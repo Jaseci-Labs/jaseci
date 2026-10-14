@@ -161,6 +161,7 @@ node ClassDetailsShared {
         is_typeddict: bool = False,
         is_root_class: bool = False,
         is_enum_class: bool = False,
+        is_extern_struct: bool = False,
         _identity_key: (tuple[str, int, int, str] | None) = None,
         _derived_special_types: (dict[str, ClassType] | None) = None,
         ct_params: (list[str] | None) = None,
@@ -168,6 +169,7 @@ node ClassDetailsShared {
         _native_name: (tuple[SymbolTable, str] | None) = None,
         _acc_cache: (dict[str, any] | None) = None,
         _mro_sig: (list[tuple[int, str]] | None) = None,
+        _fresh_epoch: int = -1,
         _provisional: bool = False,
         _heal_stamp: int = 0;
 
@@ -213,6 +215,7 @@ node ClassDetailsShared {
         typeddict_fields: (dict[str, TypeBase] | None) = None,
         is_root_class: bool = False,
         is_enum_class: bool = False,
+        is_extern_struct: bool = False,
         enum_value_type: (TypeBase | None) = None,
         enum_members: (dict[str, EnumMemberInfo] | None) = None,
         _identity_key: (tuple[str, int, int, str] | None) = None,
@@ -480,3 +483,5 @@ node EnumMemberType(TypeBase) {
     def __str__ -> str;
     def get_value_type -> TypeBase;
 }
+
+glob CLASS_GRAPH_EPOCH: list[int] = [0];

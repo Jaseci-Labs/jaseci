@@ -178,8 +178,8 @@ impl CompileContext.log_info(msg: str) -> None {
 }
 
 impl CompileContext.enter_node(nd: UniNode) -> None {
-    import from jaclang.runtime.osp_kernel { osp_skip_rest }
-    if self.is_canceled() or nd.ct_pruned {
+    if nd.ct_pruned or self.is_canceled() {
+        import from jaclang.runtime.osp_kernel { osp_skip_rest }
         osp_skip_rest();
         return;
     }
@@ -187,13 +187,14 @@ impl CompileContext.enter_node(nd: UniNode) -> None {
 }
 
 impl CompileContext.exit_node(nd: UniNode) -> None {
-    import from jaclang.runtime.osp_kernel { osp_skip_rest }
     if nd.ct_pruned {
+        import from jaclang.runtime.osp_kernel { osp_skip_rest }
         osp_skip_rest();
         return;
     }
     self.current_node = nd;
     if self.is_canceled() {
+        import from jaclang.runtime.osp_kernel { osp_skip_rest }
         osp_skip_rest();
     }
 }

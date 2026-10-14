@@ -12,6 +12,7 @@ import tempfile;
 import from pathlib { Path }
 import from tests.support { JAC_ROOT }
 import from tests.compiler.backends.es.codegen_helpers {
+    analyze_fixture_and_emit_js,
     compile_fixture_to_js,
     compile_fixture_to_js_production,
     run_js_module,
@@ -553,6 +554,49 @@ test "lambda assignment to an enclosing local stays a closure rebind" {
     );
     assert "let count = (count + 1);" not in js_code;
     assert_balanced_syntax(js_code, temp_path);
+}
+
+test "every handler a for slot builds acts on its own item" {
+    # #8168: a local assigned in a `for` slot body, bare or annotated, is local
+    # to the loop, so each handler keeps its own iteration's value. The loop
+    # target, a .map() lambda-body local (#8130) and a parameter-bound factory
+    # are the same contract.
+    fixture_file_path = os.path.join(FIXTURES, "for_slot_handlers.jac");
+    (prog, js_code) = analyze_fixture_and_emit_js(fixture_file_path);
+    assert not prog.errors_had , "\n".join(e.pretty_print() for e in prog.errors_had);
+
+    harness = (
+        "\nfunction __jacJsx(tag, props, kids) {"
+        " return {tag, props, kids: kids === undefined ? [] : kids}; }\n"
+        "const out = [];\n"
+        "const tree = Handlers({items: [{id: 'first'}, {id: 'second'}, {id: 'last'}],"
+        " sink: (t) => out.push(t)});\n"
+        "const found = [];\n"
+        "(function walk(n, section) {\n"
+        "  if (n == null || typeof n !== 'object') return;\n"
+        "  if (Array.isArray(n)) { for (const c of n) walk(c, section); return; }\n"
+        "  if (n.props && n.props.id) section = n.props.id;\n"
+        "  if (n.props && typeof n.props.onClick === 'function')"
+        " found.push([section, n.props.onClick]);\n"
+        "  walk(n.kids, section);\n"
+        "})(tree, '?');\n"
+        "const bySection = {};\n"
+        "for (const [s, fn] of found) { out.length = 0; fn();"
+        " (bySection[s] = bySection[s] || []).push(out[0]); }\n"
+        "console.log(JSON.stringify(bySection));\n"
+    );
+    result = run_js_module(js_code + harness);
+    assert result.returncode == 0 , (
+        f"for-slot handlers crashed in Node:\nstderr={result.stderr!r}\njs:\n{js_code}"
+    );
+    got = json.loads(result.stdout.strip());
+    for section in ["for_slot", "annotated", "factory", "map_lambda", "loop_target"] {
+        assert got.get(section)
+            == [f"{section}:{item}" for item in ["first", "second", "last"]] , (
+            f"every '{section}' handler must act on its own item, got {got}\njs:\n{js_code}"
+        );
+    }
+    assert_balanced_syntax(js_code, fixture_file_path);
 }
 
 test "lambda returning dict literal parenthesises the arrow body" {
@@ -3063,6 +3107,11 @@ test "builtin functions lower to runtime helpers without type-check (#7480, #858
         + "  min_max_key: min_max_by_key([\"ccc\", \"a\", \"bb\"]),"
         + "  min_spread: min_of_spread([5, 1, 3]),"
         + "  min_max_varargs: min_max_varargs(3, 1, 2),"
+        + "  sorted_kwargs_order: sorted_kwargs_order([\"ccc\", \"a\", \"bb\"]),"
+        + "  sorted_kwargs_spread: sorted_kwargs_spread("
+        + "[\"ccc\", \"a\", \"bb\"], {key: (s) => s.length}),"
+        + "  pos_spread_kwargs: pos_spread_with_kwargs([3.14159], [[1, 2, 3]]),"
+        + "  method_kwargs: method_kwargs([\"ccc\", \"a\", \"bb\"], \"a b c\"),"
         + "  empty_error: _emptyErr"
         + "}));\n"
     );
@@ -3094,6 +3143,7 @@ test "builtin functions lower to runtime helpers without type-check (#7480, #858
     # one `...xs` entry, which the fix must wrap in `[...]` rather than pass
     # straight through -- otherwise xs's elements splice into the runtime
     # helper's own argument list instead of forming the array it expects.
+    # The keyword rows below (#9120) must resolve by name, not source order.
     expected_scalars = {
         "combined min(a)": (got["combined"][0], 1),
         "combined max(a)": (got["combined"][1], 2),
@@ -3101,7 +3151,41 @@ test "builtin functions lower to runtime helpers without type-check (#7480, #858
         "max(items, key=)": (got["min_max_key"][1], "ccc"),
         "min(*xs)": (got["min_spread"], 1),
         "min(a, b, c)": (got["min_max_varargs"][0], 1),
-        "max(a, b, c)": (got["min_max_varargs"][1], 3)
+        "max(a, b, c)": (got["min_max_varargs"][1], 3),
+        "sorted(xs, reverse=True)": (got["summarize"]["sorted_reverse"], [3, 2, 1]),
+        "sum(xs, start=)": (got["summarize"]["sum_kwarg"], 16),
+        "enumerate(xs, start=)": (
+            got["summarize"]["enumerated_kwarg"],
+            [[5, 3], [6, 1], [7, 2]]
+        ),
+        "round(x, ndigits=)": (got["numeric"]["round_kwarg"], 3.14),
+        "sorted(key=, reverse=)": (
+            got["sorted_kwargs_order"]["key_then_reverse"],
+            ["ccc", "bb", "a"]
+        ),
+        "sorted(reverse=, key=)": (
+            got["sorted_kwargs_order"]["reverse_then_key"],
+            ["ccc", "bb", "a"]
+        ),
+        "pow(base=, exp=)": (got["numeric"]["pow_base_exp"], 125),
+        "pow(exp=, base=)": (got["numeric"]["pow_exp_base"], 125),
+        "complex(imag=, real=)": (got["numeric"]["complex_kwarg"], {"re": 1, "im": 2}),
+        "sorted(reverse=, **spread)": (got["sorted_kwargs_spread"], ["ccc", "bb", "a"]),
+        "round(*args, ndigits=)": (got["pos_spread_kwargs"][0], 3.14),
+        "sum(*args, start=)": (got["pos_spread_kwargs"][1], 16),
+        "list.sort(reverse=)": (
+            got["method_kwargs"]["sort_reverse"],
+            ["ccc", "bb", "a"]
+        ),
+        "list.sort(reverse=, key=)": (
+            got["method_kwargs"]["sort_reverse_key"],
+            ["ccc", "bb", "a"]
+        ),
+        "str.split(maxsplit=)": (got["method_kwargs"]["split_maxsplit"], ["a", "b c"]),
+        "str.split(maxsplit=, sep=)": (
+            got["method_kwargs"]["split_kw_order"],
+            ["a", "b c"]
+        )
     };
     for (label, (actual, expected)) in expected_scalars.items() {
         assert actual == expected , (

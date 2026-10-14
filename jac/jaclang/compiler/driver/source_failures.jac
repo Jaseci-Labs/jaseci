@@ -24,8 +24,9 @@ def module_scoped_failure_details(path: str, program: JacProgram) -> str {
 }
 
 def bootstrap_tier_failure_details(path: str) -> str {
-    import from jaclang.compiler.driver.pipeline { schedule_tier_reason }
-    reason = schedule_tier_reason();
+    import from jaclang.compiler.driver.pipeline { tier_reason }
+    import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
+    reason = tier_reason(CompilationProduct.IR);
     if not reason {
         return '';
     }
@@ -34,7 +35,7 @@ def bootstrap_tier_failure_details(path: str) -> str {
         "that tier could not produce its bytecode. A module that needs the "
         "full compiler must not be reached from a schedule dependency at "
         "module scope: keep that import function-local, or pre-import the "
-        "module in the schedule loader (see IR_SCHED_DEPS in "
+        "module through the IR product's loads (the PRODUCTS table in "
         "jaclang.compiler.driver.pipeline)."
     );
 }

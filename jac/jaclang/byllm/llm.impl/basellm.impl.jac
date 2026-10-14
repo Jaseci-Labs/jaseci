@@ -301,7 +301,7 @@ def _existing_cost(usage_obj: object) -> object {
 def _rebuild_stream_chunks(chunks: list[any], logging_obj: object) -> dict[str, any] {
     rebuilt: any = (
         litellm.stream_chunk_builder(chunks, logging_obj=logging_obj)
-            if _STREAM_CHUNK_BUILDER_ACCEPTS_LOGGING_OBJ
+            if _stream_builder_accepts_logging_obj()
             else litellm.stream_chunk_builder(chunks)
     );
     return rebuilt;
@@ -414,75 +414,124 @@ def _copy_for_compaction(model: BaseLLM) -> BaseLLM {
 }
 
 
+glob _CHARS_PER_TOKEN: int = 4,
+     _TAIL_BUDGET_RATIO: float = 0.25,
+     _MIN_SLICE_RATIO: float = 0.05;
+
+
+def _message_role(msg: dict[str, any]) -> str {
+    return str(msg.get("role"));
+}
+
+
+def _compaction_line(msg: any) -> str {
+    if not isinstance(msg, dict) {
+        return str(msg);
+    }
+    role = msg.get("role", "");
+    content = msg.get("content") or "";
+    if isinstance(content, list) {
+        content = " ".join(
+            p.get("text", "") if isinstance(p, dict) else str(p) for p in content
+        );
+    }
+    if str(role) == "assistant" {
+        tool_calls: any = msg.get("tool_calls") or [];
+        if tool_calls {
+            descs: list[str] = [];
+            for tc in tool_calls {
+                fn = tc.get("function", {})
+                    if isinstance(tc, dict)
+                    else (tc?.function or {});
+                name = (fn.get("name", "?") if isinstance(fn, dict) else fn?.name)
+                    or "?";
+                args = (
+                    fn.get("arguments", "") if isinstance(fn, dict) else fn?.arguments
+                )
+                    or "";
+                descs.append(f"{name}({args})");
+            }
+            called = "called: " + "; ".join(descs);
+            content = f"{content}\n{called}" if content else called;
+        }
+    }
+    return f"[{role}] {content}";
+}
+
+
+def _estimate_tokens(messages: list[any]) -> int {
+    return sum(len(_compaction_line(msg)) for msg in messages) // _CHARS_PER_TOKEN;
+}
+
+
+def _tail_start(messages: list[any], keep_recent: int, budget: int) -> int {
+    rounds = [
+        i
+        for i in range(2, len(messages))
+        if _message_role(messages[i]) == "assistant"
+    ];
+    if not rounds {
+        return 2;
+    }
+    kept = min(keep_recent, len(rounds));
+    while kept > 1
+        and budget > 0
+        and _estimate_tokens(messages[rounds[-kept]:]) > budget {
+        kept -= 1;
+    }
+    return rounds[-kept] if kept > 0 else len(messages);
+}
+
+
+def _clip_content(msg: dict[str, any], max_chars: int) -> dict[str, any] {
+    content = msg.get("content");
+    if not isinstance(content, str) or len(content) <= max_chars {
+        return msg;
+    }
+    dropped = len(content) - max_chars;
+    clipped = dict(msg);
+    clipped["content"] = f"{content[:max_chars]}\n[truncated: {dropped} characters removed]";
+    return clipped;
+}
+
+
+def _clip_tool_results(tail: list[any], budget: int) -> list[any] {
+    tool_count = sum(
+        1
+        for msg in tail
+        if _message_role(msg) == "tool"
+    );
+    if budget <= 0 or not tool_count or _estimate_tokens(tail) <= budget {
+        return tail;
+    }
+    max_chars = budget * _CHARS_PER_TOKEN // tool_count;
+    return [
+        _clip_content(msg, max_chars) if _message_role(msg) == "tool" else msg
+        for msg in tail
+    ];
+}
+
+
 def _default_compact(
     messages: list[any],
     keep_recent: int,
     model: BaseLLM,
-    parent_mt_run: MTRuntime | None = None
+    parent_mt_run: MTRuntime | None = None,
+    ctx_window: int = 0
 ) -> list[any] {
     if len(messages) < 4 {
         return messages;
     }
 
-    kept_tail: list[any] = [];
-    assistant_rounds = 0;
-    i = len(messages) - 1;
-    while i >= 2 and assistant_rounds < keep_recent {
-        msg = messages[i];
-        role = msg.get("role") if isinstance(msg, dict) else msg?.role;
-        if str(role) == "assistant" {
-            assistant_rounds += 1;
-        }
-        kept_tail.insert(0, msg);
-        i -= 1;
+    tail_budget = int(ctx_window * _TAIL_BUDGET_RATIO);
+    tail_start = _tail_start(messages, keep_recent, tail_budget);
+    kept_tail = _clip_tool_results(messages[tail_start:], tail_budget);
+    compact_slice = messages[2:tail_start];
+    if _estimate_tokens(compact_slice) <= int(ctx_window * _MIN_SLICE_RATIO) {
+        return messages[:tail_start] + kept_tail;
     }
 
-    compact_slice = messages[2:i + 1];
-    if not compact_slice {
-        return messages;
-    }
-
-    lines: list[str] = [];
-    for msg in compact_slice {
-        if isinstance(msg, dict) {
-            role = msg.get("role", "");
-            content = msg.get("content") or "";
-            if isinstance(content, list) {
-                content = " ".join(
-                    p.get("text", "") if isinstance(p, dict) else str(p)
-                    for p in content
-                );
-            }
-            if str(role) == "assistant" {
-                tool_calls: any = msg.get("tool_calls") or [];
-                if tool_calls {
-                    descs: list[str] = [];
-                    for tc in tool_calls {
-                        fn = tc.get("function", {})
-                            if isinstance(tc, dict)
-                            else (tc?.function or {});
-                        name = (
-                            fn.get("name", "?") if isinstance(fn, dict) else fn?.name
-                        )
-                            or "?";
-                        args = (
-                            fn.get("arguments", "")
-                                if isinstance(fn, dict)
-                                else fn?.arguments
-                        )
-                            or "";
-                        descs.append(f"{name}({args})");
-                    }
-                    called = "called: " + "; ".join(descs);
-                    content = f"{content}\n{called}" if content else called;
-                }
-            }
-            lines.append(f"[{role}] {content}");
-        } else {
-            lines.append(str(msg));
-        }
-    }
-    history_text = "\n".join(lines);
+    history_text = "\n".join(_compaction_line(msg) for msg in compact_slice);
     summary_prompt = (
         "Summarise the following agent tool-call history concisely. "
         "Preserve key findings, decisions, and intermediate results that "
@@ -501,9 +550,12 @@ def _default_compact(
         mtir=None,
         _call_kind="compaction"
     );
-    summary = str(model.invoke(comp_mt_run));
-    if parent_mt_run is not None {
-        parent_mt_run._usage_history.extend(comp_mt_run._usage_history);
+    try {
+        summary = str(model.invoke(comp_mt_run));
+    } finally {
+        if parent_mt_run is not None {
+            parent_mt_run._usage_history.extend(comp_mt_run._usage_history);
+        }
     }
     summary_msg = {
         "role": "user",
@@ -585,21 +637,27 @@ impl BaseLLM._maybe_compact(
     );
     if prompt_tokens > 0 and prompt_tokens / ctx_window >= comp_threshold {
         if just_compacted {
-            raise CompactionNotEffectiveError(
-                f"{prompt_tokens}/{ctx_window} tokens "
+            logger.warning(
+                f"byLLM compaction: {prompt_tokens}/{ctx_window} tokens "
                 f"({prompt_tokens / ctx_window:.0%}) still at or above threshold "
-                f"{comp_threshold:.0%} after compaction - provide a custom "
-                "on_compaction hook, increase ctx_window, or switch to a model "
-                "with a larger context window."
+                f"{comp_threshold:.0%} after compaction. Continuing: the provider's "
+                "own limit decides. Provide a custom on_compaction hook, increase "
+                "ctx_window, or switch to a model with a larger context window."
             );
+            return True;
         }
         logger.info(
             f"byLLM compaction: {prompt_tokens}/{ctx_window} tokens "
             f"({prompt_tokens / ctx_window:.0%}) >= threshold {comp_threshold:.0%}. "
             "Compacting message history."
         );
-        self._compact_messages(mt_run, int(cp["keep_recent"]), cp["model"]);
-        return True;
+        if self._compact_messages(mt_run, cp) {
+            return True;
+        }
+        logger.warning(
+            "byLLM compaction: could not reduce the message history (nothing "
+            "worth summarising). Continuing: the provider's own limit decides."
+        );
     }
     return False;
 }
@@ -613,7 +671,7 @@ impl BaseLLM._emergency_compact_retry(
     }
     if just_compacted {
         raise CompactionNotEffectiveError(
-            "Context window exceeded again after emergency compaction - "
+            "Context window exceeded again after compaction - "
             "provide a custom on_compaction hook, increase ctx_window, "
             "or switch to a model with a larger context window."
         );
@@ -621,14 +679,19 @@ impl BaseLLM._emergency_compact_retry(
     logger.warning(
         "byLLM compaction: context window exceeded, triggering emergency compaction."
     );
-    self._compact_messages(mt_run, int(cp["keep_recent"]), cp["model"]);
+    if not self._compact_messages(mt_run, cp) and len(mt_run.messages) >= 4 {
+        raise CompactionNotEffectiveError(
+            "Compaction produced no reduction in message history - "
+            "check on_compaction hook or compaction model."
+        );
+    }
     return self.dispatch_no_streaming(mt_run);
 }
 
 
-impl BaseLLM._compact_messages(
-    mt_run: MTRuntime, keep_recent: int, comp_model: str | None
-) -> None {
+impl BaseLLM._compact_messages(mt_run: MTRuntime, cp: dict[str, any]) -> bool {
+    keep_recent = int(cp["keep_recent"]);
+    comp_model = cp["model"];
     on_compaction = (
         mt_run.call_params.get("on_compaction") or self.call_params.get("on_compaction")
     );
@@ -656,23 +719,20 @@ impl BaseLLM._compact_messages(
             model_for_compaction = _copy_for_compaction(self);
         }
         compacted = _default_compact(
-            msg_dicts, keep_recent, model_for_compaction, mt_run
+            msg_dicts, keep_recent, model_for_compaction, mt_run, int(cp["ctx_window"])
         );
     }
-    removed = original_len - len(compacted);
-    if removed == 0 and original_len >= 4 {
-        raise CompactionNotEffectiveError(
-            "Compaction produced no reduction in message history - "
-            "check on_compaction hook or compaction model."
-        );
+    tokens_before = _estimate_tokens(msg_dicts);
+    tokens_after = _estimate_tokens(compacted);
+    if tokens_after >= tokens_before {
+        return False;
     }
     mt_run.messages = compacted;
     logger.info(
-        f"byLLM compaction: reduced message list from {original_len} to {len(
-            compacted
-        )} "
-        f"({removed} messages replaced with summary)"
+        f"byLLM compaction: reduced message list from {original_len} to "
+        f"{len(compacted)} messages, about {tokens_before} to {tokens_after} tokens"
     );
+    return True;
 }
 
 
@@ -1171,7 +1231,9 @@ impl BaseLLM._invoke_react_loop(mt_run: MTRuntime) -> object {
                 }
                 mt_run.add_message(finish_msg);
                 if mt_run.stream {
-                    return self._stream_final_answer(mt_run);
+                    return self._stream_final_answer(
+                        mt_run, fallback=str(final_output or "")
+                    );
                 }
                 return final_output;
             }
@@ -1483,6 +1545,19 @@ def _sanitize_tool_calls(message: dict[str, any]) -> set[str] {
 }
 
 
+def _raise_if_empty_truncation(finish_reason: str, content: any, tool_calls: any) {
+    if finish_reason == "length"
+        and not tool_calls
+        and not str(content or "").strip() {
+        raise OutputTruncatedError(
+            "The model hit max_tokens before it produced any text or tool call "
+            "(the budget went to reasoning). Raise max_tokens or lower the "
+            "reasoning effort."
+        );
+    }
+}
+
+
 def _truncated_call_ids(message: dict[str, any], finish_reason: str) -> set[str] {
     if finish_reason != "length" {
         return set();
@@ -1546,14 +1621,18 @@ impl BaseLLM.dispatch_no_streaming(mt_run: MTRuntime) -> CompletionResult {
     tool_calls_list: list[any] = _tc_raw if isinstance(_tc_raw, list) else [];
     tool_calls = _parse_tool_calls(mt_run, tool_calls_list, truncated_ids, damaged_ids);
 
-    output_value = mt_run.parse_response(output_content)
-        if not tool_calls_list
-        else output_content;
     usage_data = response.get("usage", {});
     _attach_call_cost(usage_data, self.model_name, response);
     _record_usage(mt_run, usage_data, actual_model, finish_reason=finish_reason);
+    _raise_if_empty_truncation(finish_reason, output_content, tool_calls_list);
+    output_value = mt_run.parse_response(output_content)
+        if not tool_calls_list
+        else output_content;
     return CompletionResult(
-        output=output_value, tool_calls=tool_calls, usage=usage_data
+        output=output_value,
+        tool_calls=tool_calls,
+        usage=usage_data,
+        finish_reason=finish_reason
     );
 }
 
@@ -1588,6 +1667,7 @@ impl BaseLLM.dispatch_streaming(mt_run: MTRuntime) -> Generator[str, None, None]
     stream_model: str = self.model_name;
     while True {
         finish_reason = "";
+        produced = False;
         try {
             response = self.model_call_with_stream(params);
             for chunk in response {
@@ -1605,6 +1685,7 @@ impl BaseLLM.dispatch_streaming(mt_run: MTRuntime) -> Generator[str, None, None]
                 }
                 if chunk?.choices and chunk?.choices?[0]?.delta {
                     delta = chunk?.choices?[0]?.delta;
+                    produced = produced or bool(str(delta?.content or "").strip());
                     yield delta?.content or "";
                 }
             }
@@ -1621,6 +1702,9 @@ impl BaseLLM.dispatch_streaming(mt_run: MTRuntime) -> Generator[str, None, None]
 
     if len(mt_run._usage_history) == usage_base {
         _record_usage(mt_run, {}, stream_model, finish_reason=finish_reason);
+    }
+    if not produced {
+        _raise_if_empty_truncation(finish_reason, "", None);
     }
 }
 
@@ -1748,7 +1832,12 @@ impl BaseLLM.dispatch_streaming_with_tools(
         else output_content;
     _record_usage(mt_run, usage_data, actual_model, finish_reason=finish_reason);
     out.append(
-        CompletionResult(output=output_value, tool_calls=tool_calls, usage=usage_data)
+        CompletionResult(
+            output=output_value,
+            tool_calls=tool_calls,
+            usage=usage_data,
+            finish_reason=finish_reason
+        )
     );
 }
 
@@ -1798,14 +1887,18 @@ impl BaseLLM.adispatch_no_streaming(mt_run: MTRuntime) -> CompletionResult {
     _tc_raw: any = (message or {}).get("tool_calls") or [];
     tool_calls_list: list[any] = _tc_raw if isinstance(_tc_raw, list) else [];
     tool_calls = _parse_tool_calls(mt_run, tool_calls_list, truncated_ids, damaged_ids);
-    output_value = mt_run.parse_response(output_content)
-        if not tool_calls_list
-        else output_content;
     usage_data = response.get("usage", {});
     _attach_call_cost(usage_data, self.model_name, response);
     _record_usage(mt_run, usage_data, actual_model, finish_reason=finish_reason);
+    _raise_if_empty_truncation(finish_reason, output_content, tool_calls_list);
+    output_value = mt_run.parse_response(output_content)
+        if not tool_calls_list
+        else output_content;
     return CompletionResult(
-        output=output_value, tool_calls=tool_calls, usage=usage_data
+        output=output_value,
+        tool_calls=tool_calls,
+        usage=usage_data,
+        finish_reason=finish_reason
     );
 }
 
@@ -1820,6 +1913,7 @@ impl BaseLLM.adispatch_streaming(mt_run: MTRuntime) -> AsyncIterator[str] {
     stream_model: str = self.model_name;
     while True {
         finish_reason = "";
+        produced = False;
         try {
             response = await self.model_call_with_stream_async(params);
             async for chunk in response {
@@ -1837,6 +1931,7 @@ impl BaseLLM.adispatch_streaming(mt_run: MTRuntime) -> AsyncIterator[str] {
                 }
                 if chunk?.choices and chunk?.choices?[0]?.delta {
                     delta = chunk?.choices?[0]?.delta;
+                    produced = produced or bool(str(delta?.content or "").strip());
                     yield str(delta?.content or "");
                 }
             }
@@ -1853,6 +1948,9 @@ impl BaseLLM.adispatch_streaming(mt_run: MTRuntime) -> AsyncIterator[str] {
 
     if len(mt_run._usage_history) == usage_base {
         _record_usage(mt_run, {}, stream_model, finish_reason=finish_reason);
+    }
+    if not produced {
+        _raise_if_empty_truncation(finish_reason, "", None);
     }
 }
 
@@ -2056,7 +2154,9 @@ impl BaseLLM._force_final_answer(mt_run: MTRuntime) -> object {
 }
 
 
-impl BaseLLM._stream_final_answer(mt_run: MTRuntime) -> Generator[str, None, None] {
+impl BaseLLM._stream_final_answer(
+    mt_run: MTRuntime, fallback: str | None = None
+) -> Generator[str, None, None] {
     final_instruction = Message(
         role=MessageRole.USER,
         content="Based on the tool calls and their results above, provide your final answer. "
@@ -2075,6 +2175,16 @@ impl BaseLLM._stream_final_answer(mt_run: MTRuntime) -> Generator[str, None, Non
             accumulated += token;
             yield token;
         }
+        if not accumulated and fallback is not None {
+            accumulated = fallback;
+            yield fallback;
+        }
+    } except OutputTruncatedError {
+        if fallback is None {
+            raise;
+        }
+        accumulated = fallback;
+        yield fallback;
     } finally {
         mt_run._call_kind = original_call_kind;
         mt_run.call_params.pop("tool_choice", None);
@@ -2122,10 +2232,12 @@ impl BaseLLM._yield_recovery_result(
     recovery_resp: CompletionResult, iter_count: int, mt_run: MTRuntime, usage_base: int
 ) -> Generator[StreamEvent, None, None] {
     finish_found = False;
+    committed = "";
     if recovery_resp.tool_calls {
         for tool_call in recovery_resp.tool_calls {
             if tool_call.is_finish_call() {
                 mt_run.add_message(tool_call());
+                committed = str(tool_call.get_output() or "");
                 finish_found = True;
                 break;
             }
@@ -2133,7 +2245,7 @@ impl BaseLLM._yield_recovery_result(
     }
     yield StreamEvent(event_type="steps_done", data={"iterations": iter_count});
     if finish_found {
-        for token in self._stream_final_answer(mt_run) {
+        for token in self._stream_final_answer(mt_run, fallback=committed) {
             if token {
                 yield StreamEvent(event_type="chunk", data={"content": token});
             }
@@ -2149,6 +2261,14 @@ impl BaseLLM._yield_recovery_result(
 impl BaseLLM._invoke_streaming(
     mt_run: MTRuntime
 ) -> Generator[StreamEvent, None, None] {
+    try {
+        yield from self._stream_steps(mt_run);
+    } finally {
+        mt_run.write_back_conversation();
+    }
+}
+
+impl BaseLLM._stream_steps(mt_run: MTRuntime) -> Generator[StreamEvent, None, None] {
     if len(mt_run.tools) == 0 {
         _seen_resets = mt_run._stream_reset_count;
         for token in self.dispatch_streaming(mt_run) {
@@ -2447,7 +2567,9 @@ impl BaseLLM._invoke_streaming(
                     );
 
                     if mt_run.resp_type is None or mt_run.resp_type is str {
-                        for token in self._stream_final_answer(mt_run) {
+                        for token in self._stream_final_answer(
+                            mt_run, fallback=str(final_output or "")
+                        ) {
                             if token {
                                 yield StreamEvent(
                                     event_type="chunk", data={"content": token}
@@ -2459,6 +2581,9 @@ impl BaseLLM._invoke_streaming(
                     break;
                 }
             } else {
+                _raise_if_empty_truncation(
+                    resp.finish_reason, resp.output, resp.tool_calls
+                );
                 recovery_resp = self._attempt_recovery(mt_run);
                 if recovery_resp is None {
                     yield StreamEvent(
@@ -2481,6 +2606,4 @@ impl BaseLLM._invoke_streaming(
     }
 
     yield StreamEvent(event_type="usage", data=_aggregate_usage(mt_run._usage_history));
-
-    mt_run.write_back_conversation();
 }

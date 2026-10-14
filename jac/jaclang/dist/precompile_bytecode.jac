@@ -630,6 +630,16 @@ def precompile_unit_context(
     }
 }
 
+def raised_at(err: BaseException) -> str {
+    import traceback;
+    frames = traceback.extract_tb(err.__traceback__);
+    if not frames {
+        return "";
+    }
+    last = frames[-1];
+    return f" (raised in {last.name} at {os.path.basename(last.filename)}:{last.lineno})";
+}
+
 def precompile_unit(
     jac_path: str,
     pkg_root: str,
@@ -1234,7 +1244,8 @@ def seal_finalize(
         manifest_modules,
         payloads,
         app_meta,
-        native_record
+        native_record,
+        kit_omissions(pkg_name)
     );
     _phase("payloads and manifest");
     console.print(f"  Manifest: {precompiled_dir / MANIFEST_NAME}");
@@ -1249,16 +1260,9 @@ def native_roots(pkg_name: str, units: list[str]) -> list[str] {
     return list(units);
 }
 
-def _stage0_builds_kernel -> bool {
-    import from jaclang.compiler.backends.native.stage0_pin {
-        Stage0PinError,
-        read_stage0_pin
-    }
-    try {
-        return not read_stage0_pin().is_self();
-    } except (Stage0PinError, OSError) {
-        return False;
-    }
+def kit_omissions(pkg_name: str) -> list[str] {
+    import from jaclang.artifacts.kit { pr_kit_omits }
+    return ["kernel"] if pkg_name == "jaclang" and pr_kit_omits("kernel") else [];
 }
 
 def _compiler_kernel_units -> set[str] {
@@ -1319,6 +1323,12 @@ def seal_native(
     pkg_path: Path, out_dir: Path, pkg_name: str, manifest_modules: dict[str, any]
 ) -> (dict[str, any] | None) {
     import from jaclang.compiler.driver.toolchain { native_pipeline_available }
+    if "kernel" in kit_omissions(pkg_name) {
+        console.print(
+            "  Native artifact: none (a pull request's kit leaves the kernel out)"
+        );
+        return None;
+    }
     units = package_native_units(str(pkg_path));
     if not units {
         return None;
@@ -1335,19 +1345,24 @@ def seal_native(
         link_artifact
     }
     import from jaclang.compiler.backends.native.kernel_resolve {
-        PR_KIT_EVENT,
         SEALED_LINK_MODE,
-        kernel_lib_name,
-        seal_link_mode
+        kernel_lib_name
     }
     import from jaclang.compiler.driver.jir {
         native_section_payload,
         read_section_bytes as _rsb
     }
     import from jaclang.compiler.driver.native_iface { NativeIface }
+    import from jaclang.compiler.native_scope { in_native_scope_path }
     import from jaclang.server.sealed_serve { NATIVE_DIR_REL }
 
     prog = JacProgram();
+
+    def progress(line: str) {
+        console.print(line);
+    }
+
+    prog.native_units().progress = progress;
     options = CompileOptions(
         aot_mode=True,
         default_codespace="native",
@@ -1363,16 +1378,8 @@ def seal_native(
     native_start = time.monotonic();
     artifact_path = pkg_path / artifact_rel;
     artifact_path.parent.mkdir(parents=True, exist_ok=True);
-    if pkg_name == "jaclang" {
-        staged = seal_stage0_kernel(pkg_path, artifact_path, artifact_rel);
-        if staged is not None {
-            console.print(f"  Native build: {time.monotonic() - native_start:.1f}s");
-            return staged;
-        }
-    }
-
     plan = build_link_plan(
-        prog, roots, options, mode=seal_link_mode(), native_unit=True
+        prog, roots, options, mode=SEALED_LINK_MODE, native_unit=True
     );
     result = link_artifact(
         plan, str(artifact_path), ArtifactKind.SHARED, log=console.print
@@ -1397,6 +1404,15 @@ def seal_native(
         mod_entry = manifest_modules.get(rel);
         if mod_entry is None {
             raise RuntimeError(f"native unit {rel} has no sealed JIR");
+        }
+        if pkg_name == "jaclang" {
+            if in_native_scope_path(u.path)
+                and _drop_native_twin(out_dir / mod_entry["jir"]) {
+                mod_entry["sha256"] = hashlib.sha256(
+                    (out_dir / mod_entry["jir"]).read_bytes()
+                ).hexdigest();
+            }
+            continue;
         }
         _refresh_native_twin(out_dir / mod_entry["jir"], u.path, str(pkg_path));
         jir_bytes = (out_dir / mod_entry["jir"]).read_bytes();
@@ -1425,133 +1441,7 @@ def seal_native(
         "triple": plan.triple,
         "mode": plan.mode
     };
-    if plan.mode != SEALED_LINK_MODE {
-        artifact["kit"] = PR_KIT_EVENT;
-    }
     return {"units": unit_records, "artifact": artifact};
-}
-
-def _stage0_kernel_workdir(pkg_path: Path, artifact_name: str) -> tuple[Path, Path] {
-    import shutil;
-    import from jaclang.compiler.driver.jir { get_jir_cache_dir }
-    work = get_jir_cache_dir() / "stage0-kernel";
-    target = work / "target" / pkg_path.name;
-    if target.exists() {
-        shutil.rmtree(target);
-    }
-    shutil.copytree(
-        pkg_path,
-        target,
-        symlinks=True,
-        ignore=shutil.ignore_patterns(
-            "__pycache__",
-            "_precompiled",
-            "_bun",
-            "*.so",
-            "*.so.*",
-            "*.dylib",
-            "*.dll",
-            ".jac"
-        )
-    );
-    out = work / "out" / artifact_name;
-    out.parent.mkdir(parents=True, exist_ok=True);
-    return (target, out);
-}
-
-def _sealed_link_current(out: Path) -> bool {
-    import from jaclang.compiler.backends.native.kernel_resolve {
-        SEALED_LINK_MODE,
-        _sidecar_matches_sources,
-        read_sidecar
-    }
-    sidecar = read_sidecar(str(out));
-    if sidecar is None
-        or not out.is_file()
-        or sidecar.get("link_mode") != SEALED_LINK_MODE {
-        return False;
-    }
-    try {
-        return _sidecar_matches_sources(sidecar);
-    } except Exception {
-        return False;
-    }
-}
-
-def seal_stage0_kernel(
-    pkg_path: Path, artifact_path: Path, artifact_rel: str
-) -> (dict[str, any] | None) {
-    import shutil;
-    import from jaclang.compiler.backends.native.kernel_resolve {
-        LAYOUT_SIDECAR_SUFFIX,
-        PR_KIT_EVENT,
-        SEALED_LINK_MODE,
-        STAGE0_BUILDER,
-        read_sidecar,
-        seal_link_mode
-    }
-    import from jaclang.compiler.backends.native.kernel_stage0 { running_kernel_target }
-    import from jaclang.compiler.backends.native.stage0_build { build_kernel_by_pin }
-    import from jaclang.compiler.driver.jir { get_jir_cache_dir }
-    import from jaclang.jac0core.cache_paths { FileLock }
-    link_mode = seal_link_mode();
-    lock_path = get_jir_cache_dir() / "stage0-kernel.lock";
-    lock_path.parent.mkdir(parents=True, exist_ok=True);
-    lock = FileLock(str(lock_path), timeout=7200.0);
-    lock.acquire();
-    try {
-        (target, out) = _stage0_kernel_workdir(pkg_path, artifact_path.name);
-        if link_mode != SEALED_LINK_MODE and _sealed_link_current(out) {
-            console.print(
-                "  Kernel: the cached bitcode link matches these units; reusing it"
-            );
-            link_mode = SEALED_LINK_MODE;
-        }
-        if not build_kernel_by_pin(
-            str(out), spec=running_kernel_target(str(target)), link_mode=link_mode
-        ) {
-            return None;
-        }
-        for suffix in ("", LAYOUT_SIDECAR_SUFFIX) {
-            shutil.copyfile(str(out) + suffix, str(artifact_path) + suffix);
-        }
-    } finally {
-        lock.release();
-    }
-    sidecar = read_sidecar(str(artifact_path));
-    if sidecar is None {
-        raise RuntimeError("the stage-0 kernel build left no layout sidecar");
-    }
-    mode = str(sidecar.get("link_mode", ""));
-    if mode != link_mode {
-        raise RuntimeError(
-            f"stage 0 linked the kernel in {mode or 'an unrecorded'} mode; this "
-            f"seal asked for a {link_mode} link"
-        );
-    }
-    stage0 = sidecar.get("stage0");
-    if not isinstance(stage0, dict) {
-        raise RuntimeError("the stage-0 kernel sidecar names no stage-0 compiler");
-    }
-    record = {
-        "path": Path(artifact_rel).as_posix(),
-        "sha256": hashlib.sha256(artifact_path.read_bytes()).hexdigest(),
-        "layout_digest": str(sidecar.get("layout_digest", "")),
-        "plan_digest": str(sidecar.get("plan_digest", "")),
-        "triple": str(sidecar.get("triple", "")),
-        "mode": mode,
-        "builder": STAGE0_BUILDER,
-        "stage0": dict(stage0)
-    };
-    if mode != SEALED_LINK_MODE {
-        record["kit"] = PR_KIT_EVENT;
-    }
-    console.print(
-        f"  Native artifact: {artifact_rel} built by stage 0 "
-        f"{str(stage0.get('commit', ''))[:12]} ({mode} link, plan "
-        f"{record['plan_digest'][:12]}, layout {record['layout_digest'][:12]})"
-    );
-    return {"units": {}, "artifact": record};
 }
 
 def _refresh_native_twin(twin: Path, jac_path: str, pkg_root: str) -> None {
@@ -1591,6 +1481,32 @@ the artifact linked, so the twin takes them now.""";
     );
 }
 
+def _drop_native_twin(twin: Path) -> bool {
+    data = twin.read_bytes();
+    header = parse_header(data[:HEADER_SIZE]);
+    if header is None {
+        return False;
+    }
+    magic: any = SECTIONS_MAGIC;
+    pos = data.find(magic, HEADER_SIZE);
+    if pos < 0 {
+        return False;
+    }
+    sections = read_sections(data, pos + len(magic));
+    kept: dict[int, bytes] = {
+        sec: raw
+        for (sec, raw) in sections.items()
+        if sec not in NATIVE_SECTIONS
+    };
+    if len(kept) == len(sections) {
+        return False;
+    }
+    bytecode = kept.pop(SEC_BYTECODE, None);
+    module_key = (kept.pop(SEC_MODKEY, b"") or b"").decode("utf-8");
+    twin.write_bytes(write_precompiled_jir(bytecode, module_key, header.flags, kept));
+    return True;
+}
+
 def _shared_suffix -> str {
     if sys.platform == "darwin" {
         return ".dylib";
@@ -1608,7 +1524,8 @@ def write_manifest(
     modules: dict[str, dict[str, any]],
     payloads: (dict[str, str] | None) = None,
     app_meta: (dict[str, any] | None) = None,
-    native_record: (dict[str, any] | None) = None
+    native_record: (dict[str, any] | None) = None,
+    omits: (list[str] | None) = None
 ) {
     import from importlib.metadata { version as pkg_version }
     try {
@@ -1633,6 +1550,9 @@ def write_manifest(
     }
     if native_record {
         manifest["native"] = native_record;
+    }
+    if omits {
+        manifest["omits"] = sorted(omits);
     }
     (precompiled_dir / MANIFEST_NAME).write_text(
         json.dumps(manifest, sort_keys=True, indent=1) + "\n", encoding="utf-8"
@@ -1828,7 +1748,7 @@ def run_precompile(
                 jac_files.append(unit);
             }
         }
-        if pkg_name == "jaclang" and _stage0_builds_kernel() {
+        if pkg_name == "jaclang" {
             kernel_only = _compiler_kernel_units();
             dropped = {
                 u
@@ -1838,8 +1758,12 @@ def run_precompile(
             native_units_set = native_units_set - dropped;
             if dropped {
                 console.print(
-                    f"  Compiler kernel: {len(dropped)} unit(s) left to the stage-0 "
-                    "kernel build; lowering the units programs link"
+                    f"  Compiler kernel: {len(dropped)} unit(s) "
+                        + (
+                            "left unlowered; this pull-request kit omits the kernel"
+                                if "kernel" in kit_omissions(pkg_name)
+                                else "left to the native seal; lowering the units programs link"
+                        )
                 );
             }
         }
@@ -1959,7 +1883,7 @@ def run_precompile(
             return {
                 "status": "failed",
                 "rel": str(rel),
-                "message": f"FAIL: {rel} - {e}"
+                "message": f"FAIL: {rel} - {type(e).__name__}: {e}{raised_at(e)}"
             };
         }
     }
@@ -1997,7 +1921,7 @@ def run_precompile(
     if use_pool and native_units_set {
         prebuild_native_units(
             sorted(native_units_set)
-                if pkg_name == "jaclang" and _stage0_builds_kernel()
+                if pkg_name == "jaclang"
                 else native_roots(pkg_name, sorted(native_units_set))
         );
     }

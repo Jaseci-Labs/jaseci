@@ -20,7 +20,8 @@ import from jaclang.compiler.frontend.parser.tokens { SrcDiag, CommentData }
 import from jaclang.compiler.frontend.unitree { Module, Import }
 import from jaclang.compiler.frontend.roles { AccessorsRole, BodyRole, SpecRole }
 import from jaclang.compiler.frontend.constant { CodeContext }
-import from jaclang.compiler.passes.early_passes { EARLY_PASSES, SymTabBuildPass }
+import from jaclang.compiler.driver.pipeline { early_passes }
+import from jaclang.compiler.passes.sym_tab_build_pass { SymTabBuildPass }
 import from jaclang.compiler.passes.context { Alert }
 import from jaclang.compiler.passes.annex_weave {
     merge_annex_into,
@@ -29,8 +30,11 @@ import from jaclang.compiler.passes.annex_weave {
 import from jaclang.compiler.frontend.kernel_analyze {
     ANALYSIS_CRASHED,
     AnalysisReport,
-    run_kernel_analysis
+    CompileReport,
+    run_kernel_analysis,
+    run_kernel_compile
 }
+import from jaclang.compiler.jc_ask { set_host_callback, take_host_answer }
 
 obj JcState {
     has p_errs: int = 0,
@@ -40,6 +44,7 @@ obj JcState {
         lexdiags_h: int = 0,
         comments_h: int = 0,
         analysis_h: int = 0,
+        compile_h: int = 0,
         early_context: int = 0,
         pass_times: list[float] = [],
         pass_names_h: list[int] = [],
@@ -52,6 +57,16 @@ glob _JC: JcState = JcState(),
 
 def:pub jc_probe -> int {
     return 44061;
+}
+
+def:pub jc_set_asker(callback: int) -> int {
+    set_host_callback(callback);
+    return 0;
+}
+
+def:pub jc_answer(text: str) -> int {
+    take_host_answer(text);
+    return 0;
 }
 
 def _drop_h(h: int) {
@@ -171,7 +186,7 @@ def _run_early_passes(mod: Module) -> list[CompileContext] {
     } elif _JC.early_context == 3 {
         mod.set_code_context(CodeContext.NATIVE);
     }
-    for pass_type in EARLY_PASSES {
+    for pass_type in early_passes() {
         if pass_type is SymTabBuildPass and _has_absorb_import(mod) {
             break;
         }
@@ -304,7 +319,7 @@ def:pub jc_analyze(inputs: str, path: str, source: str, has_source: int) -> int 
     status = ANALYSIS_CRASHED;
     try {
         outcome = run_kernel_analysis(
-            inputs, path, source if has_source != 0 else None
+            inputs, path, source if has_source != 0 else None, None, True
         );
         status = outcome.status;
         text = outcome.to_json();
@@ -315,6 +330,34 @@ def:pub jc_analyze(inputs: str, path: str, source: str, has_source: int) -> int 
     }
     _JC.analysis_h = PyUnicode_FromString(id(text));
     return status;
+}
+
+def:pub jc_compile(inputs: str, path: str, source: str, has_source: int) -> int {
+    _drop_stale_regions();
+    _drop_h(_JC.compile_h);
+    _JC.compile_h = 0;
+    status = ANALYSIS_CRASHED;
+    try {
+        outcome = run_kernel_compile(
+            inputs, path, source if has_source != 0 else None, None, True
+        );
+        status = outcome.analysis.status;
+        text = outcome.to_json();
+    } except Exception as err {
+        text = CompileReport(
+            analysis=AnalysisReport(
+                status=ANALYSIS_CRASHED, message=f"kernel compile raised: {err}"
+            )
+        ).to_json();
+    }
+    _JC.compile_h = PyUnicode_FromString(id(text));
+    return status;
+}
+
+def:pub jc_take_compile -> int {
+    h = _JC.compile_h;
+    _JC.compile_h = 0;
+    return h;
 }
 
 def:pub jc_take_analysis -> int {

@@ -111,6 +111,7 @@ impl NativeCompilePass._run_impl(ir_in: uni.Module) -> uni.Module {
         return ir_in;
     }
     options = self.prog.options;
+    verifying = False;
     try {
         if options.native_required_for(module.loc.mod_path) {
             require_native_ir(str(module.gen.llvm_ir));
@@ -129,10 +130,10 @@ impl NativeCompilePass._run_impl(ir_in: uni.Module) -> uni.Module {
             module.gen.native_object = cached.object_bytes;
         } else {
             unit_ir = module.gen.llvm_ir;
-            mod = unit_ir.clone()
-                if isinstance(unit_ir, llvm.ModuleRef)
-                else llvm.parse_assembly(str(unit_ir));
+            mod = llvm.parse_assembly(str(unit_ir), llvm.create_context());
+            verifying = True;
             mod.verify();
+            verifying = False;
             opt_level = 0 if native_debug else int(options.opt_level or 0);
             optimize_unit(mod, target_machine, opt_level);
             module.gen.native_bitcode = module_bitcode(mod);
@@ -161,12 +162,15 @@ impl NativeCompilePass._run_impl(ir_in: uni.Module) -> uni.Module {
         }
 
         manifest = module.gen.interop_manifest;
-        if manifest.native_imports {
+        if manifest.callable_native_imports {
             import from jaclang.runtime.interop_bridge { register_py_callbacks }
             py_func_table: dict[str, any] = {};
             callbacks_list: list[any] = [];
             register_py_callbacks(
-                manifest.native_imports, py_func_table, callbacks_list, llvm.add_symbol
+                manifest.callable_native_imports,
+                py_func_table,
+                callbacks_list,
+                llvm.add_symbol
             );
             module.gen.interop_py_funcs = py_func_table;
             module.gen._interop_callbacks = callbacks_list;
@@ -200,9 +204,23 @@ impl NativeCompilePass._run_impl(ir_in: uni.Module) -> uni.Module {
             self.ctx.emit(
                 E5026, symbol=e.symbol, existing_module=e.first, new_module=e.second
             );
+        } elif verifying {
+            self.ctx.emit(
+                E5020,
+                error=str(e),
+                help_text="The native backend produced IR that does not verify. "
+                "This is a compiler bug -- please report it. Pin the module to "
+                "the server codespace under [placement.pins] in jac.toml to keep "
+                "working until it is fixed."
+            );
+            return ir_in;
         } else {
             self.ctx.emit(E5020, error=str(e));
         }
+        import from jaclang.compiler.passes.placement_pass { settle_native_module }
+        settle_native_module(
+            module, self.prog, self.ctx.errors_had, self.ctx.warnings_had
+        );
     }
     return ir_in;
 }
@@ -296,6 +314,7 @@ impl settle_unit_ir(module: uni.Module) -> None {
     } except RuntimeError {
         return;
     }
+    module.gen.ir_module = None;
 }
 
 impl native_linked_ir_text(module: uni.Module) -> str {

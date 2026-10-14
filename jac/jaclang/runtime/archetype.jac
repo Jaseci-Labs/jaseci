@@ -7,7 +7,7 @@ import from jaclang.runtime.object_model {
     make_object
 }
 import from functools { cached_property }
-import from inspect { _empty, signature }
+import from inspect { Parameter, _empty, signature }
 import from logging { getLogger }
 import from pickle { dumps }
 import from threading { Lock }
@@ -25,6 +25,7 @@ glob _NO_TRIGGER = object(),
      _subclass_hook_lock = Lock();
 
 glob _light_edge_types: dict[type, bool] = {},
+     _edge_ctor_args: dict[type, tuple[str, ...]] = {},
      _edge_subtypes: dict[type, tuple[type, ...]] = {},
      _tracked_classes: dict[type, type] = {};
 
@@ -333,6 +334,47 @@ def is_light_edge_type(cls: type) -> bool {
     return light;
 }
 
+def edge_ctor_args(cls: type) -> tuple[str, ...] {
+    known = _edge_ctor_args.get(cls);
+    if known is not None {
+        return known;
+    }
+    names: list[str] = [];
+    try {
+        for param in signature(cls).parameters.values() {
+            if param.default is _empty
+                and param.kind
+                    in (Parameter.POSITIONAL_OR_KEYWORD, Parameter.KEYWORD_ONLY) {
+                names.append(param.name);
+            }
+        }
+    } except (TypeError, ValueError) {
+        names = [];
+    }
+    result = tuple(names);
+    _edge_ctor_args[cls] = result;
+    return result;
+}
+
+def new_connect_edge(
+    ct: (type[EdgeArchetype] | EdgeArchetype),
+    conn_assign: (tuple[(tuple[any, ...], tuple[any, ...])] | None)
+) -> tuple[EdgeArchetype, tuple[str, ...]] {
+    if not isinstance(ct, `type) {
+        return (ct, ());
+    }
+    if conn_assign {
+        required = edge_ctor_args(ct);
+        if required {
+            given = dict(zip(conn_assign[0], conn_assign[1], strict=False));
+            if all(name in given for name in required) {
+                return (ct(**{name: given[name] for name in required}), required);
+            }
+        }
+    }
+    return (ct(), ());
+}
+
 def edge_subtypes(cls: type) -> tuple[type, ...] {
     known = _edge_subtypes.get(cls);
     if known is not None {
@@ -364,6 +406,113 @@ def _deref(lst: list[any]) -> list[any] {
     return out;
 }
 
+glob _VACANT = weakref.ref(`type('_Vacated', (), {})()),
+     _INDEX_AT: int = 64;
+
+class _InLinks(list) {
+    static has __slots__: tuple[str, ...] = ("at", "live", "limit");
+    has at: dict[int, list[int]],
+        live: int,
+        limit: int;
+
+    def init(self: _InLinks, refs: list[any]) {
+        super.init();
+        self._rebuild(refs);
+    }
+
+    def _rebuild(self: _InLinks, refs: list[any]) {
+        list.clear(self);
+        self.at = {};
+        for r in refs {
+            src = r();
+            if src is not None {
+                self.at.setdefault(id(src), []).append(len(self));
+            }
+            list.append(self, r);
+        }
+        self.live = len(self);
+        self.limit = max(_INDEX_AT, 2 * len(self));
+    }
+
+    def add(self: _InLinks, src: NodeArchetype) {
+        self.at.setdefault(id(src), []).append(len(self));
+        list.append(self, weakref.ref(src));
+        self.live += 1;
+        if len(self) >= self.limit {
+            self._rebuild(
+                [
+                    r
+                    for r in self
+                    if r() is not None
+                ]
+            );
+        }
+    }
+
+    def drop(self: _InLinks, src: NodeArchetype) -> bool {
+        slots = self.at.get(id(src));
+        while slots {
+            i = slots.pop(0);
+            if self[i]() is src {
+                self[i] = _VACANT;
+                self.live -= 1;
+                if not slots {
+                    self.at.pop(id(src), None);
+                }
+                return True;
+            }
+        }
+        self.at.pop(id(src), None);
+        return False;
+    }
+}
+
+def _connect_back(inn: dict[type, list[any]], cls: type, src: NodeArchetype) {
+    lst = inn.get(cls);
+    if lst is None {
+        inn[cls] = [weakref.ref(src)];
+    } elif isinstance(lst, _InLinks) {
+        lst.add(src);
+    } elif len(lst) + 1 < _INDEX_AT {
+        lst.append(weakref.ref(src));
+    } else {
+        indexed = _InLinks(lst);
+        indexed.add(src);
+        inn[cls] = indexed;
+    }
+}
+
+def _drop_back(
+    d: (dict[type, list[any]] | None), cls: type, src: NodeArchetype
+) -> bool {
+    if d is None {
+        return False;
+    }
+    lst = d.get(cls);
+    if lst is None {
+        return False;
+    }
+    if isinstance(lst, _InLinks) {
+        if not lst.drop(src) {
+            return False;
+        }
+        if lst.live == 0 {
+            d.pop(cls, None);
+        }
+        return True;
+    }
+    for (i, r) in enumerate(lst) {
+        if r() is src {
+            lst.pop(i);
+            if not lst {
+                d.pop(cls, None);
+            }
+            return True;
+        }
+    }
+    return False;
+}
+
 def light_connect(src: NodeAnchor, cls: type, tgt: NodeAnchor) {
     out = src.out_light;
     if out is None {
@@ -381,20 +530,7 @@ def light_connect(src: NodeAnchor, cls: type, tgt: NodeAnchor) {
         inn = {};
         tgt.in_light = inn;
     }
-    back = weakref.ref(src.archetype);
-    lst = inn.get(cls);
-    if lst is None {
-        inn[cls] = [back];
-    } else {
-        lst.append(back);
-        if len(lst) & 63 == 0 {
-            lst[:] = [
-                r
-                for r in lst
-                if r() is not None
-            ];
-        }
-    }
+    _connect_back(inn, cls, src.archetype);
 }
 
 def _drop_entry(d: (dict[type, list[any]] | None), cls: type, key: any) -> bool {
@@ -418,7 +554,7 @@ def _drop_entry(d: (dict[type, list[any]] | None), cls: type, key: any) -> bool 
 
 def light_disconnect(src: NodeAnchor, cls: type, tgt: NodeAnchor) -> bool {
     held = _drop_entry(src.out_light, cls, tgt.archetype);
-    _drop_entry(tgt.in_light, cls, weakref.ref(src.archetype));
+    _drop_back(tgt.in_light, cls, src.archetype);
     return held;
 }
 
@@ -433,9 +569,8 @@ def light_clear(anchor: NodeAnchor, cls: type, outgoing: bool = True) -> bool {
     }
     me = anchor.archetype;
     if outgoing {
-        back = weakref.ref(me);
         for other in lst {
-            _drop_entry(other.__jac__.in_light, cls, back);
+            _drop_back(other.__jac__.in_light, cls, me);
         }
     } else {
         for other in _deref(lst) {
@@ -613,6 +748,10 @@ def light_edge_views(
     return out;
 }
 
+def _note_write(an: any) {
+    an.__dict__['_field_written'] = an.__dict__.get('_field_written', 0) + 1;
+}
+
 def _dirty_setattr(self: any, name: str, value: any) -> None {
     an = self.__dict__.get('__jac__');
     if an is None or not an.persistent {
@@ -623,6 +762,7 @@ def _dirty_setattr(self: any, name: str, value: any) -> None {
     ctx = JacRuntime.peek_context();
     if ctx is None {
         object.__setattr__(self, name, value);
+        _note_write(an);
         return;
     }
     import from jaclang { JacRuntimeInterface }
@@ -630,6 +770,32 @@ def _dirty_setattr(self: any, name: str, value: any) -> None {
         return;
     }
     object.__setattr__(self, name, value);
+    _note_write(an);
+    md = ctx.mem?.mark_dirty;
+    if md is not None {
+        md(an);
+    }
+}
+
+def _dirty_delattr(self: any, name: str) -> None {
+    an = self.__dict__.get('__jac__');
+    if an is None or not an.persistent {
+        object.__delattr__(self, name);
+        return;
+    }
+    import from jaclang.runtime.runtime { JacRuntime }
+    ctx = JacRuntime.peek_context();
+    if ctx is None {
+        object.__delattr__(self, name);
+        _note_write(an);
+        return;
+    }
+    import from jaclang { JacRuntimeInterface }
+    if not JacRuntimeInterface.check_write_access(an, op_hint="field_write") {
+        return;
+    }
+    object.__delattr__(self, name);
+    _note_write(an);
     md = ctx.mem?.mark_dirty;
     if md is not None {
         md(an);
@@ -667,6 +833,7 @@ def track_writes(arch: Archetype) -> None {
                 '__jac_tracked__': True,
                 '__jac_untracked__': cls,
                 '__setattr__': _dirty_setattr,
+                '__delattr__': _dirty_delattr,
                 '__reduce_ex__': _tracked_reduce_ex
             }
         );

@@ -146,6 +146,10 @@ impl HotReloader.record_error(
 impl HotReloader._status_file_path -> Path {
     if self.client_compiler {
         try {
+            return Path(self.client_compiler.vite_bundler._get_client_dir())
+                / '.jac-status.json';
+        } except Exception {}
+        try {
             compiled = Path(str(self.client_compiler.jac_client_compiler.compiled_dir));
             return compiled.parent / '.jac-status.json';
         } except Exception {}
@@ -158,8 +162,14 @@ impl HotReloader._sync_status_file -> None {
         payload = self.build_status();
         status_file = self._status_file_path();
         if payload["status"] == BuildStatus.ERROR.value {
+            content = json.dumps(payload);
+            try {
+                if status_file.read_text(encoding='utf-8') == content {
+                    return;
+                }
+            } except OSError {}
             status_file.parent.mkdir(parents=True, exist_ok=True);
-            status_file.write_text(json.dumps(payload), encoding='utf-8');
+            status_file.write_text(content, encoding='utf-8');
         } elif status_file.exists() {
             status_file.unlink();
         }
@@ -192,8 +202,13 @@ impl HotReloader._process_change(file_path: str, is_directory: bool = False) -> 
 
 impl HotReloader._dispatch_change(file_path: str, is_directory: bool = False) -> None {
     import from jaclang.runtime.prepared { application_for }
+    if Path(file_path).resolve().is_relative_to(self._compiled_root().resolve()) {
+        return;
+    }
     entry_path = str(self._entry_module_path());
-    if application_for(entry_path) is not None {
+    if application_for(entry_path) is not None
+        and not is_directory
+        and file_path.endswith((".jac", ".py")) {
         self._reload_server_module(file_path);
         if self._build_status is BuildStatus.COMPILING {
             self._signal_full_reload();
@@ -330,6 +345,13 @@ impl HotReloader._remove_compiled_output(file_path: str) -> None {
     }
 }
 
+impl HotReloader._compiled_root -> Path {
+    if self.client_compiler {
+        return Path(str(self.client_compiler.jac_client_compiler.compiled_dir));
+    }
+    return Path(self.base_path) / self._client_output_dir;
+}
+
 impl HotReloader._remove_compiled_dir(file_path: str) -> None {
     base_dir = Path(self.base_path).resolve();
     source_path = Path(file_path);
@@ -341,13 +363,7 @@ impl HotReloader._remove_compiled_dir(file_path: str) -> None {
     } except ValueError {
         return;
     }
-    if self.client_compiler {
-        compiled_root = Path(
-            str(self.client_compiler.jac_client_compiler.compiled_dir)
-        );
-    } else {
-        compiled_root = Path(self.base_path) / self._client_output_dir;
-    }
+    compiled_root = self._compiled_root();
     target = compiled_root / rel;
     try {
         if str(target.resolve()) == str(compiled_root.resolve()) {
@@ -762,8 +778,7 @@ impl HotReloader._copy_frontend_files(file_path: str) -> None {
         } except ValueError {
             rel_path = Path(source_path.name);
         }
-        output_base = Path(self.base_path) / self._client_output_dir;
-        output_path = output_base / rel_path;
+        output_path = self._compiled_root() / rel_path;
 
         if not source_path.exists() {
             if output_path.exists() {

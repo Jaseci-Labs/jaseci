@@ -259,6 +259,107 @@ impl ProjectHost.native_session_declares(
     );
 }
 
+impl ProjectHost.client_boundary_facts(
+    program: JacProgram, path: str
+) -> (list[str] | None) {
+    try {
+        return program.iface_registry().client_boundary_facts(path);
+    } except Exception {
+        return None;
+    }
+}
+
+impl ProjectHost.kernel_compile(
+    program: JacProgram, path: str, options: CompileOptions
+) -> (CompileReport | None) {
+    import from jaclang.project.kernel_compile { host_kernel_compile }
+    return host_kernel_compile(self, program, path, options);
+}
+
+impl ProjectHost.in_compiler_tree(path: str) -> bool {
+    import from jaclang.compiler.driver.jir { is_compiler_tree_path }
+    return is_compiler_tree_path(path);
+}
+
+impl ProjectHost.schedule_import_failed(err: ImportError) {
+    import from jaclang.compiler.driver.source_failures { fail_loud_on_compiler_source }
+    fail_loud_on_compiler_source(err);
+}
+
+impl ProjectHost.client_osp_core_js -> str {
+    import from jaclang.compiler.backends.es.client_kernel_cache { osp_core_js }
+    return osp_core_js();
+}
+
+impl ProjectHost.client_pulls(path: str) -> str {
+    import from jaclang.compiler.driver.compiler { cached_client_pulls }
+    return cached_client_pulls(path);
+}
+
+impl ProjectHost.client_stub_globals -> list[str] {
+    if not self._stub_globals {
+        import os;
+        import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
+        stub_dir = os.path.join(jaclang_pkg_root(), "compiler", "types");
+        names: set[str] = set();
+        for stub in ("js_globals.pyi", "dom_types.pyi") {
+            names.update(client_stub_names(os.path.join(stub_dir, stub)));
+        }
+        self._stub_globals.extend(sorted(names));
+    }
+    return list(self._stub_globals);
+}
+
+impl ProjectHost.native_dep_iface(
+    program: JacProgram, path: str, options: CompileOptions
+) -> (NativeIface | None) {
+    ent = program.native_units().ensure(
+        path,
+        compile_on_miss=True,
+        options=options,
+        check_deps=False,
+        products=not options.no_cgen
+    );
+    return ent.iface if ent is not None else None;
+}
+
+impl ProjectHost.held_native_iface(
+    program: JacProgram, path: str, options: CompileOptions
+) -> str {
+    import from jaclang.compiler.frontend.codeinfo { is_compiler_source_path }
+    ent = program.native_units().ensure(
+        path,
+        compile_on_miss=is_compiler_source_path(path),
+        options=options,
+        check_deps=False,
+        products=not options.no_cgen
+    );
+    return ent.iface.to_bytes().decode("utf-8") if ent is not None else "";
+}
+
+impl ProjectHost.native_lowering_failed(program: JacProgram, path: str, detail: str) {
+    import os;
+    program.native_units().failures[os.path.realpath(path)] = detail;
+}
+
+impl ProjectHost.save_native_debug_ir(path: str, text: str) {
+    import os;
+    import from jaclang.compiler.driver.jir { get_native_debug_dir }
+    stem = os.path.splitext(os.path.basename(path))[0];
+    ir_dir = str(get_native_debug_dir(path));
+    os.makedirs(ir_dir, exist_ok=True);
+    saved = os.path.join(ir_dir, stem + ".ll");
+    with open(saved, "w") as f {
+        f.write(text);
+    }
+    self.note(f"[native debug] IR saved to: {saved}", style="info");
+}
+
+impl ProjectHost.native_fact(kind: str, key: str) -> str {
+    import from jaclang.compiler.backends.native.host_facts { host_native_fact }
+    return host_native_fact(kind, key);
+}
+
 impl ProjectHost.native_units_for(program: JacProgram) -> NativeUnitRegistry {
     if program._natives is None {
         import from jaclang.compiler.driver.nativecache { NativeUnitRegistry }
@@ -267,31 +368,11 @@ impl ProjectHost.native_units_for(program: JacProgram) -> NativeUnitRegistry {
     return program._natives;
 }
 
-impl ProjectHost.native_verdict(
-    path: str, program: (JacProgram | None) = None
-) -> (NativeVerdict | None) {
-    try {
-        if program is not None {
-            return program.native_units().verdict_for(path);
-        }
-        import from jaclang.compiler.driver.nativecache { read_native_verdict }
-        return read_native_verdict(path);
-    } except Exception {
-        return None;
-    }
-}
-
 impl ProjectHost.record_native_coverage(
     path: str, outcome: str, code: str = "", detail: str = ""
 ) {
     import from jaclang.compiler.driver.na_coverage { na_coverage_record }
     na_coverage_record(path, outcome, code, detail);
-}
-
-impl ProjectHost.record_native_verdict(
-    program: JacProgram, path: str, code: str, detail: str
-) {
-    program.native_units().record_verdict(path, code, detail);
 }
 
 impl ProjectHost.native_analyze(
@@ -329,8 +410,8 @@ impl ProjectHost.native_analyze(
 impl ProjectHost.kernel_inputs(
     program: JacProgram, path: str, options: CompileOptions, source: (str | None) = None
 ) -> KernelInputs {
-    import from jaclang.project.kernel_snapshot { snapshot_inputs }
-    return snapshot_inputs(self, program, path, options, source);
+    import from jaclang.project.kernel_snapshot { session_inputs }
+    return session_inputs(self, program, path, options);
 }
 
 impl ProjectHost.format_file(file_path: str, auto_lint: bool = False) -> JacProgram {
@@ -372,6 +453,10 @@ impl ProjectHost.native_parse(
 ) -> (tuple[Module, bool] | None) {
     import from jaclang.compiler.frontend.parser.frontend { finish_parse }
     import jaclang.compiler.native_compiler as _jc;
+    natives = program._natives if program is not None else None;
+    if natives is not None and natives.progress is not None {
+        natives.note_step("parse", file_path);
+    }
     kernel = _jc.ensure_loaded();
     if kernel is None {
         return None;
@@ -484,9 +569,10 @@ impl ProjectHost.parse_python(
 ) -> tuple[Module, bool] {
     import ast as py_ast;
     import jaclang.compiler.frontend.unitree as uni;
-    import from jaclang.compiler.driver.pipeline_runner { run_utility, UtilityProduct }
+    import from jaclang.compiler.driver.pipeline { run_utility }
+    import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
     built = run_utility(
-        UtilityProduct.PYTHON_AST,
+        CompilationProduct.PYTHON_AST,
         uni.PythonModuleAst(
             py_ast.parse(source_str),
             orig_src=uni.Source(source_str, mod_path=file_path)
@@ -653,6 +739,17 @@ impl ProjectHost.import_in_flight(path: str) -> bool {
 impl ProjectHost.has_active_stub_catalog -> bool {
     import from jaclang.jac0core.stubcat_hook { active }
     return active() is not None;
+}
+
+impl ProjectHost.typeshed_unavailable_reason -> str {
+    import from jaclang.artifacts.model { ArtifactUnavailable }
+    import from jaclang.artifacts.router { require }
+    try {
+        require("typeshed");
+    } except ArtifactUnavailable as e {
+        return str(e);
+    }
+    return "";
 }
 
 impl ProjectHost.is_native_only_source(rel: str) -> bool {
