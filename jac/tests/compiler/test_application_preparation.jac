@@ -318,6 +318,43 @@ test "an edit prepare analyses only the edited module and matches a cold prepare
     }
 }
 
+test "an edit reached through a plain import and an empty helper match a cold prepare" {
+    tmp = tempfile.mkdtemp(prefix="jac-prepared-kernel-plain-");
+    base = Path(tmp);
+    path = base / 'main.jac';
+    def write_a(body: str) {
+        (base / 'mods' / 'a.jac').write_text(
+            "node Thing { has n: int = 0; }\n" + f"def:pub make -> int {{ {body} }}\n"
+        );
+    }
+    try {
+        (base / 'mods').mkdir();
+        write_a("return 1;");
+        (base / 'mods' / 'b.jac').write_text(
+            "import mods.a;\n"
+                + "def noop {}\n"
+                + "def:pub b_value -> int { noop(); return mods.a.make(); }\n"
+        );
+        path.write_text(
+            "import from mods.b { b_value }\n"
+                + "walker:pub Total { can go with Root entry { report b_value(); } }\n"
+        );
+        kernel_prepare(path, tmp, []);
+        forget(str(path));
+        write_a("Thing(n=1); return 1;");
+        edited = kernel_prepare(path, tmp, []);
+        forget(str(path));
+        shutil.rmtree(base / '.jac' / 'cache' / 'applications');
+        cold = kernel_prepare(path, tmp, []);
+        assert edited.manifests == cold.manifests , (
+            "an edit reached through `import mods.a;` left stale metadata"
+        );
+    } finally {
+        forget(str(path));
+        shutil.rmtree(tmp, ignore_errors=True);
+    }
+}
+
 test "an edit that changes a module's interface re-checks its importers" {
     tmp = tempfile.mkdtemp(prefix="jac-prepared-kernel-iface-");
     path = Path(tmp) / 'main.jac';

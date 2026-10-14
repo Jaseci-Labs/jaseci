@@ -747,6 +747,7 @@ def _unit_row(unit: any) -> dict[str, any] {
         'app': unit.app,
         'persistence': list(unit.persistence),
         'import_edges': list(unit.import_edges),
+        'jac_deps': list(unit.jac_deps),
         'interop': unit.interop,
         'client_manifest': unit.client_manifest
     };
@@ -796,8 +797,8 @@ def _importers_of(
     found: set[str] = set();
     for path in among {
         row = rows.get(path) or {};
-        for edge in _import_edges_of(row.get('import_edges') or []) {
-            if os.path.realpath(edge[1]) in changed {
+        for dep in row.get('jac_deps') or [] {
+            if dep in changed {
                 found.add(path);
                 break;
             }
@@ -818,8 +819,7 @@ def _unreached_changes(
     while frontier {
         path = frontier.pop();
         row = rows.get(path) or previous.get(path) or {};
-        for edge in _import_edges_of(row.get('import_edges') or []) {
-            dep = os.path.realpath(edge[1]);
+        for dep in row.get('jac_deps') or [] {
             if dep in seen or dep not in previous {
                 continue;
             }
@@ -911,8 +911,7 @@ def _kernel_units(
     frontier = list(units);
     while frontier {
         row = rows.get(frontier.pop()) or {};
-        for edge in _import_edges_of(row.get('import_edges') or []) {
-            dep = os.path.realpath(edge[1]);
+        for dep in row.get('jac_deps') or [] {
             if dep in seeds and dep not in units {
                 _capture_input(dep, inputs);
                 units[dep] = _unit_source(_row_unit(dep, previous[dep]));
