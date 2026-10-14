@@ -7,7 +7,7 @@ import from jaclang.runtime.object_model {
     make_object
 }
 import from functools { cached_property }
-import from inspect { _empty, signature }
+import from inspect { Parameter, _empty, signature }
 import from logging { getLogger }
 import from pickle { dumps }
 import from threading { Lock }
@@ -25,6 +25,7 @@ glob _NO_TRIGGER = object(),
      _subclass_hook_lock = Lock();
 
 glob _light_edge_types: dict[type, bool] = {},
+     _edge_ctor_args: dict[type, tuple[str, ...]] = {},
      _edge_subtypes: dict[type, tuple[type, ...]] = {},
      _tracked_classes: dict[type, type] = {};
 
@@ -331,6 +332,47 @@ def is_light_edge_type(cls: type) -> bool {
     }
     _light_edge_types[cls] = light;
     return light;
+}
+
+def edge_ctor_args(cls: type) -> tuple[str, ...] {
+    known = _edge_ctor_args.get(cls);
+    if known is not None {
+        return known;
+    }
+    names: list[str] = [];
+    try {
+        for param in signature(cls).parameters.values() {
+            if param.default is _empty
+                and param.kind
+                    in (Parameter.POSITIONAL_OR_KEYWORD, Parameter.KEYWORD_ONLY) {
+                names.append(param.name);
+            }
+        }
+    } except (TypeError, ValueError) {
+        names = [];
+    }
+    result = tuple(names);
+    _edge_ctor_args[cls] = result;
+    return result;
+}
+
+def new_connect_edge(
+    ct: (type[EdgeArchetype] | EdgeArchetype),
+    conn_assign: (tuple[(tuple[any, ...], tuple[any, ...])] | None)
+) -> tuple[EdgeArchetype, tuple[str, ...]] {
+    if not isinstance(ct, `type) {
+        return (ct, ());
+    }
+    if conn_assign {
+        required = edge_ctor_args(ct);
+        if required {
+            given = dict(zip(conn_assign[0], conn_assign[1], strict=False));
+            if all(name in given for name in required) {
+                return (ct(**{name: given[name] for name in required}), required);
+            }
+        }
+    }
+    return (ct(), ());
 }
 
 def edge_subtypes(cls: type) -> tuple[type, ...] {

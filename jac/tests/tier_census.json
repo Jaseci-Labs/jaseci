@@ -1,7 +1,7 @@
 {
   "summary": {
     "same": 47,
-    "refused": 80,
+    "refused": 81,
     "fails": 0,
     "differs": 1,
     "hangs": 0,
@@ -598,6 +598,10 @@
     },
     "tests/language/fixtures/params/test_kwonly_params.jac": {
       "class": "same"
+    },
+    "tests/language/fixtures/prop_class_setter.jac": {
+      "class": "refused",
+      "reason": "E5092 Native lowering failed for constructor '_'"
     },
     "tests/language/fixtures/prop_multi.jac": {
       "class": "same"

@@ -120,6 +120,13 @@ never reaches a user. Outside a demotion window a suppressed lowering error
 still withholds the unit: suppression silences the report, not the fact that
 the body did not lower, and the unit's failure names the diagnostic.
 
+Refusals live on one table, `NativeLegality`. The static rules fill it during
+analysis, and a unit they refuse is stubbed without lowering its body. A
+diagnostic the generator records while lowering a unit the static rules
+accepted is moved onto the same table as a late refusal: it is the list of
+what the static rules do not yet predict. An exception raised by the
+generator is not a refusal; it is reported as a compiler error.
+
 ## The link plan
 
 One plan produces every artifact: `jac build --native`, native app builds,
@@ -275,17 +282,17 @@ setting, and stay inert unless the application calls them.
 The native compiler kernel is the plan rooted at `jc_unit` with the
 frontend scope compiled as native units, linked as a shared library in
 bitcode mode. `resolve_kernel()` in `kernel_resolve.jac` is the one lookup.
-It only ever loads a kernel; nothing but `jac kernel build` and the seal
+It only ever loads a kernel; nothing but `jac native build kernel` and the seal
 builds one. Its precedence is fixed:
 
 1. Sealed image. The manifest's `native` record names the artifact, its
    sha256, layout digest and plan digest; missing or mismatched is a startup
    error. A sealed image runs its own kernel and never looks at a checkout.
-   The one image without an artifact is a pull request's CI kit: its record
-   says `"kernel": "none"` and names the kit it ships in, and the store
-   parser serves every process that runs on it, sealed or rerouted.
-   (`JAC_STUBCAT_BUILDING`, set only while the stub catalog is built, keeps
-   the store parser ahead of every step.)
+   The one image without an artifact is a pull request's CI kit: its
+   manifest's `omits` lists `kernel`, and the store parser serves every
+   process that runs on it, sealed or rerouted, without a notice. (While the
+   stub catalog builds, its build mark in the handoff record keeps the store
+   parser ahead of every step.)
 2. The checkout's kernel. The kernel beside `native_compiler.jac` is loaded
    when the inputs its sidecar records are the ones the sources have now.
 3. The kit's kernel. A rerouted checkout runs on a kit's interpreter; when
@@ -294,15 +301,15 @@ builds one. Its precedence is fixed:
 4. Bytecode. Otherwise the compiler runs from bytecode with the store
    parser, and the process says so once on stderr: why the kernel is not
    usable (none built, the first source that moved, or no native toolchain)
-   and that `jac kernel build` builds it.
+   and that `jac native build kernel` builds it.
 
-`jac kernel status` prints what resolution sees: the checkout's kernel and
+`jac native status kernel` prints what resolution sees: the checkout's kernel and
 every input that moved since it was built, the kit's kernel, and which one
-this process runs. `jac kernel build` builds the kernel the sources describe
+this process runs. `jac native build kernel` builds the kernel the sources describe
 in its own process, on whatever compiler resolved for it (bytecode when the
 kernel is stale), and reuses every unit whose inputs have not moved, so a
-build after a small edit relinks in seconds. `JAC_DEV_EXACT=1 jac kernel
-build --force` rebuilds every unit with the compiler as edited.
+build after a small edit relinks in seconds. `jac native build kernel --force
+--exact` rebuilds every unit with the compiler as edited.
 
 The sidecar records the kernel's inputs one by one: the compiler digest,
 the codegen identity every unit shares, the target triple, the interpreter
@@ -336,13 +343,14 @@ A pull request's kit is built without the kernel. The kernel is most of a
 kit's build time (24 to 64 minutes of a build that otherwise takes about 15),
 and it is the same compiler lowered to native code, so a pull request runs
 its lanes on the bytecode the kit precompiles: the path every kernel build
-compiles through. `JAC_PR_KIT_KERNEL=none` asks the seal for such a kit, and
-the seal refuses it outside a `pull_request` CI build, so main, nightly and
-release kits always carry a kernel; the release smoke test asserts one is
-loaded. On such a kit the warm step checks that the first run resolves no
-kernel and leaves none beside the loader. A pull request that changes what
-the kernel is built from can ask for the full kit with the `build-kernel`
-label; otherwise the first build with a kernel is the one on main.
+compiles through. The seal leaves the kernel out only in a `pull_request`
+CI build (`pr_kit_omits` in `artifacts/kit.jac` reads the event), so main,
+nightly and release kits always carry a kernel; the release smoke test
+asserts one is loaded. On such a kit the warm step checks that the first run
+resolves no kernel and leaves none beside the loader. A pull request that
+changes what the kernel is built from can ask for the full kit with the
+`native:kernel` label; otherwise the first build with a kernel is the one on
+main.
 
 The kernel is always the host's. `kernel_options()` pins the target to the
 host whatever `JAC_NATIVE_TARGET` says, so a cross-compiled artifact's units

@@ -9,7 +9,6 @@ import from jaclang.compiler.frontend.host {
     HostPlatform,
     HostServices,
     LintSettings,
-    NativeVerdict,
     PathFacts,
     ProjectDefaults,
     ProjectFacts
@@ -61,7 +60,6 @@ glob _CATALOGS: dict[str, StubCatalog] = {};
 
 glob HOST_ONLY_ANSWER: str = "host_only",
      EMIT_QUESTION: str = "emit_unit",
-     NATIVE_GENERATOR_MODULE: str = "jaclang.compiler.backends.native.na_ir_gen_pass",
      EVENT_NOTE: str = "note",
      EVENT_COVERAGE: str = "coverage";
 
@@ -295,7 +293,6 @@ obj KernelHost(HostServices) {
         closure: (CompileOptions | None) = None,
         census: HostCensus = HostCensus(),
         events: list[HostEvent] = [],
-        demoted: dict[str, NativeVerdict] = {},
         _imports: dict[str, ImportResolution] = {},
         _locals: dict[str, LocalResolution] = {},
         _npm: dict[str, NpmAnswer] = {},
@@ -1030,8 +1027,6 @@ obj KernelHost(HostServices) {
     def lower_dependency(
         program: JacProgram, real: str, options: CompileOptions
     ) -> (NativeIface | None) {
-        import from jaclang.compiler.passes.rc_facts_pass { RcFactsPass }
-        import from jaclang.compiler.backends.native.na_ir_gen_pass { NaIRGenPass }
         import from jaclang.compiler.frontend.codeinfo {
             get_effective_default_codespace_override,
             set_effective_default_codespace
@@ -1050,16 +1045,13 @@ obj KernelHost(HostServices) {
             opts.no_cgen = False;
             program.options = opts;
             set_effective_default_codespace("native");
-            import from jaclang.compiler.driver.pipeline {
-                product_ready,
-                require_product
-            }
+            import from jaclang.compiler.driver.pipeline { product_ready, require }
             import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
             if not product_ready(program, module, CompilationProduct.ANALYSIS)
-                and not require_product(program, module, CompilationProduct.ANALYSIS) {
+                and not require(program, module, CompilationProduct.ANALYSIS) {
                 return None;
             }
-            program.run_schedule(module, [RcFactsPass, NaIRGenPass]);
+            require(program, module, CompilationProduct.NATIVE_LOWER);
             if len(program.errors_had) > mark {
                 return None;
             }
@@ -1201,24 +1193,6 @@ obj KernelHost(HostServices) {
         return answer;
     }
 
-    def native_verdict(
-        path: str, program: (JacProgram | None) = None
-    ) -> (NativeVerdict | None) {
-        self.census.count("native_verdict");
-        recorded = self.demoted.get(os.path.realpath(path));
-        if recorded is not None {
-            return recorded;
-        }
-        if path in self.inputs.verdicts {
-            return self.inputs.verdicts[path];
-        }
-        with self.missing("native_verdict", path) as host {
-            answer = host.native_verdict(path, program);
-        }
-        self.inputs.verdicts[path] = answer;
-        return answer;
-    }
-
     def record_native_coverage(
         path: str, outcome: str, code: str = "", detail: str = ""
     ) {
@@ -1232,20 +1206,6 @@ obj KernelHost(HostServices) {
             ),
             "record_native_coverage"
         );
-    }
-
-    def record_native_verdict(program: JacProgram, path: str, code: str, detail: str) {
-        self.demoted[os.path.realpath(path)] = NativeVerdict(
-            demoted=True, code=code, detail=detail
-        );
-        if self.kernel_only("record_native_verdict") {
-            import from jaclang.compiler.placement.placement { note_native_verdict }
-            note_native_verdict(program, os.path.realpath(path), code, detail);
-            return;
-        }
-        with self.delegating("record_native_verdict") as host {
-            host.record_native_verdict(program, path, code, detail);
-        }
     }
 
     def format_file(file_path: str, auto_lint: bool = False) -> JacProgram {
@@ -1399,21 +1359,6 @@ obj KernelHost(HostServices) {
 
     def load_modules(names: list[str]) {
         self.census.count("load_modules");
-        if NATIVE_GENERATOR_MODULE in names and self.fallback is None {
-            import from jaclang.compiler.driver.pipeline {
-                register_codegen_backend,
-                register_product_schedule
-            }
-            import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
-            import from jaclang.compiler.backends.native.na_ir_gen_pass {
-                native_codegen_schedule,
-                native_ir_product_schedule
-            }
-            register_codegen_backend("native", native_codegen_schedule);
-            register_product_schedule(
-                CompilationProduct.NATIVE_IR, native_ir_product_schedule
-            );
-        }
     }
 
     def module_in_flight(names: list[str]) -> str {

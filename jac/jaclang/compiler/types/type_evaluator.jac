@@ -7,6 +7,7 @@ import type from jaclang.compiler.types.stubcat.reader { CatScope, StubCatalog }
 import from typing { cast }
 import from jaclang.compiler.types.ct_eval { CtEvaluator }
 import from jaclang.compiler.types.ct_value { CtValue }
+import from jaclang.compiler.c_interop { is_va_list_type }
 import from jaclang.compiler.frontend.diagnostics { E0033, E0108, E0109 }
 import from jaclang.compiler.frontend.unitree {
     literal_string_value,
@@ -359,7 +360,8 @@ obj NarrowingPredicate {
         attr_name: str | None = None,
         narrows_on_true: bool = True,
         narrows_on_false: bool = True,
-        replaces_declared: bool = False;
+        replaces_declared: bool = False,
+        by_equality: bool = False;
 }
 
 enum NarrowingKind {
@@ -416,9 +418,12 @@ walker TypeEvaluator {
         prefetch: PrefetchedTypes postinit,
         _pass: CompileContext | None = None,
         _diagnostic_suppression_depth: int = 0,
+        _trial_notes: (list[tuple[UniNode, str, str, bool]] | None) = None,
+        _last_trial_notes: list[tuple[UniNode, str, str, bool]] = [],
         builtins_module: Module | None = None,
         _flow_node_type_cache: dict[tuple[int, int], TypeBase | None] = {},
         _flow_key_type_cache: dict[tuple[int, str], TypeBase | None] = {},
+        _narrow_expr_memo: dict[tuple[int, int, int], tuple[any, any, any, any]] = {},
         _flow_pending_symbols: set[tuple[int, int]] postinit,
         _flow_pending_keys: set[tuple[str, int]] postinit,
         _module_type_cache: dict[str, ModuleType] = {},
@@ -596,6 +601,10 @@ walker TypeEvaluator {
     def _is_strict_site(nd: UniNode) -> bool;
     def _diag_unnarrowed_optional(nd: UniNode, ty: TypeBase, required: str) -> bool;
     def _in_native_context -> bool;
+    def note_native(nd: UniNode, code: str, text: str, requires: bool = False) -> None;
+    def commit_trial_notes(notes: list[tuple[UniNode, str, str, bool]]) -> None;
+    def neutral_site(nd: UniNode) -> bool;
+    def _is_address_pair(src_type: TypeBase, dest_type: TypeBase) -> bool;
     def is_typevar_class(ty: TypeBase) -> bool;
     def is_paramspec_class(ty: TypeBase) -> bool;
     def is_type_var_tuple_class(ty: TypeBase) -> bool;
@@ -844,6 +853,7 @@ walker TypeEvaluator {
     def _is_awaitable_type(t: TypeBase) -> bool;
     def _unwrap_awaitable_type(t: TypeBase, node_: UniNode) -> TypeBase;
     def _is_sv_async_call(expr: FuncCall) -> bool;
+    def _c_lent_args(args: MatchArgsToParamsResult) -> set[Expr | KWPair];
     def validate_arg_types(
         args: MatchArgsToParamsResult,
         checking_overload: bool = False,
@@ -884,6 +894,7 @@ walker TypeEvaluator {
 
     def _create_object_init_method(class_type: ClassType) -> FunctionType;
     def _scope_has_fields(tab: UniScopeNode | None) -> bool;
+    def _dataclass_shadows_base_init(class_type: ClassType) -> bool;
     def _create_namedtuple_new_method(class_type: ClassType) -> FunctionType;
     def _create_special_builtin_type(name: str, base_class: ClassType) -> ClassType;
     def _validate_constructor_method(
@@ -975,6 +986,10 @@ walker TypeEvaluator {
         expr: Expr, declared_type: TypeBase, at_node: UniNode
     ) -> TypeBase | None;
 
+    def _narrowed_type_for_expr(
+        expr: Expr, declared_type: TypeBase, at_node: UniNode
+    ) -> TypeBase | None;
+
     def _get_type_from_flow_node(
         target: NarrowingTarget, flow_node: UniCFGNode, visited: set[int]
     ) -> TypeBase | None;
@@ -1002,6 +1017,11 @@ walker TypeEvaluator {
 
     def _narrow_type_to(base_type: TypeBase, narrow_type: TypeBase) -> TypeBase | None;
     def _narrow_member_to(member: TypeBase, narrow_type: TypeBase) -> TypeBase | None;
+    def _narrow_type_by_equality(
+        base_type: TypeBase, compared: TypeBase
+    ) -> TypeBase | None;
+
+    def _may_equal(member: TypeBase, compared: TypeBase) -> bool;
     def _specialize_narrow_from_base(
         base_type: TypeBase, narrow_type: TypeBase
     ) -> TypeBase;

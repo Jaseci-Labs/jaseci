@@ -1,33 +1,12 @@
-def _toml_section(base_path: (str | None), section: str) -> dict[str, any] {
-    if not base_path {
-        return {};
-    }
-    manifest = os.path.join(base_path, 'jac.toml');
-    if not os.path.isfile(manifest) {
-        return {};
-    }
-    try {
-        import tomllib;
-        with open(manifest, 'rb') as f {
-            data = tomllib.load(f);
-        }
-        return data.get(section) or {};
-    } except Exception as e {
-        logger.warning(f"could not read [{section}] from {manifest}: {e}");
-        return {};
-    }
+def _database_config(base_path: (str | None)) -> DatabaseConfig {
+    import from jaclang.project.config { DatabaseConfig, get_config_for_dir }
+    config = get_config_for_dir(base_path) if base_path else None;
+    return config.database if config is not None else DatabaseConfig();
 }
 
 
 impl promotions_for(base_path: (str | None)) -> dict[str, list[str]] {
-    raw: any = _toml_section(base_path, 'database').get('indexes') or {};
-    out: dict[str, list[str]] = {};
-    for (arch, fields_l) in raw.items() {
-        if isinstance(fields_l, list) {
-            out[str(arch)] = [str(x) for x in fields_l];
-        }
-    }
-    return out;
+    return dict(_database_config(base_path).indexes);
 }
 
 
@@ -45,8 +24,8 @@ impl conninfo_from_url(url: str) -> ConnInfo {
 
 
 impl shared_pg_data_dir -> str {
-    import from jaclang.data.pgembed { dist_cache_dir }
-    return os.path.join(os.path.dirname(dist_cache_dir()), 'main');
+    import from jaclang.cache.registry { bucket }
+    return str(bucket("pg").path() / 'main');
 }
 
 
@@ -213,10 +192,7 @@ impl drop_owned_databases(data_dir: str = '') -> int {
 impl retention_days_for(base_path: (str | None)) -> int {
     raw: str = os.environ.get(RETENTION_ENV, '').strip();
     if not raw {
-        raw = str(_toml_section(base_path, 'database').get('retention_days') or '');
-    }
-    if not raw {
-        return 0;
+        return _database_config(base_path).retention_days;
     }
     try {
         days = int(raw);
@@ -294,65 +270,10 @@ def _ancestry_of(arch: (object | None)) -> list[str] {
 }
 
 
-def _frozen_value(value: any) -> bool {
-    import datetime;
-    import decimal;
-    import enum;
-    import uuid;
-    if value is None
-        or isinstance(
-            value,
-            (
-                bool,
-                int,
-                float,
-                complex,
-                str,
-                bytes,
-                decimal.Decimal,
-                uuid.UUID,
-                datetime.date,
-                datetime.time,
-                datetime.timedelta
-            )
-        ) {
-        return True;
-    }
-    if isinstance(value, enum.Enum) {
-        return _frozen_value(value.value);
-    }
-    if isinstance(value, (tuple, frozenset)) {
-        return all(_frozen_value(item) for item in value);
-    }
-    return False;
-}
-
-
 def _settle_written(anchor: Anchor, seen: int) {
     if seen and anchor.__dict__.get('_field_written', 0) == seen {
         anchor.__dict__.pop('_field_written', None);
     }
-}
-
-
-def _frozen_fields(anchor: Anchor) -> bool {
-    if anchor.__dict__.get('_field_written') {
-        return False;
-    }
-    arch = anchor.archetype;
-    if not type(arch).__dict__.get('__jac_tracked__', False) {
-        return False;
-    }
-    fields = arch?.__dict__;
-    if not isinstance(fields, dict) {
-        return False;
-    }
-    for (name, value) in fields.items() {
-        if name != '__jac__' and not _frozen_value(value) {
-            return False;
-        }
-    }
-    return True;
 }
 
 
@@ -366,7 +287,7 @@ def _is_serialization_conflict(e: Exception) -> bool {
         c: BaseException = cur;
         for arg in getattr(c, 'args', ()) {
             if isinstance(arg, dict)
-                and arg.get('C') in ('40001', '40P01', '55P03', '08006') {
+                and arg.get('C') in ('40001', '40P01', '53200', '55P03', '08006') {
                 return True;
             }
         }
@@ -374,6 +295,11 @@ def _is_serialization_conflict(e: Exception) -> bool {
         seen += 1;
     }
     return False;
+}
+
+
+impl transient_db_error(e: Exception) -> bool {
+    return _is_serialization_conflict(e);
 }
 
 
@@ -1108,7 +1034,7 @@ impl Session._unflushed(full: bool) -> list[UnflushedAnchor] {
             and id not in self._dirty
             and known is not None
             and known.hash != 0
-            and _frozen_fields(anchor) {
+            and frozen_fields(anchor) {
             continue;
         }
         written = anchor.__dict__.get('_field_written', 0);

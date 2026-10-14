@@ -56,7 +56,8 @@ restores the other products through the same path a JIR cache hit takes, and
 writes the module JIR. A session emits a unit for every module it analysed
 that has no cached products, so importing a program compiles its closure once
 (`kernel_compile_application` does the same for an application).
-`JAC_KERNEL_COMPILE=inprocess` runs the kernel's code under Python for tests.
+`run_kernel_in_process()` (in `project/kernel_compile.jac`) runs the kernel's
+code under Python for tests.
 
 Keep pass and generator algorithms in `passes/` and `backends/`. To move a
 module into the kernel, add it to `native_scope.jac` and make it lower: a walker

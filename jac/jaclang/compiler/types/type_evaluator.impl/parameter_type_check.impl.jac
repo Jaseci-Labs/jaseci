@@ -6,12 +6,14 @@ impl TypeEvaluator.validate_arg_types(
 ) -> bool {
     has_errors: bool = False;
     binding_failures: set[Expr | KWPair] = set();
+    trial: list[tuple[UniNode, str, str, bool]] = [];
 
     bindings: dict[str, TypeBase] = solved_type_vars
         if solved_type_vars is not None
         else {};
+    lent = self._c_lent_args(args);
     for (arg, param) in args.arg_params.items() {
-        if param is None or param.param_type is None {
+        if param is None or param.param_type is None or arg in lent {
             continue;
         }
         value = arg.value if isinstance(arg, KWPair) else arg;
@@ -27,7 +29,7 @@ impl TypeEvaluator.validate_arg_types(
     }
 
     for (arg, param) in args.arg_params.items() {
-        if param is None or param.param_type is None {
+        if param is None or param.param_type is None or arg in lent {
             continue;
         }
         expected = param.param_type;
@@ -72,13 +74,24 @@ impl TypeEvaluator.validate_arg_types(
             }
         }
 
-        verdict = self.assign_expr(
-            value,
-            arg_type,
-            expected,
-            strict=self._is_strict_site(arg),
-            probe=checking_overload
-        );
+        outer_trial = self._trial_notes;
+        if checking_overload {
+            self._trial_notes = [];
+        }
+        try {
+            verdict = self.assign_expr(
+                value,
+                arg_type,
+                expected,
+                strict=self._is_strict_site(arg),
+                probe=checking_overload
+            );
+        } finally {
+            if checking_overload and self._trial_notes is not None {
+                trial.extend(self._trial_notes);
+            }
+            self._trial_notes = outer_trial;
+        }
         if not verdict.ok {
             has_errors = True;
             if mismatches is not None {
@@ -103,7 +116,30 @@ impl TypeEvaluator.validate_arg_types(
             }
         }
     }
+    if checking_overload {
+        self._last_trial_notes = [] if has_errors else trial;
+    }
     return not has_errors;
+}
+
+impl TypeEvaluator._c_lent_args(args: MatchArgsToParamsResult) -> set[Expr | KWPair] {
+    import from jaclang.compiler.c_interop { c_abi_callee, c_lent_elem }
+    import from jaclang.compiler.frontend.constant { is_borrow_kind }
+    lent: set[Expr | KWPair] = set();
+    for (arg, param) in args.arg_params.items() {
+        if param is None
+            or param.param_type is None
+            or not isinstance(arg, UnaryExpr)
+            or not is_borrow_kind(arg.ownership)
+            or c_abi_callee(arg.parent) is None {
+            continue;
+        }
+        operand = self._convert_to_instance(self.get_type_of_expression(arg.operand));
+        if c_lent_elem(param.param_type, operand) is not None {
+            lent.add(arg);
+        }
+    }
+    return lent;
 }
 
 def _q(value: object) -> str {
@@ -724,6 +760,10 @@ impl TypeEvaluator._validate_call_type(
                     expr, self._create_object_init_method(caller_type)
                 );
             }
+        } elif self._dataclass_shadows_base_init(caller_type) {
+            self._validate_constructor_method(
+                expr, self._create_object_init_method(caller_type)
+            );
         }
         if matched_method is not None {
             expr.callee_signature = matched_method;
