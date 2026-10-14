@@ -799,6 +799,22 @@ test "raw body sends a returned Response as returned (#9291)" {
     }
 }
 
+test "raw body takes its status and headers from respond()" {
+    client = make_client("restspec_fixtures.jac");
+    try {
+        r = client.get("/raw/respond");
+        assert r.status_code == 404 , r.text;
+        assert r.headers["x-probe"] == "1";
+        assert r.text == "no such thing" , r.text;
+
+        r = client.get("/raw/respond-conflict");
+        assert r.status_code == 500 , r.text;
+        assert "respond()" in r.text , r.text;
+    } finally {
+        client.close();
+    }
+}
+
 test "raw body sends a returned RedirectResponse (#9291)" {
     client = make_client("restspec_fixtures.jac");
     try {

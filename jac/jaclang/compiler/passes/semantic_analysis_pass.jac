@@ -24,6 +24,7 @@ import from jaclang.compiler.frontend.unitree {
     TypedCtxBlock,
     VisitStmt
 }
+import from jaclang.compiler.driver.pipeline_types { PassContract }
 import from jaclang.compiler.passes.context { CompileContext, TreePass }
 import from collections.abc { Sequence }
 import from jaclang.compiler.frontend.constant { ExprCtx }
@@ -41,6 +42,8 @@ import from jaclang.compiler.frontend.diagnostics {
 def inform_from_walker(nd: UniNode) -> None;
 
 walker SemanticAnalysisPass(TreePass) {
+    static has contract: PassContract = PassContract(kernel_safe=True);
+
     can enter_archetype with Archetype entry;
     def _check_archetype(nd: Archetype) -> None;
     def _property_type_names(methods: list[Ability]) -> dict[str, str];

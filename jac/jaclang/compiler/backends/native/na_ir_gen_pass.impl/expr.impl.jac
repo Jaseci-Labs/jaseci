@@ -2891,6 +2891,14 @@ impl NaIRGenPass._codegen_plain_trailer(nd: uni.AtomTrailer) -> (ir.Value | None
                 }
                 if _real_cls in self.struct_types
                     and _real_cls not in self.local_vars {
+                    if self._is_runtime_class_value(nd.target) {
+                        _dyn_sf = self._codegen_class_value_static(
+                            nd.target, _real_cls, right_name
+                        );
+                        if _dyn_sf is not None {
+                            return _dyn_sf;
+                        }
+                    }
                     for _rcn in self._mro_of(_real_cls) {
                         _rsf = f"{_rcn}.{right_name}";
                         if _rsf in self.static_fields {

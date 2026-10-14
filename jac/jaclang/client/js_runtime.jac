@@ -227,25 +227,41 @@ obj JsEngineArtifact(Artifact) {
         return js_engine_build_dir();
     }
 
+    override def built -> Probe {
+        found = self.probe_checkout();
+        if found.found is None {
+            return found;
+        }
+        if _engine_record(installed_engine_dir()) != _engine_record(found.found.path) {
+            return Probe.stale(["the engine is built but not installed"]);
+        }
+        return found;
+    }
+
     override def build_blocker -> str {
         import shutil;
         if not os.path.isdir(os.path.join(_repo_root(), "js_engine")) {
             return "this tree has no js_engine/";
         }
-        return "" if shutil.which("zig") else "zig is not on PATH";
+        if shutil.which("zig") or self.probe_checkout().found is not None {
+            return "";
+        }
+        return "zig is not on PATH";
     }
 
     override def build(log: Callable[[str], None], force: bool, exact: bool) {
         import subprocess;
         import from jaclang.jac0core.cache_paths { atomic_write }
-        log("  zig build js-engine (about 18 minutes and 7 GB cold)");
-        subprocess.run(["zig", "build", "js-engine"], cwd=_repo_root(), check=True);
-        atomic_write(
-            os.path.join(js_engine_build_dir(), RECORD_SUFFIX),
-            json.dumps({"inputs": js_engine_inputs_digest(_repo_root())}).encode(
-                "utf-8"
-            )
-        );
+        if force or self.probe_checkout().found is None {
+            log("  zig build js-engine (about 18 minutes and 7 GB cold)");
+            subprocess.run(["zig", "build", "js-engine"], cwd=_repo_root(), check=True);
+            atomic_write(
+                os.path.join(js_engine_build_dir(), RECORD_SUFFIX),
+                json.dumps({"inputs": js_engine_inputs_digest(_repo_root())}).encode(
+                    "utf-8"
+                )
+            );
+        }
         ensure_node_link(js_engine_build_dir());
         _install_engine(js_engine_build_dir());
         log(f"  installed for every jac at {installed_engine_dir()}");
@@ -280,13 +296,14 @@ def js_runtime_path -> str {
 }
 
 def run_pm(args: list[str], cwd: str, capture: bool = False) -> tuple[int, str] {
-    if _engine() is not None {
-        import from jaclang.client.js_engine { run_pm as engine_pm }
-        return engine_pm(args, cwd, capture);
-    }
     import subprocess;
+    runtime = js_runtime_path();
+    env = dict(os.environ);
+    if _engine() is not None {
+        env["PATH"] = os.path.dirname(runtime) + os.pathsep + env.get("PATH", "");
+    }
     result = subprocess.run(
-        [js_runtime_path()] + list(args), cwd=cwd, text=True, capture_output=capture
+        [runtime] + list(args), cwd=cwd, env=env, text=True, capture_output=capture
     );
     if not capture {
         return (result.returncode, "");

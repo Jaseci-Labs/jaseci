@@ -21,6 +21,7 @@ Node.js spec: https://nodejs.org/api/process.html
 
 # ── C library imports ────────────────────────────────────────────────────────
 
+import from engine.src.runtime.environ { environ_entries }
 import from engine.src.ffi.libc {
     getpid,
     getppid,
@@ -152,67 +153,14 @@ def:pub process_add_env(key: str, val: str) {
     js_object_set(_PROC_ENV, str_intern(key), jsval);
 }
 
-"""Try to read an env var via libc getenv() and add it to _PROC_ENV."""
-def _try_add_env(name: str) {
-    _ensure_env();
-    val: str = getenv(name);
-    if val {
-        jsval: JSValue = jsv_from_string_id(str_intern(val));
-        js_object_set(_PROC_ENV, str_intern(name), jsval);
-    }
-}
-
-"""Populate process.env with ALL environment variables by reading
-/proc/self/environ (Linux). Each entry is null-byte-terminated KEY=VALUE.
-Falls back to a hardcoded list of common vars if /proc is unavailable."""
+"""Populate process.env with every variable of the live environment."""
 def:pub process_populate_env -> None {
-    BUF_SIZE: int = 131072;  # 128 KB — enough for any realistic environ
-    fp: Ptr = fopen("/proc/self/environ", "rb");
-    if fp != 0 {
-        buf: Ptr = io_alloc(BUF_SIZE);
-        n: int = fread(buf, 1, BUF_SIZE - 1, fp);
-        fclose(fp);
-        # /proc/self/environ: KEY=VALUE\0KEY2=VALUE2\0...
-        pos: int = 0;
-        while pos < n {
-            # Find '=' (0x3D = 61)
-            eq: int = pos;
-            while eq < n and read_byte(buf, eq) != 61 {
-                eq = eq + 1;
-            }
-            if eq >= n {
-                break;
-            }
-            # Find '\0' (0x00) after the value
-            nul: int = eq + 1;
-            while nul < n and read_byte(buf, nul) != 0 {
-                nul = nul + 1;
-            }
-            key_len: int = eq - pos;
-            val_len: int = nul - (eq + 1);
-            if key_len > 0 {
-                key: str = _proc_buf_to_str(buf + pos, key_len);
-                val: str = _proc_buf_to_str(buf + (eq + 1), val_len);
-                process_add_env(key, val);
-            }
-            pos = nul + 1;
+    for env_entry in environ_entries() {
+        eq: int = env_entry.find("=");
+        if eq > 0 {
+            process_add_env(env_entry[0:eq], env_entry[eq + 1:]);
         }
-        return;
     }
-    # Fallback: hardcoded common names via getenv()
-    _try_add_env("PATH");
-    _try_add_env("HOME");
-    _try_add_env("USER");
-    _try_add_env("SHELL");
-    _try_add_env("TERM");
-    _try_add_env("LANG");
-    _try_add_env("NODE_ENV");
-    _try_add_env("PWD");
-    _try_add_env("HOSTNAME");
-    _try_add_env("EDITOR");
-    _try_add_env("TMPDIR");
-    _try_add_env("TZ");
-    _try_add_env("LOGNAME");
 }
 
 """Return the pre-populated process.env object."""

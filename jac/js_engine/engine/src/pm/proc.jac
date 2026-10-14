@@ -6,6 +6,7 @@ cannot deadlock on a full pipe. Environment is passed explicitly as
 KEY=VALUE strings (proc_env_inherit reads the current one).
 """
 
+import from engine.src.runtime.environ { environ_entries }
 import from engine.src.ffi.libc {
     posix_spawnp,
     posix_spawn_file_actions_init,
@@ -18,15 +19,11 @@ import from engine.src.ffi.libc {
     close,
     read,
     poll,
-    fopen,
-    fread,
-    fclose,
     getenv
 }
 import from engine.src.runtime.mem {
     io_alloc,
     io_free,
-    read_byte,
     write_i64,
     read_i32,
     write_i32,
@@ -39,8 +36,7 @@ import from engine.src.pm.bytes {
     bytebuf_append,
     bytebuf_to_str,
     bytebuf_free,
-    str_to_cbuf,
-    bytes_to_str
+    str_to_cbuf
 }
 
 glob:priv _FILE_ACTIONS_SZ: int = 128;  # glibc posix_spawn_file_actions_t (80 bytes) with slack
@@ -56,32 +52,7 @@ obj:pub ProcResult {
 
 """KEY=VALUE entries of the current environment."""
 def:pub proc_env_inherit -> list[str] {
-    out: list[str] = [];
-    fp: int = fopen("/proc/self/environ", "rb");
-    if fp == 0 {
-        return out;
-    }
-    cap: int = 262144;
-    buf: int = io_alloc(cap);
-    n: int = fread(buf, 1, cap - 1, fp);
-    fclose(fp);
-    if n <= 0 {
-        io_free(buf);
-        return out;
-    }
-    start: int = 0;
-    pos: int = 0;
-    while pos <= n {
-        if pos == n or read_byte(buf, pos) == 0 {
-            if pos > start {
-                out.append(bytes_to_str(buf, start, pos - start));
-            }
-            start = pos + 1;
-        }
-        pos = pos + 1;
-    }
-    io_free(buf);
-    return out;
+    return environ_entries();
 }
 
 """Value of KEY in an env list ("" when absent)."""

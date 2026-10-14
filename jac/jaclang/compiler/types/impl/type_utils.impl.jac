@@ -173,6 +173,18 @@ impl class_implements_protocol(
                 cls_func_type = _method_entry_type(evaluator, cls_method);
                 if isinstance(proto_func_type, FunctionType)
                     and isinstance(cls_func_type, FunctionType) {
+                    if proto.private is not None and proto.private.type_args {
+                        proto_func_type = proto_func_type.specialize(proto);
+                        cls_member = evaluator._lookup_class_member(cls, name);
+                        impl_func = evaluator._protocol_member_impl(
+                            proto_func_type, cls_member, cls
+                        )
+                            if cls_member is not None
+                            else None;
+                        if impl_func is not None {
+                            cls_func_type = impl_func;
+                        }
+                    }
                     if not evaluator._assign_callable(cls_func_type, proto_func_type) {
                         return False;
                     }
@@ -644,6 +656,20 @@ impl mro_signature(cls: ClassType) -> list[tuple[int, str]] {
 
 impl ensure_mro_fresh(cls: ClassType, _visiting: (set[int] | None) = None) -> bool {
     shared = cls.shared;
+    if getattr(shared, "_fresh_epoch", -1) == CLASS_GRAPH_EPOCH[0] {
+        return False;
+    }
+    changed = _ensure_mro_fresh(cls, _visiting);
+    if _visiting is None or not _visiting {
+        try {
+            shared._fresh_epoch = CLASS_GRAPH_EPOCH[0];
+        } except AttributeError {}
+    }
+    return changed;
+}
+
+def _ensure_mro_fresh(cls: ClassType, _visiting: (set[int] | None) = None) -> bool {
+    shared = cls.shared;
     if _visiting is None {
         _visiting = set();
     }
@@ -861,6 +887,29 @@ impl shadowed_type_var_names(
 }
 
 impl build_type_var_solution(class_type: ClassType) -> dict[str, TypeBase] {
+    private = class_type.private;
+    mro = class_type.shared.mro;
+    key = (
+        id(private),
+        tuple(id(arg) for arg in (private.type_args or [])),
+        id(mro),
+        len(mro)
+    );
+    cache = class_type._acc_cache;
+    if cache is None {
+        cache = {};
+        class_type._acc_cache = cache;
+    }
+    held = cache.get("_tv_solution");
+    if held is not None and held[0] == key {
+        return held[1];
+    }
+    solution = CachedSolution(_build_type_var_solution(class_type));
+    cache["_tv_solution"] = (key, solution);
+    return solution;
+}
+
+def _build_type_var_solution(class_type: ClassType) -> dict[str, TypeBase] {
     solution: dict[str, TypeBase] = {};
 
     if class_type.shared.type_params
@@ -1039,6 +1088,48 @@ def _apply_solution_to_class(
 }
 
 def _apply_to_function(
+    func: FunctionType,
+    solution: dict[str, TypeBase],
+    class_type: (ClassType | None),
+    shadowed: (set[str] | None) = None
+) -> FunctionType {
+    if not isinstance(solution, CachedSolution) {
+        return _apply_to_function_uncached(func, solution, class_type, shadowed);
+    }
+    memo_key = (
+        id(solution),
+        id(class_type),
+        frozenset(shadowed) if shadowed is not None else None
+    );
+    cache = func._acc_cache;
+    if cache is None {
+        cache = {};
+        func._acc_cache = cache;
+    }
+    memo:
+        (
+            dict[
+                tuple[(int, int, (frozenset[str] | None))],
+                tuple[(dict[str, TypeBase], (ClassType | None), FunctionType)]
+            ]
+            | None
+        ) = cache.get("_applied");
+    if memo is None {
+        memo = {};
+        cache["_applied"] = memo;
+    }
+    held = memo.get(memo_key);
+    if held is not None and held[0] is solution and held[1] is class_type {
+        return held[2];
+    }
+    result = _apply_to_function_uncached(func, solution, class_type, shadowed);
+    if len(memo) < 32 {
+        memo[memo_key] = (solution, class_type, result);
+    }
+    return result;
+}
+
+def _apply_to_function_uncached(
     func: FunctionType,
     solution: dict[str, TypeBase],
     class_type: (ClassType | None),

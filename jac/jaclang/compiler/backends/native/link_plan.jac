@@ -211,6 +211,9 @@ obj LinkPlan {
         h.update(self.options.codegen_identity().encode());
         import from jaclang.compiler.driver.jir { native_producer_digest }
         h.update(native_producer_digest(self.options.kernel_build).encode());
+        if self.library_api {
+            h.update(b"library-api");
+        }
         import from jaclang.compiler.frontend.codeinfo { native_unit_identity }
         for u in self.units {
             h.update(native_unit_identity(u.path).encode());
@@ -1087,6 +1090,17 @@ def _reuse_artifact(
     }
 }
 
+def _links_for_host(triple: str) -> bool {
+    if not sys.platform.startswith("linux") {
+        return False;
+    }
+    target = triple.lower().split("-");
+    host = str(llvm.get_default_triple()).lower().split("-");
+    return target[0] == host[0]
+        and "linux" in target
+        and ("musl" in target[-1]) == ("musl" in host[-1]);
+}
+
 def link_artifact(
     plan: LinkPlan,
     output_path: str,
@@ -1128,7 +1142,12 @@ def link_artifact(
     } elif is_macos {
         needed_libs = ["/usr/lib/libSystem.B.dylib"];
     }
-    lib_norm = clib_needed_libs(needed_libs, clib_paths, floor_handled);
+    lib_norm = clib_needed_libs(
+        needed_libs,
+        clib_paths,
+        floor_handled,
+        host_elf=platform == "elf" and _links_for_host(plan.triple)
+    );
     is_linux_exec = (not shared) and platform == "elf";
     """The runtime units declare their libc calls as C imports, and musl's
     libc.a satisfies every one of them: only a library beyond libc and libm
