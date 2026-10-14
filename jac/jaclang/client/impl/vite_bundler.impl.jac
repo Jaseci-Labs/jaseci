@@ -404,20 +404,18 @@ impl ViteBundler._format_define_entries(
 
 def _client_route_regex(pattern: str) -> str {
     import re;
-    parts: list[str] = [];
+    out = '^';
     for seg in pattern.split('/') {
         if not seg {
             continue;
         }
         if seg == '*' {
-            parts.append('.*');
-        } elif seg.startswith(':') {
-            parts.append('[^/]+');
-        } else {
-            parts.append(re.escape(seg));
+            out += '(?:/.*)?';
+            break;
         }
+        out += '/' + ('[^/]+' if seg.startswith(':') else re.escape(seg));
     }
-    return '^/' + '/'.join(parts) + '/?$';
+    return out + '/?$';
 }
 
 
@@ -618,7 +616,7 @@ impl ViteBundler._generate_vite_config_content(
             under = [
                 p
                 for p in claimed
-                if p.startswith(prefix + '/')
+                if route_pattern_under_prefix(p, prefix)
             ];
             builtin_proxy_str += _proxy_entry(prefix, api_port, under);
         }
@@ -1687,4 +1685,35 @@ impl ViteBundler._start_vite_with_output_capture(
         }
     }
     return process;
+}
+
+impl route_pattern_under_prefix(pattern: str, prefix: str) -> bool {
+    want = [
+        seg
+        for seg in prefix.split('/')
+        if seg
+    ];
+    have = [
+        seg
+        for seg in pattern.split('/')
+        if seg
+    ];
+    if not have or have[0] == '*' {
+        return False;
+    }
+    for (i, seg) in enumerate(want) {
+        if i >= len(have) {
+            return False;
+        }
+        if have[i] == '*' {
+            return True;
+        }
+        if have[i].startswith(':') {
+            continue;
+        }
+        if have[i] != seg {
+            return False;
+        }
+    }
+    return len(have) > len(want);
 }

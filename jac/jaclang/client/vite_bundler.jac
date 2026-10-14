@@ -35,6 +35,8 @@ glob logger = logging.getLogger(__name__),
 
 def client_deps_stale(build_dir: Path) -> bool;
 
+def route_pattern_under_prefix(pattern: str, prefix: str) -> bool;
+
 def _forward_vite_output(
     proc: any,
     ready_event: any,

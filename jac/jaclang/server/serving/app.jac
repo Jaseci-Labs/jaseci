@@ -268,9 +268,16 @@ obj ServingApp {
                 claimed = False;
             }
             if claimed {
+                tried = [ep];
                 (next_ep, next_params, _) = self.router.resolve(
-                    request.method, request.url.path, exclude=ep
+                    request.method, request.url.path, exclude=tried
                 );
+                while next_ep is not None and next_ep.yields_to_client {
+                    tried.append(next_ep);
+                    (next_ep, next_params, _) = self.router.resolve(
+                        request.method, request.url.path, exclude=tried
+                    );
+                }
                 if next_ep is not None {
                     ep = next_ep;
                     path_params = next_params;

@@ -136,7 +136,7 @@ obj Router {
     }
 
     def resolve(
-        method: str, path: str, exclude: (JEndPoint | None) = None
+        method: str, path: str, exclude: (list[JEndPoint] | None) = None
     ) -> tuple[(JEndPoint | None), dict[(str, str)], list[str]] {
         segments = [
             p
@@ -149,7 +149,7 @@ obj Router {
             params = route.`match(segments, trailing);
             if params is not None
                 and route.endpoint is not None
-                and route.endpoint is not exclude {
+                and not any(route.endpoint is tried for tried in (exclude or [])) {
                 return (route.endpoint, params, []);
             }
         }

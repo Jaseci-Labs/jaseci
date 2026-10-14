@@ -1118,9 +1118,11 @@ impl ModuleIntrospector.client_claimed_paths(candidates: list[str]) -> list[str]
             continue;
         }
     }
+    import from jaclang.client.vite_bundler { route_pattern_under_prefix }
     for pattern in (self._spa_route_patterns or []) {
         for candidate in candidates {
-            if pattern.startswith(candidate + '/') and pattern not in claimed {
+            if route_pattern_under_prefix(pattern, candidate)
+                and pattern not in claimed {
                 claimed.append(pattern);
             }
         }

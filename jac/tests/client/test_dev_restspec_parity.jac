@@ -331,15 +331,37 @@ test "the dev proxy drops built-in prefixes the app claims as client routes" {
             entry_file,
             is_dev=True,
             api_port=8123,
-            client_paths=["/admin/quotes", "/admin/:id", "/admin/files/*"]
+            client_paths=[
+                "/admin/quotes",
+                "/admin/:id",
+                "/admin/files/*",
+                "/:section/reports"
+            ]
         );
         text = config_path.read_text(encoding="utf-8");
     }
     assert '"/admin": {' in text , f"the prefix must stay proxied:\n{text}";
     assert "bypass:" in text , f"a sub-route claim needs a bypass:\n{text}";
-    for source in ['^/admin/quotes/?$', '^/admin/[^/]+/?$', '^/admin/files/.*/?$'] {
+    # A trailing wildcard also claims its bare parent, and a dynamic parent
+    # segment claims the prefix too.
+    for source in [
+        '^/admin/quotes/?$',
+        '^/admin/[^/]+/?$',
+        '^/admin/files(?:/.*)?/?$',
+        '^/[^/]+/reports/?$'
+    ] {
         assert source in text , f"missing bypass pattern {source}:\n{text}";
     }
+    # A root catch-all page claims no prefix: it must not bypass the API.
+    with TemporaryDirectory() as tmp {
+        entry_file = _min_project(tmp);
+        bundler = ViteBundler(Path(tmp));
+        config_path = bundler.create_vite_config(
+            entry_file, is_dev=True, api_port=8123, client_paths=["/*"]
+        );
+        text = config_path.read_text(encoding="utf-8");
+    }
+    assert "bypass:" not in text , f"a root catch-all must not bypass:\n{text}";
     assert '"/walker": {\n        target' in text , (
         f"a prefix with no claimed page keeps the plain proxy entry:\n{text}"
     );

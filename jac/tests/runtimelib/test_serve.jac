@@ -367,6 +367,15 @@ test "api server construction is socket-free and builds a serving app" {
                 )
             );
         }
+        app.add_endpoint(
+            JEndPoint(
+                method=HTTPMethod.GET,
+                path='/probe/{rest:path}',
+                callback=probe,
+                parameters=[],
+                yields_to_client=True
+            )
+        );
         # (spa_routes, method, path, answered by). The app's own SPA fallback
         # is what a yielded request lands on; with no client built it is a
         # JSON 404, which tells it apart from the probe's 401.
@@ -379,6 +388,8 @@ test "api server construction is socket-free and builds a serving app" {
             (['/other'], 'GET', '/probe', 'platform'),
             (['/*'], 'GET', '/probe', 'platform'),
             (['/probe/:id'], 'GET', '/probe', 'platform'),
+            (['/probe/:id'], 'GET', '/probe/x', 'fallback'),
+            (['/probe/:id'], 'GET', '/probe/x/y', 'platform'),
 
         ];
         for (routes, method, path, expected) in cases {
