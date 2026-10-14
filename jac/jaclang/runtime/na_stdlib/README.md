@@ -209,7 +209,7 @@ native layout records the emitted name separately from its source-level key.
   `b B h H i I l L q Q f d` (4-byte `l`/`L` on the native i64 word are
   8 bytes here -- `itemsize` follows the stored width, matching CPython
   on a 64-bit LP64 host where `l`/`L` are 8). `append`, `extend`
-  (`list[any]`), `extend_array`, `extend_bytes`, `insert`, `pop`,
+  (`list[any]`), `insert`, `pop`,
   `remove`, `index`, `count`, `reverse`, `tolist`, `tobytes`,
   `frombytes`, `byteswap`, `buffer_info`, `tofile`/`fromfile`, and the
   dunders `__len__`/`__getitem__`/`__setitem__`/`__contains__`/`__eq__`/
@@ -220,7 +220,7 @@ native layout records the emitted name separately from its source-level key.
   dunders on the na pathway -- call them explicitly (`a.__getitem__(i)`,
   `a.__eq__(b)`); the constructor takes `list[any]` (literal elements box
   correctly) and deliberately does NOT accept `bytes`/array initializers --
-  use `frombytes`/`extend_array`/`extend_bytes` (a boxed `any` cannot be
+  use `frombytes`/`_extend_array`/`_extend_bytes` (a boxed `any` cannot be
   safely redispatched on the na pathway); `u`/`w` codes, slicing, and `del`
   are not provided; `buffer_info()[0]` is the live `__bytearray_data`
   payload address (0 for an empty array, invalidated by growth like
@@ -246,7 +246,7 @@ native layout records the emitted name separately from its source-level key.
   mapping is private-anonymous, so writes after such a resize would
   silently stop reaching the file, where CPython keeps write-through via
   `mremap`), `flush`,
-  `close`, `read_slice`, `size` (the live FILE size, as CPython's fstat --
+  `close`, `size` (the live FILE size, as CPython's fstat --
   anonymous maps raise CPython's `[Errno 9] Bad file descriptor`), `closed`,
   `ACCESS_*`/`PROT_*`/`MAP_*`
   constants, and explicit-callable dunders (`__getitem__`/`__setitem__`/
@@ -256,7 +256,7 @@ native layout records the emitted name separately from its source-level key.
   256)`, `unknown seek type`, `flush values out of range`, `mmap can't
   modify a readonly memory map.`); `init` pre-validates length/offset
   (`OverflowError`) and file size/emptiness (`ValueError`) like CPython,
-  and OS-level failures format as CPython's (`[Errno n] ...`). SCOPE: no operator-syntax slicing (`m[a:b]` -- use `read_slice`),
+  and OS-level failures format as CPython's (`[Errno n] ...`). SCOPE: no operator-syntax slicing (`m[a:b]` -- use `_read_slice`),
   and no
   `ACCESS_COPY` copy-on-write verification beyond flag semantics. Pinned
   sv<->na congruent by

@@ -236,7 +236,7 @@ obj:pub array {
         }
     }
 
-    def extend_array(other: array) {
+    def _extend_array(other: array) {
         if other.typecode != self.typecode {
             raise TypeError("can only extend with array of same kind");
         }
@@ -244,7 +244,7 @@ obj:pub array {
         b.extend(other._buf);
     }
 
-    def extend_bytes(data: bytes) {
+    def _extend_bytes(data: bytes) {
         n: int = len(data);
         i: int = 0;
         while i < n {

@@ -433,7 +433,7 @@ obj:pub mmap {
         }
     }
 
-    def read_slice(start: int, n: int) -> bytes {
+    def _read_slice(start: int, n: int) -> bytes {
         self._check_open();
         if start < 0 or start + n > self._len {
             raise IndexError("mmap slice out of range");

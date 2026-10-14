@@ -17,7 +17,7 @@ on CPython too, keeping the two lanes source-identical where possible.
 
 Documented divergences NOT exercised here (they would spuriously fail):
   - bytes/array constructor initializers (na: use ``frombytes`` /
-    ``extend_array`` -- the ctor takes ``list[any]``),
+    ``_extend_array`` -- the ctor takes ``list[any]``),
   - ``buffer_info()[0]`` is a live address on BOTH lanes and differs across
     backends (raw addresses), so only ``[1]`` (the item count) is compared,
   - 'u'/'w' typecodes, slicing, ``del``, and ``tobuffer``.
