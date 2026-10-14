@@ -1230,6 +1230,12 @@ def _definition_texts(path: str) -> dict[str, list[str]] {
     return texts;
 }
 
+glob _DEFINITION_DIGESTS: dict[str, str] = {};
+
+def _definition_digest_file(key: str) -> Path {
+    return get_jir_cache_dir() / "defdigest" / compiler_generation() / key[:2] / key;
+}
+
 def definition_digest(path: str, qualname: str) -> str {
     files: list[str] = [path];
     if path.endswith(".jac") {
@@ -1240,6 +1246,41 @@ def definition_digest(path: str, qualname: str) -> str {
             }
         }
     }
+    key_h = hashlib.sha256();
+    key_h.update(qualname.encode());
+    try {
+        for source in files {
+            key_h.update(os.path.realpath(source).encode());
+            key_h.update(b"\0");
+            key_h.update(compute_content_sha256(source).encode());
+            key_h.update(b"\0");
+        }
+    } except OSError {
+        return _compute_definition_digest(files, qualname);
+    }
+    key = key_h.hexdigest();
+    hit = _DEFINITION_DIGESTS.get(key);
+    if hit is not None {
+        return hit;
+    }
+    store = _definition_digest_file(key);
+    try {
+        hit = store.read_text(encoding="utf-8");
+        _DEFINITION_DIGESTS[key] = hit;
+        return hit;
+    } except OSError {}
+    digest = _compute_definition_digest(files, qualname);
+    _DEFINITION_DIGESTS[key] = digest;
+    try {
+        store.parent.mkdir(parents=True, exist_ok=True);
+        tmp = store.with_name(f"{key}.{os.getpid()}.tmp");
+        tmp.write_text(digest, encoding="utf-8");
+        os.replace(tmp, store);
+    } except OSError {}
+    return digest;
+}
+
+def _compute_definition_digest(files: list[str], qualname: str) -> str {
     h = hashlib.sha256();
     h.update(qualname.encode());
     found = False;

@@ -1092,6 +1092,24 @@ impl PlacementPass._run_undecided(ir_in: Module) -> Module {
                 self._emit_refusal(refusal, need[1] if need is not None else "");
             }
         }
+        if elem.code_context == CodeContext.NATIVE
+            and need is not None
+            and need[0] == "native" {
+            for (uid, owner) in legality.owners.items() {
+                if uid == id(elem)
+                    or uid not in legality.units
+                    or top_element_of(ir_in, owner) is not elem {
+                    continue;
+                }
+                for refusal in legality.units[uid] {
+                    if refusal.site is None or id(refusal.site) in seen {
+                        continue;
+                    }
+                    seen.add(id(refusal.site));
+                    self._emit_refusal(refusal, need[1]);
+                }
+            }
+        }
         if elem.code_context == CodeContext.CLIENT and id(elem) in client_refused {
             for (vnode, vkind) in client_refused[id(elem)] {
                 self.ctx.emit(E5096, node_override=vnode, kind=vkind);

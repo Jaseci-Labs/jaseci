@@ -75,6 +75,7 @@ class JacProgram {
         need_tree: bool = False
     ) -> uni.Module;
 
+    def toolchain_dependency(self: JacProgram, resolved_path: str) -> bool;
     def drop_module_alerts(self: JacProgram, resolved_path: str) -> None;
     def reset_module_root(self: JacProgram, module_root: uni.ProgramModule) -> None;
     static def hub_key(path: str) -> str;
