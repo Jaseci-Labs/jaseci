@@ -217,7 +217,10 @@ impl JacFileWatcher._on_change(
     if '/.jac/' in path or '\\.jac\\' in path {
         return;
     }
-    if self._beside_watched_file(path) or self._foreign_shared_annex(path) {
+
+    if self._beside_watched_file(path)
+        or self._foreign_shared_annex(path)
+        or is_compiler_source_path(path) {
         return;
     }
 

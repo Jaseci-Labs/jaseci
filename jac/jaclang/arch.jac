@@ -8734,6 +8734,8 @@ graph import compiler.frontend {
     unitree --> compiler.passes.type_checker_pass { AtomUnit, GlobalVars, String }
     unparse --> compiler.boundary_rules.json_refusal { unparse_node }
     unparse --> compiler.boundary_rules.signature_refusals { unparse_node }
+    codeinfo --> cli.commands.execution._count_jac_files { is_compiler_source_path }
+    codeinfo --> server.watcher.JacFileWatcher._on_change { is_compiler_source_path }
 }
 
 graph import compiler.frontend.parser {
@@ -13179,6 +13181,10 @@ graph import runtime {
     scalars --> compiler.boundary_rules.json_refusal { sized_scalar_names }
     scalars --> compiler.boundary_rules.non_string_key { sized_scalar_names }
     scalars --> compiler.boundary_rules.python_native_wire { sized_scalar_names }
+    preparation_lock --> runtime.runtime.JacModule.jac_import { PREPARATION_LOCK }
+    preparation_lock --> server.hmr.HotReloader._reload_server_module {
+        PREPARATION_LOCK
+    }
 }
 
 graph import scale {

@@ -363,6 +363,82 @@ impl TypeEvaluator._typeddict_as_dict(base_type: ClassType) -> ClassType | None 
     return dict_type.clone_as_instance();
 }
 
+glob _TYPEDDICT_ASSIGNS_IN_PROGRESS: set[tuple[int, int]] = set();
+
+impl TypeEvaluator._assign_typeddict(
+    src_type: ClassType, dest_type: ClassType, strict: bool = False
+) -> bool {
+    if not src_type.is_typeddict() {
+        return False;
+    }
+    pair = (id(src_type.shared), id(dest_type.shared));
+    if pair in _TYPEDDICT_ASSIGNS_IN_PROGRESS {
+        return True;
+    }
+    _TYPEDDICT_ASSIGNS_IN_PROGRESS.add(pair);
+    try {
+        src_fields: dict[str, TypeBase] = src_type.shared.typeddict_fields or {};
+        for (key, dest_field) in (dest_type.shared.typeddict_fields or {}).items() {
+            if key not in src_fields {
+                return False;
+            }
+            src_field = src_fields[key];
+            if not self.assign_type(src_field, dest_field, strict)
+                or not self.assign_type(dest_field, src_field, strict) {
+                return False;
+            }
+        }
+        return True;
+    } finally {
+        _TYPEDDICT_ASSIGNS_IN_PROGRESS.discard(pair);
+    }
+}
+
+impl TypeEvaluator._typeddict_for_dict_literal(
+    expr: DictVal, expected_type: TypeBase | None
+) -> ClassType | None {
+    candidates: list[TypeBase] = [];
+    if isinstance(expected_type, UnionType) {
+        candidates = list(expected_type.types);
+    } elif expected_type is not None {
+        candidates = [expected_type];
+    }
+    for cand in candidates {
+        if not (
+            isinstance(cand, ClassType)
+            and cand.is_class_instance()
+            and cand.is_typeddict()
+        ) {
+            continue;
+        }
+        fields: dict[str, TypeBase] = cand.shared.typeddict_fields or {};
+        fits = True;
+        for kv in expr.kv_pairs {
+            if not kv.key {
+                fits = False;
+                break;
+            }
+            key_type = self.get_type_of_expression(kv.key);
+            key = key_type.get_literal_value()
+                if isinstance(key_type, ClassType)
+                else None;
+            if not isinstance(key, str) or key not in fields {
+                fits = False;
+                break;
+            }
+            val_type = self.get_type_of_expression(kv.value, expected_type=fields[key]);
+            if not self.assign_type(val_type, fields[key]) {
+                fits = False;
+                break;
+            }
+        }
+        if fits {
+            return cand;
+        }
+    }
+    return None;
+}
+
 impl TypeEvaluator._scope_has_fields(tab: UniScopeNode | None) -> bool {
     if isinstance(tab, Archetype) {
         return bool(tab.get_has_vars());
