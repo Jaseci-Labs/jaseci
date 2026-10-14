@@ -256,6 +256,17 @@ def catalog_build_blocker(artifact: any) -> str {
     if not artifact.host_supported() {
         return "the stub catalog cannot be built on this host";
     }
+    import from jaclang.project.config { offline_mode }
+    if offline_mode() {
+        import from jaclang.artifacts.router { artifact_named }
+        typeshed = artifact_named("typeshed").built();
+        if typeshed.found is None {
+            return (
+                f"the typeshed stubs it is built from are missing ({typeshed.describe()}), "
+                "and this project is offline ([network] offline)"
+            );
+        }
+    }
     return artifact.unavailable_reason() or artifact.build_blocker();
 }
 

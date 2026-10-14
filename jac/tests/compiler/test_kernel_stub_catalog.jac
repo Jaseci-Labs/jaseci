@@ -124,6 +124,35 @@ test "a sealed install with no catalog stops without trying to build" {
     assert "reinstall jac" in str(outcome.code) , outcome.code;
 }
 
+test "an offline project missing the typeshed stubs stops without downloading them" {
+    import jaclang.project.config as config;
+    import from jaclang.compiler.types.stubcat.locate { TypeshedArtifact }
+    compiler = FakeCompiler(catalog=[False]);
+    with patch.object(config, "offline_mode", return_value=True) {
+        with patch.object(TypeshedArtifact, "built", return_value=Probe.missing()) {
+            (outcome, said) = _require(compiler, _build_ok);
+        }
+    }
+    assert isinstance(outcome, snapshot.StubCatalogMissing) , outcome;
+    assert _built == [] , _built;
+    told = str(outcome.code);
+    assert "offline" in told and "jac native build stubcat" in told , told;
+}
+
+test "an offline project with the typeshed stubs still builds the catalog" {
+    import jaclang.project.config as config;
+    import from jaclang.compiler.types.stubcat.locate { TypeshedArtifact }
+    compiler = FakeCompiler(catalog=[False, True]);
+    present = Probe.hit(Source.CHECKOUT, "/typeshed/stdlib", {});
+    with patch.object(config, "offline_mode", return_value=True) {
+        with patch.object(TypeshedArtifact, "built", return_value=present) {
+            (outcome, said) = _require(compiler, _build_ok);
+        }
+    }
+    assert outcome is True , outcome;
+    assert _built == [["stubcat"]] , _built;
+}
+
 test "building the kernel builds its stub catalog first" {
     import from jaclang.compiler.backends.native.kernel_resolve { KernelArtifact }
     assert "stubcat" in KernelArtifact().requires;
