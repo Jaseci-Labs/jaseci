@@ -40,38 +40,45 @@ obj DiagnosticInfo {
     }
 }
 
-def _fill_template(template: str, kwargs: dict[str, object]) -> (str | None) {
-    esc_open = chr(1);
-    esc_close = chr(2);
-    out = template.replace("{{", esc_open).replace("}}", esc_close);
-    for (k, v) in kwargs.items() {
-        key = "{" + str(k) + "}";
-        out = out.replace(key, str(v));
+def _placeholder_name(text: str) -> bool {
+    if not text {
+        return False;
     }
-    scan = 0;
-    while True {
-        b_open = out.find("{", scan);
-        if b_open < 0 {
-            break;
+    for ch in text {
+        if not (ch.isalnum() or ch == "_") {
+            return False;
         }
-        b_close = out.find("}", b_open + 1);
-        if b_close < 0 {
-            break;
+    }
+    return True;
+}
+
+def _fill_template(template: str, kwargs: dict[str, object]) -> (str | None) {
+    out: list[str] = [];
+    i = 0;
+    n = len(template);
+    while i < n {
+        ch = template[i];
+        if (ch == "{" or ch == "}") and i + 1 < n and template[i + 1] == ch {
+            out.append(ch);
+            i += 2;
+            continue;
         }
-        inner = out[b_open + 1:b_close];
-        is_name = len(inner) > 0;
-        for ch in inner {
-            if not (ch.isalnum() or ch == "_") {
-                is_name = False;
-                break;
+        if ch == "{" {
+            close = template.find("}", i + 1);
+            if close > i and _placeholder_name(template[i + 1:close]) {
+                key = template[i + 1:close];
+                if key not in kwargs {
+                    return None;
+                }
+                out.append(str(kwargs[key]));
+                i = close + 1;
+                continue;
             }
         }
-        if is_name {
-            return None;
-        }
-        scan = b_open + 1;
+        out.append(ch);
+        i += 1;
     }
-    return out.replace(esc_open, "{").replace(esc_close, "}");
+    return "".join(out);
 }
 
 glob DIAGNOSTICS: dict[str, DiagnosticInfo] = {};

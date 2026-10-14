@@ -1,4 +1,5 @@
 import from jaclang.compiler.frontend.unitree { TreeWalker }
+import from jaclang.compiler.driver.pipeline_types { PassContract }
 import from jaclang.compiler.frontend.roles { Kid }
 import from jaclang.compiler.passes.context { CompileContext, TreePass }
 import jaclang.compiler.tools.doc_ir as doc;
@@ -6,6 +7,7 @@ import jaclang.compiler.frontend.unitree as uni;
 import from jaclang.compiler.frontend.constant { Tokens as Tok, is_mut_kind }
 
 walker DocIRGenPass(TreePass) {
+    static has contract: PassContract = PassContract();
     has _live_comment_ids: (set[int] | None) = None,
         _emitted_comment_ids: (set[int] | None) = None;
 

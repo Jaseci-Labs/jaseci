@@ -209,13 +209,10 @@ def _tree_source(
 ) -> ManifestSource {
     import from jaclang.compiler.driver.unit_products { import_edge_rows }
     if imported {
-        import from jaclang.compiler.driver.pipeline {
-            require_product,
-            CompilationProduct
-        }
+        import from jaclang.compiler.driver.pipeline { require, CompilationProduct }
         manifest = mod.gen.interop_manifest;
         if not (manifest and manifest.surface) {
-            require_product(program, mod, CompilationProduct.BOUNDARIES);
+            require(program, mod, CompilationProduct.BOUNDARIES);
         }
     }
     return ManifestSource(
@@ -870,6 +867,7 @@ def _prepare_revision(
             ];
         }
         revision.code = record['code'];
+        revision.sources = sorted(record['dependencies']);
         revision.manifests = record['manifests'];
         for (path, sections) in record['sections'].items() {
             import from jaclang.compiler.driver.compilation_context {
@@ -1084,6 +1082,7 @@ def _prepare_revision(
             dependencies=inputs
         )
     );
+    revision.sources = sorted(inputs);
     _semantic_metadata(revision, program);
     return revision;
 }

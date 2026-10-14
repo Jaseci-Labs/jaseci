@@ -1,4 +1,5 @@
 import from jaclang.compiler.frontend.roles { Kid }
+import from jaclang.compiler.driver.pipeline_types { PassContract }
 import from jaclang.compiler.frontend.unitree {
     UniNode,
     Ability,
@@ -123,6 +124,7 @@ glob PyPositioned: TypeAlias = py_ast.stmt
          | py_ast.GeneratorExp;
 
 walker PyastBuildPass(CompilerPass) {
+    static has contract: PassContract = PassContract();
     has module: UniNode,
         mod_path: str postinit,
         orig_src: Source postinit,

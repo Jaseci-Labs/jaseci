@@ -1,4 +1,5 @@
 import from jaclang.compiler.passes.context { CompilerPass }
+import from jaclang.compiler.driver.pipeline_types { AnalysisFact, PassContract }
 import os;
 import jaclang.compiler.frontend.unitree as uni;
 import from jaclang.compiler.frontend.constant { CodeContext, Tokens as Tok }
@@ -102,39 +103,14 @@ def _native_dep_scan(
     return (sv_reason, deps);
 }
 
-glob _CLOSURE_CAP_NOTED: set[str] = set();
-
-def note_native_closure_cap(root_path: str, cap: int) {
-    import from jaclang.compiler.frontend.host { active_host }
-    resolved = os.path.realpath(root_path);
-    if resolved in _CLOSURE_CAP_NOTED {
-        return;
-    }
-    _CLOSURE_CAP_NOTED.add(resolved);
-    active_host().note(
-        f"note: {root_path} preferred native but its import closure "
-        f"exceeded the inference cap ({cap} modules); compiled in the "
-        f"server codespace. Raise [build] native_closure_cap in jac.toml "
-        f"to scan larger closures."
-    );
-}
-
 def _native_deps_ok(
     root_path: str, root_deps: list[str], hold_exempt: bool = False
 ) -> bool {
-    import from jaclang.compiler.frontend.codeinfo {
-        effective_native_closure_cap,
-        native_unit_compile_active
-    }
+    import from jaclang.compiler.frontend.codeinfo { native_unit_compile_active }
     import from jaclang.compiler.native_scope { in_native_scope_path }
-    cap = effective_native_closure_cap();
     edges: dict[str, list[str]] = {root_path: list(root_deps)};
     queue: list[str] = list(root_deps);
     while queue {
-        if len(edges) > cap {
-            note_native_closure_cap(root_path, cap);
-            return False;
-        }
         dep = queue.pop();
         if dep in edges {
             continue;
@@ -238,13 +214,9 @@ def dependency_summary(prog: JacProgram, path: str) -> (PlacementSummary | None)
 def native_closure_blocker(
     prog: JacProgram, root_path: str, deps: list[str]
 ) -> tuple[str, bool] {
-    import from jaclang.compiler.frontend.codeinfo {
-        effective_native_closure_cap,
-        native_unit_compile_active
-    }
+    import from jaclang.compiler.frontend.codeinfo { native_unit_compile_active }
     import from jaclang.compiler.native_scope { in_native_scope_path }
     import from jaclang.compiler.placement.placement_facts { pinned_module_space }
-    cap = effective_native_closure_cap();
     seen: set[str] = {os.path.abspath(root_path)};
     queue: list[str] = [os.path.abspath(dep) for dep in deps];
     while queue {
@@ -253,13 +225,6 @@ def native_closure_blocker(
             continue;
         }
         seen.add(dep);
-        if len(seen) > cap {
-            note_native_closure_cap(root_path, cap);
-            return (
-                f"its import closure exceeds the native closure cap ({cap} modules)",
-                False
-            );
-        }
         name = os.path.basename(dep);
         if in_native_scope_path(dep) and not native_unit_compile_active() {
             return (f"'{name}' is a compiler frontend module", False);
@@ -626,8 +591,9 @@ def solve_module_placement(
 
     def _invalidate_stale_codegen {
         if stamp_count[0] and (module.gen.js or module.gen.es_ast is not None) {
-            import from jaclang.compiler.driver.pipeline { invalidate_client_product }
-            invalidate_client_product(prog, module);
+            import from jaclang.compiler.driver.pipeline { invalidate }
+            import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
+            invalidate(prog, module, CompilationProduct.CLIENT);
         }
     }
 
@@ -1002,10 +968,11 @@ def invalidate_importers_es(prog: JacProgram, mod_path: str) -> list[uni.Module]
                 continue;
             }
             if isinstance(target, str) and os.path.realpath(target) == key {
-                import from jaclang.compiler.driver.pipeline {
-                    invalidate_client_product
+                import from jaclang.compiler.driver.pipeline { invalidate }
+                import from jaclang.compiler.driver.pipeline_types {
+                    CompilationProduct
                 }
-                invalidate_client_product(prog, m);
+                invalidate(prog, m, CompilationProduct.CLIENT);
                 cleared.append(m);
                 break;
             }
@@ -1015,6 +982,16 @@ def invalidate_importers_es(prog: JacProgram, mod_path: str) -> list[uni.Module]
 }
 
 walker PlacementApplyPass(CompilerPass) {
+    static has contract: PassContract = PassContract(
+        requires=(AnalysisFact.SYM_OF, ),
+        provides=(
+            AnalysisFact.PLACED_IN,
+            AnalysisFact.DECIDED_CODESPACE,
+            AnalysisFact.CODESPACE_PULL,
+
+        )
+    );
+
     def _run_impl(ir_in: uni.Module) -> uni.Module;
     can run_walk with uni.Module entry;
 }

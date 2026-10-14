@@ -1,4 +1,5 @@
 import from jaclang.compiler.frontend.roles { Kid }
+import from jaclang.compiler.driver.pipeline_types { AnalysisFact, PassContract }
 import from jaclang.compiler.passes.context { CompileContext, CompilerPass }
 import from jaclang.compiler.frontend.unitree {
     Ability,
@@ -81,6 +82,10 @@ def native_capability_violations(
 def native_capability_demotion_owner(viol_node: UniNode) -> (Ability | None);
 
 walker PortabilityWarnPass(CompilerPass) {
+    static has contract: PassContract = PassContract(
+        provides=(AnalysisFact.PORTABILITY, )
+    );
+
     def _run_impl(ir_in: Module) -> Module;
     can run_walk with Module entry;
     def _check_js_globals(mod: Module) -> None;

@@ -260,8 +260,8 @@ tree every backend reads.
    native, the compile generates code, the native pipeline is available,
    and the module declares no client elements. Nothing about the module's
    contents is decided here.
-2. **Seeded before typing** (`PlacementApplyPass`, scheduled in both
-   `get_symtab_ir_sched` and `get_ir_gen_sched`, then the program stage):
+2. **Seeded before typing** (`PlacementApplyPass`, scheduled in both the
+   `SYMBOLS` and `IR` products, then the program stage):
    what syntax and symbols decide. Seeds are read off the summary (JSX and
    string-path imports stamp CLIENT, clib externs stamp NATIVE,
    browser-global references stamp CLIENT in unanchored modules), then
@@ -303,10 +303,10 @@ tree every backend reads.
    the boundary rule: a call stays native when the callee's signature
    crosses, a type binds as a data shape, anything else refuses the code
    that uses it. Any other closure that cannot be native (a dependency
-   whose summary records a blocker, past `native_closure_cap`, or into the
-   compiler's own frontend) closes the preference. A native pin on a module
-   is a preference like the project default: only a pin on an element
-   holds that element native. The pass places each top-level element
+   whose summary records a blocker, or into the compiler's own frontend)
+   closes the preference, however many modules the closure holds. A native
+   pin on a module is a preference like the project default: only a pin on
+   an element holds that element native. The pass places each top-level element
    native unless a capability rule or a refusal rules it out, and a
    reference between two elements placed apart is allowed when the
    callee's signature can cross (`compiler/boundary_rules.jac`): between
@@ -350,11 +350,11 @@ through the interop stubs.
 
 ## Stage 3: Shared Frontend Analysis
 
-These passes run regardless of codespace and are collected by
-`get_ir_gen_sched` and `get_analysis_sched` in
-[`compiler.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/driver/pipeline.jac#L42).
+These passes run regardless of codespace and are collected by the `IR` and
+`ANALYSIS` products of the `PRODUCTS` table in
+[`pipeline.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/driver/pipeline.jac).
 
-The ir-gen schedule (`get_ir_gen_sched`):
+The IR product (`ir_passes`):
 
 | Pass | Source | Role |
 |------|--------|------|
@@ -369,7 +369,7 @@ The ir-gen schedule (`get_ir_gen_sched`):
 | `JsxIntrinsicGuardPass` | [`compiler/passes/jsx_intrinsic_guard_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/passes/jsx_intrinsic_guard_pass.jac) | Rejects raw HTML host tags per the project's client kind (`E1105`) |
 | `ComptimeResolvePass` | [`compiler/passes/comptime_resolve_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/passes/comptime_resolve_pass.jac) | Settles every `comptime` site (bindings, `if`/`for`/`assert`, comptime-parameter arguments) through the shared `TypeEvaluator` and its `CtEvaluator`, visiting only subtrees that contain a comptime construct; marks the module `ct_resolved` so a later `TypeCheckPass` does not report the same site twice. Runs here, not in the analysis schedule, so modules compiled on import fold identically to `jac check` |
 
-The analysis schedule (`get_analysis_sched`) -- **unconditional**, appended
+The ANALYSIS product (`analysis_passes`) -- **unconditional**, requested
 on every compile:
 
 | Pass | Source | Role |
@@ -385,16 +385,43 @@ on every compile:
 Type checking is not a mode: there is no gate on the analysis schedule, no
 `CompileOptions` flag or `jac.toml` key to turn it off, and the only way to
 stop a compile before analysis is `--parse_only`. Because type inference is
-on every compile's critical path, `get_analysis_sched` calls
+on every compile's critical path, the ANALYSIS spec's `precheck` calls
 `require_typeshed_stubs()` first -- a missing vendored typeshed tree raises
 `TypeshedUnavailableError` rather than degrading to an unchecked compile.
 
-The pipeline uses a **re-entrancy guard** (`_ir_sched_loading`,
-`_codegen_sched_loading`, `_analysis_sched_loading`) so that compiling the
-compiler's own pass modules degrades gracefully to the bootstrap subset
-instead of recursing forever.
+### How passes are scheduled
 
-Every schedule builder also degrades on `ImportError`, but only for
+Every pass declares its contract on its own class:
+`static has contract: PassContract = PassContract(requires=..., provides=...)`,
+naming the `AnalysisFact`s it needs and supplies, and `kernel_safe=True` for
+the passes the native kernel runs while it parses. A scheduled pass with no
+contract is a scheduling error, and a schedule whose pass requires a fact no
+earlier pass or recorded fact provides is rejected before any pass runs.
+
+One table, `PRODUCTS` in `pipeline.jac`, defines every schedule. Each
+`ProductSpec` names the products it `needs`, its pass list (built lazily, so
+the compiler can compile its own passes), its `bootstrap` variant, the
+modules it `loads`, the products whose tier it shares (`tier_with`), its
+import fallback, and whether a finished task is reused (`cached`). The
+facts a product guarantees are derived from its passes' contracts, and the
+kernel's early passes are the IR product's kernel-safe passes.
+
+There is one way to run passes: `require(program, module, product)`. It
+satisfies the product's needs first, resolves its schedule, and runs each
+pass once per module (a pass already done on that module is skipped).
+`invalidate(program, module, product)` drops a product and every product that
+needs it, so the next request regenerates their outputs; analysis passes
+(those that provide facts) are kept. Module compiles are two tables of steps,
+`ANALYSIS_PLAN` and `CODEGEN_PLAN`, each step an admission rule and a run
+that requests products, driven by one `run_plan` loop.
+
+A single **re-entrancy guard** (`_LOADING`) records which products are
+resolving their schedules. A product resolves to its `bootstrap` schedule
+while it, or a product in its `tier_with`, is loading or has a loaded module
+mid-import, so compiling the compiler's own pass modules degrades gracefully
+to the bootstrap subset instead of recursing forever.
+
+A product whose spec allows it also degrades on `ImportError`, but only for
 **absence**: a pass module a partial build does not ship, or a partially
 initialized one mid-bootstrap. A compiler-source file that resolves and then
 fails to compile is not absence, so `fail_loud_on_compiler_source` re-raises it
@@ -528,7 +555,8 @@ reference for `na → na`.
 
 ## Stage 5: Backend Code Generation
 
-`get_py_code_gen` returns the codegen schedule. All three backends read the
+The `CODEGEN`, `PY_IR` and `FROZEN` products make up the codegen schedule,
+with `NATIVE_OBJECT` and `BYTECODE` assembled by the session around them. All three backends read the
 same module facts -- [`ModuleFacts`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/frontend/module_facts.jac)
 (context-tagged statements, woven annex segments and the merged module body,
 erased type declarations). The AST-emitting passes are plain tree passes that

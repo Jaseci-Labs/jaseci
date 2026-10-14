@@ -154,6 +154,78 @@ glob PIN_FIXTURE_DIR = os.path.join(
          "    print(double(2), len([root-->]));\n"
          "}\n"
      ),
+     TOKEN_SRC = (
+         "import from contextvars { ContextVar, Token }\n\n"
+         "def double(n: int) -> int {\n"
+         "    return n * 2;\n"
+         "}\n\n"
+         "with entry {\n"
+         "    print(double(2));\n"
+         "}\n"
+     ),
+     MIXED_LATE_SRC = (
+         "import json;\n\n"
+         "def pretty(x: dict[str, int]) -> str {\n"
+         "    return json.dumps(x, indent=2);\n"
+         "}\n\n"
+         "def bad(n: int) -> int {\n"
+         "    s = {1, \"a\"};\n"
+         "    return len(s) + n;\n"
+         "}\n\n"
+         "def double(n: int) -> int {\n"
+         "    return n * 2;\n"
+         "}\n\n"
+         "with entry {\n"
+         "    print(double(2), bad(1));\n"
+         "}\n"
+     ),
+     PINNED_METHOD_SRC = (
+         "obj Foo {\n"
+         "    has n: int = 1;\n\n"
+         "    def size -> int {\n"
+         "        s = \"x\";\n"
+         "        return len(f\"{s!a}\") + self.n;\n"
+         "    }\n"
+         "}\n\n"
+         "with entry {\n"
+         "    print(Foo().size());\n"
+         "}\n"
+     ),
+     PINNED_LATE_METHOD_SRC = (
+         "import json;\n\n"
+         "def pretty(x: dict[str, int]) -> str {\n"
+         "    return json.dumps(x, indent=2);\n"
+         "}\n\n"
+         "obj Foo {\n"
+         "    has n: int = 1;\n\n"
+         "    def size -> int {\n"
+         "        s = {1, \"a\"};\n"
+         "        return len(s) + self.n;\n"
+         "    }\n"
+         "}\n\n"
+         "with entry {\n"
+         "    print(Foo().size());\n"
+         "}\n"
+     ),
+     OVERLOAD_STUB = (
+         "from typing import Callable, overload\n"
+         "@overload\n"
+         "def run(a: int, b: str) -> int: ...\n"
+         "@overload\n"
+         "def run(a: Callable[[int], int], b: int) -> int: ...\n"
+     ),
+     OVERLOAD_SRC = (
+         "import choices;\n\n"
+         "def inc(x: int) -> int {\n"
+         "    return x + 1;\n"
+         "}\n\n"
+         "def by_callable -> int {\n"
+         "    return choices.run(inc, 3);\n"
+         "}\n\n"
+         "def by_address -> int {\n"
+         "    return choices.run(inc, \"x\");\n"
+         "}\n"
+     ),
      NATIVE_ONLY_SRC = (
          "def size(f: File) -> int {\n"
          "    s = \"x\";\n"
@@ -313,6 +385,64 @@ test "an import with no native form keeps the module in Python" {
     assert set(placed_by_name(mod).values()) == {'server'} , placed_by_name(mod);
 }
 
+test "only a module whose native preference is open asks for the trees native code reads" {
+    import from unittest.mock { patch }
+    import jaclang.compiler.driver.module_compile as module_compile;
+    import from jaclang.compiler.frontend.codeinfo {
+        set_effective_default_codespace,
+        get_effective_default_codespace_override
+    }
+    real_analyze: any = module_compile.analyze_module;
+    seen: dict[str, tuple[bool, bool]] = {};
+    def recording(
+        program: JacProgram, path: str, options: CompileOptions, source: any = None
+    ) -> any {
+        task = real_analyze(program, path, options, source);
+        seen[os.path.realpath(str(path))] = (
+            options.native_tree_demand,
+            options.need_full_ast
+        );
+        return task;
+    }
+    previous = get_effective_default_codespace_override();
+    asked: dict[str, tuple[bool, bool]] = {};
+    try {
+        with patch.object(module_compile, "analyze_module", recording) {
+            for (name, text) in [("closed", PY_IMPORT_SRC), ("open", CLEAN_SRC)] {
+                path = os.path.realpath(os.path.join(tempfile.mkdtemp(), "m.jac"));
+                with open(path, "w", encoding="utf-8") as fh {
+                    fh.write(text);
+                }
+                JacProgram().compile(
+                    path, options=CompileOptions(default_codespace="native")
+                );
+                asked[name] = seen.get(path, (False, False));
+            }
+        }
+    } finally {
+        set_effective_default_codespace(previous);
+    }
+    assert asked["closed"] == (False, False) , (
+        "a module the syntax scan closed is placed on the server before typing, "
+        "so its dependencies are read from their interfaces"
+    );
+    assert asked["open"] == (True, False) , (
+        f"a module that may be placed native asks for the trees native lowering "
+        f"reads, not for every dependency's tree: {asked['open']}"
+    );
+}
+
+test "native lowering reads user and native-library trees, not the compiler's own" {
+    import jaclang;
+    import from jaclang.compiler.driver.ifacecache { native_lowering_reads }
+    pkg = os.path.dirname(os.path.realpath(jaclang.__file__));
+    assert not native_lowering_reads(
+        os.path.join(pkg, "compiler", "frontend", "unitree.jac")
+    );
+    assert native_lowering_reads(os.path.join(pkg, "runtime", "na_stdlib", "json.jac"));
+    assert native_lowering_reads(os.path.join(tempfile.mkdtemp(), "app.jac"));
+}
+
 test "access to the persistent graph still keeps the whole module in Python" {
     (prog, mod, path, parses) = compile_native_default(ROOT_SRC);
     assert not prog.errors_had , f"{[str(e) for e in prog.errors_had]}";
@@ -395,6 +525,108 @@ test "a backend crash is a compiler error, never a placement decision" {
     ]}";
     assert "compiler bug" in (crashes[0].help_text or "");
     assert mod.decided_codespace == 'native' , "a crash must not move the module";
+}
+
+test "a native type alias is something the native library provides" {
+    (prog, mod, path, parses) = compile_native_default(TOKEN_SRC);
+    assert not prog.errors_had , f"{[str(e) for e in prog.errors_had]}";
+    placed = placed_by_name(mod);
+    assert placed["double"] == 'native' , (
+        f"importing the native contextvars' Token alias keeps the preference "
+        f"open: {placed}"
+    );
+}
+
+test "a late refusal in a mixed module settles the module on the server" {
+    (prog, mod, path, parses) = compile_native_default(MIXED_LATE_SRC);
+    assert not prog.errors_had , f"{[str(e) for e in prog.errors_had]}";
+    assert parses == 1 , f"the module is analyzed once, got {parses} analyses";
+    placed = placed_by_name(mod);
+    assert set(placed.values()) == {'server'} , (
+        f"a native element of a mixed module has no Python body to fall back "
+        f"on, so the module moves as a whole: {placed}"
+    );
+    assert mod.gen.llvm_ir is None;
+    assert mod.gen.py_ast , "the Python backend emits the module it was handed";
+}
+
+"""Compile `text` as m.jac in a project that pins `m.Foo` native."""
+def compile_pinned_foo(text: str) -> JacProgram {
+    import from jaclang.compiler.frontend.codeinfo {
+        set_effective_default_codespace,
+        get_effective_default_codespace_override
+    }
+    base = tempfile.mkdtemp();
+    with open(os.path.join(base, "jac.toml"), "w", encoding="utf-8") as fh {
+        fh.write(
+            '[project]\nname = "pinned-method"\n\n[placement.pins]\n"m.Foo" = "native"\n'
+        );
+    }
+    path = os.path.realpath(os.path.join(base, "m.jac"));
+    with open(path, "w", encoding="utf-8") as fh {
+        fh.write(text);
+    }
+    previous = get_effective_default_codespace_override();
+    prog = JacProgram();
+    try {
+        prog.compile(path, options=CompileOptions(default_codespace="native"));
+    } finally {
+        set_effective_default_codespace(previous);
+    }
+    return prog;
+}
+
+test "a refusal inside an element pinned native is an error" {
+    prog = compile_pinned_foo(PINNED_METHOD_SRC);
+    assert any("must be native" in (e.help_text or "") for e in prog.errors_had) , f"a method of a pinned archetype that cannot lower is an error: {[
+        str(e) for e in prog.errors_had
+    ]}";
+}
+
+test "a late refusal inside an element pinned native is an error" {
+    prog = compile_pinned_foo(PINNED_LATE_METHOD_SRC);
+    assert any("mixed element types" in str(e) for e in prog.errors_had) , (
+        f"a method of a pinned archetype that refuses during lowering keeps its "
+        f"error rather than an abort() body: {[str(e) for e in prog.errors_had]}"
+    );
+}
+
+test "an overload the call does not select records no native requirement" {
+    import from unittest.mock { patch }
+    import from jaclang.compiler.types.type_evaluator { TypeEvaluator }
+    base = tempfile.mkdtemp();
+    with open(os.path.join(base, "choices.pyi"), "w", encoding="utf-8") as fh {
+        fh.write(OVERLOAD_STUB);
+    }
+    path = os.path.realpath(os.path.join(base, "main.jac"));
+    with open(path, "w", encoding="utf-8") as fh {
+        fh.write(OVERLOAD_SRC);
+    }
+    prog = JacProgram();
+    with patch.object(
+        TypeEvaluator, "neutral_site", lambda (this: any, nd: any) { True }
+    ) {
+        prog.compile(path, options=CompileOptions(no_cgen=True));
+    }
+    owners: set[str] = set();
+    for note in capability_notes_of(prog, path, "native") {
+        if not note.requires {
+            continue;
+        }
+        cur: (uni.UniNode | None) = note.site;
+        while cur is not None and not isinstance(cur, uni.Ability) {
+            cur = cur.parent;
+        }
+        if isinstance(cur, uni.Ability) and cur.name_ref is not None {
+            owners.add(cur.name_ref.sym_name);
+        }
+    }
+    assert "by_address" in owners , (
+        f"the selected (int, str) overload takes the function as an address: {owners}"
+    );
+    assert "by_callable" not in owners , (
+        f"the (int, str) overload was only tried; (Callable, int) was selected: {owners}"
+    );
 }
 
 test "a docstring-only module is not a candidate for native placement" {
