@@ -150,8 +150,6 @@ impl NaIRGenPass._maybe_declare_ability(
             if symbol is not None
             else self._symbol_for(name, _def_m, _is_pub);
         if _emit_name == name and symbol is None {
-            """A local def sharing a clib extern's bare C name emits under a
-            module-mangled symbol instead of tripping a duplicate-name error."""
             for gv in self.llvm_module.global_values {
                 if isinstance(gv, ir.Function)
                     and gv.name == name
