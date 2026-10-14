@@ -162,6 +162,15 @@ obj Video(Media) {
     def to_dict -> list[dict[str, any]];
 }
 
+obj Document(Media) {
+    has source: str | os.PathLike[str] | bytes | bytearray | memoryview,
+        filename: str | None = None,
+        _data_url: str = "";
+
+    def postinit -> None;
+    def to_dict -> list[dict[str, any]];
+}
+
 
 def image_resp_kind(resp_type: type | None) -> str {
     if resp_type is Image {
@@ -235,6 +244,8 @@ def content_preview(content: any, max_len: int) -> str {
 }
 
 
+glob TOOL_MEDIA_BLOCKS: tuple[str, ...] = ("image_url", "image", "file");
+
 def reroute_tool_images_to_user_message(
     messages: list[dict[str, object] | LiteLLMMessage]
 ) -> list[dict[str, object] | LiteLLMMessage] {
@@ -286,7 +297,7 @@ def _tool_msg_has_image(msg: object) -> bool {
         return False;
     }
     for block in content {
-        if isinstance(block, dict) and block.get("type") in ("image_url", "image") {
+        if isinstance(block, dict) and block.get("type") in TOOL_MEDIA_BLOCKS {
             return True;
         }
     }
@@ -302,15 +313,15 @@ def _split_tool_msg_images(
         return (msg, []);
     }
     text_blocks: list[dict[str, any]] = [];
-    image_blocks: list[dict[str, any]] = [];
+    media_blocks: list[dict[str, any]] = [];
     for block in content {
-        if isinstance(block, dict) and block.get("type") in ("image_url", "image") {
-            image_blocks.append(block);
+        if isinstance(block, dict) and block.get("type") in TOOL_MEDIA_BLOCKS {
+            media_blocks.append(block);
         } else {
             text_blocks.append(block);
         }
     }
-    if not image_blocks {
+    if not media_blocks {
         return (msg, []);
     }
     text_only = all(
@@ -320,12 +331,15 @@ def _split_tool_msg_images(
     if text_only {
         stripped_content = " ".join(b.get("text", "") for b in text_blocks).strip();
         if not stripped_content {
-            stripped_content = "(image attached in following user message)";
+            noun = "document"
+                if all(b.get("type") == "file" for b in media_blocks)
+                else "image";
+            stripped_content = f"({noun} attached in following user message)";
         }
     } else {
         stripped_content = text_blocks;
     }
-    return ({** msg, "content": stripped_content}, image_blocks);
+    return ({** msg, "content": stripped_content}, media_blocks);
 }
 
 

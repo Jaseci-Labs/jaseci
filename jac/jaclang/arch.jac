@@ -429,6 +429,13 @@ graph import byllm {
     lib --> byllm.tests.test_tools { MockRawResponse }
     lib --> byllm.tests.test_truncated_tool_calls { OutputTruncatedError }
     lib --> byllm.tests.test_usage { OutputTruncatedError }
+    exceptions --> byllm.tests.test_typed_retry { OutputConversionError }
+    lib --> byllm.tests.test_document { Document, MockLLM }
+    schema --> byllm.llm { type_display_name }
+    schema --> byllm.mtir { type_display_name }
+    schema --> byllm.tests.test_byllm { type_display_name }
+    schema --> byllm.types { type_display_name }
+    types --> byllm.lib { Document }
 }
 
 graph import byllm._optdeps {

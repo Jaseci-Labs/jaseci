@@ -1,5 +1,5 @@
 import from enum { Enum }
-import from types { FunctionType, MethodType, UnionType }
+import from types { EllipsisType, FunctionType, MethodType, UnionType }
 import from typing { Union, get_args, get_origin, get_type_hints }
 
 glob _SCHEMA_OBJECT_WRAPPER = "schema_object_wrapper",
@@ -22,6 +22,7 @@ def _function_to_schema(
 ) -> dict[str, any];
 
 def _name_of_type(ty: type, info: (Info | TypeForm | str | None) = None) -> str;
+def type_display_name(ty: object) -> str;
 def _convert_dict_to_schema(ty_dict: type) -> dict[str, any];
 def _decode_dict(json_obj: dict[str, any]) -> dict[str, any];
 def _wrap_to_object(schema: dict[str, object]) -> dict[str, object];
