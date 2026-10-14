@@ -394,12 +394,24 @@ impl WiringSpec.annex_source(consumer: str) -> (str | None) {
 }
 
 impl WiringSpec.digest_for(consumer: str) -> str {
-    annex = self.annex_source(consumer) or "";
-    if not annex and not self._policy_digest {
+    rows: list[str] = [];
+    for wire in self.consumer_wires(consumer) {
+        scope = ".".join(self.consumer_scope(consumer, wire));
+        provider = self.import_name(wire.provider_path);
+        for binding in self.wire_bindings(wire) {
+            rows.append(
+                "\x1f".join(
+                    [scope, binding.form, provider, binding.name, binding.alias]
+                )
+            );
+        }
+    }
+    if not rows and not self._policy_digest {
         return "";
     }
+    rows.sort();
     return hashlib.sha256(
-        (consumer + "\x00" + annex + "\x00" + self._policy_digest).encode()
+        (consumer + "\x00" + "\n".join(rows) + "\x00" + self._policy_digest).encode()
     ).hexdigest();
 }
 
