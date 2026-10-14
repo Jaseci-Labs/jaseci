@@ -1276,7 +1276,9 @@ impl NaIRGenPass._demote_method_if_unlowerable(
     and the unit is placed on its Python-only implementation. Where the module
     requires native, or the unit belongs to an element that must be native (an
     element pin, a native-only construct), they stay behind as errors as
-    well.""";
+    well. A unit of a native element in a mixed module has no Python
+    implementation to fall back on: its diagnostics stay pending and the
+    module settles on the server as a whole.""";
     if len(self.ctx.errors_had) <= local_mark {
         return False;
     }
@@ -1286,29 +1288,58 @@ impl NaIRGenPass._demote_method_if_unlowerable(
     if self._legality is not None {
         self._legality.late[full_name] = _refusals;
     }
-    required = self.prog.options.native_required_for(self.module.loc.mod_path);
-    if not required and self.module.gen.placement_mode == "inferred" {
-        import from jaclang.compiler.passes.placement_pass { element_requirements }
-        import from jaclang.compiler.placement.placement { element_display_name }
-        needs = element_requirements(self.module, self.prog);
-        owner_name = full_name.split(".")[0];
-        for elem in self.module.body {
-            need = needs.get(id(elem));
-            if need is not None
-                and need[0] == "native"
-                and element_display_name(elem) == owner_name {
-                required = True;
-                break;
-            }
-        }
-    }
-    if not required {
+    required = self.prog.options.native_required_for(self.module.loc.mod_path)
+        or self._owner_required(full_name);
+    if not required and not self._lacks_python_body(full_name) {
         del self.ctx.errors_had[local_mark:];
     }
     self._place_unit_python(
         full_name, func, _refusals, keep_func=keep_func, stub_body=stub_body
     );
     return True;
+}
+
+impl NaIRGenPass._owner_element(full_name: str) -> (uni.UniNode | None) {
+    import from jaclang.compiler.placement.placement { element_display_name }
+    owner_name = full_name.split(".")[0];
+    for elem in self.module.body {
+        if isinstance(elem, uni.Archetype) and self._arch_key(elem) == owner_name {
+            return elem;
+        }
+        if element_display_name(elem) == owner_name {
+            return elem;
+        }
+    }
+    return None;
+}
+
+impl NaIRGenPass._owner_required(full_name: str) -> bool {
+    """Whether the unit belongs to a top-level element of an inferred module
+    that must be native: an element pin or a native-only construct.""";
+    if self.module.gen.placement_mode != "inferred" {
+        return False;
+    }
+    owner = self._owner_element(full_name);
+    if owner is None {
+        return False;
+    }
+    import from jaclang.compiler.passes.placement_pass { element_requirements }
+    need = element_requirements(self.module, self.prog).get(id(owner));
+    return need is not None and need[0] == "native";
+}
+
+impl NaIRGenPass._lacks_python_body(full_name: str) -> bool {
+    """Whether the unit belongs to a native element of an inferred module that
+    placement left part native and part Python. The Python backend emits no
+    body for such an element, only a stub that calls its native symbol, so
+    the unit has no Python implementation to fall back on.""";
+    if self.module.gen.placement_mode != "inferred"
+        or self.module.decided_codespace == "native" {
+        return False;
+    }
+    owner = self._owner_element(full_name);
+    return isinstance(owner, uni.ContextAwareNode)
+        and owner.code_context == CodeContext.NATIVE;
 }
 
 impl NaIRGenPass._place_unit_python(
@@ -1988,7 +2019,8 @@ impl NaIRGenPass._codegen_instantiation(
     nd: (uni.FuncCall | uni.Name),
     type_name_override: (str | None) = None,
     ctor_params: (list[uni.Expr | uni.KWPair] | None) = None,
-    ctor_values: (dict[str, ir.Value] | None) = None
+    ctor_values: (dict[str, ir.Value] | None) = None,
+    ctor_pre: (dict[int, ir.Value] | None) = None
 ) -> (ir.Value | None) {
     import from jaclang.compiler.passes.layout_pass { EXC_MESSAGE_FIELD }
     _ctor_ref = nd.target if isinstance(nd, uni.FuncCall) else nd;
@@ -2258,7 +2290,7 @@ impl NaIRGenPass._codegen_instantiation(
     foreign_fields = self.struct_field_foreign.get(type_name, set());
 
     set_fields: set[str] = set();
-    _pre_args: dict[int, ir.Value] = {};
+    _pre_args: dict[int, ir.Value] = dict(ctor_pre) if ctor_pre is not None else {};
     if _msg_slot is not None and _pos_all {
         if not self._store_exc_message(
             obj_ptr, type_name, _pos_all, _pre_args, shared=not _msg_only

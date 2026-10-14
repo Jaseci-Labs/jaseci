@@ -14,6 +14,7 @@ import from jaclang.compiler.frontend.unitree {
     Module,
     Name,
     Symbol,
+    TypeAlias,
     UniNode,
     UniScopeNode,
     resolved_decl_of
@@ -770,8 +771,8 @@ impl import_gaps(prog: JacProgram, imp: Import, base_dir: str) -> list[str] {
     """What a `from` import of a native library module names that the native
     module does not provide. The interface may declare such a name under a
     condition the checker does not resolve, so the import is checked against
-    the native module itself: its public functions, classes, enums and
-    globals.""";
+    the native module itself: its public functions, classes, enums, type
+    aliases and globals.""";
     if imp.from_loc is None or imp.is_absorb {
         return [];
     }
@@ -796,6 +797,8 @@ impl import_gaps(prog: JacProgram, imp: Import, base_dir: str) -> list[str] {
                 provided.add(nm.value);
             }
         } elif isinstance(stmt, Enum) and stmt.name is not None {
+            provided.add(stmt.name.value);
+        } elif isinstance(stmt, TypeAlias) {
             provided.add(stmt.name.value);
         }
     }

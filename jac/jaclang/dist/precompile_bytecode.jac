@@ -1021,6 +1021,7 @@ def seal_runtime_closure(
     sources = sealable_sources(base, app);
     pending = list(out_dir.rglob("*.jir"));
     visited: set[str] = set();
+    imports_of: dict[str, list[str]] = {};
 
     def add_dependency(dependency: str) -> bool {
         relative = Path(dependency).relative_to(pkg_path);
@@ -1070,11 +1071,21 @@ def seal_runtime_closure(
             console.error(f"Seal aborted: no bytecode in {artifact}");
             return False;
         }
-        for dependency in runtime_sources(marshal.loads(bytecode), source, base) {
+        dependencies = runtime_sources(marshal.loads(bytecode), source, base);
+        for dependency in dependencies {
             if not add_dependency(dependency) {
                 return False;
             }
         }
+        imports_of[Path(source).relative_to(pkg_path).as_posix()] = sorted(
+            Path(dependency).relative_to(pkg_path).as_posix()
+            for dependency in dependencies
+        );
+    }
+    if serving.is_file() {
+        recorded = json.loads(serving.read_text());
+        recorded["runtime_imports"] = imports_of;
+        serving.write_text(json.dumps(recorded));
     }
     return True;
 }

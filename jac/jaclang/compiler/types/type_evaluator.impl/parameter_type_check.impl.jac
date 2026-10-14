@@ -6,6 +6,7 @@ impl TypeEvaluator.validate_arg_types(
 ) -> bool {
     has_errors: bool = False;
     binding_failures: set[Expr | KWPair] = set();
+    trial: list[tuple[UniNode, str, str, bool]] = [];
 
     bindings: dict[str, TypeBase] = solved_type_vars
         if solved_type_vars is not None
@@ -73,13 +74,24 @@ impl TypeEvaluator.validate_arg_types(
             }
         }
 
-        verdict = self.assign_expr(
-            value,
-            arg_type,
-            expected,
-            strict=self._is_strict_site(arg),
-            probe=checking_overload
-        );
+        outer_trial = self._trial_notes;
+        if checking_overload {
+            self._trial_notes = [];
+        }
+        try {
+            verdict = self.assign_expr(
+                value,
+                arg_type,
+                expected,
+                strict=self._is_strict_site(arg),
+                probe=checking_overload
+            );
+        } finally {
+            if checking_overload and self._trial_notes is not None {
+                trial.extend(self._trial_notes);
+            }
+            self._trial_notes = outer_trial;
+        }
         if not verdict.ok {
             has_errors = True;
             if mismatches is not None {
@@ -103,6 +115,9 @@ impl TypeEvaluator.validate_arg_types(
                 );
             }
         }
+    }
+    if checking_overload {
+        self._last_trial_notes = [] if has_errors else trial;
     }
     return not has_errors;
 }

@@ -64,12 +64,6 @@ import from jaclang.compiler.driver.session_compile {
 }
 import from jaclang.compiler.driver.setup_progress { setup_progress }
 import from jaclang.compiler.driver.module_compile { compile_module }
-import from jaclang.compiler.driver.pipeline_runner {
-    run_utility,
-    get_format_sched,
-    get_lint_sched
-}
-import from jaclang.compiler.driver.pipeline_types { UtilityProduct }
 import from jaclang.compiler.driver.source_failures {
     CompilerSourceError,
     import_error_re_enters,
@@ -79,7 +73,7 @@ import from jaclang.compiler.driver.source_failures {
 }
 
 glob COMPILE_GC_THRESHOLDS: tuple[int, int, int] = (5000000, 50, 100),
-     CHECK_GC_THRESHOLDS: tuple[int, int, int] = (100000, 10, 10);
+     CHECK_GC_THRESHOLDS: tuple[int, int, int] = (300000, 10, 10);
 
 def client_dep_digests(manifest: ClientManifest) -> dict[str, str] {
     digests: dict[str, str] = {};

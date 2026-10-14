@@ -23,6 +23,7 @@ obj RequestOptions {
         native_require: list[str] = [],
         iface_ok: bool = False,
         need_full_ast: bool = False,
+        native_tree_demand: bool = False,
         no_ir_cache: bool = False,
         resolve_annex_parent: bool = False,
         aot_mode: bool = False,
@@ -61,6 +62,7 @@ obj RequestOptions {
             native_require=list(self.native_require),
             iface_ok=self.iface_ok,
             need_full_ast=self.need_full_ast,
+            native_tree_demand=self.native_tree_demand,
             no_ir_cache=self.no_ir_cache,
             resolve_annex_parent=self.resolve_annex_parent,
             aot_mode=self.aot_mode,
@@ -272,6 +274,7 @@ def request_of(options: CompileOptions) -> RequestOptions {
         native_require=list(options.native_require or []),
         iface_ok=options.iface_ok,
         need_full_ast=options.need_full_ast,
+        native_tree_demand=options.native_tree_demand,
         no_ir_cache=options.no_ir_cache,
         resolve_annex_parent=options.resolve_annex_parent,
         aot_mode=options.aot_mode,
@@ -314,6 +317,7 @@ def request_to_dict(request: RequestOptions) -> dict[str, any] {
         "native_require": list(request.native_require),
         "iface_ok": request.iface_ok,
         "need_full_ast": request.need_full_ast,
+        "native_tree_demand": request.native_tree_demand,
         "no_ir_cache": request.no_ir_cache,
         "resolve_annex_parent": request.resolve_annex_parent,
         "aot_mode": request.aot_mode,
@@ -355,6 +359,7 @@ def request_from_dict(raw: dict[str, any]) -> RequestOptions {
         native_require=json_str_list(raw.get("native_require")),
         iface_ok=bool(raw.get("iface_ok", False)),
         need_full_ast=bool(raw.get("need_full_ast", False)),
+        native_tree_demand=bool(raw.get("native_tree_demand", False)),
         no_ir_cache=bool(raw.get("no_ir_cache", False)),
         resolve_annex_parent=bool(raw.get("resolve_annex_parent", False)),
         aot_mode=bool(raw.get("aot_mode", False)),
@@ -415,7 +420,6 @@ def check_from_dict(raw: dict[str, any]) -> CheckSettings {
 def defaults_to_dict(defaults: ProjectDefaults) -> dict[str, any] {
     return {
         "default_codespace": defaults.default_codespace,
-        "native_closure_cap": defaults.native_closure_cap,
         "native_require": list(defaults.native_require),
         "native_target": defaults.native_target,
         "native_debug": defaults.native_debug,
@@ -433,7 +437,6 @@ def defaults_to_dict(defaults: ProjectDefaults) -> dict[str, any] {
 def defaults_from_dict(raw: dict[str, any]) -> ProjectDefaults {
     return ProjectDefaults(
         default_codespace=str(raw.get("default_codespace", "")),
-        native_closure_cap=json_int(raw.get("native_closure_cap")),
         native_require=json_str_list(raw.get("native_require")),
         native_target=str(raw.get("native_target", "")),
         native_debug=bool(raw.get("native_debug", False)),

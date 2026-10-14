@@ -6,7 +6,7 @@ import type from jaclang.compiler.driver.compile_options { CancelToken }
 import jaclang.compiler.frontend.unitree as uni;
 import from jaclang.compiler.frontend.relations { ScopeChild }
 import from jaclang.compiler.driver.compile_options { CompileOptions }
-import from jaclang.compiler.passes.context { Alert, PassSchedule }
+import from jaclang.compiler.passes.context { Alert }
 import from jaclang.compiler.driver.progstate {
     AnalysisCaches,
     BuildScratch,
@@ -75,6 +75,7 @@ class JacProgram {
         need_tree: bool = False
     ) -> uni.Module;
 
+    def toolchain_dependency(self: JacProgram, resolved_path: str) -> bool;
     def drop_module_alerts(self: JacProgram, resolved_path: str) -> None;
     def reset_module_root(self: JacProgram, module_root: uni.ProgramModule) -> None;
     static def hub_key(path: str) -> str;
@@ -123,13 +124,6 @@ class JacProgram {
     def build(
         self: JacProgram, file_path: str, use_str: (str | None) = None
     ) -> uni.Module;
-
-    def run_schedule(
-        self: JacProgram,
-        mod: uni.Module,
-        passes: PassSchedule,
-        cancel_token: (CancelToken | None) = None
-    ) -> None;
 
     static def jac_file_formatter(
         file_path: str, auto_lint: bool = False

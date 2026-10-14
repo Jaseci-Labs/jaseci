@@ -623,15 +623,19 @@ impl TypeEvaluator._get_type_of_expression_core(
         case JsxElement():
             if self.prefetch and self.prefetch.jsx_element_class {
                 if expr.name and expr.name.parts {
-                    for part in expr.name.parts {
-                        if isinstance(part, Name) {
-                            tag_val = part.value or "";
-                            is_mobui = self._is_mobui_module(part);
-                            if tag_val and (tag_val[0].isupper() or is_mobui) {
-                                self.get_type_of_expression(part);
-                            } elif tag_val {
-                                self._resolve_intrinsic_jsx_tag(part, tag_val);
-                            }
+                    part = expr.name.parts[0];
+                    if isinstance(part, Name) {
+                        tag_val = part.value or "";
+                        is_mobui = self._is_mobui_module(part);
+                        if tag_val
+                            and (
+                                len(expr.name.parts) > 1
+                                or tag_val[0].isupper()
+                                or is_mobui
+                            ) {
+                            self.get_type_of_expression(part);
+                        } elif tag_val {
+                            self._resolve_intrinsic_jsx_tag(part, tag_val);
                         }
                     }
                 }
@@ -3479,6 +3483,7 @@ impl TypeEvaluator.get_type_of_magic_method_call(
                 }
 
                 _fallback_result: TypeBase | None = None;
+                _fallback_notes: list[tuple[UniNode, str, str, bool]] = [];
                 for fn in overloaded_fns {
                     if not self._overload_accepts_receiver(fn, obj_type) {
                         continue;
@@ -3498,15 +3503,18 @@ impl TypeEvaluator.get_type_of_magic_method_call(
                                 ret_ty = apply_solved_type_vars(ret_ty, solved);
                             }
                             if not isinstance(ret_ty, UnknownType) {
+                                self.commit_trial_notes(self._last_trial_notes);
                                 return ret_ty or UnknownType();
                             }
                             if _fallback_result is None {
                                 _fallback_result = ret_ty;
+                                _fallback_notes = self._last_trial_notes;
                             }
                         }
                     }
                 }
                 if _fallback_result is not None {
+                    self.commit_trial_notes(_fallback_notes);
                     return _fallback_result;
                 }
 
@@ -3646,8 +3654,20 @@ impl TypeEvaluator.note_native(
     if self._diagnostic_suppression_depth > 0 {
         return;
     }
+    if self._trial_notes is not None {
+        self._trial_notes.append((nd, code, text, requires));
+        return;
+    }
     import from jaclang.compiler.capability_notes { TARGET_NATIVE, note_capability }
     note_capability(self.program, nd, TARGET_NATIVE, code, text, requires);
+}
+
+impl TypeEvaluator.commit_trial_notes(
+    notes: list[tuple[UniNode, str, str, bool]]
+) -> None {
+    for (nd, code, text, requires) in notes {
+        self.note_native(nd, code, text, requires);
+    }
 }
 
 impl TypeEvaluator._in_native_context -> bool {
@@ -4177,7 +4197,9 @@ impl TypeEvaluator.get_type_of_expression(
             if isinstance(node_.type, (UnionType, ClassType, FunctionType)) {
                 if narrowed
                     := self.get_narrowed_type_for_expr(node_, node_.type, node_) {
-                    node_.narrowed_type = narrowed;
+                    if node_.narrowed_type is not narrowed {
+                        node_.narrowed_type = narrowed;
+                    }
                     return narrowed;
                 }
             }
@@ -4767,11 +4789,34 @@ impl TypeEvaluator.get_narrowed_type(
 impl TypeEvaluator.get_narrowed_type_for_expr(
     expr: Expr, declared_type: TypeBase, at_node: UniNode
 ) -> TypeBase | None {
-    import from jaclang.compiler.types.type_evaluator { NarrowingTarget }
-    import from jaclang.compiler.symbol_utils { reference_key_deps }
     if not isinstance(declared_type, (UnionType, ClassType, FunctionType)) {
         return None;
     }
+    memo_key = (id(expr), id(at_node), id(declared_type));
+    memo_ok = not self._and_narrowing_overrides and not self._flow_pending_keys;
+    if memo_ok {
+        held = self._narrow_expr_memo.get(memo_key);
+        if held is not None
+            and held[0] is expr
+            and held[1] is at_node
+            and held[2] is declared_type {
+            return held[3];
+        }
+    }
+    result = self._narrowed_type_for_expr(expr, declared_type, at_node);
+    if memo_ok
+        and not self._flow_pending_keys
+        and not (isinstance(result, UnknownType) and result.is_incomplete) {
+        self._narrow_expr_memo[memo_key] = (expr, at_node, declared_type, result);
+    }
+    return result;
+}
+
+impl TypeEvaluator._narrowed_type_for_expr(
+    expr: Expr, declared_type: TypeBase, at_node: UniNode
+) -> TypeBase | None {
+    import from jaclang.compiler.types.type_evaluator { NarrowingTarget }
+    import from jaclang.compiler.symbol_utils { reference_key_deps }
     key = self.create_key_for_reference(expr);
     if key is None {
         return None;

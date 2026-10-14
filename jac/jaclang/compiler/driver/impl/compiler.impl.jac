@@ -1,7 +1,5 @@
 import type from jaclang.runtime.native_library { SharedNativeEngine }
-import from jaclang.compiler.driver.pipeline_runner { run_utility }
-import from jaclang.compiler.driver.pipeline_types { UtilityProduct }
-import from jaclang.compiler.driver.pipeline_types { AnalysisFact }
+import from jaclang.compiler.driver.pipeline_types { AnalysisFact, CompilationProduct }
 impl JacCompiler.selfhost.getter -> SelfHostCache {
     cache = self._selfhost;
     if (cache is None) {
@@ -410,7 +408,7 @@ impl JacCompiler.native_entry_engine(
     if self.get_bytecode(full_target=path, target_program=target_program) is None {
         return None;
     }
-    actual = self.selfhost.resolve(path, target_program, execution=True);
+    actual = self.product_program(path, target_program, execution=True);
     placed = summary_store(actual).get(os.path.abspath(path));
     if placed is None or placed.decided != 'native' {
         return None;
@@ -428,17 +426,19 @@ impl JacCompiler.kernel_native_entry(
     if actual.internal or not kernel_generates_native(actual, path) {
         return (False, None);
     }
+    compiled = actual;
     if options is None {
         self.get_bytecode(full_target=path, target_program=target_program);
+        compiled = self.product_program(path, target_program, execution=True);
     } else {
         self._adopt_kernel_compile(path, actual, options);
     }
     import from jaclang.compiler.placement.placement { summary_store }
-    placed = summary_store(actual).get(os.path.abspath(path));
+    placed = summary_store(compiled).get(os.path.abspath(path));
     if placed is None or placed.decided != 'native' {
         return (True, None);
     }
-    carrier = actual.hub.artifacts.get(path);
+    carrier = compiled.hub.artifacts.get(path);
     return (True, carrier.native_engine if carrier is not None else None);
 }
 
@@ -829,17 +829,17 @@ impl JacCompiler.enter_compile(ctx: SessionContext) -> CompileFrame {
 }
 
 impl JacCompiler.assemble_python(program: JacProgram, module: uni.Module) {
-    import from jaclang.compiler.backends.py.jcir_bc_gen_pass { JcirBytecodeGenPass }
-    program.run_schedule(module, [JcirBytecodeGenPass]);
+    import from jaclang.compiler.driver.pipeline { require }
+    require(program, module, CompilationProduct.BYTECODE);
 }
 
 impl JacCompiler.assemble_native(
     program: JacProgram, module: uni.Module, checking: bool
 ) {
     import copy;
-    import from jaclang.compiler.backends.native.na_compile_pass { NativeCompilePass }
+    import from jaclang.compiler.driver.pipeline { require }
     if not checking {
-        program.run_schedule(module, [NativeCompilePass]);
+        require(program, module, CompilationProduct.NATIVE_OBJECT);
         return;
     }
     previous = program.options;
@@ -848,7 +848,7 @@ impl JacCompiler.assemble_native(
     checked.skip_native_engine = False;
     program.options = checked;
     try {
-        program.run_schedule(module, [NativeCompilePass]);
+        require(program, module, CompilationProduct.NATIVE_OBJECT);
     } finally {
         program.options = previous;
     }
@@ -889,10 +889,10 @@ impl JacCompiler.check_crash(crash: Exception, file_path: str) {
             f"compiling {file_path} re-entered it: a pass imported "
             f"'{re_entered}' while Python was still executing that "
             "module, so the name is not bound yet. A module a pass "
-            "reaches at run time belongs in the schedule's dependency "
-            "list (IR_SCHED_DEPS in jaclang.compiler.driver.pipeline), "
-            "which the loader pre-imports and which puts any compile "
-            "nested in its import on the bootstrap tier."
+            "reaches at run time belongs in its product's loads (the "
+            "PRODUCTS table in jaclang.compiler.driver.pipeline), which "
+            "the loader pre-imports and which puts any compile nested in "
+            "its import on the bootstrap tier."
         ) from crash;
     }
 }
@@ -1061,9 +1061,11 @@ impl JacCompiler.jac_file_formatter(
     if current_mod is None {
         return prog;
     }
-    import from jaclang.compiler.driver.pipeline { execute_passes }
-    current_mod = execute_passes(
-        prog, current_mod, get_format_sched(auto_lint=auto_lint)
+    import from jaclang.compiler.driver.pipeline { require }
+    require(
+        prog,
+        current_mod,
+        CompilationProduct.FORMAT_LINTFIX if auto_lint else CompilationProduct.FORMAT
     );
     prog.reset_module_root(uni.ProgramModule(main_mod=current_mod));
     return prog;
@@ -1076,9 +1078,11 @@ impl JacCompiler.jac_str_formatter(
     if current_mod is None {
         return prog;
     }
-    import from jaclang.compiler.driver.pipeline { execute_passes }
-    current_mod = execute_passes(
-        prog, current_mod, get_format_sched(auto_lint=auto_lint)
+    import from jaclang.compiler.driver.pipeline { require }
+    require(
+        prog,
+        current_mod,
+        CompilationProduct.FORMAT_LINTFIX if auto_lint else CompilationProduct.FORMAT
     );
     prog.reset_module_root(uni.ProgramModule(main_mod=current_mod));
     return prog;
@@ -1090,8 +1094,8 @@ impl JacCompiler.jac_file_linter(file_path: str) -> JacProgram {
     if current_mod is None {
         return prog;
     }
-    import from jaclang.compiler.driver.pipeline { execute_passes }
-    current_mod = execute_passes(prog, current_mod, get_lint_sched());
+    import from jaclang.compiler.driver.pipeline { require }
+    require(prog, current_mod, CompilationProduct.LINT);
     prog.reset_module_root(uni.ProgramModule(main_mod=current_mod));
     return prog;
 }
@@ -1103,7 +1107,7 @@ impl JacCompiler.client_codegen_target(
     if mod is None {
         return None;
     }
-    if target_program.analysis.analyses_run.provides(mod, AnalysisFact.TYPE_OF) {
+    if target_program.analysis.provides(mod, AnalysisFact.TYPE_OF) {
         return mod;
     }
     return None;
@@ -1115,8 +1119,8 @@ impl JacCompiler.ensure_client_codegen(
     if mod.gen.js {
         return True;
     }
-    import from jaclang.compiler.driver.pipeline { require_product, CompilationProduct }
-    return require_product(target_program, mod, CompilationProduct.CLIENT);
+    import from jaclang.compiler.driver.pipeline { require }
+    return require(target_program, mod, CompilationProduct.CLIENT);
 }
 
 impl JacCompiler._cached_client_artifact(full_target: str) -> (ClientArtifact | None) {

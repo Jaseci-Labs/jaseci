@@ -209,13 +209,10 @@ def _tree_source(
 ) -> ManifestSource {
     import from jaclang.compiler.driver.unit_products { import_edge_rows }
     if imported {
-        import from jaclang.compiler.driver.pipeline {
-            require_product,
-            CompilationProduct
-        }
+        import from jaclang.compiler.driver.pipeline { require, CompilationProduct }
         manifest = mod.gen.interop_manifest;
         if not (manifest and manifest.surface) {
-            require_product(program, mod, CompilationProduct.BOUNDARIES);
+            require(program, mod, CompilationProduct.BOUNDARIES);
         }
     }
     return ManifestSource(
@@ -432,6 +429,16 @@ def _prepare_sealed(
     }
     manifest = json.loads(serve_manifest.read_text());
     manifest['root'] = image_root;
+    recorded: dict[str, set[str]] = {
+        os.path.realpath(os.path.join(image_root, source)): {
+            os.path.realpath(os.path.join(image_root, dependency))
+            for dependency in dependencies
+        } for (source, dependencies) in (manifest.get('runtime_imports') or {}).items()
+    };
+    def imports_of(code: any, path: str) -> set[str] {
+        known = recorded.get(path);
+        return known if known is not None else runtime_sources(code, path, image_root);
+    }
     revision = PreparedApplication(
         image_root, `entry, services=tuple(entries[1:]), dev=False
     );
@@ -487,9 +494,7 @@ def _prepare_sealed(
                 );
             }
             revision.code[path] = code;
-            pending.update(
-                runtime_sources(code, path, image_root) - revision.code.keys()
-            );
+            pending.update(imports_of(code, path) - revision.code.keys());
             continue;
         }
         sealed = compiler._sealed_jir_data(path);
@@ -517,10 +522,7 @@ def _prepare_sealed(
             );
         }
         revision.native[path] = compiler.get_native_interop_setup(path, program);
-        pending.update(
-            runtime_sources(revision.code[path], path, image_root)
-                - revision.code.keys()
-        );
+        pending.update(imports_of(revision.code[path], path) - revision.code.keys());
     }
     revision.applications = [
         PreparedApplication(
@@ -870,6 +872,7 @@ def _prepare_revision(
             ];
         }
         revision.code = record['code'];
+        revision.sources = sorted(record['dependencies']);
         revision.manifests = record['manifests'];
         for (path, sections) in record['sections'].items() {
             import from jaclang.compiler.driver.compilation_context {
@@ -1084,6 +1087,7 @@ def _prepare_revision(
             dependencies=inputs
         )
     );
+    revision.sources = sorted(inputs);
     _semantic_metadata(revision, program);
     return revision;
 }

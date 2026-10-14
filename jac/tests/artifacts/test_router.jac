@@ -323,3 +323,22 @@ test "unmet holds what a release needs, and nothing a host cannot carry" {
     (problems, _said) = with_fakes([here, elsewhere], check);
     assert len(problems) == 1 and problems[0].startswith("here:") , problems;
 }
+
+test "a build whose command fails is refused cleanly, naming the command" {
+    import subprocess;
+    fake = accel("x");
+    def fail(log: Callable[[str], None], force: bool, exact: bool) {
+        raise subprocess.CalledProcessError(1, ["zig", "build", "x"]);
+    }
+    fake.build = fail;
+    def attempt -> any {
+        try {
+            router.build(["x"], lambda (line: str) {});
+        } except ArtifactUnavailable as e {
+            return str(e);
+        }
+        return "";
+    }
+    (message, _) = with_fakes([fake], attempt);
+    assert "x: `zig build x` failed (exit status 1)" in message , message;
+}

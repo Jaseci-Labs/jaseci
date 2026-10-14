@@ -1,8 +1,13 @@
 import os;
 import time;
-import from jaclang.compiler.driver.pipeline_types { AnalysisFact, CompilationPhase }
+import from jaclang.compiler.driver.pipeline_types {
+    AnalysisFact,
+    CompilationProduct,
+    ProductRequest
+}
 import from jaclang.compiler.driver.compile_options { CompileOptions }
 import from jaclang.compiler.driver.program { JacProgram }
+import type from jaclang.compiler.driver.session_compile { SessionHooks }
 import jaclang.compiler.frontend.unitree as uni;
 import from jaclang.compiler.frontend.unitree { Module }
 import from jaclang.compiler.frontend.host { active_host }
@@ -16,9 +21,9 @@ obj ModuleAnalysis {
         module_path: str = "",
         parse_failed: bool = False,
         blocked: bool = False,
-        full_head: bool = False,
         native: bool = False,
-        placement_only: bool = False;
+        placement_only: bool = False,
+        session: (SessionHooks | None) = None;
 
     def postinit {
         self.module = Module.make_stub();
@@ -26,13 +31,15 @@ obj ModuleAnalysis {
 
     def parse {
         existing = self.program.mod.hub.get(os.path.realpath(self.path));
+        built = self.program.analysis.peek(existing) if existing is not None else None;
         if self.source is None
             and not self.program.internal
             and existing is not None
             and not existing.stub_only
             and not existing.parse_failed
             and self.program.is_hub_entry_fresh(os.path.realpath(self.path))
-            and id(existing) in self.program.analysis.completed_passes {
+            and built is not None
+            and built.done {
             self.module = existing;
             return;
         }
@@ -47,191 +54,170 @@ obj ModuleAnalysis {
         self.program.ingest_comptime_producers(self.module, self.path);
     }
 
-    def ir {
-        import from jaclang.compiler.driver.pipeline {
-            get_symtab_ir_sched,
-            get_ir_gen_sched,
-            providers_of
-        }
-        self.module_path = os.path.normpath(self.path);
-        blocking_errs_pre_ir = self.program.count_module_blocking_errors(
-            self.module_path
+    def require(
+        product: CompilationProduct, request: (ProductRequest | None) = None
+    ) -> bool {
+        import from jaclang.compiler.driver.pipeline { require }
+        return require(
+            self.program,
+            self.module,
+            product,
+            cancel_token=self.options.cancel_token,
+            request=request
         );
-        if self.options.symtab_ir_only {
-            _head_sched = get_symtab_ir_sched();
-        } else {
-            _head_sched = get_ir_gen_sched(
-                is_internal=self.program.internal, gen_mtir=not self.options.no_cgen
-            );
-        }
-
-        self.full_head = AnalysisFact.CFG_SUCC in providers_of(_head_sched);
-        self.program.run_schedule(
-            mod=self.module, passes=_head_sched, cancel_token=self.options.cancel_token
-        );
-
-        blocking_errs_post_ir = self.program.count_module_blocking_errors(
-            self.module_path
-        );
-        self.blocked = blocking_errs_post_ir > blocking_errs_pre_ir;
     }
 
-    def placement {
-        if not self.options.symtab_ir_only and not self.blocked {
-            import from jaclang.compiler.placement.placement_solver {
-                solve_program_placement,
-                refresh_placement_module
-            }
-            refresh_placement_module(self.module, self.program);
-            solve_program_placement(self.module, self.program);
-        }
+    def ready(product: CompilationProduct) -> bool {
+        import from jaclang.compiler.driver.pipeline { product_ready }
+        return product_ready(self.program, self.module, product);
     }
 
-    def analysis {
-        import from jaclang.compiler.driver.pipeline {
-            require_product,
-            product_ready,
-            CompilationProduct
-        }
-        import from jaclang.compiler.frontend.constant { CodeContext as _CodeCtx }
-        self.native = self.module is not None
-            and self.module.declares_codespace(_CodeCtx.NATIVE, path_hint=self.path);
-        candidate = self.native
-            or (
-                self.module is not None
-                and not self.parse_failed
-                and not self.module.gen.placement_mode
-                and self.program.infers_native_codespace(self.path)
-            );
-
-        if candidate {
-            self.options.need_full_ast = True;
-        }
-
-        _is_decl_stub = str(self.path).endswith('.pyi')
-            or str(self.path).endswith('.py')
-            or (self.module is not None and self.module.stub_only)
-            or (self.module is not None and self.module.is_raised_from_py);
-        host = active_host();
-        _annex_of_base = host.path_facts(self.path).is_annex
-            and host.base_file(str(self.path)) is not None;
-        _unasked = self.options.skip_analysis
-            or (self.program.internal and host.import_in_flight(self.path));
-        _analyze = self.full_head
-            and not _is_decl_stub
-            and not _annex_of_base
-            and (candidate or not _unasked);
-        self.placement_only = _analyze and _unasked and not self.native;
-        errors_mark = len(self.program.errors_had);
-        blocked_before = self.blocked;
-
-        if _analyze
-            and not product_ready(
-                self.program, self.module, CompilationProduct.ANALYSIS
-            ) {
-            if not require_product(
-                self.program,
-                self.module,
-                CompilationProduct.ANALYSIS,
-                cancel_token=self.options.cancel_token
-            ) {
-                self.blocked = True;
-            }
-        }
-        if self.placement_only
-            and not blocked_before
-            and len(self.program.errors_had) > errors_mark
-            and not cancelled(self.options) {
-            import from jaclang.compiler.placement.placement_facts { settle_server }
-            del self.program.errors_had[errors_mark:];
-            settle_server(self.module);
-            import from jaclang.compiler.placement.placement { record_decided }
-            record_decided(self.program, self.module);
-            self.blocked = False;
-        }
-
-        if not self.blocked
-            and self.program.count_module_errors(self.module_path) > 0 {
-            self.blocked = True;
-        }
-        if _analyze and not self.blocked {
-            import from jaclang.compiler.placement.placement_solver { placement_work }
-            placement_work(self.program).drain(self.program);
-        }
-        self.native = self.module is not None
-            and self.module.declares_codespace(_CodeCtx.NATIVE, path_hint=self.path);
-    }
-
-    def run_phase(phase: CompilationPhase) {
-        if phase == CompilationPhase.PARSE {
-            self.parse();
-        } elif phase == CompilationPhase.IR {
-            self.ir();
-        } elif phase == CompilationPhase.PLACEMENT {
-            self.placement();
-        } elif phase == CompilationPhase.ANALYSIS {
-            self.analysis();
-        } elif phase == CompilationPhase.BOUNDARIES {
-            self.boundaries();
-        }
-    }
-
-    def boundaries {
-        import from jaclang.compiler.driver.pipeline { get_boundary_analysis_sched }
-        if (
-            not self.parse_failed
-            and not self.blocked
-            and not self.options.symtab_ir_only
-        ) {
-            self.program.run_schedule(
-                mod=self.module,
-                passes=get_boundary_analysis_sched(),
-                cancel_token=self.options.cancel_token
-            );
-        }
+    def has_full_ir -> bool {
+        return not self.options.symtab_ir_only
+            and self.program.analysis.provides(self.module, AnalysisFact.CFG_SUCC);
     }
 }
 
-glob ANALYSIS_PHASES: list[CompilationPhase] = [
-         CompilationPhase.PARSE,
-         CompilationPhase.IR,
-         CompilationPhase.PLACEMENT,
-         CompilationPhase.ANALYSIS,
-         CompilationPhase.BOUNDARIES
-     ];
-
-def record_phase(program: JacProgram, phase: CompilationPhase, started: float) {
-    name = phase.name;
-    program.analysis.phase_time[name] = (
-        program.analysis.phase_time.get(name, 0.0) + time.perf_counter() - started
-    );
+obj PlanStep {
+    has name: str,
+        admit: Callable[[ModuleAnalysis], bool],
+        run: Callable[[ModuleAnalysis], None];
 }
 
 def cancelled(options: CompileOptions) -> bool {
     return options.cancel_token is not None and options.cancel_token.is_set();
 }
 
-def run_analysis_phases(
-    program: JacProgram, path: str, options: CompileOptions, source: str | None
-) -> ModuleAnalysis {
-    program.analysis.capability_notes.pop(os.path.realpath(path), None);
-    task = ModuleAnalysis(program, path, options, source);
-    for phase in ANALYSIS_PHASES {
-        if cancelled(options) {
+def always(task: ModuleAnalysis) -> bool {
+    return True;
+}
+
+def run_parse(task: ModuleAnalysis) {
+    task.parse();
+}
+
+def run_head(task: ModuleAnalysis) {
+    task.module_path = os.path.normpath(task.path);
+    before = task.program.count_module_blocking_errors(task.module_path);
+    if task.options.symtab_ir_only {
+        task.require(CompilationProduct.SYMBOLS);
+    } else {
+        task.require(
+            CompilationProduct.IR, ProductRequest(gen_mtir=not task.options.no_cgen)
+        );
+    }
+    task.blocked = task.program.count_module_blocking_errors(task.module_path) > before;
+}
+
+def admits_placement(task: ModuleAnalysis) -> bool {
+    return not task.options.symtab_ir_only and not task.blocked;
+}
+
+def run_placement(task: ModuleAnalysis) {
+    task.require(CompilationProduct.PLACEMENT);
+}
+
+def run_analysis(task: ModuleAnalysis) {
+    import from jaclang.compiler.frontend.constant { CodeContext as _CodeCtx }
+    program = task.program;
+    module = task.module;
+    task.native = module is not None
+        and module.declares_codespace(_CodeCtx.NATIVE, path_hint=task.path);
+    candidate = task.native
+        or (
+            module is not None
+            and not task.parse_failed
+            and not module.gen.placement_mode
+            and module.gen.native_undecided
+            and program.infers_native_codespace(task.path)
+        );
+    if candidate {
+        task.options.native_tree_demand = True;
+    }
+    _is_decl_stub = str(task.path).endswith('.pyi')
+        or str(task.path).endswith('.py')
+        or (module is not None and module.stub_only)
+        or (module is not None and module.is_raised_from_py);
+    host = active_host();
+    _annex_of_base = host.path_facts(task.path).is_annex
+        and host.base_file(str(task.path)) is not None;
+    _unasked = task.options.skip_analysis
+        or (program.internal and host.import_in_flight(task.path));
+    _analyze = task.has_full_ir()
+        and not _is_decl_stub
+        and not _annex_of_base
+        and (candidate or not _unasked);
+    task.placement_only = _analyze and _unasked and not task.native;
+    errors_mark = len(program.errors_had);
+    blocked_before = task.blocked;
+    if _analyze
+        and not task.ready(CompilationProduct.ANALYSIS)
+        and not task.require(CompilationProduct.ANALYSIS) {
+        task.blocked = True;
+    }
+    if task.placement_only
+        and not blocked_before
+        and len(program.errors_had) > errors_mark
+        and not cancelled(task.options) {
+        import from jaclang.compiler.placement.placement_facts { settle_server }
+        del program.errors_had[errors_mark:];
+        settle_server(module);
+        import from jaclang.compiler.placement.placement { record_decided }
+        record_decided(program, module);
+        task.blocked = False;
+    }
+    if not task.blocked and program.count_module_errors(task.module_path) > 0 {
+        task.blocked = True;
+    }
+    if _analyze and not task.blocked {
+        import from jaclang.compiler.placement.placement_solver { placement_work }
+        placement_work(program).drain(program);
+    }
+    task.native = module is not None
+        and module.declares_codespace(_CodeCtx.NATIVE, path_hint=task.path);
+}
+
+def admits_boundaries(task: ModuleAnalysis) -> bool {
+    return not task.parse_failed
+        and not task.blocked
+        and not task.options.symtab_ir_only;
+}
+
+def run_boundaries(task: ModuleAnalysis) {
+    task.require(CompilationProduct.BOUNDARIES);
+}
+
+glob ANALYSIS_PLAN: tuple[PlanStep, ...] = (
+         PlanStep(name="PARSE", admit=always, run=run_parse),
+         PlanStep(name="IR", admit=always, run=run_head),
+         PlanStep(name="PLACEMENT", admit=admits_placement, run=run_placement),
+         PlanStep(name="ANALYSIS", admit=always, run=run_analysis),
+         PlanStep(name="BOUNDARIES", admit=admits_boundaries, run=run_boundaries)
+     );
+
+def run_plan(task: ModuleAnalysis, steps: tuple[PlanStep, ...]) {
+    times = task.program.analysis.phase_time;
+    for step in steps {
+        if cancelled(task.options) {
             break;
         }
         started = time.perf_counter();
         try {
-            task.run_phase(phase);
+            if step.admit(task) {
+                step.run(task);
+            }
         } finally {
-            record_phase(program, phase, started);
+            times[step.name] = times.get(step.name, 0.0) + time.perf_counter()
+                - started;
         }
     }
-    return task;
 }
 
 def analyze_module(
     program: JacProgram, path: str, options: CompileOptions, source: str | None = None
 ) -> ModuleAnalysis {
-    return run_analysis_phases(program, path, options, source);
+    program.analysis.capability_notes.pop(os.path.realpath(path), None);
+    task = ModuleAnalysis(program, path, options, source);
+    run_plan(task, ANALYSIS_PLAN);
+    return task;
 }
