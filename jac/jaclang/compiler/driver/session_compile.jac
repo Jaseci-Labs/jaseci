@@ -120,6 +120,9 @@ def inherit_session_options(
     if closure is not None and closure is not options and closure.need_full_ast {
         options.need_full_ast = True;
     }
+    if closure is not None and closure is not options and closure.native_tree_demand {
+        options.native_tree_demand = True;
+    }
     program.options = options;
     if options.default_codespace {
         import from jaclang.compiler.frontend.codeinfo {
