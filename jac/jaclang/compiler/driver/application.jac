@@ -708,13 +708,13 @@ def _prepare(
     import from jaclang.project.kernel_compile { host_prepared }
     import from jaclang.compiler.driver.jir { begin_prepare_memo, end_prepare_memo }
     with compile_progress.listen(capture) {
-        begin_prepare_memo();
+        memo = begin_prepare_memo();
         try {
             return _prepare_revision(
                 `entry, program, `root, entries, client, dev, console, inputs
             );
         } finally {
-            end_prepare_memo();
+            end_prepare_memo(memo);
             host_prepared();
         }
     }

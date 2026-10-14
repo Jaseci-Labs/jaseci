@@ -4,6 +4,7 @@ import os;
 import struct;
 import sys;
 import zlib;
+import from contextvars { ContextVar }
 import from pathlib { Path }
 import from jaclang.jac0core.cache_paths { FileLock, atomic_write }
 import from jaclang.compiler.frontend.codeinfo {
@@ -886,26 +887,39 @@ def _module_projection(source_path: str) -> str {
     return options.module_projection();
 }
 
-glob _PREPARE_MEMO: list[dict[str, str]] = [];
+glob _PREPARE_MEMO: ContextVar[dict[str, str] | None] = ContextVar(
+         'jac_prepare_memo', `default=None
+     );
 
-def begin_prepare_memo {
-    _PREPARE_MEMO.append({});
+def begin_prepare_memo -> any {
+    return _PREPARE_MEMO.set({});
 }
 
-def end_prepare_memo {
-    if _PREPARE_MEMO {
-        _PREPARE_MEMO.pop();
-    }
+def end_prepare_memo(token: any) {
+    _PREPARE_MEMO.reset(token);
 }
 
 def _memoized(kind: str, source_path: str, compute: any) -> str {
-    if not _PREPARE_MEMO {
+    memo = _PREPARE_MEMO.get();
+    if memo is None {
         return compute(source_path);
     }
     import from jaclang.compiler.driver.compilation_context { active_options }
     import from jaclang.compiler.frontend.host { active_host }
-    key = f"{kind}\x1f{source_path}\x1f{id(active_options())}\x1f{id(active_host())}";
-    memo = _PREPARE_MEMO[-1];
+    import from jaclang.compiler.frontend.codeinfo {
+        _native_target_ctx,
+        get_effective_default_codespace_override
+    }
+    key = "\x1f".join(
+        [
+            kind,
+            source_path,
+            str(id(active_options())),
+            str(id(active_host())),
+            get_effective_default_codespace_override(),
+            repr(_native_target_ctx.get(None))
+        ]
+    );
     found = memo.get(key);
     if found is None {
         found = compute(source_path);
