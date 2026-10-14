@@ -591,77 +591,84 @@ def prepare_application(
         get_effective_default_codespace_override,
         set_effective_default_codespace
     }
-    previous = get_effective_default_codespace_override();
-    set_effective_default_codespace('server');
-    watched = bool(os.environ.get('JAC_KERNEL_TIMING'));
-    if watched {
-        import faulthandler;
-        try {
-            faulthandler.dump_traceback_later(
-                SLOW_PREPARE_SECONDS, repeat=True, file=sys.stderr
-            );
-        } except (ValueError, OSError) {
-            watched = False;
-        }
-    }
-    try {
-        with console.status('Preparing application...', file=sys.stderr) as status {
-            status.update(progress);
-            with compile_progress.listen(begin, finish) {
-                import from jaclang.compiler.driver.compilation_context {
-                    bind_options,
-                    context_program
-                }
-                import from jaclang.compiler.driver.compile_options { CompileOptions }
-                import from jaclang.runtime.prepared { publish }
-                applications: list[PreparedApplication] = [];
-                for path in entries {
-                    options = bind_options(
-                        path,
-                        program,
-                        CompileOptions(
-                            default_codespace='server',
-                            force_codespace=force_codespace,
-                            skip_native_engine=program.options.skip_native_engine,
-                            entry_point=path,
-                            project_root=`root
-                        )
-                    );
-                    actual = context_program(program, options);
-                    applications.append(
-                        _prepare(
-                            path,
-                            actual,
-                            `root,
-                            [path],
-                            client and path == `entry,
-                            dev,
-                            console
-                        )
-                    );
-                }
-                revision = applications[0];
-                for application in applications {
-                    _warn_private_declarations(application, console);
-                    application.name = application.manifests.get(
-                        application.entry, {}
-                    ).get(
-                        'app', ''
-                    );
-                }
-                revision.services = tuple(entries[1:]);
-                revision.applications = applications[1:];
-                publish(revision);
-                _release_compile_state(program);
-                return revision;
-            }
-        }
-    } finally {
+    import from jaclang.runtime.preparation_lock { PREPARATION_LOCK }
+    with PREPARATION_LOCK {
+        previous = get_effective_default_codespace_override();
+        set_effective_default_codespace('server');
+        watched = bool(os.environ.get('JAC_KERNEL_TIMING'));
         if watched {
             import faulthandler;
-            faulthandler.cancel_dump_traceback_later();
+            try {
+                faulthandler.dump_traceback_later(
+                    SLOW_PREPARE_SECONDS, repeat=True, file=sys.stderr
+                );
+            } except (ValueError, OSError) {
+                watched = False;
+            }
         }
-        set_effective_default_codespace(previous);
+        try {
+            with console.status(
+                'Preparing application...', file=sys.stderr
+            ) as status {
+                status.update(progress);
+                with compile_progress.listen(begin, finish) {
+                    import from jaclang.compiler.driver.compilation_context {
+                        bind_options,
+                        context_program
+                    }
+                    import from jaclang.compiler.driver.compile_options {
+                        CompileOptions
+                    }
+                    import from jaclang.runtime.prepared { publish }
+                    applications: list[PreparedApplication] = [];
+                    for path in entries {
+                        options = bind_options(
+                            path,
+                            program,
+                            CompileOptions(
+                                default_codespace='server',
+                                force_codespace=force_codespace,
+                                skip_native_engine=program.options.skip_native_engine,
+                                entry_point=path,
+                                project_root=`root
+                            )
+                        );
+                        actual = context_program(program, options);
+                        applications.append(
+                            _prepare(
+                                path,
+                                actual,
+                                `root,
+                                [path],
+                                client and path == `entry,
+                                dev,
+                                console
+                            )
+                        );
+                    }
+                    revision = applications[0];
+                    for application in applications {
+                        _warn_private_declarations(application, console);
+                        application.name = application.manifests.get(
+                            application.entry, {}
+                        ).get(
+                            'app', ''
+                        );
+                    }
+                    revision.services = tuple(entries[1:]);
+                    revision.applications = applications[1:];
+                    publish(revision);
+                    _release_compile_state(program);
+                    return revision;
+                }
+            }
+        } finally {
+            if watched {
+                import faulthandler;
+                faulthandler.cancel_dump_traceback_later();
+            }
+            set_effective_default_codespace(previous);
+        }
     }
 }
 
@@ -706,12 +713,15 @@ def _prepare(
         capture(path);
     }
     import from jaclang.project.kernel_compile { host_prepared }
+    import from jaclang.compiler.driver.jir { begin_prepare_memo, end_prepare_memo }
     with compile_progress.listen(capture) {
+        memo = begin_prepare_memo();
         try {
             return _prepare_revision(
                 `entry, program, `root, entries, client, dev, console, inputs
             );
         } finally {
+            end_prepare_memo(memo);
             host_prepared();
         }
     }
@@ -949,10 +959,21 @@ def _prepare_revision(
     }
     revision.manifests[`entry]['spa_routes'] = routes;
     import from jaclang.compiler.backends.py.artifact_imports {
-        runtime_sources,
-        package_sources
+        import_specs,
+        package_sources,
+        resolve_imports
     }
     sections = {};
+    previous_code: dict[str, any] = candidate.get('code') or {}
+        if isinstance(candidate, dict)
+        else {};
+    previous_specs: dict[str, list[tuple[int, str, (tuple[str, ...] | None)]]] = candidate.get(
+        'import_specs'
+    )
+        or {}
+        if isinstance(candidate, dict)
+        else {};
+    specs_of: dict[str, list[tuple[int, str, (tuple[str, ...] | None)]]] = {};
     pending = `set(entries);
     for path in entries {
         pending.update(package_sources(path, `root));
@@ -994,7 +1015,12 @@ def _prepare_revision(
         revision.code[path] = code;
         sections[path] = _sections(path, program);
         revision.native[path] = compiler.get_native_interop_setup(path, program);
-        pending.update((runtime_sources(code, path, `root) - revision.code.keys()));
+        known = previous_specs.get(path);
+        specs = known
+            if known is not None and previous_code.get(path) == code
+            else import_specs(code, path);
+        specs_of[path] = specs;
+        pending.update(resolve_imports(specs, path, `root) - revision.code.keys());
     }
 
     project_facts: dict[str, tuple[str, any]] = {
@@ -1078,6 +1104,7 @@ def _prepare_revision(
                 if revision.client_compiler is not None
                 else False,
             code=revision.code,
+            import_specs=specs_of,
             manifests=revision.manifests,
             sections=sections,
             outputs=outputs,
@@ -1129,18 +1156,21 @@ def prepare_dynamic_module(
     console.print(f'Preparing dynamically imported module: {path}', file=sys.stderr);
     import from jaclang.compiler.driver.compilation_context { program_for }
     import from jaclang.runtime.prepared { publish }
-    actual = program_for(application.entry, program);
-    revision = _prepare(
-        application.entry,
-        actual,
-        application.root,
-        [application.entry, path],
-        application.client_enabled,
-        application.dev,
-        console
-    );
-    revision.services = application.services;
-    revision.applications = application.applications;
-    publish(revision);
-    return revision;
+    import from jaclang.runtime.preparation_lock { PREPARATION_LOCK }
+    with PREPARATION_LOCK {
+        actual = program_for(application.entry, program);
+        revision = _prepare(
+            application.entry,
+            actual,
+            application.root,
+            [application.entry, path],
+            application.client_enabled,
+            application.dev,
+            console
+        );
+        revision.services = application.services;
+        revision.applications = application.applications;
+        publish(revision);
+        return revision;
+    }
 }

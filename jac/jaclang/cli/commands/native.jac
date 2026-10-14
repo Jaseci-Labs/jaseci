@@ -17,7 +17,7 @@ comptime SPEC_NATIVE: CommandSpec = CommandSpec(
                  "names",
                  kind=ArgKind.MULTI_POSITIONAL,
                  `default=[],
-                 help="Artifacts to inspect or build (none = all of them)"
+                 help="Artifacts to inspect or build (none = all of them); a per-target artifact takes its target as name@os-arch"
              ),
              Arg.create(
                  "force",
@@ -61,6 +61,10 @@ comptime SPEC_NATIVE: CommandSpec = CommandSpec(
              (
                  "jac native build kernel --force",
                  "Relink the kernel although it is current"
+             ),
+             (
+                 "jac native build musl@linux-aarch64",
+                 "Build the static musl runtime for another target"
              ),
              ("jac native build --release", "Build exactly what a release carries"),
              (

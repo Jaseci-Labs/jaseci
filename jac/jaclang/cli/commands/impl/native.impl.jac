@@ -90,6 +90,12 @@ def _require(spec: str) -> int {
 }
 
 
+def _names_artifact(name: str) -> bool {
+    (base, at, variant) = name.partition("@");
+    return base in router.names() and (not at or bool(variant));
+}
+
+
 def _build(names: list[str], force: bool, exact: bool, release: bool) -> int {
     started = time.monotonic();
     if release {
@@ -124,7 +130,7 @@ impl native(
     unknown = [
         n
         for n in names
-        if n not in router.names()
+        if not _names_artifact(n)
     ];
     if unknown {
         console.error(
