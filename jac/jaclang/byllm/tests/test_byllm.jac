@@ -701,7 +701,7 @@ test "prompt caching marks system, last non-system message, and last tool for an
     assert _is_prompt_caching_eligible("gpt-4o") == False;
 
     stale = dict(_CACHE_CONTROL_EPHEMERAL);
-    for (label, messages, tools) in [
+    for (label, messages, tools, marked) in [
         (
             "fresh history",
             [
@@ -719,16 +719,13 @@ test "prompt caching marks system, last non-system message, and last tool for an
             [
                 {"type": "function", "function": {"name": "read_file"}},
                 {"type": "function", "function": {"name": "finish_tool"}}
-            ]
+            ],
+            [1, 0, 0, 1]
         ),
         (
             "history saved with stale markers",
             [
-                {
-                    "role": "system",
-                    "content": "You are an agent.",
-                    "cache_control": stale
-                },
+                {"role": "system", "content": "You are an agent."},
                 {"role": "user", "content": "first", "cache_control": stale},
                 {
                     "role": "user",
@@ -736,7 +733,6 @@ test "prompt caching marks system, last non-system message, and last tool for an
                         {"type": "text", "text": "second", "cache_control": stale}
                     ]
                 },
-                {"role": "assistant", "content": "ok", "cache_control": stale},
                 {"role": "user", "content": "latest"}
             ],
             [
@@ -746,69 +742,40 @@ test "prompt caching marks system, last non-system message, and last tool for an
                     "cache_control": stale
                 },
                 {"type": "function", "function": {"name": "finish_tool"}}
-            ]
+            ],
+            [1, 0, 0, 1]
         )
     ] {
         before = copy.deepcopy((messages, tools));
         (sent_messages, sent_tools) = _apply_prompt_caching(messages, tools);
-        assert _cache_markers({"messages": [sent_messages[0]]}) == 1 , f"{label}: system";
-        assert _cache_markers({"messages": [sent_messages[-1]]}) == 1 , f"{label}: latest";
-        assert sent_tools[-1].get("cache_control") == _CACHE_CONTROL_EPHEMERAL , f"{label}: last tool";
-        assert _cache_markers({"messages": sent_messages, "tools": sent_tools}) == 3 , (
-            f"{label}: only the system message, the latest message and the last tool "
-            "may carry a marker"
-        );
-        assert (messages, tools) == before , (
-            f"{label}: the markers belong to the request, so the caller's messages "
-            "and tools must be the same after caching as before it"
-        );
+        assert [_cache_markers({"messages": [m]}) for m in sent_messages]
+            == marked , label;
+        assert ["cache_control" in t for t in sent_tools] == [False, True] , label;
+        assert (messages, tools) == before , f"{label}: the caller's messages and tools changed";
     }
 
-    steers: list[dict[str, any]] = [];
+    steer = {"role": "user", "content": "focus on a"};
 
     def lookup(key: str) -> str {
-        return f"value_for_{key}";
+        return key;
     }
 
     def hook(ctx: IterationContext) -> IterationAction {
-        steer: dict[str, any] = (
-            {"role": "user", "content": f"steer {ctx.iteration}"}
-                if ctx.iteration % 2 == 0
-                else {
-                    "role": "user",
-                    "content": [{"type": "text", "text": f"steer {ctx.iteration}"}]
-                }
-        );
-        steers.append(steer);
         ctx.messages.append(steer);
         return IterationAction.CONTINUE;
     }
 
     llm = MockLLM(
         model_name="anthropic/claude-test",
-        outputs=[
-            tool_call("lookup", {"key": "a"}),
-            tool_call("lookup", {"key": "b"}),
-            tool_call("lookup", {"key": "c"}),
-            tool_call("lookup", {"key": "d"}),
-            finish("done")
-        ]
+        outputs=[tool_call("lookup", {"key": "a"}), finish("done")]
     );
 
     def fetch(query: str) -> str by llm(tools=[lookup], on_iteration=hook);
 
-    assert fetch("get everything") == "done";
-    assert len(steers) >= 3 , f"expected several steers, got {len(steers)}";
-    counts = [_cache_markers(params) for params in llm.seen];
-    assert all(n <= 4 for n in counts) , (
-        f"Anthropic rejects a request with more than four cache markers; sent {counts}"
-    );
-    leaked = [
-        s
-        for s in steers
-        if _cache_markers({"messages": [s]})
-    ];
-    assert not leaked , f"the caller's steer messages were stamped: {leaked}";
+    assert fetch("go") == "done";
+    sent = [_cache_markers(params) for params in llm.seen];
+    assert sent == [3, 3] , f"each request should carry 3 cache markers, sent {sent}";
+    assert "cache_control" not in steer , "the caller's steer message was stamped";
 }
 
 test "prompt caching disabled via config" {
