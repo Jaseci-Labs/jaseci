@@ -123,7 +123,7 @@ import from engine.src.runtime.error {
 import from engine.src.runtime.encoding { SYMBOL_KEY_BASE }
 import from engine.src.runtime.jssymbol { SYMBOL_ISOONCATSPREADABLE }
 import from engine.src.builtins.native_registry { is_native_val }
-import from engine.src.builtins.markers { KEY_CTOR_KIND }
+import from engine.src.runtime.jsobject { KEY_CTOR_KIND }
 import from engine.src.runtime.proxy {
     js_is_proxy,
     js_proxy_is_revoked,

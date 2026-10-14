@@ -17,6 +17,7 @@ import from jaclang.artifacts.model { Probe, Source }
 import jaclang.artifacts.router as router;
 import from jaclang.compiler.backends.native.kernel_resolve {
     KernelArtifact,
+    KernelLoadError,
     ResolvedKernel,
     _inspect,
     kernel_options,
@@ -26,7 +27,7 @@ import from jaclang.compiler.backends.native.kernel_resolve {
 }
 import jaclang.compiler.backends.native.kernel_resolve as resolver;
 import from jaclang.compiler.backends.native.link_plan { LinkResult }
-import from jaclang.compiler.native_compiler { reset_loaded }
+import from jaclang.compiler.native_compiler { ensure_loaded, reset_loaded }
 
 def _never(*args: any, **kwargs: any) -> any {
     raise AssertionError("resolving a kernel must never build or probe here");
@@ -239,6 +240,89 @@ test "a current checkout kernel loads silently and reports where it came from" {
         and found.source == "checkout"
         and found.plan_digest == "p";
     assert said == "";
+}
+
+"""Route a compile to the current checkout kernel at `lib` and return how it
+stopped and what it printed. A kernel that does not load must stop the
+command: nothing compiles, on the kernel or on the bytecode compiler."""
+def _route_to(lib: str, check: bool = False) -> tuple[(KernelLoadError | None), str] {
+    import jaclang.project.kernel_compile as kernel_compile;
+    import jaclang.project.kernel_check as kernel_check;
+    import from jaclang.compiler.driver.program { JacProgram }
+    err = io.StringIO();
+    app = os.path.join(tempfile.gettempdir(), "app.jac");
+    mine = Probe.hit(Source.CHECKOUT, lib, {"classes": {}, "plan_digest": "p"});
+    stopped: (KernelLoadError | None) = None;
+    router.forget();
+    reset_loaded();
+    try {
+        with _toolchain() {
+            with patch.object(router, "_omitted", return_value=frozenset()) {
+                with patch.object(resolver, "_from_sealed_image", return_value=None) {
+                    with patch.object(
+                        KernelArtifact, "probe_checkout", return_value=mine
+                    ) {
+                        with patch.object(
+                            kernel_compile,
+                            "kernel_compile_in_process",
+                            return_value=False
+                        ) {
+                            with patch.object(sys, "stderr", err) {
+                                try {
+                                    if check {
+                                        kernel_check.kernel_check(
+                                            JacProgram(), app, kernel_options()
+                                        );
+                                    } else {
+                                        kernel_compile.kernel_route(JacProgram(), app);
+                                    }
+                                } except KernelLoadError as e {
+                                    stopped = e;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    } finally {
+        router.forget();
+        reset_loaded();
+    }
+    return (stopped, err.getvalue());
+}
+
+def _assert_refused(lib: str, routed: tuple[(KernelLoadError | None), str]) {
+    (stopped, said) = routed;
+    assert stopped is not None , f"the command went on without its kernel: {said}";
+    told = str(stopped.code);
+    assert told.startswith("jac: the native compiler kernel cannot be loaded") , told;
+    assert f"kernel: {lib}" in told , told;
+    assert "jac native build kernel --force" in told , told;
+    assert "runs on its floor" not in said , said;
+}
+
+test "a current kernel that does not load stops the command and says why" {
+    with tempfile.TemporaryDirectory(prefix="jac-kernel-") as tmp {
+        lib = os.path.join(tmp, "libjac_compiler.so");
+        Path(lib).write_bytes(b"not a shared library");
+        routed = _route_to(lib);
+        checked = _route_to(lib, check=True);
+    }
+    _assert_refused(lib, routed);
+    _assert_refused(lib, checked);
+    assert "error:  " in str(routed[0]?.code) , routed[0];
+}
+
+test "a current kernel without the kernel's exports stops the command" {
+    import _ctypes;
+    lib = _ctypes?.__file__;
+    if not lib {
+        return;
+    }
+    routed = _route_to(lib);
+    _assert_refused(lib, routed);
+    assert "jac_str_new" in str(routed[0]?.code) , routed[0];
 }
 
 test "the sidecar reader wants a classes map" {

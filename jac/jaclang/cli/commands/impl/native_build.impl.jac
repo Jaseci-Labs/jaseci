@@ -284,6 +284,7 @@ impl native_build(
     kind = ArtifactKind.SHARED
         if shared
         else (ArtifactKind.WASM if is_wasm else ArtifactKind.EXECUTABLE);
+    plan.library_api = shared;
     app_imports: (set | None) = None;
     if is_wasm {
         import from jaclang.compiler.backends.native.wasm_build { app_declared_imports }

@@ -1,4 +1,5 @@
 import from jaclang.compiler.frontend.roles { BodyRole }
+import from jaclang.compiler.driver.pipeline_types { AnalysisFact, PassContract }
 import from jaclang.compiler.passes.context { CompileContext, CompilerPass }
 import from jaclang.compiler.passes.scope_walk { ScopeWalker }
 import from jaclang.compiler.frontend.unitree {
@@ -24,12 +25,15 @@ import from jaclang.compiler.frontend.unitree {
     Float,
     ForeverStmt,
     FormattedValue,
+    HasVar,
     IfStmt,
     ImplDef,
     ImplImport,
     Import,
     InForStmt,
     Int,
+    JsxElement,
+    JsxElementName,
     IterForStmt,
     KWPair,
     LambdaExpr,
@@ -50,7 +54,11 @@ import from jaclang.compiler.frontend.unitree {
     in_type_position
 }
 
-import from jaclang.compiler.frontend.constant { ExprCtx, SymbolType }
+import from jaclang.compiler.frontend.constant {
+    ExprCtx,
+    SymbolType,
+    client_state_setter_name
+}
 import from jaclang.compiler.frontend.diagnostics {
     W1103,
     W2001,
@@ -270,6 +278,10 @@ walker UnusedSymbolWalker(ScopeWalker) {
 }
 
 walker StaticAnalysisPass(CompilerPass) {
+    static has contract: PassContract = PassContract(
+        provides=(AnalysisFact.STATIC_CHECKS, )
+    );
+
     def _run_impl(ir_in: Module) -> Module;
     can run_walk with Module entry;
     def _check_unused_symbols(scope: UniScopeNode) -> None;

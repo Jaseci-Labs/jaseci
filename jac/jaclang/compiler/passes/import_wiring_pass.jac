@@ -1,4 +1,5 @@
 import os;
+import from jaclang.compiler.driver.pipeline_types { AnalysisFact, PassContract }
 import from jaclang.compiler.passes.context { CompileContext, CompilerPass }
 import from jaclang.compiler.frontend.unitree {
     EmptyToken,
@@ -39,6 +40,8 @@ import from jaclang.compiler.frontend.diagnostics {
 }
 
 walker ImportWiringPass(CompilerPass) {
+    static has contract: PassContract = PassContract(requires=(AnalysisFact.SYM_OF, ));
+
     can run_walk with Module entry;
     def _check_arch_module(mod: Module) -> None;
     def _check_scope(spec: WiringSpec, block: ImplImport, seen: set[int]) -> None;

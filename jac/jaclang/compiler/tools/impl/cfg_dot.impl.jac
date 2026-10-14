@@ -1,13 +1,13 @@
 impl cfg_dot_from_file(file_name: str) -> str {
-    import from jaclang.compiler.driver.pipeline_runner { run_utility }
-    import from jaclang.compiler.driver.pipeline_types { UtilityProduct }
+    import from jaclang.compiler.driver.pipeline { run_utility }
+    import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
     import from jaclang.compiler.driver.program { JacProgram }
     with open(file_name, encoding="utf-8") as f {
         file_source = f.read();
     }
     ir = (prog := JacProgram()).compile(use_str=file_source, file_path=file_name);
     import from typing { cast }
-    cfg_pass = cast(CoalesceBBPass, run_utility(UtilityProduct.CFG_DOT, ir, prog));
+    cfg_pass = cast(CoalesceBBPass, run_utility(CompilationProduct.CFG_DOT, ir, prog));
     dot = cfg_pass.printgraph_cfg();
     return dot;
 }

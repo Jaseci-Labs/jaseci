@@ -56,9 +56,11 @@ def deliver_alerts(
     errors: Sequence[Alert],
     warnings: Sequence[Alert],
     prog: JacProgram,
-    policy: (DiagnosticPolicy | None) = None
+    policy: (DiagnosticPolicy | None) = None,
+    module_path: str = ""
 ) {
     pol = policy if policy is not None else build_diagnostic_policy(prog);
+    drop_toolchain = not prog.toolchain_dependency(module_path);
     for alrt in errors {
         if alrt.code is not None and pol.is_suppressed(alrt.code, alrt.loc) {
             continue;
@@ -76,6 +78,9 @@ def deliver_alerts(
         }
         if alrt.code is not None
             and _alert_in_internal_stub(str(alrt.loc.mod_path or "")) {
+            continue;
+        }
+        if drop_toolchain and prog.toolchain_dependency(str(alrt.loc.mod_path or "")) {
             continue;
         }
         prog.warnings_had.append(alrt);
@@ -138,7 +143,7 @@ def run_pass[W: CompilerPass](
         eff = inst.ctx.policy
             if (inst is not None and inst.ctx.policy is not None)
             else pol;
-        deliver_alerts(errors, warnings, prog, eff);
+        deliver_alerts(errors, warnings, prog, eff, module_path=ir_in.loc.mod_path);
         try {
             ledger = prog.analysis;
             pass_name = pass_cls.__name__;

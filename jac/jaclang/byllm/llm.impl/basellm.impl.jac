@@ -2199,6 +2199,10 @@ impl BaseLLM._stream_final_answer(
             accumulated += token;
             yield token;
         }
+        if not accumulated and fallback is not None {
+            accumulated = fallback;
+            yield fallback;
+        }
     } except OutputTruncatedError {
         if fallback is None {
             raise;

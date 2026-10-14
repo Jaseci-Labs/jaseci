@@ -263,7 +263,8 @@ def diag_of(alert: Alert) -> AnalysisDiag {
 }
 
 def module_report(task: ModuleAnalysis) -> ModuleReport {
-    done = task.program.analysis.completed_passes.get(id(task.module));
+    build = task.program.analysis.peek(task.module);
+    done = build.done if build is not None else None;
     native = task.native
         or (
             not task.parse_failed and ModuleFacts.has_native_context_stmts(task.module)

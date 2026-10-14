@@ -348,6 +348,16 @@ def media_blocks(llm: MockLLM, n: int = 0) -> list[dict[str, any]] {
 }
 
 
+"""Just the `file` blocks (documents) of the user turn of call `n`, in order."""
+def document_blocks(llm: MockLLM, n: int = 0) -> list[dict[str, any]] {
+    return [
+        b
+        for b in user_blocks(llm, n)
+        if b.get("type") == "file"
+    ];
+}
+
+
 """The data url carried by one media block."""
 def data_url(block: dict[str, any]) -> str {
     return block["image_url"]["url"];

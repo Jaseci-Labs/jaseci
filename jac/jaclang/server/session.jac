@@ -15,6 +15,7 @@ import from jaclang.data.dbcatalog {
 import from jaclang.data.pgembed { PgRuntime }
 import type from jaclang.project.config { DatabaseConfig }
 import from jaclang.runtime.exceptions { ReadOnlyRetry, TransactionLost, WriteConflict }
+import from jaclang.data.serializer { frozen_fields }
 import from jaclang.data.store { AnchorRow, ConnInfo, PgStore, Store, TxnIsolation }
 
 glob logger = logging.getLogger(__name__),

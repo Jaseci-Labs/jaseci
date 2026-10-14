@@ -1,4 +1,4 @@
-import from _platform_native {
+import from ._platform_native {
     plat_uname_ok,
     plat_sysname,
     plat_nodename,

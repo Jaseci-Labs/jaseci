@@ -96,8 +96,29 @@ def collect_floor_archives(
 }
 
 
+def elf_runtime_soname(name: str) -> str {
+    import ctypes.util;
+    import re;
+    matched = re.fullmatch(r"lib([^/]+)\.so", name);
+    if matched is None {
+        return name;
+    }
+    try {
+        found = ctypes.util.find_library(matched.group(1));
+    } except Exception {
+        return name;
+    }
+    if found and "/" not in found and found.startswith(name + ".") {
+        return found;
+    }
+    return name;
+}
+
 def clib_needed_libs(
-    needed_libs: list[str], clib_paths: list[str], floor_handled: set[str]
+    needed_libs: list[str],
+    clib_paths: list[str],
+    floor_handled: set[str],
+    host_elf: bool = False
 ) -> dict[str, str] {
     import os;
     lib_norm: dict[str, str] = {};
@@ -119,6 +140,8 @@ def clib_needed_libs(
             needed = "libm.so.6";
         } elif base in ["libc.dylib", "libm.dylib"] {
             needed = "/usr/lib/libSystem.B.dylib";
+        } elif host_elf and needed == base {
+            needed = elf_runtime_soname(base);
         }
         if needed not in needed_libs {
             needed_libs.append(needed);

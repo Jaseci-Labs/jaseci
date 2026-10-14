@@ -418,9 +418,12 @@ walker TypeEvaluator {
         prefetch: PrefetchedTypes postinit,
         _pass: CompileContext | None = None,
         _diagnostic_suppression_depth: int = 0,
+        _trial_notes: (list[tuple[UniNode, str, str, bool]] | None) = None,
+        _last_trial_notes: list[tuple[UniNode, str, str, bool]] = [],
         builtins_module: Module | None = None,
         _flow_node_type_cache: dict[tuple[int, int], TypeBase | None] = {},
         _flow_key_type_cache: dict[tuple[int, str], TypeBase | None] = {},
+        _narrow_expr_memo: dict[tuple[int, int, int], tuple[any, any, any, any]] = {},
         _flow_pending_symbols: set[tuple[int, int]] postinit,
         _flow_pending_keys: set[tuple[str, int]] postinit,
         _module_type_cache: dict[str, ModuleType] = {},
@@ -598,6 +601,10 @@ walker TypeEvaluator {
     def _is_strict_site(nd: UniNode) -> bool;
     def _diag_unnarrowed_optional(nd: UniNode, ty: TypeBase, required: str) -> bool;
     def _in_native_context -> bool;
+    def note_native(nd: UniNode, code: str, text: str, requires: bool = False) -> None;
+    def commit_trial_notes(notes: list[tuple[UniNode, str, str, bool]]) -> None;
+    def neutral_site(nd: UniNode) -> bool;
+    def _is_address_pair(src_type: TypeBase, dest_type: TypeBase) -> bool;
     def is_typevar_class(ty: TypeBase) -> bool;
     def is_paramspec_class(ty: TypeBase) -> bool;
     def is_type_var_tuple_class(ty: TypeBase) -> bool;
@@ -658,6 +665,13 @@ walker TypeEvaluator {
     def _is_protocol_class(cls_type: ClassType) -> bool;
     def _solve_protocol_type_args(
         src_type: ClassType, proto_type: ClassType, bindings: dict[str, TypeBase]
+    ) -> bool;
+
+    def _solve_protocol_members(
+        src_type: ClassType,
+        proto_type: ClassType,
+        proto_symtab: UniScopeNode,
+        bindings: dict[str, TypeBase]
     ) -> bool;
 
     def _protocol_member_impl(
@@ -976,6 +990,10 @@ walker TypeEvaluator {
     def flow_pred_never_returns(pred: UniCFGNode) -> bool;
     def get_narrowed_type(symbol: Symbol, at_node: UniNode) -> TypeBase | None;
     def get_narrowed_type_for_expr(
+        expr: Expr, declared_type: TypeBase, at_node: UniNode
+    ) -> TypeBase | None;
+
+    def _narrowed_type_for_expr(
         expr: Expr, declared_type: TypeBase, at_node: UniNode
     ) -> TypeBase | None;
 

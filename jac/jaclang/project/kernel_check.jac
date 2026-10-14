@@ -115,6 +115,10 @@ def kernel_check(
     }
     kernel = analysis_kernel();
     if kernel is None {
+        import from jaclang.compiler.backends.native.kernel_resolve {
+            refuse_unloadable
+        }
+        refuse_unloadable();
         return KernelCheck();
     }
     try {
