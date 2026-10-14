@@ -659,10 +659,18 @@ def _precompile_app(
     timeout_s: int,
     app: str = "",
     sources: (list[Path] | None) = None,
-    tomls: (dict[str, str] | None) = None
+    tomls: (dict[str, str] | None) = None,
+    seed: (Path | None) = None
 ) -> Path {
     stage_root = _stage_app(base, sanitized_toml, sources, tomls);
     stage = stage_root / "app";
+    seeded = _seed_precompiled(stage, seed);
+    if seeded {
+        logger.info(
+            f"Seeded {seeded} precompiled module(s) from the previous seal; only "
+            "changed modules are compiled again."
+        );
+    }
     seal_flags: list[str] = ["--seal"] + ([f"--app={app}"] if app else []);
     try {
         jac_path = stage_root / ".seal-jac";
@@ -736,7 +744,13 @@ def _precompile_app(
                 f".jab: {(result.stderr or result.stdout).strip()[-2000:]}"
             );
         }
-        for line in (result.stdout or "").splitlines()[-12:] {
+        output = (result.stdout or "").splitlines();
+        for line in [
+            line
+            for line in output
+            if line.startswith("Done!")
+        ]
+            + output[-12:] {
             if line.strip() {
                 logger.info(f"seal: {line.strip()}");
             }
@@ -1002,6 +1016,55 @@ def _mtime(path: Path) -> float {
 }
 
 
+def _latest_seal(base: Path) -> (Path | None) {
+    try {
+        bundles = sorted(
+            _seal_cache_dir(base).`glob("*.jab"), key=_mtime, reverse=True
+        );
+    } except OSError {
+        return None;
+    }
+    return bundles[0] if bundles else None;
+}
+
+
+def _seed_precompiled(stage: Path, seed: (Path | None)) -> int {
+    if seed is None {
+        return 0;
+    }
+    seeded = 0;
+    try {
+        with tarfile.open(str(seed), "r:gz") as tar {
+            for member in tar.getmembers() {
+                parts = Path(member.name).parts;
+                if not member.isfile()
+                    or len(parts) < 3
+                    or parts[0] != "_precompiled"
+                    or not member.name.endswith(".jir")
+                    or ".." in parts {
+                    continue;
+                }
+                source = stage.joinpath(*parts[2:]).with_suffix(".jac");
+                if not source.is_file() {
+                    continue;
+                }
+                data = tar.extractfile(member);
+                if data is None {
+                    continue;
+                }
+                target = stage.joinpath(*parts);
+                target.parent.mkdir(parents=True, exist_ok=True);
+                target.write_bytes(data.read());
+                seeded += 1;
+            }
+        }
+    } except (OSError, tarfile.TarError) as exc {
+        logger.warning(f"Could not seed the seal from the previous bundle: {exc}");
+    }
+    return seeded;
+}
+
+
 def _cached_seal(base: Path, key: str) -> (bytes | None) {
     cached = _seal_cache_dir(base) / f"{key}.jab";
     try {
@@ -1102,7 +1165,8 @@ def pack_jab(
         seal_timeout_setting(project_dir),
         app_name,
         sources,
-        tomls
+        tomls,
+        _latest_seal(base)
     );
 
     try {
