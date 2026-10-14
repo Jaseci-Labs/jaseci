@@ -88,9 +88,6 @@ obj NativeLibrary {
 }
 
 glob logger = logging.getLogger(__name__),
-     # Sized spellings come from the scalar table (the single owner); both
-     # int and float widths ride the 64-bit ABI lane here. usize/isize are
-     # C-boundary spellings (size_t) the manifest can carry, not Jac scalars.
      JAC_TO_CTYPES: dict[(str, type)] = {
          ** {
              'int': ctypes.c_int64,
@@ -245,8 +242,6 @@ def register_py_callbacks(
                     return fn(*args);
                 }
                 if void {
-                    # No return value crosses the boundary, so nothing is
-                    # fabricated: a skipped sink is survivable. Warn and return.
                     import sys;
                     sys.stderr.write(
                         f"Native code called unregistered void callback "
