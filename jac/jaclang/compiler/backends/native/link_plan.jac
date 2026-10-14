@@ -31,6 +31,7 @@ import from jaclang.compiler.backends.native.link_glue {
     RC_THREADED_SYMBOL,
     REGION_DIED_HOOK,
     SHARED_INIT_SYMBOL,
+    SHARED_MAIN_SYMBOL,
     STR_NEW_SYMBOL,
     init_object_codegen,
     link_glue_ir
@@ -159,7 +160,8 @@ obj LinkPlan {
         units: list[LinkUnit],
         mode: str,
         triple: str,
-        callback_bindings: list[InteropBinding] = [];
+        callback_bindings: list[InteropBinding] = [],
+        library_api: bool = False;
 
     def unit(path: str) -> (LinkUnit | None) {
         real = os.path.realpath(path);
@@ -189,10 +191,14 @@ obj LinkPlan {
         return -1;
     }
 
+    def init_units -> list[LinkUnit] {
+        return initialization_order(self.units, self.roots);
+    }
+
     def init_symbols -> list[str] {
         return [
             u.iface.init_symbol
-            for u in self.units
+            for u in self.init_units()
             if u.iface.init_symbol
         ];
     }
@@ -205,6 +211,9 @@ obj LinkPlan {
         h.update(self.options.codegen_identity().encode());
         import from jaclang.compiler.driver.jir { native_producer_digest }
         h.update(native_producer_digest(self.options.kernel_build).encode());
+        if self.library_api {
+            h.update(b"library-api");
+        }
         import from jaclang.compiler.frontend.codeinfo { native_unit_identity }
         for u in self.units {
             h.update(native_unit_identity(u.path).encode());
@@ -255,8 +264,12 @@ obj LinkPlan {
     }
 
     def pub_exports -> list[str] {
+        """The C ABI of a shared artifact. A library's is its root module's
+        `:pub` surface: in the modules it imports `:pub` is how Jac modules see
+        each other, and keeping those internal lets the whole-program optimizer
+        specialize and drop them as it does for an executable.""";
         out: list[str] = [];
-        for u in self.units {
+        for u in ([self.root_unit()] if self.library_api else self.units) {
             for sym in u.iface.pub_symbols() {
                 if sym not in out {
                     out.append(sym);
@@ -282,7 +295,11 @@ obj LinkPlan {
             }
         }
         hook_supplied = any(REGION_DIED_HOOK in u.iface.exports for u in self.units);
-        for u in self.units {
+        root_index = -1;
+        for u in self.init_units() {
+            if u.is_root and root_index < 0 {
+                root_index = len(units);
+            }
             exports = u.iface.exports;
             probe = exports.get("__jac_rt_probe");
             units.append(
@@ -300,7 +317,7 @@ obj LinkPlan {
         is_elf = platform == "elf";
         return GlueSpec(
             units=units,
-            root_index=self.root_index(),
+            root_index=root_index,
             shared=(kind == ArtifactKind.SHARED),
             platform=platform if kind != ArtifactKind.JIT else "jit",
             static_musl=static_musl,
@@ -312,6 +329,100 @@ obj LinkPlan {
             needs_region_hook=not hook_supplied
         );
     }
+}
+
+def initialization_order(units: list[LinkUnit], roots: list[str]) -> list[LinkUnit] {
+    by_path: dict[str, LinkUnit] = {u.path: u for u in units};
+    imports: dict[str, list[str]] = {
+        u.path: [os.path.realpath(d) for d in u.iface.deps] for u in units
+    };
+    walked: list[LinkUnit] = [];
+    started: set[str] = set();
+    starts = [os.path.realpath(r) for r in roots] + [u.path for u in units];
+    for start in starts {
+        if start in started or start not in by_path {
+            continue;
+        }
+        started.add(start);
+        stack: list[tuple[str, int]] = [(start, 0)];
+        while stack {
+            (path, next_dep) = stack[-1];
+            deps = imports[path];
+            if next_dep < len(deps) {
+                stack[-1] = (path, next_dep + 1);
+                dep = deps[next_dep];
+                if dep in by_path and dep not in started {
+                    started.add(dep);
+                    stack.append((dep, 0));
+                }
+                continue;
+            }
+            stack.pop();
+            walked.append(by_path[path]);
+        }
+    }
+    producer: dict[str, str] = {};
+    for u in walked {
+        for symbol in u.iface.runtime_globals {
+            producer.setdefault(symbol, u.path);
+        }
+    }
+    reads: dict[str, list[tuple[str, str]]] = {};
+    for u in walked {
+        reads[u.path] = [
+            (producer[symbol], symbol)
+            for symbol in u.iface.init_reads
+            if symbol in producer and producer[symbol] != u.path
+        ];
+    }
+    ordered: list[LinkUnit] = [];
+    placed: set[str] = set();
+    pending = list(walked);
+    while pending {
+        ready = -1;
+        for (i, u) in enumerate(pending) {
+            if all(source in placed for (source, _) in reads[u.path]) {
+                ready = i;
+                break;
+            }
+        }
+        if ready < 0 {
+            raise LinkPlanError(_init_cycle_message(pending[0].path, reads, placed));
+        }
+        u = pending.pop(ready);
+        ordered.append(u);
+        placed.add(u.path);
+    }
+    return ordered;
+}
+
+def _init_cycle_message(
+    start: str, reads: dict[str, list[tuple[str, str]]], placed: set[str]
+) -> str {
+    chain: list[str] = [];
+    seen: list[str] = [];
+    path = start;
+    while path not in seen {
+        seen.append(path);
+        (source, symbol) = [
+            r
+            for r in reads[path]
+            if r[0] not in placed
+        ][0];
+        chain.append(
+            f"{os.path.basename(path)} reads {symbol.rsplit('.', 1)[-1]} of "
+            f"{os.path.basename(source)}"
+        );
+        path = source;
+    }
+    cycle = chain[seen.index(path):];
+    return (
+        "module initializers read each other's globals, so none of them can "
+        "run first: "
+        + "; ".join(cycle)
+        + ". Compute one of these globals in a function, or move it to a module "
+        "outside the import cycle."
+    );
 }
 
 def _platform_of(triple: str) -> str {
@@ -571,6 +682,7 @@ def _build_link_plan(
 
     check_prefix_collisions(ordered);
     check_pub_collisions(ordered);
+    initialization_order(ordered, real_roots);
     import from jaclang.compiler.driver.na_coverage { na_coverage_replay }
     for unit in ordered {
         na_coverage_replay(unit.path, unit.iface.coverage or {"outcome": "native"});
@@ -803,6 +915,7 @@ def optimize_whole_program(
         exports = plan.pub_exports()
             + [
                 SHARED_INIT_SYMBOL,
+                SHARED_MAIN_SYMBOL,
                 "jac_retain",
                 "jac_release",
                 "jac_str_new",
@@ -977,6 +1090,17 @@ def _reuse_artifact(
     }
 }
 
+def _links_for_host(triple: str) -> bool {
+    if not sys.platform.startswith("linux") {
+        return False;
+    }
+    target = triple.lower().split("-");
+    host = str(llvm.get_default_triple()).lower().split("-");
+    return target[0] == host[0]
+        and "linux" in target
+        and ("musl" in target[-1]) == ("musl" in host[-1]);
+}
+
 def link_artifact(
     plan: LinkPlan,
     output_path: str,
@@ -1018,7 +1142,12 @@ def link_artifact(
     } elif is_macos {
         needed_libs = ["/usr/lib/libSystem.B.dylib"];
     }
-    lib_norm = clib_needed_libs(needed_libs, clib_paths, floor_handled);
+    lib_norm = clib_needed_libs(
+        needed_libs,
+        clib_paths,
+        floor_handled,
+        host_elf=platform == "elf" and _links_for_host(plan.triple)
+    );
     is_linux_exec = (not shared) and platform == "elf";
     """The runtime units declare their libc calls as C imports, and musl's
     libc.a satisfies every one of them: only a library beyond libc and libm

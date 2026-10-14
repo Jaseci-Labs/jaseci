@@ -21,7 +21,6 @@ glob NATIVE_SCOPE: tuple[NativeScopeEntry, ...] = (
          NativeScopeEntry(module="jaclang.compiler.passes.ast_validation_pass"),
          NativeScopeEntry(module="jaclang.compiler.passes.sym_tab_build_pass"),
          NativeScopeEntry(module="jaclang.compiler.passes.annex_weave"),
-         NativeScopeEntry(module="jaclang.compiler.passes.early_passes"),
          NativeScopeEntry(module="jaclang.compiler.passes.graph_lowering_pass"),
          NativeScopeEntry(module="jaclang.compiler.passes.decl_impl_match_pass"),
          NativeScopeEntry(module="jaclang.compiler.passes.semantic_analysis_pass"),
@@ -62,10 +61,14 @@ glob NATIVE_SCOPE: tuple[NativeScopeEntry, ...] = (
          NativeScopeEntry(module="jaclang.compiler.frontend.unparse"),
          NativeScopeEntry(module="jaclang.compiler.intrinsic_registry"),
          NativeScopeEntry(module="jaclang.compiler.kernel_target"),
+         NativeScopeEntry(module="jaclang.compiler.native_bindings"),
+         NativeScopeEntry(module="jaclang.compiler.boundary_rules"),
+         NativeScopeEntry(module="jaclang.compiler.capability_notes"),
          NativeScopeEntry(module="jaclang.compiler.native_scope"),
          NativeScopeEntry(module="jaclang.compiler.passes.access_check_pass"),
          NativeScopeEntry(module="jaclang.compiler.passes.boundary_analysis_pass"),
          NativeScopeEntry(module="jaclang.compiler.passes.capability_check_pass"),
+         NativeScopeEntry(module="jaclang.compiler.passes.placement_pass"),
          NativeScopeEntry(module="jaclang.compiler.passes.comptime_resolve_pass"),
          NativeScopeEntry(module="jaclang.compiler.passes.dataflow"),
          NativeScopeEntry(module="jaclang.compiler.passes.endpoint_effect_pass"),
@@ -194,6 +197,28 @@ def package_host_edge(mod_path: str) -> bool {
 def scope_allows_inferred_path(mod_path: str) -> bool {
     import from jaclang.compiler.frontend.codeinfo { native_unit_compile_active }
     return not native_unit_compile_active() or not package_host_edge(mod_path);
+}
+
+def binds_bare_arch_names(mod_path: str) -> bool {
+    import from jaclang.compiler.kernel_target { target_package_rel }
+    import from jaclang.compiler.frontend.codeinfo { kernel_unit_rels }
+    rel = target_package_rel(mod_path) if mod_path else None;
+    if rel is None {
+        return False;
+    }
+    rel = rel.lstrip("/");
+    if rel.endswith(".pyi")
+        or (rel.startswith("runtime/") and rel.count("/") == 1)
+        or rel in KERNEL_ABI_CONTRACT_REL
+        or rel in kernel_unit_rels() {
+        return True;
+    }
+    if rel.startswith("runtime/") {
+        return False;
+    }
+    import from jaclang.compiler.frontend.host { active_host }
+    host = active_host();
+    return host.is_native_only_source(rel) or host.is_native_lowered_source(rel);
 }
 
 def scope_modules -> list[str] {

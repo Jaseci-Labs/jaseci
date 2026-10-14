@@ -171,6 +171,7 @@ impl build(
     exact: bool = False,
     strict: bool = False
 ) -> list[str] {
+    import subprocess;
     built: list[str] = [];
     for name in build_order(requested) {
         artifact = artifact_named(name);
@@ -190,17 +191,25 @@ impl build(
             log(f"skipped {name}: {why}");
             continue;
         }
-        if not (force and name in requested)
-            and artifact.probe_checkout().found is not None {
+        if not (force and name in requested) and artifact.built().found is not None {
             log(f"{name}: current");
             continue;
         }
         log(f"building {name}");
-        with building([name]) {
-            artifact.build(log, force, exact);
+        try {
+            with building([name]) {
+                artifact.build(log, force, exact);
+            }
+        } except subprocess.CalledProcessError as e {
+            command = " ".join(str(part) for part in e.cmd)
+                if isinstance(e.cmd, (list, tuple))
+                else str(e.cmd);
+            raise ArtifactUnavailable(
+                f"{name}: `{command}` failed (exit status {e.returncode}); see its output above"
+            ) from None;
         }
         forget(name);
-        after = artifact.probe_checkout();
+        after = artifact.built();
         if after.found is None {
             raise ArtifactUnavailable(
                 f"{name} was built but does not match its inputs: "

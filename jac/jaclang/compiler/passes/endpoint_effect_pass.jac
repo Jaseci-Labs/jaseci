@@ -1,4 +1,5 @@
 import from jaclang.compiler.frontend.roles { Kid }
+import from jaclang.compiler.driver.pipeline_types { PassContract }
 import from jaclang.compiler.frontend.unitree {
     Module,
     TreeWalker,
@@ -52,6 +53,7 @@ def _literal_names(value: (Expr | None)) -> (list[str] | None) {
 }
 
 walker EndpointEffectPass(TreePass) {
+    static has contract: PassContract = PassContract();
     has _is_writer: bool = False,
         _unknown: bool = False,
         _declared_reads: set[str] = set(),

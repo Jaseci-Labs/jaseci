@@ -124,3 +124,80 @@ test "build_jab seals the default app when no app is named" {
         shutil.rmtree(os.path.dirname(ws), ignore_errors=True);
     }
 }
+
+
+test "a sealed boot reads each module's imports from the seal instead of disassembling it" {
+    import json;
+    import from jaclang.compiler.backends.py { artifact_imports }
+    import from jaclang.compiler.driver.application { prepare_application }
+    import from jaclang.compiler.driver.program { JacProgram }
+    import from jaclang.runtime.prepared { forget }
+    ws = _workspace();
+    real_sources = artifact_imports.runtime_sources;
+    scanned: list[str] = [];
+    def counting_sources(code: any, source: str, `root: str) -> set[str] {
+        scanned.append(source);
+        return real_sources(code, source, `root);
+    }
+    entry_file = "";
+    manifest_path: (Path | None) = None;
+    original_manifest = "";
+    try {
+        config = JacConfig.load(Path(ws) / "jac.toml");
+        out = Path(ws) / "out" / "web.jab";
+        build_jab(config, out, bake_client=False);
+        img = materialize_jab(str(out));
+        manifest_path = img / ".jac" / "serve_manifest.json";
+        original_manifest = manifest_path.read_text();
+        serving = json.loads(original_manifest);
+        recorded: dict[str, list[str]] = serving.get("runtime_imports") or {};
+        main_imports: list[str] = recorded.get("web/main.jac", []);
+        assert "core/helper.jac" in main_imports , (
+            f"the seal did not record web/main.jac's imports: {recorded}"
+        );
+        entry_file = str(img / "web" / "main.jac");
+        artifact_imports.runtime_sources = counting_sources;
+        prepared = prepare_application(entry_file, JacProgram(), str(img));
+        assert os.path.realpath(str(img / "core" / "helper.jac")) in prepared.code , (
+            "the sealed boot did not load the module web/main.jac imports"
+        );
+        assert not scanned , (
+            f"the sealed boot disassembled {len(scanned)} modules whose imports the "
+            f"seal had recorded: {scanned}"
+        );
+        partial = dict(serving);
+        partial["runtime_imports"] = {
+            source: imports
+            for (source, imports) in recorded.items()
+            if source != "web/main.jac"
+        };
+        missing = dict(serving);
+        missing.pop("runtime_imports", None);
+        for (label, variant) in [
+            ("one module unrecorded", partial),
+            ("no map", missing)
+        ] {
+            manifest_path.write_text(json.dumps(variant));
+            forget(entry_file);
+            scanned.clear();
+            prepared = prepare_application(entry_file, JacProgram(), str(img));
+            assert os.path.realpath(str(img / "core" / "helper.jac"))
+                in prepared.code , (
+                f"{label}: the boot did not load the module web/main.jac imports"
+            );
+            assert any(path.endswith("main.jac") for path in scanned) , (
+                f"{label}: the boot did not fall back to reading web/main.jac's imports"
+            );
+        }
+    } finally {
+        if manifest_path is not None and original_manifest {
+            manifest_path.write_text(original_manifest);
+        }
+        artifact_imports.runtime_sources = real_sources;
+        if entry_file {
+            forget(entry_file);
+        }
+        set_config(None);
+        shutil.rmtree(os.path.dirname(ws), ignore_errors=True);
+    }
+}

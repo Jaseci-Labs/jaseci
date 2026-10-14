@@ -368,31 +368,11 @@ impl ProjectHost.native_units_for(program: JacProgram) -> NativeUnitRegistry {
     return program._natives;
 }
 
-impl ProjectHost.native_verdict(
-    path: str, program: (JacProgram | None) = None
-) -> (NativeVerdict | None) {
-    try {
-        if program is not None {
-            return program.native_units().verdict_for(path);
-        }
-        import from jaclang.compiler.driver.nativecache { read_native_verdict }
-        return read_native_verdict(path);
-    } except Exception {
-        return None;
-    }
-}
-
 impl ProjectHost.record_native_coverage(
     path: str, outcome: str, code: str = "", detail: str = ""
 ) {
     import from jaclang.compiler.driver.na_coverage { na_coverage_record }
     na_coverage_record(path, outcome, code, detail);
-}
-
-impl ProjectHost.record_native_verdict(
-    program: JacProgram, path: str, code: str, detail: str
-) {
-    program.native_units().record_verdict(path, code, detail);
 }
 
 impl ProjectHost.native_analyze(
@@ -589,9 +569,10 @@ impl ProjectHost.parse_python(
 ) -> tuple[Module, bool] {
     import ast as py_ast;
     import jaclang.compiler.frontend.unitree as uni;
-    import from jaclang.compiler.driver.pipeline_runner { run_utility, UtilityProduct }
+    import from jaclang.compiler.driver.pipeline { run_utility }
+    import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
     built = run_utility(
-        UtilityProduct.PYTHON_AST,
+        CompilationProduct.PYTHON_AST,
         uni.PythonModuleAst(
             py_ast.parse(source_str),
             orig_src=uni.Source(source_str, mod_path=file_path)

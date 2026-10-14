@@ -1075,18 +1075,11 @@ def _exec_file(
                     and resolve_app_kind(_cfg_kind, _app, _abs_file) == 'cli-native'
                 );
             }
-            import from jaclang.compiler.driver.boundary_classify {
-                module_demoted_native as _na_demoted
-            }
             if backend != "python"
                 and (
                     backend == "native"
                     or _kind_forced
-                    or (
-                        _default_codespace_is_native()
-                        and sys.stdout is sys.__stdout__
-                        and not _na_demoted(filename)
-                    )
+                    or (_default_codespace_is_native() and sys.stdout is sys.__stdout__)
                 ) {
                 import ctypes;
                 import from jaclang.compiler.driver.compile_options {
@@ -1102,7 +1095,11 @@ def _exec_file(
                 (in_kernel, engine) = program._get_compiler().kernel_native_entry(
                     full_path, program, _run_options
                 );
-                if not in_kernel {
+                if not in_kernel and _run_options is None {
+                    engine = program._get_compiler().native_entry_engine(
+                        full_path, program
+                    );
+                } elif not in_kernel {
                     ir_mod = program.compile(file_path=full_path, options=_run_options);
                     if (
                         ir_mod
@@ -1441,12 +1438,13 @@ impl serve(
             }
             try {
                 import from jaclang.server.hmr { HotReloader }
-                import from jaclang.server.watcher { JacFileWatcher, watch_roots }
+                import from jaclang.server.watcher {
+                    JacFileWatcher,
+                    application_watch_roots
+                }
 
-                watch_paths = watch_roots(
-                    base,
-                    prepared.`root,
-                    [str(k) for k in Jac.get_program().mod.hub.keys()]
+                watch_paths = application_watch_roots(
+                    base, prepared, Jac.get_program()
                 );
                 watcher = JacFileWatcher(watch_paths=watch_paths);
                 client_compiler = None;

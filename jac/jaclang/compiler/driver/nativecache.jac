@@ -2,7 +2,6 @@ import os;
 import sys;
 import time;
 import type from jaclang.compiler.driver.program { JacProgram }
-import from jaclang.compiler.frontend.host { NativeVerdict }
 import type from jaclang.compiler.frontend.codeinfo { CodeGenTarget }
 import type from jaclang.compiler.frontend.unitree { Module }
 import from jaclang.compiler.driver.jir {
@@ -59,7 +58,6 @@ obj NativeUnitRegistry {
         not_native: dict[str, str] = {},
         failures: dict[str, str] = {},
         compiled_paths: list[str] = [],
-        verdicts: dict[str, tuple[str, NativeVerdict]] = {},
         progress: (Callable[[str], None] | None) = None,
         progress_steps: int = 0;
 
@@ -97,7 +95,6 @@ obj NativeUnitRegistry {
     def clear {
         self.entries.clear();
         self.not_native.clear();
-        self.verdicts.clear();
         self.compiled_paths.clear();
         self.failures.clear();
     }
@@ -820,56 +817,6 @@ obj NativeUnitRegistry {
         }
         return self.prog.hub.artifacts.get(resolved);
     }
-
-    def verdict_for(path: str) -> (NativeVerdict | None) {
-        resolved = os.path.realpath(path);
-        key = NativeUnitRegistry._source_key(resolved);
-        cached = self.verdicts.get(resolved);
-        if cached is not None {
-            if cached[0] == key and verdict_deps_fresh(cached[1].deps) {
-                return cached[1];
-            }
-            del self.verdicts[resolved];
-            if cached[0] == key {
-                return None;
-            }
-        }
-        found = self._module_jir(resolved);
-        if found is None {
-            return None;
-        }
-        verdict = verdict_from_jir(found[0], found[1]);
-        if verdict is not None and key is not None {
-            self.verdicts[resolved] = (key, verdict, );
-        }
-        return verdict;
-    }
-
-    def is_demoted(path: str) -> bool {
-        v = self.verdict_for(path);
-        return v is not None and v.demoted;
-    }
-
-    def demoted_code(path: str) -> str {
-        v = self.verdict_for(path);
-        return v.code if v is not None else "";
-    }
-
-    def record_verdict(path: str, code: str, detail: str) {
-        resolved = os.path.realpath(path);
-        key = NativeUnitRegistry._source_key(resolved);
-        deps = native_verdict_dep_rows(resolved);
-        if key is not None {
-            self.verdicts[resolved] = (
-                key,
-                NativeVerdict(demoted=True, code=code, detail=detail, deps=deps),
-
-            );
-        }
-        import from jaclang.compiler.placement.placement { note_native_verdict }
-        note_native_verdict(self.prog, resolved, code, detail, deps);
-        self.entries.pop(resolved, None);
-    }
 }
 
 obj NativeBuildSession {
@@ -925,29 +872,19 @@ obj NativeBuildSession {
             opts.no_cgen = False;
             self.prog.options = opts;
             set_effective_default_codespace("native");
-            import from jaclang.compiler.passes.rc_facts_pass { RcFactsPass }
-            import from jaclang.compiler.backends.native.na_ir_gen_pass { NaIRGenPass }
-            completed = self.prog.analysis.completed_passes.get(id(mod));
-            if completed is not None {
-                completed.discard("NaIRGenPass");
-                completed.discard("NativeCompilePass");
-            }
+            import from jaclang.compiler.driver.pipeline { invalidate, require }
             import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
-            tasks = self.prog.analysis.product_tasks.get(id(mod));
-            if tasks is not None {
-                tasks.pop(CompilationProduct.NATIVE_IR, None);
-            }
-            mod.gen.drop_native_ir();
-            mod.gen.native_iface = None;
-            mod.gen.native_bitcode = None;
-            mod.gen.native_object = None;
+            invalidate(self.prog, mod, CompilationProduct.NATIVE_LOWER);
             started = self.registry.note_step("lower", resolved);
-            self.prog.run_schedule(mod, [RcFactsPass, NaIRGenPass]);
+            require(self.prog, mod, CompilationProduct.NATIVE_LOWER);
             self.registry._timed("NATIVE_LOWER", started);
             self.registry._event("native_unit_lower");
             self.registry.note_slow_step("lowering", resolved, started);
             if len(self.prog.errors_had) > errors_before
                 or mod.gen.native_iface is None {
+                if mod.gen.native_refusal {
+                    self.registry.failures[resolved] = mod.gen.native_refusal;
+                }
                 return None;
             }
             import from jaclang.compiler.backends.native.na_compile_pass {
@@ -1045,9 +982,8 @@ obj NativeBuildSession {
         """Optimize and persist only after every consumed interface agrees.
         Cyclic interface settlement reuses the analyzed trees and never emits
         optimized products for an intermediate state.""";
-        import from jaclang.compiler.backends.native.na_compile_pass {
-            NativeCompilePass
-        }
+        import from jaclang.compiler.driver.pipeline { require }
+        import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
         self.prog.options = self.options.clone_for_native_import();
         for path in paths {
             if path in self.source_keys
@@ -1076,7 +1012,7 @@ obj NativeBuildSession {
             errors_before = len(self.prog.errors_had);
             if path not in optimized {
                 started = self.registry.note_step("optimize", path);
-                self.prog.run_schedule(mod, [NativeCompilePass]);
+                require(self.prog, mod, CompilationProduct.NATIVE_OBJECT);
                 self.registry._timed("NATIVE_OPTIMIZE", started);
                 self.registry.note_slow_step("optimizing", path, started);
             }
@@ -1154,28 +1090,6 @@ def _module_files_and_imports(path: str) -> tuple[list[str], list[str]] {
     return (files, imports);
 }
 
-def native_verdict_closure(path: str) -> list[str] {
-    start = os.path.realpath(path);
-    seen: set[str] = {start};
-    queue: list[str] = list(_module_files_and_imports(start)[1]);
-    out: list[str] = [];
-    while queue and len(seen) < VERDICT_CLOSURE_LIMIT {
-        dep = queue.pop(0);
-        if dep in seen {
-            continue;
-        }
-        seen.add(dep);
-        (files, imports) = _module_files_and_imports(dep);
-        out.extend(files);
-        queue.extend(
-            i
-            for i in imports
-            if i not in seen
-        );
-    }
-    return sorted(set(out));
-}
-
 def _file_digest(path: str) -> str {
     key = _stat_key(path);
     if key is None {
@@ -1192,14 +1106,6 @@ def _file_digest(path: str) -> str {
     }
     _dep_digest_memo[path] = (key, digest);
     return digest;
-}
-
-def native_verdict_dep_rows(path: str) -> list[list[str]] {
-    try {
-        return [[f, _file_digest(f)] for f in native_verdict_closure(path)];
-    } except Exception {
-        return [];
-    }
 }
 
 def _interface_changes(before: any, after: any, path: str, out: list[str]) {
@@ -1228,55 +1134,4 @@ def _interface_changes(before: any, after: any, path: str, out: list[str]) {
         return;
     }
     out.append(f"{path}: {str(before)[:60]} -> {str(after)[:60]}");
-}
-
-def verdict_deps_fresh(rows: list[list[str]], base_dir: str = "") -> bool {
-    prefix = PRECOMPILE_SENTINEL + "/";
-    for row in rows {
-        path = row[0];
-        if path.startswith(prefix) {
-            if not base_dir {
-                continue;
-            }
-            path = os.path.normpath(os.path.join(base_dir, path[len(prefix):]));
-        }
-        if _file_digest(path) != row[1] {
-            return False;
-        }
-    }
-    return True;
-}
-
-def verdict_from_jir(data: bytes, base_dir: str = "") -> (NativeVerdict | None) {
-    raw = read_section_bytes(data, SEC_PLACEMENT);
-    if raw is None {
-        return None;
-    }
-    import from jaclang.compiler.placement.placement_export { summary_from_bytes }
-    summary = summary_from_bytes(raw);
-    if summary is None or not summary.native_verdict {
-        return None;
-    }
-    if not verdict_deps_fresh(summary.native_verdict_deps, base_dir) {
-        return None;
-    }
-    return NativeVerdict(
-        demoted=True,
-        code=summary.native_verdict_code,
-        detail=summary.native_verdict,
-        deps=summary.native_verdict_deps
-    );
-}
-
-def read_native_verdict(path: str) -> (NativeVerdict | None) {
-    resolved = os.path.realpath(path);
-    try {
-        cache_path = get_module_cache_path(resolved);
-        if not is_module_cache_valid(resolved, cache_path) {
-            return None;
-        }
-        return verdict_from_jir(cache_path.read_bytes());
-    } except Exception {
-        return None;
-    }
 }

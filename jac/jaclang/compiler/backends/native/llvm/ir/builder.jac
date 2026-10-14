@@ -997,13 +997,14 @@ class IRBuilder {
         indices: any,
         inbounds: bool = False,
         name: str = '',
-        source_etype: types.Type | None = None
+        source_etype: types.Type | None = None,
+        nusw: bool = False
     ) -> Value {
         if ptr is None {
             raise TypeError(MISSING_OPERAND);
         }
         instr = instructions.GEPInstr(
-            self.block, ptr, indices, inbounds, name, source_etype
+            self.block, ptr, indices, inbounds, name, source_etype, nusw
         );
         self._insert(instr);
         return instr;
