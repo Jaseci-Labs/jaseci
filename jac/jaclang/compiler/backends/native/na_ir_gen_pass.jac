@@ -1677,6 +1677,7 @@ walker NaIRGenPass(CompilerPass) {
     def _emit_exc_lineage_match(type_val: ir.Value, bases: list[int]) -> ir.Value;
     def _register_exc_lineage(cause: (uni.Expr | None), type_id: int) -> None;
     def _codegen_raise(nd: uni.RaiseStmt) -> None;
+    def _exc_arg_message(arg: uni.Expr) -> (ir.Value | None);
     def _raise_has_frame_handler(nd: uni.RaiseStmt) -> bool;
     def _codegen_try(nd: uni.TryStmt) -> None;
     def _codegen_expr(nd: (uni.UniNode | None)) -> (ir.Value | None);
