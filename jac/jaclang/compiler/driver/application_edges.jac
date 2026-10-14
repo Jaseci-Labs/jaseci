@@ -3,7 +3,7 @@ def application_edges(
 ) -> list[tuple[str, str]] {
     import from jaclang.compiler.driver.program { JacProgram }
     import from jaclang.compiler.driver.compile_options { CompileOptions }
-    import from jaclang.compiler.driver.pipeline { require_product, CompilationProduct }
+    import from jaclang.compiler.driver.pipeline { require, CompilationProduct }
     prog = JacProgram();
     prog.compile(
         entry_path,
@@ -45,7 +45,7 @@ def application_edges(
             }
             if not man.app_edges and not man.surface {
                 try {
-                    require_product(prog, mod, CompilationProduct.BOUNDARIES);
+                    require(prog, mod, CompilationProduct.BOUNDARIES);
                     man = mod.gen.interop_manifest;
                 } except Exception {
                     continue;

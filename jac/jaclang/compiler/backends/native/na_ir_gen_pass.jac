@@ -1,15 +1,6 @@
 import from jaclang.compiler.frontend.roles { Kid }
-import from jaclang.compiler.passes.context {
-    Alert,
-    CompileContext,
-    CompilerPass,
-    PassSchedule
-}
-import from jaclang.compiler.driver.pipeline {
-    register_codegen_backend,
-    register_product_schedule
-}
-import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
+import from jaclang.compiler.passes.context { Alert, CompileContext, CompilerPass }
+import from jaclang.compiler.driver.pipeline_types { AnalysisFact, PassContract }
 import from jaclang.compiler.driver.native_iface { NativeIface, NativeExport }
 import from jaclang.compiler.frontend.host { active_host }
 import from jaclang.compiler.backends.native.na_constants {
@@ -128,6 +119,8 @@ import from jaclang.runtime.osp_tag { stable_osp_tag }
 import from jaclang.compiler.backends.native.na_constants {
     CLASS_DISPLAY_OFF,
     CLASS_RECORD_ANCESTRY,
+    CLASS_RECORD_STATICS,
+    CLASS_RECORD_STATICS_COUNT,
     VTABLE_SET_BUCKETS,
     VTABLE_SET_SYMBOL,
     EXC_LINEAGE_BITS,
@@ -277,6 +270,17 @@ obj NativeFunctionState {
 }
 
 walker NaIRGenPass(CompilerPass) {
+    static has contract: PassContract = PassContract(
+        requires=(
+            AnalysisFact.TYPE_OF,
+            AnalysisFact.CFG_SUCC,
+            AnalysisFact.OWNERSHIP,
+            AnalysisFact.CAPABILITY,
+            AnalysisFact.RC_FACTS,
+
+        )
+    );
+
     has module: uni.Module,
         _llvm_module: (ir.Module | None) = None,
         _type_map: (dict[str, ir.Type] | None) = None,
@@ -405,6 +409,7 @@ walker NaIRGenPass(CompilerPass) {
         _runtime_class_name_fn: (ir.Function | None) = None,
         _class_ctor_lookup_fn: (ir.Function | None) = None,
         _class_record_lookup_fn: (ir.Function | None) = None,
+        _class_static_lookup_fn: (ir.Function | None) = None,
         _class_ctor_records: list[tuple[ir.GlobalVariable, int]] = [],
         _class_display_fn: (ir.Function | None) = None,
         _vtable_less_reach: (set[str] | None) = None,
@@ -2401,6 +2406,15 @@ walker NaIRGenPass(CompilerPass) {
 
     def _class_record_type -> ir.LiteralStructType;
     def _class_ctor_entry_type -> ir.LiteralStructType;
+    def _class_static_entry_type -> ir.LiteralStructType;
+    def _static_type_key(t: ir.Type) -> str;
+    def _static_field_name_const(field: str) -> ir.Constant;
+    def _class_static_table(name: str) -> tuple[int, ir.Value];
+    def _emit_class_static_lookup_fn -> ir.Function;
+    def _codegen_class_value_static(
+        target: uni.UniNode, bound: str, field: str
+    ) -> (ir.Value | None);
+
     def _emit_class_record_lookup_fn -> ir.Function;
     def _emit_class_ctor_lookup_fn -> ir.Function;
     def _codegen_class_osp_tag(instance: ir.Value) -> (ir.Value | None);
@@ -3551,19 +3565,4 @@ walker NaIRGenPass(CompilerPass) {
     def _decl_field_llvm_types(arch_name: str) -> (dict[str, ir.Type] | None);
     def _lower_view_container(t: any) -> (ir.Type | None);
     def _program_has_subclasses(arch_name: str) -> bool;
-}
-
-def native_codegen_schedule -> PassSchedule {
-    return [NaIRGenPass];
-}
-
-def native_ir_product_schedule -> PassSchedule {
-    import from jaclang.compiler.driver.context_passes { NativeImportFactsPass }
-    import from jaclang.compiler.passes.rc_facts_pass { RcFactsPass }
-    return [NativeImportFactsPass, RcFactsPass, NaIRGenPass];
-}
-
-with entry {
-    register_codegen_backend("native", native_codegen_schedule);
-    register_product_schedule(CompilationProduct.NATIVE_IR, native_ir_product_schedule);
 }

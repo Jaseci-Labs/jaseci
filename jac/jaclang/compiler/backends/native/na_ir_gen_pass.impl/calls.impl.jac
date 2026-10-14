@@ -2161,19 +2161,18 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
                 "ascii"
             ) {
             params_l: list[uni.Expr | uni.KWPair] = list(nd.params or []);
+            _ez_setlike = func_name in ("set", "frozenset");
             _ez_peer = self._spec_from_container_ptr(self._peer_container_ty)
-                if not params_l and func_name in ("list", "set")
+                if not params_l and (func_name == "list" or _ez_setlike)
                 else None;
             if not params_l
-                and func_name in ("list", "set")
+                and (func_name == "list" or _ez_setlike)
                 and (self._empty_ctor_args_of(nd) or _ez_peer is not None) {
                 _ez_args = self._empty_ctor_args_of(nd);
                 _ez_elem: ir.Type = ir.IntType(8).as_pointer();
                 _ez_spec = "ptr";
                 if not _ez_args and _ez_peer is not None {
-                    _ez_pt = self.set_helpers
-                        if func_name == "set"
-                        else self.list_helpers;
+                    _ez_pt = self.set_helpers if _ez_setlike else self.list_helpers;
                     _ez_ph = _ez_pt.get(_ez_peer);
                     if _ez_ph is not None {
                         _ez_peer_new = self.builder.call(
@@ -2202,7 +2201,7 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
                         }
                     }
                 }
-                if func_name == "set" {
+                if _ez_setlike {
                     (_ez_spec, _ez_size) = self._hash_key_spec(_ez_elem);
                     self._emit_set_helpers(_ez_spec, _ez_elem, _ez_size);
                     _ez_h = self.set_helpers.get(_ez_spec);

@@ -21,7 +21,6 @@ glob NATIVE_SCOPE: tuple[NativeScopeEntry, ...] = (
          NativeScopeEntry(module="jaclang.compiler.passes.ast_validation_pass"),
          NativeScopeEntry(module="jaclang.compiler.passes.sym_tab_build_pass"),
          NativeScopeEntry(module="jaclang.compiler.passes.annex_weave"),
-         NativeScopeEntry(module="jaclang.compiler.passes.early_passes"),
          NativeScopeEntry(module="jaclang.compiler.passes.graph_lowering_pass"),
          NativeScopeEntry(module="jaclang.compiler.passes.decl_impl_match_pass"),
          NativeScopeEntry(module="jaclang.compiler.passes.semantic_analysis_pass"),

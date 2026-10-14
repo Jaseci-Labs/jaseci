@@ -1962,11 +1962,11 @@ impl NaIRGenPass._record_linked_decl(
 }
 
 impl NaIRGenPass._ensure_dep_inference(dep_mod: uni.Module) -> None {
-    if self.prog.analysis.analyses_run.provides(dep_mod, AnalysisFact.TYPE_OF) {
+    if self.prog.analysis.provides(dep_mod, AnalysisFact.TYPE_OF) {
         return;
     }
-    import from jaclang.compiler.driver.pipeline { require_product, CompilationProduct }
-    if not require_product(self.prog, dep_mod, CompilationProduct.ANALYSIS) {
+    import from jaclang.compiler.driver.pipeline { require, CompilationProduct }
+    if not require(self.prog, dep_mod, CompilationProduct.ANALYSIS) {
         raise NativeRefused(
             f"Native dependency analysis failed: {dep_mod.loc.mod_path}"
         );

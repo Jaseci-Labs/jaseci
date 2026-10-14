@@ -1,4 +1,5 @@
 import from jaclang.compiler.frontend.unitree { TreeWalker }
+import from jaclang.compiler.driver.pipeline_types { PassContract }
 import from jaclang.compiler.passes.context { CompileContext, TreePass }
 import from jaclang.compiler.tools.reactive_use_walk { ReactiveUseWalker }
 import keyword;
@@ -66,6 +67,7 @@ import from jaclang.compiler.frontend.roles {
 }
 
 walker JacAutoLintPass(TreePass) {
+    static has contract: PassContract = PassContract();
     has lint_enabled: bool = True,
         report_only: bool = False,
         main_module: (uni.Module | None) = None,
@@ -227,5 +229,6 @@ walker JacAutoLintPass(TreePass) {
 }
 
 walker JacLintCheckPass(JacAutoLintPass) {
+    static has contract: PassContract = PassContract();
     has report_only: bool = True;
 }
