@@ -1638,12 +1638,19 @@ def _serves_web_client(kind: (str | None), platform: (str | None)) -> bool {
 
 def _count_jac_files(directory: str) -> int {
     import from pathlib { Path }
+    import from jaclang.compiler.frontend.codeinfo { is_compiler_source_path }
     try {
         path = Path(directory);
         if path.is_file() {
             return 1 if path.suffix == '.jac' else 0;
         }
-        return len(list(path.rglob('*.jac')));
+        return len(
+            [
+                f
+                for f in path.rglob('*.jac')
+                if not is_compiler_source_path(str(f))
+            ]
+        );
     } except Exception {
         return 0;
     }

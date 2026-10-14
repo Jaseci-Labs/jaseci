@@ -298,6 +298,27 @@ test "the compiler's own modules never make a watch root, wherever its checkout 
     }
 }
 
+test "a watch around the jac checkout reports no compiler source events" {
+    import os;
+    import from jaclang.compiler.frontend.codeinfo {
+        is_compiler_source_path,
+        jaclang_pkg_root
+    }
+    import from jaclang.cli.commands.execution { _count_jac_files }
+    package = os.path.realpath(jaclang_pkg_root());
+    checkout = os.path.dirname(package);
+    compiler_module = os.path.join(package, "runtime", "prepared.jac");
+    assert is_compiler_source_path(compiler_module);
+    watcher = JacFileWatcher(watch_paths=[checkout]);
+    for path in [compiler_module, os.path.join(checkout, "main.jac")] {
+        watcher._on_change(path, ChangeType.MODIFIED);
+    }
+    watcher._on_change(os.path.join(package, "runtime"), ChangeType.CREATED, True);
+    seen = sorted(watcher._pending_events);
+    assert seen == [os.path.join(checkout, "main.jac")] , str(seen);
+    assert _count_jac_files(package) == 0;
+}
+
 test "nothing under site-packages or a hidden directory becomes a watch root" {
     import os;
     with tempfile.TemporaryDirectory() as tmp {
