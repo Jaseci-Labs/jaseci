@@ -89,9 +89,8 @@ def _cold_rebuild -> tuple[int, dict[str, any], int] {
     env.update(cache_env(os.path.join(work, "cache")));
     env["LOCALAPPDATA"] = os.path.join(work, "cache");
     for knob in [
-        "JAC_NO_DEV_SOURCE",
+        "JAC_HANDOFF",
         "JAC_NO_UNIT_EVICT",
-        "JAC_REBUILD",
         "JAC_PRECOMPILE_LIMIT",
         "JAC_UNIT_COLLECT_EVERY",
         "JAC_UNIT_COLLECT_GROWTH_MB"

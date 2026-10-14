@@ -1195,7 +1195,7 @@ impl _parse_toml_data(
             conflict_max_attempts=serve_data.get("conflict_max_attempts", 5),
             conflict_backoff_ms=serve_data.get("conflict_backoff_ms", 0),
             workers=ServeWorkersConfig(
-                count=str(workers_data.get("count", "1")),
+                count=str(workers_data.get("count", "")),
                 threads=str(workers_data.get("threads", "auto")),
                 max_requests=int(workers_data.get("max_requests", 0)),
                 max_requests_jitter=int(workers_data.get("max_requests_jitter", 0)),
@@ -1316,11 +1316,38 @@ impl _parse_toml_data(
         client_data = data["client"];
         config.client = ClientConfig(framework=client_data.get("framework", "react"));
     }
+    if isinstance(data.get("database"), dict) {
+        db_data: dict[str, any] = data["database"];
+        indexes = db_data.get("indexes");
+        days = str(db_data.get("retention_days") or "0").strip();
+        config.database = DatabaseConfig(
+            indexes={
+                str(arch): [str(field) for field in fields]
+                for (arch, fields) in (
+                    indexes.items() if isinstance(indexes, dict) else []
+                )
+                if isinstance(fields, list)
+            },
+            retention_days=int(days) if days.isdigit() else 0,
+            postgres_dist=str(db_data.get("postgres_dist") or ""),
+            postgres_version=str(db_data.get("postgres_version") or "")
+        );
+    }
+    if isinstance(data.get("network"), dict) {
+        config.network = NetworkConfig(offline=data["network"].get("offline") is True);
+    }
+    if isinstance(data.get("toolchains"), dict) {
+        config.toolchains = ToolchainsConfig(
+            system=data["toolchains"].get("system", True) is not False
+        );
+    }
     if "dev" in data {
         dev_data = data["dev"];
 
         config.dev = DevConfig(
             jaclang_source=str(dev_data.get("jaclang_source", "")),
+            exact=dev_data.get("exact") is True,
+            pod_binary=str(dev_data.get("pod_binary", "")),
             jobs=str(dev_data.get("jobs", "")),
             test_jobs=str(dev_data.get("test_jobs", "")),
             check_jobs=str(dev_data.get("check_jobs", "")),
@@ -1656,23 +1683,13 @@ def _apply_build_section(cfg: JacConfig, data: dict[str, any]) -> None {
             );
         }
     }
-    _builtin_cap = BuildConfig().native_closure_cap;
-    try {
-        _cap = int(build_data.get("native_closure_cap", _builtin_cap));
-    } except (TypeError, ValueError) {
-        _cap = 0;
-    }
-    if _cap < 1 {
+    if "native_closure_cap" in build_data {
         console.warning(
-            f"[build] native_closure_cap="
-            f"'{build_data.get('native_closure_cap')}' must be a positive "
-            f"integer; defaulting to {_builtin_cap}."
+            "jac.toml: [build] native_closure_cap was retired; a module's whole "
+            "import closure is always judged for native placement."
         );
-        _cap = _builtin_cap;
     }
-    cfg.build = BuildConfig(
-        dir=str(build_data.get("dir", BuildConfig().dir)), native_closure_cap=_cap
-    );
+    cfg.build = BuildConfig(dir=str(build_data.get("dir", BuildConfig().dir)));
 }
 
 def _apply_memory_native_placement(cfg: JacConfig, data: dict[str, any]) {

@@ -1,4 +1,5 @@
 import from jaclang.compiler.frontend.roles { BodyRole, Kid }
+import from jaclang.compiler.driver.pipeline_types { AnalysisFact, PassContract }
 import from jaclang.compiler.passes.context { CompileContext, CompilerPass }
 import type from jaclang.compiler.types.types { TypeBase }
 import from enum { Enum }
@@ -104,6 +105,11 @@ obj BorrowMeta {
 }
 
 walker OwnershipCheckPass(CompilerPass) {
+    static has contract: PassContract = PassContract(
+        requires=(AnalysisFact.CFG_SUCC, AnalysisFact.TYPE_OF, ),
+        provides=(AnalysisFact.OWNERSHIP, )
+    );
+
     has owned_decl: dict[SymId, Name] = {},
         linear_decl: dict[SymId, Name] = {},
         consumed_syms: set[SymId] = set(),
@@ -134,6 +140,7 @@ walker OwnershipCheckPass(CompilerPass) {
     def _nogc_setup -> None;
     def _nogc_resolve_provenance -> (str | None);
     def _nogc_infer_locals -> None;
+    def _nogc_entry_confined_str(tgt: Name) -> bool;
     def _nogc_infer_state(expr: Expr | None) -> tuple[OwnershipKind, list[Name]];
     def _nogc_bind_inferred(
         nd: Assignment, tgt: Name, kind: OwnershipKind, roots: list[Name]

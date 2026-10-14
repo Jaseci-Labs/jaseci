@@ -1,5 +1,6 @@
-glob WASM_FLOOR_MANIFEST: str = "SOURCES.sha256",
-     MUSL_ARTIFACTS: tuple[str, ...] = (
+import from jaclang.compiler.backends.native.floors { WASM_FLOOR_MANIFEST }
+
+glob MUSL_ARTIFACTS: tuple[str, ...] = (
          "libc.a",
          "libzigc.a",
          "libcompiler_rt.a",

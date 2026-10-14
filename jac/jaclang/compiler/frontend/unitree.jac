@@ -935,6 +935,7 @@ node ModulePath(UniNode) {
     def resolve_relative_path(target_item: (str | None) = None) -> str;
     def resolve_relative_path_list -> list[str];
     def native_bundled_path -> (str | None);
+    def native_variant_path -> (str | None);
     def __repr__ -> str;
 }
 
@@ -1629,11 +1630,17 @@ node ReportStmt(CodeBlockStmt) {
 }
 
 node ReturnStmt(CodeBlockStmt) {
-    has is_implicit: bool = False;
+    has is_implicit: bool = False,
+        is_tail: bool = False;
+
     has expr: (Expr | None) { getter; }
 
     def init(
-        *, expr: (Expr | None), is_implicit: bool = False, kid: Sequence[UniNode] = []
+        *,
+        expr: (Expr | None),
+        is_implicit: bool = False,
+        is_tail: bool = False,
+        kid: Sequence[UniNode] = []
     ) -> None;
 
     def postinit -> None;

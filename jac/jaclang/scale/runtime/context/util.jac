@@ -28,7 +28,8 @@ def pick_free_port(
 }
 
 def jac_executable -> str {
-    return os.environ.get("JAC_EXECUTABLE", "") or shutil.which("jac") or "jac";
+    import from jaclang.dist.fused_binary { jac_binary }
+    return jac_binary() or shutil.which("jac") or "jac";
 }
 
 glob _DEFAULT_HTTP_FORWARD_TIMEOUT: float = 30.0,

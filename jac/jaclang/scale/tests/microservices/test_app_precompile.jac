@@ -213,6 +213,77 @@ test "an unchanged project reuses its sealed bundle instead of sealing again" {
 }
 
 
+"""Compiled and reused counts from the seal's `Done!` line in a pack log."""
+def _seal_counts(log: list[str]) -> tuple[int, int] {
+    import re;
+    for line in log {
+        found = re.search(r"Compiled (\d+)/\d+ modules \((\d+) reused", line);
+        if found {
+            return (int(found.group(1)), int(found.group(2)));
+        }
+    }
+    return (-1, -1);
+}
+
+
+"""The compiled `.jir` of `module` inside a packed bundle, or empty bytes."""
+def _bundle_jir(raw: bytes, module: str) -> bytes {
+    with tarfile.open(fileobj=io.BytesIO(raw), mode="r:gz") as archive {
+        for member in archive.getmembers() {
+            if member.name.startswith("_precompiled/")
+                and member.name.endswith("/" + module + ".jir") {
+                data = archive.extractfile(member);
+                return data.read() if data is not None else b"";
+            }
+        }
+    }
+    return b"";
+}
+
+
+test "a deploy after an edit recompiles only what the edit reaches" {
+    binary = require_pod_binary().read_bytes();
+    base = Path(_mini_app());
+    (base / "helper.jac").write_text("def label(text: str) -> str { return text; }\n");
+    (base / "svc.jac").write_text(
+        "import from helper { label }\n"
+            + "def:pub ping -> str { return label(\"pong\"); }\n"
+    );
+    (first, first_log) = _pack_logged(base, binary);
+    (compiled, reused) = _seal_counts(first_log);
+    assert compiled > 0 and reused == 0 , f"first seal: {first_log}";
+    assert _bundle_jir(first, "svc") and _bundle_jir(first, "helper");
+    (base / "svc.jac").write_text(
+        "import from helper { label }\n"
+            + "def:pub ping -> str { return label(\"pong!\"); }\n"
+    );
+    (edited, edited_log) = _pack_logged(base, binary);
+    assert any("Seeded" in m for m in edited_log) , (
+        f"the seal after an edit did not start from the previous one: {edited_log}"
+    );
+    (compiled, _) = _seal_counts(edited_log);
+    assert compiled == 1 , f"an edit to one module compiled {compiled}: {edited_log}";
+    assert _bundle_jir(edited, "svc") != _bundle_jir(first, "svc") , (
+        "the edited module shipped its old compiled code"
+    );
+    assert _bundle_jir(edited, "helper") == _bundle_jir(first, "helper") , (
+        "the unchanged module was not reused"
+    );
+    (base / "helper.jac").write_text(
+        "def label(text: str) -> str { return text + \"!\"; }\n"
+    );
+    (dep_edited, dep_log) = _pack_logged(base, binary);
+    (compiled, _) = _seal_counts(dep_log);
+    assert compiled == 1 , f"an edit to the imported module compiled {compiled}";
+    assert _bundle_jir(dep_edited, "helper") != _bundle_jir(edited, "helper") , (
+        "the edited imported module shipped its old compiled code"
+    );
+    assert _bundle_jir(dep_edited, "svc") == _bundle_jir(edited, "svc") , (
+        "the importer was recompiled although its own source did not change"
+    );
+}
+
+
 test "pack_jab on a nonexistent app directory is a hard error" {
     caught = "";
     try {
@@ -255,7 +326,7 @@ test "the seal and vendor subprocesses run without persistent storage (issue 809
         f"persistent store there is a permanent orphan; {SCRATCH_ENV} was "
         f"{env.get(SCRATCH_ENV)!r}"
     );
-    for banned in ["PYTHONPATH", "JAC_DEV_SOURCE"] {
+    for banned in ["PYTHONPATH", "JAC_HANDOFF"] {
         assert banned not in env , f"{banned} must stay out of the seal env";
     }
 }
@@ -395,7 +466,7 @@ test "a real pod binary seals the app each pod serves and boots it from the seal
                 archive.extractall(tmp, filter="data");
             }
             env = dict(os.environ);
-            env["JAC_NO_DEV_SOURCE"] = "1";
+            env["JAC_HANDOFF"] = '{"compiler_source": ""}';
             for (boot_file, endpoint) in boots.items() {
                 result = subprocess.run(
                     [

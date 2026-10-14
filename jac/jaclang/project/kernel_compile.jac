@@ -22,17 +22,25 @@ import from jaclang.project.kernel_snapshot {
     loaded_kernel
 }
 
-glob KERNEL_COMPILE_ENV: str = "JAC_KERNEL_COMPILE",
-     KERNEL_TIMING_ENV: str = "JAC_KERNEL_TIMING",
+glob KERNEL_TIMING_ENV: str = "JAC_KERNEL_TIMING",
      SLOW_COMPILE_SECONDS: float = 20.0,
      _APPLICATION_UNITS: dict[str, UnitProducts] = {},
-     _HOST_PREPARING: list[str] = [];
+     _HOST_PREPARING: list[str] = [],
+     _IN_PROCESS: list[bool] = [];
 
 class KernelCompileError(RuntimeError) {}
 
+def run_kernel_in_process(on: bool = True) -> bool {
+    previous = kernel_compile_in_process();
+    _IN_PROCESS.clear();
+    if on {
+        _IN_PROCESS.append(True);
+    }
+    return previous;
+}
+
 def kernel_compile_in_process -> bool {
-    raw = os.environ.get(KERNEL_COMPILE_ENV, "").strip().lower();
-    return raw in ("inprocess", "in-process");
+    return bool(_IN_PROCESS);
 }
 
 def kernel_compile(
@@ -112,7 +120,14 @@ def kernel_route(program: JacProgram, path: str) -> tuple[bool, bool] {
         return (True, True);
     }
     import from jaclang.compiler.native_compiler { ensure_loaded }
-    return (ensure_loaded() is not None, False);
+    if ensure_loaded() is None {
+        import from jaclang.compiler.backends.native.kernel_resolve {
+            refuse_unloadable
+        }
+        refuse_unloadable();
+        return (False, False);
+    }
+    return (True, False);
 }
 
 def kernel_compile_reported(

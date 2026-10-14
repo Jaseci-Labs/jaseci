@@ -22,6 +22,7 @@ obj CompileOptions {
         native_require: (list[str] | None) = None,
         iface_ok: bool = False,
         need_full_ast: bool = False,
+        native_tree_demand: bool = False,
         skip_analysis: bool = False,
         skip_native_engine: bool = False,
         no_ir_cache: bool = False,
@@ -353,25 +354,10 @@ def env_symmap_requested -> bool {
     return bool(os.environ.get("JAC_SYMMAP", ""));
 }
 
-def env_floor_dir -> str {
-    import os;
-    return os.environ.get("JAC_NATIVE_FLOOR_DIR", "");
-}
-
 def env_na_debug -> bool {
     import os;
     return os.environ.get("JAC_NA_DEBUG", "").strip().lower()
         in ("1", "true", "yes", "on");
-}
-
-def env_wasm_libc_dir -> str {
-    import os;
-    return os.environ.get("JAC_NATIVE_WASM_LIBC_DIR", "");
-}
-
-def env_llvm_shim_override -> (str | None) {
-    import os;
-    return os.environ.get("JAC_LLVM_SHIM", None);
 }
 
 def env_typed_pointers_enabled -> bool {

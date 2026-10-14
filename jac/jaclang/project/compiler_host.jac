@@ -4,7 +4,6 @@ import from jaclang.compiler.frontend.host {
     HostPlatform,
     HostServices,
     LintSettings,
-    NativeVerdict,
     PathFacts,
     ProjectDefaults,
     ProjectFacts
@@ -123,15 +122,10 @@ obj ProjectHost(HostServices) {
         program: JacProgram, source: str, element: str
     ) -> (bool | None);
 
-    def native_verdict(
-        path: str, program: (JacProgram | None) = None
-    ) -> (NativeVerdict | None);
-
     def record_native_coverage(
         path: str, outcome: str, code: str = "", detail: str = ""
     );
 
-    def record_native_verdict(program: JacProgram, path: str, code: str, detail: str);
     def native_analyze(
         program: JacProgram, path: str, options: CompileOptions, source: (str | None)
     ) -> (ModuleAnalysis | None);
@@ -179,6 +173,7 @@ obj ProjectHost(HostServices) {
     def module_in_flight(names: list[str]) -> str;
     def import_in_flight(path: str) -> bool;
     def has_active_stub_catalog -> bool;
+    def typeshed_unavailable_reason -> str;
     def is_native_only_source(rel: str) -> bool;
     def is_native_lowered_source(rel: str) -> bool;
     def default_target_triple -> str;
@@ -206,7 +201,6 @@ def project_defaults_of(cfg: any) -> ProjectDefaults {
     memory = cfg.memory;
     return ProjectDefaults(
         default_codespace=cfg.placement.default_codespace,
-        native_closure_cap=cfg.build.native_closure_cap,
         native_require=list(native.require),
         native_target=native.target,
         native_debug=native.debug,

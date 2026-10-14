@@ -1,4 +1,5 @@
 import textwrap;
+import from jaclang.compiler.driver.pipeline_types { PassContract }
 import from jaclang.compiler.frontend.roles { Kid }
 import from collections.abc { Sequence }
 import from jaclang.compiler.frontend.loop_links { LoopLinks, LoopStmt, PassLink }
@@ -371,6 +372,7 @@ def module_container_bytes(mod_path: str, root_node: CgNode) -> bytes {
 }
 
 walker JcirGenPass(TreePass) {
+    static has contract: PassContract = PassContract();
     has already_added: list[str] = [],
         _ct_only_names: (set[str] | None) = None,
         jaclib_imports: set[str] postinit,
@@ -458,6 +460,8 @@ walker JcirGenPass(TreePass) {
     def _c_temp_name(role: str) -> str;
     def _c_named(name: str, value: CgNode) -> CgNode;
     def _c_interop_call_rewrite(nd: FuncCall) -> None;
+    def _c_vararg_rewrite(nd: FuncCall, fixed: int) -> None;
+    def _is_c_global_value(nd: Name) -> bool;
     def _c_copy_rewrite(nd: AtomTrailer) -> None;
     def const_of(value: any, jac_node: (UniNode | None) = None) -> CgNode;
     def int_const_of(value: CtInt, jac_node: (UniNode | None) = None) -> CgNode;

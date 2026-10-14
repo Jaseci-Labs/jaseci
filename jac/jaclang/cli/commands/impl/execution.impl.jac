@@ -782,6 +782,19 @@ def _resolve_plan(
     return (plan, cfg, app, file, 0);
 }
 
+def _in_compiler_tree(file: Path, project_root: Path) -> bool {
+    project = project_root.resolve();
+    for parent in file.resolve().parents {
+        if not parent.is_relative_to(project) {
+            return False;
+        }
+        if parent.name == 'jaclang' and (parent / 'jac0core').is_dir() {
+            return True;
+        }
+    }
+    return False;
+}
+
 def _load_executable(
     filename: str, base: str, main: bool, force_codespace: str = ''
 ) -> types.ModuleType {
@@ -796,17 +809,9 @@ def _load_executable(
         compiler.selfhost.resolve(filename, program)
     );
     config = get_config_for_path(Path(filename));
-    if config is not None
-        and config.project_root is not None
-        and config.dev.jaclang_source {
-        source_root = (
-            config.project_root / config.dev.jaclang_source / 'jaclang'
-        ).resolve();
+    if config is not None and config.project_root is not None {
         compiler_owned = compiler_owned
-            or (
-                source_root.is_relative_to(config.project_root.resolve())
-                and Path(filename).resolve().is_relative_to(source_root)
-            );
+            or _in_compiler_tree(Path(filename), config.project_root);
     }
     if compiler_owned {
         modules = Jac.jac_import(
@@ -1070,18 +1075,11 @@ def _exec_file(
                     and resolve_app_kind(_cfg_kind, _app, _abs_file) == 'cli-native'
                 );
             }
-            import from jaclang.compiler.driver.boundary_classify {
-                module_demoted_native as _na_demoted
-            }
             if backend != "python"
                 and (
                     backend == "native"
                     or _kind_forced
-                    or (
-                        _default_codespace_is_native()
-                        and sys.stdout is sys.__stdout__
-                        and not _na_demoted(filename)
-                    )
+                    or (_default_codespace_is_native() and sys.stdout is sys.__stdout__)
                 ) {
                 import ctypes;
                 import from jaclang.compiler.driver.compile_options {
@@ -1097,7 +1095,11 @@ def _exec_file(
                 (in_kernel, engine) = program._get_compiler().kernel_native_entry(
                     full_path, program, _run_options
                 );
-                if not in_kernel {
+                if not in_kernel and _run_options is None {
+                    engine = program._get_compiler().native_entry_engine(
+                        full_path, program
+                    );
+                } elif not in_kernel {
                     ir_mod = program.compile(file_path=full_path, options=_run_options);
                     if (
                         ir_mod
@@ -1436,12 +1438,13 @@ impl serve(
             }
             try {
                 import from jaclang.server.hmr { HotReloader }
-                import from jaclang.server.watcher { JacFileWatcher, watch_roots }
+                import from jaclang.server.watcher {
+                    JacFileWatcher,
+                    application_watch_roots
+                }
 
-                watch_paths = watch_roots(
-                    base,
-                    prepared.`root,
-                    [str(k) for k in Jac.get_program().mod.hub.keys()]
+                watch_paths = application_watch_roots(
+                    base, prepared, Jac.get_program()
                 );
                 watcher = JacFileWatcher(watch_paths=watch_paths);
                 client_compiler = None;
@@ -1924,14 +1927,13 @@ def _run_entry_point(
 def _run_node_tool(name: str, bin_path: Path, args: list[str]) -> int {
     import subprocess;
     import from jaclang.project.config { get_config }
-    import from jaclang.client.bun_installer { get_bun }
+    import from jaclang.artifacts.model { ArtifactUnavailable }
+    import from jaclang.client.js_runtime { js_runtime_path }
 
-    bun = get_bun();
-    if bun is None {
-        console.error(
-            f"Cannot run npm tool '{name}': the bun runtime is unavailable.",
-            hint="Install bun, or run the project once (e.g. 'jac run') to let jac provision it."
-        );
+    try {
+        bun = js_runtime_path();
+    } except ArtifactUnavailable as e {
+        console.error(f"Cannot run npm tool '{name}': {e}");
         return 1;
     }
     config = get_config();

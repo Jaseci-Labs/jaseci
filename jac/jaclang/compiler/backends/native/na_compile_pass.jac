@@ -1,4 +1,5 @@
 import from jaclang.compiler.passes.context { CompileContext, CompilerPass }
+import from jaclang.compiler.driver.pipeline_types { PassContract }
 import jaclang.compiler.backends.native.llvm.binding as llvm;
 import type from jaclang.compiler.backends.native.llvm.binding {
     ModuleRef,
@@ -30,6 +31,8 @@ def optimize_unit(
 ) -> None;
 
 walker NativeCompilePass(CompilerPass) {
+    static has contract: PassContract = PassContract();
+
     def postinit -> None;
     def _run_impl(ir_in: uni.Module) -> uni.Module;
     def _share_engine(module: uni.Module, engine: any) -> None;

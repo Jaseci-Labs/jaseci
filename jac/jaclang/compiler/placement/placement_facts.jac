@@ -18,6 +18,55 @@ glob TOOLCHAIN_NATIVE_ONLY_REL: tuple[str, ...] = ("runtime", "na_stdlib"),
      );
 
 
+def native_placement_hard(prog: JacProgram, mod_path: str) -> bool {
+    opts = prog.options;
+    if opts is None {
+        return False;
+    }
+    if opts.aot_mode or opts.force_codespace {
+        return True;
+    }
+    return bool(mod_path and opts.native_required_for(mod_path));
+}
+
+
+def native_placement_soft(prog: JacProgram, mod: uni.Module) -> bool {
+    if mod.decided_codespace != SPACE_NATIVE and not mod.codespace_inferred {
+        return False;
+    }
+    mod_path = mod.loc.mod_path if mod.loc is not None else "";
+    return not native_placement_hard(prog, mod_path);
+}
+
+
+def contexts_of(module: uni.Module) -> list[str] {
+    return [
+        elem.code_context.value if isinstance(elem, uni.ContextAwareNode) else ''
+        for elem in module.body
+    ];
+}
+
+
+def settle_server(module: uni.Module) -> bool {
+    import from jaclang.compiler.frontend.constant { CodeContext }
+    import from jaclang.compiler.driver.boundary_classify { _stamp_context_element }
+    moved = False;
+    for elem in module.body {
+        if isinstance(elem, uni.ContextAwareNode)
+            and elem.code_context == CodeContext.NATIVE {
+            _stamp_context_element(elem, CodeContext.SERVER);
+            moved = True;
+        }
+    }
+    if module.decided_codespace == SPACE_NATIVE {
+        module.decided_codespace = "";
+    }
+    module.codespace_inferred = False;
+    module.gen.native_codespace = False;
+    return moved;
+}
+
+
 def project_root_of(source_path: str) -> (str | None) {
     return active_host().project_root(source_path);
 }
@@ -127,7 +176,22 @@ def _toolchain_rel(source_path: str) -> (str | None) {
     return target_package_rel(source_path);
 }
 
+def variant_selected(source_path: str) -> (bool | None) {
+    import from jaclang.compiler.frontend.codeinfo {
+        is_native_variant_path,
+        is_selected_native_variant
+    }
+    if not is_native_variant_path(source_path) {
+        return None;
+    }
+    return is_selected_native_variant(source_path);
+}
+
 def native_only(source_path: str) -> bool {
+    selected = variant_selected(source_path);
+    if selected is not None {
+        return selected;
+    }
     rel = _toolchain_rel(source_path);
     if rel is None {
         return False;
@@ -158,6 +222,10 @@ def native_unit(
     native_unit_compile: (bool | None) = None,
     prog: (JacProgram | None) = None
 ) -> bool {
+    selected = variant_selected(source_path);
+    if selected is not None {
+        return selected;
+    }
     if native_only(source_path) {
         return True;
     }

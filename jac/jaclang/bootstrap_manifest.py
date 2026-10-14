@@ -169,6 +169,8 @@ SEED_PATHS: tuple[str, ...] = (
     "runtime/semantic.jac",
     "cli/cli_boot.jac",
     "jac0core/cli_boot.jac",
+    "jac0core/handoff.jac",
+    "jac0core/artifact_registry.jac",
     "project/__init__.jac",
     "project/tomlio.jac",
     "project/source.jac",
