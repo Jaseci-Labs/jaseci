@@ -3859,7 +3859,6 @@ impl NaIRGenPass._emit_binary_op(
             return self._mark_owned(
                 self.builder.call(_repeat_fn, [str_val, _repeat_count], name="rep")
             );
-
         }
     }
 
