@@ -558,6 +558,14 @@ impl is_kernel_abi_contract(path: str) -> bool {
     return os.path.relpath(real, pkg).replace(os.sep, "/") in KERNEL_ABI_CONTRACT_REL;
 }
 
+impl is_native_stdlib_source(path: str) -> bool {
+    import jaclang;
+
+    pkg = os.path.dirname(os.path.realpath(jaclang.__file__));
+    stdlib = os.path.join(pkg, "runtime", "na_stdlib") + os.sep;
+    return os.path.realpath(path).startswith(stdlib);
+}
+
 impl scope_path_of(nd: UniNode) -> (list[str] | None) {
     names: list[str] = [];
     cur = nd.parent;

@@ -1,5 +1,6 @@
 import from socket { create_connection }
 import from ssl { create_default_context }
+import from ..http.client { HTTPResponse }
 
 
 obj _Url {

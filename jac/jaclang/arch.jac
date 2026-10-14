@@ -4410,7 +4410,8 @@ graph import compiler.driver {
         dedupe_generated_imports
     }
     wiring --> compiler.tools.jac_auto_lint_pass.JacAutoLintPass._strip_wired_imports {
-        is_kernel_abi_contract
+        is_kernel_abi_contract,
+        is_native_stdlib_source
     }
     application --> cli.commands.execution._load_executable { prepare_application }
     application --> compiler.driver.build_services.CompilerBuildServices.prepare_dynamic_module {

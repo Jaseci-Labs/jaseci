@@ -1,6 +1,6 @@
 import os;
 import from os.path { join, exists, abspath }
-
+import from ._file_native { read_file_bytes }
 import from locale { normalize }
 
 glob _OP_CONST: int = 0,
