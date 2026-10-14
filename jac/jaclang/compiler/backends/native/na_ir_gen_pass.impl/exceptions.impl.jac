@@ -957,7 +957,7 @@ impl NaIRGenPass._codegen_raise(nd: uni.RaiseStmt) -> None {
             } elif _exc_pos_args {
                 exc_msg = self._exc_arg_message(_exc_pos_args[0]);
             } elif nd.cause.params {
-                exc_msg = self._exc_arg_message(nd.cause.params[0]);
+                exc_msg = self._codegen_expr(nd.cause.params[0]);
             }
         } else {
             cause_struct = self._struct_name_of(nd.cause);
