@@ -855,11 +855,10 @@ impl JacCompiler.assemble_native(
 }
 
 impl JacCompiler.leave_compile(ctx: SessionContext, frame: CompileFrame) {
-    depth_prev = frame.depth_prev if isinstance(frame, HostCompileFrame) else 0;
     self._reentrant_depth = max(self._reentrant_depth - 1, 0)
         if isinstance(frame, HostCompileFrame)
         else 0;
-    if depth_prev == 0 {
+    if self._reentrant_depth == 0 {
         self._closure_opts = None;
         if ctx.caller is not ctx.target {
             self._release_compile_scratch(ctx.caller);

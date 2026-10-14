@@ -426,81 +426,85 @@ impl HotReloader._refresh_routing(file_path: str) -> None {
 }
 
 impl HotReloader._reload_server_module(file_path: str) -> None {
-    import from jaclang.runtime.runtime { JacRuntime as Jac }
-
-    import from jaclang.runtime.prepared { application_for }
-    entry_path = str(self._entry_module_path());
-    previous = application_for(entry_path);
-    program = Jac.program;
-
-    try {
-        resolved_path = str(Path(file_path).resolve());
-        for key in (file_path, resolved_path) {
-            if program is not None {
-                program.invalidate_module(key);
-                program.drop_module_alerts(key);
-            }
-        }
-    } except Exception as e {
-        console.warning(f"Could not clear module hub: {e}");
-    }
-
-    try {
+    import from jaclang.runtime.preparation_lock { PREPARATION_LOCK }
+    with PREPARATION_LOCK {
+        import from jaclang.runtime.runtime { JacRuntime as Jac }
         import from jaclang.runtime.prepared { application_for }
         entry_path = str(self._entry_module_path());
-        prepared = application_for(entry_path);
-        if prepared is not None {
-            import from jaclang.compiler.driver.application { reprepare_application }
-            prepared = reprepare_application(prepared, Jac.get_program());
-            if prepared.client_compiler is not None {
-                self.client_compiler = prepared.client_compiler;
-            }
-        }
-
-        sys.modules.pop(self.module_name, None);
-        Jac.loaded_modules.pop(self.module_name, None);
-        if previous is not None {
-            for (name, loaded) in list(sys.modules.items()) {
-                source = loaded?.__file__;
-                if source and os.path.realpath(source) in previous.code {
-                    sys.modules.pop(name, None);
-                    Jac.loaded_modules.pop(name, None);
+        previous = application_for(entry_path);
+        program = Jac.program;
+        try {
+            resolved_path = str(Path(file_path).resolve());
+            for key in (file_path, resolved_path) {
+                if program is not None {
+                    program.invalidate_module(key);
+                    program.drop_module_alerts(key);
                 }
             }
-        } elif program is not None {
-            for key in list(program.mod.hub.keys()) {
-                sys.modules.pop(self._path_to_module(key), None);
+        } except Exception as e {
+            console.warning(f"Could not clear module hub: {e}");
+        }
+        try {
+            import from jaclang.runtime.prepared { application_for }
+            entry_path = str(self._entry_module_path());
+            prepared = application_for(entry_path);
+            if prepared is not None {
+                import from jaclang.compiler.driver.application {
+                    reprepare_application
+                }
+                prepared = reprepare_application(prepared, Jac.get_program());
+                if prepared.client_compiler is not None {
+                    self.client_compiler = prepared.client_compiler;
+                }
             }
-        }
-        if prepared is not None {
-            import from jaclang.runtime.prepared { initialize_application }
-            import from jaclang.project.config { get_config_for_dir }
-            cfg = get_config_for_dir(prepared.root);
-            served = cfg.app_for_path(prepared.entry) if cfg is not None else None;
-            initialize_application(prepared, cfg, served);
-        } else {
-            Jac.jac_import(
-                target=self.module_name, base_path=self.base_path, reload_module=True
+
+            sys.modules.pop(self.module_name, None);
+            Jac.loaded_modules.pop(self.module_name, None);
+            if previous is not None {
+                for (name, loaded) in list(sys.modules.items()) {
+                    source = loaded?.__file__;
+                    if source and os.path.realpath(source) in previous.code {
+                        sys.modules.pop(name, None);
+                        Jac.loaded_modules.pop(name, None);
+                    }
+                }
+            } elif program is not None {
+                for key in list(program.mod.hub.keys()) {
+                    sys.modules.pop(self._path_to_module(key), None);
+                }
+            }
+            if prepared is not None {
+                import from jaclang.runtime.prepared { initialize_application }
+                import from jaclang.project.config { get_config_for_dir }
+                cfg = get_config_for_dir(prepared.root);
+                served = cfg.app_for_path(prepared.entry) if cfg is not None else None;
+                initialize_application(prepared, cfg, served);
+            } else {
+                Jac.jac_import(
+                    target=self.module_name,
+                    base_path=self.base_path,
+                    reload_module=True
+                );
+            }
+            console.print(f"[HMR] Reloaded: {file_path}");
+        } except SyntaxError as e {
+            console.error(
+                _syntax_error_line(file_path, e), hint="Fix the error and save to retry"
             );
+            self.record_error(
+                file_path,
+                f"Syntax error: {e?.msg or str(e)}",
+                line=int(e.lineno or 0),
+                column=int(e.offset or 0)
+            );
+        } except ImportError as e {
+            console.error(f"Import error in {file_path}: {e}");
+            self.record_error(file_path, f"Import error: {e}");
+        } except Exception as e {
+            error_type = type(e).__name__;
+            console.error(f"{error_type} in {file_path}: {e}");
+            self.record_error(file_path, f"{error_type}: {e}");
         }
-        console.print(f"[HMR] Reloaded: {file_path}");
-    } except SyntaxError as e {
-        console.error(
-            _syntax_error_line(file_path, e), hint="Fix the error and save to retry"
-        );
-        self.record_error(
-            file_path,
-            f"Syntax error: {e?.msg or str(e)}",
-            line=int(e.lineno or 0),
-            column=int(e.offset or 0)
-        );
-    } except ImportError as e {
-        console.error(f"Import error in {file_path}: {e}");
-        self.record_error(file_path, f"Import error: {e}");
-    } except Exception as e {
-        error_type = type(e).__name__;
-        console.error(f"{error_type} in {file_path}: {e}");
-        self.record_error(file_path, f"{error_type}: {e}");
     }
 }
 

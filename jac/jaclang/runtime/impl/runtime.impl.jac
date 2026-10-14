@@ -774,7 +774,13 @@ impl JacModule.jac_import(
                 spec.loader.exec_module(module);
             }
         } elif (reload_module and (module_name in sys.modules)) {
-            module = importlib.reload(sys.modules[module_name]);
+            import from jaclang.runtime.preparation_lock { PREPARATION_LOCK }
+            with PREPARATION_LOCK {
+                loaded = sys.modules.get(module_name);
+                module = importlib.reload(loaded)
+                    if loaded is not None
+                    else importlib.import_module(module_name);
+            }
             JacRuntimeInterface.load_module(module_name, module, force=True);
         } else {
             module = importlib.import_module(module_name);
