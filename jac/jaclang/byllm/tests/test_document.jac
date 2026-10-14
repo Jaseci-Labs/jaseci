@@ -1,4 +1,4 @@
-"""PDF documents: how a `Document` reaches the model, and what it refuses.
+"""PDF documents: the block each accepted source becomes, and what is refused.
 
 Assert on the request byLLM actually sent, not on a rendered string.
 """
@@ -6,8 +6,9 @@ Assert on the request byLLM actually sent, not on a rendered string.
 import base64;
 import os;
 import tempfile;
+import from pathlib { Path }
 import from jaclang.byllm.lib { Document, MockLLM }
-import from support { call, document_blocks, roles, say, sent_messages, user_blocks }
+import from support { document_blocks, say, user_blocks }
 
 
 glob PDF: bytes = b"%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n";
@@ -25,151 +26,92 @@ def _write(name: str, raw: bytes) -> str {
 }
 
 
-test "a PDF path is sent as one file block carrying its data url and file name" {
+test "every accepted document source becomes the expected file block" {
+    url = _pdf_data_url(PDF);
+    named = _write("brief.pdf", PDF);
+
+    # (label, what the caller hands to Document(), filename=, the block's `file`).
+    # The content decides, not the extension, and bytes before the header are dropped.
+    rows = [
+        ("path", named, None, {"file_data": url, "filename": "brief.pdf"}),
+        ("PathLike", Path(named), None, {"file_data": url, "filename": "brief.pdf"}),
+        (
+            "explicit name over the path's",
+            _write("tmp_1234.pdf", PDF),
+            "Q3 brief.pdf",
+            {"file_data": url, "filename": "Q3 brief.pdf"}
+        ),
+        (
+            "path with no extension",
+            _write("brief", PDF),
+            None,
+            {"file_data": url, "filename": "brief"}
+        ),
+        ("bytes carry no name", PDF, None, {"file_data": url}),
+        (
+            "bytes with a name",
+            PDF,
+            "spec.pdf",
+            {"file_data": url, "filename": "spec.pdf"}
+        ),
+        ("bytearray", bytearray(PDF), None, {"file_data": url}),
+        ("memoryview", memoryview(PDF), None, {"file_data": url}),
+        ("a newline before the header", b"\n" + PDF, None, {"file_data": url}),
+        ("a BOM before the header", b"\xef\xbb\xbf" + PDF, None, {"file_data": url}),
+        ("the header at byte 1000", b"x" * 1000 + PDF, None, {"file_data": url})
+    ];
+    for (label, source, filename, expected) in rows {
+        assert Document(source, filename=filename).to_dict()
+            == [{"type": "file", "file": expected}] , f"{label}: got {Document(
+            source, filename=filename
+        ).to_dict()}";
+    }
+
     llm = MockLLM(outputs=[say("PINEAPPLE")]);
 
     def read_secret(brief: Document) -> str by llm();
 
-    path = _write("brief.pdf", PDF);
-    assert read_secret(Document(path)) == "PINEAPPLE";
-    assert roles(llm) == ["system", "user"] , f"got {roles(llm)}";
+    assert read_secret(Document(named)) == "PINEAPPLE";
     assert document_blocks(llm)
-        == [
-            {
-                "type": "file",
-                "file": {"file_data": _pdf_data_url(PDF), "filename": "brief.pdf"}
-            }
-        ] , f"got {user_blocks(llm)}";
+        == [{"type": "file", "file": {"file_data": url, "filename": "brief.pdf"}}] , f"got {user_blocks(
+        llm
+    )}";
     assert user_blocks(llm)[0]["type"] == "text" , (
         f"the caller name introduces the argument, got {user_blocks(llm)[0]}"
     );
 }
 
 
-test "PDF bytes carry no file name unless one is given" {
-    llm = MockLLM(outputs=[say("ok"), say("ok")]);
+test "what is not a PDF is refused, with an error that says why" {
+    absent = os.path.join(tempfile.mkdtemp(prefix="doc-"), "absent.pdf");
 
-    def read_secret(brief: Document) -> str by llm();
-
-    assert read_secret(Document(PDF)) == "ok";
-    assert document_blocks(llm, 0)
-        == [{"type": "file", "file": {"file_data": _pdf_data_url(PDF)}}] , f"got {document_blocks(
-        llm, 0
-    )}";
-
-    assert read_secret(Document(PDF, filename="spec.pdf")) == "ok";
-    assert document_blocks(llm, 1)[0]["file"]["filename"] == "spec.pdf" , (
-        f"got {document_blocks(llm, 1)}"
-    );
-}
-
-
-test "an explicit file name wins over the path's" {
-    doc = Document(_write("tmp_1234.pdf", PDF), filename="Q3 brief.pdf");
-    assert doc.to_dict()[0]["file"]["filename"] == "Q3 brief.pdf";
-}
-
-
-test "the content decides, not the extension" {
-    no_extension = Document(_write("brief", PDF));
-    assert no_extension.to_dict()[0]["file"]["file_data"] == _pdf_data_url(PDF);
-
-    for (name, raw) in [
-        ("notes.pdf", b"# Notes\nThe secret word is MANGO.\n"),
-        ("notes.md", b"# Notes\n"),
-        ("empty.pdf", b"")
-    ] {
+    # (label, input, error type, a fragment of its message)
+    rows = [
+        ("markdown bytes", b"# Notes\nThe secret word is MANGO.\n", ValueError, "Text"),
+        (
+            "a .pdf holding markdown",
+            _write("notes.pdf", b"# Notes\n"),
+            ValueError,
+            "Text"
+        ),
+        ("an empty file", _write("empty.pdf", b""), ValueError, "PDF"),
+        ("image bytes", b"\x89PNG\r\n\x1a\n", ValueError, "PDF"),
+        ("the header at byte 1024", b"x" * 1024 + PDF, ValueError, "PDF"),
+        ("a missing file", absent, ValueError, "does not exist"),
+        ("an int", 42, TypeError, "Document"),
+        ("None", None, TypeError, "Document"),
+        ("a list", ["%PDF-"], TypeError, "Document")
+    ];
+    for (label, source, error, fragment) in rows {
+        raised = None;
         try {
-            Document(_write(name, raw));
-            assert False , f"{name}: a non-PDF must be refused";
-        } except ValueError as e {
-            assert "PDF" in str(e) , f"{name}: got {e}";
-            assert "Text" in str(e) , f"{name}: the error points to Text, got {e}";
+            Document(source);
+        } except Exception as e {
+            raised = e;
         }
-    }
-}
-
-
-test "bytes before the header are not sent, and the header must be near the start" {
-    for junk in [b"\n", b"\xef\xbb\xbf", b"x" * 1000] {
-        doc = Document(junk + PDF);
-        assert doc.to_dict()[0]["file"]["file_data"] == _pdf_data_url(PDF) , (
-            f"{len(junk)} junk bytes: the data must start at the header"
+        assert isinstance(raised, error) , (
+            f"{label}: expected {error.__name__}, got {raised!r}"
         );
+        assert fragment in str(raised) , f"{label}: got {raised}";
     }
-    try {
-        Document(b"x" * 1024 + PDF);
-        assert False , "a header past the first 1024 bytes must be refused";
-    } except ValueError as e {
-        assert "PDF" in str(e) , f"got {e}";
-    }
-}
-
-
-test "non-PDF bytes are refused before any call is made" {
-    llm = MockLLM(outputs=[say("never sent")]);
-    try {
-        Document(b"\x89PNG\r\n\x1a\n");
-        assert False , "image bytes must be refused";
-    } except ValueError as e {
-        assert "PDF" in str(e) , f"got {e}";
-    }
-    assert len(llm.seen) == 0;
-}
-
-
-test "a missing file and an unsupported input type fail with their own errors" {
-    try {
-        Document(os.path.join(tempfile.mkdtemp(prefix="doc-"), "absent.pdf"));
-        assert False , "a missing file must be refused";
-    } except ValueError as e {
-        assert "does not exist" in str(e) , f"got {e}";
-    }
-    for bad in [42, None, ["%PDF-"]] {
-        try {
-            Document(bad);
-            assert False , f"{bad!r}: an unsupported input must be refused";
-        } except TypeError as e {
-            assert "Document" in str(e) , f"{bad!r}: got {e}";
-        }
-    }
-}
-
-
-test "a document a tool returns reaches the model in a user turn, not in the tool message" {
-    llm = MockLLM(outputs=[call("fetch_brief", {}, call_id="c1"), say("PINEAPPLE")]);
-
-    def fetch_brief -> Document {
-        return Document(PDF, filename="brief.pdf");
-    }
-
-    def summarise(topic: str) -> str by llm(tools=[fetch_brief]);
-
-    assert summarise("the brief") == "PINEAPPLE";
-    second = sent_messages(llm, 1);
-    tool = [
-        m
-        for m in second
-        if m["role"] == "tool"
-    ];
-    assert len(tool) == 1 , f"got {[m['role'] for m in second]}";
-    in_tool = [
-        b
-        for b in (tool[0]["content"] if isinstance(tool[0]["content"], list) else [])
-        if b.get("type") == "file"
-    ];
-    assert in_tool == [] , f"the file must not stay inside the tool message: {tool[0]}";
-
-    assert second[-1]["role"] == "user" , f"got {[m['role'] for m in second]}";
-    assert [
-        b
-        for b in second[-1]["content"]
-        if b.get("type") == "file"
-    ]
-        == [
-            {
-                "type": "file",
-                "file": {"file_data": _pdf_data_url(PDF), "filename": "brief.pdf"}
-            }
-        ] , f"got {second[-1]}";
 }

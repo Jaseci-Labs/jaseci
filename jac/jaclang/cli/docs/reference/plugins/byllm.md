@@ -1833,7 +1833,7 @@ def analyze_video(video: Video) -> VideoAnalysis by llm();
 
 ### Document Type
 
-The `Document` type sends a PDF file to the model. Give it a path, or the PDF's bytes:
+The `Document` type sends a PDF to the model, from a path or from bytes:
 
 ```jac
 import from jaclang.byllm.lib { Document }
@@ -1843,11 +1843,6 @@ def summarise(brief: Document) -> str by llm();
 
 with entry {
     print(summarise(Document("brief.pdf")));
-
-    with open("brief.pdf", "rb") as f {
-        pdf_bytes = f.read();
-    }
-    print(summarise(Document(pdf_bytes, filename="brief.pdf")));
 }
 ```
 
@@ -1855,27 +1850,10 @@ with entry {
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `source` | str, os.PathLike, bytes | required | Path to a PDF file, or the PDF's bytes |
-| `filename` | str | the path's file name | Name sent with the file. Omitted for bytes when not given |
+| `source` | str, os.PathLike, bytes | required | Path to a PDF, or the PDF's bytes |
+| `filename` | str | the path's file name | Name sent with the file |
 
-`Document` checks the content, not the extension: a `.pdf` file that is not a PDF is refused with a `ValueError` before any call is made, and a PDF without an extension is accepted. The `%PDF-` header must sit within the first 1024 bytes, and any bytes before it are dropped, because Anthropic rejects a file that does not start at the header. A missing file raises `ValueError` and an unsupported input type raises `TypeError`.
-
-Only PDF is accepted, because providers reject other file types. Pass text-like files (`.md`, `.txt`, source code, `.csv`) as `Text`:
-
-```jac
-import from jaclang.byllm.types { Text }
-
-"""Read the note and report any action items."""
-def read_note(note: Text) -> list[str] by llm();
-
-with entry {
-    with open("note.md") as f {
-        print(read_note(Text(f.read())));
-    }
-}
-```
-
-byLLM does not check whether the model accepts documents; a model that cannot read PDFs fails at the provider. A `Document` returned by a tool reaches the model in the user turn that follows the tool result, as an image does. Page and file size limits are the provider's.
+Only PDFs are accepted; anything else raises a `ValueError`. Use `Text` for text files such as `.md` or `.csv`. A `Document` returned by a tool reaches the model the way an image does. Page and file size limits are the provider's.
 
 ### Multimodal with Tools
 
