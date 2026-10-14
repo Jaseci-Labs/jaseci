@@ -1,0 +1,6 @@
+.jac/
+# test262 checkout (tools/fetch_test_deps.sh test262, at engine/tests/test262/test262.sha)
+# and the runner's per-filter run logs.
+engine/tests/test262/vendor/
+engine/tests/test262/.run_logs
+regression_logs/

@@ -74,6 +74,15 @@ impl StaticAnalysisPass._check_unused_symbols(scope: UniScopeNode) -> None {
             continue;
         }
 
+        decl_owner = sym.decl.parent;
+        if (
+            isinstance(decl_owner, HasVar)
+            and decl_owner.name is not sym.decl
+            and name == client_state_setter_name(decl_owner.name.value)
+        ) {
+            continue;
+        }
+
         if len(sym.uses) == 0 {
             self.ctx.emit(W2003, node_override=sym.decl, name=name);
         }
@@ -81,6 +90,7 @@ impl StaticAnalysisPass._check_unused_symbols(scope: UniScopeNode) -> None {
 }
 
 impl StaticAnalysisPass._check_undefined_names(mod: Module) -> None {
+    import from jaclang.compiler.frontend.unitree { JsxElementName }
     all_names = mod.get_all_sub_nodes(typ=Name);
     for name_nd in all_names {
         if name_nd.sym {
@@ -108,7 +118,19 @@ impl StaticAnalysisPass._check_undefined_names(mod: Module) -> None {
             continue;
         }
 
+        if isinstance(parent, JsxElementName) and parent.parts[0] is not name_nd {
+            continue;
+        }
+
         if isinstance(parent, KWPair) and parent.key is name_nd {
+            continue;
+        }
+
+        if (
+            isinstance(parent, JsxElementName)
+            and isinstance(parent.parent, JsxElement)
+            and parent.parent.name is not parent
+        ) {
             continue;
         }
 
@@ -122,6 +144,24 @@ impl StaticAnalysisPass._check_undefined_names(mod: Module) -> None {
                     position=native_position
                 );
                 continue;
+            }
+            if in_type_position(name_nd, include_subscripts=False) {
+                import from jaclang.compiler.capability_notes {
+                    TARGET_NATIVE,
+                    note_capability,
+                    placement_neutral
+                }
+                if placement_neutral(name_nd) {
+                    note_capability(
+                        self.prog,
+                        name_nd,
+                        TARGET_NATIVE,
+                        "E2018",
+                        E2018.format_message(
+                            name=name_nd.value, position="native type position"
+                        )
+                    );
+                }
             }
         }
 
@@ -471,8 +511,9 @@ impl StaticAnalysisPass._check_client_imports(mod: Module) -> None {
         report_dead_client_import,
         resolve_import_source_module
     }
+    client_tops: dict[str, bool] = {};
     for nd in mod.get_all_sub_nodes(typ=Import) {
-        if is_client_native_edge_import(nd, self.prog) {
+        if is_client_native_edge_import(nd, self.prog, client_tops) {
             continue;
         }
         if nd.code_context != CodeContext.CLIENT {

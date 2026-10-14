@@ -1,4 +1,5 @@
 import from jaclang.compiler.passes.context { CompileContext, CompilerPass }
+import from jaclang.compiler.driver.pipeline_types { PassContract }
 import jaclang.compiler.backends.native.llvm.binding as llvm;
 import type from jaclang.compiler.backends.native.llvm.binding {
     ModuleRef,
@@ -15,6 +16,10 @@ def module_bitcode(mod: ModuleRef) -> bytes;
 def emit_unit_object(bitcode: bytes, options: CompileOptions) -> bytes;
 def object_emit_jobs -> int;
 def emit_unit_objects(bitcodes: list[bytes], options: CompileOptions) -> list[bytes];
+def optimize_unit_texts(
+    texts: list[str], options: CompileOptions, opt_level: int
+) -> list[bytes];
+
 def module_functions(mod: ModuleRef) -> list[any];
 def settle_unit_ir(module: uni.Module) -> None;
 def create_unit_target_machine(
@@ -26,6 +31,8 @@ def optimize_unit(
 ) -> None;
 
 walker NativeCompilePass(CompilerPass) {
+    static has contract: PassContract = PassContract();
+
     def postinit -> None;
     def _run_impl(ir_in: uni.Module) -> uni.Module;
     def _share_engine(module: uni.Module, engine: any) -> None;

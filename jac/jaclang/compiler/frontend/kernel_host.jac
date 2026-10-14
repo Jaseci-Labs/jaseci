@@ -1,3 +1,4 @@
+import json;
 import os;
 import sys;
 import from contextlib { contextmanager }
@@ -8,7 +9,6 @@ import from jaclang.compiler.frontend.host {
     HostPlatform,
     HostServices,
     LintSettings,
-    NativeVerdict,
     PathFacts,
     ProjectDefaults,
     ProjectFacts
@@ -21,7 +21,9 @@ import from jaclang.compiler.frontend.kernel_inputs {
     KEY_SEP,
     NpmAnswer,
     PythonInterface,
+    json_map,
     local_key,
+    merge_answers,
     pair_key,
     resolution_key
 }
@@ -37,6 +39,8 @@ import from jaclang.compiler.driver.compile_options { CompileOptions }
 import from jaclang.compiler.driver.compilation_context { package_owned }
 import from jaclang.compiler.driver.session_compile { SessionHooks, compile_in_session }
 import from jaclang.compiler.driver.module_analysis { ModuleAnalysis, analyze_module }
+import from jaclang.compiler.driver.module_compile { compile_task }
+import from jaclang.compiler.driver.unit_products { UnitProducts, unit_products }
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.compiler.types.stubcat.reader { StubCatalog, open_catalog_region }
 import from jaclang.compiler.types.stubcat.resolver { CatalogResolver }
@@ -49,10 +53,21 @@ import type from jaclang.compiler.passes.annex_weave { WovenAnnex }
 import type from jaclang.compiler.driver.compiler { JacCompiler }
 import type from jaclang.compiler.driver.ifacecache { IfaceRegistry }
 import type from jaclang.compiler.driver.nativecache { NativeUnitRegistry }
+import from jaclang.compiler.driver.native_iface { NativeIface }
+import type from jaclang.compiler.frontend.kernel_analyze { CompileReport }
 
 glob _CATALOGS: dict[str, StubCatalog] = {};
 
+glob HOST_ONLY_ANSWER: str = "host_only",
+     EMIT_QUESTION: str = "emit_unit",
+     EVENT_NOTE: str = "note",
+     EVENT_COVERAGE: str = "coverage";
+
 class HostOnlyError(RuntimeError) {}
+
+obj HostAsker {
+    def ask(method: str, key: str) -> str abst;
+}
 
 enum HostEventKind { NOTE, COVERAGE, COLLECT }
 
@@ -187,8 +202,11 @@ obj KernelSession(SessionHooks) {
         host = self.host;
         if host.fallback is None {
             host.census.count("run_module");
-            task = analyze_module(target_program, file_path, options, use_str);
+            task = analyze_module(target_program, file_path, options, use_str)
+                if options.no_cgen or options.symtab_ir_only
+                else compile_task(self, target_program, file_path, options, use_str);
             host.analyses[os.path.realpath(file_path)] = task;
+            host.record_unit(task);
             return task.module;
         }
         with host.delegating("run_module") as fallback {
@@ -271,10 +289,10 @@ obj ServedInterface {
 obj KernelHost(HostServices) {
     has inputs: KernelInputs,
         fallback: (HostServices | None) = None,
+        loader: (HostServices | None) = None,
         closure: (CompileOptions | None) = None,
         census: HostCensus = HostCensus(),
         events: list[HostEvent] = [],
-        demoted: dict[str, NativeVerdict] = {},
         _imports: dict[str, ImportResolution] = {},
         _locals: dict[str, LocalResolution] = {},
         _npm: dict[str, NpmAnswer] = {},
@@ -283,25 +301,96 @@ obj KernelHost(HostServices) {
         _served: dict[str, ServedInterface] = {},
         _catalog: (StubCatalog | None) = None,
         analyses: dict[str, ModuleAnalysis] = {},
+        units: dict[str, UnitProducts] = {},
+        asker: (HostAsker | None) = None,
+        kernel_asker: bool = False,
+        _asked: set[str] = set(),
+        grown: set[str] = set(),
+        native_failures: dict[str, str] = {},
+        _native_ifaces: dict[str, NativeIface] = {},
+        _lowering: set[str] = set(),
+        _indexed: list[int] = [0, 0, 0, 0, 0],
         _session: (KernelSession | None) = None;
 
     def postinit {
-        for resolution in self.inputs.imports {
-            self._imports[resolution.key()] = resolution;
-        }
-        for local in self.inputs.local_imports {
-            self._locals[local.key()] = local;
-        }
-        for answer in self.inputs.npm {
-            self._npm[answer.key()] = answer;
-        }
-        for declared in self.inputs.declared {
-            self._declared[declared.key()] = declared;
-        }
-        for iface in self.inputs.python_ifaces {
-            self._python[os.path.realpath(iface.path)] = iface;
-        }
+        self.index_answers();
         self._session = KernelSession(host=self, closure=self.closure);
+    }
+
+    def index_answers {
+        inputs = self.inputs;
+        seen = self._indexed;
+        while seen[0] < len(inputs.imports) {
+            resolution = inputs.imports[seen[0]];
+            self._imports[resolution.key()] = resolution;
+            seen[0] += 1;
+        }
+        while seen[1] < len(inputs.local_imports) {
+            local = inputs.local_imports[seen[1]];
+            self._locals[local.key()] = local;
+            seen[1] += 1;
+        }
+        while seen[2] < len(inputs.npm) {
+            answer = inputs.npm[seen[2]];
+            self._npm[answer.key()] = answer;
+            seen[2] += 1;
+        }
+        while seen[3] < len(inputs.declared) {
+            declared = inputs.declared[seen[3]];
+            self._declared[declared.key()] = declared;
+            seen[3] += 1;
+        }
+        while seen[4] < len(inputs.python_ifaces) {
+            iface = inputs.python_ifaces[seen[4]];
+            self._python[os.path.realpath(iface.path)] = iface;
+            seen[4] += 1;
+        }
+    }
+
+    def ask(method: str, key: str) -> bool {
+        asker = self.asker;
+        if self.fallback is not None or (asker is None and not self.kernel_asker) {
+            return False;
+        }
+        tag = method + KEY_SEP + key;
+        if tag in self._asked {
+            return False;
+        }
+        self._asked.add(tag);
+        self.census.count("ask");
+        text = "";
+        if asker is not None {
+            text = asker.ask(method, key);
+        } else {
+            import from jaclang.compiler.jc_ask { ask_host }
+            text = ask_host(method, key);
+        }
+        if not text {
+            return False;
+        }
+        raw = json_map(json.loads(text));
+        merge_answers(self.inputs, raw);
+        self.index_answers();
+        reason = str(raw.get(HOST_ONLY_ANSWER, ""));
+        if reason {
+            cut = reason.partition(": ");
+            self.census.miss(cut[0], cut[2]);
+            raise HostOnlyError(reason);
+        }
+        return True;
+    }
+
+    def wants_unit(path: str) -> bool {
+        if not self.inputs.emit_closure {
+            return False;
+        }
+        if path in self.grown {
+            return True;
+        }
+        if path not in self.inputs.emit_of {
+            self.ask(EMIT_QUESTION, path);
+        }
+        return self.inputs.emit_of.get(path, False);
     }
 
     def host(method: str = "") -> HostServices {
@@ -379,11 +468,34 @@ obj KernelHost(HostServices) {
         return mod;
     }
 
+    def close_over(options: CompileOptions) {
+        self.closure = options;
+        if self._session is not None {
+            self._session.closure = options;
+        }
+    }
+
+    def record_unit(task: ModuleAnalysis) {
+        module = task.module;
+        if task.parse_failed or task.blocked or not module.gen.jcir {
+            return;
+        }
+        real = os.path.realpath(task.path);
+        products = unit_products(module, task.program);
+        if not products.path {
+            products.path = real;
+        }
+        self.units[real] = products;
+    }
+
     def host_turn(method: str = "") -> HostTurn {
         return HostTurn(host=self.host(method));
     }
 
     def missing(method: str, key: str) -> HostTurn {
+        if self.ask(method, key) {
+            return HostTurn(host=self);
+        }
         self.census.miss(method, key);
         return self.host_turn(method);
     }
@@ -398,6 +510,22 @@ obj KernelHost(HostServices) {
         self.census.count(method);
         self.census.buffer(method);
         self.events.append(event);
+    }
+
+    def event_rows -> list[list[str]] {
+        rows: list[list[str]] = [];
+        for event in self.events {
+            if event.kind == HostEventKind.NOTE {
+                rows.append(
+                    [EVENT_NOTE, event.path, event.text, event.code, event.detail]
+                );
+            } elif event.kind == HostEventKind.COVERAGE {
+                rows.append(
+                    [EVENT_COVERAGE, event.path, event.text, event.code, event.detail]
+                );
+            }
+        }
+        return rows;
     }
 
     def replay(target: HostServices) {
@@ -629,6 +757,25 @@ obj KernelHost(HostServices) {
         return answer;
     }
 
+    def client_pulls(path: str) -> str {
+        self.census.count("client_pulls");
+        if self.fallback is None and not self.inputs.emit_closure {
+            return "";
+        }
+        if path in self.inputs.client_pulls {
+            return self.inputs.client_pulls[path];
+        }
+        with self.missing("client_pulls", path) as host {
+            answer = host.client_pulls(path);
+        }
+        self.inputs.client_pulls[path] = answer;
+        return answer;
+    }
+
+    def client_pull_grew(path: str) {
+        self.grown.add(path);
+    }
+
     def npm_answer(spec: str, base_path: str, method: str) -> NpmAnswer {
         key = pair_key(spec, base_path);
         found = self._npm.get(key);
@@ -828,9 +975,195 @@ obj KernelHost(HostServices) {
         return answer;
     }
 
+    def held_native_iface(
+        program: JacProgram, path: str, options: CompileOptions
+    ) -> str {
+        self.census.count("held_native_iface");
+        key = pair_key(os.path.realpath(path), options.unit_codegen_identity(path));
+        if key in self.inputs.native_ifaces {
+            return self.inputs.native_ifaces[key];
+        }
+        with self.missing("held_native_iface", key) as host {
+            answer = host.held_native_iface(program, path, options);
+        }
+        self.inputs.native_ifaces[key] = answer;
+        return answer;
+    }
+
+    def native_dep_iface(
+        program: JacProgram, path: str, options: CompileOptions
+    ) -> (NativeIface | None) {
+        if self.fallback is not None {
+            with self.delegating("native_dep_iface") as host {
+                answer = host.native_dep_iface(program, path, options);
+            }
+            return answer;
+        }
+        self.census.count("native_dep_iface");
+        real = os.path.realpath(path);
+        known = self._native_ifaces.get(real);
+        if known is not None {
+            return known;
+        }
+        if real in self._lowering {
+            return None;
+        }
+        found: (NativeIface | None) = None;
+        text = self.held_native_iface(program, real, options);
+        if text {
+            found = NativeIface.from_bytes(text.encode("utf-8"));
+            if found is not None {
+                found.resolve_deps(real);
+            }
+        } else {
+            found = self.lower_dependency(program, real, options);
+        }
+        if found is not None {
+            self._native_ifaces[real] = found;
+        }
+        return found;
+    }
+
+    def lower_dependency(
+        program: JacProgram, real: str, options: CompileOptions
+    ) -> (NativeIface | None) {
+        import from jaclang.compiler.frontend.codeinfo {
+            get_effective_default_codespace_override,
+            set_effective_default_codespace
+        }
+        self._lowering.add(real);
+        previous = program.options;
+        codespace = get_effective_default_codespace_override();
+        mark = len(program.errors_had);
+        try {
+            opts = options.clone_for_native_import();
+            opts.no_cgen = True;
+            module = self.compile_module(program, real, None, opts);
+            if len(program.errors_had) > mark {
+                return None;
+            }
+            opts.no_cgen = False;
+            program.options = opts;
+            set_effective_default_codespace("native");
+            import from jaclang.compiler.driver.pipeline { product_ready, require }
+            import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
+            if not product_ready(program, module, CompilationProduct.ANALYSIS)
+                and not require(program, module, CompilationProduct.ANALYSIS) {
+                return None;
+            }
+            require(program, module, CompilationProduct.NATIVE_LOWER);
+            if len(program.errors_had) > mark {
+                return None;
+            }
+            if module.gen.native_iface is not None {
+                self.grown.add(real);
+            }
+            return module.gen.native_iface;
+        } finally {
+            program.options = previous;
+            set_effective_default_codespace(codespace);
+            self._lowering.discard(real);
+        }
+    }
+
+    def native_fact(kind: str, key: str) -> str {
+        self.census.count("native_fact");
+        tag = pair_key(kind, key);
+        if tag in self.inputs.native_facts {
+            return self.inputs.native_facts[tag];
+        }
+        with self.missing("native_fact", tag) as host {
+            answer = host.native_fact(kind, key);
+        }
+        self.inputs.native_facts[tag] = answer;
+        return answer;
+    }
+
+    def save_native_debug_ir(path: str, text: str) {
+        self.census.count("save_native_debug_ir");
+        if self.fallback is not None {
+            self.fallback.save_native_debug_ir(path, text);
+        }
+    }
+
+    def native_lowering_failed(program: JacProgram, path: str, detail: str) {
+        self.census.count("native_lowering_failed");
+        if self.fallback is not None {
+            self.fallback.native_lowering_failed(program, path, detail);
+            return;
+        }
+        self.native_failures[os.path.realpath(path)] = detail;
+    }
+
     def native_units_for(program: JacProgram) -> NativeUnitRegistry {
         with self.delegating("native_units_for") as host {
             answer = host.native_units_for(program);
+        }
+        return answer;
+    }
+
+    def client_boundary_facts(program: JacProgram, path: str) -> (list[str] | None) {
+        if self.kernel_only("client_boundary_facts") {
+            return None;
+        }
+        with self.delegating("client_boundary_facts") as host {
+            answer = host.client_boundary_facts(program, path);
+        }
+        return answer;
+    }
+
+    def in_compiler_tree(path: str) -> bool {
+        if self.kernel_only("in_compiler_tree") {
+            return False;
+        }
+        with self.delegating("in_compiler_tree") as host {
+            answer = host.in_compiler_tree(path);
+        }
+        return answer;
+    }
+
+    def schedule_import_failed(err: ImportError) {
+        if self.kernel_only("schedule_import_failed") {
+            return;
+        }
+        with self.delegating("schedule_import_failed") as host {
+            host.schedule_import_failed(err);
+        }
+    }
+
+    def client_osp_core_js -> str {
+        self.census.count("client_osp_core_js");
+        if self.inputs.osp_core_js {
+            return self.inputs.osp_core_js;
+        }
+        with self.missing("client_osp_core_js", "") as host {
+            answer = host.client_osp_core_js();
+        }
+        self.inputs.osp_core_js = answer;
+        return answer;
+    }
+
+    def client_stub_globals -> list[str] {
+        self.census.count("client_stub_globals");
+        if self.inputs.client_stub_globals_known {
+            return list(self.inputs.client_stub_globals);
+        }
+        with self.missing("client_stub_globals", "") as host {
+            answer = host.client_stub_globals();
+        }
+        self.inputs.client_stub_globals = list(answer);
+        self.inputs.client_stub_globals_known = True;
+        return answer;
+    }
+
+    def kernel_compile(
+        program: JacProgram, path: str, options: CompileOptions
+    ) -> (CompileReport | None) {
+        if self.kernel_only("kernel_compile") {
+            return None;
+        }
+        with self.delegating("kernel_compile") as host {
+            answer = host.kernel_compile(program, path, options);
         }
         return answer;
     }
@@ -860,24 +1193,6 @@ obj KernelHost(HostServices) {
         return answer;
     }
 
-    def native_verdict(
-        path: str, program: (JacProgram | None) = None
-    ) -> (NativeVerdict | None) {
-        self.census.count("native_verdict");
-        recorded = self.demoted.get(os.path.realpath(path));
-        if recorded is not None {
-            return recorded;
-        }
-        if path in self.inputs.verdicts {
-            return self.inputs.verdicts[path];
-        }
-        with self.missing("native_verdict", path) as host {
-            answer = host.native_verdict(path, program);
-        }
-        self.inputs.verdicts[path] = answer;
-        return answer;
-    }
-
     def record_native_coverage(
         path: str, outcome: str, code: str = "", detail: str = ""
     ) {
@@ -891,18 +1206,6 @@ obj KernelHost(HostServices) {
             ),
             "record_native_coverage"
         );
-    }
-
-    def record_native_verdict(program: JacProgram, path: str, code: str, detail: str) {
-        self.demoted[os.path.realpath(path)] = NativeVerdict(
-            demoted=True, code=code, detail=detail
-        );
-        if self.kernel_only("record_native_verdict") {
-            return;
-        }
-        with self.delegating("record_native_verdict") as host {
-            host.record_native_verdict(program, path, code, detail);
-        }
     }
 
     def format_file(file_path: str, auto_lint: bool = False) -> JacProgram {
@@ -948,14 +1251,32 @@ obj KernelHost(HostServices) {
         use_str: (str | None),
         options: CompileOptions
     ) -> Module {
-        if self.in_kernel() {
+        owned = program.internal or package_owned(file_path, program, options);
+        tree_wanted = False;
+        if file_path.endswith(".jac") and not program.internal {
+            import from jaclang.compiler.frontend.codeinfo { native_stdlib_root }
+            stdlib_dir = native_stdlib_root();
+            tree_wanted = stdlib_dir is not None
+                and os.path.realpath(file_path).startswith(
+                    os.path.realpath(stdlib_dir) + os.sep
+                );
+        }
+        if tree_wanted {
+            owned = False;
+        }
+        if self.in_kernel() and not tree_wanted {
             served = self.python_module(program, file_path);
+            if served is None and (owned or not file_path.endswith(".jac")) {
+                if self.ask("compile_module", file_path) {
+                    served = self.python_module(program, file_path);
+                }
+            }
             if served is not None {
                 self.census.count("compile_module");
                 return served;
             }
         }
-        if program.internal or package_owned(file_path, program, options) {
+        if owned {
             if self.in_kernel() {
                 self.census.miss("compile_module", file_path);
             }
@@ -1066,7 +1387,10 @@ obj KernelHost(HostServices) {
     }
 
     def host_side -> HostServices {
-        return self.fallback if self.fallback is not None else self;
+        if self.fallback is not None {
+            return self.fallback;
+        }
+        return self.loader if self.loader is not None else self;
     }
 
     def default_target_triple -> str {
@@ -1099,6 +1423,19 @@ def read_utf8_source(path: str) -> (str | None) {
         text = text.replace("\r\n", "\n").replace("\r", "\n");
     }
     return text;
+}
+
+def replay_event_rows(target: HostServices, rows: list[list[str]]) {
+    for row in rows {
+        if len(row) != 5 {
+            continue;
+        }
+        if row[0] == EVENT_NOTE {
+            target.note(row[2], row[3]);
+        } elif row[0] == EVENT_COVERAGE {
+            target.record_native_coverage(row[1], row[2], row[3], row[4]);
+        }
+    }
 }
 
 def replay_event(target: HostServices, event: HostEvent) {

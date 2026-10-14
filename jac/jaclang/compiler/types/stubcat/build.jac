@@ -5,7 +5,6 @@ import os;
 import sys;
 import time;
 import from jaclang.compiler.types.stubcat.locate {
-    ENV_BUILDING,
     catalog_key,
     jac_internal_stub_dir,
     jaclang_pkg_dir,
@@ -139,16 +138,12 @@ def build_catalog(
     prog._compiler = JacCompiler(
         stub_catalog_disabled=True, _selfhost=SelfHostCache(_program=prog)
     );
-    previous_building = os.environ.get(ENV_BUILDING);
-    os.environ[ENV_BUILDING] = "1";
+    import from jaclang.artifacts.router { building }
     try {
-        return _build_catalog_inner(prog, out_path, only, pkg_dir, quiet, started);
-    } finally {
-        if previous_building is None {
-            os.environ.pop(ENV_BUILDING, None);
-        } else {
-            os.environ[ENV_BUILDING] = previous_building;
+        with building(["stubcat"]) {
+            return _build_catalog_inner(prog, out_path, only, pkg_dir, quiet, started);
         }
+    } finally {
         prog.release_compile_closure(retain_stubs=False);
     }
 }

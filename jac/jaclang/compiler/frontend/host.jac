@@ -9,15 +9,10 @@ import type from jaclang.compiler.passes.annex_weave { WovenAnnex }
 import type from jaclang.compiler.driver.compiler { JacCompiler }
 import type from jaclang.compiler.driver.ifacecache { IfaceRegistry }
 import type from jaclang.compiler.driver.nativecache { NativeUnitRegistry }
+import type from jaclang.compiler.driver.native_iface { NativeIface }
 import type from jaclang.compiler.driver.compile_options { CompileOptions }
 import type from jaclang.compiler.driver.module_analysis { ModuleAnalysis }
-
-obj NativeVerdict {
-    has demoted: bool = False,
-        code: str = "",
-        detail: str = "",
-        deps: list[list[str]] = [];
-}
+import type from jaclang.compiler.frontend.kernel_analyze { CompileReport }
 
 obj CheckSettings {
     has suppress: list[str] = [],
@@ -32,7 +27,6 @@ obj CheckSettings {
 
 obj ProjectDefaults {
     has default_codespace: str,
-        native_closure_cap: int,
         native_require: list[str],
         native_target: str,
         native_debug: bool,
@@ -140,6 +134,11 @@ obj HostServices {
         return None;
     }
 
+    def client_pulls(path: str) -> str {
+        return "";
+    }
+
+    def client_pull_grew(path: str) {}
     def has_npm_package(spec: str, base_path: str) -> bool {
         return False;
     }
@@ -231,8 +230,49 @@ obj HostServices {
         raise RuntimeError("no compiler host is installed");
     }
 
+    def native_dep_iface(
+        program: JacProgram, path: str, options: CompileOptions
+    ) -> (NativeIface | None) {
+        return None;
+    }
+
+    def held_native_iface(
+        program: JacProgram, path: str, options: CompileOptions
+    ) -> str {
+        return "";
+    }
+
+    def native_lowering_failed(program: JacProgram, path: str, detail: str) {}
+    def native_fact(kind: str, key: str) -> str {
+        return "";
+    }
+
+    def save_native_debug_ir(path: str, text: str) {}
     def native_units_for(program: JacProgram) -> NativeUnitRegistry {
         raise RuntimeError("no compiler host is installed");
+    }
+
+    def client_boundary_facts(program: JacProgram, path: str) -> (list[str] | None) {
+        return None;
+    }
+
+    def kernel_compile(
+        program: JacProgram, path: str, options: CompileOptions
+    ) -> (CompileReport | None) {
+        return None;
+    }
+
+    def in_compiler_tree(path: str) -> bool {
+        return False;
+    }
+
+    def schedule_import_failed(err: ImportError) {}
+    def client_osp_core_js -> str {
+        return "";
+    }
+
+    def client_stub_globals -> list[str] {
+        return [];
     }
 
     def native_session_declares(
@@ -245,18 +285,8 @@ obj HostServices {
         return False;
     }
 
-    def native_verdict(
-        path: str, program: (JacProgram | None) = None
-    ) -> (NativeVerdict | None) {
-        return None;
-    }
-
     def record_native_coverage(
         path: str, outcome: str, code: str = "", detail: str = ""
-    ) {}
-
-    def record_native_verdict(
-        program: JacProgram, path: str, code: str, detail: str
     ) {}
 
     def native_analyze(
@@ -333,6 +363,16 @@ obj HostServices {
         return False;
     }
 
+    def typeshed_unavailable_reason -> str {
+        import os;
+        import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
+        stdlib = os.path.join(jaclang_pkg_root(), "vendor", "typeshed", "stdlib");
+        if os.path.isfile(os.path.join(stdlib, "builtins.pyi")) {
+            return "";
+        }
+        return f"no typeshed stdlib at {stdlib}";
+    }
+
     def is_native_only_source(rel: str) -> bool {
         return False;
     }
@@ -352,8 +392,8 @@ obj HostServices {
 
 obj NeutralHost(HostServices) {}
 
-glob KERNEL_HOST_ENV: str = "JAC_KERNEL_HOST",
-     _HOSTS: list[HostServices] = [],
+glob _HOSTS: list[HostServices] = [],
+     _KERNEL_HOST_MODE: list[str] = [],
      _NEUTRAL_HOST: HostServices = NeutralHost(),
      _PACKAGE_ROOT: list[str] = [];
 
@@ -375,11 +415,19 @@ def install_host(host: HostServices) {
     _HOSTS.append(host);
 }
 
+def set_kernel_host_mode(mode: str) -> str {
+    previous = kernel_host_mode();
+    _KERNEL_HOST_MODE.clear();
+    if mode {
+        _KERNEL_HOST_MODE.append(mode);
+    }
+    return previous;
+}
+
 def kernel_host_mode -> str {
-    import os;
-    return os.environ.get(KERNEL_HOST_ENV, "").strip().lower();
+    return _KERNEL_HOST_MODE[0] if _KERNEL_HOST_MODE else "";
 }
 
 def kernel_host_enabled -> bool {
-    return kernel_host_mode() not in ("", "0", "off", "false");
+    return kernel_host_mode() != "";
 }

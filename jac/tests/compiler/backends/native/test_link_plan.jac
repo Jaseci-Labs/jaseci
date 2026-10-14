@@ -84,6 +84,9 @@ test "the plan holds every unit of the diamond, dependencies first" {
     ];
     assert sorted(names) == sorted(UNITS) , names;
     assert toolchain;
+    events = prog.analysis.cache_events;
+    assert events.get("native_unit_lower", 0)
+        == events.get("native_unit_analysis", 0) , events;
     for u in plan.units {
         for dep in u.iface.deps {
             assert plan.units.index(plan.unit(dep)) < plan.units.index(u) , f"{dep} must precede its consumer {u.path}";
@@ -635,6 +638,8 @@ test "an import cycle settles without repeating frontend analysis or optimizatio
         assert str(even.resolve()) in compiled and str(odd.resolve()) in compiled;
         assert len(compiled) == len(set(compiled));
         assert events.get("native_unit_analysis", 0) == len(compiled);
+        assert events.get("native_unit_lower", 0) == len(compiled) , events;
+        assert events.get("native_dep_adopt", 0) >= 1 , events;
         for unit in plan.units {
             consumed = prog.native_units().entries[unit.path].dep_digests;
             for dep in unit.iface.deps {
@@ -1133,8 +1138,7 @@ print(json.dumps({
 
 """Each unit's interface digest after planning the cascade project from
 `root_dir`, and the units that build lowered. Every build runs in its own
-process with the bytecode analysis a stage-0 build uses: a dependency the parent
-already analyzed would hide a unit whose interface depends on how deeply its
+process: a dependency the parent already analyzed would hide a unit whose interface depends on how deeply its
 imports were read."""
 def _cascade_plan(root_dir: str) -> tuple[dict[str, str], list[str]] {
     import json;
@@ -1143,9 +1147,8 @@ def _cascade_plan(root_dir: str) -> tuple[dict[str, str], list[str]] {
     env = {
         k: v
         for (k, v) in os.environ.items()
-        if not k.startswith("JAC_STUBCAT_") and k != "JAC_STANDALONE"
+        if k != "JAC_STANDALONE"
     };
-    env["JAC_COMPILER_LIB"] = "off";
     run = subprocess.run(
         compiler_python_command(CASCADE_PLAN_SCRIPT, root_dir, source_root),
         capture_output=True,

@@ -100,7 +100,7 @@ def _slash_alternate(path: str) -> (str | None) {
 
 
 def _declares_body(ep: JEndPoint) -> bool {
-    for param in (ep.parameters or []) {
+    for param in ep.declared_parameters() {
         kind_name = str(param.kind.value) if param.kind?.value else str(param.kind);
         if kind_name in ('body', 'file') {
             return True;
@@ -279,11 +279,12 @@ obj ServingApp {
         }
         kwargs = filter_kwargs_for_callback(spec, kwargs, request);
         callback_fn: any = ep.callback;
+        args: list[any] = [request] if spec.request_positional else [];
         if spec.is_async {
-            result = await callback_fn(**kwargs);
+            result = await callback_fn(*args, **kwargs);
         } else {
             def _call_sync -> any {
-                return callback_fn(**kwargs);
+                return callback_fn(*args, **kwargs);
             }
             result = await asyncio.to_thread(_call_sync);
             if inspect.isawaitable(result) {

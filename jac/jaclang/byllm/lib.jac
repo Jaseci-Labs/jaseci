@@ -1,4 +1,11 @@
-import from jaclang.byllm.llm { MockLLM, Model, ModelPool }
+import from jaclang.byllm.llm {
+    MockLLM,
+    Model,
+    ModelPool,
+    SystemOneModel,
+    MockSystemOne
+}
+import from jaclang.byllm.systemone { Decision }
 import from jaclang.byllm.mtir { MTIR, MTRuntime }
 import from jaclang.runtime.runtime { JacRuntime }
 import from jaclang.byllm.types {
@@ -20,10 +27,12 @@ import from jaclang.byllm.exceptions {
     AuthenticationError,
     RateLimitError,
     ModelNotFoundError,
+    LLMTimeout,
     OutputConversionError,
     FinishToolError,
     ConfigurationError,
-    McpError
+    McpError,
+    OutputTruncatedError
 }
 import from jaclang.byllm.mcp { McpClient, McpTool }
 import from jaclang.byllm.telemetry { register_agent_callback }
@@ -36,10 +45,12 @@ glob `by = JacRuntime.`by,
          'AuthenticationError',
          'RateLimitError',
          'ModelNotFoundError',
+         'LLMTimeout',
          'OutputConversionError',
          'FinishToolError',
          'ConfigurationError',
          'McpError',
+         'OutputTruncatedError',
          'McpClient',
          'McpTool',
          'Image',
@@ -53,6 +64,9 @@ glob `by = JacRuntime.`by,
          'MockError',
          'Model',
          'ModelPool',
+         'Decision',
+         'SystemOneModel',
+         'MockSystemOne',
          'MTIR',
          'MTRuntime',
          'StreamEvent',
