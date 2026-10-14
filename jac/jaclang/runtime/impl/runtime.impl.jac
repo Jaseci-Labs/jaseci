@@ -780,8 +780,8 @@ impl JacModule.jac_import(
                 module = importlib.reload(loaded)
                     if loaded is not None
                     else importlib.import_module(module_name);
+                JacRuntimeInterface.load_module(module_name, module, force=True);
             }
-            JacRuntimeInterface.load_module(module_name, module, force=True);
         } else {
             module = importlib.import_module(module_name);
             JacRuntimeInterface.load_module(

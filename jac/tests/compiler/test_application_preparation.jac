@@ -1200,19 +1200,30 @@ test "every module reload takes the preparation lock before the import lock" {
         importlib.import_module(name);
         holding = threading.Event();
         requesting = threading.Event();
+        errors: list[str] = [];
         def watcher {
-            with PREPARATION_LOCK {
-                holding.set();
-                assert requesting.wait(60) , "the reload never started";
-                probe.reaching.wait(5);
-                _imp.acquire_lock();
-                _imp.release_lock();
+            try {
+                with PREPARATION_LOCK {
+                    holding.set();
+                    assert requesting.wait(60) , "the reload never started";
+                    probe.reaching.wait(5);
+                    _imp.acquire_lock();
+                    _imp.release_lock();
+                }
+            } except Exception as e {
+                errors.append(f"watcher: {e}");
             }
         }
         def request {
-            holding.wait(60);
-            requesting.set();
-            Jac.jac_import(target=name, base_path=tmp, reload_module=True, lng='py');
+            try {
+                holding.wait(60);
+                requesting.set();
+                Jac.jac_import(
+                    target=name, base_path=tmp, reload_module=True, lng='py'
+                );
+            } except Exception as e {
+                errors.append(f"request: {e}");
+            }
         }
         sys.meta_path.insert(0, probe);
         threads = [
@@ -1224,6 +1235,7 @@ test "every module reload takes the preparation lock before the import lock" {
         }
         stuck.extend(_join_all(threads));
         assert not stuck , f"workers still running: {stuck}";
+        assert not errors , errors;
         assert probe.waited == [False] , (
             "the reload waited for the preparation lock while holding the import lock"
         );
