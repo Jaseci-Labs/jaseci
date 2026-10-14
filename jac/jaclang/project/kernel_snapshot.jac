@@ -244,6 +244,8 @@ def served_interface(
     return iface;
 }
 
+glob SEALED_CATALOG_MISSING: str = "this jac installation is sealed and carries no stub catalog";
+
 class StubCatalogMissing(SystemExit) {
     static has stops_command: bool = True;
 }
@@ -251,7 +253,7 @@ class StubCatalogMissing(SystemExit) {
 def catalog_build_blocker(artifact: any) -> str {
     import from jaclang.jac0core { sealed }
     if sealed._jaclang_image() is not None {
-        return "this jac installation is sealed and its stub catalog is missing; reinstall jac";
+        return SEALED_CATALOG_MISSING;
     }
     if not artifact.host_supported() {
         return "the stub catalog cannot be built on this host";
@@ -322,11 +324,14 @@ def _to_stderr(line: str) {
 }
 
 def catalog_missing_message(cause: str) -> str {
+    fix = "reinstall jac"
+        if cause == SEALED_CATALOG_MISSING
+        else "run `jac native build stubcat`, then rerun";
     return (
         "jac: the native compiler kernel needs the stub catalog, which is missing "
         "and could not be built\n"
         f"  cause: {cause}\n"
-        "  fix:   run `jac native build stubcat`, then rerun"
+        f"  fix:   {fix}"
     );
 }
 

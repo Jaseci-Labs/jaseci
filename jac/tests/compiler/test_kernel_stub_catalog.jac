@@ -48,26 +48,34 @@ def _build_fails(requested: list[str], log: any, **kw: any) -> list[str] {
     raise ArtifactUnavailable("typeshed: the stubs could not be fetched (offline)");
 }
 
-def _require(compiler: FakeCompiler, builder: any) -> tuple[any, str] {
+def _require(
+    compiler: FakeCompiler, builder: any, sealed_image: bool = False
+) -> tuple[any, str] {
     err = io.StringIO();
     _built.clear();
     outcome: any = None;
     host: any = FakeHost(compiler=compiler);
     program: any = None;
     router.forget();
+    import from jaclang.jac0core { sealed }
+    image: any = object() if sealed_image else None;
     try {
-        with patch.object(router, "build", side_effect=builder) {
-            with patch.object(StubcatArtifact, "built", return_value=Probe.missing()) {
+        with patch.object(sealed, "_jaclang_image", return_value=image) {
+            with patch.object(router, "build", side_effect=builder) {
                 with patch.object(
-                    StubcatArtifact,
-                    "checkout_path",
-                    return_value=_lock_dir() + "/stubcat.bin"
+                    StubcatArtifact, "built", return_value=Probe.missing()
                 ) {
-                    with patch.object(sys, "stderr", err) {
-                        try {
-                            outcome = snapshot.require_stub_catalog(host, program);
-                        } except snapshot.StubCatalogMissing as e {
-                            outcome = e;
+                    with patch.object(
+                        StubcatArtifact,
+                        "checkout_path",
+                        return_value=_lock_dir() + "/stubcat.bin"
+                    ) {
+                        with patch.object(sys, "stderr", err) {
+                            try {
+                                outcome = snapshot.require_stub_catalog(host, program);
+                            } except snapshot.StubCatalogMissing as e {
+                                outcome = e;
+                            }
                         }
                     }
                 }
@@ -114,11 +122,8 @@ test "a catalog that cannot be built stops the command with the cause and the co
 }
 
 test "a sealed install with no catalog stops without trying to build" {
-    import from jaclang.jac0core { sealed }
     compiler = FakeCompiler(catalog=[False]);
-    with patch.object(sealed, "_jaclang_image", return_value=object()) {
-        (outcome, said) = _require(compiler, _build_ok);
-    }
+    (outcome, said) = _require(compiler, _build_ok, sealed_image=True);
     assert isinstance(outcome, snapshot.StubCatalogMissing) , outcome;
     assert _built == [] , _built;
     assert "reinstall jac" in str(outcome.code) , outcome.code;
