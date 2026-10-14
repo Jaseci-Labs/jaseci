@@ -312,6 +312,7 @@ def _archetype_native_name(arch: Archetype, name: str) -> str {
 }
 
 def _recorded_native_name(shared: ClassDetailsShared) -> (str | None) {
+    import from jaclang.compiler.frontend.codeinfo { cached_realpath }
     if shared.class_name not in _NATIVE_NAMED_CLASSES {
         return None;
     }
@@ -320,9 +321,7 @@ def _recorded_native_name(shared: ClassDetailsShared) -> (str | None) {
         return None;
     }
     import os;
-    found = _NATIVE_NAME_BY_DECL.get(
-        (os.path.realpath(key[0]), key[1], key[2], key[3])
-    );
+    found = _NATIVE_NAME_BY_DECL.get((cached_realpath(key[0]), key[1], key[2], key[3]));
     if found is None {
         import from jaclang.compiler.frontend.codeinfo { bundled_stdlib_module_of }
         stdlib_module = bundled_stdlib_module_of(key[0]);

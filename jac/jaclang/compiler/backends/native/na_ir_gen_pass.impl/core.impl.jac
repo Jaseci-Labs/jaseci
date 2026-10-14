@@ -511,9 +511,8 @@ impl NaIRGenPass._own_prefix -> str {
 impl NaIRGenPass._prefix_of_path(path: str) -> str {
     found = self._unit_prefixes.get(path);
     if found is None {
-        import os as _pp_os;
         import from jaclang.compiler.frontend.codeinfo { native_unit_prefix }
-        found = native_unit_prefix(_pp_os.path.realpath(path));
+        found = native_unit_prefix(cached_realpath(path));
         self._unit_prefixes[path] = found;
     }
     return found;
@@ -1560,7 +1559,7 @@ impl NaIRGenPass._walk_imported_module_abilities(
         for _wl_key in (
             _wl_raw,
             _wl_os.path.abspath(_wl_raw),
-            _wl_os.path.realpath(_wl_raw)
+            cached_realpath(_wl_raw)
         ) {
             _wl_slim = self.prog.hub.artifacts.get(_wl_key);
             if _wl_slim is not None and _wl_slim.native_layout is not None {
@@ -1738,7 +1737,7 @@ impl NaIRGenPass._register_imported_archetype(arch: uni.Archetype) -> None {
         return;
     }
 
-    _arch_src = os.path.realpath(arch.loc.mod_path) if arch.loc.mod_path else "";
+    _arch_src = cached_realpath(arch.loc.mod_path) if arch.loc.mod_path else "";
     _seen_src = self._struct_source_mod.get(aname);
     if _seen_src is not None and _arch_src and _seen_src != _arch_src {
         import from jaclang.compiler.frontend.host { active_host }
@@ -1790,7 +1789,7 @@ impl NaIRGenPass._register_imported_globals(
         return;
     }
     import os;
-    real_source = os.path.realpath(source_path) if source_path else "";
+    real_source = cached_realpath(source_path) if source_path else "";
     aliases: dict[str, list[str]] = {};
     for (item, path, _) in self._native_import_items {
         alias = self._get_name(item.alias) if item.alias is not None else None;

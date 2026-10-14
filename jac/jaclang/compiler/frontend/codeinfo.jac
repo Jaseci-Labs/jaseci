@@ -448,7 +448,7 @@ def native_module_key(path: str) -> str {
     keyed by its path within that root, so the symbols a sealed unit
     defines at build time are the ones consumers reference at run time.""";
     import os;
-    rp = os.path.realpath(path);
+    rp = cached_realpath(path);
     base = os.path.basename(rp);
     dot = base.rfind(".");
     stem = base[0:dot] if dot > 0 else base;
@@ -505,10 +505,10 @@ def jaclang_pkg_root -> str {
 def is_compiler_source_path(source_path: str) -> bool {
     import os;
     if not _PKG_REAL {
-        _PKG_REAL.append(os.path.realpath(jaclang_pkg_root()) + os.sep);
+        _PKG_REAL.append(cached_realpath(jaclang_pkg_root()) + os.sep);
     }
     try {
-        return os.path.realpath(source_path).startswith(_PKG_REAL[0]);
+        return cached_realpath(source_path).startswith(_PKG_REAL[0]);
     } except (OSError, ValueError) {
         return False;
     }
@@ -1015,7 +1015,7 @@ def resolve_native_module(
             return (None, None);
         }
 
-        candidate = os.path.realpath(
+        candidate = cached_realpath(
             _native_variant_path(candidate[:-len('.jac')]) or candidate
         );
         if (native_unit_compile_active() and in_native_scope_path(candidate))
