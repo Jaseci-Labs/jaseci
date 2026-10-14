@@ -134,7 +134,7 @@ walker JacAutoLintPass(TreePass) {
     def _wired_items(
         stmt: uni.Import,
         spec: WiringSpec,
-        provided: dict[tuple[str, str, str, str], uni.ImportWire]
+        provided: dict[tuple[str, str, str, str], WireRec]
     ) -> set[int];
 
     def _strip_duplicate_wires(nd: uni.Module) -> None;

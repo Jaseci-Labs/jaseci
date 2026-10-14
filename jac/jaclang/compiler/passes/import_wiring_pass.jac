@@ -18,8 +18,11 @@ import from jaclang.compiler.frontend.unitree {
 }
 import from jaclang.compiler.frontend.module_facts { ModuleFacts }
 import from jaclang.compiler.driver.wiring {
+    RuleRec,
     WireBinding,
+    WireRec,
     WiringSpec,
+    pattern_text,
     scope_owners,
     is_arch_file,
     scope_path_of,
@@ -64,7 +67,7 @@ walker ImportWiringPass(CompilerPass) {
         spec: WiringSpec,
         imp: Import,
         consumer: str,
-        provided: dict[tuple[str, str, str, str], ImportWire],
+        provided: dict[tuple[str, str, str, str], WireRec],
         enforce: bool,
         nested: bool = False,
         scope: (list[str] | None) = None
@@ -74,5 +77,5 @@ walker ImportWiringPass(CompilerPass) {
         binding: WireBinding, at: UniNode, consumer: str, scope: (list[str] | None)
     ) -> None;
 
-    static def _rule_names(rules: list[ImportRule]) -> str;
+    static def _rule_names(rules: list[RuleRec]) -> str;
 }

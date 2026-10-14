@@ -3326,6 +3326,7 @@ graph import compiler.backends.py {
 }
 
 graph import compiler.driver {
+    jir --> compiler.driver.wiring._records_path { running_compiler_digest }
     application --> cli.commands.execution.serve { prepare_application }
     application --> client.targets.client_dev_common.dev_proxy_paths {
         prepare_application
@@ -4206,6 +4207,7 @@ graph import compiler.driver {
     source_products --> dist.source.project { python_source }
     wiring --> cli.commands.architecture {
         ARCH_FILE_NAME,
+        WireRec,
         WiringSpec,
         scope_path_of,
         wiring_for_path
@@ -4214,8 +4216,11 @@ graph import compiler.driver {
     wiring --> compiler.driver.jir.unit_source_digest { wiring_digest_for }
     wiring --> compiler.frontend.parser.frontend.annex_sources { wiring_annex_for }
     wiring --> compiler.passes.import_wiring_pass {
+        RuleRec,
         WireBinding,
+        WireRec,
         WiringSpec,
+        pattern_text,
         is_arch_file,
         scope_owners,
         scope_path_of,
@@ -4226,6 +4231,8 @@ graph import compiler.driver {
         compiled_by_seed,
         is_arch_file,
         scope_path_of,
+        WireRec,
+        wire_record,
         wiring_for_path
     }
     bccache --> project.compiler_host.ProjectHost.annex_files { discover_annex_files }
@@ -8741,7 +8748,7 @@ graph import compiler.frontend {
 graph import compiler.frontend.parser {
     frontend --> cli.commands.analysis._check_file_job { _replay_diags, parse_diags }
     frontend --> cli.commands.architecture._parse_imports { parse_woven }
-    frontend --> compiler.driver.wiring.WiringSpec.__post_init__ { parse_woven }
+    frontend --> compiler.driver.wiring.parse_records { parse_woven }
     frontend --> compiler.passes.variant_agreement_pass.VariantAgreementPass._parse_sibling {
         parse
     }
@@ -11440,6 +11447,7 @@ graph import dist.source {
 }
 
 graph import jac0core {
+    cache_paths --> compiler.driver.wiring._records_path { get_jir_cache_dir }
     cache_paths --> cache.home { get_cache_home }
     cache_paths --> compiler.backends.es.client_kernel_cache._cache_dir {
         get_jir_cache_dir

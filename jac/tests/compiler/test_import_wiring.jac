@@ -369,9 +369,7 @@ test "jac arch init derives a wiring that covers the project" {
         }
     );
     try {
-        spec = WiringSpec(
-            root_dir=base, path=os.path.join(base, "arch.jac"), source=""
-        );
+        spec = WiringSpec(root_dir=base, path=os.path.join(base, "arch.jac"));
         modules = [
             (name, spec.module_file(name) or "") for name in spec.project_modules()
         ];

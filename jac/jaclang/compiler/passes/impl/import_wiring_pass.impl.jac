@@ -21,8 +21,8 @@ impl ImportWiringPass.run_walk with Module entry {
     self._check_module(mod, spec);
 }
 
-impl ImportWiringPass._rule_names(rules: list[ImportRule]) -> str {
-    return ", ".join([f"rule '{r.name.value}'" for r in rules]);
+impl ImportWiringPass._rule_names(rules: list[RuleRec]) -> str {
+    return ", ".join([f"rule '{r.name}'" for r in rules]);
 }
 
 impl ImportWiringPass._check_arch_module(mod: Module) -> None {
@@ -169,7 +169,7 @@ impl ImportWiringPass._check_rule_liveness(spec: WiringSpec, rule: ImportRule) -
                 W2083,
                 node_override=p,
                 name=rule.name.value,
-                what=f"source pattern '{WiringSpec.pattern_text(p)}'"
+                what=f"source pattern '{pattern_text(p)}'"
             );
         }
     }
@@ -179,7 +179,7 @@ impl ImportWiringPass._check_rule_liveness(spec: WiringSpec, rule: ImportRule) -
                 W2083,
                 node_override=t,
                 name=rule.name.value,
-                what=f"target pattern '{WiringSpec.pattern_text(t)}'"
+                what=f"target pattern '{pattern_text(t)}'"
             );
         }
     }
@@ -286,7 +286,7 @@ impl ImportWiringPass._check_import(
     spec: WiringSpec,
     imp: Import,
     consumer: str,
-    provided: dict[tuple[str, str, str, str], ImportWire],
+    provided: dict[tuple[str, str, str, str], WireRec],
     enforce: bool,
     nested: bool = False,
     scope: (list[str] | None) = None

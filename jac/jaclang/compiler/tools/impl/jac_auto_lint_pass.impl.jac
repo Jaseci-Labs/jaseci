@@ -2548,7 +2548,7 @@ impl JacAutoLintPass._resolved_import_keys(
 impl JacAutoLintPass._wired_items(
     stmt: uni.Import,
     spec: WiringSpec,
-    provided: dict[tuple[str, str, str, str], uni.ImportWire]
+    provided: dict[tuple[str, str, str, str], WireRec]
 ) -> set[int] {
     doomed: set[int] = set();
     if not provided {
@@ -2628,7 +2628,7 @@ impl JacAutoLintPass._strip_duplicate_wires(nd: uni.Module) -> None {
             }
             keys = [
                 (consumer, binding.key()) for consumer in stmt.consumer_paths
-                for binding in spec.wire_bindings(stmt)
+                for binding in wire_record(stmt).bindings()
             ];
             if keys and all([k in seen for k in keys]) {
                 if (

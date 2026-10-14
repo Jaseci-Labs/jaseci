@@ -64,9 +64,7 @@ def _project_root -> (str | None) {
 }
 
 def _empty_spec(root_dir: str) -> WiringSpec {
-    return WiringSpec(
-        root_dir=root_dir, path=os.path.join(root_dir, ARCH_FILE_NAME), source=""
-    );
+    return WiringSpec(root_dir=root_dir, path=os.path.join(root_dir, ARCH_FILE_NAME));
 }
 
 def _module_files(spec: WiringSpec) -> list[tuple[str, str]] {
@@ -99,7 +97,7 @@ def _collect_rows(spec: WiringSpec, modules: list[tuple[str, str]]) -> list[Wire
     for (module, path) in modules {
         payloads: dict[tuple[str, str, str], list[tuple[str, str]]] = {};
         module_rows: list[tuple[str, WireRow]] = [];
-        provided_by_scope: dict[str, dict[tuple[str, str, str, str], ImportWire]] = {};
+        provided_by_scope: dict[str, dict[tuple[str, str, str, str], WireRec]] = {};
         sources = [path, *discover_annex_files(path, ".impl.jac")];
         for src in sources {
             for (imp, scope) in _parse_imports(src) {
@@ -231,7 +229,17 @@ def _scope_of(provider: str) -> str {
 }
 
 def _merge_into(spec: WiringSpec, rows: list[WireRow]) -> str {
-    lines = spec.source.split("\n");
+    source = read_file_with_encoding(spec.path) if os.path.isfile(spec.path) else "";
+    blocks: list[GraphImport] = [];
+    if source {
+        parsed = parse_woven(source, spec.path, None, []);
+        for stmt in parsed[0].body {
+            if isinstance(stmt, GraphImport) {
+                blocks.append(stmt);
+            }
+        }
+    }
+    lines = source.split("\n");
     insertions: list[tuple[int, list[str]]] = [];
     appended: list[str] = [];
     groups: dict[str, list[WireRow]] = {};
@@ -240,7 +248,7 @@ def _merge_into(spec: WiringSpec, rows: list[WireRow]) -> str {
     }
     for scope in sorted(groups.keys()) {
         block: (GraphImport | None) = None;
-        for candidate in spec.blocks {
+        for candidate in blocks {
             if candidate.scope_prefix == scope {
                 block = candidate;
             }
@@ -440,17 +448,17 @@ def _node_id(name: str) -> str {
 def _render_mermaid(spec: WiringSpec) -> str {
     lines: list[str] = ["graph LR"];
     for rule in spec.rules {
-        srcs = " | ".join([WiringSpec.pattern_text(p) for p in rule.sources]);
-        tgts = " | ".join([WiringSpec.pattern_text(p) for p in rule.targets]);
+        srcs = " | ".join([p.text for p in rule.sources]);
+        tgts = " | ".join([p.text for p in rule.targets]);
         names = ""
             if rule.is_open
             else " { " + ", ".join(sorted(rule.item_names)) + " }";
-        lines.append(f"    %% edge {rule.name.value}: {srcs} --> {tgts}{names}");
+        lines.append(f"    %% edge {rule.name}: {srcs} --> {tgts}{names}");
     }
     modules: set[str] = set();
     for wire in spec.wires {
-        modules.add(wire.provider_path);
-        modules.update(wire.consumer_paths);
+        modules.add(wire.provider);
+        modules.update(wire.consumers);
     }
     packages: dict[str, list[str]] = {};
     for name in sorted(modules) {
@@ -467,11 +475,11 @@ def _render_mermaid(spec: WiringSpec) -> str {
         label = (
             "module"
                 if wire.is_module_form
-                else ", ".join([item.name.value for item in wire.items])
+                else ", ".join([name for (name, _alias) in wire.items])
         );
-        for consumer in wire.consumer_paths {
+        for consumer in wire.consumers {
             lines.append(
-                f"    {_node_id(wire.provider_path)} -->|{label}| {_node_id(consumer)}"
+                f"    {_node_id(wire.provider)} -->|{label}| {_node_id(consumer)}"
             );
         }
     }
@@ -481,8 +489,8 @@ def _render_mermaid(spec: WiringSpec) -> str {
 def _render_json(spec: WiringSpec) -> str {
     wires = [
         {
-            "provider": wire.provider_path,
-            "consumers": list(wire.consumer_paths),
+            "provider": wire.provider,
+            "consumers": list(wire.consumers),
             "form": import_form(
                 wire.is_absorb, wire.is_typed, wire.is_comptime, not wire.is_module_form
             ),
@@ -490,22 +498,18 @@ def _render_json(spec: WiringSpec) -> str {
                 None
                     if wire.is_module_form
                     else [
-                        {
-                            "name": item.name.value,
-                            "alias": item.alias.value
-                                if item.alias is not None
-                                else None
-                        } for item in wire.items
+                        {"name": name, "alias": alias or None}
+                        for (name, alias) in wire.items
                     ]
             )
         } for wire in spec.wires
     ];
     rules = [
         {
-            "name": rule.name.value,
-            "scope": rule.block.scope_prefix,
-            "sources": [WiringSpec.pattern_text(p) for p in rule.sources],
-            "targets": [WiringSpec.pattern_text(p) for p in rule.targets],
+            "name": rule.name,
+            "scope": rule.scope,
+            "sources": [p.text for p in rule.sources],
+            "targets": [p.text for p in rule.targets],
             "names": None if rule.is_open else sorted(rule.item_names)
         } for rule in spec.rules
     ];

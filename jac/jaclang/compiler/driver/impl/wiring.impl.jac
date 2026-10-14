@@ -20,36 +20,23 @@ impl WireBinding.wire_text(consumer: str) -> str {
 }
 
 impl WiringSpec.postinit -> None {
-    import from jaclang.compiler.frontend.parser.frontend { parse_woven }
-    self.digest = hashlib.sha256(self.source.encode()).hexdigest();
-    self._lines = self.source.split("\n");
     self.package_prefix = _package_prefix(self.root_dir);
-    (mod, had_error) = parse_woven(self.source, self.path, None, [], load_kernel=False);
-    self.module = mod;
-    self.parse_failed = bool(had_error);
-    self.blocks = [
-        s
-        for s in mod.body
-        if isinstance(s, GraphImport)
-    ];
-    for block in self.blocks {
-        for stmt in block.body {
-            if isinstance(stmt, ImportWire) {
-                self.wires.append(stmt);
-                self._wire_lines[stmt.loc.first_line] = stmt;
-            } elif isinstance(stmt, ImportRule) {
-                self.rules.append(stmt);
+    for (i, wire) in enumerate(self.wires) {
+        wire.index = i;
+        self._wire_lines[wire.line] = wire;
+        for consumer in wire.consumers {
+            held = self._raw.setdefault(consumer, []);
+            if not any([w is wire for w in held]) {
+                held.append(wire);
             }
         }
     }
     rows: list[str] = [];
     for rule in self.rules {
-        srcs = "|".join([WiringSpec.pattern_text(p) for p in rule.sources]);
-        tgts = "|".join([WiringSpec.pattern_text(p) for p in rule.targets]);
+        srcs = "|".join([p.text for p in rule.sources]);
+        tgts = "|".join([p.text for p in rule.targets]);
         names = ",".join(sorted(rule.item_names)) if not rule.is_open else "*";
-        rows.append(
-            f"{rule.block.scope_prefix}:{rule.name.value}:{srcs}-->{tgts}:{names}"
-        );
+        rows.append(f"{rule.scope}:{rule.name}:{srcs}-->{tgts}:{names}");
     }
     self._policy_digest = hashlib.sha256("\n".join(rows).encode()).hexdigest()
         if rows
@@ -188,44 +175,28 @@ impl WiringSpec.owns(path: str) -> bool {
 }
 
 impl WiringSpec.split_consumer(path: str) -> (tuple[str, list[str]] | None) {
+    if path in self._splits {
+        return self._splits[path];
+    }
+    found: (tuple[str, list[str]] | None) = None;
     parts = path.split(".");
     for i in range(len(parts), 0, -1) {
         head = ".".join(parts[:i]);
         if self.module_file(head) is not None {
-            return (head, parts[i:]);
+            found = (head, parts[i:]);
+            break;
         }
     }
-    return None;
+    self._splits[path] = found;
+    return found;
 }
 
-impl WiringSpec._index_consumers -> None {
-    if self._indexed {
-        return;
-    }
-    self._indexed = True;
-    for wire in self.wires {
-        for path in wire.consumer_paths {
-            split = self.split_consumer(path);
-            owner_mod = path;
-            scope: list[str] = [];
-            if split is not None {
-                (owner_mod, scope) = split;
-            }
-            wires = self._by_consumer.setdefault(owner_mod, []);
-            if not any([w is wire for w in wires]) {
-                wires.append(wire);
-                self._scopes[(owner_mod, id(wire))] = scope;
-            }
-        }
-    }
-}
-
-impl WiringSpec.consumer_scope(consumer: str, wire: ImportWire) -> list[str] {
-    self._index_consumers();
+impl WiringSpec.consumer_scope(consumer: str, wire: WireRec) -> list[str] {
+    self.consumer_wires(consumer);
     return self._scopes.get((consumer, id(wire)), []);
 }
 
-impl WiringSpec.wire_at_line(line: int) -> (ImportWire | None) {
+impl WiringSpec.wire_at_line(line: int) -> (WireRec | None) {
     return self._wire_lines.get(line);
 }
 
@@ -286,71 +257,75 @@ impl WiringSpec._scan_modules(
     }
 }
 
-impl WiringSpec.consumer_wires(consumer: str) -> list[ImportWire] {
-    self._index_consumers();
-    return self._by_consumer.get(consumer, []);
+impl WiringSpec.consumer_wires(consumer: str) -> list[WireRec] {
+    held = self._by_consumer.get(consumer);
+    if held is not None {
+        return held;
+    }
+    dotted = consumer + ".";
+    candidates: dict[int, WireRec] = {};
+    for (path, wires) in self._raw.items() {
+        if path == consumer or path.startswith(dotted) {
+            for wire in wires {
+                candidates[wire.index] = wire;
+            }
+        }
+    }
+    found: list[WireRec] = [];
+    for index in sorted(candidates.keys()) {
+        wire = candidates[index];
+        for path in wire.consumers {
+            if path != consumer and not path.startswith(dotted) {
+                continue;
+            }
+            split = self.split_consumer(path);
+            owner = split[0] if split is not None else path;
+            if owner == consumer {
+                found.append(wire);
+                self._scopes[(consumer, id(wire))] = split[1]
+                    if split is not None
+                    else [];
+                break;
+            }
+        }
+    }
+    self._by_consumer[consumer] = found;
+    return found;
 }
 
 impl WiringSpec.is_covered(consumer: str) -> bool {
-    self._index_consumers();
-    return consumer in self._by_consumer;
+    return bool(self.consumer_wires(consumer));
 }
 
 impl WiringSpec.is_project_module(module: str) -> bool {
     return module in self.project_modules();
 }
 
-impl WiringSpec.pattern_text(pattern: ModulePattern) -> str {
-    if pattern.path is None {
-        return "*";
-    }
-    return pattern.dotted + (".*" if pattern.is_glob else "");
-}
-
-impl WiringSpec._column_of(pos: int) -> int {
-    return pos - (self.source.rfind("\n", 0, pos) + 1);
-}
-
-impl WiringSpec._wire_text(wire: ImportWire) -> list[tuple[int, int, str]] {
-    first = wire.loc.first_tok;
-    line0 = first.line_no - 1;
-    col = self._column_of(first.pos_start);
+impl WiringSpec._wire_pieces(wire: WireRec) -> list[tuple[int, int, str]] {
+    line0 = wire.line - 1;
+    col = wire.col;
     head_form = import_form(wire.is_absorb, wire.is_typed, wire.is_comptime, False);
     if wire.is_module_form {
-        alias = wire.provider.alias;
         text = head_form
             + " "
-            + self.import_name(wire.provider_path)
-            + (" as " + alias.value if alias is not None else "")
+            + self.import_name(wire.provider)
+            + (" as " + wire.alias if wire.alias else "")
             + ";";
         return [(line0, col, text)];
     }
-    lbrace: (Token | None) = None;
-    rbrace: (Token | None) = None;
-    for k in [wire->:Kid:->] {
-        if isinstance(k, Token) {
-            if k.name == Tok.LBRACE and lbrace is None {
-                lbrace = k;
-            } elif k.name == Tok.RBRACE {
-                rbrace = k;
-            }
-        }
-    }
-    if lbrace is None or rbrace is None {
+    if not wire.payload {
         return [];
     }
-    payload = self.source[lbrace.pos_start:rbrace.pos_end];
-    header = head_form + " from " + self.import_name(wire.provider_path);
-    lb_col = self._column_of(lbrace.pos_start);
-    if lbrace.line_no > first.line_no {
-        header = header + ("\n" * (lbrace.line_no - first.line_no)) + (" " * lb_col);
-    } elif lb_col >= col + len(header) + 1 {
-        header = header + (" " * (lb_col - col - len(header)));
+    header = head_form + " from " + self.import_name(wire.provider);
+    if wire.lb_line > wire.line {
+        header = header + ("\n" * (wire.lb_line - wire.line)) + (" " * wire.lb_col);
+    } elif wire.lb_col >= col + len(header) + 1 {
+        header = header + (" " * (wire.lb_col - col - len(header)));
     } else {
         header = header + " ";
     }
     out: list[tuple[int, int, str]] = [];
-    for (i, line) in enumerate((header + payload).split("\n")) {
+    for (i, line) in enumerate((header + wire.payload).split("\n")) {
         out.append((line0 + i, col if i == 0 else 0, line));
     }
     return out;
@@ -367,11 +342,14 @@ impl WiringSpec.annex_source(consumer: str) -> (str | None) {
     }
     placed: dict[int, list[tuple[int, str]]] = {};
     for wire in wires {
-        for (line0, col, text) in self._wire_text(wire) {
+        for (line0, col, text) in self._wire_pieces(wire) {
             placed.setdefault(line0, []).append((col, text));
         }
     }
-    out: list[str] = [""] * len(self._lines);
+    if not placed {
+        return None;
+    }
+    out: list[str] = [""] * (max(placed.keys()) + 1);
     for (line0, pieces) in placed.items() {
         pieces.sort();
         buf = "";
@@ -382,9 +360,6 @@ impl WiringSpec.annex_source(consumer: str) -> (str | None) {
                 buf = buf + " ";
             }
             buf = buf + text;
-        }
-        while line0 >= len(out) {
-            out.append("");
         }
         out[line0] = buf;
     }
@@ -397,8 +372,8 @@ impl WiringSpec.digest_for(consumer: str) -> str {
     rows: list[str] = [];
     for wire in self.consumer_wires(consumer) {
         scope = ".".join(self.consumer_scope(consumer, wire));
-        provider = self.import_name(wire.provider_path);
-        for binding in self.wire_bindings(wire) {
+        provider = self.import_name(wire.provider);
+        for binding in wire.bindings() {
             rows.append(
                 "\x1f".join(
                     [scope, binding.form, provider, binding.name, binding.alias]
@@ -415,41 +390,35 @@ impl WiringSpec.digest_for(consumer: str) -> str {
     ).hexdigest();
 }
 
-impl WiringSpec.wire_bindings(wire: ImportWire) -> list[WireBinding] {
-    provider = wire.provider_path;
-    if wire.is_module_form {
-        alias = wire.provider.alias;
+impl WireRec.bindings -> list[WireBinding] {
+    if self.is_module_form {
         return [
             WireBinding(
-                provider=provider,
+                provider=self.provider,
                 form=import_form(
-                    wire.is_absorb, wire.is_typed, wire.is_comptime, False
+                    self.is_absorb, self.is_typed, self.is_comptime, False
                 ),
-                alias=alias.value if alias is not None else ""
+                alias=self.alias
             )
         ];
     }
-    form = import_form(wire.is_absorb, wire.is_typed, wire.is_comptime, True);
+    form = import_form(self.is_absorb, self.is_typed, self.is_comptime, True);
     return [
-        WireBinding(
-            provider=provider,
-            form=form,
-            name=item.name.value,
-            alias=item.alias.value if item.alias is not None else ""
-        ) for item in wire.items
+        WireBinding(provider=self.provider, form=form, name=name, alias=alias)
+        for (name, alias) in self.items
     ];
 }
 
 impl WiringSpec.consumer_bindings(
     consumer: str, scope: (list[str] | None) = None
-) -> dict[tuple[str, str, str, str], ImportWire] {
+) -> dict[tuple[str, str, str, str], WireRec] {
     want = scope or [];
-    out: dict[tuple[str, str, str, str], ImportWire] = {};
+    out: dict[tuple[str, str, str, str], WireRec] = {};
     for wire in self.consumer_wires(consumer) {
         if self.consumer_scope(consumer, wire) != want {
             continue;
         }
-        for binding in self.wire_bindings(wire) {
+        for binding in wire.bindings() {
             out.setdefault(binding.key(), wire);
         }
     }
@@ -488,15 +457,15 @@ impl WiringSpec.import_provider(path_node: ModulePath) -> (str | None) {
     return None;
 }
 
-impl WiringSpec.rules_for_provider(provider: str) -> list[ImportRule] {
+impl WiringSpec.rules_for_provider(provider: str) -> list[RuleRec] {
     return [
         rule
         for rule in self.rules
-        if any([p.matches(provider, rule.block.scope_prefix) for p in rule.sources])
+        if any([p.matches(provider, rule.scope) for p in rule.sources])
     ];
 }
 
-impl WiringSpec.rules_admitting(provider: str, consumer: str) -> list[ImportRule] {
+impl WiringSpec.rules_admitting(provider: str, consumer: str) -> list[RuleRec] {
     return [
         rule
         for rule in self.rules_for_provider(provider)
@@ -504,7 +473,7 @@ impl WiringSpec.rules_admitting(provider: str, consumer: str) -> list[ImportRule
     ];
 }
 
-impl WiringSpec.admitted_names(rules: list[ImportRule]) -> (set[str] | None) {
+impl WiringSpec.admitted_names(rules: list[RuleRec]) -> (set[str] | None) {
     payload_rules = [
         r
         for r in rules
@@ -518,6 +487,197 @@ impl WiringSpec.admitted_names(rules: list[ImportRule]) -> (set[str] | None) {
         names |= rule.item_names;
     }
     return names;
+}
+
+impl PatternRec.matches(module: str, prefix: str = "") -> bool {
+    base = ModulePattern.join_scope(prefix, self.dotted);
+    if self.is_glob {
+        return (not base) or module == base or module.startswith(base + ".");
+    }
+    return module == base;
+}
+
+impl pattern_text(pattern: ModulePattern) -> str {
+    if pattern.path is None {
+        return "*";
+    }
+    return pattern.dotted + (".*" if pattern.is_glob else "");
+}
+
+impl pattern_record(pattern: ModulePattern) -> PatternRec {
+    return PatternRec(
+        dotted=pattern.dotted, is_glob=pattern.is_glob, text=pattern_text(pattern)
+    );
+}
+
+impl rule_record(rule: ImportRule) -> RuleRec {
+    return RuleRec(
+        name=rule.name.value,
+        scope=rule.block.scope_prefix,
+        sources=[pattern_record(p) for p in rule.sources],
+        targets=[pattern_record(p) for p in rule.targets],
+        item_names=set(rule.item_names),
+        is_open=rule.is_open
+    );
+}
+
+impl wire_record(wire: ImportWire, source: str = "") -> WireRec {
+    alias = wire.provider.alias if wire.is_module_form else None;
+    first = wire.loc.first_tok;
+    rec = WireRec(
+        provider=wire.provider_path,
+        consumers=list(wire.consumer_paths),
+        is_module_form=wire.is_module_form,
+        is_absorb=wire.is_absorb,
+        is_typed=wire.is_typed,
+        is_comptime=wire.is_comptime,
+        alias=alias.value if alias is not None else "",
+        items=[]
+            if wire.is_module_form
+            else [
+                (item.name.value, item.alias.value if item.alias is not None else "")
+                for item in wire.items
+            ],
+        line=first.line_no
+    );
+    if not source {
+        return rec;
+    }
+    rec.col = first.pos_start - (source.rfind("\n", 0, first.pos_start) + 1);
+    if wire.is_module_form {
+        return rec;
+    }
+    lbrace: (Token | None) = None;
+    rbrace: (Token | None) = None;
+    for k in [wire->:Kid:->] {
+        if isinstance(k, Token) {
+            if k.name == Tok.LBRACE and lbrace is None {
+                lbrace = k;
+            } elif k.name == Tok.RBRACE {
+                rbrace = k;
+            }
+        }
+    }
+    if lbrace is None or rbrace is None {
+        return rec;
+    }
+    rec.lb_line = lbrace.line_no;
+    rec.lb_col = lbrace.pos_start - (source.rfind("\n", 0, lbrace.pos_start) + 1);
+    rec.payload = source[lbrace.pos_start:rbrace.pos_end];
+    return rec;
+}
+
+impl parse_records(
+    source: str, path: str
+) -> tuple[bool, list[WireRec], list[RuleRec]] {
+    import from jaclang.compiler.frontend.parser.frontend { parse_woven }
+    (mod, had_error) = parse_woven(source, path, None, [], load_kernel=False);
+    wires: list[WireRec] = [];
+    rules: list[RuleRec] = [];
+    for stmt in mod.body {
+        if not isinstance(stmt, GraphImport) {
+            continue;
+        }
+        for item in stmt.body {
+            if isinstance(item, ImportWire) {
+                wires.append(wire_record(item, source));
+            } elif isinstance(item, ImportRule) {
+                rules.append(rule_record(item));
+            }
+        }
+    }
+    return (bool(had_error), wires, rules);
+}
+
+impl _records_path(source: str) -> str {
+    import from jaclang.compiler.driver.jir { running_compiler_digest }
+    import from jaclang.jac0core.cache_paths { get_jir_cache_dir }
+    h = hashlib.sha256();
+    h.update(
+        (str(RECORDS_FORMAT) + "\x00" + running_compiler_digest() + "\x00").encode()
+    );
+    h.update(source.encode());
+    key = h.hexdigest();
+    return os.path.join(
+        str(get_jir_cache_dir()), "wiring-spec", key[:2], key + ".json"
+    );
+}
+
+impl _records_to_json(
+    parse_failed: bool, wires: list[WireRec], rules: list[RuleRec]
+) -> dict[str, any] {
+    return {
+        "format": RECORDS_FORMAT,
+        "parse_failed": parse_failed,
+        "wires": [
+            [
+                w.provider,
+                w.consumers,
+                [w.is_module_form, w.is_absorb, w.is_typed, w.is_comptime],
+                w.alias,
+                [[name, alias] for (name, alias) in w.items],
+                w.line,
+                w.col,
+                w.lb_line,
+                w.lb_col,
+                w.payload
+            ] for w in wires
+        ],
+        "rules": [
+            [
+                r.name,
+                r.scope,
+                [[p.dotted, p.is_glob, p.text] for p in r.sources],
+                [[p.dotted, p.is_glob, p.text] for p in r.targets],
+                sorted(r.item_names),
+                r.is_open
+            ] for r in rules
+        ]
+    };
+}
+
+impl _records_from_json(
+    held: dict[str, any]
+) -> (tuple[bool, list[WireRec], list[RuleRec]] | None) {
+    if not isinstance(held, dict) or held.get("format") != RECORDS_FORMAT {
+        return None;
+    }
+    try {
+        wires = [
+            WireRec(
+                provider=w[0],
+                consumers=w[1],
+                is_module_form=w[2][0],
+                is_absorb=w[2][1],
+                is_typed=w[2][2],
+                is_comptime=w[2][3],
+                alias=w[3],
+                items=[(i[0], i[1]) for i in w[4]],
+                line=w[5],
+                col=w[6],
+                lb_line=w[7],
+                lb_col=w[8],
+                payload=w[9]
+            ) for w in held["wires"]
+        ];
+        rules = [
+            RuleRec(
+                name=r[0],
+                scope=r[1],
+                sources=[
+                    PatternRec(dotted=p[0], is_glob=p[1], text=p[2]) for p in r[2]
+                ],
+                targets=[
+                    PatternRec(dotted=p[0], is_glob=p[1], text=p[2]) for p in r[3]
+                ],
+                item_names=set(r[4]),
+                is_open=r[5]
+            ) for r in held["rules"]
+        ];
+    } except (IndexError, KeyError, TypeError) {
+        return None;
+    }
+    return (bool(held.get("parse_failed")), wires, rules);
 }
 
 impl is_arch_file(path: str) -> bool {
@@ -653,8 +813,35 @@ impl _load_spec(root_dir: str, arch_path: str) -> WiringSpec {
     if cached is not None and cached[0] == stamp {
         return cached[1];
     }
+    import json;
+    source = active_host().read_source(arch_path);
+    records: (tuple[bool, list[WireRec], list[RuleRec]] | None) = None;
+    store = "";
+    try {
+        store = _records_path(source);
+        with open(store, "r", encoding="utf-8") as f {
+            records = _records_from_json(json.load(f));
+        }
+    } except (OSError, ValueError, RuntimeError) {}
+    if records is None {
+        records = parse_records(source, arch_path);
+        if store {
+            try {
+                os.makedirs(os.path.dirname(store), exist_ok=True);
+                scratch = store + "." + str(os.getpid()) + ".tmp";
+                with open(scratch, "w", encoding="utf-8") as f {
+                    json.dump(_records_to_json(records[0], records[1], records[2]), f);
+                }
+                os.replace(scratch, store);
+            } except OSError {}
+        }
+    }
     spec = WiringSpec(
-        root_dir=root_dir, path=arch_path, source=active_host().read_source(arch_path)
+        root_dir=root_dir,
+        path=arch_path,
+        parse_failed=records[0],
+        wires=records[1],
+        rules=records[2]
     );
     _spec_cache[key] = (stamp, spec);
     return spec;
