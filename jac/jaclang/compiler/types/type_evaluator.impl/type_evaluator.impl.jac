@@ -228,6 +228,9 @@ impl TypeEvaluator._get_type_of_expression_core(
             }
 
         case DictVal():
+            if td_type := self._typeddict_for_dict_literal(expr, expected_type) {
+                return td_type;
+            }
             if self.prefetch and self.prefetch.dict_class {
                 dict_inst = self._convert_to_instance(self.prefetch.dict_class);
                 if isinstance(dict_inst, ClassType) and not expr.kv_pairs {
@@ -3153,6 +3156,10 @@ impl TypeEvaluator._assign_class(
         }
     }
 
+    if dest_type.is_typeddict() {
+        return self._assign_typeddict(src_type, dest_type, strict);
+    }
+
     if self._is_protocol_class(dest_type) {
         if class_implements_protocol(src_type, dest_type, self) {
             return True;
@@ -3196,9 +3203,6 @@ impl TypeEvaluator._assign_c_interop_args(
 }
 
 impl TypeEvaluator._is_protocol_class(cls_type: ClassType) -> bool {
-    if cls_type.shared.is_typeddict {
-        return True;
-    }
     for base_cls in cls_type.shared.base_classes {
         if not isinstance(base_cls, ClassType) or base_cls._shared is None {
             continue;
