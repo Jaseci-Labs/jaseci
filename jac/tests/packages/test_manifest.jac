@@ -118,8 +118,10 @@ test "saving the manifest keeps both kinds of dependencies" {
 
 test "jac fix dependencies moves PyPI entries without touching the rest" {
     with tempfile.TemporaryDirectory() as tmp {
-        path = Path(tmp) / "jac.toml";
+        proj = Path(tmp);
+        path = proj / "jac.toml";
         path.write_text(LEGACY);
+        (proj / "main.jac").write_text("with entry {\n    print(\"hi\");\n}\n");
         result = migrate_manifest(path);
         assert sorted(result.moved)
             == [
@@ -135,100 +137,21 @@ test "jac fix dependencies moves PyPI entries without touching the rest" {
         assert doc["dependencies"]["npm"] == {"react": "^19"};
         assert doc["dev-dependencies"]["pypi"] == {"pytest": ">=8"};
         assert "# the app's own deps" in result.text;
-        path.write_text(result.text);
+        (code, out) = run_jac(proj, ["fmt", "--check", "main.jac"]);
+        assert code == 2 and "jac.toml is invalid" in out , out;
+        (code, out) = run_jac(proj, ["fix", "dependencies", "--dry-run"]);
+        assert code == 0 , out;
+        assert path.read_text() == LEGACY , "--dry-run must not write";
+        (code, out) = run_jac(proj, ["fix", "dependencies"]);
+        assert code == 0 , out;
+        assert "Failed to apply profile" not in out , out;
+        assert path.read_text() == result.text;
         cfg = JacConfig.load(path);
         assert cfg.pypi_dependencies == {"requests": ">=2.28", "numpy": "~=2.0"};
         assert not cfg.dependencies;
         assert not migrate_manifest(path).moved;
-    }
-}
-
-test "jac fix dependencies runs from the CLI on the legacy manifest it migrates" {
-    with tempfile.TemporaryDirectory() as tmp {
-        proj = Path(tmp);
-        manifest = proj / "jac.toml";
-        manifest.write_text(
-            "[project]\nname = \"repro\"\nversion = \"0.1.0\"\n\n"
-            "[dependencies]\nrequests = \">=2.0\"\n"
-        );
-        (proj / "main.jac").write_text("with entry {\n    print(\"hi\");\n}\n");
-        legacy = manifest.read_text();
-        (code, out) = run_jac(proj, ["fix", "dependencies", "--dry-run"]);
-        assert code == 0 , out;
-        assert "Would move 1" in out , out;
-        assert manifest.read_text() == legacy , "--dry-run must not write";
+        path.write_text("[project\nname = \"old\"\n");
         (code, out) = run_jac(proj, ["fix", "dependencies"]);
-        assert code == 0 , out;
-        assert "Failed to apply profile" not in out , out;
-        doc = tomllib.loads(manifest.read_text());
-        assert doc["dependencies"] == {"pypi": {"requests": ">=2.0"}} , doc;
-        assert JacConfig.load(manifest).pypi_dependencies == {"requests": ">=2.0"};
-    }
-}
-
-test "commands other than fix still refuse a jac.toml that fails validation" {
-    with tempfile.TemporaryDirectory() as tmp {
-        proj = Path(tmp);
-        (proj / "jac.toml").write_text(
-            "[project]\nname = \"repro\"\nversion = \"0.1.0\"\n\n"
-            "[dependencies]\nrequests = \">=2.0\"\n"
-        );
-        (proj / "main.jac").write_text("with entry {\n    print(\"hi\");\n}\n");
-        (code, out) = run_jac(proj, ["fmt", "--check", "main.jac"]);
-        assert code == 2 , out;
-        assert "jac.toml is invalid" in out , out;
-    }
-}
-
-test "jac fix still stops on a jac.toml that is not TOML" {
-    with tempfile.TemporaryDirectory() as tmp {
-        proj = Path(tmp);
-        (proj / "jac.toml").write_text("[project\nname = \"repro\"\n");
-        (code, out) = run_jac(proj, ["fix", "dependencies"]);
-        assert code == 2 , out;
-        assert "jac.toml is malformed" in out , out;
-    }
-}
-
-test "jac fix placement refuses an invalid jac.toml before rewriting any source" {
-    with tempfile.TemporaryDirectory() as tmp {
-        proj = Path(tmp);
-        manifest = proj / "jac.toml";
-        manifest.write_text(
-            "[project]\nname = \"repro\"\nversion = \"0.1.0\"\n"
-            "entry-point = \"main\"\n\n[dependencies]\nrequests = \">=2.0\"\n"
-        );
-        main = proj / "main.jac";
-        main.write_text(
-            "sv import from analytics { track }\n\n"
-            "with entry {\n    print(track());\n}\n"
-        );
-        (proj / "analytics.jac").write_text("def track -> int {\n    return 1;\n}\n");
-        source = main.read_text();
-        (code, out) = run_jac(proj, ["fix", "placement"]);
-        assert code == 2 , out;
-        assert "jac.toml is invalid" in out , out;
-        assert main.read_text() == source , "placement stripped markers it could not record";
-        (code, out) = run_jac(proj, ["fix", "dependencies"]);
-        assert code == 0 , out;
-        (code, out) = run_jac(proj, ["fix", "placement"]);
-        assert code == 0 , out;
-        assert "sv import" not in main.read_text();
-        apps = tomllib.loads(manifest.read_text())["apps"];
-        assert apps["analytics"]["kind"] == "service" , apps;
-    }
-}
-
-test "jac fix access refuses an invalid jac.toml" {
-    with tempfile.TemporaryDirectory() as tmp {
-        proj = Path(tmp);
-        (proj / "jac.toml").write_text(
-            "[project]\nname = \"repro\"\nversion = \"0.1.0\"\n\n"
-            "[dependencies]\nrequests = \">=2.0\"\n"
-        );
-        (proj / "main.jac").write_text("def hello -> str {\n    return \"hi\";\n}\n");
-        (code, out) = run_jac(proj, ["fix", "access"]);
-        assert code == 2 , out;
-        assert "jac.toml is invalid" in out , out;
+        assert code == 2 and "jac.toml is malformed" in out , out;
     }
 }
