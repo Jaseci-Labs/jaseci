@@ -1,0 +1,1472 @@
+{
+  "environment": {
+    "python": "3.12.11",
+    "torch": "2.8.0+cpu",
+    "device": "cpu",
+    "cpu_threads": 1,
+    "tf32": false,
+    "compiler_cache": "/tmp/transformer-python-comparison-inductor"
+  },
+  "cases": {
+    "small_float64_4x3": {
+      "status": "passed",
+      "config": {
+        "dimension": 8,
+        "heads": 2,
+        "hidden": 16,
+        "vocabulary": 13,
+        "capacity": 64,
+        "epsilon": 1e-05
+      },
+      "shape": [
+        4,
+        3
+      ],
+      "dtype": "torch.float64",
+      "device": "cpu",
+      "compiler_entry": "torch._inductor.compile_fx.compile_fx",
+      "fallback": null,
+      "frontend_audit": {
+        "probed_entries": [
+          "torch.compile",
+          "torch._dynamo.optimize",
+          "torch._dynamo.optimize_assert",
+          "torch._dynamo.export",
+          "torch._dynamo.convert_frame._compile",
+          "torch.export.export",
+          "torch.jit.trace",
+          "torch.fx.symbolic_trace frontend roots"
+        ],
+        "calls": [],
+        "allowed_inductor_internal_symbolic_traces": [
+          "torch._dynamo.utils.identity called by torch._inductor.loop_body"
+        ]
+      },
+      "counts": {
+        "node_counts": {
+          "placeholder": 49,
+          "call_function": 157,
+          "output": 1
+        },
+        "aten_operations": {
+          "aten._softmax.default": 4,
+          "aten.add.Scalar": 5,
+          "aten.add.Tensor": 29,
+          "aten.bmm.default": 6,
+          "aten.contiguous.default": 3,
+          "aten.div.Scalar": 3,
+          "aten.index_select.default": 2,
+          "aten.masked_fill.Scalar": 1,
+          "aten.mean.dim": 10,
+          "aten.mm.default": 17,
+          "aten.mul.Scalar": 2,
+          "aten.mul.Tensor": 10,
+          "aten.ones.default": 1,
+          "aten.relu.default": 2,
+          "aten.reshape.default": 12,
+          "aten.rsqrt.default": 5,
+          "aten.slice.Tensor": 2,
+          "aten.square.default": 5,
+          "aten.sub.Tensor": 5,
+          "aten.t.default": 17,
+          "aten.transpose.int": 15,
+          "aten.triu.default": 1
+        },
+        "weight_inputs": 47,
+        "captures": 45
+      },
+      "checked_intermediates": 45,
+      "intermediate_errors": {
+        "enc_embed": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "enc_pos": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "enc_attn.q": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "enc_attn.k": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "enc_attn.v": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "enc_attn.score": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "enc_attn.probabilities": {
+          "fx": 0.0,
+          "inductor": 2.7755575615628914e-17
+        },
+        "enc_attn.context": {
+          "fx": 0.0,
+          "inductor": 1.1102230246251565e-16
+        },
+        "enc_attn.output": {
+          "fx": 0.0,
+          "inductor": 1.1102230246251565e-16
+        },
+        "enc_norm1.residual": {
+          "fx": 0.0,
+          "inductor": 2.220446049250313e-16
+        },
+        "enc_norm1": {
+          "fx": 8.881784197001252e-16,
+          "inductor": 8.881784197001252e-16
+        },
+        "enc_ffn.up": {
+          "fx": 8.881784197001252e-16,
+          "inductor": 8.881784197001252e-16
+        },
+        "enc_ffn.relu": {
+          "fx": 8.881784197001252e-16,
+          "inductor": 8.881784197001252e-16
+        },
+        "enc_ffn.output": {
+          "fx": 4.440892098500626e-16,
+          "inductor": 6.661338147750939e-16
+        },
+        "enc_norm2.residual": {
+          "fx": 4.440892098500626e-16,
+          "inductor": 4.440892098500626e-16
+        },
+        "enc_norm2": {
+          "fx": 6.661338147750939e-16,
+          "inductor": 6.661338147750939e-16
+        },
+        "dec_embed": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_pos": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_attn.q": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_attn.k": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_attn.v": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_attn.score": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_attn.mask": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_attn.masked": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_attn.probabilities": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_attn.context": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_attn.output": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_norm1.residual": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_norm1": {
+          "fx": 2.220446049250313e-16,
+          "inductor": 2.220446049250313e-16
+        },
+        "cross_attn.q": {
+          "fx": 4.440892098500626e-16,
+          "inductor": 4.440892098500626e-16
+        },
+        "cross_attn.k": {
+          "fx": 8.881784197001252e-16,
+          "inductor": 4.440892098500626e-16
+        },
+        "cross_attn.v": {
+          "fx": 8.881784197001252e-16,
+          "inductor": 8.881784197001252e-16
+        },
+        "cross_attn.score": {
+          "fx": 1.3322676295501878e-15,
+          "inductor": 8.881784197001252e-16
+        },
+        "cross_attn.probabilities": {
+          "fx": 3.3306690738754696e-16,
+          "inductor": 3.3306690738754696e-16
+        },
+        "cross_attn.context": {
+          "fx": 4.440892098500626e-16,
+          "inductor": 4.440892098500626e-16
+        },
+        "cross_attn.output": {
+          "fx": 4.440892098500626e-16,
+          "inductor": 8.881784197001252e-16
+        },
+        "dec_norm2.residual": {
+          "fx": 4.440892098500626e-16,
+          "inductor": 8.881784197001252e-16
+        },
+        "dec_norm2": {
+          "fx": 4.440892098500626e-16,
+          "inductor": 6.661338147750939e-16
+        },
+        "dec_ffn.up": {
+          "fx": 4.440892098500626e-16,
+          "inductor": 8.881784197001252e-16
+        },
+        "dec_ffn.relu": {
+          "fx": 4.440892098500626e-16,
+          "inductor": 4.440892098500626e-16
+        },
+        "dec_ffn.output": {
+          "fx": 4.440892098500626e-16,
+          "inductor": 4.440892098500626e-16
+        },
+        "dec_norm3.residual": {
+          "fx": 8.881784197001252e-16,
+          "inductor": 8.881784197001252e-16
+        },
+        "dec_norm3": {
+          "fx": 4.996003610813204e-16,
+          "inductor": 8.881784197001252e-16
+        },
+        "projection": {
+          "fx": 4.440892098500626e-16,
+          "inductor": 8.881784197001252e-16
+        },
+        "probabilities": {
+          "fx": 5.551115123125783e-17,
+          "inductor": 1.1102230246251565e-16
+        }
+      },
+      "final_errors": {
+        "fx": 5.551115123125783e-17,
+        "inductor": 1.1102230246251565e-16
+      },
+      "repeated_changed_input_errors": [
+        1.1102230246251565e-16,
+        8.326672684688674e-17,
+        1.1102230246251565e-16
+      ],
+      "shifted_target": [
+        1,
+        6,
+        7
+      ],
+      "labels": [
+        6,
+        7,
+        8
+      ],
+      "causal_mask": "passed",
+      "future_isolation": "passed",
+      "residual_joins": 5,
+      "encoder_influence": {
+        "memory": 0.9322561626170056,
+        "cross_keys": 1.1520746450396646,
+        "output": 0.04535955051382587
+      },
+      "replaced_weights": {
+        "enc_embed.weight": {
+          "output_delta": 0.002775454254742085,
+          "checkpoint": "enc_embed",
+          "checkpoint_delta": 0.07067866563000713,
+          "expected_output_invariance": false
+        },
+        "enc_attn.q.weight": {
+          "output_delta": 0.0020455540890730872,
+          "checkpoint": "enc_attn.q",
+          "checkpoint_delta": 0.09696179981137618,
+          "expected_output_invariance": false
+        },
+        "dec_attn.k.weight": {
+          "output_delta": 0.0025423201689091235,
+          "checkpoint": "dec_attn.k",
+          "checkpoint_delta": 0.06352343802683258,
+          "expected_output_invariance": false
+        },
+        "cross_attn.v.weight": {
+          "output_delta": 0.02298712937914535,
+          "checkpoint": "cross_attn.v",
+          "checkpoint_delta": 0.09745012816409893,
+          "expected_output_invariance": false
+        },
+        "enc_ffn.up.weight": {
+          "output_delta": 0.0038257861472562604,
+          "checkpoint": "enc_ffn.up",
+          "checkpoint_delta": 0.11649430266883609,
+          "expected_output_invariance": false
+        },
+        "dec_ffn.output.weight": {
+          "output_delta": 0.012487890177685923,
+          "checkpoint": "dec_ffn.output",
+          "checkpoint_delta": 0.07099679497467731,
+          "expected_output_invariance": false
+        },
+        "enc_norm1.weight": {
+          "output_delta": 0.0023678618350783387,
+          "checkpoint": "enc_norm1",
+          "checkpoint_delta": 0.042163060830908705,
+          "expected_output_invariance": false
+        },
+        "dec_norm3.bias": {
+          "output_delta": 0.00771714404132301,
+          "checkpoint": "dec_norm3",
+          "checkpoint_delta": 0.024088954635429816,
+          "expected_output_invariance": false
+        },
+        "projection.weight": {
+          "output_delta": 0.00807627842114439,
+          "checkpoint": "projection",
+          "checkpoint_delta": 0.06651861814950077,
+          "expected_output_invariance": false
+        },
+        "projection.bias": {
+          "output_delta": 0.004929191043544667,
+          "checkpoint": "projection",
+          "checkpoint_delta": 0.024088954635429927,
+          "expected_output_invariance": false
+        },
+        "position_table": {
+          "output_delta": 0.0034942818498567008,
+          "checkpoint": "enc_pos",
+          "checkpoint_delta": 0.024994360776825264,
+          "expected_output_invariance": false
+        }
+      },
+      "in_place_mutation": "passed",
+      "output_only": {
+        "max_abs_error": 1.1102230246251565e-16,
+        "counts": {
+          "node_counts": {
+            "placeholder": 49,
+            "call_function": 157,
+            "output": 1
+          },
+          "aten_operations": {
+            "aten._softmax.default": 4,
+            "aten.add.Scalar": 5,
+            "aten.add.Tensor": 29,
+            "aten.bmm.default": 6,
+            "aten.contiguous.default": 3,
+            "aten.div.Scalar": 3,
+            "aten.index_select.default": 2,
+            "aten.masked_fill.Scalar": 1,
+            "aten.mean.dim": 10,
+            "aten.mm.default": 17,
+            "aten.mul.Scalar": 2,
+            "aten.mul.Tensor": 10,
+            "aten.ones.default": 1,
+            "aten.relu.default": 2,
+            "aten.reshape.default": 12,
+            "aten.rsqrt.default": 5,
+            "aten.slice.Tensor": 2,
+            "aten.square.default": 5,
+            "aten.sub.Tensor": 5,
+            "aten.t.default": 17,
+            "aten.transpose.int": 15,
+            "aten.triu.default": 1
+          },
+          "weight_inputs": 47,
+          "captures": 0
+        }
+      },
+      "metadata_guards": {
+        "input_shape": "shape/stride/dtype/device/grad metadata changed: rebuild and recompile",
+        "input_dtype": "inputs must be rank-one int64 token tensors",
+        "weight_shape": "shape/stride/dtype/device/grad metadata changed: rebuild and recompile",
+        "missing_weight": "weight names changed"
+      }
+    },
+    "small_float64_2x1": {
+      "status": "passed",
+      "config": {
+        "dimension": 8,
+        "heads": 2,
+        "hidden": 16,
+        "vocabulary": 13,
+        "capacity": 64,
+        "epsilon": 1e-05
+      },
+      "shape": [
+        2,
+        1
+      ],
+      "dtype": "torch.float64",
+      "device": "cpu",
+      "compiler_entry": "torch._inductor.compile_fx.compile_fx",
+      "fallback": null,
+      "frontend_audit": {
+        "probed_entries": [
+          "torch.compile",
+          "torch._dynamo.optimize",
+          "torch._dynamo.optimize_assert",
+          "torch._dynamo.export",
+          "torch._dynamo.convert_frame._compile",
+          "torch.export.export",
+          "torch.jit.trace",
+          "torch.fx.symbolic_trace frontend roots"
+        ],
+        "calls": [],
+        "allowed_inductor_internal_symbolic_traces": []
+      },
+      "counts": {
+        "node_counts": {
+          "placeholder": 49,
+          "call_function": 157,
+          "output": 1
+        },
+        "aten_operations": {
+          "aten._softmax.default": 4,
+          "aten.add.Scalar": 5,
+          "aten.add.Tensor": 29,
+          "aten.bmm.default": 6,
+          "aten.contiguous.default": 3,
+          "aten.div.Scalar": 3,
+          "aten.index_select.default": 2,
+          "aten.masked_fill.Scalar": 1,
+          "aten.mean.dim": 10,
+          "aten.mm.default": 17,
+          "aten.mul.Scalar": 2,
+          "aten.mul.Tensor": 10,
+          "aten.ones.default": 1,
+          "aten.relu.default": 2,
+          "aten.reshape.default": 12,
+          "aten.rsqrt.default": 5,
+          "aten.slice.Tensor": 2,
+          "aten.square.default": 5,
+          "aten.sub.Tensor": 5,
+          "aten.t.default": 17,
+          "aten.transpose.int": 15,
+          "aten.triu.default": 1
+        },
+        "weight_inputs": 47,
+        "captures": 45
+      },
+      "checked_intermediates": 45,
+      "intermediate_errors": {
+        "enc_embed": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "enc_pos": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "enc_attn.q": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "enc_attn.k": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "enc_attn.v": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "enc_attn.score": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "enc_attn.probabilities": {
+          "fx": 0.0,
+          "inductor": 5.551115123125783e-17
+        },
+        "enc_attn.context": {
+          "fx": 0.0,
+          "inductor": 5.551115123125783e-17
+        },
+        "enc_attn.output": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "enc_norm1.residual": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "enc_norm1": {
+          "fx": 4.440892098500626e-16,
+          "inductor": 4.440892098500626e-16
+        },
+        "enc_ffn.up": {
+          "fx": 4.440892098500626e-16,
+          "inductor": 4.440892098500626e-16
+        },
+        "enc_ffn.relu": {
+          "fx": 4.440892098500626e-16,
+          "inductor": 4.440892098500626e-16
+        },
+        "enc_ffn.output": {
+          "fx": 4.440892098500626e-16,
+          "inductor": 4.440892098500626e-16
+        },
+        "enc_norm2.residual": {
+          "fx": 4.440892098500626e-16,
+          "inductor": 4.440892098500626e-16
+        },
+        "enc_norm2": {
+          "fx": 2.220446049250313e-16,
+          "inductor": 2.220446049250313e-16
+        },
+        "dec_embed": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_pos": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_attn.q": {
+          "fx": 0.0,
+          "inductor": 1.1102230246251565e-16
+        },
+        "dec_attn.k": {
+          "fx": 0.0,
+          "inductor": 2.220446049250313e-16
+        },
+        "dec_attn.v": {
+          "fx": 0.0,
+          "inductor": 1.1102230246251565e-16
+        },
+        "dec_attn.score": {
+          "fx": 0.0,
+          "inductor": 4.440892098500626e-16
+        },
+        "dec_attn.mask": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_attn.masked": {
+          "fx": 0.0,
+          "inductor": 4.440892098500626e-16
+        },
+        "dec_attn.probabilities": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_attn.context": {
+          "fx": 0.0,
+          "inductor": 1.1102230246251565e-16
+        },
+        "dec_attn.output": {
+          "fx": 0.0,
+          "inductor": 2.220446049250313e-16
+        },
+        "dec_norm1.residual": {
+          "fx": 0.0,
+          "inductor": 2.220446049250313e-16
+        },
+        "dec_norm1": {
+          "fx": 4.440892098500626e-16,
+          "inductor": 4.440892098500626e-16
+        },
+        "cross_attn.q": {
+          "fx": 8.881784197001252e-16,
+          "inductor": 8.881784197001252e-16
+        },
+        "cross_attn.k": {
+          "fx": 4.440892098500626e-16,
+          "inductor": 4.440892098500626e-16
+        },
+        "cross_attn.v": {
+          "fx": 2.220446049250313e-16,
+          "inductor": 2.220446049250313e-16
+        },
+        "cross_attn.score": {
+          "fx": 4.440892098500626e-16,
+          "inductor": 4.440892098500626e-16
+        },
+        "cross_attn.probabilities": {
+          "fx": 1.1102230246251565e-16,
+          "inductor": 1.1102230246251565e-16
+        },
+        "cross_attn.context": {
+          "fx": 4.440892098500626e-16,
+          "inductor": 4.440892098500626e-16
+        },
+        "cross_attn.output": {
+          "fx": 4.996003610813204e-16,
+          "inductor": 3.885780586188048e-16
+        },
+        "dec_norm2.residual": {
+          "fx": 4.440892098500626e-16,
+          "inductor": 6.661338147750939e-16
+        },
+        "dec_norm2": {
+          "fx": 3.3306690738754696e-16,
+          "inductor": 3.3306690738754696e-16
+        },
+        "dec_ffn.up": {
+          "fx": 8.881784197001252e-16,
+          "inductor": 4.440892098500626e-16
+        },
+        "dec_ffn.relu": {
+          "fx": 4.440892098500626e-16,
+          "inductor": 2.220446049250313e-16
+        },
+        "dec_ffn.output": {
+          "fx": 2.220446049250313e-16,
+          "inductor": 1.1102230246251565e-16
+        },
+        "dec_norm3.residual": {
+          "fx": 4.440892098500626e-16,
+          "inductor": 4.440892098500626e-16
+        },
+        "dec_norm3": {
+          "fx": 6.661338147750939e-16,
+          "inductor": 6.661338147750939e-16
+        },
+        "projection": {
+          "fx": 8.881784197001252e-16,
+          "inductor": 6.661338147750939e-16
+        },
+        "probabilities": {
+          "fx": 1.3877787807814457e-16,
+          "inductor": 1.3877787807814457e-16
+        }
+      },
+      "final_errors": {
+        "fx": 1.3877787807814457e-16,
+        "inductor": 1.3877787807814457e-16
+      },
+      "repeated_changed_input_errors": [
+        1.3877787807814457e-16,
+        2.7755575615628914e-17,
+        5.551115123125783e-17
+      ],
+      "shifted_target": [
+        1
+      ],
+      "labels": [
+        6
+      ],
+      "causal_mask": "passed",
+      "future_isolation": "vacuous_length_one",
+      "residual_joins": 5,
+      "encoder_influence": {
+        "memory": 2.004905504896133,
+        "cross_keys": 2.481715922511294,
+        "output": 0.1275058170760854
+      },
+      "replaced_weights": {
+        "enc_embed.weight": {
+          "output_delta": 0.010406667171878242,
+          "checkpoint": "enc_embed",
+          "checkpoint_delta": 0.07067866563000713,
+          "expected_output_invariance": false
+        },
+        "enc_attn.q.weight": {
+          "output_delta": 0.0012826568068190214,
+          "checkpoint": "enc_attn.q",
+          "checkpoint_delta": 0.0752481914036911,
+          "expected_output_invariance": false
+        },
+        "dec_attn.k.weight": {
+          "output_delta": 0.0,
+          "checkpoint": "dec_attn.k",
+          "checkpoint_delta": 0.06352343802683258,
+          "expected_output_invariance": true
+        },
+        "cross_attn.v.weight": {
+          "output_delta": 0.02428273777350967,
+          "checkpoint": "cross_attn.v",
+          "checkpoint_delta": 0.0885577144759383,
+          "expected_output_invariance": false
+        },
+        "enc_ffn.up.weight": {
+          "output_delta": 0.0069083300861425,
+          "checkpoint": "enc_ffn.up",
+          "checkpoint_delta": 0.09130443940632749,
+          "expected_output_invariance": false
+        },
+        "dec_ffn.output.weight": {
+          "output_delta": 0.006537622489054873,
+          "checkpoint": "dec_ffn.output",
+          "checkpoint_delta": 0.09923644417882915,
+          "expected_output_invariance": false
+        },
+        "enc_norm1.weight": {
+          "output_delta": 0.0010774784413141725,
+          "checkpoint": "enc_norm1",
+          "checkpoint_delta": 0.041087523881847776,
+          "expected_output_invariance": false
+        },
+        "dec_norm3.bias": {
+          "output_delta": 0.005640032143736928,
+          "checkpoint": "dec_norm3",
+          "checkpoint_delta": 0.024088954635429816,
+          "expected_output_invariance": false
+        },
+        "projection.weight": {
+          "output_delta": 0.003113373436492428,
+          "checkpoint": "projection",
+          "checkpoint_delta": 0.011850101260800994,
+          "expected_output_invariance": false
+        },
+        "projection.bias": {
+          "output_delta": 0.004556943790059276,
+          "checkpoint": "projection",
+          "checkpoint_delta": 0.024088954635429927,
+          "expected_output_invariance": false
+        },
+        "position_table": {
+          "output_delta": 0.0020407030036310725,
+          "checkpoint": "enc_pos",
+          "checkpoint_delta": 0.024669299106865383,
+          "expected_output_invariance": false
+        }
+      },
+      "in_place_mutation": "passed",
+      "output_only": null,
+      "metadata_guards": {
+        "input_shape": "shape/stride/dtype/device/grad metadata changed: rebuild and recompile",
+        "input_dtype": "inputs must be rank-one int64 token tensors",
+        "weight_shape": "shape/stride/dtype/device/grad metadata changed: rebuild and recompile",
+        "missing_weight": "weight names changed"
+      }
+    },
+    "small_float32_4x3": {
+      "status": "passed",
+      "config": {
+        "dimension": 8,
+        "heads": 2,
+        "hidden": 16,
+        "vocabulary": 13,
+        "capacity": 64,
+        "epsilon": 1e-05
+      },
+      "shape": [
+        4,
+        3
+      ],
+      "dtype": "torch.float32",
+      "device": "cpu",
+      "compiler_entry": "torch._inductor.compile_fx.compile_fx",
+      "fallback": null,
+      "frontend_audit": {
+        "probed_entries": [
+          "torch.compile",
+          "torch._dynamo.optimize",
+          "torch._dynamo.optimize_assert",
+          "torch._dynamo.export",
+          "torch._dynamo.convert_frame._compile",
+          "torch.export.export",
+          "torch.jit.trace",
+          "torch.fx.symbolic_trace frontend roots"
+        ],
+        "calls": [],
+        "allowed_inductor_internal_symbolic_traces": []
+      },
+      "counts": {
+        "node_counts": {
+          "placeholder": 49,
+          "call_function": 157,
+          "output": 1
+        },
+        "aten_operations": {
+          "aten._softmax.default": 4,
+          "aten.add.Scalar": 5,
+          "aten.add.Tensor": 29,
+          "aten.bmm.default": 6,
+          "aten.contiguous.default": 3,
+          "aten.div.Scalar": 3,
+          "aten.index_select.default": 2,
+          "aten.masked_fill.Scalar": 1,
+          "aten.mean.dim": 10,
+          "aten.mm.default": 17,
+          "aten.mul.Scalar": 2,
+          "aten.mul.Tensor": 10,
+          "aten.ones.default": 1,
+          "aten.relu.default": 2,
+          "aten.reshape.default": 12,
+          "aten.rsqrt.default": 5,
+          "aten.slice.Tensor": 2,
+          "aten.square.default": 5,
+          "aten.sub.Tensor": 5,
+          "aten.t.default": 17,
+          "aten.transpose.int": 15,
+          "aten.triu.default": 1
+        },
+        "weight_inputs": 47,
+        "captures": 45
+      },
+      "checked_intermediates": 45,
+      "intermediate_errors": {
+        "enc_embed": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "enc_pos": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "enc_attn.q": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "enc_attn.k": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "enc_attn.v": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "enc_attn.score": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "enc_attn.probabilities": {
+          "fx": 0.0,
+          "inductor": 2.9802322387695312e-08
+        },
+        "enc_attn.context": {
+          "fx": 0.0,
+          "inductor": 1.1920928955078125e-07
+        },
+        "enc_attn.output": {
+          "fx": 0.0,
+          "inductor": 8.940696716308594e-08
+        },
+        "enc_norm1.residual": {
+          "fx": 0.0,
+          "inductor": 1.1920928955078125e-07
+        },
+        "enc_norm1": {
+          "fx": 1.1920928955078125e-07,
+          "inductor": 1.1920928955078125e-07
+        },
+        "enc_ffn.up": {
+          "fx": 1.1920928955078125e-07,
+          "inductor": 2.384185791015625e-07
+        },
+        "enc_ffn.relu": {
+          "fx": 1.1920928955078125e-07,
+          "inductor": 1.1920928955078125e-07
+        },
+        "enc_ffn.output": {
+          "fx": 1.1920928955078125e-07,
+          "inductor": 1.1920928955078125e-07
+        },
+        "enc_norm2.residual": {
+          "fx": 2.384185791015625e-07,
+          "inductor": 2.384185791015625e-07
+        },
+        "enc_norm2": {
+          "fx": 2.384185791015625e-07,
+          "inductor": 2.384185791015625e-07
+        },
+        "dec_embed": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_pos": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_attn.q": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_attn.k": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_attn.v": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_attn.score": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_attn.mask": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_attn.masked": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_attn.probabilities": {
+          "fx": 0.0,
+          "inductor": 2.9802322387695312e-08
+        },
+        "dec_attn.context": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_attn.output": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_norm1.residual": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_norm1": {
+          "fx": 2.384185791015625e-07,
+          "inductor": 2.384185791015625e-07
+        },
+        "cross_attn.q": {
+          "fx": 2.384185791015625e-07,
+          "inductor": 2.384185791015625e-07
+        },
+        "cross_attn.k": {
+          "fx": 2.384185791015625e-07,
+          "inductor": 2.384185791015625e-07
+        },
+        "cross_attn.v": {
+          "fx": 2.384185791015625e-07,
+          "inductor": 3.5762786865234375e-07
+        },
+        "cross_attn.score": {
+          "fx": 3.5762786865234375e-07,
+          "inductor": 4.76837158203125e-07
+        },
+        "cross_attn.probabilities": {
+          "fx": 5.960464477539063e-08,
+          "inductor": 8.940696716308594e-08
+        },
+        "cross_attn.context": {
+          "fx": 1.7881393432617188e-07,
+          "inductor": 2.384185791015625e-07
+        },
+        "cross_attn.output": {
+          "fx": 2.384185791015625e-07,
+          "inductor": 4.76837158203125e-07
+        },
+        "dec_norm2.residual": {
+          "fx": 2.384185791015625e-07,
+          "inductor": 4.76837158203125e-07
+        },
+        "dec_norm2": {
+          "fx": 1.1920928955078125e-07,
+          "inductor": 2.384185791015625e-07
+        },
+        "dec_ffn.up": {
+          "fx": 2.384185791015625e-07,
+          "inductor": 2.384185791015625e-07
+        },
+        "dec_ffn.relu": {
+          "fx": 2.384185791015625e-07,
+          "inductor": 2.384185791015625e-07
+        },
+        "dec_ffn.output": {
+          "fx": 1.1920928955078125e-07,
+          "inductor": 1.4156103134155273e-07
+        },
+        "dec_norm3.residual": {
+          "fx": 2.384185791015625e-07,
+          "inductor": 2.384185791015625e-07
+        },
+        "dec_norm3": {
+          "fx": 2.384185791015625e-07,
+          "inductor": 3.5762786865234375e-07
+        },
+        "projection": {
+          "fx": 3.5762786865234375e-07,
+          "inductor": 4.76837158203125e-07
+        },
+        "probabilities": {
+          "fx": 2.9802322387695312e-08,
+          "inductor": 2.9802322387695312e-08
+        }
+      },
+      "final_errors": {
+        "fx": 2.9802322387695312e-08,
+        "inductor": 2.9802322387695312e-08
+      },
+      "repeated_changed_input_errors": [
+        2.9802322387695312e-08,
+        5.960464477539063e-08,
+        4.470348358154297e-08
+      ],
+      "shifted_target": [
+        1,
+        6,
+        7
+      ],
+      "labels": [
+        6,
+        7,
+        8
+      ],
+      "causal_mask": "passed",
+      "future_isolation": "passed",
+      "residual_joins": 5,
+      "encoder_influence": {
+        "memory": 0.9322561621665955,
+        "cross_keys": 1.1520745754241943,
+        "output": 0.0453595370054245
+      },
+      "replaced_weights": {
+        "enc_embed.weight": {
+          "output_delta": 0.00277545303106308,
+          "checkpoint": "enc_embed",
+          "checkpoint_delta": 0.07067859172821045,
+          "expected_output_invariance": false
+        },
+        "enc_attn.q.weight": {
+          "output_delta": 0.002045571804046631,
+          "checkpoint": "enc_attn.q",
+          "checkpoint_delta": 0.09696176648139954,
+          "expected_output_invariance": false
+        },
+        "dec_attn.k.weight": {
+          "output_delta": 0.0025423020124435425,
+          "checkpoint": "dec_attn.k",
+          "checkpoint_delta": 0.0635232925415039,
+          "expected_output_invariance": false
+        },
+        "cross_attn.v.weight": {
+          "output_delta": 0.022987157106399536,
+          "checkpoint": "cross_attn.v",
+          "checkpoint_delta": 0.09745007753372192,
+          "expected_output_invariance": false
+        },
+        "enc_ffn.up.weight": {
+          "output_delta": 0.003825753927230835,
+          "checkpoint": "enc_ffn.up",
+          "checkpoint_delta": 0.11649435758590698,
+          "expected_output_invariance": false
+        },
+        "dec_ffn.output.weight": {
+          "output_delta": 0.012487918138504028,
+          "checkpoint": "dec_ffn.output",
+          "checkpoint_delta": 0.07099676132202148,
+          "expected_output_invariance": false
+        },
+        "enc_norm1.weight": {
+          "output_delta": 0.002367839217185974,
+          "checkpoint": "enc_norm1",
+          "checkpoint_delta": 0.04216301441192627,
+          "expected_output_invariance": false
+        },
+        "dec_norm3.bias": {
+          "output_delta": 0.00771719217300415,
+          "checkpoint": "dec_norm3",
+          "checkpoint_delta": 0.02408897876739502,
+          "expected_output_invariance": false
+        },
+        "projection.weight": {
+          "output_delta": 0.008076280355453491,
+          "checkpoint": "projection",
+          "checkpoint_delta": 0.06651902198791504,
+          "expected_output_invariance": false
+        },
+        "projection.bias": {
+          "output_delta": 0.004929184913635254,
+          "checkpoint": "projection",
+          "checkpoint_delta": 0.02408897876739502,
+          "expected_output_invariance": false
+        },
+        "position_table": {
+          "output_delta": 0.0034943222999572754,
+          "checkpoint": "enc_pos",
+          "checkpoint_delta": 0.024994373321533203,
+          "expected_output_invariance": false
+        }
+      },
+      "in_place_mutation": "passed",
+      "output_only": null,
+      "metadata_guards": {
+        "input_shape": "shape/stride/dtype/device/grad metadata changed: rebuild and recompile",
+        "input_dtype": "inputs must be rank-one int64 token tensors",
+        "weight_shape": "shape/stride/dtype/device/grad metadata changed: rebuild and recompile",
+        "missing_weight": "weight names changed"
+      }
+    },
+    "medium_float32_7x5": {
+      "status": "passed",
+      "config": {
+        "dimension": 32,
+        "heads": 4,
+        "hidden": 64,
+        "vocabulary": 31,
+        "capacity": 64,
+        "epsilon": 1e-05
+      },
+      "shape": [
+        7,
+        5
+      ],
+      "dtype": "torch.float32",
+      "device": "cpu",
+      "compiler_entry": "torch._inductor.compile_fx.compile_fx",
+      "fallback": null,
+      "frontend_audit": {
+        "probed_entries": [
+          "torch.compile",
+          "torch._dynamo.optimize",
+          "torch._dynamo.optimize_assert",
+          "torch._dynamo.export",
+          "torch._dynamo.convert_frame._compile",
+          "torch.export.export",
+          "torch.jit.trace",
+          "torch.fx.symbolic_trace frontend roots"
+        ],
+        "calls": [],
+        "allowed_inductor_internal_symbolic_traces": []
+      },
+      "counts": {
+        "node_counts": {
+          "placeholder": 49,
+          "call_function": 157,
+          "output": 1
+        },
+        "aten_operations": {
+          "aten._softmax.default": 4,
+          "aten.add.Scalar": 5,
+          "aten.add.Tensor": 29,
+          "aten.bmm.default": 6,
+          "aten.contiguous.default": 3,
+          "aten.div.Scalar": 3,
+          "aten.index_select.default": 2,
+          "aten.masked_fill.Scalar": 1,
+          "aten.mean.dim": 10,
+          "aten.mm.default": 17,
+          "aten.mul.Scalar": 2,
+          "aten.mul.Tensor": 10,
+          "aten.ones.default": 1,
+          "aten.relu.default": 2,
+          "aten.reshape.default": 12,
+          "aten.rsqrt.default": 5,
+          "aten.slice.Tensor": 2,
+          "aten.square.default": 5,
+          "aten.sub.Tensor": 5,
+          "aten.t.default": 17,
+          "aten.transpose.int": 15,
+          "aten.triu.default": 1
+        },
+        "weight_inputs": 47,
+        "captures": 45
+      },
+      "checked_intermediates": 45,
+      "intermediate_errors": {
+        "enc_embed": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "enc_pos": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "enc_attn.q": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "enc_attn.k": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "enc_attn.v": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "enc_attn.score": {
+          "fx": 0.0,
+          "inductor": 2.384185791015625e-07
+        },
+        "enc_attn.probabilities": {
+          "fx": 0.0,
+          "inductor": 5.960464477539063e-08
+        },
+        "enc_attn.context": {
+          "fx": 0.0,
+          "inductor": 2.384185791015625e-07
+        },
+        "enc_attn.output": {
+          "fx": 0.0,
+          "inductor": 2.384185791015625e-07
+        },
+        "enc_norm1.residual": {
+          "fx": 0.0,
+          "inductor": 4.76837158203125e-07
+        },
+        "enc_norm1": {
+          "fx": 2.384185791015625e-07,
+          "inductor": 4.76837158203125e-07
+        },
+        "enc_ffn.up": {
+          "fx": 4.76837158203125e-07,
+          "inductor": 5.364418029785156e-07
+        },
+        "enc_ffn.relu": {
+          "fx": 4.76837158203125e-07,
+          "inductor": 5.364418029785156e-07
+        },
+        "enc_ffn.output": {
+          "fx": 5.960464477539062e-07,
+          "inductor": 4.76837158203125e-07
+        },
+        "enc_norm2.residual": {
+          "fx": 5.960464477539062e-07,
+          "inductor": 4.76837158203125e-07
+        },
+        "enc_norm2": {
+          "fx": 4.76837158203125e-07,
+          "inductor": 4.76837158203125e-07
+        },
+        "dec_embed": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_pos": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_attn.q": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_attn.k": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_attn.v": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_attn.score": {
+          "fx": 0.0,
+          "inductor": 2.384185791015625e-07
+        },
+        "dec_attn.mask": {
+          "fx": 0.0,
+          "inductor": 0.0
+        },
+        "dec_attn.masked": {
+          "fx": 0.0,
+          "inductor": 1.1920928955078125e-07
+        },
+        "dec_attn.probabilities": {
+          "fx": 0.0,
+          "inductor": 5.960464477539063e-08
+        },
+        "dec_attn.context": {
+          "fx": 0.0,
+          "inductor": 2.384185791015625e-07
+        },
+        "dec_attn.output": {
+          "fx": 0.0,
+          "inductor": 3.2782554626464844e-07
+        },
+        "dec_norm1.residual": {
+          "fx": 0.0,
+          "inductor": 4.76837158203125e-07
+        },
+        "dec_norm1": {
+          "fx": 2.384185791015625e-07,
+          "inductor": 2.384185791015625e-07
+        },
+        "cross_attn.q": {
+          "fx": 4.76837158203125e-07,
+          "inductor": 4.76837158203125e-07
+        },
+        "cross_attn.k": {
+          "fx": 4.76837158203125e-07,
+          "inductor": 5.066394805908203e-07
+        },
+        "cross_attn.v": {
+          "fx": 4.76837158203125e-07,
+          "inductor": 5.960464477539062e-07
+        },
+        "cross_attn.score": {
+          "fx": 7.152557373046875e-07,
+          "inductor": 4.76837158203125e-07
+        },
+        "cross_attn.probabilities": {
+          "fx": 8.940696716308594e-08,
+          "inductor": 1.1920928955078125e-07
+        },
+        "cross_attn.context": {
+          "fx": 3.5762786865234375e-07,
+          "inductor": 4.76837158203125e-07
+        },
+        "cross_attn.output": {
+          "fx": 3.5762786865234375e-07,
+          "inductor": 3.5762786865234375e-07
+        },
+        "dec_norm2.residual": {
+          "fx": 4.172325134277344e-07,
+          "inductor": 4.76837158203125e-07
+        },
+        "dec_norm2": {
+          "fx": 4.76837158203125e-07,
+          "inductor": 4.76837158203125e-07
+        },
+        "dec_ffn.up": {
+          "fx": 5.960464477539062e-07,
+          "inductor": 4.76837158203125e-07
+        },
+        "dec_ffn.relu": {
+          "fx": 5.960464477539062e-07,
+          "inductor": 4.172325134277344e-07
+        },
+        "dec_ffn.output": {
+          "fx": 6.556510925292969e-07,
+          "inductor": 4.76837158203125e-07
+        },
+        "dec_norm3.residual": {
+          "fx": 7.152557373046875e-07,
+          "inductor": 4.76837158203125e-07
+        },
+        "dec_norm3": {
+          "fx": 7.152557373046875e-07,
+          "inductor": 4.76837158203125e-07
+        },
+        "projection": {
+          "fx": 1.1920928955078125e-06,
+          "inductor": 7.152557373046875e-07
+        },
+        "probabilities": {
+          "fx": 1.1920928955078125e-07,
+          "inductor": 5.960464477539063e-08
+        }
+      },
+      "final_errors": {
+        "fx": 1.1920928955078125e-07,
+        "inductor": 5.960464477539063e-08
+      },
+      "repeated_changed_input_errors": [
+        5.960464477539063e-08,
+        1.7881393432617188e-07,
+        7.450580596923828e-08
+      ],
+      "shifted_target": [
+        1,
+        6,
+        7,
+        8,
+        9
+      ],
+      "labels": [
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "causal_mask": "passed",
+      "future_isolation": "passed",
+      "residual_joins": 5,
+      "encoder_influence": {
+        "memory": 2.931652069091797,
+        "cross_keys": 2.5610485076904297,
+        "output": 0.1299835592508316
+      },
+      "replaced_weights": {
+        "enc_embed.weight": {
+          "output_delta": 0.017020702362060547,
+          "checkpoint": "enc_embed",
+          "checkpoint_delta": 0.14141935110092163,
+          "expected_output_invariance": false
+        },
+        "enc_attn.q.weight": {
+          "output_delta": 0.004842430353164673,
+          "checkpoint": "enc_attn.q",
+          "checkpoint_delta": 0.245854914188385,
+          "expected_output_invariance": false
+        },
+        "dec_attn.k.weight": {
+          "output_delta": 0.0036246180534362793,
+          "checkpoint": "dec_attn.k",
+          "checkpoint_delta": 0.24995538592338562,
+          "expected_output_invariance": false
+        },
+        "cross_attn.v.weight": {
+          "output_delta": 0.02202119678258896,
+          "checkpoint": "cross_attn.v",
+          "checkpoint_delta": 0.33040082454681396,
+          "expected_output_invariance": false
+        },
+        "enc_ffn.up.weight": {
+          "output_delta": 0.010066315531730652,
+          "checkpoint": "enc_ffn.up",
+          "checkpoint_delta": 0.26521217823028564,
+          "expected_output_invariance": false
+        },
+        "dec_ffn.output.weight": {
+          "output_delta": 0.01384328305721283,
+          "checkpoint": "dec_ffn.output",
+          "checkpoint_delta": 0.1440456509590149,
+          "expected_output_invariance": false
+        },
+        "enc_norm1.weight": {
+          "output_delta": 0.0032782256603240967,
+          "checkpoint": "enc_norm1",
+          "checkpoint_delta": 0.0590672492980957,
+          "expected_output_invariance": false
+        },
+        "dec_norm3.bias": {
+          "output_delta": 0.0035627782344818115,
+          "checkpoint": "dec_norm3",
+          "checkpoint_delta": 0.024994373321533203,
+          "expected_output_invariance": false
+        },
+        "projection.weight": {
+          "output_delta": 0.044479936361312866,
+          "checkpoint": "projection",
+          "checkpoint_delta": 0.26912564039230347,
+          "expected_output_invariance": false
+        },
+        "projection.bias": {
+          "output_delta": 0.003712207078933716,
+          "checkpoint": "projection",
+          "checkpoint_delta": 0.024994373321533203,
+          "expected_output_invariance": false
+        },
+        "position_table": {
+          "output_delta": 0.004097849130630493,
+          "checkpoint": "enc_pos",
+          "checkpoint_delta": 0.024994373321533203,
+          "expected_output_invariance": false
+        }
+      },
+      "in_place_mutation": "passed",
+      "output_only": null,
+      "metadata_guards": {
+        "input_shape": "shape/stride/dtype/device/grad metadata changed: rebuild and recompile",
+        "input_dtype": "inputs must be rank-one int64 token tensors",
+        "weight_shape": "shape/stride/dtype/device/grad metadata changed: rebuild and recompile",
+        "missing_weight": "weight names changed"
+      }
+    }
+  },
+  "compiler_entry": "torch._inductor.compile_fx.compile_fx",
+  "dynamo_frontend_capture": false,
+  "fallback": null,
+  "cuda_status": "not_run: host RTX3090 occupied by Ollama; isolated validation venv uses CPU-only torch",
+  "preservation": {
+    "jac/examples": {
+      "files": 566,
+      "sha256": "5033cf69e53d52c313b6646141c6cc30c5e5da59e5d45f95826d964dad9c4977"
+    },
+    "jac/jaclang/lib": {
+      "files": 12,
+      "sha256": "ed2b09b73071c11032c11c204a059fbae92ff2cbadedb335f3d2d7c89e558512"
+    }
+  },
+  "status": "passed"
+}

@@ -1,0 +1,12 @@
+digraph TensorGraph {
+rankdir=LR;
+"x" [label="x\nInput\n[2, 2]"];
+"w" [label="w\nParameter\n[2, 2]"];
+"b" [label="b\nParameter\n[2]"];
+"h" [label="h\nMatMul\n[2, 2]"];
+"y" [label="y\nAdd\n[2, 2]"];
+"x" -> "h" [label="a"];
+"w" -> "h" [label="b"];
+"b" -> "y" [label="b"];
+"h" -> "y" [label="a"];
+}

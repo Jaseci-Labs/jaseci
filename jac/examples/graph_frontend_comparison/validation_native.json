@@ -1,0 +1,173 @@
+{
+  "status": "passed",
+  "cases": {
+    "linear": {
+      "case": "linear",
+      "status": "passed",
+      "device": "cpu",
+      "dtype": "float64",
+      "graph_lifetime": "fresh graph per invocation",
+      "records": [
+        {
+          "predicate": null,
+          "native_trace": [
+            "x",
+            "w",
+            "b",
+            "h",
+            "y"
+          ],
+          "native_mm_calls": 1,
+          "fx_mm_calls": 1,
+          "native_add_calls": 1,
+          "native_sub_calls": 0,
+          "fx_add_calls": 1,
+          "fx_sub_calls": 0,
+          "max_abs_error": 0.0,
+          "output": [
+            [
+              -3.15,
+              -1.7
+            ],
+            [
+              6.475,
+              0.04999999999999999
+            ]
+          ]
+        }
+      ]
+    },
+    "residual": {
+      "case": "residual",
+      "status": "passed",
+      "device": "cpu",
+      "dtype": "float64",
+      "graph_lifetime": "fresh graph per invocation",
+      "records": [
+        {
+          "predicate": null,
+          "native_trace": [
+            "x",
+            "w",
+            "h",
+            "r",
+            "y"
+          ],
+          "native_mm_calls": 1,
+          "fx_mm_calls": 1,
+          "native_add_calls": 1,
+          "native_sub_calls": 0,
+          "fx_add_calls": 1,
+          "fx_sub_calls": 0,
+          "max_abs_error": 0.0,
+          "output": [
+            [
+              -3.25,
+              -1.5
+            ],
+            [
+              12.75,
+              0.5
+            ]
+          ]
+        }
+      ]
+    },
+    "cond": {
+      "case": "cond",
+      "status": "passed",
+      "device": "cpu",
+      "dtype": "float64",
+      "graph_lifetime": "fresh graph per invocation",
+      "records": [
+        {
+          "predicate": true,
+          "native_trace": [
+            "x",
+            "w",
+            "c",
+            "h",
+            "select",
+            "t",
+            "y"
+          ],
+          "native_mm_calls": 1,
+          "fx_mm_calls": 1,
+          "native_add_calls": 1,
+          "native_sub_calls": 0,
+          "fx_add_calls": 1,
+          "fx_sub_calls": 0,
+          "max_abs_error": 0.0,
+          "output": [
+            [
+              -2.25,
+              -3.5
+            ],
+            [
+              6.875,
+              3.25
+            ]
+          ]
+        },
+        {
+          "predicate": false,
+          "native_trace": [
+            "x",
+            "w",
+            "c",
+            "h",
+            "select",
+            "f",
+            "y"
+          ],
+          "native_mm_calls": 1,
+          "fx_mm_calls": 1,
+          "native_add_calls": 0,
+          "native_sub_calls": 1,
+          "fx_add_calls": 0,
+          "fx_sub_calls": 1,
+          "max_abs_error": 0.0,
+          "output": [
+            [
+              -4.25,
+              0.5
+            ],
+            [
+              5.875,
+              -2.75
+            ]
+          ]
+        },
+        {
+          "predicate": true,
+          "native_trace": [
+            "x",
+            "w",
+            "c",
+            "h",
+            "select",
+            "t",
+            "y"
+          ],
+          "native_mm_calls": 1,
+          "fx_mm_calls": 1,
+          "native_add_calls": 1,
+          "native_sub_calls": 0,
+          "fx_add_calls": 1,
+          "fx_sub_calls": 0,
+          "max_abs_error": 0.0,
+          "output": [
+            [
+              -2.25,
+              -3.5
+            ],
+            [
+              6.875,
+              3.25
+            ]
+          ]
+        }
+      ]
+    }
+  }
+}

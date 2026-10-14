@@ -1,0 +1,965 @@
+{
+  "config": {
+    "dimension": 8,
+    "heads": 2,
+    "hidden": 16,
+    "vocabulary": 13,
+    "capacity": 64,
+    "epsilon": 1e-05
+  },
+  "source_length": 4,
+  "target_length": 3,
+  "capture_names": [
+    "enc_embed",
+    "enc_pos",
+    "dec_embed",
+    "dec_pos",
+    "enc_attn.q",
+    "enc_attn.k",
+    "enc_attn.v",
+    "enc_attn.score",
+    "enc_attn.probabilities",
+    "enc_attn.context",
+    "enc_attn.output",
+    "enc_norm1.residual",
+    "enc_norm1",
+    "enc_ffn.up",
+    "enc_ffn.relu",
+    "enc_ffn.output",
+    "enc_norm2.residual",
+    "enc_norm2",
+    "dec_attn.q",
+    "dec_attn.k",
+    "dec_attn.v",
+    "dec_attn.score",
+    "dec_attn.mask",
+    "dec_attn.masked",
+    "dec_attn.probabilities",
+    "dec_attn.context",
+    "dec_attn.output",
+    "dec_norm1.residual",
+    "dec_norm1",
+    "cross_attn.q",
+    "cross_attn.k",
+    "cross_attn.v",
+    "cross_attn.score",
+    "cross_attn.probabilities",
+    "cross_attn.context",
+    "cross_attn.output",
+    "dec_norm2.residual",
+    "dec_norm2",
+    "dec_ffn.up",
+    "dec_ffn.relu",
+    "dec_ffn.output",
+    "dec_norm3.residual",
+    "dec_norm3",
+    "projection",
+    "probabilities"
+  ],
+  "weights": [
+    {
+      "argument": "weight_0",
+      "name": "cross_attn.k.bias",
+      "metadata": {
+        "shape": [
+          8
+        ],
+        "stride": [
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_1",
+      "name": "cross_attn.k.weight",
+      "metadata": {
+        "shape": [
+          8,
+          8
+        ],
+        "stride": [
+          8,
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_2",
+      "name": "cross_attn.output.bias",
+      "metadata": {
+        "shape": [
+          8
+        ],
+        "stride": [
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_3",
+      "name": "cross_attn.output.weight",
+      "metadata": {
+        "shape": [
+          8,
+          8
+        ],
+        "stride": [
+          8,
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_4",
+      "name": "cross_attn.q.bias",
+      "metadata": {
+        "shape": [
+          8
+        ],
+        "stride": [
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_5",
+      "name": "cross_attn.q.weight",
+      "metadata": {
+        "shape": [
+          8,
+          8
+        ],
+        "stride": [
+          8,
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_6",
+      "name": "cross_attn.v.bias",
+      "metadata": {
+        "shape": [
+          8
+        ],
+        "stride": [
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_7",
+      "name": "cross_attn.v.weight",
+      "metadata": {
+        "shape": [
+          8,
+          8
+        ],
+        "stride": [
+          8,
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_8",
+      "name": "dec_attn.k.bias",
+      "metadata": {
+        "shape": [
+          8
+        ],
+        "stride": [
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_9",
+      "name": "dec_attn.k.weight",
+      "metadata": {
+        "shape": [
+          8,
+          8
+        ],
+        "stride": [
+          8,
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_10",
+      "name": "dec_attn.output.bias",
+      "metadata": {
+        "shape": [
+          8
+        ],
+        "stride": [
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_11",
+      "name": "dec_attn.output.weight",
+      "metadata": {
+        "shape": [
+          8,
+          8
+        ],
+        "stride": [
+          8,
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_12",
+      "name": "dec_attn.q.bias",
+      "metadata": {
+        "shape": [
+          8
+        ],
+        "stride": [
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_13",
+      "name": "dec_attn.q.weight",
+      "metadata": {
+        "shape": [
+          8,
+          8
+        ],
+        "stride": [
+          8,
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_14",
+      "name": "dec_attn.v.bias",
+      "metadata": {
+        "shape": [
+          8
+        ],
+        "stride": [
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_15",
+      "name": "dec_attn.v.weight",
+      "metadata": {
+        "shape": [
+          8,
+          8
+        ],
+        "stride": [
+          8,
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_16",
+      "name": "dec_embed.weight",
+      "metadata": {
+        "shape": [
+          13,
+          8
+        ],
+        "stride": [
+          8,
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_17",
+      "name": "dec_ffn.output.bias",
+      "metadata": {
+        "shape": [
+          8
+        ],
+        "stride": [
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_18",
+      "name": "dec_ffn.output.weight",
+      "metadata": {
+        "shape": [
+          8,
+          16
+        ],
+        "stride": [
+          16,
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_19",
+      "name": "dec_ffn.up.bias",
+      "metadata": {
+        "shape": [
+          16
+        ],
+        "stride": [
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_20",
+      "name": "dec_ffn.up.weight",
+      "metadata": {
+        "shape": [
+          16,
+          8
+        ],
+        "stride": [
+          8,
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_21",
+      "name": "dec_norm1.bias",
+      "metadata": {
+        "shape": [
+          8
+        ],
+        "stride": [
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_22",
+      "name": "dec_norm1.weight",
+      "metadata": {
+        "shape": [
+          8
+        ],
+        "stride": [
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_23",
+      "name": "dec_norm2.bias",
+      "metadata": {
+        "shape": [
+          8
+        ],
+        "stride": [
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_24",
+      "name": "dec_norm2.weight",
+      "metadata": {
+        "shape": [
+          8
+        ],
+        "stride": [
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_25",
+      "name": "dec_norm3.bias",
+      "metadata": {
+        "shape": [
+          8
+        ],
+        "stride": [
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_26",
+      "name": "dec_norm3.weight",
+      "metadata": {
+        "shape": [
+          8
+        ],
+        "stride": [
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_27",
+      "name": "enc_attn.k.bias",
+      "metadata": {
+        "shape": [
+          8
+        ],
+        "stride": [
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_28",
+      "name": "enc_attn.k.weight",
+      "metadata": {
+        "shape": [
+          8,
+          8
+        ],
+        "stride": [
+          8,
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_29",
+      "name": "enc_attn.output.bias",
+      "metadata": {
+        "shape": [
+          8
+        ],
+        "stride": [
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_30",
+      "name": "enc_attn.output.weight",
+      "metadata": {
+        "shape": [
+          8,
+          8
+        ],
+        "stride": [
+          8,
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_31",
+      "name": "enc_attn.q.bias",
+      "metadata": {
+        "shape": [
+          8
+        ],
+        "stride": [
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_32",
+      "name": "enc_attn.q.weight",
+      "metadata": {
+        "shape": [
+          8,
+          8
+        ],
+        "stride": [
+          8,
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_33",
+      "name": "enc_attn.v.bias",
+      "metadata": {
+        "shape": [
+          8
+        ],
+        "stride": [
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_34",
+      "name": "enc_attn.v.weight",
+      "metadata": {
+        "shape": [
+          8,
+          8
+        ],
+        "stride": [
+          8,
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_35",
+      "name": "enc_embed.weight",
+      "metadata": {
+        "shape": [
+          13,
+          8
+        ],
+        "stride": [
+          8,
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_36",
+      "name": "enc_ffn.output.bias",
+      "metadata": {
+        "shape": [
+          8
+        ],
+        "stride": [
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_37",
+      "name": "enc_ffn.output.weight",
+      "metadata": {
+        "shape": [
+          8,
+          16
+        ],
+        "stride": [
+          16,
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_38",
+      "name": "enc_ffn.up.bias",
+      "metadata": {
+        "shape": [
+          16
+        ],
+        "stride": [
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_39",
+      "name": "enc_ffn.up.weight",
+      "metadata": {
+        "shape": [
+          16,
+          8
+        ],
+        "stride": [
+          8,
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_40",
+      "name": "enc_norm1.bias",
+      "metadata": {
+        "shape": [
+          8
+        ],
+        "stride": [
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_41",
+      "name": "enc_norm1.weight",
+      "metadata": {
+        "shape": [
+          8
+        ],
+        "stride": [
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_42",
+      "name": "enc_norm2.bias",
+      "metadata": {
+        "shape": [
+          8
+        ],
+        "stride": [
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_43",
+      "name": "enc_norm2.weight",
+      "metadata": {
+        "shape": [
+          8
+        ],
+        "stride": [
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_44",
+      "name": "position_table",
+      "metadata": {
+        "shape": [
+          64,
+          8
+        ],
+        "stride": [
+          8,
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_45",
+      "name": "projection.bias",
+      "metadata": {
+        "shape": [
+          13
+        ],
+        "stride": [
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    },
+    {
+      "argument": "weight_46",
+      "name": "projection.weight",
+      "metadata": {
+        "shape": [
+          13,
+          8
+        ],
+        "stride": [
+          8,
+          1
+        ],
+        "dtype": "torch.float32",
+        "device": "cpu",
+        "requires_grad": false
+      }
+    }
+  ],
+  "expressions": {
+    "index_select_default": "enc_embed.gather",
+    "mul_scalar": "enc_embed",
+    "slice_tensor": "enc_pos.positions",
+    "add_tensor": "enc_pos",
+    "index_select_default_1": "dec_embed.gather",
+    "mul_scalar_1": "dec_embed",
+    "slice_tensor_1": "dec_pos.positions",
+    "add_tensor_1": "dec_pos",
+    "t_default": "enc_attn.q.weight_transpose",
+    "mm_default": "enc_attn.q.matmul",
+    "add_tensor_2": "enc_attn.q",
+    "reshape_default": "enc_attn.q.reshape",
+    "transpose_int": "enc_attn.q.heads",
+    "t_default_1": "enc_attn.k.weight_transpose",
+    "mm_default_1": "enc_attn.k.matmul",
+    "add_tensor_3": "enc_attn.k",
+    "reshape_default_1": "enc_attn.k.reshape",
+    "transpose_int_1": "enc_attn.k.heads",
+    "t_default_2": "enc_attn.v.weight_transpose",
+    "mm_default_2": "enc_attn.v.matmul",
+    "add_tensor_4": "enc_attn.v",
+    "reshape_default_2": "enc_attn.v.reshape",
+    "transpose_int_2": "enc_attn.v.heads",
+    "transpose_int_3": "enc_attn.k_transpose",
+    "bmm_default": "enc_attn.score_matmul",
+    "div_scalar": "enc_attn.score",
+    "_softmax_default": "enc_attn.probabilities",
+    "bmm_default_1": "enc_attn.context",
+    "transpose_int_4": "enc_attn.context_transpose",
+    "contiguous_default": "enc_attn.context_contiguous",
+    "reshape_default_3": "enc_attn.joined",
+    "t_default_3": "enc_attn.output.weight_transpose",
+    "mm_default_3": "enc_attn.output.matmul",
+    "add_tensor_5": "enc_attn.output",
+    "add_tensor_6": "enc_norm1.residual",
+    "mean_dim": "enc_norm1.mean",
+    "sub_tensor": "enc_norm1.center",
+    "square_default": "enc_norm1.square",
+    "mean_dim_1": "enc_norm1.variance",
+    "add_scalar": "enc_norm1.stable",
+    "rsqrt_default": "enc_norm1.rsqrt",
+    "mul_tensor": "enc_norm1.normalized",
+    "mul_tensor_1": "enc_norm1.scaled",
+    "add_tensor_7": "enc_norm1",
+    "t_default_4": "enc_ffn.up.weight_transpose",
+    "mm_default_4": "enc_ffn.up.matmul",
+    "add_tensor_8": "enc_ffn.up",
+    "relu_default": "enc_ffn.relu",
+    "t_default_5": "enc_ffn.output.weight_transpose",
+    "mm_default_5": "enc_ffn.output.matmul",
+    "add_tensor_9": "enc_ffn.output",
+    "add_tensor_10": "enc_norm2.residual",
+    "mean_dim_2": "enc_norm2.mean",
+    "sub_tensor_1": "enc_norm2.center",
+    "square_default_1": "enc_norm2.square",
+    "mean_dim_3": "enc_norm2.variance",
+    "add_scalar_1": "enc_norm2.stable",
+    "rsqrt_default_1": "enc_norm2.rsqrt",
+    "mul_tensor_2": "enc_norm2.normalized",
+    "mul_tensor_3": "enc_norm2.scaled",
+    "add_tensor_11": "enc_norm2",
+    "t_default_6": "dec_attn.q.weight_transpose",
+    "mm_default_6": "dec_attn.q.matmul",
+    "add_tensor_12": "dec_attn.q",
+    "reshape_default_4": "dec_attn.q.reshape",
+    "transpose_int_5": "dec_attn.q.heads",
+    "t_default_7": "dec_attn.k.weight_transpose",
+    "mm_default_7": "dec_attn.k.matmul",
+    "add_tensor_13": "dec_attn.k",
+    "reshape_default_5": "dec_attn.k.reshape",
+    "transpose_int_6": "dec_attn.k.heads",
+    "t_default_8": "dec_attn.v.weight_transpose",
+    "mm_default_8": "dec_attn.v.matmul",
+    "add_tensor_14": "dec_attn.v",
+    "reshape_default_6": "dec_attn.v.reshape",
+    "transpose_int_7": "dec_attn.v.heads",
+    "transpose_int_8": "dec_attn.k_transpose",
+    "bmm_default_2": "dec_attn.score_matmul",
+    "div_scalar_1": "dec_attn.score",
+    "ones_default": "dec_attn.mask_full",
+    "triu_default": "dec_attn.mask",
+    "masked_fill_scalar": "dec_attn.masked",
+    "_softmax_default_1": "dec_attn.probabilities",
+    "bmm_default_3": "dec_attn.context",
+    "transpose_int_9": "dec_attn.context_transpose",
+    "contiguous_default_1": "dec_attn.context_contiguous",
+    "reshape_default_7": "dec_attn.joined",
+    "t_default_9": "dec_attn.output.weight_transpose",
+    "mm_default_9": "dec_attn.output.matmul",
+    "add_tensor_15": "dec_attn.output",
+    "add_tensor_16": "dec_norm1.residual",
+    "mean_dim_4": "dec_norm1.mean",
+    "sub_tensor_2": "dec_norm1.center",
+    "square_default_2": "dec_norm1.square",
+    "mean_dim_5": "dec_norm1.variance",
+    "add_scalar_2": "dec_norm1.stable",
+    "rsqrt_default_2": "dec_norm1.rsqrt",
+    "mul_tensor_4": "dec_norm1.normalized",
+    "mul_tensor_5": "dec_norm1.scaled",
+    "add_tensor_17": "dec_norm1",
+    "t_default_10": "cross_attn.q.weight_transpose",
+    "mm_default_10": "cross_attn.q.matmul",
+    "add_tensor_18": "cross_attn.q",
+    "reshape_default_8": "cross_attn.q.reshape",
+    "transpose_int_10": "cross_attn.q.heads",
+    "t_default_11": "cross_attn.k.weight_transpose",
+    "mm_default_11": "cross_attn.k.matmul",
+    "add_tensor_19": "cross_attn.k",
+    "reshape_default_9": "cross_attn.k.reshape",
+    "transpose_int_11": "cross_attn.k.heads",
+    "t_default_12": "cross_attn.v.weight_transpose",
+    "mm_default_12": "cross_attn.v.matmul",
+    "add_tensor_20": "cross_attn.v",
+    "reshape_default_10": "cross_attn.v.reshape",
+    "transpose_int_12": "cross_attn.v.heads",
+    "transpose_int_13": "cross_attn.k_transpose",
+    "bmm_default_4": "cross_attn.score_matmul",
+    "div_scalar_2": "cross_attn.score",
+    "_softmax_default_2": "cross_attn.probabilities",
+    "bmm_default_5": "cross_attn.context",
+    "transpose_int_14": "cross_attn.context_transpose",
+    "contiguous_default_2": "cross_attn.context_contiguous",
+    "reshape_default_11": "cross_attn.joined",
+    "t_default_13": "cross_attn.output.weight_transpose",
+    "mm_default_13": "cross_attn.output.matmul",
+    "add_tensor_21": "cross_attn.output",
+    "add_tensor_22": "dec_norm2.residual",
+    "mean_dim_6": "dec_norm2.mean",
+    "sub_tensor_3": "dec_norm2.center",
+    "square_default_3": "dec_norm2.square",
+    "mean_dim_7": "dec_norm2.variance",
+    "add_scalar_3": "dec_norm2.stable",
+    "rsqrt_default_3": "dec_norm2.rsqrt",
+    "mul_tensor_6": "dec_norm2.normalized",
+    "mul_tensor_7": "dec_norm2.scaled",
+    "add_tensor_23": "dec_norm2",
+    "t_default_14": "dec_ffn.up.weight_transpose",
+    "mm_default_14": "dec_ffn.up.matmul",
+    "add_tensor_24": "dec_ffn.up",
+    "relu_default_1": "dec_ffn.relu",
+    "t_default_15": "dec_ffn.output.weight_transpose",
+    "mm_default_15": "dec_ffn.output.matmul",
+    "add_tensor_25": "dec_ffn.output",
+    "add_tensor_26": "dec_norm3.residual",
+    "mean_dim_8": "dec_norm3.mean",
+    "sub_tensor_4": "dec_norm3.center",
+    "square_default_4": "dec_norm3.square",
+    "mean_dim_9": "dec_norm3.variance",
+    "add_scalar_4": "dec_norm3.stable",
+    "rsqrt_default_4": "dec_norm3.rsqrt",
+    "mul_tensor_8": "dec_norm3.normalized",
+    "mul_tensor_9": "dec_norm3.scaled",
+    "add_tensor_27": "dec_norm3",
+    "t_default_16": "projection.weight_transpose",
+    "mm_default_16": "projection.matmul",
+    "add_tensor_28": "projection",
+    "_softmax_default_3": "probabilities"
+  }
+}

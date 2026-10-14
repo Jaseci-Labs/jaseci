@@ -1,0 +1,22 @@
+{
+  "cases": [
+    {
+      "title": "Linear",
+      "equation": "y = x @ w + b",
+      "jac": "g = base();\ng.add(Parameter(name=\"b\",\n    value=fixtures.tensors()[\"b\"]));\nh = g.add(MatMul(name=\"h\"), {\"a\": \"x\", \"b\": \"w\"});\ng.add(Add(name=\"y\"), {\"a\": h, \"b\": \"b\"});",
+      "fx": "g, x, w, b, _ = base(bias=True)\nh = g.call_function(mm, (x, w))\ny = g.call_function(add, (h, b))\ng.output(y)\nmodel = fx.GraphModule(nn.Module(), g)"
+    },
+    {
+      "title": "Shared computation + residual",
+      "equation": "h = x @ w; y = relu(h) + h",
+      "jac": "g = base();\nh = g.add(MatMul(name=\"h\"), {\"a\": \"x\", \"b\": \"w\"});\nr = g.add(ReLU(name=\"r\"), {\"x\": h});\ng.add(Add(name=\"y\"), {\"a\": r, \"b\": h});",
+      "fx": "g, x, w, _, _ = base()\nh = g.call_function(mm, (x, w))\nr = g.call_function(relu, (h,))\ny = g.call_function(add, (r, h))\ng.output(y)\nmodel = fx.GraphModule(nn.Module(), g)"
+    },
+    {
+      "title": "Lazy conditional with shared work",
+      "equation": "h = x @ w; y = cond(c, h + x, h - x)",
+      "jac": "g = base();\ng.add(Input(name=\"c\"));\nh = g.add(MatMul(name=\"h\"), {\"a\": \"x\", \"b\": \"w\"});\nt = g.add(Add(name=\"t\"), {\"a\": h, \"b\": \"x\"});\nf = g.add(Subtract(name=\"f\"), {\"a\": h, \"b\": \"x\"});\ng.add(Cond(name=\"y\"), {\"condition\": \"c\",\n    \"true_result\": t, \"false_result\": f});",
+      "fx": "g, x, w, _, c = base(condition=True)\nroot = nn.Module()\nt, f = cond_modules(g, root, add, sub)\nh = g.call_function(mm, (x, w))\nr = g.call_function(torch.ops.higher_order.cond,\n                    (c, t, f, (h, x)))\ny = g.call_function(operator.getitem, (r, 0))\ng.output(y)\nmodel = fx.GraphModule(root, g)"
+    }
+  ]
+}

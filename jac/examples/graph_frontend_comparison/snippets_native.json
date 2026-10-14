@@ -1,0 +1,25 @@
+{
+  "cases": [
+    {
+      "title": "Linear",
+      "equation": "y = x @ w + b",
+      "jac": "v = fixtures.tensors(); g = Graph();\nx = Input(name=\"x\", value=v[\"x\"]); w = Weight(name=\"w\", value=v[\"w\"]);\nb = Weight(name=\"b\", value=v[\"b\"]); h = MatMul(name=\"h\"); y = Output(name=\"y\");\ng +>: Seed() :+> x; g +>: Seed() :+> w; g +>: Seed() :+> b;\nx +>: TensorEdge(port=\"a\") :+> h; w +>: TensorEdge(port=\"b\") :+> h;\nh +>: TensorEdge(port=\"a\") :+> y; b +>: TensorEdge(port=\"b\") :+> y;\nwalk = g spawn Run(); result = walk.output;",
+      "fx": "v = fixtures.tensors(); g = fx.Graph()\nx = g.placeholder(\"x\"); w = g.placeholder(\"w\")\nb = g.placeholder(\"b\")\nh = g.call_function(mm, (x, w))\ny = g.call_function(add, (h, b))\ng.output(y)\nmodel = fx.GraphModule(nn.Module(), g)\nresult = model(v[\"x\"], v[\"w\"], v[\"b\"])",
+      "disclosure": "Custom Value/Input/Weight/operation/Output nodes, TensorEdge/Seed edges and Run walker are defined in native_linear.jac, not builtins. Run handwrites port-readiness/inbox routing. Imports and deterministic fixtures are shared setup; w is [in,out]. FX names are Node handles; Jac variables here hold native node instances. No automatic lowering of custom Jac walkers to FX."
+    },
+    {
+      "title": "Shared computation + residual",
+      "equation": "h = x @ w; y = relu(h) + h",
+      "jac": "v = fixtures.tensors(); g = Graph();\nx = Input(name=\"x\", value=v[\"x\"]); w = Weight(name=\"w\", value=v[\"w\"]);\nh = MatMul(name=\"h\"); r = ReLU(name=\"r\"); y = Output(name=\"y\");\ng +>: Seed() :+> x; g +>: Seed() :+> w;\nx +>: TensorEdge(port=\"a\") :+> h; w +>: TensorEdge(port=\"b\") :+> h;\nh +>: TensorEdge(port=\"x\") :+> r;\nh +>: TensorEdge(port=\"b\") :+> y; r +>: TensorEdge(port=\"a\") :+> y;\nwalk = g spawn Run(); result = walk.output;",
+      "fx": "v = fixtures.tensors(); g = fx.Graph()\nx = g.placeholder(\"x\"); w = g.placeholder(\"w\")\nh = g.call_function(mm, (x, w))\nr = g.call_function(relu, (h,))\ny = g.call_function(add, (r, h))\ng.output(y)\nmodel = fx.GraphModule(nn.Module(), g)\nresult = model(v[\"x\"], v[\"w\"])",
+      "disclosure": "Custom Value/Input/Weight/operation/Output nodes, TensorEdge/Seed edges and Run walker are defined in native_residual.jac, not builtins. Run handwrites port-readiness/inbox routing. Imports and deterministic fixtures are shared setup; w is [in,out]. FX names are Node handles; Jac variables here hold native node instances. No automatic lowering of custom Jac walkers to FX."
+    },
+    {
+      "title": "Lazy branch via typed control edges",
+      "equation": "h = x @ w; y = c ? h + x : h - x",
+      "jac": "v = fixtures.tensors(); g = Graph();\nx = Input(name=\"x\", value=v[\"x\"]); w = Weight(name=\"w\", value=v[\"w\"]);\nc = Input(name=\"c\", value=torch.tensor(predicate, dtype=torch.bool));\nh = MatMul(name=\"h\"); gate = Select(name=\"select\"); y = Output(name=\"y\");\nt = Add(name=\"t\", enabled=False); f = Subtract(name=\"f\", enabled=False);\ng +>: Seed() :+> x; g +>: Seed() :+> w; g +>: Seed() :+> c;\nx +>: TensorEdge(port=\"a\") :+> h; w +>: TensorEdge(port=\"b\") :+> h;\nc +>: TensorEdge(port=\"c\") :+> gate;\nh +>: TensorEdge(port=\"h\") :+> gate; x +>: TensorEdge(port=\"x\") :+> gate;\nh +>: TensorEdge(port=\"a\") :+> t; x +>: TensorEdge(port=\"b\") :+> t;\nh +>: TensorEdge(port=\"a\") :+> f; x +>: TensorEdge(port=\"b\") :+> f;\ngate +>: Then() :+> t; gate +>: Else() :+> f;\nt +>: TensorEdge(port=\"x\") :+> y; f +>: TensorEdge(port=\"x\") :+> y;\nwalk = g spawn Run(); result = walk.output;",
+      "fx": "v = fixtures.tensors(); g = fx.Graph(); root = nn.Module()\nx = g.placeholder(\"x\"); w = g.placeholder(\"w\")\nc = g.placeholder(\"c\")\nt, f = cond_modules(g, root, add, sub)\nh = g.call_function(mm, (x, w))\nr = g.call_function(torch.ops.higher_order.cond,\n                    (c, t, f, (h, x)))\ny = g.call_function(operator.getitem, (r, 0))\ng.output(y)\nmodel = fx.GraphModule(root, g)\ncondition = torch.tensor(predicate, dtype=torch.bool)\nresult = model(v[\"x\"], v[\"w\"], condition)",
+      "disclosure": "Custom Value/Input/Weight/operation/Output nodes, TensorEdge/Seed edges and Run walker are defined in native_cond.jac, not builtins. Run handwrites port-readiness/inbox routing. Imports and deterministic fixtures are shared setup; w is [in,out]. FX names are Node handles; Jac variables here hold native node instances. No automatic lowering of custom Jac walkers to FX. Custom Select uses explicit Then/Else control edges and disabled branches, not automatic dependency extraction. FX cond_modules constructs BOTH branch GraphModules (h+x and h-x, with cloned outputs) with explicit h/x operands. predicate is True or False. Fresh graph per invocation; not torch.where."
+    }
+  ]
+}

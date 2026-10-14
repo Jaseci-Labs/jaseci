@@ -1,0 +1,108 @@
+{
+  "status": "passed",
+  "environment": {
+    "python": "3.12.11",
+    "torch": "2.8.0+cpu",
+    "device": "cpu",
+    "cpu_threads": 1,
+    "tf32": false,
+    "compiler_cache": "/tmp/transformer-python-comparison-inductor"
+  },
+  "cases": {
+    "small_float64_4x3": {
+      "dtype": "torch.float64",
+      "shape": [
+        4,
+        3
+      ],
+      "checked_intermediates": 45,
+      "final_max_abs_error": {
+        "fx": 5.551115123125783e-17,
+        "inductor": 1.1102230246251565e-16
+      },
+      "intermediate_max_abs_error": {
+        "fx": 1.3322676295501878e-15,
+        "inductor": 8.881784197001252e-16
+      },
+      "frontend_capture_calls": 0,
+      "replaced_weights": 11
+    },
+    "small_float64_2x1": {
+      "dtype": "torch.float64",
+      "shape": [
+        2,
+        1
+      ],
+      "checked_intermediates": 45,
+      "final_max_abs_error": {
+        "fx": 1.3877787807814457e-16,
+        "inductor": 1.3877787807814457e-16
+      },
+      "intermediate_max_abs_error": {
+        "fx": 8.881784197001252e-16,
+        "inductor": 8.881784197001252e-16
+      },
+      "frontend_capture_calls": 0,
+      "replaced_weights": 11
+    },
+    "small_float32_4x3": {
+      "dtype": "torch.float32",
+      "shape": [
+        4,
+        3
+      ],
+      "checked_intermediates": 45,
+      "final_max_abs_error": {
+        "fx": 2.9802322387695312e-08,
+        "inductor": 2.9802322387695312e-08
+      },
+      "intermediate_max_abs_error": {
+        "fx": 3.5762786865234375e-07,
+        "inductor": 4.76837158203125e-07
+      },
+      "frontend_capture_calls": 0,
+      "replaced_weights": 11
+    },
+    "medium_float32_7x5": {
+      "dtype": "torch.float32",
+      "shape": [
+        7,
+        5
+      ],
+      "checked_intermediates": 45,
+      "final_max_abs_error": {
+        "fx": 1.1920928955078125e-07,
+        "inductor": 5.960464477539063e-08
+      },
+      "intermediate_max_abs_error": {
+        "fx": 1.1920928955078125e-06,
+        "inductor": 7.152557373046875e-07
+      },
+      "frontend_capture_calls": 0,
+      "replaced_weights": 11
+    }
+  },
+  "graph_nodes": {
+    "placeholder": 49,
+    "call_function": 157,
+    "output": 1
+  },
+  "parameter_tensors": 46,
+  "fixed_position_buffers": 1,
+  "compiler_entry": "torch._inductor.compile_fx.compile_fx",
+  "dynamo_frontend_capture": false,
+  "internal_backend_trace": "Inductor may symbolic_trace torch._dynamo.utils.identity for its own loop-body bookkeeping; never version 1.",
+  "fallback": null,
+  "cuda_status": "not_run: host RTX3090 occupied by Ollama; isolated validation venv uses CPU-only torch",
+  "preservation": {
+    "jac/examples": {
+      "files": 566,
+      "sha256": "5033cf69e53d52c313b6646141c6cc30c5e5da59e5d45f95826d964dad9c4977"
+    },
+    "jac/jaclang/lib": {
+      "files": 12,
+      "sha256": "ed2b09b73071c11032c11c204a059fbae92ff2cbadedb335f3d2d7c89e558512"
+    }
+  },
+  "note": "Correctness/expression comparison only; no timing or performance claim."
+}

@@ -1,0 +1,150 @@
+{
+  "status": "passed",
+  "device": "cpu",
+  "dtype": "float64",
+  "torch": "2.8.0+cpu",
+  "shape_x": [
+    2,
+    2
+  ],
+  "shape_w_in_out": [
+    2,
+    2
+  ],
+  "cases": {
+    "linear": [
+      {
+        "predicate": null,
+        "jac_trace": [
+          "x",
+          "w",
+          "b",
+          "h",
+          "y"
+        ],
+        "jac_mm_calls": 1,
+        "fx_mm_calls": 1,
+        "fx_add_calls": 1,
+        "fx_sub_calls": 0,
+        "max_abs_error": 0.0,
+        "output": [
+          [
+            -3.15,
+            -1.7
+          ],
+          [
+            6.475,
+            0.04999999999999999
+          ]
+        ]
+      }
+    ],
+    "residual": [
+      {
+        "predicate": null,
+        "jac_trace": [
+          "x",
+          "w",
+          "h",
+          "r",
+          "y"
+        ],
+        "jac_mm_calls": 1,
+        "fx_mm_calls": 1,
+        "fx_add_calls": 1,
+        "fx_sub_calls": 0,
+        "max_abs_error": 0.0,
+        "output": [
+          [
+            -3.25,
+            -1.5
+          ],
+          [
+            12.75,
+            0.5
+          ]
+        ]
+      }
+    ],
+    "cond": [
+      {
+        "predicate": true,
+        "jac_trace": [
+          "x",
+          "w",
+          "c",
+          "h",
+          "t",
+          "y"
+        ],
+        "jac_mm_calls": 1,
+        "fx_mm_calls": 1,
+        "fx_add_calls": 1,
+        "fx_sub_calls": 0,
+        "max_abs_error": 0.0,
+        "output": [
+          [
+            -2.25,
+            -3.5
+          ],
+          [
+            6.875,
+            3.25
+          ]
+        ]
+      },
+      {
+        "predicate": false,
+        "jac_trace": [
+          "x",
+          "w",
+          "c",
+          "h",
+          "f",
+          "y"
+        ],
+        "jac_mm_calls": 1,
+        "fx_mm_calls": 1,
+        "fx_add_calls": 0,
+        "fx_sub_calls": 1,
+        "max_abs_error": 0.0,
+        "output": [
+          [
+            -4.25,
+            0.5
+          ],
+          [
+            5.875,
+            -2.75
+          ]
+        ]
+      },
+      {
+        "predicate": true,
+        "jac_trace": [
+          "x",
+          "w",
+          "c",
+          "h",
+          "t",
+          "y"
+        ],
+        "jac_mm_calls": 1,
+        "fx_mm_calls": 1,
+        "fx_add_calls": 1,
+        "fx_sub_calls": 0,
+        "max_abs_error": 0.0,
+        "output": [
+          [
+            -2.25,
+            -3.5
+          ],
+          [
+            6.875,
+            3.25
+          ]
+        ]
+      }
+    ]
+  }
+}

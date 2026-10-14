@@ -1,0 +1,36 @@
+{
+  "case": "residual",
+  "status": "passed",
+  "device": "cpu",
+  "dtype": "float64",
+  "graph_lifetime": "fresh graph per invocation",
+  "records": [
+    {
+      "predicate": null,
+      "native_trace": [
+        "x",
+        "w",
+        "h",
+        "r",
+        "y"
+      ],
+      "native_mm_calls": 1,
+      "fx_mm_calls": 1,
+      "native_add_calls": 1,
+      "native_sub_calls": 0,
+      "fx_add_calls": 1,
+      "fx_sub_calls": 0,
+      "max_abs_error": 0.0,
+      "output": [
+        [
+          -3.25,
+          -1.5
+        ],
+        [
+          12.75,
+          0.5
+        ]
+      ]
+    }
+  ]
+}

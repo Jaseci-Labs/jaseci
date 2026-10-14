@@ -1,0 +1,10 @@
+{
+  "jac/examples": {
+    "files": 566,
+    "sha256": "5033cf69e53d52c313b6646141c6cc30c5e5da59e5d45f95826d964dad9c4977"
+  },
+  "jac/jaclang/lib": {
+    "files": 12,
+    "sha256": "ed2b09b73071c11032c11c204a059fbae92ff2cbadedb335f3d2d7c89e558512"
+  }
+}

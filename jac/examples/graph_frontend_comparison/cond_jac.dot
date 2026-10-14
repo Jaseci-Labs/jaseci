@@ -1,0 +1,19 @@
+digraph TensorGraph {
+rankdir=LR;
+"x" [label="x\nInput\n[2, 2]"];
+"w" [label="w\nParameter\n[2, 2]"];
+"c" [label="c\nInput\n[]"];
+"h" [label="h\nMatMul\n[2, 2]"];
+"t" [label="t\nAdd\n[2, 2]"];
+"f" [label="f\nSubtract\n[2, 2]"];
+"y" [label="y\nCond\n[2, 2]"];
+"x" -> "h" [label="a"];
+"x" -> "t" [label="b"];
+"x" -> "f" [label="b"];
+"w" -> "h" [label="b"];
+"c" -> "y" [label="condition"];
+"h" -> "t" [label="a"];
+"h" -> "f" [label="a"];
+"t" -> "y" [label="true_result"];
+"f" -> "y" [label="false_result"];
+}
