@@ -402,11 +402,45 @@ impl ViteBundler._format_define_entries(
     return ',\n'.join(entries);
 }
 
-def _proxy_entry(key: str, api_port: int) -> str {
+def _client_route_regex(pattern: str) -> str {
+    import re;
+    parts: list[str] = [];
+    for seg in pattern.split('/') {
+        if not seg {
+            continue;
+        }
+        if seg == '*' {
+            parts.append('.*');
+        } elif seg.startswith(':') {
+            parts.append('[^/]+');
+        } else {
+            parts.append(re.escape(seg));
+        }
+    }
+    return '^/' + '/'.join(parts) + '/?$';
+}
+
+
+def _proxy_entry(
+    key: str, api_port: int, client_routes: (list[str] | None) = None
+) -> str {
+    import json;
+    bypass = '';
+    if client_routes {
+        sources = json.dumps([_client_route_regex(r) for r in client_routes]);
+        bypass = (
+            '\n        bypass: (req) => {'
+            '\n          if (req.method !== "GET" && req.method !== "HEAD") { return; }'
+            '\n          const p = (req.url || "").split("?")[0];'
+            f'\n          if ({sources}.some((s) => new RegExp(s).test(p))) {{ return req.url; }}'
+            '\n        },'
+        );
+    }
     return (
         f'\n      "{key}": {{'
         f'\n        target: "http://localhost:{api_port}",'
         '\n        changeOrigin: true,'
+        f'{bypass}'
         '\n      },'
     );
 }
@@ -581,7 +615,12 @@ impl ViteBundler._generate_vite_config_content(
             if prefix in claimed {
                 continue;
             }
-            builtin_proxy_str += _proxy_entry(prefix, api_port);
+            under = [
+                p
+                for p in claimed
+                if p.startswith(prefix + '/')
+            ];
+            builtin_proxy_str += _proxy_entry(prefix, api_port, under);
         }
         declared_seen: set[str] = set();
         declared_proxy_str: str = "";

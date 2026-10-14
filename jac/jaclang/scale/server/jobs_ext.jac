@@ -302,7 +302,8 @@ obj JobsExtension(ServerExtension) {
                 parameters=[],
                 tags=['Scheduler'],
                 summary='List scheduled jobs',
-                requires_auth=True
+                requires_auth=True,
+                yields_to_client=True
             )
         );
         server.add_endpoint(
@@ -313,7 +314,8 @@ obj JobsExtension(ServerExtension) {
                 parameters=job_id_param,
                 tags=['Scheduler'],
                 summary='Get scheduled job',
-                requires_auth=True
+                requires_auth=True,
+                yields_to_client=True
             )
         );
         server.add_endpoint(

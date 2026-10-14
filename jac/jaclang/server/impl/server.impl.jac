@@ -982,7 +982,9 @@ impl ModuleIntrospector.render_page(
     return Jac.render_page(self, function_name, args, username);
 }
 
-impl ModuleIntrospector.has_client_route(url_path: str) -> bool {
+impl ModuleIntrospector.has_client_route(
+    url_path: str, explicit_only: bool = False
+) -> bool {
     if not self._spa_routes_loaded {
         self._spa_route_patterns = self._load_spa_routes();
         self._spa_routes_loaded = True;
@@ -997,6 +999,9 @@ impl ModuleIntrospector.has_client_route(url_path: str) -> bool {
         if seg
     ];
     for pattern in patterns {
+        if explicit_only and pattern.strip('/').split('/')[0] == '*' {
+            continue;
+        }
         if self._spa_route_matches(pattern, segments) {
             return True;
         }
@@ -1111,6 +1116,13 @@ impl ModuleIntrospector.client_claimed_paths(candidates: list[str]) -> list[str]
             }
         } except Exception {
             continue;
+        }
+    }
+    for pattern in (self._spa_route_patterns or []) {
+        for candidate in candidates {
+            if pattern.startswith(candidate + '/') and pattern not in claimed {
+                claimed.append(pattern);
+            }
         }
     }
     return claimed;
@@ -1269,6 +1281,10 @@ impl JacAPIServer.build_app -> ServingApp {
     if not settings.docs_enabled {
         app.openapi_url = None;
     }
+    def _claims_client_route(url_path: str) -> bool {
+        return self.introspector.has_client_route(url_path, explicit_only=True);
+    }
+    app.client_route_probe = _claims_client_route;
     self.app = app;
     self._endpoints = [];
     self._install_middleware();
