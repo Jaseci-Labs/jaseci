@@ -32,6 +32,10 @@ obj ResolvedKernel {
 
 class KernelUnavailable(RuntimeError) {}
 
+class KernelLoadError(SystemExit) {
+    static has stops_command: bool = True;
+}
+
 def kernel_lib_name -> str {
     if sys.platform == "darwin" {
         return "libjac_compiler.dylib";
@@ -336,6 +340,30 @@ obj KernelArtifact(Artifact) {
         }
         build_kernel(source_tree_kernel_path(), log=log);
     }
+}
+
+def refuse_unloadable {
+    import from jaclang.compiler.native_compiler { load_failure }
+    failed = load_failure();
+    if failed is None {
+        return;
+    }
+    (lib_path, source, err) = failed;
+    if source in ("sealed", "kit") {
+        remedy = "this jac installation is damaged; reinstall jac";
+    } else {
+        remedy = (
+            "rebuild it with `jac native build kernel --force`, or delete "
+            f"{lib_path} and {lib_path}{LAYOUT_SIDECAR_SUFFIX} to compile on the "
+            "bytecode compiler"
+        );
+    }
+    raise KernelLoadError(
+        "jac: the native compiler kernel cannot be loaded\n"
+        f"  kernel: {lib_path}\n"
+        f"  error:  {err}\n"
+        f"  fix:    {remedy}"
+    );
 }
 
 def resolve_kernel -> (ResolvedKernel | None) {
