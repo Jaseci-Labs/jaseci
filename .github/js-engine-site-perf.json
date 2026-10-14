@@ -1,6 +1,6 @@
 {
-  "runs": 3,
+  "runs": 5,
   "fail_ratio": 1.05,
-  "record_ratio": 0.95,
+  "update_ratio": 0.95,
   "baseline": null
 }

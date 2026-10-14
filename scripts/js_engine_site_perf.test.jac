@@ -1,4 +1,4 @@
-"""Exercise the site perf measurement, the ratio gate and the baseline it records."""
+"""Exercise the site perf measurement, the ratio gate and the baseline it asks for."""
 
 import contextlib;
 import io;
@@ -52,7 +52,7 @@ obj SiteProbe {
                 {
                     "runs": runs,
                     "fail_ratio": 1.05,
-                    "record_ratio": 0.95,
+                    "update_ratio": 0.95,
                     "baseline": baseline
                 }
             )
@@ -226,27 +226,30 @@ test "the fastest run of each side sets the ratios" {
     }
 }
 
-test "with no baseline the first ratio is recorded" {
+test "with no baseline the run fails and gives the ratio to commit" {
     with tempfile.TemporaryDirectory() as directory {
         probe = SiteProbe(directory=Path(directory));
         (code, printed, outputs) = probe.gate_with(None, 120.0, 30.0);
-        assert code == 0;
-        assert "record=true" in outputs and "status=recorded" in outputs;
+        assert code == 1;
+        assert "status=no-baseline" in outputs;
+        assert "::error title=js_engine site perf::there is no baseline yet; set the baseline in .github/js-engine-site-perf.json to ratio 4.0000" in printed;
         recorded = json.loads((probe.output() / "baseline.json").read_text());
         assert recorded["ratio"] == 4.0 and recorded["node"] == "v20.0.0-fake";
-        assert "| engine / node no-JIT (gated) | 4.000 |  |" in (
-            probe.output() / "summary.md"
-        ).read_text();
-        assert "::notice" in printed;
+        summary = (probe.output() / "summary.md").read_text();
+        assert "| engine / node no-JIT (gated) | 4.000 |  |" in summary;
+        assert "### Update the baseline" in summary;
+        assert '"ratio": 4.0,' in summary;
     }
 }
 
-test "a ratio inside the band passes and records nothing" {
+test "a ratio inside the band passes and asks for nothing" {
     with tempfile.TemporaryDirectory() as directory {
         probe = SiteProbe(directory=Path(directory));
         (code, printed, outputs) = probe.gate_with(baseline_at(4.0), 123.0, 30.0);
         assert code == 0 , printed;
-        assert "status=pass" in outputs and "record=false" in outputs;
+        assert "status=pass" in outputs;
+        assert "::error" not in printed;
+        assert "### Update the baseline" not in printed;
         assert not (probe.output() / "baseline.json").exists();
         assert "+2.5%" in printed;
     }
@@ -257,41 +260,46 @@ test "a ratio past fail_ratio fails the gate" {
         probe = SiteProbe(directory=Path(directory));
         (code, printed, outputs) = probe.gate_with(baseline_at(4.0), 132.0, 30.0);
         assert code == 1;
-        assert "status=regressed" in outputs and "record=false" in outputs;
+        assert "status=regressed" in outputs;
         assert "::error title=js_engine site perf::the engine got slower" in printed;
         assert "+10.0%" in printed;
+        assert "### Update the baseline" not in printed;
         assert not (probe.output() / "baseline.json").exists();
     }
 }
 
-test "a ratio below record_ratio records the new baseline" {
+test "a ratio below update_ratio fails and gives the new baseline to commit" {
     with tempfile.TemporaryDirectory() as directory {
         probe = SiteProbe(directory=Path(directory));
         (code, printed, outputs) = probe.gate_with(baseline_at(4.0), 108.0, 30.0);
-        assert code == 0;
-        assert "status=improved" in outputs and "record=true" in outputs;
+        assert code == 1;
+        assert "status=improved" in outputs;
+        assert "::error title=js_engine site perf::the engine got faster relative to node: 3.600 against the baseline's 4.000 (-10.0%); set the baseline in .github/js-engine-site-perf.json to ratio 3.6000" in printed;
+        assert "### Update the baseline" in printed;
         recorded = json.loads((probe.output() / "baseline.json").read_text());
         assert recorded["ratio"] == 3.6;
         assert recorded["commit"] == "abc";
     }
 }
 
-test "a different node version is recorded, not compared" {
+test "a different node version fails and asks for a new baseline, not a comparison" {
     with tempfile.TemporaryDirectory() as directory {
         probe = SiteProbe(directory=Path(directory));
         (code, printed, outputs) = probe.gate_with(
             baseline_at(2.0, node_version="v18.0.0"), 132.0, 30.0
         );
-        assert code == 0;
-        assert "status=recorded" in outputs;
-        assert "node changed from v18.0.0" in printed;
+        assert code == 1;
+        assert "status=node-changed" in outputs;
+        assert "node changed from v18.0.0 to v20.0.0-fake" in printed;
+        assert "to ratio 4.4000" in printed;
+        assert (probe.output() / "baseline.json").exists();
     }
 }
 
 test "a policy outside its bounds is refused" {
     for raw in [
         {"fail_ratio": 1.0},
-        {"record_ratio": 1.0},
+        {"update_ratio": 1.0},
         {"runs": 0},
         {"baseline": {"ratio": 0}}
     ] {

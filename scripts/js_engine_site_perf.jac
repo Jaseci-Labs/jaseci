@@ -9,13 +9,16 @@ ratio would compare two different builds.
 
 `gate` divides the engine's time by no-JIT node's, which cancels most of the
 runner's own speed, and holds that ratio to the baseline in
-.github/js-engine-site-perf.json. Above `fail_ratio` times the baseline it
-fails. Below `record_ratio` times the baseline it writes the measured ratio as
-the new baseline for CI to commit, as it does when there is no baseline yet or
-node's version changed. In between it passes and leaves the baseline alone, so
-noise neither fails a run nor ratchets the baseline down; several small
-regressions still fail once together they cross `fail_ratio`. Plain node's
-ratio and the peak RSS of each side are recorded, not gated.
+.github/js-engine-site-perf.json. Only a ratio inside the band passes. Above
+`fail_ratio` times the baseline the engine got slower, and the run fails. Below
+`update_ratio` times the baseline it got faster, and the run fails too, asking
+for the measured baseline to be committed by hand with the change that earned
+it; so does a run with no baseline yet or on a different node. The failure
+prints the ratio, and the job summary and `baseline.json` carry the whole
+block to commit. Inside the band nothing changes, so noise neither fails a run
+nor moves the baseline; several small regressions still fail once together
+they cross `fail_ratio`. Plain node's ratio and the peak RSS of each side are
+reported, not gated.
 """
 
 import argparse;
@@ -33,6 +36,7 @@ import from pathlib { Path }
 glob NO_JIT_FLAGS: list[str] = ["--no-opt", "--no-sparkplug", "--no-maglev"],
      SIDES: list[str] = ["node-nojit", "engine", "node"],
      VITE_CONFIG: str = "configs/vite.config.js",
+     POLICY_FILE: str = ".github/js-engine-site-perf.json",
      RUN_TIMEOUT_SECONDS: float = 1800.0;
 
 def finite_positive(value: any) -> bool {
@@ -45,7 +49,7 @@ def finite_positive(value: any) -> bool {
 obj Policy {
     has runs: int = 3,
         fail_ratio: float = 1.05,
-        record_ratio: float = 0.95,
+        update_ratio: float = 0.95,
         baseline: dict[str, any] | None = None;
 
     def postinit {
@@ -55,8 +59,8 @@ obj Policy {
         if not finite_positive(self.fail_ratio) or self.fail_ratio <= 1 {
             raise ValueError("fail_ratio must be a finite number above 1");
         }
-        if not finite_positive(self.record_ratio) or self.record_ratio >= 1 {
-            raise ValueError("record_ratio must be a positive number below 1");
+        if not finite_positive(self.update_ratio) or self.update_ratio >= 1 {
+            raise ValueError("update_ratio must be a positive number below 1");
         }
         if self.baseline is not None
             and not finite_positive(self.baseline.get("ratio")) {
@@ -70,7 +74,7 @@ def load_policy(path: Path) -> Policy {
     return Policy(
         runs=raw.get("runs", 3),
         fail_ratio=raw.get("fail_ratio", 1.05),
-        record_ratio=raw.get("record_ratio", 0.95),
+        update_ratio=raw.get("update_ratio", 0.95),
         baseline=raw.get("baseline")
     );
 }
@@ -272,35 +276,38 @@ def summarize(results: dict[str, any]) -> dict[str, any] {
     };
 }
 
+"""A run's outcome. Every status but `pass` fails the run; `update` says the
+measured baseline is to be committed by hand."""
 obj Verdict {
     has status: str,
         message: str,
-        record: bool;
+        update: bool;
 
     def failed -> bool {
-        return self.status == "regressed";
+        return self.status != "pass";
     }
 }
 
 def judge(policy: Policy, summary: dict[str, any]) -> Verdict {
     ratio = float(summary["ratio"]);
     held = policy.baseline;
+    ask = f"set the baseline in {POLICY_FILE} to ratio {ratio:.4f}";
     if held is None {
         return Verdict(
-            status="recorded",
-            message=f"no baseline yet; recording {ratio:.3f}",
-            record=True
+            status="no-baseline",
+            message=f"there is no baseline yet; {ask}",
+            update=True
         );
     }
     was = float(held["ratio"]);
     if held.get("node") != summary.get("node") {
         return Verdict(
-            status="recorded",
+            status="node-changed",
             message=(
-                f"node changed from {held.get('node')} to {summary.get('node')}; "
-                f"recording {ratio:.3f} without comparing it to {was:.3f}"
+                f"node changed from {held.get('node')} to {summary.get('node')}, "
+                f"so {ratio:.3f} cannot be compared with {was:.3f}; {ask}"
             ),
-            record=True
+            update=True
         );
     }
     change = f"{ratio:.3f} against the baseline's {was:.3f} ({ratio / was - 1:+.1%})";
@@ -308,15 +315,17 @@ def judge(policy: Policy, summary: dict[str, any]) -> Verdict {
         return Verdict(
             status="regressed",
             message=f"the engine got slower relative to node: {change}",
-            record=False
+            update=False
         );
     }
-    if ratio < was * policy.record_ratio {
+    if ratio < was * policy.update_ratio {
         return Verdict(
-            status="improved", message=f"recording the faster {change}", record=True
+            status="improved",
+            message=f"the engine got faster relative to node: {change}; {ask}",
+            update=True
         );
     }
-    return Verdict(status="pass", message=f"within the band: {change}", record=False);
+    return Verdict(status="pass", message=f"within the band: {change}", update=False);
 }
 
 def _cell(value: any, fmt: str) -> str {
@@ -339,10 +348,9 @@ def summary_markdown(
     lines = [
         "## js_engine site build vs node",
         "",
-        f"**{verdict.status}**: {verdict.message}. Fails above "
-        f"{policy.fail_ratio:g}x the baseline ratio, records below "
-        f"{policy.record_ratio:g}x. Fastest of {summary.get('runs')} runs per side, "
-        f"node {summary.get('node')}.",
+        f"**{verdict.status}**: {verdict.message}. Passes only between "
+        f"{policy.update_ratio:g}x and {policy.fail_ratio:g}x the baseline ratio. "
+        f"Fastest of {summary.get('runs')} runs per side, node {summary.get('node')}.",
         "",
         "| | Now | Baseline |",
         "| --- | ---: | ---: |"
@@ -356,6 +364,23 @@ def summary_markdown(
         lines.append("");
         lines.append(f"Baseline recorded at {held.get('commit')}.");
     }
+    if verdict.update {
+        lines.extend(
+            [
+                "",
+                "### Update the baseline",
+                "",
+                f"Set `baseline` in `{POLICY_FILE}` to this run's measurement and "
+                "commit it with the change (the js-engine-site-perf artifact holds "
+                "it as `baseline.json`; `jq --slurpfile b baseline.json "
+                f"'.baseline = $b[0]' {POLICY_FILE}` writes it in):",
+                "",
+                "```json",
+                json.dumps(summary, indent=2),
+                "```"
+            ]
+        );
+    }
     return "\n".join(lines) + "\n";
 }
 
@@ -368,17 +393,17 @@ def append_env_file(variable: str, text: str) {
     }
 }
 
-"""Judge the measured runs against the policy's baseline; 1 when it regressed.
+"""Judge the measured runs against the policy's baseline; 1 unless it passed.
 
-The table goes to `output`/summary.md and the step summary, and a recording
-verdict writes the new baseline object to `output`/baseline.json; the verdict
-lands in GITHUB_OUTPUT (`status`, `record`) for the workflow.
+The table goes to `output`/summary.md and the step summary, a verdict asking
+for an update writes the new baseline object to `output`/baseline.json, and
+the status lands in GITHUB_OUTPUT (`status`) for the workflow.
 """
 def gate(policy_path: Path, results_path: Path, output: Path) -> int {
     policy = load_policy(policy_path);
     summary = summarize(json.loads(results_path.read_text()));
     verdict = judge(policy, summary);
-    if verdict.record {
+    if verdict.update {
         write_json(output / "baseline.json", summary);
     }
     markdown = summary_markdown(policy, summary, verdict);
@@ -386,16 +411,10 @@ def gate(policy_path: Path, results_path: Path, output: Path) -> int {
     (output / "summary.md").write_text(markdown);
     print(markdown, flush=True);
     append_env_file("GITHUB_STEP_SUMMARY", markdown);
-    append_env_file(
-        "GITHUB_OUTPUT",
-        f"status={verdict.status}\nrecord={'true' if verdict.record else 'false'}\n"
-    );
+    append_env_file("GITHUB_OUTPUT", f"status={verdict.status}\n");
     if verdict.failed() {
         print(f"::error title=js_engine site perf::{verdict.message}", flush=True);
         return 1;
-    }
-    if verdict.record {
-        print(f"::notice title=js_engine site perf::{verdict.message}", flush=True);
     }
     return 0;
 }
