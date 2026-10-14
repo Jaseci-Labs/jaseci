@@ -1,6 +1,8 @@
 # Native Jac vs direct Python FX
 
-[English PDF](jac-vs-python-fx.pdf): three pages, one example per page:
+[English PDF](jac-vs-python-fx.pdf): seven pages. Two context slides connect to
+the professor-provided *Two Roads to the GPU*, followed by three example pages
+and two discussion slides on current evidence and the research goal. Examples:
 Linear, shared MatMul/residual, and lazy conditional.
 
 Jac uses actual node instances, native typed edge connections and walker spawn.
@@ -31,3 +33,20 @@ python docs/presentations/graph-frontends/generate.py
 ```
 
 Evidence: `jac/examples/graph_frontend_comparison/validation_native.json`.
+
+## ONNX comparison
+
+All three example slides now include direct Python ONNX construction excerpts.
+`N` aliases `onnx.helper.make_node`; `G` aliases `make_graph`. Input/output
+value infos, graph/model wrapping, opset selection and execution are omitted.
+The conditional uses an ONNX If with two branch GraphProto attributes; these
+branches reference the outer h and x through lexical scope. It does not eagerly
+execute both branch calculations. ONNX excerpts are documentation-checked API
+illustrations, not newly runtime-validated examples. Existing Jac/FX correctness
+results do not constitute ONNX validation.
+
+Official references:
+- https://onnx.ai/onnx/api/helper.html
+- https://onnx.ai/onnx/operators/onnx__If.html
+
+Only presentation files changed for this addition; runnable examples are untouched.
