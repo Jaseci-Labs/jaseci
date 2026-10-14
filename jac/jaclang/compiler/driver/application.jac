@@ -5,7 +5,6 @@ import sys;
 import tempfile;
 import time;
 import from pathlib { Path }
-import from jaclang.runtime.preparation_lock { PREPARATION_LOCK }
 import type from jaclang.runtime.prepared { PreparedApplication }
 import type from jaclang.compiler.frontend { unitree as uni }
 glob _FORMAT: int = 9,
@@ -592,6 +591,7 @@ def prepare_application(
         get_effective_default_codespace_override,
         set_effective_default_codespace
     }
+    import from jaclang.runtime.preparation_lock { PREPARATION_LOCK }
     with PREPARATION_LOCK {
         previous = get_effective_default_codespace_override();
         set_effective_default_codespace('server');
@@ -1156,6 +1156,7 @@ def prepare_dynamic_module(
     console.print(f'Preparing dynamically imported module: {path}', file=sys.stderr);
     import from jaclang.compiler.driver.compilation_context { program_for }
     import from jaclang.runtime.prepared { publish }
+    import from jaclang.runtime.preparation_lock { PREPARATION_LOCK }
     with PREPARATION_LOCK {
         actual = program_for(application.entry, program);
         revision = _prepare(
