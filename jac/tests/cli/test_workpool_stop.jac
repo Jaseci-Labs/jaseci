@@ -1,22 +1,28 @@
-"""A job that raises an error marked `stops_command` (the unloadable-kernel
-refusal) stops the whole pool, inline or in a forked worker, instead of
-being recorded as one failed item while the rest go on."""
+"""A job that raises a SystemExit marked `stops_command` (a refusal that
+must end the command, such as a kernel that cannot be used) stops the whole
+pool, inline or in a forked worker, instead of being recorded as one failed
+item while the rest go on. Any other SystemExit stays one failed item."""
 
 import from jaclang.cli.workpool { WorkPool, pool_available }
-import from jaclang.compiler.backends.native.kernel_resolve { KernelLoadError }
+
+class StopCommand(SystemExit) {
+    static has stops_command: bool = True;
+}
+
+class OtherExit(SystemExit) {}
 
 glob _seen: list[int] = [];
 
 def _job(request: dict[(str, any)]) -> any {
-    raise KernelLoadError("jac: stop");
+    raise StopCommand("jac: stop");
+}
+
+def _exit_job(request: dict[(str, any)]) -> any {
+    raise OtherExit(3);
 }
 
 def _on_record(idx: int, record: dict[(str, any)]) {
     _seen.append(idx);
-}
-
-def _exit_job(request: dict[(str, any)]) -> any {
-    raise SystemExit(3);
 }
 
 def _stopped(pool: WorkPool, inline: bool) -> (str | None) {
