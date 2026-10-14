@@ -1315,7 +1315,12 @@ impl NaIRGenPass._codegen_compare_link(
                     _lin_key = left_node.type;
                 }
                 _contains_fn = self._emit_list_contains_fn(
-                    list_key, list_type.as_pointer(), elem_type, helpers, _lin_str_elems
+                    list_key,
+                    list_type.as_pointer(),
+                    elem_type,
+                    helpers,
+                    _lin_str_elems,
+                    _lin_key
                 );
                 result = self.builder.call(
                     _contains_fn, [left_coerced, right], name="list.in"

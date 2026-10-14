@@ -3202,7 +3202,8 @@ walker NaIRGenPass(CompilerPass) {
         list_ptr_type: ir.Type,
         elem_type: ir.Type,
         helpers: dict[str, any],
-        is_str: bool
+        is_str: bool,
+        elem_key: any = None
     ) -> ir.Function;
 
     def _emit_list_compare_fn(

@@ -3468,7 +3468,8 @@ impl NaIRGenPass._emit_list_contains_fn(
     list_ptr_type: ir.Type,
     elem_type: ir.Type,
     helpers: dict[str, any],
-    is_str: bool
+    is_str: bool,
+    elem_key: any = None
 ) -> ir.Function {
     i64 = ir.IntType(64);
     i1 = ir.IntType(1);
@@ -3528,7 +3529,9 @@ impl NaIRGenPass._emit_list_contains_fn(
         } elif isinstance(elem_type, ir.PointerType) {
             eq = self.builder.icmp_unsigned("==", fn.args[0], elem);
         } else {
-            _eq = self._emit_comparison(Tok.EE, fn.args[0], elem, False);
+            _eq = self._emit_comparison(
+                Tok.EE, fn.args[0], elem, False, key_ret=elem_key
+            );
             eq = _eq if _eq is not None else ir.Constant(i1, 0);
         }
         self.builder.cbranch(eq, found, next_bb);
@@ -3631,11 +3634,10 @@ impl NaIRGenPass._emit_list_compare_fn(
                 equal = self.builder.icmp_signed(
                     "==", left_elem, right_elem, name="compare.eq"
                 );
-            } elif isinstance(elem_type, ir.PointerType) {
-                _eq = self._emit_comparison(Tok.EE, left_elem, right_elem, False);
-                equal = _eq if _eq is not None else ir.Constant(i1, 0);
             } else {
-                _eq = self._emit_comparison(Tok.EE, left_elem, right_elem, False);
+                _eq = self._emit_comparison(
+                    Tok.EE, left_elem, right_elem, False, key_ret=elem_key
+                );
                 equal = _eq if _eq is not None else ir.Constant(i1, 0);
             }
             self.builder.cbranch(equal, next_bb, false_bb if op == Tok.EE else true_bb);
