@@ -248,6 +248,102 @@ test "a prepare after an edit reads only the edited module's imports again" {
 }
 
 
+"""Prepare `app_entry` on the in-process kernel, recording the modules it analysed."""
+def kernel_prepare(app_entry: Path, `root: str, analysed: list[str]) -> any {
+    import jaclang.project.kernel_compile as kernel_compile;
+    real_compile = kernel_compile.kernel_compile_application;
+    def counting_compile(*args: any, **kwargs: any) -> any {
+        compiled = real_compile(*args, **kwargs);
+        if compiled is not None {
+            analysed.extend(
+                sorted(os.path.basename(mod.path) for mod in compiled.analysis.modules)
+            );
+        }
+        return compiled;
+    }
+    with patch("jaclang.project.kernel_compile._IN_PROCESS", [True]), patch.object(
+        kernel_compile, "kernel_compile_application", counting_compile
+    ) {
+        return prepare_application(str(app_entry), JacProgram(), `root);
+    }
+}
+
+"""Write a three-module app whose `b` calls into `a` with the signature `a_sig`."""
+def write_layered_app(base: Path, a_sig: str, a_body: str) {
+    (base / 'mods').mkdir(exist_ok=True);
+    (base / 'mods' / 'a.jac').write_text(
+        f"def:pub a_value{a_sig} -> int {{ {a_body} }}\n"
+    );
+    (base / 'mods' / 'b.jac').write_text(
+        "import from mods.a { a_value }\n"
+            + "node Item { has n: int = 0; }\n"
+            + "def:pub b_value -> int { return a_value(1) + Item(n=2).n; }\n"
+    );
+    (base / 'main.jac').write_text(
+        "import from mods.b { b_value }\n"
+            + "walker:pub Total { can go with Root entry { report b_value(); } }\n"
+    );
+}
+
+test "an edit prepare analyses only the edited module and matches a cold prepare" {
+    tmp = tempfile.mkdtemp(prefix="jac-prepared-kernel-edit-");
+    path = Path(tmp) / 'main.jac';
+    try {
+        write_layered_app(Path(tmp), "(x: int)", "return x;");
+        kernel_prepare(path, tmp, []);
+        forget(str(path));
+        write_layered_app(Path(tmp), "(x: int)", "return x + 1;");
+        analysed: list[str] = [];
+        edited = kernel_prepare(path, tmp, analysed);
+        assert sorted(set(analysed)) == ['a.jac', 'main.jac'] , (
+            f"a body edit to a.jac made the kernel analyse {analysed}"
+        );
+        forget(str(path));
+        shutil.rmtree(Path(tmp) / '.jac' / 'cache' / 'applications');
+        cold_analysed: list[str] = [];
+        cold = kernel_prepare(path, tmp, cold_analysed);
+        assert sorted(set(cold_analysed)) == ['a.jac', 'b.jac', 'main.jac'] , (
+            f"a cold prepare analysed {cold_analysed}"
+        );
+        assert edited.manifests == cold.manifests , (
+            "the edit prepare's manifests differ from a cold prepare's"
+        );
+        assert edited.code == cold.code , "the edit prepare loaded different code";
+        assert sorted(edited.sources) == sorted(cold.sources) , (
+            f"inputs differ: {sorted(edited.sources)} vs {sorted(cold.sources)}"
+        );
+    } finally {
+        forget(str(path));
+        shutil.rmtree(tmp, ignore_errors=True);
+    }
+}
+
+test "an edit that changes a module's interface re-checks its importers" {
+    tmp = tempfile.mkdtemp(prefix="jac-prepared-kernel-iface-");
+    path = Path(tmp) / 'main.jac';
+    try {
+        write_layered_app(Path(tmp), "(x: int)", "return x;");
+        kernel_prepare(path, tmp, []);
+        forget(str(path));
+        write_layered_app(Path(tmp), "", "return 1;");
+        analysed: list[str] = [];
+        failed = False;
+        try {
+            kernel_prepare(path, tmp, analysed);
+        } except Exception {
+            failed = True;
+        }
+        assert 'b.jac' in analysed , (
+            f"the importer of a changed signature was not re-checked: {analysed}"
+        );
+        assert failed , "b.jac calls a_value(1) after a_value lost its parameter";
+    } finally {
+        forget(str(path));
+        shutil.rmtree(tmp, ignore_errors=True);
+    }
+}
+
+
 test "a prepare resolves an unchanged module's imports against the files as they are now" {
     tmp = tempfile.mkdtemp(prefix="jac-prepared-moved-");
     path = Path(tmp) / 'main.jac';

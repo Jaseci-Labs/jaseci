@@ -215,6 +215,7 @@ obj CatalogWriter {
         external_modules: set[any] postinit,
         boundary: (Module | None) = None,
         path_mapper: Callable[[str], str] | None = None,
+        spans: bool = True,
         failures: int = 0,
         evaluated: int = 0,
         failure_log: list[str] = [],
@@ -941,7 +942,7 @@ obj CatalogWriter {
         put_ref(out, parent);
         put_ref(out, self.ref_module(module_of(scope)));
         put_ref(out, self.ref_symbol(owner));
-        loc = scope.loc;
+        loc = scope.loc if self.spans else None;
         put_uvar(out, max(loc.first_line, 0) if loc else 0);
         put_uvar(out, max(loc.col_start, 0) if loc else 0);
         put_uvar(out, max(loc.last_line, 0) if loc else 0);
@@ -1026,7 +1027,7 @@ obj CatalogWriter {
         }
         put_uvar(out, access);
         put_uvar(out, 1 if sym.imported else 0);
-        loc = sym.decl.loc if sym.decl else None;
+        loc = sym.decl.loc if sym.decl and self.spans else None;
         put_uvar(out, max(loc.first_line, 0) if loc else 0);
         put_uvar(out, max(loc.col_start, 0) if loc else 0);
         put_uvar(out, max(loc.last_line, 0) if loc else 0);
@@ -1528,10 +1529,15 @@ def build_module_iface(
     mod: Module,
     evaluator: any,
     pkg_dir: str,
-    path_mapper: Callable[[str], str] | None = None
+    path_mapper: Callable[[str], str] | None = None,
+    spans: bool = True
 ) -> bytes {
     writer = CatalogWriter(
-        evaluator=evaluator, pkg_dir=pkg_dir, boundary=mod, path_mapper=path_mapper
+        evaluator=evaluator,
+        pkg_dir=pkg_dir,
+        boundary=mod,
+        path_mapper=path_mapper,
+        spans=spans
     );
     dotted = mod.name or "";
     writer.add_module(mod, dotted);

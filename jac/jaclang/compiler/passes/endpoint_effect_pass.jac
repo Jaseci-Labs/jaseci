@@ -26,7 +26,8 @@ import from jaclang.compiler.frontend.unitree {
     SpecialVarRef,
     String,
     Symbol,
-    Token
+    Token,
+    UniScopeNode
 }
 import from jaclang.compiler.passes.context { CompileContext, TreePass }
 import from jaclang.compiler.frontend.constant { SymbolType, Tokens as Tok }
@@ -50,6 +51,19 @@ def _literal_names(value: (Expr | None)) -> (list[str] | None) {
         names.append(text);
     }
     return names;
+}
+
+def callable_key(sym: Symbol) -> tuple[(UniScopeNode | None), str] {
+    parts: list[str] = [sym.sym_name];
+    cur: (UniScopeNode | None) = sym.parent_tab;
+    while cur is not None and not isinstance(cur, Module) {
+        if UniScopeNode.is_python_scoping(cur) or hasattr(cur, "cat_kind") {
+            parts.append(cur.scope_name);
+        }
+        cur = cur.parent_scope;
+    }
+    parts.reverse();
+    return (cur, ".".join(parts));
 }
 
 walker EndpointEffectPass(TreePass) {
@@ -103,6 +117,77 @@ walker EndpointEffectPass(TreePass) {
         self.module.gen.interop_manifest.endpoint_effects[
             endpoint_key(self.module, "walker", here.name.sym_name)
         ] = self._classify(self._resolved_body(here), "walker", here.name.sym_name);
+    }
+
+    can record_callables with Module exit {
+        if self.ctx.nested_depth {
+            return;
+        }
+        effects: dict[str, dict[str, any]] = {};
+        for ability in here.get_all_sub_nodes(Ability) {
+            if ability.in_client_context() or not isinstance(ability.name_ref, Name) {
+                continue;
+            }
+            sym = ability.name_ref.sym;
+            if sym is None {
+                continue;
+            }
+            effects[callable_key(sym)[1]] = self._summary(ability);
+        }
+        here.gen.callable_effects = effects;
+    }
+
+    def _summary(ability: Ability) -> dict[str, any] {
+        self._is_writer = False;
+        self._unknown = False;
+        self._declared_reads.clear();
+        self._declared_writes.clear();
+        self._assumptions.clear();
+        self._touches.clear();
+        self._visited.clear();
+        declared = self._declaration_effects(ability);
+        if declared is not None {
+            self._declared_reads.update(declared["reads"]);
+            self._declared_writes.update(declared["writes"]);
+            self._assumptions.add("Declared effects of " + ability.name_ref.sym_name);
+        } else {
+            for nd in self._resolved_body(ability) {
+                self._scan(nd);
+            }
+        }
+        return {
+            "writer": self._is_writer,
+            "unknown": self._unknown,
+            "touches": sorted(self._touches),
+            "reads": sorted(self._declared_reads),
+            "writes": sorted(self._declared_writes),
+            "assumptions": sorted(self._assumptions)
+        };
+    }
+
+    def _served_effects(call: FuncCall) -> (dict[str, any] | None) {
+        sym = self._call_target_symbol(call);
+        if sym is None {
+            return None;
+        }
+        (owner, key) = callable_key(sym);
+        if not isinstance(owner, Module) {
+            return None;
+        }
+        return owner.gen.callable_effects.get(key);
+    }
+
+    def _apply(summary: dict[str, any]) {
+        if summary["writer"] {
+            self._is_writer = True;
+        }
+        if summary["unknown"] {
+            self._unknown = True;
+        }
+        self._touches.update(summary["touches"]);
+        self._declared_reads.update(summary["reads"]);
+        self._declared_writes.update(summary["writes"]);
+        self._assumptions.update(summary["assumptions"]);
     }
 
     def _classify(
@@ -199,7 +284,12 @@ walker EndpointEffectPass(TreePass) {
                 } else {
                     body = self._callee_body(nd);
                     if not body {
-                        self._unknown = True;
+                        served = self._served_effects(nd);
+                        if served is not None {
+                            self._apply(served);
+                        } else {
+                            self._unknown = True;
+                        }
                     }
                     for stmt in body {
                         self._scan(stmt);

@@ -35,7 +35,10 @@ obj UnitProducts {
         native_ir: str = "",
         native_iface: str = "",
         native_layout: str = "",
-        native_deps: list[str] = [];
+        native_deps: list[str] = [],
+        iface: str = "",
+        iface_shape: str = "",
+        effects: str = "";
 }
 
 def definition_span_rows(tree: uni.Module) -> list[str] {
@@ -506,8 +509,28 @@ def unit_products(module: uni.Module, program: JacProgram) -> UnitProducts {
             manifest_record(module.gen.client_manifest)
         );
     }
+    if module.gen.callable_effects {
+        products.effects = json.dumps(module.gen.callable_effects, sort_keys=True);
+    }
     native_products(module, products);
     return products;
+}
+
+def unit_interface(module: uni.Module, program: JacProgram, products: UnitProducts) {
+    import from jaclang.compiler.types.stubcat.writer {
+        IncoherentInterface,
+        build_module_iface
+    }
+    evaluator = program.get_type_evaluator();
+    pkg_dir = os.path.dirname(os.path.realpath(module.loc.mod_path));
+    try {
+        data = build_module_iface(module, evaluator, pkg_dir);
+        shape = build_module_iface(module, evaluator, pkg_dir, spans=False);
+    } except IncoherentInterface {
+        return;
+    }
+    products.iface = base64.b64encode(data).decode("ascii");
+    products.iface_shape = shape[:64].decode("ascii");
 }
 
 def native_products(module: uni.Module, products: UnitProducts) {
@@ -546,7 +569,10 @@ def products_record(products: UnitProducts) -> dict[str, any] {
         "native_ir": products.native_ir,
         "native_iface": products.native_iface,
         "native_layout": products.native_layout,
-        "native_deps": list(products.native_deps)
+        "native_deps": list(products.native_deps),
+        "iface": products.iface,
+        "iface_shape": products.iface_shape,
+        "effects": products.effects
     };
 }
 
@@ -570,7 +596,10 @@ def products_from_record(raw: dict[str, any]) -> UnitProducts {
         native_ir=str(raw.get("native_ir", "")),
         native_iface=str(raw.get("native_iface", "")),
         native_layout=str(raw.get("native_layout", "")),
-        native_deps=json_str_list(raw.get("native_deps"))
+        native_deps=json_str_list(raw.get("native_deps")),
+        iface=str(raw.get("iface", "")),
+        iface_shape=str(raw.get("iface_shape", "")),
+        effects=str(raw.get("effects", ""))
     );
 }
 

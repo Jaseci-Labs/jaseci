@@ -30,12 +30,19 @@ def kernel_compile(
     in_process: bool = False,
     isolated: bool = True,
     emit_closure: bool = False,
-    emit_cached: bool = True
+    emit_cached: bool = True,
+    seeds: (list[PythonInterface] | None) = None
 ) -> CompileReport {
     import time;
     started = time.monotonic();
     snapshot = kernel_snapshot(
-        host, program, path, options, emit_closure=emit_closure, emit_cached=emit_cached
+        host,
+        program,
+        path,
+        options,
+        emit_closure=emit_closure,
+        emit_cached=emit_cached,
+        seeds=seeds
     );
     seeded = time.monotonic();
     if snapshot.other_compiler {
@@ -114,7 +121,8 @@ def kernel_compile_reported(
     options: CompileOptions,
     in_process: bool,
     emit_closure: bool,
-    emit_cached: bool = True
+    emit_cached: bool = True,
+    seeds: (list[PythonInterface] | None) = None
 ) -> CompileReport {
     try {
         compiled = kernel_compile(
@@ -124,7 +132,8 @@ def kernel_compile_reported(
             options,
             in_process=in_process,
             emit_closure=emit_closure,
-            emit_cached=emit_cached
+            emit_cached=emit_cached,
+            seeds=seeds
         );
     } except KernelAnalysisError as err {
         raise KernelCompileError(
@@ -168,13 +177,19 @@ def host_kernel_compile(
 }
 
 def kernel_compile_application(
-    host: HostServices, program: JacProgram, path: str, options: CompileOptions
+    host: HostServices,
+    program: JacProgram,
+    path: str,
+    options: CompileOptions,
+    seeds: (list[PythonInterface] | None) = None
 ) -> (CompileReport | None) {
     (routed, in_process) = kernel_route(program, path);
     if not routed {
         return None;
     }
-    compiled = kernel_compile_reported(host, program, path, options, in_process, True);
+    compiled = kernel_compile_reported(
+        host, program, path, options, in_process, True, seeds=seeds
+    );
     for unit in compiled.units {
         _APPLICATION_UNITS[os.path.realpath(unit.path)] = unit;
     }
