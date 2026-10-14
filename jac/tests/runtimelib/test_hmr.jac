@@ -248,7 +248,8 @@ test "a client-only sibling directory is watched on a fresh and a restored start
     }
 }
 
-test "a watched directory outside the first one delivers its changes" {
+test "nothing under site-packages or a hidden directory becomes a watch root" {
+    import os;
     with tempfile.TemporaryDirectory() as tmp {
         top = os.path.realpath(tmp);
         base = os.path.join(top, "web");
