@@ -4758,7 +4758,7 @@ impl Parser.parse_return_stmt -> ReturnStmt {
         and self.check_peek_any(
             TokenKind.NAME, TokenKind.KWESC_NAME, TokenKind.KW_SELF, TokenKind.KW_SUPER
         ) {
-        tail_tok = self.advance();
+        tail_tok = self.expect(TokenKind.NAME);
         tail_loc = tail_tok.loc;
         tail_uni = Token(
             orig_src=self.source,
