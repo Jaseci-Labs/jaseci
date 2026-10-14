@@ -3296,13 +3296,21 @@ impl NaIRGenPass._emit_malloc_null_guard(
         _write_fn = self._get_or_declare_extern("write", i32, [i32, i8_ptr, i32]);
         _b_oom.call(
             _write_fn,
-            [ir.Constant(i32, 2), _oom_msg_ptr, ir.Constant(i32, len(_oom_msg.encode()))]
+            [
+                ir.Constant(i32, 2),
+                _oom_msg_ptr,
+                ir.Constant(i32, len(_oom_msg.encode()))
+            ]
         );
     } else {
         _write_fn = self._get_or_declare_extern("write", i64, [i32, i8_ptr, i64]);
         _b_oom.call(
             _write_fn,
-            [ir.Constant(i32, 2), _oom_msg_ptr, ir.Constant(i64, len(_oom_msg.encode()))]
+            [
+                ir.Constant(i32, 2),
+                _oom_msg_ptr,
+                ir.Constant(i64, len(_oom_msg.encode()))
+            ]
         );
     }
     _b_oom.call(_abort_fn, []);

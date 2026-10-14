@@ -2662,6 +2662,7 @@ walker NaIRGenPass(CompilerPass) {
         ok_bb_name: str = "alloc.ok",
         oom_bb_name: str = "oom"
     ) -> ir.IRBuilder;
+
     def _emit_rc_retain(ptr: ir.Value, op: str = "", loc: str = "") -> None;
     def _emit_rc_release_simple(ptr: ir.Value, op: str = "", loc: str = "") -> None;
     def _emit_rc_release_typed(val: ir.Value, op: str = "", loc: str = "") -> None;
