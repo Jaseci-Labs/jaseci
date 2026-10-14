@@ -31,6 +31,7 @@ import from jaclang.compiler.backends.native.link_glue {
     RC_THREADED_SYMBOL,
     REGION_DIED_HOOK,
     SHARED_INIT_SYMBOL,
+    SHARED_MAIN_SYMBOL,
     STR_NEW_SYMBOL,
     init_object_codegen,
     link_glue_ir
@@ -159,7 +160,8 @@ obj LinkPlan {
         units: list[LinkUnit],
         mode: str,
         triple: str,
-        callback_bindings: list[InteropBinding] = [];
+        callback_bindings: list[InteropBinding] = [],
+        library_api: bool = False;
 
     def unit(path: str) -> (LinkUnit | None) {
         real = os.path.realpath(path);
@@ -209,6 +211,9 @@ obj LinkPlan {
         h.update(self.options.codegen_identity().encode());
         import from jaclang.compiler.driver.jir { native_producer_digest }
         h.update(native_producer_digest(self.options.kernel_build).encode());
+        if self.library_api {
+            h.update(b"library-api");
+        }
         import from jaclang.compiler.frontend.codeinfo { native_unit_identity }
         for u in self.units {
             h.update(native_unit_identity(u.path).encode());
@@ -259,8 +264,12 @@ obj LinkPlan {
     }
 
     def pub_exports -> list[str] {
+        """The C ABI of a shared artifact. A library's is its root module's
+        `:pub` surface: in the modules it imports `:pub` is how Jac modules see
+        each other, and keeping those internal lets the whole-program optimizer
+        specialize and drop them as it does for an executable.""";
         out: list[str] = [];
-        for u in self.units {
+        for u in ([self.root_unit()] if self.library_api else self.units) {
             for sym in u.iface.pub_symbols() {
                 if sym not in out {
                     out.append(sym);
@@ -906,6 +915,7 @@ def optimize_whole_program(
         exports = plan.pub_exports()
             + [
                 SHARED_INIT_SYMBOL,
+                SHARED_MAIN_SYMBOL,
                 "jac_retain",
                 "jac_release",
                 "jac_str_new",
@@ -1080,6 +1090,17 @@ def _reuse_artifact(
     }
 }
 
+def _links_for_host(triple: str) -> bool {
+    if not sys.platform.startswith("linux") {
+        return False;
+    }
+    target = triple.lower().split("-");
+    host = str(llvm.get_default_triple()).lower().split("-");
+    return target[0] == host[0]
+        and "linux" in target
+        and ("musl" in target[-1]) == ("musl" in host[-1]);
+}
+
 def link_artifact(
     plan: LinkPlan,
     output_path: str,
@@ -1121,7 +1142,12 @@ def link_artifact(
     } elif is_macos {
         needed_libs = ["/usr/lib/libSystem.B.dylib"];
     }
-    lib_norm = clib_needed_libs(needed_libs, clib_paths, floor_handled);
+    lib_norm = clib_needed_libs(
+        needed_libs,
+        clib_paths,
+        floor_handled,
+        host_elf=platform == "elf" and _links_for_host(plan.triple)
+    );
     is_linux_exec = (not shared) and platform == "elf";
     """The runtime units declare their libc calls as C imports, and musl's
     libc.a satisfies every one of them: only a library beyond libc and libm

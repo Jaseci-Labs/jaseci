@@ -1,4 +1,5 @@
 import from jaclang.compiler.passes.context { CompileContext, CompilerPass }
+import from jaclang.compiler.driver.pipeline_types { PassContract }
 import from jaclang.compiler.frontend.unitree {
     Ability,
     Archetype,
@@ -63,6 +64,7 @@ glob PRIMITIVE_TYPES: list[str] = [
          + JAC_TYPE_REGISTRY.sized_scalar_names();
 
 walker MTIRGenPass(CompilerPass) {
+    static has contract: PassContract = PassContract();
     has _class_info_cache: dict[int, ClassInfo] = {},
         _owned: list[str] = [];
 

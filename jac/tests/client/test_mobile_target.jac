@@ -1550,6 +1550,8 @@ test "node tooling runs installs and tools on the bundled bun only" {
             with unittest.mock.patch(
                 "jaclang.client.targets.node_tooling_common.js_runtime_path",
                 side_effect=_fake_get_bun
+            ), unittest.mock.patch(
+                "jaclang.client.js_runtime.js_runtime_path", side_effect=_fake_get_bun
             ) {
                 run_manifest_install(project_dir);
                 runner = resolve_node_tool(project_dir, "expo");
@@ -1602,6 +1604,8 @@ test "run_manifest_install skips bun install while the stamp is current" {
         with unittest.mock.patch("subprocess.run", side_effect=_fake_run), unittest.mock.patch(
             "jaclang.client.targets.node_tooling_common.js_runtime_path",
             side_effect=_fake_get_bun
+        ), unittest.mock.patch(
+            "jaclang.client.js_runtime.js_runtime_path", side_effect=_fake_get_bun
         ) {
             run_manifest_install(project_dir);
             assert calls == [["/opt/jac/_bun/bun", "install"]] , calls;

@@ -702,9 +702,9 @@ test "a loaded anchor is hashed once (#9410)" {
                 json.dumps = real_dumps;
             }
             assert len(loaded) == len(ids);
-            assert len(dumps_calls) == len(ids) , (
+            assert len(dumps_calls) <= len(ids) , (
                 f"loading {len(ids)} anchors hashed {len(dumps_calls)} times; each "
-                "anchor's stored form is hashed once, when it is deserialized"
+                "anchor's stored form is hashed at most once, when it is deserialized"
             );
             # The load-time hash is the one the next commit compares against:
             # an unchanged anchor must not be written back.
@@ -715,6 +715,65 @@ test "a loaded anchor is hashed once (#9410)" {
                     "its load-time hash does not match its flush-time hash"
                 );
             }
+        } finally {
+            JacRuntime.exec_ctx = old;
+            ctx.close();
+        }
+    }
+}
+
+
+test "loading anchors hashes only those whose fields can change in place" {
+    with TemporaryDirectory() as td {
+        old = JacRuntime.exec_ctx;
+        seed = _ctx(td);
+        JacRuntime.exec_ctx = seed;
+        ids: list[UUID] = [];
+        bag_id = UUID(int=0);
+        try {
+            ids = [_loose(seed, n).ensure_id() for n in range(4)];
+            bag: NodeAnchor = _as_any(RBag(items=[1])).__jac__;
+            bag.persistent = True;
+            seed.mem.put(bag);
+            bag_id = bag.ensure_id();
+            seed.mem.commit();
+        } finally {
+            JacRuntime.exec_ctx = old;
+            seed.close();
+        }
+        ctx = _ctx(td);
+        JacRuntime.exec_ctx = ctx;
+        dumps_calls: list[int] = [];
+        import json;
+        real_dumps = json.dumps;
+        def counting_dumps(*args: any, **kwargs: any) -> str {
+            if kwargs.get("sort_keys") {
+                dumps_calls.append(1);
+            }
+            return real_dumps(*args, **kwargs);
+        }
+        try {
+            _ = ctx.user_root;
+            ctx.mem.commit();
+            json.dumps = counting_dumps;
+            try {
+                loaded = ctx.mem.batch_get(ids + [bag_id]);
+            } finally {
+                json.dumps = real_dumps;
+            }
+            assert len(loaded) == len(ids) + 1;
+            assert len(dumps_calls) == 1 , (
+                f"loading five anchors hashed {len(dumps_calls)} stored forms; only "
+                "the one holding a list can change without a field write"
+            );
+            assert all(loaded[i].hash != 0 for i in ids) , (
+                "a loaded anchor must not look newly created to access checks"
+            );
+            _as_any(loaded[bag_id].archetype).items.append(2);
+            _as_any(loaded[ids[0]].archetype).n = 7;
+            ctx.mem.commit();
+            assert _stored(ctx, bag_id, "items") == "[1, 2]";
+            assert _stored(ctx, ids[0], "n") == "7";
         } finally {
             JacRuntime.exec_ctx = old;
             ctx.close();
