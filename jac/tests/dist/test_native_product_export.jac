@@ -38,9 +38,14 @@ test "the exported callback record keeps every field the loader needs" {
             )
         );
         assert not program.errors_had , [e.pretty_print() for e in program.errors_had];
-        record = write_native_product(
-            module, base, Path("libn"), shared=True, program=program
-        );
+        def stub_emit(ir: str) -> str {
+            return "/* captured */";
+        }
+        with patch.object(c_emit, "emit_c", stub_emit) {
+            record = write_native_product(
+                module, base, Path("libn"), shared=True, program=program
+            );
+        }
         assert record["callbacks"] , (
             "the pinned server callback must be exported, got: "
             + repr(record["callbacks"])

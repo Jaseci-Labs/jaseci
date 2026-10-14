@@ -3,6 +3,7 @@ import hashlib;
 import logging;
 import from collections.abc { Callable, Iterable }
 import from typing { Protocol }
+import from jaclang.runtime.scalars { sized_float_names, sized_int_names }
 class CallbackSignature(Protocol) {
     has name: str,
         ret_type: str,
@@ -87,24 +88,21 @@ obj NativeLibrary {
 }
 
 glob logger = logging.getLogger(__name__),
+     # Sized spellings come from the scalar table (the single owner); both
+     # int and float widths ride the 64-bit ABI lane here. usize/isize are
+     # C-boundary spellings (size_t) the manifest can carry, not Jac scalars.
      JAC_TO_CTYPES: dict[(str, type)] = {
-         'int': ctypes.c_int64,
-         'i8': ctypes.c_int64,
-         'i16': ctypes.c_int64,
-         'i32': ctypes.c_int64,
-         'i64': ctypes.c_int64,
-         'isize': ctypes.c_int64,
-         'u8': ctypes.c_int64,
-         'u16': ctypes.c_int64,
-         'u32': ctypes.c_int64,
-         'u64': ctypes.c_int64,
-         'usize': ctypes.c_int64,
-         'float': ctypes.c_double,
-         'f32': ctypes.c_double,
-         'f64': ctypes.c_double,
-         'bool': ctypes.c_bool,
-         'str': ctypes.c_char_p,
-         'bytes': ctypes.c_char_p
+         ** {
+             'int': ctypes.c_int64,
+             'usize': ctypes.c_int64,
+             'isize': ctypes.c_int64,
+             'float': ctypes.c_double,
+             'bool': ctypes.c_bool,
+             'str': ctypes.c_char_p,
+             'bytes': ctypes.c_char_p
+         },
+         ** {name: ctypes.c_int64 for name in sized_int_names()},
+         ** {name: ctypes.c_double for name in sized_float_names()}
      },
      _CB_VOID_RETURNS: set[str] = {'None', 'void'},
      _pyb_shadows: dict[(int, object)] = {},
@@ -239,12 +237,23 @@ def register_py_callbacks(
         }
         cb_type = ctypes.CFUNCTYPE(ret_ct, *arg_cts);
         def _make_callback(
-            func_name: str, table: dict[(str, Callable[(..., object)])]
+            func_name: str, void: bool, table: dict[(str, Callable[(..., object)])]
         ) -> Callable[(..., object)] {
             def callback(*args: object) -> object {
                 fn = table.get(func_name);
                 if (fn is not None) {
                     return fn(*args);
+                }
+                if void {
+                    # No return value crosses the boundary, so nothing is
+                    # fabricated: a skipped sink is survivable. Warn and return.
+                    import sys;
+                    sys.stderr.write(
+                        f"Native code called unregistered void callback "
+                        f"'{func_name}'; the call is dropped, not failed.\n"
+                    );
+                    sys.stderr.flush();
+                    return None;
                 }
 
                 import os;
@@ -261,7 +270,7 @@ def register_py_callbacks(
             }
             return callback;
         }
-        cb = cb_type(_make_callback(binding.name, py_func_table));
+        cb = cb_type(_make_callback(binding.name, ret_void, py_func_table));
         callbacks_list.append(cb);
         cb_addr = ctypes.cast(cb, ctypes.c_void_p).value;
         if cb_addr is None {
