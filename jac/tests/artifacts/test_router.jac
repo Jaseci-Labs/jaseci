@@ -342,3 +342,37 @@ test "a build whose command fails is refused cleanly, naming the command" {
     (message, _) = with_fakes([fake], attempt);
     assert "x: `zig build x` failed (exit status 1)" in message , message;
 }
+
+test "the build command named for a missing per-target artifact is one `jac native` accepts" {
+    import re;
+    import from jaclang.artifacts.kit { osarch }
+    import from jaclang.cli.commands.native { native }
+    import jaclang.compiler.backends.native.floors as floors;
+    target = "linux-aarch64" if osarch() == "linux-x86_64" else "linux-x86_64";
+    router.forget();
+    try {
+        with patch.object(floors.MuslArtifact, "probe_sealed", return_value=None), patch.object(
+            floors.MuslArtifact, "probe_checkout", return_value=Probe.missing()
+        ), patch.object(
+            floors.MuslArtifact, "probe_kit", return_value=Probe.missing()
+        ) {
+            router._ENTRIES.pop(f"musl@{target}", None);
+            try {
+                router.require(f"musl@{target}");
+                assert False , "a musl runtime that no tier holds must be refused";
+            } except ArtifactUnavailable as e {
+                advice = str(e);
+            }
+        }
+    } finally {
+        router._ENTRIES.pop(f"musl@{target}", None);
+        router.forget();
+    }
+    named = re.search(r"`jac native build ([^`]+)`", advice);
+    assert named is not None , advice;
+    assert named.group(1) == f"musl@{target}" , advice;
+    assert native(action="status", names=[named.group(1)]) == 0;
+    assert native(action="status", names=[f"c-floor@{target}"]) == 0;
+    assert native(action="status", names=["musl@"]) == 1;
+    assert native(action="status", names=[f"no-such-artifact@{target}"]) == 1;
+}
