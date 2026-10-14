@@ -288,7 +288,7 @@ def shared_main_ir(spec: GlueSpec) -> str {
 
 def platform_entry_ir(spec: GlueSpec) -> str {
     if spec.shared {
-        return shared_main_ir(spec);
+        return "" if spec.entry_lib else shared_main_ir(spec);
     }
     if spec.platform in ("jit", "wasm") {
         return "";
@@ -365,7 +365,7 @@ def link_glue_ir(spec: GlueSpec) -> tuple[str, list[str]] {
     if spec.shared {
         exports.append(SHARED_INIT_SYMBOL);
     }
-    if shared_entry_symbol(spec) {
+    if shared_entry_symbol(spec) and not spec.entry_lib {
         exports.append(SHARED_MAIN_SYMBOL);
     }
     return ("".join(parts), exports);
