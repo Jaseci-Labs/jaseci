@@ -3000,7 +3000,6 @@ walker NaIRGenPass(CompilerPass) {
         little: bool
     ) -> (ir.Value | None);
 
-
     def _emit_trace_fn(arch_name: str) -> None;
     def _register_trace_pair(
         dtor_fn: (ir.Function | None), trace_fn: ir.Function
