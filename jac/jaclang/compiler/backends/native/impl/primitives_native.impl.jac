@@ -3161,13 +3161,17 @@ impl NativeListEmitter.emit_pop(
     b.branch(shift_bb);
     b.position_at_start(done_bb);
     b.store(new_len, len_ptr);
+    result: ir.Value = popped;
     if ctx.receiver_node is not None {
-        popped = p._restore_list_read(popped, ctx.receiver_node);
+        restored = p._restore_list_read(popped, ctx.receiver_node);
+        if restored is not None {
+            result = restored;
+        }
     }
     if is_ptr {
-        p._mark_owned(popped);
+        p._mark_owned(result);
     }
-    return popped;
+    return result;
 }
 
 impl NativeListEmitter.emit_clear(
