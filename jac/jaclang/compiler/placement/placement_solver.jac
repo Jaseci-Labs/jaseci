@@ -1,4 +1,5 @@
 import from jaclang.compiler.passes.context { CompilerPass }
+import from jaclang.compiler.driver.pipeline_types { AnalysisFact, PassContract }
 import os;
 import jaclang.compiler.frontend.unitree as uni;
 import from jaclang.compiler.frontend.constant { CodeContext, Tokens as Tok }
@@ -590,8 +591,9 @@ def solve_module_placement(
 
     def _invalidate_stale_codegen {
         if stamp_count[0] and (module.gen.js or module.gen.es_ast is not None) {
-            import from jaclang.compiler.driver.pipeline { invalidate_client_product }
-            invalidate_client_product(prog, module);
+            import from jaclang.compiler.driver.pipeline { invalidate }
+            import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
+            invalidate(prog, module, CompilationProduct.CLIENT);
         }
     }
 
@@ -966,10 +968,11 @@ def invalidate_importers_es(prog: JacProgram, mod_path: str) -> list[uni.Module]
                 continue;
             }
             if isinstance(target, str) and os.path.realpath(target) == key {
-                import from jaclang.compiler.driver.pipeline {
-                    invalidate_client_product
+                import from jaclang.compiler.driver.pipeline { invalidate }
+                import from jaclang.compiler.driver.pipeline_types {
+                    CompilationProduct
                 }
-                invalidate_client_product(prog, m);
+                invalidate(prog, m, CompilationProduct.CLIENT);
                 cleared.append(m);
                 break;
             }
@@ -979,6 +982,16 @@ def invalidate_importers_es(prog: JacProgram, mod_path: str) -> list[uni.Module]
 }
 
 walker PlacementApplyPass(CompilerPass) {
+    static has contract: PassContract = PassContract(
+        requires=(AnalysisFact.SYM_OF, ),
+        provides=(
+            AnalysisFact.PLACED_IN,
+            AnalysisFact.DECIDED_CODESPACE,
+            AnalysisFact.CODESPACE_PULL,
+
+        )
+    );
+
     def _run_impl(ir_in: uni.Module) -> uni.Module;
     can run_walk with uni.Module entry;
 }

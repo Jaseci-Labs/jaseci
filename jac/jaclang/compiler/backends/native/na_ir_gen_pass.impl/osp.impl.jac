@@ -853,6 +853,8 @@ impl NaIRGenPass._codegen_connect(nd: uni.BinaryExpr) -> (ir.Value | None) {
     edge_obj: (ir.Value | None) = None;
     edge_arch: (str | None) = None;
     edge_fresh = True;
+    built_with: set[str] = set();
+    early: (dict[int, ir.Value] | None) = None;
     if co.conn_type is not None {
         edge_name = self._osp_static_edge_name(co.conn_type);
         edge_arch = edge_name or self._osp_edge_class_name(co.conn_type);
@@ -864,10 +866,29 @@ impl NaIRGenPass._codegen_connect(nd: uni.BinaryExpr) -> (ir.Value | None) {
                 return None;
             }
             edge_tag = self._osp_edge_tag(co.conn_type, nd, descriptor);
+            ctor_kws = self._osp_edge_ctor_assigns(co, edge_name)
+                if edge_name is not None
+                else [];
             factory = self._osp_edge_factory(edge_name)
                 if edge_name is not None
                 else self.func_symtab.get("osp_new_edge");
-            if factory is not None {
+            if ctor_kws and edge_name is not None {
+                if held is None {
+                    early = self._osp_connect_assign_early(co, edge_arch);
+                    if early is None {
+                        return None;
+                    }
+                }
+                edge_obj = self._osp_edge_build_with(
+                    co, edge_name, ctor_kws, held, early, nd
+                );
+                if edge_obj is None {
+                    return None;
+                }
+                for kw in ctor_kws {
+                    built_with.add(self._get_name(kw.key) or "");
+                }
+            } elif factory is not None {
                 args: list[ir.Value] = [];
                 if descriptor is not None {
                     args.append(
@@ -913,7 +934,7 @@ impl NaIRGenPass._codegen_connect(nd: uni.BinaryExpr) -> (ir.Value | None) {
     if not self._osp_pins_refs() {
         self._osp_make_immortal(edge_obj);
     }
-    if not self._osp_connect_assign(co, edge_obj, edge_arch, held) {
+    if not self._osp_connect_assign(co, edge_obj, edge_arch, held, built_with, early) {
         return None;
     }
     _argtys = osp_conn_fn.function_type.args;
@@ -1007,14 +1028,19 @@ impl NaIRGenPass._osp_connect_assign(
     co: uni.ConnectOp,
     edge_obj: ir.Value,
     edge_arch: (str | None),
-    held: (list[tuple[ir.Value, ir.Value]] | None) = None
+    held: (list[tuple[ir.Value, ir.Value]] | None) = None,
+    built_with: (set[str] | None) = None,
+    early: (dict[int, ir.Value] | None) = None
 ) -> bool {
     """Apply a typed connect's attribute assignments to its new edge.
 
     `a +>:E:f=v, g=w:+> b` builds `E` with no arguments and then sets each
     named field, as the Python runtime does, so a field left out keeps its
     default. The values are evaluated left to right after the edge exists and
-    before it joins the graph. A connect that builds one edge per node of a
+    before it joins the graph. When `E`'s constructor requires some of the
+    names, every value was evaluated left to right before the edge was built
+    (`early`), the edge was built with the required ones (`built_with`), and
+    only the others are set here. A connect that builds one edge per node of a
     list evaluates them once, before the first edge (`held`), and each edge
     takes its own reference.
     """;
@@ -1029,6 +1055,9 @@ impl NaIRGenPass._osp_connect_assign(
         );
     }
     for (position, kw) in enumerate(assign.assigns) {
+        if built_with and kw.key is not None and self._get_name(kw.key) in built_with {
+            continue;
+        }
         field_name = self._osp_connect_assign_field(kw, edge_arch);
         if field_name is None or edge_arch is None {
             return False;
@@ -1043,7 +1072,9 @@ impl NaIRGenPass._osp_connect_assign(
             );
             continue;
         }
-        value = self._osp_connect_assign_value(kw);
+        value = early.pop(id(kw.value))
+            if early is not None and id(kw.value) in early
+            else self._osp_connect_assign_value(kw);
         if value is None {
             return False;
         }
@@ -1052,6 +1083,26 @@ impl NaIRGenPass._osp_connect_assign(
         );
     }
     return True;
+}
+
+impl NaIRGenPass._osp_connect_assign_early(
+    co: uni.ConnectOp, edge_arch: (str | None)
+) -> (dict[int, ir.Value] | None) {
+    early: dict[int, ir.Value] = {};
+    if co.conn_assign is None {
+        return early;
+    }
+    for kw in co.conn_assign.assigns {
+        if self._osp_connect_assign_field(kw, edge_arch) is None {
+            return None;
+        }
+        value = self._osp_connect_assign_value(kw);
+        if value is None {
+            return None;
+        }
+        early[id(kw.value)] = value;
+    }
+    return early;
 }
 
 impl NaIRGenPass._osp_connect_assign_hold(

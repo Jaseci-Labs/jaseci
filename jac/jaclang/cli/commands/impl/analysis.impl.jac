@@ -1888,10 +1888,12 @@ impl grammar(output: str = "", strict: bool = False) -> int {
         }
         return 1;
     }
-    import from jaclang.compiler.driver.pipeline_runner { run_utility }
-    import from jaclang.compiler.driver.pipeline_types { UtilityProduct }
+    import from jaclang.compiler.driver.pipeline { run_utility }
+    import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
     import from typing { cast }
-    pass_ = cast(GrammarExtractPass, run_utility(UtilityProduct.GRAMMAR, mod, prog));
+    pass_ = cast(
+        GrammarExtractPass, run_utility(CompilationProduct.GRAMMAR, mod, prog)
+    );
     if len(pass_.rules) == 0 {
         console.error("No grammar rules extracted.");
         return 1;

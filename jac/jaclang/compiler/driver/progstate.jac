@@ -263,58 +263,12 @@ obj BuildScratch {
     }
 }
 
-class AnalysisLedger {
-    has _tags: dict[int, set[AnalysisFact]],
-        _owners: dict[int, uni.Module];
-
-    def init(self: AnalysisLedger) {
-        self._tags: dict[int, set[AnalysisFact]] = {};
-        self._owners: dict[int, uni.Module] = {};
-    }
-
-    def provided(self: AnalysisLedger, mod: uni.Module) -> set[AnalysisFact] {
-        key = id(mod);
-        if self._owners.get(key) is mod {
-            return self._tags[key];
-        }
-        tags: set[AnalysisFact] = set();
-        self._tags[key] = tags;
-        self._owners[key] = mod;
-        return tags;
-    }
-
-    def provides(self: AnalysisLedger, mod: uni.Module, tag: AnalysisFact) -> bool {
-        key = id(mod);
-        return self._owners.get(key) is mod and tag in self._tags[key];
-    }
-
-    def mark(self: AnalysisLedger, mod: uni.Module, tags: set[AnalysisFact]) {
-        live = self.provided(mod);
-        live.clear();
-        live.update(tags);
-    }
-
-    def forget(self: AnalysisLedger, mod: uni.Module) {
-        key = id(mod);
-        if self._owners.get(key) is mod {
-            self._tags.pop(key, None);
-            self._owners.pop(key, None);
-        }
-    }
-
-    def clear(self: AnalysisLedger) {
-        self._tags.clear();
-        self._owners.clear();
-    }
-
-    def __len__(self: AnalysisLedger) -> int {
-        return len(self._tags);
-    }
-}
-
-obj PendingPassResults {
+obj ModuleBuild {
     has module: uni.Module,
-        results: dict[str, PassResult];
+        done: set[str],
+        tasks: dict[CompilationProduct, ProductTask],
+        facts: set[AnalysisFact],
+        early: dict[str, PassResult];
 }
 
 class AnalysisCaches {
@@ -324,16 +278,13 @@ class AnalysisCaches {
         capability_notes: dict[str, dict[str, CapabilityNote]],
         native_bindings: any,
         placement_refusals: dict[str, dict[str, set[int]]],
-        analyses_run: AnalysisLedger,
         mtir_map: dict[(str, Info)],
         mtir_owned: dict[str, list[str]],
         pass_runs: dict[str, int],
         pass_time: dict[str, float],
         phase_time: dict[str, float],
-        completed_passes: dict[int, set[str]],
-        product_tasks: dict[int, dict[CompilationProduct, ProductTask]],
-        task_owners: dict[int, uni.Module],
-        early_passes: dict[int, PendingPassResults],
+        builds: dict[int, ModuleBuild],
+        product_facts: dict[CompilationProduct, set[AnalysisFact]],
         cache_events: dict[str, int],
         running: (CompileContext | None);
 
@@ -344,76 +295,74 @@ class AnalysisCaches {
         self.capability_notes: dict[str, dict[str, CapabilityNote]] = {};
         self.native_bindings: any = None;
         self.placement_refusals: dict[str, dict[str, set[int]]] = {};
-        self.analyses_run: AnalysisLedger = AnalysisLedger();
         self.mtir_map: dict[(str, Info)] = {};
         self.mtir_owned: dict[str, list[str]] = {};
         self.pass_runs: dict[str, int] = {};
         self.pass_time: dict[str, float] = {};
         self.phase_time: dict[str, float] = {};
-        self.completed_passes: dict[int, set[str]] = {};
-        self.product_tasks: dict[int, dict[CompilationProduct, ProductTask]] = {};
-        self.task_owners: dict[int, uni.Module] = {};
-        self.early_passes: dict[int, PendingPassResults] = {};
+        self.builds: dict[int, ModuleBuild] = {};
+        self.product_facts: dict[CompilationProduct, set[AnalysisFact]] = {};
         self.cache_events: dict[str, int] = {};
         self.running: (CompileContext | None) = None;
     }
 
-    def retain_tasks(self: AnalysisCaches, module: uni.Module) {
+    def build(self: AnalysisCaches, module: uni.Module) -> ModuleBuild {
         key = id(module);
-        if self.task_owners.get(key) is module {
-            return;
+        found = self.builds.get(key);
+        if found is not None and found.module is module {
+            return found;
         }
-        self.drop_tasks(key);
-        self.task_owners[key] = module;
+        fresh = ModuleBuild(module=module, done=set(), tasks={}, facts=set(), early={});
+        self.builds[key] = fresh;
+        return fresh;
     }
 
-    def drop_tasks(self: AnalysisCaches, key: int) {
-        self.completed_passes.pop(key, None);
-        self.product_tasks.pop(key, None);
-        self.task_owners.pop(key, None);
+    def peek(self: AnalysisCaches, module: uni.Module) -> (ModuleBuild | None) {
+        found = self.builds.get(id(module));
+        if found is not None and found.module is module {
+            return found;
+        }
+        return None;
+    }
+
+    def provides(self: AnalysisCaches, module: uni.Module, fact: AnalysisFact) -> bool {
+        found = self.peek(module);
+        return found is not None and fact in found.facts;
+    }
+
+    def mark_facts(self: AnalysisCaches, module: uni.Module, facts: set[AnalysisFact]) {
+        live = self.build(module).facts;
+        live.clear();
+        live.update(facts);
     }
 
     def forget_module(self: AnalysisCaches, module: uni.Module) {
-        key = id(module);
-        self.analyses_run.forget(module);
-        if self.task_owners.get(key) is module {
-            self.drop_tasks(key);
-        }
-        pending = self.early_passes.get(key);
-        if pending is not None and pending.module is module {
-            self.early_passes.pop(key, None);
+        if self.peek(module) is not None {
+            self.builds.pop(id(module), None);
         }
     }
 
     def reset_module_state(self: AnalysisCaches) {
-        self.analyses_run.clear();
         self.placement_work = None;
         self.capability_notes.clear();
         self.placement_refusals.clear();
         self.native_bindings = None;
-        self.early_passes.clear();
-        self.product_tasks.clear();
-        self.completed_passes.clear();
-        self.task_owners.clear();
+        self.builds.clear();
     }
 
     def record_early(
         self: AnalysisCaches, module: uni.Module, results: dict[str, PassResult]
     ) {
-        self.early_passes[id(module)] = PendingPassResults(module, results);
+        self.build(module).early = results;
     }
 
     def take_early(
         self: AnalysisCaches, module: uni.Module, name: str
     ) -> (PassResult | None) {
-        pending = self.early_passes.get(id(module));
-        if pending is None {
+        found = self.peek(module);
+        if found is None {
             return None;
         }
-        result = pending.results.pop(name, None);
-        if not pending.results {
-            self.early_passes.pop(id(module));
-        }
-        return result;
+        return found.early.pop(name, None);
     }
 }
