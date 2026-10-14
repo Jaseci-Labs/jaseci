@@ -252,7 +252,18 @@ glob NATIVE_RESERVED_C_SYMBOLS: frozenset[str] = _reserved_c_symbols();
 glob NATIVE_ARCH_SCOPE_SEP: str = "$",
      _native_arch_scope_memo: dict[str, str] = {},
      _native_arch_scope_gen: list[int] = [-1],
-     _native_unit_identity_memo: dict[str, str] = {};
+     _native_unit_identity_memo: dict[str, str] = {},
+     _realpath_memo: dict[str, str] = {};
+
+def cached_realpath(path: str) -> str {
+    import os;
+    found = _realpath_memo.get(path);
+    if found is None {
+        found = os.path.realpath(path);
+        _realpath_memo[path] = found;
+    }
+    return found;
+}
 
 def native_arch_scope(mod_path: str) -> str {
     import os;
@@ -525,13 +536,12 @@ def kernel_unit_paths -> list[str] {
 }
 
 def is_kernel_unit_path(path: str) -> bool {
-    import os;
     if not path {
         return False;
     }
-    rp = os.path.realpath(path);
+    rp = cached_realpath(path);
     for rel in kernel_unit_rels() {
-        if rp == os.path.realpath(kernel_unit_path(rel)) {
+        if rp == cached_realpath(kernel_unit_path(rel)) {
             return True;
         }
     }

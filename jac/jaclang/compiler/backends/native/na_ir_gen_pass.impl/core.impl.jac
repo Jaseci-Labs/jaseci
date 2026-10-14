@@ -1218,13 +1218,13 @@ impl NaIRGenPass._register_imported_struct_types -> None {
             if _bound_path is not None {
                 for _it in imp.items {
                     if isinstance(_it, uni.ModuleItem) and _it.alias is None {
-                        self._glob_import_sources[_it.name.value] = os.path.realpath(
+                        self._glob_import_sources[_it.name.value] = cached_realpath(
                             _bound_path
                         );
                     }
                     if isinstance(_it, uni.ModuleItem) {
                         self._native_import_items.append(
-                            (_it, os.path.realpath(_bound_path), mod_name)
+                            (_it, cached_realpath(_bound_path), mod_name)
                         );
                     }
                 }
@@ -1233,7 +1233,7 @@ impl NaIRGenPass._register_imported_struct_types -> None {
     }
 
     _self_key = (
-        os.path.realpath(self.module.loc.mod_path) if (self.module?.loc) else None
+        cached_realpath(self.module.loc.mod_path) if (self.module?.loc) else None
     );
 
     _canon_src: dict[str, any] = {};
@@ -1248,7 +1248,7 @@ impl NaIRGenPass._register_imported_struct_types -> None {
         if src_mod_str is None or full_path is None {
             continue;
         }
-        if _self_key is not None and os.path.realpath(full_path) == _self_key {
+        if _self_key is not None and cached_realpath(full_path) == _self_key {
             continue;
         }
         abs_key = os.path.abspath(full_path);
@@ -1394,7 +1394,7 @@ impl NaIRGenPass._register_imported_struct_types -> None {
                     }
                 }
             }
-            _defined[os.path.realpath(_gmod.loc.mod_path)] = _names;
+            _defined[cached_realpath(_gmod.loc.mod_path)] = _names;
         }
     }
     self._glob_import_sources = {
@@ -1868,7 +1868,7 @@ impl NaIRGenPass._forward_declare_imported_ability(
     _owner = nd.find_parent_of_type(uni.Module);
     _owner_name = _owner.name if _owner is not None else "";
     if _owner is not None
-        and (os.path.realpath(_owner.source.file_path), name)
+        and (cached_realpath(_owner.source.file_path), name)
             in self._module_functions {
         return;
     }
@@ -1914,7 +1914,7 @@ impl NaIRGenPass._forward_declare_imported_ability(
             }
             if _owner is not None {
                 self._native_skipped_import_origin.setdefault(name, set()).add(
-                    os.path.realpath(_owner.source.file_path)
+                    cached_realpath(_owner.source.file_path)
                 );
             }
             return;
@@ -1936,7 +1936,7 @@ impl NaIRGenPass._forward_declare_imported_ability(
             }
         }
         if _owner is not None {
-            self._module_functions[(os.path.realpath(_owner.source.file_path), name)] = _already;
+            self._module_functions[(cached_realpath(_owner.source.file_path), name)] = _already;
         }
         self._record_linked_decl(_already, nd);
         return;

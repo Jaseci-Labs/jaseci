@@ -215,11 +215,13 @@ glob _NATIVE_NAME_BY_DECL: dict[tuple[str, int, int, str], str] = {},
 def archetype_native_name(arch: Archetype) -> str {
     name = arch.name.value if arch.name else "unknown";
     if arch.loc is not None and arch.loc.mod_path.endswith(".pyi") {
-        import os;
-        import from jaclang.compiler.frontend.codeinfo { bundled_stdlib_module_of }
+        import from jaclang.compiler.frontend.codeinfo {
+            bundled_stdlib_module_of,
+            cached_realpath
+        }
         twin = _NATIVE_NAME_BY_DECL.get(
             (
-                os.path.realpath(arch.loc.mod_path),
+                cached_realpath(arch.loc.mod_path),
                 arch.loc.first_line,
                 arch.loc.col_start,
                 name
@@ -233,9 +235,9 @@ def archetype_native_name(arch: Archetype) -> str {
     }
     native = _archetype_native_name(arch, name);
     if arch.loc is not None and arch.loc.mod_path {
-        import os;
+        import from jaclang.compiler.frontend.codeinfo { cached_realpath }
         key = (
-            os.path.realpath(arch.loc.mod_path),
+            cached_realpath(arch.loc.mod_path),
             arch.loc.first_line,
             arch.loc.col_start,
             name
