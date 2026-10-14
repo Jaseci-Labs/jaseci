@@ -3161,6 +3161,9 @@ impl NativeListEmitter.emit_pop(
     b.branch(shift_bb);
     b.position_at_start(done_bb);
     b.store(new_len, len_ptr);
+    if ctx.receiver_node is not None {
+        popped = p._restore_list_read(popped, ctx.receiver_node);
+    }
     if is_ptr {
         p._mark_owned(popped);
     }
