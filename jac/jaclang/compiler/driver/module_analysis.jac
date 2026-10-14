@@ -132,7 +132,7 @@ def run_analysis(task: ModuleAnalysis) {
             and program.infers_native_codespace(task.path)
         );
     if candidate {
-        task.options.need_full_ast = True;
+        task.options.native_tree_demand = True;
     }
     _is_decl_stub = str(task.path).endswith('.pyi')
         or str(task.path).endswith('.py')

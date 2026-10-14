@@ -385,7 +385,7 @@ test "an import with no native form keeps the module in Python" {
     assert set(placed_by_name(mod).values()) == {'server'} , placed_by_name(mod);
 }
 
-test "only a module whose native preference is open asks for full dependency trees" {
+test "only a module whose native preference is open asks for the trees native code reads" {
     import from unittest.mock { patch }
     import jaclang.compiler.driver.module_compile as module_compile;
     import from jaclang.compiler.frontend.codeinfo {
@@ -393,16 +393,19 @@ test "only a module whose native preference is open asks for full dependency tre
         get_effective_default_codespace_override
     }
     real_analyze: any = module_compile.analyze_module;
-    seen: dict[str, bool] = {};
+    seen: dict[str, tuple[bool, bool]] = {};
     def recording(
         program: JacProgram, path: str, options: CompileOptions, source: any = None
     ) -> any {
         task = real_analyze(program, path, options, source);
-        seen[os.path.realpath(str(path))] = options.need_full_ast;
+        seen[os.path.realpath(str(path))] = (
+            options.native_tree_demand,
+            options.need_full_ast
+        );
         return task;
     }
     previous = get_effective_default_codespace_override();
-    asked: dict[str, bool] = {};
+    asked: dict[str, tuple[bool, bool]] = {};
     try {
         with patch.object(module_compile, "analyze_module", recording) {
             for (name, text) in [("closed", PY_IMPORT_SRC), ("open", CLEAN_SRC)] {
@@ -413,17 +416,31 @@ test "only a module whose native preference is open asks for full dependency tre
                 JacProgram().compile(
                     path, options=CompileOptions(default_codespace="native")
                 );
-                asked[name] = seen.get(path, False);
+                asked[name] = seen.get(path, (False, False));
             }
         }
     } finally {
         set_effective_default_codespace(previous);
     }
-    assert not asked["closed"] , (
+    assert asked["closed"] == (False, False) , (
         "a module the syntax scan closed is placed on the server before typing, "
         "so its dependencies are read from their interfaces"
     );
-    assert asked["open"] , "a module that may be placed native lowers against full trees";
+    assert asked["open"] == (True, False) , (
+        f"a module that may be placed native asks for the trees native lowering "
+        f"reads, not for every dependency's tree: {asked['open']}"
+    );
+}
+
+test "native lowering reads user and native-library trees, not the compiler's own" {
+    import jaclang;
+    import from jaclang.compiler.driver.ifacecache { native_lowering_reads }
+    pkg = os.path.dirname(os.path.realpath(jaclang.__file__));
+    assert not native_lowering_reads(
+        os.path.join(pkg, "compiler", "frontend", "unitree.jac")
+    );
+    assert native_lowering_reads(os.path.join(pkg, "runtime", "na_stdlib", "json.jac"));
+    assert native_lowering_reads(os.path.join(tempfile.mkdtemp(), "app.jac"));
 }
 
 test "access to the persistent graph still keeps the whole module in Python" {
