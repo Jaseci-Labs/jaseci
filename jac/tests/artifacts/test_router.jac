@@ -372,6 +372,21 @@ test "the build command named for a missing per-target artifact is one `jac nati
     assert named is not None , advice;
     assert named.group(1) == f"musl@{target}" , advice;
     assert native(action="status", names=[named.group(1)]) == 0;
+    requested: list[list[str]] = [];
+    def fake_build(
+        names: list[str],
+        log: any,
+        force: bool = False,
+        exact: bool = False,
+        strict: bool = False
+    ) -> list[str] {
+        requested.append(list(names));
+        return list(names);
+    }
+    with patch.object(router, "build", side_effect=fake_build) {
+        assert native(action="build", names=[named.group(1)]) == 0;
+    }
+    assert requested == [[f"musl@{target}"]] , requested;
     assert native(action="status", names=[f"c-floor@{target}"]) == 0;
     assert native(action="status", names=["musl@"]) == 1;
     assert native(action="status", names=[f"no-such-artifact@{target}"]) == 1;
