@@ -3,15 +3,14 @@ import marshal;
 import os;
 import sys;
 import tempfile;
-import threading;
 import time;
 import from pathlib { Path }
+import from jaclang.runtime.preparation_lock { PREPARATION_LOCK }
 import type from jaclang.runtime.prepared { PreparedApplication }
 import type from jaclang.compiler.frontend { unitree as uni }
 glob _FORMAT: int = 9,
      SLOW_PREPARE_SECONDS: int = 45,
-     _SKIP: set[str] = {'.jac', '.git', '.venv', 'venv', 'node_modules', '__pycache__'},
-     PREPARATION_LOCK: threading.RLock = threading.RLock();
+     _SKIP: set[str] = {'.jac', '.git', '.venv', 'venv', 'node_modules', '__pycache__'};
 
 def _stamp(path: str, previous: any = None) -> tuple[int, int, str] {
     import from jaclang.compiler.driver.jir { compute_content_sha256 }

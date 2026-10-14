@@ -1374,7 +1374,7 @@ impl JacAPIServer.enable_hmr(hot_reloader: any) -> None {
 }
 
 impl JacAPIServer._refresh_dev_endpoints -> None {
-    import from jaclang.compiler.driver.application { PREPARATION_LOCK }
+    import from jaclang.runtime.preparation_lock { PREPARATION_LOCK }
     with PREPARATION_LOCK {
         self._hmr_pending = False;
         self.introspector.load(force_reload=True);

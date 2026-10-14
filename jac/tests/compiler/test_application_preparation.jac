@@ -1041,7 +1041,7 @@ obj _DevServer {
 test "a dev reload waits for the preparation lock before it takes the import lock" {
     import _imp;
     import threading;
-    import from jaclang.compiler.driver.application { PREPARATION_LOCK }
+    import from jaclang.runtime.preparation_lock { PREPARATION_LOCK }
     import from jaclang.server.server { JacAPIServer }
     holding = threading.Event();
     requesting = threading.Event();
