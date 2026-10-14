@@ -140,7 +140,10 @@ walker EndpointEffectPass(TreePass) {
                     continue;
                 }
                 sym = ability.name_ref.sym;
-                summary = self._summary(ability) if sym is not None else None;
+                if sym is None {
+                    continue;
+                }
+                summary = self._summary(ability);
                 if summary is not None {
                     effects[callable_key(sym)[1]] = summary;
                 }
