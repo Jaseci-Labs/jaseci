@@ -123,7 +123,10 @@ walker EndpointEffectPass(TreePass) {
     }
 
     can record_callables with Module exit {
-        if self.ctx.nested_depth {
+        import from jaclang.compiler.frontend.codeinfo { is_compiler_source_path }
+        if self.ctx.nested_depth
+            or not here.loc.mod_path.endswith(".jac")
+            or is_compiler_source_path(here.loc.mod_path) {
             return;
         }
         self._recording = True;
