@@ -146,6 +146,10 @@ impl HotReloader.record_error(
 impl HotReloader._status_file_path -> Path {
     if self.client_compiler {
         try {
+            return Path(self.client_compiler.vite_bundler._get_client_dir())
+                / '.jac-status.json';
+        } except Exception {}
+        try {
             compiled = Path(str(self.client_compiler.jac_client_compiler.compiled_dir));
             return compiled.parent / '.jac-status.json';
         } except Exception {}
@@ -158,8 +162,14 @@ impl HotReloader._sync_status_file -> None {
         payload = self.build_status();
         status_file = self._status_file_path();
         if payload["status"] == BuildStatus.ERROR.value {
+            content = json.dumps(payload);
+            try {
+                if status_file.read_text(encoding='utf-8') == content {
+                    return;
+                }
+            } except OSError {}
             status_file.parent.mkdir(parents=True, exist_ok=True);
-            status_file.write_text(json.dumps(payload), encoding='utf-8');
+            status_file.write_text(content, encoding='utf-8');
         } elif status_file.exists() {
             status_file.unlink();
         }

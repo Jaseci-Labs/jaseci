@@ -4696,6 +4696,29 @@ test "jsx_intrinsic_tag_names_do_not_emit_w1051" {
     ]}";
 }
 
+test "jsx_svg_and_less_common_html_tags_are_intrinsic" {
+    path = os.path.join(CHECKER_FIXTURES, "checker_jsx_svg_and_html_intrinsics.jac");
+    program = JacProgram();
+    program.compile(path);
+    lines = Path(path).read_text().splitlines();
+    def opening_tag(w: any) -> bool {
+        return lines[w.loc.first_line - 1][w.loc.col_start - 2] == "<";
+    }
+    flagged = [
+        w
+        for w in program.warnings_had
+        if w.code
+            and (w.code.code == "W1050" or (w.code.code == "W2001" and opening_tag(w)))
+    ];
+    assert len(flagged) == 0 , f"Expected SVG and HTML tags to resolve as intrinsic elements, got {len(
+        flagged
+    )}:\n"
+        + "\n---\n".join(w.pretty_print() for w in flagged);
+    assert len(program.errors_had) == 0 , f"Unexpected errors: {[
+        e.pretty_print() for e in program.errors_had
+    ]}";
+}
+
 test "dom_browser_globals_resolve_to_storage" {
     # `localStorage` / `sessionStorage` are ambient browser globals typed as
     # `Storage` (dom_types.pyi). Their real API surface must type-check with
