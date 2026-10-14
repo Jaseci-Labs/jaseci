@@ -1,0 +1,6 @@
+{
+  "runs": 3,
+  "fail_ratio": 1.05,
+  "record_ratio": 0.95,
+  "baseline": null
+}

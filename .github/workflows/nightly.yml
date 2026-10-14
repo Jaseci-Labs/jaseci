@@ -27,6 +27,10 @@ jobs:
   js-engine:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '0 3 * * *' }}
     uses: ./.github/workflows/_js_engine.yml
+    # record-site-perf opens a pull request for an improved site build ratio.
+    permissions:
+      contents: write
+      pull-requests: write
 
   notes-app-cef-smoke:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '0 3 * * *' }}
