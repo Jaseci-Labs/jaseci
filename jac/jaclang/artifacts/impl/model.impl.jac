@@ -72,3 +72,7 @@ impl Artifact.provide_floor(log: Callable[[str], None]) -> None {}
 impl Artifact.floor_present -> bool {
     return True;
 }
+
+impl Artifact.built -> Probe {
+    return self.probe_checkout();
+}

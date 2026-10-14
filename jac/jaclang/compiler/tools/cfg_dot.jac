@@ -1,4 +1,5 @@
 import from jaclang.compiler.frontend.roles { Kid }
+import from jaclang.compiler.driver.pipeline_types { PassContract }
 import from jaclang.compiler.frontend.unitree {
     Module,
     TreeWalker,
@@ -61,6 +62,7 @@ import from jaclang.compiler.passes.cfg_build_pass {
 }
 
 walker CoalesceBBPass(TreePass) {
+    static has contract: PassContract = PassContract();
     has basic_blocks: dict[int, dict[str, list[UniCFGNode]]] = {},
         bb_counter: int = 0;
 

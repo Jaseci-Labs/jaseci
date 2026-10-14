@@ -44,6 +44,7 @@ import from jaclang.runtime.constructs {
 }
 
 glob logger = logging.getLogger(__name__),
+     FROZEN_BASELINE: int = 1,
      FINGERPRINT_LENGTH: int = 16,
      _MAX_WARNED_CLASS_KEYS: int = 1024,
      _MAX_IMPORT_FAILURES: int = 1024,
@@ -147,3 +148,7 @@ glob _register_hook: object = Archetype.install_subclass_hook(
      ),
      _register_root: object = Serializer.register(cast(type, Root)),
      _register_generic_edge: object = Serializer.register(cast(type, GenericEdge));
+
+
+def frozen_value(value: any) -> bool;
+def frozen_fields(anchor: Anchor) -> bool;

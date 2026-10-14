@@ -326,7 +326,7 @@ conflict_max_attempts = 5    # max walker/function attempts under "retry"
 conflict_backoff_ms = 0      # linear backoff between replay attempts (0 = none)
 
 [serve.workers]
-count = "1"              # Worker processes; "auto" = the CPU quota. JAC_SERVE_WORKERS
+count = ""               # Worker processes; unset = as many as fit (see below), "auto" = the CPU quota. JAC_SERVE_WORKERS
 threads = "auto"         # Sync-handler threads per worker; "auto" sizes from the quota. JAC_SERVE_THREADS
 max_requests = 0         # Recycle a worker after this many requests (0 = never). JAC_SERVE_MAX_REQUESTS
 max_requests_jitter = 0  # Random extra requests so workers do not recycle together
@@ -452,6 +452,15 @@ keeps a slow request from stalling every other request. Anything that only
 works in one process is refused when `count > 1`: `--dev` hot reload, a
 memory WebSocket backplane, or events without a database.
 
+Left unset, `count` starts one worker per core of the quota, no more than
+available memory allows at 512 MiB per worker, and falls back to one worker
+(saying why at startup) whenever more would be refused for one of the reasons
+above, so `--dev` and single-process features keep working without
+configuration. In a cluster an unset count is one worker per pod; pods scale
+by replicas, and `jac scale deploy` sets `JAC_SERVE_WORKERS` to `1` unless
+`count` is configured. Set `count` explicitly to pin it: an explicit value is
+never lowered, and is refused instead when it cannot work.
+
 `on_conflict` controls what happens when two concurrent requests race a "look it up, create it if missing" against the same node and the loser's commit is rejected. `retry` (default) re-runs the request against the now-current graph so it converges on the winner's node; `fail` surfaces a typed `409 write_conflict` for the client to handle. See [Persistence -> Concurrent writes: check-then-create](../persistence.md#concurrent-writes-check-then-create-and-convergence) for the full model.
 
 ---
@@ -463,7 +472,6 @@ Build configuration:
 ```toml
 [build]
 dir = ".jac"                # Build artifacts directory
-native_closure_cap = 256    # Largest native closure the whole-module path will link
 ```
 
 The `dir` setting controls where all build artifacts are stored:

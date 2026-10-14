@@ -2513,6 +2513,109 @@ for (const row of ROWS) {
 process.exit(failed ? 1 : 0);
 """;
 
+"""Serve settings for `base` as if JAC_SERVE_WORKERS were unset."""
+def _settings_without_worker_env(
+    base: str, overrides: (dict[str, any] | None) = None, config: any = None
+) -> any {
+    import from jaclang.server.settings { ServeSettings }
+    saved = os.environ.pop("JAC_SERVE_WORKERS", None);
+    try {
+        return ServeSettings.load(base, overrides, config=config);
+    } finally {
+        if saved is not None {
+            os.environ["JAC_SERVE_WORKERS"] = saved;
+        }
+    }
+}
+
+
+test "an unset worker count picks as many as fit; an explicit one is kept" {
+    import from jaclang.server.settings {
+        ServeSettings,
+        WORKER_MEMORY_BUDGET,
+        default_worker_count
+    }
+    budget = WORKER_MEMORY_BUDGET;
+    cases = [
+        (8, 64 * budget, False, True, 8, "ample memory gives one worker per core"),
+        (8, 2 * budget, False, True, 2, "two budgets of memory give two workers"),
+        (8, 2 * budget - 1, False, True, 1, "just under two budgets gives one"),
+        (8, budget // 2, False, True, 1, "less than one budget gives one"),
+        (8, 0, False, True, 1, "no free memory gives one"),
+        (8, 64 * budget, True, True, 1, "a cluster pod gives one"),
+        (8, 64 * budget, False, False, 1, "no fork gives one"),
+        (1, 64 * budget, False, True, 1, "one core gives one")
+    ];
+    for (quota, headroom, clustered, can_fork, expected, why) in cases {
+        got = default_worker_count(quota, headroom, clustered, can_fork);
+        assert got == expected , f"{why}: expected {expected}, got {got}";
+    }
+    with TemporaryDirectory() as tmpdir {
+        unset = _settings_without_worker_env(tmpdir, {"workers": ""});
+        assert unset.workers.count_by_default;
+        assert unset.workers.count >= 1;
+        pinned = ServeSettings.load(tmpdir, {"workers": "3"});
+        assert not pinned.workers.count_by_default;
+        assert pinned.workers.count == 3;
+    }
+}
+
+
+test "a [serve] table without a worker count leaves the count unset" {
+    import from jaclang.project.config { JacConfig }
+    with TemporaryDirectory() as tmpdir {
+        manifest = Path(tmpdir) / "jac.toml";
+        manifest.write_text(
+            '[project]\nname = "workers-unset"\n\n[serve]\nport = 9123\n'
+        );
+        config = JacConfig.load(manifest);
+        assert config.serve.port == 9123;
+        assert config.serve.workers.count == "" , (
+            f"an absent worker count loaded as {config.serve.workers.count!r}"
+        );
+        settings = _settings_without_worker_env(tmpdir, config=config);
+        assert settings.workers.count_by_default , (
+            "a [serve] port pinned the app to an explicit worker count"
+        );
+    }
+}
+
+
+test "an unset worker count falls back to one worker where more would be refused" {
+    import from jaclang.server.settings { ServeConfigError, ServeSettings }
+    with TemporaryDirectory() as tmpdir {
+        client = JacTestClient.from_file(
+            fixture_abs_path("serve_shared_root.jac"), base_path=tmpdir
+        );
+        try {
+            chosen = _settings_without_worker_env(tmpdir, {"workers": ""});
+            chosen.workers.count = 4;
+            chosen.dev = True;
+            client.server.settings = chosen;
+            client.server._validate_or_raise();
+            assert chosen.workers.count == 1 , (
+                f"--dev kept {chosen.workers.count} default workers"
+            );
+            pinned = ServeSettings.load(tmpdir, {"workers": "2"});
+            pinned.dev = True;
+            client.server.settings = pinned;
+            refused = "";
+            try {
+                client.server._validate_or_raise();
+            } except ServeConfigError as e {
+                refused = str(e);
+            }
+            assert "workers = 1 for development" in refused , (
+                f"an explicit count of 2 with --dev was not refused: {refused!r}"
+            );
+            assert pinned.workers.count == 2 , "an explicit count was lowered";
+        } finally {
+            client.close();
+        }
+    }
+}
+
+
 """The stdlib server serves /graph, /graph/data and /docs, and the /graph login
 modal signs in against it (#8951)."""
 test "stdlib server serves graph visualizer and docs" {

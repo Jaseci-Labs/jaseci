@@ -162,6 +162,7 @@ obj PgStore(Store) {
     def server_version -> int;
     def ensure_schema(promotions: dict[str, list[str]]) -> None;
     def ensure_schema_once(promotions: dict[str, list[str]]) -> None;
+    def _warn_lock_headroom -> None;
     def reset_data -> None;
     def takeover -> int;
     def begin(isolation: TxnIsolation = TxnIsolation.SERIALIZABLE) -> None;

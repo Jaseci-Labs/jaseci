@@ -1,6 +1,7 @@
 import inspect;
 import logging;
 import from json { dumps, loads }
+import from jaclang.server.serving.executor { iterate_sync }
 
 
 glob _logger: logging.Logger = logging.getLogger("jaclang.server.serving.sse");
@@ -37,7 +38,7 @@ async def _sse_frame_stream_inner(source: any) -> AsyncIterator[str] {
                 yield format_sse_event(dumps(item, `default=_sse_json_default));
             }
         } else {
-            for item in source {
+            async for item in iterate_sync(source) {
                 yield format_sse_event(dumps(item, `default=_sse_json_default));
             }
         }

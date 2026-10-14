@@ -23,11 +23,11 @@ def _scan_rc_machinery(llvm_ir_str: str) -> tuple[list[str], list[str]] {
 
 def _application_ir(plan: LinkPlan) -> str {
     import jaclang.compiler.backends.native.llvm.binding as llvm;
-    import from jaclang.compiler.frontend.codeinfo { native_unit_identity }
+    import from jaclang.compiler.frontend.codeinfo { is_toolchain_unit }
     registry = plan.prog.native_units();
     parts: list[str] = [];
     for u in plan.units {
-        if native_unit_identity(u.path).startswith("jaclang/") {
+        if is_toolchain_unit(u.path) {
             continue;
         }
         bc = registry.bitcode_for(u.path, plan.options);
@@ -284,6 +284,7 @@ impl native_build(
     kind = ArtifactKind.SHARED
         if shared
         else (ArtifactKind.WASM if is_wasm else ArtifactKind.EXECUTABLE);
+    plan.library_api = shared;
     app_imports: (set | None) = None;
     if is_wasm {
         import from jaclang.compiler.backends.native.wasm_build { app_declared_imports }

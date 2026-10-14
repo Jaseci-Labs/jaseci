@@ -53,6 +53,7 @@ import from jaclang.compiler.frontend.unitree {
     record_cross_scope_rebind,
     rebind_or_def_insert
 }
+import from jaclang.compiler.driver.pipeline_types { AnalysisFact, PassContract }
 import from jaclang.compiler.passes.context { CompileContext, TreePass }
 import from jaclang.compiler.frontend.constant { SymbolAccess }
 
@@ -103,6 +104,17 @@ glob TEST_ASSERT_METHOD_NAMES: tuple[str, ...] = (
      );
 
 walker SymTabBuildPass(TreePass) {
+    static has contract: PassContract = PassContract(
+        provides=(
+            AnalysisFact.SYM_OF,
+            AnalysisFact.DEFINES,
+            AnalysisFact.IN_SCOPE,
+            AnalysisFact.SCOPE_CHILD,
+
+        ),
+        kernel_safe=True
+    );
+
     has cur_sym_tab: list[UniScopeNode] = [];
 
     can prepare with entry;
@@ -118,6 +130,7 @@ walker SymTabBuildPass(TreePass) {
     can exit_type_alias with TypeAlias exit;
     can enter_type_param with TypeParam entry;
     can exit_global_vars with GlobalVars exit;
+    def _declare_global_vars(nd: GlobalVars) -> None;
     can exit_assignment with Assignment exit;
     can exit_binary_expr with BinaryExpr exit;
     can enter_test with Test entry;

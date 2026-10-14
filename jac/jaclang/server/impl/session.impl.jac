@@ -270,65 +270,10 @@ def _ancestry_of(arch: (object | None)) -> list[str] {
 }
 
 
-def _frozen_value(value: any) -> bool {
-    import datetime;
-    import decimal;
-    import enum;
-    import uuid;
-    if value is None
-        or isinstance(
-            value,
-            (
-                bool,
-                int,
-                float,
-                complex,
-                str,
-                bytes,
-                decimal.Decimal,
-                uuid.UUID,
-                datetime.date,
-                datetime.time,
-                datetime.timedelta
-            )
-        ) {
-        return True;
-    }
-    if isinstance(value, enum.Enum) {
-        return _frozen_value(value.value);
-    }
-    if isinstance(value, (tuple, frozenset)) {
-        return all(_frozen_value(item) for item in value);
-    }
-    return False;
-}
-
-
 def _settle_written(anchor: Anchor, seen: int) {
     if seen and anchor.__dict__.get('_field_written', 0) == seen {
         anchor.__dict__.pop('_field_written', None);
     }
-}
-
-
-def _frozen_fields(anchor: Anchor) -> bool {
-    if anchor.__dict__.get('_field_written') {
-        return False;
-    }
-    arch = anchor.archetype;
-    if not type(arch).__dict__.get('__jac_tracked__', False) {
-        return False;
-    }
-    fields = arch?.__dict__;
-    if not isinstance(fields, dict) {
-        return False;
-    }
-    for (name, value) in fields.items() {
-        if name != '__jac__' and not _frozen_value(value) {
-            return False;
-        }
-    }
-    return True;
 }
 
 
@@ -342,7 +287,7 @@ def _is_serialization_conflict(e: Exception) -> bool {
         c: BaseException = cur;
         for arg in getattr(c, 'args', ()) {
             if isinstance(arg, dict)
-                and arg.get('C') in ('40001', '40P01', '55P03', '08006') {
+                and arg.get('C') in ('40001', '40P01', '53200', '55P03', '08006') {
                 return True;
             }
         }
@@ -350,6 +295,11 @@ def _is_serialization_conflict(e: Exception) -> bool {
         seen += 1;
     }
     return False;
+}
+
+
+impl transient_db_error(e: Exception) -> bool {
+    return _is_serialization_conflict(e);
 }
 
 
@@ -1084,7 +1034,7 @@ impl Session._unflushed(full: bool) -> list[UnflushedAnchor] {
             and id not in self._dirty
             and known is not None
             and known.hash != 0
-            and _frozen_fields(anchor) {
+            and frozen_fields(anchor) {
             continue;
         }
         written = anchor.__dict__.get('_field_written', 0);

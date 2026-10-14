@@ -361,6 +361,23 @@ impl resolve_count(raw: str, quota: int, label: str) -> int {
 }
 
 
+impl default_worker_count(
+    quota: int, headroom: int, clustered: bool, can_fork: bool
+) -> int {
+    if clustered or not can_fork {
+        return 1;
+    }
+    return max(1, min(quota, headroom // WORKER_MEMORY_BUDGET));
+}
+
+
+impl machine_worker_count(quota: int) -> int {
+    return default_worker_count(
+        quota, memory_headroom_bytes(), in_cluster(), hasattr(os, 'fork')
+    );
+}
+
+
 impl default_threads(worker_count: int, quota: int) -> int {
     per_worker = max(1, quota // max(1, worker_count));
     return min(32, per_worker * 4 + 4);
@@ -385,14 +402,18 @@ impl ServeSettings.load(
     quota = cpu_quota();
 
     workers_raw = str(
-        given.get('workers') or env_value('WORKERS') or cfg.workers.count
-    );
-    worker_count = resolve_count(workers_raw, quota, '[serve.workers] count');
+        given.get('workers') or env_value('WORKERS') or cfg.workers.count or ''
+    ).strip();
+    count_by_default = not workers_raw;
+    worker_count = machine_worker_count(quota)
+        if count_by_default
+        else resolve_count(workers_raw, quota, '[serve.workers] count');
     threads_raw = str(
         given.get('threads') or env_value('THREADS') or cfg.workers.threads
     );
+    threads_by_default = threads_raw.strip().lower() == WORKERS_AUTO;
     threads = default_threads(worker_count, quota)
-        if threads_raw.strip().lower() == WORKERS_AUTO
+        if threads_by_default
         else resolve_count(threads_raw, quota, '[serve.workers] threads');
 
     port = (
@@ -425,7 +446,9 @@ impl ServeSettings.load(
             ),
             request_timeout=env_float('REQUEST_TIMEOUT', cfg.workers.request_timeout),
             boot_timeout=env_float('BOOT_TIMEOUT', cfg.workers.boot_timeout),
-            hang_timeout=env_float('HANG_TIMEOUT', cfg.workers.hang_timeout)
+            hang_timeout=env_float('HANG_TIMEOUT', cfg.workers.hang_timeout),
+            count_by_default=count_by_default,
+            threads_by_default=threads_by_default
         ),
         tls=TlsSettings(
             certfile=env_value('TLS_CERTFILE') or cfg.tls.certfile,

@@ -550,9 +550,12 @@ def _default_compact(
         mtir=None,
         _call_kind="compaction"
     );
-    summary = str(model.invoke(comp_mt_run));
-    if parent_mt_run is not None {
-        parent_mt_run._usage_history.extend(comp_mt_run._usage_history);
+    try {
+        summary = str(model.invoke(comp_mt_run));
+    } finally {
+        if parent_mt_run is not None {
+            parent_mt_run._usage_history.extend(comp_mt_run._usage_history);
+        }
     }
     summary_msg = {
         "role": "user",
@@ -1228,7 +1231,9 @@ impl BaseLLM._invoke_react_loop(mt_run: MTRuntime) -> object {
                 }
                 mt_run.add_message(finish_msg);
                 if mt_run.stream {
-                    return self._stream_final_answer(mt_run);
+                    return self._stream_final_answer(
+                        mt_run, fallback=str(final_output or "")
+                    );
                 }
                 return final_output;
             }
@@ -1540,6 +1545,19 @@ def _sanitize_tool_calls(message: dict[str, any]) -> set[str] {
 }
 
 
+def _raise_if_empty_truncation(finish_reason: str, content: any, tool_calls: any) {
+    if finish_reason == "length"
+        and not tool_calls
+        and not str(content or "").strip() {
+        raise OutputTruncatedError(
+            "The model hit max_tokens before it produced any text or tool call "
+            "(the budget went to reasoning). Raise max_tokens or lower the "
+            "reasoning effort."
+        );
+    }
+}
+
+
 def _truncated_call_ids(message: dict[str, any], finish_reason: str) -> set[str] {
     if finish_reason != "length" {
         return set();
@@ -1603,14 +1621,18 @@ impl BaseLLM.dispatch_no_streaming(mt_run: MTRuntime) -> CompletionResult {
     tool_calls_list: list[any] = _tc_raw if isinstance(_tc_raw, list) else [];
     tool_calls = _parse_tool_calls(mt_run, tool_calls_list, truncated_ids, damaged_ids);
 
-    output_value = mt_run.parse_response(output_content)
-        if not tool_calls_list
-        else output_content;
     usage_data = response.get("usage", {});
     _attach_call_cost(usage_data, self.model_name, response);
     _record_usage(mt_run, usage_data, actual_model, finish_reason=finish_reason);
+    _raise_if_empty_truncation(finish_reason, output_content, tool_calls_list);
+    output_value = mt_run.parse_response(output_content)
+        if not tool_calls_list
+        else output_content;
     return CompletionResult(
-        output=output_value, tool_calls=tool_calls, usage=usage_data
+        output=output_value,
+        tool_calls=tool_calls,
+        usage=usage_data,
+        finish_reason=finish_reason
     );
 }
 
@@ -1645,6 +1667,7 @@ impl BaseLLM.dispatch_streaming(mt_run: MTRuntime) -> Generator[str, None, None]
     stream_model: str = self.model_name;
     while True {
         finish_reason = "";
+        produced = False;
         try {
             response = self.model_call_with_stream(params);
             for chunk in response {
@@ -1662,6 +1685,7 @@ impl BaseLLM.dispatch_streaming(mt_run: MTRuntime) -> Generator[str, None, None]
                 }
                 if chunk?.choices and chunk?.choices?[0]?.delta {
                     delta = chunk?.choices?[0]?.delta;
+                    produced = produced or bool(str(delta?.content or "").strip());
                     yield delta?.content or "";
                 }
             }
@@ -1678,6 +1702,9 @@ impl BaseLLM.dispatch_streaming(mt_run: MTRuntime) -> Generator[str, None, None]
 
     if len(mt_run._usage_history) == usage_base {
         _record_usage(mt_run, {}, stream_model, finish_reason=finish_reason);
+    }
+    if not produced {
+        _raise_if_empty_truncation(finish_reason, "", None);
     }
 }
 
@@ -1805,7 +1832,12 @@ impl BaseLLM.dispatch_streaming_with_tools(
         else output_content;
     _record_usage(mt_run, usage_data, actual_model, finish_reason=finish_reason);
     out.append(
-        CompletionResult(output=output_value, tool_calls=tool_calls, usage=usage_data)
+        CompletionResult(
+            output=output_value,
+            tool_calls=tool_calls,
+            usage=usage_data,
+            finish_reason=finish_reason
+        )
     );
 }
 
@@ -1855,14 +1887,18 @@ impl BaseLLM.adispatch_no_streaming(mt_run: MTRuntime) -> CompletionResult {
     _tc_raw: any = (message or {}).get("tool_calls") or [];
     tool_calls_list: list[any] = _tc_raw if isinstance(_tc_raw, list) else [];
     tool_calls = _parse_tool_calls(mt_run, tool_calls_list, truncated_ids, damaged_ids);
-    output_value = mt_run.parse_response(output_content)
-        if not tool_calls_list
-        else output_content;
     usage_data = response.get("usage", {});
     _attach_call_cost(usage_data, self.model_name, response);
     _record_usage(mt_run, usage_data, actual_model, finish_reason=finish_reason);
+    _raise_if_empty_truncation(finish_reason, output_content, tool_calls_list);
+    output_value = mt_run.parse_response(output_content)
+        if not tool_calls_list
+        else output_content;
     return CompletionResult(
-        output=output_value, tool_calls=tool_calls, usage=usage_data
+        output=output_value,
+        tool_calls=tool_calls,
+        usage=usage_data,
+        finish_reason=finish_reason
     );
 }
 
@@ -1877,6 +1913,7 @@ impl BaseLLM.adispatch_streaming(mt_run: MTRuntime) -> AsyncIterator[str] {
     stream_model: str = self.model_name;
     while True {
         finish_reason = "";
+        produced = False;
         try {
             response = await self.model_call_with_stream_async(params);
             async for chunk in response {
@@ -1894,6 +1931,7 @@ impl BaseLLM.adispatch_streaming(mt_run: MTRuntime) -> AsyncIterator[str] {
                 }
                 if chunk?.choices and chunk?.choices?[0]?.delta {
                     delta = chunk?.choices?[0]?.delta;
+                    produced = produced or bool(str(delta?.content or "").strip());
                     yield str(delta?.content or "");
                 }
             }
@@ -1910,6 +1948,9 @@ impl BaseLLM.adispatch_streaming(mt_run: MTRuntime) -> AsyncIterator[str] {
 
     if len(mt_run._usage_history) == usage_base {
         _record_usage(mt_run, {}, stream_model, finish_reason=finish_reason);
+    }
+    if not produced {
+        _raise_if_empty_truncation(finish_reason, "", None);
     }
 }
 
@@ -2113,7 +2154,9 @@ impl BaseLLM._force_final_answer(mt_run: MTRuntime) -> object {
 }
 
 
-impl BaseLLM._stream_final_answer(mt_run: MTRuntime) -> Generator[str, None, None] {
+impl BaseLLM._stream_final_answer(
+    mt_run: MTRuntime, fallback: str | None = None
+) -> Generator[str, None, None] {
     final_instruction = Message(
         role=MessageRole.USER,
         content="Based on the tool calls and their results above, provide your final answer. "
@@ -2132,6 +2175,16 @@ impl BaseLLM._stream_final_answer(mt_run: MTRuntime) -> Generator[str, None, Non
             accumulated += token;
             yield token;
         }
+        if not accumulated and fallback is not None {
+            accumulated = fallback;
+            yield fallback;
+        }
+    } except OutputTruncatedError {
+        if fallback is None {
+            raise;
+        }
+        accumulated = fallback;
+        yield fallback;
     } finally {
         mt_run._call_kind = original_call_kind;
         mt_run.call_params.pop("tool_choice", None);
@@ -2179,10 +2232,12 @@ impl BaseLLM._yield_recovery_result(
     recovery_resp: CompletionResult, iter_count: int, mt_run: MTRuntime, usage_base: int
 ) -> Generator[StreamEvent, None, None] {
     finish_found = False;
+    committed = "";
     if recovery_resp.tool_calls {
         for tool_call in recovery_resp.tool_calls {
             if tool_call.is_finish_call() {
                 mt_run.add_message(tool_call());
+                committed = str(tool_call.get_output() or "");
                 finish_found = True;
                 break;
             }
@@ -2190,7 +2245,7 @@ impl BaseLLM._yield_recovery_result(
     }
     yield StreamEvent(event_type="steps_done", data={"iterations": iter_count});
     if finish_found {
-        for token in self._stream_final_answer(mt_run) {
+        for token in self._stream_final_answer(mt_run, fallback=committed) {
             if token {
                 yield StreamEvent(event_type="chunk", data={"content": token});
             }
@@ -2206,6 +2261,14 @@ impl BaseLLM._yield_recovery_result(
 impl BaseLLM._invoke_streaming(
     mt_run: MTRuntime
 ) -> Generator[StreamEvent, None, None] {
+    try {
+        yield from self._stream_steps(mt_run);
+    } finally {
+        mt_run.write_back_conversation();
+    }
+}
+
+impl BaseLLM._stream_steps(mt_run: MTRuntime) -> Generator[StreamEvent, None, None] {
     if len(mt_run.tools) == 0 {
         _seen_resets = mt_run._stream_reset_count;
         for token in self.dispatch_streaming(mt_run) {
@@ -2504,7 +2567,9 @@ impl BaseLLM._invoke_streaming(
                     );
 
                     if mt_run.resp_type is None or mt_run.resp_type is str {
-                        for token in self._stream_final_answer(mt_run) {
+                        for token in self._stream_final_answer(
+                            mt_run, fallback=str(final_output or "")
+                        ) {
                             if token {
                                 yield StreamEvent(
                                     event_type="chunk", data={"content": token}
@@ -2516,6 +2581,9 @@ impl BaseLLM._invoke_streaming(
                     break;
                 }
             } else {
+                _raise_if_empty_truncation(
+                    resp.finish_reason, resp.output, resp.tool_calls
+                );
                 recovery_resp = self._attempt_recovery(mt_run);
                 if recovery_resp is None {
                     yield StreamEvent(
@@ -2538,6 +2606,4 @@ impl BaseLLM._invoke_streaming(
     }
 
     yield StreamEvent(event_type="usage", data=_aggregate_usage(mt_run._usage_history));
-
-    mt_run.write_back_conversation();
 }

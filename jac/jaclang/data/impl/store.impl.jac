@@ -615,6 +615,31 @@ impl PgStore.ensure_schema_once(promotions: dict[str, list[str]]) -> None {
         }
         self.ensure_schema(promotions);
         _schema_ready.add(ns);
+        if self.ensure_cb is None {
+            self._warn_lock_headroom();
+        }
+    }
+}
+
+
+impl PgStore._warn_lock_headroom -> None {
+    import from jaclang.data.pgembed { predicate_lock_shortfall }
+    try {
+        found = self._run(
+            "SELECT name, setting FROM pg_settings WHERE name IN "
+            "('max_pred_locks_per_transaction', 'max_connections', "
+            "'max_prepared_transactions')",
+            {}
+        );
+        problem = predicate_lock_shortfall({str(row[0]): int(row[1]) for row in found});
+    } except Exception as e {
+        logger.debug(f"predicate-lock headroom check skipped: {e}");
+        return;
+    }
+    if problem {
+        where = self.conninfo.unix_socket_dir
+            or f"{self.conninfo.host}:{self.conninfo.port}/{self.conninfo.database}";
+        logger.warning(f"Postgres at {where}: {problem}");
     }
 }
 

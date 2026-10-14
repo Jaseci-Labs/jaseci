@@ -54,6 +54,13 @@ glob NATIVE_STRUCT_FUNCS: set[str] = {
          "unpack_from",
 
      };
+
+def stdlib_intercepted(module_name: str, func_name: str) -> bool {
+    return (module_name == "os" and func_name in NATIVE_OS_FUNCS)
+        or (module_name == "random" and func_name in NATIVE_RANDOM_FUNCS)
+        or (module_name == "struct" and func_name in NATIVE_STRUCT_FUNCS);
+}
+
 glob RC_COLOR_BLACK: int = 0,
      RC_COLOR_WHITE: int = 1,
      RC_COLOR_GRAY: int = 2,
@@ -67,6 +74,13 @@ glob RC_COLOR_BLACK: int = 0,
 glob JACVAL_ELLIPSIS_TAG: int = 9;
 
 glob CLASS_DISPLAY_OFF: int = 24;
+
+glob CLASS_RECORD_ANCESTRY: int = 6,
+     CLASS_RECORD_STATICS_COUNT: int = 7,
+     CLASS_RECORD_STATICS: int = 8;
+
+glob VTABLE_SET_SYMBOL: str = "__jac_vtables",
+     VTABLE_SET_BUCKETS: int = 256;
 glob LIVE_NODE_ID_OFF: int = 0,
      LIVE_NODE_USER_OFF: int = 8,
      LIVE_NODE_TAG_OFF: int = 16,
@@ -78,4 +92,5 @@ glob NATIVE_CONTAINER_CODES: dict[str, str] = {"dict": "natdict", "set": "natset
 
 glob EXC_LINEAGE_BITS: int = 11,
      EXC_LINEAGE_SLOTS: int = 2048,
-     EXC_LINEAGE_MIX: int = -7046029254386353131;
+     EXC_LINEAGE_MIX: int = -7046029254386353131,
+     UNBOUND_CAUGHT: str = "__jac caught";
