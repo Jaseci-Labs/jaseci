@@ -338,26 +338,6 @@ obj KernelArtifact(Artifact) {
     }
 }
 
-def _catalog_active(program: JacProgram) -> bool {
-    import from jaclang.compiler.frontend.host { active_host }
-    host = active_host();
-    host.compiler_for(program).ensure_stub_catalog();
-    return host.has_active_stub_catalog();
-}
-
-def catalog_blocker(program: JacProgram) -> str {
-    if _catalog_active(program) {
-        return "";
-    }
-    import from jaclang.artifacts.model { Resolution }
-    import from jaclang.artifacts.router { _announce, artifact_named, resolve }
-    why = "it reads typeshed only through the stub catalog, which is unavailable ("
-        + (resolve("stubcat").reason or "not built")
-        + ")";
-    _announce(artifact_named("kernel"), Resolution(name="kernel", reason=why));
-    return why;
-}
-
 def resolve_kernel -> (ResolvedKernel | None) {
     import from jaclang.artifacts.router { resolve }
     found = resolve("kernel").found;

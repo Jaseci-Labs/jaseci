@@ -244,6 +244,106 @@ def served_interface(
     return iface;
 }
 
+class StubCatalogMissing(SystemExit) {
+    static has stops_command: bool = True;
+}
+
+def catalog_build_blocker(artifact: any) -> str {
+    import from jaclang.jac0core { sealed }
+    if sealed._jaclang_image() is not None {
+        return "this jac installation is sealed and its stub catalog is missing; reinstall jac";
+    }
+    if not artifact.host_supported() {
+        return "the stub catalog cannot be built on this host";
+    }
+    return artifact.unavailable_reason() or artifact.build_blocker();
+}
+
+def build_stub_catalog {
+    import from jaclang.artifacts.router { artifact_named, build, forget }
+    import from jaclang.jac0core.cache_paths { FileLock }
+    artifact = artifact_named("stubcat");
+    blocker = catalog_build_blocker(artifact);
+    if blocker {
+        raise StubCatalogMissing(catalog_missing_message(blocker));
+    }
+    lock_path = artifact.checkout_path() + ".build.lock";
+    lock = FileLock(lock_path, timeout=0.0);
+    try {
+        try {
+            lock.acquire();
+        } except TimeoutError {
+            sys.stderr.write(
+                "jac: waiting for another jac process to finish building the stub catalog\n"
+            );
+            sys.stderr.flush();
+            lock = FileLock(lock_path);
+            lock.acquire();
+        }
+    } except OSError as e {
+        raise StubCatalogMissing(
+            catalog_missing_message(f"cannot lock {lock_path} ({e})")
+        ) from None;
+    }
+    try {
+        forget("stubcat");
+        if artifact.built().found is not None {
+            return;
+        }
+        sys.stderr.write(
+            "jac: the native compiler kernel needs the stub catalog (pre-resolved "
+            "typeshed types); building stubcat now (one time, about 2 minutes)\n"
+        );
+        sys.stderr.flush();
+        try {
+            build(["stubcat"], _to_stderr, strict=True);
+        } except Exception as e {
+            raise StubCatalogMissing(catalog_missing_message(str(e))) from None;
+        }
+    } finally {
+        lock.release();
+    }
+}
+
+def _to_stderr(line: str) {
+    sys.stderr.write(line + "\n");
+    sys.stderr.flush();
+}
+
+def catalog_missing_message(cause: str) -> str {
+    return (
+        "jac: the native compiler kernel needs the stub catalog, which is missing "
+        "and could not be built\n"
+        f"  cause: {cause}\n"
+        "  fix:   run `jac native build stubcat`, then rerun"
+    );
+}
+
+def require_stub_catalog(host: HostServices, program: JacProgram) -> bool {
+    compiler = host.compiler_for(program);
+    compiler.ensure_stub_catalog();
+    if host.has_active_stub_catalog() {
+        return True;
+    }
+    import from jaclang.jac0core.stubcat_hook { catalog_disabled }
+    if catalog_disabled() {
+        return False;
+    }
+    build_stub_catalog();
+    import from jaclang.artifacts.router { forget }
+    import from jaclang.compiler.types.stubcat.locate { reset_catalog_cache }
+    forget("stubcat");
+    reset_catalog_cache();
+    compiler._stub_catalog_tried = False;
+    compiler.ensure_stub_catalog();
+    if not host.has_active_stub_catalog() {
+        raise StubCatalogMissing(
+            catalog_missing_message("it was built but could not be opened")
+        );
+    }
+    return True;
+}
+
 def session_inputs(
     host: HostServices, program: JacProgram, path: str, options: CompileOptions
 ) -> KernelInputs {
@@ -252,8 +352,7 @@ def session_inputs(
     import from jaclang.compiler.types.stubcat.locate { catalog_origin }
     import from jaclang.compiler.frontend.host { package_root }
     catalog_dir = "";
-    host.compiler_for(program).ensure_stub_catalog();
-    catalog_active = host.has_active_stub_catalog();
+    catalog_active = require_stub_catalog(host, program);
     if catalog_active {
         import from jaclang.jac0core.stubcat_hook { active }
         catalog: any = active();
