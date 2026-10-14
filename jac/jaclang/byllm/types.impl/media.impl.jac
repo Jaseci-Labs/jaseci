@@ -200,12 +200,14 @@ impl Document.postinit -> None {
             "or bytes."
         );
     }
-    if b"%PDF-" not in raw[:1024] {
+    start = raw.find(b"%PDF-", 0, 1024);
+    if start < 0 {
         raise ValueError(
             "Document accepts PDF files only. Pass text-like files (.md, .txt, "
             "code, .csv) as Text."
         );
     }
+    raw = raw[start:];
     b64 = base64.b64encode(raw).decode("utf-8");
     self._data_url = f"data:application/pdf;base64,{b64}";
 }

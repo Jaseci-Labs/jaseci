@@ -90,6 +90,22 @@ test "the content decides, not the extension" {
 }
 
 
+test "bytes before the header are not sent, and the header must be near the start" {
+    for junk in [b"\n", b"\xef\xbb\xbf", b"x" * 1000] {
+        doc = Document(junk + PDF);
+        assert doc.to_dict()[0]["file"]["file_data"] == _pdf_data_url(PDF) , (
+            f"{len(junk)} junk bytes: the data must start at the header"
+        );
+    }
+    try {
+        Document(b"x" * 1024 + PDF);
+        assert False , "a header past the first 1024 bytes must be refused";
+    } except ValueError as e {
+        assert "PDF" in str(e) , f"got {e}";
+    }
+}
+
+
 test "non-PDF bytes are refused before any call is made" {
     llm = MockLLM(outputs=[say("never sent")]);
     try {

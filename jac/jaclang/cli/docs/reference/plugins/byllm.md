@@ -1858,7 +1858,7 @@ with entry {
 | `source` | str, os.PathLike, bytes | required | Path to a PDF file, or the PDF's bytes |
 | `filename` | str | the path's file name | Name sent with the file. Omitted for bytes when not given |
 
-`Document` checks the content, not the extension: a `.pdf` file that is not a PDF is refused with a `ValueError` before any call is made, and a PDF without an extension is accepted. A missing file raises `ValueError` and an unsupported input type raises `TypeError`.
+`Document` checks the content, not the extension: a `.pdf` file that is not a PDF is refused with a `ValueError` before any call is made, and a PDF without an extension is accepted. The `%PDF-` header must sit within the first 1024 bytes, and any bytes before it are dropped, because Anthropic rejects a file that does not start at the header. A missing file raises `ValueError` and an unsupported input type raises `TypeError`.
 
 Only PDF is accepted, because providers reject other file types. Pass text-like files (`.md`, `.txt`, source code, `.csv`) as `Text`:
 
