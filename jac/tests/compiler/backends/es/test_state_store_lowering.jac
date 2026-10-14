@@ -153,78 +153,47 @@ test "preact lowers a shorthand jsx attribute as a state read" {
     assert_shorthand_read(js, "preact");
 }
 
-# Tuple, star, nested and chained writes to state: every target goes through its
-# setter, after the whole value is bound to temporaries so a swap reads old values.
+# Each face binds the whole value first (its shape after `const [T_0, `), then writes
+# every name with its temporary: `a`/`b` through the setter, any other as a local.
+glob UNPACK_FACES = [
+         (r"\1_1\] = \[\(?__jacS_b\.val \+ 1\)?, \(?__jacS_a\.val \+ 1\)?\];", "a b"),
+         (r"\1_1\] = \[\(?__jacS_b\.val \+ 2\)?, \(?__jacS_a\.val \+ 2\)?\];", "a b"),
+         (r"\1_1\] = \[5, 6\];", "a x"),
+         (r"\.\.\.\1_1\] = __jacS_items\.val;", "a rest"),
+         (r"\[\1_1, \1_2\]\] = ", "a b y")
+     ];
+
+def assert_written(js: str, name: str, temp: str, backend_name: str) {
+    if name in ("a", "b") {
+        assert re.search(rf"__jacS_{name}\.set\(\(?{temp}\)?\)", js) , (
+            f"[{backend_name}] `{name}` must be set from `{temp}`:\n{js}"
+        );
+    } else {
+        assert re.search(rf"\blet {name} = {temp};", js) , (
+            f"[{backend_name}] local `{name}` must be declared from `{temp}`:\n{js}"
+        );
+    }
+}
+
 def assert_state_unpack(js: str, backend_name: str) {
     assert re.search(r"\[\s*a\s*,", js) is None , (
-        f"[{backend_name}] an unpacking write must not destructure into the bare "
-        f"field names, which the module never declares:\n{js}"
+        f"[{backend_name}] no write may destructure into bare field names:\n{js}"
     );
-    for (face, rhs) in [("swap", "1"), ("swap_list", "2")] {
-        bound = re.search(
-            r"const \[(__jac_unpack_\d+)_0, \1_1\] = \[\(?__jacS_b\.val \+ "
-            + rhs
-            + r"\)?, \(?__jacS_a\.val \+ "
-            + rhs
-            + r"\)?\];",
-            js
-        );
+    for (shape, names) in UNPACK_FACES {
+        bound = re.search(r"const \[(__jac_unpack_\d+)_0, " + shape, js);
         assert bound is not None , (
-            f"[{backend_name}] `{face}` must bind both new values before any "
-            f"write:\n{js}"
+            f"[{backend_name}] no unpack matches `{shape}`:\n{js}"
         );
-        after = js[bound.end():];
         temp = bound.group(1);
-        assert_sets(after, "a", temp + "_0", backend_name);
-        assert_sets(after, "b", temp + "_1", backend_name);
+        for (i, name) in enumerate(names.split()) {
+            assert_written(js[bound.end():], name, f"{temp}_{i}", backend_name);
+        }
     }
-
-    # A local next to a state field is still assigned and declared.
-    mixed = re.search(r"const \[(__jac_unpack_\d+)_0, \1_1\] = \[5, 6\];", js);
-    assert mixed is not None , f"[{backend_name}] `mixed` must unpack once:\n{js}";
-    assert_sets(js[mixed.end():], "a", mixed.group(1) + "_0", backend_name);
-    assert_local(js, "x", mixed.group(1) + "_1", backend_name);
-
-    star = re.search(
-        r"const \[(__jac_unpack_\d+)_0, \.\.\.\1_1\] = __jacS_items\.val;", js
-    );
-    assert star is not None , (
-        f"[{backend_name}] a star target must unpack into a rest temporary:\n{js}"
-    );
-    assert_sets(js[star.end():], "a", star.group(1) + "_0", backend_name);
-    assert_local(js, "rest", star.group(1) + "_1", backend_name);
-
-    nested = re.search(r"const \[(__jac_unpack_\d+)_0, \[\1_1, \1_2\]\] = ", js);
-    assert nested is not None , (
-        f"[{backend_name}] a nested target must unpack in one pattern:\n{js}"
-    );
-    assert_sets(js[nested.end():], "a", nested.group(1) + "_0", backend_name);
-    assert_sets(js[nested.end():], "b", nested.group(1) + "_1", backend_name);
-    assert_local(js, "y", nested.group(1) + "_2", backend_name);
-
-    # `a = b = 7` evaluates the value once and hands it to both setters.
     chained = re.search(r"const (__jac_unpack_\d+) = 7;", js);
-    assert chained is not None , (
-        f"[{backend_name}] a chained write must bind its value once:\n{js}"
-    );
-    assert_sets(js[chained.end():], "a", chained.group(1), backend_name);
-    assert_sets(js[chained.end():], "b", chained.group(1), backend_name);
-}
-
-def assert_sets(js: str, field: str, temp: str, backend_name: str) {
-    assert re.search(r"__jacS_" + field + r"\.set\(\(?" + temp + r"\)?\)", js) , (
-        f"[{backend_name}] `{field}` must be written through its setter with "
-        f"`{temp}`:\n{js}"
-    );
-}
-
-def assert_local(js: str, name: str, temp: str, backend_name: str) {
-    assert re.search(r"\b" + name + r" = " + temp + r";", js) , (
-        f"[{backend_name}] local `{name}` must take `{temp}`:\n{js}"
-    );
-    assert re.search(r"\blet " + name + r"\b", js) , (
-        f"[{backend_name}] local `{name}` must be declared:\n{js}"
-    );
+    assert chained is not None , f"[{backend_name}] `a = b = 7` must bind once:\n{js}";
+    for name in ("a", "b") {
+        assert_written(js[chained.end():], name, chained.group(1), backend_name);
+    }
 }
 
 test "react routes tuple and chained writes to state through setters" {

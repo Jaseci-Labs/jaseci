@@ -692,22 +692,13 @@ walker EsastGenPass(TreePass) {
         here: uni.Assignment
     ) -> list[es.Statement];
 
-    def _assigns_state(targets: Sequence[uni.Expr]) -> bool;
     def _lower_state_assignment(
         here: uni.Assignment, value_expr: (es.Expression | None)
-    ) -> list[es.Statement];
-
-    def _assign_state_target(
-        target: uni.Expr, source: es.Expression, here: uni.Assignment
     ) -> list[es.Statement];
 
     def _unpack_pattern(
         node: uni.Expr, prefix: str, leaves: list[tuple[uni.Expr, str]]
     ) -> es.Pattern;
-
-    def _const_binding(
-        pattern: es.Pattern, init: es.Expression, loc: uni.UniNode
-    ) -> es.Statement;
     def _resolve_source_module(nd: uni.Import) -> (uni.Module | None);
     def _resolve_call_ability(nd: uni.FuncCall) -> (uni.Ability | None);
     def _return_type_route_role(rt: uni.Expr) -> (str | None);
