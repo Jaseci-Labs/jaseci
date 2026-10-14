@@ -1,5 +1,10 @@
 import from jaclang.server.endpoint_contract { check_endpoint_contract }
-import from jaclang.server.exchange { refusal_status, settle_envelope }
+import from jaclang.server.exchange {
+    apply_response_choice,
+    has_response_choice,
+    refusal_status,
+    settle_envelope
+}
 import json;
 import logging;
 import from inspect { isgenerator }
@@ -119,6 +124,13 @@ def _raw_response(
 ) -> (Response | TransportResponse) {
     media_type = declared_media_type;
     if isinstance(payload, Response) {
+        if has_response_choice() {
+            return TransportResponse.fail(
+                code='CONFLICTING_RESPONSE',
+                message='A function that returns a Response must not also call respond()',
+                meta=Meta(extra={'http_status': 500})
+            );
+        }
         header_text = [payload.media_type or ''];
         for (name, value) in payload.headers.items() {
             header_text.append(name);
@@ -170,7 +182,7 @@ def _raw_response(
     } else {
         body = json.dumps(Serializer.serialize(payload, api_mode=True)).encode('utf-8');
     }
-    return Response(content=body, media_type=media_type);
+    return apply_response_choice(Response(content=body, media_type=media_type));
 }
 
 
