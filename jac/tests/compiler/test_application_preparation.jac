@@ -207,11 +207,11 @@ test "source changes invalidate a prepared revision and replace its access metad
 test "a prepare after an edit reads only the edited module's imports again" {
     import from jaclang.compiler.backends.py { artifact_imports }
     tmp = tempfile.mkdtemp(prefix="jac-prepared-imports-");
-    real_sources = artifact_imports.runtime_sources;
+    real_specs = artifact_imports.import_specs;
     scanned: list[str] = [];
-    def counting_sources(code: any, source: str, `root: str) -> set[str] {
+    def counting_specs(code: any, source: str) -> list[any] {
         scanned.append(os.path.basename(source));
-        return real_sources(code, source, `root);
+        return real_specs(code, source);
     }
     path = Path(tmp) / 'main.jac';
     try {
@@ -231,15 +231,41 @@ test "a prepare after an edit reads only the edited module's imports again" {
         edited = os.path.realpath(str(Path(tmp) / 'mods' / 'a.jac'));
         old_code = first.code[edited];
         forget(str(path));
-        (Path(tmp) / 'mods' / 'a.jac').write_text("def:pub a_value -> int { return 2; }\n");
-        artifact_imports.runtime_sources = counting_sources;
+        (Path(tmp) / 'mods' / 'a.jac').write_text(
+            "def:pub a_value -> int { return 2; }\n"
+        );
+        artifact_imports.import_specs = counting_specs;
         updated = prepare_application(str(path), JacProgram(), tmp);
         assert updated.code[edited] != old_code , "the edited module kept its old code";
         assert scanned == ['a.jac'] , (
             f"a one-module edit re-read the imports of {scanned}; only a.jac changed"
         );
     } finally {
-        artifact_imports.runtime_sources = real_sources;
+        artifact_imports.import_specs = real_specs;
+        forget(str(path));
+        shutil.rmtree(tmp, ignore_errors=True);
+    }
+}
+
+
+test "a prepare resolves an unchanged module's imports against the files as they are now" {
+    tmp = tempfile.mkdtemp(prefix="jac-prepared-moved-");
+    path = Path(tmp) / 'main.jac';
+    try {
+        (Path(tmp) / 'helper.py').write_text("VALUE = 1\n");
+        (Path(tmp) / 'util.py').write_text("import helper\nVALUE = helper.VALUE\n");
+        path.write_text("import util;\ndef:pub value -> int { return util.VALUE; }\n");
+        prepare_application(str(path), JacProgram(), tmp);
+        forget(str(path));
+        (Path(tmp) / 'helper.py').unlink();
+        (Path(tmp) / 'helper').mkdir();
+        (Path(tmp) / 'helper' / '__init__.py').write_text("VALUE = 2\n");
+        updated = prepare_application(str(path), JacProgram(), tmp);
+        moved = os.path.realpath(str(Path(tmp) / 'helper' / '__init__.py'));
+        assert moved in updated.code , (
+            "an import that moved into a package was resolved to its old path"
+        );
+    } finally {
         forget(str(path));
         shutil.rmtree(tmp, ignore_errors=True);
     }

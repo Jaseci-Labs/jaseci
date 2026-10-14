@@ -952,17 +952,21 @@ def _prepare_revision(
     }
     revision.manifests[`entry]['spa_routes'] = routes;
     import from jaclang.compiler.backends.py.artifact_imports {
-        runtime_sources,
-        package_sources
+        import_specs,
+        package_sources,
+        resolve_imports
     }
     sections = {};
     previous_code: dict[str, any] = candidate.get('code') or {}
         if isinstance(candidate, dict)
         else {};
-    previous_imports: dict[str, list[str]] = candidate.get('imports') or {}
+    previous_specs: dict[str, list[tuple[int, str, (tuple[str, ...] | None)]]] = candidate.get(
+        'import_specs'
+    )
+        or {}
         if isinstance(candidate, dict)
         else {};
-    imports_of: dict[str, list[str]] = {};
+    specs_of: dict[str, list[tuple[int, str, (tuple[str, ...] | None)]]] = {};
     pending = `set(entries);
     for path in entries {
         pending.update(package_sources(path, `root));
@@ -1004,12 +1008,12 @@ def _prepare_revision(
         revision.code[path] = code;
         sections[path] = _sections(path, program);
         revision.native[path] = compiler.get_native_interop_setup(path, program);
-        known = previous_imports.get(path);
-        found = set(known)
+        known = previous_specs.get(path);
+        specs = known
             if known is not None and previous_code.get(path) == code
-            else runtime_sources(code, path, `root);
-        imports_of[path] = sorted(found);
-        pending.update(found - revision.code.keys());
+            else import_specs(code, path);
+        specs_of[path] = specs;
+        pending.update(resolve_imports(specs, path, `root) - revision.code.keys());
     }
 
     project_facts: dict[str, tuple[str, any]] = {
@@ -1093,7 +1097,7 @@ def _prepare_revision(
                 if revision.client_compiler is not None
                 else False,
             code=revision.code,
-            imports=imports_of,
+            import_specs=specs_of,
             manifests=revision.manifests,
             sections=sections,
             outputs=outputs,
