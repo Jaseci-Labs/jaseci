@@ -1096,7 +1096,7 @@ impl NaIRGenPass._osp_connect_assign_early(
         if self._osp_connect_assign_field(kw, edge_arch) is None {
             return None;
         }
-        value = self._osp_connect_assign_value(kw);
+        value = self._osp_connect_assign_value(kw, keep=True);
         if value is None {
             return None;
         }
@@ -1129,7 +1129,7 @@ impl NaIRGenPass._osp_connect_assign_hold(
             );
             return None;
         }
-        value = self._osp_connect_assign_value(kw);
+        value = self._osp_connect_assign_value(kw, keep=True);
         if value is None {
             return None;
         }
@@ -1163,7 +1163,15 @@ impl NaIRGenPass._osp_connect_assign_field(
     return field_name;
 }
 
-impl NaIRGenPass._osp_connect_assign_value(kw: uni.KWPair) -> (ir.Value | None) {
+impl NaIRGenPass._osp_connect_assign_value(
+    kw: uni.KWPair, keep: bool = False
+) -> (ir.Value | None) {
+    """Lower one attribute value of a typed connect.
+
+    With `keep`, the value is held before a later value is evaluated, so a
+    borrowed one (`f=h.text`) takes its own reference: a later value such as
+    `g=reset(h)` could otherwise free it before it is stored.
+    """;
     _errs = len(self.ctx.errors_had);
     value = self._codegen_expr(kw.value);
     if value is None and len(self.ctx.errors_had) == _errs {
@@ -1173,6 +1181,13 @@ impl NaIRGenPass._osp_connect_assign_value(kw: uni.KWPair) -> (ir.Value | None) 
             kind="expression",
             name=type(kw.value).__name__
         );
+    }
+    if value is not None
+        and keep
+        and not self._is_owned(value)
+        and not self._nogc_headerless() {
+        self._emit_take_ref(value, op="conn_assign_keep");
+        value = self._mark_reference_owned(value);
     }
     return value;
 }
