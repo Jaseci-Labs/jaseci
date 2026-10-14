@@ -78,6 +78,11 @@ impl EsastGenPass.exit_assignment with uni.Assignment exit {
             return;
         }
     }
+    if not here.aug_op and self._assigns_state(here.target) {
+        stmts = self._lower_state_assignment(here, value_expr);
+        here.gen.es_ast = stmts[0] if len(stmts) == 1 else stmts;
+        return;
+    }
     if here.aug_op {
         (left, _, _) = self._convert_assignment_target(here.target[0]);
         aug_tok: str = here.aug_op.name;
@@ -143,15 +148,23 @@ impl EsastGenPass.exit_assignment with uni.Assignment exit {
         return;
     }
 
-    if len(here.target) == 1 {
-        _setitem = self._try_subscript_setitem(here.target[0], value_expr, here);
+    stmts = self._lower_plain_assignment(here.target, value_expr, here);
+    here.gen.es_ast = stmts[0] if len(stmts) == 1 else stmts;
+}
+
+impl EsastGenPass._lower_plain_assignment(
+    targets: Sequence[uni.Expr],
+    value_expr: (es.Expression | None),
+    here: uni.Assignment
+) -> list[es.Statement] {
+    if len(targets) == 1 {
+        _setitem = self._try_subscript_setitem(targets[0], value_expr, here);
         if _setitem is not None {
-            here.gen.es_ast = _setitem;
-            return;
+            return [_setitem];
         }
     }
     targets_info: list[AssignmentTargetInfo] = [];
-    for target_node in here.target {
+    for target_node in targets {
         (left, reference, decl_name) = self._convert_assignment_target(target_node);
         pattern_names = self._collect_pattern_names(target_node);
         targets_info.append(
@@ -261,11 +274,7 @@ impl EsastGenPass.exit_assignment with uni.Assignment exit {
             current_value = info.reference or current_value;
         }
     }
-    if (len(statements) == 1) {
-        here.gen.es_ast = statements[0];
-    } else {
-        here.gen.es_ast = statements;
-    }
+    return statements;
 }
 
 impl EsastGenPass._collect_pattern_names(
@@ -420,4 +429,115 @@ impl EsastGenPass._target_to_pattern(target: es.Node, loc: uni.UniNode) -> es.Pa
         return target;
     }
     return self.sync_loc(es.Identifier(name='_item'), jac_node=loc);
+}
+
+impl EsastGenPass._assigns_state(targets: Sequence[uni.Expr]) -> bool {
+    for target in targets {
+        for (name, _) in self._collect_pattern_names(target) {
+            if name in self.reactive_vars {
+                return True;
+            }
+        }
+    }
+    return False;
+}
+
+impl EsastGenPass._lower_state_assignment(
+    here: uni.Assignment, value_expr: (es.Expression | None)
+) -> list[es.Statement] {
+    source = cast(es.Expression, value_expr or es.Identifier(name='undefined'));
+    stmts: list[es.Statement] = [];
+    # A chained assignment evaluates its value once and hands it to every target.
+    if len(here.target) > 1 {
+        self._unpack_seq += 1;
+        bound = f"__jac_unpack_{self._unpack_seq}";
+        stmts.append(self._const_binding(es.Identifier(name=bound), source, here));
+        source = self.sync_loc(es.Identifier(name=bound), jac_node=here);
+    }
+    for target in here.target {
+        stmts.extend(self._assign_state_target(target, source, here));
+    }
+    return stmts;
+}
+
+impl EsastGenPass._assign_state_target(
+    target: uni.Expr, source: es.Expression, here: uni.Assignment
+) -> list[es.Statement] {
+    if isinstance(target, uni.Name) and target.sym_name in self.reactive_vars {
+        setter_call = self.sync_loc(
+            self._ensure_backend().lower_state_update(
+                StateUpdate(name=target.sym_name, value=source, aug_op=None)
+            ),
+            jac_node=target
+        );
+        return [
+            self.sync_loc(
+                es.ExpressionStatement(expression=setter_call), jac_node=target
+            )
+        ];
+    }
+    if not (
+        isinstance(target, (uni.TupleVal, uni.ListVal))
+        and self._assigns_state([target])
+    ) {
+        return self._lower_plain_assignment([target], source, here);
+    }
+    # Unpack every value into a temporary before any write, so a swap reads old values.
+    self._unpack_seq += 1;
+    leaves: list[tuple[uni.Expr, str]] = [];
+    pattern = self._unpack_pattern(target, f"__jac_unpack_{self._unpack_seq}", leaves);
+    stmts: list[es.Statement] = [self._const_binding(pattern, source, target)];
+    for (leaf, temp) in leaves {
+        if (
+            isinstance(leaf, uni.Name)
+            and leaf.sym_name == '_'
+            and '_' not in self.reactive_vars
+        ) {
+            continue;
+        }
+        stmts.extend(
+            self._assign_state_target(
+                leaf, self.sync_loc(es.Identifier(name=temp), jac_node=leaf), here
+            )
+        );
+    }
+    return stmts;
+}
+
+impl EsastGenPass._unpack_pattern(
+    node: uni.Expr, prefix: str, leaves: list[tuple[uni.Expr, str]]
+) -> es.Pattern {
+    if isinstance(node, (uni.TupleVal, uni.ListVal)) {
+        elements: list[(es.Pattern | None)] = [];
+        for value in node.values {
+            if isinstance(value, uni.Expr) {
+                elements.append(self._unpack_pattern(value, prefix, leaves));
+            } else {
+                elements.append(None);
+            }
+        }
+        return self.sync_loc(es.ArrayPattern(elements=elements), jac_node=node);
+    }
+    if (
+        isinstance(node, uni.UnaryExpr)
+        and isinstance(node.op, uni.Token)
+        and node.op.name == Tok.STAR_MUL.value
+    ) {
+        inner = self._unpack_pattern(node.operand, prefix, leaves);
+        return self.sync_loc(es.RestElement(argument=inner), jac_node=node);
+    }
+    temp = f"{prefix}_{len(leaves)}";
+    leaves.append((node, temp));
+    return self.sync_loc(es.Identifier(name=temp), jac_node=node);
+}
+
+impl EsastGenPass._const_binding(
+    pattern: es.Pattern, init: es.Expression, loc: uni.UniNode
+) -> es.Statement {
+    declarator = self.sync_loc(
+        es.VariableDeclarator(id=pattern, init=init), jac_node=loc
+    );
+    return self.sync_loc(
+        es.VariableDeclaration(declarations=[declarator], kind='const'), jac_node=loc
+    );
 }
