@@ -818,7 +818,7 @@ impl UniScopeNode.lookup(
     if decl is not None {
         decl_scope = decl.sym_tab;
         if decl_scope is not None {
-            return decl_scope.lookup(name, deep=True, incl_inner_scope=False);
+            return decl_scope.lookup(name, deep=deep, incl_inner_scope=False);
         }
     }
     return None;
@@ -919,11 +919,14 @@ impl UniScopeNode.get_enclosing_captures -> list[Symbol] {
                 tab = sym.parent_tab;
             }
         }
-        if (
-            (tab is None)
-            or same_lexical_scope(tab, self)
-            or not isinstance(tab, (Ability, ImplDef, LambdaExpr, Test))
-        ) {
+        if (tab is None) or same_lexical_scope(tab, self) {
+            continue;
+        }
+        frame: (UniScopeNode | None) = tab;
+        while frame is not None and not UniScopeNode.is_python_scoping(frame) {
+            frame = frame.parent_scope;
+        }
+        if not isinstance(frame, (Ability, ImplDef, LambdaExpr, Test)) {
             continue;
         }
 
@@ -1760,6 +1763,12 @@ impl ModulePath.resolve_relative_path(target_item: (str | None) = None) -> str {
     if bundled is not None {
         return bundled;
     }
+    if target_item is None {
+        variant = self.native_variant_path();
+        if variant is not None {
+            return variant;
+        }
+    }
     spv = self.string_path_value;
     if spv is not None {
         return active_host().resolve_module(spv, self.loc.mod_path, string_spec=True)[
@@ -1791,6 +1800,31 @@ impl ModulePath.native_bundled_path -> (str | None) {
     base_dir = os.path.dirname(mod_path) if mod_path else os.getcwd();
     (_src, full_path) = resolve_native_module(base, base_dir);
     return full_path;
+}
+
+impl ModulePath.native_variant_path -> (str | None) {
+    import os;
+    mod_path = self.loc.mod_path if self.loc else None;
+    if not mod_path
+        or self.level == 0
+        or self.string_path_value is not None
+        or not self.path
+        or "/runtime/na_stdlib/" not in mod_path.replace("\\", "/") {
+        return None;
+    }
+    base = os.path.dirname(mod_path);
+    for _ in range(self.level - 1) {
+        base = os.path.dirname(base);
+    }
+    candidate = base;
+    for segment in self.path {
+        candidate = os.path.join(candidate, segment.value);
+    }
+    if os.path.isfile(candidate + ".jac") or os.path.isdir(candidate) {
+        return None;
+    }
+    import from jaclang.compiler.frontend.codeinfo { _native_variant_path }
+    return _native_variant_path(candidate);
 }
 
 impl ModulePath.resolve_relative_path_list -> list[str] {
@@ -2364,6 +2398,10 @@ impl FuncSignature.is_static.getter -> bool {
 }
 
 impl FuncSignature.is_in_py_class.getter -> bool {
+    owner = self.parent.decl_link if isinstance(self.parent, ImplDef) else self.parent;
+    if isinstance(owner, Ability) and owner.accessor_kind {
+        return False;
+    }
     is_archi = self.find_parent_of_type(Archetype);
     is_class = (is_archi is not None) and (is_archi.arch_type.name == Tok.KW_CLASS);
     return (

@@ -22,6 +22,7 @@ import from jaclang.compiler.frontend.unitree {
 }
 import from jaclang.compiler.frontend.constant { ParamKind, Tokens as Tok }
 import from .types {
+    CLASS_GRAPH_EPOCH,
     NeverType,
     EnumMemberType,
     AnyType,
@@ -35,6 +36,8 @@ import from .types {
 }
 
 glob BARE_GENERIC_REQUIRED: list[str] = ["dict", "list", "tuple"];
+
+class CachedSolution(dict) {}
 
 enum PropertyWriteKind { NOT_PROPERTY = 0, READ_ONLY = 1, WRITABLE = 2, }
 

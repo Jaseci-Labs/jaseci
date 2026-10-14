@@ -79,8 +79,7 @@ obj PlacementConfig {
 }
 
 obj BuildConfig {
-    has dir: str = ".jac",
-        native_closure_cap: int = 256;
+    has dir: str = ".jac";
 }
 
 obj TestConfig {
@@ -95,7 +94,7 @@ obj TestConfig {
 }
 
 obj ServeWorkersConfig {
-    has count: str = "1",
+    has count: str = "",
         threads: str = "auto",
         max_requests: int = 0,
         max_requests_jitter: int = 0,
@@ -152,17 +151,6 @@ obj ServeWebSocketConfig {
         ping_timeout: float = 20.0;
 }
 
-obj ServeAuthConfig {
-    has secret: str = "",
-        algorithm: str = "HS256",
-        token_ttl_days: int = 7,
-        password_hash_cost: int = 14,
-        registration_challenge: bool = False,
-        registration_attempts_per_hour: int = 0,
-        registration_challenges_per_10_minutes: int = 0,
-        session_cookie: bool = False;
-}
-
 obj ServeConfig {
     has host: str = "0.0.0.0",
         port: int = 8000,
@@ -171,6 +159,7 @@ obj ServeConfig {
         docs_enabled: bool = True,
         graph_enabled: bool = True,
         cors_origins: list[str] = ["*"],
+        public_origin: str = "",
         on_conflict: str = "retry",
         conflict_max_attempts: int = 5,
         conflict_backoff_ms: int = 0,
@@ -182,7 +171,7 @@ obj ServeConfig {
         access_log: ServeAccessLogConfig = ServeAccessLogConfig(),
         compression: ServeCompressionConfig = ServeCompressionConfig(),
         websocket: ServeWebSocketConfig = ServeWebSocketConfig(),
-        auth: ServeAuthConfig = ServeAuthConfig();
+        auth: dict[str, any] = {};
 }
 
 obj FormatConfig {
@@ -244,8 +233,25 @@ obj ClientConfig {
     has framework: str = "react";
 }
 
+obj DatabaseConfig {
+    has indexes: dict[str, list[str]] = {},
+        retention_days: int = 0,
+        postgres_dist: str = "",
+        postgres_version: str = "";
+}
+
+obj NetworkConfig {
+    has offline: bool = False;
+}
+
+obj ToolchainsConfig {
+    has system: bool = True;
+}
+
 obj DevConfig {
     has jaclang_source: str = "",
+        exact: bool = False,
+        pod_binary: str = "",
         jobs: str = "",
         test_jobs: str = "",
         check_jobs: str = "",
@@ -311,6 +317,9 @@ obj JacConfig {
         client_errors: ClientErrorsConfig = ClientErrorsConfig(),
         client: ClientConfig = ClientConfig(),
         dev: DevConfig = DevConfig(),
+        database: DatabaseConfig = DatabaseConfig(),
+        network: NetworkConfig = NetworkConfig(),
+        toolchains: ToolchainsConfig = ToolchainsConfig(),
         dependencies: dict[str, PackageDep] = {},
         dev_dependencies: dict[str, PackageDep] = {},
         pypi_dependencies: dict[str, str] = {},
@@ -432,5 +441,15 @@ def get_config_for_path(
 ) -> JacConfig | None;
 
 def get_config_for_dir(start_dir: str) -> JacConfig | None;
+
+def offline_mode -> bool {
+    config = get_config();
+    return config is not None and config.network.offline;
+}
+
+def use_system_toolchains -> bool {
+    config = get_config();
+    return config is None or config.toolchains.system;
+}
 
 def active_profile_name(config: JacConfig | None) -> str;

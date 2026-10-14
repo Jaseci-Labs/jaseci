@@ -8,7 +8,7 @@ import from jaclang.toolchains.store { offline }
 def install_linux_packages(packages: dict[str, list[str]]) {
     if offline() {
         raise RuntimeError(
-            "Required system libraries are missing and JAC_OFFLINE is enabled. Run setup online first."
+            "Required system libraries are missing and jac.toml sets `[network] offline`. Run setup online first."
         );
     }
     for (manager, names) in packages.items() {
@@ -143,20 +143,8 @@ def ensure_desktop_host -> str {
 
 
 def ensure_patchelf -> str {
-    found = shutil.which("patchelf");
-    if found {
-        return found;
-    }
-    import from jaclang.toolchains.pins { PATCHELF_ARTIFACTS }
-    import from jaclang.toolchains.store { install }
-    import from jaclang.toolchains.host { host_platform }
-    artifact = PATCHELF_ARTIFACTS.get(host_platform());
-    if artifact is None {
-        raise RuntimeError("No patchelf distribution for this host.");
-    }
-    marker = "patchelf-0.17.2.4.data/scripts/patchelf";
-    directory = install(artifact, marker);
-    return str(directory / marker);
+    import from jaclang.toolchains.tools { tool_path }
+    return str(tool_path("patchelf"));
 }
 
 

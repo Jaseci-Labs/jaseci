@@ -132,7 +132,12 @@ impl NaIRGenPass._emit_print(nd: uni.FuncCall) -> (ir.Value | None) {
     fmt_parts = [];
     args: list[ir.Value] = [];
     for (i, param) in enumerate(params) {
+        refusals_before = len(self.ctx.errors_had);
         val = self._str_norm_optional(self._codegen_expr(param));
+        if len(self.ctx.errors_had) == refusals_before
+            and self._type_key_of(param) in ("None", "NoneType") {
+            val = self._make_global_string("None", name_prefix=".print.none");
+        }
         if val is None {
             self.ctx.emit(
                 E5092,
@@ -291,9 +296,6 @@ impl NaIRGenPass._emit_print_call(
     if libc_name not in self.llvm_module.globals {
         _gv = ir.GlobalVariable(self.llvm_module, i8p, name=libc_name);
         _gv.linkage = "external";
-        if "windows" in str(self.llvm_module.triple or "") {
-            _gv.storage_class = "dllimport";
-        }
     }
     handle = self.builder.load(
         self.llvm_module.get_global(libc_name), name="print.stderr"
@@ -1568,9 +1570,6 @@ impl NaIRGenPass._emit_sys_stream(stream: str) -> (ir.Value | None) {
     if libc_name not in self.llvm_module.globals {
         _libc_new = ir.GlobalVariable(self.llvm_module, i8p, name=libc_name);
         _libc_new.linkage = "external";
-        if "windows" in str(self.llvm_module.triple or "") {
-            _libc_new.storage_class = "dllimport";
-        }
     }
     libc_gv = self.llvm_module.get_global(libc_name);
 

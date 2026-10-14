@@ -428,15 +428,9 @@ impl _run_harness(
     timeout: float,
     source_path: (str | None) = None
 ) -> list[ClTestResult] {
-    import from jaclang.client.bun_installer { get_bun }
+    import from jaclang.client.js_runtime { js_runtime_path }
 
-    bun = get_bun();
-    if bun is None {
-        raise RuntimeError(
-            "bun is required to run client (cl) tests but could not be located "
-            "or installed."
-        );
-    }
+    bun = js_runtime_path();
 
     work_dir = Path(tempfile.mkdtemp(prefix="jac_cl_test_"));
     try {

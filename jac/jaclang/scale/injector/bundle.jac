@@ -24,7 +24,8 @@ glob APP_VOLUME_NAME: str = "jac-app",
      STAGE_PREFIX: str = "jac-app-precompile-",
      STAGE_REAP_AGE_S: int = 86400;
 
-glob _stage_roots: list[str] = [];
+glob _stage_roots: list[str] = [],
+     SEAL_CACHE_KEEP: int = 2;
 
 glob _reported_prunes: set[str] = set();
 
@@ -59,15 +60,7 @@ glob _EXCLUDE_SUFFIXES: tuple[str, ...] = (
          ".jks",
          ".keystore"
      );
-glob _EXCLUDE_ENV: set[str] = {
-         "PYTHONPATH",
-         "PYTHONHOME",
-         "JAC_LLVM_SHIM",
-         "JAC_DEV_SOURCE",
-         "JAC_NO_PRECOMPILE",
-         "JAC_PRECOMPILE_REQUIRED",
-         "JAC_EXECUTABLE"
-     };
+glob _EXCLUDE_ENV: set[str] = {"PYTHONPATH", "PYTHONHOME", "JAC_HANDOFF"};
 
 
 def _is_bundle_required(rel: Path) -> bool {
@@ -537,7 +530,12 @@ def seal_step_env -> dict[str, str] {
 }
 
 
-def _stage_app(base: Path, sanitized_toml: (str | None)) -> Path {
+def _stage_app(
+    base: Path,
+    sanitized_toml: (str | None),
+    sources: (list[Path] | None) = None,
+    tomls: (dict[str, str] | None) = None
+) -> Path {
     reap_stale_stage_roots();
     stage_root = Path(tempfile.mkdtemp(prefix=_stage_root_prefix()));
     if not _stage_roots {
@@ -547,7 +545,7 @@ def _stage_app(base: Path, sanitized_toml: (str | None)) -> Path {
     _stage_roots.append(str(stage_root));
     stage = stage_root / "app";
     try {
-        for path in bundle_source_files(base) {
+        for path in (sources if sources is not None else bundle_source_files(base)) {
             dest = stage / path.relative_to(base);
             dest.parent.mkdir(parents=True, exist_ok=True);
             shutil.copy2(str(path), str(dest));
@@ -558,7 +556,9 @@ def _stage_app(base: Path, sanitized_toml: (str | None)) -> Path {
         } else {
             (stage / "jac.toml").write_text(PLACEHOLDER_JAC_TOML, encoding="utf-8");
         }
-        for (rel, text) in nested_sanitized_tomls(base).items() {
+        for (rel, text) in (
+            tomls if tomls is not None else nested_sanitized_tomls(base)
+        ).items() {
             dest = stage / Path(rel);
             dest.parent.mkdir(parents=True, exist_ok=True);
             dest.write_text(text, encoding="utf-8");
@@ -657,10 +657,20 @@ def _precompile_app(
     seal_binary: bytes,
     sanitized_toml: (str | None),
     timeout_s: int,
-    app: str = ""
+    app: str = "",
+    sources: (list[Path] | None) = None,
+    tomls: (dict[str, str] | None) = None,
+    seed: (Path | None) = None
 ) -> Path {
-    stage_root = _stage_app(base, sanitized_toml);
+    stage_root = _stage_app(base, sanitized_toml, sources, tomls);
     stage = stage_root / "app";
+    seeded = _seed_precompiled(stage, seed);
+    if seeded {
+        logger.info(
+            f"Seeded {seeded} precompiled module(s) from the previous seal; only "
+            "changed modules are compiled again."
+        );
+    }
     seal_flags: list[str] = ["--seal"] + ([f"--app={app}"] if app else []);
     try {
         jac_path = stage_root / ".seal-jac";
@@ -734,7 +744,13 @@ def _precompile_app(
                 f".jab: {(result.stderr or result.stdout).strip()[-2000:]}"
             );
         }
-        for line in (result.stdout or "").splitlines()[-12:] {
+        output = (result.stdout or "").splitlines();
+        for line in [
+            line
+            for line in output
+            if line.startswith("Done!")
+        ]
+            + output[-12:] {
             if line.strip() {
                 logger.info(f"seal: {line.strip()}");
             }
@@ -951,6 +967,146 @@ def _venv_stage(stage: Path, seal_binary: bytes, timeout_s: int) {
 }
 
 
+def seal_input_digest(
+    base: Path,
+    sources: list[Path],
+    seal_binary: bytes,
+    pod_arch: str,
+    app_name: str,
+    sanitized: (str | None),
+    fat: bool,
+    tomls: dict[str, str]
+) -> str {
+    digest = hashlib.sha256();
+    digest.update(hashlib.sha256(seal_binary).digest());
+    for part in (
+        pod_arch,
+        app_name,
+        "fat" if fat else "thin",
+        os.environ.get("JAC_SEAL_SKIP_VENV", ""),
+        sanitized or ""
+    ) {
+        digest.update(part.encode("utf-8"));
+        digest.update(b"\0");
+    }
+    for (toml_rel, toml_text) in sorted(tomls.items()) {
+        digest.update(toml_rel.encode("utf-8"));
+        digest.update(b"\0");
+        digest.update(toml_text.encode("utf-8"));
+        digest.update(b"\0");
+    }
+    for path in sorted(sources) {
+        digest.update(path.relative_to(base).as_posix().encode("utf-8"));
+        digest.update(b"\0");
+        digest.update(f"{path.stat().st_mode & 0o777:o}".encode("utf-8"));
+        digest.update(b"\0");
+        digest.update(hashlib.sha256(path.read_bytes()).digest());
+    }
+    return digest.hexdigest();
+}
+
+
+def _seal_cache_dir(base: Path) -> Path {
+    return base / ".jac" / "seal-cache";
+}
+
+
+def _mtime(path: Path) -> float {
+    return path.stat().st_mtime;
+}
+
+
+def _latest_seal(base: Path) -> (Path | None) {
+    try {
+        bundles = sorted(
+            _seal_cache_dir(base).`glob("*.jab"), key=_mtime, reverse=True
+        );
+    } except OSError {
+        return None;
+    }
+    return bundles[0] if bundles else None;
+}
+
+
+def _seed_precompiled(stage: Path, seed: (Path | None)) -> int {
+    if seed is None {
+        return 0;
+    }
+    seeded = 0;
+    try {
+        with tarfile.open(str(seed), "r:gz") as tar {
+            for member in tar.getmembers() {
+                parts = Path(member.name).parts;
+                if not member.isfile()
+                    or len(parts) < 3
+                    or parts[0] != "_precompiled"
+                    or not member.name.endswith(".jir")
+                    or ".." in parts {
+                    continue;
+                }
+                source = stage.joinpath(*parts[2:]).with_suffix(".jac");
+                if not source.is_file() {
+                    continue;
+                }
+                data = tar.extractfile(member);
+                if data is None {
+                    continue;
+                }
+                target = stage.joinpath(*parts);
+                target.parent.mkdir(parents=True, exist_ok=True);
+                target.write_bytes(data.read());
+                seeded += 1;
+            }
+        }
+    } except (OSError, tarfile.TarError) as exc {
+        logger.warning(f"Could not seed the seal from the previous bundle: {exc}");
+    }
+    return seeded;
+}
+
+
+def _cached_seal(base: Path, key: str) -> (bytes | None) {
+    cached = _seal_cache_dir(base) / f"{key}.jab";
+    try {
+        raw = cached.read_bytes();
+    } except OSError {
+        return None;
+    }
+    try {
+        os.utime(cached, None);
+    } except OSError as exc {
+        logger.debug(f"Could not touch the reused sealed bundle: {exc}");
+    }
+    return raw;
+}
+
+
+def _remember_seal(base: Path, key: str, raw: bytes) {
+    cache = _seal_cache_dir(base);
+    partial = "";
+    try {
+        cache.mkdir(parents=True, exist_ok=True);
+        (fd, partial) = tempfile.mkstemp(
+            dir=str(cache), prefix=f"{key}.", suffix=".partial"
+        );
+        with os.fdopen(fd, "wb") as out {
+            out.write(raw);
+        }
+        os.replace(partial, cache / f"{key}.jab");
+        kept = sorted(cache.`glob("*.jab"), key=_mtime, reverse=True);
+        for stale in kept[SEAL_CACHE_KEEP:] {
+            stale.unlink(missing_ok=True);
+        }
+    } except OSError as exc {
+        logger.warning(f"Could not keep the sealed bundle for reuse: {exc}");
+    } finally {
+        if partial {
+            Path(partial).unlink(missing_ok=True);
+        }
+    }
+}
+
+
 def pack_jab(
     project_dir: str, seal_binary: bytes, pod_arch: str = "", fleet: any = None
 ) -> bytes {
@@ -980,12 +1136,37 @@ def pack_jab(
         );
     }
     sanitized = sanitized_jac_toml(base);
+    app_name = sealed_app_name(project_dir, fleet);
+    tomls = nested_sanitized_tomls(base);
+    def input_key(tree: Path, files: list[Path]) -> str {
+        return seal_input_digest(
+            tree,
+            files,
+            seal_binary,
+            pod_arch,
+            app_name,
+            sanitized,
+            fat_bundle_setting(project_dir)[0],
+            tomls
+        );
+    }
+    key = input_key(base, sources);
+    cached = _cached_seal(base, key);
+    if cached is not None {
+        logger.info(
+            f"Reusing the sealed bundle for unchanged inputs ({key[:12]}); skipping the seal."
+        );
+        return cached;
+    }
     staged = _precompile_app(
         base,
         seal_binary,
         sanitized,
         seal_timeout_setting(project_dir),
-        sealed_app_name(project_dir, fleet)
+        app_name,
+        sources,
+        tomls,
+        _latest_seal(base)
     );
 
     try {
@@ -1024,7 +1205,12 @@ def pack_jab(
         (tar, gz) = open_det_tar(buf);
         try {
             with tar {
-                add_source_members(tar, base, sources=sources);
+                snapshot = [
+                    staged / path.relative_to(base)
+                    for path in sources
+                    if (staged / path.relative_to(base)).is_file()
+                ];
+                add_source_members(tar, staged, sources=snapshot);
                 pre = staged / "_precompiled";
                 count = 0;
                 for path in sorted(pre.rglob("*")) {
@@ -1081,7 +1267,7 @@ def pack_jab(
                     info.size = len(data);
                     tar.addfile(info, io.BytesIO(data));
                 }
-                for (toml_rel, toml_text) in nested_sanitized_tomls(base).items() {
+                for (toml_rel, toml_text) in tomls.items() {
                     data = toml_text.encode("utf-8");
                     info = tarfile.TarInfo(name=toml_rel);
                     info.size = len(data);
@@ -1091,7 +1277,21 @@ def pack_jab(
         } finally {
             gz.close();
         }
-        return buf.getvalue();
+        raw = buf.getvalue();
+        try {
+            unchanged = len(snapshot) == len(sources)
+                and input_key(staged, snapshot) == key;
+        } except OSError {
+            unchanged = False;
+        }
+        if unchanged {
+            _remember_seal(base, key, raw);
+        } else {
+            logger.info(
+                "The project changed while it was sealed; not keeping this bundle for reuse."
+            );
+        }
+        return raw;
     } finally {
         remove_stage_root(staged.parent);
     }

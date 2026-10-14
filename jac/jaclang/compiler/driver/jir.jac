@@ -561,7 +561,6 @@ glob _COMPILER_DIGEST_CACHE: list[str] = [],
 
 glob PY_EMITTER_ROOTS: tuple[str, ...] = ("compiler/backends/py", ),
      PY_EMITTER_EXCLUDED: tuple[str, ...] = ("compiler/backends/py/jacpython", ),
-     DEV_EXACT_ENV: str = "JAC_DEV_EXACT",
      DEV_NATIVE_PRODUCER: str = "abi:";
 
 def _digest_manifest_path(pkg_dir: str) -> Path {
@@ -677,14 +676,25 @@ def py_emitter_digest -> str {
 }
 
 def require_exact_compiler_products {
-    os.environ[DEV_EXACT_ENV] = "1";
+    import from jaclang.jac0core.handoff { update_handoff }
+    update_handoff(exact=True);
+}
+
+def _handoff -> dict[str, object] {
+    import from jaclang.jac0core.handoff { handoff }
+    return handoff();
+}
+
+def dev_source -> str {
+    return str(_handoff().get("compiler_source") or "");
 }
 
 def dev_carry_enabled -> bool {
-    if os.environ.get(DEV_EXACT_ENV, "") in ENV_TRUTHY or precompile_required() {
+    record = _handoff();
+    if record.get("exact") {
         return False;
     }
-    dev = os.environ.get("JAC_DEV_SOURCE", "").strip();
+    dev = str(record.get("compiler_source") or "");
     if not dev {
         return False;
     }
@@ -696,6 +706,28 @@ def dev_carry_enabled -> bool {
     }
 }
 
+def _contract_file_sha(path: str) -> str {
+    try {
+        with open(path, "rb") as f {
+            return hashlib.sha256(f.read()).hexdigest();
+        }
+    } except OSError {
+        return "missing";
+    }
+}
+
+def abi_contract_digest(pkg_root: str) -> str {
+    import from jaclang.compiler.native_scope { KERNEL_ABI_CONTRACT_REL }
+    h = hashlib.sha256();
+    for rel in KERNEL_ABI_CONTRACT_REL {
+        h.update(rel.encode("utf-8"));
+        h.update(
+            _contract_file_sha(os.path.join(pkg_root, *rel.split("/"))).encode("utf-8")
+        );
+    }
+    return h.hexdigest();
+}
+
 def native_producer_digest(kernel_build: bool = False) -> str {
     current = running_compiler_digest();
     if not kernel_build or not dev_carry_enabled() {
@@ -705,7 +737,6 @@ def native_producer_digest(kernel_build: bool = False) -> str {
     if known is None {
         import from jaclang.compiler.frontend.codeinfo { NATIVE_ABI_VERSION }
         import from jaclang.compiler.kernel_target { target_pkg_root }
-        import from jaclang.compiler.backends.native.stage0_pin { abi_contract_digest }
         known = DEV_NATIVE_PRODUCER
             + str(NATIVE_ABI_VERSION)
             + ":"
@@ -1199,6 +1230,12 @@ def _definition_texts(path: str) -> dict[str, list[str]] {
     return texts;
 }
 
+glob _DEFINITION_DIGESTS: dict[str, str] = {};
+
+def _definition_digest_file(key: str) -> Path {
+    return get_jir_cache_dir() / "defdigest" / compiler_generation() / key[:2] / key;
+}
+
 def definition_digest(path: str, qualname: str) -> str {
     files: list[str] = [path];
     if path.endswith(".jac") {
@@ -1209,6 +1246,41 @@ def definition_digest(path: str, qualname: str) -> str {
             }
         }
     }
+    key_h = hashlib.sha256();
+    key_h.update(qualname.encode());
+    try {
+        for source in files {
+            key_h.update(os.path.realpath(source).encode());
+            key_h.update(b"\0");
+            key_h.update(compute_content_sha256(source).encode());
+            key_h.update(b"\0");
+        }
+    } except OSError {
+        return _compute_definition_digest(files, qualname);
+    }
+    key = key_h.hexdigest();
+    hit = _DEFINITION_DIGESTS.get(key);
+    if hit is not None {
+        return hit;
+    }
+    store = _definition_digest_file(key);
+    try {
+        hit = store.read_text(encoding="utf-8");
+        _DEFINITION_DIGESTS[key] = hit;
+        return hit;
+    } except OSError {}
+    digest = _compute_definition_digest(files, qualname);
+    _DEFINITION_DIGESTS[key] = digest;
+    try {
+        store.parent.mkdir(parents=True, exist_ok=True);
+        tmp = store.with_name(f"{key}.{os.getpid()}.tmp");
+        tmp.write_text(digest, encoding="utf-8");
+        os.replace(tmp, store);
+    } except OSError {}
+    return digest;
+}
+
+def _compute_definition_digest(files: list[str], qualname: str) -> str {
     h = hashlib.sha256();
     h.update(qualname.encode());
     found = False;
@@ -1487,29 +1559,18 @@ def jir_cacheable_source_path(source_path: str) -> bool {
         or (source_path.endswith('.jac') and not source_path.endswith('.na.jac'));
 }
 
-glob ENV_TRUTHY: set[str] = {
-         '1',
-         'true',
-         'True',
-         'TRUE',
-         'yes',
-         'YES',
-         'on',
-         'ON'
-     };
-
 def cache_mode -> tuple[bool, bool] {
-    rebuild = os.environ.get('JAC_REBUILD', '') in ENV_TRUTHY;
-    no_precompile = os.environ.get('JAC_NO_PRECOMPILE', '') in ENV_TRUTHY;
-    return (rebuild, no_precompile);
+    record = _handoff();
+    return (bool(record.get("rebuild")), bool(record.get("no_precompile")));
 }
 
-def precompile_required -> bool {
-    return os.environ.get('JAC_PRECOMPILE_REQUIRED', '') in ENV_TRUTHY;
+def set_cache_mode(rebuild: (bool | None) = None, no_precompile: (bool | None) = None) {
+    import from jaclang.jac0core.handoff { update_handoff }
+    update_handoff(rebuild=rebuild or None, no_precompile=no_precompile or None);
 }
 
 def bundle_dir_allowed(bundle_dir: str) -> bool {
-    dev = os.environ.get('JAC_DEV_SOURCE', '').strip();
+    dev = dev_source();
     if not dev {
         return True;
     }

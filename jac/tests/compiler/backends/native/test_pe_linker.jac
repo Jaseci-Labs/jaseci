@@ -9,7 +9,7 @@ whole transform: it pulls in the libc import surface (puts/printf/snprintf/
 malloc/free), a data segment, and floating point.
 
 The produced .exe is validated structurally (it parses as a well-formed
-PE32+ image whose imports resolve to msvcrt.dll). Actually running the binary
+PE32+ image whose imports resolve to ucrtbase.dll). Actually running the binary
 requires a Windows host (or WSL interop) and is not assumed here.
 """
 
@@ -47,6 +47,7 @@ def emit_coff_object(fixture: str) -> bytes {
         src = program_ir(fixture, WIN_TRIPLE);
         llvm.initialize_all_targets();
         llvm.initialize_all_asmprinters();
+        llvm.initialize_all_asmparsers();
         mod = llvm.parse_assembly(src);
         mod.verify();
         # codemodel="large" (not the default "jitdefault"): on a Windows host
@@ -178,18 +179,18 @@ test "linker emits a well-formed PE32+ image" {
     assert pe["entry_rva"] >= tva and pe["entry_rva"] < tva + max(tvsz, trsz);
 }
 
-test "imports resolve to msvcrt.dll via the import directory" {
+test "imports resolve to ucrtbase.dll via the import directory" {
     pe = parse_pe(link_pe(emit_coff_object(FIXTURE)));
-    assert "msvcrt.dll" in pe["imports"] , f"DLLs: {list(pe['imports'].keys())}";
+    assert "ucrtbase.dll" in pe["imports"] , f"DLLs: {list(pe['imports'].keys())}";
     syms = [];
     for (_dll, names) in pe["imports"].items() {
         syms += names;
     }
-    # the entry stub always needs exit + __getmainargs; the fixture prints
-    for need in ["exit", "__getmainargs", "puts"] {
+    # the entry stub always needs exit and the UCRT's argv; the fixture prints
+    for need in ["exit", "__p___argv", "puts"] {
         assert need in syms , f"missing import {need} in {syms}";
     }
-    # the glibc-only malloc_usable_size must be aliased to msvcrt's _msize
+    # the glibc-only malloc_usable_size must be aliased to the UCRT's _msize
     assert "malloc_usable_size" not in syms;
 }
 
@@ -304,5 +305,5 @@ test "nacompile --target windows writes a valid PE via the CLI" {
     assert os.path.exists(out);
     pe = parse_pe(Path(out).read_bytes());
     assert pe["magic"] == 0x20B;
-    assert "msvcrt.dll" in pe["imports"];
+    assert "ucrtbase.dll" in pe["imports"];
 }

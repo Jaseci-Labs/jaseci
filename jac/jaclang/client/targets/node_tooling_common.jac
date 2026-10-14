@@ -3,7 +3,7 @@ import hashlib;
 import json;
 import from pathlib { Path }
 import from jaclang.cli.console { console }
-import from jaclang.client { get_bun }
+import from jaclang.client.js_runtime { js_runtime_path, run_pm }
 
 def resolve_node_tool_entry(project_dir: Path, tool: str) -> (Path | None) {
     shim = project_dir / "node_modules" / ".bin" / tool;
@@ -14,7 +14,7 @@ def resolve_node_tool_entry(project_dir: Path, tool: str) -> (Path | None) {
 }
 
 def resolve_node_tool(project_dir: Path, tool: str) -> list[str] {
-    bun = _require_bundled_bun();
+    bun = js_runtime_path();
     `entry = resolve_node_tool_entry(project_dir, tool);
     if `entry is None {
         raise RuntimeError(
@@ -24,22 +24,6 @@ def resolve_node_tool(project_dir: Path, tool: str) -> list[str] {
         );
     }
     return [bun, str(`entry)];
-}
-
-def resolve_package_manager -> str {
-    return _require_bundled_bun();
-}
-
-def _require_bundled_bun -> str {
-    bun_path = get_bun();
-    if bun_path is None {
-        raise RuntimeError(
-            "Bundled bun is missing. Shipped jac binaries include it (a "
-            "missing copy indicates a broken build); for a source checkout "
-            "run `zig build fetch-bun`, or set JAC_BUN to a bun binary."
-        );
-    }
-    return bun_path;
 }
 
 def run_manifest_install(project_dir: Path) {
@@ -64,9 +48,11 @@ def run_manifest_install(project_dir: Path) {
         if current {
             return;
         }
-        cmd = [resolve_package_manager(), "install"];
         console.print(f"Synchronizing dependencies in {project_dir.name}...");
-        subprocess.run(cmd, cwd=project_dir, check=True, capture_output=False);
+        (returncode, _) = run_pm(["install"], str(project_dir));
+        if returncode != 0 {
+            raise subprocess.CalledProcessError(returncode, ["install"]);
+        }
         stamp.write_text(manifest_signature(project_dir));
     }
 }

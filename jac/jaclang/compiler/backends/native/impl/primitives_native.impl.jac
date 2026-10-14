@@ -3509,8 +3509,13 @@ impl NativeListEmitter.emit_sort(
     b.cbranch(needs_swap, swap_bb, no_swap);
 
     b.position_at_start(swap_bb);
-    b.call(helpers["set"], [target, ji, ej1]);
-    b.call(helpers["set"], [target, j1, ej]);
+
+    _sw_dpp = b.gep(
+        target, [ir.Constant(i32, 0), ir.Constant(i32, 2)], name="sort.dpp"
+    );
+    _sw_da = b.load(_sw_dpp, name="sort.da");
+    b.store(ej1, b.gep(_sw_da, [ji], name="sort.slot.j"));
+    b.store(ej, b.gep(_sw_da, [j1], name="sort.slot.j1"));
     b.branch(inner_next);
     b.position_at_start(no_swap);
     b.branch(inner_next);
@@ -3769,8 +3774,13 @@ impl NativeListEmitter.emit_reverse(
     b.position_at_start(body_bb);
     val_i = b.call(helpers["get"], [target, i_phi], name="rev.val.i");
     val_j = b.call(helpers["get"], [target, j_phi], name="rev.val.j");
-    b.call(helpers["set"], [target, i_phi, val_j]);
-    b.call(helpers["set"], [target, j_phi, val_i]);
+
+    _rev_dpp = b.gep(
+        target, [ir.Constant(i32, 0), ir.Constant(i32, 2)], name="rev.dpp"
+    );
+    _rev_da = b.load(_rev_dpp, name="rev.da");
+    b.store(val_j, b.gep(_rev_da, [i_phi], name="rev.slot.i"));
+    b.store(val_i, b.gep(_rev_da, [j_phi], name="rev.slot.j"));
     next_i = b.add(i_phi, ir.Constant(i64, 1), name="rev.next.i");
     next_j = b.sub(j_phi, ir.Constant(i64, 1), name="rev.next.j");
     i_phi.add_incoming(next_i, body_bb);
@@ -5427,6 +5437,12 @@ impl NativeBuiltinEmitter.emit_sum(
     f64 = ir.DoubleType();
     list_val = args[0];
 
+    byte_src = p._bytearray_src_of(list_val);
+    if byte_src is not None {
+        (data, count) = byte_src;
+        return _sum_bytes(p, data, count, args);
+    }
+
     helpers: (dict[str, any] | None) = None;
     for (lk, lt) in p.list_types.items() {
         if list_val.type == lt.as_pointer() {
@@ -5473,22 +5489,130 @@ impl NativeBuiltinEmitter.emit_sum(
     b.position_at_start(loop_bb);
     idx = b.phi(i64, name="sum.idx");
     acc = b.phi(acc_ty, name="sum.acc");
+    comp = b.phi(f64, name="sum.comp") if use_float else None;
     idx.add_incoming(ir.Constant(i64, 0), entry_bb);
     acc.add_incoming(initial, entry_bb);
+    if comp is not None {
+        comp.add_incoming(ir.Constant(f64, 0.0), entry_bb);
+    }
     at_end = b.icmp_unsigned(">=", idx, list_len, name="sum.atend");
     b.cbranch(at_end, done_bb, body_bb);
     b.position_at_start(body_bb);
     elem = b.call(helpers["get"], [list_val, idx], name="sum.elem");
     value = _sum_operand(b, elem, use_float);
-    new_acc = b.fadd(acc, value, name="sum.add")
-        if use_float
-        else b.add(acc, value, name="sum.add");
+    new_acc: ir.Value;
+    if comp is None {
+        new_acc = b.add(acc, value, name="sum.add");
+    } else {
+        (new_acc, lost) = _sum_compensated_add(p, acc, value);
+        if not start_float {
+            lost = b.select(
+                b.icmp_unsigned("==", idx, ir.Constant(i64, 0), name="sum.first"),
+                ir.Constant(f64, 0.0),
+                lost,
+                name="sum.lost.kept"
+            );
+        }
+        comp.add_incoming(b.fadd(comp, lost, name="sum.comp.next"), b.basic_block);
+    }
     next_idx = b.add(idx, ir.Constant(i64, 1), name="sum.next");
     body_end = b.basic_block;
     idx.add_incoming(next_idx, body_end);
     acc.add_incoming(new_acc, body_end);
     b.branch(loop_bb);
     b.position_at_start(done_bb);
+    if comp is not None {
+        return _sum_compensated_result(p, acc, comp);
+    }
+    return acc;
+}
+
+def _sum_compensated_add(
+    p: NaIRGenPass, acc: ir.Value, value: ir.Value
+) -> tuple[ir.Value, ir.Value] {
+    b = get_builder(p);
+    total = b.fadd(acc, value, name="sum.add");
+    acc_larger = b.fcmp_ordered(
+        ">=", p._fp_fabs(acc), p._fp_fabs(value), name="sum.acc.larger"
+    );
+    lost = b.select(
+        acc_larger,
+        b.fadd(b.fsub(acc, total, name="sum.lost.acc"), value, name="sum.lost.a"),
+        b.fadd(b.fsub(value, total, name="sum.lost.value"), acc, name="sum.lost.b"),
+        name="sum.lost"
+    );
+    return (total, lost);
+}
+
+def _sum_compensated_result(p: NaIRGenPass, acc: ir.Value, comp: ir.Value) -> ir.Value {
+    b = get_builder(p);
+    usable = b.and_(
+        b.fcmp_unordered(
+            "!=", comp, ir.Constant(ir.DoubleType(), 0.0), name="sum.comp.nonzero"
+        ),
+        p._fp_isfinite(comp),
+        name="sum.comp.usable"
+    );
+    return b.select(
+        usable, b.fadd(acc, comp, name="sum.comp.add"), acc, name="sum.result"
+    );
+}
+
+def _sum_bytes(
+    p: NaIRGenPass, data: ir.Value, count: ir.Value, args: list[ir.Value]
+) -> (ir.Value | None) {
+    b = get_builder(p);
+    i64 = ir.IntType(64);
+    f64 = ir.DoubleType();
+    start = args[1] if len(args) == 2 else None;
+    use_float = start is not None
+        and isinstance(start.type, (ir.DoubleType, ir.FloatType));
+    if start is not None and not use_float and not isinstance(start.type, ir.IntType) {
+        return None;
+    }
+    acc_ty = f64 if use_float else i64;
+    initial: ir.Value = ir.Constant(acc_ty, 0.0)
+        if use_float
+        else ir.Constant(acc_ty, 0);
+    if start is not None {
+        initial = _sum_operand(b, start, use_float);
+    }
+    func = b.basic_block.function;
+    entry_bb = b.basic_block;
+    loop_bb = func.append_basic_block(name="sumb.loop");
+    body_bb = func.append_basic_block(name="sumb.body");
+    done_bb = func.append_basic_block(name="sumb.done");
+    b.branch(loop_bb);
+    b.position_at_start(loop_bb);
+    idx = b.phi(i64, name="sumb.idx");
+    acc = b.phi(acc_ty, name="sumb.acc");
+    comp = b.phi(f64, name="sumb.comp") if use_float else None;
+    idx.add_incoming(ir.Constant(i64, 0), entry_bb);
+    acc.add_incoming(initial, entry_bb);
+    if comp is not None {
+        comp.add_incoming(ir.Constant(f64, 0.0), entry_bb);
+    }
+    at_end = b.icmp_unsigned(">=", idx, count, name="sumb.atend");
+    b.cbranch(at_end, done_bb, body_bb);
+    b.position_at_start(body_bb);
+    byte = b.load(b.gep(data, [idx], name="sumb.at"), name="sumb.byte");
+    value = _sum_operand(b, b.zext(byte, i64, name="sumb.wide"), use_float);
+    new_acc: ir.Value;
+    if comp is None {
+        new_acc = b.add(acc, value, name="sumb.add");
+    } else {
+        (new_acc, lost) = _sum_compensated_add(p, acc, value);
+        comp.add_incoming(b.fadd(comp, lost, name="sumb.comp.next"), b.basic_block);
+    }
+    next_idx = b.add(idx, ir.Constant(i64, 1), name="sumb.next");
+    body_end = b.basic_block;
+    idx.add_incoming(next_idx, body_end);
+    acc.add_incoming(new_acc, body_end);
+    b.branch(loop_bb);
+    b.position_at_start(done_bb);
+    if comp is not None {
+        return _sum_compensated_result(p, acc, comp);
+    }
     return acc;
 }
 
@@ -5890,7 +6014,11 @@ impl NativeBuiltinEmitter.emit_str(
     }
 
     if isinstance(arg_val.type, ir.IntType) and arg_val.type.width == 1 {
-        return p._bool_text(b, arg_val, "str.bool");
+        _str_flag = p._bool_text(b, arg_val, "str.bool");
+        if p._nogc_headerless() {
+            return p._mark_owned(p._call_str_dup(b, _str_flag, name="str.bool.own"));
+        }
+        return _str_flag;
     }
 
     if isinstance(arg_val.type, ir.PointerType) {
@@ -5913,6 +6041,12 @@ impl NativeBuiltinEmitter.emit_str(
             "==", arg_val, ir.Constant(i8p, None), name="str.isnone"
         );
         result = b.select(is_null, none_s, arg_val, name="str.ornone");
+        if p._nogc_headerless() {
+            if p._is_owned(arg_val) {
+                return p._mark_owned(result);
+            }
+            return p._rc_strdup(result, name="str.copy");
+        }
         p._emit_rc_retain(result, op="builtin_str_id");
         return result;
     }
@@ -6447,7 +6581,30 @@ impl NativeBuiltinEmitter.emit_set(
             return _se.emit_copy(_ctx2, val, []);
         }
     }
-    return None;
+    if not ctx.arg_nodes {
+        return None;
+    }
+    listed = self.emit_list(ctx, args);
+    if listed is None {
+        return None;
+    }
+    scalar = False;
+    for (lk, lhelpers) in p.list_helpers.items() {
+        ltype = p.list_types.get(lk);
+        if ltype is not None and listed.type == ltype.as_pointer() {
+            scalar = isinstance(
+                lhelpers["elem_type"], (ir.IntType, ir.DoubleType, ir.FloatType)
+            );
+            break;
+        }
+    }
+    if not scalar {
+        return None;
+    }
+    _ctx3 = ctx.__class__(pass_ref=p, type_key=ctx.type_key);
+    drained = self.emit_set(_ctx3, [listed]);
+    p._release_owned_args([p._mark_owned(listed)]);
+    return drained;
 }
 
 impl NativeBuiltinEmitter.emit_tuple(
