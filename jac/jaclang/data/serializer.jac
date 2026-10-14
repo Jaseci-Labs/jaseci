@@ -14,6 +14,7 @@ import from typing { Union }
 import from uuid { UUID }
 
 glob logger = logging.getLogger(__name__),
+     FROZEN_BASELINE: int = 1,
      FINGERPRINT_LENGTH: int = 16,
      _MAX_WARNED_CLASS_KEYS: int = 1024,
      _MAX_IMPORT_FAILURES: int = 1024,
@@ -100,7 +101,11 @@ obj Serializer {
         data: dict[str, object], anchor: Anchor
     ) -> (object | None);
 
-    static def _compute_hash(anchor: Anchor) -> int;
+    static def stored_form(anchor: Anchor) -> dict[str, object];
+    static def stored_hash(
+        anchor: Anchor, stored: (dict[str, object] | None) = None
+    ) -> int;
+
     static def serialize_fields(
         anchor: Anchor, field_names: set[str]
     ) -> dict[str, object];
@@ -113,3 +118,7 @@ glob _register_hook: object = Archetype.install_subclass_hook(
      ),
      _register_root: object = Serializer.register(cast(type, Root)),
      _register_generic_edge: object = Serializer.register(cast(type, GenericEdge));
+
+
+def frozen_value(value: any) -> bool;
+def frozen_fields(anchor: Anchor) -> bool;

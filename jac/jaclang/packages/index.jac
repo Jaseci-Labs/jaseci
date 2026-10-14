@@ -209,7 +209,7 @@ obj Registry {
         if offline() {
             if not cached {
                 raise RegistryError(
-                    f"{self.name}: {rel} is not cached and JAC_OFFLINE is set"
+                    f"{self.name}: {rel} is not cached and jac.toml sets `[network] offline`"
                 );
             }
             return cached.get("body");

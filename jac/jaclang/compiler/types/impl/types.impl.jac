@@ -122,6 +122,7 @@ impl ClassDetailsShared.mro.setter(mro: list[ClassType]) -> None {
         self +>:MroOf:+> t;
     }
     self._mro_cache = `list(mro or []);
+    CLASS_GRAPH_EPOCH[0] += 1;
 }
 
 impl ClassDetailsShared.type_params.getter -> list[TypeVarType] {
@@ -174,6 +175,7 @@ impl ClassDetailsShared.base_classes.setter(
     for t in (base_classes or []) {
         self +>:BaseOf:+> t;
     }
+    CLASS_GRAPH_EPOCH[0] += 1;
     c = self._acc_cache;
     if c is None {
         c = {};
@@ -877,6 +879,22 @@ impl FunctionType.clone -> FunctionType {
 
 impl FunctionType.specialize(class_type: ClassType) -> FunctionType {
     solution = build_type_var_solution(class_type);
+    cache = self._acc_cache;
+    if cache is None {
+        cache = {};
+        self._acc_cache = cache;
+    }
+    memo: (dict[int, tuple[(ClassType, dict[str, TypeBase], FunctionType)]] | None) = cache.get(
+        "_specialized"
+    );
+    if memo is None {
+        memo = {};
+        cache["_specialized"] = memo;
+    }
+    held = memo.get(id(class_type));
+    if held is not None and held[0] is class_type and held[1] is solution {
+        return held[2];
+    }
 
     clone = self.clone();
 
@@ -894,6 +912,9 @@ impl FunctionType.specialize(class_type: ClassType) -> FunctionType {
         );
     }
 
+    if len(memo) < 32 {
+        memo[id(class_type)] = (class_type, solution, clone);
+    }
     return clone;
 }
 

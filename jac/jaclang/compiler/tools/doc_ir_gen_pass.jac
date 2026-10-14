@@ -1,4 +1,5 @@
 walker DocIRGenPass(TreePass) {
+    static has contract: PassContract = PassContract();
     has _live_comment_ids: (set[int] | None) = None,
         _emitted_comment_ids: (set[int] | None) = None;
 

@@ -2,6 +2,7 @@ import keyword;
 import os;
 
 walker JacAutoLintPass(TreePass) {
+    static has contract: PassContract = PassContract();
     has lint_enabled: bool = True,
         report_only: bool = False,
         main_module: (uni.Module | None) = None,
@@ -173,5 +174,6 @@ walker JacAutoLintPass(TreePass) {
 }
 
 walker JacLintCheckPass(JacAutoLintPass) {
+    static has contract: PassContract = PassContract();
     has report_only: bool = True;
 }

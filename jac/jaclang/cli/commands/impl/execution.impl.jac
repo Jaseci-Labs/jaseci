@@ -516,7 +516,11 @@ impl run_jab_image(
     }
     servable = kind in ["service", "service-mesh", "web-app", "web-static"];
     if serve_only or servable {
-        serve_port = port;
+        (arg_port, accepted) = _bundle_serve_args(args, label);
+        if not accepted {
+            return 1;
+        }
+        serve_port = arg_port if arg_port is not None else port;
         if serve_port is None {
             import from jaclang.project.config { get_config_for_path }
             img_cfg = get_config_for_path(img_root);
@@ -546,6 +550,48 @@ impl run_jab_image(
         "(build its platform projection instead)."
     );
     return 1;
+}
+
+def _bundle_serve_args(args: list[str], label: str) -> tuple[(int | None), bool] {
+    rest = [str(a) for a in args];
+    if rest and rest[0] == "--" {
+        rest = rest[1:];
+    }
+    port: (int | None) = None;
+    i = 0;
+    while i < len(rest) {
+        arg = rest[i];
+        value: (int | None) = None;
+        if arg == "--port" and i + 1 < len(rest) {
+            value = _cli_port(rest[i + 1]);
+            i += 2;
+        } elif arg.startswith("--port=") {
+            value = _cli_port(arg[len("--port="):]);
+            i += 1;
+        }
+        if value is None {
+            example = (
+                f"{os.path.basename(sys.executable)} --port 8080"
+                    if label == "<app binary>"
+                    else f"jac run --port 8080 {label}"
+            );
+            console.error(
+                f"{label} serves, so the only argument it takes is --port N "
+                f"(got '{arg}'). For example: {example}"
+            );
+            return (None, False);
+        }
+        port = value;
+    }
+    return (port, True);
+}
+
+def _cli_port(text: str) -> (int | None) {
+    if not (text.isascii() and text.isdigit()) {
+        return None;
+    }
+    value = int(text);
+    return value if 0 < value < 65536 else None;
 }
 
 def _jab_native_bin(img_root: Path, entry_rel: str) -> (str | None) {
@@ -696,6 +742,19 @@ def _resolve_plan(
     return (plan, cfg, app, file, 0);
 }
 
+def _in_compiler_tree(file: Path, project_root: Path) -> bool {
+    project = project_root.resolve();
+    for parent in file.resolve().parents {
+        if not parent.is_relative_to(project) {
+            return False;
+        }
+        if parent.name == 'jaclang' and (parent / 'jac0core').is_dir() {
+            return True;
+        }
+    }
+    return False;
+}
+
 def _load_executable(
     filename: str, base: str, main: bool, force_codespace: str = ''
 ) -> types.ModuleType {
@@ -705,17 +764,9 @@ def _load_executable(
         compiler.selfhost.resolve(filename, program)
     );
     config = get_config_for_path(Path(filename));
-    if config is not None
-        and config.project_root is not None
-        and config.dev.jaclang_source {
-        source_root = (
-            config.project_root / config.dev.jaclang_source / 'jaclang'
-        ).resolve();
+    if config is not None and config.project_root is not None {
         compiler_owned = compiler_owned
-            or (
-                source_root.is_relative_to(config.project_root.resolve())
-                and Path(filename).resolve().is_relative_to(source_root)
-            );
+            or _in_compiler_tree(Path(filename), config.project_root);
     }
     if compiler_owned {
         modules = Jac.jac_import(
@@ -970,18 +1021,11 @@ def _exec_file(
                     and resolve_app_kind(_cfg_kind, _app, _abs_file) == 'cli-native'
                 );
             }
-            import from jaclang.compiler.driver.boundary_classify {
-                module_demoted_native as _na_demoted
-            }
             if backend != "python"
                 and (
                     backend == "native"
                     or _kind_forced
-                    or (
-                        _default_codespace_is_native()
-                        and sys.stdout is sys.__stdout__
-                        and not _na_demoted(filename)
-                    )
+                    or (_default_codespace_is_native() and sys.stdout is sys.__stdout__)
                 ) {
                 import ctypes;
                 import from jaclang.compiler.driver.compile_options {
@@ -994,19 +1038,30 @@ def _exec_file(
                         if _kind_forced or backend == "native"
                         else None
                 );
-                ir_mod = program.compile(file_path=full_path, options=_run_options);
+                (in_kernel, engine) = program._get_compiler().kernel_native_entry(
+                    full_path, program, _run_options
+                );
+                if not in_kernel and _run_options is None {
+                    engine = program._get_compiler().native_entry_engine(
+                        full_path, program
+                    );
+                } elif not in_kernel {
+                    ir_mod = program.compile(file_path=full_path, options=_run_options);
+                    if (
+                        ir_mod
+                        and ir_mod.decided_codespace == 'native'
+                        and ir_mod.gen.native_engine
+                    ) {
+                        engine = ir_mod.gen.native_engine;
+                    }
+                }
                 if program.errors_had {
                     for _err in program.errors_had {
                         console.error(_err.pretty_print());
                     }
                     return 1;
                 }
-                if (
-                    ir_mod
-                    and ir_mod.decided_codespace == 'native'
-                    and ir_mod.gen.native_engine
-                ) {
-                    engine = ir_mod.gen.native_engine;
+                if engine is not None {
                     _populate_native_argv(engine, sys.argv);
                     if main {
                         addr = engine.get_function_address("jac_entry");
@@ -1256,10 +1311,11 @@ impl serve(
                 [svc.entry_path(project_root) for svc in services],
                 not no_client
                     and not faux
-                    and (
-                        served is None
-                        or (cfg.resolved_kind(served) if cfg else served.kind)
-                            == "web-app"
+                    and _serves_web_client(
+                        (cfg.resolved_kind(served) if cfg else served.kind)
+                            if served is not None
+                            else None,
+                        platform or (served.platform if served is not None else "")
                     ),
                 dev
             );
@@ -1311,6 +1367,7 @@ impl serve(
             return 0;
         }
         hot_reloader = None;
+        watch_paths: list[str] = [base];
         vite_holder: list[any] = [];
         if dev {
             if not _ensure_watchdog_installed() {
@@ -1319,9 +1376,15 @@ impl serve(
             }
             try {
                 import from jaclang.server.hmr { HotReloader }
-                import from jaclang.server.watcher { JacFileWatcher }
+                import from jaclang.server.watcher {
+                    JacFileWatcher,
+                    application_watch_roots
+                }
 
-                watcher = JacFileWatcher(watch_paths=[base]);
+                watch_paths = application_watch_roots(
+                    base, prepared, Jac.get_program()
+                );
+                watcher = JacFileWatcher(watch_paths=watch_paths);
                 client_compiler = None;
                 if not no_client {
                     try {
@@ -1385,7 +1448,8 @@ impl serve(
                 no_client=no_client,
                 primary_port=primary_port,
                 api_port=actual_port,
-                base_path=base
+                base_path=base,
+                watch_paths=watch_paths
             );
         }
         try {
@@ -1499,10 +1563,20 @@ def _get_network_ips -> list[str] {
     return ips;
 }
 
+def _serves_web_client(kind: (str | None), platform: (str | None)) -> bool {
+    if kind is None or kind == "web-app" {
+        return True;
+    }
+    return kind == "mobile" and (platform or "").strip().lower() == "web";
+}
+
 def _count_jac_files(directory: str) -> int {
     import from pathlib { Path }
     try {
         path = Path(directory);
+        if path.is_file() {
+            return 1 if path.suffix == '.jac' else 0;
+        }
         return len(list(path.rglob('*.jac')));
     } except Exception {
         return 0;
@@ -1510,7 +1584,12 @@ def _count_jac_files(directory: str) -> int {
 }
 
 def _print_startup_message(
-    dev: bool, no_client: bool, primary_port: int, api_port: int, base_path: str = '.'
+    dev: bool,
+    no_client: bool,
+    primary_port: int,
+    api_port: int,
+    base_path: str = '.',
+    watch_paths: (list[str] | None) = None
 ) {
     import from importlib.metadata { version as pkg_version }
 
@@ -1541,7 +1620,7 @@ def _print_startup_message(
         console.print(f"    API:  http://localhost:{api_port}/", style="muted");
         console.print();
 
-        file_count = _count_jac_files(base_path);
+        file_count = sum(_count_jac_files(p) for p in (watch_paths or [base_path]));
         if file_count > 0 {
             console.print_watching("**/*.jac", file_count);
         } else {
@@ -1550,7 +1629,7 @@ def _print_startup_message(
     } elif dev and no_client {
         console.print("  Server ready (API only)", style="bold green");
         console.print();
-        file_count = _count_jac_files(base_path);
+        file_count = sum(_count_jac_files(p) for p in (watch_paths or [base_path]));
         if file_count > 0 {
             console.print_watching("**/*.jac", file_count);
         } else {
@@ -1777,12 +1856,10 @@ def _run_entry_point(
 def _run_node_tool(name: str, bin_path: Path, args: list[str]) -> int {
     import subprocess;
 
-    bun = get_bun();
-    if bun is None {
-        console.error(
-            f"Cannot run npm tool '{name}': the bun runtime is unavailable.",
-            hint="Install bun, or run the project once (e.g. 'jac run') to let jac provision it."
-        );
+    try {
+        bun = js_runtime_path();
+    } except ArtifactUnavailable as e {
+        console.error(f"Cannot run npm tool '{name}': {e}");
         return 1;
     }
     config = get_config();

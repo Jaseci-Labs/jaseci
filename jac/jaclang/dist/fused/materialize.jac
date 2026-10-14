@@ -55,36 +55,6 @@ def:pub overlay_for_path(exe_path: str) -> Overlay | None {
     return peek_overlay(exe_path, total);
 }
 
-def:pub peek_stubcat(exe_path: str, total: int) -> Overlay | None {
-    trailer = trailer_at(exe_path, total, MAGIC);
-    if trailer is None {
-        return None;
-    }
-    poff = region_start(total, trailer.payload_len);
-    if poff < REGION_DESC_LEN {
-        return None;
-    }
-    desc = parse_region_desc(
-        read_at(exe_path, poff - REGION_DESC_LEN, REGION_DESC_LEN)
-    );
-    if desc is None or desc.length <= 0 or desc.off + desc.length > poff {
-        return None;
-    }
-    return Overlay(off=desc.off, length=desc.length);
-}
-
-def:pub stubcat_for_path(exe_path: str) -> Overlay | None {
-    total = os.path.getsize(exe_path);
-    if total < TRAILER_LEN {
-        return None;
-    }
-    ovl = peek_overlay(exe_path, total);
-    if ovl is not None {
-        total = ovl.off;
-    }
-    return peek_stubcat(exe_path, total);
-}
-
 def dir_writable(path: str) -> bool {
     os.makedirs(path, exist_ok=True);
     if not os.path.isdir(path) {

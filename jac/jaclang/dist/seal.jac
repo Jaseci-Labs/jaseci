@@ -63,6 +63,25 @@ def resolve_entry_file(config: any, app: str = "") -> (Path | None) {
     return None;
 }
 
+def _without_keys(record: dict[str, any], dropped: str) -> dict[str, any] {
+    return {
+        key: value
+        for (key, value) in record.items()
+        if key != dropped
+    };
+}
+
+def _portable_manifest(manifest: dict[str, any]) -> dict[str, any] {
+    result = _without_keys(manifest, 'root');
+    if result.get('surface') {
+        result['surface'] = {
+            name: _without_keys(rec, 'module')
+            for (name, rec) in result['surface'].items()
+        };
+    }
+    return result;
+}
+
 def build_serve_manifest(entry_file: Path, proj_root: Path) -> (dict[str, any] | None) {
     program = JacProgram();
     program.options = CompileOptions(skip_native_engine=True);
@@ -83,10 +102,11 @@ def build_serve_manifest(entry_file: Path, proj_root: Path) -> (dict[str, any] |
             str(proj_root.resolve()),
             services=[svc.entry_path(str(proj_root.resolve())) for svc in services]
         );
-        result = dict(prepared.manifests[str(entry_file.resolve())]);
+        result = _portable_manifest(prepared.manifests[str(entry_file.resolve())]);
         result['module_manifests'] = {
-            os.path.relpath(path, prepared.root).replace(os.sep, '/'): manifest
-            for application in [prepared, *prepared.applications]
+            os.path.relpath(path, prepared.root).replace(os.sep, '/'): _portable_manifest(
+                manifest
+            ) for application in [prepared, *prepared.applications]
             for (path, manifest) in application.manifests.items()
         };
         return result;
@@ -101,35 +121,20 @@ def build_serve_manifest(entry_file: Path, proj_root: Path) -> (dict[str, any] |
 
 def ensure_client_dist(config: any, entry_file: Path) -> (Path | None) {
     dist = client_app_dir_for(config, str(entry_file)) / 'dist';
-    bun = None;
     try {
-        bun = get_bun();
-    } except Exception {
-        bun = None;
+        js_runtime_path();
+    } except ArtifactUnavailable as e {
+        console.error(f"This app has client code but it cannot be bundled: {e}");
+        return None;
     }
-    if bun {
-        console.print("  Building client bundle (web)", style="muted");
-        try {
-            WebTarget().build(entry_file, Path(config.project_root));
-        } except Exception as e {
-            console.error(f"Client build failed: {e}");
-            return None;
-        }
-        return dist if dist.is_dir() else None;
+    console.print("  Building client bundle (web)", style="muted");
+    try {
+        WebTarget().build(entry_file, Path(config.project_root));
+    } except Exception as e {
+        console.error(f"Client build failed: {e}");
+        return None;
     }
-    if dist.is_dir() and any(dist.`glob('client.*.js')) {
-        console.print(
-            "  ⚠ bun unavailable; baking the existing client dist as-is",
-            style="warning"
-        );
-        return dist;
-    }
-    console.error(
-        "This app has client code but no client bundle could be built or "
-        f"found ({dist}).",
-        hint="Install bun (jac will fetch it on demand) or prebuild the client."
-    );
-    return None;
+    return dist if dist.is_dir() else None;
 }
 
 def bake_native_payloads(config: any, pkg_copy: Path, app: str = "") -> bool {

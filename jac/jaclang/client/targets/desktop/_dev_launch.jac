@@ -77,7 +77,8 @@ def _prepend_env_path(env: dict[str, str], key: str, path: str) -> None {
 
 def _dev_roots_from_env -> dict[str, str] {
     roots: dict[str, str] = {};
-    dev_src = os.environ.get("JAC_DEV_SOURCE");
+
+    dev_src = dev_source();
     if not dev_src {
         return roots;
     }
@@ -156,7 +157,7 @@ def ensure_dev_build_env {
 
 def desktop_app_runtime_env(base: any = None) -> dict[str, str] {
     env = desktop_launch_env(base);
-    for key in ["PYTHONEXECUTABLE", "JAC_EXECUTABLE", "VIRTUAL_ENV", ] {
+    for key in ["PYTHONEXECUTABLE", "JAC_HANDOFF", "VIRTUAL_ENV", ] {
         env.pop(key, None);
     }
     for (key, val) in desktop_host_env() {

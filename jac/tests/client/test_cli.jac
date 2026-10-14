@@ -1098,7 +1098,7 @@ test "vite build injects core deps without prompting" {
         bundler = ViteBundler(project_dir);
         with unittest.mock.patch("builtins.input", return_value="Y") as mock_input {
             with unittest.mock.patch(
-                "jaclang.client.bun_installer.get_bun", return_value="bun"
+                "jaclang.client.js_runtime.js_runtime_path", return_value="bun"
             ) {
                 with unittest.mock.patch("subprocess.run") as mock_subprocess {
                     # bun install returns success, vite build returns failure

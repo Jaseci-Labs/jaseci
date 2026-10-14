@@ -52,9 +52,14 @@ impl _decode_value(oid: int, raw: bytes) -> any {
 
 
 impl _named_to_positional(sql: str, params: dict[str, any]) -> tuple[str, list[any]] {
+    (pos_sql, order) = _rewrite_named(sql, frozenset(params));
+    return (pos_sql, [params[name] for name in order]);
+}
+
+
+impl _rewrite_named(sql: str, names: frozenset[str]) -> tuple[str, tuple[str, ...]] {
     out: list[str] = [];
     order: dict[str, int] = {};
-    args: list[any] = [];
     i = 0;
     n = len(sql);
     in_squote = False;
@@ -101,15 +106,13 @@ impl _named_to_positional(sql: str, params: dict[str, any]) -> tuple[str, list[a
                 continue;
             }
             j = i + 1;
-            name = '';
             while j < n and (sql[j].isalnum() or sql[j] == '_') {
-                name += sql[j];
                 j += 1;
             }
-            if name and name in params {
+            name = sql[i + 1:j];
+            if name and name in names {
                 if name not in order {
-                    order[name] = len(args) + 1;
-                    args.append(params[name]);
+                    order[name] = len(order) + 1;
                 }
                 out.append(f"${order[name]}");
                 i = j;
@@ -119,7 +122,7 @@ impl _named_to_positional(sql: str, params: dict[str, any]) -> tuple[str, list[a
         out.append(ch);
         i += 1;
     }
-    return (''.join(out), args);
+    return (''.join(out), tuple(order));
 }
 
 
@@ -180,6 +183,8 @@ impl PgWireConnection.postinit -> None {
     self.parameters = {};
     self._sock = None;
     self._closed = False;
+    self._rbuf = bytearray();
+    self._rpos = 0;
     self._connect_socket();
     self._startup();
 }
@@ -227,6 +232,7 @@ impl PgWireConnection._startup -> None {
         } elif mtype == 'E' {
             raise PgWireError(_parse_error_fields(payload));
         } elif mtype == 'Z' {
+            self._drain_async();
             return;
         }
     }
@@ -317,27 +323,53 @@ impl PgWireConnection._send(msg_type: str, payload: bytes) -> None {
 }
 
 
-impl PgWireConnection._read_exact(n: int) -> bytes {
-    buf = b'';
+impl PgWireConnection._fill(n: int) -> None {
+    buf = self._rbuf;
     sock: any = self._sock;
-    while len(buf) < n {
-        chunk = sock.recv(n - len(buf));
+    while len(buf) - self._rpos < n {
+        chunk = sock.recv(READ_CHUNK);
         if not chunk {
             self._closed = True;
             raise PgWireError({'C': '08006', 'M': 'connection closed by server'});
         }
-        buf += chunk;
+        if self._rpos {
+            del buf[:self._rpos];
+            self._rpos = 0;
+        }
+        buf.extend(chunk);
     }
-    return buf;
 }
 
 
 impl PgWireConnection._read_message -> tuple[str, bytes] {
-    header = self._read_exact(5);
-    mtype = header[:1].decode('ascii');
-    length = struct.unpack(_INT32, header[1:5])[0];
-    payload = self._read_exact(length - 4) if length > 4 else b'';
+    self._fill(5);
+    length = struct.unpack_from(_INT32, self._rbuf, self._rpos + 1)[0];
+    self._fill(length + 1);
+    buf = self._rbuf;
+    start = self._rpos;
+    end = start + 1 + length;
+    mtype = chr(buf[start]);
+    payload = bytes(buf[start + 5:end]);
+    if end == len(buf) {
+        buf.clear();
+        self._rpos = 0;
+    } else {
+        self._rpos = end;
+    }
     return (mtype, payload);
+}
+
+
+impl PgWireConnection._drain_async -> None {
+    buf = self._rbuf;
+    while len(buf) - self._rpos >= 5 and chr(buf[self._rpos]) in ('A', 'S', 'N') {
+        length = struct.unpack_from(_INT32, buf, self._rpos + 1)[0];
+        if len(buf) - self._rpos < length + 1 {
+            return;
+        }
+        (mtype, payload) = self._read_message();
+        self._handle_async(mtype, payload);
+    }
 }
 
 
@@ -437,6 +469,7 @@ impl PgWireConnection.run(sql: str, **params: any) -> list[any] {
             continue;
         }
         if mtype == 'Z' {
+            self._drain_async();
             if err is not None {
                 raise PgWireError(err);
             }

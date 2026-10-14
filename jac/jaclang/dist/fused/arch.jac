@@ -8,12 +8,12 @@ graph import {
     trailer --> materialize {
         MAGIC,
         OVERLAY_MAGIC,
-        REGION_DESC_LEN,
         TRAILER_LEN,
         Trailer,
-        parse_region_desc,
         parse_trailer,
         region_start,
         rt_key
     }
+    embed --> js_engine { CStrArray, export_ca_bundle }
+    report --> js_engine { die }
 }

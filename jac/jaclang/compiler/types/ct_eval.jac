@@ -1,6 +1,7 @@
 import os;
 
 glob CT_FUEL_DEFAULT: int = 50000000,
+     CT_CALL_DEPTH_LIMIT: int = 200,
      CT_MODULE_SUFFIX: str = "jaclang/comptime.jac",
      CT_INTRINSICS: frozenset[str] = frozenset(
          {
@@ -114,6 +115,7 @@ obj CtEvaluator(CtCaller) {
     has evaluator: TypeEvaluator,
         env: CtEnvironment = CtEnvironment(),
         fuel: int = CT_FUEL_DEFAULT,
+        call_depth: int = 0,
         frames: list[dict[str, CtValue]] = [],
         barriers: list[bool] = [],
         call_stack: list[str] = [],
@@ -1681,6 +1683,18 @@ obj CtEvaluator(CtCaller) {
     }
 
     def _eval_call(nd: FuncCall) -> CtValue {
+        if self.call_depth >= CT_CALL_DEPTH_LIMIT {
+            raise CtError("comptime evaluation recursed too deeply");
+        }
+        self.call_depth += 1;
+        try {
+            return self._eval_call_counted(nd);
+        } finally {
+            self.call_depth -= 1;
+        }
+    }
+
+    def _eval_call_counted(nd: FuncCall) -> CtValue {
         if nd.genai_call is not None {
             raise CtError("'by llm' calls cannot run at compile time");
         }

@@ -1,6 +1,16 @@
 import from typing { cast }
 
 walker CFGBuildPass(TreePass) {
+    static has contract: PassContract = PassContract(
+        provides=(
+            AnalysisFact.CFG_SUCC,
+            AnalysisFact.CFG_TRUE,
+            AnalysisFact.CFG_FALSE,
+
+        ),
+        kernel_safe=True
+    );
+
     def link_bbs(source: UniCFGNode, target: UniCFGNode) -> None;
     def _link_sequential(body: Sequence[CodeBlockStmt]) -> None;
     def _exit_wired(nd: UniCFGNode) -> bool;

@@ -294,8 +294,8 @@ test "wiring syntax has its own diagnostics" {
         ("graph import { 42; }", "E0094"),
         ("graph import { a --> b { *, x } }", "E0095"),
         ("graph import { edge R: a.* --> b.* { x as y } }", "E0096"),
-        ("graph import { edge R: a.* --> any; }", "E0097"),
-        ("impl import { a --> b { x } }", "E0098"),
+        ("graph import { edge R: a.* --> any; }", "E0098"),
+        ("impl import { a --> b { x } }", "E0099"),
 
     ];
     for (src, code) in cases {

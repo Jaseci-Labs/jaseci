@@ -1,4 +1,6 @@
 walker CommentAttachPass(CompilerPass) {
+    static has contract: PassContract = PassContract();
+
     def _run_impl(ir_in: uni.Module) -> uni.Module;
     can run_walk with uni.Module entry;
     def _node_comments(nd: uni.UniNode) -> NodeComments;

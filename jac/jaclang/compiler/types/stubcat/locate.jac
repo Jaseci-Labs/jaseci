@@ -8,11 +8,7 @@ obj CatalogOrigin {
         length: int = 0;
 }
 
-glob ENV_FILE: str = "JAC_STUBCAT_FILE",
-     ENV_OFF: str = "JAC_STUBCAT_OFF",
-     ENV_LEN: str = "JAC_STUBCAT_LEN",
-     ENV_BUILDING: str = "JAC_STUBCAT_BUILDING",
-     TYPE_SYSTEM_ROOTS: tuple[str, ...] = (
+glob TYPE_SYSTEM_ROOTS: tuple[str, ...] = (
          "compiler/types",
          "compiler/passes/pyast_load_pass.jac",
          "compiler/passes/impl/pyast_load_pass.impl.jac",
@@ -147,63 +143,148 @@ def _open_region(
     }
 }
 
-class StubCatalogUnavailable(RuntimeError) {}
-
-def _build_dev_catalog(path: str, pkg_dir: str) {
-    sys.stderr.write(
-        "jac: building the stub catalog (one-time per type-system change)...\n"
+def _region_probe(exe: str, source: Source, pkg: str, check_key: bool) -> Probe {
+    region = stubcat_region(exe);
+    if region is None {
+        return Probe.missing();
+    }
+    cat = _open_region(exe, region.off, region.length, pkg);
+    if cat is None {
+        return Probe.stale(["the embedded catalog is unreadable"]);
+    }
+    if check_key and cat.key() != catalog_key(pkg) {
+        return Probe.stale(["the type system changed since this catalog was built"]);
+    }
+    return Probe.hit(
+        source, exe, {"catalog": cat, "offset": region.off, "length": region.length}
     );
-    sys.stderr.flush();
-    os.environ[ENV_BUILDING] = "1";
-    try {
-        import from jaclang.compiler.types.stubcat.build { build_catalog }
-        build_catalog(path, pkg_dir=pkg_dir, quiet=True);
-    } finally {
-        os.environ.pop(ENV_BUILDING, None);
+}
+
+def _file_probe(path: str, source: Source, pkg: str, check_key: bool) -> Probe {
+    if not os.path.isfile(path) {
+        return Probe.missing();
+    }
+    cat = _open_file(path, pkg);
+    if cat is None {
+        return Probe.stale(["the catalog is unreadable"]);
+    }
+    if check_key and cat.key() != catalog_key(pkg) {
+        return Probe.stale(["the type system changed since this catalog was built"]);
+    }
+    return Probe.hit(
+        source, path, {"catalog": cat, "offset": 0, "length": len(cat.buf)}
+    );
+}
+
+obj StubcatArtifact(Artifact) {
+    has name: str = "stubcat",
+        kind: ArtifactKind = ArtifactKind.ACCELERATOR,
+        release: ReleasePolicy = ReleasePolicy.REQUIRED,
+        summary: str = "the stub catalog (pre-resolved typeshed types)",
+        floor: str = "parsing the typeshed stubs",
+        requires: list[str] = ["typeshed"];
+
+    override def probe_sealed -> (Probe | None) {
+        if sealed._jaclang_image() is None {
+            return None;
+        }
+
+        pkg = jaclang_pkg_dir();
+        embedded = _region_probe(running_executable(), Source.SEALED, pkg, False);
+        if embedded.found is not None {
+            return embedded;
+        }
+        return _file_probe(bundled_catalog_path(pkg), Source.SEALED, pkg, False);
+    }
+
+    override def probe_checkout -> Probe {
+        pkg = jaclang_pkg_dir();
+        found = _file_probe(dev_catalog_path(pkg), Source.CHECKOUT, pkg, False);
+        if found.found is not None {
+            import from pathlib { Path }
+            import from jaclang.cache.registry { bucket }
+            bucket("jir-stubcat").note_hit(Path(found.found.path));
+        }
+        return found;
+    }
+
+    override def probe_kit -> Probe {
+        if kit_image() is None {
+            return Probe.missing("this process runs on no kit");
+        }
+
+        pkg = jaclang_pkg_dir();
+        embedded = _region_probe(running_executable(), Source.KIT, pkg, True);
+        if embedded.found is not None or not embedded.absent {
+            return embedded;
+        }
+        return _file_probe(
+            kit_path(os.path.join("_precompiled", "stubcat.bin")), Source.KIT, pkg, True
+        );
+    }
+
+    override def checkout_path -> str {
+        return dev_catalog_path(jaclang_pkg_dir());
+    }
+
+    override def build(log: Callable[[str], None], force: bool, exact: bool) {
+        pkg = jaclang_pkg_dir();
+        out = dev_catalog_path(pkg);
+        log(f"  building the stub catalog into {out}");
+        build_catalog(out, pkg_dir=pkg, quiet=True);
+        maybe_sweep("jir-stubcat");
     }
 }
 
-def _current_for_source(cat: StubCatalog, pkg: str) -> bool {
-    if not os.environ.get("JAC_DEV_SOURCE") {
-        return True;
+obj TypeshedArtifact(Artifact) {
+    has name: str = "typeshed",
+        kind: ArtifactKind = ArtifactKind.CAPABILITY,
+        release: ReleasePolicy = ReleasePolicy.REQUIRED,
+        summary: str = "the vendored typeshed stdlib stubs";
+
+    override def probe_sealed -> (Probe | None) {
+        if sealed._jaclang_image() is None {
+            return None;
+        }
+        return _typeshed_probe(Source.SEALED, False);
     }
-    try {
-        return cat.key() == catalog_key(pkg);
-    } except Exception {
-        return True;
+
+    override def probe_checkout -> Probe {
+        return _typeshed_probe(Source.CHECKOUT, True);
+    }
+
+    override def checkout_path -> str {
+        return typeshed_stdlib_dir(jaclang_pkg_dir());
+    }
+
+    override def build(log: Callable[[str], None], force: bool, exact: bool) {
+        fetch_typeshed(os.path.dirname(jaclang_pkg_dir()));
     }
 }
 
-def _find_catalog -> StubCatalog | None {
-    pkg = jaclang_pkg_dir();
-    explicit = os.environ.get(ENV_FILE, "");
-    if explicit {
-        return _open_file(explicit, pkg);
+def _typeshed_probe(source: Source, check_pin: bool) -> Probe {
+    stdlib = typeshed_stdlib_dir(jaclang_pkg_dir());
+    if not os.path.isfile(os.path.join(stdlib, "builtins.pyi")) {
+        return Probe.missing();
     }
-    off = os.environ.get(ENV_OFF, "");
-    length = os.environ.get(ENV_LEN, "");
-    if off and length {
-        exe = os.environ.get("JAC_EXECUTABLE", "") or sys.executable;
-        cat = _open_region(exe, int(off), int(length), pkg);
-        if cat is not None and _current_for_source(cat, pkg) {
-            return cat;
+    if check_pin {
+        pin = _read_trimmed(os.path.join(os.path.dirname(stdlib), "PIN"));
+        stamp = _read_trimmed(os.path.join(stdlib, ".typeshed-sha"));
+        if pin and stamp != pin {
+            return Probe.stale([f"the typeshed PIN moved to {pin[:12]}"]);
         }
     }
-    bundled = bundled_catalog_path(pkg);
-    if os.path.isfile(bundled) {
-        cat = _open_file(bundled, pkg);
-        if cat is not None and _current_for_source(cat, pkg) {
-            return cat;
+    return Probe.hit(source, stdlib, {});
+}
+
+def _read_trimmed(path: str) -> str {
+    try {
+        with open(path, encoding="utf-8") as f {
+            return f.read().strip();
         }
+    } except OSError {
+        return "";
     }
-    dev = dev_catalog_path(pkg);
-    if os.path.isfile(dev) {
-        import from pathlib { Path }
-        import from jaclang.cache.registry { bucket }
-        bucket("jir-stubcat").note_hit(Path(dev));
-        return _open_file(dev, pkg);
-    }
-    return None;
 }
 
 def _publish(cat: StubCatalog | None) -> StubCatalog | None {
@@ -217,40 +298,24 @@ def _publish(cat: StubCatalog | None) -> StubCatalog | None {
 }
 
 def open_catalog -> StubCatalog | None {
-    if os.environ.get(ENV_BUILDING) {
-        return None;
-    }
     if _CATALOG_CACHE {
         return _CATALOG_CACHE[0];
     }
-    return _publish(_find_catalog());
-}
 
-def ensure_catalog -> StubCatalog | None {
-    cat = open_catalog();
-    if cat is not None or os.environ.get(ENV_BUILDING) {
-        return cat;
+    if catalog_disabled() {
+        return None;
     }
-    pkg = jaclang_pkg_dir();
-    if not os.path.isfile(os.path.join(typeshed_stdlib_dir(pkg), "builtins.pyi")) {
-        raise StubCatalogUnavailable(
-            "no stub catalog is available and this checkout has no vendored "
-            "typeshed sources to build one from. In a source checkout run "
-            "'zig build fetch-typeshed'; in an installed environment reinstall "
-            "the jac distribution, whose payload carries the catalog."
-        );
-    }
-    dev = dev_catalog_path(pkg);
-    _build_dev_catalog(dev, pkg);
 
-    maybe_sweep("jir-stubcat");
-    cat = _publish(_open_file(dev, pkg));
-    if cat is None {
-        raise StubCatalogUnavailable(
-            f"the stub catalog build produced no readable catalog at {dev}"
-        );
+    found = resolve("stubcat").found;
+    if found is None {
+        return None;
     }
-    return cat;
+    _opened(
+        found.path,
+        int(found.record.get("offset", 0)),
+        int(found.record.get("length", 0))
+    );
+    return _publish(found.record.get("catalog"));
 }
 
 def reset_catalog_cache {

@@ -22,7 +22,7 @@ The one rule: **having an arch.jac closes its directory.** It governs every modu
 - must have every import of a module below the arch.jac match a wire, item by item: matched is `W3053` (autofixed by `jac fmt --lintfix`), unmatched is `E1144` with the wire to add;
 - may import such a module inside a function body only through a scoped wire naming that function (`pkg.mod.Class.method`), or it is `E2094`.
 
-Rules are optional restrictions. A provider no rule names flows anywhere under the arch.jac; one a rule names flows only where a rule admits (`E2090`), and a payload rule admits only the names it lists (`E2091`). Rule targets are modules under the arch.jac, so `any` is not a pattern (`E0097`). `E1144`, `E2090`, `E2091` and `E2094` ignore inline `# jac:ignore`; changing a boundary is an edit to arch.jac.
+Rules are optional restrictions. A provider no rule names flows anywhere under the arch.jac; one a rule names flows only where a rule admits (`E2090`), and a payload rule admits only the names it lists (`E2091`). Rule targets are modules under the arch.jac, so `any` is not a pattern (`E0098`). `E1144`, `E2090`, `E2091` and `E2094` ignore inline `# jac:ignore`; changing a boundary is an edit to arch.jac.
 
 Consequences worth knowing:
 

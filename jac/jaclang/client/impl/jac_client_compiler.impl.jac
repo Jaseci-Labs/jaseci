@@ -94,6 +94,7 @@ impl JacClientCompiler.compile(
     module_path: Path,
     native: bool = False
 ) -> tuple[list[str], list[str]] {
+    self.input_files = {};
     self.emit_prelude();
     artifact = self.jac_compiler.compile_module(module_path);
     self._collect_na_modules(artifact);
@@ -284,7 +285,11 @@ impl JacClientCompiler.emit_dependencies(
             artifact, str(module_path), output_path, source_header + combined_js
         );
     }
+
     for asset in closure.assets {
+        self.input_files[str(asset)] = compute_content_sha256(str(asset))
+            if asset.is_file()
+            else "";
         if asset.suffix == '.js' {
             self._copy_js_file(asset, source_root);
         } elif asset.suffix in {'.ts', '.tsx'} {

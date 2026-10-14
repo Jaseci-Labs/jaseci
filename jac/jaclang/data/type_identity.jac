@@ -2,7 +2,7 @@ import json;
 import sys;
 
 import threading;
-import from weakref { WeakValueDictionary }
+import from weakref { WeakValueDictionary, finalize, ref }
 import from contextlib { contextmanager }
 import from contextvars { ContextVar }
 
@@ -18,6 +18,7 @@ glob _scope: ContextVar[ResolutionScope | None] = ContextVar(
          'jac_persistence_scope', `default=None
      ),
      _types: dict[str, WeakValueDictionary[str, type]] = {},
+     _resolved: dict[int, tuple[any, WeakValueDictionary[str, type]]] = {},
      _lock: threading.RLock = threading.RLock();
 
 def module_identity(facts: tuple[str, ...]) -> str {
@@ -79,6 +80,39 @@ def resolution_scope(application: PreparedApplication | None) -> Iterator[None] 
     }
 }
 
+def _cached_type(
+    application: PreparedApplication, key: str, name: str
+) -> (type | None) {
+    slot = _resolved.get(id(application));
+    if slot is None or slot[0]() is not application {
+        return None;
+    }
+    cls = slot[1].get(key);
+    if cls is not None
+        and getattr(sys.modules.get(cls.__module__), name, None) is cls {
+        return cls;
+    }
+    return None;
+}
+
+def _forget_resolved(application_id: int) {
+    with _lock {
+        _resolved.pop(application_id, None);
+    }
+}
+
+def _remember_type(application: PreparedApplication, key: str, cls: type) {
+    with _lock {
+        slot = _resolved.get(id(application));
+        if slot is None or slot[0]() is not application {
+            slot = (ref(application), WeakValueDictionary());
+            _resolved[id(application)] = slot;
+            finalize(application, _forget_resolved, id(application));
+        }
+        slot[1][key] = cls;
+    }
+}
+
 def resolve_type(module_name: str, name: str) -> type {
     key = module_name + '.' + name;
     scope = _scope.get();
@@ -94,16 +128,11 @@ def resolve_type(module_name: str, name: str) -> type {
             f'Persistent type {key} is outside the active application namespace'
         );
     }
-    with _lock {
-        candidates: dict[str, type] = {};
-        for (runtime_module, registered) in _types.get(key, {}).items() {
-            candidate = getattr(sys.modules.get(runtime_module), name, None);
-            candidates[runtime_module] = candidate
-                if isinstance(candidate, type) and type_module(candidate) == module_name
-                else registered;
-        }
-    }
     if application is not None {
+        cached = _cached_type(application, key, name);
+        if cached is not None {
+            return cached;
+        }
         import from jaclang.runtime.prepared { load_prepared_module }
         module = load_prepared_module(
             application.persistence_modules[module_name], application
@@ -111,10 +140,23 @@ def resolve_type(module_name: str, name: str) -> type {
         candidate = getattr(module, name, None);
         if isinstance(candidate, type) and type_module(candidate) == module_name {
             register_type(candidate);
+            _remember_type(application, key, candidate);
             return candidate;
         }
-    } elif len(candidates) == 1 {
-        return next(iter(candidates.values()));
+    } else {
+        with _lock {
+            candidates: dict[str, type] = {};
+            for (runtime_module, registered) in _types.get(key, {}).items() {
+                candidate = getattr(sys.modules.get(runtime_module), name, None);
+                candidates[runtime_module] = candidate
+                    if isinstance(candidate, type)
+                        and type_module(candidate) == module_name
+                    else registered;
+            }
+        }
+        if len(candidates) == 1 {
+            return next(iter(candidates.values()));
+        }
     }
     raise UnavailableType(
         f'Cannot resolve persistent type {key} in the active app; prepare its schema and select a persistence scope'

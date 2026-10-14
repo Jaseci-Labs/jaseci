@@ -393,8 +393,9 @@ impl fetch_bun(osarch: str, dest: str) {
     is_windows = osarch.startswith("windows");
     bun_name = "bun.exe" if is_windows else "bun";
     out_path = os.path.join(dest, bun_name);
-    if file_exists(out_path) {
-        log(f"fetch-bun: already present at {out_path}");
+
+    if _probe_bun(out_path, Source.CHECKOUT).found is not None {
+        log(f"fetch-bun: bun {BUN_VERSION} already present at {out_path}");
         return;
     }
 
@@ -429,5 +430,6 @@ impl fetch_bun(osarch: str, dest: str) {
     if not file_exists(out_path) {
         die(f"fetch-bun: extract produced no {bun_name}");
     }
+    write_bun_record(out_path);
     log(f"fetch-bun: ready at {out_path} ({len(bun_bytes) >> 20} MiB)");
 }

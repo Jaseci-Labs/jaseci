@@ -203,6 +203,7 @@ impl PgStore.postinit -> None {
     self._in_txn = False;
     self._isolation = None;
     self._known_types = set();
+    self._txn_types = set();
     self._listeners = [];
     self._listen_thread = None;
     self._listen_stop = None;
@@ -300,7 +301,8 @@ glob _SCHEMA_LOCK_TAG = 'jac:ensure_schema',
      _SCHEMA_LOCK_WAIT_SECONDS = 30.0,
      _SCHEMA_LOCK_POLL_SECONDS = 0.05,
      _SCHEMA_LOCK_POLL_MAX_SECONDS = 0.5,
-     _CONCURRENT_CREATE_STATES = ('23505', '42P07', '42710');
+     _CONCURRENT_CREATE_STATES = ('23505', '42P07', '42710'),
+     _QUEUE_WAIT_SECONDS = 30;
 
 
 def _schema_lock_key -> int {
@@ -578,6 +580,30 @@ impl PgStore.ensure_schema_once(promotions: dict[str, list[str]]) -> None {
         }
         self.ensure_schema(promotions);
         _schema_ready.add(ns);
+        if self.ensure_cb is None {
+            self._warn_lock_headroom();
+        }
+    }
+}
+
+
+impl PgStore._warn_lock_headroom -> None {
+    try {
+        found = self._run(
+            "SELECT name, setting FROM pg_settings WHERE name IN "
+            "('max_pred_locks_per_transaction', 'max_connections', "
+            "'max_prepared_transactions')",
+            {}
+        );
+        problem = predicate_lock_shortfall({str(row[0]): int(row[1]) for row in found});
+    } except Exception as e {
+        logger.debug(f"predicate-lock headroom check skipped: {e}");
+        return;
+    }
+    if problem {
+        where = self.conninfo.unix_socket_dir
+            or f"{self.conninfo.host}:{self.conninfo.port}/{self.conninfo.database}";
+        logger.warning(f"Postgres at {where}: {problem}");
     }
 }
 
@@ -829,6 +855,7 @@ impl PgStore.begin(isolation: TxnIsolation = TxnIsolation.SERIALIZABLE) -> None 
         self._run(f"BEGIN {isolation.value}", {});
         self._in_txn = True;
         self._isolation = isolation;
+        self._txn_types = set();
         try {
             self._run("SET LOCAL lock_timeout = '10s'", {});
         } except Exception {}
@@ -843,6 +870,7 @@ impl PgStore.commit -> None {
         }
         try {
             self._run('COMMIT', {});
+            self._known_types |= self._txn_types;
         } finally {
             self._in_txn = False;
             self._isolation = None;
@@ -1021,10 +1049,13 @@ impl PgStore.upsert(rows_in: list[AnchorRow]) -> None {
             actual_version=int(found[0][0]) if found else -1
         );
     }
+    registered = self._txn_types if self._in_txn else self._known_types;
     pairs: list[tuple[str, str]] = [];
     seen_pairs: set[tuple[str, str]] = set();
     for row in rows {
-        if row.arch_type and row.arch_type not in self._known_types {
+        if row.arch_type
+            and row.arch_type not in self._known_types
+            and row.arch_type not in registered {
             for anc in (row.ancestry or [row.arch_type]) {
                 if (row.arch_type, anc) not in seen_pairs {
                     seen_pairs.add((row.arch_type, anc));
@@ -1048,7 +1079,7 @@ impl PgStore.upsert(rows_in: list[AnchorRow]) -> None {
             tparams
         );
         for pair in pairs {
-            self._known_types.add(pair[0]);
+            registered.add(pair[0]);
         }
     }
 }
@@ -1103,6 +1134,61 @@ impl PgStore.subtype_names(type_name: str) -> list[str] {
 
 impl PgStore.rows(sql: str, params: dict[str, any]) -> list[tuple[any, ...]] {
     return [tuple(r) for r in self._run(sql, params)];
+}
+
+
+impl PgStore.queue_enter(ids: list[UUID]) -> bool {
+    with self._lock {
+        self._run('BEGIN', {});
+        try {
+            self._run(f"SET LOCAL lock_timeout = '{_QUEUE_WAIT_SECONDS}s'", {});
+            self._run(
+                """
+                SELECT pg_advisory_lock(k) FROM (
+                    SELECT hashtextextended(x, 0) AS k
+                    FROM unnest(CAST(:ids AS text[])) AS x
+                    ORDER BY 1
+                ) AS keys
+                """,
+                {'ids': sorted(str(i) for i in ids)}
+            );
+            self._run('COMMIT', {});
+            return True;
+        } except Exception as e {
+            try {
+                self._run('ROLLBACK', {});
+            } except Exception {}
+            try {
+                self.queue_exit(ids);
+            } except Exception {}
+            if _sqlstate(e) in ('55P03', '40P01') {
+                return False;
+            }
+            raise;
+        }
+    }
+}
+
+
+impl PgStore.queue_exit(ids: list[UUID]) -> None {
+    self._run(
+        """
+        SELECT pg_advisory_unlock(hashtextextended(x, 0))
+        FROM unnest(CAST(:ids AS text[])) AS x
+        """,
+        {'ids': [str(i) for i in ids]}
+    );
+}
+
+
+impl PgStore.lock_rows(ids: list[UUID]) -> None {
+    self._run(
+        """
+        SELECT id FROM anchors WHERE id = ANY(CAST(:ids AS uuid[]))
+        ORDER BY id FOR UPDATE
+        """,
+        {'ids': [str(i) for i in ids]}
+    );
 }
 
 
@@ -1497,4 +1583,13 @@ impl PgStore.close -> None {
     self._join_listen_thread(parked);
     _park_conn(self.conninfo, main_conn, was_txn, False);
     _park_conn(self.conninfo, side_conn, False, listened);
+}
+
+
+impl PgStore.lock_wait(timeout: str) -> None {
+    with self._lock {
+        if self._in_txn {
+            self._run(f"SET LOCAL lock_timeout = '{timeout}'", {});
+        }
+    }
 }

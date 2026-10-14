@@ -4,7 +4,7 @@ impl cfg_dot_from_file(file_name: str) -> str {
     }
     ir = (prog := JacProgram()).compile(use_str=file_source, file_path=file_name);
     import from typing { cast }
-    cfg_pass = cast(CoalesceBBPass, run_utility(UtilityProduct.CFG_DOT, ir, prog));
+    cfg_pass = cast(CoalesceBBPass, run_utility(CompilationProduct.CFG_DOT, ir, prog));
     dot = cfg_pass.printgraph_cfg();
     return dot;
 }

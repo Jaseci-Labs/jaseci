@@ -60,6 +60,9 @@ impl CFGBuildPass._exit_wired(nd: UniCFGNode) -> bool {
         return bool(nd.bb_out);
     }
     for succ in nd.bb_out {
+        if isinstance(succ, InnerCompr) {
+            continue;
+        }
         if not isinstance(succ, CfgExpr)
             or succ.find_parent_of_type(UniCFGNode) is not nd {
             return True;

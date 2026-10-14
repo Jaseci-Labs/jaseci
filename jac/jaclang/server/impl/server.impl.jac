@@ -30,8 +30,9 @@ impl ExecutionManager.report_collector(
 async def _begin_request_context(
     user_root_id: str, target: object | None = None
 ) -> tuple[(ExecutionContext, any)] {
-    parent = Jac.get_context();
-    req_ctx = await ExecutionContext.for_target(target, parent, user_root_id);
+    req_ctx = await ExecutionContext.for_target(
+        target, RequestScope.current(), user_root_id
+    );
     token = Jac.push_request_context(req_ctx);
 
     isolate_request_walk_stack();
@@ -125,6 +126,20 @@ def _unit_key_for(target: any) -> (str | None) {
 }
 
 
+glob _TURN_POOL: list[any] = [];
+
+
+def _conflict_turn_pool -> any {
+    if not _TURN_POOL {
+        import from concurrent.futures { ThreadPoolExecutor }
+        _TURN_POOL.append(
+            ThreadPoolExecutor(max_workers=8, thread_name_prefix="jac-conflict-turn")
+        );
+    }
+    return _TURN_POOL[0];
+}
+
+
 def _occ_policy -> tuple[str, int, int] {
     mode = "retry";
     max_attempts = 5;
@@ -196,11 +211,16 @@ async def _run_function_with_occ(
         max_attempts = 1 if occ_mode == "fail" else max(1, occ_max);
         attempt = 0;
         ro_retries = 0;
+        reload_root = False;
         while attempt < max_attempts {
             attempt += 1;
             call_token = ctx.call_state.set(CallState());
             call_state = ctx.call_state.get();
             try {
+                if reload_root {
+                    reload_root = False;
+                    await ctx.aset_user_root(root_id);
+                }
                 outcome = await run_attempt(call_state, ctx);
                 ctx.mem.unit_exit();
                 settled = True;
@@ -221,7 +241,7 @@ async def _run_function_with_occ(
                 if ro_retries <= 2 {
                     attempt -= 1;
                 }
-                await ctx.aset_user_root(root_id);
+                reload_root = True;
             } except WriteConflict as wc {
                 settled = False;
                 if ctx.mem.unit_depth() == 0 {
@@ -243,8 +263,49 @@ async def _run_function_with_occ(
                 if occ_backoff_ms > 0 {
                     await asyncio.sleep(occ_backoff_ms * attempt / 1000.0);
                 }
-                await ctx.aset_user_root(root_id);
+                import from jaclang.server.session { Session }
+                mem: any = ctx.mem;
+                if isinstance(mem, Session) {
+                    import contextvars;
+                    turn_context = contextvars.copy_context();
+                    def take_turn {
+                        turn_context.run(mem.wait_turn);
+                    }
+                    turn = asyncio.get_running_loop().run_in_executor(
+                        _conflict_turn_pool(), take_turn
+                    );
+                    try {
+                        await asyncio.shield(turn);
+                    } except asyncio.CancelledError {
+                        while not turn.done() {
+                            try {
+                                await asyncio.shield(turn);
+                            } except asyncio.CancelledError {
+                                continue;
+                            }
+                        }
+                        raise;
+                    }
+                }
+                reload_root = True;
             } except Exception as e {
+                import from jaclang.server.session { transient_db_error }
+                if attempt < max_attempts and transient_db_error(e) {
+                    settled = False;
+                    if ctx.mem.unit_depth() == 0 {
+                        ctx.mem.unit_enter(unit_key);
+                    }
+                    ctx.mem.abort();
+                    ctx.pending_effects.clear();
+                    ctx.read_versions.clear();
+                    ctx.diagnostics.clear();
+                    forget_response_choice();
+                    if occ_backoff_ms > 0 {
+                        await asyncio.sleep(occ_backoff_ms * attempt / 1000.0);
+                    }
+                    reload_root = True;
+                    continue;
+                }
                 ctx.mem.abort();
                 import logging;
                 logging.getLogger('jaclang.serve').exception(
@@ -458,8 +519,7 @@ impl ModuleIntrospector.load(force_reload: bool = False) -> None {
     self._module = module;
     self._load_manifest();
     self._load_surface();
-    self._functions = self._collect_functions();
-    self._walkers = self._collect_walkers();
+    self._reset_targets();
     self._invalidate_bundle();
 }
 
@@ -498,11 +558,6 @@ impl ModuleIntrospector._load_surface -> None {
         str(name): SurfaceEntry.from_dict(str(name), dict(rec))
         for (name, rec) in dict(manifest.get('surface', {}) or {}).items()
     };
-    self._served_walkers = sum(
-        1
-        for rec in self._surface.values()
-        if rec.kind == 'walker' and rec.is_served()
-    );
     self._manifest_root = str(manifest.get('root') or '');
 }
 
@@ -523,7 +578,8 @@ impl ModuleIntrospector._resolve_declared(rel: str, name: str) -> any {
             src_path = source_for_origin(application, rel);
         } except Exception {}
     }
-    if own_file and os.path.abspath(src_path) == os.path.abspath(own_file) {
+    target = os.path.abspath(src_path);
+    if own_file and target == os.path.abspath(own_file) {
         return getattr(self._module, name, None);
     }
 
@@ -532,7 +588,7 @@ impl ModuleIntrospector._resolve_declared(rel: str, name: str) -> any {
     }
     for loaded in list(Jac.loaded_modules.values()) {
         f = loaded?.__file__;
-        if f and os.path.abspath(f) == os.path.abspath(src_path) {
+        if f and os.path.abspath(f) == target {
             sym = getattr(loaded, name, None);
             if sym is not None {
                 return sym;
@@ -563,24 +619,17 @@ impl ModuleIntrospector.scheduled_members -> list[tuple[str, any, bool]] {
 }
 
 
-impl ModuleIntrospector._collect_functions -> dict[str, Callable[(..., any)]] {
+impl ModuleIntrospector._reset_targets -> None {
+    self._functions = {};
+    self._walkers = {};
+    self._complete = False;
+    self._collect_client_functions();
+}
+
+impl ModuleIntrospector._collect_client_functions -> None {
+    self._client_functions = {};
     if not self._module {
-        return {};
-    }
-    functions: dict[(str, Callable[(..., any)])] = {};
-    for (name, rec) in self._surface.items() {
-        if rec.kind != 'function' or not rec.is_served() {
-            continue;
-        }
-        try {
-            target = self._resolve_declared(rec.src, name);
-        } except Exception {
-            logger.exception('Could not load endpoint %s from %s', name, rec.src);
-            continue;
-        }
-        if callable(target) {
-            functions[name] = target;
-        }
+        return;
     }
     for name in self._client_manifest.get('exports', []) {
         if not hasattr(self._module, name) {
@@ -591,76 +640,108 @@ impl ModuleIntrospector._collect_functions -> dict[str, Callable[(..., any)]] {
             self._client_functions[name] = attr;
         }
     }
-    return functions;
-}
-
-impl ModuleIntrospector._collect_walkers -> dict[str, type[WalkerArchetype]] {
-    if not self._module {
-        return {};
-    }
-    walkers: dict[(str, type[WalkerArchetype])] = {};
-    for (name, rec) in self._surface.items() {
-        if rec.kind != 'walker' or not rec.is_served() {
-            continue;
-        }
-        try {
-            target = self._resolve_declared(rec.src, name);
-        } except Exception {
-            logger.exception('Could not load walker %s from %s', name, rec.src);
-            continue;
-        }
-        if isinstance(target, type) and issubclass(target, WalkerArchetype) {
-            walkers[name] = target;
-        }
-    }
-    return walkers;
 }
 
 impl ModuleIntrospector._check_module_freshness -> None {
     if not self._module {
         return;
     }
-
     current_module = Jac.loaded_modules.get(self.module_name);
-    if (current_module is not None and current_module is not self._module) {
+    replaced = current_module is not None and current_module is not self._module;
+    if replaced {
         self._module = current_module;
+    }
+    resolved = [*self._walkers.items(), *self._functions.items()];
+    if replaced
+        or any(
+            getattr(self._module, name, cached) is not cached
+            for (name, cached) in resolved
+        ) {
         self._load_manifest();
         self._load_surface();
-        self._functions = self._collect_functions();
-        self._walkers = self._collect_walkers();
-        self._invalidate_bundle();
-        return;
-    }
-
-    needs_refresh = False;
-    for (name, cached_cls) in self._walkers.items() {
-        current_cls = getattr(self._module, name, None);
-        if current_cls is not cached_cls {
-            needs_refresh = True;
-            break;
-        }
-    }
-    if not needs_refresh and len(self._walkers) < self._served_walkers {
-        _fresh_walkers = self._collect_walkers();
-        if set(_fresh_walkers.keys()) != set(self._walkers.keys()) {
-            needs_refresh = True;
-        }
-    }
-    if needs_refresh {
-        self._load_manifest();
-        self._load_surface();
-        self._functions = self._collect_functions();
-        self._walkers = self._collect_walkers();
+        self._reset_targets();
         self._invalidate_bundle();
     }
 }
 
-impl ModuleIntrospector.get_functions -> dict[str, Callable[(..., any)]] {
-    if not self._functions {
+impl ModuleIntrospector.served(kind: str) -> list[any] {
+    if self._module is None {
         self.load();
-    } else {
+    }
+    return [
+        rec
+        for (_, rec) in sorted(self._surface.items())
+        if rec.kind == kind and rec.is_served()
+    ];
+}
+
+impl ModuleIntrospector.target(name: str) -> any {
+    if self._module is not None {
         self._check_module_freshness();
     }
+    if name in self._walkers {
+        return self._walkers[name];
+    }
+    if name in self._functions {
+        return self._functions[name];
+    }
+    if self._module is None and not (self._walkers or self._functions) {
+        self.load();
+    }
+    if self._module is None {
+        return None;
+    }
+    rec = self._surface.get(name);
+    if rec is None or not rec.is_served() or rec.kind not in ('walker', 'function') {
+        return None;
+    }
+    try {
+        found = self._resolve_declared(rec.src, name);
+    } except Exception {
+        logger.exception('Could not load %s %s from %s', rec.kind, name, rec.src);
+        return None;
+    }
+    if rec.kind == 'walker' {
+        if isinstance(found, type) and issubclass(found, WalkerArchetype) {
+            self._walkers[name] = found;
+            return found;
+        }
+    } elif callable(found) {
+        self._functions[name] = found;
+        return found;
+    }
+    return None;
+}
+
+impl ModuleIntrospector.route_spec(name: str) -> any {
+    rec = self._surface.get(name);
+    if rec is None {
+        return None;
+    }
+    if rec.reflect {
+        return target_restspec(self.target(name));
+    }
+    if rec.route is None {
+        return None;
+    }
+
+    server_cls: type[JacAPIServer] = Jac.get_api_server_class();
+    return server_cls.RestSpecs(**restspec_fields(rec.route));
+}
+
+impl ModuleIntrospector.is_scheduled(name: str) -> bool {
+    rec = self._surface.get(name);
+    if rec is None {
+        return False;
+    }
+    if rec.reflect {
+        return target_schedule_spec(self.target(name)) is not None;
+    }
+    return rec.scheduled;
+}
+
+impl ModuleIntrospector.get_functions -> dict[str, Callable[(..., any)]] {
+    self._resolve_all();
     return {
         k: v
         for (k, v) in self._functions.items()
@@ -669,11 +750,7 @@ impl ModuleIntrospector.get_functions -> dict[str, Callable[(..., any)]] {
 }
 
 impl ModuleIntrospector.get_walkers -> dict[str, type[WalkerArchetype]] {
-    if not self._walkers {
-        self.load();
-    } else {
-        self._check_module_freshness();
-    }
+    self._resolve_all();
     return {
         k: v
         for (k, v) in self._walkers.items()
@@ -681,13 +758,23 @@ impl ModuleIntrospector.get_walkers -> dict[str, type[WalkerArchetype]] {
     };
 }
 
-impl ModuleIntrospector.find_target(name: str) -> any {
-    if not self._walkers and not self._functions {
-        self.load();
-    } else {
+impl ModuleIntrospector._resolve_all -> None {
+    if self._module is not None {
         self._check_module_freshness();
+    } elif not (self._walkers or self._functions) {
+        self.load();
     }
-    return self._walkers.get(name) or self._functions.get(name);
+    if self._complete or self._module is None {
+        return;
+    }
+    for rec in [*self.served('walker'), *self.served('function')] {
+        self.target(rec.name);
+    }
+    self._complete = True;
+}
+
+impl ModuleIntrospector.find_target(name: str) -> any {
+    return self.target(name);
 }
 
 impl ModuleIntrospector.get_client_functions -> dict[str, Callable[(..., any)]] {
@@ -855,7 +942,7 @@ impl ModuleIntrospector.ensure_bundle -> str {
             self._bundle_error = None;
             self._bundle_epoch += 1;
             return self._bundle.hash;
-        } except MissingBunError {
+        } except ArtifactUnavailable {
             self._bundle_epoch += 1;
             raise;
         } except Exception as exc {
@@ -962,22 +1049,16 @@ impl ModuleIntrospector.is_auth_required_for_walker(walker_name: str) -> bool {
 
 impl ModuleIntrospector.restspec_routes -> list[tuple[str, str, any]] {
     routes: list[tuple[str, str, any]] = [];
-    try {
-        for (name, target) in sorted(self.get_walkers().items()) {
-            spec = target?.restspec;
+    for kind in ('walker', 'function') {
+        for rec in self.served(kind) {
+            if self.is_scheduled(rec.name) {
+                continue;
+            }
+            spec = self.route_spec(rec.name);
             if spec is not None {
-                routes.append((name, 'walker', spec));
+                routes.append((rec.name, kind, spec));
             }
         }
-        for (name, target) in sorted(self.get_functions().items()) {
-            fn_target: any = target;
-            fn_spec = fn_target?.restspec;
-            if fn_spec is not None {
-                routes.append((name, 'function', fn_spec));
-            }
-        }
-    } except Exception {
-        return routes;
     }
     return routes;
 }
@@ -1014,19 +1095,13 @@ impl ModuleIntrospector.client_claimed_paths(candidates: list[str]) -> list[str]
 
 
 impl ModuleIntrospector.walker_protocol(walker_name: str) -> APIProtocol {
-    walkers = self.get_walkers();
-    if walker_name not in walkers {
-        return APIProtocol.HTTP;
-    }
-    return target_protocol(walkers[walker_name]);
+    spec = self.route_spec(walker_name);
+    return APIProtocol(spec.protocol) if spec?.protocol else APIProtocol.HTTP;
 }
 
 impl ModuleIntrospector.function_protocol(func_name: str) -> APIProtocol {
-    functions = self.get_functions();
-    if func_name not in functions {
-        return APIProtocol.HTTP;
-    }
-    return target_protocol(functions[func_name]);
+    spec = self.route_spec(func_name);
+    return APIProtocol(spec.protocol) if spec?.protocol else APIProtocol.HTTP;
 }
 
 
@@ -1124,12 +1199,19 @@ impl JacAPIServer.add_shutdown_hook(fn: Callable[..., any]) -> None {
     self.require_app().add_shutdown_hook(fn);
 }
 
+impl JacAPIServer.request_scope -> RequestScope {
+    return RequestScope.open(
+        base_path_dir=self._context_base_path,
+        full_target_path=self._context_target_path
+    );
+}
+
 impl JacAPIServer._install_middleware -> None {
+    self._context_base_path = Jac.get_base_path_dir() or self.base_path or None;
+    self._context_target_path = Jac.get_full_target_path() or self.module_file;
     self.add_middleware(
         request_context_middleware(
-            base_path_dir=Jac.get_base_path_dir() or self.base_path or None,
-            full_target_path=Jac.get_full_target_path() or self.module_file,
-            public_origin=self.resolved_settings().public_origin
+            self.request_scope, public_origin=self.resolved_settings().public_origin
         )
     );
     self.add_middleware(jwt_middleware(self.user_manager));
@@ -1242,8 +1324,10 @@ impl JacAPIServer.enable_hmr(hot_reloader: any) -> None {
 }
 
 impl JacAPIServer._refresh_dev_endpoints -> None {
-    self._hmr_pending = False;
-    self.introspector.load(force_reload=True);
+    with PREPARATION_LOCK {
+        self._hmr_pending = False;
+        self.introspector.load(force_reload=True);
+    }
     if self.app is None {
         return;
     }
@@ -1383,15 +1467,15 @@ impl JacAPIServer._scheduled_targets -> list[tuple[str, any, bool]] {
             found.append((name, spec, is_walker));
         }
     }
-    for (registry, is_walker) in [
-        (dict(self.introspector._walkers), True),
-        (dict(self.introspector._functions), False)
-    ] {
-        for (name, item) in registry.items() {
-            spec = item?.schedule_spec;
-            if isinstance(spec, ScheduleSpec) and name not in seen {
-                seen.add(name);
-                found.append((name, spec, is_walker));
+    for kind in ('walker', 'function') {
+        for rec in self.introspector.served(kind) {
+            if rec.name in seen or not self.introspector.is_scheduled(rec.name) {
+                continue;
+            }
+            spec = self.introspector.target(rec.name)?.schedule_spec;
+            if isinstance(spec, ScheduleSpec) {
+                seen.add(rec.name);
+                found.append((rec.name, spec, kind == 'walker'));
             }
         }
     }
@@ -1418,9 +1502,7 @@ impl JacAPIServer._register_scheduled_tasks -> None {
             if name not in registry {
                 return {'error': f"'{name}' is no longer registered"};
             }
-            ctx = Jac.create_j_context(user_root=None);
-            token = Jac.push_request_context(ctx);
-            try {
+            with _self.request_scope() {
                 if is_walker {
                     return await _self.execution_manager.spawn_walker(
                         registry[name], {}, SYSTEM_USER
@@ -1429,12 +1511,6 @@ impl JacAPIServer._register_scheduled_tasks -> None {
                 return await _self.execution_manager.execute_function(
                     registry[name], {}, SYSTEM_USER
                 );
-            } finally {
-                try {
-                    ctx.close();
-                } finally {
-                    Jac.reset_request_context(token);
-                }
             }
         }
         def target {
@@ -1469,17 +1545,30 @@ impl JacAPIServer._register_scheduled_tasks -> None {
         def _claim(key: str, tick: int) -> bool {
             return bool(_store.kv_claim_tick(key, tick));
         }
+        def _hold(key: str, ttl: int, owner: str) -> bool {
+            return bool(_store.kv_acquire_lease(key, ttl, owner));
+        }
+        def _release(key: str, owner: str) -> bool {
+            return bool(_store.kv_release_lease(key, owner));
+        }
         self.scheduler.claim = _claim;
+        self.scheduler.hold = _hold;
+        self.scheduler.release = _release;
         self.scheduler.namespace = schedule_namespace(self.module_name);
     }
 }
 
-impl JacAPIServer._validate_or_raise -> None {
+impl JacAPIServer._start_problems -> list[str] {
     settings = self.resolved_settings();
     problems = settings.validate();
+    transport: any = None;
     for ext in (self.extensions or []) {
         problems.extend(ext.validate(self));
+        if transport is None {
+            transport = ext.mail_transport();
+        }
     }
+    problems.extend(verification_problems(settings.auth.email.verification, transport));
     if not settings.static_only {
         import from jaclang.server.task_scheduler { schedule_problems }
         for (name, spec, _is_walker) in self._scheduled_targets() {
@@ -1487,6 +1576,35 @@ impl JacAPIServer._validate_or_raise -> None {
                 problems.append(f"@schedule on '{name}': {problem}");
             }
         }
+    }
+    return problems;
+}
+
+impl JacAPIServer._validate_or_raise -> None {
+    settings = self.resolved_settings();
+    problems = self._start_problems();
+    workers = settings.workers;
+    if problems and workers.count_by_default and workers.multi_process() {
+        (count, threads) = (workers.count, workers.threads);
+        workers.count = 1;
+        if workers.threads_by_default {
+            workers.threads = default_threads(1, cpu_quota());
+        }
+        single = self._start_problems();
+        if len(single) < len(problems) {
+            dropped = [
+                p
+                for p in problems
+                if p not in single
+            ];
+            logger.info(f"Serving with one worker instead of {count}: {dropped[0]}");
+            problems = single;
+        } else {
+            (workers.count, workers.threads) = (count, threads);
+        }
+    }
+    for warning in settings.warnings() {
+        logger.warning(warning);
     }
     if problems {
         raise ServeConfigError(
@@ -1524,6 +1642,13 @@ impl JacAPIServer.serve_background(
     on_ready: Callable[..., None] | None = None,
     port_retries: int = 0
 ) -> Callable[[], None] {
+    workers = self.resolved_settings().workers;
+    if workers.count_by_default and workers.multi_process() {
+        workers.count = 1;
+        if workers.threads_by_default {
+            workers.threads = default_threads(1, cpu_quota());
+        }
+    }
     settings = self._prepare_to_serve(dev, no_client);
     serving = ServingServer(
         app=self.require_app(), settings=settings, drain=self.drain

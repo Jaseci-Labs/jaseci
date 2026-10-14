@@ -60,7 +60,7 @@ impl AstTool.ir(args: list[str]) -> str {
             }
             try {
                 rep = run_utility(
-                    UtilityProduct.PYTHON_AST,
+                    CompilationProduct.PYTHON_AST,
                     uni.PythonModuleAst(
                         parsed_ast, orig_src=uni.Source(file_source, file_name)
                     ),
@@ -137,7 +137,7 @@ impl AstTool.ir(args: list[str]) -> str {
 
             case 'docir':
                 return str(
-                    run_utility(UtilityProduct.DOC, ir_mod, prog).module.gen.doc_ir
+                    run_utility(CompilationProduct.DOC, ir_mod, prog).module.gen.doc_ir
                 );
 
             case 'py':
@@ -148,7 +148,7 @@ impl AstTool.ir(args: list[str]) -> str {
                 return generated_python(ir_mod.gen) or 'Compile failed.';
 
             case 'esast':
-                require_product(prog, ir_mod, CompilationProduct.CLIENT);
+                require(prog, ir_mod, CompilationProduct.CLIENT);
                 es_ir = ir_mod;
                 es_ast = es_ir.gen.es_ast;
                 if isinstance(es_ast, EsNode) {
@@ -158,7 +158,7 @@ impl AstTool.ir(args: list[str]) -> str {
                 }
 
             case 'es':
-                require_product(prog, ir_mod, CompilationProduct.CLIENT);
+                require(prog, ir_mod, CompilationProduct.CLIENT);
                 es_ir = ir_mod;
                 es_ast = es_ir.gen.es_ast;
                 if isinstance(es_ast, EsNode) {

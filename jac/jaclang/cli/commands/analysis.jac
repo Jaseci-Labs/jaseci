@@ -124,6 +124,13 @@ comptime SPEC_EXPLAIN: CommandSpec = CommandSpec(
                  short="",
                  help="Restrict a workspace check to one [apps.<name>] entry of jac.toml"
              ),
+             Arg.create(
+                 "kernel-parity",
+                 typ=bool,
+                 `default=False,
+                 short="",
+                 help="Compiler development: check with both the host and the native kernel and report every diagnostic they disagree on"
+             ),
 
          ],
          examples=[
@@ -175,7 +182,8 @@ def check(
     native_coverage: bool = False,
     placements: bool = False,
     jobs: str = "",
-    app: str = ""
+    app: str = "",
+    kernel_parity: bool = False
 ) -> int;
 
 def lint(

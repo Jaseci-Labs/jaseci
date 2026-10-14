@@ -854,14 +854,14 @@ impl JacBuiltin.log_report(expr: any, custom: bool = False) -> None {
     if custom {
         JacRuntimeInterface.get_context().custom = expr;
     } else {
-        JacRuntimeInterface.get_console().print(expr);
+        cs = JacRuntimeInterface.get_context().call_state.get(None);
+        if cs is None {
+            JacRuntimeInterface.get_console().print(expr);
+        }
         if _current_scope() is not None {
             osp_report(expr);
-        } else {
-            cs = JacRuntimeInterface.get_context().call_state.get(None);
-            if cs is not None {
-                cs.reports.put_nowait(expr);
-            }
+        } elif cs is not None {
+            cs.reports.put_nowait(expr);
         }
     }
 }
@@ -1259,7 +1259,7 @@ impl JacGraph.heavy_edge(
 ) -> EdgeArchetype {
     import from jaclang.runtime.osp_graph_sv { sv_conn }
     ct = conn_type or GenericEdge;
-    `edge = ct() if isinstance(ct, `type) else ct;
+    (`edge, built_with) = new_connect_edge(ct, conn_assign);
     eanch = `edge.__jac__=EdgeAnchor(
         archetype=`edge, source=source, target=target, is_undirected=is_undirected
     );
@@ -1272,6 +1272,9 @@ impl JacGraph.heavy_edge(
     sv_conn(source, target, eanch, is_undirected);
     if conn_assign {
         for (fld, val) in zip(conn_assign[0], conn_assign[1], strict=False) {
+            if fld in built_with {
+                continue;
+            }
             if hasattr(`edge, fld) {
                 setattr(`edge, fld, val);
             } else {
@@ -2122,6 +2125,10 @@ impl JacRuntime.set_full_target_path(target_path: (str | None)) -> None {
 
 impl JacRuntime.set_context(context: ExecutionContext) -> None {
     JacRuntime.exec_ctx = context;
+}
+
+impl JacRuntime.request_context -> (ExecutionContext | None) {
+    return _request_context.get();
 }
 
 impl JacRuntime.push_request_context(context: ExecutionContext) -> any {

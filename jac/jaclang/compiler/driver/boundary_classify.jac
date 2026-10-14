@@ -161,17 +161,9 @@ def module_own_native_anchor(module: (uni.Module | None)) -> bool {
     return False;
 }
 
-def module_demoted_native(path: str, prog: (JacProgram | None) = None) -> bool {
-    import from jaclang.compiler.placement.placement_pins { module_native_demoted }
-    return module_native_demoted(os.path.realpath(path), prog);
-}
-
 
 def plain_native_import_target(nd: uni.Import, prog: JacProgram) -> (str | None) {
-    import from jaclang.compiler.placement.placement_pins {
-        module_native_demoted,
-        effective_module_pin
-    }
+    import from jaclang.compiler.placement.placement_pins { effective_module_pin }
     if (
         nd.is_service_import
         or nd.is_typed
@@ -192,9 +184,6 @@ def plain_native_import_target(nd: uni.Import, prog: JacProgram) -> (str | None)
         real_resolved.startswith(jaclang_root + os.sep)
         and (os.sep + 'na_stdlib' + os.sep) not in real_resolved
     ) {
-        return None;
-    }
-    if module_native_demoted(real_resolved, prog) {
         return None;
     }
     if effective_module_pin(resolved, prog) == 'native' {
@@ -321,13 +310,38 @@ def import_bound_names(nd: uni.Import) -> list[str] {
     return bound;
 }
 
-def is_client_native_edge_import(nd: uni.Import, prog: JacProgram) -> bool {
+def clib_decl_type_names(nd: uni.Import) -> set[str] {
+    names: set[str] = set();
+    for decl in nd.clib_decls or [] {
+        for nm in decl.get_all_sub_nodes(uni.Name) {
+            names.add(nm.value);
+        }
+    }
+    return names;
+}
+
+def is_client_native_edge_import(
+    nd: uni.Import, prog: JacProgram, client_tops: (dict[str, bool] | None) = None
+) -> bool {
     if nd.code_context == CodeContext.CLIENT {} elif nd.code_context
         == CodeContext.SERVER
-        and module_has_client_top(nd.find_parent_of_type(uni.Module)) {} else {
+        and _has_client_top(nd.find_parent_of_type(uni.Module), client_tops) {} else {
         return False;
     }
     return plain_native_import_target(nd, prog) is not None;
+}
+
+def _has_client_top(
+    module: (uni.Module | None), client_tops: (dict[str, bool] | None)
+) -> bool {
+    if client_tops is None or module is None {
+        return module_has_client_top(module);
+    }
+    key = module.loc.mod_path;
+    if key not in client_tops {
+        client_tops[key] = module_has_client_top(module);
+    }
+    return client_tops[key];
 }
 
 enum ClientImportVerdict {

@@ -148,8 +148,8 @@ def _bundle_runtime(host_binary: Path) {
 }
 
 def _jac_bin -> str {
-    exe = os.environ.get("JAC_EXECUTABLE");
-    if exe and os.path.exists(exe) {
+    exe = jac_binary();
+    if exe {
         return exe;
     }
     found = shutil.which("jac");

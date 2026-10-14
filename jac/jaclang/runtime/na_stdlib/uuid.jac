@@ -1,6 +1,3 @@
-import from _csprng_native { csprng_bytes }
-import from _directory_native { try_directory_names }
-import from _file_native { read_file_bytes }
 import from hashlib { md5, sha1 }
 import time;
 
@@ -74,7 +71,7 @@ def _frozen(buf: bytearray, n: int) -> bytes {
 }
 
 
-def:pub hex_concat(b: bytes) -> str {
+def hex_concat(b: bytes) -> str {
     out: str = "";
     n: int = len(b);
     i: int = 0;
@@ -88,7 +85,7 @@ def:pub hex_concat(b: bytes) -> str {
 }
 
 
-def:pub hex_buffer(b: bytes) -> str {
+def hex_buffer(b: bytes) -> str {
     return _hex_str(b);
 }
 
@@ -323,7 +320,7 @@ obj:pub UUID {
         return acc;
     }
 
-    def to_bytes -> bytes {
+    def _to_bytes -> bytes {
         return self._b;
     }
 }
@@ -551,7 +548,7 @@ def:pub uuid1(`node: int = -1, clock_seq: int = -1) -> UUID {
 
 
 def:pub uuid3(namespace: UUID, name: str) -> UUID {
-    h = md5(namespace.to_bytes() + name.encode());
+    h = md5(namespace._to_bytes() + name.encode());
     return _from_bytes(h.digest(), 3);
 }
 
@@ -561,7 +558,7 @@ def:pub uuid4 -> UUID {
 }
 
 
-def:pub uuid4_fresh_buffer -> UUID {
+def uuid4_fresh_buffer -> UUID {
     buf: bytearray = bytearray(16);
     i: int = 0;
     while i < 16 {
@@ -576,7 +573,7 @@ def:pub uuid4_fresh_buffer -> UUID {
 
 
 def:pub uuid5(namespace: UUID, name: str) -> UUID {
-    h = sha1(namespace.to_bytes() + name.encode());
+    h = sha1(namespace._to_bytes() + name.encode());
     return _from_bytes(h.digest()[0:16], 5);
 }
 

@@ -1053,7 +1053,9 @@ impl Serializer._deserialize_anchor(data: dict[str, object]) -> (Anchor | None) 
             }
         }
 
-        anchor.hash = Serializer._compute_hash(anchor);
+        anchor.hash = FROZEN_BASELINE
+            if frozen_fields(anchor)
+            else Serializer.stored_hash(anchor);
         return anchor;
     } except TypeResolutionError {
         raise;
@@ -1319,12 +1321,88 @@ impl Serializer.serialize_fields(
     return result;
 }
 
-impl Serializer._compute_hash(anchor: Anchor) -> int {
+impl Serializer.stored_form(anchor: Anchor) -> dict[str, object] {
+    data = Serializer.serialize(anchor, include_type=True);
+    if not isinstance(data, dict) {
+        raise TypeError(f"{type(anchor).__name__} did not serialize to a mapping");
+    }
+    stored: dict[str, object] = data;
+    stored.pop('edges', None);
+    return stored;
+}
+
+impl Serializer.stored_hash(
+    anchor: Anchor, stored: (dict[str, object] | None) = None
+) -> int {
     import from json { dumps }
     try {
-        data = Serializer.serialize(anchor, include_type=True);
-        return hash(dumps(data, sort_keys=True));
+        content = stored if stored is not None else Serializer.stored_form(anchor);
+        return hash(
+            dumps(
+                {
+                    k: v
+                    for (k, v) in content.items()
+                    if k != 'version'
+                },
+                sort_keys=True
+            )
+        );
     } except Exception {
         return 0;
     }
+}
+
+
+impl frozen_value(value: any) -> bool {
+    import datetime;
+    import decimal;
+    import enum;
+    import uuid;
+    if value is None
+        or isinstance(
+            value,
+            (
+                bool,
+                int,
+                float,
+                complex,
+                str,
+                bytes,
+                decimal.Decimal,
+                uuid.UUID,
+                datetime.date,
+                datetime.time,
+                datetime.timedelta
+            )
+        ) {
+        return True;
+    }
+    if isinstance(value, enum.Enum) {
+        return frozen_value(value.value);
+    }
+    if isinstance(value, (tuple, frozenset)) {
+        return all(frozen_value(item) for item in value);
+    }
+    return False;
+}
+
+
+impl frozen_fields(anchor: Anchor) -> bool {
+    if anchor.__dict__.get('_field_written') {
+        return False;
+    }
+    arch = anchor.archetype;
+    if not type(arch).__dict__.get('__jac_tracked__', False) {
+        return False;
+    }
+    fields = arch?.__dict__;
+    if not isinstance(fields, dict) {
+        return False;
+    }
+    for (name, value) in fields.items() {
+        if name != '__jac__' and not frozen_value(value) {
+            return False;
+        }
+    }
+    return True;
 }

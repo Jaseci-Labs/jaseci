@@ -5,6 +5,7 @@ glob FW_INTERVAL_OPS: dict[str, str] = {
      };
 
 walker TypeCheckPass(TreePass) {
+    static has contract: PassContract = PassContract(provides=(AnalysisFact.TYPE_OF, ));
     has evaluator: TypeEvaluator postinit,
         _deferred_writes: list[tuple[Expr, (UniNode | None)]] postinit,
         _lambda_depth: int = 0,
@@ -40,9 +41,18 @@ walker TypeCheckPass(TreePass) {
     def _c_plain_data(t: (TypeBase | None), allow_callable: bool = False) -> bool;
     def _opaque_member(t: (TypeBase | None)) -> (Archetype | None);
     def _check_c_type_use(ann_node: (UniNode | None)) -> None;
+    def _check_c_global_use(nd: Name) -> None;
+    def _check_c_variadic_def(nd: Ability) -> None;
+    def _check_c_function_def(nd: Ability) -> None;
+    def _check_c_variadic_args(nd: FuncCall) -> None;
+    def _check_c_global_decl(assign: Assignment) -> None;
+    def _c_const_problem(expr: Expr, ctype: (TypeBase | None)) -> (str | None);
     def _check_c_interop_import(imp: Import) -> None;
     def _foreign_struct_contains(t: (TypeBase | None), target: Archetype) -> bool;
     def _check_c_interop_call(nd: FuncCall) -> None;
+    def _borrowed_scalar_param(name: Name) -> bool;
+    def _check_borrowed_scalar_write(leaf: Expr) -> None;
+    def _check_borrowed_scalar_forward(nd: FuncCall) -> None;
     def _c_arg_instance(t: (TypeBase | None)) -> (TypeBase | None);
     can exit_gen_compr with GenCompr exit;
     def _check_intrinsic_collision(nd: Ability) -> None;

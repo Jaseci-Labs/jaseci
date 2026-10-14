@@ -423,13 +423,7 @@ impl _run_harness(
     timeout: float,
     source_path: (str | None) = None
 ) -> list[ClTestResult] {
-    bun = get_bun();
-    if bun is None {
-        raise RuntimeError(
-            "bun is required to run client (cl) tests but could not be located "
-            "or installed."
-        );
-    }
+    bun = js_runtime_path();
 
     work_dir = Path(tempfile.mkdtemp(prefix="jac_cl_test_"));
     try {

@@ -9,7 +9,8 @@ with entry {
 
 class JacClientCompiler {
     has entry_path: str = "",
-        na_wasm_modules: set[str] = set();
+        na_wasm_modules: set[str] = set(),
+        input_files: dict[str, str] = {};
 
     with entry {
         ROUTER_EXPORTS = [

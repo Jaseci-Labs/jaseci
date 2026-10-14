@@ -168,6 +168,7 @@ obj CallArgSlot {
 }
 
 walker EsastGenPass(TreePass) {
+    static has contract: PassContract = PassContract();
     has _ct_only_names: (set[str] | None) = None,
         imports: list[es.ImportDeclaration] = [],
         module_import_paths: dict[str, str] = {},
@@ -210,7 +211,9 @@ walker EsastGenPass(TreePass) {
         _primitive_emitters: dict[str, PrimitiveEmitter[(str, ESEmitCtx)]] = {},
         _emitters_ready: bool = False,
         _builtin_emitter: PrimitiveEmitter[(str, ESEmitCtx)] = ESBuiltinEmitter(),
-        _poly_methods: (set[str] | None) = None;
+        _poly_methods: (set[str] | None) = None,
+        loop_links: LoopLinks = LoopLinks(),
+        _native_links: dict[int, bool] = {};
 
     has resolved_backend: FrameworkBackend {
         getter {
@@ -358,6 +361,14 @@ walker EsastGenPass(TreePass) {
     def _is_ct_type_param(nd: uni.Name) -> bool;
     def _ct_ctor_slots(nd: uni.UniNode) -> (list[tuple[str, uni.Expr]] | None);
     def _trailer_reaches_ct_class(nd: uni.AtomTrailer) -> bool;
+    def _pass_link_name(link: PassLink) -> str;
+    def _pass_link_ref(link: PassLink, nd: uni.UniNode) -> es.Expression;
+    def _build_pass_block(loop: LoopStmt) -> es.BlockStatement;
+    def _pass_link_native(link: PassLink) -> bool;
+    def _target_confined(loop: uni.InForStmt) -> bool;
+    def _target_rebound(loop: uni.InForStmt) -> bool;
+    def _frame_scope_of(nd: uni.UniNode) -> (ScopeInfo | None);
+    def _pass_link_detaches(loop: (LoopStmt | None)) -> list[es.Statement];
     def _build_block_statement(
         scope_node: uni.UniScopeNode, body_nodes: (Sequence[uni.UniNode] | None)
     ) -> es.BlockStatement;
@@ -605,6 +616,16 @@ walker EsastGenPass(TreePass) {
     def _pos_params_from_ability(ability_node: uni.Ability) -> list[uni.ParamVar];
     def _param_names_from_ability(ability_node: uni.Ability) -> list[str];
     def _param_type_map_from_ability(ability_node: uni.Ability) -> dict[(str, str)];
+    def _builtin_param_names(nd: uni.FuncCall) -> (list[str] | None);
+    def _slot_builtin_kwargs(
+        nd: uni.FuncCall,
+        args: list[(es.Expression | es.SpreadElement)],
+        props: list[(es.Property | es.SpreadElement)],
+        func_name: str
+    ) -> (
+        tuple[(list[(es.Expression | es.SpreadElement)], (es.Expression | None))] | None
+    );
+
     def _wrap_to_wire_if_boundary(
         expr: es.Expression,
         type_name: str,

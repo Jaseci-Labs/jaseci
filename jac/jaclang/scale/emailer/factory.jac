@@ -84,3 +84,7 @@ def create(config: dict[str, any]) -> Emailer | None {
     }
     return _instantiate(cls, provider, config, from_address, enabled);
 }
+
+def configured -> Emailer | None {
+    return create(get_scale_config().get_emailer_config());
+}

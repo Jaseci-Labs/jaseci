@@ -51,6 +51,5 @@ def run_step(
 
 
 def use_system_tools -> bool {
-    return os.environ.get("JAC_TOOLCHAIN_USE_SYSTEM", "1").lower()
-        not in ["0", "false", "no"];
+    return use_system_toolchains();
 }

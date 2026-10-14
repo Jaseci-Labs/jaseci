@@ -4,6 +4,7 @@ import from contextvars { ContextVar }
 glob AAL1: str = 'aal1',
      AAL2: str = 'aal2',
      METHOD_PASSWORD: str = 'pwd',
+     METHOD_FEDERATED: str = 'sso',
      METHOD_TOTP: str = 'otp',
      METHOD_RECOVERY: str = 'recovery',
      _caller_assurance: ContextVar[dict[str, any] | None] = ContextVar(

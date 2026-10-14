@@ -35,6 +35,11 @@ def _install_python(
 ) -> bool {
     python = get_python_provider();
     inputs = digest_of(sorted(specs));
+    if not ctx.is_dry_run()
+        and ctx.target != "global"
+        and venv_deps_satisfied(config.get_venv_dir(), specs) {
+        return True;
+    }
     replay = not refresh
         and lock.pypi_resolved
         and lock.pypi_inputs == inputs

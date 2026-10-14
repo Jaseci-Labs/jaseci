@@ -56,6 +56,10 @@ def comptime_reach(top: UniNode) -> set[int] {
 }
 
 walker ComptimeResolvePass(TypeCheckPass) {
+    static has contract: PassContract = PassContract(
+        provides=(AnalysisFact.COMPTIME, )
+    );
+
     has _armed: bool = False,
         _keep: set[int] = set();
 

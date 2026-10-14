@@ -1,3 +1,4 @@
+import hashlib;
 import logging;
 
 glob logger = logging.getLogger(__name__),
@@ -9,6 +10,7 @@ obj BinaryInjector(PvcInjector) {
         _toolchain_object_key: str = "",
         _toolchain_bytes: bytes = b"",
         _pod_binary_bytes: bytes = b"",
+        _pod_binary_sha256: str = "",
         _seal_binary_bytes: bytes = b"",
         _pod_arch: str = "";
 
@@ -21,8 +23,11 @@ obj BinaryInjector(PvcInjector) {
         );
 
         pod_arch = node_arch();
-        payload = download_release_binary(self.channel.value, pod_arch, version);
+        payload = read_local_binary(project_dir)
+            if self.channel == Channel.LOCAL
+            else download_release_binary(self.channel.value, pod_arch, version);
         self._pod_binary_bytes = payload;
+        self._pod_binary_sha256 = hashlib.sha256(payload).hexdigest();
         self._pod_arch = pod_arch;
         self._seal_binary_bytes = self._resolve_seal_binary(payload, pod_arch, version);
         super.prepare(app_name, namespace, project_dir);
@@ -55,6 +60,13 @@ obj BinaryInjector(PvcInjector) {
         paths = super._unpack_bundle_paths();
         paths.append(bundle_pvc_path(self._toolchain_object_key));
         return paths;
+    }
+
+    def _skip_when_image_binary -> dict[str, str] {
+        if not self._pod_binary_sha256 or not self._toolchain_object_key {
+            return {};
+        }
+        return {bundle_pvc_path(self._toolchain_object_key): self._pod_binary_sha256};
     }
 }
 

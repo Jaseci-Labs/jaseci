@@ -20,14 +20,8 @@ graph import {
     bootstrap_manifest --> dist.publish.runtime_vendor._compile_runtime_module {
         is_seed_source
     }
-    client --> client.npm_provider.regenerate_and_install { get_bun }
     client as _client_pkg --> client.runtime_source.resolve_client_runtime_cl_path;
-    client --> client.targets.node_tooling_common { get_bun }
-    client --> client.vite_bundler { get_bun }
-    client --> client.vite_bundler.ViteBundler.add_packages { get_bun }
     client --> client.vite_bundler.ViteBundler.build { ensure_client_deps }
-    client --> client.vite_bundler.ViteBundler.start_dev_server { get_bun }
-    client --> dist.seal.ensure_client_dist { get_bun }
     client as _client_pkg --> project.modresolver._resolve_jac_virtual_module;
     compiler --> cli.commands.analysis.gen_parser { gen_all_parsers }
     comptime --> byllm.cli { name as ct_name }
@@ -67,9 +61,6 @@ graph import {
         discover_impl_files
     }
     jac0core --> compiler.backends.native.kernel_resolve._from_sealed_image { sealed }
-    jac0core --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._walk_imported_module_abilities {
-        sealed as _wl_sealed
-    }
     jac0core --> compiler.driver.compiler.JacCompiler._get_precompiled_jir_bytecode {
         sealed as _sealed
     }
@@ -115,6 +106,25 @@ graph import {
         compile_jac as jac0_compile,
         discover_impl_files as jac0_impls
     }
+    comptime --> cli.commands.native { name as ct_name }
+    jac0core --> artifacts.kit.runtime_floor_root { sealed as sealed_mod }
+    jac0core --> artifacts.router._omitted { sealed }
+    jac0core --> client.js_runtime.BunArtifact.probe_sealed { sealed }
+    jac0core --> client.js_runtime.JsEngineArtifact.probe_sealed { sealed }
+    jac0core --> compiler.backends.native.floors.CFloorArtifact.probe_sealed { sealed }
+    jac0core --> compiler.backends.native.floors.MuslArtifact.probe_sealed { sealed }
+    jac0core --> compiler.backends.native.floors.WasmLibcArtifact.probe_sealed {
+        sealed
+    }
+    jac0core --> compiler.backends.native.host_facts.compute_fact { sealed }
+    jac0core --> compiler.backends.native.llvm.shim_path.ShimArtifact.probe_sealed {
+        sealed
+    }
+    jac0core --> compiler.types.stubcat.locate.StubcatArtifact.probe_sealed { sealed }
+    jac0core --> compiler.types.stubcat.locate.TypeshedArtifact.probe_sealed { sealed }
+    jac0core --> dist.interpreter.JacPythonArtifact.probe_sealed { sealed }
+    jac0core --> dist.precompiled.PrecompiledArtifact.probe_sealed { sealed }
+    jac0core --> project.kernel_snapshot.catalog_build_blocker { sealed }
 }
 
 graph import byllm {
@@ -415,19 +425,38 @@ graph import byllm {
     systemone --> byllm.visit_routing { ROUTE_SELECT_ATTR }
     types --> byllm.systemone.build_state { Media }
     types --> byllm.systemone.lower { image_resp_kind }
+    exceptions --> byllm.lib | byllm.llm { OutputTruncatedError }
+    lib --> byllm.tests.test_tools { MockRawResponse }
+    lib --> byllm.tests.test_truncated_tool_calls { OutputTruncatedError }
+    lib --> byllm.tests.test_usage { OutputTruncatedError }
 }
 
 graph import byllm._optdeps {
     litellm --> byllm.llm { _disable_debugging, litellm }
-    litellm --> byllm.llm._configure_litellm { HAS_LITELLM }
     litellm --> byllm.tests.test_telemetry_ { LiteLLMMessage }
     litellm --> byllm.types { LiteLLMMessage }
     loguru --> byllm.llm | byllm.visit_routing { logger }
     openai --> byllm.llm { AsyncOpenAI, OpenAI, openai }
     pillow --> byllm.types { PILImageCls, open_image }
     pydantic --> byllm.schema | byllm.types { TypeAdapter }
-    litellm --> byllm.exceptions | byllm.tests.test_timeout { litellm }
+    litellm --> byllm.tests.test_timeout { litellm }
     litellm --> byllm.tests.test_compaction_conversation { LiteLLMMessage }
+    _deferred --> byllm._optdeps.litellm {
+        DeferredClassMeta,
+        DeferredModule,
+        is_installed,
+        when_loaded
+    }
+    _deferred --> byllm._optdeps.openai {
+        DeferredClassMeta,
+        DeferredModule,
+        is_installed
+    }
+    litellm --> byllm.exceptions | byllm.llm { when_litellm_loaded }
+    litellm --> scale.admin.llm_telemetry.JacAPIServerLLMTelemetry.register_llm_telemetry_endpoints {
+        HAS_LITELLM,
+        when_litellm_loaded
+    }
 }
 
 graph import byllm.tests {
@@ -585,10 +614,7 @@ graph import cache {
     registry --> compiler.driver.jir._sweep_once { bucket, maybe_sweep }
     registry --> compiler.driver.jir._touch_generation { bucket }
     registry --> compiler.driver.jir.sweep_stale_generations { bucket }
-    registry --> compiler.types.stubcat.locate._find_catalog { bucket }
     registry --> compiler.types.stubcat.locate.dev_catalog_path { bucket }
-    registry --> compiler.types.stubcat.locate.ensure_catalog { maybe_sweep }
-    registry --> data.pgembed.dist_cache_dir { bucket }
     registry --> dist.fused_binary._runtime_dir_for_key { bucket }
     registry --> dist.jab { bucket, maybe_sweep }
     registry --> scale.injector.binary._fetch_verified_asset { maybe_sweep }
@@ -600,6 +626,12 @@ graph import cache {
         bucket
     }
     registry --> packages.index.fetch_verified { bucket }
+    registry --> client.js_runtime.installed_engine_dir { bucket }
+    registry --> compiler.types.stubcat.locate.StubcatArtifact.build { maybe_sweep }
+    registry --> compiler.types.stubcat.locate.StubcatArtifact.probe_checkout { bucket }
+    registry --> data.pg_dist.dist_cache_dir { bucket }
+    registry --> server.session.shared_pg_data_dir { bucket }
+    registry --> toolchains.tools.ToolArtifact.checkout_path { bucket }
 }
 
 graph import cli {
@@ -710,7 +742,6 @@ graph import cli {
     console --> cli.shadcn.shadcn_handler { console }
     console --> cli.shadcn.theme_handler { console }
     console --> client.asset_processor { console }
-    console --> client.bun_installer { console }
     console --> client.cli._npm_context { console }
     console --> client.cli.run_client_build { console }
     console --> client.cli.run_client_setup { console }
@@ -930,6 +961,15 @@ graph import cli {
     console --> packages.commands | packages.install | packages.publish | packages.verify {
         console
     }
+    command --> cli.commands.native { Arg, ArgKind, CommandSpec }
+    console --> cli.commands.native { console }
+    workpool --> cli.commands.analysis._settle_check_heap {
+        maybe_malloc_trim,
+        worker_rss_mb
+    }
+    workpool --> server.server.JacAPIServer._validate_or_raise { cpu_quota }
+    workpool --> server.server.JacAPIServer.serve_background { cpu_quota }
+    workpool --> server.settings { cpu_quota, memory_headroom_bytes }
 }
 
 graph import cli.commands {
@@ -976,6 +1016,7 @@ graph import cli.commands {
     comptime tools --> cli.manifest { SPEC_COMPLETIONS, SPEC_DOT, SPEC_LSP, SPEC_TOOL }
     analysis --> packages.publish.check_gate { check }
     comptime project --> cli.manifest { SPEC_PUBLISH }
+    comptime native --> cli.manifest { SPEC_NATIVE }
 }
 
 graph import cli.mcp {
@@ -1045,25 +1086,16 @@ graph import client {
     artifact --> client.client_bundle {
         ClientBundle,
         ClientBundleError,
-        MissingBunError,
         prebuilt_bundle
     }
     artifact --> client.serving { client_output_dir }
-    artifact --> server.server { ClientBundleError, MissingBunError }
+    artifact --> server.server { ClientBundleError }
     artifact --> server.server.ModuleIntrospector.ensure_bundle { prebuilt_bundle }
     asset_processor --> client.jac_client_compiler { AssetProcessor }
     auth_contract --> client.client_react_core { SignupResult }
     auth_contract --> client.client_runtime { SignupResult }
     auth_contract --> client.client_runtime_core { SignupResult }
     auth_contract --> client.solid_runtime { SignupResult }
-    bun_installer --> cli.commands.execution._run_node_tool { get_bun }
-    bun_installer --> client.cli.run_npm_add_global { bun_unavailable_message, get_bun }
-    bun_installer --> client.npm_provider.regenerate_and_install {
-        bun_unavailable_message
-    }
-    bun_installer --> client.vite_bundler { bun_unavailable_message }
-    bun_installer --> dist.payload.fetch { BUN_VERSION }
-    bun_installer --> testing.cl_test_runner._run_harness { get_bun }
     cli --> cli.commands.build._build_app { run_client_build }
     cli --> cli.commands.execution.serve { run_client_start }
     cli --> cli.commands.project.install { run_npm_add }
@@ -1082,7 +1114,7 @@ graph import client {
     client_bundle --> client.jac_client_compiler { ClientBundleError }
     client_bundle --> client.npm_provider { ClientBundleError }
     client_bundle --> client.route_scanner { ClientBundleError }
-    client_bundle --> client.vite_bundler { ClientBundleError, MissingBunError }
+    client_bundle --> client.vite_bundler { ClientBundleError }
     client_bundle --> client.vite_client_bundle {
         ClientBuildInputs,
         ClientBundle,
@@ -1445,6 +1477,19 @@ graph import client {
         make_client_bundle_builder
     }
     client_surface --> compiler.backends.es.esast_gen_pass { WASM_HOST_MODULE }
+    config_loader --> compiler.driver.application._prepare_revision { JacClientConfig }
+    js_engine --> client.js_runtime.js_runtime_path { node_executable }
+    js_runtime --> cli.commands.execution._run_node_tool { js_runtime_path }
+    js_runtime --> client.cli.run_npm_add_global { js_runtime_path, run_pm }
+    js_runtime --> client.js_engine.node_executable { ensure_node_link }
+    js_runtime --> client.npm_provider.regenerate_and_install { js_runtime_path }
+    js_runtime --> client.targets.node_tooling_common { js_runtime_path, run_pm }
+    js_runtime --> client.vite_bundler { js_runtime_path, run_pm }
+    js_runtime --> dist.payload.assemble._bundle_bun { write_bun_record }
+    js_runtime --> dist.payload.fetch { BUN_VERSION }
+    js_runtime --> dist.payload.fetch.fetch_bun { _probe_bun, write_bun_record }
+    js_runtime --> dist.seal.ensure_client_dist { js_runtime_path }
+    js_runtime --> testing.cl_test_runner._run_harness { js_runtime_path }
 }
 
 graph import client.targets {
@@ -1852,9 +1897,6 @@ graph import compiler {
     native_scope --> compiler.placement.placement_solver._native_deps_ok {
         in_native_scope_path
     }
-    native_scope --> compiler.placement.placement_solver.native_default_verdict {
-        in_native_scope_path
-    }
     native_scope --> dist.precompile_bytecode.seal_native { kernel_root_path }
     passes --> compiler.tools.code_intel { Alert }
     symbol_utils --> compiler.backends.es.esast_gen_pass { return_type_is_jsx }
@@ -1887,9 +1929,6 @@ graph import compiler {
     }
     symbol_utils --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._callee_ability_of {
         resolved_callee
-    }
-    symbol_utils --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._codegen_atom_trailer {
-        imported_module_name
     }
     symbol_utils --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._codegen_method_call_inner {
         imported_module_name
@@ -1972,9 +2011,6 @@ graph import compiler {
     }
     symbol_utils --> compiler.types.type_evaluator.TypeEvaluator.flow_pred_never_returns {
         resolve_expr_symbol
-    }
-    symbol_utils --> compiler.types.type_evaluator.TypeEvaluator.get_narrowed_type_for_expr {
-        reference_key_deps
     }
     type_registry --> compiler.backends.es.esast_gen_pass.EsastGenPass._audit_free_identifiers {
         JAC_TYPE_REGISTRY
@@ -2075,9 +2111,6 @@ graph import compiler {
     type_registry --> compiler.types.type_utils.primitive_type_name_of {
         JAC_TYPE_REGISTRY
     }
-    types --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._codegen_call {
-        types as jtypes
-    }
     erased_imports --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._codegen_call {
         contextmanager_ability,
         erased_identity_call_arg
@@ -2099,15 +2132,7 @@ graph import compiler {
         read_kernel_target,
         set_kernel_target
     }
-    kernel_target --> compiler.backends.native.stage0_build.build_kernel_by_pin {
-        active_kernel_target,
-        with_link_mode,
-        write_kernel_target
-    }
-    kernel_target --> compiler.backends.native.stage0_build.stage0_child_env {
-        KERNEL_TARGET_ENV
-    }
-    kernel_target --> compiler.backends.native.stage0_pin.stage0_sidecar_matches | compiler.driver.jir.sidecar_unit_paths | compiler.driver.native_iface | compiler.native_scope.scope_module_path {
+    kernel_target --> compiler.driver.jir.sidecar_unit_paths | compiler.driver.native_iface | compiler.native_scope.scope_module_path {
         target_pkg_root
     }
     kernel_target --> compiler.driver.jir.get_module_cache_path {
@@ -2133,20 +2158,12 @@ graph import compiler {
     kernel_target --> compiler.placement.placement_facts._toolchain_rel {
         target_package_rel
     }
-    type kernel_target --> compiler.backends.native.kernel_resolve | compiler.backends.native.stage0_build {
-        KernelTarget
-    }
+    type kernel_target --> compiler.backends.native.kernel_resolve { KernelTarget }
     native_compiler as _jc --> project.compiler_host.ProjectHost.native_parse;
     native_compiler --> project.kernel_check.analysis_kernel { ensure_loaded }
     native_scope --> compiler.backends.native.kernel_stage0.running_kernel_target {
         KERNEL_ROOT_MODULE,
         NATIVE_SCOPE
-    }
-    native_scope --> compiler.backends.native.stage0_pin.abi_contract_differences {
-        KERNEL_ABI_CONTRACT_REL
-    }
-    native_scope --> compiler.backends.native.stage0_pin.abi_contract_digest {
-        KERNEL_ABI_CONTRACT_REL
     }
     native_scope --> compiler.driver.program.JacProgram.declared_codespace {
         package_host_edge
@@ -2181,11 +2198,216 @@ graph import compiler {
     }
     jc_ask --> compiler.frontend.kernel_host.KernelHost.ask { ask_host }
     jc_ask --> compiler.jc_unit { set_host_callback, take_host_answer }
-    kernel_target --> compiler.frontend.codeinfo { target_package_rel }
     native_compiler --> project.kernel_compile.kernel_route { ensure_loaded }
     type native_compiler --> project.kernel_snapshot { NativeCompiler }
     native_compiler --> project.kernel_snapshot.loaded_kernel { ensure_loaded }
     native_scope --> dist.precompile_bytecode.seal_native { in_native_scope_path }
+    boundary_rules --> compiler.passes.boundary_analysis_pass.BoundaryAnalysisPass._export_mixed_native {
+        ability_crossing
+    }
+    boundary_rules --> compiler.passes.boundary_analysis_pass.BoundaryAnalysisPass.finish {
+        archetype_refusals,
+        signature_crossings,
+        signature_refusals
+    }
+    boundary_rules --> compiler.passes.placement_pass.NativeLegality.settle {
+        ability_crossing
+    }
+    boundary_rules --> compiler.passes.placement_pass.bridged_use_crosses {
+        ability_crossing
+    }
+    boundary_rules --> compiler.passes.placement_pass.uncrossable_native {
+        ability_crossing
+    }
+    c_interop --> compiler.backends.native.na_ir_gen_pass {
+        c_array_elem,
+        c_bytes_array_values,
+        c_bytes_elem_shape,
+        c_bytes_literal,
+        c_scalar_constant,
+        c_string_literal,
+        c_variadic_param,
+        clib_block_defines,
+        clib_global_of_name,
+        clib_import_of,
+        foreign_field_of,
+        is_builtin_addressof_call,
+        is_va_list_type,
+        named_function_of
+    }
+    c_interop --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._codegen_unary {
+        c_lent_arg_elem
+    }
+    c_interop --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._ensure_clib_struct {
+        foreign_struct_of_type
+    }
+    c_interop --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._final_scalar_value {
+        c_scalar_constant,
+        final_glob_value
+    }
+    c_interop --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._final_variant_value {
+        final_glob_value
+    }
+    c_interop --> compiler.backends.py.jcir_gen_pass { c_variadic_param }
+    c_interop --> compiler.backends.py.jcir_gen_pass.JcirGenPass._c_interop_call_rewrite {
+        c_lent_arg_elem,
+        c_lent_param,
+        c_param_type,
+        c_variadic_param,
+        is_ptr_type,
+        named_function_of
+    }
+    c_interop --> compiler.backends.py.jcir_gen_pass.JcirGenPass._c_vararg_rewrite {
+        c_type_spec
+    }
+    c_interop --> compiler.backends.py.jcir_gen_pass.JcirGenPass._is_c_global_value {
+        clib_global_of_name,
+        is_builtin_addressof_call
+    }
+    c_interop --> compiler.passes.layout_pass.open_dispatch { is_clib_archetype }
+    c_interop --> compiler.passes.ownership_check_pass { clib_import_of }
+    c_interop --> compiler.passes.type_checker_pass.TypeCheckPass._borrowed_scalar_param {
+        clib_import_of,
+        is_ptr_type
+    }
+    c_interop --> compiler.passes.type_checker_pass.TypeCheckPass._c_const_problem {
+        c_array_elem,
+        c_bytes_elem_shape,
+        c_bytes_literal,
+        c_scalar_constant,
+        c_string_literal,
+        foreign_struct_of_type,
+        is_builtin_addressof_call,
+        is_ptr_type,
+        named_function_of
+    }
+    c_interop --> compiler.passes.type_checker_pass.TypeCheckPass._check_c_function_def {
+        c_variadic_param,
+        foreign_struct_of_type
+    }
+    c_interop --> compiler.passes.type_checker_pass.TypeCheckPass._check_c_global_decl {
+        c_array_elem
+    }
+    c_interop --> compiler.passes.type_checker_pass.TypeCheckPass._check_c_global_use {
+        clib_global_of_name,
+        foreign_struct_of_type,
+        is_builtin_addressof_call
+    }
+    c_interop --> compiler.passes.type_checker_pass.TypeCheckPass._check_c_interop_call {
+        c_string_literal,
+        clib_global_of_name,
+        is_builtin_addressof_call
+    }
+    c_interop --> compiler.passes.type_checker_pass.TypeCheckPass._check_c_variadic_args {
+        c_variadic_param
+    }
+    c_interop --> compiler.passes.type_checker_pass.TypeCheckPass._check_c_variadic_def {
+        c_variadic_param
+    }
+    c_interop --> compiler.passes.type_checker_pass.TypeCheckPass.exit_assignment {
+        c_bytes_array_definition
+    }
+    c_interop --> compiler.types.type_evaluator { is_va_list_type }
+    c_interop --> compiler.types.type_evaluator.TypeEvaluator._c_lent_args {
+        c_abi_callee,
+        c_lent_elem
+    }
+    capability_notes --> compiler.boundary_rules { TARGET_NATIVE, TARGET_SERVER }
+    type capability_notes --> compiler.driver.progstate { CapabilityNote }
+    capability_notes --> compiler.passes.boundary_analysis_pass.BoundaryAnalysisPass._export_mixed_native {
+        TARGET_NATIVE,
+        TARGET_SERVER
+    }
+    capability_notes --> compiler.passes.placement_pass.NativeLegality.settle {
+        TARGET_NATIVE,
+        TARGET_SERVER
+    }
+    capability_notes --> compiler.passes.placement_pass.PlacementPass._run_undecided {
+        capability_notes_of
+    }
+    capability_notes --> compiler.passes.placement_pass.bridged_use_crosses {
+        TARGET_NATIVE,
+        TARGET_SERVER
+    }
+    capability_notes --> compiler.passes.placement_pass.build_native_legality {
+        TARGET_NATIVE,
+        capability_notes_of
+    }
+    capability_notes --> compiler.passes.placement_pass.element_requirements {
+        TARGET_NATIVE,
+        capability_notes_of
+    }
+    capability_notes --> compiler.passes.placement_pass.uncrossable_native {
+        TARGET_NATIVE,
+        TARGET_SERVER
+    }
+    capability_notes --> compiler.passes.static_analysis_pass.StaticAnalysisPass._check_undefined_names {
+        TARGET_NATIVE,
+        note_capability,
+        placement_neutral
+    }
+    capability_notes --> compiler.types.type_evaluator.TypeEvaluator.neutral_site {
+        placement_neutral
+    }
+    capability_notes --> compiler.types.type_evaluator.TypeEvaluator.note_native {
+        TARGET_NATIVE,
+        note_capability
+    }
+    expr_keys --> compiler.passes.rc_facts_pass.method_returns_borrow {
+        type_tag_borrows
+    }
+    kernel_target --> compiler.native_scope.binds_bare_arch_names { target_package_rel }
+    native_bindings --> compiler.passes.layout_pass.record_interface_twins {
+        interface_type,
+        typeshed_stub_path
+    }
+    native_bindings --> compiler.passes.placement_pass.PlacementPass._check_conformance {
+        conformance_mismatches,
+        native_library_module_name,
+        typeshed_stub_path,
+        variant_mismatches
+    }
+    native_bindings --> compiler.passes.placement_pass.build_native_legality {
+        binding_gaps,
+        import_gaps
+    }
+    native_compiler --> compiler.backends.native.kernel_resolve.refuse_unloadable {
+        load_failure
+    }
+    native_scope --> compiler.driver.jir.abi_contract_digest { KERNEL_ABI_CONTRACT_REL }
+    native_scope --> compiler.frontend.codeinfo.native_arch_scope {
+        binds_bare_arch_names
+    }
+    native_scope --> compiler.placement.placement_solver.native_closure_blocker {
+        in_native_scope_path
+    }
+    native_scope --> compiler.placement.placement_solver.native_placement_candidate {
+        in_native_scope_path
+    }
+    symbol_utils --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._codegen_plain_trailer {
+        imported_module_name
+    }
+    symbol_utils --> compiler.c_interop.c_abi_callee { resolved_callee }
+    symbol_utils --> compiler.passes.placement_pass.PlacementPass._run_decided {
+        report_serverless_kind_errors
+    }
+    symbol_utils --> compiler.passes.placement_pass.PlacementPass._run_undecided {
+        report_serverless_kind_errors
+    }
+    symbol_utils --> compiler.types.type_evaluator.TypeEvaluator._narrowed_type_for_expr {
+        reference_key_deps
+    }
+    type_registry --> compiler.backends.native.host_facts.primitive_methods_fact {
+        JAC_TYPE_REGISTRY
+    }
+    type_registry --> compiler.backends.native.na_ir_gen_pass._caught_exception_class_name {
+        JAC_TYPE_REGISTRY
+    }
+    type_registry --> compiler.c_interop.c_bytes_elem_shape { JAC_TYPE_REGISTRY }
+    type_registry --> compiler.c_interop.c_scalar_constant { JAC_TYPE_REGISTRY }
+    type_registry --> compiler.passes.type_checker_pass.TypeCheckPass._borrowed_scalar_param {
+        JAC_TYPE_REGISTRY
+    }
 }
 
 graph import compiler.backends {
@@ -2446,10 +2668,6 @@ graph import compiler.backends.es {
     es_unparse --> compiler.driver.unit_products.client_artifact_of {
         es_to_js_with_map
     }
-    esast_gen_pass --> compiler.driver.module_compile.client_product_schedule {
-        EsastGenPass
-    }
-    esast_gen_pass --> compiler.driver.module_compile.get_py_code_gen { EsastGenPass }
     estree as es --> compiler.backends.es.es_unparse;
     estree as es --> compiler.backends.es.jsx_processor;
     estree --> compiler.driver.unit_products.client_artifact_of { Node as EsNode }
@@ -2504,6 +2722,8 @@ graph import compiler.backends.es {
     view_ir --> compiler.backends.es.jsx_processor.EsJsxProcessor.element {
         ViewLocator
     }
+    esast_gen_pass --> compiler.driver.pipeline.client_passes { EsastGenPass }
+    esast_gen_pass --> compiler.driver.pipeline.codegen_passes { EsastGenPass }
 }
 
 graph import compiler.backends.es.backends {
@@ -2597,9 +2817,6 @@ graph import compiler.backends.native {
         build_link_plan,
         link_artifact
     }
-    link_plan --> compiler.backends.native.kernel_resolve._sidecar_matches_sources {
-        units_source_key
-    }
     link_plan --> compiler.backends.native.kernel_resolve.kernel_plan {
         build_link_plan
     }
@@ -2671,13 +2888,6 @@ graph import compiler.backends.native {
         read_sleb128,
         read_uleb128
     }
-    llvm --> compiler.backends.native.abi { ir }
-    llvm --> compiler.backends.native.abi.struct_layouts { binding }
-    llvm --> compiler.backends.native.llvm.binding.ffi { _find_shim, _shim_name }
-    llvm --> compiler.backends.native.llvm.ir.types { ir_layer_typed_pointers_enabled }
-    llvm --> compiler.backends.native.lowering { ir }
-    llvm --> compiler.backends.native.na_ir_gen_pass { binding as llvm, ir }
-    llvm --> compiler.backends.native.primitives_native { ir }
     lowering --> compiler.backends.native.entry_points.validate_native_application {
         native_lowering_issues
     }
@@ -2707,9 +2917,6 @@ graph import compiler.backends.native {
     na_compile_pass --> compiler.backends.native.wasm_build.prepare_wasm_module {
         optimize_unit
     }
-    na_compile_pass --> compiler.driver.nativecache.NativeBuildSession._finish {
-        NativeCompilePass
-    }
     na_compile_pass --> compiler.driver.nativecache.NativeUnitRegistry.object_for {
         emit_unit_object
     }
@@ -2733,9 +2940,6 @@ graph import compiler.backends.native {
         RC_CYCLE_THRESHOLD
     }
     type na_ir_gen_pass --> compiler.backends.native.primitives_native { NaIRGenPass }
-    na_ir_gen_pass --> compiler.driver.nativecache.NativeBuildSession.lower {
-        NaIRGenPass
-    }
     pe_linker --> compiler.backends.native.link_plan.link_artifact { PeLinker }
     primitives_native --> compiler.backends.native.na_ir_gen_pass {
         NativeDictEmitter,
@@ -2778,32 +2982,11 @@ graph import compiler.backends.native {
     wasm_linker --> dist.source.build.build_native_product { WasmLinker }
     kernel_resolve --> compiler.backends.native.kernel_stage0 {
         KERNEL_DEV_LINK_MODE,
-        _StoreParserSpan,
         kernel_plan
     }
-    kernel_resolve --> compiler.backends.native.stage0_build {
-        KERNEL_DEV_LINK_MODE,
-        STAGE0_BUILDER
-    }
-    kernel_resolve --> compiler.backends.native.stage0_build._fall_back {
-        KernelUnavailable
-    }
-    kernel_resolve --> compiler.backends.native.stage0_build.restamp_stage0_sidecar {
-        LAYOUT_SIDECAR_SUFFIX,
-        kernel_options,
-        read_sidecar
-    }
     kernel_resolve --> dist.precompile_bytecode.seal_native { SEALED_LINK_MODE }
-    kernel_resolve --> dist.precompile_bytecode.seal_stage0_kernel {
-        SEALED_LINK_MODE,
-        STAGE0_BUILDER,
-        read_sidecar
-    }
     kernel_stage0 --> compiler.backends.native.kernel_resolve.build_kernel {
         link_kernel
-    }
-    kernel_stage0 --> compiler.backends.native.stage0_build.build_kernel_by_pin | dist.precompile_bytecode.seal_stage0_kernel {
-        running_kernel_target
     }
     link_plan --> compiler.backends.native.kernel_stage0.link_kernel {
         ArtifactKind,
@@ -2815,9 +2998,6 @@ graph import compiler.backends.native {
     linker_common --> compiler.backends.native.link_plan.link_artifact {
         object_undefined_symbols
     }
-    llvm --> compiler.backends.native.stage0_build.stage0_child_env | compiler.driver.toolchain.native_pipeline_available {
-        _find_shim
-    }
     na_compile_pass --> compiler.driver.nativecache.NativeBuildSession.lower {
         settle_unit_ir
     }
@@ -2826,42 +3006,11 @@ graph import compiler.backends.native {
         NATIVE_CONTAINER_CODES,
         NATIVE_COPY_FUNCS
     }
-    stage0_build --> compiler.backends.native.kernel_resolve._derive_in_tree | dist.precompile_bytecode.seal_stage0_kernel {
-        build_kernel_by_pin
-    }
-    stage0_pin --> compiler.backends.native.kernel_resolve._unit_sources_match {
-        stage0_sidecar_matches
-    }
-    stage0_pin --> compiler.backends.native.stage0_build {
-        Stage0Pin,
-        Stage0PinError,
-        abi_contract_differences,
-        abi_contract_digest,
-        read_stage0_pin,
-        stage0_source_dir,
-        stage0_strict
-    }
     static_link --> compiler.backends.native.link_plan { load_outline_atomics }
-    kernel_resolve --> dist.precompile_bytecode.seal_stage0_kernel {
-        LAYOUT_SIDECAR_SUFFIX
-    }
-    stage0_pin --> dist.precompile_bytecode._stage0_builds_kernel {
-        Stage0PinError,
-        read_stage0_pin
-    }
     na_constants --> compiler.backends.native.na_ir_gen_pass {
         EXC_LINEAGE_BITS,
         EXC_LINEAGE_MIX,
         EXC_LINEAGE_SLOTS
-    }
-    kernel_resolve --> dist.precompile_bytecode._sealed_link_current {
-        SEALED_LINK_MODE,
-        _sidecar_matches_sources,
-        read_sidecar
-    }
-    kernel_resolve --> dist.precompile_bytecode.seal_stage0_kernel {
-        PR_KIT_EVENT,
-        seal_link_mode
     }
     na_compile_pass --> compiler.driver.nativecache.NativeUnitRegistry.emit_objects {
         emit_unit_objects
@@ -2870,21 +3019,74 @@ graph import compiler.backends.native {
         RC_CYCLE_PACE,
         RC_UNTRACED_BIT
     }
-    stage0_pin --> compiler.driver.jir.native_producer_digest { abi_contract_digest }
-    kernel_resolve --> compiler.backends.native.stage0_build.stage0_child_env {
-        kernel_build_env
-    }
-    kernel_resolve --> dist.precompile_bytecode.seal_native {
-        PR_KIT_EVENT,
-        seal_link_mode
-    }
     link_glue --> compiler.backends.native.link_plan { RC_THREADED_SYMBOL }
-    na_compile_pass --> compiler.driver.compiler.JacCompiler.assemble_native {
-        NativeCompilePass
-    }
     na_compile_pass --> compiler.driver.nativecache.NativeBuildSession._optimize_in_parallel {
         optimize_unit_texts,
         require_native_ir
+    }
+    floors --> dist.payload.vendor { WASM_FLOOR_MANIFEST }
+    host_facts --> project.compiler_host.ProjectHost.native_fact { host_native_fact }
+    kernel_resolve --> project.kernel_check.kernel_check { refuse_unloadable }
+    kernel_resolve --> project.kernel_compile.kernel_route { refuse_unloadable }
+    link_glue --> compiler.backends.native.link_plan { SHARED_MAIN_SYMBOL }
+    type link_plan --> compiler.backends.native.kernel_resolve { LinkResult }
+    linker_common --> compiler.backends.native.static_link { ArMember }
+    na_compile_pass --> compiler.driver.nativecache.NativeUnitRegistry.adopt_lowered {
+        emit_unit_object,
+        optimize_unit_texts,
+        require_native_ir
+    }
+    na_compile_pass --> compiler.driver.pipeline.native_object_passes {
+        NativeCompilePass
+    }
+    na_constants --> compiler.backends.native.abi.struct_layouts {
+        FACT_SEP,
+        FACT_STRUCT_LAYOUTS
+    }
+    na_constants --> compiler.backends.native.host_facts {
+        FACT_CODEC_NAME,
+        FACT_CODEC_TABLES,
+        FACT_IMPORT_PATHS,
+        FACT_OS,
+        FACT_PRIMITIVE_METHODS,
+        FACT_SEALED_RUNTIME,
+        FACT_SEP,
+        FACT_STRUCT_LAYOUTS,
+        FACT_TARGET
+    }
+    na_constants --> compiler.backends.native.na_ir_gen_pass {
+        CLASS_RECORD_ANCESTRY,
+        CLASS_RECORD_STATICS,
+        CLASS_RECORD_STATICS_COUNT,
+        FACT_CODEC_NAME,
+        FACT_CODEC_TABLES,
+        FACT_OS,
+        FACT_PRIMITIVE_METHODS,
+        FACT_SEALED_RUNTIME,
+        FACT_SEP,
+        FACT_STRUCT_LAYOUTS,
+        FACT_TARGET,
+        UNBOUND_CAUGHT,
+        VTABLE_SET_BUCKETS,
+        VTABLE_SET_SYMBOL,
+        stdlib_intercepted
+    }
+    na_constants --> compiler.driver.native_iface.resolve_native_unit_ref {
+        FACT_IMPORT_PATHS,
+        FACT_SEP
+    }
+    na_ir_gen_pass --> compiler.driver.pipeline.codegen_passes { NaIRGenPass }
+    na_ir_gen_pass --> compiler.driver.pipeline.native_ir_passes { NaIRGenPass }
+    na_ir_gen_pass --> compiler.driver.pipeline.native_lower_passes { NaIRGenPass }
+    primitives_native as emitters --> compiler.backends.native.host_facts.primitive_methods_fact;
+    primitives_native as _pm_pn --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._dispatch_primitive_method;
+    primitives_native as _pn --> compiler.backends.native.na_ir_gen_pass._native_emitter_of;
+    win_floor --> compiler.backends.native.link_glue.link_glue_ir { win_floor_ir }
+    win_floor --> compiler.backends.native.link_plan.link_artifact { WIN_CRT_DLL }
+    win_floor --> compiler.backends.native.pe_linker { win_import_dll, win_import_name }
+    win_floor_ir --> compiler.backends.native.win_floor.win_floor_ir { WIN_FLOOR_IR }
+    win_floor_ir --> compiler.backends.native.win_floor.win_import_dll {
+        WIN_FLOOR_KERNEL32
     }
 }
 
@@ -2920,7 +3122,6 @@ graph import compiler.backends.native.llvm {
         ModuleRef,
         TargetMachine
     }
-    binding as _llvm_bind --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass.__post_init__;
     type binding --> compiler.backends.native.wasm_build {
         ModuleRef,
         TargetMachine,
@@ -2932,26 +3133,20 @@ graph import compiler.backends.native.llvm {
     type binding --> compiler.driver.compiler.JacCompiler._load_native_from_cache {
         ExecutionEngine
     }
-    type binding --> compiler.frontend.codeinfo { ExecutionEngine, ModuleRef }
+    type binding --> compiler.frontend.codeinfo { ExecutionEngine }
     binding as llvm --> dist.seal.bake_native_payloads;
-    ir --> compiler.backends.native.llvm.ir.builder { instructions, types, values }
-    ir --> compiler.backends.native.llvm.ir.context { _utils, types }
-    ir --> compiler.backends.native.llvm.ir.instructions { types }
-    ir --> compiler.backends.native.llvm.ir.module { _utils, context, types, values }
-    ir --> compiler.backends.native.llvm.ir.types.Aggregate.wrap_constant_value {
-        Constant,
-        Value
-    }
-    ir --> compiler.backends.native.llvm.ir.types.Type.__call__ { Constant }
-    ir --> compiler.backends.native.llvm.ir.types.VectorType.wrap_constant_value {
-        Constant,
-        Value
-    }
-    ir --> compiler.backends.native.llvm.ir.values { _utils, types, values }
     type ir --> compiler.frontend.codeinfo { Module as IRModule }
     binding --> project.compiler_host.ProjectHost.default_target_triple {
         get_default_triple
     }
+    binding as llvm --> compiler.backends.native.host_facts.struct_layouts_fact;
+    binding as llvm --> compiler.backends.native.host_facts.target_fact;
+    ir as ir --> compiler.backends.native.abi;
+    ir as ir --> compiler.backends.native.lowering;
+    ir as ir --> compiler.backends.native.na_ir_gen_pass;
+    ir as ir --> compiler.backends.native.primitives_native;
+    shim_path --> compiler.backends.native.llvm.binding.ffi { shim_path }
+    shim_path --> dist.payload.assemble.assemble_site { write_shim_record }
 }
 
 graph import compiler.backends.native.llvm.binding {
@@ -2999,13 +3194,6 @@ graph import compiler.backends.native.llvm.binding {
 }
 
 graph import compiler.backends.native.llvm.ir {
-    _utils --> compiler.backends.native.llvm.ir.instructions { _HasMetadata }
-    _utils --> compiler.backends.native.llvm.ir.types { _StrCaching }
-    _utils --> compiler.backends.native.llvm.ir.values {
-        _HasMetadata,
-        _StrCaching,
-        _StringReferenceCaching
-    }
     include builder --> compiler.backends.native.llvm.ir;
     context --> compiler.backends.native.llvm.ir { Context, global_context }
     include instructions --> compiler.backends.native.llvm.ir;
@@ -3026,6 +3214,37 @@ graph import compiler.backends.native.llvm.ir {
         NamedValue,
         Value
     }
+    _utils as _utils --> compiler.backends.native.llvm.ir.context;
+    _utils as _utils --> compiler.backends.native.llvm.ir.module;
+    _utils as _utils --> compiler.backends.native.llvm.ir.values;
+    context --> compiler.backends.native.llvm.ir.module { Context, global_context }
+    type context --> compiler.backends.native.llvm.ir.types { Context }
+    instructions as instructions --> compiler.backends.native.llvm.ir.builder;
+    instructions --> compiler.backends.native.llvm.ir.values.Block.replace {
+        Instruction
+    }
+    type module --> compiler.backends.native.llvm.ir.builder { Module }
+    type module --> compiler.backends.native.llvm.ir.values { Module }
+    types as types --> compiler.backends.native.llvm.ir.builder;
+    types as types --> compiler.backends.native.llvm.ir.context;
+    types as types --> compiler.backends.native.llvm.ir.instructions;
+    types as types --> compiler.backends.native.llvm.ir.module;
+    types as types --> compiler.backends.native.llvm.ir.values;
+    values as values --> compiler.backends.native.llvm.ir.builder;
+    values --> compiler.backends.native.llvm.ir.instructions { _str_list, _value_list }
+    values as values --> compiler.backends.native.llvm.ir.module;
+    type values --> compiler.backends.native.llvm.ir.types { Constant, Value }
+    values --> compiler.backends.native.llvm.ir.types.ArrayType.wrap_constant_value {
+        Constant,
+        Value
+    }
+    values --> compiler.backends.native.llvm.ir.types.BaseStructType.gep { Constant }
+    values --> compiler.backends.native.llvm.ir.types.Type.__call__ { Constant }
+    values --> compiler.backends.native.llvm.ir.types.VectorType.wrap_constant_value {
+        Constant
+    }
+    values --> compiler.backends.native.llvm.ir.types._format_members { Value }
+    values --> compiler.backends.native.llvm.ir.types._wrap_members { Constant, Value }
 }
 
 graph import compiler.backends.py {
@@ -3084,15 +3303,19 @@ graph import compiler.backends.py {
     }
     codegen_shim --> compiler.tools.lang_tools.AstTool.ir { generated_python }
     artifact_imports --> compiler.driver.application._prepare_revision {
-        package_sources,
-        runtime_sources
+        package_sources
     }
     codegen_ir --> compiler.backends.py.jcir_gen_pass { int_literal_magnitude }
     codegen_shim --> compiler.driver.compiler.assemble_jcir { compile_ir }
-    jcir_bc_gen_pass --> compiler.driver.compiler.JacCompiler.assemble_python {
+    jcir_gen_pass --> compiler.driver.module_compile { JcirGenPass }
+    artifact_imports --> compiler.driver.application._prepare_revision {
+        import_specs,
+        resolve_imports
+    }
+    jcir_bc_gen_pass --> compiler.driver.pipeline.bytecode_passes {
         JcirBytecodeGenPass
     }
-    jcir_gen_pass --> compiler.driver.module_compile { JcirGenPass }
+    jcir_gen_pass --> compiler.driver.pipeline.py_ir_passes { JcirGenPass }
 }
 
 graph import compiler.driver {
@@ -3138,9 +3361,6 @@ graph import compiler.driver {
     bccache --> lsp.server.engine { discover_annex_files, discover_base_file }
     bccache --> server.hmr { discover_base_file }
     bccache --> testing.test_runner._suite_source { discover_base_file }
-    boundary_classify --> cli.commands.execution._exec_file {
-        module_demoted_native as _na_demoted
-    }
     boundary_classify --> compiler.backends.es.esast_gen_pass.EsastGenPass._is_client_native_import {
         import_binds_client_native
     }
@@ -3244,9 +3464,6 @@ graph import compiler.driver {
         classify_import,
         is_service_app_entry
     }
-    boundary_classify --> compiler.placement.placement.scan_native_blockers {
-        ability_delegates_to_model
-    }
     boundary_classify --> compiler.placement.placement_facts.discover_spaces {
         hub_module_for_path
     }
@@ -3281,9 +3498,6 @@ graph import compiler.driver {
         CrossAppKind,
         classify_cross_app_import,
         is_client_native_edge_import
-    }
-    compilation_context --> compiler.backends.native.link_plan.units_source_key {
-        cache_scope
     }
     compilation_context --> compiler.driver.application._prepare {
         cache_scope,
@@ -3385,9 +3599,6 @@ graph import compiler.driver {
         push_native_target
     }
     compile_options --> compiler.backends.native.llvm { env_typed_pointers_enabled }
-    compile_options --> compiler.backends.native.llvm._find_shim {
-        env_llvm_shim_override
-    }
     type compile_options --> compiler.backends.native.na_compile_pass { CompileOptions }
     compile_options --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._full_ast_of {
         env_na_debug
@@ -3401,9 +3612,6 @@ graph import compiler.driver {
     compile_options --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._register_imported_struct_types {
         env_na_debug,
         env_na_debug as _ti_dbg
-    }
-    compile_options --> compiler.backends.native.wasm_build._wasm_libc_dir {
-        env_wasm_libc_dir
     }
     compile_options --> compiler.driver.application.prepare_application {
         CompileOptions
@@ -3440,7 +3648,6 @@ graph import compiler.driver {
     compile_options --> compiler.driver.nativecache.NativeUnitRegistry.known_digest {
         env_na_debug
     }
-    type compile_options --> compiler.driver.pipeline { CompileOptions }
     compile_options --> compiler.driver.pipeline_runner { CompileOptions }
     compile_options --> compiler.driver.pipeline_runner.native_application {
         CompileOptions,
@@ -3524,13 +3731,6 @@ graph import compiler.driver {
     jir --> compiler.backends.es.client_kernel_cache._artifact_path {
         running_compiler_digest
     }
-    jir --> compiler.backends.native.kernel_resolve._sidecar_matches_sources {
-        sidecar_unit_paths
-    }
-    jir --> compiler.backends.native.kernel_resolve._unit_sources_match {
-        running_compiler_digest,
-        unit_source_digest
-    }
     jir --> compiler.backends.native.link_plan {
         sidecar_unit_paths,
         unit_source_digest
@@ -3539,11 +3739,7 @@ graph import compiler.driver {
         module_cache_key
     }
     jir --> compiler.backends.native.link_plan._reuse_artifact { cache_mode }
-    jir --> compiler.backends.native.link_plan.units_source_key { module_cache_key }
     jir --> compiler.backends.native.na_compile_pass.NativeCompilePass._emit_debug_products {
-        get_native_debug_dir
-    }
-    jir --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass.finish {
         get_native_debug_dir
     }
     jir --> compiler.driver.application._context_sections {
@@ -3593,8 +3789,7 @@ graph import compiler.driver {
         SEC_CTDEPS,
         absolutize_ct_deps_section,
         bundle_dir_allowed,
-        cache_mode,
-        precompile_required
+        cache_mode
     }
     jir --> compiler.driver.compiler.JacCompiler._persist_module_cache {
         get_module_cache_path,
@@ -3743,16 +3938,10 @@ graph import compiler.driver {
         running_compiler_digest,
         write_precompiled_jir
     }
-    na_coverage --> cli.commands.analysis._check_file_job {
-        _na_coverage,
-        na_coverage_begin
-    }
+    na_coverage --> cli.commands.analysis._check_file_job { na_coverage_begin }
     na_coverage --> cli.commands.analysis.check { na_coverage_end }
     na_coverage --> compiler.backends.native.link_plan._build_link_plan {
         na_coverage_replay
-    }
-    na_coverage --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._demote_method_if_unlowerable {
-        na_coverage_seam
     }
     na_coverage --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._export_native_iface {
         na_coverage_capture
@@ -3803,69 +3992,17 @@ graph import compiler.driver {
     pass_driver --> compiler.tools.jac_auto_lint_pass.JacAutoLintPass.__post_init__ {
         diagnostic_policy_for
     }
-    pipeline --> compiler.backends.es.client_kernel_cache._lower {
-        CompilationProduct,
-        require_product
-    }
+    pipeline --> compiler.backends.es.client_kernel_cache._lower { CompilationProduct }
     pipeline --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._ensure_dep_inference {
-        CompilationProduct,
-        require_product
+        CompilationProduct
     }
     pipeline --> compiler.driver.application_edges.application_edges {
-        CompilationProduct,
-        require_product
+        CompilationProduct
     }
-    pipeline --> compiler.driver.compiler.JacCompiler.ensure_client_codegen {
-        CompilationProduct,
-        require_product
-    }
-    pipeline --> compiler.driver.compiler.JacCompiler.jac_file_formatter {
-        execute_passes
-    }
-    pipeline --> compiler.driver.compiler.JacCompiler.jac_file_linter { execute_passes }
-    pipeline --> compiler.driver.compiler.JacCompiler.jac_str_formatter {
-        execute_passes
-    }
-    pipeline --> compiler.driver.ifacecache.IfaceRegistry._ensure_flow_graph {
-        CompilationProduct,
-        require_product
-    }
-    pipeline --> compiler.driver.ifacecache.IfaceRegistry._ensure_in_context {
-        CompilationProduct,
-        require_product
-    }
-    pipeline --> compiler.driver.ifacecache._symtab_provides {
-        get_symtab_ir_sched,
-        providers_of
-    }
-    pipeline --> compiler.driver.source_failures.bootstrap_tier_failure_details {
-        schedule_tier_reason
-    }
-    pipeline --> compiler.passes.layout_pass.get_layout_registry {
-        CompilationProduct,
-        require_product
-    }
-    pipeline --> compiler.placement.placement_solver.demote_client_pulled_elements {
-        invalidate_client_product
-    }
-    pipeline --> compiler.placement.placement_solver.invalidate_importers_es {
-        invalidate_client_product
-    }
-    pipeline --> compiler.placement.placement_solver.solve_module_placement._invalidate_stale_codegen {
-        invalidate_client_product
-    }
-    pipeline --> compiler.tests.test_pipeline_products {
-        CompilationProduct,
-        _analysis_sched_loading,
-        product_ready,
-        require_product,
-        validate_product_specs
-    }
-    pipeline --> compiler.tools.lang_tools { CompilationProduct, require_product }
-    pipeline --> dist.publish.npm_sources._compile_module {
-        CompilationProduct,
-        require_product
-    }
+    pipeline --> compiler.passes.layout_pass.get_layout_registry { CompilationProduct }
+    pipeline --> compiler.tests.test_pipeline_products { product_ready }
+    pipeline --> compiler.tools.lang_tools { CompilationProduct }
+    pipeline --> dist.publish.npm_sources._compile_module { CompilationProduct }
     pipeline_runner --> dist.source.client.write_client { wasm_ir }
     pipeline_runner --> dist.source.project.export_project { native_application }
     pipeline_types --> compiler.backends.native.na_ir_gen_pass { AnalysisFact }
@@ -3879,8 +4016,7 @@ graph import compiler.driver {
         CompilationProduct,
         PassContract,
         ProductTask,
-        TaskState,
-        UtilityProduct
+        TaskState
     }
     pipeline_types --> compiler.driver.program { AnalysisFact }
     pipeline_types --> compiler.driver.progstate {
@@ -4145,19 +4281,13 @@ graph import compiler.driver {
     compile_options --> compiler.backends.native.kernel_resolve {
         NATIVE_LINK_MODE_OBJECTS
     }
-    compile_options --> compiler.backends.native.stage0_build.restamp_stage0_sidecar {
-        NATIVE_LINK_MODE_BITCODE
-    }
-    compile_options --> compiler.backends.native.static_link.floor_lib_dir {
-        env_floor_dir
-    }
     compile_options --> compiler.driver.module_analysis | compiler.driver.session_compile | compiler.frontend.kernel_host | compiler.frontend.kernel_inputs | dist.precompile_bytecode.prebuild_native_closure | dist.publish.runtime_vendor | dist.seal | project.kernel_check | project.kernel_snapshot {
         CompileOptions
     }
     compile_options --> compiler.driver.pass_driver | compiler.passes.context | compiler.passes.execution | compiler.tests.test_pipeline_products | lsp.server.engine {
         CancelToken
     }
-    type compile_options --> compiler.driver.pipeline | compiler.driver.pipeline_runner | compiler.driver.program {
+    type compile_options --> compiler.driver.pipeline | compiler.driver.program {
         CancelToken
     }
     type compile_options --> compiler.frontend.host | compiler.placement.placement_facts | project.compiler_host {
@@ -4180,19 +4310,6 @@ graph import compiler.driver {
     jir --> compiler.backends.native.link_plan._jit_image_path {
         cache_mode,
         get_jir_cache_dir
-    }
-    jir --> compiler.backends.native.stage0_build.pin_for_commit {
-        compiler_source_digest
-    }
-    jir --> compiler.backends.native.stage0_build.provision_stage0 {
-        compiler_source_digest
-    }
-    jir --> compiler.backends.native.stage0_build.restamp_stage0_sidecar {
-        sidecar_unit_paths,
-        unit_source_digest
-    }
-    jir --> compiler.backends.native.stage0_build.unit_sources_before {
-        unit_source_digest
     }
     jir --> compiler.driver.ifacecache.artifact_cache_path { get_module_cache_path }
     jir --> project.compiler_host.ProjectHost.drop_python_lane_products {
@@ -4223,70 +4340,25 @@ graph import compiler.driver {
     nativecache --> project.compiler_host.ProjectHost.native_units_for {
         NativeUnitRegistry
     }
-    nativecache --> project.compiler_host.ProjectHost.native_verdict {
-        read_native_verdict
-    }
     type nativecache --> compiler.frontend.host | compiler.frontend.kernel_host | project.compiler_host {
         NativeUnitRegistry
     }
-    pass_driver --> compiler.driver.pipeline_runner.run_utility | compiler.driver.program.JacProgram.load_dependency_module {
+    pass_driver --> compiler.driver.program.JacProgram.load_dependency_module {
         run_pass
     }
     pass_driver --> compiler.driver.session_compile.compile_in_session {
         compile_progress
     }
-    pipeline --> compiler.driver.module_analysis.ModuleAnalysis.analysis {
-        CompilationProduct,
-        product_ready,
-        require_product
-    }
-    pipeline --> compiler.driver.module_analysis.ModuleAnalysis.boundaries {
-        get_boundary_analysis_sched
-    }
-    pipeline --> compiler.driver.module_analysis.ModuleAnalysis.ir {
-        get_ir_gen_sched,
-        get_symtab_ir_sched,
-        providers_of
-    }
-    pipeline --> compiler.driver.pipeline_runner { validate_schedule }
-    pipeline --> compiler.driver.program.JacProgram.run_schedule { execute_passes }
-    pipeline --> compiler.driver.toolchain {
-        _analysis_sched_loading,
-        _ir_sched_loading
-    }
     pipeline_runner --> cli.commands.analysis._check_file_job | compiler.driver.application._prepare | dist.precompile_bytecode._application_sources {
         compile_application
     }
-    pipeline_runner --> cli.commands.analysis.grammar | cli.commands.transform.py2jac | compiler.tests.test_module_exports | compiler.tools.cfg_dot.cfg_dot_from_file | compiler.tools.jac_formatter_pass.format_module | compiler.tools.lang_tools.AstTool.ir {
-        run_utility
-    }
-    pipeline_runner --> compiler.tools.jac_formatter_pass.unparse_module { run_utility }
     pipeline_runner --> client.compiler.ViteCompiler._compile_wasm_module | compiler.backends.native.wasm_build.compile_to_wasm {
         build_wasm
     }
     pipeline_runner --> client.route_scanner.resolve_route_exports | compiler.driver.application.prepare_route_metadata {
         route_exports
     }
-    pipeline_runner --> compiler.driver.compiler {
-        get_format_sched,
-        get_lint_sched,
-        run_utility
-    }
-    pipeline_runner --> project.compiler_host.ProjectHost.parse_python {
-        UtilityProduct,
-        run_utility
-    }
-    pipeline_types --> cli.commands.analysis.grammar | cli.commands.transform.py2jac | compiler.driver.compiler | compiler.tests.test_module_exports | compiler.tools.cfg_dot.cfg_dot_from_file | compiler.tools.jac_formatter_pass.format_module | compiler.tools.lang_tools.AstTool.ir {
-        UtilityProduct
-    }
-    pipeline_types --> compiler.tools.jac_formatter_pass.unparse_module {
-        UtilityProduct
-    }
-    pipeline_types --> compiler.driver.module_analysis {
-        AnalysisFact,
-        CompilationPhase
-    }
-    pipeline_types --> compiler.driver.pipeline_runner { UtilityProduct }
+    pipeline_types --> compiler.driver.module_analysis { AnalysisFact }
     program --> compiler.driver.module_analysis | compiler.driver.session_compile | compiler.frontend.kernel_analyze | compiler.frontend.kernel_host | compiler.tests.test_module_exports | compiler.tools.cfg_dot.cfg_dot_from_file | compiler.tools.jac_formatter_pass.unparse_module | dist.precompile_bytecode.prebuild_native_closure | dist.seal | project.kernel_check | project.kernel_snapshot {
         JacProgram
     }
@@ -4311,16 +4383,14 @@ graph import compiler.driver {
         SessionHooks,
         compile_in_session
     }
-    setup_progress --> compiler.backends.native.kernel_resolve._derive_in_tree | compiler.driver.compiler {
-        setup_progress
-    }
+    setup_progress --> compiler.driver.compiler { setup_progress }
     source_failures --> compiler.driver.toolchain | project.compiler_host.ProjectHost.load_modules {
         fail_loud_on_compiler_source
     }
     source_failures --> project.compiler_host.ProjectHost.import_in_flight {
         module_import_in_flight
     }
-    toolchain --> compiler.backends.native.kernel_resolve._toolchain_available | dist.precompile_bytecode.seal_native | project.compiler_host.ProjectHost.native_pipeline_available {
+    toolchain --> dist.precompile_bytecode.seal_native | project.compiler_host.ProjectHost.native_pipeline_available {
         native_pipeline_available
     }
     wiring --> compiler.frontend.kernel_host.KernelHost.wiring_file | project.compiler_host.ProjectHost.wiring_file {
@@ -4332,8 +4402,6 @@ graph import compiler.driver {
     wiring --> compiler.frontend.kernel_host.KernelHost.place_wired_imports | project.compiler_host.ProjectHost.place_wired_imports {
         dedupe_generated_imports
     }
-    jir --> dist.precompile_bytecode._stage0_kernel_workdir { get_jir_cache_dir }
-    jir --> dist.precompile_bytecode.seal_stage0_kernel { get_jir_cache_dir }
     wiring --> compiler.tools.jac_auto_lint_pass.JacAutoLintPass._strip_wired_imports {
         is_kernel_abi_contract
     }
@@ -4345,9 +4413,6 @@ graph import compiler.driver {
         discover_annex_files
     }
     bccache --> testing.cl_test_runner.module_entry_for { discover_base_file }
-    boundary_classify --> compiler.driver.program.JacProgram.anchors_native_under_default {
-        module_own_native_anchor
-    }
     boundary_classify --> compiler.driver.program.JacProgram.stamp_native_import_facts {
         import_bound_names,
         python_side_name_refs
@@ -4365,13 +4430,10 @@ graph import compiler.driver {
         env_na_debug
     }
     compile_options --> packages.api.package_surface { CompileOptions }
-    jir --> compiler.backends.native.kernel_resolve._unit_sources_match | compiler.backends.native.link_plan.LinkPlan.plan_digest {
+    jir --> compiler.backends.native.link_plan.LinkPlan.plan_digest {
         native_producer_digest
     }
     jir --> compiler.backends.native.link_plan._write_sidecar { native_producer_digest }
-    jir --> compiler.backends.native.link_plan.units_source_key {
-        native_producer_digest
-    }
     jir --> compiler.driver.application._capture_input { ct_dep_digest }
     jir --> compiler.driver.application._prepare_revision { cache_mode, ct_dep_digest }
     jir --> compiler.driver.compiler { FLAG_CARRIED, carried_module_bytecode }
@@ -4424,10 +4486,6 @@ graph import compiler.driver {
     compile_options --> compiler.driver.module_compile { CompileOptions }
     compile_options --> project.kernel_compile { CompileOptions }
     compiler --> project.compiler_host.ProjectHost.client_pulls { cached_client_pulls }
-    context_passes --> compiler.backends.native.na_ir_gen_pass.native_ir_product_schedule {
-        NativeImportFactsPass
-    }
-    context_passes --> compiler.driver.module_compile { NativeImportFactsPass }
     jir --> client.client_bundle.ClientBundleBuilder._signature { ct_dep_digest }
     jir --> compiler.driver.application._stamp { compute_content_sha256 }
     jir --> compiler.driver.compiler {
@@ -4436,29 +4494,15 @@ graph import compiler.driver {
         seed_definition_texts
     }
     jir --> project.compiler_host.ProjectHost.in_compiler_tree { is_compiler_tree_path }
-    jir --> project.kernel_compile.last_compiled_native {
-        HEADER_SIZE,
-        SECTIONS_MAGIC,
-        SEC_NBITCODE,
-        SEC_NOBJ,
-        get_module_cache_path,
-        read_sections
-    }
     jir --> project.kernel_snapshot.compiled_already {
         get_module_cache_path,
         is_module_cache_valid
     }
     module_analysis --> compiler.driver.module_compile {
-        ANALYSIS_PHASES,
         ModuleAnalysis,
-        analyze_module,
-        cancelled,
-        record_phase
+        analyze_module
     }
     module_compile --> compiler.driver.compiler { compile_module }
-    module_compile --> compiler.driver.pipeline.product_pipeline {
-        client_product_schedule
-    }
     module_compile --> compiler.frontend.kernel_host { compile_task }
     pass_driver --> compiler.driver.compiler.JacCompiler._adopt_kernel_compile {
         compile_progress
@@ -4466,31 +4510,8 @@ graph import compiler.driver {
     pass_driver --> compiler.driver.module_compile.report_missing_native_ir {
         deliver_alerts
     }
-    pipeline --> compiler.backends.native.na_ir_gen_pass {
-        register_codegen_backend,
-        register_product_schedule
-    }
-    pipeline --> compiler.driver.application._tree_source {
-        CompilationProduct,
-        require_product
-    }
-    pipeline --> compiler.driver.module_compile {
-        _codegen_sched_loading,
-        codegen_backend_passes,
-        product_ready,
-        providers_of_product,
-        register_product_schedule,
-        require_product,
-        schedule_tier_reason,
-        validate_schedule
-    }
-    pipeline --> compiler.driver.toolchain { _codegen_sched_loading }
-    pipeline_types --> compiler.backends.native.na_ir_gen_pass { CompilationProduct }
-    pipeline_types --> compiler.driver.module_compile {
-        AnalysisFact,
-        CompilationPhase,
-        CompilationProduct
-    }
+    pipeline --> compiler.driver.application._tree_source { CompilationProduct }
+    pipeline_types --> compiler.driver.module_compile { CompilationProduct }
     program --> compiler.driver.module_compile { JacProgram }
     program --> compiler.driver.unit_products { JacProgram }
     program --> project.kernel_compile { JacProgram }
@@ -4539,6 +4560,253 @@ graph import compiler.driver {
         is_arch_file,
         wiring_digest_for
     }
+    bccache --> cli.commands.analysis._unit_weight { discover_annex_files }
+    boundary_classify --> compiler.driver.program.JacProgram.stamp_native_import_facts {
+        clib_decl_type_names
+    }
+    boundary_classify --> compiler.passes.placement_pass.PlacementPass._run_undecided {
+        _stamp_context_element
+    }
+    boundary_classify --> compiler.passes.placement_pass.uncrossable_native {
+        _stamp_context_element
+    }
+    boundary_classify --> compiler.placement.placement.native_blocker_scan {
+        ability_delegates_to_model
+    }
+    boundary_classify --> compiler.placement.placement_facts.settle_server {
+        _stamp_context_element
+    }
+    boundary_classify --> compiler.placement.placement_solver.dependency_summary {
+        hub_module_for_path
+    }
+    compilation_context --> compiler.driver.jir._memoized { active_options }
+    compilation_context --> compiler.types.type_evaluator.TypeEvaluator._in_flight_module {
+        program_for
+    }
+    compile_options --> compiler.backends.native.llvm.ir.types {
+        env_typed_pointers_enabled
+    }
+    context_passes --> compiler.driver.pipeline { NativeImportFactsPass }
+    ifacecache --> cli.commands.analysis.check { prime_iface_codec }
+    jir --> client.jac_client_compiler.JacClientCompiler.emit_dependencies {
+        compute_content_sha256
+    }
+    jir --> client.targets.desktop._dev_launch._dev_roots_from_env { dev_source }
+    jir --> compiler.backends.native.kernel_resolve.KernelArtifact.build {
+        require_exact_compiler_products
+    }
+    jir --> compiler.backends.native.kernel_resolve._inspect { sidecar_unit_paths }
+    jir --> compiler.backends.native.kernel_resolve.unit_drift {
+        native_producer_digest,
+        running_compiler_digest,
+        unit_source_digest
+    }
+    jir --> compiler.driver.application._prepare {
+        begin_prepare_memo,
+        end_prepare_memo
+    }
+    jir --> dist.precompiled.bundle_misses {
+        jir_cacheable_source_path,
+        precompiled_jir_matches_source
+    }
+    jir --> project.compiler_host.ProjectHost.save_native_debug_ir {
+        get_native_debug_dir
+    }
+    module_analysis --> compiler.driver.module_compile { PlanStep, run_plan }
+    na_coverage --> cli.commands.analysis._check_file_job { na_coverage_snapshot }
+    na_coverage --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._place_unit_python {
+        na_coverage_seam
+    }
+    native_iface --> compiler.driver.nativecache.NativeUnitRegistry.adopt_lowered {
+        native_layout_from_dict
+    }
+    native_iface --> compiler.driver.unit_products.native_products {
+        native_layout_to_dict
+    }
+    type native_iface --> compiler.frontend.host | project.compiler_host { NativeIface }
+    native_iface --> compiler.frontend.kernel_host { NativeIface }
+    pass_driver --> compiler.driver.pipeline.run_utility { run_pass }
+    pipeline --> cli.commands.analysis.grammar { run_utility }
+    pipeline --> cli.commands.transform.py2jac { run_utility }
+    pipeline --> compiler.backends.es.client_kernel_cache._lower { require }
+    pipeline --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._ensure_dep_inference {
+        require
+    }
+    pipeline --> compiler.driver.application._tree_source { require }
+    pipeline --> compiler.driver.application_edges.application_edges { require }
+    pipeline --> compiler.driver.compiler.JacCompiler.assemble_native { require }
+    pipeline --> compiler.driver.compiler.JacCompiler.assemble_python { require }
+    pipeline --> compiler.driver.compiler.JacCompiler.ensure_client_codegen { require }
+    pipeline --> compiler.driver.compiler.JacCompiler.jac_file_formatter { require }
+    pipeline --> compiler.driver.compiler.JacCompiler.jac_file_linter { require }
+    pipeline --> compiler.driver.compiler.JacCompiler.jac_str_formatter { require }
+    pipeline --> compiler.driver.ifacecache.IfaceRegistry._ensure_flow_graph { require }
+    pipeline --> compiler.driver.ifacecache.IfaceRegistry._ensure_in_context { require }
+    pipeline --> compiler.driver.ifacecache.IfaceRegistry._prepare { product_facts }
+    pipeline --> compiler.driver.module_analysis.ModuleAnalysis.ready { product_ready }
+    pipeline --> compiler.driver.module_analysis.ModuleAnalysis.require { require }
+    pipeline --> compiler.driver.module_compile { product_passes, unavailable }
+    pipeline --> compiler.driver.nativecache.NativeBuildSession._finish { require }
+    pipeline --> compiler.driver.nativecache.NativeBuildSession.lower {
+        invalidate,
+        require
+    }
+    pipeline --> compiler.driver.source_failures.bootstrap_tier_failure_details {
+        tier_reason
+    }
+    pipeline --> compiler.driver.toolchain { schedule_loading }
+    pipeline --> compiler.frontend.kernel_host.KernelHost.lower_dependency {
+        product_ready,
+        require
+    }
+    pipeline --> compiler.jc_unit { early_passes }
+    pipeline --> compiler.passes.layout_pass.get_layout_registry { require }
+    pipeline --> compiler.placement.placement_solver.invalidate_importers_es {
+        invalidate
+    }
+    pipeline --> compiler.placement.placement_solver.solve_module_placement._invalidate_stale_codegen {
+        invalidate
+    }
+    pipeline --> compiler.tests.test_module_exports { run_utility }
+    pipeline --> compiler.tests.test_pipeline_products {
+        _LOADING,
+        product_facts,
+        require
+    }
+    pipeline --> compiler.tools.cfg_dot.cfg_dot_from_file { run_utility }
+    pipeline --> compiler.tools.jac_formatter_pass.format_module { run_utility }
+    pipeline --> compiler.tools.jac_formatter_pass.unparse_module { run_utility }
+    pipeline --> compiler.tools.lang_tools { require }
+    pipeline --> compiler.tools.lang_tools.AstTool.ir { run_utility }
+    pipeline --> dist.publish.npm_sources._compile_module { require }
+    pipeline --> project.compiler_host.ProjectHost.parse_python { run_utility }
+    pipeline_types --> cli.commands.analysis.grammar { CompilationProduct }
+    pipeline_types --> cli.commands.transform.py2jac { CompilationProduct }
+    pipeline_types --> compiler.backends.es.esast_gen_pass { PassContract }
+    pipeline_types --> compiler.backends.native.na_compile_pass { PassContract }
+    pipeline_types --> compiler.backends.native.na_ir_gen_pass { PassContract }
+    pipeline_types --> compiler.backends.py.jcir_bc_gen_pass { PassContract }
+    pipeline_types --> compiler.backends.py.jcir_gen_pass { PassContract }
+    pipeline_types --> compiler.driver.compiler { CompilationProduct }
+    pipeline_types --> compiler.driver.context_passes { PassContract }
+    pipeline_types --> compiler.driver.ifacecache.IfaceRegistry._ensure_flow_graph {
+        CompilationProduct
+    }
+    pipeline_types --> compiler.driver.ifacecache.IfaceRegistry._ensure_in_context {
+        CompilationProduct
+    }
+    pipeline_types --> compiler.driver.ifacecache.IfaceRegistry._prepare {
+        CompilationProduct
+    }
+    pipeline_types --> compiler.driver.module_analysis {
+        CompilationProduct,
+        ProductRequest
+    }
+    pipeline_types --> compiler.driver.module_compile { ProductRequest }
+    pipeline_types --> compiler.driver.nativecache.NativeBuildSession._finish {
+        CompilationProduct
+    }
+    pipeline_types --> compiler.driver.pipeline { ImportFallback, ProductRequest }
+    pipeline_types --> compiler.driver.source_failures.bootstrap_tier_failure_details {
+        CompilationProduct
+    }
+    pipeline_types --> compiler.frontend.kernel_host.KernelHost.lower_dependency {
+        CompilationProduct
+    }
+    pipeline_types --> compiler.passes.access_check_pass { AnalysisFact, PassContract }
+    pipeline_types --> compiler.passes.ast_validation_pass { PassContract }
+    pipeline_types --> compiler.passes.boundary_analysis_pass { PassContract }
+    pipeline_types --> compiler.passes.capability_check_pass {
+        AnalysisFact,
+        PassContract
+    }
+    pipeline_types --> compiler.passes.cfg_build_pass { AnalysisFact, PassContract }
+    pipeline_types --> compiler.passes.comptime_resolve_pass {
+        AnalysisFact,
+        PassContract
+    }
+    pipeline_types --> compiler.passes.context { PassContract }
+    pipeline_types --> compiler.passes.decl_impl_match_pass {
+        AnalysisFact,
+        PassContract
+    }
+    pipeline_types --> compiler.passes.endpoint_effect_pass { PassContract }
+    pipeline_types --> compiler.passes.freeze_structure_pass {
+        AnalysisFact,
+        PassContract
+    }
+    pipeline_types --> compiler.passes.graph_lowering_pass { PassContract }
+    pipeline_types --> compiler.passes.import_wiring_pass { AnalysisFact, PassContract }
+    pipeline_types --> compiler.passes.jsx_intrinsic_guard_pass { PassContract }
+    pipeline_types --> compiler.passes.layout_pass { PassContract }
+    pipeline_types --> compiler.passes.mtir_gen_pass { PassContract }
+    pipeline_types --> compiler.passes.ownership_check_pass {
+        AnalysisFact,
+        PassContract
+    }
+    pipeline_types --> compiler.passes.package_boundary_pass {
+        AnalysisFact,
+        PassContract
+    }
+    pipeline_types --> compiler.passes.placement_pass { AnalysisFact, PassContract }
+    pipeline_types --> compiler.passes.pyast_load_pass { PassContract }
+    pipeline_types --> compiler.passes.rc_facts_pass { AnalysisFact, PassContract }
+    pipeline_types --> compiler.passes.region_infer_pass { AnalysisFact, PassContract }
+    pipeline_types --> compiler.passes.sem_def_match_pass { PassContract }
+    pipeline_types --> compiler.passes.semantic_analysis_pass { PassContract }
+    pipeline_types --> compiler.passes.static_analysis_pass {
+        AnalysisFact,
+        PassContract
+    }
+    pipeline_types --> compiler.passes.sym_tab_build_pass { AnalysisFact, PassContract }
+    pipeline_types --> compiler.passes.type_checker_pass { AnalysisFact, PassContract }
+    pipeline_types --> compiler.passes.variant_agreement_pass {
+        AnalysisFact,
+        PassContract
+    }
+    pipeline_types --> compiler.placement.placement_solver {
+        AnalysisFact,
+        PassContract
+    }
+    pipeline_types --> compiler.placement.placement_solver.invalidate_importers_es {
+        CompilationProduct
+    }
+    pipeline_types --> compiler.placement.placement_solver.solve_module_placement._invalidate_stale_codegen {
+        CompilationProduct
+    }
+    pipeline_types --> compiler.tests.test_module_exports { CompilationProduct }
+    pipeline_types --> compiler.tests.test_pipeline_products { CompilationProduct }
+    pipeline_types --> compiler.tools.cfg_dot { PassContract }
+    pipeline_types --> compiler.tools.cfg_dot.cfg_dot_from_file { CompilationProduct }
+    pipeline_types --> compiler.tools.comment_attach_pass { PassContract }
+    pipeline_types --> compiler.tools.doc_ir_gen_pass { PassContract }
+    pipeline_types --> compiler.tools.grammar_extract_pass { PassContract }
+    pipeline_types --> compiler.tools.jac_auto_lint_pass { PassContract }
+    pipeline_types --> compiler.tools.jac_formatter_pass { PassContract }
+    pipeline_types --> compiler.tools.jac_formatter_pass.format_module {
+        CompilationProduct
+    }
+    pipeline_types --> compiler.tools.jac_formatter_pass.unparse_module {
+        CompilationProduct
+    }
+    pipeline_types --> compiler.tools.lang_tools.AstTool.ir { CompilationProduct }
+    pipeline_types --> compiler.tools.normalize_pass { PassContract }
+    pipeline_types --> compiler.tools.unparse_pass { PassContract }
+    pipeline_types --> project.compiler_host.ProjectHost.parse_python {
+        CompilationProduct
+    }
+    program --> compiler.backends.native.kernel_stage0.link_kernel { JacProgram }
+    type program --> compiler.capability_notes { JacProgram }
+    type program --> compiler.native_bindings { JacProgram }
+    type program --> compiler.passes.placement_pass { JacProgram }
+    program --> dist.publish.builder._backend_source { JacProgram as JacProgramRt }
+    type session_compile --> compiler.driver.module_analysis { SessionHooks }
+    session_compile --> compiler.passes.placement_pass.settle_native_module {
+        drop_native_bindings
+    }
+    toolchain --> compiler.backends.native.kernel_resolve.KernelArtifact.unavailable_reason {
+        native_pipeline_available
+    }
 }
 
 graph import compiler.frontend {
@@ -4551,7 +4819,6 @@ graph import compiler.frontend {
         set_effective_default_codespace
     }
     codeinfo --> cli.commands.execution.serve { set_effective_default_codespace }
-    codeinfo --> cli.commands.native_build._application_ir { native_unit_identity }
     type codeinfo --> client.client_bundle { ClientArtifact, ClientManifest }
     type codeinfo --> client.compiler { ClientArtifact, ClientManifest }
     codeinfo --> client.compiler.ViteCompiler._compile_wasm_module { native_wasm_stem }
@@ -4583,15 +4850,6 @@ graph import compiler.frontend {
     codeinfo --> compiler.backends.es.esast_gen_pass.EsastGenPass.prepare {
         ClientManifest
     }
-    codeinfo --> compiler.backends.native.kernel_resolve._bundled_kernel {
-        jaclang_pkg_root
-    }
-    codeinfo --> compiler.backends.native.kernel_resolve._unit_sources_match {
-        native_unit_identity
-    }
-    codeinfo --> compiler.backends.native.kernel_resolve.compiler_package_parent {
-        jaclang_pkg_root
-    }
     codeinfo --> compiler.backends.native.kernel_resolve.source_tree_kernel_path {
         jaclang_pkg_root
     }
@@ -4603,9 +4861,6 @@ graph import compiler.frontend {
         is_kernel_unit_path
     }
     codeinfo --> compiler.backends.native.link_plan._write_sidecar {
-        native_unit_identity
-    }
-    codeinfo --> compiler.backends.native.link_plan.units_source_key {
         native_unit_identity
     }
     codeinfo --> compiler.backends.native.na_ir_gen_pass {
@@ -4637,9 +4892,6 @@ graph import compiler.frontend {
     }
     codeinfo --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._codegen_test {
         native_test_symbol
-    }
-    codeinfo --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._demote_method_if_unlowerable {
-        native_display_text
     }
     codeinfo --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._emit_class_display_fn {
         NATIVE_ARCH_SCOPE_SEP
@@ -4905,22 +5157,15 @@ graph import compiler.frontend {
     codeinfo --> compiler.passes.endpoint_effect_pass.EndpointEffectPass.enter_archetype {
         endpoint_key
     }
-    codeinfo --> compiler.passes.layout_pass.archetype_native_name { native_arch_name }
     codeinfo --> compiler.passes.layout_pass.is_erased_base_name { NATIVE_ERASED_BASES }
     codeinfo --> compiler.placement.placement._erased_only_import {
         native_erased_import_names
-    }
-    codeinfo --> compiler.placement.placement.scan_native_blockers {
-        NATIVE_SUPPORTED_STDLIB,
-        is_bundled_native_module,
-        resolve_native_module
     }
     codeinfo --> compiler.placement.placement_facts.native_unit {
         is_kernel_unit_path,
         native_unit_compile_active
     }
     codeinfo --> compiler.placement.placement_solver._native_deps_ok {
-        effective_native_closure_cap,
         native_unit_compile_active
     }
     codeinfo --> compiler.tests.xbackend_equiv {
@@ -4972,9 +5217,6 @@ graph import compiler.frontend {
         OwnershipKind,
         SymbolAccess,
         Tokens as Tok
-    }
-    constant --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._clib_param_info {
-        is_borrow_kind
     }
     constant --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._clib_place_ptr {
         is_borrow_kind
@@ -5162,9 +5404,6 @@ graph import compiler.frontend {
     constant --> compiler.passes.sym_tab_build_pass.SymTabBuildPass.exit_binary_expr {
         Tokens as Tok
     }
-    constant --> compiler.passes.sym_tab_build_pass.SymTabBuildPass.exit_global_vars {
-        SymbolType
-    }
     constant --> compiler.passes.type_checker_pass { ImmutabilityKind, Tokens as Tok }
     constant --> compiler.passes.type_checker_pass.TypeCheckPass._check_c_interop_import {
         is_borrow_kind
@@ -5306,7 +5545,6 @@ graph import compiler.frontend {
     diagnostics --> compiler.backends.native.na_ir_gen_pass {
         DiagnosticInfo,
         E5026,
-        E5060,
         E5088,
         E5089,
         E5090,
@@ -5412,7 +5650,6 @@ graph import compiler.frontend {
         E5093
     }
     diagnostics --> compiler.passes.capability_check_pass {
-        E5090,
         E5096,
         W6001,
         W6002,
@@ -6135,7 +6372,6 @@ graph import compiler.frontend {
     }
     unitree --> compiler.c_interop._annotation_name { Name, Null }
     unitree --> compiler.c_interop.c_call_borrows_args { FuncCall }
-    unitree --> compiler.c_interop.is_builtin_pin_call { FuncCall, Name }
     unitree as uni --> compiler.driver.boundary_classify;
     unitree as uni --> compiler.driver.compiler;
     unitree --> compiler.driver.context_passes { Module }
@@ -7646,8 +7882,7 @@ graph import compiler.frontend {
     }
     codeinfo --> compiler.passes.ownership_check_pass.OwnershipCheckPass._nogc_resolve_provenance {
         NOGC_NATIVE_STDLIB,
-        bundled_stdlib_module_of,
-        is_in_jaclang_package
+        bundled_stdlib_module_of
     }
     diagnostics --> compiler.passes.import_wiring_pass { W2084 }
     codeinfo --> compiler.backends.native.kernel_stage0.running_kernel_target {
@@ -7663,15 +7898,8 @@ graph import compiler.frontend {
         is_package_keyed_path,
         native_unit_identity
     }
-    codeinfo --> compiler.backends.native.stage0_build._materialize_typeshed | compiler.backends.native.stage0_pin.stage0_source_dir | compiler.driver.boundary_classify.plain_native_import_target | compiler.driver.pass_driver._alert_in_internal_stub | compiler.driver.pipeline.typeshed_stubs_available | compiler.driver.setup_progress | compiler.driver.source_failures._compiler_source_root | compiler.types.type_evaluator.TypeEvaluator.__post_init__ {
+    codeinfo --> compiler.driver.boundary_classify.plain_native_import_target | compiler.driver.pass_driver._alert_in_internal_stub | compiler.driver.setup_progress | compiler.driver.source_failures._compiler_source_root | compiler.types.type_evaluator.TypeEvaluator.__post_init__ {
         jaclang_pkg_root
-    }
-    codeinfo --> compiler.backends.native.stage0_build.file_guard_trips {
-        NATIVE_ABI_VERSION,
-        jaclang_pkg_root
-    }
-    codeinfo --> compiler.backends.native.stage0_build.restamp_stage0_sidecar | compiler.backends.native.stage0_pin.stage0_sidecar_matches {
-        NATIVE_ABI_VERSION
     }
     codeinfo --> compiler.driver.compilation_context { is_package_keyed_path }
     codeinfo --> compiler.driver.compiler.JacCompiler._wants_native_engine | compiler.driver.selfhost.SelfHostCache.owns | project.kernel_check.kernel_check | project.kernel_snapshot {
@@ -7702,10 +7930,6 @@ graph import compiler.frontend {
         set_effective_default_codespace,
         set_native_unit_compile
     }
-    codeinfo --> compiler.driver.session_compile.drop_demoted_native_bindings {
-        InteropContext,
-        InteropManifest
-    }
     codeinfo --> compiler.driver.session_compile.inherit_session_options {
         set_effective_default_codespace
     }
@@ -7723,9 +7947,6 @@ graph import compiler.frontend {
     }
     type codeinfo --> compiler.driver.boundary_classify { InteropManifest }
     constant --> compiler.backends.native.na_ir_gen_pass { SymbolType }
-    constant --> compiler.driver.module_analysis.ModuleAnalysis.analysis {
-        CodeContext as _CodeCtx
-    }
     constant --> compiler.driver.program.JacProgram.parse_source | compiler.placement.placement_export {
         CodeContext
     }
@@ -7736,16 +7957,16 @@ graph import compiler.frontend {
     }
     diagnostics --> compiler.driver.program.JacProgram.module_scoped_errors { Category }
     diagnostics --> project.kernel_check.alert_of { DIAGNOSTICS }
-    host --> compiler.backends.es.backends.registry.active_framework | compiler.backends.es.esast_gen_pass | compiler.backends.native.na_ir_gen_pass | compiler.backends.native.wasm_build._link_wasm_libc | compiler.backends.py.artifact_imports | compiler.driver.boundary_classify | compiler.driver.compilation_context.bind_options | compiler.driver.compile_options.CompileOptions.__post_init__ | compiler.driver.ifacecache.IfaceRegistry._entry_fresh | compiler.driver.jir._project_env_fingerprint | compiler.driver.module_analysis | compiler.driver.pipeline | compiler.driver.program.JacProgram._get_compiler | compiler.driver.progstate.DiagLedger._owned | compiler.driver.session_compile | compiler.driver.wiring | compiler.frontend.codeinfo.effective_default_codespace | compiler.frontend.helpers.evaluate_version_condition | compiler.frontend.parser.frontend.annex_paths | compiler.frontend.unitree.Import.__jac_detected.getter | compiler.passes.access_check_pass.AccessCheckPass._module_app_facts | compiler.passes.boundary_analysis_pass.BoundaryAnalysisPass.enter_atom_trailer | compiler.passes.mtir_gen_pass.MTIRGenPass._get_scope_str | compiler.passes.ownership_check_pass.OwnershipCheckPass._nogc_module_enforced | compiler.passes.static_analysis_pass.StaticAnalysisPass._check_client_imports | compiler.passes.variant_agreement_pass.VariantAgreementPass._parse_sibling | compiler.placement.placement_facts | compiler.placement.placement_solver._native_dep_scan | compiler.symbol_utils.intrinsic_registry_if_ready | compiler.tools.jac_auto_lint_pass | compiler.types.type_evaluator.TypeEvaluator.__post_init__ | project.kernel_check {
+    host --> compiler.backends.es.backends.registry.active_framework | compiler.backends.es.esast_gen_pass | compiler.backends.native.na_ir_gen_pass | compiler.backends.py.artifact_imports | compiler.driver.boundary_classify | compiler.driver.compilation_context.bind_options | compiler.driver.compile_options.CompileOptions.__post_init__ | compiler.driver.ifacecache.IfaceRegistry._entry_fresh | compiler.driver.module_analysis | compiler.driver.pipeline | compiler.driver.program.JacProgram._get_compiler | compiler.driver.progstate.DiagLedger._owned | compiler.driver.session_compile | compiler.driver.wiring | compiler.frontend.codeinfo.effective_default_codespace | compiler.frontend.helpers.evaluate_version_condition | compiler.frontend.parser.frontend.annex_paths | compiler.frontend.unitree.Import.__jac_detected.getter | compiler.passes.access_check_pass.AccessCheckPass._module_app_facts | compiler.passes.boundary_analysis_pass.BoundaryAnalysisPass.enter_atom_trailer | compiler.passes.mtir_gen_pass.MTIRGenPass._get_scope_str | compiler.passes.ownership_check_pass.OwnershipCheckPass._nogc_module_enforced | compiler.passes.static_analysis_pass.StaticAnalysisPass._check_client_imports | compiler.passes.variant_agreement_pass.VariantAgreementPass._parse_sibling | compiler.placement.placement_facts | compiler.placement.placement_solver._native_dep_scan | compiler.symbol_utils.intrinsic_registry_if_ready | compiler.tools.jac_auto_lint_pass | compiler.types.type_evaluator.TypeEvaluator.__post_init__ | project.kernel_check {
         active_host
     }
-    host --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._demote_method_if_unlowerable | compiler.driver.compilation_context.compilation_scope | compiler.driver.compile_options.CompileOptions.effective_triple | compiler.driver.ifacecache.IfaceRegistry.analysis_profile | compiler.driver.program.JacProgram.build | compiler.driver.progstate.ModuleHub.is_fresh | compiler.frontend.codeinfo.effective_native_closure_cap | compiler.frontend.parser.frontend.annex_sources | compiler.frontend.unitree.Module.annexable_by.getter | compiler.passes.ownership_check_pass.OwnershipCheckPass._nogc_resolve_provenance | compiler.passes.static_analysis_pass.is_bootstrap_compiled_module | compiler.placement.placement_solver.demote_client_pulled_elements | compiler.tools.jac_auto_lint_pass.JacAutoLintPass.__post_init__ | compiler.types.type_evaluator.TypeEvaluator._client_npm_base {
+    host --> compiler.driver.compilation_context.compilation_scope | compiler.driver.compile_options.CompileOptions.effective_triple | compiler.driver.ifacecache.IfaceRegistry.analysis_profile | compiler.driver.program.JacProgram.build | compiler.driver.progstate.ModuleHub.is_fresh | compiler.frontend.parser.frontend.annex_sources | compiler.frontend.unitree.Module.annexable_by.getter | compiler.passes.ownership_check_pass.OwnershipCheckPass._nogc_resolve_provenance | compiler.passes.static_analysis_pass.is_bootstrap_compiled_module | compiler.tools.jac_auto_lint_pass.JacAutoLintPass.__post_init__ | compiler.types.type_evaluator.TypeEvaluator._client_npm_base {
         active_host
     }
-    host --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._opaque_field_if_unlowerable | compiler.driver.compilation_context.context_app | compiler.driver.program.JacProgram.compile | compiler.driver.progstate.ModuleHub.stamp | compiler.frontend.codeinfo.effective_native_target | compiler.frontend.parser.frontend.parse_woven | compiler.frontend.unitree.ModulePath.resolve_relative_path | compiler.placement.placement_solver.native_default_verdict | compiler.tools.jac_auto_lint_pass.JacAutoLintPass._base_decl_archetypes | compiler.types.type_evaluator.TypeEvaluator._declared_missing_dependency {
+    host --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._opaque_field_if_unlowerable | compiler.driver.compilation_context.context_app | compiler.driver.program.JacProgram.compile | compiler.driver.progstate.ModuleHub.stamp | compiler.frontend.codeinfo.effective_native_target | compiler.frontend.parser.frontend.parse_woven | compiler.frontend.unitree.ModulePath.resolve_relative_path | compiler.tools.jac_auto_lint_pass.JacAutoLintPass._base_decl_archetypes | compiler.types.type_evaluator.TypeEvaluator._declared_missing_dependency {
         active_host
     }
-    host --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._register_imported_archetype | compiler.driver.compilation_context.context_program | compiler.driver.program.JacProgram.execution_hubs | compiler.frontend.codeinfo.endpoint_descriptor | compiler.placement.placement_solver.note_native_closure_cap | compiler.types.type_evaluator.TypeEvaluator._jac_virtual_sibling_dts {
+    host --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._register_imported_archetype | compiler.driver.compilation_context.context_program | compiler.driver.program.JacProgram.execution_hubs | compiler.frontend.codeinfo.endpoint_descriptor | compiler.types.type_evaluator.TypeEvaluator._jac_virtual_sibling_dts {
         active_host
     }
     host --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._seam_warnings_on | compiler.driver.program.JacProgram.iface_registry | compiler.frontend.codeinfo.native_target_arch | compiler.types.type_evaluator.TypeEvaluator._load_ts_declarations {
@@ -7780,7 +8001,6 @@ graph import compiler.frontend {
         install_host
     }
     host --> compiler.driver.compiler.JacCompiler.finish_compile { install_host }
-    host --> compiler.driver.nativecache { NativeVerdict }
     host --> compiler.driver.pass_driver { CheckSettings, active_host }
     host --> compiler.frontend.codeinfo.jaclang_pkg_root | compiler.kernel_target.target_pkg_root {
         package_root
@@ -7795,7 +8015,6 @@ graph import compiler.frontend {
         HostPlatform,
         HostServices,
         LintSettings,
-        NativeVerdict,
         PathFacts,
         ProjectDefaults,
         ProjectFacts,
@@ -7806,18 +8025,16 @@ graph import compiler.frontend {
         CheckSettings,
         HostPlatform,
         LintSettings,
-        NativeVerdict,
         ProjectDefaults,
         ProjectFacts
     }
     host --> compiler.frontend.source_layout { PathFacts }
-    host --> compiler.placement.placement_pins { NativeVerdict, active_host }
+    host --> compiler.placement.placement_pins { active_host }
     host --> project.compiler_host {
         CheckSettings,
         HostPlatform,
         HostServices,
         LintSettings,
-        NativeVerdict,
         PathFacts,
         ProjectDefaults,
         ProjectFacts
@@ -8085,7 +8302,6 @@ graph import compiler.frontend {
     host --> compiler.driver.jir.stored_wiring_digest { active_host }
     host --> compiler.driver.module_compile { active_host }
     host --> compiler.driver.unit_products.dependency_span_rows { active_host }
-    host --> compiler.frontend.codeinfo.toolchain_runtime_unit { active_host }
     host --> compiler.placement.placement_solver._held_pull_ids { active_host }
     host --> compiler.placement.placement_solver._pull_into_target { active_host }
     host --> project.kernel_compile { HostServices }
@@ -8143,6 +8359,373 @@ graph import compiler.frontend {
     unitree as uni --> compiler.driver.module_compile;
     unitree as uni --> compiler.driver.unit_products;
     unitree --> compiler.passes.type_checker_pass { MatchArch }
+    codeinfo --> cli.commands.native_build._application_ir { is_toolchain_unit }
+    codeinfo --> client.js_runtime._pkg_dir { jaclang_pkg_root }
+    codeinfo --> compiler.backends.native.floors._repo_root { jaclang_pkg_root }
+    codeinfo --> compiler.backends.native.kernel_resolve._unit_label {
+        jaclang_pkg_root
+    }
+    codeinfo --> compiler.backends.native.kernel_resolve.unit_drift {
+        native_unit_identity
+    }
+    codeinfo --> compiler.backends.native.llvm.shim_path._repo_root { jaclang_pkg_root }
+    codeinfo --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._default_repr_fn {
+        native_safe_sym
+    }
+    codeinfo --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._final_variant_value {
+        native_variant_of
+    }
+    codeinfo --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._forward_declare_imported_ability {
+        NativeModuleLayout
+    }
+    codeinfo --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._maybe_declare_ability {
+        NativeModuleLayout
+    }
+    codeinfo --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._native_variant_decl {
+        native_variant_of
+    }
+    codeinfo --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._place_unit_python {
+        native_display_text
+    }
+    codeinfo --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._ret_tuple_hints {
+        NativeTupleLayout
+    }
+    codeinfo --> compiler.driver.ifacecache.native_lowering_reads {
+        is_compiler_source_path,
+        is_native_by_location
+    }
+    codeinfo --> compiler.driver.jir._memoized {
+        _native_target_ctx,
+        get_effective_default_codespace_override
+    }
+    codeinfo --> compiler.driver.nativecache.NativeUnitRegistry.adopt_lowered {
+        CodeGenTarget
+    }
+    codeinfo --> compiler.driver.nativecache.NativeUnitRegistry.note_step {
+        native_unit_identity
+    }
+    codeinfo --> compiler.driver.program.JacProgram.prefers_native_codespace {
+        is_kernel_unit_path
+    }
+    codeinfo --> compiler.driver.program.JacProgram.toolchain_dependency {
+        is_compiler_source_path
+    }
+    codeinfo --> compiler.driver.session_compile.drop_native_bindings {
+        InteropContext,
+        InteropManifest
+    }
+    codeinfo --> compiler.frontend.host.HostServices.typeshed_unavailable_reason {
+        jaclang_pkg_root
+    }
+    codeinfo --> compiler.frontend.kernel_host.KernelHost.compile_module {
+        native_stdlib_root
+    }
+    codeinfo --> compiler.frontend.kernel_host.KernelHost.lower_dependency {
+        get_effective_default_codespace_override,
+        set_effective_default_codespace
+    }
+    codeinfo --> compiler.frontend.unitree.ModulePath.native_variant_path {
+        _native_variant_path
+    }
+    codeinfo --> compiler.native_bindings.NativeBindings.surface {
+        NATIVE_STDLIB_EXTENSIONS,
+        NATIVE_SUPPORTED_STDLIB,
+        is_bundled_native_module,
+        resolve_native_module
+    }
+    codeinfo --> compiler.native_bindings.import_gaps { resolve_native_module }
+    codeinfo --> compiler.native_bindings.typeshed_stub_path { jaclang_pkg_root }
+    codeinfo --> compiler.native_scope.binds_bare_arch_names { kernel_unit_rels }
+    codeinfo --> compiler.passes.layout_pass._archetype_native_name { native_arch_name }
+    codeinfo --> compiler.passes.layout_pass._recorded_native_name {
+        bundled_stdlib_module_of
+    }
+    codeinfo --> compiler.passes.layout_pass.archetype_native_name {
+        bundled_stdlib_module_of
+    }
+    codeinfo --> compiler.passes.layout_pass.record_interface_twins {
+        bundled_stdlib_module_of
+    }
+    codeinfo --> compiler.passes.ownership_check_pass.OwnershipCheckPass._nogc_resolve_provenance {
+        is_toolchain_unit
+    }
+    codeinfo --> compiler.placement.placement.native_blocker_scan {
+        NATIVE_SUPPORTED_STDLIB,
+        is_bundled_native_module,
+        resolve_native_module
+    }
+    codeinfo --> compiler.placement.placement_facts.variant_selected {
+        is_native_variant_path,
+        is_selected_native_variant
+    }
+    codeinfo --> compiler.placement.placement_solver.native_closure_blocker {
+        native_unit_compile_active
+    }
+    codeinfo --> dist.interpreter._repo_root { jaclang_pkg_root }
+    codeinfo --> dist.precompiled._pkg_dir { jaclang_pkg_root }
+    codeinfo --> project.compiler_host.ProjectHost.held_native_iface {
+        is_compiler_source_path
+    }
+    codeinfo --> server.watcher.watch_roots { is_compiler_source_path }
+    const_fold --> compiler.backends.py.jcir_gen_pass { fold_const }
+    const_fold --> compiler.c_interop.c_scalar_constant { fold_const }
+    constant --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._binds_variable {
+        SymbolType
+    }
+    constant --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._c_vararg {
+        is_borrow_kind
+    }
+    constant --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._c_vararg_value {
+        is_borrow_kind
+    }
+    constant --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._clib_abi_signature {
+        is_borrow_kind
+    }
+    constant --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._clib_param_borrowed {
+        is_borrow_kind
+    }
+    constant --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._codegen_assignment {
+        SymbolStorage
+    }
+    constant --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._null_safe_on_value {
+        SymbolType
+    }
+    constant --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._register_entry_globals {
+        SymbolStorage
+    }
+    constant --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._unpack_into {
+        SymbolStorage
+    }
+    constant --> compiler.c_interop.c_lent_arg_elem { is_borrow_kind }
+    constant --> compiler.c_interop.c_lent_param { is_borrow_kind }
+    constant --> compiler.driver.module_analysis.run_analysis {
+        CodeContext as _CodeCtx
+    }
+    constant --> compiler.frontend.loop_links { ExprCtx, SymbolType }
+    constant --> compiler.native_bindings { ParamKind, Tokens as Tok }
+    constant --> compiler.passes.layout_pass.open_dispatch { SymbolAccess }
+    constant --> compiler.passes.placement_pass { CodeContext }
+    constant --> compiler.passes.static_analysis_pass { client_state_setter_name }
+    constant --> compiler.passes.sym_tab_build_pass.SymTabBuildPass._declare_global_vars {
+        SymbolType
+    }
+    constant --> compiler.passes.type_checker_pass.TypeCheckPass._borrowed_scalar_param {
+        OwnershipKind
+    }
+    constant --> compiler.passes.type_checker_pass.TypeCheckPass._check_borrowed_scalar_forward {
+        OwnershipKind,
+        is_borrow_kind
+    }
+    constant --> compiler.passes.type_checker_pass.TypeCheckPass._check_c_function_def {
+        is_borrow_kind
+    }
+    constant --> compiler.placement.placement_facts.settle_server { CodeContext }
+    constant --> compiler.types.type_evaluator.TypeEvaluator._c_lent_args {
+        is_borrow_kind
+    }
+    diagnostics --> compiler.backends.native.na_ir_gen_pass {
+        E1145,
+        E1158,
+        E5113,
+        E5114
+    }
+    diagnostics --> compiler.passes.boundary_analysis_pass.BoundaryAnalysisPass.finish {
+        E5115
+    }
+    diagnostics --> compiler.passes.placement_pass { DIAGNOSTICS, E5090, E5116 }
+    diagnostics --> compiler.passes.placement_pass.PlacementPass._run_decided { E5096 }
+    diagnostics --> compiler.passes.placement_pass.PlacementPass._run_undecided {
+        E5096
+    }
+    diagnostics --> compiler.passes.type_checker_pass {
+        E1153,
+        E1154,
+        E1155,
+        E1156,
+        E1157,
+        E1158,
+        E1159
+    }
+    host --> compiler.backends.native.abi.struct_layouts { active_host }
+    host --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._place_unit_python {
+        active_host
+    }
+    host --> compiler.driver.jir._memoized { active_host }
+    host --> compiler.driver.jir._project_env_fingerprint_uncached { active_host }
+    host --> compiler.driver.native_iface.resolve_native_unit_ref { active_host }
+    host --> compiler.driver.nativecache.NativeUnitRegistry.adopt_lowered {
+        active_host
+    }
+    host --> compiler.native_scope.binds_bare_arch_names { active_host }
+    host --> compiler.passes.placement_pass.PlacementPass._run_decided { active_host }
+    host --> compiler.passes.placement_pass.PlacementPass._run_undecided { active_host }
+    host --> compiler.passes.placement_pass.settle_native_module { active_host }
+    host --> compiler.placement.placement_solver.native_placement_candidate {
+        active_host
+    }
+    kernel_host --> project.kernel_compile.kernel_compile_reported { replay_event_rows }
+    loop_links --> compiler.backends.es.esast_gen_pass {
+        LoopLinks,
+        LoopStmt,
+        PassLink,
+        assigned_on_entry,
+        binding_sites,
+        binds_target,
+        confined_to,
+        enclosing_loop,
+        is_within
+    }
+    loop_links --> compiler.backends.native.na_ir_gen_pass {
+        LoopLinks,
+        LoopStmt,
+        PassLink,
+        enclosing_loop,
+        frame_owns
+    }
+    loop_links --> compiler.backends.py.jcir_gen_pass { LoopLinks, LoopStmt, PassLink }
+    module_facts --> compiler.native_bindings { ModuleFacts }
+    module_facts --> compiler.passes.layout_pass { ModuleFacts }
+    module_facts --> compiler.passes.placement_pass { ModuleFacts }
+    module_facts --> compiler.passes.placement_pass.client_refused_elements {
+        client_capability_violations
+    }
+    relations --> compiler.frontend.unitree { CalleeSignature }
+    unitree --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._binds_variable {
+        ability_of_symbol
+    }
+    unitree --> compiler.boundary_rules {
+        Ability,
+        Archetype,
+        Assignment,
+        AtomTrailer,
+        AtomUnit,
+        BinaryExpr,
+        Ellipsis,
+        Enum,
+        FuncSignature,
+        HasVar,
+        IndexSlice,
+        Module,
+        MultiString,
+        NameAtom,
+        Null,
+        String,
+        Token,
+        TupleVal,
+        TypeAlias,
+        UniNode,
+        resolved_decl_of
+    }
+    unitree --> compiler.c_interop {
+        Ability,
+        GlobalVars,
+        Name,
+        ParamVar,
+        Symbol,
+        resolved_decl_of
+    }
+    unitree --> compiler.c_interop._ambient_c_call_returns { FuncCall, Name }
+    unitree --> compiler.c_interop._fold_with_finals { BinaryExpr }
+    unitree --> compiler.c_interop._spelled_c_type_name { Name }
+    unitree --> compiler.c_interop.c_abi_callee { FuncCall }
+    unitree --> compiler.c_interop.c_bytes_array_definition { MultiString, String }
+    unitree --> compiler.c_interop.c_bytes_literal { MultiString, String }
+    unitree --> compiler.c_interop.c_lent_param { FuncCall, FuncSignature, KWPair }
+    unitree --> compiler.c_interop.c_param_type { FuncCall }
+    unitree --> compiler.c_interop.c_scalar_constant { BinaryExpr, FuncCall, Name }
+    unitree --> compiler.c_interop.c_string_literal {
+        FString,
+        MultiString,
+        literal_string_value
+    }
+    unitree --> compiler.c_interop.c_variadic_param { FuncSignature }
+    unitree --> compiler.c_interop.clib_block_defines { Ability }
+    unitree --> compiler.c_interop.clib_global_of_name {
+        Ability,
+        ImplDef,
+        LambdaExpr,
+        Module,
+        Test
+    }
+    unitree --> compiler.c_interop.final_glob_value { Name }
+    unitree --> compiler.c_interop.named_function_of { Ability, Name }
+    unitree --> compiler.capability_notes { Module, UniNode }
+    unitree --> compiler.frontend.loop_links {
+        Ability,
+        Archetype,
+        Assignment,
+        CtrlStmt,
+        DictCompr,
+        Enum,
+        ForeverStmt,
+        ImplDef,
+        InForStmt,
+        InnerCompr,
+        IterForStmt,
+        LambdaExpr,
+        ListCompr,
+        Module,
+        ModuleCode,
+        Name,
+        Symbol,
+        Test,
+        UniNode,
+        UniScopeNode,
+        WhileStmt,
+        is_identifier_slot,
+        same_lexical_scope
+    }
+    unitree --> compiler.native_bindings {
+        Ability,
+        Archetype,
+        AtomTrailer,
+        Enum,
+        FuncCall,
+        FuncSignature,
+        GlobalVars,
+        HasVar,
+        Import,
+        KWPair,
+        Module,
+        ModuleItem,
+        Name,
+        Symbol,
+        TypeAlias,
+        UniNode,
+        UniScopeNode,
+        resolved_decl_of
+    }
+    unitree --> compiler.passes.boundary_analysis_pass { ContextAwareNode }
+    unitree --> compiler.passes.boundary_analysis_pass.BoundaryAnalysisPass._route_facts {
+        KWPair
+    }
+    unitree --> compiler.passes.boundary_analysis_pass.route_literal { Null }
+    unitree --> compiler.passes.placement_pass {
+        Ability,
+        Archetype,
+        AtomTrailer,
+        ContextAwareNode,
+        ImplDef,
+        Import,
+        Module,
+        ModuleCode,
+        ModuleItem,
+        ModulePath,
+        Name,
+        Test,
+        UniNode
+    }
+    unitree --> compiler.passes.static_analysis_pass {
+        HasVar,
+        JsxElement,
+        JsxElementName
+    }
+    unitree --> compiler.passes.static_analysis_pass.StaticAnalysisPass._check_undefined_names {
+        JsxElementName
+    }
+    unitree --> compiler.passes.type_checker_pass { AtomUnit, GlobalVars, String }
+    unparse --> compiler.boundary_rules.json_refusal { unparse_node }
+    unparse --> compiler.boundary_rules.signature_refusals { unparse_node }
 }
 
 graph import compiler.frontend.parser {
@@ -8229,9 +8812,6 @@ graph import compiler.frontend.parser {
 }
 
 graph import compiler.passes {
-    access_check_pass --> compiler.driver.pipeline.get_analysis_sched {
-        AccessCheckPass
-    }
     annex_weave --> compiler.frontend.parser.frontend.parse_woven { merge_annex_into }
     ast_validation_pass --> compiler.driver.pipeline { ASTValidationPass }
     boundary_analysis_pass --> compiler.driver.pipeline { BoundaryAnalysisPass }
@@ -8241,21 +8821,7 @@ graph import compiler.passes {
     capability_check_pass --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._process_clib_imports {
         classify_native_import
     }
-    capability_check_pass --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._run_impl {
-        native_capability_violations,
-        partition_native_capability_violations
-    }
-    capability_check_pass --> compiler.driver.pipeline.get_analysis_sched {
-        ClientCapabilityCheckPass,
-        NativeCapabilityCheckPass,
-        PortabilityWarnPass
-    }
-    cfg_build_pass --> compiler.driver.pipeline.get_ir_gen_sched { CFGBuildPass }
-    cfg_build_pass --> compiler.driver.pipeline.product_pipeline { CFGBuildPass }
     cfg_build_pass --> compiler.tests.test_pipeline_products { CFGBuildPass }
-    comptime_resolve_pass --> compiler.driver.pipeline.get_ir_gen_sched {
-        ComptimeResolvePass
-    }
     type context --> client.client_diagnostics { Alert }
     context --> compiler.backends.native.na_compile_pass { CompileContext }
     context --> compiler.backends.native.na_ir_gen_pass { CompileContext }
@@ -8300,7 +8866,6 @@ graph import compiler.passes {
     context --> compiler.passes.sym_tab_build_pass { CompileContext }
     context --> compiler.passes.type_checker_pass { CompileContext }
     context --> compiler.passes.variant_agreement_pass { CompileContext }
-    context --> compiler.placement.placement_solver { CompileContext }
     context --> compiler.placement.placement_solver._emit_solver_warning { Alert }
     context --> compiler.tools.comment_attach_pass { CompileContext }
     context --> compiler.tools.doc_ir_gen_pass { CompileContext }
@@ -8325,9 +8890,6 @@ graph import compiler.passes {
     execution --> compiler.tests.xbackend_equiv { run_walker }
     graph_lowering_pass --> compiler.driver.pipeline { GraphLoweringPass }
     import_wiring_pass --> compiler.driver.pipeline { ImportWiringPass }
-    jsx_intrinsic_guard_pass --> compiler.driver.pipeline.get_ir_gen_sched {
-        JsxIntrinsicGuardPass
-    }
     layout_pass --> compiler.backends.es.esast_gen_pass.EsastGenPass._field_constructor_args {
         archetype_native_name,
         get_layout_registry
@@ -8370,10 +8932,6 @@ graph import compiler.passes {
     }
     layout_pass --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._codegen_archetype {
         get_layout_registry
-    }
-    layout_pass --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._codegen_atom_trailer {
-        class_form_enum_member,
-        class_form_enum_scalar
     }
     layout_pass --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._codegen_class_form_enum_member {
         class_form_enum_member
@@ -8467,7 +9025,6 @@ graph import compiler.passes {
     layout_pass --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._vtable_candidates {
         get_layout_registry
     }
-    layout_pass --> compiler.driver.pipeline.product_pipeline { LayoutPass }
     layout_pass --> compiler.passes.osp_analysis.OspAnalysis._isa_closure {
         referenced_native_name
     }
@@ -8479,7 +9036,6 @@ graph import compiler.passes {
         referenced_native_name
     }
     layout_pass --> compiler.symbol_utils.collect_method_names { archetype_accessors }
-    mtir_gen_pass --> compiler.driver.pipeline.get_ir_gen_sched { MTIRGenPass }
     osp_analysis --> compiler.backends.es.esast_gen_pass {
         OspAnalysis,
         OspModel,
@@ -8496,9 +9052,6 @@ graph import compiler.passes {
         OspAnalysis
     }
     type osp_analysis --> compiler.frontend.codeinfo { OspModel }
-    ownership_check_pass --> compiler.driver.pipeline.get_analysis_sched {
-        OwnershipCheckPass
-    }
     ownership_hints --> cli.commands.analysis.explain { inferred_hints }
     ownership_hints --> lsp.server.engine.JacLangServer.get_inlay_hints {
         inferred_hints
@@ -8540,9 +9093,6 @@ graph import compiler.passes {
     rc_facts_pass --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._try_iter_protocol_for {
         loop_body_locals
     }
-    rc_facts_pass --> compiler.driver.nativecache.NativeBuildSession.lower {
-        RcFactsPass
-    }
     rc_facts_pass --> compiler.passes.ownership_check_pass.OwnershipCheckPass._nogc_infer_state {
         Ownership,
         result_ownership
@@ -8551,28 +9101,17 @@ graph import compiler.passes {
         Ownership,
         result_ownership
     }
-    region_infer_pass --> compiler.driver.pipeline.get_analysis_sched {
-        RegionInferPass
-    }
     scope_walk --> compiler.passes.static_analysis_pass { ScopeWalker }
     scope_walk --> compiler.tools.code_intel { ScopeWalker }
-    sem_def_match_pass --> compiler.driver.pipeline.get_ir_gen_sched { SemDefMatchPass }
     semantic_analysis_pass --> compiler.driver.pipeline { SemanticAnalysisPass }
-    static_analysis_pass --> compiler.driver.pipeline.get_analysis_sched {
-        StaticAnalysisPass
-    }
     sym_tab_build_pass --> compiler.driver.pipeline { SymTabBuildPass }
     sym_tab_build_pass --> compiler.driver.program.JacProgram.load_dependency_module {
         SymTabBuildPass
     }
-    type_checker_pass --> compiler.driver.pipeline.get_analysis_sched { TypeCheckPass }
     type_checker_pass --> compiler.passes.comptime_resolve_pass { TypeCheckPass }
     type_checker_pass --> compiler.tests.test_pipeline_products { TypeCheckPass }
     type_checker_pass --> compiler.tests.xbackend_equiv.compile_fixture_to_js {
         TypeCheckPass
-    }
-    variant_agreement_pass --> compiler.driver.pipeline.get_analysis_sched {
-        VariantAgreementPass
     }
     wasm_contract --> compiler.passes.boundary_analysis_pass.BoundaryAnalysisPass._register_na_client_import {
         function_contract
@@ -8599,31 +9138,23 @@ graph import compiler.passes {
     type annex_weave --> compiler.frontend.host | compiler.frontend.kernel_host | compiler.native_compiler | project.compiler_host {
         WovenAnnex
     }
-    ast_validation_pass --> compiler.passes.early_passes { ASTValidationPass }
-    cfg_build_pass --> compiler.passes.early_passes { CFGBuildPass }
     cfg_build_pass --> compiler.tools.cfg_dot { is_structural_child, unwrap_to_bool }
     context --> compiler.passes.ast_validation_pass | compiler.passes.boundary_analysis_pass | compiler.passes.cfg_build_pass | compiler.passes.endpoint_effect_pass | compiler.passes.graph_lowering_pass | compiler.passes.jsx_intrinsic_guard_pass | compiler.passes.semantic_analysis_pass | compiler.passes.sym_tab_build_pass | compiler.passes.type_checker_pass | compiler.tools.doc_ir_gen_pass | compiler.tools.grammar_extract_pass | compiler.tools.jac_auto_lint_pass | compiler.tools.normalize_pass | compiler.tools.unparse_pass {
         TreePass
     }
-    context --> compiler.backends.native.na_compile_pass | compiler.backends.native.na_ir_gen_pass | compiler.backends.py.jcir_bc_gen_pass | compiler.driver.context_passes | compiler.driver.pass_driver | compiler.passes.access_check_pass | compiler.passes.capability_check_pass | compiler.passes.decl_impl_match_pass | compiler.passes.early_passes | compiler.passes.execution | compiler.passes.freeze_structure_pass | compiler.passes.import_wiring_pass | compiler.passes.layout_pass | compiler.passes.mtir_gen_pass | compiler.passes.ownership_check_pass | compiler.passes.pyast_load_pass | compiler.passes.rc_facts_pass | compiler.passes.region_infer_pass | compiler.passes.sem_def_match_pass | compiler.passes.static_analysis_pass | compiler.passes.variant_agreement_pass | compiler.placement.placement_solver | compiler.tools.comment_attach_pass | compiler.tools.jac_formatter_pass | project.kernel_check.pass_type_named {
+    context --> compiler.backends.native.na_compile_pass | compiler.backends.native.na_ir_gen_pass | compiler.backends.py.jcir_bc_gen_pass | compiler.driver.context_passes | compiler.driver.pass_driver | compiler.passes.access_check_pass | compiler.passes.capability_check_pass | compiler.passes.decl_impl_match_pass | compiler.passes.execution | compiler.passes.freeze_structure_pass | compiler.passes.import_wiring_pass | compiler.passes.layout_pass | compiler.passes.mtir_gen_pass | compiler.passes.ownership_check_pass | compiler.passes.pyast_load_pass | compiler.passes.rc_facts_pass | compiler.passes.region_infer_pass | compiler.passes.sem_def_match_pass | compiler.passes.static_analysis_pass | compiler.passes.variant_agreement_pass | compiler.placement.placement_solver | compiler.tools.comment_attach_pass | compiler.tools.jac_formatter_pass | project.kernel_check.pass_type_named {
         CompilerPass
     }
-    context --> compiler.driver.pipeline | compiler.driver.pipeline_runner | compiler.driver.program {
-        PassSchedule
-    }
+    context --> compiler.driver.pipeline { PassSchedule }
     context --> compiler.frontend.kernel_analyze | project.kernel_check { Alert }
     context --> compiler.tools.cfg_dot { CompileContext, TreePass }
     type context --> compiler.symbol_utils { CompilerPass }
     dataflow --> compiler.passes.ownership_check_pass { DataflowTransfer, SymId }
     dataflow --> compiler.passes.rc_facts_pass { SymId }
-    decl_impl_match_pass --> compiler.passes.early_passes { DeclImplMatchPass }
-    early_passes --> compiler.jc_unit { EARLY_PASSES, SymTabBuildPass }
     execution --> compiler.passes.pyast_load_pass.build_python_module {
         new_context,
         walk_pass
     }
-    graph_lowering_pass --> compiler.passes.early_passes { GraphLoweringPass }
-    jsx_intrinsic_guard_pass --> compiler.passes.early_passes { JsxIntrinsicGuardPass }
     layout_pass --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._class_expr_bound {
         class_type_native_name
     }
@@ -8658,12 +9189,6 @@ graph import compiler.passes {
         get_layout_registry
     }
     type layout_pass --> compiler.frontend.codeinfo { LayoutRegistry }
-    pyast_load_pass --> compiler.driver.pipeline_runner.run_utility { PyastBuildPass }
-    sem_def_match_pass --> compiler.passes.early_passes { SemDefMatchPass }
-    semantic_analysis_pass --> compiler.passes.early_passes { SemanticAnalysisPass }
-    sym_tab_build_pass --> compiler.driver.pipeline_runner | compiler.passes.early_passes {
-        SymTabBuildPass
-    }
     wasm_contract --> compiler.passes.boundary_analysis_pass.BoundaryAnalysisPass._register_na_client_import {
         host_contract_dicts
     }
@@ -8683,15 +9208,10 @@ graph import compiler.passes {
     context --> compiler.passes.package_boundary_pass { CompilerPass }
     package_boundary_pass --> compiler.driver.pipeline { PackageBoundaryPass }
     context --> compiler.backends.es.esast_gen_pass { TreePass }
-    context --> compiler.backends.native.na_ir_gen_pass { PassSchedule }
     context --> compiler.backends.py.jcir_gen_pass { TreePass }
-    context --> compiler.driver.module_compile { PassSchedule }
     context --> compiler.driver.module_compile.report_missing_native_ir { Alert }
     context --> compiler.driver.progstate { CompileContext }
     context --> project.kernel_check.loaded_pass_type { CompilerPass }
-    freeze_structure_pass --> compiler.driver.module_compile.get_py_code_gen {
-        FreezeStructurePass
-    }
     layout_pass --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._erased_want {
         class_type_native_name
     }
@@ -8701,10 +9221,96 @@ graph import compiler.passes {
     layout_pass --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._module_class_name {
         class_type_native_name
     }
-    rc_facts_pass --> compiler.backends.native.na_ir_gen_pass.native_ir_product_schedule {
-        RcFactsPass
+    access_check_pass --> compiler.driver.pipeline.analysis_passes { AccessCheckPass }
+    capability_check_pass --> compiler.driver.pipeline.analysis_passes {
+        PortabilityWarnPass
     }
-    rc_facts_pass --> compiler.driver.module_compile.get_py_code_gen { RcFactsPass }
+    capability_check_pass --> compiler.passes.placement_pass.build_native_legality {
+        native_capability_demotion_owner,
+        native_capability_violations
+    }
+    cfg_build_pass --> compiler.driver.pipeline.flow_passes { CFGBuildPass }
+    cfg_build_pass --> compiler.driver.pipeline.ir_passes { CFGBuildPass }
+    comptime_resolve_pass --> compiler.driver.pipeline.ir_passes { ComptimeResolvePass }
+    context --> compiler.backends.native.na_ir_gen_pass { Alert }
+    context --> compiler.driver.pipeline { CompilerPass }
+    context --> compiler.passes.placement_pass { Alert, CompilerPass }
+    freeze_structure_pass --> compiler.driver.pipeline.frozen_passes {
+        FreezeStructurePass
+    }
+    jsx_intrinsic_guard_pass --> compiler.driver.pipeline.ir_passes {
+        JsxIntrinsicGuardPass
+    }
+    layout_pass --> compiler.backends.native.na_ir_gen_pass { VTABLE_DROP_SLOT }
+    layout_pass --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._codegen_plain_trailer {
+        class_form_enum_member,
+        class_form_enum_scalar
+    }
+    layout_pass --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._drop_dispatches {
+        get_layout_registry
+    }
+    layout_pass --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._emit_default_obj_repr {
+        get_layout_registry
+    }
+    layout_pass --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._emit_jid {
+        get_layout_registry
+    }
+    layout_pass --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._report_unreachable_overrides {
+        get_layout_registry
+    }
+    layout_pass --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._walk_imported_module_type_names {
+        record_interface_twins
+    }
+    layout_pass --> compiler.boundary_rules.archetype_fields { referenced_archetype }
+    layout_pass --> compiler.driver.pipeline.layout_passes { LayoutPass }
+    mtir_gen_pass --> compiler.driver.pipeline.ir_passes { MTIRGenPass }
+    ownership_check_pass --> compiler.driver.pipeline.analysis_passes {
+        OwnershipCheckPass
+    }
+    placement_pass --> compiler.backends.native.na_compile_pass.NativeCompilePass._run_impl {
+        settle_native_module
+    }
+    placement_pass --> compiler.backends.native.na_ir_gen_pass {
+        NativeLegality,
+        NativeRefusal,
+        NativeRefused
+    }
+    placement_pass --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._demote_method_if_unlowerable {
+        refusal_from_alert
+    }
+    placement_pass --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._lower_module {
+        build_native_legality
+    }
+    placement_pass --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._owner_required {
+        element_requirements
+    }
+    placement_pass --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._settle_module {
+        settle_native_module
+    }
+    placement_pass --> compiler.driver.pipeline.analysis_passes { PlacementPass }
+    pyast_load_pass --> compiler.driver.pipeline.python_ast_passes { PyastBuildPass }
+    rc_facts_pass --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._codegen_expr {
+        call_borrows_receiver
+    }
+    rc_facts_pass --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._codegen_with_recursive {
+        method_returns_borrow
+    }
+    rc_facts_pass --> compiler.driver.pipeline.codegen_passes { RcFactsPass }
+    rc_facts_pass --> compiler.driver.pipeline.native_ir_passes { RcFactsPass }
+    rc_facts_pass --> compiler.driver.pipeline.native_lower_passes { RcFactsPass }
+    rc_facts_pass --> compiler.passes.ownership_check_pass.OwnershipCheckPass._nogc_infer_state {
+        call_borrows_receiver
+    }
+    region_infer_pass --> compiler.driver.pipeline.analysis_passes { RegionInferPass }
+    sem_def_match_pass --> compiler.driver.pipeline.ir_passes { SemDefMatchPass }
+    static_analysis_pass --> compiler.driver.pipeline.analysis_passes {
+        StaticAnalysisPass
+    }
+    sym_tab_build_pass --> compiler.jc_unit { SymTabBuildPass }
+    type_checker_pass --> compiler.driver.pipeline.analysis_passes { TypeCheckPass }
+    variant_agreement_pass --> compiler.driver.pipeline.analysis_passes {
+        VariantAgreementPass
+    }
 }
 
 graph import compiler.placement {
@@ -8717,9 +9323,6 @@ graph import compiler.placement {
     }
     placement --> compiler.driver.ifacecache.IfaceRegistry._restore_placement {
         summary_store
-    }
-    placement --> compiler.driver.nativecache.NativeUnitRegistry.record_verdict {
-        note_native_verdict
     }
     placement --> compiler.placement.placement_solver {
         PLACEMENT_HOLD_EXEMPT_ROOTS,
@@ -8775,19 +9378,11 @@ graph import compiler.placement {
     placement_pins --> compiler.driver.boundary_classify.import_declares_native_target {
         effective_module_pin
     }
-    placement_pins --> compiler.driver.boundary_classify.module_demoted_native {
-        module_native_demoted
-    }
     placement_pins --> compiler.driver.boundary_classify.native_only_import_target {
         effective_module_pin
     }
     placement_pins --> compiler.driver.boundary_classify.plain_native_import_target {
-        effective_module_pin,
-        module_native_demoted
-    }
-    placement_pins --> compiler.driver.jir._project_env_fingerprint {
-        config_kind_space,
-        pins_digest
+        effective_module_pin
     }
     placement_pins --> compiler.passes.static_analysis_pass.StaticAnalysisPass._check_client_imports {
         in_client_npm_world
@@ -8797,10 +9392,6 @@ graph import compiler.placement {
     }
     placement_pins --> compiler.placement.placement.project_kind_name {
         config_project_kind
-    }
-    placement_pins --> compiler.placement.placement.scan_native_blockers {
-        config_module_pin as _cmp,
-        config_pin_for
     }
     placement_pins --> compiler.placement.placement.summarize_module {
         effective_pin_for
@@ -8814,12 +9405,6 @@ graph import compiler.placement {
     placement_pins --> compiler.placement.placement_solver._module_externally_pinned {
         config_module_pin
     }
-    placement_pins --> compiler.placement.placement_solver._native_dep_scan {
-        module_native_demoted
-    }
-    placement_pins --> compiler.placement.placement_solver.native_default_verdict {
-        module_native_demoted
-    }
     placement_pins --> lsp.server.engine.JacLangServer._module_spec_target {
         in_client_npm_world
     }
@@ -8831,9 +9416,6 @@ graph import compiler.placement {
     }
     placement_solver --> compiler.driver.boundary_classify.plain_native_import_target {
         _materialize_module
-    }
-    placement_solver --> compiler.driver.na_coverage.na_coverage_begin {
-        native_scan_memo_clear
     }
     placement_solver --> compiler.driver.pipeline { PlacementApplyPass }
     placement_solver --> compiler.frontend.codeinfo._inferred_native_path {
@@ -8869,7 +9451,7 @@ graph import compiler.placement {
     placement_export --> compiler.driver.ifacecache.IfaceRegistry._persist_in_context {
         summary_to_bytes
     }
-    placement_export --> compiler.driver.compiler.JacCompiler._restore_sections | compiler.driver.ifacecache.IfaceRegistry._restore_placement | compiler.driver.nativecache.verdict_from_jir {
+    placement_export --> compiler.driver.compiler.JacCompiler._restore_sections | compiler.driver.ifacecache.IfaceRegistry._restore_placement {
         summary_from_bytes
     }
     placement_export --> dist.precompile_bytecode._unit_extra {
@@ -8894,25 +9476,12 @@ graph import compiler.placement {
         config_kind_space,
         effective_module_pin
     }
-    placement_pins --> compiler.driver.program.JacProgram.parse_source {
-        native_demotion_code
-    }
     placement_pins --> compiler.driver.program.JacProgram.stamp_boundary_facts {
         config_module_pin
     }
     placement_pins --> compiler.placement.placement_facts.session_declares_native {
         config_kind_space,
         effective_pin_for
-    }
-    placement_solver --> compiler.driver.module_analysis.ModuleAnalysis.placement {
-        refresh_placement_module,
-        solve_program_placement
-    }
-    placement_solver --> compiler.driver.program.JacProgram.parse_source {
-        native_default_verdict
-    }
-    placement_solver --> compiler.driver.session_compile.demote_native_failure {
-        invalidate_importers_es
     }
     type placement_work --> compiler.driver.progstate { PlacementWork }
     placement --> compiler.driver.nativecache._module_files_and_imports {
@@ -8924,6 +9493,103 @@ graph import compiler.placement {
     placement --> compiler.driver.unit_products.placement_record { get_module_summary }
     placement_export --> compiler.driver.unit_products.placement_record {
         summary_to_dict
+    }
+    placement --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._owner_element {
+        element_display_name
+    }
+    placement --> compiler.driver.compiler.JacCompiler.kernel_native_entry {
+        summary_store
+    }
+    placement --> compiler.driver.compiler.JacCompiler.native_entry_engine {
+        summary_store
+    }
+    placement --> compiler.driver.module_analysis.run_analysis { record_decided }
+    placement --> compiler.passes.placement_pass.PlacementPass._run_undecided {
+        record_decided
+    }
+    placement --> compiler.passes.placement_pass.build_native_legality {
+        native_blocker_scan
+    }
+    placement --> compiler.passes.placement_pass.element_requirements {
+        element_display_name
+    }
+    placement --> compiler.passes.placement_pass.settle_native_module { record_decided }
+    placement --> compiler.placement.placement_solver {
+        PlacementSummary,
+        summary_store
+    }
+    placement --> compiler.placement.placement_solver.PlacementApplyPass._run_impl {
+        native_blocker_scan
+    }
+    placement_facts --> compiler.driver.module_analysis.run_analysis { settle_server }
+    placement_facts --> compiler.driver.module_compile.admits_native_checks {
+        variant_selected
+    }
+    placement_facts --> compiler.driver.program.JacProgram.declared_codespace {
+        variant_selected
+    }
+    placement_facts --> compiler.driver.program.JacProgram.prefers_native_codespace {
+        native_only,
+        native_placement_hard
+    }
+    placement_facts --> compiler.passes.placement_pass { native_placement_soft }
+    placement_facts --> compiler.passes.placement_pass.PlacementPass._run_undecided {
+        contexts_of
+    }
+    placement_facts --> compiler.passes.placement_pass.settle_native_module {
+        settle_server
+    }
+    placement_facts --> compiler.placement.placement_solver.native_closure_blocker {
+        pinned_module_space
+    }
+    placement_pins --> compiler.driver.jir._project_env_fingerprint_uncached {
+        config_kind_space,
+        pins_digest
+    }
+    placement_pins --> compiler.driver.program.JacProgram.prefers_native_codespace {
+        config_kind_space,
+        effective_module_pin
+    }
+    placement_pins --> compiler.passes.placement_pass.element_requirements {
+        config_element_pin,
+        config_pin_for
+    }
+    placement_pins --> compiler.placement.placement.native_blocker_scan {
+        config_module_pin as _cmp,
+        config_pin_for
+    }
+    placement_pins --> compiler.placement.placement.summarize_module {
+        config_element_pin,
+        config_module_pin
+    }
+    placement_solver --> compiler.driver.module_analysis.run_analysis { placement_work }
+    placement_solver --> compiler.driver.pipeline.place_module {
+        refresh_placement_module,
+        solve_program_placement
+    }
+    placement_solver --> compiler.driver.program.JacProgram.parse_source {
+        native_placement_candidate
+    }
+    placement_solver --> compiler.passes.placement_pass.PlacementPass._run_decided {
+        placement_work,
+        refresh_placement_module,
+        solve_module_placement
+    }
+    placement_solver --> compiler.passes.placement_pass.PlacementPass._run_undecided {
+        native_placement_candidate,
+        placement_work,
+        refresh_placement_module,
+        solve_module_placement
+    }
+    placement_solver --> compiler.passes.placement_pass.build_native_legality {
+        native_closure_blocker
+    }
+    placement_solver --> compiler.passes.placement_pass.settle_native_module {
+        invalidate_importers_es
+    }
+    placement_solver --> compiler.passes.placement_pass.uncrossable_native {
+        placement_work,
+        refresh_placement_module
     }
 }
 
@@ -8995,6 +9661,12 @@ graph import compiler.tests {
         run_native_function,
         run_py_fixture
     }
+    xbackend_equiv --> compiler.tests.test_loop_closure_equivalence {
+        compile_fixture_to_js,
+        run_js_function,
+        run_py_fixture,
+        run_with_both
+    }
 }
 
 graph import compiler.tools {
@@ -9007,9 +9679,6 @@ graph import compiler.tools {
     doc_ir_gen_pass --> compiler.tools.jac_formatter_pass.format_module { DocIRGenPass }
     doc_ir_gen_pass --> compiler.tools.lang_tools { DocIRGenPass }
     grammar_extract_pass --> cli.commands.analysis.grammar { GrammarExtractPass }
-    jac_auto_lint_pass --> compiler.driver.pipeline.get_analysis_sched {
-        JacLintCheckPass
-    }
     lang_tools --> cli.commands.tools.tool { AstTool }
     reactive_use_walk --> compiler.tools.jac_auto_lint_pass { ReactiveUseWalker }
     treeprinter --> cli.mcp.compiler_bridge { node_to_dict, print_ast_tree }
@@ -9019,35 +9688,36 @@ graph import compiler.tools {
         printgraph_ast_tree,
         printgraph_symtab_tree
     }
-    cfg_dot --> compiler.driver.pipeline_runner.run_utility { CoalesceBBPass }
     cfg_dot --> compiler.tools.lang_tools { cfg_dot_from_file }
-    comment_attach_pass --> compiler.driver.pipeline_runner.get_format_sched {
-        CommentAttachPass
-    }
-    doc_ir_gen_pass --> compiler.driver.pipeline_runner.get_format_sched {
-        DocIRGenPass
-    }
-    doc_ir_gen_pass --> compiler.driver.pipeline_runner.run_utility { DocIRGenPass }
-    grammar_extract_pass --> compiler.driver.pipeline_runner.run_utility {
-        GrammarExtractPass
-    }
-    jac_auto_lint_pass --> compiler.driver.pipeline_runner.get_format_sched {
-        JacAutoLintPass
-    }
-    jac_auto_lint_pass --> compiler.driver.pipeline_runner.get_lint_sched {
-        JacLintCheckPass
-    }
     jac_formatter_pass --> cli.commands.transform.py2jac | cli.mcp.compiler_bridge | compiler.tools.lang_tools {
         unparse_module
     }
-    jac_formatter_pass --> compiler.driver.pipeline_runner.get_format_sched {
-        JacFormatPass
-    }
-    jac_formatter_pass --> compiler.driver.pipeline_runner.run_utility { JacFormatPass }
-    normalize_pass --> compiler.driver.pipeline_runner.run_utility | compiler.tools.jac_formatter_pass.unparse_module {
+    normalize_pass --> compiler.tools.jac_formatter_pass.unparse_module {
         NormalizePass
     }
-    unparse_pass --> compiler.driver.pipeline_runner.run_utility { UnparsePass }
+    cfg_dot --> compiler.driver.pipeline.cfg_dot_passes { CoalesceBBPass }
+    comment_attach_pass --> compiler.driver.pipeline.format_lintfix_passes {
+        CommentAttachPass
+    }
+    comment_attach_pass --> compiler.driver.pipeline.format_passes { CommentAttachPass }
+    doc_ir_gen_pass --> compiler.driver.pipeline.doc_passes { DocIRGenPass }
+    doc_ir_gen_pass --> compiler.driver.pipeline.format_lintfix_passes { DocIRGenPass }
+    doc_ir_gen_pass --> compiler.driver.pipeline.format_passes { DocIRGenPass }
+    grammar_extract_pass --> compiler.driver.pipeline.grammar_passes {
+        GrammarExtractPass
+    }
+    jac_auto_lint_pass --> compiler.driver.pipeline.analysis_passes { JacLintCheckPass }
+    jac_auto_lint_pass --> compiler.driver.pipeline.format_lintfix_passes {
+        JacAutoLintPass
+    }
+    jac_auto_lint_pass --> compiler.driver.pipeline.lint_passes { JacLintCheckPass }
+    jac_formatter_pass --> compiler.driver.pipeline.format_lintfix_passes {
+        JacFormatPass
+    }
+    jac_formatter_pass --> compiler.driver.pipeline.format_passes { JacFormatPass }
+    jac_formatter_pass --> compiler.driver.pipeline.format_text_passes { JacFormatPass }
+    normalize_pass --> compiler.driver.pipeline.normalize_passes { NormalizePass }
+    unparse_pass --> compiler.driver.pipeline.unparse_passes { UnparsePass }
 }
 
 graph import compiler.types {
@@ -9424,7 +10094,6 @@ graph import compiler.types {
     }
     types --> compiler.c_interop.c_type_arg { AnyType, ClassType, UnknownType }
     types --> compiler.c_interop.c_type_spec { ClassType, FunctionType, UnionType }
-    types --> compiler.c_interop.is_builtin_pin_call { FunctionType }
     type types --> compiler.frontend.relations {
         ClassDetailsPrivate,
         ClassDetailsShared,
@@ -10120,12 +10789,42 @@ graph import compiler.types {
         TypeVarType as _TeTypeVar
     }
     type types --> compiler.passes.layout_pass { ClassDetailsShared }
+    type_utils --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._check_native_import_names {
+        lookup_symtab
+    }
+    type_utils --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._is_number_slot {
+        primitive_type_name_of
+    }
+    types --> compiler.backends.es.esast_gen_pass.EsastGenPass._builtin_param_names {
+        FunctionType,
+        ParameterCategory
+    }
+    types --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._emit_jid {
+        ClassType,
+        UnionType
+    }
+    types --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._lower_clib_function_type {
+        FunctionType as CallbackType
+    }
+    types --> compiler.c_interop._ambient_c_call_returns {
+        FunctionType,
+        OverloadedType
+    }
+    types --> compiler.c_interop.c_param_type { FunctionType }
+    types --> compiler.native_bindings {
+        ClassType,
+        FunctionType,
+        OverloadedType,
+        TypeBase
+    }
+    types --> compiler.passes.layout_pass.record_interface_twins { ClassType }
+    types --> compiler.passes.layout_pass.referenced_native_name { ClassType }
+    types --> compiler.types.type_utils { CLASS_GRAPH_EPOCH }
 }
 
 graph import compiler.types.stubcat {
     build as catalog_build --> compiler.tests.test_stubcat_roundtrip;
     build --> compiler.tests.test_stubcat_roundtrip { build_catalog }
-    build --> compiler.types.stubcat.locate._build_dev_catalog { build_catalog }
     format --> compiler.driver.compiler.JacCompiler.ensure_stub_catalog;
     format --> compiler.types.stubcat.locate { FORMAT_VERSION }
     format --> compiler.types.stubcat.reader {
@@ -10244,18 +10943,13 @@ graph import compiler.types.stubcat {
         SYMF_HAS_DEFAULT
     }
     locate --> compiler.driver.compiler.JacCompiler.compile { StubCatalogUnavailable }
-    locate --> compiler.driver.compiler.JacCompiler.ensure_stub_catalog {
-        ensure_catalog
-    }
     locate --> compiler.driver.ifacecache.IfaceRegistry._pkg_dir { jaclang_pkg_dir }
     locate --> compiler.tests.test_stubcat_roundtrip {
-        ENV_FILE,
         jaclang_pkg_dir,
         reset_catalog_cache,
         typeshed_stdlib_dir
     }
     locate --> compiler.types.stubcat.build {
-        ENV_BUILDING,
         catalog_key,
         jac_internal_stub_dir,
         jaclang_pkg_dir,
@@ -10291,9 +10985,6 @@ graph import compiler.types.stubcat {
         SYMF_INSTANCE_METHOD
     }
     format --> project.kernel_snapshot.interface_dependencies { MOD_EXTERNAL }
-    locate --> compiler.driver.compiler.JacCompiler.enter_compile {
-        StubCatalogUnavailable
-    }
     modiface --> compiler.frontend.kernel_host { iface_module, open_module_iface }
     modiface --> project.kernel_snapshot.interface_dependencies { open_module_iface }
     reader --> compiler.driver.program.JacProgram.load_dependency_module | compiler.types.ct_eval {
@@ -10323,6 +11014,11 @@ graph import compiler.types.stubcat {
     reader --> compiler.driver.unit_products.dependency_span_rows { CatModule }
     reader --> compiler.placement.placement_solver._import_source_module { CatModule }
     reader --> compiler.types.stubcat.writer.CatalogWriter.encode_symbol { CatProvider }
+    build --> compiler.types.stubcat.locate.StubcatArtifact.build { build_catalog }
+    locate --> compiler.driver.compiler.JacCompiler.ensure_stub_catalog { open_catalog }
+    locate --> compiler.tests.test_stubcat_roundtrip { StubcatArtifact }
+    locate --> project.kernel_snapshot.require_stub_catalog { reset_catalog_cache }
+    reader --> compiler.native_bindings.is_owning_scope { CatScope }
 }
 
 graph import data {
@@ -10379,7 +11075,6 @@ graph import data {
     }
     dbcatalog --> server.session.own_child_databases { process_alive, this_host }
     pgembed --> cli.commands.db._catalog_runtime { PgRuntime }
-    pgembed --> cli.commands.db._db_fetch { PgRuntime, dist_cache_dir }
     pgembed --> cli.commands.db._runtime_for { PgRuntime }
     pgembed --> scale.deploy.database.kubernetes_postgres.KubernetesPostgresProvider.deploy {
         pg_tuning_settings
@@ -10397,7 +11092,6 @@ graph import data {
     pgembed --> scale.tests.server.test_registration_limits { PgRuntime }
     pgembed --> scale.tests.server.test_scheduler_multipod { PgRuntime }
     pgembed --> server.session { PgRuntime }
-    pgembed --> server.session.shared_pg_data_dir { dist_cache_dir }
     pgload --> data.dbcatalog.connect_admin { connect }
     pgload --> data.dbcatalog.holds_no_data { connect }
     pgload --> data.pgembed.PgRuntime._wait_ready { connect }
@@ -10442,13 +11136,9 @@ graph import data {
     serializer --> runtime.builtin._get_archetype_alias.factory.decorator { Serializer }
     serializer --> server.endpoints.walkers { Serializer }
     serializer --> server.server { Serializer }
-    serializer --> server.session.Session._evict_uncommitted { Serializer }
-    serializer --> server.session.Session._flush_locked { Serializer }
     serializer --> server.session.Session._load_edges { Serializer }
     serializer --> server.session.Session._materialize { Serializer }
     serializer --> server.session.Session._serialize { Serializer }
-    serializer --> server.session.Session.flush { Serializer }
-    serializer --> server.session._persist_hash { Serializer }
     sqlcompile --> data.query_planner { compile_query }
     storage --> runtime.runtime.JacPersistence.store { LocalStorage }
     storage --> scale.plugin { Storage }
@@ -10498,6 +11188,14 @@ graph import data {
         resolution_scope
     }
     type_identity --> server.session.Session._serialize { storage_type, type_module }
+    pg_dist --> cli.commands.db._db_fetch { download_dist }
+    pg_dist --> data.pgembed.PgRuntime._resolve_binaries { postgres_bin_dir }
+    pgembed --> data.store.PgStore._warn_lock_headroom { predicate_lock_shortfall }
+    pgembed --> scale.tests.deploy.test_postgres_predicate_lock_headroom {
+        predicate_lock_shortfall
+    }
+    serializer --> server.session { frozen_fields }
+    serializer --> server.session.Session._unflushed { Serializer }
 }
 
 graph import data.storage {
@@ -10514,12 +11212,6 @@ graph import dist {
     fused_binary --> cli.commands.project._bundle_binary { append_overlay, has_runtime }
     fused_binary --> client.targets.desktop.desktop_build._bundle_runtime {
         graft_runtime
-    }
-    fused_binary --> compiler.backends.native.static_link.musl_lib_dir {
-        bundled_floor_roots
-    }
-    fused_binary --> compiler.backends.native.wasm_build._wasm_libc_dir {
-        bundled_floor_roots
     }
     jab --> cli.cli_boot._run_bundled_app { materialize_jab_bytes }
     jab --> cli.commands.execution._run_jab { materialize_jab }
@@ -10559,9 +11251,6 @@ graph import dist {
     }
     seal --> cli.commands.project { build_jab, make_sealed_image as _make_sealed_image }
     seal --> client.targets.desktop.desktop_build.stage_program { build_jab }
-    fused_binary --> compiler.backends.native.static_link.resolve_floor_dir {
-        bundled_floor_roots
-    }
     archive --> dist.seal.build_jab | packages.artifact { tar_gz_dir }
     archive --> packages.store | packages.templates | packages.verify { extract_tar_gz }
     archive --> scale.injector.binary.pack_binary_bytes | scale.tests.microservices.test_bundle_jacignore {
@@ -10578,6 +11267,20 @@ graph import dist {
     sanitize --> scale.deploy.target.kubernetes.manifest_builder.ManifestBuilder._check_pod_config_resolves {
         sanitized_jac_toml
     }
+    fused_binary --> client.targets.desktop.desktop_build._jac_bin { jac_binary }
+    fused_binary --> compiler.types.stubcat.locate.StubcatArtifact.probe_kit {
+        running_executable
+    }
+    fused_binary --> compiler.types.stubcat.locate.StubcatArtifact.probe_sealed {
+        running_executable
+    }
+    fused_binary --> compiler.types.stubcat.locate._region_probe { stubcat_region }
+    fused_binary --> scale.runtime.context.util.jac_executable { jac_binary }
+    precompile_bytecode --> dist.precompiled.PrecompiledArtifact.build {
+        run_precompile
+    }
+    precompile_bytecode --> dist.precompiled.bundle_misses { sealable_sources }
+    publish --> dist.publish.builder._backend_source { wheel_archive }
 }
 
 graph import dist.payload {
@@ -10658,6 +11361,8 @@ graph import dist.payload {
     pins --> dist.payload.fetch { LlvmSlice, llvm_release, pins }
     vendor --> dist.payload.assemble { MUSL_ARTIFACTS }
     vendor --> dist.payload.cli { build_musl, build_wasm_libc }
+    fetch --> client.js_runtime.BunArtifact.build { fetch_bun }
+    fetch --> compiler.types.stubcat.locate.TypeshedArtifact.build { fetch_typeshed }
 }
 
 graph import dist.publish {
@@ -10715,6 +11420,8 @@ graph import dist.publish {
         sdist_filename,
         wheel_filename
     }
+    wheel_archive --> dist.publish.builder { BUILD_DATA_FILE, wheel_bytes }
+    wheel_archive --> dist.publish.record { record_hash, record_text }
 }
 
 graph import dist.source {
@@ -10728,7 +11435,6 @@ graph import jac0core {
         get_jir_cache_dir
     }
     cache_paths --> compiler.backends.native.elf_linker { atomic_write }
-    cache_paths --> compiler.backends.native.kernel_resolve { FileLock, atomic_write }
     cache_paths --> compiler.backends.native.link_plan { atomic_write }
     cache_paths --> compiler.backends.native.macho_linker { atomic_write }
     cache_paths --> compiler.backends.native.pe_linker { atomic_write }
@@ -10778,7 +11484,6 @@ graph import jac0core {
     ext_registry --> testing.test_runner._suite_source { is_test }
     ext_registry --> testing.test_runner.discover { is_jac }
     ext_registry --> testing.test_runner.run_file { base_stem }
-    sealed --> compiler.backends.native.kernel_resolve._bundled_kernel { load_image }
     sealed --> compiler.driver.application._prepare_sealed {
         image_for_bundle_dir,
         register_image
@@ -10799,22 +11504,17 @@ graph import jac0core {
     sealed --> dist.seal.vendor_jab_deps { python_tag }
     sealed --> scale.utils.vendor_wheels { python_tag }
     sealed --> server.sealed_serve { MANIFEST_NAME }
-    stubcat_hook --> compiler.driver.compiler.JacCompiler.ensure_stub_catalog {
-        env_disabled
-    }
     stubcat_hook --> compiler.driver.compiler.JacCompiler.stub_catalog { active }
     stubcat_hook --> compiler.types.stubcat.locate._publish { set_active }
     stubcat_hook --> compiler.types.stubcat.locate.reset_catalog_cache { set_active }
     stubcat_hook --> project.modresolver._candidate_from_stub_catalog { active }
     stubcat_hook --> project.modresolver._stub_catalog_active { active }
-    cache_paths --> client.targets.desktop.desktop_build._native_build_cef | client.targets.node_tooling_common.run_manifest_install | client.targets.react_native.build.run_gradle_assemble | compiler.backends.native.stage0_build.pin_for_commit | data.pgembed.PgRuntime._download_zonky | toolchains.android | toolchains.apple | toolchains.c_backend | toolchains.cef | toolchains.desktop | toolchains.store {
+    cache_paths --> client.targets.desktop.desktop_build._native_build_cef | client.targets.node_tooling_common.run_manifest_install | client.targets.react_native.build.run_gradle_assemble | toolchains.android | toolchains.apple | toolchains.c_backend | toolchains.cef | toolchains.desktop | toolchains.store {
         FileLock
     }
-    cache_paths --> compiler.backends.native.stage0_build.provision_stage0 { FileLock }
-    cache_paths --> compiler.backends.native.stage0_build.restamp_stage0_sidecar | compiler.types.stubcat.build | scale.injector.binary {
+    cache_paths --> compiler.types.stubcat.build | scale.injector.binary {
         atomic_write
     }
-    cache_paths --> compiler.backends.native.stage0_build.stage0_dir { get_cache_home }
     ext_registry --> compiler.driver.bccache.host_layout_tables {
         ANNEX_FOLDER,
         INIT_FILES,
@@ -10830,11 +11530,60 @@ graph import jac0core {
     stubcat_hook --> project.compiler_host.ProjectHost.has_active_stub_catalog {
         active
     }
-    cache_paths --> dist.precompile_bytecode.seal_stage0_kernel { FileLock }
     cache_paths --> packages.sources.checkout | packages.store.materialize { FileLock }
     ext_registry --> testing.cl_test_runner.module_entry_for { is_annex }
     ext_registry --> project.kernel_snapshot.KernelSnapshot.emits { is_annex }
     stubcat_hook --> project.kernel_snapshot.session_inputs { active }
+    artifact_registry --> artifacts.router._BuildingSpan.__enter__ { begin }
+    artifact_registry --> artifacts.router._BuildingSpan.__exit__ { end }
+    artifact_registry --> artifacts.router.artifact_named { ARTIFACTS }
+    artifact_registry --> artifacts.router.building_now { building as marked }
+    artifact_registry --> artifacts.router.names { ARTIFACTS }
+    artifact_registry --> artifacts.router.resolve { resolution_in_flight }
+    artifact_registry --> compiler.driver.compiler.JacCompiler.ensure_stub_catalog {
+        resolution_in_flight
+    }
+    artifact_registry --> compiler.native_compiler.ensure_loaded {
+        resolution_in_flight
+    }
+    cache_paths --> artifacts.router.publish { FileLock, atomic_write }
+    cache_paths --> client.js_runtime.JsEngineArtifact.build { atomic_write }
+    cache_paths --> client.js_runtime.write_bun_record { atomic_write }
+    cache_paths --> compiler.backends.native.llvm.shim_path.write_shim_record {
+        atomic_write
+    }
+    cache_paths --> data.pg_dist.download_dist { FileLock }
+    cache_paths --> project.kernel_snapshot.build_stub_catalog { FileLock }
+    ext_registry --> server.watcher.JacFileWatcher._beside_watched_file {
+        is_annex_path_of
+    }
+    ext_registry --> server.watcher.JacFileWatcher._foreign_shared_annex {
+        ANNEX_FOLDER,
+        JAC_SUFFIX,
+        is_annex_path_of,
+        shared_annex_folder
+    }
+    ext_registry --> server.watcher.annex_folders_of {
+        ANNEX_FOLDER,
+        JAC_SUFFIX,
+        shared_annex_folder
+    }
+    handoff --> cli.cli.start_cli { handoff }
+    handoff --> cli.manifest_route.resolve_cli_version { handoff }
+    handoff --> client.js_runtime.ensure_node_link { process_executable }
+    handoff --> client.targets.desktop.native.host_boot.host_executable {
+        process_executable
+    }
+    handoff --> compiler.driver.jir._handoff { handoff }
+    handoff --> compiler.driver.jir.require_exact_compiler_products { update_handoff }
+    handoff --> compiler.driver.jir.set_cache_mode { update_handoff }
+    handoff --> dist.fused_binary.running_executable { process_executable }
+    handoff --> jac0core.artifact_registry._marks { handoff }
+    handoff --> jac0core.artifact_registry._record { update_handoff }
+    type sealed --> artifacts.kit { SealedImage }
+    sealed --> artifacts.kit._find_kit { load_image }
+    stubcat_hook --> compiler.types.stubcat.locate.open_catalog { catalog_disabled }
+    stubcat_hook --> project.kernel_snapshot.require_stub_catalog { catalog_disabled }
 }
 
 graph import lib {
@@ -11564,9 +12313,7 @@ graph import project {
     }
     jac_version --> scale.tests.deploy.test_memory_trigger_guard { version_key }
     jac_version --> scale.tests.deploy.test_version_pin { exact_pin, version_key }
-    modresolver --> compiler.backends.py.artifact_imports.runtime_sources | dist.precompile_bytecode.image_mount_prefix {
-        project_mounts
-    }
+    modresolver --> dist.precompile_bytecode.image_mount_prefix { project_mounts }
     modresolver --> project.compiler_host.ProjectHost.project_facts {
         project_mounts_dir
     }
@@ -11642,6 +12389,29 @@ graph import project {
         get_jac_search_paths,
         get_typeshed_paths
     }
+    client_paths --> compiler.driver.application._prepare_revision { client_input_dirs }
+    config --> artifacts.router._provision { offline_mode }
+    type config --> data.pg_dist | server.session { DatabaseConfig }
+    config --> data.pg_dist._configured_dist { get_config }
+    config --> data.pg_dist._database_config { get_config }
+    config --> project.kernel_snapshot.catalog_build_blocker { offline_mode }
+    config --> scale.config.dev_config.local_pod_binary { get_config_for_path }
+    config --> server.session._database_config { DatabaseConfig, get_config_for_dir }
+    config --> toolchains.host.use_system_tools { use_system_toolchains }
+    config --> toolchains.store.offline { offline_mode }
+    kernel_compile --> compiler.driver.application._release_compile_state {
+        forget_application_units
+    }
+    kernel_compile --> compiler.driver.compiler.JacCompiler.kernel_native_entry {
+        kernel_generates_native
+    }
+    kernel_snapshot --> compiler.driver.application._release_compile_state {
+        forget_interface_memo
+    }
+    modresolver --> compiler.backends.py.artifact_imports.resolve_imports {
+        project_mounts
+    }
+    providers --> packages.commands { venv_deps_satisfied }
 }
 
 graph import runtime {
@@ -11839,7 +12609,6 @@ graph import runtime {
     type constructs --> server.server { Archetype, WalkerArchetype }
     constructs --> server.server.ExecutionManager.spawn_walker_async { NodeArchetype }
     constructs --> server.server.ExecutionManager.spawn_walker_sync { NodeArchetype }
-    constructs --> server.server.ModuleIntrospector._collect_walkers { WalkerArchetype }
     constructs --> server.server.ModuleIntrospector.scheduled_members {
         WalkerArchetype
     }
@@ -11872,7 +12641,6 @@ graph import runtime {
     graph_query --> lib.jaclib { GraphQuery, QHop, QOrder, QPred }
     graph_query --> runtime.graph_walk { GraphQuery, QHop, QPred }
     graph_query --> runtime.runtime { GraphQuery, QHop, QPred, filter_query_nodes }
-    graph_utils --> compiler.backends.native.static_link.musl_lib_dir { triple_arch }
     graph_utils --> runtime.builtin._jac_graph_json { collect_node_connections }
     graph_utils --> runtime.runtime.JacBuiltin.printgraph { traverse_graph }
     graph_utils --> scale.admin.admin_portal.JacAPIServerAdmin.admin_graph_data {
@@ -11995,7 +12763,6 @@ graph import runtime {
     }
     osp_graph_sv --> runtime.runtime.JacGraph.heavy_edge { sv_conn }
     osp_graph_sv --> server.session.Session._drop_snapshot_reads { sv_forget_edge }
-    osp_graph_sv --> server.session.Session._evict_uncommitted { sv_forget_edge }
     osp_graph_sv --> server.session.Session.close { sv_store_closed }
     osp_graph_sv --> server.session.Session.quarantine_ref { sv_forget_by_id }
     osp_kernel --> byllm.visit_routing._route_context { _current_scope }
@@ -12070,8 +12837,7 @@ graph import runtime {
     prepared --> runtime.prepared_loader.PreparedFinder.find_spec {
         _applications,
         application_namespace,
-        entry_alias,
-        qualified_module
+        entry_alias
     }
     prepared --> runtime.prepared_loader.PreparedLoader.exec_module { execute_module }
     prepared --> runtime.runtime.JacLLM.get_mtir_from_map { semantic_for_scope }
@@ -12197,7 +12963,6 @@ graph import runtime {
     runtime --> server.hmr.HotReloader._recompile_client_code { JacRuntime as Jac }
     runtime --> server.hmr.HotReloader._recompile_client_unified { JacRuntime as Jac }
     runtime --> server.hmr.HotReloader._reload_server_module { JacRuntime as Jac }
-    runtime --> server.middleware { JacRuntime }
     runtime --> server.server.ModuleIntrospector._check_module_freshness {
         JacRuntime as Jac
     }
@@ -12239,9 +13004,6 @@ graph import runtime {
     }
     scalars --> compiler.backends.py.jcir_facts { sized_scalar_names }
     scalars --> compiler.backends.py.jcir_gen_pass { shape_of }
-    scalars --> compiler.passes.boundary_analysis_pass.BoundaryAnalysisPass.finish {
-        sized_scalar_names
-    }
     scalars --> compiler.passes.wasm_contract.value_contract {
         ScalarShape,
         shape_range
@@ -12320,9 +13082,6 @@ graph import runtime {
     graph_utils --> compiler.backends.native.static_link.load_outline_atomics {
         triple_arch
     }
-    graph_utils --> compiler.backends.native.static_link.resolve_floor_dir {
-        triple_arch
-    }
     portability --> compiler.placement.placement_solver { supports }
     semantic --> byllm.schema { TypeForm }
     semantic --> byllm.tests.test_mtir_integration { TypeForm, mk_form, type_to_str }
@@ -12383,6 +13142,35 @@ graph import runtime {
     semantic --> compiler.driver.compiler { info_graph_from_json }
     semantic --> compiler.driver.unit_products { Info, info_graph_to_json }
     surface --> compiler.driver.unit_products { SurfaceEntry }
+    archetype --> runtime.runtime { new_connect_edge }
+    constructs --> server.server.ModuleIntrospector.target { WalkerArchetype }
+    context --> server.request_scope { ExecutionContext }
+    context --> server.task_scheduler.Scheduler._execute { CallState }
+    exceptions --> server.session { TransactionLost }
+    object_interop --> server.settings { fields, is_record }
+    object_model --> scale.sso.oauth_session { asdict }
+    osp_graph_sv --> server.session.Session._forget_loaded { sv_forget_edge }
+    pass_link --> lib.jaclib { PassLink }
+    preparation_lock --> compiler.driver.application.prepare_application {
+        PREPARATION_LOCK
+    }
+    preparation_lock --> compiler.driver.application.prepare_dynamic_module {
+        PREPARATION_LOCK
+    }
+    preparation_lock --> server.server.JacAPIServer._refresh_dev_endpoints {
+        PREPARATION_LOCK
+    }
+    prepared --> compiler.driver.pipeline_runner.compile_application {
+        holds_application_code
+    }
+    prepared --> runtime.prepared_loader.PreparedFinder.find_spec { module_index }
+    prepared --> server.watcher.watch_roots { holds_application_code }
+    region --> runtime.cinterop { escape_regions, restore_regions }
+    runtime --> runtime.archetype._dirty_delattr | server.request_scope { JacRuntime }
+    runtime --> server.server.ModuleIntrospector.route_spec { JacRuntime as Jac }
+    scalars --> compiler.boundary_rules.json_refusal { sized_scalar_names }
+    scalars --> compiler.boundary_rules.non_string_key { sized_scalar_names }
+    scalars --> compiler.boundary_rules.python_native_wire { sized_scalar_names }
 }
 
 graph import scale {
@@ -12613,6 +13401,7 @@ graph import scale.admin {
     }
     workloads --> scale.runtime.gateway.microservice_gateway { JacAPIServerWorkloads }
     workloads --> scale.server.extensions { JacAPIServerWorkloads }
+    admin_portal --> scale.tests.server.test_auth_policy_startup { JacAPIServerAdmin }
 }
 
 graph import scale.config {
@@ -12791,7 +13580,6 @@ graph import scale.config {
         Channel,
         resolve_dev_channel
     }
-    dev_config --> scale.injector.binary.download_release_binary { BINARY_PATH_ENV }
     dev_config --> scale.injector.binary.host_toolchain_path { resolve_dev_channel }
     dev_config --> scale.injector.binary.preflight_pod_runtime { Channel }
     dev_config --> scale.injector.binary.resolve_console_version { Channel }
@@ -12807,7 +13595,6 @@ graph import scale.config {
         resolve_dev_channel
     }
     dev_config --> scale.tests.microservices.test_binary_injector {
-        BINARY_PATH_ENV,
         Channel,
         resolve_dev_channel,
         resolve_experimental_pr
@@ -12876,6 +13663,24 @@ graph import scale.config {
         get_scale_config,
         reset_scale_config
     }
+    config_loader --> scale.deploy.target.kubernetes.manifest_builder {
+        ADMIN_PASSWORD_ENV,
+        SIGNING_SECRET_ENV
+    }
+    config_loader --> scale.deploy.target.kubernetes.target {
+        ADMIN_PASSWORD_ENV,
+        SIGNING_SECRET_ENV
+    }
+    config_loader --> scale.emailer.factory.configured { get_scale_config }
+    config_loader --> scale.runtime.context.service_routing.is_http_activated {
+        get_scale_config
+    }
+    config_loader --> scale.server.extensions { ADMIN_PASSWORD_ENV }
+    config_loader --> scale.tests.microservices.test_gateway {
+        get_scale_config,
+        reset_scale_config
+    }
+    dev_config --> scale.injector.binary.read_local_binary { local_pod_binary }
 }
 
 graph import scale.deploy.autoscale {
@@ -13270,6 +14075,15 @@ graph import scale.deploy.target.kubernetes {
     }
     target --> scale.tests.deploy.test_version_pin { KubernetesTarget }
     target --> scale.tests.microservices.test_fleet_rollout { KubernetesTarget }
+    kubernetes_config --> scale.tests.microservices.test_pvc_injector {
+        KubernetesConfig
+    }
+    runtime_bootstrap --> scale.tests.microservices.test_pvc_injector {
+        build_bootstrap_init_container
+    }
+    target --> scale.tests.deploy.test_http_activation_microservices {
+        replacing_init_containers
+    }
 }
 
 graph import scale.deploy.target.kubernetes.utils {
@@ -13324,9 +14138,8 @@ graph import scale.deploy.target.kubernetes.utils {
         default_pss_labels,
         privileged_pss_labels
     }
-    kubernetes_utils --> scale.deploy.target.kubernetes.target | scale.tests.deploy.test_pod_env {
-        resolve_signing_secret
-    }
+    kubernetes_utils --> scale.deploy.target.kubernetes.target { resolve_minted_secret }
+    kubernetes_utils --> scale.tests.deploy.test_pod_env { resolve_minted_secret }
 }
 
 graph import scale.emailer {
@@ -13336,13 +14149,16 @@ graph import scale.emailer {
     emailer --> scale.tests.server.test_emailer_factory { Emailer }
     emailers --> scale.emailer.factory.create { SMTPEmailer }
     emailers --> scale.tests.server.test_emailer_factory { SMTPEmailer }
-    factory --> scale.server.extensions.RecoveryMailExtension.register {
-        create as create_emailer
-    }
     factory --> scale.tests.server.test_emailer_factory {
         create as create_emailer,
         register
     }
+    emailer --> scale.emailer.emailers { EmailAttachment }
+    emailer --> scale.tests.server.test_emailer_factory { EmailAttachment }
+    factory --> scale.runtime.gateway.microservice_gateway.MicroserviceGateway._install_admin_api {
+        configured as configured_emailer
+    }
+    factory --> scale.server.extensions { configured as configured_emailer }
 }
 
 graph import scale.events {
@@ -13595,13 +14411,18 @@ graph import scale.injector {
         build_pvc_init_container,
         bundle_keys_from_pod_spec
     }
+    binary --> scale.injector.binary_injector { read_local_binary }
+    binary --> scale.tests.microservices.test_binary_injector { read_local_binary }
+    pvc_injector --> scale.tests.deploy.test_pod_env {
+        BUNDLE_MOUNT_PATH,
+        PVC_BOOTSTRAP_NAME,
+        bundle_keys_from_pod_spec
+    }
+    pvc_injector --> scale.tests.microservices.test_pvc_injector { pvc_unpack_script }
 }
 
 graph import scale.memory {
     context --> scale.runtime.provider.JacScaleRuntime.create_j_context {
-        JScaleExecutionContext
-    }
-    context --> scale.scheduler.scheduler.JacScaleScheduler._execute_task._run {
         JScaleExecutionContext
     }
 }
@@ -14076,6 +14897,20 @@ graph import scale.runtime.context {
     util --> scale.tests.server.test_root_bind_fail_closed._prewarm { jac_executable }
     util --> scale.tests.server.test_serve { jac_executable }
     util --> scale.tests.support.start_server { jac_executable }
+    errors --> scale.runtime.gateway.microservice_gateway.MicroserviceGateway.forward_to {
+        bad_gateway
+    }
+    errors --> scale.runtime.gateway.microservice_gateway.MicroserviceGateway.probe_services {
+        gateway_timeout
+    }
+    service_routing --> scale.runtime.context.util.http_forward_timeout {
+        HTTP_ACTIVATED_WAKE_TIMEOUT,
+        is_http_activated
+    }
+    service_routing --> scale.runtime.rpc.rpc._sv_rpc_timeout {
+        HTTP_ACTIVATED_WAKE_TIMEOUT,
+        is_http_activated
+    }
 }
 
 graph import scale.runtime.gateway {
@@ -14486,6 +15321,10 @@ graph import scale.server {
     }
     webhook_ext --> scale.server.extensions { WebhookExtension }
     websocket_ext --> scale.server.extensions { WebSocketExtension }
+    extensions --> scale.tests.server.test_auth_policy_startup {
+        AdminExtension,
+        MailExtension
+    }
 }
 
 graph import scale.shared {
@@ -14542,11 +15381,11 @@ graph import scale.sso {
     sso_auth --> scale.server.sso_ext { SSOAuth }
     sso_auth --> scale.tests.server.test_firebase_auth_sso { SSOAuth }
     sso_auth --> scale.tests.server.test_sso { SSOAuth }
+    oauth_session --> scale.sso.sso_auth { OAuthLogin }
 }
 
 graph import scale.state {
     factory --> scale.runtime.middleware.rate_limit { get_state_backend }
-    factory --> scale.server.extensions { get_state_backend }
     factory --> scale.tests.microservices.test_rate_limit._reset_state {
         _backend_holder
     }
@@ -14558,7 +15397,6 @@ graph import scale.state {
     pg_state_backend --> scale.runtime.provider { PgStateBackend as _state_anchor }
     pg_state_backend --> scale.state.factory { PgStateBackend }
     state_backend --> scale.runtime.middleware.rate_limit { StateBackend }
-    state_backend --> scale.server.extensions { StateBackend }
     state_backend --> scale.state.factory { InProcessStateBackend, StateBackend }
     state_backend --> scale.state.pg_state_backend { StateBackend }
     state_backend --> scale.tests.misc.test_state_backend_selection {
@@ -14719,6 +15557,14 @@ graph import scale.tests {
         totp_code,
         wrong_totp_code
     }
+    fixture_policy --> scale.tests.scale_test_client {
+        ADMIN_BOOTSTRAP_PASSWORD,
+        apply_fixture_policy
+    }
+    fixture_policy --> scale.tests.support { apply_fixture_policy }
+    scale_test_client --> scale.tests.server.test_admin { ADMIN_BOOTSTRAP_PASSWORD }
+    scale_test_client --> scale.tests.server.test_auth_policy_http { make_client }
+    scale_test_client --> scale.tests.server.test_oauth_session { fresh_totp_code }
 }
 
 graph import scale.tests.deploy {
@@ -14842,7 +15688,6 @@ graph import server {
     middleware --> scale.runtime.gateway.microservice_gateway.MicroserviceGateway._install_admin_api {
         jwt_middleware
     }
-    middleware --> scale.server.extensions { require_user }
     middleware --> scale.server.jobs_ext { require_user }
     middleware --> scale.server.sso_ext { require_user }
     middleware --> server.endpoints.auth { require_user }
@@ -14982,12 +15827,7 @@ graph import server {
     server --> scale.server.inprocess { JacAPIServer, ServerExtension }
     server --> scale.server.jobs_ext { JacAPIServer, ServerExtension }
     server --> scale.server.sso_ext { JacAPIServer, ServerExtension }
-    server --> scale.server.webhook_ext {
-        JacAPIServer,
-        JsonValue,
-        ServerExtension,
-        target_restspec
-    }
+    server --> scale.server.webhook_ext { JacAPIServer, JsonValue, ServerExtension }
     server --> scale.server.websocket_ext { JacAPIServer, ServerExtension }
     server --> scale.tests.data.test_eager_spawn { JacAPIServer }
     server --> scale.tests.data.test_identity_fail_loud { JacAPIServer }
@@ -15005,12 +15845,7 @@ graph import server {
     }
     server --> server.endpoints.introspection { JacAPIServer }
     server --> server.endpoints.pages { JacAPIServer, JsonValue }
-    server --> server.endpoints.walkers {
-        JacAPIServer,
-        JsonValue,
-        target_restspec,
-        target_schedule_spec
-    }
+    server --> server.endpoints.walkers { JacAPIServer, JsonValue, target_restspec }
     server --> testing.testing { JacAPIServer }
     type server --> testing.testing { JacAPIServer }
     session --> cli.commands.db._db_status { conninfo_from_url }
@@ -15143,9 +15978,6 @@ graph import server {
         schedule_namespace
     }
     task_scheduler --> server.server.JacAPIServer._scheduled_targets { ScheduleSpec }
-    task_scheduler --> server.server.JacAPIServer._validate_or_raise {
-        schedule_problems
-    }
     task_scheduler --> server.server.ModuleIntrospector.scheduled_members {
         ScheduleSpec
     }
@@ -15153,7 +15985,6 @@ graph import server {
     transport --> scale.admin.llm_telemetry { Meta, TransportResponse }
     transport --> scale.admin.logs { TransportResponse }
     transport --> scale.admin.workloads { Meta, TransportResponse }
-    transport --> scale.server.extensions { Meta, TransportResponse }
     transport --> scale.server.jobs_ext { Meta, TransportResponse }
     transport --> scale.server.sso_ext { TransportResponse }
     transport --> scale.server.webhook_ext { Meta, TransportResponse }
@@ -15196,14 +16027,54 @@ graph import server {
     middleware --> scale.tests.data.test_gateway_owned_identity { jwt_middleware }
     middleware --> server.endpoints.auth { bearer_token }
     middleware --> server.endpoints.second_factor { bearer_token, require_user }
-    server --> scale.server.webhook_ext { target_protocol }
-    server --> scale.server.websocket_ext { target_protocol }
     server --> server.endpoints.second_factor { EndpointHost, JsonValue }
-    server --> server.endpoints.walkers { target_protocol }
     settings --> scale.deploy.target.kubernetes.manifest_builder { resolve_count }
     settings --> scale.tests.deploy.test_deployment_overlay { ServeConfigError }
     shared_store --> server.identity.second_factor { shared_store }
     transport --> server.exchange | server.endpoints.second_factor { TransportResponse }
+    exchange --> server.endpoints.walkers { apply_response_choice, has_response_choice }
+    request_scope --> scale.server.websocket_ext { RequestScope }
+    request_scope --> server.middleware { RequestScope }
+    request_scope --> server.server { RequestScope }
+    server --> runtime.builtin.restspec { restspec_fields }
+    server --> scale.tests.server.test_auth_policy_startup {
+        EndpointHost,
+        ServerExtension
+    }
+    session --> server.server._run_function_with_occ { Session, transient_db_error }
+    settings --> scale.deploy.target.kubernetes.manifest_builder { AuthSettings }
+    settings --> scale.runtime.gateway.microservice_gateway.MicroserviceGateway._install_admin_api {
+        ServeConfigError
+    }
+    settings --> scale.tests.server.test_auth_policy_http { ServeConfigError }
+    settings --> scale.tests.server.test_auth_policy_startup {
+        AuthSettings,
+        EmailSettings,
+        LockoutSettings,
+        PasswordSettings
+    }
+    settings --> scale.tests.server.test_oauth_session {
+        AuthSettings,
+        EmailSettings,
+        IdentifierSettings,
+        LockoutSettings,
+        PasswordSettings,
+        RegistrationSettings
+    }
+    settings --> scale.tests.server.test_registration_challenge { RegistrationSettings }
+    settings --> scale.tests.server.test_registration_limits { RegistrationSettings }
+    settings --> scale.tests.server.test_sso { AuthSettings, IdentifierSettings }
+    settings --> scale.tests.server.test_sv_outbox_endpoints { ServeSettings }
+    settings --> server.identity.policy {
+        IDENTIFIER_KINDS,
+        PASSWORD_CLASSES,
+        PasswordSettings
+    }
+    settings --> server.identity.user_manager { IDENTIFIER_KINDS, in_cluster }
+    settings --> server.server.JacAPIServer._validate_or_raise { default_threads }
+    settings --> server.server.JacAPIServer.serve_background { default_threads }
+    task_scheduler --> server.server.JacAPIServer._start_problems { schedule_problems }
+    watcher --> cli.commands.execution.serve { application_watch_roots }
 }
 
 graph import server.endpoints {
@@ -15243,15 +16114,13 @@ graph import server.endpoints {
     second_factor --> server.endpoints.auth.register_auth_endpoints {
         register_second_factor_endpoints
     }
+    auth --> scale.admin.admin_portal { refused, throttled }
+    auth --> scale.server.extensions { register_mail_endpoints }
+    auth --> server.endpoints.second_factor { throttled }
 }
 
 graph import server.identity {
-    audit --> scale.server.extensions { client_ip, emit as audit }
     audit --> server.endpoints.auth { client_ip, emit as audit }
-    auth_models --> scale.server.extensions {
-        ForgotPasswordRequest,
-        SendVerificationRequest
-    }
     auth_models --> scale.server.sso_ext { FirebaseTokenRequest }
     auth_models --> scale.tests.server.test_registration_challenge { RegisterRequest }
     auth_models --> scale.tests.server.test_registration_limits { RegisterRequest }
@@ -15268,7 +16137,6 @@ graph import server.identity {
         UpdateUsernameRequest,
         VerifyIdentityRequest
     }
-    auth_tokens --> scale.server.extensions { AuthTokenStore }
     auth_tokens --> scale.sso.oauth_session { AuthTokenStore }
     auth_tokens --> scale.sso.sso_auth { AuthTokenStore }
     auth_tokens --> scale.tests.data.test_auth_tokens_fail_closed {
@@ -15320,7 +16188,7 @@ graph import server.identity {
     identity_storage --> scale.tests.data.test_auth_cutover { PgIdentityStorage }
     identity_storage as storage_mod --> scale.tests.data.test_identity_fail_loud;
     identity_storage --> scale.tests.data.test_identity_password { IdentityStorage }
-    identity_storage --> server.endpoints.auth { IdentityTakenError, primary_username }
+    identity_storage --> server.endpoints.auth { primary_username }
     identity_storage --> server.identity.user_manager {
         IdentityStorage,
         PgIdentityStorage
@@ -15364,16 +16232,11 @@ graph import server.identity {
     user_manager --> server.server.JacAPIServer._register_scheduled_tasks {
         SYSTEM_USER
     }
-    assurance --> scale.admin.admin_portal {
-        METHOD_PASSWORD,
-        second_factor_claims,
-        token_assurance
-    }
+    assurance --> scale.admin.admin_portal { METHOD_PASSWORD, second_factor_claims }
     assurance --> scale.tests.data.test_gateway_owned_identity {
         caller_assurance_level,
         second_factor_claims
     }
-    assurance --> server.endpoints.auth { token_assurance }
     assurance --> server.endpoints.second_factor {
         AAL1,
         AAL2,
@@ -15423,6 +16286,72 @@ graph import server.identity {
         provisioning_uri
     }
     user_manager --> server.endpoints.second_factor { UserRole }
+    assurance --> scale.sso.oauth_session { METHOD_FEDERATED }
+    assurance --> server.identity.second_factor { METHOD_PASSWORD }
+    assurance --> server.identity.user_manager { METHOD_PASSWORD }
+    audit --> scale.admin.admin_portal { client_ip }
+    audit --> server.identity.mail { emit as audit }
+    auth_models --> scale.admin.admin_portal { IdentityInputModel }
+    auth_models --> server.endpoints.auth {
+        ForgotPasswordRequest,
+        SendVerificationRequest
+    }
+    auth_tokens --> server.identity.mail { AuthTokenStore }
+    auth_tokens --> server.identity.user_manager { AuthTokenStore }
+    common_passwords --> server.identity.policy { COMMON_PASSWORDS }
+    config --> scale.sso.github { auth_settings }
+    config --> scale.sso.oauth_session { auth_settings }
+    config --> scale.tests.server.test_auth_policy_startup { configure_identity }
+    config --> scale.tests.server.test_oauth_session { configure_identity }
+    config --> scale.tests.server.test_sso { configure_identity }
+    config --> server.identity.identity_storage { auth_settings }
+    config --> server.identity.mail { auth_settings }
+    config --> server.identity.policy { auth_settings }
+    config --> server.identity.user_manager { auth_settings }
+    identity_storage --> server.identity.user_manager { IdentityTakenError }
+    mail --> scale.runtime.gateway.microservice_gateway.MicroserviceGateway._install_admin_api {
+        verification_problems
+    }
+    mail --> scale.tests.server.test_auth_policy_startup { verification_problems }
+    mail --> server.endpoints.auth { MailOutcome, VERIFY_PURPOSE }
+    mail --> server.identity.user_manager { RESET_PURPOSE }
+    mail --> server.server { IdentityMailer, verification_problems }
+    policy --> scale.deploy.target.kubernetes.target { minted_password }
+    policy --> scale.server.extensions { check_password }
+    policy --> scale.sso.oauth_session { check_email }
+    policy --> scale.tests.server.test_auth_policy_startup {
+        check_password,
+        minted_password
+    }
+    policy --> server.endpoints.auth { POLICY_VIOLATION, public_policy }
+    policy --> server.identity.identity_storage {
+        VERIFY_BEFORE_LOGIN,
+        verify_before_login
+    }
+    policy --> server.identity.user_manager {
+        Violation,
+        awaiting_verification,
+        check_identifiers,
+        check_identity,
+        check_password,
+        minted_password,
+        refusal
+    }
+    rate_limit --> scale.admin.admin_portal { AttemptsExhausted }
+    rate_limit --> server.endpoints.auth { AttemptsExhausted }
+    rate_limit --> server.identity.mail { consume_limit }
+    rate_limit --> server.identity.user_manager {
+        AttemptsExhausted,
+        consume_limit,
+        refund_limit
+    }
+    user_manager --> scale.tests.server.oauth_fixtures { SessionGrant }
+    user_manager --> scale.tests.server.test_auth_policy_startup { UserManager }
+    user_manager --> scale.tests.server.test_oauth_session {
+        SecondFactorRequired,
+        SessionGrant
+    }
+    user_manager --> scale.tests.server.test_registration_challenge { SessionGrant }
 }
 
 graph import server.serving {
@@ -15721,7 +16650,6 @@ graph import server.serving {
         JEndPoint,
         ParameterType
     }
-    endpoint --> runtime.builtin.restspec { HTTPMethod }
     endpoint --> scale.admin.admin_portal {
         APIParameter,
         HTTPMethod,
@@ -15918,9 +16846,7 @@ graph import server.serving {
     ws --> scale.websocket.websocket { WebSocket }
     ws --> server.serving.client { WebSocket, compute_accept_key }
     ws --> server.serving.server { WebSocket, compute_accept_key }
-    authcrypt --> scale.deploy.target.kubernetes.manifest_builder.ManifestBuilder._signing_secret | scale.deploy.target.kubernetes.utils.kubernetes_utils.resolve_signing_secret | scale.tests.deploy.test_pod_env {
-        PLACEHOLDER_JWT_SECRET
-    }
+    authcrypt --> scale.tests.deploy.test_pod_env { PLACEHOLDER_JWT_SECRET }
     drain --> server.task_scheduler { DrainState }
     app --> server.exchange.settle_envelope { transport_to_response }
     authcrypt --> scale.tests.deploy.test_deployment_overlay { PLACEHOLDER_JWT_SECRET }
@@ -15935,6 +16861,29 @@ graph import server.serving {
     datatypes --> server.identity.session_cookie { Request, Response }
     endpoint --> server.endpoints.second_factor { HTTPMethod, JEndPoint }
     files --> server.endpoints.walkers { file_response }
+    app --> scale.tests.microservices.test_sse_framing { ServingApp }
+    app --> scale.tests.server.test_auth_policy_startup { transport_to_response }
+    authcrypt --> scale.deploy.target.kubernetes.manifest_builder {
+        PLACEHOLDER_JWT_SECRET
+    }
+    authcrypt --> scale.deploy.target.kubernetes.utils.kubernetes_utils.resolve_minted_secret {
+        PLACEHOLDER_JWT_SECRET
+    }
+    client --> scale.runtime.gateway.microservice_gateway.MicroserviceGateway.forward_to {
+        ClientReadTimeout
+    }
+    client --> scale.runtime.gateway.microservice_gateway.MicroserviceGateway.probe_services {
+        ClientReadTimeout
+    }
+    client --> scale.runtime.transport.http_forward { ClientReadTimeout }
+    client --> server.identity.policy { request_sync }
+    compression --> scale.tests.microservices.test_sse_framing { _gzip_stream }
+    endpoint --> scale.tests.server.test_auth_policy_startup { JEndPoint }
+    endpoint --> server.server.restspec_fields { HTTPMethod }
+    executor --> server.serving.compression { iterate_sync }
+    executor --> server.serving.server { iterate_sync }
+    executor --> server.serving.sse { iterate_sync }
+    server --> scale.tests.microservices.test_sse_framing { ServingServer }
 }
 
 graph import testing {
@@ -16038,21 +16987,14 @@ graph import toolchains {
     desktop --> toolchains.manager.setup_toolchain { ensure_webview }
     host --> client.targets.desktop.webview_shell { host_platform }
     host --> client.targets.react_native.build.run_xcodebuild_ios { run_step }
-    host --> toolchains.android {
-        executable,
-        host_platform,
-        run_step,
-        use_system_tools
-    }
+    host --> toolchains.android { executable, host_platform, run_step }
     host --> toolchains.apple { host_platform, run_step, use_system_tools }
     host --> toolchains.c_backend { executable, host_platform, run_step }
     host --> toolchains.cef { host_platform }
     host --> toolchains.desktop { host_platform, run_step, shared_library_name }
-    host --> toolchains.javascript { host_platform, use_system_tools }
     host --> toolchains.system { run_step }
     host --> toolchains.system.ensure_desktop_host { host_platform }
     host --> toolchains.system.ensure_linux_desktop { host_platform }
-    host --> toolchains.system.ensure_patchelf { host_platform }
     javascript --> client.targets.react_native.build.run_eas_local_build {
         build_environment
     }
@@ -16067,16 +17009,13 @@ graph import toolchains {
     }
     javascript --> toolchains.manager.setup_toolchain { native_node }
     manager --> client.cli.setup { setup_toolchain }
-    pins --> toolchains.android { ANDROID_ARTIFACTS, JDK_ARTIFACTS, JDK_VERSION }
+    pins --> toolchains.android { ANDROID_ARTIFACTS }
     pins --> toolchains.apple.ensure_apple { RUBY_ARTIFACTS, RUBY_VERSION }
-    pins --> toolchains.javascript { NODE_ARTIFACTS }
-    pins --> toolchains.system.ensure_patchelf { PATCHELF_ARTIFACTS }
     store --> client.targets.mobile_target.MobileTarget.ensure_ready { offline }
     store --> client.targets.node_tooling_common.run_manifest_install { offline }
     store --> client.targets.react_native.build.run_eas_local_build { offline }
     store --> client.targets.react_native.build.run_gradle_assemble { offline }
     store --> client.targets.react_native.build.run_xcodebuild_ios { offline }
-    store --> data.pgembed.PgRuntime._fetch_dist { Artifact, extract, fetch }
     store --> scale.injector.binary._fetch_verified_asset { Artifact, fetch }
     store --> toolchains.android { install, offline }
     store --> toolchains.apple {
@@ -16104,15 +17043,24 @@ graph import toolchains {
         publish_build_slot,
         slot_ready
     }
-    store --> toolchains.javascript { install, offline }
+    store --> toolchains.javascript { offline }
     store --> toolchains.pins { Artifact }
     store --> toolchains.system { offline }
-    store --> toolchains.system.ensure_patchelf { install }
     system --> client.targets.desktop.desktop_build._patchelf_rpath { ensure_patchelf }
     system --> toolchains.desktop { ensure_desktop_host, webkit_module }
     store --> packages.index.Registry._read { allowed_url, offline }
     store --> packages.index.fetch_verified { Artifact, fetch }
     store --> packages.sources.checkout { offline }
+    host --> toolchains.tools { executable, host_platform, use_system_tools }
+    pins --> toolchains.tools.JdkArtifact._home { JDK_VERSION }
+    pins --> toolchains.tools.JdkArtifact.pinned { JDK_ARTIFACTS }
+    pins --> toolchains.tools.NodeArtifact.pinned { NODE_ARTIFACTS }
+    pins --> toolchains.tools.PatchelfArtifact.pinned { PATCHELF_ARTIFACTS }
+    store --> data.pg_dist._unpack { Artifact as Download, extract, fetch }
+    store --> toolchains.tools { Artifact as Download, install, installed }
+    tools --> toolchains.android.ensure_jdk { tool_path }
+    tools --> toolchains.javascript.native_node { tool_path }
+    tools --> toolchains.system.ensure_patchelf { tool_path }
 }
 
 graph import compiler.backends.py.jacpython {
@@ -18460,6 +19408,8 @@ graph import compiler.frontend.python {
         tokenizer_next
     }
     tokenizer --> runtime.python.tokenize { tok_state, token_source, tokenizer_next }
+    ast_nodes --> compiler.backends.py.jacpython.native_api { ast_kind }
+    peg_runtime --> compiler.frontend.python.parser { peg_enter_rule }
 }
 
 graph import runtime.python {
@@ -18480,16 +19430,9 @@ graph import runtime.python {
         required,
         text_value
     }
-    capi --> runtime.python.bindings.array {
-        jac_heap_size,
-        object_error,
-        text_object,
-        type_name
-    }
-    capi --> runtime.python.bindings.binascii { object_error }
+    capi --> runtime.python.bindings.array { object_error, text_object }
     capi --> runtime.python.bindings.collections {
         boundary_failure,
-        jac_heap_size,
         object_error,
         repr_value,
         text_object,
@@ -18501,14 +19444,6 @@ graph import runtime.python {
         object_error,
         text_object
     }
-    capi --> runtime.python.bindings.heapq { type_name }
-    capi --> runtime.python.bindings.itertools {
-        boundary_failure,
-        object_error,
-        required,
-        text_object,
-        type_name
-    }
     capi --> runtime.python.bindings.json {
         boundary_failure,
         object_error,
@@ -18518,19 +19453,9 @@ graph import runtime.python {
     capi --> runtime.python.bindings.operator {
         boundary_failure,
         object_error,
-        text_object,
-        type_name
+        text_object
     }
-    capi --> runtime.python.bindings.pickle {
-        boundary_failure,
-        builtin_kind,
-        object_error,
-        required,
-        text_object,
-        text_value
-    }
-    capi --> runtime.python.bindings.queue { object_error }
-    capi --> runtime.python.bindings.random { object_error }
+    capi --> runtime.python.bindings.pickle { builtin_kind, object_error, text_value }
     capi --> runtime.python.bindings.struct {
         boundary_failure,
         jac_heap_size,
@@ -19711,7 +20636,6 @@ graph import runtime.python {
     capi --> runtime.python.bindings.grp { object_error }
     capi --> runtime.python.bindings.pwd { object_error }
     capi --> runtime.python.bindings.resource { object_error }
-    capi --> runtime.python.bindings.runtime_objects { object_error }
     capi --> runtime.python.bindings.stat { boundary_failure, object_error }
     capi --> runtime.python.bindings.syslog { boundary_failure, object_error }
     capi --> runtime.python.modules.bz2 { object_error }
@@ -19732,8 +20656,6 @@ graph import runtime.python {
         PyObject,
         PyTuple_New,
         jacpy_error_pending,
-        jacpy_none,
-        jacpy_raise_compiler_error,
         jacpy_release,
         jacpy_source_kind,
         jacpy_tuple_set_owned
@@ -19758,7 +20680,6 @@ graph import runtime.python {
         jacpy_ast_new,
         jacpy_list_append_owned,
         jacpy_list_new,
-        jacpy_none,
         jacpy_release,
         jacpy_set_owned,
         jacpy_text
@@ -19770,13 +20691,11 @@ graph import runtime.python {
     cpython_api --> compiler.frontend.python.source_encoding {
         PyObject,
         jacpy_codec_valid,
-        jacpy_error_is,
         jacpy_fd_line
     }
     cpython_api --> compiler.frontend.python.source_input {
         PyObject,
         jacpy_decode,
-        jacpy_error_is,
         jacpy_error_pending,
         jacpy_release,
         jacpy_source_bytes,
@@ -19805,79 +20724,36 @@ graph import runtime.python {
         NULL,
         PyImport_ImportModuleAttrString,
         PyIndex_Check,
-        PyLong_AsInt,
-        PyLong_AsSsize_t,
         PyLong_FromLongLong,
-        PyLong_FromUnsignedLongLong,
-        PyLong_FromVoidPtr,
         PyObject,
-        PyObject_Call,
         PyObject_CallOneArg,
         PyObject_GetAttrString,
         PySys_AuditTuple,
-        PyTuple_New,
         PyType_GetSlot,
-        PyType_IsSubtype,
         PyUnicode_FromOrdinal,
-        Py_GenericAlias,
         Py_NewRef,
         Py_TYPE,
         Py_buffer,
-        SliceBounds,
-        jacpy_builtins,
-        jacpy_dict_get,
         jacpy_dict_size,
         jacpy_error_pending,
         jacpy_is_bytearray,
         jacpy_is_bytes,
-        jacpy_is_list,
-        jacpy_is_long,
         jacpy_is_slice,
-        jacpy_is_type,
         jacpy_is_unicode,
-        jacpy_none,
-        jacpy_not_implemented,
-        jacpy_number_ssize,
-        jacpy_optional_attr,
         jacpy_release,
         jacpy_slice_adjust,
-        jacpy_slice_unpack,
-        jacpy_type_check,
-        jacpy_warn
+        jacpy_slice_unpack
     }
-    cpython_api --> runtime.python.bindings.binascii {
-        NULL,
-        PyLong_AsInt,
-        PyLong_AsUnsignedLongMask,
-        PyObject,
-        PyObject_IsTrue,
-        PySequence_Size,
-        PyUnicode_ReadChar,
-        jacpy_buffer_byte,
-        jacpy_error_pending,
-        jacpy_is_bytes,
-        jacpy_is_unicode,
-        jacpy_release
-    }
-    cpython_api --> runtime.python.bindings.bisect { NULL, PyObject, jacpy_is_none }
+    cpython_api --> runtime.python.bindings.binascii { NULL, PyObject }
+    cpython_api --> runtime.python.bindings.bisect { PyObject }
     cpython_api --> runtime.python.bindings.buffer {
         PyObject,
         Py_buffer,
         jacpy_buffer_acquire,
-        jacpy_buffer_acquire_writable,
-        jacpy_buffer_address,
         jacpy_buffer_bytes,
-        jacpy_buffer_dimensions,
-        jacpy_buffer_length,
-        jacpy_buffer_owner,
         jacpy_buffer_release
     }
-    cpython_api --> runtime.python.bindings.bz2 {
-        NULL,
-        PyBool_FromLong,
-        PyObject,
-        Py_NewRef
-    }
+    cpython_api --> runtime.python.bindings.bz2 { PyObject }
     cpython_api --> runtime.python.bindings.clinic.bz2 { NULL, PyObject }
     cpython_api --> runtime.python.bindings.clinic.grp { NULL, PyObject }
     cpython_api --> runtime.python.bindings.clinic.opcode { NULL, PyObject }
@@ -19893,52 +20769,31 @@ graph import runtime.python {
         PyObject,
         jacpy_is_dict
     }
-    cpython_api --> runtime.python.bindings.clinic.zlib {
-        NULL,
-        PyObject,
-        jacpy_release
-    }
-    cpython_api --> runtime.python.bindings.cmath {
-        NULL,
-        PyComplex_FromDoubles,
-        PyFloat_FromDouble,
-        PyObject
-    }
+    cpython_api --> runtime.python.bindings.clinic.zlib { NULL, PyObject }
+    cpython_api --> runtime.python.bindings.cmath { PyFloat_FromDouble, PyObject }
     cpython_api --> runtime.python.bindings.collections {
         NULL,
         PyCallable_Check,
         PyDict_New,
         PyDict_Update,
-        PyLong_AsSsize_t,
         PyLong_FromLongLong,
         PyObject,
         PyObject_Call,
-        PyObject_CallOneArg,
         PyObject_GetAttrString,
         PyObject_GetIter,
         PyTuple_GetSlice,
         PyTuple_New,
         PyTuple_Size,
-        Py_GenericAlias,
         Py_NewRef,
         Py_TYPE,
-        _PyObject_GetState,
-        jacpy_error_pending,
         jacpy_is_dict,
-        jacpy_is_none,
         jacpy_is_tuple,
-        jacpy_none,
-        jacpy_not_implemented,
-        jacpy_number_ssize,
-        jacpy_ordered_dict_new,
         jacpy_release,
         jacpy_tuple_item,
-        jacpy_tuple_set_owned,
         jacpy_type_check
     }
     cpython_api --> runtime.python.bindings.converters {
         NULL,
-        PyBool_FromLong,
         PyErr_Occurred,
         PyFloat_AsDouble,
         PyFloat_FromDouble,
@@ -19959,7 +20814,6 @@ graph import runtime.python {
         Py_GetConstantBorrowed,
         Py_TYPE,
         jacpy_is_float,
-        jacpy_is_none,
         jacpy_is_unicode,
         jacpy_release
     }
@@ -19969,7 +20823,6 @@ graph import runtime.python {
         PyDict_New,
         PyDict_SetItem,
         PyLong_AsLongLong,
-        PyLong_AsSsize_t,
         PyLong_FromLongLong,
         PyObject,
         PyObject_Call,
@@ -19979,9 +20832,7 @@ graph import runtime.python {
         Py_NewRef,
         Py_TYPE,
         jacpy_error_pending,
-        jacpy_is_exact_long,
         jacpy_is_unicode,
-        jacpy_none,
         jacpy_optional_attr,
         jacpy_release,
         jacpy_text,
@@ -20003,7 +20854,6 @@ graph import runtime.python {
         NULL,
         PyCallable_Check,
         PyIndex_Check,
-        PyMethod_New,
         PyObject,
         PyObject_GenericGetDict,
         PyObject_GenericSetDict,
@@ -20013,15 +20863,11 @@ graph import runtime.python {
         PyTuple_GetSlice,
         PyTuple_New,
         PyTuple_Size,
-        Py_GenericAlias,
         Py_LeaveRecursiveCall,
         Py_NewRef,
         Py_TYPE,
         jacpy_dict_size,
         jacpy_error_pending,
-        jacpy_is_none,
-        jacpy_none,
-        jacpy_not_implemented,
         jacpy_recursion_enter,
         jacpy_release,
         jacpy_tuple_item,
@@ -20029,41 +20875,15 @@ graph import runtime.python {
         jacpy_type_check
     }
     cpython_api --> runtime.python.bindings.grp { PyObject, jacpy_struct_sequence_type }
-    cpython_api --> runtime.python.bindings.heapq { NULL, PyObject, jacpy_is_list }
-    cpython_api --> runtime.python.bindings.itertools {
-        NULL,
-        PyErr_Clear,
-        PyLong_AsSsize_t,
-        PyLong_FromLongLong,
-        PyNumber_Check,
-        PyObject,
-        PyObject_IsTrue,
-        PyTuple_Size,
-        PyType_GetSlot,
-        Py_GenericAlias,
-        Py_NewRef,
-        Py_TYPE,
-        jacpy_dict_get,
-        jacpy_dict_size,
-        jacpy_error_pending,
-        jacpy_is_list,
-        jacpy_is_none,
-        jacpy_list_size,
-        jacpy_none,
-        jacpy_number_ssize,
-        jacpy_release,
-        jacpy_tuple_item,
-        jacpy_type_check
-    }
+    cpython_api --> runtime.python.bindings.heapq { PyObject }
+    cpython_api --> runtime.python.bindings.itertools { PyObject }
     cpython_api --> runtime.python.bindings.json {
         NULL,
-        PyBool_FromLong,
         PyObject,
         PyObject_GetAttrString,
         PyObject_IsTrue,
         Py_NewRef,
         jacpy_is_dict,
-        jacpy_is_none,
         jacpy_is_unicode,
         jacpy_release
     }
@@ -20078,75 +20898,28 @@ graph import runtime.python {
     cpython_api --> runtime.python.bindings.operator {
         NULL,
         PyObject,
-        PyObject_CheckBuffer,
         PyTuple_Size,
         PyVectorcall_NARGS,
         Py_NewRef,
         Py_TYPE,
         jacpy_dict_size,
-        jacpy_is_unicode,
-        jacpy_release,
-        jacpy_unicode_ascii
+        jacpy_release
     }
     cpython_api --> runtime.python.bindings.payload { PyObject, Py_TYPE }
     cpython_api --> runtime.python.bindings.pickle {
         NULL,
-        PyBool_FromLong,
-        PyDict_New,
-        PyDict_SetItem,
-        PyErr_Clear,
         PyImport_ImportModuleAttrString,
-        PyLong_AsInt,
-        PyLong_AsLongLong,
-        PyLong_FromLongLong,
         PyObject,
-        PyObject_Call,
-        PyObject_CallOneArg,
         PyObject_GenericGetAttr,
         PyObject_GenericSetAttr,
-        PyObject_GetAttrString,
-        PyObject_IsTrue,
         Py_NewRef,
         Py_TYPE,
-        jacpy_builtin_type,
-        jacpy_error_is,
-        jacpy_error_pending,
-        jacpy_is_none,
         jacpy_is_unicode,
-        jacpy_none,
-        jacpy_optional_attr,
-        jacpy_release,
-        jacpy_set_exception
+        jacpy_release
     }
     cpython_api --> runtime.python.bindings.pwd { PyObject, jacpy_struct_sequence_type }
-    cpython_api --> runtime.python.bindings.queue {
-        NULL,
-        PyBool_FromLong,
-        PyLong_FromLongLong,
-        PyObject,
-        PyObject_IsTrue,
-        PyType_GetSlot,
-        Py_GenericAlias,
-        Py_TYPE,
-        jacpy_lock_new,
-        jacpy_none,
-        jacpy_release
-    }
-    cpython_api --> runtime.python.bindings.random {
-        NULL,
-        PyFloat_FromDouble,
-        PyLong_AsUnsignedLongLong,
-        PyNumber_Index,
-        PyObject,
-        PyType_GetSlot,
-        Py_TYPE,
-        jacpy_dict_size,
-        jacpy_error_pending,
-        jacpy_is_none,
-        jacpy_long_sign,
-        jacpy_none,
-        jacpy_release
-    }
+    cpython_api --> runtime.python.bindings.queue { NULL, PyObject }
+    cpython_api --> runtime.python.bindings.random { NULL, PyObject, jacpy_release }
     cpython_api --> runtime.python.bindings.references {
         NULL,
         PyObject,
@@ -20159,47 +20932,33 @@ graph import runtime.python {
         PyModule_AddIntConstant,
         PyModule_AddObjectRef,
         PyObject,
-        jacpy_exception_type,
         jacpy_struct_sequence_type
     }
     cpython_api --> runtime.python.bindings.runtime_objects {
         PyModule_AddObjectRef,
-        PyObject,
-        jacpy_runtime_object
+        PyObject
     }
     cpython_api --> runtime.python.bindings.stat {
         NULL,
-        PyBool_FromLong,
         PyLong_FromUnsignedLong,
         PyModule_AddIntConstant,
         PyObject,
         PyUnicode_FromString
     }
     cpython_api --> runtime.python.bindings.state { PyObject }
-    cpython_api --> runtime.python.bindings.statistics { NULL, PyObject }
+    cpython_api --> runtime.python.bindings.statistics { PyObject }
     cpython_api --> runtime.python.bindings.struct {
         NULL,
-        PyDict_Clear,
         PyDict_New,
         PyLong_FromLongLong,
         PyObject,
-        PyTuple_GetSlice,
         PyTuple_Size,
-        PyUnicode_AsEncodedString,
         Py_NewRef,
-        Py_TYPE,
         jacpy_buffer_new,
         jacpy_bytes_address,
         jacpy_bytes_decode,
-        jacpy_bytes_from_memory,
         jacpy_error_pending,
-        jacpy_is_bytes,
-        jacpy_is_unicode,
-        jacpy_none,
-        jacpy_number_ssize,
-        jacpy_offset,
         jacpy_release,
-        jacpy_set_exception,
         jacpy_tuple_item
     }
     cpython_api --> runtime.python.bindings.suggestions { PyObject }
@@ -20218,10 +20977,7 @@ graph import runtime.python {
     cpython_api --> runtime.python.bindings.weakref { PyObject }
     cpython_api --> runtime.python.bindings.zlib {
         NULL,
-        PyArg_ParseTupleAndKeywords,
-        PyBool_FromLong,
         PyModule_AddIntConstant,
-        PyModule_AddObjectRef,
         PyObject,
         PyUnicode_FromString,
         Py_NewRef,
@@ -20238,9 +20994,7 @@ graph import runtime.python {
         Py_NewRef,
         jacpy_bytes_copy_to,
         jacpy_bytes_length,
-        jacpy_exception_note,
         jacpy_qualified_type_name,
-        jacpy_raise_error,
         jacpy_release,
         jacpy_text,
         jacpy_tuple_set_owned,
@@ -20254,8 +21008,6 @@ graph import runtime.python {
         _PyUnicode_IsXidStart
     }
     cpython_api --> runtime.python.constant_input {
-        PyComplex_ImagAsDouble,
-        PyComplex_RealAsDouble,
         PyObject,
         PyObject_IsTrue,
         PySequence_List,
@@ -20279,16 +21031,13 @@ graph import runtime.python {
         PyTuple_New,
         Py_NewRef,
         jacpy_code_new,
-        jacpy_ellipsis,
         jacpy_long_from_bytes,
-        jacpy_none,
         jacpy_release,
         jacpy_set_new,
         jacpy_tuple_set_owned
     }
     cpython_api --> runtime.python.modules.array {
         NULL,
-        PyBool_FromLong,
         PyByteArray_Resize,
         PyFloat_AsDouble,
         PyFloat_FromDouble,
@@ -20323,10 +21072,8 @@ graph import runtime.python {
         jacpy_list_new,
         jacpy_memory_copy,
         jacpy_memory_move,
-        jacpy_memory_zero,
         jacpy_native_little_endian,
         jacpy_native_size,
-        jacpy_offset,
         jacpy_release,
         jacpy_unicode_decode_bytes,
         jacpy_unicode_size
@@ -20335,36 +21082,28 @@ graph import runtime.python {
         NULL,
         PyLong_FromLongLong,
         PyLong_FromUnsignedLongLong,
-        PyObject,
-        jacpy_memory_byte,
-        jacpy_memory_set
+        PyObject
     }
     cpython_api --> runtime.python.modules.binascii {
         NULL,
         PyLong_FromLongLong,
         PyObject,
-        _Py_strhex_bytes_with_sep,
         jacpy_buffer_byte,
         jacpy_buffer_size,
         jacpy_set_exception
     }
     cpython_api --> runtime.python.modules.bisect {
         NULL,
-        PyLong_FromLongLong,
         PyObject,
         PyObject_CallOneArg,
         PySequence_Size,
         Py_LeaveRecursiveCall,
         jacpy_comparison_slot,
-        jacpy_insert,
         jacpy_less,
-        jacpy_none,
         jacpy_recursion_enter,
         jacpy_release,
         jacpy_same_type,
-        jacpy_sequence_slot,
-        jacpy_slot_item,
-        jacpy_slot_less
+        jacpy_sequence_slot
     }
     cpython_api --> runtime.python.modules.bz2 {
         NULL,
@@ -20384,33 +21123,24 @@ graph import runtime.python {
         PyThread_free_lock,
         PyThread_release_lock,
         jacpy_buffer_new,
-        jacpy_distance,
         jacpy_memory_copy,
         jacpy_memory_move,
-        jacpy_offset,
         jacpy_release
     }
     cpython_api --> runtime.python.modules.cmath {
         NULL,
-        PyBool_FromLong,
-        PyComplex_FromDoubles,
-        PyComplex_ImagAsDouble,
-        PyComplex_RealAsDouble,
         PyFloat_AsDouble,
         PyFloat_FromDouble,
         PyNumber_TrueDivide,
         PyObject,
-        _Py_c_abs,
         jacpy_clear_errno,
         jacpy_complex_value,
-        jacpy_error_is,
         jacpy_error_pending,
         jacpy_math_errno,
         jacpy_release
     }
     cpython_api --> runtime.python.modules.collections {
         NULL,
-        PyBool_FromLong,
         PyIter_Next,
         PyLong_FromLongLong,
         PyNumber_Add,
@@ -20428,9 +21158,7 @@ graph import runtime.python {
         jacpy_dict_default,
         jacpy_dict_repr,
         jacpy_error_pending,
-        jacpy_is_none,
         jacpy_release,
-        jacpy_set_key_error,
         jacpy_tuple_set_owned
     }
     cpython_api --> runtime.python.modules.combinatorics {
@@ -20447,7 +21175,6 @@ graph import runtime.python {
     }
     cpython_api --> runtime.python.modules.csv {
         NULL,
-        PyBool_FromLong,
         PyDict_Keys,
         PyDict_SetItem,
         PyErr_Clear,
@@ -20472,13 +21199,10 @@ graph import runtime.python {
         Py_NewRef,
         jacpy_dict_get,
         jacpy_dict_pop_discard,
-        jacpy_error_is,
         jacpy_error_pending,
         jacpy_is_exact_long,
-        jacpy_is_none,
         jacpy_is_unicode,
         jacpy_list_new,
-        jacpy_none,
         jacpy_release,
         jacpy_set_exception,
         jacpy_tuple_item,
@@ -20488,7 +21212,6 @@ graph import runtime.python {
     }
     cpython_api --> runtime.python.modules.functools {
         NULL,
-        PyBool_FromLong,
         PyCallable_Check,
         PyDict_Clear,
         PyDict_Copy,
@@ -20514,21 +21237,16 @@ graph import runtime.python {
         Py_ReprEnter,
         Py_ReprLeave,
         jacpy_call_two,
-        jacpy_dict_entry,
         jacpy_dict_get,
         jacpy_dict_size,
-        jacpy_error_is,
         jacpy_error_pending,
         jacpy_is_dict,
         jacpy_is_exact_dict,
         jacpy_is_exact_long,
         jacpy_is_exact_tuple,
         jacpy_is_exact_unicode,
-        jacpy_is_none,
         jacpy_is_tuple,
-        jacpy_none,
         jacpy_object_type,
-        jacpy_ordered_dict_new,
         jacpy_release,
         jacpy_tuple_item,
         jacpy_tuple_set_owned
@@ -20542,7 +21260,6 @@ graph import runtime.python {
         PyObject_RichCompareBool,
         PyTuple_New,
         Py_NewRef,
-        jacpy_is_none,
         jacpy_release,
         jacpy_tuple_set_owned
     }
@@ -20560,8 +21277,6 @@ graph import runtime.python {
         PyMem_RawRealloc,
         PyObject,
         PySequence_Contains,
-        PyStructSequence_New,
-        PyStructSequence_SetItem,
         PyUnicode_EncodeFSDefault,
         jacpy_fs_text,
         jacpy_release
@@ -20577,7 +21292,6 @@ graph import runtime.python {
         jacpy_list_exchange,
         jacpy_list_size,
         jacpy_list_swap,
-        jacpy_none,
         jacpy_release
     }
     cpython_api --> runtime.python.modules.iterators {
@@ -20600,11 +21314,9 @@ graph import runtime.python {
         jacpy_call_two,
         jacpy_error_pending,
         jacpy_is_long,
-        jacpy_is_none,
         jacpy_list_exchange,
         jacpy_list_new,
         jacpy_list_size,
-        jacpy_none,
         jacpy_release,
         jacpy_tuple_exchange,
         jacpy_tuple_item,
@@ -20613,7 +21325,6 @@ graph import runtime.python {
     }
     cpython_api --> runtime.python.modules.json {
         NULL,
-        PyBool_FromLong,
         PyDict_DelItem,
         PyDict_New,
         PyDict_SetItem,
@@ -20647,7 +21358,6 @@ graph import runtime.python {
         Py_LeaveRecursiveCall,
         Py_NewRef,
         jacpy_dict_default,
-        jacpy_dict_entry,
         jacpy_dict_size,
         jacpy_error_pending,
         jacpy_fast_item,
@@ -20660,14 +21370,11 @@ graph import runtime.python {
         jacpy_is_float,
         jacpy_is_list,
         jacpy_is_long,
-        jacpy_is_none,
         jacpy_is_tuple,
         jacpy_is_unicode,
         jacpy_list_new,
         jacpy_list_size,
         jacpy_long_repr,
-        jacpy_none,
-        jacpy_raise_value,
         jacpy_recursion_enter,
         jacpy_release,
         jacpy_tuple_item,
@@ -20676,7 +21383,6 @@ graph import runtime.python {
     }
     cpython_api --> runtime.python.modules.math {
         NULL,
-        PyBool_FromLong,
         PyErr_Clear,
         PyFloat_AsDouble,
         PyFloat_FromDouble,
@@ -20709,11 +21415,8 @@ graph import runtime.python {
         jacpy_is_exact_float,
         jacpy_is_exact_long,
         jacpy_is_long,
-        jacpy_is_none,
         jacpy_is_tuple,
-        jacpy_libm_parts,
         jacpy_long_fits_i64,
-        jacpy_long_frexp,
         jacpy_long_shift,
         jacpy_long_sign,
         jacpy_math_errno,
@@ -20735,16 +21438,13 @@ graph import runtime.python {
         _PyCompile_GetBinaryIntrinsicName,
         _PyCompile_GetUnaryIntrinsicName,
         jacpy_is_code,
-        jacpy_is_none,
         jacpy_release
     }
     cpython_api --> runtime.python.modules.operator {
         NULL,
-        PyBool_FromLong,
         PyImport_ImportModuleAttrString,
         PyList_GetItemRef,
         PyLong_AsLongLong,
-        PyLong_FromLongLong,
         PyNumber_Absolute,
         PyNumber_Add,
         PyNumber_And,
@@ -20796,14 +21496,9 @@ graph import runtime.python {
         Py_NewRef,
         Py_ReprEnter,
         Py_ReprLeave,
-        jacpy_crypto_compare,
-        jacpy_dict_entry,
         jacpy_dict_size,
-        jacpy_error_pending,
-        jacpy_is_none,
         jacpy_is_unicode,
         jacpy_list_size,
-        jacpy_none,
         jacpy_power,
         jacpy_release,
         jacpy_text,
@@ -20824,7 +21519,6 @@ graph import runtime.python {
         Py_NewRef,
         jacpy_buffer_new,
         jacpy_memory_copy,
-        jacpy_offset,
         jacpy_release
     }
     cpython_api --> runtime.python.modules.pickle {
@@ -20836,7 +21530,6 @@ graph import runtime.python {
         PyList_GetItemRef,
         PyLong_AsLongLong,
         PyLong_FromLongLong,
-        PyLong_FromUnsignedLongLong,
         PyLong_FromVoidPtr,
         PyMapping_Items,
         PyObject,
@@ -20844,7 +21537,6 @@ graph import runtime.python {
         PyTuple_Size,
         Py_NewRef,
         jacpy_bytearray_memory,
-        jacpy_dict_memory,
         jacpy_error_pending,
         jacpy_is_dict,
         jacpy_is_tuple,
@@ -20854,7 +21546,6 @@ graph import runtime.python {
     }
     cpython_api --> runtime.python.modules.pickle_decode {
         NULL,
-        PyBool_FromLong,
         PyDict_Items,
         PyDict_New,
         PyDict_SetItem,
@@ -20886,23 +21577,18 @@ graph import runtime.python {
         jacpy_bytes_unescape,
         jacpy_dict_get,
         jacpy_dict_size,
-        jacpy_error_is,
         jacpy_error_pending,
         jacpy_float_unpack,
         jacpy_is_dict,
         jacpy_is_exact_unicode,
         jacpy_is_list,
-        jacpy_is_none,
         jacpy_is_tuple,
         jacpy_is_type,
         jacpy_is_unicode,
         jacpy_list_new,
         jacpy_list_size,
         jacpy_long_from_signed_bytes,
-        jacpy_memory_byte,
         jacpy_memory_copy,
-        jacpy_none,
-        jacpy_offset,
         jacpy_optional_attr,
         jacpy_release,
         jacpy_set_new,
@@ -20941,22 +21627,17 @@ graph import runtime.python {
         Py_LeaveRecursiveCall,
         Py_NewRef,
         _PyLong_NumBits,
-        jacpy_builtin_kind,
         jacpy_bytes_address,
         jacpy_bytes_decode,
         jacpy_bytes_from_memory,
         jacpy_bytes_length,
         jacpy_dict_get,
         jacpy_dict_size,
-        jacpy_ellipsis,
-        jacpy_error_is,
         jacpy_error_pending,
         jacpy_float_bits,
         jacpy_float_repr,
         jacpy_float_value,
         jacpy_is_dict,
-        jacpy_is_none,
-        jacpy_is_not_implemented,
         jacpy_is_tuple,
         jacpy_is_type,
         jacpy_is_unicode,
@@ -20966,9 +21647,6 @@ graph import runtime.python {
         jacpy_long_sign,
         jacpy_long_signed_bytes,
         jacpy_mapping_optional_item,
-        jacpy_memory_byte,
-        jacpy_none,
-        jacpy_not_implemented,
         jacpy_object_type,
         jacpy_optional_attr,
         jacpy_recursion_enter,
@@ -20990,11 +21668,8 @@ graph import runtime.python {
         PyObject_Str,
         PyTuple_Size,
         Py_NewRef,
-        jacpy_audit_pickle_find,
         jacpy_dict_get,
-        jacpy_error_is,
         jacpy_error_pending,
-        jacpy_is_none,
         jacpy_is_tuple,
         jacpy_is_unicode,
         jacpy_list_size,
@@ -21018,10 +21693,7 @@ graph import runtime.python {
         jacpy_bytes_length,
         jacpy_exception_context,
         jacpy_is_bytes,
-        jacpy_memory_byte,
         jacpy_memory_copy,
-        jacpy_memory_set,
-        jacpy_offset,
         jacpy_release,
         jacpy_set_exception
     }
@@ -21038,12 +21710,9 @@ graph import runtime.python {
         PyMem_RawRealloc,
         PyObject,
         PySequence_Contains,
-        PyStructSequence_New,
-        PyStructSequence_SetItem,
         PyThreadState,
         PyUnicode_EncodeFSDefault,
         PyUnicode_FromString,
-        jacpy_error_is,
         jacpy_fs_text,
         jacpy_release
     }
@@ -21057,7 +21726,6 @@ graph import runtime.python {
         _PyDeadline_Get,
         _PyDeadline_Init,
         jacpy_error_pending,
-        jacpy_is_none,
         jacpy_lock_free,
         jacpy_lock_wait,
         jacpy_release,
@@ -21102,14 +21770,11 @@ graph import runtime.python {
         PyNumber_Index,
         PyObject,
         PySequence_Tuple,
-        PyStructSequence_New,
-        PyStructSequence_SetItem,
         PySys_AuditTuple,
         PyTuple_GetItem,
         PyTuple_Size,
         Py_NewRef,
         jacpy_errno,
-        jacpy_exception_type,
         jacpy_long_u64_checked,
         jacpy_release
     }
@@ -21121,19 +21786,9 @@ graph import runtime.python {
         jacpy_is_long,
         jacpy_release
     }
-    cpython_api --> runtime.python.modules.statistics {
-        NULL,
-        PyFloat_AsDouble,
-        PyFloat_FromDouble,
-        PyObject,
-        jacpy_error_pending
-    }
+    cpython_api --> runtime.python.modules.statistics { PyObject }
     cpython_api --> runtime.python.modules.struct {
         NULL,
-        PyBool_FromLong,
-        PyComplex_FromDoubles,
-        PyComplex_ImagAsDouble,
-        PyComplex_RealAsDouble,
         PyDict_Clear,
         PyDict_SetItem,
         PyErr_Clear,
@@ -21142,15 +21797,11 @@ graph import runtime.python {
         PyIndex_Check,
         PyLong_AsLongLong,
         PyLong_AsUnsignedLongLong,
-        PyLong_AsVoidPtr,
-        PyLong_FromLongLong,
-        PyLong_FromUnsignedLongLong,
         PyNumber_Index,
         PyObject,
         PyObject_CallOneArg,
         PyObject_IsTrue,
         PyTuple_New,
-        PyTuple_Size,
         Py_NewRef,
         jacpy_bytes_address,
         jacpy_bytes_from_memory,
@@ -21158,7 +21809,6 @@ graph import runtime.python {
         jacpy_complex_value,
         jacpy_dict_get,
         jacpy_dict_size,
-        jacpy_error_is,
         jacpy_error_pending,
         jacpy_float_pack,
         jacpy_float_unpack,
@@ -21166,14 +21816,11 @@ graph import runtime.python {
         jacpy_is_bytes,
         jacpy_is_long,
         jacpy_long_address,
-        jacpy_memory_byte,
         jacpy_memory_copy,
-        jacpy_memory_set,
         jacpy_memory_zero,
         jacpy_native_float_store,
         jacpy_native_little_endian,
         jacpy_native_size,
-        jacpy_offset,
         jacpy_release,
         jacpy_set_exception,
         jacpy_tuple_item,
@@ -21217,8 +21864,7 @@ graph import runtime.python {
         Py_NewRef,
         _PySys_GetOptionalAttrString,
         jacpy_is_unicode,
-        jacpy_release,
-        jacpy_syslog
+        jacpy_release
     }
     cpython_api --> runtime.python.modules.tee {
         NULL,
@@ -21236,7 +21882,6 @@ graph import runtime.python {
     }
     cpython_api --> runtime.python.modules.tracemalloc {
         NULL,
-        PyBool_FromLong,
         PyLong_FromLong,
         PyLong_FromSize_t,
         PyObject,
@@ -21290,29 +21935,22 @@ graph import runtime.python {
         Py_TYPE,
         _PyBytes_Resize,
         jacpy_buffer_acquire,
-        jacpy_buffer_address,
-        jacpy_buffer_length,
         jacpy_buffer_new,
         jacpy_buffer_release,
-        jacpy_distance,
         jacpy_fs_text,
         jacpy_memory_copy,
         jacpy_memory_move,
-        jacpy_offset,
         jacpy_release
     }
     cpython_api --> runtime.python.native_services {
         PyObject,
         jacpy_bytes_escape,
-        jacpy_error_is,
         jacpy_float_value,
-        jacpy_normalize,
         jacpy_parse_float,
         jacpy_parse_long,
         jacpy_release,
         jacpy_take_error_text,
-        jacpy_unicode_escape,
-        jacpy_warning
+        jacpy_unicode_escape
     }
     cpython_api --> runtime.python.objects {
         NULL,
@@ -21323,7 +21961,6 @@ graph import runtime.python {
         PySequence_Fast,
         PySequence_GetItem,
         PySequence_Tuple,
-        PySlice_AdjustIndices,
         PyUnicode_Format,
         _Py_c_pow,
         _Py_c_quot
@@ -21378,8 +22015,7 @@ graph import runtime.python {
     }
     cpython_api --> runtime.python.bindings.clinic.hmac | runtime.python.bindings.clinic.md5 | runtime.python.bindings.clinic.sha1 | runtime.python.bindings.clinic.sha2 {
         NULL,
-        PyObject,
-        jacpy_release
+        PyObject
     }
     cpython_api --> runtime.python.bindings.converters { jacpy_unsigned_converter }
     cpython_api --> runtime.python.bindings.hmac { PyModule_AddIntConstant, PyObject }
@@ -21423,15 +22059,11 @@ graph import runtime.python {
         PyTuple_New,
         PyTuple_Size,
         Py_NewRef,
-        jacpy_atexit_call,
         jacpy_atexit_callbacks,
         jacpy_atexit_detach,
         jacpy_atexit_push,
-        jacpy_atexit_release_callbacks,
-        jacpy_is_none,
         jacpy_release,
-        jacpy_tuple_set_owned,
-        jacpy_unraisable
+        jacpy_tuple_set_owned
     }
     cpython_api --> runtime.python.modules.blake2 {
         NULL,
@@ -21445,7 +22077,6 @@ graph import runtime.python {
         jacpy_hacl_simd_features,
         jacpy_memory_copy,
         jacpy_memory_zero,
-        jacpy_offset,
         jacpy_release
     }
     cpython_api --> runtime.python.modules.hashlib {
@@ -21488,9 +22119,7 @@ graph import runtime.python {
         _Py_strhex,
         jacpy_bytes_from_memory,
         jacpy_hacl_simd_features,
-        jacpy_is_none,
         jacpy_is_unicode,
-        jacpy_offset,
         jacpy_release
     }
     cpython_api --> runtime.python.modules.md5 | runtime.python.modules.sha1 | runtime.python.modules.sha2 {
@@ -21498,7 +22127,6 @@ graph import runtime.python {
         PyErr_NoMemory,
         PyObject,
         Py_TYPE,
-        jacpy_offset,
         jacpy_release
     }
     cpython_api --> runtime.python.modules.numeric {
@@ -21525,31 +22153,5347 @@ graph import runtime.python {
         Py_TYPE,
         _Py_strhex,
         jacpy_bytes_from_memory,
-        jacpy_offset,
         jacpy_release
+    }
+    capi --> compiler.backends.py.jacpython.native_api { object_error, type_name }
+    capi --> compiler.frontend.python.ast_input { repr_value }
+    capi --> runtime.python.bindings.arguments { c_string_text, type_name }
+    capi --> runtime.python.bindings.asyncio { c_string_copy }
+    capi --> runtime.python.bindings.clinic.abc { boundary_failure }
+    capi --> runtime.python.bindings.clinic.array { boundary_failure }
+    capi --> runtime.python.bindings.clinic.asyncio { boundary_failure }
+    capi --> runtime.python.bindings.clinic.binascii { boundary_failure }
+    capi --> runtime.python.bindings.clinic.bisect { boundary_failure }
+    capi --> runtime.python.bindings.clinic.blake2 { boundary_failure }
+    capi --> runtime.python.bindings.clinic.bz2 { boundary_failure }
+    capi --> runtime.python.bindings.clinic.cmath { boundary_failure }
+    capi --> runtime.python.bindings.clinic.codecs { boundary_failure }
+    capi --> runtime.python.bindings.clinic.collections { boundary_failure }
+    capi --> runtime.python.bindings.clinic.csv { boundary_failure }
+    capi --> runtime.python.bindings.clinic.datetime { boundary_failure }
+    capi --> runtime.python.bindings.clinic.elementtree { boundary_failure }
+    capi --> runtime.python.bindings.clinic.fcntl { boundary_failure }
+    capi --> runtime.python.bindings.clinic.functools { boundary_failure }
+    capi --> runtime.python.bindings.clinic.grp { boundary_failure }
+    capi --> runtime.python.bindings.clinic.hashopenssl { boundary_failure }
+    capi --> runtime.python.bindings.clinic.heapq { boundary_failure }
+    capi --> runtime.python.bindings.clinic.hmac { boundary_failure }
+    capi --> runtime.python.bindings.clinic.itertools { boundary_failure }
+    capi --> runtime.python.bindings.clinic.locale { boundary_failure }
+    capi --> runtime.python.bindings.clinic.lsprof { boundary_failure }
+    capi --> runtime.python.bindings.clinic.lzma { boundary_failure }
+    capi --> runtime.python.bindings.clinic.math { boundary_failure }
+    capi --> runtime.python.bindings.clinic.md5 { boundary_failure }
+    capi --> runtime.python.bindings.clinic.mmap { boundary_failure }
+    capi --> runtime.python.bindings.clinic.multibytecodec { boundary_failure }
+    capi --> runtime.python.bindings.clinic.multiprocessing { boundary_failure }
+    capi --> runtime.python.bindings.clinic.opcode { boundary_failure }
+    capi --> runtime.python.bindings.clinic.operator { boundary_failure }
+    capi --> runtime.python.bindings.clinic.pickle { boundary_failure }
+    capi --> runtime.python.bindings.clinic.posix { boundary_failure }
+    capi --> runtime.python.bindings.clinic.posixshmem { boundary_failure }
+    capi --> runtime.python.bindings.clinic.posixsubprocess { boundary_failure }
+    capi --> runtime.python.bindings.clinic.pwd { boundary_failure }
+    capi --> runtime.python.bindings.clinic.pyexpat { boundary_failure }
+    capi --> runtime.python.bindings.clinic.queue { boundary_failure }
+    capi --> runtime.python.bindings.clinic.random { boundary_failure }
+    capi --> runtime.python.bindings.clinic.resource { boundary_failure }
+    capi --> runtime.python.bindings.clinic.select { boundary_failure }
+    capi --> runtime.python.bindings.clinic.sha1 { boundary_failure }
+    capi --> runtime.python.bindings.clinic.sha2 { boundary_failure }
+    capi --> runtime.python.bindings.clinic.sha3 { boundary_failure }
+    capi --> runtime.python.bindings.clinic.socket { boundary_failure }
+    capi --> runtime.python.bindings.clinic.sqlite3 { boundary_failure }
+    capi --> runtime.python.bindings.clinic.sre { boundary_failure }
+    capi --> runtime.python.bindings.clinic.ssl { boundary_failure }
+    capi --> runtime.python.bindings.clinic.statistics { boundary_failure }
+    capi --> runtime.python.bindings.clinic.struct { boundary_failure }
+    capi --> runtime.python.bindings.clinic.suggestions { boundary_failure }
+    capi --> runtime.python.bindings.clinic.sysconfig { boundary_failure }
+    capi --> runtime.python.bindings.clinic.syslog { boundary_failure }
+    capi --> runtime.python.bindings.clinic.termios { boundary_failure }
+    capi --> runtime.python.bindings.clinic.time { boundary_failure }
+    capi --> runtime.python.bindings.clinic.tracemalloc { boundary_failure }
+    capi --> runtime.python.bindings.clinic.typing { boundary_failure }
+    capi --> runtime.python.bindings.clinic.unicodedata { boundary_failure }
+    capi --> runtime.python.bindings.clinic.weakref { boundary_failure }
+    capi --> runtime.python.bindings.clinic.zlib { boundary_failure }
+    capi --> runtime.python.bindings.clinic.zoneinfo { boundary_failure }
+    capi --> runtime.python.bindings.clinic.zstd { boundary_failure }
+    capi --> runtime.python.bindings.fcntl { object_error }
+    capi --> runtime.python.bindings.locale { object_error }
+    capi --> runtime.python.bindings.mmap { object_error }
+    capi --> runtime.python.bindings.module { c_string_copy }
+    capi --> runtime.python.bindings.pickle { builtin_type }
+    capi --> runtime.python.bindings.posix { object_error }
+    capi --> runtime.python.bindings.posixsubprocess { object_error }
+    capi --> runtime.python.bindings.select { object_error }
+    capi --> runtime.python.bindings.socket { object_error }
+    capi --> runtime.python.bindings.ssl { object_error }
+    capi --> runtime.python.bindings.termios { object_error }
+    capi --> runtime.python.bindings.time { object_error }
+    capi --> runtime.python.bindings.type { c_string_copy }
+    capi --> runtime.python.bindings.zstd { c_string_text }
+    capi --> runtime.python.modules.abc { object_error }
+    capi --> runtime.python.modules.array | runtime.python.modules.hashlib { type_name }
+    capi --> runtime.python.modules.binary_scalars { memory_byte, memory_set }
+    capi --> runtime.python.modules.binascii { boundary_failure }
+    capi --> runtime.python.modules.cjkcodecs { object_error }
+    capi --> runtime.python.modules.codecs { object_error }
+    capi --> runtime.python.modules.datetime_date { boundary_failure }
+    capi --> runtime.python.modules.datetime_datetime { boundary_failure }
+    capi --> runtime.python.modules.datetime_delta { boundary_failure }
+    capi --> runtime.python.modules.datetime_time { boundary_failure }
+    capi --> runtime.python.modules.datetime_tzinfo { boundary_failure }
+    capi --> runtime.python.modules.decimal_context { c_string_text }
+    capi --> runtime.python.modules.decimal_number {
+        boundary_failure,
+        c_string_length,
+        c_string_text
+    }
+    capi --> runtime.python.modules.elementtree { StaticText, object_error, text_value }
+    capi --> runtime.python.modules.fcntl { audit_event, object_error, type_name }
+    capi --> runtime.python.modules.hashopenssl {
+        c_size,
+        c_string_copy,
+        c_string_text,
+        object_error,
+        text_value
+    }
+    capi --> runtime.python.modules.itertools {
+        boundary_failure,
+        object_error,
+        required,
+        text_object
+    }
+    capi --> runtime.python.modules.locale { object_error }
+    capi --> runtime.python.modules.lsprof {
+        boundary_failure,
+        object_error,
+        text_object,
+        text_value
+    }
+    capi --> runtime.python.modules.lzma { boundary_failure, object_error }
+    capi --> runtime.python.modules.mmap { boundary_failure, object_error, type_name }
+    capi --> runtime.python.modules.multibytecodec {
+        boundary_failure,
+        c_string_text,
+        object_error,
+        text_value,
+        type_name
+    }
+    capi --> runtime.python.modules.multiprocessing {
+        c_string_copy,
+        c_string_text,
+        object_error,
+        text_value
+    }
+    capi --> runtime.python.modules.openssl { c_string_copy }
+    capi --> runtime.python.modules.pickle {
+        builtin_kind,
+        builtin_type,
+        object_error,
+        text_object
+    }
+    capi --> runtime.python.modules.pickle_decode { memory_byte }
+    capi --> runtime.python.modules.pickle_encode { builtin_kind_of, memory_byte }
+    capi --> runtime.python.modules.pickle_stream { memory_byte, memory_set }
+    capi --> runtime.python.modules.posix_core { boundary_failure }
+    capi --> runtime.python.modules.posix_stat { audit_event, boundary_failure }
+    capi --> runtime.python.modules.posixshmem { object_error }
+    capi --> runtime.python.modules.posixsubprocess {
+        audit_event,
+        object_error,
+        type_name
+    }
+    capi --> runtime.python.modules.pyexpat {
+        StaticText,
+        c_string_text,
+        object_error,
+        text_object,
+        text_value,
+        type_name
+    }
+    capi --> runtime.python.modules.select {
+        boundary_failure,
+        object_error,
+        object_tuple,
+        text_value,
+        type_name
+    }
+    capi --> runtime.python.modules.socket {
+        boundary_failure,
+        c_string_text,
+        object_error
+    }
+    capi --> runtime.python.modules.socket_address {
+        c_string_length,
+        c_string_text,
+        object_error,
+        text_value
+    }
+    capi --> runtime.python.modules.socket_object { c_int, object_error }
+    capi --> runtime.python.modules.sqlite3 {
+        boundary_failure,
+        c_string_copy,
+        c_string_length,
+        c_string_text,
+        object_error,
+        text_value
+    }
+    capi --> runtime.python.modules.ssl {
+        boundary_failure,
+        c_int,
+        c_string_length,
+        c_string_text,
+        c_text,
+        object_error,
+        text_value
+    }
+    capi --> runtime.python.modules.ssl_cert { c_int, c_text }
+    capi --> runtime.python.modules.ssl_core {
+        c_int,
+        c_size,
+        c_string_text,
+        object_error
+    }
+    capi --> runtime.python.modules.struct { memory_byte, memory_set, type_name }
+    capi --> runtime.python.modules.termios { object_error }
+    capi --> runtime.python.modules.time {
+        boundary_failure,
+        c_string_text,
+        object_error,
+        object_tuple,
+        text_value,
+        type_name
+    }
+    capi --> runtime.python.modules.unicodedata {
+        c_string_length,
+        c_string_text,
+        object_error
+    }
+    capi --> runtime.python.modules.zoneinfo { object_error }
+    capi --> runtime.python.modules.zstd { boundary_failure, object_error }
+    capi --> runtime.python.native_services { text_object, text_value }
+    cpython_api --> compiler.backends.py.jacpython.native_api {
+        PyErr_SetObject,
+        PyExc_IndentationError,
+        PyExc_MemoryError,
+        PyExc_NotImplementedError,
+        PyExc_OverflowError,
+        PyExc_RecursionError,
+        PyExc_RuntimeError,
+        PyExc_SyntaxError,
+        PyExc_SystemError,
+        PyExc_TabError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyObject_IsSubclass,
+        PyTuple_Pack,
+        Py_NewRef,
+        Py_None,
+        _PyExc_IncompleteInputError,
+        jacpy_ast_kind
+    }
+    cpython_api --> compiler.frontend.python.ast_output { Py_NewRef, Py_None }
+    cpython_api --> compiler.frontend.python.source_encoding {
+        PyErr_ExceptionMatches,
+        PyExc_LookupError
+    }
+    cpython_api --> compiler.frontend.python.source_input {
+        PyErr_ExceptionMatches,
+        PyExc_UnicodeError
+    }
+    cpython_api --> runtime.python.bindings.abc {
+        PyObject,
+        PyUnicode_InternFromString,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.bindings.arguments {
+        PyDict_GetItemStringRef,
+        PyDict_Next,
+        PyDict_Size,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_WarnEx,
+        PyExc_DeprecationWarning,
+        PyExc_OverflowError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyIndex_Check,
+        PyList_New,
+        PyList_SetItem,
+        PyLong_AsLong,
+        PyLong_AsLongLong,
+        PyLong_AsUnsignedLongLongMask,
+        PyLong_AsUnsignedLongMask,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyObject_IsTrue,
+        PyTuple_GetItem,
+        PyTuple_New,
+        PyTuple_SetItem,
+        PyType_IsSubtype,
+        PyUnicode_AsUTF8AndSize,
+        PyUnicode_Equal,
+        PyUnicode_FromString,
+        PyUnicode_InternFromString,
+        Py_None,
+        Py_TYPE,
+        _Py_CalculateSuggestions,
+        jacpy_dict_size,
+        jacpy_is_bytes,
+        jacpy_tuple_items
+    }
+    cpython_api --> runtime.python.bindings.array {
+        PyErr_WarnEx,
+        PyExc_DeprecationWarning,
+        PyExc_IndexError,
+        PyExc_TypeError,
+        PyNumber_AsSsize_t,
+        Py_None,
+        Py_NotImplemented
+    }
+    cpython_api --> runtime.python.bindings.asyncio {
+        NULL,
+        PyDict_Next,
+        PyImport_ImportModule,
+        PyMethodDef,
+        PyModule_AddType,
+        PyObject,
+        PyObject_CallNoArgs,
+        PyObject_GenericGetAttr,
+        PyObject_GetAttrString,
+        PyObject_IsTrue,
+        PyObject_SelfIter,
+        PySet_New,
+        PyTuple_GetItem,
+        PyTuple_Size,
+        PyType_FromModuleAndSpec,
+        PyType_GenericNew,
+        PyType_Slot,
+        PyType_Spec,
+        Py_BuildValue,
+        Py_None,
+        jacpy_dict_size,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.bindings.binascii { PyExc_ValueError }
+    cpython_api --> runtime.python.bindings.buffer {
+        NULL,
+        PyArg_Parse,
+        PyErr_NoMemory,
+        PyMem_Calloc,
+        PyMem_Free,
+        PyObject_GetBuffer
+    }
+    cpython_api --> runtime.python.bindings.clinic.abc { NULL, PyObject }
+    cpython_api --> runtime.python.bindings.clinic.array { NULL, PyMem_Free, PyObject }
+    cpython_api --> runtime.python.bindings.clinic.asyncio {
+        NULL,
+        PyMem_Free,
+        PyObject,
+        PyTuple_Size,
+        jacpy_dict_size,
+        jacpy_release,
+        jacpy_tuple_items
+    }
+    cpython_api --> runtime.python.bindings.clinic.binascii {
+        NULL,
+        PyMem_Free,
+        PyObject
+    }
+    cpython_api --> runtime.python.bindings.clinic.bisect { NULL, PyMem_Free, PyObject }
+    cpython_api --> runtime.python.bindings.clinic.blake2 {
+        PyMem_Free,
+        PyTuple_Size,
+        jacpy_dict_size,
+        jacpy_tuple_items
+    }
+    cpython_api --> runtime.python.bindings.clinic.bz2 {
+        PyMem_Free,
+        PyTuple_Size,
+        jacpy_dict_size,
+        jacpy_tuple_items
+    }
+    cpython_api --> runtime.python.bindings.clinic.cmath { NULL, PyMem_Free, PyObject }
+    cpython_api --> runtime.python.bindings.clinic.codecs {
+        NULL,
+        PyMem_Free,
+        PyObject,
+        jacpy_is_bytes
+    }
+    cpython_api --> runtime.python.bindings.clinic.collections {
+        NULL,
+        PyMem_Free,
+        PyObject,
+        PyTuple_Size,
+        jacpy_dict_size,
+        jacpy_release,
+        jacpy_tuple_items
+    }
+    cpython_api --> runtime.python.bindings.clinic.csv { NULL, PyMem_Free, PyObject }
+    cpython_api --> runtime.python.bindings.clinic.datetime {
+        NULL,
+        PyMem_Free,
+        PyObject,
+        PyTuple_Size,
+        jacpy_dict_size,
+        jacpy_tuple_items
+    }
+    cpython_api --> runtime.python.bindings.clinic.elementtree {
+        NULL,
+        PyMem_Free,
+        PyObject,
+        PyTuple_Size,
+        jacpy_dict_size,
+        jacpy_is_dict,
+        jacpy_release,
+        jacpy_tuple_items
+    }
+    cpython_api --> runtime.python.bindings.clinic.fcntl { NULL, PyObject }
+    cpython_api --> runtime.python.bindings.clinic.functools {
+        NULL,
+        PyMem_Free,
+        PyObject
+    }
+    cpython_api --> runtime.python.bindings.clinic.grp { PyMem_Free }
+    cpython_api --> runtime.python.bindings.clinic.hashopenssl {
+        NULL,
+        PyMem_Free,
+        PyObject
+    }
+    cpython_api --> runtime.python.bindings.clinic.heapq {
+        NULL,
+        PyObject,
+        jacpy_is_list
+    }
+    cpython_api --> runtime.python.bindings.clinic.hmac { PyMem_Free }
+    cpython_api --> runtime.python.bindings.clinic.itertools {
+        NULL,
+        PyMem_Free,
+        PyObject,
+        PyTuple_Size,
+        jacpy_dict_size,
+        jacpy_is_list,
+        jacpy_tuple_items
+    }
+    cpython_api --> runtime.python.bindings.clinic.json { NULL, PyObject }
+    cpython_api --> runtime.python.bindings.clinic.locale { NULL, PyObject }
+    cpython_api --> runtime.python.bindings.clinic.lsprof {
+        NULL,
+        PyMem_Free,
+        PyObject,
+        PyTuple_Size,
+        jacpy_dict_size,
+        jacpy_release,
+        jacpy_tuple_items
+    }
+    cpython_api --> runtime.python.bindings.clinic.lzma {
+        NULL,
+        PyMem_Free,
+        PyObject,
+        PyTuple_Size,
+        jacpy_dict_size,
+        jacpy_tuple_items
+    }
+    cpython_api --> runtime.python.bindings.clinic.math { NULL, PyMem_Free, PyObject }
+    cpython_api --> runtime.python.bindings.clinic.md5 { PyMem_Free }
+    cpython_api --> runtime.python.bindings.clinic.mmap { NULL, PyObject }
+    cpython_api --> runtime.python.bindings.clinic.multibytecodec {
+        NULL,
+        PyMem_Free,
+        PyObject,
+        jacpy_is_long,
+        jacpy_is_tuple
+    }
+    cpython_api --> runtime.python.bindings.clinic.multiprocessing {
+        NULL,
+        PyMem_Free,
+        PyObject,
+        PyTuple_Size,
+        jacpy_dict_size,
+        jacpy_tuple_items
+    }
+    cpython_api --> runtime.python.bindings.clinic.opcode { PyMem_Free }
+    cpython_api --> runtime.python.bindings.clinic.operator { NULL, PyObject }
+    cpython_api --> runtime.python.bindings.clinic.pickle {
+        NULL,
+        PyMem_Free,
+        PyObject,
+        PyTuple_Size,
+        jacpy_dict_size,
+        jacpy_release,
+        jacpy_tuple_items
+    }
+    cpython_api --> runtime.python.bindings.clinic.posix {
+        NULL,
+        PyMem_Free,
+        PyObject,
+        PyTuple_Size,
+        jacpy_dict_size,
+        jacpy_release,
+        jacpy_tuple_items
+    }
+    cpython_api --> runtime.python.bindings.clinic.posixshmem {
+        NULL,
+        PyObject,
+        jacpy_is_unicode
+    }
+    cpython_api --> runtime.python.bindings.clinic.posixsubprocess {
+        NULL,
+        PyObject,
+        jacpy_is_tuple
+    }
+    cpython_api --> runtime.python.bindings.clinic.pwd { jacpy_is_unicode }
+    cpython_api --> runtime.python.bindings.clinic.pyexpat {
+        NULL,
+        PyMem_Free,
+        PyObject
+    }
+    cpython_api --> runtime.python.bindings.clinic.queue {
+        NULL,
+        PyMem_Free,
+        PyObject,
+        PyTuple_Size,
+        jacpy_dict_size,
+        jacpy_tuple_items
+    }
+    cpython_api --> runtime.python.bindings.clinic.random {
+        NULL,
+        PyObject,
+        PyTuple_Size,
+        jacpy_dict_size,
+        jacpy_release,
+        jacpy_tuple_items
+    }
+    cpython_api --> runtime.python.bindings.clinic.select {
+        NULL,
+        PyMem_Free,
+        PyObject,
+        PyTuple_Size,
+        jacpy_dict_size,
+        jacpy_tuple_items
+    }
+    cpython_api --> runtime.python.bindings.clinic.sha1 { PyMem_Free }
+    cpython_api --> runtime.python.bindings.clinic.sha2 { PyMem_Free }
+    cpython_api --> runtime.python.bindings.clinic.sha3 {
+        PyMem_Free,
+        PyTuple_Size,
+        jacpy_dict_size,
+        jacpy_tuple_items
+    }
+    cpython_api --> runtime.python.bindings.clinic.socket {
+        NULL,
+        PyMem_Free,
+        PyObject,
+        PyTuple_Size,
+        jacpy_dict_size,
+        jacpy_release,
+        jacpy_tuple_items
+    }
+    cpython_api --> runtime.python.bindings.clinic.sqlite3 {
+        NULL,
+        PyMem_Free,
+        PyObject,
+        PyTuple_Size,
+        jacpy_dict_size,
+        jacpy_is_tuple,
+        jacpy_release,
+        jacpy_tuple_items
+    }
+    cpython_api --> runtime.python.bindings.clinic.sre {
+        NULL,
+        PyLong_AsSsize_t,
+        PyMem_Free,
+        PyObject,
+        jacpy_is_dict,
+        jacpy_is_list,
+        jacpy_is_tuple
+    }
+    cpython_api --> runtime.python.bindings.clinic.ssl {
+        NULL,
+        PyMem_Free,
+        PyObject,
+        PyTuple_Size,
+        jacpy_dict_size,
+        jacpy_release,
+        jacpy_tuple_items
+    }
+    cpython_api --> runtime.python.bindings.clinic.statistics { NULL, PyObject }
+    cpython_api --> runtime.python.bindings.clinic.struct {
+        NULL,
+        PyMem_Free,
+        PyObject,
+        PyTuple_Size,
+        jacpy_dict_size,
+        jacpy_release,
+        jacpy_tuple_items
+    }
+    cpython_api --> runtime.python.bindings.clinic.syslog { PyMem_Free }
+    cpython_api --> runtime.python.bindings.clinic.termios { NULL, PyObject }
+    cpython_api --> runtime.python.bindings.clinic.time { NULL, PyObject }
+    cpython_api --> runtime.python.bindings.clinic.unicodedata { NULL, PyObject }
+    cpython_api --> runtime.python.bindings.clinic.zlib { PyMem_Free }
+    cpython_api --> runtime.python.bindings.clinic.zoneinfo {
+        NULL,
+        PyMem_Free,
+        PyObject,
+        PyTuple_Size,
+        jacpy_dict_size,
+        jacpy_tuple_items
+    }
+    cpython_api --> runtime.python.bindings.clinic.zstd {
+        NULL,
+        PyMem_Free,
+        PyObject,
+        PyTuple_Size,
+        jacpy_dict_size,
+        jacpy_is_bytes,
+        jacpy_is_tuple,
+        jacpy_is_type,
+        jacpy_tuple_items
+    }
+    cpython_api --> runtime.python.bindings.codecs { PyObject }
+    cpython_api --> runtime.python.bindings.codecs_cn { PyObject }
+    cpython_api --> runtime.python.bindings.codecs_hk { PyObject }
+    cpython_api --> runtime.python.bindings.codecs_iso2022 { PyObject }
+    cpython_api --> runtime.python.bindings.codecs_jp { PyObject }
+    cpython_api --> runtime.python.bindings.codecs_kr { PyObject }
+    cpython_api --> runtime.python.bindings.codecs_tw { PyObject }
+    cpython_api --> runtime.python.bindings.collections {
+        PyExc_AttributeError,
+        PyExc_RuntimeError,
+        PyExc_SystemError,
+        PyExc_TypeError,
+        PyODict_Type,
+        PyObject_CallNoArgs,
+        Py_None,
+        Py_NotImplemented
+    }
+    cpython_api --> runtime.python.bindings.converters {
+        PyArg_Parse,
+        PyErr_Clear,
+        PyExc_OverflowError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyNumber_AsSsize_t,
+        PyType_GetSlot,
+        PyUnicode_AsUTF8AndSize,
+        PyUnicode_FSConverter,
+        PyUnicode_ReadChar,
+        Py_None,
+        _PyLong_UInt16_Converter,
+        _PyLong_UInt32_Converter,
+        _PyLong_UInt64_Converter,
+        _PyLong_UInt8_Converter,
+        _PyLong_UnsignedInt_Converter,
+        _PyLong_UnsignedShort_Converter,
+        jacpy_is_exact_long,
+        jacpy_unicode_size
+    }
+    cpython_api --> runtime.python.bindings.csv {
+        PyExc_SystemError,
+        PyExc_TypeError,
+        Py_None
+    }
+    cpython_api --> runtime.python.bindings.datetime {
+        NULL,
+        PyDict_SetItemString,
+        PyInterpreterState,
+        PyInterpreterState_Get,
+        PyLong_FromDouble,
+        PyLong_FromLong,
+        PyMemberDef,
+        PyMethodDef,
+        PyModule_Add,
+        PyModule_AddIntConstant,
+        PyModule_AddObjectRef,
+        PyObject,
+        PyType_FromModuleAndSpec,
+        PyType_Slot,
+        PyType_Spec,
+        Py_NewRef,
+        Py_None,
+        _PyStaticType_InitForExtension,
+        _PyType_GetDict,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.bindings.decimal {
+        NULL,
+        PyContextVar_New,
+        PyDict_SetItemString,
+        PyErr_Format,
+        PyErr_NewException,
+        PyErr_SetString,
+        PyExc_ArithmeticError,
+        PyExc_RuntimeError,
+        PyExc_TypeError,
+        PyExc_ZeroDivisionError,
+        PyImport_ImportModule,
+        PyLong_FromSsize_t,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyMem_Realloc,
+        PyMethodDef,
+        PyModule_Add,
+        PyModule_AddIntConstant,
+        PyModule_AddObjectRef,
+        PyModule_AddStringConstant,
+        PyModule_AddType,
+        PyObject,
+        PyObject_CallFunction,
+        PyObject_CallMethod,
+        PyObject_CallObject,
+        PyObject_GenericGetAttr,
+        PyObject_GetAttrString,
+        PyObject_HashNotImplemented,
+        PyTuple_New,
+        PyTuple_Pack,
+        PyTuple_SetItem,
+        PyType_FromMetaclass,
+        PyType_GetDict,
+        PyType_Slot,
+        PyType_Spec,
+        PyUnicode_FromString,
+        PyUnicode_InternFromString,
+        Py_NewRef,
+        Py_None,
+        jacpy_is_type,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.bindings.elementtree {
+        NULL,
+        PyExc_SyntaxError,
+        PyImport_ImportModule,
+        PyImport_ImportModuleAttrString,
+        PyModule_AddObjectRef,
+        PyObject,
+        PyObject_GenericGetAttr,
+        PyUnicode_InternFromString
+    }
+    cpython_api --> runtime.python.bindings.errno { PyExc_ImportError }
+    cpython_api --> runtime.python.bindings.fcntl {
+        PyExc_ImportError,
+        PyModule_AddIntConstant,
+        PyObject
+    }
+    cpython_api --> runtime.python.bindings.functools {
+        PyBaseObject_Type,
+        PyDict_New,
+        PyDict_SetItem,
+        PyExc_AttributeError,
+        PyExc_SystemError,
+        PyExc_TypeError,
+        PyObject_CallNoArgs,
+        PyTuple_GetItem,
+        PyVectorcall_NARGS,
+        Py_None,
+        Py_NotImplemented
+    }
+    cpython_api --> runtime.python.bindings.grp { PyExc_ImportError }
+    cpython_api --> runtime.python.bindings.hashopenssl {
+        NULL,
+        PyLong_FromLong,
+        PyModule_Add,
+        PyModule_AddIntConstant,
+        PyObject,
+        Py_TYPE,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.bindings.heapq { PyUnicode_FromString }
+    cpython_api --> runtime.python.bindings.hmac { PyExc_ValueError }
+    cpython_api --> runtime.python.bindings.json {
+        PyExc_SystemError,
+        PyExc_TypeError,
+        Py_None
+    }
+    cpython_api --> runtime.python.bindings.locale {
+        NULL,
+        PyExc_ImportError,
+        PyModule_AddIntConstant,
+        PyObject,
+        jacpy_char_max
+    }
+    cpython_api --> runtime.python.bindings.lsprof {
+        PyObject,
+        jacpy_struct_sequence_type
+    }
+    cpython_api --> runtime.python.bindings.lzma {
+        NULL,
+        PyLong_FromLongLong,
+        PyModule_Add,
+        PyObject,
+        PyTuple_New,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.bindings.members {
+        PyMemberDef,
+        PyMember_GetOne,
+        PyMember_SetOne,
+        PyObject
+    }
+    cpython_api --> runtime.python.bindings.mmap {
+        PyExc_ImportError,
+        PyExc_OSError,
+        PyModule_AddIntConstant,
+        PyModule_AddObjectRef,
+        PyObject
+    }
+    cpython_api --> runtime.python.bindings.module {
+        PyCFunction_NewEx,
+        PyErr_NoMemory,
+        PyMem_RawCalloc,
+        PyMethodDef
+    }
+    cpython_api --> runtime.python.bindings.multibytecodec {
+        NULL,
+        PyObject,
+        PyUnicode_InternFromString,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.bindings.multiprocessing {
+        PyDict_New,
+        PyDict_SetItemString,
+        PyLong_FromLong,
+        PyObject,
+        PyType_GetDict,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.bindings.operator {
+        PyExc_SystemError,
+        PyExc_TypeError
+    }
+    cpython_api --> runtime.python.bindings.pickle { PyExc_TypeError, Py_None }
+    cpython_api --> runtime.python.bindings.posix {
+        NULL,
+        PyDict_New,
+        PyDict_SetItemString,
+        PyExc_ImportError,
+        PyExc_OSError,
+        PyList_Append,
+        PyList_New,
+        PyLong_FromLong,
+        PyMethodDef,
+        PyModule_AddIntConstant,
+        PyModule_AddObjectRef,
+        PyObject,
+        PyObject_SelfIter,
+        PyType_Modified,
+        PyUnicode_FromString,
+        PyUnicode_InternFromString,
+        _PyType_AddMethod,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.bindings.posixshmem { PyObject }
+    cpython_api --> runtime.python.bindings.posixsubprocess {
+        PyExc_ImportError,
+        PyObject
+    }
+    cpython_api --> runtime.python.bindings.pwd { PyExc_ImportError }
+    cpython_api --> runtime.python.bindings.pyexpat {
+        NULL,
+        PyModule_Add,
+        PyModule_AddIntConstant,
+        PyModule_AddObjectRef,
+        PyModule_AddStringConstant,
+        PyObject,
+        PyUnicode_InternFromString
+    }
+    cpython_api --> runtime.python.bindings.references {
+        PyObject_Call,
+        PyObject_GetAttrString
+    }
+    cpython_api --> runtime.python.bindings.resource {
+        PyExc_ImportError,
+        PyExc_OSError
+    }
+    cpython_api --> runtime.python.bindings.select {
+        PyErr_Clear,
+        PyExc_ImportError,
+        PyExc_OSError,
+        PyModule_AddIntConstant,
+        PyModule_AddObjectRef,
+        PyObject,
+        PyObject_DelAttrString,
+        PyUnicode_InternFromString,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.bindings.socket {
+        NULL,
+        PyErr_NewException,
+        PyErr_NoMemory,
+        PyExc_ImportError,
+        PyExc_OSError,
+        PyExc_TimeoutError,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyMemberDef,
+        PyMethodDef,
+        PyModule_Add,
+        PyModule_AddIntConstant,
+        PyModule_AddObjectRef,
+        PyModule_AddType,
+        PyObject,
+        PyThread_allocate_lock,
+        PyType_FromMetaclass,
+        PyType_Slot,
+        PyType_Spec,
+        Py_NewRef,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.bindings.sqlite3 {
+        NULL,
+        PyDict_New,
+        PyExc_Exception,
+        PyImport_ImportModuleAttrString,
+        PyLong_FromLong,
+        PyModule_AddIntConstant,
+        PyModule_AddObjectRef,
+        PyObject,
+        PyObject_CallFinalizerFromDealloc,
+        PyUnicode_InternFromString,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.bindings.sre {
+        NULL,
+        PyLong_FromUnsignedLong,
+        PyMemberDef,
+        PyMethodDef,
+        PyModule_Add,
+        PyModule_AddIntConstant,
+        PyModule_AddStringConstant,
+        PyObject,
+        PyType_FromModuleAndSpec,
+        PyType_Slot,
+        PyType_Spec,
+        Py_None,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.bindings.ssl {
+        NULL,
+        PyArg_ParseTuple,
+        PyDict_New,
+        PyDict_SetItem,
+        PyErr_NewExceptionWithDoc,
+        PyErr_NoMemory,
+        PyErr_SetString,
+        PyExc_OSError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyLong_FromLong,
+        PyLong_FromUnsignedLongLong,
+        PyMem_Free,
+        PyModule_Add,
+        PyModule_AddIntConstant,
+        PyModule_AddObjectRef,
+        PyModule_AddStringConstant,
+        PyObject,
+        PyObject_Str,
+        PyThread_allocate_lock,
+        PyTuple_Pack,
+        PyTuple_Size,
+        PyType_FromSpecWithBases,
+        PyType_Slot,
+        PyType_Spec,
+        PyUnicode_FromString,
+        PyUnicode_InternFromString,
+        Py_BuildValue,
+        Py_NewRef,
+        Py_TYPE,
+        Py_buffer,
+        jacpy_buffer_release,
+        jacpy_is_unicode,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.bindings.stat { PyExc_ImportError }
+    cpython_api --> runtime.python.bindings.struct {
+        PyExc_IndexError,
+        PyExc_TypeError,
+        PyNumber_AsSsize_t,
+        Py_None
+    }
+    cpython_api --> runtime.python.bindings.syslog {
+        PyExc_ImportError,
+        PyExc_TypeError
+    }
+    cpython_api --> runtime.python.bindings.termios {
+        NULL,
+        PyExc_ImportError,
+        PyLong_FromUnsignedLong,
+        PyModule_AddIntConstant,
+        PyObject
+    }
+    cpython_api --> runtime.python.bindings.time {
+        PyExc_ImportError,
+        PyModule_AddIntConstant,
+        PyObject,
+        jacpy_struct_sequence_type
+    }
+    cpython_api --> runtime.python.bindings.type {
+        PyErr_NoMemory,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyMem_RawCalloc,
+        PyType_GetSlot,
+        Py_TYPE
+    }
+    cpython_api --> runtime.python.bindings.types {
+        PyAsyncGen_Type,
+        PyCFunction_Type,
+        PyCapsule_Type,
+        PyCell_Type,
+        PyClassMethodDescr_Type,
+        PyCode_Type,
+        PyCoro_Type,
+        PyDictProxy_Type,
+        PyEllipsis_Type,
+        PyFrame_Type,
+        PyFunction_Type,
+        PyGen_Type,
+        PyGetSetDescr_Type,
+        PyMemberDescr_Type,
+        PyMethodDescr_Type,
+        PyMethod_Type,
+        PyModule_Type,
+        PyTraceBack_Type,
+        PyWrapperDescr_Type,
+        Py_GenericAliasType,
+        _PyMethodWrapper_Type,
+        _PyNamespace_Type,
+        _PyNone_Type,
+        _PyNotImplemented_Type,
+        _PyUnion_Type
+    }
+    cpython_api --> runtime.python.bindings.typing {
+        _PyTypeAlias_Type,
+        _PyUnion_Type,
+        _Py_NoDefaultStruct,
+        jacpy_typing_types
+    }
+    cpython_api --> runtime.python.bindings.unicodedata {
+        PyModule_Add,
+        PyModule_AddStringConstant,
+        PyModule_AddType,
+        PyObject,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.bindings.uuid { PyModule_AddIntConstant, PyObject }
+    cpython_api --> runtime.python.bindings.weakref {
+        _PyWeakref_CallableProxyType,
+        _PyWeakref_ProxyType,
+        _PyWeakref_RefType
+    }
+    cpython_api --> runtime.python.bindings.zoneinfo { PyModule_AddObjectRef, PyObject }
+    cpython_api --> runtime.python.bindings.zstd {
+        NULL,
+        PyLong_FromLong,
+        PyLong_FromSize_t,
+        PyModule_AddIntConstant,
+        PyObject,
+        PyObject_SetAttrString,
+        PyType_Freeze,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.capi {
+        PyBool_Type,
+        PyByteArray_Type,
+        PyBytes_Type,
+        PyDict_Type,
+        PyFloat_Type,
+        PyFrozenSet_Type,
+        PyFunction_Type,
+        PyList_Type,
+        PyLong_Type,
+        PyMem_RawMalloc,
+        PyObject_CallMethod,
+        PyPickleBuffer_Type,
+        PySet_Type,
+        PySys_AuditTuple,
+        PyTuple_Type,
+        PyType_Type,
+        PyUnicode_DecodeUTF8Stateful,
+        PyUnicode_Type,
+        Py_TYPE,
+        _PyNone_Type,
+        jacpy_bytes_from_memory,
+        jacpy_set_exception,
+        jacpy_unicode_decode_bytes
+    }
+    cpython_api --> runtime.python.constant_output { Py_Ellipsis, Py_None }
+    cpython_api --> runtime.python.layouts {
+        PyMemberDef,
+        PyMethodDef,
+        PyObject,
+        PyType_Slot,
+        PyType_Spec,
+        Py_buffer,
+        Py_complex
+    }
+    cpython_api --> runtime.python.modules.abc {
+        NULL,
+        PyDict_Pop,
+        PyErr_Clear,
+        PyErr_ExceptionMatches,
+        PyExc_AssertionError,
+        PyExc_RuntimeError,
+        PyExc_SystemError,
+        PyExc_TypeError,
+        PyIter_Next,
+        PyList_GetItemRef,
+        PyLong_AsLong,
+        PyLong_FromUnsignedLongLong,
+        PyMapping_Items,
+        PyObject,
+        PyObject_CallNoArgs,
+        PyObject_CallOneArg,
+        PyObject_GetAttr,
+        PyObject_GetIter,
+        PyObject_GetOptionalAttr,
+        PyObject_IsSubclass,
+        PyObject_IsTrue,
+        PyObject_SetAttr,
+        PySequence_Fast,
+        PySet_Add,
+        PySet_Clear,
+        PySet_Contains,
+        PySet_Discard,
+        PySet_New,
+        PySet_Size,
+        PyTuple_Size,
+        PyType_GetFlags,
+        PyType_GetModule,
+        PyType_IsSubtype,
+        PyWeakref_GetRef,
+        PyWeakref_NewRef,
+        Py_NewRef,
+        Py_NotImplemented,
+        Py_TYPE,
+        _PyObject_IsAbstract,
+        _PyType_GetDict,
+        _PyType_SetFlags,
+        _PyType_SetFlagsRecursive,
+        jacpy_error_pending,
+        jacpy_fast_item,
+        jacpy_fast_size,
+        jacpy_is_exact_long,
+        jacpy_is_list,
+        jacpy_is_tuple,
+        jacpy_is_type,
+        jacpy_list_size,
+        jacpy_release,
+        jacpy_set_new,
+        jacpy_tuple_item
+    }
+    cpython_api --> runtime.python.modules.array {
+        PyExc_BufferError,
+        PyExc_EOFError,
+        PyExc_IndexError,
+        PyExc_MemoryError,
+        PyExc_OverflowError,
+        PyExc_RuntimeError,
+        PyExc_SystemError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyLong_AsSsize_t,
+        PyLong_FromVoidPtr,
+        PyType_IsSubtype,
+        Py_None,
+        Py_TYPE,
+        jacpy_builtins,
+        jacpy_dict_get,
+        jacpy_is_list,
+        jacpy_is_long,
+        jacpy_is_type,
+        jacpy_optional_attr
+    }
+    cpython_api --> runtime.python.modules.asyncio {
+        NULL,
+        PyCFunction_NewEx,
+        PyContext_CopyCurrent,
+        PyContext_Enter,
+        PyContext_Exit,
+        PyDict_New,
+        PyDict_SetItem,
+        PyErr_ExceptionMatches,
+        PyErr_Format,
+        PyErr_FormatUnraisable,
+        PyErr_GetRaisedException,
+        PyErr_GivenExceptionMatches,
+        PyErr_NormalizeException,
+        PyErr_Restore,
+        PyErr_SetObject,
+        PyErr_SetRaisedException,
+        PyErr_SetString,
+        PyErr_WarnEx,
+        PyExc_AttributeError,
+        PyExc_DeprecationWarning,
+        PyExc_KeyboardInterrupt,
+        PyExc_RuntimeError,
+        PyExc_SystemExit,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyException_GetTraceback,
+        PyFrozenSet_New,
+        PyGen_Type,
+        PyIter_Send,
+        PyList_Append,
+        PyList_Extend,
+        PyList_GetItem,
+        PyList_New,
+        PyList_SetItem,
+        PyList_SetSlice,
+        PyList_Size,
+        PyLong_FromLong,
+        PyLong_FromSsize_t,
+        PyLong_FromUnsignedLongLong,
+        PyMethodDef,
+        PyObject,
+        PyObject_CallFinalizerFromDealloc,
+        PyObject_CallMethodObjArgs,
+        PyObject_CallNoArgs,
+        PyObject_CallOneArg,
+        PyObject_ClearManagedDict,
+        PyObject_ClearWeakRefs,
+        PyObject_GC_Del,
+        PyObject_GC_Track,
+        PyObject_GC_UnTrack,
+        PyObject_GetAttr,
+        PyObject_GetOptionalAttr,
+        PyObject_IsInstance,
+        PyObject_IsTrue,
+        PyObject_RichCompareBool,
+        PyObject_SetAttr,
+        PyObject_Str,
+        PyObject_Vectorcall,
+        PyObject_VisitManagedDict,
+        PySet_Add,
+        PySet_Discard,
+        PySet_New,
+        PyTraceBack_Type,
+        PyTuple_GetItem,
+        PyTuple_New,
+        PyTuple_Size,
+        PyUnicode_FromFormat,
+        PyUnicode_FromString,
+        Py_NewRef,
+        Py_None,
+        Py_TYPE,
+        _PyArg_CheckPositional,
+        _PyErr_ChainExceptions1,
+        _PyGen_FetchStopIterationValue,
+        _PyGen_SetStopIterationValue,
+        _PyObject_GC_New,
+        _PyType_Name,
+        jacpy_asyncio_add_tasks,
+        jacpy_asyncio_thread_task,
+        jacpy_dict_size,
+        jacpy_is_exact_long,
+        jacpy_is_exact_unicode,
+        jacpy_release,
+        jacpy_tuple_set_owned
+    }
+    cpython_api --> runtime.python.modules.asyncio.call_with_task { PyObject_Call }
+    cpython_api --> runtime.python.modules.asyncio_core {
+        NULL,
+        PyCoro_Type,
+        PyErr_Format,
+        PyErr_GivenExceptionMatches,
+        PyErr_SetObject,
+        PyErr_SetString,
+        PyExc_BaseException,
+        PyExc_RuntimeError,
+        PyExc_StopIteration,
+        PyExc_TypeError,
+        PyException_GetTraceback,
+        PyException_SetCause,
+        PyException_SetContext,
+        PyException_SetTraceback,
+        PyInterpreterState_Get,
+        PyList_Append,
+        PyList_GetItem,
+        PyList_New,
+        PyList_SetItem,
+        PyList_Size,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyObject,
+        PyObject_CallMethodObjArgs,
+        PyObject_CallNoArgs,
+        PyObject_CallOneArg,
+        PyObject_GetAttr,
+        PyObject_GetOptionalAttr,
+        PyObject_IsTrue,
+        PyObject_VectorcallMethod,
+        PySet_Add,
+        PySet_Contains,
+        PySet_Discard,
+        PySet_New,
+        PySet_Size,
+        PyTuple_GetItem,
+        PyTuple_New,
+        PyType_IsSubtype,
+        PyUnicode_FromString,
+        PyUnicode_InternFromString,
+        Py_NewRef,
+        Py_None,
+        Py_TYPE,
+        _Py_IsInterpreterFinalizing,
+        jacpy_asyncio_running_loop,
+        jacpy_asyncio_running_task,
+        jacpy_asyncio_tasks_head,
+        jacpy_is_type,
+        jacpy_release,
+        jacpy_tuple_set_owned
+    }
+    cpython_api --> runtime.python.modules.atexit {
+        PyErr_FormatUnraisable,
+        PyExc_TypeError,
+        PyList_New,
+        PyMem_Free,
+        Py_None
+    }
+    cpython_api --> runtime.python.modules.binascii {
+        PyExc_SystemError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyLong_AsUnsignedLongMask,
+        PySequence_Size,
+        PyUnicode_ReadChar,
+        jacpy_is_bytes,
+        jacpy_is_unicode,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.modules.bisect {
+        PyExc_ValueError,
+        PyList_Insert,
+        PyObject_CallMethod,
+        PyObject_IsTrue,
+        Py_NewRef,
+        Py_None,
+        Py_NotImplemented,
+        jacpy_is_exact_list
+    }
+    cpython_api --> runtime.python.modules.blake2 {
+        PyExc_OverflowError,
+        PyExc_ValueError
+    }
+    cpython_api --> runtime.python.modules.bz2 {
+        PyExc_EOFError,
+        PyExc_MemoryError,
+        PyExc_OSError,
+        PyExc_RuntimeError,
+        PyExc_SystemError,
+        PyExc_ValueError
+    }
+    cpython_api --> runtime.python.modules.cjkcodecs {
+        NULL,
+        PyErr_NoMemory,
+        PyExc_LookupError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyImport_ImportModule,
+        PyImport_ImportModuleAttrString,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyModule_Add,
+        PyObject,
+        PyObject_CallOneArg,
+        PyObject_GetAttrString,
+        PyUnicodeWriter,
+        PyUnicodeWriter_WriteChar,
+        PyUnicode_AsUTF8,
+        Py_NewRef,
+        jacpy_is_unicode,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.modules.cmath {
+        PyErr_ExceptionMatches,
+        PyExc_OverflowError,
+        PyExc_ValueError,
+        PyExc_ZeroDivisionError
+    }
+    cpython_api --> runtime.python.modules.codecs {
+        NULL,
+        PyBytes_AsString,
+        PyBytes_DecodeEscape,
+        PyBytes_Size,
+        PyCodec_Decode,
+        PyCodec_Encode,
+        PyCodec_LookupError,
+        PyCodec_Register,
+        PyCodec_RegisterError,
+        PyCodec_Unregister,
+        PyExc_OverflowError,
+        PyLong_FromLong,
+        PyLong_FromSsize_t,
+        PyObject,
+        PyUnicode_AsRawUnicodeEscapeString,
+        PyUnicode_AsUnicodeEscapeString,
+        PyUnicode_BuildEncodingMap,
+        PyUnicode_DecodeASCII,
+        PyUnicode_DecodeCharmap,
+        PyUnicode_DecodeLatin1,
+        PyUnicode_DecodeUTF16Stateful,
+        PyUnicode_DecodeUTF32Stateful,
+        PyUnicode_DecodeUTF7Stateful,
+        PyUnicode_DecodeUTF8Stateful,
+        PyUnicode_GetDefaultEncoding,
+        PyUnicode_GetLength,
+        Py_NewRef,
+        _PyBytes_Resize,
+        _PyCodec_Lookup,
+        _PyCodec_UnregisterError,
+        _PyUnicode_AsASCIIString,
+        _PyUnicode_AsLatin1String,
+        _PyUnicode_AsUTF8String,
+        _PyUnicode_DecodeRawUnicodeEscapeStateful,
+        _PyUnicode_DecodeUnicodeEscapeStateful,
+        _PyUnicode_EncodeCharmap,
+        _PyUnicode_EncodeUTF16,
+        _PyUnicode_EncodeUTF32,
+        _PyUnicode_EncodeUTF7,
+        jacpy_buffer_new,
+        jacpy_bytes_from_memory
+    }
+    cpython_api --> runtime.python.modules.codecs_cn { PyObject }
+    cpython_api --> runtime.python.modules.codecs_hk { PyObject }
+    cpython_api --> runtime.python.modules.codecs_iso2022 {
+        PyErr_NoMemory,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyObject
+    }
+    cpython_api --> runtime.python.modules.codecs_jp { PyObject }
+    cpython_api --> runtime.python.modules.codecs_kr { PyObject }
+    cpython_api --> runtime.python.modules.codecs_tw { PyObject }
+    cpython_api --> runtime.python.modules.collections {
+        PyErr_SetObject,
+        PyExc_IndexError,
+        PyExc_KeyError,
+        PyExc_MemoryError,
+        PyExc_RuntimeError,
+        PyExc_SystemError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyLong_AsSsize_t,
+        PyTuple_Pack,
+        Py_None,
+        Py_TYPE,
+        _PyObject_GetState
+    }
+    cpython_api --> runtime.python.modules.combinatorics {
+        PyExc_MemoryError,
+        PyExc_OverflowError
+    }
+    cpython_api --> runtime.python.modules.csv {
+        PyErr_ExceptionMatches,
+        PyExc_SystemError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyLong_AsLong,
+        Py_None
+    }
+    cpython_api --> runtime.python.modules.datetime {
+        NULL,
+        PyArg_UnpackTuple,
+        PyObject
+    }
+    cpython_api --> runtime.python.modules.datetime_date {
+        NULL,
+        PyBytes_Size,
+        PyErr_ExceptionMatches,
+        PyErr_Format,
+        PyErr_SetString,
+        PyExc_OverflowError,
+        PyExc_TypeError,
+        PyExc_UnicodeEncodeError,
+        PyExc_ValueError,
+        PyImport_ImportModule,
+        PyLong_FromLong,
+        PyObject,
+        PyObject_CallMethod,
+        PyObject_GenericGetAttr,
+        PyObject_Str,
+        PyTuple_GetItem,
+        PyTuple_SetItem,
+        PyTuple_Size,
+        PyType_GetSlot,
+        PyUnicode_AsLatin1String,
+        PyUnicode_AsUTF8AndSize,
+        PyUnicode_FromFormat,
+        PyUnicode_GetLength,
+        PyUnicode_ReadChar,
+        Py_BuildValue,
+        Py_HashBuffer,
+        Py_NewRef,
+        _PyTime_ObjectToTime_t,
+        _PyTime_localtime,
+        jacpy_bytes_address,
+        jacpy_is_bytes,
+        jacpy_is_unicode,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.modules.datetime_datetime {
+        NULL,
+        PyBytes_Size,
+        PyErr_ExceptionMatches,
+        PyErr_Format,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_SetString,
+        PyErr_WarnEx,
+        PyExc_DeprecationWarning,
+        PyExc_OverflowError,
+        PyExc_TypeError,
+        PyExc_UnicodeEncodeError,
+        PyExc_ValueError,
+        PyFloat_FromDouble,
+        PyLong_FromLong,
+        PyObject,
+        PyObject_CallMethod,
+        PyObject_GenericGetAttr,
+        PyObject_Hash,
+        PyObject_Init,
+        PyObject_Malloc,
+        PyTime_Time,
+        PyTuple_GetItem,
+        PyTuple_Pack,
+        PyTuple_Size,
+        PyUnicode_AsLatin1String,
+        PyUnicode_AsUTF8AndSize,
+        PyUnicode_DecodeLocale,
+        PyUnicode_FromFormat,
+        PyUnicode_FromString,
+        PyUnicode_GetLength,
+        PyUnicode_ReadChar,
+        PyUnicode_WriteChar,
+        Py_BuildValue,
+        Py_NewRef,
+        Py_None,
+        _PyLong_AsTime_t,
+        _PyTime_AsTimevalTime_t,
+        _PyTime_ObjectToTimeval,
+        _PyTime_gmtime,
+        _PyTime_localtime,
+        _PyUnicode_Copy,
+        jacpy_bytes_address,
+        jacpy_is_bytes,
+        jacpy_is_unicode,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.modules.datetime_delta {
+        NULL,
+        PyErr_Format,
+        PyErr_Occurred,
+        PyErr_SetString,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyFloat_AsDouble,
+        PyLong_AsDouble,
+        PyLong_FromDouble,
+        PyLong_FromLong,
+        PyMemberDef,
+        PyNumber_Add,
+        PyNumber_And,
+        PyNumber_FloorDivide,
+        PyNumber_Multiply,
+        PyNumber_Remainder,
+        PyNumber_TrueDivide,
+        PyObject,
+        PyObject_CallMethod,
+        PyObject_GenericGetAttr,
+        PyObject_Hash,
+        PyObject_IsTrue,
+        PyTuple_GetItem,
+        PyTuple_Pack,
+        PyTuple_Size,
+        PyUnicode_FromFormat,
+        PyUnicode_FromString,
+        PyUnicode_GetLength,
+        Py_BuildValue,
+        Py_GetConstant,
+        Py_GetConstantBorrowed,
+        Py_NewRef,
+        _PyLong_DivmodNear,
+        jacpy_is_float,
+        jacpy_is_long,
+        jacpy_is_tuple,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.modules.datetime_format {
+        NULL,
+        PyErr_Occurred,
+        PyErr_SetString,
+        PyExc_TypeError,
+        PyImport_ImportModuleAttrString,
+        PyLong_AsLong,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyNumber_Long,
+        PyObject,
+        PyObject_CallFunction,
+        PyObject_CallMethod,
+        PyObject_CallNoArgs,
+        PySequence_GetItem,
+        PyUnicodeWriter,
+        PyUnicodeWriter_Create,
+        PyUnicodeWriter_Discard,
+        PyUnicodeWriter_Finish,
+        PyUnicodeWriter_WriteStr,
+        PyUnicodeWriter_WriteSubstring,
+        PyUnicode_FindChar,
+        PyUnicode_FromFormat,
+        PyUnicode_FromString,
+        PyUnicode_GetLength,
+        PyUnicode_ReadChar,
+        PyUnicode_Substring,
+        Py_NewRef,
+        Py_None,
+        jacpy_is_unicode,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.modules.datetime_objects {
+        NULL,
+        PyDict_GetItemRef,
+        PyDict_New,
+        PyDict_SetItem,
+        PyDict_SetItemString,
+        PyErr_Format,
+        PyErr_FormatUnraisable,
+        PyErr_GetRaisedException,
+        PyErr_Occurred,
+        PyErr_SetRaisedException,
+        PyErr_SetString,
+        PyExc_OverflowError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyImport_ImportModule,
+        PyInterpreterState,
+        PyInterpreterState_Get,
+        PyInterpreterState_GetDict,
+        PyLong_AsInt,
+        PyLong_FromLong,
+        PyNumber_Add,
+        PyNumber_Divmod,
+        PyNumber_FloorDivide,
+        PyNumber_Multiply,
+        PyObject,
+        PyObject_Call,
+        PyObject_CallFunction,
+        PyObject_CallMethod,
+        PyTuple_GetItem,
+        PyTuple_Size,
+        PyUnicode_FromFormat,
+        PyUnicode_GetLength,
+        PyUnicode_InternFromString,
+        PyUnicode_Substring,
+        PyWeakref_GetRef,
+        PyWeakref_NewRef,
+        Py_BuildValue,
+        Py_NewRef,
+        Py_None,
+        Py_NotImplemented,
+        Py_XNewRef,
+        jacpy_bytes_from_memory,
+        jacpy_is_tuple,
+        jacpy_is_unicode,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.modules.datetime_time {
+        NULL,
+        PyBytes_Size,
+        PyErr_ExceptionMatches,
+        PyErr_Format,
+        PyErr_NoMemory,
+        PyErr_SetString,
+        PyExc_TypeError,
+        PyExc_UnicodeEncodeError,
+        PyExc_ValueError,
+        PyLong_FromLong,
+        PyObject,
+        PyObject_CallFunction,
+        PyObject_CallMethod,
+        PyObject_GenericGetAttr,
+        PyObject_Hash,
+        PyObject_Init,
+        PyObject_Malloc,
+        PyTuple_GetItem,
+        PyTuple_Pack,
+        PyTuple_Size,
+        PyUnicode_AppendAndDel,
+        PyUnicode_AsLatin1String,
+        PyUnicode_AsUTF8AndSize,
+        PyUnicode_FromFormat,
+        PyUnicode_GetLength,
+        PyUnicode_ReadChar,
+        Py_BuildValue,
+        Py_NewRef,
+        Py_None,
+        jacpy_bytes_address,
+        jacpy_is_bytes,
+        jacpy_is_unicode,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.modules.datetime_tzinfo {
+        NULL,
+        PyErr_Format,
+        PyErr_SetString,
+        PyExc_NotImplementedError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyObject,
+        PyObject_CallNoArgs,
+        PyObject_GenericGetAttr,
+        PyObject_GetOptionalAttr,
+        PyTuple_New,
+        PyTuple_Pack,
+        PyType_GenericNew,
+        PyUnicode_FromFormat,
+        PyUnicode_FromString,
+        PyUnicode_InternFromString,
+        Py_BuildValue,
+        Py_NewRef,
+        Py_None,
+        _PyObject_GetState,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.modules.decimal_context {
+        NULL,
+        PyErr_Clear,
+        PyErr_Format,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_SetString,
+        PyExc_AttributeError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyLong_AsSsize_t,
+        PyLong_FromLong,
+        PyLong_FromSsize_t,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyObject,
+        PyObject_CallObject,
+        PyObject_GC_Track,
+        PyObject_GC_UnTrack,
+        PyObject_GenericGetAttr,
+        PyObject_GenericSetAttr,
+        PyObject_GetIter,
+        PyObject_IsTrue,
+        PyTuple_Pack,
+        PyType_GetModule,
+        PyUnicode_CompareWithASCIIString,
+        PyUnicode_FromFormat,
+        PyUnicode_FromString,
+        Py_BuildValue,
+        Py_NewRef,
+        Py_None,
+        Py_NotImplemented,
+        _PyObject_GC_New,
+        jacpy_is_dict,
+        jacpy_is_list,
+        jacpy_is_unicode,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.modules.decimal_convert {
+        NULL,
+        PyErr_Format,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_SetString,
+        PyExc_RuntimeError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyFloat_AsDouble,
+        PyFloat_FromDouble,
+        PyList_AsTuple,
+        PyLongExport,
+        PyLong_AsLong,
+        PyLong_AsSsize_t,
+        PyLong_Export,
+        PyLong_FreeExport,
+        PyLong_GetNativeLayout,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyObject,
+        PyObject_CallOneArg,
+        PyObject_GetAttrString,
+        PyObject_IsInstance,
+        PyTuple_GetItem,
+        PyTuple_Size,
+        PyUnicode_GetLength,
+        PyUnicode_ReadChar,
+        Py_NewRef,
+        Py_None,
+        Py_NotImplemented,
+        _PyUnicode_IsWhitespace,
+        _PyUnicode_ToDecimalDigit,
+        jacpy_is_float,
+        jacpy_is_list,
+        jacpy_is_long,
+        jacpy_is_tuple,
+        jacpy_is_unicode,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.modules.decimal_number {
+        NULL,
+        PyDict_GetItemWithError,
+        PyDict_Size,
+        PyErr_Clear,
+        PyErr_ExceptionMatches,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_SetString,
+        PyErr_WarnEx,
+        PyExc_DeprecationWarning,
+        PyExc_OverflowError,
+        PyExc_RuntimeError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyFloat_AsDouble,
+        PyFloat_FromString,
+        PyImport_ImportModuleAttrString,
+        PyLongWriter,
+        PyLongWriter_Create,
+        PyLongWriter_Finish,
+        PyLong_AsSsize_t,
+        PyLong_FromInt64,
+        PyLong_FromLong,
+        PyLong_FromSize_t,
+        PyLong_FromSsize_t,
+        PyLong_FromUnsignedLong,
+        PyLong_GetNativeLayout,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyObject,
+        PyObject_Call,
+        PyObject_CallFunction,
+        PyObject_CallMethod,
+        PyObject_CallOneArg,
+        PyObject_GC_UnTrack,
+        PyObject_GenericHash,
+        PyTuple_GetItem,
+        PyTuple_New,
+        PyTuple_Pack,
+        PyTuple_SetItem,
+        PyTuple_Size,
+        PyUnicode_AsUTF8AndSize,
+        PyUnicode_AsUTF8String,
+        PyUnicode_DecodeASCII,
+        PyUnicode_FromFormat,
+        PyUnicode_FromString,
+        PyUnicode_FromWideChar,
+        Py_BuildValue,
+        Py_NewRef,
+        Py_None,
+        Py_NotImplemented,
+        _PyLong_GCD,
+        jacpy_bytes_address,
+        jacpy_bytes_from_memory,
+        jacpy_is_dict,
+        jacpy_is_long,
+        jacpy_is_unicode,
+        jacpy_memory_copy,
+        jacpy_release,
+        jacpy_unicode_decode_bytes
+    }
+    cpython_api --> runtime.python.modules.decimal_objects {
+        NULL,
+        PyContextVar_Get,
+        PyContextVar_Set,
+        PyDict_GetItemWithError,
+        PyDict_New,
+        PyDict_SetItem,
+        PyDict_Size,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_SetObject,
+        PyErr_SetString,
+        PyExc_KeyError,
+        PyExc_RuntimeError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyList_Append,
+        PyList_GetItem,
+        PyList_New,
+        PyList_Size,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyObject,
+        PyObject_CallObject,
+        PyObject_GC_Track,
+        PyObject_IsTrue,
+        PyType_GetBaseByToken,
+        PyType_GetModule,
+        PyType_IsSubtype,
+        PyType_Spec,
+        PyUnicode_Compare,
+        Py_NewRef,
+        Py_None,
+        _PyObject_GC_New,
+        jacpy_is_dict,
+        jacpy_is_unicode,
+        jacpy_memory_copy,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.modules.elementtree {
+        NULL,
+        PyBytes_AsString,
+        PyBytes_Concat,
+        PyBytes_Size,
+        PyBytes_Type,
+        PyCallable_Check,
+        PyDict_Copy,
+        PyDict_GetItemStringRef,
+        PyDict_GetItemWithError,
+        PyDict_Items,
+        PyDict_Keys,
+        PyDict_New,
+        PyDict_Next,
+        PyDict_PopString,
+        PyDict_SetItem,
+        PyDict_Size,
+        PyDict_Type,
+        PyDict_Update,
+        PyErr_Clear,
+        PyErr_ExceptionMatches,
+        PyErr_Format,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_SetNone,
+        PyErr_SetObject,
+        PyErr_WarnEx,
+        PyExc_AttributeError,
+        PyExc_DeprecationWarning,
+        PyExc_ImportError,
+        PyExc_IndexError,
+        PyExc_OverflowError,
+        PyExc_RuntimeError,
+        PyExc_RuntimeWarning,
+        PyExc_StopIteration,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyImport_ImportModuleAttrString,
+        PyIndex_Check,
+        PyList_Append,
+        PyList_GetItem,
+        PyList_New,
+        PyList_SetItem,
+        PyList_SetSlice,
+        PyList_Size,
+        PyLong_FromLong,
+        PyLong_FromSsize_t,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyMem_Realloc,
+        PyNumber_Add,
+        PyNumber_AsSsize_t,
+        PyObject,
+        PyObject_CallFunction,
+        PyObject_CallFunctionObjArgs,
+        PyObject_CallMethodObjArgs,
+        PyObject_CallNoArgs,
+        PyObject_CallOneArg,
+        PyObject_GetAttr,
+        PyObject_GetAttrString,
+        PyObject_HasAttrWithError,
+        PyObject_IsTrue,
+        PyObject_RichCompareBool,
+        PyObject_SetAttr,
+        PyObject_SetAttrString,
+        PyObject_Vectorcall,
+        PySequence_Fast,
+        PyTuple_GetItem,
+        PyTuple_New,
+        PyTuple_Pack,
+        PyTuple_Size,
+        PyType_GetModule,
+        PyUnicode_AsEncodedString,
+        PyUnicode_AsUTF8,
+        PyUnicode_AsUTF8AndSize,
+        PyUnicode_DecodeUTF8Stateful,
+        PyUnicode_FromFormat,
+        PyUnicode_FromString,
+        PyUnicode_GetLength,
+        PyUnicode_Join,
+        PyUnicode_ReadChar,
+        PyUnstable_Object_IsUniquelyReferenced,
+        Py_GetConstant,
+        Py_LeaveRecursiveCall,
+        Py_NewRef,
+        Py_None,
+        Py_ReprEnter,
+        Py_ReprLeave,
+        Py_TYPE,
+        _Py_HashSecret,
+        jacpy_bytes_from_memory,
+        jacpy_is_bytes,
+        jacpy_is_dict,
+        jacpy_is_exact_dict,
+        jacpy_is_exact_list,
+        jacpy_is_exact_unicode,
+        jacpy_is_list,
+        jacpy_is_slice,
+        jacpy_is_unicode,
+        jacpy_memory_copy,
+        jacpy_recursion_enter,
+        jacpy_release,
+        jacpy_tuple_set_owned,
+        jacpy_type_check,
+        jacpy_type_name
+    }
+    cpython_api --> runtime.python.modules.expat {
+        PyMem_Free,
+        PyMem_Malloc,
+        PyMem_Realloc
+    }
+    cpython_api --> runtime.python.modules.fcntl {
+        NULL,
+        PyErr_CheckSignals,
+        PyErr_Clear,
+        PyErr_ExceptionMatches,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_SetFromErrno,
+        PyEval_RestoreThread,
+        PyEval_SaveThread,
+        PyExc_BufferError,
+        PyExc_OSError,
+        PyExc_OverflowError,
+        PyExc_SystemError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyIndex_Check,
+        PyLong_AsLong,
+        PyLong_AsLongLong,
+        PyLong_AsUnsignedLongMask,
+        PyLong_FromLong,
+        PyLong_FromUnsignedLong,
+        PyMem_Calloc,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyObject,
+        PyObject_CheckBuffer,
+        Py_NewRef,
+        jacpy_bytes_from_memory,
+        jacpy_errno,
+        jacpy_is_bytes,
+        jacpy_is_long,
+        jacpy_is_unicode,
+        jacpy_memory_copy
+    }
+    cpython_api --> runtime.python.modules.functools {
+        PyDict_Next,
+        PyErr_ExceptionMatches,
+        PyExc_SystemError,
+        PyExc_TypeError,
+        PyODict_Type,
+        PyObject_CallNoArgs,
+        Py_None
+    }
+    cpython_api --> runtime.python.modules.grouping { Py_None }
+    cpython_api --> runtime.python.modules.grp { PyExc_KeyError, PyExc_ValueError }
+    cpython_api --> runtime.python.modules.hashlib {
+        PyExc_BufferError,
+        PyExc_SystemError,
+        PyExc_TypeError,
+        jacpy_crypto_compare,
+        jacpy_unicode_ascii
+    }
+    cpython_api --> runtime.python.modules.hashopenssl {
+        NULL,
+        PyDictProxy_New,
+        PyDict_GetItemWithError,
+        PyDict_New,
+        PyDict_SetItem,
+        PyErr_Format,
+        PyErr_NewException,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyEval_RestoreThread,
+        PyEval_SaveThread,
+        PyExc_OverflowError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyFrozenSet_New,
+        PyLong_AsLong,
+        PyLong_FromLong,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyModule_Add,
+        PyModule_AddObjectRef,
+        PyObject,
+        PyObject_GetAttrString,
+        PySet_Add,
+        PyThread_acquire_lock,
+        PyThread_release_lock,
+        PyUnicode_AsUTF8,
+        PyUnicode_FromFormat,
+        PyUnicode_FromString,
+        Py_NewRef,
+        Py_None,
+        Py_TYPE,
+        _Py_strhex,
+        jacpy_bytes_address,
+        jacpy_bytes_from_memory,
+        jacpy_is_unicode,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.modules.heapq {
+        PyExc_IndexError,
+        PyExc_RuntimeError,
+        Py_None
+    }
+    cpython_api --> runtime.python.modules.hmac {
+        PyExc_OverflowError,
+        PyExc_RuntimeError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        Py_None
+    }
+    cpython_api --> runtime.python.modules.iterators { PyExc_ValueError, Py_None }
+    cpython_api --> runtime.python.modules.itertools {
+        NULL,
+        PyErr_Clear,
+        PyExc_OverflowError,
+        PyExc_RuntimeError,
+        PyExc_SystemError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyLong_AsSsize_t,
+        PyLong_FromLongLong,
+        PyNumber_AsSsize_t,
+        PyNumber_Check,
+        PyObject,
+        PyType_GetSlot,
+        Py_NewRef,
+        Py_None,
+        Py_TYPE,
+        jacpy_dict_get,
+        jacpy_dict_size,
+        jacpy_error_pending,
+        jacpy_list_size,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.modules.json {
+        PyDict_Next,
+        PyExc_StopIteration,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        Py_None
+    }
+    cpython_api --> runtime.python.modules.locale {
+        NULL,
+        PyBytes_AsString,
+        PyDict_New,
+        PyDict_SetItemString,
+        PyErr_NoMemory,
+        PyErr_SetFromErrno,
+        PyErr_SetString,
+        PyExc_OSError,
+        PyExc_RuntimeError,
+        PyExc_RuntimeWarning,
+        PyExc_ValueError,
+        PyList_New,
+        PyList_SetItem,
+        PyLong_FromLong,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyMem_Realloc,
+        PyObject,
+        PyUnicode_AsWideCharString,
+        PyUnicode_DecodeLocale,
+        PyUnicode_FSConverter,
+        PyUnicode_FromKindAndData,
+        PyUnicode_FromString,
+        Py_NewRef,
+        _PyMem_Strdup,
+        _Py_GetLocaleEncodingObject,
+        _Py_GetLocaleconvNumeric,
+        jacpy_char_max,
+        jacpy_clear_errno,
+        jacpy_errno,
+        jacpy_release,
+        lconv
+    }
+    cpython_api --> runtime.python.modules.lsprof {
+        NULL,
+        PyCFunction_Type,
+        PyErr_Clear,
+        PyErr_FormatUnraisable,
+        PyErr_GetRaisedException,
+        PyErr_SetRaisedException,
+        PyExc_MemoryError,
+        PyExc_RuntimeError,
+        PyExc_SystemError,
+        PyExc_ValueError,
+        PyFloat_FromDouble,
+        PyImport_ImportModuleAttrString,
+        PyList_Append,
+        PyList_New,
+        PyLong_FromLong,
+        PyMethodDef,
+        PyMethodDescr_Type,
+        PyModule_GetNameObject,
+        PyModule_Type,
+        PyObject,
+        PyObject_CallNoArgs,
+        PyObject_GetAttrString,
+        PyObject_Repr,
+        PyObject_Str,
+        PyThreadState_Get,
+        PyTime_PerfCounterRaw,
+        PyType_GetModule,
+        PyUnicode_FromFormat,
+        PyUnicode_FromString,
+        Py_NewRef,
+        Py_TYPE,
+        _PyEval_SetProfile,
+        _PyTime_FromLong,
+        _PyTime_FromSeconds,
+        _PyTime_FromSecondsObject,
+        _PyType_LookupRef,
+        _PyUnicode_EqualToASCIIString,
+        jacpy_cfunction_method,
+        jacpy_cfunction_module,
+        jacpy_cfunction_self,
+        jacpy_is_unicode,
+        jacpy_release,
+        jacpy_type_check
+    }
+    cpython_api --> runtime.python.modules.lzma {
+        NULL,
+        PyBytes_AsString,
+        PyDict_Keys,
+        PyDict_New,
+        PyDict_SetItem,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_SetNone,
+        PyEval_RestoreThread,
+        PyEval_SaveThread,
+        PyExc_EOFError,
+        PyExc_MemoryError,
+        PyExc_OverflowError,
+        PyExc_SystemError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyList_GetItem,
+        PyList_Size,
+        PyLong_AsNativeBytes,
+        PyLong_FromUnsignedLongLong,
+        PyMapping_Check,
+        PyMapping_GetOptionalItemString,
+        PyMem_Calloc,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyMem_RawFree,
+        PyMem_RawMalloc,
+        PyMem_Realloc,
+        PyObject,
+        PySequence_GetItem,
+        PySequence_Size,
+        PyThread_acquire_lock,
+        PyThread_allocate_lock,
+        PyThread_free_lock,
+        PyThread_release_lock,
+        PyType_GetModule,
+        PyUnicode_EqualToUTF8,
+        PyUnicode_InternFromString,
+        Py_None,
+        Py_TYPE,
+        _PyLong_UInt32_Converter,
+        _PyLong_UInt64_Converter,
+        jacpy_buffer_new,
+        jacpy_is_dict,
+        jacpy_is_unicode,
+        jacpy_memory_copy,
+        jacpy_memory_move,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.modules.math {
+        PyExc_OverflowError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyExc_ZeroDivisionError,
+        PyObject_IsTrue,
+        Py_BuildValue,
+        Py_None,
+        _PyLong_Frexp
+    }
+    cpython_api --> runtime.python.modules.mmap {
+        NULL,
+        PyBytes_AsString,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_SetFromErrno,
+        PyEval_RestoreThread,
+        PyEval_SaveThread,
+        PyExc_BufferError,
+        PyExc_IndexError,
+        PyExc_OSError,
+        PyExc_OverflowError,
+        PyExc_SystemError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyIndex_Check,
+        PyLong_AsSsize_t,
+        PyLong_FromLong,
+        PyLong_FromSize_t,
+        PyLong_FromSsize_t,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyNumber_AsSsize_t,
+        PyObject,
+        PySys_AuditTuple,
+        PyUnicode_FromString,
+        Py_NewRef,
+        Py_buffer,
+        _PyBytes_Find,
+        _PyBytes_ReverseFind,
+        _PyNumber_Index,
+        _Py_dup,
+        _Py_fstat,
+        _Py_fstat_noraise,
+        jacpy_bytes_from_memory,
+        jacpy_bytes_length,
+        jacpy_errno,
+        jacpy_is_bytes,
+        jacpy_is_slice,
+        jacpy_release,
+        jacpy_set_errno,
+        jacpy_slice_adjust,
+        jacpy_slice_unpack
+    }
+    cpython_api --> runtime.python.modules.multibytecodec {
+        NULL,
+        PyCodec_LookupError,
+        PyCodec_StrictErrors,
+        PyErr_Clear,
+        PyErr_Format,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_SetObject,
+        PyExc_AttributeError,
+        PyExc_IndexError,
+        PyExc_RuntimeError,
+        PyExc_TypeError,
+        PyExc_UnicodeDecodeError,
+        PyExc_UnicodeEncodeError,
+        PyExc_UnicodeError,
+        PyExc_ValueError,
+        PyLong_AsSsize_t,
+        PyLong_FromSsize_t,
+        PyLong_Type,
+        PyMem_Calloc,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyObject,
+        PyObject_CallFunction,
+        PyObject_CallMethod,
+        PyObject_CallMethodObjArgs,
+        PyObject_CallOneArg,
+        PyObject_GetAttrString,
+        PyObject_Str,
+        PySequence_Check,
+        PySequence_GetItem,
+        PySequence_Length,
+        PyTuple_GetItem,
+        PyTuple_New,
+        PyTuple_Pack,
+        PyTuple_SetItem,
+        PyTuple_Size,
+        PyType_GetModule,
+        PyUnicodeDecodeError_Create,
+        PyUnicodeDecodeError_SetEnd,
+        PyUnicodeDecodeError_SetReason,
+        PyUnicodeDecodeError_SetStart,
+        PyUnicodeEncodeError_SetEnd,
+        PyUnicodeEncodeError_SetReason,
+        PyUnicodeEncodeError_SetStart,
+        PyUnicodeWriter,
+        PyUnicodeWriter_Create,
+        PyUnicodeWriter_Discard,
+        PyUnicodeWriter_Finish,
+        PyUnicodeWriter_WriteChar,
+        PyUnicodeWriter_WriteStr,
+        PyUnicode_Append,
+        PyUnicode_AsUTF8AndSize,
+        PyUnicode_DecodeUTF8Stateful,
+        PyUnicode_FromOrdinal,
+        PyUnicode_Splitlines,
+        PyUnicode_Substring,
+        Py_GetConstant,
+        Py_NewRef,
+        Py_None,
+        Py_TYPE,
+        _PyBytes_Resize,
+        _PyLong_AsByteArray,
+        _PyLong_FromByteArray,
+        jacpy_bytes_address,
+        jacpy_bytes_from_memory,
+        jacpy_bytes_length,
+        jacpy_is_bytes,
+        jacpy_is_long,
+        jacpy_is_tuple,
+        jacpy_is_unicode,
+        jacpy_release,
+        jacpy_unicode_data,
+        jacpy_unicode_kind,
+        jacpy_unicode_size
+    }
+    cpython_api --> runtime.python.modules.multiprocessing {
+        NULL,
+        PyErr_CheckSignals,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_SetFromErrno,
+        PyErr_SetNone,
+        PyEval_RestoreThread,
+        PyEval_SaveThread,
+        PyExc_AssertionError,
+        PyExc_NotImplementedError,
+        PyExc_OSError,
+        PyExc_RuntimeError,
+        PyExc_SystemError,
+        PyExc_ValueError,
+        PyFloat_AsDouble,
+        PyLong_FromLong,
+        PyMem_RawFree,
+        PyObject,
+        PyThreadState,
+        PyThread_get_thread_ident,
+        Py_NewRef,
+        Py_None,
+        jacpy_errno,
+        jacpy_release,
+        jacpy_set_errno
+    }
+    cpython_api --> runtime.python.modules.opcode {
+        PyExc_RuntimeError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        Py_None
+    }
+    cpython_api --> runtime.python.modules.openssl {
+        NULL,
+        PyErr_Format,
+        PyErr_SetString,
+        PyObject
+    }
+    cpython_api --> runtime.python.modules.operator {
+        PyDict_Next,
+        PyExc_RuntimeError,
+        PyExc_TypeError,
+        Py_None
+    }
+    cpython_api --> runtime.python.modules.output_buffer {
+        PyExc_MemoryError,
+        PyExc_SystemError
+    }
+    cpython_api --> runtime.python.modules.pickle {
+        PyErr_Clear,
+        PyErr_ExceptionMatches,
+        PyExc_AttributeError,
+        PyExc_RuntimeError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyObject_Call,
+        PyObject_CallOneArg,
+        PyObject_GetAttrString,
+        Py_None,
+        Py_TYPE,
+        _PyDict_SizeOf,
+        jacpy_optional_attr,
+        jacpy_set_exception
+    }
+    cpython_api --> runtime.python.modules.pickle_decode {
+        PyErr_ExceptionMatches,
+        PyExc_OverflowError,
+        PyExc_TypeError,
+        PyExc_UnicodeDecodeError,
+        PyExc_ValueError,
+        Py_None
+    }
+    cpython_api --> runtime.python.modules.pickle_encode {
+        PyErr_ExceptionMatches,
+        PyExc_OverflowError,
+        PyExc_RuntimeError,
+        PyExc_TypeError,
+        PyExc_UnicodeEncodeError,
+        PyExc_ValueError,
+        Py_Ellipsis,
+        Py_None,
+        Py_NotImplemented
+    }
+    cpython_api --> runtime.python.modules.pickle_objects {
+        PyErr_ExceptionMatches,
+        PyExc_AttributeError,
+        PyExc_Exception,
+        PyExc_ImportError,
+        PyExc_RuntimeError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PySys_Audit,
+        Py_None
+    }
+    cpython_api --> runtime.python.modules.pickle_stream {
+        PyExc_EOFError,
+        PyExc_OverflowError,
+        PyExc_TypeError
+    }
+    cpython_api --> runtime.python.modules.posix_core {
+        NULL,
+        PyBytes_AsString,
+        PyBytes_FromStringAndSize,
+        PyBytes_Size,
+        PyDict_New,
+        PyDict_SetDefaultRef,
+        PyErr_CheckSignals,
+        PyErr_Clear,
+        PyErr_ExceptionMatches,
+        PyErr_Format,
+        PyErr_FormatUnraisable,
+        PyErr_Occurred,
+        PyErr_SetFromErrno,
+        PyErr_SetFromErrnoWithFilenameObject,
+        PyErr_SetFromErrnoWithFilenameObjects,
+        PyErr_WarnEx,
+        PyErr_WarnFormat,
+        PyEval_RestoreThread,
+        PyEval_SaveThread,
+        PyExc_NotImplementedError,
+        PyExc_OSError,
+        PyExc_OverflowError,
+        PyExc_RuntimeWarning,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyImport_GetModule,
+        PyIndex_Check,
+        PyInterpreterState,
+        PyInterpreterState_Get,
+        PyIter_Next,
+        PyList_Append,
+        PyList_GetItem,
+        PyList_GetSlice,
+        PyList_New,
+        PyList_Reverse,
+        PyList_Size,
+        PyLong_AsInt,
+        PyLong_AsLong,
+        PyLong_AsLongAndOverflow,
+        PyLong_AsLongLongAndOverflow,
+        PyLong_AsUnsignedLong,
+        PyLong_AsUnsignedLongLong,
+        PyLong_FromLong,
+        PyLong_FromLongLong,
+        PyLong_FromUnsignedLong,
+        PyLong_FromUnsignedLongLong,
+        PyMem_Free,
+        PyObject,
+        PyObject_CallNoArgs,
+        PyObject_GetAttrString,
+        PyObject_GetItem,
+        PyObject_GetIter,
+        PyThreadState,
+        PyThreadState_GetInterpreter,
+        PyThreadState_GetUnchecked,
+        PyThread_get_thread_ident,
+        PyUnicode_AsWideCharString,
+        PyUnicode_DecodeFSDefaultAndSize,
+        PyUnicode_EncodeFSDefault,
+        PyUnicode_FSConverter,
+        PyUnicode_InternFromString,
+        Py_NewRef,
+        Py_None,
+        Py_TYPE,
+        _PyEval_StartTheWorldAll,
+        _PyEval_StopTheWorldAll,
+        _PyImport_AcquireLock,
+        _PyImport_ReInitLock,
+        _PyImport_ReleaseLock,
+        _PyInterpreterState_ReinitRunningMain,
+        _PyNumber_Index,
+        _PyObject_LookupSpecial,
+        _PyRuntime,
+        _PyRuntimeState,
+        _PySignal_AfterFork,
+        _PyThreadState_DeleteList,
+        _PyThreadState_RemoveExcept,
+        _PyType_Name,
+        jacpy_errno,
+        jacpy_fork_callbacks,
+        jacpy_is_bool,
+        jacpy_is_bytes,
+        jacpy_is_long,
+        jacpy_is_unicode,
+        jacpy_release,
+        jacpy_runtime_head_lock,
+        jacpy_runtime_head_unlock,
+        jacpy_stdio_fileno,
+        jacpy_thread_state_fork_reset,
+        jacpy_thread_state_native_id
+    }
+    cpython_api --> runtime.python.modules.posix_fileio {
+        NULL,
+        PyBuffer_Release,
+        PyBytes_AsString,
+        PyBytes_FromStringAndSize,
+        PyErr_CheckSignals,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_SetFromErrno,
+        PyErr_SetFromErrnoWithFilenameObject,
+        PyErr_SetString,
+        PyEval_RestoreThread,
+        PyEval_SaveThread,
+        PyExc_OSError,
+        PyExc_OverflowError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyFloat_FromDouble,
+        PyLong_AsLong,
+        PyLong_FromLong,
+        PyLong_FromSsize_t,
+        PyLong_FromUnsignedLongLong,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyMem_RawFree,
+        PyMem_RawMalloc,
+        PyObject,
+        PyObject_GetBuffer,
+        PySequence_Check,
+        PySequence_GetItem,
+        PySequence_Size,
+        PySys_Audit,
+        PyTuple_Pack,
+        PyUnicode_DecodeFSDefault,
+        Py_BuildValue,
+        Py_NewRef,
+        Py_None,
+        Py_buffer,
+        _PyBytes_Resize,
+        _PyTime_AsTimespec,
+        _PyTime_FromSecondsDouble,
+        _PyTime_FromTimespec,
+        _Py_closerange,
+        _Py_device_encoding,
+        _Py_dup,
+        _Py_get_blocking,
+        _Py_get_inheritable,
+        _Py_read,
+        _Py_set_blocking,
+        _Py_set_inheritable,
+        _Py_write,
+        jacpy_errno,
+        jacpy_release,
+        jacpy_set_errno
+    }
+    cpython_api --> runtime.python.modules.posix_fileio_platform { jacpy_set_errno }
+    cpython_api --> runtime.python.modules.posix_files {
+        NULL,
+        PyBytes_AsString,
+        PyBytes_FromStringAndSize,
+        PyErr_CheckSignals,
+        PyErr_Format,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_SetString,
+        PyEval_RestoreThread,
+        PyEval_SaveThread,
+        PyExc_OverflowError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyList_Append,
+        PyList_New,
+        PyLong_AsLong,
+        PyLong_FromLong,
+        PyLong_FromUnsignedLong,
+        PyMem_Calloc,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyMem_RawFree,
+        PyMem_RawRealloc,
+        PyNumber_Divmod,
+        PyObject,
+        PySys_Audit,
+        PyTuple_GetItem,
+        PyTuple_Pack,
+        PyTuple_Size,
+        PyUnicode_DecodeFSDefault,
+        PyUnicode_DecodeFSDefaultAndSize,
+        PyUnicode_EncodeFSDefault,
+        PyUnicode_FromOrdinal,
+        PyUnicode_FromWideChar,
+        Py_NewRef,
+        Py_None,
+        Py_TYPE,
+        _PyBytes_Resize,
+        _PyLong_AsTime_t,
+        _PyTime_ObjectToTimespec,
+        _PyType_Name,
+        _Py_normpath_and_size,
+        _Py_skiproot,
+        jacpy_errno,
+        jacpy_is_bytes,
+        jacpy_is_exact_tuple,
+        jacpy_is_tuple,
+        jacpy_is_unicode,
+        jacpy_release,
+        jacpy_set_errno
+    }
+    cpython_api --> runtime.python.modules.posix_ids {
+        NULL,
+        PyBytes_AsString,
+        PyBytes_FromStringAndSize,
+        PyBytes_Size,
+        PyConfig_GetInt,
+        PyErr_CheckSignals,
+        PyErr_NoMemory,
+        PyErr_SetFromErrno,
+        PyErr_SetString,
+        PyEval_RestoreThread,
+        PyEval_SaveThread,
+        PyExc_OSError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyIndex_Check,
+        PyList_New,
+        PyList_SetItem,
+        PyLong_FromLong,
+        PyLong_FromUnsignedLong,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyObject,
+        PySequence_Check,
+        PySequence_GetItem,
+        PySequence_Size,
+        PySys_Audit,
+        PyUnicode_DecodeFSDefault,
+        PyUnicode_DecodeFSDefaultAndSize,
+        PyUnicode_DecodeLocale,
+        Py_BuildValue,
+        Py_NewRef,
+        Py_None,
+        _PyBytes_Resize,
+        _PyOS_URandom,
+        jacpy_errno,
+        jacpy_release,
+        jacpy_set_errno
+    }
+    cpython_api --> runtime.python.modules.posix_process {
+        NULL,
+        PyArg_Parse,
+        PyArg_ParseTuple,
+        PyBytes_AsString,
+        PyBytes_FromFormat,
+        PyBytes_Size,
+        PyCallable_Check,
+        PyErr_CheckSignals,
+        PyErr_Clear,
+        PyErr_Format,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_SetString,
+        PyErr_WarnFormat,
+        PyEval_RestoreThread,
+        PyEval_SaveThread,
+        PyExc_DeprecationWarning,
+        PyExc_NotImplementedError,
+        PyExc_OSError,
+        PyExc_OverflowError,
+        PyExc_PythonFinalizationError,
+        PyExc_RuntimeError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyFloat_FromDouble,
+        PyImport_GetModule,
+        PyImport_ImportModuleAttrString,
+        PyIndex_Check,
+        PyInterpreterState_Get,
+        PyIter_Next,
+        PyList_Append,
+        PyList_GetItemRef,
+        PyList_New,
+        PyLong_AsInt,
+        PyLong_AsLong,
+        PyLong_FromLong,
+        PyMapping_Check,
+        PyMapping_Keys,
+        PyMapping_Length,
+        PyMapping_Size,
+        PyMapping_Values,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyMem_RawFree,
+        PyMem_RawMalloc,
+        PyObject,
+        PyObject_GetAttr,
+        PyObject_GetIter,
+        PySequence_Fast,
+        PySequence_GetItem,
+        PySequence_Size,
+        PySet_Add,
+        PySet_New,
+        PySys_Audit,
+        PySys_AuditTuple,
+        PyTuple_GetItem,
+        PyTuple_Size,
+        PyUnicode_FSConverter,
+        Py_BuildValue,
+        Py_NewRef,
+        Py_None,
+        Py_TYPE,
+        _PyInterpreterState_HasFeature,
+        _PyInterpreterState_Main,
+        _PyType_Name,
+        _Py_GetTicksPerSecond,
+        jacpy_errno,
+        jacpy_fast_item,
+        jacpy_fast_size,
+        jacpy_interpreter_finalizing,
+        jacpy_is_list,
+        jacpy_is_tuple,
+        jacpy_release,
+        jacpy_set_errno
+    }
+    cpython_api --> runtime.python.modules.posix_stat {
+        NULL,
+        PyBytes_AsString,
+        PyBytes_FromString,
+        PyBytes_FromStringAndSize,
+        PyErr_CheckSignals,
+        PyErr_Clear,
+        PyErr_ExceptionMatches,
+        PyErr_Format,
+        PyErr_FormatUnraisable,
+        PyErr_GetRaisedException,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_ResourceWarning,
+        PyErr_SetRaisedException,
+        PyEval_RestoreThread,
+        PyEval_SaveThread,
+        PyExc_FileNotFoundError,
+        PyExc_NotImplementedError,
+        PyExc_TypeError,
+        PyExc_Warning,
+        PyFloat_FromDouble,
+        PyList_Append,
+        PyList_New,
+        PyLong_AsLong,
+        PyLong_FromLong,
+        PyLong_FromLongLong,
+        PyLong_FromUnsignedLong,
+        PyLong_FromUnsignedLongLong,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyNumber_Add,
+        PyNumber_Multiply,
+        PyObject,
+        PyObject_CallFinalizerFromDealloc,
+        PyObject_GetAttr,
+        PyType_GetModule,
+        PyUnicode_DecodeFSDefault,
+        PyUnicode_DecodeFSDefaultAndSize,
+        PyUnicode_FSConverter,
+        PyUnicode_FromFormat,
+        Py_NewRef,
+        Py_None,
+        Py_TYPE,
+        Py_XNewRef,
+        _PyLong_FromTime_t,
+        _Py_dup,
+        jacpy_bytes_length,
+        jacpy_closedir,
+        jacpy_errno,
+        jacpy_fdopendir,
+        jacpy_fstat,
+        jacpy_fstatat,
+        jacpy_is_bytes,
+        jacpy_lstat,
+        jacpy_opendir,
+        jacpy_readdir_entry,
+        jacpy_release,
+        jacpy_rewinddir,
+        jacpy_set_errno,
+        jacpy_stat
+    }
+    cpython_api --> runtime.python.modules.posix_stat_platform { PyObject }
+    cpython_api --> runtime.python.modules.posixshmem {
+        NULL,
+        PyErr_CheckSignals,
+        PyErr_SetFromErrnoWithFilenameObject,
+        PyEval_RestoreThread,
+        PyEval_SaveThread,
+        PyExc_OSError,
+        PyExc_ValueError,
+        PyObject,
+        PyUnicode_AsUTF8AndSize,
+        Py_NewRef,
+        jacpy_errno
+    }
+    cpython_api --> runtime.python.modules.posixsubprocess {
+        NULL,
+        PyBytes_AsString,
+        PyBytes_FromStringAndSize,
+        PyBytes_Size,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_SetFromErrno,
+        PyEval_RestoreThread,
+        PyEval_SaveThread,
+        PyExc_MemoryError,
+        PyExc_OSError,
+        PyExc_PythonFinalizationError,
+        PyExc_RuntimeError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyGC_Disable,
+        PyGC_Enable,
+        PyInterpreterState_Get,
+        PyInterpreterState_Main,
+        PyLong_AsLong,
+        PyLong_FromLong,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyMem_RawCalloc,
+        PyMem_RawFree,
+        PyMem_RawMalloc,
+        PyObject,
+        PyObject_Call,
+        PySequence_Fast,
+        PySequence_GetItem,
+        PySequence_Size,
+        PyTuple_GetItem,
+        PyTuple_New,
+        PyTuple_Size,
+        PyUnicode_FSConverter,
+        Py_NewRef,
+        _Py_RestoreSignals,
+        _Py_set_inheritable_async_safe,
+        _Py_write_noraise,
+        jacpy_errno,
+        jacpy_fast_item,
+        jacpy_fast_size,
+        jacpy_interpreter_finalizing,
+        jacpy_is_bytes,
+        jacpy_is_list,
+        jacpy_is_long,
+        jacpy_memory_copy,
+        jacpy_release,
+        jacpy_set_errno,
+        jacpy_tuple_set_owned
+    }
+    cpython_api --> runtime.python.modules.posixsubprocess_fds { _Py_closerange }
+    cpython_api --> runtime.python.modules.pwd {
+        PyErr_ExceptionMatches,
+        PyExc_KeyError,
+        PyExc_OverflowError,
+        PyExc_ValueError
+    }
+    cpython_api --> runtime.python.modules.pyexpat {
+        NULL,
+        PyByteArray_AsString,
+        PyBytes_AsString,
+        PyDict_GetItemRef,
+        PyDict_New,
+        PyDict_SetItem,
+        PyErr_FormatUnraisable,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_SetObject,
+        PyExc_RuntimeError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyList_Append,
+        PyList_New,
+        PyList_SetItem,
+        PyLong_AsLong,
+        PyLong_FromLong,
+        PyLong_FromSize_t,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyModule_Add,
+        PyModule_AddIntConstant,
+        PyModule_AddObjectRef,
+        PyModule_AddStringConstant,
+        PyModule_New,
+        PyObject,
+        PyObject_Call,
+        PyObject_CallFunction,
+        PyObject_CallOneArg,
+        PyObject_GetOptionalAttr,
+        PyObject_IsTrue,
+        PyObject_SetAttrString,
+        PyTuple_New,
+        PyType_GetModule,
+        PyUnicode_AsUTF8AndSize,
+        PyUnicode_Decode,
+        PyUnicode_DecodeUTF8Stateful,
+        PyUnicode_FromFormat,
+        PyUnicode_GetLength,
+        PyUnicode_ReadChar,
+        Py_LeaveRecursiveCall,
+        Py_NewRef,
+        Py_None,
+        Py_TYPE,
+        _PyImport_SetModule,
+        _PyTraceback_Add,
+        _Py_HashSecret,
+        jacpy_bytes_from_memory,
+        jacpy_bytes_length,
+        jacpy_is_bytearray,
+        jacpy_is_bytes,
+        jacpy_is_dict,
+        jacpy_is_long,
+        jacpy_is_unicode,
+        jacpy_memory_copy,
+        jacpy_recursion_enter,
+        jacpy_release,
+        jacpy_tuple_set_owned
+    }
+    cpython_api --> runtime.python.modules.queue {
+        PyExc_SystemError,
+        PyExc_ValueError,
+        PyType_GetModule,
+        Py_None,
+        jacpy_lock_new
+    }
+    cpython_api --> runtime.python.modules.random {
+        PyExc_MemoryError,
+        PyExc_SystemError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyFloat_FromDouble,
+        Py_NewRef,
+        Py_None
+    }
+    cpython_api --> runtime.python.modules.resource {
+        PyExc_OSError,
+        PyExc_OverflowError,
+        PyExc_ValueError
+    }
+    cpython_api --> runtime.python.modules.select {
+        NULL,
+        PyDict_Contains,
+        PyDict_DelItem,
+        PyDict_New,
+        PyDict_Next,
+        PyDict_SetItem,
+        PyErr_CheckSignals,
+        PyErr_ExceptionMatches,
+        PyErr_GetRaisedException,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_SetFromErrno,
+        PyErr_SetRaisedException,
+        PyErr_WarnEx,
+        PyEval_RestoreThread,
+        PyEval_SaveThread,
+        PyExc_OSError,
+        PyExc_OverflowError,
+        PyExc_RuntimeError,
+        PyExc_RuntimeWarning,
+        PyExc_SystemError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyImport_ImportModuleAttrString,
+        PyIndex_Check,
+        PyList_New,
+        PyList_SetItem,
+        PyLong_AsLong,
+        PyLong_AsNativeBytes,
+        PyLong_FromLong,
+        PyLong_FromUnsignedLong,
+        PyMem_Calloc,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyMem_Realloc,
+        PyObject,
+        PyObject_Call,
+        PyObject_CallNoArgs,
+        PyObject_GetAttr,
+        PyObject_Str,
+        PySequence_Fast,
+        PyTuple_New,
+        PyUnicode_FromString,
+        Py_NewRef,
+        Py_None,
+        Py_NotImplemented,
+        Py_TYPE,
+        _PyDeadline_Get,
+        _PyDeadline_Init,
+        _PyTime_AsMilliseconds,
+        _PyTime_AsTimespec,
+        _PyTime_AsTimeval,
+        _PyTime_AsTimeval_clamp,
+        _PyTime_FromMillisecondsObject,
+        _PyTime_FromSecondsObject,
+        _Py_set_inheritable,
+        jacpy_dict_size,
+        jacpy_errno,
+        jacpy_fast_item,
+        jacpy_fast_size,
+        jacpy_release,
+        jacpy_set_errno,
+        jacpy_tuple_set_owned
+    }
+    cpython_api --> runtime.python.modules.sha3 { PyExc_SystemError, PyExc_ValueError }
+    cpython_api --> runtime.python.modules.socket {
+        NULL,
+        PyArg_ParseTuple,
+        PyArg_ParseTupleAndKeywords,
+        PyErr_Clear,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_SetFromErrno,
+        PyErr_SetString,
+        PyEval_RestoreThread,
+        PyEval_SaveThread,
+        PyExc_OSError,
+        PyExc_OverflowError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyIndex_Check,
+        PyList_Append,
+        PyList_New,
+        PyLong_AsLong,
+        PyLong_FromLong,
+        PyLong_FromSize_t,
+        PyLong_FromUnsignedLong,
+        PyMem_Calloc,
+        PyMem_Free,
+        PyNumber_Index,
+        PyObject,
+        PyObject_GetBuffer,
+        PyObject_Str,
+        PySys_Audit,
+        PySys_AuditTuple,
+        PyThread_acquire_lock,
+        PyThread_release_lock,
+        PyTuple_Pack,
+        PyTuple_Size,
+        PyUnicode_AsEncodedString,
+        PyUnicode_AsUTF8,
+        PyUnicode_FSConverter,
+        Py_BuildValue,
+        Py_NewRef,
+        Py_None,
+        Py_buffer,
+        _Py_dup,
+        jacpy_buffer_release,
+        jacpy_bytes_address,
+        jacpy_bytes_from_memory,
+        jacpy_errno,
+        jacpy_fs_text,
+        jacpy_is_bytes,
+        jacpy_is_tuple,
+        jacpy_is_unicode,
+        jacpy_memory_copy,
+        jacpy_memory_zero,
+        jacpy_release,
+        jacpy_set_errno
+    }
+    cpython_api --> runtime.python.modules.socket_address {
+        NULL,
+        PyArg_Parse,
+        PyArg_ParseTuple,
+        PyErr_ExceptionMatches,
+        PyErr_NoMemory,
+        PyErr_SetString,
+        PyEval_RestoreThread,
+        PyEval_SaveThread,
+        PyExc_OSError,
+        PyExc_OverflowError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyMem_Calloc,
+        PyMem_Free,
+        PyObject,
+        PyUnicode_AsEncodedString,
+        PyUnicode_EncodeFSDefault,
+        PyUnicode_FSConverter,
+        Py_BuildValue,
+        Py_NewRef,
+        Py_None,
+        Py_buffer,
+        jacpy_buffer_release,
+        jacpy_bytes_address,
+        jacpy_bytes_from_memory,
+        jacpy_bytes_length,
+        jacpy_errno,
+        jacpy_fs_text,
+        jacpy_is_bytearray,
+        jacpy_is_bytes,
+        jacpy_is_tuple,
+        jacpy_is_unicode,
+        jacpy_memory_copy,
+        jacpy_memory_zero,
+        jacpy_release,
+        jacpy_unicode_ascii,
+        jacpy_unicode_data,
+        jacpy_unicode_size
+    }
+    cpython_api --> runtime.python.modules.socket_core {
+        NULL,
+        PyErr_CheckSignals,
+        PyErr_SetFromErrno,
+        PyErr_SetObject,
+        PyErr_SetString,
+        PyEval_RestoreThread,
+        PyEval_SaveThread,
+        PyExc_OSError,
+        PyExc_TimeoutError,
+        PyExc_ValueError,
+        PyFloat_FromDouble,
+        PyObject,
+        PyTime_AsSecondsDouble,
+        Py_BuildValue,
+        Py_NewRef,
+        Py_None,
+        _PyDeadline_Get,
+        _PyDeadline_Init,
+        _PyTime_AsMilliseconds,
+        _PyTime_FromSecondsObject,
+        jacpy_errno,
+        jacpy_release,
+        jacpy_set_errno
+    }
+    cpython_api --> runtime.python.modules.socket_object {
+        NULL,
+        PyArg_Parse,
+        PyArg_ParseTuple,
+        PyArg_ParseTupleAndKeywords,
+        PyBuffer_Release,
+        PyErr_CheckSignals,
+        PyErr_Clear,
+        PyErr_ExceptionMatches,
+        PyErr_FormatUnraisable,
+        PyErr_GetRaisedException,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_ResourceWarning,
+        PyErr_SetFromErrno,
+        PyErr_SetRaisedException,
+        PyErr_SetString,
+        PyErr_WarnEx,
+        PyEval_RestoreThread,
+        PyEval_SaveThread,
+        PyExc_OSError,
+        PyExc_RuntimeError,
+        PyExc_RuntimeWarning,
+        PyExc_TimeoutError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyExc_Warning,
+        PyList_Append,
+        PyList_New,
+        PyLong_AsInt,
+        PyLong_AsLong,
+        PyLong_FromLong,
+        PyLong_FromSsize_t,
+        PyLong_FromUnsignedLong,
+        PyMem_Calloc,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyObject,
+        PyObject_CallFinalizerFromDealloc,
+        PyObject_GC_UnTrack,
+        PyObject_IsTrue,
+        PySequence_Fast,
+        PySequence_Tuple,
+        PySys_Audit,
+        PyTuple_GetItem,
+        PyTuple_Pack,
+        PyTuple_Size,
+        PyUnicode_FromFormat,
+        Py_BuildValue,
+        Py_NewRef,
+        Py_None,
+        Py_buffer,
+        _PyBytes_Resize,
+        _PyDeadline_Get,
+        _PyDeadline_Init,
+        _Py_set_inheritable,
+        jacpy_buffer_release,
+        jacpy_bytes_address,
+        jacpy_bytes_from_memory,
+        jacpy_bytes_length,
+        jacpy_errno,
+        jacpy_fast_item,
+        jacpy_fast_size,
+        jacpy_memory_copy,
+        jacpy_memory_zero,
+        jacpy_release,
+        jacpy_set_errno
+    }
+    cpython_api --> runtime.python.modules.sqlite3 {
+        NULL,
+        PyBool_Type,
+        PyByteArray_FromObject,
+        PyByteArray_Type,
+        PyBytes_AsString,
+        PyBytes_Type,
+        PyCallable_Check,
+        PyDict_GetItemRef,
+        PyDict_GetItemWithError,
+        PyDict_New,
+        PyDict_SetItem,
+        PyDict_SetItemString,
+        PyDict_Size,
+        PyErr_Clear,
+        PyErr_ExceptionMatches,
+        PyErr_Format,
+        PyErr_FormatUnraisable,
+        PyErr_GetRaisedException,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_Print,
+        PyErr_ResourceWarning,
+        PyErr_SetObject,
+        PyErr_SetRaisedException,
+        PyErr_WarnEx,
+        PyEval_RestoreThread,
+        PyEval_SaveThread,
+        PyExc_AttributeError,
+        PyExc_DeprecationWarning,
+        PyExc_Exception,
+        PyExc_ImportError,
+        PyExc_IndexError,
+        PyExc_MemoryError,
+        PyExc_OverflowError,
+        PyExc_SystemError,
+        PyExc_TypeError,
+        PyExc_UnicodeDecodeError,
+        PyExc_ValueError,
+        PyExc_Warning,
+        PyFloat_AsDouble,
+        PyFloat_FromDouble,
+        PyFloat_Type,
+        PyGILState_Ensure,
+        PyGILState_Release,
+        PyImport_ImportModuleAttrString,
+        PyIndex_Check,
+        PyInterpreterState_Get,
+        PyIter_Check,
+        PyIter_Next,
+        PyList_Append,
+        PyList_GetItem,
+        PyList_New,
+        PyList_Size,
+        PyLong_AsInt,
+        PyLong_AsLong,
+        PyLong_AsLongAndOverflow,
+        PyLong_AsLongLongAndOverflow,
+        PyLong_AsUInt32,
+        PyLong_FromLong,
+        PyLong_FromLongLong,
+        PyLong_FromUInt32,
+        PyLong_FromUnsignedLong,
+        PyLong_Type,
+        PyMapping_GetOptionalItemString,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyMem_RawFree,
+        PyModule_AddIntConstant,
+        PyModule_AddObjectRef,
+        PyModule_AddStringConstant,
+        PyNumber_AsSsize_t,
+        PyObject,
+        PyObject_Call,
+        PyObject_CallFinalizerFromDealloc,
+        PyObject_CallFunction,
+        PyObject_CallFunctionObjArgs,
+        PyObject_CallMethodObjArgs,
+        PyObject_CallNoArgs,
+        PyObject_CallObject,
+        PyObject_CallOneArg,
+        PyObject_CheckBuffer,
+        PyObject_GetAttr,
+        PyObject_GetItem,
+        PyObject_GetIter,
+        PyObject_GetOptionalAttr,
+        PyObject_Hash,
+        PyObject_IsTrue,
+        PyObject_RichCompare,
+        PyObject_RichCompareBool,
+        PyObject_SetAttrString,
+        PyObject_Vectorcall,
+        PySequence_Check,
+        PySequence_GetItem,
+        PySequence_Size,
+        PySys_Audit,
+        PyThread_get_thread_ident,
+        PyTuple_GetItem,
+        PyTuple_New,
+        PyTuple_Pack,
+        PyTuple_SetItem,
+        PyTuple_Size,
+        PyType_GetModule,
+        PyUnicode_AsUTF8AndSize,
+        PyUnicode_CompareWithASCIIString,
+        PyUnicode_DecodeASCII,
+        PyUnicode_DecodeUTF8Stateful,
+        PyUnicode_FSConverter,
+        PyUnicode_FromString,
+        PyUnicode_InternFromString,
+        PyUnicode_Type,
+        PyWeakref_GetRef,
+        PyWeakref_NewRef,
+        Py_NewRef,
+        Py_None,
+        Py_NotImplemented,
+        Py_TYPE,
+        _PyErr_ChainExceptions1,
+        _PyErr_FormatFromCause,
+        _PyUnicode_AsUTF8NoNUL,
+        _PyWeakref_IsDead,
+        _Py_IsInterpreterFinalizing,
+        jacpy_buffer_new,
+        jacpy_bytes_from_memory,
+        jacpy_is_bytearray,
+        jacpy_is_dict,
+        jacpy_is_exact_float,
+        jacpy_is_exact_list,
+        jacpy_is_exact_long,
+        jacpy_is_exact_tuple,
+        jacpy_is_exact_unicode,
+        jacpy_is_float,
+        jacpy_is_list,
+        jacpy_is_long,
+        jacpy_is_slice,
+        jacpy_is_tuple,
+        jacpy_is_type,
+        jacpy_is_unicode,
+        jacpy_memory_copy,
+        jacpy_release,
+        jacpy_type_check
+    }
+    cpython_api --> runtime.python.modules.sre {
+        NULL,
+        PyBuffer_Release,
+        PyBytes_FromObject,
+        PyBytes_Join,
+        PyBytes_Type,
+        PyCallable_Check,
+        PyDictProxy_New,
+        PyDict_GetItemWithError,
+        PyDict_New,
+        PyDict_Next,
+        PyDict_SetItem,
+        PyDict_Size,
+        PyErr_Clear,
+        PyErr_ExceptionMatches,
+        PyErr_Format,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_SetString,
+        PyExc_IndexError,
+        PyExc_OverflowError,
+        PyExc_RecursionError,
+        PyExc_RuntimeError,
+        PyExc_SystemError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyImport_ImportModuleAttrString,
+        PyIndex_Check,
+        PyList_Append,
+        PyList_GetItem,
+        PyList_New,
+        PyList_Size,
+        PyLong_AsSsize_t,
+        PyLong_AsUnsignedLong,
+        PyLong_FromSsize_t,
+        PyMem_Calloc,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyNumber_AsSsize_t,
+        PyObject,
+        PyObject_CheckBuffer,
+        PyObject_ClearWeakRefs,
+        PyObject_GC_Del,
+        PyObject_GC_Track,
+        PyObject_GC_UnTrack,
+        PyObject_GetAttrString,
+        PyObject_GetBuffer,
+        PyObject_Hash,
+        PyObject_RichCompareBool,
+        PyObject_Vectorcall,
+        PyTuple_New,
+        PyTuple_Size,
+        PyType_GetModule,
+        PyUnicode_FindChar,
+        PyUnicode_FromFormat,
+        PyUnicode_FromString,
+        PyUnicode_Join,
+        PyUnicode_New,
+        PyUnicode_Substring,
+        Py_HashBuffer,
+        Py_NewRef,
+        Py_None,
+        Py_NotImplemented,
+        Py_XNewRef,
+        Py_buffer,
+        _PyObject_GC_New,
+        _PyObject_GC_NewVar,
+        _PyUnicode_Copy,
+        _PyUnicode_JoinArray,
+        jacpy_buffer_new,
+        jacpy_bytes_from_memory,
+        jacpy_is_bytes,
+        jacpy_is_long,
+        jacpy_is_unicode,
+        jacpy_release,
+        jacpy_unicode_data,
+        jacpy_unicode_kind,
+        jacpy_unicode_size
+    }
+    cpython_api --> runtime.python.modules.sre_engine {
+        PyMem_Free,
+        PyMem_Realloc,
+        PyObject,
+        Py_buffer,
+        _PyUnicode_IsAlpha,
+        _PyUnicode_IsDecimalDigit,
+        _PyUnicode_IsDigit,
+        _PyUnicode_IsLinebreak,
+        _PyUnicode_IsNumeric,
+        _PyUnicode_IsWhitespace,
+        _PyUnicode_ToLowercase,
+        _PyUnicode_ToUppercase
+    }
+    cpython_api --> runtime.python.modules.sre_ucs1 { PyErr_CheckSignals, PyMem_Malloc }
+    cpython_api --> runtime.python.modules.sre_ucs2 { PyErr_CheckSignals, PyMem_Malloc }
+    cpython_api --> runtime.python.modules.sre_ucs4 { PyErr_CheckSignals, PyMem_Malloc }
+    cpython_api --> runtime.python.modules.ssl {
+        NULL,
+        PyArg_Parse,
+        PyArg_ParseTuple,
+        PyBytes_AsString,
+        PyBytes_AsStringAndSize,
+        PyBytes_FromString,
+        PyCallable_Check,
+        PyDict_New,
+        PyDict_SetItemString,
+        PyErr_BadArgument,
+        PyErr_BadInternalCall,
+        PyErr_CheckSignals,
+        PyErr_Clear,
+        PyErr_ExceptionMatches,
+        PyErr_Format,
+        PyErr_FormatUnraisable,
+        PyErr_GetRaisedException,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_SetFromErrno,
+        PyErr_SetFromErrnoWithFilenameObject,
+        PyErr_SetObject,
+        PyErr_SetString,
+        PyErr_WarnEx,
+        PyEval_RestoreThread,
+        PyEval_SaveThread,
+        PyExc_AttributeError,
+        PyExc_DeprecationWarning,
+        PyExc_MemoryError,
+        PyExc_NotImplementedError,
+        PyExc_OSError,
+        PyExc_OverflowError,
+        PyExc_RuntimeError,
+        PyExc_TimeoutError,
+        PyExc_TypeError,
+        PyExc_UnicodeEncodeError,
+        PyExc_ValueError,
+        PyGILState_Ensure,
+        PyGILState_Release,
+        PyList_Append,
+        PyList_Insert,
+        PyList_New,
+        PyList_SetItem,
+        PyLong_AsLong,
+        PyLong_FromLong,
+        PyLong_FromSize_t,
+        PyLong_FromUnsignedLong,
+        PyLong_FromUnsignedLongLong,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyMem_RawFree,
+        PyMem_RawMalloc,
+        PyMutex_Lock,
+        PyMutex_Unlock,
+        PyObject,
+        PyObject_CallFunction,
+        PyObject_CallFunctionObjArgs,
+        PyObject_CallNoArgs,
+        PyObject_CheckBuffer,
+        PyObject_IsTrue,
+        PyThreadState,
+        PyThreadState_Swap,
+        PyThread_acquire_lock,
+        PyThread_release_lock,
+        PyTuple_New,
+        PyUnicode_AsASCIIString,
+        PyUnicode_AsUTF8String,
+        PyUnicode_DecodeASCII,
+        PyUnicode_DecodeFSDefault,
+        PyUnicode_DecodeUTF8Stateful,
+        PyUnicode_FSConverter,
+        PyUnicode_FromEncodedObject,
+        PyUnicode_FromFormat,
+        PyUnicode_FromString,
+        PyWeakref_GetRef,
+        PyWeakref_NewRef,
+        Py_BuildValue,
+        Py_NewRef,
+        Py_None,
+        Py_NotImplemented,
+        Py_TYPE,
+        Py_buffer,
+        Py_fopen,
+        _PyBytes_Resize,
+        _PyDeadline_Get,
+        _PyDeadline_Init,
+        _PyLong_FromTime_t,
+        _PyLong_UnsignedLongLong_Converter,
+        jacpy_buffer_release,
+        jacpy_bytes_address,
+        jacpy_bytes_from_memory,
+        jacpy_bytes_length,
+        jacpy_errno,
+        jacpy_is_bytearray,
+        jacpy_is_bytes,
+        jacpy_is_unicode,
+        jacpy_release,
+        jacpy_set_errno,
+        jacpy_tuple_set_owned
+    }
+    cpython_api --> runtime.python.modules.ssl_cert {
+        NULL,
+        PyDict_New,
+        PyDict_SetItemString,
+        PyErr_Format,
+        PyErr_NoMemory,
+        PyErr_SetString,
+        PyErr_WarnFormat,
+        PyExc_MemoryError,
+        PyExc_RuntimeWarning,
+        PyExc_ValueError,
+        PyList_Append,
+        PyList_AsTuple,
+        PyList_New,
+        PyList_SetItem,
+        PyList_Size,
+        PyLong_FromLong,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyObject,
+        PyTuple_New,
+        PyUnicode_DecodeUTF8Stateful,
+        PyUnicode_FromFormat,
+        PyUnicode_FromString,
+        Py_BuildValue,
+        Py_NewRef,
+        Py_None,
+        Py_TYPE,
+        jacpy_bytes_from_memory,
+        jacpy_release,
+        jacpy_tuple_set_owned
+    }
+    cpython_api --> runtime.python.modules.ssl_core {
+        NULL,
+        PyDict_GetItemWithError,
+        PyErr_Occurred,
+        PyErr_SetFromErrno,
+        PyErr_SetObject,
+        PyEval_RestoreThread,
+        PyEval_SaveThread,
+        PyExc_OSError,
+        PyExc_SystemError,
+        PyLong_FromLong,
+        PyMem_RawFree,
+        PyMem_RawMalloc,
+        PyMutex,
+        PyMutex_Lock,
+        PyMutex_Unlock,
+        PyObject,
+        PyObject_CallObject,
+        PyObject_SetAttr,
+        PyThreadState,
+        PyThread_free_lock,
+        PyType_IsSubtype,
+        PyUnicodeWriter,
+        PyUnicodeWriter_Create,
+        PyUnicodeWriter_Discard,
+        PyUnicodeWriter_Finish,
+        PyUnicodeWriter_Format,
+        PyUnicodeWriter_WriteASCII,
+        PyUnicode_FromFormat,
+        PyUnicode_FromString,
+        PyWeakref_GetRef,
+        Py_BuildValue,
+        Py_NewRef,
+        Py_None,
+        Py_TYPE,
+        _PyErr_ChainExceptions1,
+        _PyTime_AsMilliseconds,
+        jacpy_release,
+        jacpy_set_errno
+    }
+    cpython_api --> runtime.python.modules.stat { PyExc_OverflowError }
+    cpython_api --> runtime.python.modules.statistics { PyExc_ValueError }
+    cpython_api --> runtime.python.modules.struct {
+        PyErr_ExceptionMatches,
+        PyExc_OverflowError,
+        PyExc_RuntimeError,
+        PyExc_TypeError,
+        PyUnicode_AsEncodedString,
+        Py_None,
+        Py_TYPE,
+        jacpy_is_unicode
+    }
+    cpython_api --> runtime.python.modules.suggestions { PyExc_TypeError }
+    cpython_api --> runtime.python.modules.syslog { PyExc_RuntimeError }
+    cpython_api --> runtime.python.modules.tee { PyExc_RuntimeError, PyExc_ValueError }
+    cpython_api --> runtime.python.modules.termios {
+        NULL,
+        PyBytes_AsString,
+        PyBytes_Size,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_SetFromErrno,
+        PyEval_RestoreThread,
+        PyEval_SaveThread,
+        PyExc_OverflowError,
+        PyExc_TypeError,
+        PyList_GetItem,
+        PyList_New,
+        PyList_SetItem,
+        PyList_Size,
+        PyLong_AsLong,
+        PyLong_FromLong,
+        PyMem_Calloc,
+        PyMem_Free,
+        PyObject,
+        PySequence_Check,
+        PySequence_GetItem,
+        PySequence_Size,
+        PyTuple_New,
+        PyTuple_SetItem,
+        Py_NewRef,
+        jacpy_bytes_from_memory,
+        jacpy_is_bytes,
+        jacpy_is_list,
+        jacpy_is_long,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.modules.time {
+        NULL,
+        PyDict_New,
+        PyDict_SetItemString,
+        PyErr_CheckSignals,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_SetFromErrno,
+        PyEval_RestoreThread,
+        PyEval_SaveThread,
+        PyExc_OSError,
+        PyExc_OverflowError,
+        PyExc_RuntimeError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyFloat_FromDouble,
+        PyImport_ImportModule,
+        PyImport_ImportModuleAttrString,
+        PyLong_AsInt,
+        PyLong_AsLong,
+        PyLong_FromLong,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyMem_Realloc,
+        PyModule_AddIntConstant,
+        PyModule_AddObjectRef,
+        PyObject,
+        PyObject_Call,
+        PySys_AuditTuple,
+        PyTime_AsSecondsDouble,
+        PyTime_Monotonic,
+        PyTime_PerfCounter,
+        PyTime_Time,
+        PyTuple_GetItem,
+        PyTuple_Size,
+        PyUnicodeWriter_Create,
+        PyUnicodeWriter_Discard,
+        PyUnicodeWriter_Finish,
+        PyUnicodeWriter_WriteStr,
+        PyUnicodeWriter_WriteSubstring,
+        PyUnicode_AsUTF8,
+        PyUnicode_DecodeLocale,
+        PyUnicode_FromString,
+        PyUnicode_FromWideChar,
+        PyUnicode_GetLength,
+        PyUnicode_ReadChar,
+        Py_NewRef,
+        Py_None,
+        Py_TYPE,
+        _PyArg_CheckPositional,
+        _PyTimeFraction,
+        _PyTimeFraction_Mul,
+        _PyTimeFraction_Resolution,
+        _PyTimeFraction_Set,
+        _PyTime_Add,
+        _PyTime_AsLong,
+        _PyTime_AsTimespec,
+        _PyTime_FromLong,
+        _PyTime_FromSecondsObject,
+        _PyTime_FromTimespec,
+        _PyTime_FromTimeval,
+        _PyTime_MonotonicWithInfo,
+        _PyTime_ObjectToTime_t,
+        _PyTime_PerfCounterWithInfo,
+        _PyTime_TimeWithInfo,
+        _PyTime_gmtime,
+        _PyTime_localtime,
+        _Py_GetTicksPerSecond,
+        _Py_clock_info_t,
+        jacpy_clear_errno,
+        jacpy_errno,
+        jacpy_is_tuple,
+        jacpy_release,
+        jacpy_set_errno
+    }
+    cpython_api --> runtime.python.modules.unicodedata {
+        NULL,
+        PyErr_Format,
+        PyErr_NoMemory,
+        PyExc_KeyError,
+        PyExc_ValueError,
+        PyFloat_FromDouble,
+        PyLong_FromLong,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyMem_Realloc,
+        PyModule_Type,
+        PyObject,
+        PyType_IsSubtype,
+        PyUnicode_Compare,
+        PyUnicode_CompareWithASCIIString,
+        PyUnicode_DecodeUTF8Stateful,
+        PyUnicode_FromKindAndData,
+        PyUnicode_FromObject,
+        PyUnicode_FromOrdinal,
+        Py_GetConstant,
+        Py_NewRef,
+        Py_TYPE,
+        _PyUnicode_ToDecimalDigit,
+        _PyUnicode_ToDigit,
+        _PyUnicode_ToNumeric,
+        jacpy_release,
+        jacpy_unicode_ascii,
+        jacpy_unicode_data,
+        jacpy_unicode_kind,
+        jacpy_unicode_size
+    }
+    cpython_api --> runtime.python.modules.uuid {
+        NULL,
+        PyBytes_AsString,
+        PyLong_FromLong,
+        PyObject,
+        Py_NewRef,
+        jacpy_buffer_new
+    }
+    cpython_api --> runtime.python.modules.zlib {
+        PyExc_EOFError,
+        PyExc_MemoryError,
+        PyExc_OverflowError,
+        PyExc_SystemError,
+        PyExc_TypeError,
+        PyExc_ValueError
+    }
+    cpython_api --> runtime.python.modules.zoneinfo {
+        NULL,
+        PyBytes_AsString,
+        PyDict_GetItemRef,
+        PyDict_New,
+        PyDict_SetDefaultRef,
+        PyDict_SetItemString,
+        PyErr_ExceptionMatches,
+        PyErr_Format,
+        PyErr_GetRaisedException,
+        PyErr_Occurred,
+        PyExc_MemoryError,
+        PyExc_RuntimeError,
+        PyExc_SystemError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyImport_ImportModule,
+        PyImport_ImportModuleAttrString,
+        PyIter_Next,
+        PyLong_AsLong,
+        PyLong_AsLongLong,
+        PyLong_AsSsize_t,
+        PyLong_FromLong,
+        PyNumber_Add,
+        PyObject,
+        PyObject_Call,
+        PyObject_CallFunction,
+        PyObject_CallMethod,
+        PyObject_CallMethodObjArgs,
+        PyObject_CallNoArgs,
+        PyObject_CallOneArg,
+        PyObject_GetAttrString,
+        PyObject_GetIter,
+        PyObject_IsTrue,
+        PyObject_Repr,
+        PyObject_RichCompareBool,
+        PyObject_SetAttrString,
+        PyTuple_GetItem,
+        PyTuple_New,
+        PyTuple_Size,
+        PyTuple_Type,
+        PyUnicode_DecodeUTF8Stateful,
+        PyUnicode_FromFormat,
+        PyUnicode_FromString,
+        Py_BuildValue,
+        Py_NewRef,
+        Py_None,
+        Py_TYPE,
+        _PyErr_ChainExceptions1,
+        _PyType_Name,
+        jacpy_is_tuple,
+        jacpy_release,
+        jacpy_type_check
+    }
+    cpython_api --> runtime.python.modules.zstd {
+        NULL,
+        PyBytes_AsString,
+        PyBytes_Size,
+        PyDict_Next,
+        PyErr_ExceptionMatches,
+        PyErr_Format,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_SetString,
+        PyEval_RestoreThread,
+        PyEval_SaveThread,
+        PyExc_EOFError,
+        PyExc_OverflowError,
+        PyExc_SystemError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyLong_AsInt,
+        PyLong_AsSize_t,
+        PyLong_AsUnsignedLongLong,
+        PyLong_FromSize_t,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyMem_RawCalloc,
+        PyMem_RawFree,
+        PyMutex,
+        PyMutex_Lock,
+        PyMutex_Unlock,
+        PyObject,
+        PyTuple_GetItem,
+        PyTuple_Size,
+        PyTuple_Type,
+        PyType_GetModule,
+        PyUnicode_FromFormat,
+        Py_BuildValue,
+        Py_GetConstant,
+        Py_NewRef,
+        Py_None,
+        Py_TYPE,
+        _PyBytes_Resize,
+        jacpy_buffer_new,
+        jacpy_bytes_from_memory,
+        jacpy_is_dict,
+        jacpy_is_long,
+        jacpy_memory_copy,
+        jacpy_memory_move,
+        jacpy_release,
+        jacpy_type_check
+    }
+    cpython_api --> runtime.python.native_services {
+        NULL,
+        PyErr_ExceptionMatches,
+        PyErr_WarnExplicit,
+        PyExc_SyntaxWarning,
+        PyExc_UnicodeError,
+        PyExc_ValueError,
+        PyImport_ImportModule,
+        PyObject_CallMethod
+    }
+    cpython_api --> runtime.python.object_model.bool {
+        NULL,
+        PyArg_UnpackTuple,
+        PyErr_WarnEx,
+        PyObject,
+        PyObject_IsTrue,
+        PyUnicode_InternFromString,
+        PyVectorcall_NARGS,
+        _PyArg_CheckPositional,
+        _PyArg_NoKeywords,
+        _PyArg_NoKwnames,
+        _Py_SetImmortal
+    }
+    cpython_api --> runtime.python.object_model.capsule {
+        NULL,
+        PyErr_Format,
+        PyErr_NoMemory,
+        PyErr_SetString,
+        PyExc_AttributeError,
+        PyExc_ImportError,
+        PyExc_ValueError,
+        PyImport_ImportModule,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyObject,
+        PyObject_GC_Del,
+        PyObject_GC_IsTracked,
+        PyObject_GetAttrString,
+        PyUnicode_FromFormat,
+        _PyObject_GC_New,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.object_model.cell {
+        NULL,
+        PyArg_UnpackTuple,
+        PyErr_BadInternalCall,
+        PyErr_SetString,
+        PyExc_ValueError,
+        PyObject,
+        PyObject_GC_Del,
+        PyObject_GenericGetAttr,
+        PyObject_RichCompare,
+        PyUnicode_FromFormat,
+        Py_NewRef,
+        Py_NotImplemented,
+        Py_XNewRef,
+        _PyArg_NoKeywords,
+        _PyObject_GC_New,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.object_model.complex {
+        NULL,
+        PyErr_Clear,
+        PyErr_ExceptionMatches,
+        PyErr_Format,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyErr_SetString,
+        PyErr_WarnFormat,
+        PyExc_DeprecationWarning,
+        PyExc_OverflowError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyExc_ZeroDivisionError,
+        PyFloat_AsDouble,
+        PyFloat_FromDouble,
+        PyLong_AsDouble,
+        PyLong_FromLong,
+        PyMem_Free,
+        PyMemberDef,
+        PyMethodDef,
+        PyNumber_Float,
+        PyOS_double_to_string,
+        PyOS_string_to_double,
+        PyObject,
+        PyObject_CallNoArgs,
+        PyObject_CallOneArg,
+        PyObject_Free,
+        PyObject_GenericGetAttr,
+        PyObject_Init,
+        PyObject_Malloc,
+        PyObject_RichCompare,
+        PyType_GenericAlloc,
+        PyUnicodeWriter_Create,
+        PyUnicodeWriter_Discard,
+        PyUnicodeWriter_Finish,
+        PyUnicode_AsUTF8AndSize,
+        PyUnicode_FromFormat,
+        PyUnicode_GetLength,
+        PyUnicode_InternFromString,
+        Py_BuildValue,
+        Py_NewRef,
+        Py_None,
+        Py_NotImplemented,
+        Py_complex,
+        _PyArg_BadArgument,
+        _PyComplex_FormatAdvancedWriter,
+        _PyObject_LookupSpecial,
+        _PyUnicodeWriter,
+        _PyUnicode_TransformDecimalAndSpaceToASCII,
+        _Py_HashDouble,
+        _Py_string_to_number_with_underscores,
+        jacpy_errno,
+        jacpy_is_float,
+        jacpy_is_long,
+        jacpy_is_unicode,
+        jacpy_release,
+        jacpy_set_errno
+    }
+    cpython_api --> runtime.python.object_model.enumerate {
+        NULL,
+        PyArg_ParseTupleAndKeywords,
+        PyErr_Clear,
+        PyErr_ExceptionMatches,
+        PyErr_Format,
+        PyErr_Occurred,
+        PyErr_SetString,
+        PyExc_IndexError,
+        PyExc_StopIteration,
+        PyExc_TypeError,
+        PyLong_AsSsize_t,
+        PyLong_FromLong,
+        PyLong_FromSsize_t,
+        PyMethodDef,
+        PyNumber_Add,
+        PyNumber_Index,
+        PyObject,
+        PyObject_CallNoArgs,
+        PyObject_GC_Del,
+        PyObject_GenericGetAttr,
+        PyObject_GetIter,
+        PyObject_SelfIter,
+        PySequence_Check,
+        PySequence_GetItem,
+        PySequence_Size,
+        PyTuple_New,
+        PyTuple_Pack,
+        PyType_GenericAlloc,
+        PyUnicode_InternFromString,
+        PyVectorcall_NARGS,
+        Py_BuildValue,
+        Py_IncRef,
+        Py_NewRef,
+        Py_None,
+        _PyArg_CheckPositional,
+        _PyArg_NoKeywords,
+        _PyArg_NoKwnames,
+        _PyObject_LookupSpecial,
+        _PyUnicode_EqualToASCIIString,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.object_model.file {
+        NULL,
+        PyArg_ParseTuple,
+        PyBytes_Size,
+        PyErr_BadInternalCall,
+        PyErr_Clear,
+        PyErr_Format,
+        PyErr_Occurred,
+        PyErr_SetString,
+        PyErr_WarnEx,
+        PyEval_RestoreThread,
+        PyEval_SaveThread,
+        PyExc_EOFError,
+        PyExc_RuntimeWarning,
+        PyExc_SystemError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyImport_ImportModuleAttrString,
+        PyLong_AsInt,
+        PyLong_FromLong,
+        PyLong_FromSsize_t,
+        PyMethodDef,
+        PyObject,
+        PyObject_CallFunction,
+        PyObject_CallMethod,
+        PyObject_CallNoArgs,
+        PyObject_CallOneArg,
+        PyObject_Free,
+        PyObject_GenericGetAttr,
+        PyObject_GetAttrString,
+        PyObject_GetOptionalAttrString,
+        PyObject_Repr,
+        PyObject_Str,
+        PySys_AuditTuple,
+        PyType_GenericAlloc,
+        PyUnicode_AsUTF8AndSize,
+        PyUnicode_FromFormat,
+        PyUnicode_FromString,
+        PyUnicode_GetLength,
+        PyUnicode_ReadChar,
+        PyUnicode_Substring,
+        Py_IsInitialized,
+        Py_NewRef,
+        Py_None,
+        _PyBytes_Resize,
+        _PyObject_New,
+        _PyUnicode_AsUTF8String,
+        _Py_write,
+        jacpy_bytes_address,
+        jacpy_errno,
+        jacpy_is_bytes,
+        jacpy_is_long,
+        jacpy_is_unicode,
+        jacpy_open_code_hook,
+        jacpy_open_code_userdata,
+        jacpy_release,
+        jacpy_set_errno,
+        jacpy_stdio_fileno
+    }
+    cpython_api --> runtime.python.object_model.genericalias {
+        NULL,
+        PyErr_Clear,
+        PyErr_ExceptionMatches,
+        PyErr_Format,
+        PyErr_Occurred,
+        PyErr_SetNone,
+        PyErr_SetString,
+        PyExc_AttributeError,
+        PyExc_StopIteration,
+        PyExc_TypeError,
+        PyList_Append,
+        PyList_GetItemRef,
+        PyList_New,
+        PyList_SetSlice,
+        PyMemberDef,
+        PyMethodDef,
+        PyObject,
+        PyObject_Call,
+        PyObject_CallFunction,
+        PyObject_CallOneArg,
+        PyObject_ClearWeakRefs,
+        PyObject_Dir,
+        PyObject_GC_Del,
+        PyObject_GenericGetAttr,
+        PyObject_GetAttr,
+        PyObject_GetItem,
+        PyObject_GetIter,
+        PyObject_GetOptionalAttrString,
+        PyObject_HasAttrWithError,
+        PyObject_Hash,
+        PyObject_IsTrue,
+        PyObject_RichCompare,
+        PyObject_RichCompareBool,
+        PyObject_SelfIter,
+        PyObject_SetAttrString,
+        PyObject_Vectorcall,
+        PySequence_Contains,
+        PySequence_List,
+        PySequence_Tuple,
+        PyTuple_New,
+        PyTuple_Pack,
+        PyType_GenericAlloc,
+        PyUnicodeWriter,
+        PyUnicodeWriter_Create,
+        PyUnicodeWriter_Discard,
+        PyUnicodeWriter_Finish,
+        PyUnicodeWriter_WriteASCII,
+        PyUnicodeWriter_WriteChar,
+        PyUnicode_FromString,
+        PyUnicode_InternFromString,
+        PyVectorcall_Function,
+        Py_BuildValue,
+        Py_Ellipsis,
+        Py_NewRef,
+        Py_None,
+        Py_NotImplemented,
+        _PyArg_CheckPositional,
+        _PyArg_NoKeywords,
+        _PyObject_GC_New,
+        _PyTuple_Resize,
+        _PyUnicode_EqualToASCIIString,
+        _Py_typing_type_repr,
+        jacpy_is_exact_list,
+        jacpy_is_list,
+        jacpy_is_tuple,
+        jacpy_is_type,
+        jacpy_is_unicode,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.object_model.header {
+        NULL,
+        PyObject,
+        PyThreadState_GetUnchecked,
+        PyType_IsSubtype,
+        PyUnicode_InternFromString,
+        Py_NewRef,
+        Py_NotImplemented,
+        _PyEval_GetBuiltin,
+        _Py_Dealloc,
+        _Py_NewReference,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.object_model.interpolation {
+        NULL,
+        PyDict_SetItemString,
+        PyErr_Format,
+        PyErr_SetString,
+        PyExc_SystemError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyInterpreterState,
+        PyMemberDef,
+        PyMethodDef,
+        PyObject,
+        PyObject_GC_Del,
+        PyType_GenericAlloc,
+        PyUnicode_AsUTF8AndSize,
+        PyUnicode_FromFormat,
+        PyUnicode_FromOrdinal,
+        Py_BuildValue,
+        Py_GetConstantBorrowed,
+        Py_NewRef,
+        Py_None,
+        _PyArg_BadArgument,
+        _PyObject_GC_New,
+        _PyType_GetDict,
+        _PyType_Name,
+        jacpy_is_unicode,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.object_model.iterator {
+        NULL,
+        PyErr_BadInternalCall,
+        PyErr_Clear,
+        PyErr_ExceptionMatches,
+        PyErr_Occurred,
+        PyErr_SetString,
+        PyExc_IndexError,
+        PyExc_OverflowError,
+        PyExc_StopAsyncIteration,
+        PyExc_StopIteration,
+        PyExc_TypeError,
+        PyIter_Check,
+        PyLong_AsSsize_t,
+        PyLong_FromLong,
+        PyLong_FromSsize_t,
+        PyMethodDef,
+        PyObject,
+        PyObject_CallMethod,
+        PyObject_CallNoArgs,
+        PyObject_GC_Del,
+        PyObject_GenericGetAttr,
+        PyObject_RichCompareBool,
+        PyObject_SelfIter,
+        PySequence_Check,
+        PySequence_GetItem,
+        PySequence_Size,
+        Py_BuildValue,
+        Py_NewRef,
+        Py_None,
+        Py_NotImplemented,
+        _PyCoro_GetAwaitableIter,
+        _PyGen_SetStopIterationValue,
+        _PyObject_GC_New,
+        _PyObject_HasLen,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.object_model.method {
+        NULL,
+        PyCallable_Check,
+        PyErr_BadInternalCall,
+        PyErr_SetString,
+        PyExc_TypeError,
+        PyMemberDef,
+        PyMethodDef,
+        PyObject,
+        PyObject_Call,
+        PyObject_ClearWeakRefs,
+        PyObject_GC_Del,
+        PyObject_GenericHash,
+        PyObject_GenericSetAttr,
+        PyObject_GetAttr,
+        PyObject_GetAttrString,
+        PyObject_GetOptionalAttrString,
+        PyObject_Hash,
+        PyObject_RichCompareBool,
+        PyThreadState_GetUnchecked,
+        PyType_Ready,
+        PyUnicode_FromFormat,
+        PyVectorcall_Call,
+        Py_BuildValue,
+        Py_NewRef,
+        Py_None,
+        Py_NotImplemented,
+        _PyArg_CheckPositional,
+        _PyArg_NoKeywords,
+        _PyObject_GC_New,
+        _PyObject_VectorcallPrepend,
+        _PyType_LookupRef,
+        jacpy_is_unicode,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.object_model.namespace {
+        NULL,
+        PyArg_UnpackTuple,
+        PyArg_ValidateKeywordArguments,
+        PyDict_GetItemRef,
+        PyDict_Keys,
+        PyDict_New,
+        PyDict_Type,
+        PyDict_Update,
+        PyErr_Format,
+        PyErr_Occurred,
+        PyExc_TypeError,
+        PyIter_Next,
+        PyList_Append,
+        PyList_New,
+        PyMemberDef,
+        PyMethodDef,
+        PyObject,
+        PyObject_CallNoArgs,
+        PyObject_CallOneArg,
+        PyObject_GC_Del,
+        PyObject_GenericGetAttr,
+        PyObject_GenericSetAttr,
+        PyObject_GetIter,
+        PyObject_RichCompare,
+        PyTuple_New,
+        PyTuple_Pack,
+        PyType_GenericAlloc,
+        PyUnicode_FromFormat,
+        PyUnicode_FromString,
+        PyUnicode_Join,
+        Py_NewRef,
+        Py_NotImplemented,
+        Py_ReprEnter,
+        Py_ReprLeave,
+        _PyArg_NoPositional,
+        _PyType_Name,
+        jacpy_is_exact_dict,
+        jacpy_is_unicode,
+        jacpy_release,
+        jacpy_unicode_size
+    }
+    cpython_api --> runtime.python.object_model.picklebuffer {
+        NULL,
+        PyArg_ParseTupleAndKeywords,
+        PyBuffer_IsContiguous,
+        PyBuffer_Release,
+        PyErr_Format,
+        PyErr_SetString,
+        PyExc_BufferError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyMemoryView_FromObject,
+        PyMethodDef,
+        PyObject,
+        PyObject_ClearWeakRefs,
+        PyObject_GetBuffer,
+        Py_NewRef,
+        Py_None,
+        Py_buffer,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.object_model.range {
+        NULL,
+        PyErr_BadArgument,
+        PyErr_Clear,
+        PyErr_Format,
+        PyErr_Occurred,
+        PyErr_SetString,
+        PyExc_IndexError,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyIndex_Check,
+        PyLong_AsLong,
+        PyLong_AsLongAndOverflow,
+        PyLong_AsSsize_t,
+        PyLong_FromLong,
+        PyLong_FromSsize_t,
+        PyLong_GetSign,
+        PyMemberDef,
+        PyMethodDef,
+        PyNumber_Add,
+        PyNumber_AsSsize_t,
+        PyNumber_FloorDivide,
+        PyNumber_Index,
+        PyNumber_Multiply,
+        PyNumber_Negative,
+        PyNumber_Remainder,
+        PyNumber_Subtract,
+        PyObject,
+        PyObject_Free,
+        PyObject_GenericGetAttr,
+        PyObject_Hash,
+        PyObject_IsTrue,
+        PyObject_Not,
+        PyObject_RichCompareBool,
+        PyObject_SelfIter,
+        PyTuple_New,
+        PyUnicode_FromFormat,
+        PyVectorcall_NARGS,
+        Py_BuildValue,
+        Py_IncRef,
+        Py_NewRef,
+        Py_None,
+        Py_NotImplemented,
+        _PyArg_NoKeywords,
+        _PyArg_NoKwnames,
+        _PyObject_New,
+        _PySequence_IterSearch,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.object_model.slice {
+        NULL,
+        PyArg_UnpackTuple,
+        PyDict_Size,
+        PyErr_SetString,
+        PyExc_TypeError,
+        PyExc_ValueError,
+        PyIndex_Check,
+        PyLong_AsSsize_t,
+        PyLong_FromLong,
+        PyLong_FromSsize_t,
+        PyLong_GetSign,
+        PyMemberDef,
+        PyMethodDef,
+        PyNumber_Add,
+        PyNumber_Index,
+        PyObject,
+        PyObject_GC_Del,
+        PyObject_GenericGetAttr,
+        PyObject_Hash,
+        PyObject_RichCompare,
+        PyObject_RichCompareBool,
+        PyTuple_Pack,
+        PyUnicode_FromFormat,
+        PyUnicode_FromString,
+        Py_BuildValue,
+        Py_NewRef,
+        Py_None,
+        Py_NotImplemented,
+        _PyArg_NoKeywords,
+        _PyEval_SliceIndex,
+        _PyObject_GC_New,
+        _Py_SetImmortal,
+        jacpy_is_long,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.object_model.structseq {
+        NULL,
+        PyDict_GetItemRef,
+        PyDict_GetItemWithError,
+        PyDict_Keys,
+        PyDict_New,
+        PyDict_Pop,
+        PyDict_SetItem,
+        PyDict_Size,
+        PyErr_BadInternalCall,
+        PyErr_Format,
+        PyErr_NoMemory,
+        PyErr_Occurred,
+        PyExc_RuntimeError,
+        PyExc_SystemError,
+        PyExc_TypeError,
+        PyInterpreterState,
+        PyInterpreterState_Main,
+        PyLong_AsSsize_t,
+        PyLong_FromSsize_t,
+        PyMem_Free,
+        PyMem_Malloc,
+        PyMemberDef,
+        PyMethodDef,
+        PyObject,
+        PyObject_GC_Del,
+        PySequence_Fast,
+        PyTuple_New,
+        PyType_FromSpecWithBases,
+        PyType_Ready,
+        PyType_Slot,
+        PyType_Spec,
+        PyUnicodeWriter_Create,
+        PyUnicodeWriter_Discard,
+        PyUnicodeWriter_Finish,
+        PyUnicodeWriter_WriteChar,
+        PyUnicodeWriter_WriteRepr,
+        PyUnicodeWriter_WriteStr,
+        PyUnicode_FromString,
+        PyUnicode_InternFromString,
+        Py_BuildValue,
+        Py_IncRef,
+        Py_NewRef,
+        Py_None,
+        _PyArg_NoPositional,
+        _PyObject_GC_NewVar,
+        _PyStaticType_FiniBuiltin,
+        _PyStaticType_InitBuiltin,
+        _PyTuple_FromArray,
+        _PyTuple_Resize,
+        _PyType_GetDict,
+        _PyType_HasSubclasses,
+        _Py_SetImmortal,
+        jacpy_is_dict,
+        jacpy_release
+    }
+    cpython_api --> runtime.python.object_model.template {
+        NULL,
+        PyErr_Format,
+        PyErr_SetString,
+        PyExc_TypeError,
+        PyImport_ImportModule,
+        PyIter_Next,
+        PyMemberDef,
+        PyMethodDef,
+        PyObject,
+        PyObject_GC_Del,
+        PyObject_GetAttrString,
+        PyObject_GetIter,
+        PyObject_SelfIter,
+        PySequence_Concat,
+        PyTuple_New,
+        PyType_GenericAlloc,
+        PyUnicode_Concat,
+        PyUnicode_FromFormat,
+        Py_BuildValue,
+        Py_GetConstantBorrowed,
+        Py_NewRef,
+        _PyObject_GC_New,
+        _PyType_Name,
+        jacpy_is_unicode,
+        jacpy_release,
+        jacpy_unicode_size
+    }
+    cpython_api --> runtime.python.object_model.union {
+        NULL,
+        PyErr_Clear,
+        PyErr_Format,
+        PyErr_SetString,
+        PyExc_TypeError,
+        PyFrozenSet_New,
+        PyImport_ImportModule,
+        PyList_Append,
+        PyList_AsTuple,
+        PyList_GetItem,
+        PyList_New,
+        PyMemberDef,
+        PyMethodDef,
+        PyObject,
+        PyObject_CallFunctionObjArgs,
+        PyObject_ClearWeakRefs,
+        PyObject_GC_Del,
+        PyObject_GenericGetAttr,
+        PyObject_GetAttr,
+        PyObject_GetAttrString,
+        PyObject_Hash,
+        PyObject_RichCompareBool,
+        PySequence_Contains,
+        PySet_Add,
+        PySet_Contains,
+        PySet_New,
+        PyType_GenericAlloc,
+        PyUnicodeWriter_Create,
+        PyUnicodeWriter_Discard,
+        PyUnicodeWriter_Finish,
+        PyUnicodeWriter_WriteASCII,
+        PyUnicode_FromString,
+        Py_NewRef,
+        Py_None,
+        Py_NotImplemented,
+        _PyNone_Type,
+        _PyObject_GC_New,
+        _PyTypeAlias_Type,
+        _PyUnicode_EqualToASCIIString,
+        _Py_typing_type_repr,
+        jacpy_is_exact_tuple,
+        jacpy_is_type,
+        jacpy_is_unicode,
+        jacpy_release
+    }
+    layouts --> runtime.python.bindings.arguments { PyTypeObject }
+    layouts --> runtime.python.bindings.asyncio {
+        METH_FASTCALL,
+        METH_NOARGS,
+        METH_O,
+        PyGetSetDef,
+        Py_TPFLAGS_BASETYPE,
+        Py_TPFLAGS_DEFAULT,
+        Py_TPFLAGS_HAVE_GC,
+        Py_TPFLAGS_IMMUTABLETYPE,
+        Py_TPFLAGS_MANAGED_DICT,
+        Py_TPFLAGS_MANAGED_WEAKREF,
+        Py_am_await,
+        Py_am_send,
+        Py_tp_call,
+        Py_tp_clear,
+        Py_tp_dealloc,
+        Py_tp_doc,
+        Py_tp_finalize,
+        Py_tp_getattro,
+        Py_tp_getset,
+        Py_tp_init,
+        Py_tp_iter,
+        Py_tp_iternext,
+        Py_tp_methods,
+        Py_tp_new,
+        Py_tp_repr,
+        Py_tp_token,
+        Py_tp_traverse
+    }
+    layouts --> runtime.python.bindings.buffer { PY_BUFFER_SIZE }
+    layouts --> runtime.python.bindings.datetime {
+        METH_CLASS,
+        METH_FASTCALL,
+        METH_KEYWORDS,
+        METH_NOARGS,
+        METH_O,
+        METH_VARARGS,
+        PY_TUPLE_OBJECT_SIZE,
+        PyDateTime_CAPI,
+        PyGetSetDef,
+        PyStatus,
+        PyTypeObject,
+        Py_TPFLAGS_DEFAULT,
+        Py_TPFLAGS_HAVE_GC,
+        Py_TPFLAGS_IMMUTABLETYPE,
+        Py_tp_dealloc,
+        Py_tp_doc,
+        Py_tp_getset,
+        Py_tp_methods,
+        Py_tp_new,
+        Py_tp_repr,
+        Py_tp_traverse,
+        _PyStatus_TYPE_ERROR,
+        _PyStatus_TYPE_OK
+    }
+    layouts --> runtime.python.bindings.decimal {
+        METH_CLASS,
+        METH_KEYWORDS,
+        METH_NOARGS,
+        METH_O,
+        METH_VARARGS,
+        PyGetSetDef,
+        PyTypeObject,
+        Py_TPFLAGS_BASETYPE,
+        Py_TPFLAGS_DEFAULT,
+        Py_TPFLAGS_DISALLOW_INSTANTIATION,
+        Py_TPFLAGS_HAVE_GC,
+        Py_TPFLAGS_IMMUTABLETYPE,
+        Py_mp_ass_subscript,
+        Py_mp_length,
+        Py_mp_subscript,
+        Py_nb_absolute,
+        Py_nb_add,
+        Py_nb_bool,
+        Py_nb_divmod,
+        Py_nb_float,
+        Py_nb_floor_divide,
+        Py_nb_int,
+        Py_nb_multiply,
+        Py_nb_negative,
+        Py_nb_positive,
+        Py_nb_power,
+        Py_nb_remainder,
+        Py_nb_subtract,
+        Py_nb_true_divide,
+        Py_tp_clear,
+        Py_tp_dealloc,
+        Py_tp_doc,
+        Py_tp_getattro,
+        Py_tp_getset,
+        Py_tp_hash,
+        Py_tp_init,
+        Py_tp_iter,
+        Py_tp_methods,
+        Py_tp_new,
+        Py_tp_repr,
+        Py_tp_richcompare,
+        Py_tp_setattro,
+        Py_tp_str,
+        Py_tp_token,
+        Py_tp_traverse
+    }
+    layouts --> runtime.python.bindings.posix {
+        METH_COEXIST,
+        METH_NOARGS,
+        PyTypeObject as TypeLayout
+    }
+    layouts --> runtime.python.bindings.socket {
+        PY_SOCKET_API_SIZE,
+        PY_SOCKET_FAMILY_OFFSET,
+        PY_SOCKET_OBJECT_SIZE,
+        PY_SOCKET_PROTO_OFFSET,
+        PY_SOCKET_TYPE_OFFSET,
+        PyGetSetDef,
+        PySocketModule_APIObject,
+        PyTypeObject,
+        Py_READONLY,
+        Py_TPFLAGS_BASETYPE,
+        Py_TPFLAGS_DEFAULT,
+        Py_TPFLAGS_HAVE_GC,
+        Py_TPFLAGS_IMMUTABLETYPE,
+        Py_T_INT,
+        Py_tp_dealloc,
+        Py_tp_doc,
+        Py_tp_finalize,
+        Py_tp_getset,
+        Py_tp_init,
+        Py_tp_members,
+        Py_tp_methods,
+        Py_tp_new,
+        Py_tp_repr,
+        Py_tp_traverse
+    }
+    layouts --> runtime.python.bindings.sre {
+        METH_CLASS,
+        METH_O,
+        METH_VARARGS,
+        PyGetSetDef,
+        Py_READONLY,
+        Py_TPFLAGS_DEFAULT,
+        Py_TPFLAGS_DISALLOW_INSTANTIATION,
+        Py_TPFLAGS_HAVE_GC,
+        Py_TPFLAGS_IMMUTABLETYPE,
+        Py_T_INT,
+        Py_T_PYSSIZET,
+        Py_mp_subscript,
+        Py_tp_clear,
+        Py_tp_dealloc,
+        Py_tp_doc,
+        Py_tp_getset,
+        Py_tp_hash,
+        Py_tp_members,
+        Py_tp_methods,
+        Py_tp_repr,
+        Py_tp_richcompare,
+        Py_tp_token,
+        Py_tp_traverse,
+        _Py_T_OBJECT
+    }
+    layouts --> runtime.python.bindings.ssl {
+        PY_OS_ERROR_OBJECT_SIZE,
+        PyOSErrorObject,
+        PySocketModule_APIObject,
+        Py_TPFLAGS_BASETYPE,
+        Py_TPFLAGS_DEFAULT,
+        Py_TPFLAGS_IMMUTABLETYPE,
+        Py_tp_doc,
+        Py_tp_str
+    }
+    layouts --> runtime.python.bindings.type {
+        PY_STRUCT_SEQUENCE_DESC_SIZE,
+        PY_STRUCT_SEQUENCE_FIELD_SIZE,
+        PyGetSetDef,
+        PyStructSequence_Desc,
+        PyStructSequence_Field
+    }
+    layouts --> runtime.python.modules.asyncio {
+        PYGEN_ERROR,
+        PYGEN_NEXT,
+        PYGEN_RETURN,
+        Py_futureiters_MAXFREELIST,
+        _Py_freelists_FUTUREITERS
+    }
+    layouts --> runtime.python.modules.asyncio_core { _object }
+    layouts --> runtime.python.modules.atexit {
+        PyStatus,
+        _PyStatus_TYPE_ERROR,
+        _PyStatus_TYPE_OK
+    }
+    layouts --> runtime.python.modules.datetime { PyTypeObject }
+    layouts --> runtime.python.modules.datetime_date {
+        PY_DATETIME_DATE_SIZE,
+        PyDateTime_Date,
+        PyGetSetDef,
+        PyNumberMethods,
+        PyTypeObject,
+        PyVarObject,
+        Py_TPFLAGS_BASETYPE,
+        Py_TPFLAGS_DEFAULT,
+        Py_tp_traverse,
+        _PyTime_ROUND_FLOOR,
+        _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
+        _object
+    }
+    layouts --> runtime.python.modules.datetime_datetime {
+        PY_DATETIME_BASE_DATETIME_SIZE,
+        PY_DATETIME_DATETIME_SIZE,
+        PyDateTime_DateTime,
+        PyGetSetDef,
+        PyNumberMethods,
+        PyTypeObject,
+        PyVarObject,
+        Py_TPFLAGS_BASETYPE,
+        Py_TPFLAGS_DEFAULT,
+        _PyTime_ROUND_FLOOR,
+        _PyTime_ROUND_HALF_EVEN,
+        _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
+        _object
+    }
+    layouts --> runtime.python.modules.datetime_delta {
+        PY_DATETIME_DELTA_DAYS_OFFSET,
+        PY_DATETIME_DELTA_MICROSECONDS_OFFSET,
+        PY_DATETIME_DELTA_SECONDS_OFFSET,
+        PY_DATETIME_DELTA_SIZE,
+        PyDateTime_Delta,
+        PyNumberMethods,
+        PyTypeObject,
+        PyVarObject,
+        Py_CONSTANT_EMPTY_STR,
+        Py_CONSTANT_ONE,
+        Py_READONLY,
+        Py_TPFLAGS_BASETYPE,
+        Py_TPFLAGS_DEFAULT,
+        Py_T_INT,
+        _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
+        _object
+    }
+    layouts --> runtime.python.modules.datetime_objects {
+        PY_DATETIME_DATA_OFFSET,
+        PyDateTime_Date,
+        PyDateTime_DateTime,
+        PyDateTime_Delta,
+        PyDateTime_Time,
+        PyTypeObject,
+        _PyDateTime_BaseTZInfo,
+        _object
+    }
+    layouts --> runtime.python.modules.datetime_time {
+        PY_DATETIME_BASE_TIME_SIZE,
+        PY_DATETIME_TIME_SIZE,
+        PyDateTime_Time,
+        PyGetSetDef,
+        PyTypeObject,
+        PyVarObject,
+        Py_TPFLAGS_BASETYPE,
+        Py_TPFLAGS_DEFAULT,
+        _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
+        _object
+    }
+    layouts --> runtime.python.modules.datetime_tzinfo {
+        PY_DATETIME_TZINFO_SIZE,
+        PY_OBJECT_SIZE,
+        PyDateTime_DateTime,
+        PyTypeObject,
+        PyVarObject,
+        Py_TPFLAGS_BASETYPE,
+        Py_TPFLAGS_DEFAULT,
+        _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
+        _object
+    }
+    layouts --> runtime.python.modules.decimal_context { PyTypeObject }
+    layouts --> runtime.python.modules.decimal_number { PyTypeObject }
+    layouts --> runtime.python.modules.decimal_objects { PyTypeObject, _object }
+    layouts --> runtime.python.modules.posix_core { PyStatus, _PyStatus_TYPE_OK }
+    layouts --> runtime.python.modules.posix_fileio { PY_BUFFER_SIZE }
+    layouts --> runtime.python.modules.posix_stat { PyTypeObject as TypeLayout }
+    layouts --> runtime.python.modules.socket_address {
+        PY_BUFFER_SIZE,
+        PySocketSockObject,
+        Py_CLEANUP_SUPPORTED
+    }
+    layouts --> runtime.python.modules.socket_core {
+        PySocketSockObject,
+        PyTypeObject,
+        _PyTime_ROUND_CEILING,
+        _PyTime_ROUND_TIMEOUT,
+        _socket_state
+    }
+    layouts --> runtime.python.modules.socket_object {
+        PY_BUFFER_SIZE,
+        PySocketSockObject,
+        PyTypeObject
+    }
+    layouts --> runtime.python.modules.sre {
+        PyBUF_SIMPLE,
+        PyTypeObject,
+        PyVarObject,
+        Py_EQ,
+        Py_NE,
+        _object
+    }
+    layouts --> runtime.python.modules.ssl { PyTypeObject }
+    layouts --> runtime.python.modules.ssl_cert { PyTypeObject }
+    layouts --> runtime.python.modules.ssl_core {
+        PySocketSockObject,
+        _PyTime_ROUND_CEILING
+    }
+    layouts --> runtime.python.modules.zoneinfo { PyDateTime_CAPI, PyDateTime_DateTime }
+    layouts --> runtime.python.object_model.bool {
+        PyLongObject,
+        PyLong_DIGITS_OFFSET,
+        PyLong_DIGIT_SIZE,
+        PyNumberMethods,
+        PyTypeObject,
+        PyVarObject,
+        Py_TPFLAGS_DEFAULT,
+        _PyLongValue,
+        _PyLong_FALSE_TAG,
+        _PyLong_TRUE_TAG,
+        _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
+        _object
+    }
+    layouts --> runtime.python.object_model.capsule {
+        PyCapsule,
+        PyCapsule_SIZE,
+        PyTypeObject,
+        PyVarObject,
+        Py_TPFLAGS_DEFAULT,
+        Py_TPFLAGS_HAVE_GC,
+        _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
+        _object
+    }
+    layouts --> runtime.python.object_model.cell {
+        PyCellObject,
+        PyCellObject_SIZE,
+        PyGetSetDef,
+        PyTypeObject,
+        PyVarObject,
+        Py_TPFLAGS_DEFAULT,
+        Py_TPFLAGS_HAVE_GC,
+        _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
+        _object
+    }
+    layouts --> runtime.python.object_model.complex {
+        METH_CLASS,
+        METH_NOARGS,
+        METH_O,
+        PyComplexObject,
+        PyComplexObject_IMAG,
+        PyComplexObject_REAL,
+        PyComplexObject_SIZE,
+        PyFloatObject,
+        PyHASH_IMAG,
+        PyNumberMethods,
+        PyTypeObject,
+        PyVarObject,
+        Py_DTSF_SIGN,
+        Py_EQ,
+        Py_NE,
+        Py_READONLY,
+        Py_TPFLAGS_BASETYPE,
+        Py_TPFLAGS_DEFAULT,
+        Py_T_DOUBLE,
+        _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
+        _Py_TYPE_VERSION_COMPLEX,
+        _object
+    }
+    layouts --> runtime.python.object_model.enumerate {
+        METH_CLASS,
+        METH_NOARGS,
+        METH_O,
+        PyTypeObject,
+        PyVarObject,
+        Py_TPFLAGS_BASETYPE,
+        Py_TPFLAGS_DEFAULT,
+        Py_TPFLAGS_HAVE_GC,
+        _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
+        _object,
+        enumobject,
+        enumobject_SIZE,
+        reversedobject,
+        reversedobject_SIZE
+    }
+    layouts --> runtime.python.object_model.file {
+        METH_NOARGS,
+        METH_VARARGS,
+        PyGetSetDef,
+        PyStdPrinter_Object,
+        PyStdPrinter_Object_SIZE,
+        PyTypeObject,
+        PyVarObject,
+        Py_PRINT_RAW,
+        Py_TPFLAGS_DEFAULT,
+        Py_TPFLAGS_DISALLOW_INSTANTIATION,
+        _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
+        _object
+    }
+    layouts --> runtime.python.object_model.genericalias {
+        METH_NOARGS,
+        METH_O,
+        PyGetSetDef,
+        PyMappingMethods,
+        PyNumberMethods,
+        PyTypeObject,
+        PyVarObject,
+        Py_EQ,
+        Py_NE,
+        Py_READONLY,
+        Py_TPFLAGS_BASETYPE,
+        Py_TPFLAGS_DEFAULT,
+        Py_TPFLAGS_HAVE_GC,
+        Py_TPFLAGS_HAVE_VECTORCALL,
+        Py_T_BOOL,
+        _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
+        _Py_T_OBJECT,
+        _object,
+        gaiterobject,
+        gaiterobject_SIZE,
+        gaobject,
+        gaobject_ARGS,
+        gaobject_ORIGIN,
+        gaobject_SIZE,
+        gaobject_STARRED,
+        gaobject_VECTORCALL,
+        gaobject_WEAKREFLIST
+    }
+    layouts --> runtime.python.object_model.header {
+        PyGC_Head_SIZE,
+        PyListObject,
+        PyThreadState_INTERP,
+        PyTupleObject,
+        PyTupleObject_ITEMS,
+        PyTypeObject,
+        PyVarObject,
+        Py_EQ,
+        Py_GE,
+        Py_GT,
+        Py_LE,
+        Py_LT,
+        Py_NE,
+        Py_TPFLAGS_LIST_SUBCLASS,
+        _PyGC_PREV_FLAGS,
+        _PyGC_PREV_MASK,
+        _PyGC_PREV_MASK_FINALIZED,
+        _Py_IMMORTAL_INITIAL_REFCNT,
+        _Py_freelist,
+        _gc_runtime_state_GENERATION0,
+        _gc_runtime_state_HEAP_SIZE,
+        _object
+    }
+    layouts --> runtime.python.object_model.interpolation {
+        FVC_ASCII,
+        FVC_REPR,
+        FVC_STR,
+        METH_CLASS,
+        METH_NOARGS,
+        METH_O,
+        PyStatus,
+        PyTypeObject,
+        PyVarObject,
+        Py_CONSTANT_EMPTY_STR,
+        Py_READONLY,
+        Py_TPFLAGS_DEFAULT,
+        Py_TPFLAGS_HAVE_GC,
+        Py_T_OBJECT_EX,
+        _PyStatus_TYPE_ERROR,
+        _PyStatus_TYPE_OK,
+        _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
+        _object,
+        interpolationobject,
+        interpolationobject_CONVERSION,
+        interpolationobject_EXPRESSION,
+        interpolationobject_FORMAT_SPEC,
+        interpolationobject_SIZE,
+        interpolationobject_VALUE
+    }
+    layouts --> runtime.python.object_model.iterator {
+        METH_NOARGS,
+        METH_O,
+        METH_VARARGS,
+        PyAsyncMethods,
+        PyTypeObject,
+        PyVarObject,
+        Py_EQ,
+        Py_TPFLAGS_DEFAULT,
+        Py_TPFLAGS_HAVE_GC,
+        _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
+        _object,
+        anextawaitableobject,
+        anextawaitableobject_SIZE,
+        calliterobject,
+        calliterobject_SIZE,
+        seqiterobject,
+        seqiterobject_SIZE
+    }
+    layouts --> runtime.python.object_model.method {
+        METH_NOARGS,
+        PyGetSetDef,
+        PyInstanceMethodObject,
+        PyInstanceMethodObject_FUNC,
+        PyInstanceMethodObject_SIZE,
+        PyMethodObject,
+        PyMethodObject_FUNC,
+        PyMethodObject_SELF,
+        PyMethodObject_SIZE,
+        PyMethodObject_VECTORCALL,
+        PyMethodObject_WEAKREFLIST,
+        PyTypeObject,
+        PyVarObject,
+        Py_EQ,
+        Py_NE,
+        Py_READONLY,
+        Py_TPFLAGS_DEFAULT,
+        Py_TPFLAGS_HAVE_GC,
+        Py_TPFLAGS_HAVE_VECTORCALL,
+        Py_pymethodobjects_MAXFREELIST,
+        _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
+        _Py_T_OBJECT,
+        _Py_freelists_PYMETHODOBJECTS,
+        _object
+    }
+    layouts --> runtime.python.object_model.namespace {
+        METH_KEYWORDS,
+        METH_NOARGS,
+        METH_VARARGS,
+        PyTypeObject,
+        PyVarObject,
+        Py_READONLY,
+        Py_TPFLAGS_BASETYPE,
+        Py_TPFLAGS_DEFAULT,
+        Py_TPFLAGS_HAVE_GC,
+        _PyNamespaceObject,
+        _PyNamespaceObject_NS_DICT,
+        _PyNamespaceObject_SIZE,
+        _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
+        _Py_T_OBJECT,
+        _object
+    }
+    layouts --> runtime.python.object_model.picklebuffer {
+        METH_NOARGS,
+        PyBUF_FULL_RO,
+        PyBufferProcs,
+        PyMemoryViewObject_FLAGS,
+        PyMemoryViewObject_VIEW,
+        PyPickleBufferObject,
+        PyPickleBufferObject_SIZE,
+        PyPickleBufferObject_VIEW,
+        PyPickleBufferObject_WEAKREFLIST,
+        PyTypeObject,
+        PyVarObject,
+        Py_TPFLAGS_DEFAULT,
+        Py_TPFLAGS_HAVE_GC,
+        Py_buffer_ITEMSIZE,
+        Py_buffer_LEN,
+        _Py_MEMORYVIEW_C,
+        _Py_MEMORYVIEW_FORTRAN,
+        _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
+        _object
+    }
+    layouts --> runtime.python.object_model.range {
+        METH_NOARGS,
+        METH_O,
+        PY_ITERSEARCH_CONTAINS,
+        PY_ITERSEARCH_COUNT,
+        PY_ITERSEARCH_INDEX,
+        PyMappingMethods,
+        PyNumberMethods,
+        PySequenceMethods,
+        PyTypeObject,
+        PyVarObject,
+        Py_EQ,
+        Py_GE,
+        Py_GT,
+        Py_LE,
+        Py_LT,
+        Py_NE,
+        Py_READONLY,
+        Py_TPFLAGS_DEFAULT,
+        Py_TPFLAGS_SEQUENCE,
+        Py_T_OBJECT_EX,
+        Py_range_iters_MAXFREELIST,
+        Py_ranges_MAXFREELIST,
+        _PyRangeIterObject,
+        _PyRangeIterObject_SIZE,
+        _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
+        _Py_freelists_RANGES,
+        _Py_freelists_RANGE_ITERS,
+        _object,
+        longrangeiterobject,
+        longrangeiterobject_SIZE,
+        rangeobject,
+        rangeobject_SIZE,
+        rangeobject_START,
+        rangeobject_STEP,
+        rangeobject_STOP
+    }
+    layouts --> runtime.python.object_model.slice {
+        METH_NOARGS,
+        METH_O,
+        PySliceObject,
+        PySliceObject_SIZE,
+        PySliceObject_START,
+        PySliceObject_STEP,
+        PySliceObject_STOP,
+        PyTypeObject,
+        PyVarObject,
+        Py_EQ,
+        Py_GE,
+        Py_GT,
+        Py_LE,
+        Py_LT,
+        Py_READONLY,
+        Py_TPFLAGS_DEFAULT,
+        Py_TPFLAGS_HAVE_GC,
+        Py_slices_MAXFREELIST,
+        _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
+        _Py_T_OBJECT,
+        _Py_freelists_SLICES,
+        _object
+    }
+    layouts --> runtime.python.object_model.structseq {
+        METH_KEYWORDS,
+        METH_NOARGS,
+        METH_VARARGS,
+        PY_MEMBER_DEF_SIZE,
+        PY_TYPE_SLOT_SIZE,
+        PY_TYPE_SPEC_SIZE,
+        PyStructSequence_Desc,
+        PyStructSequence_Field,
+        PyStructSequence_SIZE,
+        PyTupleObject,
+        PyTupleObject_ITEMS,
+        PyTypeObject,
+        PyVarObject,
+        Py_READONLY,
+        Py_TPFLAGS_DEFAULT,
+        Py_TPFLAGS_HAVE_GC,
+        Py_TPFLAGS_HEAPTYPE,
+        Py_TPFLAGS_READY,
+        Py_tp_dealloc,
+        Py_tp_doc,
+        Py_tp_members,
+        Py_tp_methods,
+        Py_tp_new,
+        Py_tp_repr,
+        Py_tp_traverse,
+        _Py_T_OBJECT,
+        _object
+    }
+    layouts --> runtime.python.object_model.template {
+        METH_CLASS,
+        METH_NOARGS,
+        METH_O,
+        PyGetSetDef,
+        PySequenceMethods,
+        PyTypeObject,
+        PyVarObject,
+        Py_CONSTANT_EMPTY_STR,
+        Py_READONLY,
+        Py_TPFLAGS_DEFAULT,
+        Py_TPFLAGS_HAVE_GC,
+        Py_T_OBJECT_EX,
+        _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
+        _object,
+        templateiterobject,
+        templateiterobject_SIZE,
+        templateobject,
+        templateobject_INTERPOLATIONS,
+        templateobject_SIZE,
+        templateobject_STRINGS
+    }
+    layouts --> runtime.python.object_model.union {
+        METH_CLASS,
+        METH_O,
+        PyGetSetDef,
+        PyMappingMethods,
+        PyNumberMethods,
+        PyTypeObject,
+        PyVarObject,
+        Py_EQ,
+        Py_NE,
+        Py_READONLY,
+        Py_TPFLAGS_DEFAULT,
+        Py_TPFLAGS_HAVE_GC,
+        _Py_STATIC_IMMORTAL_INITIAL_REFCNT,
+        _Py_T_OBJECT,
+        _object,
+        unionobject,
+        unionobject_ARGS,
+        unionobject_SIZE,
+        unionobject_WEAKREFLIST
+    }
+    layouts_platform --> runtime.python.object_model.header {
+        PyInterpreterState_FREELISTS,
+        PyInterpreterState_GC
     }
 }
 
 graph import runtime.python.bindings {
     arguments --> runtime.python.bindings.array {
-        BoundArguments,
-        CallSignature,
-        character_value,
-        index_value,
-        invoke
-    }
-    arguments --> runtime.python.bindings.binascii {
-        BoundArguments,
-        CallSignature,
-        invoke
-    }
-    arguments --> runtime.python.bindings.bisect {
-        BoundArguments,
-        CallSignature,
-        index_value,
-        invoke
-    }
-    arguments --> runtime.python.bindings.cmath {
         BoundArguments,
         CallSignature,
         invoke
@@ -21567,19 +27511,6 @@ graph import runtime.python.bindings {
         index_value,
         invoke
     }
-    arguments --> runtime.python.bindings.heapq {
-        BoundArguments,
-        CallSignature,
-        invalid,
-        invoke,
-        invoke_one
-    }
-    arguments --> runtime.python.bindings.itertools {
-        BoundArguments,
-        CallSignature,
-        index_value,
-        invoke
-    }
     arguments --> runtime.python.bindings.json {
         BoundArguments,
         CallSignature,
@@ -21587,50 +27518,14 @@ graph import runtime.python.bindings {
         invoke,
         invoke_one
     }
-    arguments --> runtime.python.bindings.math { BoundArguments, CallSignature, invoke }
-    arguments --> runtime.python.bindings.operator {
-        BoundArguments,
-        CallSignature,
-        index_value,
-        invoke,
-        invoke_one
-    }
-    arguments --> runtime.python.bindings.pickle {
-        BoundArguments,
-        CallSignature,
-        invoke
-    }
-    arguments --> runtime.python.bindings.queue {
-        BoundArguments,
-        CallSignature,
-        invoke
-    }
-    arguments --> runtime.python.bindings.random {
-        BoundArguments,
-        CallSignature,
-        invoke
-    }
-    arguments --> runtime.python.bindings.statistics {
-        BoundArguments,
-        CallSignature,
-        invoke
-    }
-    arguments --> runtime.python.bindings.struct {
-        BoundArguments,
-        CallSignature,
-        invoke
-    }
     array --> compiler.backends.py.jacpython.native_api { PyInit_array }
     binascii --> compiler.backends.py.jacpython.native_api { PyInit_binascii }
     bisect --> compiler.backends.py.jacpython.native_api { PyInit__bisect }
     buffer --> runtime.python.bindings.array {
-        BufferArgument,
         BufferLayout,
         jacpy_binding_buffer_dispose,
         jacpy_binding_buffer_fill
     }
-    buffer --> runtime.python.bindings.binascii { BufferArgument }
-    buffer --> runtime.python.bindings.operator { BufferArgument }
     buffer --> runtime.python.bindings.struct { BufferArgument }
     cmath --> compiler.backends.py.jacpython.native_api { PyInit_cmath }
     collections --> compiler.backends.py.jacpython.native_api { PyInit__collections }
@@ -21648,26 +27543,16 @@ graph import runtime.python.bindings {
         add_owned,
         add_state_owned,
         jacpy_binding_state_get,
-        jacpy_binding_state_set,
-        jacpy_binding_visit
+        jacpy_binding_state_set
     }
     module --> runtime.python.bindings.binascii {
-        MethodCallbacks,
-        MethodDefinition,
         ModuleDefinition,
         ModuleHooks,
         add_state_owned,
-        jacpy_binding_exception,
-        jacpy_binding_state_get
+        jacpy_binding_exception
     }
-    module --> runtime.python.bindings.bisect {
-        MethodCallbacks,
-        MethodDefinition,
-        ModuleDefinition
-    }
+    module --> runtime.python.bindings.bisect { ModuleDefinition }
     module --> runtime.python.bindings.cmath {
-        MethodCallbacks,
-        MethodDefinition,
         ModuleDefinition,
         ModuleHooks,
         add_owned
@@ -21680,8 +27565,7 @@ graph import runtime.python.bindings {
         add_owned,
         add_state_owned,
         jacpy_binding_state_get,
-        jacpy_binding_state_set,
-        jacpy_binding_visit
+        jacpy_binding_state_set
     }
     module --> runtime.python.bindings.csv {
         MethodCallbacks,
@@ -21694,8 +27578,7 @@ graph import runtime.python.bindings {
         jacpy_binding_module_native_get,
         jacpy_binding_module_native_present,
         jacpy_binding_module_native_set,
-        jacpy_binding_state_get,
-        jacpy_binding_visit
+        jacpy_binding_state_get
     }
     module --> runtime.python.bindings.functools {
         MethodCallbacks,
@@ -21705,22 +27588,15 @@ graph import runtime.python.bindings {
         add_owned,
         add_state_owned,
         jacpy_binding_state_get,
-        jacpy_binding_state_set,
-        jacpy_binding_visit
+        jacpy_binding_state_set
     }
-    module --> runtime.python.bindings.heapq {
-        MethodCallbacks,
-        MethodDefinition,
-        ModuleDefinition
-    }
+    module --> runtime.python.bindings.heapq { ModuleDefinition }
     module --> runtime.python.bindings.itertools {
         MethodCallbacks,
         MethodDefinition,
         ModuleDefinition,
         ModuleHooks,
-        add_state_owned,
-        jacpy_binding_state_get,
-        jacpy_binding_visit
+        add_state_owned
     }
     module --> runtime.python.bindings.json {
         MethodCallbacks,
@@ -21743,7 +27619,6 @@ graph import runtime.python.bindings {
         ModuleHooks,
         add_owned
     }
-    module --> runtime.python.bindings.payload { jacpy_binding_visit }
     module --> runtime.python.bindings.pickle {
         MethodCallbacks,
         MethodDefinition,
@@ -21752,10 +27627,8 @@ graph import runtime.python.bindings {
         add_owned,
         add_state_owned,
         jacpy_binding_exception,
-        jacpy_binding_exception_with_base,
         jacpy_binding_state_get,
-        jacpy_binding_state_set,
-        jacpy_binding_visit
+        jacpy_binding_state_set
     }
     module --> runtime.python.bindings.queue {
         MethodCallbacks,
@@ -21763,22 +27636,14 @@ graph import runtime.python.bindings {
         ModuleDefinition,
         ModuleHooks,
         add_state_owned,
-        jacpy_binding_exception,
-        jacpy_binding_state_get
+        jacpy_binding_exception
     }
     module --> runtime.python.bindings.random {
-        MethodCallbacks,
-        MethodDefinition,
         ModuleDefinition,
         ModuleHooks,
         add_state_owned
     }
-    module --> runtime.python.bindings.references { jacpy_binding_visit }
-    module --> runtime.python.bindings.statistics {
-        MethodCallbacks,
-        MethodDefinition,
-        ModuleDefinition
-    }
+    module --> runtime.python.bindings.statistics { ModuleDefinition }
     module --> runtime.python.bindings.struct {
         MethodCallbacks,
         MethodDefinition,
@@ -21787,17 +27652,13 @@ graph import runtime.python.bindings {
         add_state_owned,
         jacpy_binding_exception,
         jacpy_binding_state_get,
-        jacpy_binding_state_set,
-        jacpy_binding_visit
+        jacpy_binding_state_set
     }
     module --> runtime.python.bindings.type { MethodDefinition, install_methods }
-    module --> runtime.python.modules.queue { jacpy_binding_visit }
     operator --> compiler.backends.py.jacpython.native_api { PyInit__operator }
     payload --> runtime.python.bindings.array {
         clear_payload,
         dispose_payload,
-        jacpy_binding_native_get,
-        jacpy_binding_native_present,
         jacpy_binding_native_set,
         traverse_payload
     }
@@ -21807,7 +27668,6 @@ graph import runtime.python.bindings {
         jacpy_binding_native_clear,
         jacpy_binding_native_get,
         jacpy_binding_native_present,
-        jacpy_binding_native_set,
         jacpy_binding_untrack,
         traverse_payload
     }
@@ -21822,15 +27682,6 @@ graph import runtime.python.bindings {
     payload --> runtime.python.bindings.functools {
         clear_payload,
         dispose_payload,
-        jacpy_binding_native_get,
-        jacpy_binding_native_present,
-        jacpy_binding_native_set,
-        traverse_payload
-    }
-    payload --> runtime.python.bindings.itertools {
-        clear_payload,
-        dispose_payload,
-        jacpy_binding_dealloc_guard,
         jacpy_binding_native_get,
         jacpy_binding_native_present,
         jacpy_binding_native_set,
@@ -21855,32 +27706,22 @@ graph import runtime.python.bindings {
     payload --> runtime.python.bindings.pickle {
         clear_payload,
         dispose_payload,
-        jacpy_binding_native_get,
-        jacpy_binding_native_present,
-        jacpy_binding_native_set,
         traverse_payload
     }
     payload --> runtime.python.bindings.queue {
         clear_payload,
         dispose_payload,
-        jacpy_binding_native_get,
-        jacpy_binding_native_present,
-        jacpy_binding_native_set,
         traverse_payload
     }
     payload --> runtime.python.bindings.random {
         jacpy_binding_native_clear,
-        jacpy_binding_native_get,
-        jacpy_binding_native_present,
         jacpy_binding_native_set
     }
     payload --> runtime.python.bindings.struct {
-        NativeState,
         clear_payload,
         dispose_payload,
         jacpy_binding_native_get,
         jacpy_binding_native_present,
-        jacpy_binding_native_set,
         traverse_payload
     }
     pickle --> compiler.backends.py.jacpython.native_api { PyInit__pickle }
@@ -21890,18 +27731,12 @@ graph import runtime.python.bindings {
     references --> runtime.python.bindings.collections { ReferenceState, owned_tuple }
     references --> runtime.python.bindings.csv { ReferenceState }
     references --> runtime.python.bindings.functools { ReferenceState }
-    references --> runtime.python.bindings.itertools { ReferenceState }
     references --> runtime.python.bindings.json { ReferenceState }
     references --> runtime.python.bindings.operator { ReferenceState }
-    references --> runtime.python.bindings.pickle { ReferenceState, owned_tuple }
-    references --> runtime.python.bindings.struct { ReferenceState }
-    state --> runtime.python.bindings.array { NativeState }
-    state --> runtime.python.bindings.collections { NativeState }
+    references --> runtime.python.bindings.pickle { ReferenceState }
     state --> runtime.python.bindings.functools { NativeState }
-    state --> runtime.python.bindings.itertools { NativeState }
     state --> runtime.python.bindings.module { NativeState }
     state --> runtime.python.bindings.payload { NativeState }
-    state --> runtime.python.bindings.pickle { NativeState }
     state --> runtime.python.bindings.references { NativeState }
     state --> runtime.python.modules.csv { NativeState }
     state --> runtime.python.modules.queue { NativeState }
@@ -21916,9 +27751,7 @@ graph import runtime.python.bindings {
         TypeHooks,
         TypeSlot,
         jacpy_binding_allocate,
-        jacpy_binding_basicsize,
-        jacpy_binding_matches,
-        jacpy_binding_owner
+        jacpy_binding_matches
     }
     type --> runtime.python.bindings.collections {
         PropertyCallbacks,
@@ -21926,15 +27759,11 @@ graph import runtime.python.bindings {
         TypeDefinition,
         TypeFlags,
         TypeHooks,
-        jacpy_binding_allocate,
         jacpy_binding_base_clear,
         jacpy_binding_base_dealloc,
         jacpy_binding_base_init,
-        jacpy_binding_base_new,
         jacpy_binding_base_traverse,
-        jacpy_binding_basicsize,
         jacpy_binding_matches,
-        jacpy_binding_owner,
         jacpy_binding_parent
     }
     type --> runtime.python.bindings.csv {
@@ -21956,22 +27785,10 @@ graph import runtime.python.bindings {
         jacpy_binding_dict_peek,
         jacpy_binding_dict_present,
         jacpy_binding_dict_replace,
-        jacpy_binding_marker,
         jacpy_binding_owner
     }
-    type --> runtime.python.bindings.itertools {
-        TypeDefinition,
-        TypeFlags,
-        TypeHooks,
-        TypeSlot,
-        jacpy_binding_allocate,
-        jacpy_binding_basicsize,
-        jacpy_binding_owner,
-        jacpy_binding_type_matches
-    }
+    type --> runtime.python.bindings.itertools { TypeDefinition, TypeFlags, TypeHooks }
     type --> runtime.python.bindings.json {
-        PropertyCallbacks,
-        PropertyDefinition,
         TypeDefinition,
         TypeFlags,
         TypeHooks,
@@ -21995,29 +27812,14 @@ graph import runtime.python.bindings {
         PropertyDefinition,
         TypeDefinition,
         TypeFlags,
-        TypeHooks,
-        jacpy_binding_allocate,
-        jacpy_binding_basicsize,
-        jacpy_binding_matches,
-        jacpy_binding_owner,
-        jacpy_binding_type_matches
+        TypeHooks
     }
-    type --> runtime.python.bindings.queue {
-        TypeDefinition,
-        TypeFlags,
-        TypeHooks,
-        TypeSlot,
-        jacpy_binding_allocate,
-        jacpy_binding_base,
-        jacpy_binding_owner
-    }
+    type --> runtime.python.bindings.queue { TypeDefinition, TypeFlags, TypeHooks }
     type --> runtime.python.bindings.random {
         TypeDefinition,
         TypeFlags,
         TypeHooks,
-        TypeSlot,
         jacpy_binding_allocate,
-        jacpy_binding_base,
         jacpy_binding_free
     }
     type --> runtime.python.bindings.struct {
@@ -22026,69 +27828,13 @@ graph import runtime.python.bindings {
         TypeDefinition,
         TypeFlags,
         TypeHooks,
-        jacpy_binding_allocate,
-        jacpy_binding_owner
+        jacpy_binding_allocate
     }
-    arguments --> runtime.python.bindings.clinic.bz2 {
-        BoundArguments,
-        CallSignature,
-        invoke
-    }
-    arguments --> runtime.python.bindings.clinic.grp {
-        BoundArguments,
-        CallSignature,
-        invoke
-    }
-    arguments --> runtime.python.bindings.clinic.opcode {
-        BoundArguments,
-        CallSignature,
-        invoke
-    }
-    arguments --> runtime.python.bindings.clinic.pwd {
-        BoundArguments,
-        CallSignature,
-        invoke
-    }
-    arguments --> runtime.python.bindings.clinic.resource {
-        BoundArguments,
-        CallSignature,
-        invoke
-    }
-    arguments --> runtime.python.bindings.clinic.suggestions {
-        BoundArguments,
-        CallSignature,
-        invoke
-    }
-    arguments --> runtime.python.bindings.clinic.sysconfig {
-        BoundArguments,
-        CallSignature,
-        invoke
-    }
-    arguments --> runtime.python.bindings.clinic.syslog {
-        BoundArguments,
-        CallSignature,
-        invoke
-    }
-    arguments --> runtime.python.bindings.clinic.tracemalloc {
-        BoundArguments,
-        CallSignature,
-        invoke
-    }
-    arguments --> runtime.python.bindings.clinic.typing {
-        BoundArguments,
-        CallSignature,
-        invoke
-    }
-    arguments --> runtime.python.bindings.clinic.weakref {
-        BoundArguments,
-        CallSignature,
-        invoke
-    }
-    arguments --> runtime.python.bindings.clinic.zlib {
-        BoundArguments,
-        CallSignature,
-        invoke
-    }
+    arguments --> runtime.python.bindings.clinic.bz2 { CallSignature }
+    arguments --> runtime.python.bindings.clinic.grp { CallSignature }
+    arguments --> runtime.python.bindings.clinic.opcode { CallSignature }
+    arguments --> runtime.python.bindings.clinic.syslog { CallSignature }
+    arguments --> runtime.python.bindings.clinic.zlib { CallSignature }
     arguments --> runtime.python.bindings.zlib { BoundArguments, CallSignature, invoke }
     buffer --> runtime.python.bindings.clinic.bz2 { BufferArgument }
     buffer --> runtime.python.bindings.clinic.grp { BufferArgument }
@@ -22123,10 +27869,6 @@ graph import runtime.python.bindings {
         return_bool,
         return_int
     }
-    converters --> runtime.python.bindings.clinic.pwd {
-        argument_label,
-        convert_unicode
-    }
     converters --> runtime.python.bindings.clinic.resource {
         argument_label,
         borrowed_none,
@@ -22147,7 +27889,6 @@ graph import runtime.python.bindings {
         argument_label,
         convert_int
     }
-    converters --> runtime.python.bindings.clinic.typing { argument_label }
     converters --> runtime.python.bindings.clinic.weakref {
         argument_label,
         bad_argument,
@@ -22174,7 +27915,7 @@ graph import runtime.python.bindings {
         borrowed_none,
         borrowed_true
     }
-    converters --> runtime.python.modules.resource { borrowed_none, convert_int }
+    converters --> runtime.python.modules.resource { borrowed_none }
     converters --> runtime.python.modules.suggestions { borrowed_none }
     converters --> runtime.python.modules.syslog { borrowed_none }
     converters --> runtime.python.modules.tracemalloc { borrowed_none }
@@ -22271,10 +28012,7 @@ graph import runtime.python.bindings {
     module --> runtime.python.modules.grp { jacpy_binding_state_get }
     module --> runtime.python.modules.pwd { jacpy_binding_state_get }
     module --> runtime.python.modules.resource { jacpy_binding_state_get }
-    module --> runtime.python.modules.zlib {
-        jacpy_binding_state_get,
-        jacpy_binding_visit
-    }
+    module --> runtime.python.modules.zlib { jacpy_binding_state_get }
     opcode --> compiler.backends.py.jacpython.native_api { PyInit__opcode }
     payload --> runtime.python.bindings.bz2 { dispose_payload, traverse_payload }
     payload --> runtime.python.bindings.zlib {
@@ -22304,13 +28042,7 @@ graph import runtime.python.bindings {
     sysconfig --> compiler.backends.py.jacpython.native_api { PyInit__sysconfig }
     syslog --> compiler.backends.py.jacpython.native_api { PyInit_syslog }
     tracemalloc --> compiler.backends.py.jacpython.native_api { PyInit__tracemalloc }
-    type --> runtime.python.bindings.bz2 {
-        PropertyCallbacks,
-        PropertyDefinition,
-        TypeDefinition,
-        TypeFlags,
-        TypeHooks
-    }
+    type --> runtime.python.bindings.bz2 { TypeDefinition, TypeFlags, TypeHooks }
     type --> runtime.python.bindings.clinic.bz2 {
         PropertyCallbacks,
         PropertyDefinition
@@ -22374,9 +28106,7 @@ graph import runtime.python.bindings {
     weakref --> compiler.backends.py.jacpython.native_api { PyInit__weakref }
     zlib --> compiler.backends.py.jacpython.native_api { PyInit_zlib }
     arguments --> runtime.python.bindings.clinic.blake2 | runtime.python.bindings.clinic.hmac | runtime.python.bindings.clinic.md5 | runtime.python.bindings.clinic.sha1 | runtime.python.bindings.clinic.sha2 | runtime.python.bindings.clinic.sha3 {
-        BoundArguments,
-        CallSignature,
-        invoke
+        CallSignature
     }
     atexit --> compiler.backends.py.jacpython.native_api { PyInit_atexit }
     blake2 --> compiler.backends.py.jacpython.native_api { PyInit__blake2 }
@@ -22476,53 +28206,2124 @@ graph import runtime.python.bindings {
     type --> runtime.python.bindings.converters { jacpy_binding_type_matches }
     type --> runtime.python.bindings.hmac { TypeDefinition, TypeFlags, TypeHooks }
     type --> runtime.python.modules.hashlib { jacpy_binding_allocate }
+    abc --> compiler.backends.py.jacpython.native_api { PyInit__abc }
+    arguments --> runtime.python.bindings.array { PARSE_FORMAT }
+    arguments --> runtime.python.bindings.clinic.abc { check_positional }
+    arguments --> runtime.python.bindings.clinic.array {
+        CallSignature,
+        PARSE_KEYWORDS,
+        PARSE_NO_ARGUMENTS,
+        check_positional,
+        invoke_stack,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.asyncio {
+        CallSignature,
+        PARSE_KEYWORDS,
+        PARSE_NO_ARGUMENTS,
+        check_positional,
+        invoke_stack,
+        invoke_tuple,
+        unpack_mapping,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.binascii {
+        CallSignature,
+        PARSE_KEYWORDS,
+        check_positional,
+        invoke_stack,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.bisect {
+        CallSignature,
+        PARSE_KEYWORDS,
+        invoke_stack,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.blake2 {
+        PARSE_KEYWORDS,
+        invoke_tuple,
+        unpack_mapping
+    }
+    arguments --> runtime.python.bindings.clinic.bz2 {
+        PARSE_KEYWORDS,
+        PARSE_NOTHING,
+        PARSE_POSITIONAL,
+        invoke_stack,
+        invoke_tuple,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.cmath {
+        CallSignature,
+        PARSE_KEYWORDS,
+        check_positional,
+        invoke_stack,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.codecs {
+        CallSignature,
+        PARSE_KEYWORDS,
+        check_positional,
+        invoke_stack,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.collections {
+        CallSignature,
+        PARSE_KEYWORDS,
+        PARSE_POSITIONAL,
+        check_positional,
+        invoke_tuple,
+        unpack_mapping
+    }
+    arguments --> runtime.python.bindings.clinic.csv {
+        CallSignature,
+        PARSE_KEYWORDS,
+        invoke_stack,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.datetime {
+        CallSignature,
+        PARSE_KEYWORDS,
+        invoke_stack,
+        invoke_tuple,
+        unpack_mapping,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.elementtree {
+        CallSignature,
+        PARSE_KEYWORDS,
+        PARSE_NO_ARGUMENTS,
+        check_positional,
+        invoke_stack,
+        invoke_tuple,
+        unpack_mapping,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.fcntl { check_positional }
+    arguments --> runtime.python.bindings.clinic.functools {
+        CallSignature,
+        PARSE_KEYWORDS,
+        invoke_stack,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.grp {
+        PARSE_KEYWORDS,
+        invoke_stack,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.hashopenssl {
+        CallSignature,
+        PARSE_KEYWORDS,
+        check_positional,
+        invoke_stack,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.heapq { check_positional }
+    arguments --> runtime.python.bindings.clinic.hmac {
+        PARSE_KEYWORDS,
+        PARSE_NO_ARGUMENTS,
+        check_positional,
+        invoke_stack,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.itertools {
+        CallSignature,
+        PARSE_KEYWORDS,
+        PARSE_POSITIONAL,
+        check_positional,
+        invoke_tuple,
+        unpack_mapping
+    }
+    arguments --> runtime.python.bindings.clinic.locale { check_positional }
+    arguments --> runtime.python.bindings.clinic.lsprof {
+        CallSignature,
+        PARSE_KEYWORDS,
+        PARSE_NO_ARGUMENTS,
+        check_positional,
+        invoke_stack,
+        invoke_tuple,
+        unpack_mapping,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.lzma {
+        CallSignature,
+        PARSE_KEYWORDS,
+        check_positional,
+        invoke_stack,
+        invoke_tuple,
+        unpack_mapping,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.math {
+        CallSignature,
+        PARSE_KEYWORDS,
+        check_positional,
+        invoke_stack,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.md5 {
+        PARSE_KEYWORDS,
+        PARSE_NO_ARGUMENTS,
+        invoke_stack,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.mmap { check_positional }
+    arguments --> runtime.python.bindings.clinic.multibytecodec {
+        CallSignature,
+        PARSE_KEYWORDS,
+        PARSE_NO_ARGUMENTS,
+        check_positional,
+        invoke_stack,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.multiprocessing {
+        CallSignature,
+        PARSE_FORMAT,
+        PARSE_KEYWORDS,
+        check_positional,
+        invoke_stack,
+        invoke_tuple,
+        unpack_mapping,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.opcode {
+        PARSE_KEYWORDS,
+        invoke_stack,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.operator { check_positional }
+    arguments --> runtime.python.bindings.clinic.pickle {
+        CallSignature,
+        PARSE_KEYWORDS,
+        PARSE_NO_ARGUMENTS,
+        invoke_stack,
+        invoke_tuple,
+        unpack_mapping,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.posix {
+        CallSignature,
+        PARSE_KEYWORDS,
+        PARSE_NO_ARGUMENTS,
+        check_positional,
+        invoke_stack,
+        invoke_tuple,
+        unpack_mapping,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.posixshmem {
+        BoundArguments,
+        CallSignature,
+        PARSE_FORMAT_KEYWORDS,
+        invoke
+    }
+    arguments --> runtime.python.bindings.clinic.posixsubprocess { check_positional }
+    arguments --> runtime.python.bindings.clinic.pyexpat {
+        CallSignature,
+        PARSE_KEYWORDS,
+        invoke_stack,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.queue {
+        CallSignature,
+        PARSE_KEYWORDS,
+        PARSE_NOTHING,
+        PARSE_NO_ARGUMENTS,
+        invoke_stack,
+        invoke_tuple,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.random {
+        CallSignature,
+        PARSE_POSITIONAL,
+        check_positional,
+        invoke_tuple
+    }
+    arguments --> runtime.python.bindings.clinic.resource { check_positional }
+    arguments --> runtime.python.bindings.clinic.select {
+        CallSignature,
+        PARSE_KEYWORDS,
+        PARSE_NOTHING,
+        check_positional,
+        invoke_stack,
+        invoke_tuple,
+        unpack_mapping,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.sha1 {
+        PARSE_KEYWORDS,
+        PARSE_NO_ARGUMENTS,
+        invoke_stack,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.sha2 {
+        PARSE_KEYWORDS,
+        PARSE_NO_ARGUMENTS,
+        invoke_stack,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.sha3 {
+        PARSE_KEYWORDS,
+        invoke_stack,
+        invoke_tuple,
+        unpack_mapping,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.socket {
+        CallSignature,
+        PARSE_KEYWORDS,
+        invoke_tuple,
+        unpack_mapping
+    }
+    arguments --> runtime.python.bindings.clinic.sqlite3 {
+        CallSignature,
+        PARSE_KEYWORDS,
+        PARSE_POSITIONAL,
+        check_positional,
+        invoke_stack,
+        invoke_tuple,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.sre {
+        CallSignature,
+        PARSE_KEYWORDS,
+        PARSE_NO_ARGUMENTS,
+        check_positional,
+        invoke_stack,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.ssl {
+        CallSignature,
+        PARSE_KEYWORDS,
+        PARSE_NOTHING,
+        PARSE_POSITIONAL,
+        check_positional,
+        invoke_stack,
+        invoke_tuple,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.statistics { check_positional }
+    arguments --> runtime.python.bindings.clinic.struct {
+        CallSignature,
+        PARSE_KEYWORDS,
+        check_positional,
+        invoke_stack,
+        invoke_tuple,
+        unpack_mapping,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.suggestions { check_positional }
+    arguments --> runtime.python.bindings.clinic.syslog {
+        PARSE_KEYWORDS,
+        invoke_stack,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.termios { check_positional }
+    arguments --> runtime.python.bindings.clinic.tracemalloc { check_positional }
+    arguments --> runtime.python.bindings.clinic.unicodedata { check_positional }
+    arguments --> runtime.python.bindings.clinic.weakref { check_positional }
+    arguments --> runtime.python.bindings.clinic.zlib {
+        PARSE_KEYWORDS,
+        PARSE_NO_ARGUMENTS,
+        check_positional,
+        invoke_stack,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.zoneinfo {
+        CallSignature,
+        PARSE_KEYWORDS,
+        invoke_stack,
+        invoke_tuple,
+        unpack_mapping,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.clinic.zstd {
+        CallSignature,
+        PARSE_KEYWORDS,
+        check_positional,
+        invoke_stack,
+        invoke_tuple,
+        unpack_mapping,
+        unpack_stack
+    }
+    arguments --> runtime.python.bindings.collections { PARSE_FORMAT }
+    arguments --> runtime.python.bindings.csv { PARSE_FORMAT_KEYWORDS }
+    arguments --> runtime.python.bindings.datetime {
+        BoundArguments,
+        CallSignature,
+        PARSE_KEYWORDS,
+        invoke_vector
+    }
+    arguments --> runtime.python.bindings.functools { vector_tuple }
+    arguments --> runtime.python.bindings.json { PARSE_FORMAT }
+    arguments --> runtime.python.bindings.math { check_positional }
+    arguments --> runtime.python.bindings.operator { check_positional }
+    arguments --> runtime.python.bindings.struct { vector_tuple }
+    arguments --> runtime.python.bindings.zlib { PARSE_FORMAT_KEYWORDS }
+    arguments --> runtime.python.modules.datetime_date { ArgumentFormat }
+    arguments --> runtime.python.modules.datetime_datetime { ArgumentFormat }
+    arguments --> runtime.python.modules.datetime_delta { ArgumentFormat }
+    arguments --> runtime.python.modules.datetime_time { ArgumentFormat }
+    arguments --> runtime.python.modules.datetime_tzinfo { ArgumentFormat }
+    arguments --> runtime.python.modules.decimal_number {
+        ArgumentFormat,
+        ArgumentValue
+    }
+    arguments --> runtime.python.modules.itertools {
+        BoundArguments,
+        CallSignature,
+        PARSE_FORMAT_KEYWORDS,
+        index_value,
+        keywords_of_dict
+    }
+    arguments --> runtime.python.modules.lzma { ArgumentFormat }
+    arguments --> runtime.python.modules.math { vector_tuple }
+    arguments --> runtime.python.modules.mmap { ArgumentFormat, ArgumentValue }
+    arguments --> runtime.python.modules.multibytecodec { ArgumentFormat }
+    arguments --> runtime.python.modules.select { ArgumentFormat }
+    arguments --> runtime.python.modules.sqlite3 { ArgumentFormat }
+    arguments --> runtime.python.modules.time { ArgumentFormat }
+    arguments --> runtime.python.object_model.complex {
+        BoundArguments,
+        CallSignature,
+        PARSE_KEYWORDS,
+        invoke
+    }
+    arguments --> runtime.python.object_model.interpolation {
+        BoundArguments,
+        CallSignature,
+        PARSE_KEYWORDS,
+        invoke
+    }
+    arguments --> runtime.python.object_model.structseq {
+        BoundArguments,
+        CallSignature,
+        PARSE_KEYWORDS,
+        invoke
+    }
+    asyncio --> compiler.backends.py.jacpython.native_api { PyInit__asyncio }
+    buffer --> runtime.python.bindings.clinic.abc { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.array { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.asyncio { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.binascii { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.bisect { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.cmath { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.codecs { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.collections { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.csv { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.datetime { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.elementtree { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.fcntl { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.functools { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.hashopenssl { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.heapq { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.itertools { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.json { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.locale { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.lsprof { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.lzma { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.math { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.mmap { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.multibytecodec { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.multiprocessing { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.operator { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.pickle { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.posix { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.posixshmem { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.posixsubprocess { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.pyexpat { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.queue { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.random { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.select { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.socket { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.sqlite3 { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.sre { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.ssl { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.statistics { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.struct { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.termios { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.time { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.unicodedata { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.zoneinfo { BufferArgument }
+    buffer --> runtime.python.bindings.clinic.zstd { BufferArgument }
+    buffer --> runtime.python.modules.array { BufferArgument }
+    buffer --> runtime.python.modules.binascii { BufferArgument }
+    buffer --> runtime.python.modules.codecs { BufferArgument }
+    buffer --> runtime.python.modules.elementtree { BufferArgument }
+    buffer --> runtime.python.modules.fcntl { BufferArgument }
+    buffer --> runtime.python.modules.hashopenssl { BufferArgument }
+    buffer --> runtime.python.modules.lzma { BufferArgument }
+    buffer --> runtime.python.modules.mmap {
+        BufferArgument,
+        BufferLayout,
+        jacpy_binding_buffer_dispose,
+        jacpy_binding_buffer_fill
+    }
+    buffer --> runtime.python.modules.multibytecodec { BufferArgument }
+    buffer --> runtime.python.modules.pickle { BufferArgument }
+    buffer --> runtime.python.modules.posix_fileio { BufferArgument }
+    buffer --> runtime.python.modules.posix_files { BufferArgument }
+    buffer --> runtime.python.modules.pyexpat { BufferArgument }
+    buffer --> runtime.python.modules.socket { BufferArgument }
+    buffer --> runtime.python.modules.sqlite3 { BufferArgument }
+    buffer --> runtime.python.modules.ssl { BufferArgument }
+    buffer --> runtime.python.modules.struct { BufferArgument }
+    buffer --> runtime.python.modules.zstd { BufferArgument }
+    codecs --> compiler.backends.py.jacpython.native_api { PyInit__codecs }
+    codecs_cn --> compiler.backends.py.jacpython.native_api { PyInit__codecs_cn }
+    codecs_hk --> compiler.backends.py.jacpython.native_api { PyInit__codecs_hk }
+    codecs_iso2022 --> compiler.backends.py.jacpython.native_api {
+        PyInit__codecs_iso2022
+    }
+    codecs_jp --> compiler.backends.py.jacpython.native_api { PyInit__codecs_jp }
+    codecs_kr --> compiler.backends.py.jacpython.native_api { PyInit__codecs_kr }
+    codecs_tw --> compiler.backends.py.jacpython.native_api { PyInit__codecs_tw }
+    converters --> runtime.python.bindings.array { convert_unicode_char }
+    converters --> runtime.python.bindings.clinic.abc { argument_label }
+    converters --> runtime.python.bindings.clinic.array {
+        argument_label,
+        convert_buffer,
+        convert_int,
+        convert_slice_index_not_none,
+        convert_ssize,
+        convert_unicode,
+        convert_unicode_char,
+        defining_class
+    }
+    converters --> runtime.python.bindings.clinic.asyncio {
+        argument_label,
+        borrowed_none,
+        convert_bool,
+        defining_class,
+        return_int
+    }
+    converters --> runtime.python.bindings.clinic.binascii {
+        argument_label,
+        convert_bool,
+        convert_buffer,
+        convert_int,
+        convert_unsigned_bounded,
+        return_unsigned
+    }
+    converters --> runtime.python.bindings.clinic.bisect {
+        argument_label,
+        borrowed_none,
+        convert_optional_ssize,
+        convert_ssize,
+        return_ssize
+    }
+    converters --> runtime.python.bindings.clinic.bz2 { new_checks_arguments }
+    converters --> runtime.python.bindings.clinic.cmath {
+        argument_label,
+        convert_double,
+        return_bool
+    }
+    converters --> runtime.python.bindings.clinic.codecs {
+        argument_label,
+        bad_argument,
+        borrowed_none,
+        convert_bool,
+        convert_buffer,
+        convert_cstr,
+        convert_int,
+        convert_str,
+        convert_text_buffer,
+        convert_unicode,
+        return_bool
+    }
+    converters --> runtime.python.bindings.clinic.collections {
+        argument_label,
+        convert_slice_index_not_none,
+        convert_ssize,
+        new_checks_arguments,
+        return_int
+    }
+    converters --> runtime.python.bindings.clinic.csv { argument_label }
+    converters --> runtime.python.bindings.clinic.datetime {
+        argument_label,
+        borrowed_none,
+        convert_int
+    }
+    converters --> runtime.python.bindings.clinic.elementtree {
+        argument_label,
+        bad_argument,
+        borrowed_none,
+        convert_bool,
+        convert_cstr,
+        convert_ssize,
+        defining_class,
+        return_int,
+        return_size
+    }
+    converters --> runtime.python.bindings.clinic.fcntl {
+        argument_label,
+        convert_bool,
+        convert_fildes,
+        convert_int,
+        convert_unsigned_long
+    }
+    converters --> runtime.python.bindings.clinic.functools { argument_label }
+    converters --> runtime.python.bindings.clinic.hashopenssl {
+        argument_label,
+        borrowed_none,
+        convert_bool,
+        convert_buffer,
+        convert_long,
+        convert_ssize,
+        convert_str,
+        convert_unsigned_long,
+        return_int
+    }
+    converters --> runtime.python.bindings.clinic.heapq { argument_label, bad_argument }
+    converters --> runtime.python.bindings.clinic.itertools {
+        argument_label,
+        bad_argument,
+        borrowed_none,
+        convert_bool,
+        convert_ssize,
+        new_checks_arguments
+    }
+    converters --> runtime.python.bindings.clinic.locale {
+        argument_label,
+        convert_cstr,
+        convert_int,
+        convert_str,
+        convert_unicode
+    }
+    converters --> runtime.python.bindings.clinic.lsprof {
+        argument_label,
+        convert_bool,
+        convert_double,
+        defining_class,
+        return_int
+    }
+    converters --> runtime.python.bindings.clinic.lzma {
+        argument_label,
+        borrowed_none,
+        convert_buffer,
+        convert_int,
+        convert_ssize
+    }
+    converters --> runtime.python.bindings.clinic.math {
+        argument_label,
+        borrowed_none,
+        convert_double,
+        return_bool,
+        return_double
+    }
+    converters --> runtime.python.bindings.clinic.mmap {
+        argument_label,
+        borrowed_none,
+        convert_buffer,
+        convert_int,
+        convert_optional_ssize,
+        convert_ssize,
+        convert_unsigned_bounded
+    }
+    converters --> runtime.python.bindings.clinic.multibytecodec {
+        argument_label,
+        bad_argument,
+        borrowed_none,
+        convert_bool,
+        convert_buffer,
+        convert_cstr,
+        defining_class
+    }
+    converters --> runtime.python.bindings.clinic.multiprocessing {
+        argument_label,
+        borrowed_none,
+        convert_bool,
+        convert_cstr,
+        convert_int,
+        convert_str
+    }
+    converters --> runtime.python.bindings.clinic.operator {
+        argument_label,
+        convert_ssize,
+        return_bool,
+        return_ssize
+    }
+    converters --> runtime.python.bindings.clinic.pickle {
+        argument_label,
+        borrowed_none,
+        convert_bool,
+        convert_str,
+        defining_class,
+        return_int,
+        return_size
+    }
+    converters --> runtime.python.bindings.clinic.posix {
+        argument_label,
+        borrowed_none,
+        convert_PyUnicode_FSConverter,
+        convert_bool,
+        convert_buffer,
+        convert_double,
+        convert_fildes,
+        convert_int,
+        convert_long_long,
+        convert_ssize,
+        convert_str,
+        convert_unsigned_bounded,
+        convert_unsigned_int,
+        convert_unsigned_long,
+        convert_unsigned_long_long,
+        convert_writable_buffer,
+        defining_class,
+        return_bool,
+        return_double,
+        return_int,
+        return_long,
+        return_ssize
+    }
+    converters --> runtime.python.bindings.clinic.posixshmem {
+        argument_label,
+        bad_argument,
+        convert_int,
+        convert_unicode,
+        return_int
+    }
+    converters --> runtime.python.bindings.clinic.posixsubprocess {
+        argument_label,
+        bad_argument,
+        convert_bool,
+        convert_int
+    }
+    converters --> runtime.python.bindings.clinic.pwd { bad_argument }
+    converters --> runtime.python.bindings.clinic.pyexpat {
+        argument_label,
+        convert_bool,
+        convert_cstr,
+        convert_float,
+        convert_int,
+        convert_long,
+        convert_str,
+        convert_unsigned_long_long,
+        defining_class
+    }
+    converters --> runtime.python.bindings.clinic.queue {
+        argument_label,
+        borrowed_none,
+        convert_bool,
+        defining_class,
+        new_checks_arguments,
+        return_bool,
+        return_ssize
+    }
+    converters --> runtime.python.bindings.clinic.random {
+        argument_label,
+        borrowed_none,
+        convert_uint64,
+        init_checks_arguments,
+        return_int
+    }
+    converters --> runtime.python.bindings.clinic.select {
+        argument_label,
+        borrowed_none,
+        convert_fildes,
+        convert_int,
+        convert_unsigned_bounded,
+        convert_unsigned_short,
+        new_checks_arguments
+    }
+    converters --> runtime.python.bindings.clinic.socket {
+        argument_label,
+        convert_PyUnicode_FSConverter,
+        convert_buffer,
+        convert_int,
+        convert_str,
+        convert_uint16,
+        convert_uint32,
+        return_int
+    }
+    converters --> runtime.python.bindings.clinic.sqlite3 {
+        argument_label,
+        bad_argument,
+        borrowed_none,
+        convert_bool,
+        convert_buffer,
+        convert_cstr,
+        convert_double,
+        convert_int,
+        convert_str,
+        convert_text_buffer,
+        convert_uint32,
+        convert_unicode,
+        defining_class,
+        init_checks_arguments,
+        new_checks_arguments,
+        return_bool,
+        return_int
+    }
+    converters --> runtime.python.bindings.clinic.sre {
+        argument_label,
+        bad_argument,
+        borrowed_none,
+        convert_int,
+        convert_ssize,
+        defining_class,
+        defining_class_or_null,
+        exact_int_at,
+        failed,
+        return_bool,
+        return_int,
+        return_ssize
+    }
+    converters --> runtime.python.bindings.clinic.ssl {
+        argument_label,
+        borrowed_none,
+        convert_PyUnicode_FSConverter,
+        convert_bool,
+        convert_buffer,
+        convert_cstr,
+        convert_double,
+        convert_int,
+        convert_str,
+        convert_text_buffer,
+        new_checks_arguments
+    }
+    converters --> runtime.python.bindings.clinic.statistics {
+        argument_label,
+        convert_double,
+        return_double
+    }
+    converters --> runtime.python.bindings.clinic.struct {
+        argument_label,
+        convert_buffer,
+        convert_ssize,
+        return_int,
+        return_ssize
+    }
+    converters --> runtime.python.bindings.clinic.termios {
+        argument_label,
+        convert_fildes,
+        convert_int
+    }
+    converters --> runtime.python.bindings.clinic.unicodedata {
+        SizedText,
+        argument_label,
+        convert_sized_str,
+        convert_unicode,
+        convert_unicode_char,
+        return_int
+    }
+    converters --> runtime.python.bindings.clinic.zoneinfo {
+        argument_label,
+        borrowed_none,
+        convert_unsigned_bounded,
+        defining_class,
+        defining_class_of_type
+    }
+    converters --> runtime.python.bindings.clinic.zstd {
+        argument_label,
+        bad_argument,
+        borrowed_none,
+        convert_bool,
+        convert_buffer,
+        convert_int,
+        convert_ssize
+    }
+    converters --> runtime.python.bindings.collections { bad_argument }
+    converters --> runtime.python.bindings.datetime { convert_int }
+    converters --> runtime.python.bindings.multibytecodec { ClassToken }
+    converters --> runtime.python.modules.abc {
+        ClassToken,
+        borrowed_false,
+        borrowed_none,
+        borrowed_true
+    }
+    converters --> runtime.python.modules.array { ClassToken }
+    converters --> runtime.python.modules.asyncio { ClassToken }
+    converters --> runtime.python.modules.codecs { borrowed_none }
+    converters --> runtime.python.modules.collections { ClassToken }
+    converters --> runtime.python.modules.elementtree { ClassToken, bad_argument }
+    converters --> runtime.python.modules.fcntl { borrowed_none }
+    converters --> runtime.python.modules.functools { ClassToken }
+    converters --> runtime.python.modules.hashopenssl { ClassToken, borrowed_none }
+    converters --> runtime.python.modules.itertools { ClassToken, bad_argument }
+    converters --> runtime.python.modules.locale { borrowed_none }
+    converters --> runtime.python.modules.lsprof { ClassToken, borrowed_none }
+    converters --> runtime.python.modules.lzma { ClassToken }
+    converters --> runtime.python.modules.mmap {
+        ClassToken,
+        borrowed_false,
+        borrowed_none,
+        borrowed_true
+    }
+    converters --> runtime.python.modules.multibytecodec { ClassToken }
+    converters --> runtime.python.modules.multiprocessing {
+        ClassToken,
+        borrowed_false,
+        borrowed_none,
+        borrowed_true,
+        convert_unsigned_long_long
+    }
+    converters --> runtime.python.modules.pickle { ClassToken }
+    converters --> runtime.python.modules.posix_stat { ClassToken }
+    converters --> runtime.python.modules.posixshmem { borrowed_none }
+    converters --> runtime.python.modules.posixsubprocess { borrowed_none }
+    converters --> runtime.python.modules.pyexpat { ClassToken }
+    converters --> runtime.python.modules.queue { ClassToken }
+    converters --> runtime.python.modules.random { ClassToken }
+    converters --> runtime.python.modules.select {
+        ClassToken,
+        borrowed_false,
+        borrowed_none,
+        borrowed_true
+    }
+    converters --> runtime.python.modules.socket { convert_unsigned_int }
+    converters --> runtime.python.modules.sqlite3 {
+        ClassToken,
+        bad_argument,
+        borrowed_false,
+        borrowed_none,
+        borrowed_true
+    }
+    converters --> runtime.python.modules.sre { ClassToken }
+    converters --> runtime.python.modules.ssl {
+        bad_argument,
+        borrowed_false,
+        borrowed_none,
+        borrowed_true
+    }
+    converters --> runtime.python.modules.ssl_core { ClassToken }
+    converters --> runtime.python.modules.struct { ClassToken }
+    converters --> runtime.python.modules.termios { borrowed_none }
+    converters --> runtime.python.modules.time { borrowed_none }
+    converters --> runtime.python.modules.unicodedata { ClassToken }
+    converters --> runtime.python.modules.uuid { borrowed_none }
+    converters --> runtime.python.modules.zoneinfo { ClassToken }
+    converters --> runtime.python.modules.zstd { ClassToken }
+    datetime --> compiler.backends.py.jacpython.native_api { PyInit__datetime }
+    decimal --> compiler.backends.py.jacpython.native_api { PyInit__decimal }
+    elementtree --> compiler.backends.py.jacpython.native_api { PyInit__elementtree }
+    fcntl --> compiler.backends.py.jacpython.native_api { PyInit_fcntl }
+    hashopenssl --> compiler.backends.py.jacpython.native_api { PyInit__hashlib }
+    locale --> compiler.backends.py.jacpython.native_api { PyInit__locale }
+    lsprof --> compiler.backends.py.jacpython.native_api { PyInit__lsprof }
+    lzma --> compiler.backends.py.jacpython.native_api { PyInit__lzma }
+    members --> runtime.python.bindings.bz2 { MemberField, MemberType, record_clear }
+    members --> runtime.python.bindings.collections {
+        MemberField,
+        MemberType,
+        record_object,
+        record_set_object
+    }
+    members --> runtime.python.bindings.csv {
+        MemberField,
+        MemberType,
+        record_clear,
+        record_set_byte,
+        record_set_object
+    }
+    members --> runtime.python.bindings.functools {
+        MemberField,
+        MemberType,
+        record_clear,
+        record_set_object
+    }
+    members --> runtime.python.bindings.json {
+        MemberField,
+        MemberType,
+        record_clear,
+        record_set_byte,
+        record_set_object
+    }
+    members --> runtime.python.bindings.lzma { MemberField, MemberType, record_clear }
+    members --> runtime.python.bindings.multibytecodec {
+        MemberField,
+        MemberType,
+        record_clear,
+        record_set_object
+    }
+    members --> runtime.python.bindings.pickle {
+        MemberField,
+        MemberType,
+        record_object,
+        record_set_object
+    }
+    members --> runtime.python.bindings.type { MemberField }
+    members --> runtime.python.bindings.unicodedata { MemberField, MemberType }
+    members --> runtime.python.bindings.zlib { MemberField, MemberType, record_clear }
+    members --> runtime.python.bindings.zoneinfo {
+        MemberField,
+        MemberType,
+        record_clear
+    }
+    members --> runtime.python.modules.bz2 { record_set_byte, record_set_object }
+    members --> runtime.python.modules.collections { record_set_object }
+    members --> runtime.python.modules.elementtree { MemberField }
+    members --> runtime.python.modules.lzma {
+        record_set_byte,
+        record_set_int,
+        record_set_object
+    }
+    members --> runtime.python.modules.multiprocessing { MemberField, MemberType }
+    members --> runtime.python.modules.pickle { record_int, record_set_int }
+    members --> runtime.python.modules.posix_stat { MemberField, MemberType }
+    members --> runtime.python.modules.pyexpat { MemberField }
+    members --> runtime.python.modules.select_platform { MemberField }
+    members --> runtime.python.modules.sqlite3 { MemberField }
+    members --> runtime.python.modules.unicodedata { record_set_address }
+    members --> runtime.python.modules.zlib { record_set_byte, record_set_object }
+    members --> runtime.python.modules.zoneinfo { record_set_object }
+    mmap --> compiler.backends.py.jacpython.native_api { PyInit_mmap }
+    module --> runtime.python.bindings.abc {
+        ModuleDefinition,
+        ModuleHooks,
+        jacpy_binding_module_native_set,
+        jacpy_binding_state_set
+    }
+    module --> runtime.python.bindings.asyncio {
+        MethodCallbacks,
+        MethodDefinition,
+        ModuleDefinition,
+        ModuleHooks,
+        clear_state,
+        jacpy_binding_module_native_set,
+        jacpy_binding_state_get,
+        jacpy_binding_state_set,
+        method_table,
+        traverse_state
+    }
+    module --> runtime.python.bindings.clinic.abc { MethodCallbacks, MethodDefinition }
+    module --> runtime.python.bindings.clinic.array {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.asyncio {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.binascii {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.bisect {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.cmath {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.codecs {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.collections {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.csv { MethodCallbacks, MethodDefinition }
+    module --> runtime.python.bindings.clinic.datetime {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.elementtree {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.fcntl {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.functools {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.hashopenssl {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.heapq {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.itertools {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.json { MethodCallbacks, MethodDefinition }
+    module --> runtime.python.bindings.clinic.locale {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.lsprof {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.lzma { MethodCallbacks, MethodDefinition }
+    module --> runtime.python.bindings.clinic.math { MethodCallbacks, MethodDefinition }
+    module --> runtime.python.bindings.clinic.mmap { MethodCallbacks, MethodDefinition }
+    module --> runtime.python.bindings.clinic.multibytecodec {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.multiprocessing {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.operator {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.pickle {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.posix {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.posixshmem {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.posixsubprocess {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.pyexpat {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.queue {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.random {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.select {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.socket {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.sqlite3 {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.sre { MethodCallbacks, MethodDefinition }
+    module --> runtime.python.bindings.clinic.ssl { MethodCallbacks, MethodDefinition }
+    module --> runtime.python.bindings.clinic.statistics {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.struct {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.termios {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.time { MethodCallbacks, MethodDefinition }
+    module --> runtime.python.bindings.clinic.unicodedata {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.zoneinfo {
+        MethodCallbacks,
+        MethodDefinition
+    }
+    module --> runtime.python.bindings.clinic.zstd { MethodCallbacks, MethodDefinition }
+    module --> runtime.python.bindings.codecs { ModuleDefinition }
+    module --> runtime.python.bindings.codecs_cn {
+        MethodCallbacks,
+        MethodDefinition,
+        ModuleDefinition,
+        ModuleHooks
+    }
+    module --> runtime.python.bindings.codecs_hk {
+        MethodCallbacks,
+        MethodDefinition,
+        ModuleDefinition,
+        ModuleHooks
+    }
+    module --> runtime.python.bindings.codecs_iso2022 {
+        MethodCallbacks,
+        MethodDefinition,
+        ModuleDefinition,
+        ModuleHooks
+    }
+    module --> runtime.python.bindings.codecs_jp {
+        MethodCallbacks,
+        MethodDefinition,
+        ModuleDefinition,
+        ModuleHooks
+    }
+    module --> runtime.python.bindings.codecs_kr {
+        MethodCallbacks,
+        MethodDefinition,
+        ModuleDefinition,
+        ModuleHooks
+    }
+    module --> runtime.python.bindings.codecs_tw {
+        MethodCallbacks,
+        MethodDefinition,
+        ModuleDefinition,
+        ModuleHooks
+    }
+    module --> runtime.python.bindings.collections { visit_reference }
+    module --> runtime.python.bindings.csv { visit_reference }
+    module --> runtime.python.bindings.datetime {
+        MethodCallbacks,
+        MethodDefinition,
+        ModuleDefinition,
+        ModuleHooks,
+        clear_state,
+        jacpy_binding_state_get,
+        jacpy_binding_state_set,
+        method_table,
+        traverse_state
+    }
+    module --> runtime.python.bindings.decimal {
+        MethodCallbacks,
+        MethodDefinition,
+        ModuleDefinition,
+        ModuleHooks,
+        jacpy_binding_state_get,
+        jacpy_binding_state_set
+    }
+    module --> runtime.python.bindings.elementtree {
+        MethodCallbacks,
+        MethodDefinition,
+        ModuleDefinition,
+        ModuleHooks,
+        jacpy_binding_exception,
+        jacpy_binding_module_native_set
+    }
+    module --> runtime.python.bindings.fcntl { ModuleDefinition, ModuleHooks }
+    module --> runtime.python.bindings.functools { visit_reference }
+    module --> runtime.python.bindings.hashopenssl {
+        ModuleDefinition,
+        ModuleHooks,
+        add_state_owned,
+        jacpy_binding_module_native_set,
+        jacpy_binding_state_get,
+        jacpy_binding_state_set
+    }
+    module --> runtime.python.bindings.heapq { ModuleHooks, add_owned }
+    module --> runtime.python.bindings.locale {
+        MethodDefinition,
+        ModuleDefinition,
+        ModuleHooks,
+        add_state_owned,
+        jacpy_binding_exception
+    }
+    module --> runtime.python.bindings.lsprof {
+        ModuleDefinition,
+        ModuleHooks,
+        add_state_owned
+    }
+    module --> runtime.python.bindings.lzma {
+        MethodCallbacks,
+        MethodDefinition,
+        ModuleDefinition,
+        ModuleHooks,
+        add_state_owned,
+        jacpy_binding_exception,
+        jacpy_binding_state_set
+    }
+    module --> runtime.python.bindings.mmap {
+        MethodDefinition,
+        ModuleDefinition,
+        ModuleHooks,
+        add_owned
+    }
+    module --> runtime.python.bindings.multibytecodec {
+        ModuleDefinition,
+        ModuleHooks,
+        add_state_owned,
+        jacpy_binding_state_set
+    }
+    module --> runtime.python.bindings.multiprocessing {
+        ModuleDefinition,
+        ModuleHooks,
+        add_owned
+    }
+    module --> runtime.python.bindings.payload { visit_reference }
+    module --> runtime.python.bindings.pickle { visit_reference }
+    module --> runtime.python.bindings.posix {
+        MethodCallbacks,
+        MethodDefinition,
+        ModuleDefinition,
+        ModuleHooks,
+        add_owned,
+        add_state_owned,
+        jacpy_binding_module_native_set,
+        jacpy_binding_state_set
+    }
+    module --> runtime.python.bindings.posixshmem { ModuleDefinition }
+    module --> runtime.python.bindings.posixsubprocess { ModuleDefinition, ModuleHooks }
+    module --> runtime.python.bindings.pyexpat {
+        MethodDefinition,
+        ModuleDefinition,
+        ModuleHooks,
+        jacpy_binding_exception,
+        jacpy_binding_module_native_set
+    }
+    module --> runtime.python.bindings.references { visit_reference }
+    module --> runtime.python.bindings.select {
+        MethodDefinition,
+        ModuleDefinition,
+        ModuleHooks,
+        add_state_owned,
+        jacpy_binding_module_native_set,
+        jacpy_binding_state_set
+    }
+    module --> runtime.python.bindings.socket {
+        MethodCallbacks,
+        MethodDefinition,
+        ModuleDefinition,
+        ModuleHooks,
+        jacpy_binding_module_native_set,
+        jacpy_binding_state_set,
+        method_table,
+        visit_reference
+    }
+    module --> runtime.python.bindings.sqlite3 {
+        MethodCallbacks,
+        MethodDefinition,
+        ModuleDefinition,
+        ModuleHooks,
+        add_owned,
+        jacpy_binding_exception,
+        jacpy_binding_module_native_set,
+        visit_reference
+    }
+    module --> runtime.python.bindings.sre {
+        MethodCallbacks,
+        MethodDefinition,
+        ModuleDefinition,
+        ModuleHooks,
+        jacpy_binding_state_set,
+        method_table
+    }
+    module --> runtime.python.bindings.ssl {
+        MethodCallbacks,
+        MethodDefinition,
+        ModuleDefinition,
+        ModuleHooks,
+        add_state_owned,
+        jacpy_binding_module_native_set,
+        jacpy_binding_state_get,
+        jacpy_binding_state_set
+    }
+    module --> runtime.python.bindings.termios {
+        ModuleDefinition,
+        ModuleHooks,
+        add_owned,
+        add_state_owned,
+        jacpy_binding_exception
+    }
+    module --> runtime.python.bindings.time {
+        MethodCallbacks,
+        MethodDefinition,
+        ModuleDefinition,
+        ModuleHooks,
+        add_state_owned
+    }
+    module --> runtime.python.bindings.unicodedata { ModuleDefinition, ModuleHooks }
+    module --> runtime.python.bindings.uuid {
+        MethodCallbacks,
+        MethodDefinition,
+        ModuleDefinition,
+        ModuleHooks
+    }
+    module --> runtime.python.bindings.zoneinfo {
+        MethodCallbacks,
+        MethodDefinition,
+        ModuleDefinition,
+        ModuleHooks,
+        jacpy_binding_module_native_set
+    }
+    module --> runtime.python.bindings.zstd {
+        ModuleDefinition,
+        ModuleHooks,
+        add_owned,
+        add_state_owned,
+        jacpy_binding_exception,
+        jacpy_binding_state_get
+    }
+    module --> runtime.python.modules.abc {
+        FunctionTable,
+        MethodCallbacks,
+        MethodDefinition,
+        jacpy_binding_module_native_get,
+        jacpy_binding_module_native_present,
+        jacpy_binding_state_get
+    }
+    module --> runtime.python.modules.array { jacpy_binding_state_get, visit_reference }
+    module --> runtime.python.modules.asyncio {
+        PositionalMethodRecord,
+        visit_reference
+    }
+    module --> runtime.python.modules.asyncio_core {
+        jacpy_binding_module_native_get,
+        jacpy_binding_module_native_present,
+        jacpy_binding_state_get
+    }
+    module --> runtime.python.modules.binascii { jacpy_binding_state_get }
+    module --> runtime.python.modules.collections {
+        jacpy_binding_state_get,
+        visit_reference
+    }
+    module --> runtime.python.modules.csv {
+        jacpy_binding_module_native_get,
+        jacpy_binding_module_native_present,
+        jacpy_binding_state_get
+    }
+    module --> runtime.python.modules.datetime_date { visit_reference }
+    module --> runtime.python.modules.datetime_objects { jacpy_binding_state_get }
+    module --> runtime.python.modules.decimal_context { visit_reference }
+    module --> runtime.python.modules.decimal_number {
+        jacpy_binding_state_set,
+        visit_reference
+    }
+    module --> runtime.python.modules.decimal_objects { jacpy_binding_state_get }
+    module --> runtime.python.modules.elementtree {
+        jacpy_binding_module_native_get,
+        visit_reference
+    }
+    module --> runtime.python.modules.functools {
+        jacpy_binding_state_get,
+        visit_reference
+    }
+    module --> runtime.python.modules.hashopenssl {
+        MethodDefinition,
+        jacpy_binding_module_native_get,
+        jacpy_binding_module_native_present,
+        jacpy_binding_state_get
+    }
+    module --> runtime.python.modules.itertools {
+        jacpy_binding_state_get,
+        visit_reference
+    }
+    module --> runtime.python.modules.locale { jacpy_binding_state_get }
+    module --> runtime.python.modules.lsprof {
+        jacpy_binding_state_get,
+        visit_reference
+    }
+    module --> runtime.python.modules.lzma { jacpy_binding_state_get }
+    module --> runtime.python.modules.multibytecodec {
+        jacpy_binding_state_get,
+        visit_reference
+    }
+    module --> runtime.python.modules.pickle {
+        jacpy_binding_state_get,
+        visit_reference
+    }
+    module --> runtime.python.modules.posix_core {
+        jacpy_binding_module_native_get,
+        jacpy_binding_state_get
+    }
+    module --> runtime.python.modules.posix_fileio { add_state_owned }
+    module --> runtime.python.modules.posix_ids { add_state_owned }
+    module --> runtime.python.modules.posix_process {
+        add_state_owned,
+        jacpy_binding_state_set
+    }
+    module --> runtime.python.modules.posix_stat {
+        add_state_owned,
+        jacpy_binding_module_native_get
+    }
+    module --> runtime.python.modules.pyexpat {
+        jacpy_binding_module_native_get,
+        jacpy_binding_module_native_present,
+        visit_reference
+    }
+    module --> runtime.python.modules.queue { jacpy_binding_state_get, visit_reference }
+    module --> runtime.python.modules.select {
+        MethodCallbacks,
+        MethodDefinition,
+        builtin_function,
+        jacpy_binding_module_native_get,
+        jacpy_binding_module_native_present,
+        jacpy_binding_state_get,
+        visit_reference
+    }
+    module --> runtime.python.modules.socket_core {
+        jacpy_binding_module_native_get,
+        jacpy_binding_module_native_present,
+        jacpy_binding_state_get
+    }
+    module --> runtime.python.modules.socket_object { visit_reference }
+    module --> runtime.python.modules.sqlite3 {
+        jacpy_binding_module_native_get,
+        jacpy_binding_module_native_present,
+        visit_reference
+    }
+    module --> runtime.python.modules.sre {
+        jacpy_binding_state_get,
+        jacpy_binding_state_set,
+        visit_reference
+    }
+    module --> runtime.python.modules.ssl_core {
+        jacpy_binding_module_native_get,
+        jacpy_binding_module_native_present,
+        jacpy_binding_state_get,
+        visit_reference
+    }
+    module --> runtime.python.modules.struct {
+        jacpy_binding_state_get,
+        visit_reference
+    }
+    module --> runtime.python.modules.termios { jacpy_binding_state_get }
+    module --> runtime.python.modules.time { jacpy_binding_state_get }
+    module --> runtime.python.modules.zlib { visit_reference }
+    module --> runtime.python.modules.zoneinfo {
+        jacpy_binding_module_native_get,
+        jacpy_binding_module_native_present,
+        visit_reference
+    }
+    module --> runtime.python.modules.zstd {
+        jacpy_binding_state_get,
+        jacpy_binding_state_set,
+        visit_reference
+    }
+    module --> runtime.python.object_model.cell { visit_reference }
+    module --> runtime.python.object_model.enumerate { visit_reference }
+    module --> runtime.python.object_model.genericalias { visit_reference }
+    module --> runtime.python.object_model.interpolation { visit_reference }
+    module --> runtime.python.object_model.iterator { visit_reference }
+    module --> runtime.python.object_model.method { visit_reference }
+    module --> runtime.python.object_model.namespace { visit_reference }
+    module --> runtime.python.object_model.picklebuffer { visit_reference }
+    module --> runtime.python.object_model.slice { visit_reference }
+    module --> runtime.python.object_model.structseq { visit_reference }
+    module --> runtime.python.object_model.template { visit_reference }
+    module --> runtime.python.object_model.union { visit_reference }
+    multibytecodec --> compiler.backends.py.jacpython.native_api {
+        PyInit__multibytecodec
+    }
+    multiprocessing --> compiler.backends.py.jacpython.native_api {
+        PyInit__multiprocessing
+    }
+    payload --> runtime.python.bindings.abc {
+        clear_payload,
+        dispose_payload,
+        traverse_payload
+    }
+    payload --> runtime.python.bindings.hashopenssl { dispose_payload }
+    payload --> runtime.python.bindings.lsprof {
+        dispose_payload,
+        jacpy_binding_untrack,
+        traverse_payload
+    }
+    payload --> runtime.python.bindings.lzma { dispose_payload, traverse_payload }
+    payload --> runtime.python.bindings.mmap { dispose_payload, traverse_payload }
+    payload --> runtime.python.bindings.multibytecodec {
+        clear_payload,
+        dispose_payload,
+        jacpy_binding_native_get,
+        jacpy_binding_native_present,
+        traverse_payload
+    }
+    payload --> runtime.python.bindings.multiprocessing {
+        dispose_payload,
+        traverse_payload
+    }
+    payload --> runtime.python.bindings.pickle { jacpy_binding_untrack }
+    payload --> runtime.python.bindings.select {
+        dispose_payload,
+        jacpy_binding_native_present
+    }
+    payload --> runtime.python.bindings.sqlite3 {
+        clear_payload,
+        dispose_payload,
+        jacpy_binding_native_present,
+        traverse_payload
+    }
+    payload --> runtime.python.bindings.ssl {
+        clear_payload,
+        dispose_payload,
+        traverse_payload
+    }
+    payload --> runtime.python.bindings.unicodedata {
+        dispose_payload,
+        traverse_payload
+    }
+    payload --> runtime.python.bindings.zoneinfo {
+        clear_payload,
+        dispose_payload,
+        traverse_payload
+    }
+    payload --> runtime.python.bindings.zstd {
+        clear_payload,
+        dispose_payload,
+        traverse_payload
+    }
+    payload --> runtime.python.modules.abc {
+        jacpy_binding_native_get,
+        jacpy_binding_native_present,
+        jacpy_binding_native_set
+    }
+    payload --> runtime.python.modules.array {
+        jacpy_binding_native_get,
+        jacpy_binding_native_present,
+        jacpy_binding_native_set
+    }
+    payload --> runtime.python.modules.collections {
+        clear_payload,
+        jacpy_binding_native_get,
+        jacpy_binding_native_present,
+        jacpy_binding_native_set
+    }
+    payload --> runtime.python.modules.elementtree {
+        jacpy_binding_clear_weakrefs,
+        jacpy_binding_untrack
+    }
+    payload --> runtime.python.modules.functools {
+        jacpy_binding_native_get,
+        jacpy_binding_native_present,
+        jacpy_binding_native_set
+    }
+    payload --> runtime.python.modules.itertools {
+        clear_payload,
+        dispose_payload,
+        jacpy_binding_dealloc_guard,
+        jacpy_binding_native_get,
+        jacpy_binding_native_present,
+        jacpy_binding_native_set,
+        jacpy_binding_own_get,
+        jacpy_binding_own_present,
+        traverse_payload
+    }
+    payload --> runtime.python.modules.lsprof {
+        jacpy_binding_native_get,
+        jacpy_binding_native_present,
+        jacpy_binding_native_set
+    }
+    payload --> runtime.python.modules.lzma {
+        jacpy_binding_native_get,
+        jacpy_binding_native_present,
+        jacpy_binding_native_set
+    }
+    payload --> runtime.python.modules.mmap {
+        jacpy_binding_native_get,
+        jacpy_binding_native_present,
+        jacpy_binding_native_set
+    }
+    payload --> runtime.python.modules.multibytecodec {
+        jacpy_binding_native_get,
+        jacpy_binding_native_present,
+        jacpy_binding_native_set
+    }
+    payload --> runtime.python.modules.multiprocessing {
+        jacpy_binding_native_get,
+        jacpy_binding_native_present,
+        jacpy_binding_native_set
+    }
+    payload --> runtime.python.modules.pickle {
+        jacpy_binding_native_get,
+        jacpy_binding_native_present,
+        jacpy_binding_native_set
+    }
+    payload --> runtime.python.modules.posix_stat {
+        dispose_payload,
+        jacpy_binding_native_clear,
+        jacpy_binding_native_get,
+        jacpy_binding_native_present,
+        jacpy_binding_native_set
+    }
+    payload --> runtime.python.modules.pyexpat { jacpy_binding_untrack }
+    payload --> runtime.python.modules.queue {
+        jacpy_binding_native_get,
+        jacpy_binding_native_present,
+        jacpy_binding_native_set
+    }
+    payload --> runtime.python.modules.random {
+        jacpy_binding_native_get,
+        jacpy_binding_native_present
+    }
+    payload --> runtime.python.modules.select {
+        jacpy_binding_native_get,
+        jacpy_binding_native_present,
+        jacpy_binding_native_set
+    }
+    payload --> runtime.python.modules.sqlite3 {
+        jacpy_binding_native_get,
+        jacpy_binding_native_present,
+        jacpy_binding_native_set
+    }
+    payload --> runtime.python.modules.ssl { jacpy_binding_native_set }
+    payload --> runtime.python.modules.ssl_cert { jacpy_binding_native_set }
+    payload --> runtime.python.modules.ssl_core {
+        jacpy_binding_native_get,
+        jacpy_binding_native_present
+    }
+    payload --> runtime.python.modules.struct {
+        jacpy_binding_native_get,
+        jacpy_binding_native_present,
+        jacpy_binding_native_set
+    }
+    payload --> runtime.python.modules.unicodedata {
+        jacpy_binding_native_get,
+        jacpy_binding_native_present,
+        jacpy_binding_native_set
+    }
+    payload --> runtime.python.modules.zoneinfo {
+        jacpy_binding_native_get,
+        jacpy_binding_native_present,
+        jacpy_binding_native_set
+    }
+    payload --> runtime.python.modules.zstd {
+        jacpy_binding_native_get,
+        jacpy_binding_native_present,
+        jacpy_binding_native_set
+    }
+    posix --> compiler.backends.py.jacpython.native_api { PyInit_posix }
+    posixshmem --> compiler.backends.py.jacpython.native_api { PyInit__posixshmem }
+    posixsubprocess --> compiler.backends.py.jacpython.native_api {
+        PyInit__posixsubprocess
+    }
+    pyexpat --> compiler.backends.py.jacpython.native_api { PyInit_pyexpat }
+    references --> runtime.python.modules.abc { ReferenceState, owned_tuple }
+    references --> runtime.python.modules.array { ReferenceState, owned_tuple }
+    references --> runtime.python.modules.codecs { owned_tuple }
+    references --> runtime.python.modules.collections { ReferenceState, owned_tuple }
+    references --> runtime.python.modules.functools { ReferenceState }
+    references --> runtime.python.modules.itertools { ReferenceState }
+    references --> runtime.python.modules.lsprof { call_method }
+    references --> runtime.python.modules.mmap { owned_tuple }
+    references --> runtime.python.modules.pickle { ReferenceState, owned_tuple }
+    references --> runtime.python.modules.struct { ReferenceState }
+    references --> runtime.python.modules.uuid { owned_tuple }
+    select --> compiler.backends.py.jacpython.native_api { PyInit_select }
+    socket --> compiler.backends.py.jacpython.native_api { PyInit__socket }
+    sqlite3 --> compiler.backends.py.jacpython.native_api { PyInit__sqlite3 }
+    sre --> compiler.backends.py.jacpython.native_api { PyInit__sre }
+    ssl --> compiler.backends.py.jacpython.native_api { PyInit__ssl }
+    state --> runtime.python.modules.abc { NativeState }
+    state --> runtime.python.modules.array { NativeState }
+    state --> runtime.python.modules.asyncio_core { NativeState }
+    state --> runtime.python.modules.collections { NativeState }
+    state --> runtime.python.modules.elementtree { NativeState }
+    state --> runtime.python.modules.functools { NativeState }
+    state --> runtime.python.modules.hashopenssl { NativeState }
+    state --> runtime.python.modules.itertools { NativeState }
+    state --> runtime.python.modules.lsprof { NativeState }
+    state --> runtime.python.modules.lzma { NativeState }
+    state --> runtime.python.modules.mmap { NativeState }
+    state --> runtime.python.modules.multibytecodec { NativeState }
+    state --> runtime.python.modules.multiprocessing { NativeState }
+    state --> runtime.python.modules.pickle { NativeState }
+    state --> runtime.python.modules.posix_core { NativeState }
+    state --> runtime.python.modules.posix_stat { NativeState }
+    state --> runtime.python.modules.pyexpat { NativeState }
+    state --> runtime.python.modules.select { NativeState }
+    state --> runtime.python.modules.socket_core { NativeState }
+    state --> runtime.python.modules.sqlite3 { NativeState }
+    state --> runtime.python.modules.ssl_core { NativeState }
+    state --> runtime.python.modules.struct { NativeState }
+    state --> runtime.python.modules.unicodedata { NativeState }
+    state --> runtime.python.modules.zoneinfo { NativeState }
+    state --> runtime.python.modules.zstd { NativeState }
+    termios --> compiler.backends.py.jacpython.native_api { PyInit_termios }
+    time --> compiler.backends.py.jacpython.native_api { PyInit_time }
+    type --> runtime.python.bindings.abc { TypeDefinition, TypeFlags, TypeHooks }
+    type --> runtime.python.bindings.asyncio { PropertyDefinition, getset_table }
+    type --> runtime.python.bindings.bz2 { jacpy_binding_record }
+    type --> runtime.python.bindings.clinic.abc {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.array {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.asyncio {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.binascii {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.bisect {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.cmath {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.codecs {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.collections {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.csv {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.datetime {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.elementtree {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.fcntl {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.functools {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.hashopenssl {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.heapq {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.itertools {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.json {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.locale {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.lsprof {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.lzma {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.math {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.mmap {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.multibytecodec {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.multiprocessing {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.operator {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.pickle {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.posix {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.posixshmem {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.posixsubprocess {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.pyexpat {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.queue {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.random {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.select {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.socket {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.sqlite3 {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.sre {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.ssl {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.statistics {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.struct {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.termios {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.time {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.unicodedata {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.zoneinfo {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.clinic.zstd {
+        PropertyCallbacks,
+        PropertyDefinition
+    }
+    type --> runtime.python.bindings.collections { jacpy_binding_record }
+    type --> runtime.python.bindings.converters { TypeSlot }
+    type --> runtime.python.bindings.csv { jacpy_binding_record }
+    type --> runtime.python.bindings.elementtree {
+        PropertyCallbacks,
+        PropertyDefinition,
+        TypeDefinition,
+        TypeFlags,
+        TypeHooks
+    }
+    type --> runtime.python.bindings.functools { jacpy_binding_record }
+    type --> runtime.python.bindings.hashopenssl {
+        PropertyCallbacks,
+        PropertyDefinition,
+        TypeDefinition,
+        TypeFlags,
+        TypeHooks
+    }
+    type --> runtime.python.bindings.json { jacpy_binding_record }
+    type --> runtime.python.bindings.lsprof { TypeDefinition, TypeFlags, TypeHooks }
+    type --> runtime.python.bindings.lzma {
+        TypeDefinition,
+        TypeFlags,
+        TypeHooks,
+        jacpy_binding_record
+    }
+    type --> runtime.python.bindings.mmap {
+        PropertyCallbacks,
+        PropertyDefinition,
+        TypeDefinition,
+        TypeFlags,
+        TypeHooks
+    }
+    type --> runtime.python.bindings.multibytecodec {
+        PropertyCallbacks,
+        PropertyDefinition,
+        TypeDefinition,
+        TypeFlags,
+        TypeHooks,
+        jacpy_binding_record
+    }
+    type --> runtime.python.bindings.multiprocessing {
+        TypeDefinition,
+        TypeFlags,
+        TypeHooks
+    }
+    type --> runtime.python.bindings.posix { TypeDefinition, TypeFlags, TypeHooks }
+    type --> runtime.python.bindings.pyexpat {
+        PropertyCallbacks,
+        PropertyDefinition,
+        TypeDefinition,
+        TypeFlags,
+        TypeHooks
+    }
+    type --> runtime.python.bindings.select {
+        PropertyCallbacks,
+        PropertyDefinition,
+        TypeDefinition,
+        TypeFlags,
+        TypeHooks
+    }
+    type --> runtime.python.bindings.sqlite3 {
+        PropertyCallbacks,
+        PropertyDefinition,
+        TypeDefinition,
+        TypeFlags,
+        TypeHooks,
+        jacpy_binding_record
+    }
+    type --> runtime.python.bindings.ssl {
+        PropertyCallbacks,
+        PropertyDefinition,
+        TypeDefinition,
+        TypeFlags,
+        TypeHooks
+    }
+    type --> runtime.python.bindings.struct { jacpy_binding_basicsize }
+    type --> runtime.python.bindings.unicodedata {
+        TypeDefinition,
+        TypeFlags,
+        TypeHooks
+    }
+    type --> runtime.python.bindings.zlib { jacpy_binding_record }
+    type --> runtime.python.bindings.zoneinfo {
+        TypeDefinition,
+        TypeFlags,
+        TypeHooks,
+        jacpy_binding_record
+    }
+    type --> runtime.python.bindings.zstd {
+        PropertyCallbacks,
+        PropertyDefinition,
+        TypeDefinition,
+        TypeFlags,
+        TypeHooks
+    }
+    type --> runtime.python.modules.abc { jacpy_binding_allocate }
+    type --> runtime.python.modules.array {
+        jacpy_binding_allocate,
+        jacpy_binding_basicsize,
+        jacpy_binding_matches,
+        jacpy_binding_owner
+    }
+    type --> runtime.python.modules.asyncio.free_object { jacpy_binding_free }
+    type --> runtime.python.modules.asyncio_core { jacpy_binding_owner }
+    type --> runtime.python.modules.bz2 { jacpy_binding_record }
+    type --> runtime.python.modules.collections {
+        jacpy_binding_allocate,
+        jacpy_binding_basicsize,
+        jacpy_binding_matches,
+        jacpy_binding_owner,
+        jacpy_binding_record
+    }
+    type --> runtime.python.modules.decimal_objects { jacpy_binding_owner }
+    type --> runtime.python.modules.elementtree {
+        jacpy_binding_allocate,
+        jacpy_binding_basicsize,
+        jacpy_binding_free,
+        jacpy_binding_owner,
+        jacpy_binding_record
+    }
+    type --> runtime.python.modules.functools { jacpy_binding_allocate }
+    type --> runtime.python.modules.itertools {
+        TypeSlot,
+        jacpy_binding_allocate,
+        jacpy_binding_basicsize,
+        jacpy_binding_matches,
+        jacpy_binding_owner,
+        jacpy_binding_token,
+        jacpy_binding_type_matches
+    }
+    type --> runtime.python.modules.lsprof { descriptor_get, jacpy_binding_allocate }
+    type --> runtime.python.modules.lzma {
+        jacpy_binding_allocate,
+        jacpy_binding_record
+    }
+    type --> runtime.python.modules.mmap { jacpy_binding_allocate }
+    type --> runtime.python.modules.multibytecodec {
+        jacpy_binding_allocate,
+        jacpy_binding_owner
+    }
+    type --> runtime.python.modules.multiprocessing {
+        jacpy_binding_allocate,
+        jacpy_binding_record
+    }
+    type --> runtime.python.modules.pickle {
+        jacpy_binding_allocate,
+        jacpy_binding_basicsize,
+        jacpy_binding_owner,
+        jacpy_binding_record,
+        jacpy_binding_token
+    }
+    type --> runtime.python.modules.posix_fileio { struct_sequence_type }
+    type --> runtime.python.modules.posix_ids { struct_sequence_type }
+    type --> runtime.python.modules.posix_process { struct_sequence_type }
+    type --> runtime.python.modules.posix_stat {
+        jacpy_binding_allocate,
+        jacpy_binding_record,
+        struct_sequence_type
+    }
+    type --> runtime.python.modules.pyexpat {
+        jacpy_binding_allocate,
+        jacpy_binding_free,
+        jacpy_binding_record
+    }
+    type --> runtime.python.modules.queue { jacpy_binding_allocate }
+    type --> runtime.python.modules.select {
+        jacpy_binding_allocate,
+        jacpy_binding_matches,
+        jacpy_binding_owner,
+        jacpy_binding_record
+    }
+    type --> runtime.python.modules.socket_core { jacpy_binding_owner }
+    type --> runtime.python.modules.sqlite3 {
+        jacpy_binding_allocate,
+        jacpy_binding_owner,
+        jacpy_binding_record
+    }
+    type --> runtime.python.modules.ssl { jacpy_binding_allocate }
+    type --> runtime.python.modules.ssl_cert { jacpy_binding_allocate }
+    type --> runtime.python.modules.ssl_core { jacpy_binding_owner }
+    type --> runtime.python.modules.struct {
+        jacpy_binding_allocate,
+        jacpy_binding_owner
+    }
+    type --> runtime.python.modules.unicodedata {
+        jacpy_binding_allocate,
+        jacpy_binding_record
+    }
+    type --> runtime.python.modules.zlib { jacpy_binding_record }
+    type --> runtime.python.modules.zoneinfo {
+        jacpy_binding_allocate,
+        jacpy_binding_owner,
+        jacpy_binding_record
+    }
+    type --> runtime.python.modules.zstd { jacpy_binding_allocate }
+    unicodedata --> compiler.backends.py.jacpython.native_api { PyInit_unicodedata }
+    uuid --> compiler.backends.py.jacpython.native_api { PyInit__uuid }
+    zoneinfo --> compiler.backends.py.jacpython.native_api { PyInit__zoneinfo }
+    zstd --> compiler.backends.py.jacpython.native_api { PyInit__zstd }
 }
 
 graph import runtime.python.modules {
     array --> runtime.python.bindings.array {
-        array_cursor,
-        array_state,
         jacpy_array_address,
         jacpy_array_assign,
         jacpy_array_assign_slice,
-        jacpy_array_clear,
-        jacpy_array_code,
         jacpy_array_compare,
         jacpy_array_copy,
-        jacpy_array_cursor_clear,
-        jacpy_array_cursor_index,
         jacpy_array_cursor_new,
         jacpy_array_cursor_next,
-        jacpy_array_cursor_owner,
-        jacpy_array_cursor_reduce,
-        jacpy_array_cursor_set,
         jacpy_array_delete,
-        jacpy_array_empty,
         jacpy_array_export,
         jacpy_array_extend,
-        jacpy_array_field,
-        jacpy_array_frombytes,
-        jacpy_array_fromfile,
-        jacpy_array_fromlist,
-        jacpy_array_fromunicode,
-        jacpy_array_init,
-        jacpy_array_insert,
         jacpy_array_item,
-        jacpy_array_itemsize,
-        jacpy_array_length,
-        jacpy_array_memory,
-        jacpy_array_new,
-        jacpy_array_pop,
-        jacpy_array_reconstruct_object,
-        jacpy_array_reduce,
         jacpy_array_repeat,
         jacpy_array_repr,
-        jacpy_array_reverse,
-        jacpy_array_search,
-        jacpy_array_tobytes,
-        jacpy_array_tofile,
-        jacpy_array_tolist,
-        jacpy_array_tounicode
+        jacpy_array_search
     }
     binary_scalars --> runtime.python.modules.array {
         integer_from_bits,
@@ -22536,51 +30337,21 @@ graph import runtime.python.modules {
         read_bits,
         write_bits
     }
-    binascii --> runtime.python.bindings.binascii { jacpy_binascii_convert }
-    bisect --> runtime.python.bindings.bisect { jacpy_bisect }
-    cmath --> runtime.python.bindings.cmath {
-        jacpy_cmath_isclose,
-        jacpy_cmath_log,
-        jacpy_cmath_rect,
-        jacpy_cmath_unary
-    }
     collections --> runtime.python.bindings.collections {
-        deque_cursor,
         deque_state,
-        jacpy_count_elements,
         jacpy_default_missing,
         jacpy_default_repr,
-        jacpy_deque_append,
         jacpy_deque_assign,
-        jacpy_deque_borrow,
-        jacpy_deque_clear,
         jacpy_deque_compare,
         jacpy_deque_consumed,
-        jacpy_deque_cursor,
         jacpy_deque_extend,
-        jacpy_deque_insert,
         jacpy_deque_item,
         jacpy_deque_limit,
-        jacpy_deque_memory,
         jacpy_deque_next,
-        jacpy_deque_pop,
         jacpy_deque_remaining,
         jacpy_deque_repeat,
         jacpy_deque_repr,
-        jacpy_deque_reverse,
-        jacpy_deque_rotate,
-        jacpy_deque_search,
-        jacpy_deque_set_limit,
         jacpy_deque_size
-    }
-    combinatorics --> runtime.python.bindings.itertools {
-        combinatorial_state,
-        jacpy_combinatorial_clear,
-        jacpy_combinatorial_field,
-        jacpy_combinatorial_init,
-        jacpy_combinatorial_memory,
-        jacpy_combinatorial_new,
-        jacpy_combinatorial_next
     }
     csv --> runtime.python.bindings.csv {
         CsvConfig,
@@ -22597,10 +30368,6 @@ graph import runtime.python.modules {
     functools --> runtime.python.bindings.functools {
         jacpy_cmp_key,
         jacpy_lru_call,
-        jacpy_lru_clear,
-        jacpy_lru_destroy,
-        jacpy_lru_field,
-        jacpy_lru_info,
         jacpy_lru_init,
         jacpy_partial_call,
         jacpy_partial_clear,
@@ -22608,35 +30375,8 @@ graph import runtime.python.modules {
         jacpy_partial_init,
         jacpy_partial_repr,
         jacpy_partial_restore,
-        jacpy_reduce,
         lru_state,
         partial_state
-    }
-    grouping --> runtime.python.bindings.itertools {
-        group_state,
-        jacpy_group_activate,
-        jacpy_group_clear,
-        jacpy_group_field,
-        jacpy_group_init,
-        jacpy_group_next,
-        jacpy_grouper_next
-    }
-    heapq --> runtime.python.bindings.heapq {
-        jacpy_heap_pop,
-        jacpy_heap_push,
-        jacpy_heap_pushpop,
-        jacpy_heap_replace,
-        jacpy_heapify
-    }
-    iterators --> runtime.python.bindings.itertools {
-        jacpy_pipeline_clear,
-        jacpy_pipeline_field,
-        jacpy_pipeline_init,
-        jacpy_pipeline_length,
-        jacpy_pipeline_new,
-        jacpy_pipeline_next,
-        jacpy_pipeline_repr,
-        pipeline_state
     }
     iterators --> runtime.python.modules.combinatorics { reusable_tuple }
     json --> runtime.python.bindings.json {
@@ -22647,21 +30387,7 @@ graph import runtime.python.modules {
     }
     math --> runtime.python.bindings.math {
         jacpy_math_binary,
-        jacpy_math_comb,
-        jacpy_math_dist,
-        jacpy_math_factorial,
-        jacpy_math_fma,
-        jacpy_math_fsum,
-        jacpy_math_gcd,
-        jacpy_math_hypot,
-        jacpy_math_isclose,
-        jacpy_math_isqrt,
-        jacpy_math_ldexp,
         jacpy_math_log,
-        jacpy_math_nextafter,
-        jacpy_math_parts,
-        jacpy_math_prod,
-        jacpy_math_sumprod,
         jacpy_math_unary
     }
     numeric --> runtime.python.modules.cmath {
@@ -22730,85 +30456,19 @@ graph import runtime.python.modules {
     object_ring --> runtime.python.modules.collections { object_ring }
     object_ring --> runtime.python.modules.queue { object_ring }
     operator --> runtime.python.bindings.operator {
-        jacpy_operator_abs,
-        jacpy_operator_add,
-        jacpy_operator_and_,
         jacpy_operator_apply,
         jacpy_operator_call,
-        jacpy_operator_compare,
-        jacpy_operator_concat,
-        jacpy_operator_contains,
-        jacpy_operator_countOf,
-        jacpy_operator_delitem,
-        jacpy_operator_digest,
-        jacpy_operator_floordiv,
-        jacpy_operator_getitem,
-        jacpy_operator_iadd,
-        jacpy_operator_iand,
-        jacpy_operator_iconcat,
-        jacpy_operator_ifloordiv,
-        jacpy_operator_ilshift,
-        jacpy_operator_imatmul,
-        jacpy_operator_imod,
-        jacpy_operator_imul,
-        jacpy_operator_index,
-        jacpy_operator_indexOf,
-        jacpy_operator_invert,
-        jacpy_operator_ior,
-        jacpy_operator_ipow,
-        jacpy_operator_irshift,
-        jacpy_operator_is_,
-        jacpy_operator_is_none,
-        jacpy_operator_is_not,
-        jacpy_operator_is_not_none,
-        jacpy_operator_isub,
-        jacpy_operator_itruediv,
-        jacpy_operator_ixor,
-        jacpy_operator_length_hint,
-        jacpy_operator_lshift,
-        jacpy_operator_matmul,
-        jacpy_operator_mod,
-        jacpy_operator_mul,
-        jacpy_operator_neg,
-        jacpy_operator_not_,
-        jacpy_operator_or_,
-        jacpy_operator_pos,
-        jacpy_operator_pow,
         jacpy_operator_prepare,
         jacpy_operator_reduce,
-        jacpy_operator_repr,
-        jacpy_operator_rshift,
-        jacpy_operator_setitem,
-        jacpy_operator_sub,
-        jacpy_operator_truediv,
-        jacpy_operator_truth,
-        jacpy_operator_xor
+        jacpy_operator_repr
     }
     pickle --> runtime.python.bindings.pickle {
-        jacpy_pickler_clear,
-        jacpy_pickler_dump,
-        jacpy_pickler_field,
-        jacpy_pickler_init,
-        jacpy_pickler_memo,
-        jacpy_pickler_memo_clear,
         jacpy_pickler_memo_set,
         jacpy_pickler_new,
-        jacpy_pickler_size,
-        jacpy_unpickler_clear,
-        jacpy_unpickler_field,
-        jacpy_unpickler_field_count,
-        jacpy_unpickler_find,
-        jacpy_unpickler_init,
-        jacpy_unpickler_load,
-        jacpy_unpickler_memo,
-        jacpy_unpickler_memo_clear,
         jacpy_unpickler_memo_set,
-        jacpy_unpickler_new,
-        jacpy_unpickler_size
+        jacpy_unpickler_new
     }
-    pickle_decode --> runtime.python.bindings.pickle { unpickle_state }
     pickle_decode --> runtime.python.modules.pickle { unpickle_state }
-    pickle_encode --> runtime.python.bindings.pickle { pickle_state }
     pickle_encode --> runtime.python.modules.pickle { pickle_state }
     pickle_objects --> runtime.python.modules.pickle { find_global }
     pickle_objects --> runtime.python.modules.pickle_encode {
@@ -22832,57 +30492,18 @@ graph import runtime.python.modules {
         builtin_stream_error,
         stream_error
     }
-    queue --> runtime.python.bindings.queue {
-        jacpy_queue_get,
-        jacpy_queue_new,
-        jacpy_queue_put,
-        jacpy_queue_size,
-        queue_state
-    }
-    random --> runtime.python.bindings.random {
-        jacpy_random_bits,
-        jacpy_random_float,
-        jacpy_random_getstate,
-        jacpy_random_new,
-        jacpy_random_seed,
-        jacpy_random_setstate,
-        mt19937
-    }
-    statistics --> runtime.python.bindings.statistics { jacpy_statistics_inv_cdf }
+    random --> runtime.python.bindings.random { jacpy_random_new }
     struct --> runtime.python.bindings.struct {
         jacpy_struct_cached,
-        jacpy_struct_compile,
-        jacpy_struct_cursor,
         jacpy_struct_items,
         jacpy_struct_memory,
         jacpy_struct_next,
         jacpy_struct_offset,
         jacpy_struct_pack,
         jacpy_struct_remaining,
-        jacpy_struct_size,
-        jacpy_struct_unpack,
-        struct_plan,
-        unpack_cursor
+        jacpy_struct_size
     }
-    tee --> runtime.python.bindings.itertools {
-        TeeBindings,
-        jacpy_tee_block_clear,
-        jacpy_tee_block_count,
-        jacpy_tee_block_field,
-        jacpy_tee_block_init,
-        jacpy_tee_construct,
-        jacpy_tee_cursor_clear,
-        jacpy_tee_cursor_field,
-        jacpy_tee_next,
-        jacpy_tee_split,
-        tee_block,
-        tee_cursor
-    }
-    bz2 --> runtime.python.bindings.bz2 {
-        BZ2Compressor_token,
-        BZ2Decompressor_token,
-        decompressor_of
-    }
+    bz2 --> runtime.python.bindings.bz2 { BZ2Compressor_token, BZ2Decompressor_token }
     bz2 --> runtime.python.bindings.clinic.bz2 {
         _bz2_BZ2Compressor_compress_impl,
         _bz2_BZ2Compressor_flush_impl,
@@ -22925,7 +30546,6 @@ graph import runtime.python.modules {
         pwd_getpwuid_impl
     }
     resource --> runtime.python.bindings.clinic.resource {
-        convert_pid_t,
         resource_getpagesize_impl,
         resource_getrlimit_impl,
         resource_getrusage_impl,
@@ -23265,6 +30885,5531 @@ graph import runtime.python.modules {
         get_shake_suffix,
         get_suffix
     }
+    abc --> runtime.python.bindings.abc {
+        AbcModuleState,
+        DATA_TYPE,
+        STATE_NAMES,
+        abc_data_new,
+        abc_data_token
+    }
+    abc --> runtime.python.bindings.clinic.abc {
+        _abc__abc_init_impl,
+        _abc__abc_instancecheck_impl,
+        _abc__abc_register_impl,
+        _abc__abc_subclasscheck_impl,
+        _abc__get_dump_impl,
+        _abc__reset_caches_impl,
+        _abc__reset_registry_impl,
+        _abc_get_cache_token_impl
+    }
+    array --> runtime.python.bindings.array {
+        ArrayIteratorState,
+        ArrayState,
+        allocate,
+        append_buffer,
+        array_array___copy___impl,
+        array_module_token,
+        array_token,
+        arrayiterator_token,
+        iterator_state,
+        module_for,
+        state_for
+    }
+    array --> runtime.python.bindings.clinic.array {
+        array__array_reconstructor_impl,
+        array_array___copy___impl,
+        array_array___deepcopy___impl,
+        array_array___reduce_ex___impl,
+        array_array___sizeof___impl,
+        array_array_append_impl,
+        array_array_buffer_info_impl,
+        array_array_byteswap_impl,
+        array_array_clear_impl,
+        array_array_count_impl,
+        array_array_extend_impl,
+        array_array_frombytes_impl,
+        array_array_fromfile_impl,
+        array_array_fromlist_impl,
+        array_array_fromunicode_impl,
+        array_array_index_impl,
+        array_array_insert_impl,
+        array_array_pop_impl,
+        array_array_remove_impl,
+        array_array_reverse_impl,
+        array_array_tobytes_impl,
+        array_array_tofile_impl,
+        array_array_tolist_impl,
+        array_array_tounicode_impl,
+        array_arrayiterator___reduce___impl,
+        array_arrayiterator___setstate___impl,
+        array_token,
+        arrayiterator_token
+    }
+    asyncio --> runtime.python.bindings.asyncio {
+        Future_token,
+        Task_token,
+        _asyncio_Future___init___impl,
+        _asyncio_Future_add_done_callback_impl,
+        _asyncio_Future_cancelled_impl,
+        _asyncio_Future_done_impl,
+        _asyncio_Future_exception_impl,
+        _asyncio_Future_get_loop_impl,
+        _asyncio_Future_result_impl,
+        _asyncio_Future_set_result_impl,
+        _asyncio_Task___init___impl,
+        _asyncio_future_add_to_awaited_by_impl,
+        _asyncio_future_discard_from_awaited_by_impl,
+        future_clear,
+        future_dealloc,
+        future_finalize,
+        future_new_iter,
+        future_repr,
+        future_traverse,
+        futureiter_am_send,
+        futureiter_clear,
+        futureiter_close,
+        futureiter_dealloc,
+        futureiter_iternext,
+        futureiter_send,
+        futureiter_throw,
+        futureiter_traverse,
+        stepwrapper_call,
+        stepwrapper_clear,
+        stepwrapper_dealloc,
+        stepwrapper_self,
+        stepwrapper_traverse,
+        task_clear,
+        task_dealloc,
+        task_finalize,
+        task_repr,
+        task_traverse
+    }
+    asyncio --> runtime.python.bindings.clinic.asyncio {
+        Future_token,
+        Task_token,
+        _asyncio_Future___init___impl,
+        _asyncio_Future__asyncio_awaited_by_get_impl,
+        _asyncio_Future__asyncio_future_blocking_get_impl,
+        _asyncio_Future__asyncio_future_blocking_set_impl,
+        _asyncio_Future__callbacks_get_impl,
+        _asyncio_Future__cancel_message_get_impl,
+        _asyncio_Future__cancel_message_set_impl,
+        _asyncio_Future__exception_get_impl,
+        _asyncio_Future__log_traceback_get_impl,
+        _asyncio_Future__log_traceback_set_impl,
+        _asyncio_Future__loop_get_impl,
+        _asyncio_Future__make_cancelled_error_impl,
+        _asyncio_Future__result_get_impl,
+        _asyncio_Future__source_traceback_get_impl,
+        _asyncio_Future__state_get_impl,
+        _asyncio_Future_add_done_callback_impl,
+        _asyncio_Future_cancel_impl,
+        _asyncio_Future_cancelled_impl,
+        _asyncio_Future_done_impl,
+        _asyncio_Future_exception_impl,
+        _asyncio_Future_get_loop_impl,
+        _asyncio_Future_remove_done_callback_impl,
+        _asyncio_Future_result_impl,
+        _asyncio_Future_set_exception_impl,
+        _asyncio_Future_set_result_impl,
+        _asyncio_Task___init___impl,
+        _asyncio_Task__coro_get_impl,
+        _asyncio_Task__fut_waiter_get_impl,
+        _asyncio_Task__log_destroy_pending_get_impl,
+        _asyncio_Task__log_destroy_pending_set_impl,
+        _asyncio_Task__make_cancelled_error_impl,
+        _asyncio_Task__must_cancel_get_impl,
+        _asyncio_Task_cancel_impl,
+        _asyncio_Task_cancelling_impl,
+        _asyncio_Task_get_context_impl,
+        _asyncio_Task_get_coro_impl,
+        _asyncio_Task_get_name_impl,
+        _asyncio_Task_get_stack_impl,
+        _asyncio_Task_print_stack_impl,
+        _asyncio_Task_set_exception_impl,
+        _asyncio_Task_set_name_impl,
+        _asyncio_Task_set_result_impl,
+        _asyncio_Task_uncancel_impl,
+        _asyncio__enter_task_impl,
+        _asyncio__get_running_loop_impl,
+        _asyncio__leave_task_impl,
+        _asyncio__register_eager_task_impl,
+        _asyncio__register_task_impl,
+        _asyncio__set_running_loop_impl,
+        _asyncio__swap_current_task_impl,
+        _asyncio__unregister_eager_task_impl,
+        _asyncio__unregister_task_impl,
+        _asyncio_all_tasks_impl,
+        _asyncio_current_task_impl,
+        _asyncio_future_add_to_awaited_by_impl,
+        _asyncio_future_discard_from_awaited_by_impl,
+        _asyncio_get_event_loop_impl,
+        _asyncio_get_running_loop_impl
+    }
+    asyncio_core --> runtime.python.bindings.asyncio {
+        AsyncioState,
+        FUTURE_ITER_SIZE,
+        FUTURE_OBJECT_SIZE,
+        STATE_ASYNCIO_MOD,
+        STATE_CANCELLED_ERROR,
+        STATE_CONTEXT_KWNAME,
+        STATE_COUNT,
+        STATE_FUTURE_ITER_TYPE,
+        STATE_FUTURE_REPR_FUNC,
+        STATE_FUTURE_TYPE,
+        STATE_GET_EVENT_LOOP_POLICY,
+        STATE_INVALID_STATE_ERROR,
+        STATE_ISCOROUTINE_FUNC,
+        STATE_ISCOROUTINE_TYPECACHE,
+        STATE_NON_ASYNCIO_EAGER_TASKS,
+        STATE_NON_ASYNCIO_TASKS,
+        STATE_TASK_GET_STACK_FUNC,
+        STATE_TASK_PRINT_STACK_FUNC,
+        STATE_TASK_REPR_FUNC,
+        STATE_TASK_STEP_WRAPPER_TYPE,
+        STATE_TASK_TYPE,
+        STATE_TRACEBACK_EXTRACT_STACK,
+        TASK_OBJECT_SIZE,
+        TASK_STEP_WRAPPER_SIZE,
+        asyncio_module_token,
+        ids,
+        intern_identifiers,
+        release,
+        running_loop_slot,
+        running_task_slot
+    }
+    asyncio_core --> runtime.python.modules.asyncio {
+        BIT_BLOCKING,
+        BIT_LOG_DESTROY_PENDING,
+        BIT_LOG_TB,
+        BIT_MUST_CANCEL,
+        FutureIterObject,
+        STATE_CANCELLED,
+        STATE_CANCELLED_ERROR,
+        STATE_CONTEXT_KWNAME,
+        STATE_FINISHED,
+        STATE_FUTURE_ITER_TYPE,
+        STATE_FUTURE_REPR_FUNC,
+        STATE_INVALID_STATE_ERROR,
+        STATE_NON_ASYNCIO_EAGER_TASKS,
+        STATE_NON_ASYNCIO_TASKS,
+        STATE_PENDING,
+        STATE_TASK_GET_STACK_FUNC,
+        STATE_TASK_PRINT_STACK_FUNC,
+        STATE_TASK_REPR_FUNC,
+        STATE_TASK_STEP_WRAPPER_TYPE,
+        TASK_NODE_OFFSET,
+        TaskStepMethWrapper,
+        call_soon,
+        create_cancelled_error,
+        enter_task,
+        exception_class_check,
+        exception_instance_check,
+        fut_of,
+        future_add_done_callback,
+        future_awaited_by_add,
+        future_awaited_by_discard,
+        future_cancel,
+        future_check_exact,
+        future_ensure_alive,
+        future_get_result,
+        future_init,
+        future_is_alive,
+        future_set_cancelled_error,
+        future_set_exception,
+        future_set_result,
+        get_event_loop,
+        get_future_loop,
+        has_bit,
+        ids,
+        is_coroutine,
+        leave_task,
+        module_of,
+        module_of_type,
+        native_state,
+        register_task,
+        release,
+        running_loop,
+        running_loop_slot,
+        running_task_slot,
+        set_bit,
+        state_ref,
+        swap_current_task,
+        task_check,
+        task_check_exact,
+        task_of,
+        task_or_future_check,
+        unregister_task
+    }
+    asyncio_core --> runtime.python.modules.asyncio.call_with_context { CallStack }
+    asyncio_core --> runtime.python.modules.asyncio.future_clear { clear_future_fields }
+    binascii --> runtime.python.bindings.clinic.binascii {
+        binascii_a2b_base64_impl,
+        binascii_a2b_hex_impl,
+        binascii_a2b_qp_impl,
+        binascii_a2b_uu_impl,
+        binascii_b2a_base64_impl,
+        binascii_b2a_hex_impl,
+        binascii_b2a_qp_impl,
+        binascii_b2a_uu_impl,
+        binascii_crc32_impl,
+        binascii_crc_hqx_impl,
+        binascii_hexlify_impl,
+        binascii_unhexlify_impl,
+        convert_ascii_buffer_converter
+    }
+    bisect --> runtime.python.bindings.clinic.bisect {
+        _bisect_bisect_left_impl,
+        _bisect_bisect_right_impl,
+        _bisect_insort_left_impl,
+        _bisect_insort_right_impl
+    }
+    bz2 --> runtime.python.bindings.clinic.bz2 {
+        BZ2Compressor_token,
+        BZ2Decompressor_token
+    }
+    cjkcodecs --> runtime.python.modules.cjkcodecs_mappings_cn { DbcsMap, Gb18030Range }
+    cjkcodecs --> runtime.python.modules.cjkcodecs_mappings_hk { DbcsMap }
+    cjkcodecs --> runtime.python.modules.cjkcodecs_mappings_jp {
+        DbcsMap,
+        PairEncodeMap
+    }
+    cjkcodecs --> runtime.python.modules.cjkcodecs_mappings_kr { DbcsMap }
+    cjkcodecs --> runtime.python.modules.cjkcodecs_mappings_tw { DbcsMap }
+    cjkcodecs --> runtime.python.modules.codecs_cn {
+        DecodeWriter,
+        Gb18030Range,
+        MBERR_EXCEPTION,
+        MBERR_TOOFEW,
+        MBERR_TOOSMALL,
+        MultibyteCodec,
+        MultibyteCodec_State,
+        NOCHAR,
+        UNIINV,
+        getcodec,
+        inbyte,
+        inchar,
+        map_decode,
+        map_encode,
+        next_in,
+        next_inchar,
+        next_out,
+        no_codec_init,
+        no_decode_reset,
+        no_encode_reset,
+        no_state_init,
+        outbyte,
+        outchar,
+        register_maps,
+        set_state_byte,
+        state_byte
+    }
+    cjkcodecs --> runtime.python.modules.codecs_hk {
+        DbcsMap,
+        DecodeWriter,
+        MBENC_FLUSH,
+        MBERR_EXCEPTION,
+        MBERR_INTERNAL,
+        MBERR_TOOFEW,
+        MBERR_TOOSMALL,
+        MULTIC,
+        MultibyteCodec,
+        MultibyteCodec_State,
+        NOCHAR,
+        UNIINV,
+        getcodec,
+        importmap,
+        inbyte,
+        inchar,
+        map_decode,
+        map_encode,
+        next_in,
+        next_inchar,
+        next_out,
+        no_decode_reset,
+        no_encode_reset,
+        no_state_init,
+        outbyte,
+        outchar,
+        outchar2,
+        register_maps
+    }
+    cjkcodecs --> runtime.python.modules.codecs_iso2022 {
+        DBCINV,
+        DbcsMap,
+        DecodeWriter,
+        MBENC_FLUSH,
+        MBERR_EXCEPTION,
+        MBERR_INTERNAL,
+        MBERR_TOOFEW,
+        MBERR_TOOSMALL,
+        MULTIC,
+        MultibyteCodec,
+        MultibyteCodec_State,
+        NOCHAR,
+        PairEncodeMap,
+        UNIINV,
+        find_pairencmap,
+        getcodec,
+        importmap,
+        inbyte,
+        inchar,
+        map_decode,
+        map_decode_wide,
+        map_encode,
+        next_in,
+        next_inchar,
+        next_out,
+        no_codec_init,
+        outbyte,
+        outchar,
+        outchar2,
+        set_state_byte,
+        state_byte
+    }
+    cjkcodecs --> runtime.python.modules.codecs_jp {
+        DBCINV,
+        DecodeWriter,
+        MBENC_FLUSH,
+        MBERR_EXCEPTION,
+        MBERR_TOOFEW,
+        MBERR_TOOSMALL,
+        MULTIC,
+        MultibyteCodec,
+        MultibyteCodec_State,
+        NOCHAR,
+        UNIINV,
+        find_pairencmap,
+        getcodec,
+        inbyte,
+        inchar,
+        map_decode,
+        map_decode_wide,
+        map_encode,
+        next_in,
+        next_inchar,
+        next_out,
+        no_codec_init,
+        no_decode_reset,
+        no_encode_reset,
+        no_state_init,
+        outbyte,
+        outchar,
+        outchar2,
+        register_maps
+    }
+    cjkcodecs --> runtime.python.modules.codecs_kr {
+        DecodeWriter,
+        MBERR_EXCEPTION,
+        MBERR_TOOFEW,
+        MBERR_TOOSMALL,
+        MultibyteCodec,
+        MultibyteCodec_State,
+        NOCHAR,
+        UNIINV,
+        getcodec,
+        inbyte,
+        inchar,
+        map_decode,
+        map_encode,
+        next_in,
+        next_inchar,
+        next_out,
+        no_codec_init,
+        no_decode_reset,
+        no_encode_reset,
+        no_state_init,
+        outbyte,
+        outchar,
+        register_maps
+    }
+    cjkcodecs --> runtime.python.modules.codecs_tw {
+        DecodeWriter,
+        MBERR_EXCEPTION,
+        MBERR_TOOFEW,
+        MBERR_TOOSMALL,
+        MultibyteCodec,
+        MultibyteCodec_State,
+        NOCHAR,
+        UNIINV,
+        getcodec,
+        inbyte,
+        inchar,
+        map_decode,
+        map_encode,
+        next_in,
+        next_inchar,
+        next_out,
+        no_codec_init,
+        no_decode_reset,
+        no_encode_reset,
+        no_state_init,
+        outbyte,
+        outchar,
+        register_maps
+    }
+    cjkcodecs --> runtime.python.modules.multibytecodec {
+        CodecCapsule,
+        DecodeWriter,
+        MBENC_FLUSH,
+        MBENC_MAX,
+        MBERR_EXCEPTION,
+        MBERR_INTERNAL,
+        MBERR_TOOFEW,
+        MBERR_TOOSMALL,
+        MultibyteCodec,
+        MultibyteCodec_State
+    }
+    cjkcodecs_jis --> runtime.python.modules.codecs_iso2022 {
+        emulate_2000_decode_plane1,
+        emulate_2000_decode_plane2,
+        emulate_2000_encode_bmp,
+        emulate_2000_encode_emp,
+        jisx0201_k_decode,
+        jisx0201_k_encode,
+        jisx0201_r_decode,
+        jisx0201_r_encode
+    }
+    cjkcodecs_jis --> runtime.python.modules.codecs_jp {
+        EMPBASE,
+        EMULATE_JISX0213_2000_DECODE_INVALID,
+        EMULATE_JISX0213_2000_ENCODE_INVALID,
+        emulate_2000_decode_plane1,
+        emulate_2000_decode_plane2,
+        emulate_2000_encode_bmp,
+        emulate_2000_encode_emp,
+        jisx0201_k_decode,
+        jisx0201_k_encode,
+        jisx0201_r_decode,
+        jisx0201_r_encode
+    }
+    cjkcodecs_mappings_cn --> runtime.python.modules.codecs_cn {
+        CJK_CN_MAPPINGS,
+        cjk_cn_mappings,
+        cjk_gb18030_to_unibmp_ranges,
+        cjk_gb18030ext_map,
+        cjk_gb2312_map,
+        cjk_gbcommon_map,
+        cjk_gbkext_map
+    }
+    cjkcodecs_mappings_hk --> runtime.python.modules.codecs_hk {
+        CJK_HK_MAPPINGS,
+        cjk_big5hkscs_bmp_map,
+        cjk_big5hkscs_map,
+        cjk_big5hkscs_nonbmp_map,
+        cjk_big5hkscs_phint_0,
+        cjk_big5hkscs_phint_12130,
+        cjk_big5hkscs_phint_21924,
+        cjk_hk_mappings
+    }
+    cjkcodecs_mappings_jp --> runtime.python.modules.codecs_iso2022 {
+        JISX0213_ENCPAIRS
+    }
+    cjkcodecs_mappings_jp --> runtime.python.modules.codecs_jp {
+        CJK_JP_MAPPINGS,
+        JISX0213_ENCPAIRS,
+        cjk_cp932ext_map,
+        cjk_jisx0208_map,
+        cjk_jisx0212_map,
+        cjk_jisx0213_1_bmp_map,
+        cjk_jisx0213_1_emp_map,
+        cjk_jisx0213_2_bmp_map,
+        cjk_jisx0213_2_emp_map,
+        cjk_jisx0213_bmp_map,
+        cjk_jisx0213_emp_map,
+        cjk_jisx0213_pair_encmap,
+        cjk_jisx0213_pair_map,
+        cjk_jisxcommon_map,
+        cjk_jp_mappings
+    }
+    cjkcodecs_mappings_kr --> runtime.python.modules.codecs_kr {
+        CJK_KR_MAPPINGS,
+        cjk_cp949_map,
+        cjk_cp949ext_map,
+        cjk_kr_mappings,
+        cjk_ksx1001_map
+    }
+    cjkcodecs_mappings_tw --> runtime.python.modules.codecs_tw {
+        CJK_TW_MAPPINGS,
+        cjk_big5_map,
+        cjk_cp950ext_map,
+        cjk_tw_mappings
+    }
+    cmath --> runtime.python.bindings.clinic.cmath {
+        cmath_acos_impl,
+        cmath_acosh_impl,
+        cmath_asin_impl,
+        cmath_asinh_impl,
+        cmath_atan_impl,
+        cmath_atanh_impl,
+        cmath_cos_impl,
+        cmath_cosh_impl,
+        cmath_exp_impl,
+        cmath_isclose_impl,
+        cmath_isfinite_impl,
+        cmath_isinf_impl,
+        cmath_isnan_impl,
+        cmath_log10_impl,
+        cmath_log_impl,
+        cmath_phase_impl,
+        cmath_polar_impl,
+        cmath_rect_impl,
+        cmath_sin_impl,
+        cmath_sinh_impl,
+        cmath_sqrt_impl,
+        cmath_tan_impl,
+        cmath_tanh_impl,
+        convert_Py_complex,
+        convert_Py_complex_protected,
+        return_Py_complex_protected
+    }
+    codecs --> runtime.python.bindings.clinic.codecs {
+        _codecs__unregister_error_impl,
+        _codecs_ascii_decode_impl,
+        _codecs_ascii_encode_impl,
+        _codecs_charmap_build_impl,
+        _codecs_charmap_decode_impl,
+        _codecs_charmap_encode_impl,
+        _codecs_decode_impl,
+        _codecs_encode_impl,
+        _codecs_escape_decode_impl,
+        _codecs_escape_encode_impl,
+        _codecs_latin_1_decode_impl,
+        _codecs_latin_1_encode_impl,
+        _codecs_lookup_error_impl,
+        _codecs_lookup_impl,
+        _codecs_raw_unicode_escape_decode_impl,
+        _codecs_raw_unicode_escape_encode_impl,
+        _codecs_readbuffer_encode_impl,
+        _codecs_register_error_impl,
+        _codecs_register_impl,
+        _codecs_unicode_escape_decode_impl,
+        _codecs_unicode_escape_encode_impl,
+        _codecs_unregister_impl,
+        _codecs_utf_16_be_decode_impl,
+        _codecs_utf_16_be_encode_impl,
+        _codecs_utf_16_decode_impl,
+        _codecs_utf_16_encode_impl,
+        _codecs_utf_16_ex_decode_impl,
+        _codecs_utf_16_le_decode_impl,
+        _codecs_utf_16_le_encode_impl,
+        _codecs_utf_32_be_decode_impl,
+        _codecs_utf_32_be_encode_impl,
+        _codecs_utf_32_decode_impl,
+        _codecs_utf_32_encode_impl,
+        _codecs_utf_32_ex_decode_impl,
+        _codecs_utf_32_le_decode_impl,
+        _codecs_utf_32_le_encode_impl,
+        _codecs_utf_7_decode_impl,
+        _codecs_utf_7_encode_impl,
+        _codecs_utf_8_decode_impl,
+        _codecs_utf_8_encode_impl
+    }
+    codecs_cn --> runtime.python.bindings.codecs_cn {
+        codecs_cn_exec,
+        codecs_cn_getcodec
+    }
+    codecs_hk --> runtime.python.bindings.codecs_hk {
+        codecs_hk_exec,
+        codecs_hk_getcodec
+    }
+    codecs_iso2022 --> runtime.python.bindings.codecs_iso2022 {
+        codecs_iso2022_exec,
+        codecs_iso2022_getcodec
+    }
+    codecs_jp --> runtime.python.bindings.codecs_jp {
+        codecs_jp_exec,
+        codecs_jp_getcodec
+    }
+    codecs_kr --> runtime.python.bindings.codecs_kr {
+        codecs_kr_exec,
+        codecs_kr_getcodec
+    }
+    codecs_tw --> runtime.python.bindings.codecs_tw {
+        codecs_tw_exec,
+        codecs_tw_getcodec
+    }
+    collections --> runtime.python.bindings.clinic.collections {
+        _collections__count_elements_impl,
+        _tuplegetter_token,
+        deque___copy___impl,
+        deque___reduce___impl,
+        deque___reversed___impl,
+        deque___sizeof___impl,
+        deque_append_impl,
+        deque_appendleft_impl,
+        deque_clearmethod_impl,
+        deque_copy_impl,
+        deque_count_impl,
+        deque_extend_impl,
+        deque_extendleft_impl,
+        deque_index_impl,
+        deque_init_impl,
+        deque_insert_impl,
+        deque_pop_impl,
+        deque_popleft_impl,
+        deque_remove_impl,
+        deque_reverse_impl,
+        deque_rotate_impl,
+        tuplegetter_new_impl
+    }
+    collections --> runtime.python.bindings.collections {
+        DequeIteratorState,
+        DequeState,
+        TupleGetterState,
+        _tuplegetter_token,
+        allocate,
+        collections_module_token,
+        defdict_token,
+        deque_copy_impl,
+        deque_token,
+        deque_value,
+        dequeiter_token,
+        dequereviter_token,
+        iterator_create,
+        module_for,
+        search
+    }
+    combinatorics --> runtime.python.modules.itertools {
+        combinatorial_state,
+        jacpy_combinatorial_clear,
+        jacpy_combinatorial_field,
+        jacpy_combinatorial_init,
+        jacpy_combinatorial_memory,
+        jacpy_combinatorial_new,
+        jacpy_combinatorial_next
+    }
+    csv --> runtime.python.bindings.clinic.csv {
+        _csv_field_size_limit_impl,
+        _csv_get_dialect_impl,
+        _csv_list_dialects_impl,
+        _csv_unregister_dialect_impl
+    }
+    datetime --> runtime.python.bindings.clinic.datetime {
+        datetime_date_fromtimestamp_impl,
+        datetime_date_replace_impl,
+        datetime_datetime_now_impl,
+        datetime_datetime_replace_impl,
+        datetime_time_replace_impl,
+        iso_calendar_date_new_impl
+    }
+    datetime --> runtime.python.bindings.datetime {
+        capi_date_from_date,
+        capi_datetime_from_date_and_time,
+        capi_datetime_from_date_and_time_and_fold,
+        capi_delta_from_delta,
+        capi_time_from_time,
+        capi_time_from_time_and_fold,
+        datetime_date_fromtimestamp_capi,
+        datetime_date_replace_impl,
+        datetime_datetime_replace_impl,
+        datetime_time_replace_impl
+    }
+    datetime_calendar --> runtime.python.bindings.datetime {
+        MAXYEAR,
+        MAX_DELTA_DAYS,
+        MINYEAR
+    }
+    datetime_calendar --> runtime.python.modules.datetime_date {
+        DateTimeFields,
+        MAXYEAR,
+        MINYEAR,
+        YearMonthDay,
+        iso_to_ymd,
+        iso_week1_monday,
+        ord_to_ymd,
+        parse_isoformat_date,
+        weekday,
+        ymd_to_ord
+    }
+    datetime_calendar --> runtime.python.modules.datetime_datetime {
+        IsoTime,
+        MAXYEAR,
+        MINYEAR,
+        YearMonthDay,
+        days_in_month,
+        find_isoformat_datetime_separator,
+        parse_isoformat_date,
+        parse_isoformat_time,
+        ymd_to_ord
+    }
+    datetime_calendar --> runtime.python.modules.datetime_format {
+        days_before_month,
+        weekday
+    }
+    datetime_calendar --> runtime.python.modules.datetime_objects {
+        DateTimeFields,
+        MAXYEAR,
+        MAX_DELTA_DAYS,
+        MINYEAR,
+        days_in_month,
+        normalize_d_s_us,
+        normalize_datetime,
+        normalize_y_m_d
+    }
+    datetime_calendar --> runtime.python.modules.datetime_time {
+        IsoTime,
+        parse_isoformat_time
+    }
+    datetime_date --> runtime.python.bindings.datetime {
+        PyDateTime_DateType,
+        date_ctime,
+        date_format,
+        date_fromisocalendar,
+        date_fromisoformat,
+        date_fromordinal,
+        date_isocalendar,
+        date_isoformat,
+        date_isoweekday,
+        date_reduce,
+        date_strftime,
+        date_strptime,
+        date_timetuple,
+        date_today,
+        date_toordinal,
+        date_weekday,
+        iso_calendar_date_dealloc,
+        iso_calendar_date_reduce,
+        iso_calendar_date_repr,
+        iso_calendar_date_traverse,
+        iso_calendar_date_week,
+        iso_calendar_date_weekday,
+        iso_calendar_date_year
+    }
+    datetime_date --> runtime.python.modules.datetime {
+        date_fromtimestamp,
+        new_iso_calendar_date
+    }
+    datetime_date --> runtime.python.modules.datetime_datetime {
+        PyDateTime_DateType,
+        compare_data,
+        generic_hash,
+        month_is_sane,
+        strptime_via
+    }
+    datetime_date --> runtime.python.modules.datetime_time {
+        compare_data,
+        generic_hash,
+        strptime_via
+    }
+    datetime_datetime --> runtime.python.bindings.datetime {
+        PyDateTime_DateTimeType,
+        datetime_astimezone,
+        datetime_combine,
+        datetime_ctime,
+        datetime_fromisoformat,
+        datetime_fromtimestamp,
+        datetime_getdate,
+        datetime_gettime,
+        datetime_gettimetz,
+        datetime_isoformat,
+        datetime_reduce,
+        datetime_reduce_ex,
+        datetime_strptime,
+        datetime_timestamp,
+        datetime_timetuple,
+        datetime_tzname,
+        datetime_utcfromtimestamp,
+        datetime_utcnow,
+        datetime_utctimetuple
+    }
+    datetime_datetime --> runtime.python.modules.datetime { datetime_now }
+    datetime_delta --> runtime.python.bindings.datetime {
+        PyDateTime_DeltaType,
+        delta_reduce,
+        delta_total_seconds
+    }
+    datetime_delta --> runtime.python.modules.datetime_datetime { delta_total_seconds }
+    datetime_delta --> runtime.python.modules.datetime_tzinfo {
+        delta_hash,
+        delta_richcompare,
+        zero_delta
+    }
+    datetime_format --> runtime.python.modules.datetime_date {
+        build_struct_time,
+        format_ctime,
+        time_time,
+        wrap_strftime
+    }
+    datetime_format --> runtime.python.modules.datetime_datetime {
+        build_struct_time,
+        format_ctime,
+        format_utcoffset
+    }
+    datetime_format --> runtime.python.modules.datetime_time {
+        format_utcoffset,
+        wrap_strftime
+    }
+    datetime_objects --> runtime.python.bindings.datetime {
+        STATE_COUNT,
+        STATE_EPOCH,
+        STATE_ISOCALENDAR_DATE_TYPE,
+        STATE_SECONDS_PER_DAY,
+        STATE_US_PER_DAY,
+        STATE_US_PER_HOUR,
+        STATE_US_PER_MINUTE,
+        STATE_US_PER_MS,
+        STATE_US_PER_SECOND,
+        STATE_US_PER_WEEK,
+        clear_current_module,
+        create_timezone,
+        date_get_fold,
+        date_get_hour,
+        date_get_microsecond,
+        date_get_minute,
+        date_get_second,
+        datetime_dst,
+        datetime_tzinfo_of,
+        datetime_utcoffset,
+        get_current_module,
+        get_day,
+        get_month,
+        get_year,
+        new_date,
+        new_datetime,
+        new_delta,
+        new_time,
+        new_timezone,
+        set_current_module,
+        time_get_fold,
+        time_get_hour,
+        time_get_microsecond,
+        time_get_minute,
+        time_get_second,
+        time_tzinfo_of,
+        utc,
+        utc_timezone
+    }
+    datetime_objects --> runtime.python.modules.datetime {
+        STATE_ISOCALENDAR_DATE_TYPE,
+        new_date_ex,
+        new_date_subclass_ex,
+        new_datetime_ex,
+        new_datetime_ex2,
+        new_datetime_subclass_fold_ex,
+        new_delta_ex,
+        new_time_ex,
+        new_time_ex2,
+        new_time_subclass_fold_ex,
+        type_of
+    }
+    datetime_objects --> runtime.python.modules.datetime_date {
+        STATE_ISOCALENDAR_DATE_TYPE,
+        data_address,
+        data_bytes,
+        date_check,
+        datetime_check,
+        delta_check,
+        diff_to_bool,
+        get_current_state,
+        get_day,
+        get_month,
+        get_year,
+        new_date_ex,
+        new_date_subclass_ex,
+        new_delta,
+        normalize_date,
+        not_implemented,
+        state_value,
+        td_days,
+        type_alloc,
+        type_name_of,
+        type_of
+    }
+    datetime_objects --> runtime.python.modules.datetime_datetime {
+        Py_EQ,
+        Py_NE,
+        STATE_EPOCH,
+        add_datetime_timedelta,
+        append_keyword_fold,
+        append_keyword_tzinfo,
+        call_dst,
+        call_tzname,
+        call_utcoffset,
+        check_tzinfo_subclass,
+        data_address,
+        data_bytes,
+        date_get_fold,
+        date_get_hour,
+        date_get_microsecond,
+        date_get_minute,
+        date_get_second,
+        date_type,
+        datetime_check,
+        datetime_dst,
+        datetime_tzinfo_of,
+        datetime_utcoffset,
+        delta_bool,
+        delta_check,
+        delta_cmp,
+        delta_subtract,
+        diff_to_bool,
+        divide_timedelta_timedelta,
+        get_current_state,
+        get_day,
+        get_month,
+        get_year,
+        has_tzinfo,
+        new_date,
+        new_datetime,
+        new_datetime_ex2,
+        new_datetime_subclass_ex,
+        new_datetime_subclass_fold_ex,
+        new_delta,
+        new_time,
+        new_timezone,
+        not_implemented,
+        state_value,
+        td_days,
+        td_microseconds,
+        td_seconds,
+        time_get_fold,
+        time_get_hour,
+        time_get_microsecond,
+        time_get_minute,
+        time_get_second,
+        time_type,
+        time_tzinfo_of,
+        type_alloc,
+        type_free,
+        type_name_of,
+        type_object,
+        type_of,
+        tzinfo_from_isoformat_results,
+        utc
+    }
+    datetime_objects --> runtime.python.modules.datetime_delta {
+        STATE_SECONDS_PER_DAY,
+        STATE_US_PER_DAY,
+        STATE_US_PER_HOUR,
+        STATE_US_PER_MINUTE,
+        STATE_US_PER_MS,
+        STATE_US_PER_SECOND,
+        STATE_US_PER_WEEK,
+        checked_divmod,
+        delta_bool,
+        delta_check,
+        delta_cmp,
+        delta_negative,
+        delta_subtract,
+        delta_to_microseconds,
+        diff_to_bool,
+        divide_timedelta_timedelta,
+        get_current_state,
+        microseconds_to_delta,
+        microseconds_to_delta_ex,
+        new_delta,
+        not_implemented,
+        state_value,
+        td_days,
+        td_microseconds,
+        td_seconds,
+        type_name_of,
+        type_of
+    }
+    datetime_objects --> runtime.python.modules.datetime_format {
+        call_tzname,
+        call_utcoffset,
+        date_get_microsecond,
+        datetime_check,
+        delta_negative,
+        get_day,
+        get_month,
+        get_tzinfo_member,
+        get_year,
+        td_days,
+        td_microseconds,
+        td_seconds,
+        time_check,
+        time_get_microsecond
+    }
+    datetime_objects --> runtime.python.modules.datetime_time {
+        Py_EQ,
+        Py_NE,
+        append_keyword_fold,
+        append_keyword_tzinfo,
+        call_dst,
+        call_tzname,
+        call_utcoffset,
+        check_tzinfo_subclass,
+        data_address,
+        data_bytes,
+        delta_check,
+        delta_cmp,
+        delta_subtract,
+        diff_to_bool,
+        has_tzinfo,
+        new_delta,
+        new_time,
+        new_time_ex2,
+        not_implemented,
+        td_days,
+        td_seconds,
+        time_check,
+        time_get_fold,
+        time_get_hour,
+        time_get_microsecond,
+        time_get_minute,
+        time_get_second,
+        time_type,
+        time_tzinfo_of,
+        type_alloc,
+        type_free,
+        type_name_of,
+        type_object,
+        type_of,
+        tzinfo_from_isoformat_results
+    }
+    datetime_objects --> runtime.python.modules.datetime_tzinfo {
+        PyDateTime_TimeZone,
+        Py_EQ,
+        Py_NE,
+        add_datetime_timedelta,
+        call_dst,
+        datetime_check,
+        datetime_dst,
+        datetime_tzinfo_of,
+        datetime_utcoffset,
+        delta_bool,
+        delta_negative,
+        delta_subtract,
+        delta_type,
+        has_tzinfo,
+        new_timezone,
+        not_implemented,
+        td_days,
+        td_microseconds,
+        td_seconds,
+        timezone_check,
+        type_free,
+        type_name_of,
+        type_object,
+        type_of,
+        utc
+    }
+    datetime_time --> runtime.python.bindings.datetime {
+        PyDateTime_TimeType,
+        time_dst,
+        time_fromisoformat,
+        time_isoformat,
+        time_reduce,
+        time_reduce_ex,
+        time_strftime,
+        time_strptime,
+        time_tzname,
+        time_utcoffset
+    }
+    datetime_time --> runtime.python.modules.datetime_datetime {
+        append_utcoffset,
+        timespec_index
+    }
+    datetime_tzinfo --> runtime.python.bindings.datetime {
+        PyDateTime_TZInfoType,
+        PyDateTime_TimeZoneType,
+        timezone_dst,
+        timezone_fromutc,
+        timezone_getinitargs,
+        timezone_tzname,
+        timezone_utcoffset,
+        tzinfo_dst,
+        tzinfo_fromutc,
+        tzinfo_reduce,
+        tzinfo_tzname,
+        tzinfo_utcoffset
+    }
+    decimal_context --> runtime.python.bindings.decimal {
+        context_clear,
+        context_clear_flags,
+        context_clear_traps,
+        context_dealloc,
+        context_getattr,
+        context_getcapitals,
+        context_getclamp,
+        context_getemax,
+        context_getemin,
+        context_getetiny,
+        context_getetop,
+        context_getprec,
+        context_getround,
+        context_init,
+        context_new,
+        context_reduce,
+        context_repr,
+        context_setattr,
+        context_setcapitals,
+        context_setclamp,
+        context_setemax,
+        context_setemin,
+        context_setprec,
+        context_setround,
+        context_traverse,
+        ctx_apply,
+        ctx_binary,
+        ctx_bool,
+        ctx_canonical,
+        ctx_copy_decimal,
+        ctx_create_decimal,
+        ctx_from_float,
+        ctx_iscanonical,
+        ctx_mpd_class,
+        ctx_mpd_qcopy_abs,
+        ctx_mpd_qcopy_negate,
+        ctx_mpd_qcopy_sign,
+        ctx_mpd_qdivmod,
+        ctx_mpd_qfma,
+        ctx_mpd_qpow,
+        ctx_mpd_radix,
+        ctx_mpd_same_quantum,
+        ctx_mpd_to_eng,
+        ctx_mpd_to_sci,
+        ctx_total,
+        ctx_unary,
+        ctxmanager_clear,
+        ctxmanager_dealloc,
+        ctxmanager_new,
+        ctxmanager_restore_global,
+        ctxmanager_set_local,
+        ctxmanager_traverse,
+        dec_getcontext,
+        dec_setcontext,
+        ieee_context,
+        init_basic_context,
+        init_extended_context,
+        signaldict_copy,
+        signaldict_dealloc,
+        signaldict_getitem,
+        signaldict_init,
+        signaldict_iter,
+        signaldict_len,
+        signaldict_repr,
+        signaldict_richcompare,
+        signaldict_setitem,
+        signaldict_traverse
+    }
+    decimal_convert --> runtime.python.modules.decimal_context {
+        convert_op,
+        dec_apply,
+        dec_from_object,
+        dec_type_from_float
+    }
+    decimal_convert --> runtime.python.modules.decimal_number {
+        convert_op,
+        convert_op_cmp,
+        dec_settriple,
+        dec_type_from_float_exact,
+        dec_type_from_number_exact,
+        dec_type_from_object_exact,
+        failed_operand
+    }
+    decimal_number --> runtime.python.bindings.decimal {
+        dec_as_float,
+        dec_as_integer_ratio,
+        dec_as_tuple,
+        dec_binary_va,
+        dec_bool,
+        dec_bool_va,
+        dec_canonical,
+        dec_ceil,
+        dec_complex,
+        dec_conjugate,
+        dec_copy,
+        dec_dealloc,
+        dec_floor,
+        dec_format,
+        dec_from_float,
+        dec_from_number,
+        dec_hash,
+        dec_imag,
+        dec_mpd_adjexp,
+        dec_mpd_class,
+        dec_mpd_qcopy_abs,
+        dec_mpd_qcopy_negate,
+        dec_mpd_qcopy_sign,
+        dec_mpd_qfma,
+        dec_mpd_qquantize,
+        dec_mpd_radix,
+        dec_mpd_same_quantum,
+        dec_mpd_to_eng,
+        dec_new,
+        dec_real,
+        dec_reduce,
+        dec_repr,
+        dec_richcompare,
+        dec_round,
+        dec_sizeof,
+        dec_str,
+        dec_to_integral_exact,
+        dec_to_integral_value,
+        dec_total_va,
+        dec_traverse,
+        dec_trunc,
+        dec_unary_va,
+        nm_dec_as_long,
+        nm_mpd_qabs,
+        nm_mpd_qadd,
+        nm_mpd_qdiv,
+        nm_mpd_qdivint,
+        nm_mpd_qdivmod,
+        nm_mpd_qminus,
+        nm_mpd_qmul,
+        nm_mpd_qplus,
+        nm_mpd_qpow,
+        nm_mpd_qrem,
+        nm_mpd_qsub,
+        nm_nonzero
+    }
+    decimal_number --> runtime.python.modules.decimal_context {
+        dec_mpd_radix_of,
+        divmod_operands,
+        parse_keywords,
+        parse_tuple,
+        power_operands,
+        unicode_fromascii
+    }
+    decimal_objects --> runtime.python.bindings.decimal {
+        CONDITION_FLAGS,
+        CONDITION_NAMES,
+        CONTEXT_MANAGER_OBJECT_SIZE,
+        CONTEXT_OBJECT_SIZE,
+        DEC_OBJECT_SIZE,
+        INEXACT,
+        MPD_Float_operation,
+        PY_DEC_MINALLOC,
+        PY_DEC_ROUND_GUARD,
+        PyFloat_Type,
+        PyLong_Type,
+        PyType_Type,
+        ROUNDED,
+        SIGNAL_DICT_OBJECT_SIZE,
+        SIGNAL_FLAGS,
+        SIGNAL_MAP_LEN,
+        SIGNAL_NAMES,
+        STATE_BASIC_CONTEXT_TEMPLATE,
+        STATE_CONDITION_EXCEPTIONS,
+        STATE_CONTEXT_MANAGER_TYPE,
+        STATE_CONTEXT_TYPE,
+        STATE_COUNT,
+        STATE_CURRENT_CONTEXT_VAR,
+        STATE_DECIMAL_EXCEPTION,
+        STATE_DECIMAL_TUPLE,
+        STATE_DEC_TYPE,
+        STATE_DEFAULT_CONTEXT_TEMPLATE,
+        STATE_EXTENDED_CONTEXT_TEMPLATE,
+        STATE_RATIONAL,
+        STATE_ROUND_MAP,
+        STATE_SIGNAL_DICT_MIXIN_TYPE,
+        STATE_SIGNAL_DICT_TYPE,
+        STATE_SIGNAL_EXCEPTIONS,
+        STATE_SIGNAL_TUPLE,
+        SUBNORMAL,
+        builtin_methods,
+        context_copy,
+        decimal_module_token,
+        hash_context,
+        max_context,
+        signal_exception
+    }
+    decimal_objects --> runtime.python.modules.decimal_context {
+        CONTEXT_STATUS_OFFSET,
+        CONTEXT_TRAPS_OFFSET,
+        DEC_ERRORS,
+        INVALID_SIGNALDICT_ERROR_MSG,
+        PyDecContextManagerObject,
+        PyDecContextObject,
+        PyDecSignalDictObject,
+        Py_EQ_OP,
+        Py_NE_OP,
+        SIGNAL_FLAGS,
+        SIGNAL_MAP_LEN,
+        SIGNAL_NAMES,
+        STATE_CONTEXT_MANAGER_TYPE,
+        STATE_DEFAULT_CONTEXT_TEMPLATE,
+        STATE_ROUND_MAP,
+        STATE_SIGNAL_DICT_TYPE,
+        STATE_SIGNAL_TUPLE,
+        bool_object,
+        context_check,
+        context_copy,
+        context_record,
+        context_type,
+        copy_mpd_context,
+        ctx_caps,
+        ctx_of,
+        current_context,
+        current_context_borrowed,
+        dec_addstatus,
+        dec_alloc,
+        dec_check,
+        dec_type,
+        dict_as_flags,
+        exception_as_flag,
+        flags_as_dict,
+        getround,
+        internal_error_int,
+        internal_error_ptr,
+        list_as_flags,
+        module_of_context,
+        module_of_type,
+        mpd,
+        set_current_context,
+        signal_dict_check,
+        signal_dict_flags,
+        signals_as_list,
+        state_value,
+        value_error_int,
+        value_error_ptr
+    }
+    decimal_objects --> runtime.python.modules.decimal_convert {
+        MPD_Float_operation,
+        PyComplex_Type,
+        PyFloat_Type,
+        Py_EQ_OP,
+        Py_NE_OP,
+        STATE_RATIONAL,
+        builtin_methods,
+        context_or_current,
+        ctx_of,
+        current_context_borrowed,
+        dec_addstatus,
+        dec_alloc,
+        dec_check,
+        dec_check_exact,
+        dec_type,
+        dec_type_new,
+        max_context,
+        module_of_context,
+        module_of_type,
+        mpd,
+        state_value,
+        type_check
+    }
+    decimal_objects --> runtime.python.modules.decimal_number {
+        PyDecObject,
+        PyFloat_Type,
+        PyLong_Type,
+        Py_EQ_OP,
+        Py_GE_OP,
+        Py_GT_OP,
+        Py_LE_OP,
+        Py_LT_OP,
+        Py_NE_OP,
+        STATE_DECIMAL_TUPLE,
+        STATE_PYDECIMAL,
+        bool_object,
+        context_or_current,
+        ctx_caps,
+        ctx_of,
+        current_context_borrowed,
+        dec_addstatus,
+        dec_alloc,
+        dec_type,
+        free_work_context,
+        getround,
+        hash_context,
+        internal_error_ptr,
+        max_context,
+        module_of,
+        module_of_left_or_right,
+        module_of_ternary,
+        module_of_type,
+        mpd,
+        state_value,
+        work_context
+    }
+    decimal_ops --> runtime.python.bindings.decimal {
+        OP_ABS,
+        OP_ADD,
+        OP_AND,
+        OP_COMPARE,
+        OP_COMPARE_SIGNAL,
+        OP_COMPARE_TOTAL,
+        OP_COMPARE_TOTAL_MAG,
+        OP_DIV,
+        OP_DIVINT,
+        OP_EXP,
+        OP_INVERT,
+        OP_IS_CANONICAL,
+        OP_IS_FINITE,
+        OP_IS_INFINITE,
+        OP_IS_NAN,
+        OP_IS_NORMAL,
+        OP_IS_QNAN,
+        OP_IS_SIGNED,
+        OP_IS_SNAN,
+        OP_IS_SUBNORMAL,
+        OP_IS_ZERO,
+        OP_LN,
+        OP_LOG10,
+        OP_LOGB,
+        OP_MAX,
+        OP_MAX_MAG,
+        OP_MIN,
+        OP_MINUS,
+        OP_MIN_MAG,
+        OP_MUL,
+        OP_NEXT_MINUS,
+        OP_NEXT_PLUS,
+        OP_NEXT_TOWARD,
+        OP_OR,
+        OP_PLUS,
+        OP_QUANTIZE,
+        OP_REDUCE,
+        OP_REM,
+        OP_REM_NEAR,
+        OP_ROTATE,
+        OP_ROUND_TO_INT,
+        OP_ROUND_TO_INTX,
+        OP_SCALEB,
+        OP_SHIFT,
+        OP_SQRT,
+        OP_SUB,
+        OP_XOR
+    }
+    decimal_ops --> runtime.python.modules.decimal_context {
+        binary_op,
+        bool_op,
+        fma_op,
+        total_op,
+        unary_op
+    }
+    decimal_ops --> runtime.python.modules.decimal_number {
+        OP_ABS,
+        OP_ADD,
+        OP_DIV,
+        OP_DIVINT,
+        OP_MINUS,
+        OP_MUL,
+        OP_PLUS,
+        OP_REM,
+        OP_SUB,
+        binary_op,
+        bool_op,
+        fma_op,
+        total_op,
+        unary_op
+    }
+    elementtree --> runtime.python.bindings.clinic.elementtree {
+        Element_token,
+        _elementtree_Element___copy___impl,
+        _elementtree_Element___deepcopy___impl,
+        _elementtree_Element___getstate___impl,
+        _elementtree_Element___setstate___impl,
+        _elementtree_Element___sizeof___impl,
+        _elementtree_Element_append_impl,
+        _elementtree_Element_clear_impl,
+        _elementtree_Element_extend_impl,
+        _elementtree_Element_find_impl,
+        _elementtree_Element_findall_impl,
+        _elementtree_Element_findtext_impl,
+        _elementtree_Element_get_impl,
+        _elementtree_Element_insert_impl,
+        _elementtree_Element_items_impl,
+        _elementtree_Element_iter_impl,
+        _elementtree_Element_iterfind_impl,
+        _elementtree_Element_itertext_impl,
+        _elementtree_Element_keys_impl,
+        _elementtree_Element_makeelement_impl,
+        _elementtree_Element_remove_impl,
+        _elementtree_Element_set_impl,
+        _elementtree_TreeBuilder___init___impl,
+        _elementtree_TreeBuilder_close_impl,
+        _elementtree_TreeBuilder_comment_impl,
+        _elementtree_TreeBuilder_data_impl,
+        _elementtree_TreeBuilder_end_impl,
+        _elementtree_TreeBuilder_pi_impl,
+        _elementtree_TreeBuilder_start_impl,
+        _elementtree_XMLParser___init___impl,
+        _elementtree_XMLParser__parse_whole_impl,
+        _elementtree_XMLParser__setevents_impl,
+        _elementtree_XMLParser_close_impl,
+        _elementtree_XMLParser_feed_impl,
+        _elementtree_XMLParser_flush_impl,
+        _elementtree__set_factories_impl,
+        subclass_clinic_state_Element_Type
+    }
+    elementtree --> runtime.python.bindings.elementtree {
+        ELEMENT_ITER_RECORD_SIZE,
+        ELEMENT_RECORD_SIZE,
+        ELEMENT_TYPE_NAME,
+        ElementIter_token,
+        ElementTreeState,
+        Element_token,
+        TREEBUILDER_RECORD_SIZE,
+        TreeBuilder_token,
+        XMLPARSER_MEMBERS,
+        XMLPARSER_RECORD_SIZE,
+        XMLParser_token,
+        element_ass_subscr,
+        element_attrib_getter,
+        element_attrib_setter,
+        element_bool,
+        element_dealloc,
+        element_gc_clear,
+        element_gc_traverse,
+        element_getitem,
+        element_init,
+        element_length,
+        element_new,
+        element_repr,
+        element_setitem,
+        element_subscr,
+        element_tag_getter,
+        element_tag_setter,
+        element_tail_getter,
+        element_tail_setter,
+        element_text_getter,
+        element_text_setter,
+        elementiter_dealloc,
+        elementiter_next,
+        elementiter_self,
+        elementiter_traverse,
+        import_expat_capi,
+        module_definition,
+        subelement,
+        treebuilder_dealloc,
+        treebuilder_gc_clear,
+        treebuilder_gc_traverse,
+        treebuilder_new,
+        xmlparser_dealloc,
+        xmlparser_gc_clear,
+        xmlparser_gc_traverse,
+        xmlparser_new,
+        xmlparser_version_getter
+    }
+    errno_constants --> runtime.python.modules.locale { ERANGE }
+    errno_constants --> runtime.python.modules.multiprocessing {
+        EAGAIN,
+        EINTR,
+        ETIMEDOUT
+    }
+    errno_constants --> runtime.python.modules.posixshmem { EINTR }
+    errno_constants --> runtime.python.modules.select { EINTR, EINVAL, ENOENT }
+    errno_constants --> runtime.python.modules.socket {
+        EAFNOSUPPORT,
+        ECONNRESET,
+        EINVAL,
+        ENODEV,
+        ENXIO
+    }
+    errno_constants --> runtime.python.modules.socket_core {
+        EAGAIN,
+        EINTR,
+        EWOULDBLOCK
+    }
+    errno_constants --> runtime.python.modules.socket_object {
+        EBADF,
+        ECONNRESET,
+        EINPROGRESS,
+        EINTR,
+        EINVAL,
+        EISCONN,
+        ENOSYS,
+        ENOTSOCK
+    }
+    errno_constants --> runtime.python.modules.time { EINTR }
+    errno_constants --> runtime.python.object_model.complex { EDOM, ERANGE }
+    errno_constants --> runtime.python.object_model.file { EAGAIN, ENXIO }
+    expat --> runtime.python.bindings.pyexpat {
+        XML_PARAM_ENTITY_PARSING_ALWAYS,
+        XML_PARAM_ENTITY_PARSING_NEVER,
+        XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE
+    }
+    expat --> runtime.python.modules.elementtree {
+        PyExpat_CAPI,
+        XML_ERROR_UNDEFINED_ENTITY,
+        XML_FALSE,
+        XML_TRUE,
+        expat_memory_suite,
+        expat_version
+    }
+    expat --> runtime.python.modules.pyexpat {
+        PYEXPAT_CAPI_MAGIC,
+        PYEXPAT_CAPI_SIZE,
+        PYEXPAT_CAPSULE_NAME,
+        PyExpat_CAPI,
+        XML_Content,
+        XML_ERROR_INVALID_ARGUMENT,
+        XML_ERROR_NONE,
+        XML_ErrorString,
+        XML_ExpatVersion,
+        XML_ExternalEntityParserCreate,
+        XML_FALSE,
+        XML_FEATURE_END,
+        XML_FreeContentModel,
+        XML_GetBase,
+        XML_GetBuffer,
+        XML_GetCurrentByteIndex,
+        XML_GetCurrentColumnNumber,
+        XML_GetCurrentLineNumber,
+        XML_GetErrorCode,
+        XML_GetFeatureList,
+        XML_GetInputContext,
+        XML_GetSpecifiedAttributeCount,
+        XML_Memory_Handling_Suite,
+        XML_Parse,
+        XML_ParseBuffer,
+        XML_ParserCreate_MM,
+        XML_ParserFree,
+        XML_STATUS_ERROR,
+        XML_STATUS_OK,
+        XML_SetAllocTrackerActivationThreshold,
+        XML_SetAllocTrackerMaximumAmplification,
+        XML_SetAttlistDeclHandler,
+        XML_SetBase,
+        XML_SetBillionLaughsAttackProtectionActivationThreshold,
+        XML_SetBillionLaughsAttackProtectionMaximumAmplification,
+        XML_SetCharacterDataHandler,
+        XML_SetCommentHandler,
+        XML_SetDefaultHandler,
+        XML_SetDefaultHandlerExpand,
+        XML_SetElementDeclHandler,
+        XML_SetElementHandler,
+        XML_SetEncoding,
+        XML_SetEndCdataSectionHandler,
+        XML_SetEndDoctypeDeclHandler,
+        XML_SetEndElementHandler,
+        XML_SetEndNamespaceDeclHandler,
+        XML_SetEntityDeclHandler,
+        XML_SetExternalEntityRefHandler,
+        XML_SetHashSalt,
+        XML_SetNamespaceDeclHandler,
+        XML_SetNotStandaloneHandler,
+        XML_SetNotationDeclHandler,
+        XML_SetParamEntityParsing,
+        XML_SetProcessingInstructionHandler,
+        XML_SetReparseDeferralEnabled,
+        XML_SetReturnNSTriplet,
+        XML_SetSkippedEntityHandler,
+        XML_SetStartCdataSectionHandler,
+        XML_SetStartDoctypeDeclHandler,
+        XML_SetStartElementHandler,
+        XML_SetStartNamespaceDeclHandler,
+        XML_SetUnknownEncodingHandler,
+        XML_SetUnparsedEntityDeclHandler,
+        XML_SetUserData,
+        XML_SetXmlDeclHandler,
+        XML_StopParser,
+        XML_TRUE,
+        XML_UseForeignDTD,
+        expat_memory_suite,
+        expat_version
+    }
+    fcntl --> runtime.python.bindings.clinic.fcntl {
+        fcntl_fcntl_impl,
+        fcntl_flock_impl,
+        fcntl_ioctl_impl,
+        fcntl_lockf_impl
+    }
+    fcntl_constants --> runtime.python.bindings.fcntl { CONSTANTS }
+    fcntl_constants --> runtime.python.modules.fcntl {
+        F_RDLCK,
+        F_SETLK,
+        F_SETLKW,
+        F_UNLCK,
+        F_WRLCK,
+        LOCK_EX,
+        LOCK_NB,
+        LOCK_SH,
+        LOCK_UN
+    }
+    fcntl_records --> runtime.python.bindings.fcntl { PLATFORM }
+    fcntl_records --> runtime.python.modules.fcntl { flock_record }
+    functools --> runtime.python.bindings.clinic.functools {
+        _functools__lru_cache_wrapper_cache_clear_impl,
+        _functools__lru_cache_wrapper_cache_info_impl,
+        _functools_cmp_to_key_impl,
+        _functools_reduce_impl
+    }
+    functools --> runtime.python.bindings.functools {
+        KeyWrapper_token,
+        LruState,
+        _lru_cache_wrapper_token
+    }
+    grouping --> runtime.python.modules.itertools {
+        group_state,
+        jacpy_group_activate,
+        jacpy_group_clear,
+        jacpy_group_field,
+        jacpy_group_init,
+        jacpy_group_next,
+        jacpy_grouper_next
+    }
+    hashlib --> runtime.python.bindings.hashopenssl { HASHLIB_GIL_MINSIZE }
+    hashlib --> runtime.python.modules.hashopenssl {
+        HASHLIB_GIL_MINSIZE,
+        HashLock,
+        compare_digest,
+        data_argument,
+        hash_buffer,
+        hash_object_new,
+        hash_state_of
+    }
+    hashlib --> runtime.python.modules.operator { compare_digest }
+    hashopenssl --> runtime.python.bindings.clinic.hashopenssl {
+        EVPXOF_digest_impl,
+        EVPXOF_hexdigest_impl,
+        EVP_copy_impl,
+        EVP_digest_impl,
+        EVP_hexdigest_impl,
+        EVP_update_impl,
+        _hashlib_HMAC_copy_impl,
+        _hashlib_HMAC_digest_impl,
+        _hashlib_HMAC_hexdigest_impl,
+        _hashlib_HMAC_update_impl,
+        _hashlib_compare_digest_impl,
+        _hashlib_get_fips_mode_impl,
+        _hashlib_hmac_new_impl,
+        _hashlib_hmac_singleshot_impl,
+        _hashlib_new_impl,
+        _hashlib_openssl_md5_impl,
+        _hashlib_openssl_sha1_impl,
+        _hashlib_openssl_sha224_impl,
+        _hashlib_openssl_sha256_impl,
+        _hashlib_openssl_sha384_impl,
+        _hashlib_openssl_sha3_224_impl,
+        _hashlib_openssl_sha3_256_impl,
+        _hashlib_openssl_sha3_384_impl,
+        _hashlib_openssl_sha3_512_impl,
+        _hashlib_openssl_sha512_impl,
+        _hashlib_openssl_shake_128_impl,
+        _hashlib_openssl_shake_256_impl,
+        _hashlib_scrypt_impl,
+        pbkdf2_hmac_impl
+    }
+    hashopenssl --> runtime.python.bindings.hashopenssl {
+        HASH_token,
+        HMAC_token,
+        STATE_CONSTRUCTS,
+        STATE_COUNT,
+        STATE_EVPXOF_TYPE,
+        STATE_EVP_TYPE,
+        STATE_HMAC_TYPE,
+        STATE_UNSUPPORTED_DIGESTMOD_ERROR,
+        add_object,
+        dict_proxy,
+        evp_block_size,
+        evp_digest_size,
+        evp_name,
+        evp_repr,
+        hashlib_exception,
+        hashlib_init_constructors,
+        hashlib_md_meth_names,
+        hashlib_state_new,
+        hmac_get_block_size,
+        hmac_get_digest_size,
+        hmac_get_name,
+        hmac_repr
+    }
+    heapq --> runtime.python.bindings.clinic.heapq {
+        _heapq_heapify_impl,
+        _heapq_heapify_max_impl,
+        _heapq_heappop_impl,
+        _heapq_heappop_max_impl,
+        _heapq_heappush_impl,
+        _heapq_heappush_max_impl,
+        _heapq_heappushpop_impl,
+        _heapq_heappushpop_max_impl,
+        _heapq_heapreplace_impl,
+        _heapq_heapreplace_max_impl
+    }
+    iterators --> runtime.python.modules.itertools {
+        jacpy_pipeline_clear,
+        jacpy_pipeline_field,
+        jacpy_pipeline_init,
+        jacpy_pipeline_length,
+        jacpy_pipeline_new,
+        jacpy_pipeline_next,
+        jacpy_pipeline_repr,
+        pipeline_state
+    }
+    itertools --> runtime.python.bindings.clinic.itertools {
+        _grouper_token,
+        _tee_token,
+        batched_new_impl,
+        cycle_token,
+        dropwhile_token,
+        filterfalse_token,
+        itertools__grouper_impl,
+        itertools__tee_impl,
+        itertools_accumulate_impl,
+        itertools_chain_from_iterable_impl,
+        itertools_combinations_impl,
+        itertools_combinations_with_replacement_impl,
+        itertools_compress_impl,
+        itertools_count_impl,
+        itertools_cycle_impl,
+        itertools_dropwhile_impl,
+        itertools_filterfalse_impl,
+        itertools_groupby_impl,
+        itertools_permutations_impl,
+        itertools_starmap_impl,
+        itertools_takewhile_impl,
+        itertools_tee_impl,
+        itertools_teedataobject_impl,
+        pairwise_new_impl,
+        pairwise_token,
+        starmap_token,
+        subclass_clinic_state_by_cls_groupby_type,
+        takewhile_token,
+        teedataobject_token
+    }
+    itertools --> runtime.python.bindings.itertools {
+        Kind,
+        combination_size,
+        data_dealloc,
+        iterator_clear,
+        iterator_dealloc,
+        iterator_new,
+        iterator_next,
+        iterator_repr,
+        iterator_self,
+        iterator_traverse,
+        itertools_module_token,
+        kind_tokens,
+        names,
+        pipeline_iterator_next,
+        repeat_length,
+        tee_copy
+    }
+    locale --> runtime.python.bindings.clinic.locale {
+        _locale_bind_textdomain_codeset_impl,
+        _locale_bindtextdomain_impl,
+        _locale_dcgettext_impl,
+        _locale_dgettext_impl,
+        _locale_getencoding_impl,
+        _locale_gettext_impl,
+        _locale_localeconv_impl,
+        _locale_nl_langinfo_impl,
+        _locale_setlocale_impl,
+        _locale_strcoll_impl,
+        _locale_strxfrm_impl,
+        _locale_textdomain_impl
+    }
+    locale --> runtime.python.bindings.locale { ERROR }
+    locale_constants --> runtime.python.bindings.locale { CONSTANTS, PLATFORM }
+    locale_constants --> runtime.python.modules.locale {
+        ALT_DIGITS,
+        CONSTANTS,
+        ERA,
+        LC_CTYPE,
+        LC_MESSAGES,
+        LC_MONETARY,
+        LC_NUMERIC,
+        LC_TIME
+    }
+    locale_platform --> runtime.python.bindings.locale { HAS_LIBINTL }
+    locale_platform --> runtime.python.modules.locale {
+        GLIBC,
+        bind_textdomain_codeset,
+        bindtextdomain,
+        dcgettext,
+        dgettext,
+        gettext,
+        textdomain
+    }
+    lsprof --> runtime.python.bindings.clinic.lsprof {
+        Profiler_token,
+        _lsprof_Profiler__ccall_callback_impl,
+        _lsprof_Profiler__creturn_callback_impl,
+        _lsprof_Profiler__pyreturn_callback_impl,
+        _lsprof_Profiler__pystart_callback_impl,
+        _lsprof_Profiler__pythrow_callback_impl,
+        _lsprof_Profiler_clear_impl,
+        _lsprof_Profiler_disable_impl,
+        _lsprof_Profiler_enable_impl,
+        _lsprof_Profiler_getstats_impl,
+        profiler_init_impl
+    }
+    lsprof --> runtime.python.bindings.lsprof { Profiler_token, profiler_finalize }
+    lzma --> runtime.python.bindings.clinic.lzma {
+        FORMAT_AUTO,
+        _lzma_LZMACompressor_compress_impl,
+        _lzma_LZMACompressor_flush_impl,
+        _lzma_LZMADecompressor_decompress_impl,
+        _lzma_LZMADecompressor_impl,
+        _lzma__decode_filter_properties_impl,
+        _lzma_is_check_supported_impl,
+        convert_lzma_vli_converter
+    }
+    lzma --> runtime.python.bindings.lzma {
+        COMPRESSOR_TYPE,
+        DECOMPRESSOR_TYPE,
+        EMPTY_TUPLE,
+        FORMAT_ALONE,
+        FORMAT_AUTO,
+        FORMAT_RAW,
+        FORMAT_XZ,
+        LZMACompressor_token,
+        LZMADecompressor_token,
+        LZMA_CHECK_CRC32,
+        LZMA_CHECK_CRC64,
+        LZMA_CHECK_ID_MAX,
+        LZMA_CHECK_NONE,
+        LZMA_CHECK_SHA256,
+        LZMA_CHECK_UNKNOWN,
+        LZMA_ERROR,
+        LZMA_FILTER_ARM,
+        LZMA_FILTER_ARMTHUMB,
+        LZMA_FILTER_DELTA,
+        LZMA_FILTER_IA64,
+        LZMA_FILTER_LZMA1,
+        LZMA_FILTER_LZMA2,
+        LZMA_FILTER_POWERPC,
+        LZMA_FILTER_SPARC,
+        LZMA_FILTER_X86,
+        LZMA_MF_BT2,
+        LZMA_MF_BT3,
+        LZMA_MF_BT4,
+        LZMA_MF_HC3,
+        LZMA_MF_HC4,
+        LZMA_MODE_FAST,
+        LZMA_MODE_NORMAL,
+        LZMA_PRESET_DEFAULT,
+        LZMA_PRESET_EXTREME,
+        lzma_compressor_new,
+        lzma_encode_filter_properties
+    }
+    math --> runtime.python.bindings.clinic.math {
+        math_ceil_impl,
+        math_comb_impl,
+        math_degrees_impl,
+        math_dist_impl,
+        math_factorial_impl,
+        math_floor_impl,
+        math_fma_impl,
+        math_fmod_impl,
+        math_frexp_impl,
+        math_fsum_impl,
+        math_gcd_impl,
+        math_hypot_impl,
+        math_isclose_impl,
+        math_isfinite_impl,
+        math_isinf_impl,
+        math_isnan_impl,
+        math_isqrt_impl,
+        math_lcm_impl,
+        math_ldexp_impl,
+        math_log10_impl,
+        math_log2_impl,
+        math_modf_impl,
+        math_nextafter_impl,
+        math_perm_impl,
+        math_pow_impl,
+        math_prod_impl,
+        math_radians_impl,
+        math_sumprod_impl,
+        math_trunc_impl,
+        math_ulp_impl
+    }
+    mmap --> runtime.python.bindings.clinic.mmap {
+        mmap_mmap___enter___impl,
+        mmap_mmap___exit___impl,
+        mmap_mmap_close_impl,
+        mmap_mmap_find_impl,
+        mmap_mmap_flush_impl,
+        mmap_mmap_madvise_impl,
+        mmap_mmap_move_impl,
+        mmap_mmap_read_byte_impl,
+        mmap_mmap_read_impl,
+        mmap_mmap_readline_impl,
+        mmap_mmap_resize_impl,
+        mmap_mmap_rfind_impl,
+        mmap_mmap_seek_impl,
+        mmap_mmap_seekable_impl,
+        mmap_mmap_size_impl,
+        mmap_mmap_tell_impl,
+        mmap_mmap_write_byte_impl,
+        mmap_mmap_write_impl
+    }
+    mmap --> runtime.python.bindings.mmap {
+        mmap_ass_item,
+        mmap_ass_subscript,
+        mmap_closed_get,
+        mmap_getbuffer,
+        mmap_item,
+        mmap_length,
+        mmap_new,
+        mmap_release,
+        mmap_releasebuffer,
+        mmap_repr,
+        mmap_subscript,
+        mmap_token,
+        page_size
+    }
+    mmap_constants --> runtime.python.bindings.mmap { CONSTANTS, PLATFORM }
+    mmap_constants --> runtime.python.modules.mmap {
+        F_FULLFSYNC,
+        MAP_ANONYMOUS,
+        MAP_PRIVATE,
+        MAP_SHARED,
+        MREMAP_MAYMOVE,
+        MS_SYNC,
+        PROT_READ,
+        PROT_WRITE,
+        _SC_PAGESIZE
+    }
+    mmap_platform --> runtime.python.modules.mmap {
+        FULLFSYNC_BEFORE_MAP,
+        HAS_MREMAP,
+        REFUSES_SHARED_ANONYMOUS_GROWTH,
+        mremap
+    }
+    mpdecimal --> runtime.python.bindings.decimal {
+        MPD_Division_by_zero,
+        MPD_Division_undefined,
+        MPD_IEEE_CONTEXT_MAX_BITS,
+        MPD_MAX_EMAX,
+        MPD_MAX_PREC,
+        MPD_MIN_EMIN,
+        MPD_MIN_ETINY,
+        MPD_Overflow,
+        MPD_Underflow,
+        mpd_callocfunc,
+        mpd_callocfunc_em,
+        mpd_context_t,
+        mpd_free,
+        mpd_mallocfunc,
+        mpd_maxcontext,
+        mpd_reallocfunc,
+        mpd_round_string,
+        mpd_setminalloc,
+        mpd_traphandler,
+        mpd_version
+    }
+    mpdecimal --> runtime.python.modules.decimal_context {
+        MPD_Clamped,
+        MPD_Division_by_zero,
+        MPD_IEEE_CONTEXT_MAX_BITS,
+        MPD_IEEE_Invalid_operation,
+        MPD_MAX_SIGNAL_LIST,
+        MPD_Malloc_error,
+        MPD_Overflow,
+        MPD_ROUND_HALF_EVEN,
+        MPD_ROUND_HALF_UP,
+        MPD_Underflow,
+        mpd_class,
+        mpd_context_t,
+        mpd_etiny,
+        mpd_etop,
+        mpd_free_memory,
+        mpd_getclamp,
+        mpd_getemax,
+        mpd_getemin,
+        mpd_getprec,
+        mpd_getround,
+        mpd_ieee_context,
+        mpd_iscanonical,
+        mpd_lsnprint_signals,
+        mpd_qcopy_abs,
+        mpd_qcopy_negate,
+        mpd_qcopy_sign,
+        mpd_qsetclamp,
+        mpd_qsetemax,
+        mpd_qsetemin,
+        mpd_qsetprec,
+        mpd_qsetround,
+        mpd_qsetstatus,
+        mpd_qsettraps,
+        mpd_round_string,
+        mpd_same_quantum,
+        mpd_to_eng_size,
+        mpd_to_sci_size
+    }
+    mpdecimal --> runtime.python.modules.decimal_convert {
+        MPD_Clamped,
+        MPD_Conversion_syntax,
+        MPD_Errors,
+        MPD_INF,
+        MPD_Inexact,
+        MPD_Invalid_operation,
+        MPD_NAN,
+        MPD_NEG,
+        MPD_POS,
+        MPD_Rounded,
+        mpd_context_t,
+        mpd_del,
+        mpd_isnan,
+        mpd_isspecial,
+        mpd_qcopy,
+        mpd_qfinalize,
+        mpd_qimport_u16,
+        mpd_qimport_u32,
+        mpd_qmul,
+        mpd_qncopy,
+        mpd_qnew,
+        mpd_qpow,
+        mpd_qset_i64,
+        mpd_qset_ssize,
+        mpd_qset_string,
+        mpd_qset_uint,
+        mpd_set_flags,
+        mpd_set_sign,
+        mpd_setdigits,
+        mpd_seterror,
+        mpd_setspecial,
+        mpd_t
+    }
+    mpdecimal --> runtime.python.modules.decimal_number {
+        MPD_CONST_DATA,
+        MPD_Malloc_error,
+        MPD_POS,
+        MPD_ROUND_CEILING,
+        MPD_ROUND_DOWN,
+        MPD_ROUND_FLOOR,
+        MPD_ROUND_HALF_EVEN,
+        MPD_SSIZE_MAX,
+        MPD_SSIZE_MIN,
+        MPD_STATIC,
+        MPD_UINT_SIZE,
+        mpd_adjexp,
+        mpd_arith_sign,
+        mpd_class,
+        mpd_clear_flags,
+        mpd_context_t,
+        mpd_del,
+        mpd_free_memory,
+        mpd_isdynamic_data,
+        mpd_isinfinite,
+        mpd_isnan,
+        mpd_isnegative,
+        mpd_ispositive,
+        mpd_isqnan,
+        mpd_issnan,
+        mpd_isspecial,
+        mpd_iszero,
+        mpd_parse_fmt_str,
+        mpd_qcmp,
+        mpd_qcopy,
+        mpd_qcopy_abs,
+        mpd_qcopy_negate,
+        mpd_qcopy_sign,
+        mpd_qdivmod,
+        mpd_qexport_u16,
+        mpd_qexport_u32,
+        mpd_qformat_spec,
+        mpd_qget_i64,
+        mpd_qget_ssize,
+        mpd_qmul,
+        mpd_qncopy,
+        mpd_qnew,
+        mpd_qpow,
+        mpd_qpowmod,
+        mpd_qquantize,
+        mpd_qrem,
+        mpd_qround_to_int,
+        mpd_qround_to_intx,
+        mpd_qset_uint,
+        mpd_qsetround,
+        mpd_qsset_ssize,
+        mpd_same_quantum,
+        mpd_set_positive,
+        mpd_sign,
+        mpd_spec_t,
+        mpd_t,
+        mpd_to_eng_size,
+        mpd_to_sci,
+        mpd_to_sci_size,
+        mpd_validate_lconv
+    }
+    mpdecimal --> runtime.python.modules.decimal_objects {
+        MPD_CONTEXT_SIZE,
+        MPD_Clamped,
+        MPD_Conversion_syntax,
+        MPD_Division_by_zero,
+        MPD_Division_impossible,
+        MPD_Division_undefined,
+        MPD_IEEE_Invalid_operation,
+        MPD_Inexact,
+        MPD_Invalid_context,
+        MPD_Invalid_operation,
+        MPD_Malloc_error,
+        MPD_Max_status,
+        MPD_Not_implemented,
+        MPD_Overflow,
+        MPD_ROUND_GUARD,
+        MPD_Rounded,
+        MPD_STATIC,
+        MPD_STATIC_DATA,
+        MPD_Subnormal,
+        MPD_Underflow,
+        mpd_context_t,
+        mpd_t
+    }
+    mpdecimal --> runtime.python.modules.decimal_ops {
+        mpd_compare_total,
+        mpd_compare_total_mag,
+        mpd_context_t,
+        mpd_iscanonical,
+        mpd_isfinite,
+        mpd_isinfinite,
+        mpd_isnan,
+        mpd_isnormal,
+        mpd_isqnan,
+        mpd_issigned,
+        mpd_issnan,
+        mpd_issubnormal,
+        mpd_iszero,
+        mpd_qabs,
+        mpd_qadd,
+        mpd_qand,
+        mpd_qcompare,
+        mpd_qcompare_signal,
+        mpd_qdiv,
+        mpd_qdivint,
+        mpd_qexp,
+        mpd_qfma,
+        mpd_qinvert,
+        mpd_qln,
+        mpd_qlog10,
+        mpd_qlogb,
+        mpd_qmax,
+        mpd_qmax_mag,
+        mpd_qmin,
+        mpd_qmin_mag,
+        mpd_qminus,
+        mpd_qmul,
+        mpd_qnext_minus,
+        mpd_qnext_plus,
+        mpd_qnext_toward,
+        mpd_qor,
+        mpd_qplus,
+        mpd_qpow,
+        mpd_qquantize,
+        mpd_qreduce,
+        mpd_qrem,
+        mpd_qrem_near,
+        mpd_qrotate,
+        mpd_qround_to_int,
+        mpd_qround_to_intx,
+        mpd_qscaleb,
+        mpd_qshift,
+        mpd_qsqrt,
+        mpd_qsub,
+        mpd_qxor,
+        mpd_t
+    }
+    multibytecodec --> runtime.python.bindings.clinic.multibytecodec {
+        MultibyteStreamWriter_token,
+        _multibytecodec_MultibyteCodec_decode_impl,
+        _multibytecodec_MultibyteCodec_encode_impl,
+        _multibytecodec_MultibyteIncrementalDecoder_decode_impl,
+        _multibytecodec_MultibyteIncrementalDecoder_getstate_impl,
+        _multibytecodec_MultibyteIncrementalDecoder_reset_impl,
+        _multibytecodec_MultibyteIncrementalDecoder_setstate_impl,
+        _multibytecodec_MultibyteIncrementalEncoder_encode_impl,
+        _multibytecodec_MultibyteIncrementalEncoder_getstate_impl,
+        _multibytecodec_MultibyteIncrementalEncoder_reset_impl,
+        _multibytecodec_MultibyteIncrementalEncoder_setstate_impl,
+        _multibytecodec_MultibyteStreamReader_read_impl,
+        _multibytecodec_MultibyteStreamReader_readline_impl,
+        _multibytecodec_MultibyteStreamReader_readlines_impl,
+        _multibytecodec_MultibyteStreamReader_reset_impl,
+        _multibytecodec_MultibyteStreamWriter_reset_impl,
+        _multibytecodec_MultibyteStreamWriter_write_impl,
+        _multibytecodec_MultibyteStreamWriter_writelines_impl,
+        _multibytecodec___create_codec_impl
+    }
+    multibytecodec --> runtime.python.bindings.multibytecodec {
+        MultibyteCodec_token,
+        MultibyteIncrementalDecoder_token,
+        MultibyteIncrementalEncoder_token,
+        MultibyteStreamReader_token,
+        MultibyteStreamWriter_token,
+        STATE_CODEC_TYPE,
+        STATE_COUNT,
+        STATE_DECODER_TYPE,
+        STATE_ENCODER_TYPE,
+        STATE_READER_TYPE,
+        STATE_STR_WRITE,
+        STATE_WRITER_TYPE,
+        StatefulState,
+        codecctx_errors_get,
+        codecctx_errors_set,
+        parse_new_arguments,
+        stateful_new
+    }
+    multiprocessing --> runtime.python.bindings.clinic.multiprocessing {
+        _multiprocessing_SemLock___enter___impl,
+        _multiprocessing_SemLock___exit___impl,
+        _multiprocessing_SemLock__after_fork_impl,
+        _multiprocessing_SemLock__count_impl,
+        _multiprocessing_SemLock__get_value_impl,
+        _multiprocessing_SemLock__is_mine_impl,
+        _multiprocessing_SemLock__is_zero_impl,
+        _multiprocessing_SemLock__rebuild_impl,
+        _multiprocessing_SemLock_acquire_impl,
+        _multiprocessing_SemLock_impl,
+        _multiprocessing_SemLock_release_impl,
+        _multiprocessing_sem_unlink_impl,
+        convert_SEM_HANDLE
+    }
+    multiprocessing --> runtime.python.bindings.multiprocessing {
+        SEMLOCK_FIELDS_SIZE,
+        SemLock_token,
+        semlock_members
+    }
+    multiprocessing_constants --> runtime.python.bindings.multiprocessing {
+        SEM_VALUE_MAX
+    }
+    multiprocessing_constants --> runtime.python.modules.multiprocessing {
+        O_CREAT,
+        O_EXCL
+    }
+    numeric --> runtime.python.modules.datetime_delta { fabs, modf, round }
+    numeric --> runtime.python.modules.decimal_convert { copysign, isinf, isnan }
+    numeric --> runtime.python.modules.math { frexp, modf }
+    numeric --> runtime.python.object_model.complex {
+        atan2,
+        copysign,
+        cos,
+        exp,
+        fabs,
+        floor,
+        hypot,
+        infinity,
+        isfinite,
+        isinf,
+        isnan,
+        log,
+        nan,
+        pow,
+        sin
+    }
+    openssl --> runtime.python.modules.hashopenssl {
+        ERR_clear_error,
+        ERR_func_error_string,
+        ERR_lib_error_string,
+        ERR_peek_last_error,
+        ERR_reason_error_string,
+        EVP_DigestFinal,
+        EVP_DigestFinalXOF,
+        EVP_DigestInit_ex,
+        EVP_DigestUpdate,
+        EVP_MD_CTX_copy,
+        EVP_MD_CTX_free,
+        EVP_MD_CTX_get0_md,
+        EVP_MD_CTX_get_size_ex,
+        EVP_MD_CTX_new,
+        EVP_MD_do_all_provided,
+        EVP_MD_fetch,
+        EVP_MD_free,
+        EVP_MD_get_block_size,
+        EVP_MD_get_flags,
+        EVP_MD_get_size,
+        EVP_MD_get_type,
+        EVP_MD_up_ref,
+        EVP_PBE_scrypt,
+        EVP_default_properties_is_fips_enabled,
+        HMAC,
+        HMAC_CTX_copy,
+        HMAC_CTX_free,
+        HMAC_CTX_get_md,
+        HMAC_CTX_new,
+        HMAC_Final,
+        HMAC_Init_ex,
+        HMAC_Update,
+        OBJ_nid2ln,
+        OBJ_nid2sn,
+        PKCS5_PBKDF2_HMAC
+    }
+    openssl --> runtime.python.modules.ssl {
+        ASN1_OBJECT_free,
+        ASN1_STRING_get0_data,
+        ASN1_STRING_length,
+        BIO_clear_flags,
+        BIO_ctrl,
+        BIO_ctrl_pending,
+        BIO_free,
+        BIO_free_all,
+        BIO_new,
+        BIO_new_fp,
+        BIO_new_mem_buf,
+        BIO_printf,
+        BIO_puts,
+        BIO_read,
+        BIO_s_file,
+        BIO_s_mem,
+        BIO_set_flags,
+        BIO_up_ref,
+        BIO_write,
+        COMP_get_type,
+        DH_free,
+        ERR_clear_error,
+        ERR_get_error,
+        ERR_peek_last_error,
+        ERR_reason_error_string,
+        OBJ_nid2ln,
+        OBJ_nid2obj,
+        OBJ_nid2sn,
+        OBJ_obj2nid,
+        OBJ_sn2nid,
+        OBJ_txt2obj,
+        OPENSSL_sk_find,
+        OPENSSL_sk_free,
+        OPENSSL_sk_num,
+        OPENSSL_sk_value,
+        OpenSSL_version,
+        OpenSSL_version_num,
+        PEM_read_DHparams,
+        PEM_read_bio_X509,
+        PEM_write_bio_X509,
+        PEM_write_bio_X509_AUX,
+        RAND_add,
+        RAND_bytes,
+        RAND_status,
+        SSL_CIPHER_description,
+        SSL_CIPHER_get_auth_nid,
+        SSL_CIPHER_get_bits,
+        SSL_CIPHER_get_cipher_nid,
+        SSL_CIPHER_get_digest_nid,
+        SSL_CIPHER_get_id,
+        SSL_CIPHER_get_kx_nid,
+        SSL_CIPHER_get_name,
+        SSL_CIPHER_get_version,
+        SSL_CIPHER_is_aead,
+        SSL_CTX_callback_ctrl,
+        SSL_CTX_check_private_key,
+        SSL_CTX_clear_options,
+        SSL_CTX_ctrl,
+        SSL_CTX_free,
+        SSL_CTX_get0_param,
+        SSL_CTX_get_cert_store,
+        SSL_CTX_get_default_passwd_cb,
+        SSL_CTX_get_default_passwd_cb_userdata,
+        SSL_CTX_get_num_tickets,
+        SSL_CTX_get_options,
+        SSL_CTX_get_security_level,
+        SSL_CTX_get_verify_mode,
+        SSL_CTX_load_verify_locations,
+        SSL_CTX_new,
+        SSL_CTX_set_alpn_protos,
+        SSL_CTX_set_alpn_select_cb,
+        SSL_CTX_set_cipher_list,
+        SSL_CTX_set_default_passwd_cb,
+        SSL_CTX_set_default_passwd_cb_userdata,
+        SSL_CTX_set_default_verify_paths,
+        SSL_CTX_set_keylog_callback,
+        SSL_CTX_set_msg_callback,
+        SSL_CTX_set_num_tickets,
+        SSL_CTX_set_options,
+        SSL_CTX_set_post_handshake_auth,
+        SSL_CTX_set_psk_client_callback,
+        SSL_CTX_set_psk_server_callback,
+        SSL_CTX_set_verify,
+        SSL_CTX_use_PrivateKey_file,
+        SSL_CTX_use_certificate_chain_file,
+        SSL_CTX_use_psk_identity_hint,
+        SSL_SESSION_free,
+        SSL_SESSION_get_id,
+        SSL_SESSION_get_ticket_lifetime_hint,
+        SSL_SESSION_get_time_ex,
+        SSL_SESSION_get_timeout,
+        SSL_SESSION_has_ticket,
+        SSL_ctrl,
+        SSL_do_handshake,
+        SSL_free,
+        SSL_get0_alpn_selected,
+        SSL_get0_param,
+        SSL_get0_verified_chain,
+        SSL_get1_peer_certificate,
+        SSL_get1_session,
+        SSL_get_SSL_CTX,
+        SSL_get_ciphers,
+        SSL_get_client_ciphers,
+        SSL_get_current_cipher,
+        SSL_get_current_compression,
+        SSL_get_error,
+        SSL_get_ex_data,
+        SSL_get_finished,
+        SSL_get_peer_cert_chain,
+        SSL_get_peer_finished,
+        SSL_get_rbio,
+        SSL_get_servername,
+        SSL_get_shutdown,
+        SSL_get_verify_mode,
+        SSL_get_version,
+        SSL_get_wbio,
+        SSL_is_init_finished,
+        SSL_new,
+        SSL_pending,
+        SSL_read_ex,
+        SSL_select_next_proto,
+        SSL_session_reused,
+        SSL_set_SSL_CTX,
+        SSL_set_accept_state,
+        SSL_set_bio,
+        SSL_set_connect_state,
+        SSL_set_ex_data,
+        SSL_set_fd,
+        SSL_set_msg_callback,
+        SSL_set_post_handshake_auth,
+        SSL_set_read_ahead,
+        SSL_set_session,
+        SSL_set_session_id_context,
+        SSL_set_verify,
+        SSL_shutdown,
+        SSL_verify_client_post_handshake,
+        SSL_write_ex,
+        TLS_client_method,
+        TLS_method,
+        TLS_server_method,
+        TLSv1_1_method,
+        TLSv1_2_method,
+        TLSv1_method,
+        X509_OBJECT_free,
+        X509_OBJECT_get0_X509,
+        X509_OBJECT_get_type,
+        X509_STORE_add_cert,
+        X509_STORE_get1_objects,
+        X509_VERIFY_PARAM_clear_flags,
+        X509_VERIFY_PARAM_get_flags,
+        X509_VERIFY_PARAM_get_hostflags,
+        X509_VERIFY_PARAM_set1_host,
+        X509_VERIFY_PARAM_set1_ip,
+        X509_VERIFY_PARAM_set_flags,
+        X509_VERIFY_PARAM_set_hostflags,
+        X509_check_ca,
+        X509_cmp,
+        X509_free,
+        X509_get_default_cert_dir,
+        X509_get_default_cert_dir_env,
+        X509_get_default_cert_file,
+        X509_get_default_cert_file_env,
+        X509_get_subject_name,
+        X509_subject_name_hash,
+        a2i_IPADDRESS,
+        d2i_X509_bio,
+        err_get_lib,
+        err_get_reason,
+        fclose,
+        i2d_X509_bio
+    }
+    openssl --> runtime.python.modules.ssl_cert {
+        ASN1_STRING_get0_data,
+        ASN1_STRING_length,
+        ASN1_STRING_to_UTF8,
+        ASN1_STRING_type,
+        ASN1_TIME_print,
+        AUTHORITY_INFO_ACCESS_free,
+        BIO_ctrl,
+        BIO_free,
+        BIO_gets,
+        BIO_new,
+        BIO_s_mem,
+        CRL_DIST_POINTS_free,
+        GENERAL_NAMES_free,
+        GENERAL_NAME_print,
+        OBJ_obj2nid,
+        OBJ_obj2txt,
+        OPENSSL_sk_num,
+        OPENSSL_sk_value,
+        X509_NAME_ENTRY_get_data,
+        X509_NAME_ENTRY_get_object,
+        X509_NAME_ENTRY_set,
+        X509_NAME_entry_count,
+        X509_NAME_get_entry,
+        X509_NAME_print_ex,
+        X509_free,
+        X509_get0_notAfter,
+        X509_get0_notBefore,
+        X509_get_ext_d2i,
+        X509_get_issuer_name,
+        X509_get_serialNumber,
+        X509_get_subject_name,
+        X509_get_version,
+        X509_up_ref,
+        i2a_ASN1_INTEGER,
+        i2d_X509,
+        i2t_ASN1_OBJECT,
+        openssl_free
+    }
+    openssl --> runtime.python.modules.ssl_core {
+        ASN1_OCTET_STRING_free,
+        BIO_free_all,
+        ERR_clear_error,
+        ERR_peek_last_error,
+        ERR_reason_error_string,
+        SSL_CTX_free,
+        SSL_SESSION_free,
+        SSL_free,
+        SSL_get_error,
+        SSL_get_shutdown,
+        SSL_get_verify_result,
+        SSL_set_shutdown,
+        X509_free,
+        X509_verify_cert_error_string,
+        err_get_lib,
+        err_get_reason
+    }
+    openssl_constants --> runtime.python.bindings.ssl {
+        OPENSSL_NO_PSK,
+        SSL_AD_ACCESS_DENIED,
+        SSL_AD_BAD_CERTIFICATE,
+        SSL_AD_BAD_CERTIFICATE_HASH_VALUE,
+        SSL_AD_BAD_CERTIFICATE_STATUS_RESPONSE,
+        SSL_AD_BAD_RECORD_MAC,
+        SSL_AD_CERTIFICATE_EXPIRED,
+        SSL_AD_CERTIFICATE_REVOKED,
+        SSL_AD_CERTIFICATE_UNKNOWN,
+        SSL_AD_CERTIFICATE_UNOBTAINABLE,
+        SSL_AD_CLOSE_NOTIFY,
+        SSL_AD_DECODE_ERROR,
+        SSL_AD_DECOMPRESSION_FAILURE,
+        SSL_AD_DECRYPT_ERROR,
+        SSL_AD_HANDSHAKE_FAILURE,
+        SSL_AD_ILLEGAL_PARAMETER,
+        SSL_AD_INSUFFICIENT_SECURITY,
+        SSL_AD_INTERNAL_ERROR,
+        SSL_AD_NO_RENEGOTIATION,
+        SSL_AD_PROTOCOL_VERSION,
+        SSL_AD_RECORD_OVERFLOW,
+        SSL_AD_UNEXPECTED_MESSAGE,
+        SSL_AD_UNKNOWN_CA,
+        SSL_AD_UNKNOWN_PSK_IDENTITY,
+        SSL_AD_UNRECOGNIZED_NAME,
+        SSL_AD_UNSUPPORTED_CERTIFICATE,
+        SSL_AD_UNSUPPORTED_EXTENSION,
+        SSL_AD_USER_CANCELLED,
+        SSL_OP_ALL,
+        SSL_OP_CIPHER_SERVER_PREFERENCE,
+        SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS,
+        SSL_OP_ENABLE_KTLS,
+        SSL_OP_ENABLE_MIDDLEBOX_COMPAT,
+        SSL_OP_IGNORE_UNEXPECTED_EOF,
+        SSL_OP_LEGACY_SERVER_CONNECT,
+        SSL_OP_NO_COMPRESSION,
+        SSL_OP_NO_RENEGOTIATION,
+        SSL_OP_NO_SSLv2,
+        SSL_OP_NO_SSLv3,
+        SSL_OP_NO_TICKET,
+        SSL_OP_NO_TLSv1,
+        SSL_OP_NO_TLSv1_1,
+        SSL_OP_NO_TLSv1_2,
+        SSL_OP_NO_TLSv1_3,
+        SSL_OP_SINGLE_DH_USE,
+        SSL_OP_SINGLE_ECDH_USE,
+        UNDEFINED,
+        X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT,
+        X509_CHECK_FLAG_MULTI_LABEL_WILDCARDS,
+        X509_CHECK_FLAG_NEVER_CHECK_SUBJECT,
+        X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS,
+        X509_CHECK_FLAG_NO_WILDCARDS,
+        X509_CHECK_FLAG_SINGLE_LABEL_SUBDOMAINS,
+        X509_V_FLAG_ALLOW_PROXY_CERTS,
+        X509_V_FLAG_CRL_CHECK,
+        X509_V_FLAG_CRL_CHECK_ALL,
+        X509_V_FLAG_PARTIAL_CHAIN,
+        X509_V_FLAG_TRUSTED_FIRST,
+        X509_V_FLAG_X509_STRICT
+    }
+    openssl_constants --> runtime.python.modules.hashopenssl {
+        EVP_MAX_MD_SIZE,
+        EVP_MD_FLAG_XOF,
+        NID_blake2b512,
+        NID_blake2s256,
+        NID_md5,
+        NID_sha1,
+        NID_sha224,
+        NID_sha256,
+        NID_sha384,
+        NID_sha3_224,
+        NID_sha3_256,
+        NID_sha3_384,
+        NID_sha3_512,
+        NID_sha512,
+        NID_sha512_224,
+        NID_sha512_256,
+        NID_shake128,
+        NID_shake256,
+        NID_undef,
+        SN_blake2b512,
+        SN_blake2s256,
+        SN_md5,
+        SN_sha1,
+        SN_sha224,
+        SN_sha256,
+        SN_sha384,
+        SN_sha3_224,
+        SN_sha3_256,
+        SN_sha3_384,
+        SN_sha3_512,
+        SN_sha512,
+        SN_sha512_224,
+        SN_sha512_256,
+        SN_shake128,
+        SN_shake256,
+        UNDEFINED
+    }
+    openssl_constants --> runtime.python.modules.openssl {
+        ERR_LIB_MASK,
+        ERR_LIB_OFFSET,
+        ERR_LIB_SYS,
+        ERR_REASON_MASK,
+        ERR_SYSTEM_FLAG,
+        ERR_SYSTEM_MASK
+    }
+    openssl_constants --> runtime.python.modules.ssl {
+        BIO_CLOSE,
+        BIO_CTRL_EOF,
+        BIO_CTRL_FLUSH,
+        BIO_C_FILE_TELL,
+        BIO_C_SET_BUF_MEM_EOF_RETURN,
+        BIO_C_SET_FILENAME,
+        BIO_C_SET_NBIO,
+        BIO_FLAGS_READ,
+        BIO_FLAGS_RWS,
+        BIO_FLAGS_SHOULD_RETRY,
+        BIO_FP_READ,
+        BIO_FP_TEXT,
+        ERR_LIB_PEM,
+        ERR_LIB_X509,
+        NID_undef,
+        OPENSSL_NO_COMP,
+        OPENSSL_NO_PSK,
+        OPENSSL_NO_TLS1_1_METHOD,
+        OPENSSL_NO_TLS1_2_METHOD,
+        OPENSSL_NO_TLS1_METHOD,
+        OPENSSL_NPN_NEGOTIATED,
+        OPENSSL_VERSION,
+        OPENSSL_VERSION_NUMBER,
+        PEM_R_NO_START_LINE,
+        SSL3_MT_CHANGE_CIPHER_SPEC,
+        SSL3_RT_ALERT,
+        SSL3_RT_CHANGE_CIPHER_SPEC,
+        SSL3_RT_HANDSHAKE,
+        SSL3_RT_HEADER,
+        SSL3_RT_INNER_CONTENT_TYPE,
+        SSL_AD_HANDSHAKE_FAILURE,
+        SSL_AD_INTERNAL_ERROR,
+        SSL_CTRL_GET_MAX_PROTO_VERSION,
+        SSL_CTRL_GET_MIN_PROTO_VERSION,
+        SSL_CTRL_MODE,
+        SSL_CTRL_SESS_ACCEPT,
+        SSL_CTRL_SESS_ACCEPT_GOOD,
+        SSL_CTRL_SESS_ACCEPT_RENEGOTIATE,
+        SSL_CTRL_SESS_CACHE_FULL,
+        SSL_CTRL_SESS_CONNECT,
+        SSL_CTRL_SESS_CONNECT_GOOD,
+        SSL_CTRL_SESS_CONNECT_RENEGOTIATE,
+        SSL_CTRL_SESS_HIT,
+        SSL_CTRL_SESS_MISSES,
+        SSL_CTRL_SESS_NUMBER,
+        SSL_CTRL_SESS_TIMEOUTS,
+        SSL_CTRL_SET_GROUPS,
+        SSL_CTRL_SET_MAX_PROTO_VERSION,
+        SSL_CTRL_SET_MIN_PROTO_VERSION,
+        SSL_CTRL_SET_TLSEXT_HOSTNAME,
+        SSL_CTRL_SET_TLSEXT_SERVERNAME_ARG,
+        SSL_CTRL_SET_TLSEXT_SERVERNAME_CB,
+        SSL_CTRL_SET_TMP_DH,
+        SSL_ERROR_WANT_READ,
+        SSL_ERROR_WANT_WRITE,
+        SSL_ERROR_ZERO_RETURN,
+        SSL_FILETYPE_ASN1,
+        SSL_FILETYPE_PEM,
+        SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER,
+        SSL_MODE_AUTO_RETRY,
+        SSL_MODE_RELEASE_BUFFERS,
+        SSL_OP_ALL,
+        SSL_OP_CIPHER_SERVER_PREFERENCE,
+        SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS,
+        SSL_OP_NO_COMPRESSION,
+        SSL_OP_NO_SSLv2,
+        SSL_OP_NO_SSLv3,
+        SSL_OP_NO_TLSv1,
+        SSL_OP_NO_TLSv1_1,
+        SSL_OP_NO_TLSv1_2,
+        SSL_OP_NO_TLSv1_3,
+        SSL_OP_SINGLE_DH_USE,
+        SSL_OP_SINGLE_ECDH_USE,
+        SSL_RECEIVED_SHUTDOWN,
+        SSL_TLSEXT_ERR_ALERT_FATAL,
+        SSL_TLSEXT_ERR_NOACK,
+        SSL_TLSEXT_ERR_OK,
+        SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
+        SSL_VERIFY_NONE,
+        SSL_VERIFY_PEER,
+        SSL_VERIFY_POST_HANDSHAKE,
+        TLSEXT_NAMETYPE_host_name,
+        UNDEFINED,
+        X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS,
+        X509_FILETYPE_ASN1,
+        X509_FILETYPE_PEM,
+        X509_LU_CRL,
+        X509_LU_X509,
+        X509_R_CERT_ALREADY_IN_HASH_TABLE,
+        X509_V_FLAG_TRUSTED_FIRST,
+        XN_FLAG_RFC2253
+    }
+    openssl_constants --> runtime.python.modules.ssl_cert {
+        ACCESS_DESCRIPTION_LOCATION_OFFSET,
+        ACCESS_DESCRIPTION_METHOD_OFFSET,
+        BIO_CTRL_INFO,
+        BIO_CTRL_RESET,
+        DIST_POINT_DISTPOINT_OFFSET,
+        DIST_POINT_NAME_NAME_OFFSET,
+        GENERAL_NAME_D_OFFSET,
+        GENERAL_NAME_TYPE_OFFSET,
+        GEN_DIRNAME,
+        GEN_DNS,
+        GEN_EDIPARTY,
+        GEN_EMAIL,
+        GEN_IPADD,
+        GEN_OTHERNAME,
+        GEN_RID,
+        GEN_URI,
+        GEN_X400,
+        NID_ad_OCSP,
+        NID_ad_ca_issuers,
+        NID_crl_distribution_points,
+        NID_info_access,
+        NID_subject_alt_name,
+        V_ASN1_BIT_STRING
+    }
+    openssl_constants --> runtime.python.modules.ssl_core {
+        ERR_LIB_SSL,
+        ERR_LIB_SYS,
+        OPENSSL_NO_SSL3,
+        OPENSSL_NO_TLS1,
+        OPENSSL_NO_TLS1_1,
+        OPENSSL_NO_TLS1_2,
+        OPENSSL_NO_TLS1_3,
+        SSL3_VERSION,
+        SSL_ERROR_SSL,
+        SSL_ERROR_SYSCALL,
+        SSL_ERROR_WANT_CONNECT,
+        SSL_ERROR_WANT_READ,
+        SSL_ERROR_WANT_WRITE,
+        SSL_ERROR_WANT_X509_LOOKUP,
+        SSL_ERROR_ZERO_RETURN,
+        SSL_R_CERTIFICATE_VERIFY_FAILED,
+        SSL_R_UNEXPECTED_EOF_WHILE_READING,
+        SSL_SENT_SHUTDOWN,
+        SSL_VERIFY_POST_HANDSHAKE,
+        TLS1_1_VERSION,
+        TLS1_2_VERSION,
+        TLS1_3_VERSION,
+        TLS1_VERSION,
+        UNDEFINED,
+        X509_V_ERR_HOSTNAME_MISMATCH,
+        X509_V_ERR_IP_ADDRESS_MISMATCH
+    }
+    operator --> runtime.python.bindings.clinic.operator {
+        _operator__compare_digest_impl,
+        _operator_abs_impl,
+        _operator_add_impl,
+        _operator_and__impl,
+        _operator_concat_impl,
+        _operator_contains_impl,
+        _operator_countOf_impl,
+        _operator_delitem_impl,
+        _operator_eq_impl,
+        _operator_floordiv_impl,
+        _operator_ge_impl,
+        _operator_getitem_impl,
+        _operator_gt_impl,
+        _operator_iadd_impl,
+        _operator_iand_impl,
+        _operator_iconcat_impl,
+        _operator_ifloordiv_impl,
+        _operator_ilshift_impl,
+        _operator_imatmul_impl,
+        _operator_imod_impl,
+        _operator_imul_impl,
+        _operator_indexOf_impl,
+        _operator_index_impl,
+        _operator_inv_impl,
+        _operator_invert_impl,
+        _operator_ior_impl,
+        _operator_ipow_impl,
+        _operator_irshift_impl,
+        _operator_is__impl,
+        _operator_is_none_impl,
+        _operator_is_not_impl,
+        _operator_is_not_none_impl,
+        _operator_isub_impl,
+        _operator_itruediv_impl,
+        _operator_ixor_impl,
+        _operator_le_impl,
+        _operator_length_hint_impl,
+        _operator_lshift_impl,
+        _operator_lt_impl,
+        _operator_matmul_impl,
+        _operator_mod_impl,
+        _operator_mul_impl,
+        _operator_ne_impl,
+        _operator_neg_impl,
+        _operator_not__impl,
+        _operator_or__impl,
+        _operator_pos_impl,
+        _operator_pow_impl,
+        _operator_rshift_impl,
+        _operator_setitem_impl,
+        _operator_sub_impl,
+        _operator_truediv_impl,
+        _operator_truth_impl,
+        _operator_xor_impl
+    }
+    output_buffer --> runtime.python.modules.lzma { BlocksOutputBuffer, Cursor }
+    output_buffer --> runtime.python.modules.zstd { BlocksOutputBuffer, Cursor }
+    pickle --> runtime.python.bindings.clinic.pickle {
+        Pickler_token,
+        Unpickler_token,
+        _pickle_PicklerMemoProxy___reduce___impl,
+        _pickle_PicklerMemoProxy_clear_impl,
+        _pickle_PicklerMemoProxy_copy_impl,
+        _pickle_Pickler___init___impl,
+        _pickle_Pickler___sizeof___impl,
+        _pickle_Pickler_clear_memo_impl,
+        _pickle_Pickler_dump_impl,
+        _pickle_UnpicklerMemoProxy___reduce___impl,
+        _pickle_UnpicklerMemoProxy_clear_impl,
+        _pickle_UnpicklerMemoProxy_copy_impl,
+        _pickle_Unpickler___init___impl,
+        _pickle_Unpickler___sizeof___impl,
+        _pickle_Unpickler_find_class_impl,
+        _pickle_Unpickler_load_impl,
+        _pickle_Unpickler_persistent_load_impl,
+        _pickle_dump_impl,
+        _pickle_dumps_impl,
+        _pickle_load_impl,
+        _pickle_loads_impl
+    }
+    pickle --> runtime.python.bindings.pickle {
+        MemoState,
+        PICKLER_DISPATCH,
+        PICKLER_RECORD,
+        PicklerMemoProxy_token,
+        PicklerState,
+        Pickler_token,
+        Slot,
+        UnpicklerMemoProxy_token,
+        UnpicklerState,
+        Unpickler_token,
+        memo_proxy_copy,
+        module_for,
+        pickle_module_token,
+        pickler_record,
+        state_for,
+        type_definition,
+        wrap
+    }
+    posix --> runtime.python.bindings.clinic.posix {
+        CHMOD_DEFAULT_FOLLOW_SYMLINKS,
+        DEFAULT_DIR_FD,
+        DirEntry_token,
+        EFD_CLOEXEC,
+        MFD_CLOEXEC,
+        PATH_HAVE_FCHDIR,
+        PATH_HAVE_FCHMOD,
+        PATH_HAVE_FCHOWN,
+        PATH_HAVE_FDOPENDIR,
+        PATH_HAVE_FEXECVE,
+        PATH_HAVE_FPATHCONF,
+        PATH_HAVE_FSTATVFS,
+        PATH_HAVE_FTRUNCATE,
+        PATH_T_INITIALIZE,
+        PATH_T_INITIALIZE_P,
+        PATH_UTIME_HAVE_FD,
+        convert_FACCESSAT_DIR_FD_CONVERTER,
+        convert_FCHMODAT_DIR_FD_CONVERTER,
+        convert_FCHOWNAT_DIR_FD_CONVERTER,
+        convert_FSTATAT_DIR_FD_CONVERTER,
+        convert_FUTIMENSAT_DIR_FD_CONVERTER,
+        convert_MKDIRAT_DIR_FD_CONVERTER,
+        convert_MKFIFOAT_DIR_FD_CONVERTER,
+        convert_MKNODAT_DIR_FD_CONVERTER,
+        convert_OPENAT_DIR_FD_CONVERTER,
+        convert_Py_off_t_converter,
+        convert_READLINKAT_DIR_FD_CONVERTER,
+        convert_SYMLINKAT_DIR_FD_CONVERTER,
+        convert_UNLINKAT_DIR_FD_CONVERTER,
+        convert__Py_Dev_Converter,
+        convert__Py_Gid_Converter,
+        convert__Py_Uid_Converter,
+        convert_conv_confname,
+        convert_dir_fd_converter,
+        convert_id_t,
+        convert_idtype_t_converter,
+        convert_path_converter,
+        fileno,
+        os_DirEntry___fspath___impl,
+        os_DirEntry_inode_impl,
+        os_DirEntry_is_dir_impl,
+        os_DirEntry_is_file_impl,
+        os_DirEntry_is_junction_impl,
+        os_DirEntry_is_symlink_impl,
+        os_DirEntry_stat_impl,
+        os_WCOREDUMP_impl,
+        os_WEXITSTATUS_impl,
+        os_WIFCONTINUED_impl,
+        os_WIFEXITED_impl,
+        os_WIFSIGNALED_impl,
+        os_WIFSTOPPED_impl,
+        os_WSTOPSIG_impl,
+        os_WTERMSIG_impl,
+        os__create_environ_impl,
+        os__exit_impl,
+        os__fcopyfile_impl,
+        os__inputhook_impl,
+        os__is_inputhook_installed_impl,
+        os__path_normpath_impl,
+        os__path_splitroot_ex_impl,
+        os_abort_impl,
+        os_access_impl,
+        os_chdir_impl,
+        os_chflags_impl,
+        os_chmod_impl,
+        os_chown_impl,
+        os_chroot_impl,
+        os_close_impl,
+        os_closerange_impl,
+        os_confstr_impl,
+        os_copy_file_range_impl,
+        os_cpu_count_impl,
+        os_ctermid_impl,
+        os_device_encoding_impl,
+        os_dup2_impl,
+        os_dup_impl,
+        os_eventfd_impl,
+        os_eventfd_read_impl,
+        os_eventfd_write_impl,
+        os_execv_impl,
+        os_execve_impl,
+        os_fchdir_impl,
+        os_fchmod_impl,
+        os_fchown_impl,
+        os_fdatasync_impl,
+        os_fork1_impl,
+        os_fork_impl,
+        os_forkpty_impl,
+        os_fpathconf_impl,
+        os_fspath_impl,
+        os_fstat_impl,
+        os_fstatvfs_impl,
+        os_fsync_impl,
+        os_ftruncate_impl,
+        os_get_blocking_impl,
+        os_get_inheritable_impl,
+        os_get_terminal_size_impl,
+        os_getcwd_impl,
+        os_getcwdb_impl,
+        os_getegid_impl,
+        os_geteuid_impl,
+        os_getgid_impl,
+        os_getgrouplist_darwin_impl,
+        os_getgrouplist_linux_impl,
+        os_getgroups_impl,
+        os_getloadavg_impl,
+        os_getlogin_impl,
+        os_getpgid_impl,
+        os_getpgrp_impl,
+        os_getpid_impl,
+        os_getppid_impl,
+        os_getpriority_impl,
+        os_getrandom_impl,
+        os_getresgid_impl,
+        os_getresuid_impl,
+        os_getsid_impl,
+        os_getuid_impl,
+        os_getxattr_impl,
+        os_grantpt_impl,
+        os_initgroups_darwin_impl,
+        os_initgroups_linux_impl,
+        os_isatty_impl,
+        os_kill_impl,
+        os_killpg_impl,
+        os_lchflags_impl,
+        os_lchmod_impl,
+        os_lchown_impl,
+        os_link_impl,
+        os_listdir_impl,
+        os_listxattr_impl,
+        os_lockf_impl,
+        os_login_tty_impl,
+        os_lseek_impl,
+        os_lstat_impl,
+        os_major_impl,
+        os_makedev_impl,
+        os_memfd_create_impl,
+        os_minor_impl,
+        os_mkdir_impl,
+        os_mkfifo_impl,
+        os_mknod_impl,
+        os_nice_impl,
+        os_open_impl,
+        os_openpty_impl,
+        os_pathconf_impl,
+        os_pidfd_open_impl,
+        os_pipe2_impl,
+        os_pipe_impl,
+        os_posix_fadvise_impl,
+        os_posix_fallocate_impl,
+        os_posix_openpt_impl,
+        os_posix_spawn_impl,
+        os_posix_spawnp_impl,
+        os_pread_impl,
+        os_preadv_impl,
+        os_ptsname_impl,
+        os_putenv_impl,
+        os_pwrite_impl,
+        os_pwritev_impl,
+        os_read_impl,
+        os_readinto_impl,
+        os_readlink_impl,
+        os_readv_impl,
+        os_register_at_fork_impl,
+        os_remove_impl,
+        os_removexattr_impl,
+        os_rename_impl,
+        os_replace_impl,
+        os_rmdir_impl,
+        os_scandir_impl,
+        os_sched_get_priority_max_impl,
+        os_sched_get_priority_min_impl,
+        os_sched_getaffinity_impl,
+        os_sched_getparam_impl,
+        os_sched_getscheduler_impl,
+        os_sched_param_impl,
+        os_sched_rr_get_interval_impl,
+        os_sched_setaffinity_impl,
+        os_sched_setparam_impl,
+        os_sched_setscheduler_impl,
+        os_sched_yield_impl,
+        os_sendfile_darwin_impl,
+        os_sendfile_linux_impl,
+        os_set_blocking_impl,
+        os_set_inheritable_impl,
+        os_setegid_impl,
+        os_seteuid_impl,
+        os_setgid_impl,
+        os_setgroups_impl,
+        os_setns_impl,
+        os_setpgid_impl,
+        os_setpgrp_impl,
+        os_setpriority_impl,
+        os_setregid_impl,
+        os_setresgid_impl,
+        os_setresuid_impl,
+        os_setreuid_impl,
+        os_setsid_impl,
+        os_setuid_impl,
+        os_setxattr_impl,
+        os_splice_impl,
+        os_stat_impl,
+        os_statvfs_impl,
+        os_strerror_impl,
+        os_symlink_impl,
+        os_sync_impl,
+        os_sysconf_impl,
+        os_system_impl,
+        os_tcgetpgrp_impl,
+        os_tcsetpgrp_impl,
+        os_timerfd_create_impl,
+        os_timerfd_gettime_impl,
+        os_timerfd_gettime_ns_impl,
+        os_timerfd_settime_impl,
+        os_timerfd_settime_ns_impl,
+        os_times_impl,
+        os_truncate_impl,
+        os_ttyname_impl,
+        os_umask_impl,
+        os_uname_impl,
+        os_unlink_impl,
+        os_unlockpt_impl,
+        os_unsetenv_impl,
+        os_unshare_impl,
+        os_urandom_impl,
+        os_utime_impl,
+        os_wait3_impl,
+        os_wait4_impl,
+        os_wait_impl,
+        os_waitid_impl,
+        os_waitpid_impl,
+        os_waitstatus_to_exitcode_impl,
+        os_write_impl,
+        os_writev_impl,
+        return_Py_off_t,
+        return_dev_t,
+        stdout
+    }
+    posix_constants --> runtime.python.bindings.posix {
+        CONFSTR_TABLE,
+        CONSTANTS,
+        HAVE_CONFSTR,
+        HAVE_EVENTFD,
+        HAVE_FACCESSAT,
+        HAVE_FCHDIR,
+        HAVE_FCHMOD,
+        HAVE_FCHMODAT,
+        HAVE_FCHOWN,
+        HAVE_FCHOWNAT,
+        HAVE_FDOPENDIR,
+        HAVE_FEXECVE,
+        HAVE_FPATHCONF,
+        HAVE_FSTATAT,
+        HAVE_FSTATVFS,
+        HAVE_FTRUNCATE,
+        HAVE_FUTIMENS,
+        HAVE_FUTIMES,
+        HAVE_FUTIMESAT,
+        HAVE_LCHFLAGS,
+        HAVE_LCHMOD,
+        HAVE_LCHOWN,
+        HAVE_LINKAT,
+        HAVE_LSTAT,
+        HAVE_LUTIMES,
+        HAVE_MEMFD_CREATE,
+        HAVE_MKDIRAT,
+        HAVE_MKFIFOAT,
+        HAVE_MKNODAT,
+        HAVE_OPENAT,
+        HAVE_PATHCONF,
+        HAVE_PTSNAME_R,
+        HAVE_READLINKAT,
+        HAVE_RENAMEAT,
+        HAVE_SYMLINKAT,
+        HAVE_SYSCONF,
+        HAVE_TIMERFD_CREATE,
+        HAVE_UNLINKAT,
+        HAVE_UTIMENSAT,
+        METHODS,
+        PATHCONF_TABLE,
+        SYSCONF_TABLE
+    }
+    posix_constants --> runtime.python.modules.posix_core {
+        AT_FDCWD,
+        EFD_CLOEXEC as EFD_CLOEXEC_VALUE,
+        EINTR,
+        EINVAL,
+        HAVE_FACCESSAT,
+        HAVE_FCHDIR,
+        HAVE_FCHMOD,
+        HAVE_FCHMODAT,
+        HAVE_FCHOWN,
+        HAVE_FCHOWNAT,
+        HAVE_FDOPENDIR,
+        HAVE_FEXECVE,
+        HAVE_FPATHCONF,
+        HAVE_FSTATAT,
+        HAVE_FSTATVFS,
+        HAVE_FTRUNCATE,
+        HAVE_FUTIMENS,
+        HAVE_FUTIMES,
+        HAVE_FUTIMESAT,
+        HAVE_MKDIRAT,
+        HAVE_MKFIFOAT,
+        HAVE_MKNODAT,
+        HAVE_OPENAT,
+        HAVE_READLINKAT,
+        HAVE_SYMLINKAT,
+        HAVE_UNLINKAT,
+        HAVE_UTIMENSAT,
+        MFD_CLOEXEC as MFD_CLOEXEC_VALUE,
+        NODEV,
+        NSIG
+    }
+    posix_constants --> runtime.python.modules.posix_fileio {
+        EAGAIN,
+        EBUSY,
+        EINTR,
+        EINVAL,
+        ENOSYS,
+        HAVE_DUP3,
+        HAVE_LOGIN_TTY,
+        HAVE_OPENAT,
+        HAVE_PIPE2,
+        HAVE_PREADV2,
+        HAVE_PTSNAME_R,
+        HAVE_PWRITEV2,
+        L_ctermid,
+        MAXPATHLEN,
+        O_CLOEXEC,
+        SEEK_CUR,
+        SEEK_END,
+        SEEK_SET,
+        SIGCHLD,
+        TFD_CLOEXEC,
+        TIOCGWINSZ,
+        TIOCSCTTY,
+        _SC_TTY_NAME_MAX
+    }
+    posix_constants --> runtime.python.modules.posix_fileio_platform { ENOSYS }
+    posix_constants --> runtime.python.modules.posix_files {
+        AT_EACCESS,
+        AT_REMOVEDIR,
+        AT_SYMLINK_FOLLOW,
+        AT_SYMLINK_NOFOLLOW,
+        EINTR,
+        EINVAL,
+        ENOENT,
+        ENOSYS,
+        ENOTSUP,
+        EOPNOTSUPP,
+        ERANGE,
+        HAVE_FACCESSAT,
+        HAVE_FCHDIR,
+        HAVE_FCHMOD,
+        HAVE_FCHMODAT,
+        HAVE_FCHOWN,
+        HAVE_FCHOWNAT,
+        HAVE_FPATHCONF,
+        HAVE_FUTIMENS,
+        HAVE_FUTIMES,
+        HAVE_FUTIMESAT,
+        HAVE_LCHFLAGS,
+        HAVE_LCHMOD,
+        HAVE_LCHOWN,
+        HAVE_LINKAT,
+        HAVE_LUTIMES,
+        HAVE_MKDIRAT,
+        HAVE_MKFIFOAT,
+        HAVE_MKNODAT,
+        HAVE_READLINKAT,
+        HAVE_RENAMEAT,
+        HAVE_SYMLINKAT,
+        HAVE_UNLINKAT,
+        HAVE_UTIMENSAT,
+        MAXPATHLEN,
+        NODEV,
+        XATTR_LIST_MAX,
+        XATTR_SIZE_MAX
+    }
+    posix_constants --> runtime.python.modules.posix_ids {
+        EINTR,
+        EINVAL,
+        HAVE_BROKEN_UNSETENV,
+        NGROUPS_MAX,
+        _SC_NPROCESSORS_ONLN
+    }
+    posix_constants --> runtime.python.modules.posix_process {
+        EINTR,
+        EINVAL,
+        HAVE_BROKEN_NICE,
+        HAVE_FEXECVE,
+        HAVE_GETPRIORITY,
+        HAVE_SCHED_SETPARAM,
+        HAVE_SCHED_SETSCHEDULER,
+        HAVE_WAIT3,
+        HAVE_WAIT4,
+        HAVE_WAITID,
+        POSIX_SPAWN_CLOSE,
+        POSIX_SPAWN_DUP2,
+        POSIX_SPAWN_OPEN,
+        POSIX_SPAWN_RESETIDS,
+        POSIX_SPAWN_SETPGROUP,
+        POSIX_SPAWN_SETSCHEDPARAM,
+        POSIX_SPAWN_SETSCHEDULER,
+        POSIX_SPAWN_SETSID,
+        POSIX_SPAWN_SETSID_NP,
+        POSIX_SPAWN_SETSIGDEF,
+        POSIX_SPAWN_SETSIGMASK,
+        PRIO_PROCESS
+    }
+    posix_constants --> runtime.python.modules.posix_stat {
+        AT_SYMLINK_NOFOLLOW,
+        DT_DIR,
+        DT_LNK,
+        DT_REG,
+        DT_UNKNOWN,
+        EINTR,
+        HAVE_FDOPENDIR,
+        HAVE_FSTATAT,
+        HAVE_FSTATVFS
+    }
+    posix_core --> runtime.python.bindings.posix {
+        PosixState,
+        STATE_BILLION,
+        STATE_COUNT,
+        STATE_DIR_ENTRY_TYPE,
+        STATE_SCANDIR_ITERATOR_TYPE,
+        STATE_SCHED_PARAM_TYPE,
+        STATE_ST_MODE,
+        convertenviron,
+        state_object
+    }
+    posix_core --> runtime.python.modules.grp { _PyLong_FromGid, _Py_Gid_Converter }
+    posix_core --> runtime.python.modules.posix {
+        CHMOD_DEFAULT_FOLLOW_SYMLINKS,
+        DEFAULT_DIR_FD,
+        EFD_CLOEXEC,
+        MFD_CLOEXEC,
+        PATH_HAVE_FCHDIR,
+        PATH_HAVE_FCHMOD,
+        PATH_HAVE_FCHOWN,
+        PATH_HAVE_FDOPENDIR,
+        PATH_HAVE_FEXECVE,
+        PATH_HAVE_FPATHCONF,
+        PATH_HAVE_FSTATVFS,
+        PATH_HAVE_FTRUNCATE,
+        PATH_T_INITIALIZE,
+        PATH_T_INITIALIZE_P,
+        PATH_UTIME_HAVE_FD,
+        convert_FACCESSAT_DIR_FD_CONVERTER,
+        convert_FCHMODAT_DIR_FD_CONVERTER,
+        convert_FCHOWNAT_DIR_FD_CONVERTER,
+        convert_FSTATAT_DIR_FD_CONVERTER,
+        convert_FUTIMENSAT_DIR_FD_CONVERTER,
+        convert_MKDIRAT_DIR_FD_CONVERTER,
+        convert_MKFIFOAT_DIR_FD_CONVERTER,
+        convert_MKNODAT_DIR_FD_CONVERTER,
+        convert_OPENAT_DIR_FD_CONVERTER,
+        convert_Py_off_t_converter,
+        convert_READLINKAT_DIR_FD_CONVERTER,
+        convert_SYMLINKAT_DIR_FD_CONVERTER,
+        convert_UNLINKAT_DIR_FD_CONVERTER,
+        convert__Py_Dev_Converter,
+        convert__Py_Gid_Converter,
+        convert__Py_Uid_Converter,
+        convert_conv_confname,
+        convert_dir_fd_converter,
+        convert_id_t,
+        convert_idtype_t_converter,
+        convert_path_converter,
+        fileno,
+        return_Py_off_t,
+        return_dev_t,
+        stdout
+    }
+    posix_core --> runtime.python.modules.posix_fileio {
+        DEFAULT_DIR_FD,
+        INT_MAX,
+        STATE_TERMINAL_SIZE_TYPE,
+        argument_unavailable_error,
+        path_t,
+        posix_error,
+        state_object
+    }
+    posix_core --> runtime.python.modules.posix_files {
+        DEFAULT_DIR_FD,
+        STATE_BILLION,
+        argument_unavailable_error,
+        dev_value,
+        dir_fd_and_fd_invalid,
+        dir_fd_and_follow_symlinks_invalid,
+        fd_and_follow_symlinks_invalid,
+        follow_symlinks_specified,
+        path_and_dir_fd_invalid,
+        path_error,
+        path_error2,
+        path_object_error,
+        path_t,
+        posix_error,
+        posix_fildes_fd,
+        posix_path_error,
+        state_object
+    }
+    posix_core --> runtime.python.modules.posix_ids {
+        INT_MAX,
+        PyOS_FSPath,
+        STATE_UNAME_RESULT_TYPE,
+        _PyLong_FromGid,
+        _PyLong_FromUid,
+        _Py_Gid_Converter,
+        convertenviron,
+        posix_error,
+        state_object
+    }
+    posix_core --> runtime.python.modules.posix_process {
+        AFTER_FORKERS_CHILD,
+        AFTER_FORKERS_PARENT,
+        BEFORE_FORKERS,
+        INT_MAX,
+        INT_MIN,
+        PyOS_AfterFork_Child,
+        PyOS_AfterFork_Parent,
+        PyOS_BeforeFork,
+        STATE_SCHED_PARAM_TYPE,
+        STATE_STRUCT_RUSAGE,
+        STATE_TIMES_RESULT_TYPE,
+        STATE_WAITID_RESULT_TYPE,
+        _PyLong_FromUid,
+        _Py_Sigset_Converter,
+        argument_unavailable_error,
+        interned,
+        path_object_error,
+        path_t,
+        posix_error,
+        posix_path_error,
+        posix_state,
+        register_at_forker,
+        state_object
+    }
+    posix_core --> runtime.python.modules.posix_stat {
+        DEFAULT_DIR_FD,
+        PosixState,
+        STATE_BILLION,
+        STATE_DIR_ENTRY_TYPE,
+        STATE_SCANDIR_ITERATOR_TYPE,
+        STATE_STATVFS_RESULT_TYPE,
+        STATE_STAT_RESULT_TYPE,
+        STATE_ST_MODE,
+        _PyLong_FromDev,
+        _PyLong_FromGid,
+        _PyLong_FromUid,
+        argument_unavailable_error,
+        dir_fd_and_fd_invalid,
+        fd_and_follow_symlinks_invalid,
+        interned,
+        path_and_dir_fd_invalid,
+        path_error,
+        path_object_error,
+        path_t,
+        posix_error,
+        posix_module,
+        posix_state,
+        state_object
+    }
+    posix_core --> runtime.python.modules.posixsubprocess {
+        PyOS_AfterFork_Child,
+        PyOS_AfterFork_Parent,
+        PyOS_BeforeFork,
+        _Py_Gid_Converter,
+        _Py_Uid_Converter
+    }
+    posix_core --> runtime.python.modules.pwd { _PyLong_FromUid, _Py_Uid_Converter }
+    posix_fileio --> runtime.python.bindings.posix { posix_fileio_exec }
+    posix_fileio --> runtime.python.modules.posix {
+        os__fcopyfile_impl,
+        os_close_impl,
+        os_closerange_impl,
+        os_copy_file_range_impl,
+        os_ctermid_impl,
+        os_device_encoding_impl,
+        os_dup2_impl,
+        os_dup_impl,
+        os_eventfd_impl,
+        os_eventfd_read_impl,
+        os_eventfd_write_impl,
+        os_get_blocking_impl,
+        os_get_inheritable_impl,
+        os_get_terminal_size_impl,
+        os_grantpt_impl,
+        os_isatty_impl,
+        os_login_tty_impl,
+        os_lseek_impl,
+        os_memfd_create_impl,
+        os_open_impl,
+        os_openpty_impl,
+        os_pipe2_impl,
+        os_pipe_impl,
+        os_posix_openpt_impl,
+        os_pread_impl,
+        os_preadv_impl,
+        os_ptsname_impl,
+        os_pwrite_impl,
+        os_pwritev_impl,
+        os_read_impl,
+        os_readinto_impl,
+        os_readv_impl,
+        os_sendfile_darwin_impl,
+        os_sendfile_linux_impl,
+        os_set_blocking_impl,
+        os_set_inheritable_impl,
+        os_splice_impl,
+        os_timerfd_create_impl,
+        os_timerfd_gettime_impl,
+        os_timerfd_gettime_ns_impl,
+        os_timerfd_settime_impl,
+        os_timerfd_settime_ns_impl,
+        os_ttyname_impl,
+        os_unlockpt_impl,
+        os_write_impl,
+        os_writev_impl
+    }
+    posix_fileio_platform --> runtime.python.modules.posix_fileio {
+        PY_READ_MAX,
+        copy_file_range_call,
+        ctermid_call,
+        dup3_call,
+        eventfd_call,
+        eventfd_read_call,
+        eventfd_write_call,
+        fcopyfile_call,
+        fd_pair,
+        iovec,
+        itimerspec,
+        memfd_create_call,
+        pipe2_call,
+        preadv2_call,
+        pwritev2_call,
+        sendfile_darwin_call,
+        sendfile_linux_call,
+        splice_call,
+        timerfd_create_call,
+        timerfd_gettime_call,
+        timerfd_settime_call
+    }
+    posix_files --> runtime.python.bindings.posix { posix_files_exec }
+    posix_files --> runtime.python.modules.posix {
+        os__path_normpath_impl,
+        os__path_splitroot_ex_impl,
+        os_access_impl,
+        os_chdir_impl,
+        os_chflags_impl,
+        os_chmod_impl,
+        os_chown_impl,
+        os_chroot_impl,
+        os_fchdir_impl,
+        os_fchmod_impl,
+        os_fchown_impl,
+        os_fdatasync_impl,
+        os_fpathconf_impl,
+        os_fsync_impl,
+        os_ftruncate_impl,
+        os_getcwd_impl,
+        os_getcwdb_impl,
+        os_getxattr_impl,
+        os_lchflags_impl,
+        os_lchmod_impl,
+        os_lchown_impl,
+        os_link_impl,
+        os_listxattr_impl,
+        os_lockf_impl,
+        os_major_impl,
+        os_makedev_impl,
+        os_minor_impl,
+        os_mkdir_impl,
+        os_mkfifo_impl,
+        os_mknod_impl,
+        os_pathconf_impl,
+        os_posix_fadvise_impl,
+        os_posix_fallocate_impl,
+        os_readlink_impl,
+        os_remove_impl,
+        os_removexattr_impl,
+        os_rename_impl,
+        os_replace_impl,
+        os_rmdir_impl,
+        os_setxattr_impl,
+        os_symlink_impl,
+        os_sync_impl,
+        os_truncate_impl,
+        os_umask_impl,
+        os_unlink_impl,
+        os_utime_impl
+    }
+    posix_files_platform --> runtime.python.modules.posix_files {
+        MODE_T_MASK,
+        PLATFORM,
+        chflags_call,
+        dev_major,
+        dev_makedev,
+        dev_minor,
+        lchflags_call,
+        lchmod_call,
+        mkfifoat_available,
+        mkfifoat_call,
+        mknod_call,
+        mknodat_available,
+        mknodat_call,
+        posix_fadvise_call,
+        posix_fallocate_call,
+        umask_call,
+        xattr_get,
+        xattr_list,
+        xattr_remove,
+        xattr_set
+    }
+    posix_ids --> runtime.python.bindings.posix { posix_ids_exec }
+    posix_ids --> runtime.python.modules.posix {
+        os__create_environ_impl,
+        os__inputhook_impl,
+        os__is_inputhook_installed_impl,
+        os_confstr_impl,
+        os_cpu_count_impl,
+        os_fspath_impl,
+        os_getegid_impl,
+        os_geteuid_impl,
+        os_getgid_impl,
+        os_getgrouplist_darwin_impl,
+        os_getgrouplist_linux_impl,
+        os_getgroups_impl,
+        os_getlogin_impl,
+        os_getpgid_impl,
+        os_getpgrp_impl,
+        os_getpid_impl,
+        os_getppid_impl,
+        os_getrandom_impl,
+        os_getresgid_impl,
+        os_getresuid_impl,
+        os_getsid_impl,
+        os_getuid_impl,
+        os_initgroups_darwin_impl,
+        os_initgroups_linux_impl,
+        os_putenv_impl,
+        os_setegid_impl,
+        os_seteuid_impl,
+        os_setgid_impl,
+        os_setgroups_impl,
+        os_setpgid_impl,
+        os_setpgrp_impl,
+        os_setregid_impl,
+        os_setresgid_impl,
+        os_setresuid_impl,
+        os_setreuid_impl,
+        os_setsid_impl,
+        os_setuid_impl,
+        os_strerror_impl,
+        os_sysconf_impl,
+        os_tcgetpgrp_impl,
+        os_tcsetpgrp_impl,
+        os_uname_impl,
+        os_unsetenv_impl,
+        os_urandom_impl
+    }
+    posix_ids_platform --> runtime.python.modules.posix_ids {
+        LOGIN_NAME_SIZE,
+        UTSNAME_FIELD_SIZE,
+        UTSNAME_SIZE,
+        get_res_gid,
+        get_res_uid,
+        getgrouplist_darwin,
+        getgrouplist_linux,
+        getrandom_syscall,
+        initgroups_darwin,
+        initgroups_linux,
+        set_groups,
+        setresgid,
+        setresuid
+    }
+    posix_platform --> runtime.python.bindings.posix { PLATFORM, runtime_function }
+    posix_platform --> runtime.python.modules.posix_core {
+        DEV_T_SIGNED_32,
+        environment_table,
+        fildes_call
+    }
+    posix_platform --> runtime.python.modules.posix_files { DEV_T_SIGNED_32 }
+    posix_platform --> runtime.python.modules.posix_process { environment_table }
+    posix_process --> runtime.python.bindings.posix {
+        posix_process_exec,
+        sched_param_reduce
+    }
+    posix_process --> runtime.python.modules.posix {
+        os_WCOREDUMP_impl,
+        os_WEXITSTATUS_impl,
+        os_WIFCONTINUED_impl,
+        os_WIFEXITED_impl,
+        os_WIFSIGNALED_impl,
+        os_WIFSTOPPED_impl,
+        os_WSTOPSIG_impl,
+        os_WTERMSIG_impl,
+        os__exit_impl,
+        os_abort_impl,
+        os_execv_impl,
+        os_execve_impl,
+        os_fork1_impl,
+        os_fork_impl,
+        os_forkpty_impl,
+        os_getloadavg_impl,
+        os_getpriority_impl,
+        os_kill_impl,
+        os_killpg_impl,
+        os_nice_impl,
+        os_pidfd_open_impl,
+        os_posix_spawn_impl,
+        os_posix_spawnp_impl,
+        os_register_at_fork_impl,
+        os_sched_get_priority_max_impl,
+        os_sched_get_priority_min_impl,
+        os_sched_getaffinity_impl,
+        os_sched_getparam_impl,
+        os_sched_getscheduler_impl,
+        os_sched_param_impl,
+        os_sched_rr_get_interval_impl,
+        os_sched_setaffinity_impl,
+        os_sched_setparam_impl,
+        os_sched_setscheduler_impl,
+        os_sched_yield_impl,
+        os_setns_impl,
+        os_setpriority_impl,
+        os_system_impl,
+        os_times_impl,
+        os_unshare_impl,
+        os_wait3_impl,
+        os_wait4_impl,
+        os_wait_impl,
+        os_waitid_impl,
+        os_waitpid_impl,
+        os_waitstatus_to_exitcode_impl
+    }
+    posix_process_platform --> runtime.python.modules.posix_process {
+        FILE_ACTIONS_SIZE,
+        SIGSET_SIZE,
+        SPAWNATTR_SIZE,
+        WCOREDUMP,
+        WEXITSTATUS,
+        WIFCONTINUED,
+        WIFEXITED,
+        WIFSIGNALED,
+        WIFSTOPPED,
+        WSTOPSIG,
+        WTERMSIG,
+        cpu_alloc,
+        cpu_alloc_size,
+        cpu_count_s,
+        cpu_free,
+        cpu_isset_s,
+        cpu_set_s,
+        cpu_zero_s,
+        fexecve_call,
+        fork_one,
+        get_number_of_os_threads,
+        mode_bits,
+        pidfd_open_call,
+        process_times,
+        sched_getaffinity_call,
+        sched_getparam_call,
+        sched_getscheduler_call,
+        sched_rr_get_interval_call,
+        sched_setaffinity_call,
+        sched_setparam_call,
+        sched_setscheduler_call,
+        setns_call,
+        siginfo_t,
+        spawnattr_setschedparam,
+        spawnattr_setschedpolicy,
+        unshare_call
+    }
+    posix_stat --> runtime.python.bindings.posix {
+        DIR_ENTRY_MEMBERS,
+        DIR_ENTRY_RECORD_SIZE,
+        DirEntry_dealloc,
+        DirEntry_repr,
+        DirEntry_token,
+        ScandirIterator_close,
+        ScandirIterator_dealloc,
+        ScandirIterator_enter,
+        ScandirIterator_exit,
+        ScandirIterator_finalize,
+        ScandirIterator_iternext,
+        ScandirIterator_token,
+        posix_stat_exec
+    }
+    posix_stat --> runtime.python.modules.posix {
+        DirEntry_token,
+        os_DirEntry___fspath___impl,
+        os_DirEntry_inode_impl,
+        os_DirEntry_is_dir_impl,
+        os_DirEntry_is_file_impl,
+        os_DirEntry_is_junction_impl,
+        os_DirEntry_is_symlink_impl,
+        os_DirEntry_stat_impl,
+        os_fstat_impl,
+        os_fstatvfs_impl,
+        os_listdir_impl,
+        os_lstat_impl,
+        os_scandir_impl,
+        os_stat_impl,
+        os_statvfs_impl
+    }
+    posix_stat_platform --> runtime.python.modules.posix_stat {
+        STATVFS_RECORD_SIZE,
+        STAT_EXTRA_FIELDS,
+        set_stat_extra,
+        stat_blksize,
+        stat_device,
+        stat_mode,
+        stat_nlink,
+        stat_rdev,
+        statvfs_fd,
+        statvfs_path,
+        statvfs_result
+    }
+    posixshmem --> runtime.python.bindings.clinic.posixshmem {
+        _posixshmem_shm_open_impl,
+        _posixshmem_shm_unlink_impl
+    }
+    posixsubprocess --> runtime.python.bindings.clinic.posixsubprocess {
+        subprocess_fork_exec_impl
+    }
+    posixsubprocess_constants --> runtime.python.bindings.posixsubprocess { CONSTANTS }
+    posixsubprocess_constants --> runtime.python.modules.posixsubprocess {
+        ENOENT,
+        ENOTDIR,
+        NGROUPS_MAX
+    }
+    posixsubprocess_constants --> runtime.python.modules.posixsubprocess_fds {
+        _SC_OPEN_MAX
+    }
+    posixsubprocess_platform --> runtime.python.bindings.posixsubprocess { PLATFORM }
+    posixsubprocess_platform --> runtime.python.modules.posixsubprocess {
+        DIRENT_BUFFER_SIZE,
+        FD_DIR,
+        SIGACTION_SIZE,
+        SIGSET_SIZE,
+        VFORK_USABLE,
+        block_signals,
+        close_open_fds,
+        reset_signal_handlers,
+        set_groups,
+        set_signal_mask,
+        set_umask
+    }
+    pyexpat --> runtime.python.bindings.clinic.pyexpat {
+        pyexpat_ErrorString_impl,
+        pyexpat_ParserCreate_impl,
+        pyexpat_xmlparser_ExternalEntityParserCreate_impl,
+        pyexpat_xmlparser_GetBase_impl,
+        pyexpat_xmlparser_GetInputContext_impl,
+        pyexpat_xmlparser_GetReparseDeferralEnabled_impl,
+        pyexpat_xmlparser_ParseFile_impl,
+        pyexpat_xmlparser_Parse_impl,
+        pyexpat_xmlparser_SetAllocTrackerActivationThreshold_impl,
+        pyexpat_xmlparser_SetAllocTrackerMaximumAmplification_impl,
+        pyexpat_xmlparser_SetBase_impl,
+        pyexpat_xmlparser_SetBillionLaughsAttackProtectionActivationThreshold_impl,
+        pyexpat_xmlparser_SetBillionLaughsAttackProtectionMaximumAmplification_impl,
+        pyexpat_xmlparser_SetParamEntityParsing_impl,
+        pyexpat_xmlparser_SetReparseDeferralEnabled_impl,
+        pyexpat_xmlparser_UseForeignDTD_impl,
+        xmlparser_token
+    }
+    pyexpat --> runtime.python.bindings.pyexpat {
+        HANDLER_NAMES,
+        PyexpatState,
+        XMLPARSER_MEMBERS,
+        XMLPARSER_RECORD_SIZE,
+        add_errors_module,
+        add_features,
+        add_model_module,
+        add_version,
+        module_definition,
+        new_capsule,
+        xmlparse_ErrorByteIndex_getter,
+        xmlparse_ErrorCode_getter,
+        xmlparse_ErrorColumnNumber_getter,
+        xmlparse_ErrorLineNumber_getter,
+        xmlparse_buffer_size_getter,
+        xmlparse_buffer_size_setter,
+        xmlparse_buffer_text_getter,
+        xmlparse_buffer_text_setter,
+        xmlparse_buffer_used_getter,
+        xmlparse_clear,
+        xmlparse_dealloc,
+        xmlparse_handler_getter,
+        xmlparse_handler_setter,
+        xmlparse_namespace_prefixes_getter,
+        xmlparse_namespace_prefixes_setter,
+        xmlparse_ordered_attributes_getter,
+        xmlparse_ordered_attributes_setter,
+        xmlparse_specified_attributes_getter,
+        xmlparse_specified_attributes_setter,
+        xmlparse_traverse,
+        xmlparser_token
+    }
+    queue --> runtime.python.bindings.clinic.queue {
+        SimpleQueue_token,
+        _queue_SimpleQueue_empty_impl,
+        _queue_SimpleQueue_get_impl,
+        _queue_SimpleQueue_get_nowait_impl,
+        _queue_SimpleQueue_put_impl,
+        _queue_SimpleQueue_put_nowait_impl,
+        _queue_SimpleQueue_qsize_impl,
+        simplequeue_new_impl
+    }
+    queue --> runtime.python.bindings.queue { SimpleQueue_token }
+    random --> runtime.python.bindings.clinic.random {
+        Random_token,
+        _random_Random_getrandbits_impl,
+        _random_Random_getstate_impl,
+        _random_Random_random_impl,
+        _random_Random_seed_impl,
+        _random_Random_setstate_impl,
+        random_init_impl
+    }
+    random --> runtime.python.bindings.random { Random_token }
+    resource_records --> runtime.python.modules.posix_process { rusage, timeval }
+    resource_records --> runtime.python.modules.time { rusage }
+    select --> runtime.python.bindings.clinic.select {
+        EPOLLIN,
+        EPOLLOUT,
+        EPOLLPRI,
+        POLLIN,
+        POLLOUT,
+        POLLPRI,
+        kqueue_token,
+        select_devpoll_close_impl,
+        select_devpoll_fileno_impl,
+        select_devpoll_impl,
+        select_devpoll_modify_impl,
+        select_devpoll_poll_impl,
+        select_devpoll_register_impl,
+        select_devpoll_unregister_impl,
+        select_epoll___enter___impl,
+        select_epoll___exit___impl,
+        select_epoll_close_impl,
+        select_epoll_fileno_impl,
+        select_epoll_fromfd_impl,
+        select_epoll_impl,
+        select_epoll_modify_impl,
+        select_epoll_poll_impl,
+        select_epoll_register_impl,
+        select_epoll_unregister_impl,
+        select_kqueue_close_impl,
+        select_kqueue_control_impl,
+        select_kqueue_fileno_impl,
+        select_kqueue_fromfd_impl,
+        select_kqueue_impl,
+        select_poll_impl,
+        select_poll_modify_impl,
+        select_poll_poll_impl,
+        select_poll_register_impl,
+        select_poll_unregister_impl,
+        select_select_impl
+    }
+    select --> runtime.python.bindings.select {
+        SelectState,
+        epoll_closed_get,
+        epoll_internal_close,
+        epoll_of,
+        epoll_token,
+        have_broken_poll,
+        kevent_token,
+        kqueue_closed_get,
+        kqueue_event_init,
+        kqueue_event_new,
+        kqueue_event_repr,
+        kqueue_event_richcompare,
+        kqueue_finalize,
+        kqueue_token,
+        module_definition,
+        poll_token
+    }
+    select_constants --> runtime.python.bindings.select { CONSTANTS, PLATFORM }
+    select_constants --> runtime.python.modules.select {
+        EPOLLIN,
+        EPOLLOUT,
+        EPOLLPRI,
+        EPOLL_CLOEXEC,
+        EPOLL_CTL_ADD,
+        EPOLL_CTL_DEL,
+        EPOLL_CTL_MOD,
+        FD_SETSIZE,
+        KQ_EV_ADD,
+        KQ_FILTER_READ,
+        POLLIN,
+        POLLNVAL,
+        POLLOUT,
+        POLLPRI
+    }
+    select_platform --> runtime.python.bindings.select {
+        HAS_EPOLL,
+        HAS_KQUEUE,
+        KEVENT_MEMBERS,
+        KEVENT_SIZE,
+        PROBE_BROKEN_POLL
+    }
+    select_platform --> runtime.python.modules.select {
+        EPOLL_DATA_OFFSET,
+        EPOLL_EVENT_SIZE,
+        KEVENT_MEMBERS,
+        KEVENT_SIZE,
+        epoll_create1,
+        epoll_ctl,
+        epoll_wait,
+        kevent,
+        kevent_record,
+        kqueue,
+        poll_fds,
+        pollfd,
+        select
+    }
+    semaphore_platform --> runtime.python.bindings.multiprocessing {
+        HAVE_BROKEN_SEM_GETVALUE,
+        HAVE_BROKEN_SEM_UNLINK,
+        HAVE_SEM_OPEN,
+        HAVE_SEM_TIMEDWAIT
+    }
+    semaphore_platform --> runtime.python.modules.multiprocessing {
+        HAVE_BROKEN_SEM_GETVALUE,
+        HAVE_SEM_TIMEDWAIT,
+        SEM_FAILED,
+        timed_wait,
+        timespec,
+        timeval,
+        timeval_from,
+        timeval_usec
+    }
+    socket --> runtime.python.bindings.clinic.socket {
+        _socket_htonl_impl,
+        _socket_htons_impl,
+        _socket_if_indextoname_impl,
+        _socket_if_nametoindex_impl,
+        _socket_inet_aton_impl,
+        _socket_inet_ntoa_impl,
+        _socket_ntohl_impl,
+        _socket_ntohs_impl,
+        _socket_socket_close_impl,
+        convert__PyLong_NetIfindex_Converter,
+        sock_initobj_impl
+    }
+    socket --> runtime.python.bindings.socket {
+        netdb_lock,
+        socket_CMSG_LEN,
+        socket_CMSG_SPACE,
+        socket_close,
+        socket_dup,
+        socket_getaddrinfo,
+        socket_getdefaulttimeout,
+        socket_gethostbyaddr,
+        socket_gethostbyname,
+        socket_gethostbyname_ex,
+        socket_gethostname,
+        socket_getnameinfo,
+        socket_getprotobyname,
+        socket_getservbyname,
+        socket_getservbyport,
+        socket_if_nameindex,
+        socket_inet_ntop,
+        socket_inet_pton,
+        socket_setdefaulttimeout,
+        socket_sethostname,
+        socket_socketpair
+    }
+    socket_address --> runtime.python.bindings.ssl { new_view }
+    socket_address --> runtime.python.modules.socket {
+        free_addrbuf,
+        freeaddrinfo,
+        get_u16,
+        getaddrinfo,
+        make_ipv4_addr,
+        make_ipv6_addr,
+        makesockaddr,
+        new_addrbuf,
+        new_view,
+        put_u32,
+        setipaddr
+    }
+    socket_address --> runtime.python.modules.socket_object {
+        free_addrbuf,
+        get_u32,
+        getsockaddrarg,
+        getsockaddrlen,
+        makesockaddr,
+        new_addrbuf,
+        new_view,
+        put_u32
+    }
+    socket_address --> runtime.python.modules.ssl { new_view }
+    socket_constants --> runtime.python.bindings.socket { CONSTANTS }
+    socket_constants --> runtime.python.modules.socket {
+        AF_INET,
+        AF_INET6,
+        AF_UNIX,
+        AF_UNSPEC,
+        AI_NUMERICHOST,
+        AI_NUMERICSERV,
+        IF_NAMESIZE,
+        INET6_ADDRSTRLEN,
+        NI_MAXHOST,
+        NI_MAXSERV,
+        SOCK_CLOEXEC,
+        SOCK_DGRAM,
+        SOCK_STREAM
+    }
+    socket_constants --> runtime.python.modules.socket_address {
+        AF_ALG,
+        AF_CAN,
+        AF_INET,
+        AF_INET6,
+        AF_NETLINK,
+        AF_PACKET,
+        AF_QIPCRTR,
+        AF_RDS,
+        AF_SYSTEM,
+        AF_SYS_CONTROL,
+        AF_TIPC,
+        AF_UNIX,
+        AF_UNSPEC,
+        AF_VSOCK,
+        AI_PASSIVE,
+        CAN_BCM,
+        CAN_ISOTP,
+        CAN_J1939,
+        CAN_RAW,
+        CTLIOCGINFO,
+        INADDR_BROADCAST,
+        INET6_ADDRSTRLEN,
+        INET_ADDRSTRLEN,
+        PACKET_HOST,
+        PF_SYSTEM,
+        SIOCGIFINDEX,
+        SIOCGIFNAME,
+        SOCK_DGRAM,
+        SYSPROTO_CONTROL,
+        TIPC_ADDR_ID,
+        TIPC_ADDR_NAME,
+        TIPC_ADDR_NAMESEQ,
+        TIPC_CLUSTER_SCOPE
+    }
+    socket_constants --> runtime.python.modules.socket_core {
+        EAI_SYSTEM,
+        FIONBIO,
+        POLLERR,
+        POLLIN,
+        POLLOUT,
+        SOCK_CLOEXEC,
+        SOCK_NONBLOCK
+    }
+    socket_constants --> runtime.python.modules.socket_object {
+        AF_ALG,
+        AF_INET,
+        AF_UNSPEC,
+        AF_VSOCK,
+        ALG_SET_AEAD_ASSOCLEN,
+        ALG_SET_IV,
+        ALG_SET_OP,
+        SCM_RIGHTS,
+        SOCK_CLOEXEC,
+        SOCK_STREAM,
+        SOL_ALG,
+        SOL_SOCKET,
+        SOMAXCONN,
+        SO_ERROR,
+        SO_PROTOCOL,
+        SO_TYPE
+    }
+    socket_constants --> runtime.python.modules.ssl_core { POLLIN, POLLOUT }
+    socket_core --> runtime.python.bindings.socket {
+        STATE_COUNT,
+        STATE_GAIERROR,
+        STATE_HERROR,
+        STATE_SOCK_TYPE,
+        SocketState,
+        socket_module_token
+    }
+    socket_core --> runtime.python.modules.socket {
+        INT_MAX,
+        INVALID_SOCKET,
+        SOCKADDR_IN6_SIZE,
+        SOCKADDR_IN_SIZE,
+        SOCK_ADDR_SIZE,
+        TIMEOUT_ERROR,
+        close,
+        hostent,
+        htonl,
+        htons,
+        if_nameindex_record,
+        new_sockobject,
+        ntohl,
+        ntohs,
+        set_error,
+        set_gaierror,
+        set_herror,
+        sock_cloexec_works,
+        socket_error,
+        socket_parse_timeout,
+        socket_state,
+        timeout_object
+    }
+    socket_core --> runtime.python.modules.socket_address {
+        SOCKADDR_IN6_SIZE,
+        SOCKADDR_IN_SIZE,
+        SOCK_ADDR_SIZE,
+        get_sock_fd,
+        htonl,
+        htons,
+        ioctl,
+        module_of,
+        ntohl,
+        ntohs,
+        set_error,
+        set_gaierror,
+        sock_family,
+        sock_proto,
+        socket_error
+    }
+    socket_core --> runtime.python.modules.socket_object {
+        INT_MAX,
+        INVALID_SOCKET,
+        SEC_TO_NS,
+        SOCKLEN_T_LIMIT,
+        SOCK_ADDR_SIZE,
+        SocketCall,
+        TIMEOUT_ERROR,
+        accept4_works,
+        close,
+        get_sock_fd,
+        init_sockobject,
+        internal_setblocking,
+        module_of_type,
+        set_error,
+        set_sock_fd,
+        set_sock_timeout,
+        sock_call,
+        sock_call_ex,
+        sock_cloexec_works,
+        sock_family,
+        sock_of,
+        sock_proto,
+        sock_timeout,
+        socket_error,
+        socket_parse_timeout,
+        timeout_object
+    }
+    socket_core --> runtime.python.modules.ssl_core { poll, pollfd }
+    socket_object --> runtime.python.bindings.socket {
+        sock_accept,
+        sock_bind,
+        sock_connect,
+        sock_connect_ex,
+        sock_dealloc,
+        sock_detach,
+        sock_fileno,
+        sock_finalize,
+        sock_getblocking,
+        sock_getpeername,
+        sock_getsockname,
+        sock_getsockopt,
+        sock_gettimeout_getter,
+        sock_gettimeout_method,
+        sock_listen,
+        sock_new,
+        sock_recv,
+        sock_recv_into,
+        sock_recvfrom,
+        sock_recvfrom_into,
+        sock_recvmsg,
+        sock_recvmsg_into,
+        sock_repr,
+        sock_send,
+        sock_sendall,
+        sock_sendmsg,
+        sock_sendmsg_afalg,
+        sock_sendto,
+        sock_setblocking,
+        sock_setsockopt,
+        sock_settimeout,
+        sock_shutdown,
+        sock_traverse
+    }
+    socket_object --> runtime.python.modules.socket {
+        c_int,
+        get_CMSG_LEN,
+        get_CMSG_SPACE,
+        set_inheritable_new,
+        sock_close,
+        sock_init
+    }
+    socket_platform --> runtime.python.bindings.socket {
+        HAS_ALG,
+        HAS_GETHOSTBYNAME_R,
+        HAS_VSOCK,
+        PLATFORM
+    }
+    socket_platform --> runtime.python.modules.socket {
+        HAS_GETHOSTBYNAME_R,
+        HAS_SA_LEN,
+        HAS_SOCK_CLOEXEC,
+        PLATFORM,
+        addrinfo,
+        host_by_addr,
+        host_by_name,
+        host_error,
+        set_host_name,
+        sockaddr_family,
+        store_sa_family,
+        store_sa_len
+    }
+    socket_platform --> runtime.python.modules.socket_address {
+        HAS_ABSTRACT_UNIX,
+        HAS_ALG,
+        HAS_CAN,
+        HAS_CAN_BCM,
+        HAS_CAN_ISOTP,
+        HAS_CAN_J1939,
+        HAS_CAN_RAW,
+        HAS_NETLINK,
+        HAS_PACKET,
+        HAS_QIPCRTR,
+        HAS_RDS,
+        HAS_SA_LEN,
+        HAS_SYSTEM,
+        HAS_TIPC,
+        HAS_VSOCK,
+        SOCKADDR_UN_SIZE,
+        SUN_PATH_SIZE,
+        addrinfo,
+        sockaddr_family,
+        store_sa_family,
+        store_sa_len
+    }
+    socket_platform --> runtime.python.modules.socket_core {
+        HAS_SOCK_CLOEXEC,
+        HAS_SOCK_NONBLOCK
+    }
+    socket_platform --> runtime.python.modules.socket_object {
+        CMSGHDR_SIZE,
+        HAS_ACCEPT4,
+        HAS_ALG,
+        HAS_SOCK_CLOEXEC,
+        HAS_SO_PROTOCOL,
+        HAS_VSOCK,
+        MSGHDR_SIZE,
+        accept_cloexec,
+        cmsg_align,
+        cmsg_length,
+        cmsg_nxthdr,
+        cmsghdr,
+        msg_controllen,
+        msghdr,
+        set_cmsg_length,
+        set_msg_control,
+        set_msg_iov,
+        set_msg_name,
+        sockaddr_family,
+        store_sa_family
+    }
+    sqlite3 --> runtime.python.bindings.clinic.sqlite3 {
+        Connection_token,
+        Cursor_token,
+        LEGACY_TRANSACTION_CONTROL,
+        Row_token,
+        _sqlite3_Cursor_arraysize_get_impl,
+        _sqlite3_Cursor_arraysize_set_impl,
+        blob_close_impl,
+        blob_enter_impl,
+        blob_exit_impl,
+        blob_read_impl,
+        blob_seek_impl,
+        blob_tell_impl,
+        blob_write_impl,
+        blobopen_impl,
+        clinic_state_ConnectionType,
+        clinic_state_PrepareProtocolType,
+        convert_autocommit_converter,
+        convert_isolation_level_converter,
+        convert_sqlite3_int64_converter,
+        create_window_function_impl,
+        deserialize_impl,
+        getconfig_impl,
+        getlimit_impl,
+        pysqlite_adapt_impl,
+        pysqlite_complete_statement_impl,
+        pysqlite_connection_backup_impl,
+        pysqlite_connection_close_impl,
+        pysqlite_connection_commit_impl,
+        pysqlite_connection_create_aggregate_impl,
+        pysqlite_connection_create_collation_impl,
+        pysqlite_connection_create_function_impl,
+        pysqlite_connection_cursor_impl,
+        pysqlite_connection_enable_load_extension_impl,
+        pysqlite_connection_enter_impl,
+        pysqlite_connection_execute_impl,
+        pysqlite_connection_executemany_impl,
+        pysqlite_connection_executescript_impl,
+        pysqlite_connection_exit_impl,
+        pysqlite_connection_init_impl,
+        pysqlite_connection_interrupt_impl,
+        pysqlite_connection_iterdump_impl,
+        pysqlite_connection_load_extension_impl,
+        pysqlite_connection_rollback_impl,
+        pysqlite_connection_set_authorizer_impl,
+        pysqlite_connection_set_progress_handler_impl,
+        pysqlite_connection_set_trace_callback_impl,
+        pysqlite_cursor_close_impl,
+        pysqlite_cursor_execute_impl,
+        pysqlite_cursor_executemany_impl,
+        pysqlite_cursor_executescript_impl,
+        pysqlite_cursor_fetchall_impl,
+        pysqlite_cursor_fetchmany_impl,
+        pysqlite_cursor_fetchone_impl,
+        pysqlite_cursor_init_impl,
+        pysqlite_cursor_setinputsizes_impl,
+        pysqlite_cursor_setoutputsize_impl,
+        pysqlite_enable_callback_trace_impl,
+        pysqlite_register_adapter_impl,
+        pysqlite_register_converter_impl,
+        pysqlite_row_keys_impl,
+        pysqlite_row_new_impl,
+        self_arraysize,
+        serialize_impl,
+        setconfig_impl,
+        setlimit_impl,
+        subclass_clinic_state_ConnectionType,
+        subclass_clinic_state_CursorType
+    }
+    sqlite3 --> runtime.python.bindings.sqlite3 {
+        Blob_token,
+        CONNECTION_MEMBERS,
+        CONNECTION_RECORD_SIZE,
+        CURSOR_MEMBERS,
+        CURSOR_RECORD_SIZE,
+        Connection_token,
+        Cursor_token,
+        ENABLE_LOAD_EXTENSION,
+        ERROR_CODES,
+        INTEGER_CONSTANTS,
+        LEGACY_TRANSACTION_CONTROL,
+        PrepareProtocol_token,
+        Row_token,
+        SqliteState,
+        Statement_token,
+        blob_ass_subscript,
+        blob_close_on_dealloc,
+        blob_length,
+        blob_subscript,
+        connection_call,
+        connection_finalize,
+        connection_get_autocommit,
+        connection_get_in_transaction,
+        connection_get_isolation_level,
+        connection_get_row_factory,
+        connection_get_sig,
+        connection_get_text_factory,
+        connection_get_total_changes,
+        connection_set_autocommit,
+        connection_set_isolation_level,
+        connection_set_row_factory,
+        connection_set_text_factory,
+        cursor_iternext,
+        cursor_of,
+        cursor_self_iter,
+        initialize_library,
+        library_version,
+        module_definition,
+        prepare_protocol_init,
+        pysqlite_connect,
+        row_hash,
+        row_item,
+        row_iter,
+        row_length,
+        row_richcompare,
+        row_subscript,
+        statement_finalize,
+        threadsafety
+    }
+    sre --> runtime.python.bindings.clinic.sre {
+        SRE_Pattern_token,
+        SRE_Scanner_token,
+        _sre_SRE_Match___copy___impl,
+        _sre_SRE_Match___deepcopy___impl,
+        _sre_SRE_Match_end_impl,
+        _sre_SRE_Match_expand_impl,
+        _sre_SRE_Match_groupdict_impl,
+        _sre_SRE_Match_groups_impl,
+        _sre_SRE_Match_span_impl,
+        _sre_SRE_Match_start_impl,
+        _sre_SRE_Pattern___copy___impl,
+        _sre_SRE_Pattern___deepcopy___impl,
+        _sre_SRE_Pattern_findall_impl,
+        _sre_SRE_Pattern_finditer_impl,
+        _sre_SRE_Pattern_fullmatch_impl,
+        _sre_SRE_Pattern_match_impl,
+        _sre_SRE_Pattern_scanner_impl,
+        _sre_SRE_Pattern_search_impl,
+        _sre_SRE_Pattern_split_impl,
+        _sre_SRE_Pattern_sub_impl,
+        _sre_SRE_Pattern_subn_impl,
+        _sre_SRE_Scanner_match_impl,
+        _sre_SRE_Scanner_search_impl,
+        _sre_ascii_iscased_impl,
+        _sre_ascii_tolower_impl,
+        _sre_compile_impl,
+        _sre_getcodesize_impl,
+        _sre_template_impl,
+        _sre_unicode_iscased_impl,
+        _sre_unicode_tolower_impl
+    }
+    sre --> runtime.python.bindings.sre {
+        COPYRIGHT,
+        MATCH_ENDPOS,
+        MATCH_PATTERN,
+        MATCH_POS,
+        MATCH_SIZE,
+        MATCH_STRING,
+        PATTERN_FLAGS,
+        PATTERN_GROUPS,
+        PATTERN_PATTERN,
+        PATTERN_SIZE,
+        PATTERN_WEAKREFLIST,
+        SCANNER_PATTERN,
+        SCANNER_SIZE,
+        SRE_CODE_SIZE,
+        SRE_MAXGROUPS,
+        SRE_Pattern_token,
+        SRE_Scanner_token,
+        STATE_COUNT,
+        STATE_MATCH_TYPE,
+        STATE_PATTERN_TYPE,
+        STATE_SCANNER_TYPE,
+        STATE_TEMPLATE_TYPE,
+        TEMPLATE_ITEM_SIZE,
+        TEMPLATE_SIZE,
+        match_clear,
+        match_dealloc,
+        match_getitem,
+        match_group,
+        match_lastgroup_get,
+        match_lastindex_get,
+        match_regs_get,
+        match_repr,
+        match_traverse,
+        pattern_clear,
+        pattern_dealloc,
+        pattern_groupindex,
+        pattern_hash,
+        pattern_repr,
+        pattern_richcompare,
+        pattern_traverse,
+        scanner_clear,
+        scanner_dealloc,
+        scanner_traverse,
+        template_clear,
+        template_dealloc,
+        template_traverse
+    }
+    sre_constants --> runtime.python.bindings.sre { SRE_MAGIC }
+    sre_constants --> runtime.python.modules.sre {
+        SRE_AT_BEGINNING,
+        SRE_AT_BEGINNING_LINE,
+        SRE_AT_BEGINNING_STRING,
+        SRE_AT_BOUNDARY,
+        SRE_AT_END,
+        SRE_AT_END_LINE,
+        SRE_AT_END_STRING,
+        SRE_AT_LOC_BOUNDARY,
+        SRE_AT_LOC_NON_BOUNDARY,
+        SRE_AT_NON_BOUNDARY,
+        SRE_AT_UNI_BOUNDARY,
+        SRE_AT_UNI_NON_BOUNDARY,
+        SRE_FLAG_ASCII,
+        SRE_FLAG_DEBUG,
+        SRE_FLAG_DOTALL,
+        SRE_FLAG_IGNORECASE,
+        SRE_FLAG_LOCALE,
+        SRE_FLAG_MULTILINE,
+        SRE_FLAG_UNICODE,
+        SRE_FLAG_VERBOSE,
+        SRE_INFO_CHARSET,
+        SRE_INFO_LITERAL,
+        SRE_INFO_PREFIX,
+        SRE_OP_ANY,
+        SRE_OP_ANY_ALL,
+        SRE_OP_ASSERT,
+        SRE_OP_ASSERT_NOT,
+        SRE_OP_AT,
+        SRE_OP_ATOMIC_GROUP,
+        SRE_OP_BIGCHARSET,
+        SRE_OP_BRANCH,
+        SRE_OP_CATEGORY,
+        SRE_OP_CHARSET,
+        SRE_OP_FAILURE,
+        SRE_OP_GROUPREF,
+        SRE_OP_GROUPREF_EXISTS,
+        SRE_OP_GROUPREF_IGNORE,
+        SRE_OP_GROUPREF_LOC_IGNORE,
+        SRE_OP_GROUPREF_UNI_IGNORE,
+        SRE_OP_IN,
+        SRE_OP_INFO,
+        SRE_OP_IN_IGNORE,
+        SRE_OP_IN_LOC_IGNORE,
+        SRE_OP_IN_UNI_IGNORE,
+        SRE_OP_JUMP,
+        SRE_OP_LITERAL,
+        SRE_OP_LITERAL_IGNORE,
+        SRE_OP_LITERAL_LOC_IGNORE,
+        SRE_OP_LITERAL_UNI_IGNORE,
+        SRE_OP_MARK,
+        SRE_OP_MAX_UNTIL,
+        SRE_OP_MIN_REPEAT_ONE,
+        SRE_OP_MIN_UNTIL,
+        SRE_OP_NEGATE,
+        SRE_OP_NOT_LITERAL,
+        SRE_OP_NOT_LITERAL_IGNORE,
+        SRE_OP_NOT_LITERAL_LOC_IGNORE,
+        SRE_OP_NOT_LITERAL_UNI_IGNORE,
+        SRE_OP_POSSESSIVE_REPEAT,
+        SRE_OP_POSSESSIVE_REPEAT_ONE,
+        SRE_OP_RANGE,
+        SRE_OP_RANGE_UNI_IGNORE,
+        SRE_OP_REPEAT,
+        SRE_OP_REPEAT_ONE,
+        SRE_OP_SUCCESS
+    }
+    sre_constants --> runtime.python.modules.sre_ucs1 {
+        SRE_AT_BEGINNING,
+        SRE_AT_BEGINNING_STRING,
+        SRE_INFO_CHARSET,
+        SRE_INFO_LITERAL,
+        SRE_INFO_PREFIX,
+        SRE_OP_AT,
+        SRE_OP_IN,
+        SRE_OP_INFO,
+        SRE_OP_LITERAL,
+        SRE_OP_SUCCESS
+    }
+    sre_constants --> runtime.python.modules.sre_ucs2 {
+        SRE_AT_BEGINNING,
+        SRE_AT_BEGINNING_STRING,
+        SRE_INFO_CHARSET,
+        SRE_INFO_LITERAL,
+        SRE_INFO_PREFIX,
+        SRE_OP_AT,
+        SRE_OP_IN,
+        SRE_OP_INFO,
+        SRE_OP_LITERAL,
+        SRE_OP_SUCCESS
+    }
+    sre_constants --> runtime.python.modules.sre_ucs4 {
+        SRE_AT_BEGINNING,
+        SRE_AT_BEGINNING_STRING,
+        SRE_INFO_CHARSET,
+        SRE_INFO_LITERAL,
+        SRE_INFO_PREFIX,
+        SRE_OP_AT,
+        SRE_OP_IN,
+        SRE_OP_INFO,
+        SRE_OP_LITERAL,
+        SRE_OP_SUCCESS
+    }
+    sre_engine --> runtime.python.bindings.sre { SRE_MAXREPEAT }
+    sre_engine --> runtime.python.modules.sre {
+        SRE_ERROR_INTERRUPTED,
+        SRE_ERROR_MEMORY,
+        SRE_ERROR_RECURSION_LIMIT,
+        SRE_MAXREPEAT,
+        SRE_STATE_SIZE,
+        SreRepeat,
+        SreState,
+        ascii_is_alpha,
+        data_stack_dealloc,
+        repeat_pool_clear,
+        sre_lower_ascii,
+        sre_lower_unicode,
+        sre_upper_unicode
+    }
+    sre_engine --> runtime.python.modules.sre_ucs1 {
+        JUMP_ASSERT,
+        JUMP_ASSERT_NOT,
+        JUMP_ATOMIC_GROUP,
+        JUMP_BRANCH,
+        JUMP_MAX_UNTIL_1,
+        JUMP_MAX_UNTIL_2,
+        JUMP_MAX_UNTIL_3,
+        JUMP_MIN_REPEAT_ONE,
+        JUMP_MIN_UNTIL_1,
+        JUMP_MIN_UNTIL_2,
+        JUMP_MIN_UNTIL_3,
+        JUMP_NONE,
+        JUMP_POSS_REPEAT_1,
+        JUMP_POSS_REPEAT_2,
+        JUMP_REPEAT,
+        JUMP_REPEAT_ONE_1,
+        JUMP_REPEAT_ONE_2,
+        SRE_CONTEXT_SIZE,
+        SRE_ERROR_ILLEGAL,
+        SRE_ERROR_INTERRUPTED,
+        SRE_ERROR_MEMORY,
+        SRE_ERROR_STATE,
+        SRE_MAXREPEAT,
+        SRE_REPEAT_LAST_PTR,
+        SRE_REPEAT_SIZE,
+        SreContext,
+        SreRepeat,
+        SreState,
+        char_loc_ignore,
+        data_stack_grow,
+        sre_is_digit,
+        sre_is_linebreak,
+        sre_is_space,
+        sre_is_word,
+        sre_loc_is_word,
+        sre_lower_ascii,
+        sre_lower_locale,
+        sre_lower_unicode,
+        sre_uni_is_digit,
+        sre_uni_is_linebreak,
+        sre_uni_is_space,
+        sre_uni_is_word,
+        sre_upper_locale,
+        sre_upper_unicode
+    }
+    sre_engine --> runtime.python.modules.sre_ucs2 {
+        JUMP_ASSERT,
+        JUMP_ASSERT_NOT,
+        JUMP_ATOMIC_GROUP,
+        JUMP_BRANCH,
+        JUMP_MAX_UNTIL_1,
+        JUMP_MAX_UNTIL_2,
+        JUMP_MAX_UNTIL_3,
+        JUMP_MIN_REPEAT_ONE,
+        JUMP_MIN_UNTIL_1,
+        JUMP_MIN_UNTIL_2,
+        JUMP_MIN_UNTIL_3,
+        JUMP_NONE,
+        JUMP_POSS_REPEAT_1,
+        JUMP_POSS_REPEAT_2,
+        JUMP_REPEAT,
+        JUMP_REPEAT_ONE_1,
+        JUMP_REPEAT_ONE_2,
+        SRE_CONTEXT_SIZE,
+        SRE_ERROR_ILLEGAL,
+        SRE_ERROR_INTERRUPTED,
+        SRE_ERROR_MEMORY,
+        SRE_ERROR_STATE,
+        SRE_MAXREPEAT,
+        SRE_REPEAT_LAST_PTR,
+        SRE_REPEAT_SIZE,
+        SreContext,
+        SreRepeat,
+        SreState,
+        char_loc_ignore,
+        data_stack_grow,
+        sre_is_digit,
+        sre_is_linebreak,
+        sre_is_space,
+        sre_is_word,
+        sre_loc_is_word,
+        sre_lower_ascii,
+        sre_lower_locale,
+        sre_lower_unicode,
+        sre_uni_is_digit,
+        sre_uni_is_linebreak,
+        sre_uni_is_space,
+        sre_uni_is_word,
+        sre_upper_locale,
+        sre_upper_unicode
+    }
+    sre_engine --> runtime.python.modules.sre_ucs4 {
+        JUMP_ASSERT,
+        JUMP_ASSERT_NOT,
+        JUMP_ATOMIC_GROUP,
+        JUMP_BRANCH,
+        JUMP_MAX_UNTIL_1,
+        JUMP_MAX_UNTIL_2,
+        JUMP_MAX_UNTIL_3,
+        JUMP_MIN_REPEAT_ONE,
+        JUMP_MIN_UNTIL_1,
+        JUMP_MIN_UNTIL_2,
+        JUMP_MIN_UNTIL_3,
+        JUMP_NONE,
+        JUMP_POSS_REPEAT_1,
+        JUMP_POSS_REPEAT_2,
+        JUMP_REPEAT,
+        JUMP_REPEAT_ONE_1,
+        JUMP_REPEAT_ONE_2,
+        SRE_CONTEXT_SIZE,
+        SRE_ERROR_ILLEGAL,
+        SRE_ERROR_INTERRUPTED,
+        SRE_ERROR_MEMORY,
+        SRE_ERROR_STATE,
+        SRE_MAXREPEAT,
+        SRE_REPEAT_LAST_PTR,
+        SRE_REPEAT_SIZE,
+        SreContext,
+        SreRepeat,
+        SreState,
+        char_loc_ignore,
+        data_stack_grow,
+        sre_is_digit,
+        sre_is_linebreak,
+        sre_is_space,
+        sre_is_word,
+        sre_loc_is_word,
+        sre_lower_ascii,
+        sre_lower_locale,
+        sre_lower_unicode,
+        sre_uni_is_digit,
+        sre_uni_is_linebreak,
+        sre_uni_is_space,
+        sre_uni_is_word,
+        sre_upper_locale,
+        sre_upper_unicode
+    }
+    sre_locale --> runtime.python.modules.sre_engine {
+        sre_isalnum,
+        sre_tolower,
+        sre_toupper
+    }
+    sre_ucs1 --> runtime.python.modules.sre {
+        sre_match as ucs1_match,
+        sre_search as ucs1_search
+    }
+    sre_ucs2 --> runtime.python.modules.sre {
+        sre_match as ucs2_match,
+        sre_search as ucs2_search
+    }
+    sre_ucs4 --> runtime.python.modules.sre {
+        sre_match as ucs4_match,
+        sre_search as ucs4_search
+    }
+    ssl --> runtime.python.bindings.clinic.ssl {
+        MemoryBIO_token,
+        PY_SSL_ENCODING_PEM,
+        _SSLContext_token,
+        _ssl_Certificate_get_info_impl,
+        _ssl_Certificate_public_bytes_impl,
+        _ssl_MemoryBIO_eof_get_impl,
+        _ssl_MemoryBIO_impl,
+        _ssl_MemoryBIO_pending_get_impl,
+        _ssl_MemoryBIO_read_impl,
+        _ssl_MemoryBIO_write_eof_impl,
+        _ssl_MemoryBIO_write_impl,
+        _ssl_RAND_add_impl,
+        _ssl_RAND_bytes_impl,
+        _ssl_RAND_status_impl,
+        _ssl_SSLSession_has_ticket_get_impl,
+        _ssl_SSLSession_id_get_impl,
+        _ssl_SSLSession_ticket_lifetime_hint_get_impl,
+        _ssl_SSLSession_time_get_impl,
+        _ssl_SSLSession_timeout_get_impl,
+        _ssl__SSLContext__host_flags_get_impl,
+        _ssl__SSLContext__host_flags_set_impl,
+        _ssl__SSLContext__set_alpn_protocols_impl,
+        _ssl__SSLContext__wrap_bio_impl,
+        _ssl__SSLContext__wrap_socket_impl,
+        _ssl__SSLContext_cert_store_stats_impl,
+        _ssl__SSLContext_check_hostname_get_impl,
+        _ssl__SSLContext_check_hostname_set_impl,
+        _ssl__SSLContext_get_ca_certs_impl,
+        _ssl__SSLContext_get_ciphers_impl,
+        _ssl__SSLContext_impl,
+        _ssl__SSLContext_load_cert_chain_impl,
+        _ssl__SSLContext_load_dh_params_impl,
+        _ssl__SSLContext_load_verify_locations_impl,
+        _ssl__SSLContext_maximum_version_get_impl,
+        _ssl__SSLContext_maximum_version_set_impl,
+        _ssl__SSLContext_minimum_version_get_impl,
+        _ssl__SSLContext_minimum_version_set_impl,
+        _ssl__SSLContext_num_tickets_get_impl,
+        _ssl__SSLContext_num_tickets_set_impl,
+        _ssl__SSLContext_options_get_impl,
+        _ssl__SSLContext_options_set_impl,
+        _ssl__SSLContext_protocol_get_impl,
+        _ssl__SSLContext_security_level_get_impl,
+        _ssl__SSLContext_session_stats_impl,
+        _ssl__SSLContext_set_ciphers_impl,
+        _ssl__SSLContext_set_default_verify_paths_impl,
+        _ssl__SSLContext_set_ecdh_curve_impl,
+        _ssl__SSLContext_set_psk_client_callback_impl,
+        _ssl__SSLContext_set_psk_server_callback_impl,
+        _ssl__SSLContext_sni_callback_get_impl,
+        _ssl__SSLContext_sni_callback_set_impl,
+        _ssl__SSLContext_verify_flags_get_impl,
+        _ssl__SSLContext_verify_flags_set_impl,
+        _ssl__SSLContext_verify_mode_get_impl,
+        _ssl__SSLContext_verify_mode_set_impl,
+        _ssl__SSLSocket_cipher_impl,
+        _ssl__SSLSocket_compression_impl,
+        _ssl__SSLSocket_context_get_impl,
+        _ssl__SSLSocket_context_set_impl,
+        _ssl__SSLSocket_do_handshake_impl,
+        _ssl__SSLSocket_get_channel_binding_impl,
+        _ssl__SSLSocket_get_unverified_chain_impl,
+        _ssl__SSLSocket_get_verified_chain_impl,
+        _ssl__SSLSocket_getpeercert_impl,
+        _ssl__SSLSocket_owner_get_impl,
+        _ssl__SSLSocket_owner_set_impl,
+        _ssl__SSLSocket_pending_impl,
+        _ssl__SSLSocket_selected_alpn_protocol_impl,
+        _ssl__SSLSocket_server_hostname_get_impl,
+        _ssl__SSLSocket_server_side_get_impl,
+        _ssl__SSLSocket_session_get_impl,
+        _ssl__SSLSocket_session_reused_get_impl,
+        _ssl__SSLSocket_session_set_impl,
+        _ssl__SSLSocket_shared_ciphers_impl,
+        _ssl__SSLSocket_shutdown_impl,
+        _ssl__SSLSocket_verify_client_post_handshake_impl,
+        _ssl__SSLSocket_version_impl,
+        _ssl__SSLSocket_write_impl,
+        _ssl__test_decode_cert_impl,
+        _ssl_get_default_verify_paths_impl,
+        _ssl_nid2obj_impl,
+        _ssl_txt2obj_impl,
+        subclass_get_state_ctx_self_PySSLMemoryBIO_Type,
+        subclass_get_state_ctx_self_Sock_Type
+    }
+    ssl --> runtime.python.bindings.ssl {
+        PY_SSL_ENCODING_DER,
+        PY_SSL_ENCODING_PEM,
+        certificate_hash,
+        certificate_repr,
+        certificate_richcompare,
+        context_get_keylog_filename,
+        context_get_msg_callback,
+        context_get_post_handshake_auth,
+        context_set_keylog_filename,
+        context_set_msg_callback,
+        context_set_post_handshake_auth,
+        session_richcompare,
+        ssl_socket_read,
+        version_constants
+    }
+    ssl_cert --> runtime.python.modules.ssl {
+        asn1obj2py,
+        bytes_from_bio,
+        certificate_from_x509,
+        certificate_to_der,
+        certificates_from_stack,
+        decode_certificate,
+        pem_errors,
+        type_name_address,
+        unicode_from_bio,
+        x509name_print
+    }
+    ssl_core --> runtime.python.bindings.ssl {
+        Certificate_token,
+        HAS_SSLv3,
+        HAS_TLSv1,
+        HAS_TLSv1_1,
+        HAS_TLSv1_2,
+        HAS_TLSv1_3,
+        HAVE_POST_HS_AUTH,
+        MemoryBIO_token,
+        PY_PROTO_MAXIMUM_SUPPORTED,
+        PY_PROTO_MINIMUM_SUPPORTED,
+        PY_PROTO_SSLv3,
+        PY_PROTO_TLSv1,
+        PY_PROTO_TLSv1_1,
+        PY_PROTO_TLSv1_2,
+        PY_PROTO_TLSv1_3,
+        PY_SSL_CERT_NONE,
+        PY_SSL_CERT_OPTIONAL,
+        PY_SSL_CERT_REQUIRED,
+        PY_SSL_DEFAULT_CIPHER_STRING,
+        PY_SSL_ERROR_EOF,
+        PY_SSL_ERROR_INVALID_ERROR_CODE,
+        PY_SSL_ERROR_SSL,
+        PY_SSL_ERROR_SYSCALL,
+        PY_SSL_ERROR_WANT_CONNECT,
+        PY_SSL_ERROR_WANT_READ,
+        PY_SSL_ERROR_WANT_WRITE,
+        PY_SSL_ERROR_WANT_X509_LOOKUP,
+        PY_SSL_ERROR_ZERO_RETURN,
+        PY_SSL_VERSION_SSL3,
+        PY_SSL_VERSION_TLS,
+        PY_SSL_VERSION_TLS1,
+        PY_SSL_VERSION_TLS1_1,
+        PY_SSL_VERSION_TLS1_2,
+        PY_SSL_VERSION_TLS_CLIENT,
+        PY_SSL_VERSION_TLS_SERVER,
+        SSLModuleState,
+        SSLSession_token,
+        STATE_CERTIFICATE_TYPE,
+        STATE_CERT_VERIFICATION_ERROR,
+        STATE_CONTEXT_TYPE,
+        STATE_COUNT,
+        STATE_EOF_ERROR,
+        STATE_ERR_CODES_TO_NAMES,
+        STATE_LIB_CODES_TO_NAMES,
+        STATE_MEMORY_BIO_TYPE,
+        STATE_SESSION_TYPE,
+        STATE_SOCKET_TYPE,
+        STATE_SOCK_TYPE,
+        STATE_SSL_ERROR,
+        STATE_STR_LIBRARY,
+        STATE_STR_REASON,
+        STATE_STR_VERIFY_CODE,
+        STATE_STR_VERIFY_MESSAGE,
+        STATE_SYSCALL_ERROR,
+        STATE_WANT_READ_ERROR,
+        STATE_WANT_WRITE_ERROR,
+        STATE_ZERO_RETURN_ERROR,
+        _SSLContext_token,
+        _SSLSocket_token,
+        socket_of,
+        ssl_module_token
+    }
+    ssl_core --> runtime.python.modules.ssl {
+        AlpnProtocols,
+        CertificateState,
+        HAS_SSLv3,
+        HAS_TLSv1,
+        HAS_TLSv1_1,
+        HAS_TLSv1_2,
+        HAVE_POST_HS_AUTH,
+        INT_MAX,
+        MemoryBIOState,
+        MemoryBIO_token,
+        PY_PROTO_MAXIMUM_AVAILABLE,
+        PY_PROTO_MAXIMUM_SUPPORTED,
+        PY_PROTO_MINIMUM_AVAILABLE,
+        PY_PROTO_MINIMUM_SUPPORTED,
+        PY_PROTO_SSLv3,
+        PY_PROTO_TLSv1,
+        PY_PROTO_TLSv1_1,
+        PY_PROTO_TLSv1_2,
+        PY_PROTO_TLSv1_3,
+        PY_SSL_CERT_NONE,
+        PY_SSL_CERT_OPTIONAL,
+        PY_SSL_CERT_REQUIRED,
+        PY_SSL_CLIENT,
+        PY_SSL_DEFAULT_CIPHER_STRING,
+        PY_SSL_ERROR_NO_SOCKET,
+        PY_SSL_MIN_PROTOCOL,
+        PY_SSL_SERVER,
+        PY_SSL_VERSION_SSL2,
+        PY_SSL_VERSION_SSL3,
+        PY_SSL_VERSION_TLS,
+        PY_SSL_VERSION_TLS1,
+        PY_SSL_VERSION_TLS1_1,
+        PY_SSL_VERSION_TLS1_2,
+        PY_SSL_VERSION_TLS_CLIENT,
+        PY_SSL_VERSION_TLS_SERVER,
+        PySSL_CB_MAXLEN,
+        SOCKET_HAS_BEEN_CLOSED,
+        SOCKET_HAS_TIMED_OUT,
+        SOCKET_IS_NONBLOCKING,
+        SOCKET_OPERATION_OK,
+        SOCKET_TOO_LARGE_FOR_SELECT,
+        SSLContextState,
+        SSLSessionState,
+        SSLSession_token,
+        SSLSocketState,
+        STATE_CERTIFICATE_TYPE,
+        STATE_CONTEXT_TYPE,
+        STATE_MEMORY_BIO_TYPE,
+        STATE_SESSION_TYPE,
+        STATE_SOCKET_TYPE,
+        STATE_SOCK_TYPE,
+        STATE_SSL_ERROR,
+        UINT_MAX,
+        _SSLContext_token,
+        _SSLSocket_token,
+        certificate_of,
+        chain_exceptions,
+        context_of,
+        free_octet_string,
+        get_socket,
+        memory_bio_of,
+        module_native,
+        module_of_object,
+        module_of_socket,
+        module_of_type,
+        mutex_new,
+        session_of,
+        set_ssl_error,
+        socket_fd,
+        socket_of,
+        socket_timeout,
+        ssl_select,
+        ssl_set_error,
+        state_ref,
+        type_check
+    }
+    ssl_core --> runtime.python.modules.ssl_cert {
+        CertificateState,
+        Certificate_token,
+        STATE_CERTIFICATE_TYPE,
+        STATE_SSL_ERROR,
+        X509_NAME_MAXLEN,
+        set_ssl_error,
+        state_ref
+    }
+    ssl_errors --> runtime.python.bindings.ssl { ERROR_CODES, LIBRARY_CODES }
+    stat --> runtime.python.modules.posix_stat { S_IFDIR, S_IFLNK, S_IFMT, S_IFREG }
+    stat_records --> runtime.python.cpython_api { _Py_stat_struct }
+    stat_records --> runtime.python.modules.mmap { _Py_stat_struct }
+    stat_records --> runtime.python.modules.posix_stat { _Py_stat_struct }
+    stat_records --> runtime.python.modules.posix_stat_platform { _Py_stat_struct }
+    statistics --> runtime.python.bindings.clinic.statistics {
+        _statistics__normal_dist_inv_cdf_impl
+    }
+    struct --> runtime.python.bindings.clinic.struct {
+        Struct___init___impl,
+        Struct_iter_unpack_impl,
+        Struct_unpack_from_impl,
+        Struct_unpack_impl,
+        _clearcache_impl,
+        calcsize_impl,
+        convert_cache_struct_converter,
+        iter_unpack_impl,
+        unpack_from_impl,
+        unpack_impl
+    }
+    struct --> runtime.python.bindings.struct {
+        StructState,
+        Struct_token,
+        iterator_state,
+        module_error,
+        module_for,
+        state_for,
+        struct_module_token,
+        unpack_iterator_token
+    }
+    tee --> runtime.python.modules.itertools {
+        TeeBindings,
+        jacpy_tee_block_clear,
+        jacpy_tee_block_count,
+        jacpy_tee_block_field,
+        jacpy_tee_block_init,
+        jacpy_tee_construct,
+        jacpy_tee_cursor_clear,
+        jacpy_tee_cursor_field,
+        jacpy_tee_next,
+        jacpy_tee_split,
+        tee_block,
+        tee_cursor
+    }
+    termios --> runtime.python.bindings.clinic.termios {
+        termios_tcdrain_impl,
+        termios_tcflow_impl,
+        termios_tcflush_impl,
+        termios_tcgetattr_impl,
+        termios_tcgetwinsize_impl,
+        termios_tcsendbreak_impl,
+        termios_tcsetattr_impl,
+        termios_tcsetwinsize_impl
+    }
+    termios_constants --> runtime.python.bindings.termios { CONSTANTS }
+    termios_constants --> runtime.python.modules.termios {
+        ICANON,
+        NCCS,
+        TIOCGWINSZ,
+        TIOCSWINSZ,
+        VMIN,
+        VTIME
+    }
+    termios_records --> runtime.python.bindings.termios { PLATFORM }
+    termios_records --> runtime.python.modules.termios {
+        CC_OFFSET,
+        TERMIOS_SIZE,
+        flags_of,
+        input_speed,
+        output_speed,
+        set_flags,
+        set_input_speed,
+        set_output_speed
+    }
+    time --> runtime.python.bindings.clinic.time {
+        convert_time_clockid_converter,
+        time_clock_gettime_impl,
+        time_clock_gettime_ns_impl
+    }
+    time --> runtime.python.bindings.time {
+        init_clock_bases,
+        init_timezone,
+        time_asctime,
+        time_clock_getres,
+        time_clock_settime,
+        time_clock_settime_ns,
+        time_ctime,
+        time_get_clock_info,
+        time_gmtime,
+        time_localtime,
+        time_mktime,
+        time_monotonic,
+        time_monotonic_ns,
+        time_perf_counter,
+        time_perf_counter_ns,
+        time_process_time,
+        time_process_time_ns,
+        time_pthread_getcpuclockid,
+        time_sleep,
+        time_strftime,
+        time_strptime,
+        time_thread_time,
+        time_thread_time_ns,
+        time_time,
+        time_time_ns,
+        time_tzset
+    }
+    time_constants --> runtime.python.bindings.time { CONSTANTS, PLATFORM }
+    time_constants --> runtime.python.modules.time {
+        CLOCKS_PER_SEC,
+        CLOCK_MONOTONIC,
+        CLOCK_PROCESS_CPUTIME_ID,
+        CLOCK_THREAD_CPUTIME_ID,
+        TIMER_ABSTIME
+    }
+    time_platform --> runtime.python.bindings.time { HAS_PTHREAD_GETCPUCLOCKID }
+    time_platform --> runtime.python.modules.time {
+        HAS_CLOCK_NANOSLEEP,
+        clock_nanosleep,
+        pthread_getcpuclockid
+    }
+    time_records --> runtime.python.cpython_api { timespec, timeval, tm }
+    time_records --> runtime.python.modules.datetime_date { tm }
+    time_records --> runtime.python.modules.datetime_datetime { tm }
+    time_records --> runtime.python.modules.datetime_format { tm }
+    time_records --> runtime.python.modules.posix_fileio { timespec }
+    time_records --> runtime.python.modules.posix_fileio_platform { timespec }
+    time_records --> runtime.python.modules.posix_files { timespec }
+    time_records --> runtime.python.modules.select { timespec, timeval }
+    time_records --> runtime.python.modules.time { timespec, timeval, tm, tms }
+    time_records --> runtime.python.modules.time_platform { timespec }
+    unicodedata --> runtime.python.bindings.clinic.unicodedata {
+        unicodedata_UCD_bidirectional_impl,
+        unicodedata_UCD_category_impl,
+        unicodedata_UCD_combining_impl,
+        unicodedata_UCD_decimal_impl,
+        unicodedata_UCD_decomposition_impl,
+        unicodedata_UCD_digit_impl,
+        unicodedata_UCD_east_asian_width_impl,
+        unicodedata_UCD_is_normalized_impl,
+        unicodedata_UCD_lookup_impl,
+        unicodedata_UCD_mirrored_impl,
+        unicodedata_UCD_name_impl,
+        unicodedata_UCD_normalize_impl,
+        unicodedata_UCD_numeric_impl
+    }
+    unicodedata --> runtime.python.bindings.unicodedata {
+        UCD_token,
+        new_previous_version,
+        ucd_3_2_0_version,
+        unicodedata_create_capi
+    }
+    unicodedata_db --> runtime.python.bindings.unicodedata { UNIDATA_VERSION }
+    unicodedata_db --> runtime.python.modules.unicodedata {
+        CHANGES_3_2_0_SHIFT,
+        COMP_SHIFT,
+        ChangeRecord,
+        DECOMP_SHIFT,
+        DatabaseRecord,
+        NORMALIZATION_3_2_0_LENGTH,
+        Reindex,
+        SHIFT,
+        TOTAL_LAST,
+        _PyUnicode_BidirectionalNames,
+        _PyUnicode_CategoryNames,
+        _PyUnicode_Database_Records,
+        _PyUnicode_EastAsianWidthNames,
+        ucd_change_records_3_2_0,
+        ucd_changes_3_2_0_data,
+        ucd_changes_3_2_0_index,
+        ucd_comp_data,
+        ucd_comp_index,
+        ucd_decomp_data,
+        ucd_decomp_index1,
+        ucd_decomp_index2,
+        ucd_decomp_prefix,
+        ucd_index1,
+        ucd_index2,
+        ucd_nfc_first,
+        ucd_nfc_last,
+        ucd_normalization_3_2_0
+    }
+    unicodename_db --> runtime.python.modules.unicodedata {
+        DAWG_CODEPOINT_TO_POS_NOTFOUND,
+        DAWG_CODEPOINT_TO_POS_SHIFT,
+        DERIVED_NAME_PREFIXES_LENGTH,
+        DERIVED_NAME_RANGES_LENGTH,
+        NAME_MAXLEN,
+        aliases_end,
+        aliases_start,
+        named_sequences_end,
+        named_sequences_start,
+        ucn_dawg_codepoint_to_pos_index1,
+        ucn_dawg_codepoint_to_pos_index2,
+        ucn_dawg_pos_to_codepoint,
+        ucn_derived_name_prefixes,
+        ucn_derived_name_ranges,
+        ucn_name_aliases,
+        ucn_named_sequence_chars,
+        ucn_named_sequence_lengths,
+        ucn_packed_name_dawg
+    }
+    uuid --> runtime.python.bindings.uuid { py_uuid_generate_time_safe }
+    uuid_library --> runtime.python.bindings.uuid {
+        HAVE_GENERATE_TIME_SAFE,
+        HAVE_GENERATE_TIME_SAFE_STABLE_MAC,
+        HAVE_UUID_HEADER
+    }
+    uuid_library --> runtime.python.modules.uuid {
+        HAVE_GENERATE_TIME_SAFE,
+        generate_time
+    }
+    zoneinfo --> runtime.python.bindings.clinic.zoneinfo {
+        ZoneInfo_token,
+        zoneinfo_ZoneInfo__unpickle_impl,
+        zoneinfo_ZoneInfo_clear_cache_impl,
+        zoneinfo_ZoneInfo_dst_impl,
+        zoneinfo_ZoneInfo_from_file_impl,
+        zoneinfo_ZoneInfo_impl,
+        zoneinfo_ZoneInfo_no_cache_impl,
+        zoneinfo_ZoneInfo_tzname_impl,
+        zoneinfo_ZoneInfo_utcoffset_impl
+    }
+    zoneinfo --> runtime.python.bindings.zoneinfo {
+        ZoneInfoModuleState,
+        ZoneInfo_token,
+        datetime_import,
+        module_definition,
+        populate_module_state,
+        zoneinfo_fromutc,
+        zoneinfo_init_subclass,
+        zoneinfo_reduce,
+        zoneinfo_repr,
+        zoneinfo_str
+    }
+    zstd --> runtime.python.bindings.clinic.zstd {
+        ZSTD_e_continue,
+        ZSTD_e_end,
+        _zstd_ZstdCompressor_compress_impl,
+        _zstd_ZstdCompressor_flush_impl,
+        _zstd_ZstdCompressor_new_impl,
+        _zstd_ZstdCompressor_set_pledged_input_size_impl,
+        _zstd_ZstdDecompressor_decompress_impl,
+        _zstd_ZstdDecompressor_new_impl,
+        _zstd_ZstdDecompressor_unused_data_get_impl,
+        _zstd_ZstdDict_as_digested_dict_get_impl,
+        _zstd_ZstdDict_as_prefix_get_impl,
+        _zstd_ZstdDict_as_undigested_dict_get_impl,
+        _zstd_ZstdDict_dict_content_get_impl,
+        _zstd_ZstdDict_new_impl,
+        _zstd_finalize_dict_impl,
+        _zstd_get_frame_info_impl,
+        _zstd_get_frame_size_impl,
+        _zstd_get_param_bounds_impl,
+        _zstd_set_parameter_types_impl,
+        _zstd_train_dict_impl,
+        convert_zstd_contentsize_converter
+    }
+    zstd --> runtime.python.bindings.zstd {
+        STATE_SLOTS,
+        ZSTD_COMPRESSOR_TYPE,
+        ZSTD_DECOMPRESSOR_TYPE,
+        ZSTD_DICT_TYPE,
+        ZSTD_ERROR,
+        ZSTD_btlazy2,
+        ZSTD_btopt,
+        ZSTD_btultra,
+        ZSTD_btultra2,
+        ZSTD_c_chainLog,
+        ZSTD_c_checksumFlag,
+        ZSTD_c_compressionLevel,
+        ZSTD_c_contentSizeFlag,
+        ZSTD_c_dictIDFlag,
+        ZSTD_c_enableLongDistanceMatching,
+        ZSTD_c_hashLog,
+        ZSTD_c_jobSize,
+        ZSTD_c_ldmBucketSizeLog,
+        ZSTD_c_ldmHashLog,
+        ZSTD_c_ldmHashRateLog,
+        ZSTD_c_ldmMinMatch,
+        ZSTD_c_minMatch,
+        ZSTD_c_nbWorkers,
+        ZSTD_c_overlapLog,
+        ZSTD_c_searchLog,
+        ZSTD_c_strategy,
+        ZSTD_c_targetLength,
+        ZSTD_c_windowLog,
+        ZSTD_d_windowLogMax,
+        ZSTD_dfast,
+        ZSTD_e_continue,
+        ZSTD_e_end,
+        ZSTD_e_flush,
+        ZSTD_fast,
+        ZSTD_greedy,
+        ZSTD_lazy,
+        ZSTD_lazy2,
+        ZstdCompressor_token,
+        ZstdDecompressor_token,
+        ZstdDict_token,
+        compressor_of,
+        decompressor_of,
+        release_compressor_context,
+        release_decompressor_context,
+        zstd_default_level,
+        zstd_dict_id,
+        zstd_dict_length,
+        zstd_dict_repr,
+        zstd_dstream_out_size,
+        zstd_version,
+        zstd_version_number
+    }
 }
 
 graph import runtime.python.bindings.clinic {
@@ -23311,6 +36456,360 @@ graph import runtime.python.bindings.clinic {
         py_sha3_new_new,
         sha3_224_methods,
         shake_128_methods
+    }
+    abc --> runtime.python.bindings.abc { module_methods }
+    array --> runtime.python.bindings.array {
+        array_getsets_itemsize_doc,
+        array_getsets_typecode_doc,
+        array_methods,
+        array_methods___class_getitem___doc,
+        arrayiterator_methods,
+        arraytype_doc,
+        module_doc,
+        module_methods
+    }
+    asyncio --> runtime.python.bindings.asyncio {
+        FutureType_methods___class_getitem___doc,
+        Future_doc,
+        Future_getset,
+        Future_methods,
+        TaskType_methods___class_getitem___doc,
+        Task_doc,
+        Task_getset,
+        Task_methods,
+        _asyncio_Future___init___init,
+        _asyncio_Task___init___init,
+        module_methods
+    }
+    binascii --> runtime.python.bindings.binascii { doc_binascii, module_methods }
+    bisect --> runtime.python.bindings.bisect { module_doc, module_methods }
+    bz2 --> runtime.python.bindings.bz2 {
+        BZ2Decompressor_eof__doc__,
+        BZ2Decompressor_needs_input_doc,
+        BZ2Decompressor_unused_data__doc__
+    }
+    cmath --> runtime.python.bindings.cmath { module_doc, module_methods }
+    codecs --> runtime.python.bindings.codecs { module_methods }
+    collections --> runtime.python.bindings.collections {
+        collections_doc,
+        defdict_class_getitem_doc,
+        defdict_copy_doc,
+        defdict_doc,
+        defdict_members_default_factory_doc,
+        defdict_missing_doc,
+        deque_doc,
+        deque_getset_maxlen_doc,
+        deque_init_init,
+        deque_methods,
+        deque_methods___class_getitem___doc,
+        length_hint_doc,
+        module_methods,
+        reduce_doc,
+        tuplegetter_new_new
+    }
+    csv --> runtime.python.bindings.csv {
+        Dialect_Type_doc,
+        Reader_Type_doc,
+        Writer_Type_doc,
+        csv_module_doc,
+        csv_reader_doc,
+        csv_register_dialect_doc,
+        csv_writer_doc,
+        csv_writerow_doc,
+        csv_writerows_doc,
+        dialect_reduce_doc,
+        module_methods
+    }
+    datetime --> runtime.python.bindings.datetime {
+        date_methods,
+        datetime_methods,
+        iso_calendar_date_new_new
+    }
+    elementtree --> runtime.python.bindings.elementtree {
+        Element_methods,
+        TreeBuilder_methods,
+        XMLParser_methods,
+        _elementtree_TreeBuilder___init___init,
+        _elementtree_XMLParser___init___init,
+        module_methods
+    }
+    fcntl --> runtime.python.bindings.fcntl { module_methods }
+    functools --> runtime.python.bindings.functools {
+        _functools_doc,
+        _lru_cache_wrapper_methods,
+        keyobject_members_obj_doc,
+        lru_cache_doc,
+        module_methods,
+        partial_doc,
+        partial_memberlist_args_doc,
+        partial_memberlist_func_doc,
+        partial_memberlist_keywords_doc,
+        partial_methods___class_getitem___doc,
+        placeholder_doc
+    }
+    hashopenssl --> runtime.python.bindings.hashopenssl {
+        HASHXOF_methods,
+        HASH_methods,
+        HMAC_methods,
+        module_methods
+    }
+    heapq --> runtime.python.bindings.heapq { __about__, module_doc, module_methods }
+    itertools --> runtime.python.bindings.itertools {
+        _tee_doc,
+        accumulate_doc,
+        batched_doc,
+        batched_new_new,
+        chain_class_getitem_doc,
+        chain_doc,
+        chain_methods,
+        combinations_doc,
+        combinations_with_replacement_doc,
+        compress_doc,
+        count_doc,
+        cycle_doc,
+        dropwhile_doc,
+        filterfalse_doc,
+        groupby_doc,
+        islice_doc,
+        itertools__grouper_new,
+        itertools__tee_new,
+        itertools_accumulate_new,
+        itertools_combinations_new,
+        itertools_combinations_with_replacement_new,
+        itertools_compress_new,
+        itertools_count_new,
+        itertools_cycle_new,
+        itertools_dropwhile_new,
+        itertools_filterfalse_new,
+        itertools_groupby_new,
+        itertools_permutations_new,
+        itertools_starmap_new,
+        itertools_takewhile_new,
+        itertools_teedataobject_new,
+        length_hint_doc,
+        module_doc,
+        module_methods,
+        pairwise_doc,
+        pairwise_new_new,
+        permutations_doc,
+        product_doc,
+        repeat_doc,
+        sizeof_doc,
+        starmap_doc,
+        takewhile_doc,
+        teecopy_doc,
+        teedataobject_doc,
+        zip_longest_doc
+    }
+    json --> runtime.python.bindings.json {
+        encoder_doc,
+        encoder_members_default_doc,
+        encoder_members_encoder_doc,
+        encoder_members_indent_doc,
+        encoder_members_item_separator_doc,
+        encoder_members_key_separator_doc,
+        encoder_members_markers_doc,
+        encoder_members_skipkeys_doc,
+        encoder_members_sort_keys_doc,
+        module_doc,
+        pydoc_encode_basestring,
+        pydoc_encode_basestring_ascii,
+        pydoc_scanstring,
+        scanner_doc,
+        scanner_members_object_hook_doc,
+        scanner_members_parse_constant_doc,
+        scanner_members_parse_float_doc,
+        scanner_members_parse_int_doc,
+        scanner_members_strict_doc
+    }
+    locale --> runtime.python.bindings.locale { module_methods }
+    lsprof --> runtime.python.bindings.lsprof {
+        Profiler_doc,
+        Profiler_methods,
+        profiler_init_init
+    }
+    lzma --> runtime.python.bindings.lzma {
+        LZMACompressor_methods,
+        LZMADecompressor_doc,
+        LZMADecompressor_methods,
+        _lzma_LZMADecompressor_new,
+        module_methods
+    }
+    math --> runtime.python.bindings.math {
+        math_acos_doc,
+        math_acosh_doc,
+        math_asin_doc,
+        math_asinh_doc,
+        math_atan2_doc,
+        math_atan_doc,
+        math_atanh_doc,
+        math_cbrt_doc,
+        math_copysign_doc,
+        math_cos_doc,
+        math_cosh_doc,
+        math_erf_doc,
+        math_erfc_doc,
+        math_exp2_doc,
+        math_exp_doc,
+        math_expm1_doc,
+        math_fabs_doc,
+        math_gamma_doc,
+        math_lgamma_doc,
+        math_log1p_doc,
+        math_log_doc,
+        math_remainder_doc,
+        math_sin_doc,
+        math_sinh_doc,
+        math_sqrt_doc,
+        math_tan_doc,
+        math_tanh_doc,
+        module_doc,
+        module_methods
+    }
+    mmap --> runtime.python.bindings.mmap { mmap_methods }
+    multibytecodec --> runtime.python.bindings.multibytecodec {
+        MultibyteCodec_methods,
+        MultibyteIncrementalDecoder_methods,
+        MultibyteIncrementalEncoder_methods,
+        MultibyteStreamReader_methods,
+        MultibyteStreamWriter_methods,
+        module_methods
+    }
+    multiprocessing --> runtime.python.bindings.multiprocessing {
+        SemLock_methods,
+        _multiprocessing_SemLock_new,
+        module_methods
+    }
+    operator --> runtime.python.bindings.operator {
+        _operator_call__doc__,
+        attrgetter_doc,
+        itemgetter_doc,
+        methodcaller_doc,
+        module_methods,
+        operator_doc,
+        reduce_doc
+    }
+    pickle --> runtime.python.bindings.pickle {
+        PicklerMemoProxy_methods,
+        Pickler_doc,
+        Pickler_methods,
+        Pickler_methods_persistent_id_doc,
+        UnpicklerMemoProxy_methods,
+        Unpickler_doc,
+        Unpickler_methods,
+        _pickle_Pickler___init___init,
+        _pickle_Unpickler___init___init,
+        module_methods,
+        pickle_module_doc
+    }
+    posix --> runtime.python.bindings.posix {
+        DirEntry_methods,
+        module_methods,
+        module_methods_darwin,
+        module_methods_linux,
+        os_sched_param_new
+    }
+    posixshmem --> runtime.python.bindings.posixshmem { module_methods }
+    posixsubprocess --> runtime.python.bindings.posixsubprocess { module_methods }
+    pyexpat --> runtime.python.bindings.pyexpat { module_methods, xmlparser_methods }
+    queue --> runtime.python.bindings.queue {
+        SimpleQueue_doc,
+        SimpleQueue_methods,
+        queue_module_doc,
+        simplequeue_methods___class_getitem___doc,
+        simplequeue_new_new
+    }
+    random --> runtime.python.bindings.random {
+        Random_methods,
+        module_doc,
+        random_doc,
+        random_init_init
+    }
+    select --> runtime.python.bindings.select {
+        epoll_methods,
+        kqueue_doc,
+        kqueue_methods,
+        module_methods,
+        poll_methods,
+        select_epoll_new,
+        select_kqueue_new
+    }
+    socket --> runtime.python.bindings.socket {
+        module_methods,
+        sock_initobj_init,
+        socket_methods
+    }
+    sqlite3 --> runtime.python.bindings.sqlite3 {
+        Blob_methods,
+        Connection_methods,
+        Cursor_getset,
+        Cursor_methods,
+        Row_methods,
+        module_methods,
+        pysqlite_connect_doc,
+        pysqlite_connection_init_init,
+        pysqlite_cursor_init_init,
+        pysqlite_row_new_new
+    }
+    sre --> runtime.python.bindings.sre {
+        SRE_Match_methods,
+        SRE_Pattern_methods,
+        SRE_Scanner_methods,
+        module_methods
+    }
+    ssl --> runtime.python.bindings.ssl {
+        Certificate_methods,
+        MemoryBIO_getset,
+        MemoryBIO_methods,
+        SSLSession_getset,
+        _SSLContext_getset,
+        _SSLContext_methods,
+        _SSLSocket_getset,
+        _SSLSocket_methods,
+        _ssl_MemoryBIO_new,
+        _ssl__SSLContext_new,
+        module_methods
+    }
+    statistics --> runtime.python.bindings.statistics { module_methods, statistics_doc }
+    struct --> runtime.python.bindings.struct {
+        Struct___init___init,
+        Struct_methods,
+        module_doc,
+        module_methods,
+        pack_doc,
+        pack_into_doc,
+        s__doc__,
+        s_getsetlist_format_doc,
+        s_getsetlist_size_doc,
+        s_pack__doc__,
+        s_pack_into__doc__,
+        s_sizeof__doc__
+    }
+    termios --> runtime.python.bindings.termios { module_methods }
+    time --> runtime.python.bindings.time { module_methods }
+    unicodedata --> runtime.python.bindings.unicodedata { UCD_methods }
+    zlib --> runtime.python.bindings.zlib {
+        ZlibDecompressor__new____doc__,
+        ZlibDecompressor_eof__doc__,
+        ZlibDecompressor_needs_input_doc,
+        ZlibDecompressor_unused_data__doc__
+    }
+    zoneinfo --> runtime.python.bindings.zoneinfo {
+        ZoneInfo_methods,
+        zoneinfo_ZoneInfo_new
+    }
+    zstd --> runtime.python.bindings.zstd {
+        ZstdCompressor_doc,
+        ZstdCompressor_methods,
+        ZstdDecompressor_doc,
+        ZstdDecompressor_getset,
+        ZstdDecompressor_methods,
+        ZstdDict_doc,
+        ZstdDict_getset,
+        _zstd_ZstdCompressor_new_new,
+        _zstd_ZstdDecompressor_new_new,
+        _zstd_ZstdDict_new_new,
+        module_methods
     }
 }
 
@@ -23446,4 +36945,757 @@ graph import packages {
         load_template_jab
     }
     verify --> cli.commands.project.publish { run_verify }
+}
+
+graph import artifacts {
+    kit --> artifacts.router._omitted { kit_image }
+    kit --> client.js_runtime.BunArtifact.build { osarch }
+    kit --> client.js_runtime.BunArtifact.probe_kit { kit_image }
+    kit --> compiler.backends.native.floors { osarch, runtime_floor_root }
+    kit --> compiler.backends.native.kernel_resolve._bundled_kernel { kit_image }
+    kit --> compiler.backends.native.link_plan.link_artifact { osarch }
+    kit --> compiler.backends.native.llvm.shim_path.ShimArtifact.probe_kit {
+        kit_image,
+        kit_path
+    }
+    kit --> compiler.backends.native.static_link.floor_lib_dir { osarch }
+    kit --> compiler.backends.native.static_link.musl_lib_dir { osarch }
+    kit --> compiler.types.stubcat.locate.StubcatArtifact.probe_kit {
+        kit_image,
+        kit_path
+    }
+    kit --> dist.interpreter.JacPythonArtifact.probe_kit { kit_image }
+    kit --> dist.precompile_bytecode.kit_omissions { pr_kit_omits }
+    model --> artifacts.router {
+        Artifact,
+        ArtifactKind,
+        ArtifactUnavailable,
+        Probe,
+        ReleasePolicy,
+        Resolution,
+        Source
+    }
+    model --> cli.commands.execution._run_node_tool { ArtifactUnavailable }
+    model --> cli.commands.native { ArtifactUnavailable, Probe }
+    model --> client.cli.run_npm_add_global { ArtifactUnavailable }
+    model --> client.js_runtime { Artifact, ArtifactKind, Probe, ReleasePolicy, Source }
+    model --> compiler.backends.native.floors {
+        Artifact,
+        ArtifactKind,
+        Probe,
+        ReleasePolicy,
+        Source
+    }
+    model --> compiler.backends.native.kernel_resolve {
+        Artifact,
+        ArtifactKind,
+        Probe,
+        ReleasePolicy,
+        Source
+    }
+    model --> compiler.backends.native.llvm.binding.ffi { ArtifactUnavailable }
+    model --> compiler.backends.native.llvm.shim_path {
+        Artifact,
+        ArtifactKind,
+        Probe,
+        ReleasePolicy,
+        Source
+    }
+    model --> compiler.tests.test_stubcat_roundtrip { Probe, Source }
+    model --> compiler.types.stubcat.locate {
+        Artifact,
+        ArtifactKind,
+        Probe,
+        ReleasePolicy,
+        Source
+    }
+    model --> data.pg_dist {
+        Artifact,
+        ArtifactKind,
+        ArtifactUnavailable,
+        Probe,
+        ReleasePolicy,
+        Source
+    }
+    model --> dist.interpreter { Artifact, ArtifactKind, Probe, ReleasePolicy, Source }
+    model --> dist.payload.fetch.fetch_bun { Source }
+    model --> dist.precompiled { Artifact, ArtifactKind, Probe, ReleasePolicy, Source }
+    model --> dist.seal.ensure_client_dist { ArtifactUnavailable }
+    model --> project.compiler_host.ProjectHost.typeshed_unavailable_reason {
+        ArtifactUnavailable
+    }
+    model --> server.server { ArtifactUnavailable }
+    model --> toolchains.c_backend {
+        Artifact as ArtifactBase,
+        ArtifactKind,
+        Probe,
+        ReleasePolicy,
+        Source
+    }
+    model --> toolchains.tools {
+        Artifact,
+        ArtifactKind,
+        ArtifactUnavailable,
+        Probe,
+        ReleasePolicy,
+        Source
+    }
+    router --> artifacts.model.Artifact.disabled { building_now }
+    router as router --> cli.commands.native | compiler.tests.test_stubcat_roundtrip;
+    router --> client.js_engine.engine_dir { require }
+    router --> client.js_runtime.JsEngineArtifact.floor_present { resolve }
+    router --> client.js_runtime.JsEngineArtifact.provide_floor { build }
+    router --> client.js_runtime._engine { resolve }
+    router --> client.js_runtime.js_runtime_path { require }
+    router --> compiler.backends.native.kernel_resolve.build_kernel { publish }
+    router --> compiler.backends.native.kernel_resolve.resolve_kernel { resolve }
+    router --> compiler.backends.native.llvm.shim_path.shim_path { require }
+    router --> compiler.backends.native.static_link.floor_lib_dir { resolve }
+    router --> compiler.backends.native.static_link.musl_lib_dir { resolve }
+    router --> compiler.backends.native.wasm_build._link_wasm_libc { require }
+    router --> compiler.backends.native.wasm_build._wasm_libc_dir { resolve }
+    router --> compiler.driver.toolchain.native_pipeline_available { resolve }
+    router --> compiler.types.stubcat.build.build_catalog { building }
+    router --> compiler.types.stubcat.locate.open_catalog { resolve }
+    router --> data.pg_dist.postgres_bin_dir { require }
+    router --> project.compiler_host.ProjectHost.typeshed_unavailable_reason { require }
+    router --> project.kernel_snapshot.build_stub_catalog {
+        artifact_named,
+        build,
+        forget
+    }
+    router --> project.kernel_snapshot.catalog_build_blocker { artifact_named }
+    router --> project.kernel_snapshot.require_stub_catalog { forget }
+    router --> toolchains.c_backend.ensure_c_backend { require }
+    router --> toolchains.tools.tool_path { require }
+}
+
+graph import runtime.na_stdlib {
+    _bz2_native --> runtime.na_stdlib.bz2 { bz2_compress, bz2_decompress }
+    _csprng_native --> runtime.na_stdlib.secrets { csprng_bytes }
+    _csprng_native --> runtime.na_stdlib.uuid { csprng_bytes }
+    _datetime_native --> runtime.na_stdlib.datetime {
+        dt_epoch_us,
+        dt_fmt_buf,
+        dt_gmtime,
+        dt_localtime,
+        dt_out_buf,
+        dt_out_str,
+        dt_strftime,
+        dt_tm,
+        dt_tm_gmtoff,
+        dt_tm_zone
+    }
+    _directory_native --> runtime.na_stdlib.glob { try_directory_names }
+    _directory_native --> runtime.na_stdlib.pathlib { directory_names }
+    _directory_native --> runtime.na_stdlib.shutil { try_directory_names }
+    _directory_native --> runtime.na_stdlib.uuid { try_directory_names }
+    _directory_native --> runtime.na_stdlib.zoneinfo { try_directory_names }
+    _dirent_native --> runtime.na_stdlib._directory_native { dirent_name }
+    _errno_native --> runtime.na_stdlib._datetime_native { last_errno, raise_os_error }
+    _errno_native --> runtime.na_stdlib._directory_native {
+        clear_errno,
+        last_errno,
+        raise_os_error
+    }
+    _errno_native --> runtime.na_stdlib._file_native { last_errno, raise_os_error }
+    _errno_native --> runtime.na_stdlib._replace_native { last_errno, raise_os_error }
+    _errno_native --> runtime.na_stdlib._socket_native { errno_message }
+    _errno_native --> runtime.na_stdlib._time_common { last_errno, raise_errno }
+    _errno_native --> runtime.na_stdlib.shutil { errno_message }
+    _errno_native --> runtime.na_stdlib.socket { errno_message }
+    _errno_platform --> runtime.na_stdlib._errno_native { errno_address }
+    _file_native --> runtime.na_stdlib.gettext { read_file_bytes }
+    _file_native --> runtime.na_stdlib.io {
+        close_stream,
+        open_stream,
+        read_stream,
+        read_stream_all,
+        seek_stream
+    }
+    _file_native --> runtime.na_stdlib.mimetypes { read_file_bytes }
+    _file_native --> runtime.na_stdlib.pathlib { read_file_bytes }
+    _file_native --> runtime.na_stdlib.uuid { read_file_bytes }
+    _file_native --> runtime.na_stdlib.zoneinfo { read_file_bytes }
+    _glob_native --> runtime.na_stdlib.glob { glob_lexists }
+    _hashlib_native --> runtime.na_stdlib.hashlib {
+        block_size_for,
+        ctx_require,
+        digest_size_for,
+        evp_ctx_clone,
+        evp_ctx_digest,
+        evp_ctx_free,
+        evp_ctx_new,
+        evp_ctx_update,
+        evp_md_for
+    }
+    _hashlib_native --> runtime.na_stdlib.hmac {
+        block_size_for,
+        ctx_require,
+        digest_size_for,
+        evp_md_for,
+        hmac_ctx_clone,
+        hmac_ctx_digest,
+        hmac_ctx_free,
+        hmac_ctx_new,
+        hmac_ctx_update
+    }
+    _hex --> runtime.na_stdlib.hashlib { to_hex }
+    _hex --> runtime.na_stdlib.hmac { to_hex }
+    _hex --> runtime.na_stdlib.secrets { to_hex }
+    _locale_tables --> runtime.na_stdlib.locale { _load_alias, _load_encalias }
+    _logging_native --> runtime.na_stdlib.logging {
+        log_fclose,
+        log_fflush,
+        log_fopen,
+        log_fputs,
+        log_strftime
+    }
+    _math_fused --> runtime.na_stdlib.math { fmadd }
+    _math_native --> runtime.na_stdlib.cmath {
+        m_asinh,
+        m_atan2,
+        m_copysign,
+        m_cos,
+        m_cosh,
+        m_exp,
+        m_fabs,
+        m_hypot,
+        m_log,
+        m_log1p,
+        m_sin,
+        m_sinh,
+        m_sqrt,
+        m_tan,
+        m_tanh
+    }
+    _math_native --> runtime.na_stdlib.math {
+        m_acos,
+        m_acosh,
+        m_asin,
+        m_asinh,
+        m_atan,
+        m_atan2,
+        m_atanh,
+        m_cbrt,
+        m_ceil,
+        m_copysign,
+        m_cos,
+        m_cosh,
+        m_erf,
+        m_erfc,
+        m_exp,
+        m_exp2,
+        m_expm1,
+        m_fabs,
+        m_floor,
+        m_fma,
+        m_fmod,
+        m_log,
+        m_log10,
+        m_log1p,
+        m_log2,
+        m_pow,
+        m_remainder,
+        m_sin,
+        m_sinh,
+        m_sqrt,
+        m_tan,
+        m_tanh,
+        m_trunc
+    }
+    _mimetypes_tables --> runtime.na_stdlib.mimetypes {
+        _default_common_ext,
+        _default_common_val,
+        _default_encodings_map,
+        _default_knownfiles,
+        _default_suffix_map,
+        _default_types_ext,
+        _default_types_val
+    }
+    _passwd_layout --> runtime.na_stdlib._user_home { PASSWD_DIR, PASSWD_SIZE }
+    _replace_native --> runtime.na_stdlib._os_native { replace_file }
+    _socket_abi --> runtime.na_stdlib._socket_native {
+        ADDRINFO_ADDRLEN_OFFSET,
+        ADDRINFO_ADDR_OFFSET,
+        ADDRINFO_NEXT_OFFSET,
+        ADDRINFO_SIZE
+    }
+    _socket_abi --> runtime.na_stdlib.socket { IPV6_FAMILY, address_family }
+    _socket_native --> runtime.na_stdlib.socket {
+        gai_str,
+        resolve_all,
+        sock_close,
+        sock_connect,
+        sock_open,
+        sock_recv,
+        sock_send
+    }
+    _sqlite3_native --> runtime.na_stdlib.sqlite3 {
+        sq3_bind_blob,
+        sq3_bind_double,
+        sq3_bind_int,
+        sq3_bind_null,
+        sq3_bind_parameter_count,
+        sq3_bind_parameter_name,
+        sq3_bind_seq,
+        sq3_bind_text,
+        sq3_busy_timeout,
+        sq3_changes,
+        sq3_clear_bindings,
+        sq3_close,
+        sq3_column_count,
+        sq3_column_name,
+        sq3_complete,
+        sq3_errmsg,
+        sq3_exec,
+        sq3_exec_err,
+        sq3_finalize,
+        sq3_free,
+        sq3_get_autocommit,
+        sq3_last_insert_rowid,
+        sq3_libversion,
+        sq3_open_err,
+        sq3_open_v2,
+        sq3_prep_sqlp,
+        sq3_prep_stmt,
+        sq3_prepare,
+        sq3_reset,
+        sq3_row,
+        sq3_step,
+        sq3_tail_nonws,
+        sq3_total_changes
+    }
+    _ssl_native --> runtime.na_stdlib.ssl {
+        ctx_free,
+        ctx_load_ca_file,
+        ctx_load_default_ca,
+        ctx_new_verifying,
+        do_handshake,
+        last_error,
+        ssl_close,
+        ssl_new_client,
+        ssl_read,
+        ssl_write_all,
+        verify_message,
+        verify_result
+    }
+    _tarfile_native --> runtime.na_stdlib.tarfile {
+        tar_chmod,
+        tar_close,
+        tar_create,
+        tar_link,
+        tar_read_file,
+        tar_symlink,
+        tar_utime,
+        tar_write
+    }
+    _time_common --> runtime.na_stdlib._datetime_native { time_clock_ns }
+    _time_common --> runtime.na_stdlib.time {
+        time_clock_ns,
+        time_clock_seconds,
+        time_clock_set_ns
+    }
+    _typename --> runtime.na_stdlib.hmac | runtime.na_stdlib.secrets { typename }
+    _user_home --> runtime.na_stdlib.os.path { user_home }
+    _zlib_native --> runtime.na_stdlib.gzip {
+        ZInflateResult,
+        Z_MEM_ERROR,
+        Z_OK,
+        Z_STREAM_END,
+        z_compress2,
+        z_compress_bound,
+        z_crc32,
+        z_inflate_all,
+        z_inflate_bound
+    }
+    _zlib_native --> runtime.na_stdlib.zipfile {
+        ZInflateResult,
+        Z_MEM_ERROR,
+        Z_STREAM_END,
+        z_crc32,
+        z_inflate_all,
+        z_inflate_bound
+    }
+    _zlib_native --> runtime.na_stdlib.zlib {
+        ZInflateResult,
+        Z_MEM_ERROR,
+        Z_OK,
+        Z_STREAM_END,
+        z_adler32,
+        z_compress2,
+        z_compress_bound,
+        z_crc32,
+        z_inflate_all,
+        z_inflate_bound
+    }
+    _zstd_native --> runtime.na_stdlib.compression.zstd {
+        ZSTD_C_COMPRESSION_LEVEL,
+        ZSTD_D_WINDOW_LOG_MAX,
+        zstd_cctx_free,
+        zstd_cctx_new,
+        zstd_cctx_set,
+        zstd_compress2,
+        zstd_compress_bound,
+        zstd_dctx_free,
+        zstd_dctx_new,
+        zstd_dctx_set,
+        zstd_decompress_stream,
+        zstd_error_name,
+        zstd_frame_content_size,
+        zstd_frame_dict_id,
+        zstd_is_error,
+        zstd_version_number
+    }
+    datetime --> runtime.na_stdlib.zoneinfo { _MAXORDINAL, _ord2ymd }
+}
+
+graph import runtime.na_stdlib.http {
+    client --> runtime.na_stdlib.urllib.request { HTTPResponse }
+}
+
+graph import runtime.python.object_model {
+    bool --> compiler.backends.py.jacpython.native_api { PyBool_Type }
+    bool --> runtime.python.bindings.converters { PyBool_FromLong }
+    bool --> runtime.python.bindings.decimal { py_true }
+    bool --> runtime.python.bindings.socket { py_true }
+    bool --> runtime.python.bindings.ssl { py_false, py_true }
+    bool --> runtime.python.bindings.stat { PyBool_FromLong }
+    bool --> runtime.python.bindings.zlib { PyBool_FromLong }
+    bool --> runtime.python.bindings.zstd { PyBool_FromLong }
+    bool --> runtime.python.modules.array { PyBool_FromLong }
+    bool --> runtime.python.modules.asyncio { py_false, py_true }
+    bool --> runtime.python.modules.asyncio_core { py_false, py_true }
+    bool --> runtime.python.modules.cmath { PyBool_FromLong }
+    bool --> runtime.python.modules.collections { PyBool_FromLong }
+    bool --> runtime.python.modules.csv { PyBool_FromLong }
+    bool --> runtime.python.modules.datetime_datetime { PyBool_FromLong }
+    bool --> runtime.python.modules.datetime_objects { PyBool_FromLong }
+    bool --> runtime.python.modules.datetime_time { PyBool_FromLong }
+    bool --> runtime.python.modules.decimal_number { PyBool_FromLong }
+    bool --> runtime.python.modules.decimal_objects { PyBool_FromLong }
+    bool --> runtime.python.modules.functools { PyBool_FromLong }
+    bool --> runtime.python.modules.hashlib { PyBool_FromLong }
+    bool --> runtime.python.modules.json { PyBool_FromLong }
+    bool --> runtime.python.modules.lzma { PyBool_FromLong }
+    bool --> runtime.python.modules.math { PyBool_FromLong }
+    bool --> runtime.python.modules.multiprocessing { PyBool_FromLong }
+    bool --> runtime.python.modules.operator { PyBool_FromLong }
+    bool --> runtime.python.modules.pickle { PyBool_FromLong }
+    bool --> runtime.python.modules.pickle_decode { PyBool_FromLong }
+    bool --> runtime.python.modules.posix_ids { PyBool_FromLong }
+    bool --> runtime.python.modules.pyexpat { PyBool_FromLong }
+    bool --> runtime.python.modules.socket_object { py_false, py_true }
+    bool --> runtime.python.modules.sqlite3 { PyBool_FromLong }
+    bool --> runtime.python.modules.sre { PyBool_FromLong }
+    bool --> runtime.python.modules.ssl { PyBool_FromLong }
+    bool --> runtime.python.modules.struct { PyBool_FromLong }
+    bool --> runtime.python.modules.time { PyBool_FromLong }
+    bool --> runtime.python.modules.tracemalloc { PyBool_FromLong }
+    bool --> runtime.python.modules.unicodedata { PyBool_FromLong }
+    bool --> runtime.python.object_model.file { PyBool_FromLong, bool_check }
+    bool --> runtime.python.object_model.range { bool_check }
+    capsule --> compiler.backends.py.jacpython.native_api { PyCapsule_Type }
+    capsule --> runtime.python.bindings.datetime { PyCapsule_New }
+    capsule --> runtime.python.bindings.socket {
+        PyCapsule_GetPointer,
+        PyCapsule_New,
+        _PyCapsule_SetTraverse
+    }
+    capsule --> runtime.python.bindings.ssl { PyCapsule_Import }
+    capsule --> runtime.python.modules.cjkcodecs {
+        PyCapsule_GetPointer,
+        PyCapsule_IsValid,
+        PyCapsule_New
+    }
+    capsule --> runtime.python.modules.elementtree { PyCapsule_GetPointer }
+    capsule --> runtime.python.modules.multibytecodec {
+        PyCapsule_GetPointer,
+        PyCapsule_IsValid
+    }
+    capsule --> runtime.python.modules.pyexpat { PyCapsule_GetPointer, PyCapsule_New }
+    capsule --> runtime.python.modules.unicodedata { PyCapsule_New }
+    capsule --> runtime.python.modules.zoneinfo { PyCapsule_Import }
+    cell --> compiler.backends.py.jacpython.native_api { PyCell_Type }
+    complex --> compiler.backends.py.jacpython.native_api { PyComplex_Type }
+    complex --> runtime.python.bindings.cmath { PyComplex_FromDoubles }
+    complex --> runtime.python.constant_input {
+        PyComplex_ImagAsDouble,
+        PyComplex_RealAsDouble
+    }
+    complex --> runtime.python.modules.cmath {
+        PyComplex_FromDoubles,
+        PyComplex_ImagAsDouble,
+        PyComplex_RealAsDouble,
+        _Py_c_abs
+    }
+    complex --> runtime.python.modules.decimal_convert { PyComplex_AsCComplex }
+    complex --> runtime.python.modules.decimal_number { PyComplex_FromDoubles }
+    complex --> runtime.python.modules.struct {
+        PyComplex_FromDoubles,
+        PyComplex_ImagAsDouble,
+        PyComplex_RealAsDouble
+    }
+    enumerate --> compiler.backends.py.jacpython.native_api { PyEnum_Type }
+    file --> compiler.backends.py.jacpython.native_api { PyStdPrinter_Type }
+    file --> runtime.python.bindings.converters { PyObject_AsFileDescriptor }
+    file --> runtime.python.modules.select { PyObject_AsFileDescriptor }
+    genericalias --> compiler.backends.py.jacpython.native_api { Py_GenericAliasType }
+    genericalias --> runtime.python.bindings.array { Py_GenericAlias }
+    genericalias --> runtime.python.bindings.asyncio { Py_GenericAlias }
+    genericalias --> runtime.python.bindings.collections { Py_GenericAlias }
+    genericalias --> runtime.python.bindings.functools { Py_GenericAlias }
+    genericalias --> runtime.python.bindings.itertools { Py_GenericAlias }
+    genericalias --> runtime.python.bindings.posix { Py_GenericAlias }
+    genericalias --> runtime.python.bindings.queue { Py_GenericAlias }
+    genericalias --> runtime.python.bindings.sre { Py_GenericAlias }
+    genericalias --> runtime.python.object_model.enumerate { Py_GenericAlias }
+    genericalias --> runtime.python.object_model.interpolation { Py_GenericAlias }
+    genericalias --> runtime.python.object_model.template { Py_GenericAlias }
+    header --> runtime.python.modules.asyncio { freelist_pop, freelist_push }
+    header --> runtime.python.modules.datetime_objects {
+        object_type,
+        object_type_check
+    }
+    header --> runtime.python.modules.decimal_context { object_type }
+    header --> runtime.python.modules.decimal_convert { object_type }
+    header --> runtime.python.modules.decimal_number { object_type }
+    header --> runtime.python.modules.decimal_objects { object_type }
+    header --> runtime.python.modules.socket_address { object_type }
+    header --> runtime.python.modules.socket_core { object_type }
+    header --> runtime.python.modules.socket_object { object_type }
+    header --> runtime.python.modules.sqlite3 { object_type }
+    header --> runtime.python.modules.sre {
+        object_size,
+        object_type,
+        tuple_get_item,
+        tuple_set_item
+    }
+    header --> runtime.python.object_model.bool { object_is_type }
+    header --> runtime.python.object_model.capsule {
+        PyType_Type,
+        object_gc_track,
+        object_gc_untrack,
+        object_is_type
+    }
+    header --> runtime.python.object_model.cell {
+        PyType_Type,
+        object_gc_track,
+        object_gc_untrack,
+        object_is_type,
+        object_type,
+        rich_compare_values
+    }
+    header --> runtime.python.object_model.complex {
+        PyType_Type,
+        _Py_FalseStruct,
+        _Py_TrueStruct,
+        object_is_type,
+        object_size,
+        object_type,
+        object_type_check,
+        tuple_get_item
+    }
+    header --> runtime.python.object_model.enumerate {
+        PyType_Type,
+        object_gc_untrack,
+        object_refcount,
+        object_size,
+        object_type,
+        tuple_get_item,
+        tuple_recycle,
+        tuple_set_item
+    }
+    header --> runtime.python.object_model.file {
+        PyType_Type,
+        _Py_FalseStruct,
+        _Py_TrueStruct
+    }
+    header --> runtime.python.object_model.genericalias {
+        PyType_Type,
+        _Py_FalseStruct,
+        _Py_TrueStruct,
+        eval_builtin,
+        object_gc_track,
+        object_gc_untrack,
+        object_size,
+        object_type,
+        object_type_check,
+        tuple_get_item,
+        tuple_set_item
+    }
+    header --> runtime.python.object_model.interpolation {
+        object_gc_track,
+        object_gc_untrack,
+        object_type
+    }
+    header --> runtime.python.object_model.iterator {
+        PyType_Type,
+        eval_builtin,
+        object_gc_track,
+        object_gc_untrack,
+        object_type
+    }
+    header --> runtime.python.object_model.method {
+        PyType_Type,
+        _Py_FalseStruct,
+        _Py_TrueStruct,
+        current_interp,
+        eval_builtin,
+        freelist_pop_in,
+        freelist_push_in,
+        gc_track_in,
+        gc_untrack_in,
+        object_decref,
+        object_gc_is_tracked,
+        object_gc_track,
+        object_gc_untrack,
+        object_is_type,
+        object_new_ref,
+        object_size,
+        object_type,
+        tuple_get_item
+    }
+    header --> runtime.python.object_model.namespace {
+        PyType_Type,
+        object_gc_untrack,
+        object_is_type,
+        object_type,
+        object_type_check
+    }
+    header --> runtime.python.object_model.picklebuffer {
+        object_gc_untrack,
+        object_is_type,
+        object_type
+    }
+    header --> runtime.python.object_model.range {
+        PyType_Type,
+        _Py_FalseStruct,
+        _Py_TrueStruct,
+        eval_builtin,
+        freelist_pop,
+        freelist_push,
+        object_is_type,
+        object_size,
+        object_type,
+        tuple_items,
+        tuple_set_item
+    }
+    header --> runtime.python.object_model.slice {
+        PyType_Type,
+        _Py_FalseStruct,
+        _Py_TrueStruct,
+        freelist_pop,
+        freelist_push,
+        object_gc_track,
+        object_gc_untrack,
+        object_is_type,
+        object_size,
+        object_type
+    }
+    header --> runtime.python.object_model.structseq {
+        PyType_Type,
+        fast_items,
+        object_decref,
+        object_gc_track,
+        object_gc_untrack,
+        object_new_ref,
+        object_size,
+        object_type,
+        object_xdecref,
+        tuple_get_item,
+        tuple_items,
+        type_has_feature
+    }
+    header --> runtime.python.object_model.template {
+        object_gc_track,
+        object_gc_untrack,
+        object_size,
+        object_type,
+        tuple_get_item,
+        tuple_set_item
+    }
+    header --> runtime.python.object_model.union {
+        PyType_Type,
+        _Py_FalseStruct,
+        _Py_TrueStruct,
+        object_gc_track,
+        object_gc_untrack,
+        object_is_type,
+        object_size,
+        object_type,
+        object_type_check,
+        tuple_get_item
+    }
+    interpolation --> compiler.backends.py.jacpython.native_api {
+        _PyInterpolation_Type
+    }
+    interpolation --> runtime.python.object_model.template {
+        _PyInterpolation_GetValueRef,
+        interpolation_check_exact
+    }
+    iterator --> compiler.backends.py.jacpython.native_api { PySeqIter_Type }
+    iterator --> runtime.python.modules.sre { PyCallIter_New }
+    method --> compiler.backends.py.jacpython.native_api { PyMethod_Type }
+    method --> runtime.python.bindings.functools { PyMethod_New }
+    namespace --> compiler.backends.py.jacpython.native_api { _PyNamespace_Type }
+    namespace --> runtime.python.modules.time { _PyNamespace_New }
+    picklebuffer --> compiler.backends.py.jacpython.native_api { PyPickleBuffer_Type }
+    range --> compiler.backends.py.jacpython.native_api { PyRange_Type }
+    slice --> compiler.backends.py.jacpython.native_api { PySlice_Type }
+    slice --> runtime.python.modules.elementtree {
+        PySlice_AdjustIndices,
+        PySlice_Unpack
+    }
+    slice --> runtime.python.modules.sqlite3 { PySlice_AdjustIndices, PySlice_Unpack }
+    slice --> runtime.python.object_model.range { slice_check, slice_get_long_indices }
+    structseq --> compiler.backends.py.jacpython.native_api {
+        PyStructSequence_UnnamedField
+    }
+    structseq --> runtime.python.bindings.type {
+        PyStructSequence_NewType,
+        PyStructSequence_UnnamedField
+    }
+    structseq --> runtime.python.modules.grp {
+        PyStructSequence_New,
+        PyStructSequence_SetItem
+    }
+    structseq --> runtime.python.modules.lsprof {
+        PyStructSequence_New,
+        PyStructSequence_SetItem
+    }
+    structseq --> runtime.python.modules.posix_fileio {
+        PyStructSequence_New,
+        PyStructSequence_SetItem
+    }
+    structseq --> runtime.python.modules.posix_ids {
+        PyStructSequence_New,
+        PyStructSequence_SetItem
+    }
+    structseq --> runtime.python.modules.posix_process {
+        PyStructSequence_GetItem,
+        PyStructSequence_New,
+        PyStructSequence_SetItem
+    }
+    structseq --> runtime.python.modules.posix_stat {
+        PyStructSequence_GetItem,
+        PyStructSequence_New,
+        PyStructSequence_SetItem
+    }
+    structseq --> runtime.python.modules.pwd {
+        PyStructSequence_New,
+        PyStructSequence_SetItem
+    }
+    structseq --> runtime.python.modules.resource {
+        PyStructSequence_New,
+        PyStructSequence_SetItem
+    }
+    structseq --> runtime.python.modules.time {
+        PyStructSequence_GetItem,
+        PyStructSequence_New,
+        PyStructSequence_SetItem
+    }
+    template --> compiler.backends.py.jacpython.native_api { _PyTemplate_Type }
+    union --> compiler.backends.py.jacpython.native_api { _PyUnion_Type }
+    union --> runtime.python.object_model.genericalias { _Py_union_type_or }
 }

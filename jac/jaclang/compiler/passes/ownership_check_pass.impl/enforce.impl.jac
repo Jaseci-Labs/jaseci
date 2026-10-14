@@ -27,11 +27,11 @@ impl OwnershipCheckPass._nogc_resolve_provenance -> (str | None) {
     _mp = str(self.module.loc.mod_path or "") if self.module?.loc else "";
     if _mp {
         import from jaclang.compiler.frontend.codeinfo {
-            is_in_jaclang_package,
+            is_toolchain_unit,
             bundled_stdlib_module_of,
             NOGC_NATIVE_STDLIB
         }
-        if is_in_jaclang_package(_mp) {
+        if is_toolchain_unit(_mp) {
             _na_mod = bundled_stdlib_module_of(_mp);
             if _na_mod is None or _na_mod not in NOGC_NATIVE_STDLIB {
                 return None;
@@ -149,7 +149,8 @@ impl OwnershipCheckPass._nogc_infer_locals -> None {
         if _tgt.sym.ownership != OwnershipKind.NONE {
             continue;
         }
-        if _tgt.sym.storage == SymbolStorage.MODULE_GLOBAL {
+        if _tgt.sym.storage == SymbolStorage.MODULE_GLOBAL
+            and not self._nogc_entry_confined_str(_tgt) {
             continue;
         }
         if self._nogc_local_shape(_tgt) in ("osp", "scalar") {
@@ -200,6 +201,36 @@ impl OwnershipCheckPass._nogc_infer_locals -> None {
     }
 }
 
+impl OwnershipCheckPass._nogc_entry_confined_str(tgt: Name) -> bool {
+    """A module-level str binding that no function, lambda or `glob`
+    declaration can reach lives and dies inside the module's entry code, so
+    it infers ownership exactly like a function local: a rebind drops the
+    value it replaces.""";
+    _sym = tgt.sym;
+    if _sym is None or tgt.type is None {
+        return False;
+    }
+    try {
+        if tgt.type.mangle() != "str" {
+            return False;
+        }
+    } except Exception {
+        return False;
+    }
+    _refs: list[UniNode] = list(_sym.defn or []) + list(_sym.uses or []);
+    if _sym.decl is not None {
+        _refs.append(_sym.decl);
+    }
+    for _ref in _refs {
+        if _ref.find_parent_of_type(GlobalVars) is not None
+            or _ref.find_parent_of_type(LambdaExpr) is not None
+            or self._owning_ability(_ref) is not None {
+            return False;
+        }
+    }
+    return True;
+}
+
 impl OwnershipCheckPass._nogc_infer_state(
     expr: Expr | None
 ) -> tuple[OwnershipKind, list[Name]] {
@@ -208,6 +239,15 @@ impl OwnershipCheckPass._nogc_infer_state(
         expr = expr.expr;
     }
     if expr is None {
+        return (OwnershipKind.NONE, _none);
+    }
+    if isinstance(expr, FuncCall)
+        and call_borrows_receiver(expr)
+        and isinstance(expr.target, AtomTrailer) {
+        _recv_root = self._place_of(expr.target.target);
+        if _recv_root is not None and _recv_root.sym is not None {
+            return (OwnershipKind.BORROW, [_recv_root]);
+        }
         return (OwnershipKind.NONE, _none);
     }
     _own = result_ownership(expr);
@@ -1014,6 +1054,9 @@ impl OwnershipCheckPass._emit_enforcement_diagnostics -> None {
             }
         }
         for _gv in self.module.get_all_sub_nodes(GlobalVars) {
+            if clib_import_of(_gv) is not None {
+                continue;
+            }
             for _ga in _gv.get_all_sub_nodes(Assignment) {
                 if _ga.type_tag is not None
                     and _ga.type_tag.ownership == OwnershipKind.OWN {

@@ -19,7 +19,7 @@ impl MobileTarget.ensure_ready(
     }
     if offline() {
         raise RuntimeError(
-            f"React Native scaffold not found at {rn_dir} and JAC_OFFLINE is set; "
+            f"React Native scaffold not found at {rn_dir} and jac.toml sets `[network] offline`; "
             "provisioning it needs the network. Run `jac setup <app>` online first."
         );
     }

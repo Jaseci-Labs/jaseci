@@ -81,6 +81,7 @@ comptime ROUTES: list[CommandSpec] = [
          _route(SPEC_LSP),
          _route(SPEC_MCP_CMD),
          _route(SPEC_MODEL),
+         _route(SPEC_NATIVE),
          _route(SPEC_PRECOMMIT),
          _route(SPEC_PRECOMPILE),
          _route(SPEC_PUBLISH),

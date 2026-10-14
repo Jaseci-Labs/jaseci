@@ -4,7 +4,7 @@ impl py2jac(filename: str) -> int {
     if filename.endswith('.py') {
         file_source = read_file_with_encoding(filename);
         converted = run_utility(
-            UtilityProduct.PYTHON_AST,
+            CompilationProduct.PYTHON_AST,
             uni.PythonModuleAst(
                 ast3.parse(file_source), orig_src=uni.Source(file_source, filename)
             ),

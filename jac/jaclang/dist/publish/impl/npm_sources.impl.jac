@@ -127,7 +127,7 @@ def _compile_module(program: any, path: Path) -> any {
     }
 
     if mod and mod.gen and not mod.gen.js {
-        require_product(program, mod, CompilationProduct.CLIENT);
+        require(program, mod, CompilationProduct.CLIENT);
     }
     return mod;
 }

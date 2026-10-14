@@ -1,7 +1,4 @@
 import os;
-import re;
-import shutil;
-import subprocess;
 
 import from pathlib { Path }
 
@@ -28,57 +25,8 @@ obj AndroidEnvironment {
     }
 }
 
-def compatible_jdk(home: Path) -> bool {
-    javac = home / "bin" / executable("javac");
-    if not javac.is_file() {
-        return False;
-    }
-    try {
-        result = subprocess.run(
-            [str(javac), "-version"], capture_output=True, text=True, timeout=15
-        );
-        return result.returncode == 0
-            and bool(re.search(r"javac 21[.\s]", result.stdout + result.stderr));
-    } except (OSError, subprocess.TimeoutExpired) {
-        return False;
-    }
-}
-
 def ensure_jdk -> Path {
-    requested = os.environ.get("JAVA_HOME", "");
-    if requested and use_system_tools() {
-        home = Path(requested).expanduser();
-        if compatible_jdk(home) {
-            console.print(f"Using JDK 21 at {home}", style="muted");
-            return home;
-        }
-        console.print(
-            "JAVA_HOME does not contain a compatible JDK 21; provisioning a managed JDK.",
-            style="muted"
-        );
-    }
-    found = shutil.which(executable("javac"));
-    if found and use_system_tools() {
-        home = Path(found).resolve().parent.parent;
-        if compatible_jdk(home) {
-            return home;
-        }
-    }
-    host = host_platform();
-    artifact = JDK_ARTIFACTS.get(host);
-    if artifact is None {
-        raise RuntimeError(f"No managed JDK for {host}");
-    }
-    relative = f"jdk-{JDK_VERSION}";
-    if host.startswith("mac-") {
-        relative += "/Contents/Home";
-    }
-    installed = install(artifact, relative + "/bin/" + executable("javac"));
-    home = installed / relative;
-    if not compatible_jdk(home) {
-        raise RuntimeError(f"Managed JDK could not execute at {home}");
-    }
-    return home;
+    return tool_path("jdk");
 }
 
 def ensure_android -> AndroidEnvironment {

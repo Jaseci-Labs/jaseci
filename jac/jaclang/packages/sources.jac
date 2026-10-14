@@ -39,7 +39,9 @@ def checkout(url: str, rev: str = "") -> GitCheckout {
     with FileLock(mirror.with_suffix(".lock")) {
         if not (mirror / "HEAD").is_file() {
             if offline() {
-                raise GitError(f"{url} is not cached and JAC_OFFLINE is set");
+                raise GitError(
+                    f"{url} is not cached and jac.toml sets `[network] offline`"
+                );
             }
             shutil.rmtree(mirror, ignore_errors=True);
             _git(["clone", "--mirror", "--quiet", url, str(mirror)]);

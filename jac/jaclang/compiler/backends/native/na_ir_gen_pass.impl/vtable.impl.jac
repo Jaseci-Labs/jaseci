@@ -18,9 +18,15 @@ impl NaIRGenPass._emit_vtable_global(arch_name: str) -> None {
     i8_ptr = ir.IntType(8).as_pointer();
 
     vtable_type = ir.ArrayType(i8_ptr, len(layout) + VTABLE_HEADER_SLOTS);
+    _drop_body = self._emit_struct_drop_body_fn(arch_name)
+        if self._nogc_headerless()
+        else None;
     entries: list[ir.Value] = [
         self._emit_class_name_const(arch_name),
-        self._emit_vtable_ancestry(arch_name).bitcast(i8_ptr)
+        self._emit_vtable_ancestry(arch_name).bitcast(i8_ptr),
+        _drop_body.bitcast(i8_ptr)
+            if _drop_body is not None
+            else ir.Constant(i8_ptr, None)
     ];
     for method_name in layout {
         func = self._resolve_method(arch_name, method_name);
@@ -70,10 +76,13 @@ impl NaIRGenPass._slot_abi_matches(
     if len(fn_type.args) != len(slot_type.args) {
         return False;
     }
-    for (have, want) in [
-        (fn_type.return_type, slot_type.return_type),
-        *zip(fn_type.args, slot_type.args)
-    ] {
+    haves: list[ir.Type] = [fn_type.return_type];
+    wants: list[ir.Type] = [slot_type.return_type];
+    haves.extend(fn_type.args);
+    wants.extend(slot_type.args);
+    for i in range(len(haves)) {
+        have = haves[i];
+        want = wants[i];
         if have != want
             and not (
                 isinstance(have, ir.PointerType) and isinstance(want, ir.PointerType)
@@ -709,6 +718,16 @@ impl NaIRGenPass._emit_runtime_class_name_fn -> (ir.Function | None) {
 }
 
 impl NaIRGenPass._codegen_runtime_class_name(obj_val: ir.Value) -> (ir.Value | None) {
+    """The runtime class name of the object `obj_val` points at.
+
+    A build whose allocations carry a header reads the name stamped there,
+    which answers for every class. The static pointee type is not evidence of
+    a vtable: a union-typed value is lowered as a pointer to its first member,
+    so a `Left | Stored` receiver typed `Left*` may hold a flat `Stored` whose
+    first field would be read as a vtable pointer. Only a headerless build,
+    which has no header to read, falls back to the vtable, and its callers
+    refuse a receiver that may be a flat class.
+    """;
     i8_ptr = ir.IntType(8).as_pointer();
     _headerless = self._nogc_headerless();
     if self._opt_payload_of(obj_val.type) is not None {
@@ -732,7 +751,9 @@ impl NaIRGenPass._codegen_runtime_class_name(obj_val: ir.Value) -> (ir.Value | N
         return None;
     }
     _pointee_arch = self._struct_ptr_pointee_name(obj_val);
-    if _pointee_arch is not None and self._arch_has_vtable(_pointee_arch) {
+    if _headerless
+        and _pointee_arch is not None
+        and self._arch_has_vtable(_pointee_arch) {
         return self._class_id_of_value(_pointee_arch, obj_val);
     }
     _fn = self._emit_runtime_class_name_fn();
@@ -744,6 +765,86 @@ impl NaIRGenPass._codegen_runtime_class_name(obj_val: ir.Value) -> (ir.Value | N
         [self.builder.bitcast(obj_val, i8_ptr, name="clsname.i8")],
         name="clsname.rt"
     );
+}
+
+def _caught_exception_class_name(
+    pass_ref: NaIRGenPass, var_name: str
+) -> (ir.Value | None) {
+    func = pass_ref.builder.function;
+    code: (ir.Value | None) = None;
+    raised: (ir.Value | None) = None;
+    message: (ir.Value | None) = None;
+    for (owner, name, slot, bound, values) in reversed(pass_ref._exc_bindings) {
+        if owner is func and name == var_name {
+            if pass_ref.local_vars.get(name) is not slot {
+                return None;
+            }
+            code = values[0];
+            raised = values[1];
+            message = values[2];
+            break;
+        }
+    }
+    if code is None or raised is None or message is None {
+        return None;
+    }
+    class_name_fn = pass_ref._emit_runtime_class_name_fn();
+    if class_name_fn is None {
+        return None;
+    }
+    b = pass_ref.builder;
+    i8p = ir.IntType(8).as_pointer();
+    named: ir.Value = ir.Constant(i8p, None);
+    for (builtin, _parent) in JAC_TYPE_REGISTRY.exception_entries() {
+        type_id = JAC_TYPE_REGISTRY.exception_type_id(builtin);
+        named = b.select(
+            b.icmp_unsigned("==", code, ir.Constant(code.type, type_id)),
+            pass_ref._make_global_string(builtin),
+            named,
+            name="exc.name"
+        );
+    }
+    base_named = b.select(
+        b.icmp_unsigned("==", code, ir.Constant(code.type, 0)),
+        pass_ref._make_global_string("Exception"),
+        named,
+        name="exc.name"
+    );
+    raised_p = b.bitcast(raised, i8p, name="exc.name.obj");
+    message_p = b.bitcast(message, i8p, name="exc.name.msg");
+    is_object = b.and_(
+        b.icmp_unsigned(
+            "==", base_named, ir.Constant(i8p, None), name="exc.name.unknown"
+        ),
+        b.and_(
+            b.icmp_unsigned("!=", raised_p, ir.Constant(i8p, None)),
+            b.icmp_unsigned("!=", raised_p, message_p)
+        ),
+        name="exc.name.isobj"
+    );
+    object_bb = func.append_basic_block(name="exc.name.object");
+    done_bb = func.append_basic_block(name="exc.name.done");
+    fallback = b.select(
+        b.icmp_unsigned("==", base_named, ir.Constant(i8p, None)),
+        pass_ref._make_global_string("Exception"),
+        base_named,
+        name="exc.name.or"
+    );
+    from_bb = b.basic_block;
+    b.cbranch(is_object, object_bb, done_bb);
+    b.position_at_end(object_bb);
+    shown = b.call(
+        pass_ref._emit_class_display_fn(),
+        [b.call(class_name_fn, [raised_p], name="exc.name.cls")],
+        name="exc.name.display"
+    );
+    object_end = b.basic_block;
+    b.branch(done_bb);
+    b.position_at_end(done_bb);
+    result = b.phi(i8p, name="exc.class.name");
+    result.add_incoming(fallback, from_bb);
+    result.add_incoming(shown, object_end);
+    return result;
 }
 
 impl NaIRGenPass._codegen_class_name(nd: uni.AtomTrailer) -> (ir.Value | None) {
@@ -782,6 +883,12 @@ impl NaIRGenPass._codegen_class_name(nd: uni.AtomTrailer) -> (ir.Value | None) {
     }
     if receiver is None {
         return None;
+    }
+    if isinstance(receiver, uni.Name) {
+        _caught_name = _caught_exception_class_name(self, receiver.value);
+        if _caught_name is not None {
+            return _caught_name;
+        }
     }
     _static_arch = self._struct_name_of(receiver);
     if _static_arch is not None and not self._arch_has_vtable(_static_arch) {
@@ -876,7 +983,7 @@ impl NaIRGenPass._codegen_class_ref(
         return None;
     }
 
-    if _np?.collection is nd {
+    if isinstance(_np, (uni.InForStmt, uni.InnerCompr)) and _np.collection is nd {
         return None;
     }
     _arch = self._module_class_name(nd)
@@ -917,7 +1024,9 @@ impl NaIRGenPass._emit_isa_fn -> ir.Function {
     }
     i1 = ir.IntType(1);
     i8p = ir.IntType(8).as_pointer();
-    fn: any = self._define_function("__jac_isa", ir.FunctionType(i1, [i8p, i8p]));
+    fn: ir.Function = self._define_function(
+        "__jac_isa", ir.FunctionType(i1, [i8p, i8p])
+    );
     fn.linkage = "private";
     fn.args[0].name = "cls";
     fn.args[1].name = "tgt";
@@ -949,6 +1058,10 @@ impl NaIRGenPass._emit_isa_hashed_fn -> ir.Function {
     has a different address and is confirmed with one `strcmp`, taken only
     after the hashes agree, which also keeps two names that collide on 64 bits
     distinct.
+
+    A class this unit cannot see (a subclass an importer defines) is not in
+    the index; its ancestry comes from the class record its defining module
+    registered at initialization, which every unit of the program shares.
     """;
 
     if self._isa_h_fn is not None {
@@ -962,7 +1075,7 @@ impl NaIRGenPass._emit_isa_hashed_fn -> ir.Function {
     ent_ty = ir.LiteralStructType([i64, i8p, i32, i32]);
 
     reg = get_layout_registry(self.module, self.prog);
-    classes = sorted(set(reg.mro_order));
+    classes = sorted(reg.mro_order.keys());
     ancestors: list[ir.Constant] = [];
     spans: dict[str, tuple[int, int]] = {};
     for cls in classes {
@@ -1031,7 +1144,7 @@ impl NaIRGenPass._emit_isa_hashed_fn -> ir.Function {
     idx_gv.initializer = ir.Constant(idx_arr, slots);
 
     strcmp = self._get_or_declare_extern("strcmp", i32, [i8p, i8p]);
-    fn: any = self._define_function(
+    fn: ir.Function = self._define_function(
         "__jac_isa_h", ir.FunctionType(i1, [i8p, i8p, i64])
     );
     fn.linkage = "private";
@@ -1052,6 +1165,8 @@ impl NaIRGenPass._emit_isa_hashed_fn -> ir.Function {
     probe_name = fn.append_basic_block("probe.name");
     probe_next = fn.append_basic_block("probe.next");
     found = fn.append_basic_block("found");
+    remote = fn.append_basic_block("remote");
+    remote_walk = fn.append_basic_block("remote.walk");
     walk = fn.append_basic_block("walk");
     walk_hash = fn.append_basic_block("walk.hash");
     walk_name = fn.append_basic_block("walk.name");
@@ -1087,7 +1202,7 @@ impl NaIRGenPass._emit_isa_hashed_fn -> ir.Function {
     );
     b.cbranch(
         b.icmp_unsigned("==", ent_name, ir.Constant(i8p, None), name="isa.ent.empty"),
-        no,
+        remote,
         probe_hash
     );
 
@@ -1156,6 +1271,27 @@ impl NaIRGenPass._emit_isa_hashed_fn -> ir.Function {
     i.add_incoming(run_start, found);
     i.add_incoming(nxt, walk_next);
 
+    b = ir.IRBuilder(remote);
+    record_raw = b.call(self._emit_class_record_lookup_fn(), [_cls], name="isa.record");
+    b.cbranch(
+        b.icmp_unsigned(
+            "==", record_raw, ir.Constant(i8p, None), name="isa.record.none"
+        ),
+        no,
+        remote_walk
+    );
+    b = ir.IRBuilder(remote_walk);
+    record = b.bitcast(
+        record_raw, self._class_record_type().as_pointer(), name="isa.record.p"
+    );
+    records = b.load(
+        b.gep(record, [zero32, ir.Constant(i32, CLASS_RECORD_ANCESTRY)]),
+        name="isa.record.mro"
+    );
+    b.ret(
+        b.call(self._emit_isa_records_fn(), [records, _tgt, _th], name="isa.record.hit")
+    );
+
     ir.IRBuilder(yes).ret(ir.Constant(i1, 1));
     ir.IRBuilder(no).ret(ir.Constant(i1, 0));
     self._isa_h_fn = fn;
@@ -1207,12 +1343,10 @@ impl NaIRGenPass._emit_isa_vtable_fn -> ir.Function {
     """`__jac_isa_vt(vptr, tgt, tgt_hash)`: does the class behind a vtable answer for `tgt`?
 
     Walks the ancestry records that vtable header slot 1 points at (see
-    `_emit_vtable_ancestry`) up to the null record; an object with no vtable
-    stamped answers `False`. The candidate-vtable
-    compare and the class index only know the classes the checking module can
-    see; this also answers for a subclass defined in a module it never
-    imported. Names match as in `__jac_isa_h`: the hash first, then the
-    address, then one `strcmp` for a name another unit emitted.
+    `_emit_vtable_ancestry`); an object with no vtable stamped answers
+    `False`. The candidate-vtable compare and the class index only know the
+    classes the checking module can see; this also answers for a subclass
+    defined in a module it never imported.
     """;
     if self._isa_vt_fn is not None {
         return self._isa_vt_fn;
@@ -1221,10 +1355,57 @@ impl NaIRGenPass._emit_isa_vtable_fn -> ir.Function {
     i32 = ir.IntType(32);
     i64 = ir.IntType(64);
     i8p = ir.IntType(8).as_pointer();
+    fn = self._define_function(
+        "__jac_isa_vt", ir.FunctionType(i1, [i8p.as_pointer(), i8p, i64])
+    );
+    fn.linkage = "private";
+    head = fn.append_basic_block("entry");
+    load = fn.append_basic_block("load");
+    no = fn.append_basic_block("no");
+    b = ir.IRBuilder(head);
+    b.cbranch(
+        b.icmp_unsigned(
+            "==", fn.args[0], ir.Constant(fn.args[0].type, None), name="isavt.novt"
+        ),
+        no,
+        load
+    );
+    b = ir.IRBuilder(load);
+    records = b.load(
+        b.gep(fn.args[0], [ir.Constant(i32, 1)], name="isavt.slot"), name="isavt.raw"
+    );
+    b.ret(
+        b.call(
+            self._emit_isa_records_fn(),
+            [records, fn.args[1], fn.args[2]],
+            name="isavt.res"
+        )
+    );
+    ir.IRBuilder(no).ret(ir.Constant(i1, 0));
+    self._isa_vt_fn = fn;
+    return fn;
+}
+
+impl NaIRGenPass._emit_isa_records_fn -> ir.Function {
+    """`__jac_isa_mro(records, tgt, tgt_hash)`: does an ancestry list name `tgt`?
+
+    `records` is a class's `{name hash, class name}` MRO ending in a null
+    record (`_emit_vtable_ancestry`), reached through its vtable or its class
+    record; null answers `False`. Names match as in `__jac_isa_h`: the hash
+    first, then the address, then one `strcmp` for a name another unit
+    emitted.
+    """;
+    if self._isa_mro_fn is not None {
+        return self._isa_mro_fn;
+    }
+    i1 = ir.IntType(1);
+    i32 = ir.IntType(32);
+    i64 = ir.IntType(64);
+    i8p = ir.IntType(8).as_pointer();
     rec_ty = ir.LiteralStructType([i64, i8p]);
     strcmp = self._get_or_declare_extern("strcmp", i32, [i8p, i8p]);
-    fn: any = self._define_function(
-        "__jac_isa_vt", ir.FunctionType(i1, [i8p.as_pointer(), i8p, i64])
+    fn: ir.Function = self._define_function(
+        "__jac_isa_mro", ir.FunctionType(i1, [i8p, i8p, i64])
     );
     fn.linkage = "private";
     zero32 = ir.Constant(i32, 0);
@@ -1240,36 +1421,33 @@ impl NaIRGenPass._emit_isa_vtable_fn -> ir.Function {
 
     b = ir.IRBuilder(head);
     b.cbranch(
-        b.icmp_unsigned(
-            "==", fn.args[0], ir.Constant(fn.args[0].type, None), name="isavt.novt"
-        ),
+        b.icmp_unsigned("==", fn.args[0], ir.Constant(i8p, None), name="isamro.none"),
         no,
         load
     );
 
     b = ir.IRBuilder(load);
-    slot = b.gep(fn.args[0], [ir.Constant(i32, 1)], name="isavt.slot");
-    table = b.bitcast(
-        b.load(slot, name="isavt.raw"), rec_ty.as_pointer(), name="isavt.tab"
-    );
+    table = b.bitcast(fn.args[0], rec_ty.as_pointer(), name="isamro.tab");
     b.branch(walk);
 
     b = ir.IRBuilder(walk);
-    i = b.phi(i64, name="isavt.i");
-    rec = b.gep(table, [i], name="isavt.rec");
+    i = b.phi(i64, name="isamro.i");
+    rec = b.gep(table, [i], name="isamro.rec");
     name = b.load(
-        b.gep(rec, [zero32, ir.Constant(i32, 1)], name="isavt.np"), name="isavt.name"
+        b.gep(rec, [zero32, ir.Constant(i32, 1)], name="isamro.np"), name="isamro.name"
     );
     b.cbranch(
-        b.icmp_unsigned("==", name, ir.Constant(i8p, None), name="isavt.end"),
+        b.icmp_unsigned("==", name, ir.Constant(i8p, None), name="isamro.end"),
         no,
         walk_hash
     );
 
     b = ir.IRBuilder(walk_hash);
-    rec_hash = b.load(b.gep(rec, [zero32, zero32], name="isavt.hp"), name="isavt.hash");
+    rec_hash = b.load(
+        b.gep(rec, [zero32, zero32], name="isamro.hp"), name="isamro.hash"
+    );
     b.cbranch(
-        b.icmp_unsigned("==", rec_hash, fn.args[2], name="isavt.hit"),
+        b.icmp_unsigned("==", rec_hash, fn.args[2], name="isamro.hit"),
         walk_name,
         walk_next
     );
@@ -1278,14 +1456,14 @@ impl NaIRGenPass._emit_isa_vtable_fn -> ir.Function {
     self._emit_isa_name_match(b, None, name, fn.args[1], strcmp, yes, walk_next);
 
     b = ir.IRBuilder(walk_next);
-    nxt = b.add(i, ir.Constant(i64, 1), name="isavt.in");
+    nxt = b.add(i, ir.Constant(i64, 1), name="isamro.in");
     b.branch(walk);
     i.add_incoming(ir.Constant(i64, 0), load);
     i.add_incoming(nxt, walk_next);
 
     ir.IRBuilder(yes).ret(ir.Constant(i1, 1));
     ir.IRBuilder(no).ret(ir.Constant(i1, 0));
-    self._isa_vt_fn = fn;
+    self._isa_mro_fn = fn;
     return fn;
 }
 
@@ -1376,6 +1554,208 @@ impl NaIRGenPass._isinstance_vtable_fallback(
     res = self.builder.phi(i1, name=f"{prefix}.vt.res");
     res.add_incoming(ir.Constant(i1, 1), fast_end);
     res.add_incoming(walked, walk_end);
+    return res;
+}
+
+impl NaIRGenPass._vtable_set -> ir.GlobalVariable {
+    existing = self.llvm_module.globals.get(VTABLE_SET_SYMBOL);
+    if isinstance(existing, ir.GlobalVariable) {
+        return existing;
+    }
+    table = ir.ArrayType(ir.IntType(8).as_pointer(), VTABLE_SET_BUCKETS);
+    registry = ir.GlobalVariable(self.llvm_module, table, name=VTABLE_SET_SYMBOL);
+    registry.linkage = "weak";
+    registry.initializer = ir.Constant(table, None);
+    return registry;
+}
+
+impl NaIRGenPass._emit_vtable_set_registrations -> None {
+    """Link this unit's vtables into the program's vtable set (module init).""";
+    if not self._vtable_nodes {
+        return;
+    }
+    i32 = ir.IntType(32);
+    i64 = ir.IntType(64);
+    i8p = ir.IntType(8).as_pointer();
+    registry = self._vtable_set();
+    for vt_node in self._vtable_nodes {
+        vtable = self.builder.load(
+            self.builder.gep(vt_node, [ir.Constant(i32, 0), ir.Constant(i32, 1)]),
+            name="vtset.vt"
+        );
+        bucket = self.builder.gep(
+            registry,
+            [
+                ir.Constant(i64, 0),
+                self.builder.and_(
+                    self.builder.lshr(
+                        self.builder.ptrtoint(vtable, i64, name="vtset.addr"),
+                        ir.Constant(i64, 4),
+                        name="vtset.shift"
+                    ),
+                    ir.Constant(i64, VTABLE_SET_BUCKETS - 1),
+                    name="vtset.i"
+                )
+            ],
+            name="vtset.bucket"
+        );
+        self.builder.store(
+            self.builder.load(bucket, name="vtset.head"),
+            self.builder.gep(vt_node, [ir.Constant(i32, 0), ir.Constant(i32, 0)])
+        );
+        self.builder.store(vt_node.bitcast(i8p), bucket);
+    }
+}
+
+impl NaIRGenPass._emit_isa_vtobj_fn -> ir.Function {
+    """`__jac_isa_vtobj(word, tgt, tgt_hash)`: an erased object's first word, as a vtable.
+
+    A headerless build cannot tell a vtable-carrying object from a flat one,
+    whose first word is a field. The word is read as a vtable only when it is
+    one of the program's registered vtables; its ancestry then answers for
+    `tgt` through `__jac_isa_vt`. Anything else answers `False`.
+    """;
+    if self._isa_vtobj_fn is not None {
+        return self._isa_vtobj_fn;
+    }
+    i1 = ir.IntType(1);
+    i32 = ir.IntType(32);
+    i64 = ir.IntType(64);
+    i8p = ir.IntType(8).as_pointer();
+    node_ty = ir.LiteralStructType([i8p, i8p]);
+    zero = ir.Constant(i32, 0);
+    registry = self._vtable_set();
+    fn = self._define_function("__jac_isa_vtobj", ir.FunctionType(i1, [i8p, i8p, i64]));
+    fn.linkage = "private";
+    word = fn.args[0];
+    head = fn.append_basic_block("entry");
+    walk = fn.append_basic_block("walk");
+    check = fn.append_basic_block("check");
+    advance = fn.append_basic_block("advance");
+    hit = fn.append_basic_block("hit");
+    no = fn.append_basic_block("no");
+
+    b = ir.IRBuilder(head);
+    bucket = b.gep(
+        registry,
+        [
+            ir.Constant(i64, 0),
+            b.and_(
+                b.lshr(
+                    b.ptrtoint(word, i64, name="vtobj.addr"),
+                    ir.Constant(i64, 4),
+                    name="vtobj.shift"
+                ),
+                ir.Constant(i64, VTABLE_SET_BUCKETS - 1),
+                name="vtobj.i"
+            )
+        ],
+        name="vtobj.bucket"
+    );
+    first = b.load(bucket, name="vtobj.first");
+    b.branch(walk);
+
+    b = ir.IRBuilder(walk);
+    cursor = b.phi(i8p, name="vtobj.cur");
+    b.cbranch(
+        b.icmp_unsigned("==", cursor, ir.Constant(i8p, None), name="vtobj.end"),
+        no,
+        check
+    );
+
+    b = ir.IRBuilder(check);
+    vt_node = b.bitcast(cursor, node_ty.as_pointer(), name="vtobj.node");
+    b.cbranch(
+        b.icmp_unsigned(
+            "==",
+            b.load(b.gep(vt_node, [zero, ir.Constant(i32, 1)]), name="vtobj.vt"),
+            word,
+            name="vtobj.same"
+        ),
+        hit,
+        advance
+    );
+
+    b = ir.IRBuilder(advance);
+    after = b.load(b.gep(vt_node, [zero, zero]), name="vtobj.next");
+    b.branch(walk);
+    cursor.add_incoming(first, head);
+    cursor.add_incoming(after, advance);
+
+    b = ir.IRBuilder(hit);
+    b.ret(
+        b.call(
+            self._emit_isa_vtable_fn(),
+            [
+                b.bitcast(word, i8p.as_pointer(), name="vtobj.vptr"),
+                fn.args[1],
+                fn.args[2]
+            ],
+            name="vtobj.res"
+        )
+    );
+    ir.IRBuilder(no).ret(ir.Constant(i1, 0));
+    self._isa_vtobj_fn = fn;
+    return fn;
+}
+
+impl NaIRGenPass._isinstance_name_fallback(
+    hit: ir.Value, obj_ptr: ir.Value, names: list[str], prefix: str
+) -> ir.Value {
+    """`hit`, or else what the object's own ancestry answers.
+
+    The candidate vtables only list the classes this module can see, so a
+    subclass an importer defines misses them. Every instance of a headered
+    build carries its class name, and `__jac_isa_h` resolves a name this unit
+    does not index through the class records every unit registers. A
+    headerless build reads the object's first word, as a vtable only when it
+    is one of the program's registered vtables (`__jac_isa_vtobj`).
+    """;
+    i1 = ir.IntType(1);
+    i64 = ir.IntType(64);
+    i8p = ir.IntType(8).as_pointer();
+    headered = not self._nogc_headerless()
+        and self._emit_runtime_class_name_fn() is not None;
+    fn = self.builder.block.function;
+    fast_end = self.builder.block;
+    name_bb = fn.append_basic_block(name=f"{prefix}.nm.walk");
+    done_bb = fn.append_basic_block(name=f"{prefix}.nm.done");
+    self.builder.cbranch(hit, done_bb, name_bb);
+    self.builder.position_at_end(name_bb);
+    subject = self.builder.bitcast(obj_ptr, i8p, name=f"{prefix}.nm.obj");
+    named: (ir.Value | None) = None;
+    if headered {
+        named = self._isinstance_class_name_hit(subject, names);
+    } else {
+        word = self.builder.load(
+            self.builder.bitcast(subject, i8p.as_pointer(), name=f"{prefix}.vw.slot"),
+            name=f"{prefix}.vw.word"
+        );
+        vt_fn = self._emit_isa_vtobj_fn();
+        for name in names {
+            one = self.builder.call(
+                vt_fn,
+                [
+                    word,
+                    self._emit_class_name_const(name),
+                    ir.Constant(i64, self._static_str_hash(name))
+                ],
+                name=f"{prefix}.vw.res"
+            );
+            named = one
+                if named is None
+                else self.builder.or_(named, one, name=f"{prefix}.vw.or");
+        }
+    }
+    if named is None {
+        named = ir.Constant(i1, 0);
+    }
+    name_end = self.builder.block;
+    self.builder.branch(done_bb);
+    self.builder.position_at_end(done_bb);
+    res = self.builder.phi(i1, name=f"{prefix}.nm.res");
+    res.add_incoming(ir.Constant(i1, 1), fast_end);
+    res.add_incoming(named, name_end);
     return res;
 }
 
@@ -1488,7 +1868,7 @@ impl NaIRGenPass._runtime_class_arms(
     arity is a runtime value -- comes back whole for the loop to walk. Both are
     `None` when the argument is not a runtime class handle at all.
     """;
-    none_pair = (None, None, );
+    none_pair: tuple[list[ir.Value] | None, ir.Value | None] = (None, None, );
     one = self._runtime_class_value(expr);
     if one is not None {
         return ([one], None, );
@@ -1512,13 +1892,16 @@ impl NaIRGenPass._runtime_class_arms(
         val = self.builder.load(val, name="isa.tgts");
     }
     out: list[ir.Value] = [];
-    for i in range(len(st.elements)) {
+    for i in range(len(st.members())) {
         if st.elements[i] != i8p {
             return none_pair;
         }
         out.append(self.builder.extract_value(val, i, name="isa.tgt"));
     }
-    return (out, None, ) if out else none_pair;
+    if out {
+        return (out, None, );
+    }
+    return none_pair;
 }
 
 impl NaIRGenPass._emit_isa_seq_fn -> ir.Function {
@@ -1538,7 +1921,7 @@ impl NaIRGenPass._emit_isa_seq_fn -> ir.Function {
     helpers = self.list_helpers["ptr"];
     seq_ty = self.list_types["ptr"].as_pointer();
 
-    fn: any = self._define_function(
+    fn: ir.Function = self._define_function(
         "__jac_isa_seq", ir.FunctionType(i1, [i8p, seq_ty])
     );
     fn.linkage = "private";

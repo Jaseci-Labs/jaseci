@@ -64,7 +64,7 @@ def _lower(cl_copy: str) -> str {
         file_path=cl_copy,
         options=CompileOptions(force_codespace='client', no_cgen=True)
     );
-    if not require_product(prog, ir, CompilationProduct.CLIENT) {
+    if not require(prog, ir, CompilationProduct.CLIENT) {
         raise RuntimeError("Could not compile OSP client runtime");
     }
     program = ir.gen.es_ast;

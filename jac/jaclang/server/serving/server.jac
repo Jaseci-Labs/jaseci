@@ -831,7 +831,7 @@ obj ServingServer {
                     continue;
                 }
             } else {
-                for _chunk in stream {
+                async for _chunk in iterate_sync(stream) {
                     continue;
                 }
             }
@@ -848,7 +848,7 @@ obj ServingServer {
                 await writer.drain();
             }
         } else {
-            for chunk in stream {
+            async for chunk in iterate_sync(stream) {
                 sent += self._write_chunk(writer, chunk, chunked);
                 await writer.drain();
             }

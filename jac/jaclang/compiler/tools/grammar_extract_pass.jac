@@ -132,6 +132,7 @@ obj ConditionResult {
 }
 
 walker GrammarExtractPass(TreePass) {
+    static has contract: PassContract = PassContract();
     has rules: list[GrammarRule] = [],
         target_class: str = "Parser",
         diagnostics: list[dict[str, any]] = [],

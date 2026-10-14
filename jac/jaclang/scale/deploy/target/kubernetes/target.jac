@@ -1,7 +1,15 @@
 import logging;
+import secrets;
 import time;
 
-glob logger = logging.getLogger(__name__),
+glob MINTED_SECRET_NOTES: dict[str, str] = {
+         SIGNING_SECRET_ENV: "Minted a JWT signing secret, kept across redeploys. Set "
+         "[scale.secrets] JAC_SERVE_AUTH_SECRET to control it yourself.",
+         ADMIN_PASSWORD_ENV: "Minted the bootstrap admin password into the app Secret "
+         "as JAC_SCALE_ADMIN_PASSWORD, kept across redeploys. Set [scale.admin] "
+         "default_password to control it yourself."
+     },
+     logger = logging.getLogger(__name__),
      REVISION_ANNOTATION: str = "deployment.kubernetes.io/revision",
      FLEET_SELECTOR: str = "managed=jac-scale,jac-scale.role in (microservice,gateway)";
 
@@ -86,6 +94,25 @@ def fleet_targets_for_release(
         return {"ok": True, "missing": [], "targets": held};
     }
     return {"ok": False, "missing": list(expected), "targets": {}};
+}
+
+
+def replacing_init_containers(body: dict[str, any]) -> dict[str, any] {
+    pod_spec: dict[str, any] = dict(
+        dict(dict(body.get("spec") or {}).get("template") or {}).get("spec") or {}
+    );
+    if "initContainers" not in pod_spec {
+        return body;
+    }
+    pod_spec["initContainers"] = list(pod_spec["initContainers"])
+        + [{"$patch": "replace"}];
+    template = dict(body["spec"]["template"]);
+    template["spec"] = pod_spec;
+    spec = dict(body["spec"]);
+    spec["template"] = template;
+    patched = dict(body);
+    patched["spec"] = spec;
+    return patched;
 }
 
 
@@ -371,8 +398,12 @@ obj KubernetesTarget(KubernetesTargetBase) {
                             companion_app_names is not None
                             and app in companion_app_names
                         );
+
                     crashing = (
-                        owned and restarts >= 3 and reason not in imagepull_reasons
+                        owned
+                        and restarts >= 3
+                        and not cs.ready
+                        and reason not in imagepull_reasons
                     );
                     if crashing and not pod_crash {
                         pod_crash = str(cs.name);
@@ -941,7 +972,7 @@ obj KubernetesTarget(KubernetesTargetBase) {
                     }
                 )
             ];
-            if has_memory_request {
+            if cfg.get("memory_request_configured", False) {
                 triggers.append(
                     Trigger(
                         type="memory",
@@ -1090,17 +1121,22 @@ obj KubernetesTarget(KubernetesTargetBase) {
         config_revision: str = "";
         user_secret = bundle.get("user_secret");
         if user_secret {
-            if resolve_signing_secret(
-                core_v1,
-                namespace,
-                user_secret["metadata"]["name"],
-                user_secret["stringData"]
-            )
-                and self.logger {
-                self.logger.info(
-                    "Minted a JWT signing secret, kept across redeploys. Set "
-                    "[scale.secrets] JAC_SERVE_AUTH_SECRET to control it yourself."
-                );
+            fresh = {
+                SIGNING_SECRET_ENV: secrets.token_urlsafe(48),
+                ADMIN_PASSWORD_ENV: minted_password(bundle.get("admin_password_rules"))
+            };
+            for (key, minted_note) in MINTED_SECRET_NOTES.items() {
+                if resolve_minted_secret(
+                    core_v1,
+                    namespace,
+                    user_secret["metadata"]["name"],
+                    user_secret["stringData"],
+                    key,
+                    fresh[key]
+                )
+                    and self.logger {
+                    self.logger.info(minted_note);
+                }
             }
             config_revision = create_k8s_secret(
                 core_v1,
@@ -1149,8 +1185,11 @@ obj KubernetesTarget(KubernetesTargetBase) {
         deployments: dict[str, dict[str, any]] = bundle["deployments"];
         for (svc_name, raw_manifest) in deployments.items() {
             dep_manifest = with_config_revision(raw_manifest, config_revision);
-            patch_body = self._deployment_patch_body(
-                dep_manifest, dict(scaling.get(svc_name, {}))
+            patch_body = replacing_init_containers(
+                self._deployment_patch_body(
+                    dep_manifest, dict(scaling.get(svc_name, {}))
+                )
+                    or dep_manifest
             );
             self._apply_or_replace(
                 apps_v1,

@@ -2,6 +2,10 @@ import hashlib;
 import math;
 import logging;
 
+obj AttemptsExhausted(Exception) {
+    has retry_after: int = 1;
+}
+
 def limit_key(scope: str, actor: str) -> str {
     return "ratelimit:" + hashlib.sha256((scope + ":" + actor).encode()).hexdigest();
 }

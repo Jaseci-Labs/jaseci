@@ -19,7 +19,8 @@ import from jaclang.scale.deploy.database.kubernetes_postgres {
 import from jaclang.data.pgembed {
     PG_MAX_CONNECTIONS,
     PG_MAX_PRED_LOCKS_PER_TXN,
-    pg_tuning_settings
+    pg_tuning_settings,
+    predicate_lock_shortfall
 }
 
 glob OBSERVED_PEAK_SIREAD_LOCKS = 17406,
@@ -82,4 +83,27 @@ test "provisioning: the Kubernetes Postgres carries the predicate-lock headroom"
             'instance must be tuned the same way the embedded one is'
         );
     }
+}
+
+
+test "an external Postgres on stock settings is named before it fails requests" {
+    stock = {
+        'max_pred_locks_per_transaction': 64,
+        'max_connections': 100,
+        'max_prepared_transactions': 0
+    };
+    problem = predicate_lock_shortfall(stock);
+    assert problem is not None , "stock Postgres settings passed the headroom check";
+    assert f"max_pred_locks_per_transaction = {PG_MAX_PRED_LOCKS_PER_TXN}" in problem , (
+        problem
+    );
+    assert "53200" in problem , problem;
+    tuned = {key: int(value) for (key, value) in pg_tuning_settings().items()};
+    assert predicate_lock_shortfall(tuned) is None , (
+        "the settings jac gives its own Postgres were reported as too small"
+    );
+    wide = {'max_pred_locks_per_transaction': 256, 'max_connections': 1200};
+    assert predicate_lock_shortfall(wide) is None , (
+        "a pool as large as the embedded one was reported as too small"
+    );
 }

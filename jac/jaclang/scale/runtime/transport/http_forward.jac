@@ -76,6 +76,8 @@ async def stream_forward(
         resp = await arequest(
             method, url, headers=headers, data=body, timeout=float(timeout), stream=True
         );
+    } except ClientReadTimeout {
+        raise;
     } except (ClientConnectionError, OSError) as e {
         _logger.error(f"HTTP stream-forward error: {e}");
         return None;
