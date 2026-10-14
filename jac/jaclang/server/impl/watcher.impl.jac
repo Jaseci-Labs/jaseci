@@ -25,13 +25,14 @@ impl annex_folders_of(module_path: str) -> list[str] {
 }
 
 impl watch_roots(base: str, app_root: str, sources: list[str]) -> list[str] {
+    import from jaclang.compiler.frontend.codeinfo { is_compiler_source_path }
     import from jaclang.runtime.prepared { holds_application_code }
     base_real = os.path.realpath(base);
     root_real = os.path.realpath(app_root);
     roots: set[str] = set();
     for source in sources {
         path = os.path.realpath(source);
-        if not path.startswith(root_real + os.sep) {
+        if not path.startswith(root_real + os.sep) or is_compiler_source_path(path) {
             continue;
         }
         relative = os.path.relpath(path, root_real);

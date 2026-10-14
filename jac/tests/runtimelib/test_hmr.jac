@@ -249,6 +249,55 @@ test "a client-only sibling directory is watched on a fresh and a restored start
     }
 }
 
+test "the compiler's own modules never make a watch root, wherever its checkout sits" {
+    import copy;
+    import os;
+    import sys;
+    import from jaclang.runtime.runtime { JacRuntime as Jac }
+    import from jaclang.compiler.driver.application { prepare_application }
+    import from jaclang.compiler.frontend.codeinfo {
+        is_compiler_source_path,
+        jaclang_pkg_root
+    }
+    import from jaclang.runtime.prepared { initialize_application, forget }
+    import from jaclang.project.modresolver { resolve_jac_virtual_module_path }
+    checkout = os.path.dirname(os.path.realpath(jaclang_pkg_root()));
+    if not os.access(checkout, os.W_OK) {
+        testskip("needs a writable directory around the jaclang source tree");
+    }
+    with tempfile.TemporaryDirectory(dir=checkout, prefix="watch-app-") as tmp {
+        web = os.path.realpath(tmp);
+        Path(web, "jac.toml").write_text('[project]\nname = "watch-app"\n');
+        source_path = os.path.join(web, "main.jac");
+        Path(source_path).write_text(
+            'import from "@jac/runtime" { Navigate }\n\ndef:pub app -> JsxElement {\n    return <Navigate to="/"/>;\n}\n'
+        );
+        application = prepare_application(
+            source_path, Jac.get_program(), web, (), True
+        );
+        module = initialize_application(application);
+        prefix = module.__name__.split('.')[0];
+        try {
+            desktop_source = resolve_jac_virtual_module_path('@jac/desktop');
+            assert desktop_source is not None;
+            desktop = os.path.realpath(desktop_source);
+            assert is_compiler_source_path(desktop) , desktop;
+            enclosing: any = copy.copy(application);
+            enclosing.`root = checkout;
+            enclosing.sources = sorted({*application.sources, desktop});
+            roots = application_watch_roots(web, enclosing, Jac.get_program());
+            assert roots == [web] , str(roots);
+        } finally {
+            forget(source_path);
+            for name in list(sys.modules) {
+                if name == prefix or name.startswith(prefix + '.') {
+                    sys.modules.pop(name, None);
+                }
+            }
+        }
+    }
+}
+
 test "nothing under site-packages or a hidden directory becomes a watch root" {
     import os;
     with tempfile.TemporaryDirectory() as tmp {
