@@ -3282,38 +3282,47 @@ impl NaIRGenPass._emit_malloc_null_guard(
     _b_oom = ir.IRBuilder(_oom_bb);
     _oom_msg = "jac native: out of memory\n";
     _oom_msg_gv = self._get_snprintf_fmt(_oom_msg);
-    _oom_msg_ptr = _b_oom.gep(
-        _oom_msg_gv, [ir.Constant(i32, 0), ir.Constant(i32, 0)], name="oom.msg"
-    );
-    _abort_fn = self._get_or_declare_extern("abort", ir.VoidType(), []);
 
-    """`write`'s size/return follow the target ABI: POSIX 64-bit on native
-    targets, but wasm32 libc imports are i32-typed and the wasm backend
-    lowers a mismatched direct call to `unreachable`, so declaring the
-    POSIX shape there traps every `puts` in the module.""";
-    _triple = str(self.llvm_module.triple or "").lower();
-    if "wasm" in _triple {
-        _write_fn = self._get_or_declare_extern("write", i32, [i32, i8_ptr, i32]);
-        _b_oom.call(
-            _write_fn,
-            [
-                ir.Constant(i32, 2),
-                _oom_msg_ptr,
-                ir.Constant(i32, len(_oom_msg.encode()))
-            ]
+    """The `write` diagnostic and `abort` are only emitted when no clib import
+    in the module binds those names. The guard runs while the runtime externs
+    are declared -- before user clib abilities -- so an unconditional
+    `_get_or_declare_extern("write", <POSIX ABI>)` would claim `write` first
+    and make the module's own `def write(...) -> i32` declaration fail the
+    whole compile. When the import wins the name the guard still terminates
+    with `unreachable`, just without the diagnostic calls.""";
+    _foreign_names = self._foreign_fns();
+    if "write" not in _foreign_names {
+        _oom_msg_ptr = _b_oom.gep(
+            _oom_msg_gv, [ir.Constant(i32, 0), ir.Constant(i32, 0)], name="oom.msg"
         );
-    } else {
-        _write_fn = self._get_or_declare_extern("write", i64, [i32, i8_ptr, i64]);
-        _b_oom.call(
-            _write_fn,
-            [
-                ir.Constant(i32, 2),
-                _oom_msg_ptr,
-                ir.Constant(i64, len(_oom_msg.encode()))
-            ]
-        );
+
+        _triple = str(self.llvm_module.triple or "").lower();
+        if "wasm" in _triple {
+            _write_fn = self._get_or_declare_extern("write", i32, [i32, i8_ptr, i32]);
+            _b_oom.call(
+                _write_fn,
+                [
+                    ir.Constant(i32, 2),
+                    _oom_msg_ptr,
+                    ir.Constant(i32, len(_oom_msg.encode()))
+                ]
+            );
+        } else {
+            _write_fn = self._get_or_declare_extern("write", i64, [i32, i8_ptr, i64]);
+            _b_oom.call(
+                _write_fn,
+                [
+                    ir.Constant(i32, 2),
+                    _oom_msg_ptr,
+                    ir.Constant(i64, len(_oom_msg.encode()))
+                ]
+            );
+        }
     }
-    _b_oom.call(_abort_fn, []);
+    if "abort" not in _foreign_names {
+        _abort_fn = self._get_or_declare_extern("abort", ir.VoidType(), []);
+        _b_oom.call(_abort_fn, []);
+    }
     _b_oom.unreachable();
     return ir.IRBuilder(_ok_bb);
 }

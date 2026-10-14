@@ -114,3 +114,16 @@ test "__jac_halloc null-checks malloc and aborts on OOM" {
     ir = compile_native_ir("nogc/enforce_clean.jac", options=_headerless_opts());
     assert_malloc_oom_guard(ir);
 }
+
+test "OOM guard still traps when a clib import shadows write with another ABI" {
+    # `write(fd: i32, buf: int, count: i32) -> i32` cannot be adapted to the
+    # guard's POSIX write; the guard must skip the diagnostic and still abort
+    # instead of erroring the whole module.
+    ir = compile_native_ir("oom_guard_clib_shadow.jac");
+    text = str(ir.gen.llvm_ir);
+    assert "raw.null" in text , "malloc result must be null-checked";
+    assert ("call void @abort(" in text or 'call void @"abort"(' in text) , (
+        "OOM path must still call abort"
+    );
+    assert "unreachable" in text , "OOM path must still terminate the block";
+}
