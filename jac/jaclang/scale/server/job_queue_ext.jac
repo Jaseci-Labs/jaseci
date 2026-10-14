@@ -16,13 +16,9 @@ def resolve_job_target(server: JacAPIServer, name: str) -> any {
     found: any = None;
     if ':' in name {
         import from jaclang.data.type_identity { TypeResolutionError, module_for }
-        import from jaclang.runtime.prepared { application_for }
         (identity, attr) = name.rsplit(':', 1);
-        entry_file = server.module_file;
         try {
-            module = module_for(
-                identity, application_for(entry_file) if entry_file else None
-            );
+            module = module_for(identity, server.introspector.application());
         } except TypeResolutionError as e {
             raise JobTargetMissing(
                 f"'{name}' is not a walker or function this app loads: {e}"

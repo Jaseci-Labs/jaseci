@@ -450,8 +450,12 @@ test "a served app runs private walkers from its entry and a sibling module and 
         get_scale_config,
         reset_scale_config
     }
-    import from jaclang.scale.server.job_queue_ext { JobQueueExtension }
+    import from jaclang.scale.server.job_queue_ext {
+        JobQueueExtension,
+        resolve_job_target
+    }
     import from jaclang.scale.tests.scale_test_client { ScaleTestClient, extract_data }
+    import from jaclang.server.server { JacAPIServer }
     fixture = Path(__file__).parent.parent / "fixtures" / "job_queue";
     tmp = tempfile.mkdtemp();
     shutil.copytree(str(fixture), tmp, dirs_exist_ok=True);
@@ -474,6 +478,7 @@ test "a served app runs private walkers from its entry and a sibling module and 
             (False, True, "done", "", 10.0),
             (True, False, "dead", "ran past timeout_s=0.5", 2.5)
         ];
+        targets: list[str] = [];
         for (hang, here_only, status, error, budget) in cases {
             queued = extract_data(
                 client.post(
@@ -487,6 +492,7 @@ test "a served app runs private walkers from its entry and a sibling module and 
                 ).json()
             );
             job_id = queued["reports"][0]["job_id"];
+            targets.append(_job(job_info(job_id)).target);
             started = time.monotonic();
             seen: dict[str, any] = {};
             while time.monotonic() - started < budget {
@@ -504,6 +510,11 @@ test "a served app runs private walkers from its entry and a sibling module and 
             assert error in seen["last_error"] , f"hang={hang} here_only={here_only}: {seen[
                 'last_error'
             ]}";
+        }
+        cli_shaped = JacAPIServer(module_name=server.module_name, base_path=tmp);
+        cli_shaped.load_module();
+        for name in targets {
+            assert resolve_job_target(cli_shaped, name) is not None , name;
         }
     } finally {
         if client is not None {
