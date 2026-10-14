@@ -4,7 +4,9 @@ import types;
 import from pathlib { Path }
 import from jaclang.compiler.frontend.host { active_host }
 
-def import_specs(code: types.CodeType, source: str) -> list[tuple[int, str, (tuple[str, ...] | None)]] {
+def import_specs(
+    code: types.CodeType, source: str
+) -> list[tuple[int, str, (tuple[str, ...] | None)]] {
     specs: list[tuple[int, str, (tuple[str, ...] | None)]] = [];
     pending = [code];
     while pending {
@@ -31,7 +33,13 @@ def import_specs(code: types.CodeType, source: str) -> list[tuple[int, str, (tup
                     f'Nonconstant import level in prepared module {source}'
                 );
             }
-            specs.append((level, str(instruction.argval), names if isinstance(names, tuple) else None));
+            specs.append(
+                (
+                    level,
+                    str(instruction.argval),
+                    names if isinstance(names, tuple) else None
+                )
+            );
         }
     }
     return specs;
@@ -57,9 +65,7 @@ def resolve_imports(
             }
         }
         for search_root in roots {
-            target = search_root.joinpath(*name.split('.'))
-                if name
-                else search_root;
+            target = search_root.joinpath(*name.split('.')) if name else search_root;
             resolved = active_host().resolve_local_module(
                 str(search_root), name.split('.') if name else []
             );
