@@ -955,7 +955,7 @@ impl NaIRGenPass._codegen_raise(nd: uni.RaiseStmt) -> None {
                     exc_msg = self._exc_state_message(exc_payload, exc_type_name);
                 }
             } elif _exc_pos_args {
-                exc_msg = self._codegen_expr(_exc_pos_args[0]);
+                exc_msg = self._exc_arg_message(_exc_pos_args[0]);
             } elif nd.cause.params {
                 exc_msg = self._codegen_expr(nd.cause.params[0]);
             }
@@ -1010,6 +1010,20 @@ impl NaIRGenPass._codegen_raise(nd: uni.RaiseStmt) -> None {
         self._exc_raise_fn, [exc_payload, ir.Constant(i32, exc_type_id), exc_msg]
     );
     self.builder.unreachable();
+}
+
+impl NaIRGenPass._exc_arg_message(arg: uni.Expr) -> (ir.Value | None) {
+    val = self._codegen_expr(arg);
+    if val is None or not isinstance(val.type, (ir.IntType, ir.DoubleType)) {
+        return val;
+    }
+    text = self._dispatch_builtin(
+        "str", [val], type_key=self._type_key_of(arg) or "", arg_nodes=[arg]
+    );
+    if text is None {
+        raise NativeRefused(f"an exception argument of type {val.type}");
+    }
+    return text;
 }
 
 impl NaIRGenPass._raise_has_frame_handler(nd: uni.RaiseStmt) -> bool {
