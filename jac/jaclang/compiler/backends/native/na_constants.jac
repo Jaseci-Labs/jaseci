@@ -60,6 +60,7 @@ def stdlib_intercepted(module_name: str, func_name: str) -> bool {
         or (module_name == "random" and func_name in NATIVE_RANDOM_FUNCS)
         or (module_name == "struct" and func_name in NATIVE_STRUCT_FUNCS);
 }
+
 glob RC_COLOR_BLACK: int = 0,
      RC_COLOR_WHITE: int = 1,
      RC_COLOR_GRAY: int = 2,
