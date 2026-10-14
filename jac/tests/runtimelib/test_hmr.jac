@@ -3,6 +3,7 @@
 Tests for the file watcher and HotReloader functionality.
 """
 
+import os;
 import tempfile;
 import threading;
 import time;
