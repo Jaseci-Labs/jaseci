@@ -169,6 +169,7 @@ node ClassDetailsShared {
         _native_name: (tuple[SymbolTable, str] | None) = None,
         _acc_cache: (dict[str, any] | None) = None,
         _mro_sig: (list[tuple[int, str]] | None) = None,
+        _fresh_epoch: int = -1,
         _provisional: bool = False,
         _heal_stamp: int = 0;
 
@@ -482,3 +483,5 @@ node EnumMemberType(TypeBase) {
     def __str__ -> str;
     def get_value_type -> TypeBase;
 }
+
+glob CLASS_GRAPH_EPOCH: list[int] = [0];

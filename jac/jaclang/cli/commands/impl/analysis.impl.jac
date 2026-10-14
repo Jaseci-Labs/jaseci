@@ -17,6 +17,45 @@ def _maybe_malloc_trim {
 
 glob _CHECK_STATE: dict[(str, any)] = {"prog": None, "coverage_on": False};
 
+glob _CHECK_HEAP: dict[(str, int)] = {"base_rss": -1},
+     CHECK_HEAP_REGROW_MB: int = 512;
+
+def _unit_weight(unit: dict[(str, any)]) -> int {
+    import os;
+    import from jaclang.compiler.driver.bccache { discover_annex_files }
+    path = str(unit['path']);
+    try {
+        size = os.path.getsize(path);
+    } except OSError {
+        return 0;
+    }
+    try {
+        for annex in discover_annex_files(path, '.impl.jac') {
+            size += os.path.getsize(annex);
+        }
+    } except Exception {}
+    return size;
+}
+
+def _settle_check_heap {
+    import gc;
+    import os;
+    if os.environ.get('JAC_GC_NO_COMPILE_BOOST') {
+        return;
+    }
+    import from jaclang.cli.workpool { maybe_malloc_trim, worker_rss_mb }
+    rss = worker_rss_mb();
+    if _CHECK_HEAP["base_rss"] < 0 {
+        _CHECK_HEAP["base_rss"] = rss;
+    } elif rss - _CHECK_HEAP["base_rss"] > CHECK_HEAP_REGROW_MB {
+        gc.unfreeze();
+        gc.collect();
+        maybe_malloc_trim();
+        _CHECK_HEAP["base_rss"] = worker_rss_mb();
+    }
+    gc.freeze();
+}
+
 def _wire_list(value: any) -> list[any] {
     return value if isinstance(value, list) else [];
 }
@@ -282,6 +321,20 @@ def _check_file_job(request: dict[(str, any)]) -> dict[(str, any)] {
     }
 }
 
+def _check_file_job_settled(request: dict[(str, any)]) -> dict[(str, any)] {
+    result = _check_file_job(request);
+    _settle_check_heap();
+    return result;
+}
+
+def _release_check_heap {
+    import gc;
+    if _CHECK_HEAP["base_rss"] >= 0 {
+        gc.unfreeze();
+        _CHECK_HEAP["base_rss"] = -1;
+    }
+}
+
 impl check(
     paths: list[str],
     print_errs: bool = True,
@@ -315,6 +368,12 @@ impl check(
     import from jaclang.compiler.driver.compiler { CHECK_GC_THRESHOLDS }
     if not os.environ.get('JAC_GC_NO_COMPILE_BOOST') {
         gc.set_threshold(*CHECK_GC_THRESHOLDS);
+    }
+    if not parse_only {
+        try {
+            import from jaclang.compiler.driver.ifacecache { prime_iface_codec }
+            prime_iface_codec();
+        } except Exception {}
     }
     if isinstance(paths, str) {
         paths = [paths];
@@ -459,6 +518,9 @@ impl check(
             and workers > 1
             and total > 1
         );
+        if use_pool {
+            batch = sorted(batch, key=_unit_weight, reverse=True);
+        }
 
         def request_extra(idx: int, path: str) -> dict[(str, any)] {
             unit = batch[idx];
@@ -509,7 +571,7 @@ impl check(
 
         pool = WorkPool(
             items=[u['path'] for u in batch],
-            job=_check_file_job,
+            job=_check_file_job_settled,
             on_record=on_record,
             jobs=min(workers, max(1, total)),
             request_extra=request_extra,
@@ -523,9 +585,20 @@ impl check(
             try {
                 JacRuntime.get_compiler().ensure_stub_catalog();
             } except Exception {}
-            pool.run();
+            if not os.environ.get('JAC_GC_NO_COMPILE_BOOST') {
+                gc.freeze();
+            }
+            try {
+                pool.run();
+            } finally {
+                gc.unfreeze();
+            }
         } else {
-            pool.run_inline();
+            try {
+                pool.run_inline();
+            } finally {
+                _release_check_heap();
+            }
         }
     }
 
@@ -1815,10 +1888,12 @@ impl grammar(output: str = "", strict: bool = False) -> int {
         }
         return 1;
     }
-    import from jaclang.compiler.driver.pipeline_runner { run_utility }
-    import from jaclang.compiler.driver.pipeline_types { UtilityProduct }
+    import from jaclang.compiler.driver.pipeline { run_utility }
+    import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
     import from typing { cast }
-    pass_ = cast(GrammarExtractPass, run_utility(UtilityProduct.GRAMMAR, mod, prog));
+    pass_ = cast(
+        GrammarExtractPass, run_utility(CompilationProduct.GRAMMAR, mod, prog)
+    );
     if len(pass_.rules) == 0 {
         console.error("No grammar rules extracted.");
         return 1;

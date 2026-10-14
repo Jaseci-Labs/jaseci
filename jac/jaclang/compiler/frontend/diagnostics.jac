@@ -40,38 +40,45 @@ obj DiagnosticInfo {
     }
 }
 
-def _fill_template(template: str, kwargs: dict[str, object]) -> (str | None) {
-    esc_open = chr(1);
-    esc_close = chr(2);
-    out = template.replace("{{", esc_open).replace("}}", esc_close);
-    for (k, v) in kwargs.items() {
-        key = "{" + str(k) + "}";
-        out = out.replace(key, str(v));
+def _placeholder_name(text: str) -> bool {
+    if not text {
+        return False;
     }
-    scan = 0;
-    while True {
-        b_open = out.find("{", scan);
-        if b_open < 0 {
-            break;
+    for ch in text {
+        if not (ch.isalnum() or ch == "_") {
+            return False;
         }
-        b_close = out.find("}", b_open + 1);
-        if b_close < 0 {
-            break;
+    }
+    return True;
+}
+
+def _fill_template(template: str, kwargs: dict[str, object]) -> (str | None) {
+    out: list[str] = [];
+    i = 0;
+    n = len(template);
+    while i < n {
+        ch = template[i];
+        if (ch == "{" or ch == "}") and i + 1 < n and template[i + 1] == ch {
+            out.append(ch);
+            i += 2;
+            continue;
         }
-        inner = out[b_open + 1:b_close];
-        is_name = len(inner) > 0;
-        for ch in inner {
-            if not (ch.isalnum() or ch == "_") {
-                is_name = False;
-                break;
+        if ch == "{" {
+            close = template.find("}", i + 1);
+            if close > i and _placeholder_name(template[i + 1:close]) {
+                key = template[i + 1:close];
+                if key not in kwargs {
+                    return None;
+                }
+                out.append(str(kwargs[key]));
+                i = close + 1;
+                continue;
             }
         }
-        if is_name {
-            return None;
-        }
-        scan = b_open + 1;
+        out.append(ch);
+        i += 1;
     }
-    return out.replace(esc_open, "{").replace(esc_close, "}");
+    return "".join(out);
 }
 
 glob DIAGNOSTICS: dict[str, DiagnosticInfo] = {};
@@ -2432,6 +2439,18 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
          Category.CODEGEN,
          "Constructing '{cls}' would run '{owner}.postinit' on a Python shadow the native object cannot see",
          help="A native class over a Python-side base owns two halves: its own slots live in the native struct, the base's live on a Python shadow instance the bridge keeps beside it. Construction runs the base's `__post_init__` on that shadow, where the subclass's native slots do not exist and its method overrides are not on the shadow's class -- so a store the base initializer makes is invisible natively, and a call it dispatches reaches the base's body rather than the override. The object comes out with its declared defaults and nothing says so. Give '{cls}' a `postinit` of its own -- it suppresses the base's and can chain into it with `super.postinit()`, which does bridge -- or bring the base into the native unit so the whole chain lowers."
+     ),
+     E5116 = _err(
+         "E5116",
+         Category.CODEGEN,
+         "Native library declaration does not conform to its interface: {reason}",
+         help="A native standard-library module implements the interface the Python stubs declare for the module of the same name. Every public function, parameter and member it has must be one that interface declares, so a program typed against the interface means the same thing in every codespace. Make the extra name private with a leading underscore, rename it to match, or leave it out; a name the interface declares and this module lacks is fine, and is reported to callers as a native gap."
+     ),
+     E5115 = _err(
+         "E5115",
+         Category.CODEGEN,
+         "Type '{type}' on {what} of '{name}' has no wire form between client and server code: {reason}",
+         help="A client call to a server function is a request: arguments are bound from JSON and the result is serialized to JSON. What crosses is a scalar (str, int, float, bool, bytes, None), a list, tuple or set of types that cross, a dict with str keys, an enum, an archetype whose fields all cross, or a union of those. An upload crosses only as a parameter of a server function, and a generator only as a streamed result. Give the function a signature made of those, or keep the value on one side and pass an identifier for it."
      ),
      E5113 = _err(
          "E5113",

@@ -16,7 +16,9 @@ glob TOOLCHAIN_INPUTS: tuple[str, ...] = (
          "bootstrap/pins.json"
      ),
      NATIVE_SOURCE_SUFFIXES: tuple[str, ...] = (".cpp", ".h", ".hpp"),
-     RECORD_SUFFIX: str = ".artifact.json";
+     RECORD_SUFFIX: str = ".artifact.json",
+     LLVM_PINS: str = "bootstrap/pins.json",
+     LLVM_CACHE_DIR: str = ".llvm-build";
 
 def shim_name -> str {
     if os.name == "posix" {
@@ -27,6 +29,32 @@ def shim_name -> str {
 
 def placed_shim_path -> str {
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), shim_name());
+}
+
+def llvm_host -> str {
+    import platform;
+    system = {"linux": "linux", "darwin": "macos"}.get(sys.platform, sys.platform);
+    machine = platform.machine().lower();
+    machine = {"amd64": "x86_64", "arm64": "aarch64"}.get(machine, machine);
+    return f"{system}-{machine}";
+}
+
+def pinned_llvm_blocker(repo_root: str) -> str {
+    pins = os.path.join(repo_root, *LLVM_PINS.split("/"));
+    try {
+        with open(pins, encoding="utf-8") as f {
+            slices = json.load(f)["llvm"]["slices"];
+        }
+    } except (OSError, ValueError, KeyError, TypeError) {
+        return f"this tree has no LLVM pin ({LLVM_PINS})";
+    }
+    host = llvm_host();
+    if host in slices {
+        return "";
+    }
+    return f"{LLVM_PINS} pins no LLVM release for this host ({host}); pinned: {', '.join(
+        sorted(slices)
+    )}";
 }
 
 def _repo_root -> str {
@@ -151,7 +179,10 @@ obj ShimArtifact(Artifact) {
 
     override def build_blocker -> str {
         import shutil;
-        return "" if shutil.which("zig") else "zig is not on PATH";
+        if not shutil.which("zig") {
+            return "zig is not on PATH";
+        }
+        return pinned_llvm_blocker(_repo_root());
     }
 
     override def build(log: Callable[[str], None], force: bool, exact: bool) {
@@ -160,6 +191,10 @@ obj ShimArtifact(Artifact) {
         if force and os.path.isfile(record) {
             os.remove(record);
         }
+        log(
+            f"  zig build fetch-llvm (the pinned LLVM into {LLVM_CACHE_DIR}/, about 84 MB once)"
+        );
+        subprocess.run(["zig", "build", "fetch-llvm"], cwd=_repo_root(), check=True);
         log(
             "  zig build jacllvm (links the pinned LLVM; places the shim and its record)"
         );

@@ -160,11 +160,12 @@ test "the host runs a native module from its kernel record without analysing it"
     }
 }
 
-"""Placement is optimistic: a module pinned or inferred native that cannot be
-lowered is demoted and compiled again on the server. In a kernel session that
-retry happens inside the session, and the host learns of it from the unit's
-placement record and the session's notes, not by compiling the module."""
-test "a module that cannot be lowered is demoted inside the session" {
+"""A module pinned or inferred native that the backend cannot lower is placed
+on the server in place: the Python backend emits the tree that was typed for
+no codespace. In a kernel session that happens inside the session, and the
+host learns of it from the unit's placement record and the session's notes,
+not by compiling the module."""
+test "a module that cannot be lowered is placed on the server inside the session" {
     import json;
     with TemporaryDirectory() as td {
         base = Path(os.path.realpath(td));
@@ -173,7 +174,7 @@ test "a module that cannot be lowered is demoted inside the session" {
         );
         (base / 'models.jac').write_text(
             'def double(x: int) -> int {\n    return x * 2;\n}\n\n'
-                + 'with entry {\n    print(len([root-->]));\n}\n'
+                + 'with entry {\n    s = {1, "a"};\n    print(double(2), len(s));\n}\n'
         );
         entry_file = str(base / 'models.jac');
         with in_process_kernel() {
@@ -193,7 +194,7 @@ test "a module that cannot be lowered is demoted inside the session" {
         assert emitted.jcir , "the demoted module has no server code";
         assert not emitted.native_ir , "a demoted module still carries native IR";
         summary = json.loads(emitted.placement);
-        assert summary.get("native_verdict_code") == "E5092" , summary;
+        assert summary.get("decided") != "native" , summary;
         notes = [
             row[2]
             for row in outcome.analysis.events
@@ -247,11 +248,11 @@ test "a default run lowers a bundled native import the way the host does" {
 }
 
 """The host can still fail after the kernel has lowered a module: the IR may
-not link, because a dependency turned out not to be a native unit. Where
-placement only inferred native, that is a demotion like any other. The host
-holds the verdict and asks the kernel again, and the second session compiles
-the module for the server."""
-test "a module the host cannot link is demoted and compiled again for the server" {
+not link. Placement was settled before the module was lowered, and a
+dependency is placed before its importer is analyzed, so a link failure is a
+compiler defect. It surfaces as one; nothing compiles the module again for
+the server."""
+test "a module the host cannot link is an error, not a second compile" {
     import from jaclang.compiler.backends.native.link_plan { LinkPlanError }
     import from jaclang.compiler.driver.compiler { JacCompiler }
     with TemporaryDirectory() as td {
@@ -262,23 +263,22 @@ test "a module the host cannot link is demoted and compiled again for the server
         program = JacProgram();
         builder = program._get_compiler();
         refusal = LinkPlanError("helper.jac is not a native unit");
+        raised = False;
         with in_process_kernel() {
             with patch.object(
                 JacCompiler, "_load_native_from_cache", side_effect=refusal
             ) as link {
-                code = builder.get_bytecode(
-                    full_target=entry_file, target_program=program
-                );
+                try {
+                    builder.get_bytecode(
+                        full_target=entry_file, target_program=program
+                    );
+                } except LinkPlanError {
+                    raised = True;
+                }
             }
         }
-        assert link.call_count == 1 , (
-            "the module came back native after its verdict was held"
-        );
-        assert code is not None , "the demoted module has no server code";
-        verdict = program.native_units().verdict_for(entry_file);
-        assert verdict is not None and verdict.demoted , verdict;
-        assert verdict.code == "E5020" , verdict.code;
-        assert "helper.jac is not a native unit" in verdict.detail , verdict.detail;
+        assert raised , "a link failure was absorbed instead of surfacing";
+        assert link.call_count == 1 , "the module was compiled again after it failed to link";
     }
 }
 

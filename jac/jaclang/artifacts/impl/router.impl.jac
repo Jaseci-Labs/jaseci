@@ -171,6 +171,7 @@ impl build(
     exact: bool = False,
     strict: bool = False
 ) -> list[str] {
+    import subprocess;
     built: list[str] = [];
     for name in build_order(requested) {
         artifact = artifact_named(name);
@@ -195,8 +196,17 @@ impl build(
             continue;
         }
         log(f"building {name}");
-        with building([name]) {
-            artifact.build(log, force, exact);
+        try {
+            with building([name]) {
+                artifact.build(log, force, exact);
+            }
+        } except subprocess.CalledProcessError as e {
+            command = " ".join(str(part) for part in e.cmd)
+                if isinstance(e.cmd, (list, tuple))
+                else str(e.cmd);
+            raise ArtifactUnavailable(
+                f"{name}: `{command}` failed (exit status {e.returncode}); see its output above"
+            ) from None;
         }
         forget(name);
         after = artifact.built();

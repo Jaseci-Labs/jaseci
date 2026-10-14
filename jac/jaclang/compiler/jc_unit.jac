@@ -20,7 +20,8 @@ import from jaclang.compiler.frontend.parser.tokens { SrcDiag, CommentData }
 import from jaclang.compiler.frontend.unitree { Module, Import }
 import from jaclang.compiler.frontend.roles { AccessorsRole, BodyRole, SpecRole }
 import from jaclang.compiler.frontend.constant { CodeContext }
-import from jaclang.compiler.passes.early_passes { EARLY_PASSES, SymTabBuildPass }
+import from jaclang.compiler.driver.pipeline { early_passes }
+import from jaclang.compiler.passes.sym_tab_build_pass { SymTabBuildPass }
 import from jaclang.compiler.passes.context { Alert }
 import from jaclang.compiler.passes.annex_weave {
     merge_annex_into,
@@ -185,7 +186,7 @@ def _run_early_passes(mod: Module) -> list[CompileContext] {
     } elif _JC.early_context == 3 {
         mod.set_code_context(CodeContext.NATIVE);
     }
-    for pass_type in EARLY_PASSES {
+    for pass_type in early_passes() {
         if pass_type is SymTabBuildPass and _has_absorb_import(mod) {
             break;
         }

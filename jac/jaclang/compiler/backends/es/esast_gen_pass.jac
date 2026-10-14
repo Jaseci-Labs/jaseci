@@ -1,4 +1,5 @@
 import from jaclang.compiler.frontend.roles { Kid }
+import from jaclang.compiler.driver.pipeline_types { PassContract }
 import json;
 import from typing { cast }
 import jaclang.compiler.backends.es.estree as es;
@@ -252,6 +253,7 @@ obj CallArgSlot {
 }
 
 walker EsastGenPass(TreePass) {
+    static has contract: PassContract = PassContract();
     has _ct_only_names: (set[str] | None) = None,
         imports: list[es.ImportDeclaration] = [],
         module_import_paths: dict[str, str] = {},

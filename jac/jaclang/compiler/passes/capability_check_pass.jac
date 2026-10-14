@@ -1,4 +1,5 @@
 import from jaclang.compiler.frontend.roles { Kid }
+import from jaclang.compiler.driver.pipeline_types { AnalysisFact, PassContract }
 import from jaclang.compiler.passes.context { CompileContext, CompilerPass }
 import from jaclang.compiler.frontend.unitree {
     Ability,
@@ -45,14 +46,7 @@ import from jaclang.compiler.frontend.module_facts {
 }
 import from jaclang.compiler.frontend.constant { SymbolType }
 import from jaclang.compiler.types.types { ClassType }
-import from jaclang.compiler.frontend.diagnostics {
-    E5090,
-    E5096,
-    W6001,
-    W6002,
-    W6003,
-    W6004
-}
+import from jaclang.compiler.frontend.diagnostics { E5096, W6001, W6002, W6003, W6004 }
 import from jaclang.compiler.frontend.codeinfo {
     NATIVE_SUPPORTED_STDLIB,
     is_native_by_location
@@ -87,16 +81,11 @@ def native_capability_violations(
 
 def native_capability_demotion_owner(viol_node: UniNode) -> (Ability | None);
 
-def partition_native_capability_violations(
-    viols: list[tuple[(UniNode, str, str, (str | None))]]
-) -> tuple[
-    (
-        list[tuple[(UniNode, str, str, (str | None))]],
-        dict[int, list[tuple[(UniNode, str, str, (str | None))]]]
-    )
-];
-
 walker PortabilityWarnPass(CompilerPass) {
+    static has contract: PassContract = PassContract(
+        provides=(AnalysisFact.PORTABILITY, )
+    );
+
     def _run_impl(ir_in: Module) -> Module;
     can run_walk with Module entry;
     def _check_js_globals(mod: Module) -> None;
@@ -104,14 +93,4 @@ walker PortabilityWarnPass(CompilerPass) {
     def _find_call_is_js_style(call: FuncCall) -> bool;
     def _check_js_keywords(mod: Module) -> None;
     def _check_js_properties(mod: Module) -> None;
-}
-
-walker NativeCapabilityCheckPass(CompilerPass) {
-    def _run_impl(ir_in: Module) -> Module;
-    can run_walk with Module entry;
-}
-
-walker ClientCapabilityCheckPass(CompilerPass) {
-    def _run_impl(ir_in: Module) -> Module;
-    can run_walk with Module entry;
 }

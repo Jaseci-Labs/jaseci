@@ -14,13 +14,6 @@ import type from jaclang.compiler.driver.compile_options { CompileOptions }
 import type from jaclang.compiler.driver.module_analysis { ModuleAnalysis }
 import type from jaclang.compiler.frontend.kernel_analyze { CompileReport }
 
-obj NativeVerdict {
-    has demoted: bool = False,
-        code: str = "",
-        detail: str = "",
-        deps: list[list[str]] = [];
-}
-
 obj CheckSettings {
     has suppress: list[str] = [],
         suppress_categories: list[str] = [],
@@ -34,7 +27,6 @@ obj CheckSettings {
 
 obj ProjectDefaults {
     has default_codespace: str,
-        native_closure_cap: int,
         native_require: list[str],
         native_target: str,
         native_debug: bool,
@@ -293,18 +285,8 @@ obj HostServices {
         return False;
     }
 
-    def native_verdict(
-        path: str, program: (JacProgram | None) = None
-    ) -> (NativeVerdict | None) {
-        return None;
-    }
-
     def record_native_coverage(
         path: str, outcome: str, code: str = "", detail: str = ""
-    ) {}
-
-    def record_native_verdict(
-        program: JacProgram, path: str, code: str, detail: str
     ) {}
 
     def native_analyze(
