@@ -111,7 +111,7 @@ def _remove_tree(top: Path) -> None {
 obj AdminConsole {
     has source_dir: Path,
         cache_dir: Path,
-        build_fn: (Callable[[Path], Path] | None) = None,
+        build_fn: Callable[[Path], Path] = build_with_jac,
         retry_after: float = RETRY_AFTER_FAILURE_SECONDS,
         _key: str = "",
         _mutex: (threading.Lock | None) = None,
@@ -122,9 +122,6 @@ obj AdminConsole {
 
     def postinit {
         self._mutex = threading.Lock();
-        if self.build_fn is None {
-            self.build_fn = build_with_jac;
-        }
     }
 
     def key -> str {
@@ -252,8 +249,7 @@ obj AdminConsole {
             _make_owner_writable(src);
             logger.info("Building the admin console from source...");
             started = time.monotonic();
-            build = self.build_fn or build_with_jac;
-            built = Path(build(src));
+            built = Path(self.build_fn(src));
             if not (built / "index.html").is_file() {
                 raise RuntimeError(f"the build left no index.html in {built}");
             }
@@ -308,13 +304,12 @@ def console_unavailable(status: ConsoleStatus) -> Response {
         title = "Admin Portal Build Failed";
         detail = "The admin console could not be built. Check the server logs for details.";
         color = "#ef4444";
-        refresh = "";
     } else {
         title = "Admin Portal Is Being Built";
         detail = "The admin console is being built. This page reloads when it is ready.";
         color = "#e2e8f0";
-        refresh = f'<meta http-equiv="refresh" content="{status.retry_after}">';
     }
+    refresh = f'<meta http-equiv="refresh" content="{status.retry_after}">';
     return HTMLResponse(
         content=f'''<!DOCTYPE html>
 <html>

@@ -562,6 +562,15 @@ test "admin console pages answer without waiting on a console build" {
         return dist;
     }
 
+    # A 503 page, building or failed, says when to come back and reloads then.
+    def assert_retries(name: str, path: str, response: any) {
+        retry = response.headers.get("retry-after");
+        assert retry , f"{name}: {path} 503 carries no Retry-After";
+        assert f'http-equiv="refresh" content="{retry}"' in response.text , (
+            f"{name}: {path} 503 page does not reload after {retry}s"
+        );
+    }
+
     # Each row: whether the project carries a staged console, how the build
     # behaves, whether a console built from other sources already sits in the
     # cache, and what /admin/ serves once the build has settled.
@@ -683,9 +692,7 @@ test "admin console pages answer without waiting on a console build" {
                         f"{name}: {path} -> {response.status_code}"
                     );
                     if row["first"] == 503 {
-                        assert response.headers.get("retry-after") , (
-                            f"{name}: {path} 503 carries no Retry-After"
-                        );
+                        assert_retries(name, path, response);
                     }
                 }
 
@@ -717,6 +724,9 @@ test "admin console pages answer without waiting on a console build" {
                 assert settled.status_code == row["settled"] , (
                     f"{name}: settled /admin/quotes -> {settled.status_code}"
                 );
+                if row["settled"] == 503 {
+                    assert_retries(name, "settled /admin/quotes", settled);
+                }
                 if row["body"] {
                     assert row["body"] in settled.text , (
                         f"{name}: served {settled.text!r}"

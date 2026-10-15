@@ -18,6 +18,7 @@ import from urllib.request { urlopen }
 import from urllib.error { HTTPError }
 import from jaclang.scale.injector.bundle { TOOLCHAIN_SUBDIR }
 import from jaclang.runtime.graph_utils { release_arch, host_arch, host_os }
+import from jaclang.scale.admin.console_build { AdminConsole }
 
 glob logger = logging.getLogger(__name__);
 
@@ -646,8 +647,16 @@ def download_admin_dist(channel: str, version: str = "") -> bytes | None {
 }
 
 
-def stage_admin_dist(project_dir: str, channel: str, version: str = "") -> bool {
+def stage_admin_dist(
+    project_dir: str,
+    channel: str,
+    version: str = "",
+    console: (AdminConsole | None) = None
+) -> bool {
     dest = Path(project_dir) / ".jac" / "admin";
+    if not admin_dist_source(channel, version) {
+        return stage_built_admin_console(dest, console);
+    }
     try {
         payload = download_admin_dist(channel, version);
         if payload is None {
@@ -678,11 +687,7 @@ def stage_admin_dist(project_dir: str, channel: str, version: str = "") -> bool 
             logger.warning("Admin console asset has no index.html; not staging it.");
             return False;
         }
-        dest.parent.mkdir(parents=True, exist_ok=True);
-        if dest.exists() {
-            shutil.rmtree(str(dest));
-        }
-        tmp.rename(dest);
+        _replace_admin_dir(tmp, dest);
         logger.info("Staged the downloaded admin console into the app bundle.");
         return True;
     } except Exception as e {
@@ -696,6 +701,49 @@ def stage_admin_dist(project_dir: str, channel: str, version: str = "") -> bool 
     }
 }
 
+
+def _replace_admin_dir(staged: Path, dest: Path) {
+    dest.parent.mkdir(parents=True, exist_ok=True);
+    if dest.exists() {
+        shutil.rmtree(str(dest));
+    }
+    staged.rename(dest);
+}
+
+
+def stage_built_admin_console(
+    dest: Path, console: (AdminConsole | None) = None
+) -> bool {
+    import from jaclang.scale.admin.console_build {
+        BUILD_TIMEOUT_SECONDS,
+        ConsoleState,
+        default_admin_console
+    }
+    try {
+        builder = console or default_admin_console();
+        status = builder.status();
+        if status.state == ConsoleState.BUILDING {
+            logger.info("Building the admin console for the app bundle...");
+            status = builder.wait_for(BUILD_TIMEOUT_SECONDS + 60);
+        }
+        if status.state != ConsoleState.READY or status.dist_dir is None {
+            raise RuntimeError(status.error or f"the build is {status.state.value}");
+        }
+        tmp = dest.with_name(f".admin.tmp-{os.getpid()}");
+        if tmp.exists() {
+            shutil.rmtree(str(tmp));
+        }
+        shutil.copytree(str(status.dist_dir), str(tmp));
+        _replace_admin_dir(tmp, dest);
+        logger.info("Staged the locally built admin console into the app bundle.");
+        return True;
+    } except Exception as e {
+        logger.warning(
+            f"Could not build the admin console ({e}); the gateway builds it on its first admin request."
+        );
+        return False;
+    }
+}
 
 def toolchain_object_key(app_name: str, digest: str) -> str {
     return f"toolchain/{app_name}/{digest}.tar.gz";

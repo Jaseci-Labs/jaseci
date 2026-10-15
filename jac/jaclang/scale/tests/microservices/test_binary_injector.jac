@@ -486,10 +486,68 @@ test "admin console asset: verified download staged, cache reused, bad checksum 
 
 
 test "local channel never downloads the admin console" {
-    with unittest.mock.patch.object(binary_mod, "_http_get_bytes", _no_http) {
-        proj = tempfile.mkdtemp();
-        assert not stage_admin_dist(proj, "local");
-        assert not (Path(proj) / ".jac" / "admin").exists();
+    import shutil;
+    import from jaclang.scale.admin.console_build { AdminConsole }
+
+    # The local channel ships the deployer's own jac, which publishes no
+    # console, so the deploy builds one here instead of leaving the pod to.
+    # Each row: how the build behaves, whether an earlier deploy left a
+    # console staged, what staging returns, and what the project then ships.
+    rows = [
+        ("builds and stages the console", "ok", False, True, "built"),
+        ("a failed build stages nothing", "fails", False, False, ""),
+        (
+            "a failed build keeps the console staged before",
+            "fails",
+            True,
+            False,
+            "earlier"
+        )
+    ];
+    for (name, build, prior, staged, ships) in rows {
+        tmp = Path(tempfile.mkdtemp());
+        try {
+            source = tmp / "ui";
+            source.mkdir();
+            (source / "main.jac").write_text("with entry {}\n");
+            proj = tmp / "proj";
+            admin = proj / ".jac" / "admin";
+            if prior {
+                admin.mkdir(parents=True);
+                (admin / "index.html").write_text("<html>earlier</html>");
+            } else {
+                proj.mkdir();
+            }
+
+            def build_fn(src: Path) -> Path {
+                if build == "fails" {
+                    raise RuntimeError("the admin build broke");
+                }
+                dist = src / ".jac" / "client" / "dist";
+                (dist / "assets").mkdir(parents=True);
+                (dist / "index.html").write_text("<html>built</html>");
+                (dist / "assets" / "app.js").write_text("// built");
+                return dist;
+            }
+            console = AdminConsole(
+                source_dir=source, cache_dir=tmp / "cache", build_fn=build_fn
+            );
+
+            with unittest.mock.patch.object(binary_mod, "_http_get_bytes", _no_http) {
+                result = stage_admin_dist(str(proj), "local", console=console);
+            }
+            assert result == staged , f"{name}: staging returned {result}";
+            if ships {
+                assert ships in (admin / "index.html").read_text() , name;
+            } else {
+                assert not admin.exists() , f"{name}: staged {list(admin.iterdir())}";
+            }
+            if build == "ok" {
+                assert (admin / "assets" / "app.js").is_file() , name;
+            }
+        } finally {
+            shutil.rmtree(str(tmp), ignore_errors=True);
+        }
     }
 }
 
