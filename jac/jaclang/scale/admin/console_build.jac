@@ -1,4 +1,5 @@
 import hashlib;
+import importlib;
 import logging;
 import os;
 import shutil;
@@ -81,8 +82,8 @@ def source_digest(source_dir: Path) -> str {
 
 def _compiler_digest -> str {
     try {
-        import from jaclang.compiler.driver.jir { running_compiler_digest }
-        return running_compiler_digest();
+        jir = importlib.import_module("jaclang.compiler.driver.jir");
+        return str(jir.running_compiler_digest());
     } except Exception {
         return "";
     }
