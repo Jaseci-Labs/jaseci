@@ -493,208 +493,95 @@ test "streaming path triggers compaction and respects compaction_enabled" {
 }
 
 
-test "a streaming caller is told about an applied hook compaction" {
-    llm = MockLLM(
-        ctx_window=1000,
-        outputs=[
-            (MockToolCall(tool=step_a, args={}), {"prompt_tokens": 100}),
-            (MockToolCall(tool=step_a, args={}), {"prompt_tokens": 850}),
-            (MockToolCall(tool=finish_tool, args={"final_output": "ok"}), {}),
-            "ok"
-        ]
-    );
-
-    def shrinking_hook(msgs: list[any], keep_recent: int) -> list[any] {
-        return msgs[:2];
-    }
-
-    def task(q: str) -> str by llm(
-        tools=[step_a],
-        stream=True,
-        logging=True,
-        threshold_ratio=0.80,
-        on_compaction=shrinking_hook
-    );
-
-    reported = events_of(stream_events(task("go")), "compaction");
-
-    assert len(reported) == 1 , f"expected one compaction event, got {reported}";
-    info = reported[0].data;
-    assert info["reason"] == "threshold";
-    assert info["by"] == "hook";
-    assert info["iteration"] == 2;
-    assert info["messages_before"] == len(llm.sent("messages")[1]) + 1 , (
-        "messages_before is the request that crossed the threshold plus the reply "
-        "that was just appended to it"
-    );
-    assert info["messages_after"] == 2;
-    assert 0 < info["tokens_after"] < info["tokens_before"];
-}
-
-
-test "a compaction that is discarded is not reported" {
-    llm = MockLLM(
-        ctx_window=1000,
-        outputs=[
-            (MockToolCall(tool=step_a, args={}), {"prompt_tokens": 100}),
-            (MockToolCall(tool=step_a, args={}), {"prompt_tokens": 850}),
-            (MockToolCall(tool=finish_tool, args={"final_output": "ok"}), {}),
-            "ok"
-        ]
-    );
-
-    hook_calls = [0];
-    def noop_hook(msgs: list[any], keep_recent: int) -> list[any] {
-        hook_calls[0] += 1;
-        return msgs;
-    }
-
-    def task(q: str) -> str by llm(
-        tools=[step_a],
-        stream=True,
-        logging=True,
-        threshold_ratio=0.80,
-        on_compaction=noop_hook
-    );
-
-    events = stream_events(task("go"));
-
-    assert hook_calls[0] >= 1 , "the hook must have run for the discard to be meaningful";
-    assert events_of(events, "compaction") == [];
-}
-
-
-test "an emergency compaction is reported with the overflow reason" {
-    llm = MockLLM(
-        outputs=[
-            (MockToolCall(tool=step_a, args={}), {}),
-            fail(
-                litellm.exceptions.ContextWindowExceededError(
-                    message="ctx exceeded", model="mockllm", llm_provider="openai"
-                )
-            ),
-            (MockToolCall(tool=finish_tool, args={"final_output": "ok"}), {}),
-            "ok"
-        ]
-    );
-
-    def shrinking_hook(msgs: list[any], keep_recent: int) -> list[any] {
-        return msgs[:2];
-    }
-
-    def task(q: str) -> str by llm(
-        tools=[step_a], stream=True, logging=True, on_compaction=shrinking_hook
-    );
-
-    reported = events_of(stream_events(task("go")), "compaction");
-
-    assert len(reported) == 1 , f"expected one compaction event, got {reported}";
-    assert reported[0].data["reason"] == "overflow";
-    assert reported[0].data["by"] == "hook";
-}
-
-
-test "an emergency compaction is reported even when the retried call fails" {
+test "a streaming caller gets one compaction event per compaction byLLM applies" {
     def overflow -> Exception {
         return litellm.exceptions.ContextWindowExceededError(
             message="ctx exceeded", model="mockllm", llm_provider="openai"
         );
     }
 
-    llm = MockLLM(
-        outputs=[
-            (MockToolCall(tool=step_a, args={}), {}),
-            fail(overflow()),
-            fail(overflow())
-        ]
-    );
-
-    def shrinking_hook(msgs: list[any], keep_recent: int) -> list[any] {
+    def shrink(msgs: list[any], keep_recent: int) -> list[any] {
         return msgs[:2];
     }
 
-    def task(q: str) -> str by llm(
-        tools=[step_a], stream=True, logging=True, on_compaction=shrinking_hook
-    );
+    def unchanged(msgs: list[any], keep_recent: int) -> list[any] {
+        return msgs;
+    }
 
-    seen: list[StreamEvent] = [];
-    stream: any = task("go");
-    raised = False;
-    try {
-        for event in stream {
-            seen.append(event);
+    step = (MockToolCall(tool=step_a, args={}), {"prompt_tokens": 100});
+    big = (MockToolCall(tool=step_a, args={}), {"prompt_tokens": 850});
+    done = (MockToolCall(tool=finish_tool, args={"final_output": "ok"}), {});
+    over = [step, big, done, "ok"];
+    late = [step, (done[0], {"prompt_tokens": 950}), "ok"];
+    retry = [step, fail(overflow()), done, "ok"];
+    retry_fails = [step, fail(overflow()), fail(overflow())];
+    builtin = [
+        call("bulky_step", usage={"prompt_tokens": 100}),
+        call("bulky_step", usage={"prompt_tokens": 850}),
+        say("a summary"),
+        finish("done"),
+        say("done")
+    ];
+    threshold = {"reason": "threshold", "by": "hook"};
+    sizes = {** threshold, "iteration": 2, "messages_before": 5, "messages_after": 2};
+    overflowed = {"reason": "overflow", "by": "hook"};
+    by_builtin = {"reason": "threshold", "by": "builtin"};
+    # (label, model script, hook (None = built-in), event fields (None = no event), raises)
+    rows: list[tuple[str, list, any, dict[str, any] | None, bool]] = [
+        ("applied hook compaction", over, shrink, sizes, False),
+        ("discarded compaction", over, unchanged, None, False),
+        ("emergency compaction", retry, shrink, overflowed, False),
+        ("emergency retry that fails", retry_fails, shrink, overflowed, True),
+        ("compaction on the final reply", late, shrink, threshold, False),
+        ("built-in compactor", builtin, None, by_builtin, False)
+    ];
+    for (label, outputs, hook, want, raises) in rows {
+        llm = MockLLM(model_name="test-model", ctx_window=1000, outputs=list(outputs));
+        hook_calls = [0];
+        def counted(msgs: list[any], keep_recent: int) -> list[any] {
+            hook_calls[0] += 1;
+            return hook(msgs, keep_recent);
         }
-    } except litellm.exceptions.ContextWindowExceededError {
-        raised = True;
+
+        def task(q: str) -> str by llm(
+            tools=[(step_a if hook else bulky_step)],
+            stream=True,
+            logging=True,
+            threshold_ratio=0.80,
+            keep_recent_iterations=(3 if hook else 1),
+            on_compaction=(counted if hook else None)
+        );
+
+        seen: list[StreamEvent] = [];
+        raised = False;
+        try {
+            for event in task("go") {
+                seen.append(event);
+            }
+        } except litellm.exceptions.ContextWindowExceededError {
+            raised = True;
+        }
+        assert raised == raises , f"{label}: raised={raised}, want {raises}";
+        if hook {
+            assert hook_calls[0] >= 1 , f"{label}: the hook never ran, so this row proves nothing";
+        } else {
+            assert llm.exhausted() , f"{label}: the summary was never requested: {llm.outputs}";
+        }
+        kinds = event_types(seen);
+        reported = events_of(seen, "compaction");
+        assert len(reported) == (0 if want is None else 1) , f"{label}: events {kinds}";
+        if want is not None {
+            info = reported[0].data;
+            for (key, value) in want.items() {
+                assert info[key] == value , f"{label}: {key} is {info[key]!r}, want {value!r}";
+            }
+            assert 0 < info["tokens_after"] < info["tokens_before"] , f"{label}: tokens {info}";
+            if not raises {
+                assert "steps_done" in kinds
+                    and kinds.index("compaction") < kinds.index("steps_done") , f"{label}: {kinds}";
+            }
+        }
     }
-
-    assert raised , "the retried call overflowed again, so the stream must raise it";
-    assert event_types(seen).count("compaction") == 1 , (
-        f"the applied compaction was lost with the retry: {event_types(seen)}"
-    );
-}
-
-
-test "a compaction applied on the reply that ends the turn is reported before the answer" {
-    llm = MockLLM(
-        ctx_window=1000,
-        outputs=[
-            (MockToolCall(tool=step_a, args={}), {"prompt_tokens": 100}),
-            (
-                MockToolCall(tool=finish_tool, args={"final_output": "ok"}),
-                {"prompt_tokens": 950}
-            ),
-            "ok"
-        ]
-    );
-
-    def shrinking_hook(msgs: list[any], keep_recent: int) -> list[any] {
-        return msgs[:2];
-    }
-
-    def task(q: str) -> str by llm(
-        tools=[step_a],
-        stream=True,
-        logging=True,
-        threshold_ratio=0.80,
-        on_compaction=shrinking_hook
-    );
-
-    kinds = event_types(stream_events(task("go")));
-
-    assert kinds.count("compaction") == 1 , f"expected one compaction event: {kinds}";
-    assert kinds.index("compaction") < kinds.index("steps_done");
-}
-
-
-test "the built-in compactor is reported as builtin" {
-    llm = MockLLM(
-        model_name="test-model",
-        ctx_window=1000,
-        outputs=[
-            call("bulky_step", usage={"prompt_tokens": 100}),
-            call("bulky_step", usage={"prompt_tokens": 850}),
-            say("a summary"),
-            finish("done"),
-            say("done")
-        ]
-    );
-
-    def task(q: str) -> str by llm(
-        tools=[bulky_step],
-        stream=True,
-        logging=True,
-        threshold_ratio=0.80,
-        keep_recent_iterations=1
-    );
-
-    reported = events_of(stream_events(task("go")), "compaction");
-
-    assert llm.exhausted() , f"the summary was never requested: {llm.outputs}";
-    assert len(reported) == 1 , f"expected one compaction event, got {reported}";
-    assert reported[0].data["by"] == "builtin";
-    assert reported[0].data["reason"] == "threshold";
-    assert reported[0].data["tokens_after"] < reported[0].data["tokens_before"];
 }
 
 
