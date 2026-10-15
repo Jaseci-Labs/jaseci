@@ -519,7 +519,7 @@ def _format_source(src: str, file_path: str) -> (str | None) {
 }
 
 
-def _import_placements(file_path: str, src: str) -> dict[str, tuple[str, bool, int]] {
+def _import_placements(file_path: str, src: str) -> dict[int, tuple[str, str, bool]] {
     import jaclang.compiler.frontend.unitree as uni;
     import from jaclang.compiler.driver.program { JacProgram }
     prog = JacProgram();
@@ -528,16 +528,16 @@ def _import_placements(file_path: str, src: str) -> dict[str, tuple[str, bool, i
     } except Exception {
         return {};
     }
-    if prog.errors_had {
+    if prog.count_module_errors(os.path.normpath(mod.loc.mod_path)) {
         return {};
     }
-    placed: dict[str, tuple[str, bool, int]] = {};
+    placed: dict[int, tuple[str, str, bool]] = {};
     for stmt in mod.body {
         if isinstance(stmt, uni.Import) and stmt.from_loc is not None {
-            placed[stmt.from_loc.dot_path_str] = (
+            placed[stmt.loc.first_line] = (
+                stmt.from_loc.dot_path_str,
                 getattr(stmt?.code_context, 'value', ''),
-                bool(getattr(stmt, 'codespace_dual', False)),
-                stmt.loc.first_line
+                bool(getattr(stmt, 'codespace_dual', False))
             );
         }
     }
@@ -1093,7 +1093,7 @@ impl fix(
         }
         if res.sv_imports {
             sv_imports_by_file[final_path] = res.sv_imports;
-            migrated_text[final_path] = out_text;
+            migrated_text[final_path] = res.text;
         }
     }
 
@@ -1130,11 +1130,14 @@ impl fix(
         placed = _import_placements(path, migrated_text.get(path, ''));
         for imp in imports {
             tgt = imp.target;
-            got = placed.get(tgt);
-            if got is not None and got[0] == 'client' and not got[1] {
+            got = placed.get(imp.line);
+            if got is not None and got[0] != tgt {
+                got = None;
+            }
+            if got is not None and got[1] == 'client' and not got[2] {
                 continue;
             }
-            cause = f"{path}:{got[2] if got is not None else imp.line}";
+            cause = f"{path}:{imp.line}";
             if got is None {
                 unverified.append(
                     f"{cause} 'sv import from {tgt}' (placement not inferred; "

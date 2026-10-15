@@ -282,3 +282,76 @@ test "only a server-placed sv import declares a service app, named with its sour
         assert "NotesShell" not in printed , printed;
     }
 }
+
+
+test "a server-placed sv import is not hidden by a later client import of the same module" {
+    import from pathlib { Path }
+    import from jaclang.project.config { JacConfig }
+    with tempfile.TemporaryDirectory() as tmpdir {
+        root_path = Path(os.path.realpath(tmpdir));
+        (root_path / "jac.toml").write_text(
+            '[project]\nname = "notes"\nkind = "web-app"\nentry-point = "main"\n'
+        );
+        (root_path / "main.jac").write_text(
+            "def:pub app -> JsxElement {\n    return <div>notes</div>;\n}\n"
+        );
+        (root_path / "notes").mkdir();
+        (root_path / "notes" / "store.jac").write_text(
+            NOTES_STORE
+                + "\ndef:pub create_note(title: str) -> bool {\n"
+                + "    root ++> Note(title=title);\n    return True;\n}\n"
+        );
+        (root_path / "notes" / "NotesShell.jac").write_text(
+            "sv import from .store { create_note }\n"
+                + NOTES_SHELL.replace("sv import from", "import from")
+                + "\ndef:pub seed_note -> bool {\n    return create_note(\"first\");\n}\n"
+        );
+        assert fix("placement", [str(root_path)]) == 0;
+        cfg = JacConfig.load(root_path / "jac.toml");
+        assert "store" in cfg.apps , list(cfg.apps.keys());
+        assert cfg.apps["store"].kind == "service";
+    }
+}
+
+
+test "--dry-run classifies an sv import as the run does while its target still has markers" {
+    import io;
+    import from contextlib { redirect_stderr, redirect_stdout }
+    import from pathlib { Path }
+    with tempfile.TemporaryDirectory() as tmpdir {
+        root_path = Path(tmpdir);
+        toml_text = (
+            '[project]\nname = "notes"\nkind = "web-app"\nentry-point = "main"\n'
+        );
+        (root_path / "jac.toml").write_text(toml_text);
+        (root_path / "main.jac").write_text(
+            "def:pub app -> JsxElement {\n    return <div>notes</div>;\n}\n"
+        );
+        (root_path / "notes").mkdir();
+        (root_path / "notes" / "store.jac").write_text(
+            "sv {\n"
+                + "".join(
+                    [
+                        "    " + ln + "\n" if ln else "\n"
+                        for ln in NOTES_STORE.splitlines()
+                    ]
+                )
+                + "}\n"
+        );
+        (root_path / "notes" / "NotesShell.jac").write_text(NOTES_SHELL);
+        out = io.StringIO();
+        with redirect_stdout(out) {
+            with redirect_stderr(out) {
+                rc = fix("placement", [str(root_path)], dry_run=True);
+            }
+        }
+        assert rc == 0 , rc;
+        preview = out.getvalue();
+        assert "Would migrate 2 file(s)" in preview , preview;
+        assert "[apps." not in preview , preview;
+        assert "unverified" not in preview , preview;
+        assert fix("placement", [str(root_path)]) == 0;
+        assert (root_path / "jac.toml").read_text() == toml_text;
+        assert "sv {" not in (root_path / "notes" / "store.jac").read_text();
+    }
+}
