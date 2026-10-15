@@ -4571,7 +4571,11 @@ graph import compiler.driver {
         products_from_record,
         products_record
     }
-    unit_products --> compiler.frontend.kernel_host { UnitProducts, unit_products }
+    unit_products --> compiler.frontend.kernel_host {
+        UnitProducts,
+        unit_interface,
+        unit_products
+    }
     unit_products --> project.kernel_compile { UnitProducts }
     wiring --> compiler.driver.jir.stored_wiring_digest {
         arch_file_for,
@@ -4826,6 +4830,9 @@ graph import compiler.driver {
     toolchain --> compiler.backends.native.kernel_resolve.KernelArtifact.unavailable_reason {
         native_pipeline_available
     }
+    jir --> compiler.driver.application._reusable_interfaces { compute_module_key }
+    jir --> compiler.driver.application._unit_row { compute_module_key }
+    unit_products --> compiler.driver.application._row_unit { UnitProducts }
 }
 
 graph import compiler.frontend {
@@ -8752,6 +8759,17 @@ graph import compiler.frontend {
     unparse --> compiler.boundary_rules.signature_refusals { unparse_node }
     codeinfo --> cli.commands.execution._count_jac_files { is_compiler_source_path }
     codeinfo --> server.watcher.JacFileWatcher._on_change { is_compiler_source_path }
+    codeinfo --> compiler.passes.endpoint_effect_pass.EndpointEffectPass.record_callables {
+        is_compiler_source_path
+    }
+    kernel_inputs --> compiler.driver.application._reusable_interfaces {
+        PythonInterface
+    }
+    kernel_inputs --> project.kernel_compile { PythonInterface }
+    unitree --> compiler.passes.endpoint_effect_pass { UniScopeNode }
+    unparse --> compiler.passes.endpoint_effect_pass.EndpointEffectPass._apply {
+        unparse_node
+    }
 }
 
 graph import compiler.frontend.parser {
@@ -9616,6 +9634,12 @@ graph import compiler.placement {
     placement_solver --> compiler.passes.placement_pass.uncrossable_native {
         placement_work,
         refresh_placement_module
+    }
+    placement --> compiler.frontend.kernel_host.KernelHost.python_module {
+        summary_store
+    }
+    placement_export --> compiler.frontend.kernel_host.KernelHost.python_module {
+        summary_from_dict
     }
 }
 
@@ -11044,6 +11068,13 @@ graph import compiler.types.stubcat {
     locate --> compiler.tests.test_stubcat_roundtrip { StubcatArtifact }
     locate --> project.kernel_snapshot.require_stub_catalog { reset_catalog_cache }
     reader --> compiler.native_bindings.is_owning_scope { CatScope }
+    reader --> compiler.passes.endpoint_effect_pass.EndpointEffectPass._served_effects {
+        CatModule
+    }
+    writer --> compiler.driver.unit_products.unit_interface {
+        IncoherentInterface,
+        build_module_iface
+    }
 }
 
 graph import data {
