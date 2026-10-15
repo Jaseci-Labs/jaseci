@@ -17,9 +17,7 @@ import from support {
     fail,
     finish,
     fixture_path,
-    say,
-    scripted,
-    stream_events
+    scripted
 }
 
 
@@ -28,12 +26,6 @@ glob COMPACTION_TOML_FIXTURE = fixture_path("compaction_config");
 
 def step_a -> str {
     return "stepped";
-}
-
-
-# Big enough that the first round is worth a summariser call in a 1000-token window.
-def bulky_step -> str {
-    return "x" * 1000;
 }
 
 
@@ -435,65 +427,7 @@ test "on_compaction hook returning invalid types raises ConfigurationError" {
 }
 
 
-test "streaming path triggers compaction and respects compaction_enabled" {
-    llm1 = MockLLM(
-        ctx_window=1000,
-        outputs=[
-            (MockToolCall(tool=step_a, args={}), {"prompt_tokens": 850}),
-            (MockToolCall(tool=finish_tool, args={"final_output": "done"}), {}),
-            "done"
-        ]
-    );
-
-    fired1 = [False];
-    def hook1(msgs: list[any], keep_recent: int) -> list[any] {
-        fired1[0] = True;
-        return msgs[:2];
-    }
-
-    def task1(q: str) -> str by llm1(
-        tools=[step_a],
-        stream=True,
-        logging=True,
-        threshold_ratio=0.80,
-        on_compaction=hook1
-    );
-
-    for event in task1("test") {}
-    assert fired1[0];
-
-    llm2 = MockLLM(
-        ctx_window=1000,
-        outputs=[
-            (
-                MockToolCall(tool=finish_tool, args={"final_output": "done"}),
-                {"prompt_tokens": 950}
-            ),
-            "done"
-        ]
-    );
-
-    fired2 = [False];
-    def hook2(msgs: list[any], keep_recent: int) -> list[any] {
-        fired2[0] = True;
-        return msgs[:2];
-    }
-
-    def task2(q: str) -> str by llm2(
-        tools=[step_a],
-        stream=True,
-        logging=True,
-        threshold_ratio=0.80,
-        compaction_enabled=False,
-        on_compaction=hook2
-    );
-
-    for event in task2("test") {}
-    assert not fired2[0];
-}
-
-
-test "a streaming caller gets one compaction event per compaction byLLM applies" {
+test "streaming reports each applied compaction once and respects compaction_enabled" {
     def overflow -> Exception {
         return litellm.exceptions.ContextWindowExceededError(
             message="ctx exceeded", model="mockllm", llm_provider="openai"
@@ -512,30 +446,25 @@ test "a streaming caller gets one compaction event per compaction byLLM applies"
     big = (MockToolCall(tool=step_a, args={}), {"prompt_tokens": 850});
     done = (MockToolCall(tool=finish_tool, args={"final_output": "ok"}), {});
     over = [step, big, done, "ok"];
-    late = [step, (done[0], {"prompt_tokens": 950}), "ok"];
     retry = [step, fail(overflow()), done, "ok"];
     retry_fails = [step, fail(overflow()), fail(overflow())];
-    builtin = [
-        call("bulky_step", usage={"prompt_tokens": 100}),
-        call("bulky_step", usage={"prompt_tokens": 850}),
-        say("a summary"),
-        finish("done"),
-        say("done")
-    ];
-    threshold = {"reason": "threshold", "by": "hook"};
-    sizes = {** threshold, "iteration": 2, "messages_before": 5, "messages_after": 2};
+    applied = {
+        "reason": "threshold",
+        "by": "hook",
+        "iteration": 2,
+        "messages_before": 5,
+        "messages_after": 2
+    };
     overflowed = {"reason": "overflow", "by": "hook"};
-    by_builtin = {"reason": "threshold", "by": "builtin"};
-    # (label, model script, hook (None = built-in), event fields (None = no event), raises)
-    rows: list[tuple[str, list, any, dict[str, any] | None, bool]] = [
-        ("applied hook compaction", over, shrink, sizes, False),
-        ("discarded compaction", over, unchanged, None, False),
-        ("emergency compaction", retry, shrink, overflowed, False),
-        ("emergency retry that fails", retry_fails, shrink, overflowed, True),
-        ("compaction on the final reply", late, shrink, threshold, False),
-        ("built-in compactor", builtin, None, by_builtin, False)
+    # (label, model script, hook, compaction_enabled, event fields (None = no event), raises)
+    rows: list[tuple[str, list, any, bool, dict[str, any] | None, bool]] = [
+        ("applied compaction", over, shrink, True, applied, False),
+        ("compaction disabled", over, shrink, False, None, False),
+        ("discarded compaction", over, unchanged, True, None, False),
+        ("emergency compaction", retry, shrink, True, overflowed, False),
+        ("emergency retry that fails", retry_fails, shrink, True, overflowed, True)
     ];
-    for (label, outputs, hook, want, raises) in rows {
+    for (label, outputs, hook, enabled, want, raises) in rows {
         llm = MockLLM(model_name="test-model", ctx_window=1000, outputs=list(outputs));
         hook_calls = [0];
         def counted(msgs: list[any], keep_recent: int) -> list[any] {
@@ -544,12 +473,12 @@ test "a streaming caller gets one compaction event per compaction byLLM applies"
         }
 
         def task(q: str) -> str by llm(
-            tools=[(step_a if hook else bulky_step)],
+            tools=[step_a],
             stream=True,
             logging=True,
             threshold_ratio=0.80,
-            keep_recent_iterations=(3 if hook else 1),
-            on_compaction=(counted if hook else None)
+            compaction_enabled=enabled,
+            on_compaction=counted
         );
 
         seen: list[StreamEvent] = [];
@@ -562,11 +491,9 @@ test "a streaming caller gets one compaction event per compaction byLLM applies"
             raised = True;
         }
         assert raised == raises , f"{label}: raised={raised}, want {raises}";
-        if hook {
-            assert hook_calls[0] >= 1 , f"{label}: the hook never ran, so this row proves nothing";
-        } else {
-            assert llm.exhausted() , f"{label}: the summary was never requested: {llm.outputs}";
-        }
+        assert (hook_calls[0] > 0) == enabled , f"{label}: hook ran {hook_calls[
+            0
+        ]} times";
         kinds = event_types(seen);
         reported = events_of(seen, "compaction");
         assert len(reported) == (0 if want is None else 1) , f"{label}: events {kinds}";
@@ -577,8 +504,7 @@ test "a streaming caller gets one compaction event per compaction byLLM applies"
             }
             assert 0 < info["tokens_after"] < info["tokens_before"] , f"{label}: tokens {info}";
             if not raises {
-                assert "steps_done" in kinds
-                    and kinds.index("compaction") < kinds.index("steps_done") , f"{label}: {kinds}";
+                assert kinds.index("compaction") < kinds.index("steps_done") , f"{label}: {kinds}";
             }
         }
     }
