@@ -5708,7 +5708,6 @@ graph import compiler.frontend {
     }
     diagnostics --> compiler.passes.graph_lowering_pass { E0084, E0085 }
     diagnostics --> compiler.passes.import_wiring_pass {
-        E1140,
         E1141,
         E1142,
         E1143,
@@ -10969,7 +10968,6 @@ graph import compiler.types.stubcat {
         SYMF_DEFER,
         SYMF_HAS_DEFAULT
     }
-    locate --> compiler.driver.compiler.JacCompiler.compile { StubCatalogUnavailable }
     locate --> compiler.driver.ifacecache.IfaceRegistry._pkg_dir { jaclang_pkg_dir }
     locate --> compiler.tests.test_stubcat_roundtrip {
         jaclang_pkg_dir,
