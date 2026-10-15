@@ -555,6 +555,36 @@ test "admin index page" {
         if response.status_code == 200 {
             assert "text/html" in response.headers.get("content-type", "");
         }
+        # An app page under /admin wins the navigation; the console's own
+        # asset requests, which do not accept html, stay with the console.
+        page = {"Accept": "text/html"};
+        control = client.get("/admin/quotes", headers=page);
+        assert control.status_code in [200, 503] , control.status_code;
+        client.server.introspector._spa_route_patterns = ["/admin/quotes"];
+        client.server.introspector._spa_routes_loaded = True;
+        claimed = client.get("/admin/quotes", headers=page);
+        assert claimed.status_code == 404 , (
+            f"the admin catch-all answered an app page: {claimed.status_code}"
+        );
+        scripted = client.get("/admin/quotes");
+        assert scripted.status_code in [200, 503] , scripted.status_code;
+        # The dev proxy bypass is derived from the flagged endpoints; the
+        # fallback list used where no server is built must say the same.
+        import from jaclang.client.vite_bundler {
+            DEV_CLIENT_YIELDING_PREFIXES,
+            DEV_PROXY_PREFIXES
+        }
+        import from jaclang.server.server { yielding_client_prefixes }
+        derived = yielding_client_prefixes(client.server.app.router.all_endpoints());
+        assert {
+            p
+            for p in derived
+            if p in DEV_PROXY_PREFIXES
+        }
+            == set(DEV_CLIENT_YIELDING_PREFIXES) , (
+            f"flagged endpoints yield {derived}, the dev fallback lists "
+            f"{DEV_CLIENT_YIELDING_PREFIXES}"
+        );
     } finally {
         client.close();
     }

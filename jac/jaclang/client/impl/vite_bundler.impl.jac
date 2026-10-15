@@ -462,7 +462,8 @@ impl ViteBundler._generate_vite_config_content(
     for_desktop_dev: bool = False,
     desktop_broker_port: int = 0,
     api_paths: (list[str] | None) = None,
-    client_paths: (list[str] | None) = None
+    client_paths: (list[str] | None) = None,
+    yielding_prefixes: (list[str] | None) = None
 ) -> str {
     build_dir = self._get_client_dir();
     project_relative = Path(
@@ -609,7 +610,11 @@ impl ViteBundler._generate_vite_config_content(
             if reload_enabled
             else "";
         host_value = '"127.0.0.1"' if for_desktop_dev else 'true';
+        import from jaclang.server.server { route_pattern_under_prefix }
         claimed = {p for p in (client_paths or [])};
+        yielding = DEV_CLIENT_YIELDING_PREFIXES
+            if yielding_prefixes is None
+            else yielding_prefixes;
         builtin_proxy_str: str = "";
         for prefix in DEV_PROXY_PREFIXES {
             if prefix in claimed {
@@ -618,8 +623,7 @@ impl ViteBundler._generate_vite_config_content(
             under = [
                 p
                 for p in claimed
-                if prefix in DEV_CLIENT_YIELDING_PREFIXES
-                    and route_pattern_under_prefix(p, prefix)
+                if prefix in yielding and route_pattern_under_prefix(p, prefix)
             ];
             builtin_proxy_str += _proxy_entry(prefix, api_port, under);
         }
@@ -1052,7 +1056,8 @@ impl ViteBundler.create_vite_config(
     for_desktop_dev: bool = False,
     desktop_broker_port: int = 0,
     api_paths: (list[str] | None) = None,
-    client_paths: (list[str] | None) = None
+    client_paths: (list[str] | None) = None,
+    yielding_prefixes: (list[str] | None) = None
 ) -> Path {
     build_dir = self._get_client_dir();
     build_dir.mkdir(parents=True, exist_ok=True);
@@ -1071,7 +1076,8 @@ impl ViteBundler.create_vite_config(
         for_desktop_dev=for_desktop_dev,
         desktop_broker_port=desktop_broker_port,
         api_paths=api_paths,
-        client_paths=client_paths
+        client_paths=client_paths,
+        yielding_prefixes=yielding_prefixes
     );
     config_path.write_text(config_content, encoding='utf-8');
     if is_dev {
@@ -1688,35 +1694,4 @@ impl ViteBundler._start_vite_with_output_capture(
         }
     }
     return process;
-}
-
-impl route_pattern_under_prefix(pattern: str, prefix: str) -> bool {
-    want = [
-        seg
-        for seg in prefix.split('/')
-        if seg
-    ];
-    have = [
-        seg
-        for seg in pattern.split('/')
-        if seg
-    ];
-    if not have or have[0] == '*' {
-        return False;
-    }
-    for (i, seg) in enumerate(want) {
-        if i >= len(have) {
-            return False;
-        }
-        if have[i] == '*' {
-            return True;
-        }
-        if have[i].startswith(':') {
-            continue;
-        }
-        if have[i] != seg {
-            return False;
-        }
-    }
-    return len(have) > len(want);
 }

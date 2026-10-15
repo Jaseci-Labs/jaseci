@@ -36,8 +36,6 @@ glob logger = logging.getLogger(__name__),
 
 def client_deps_stale(build_dir: Path) -> bool;
 
-def route_pattern_under_prefix(pattern: str, prefix: str) -> bool;
-
 def _forward_vite_output(
     proc: any,
     ready_event: any,
@@ -80,7 +78,8 @@ class ViteBundler {
         for_desktop_dev: bool = False,
         desktop_broker_port: int = 0,
         api_paths: (list[str] | None) = None,
-        client_paths: (list[str] | None) = None
+        client_paths: (list[str] | None) = None,
+        yielding_prefixes: (list[str] | None) = None
     ) -> Path;
 
     def _format_config_object(
@@ -116,7 +115,8 @@ class ViteBundler {
         for_desktop_dev: bool = False,
         desktop_broker_port: int = 0,
         api_paths: (list[str] | None) = None,
-        client_paths: (list[str] | None) = None
+        client_paths: (list[str] | None) = None,
+        yielding_prefixes: (list[str] | None) = None
     ) -> str;
 
     def create_package_json(

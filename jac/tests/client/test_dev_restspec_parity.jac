@@ -380,6 +380,22 @@ test "the dev proxy drops built-in prefixes the app claims as client routes" {
         f"a dynamic parent still claims the yielding /admin:\n{text}"
     );
 
+    # The prefixes the running server derived from its flagged routes decide
+    # the bypass, not the built-in list: none flagged, no bypass.
+    with TemporaryDirectory() as tmp {
+        entry_file = _min_project(tmp);
+        bundler = ViteBundler(Path(tmp));
+        config_path = bundler.create_vite_config(
+            entry_file,
+            is_dev=True,
+            api_port=8123,
+            client_paths=["/admin/quotes"],
+            yielding_prefixes=[]
+        );
+        text = config_path.read_text(encoding="utf-8");
+    }
+    assert "bypass:" not in text , f"an unflagged prefix must not bypass:\n{text}";
+
     # A root catch-all page claims no prefix: it must not bypass the API.
     with TemporaryDirectory() as tmp {
         entry_file = _min_project(tmp);

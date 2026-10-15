@@ -1064,6 +1064,61 @@ impl ModuleIntrospector._spa_route_matches(pattern: str, segments: list[str]) ->
     return len(segments) == len(psegs);
 }
 
+impl route_pattern_under_prefix(pattern: str, prefix: str) -> bool {
+    want = [
+        seg
+        for seg in prefix.split('/')
+        if seg
+    ];
+    have = [
+        seg
+        for seg in pattern.split('/')
+        if seg
+    ];
+    if not have or have[0] == '*' {
+        return False;
+    }
+    for (i, seg) in enumerate(want) {
+        if i >= len(have) {
+            return False;
+        }
+        if have[i] == '*' {
+            return True;
+        }
+        if have[i].startswith(':') {
+            continue;
+        }
+        if have[i] != seg {
+            return False;
+        }
+    }
+    return len(have) > len(want);
+}
+
+impl yielding_client_prefixes(endpoints: list[any]) -> list[str] {
+    prefixes: list[str] = [];
+    for ep in endpoints {
+        if not ep.yields_to_client {
+            continue;
+        }
+        literal: list[str] = [];
+        for seg in str(ep.path).split('/') {
+            if not seg {
+                continue;
+            }
+            if '{' in seg or seg.startswith(':') or seg == '*' {
+                break;
+            }
+            literal.append(seg);
+        }
+        prefix = '/' + '/'.join(literal);
+        if literal and prefix not in prefixes {
+            prefixes.append(prefix);
+        }
+    }
+    return prefixes;
+}
+
 impl ModuleIntrospector.is_auth_required_for_function(func_name: str) -> bool {
     rec = self._surface.get(func_name);
     return rec.requires_auth() if rec is not None else True;
@@ -1107,7 +1162,9 @@ impl ModuleIntrospector.declared_api_paths -> list[str] {
 }
 
 
-impl ModuleIntrospector.client_claimed_paths(candidates: list[str]) -> list[str] {
+impl ModuleIntrospector.client_claimed_paths(
+    candidates: list[str], yielding_prefixes: (list[str] | None) = None
+) -> list[str] {
     claimed: list[str] = [];
     for candidate in candidates {
         try {
@@ -1118,13 +1175,9 @@ impl ModuleIntrospector.client_claimed_paths(candidates: list[str]) -> list[str]
             continue;
         }
     }
-    import from jaclang.client.vite_bundler {
-        DEV_CLIENT_YIELDING_PREFIXES,
-        route_pattern_under_prefix
-    }
     for pattern in (self._spa_route_patterns or []) {
         for candidate in candidates {
-            if candidate in DEV_CLIENT_YIELDING_PREFIXES
+            if candidate in (yielding_prefixes or [])
                 and route_pattern_under_prefix(pattern, candidate)
                 and pattern not in claimed {
                 claimed.append(pattern);
@@ -1133,7 +1186,6 @@ impl ModuleIntrospector.client_claimed_paths(candidates: list[str]) -> list[str]
     }
     return claimed;
 }
-
 
 impl ModuleIntrospector.walker_protocol(walker_name: str) -> APIProtocol {
     spec = self.route_spec(walker_name);

@@ -65,6 +65,10 @@ obj RequestMetrics {
 
 def observe_read_tier_retry(metrics: any, unit_key: str) -> None;
 
+def route_pattern_under_prefix(pattern: str, prefix: str) -> bool;
+
+def yielding_client_prefixes(endpoints: list[any]) -> list[str];
+
 
 def target_restspec(target: any) -> any {
     return target.restspec if target?.restspec else None;
@@ -231,7 +235,10 @@ obj ModuleIntrospector {
     def is_auth_required_for_walker(walker_name: str) -> bool;
     def restspec_routes -> list[tuple[str, str, any]];
     def declared_api_paths -> list[str];
-    def client_claimed_paths(candidates: list[str]) -> list[str];
+    def client_claimed_paths(
+        candidates: list[str], yielding_prefixes: (list[str] | None) = None
+    ) -> list[str];
+
     def walker_protocol(walker_name: str) -> APIProtocol;
     def function_protocol(func_name: str) -> APIProtocol;
 }

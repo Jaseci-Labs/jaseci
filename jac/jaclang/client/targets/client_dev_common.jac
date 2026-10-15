@@ -185,7 +185,10 @@ obj _ClientHmrHandler {
 def dev_proxy_paths(
     project_dir: Path, entry_file: Path
 ) -> tuple[list[str], list[str]] {
-    import from jaclang.client.vite_bundler { DEV_PROXY_PREFIXES }
+    import from jaclang.client.vite_bundler {
+        DEV_CLIENT_YIELDING_PREFIXES,
+        DEV_PROXY_PREFIXES
+    }
     import from jaclang.jac0core.ext_registry { base_stem }
     try {
         import from jaclang.runtime.prepared { prepared_manifest }
@@ -201,7 +204,9 @@ def dev_proxy_paths(
         introspector.load();
         return (
             introspector.declared_api_paths(),
-            introspector.client_claimed_paths(DEV_PROXY_PREFIXES)
+            introspector.client_claimed_paths(
+                DEV_PROXY_PREFIXES, DEV_CLIENT_YIELDING_PREFIXES
+            )
         );
     } except Exception as e {
         console.warning(f"Could not resolve dev proxy paths: {e}");

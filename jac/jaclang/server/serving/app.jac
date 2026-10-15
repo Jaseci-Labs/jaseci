@@ -260,7 +260,8 @@ obj ServingApp {
         }
         if ep.yields_to_client
             and self.client_route_probe is not None
-            and request.method.upper() in ('GET', 'HEAD') {
+            and request.method.upper() in ('GET', 'HEAD')
+            and 'text/html' in (request.headers.get('accept') or '') {
             probe: any = self.client_route_probe;
             try {
                 claimed = bool(probe(request.url.path));
