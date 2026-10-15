@@ -590,7 +590,8 @@ class NativeCompiler {
 glob _KERNEL_CELL: list[any] = [],
      _RESOLVED: list[any] = [],
      _RESOLVING: list[any] = [],
-     _LOADED: dict[str, NativeCompiler] = {};
+     _LOADED: dict[str, NativeCompiler] = {},
+     _FAILED: list[tuple[str, str, str]] = [];
 
 def ensure_loaded -> (NativeCompiler | None) {
     if _KERNEL_CELL {
@@ -617,14 +618,26 @@ def ensure_loaded -> (NativeCompiler | None) {
     lib_path = os.path.realpath(found.lib_path);
     k = _LOADED.get(lib_path);
     if k is None {
-        k = NativeCompiler(lib_path, found.layout);
-        _LOADED[lib_path] = k;
+        try {
+            loaded = NativeCompiler(lib_path, found.layout);
+        } except (OSError, AttributeError) as e {
+            _FAILED.append((found.lib_path, found.source, str(e)));
+            _RESOLVED.append(None);
+            return None;
+        }
+        _LOADED[lib_path] = loaded;
+        k = loaded;
     }
     _KERNEL_CELL.append(k);
     return k;
 }
 
+def load_failure -> (tuple[str, str, str] | None) {
+    return _FAILED[-1] if _FAILED else None;
+}
+
 def reset_loaded {
+    _FAILED.clear();
     _KERNEL_CELL.clear();
     _RESOLVED.clear();
     _RESOLVING.clear();
