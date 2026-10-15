@@ -55,13 +55,13 @@ glob PEEK_TARGETS: list[any] = [];
 
 node RPeeker {
     has n: int = 0;
-
-    @property
-    def peek -> int {
-        for bag in PEEK_TARGETS {
-            bag.items.append(99);
+    has peek: int {
+        getter {
+            for bag in PEEK_TARGETS {
+                bag.items.append(99);
+            }
+            return len(PEEK_TARGETS);
         }
-        return len(PEEK_TARGETS);
     }
 }
 
