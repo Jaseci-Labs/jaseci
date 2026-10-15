@@ -5,6 +5,7 @@ import from types { MethodType }
 import from typing { get_type_hints }
 import from jaclang.byllm.schema { json_to_instance, type_to_schema }
 import from jaclang.byllm.exceptions { ConfigurationError, OutputConversionError }
+import from jaclang.byllm.deadline { CallDeadline }
 import from jaclang.byllm.config_loader { get_byllm_config }
 import from jaclang.byllm.types {
     image_resp_kind,
@@ -44,7 +45,8 @@ obj MTRuntime {
         _usage_history: list[dict[str, any]] = [],
         _call_kind: str = "react_iteration",
         _invocation_id: str = "",
-        _parent_invocation_id: str | None = None;
+        _parent_invocation_id: str | None = None,
+        _deadline: CallDeadline | None = None;
 
     static def factory(mtir: MTIR) -> MTRuntime;
     def add_message(message: MessageType) -> None;
