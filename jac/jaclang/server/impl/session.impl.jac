@@ -259,6 +259,23 @@ def _ancestry_of(arch: (object | None)) -> list[str] {
 }
 
 
+glob _GETTER_CLASSES: dict[type, bool] = {};
+
+def _runs_getters(arch: object) -> bool {
+    cls = type(arch);
+    found = _GETTER_CLASSES.get(cls);
+    if found is None {
+        found = any(
+            isinstance(member, property)
+            for klass in cls.__mro__
+            if klass is not object and not klass.__module__.startswith('jaclang.')
+            for member in vars(klass).values()
+        );
+        _GETTER_CLASSES[cls] = found;
+    }
+    return found;
+}
+
 def _settle_written(anchor: Anchor, seen: int) {
     if seen and anchor.__dict__.get('_field_written', 0) == seen {
         anchor.__dict__.pop('_field_written', None);
@@ -421,6 +438,7 @@ impl Session.postinit -> None {
     self._last_conflict = set();
     self._scan_clean = False;
     self._scan_sealed = False;
+    self._scan_safe = True;
 }
 
 
@@ -973,7 +991,12 @@ impl Session._flush_locked(full: bool) -> None {
     if store is None {
         return;
     }
-    full = full and not self._scan_sealed;
+    if full and self._scan_sealed {
+        full = any(
+            anchor is not None and _runs_getters(anchor.archetype)
+            for anchor in (self.__mem__.get(id) for id in self._dirty)
+        );
+    }
     self._reclaim_dead_txn();
     unflushed: list[UnflushedAnchor] = [];
     while True {
@@ -1023,7 +1046,7 @@ impl Session._flush_locked(full: bool) -> None {
     }
     self._dirty.clear();
     if full {
-        self._scan_clean = True;
+        self._scan_clean = self._scan_safe;
     }
 }
 
@@ -1033,6 +1056,7 @@ impl Session._unflushed(full: bool) -> list[UnflushedAnchor] {
 
     candidates = list(self.__mem__.keys()) if full else list(self._dirty.keys());
     out: list[UnflushedAnchor] = [];
+    safe = True;
     for id in candidates {
         anchor = self.__mem__.get(id);
         if anchor is None or not anchor.persistent or not anchor.is_populated() {
@@ -1047,6 +1071,9 @@ impl Session._unflushed(full: bool) -> list[UnflushedAnchor] {
             continue;
         }
         written = anchor.__dict__.get('_field_written', 0);
+        if safe and _runs_getters(anchor.archetype) {
+            safe = False;
+        }
         stored: (dict[str, object] | None) = None;
         try {
             stored = Serializer.stored_form(anchor);
@@ -1063,6 +1090,7 @@ impl Session._unflushed(full: bool) -> list[UnflushedAnchor] {
             UnflushedAnchor(anchor=anchor, stored=stored, hash=h, written=written)
         );
     }
+    self._scan_safe = safe;
     return out;
 }
 

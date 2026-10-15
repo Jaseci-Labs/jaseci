@@ -51,6 +51,20 @@ node RBag {
 
 enum RShelf { FULL = [1] }
 
+glob PEEK_TARGETS: list[any] = [];
+
+node RPeeker {
+    has n: int = 0;
+
+    @property
+    def peek -> int {
+        for bag in PEEK_TARGETS {
+            bag.items.append(99);
+        }
+        return len(PEEK_TARGETS);
+    }
+}
+
 node RShelved {
     has shelf: RShelf = RShelf.FULL;
 }
@@ -1129,6 +1143,50 @@ test "request loop: a conflict re-run starts from the database, not from the rol
         }
     } finally {
         _restore_read_tier(prior);
+    }
+}
+
+
+test "a scan that ran a node's own getters is never sealed" {
+    with TemporaryDirectory() as td {
+        old = JacRuntime.exec_ctx;
+        seed = _ctx(td);
+        JacRuntime.exec_ctx = seed;
+        bag_id = UUID(int=0);
+        peek_id = UUID(int=0);
+        try {
+            bag: NodeAnchor = _as_any(RBag(items=[1])).__jac__;
+            bag.persistent = True;
+            seed.mem.put(bag);
+            bag_id = bag.ensure_id();
+            peeker: NodeAnchor = _as_any(RPeeker()).__jac__;
+            peeker.persistent = True;
+            seed.mem.put(peeker);
+            peek_id = peeker.ensure_id();
+            seed.mem.commit();
+        } finally {
+            JacRuntime.exec_ctx = old;
+            seed.close();
+        }
+        ctx = _ctx(td);
+        JacRuntime.exec_ctx = ctx;
+        try {
+            _ = ctx.user_root;
+            loaded = ctx.mem.batch_get([bag_id, peek_id]);
+            PEEK_TARGETS.append(_as_any(loaded[bag_id].archetype));
+            ctx.mem.commit();
+            ctx.mem.seal_scan();
+            ctx.mem.commit();
+            stored = _stored(ctx, bag_id, "items") or "";
+            assert "99" in stored , (
+                "a getter read during the scan appended to a loaded list; a seal "
+                f"must not skip the scan that saves it, but the row holds {stored}"
+            );
+        } finally {
+            PEEK_TARGETS.clear();
+            JacRuntime.exec_ctx = old;
+            ctx.close();
+        }
     }
 }
 

@@ -188,7 +188,8 @@ obj Session(Memory) {
         _queued: list[UUID] postinit,
         _last_conflict: set[UUID] postinit,
         _scan_clean: bool postinit,
-        _scan_sealed: bool postinit;
+        _scan_sealed: bool postinit,
+        _scan_safe: bool postinit;
 
     override def new_session(target_path: str) -> Session {
         if self.store is None {
