@@ -1,8 +1,4 @@
 impl ImportWiringPass.run_walk with Module entry {
-    import from jaclang.compiler.frontend.host { active_host }
-    if active_host().in_kernel() {
-        return;
-    }
     mod = here;
     path = mod.loc.mod_path;
     if is_arch_file(path) {
@@ -86,15 +82,14 @@ impl ImportWiringPass._check_scope(
 impl ImportWiringPass._check_wire(spec: WiringSpec, wire: ImportWire) -> None {
     provider = wire.provider_path;
     provider_ok = spec.module_file(provider) is not None;
-    live = [
-        c
-        for c in wire.consumers
-        if spec.module_file(
-            (spec.split_consumer(c.dot_path_str) or (c.dot_path_str, []))[0]
-        )
-            is not None
-            or spec.is_package_dir(c.dot_path_str)
-    ];
+    live: list[ModulePath] = [];
+    for c in wire.consumers {
+        split = spec.split_consumer(c.dot_path_str);
+        head = split[0] if split is not None else c.dot_path_str;
+        if spec.module_file(head) is not None or spec.is_package_dir(c.dot_path_str) {
+            live.append(c);
+        }
+    }
     if not provider_ok and live {
         self.ctx.emit(E1141, node_override=wire.provider, module=provider);
     }

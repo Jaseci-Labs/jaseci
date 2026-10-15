@@ -16,7 +16,11 @@ import from jaclang.compiler.driver.wiring { WiringSpec }
 import from jaclang.compiler.frontend.parser.frontend { parse }
 import from jaclang.compiler.frontend.module_facts { ModuleFacts }
 import from jaclang.compiler.frontend.unitree { ModuleItem }
-import from jaclang.cli.commands.architecture { _collect_rows, _render_blocks }
+import from jaclang.cli.commands.architecture {
+    _arch_init,
+    _collect_rows,
+    _render_blocks
+}
 
 glob _UTIL: str = "def now -> str {\n    return \"t\";\n}\n",
      _OTHER: str = "def helper -> int {\n    return 1;\n}\n",
@@ -580,6 +584,48 @@ test "a written import a wire duplicates is emitted once" {
             "W3053"
         )
             == 1;
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+test "jac arch init refuses a directory whose modules a parent arch.jac feeds" {
+    base = _standard();
+    try {
+        assert _arch_init(False, False, os.path.join(base, "core")) == 1;
+        assert not os.path.exists(os.path.join(base, "core", "arch.jac"));
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+test "a written import in a nested function does not cancel its parent's wire" {
+    base = _standard(
+        arch=(
+            "graph import core {\n"
+            "    util --> app.main.greet { now as when }\n"
+            "    util --> app.main.greet.inner { now as when }\n"
+            "}\n"
+        ),
+        main=(
+            "def greet -> str {\n"
+            "    def inner -> str {\n"
+            "        import from core.util { now as when }\n"
+            "        return when();\n"
+            "    }\n"
+            "    return when() + inner();\n"
+            "}\n"
+            "\n"
+            "with entry {\n"
+            "    print(greet());\n"
+            "}\n"
+        )
+    );
+    try {
+        prog = _compile(base, "app/main.jac");
+        assert _errors(prog) == [] , _errors(prog);
     } finally {
         shutil.rmtree(base, ignore_errors=True);
     }

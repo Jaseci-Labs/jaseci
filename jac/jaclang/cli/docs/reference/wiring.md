@@ -92,7 +92,7 @@ A provider that no rule names flows anywhere inside the boundary. A provider a r
 - A rule may name an external provider. `edge LlmFunnel: jaclang.byllm.* --> core.ai;` declares that all model-client access goes through one module, without a single wire.
 - A pattern that matches no module is `W2083`; external source patterns are exempt, since they are meant to match modules outside the boundary.
 
-Patterns are a dotted module (`core.docs.graph`), a package glob (`core.*`, which also matches the package's own `__init__`), `*` for every module under the arch.jac, or a quoted npm name. A rule's targets are always modules under its arch.jac: importers outside the directory answer to their own arch.jac, so `any` is not a pattern (`E0097`). Every rule is named, because the name carries the diagnostics that cite it.
+Patterns are a dotted module (`core.docs.graph`), a package glob (`core.*`, which also matches the package's own `__init__`), `*` for every module under the arch.jac, or a quoted npm name. A rule's targets are always modules under its arch.jac: importers outside the directory answer to their own arch.jac, so `any` is not a pattern (`E0098`). Every rule is named, because the name carries the diagnostics that cite it.
 
 ## Scoped blocks
 
@@ -123,7 +123,7 @@ The unscoped block stays for layer rules and anything cross-cutting. Several blo
 | `E2094` | a module imports a module under the arch.jac inside a function body that no scoped wire declares |
 | `W3052` | a wire repeats an earlier one (`remove-duplicate-wire`, autofixed by `jac fmt --lintfix`) |
 
-Syntax has its own codes, `E0086` through `E0098`, each naming the shape that was expected: a directed `-->`, one provider per wire, consumers named in full, `as` only on the module form, no duplicate payload names, `include` without a payload, named rules, a dotted scope, `*` standing alone, no `any` in a rule, and the `graph import` header.
+Syntax has its own codes, `E0086` through `E0099`, each naming the shape that was expected: a directed `-->`, one provider per wire, consumers named in full, `as` only on the module form, no duplicate payload names, `include` without a payload, named rules, a dotted scope, `*` standing alone, no `any` in a rule, and the `graph import` header.
 
 ## Wiring inside a package
 

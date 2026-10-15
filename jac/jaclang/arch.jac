@@ -3326,7 +3326,10 @@ graph import compiler.backends.py {
 }
 
 graph import compiler.driver {
-    jir --> compiler.driver.wiring._records_path { running_compiler_digest }
+    jir --> project.compiler_host._wiring_records_path {
+        get_jir_cache_dir,
+        running_compiler_digest
+    }
     application --> cli.commands.execution.serve { prepare_application }
     application --> client.targets.client_dev_common.dev_proxy_paths {
         prepare_application
@@ -3362,7 +3365,6 @@ graph import compiler.driver {
         discover_annex_files
     }
     bccache --> compiler.driver.jir._related_files { discover_annex_files }
-    bccache --> compiler.driver.wiring.compiled_by_seed { discover_base_file }
     bccache --> compiler.tests.test_batch_decl_identity { discover_base_file }
     bccache --> compiler.tests.test_global_narrowing { discover_base_file }
     bccache --> compiler.tools.code_intel { discover_annex_files }
@@ -4208,6 +4210,7 @@ graph import compiler.driver {
     wiring --> cli.commands.architecture {
         ARCH_FILE_NAME,
         WireRec,
+        arch_file_for,
         WiringSpec,
         scope_path_of,
         wiring_for_path
@@ -4572,6 +4575,7 @@ graph import compiler.driver {
     unit_products --> project.kernel_compile { UnitProducts }
     wiring --> compiler.driver.jir.stored_wiring_digest {
         arch_file_for,
+        import_prefix_for,
         is_arch_file,
         wiring_digest_for
     }
@@ -4825,6 +4829,11 @@ graph import compiler.driver {
 }
 
 graph import compiler.frontend {
+    host --> project.compiler_host.ProjectHost.native_fact {
+        HOST_FACT_GIT_IGNORED,
+        HOST_FACT_SEP,
+        HOST_FACT_STDLIB_MODULES
+    }
     codeinfo --> cli.check_report.print_native_coverage {
         effective_default_codespace,
         native_display_text
@@ -8249,16 +8258,17 @@ graph import compiler.frontend {
         unparse_node
     }
     codeinfo --> dist.precompile_bytecode.is_toolchain_package { jaclang_pkg_root }
-    codeinfo --> compiler.driver.wiring.wiring_for_path { is_package_keyed_path }
+    codeinfo --> compiler.driver.wiring.compiled_by_seed { jaclang_pkg_root }
+    codeinfo --> compiler.driver.wiring.is_kernel_abi_contract { jaclang_pkg_root }
+    codeinfo --> compiler.driver.wiring.is_native_stdlib_source { jaclang_pkg_root }
+    host --> compiler.driver.wiring {
+        HOST_FACT_GIT_IGNORED,
+        HOST_FACT_SEP,
+        HOST_FACT_STDLIB_MODULES
+    }
     codeinfo --> dist.precompile_bytecode._compiler_kernel_units { kernel_unit_paths }
     codeinfo --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._demote_native_test {
         native_test_symbol
-    }
-    host --> compiler.passes.import_wiring_pass.ImportWiringPass.run_walk {
-        active_host
-    }
-    host --> compiler.tools.jac_auto_lint_pass.JacAutoLintPass.exit_module {
-        active_host
     }
     codeinfo --> compiler.types.stubcat.build._cached_catalog { jaclang_pkg_root }
     codeinfo --> compiler.driver.jir | compiler.passes.package_boundary_pass.PackageBoundaryPass.run_walk {
@@ -11447,7 +11457,6 @@ graph import dist.source {
 }
 
 graph import jac0core {
-    cache_paths --> compiler.driver.wiring._records_path { get_jir_cache_dir }
     cache_paths --> cache.home { get_cache_home }
     cache_paths --> compiler.backends.es.client_kernel_cache._cache_dir {
         get_jir_cache_dir
@@ -11654,6 +11663,7 @@ graph import lsp.server {
 }
 
 graph import project {
+    textio --> project.compiler_host._git_ignored_under { drop_git_ignored }
     app_kinds --> dist.seal.build_serve_manifest { kind_has_server }
     app_kinds --> dist.source.project.export_project {
         kind_has_client,
@@ -12146,7 +12156,6 @@ graph import project {
     }
     source --> cli.commands.analysis._should_ignore { path_matches_exclude }
     source --> client.client_diagnostics.ClientDiagnostic.render { render_diagnostic }
-    textio --> compiler.driver.wiring { drop_git_ignored }
     source --> compiler.passes.context.Alert.as_log { render_diagnostic_header }
     source --> compiler.passes.context.Alert.pretty_print { render_diagnostic }
     source --> compiler.passes.import_wiring_pass { pascal_to_snake }

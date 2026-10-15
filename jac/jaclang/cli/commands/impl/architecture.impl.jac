@@ -294,12 +294,22 @@ def _format_source(text: str, path: str) -> str {
 }
 
 def _write_arch(arch_path: str, text: str) {
+    import tempfile;
     formatted = _format_source(text, arch_path);
-    tmp = arch_path + ".tmp";
-    with open(tmp, "w") as f {
-        f.write(formatted);
+    (fd, tmp) = tempfile.mkstemp(
+        dir=os.path.dirname(arch_path) or ".", prefix=".arch.", suffix=".tmp"
+    );
+    try {
+        with os.fdopen(fd, "w") as f {
+            f.write(formatted);
+        }
+        os.replace(tmp, arch_path);
+    } except BaseException as err {
+        if os.path.exists(tmp) {
+            os.unlink(tmp);
+        }
+        raise err;
     }
-    os.replace(tmp, arch_path);
 }
 
 def _strip_modules(paths: list[str]) -> int {
@@ -376,6 +386,24 @@ def _arch_init(force: bool, strip: bool, directory: str) -> int {
     }
     spec = _empty_spec(root_dir);
     modules = _module_files(spec);
+    parent_arch = arch_file_for(os.path.dirname(os.path.realpath(root_dir)));
+    parent = wiring_for_path(parent_arch) if parent_arch is not None else None;
+    if parent is not None {
+        fed = [
+            path
+            for (_name, path) in modules
+            if parent.is_covered(parent.module_name(path) or "")
+        ];
+        if fed {
+            console.error(
+                f"{len(fed)} modules under {root_dir} take their imports from "
+                f"{parent.path}; a new {ARCH_FILE_NAME} here would cut them off",
+                hint="write those imports back into the modules first, or extend "
+                f"{parent.path} with `jac arch sync`"
+            );
+            return 1;
+        }
+    }
     rows = _collect_rows(spec, modules);
     _write_arch(arch_path, _render_blocks(rows) if rows else "");
     console.success(

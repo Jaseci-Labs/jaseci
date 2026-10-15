@@ -970,6 +970,7 @@ def stored_wiring_digest(source_path: str) -> str {
     import from jaclang.compiler.frontend.host { active_host }
     import from jaclang.compiler.driver.wiring {
         arch_file_for,
+        import_prefix_for,
         is_arch_file,
         wiring_digest_for
     }
@@ -982,7 +983,8 @@ def stored_wiring_digest(source_path: str) -> str {
     }
     root_dir = os.path.dirname(arch);
     facts = active_host().project_facts(root_dir);
-    stamp = _arch_stamp(arch, (facts.package_name or "") if facts is not None else "");
+    package_name = (facts.package_name or "") if facts is not None else "";
+    stamp = _arch_stamp(arch, package_name + "\x00" + import_prefix_for(root_dir));
     if stamp is None {
         return wiring_digest_for(source_path);
     }

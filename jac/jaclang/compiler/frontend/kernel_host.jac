@@ -880,6 +880,23 @@ obj KernelHost(HostServices) {
         return self.inputs.manifest.is_seed(rel_path);
     }
 
+    def wiring_records(digest: str) -> str {
+        if self.kernel_only("wiring_records") {
+            return "";
+        }
+        with self.delegating("wiring_records") as host {
+            answer = host.wiring_records(digest);
+        }
+        return answer;
+    }
+
+    def keep_wiring_records(digest: str, text: str) {
+        self.census.count("keep_wiring_records");
+        if self.fallback is not None {
+            self.fallback.keep_wiring_records(digest, text);
+        }
+    }
+
     def native_parse(
         source_str: str,
         file_path: str,

@@ -2487,7 +2487,7 @@ impl JacAutoLintPass._strip_wired_imports(nd: uni.Module) -> None {
         }
         owner_body = [
             s
-            for s in owner.body
+            for s in [owner->:BodyRole:->]
             if s is not imp
         ];
         with owner.structure_thawed() {
@@ -2557,21 +2557,20 @@ impl JacAutoLintPass._wired_items(
     from_loc = stmt.from_loc;
     if from_loc is not None {
         provider = spec.import_provider(from_loc);
+        if provider is None {
+            return doomed;
+        }
         form = import_form(stmt.is_absorb, stmt.is_typed, stmt.is_comptime, True);
         for item in stmt.items {
-            if provider is None or not isinstance(item, uni.ModuleItem) {
+            if not isinstance(item, uni.ModuleItem) {
                 continue;
             }
             alias = item.alias.value if item.alias is not None else "";
-            if (provider, form, item.name.value, alias) not in provided {
-                continue;
-            }
-            if (
-                self.ctx.emit(
+            if (provider, form, item.name.value, alias) in provided
+                and self.ctx.emit(
                     W3053, node_override=item, name=item.name.value, module=provider
                 )
-                and not self.report_only
-            ) {
+                and not self.report_only {
                 doomed.add(id(item));
             }
         }
@@ -2583,19 +2582,13 @@ impl JacAutoLintPass._wired_items(
             continue;
         }
         provider = spec.import_provider(item);
-        if provider is None {
-            continue;
-        }
         alias = item.alias.value if item.alias is not None else "";
-        if (provider, form, "", alias) not in provided {
-            continue;
-        }
-        if (
-            self.ctx.emit(
+        if provider is not None
+            and (provider, form, "", alias) in provided
+            and self.ctx.emit(
                 W3053, node_override=item, name=item.dot_path_str, module=provider
             )
-            and not self.report_only
-        ) {
+            and not self.report_only {
             doomed.add(id(item));
         }
     }
@@ -2665,9 +2658,7 @@ impl JacAutoLintPass._strip_duplicate_wires(nd: uni.Module) -> None {
 
 impl JacAutoLintPass.exit_module with uni.Module exit {
     self._strip_usestate_imports(here);
-    if not active_host().in_kernel() {
-        self._strip_wired_imports(here);
-    }
+    self._strip_wired_imports(here);
     self._strip_duplicate_wires(here);
     self._strip_redundant_semis(here);
     self._strip_noise(here);

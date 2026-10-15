@@ -45,26 +45,30 @@ impl WiringSpec.postinit -> None {
 
 impl WiringSpec.import_prefix -> str {
     if self._prefix is None {
-        project = active_host().project_root(self.root_dir);
-        stop = os.path.realpath(project) if project else None;
-        chain: list[str] = [];
-        top = -1;
-        cur = os.path.realpath(self.root_dir);
-        while cur != stop {
-            if os.path.isfile(os.path.join(cur, "__init__.jac"))
-                or os.path.isfile(os.path.join(cur, "__init__.py")) {
-                top = len(chain);
-            }
-            chain.append(os.path.basename(cur));
-            parent = os.path.dirname(cur);
-            if parent == cur {
-                break;
-            }
-            cur = parent;
-        }
-        self._prefix = ".".join(reversed(chain[:top + 1]));
+        self._prefix = import_prefix_for(self.root_dir);
     }
     return self._prefix;
+}
+
+impl import_prefix_for(root_dir: str) -> str {
+    project = active_host().project_root(root_dir);
+    stop = os.path.realpath(project) if project else None;
+    chain: list[str] = [];
+    top = -1;
+    cur = os.path.realpath(root_dir);
+    while cur != stop {
+        if os.path.isfile(os.path.join(cur, "__init__.jac"))
+            or os.path.isfile(os.path.join(cur, "__init__.py")) {
+            top = len(chain);
+        }
+        chain.append(os.path.basename(cur));
+        parent = os.path.dirname(cur);
+        if parent == cur {
+            break;
+        }
+        cur = parent;
+    }
+    return ".".join(reversed(chain[:top + 1]));
 }
 
 impl WiringSpec.import_name(name: str) -> str {
@@ -214,8 +218,18 @@ impl WiringSpec.project_modules -> list[str] {
     }
     paths: list[str] = [];
     self._scan_modules(self.root_dir, paths, set());
+    ignored = set(
+        active_host().native_fact(
+            HOST_FACT_GIT_IGNORED, os.path.realpath(self.root_dir)
+        ).split(
+            HOST_FACT_SEP
+        )
+    );
     found: list[str] = [];
-    for path in drop_git_ignored(paths, cwd=self.root_dir) {
+    for path in paths {
+        if os.path.realpath(path) in ignored {
+            continue;
+        }
         name = self.module_name(path);
         if name is not None {
             found.append(name);
@@ -430,7 +444,7 @@ impl WiringSpec.import_provider(path_node: ModulePath) -> (str | None) {
     if path_node.level == 0
         and path_node.string_path_value is None
         and (
-            path_node.dot_path_str.split(".")[0] in sys.stdlib_module_names
+            is_stdlib_module(path_node.dot_path_str.split(".")[0])
             or is_bundled_native_module(path_node.dot_path_str)
         ) {
         return None;
@@ -589,95 +603,149 @@ impl parse_records(
     return (bool(had_error), wires, rules);
 }
 
-impl _records_path(source: str) -> str {
-    import from jaclang.compiler.driver.jir { running_compiler_digest }
-    import from jaclang.jac0core.cache_paths { get_jir_cache_dir }
-    h = hashlib.sha256();
-    h.update(
-        (str(RECORDS_FORMAT) + "\x00" + running_compiler_digest() + "\x00").encode()
-    );
-    h.update(source.encode());
-    key = h.hexdigest();
-    return os.path.join(
-        str(get_jir_cache_dir()), "wiring-spec", key[:2], key + ".json"
-    );
+impl _split_list(text: str) -> list[str] {
+    if not text {
+        return [];
+    }
+    return text.split("\x1e");
 }
 
-impl _records_to_json(
-    parse_failed: bool, wires: list[WireRec], rules: list[RuleRec]
-) -> dict[str, any] {
-    return {
-        "format": RECORDS_FORMAT,
-        "parse_failed": parse_failed,
-        "wires": [
-            [
-                w.provider,
-                w.consumers,
-                [w.is_module_form, w.is_absorb, w.is_typed, w.is_comptime],
-                w.alias,
-                [[name, alias] for (name, alias) in w.items],
-                w.line,
-                w.col,
-                w.lb_line,
-                w.lb_col,
-                w.payload
-            ] for w in wires
-        ],
-        "rules": [
-            [
-                r.name,
-                r.scope,
-                [[p.dotted, p.is_glob, p.text] for p in r.sources],
-                [[p.dotted, p.is_glob, p.text] for p in r.targets],
-                sorted(r.item_names),
-                r.is_open
-            ] for r in rules
+impl _encode_patterns(patterns: list[PatternRec]) -> str {
+    return "\x1e".join(
+        [
+            p.dotted + "\x1d" + ("1" if p.is_glob else "0") + "\x1d" + p.text
+            for p in patterns
         ]
-    };
+    );
 }
 
-impl _records_from_json(
-    held: dict[str, any]
-) -> (tuple[bool, list[WireRec], list[RuleRec]] | None) {
-    if not isinstance(held, dict) or held.get("format") != RECORDS_FORMAT {
+impl _decode_patterns(text: str) -> (list[PatternRec] | None) {
+    out: list[PatternRec] = [];
+    for part in _split_list(text) {
+        bits = part.split("\x1d");
+        if len(bits) != 3 {
+            return None;
+        }
+        out.append(PatternRec(dotted=bits[0], is_glob=bits[1] == "1", text=bits[2]));
+    }
+    return out;
+}
+
+impl encode_records(
+    parse_failed: bool, wires: list[WireRec], rules: list[RuleRec]
+) -> str {
+    lines: list[str] = [
+        "jacwire\x1f" + str(RECORDS_FORMAT) + "\x1f" + ("1" if parse_failed else "0")
+    ];
+    for w in wires {
+        flags = ("1" if w.is_module_form else "0")
+            + ("1" if w.is_absorb else "0")
+            + ("1" if w.is_typed else "0")
+            + ("1" if w.is_comptime else "0");
+        items = "\x1e".join([name + "\x1d" + alias for (name, alias) in w.items]);
+        lines.append(
+            "\x1f".join(
+                [
+                    "W",
+                    w.provider,
+                    "\x1e".join(w.consumers),
+                    flags,
+                    w.alias,
+                    items,
+                    str(w.line),
+                    str(w.col),
+                    str(w.lb_line),
+                    str(w.lb_col),
+                    w.payload.replace("\n", "\x1c")
+                ]
+            )
+        );
+    }
+    for r in rules {
+        lines.append(
+            "\x1f".join(
+                [
+                    "R",
+                    r.name,
+                    r.scope,
+                    _encode_patterns(r.sources),
+                    _encode_patterns(r.targets),
+                    "\x1e".join(sorted(r.item_names)),
+                    "1" if r.is_open else "0"
+                ]
+            )
+        );
+    }
+    return "\n".join(lines);
+}
+
+impl decode_records(text: str) -> (tuple[bool, list[WireRec], list[RuleRec]] | None) {
+    lines = text.split("\n");
+    head = lines[0].split("\x1f");
+    if len(head) != 3 or head[0] != "jacwire" or head[1] != str(RECORDS_FORMAT) {
         return None;
     }
-    try {
-        wires = [
-            WireRec(
-                provider=w[0],
-                consumers=w[1],
-                is_module_form=w[2][0],
-                is_absorb=w[2][1],
-                is_typed=w[2][2],
-                is_comptime=w[2][3],
-                alias=w[3],
-                items=[(i[0], i[1]) for i in w[4]],
-                line=w[5],
-                col=w[6],
-                lb_line=w[7],
-                lb_col=w[8],
-                payload=w[9]
-            ) for w in held["wires"]
-        ];
-        rules = [
-            RuleRec(
-                name=r[0],
-                scope=r[1],
-                sources=[
-                    PatternRec(dotted=p[0], is_glob=p[1], text=p[2]) for p in r[2]
-                ],
-                targets=[
-                    PatternRec(dotted=p[0], is_glob=p[1], text=p[2]) for p in r[3]
-                ],
-                item_names=set(r[4]),
-                is_open=r[5]
-            ) for r in held["rules"]
-        ];
-    } except (IndexError, KeyError, TypeError) {
-        return None;
+    wires: list[WireRec] = [];
+    rules: list[RuleRec] = [];
+    for line in lines[1:] {
+        f = line.split("\x1f");
+        if f[0] == "W" and len(f) == 11 {
+            flags = f[3];
+            if len(flags) != 4
+                or not (
+                    f[6].isdigit()
+                    and f[7].isdigit()
+                    and f[8].isdigit()
+                    and f[9].isdigit()
+                ) {
+                return None;
+            }
+            items: list[tuple[str, str]] = [];
+            for pair in _split_list(f[5]) {
+                bits = pair.split("\x1d");
+                if len(bits) != 2 {
+                    return None;
+                }
+                items.append((bits[0], bits[1]));
+            }
+            wires.append(
+                WireRec(
+                    provider=f[1],
+                    consumers=_split_list(f[2]),
+                    is_module_form=flags[0] == "1",
+                    is_absorb=flags[1] == "1",
+                    is_typed=flags[2] == "1",
+                    is_comptime=flags[3] == "1",
+                    alias=f[4],
+                    items=items,
+                    line=int(f[6]),
+                    col=int(f[7]),
+                    lb_line=int(f[8]),
+                    lb_col=int(f[9]),
+                    payload=f[10].replace("\x1c", "\n")
+                )
+            );
+        } elif f[0] == "R" and len(f) == 7 {
+            sources = _decode_patterns(f[3]);
+            targets = _decode_patterns(f[4]);
+            if sources is None or targets is None {
+                return None;
+            }
+            rules.append(
+                RuleRec(
+                    name=f[1],
+                    scope=f[2],
+                    sources=sources,
+                    targets=targets,
+                    item_names=set(_split_list(f[5])),
+                    is_open=f[6] == "1"
+                )
+            );
+        } else {
+            return None;
+        }
     }
-    return (bool(held.get("parse_failed")), wires, rules);
+    return (head[2] == "1", wires, rules);
 }
 
 impl is_arch_file(path: str) -> bool {
@@ -706,36 +774,45 @@ impl arch_file_for(path: str) -> (str | None) {
 }
 
 impl compiled_by_seed(path: str) -> bool {
-    import jaclang;
-    import from jaclang { bootstrap_manifest }
-    import from jaclang.compiler.driver.bccache { discover_base_file }
-    pkg = os.path.dirname(os.path.realpath(jaclang.__file__));
-    real = os.path.realpath(discover_base_file(path) or path);
+    import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
+    host = active_host();
+    pkg = os.path.realpath(jaclang_pkg_root());
+    base = host.base_file(path);
+    real = os.path.realpath(base if base is not None else path);
     if not real.startswith(pkg + os.sep) {
         return False;
     }
-    return bootstrap_manifest.is_seed_source(
-        os.path.relpath(real, pkg).replace(os.sep, "/")
-    );
+    return host.is_seed_source(real[len(pkg) + 1:].replace(os.sep, "/"));
 }
 
 impl is_kernel_abi_contract(path: str) -> bool {
-    import jaclang;
+    import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
     import from jaclang.compiler.native_scope { KERNEL_ABI_CONTRACT_REL }
-    pkg = os.path.dirname(os.path.realpath(jaclang.__file__));
+    pkg = os.path.realpath(jaclang_pkg_root());
     real = os.path.realpath(path);
     if not real.startswith(pkg + os.sep) {
         return False;
     }
-    return os.path.relpath(real, pkg).replace(os.sep, "/") in KERNEL_ABI_CONTRACT_REL;
+    return real[len(pkg) + 1:].replace(os.sep, "/") in KERNEL_ABI_CONTRACT_REL;
 }
 
 impl is_native_stdlib_source(path: str) -> bool {
-    import jaclang;
+    import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
+    stdlib = os.path.join(os.path.realpath(jaclang_pkg_root()), "runtime", "na_stdlib");
+    return os.path.realpath(path).startswith(stdlib + os.sep);
+}
 
-    pkg = os.path.dirname(os.path.realpath(jaclang.__file__));
-    stdlib = os.path.join(pkg, "runtime", "na_stdlib") + os.sep;
-    return os.path.realpath(path).startswith(stdlib);
+impl is_stdlib_module(name: str) -> bool {
+    if not _STDLIB_NAMES {
+        _STDLIB_NAMES.append(
+            set(
+                active_host().native_fact(HOST_FACT_STDLIB_MODULES, "").split(
+                    HOST_FACT_SEP
+                )
+            )
+        );
+    }
+    return name in _STDLIB_NAMES[0];
 }
 
 impl scope_path_of(nd: UniNode) -> (list[str] | None) {
@@ -813,28 +890,19 @@ impl _load_spec(root_dir: str, arch_path: str) -> WiringSpec {
     if cached is not None and cached[0] == stamp {
         return cached[1];
     }
-    import json;
-    source = active_host().read_source(arch_path);
+    host = active_host();
+    source = host.read_source(arch_path);
+    digest = hashlib.sha256(source.encode()).hexdigest();
     records: (tuple[bool, list[WireRec], list[RuleRec]] | None) = None;
-    store = "";
-    try {
-        store = _records_path(source);
-        with open(store, "r", encoding="utf-8") as f {
-            records = _records_from_json(json.load(f));
-        }
-    } except (OSError, ValueError, RuntimeError) {}
+    held = host.wiring_records(digest);
+    if held {
+        records = decode_records(held);
+    }
     if records is None {
         records = parse_records(source, arch_path);
-        if store {
-            try {
-                os.makedirs(os.path.dirname(store), exist_ok=True);
-                scratch = store + "." + str(os.getpid()) + ".tmp";
-                with open(scratch, "w", encoding="utf-8") as f {
-                    json.dump(_records_to_json(records[0], records[1], records[2]), f);
-                }
-                os.replace(scratch, store);
-            } except OSError {}
-        }
+        host.keep_wiring_records(
+            digest, encode_records(records[0], records[1], records[2])
+        );
     }
     spec = WiringSpec(
         root_dir=root_dir,
@@ -850,12 +918,6 @@ impl _load_spec(root_dir: str, arch_path: str) -> WiringSpec {
 impl wiring_for_path(path: str) -> (WiringSpec | None) {
     if not path {
         return None;
-    }
-    if active_host().in_kernel() {
-        import from jaclang.compiler.frontend.codeinfo { is_package_keyed_path }
-        if is_package_keyed_path(path) {
-            return None;
-        }
     }
     arch = arch_file_for(path);
     if arch is None {
@@ -911,7 +973,9 @@ impl dedupe_generated_imports(mod: Module) -> None {
                 }
                 in_scope: set[tuple[str, str, str, str]] = set();
                 for imp in owner.get_all_sub_nodes(typ=Import) {
-                    in_scope |= import_keys(imp);
+                    if scope_path_of(imp) == scope {
+                        in_scope |= import_keys(imp);
+                    }
                 }
                 doomed: set[int] = set();
                 for (key, item) in import_items(stmt) {

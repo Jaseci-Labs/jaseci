@@ -1,6 +1,5 @@
 import hashlib;
 import os;
-import sys;
 import from collections.abc { Iterator }
 import from contextlib { contextmanager }
 import from contextvars { ContextVar }
@@ -23,7 +22,12 @@ import from jaclang.compiler.frontend.unitree {
 }
 import from jaclang.compiler.frontend.constant { Tokens as Tok }
 import from jaclang.compiler.frontend.roles { BodyRole, Kid }
-import from jaclang.compiler.frontend.host { active_host }
+import from jaclang.compiler.frontend.host {
+    HOST_FACT_GIT_IGNORED,
+    HOST_FACT_SEP,
+    HOST_FACT_STDLIB_MODULES,
+    active_host
+}
 import from jaclang.compiler.passes.annex_weave {
     WovenAnnex,
     import_form,
@@ -31,11 +35,10 @@ import from jaclang.compiler.passes.annex_weave {
     import_keys,
     relative_twin
 }
-import from jaclang.project.textio { drop_git_ignored }
 
 glob ARCH_FILE_NAME: str = "arch.jac",
      SKIPPED_PROJECT_DIRS: tuple[str, ...] = ("node_modules", "__pycache__"),
-     RECORDS_FORMAT: int = 1;
+     RECORDS_FORMAT: int = 2;
 
 obj WireBinding {
     has provider: str,
@@ -137,7 +140,8 @@ glob _spec_cache: dict[str, tuple[tuple[float, int], WiringSpec]] = {},
      _resolution: ContextVar[dict[str, WiringSpec | None] | None] = ContextVar(
          'jac_wiring_resolution', `default=None
      ),
-     _building: set[str] = set();
+     _building: set[str] = set(),
+     _STDLIB_NAMES: list[set[str]] = [];
 
 @contextmanager
 def wiring_scope -> Iterator[None] {
@@ -167,14 +171,16 @@ def pattern_record(pattern: ModulePattern) -> PatternRec;
 def rule_record(rule: ImportRule) -> RuleRec;
 def wire_record(wire: ImportWire, source: str = "") -> WireRec;
 def parse_records(source: str, path: str) -> tuple[bool, list[WireRec], list[RuleRec]];
-def _records_path(source: str) -> str;
-def _records_to_json(
+def encode_records(
     parse_failed: bool, wires: list[WireRec], rules: list[RuleRec]
-) -> dict[str, any];
+) -> str;
 
-def _records_from_json(
-    held: dict[str, any]
-) -> (tuple[bool, list[WireRec], list[RuleRec]] | None);
+def decode_records(text: str) -> (tuple[bool, list[WireRec], list[RuleRec]] | None);
+def _split_list(text: str) -> list[str];
+def _encode_patterns(patterns: list[PatternRec]) -> str;
+def _decode_patterns(text: str) -> (list[PatternRec] | None);
+def import_prefix_for(root_dir: str) -> str;
+def is_stdlib_module(name: str) -> bool;
 
 def _load_spec(root_dir: str, arch_path: str) -> WiringSpec;
 def scope_path_of(nd: UniNode) -> (list[str] | None);

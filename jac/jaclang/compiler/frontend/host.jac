@@ -214,6 +214,11 @@ obj HostServices {
         return False;
     }
 
+    def wiring_records(digest: str) -> str {
+        return "";
+    }
+
+    def keep_wiring_records(digest: str, text: str) {}
     def native_parse(
         source_str: str,
         file_path: str,
@@ -400,6 +405,10 @@ obj HostServices {
 }
 
 obj NeutralHost(HostServices) {}
+
+glob HOST_FACT_SEP: str = "\x1e",
+     HOST_FACT_STDLIB_MODULES: str = "stdlib_modules",
+     HOST_FACT_GIT_IGNORED: str = "git_ignored";
 
 glob _HOSTS: list[HostServices] = [],
      _KERNEL_HOST_MODE: list[str] = [],

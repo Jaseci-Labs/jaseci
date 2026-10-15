@@ -355,8 +355,46 @@ impl ProjectHost.save_native_debug_ir(path: str, text: str) {
 }
 
 impl ProjectHost.native_fact(kind: str, key: str) -> str {
+    import sys;
+    import from jaclang.compiler.frontend.host {
+        HOST_FACT_GIT_IGNORED,
+        HOST_FACT_SEP,
+        HOST_FACT_STDLIB_MODULES
+    }
+    if kind == HOST_FACT_STDLIB_MODULES {
+        return HOST_FACT_SEP.join(sorted(sys.stdlib_module_names));
+    }
+    if kind == HOST_FACT_GIT_IGNORED {
+        return HOST_FACT_SEP.join(_git_ignored_under(key));
+    }
     import from jaclang.compiler.backends.native.host_facts { host_native_fact }
     return host_native_fact(kind, key);
+}
+
+def _git_ignored_under(root_dir: str) -> list[str] {
+    import os;
+    import from jaclang.project.textio { drop_git_ignored }
+    paths: list[str] = [];
+    for (directory, dirs, files) in os.walk(root_dir) {
+        dirs[:] = [
+            d
+            for d in dirs
+            if not d.startswith(".") and d not in ("node_modules", "__pycache__")
+        ];
+        for name in files {
+            if name.endswith(".jac") {
+                paths.append(os.path.realpath(os.path.join(directory, name)));
+            }
+        }
+    }
+    kept = set(drop_git_ignored(paths, cwd=root_dir));
+    return sorted(
+        [
+            p
+            for p in paths
+            if p not in kept
+        ]
+    );
 }
 
 impl ProjectHost.native_units_for(program: JacProgram) -> NativeUnitRegistry {
@@ -436,6 +474,50 @@ impl ProjectHost.wiring_file(path: str) -> (str | None) {
         return None;
     }
     return arch_file_for(path);
+}
+
+def _wiring_records_path(digest: str) -> str {
+    import hashlib;
+    import os;
+    import from jaclang.compiler.driver.jir {
+        get_jir_cache_dir,
+        running_compiler_digest
+    }
+    name = hashlib.sha256(
+        (digest + "\x00" + running_compiler_digest()).encode()
+    ).hexdigest();
+    return os.path.join(
+        str(get_jir_cache_dir()), "wiring-spec", name[:2], name + ".txt"
+    );
+}
+
+impl ProjectHost.wiring_records(digest: str) -> str {
+    try {
+        with open(_wiring_records_path(digest), "r", encoding="utf-8") as f {
+            return f.read();
+        }
+    } except (OSError, RuntimeError, UnicodeDecodeError) {
+        return "";
+    }
+}
+
+impl ProjectHost.keep_wiring_records(digest: str, text: str) {
+    import os;
+    import tempfile;
+    try {
+        path = _wiring_records_path(digest);
+        directory = os.path.dirname(path);
+        os.makedirs(directory, exist_ok=True);
+        (fd, scratch) = tempfile.mkstemp(dir=directory, suffix=".tmp");
+        try {
+            with os.fdopen(fd, "w", encoding="utf-8") as f {
+                f.write(text);
+            }
+            os.replace(scratch, path);
+        } except OSError {
+            os.unlink(scratch);
+        }
+    } except (OSError, RuntimeError) {}
 }
 
 impl ProjectHost.is_seed_source(rel_path: str) -> bool {
