@@ -50,11 +50,20 @@ test "above threshold compacts and next iteration sees shortened messages" {
             ]
         );
 
+        hook_calls = [0];
+        def counted(msgs: list[any], keep_recent: int) -> list[any] {
+            hook_calls[0] += 1;
+            return hook(msgs, keep_recent);
+        }
+
         def my_task(q: str) -> str by llm(
-            tools=[step_a], threshold_ratio=0.80, on_compaction=hook
+            tools=[step_a], threshold_ratio=0.80, on_compaction=counted
         );
 
         assert my_task("test") == "ok" , f"{label}: the call must finish";
+        assert hook_calls[0] == 1 , f"{label}: the hook must run once, ran {hook_calls[
+            0
+        ]}";
         # Without compaction iter 3 would be at 6 messages; the hook collapses it to 3.
         iter_msgs = [len(sent) for sent in llm.sent("messages")];
         assert iter_msgs == [2, 4, 3] , f"{label}: expected [2, 4, 3], got {iter_msgs}";
