@@ -617,7 +617,7 @@ def download_admin_dist(channel: str, version: str = "") -> bytes | None {
             if version {
                 logger.warning(
                     f"Pinned jac {version} publishes no admin console asset; "
-                    f"the gateway builds it on boot."
+                    f"the gateway builds it on its first admin request."
                 );
             }
             return None;
@@ -690,7 +690,7 @@ def stage_admin_dist(project_dir: str, channel: str, version: str = "") -> bool 
             raise;
         }
         logger.warning(
-            f"Could not stage the admin console ({e}); the gateway builds it on boot."
+            f"Could not stage the admin console ({e}); the gateway builds it on its first admin request."
         );
         return False;
     }
