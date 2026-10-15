@@ -351,11 +351,11 @@ def wired_lines(
                 }
             }
         }
-        if f"import from {spec.import_name(wire.provider_path)} " in body {
+        if f"import from {spec.import_name(wire.provider)} " in body {
             continue;
         }
         for (name, rx) in compiled.items() {
-            if rx.search(wire.provider_path) {
+            if rx.search(wire.provider) {
                 out[(dest, name)] = out.get((dest, name), 0) + 1;
             }
         }

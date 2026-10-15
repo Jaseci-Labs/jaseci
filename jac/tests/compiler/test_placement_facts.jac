@@ -165,10 +165,10 @@ test "placement_pins imports stay within the documented allowlist" {
     );
     assert spec is not None;
     for wire in spec.wires {
-        if not wire.provider_path.endswith("placement_pins") {
+        if not wire.provider.endswith("placement_pins") {
             continue;
         }
-        for consumer in wire.consumer_paths {
+        for consumer in wire.consumers {
             split = spec.split_consumer(consumer);
             owner = split[0] if split is not None else consumer;
             path = spec.module_file(owner);
