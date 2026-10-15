@@ -31,7 +31,8 @@ glob logger = logging.getLogger(__name__),
          '/graph',
          '/redoc',
          '/assets'
-     ];
+     ],
+     DEV_CLIENT_YIELDING_PREFIXES: list[str] = ['/admin'];
 
 def client_deps_stale(build_dir: Path) -> bool;
 

@@ -429,6 +429,8 @@ def _proxy_entry(
         bypass = (
             '\n        bypass: (req) => {'
             '\n          if (req.method !== "GET" && req.method !== "HEAD") { return; }'
+            '\n          const accept = (req.headers && req.headers.accept) || "";'
+            '\n          if (accept.indexOf("text/html") === -1) { return; }'
             '\n          const p = (req.url || "").split("?")[0];'
             f'\n          if ({sources}.some((s) => new RegExp(s).test(p))) {{ return req.url; }}'
             '\n        },'
@@ -616,7 +618,8 @@ impl ViteBundler._generate_vite_config_content(
             under = [
                 p
                 for p in claimed
-                if route_pattern_under_prefix(p, prefix)
+                if prefix in DEV_CLIENT_YIELDING_PREFIXES
+                    and route_pattern_under_prefix(p, prefix)
             ];
             builtin_proxy_str += _proxy_entry(prefix, api_port, under);
         }

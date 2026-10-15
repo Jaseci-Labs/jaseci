@@ -1118,10 +1118,14 @@ impl ModuleIntrospector.client_claimed_paths(candidates: list[str]) -> list[str]
             continue;
         }
     }
-    import from jaclang.client.vite_bundler { route_pattern_under_prefix }
+    import from jaclang.client.vite_bundler {
+        DEV_CLIENT_YIELDING_PREFIXES,
+        route_pattern_under_prefix
+    }
     for pattern in (self._spa_route_patterns or []) {
         for candidate in candidates {
-            if route_pattern_under_prefix(pattern, candidate)
+            if candidate in DEV_CLIENT_YIELDING_PREFIXES
+                and route_pattern_under_prefix(pattern, candidate)
                 and pattern not in claimed {
                 claimed.append(pattern);
             }

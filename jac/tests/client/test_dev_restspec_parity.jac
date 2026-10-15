@@ -352,6 +352,34 @@ test "the dev proxy drops built-in prefixes the app claims as client routes" {
     ] {
         assert source in text , f"missing bypass pattern {source}:\n{text}";
     }
+    assert "text/html" in text , (
+        f"the bypass must only take navigations, not fetches:\n{text}"
+    );
+    walker_entry = text.split('"/walker": {')[1].split("\n      },")[0];
+    assert "bypass" not in walker_entry , (
+        f"a prefix with no yielding platform route is never bypassed:\n{text}"
+    );
+
+    # Only a prefix whose server routes yield to pages gets a bypass; a page
+    # at /user/me must not turn the API's /user/me into page html in dev.
+    with TemporaryDirectory() as tmp {
+        entry_file = _min_project(tmp);
+        bundler = ViteBundler(Path(tmp));
+        config_path = bundler.create_vite_config(
+            entry_file,
+            is_dev=True,
+            api_port=8123,
+            client_paths=["/user/me", "/:section/me"]
+        );
+        text = config_path.read_text(encoding="utf-8");
+    }
+    user_entry = text.split('"/user": {')[1].split("\n      },")[0];
+    assert "bypass" not in user_entry , f"/user is not a yielding prefix:\n{text}";
+    admin_entry = text.split('"/admin": {')[1].split("\n      },")[0];
+    assert "^/[^/]+/me/?$" in admin_entry , (
+        f"a dynamic parent still claims the yielding /admin:\n{text}"
+    );
+
     # A root catch-all page claims no prefix: it must not bypass the API.
     with TemporaryDirectory() as tmp {
         entry_file = _min_project(tmp);
