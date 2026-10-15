@@ -1102,7 +1102,6 @@ impl NaIRGenPass._make_zip_iter(
 impl NaIRGenPass._resolve_method_owner(
     arch_name: str, method_name: str
 ) -> (str | None) {
-    import from jaclang.compiler.passes.layout_pass { get_layout_registry }
     owner = get_layout_registry(self.module, self.prog).resolve_method_owner(
         arch_name, method_name
     );
@@ -1124,7 +1123,6 @@ impl NaIRGenPass._resolve_method_owner(
 impl NaIRGenPass._resolve_method(
     arch_name: str, method_name: str
 ) -> (ir.Function | None) {
-    import from jaclang.compiler.passes.layout_pass { get_layout_registry }
     _reg = get_layout_registry(self.module, self.prog);
     cur: (str | None) = arch_name;
     _guard = 0;
@@ -1484,18 +1482,6 @@ impl NaIRGenPass._try_iter_protocol_for(nd: uni.InForStmt) -> bool {
     _loc = "iter_for";
     tuple_target = nd.target if isinstance(nd.target, uni.TupleVal) else None;
 
-    _gen_it_spill: (ir.Value | None) = None;
-    if self._gen_ctx is not None and self.builder.function is self._gen_ctx.resume_fn {
-        _gen_it_spill = self._entry_alloca(iter_val.type, "iterf.itslot");
-        self.builder.store(iter_val, _gen_it_spill);
-    }
-
-    _it_slot_var: (str | None) = None;
-    if _gen_it_spill is None and owns_iter {
-        _it_slot_var = self._bind_loop_coll_slot(iter_val);
-    }
-
-    elem_slot = self._entry_alloca(elem_type, "iter.elem");
     if tuple_target is not None {
         targets = tuple_target.values or [];
         if not isinstance(elem_type, ir.LiteralStructType)
@@ -1506,6 +1492,22 @@ impl NaIRGenPass._try_iter_protocol_for(nd: uni.InForStmt) -> bool {
     } elif self._get_name(nd.target) is None {
         return False;
     }
+
+    _gen_it_spill: (ir.Value | None) = None;
+    if self._gen_ctx is not None and self.builder.function is self._gen_ctx.resume_fn {
+        _gen_it_spill = self._entry_alloca(iter_val.type, "iterf.itslot");
+        if not owns_iter {
+            self._emit_rc_retain(iter_val, op="iter_spill", loc=_loc);
+        }
+        self.builder.store(iter_val, _gen_it_spill);
+    }
+
+    _it_slot_var: (str | None) = None;
+    if _gen_it_spill is None and owns_iter {
+        _it_slot_var = self._bind_loop_coll_slot(iter_val);
+    }
+
+    elem_slot = self._entry_alloca(elem_type, "iter.elem");
     func = self.builder.function;
     cond_bb = func.append_basic_block(name="iterf.cond");
     body_bb = func.append_basic_block(name="iterf.body");
@@ -1543,7 +1545,7 @@ impl NaIRGenPass._try_iter_protocol_for(nd: uni.InForStmt) -> bool {
             return False;
         }
     }
-    import from jaclang.compiler.passes.rc_facts_pass { loop_body_locals }
+
     _saved = loop_body_locals(nd.body if isinstance(nd.body, (list, tuple)) else None);
 
     _iter_prebody = set(self.local_vars.keys());
@@ -1563,9 +1565,12 @@ impl NaIRGenPass._try_iter_protocol_for(nd: uni.InForStmt) -> bool {
     self.loop_stack.pop();
 
     if _gen_it_spill is not None {
-        iter_val = self.builder.load(_gen_it_spill, name="iterf.it.end");
-    }
-    if _it_slot_var is not None {
+        _it_end = self._mark_owned(
+            self.builder.load(_gen_it_spill, name="iterf.it.end")
+        );
+        self._emit_rc_release_simple(_it_end, op="iter_end", loc=_loc);
+        self.builder.store(ir.Constant(_it_end.type, None), _gen_it_spill);
+    } elif _it_slot_var is not None {
         self._release_loop_coll_slot(_it_slot_var, op="iter_end", loc=_loc);
     } elif owns_iter {
         self._emit_rc_release_simple(iter_val, op="iter_end", loc=_loc);

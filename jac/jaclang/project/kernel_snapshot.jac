@@ -1,48 +1,6 @@
 import os;
 import sys;
 import time;
-import jaclang.compiler.frontend.unitree as uni;
-import from jaclang.compiler.frontend.host {
-    HostServices,
-    active_host,
-    install_host,
-    kernel_host_mode
-}
-import from jaclang.compiler.frontend.kernel_inputs {
-    KEY_SEP,
-    KernelInputs,
-    ManifestSets,
-    NpmAnswer,
-    PythonInterface,
-    answers_to_dict,
-    pair_key,
-    request_of
-}
-import from jaclang.compiler.frontend.kernel_host {
-    EMIT_QUESTION,
-    HOST_ONLY_ANSWER,
-    HostAsker,
-    HostCensus,
-    KernelHost
-}
-import from jaclang.compiler.frontend.kernel_analyze {
-    ANALYSIS_CRASHED,
-    ANALYSIS_OK,
-    AnalysisReport,
-    analysis_report,
-    run_kernel_analysis
-}
-import from jaclang.compiler.driver.module_analysis { ModuleAnalysis, analyze_module }
-import from jaclang.compiler.driver.session_compile {
-    CompileFrame,
-    SessionContext,
-    SessionHooks,
-    compile_in_session
-}
-import from jaclang.compiler.driver.compile_options { CompileOptions }
-import from jaclang.compiler.driver.program { JacProgram }
-import from jaclang.compiler.frontend.codeinfo { is_compiler_source_path }
-import type from jaclang.compiler.native_compiler { NativeCompiler }
 
 glob _IFACE_MEMO: dict[str, tuple[list[str], list[str], PythonInterface]] = {},
      _IFACE_REFUSED: dict[str, str] = {},
@@ -70,12 +28,6 @@ glob _IFACE_MEMO: dict[str, tuple[list[str], list[str], PythonInterface]] = {},
 class KernelAnalysisError(RuntimeError) {}
 
 def manifest_sets -> ManifestSets {
-    import from jaclang.bootstrap_manifest {
-        NATIVE_LOWERED_PATHS,
-        NATIVE_ONLY_DIR_REL,
-        NATIVE_ONLY_REL,
-        SEED_PATHS
-    }
     return ManifestSets(
         seed_paths=list(SEED_PATHS),
         native_only_files=list(NATIVE_ONLY_REL),
@@ -87,10 +39,6 @@ def manifest_sets -> ManifestSets {
 def python_interface(
     path: str, options: CompileOptions, scratch: (JacProgram | None) = None
 ) -> (PythonInterface | None) {
-    import from jaclang.compiler.types.stubcat.writer {
-        IncoherentInterface,
-        build_module_iface
-    }
     resolved = os.path.realpath(path);
     if scratch is None {
         scratch = JacProgram();
@@ -106,8 +54,6 @@ def python_interface(
 }
 
 def interface_dependencies(iface: PythonInterface) -> list[str] {
-    import from jaclang.compiler.types.stubcat.format { MOD_EXTERNAL }
-    import from jaclang.compiler.types.stubcat.modiface { open_module_iface }
     catalog = open_module_iface(iface.data, iface.pkg_dir);
     if catalog is None {
         return [];
@@ -150,10 +96,7 @@ def file_stamp(path: str) -> str {
 
 def interface_cache_file(path: str) -> str {
     import hashlib;
-    import from jaclang.compiler.driver.jir {
-        get_jir_cache_dir,
-        running_compiler_digest
-    }
+
     key = hashlib.sha256(
         (running_compiler_digest() + "\x1f" + path).encode("utf-8")
     ).hexdigest();
@@ -244,16 +187,123 @@ def served_interface(
     return iface;
 }
 
+glob SEALED_CATALOG_MISSING: str = "this jac installation is sealed and carries no stub catalog";
+
+class StubCatalogMissing(SystemExit) {
+    static has stops_command: bool = True;
+}
+
+def catalog_build_blocker(artifact: any) -> str {
+    if sealed._jaclang_image() is not None {
+        return SEALED_CATALOG_MISSING;
+    }
+    if not artifact.host_supported() {
+        return "the stub catalog cannot be built on this host";
+    }
+
+    if offline_mode() {
+        import from jaclang.artifacts.router { artifact_named }
+        typeshed = artifact_named("typeshed").built();
+        if typeshed.found is None {
+            return (
+                f"the typeshed stubs it is built from are missing ({typeshed.describe()}), "
+                "and this project is offline ([network] offline)"
+            );
+        }
+    }
+    return artifact.unavailable_reason() or artifact.build_blocker();
+}
+
+def build_stub_catalog {
+    artifact = artifact_named("stubcat");
+    blocker = catalog_build_blocker(artifact);
+    if blocker {
+        raise StubCatalogMissing(catalog_missing_message(blocker));
+    }
+    lock_path = artifact.checkout_path() + ".build.lock";
+    lock = FileLock(lock_path, timeout=0.0);
+    try {
+        try {
+            lock.acquire();
+        } except TimeoutError {
+            sys.stderr.write(
+                "jac: waiting for another jac process to finish building the stub catalog\n"
+            );
+            sys.stderr.flush();
+            lock = FileLock(lock_path);
+            lock.acquire();
+        }
+    } except OSError as e {
+        raise StubCatalogMissing(
+            catalog_missing_message(f"cannot lock {lock_path} ({e})")
+        ) from None;
+    }
+    try {
+        forget("stubcat");
+        if artifact.built().found is not None {
+            return;
+        }
+        sys.stderr.write(
+            "jac: the native compiler kernel needs the stub catalog (pre-resolved "
+            "typeshed types); building stubcat now (one time, about 2 minutes)\n"
+        );
+        sys.stderr.flush();
+        try {
+            build(["stubcat"], _to_stderr, strict=True);
+        } except Exception as e {
+            raise StubCatalogMissing(catalog_missing_message(str(e))) from None;
+        }
+    } finally {
+        lock.release();
+    }
+}
+
+def _to_stderr(line: str) {
+    sys.stderr.write(line + "\n");
+    sys.stderr.flush();
+}
+
+def catalog_missing_message(cause: str) -> str {
+    fix = "reinstall jac"
+        if cause == SEALED_CATALOG_MISSING
+        else "run `jac native build stubcat`, then rerun";
+    return (
+        "jac: the native compiler kernel needs the stub catalog, which is missing "
+        "and could not be built\n"
+        f"  cause: {cause}\n"
+        f"  fix:   {fix}"
+    );
+}
+
+def require_stub_catalog(host: HostServices, program: JacProgram) -> bool {
+    compiler = host.compiler_for(program);
+    compiler.ensure_stub_catalog();
+    if host.has_active_stub_catalog() {
+        return True;
+    }
+
+    if catalog_disabled() {
+        return False;
+    }
+    build_stub_catalog();
+
+    forget("stubcat");
+    reset_catalog_cache();
+    compiler._stub_catalog_tried = False;
+    compiler.ensure_stub_catalog();
+    if not host.has_active_stub_catalog() {
+        raise StubCatalogMissing(
+            catalog_missing_message("it was built but could not be opened")
+        );
+    }
+    return True;
+}
+
 def session_inputs(
     host: HostServices, program: JacProgram, path: str, options: CompileOptions
 ) -> KernelInputs {
-    import from jaclang.compiler.driver.bccache { host_layout_tables }
-    import from jaclang.project.modresolver { get_jac_search_paths, get_typeshed_paths }
-    import from jaclang.compiler.types.stubcat.locate { catalog_origin }
-    import from jaclang.compiler.frontend.host { package_root }
     catalog_dir = "";
-    host.compiler_for(program).ensure_stub_catalog();
-    catalog_active = host.has_active_stub_catalog();
+    catalog_active = require_stub_catalog(host, program);
     if catalog_active {
         import from jaclang.jac0core.stubcat_hook { active }
         catalog: any = active();
@@ -453,7 +503,6 @@ obj KernelSnapshot(HostAsker) {
     }
 
     def emits(path: str) -> bool {
-        import from jaclang.jac0core.ext_registry { is_annex }
         if not path.endswith(".jac")
             or is_annex(path)
             or is_compiler_source_path(path) {
@@ -474,10 +523,6 @@ def kernel_note(message: str) {
 }
 
 def compiled_already(path: str) -> bool {
-    import from jaclang.compiler.driver.jir {
-        get_module_cache_path,
-        is_module_cache_valid
-    }
     try {
         return is_module_cache_valid(path, get_module_cache_path(path));
     } except Exception {
@@ -775,7 +820,6 @@ def in_other_compiler_tree(path: str) -> bool {
 }
 
 def other_compiler_dir(folder: str) -> bool {
-    import from jaclang.project.modresolver { COMPILER_PACKAGE }
     current = os.path.realpath(folder);
     if is_compiler_source_path(os.path.join(current, "x.jac")) {
         return False;
@@ -794,7 +838,6 @@ def other_compiler_dir(folder: str) -> bool {
 }
 
 def native_stdlib_misses(misses: list[str]) -> bool {
-    import from jaclang.compiler.frontend.codeinfo { native_stdlib_root }
     stdlib_dir = native_stdlib_root();
     if not misses or not stdlib_dir {
         return False;
@@ -831,7 +874,6 @@ def host_deferred(outcome: AnalysisReport) -> bool {
 }
 
 def loaded_kernel(kind: KernelEntry) -> NativeCompiler {
-    import from jaclang.compiler.native_compiler { ensure_loaded }
     kernel = ensure_loaded();
     if kernel is None {
         raise KernelAnalysisError("no native compiler kernel is available");

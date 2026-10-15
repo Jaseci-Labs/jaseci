@@ -1,15 +1,7 @@
 import os;
 import sys;
-import from jaclang.artifacts.model {
-    Artifact,
-    ArtifactKind,
-    Probe,
-    ReleasePolicy,
-    Source
-}
 
 def _pkg_dir -> str {
-    import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
     return jaclang_pkg_root();
 }
 
@@ -22,11 +14,6 @@ def _python_tag -> str {
 }
 
 def bundle_misses(pkg_dir: str) -> list[str] {
-    import from jaclang.compiler.driver.jir {
-        jir_cacheable_source_path,
-        precompiled_jir_matches_source
-    }
-    import from jaclang.dist.precompile_bytecode { sealable_sources }
     units = os.path.join(bundle_root(pkg_dir), _python_tag());
     misses: list[str] = [];
     for source in sealable_sources(pkg_dir) {
@@ -58,7 +45,6 @@ obj PrecompiledArtifact(Artifact) {
         floor: str = "compiling the compiler from source";
 
     override def probe_sealed -> (Probe | None) {
-        import from jaclang.jac0core { sealed }
         image = sealed._jaclang_image();
         if image is None {
             return None;
@@ -91,7 +77,6 @@ obj PrecompiledArtifact(Artifact) {
     }
 
     override def build(log: Callable[[str], None], force: bool, exact: bool) {
-        import from jaclang.dist.precompile_bytecode { run_precompile }
         log(f"  precompiling {_pkg_dir()}");
         run_precompile(os.path.dirname(_pkg_dir()));
     }
