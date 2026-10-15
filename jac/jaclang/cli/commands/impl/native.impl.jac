@@ -1,7 +1,4 @@
 import time;
-import from jaclang.cli.console { console }
-import from jaclang.artifacts.model { ArtifactUnavailable, Probe }
-import jaclang.artifacts.router as router;
 
 
 def _log(message: str) {

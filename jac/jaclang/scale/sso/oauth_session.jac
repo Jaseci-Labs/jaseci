@@ -1,18 +1,11 @@
 import re;
 import json;
-import from jaclang.runtime.object_model { asdict }
+
 import secrets;
 import hashlib;
 import base64;
 import hmac;
 import from urllib.parse { urlencode }
-import from jaclang.server.identity.user_manager { UserManager }
-import from jaclang.server.identity.identity_storage { primary_username }
-import from jaclang.server.identity.auth_tokens { AuthTokenStore }
-import from jaclang.server.identity.assurance { METHOD_FEDERATED }
-import from jaclang.server.identity.config { auth_settings }
-import from jaclang.server.identity.policy { check_email }
-import from jaclang.scale.sso.provider { OAuth2CodeProvider, SSOUserInfo }
 
 obj OAuthStart {
     has ok: bool = False,
@@ -311,7 +304,7 @@ obj OAuthSession {
         result = await self.exchange(
             code, str(data["oauth_verifier"]), str(record.get("user_id") or "")
         );
-        import from jaclang.server.shared_store { shared_store }
+
         db = shared_store();
         if db is None {
             return "Could not complete sign-in. Please try again.";
@@ -332,7 +325,7 @@ obj OAuthSession {
         if re.fullmatch(r"[A-Za-z0-9_-]{43}", poll) is None {
             return OAuthLogin(error="Invalid sign-in request.");
         }
-        import from jaclang.server.shared_store { shared_store }
+
         db = shared_store();
         if db is None {
             return OAuthLogin(error="Sign-in is unavailable.");

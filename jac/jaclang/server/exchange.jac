@@ -1,7 +1,5 @@
 import re;
 import from contextvars { ContextVar }
-import from jaclang.server.serving.datatypes { JSONResponse, Request }
-import from jaclang.server.transport { TransportResponse }
 
 glob CREDENTIAL_HEADERS: frozenset[str] = frozenset(
          ['authorization', 'cookie', 'proxy-authorization']
@@ -203,7 +201,7 @@ def settle_envelope(envelope: TransportResponse) -> (TransportResponse | JSONRes
     if not has_response_choice() {
         return envelope;
     }
-    import from jaclang.server.serving.app { transport_to_response }
+
     response = apply_response_choice(transport_to_response(envelope));
     response.content['ok'] = response.status_code < 400;
     return response;

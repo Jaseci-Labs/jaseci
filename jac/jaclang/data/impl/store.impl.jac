@@ -347,8 +347,6 @@ def _owner_alive(pid: (int | None)) -> bool {
 
 
 impl PgStore._connect -> any {
-    import from jaclang.data.pgload { connect as pg_connect }
-    import from jaclang.data.pgpool { checkout }
     info = self.conninfo;
     pooled = checkout(info);
     if pooled is not None {
@@ -367,7 +365,6 @@ impl PgStore._connect -> any {
 
 
 def _park_conn(info: any, conn: any, in_txn: bool, listened: bool) -> None {
-    import from jaclang.data.pgpool { pool_enabled, release }
     if conn is None {
         return;
     }
@@ -591,7 +588,6 @@ impl PgStore.ensure_schema_once(promotions: dict[str, list[str]]) -> None {
 
 
 impl PgStore._warn_lock_headroom -> None {
-    import from jaclang.data.pgembed { predicate_lock_shortfall }
     try {
         found = self._run(
             "SELECT name, setting FROM pg_settings WHERE name IN "

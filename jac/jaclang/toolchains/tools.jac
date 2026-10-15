@@ -2,16 +2,6 @@ import os;
 import shutil;
 import subprocess;
 import from pathlib { Path }
-import from jaclang.artifacts.model {
-    Artifact,
-    ArtifactKind,
-    ArtifactUnavailable,
-    Probe,
-    ReleasePolicy,
-    Source
-}
-import from jaclang.toolchains.host { executable, host_platform, use_system_tools }
-import from jaclang.toolchains.store { Artifact as Download, install, installed }
 
 obj ToolArtifact(Artifact) {
     has kind: ArtifactKind = ArtifactKind.CAPABILITY,
@@ -55,7 +45,6 @@ obj ToolArtifact(Artifact) {
     }
 
     override def checkout_path -> str {
-        import from jaclang.cache.registry { bucket }
         download = self.pinned();
         slot = bucket("toolchains-installed").path();
         return str(slot / download.key() if download is not None else slot);
@@ -91,7 +80,6 @@ obj NodeArtifact(ToolArtifact) {
         summary: str = "Node.js 22 (native build steps: Expo autolinking, Gradle, CocoaPods)";
 
     override def pinned -> (Download | None) {
-        import from jaclang.toolchains.pins { NODE_ARTIFACTS }
         return NODE_ARTIFACTS.get(host_platform());
     }
 
@@ -136,12 +124,10 @@ obj JdkArtifact(ToolArtifact) {
         summary: str = "JDK 21 (Android builds)";
 
     override def pinned -> (Download | None) {
-        import from jaclang.toolchains.pins { JDK_ARTIFACTS }
         return JDK_ARTIFACTS.get(host_platform());
     }
 
     def _home(download: Download) -> str {
-        import from jaclang.toolchains.pins { JDK_VERSION }
         home = f"jdk-{JDK_VERSION}";
         return home + "/Contents/Home"
             if download.platform.startswith("mac-")
@@ -182,7 +168,6 @@ obj PatchelfArtifact(ToolArtifact) {
         hosts: list[str] = ["linux"];
 
     override def pinned -> (Download | None) {
-        import from jaclang.toolchains.pins { PATCHELF_ARTIFACTS }
         return PATCHELF_ARTIFACTS.get(host_platform());
     }
 
@@ -196,7 +181,6 @@ obj PatchelfArtifact(ToolArtifact) {
 }
 
 def tool_path(name: str) -> Path {
-    import from jaclang.artifacts.router { require }
     found = require(name).found;
     assert found is not None;
     return Path(found.path);

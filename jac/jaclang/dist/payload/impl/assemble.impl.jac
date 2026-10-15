@@ -4,36 +4,6 @@ import sys;
 import tarfile;
 
 import from compression.zstd { CompressionParameter, compress, decompress }
-import from jaclang.dist.payload.fetch { TYPESHED_VENDOR, fetch_typeshed }
-import from jaclang.dist.payload.fsutil {
-    PayloadDie,
-    clone_env,
-    copy_file,
-    copy_into,
-    copy_tree,
-    delete_file,
-    delete_tree,
-    die,
-    file_exists,
-    host_os_arch,
-    log,
-    make_dirs,
-    read_bytes,
-    run_child,
-    sha256_hex,
-    skip_jaclang,
-    skip_none,
-    skip_site_template,
-    skip_stage_site,
-    source_file_mode,
-    strip_best_effort,
-    toml_string,
-    walk_sorted,
-    write_bytes,
-    write_text
-}
-import from jaclang.dist.payload.pins { py_ver }
-import from jaclang.dist.payload.vendor { MUSL_ARTIFACTS }
 
 impl mk_payload(python_dir: str, repo_root: str, out: str, opts: MkPayloadOpts) {
     py = resolve_python(python_dir);
@@ -173,7 +143,7 @@ impl assemble_site(repo_root: str, site: str, opts: MkPayloadOpts) {
             " shipped binary both locate it by that exact path."
         );
     }
-    import from jaclang.compiler.backends.native.llvm.shim_path { write_shim_record }
+
     write_shim_record(dst, repo_root);
 
     _bundle_bun(site, opts);

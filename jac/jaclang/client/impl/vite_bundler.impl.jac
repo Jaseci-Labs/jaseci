@@ -1,7 +1,4 @@
 import threading;
-import from jaclang.cli.console { console }
-import from jaclang.client.client_bundle { ClientBundleError }
-import from jaclang.client.js_runtime { js_runtime_path, run_pm }
 
 
 def _require_bun -> str {
@@ -10,8 +7,6 @@ def _require_bun -> str {
 
 
 def _build_vite_command(build_dir: Path, args: list[str]) -> list[str] {
-    import from jaclang.client.targets.node_tooling_common { resolve_node_tool_entry }
-
     bun = _require_bun();
     `entry = resolve_node_tool_entry(build_dir, 'vite');
     if `entry is None {
@@ -454,7 +449,7 @@ impl ViteBundler._generate_vite_config_content(
     } else {
         compiled_base = 'compiled';
     }
-    import from jaclang.compiler.backends.es.jac_runtime_js { JAC_PRELUDE_BASENAME }
+
     compiled_utils_relative = f"{compiled_base}/client_runtime.js";
     compiled_prelude_relative = f"{compiled_base}/{JAC_PRELUDE_BASENAME}";
     compiled_pwa_relative = f"{compiled_base}/pwa_runtime.js";
@@ -502,7 +497,6 @@ impl ViteBundler._generate_vite_config_content(
         desktop_alias_str = f'\n      "@jac/desktop": path.resolve(buildDir, "{compiled_desktop_relative}"),';
     }
 
-    import from jaclang.client.runtime_source { JAC_VIRTUAL_MODULE_SOURCES }
     virtual_alias_str = '';
     for (module_name, source_name) in JAC_VIRTUAL_MODULE_SOURCES.items() {
         if module_name in ('mobui', 'pwa') {
@@ -1065,7 +1059,6 @@ impl ViteBundler.find_bundle(self: ViteBundler) -> Optional[Path] {
 
 impl ViteBundler.build(self: ViteBundler, entry_file: Optional[Path] = None) -> None {
     import time;
-    import from jaclang.client { ensure_client_deps }
 
     bun = _require_bun();
 
@@ -1122,7 +1115,6 @@ impl ViteBundler.init(
     config_path: Optional[Path] = None,
     entry_path: str = ""
 ) {
-    import from jaclang.project.config { find_project_root }
     project_root = find_project_root(project_dir);
     self.project_dir = project_root[0] if project_root else project_dir;
     self.minify = minify;
@@ -1349,9 +1341,6 @@ impl ViteBundler.start_dev_server(
 }
 
 def _dev_head_scripts -> str {
-    import from jaclang.project.config { get_config }
-    import from jaclang.client.serving { HeaderBuilder }
-
     config = get_config();
     client_cfg = config.get_plugin_config('client') if config else None;
     meta_data = client_cfg.get('app_meta_data', {}) if client_cfg else {};

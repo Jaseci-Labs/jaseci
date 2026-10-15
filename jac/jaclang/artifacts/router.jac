@@ -1,13 +1,3 @@
-import from jaclang.artifacts.model {
-    Artifact,
-    ArtifactKind,
-    ArtifactUnavailable,
-    Probe,
-    ReleasePolicy,
-    Resolution,
-    Source
-}
-
 glob _ENTRIES: dict[str, Artifact] = {},
      _RESOLVED: dict[str, Resolution] = {},
      _ANNOUNCED: set[str] = set();
@@ -96,14 +86,14 @@ def _omitted(sealed_image: bool) -> frozenset[str] {
         image = sealed._jaclang_image();
         return image.omits if image is not None else frozenset();
     }
-    import from jaclang.artifacts.kit { kit_image }
+
     found = kit_image();
     return found[1].omits if found is not None else frozenset();
 }
 
 def _provision(artifact: Artifact, resolution: Resolution) -> Resolution {
     import sys;
-    import from jaclang.project.config { offline_mode }
+
     if offline_mode() {
         return Resolution(
             name=artifact.name,

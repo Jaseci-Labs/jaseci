@@ -1,7 +1,3 @@
-import from jaclang.cli.command { Arg, ArgKind, CommandSpec }
-import from jaclang.comptime { name as ct_name }
-
-
 comptime SPEC_NATIVE: CommandSpec = CommandSpec(
          name="native",
          help="Inspect or build the native artifacts a checkout or release runs on",

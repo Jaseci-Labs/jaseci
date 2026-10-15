@@ -7,28 +7,6 @@ import urllib.error;
 import urllib.request;
 import zlib;
 
-import from jaclang.dist.payload.fsutil {
-    PayloadDie,
-    copy_file,
-    copy_tree,
-    delete_tree,
-    die,
-    extract_tar,
-    file_exists,
-    find_sum_line,
-    host_os_arch,
-    log,
-    make_dirs,
-    rd_u16,
-    rd_u32,
-    read_trimmed,
-    sha256_hex,
-    skip_typeshed_tests,
-    write_bytes,
-    write_text
-}
-import from jaclang.dist.payload.pins { llvm_release, pins }
-
 impl HttpSource.get(url: str) -> bytes {
     return http_get(url);
 }
@@ -415,9 +393,7 @@ impl fetch_bun(osarch: str, dest: str) {
     is_windows = osarch.startswith("windows");
     bun_name = "bun.exe" if is_windows else "bun";
     out_path = os.path.join(dest, bun_name);
-    import from jaclang.client.js_runtime { write_bun_record }
-    import from jaclang.artifacts.model { Source }
-    import from jaclang.client.js_runtime { _probe_bun }
+
     if _probe_bun(out_path, Source.CHECKOUT).found is not None {
         log(f"fetch-bun: bun {BUN_VERSION} already present at {out_path}");
         return;
