@@ -5,6 +5,8 @@ import json;
 import os;
 import from inspect { iscoroutine }
 import from typing { get_type_hints }
+import from enum { Enum }
+import from uuid { UUID }
 
 impl ExecutionManager.report_collector(
     call_state: CallState
@@ -164,12 +166,11 @@ impl ExecutionManager._finalize_call_response(
 ) -> dict[str, JsonValue] | Generator | AsyncGenerator {
     call_state.reports.put_nowait(call_state._sentinel);
     reports = await self.report_collector(call_state);
+    await Jac.acommit();
     if isgenerator(result) or isinstance(result, AsyncGenerator) {
-        await Jac.acommit();
         return result;
     }
     if isgenerator(reports) or isinstance(reports, AsyncGenerator) {
-        await Jac.acommit();
         return reports;
     }
 
@@ -179,14 +180,31 @@ impl ExecutionManager._finalize_call_response(
             else result,
         'reports': Serializer.serialize(reports, api_mode=True)
     };
-    await Jac.acommit();
-    Jac.get_context().mem.seal_scan();
+    if _plain_value(reports) and (not serialize_result or _plain_value(result)) {
+        Jac.get_context().mem.seal_scan();
+    }
     ctx = Jac.get_context();
     if ctx.diagnostics {
         envelope['warnings'] = [d.to_dict() for d in ctx.diagnostics];
         ctx.diagnostics.clear();
     }
     return dict[(str, JsonValue)](envelope);
+}
+
+def _plain_value(val: object) -> bool {
+    if val is None or isinstance(val, (str, int, float, bool, UUID, Enum)) {
+        return True;
+    }
+    if isinstance(val, (list, tuple)) {
+        return all(_plain_value(item) for item in val);
+    }
+    if isinstance(val, dict) {
+        return all(
+            isinstance(k, (str, int, float, bool)) and _plain_value(v)
+            for (k, v) in val.items()
+        );
+    }
+    return False;
 }
 
 async def _run_function_with_occ(

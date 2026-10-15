@@ -1133,6 +1133,18 @@ test "request loop: a conflict re-run starts from the database, not from the rol
 }
 
 
+test "request loop: the response shows what on_commit callbacks changed" {
+    with TemporaryDirectory() as td {
+        (exec_mgr, walkers, _) = _vote_app(td);
+        delivered = _spawn(exec_mgr, walkers["Deliver"]);
+        assert delivered.get("reports") == [{"sent": True}] , (
+            "the callback runs at the response commit, before the response is "
+            f"serialized, so the client must see its change: {delivered}"
+        );
+    }
+}
+
+
 test "request loop: a COMMIT conflict the session retries does not cost a re-run" {
     prior = _without_read_tier();
     try {
