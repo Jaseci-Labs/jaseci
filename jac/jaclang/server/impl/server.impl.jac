@@ -196,10 +196,10 @@ def _plain_value(val: object) -> bool {
     if val is None or kind in (str, int, float, bool, UUID) or isinstance(val, Enum) {
         return True;
     }
-    if kind is list or kind is tuple {
+    if isinstance(val, (list, tuple)) and kind in (list, tuple) {
         return all(_plain_value(item) for item in val);
     }
-    if kind is dict {
+    if isinstance(val, dict) and kind is dict {
         return all(
             type(k) in (str, int, float, bool) and _plain_value(v)
             for (k, v) in val.items()
