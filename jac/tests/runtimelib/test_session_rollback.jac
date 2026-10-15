@@ -1133,6 +1133,24 @@ test "request loop: a conflict re-run starts from the database, not from the rol
 }
 
 
+class TrackedList(list) {}
+
+class TrackedDict(dict) {}
+
+test "only plain response data seals the scan" {
+    import from jaclang.server.server { _plain_value }
+    assert _plain_value({"a": [1, (2.5, "x")], "b": None, "c": True}) , (
+        "nested primitives, lists, tuples and dicts are plain"
+    );
+    assert not _plain_value([TrackedList([1])]) , (
+        "a list subclass can run its own __iter__; it must not count as plain"
+    );
+    assert not _plain_value(TrackedDict(a=1)) , "a dict subclass is not plain";
+    assert not _plain_value({(1, 2): 3}) , "a dict keyed by a tuple is not plain";
+    assert not _plain_value([RBag()]) , "an archetype is not plain";
+}
+
+
 test "request loop: the response shows what on_commit callbacks changed" {
     with TemporaryDirectory() as td {
         (exec_mgr, walkers, _) = _vote_app(td);

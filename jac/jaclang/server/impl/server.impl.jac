@@ -192,15 +192,16 @@ impl ExecutionManager._finalize_call_response(
 }
 
 def _plain_value(val: object) -> bool {
-    if val is None or isinstance(val, (str, int, float, bool, UUID, Enum)) {
+    kind = type(val);
+    if val is None or kind in (str, int, float, bool, UUID) or isinstance(val, Enum) {
         return True;
     }
-    if isinstance(val, (list, tuple)) {
+    if kind is list or kind is tuple {
         return all(_plain_value(item) for item in val);
     }
-    if isinstance(val, dict) {
+    if kind is dict {
         return all(
-            isinstance(k, (str, int, float, bool)) and _plain_value(v)
+            type(k) in (str, int, float, bool) and _plain_value(v)
             for (k, v) in val.items()
         );
     }
