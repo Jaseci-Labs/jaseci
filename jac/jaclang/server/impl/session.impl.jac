@@ -996,6 +996,9 @@ impl Session._flush_locked(full: bool) -> None {
             anchor is not None and _runs_getters(anchor.archetype)
             for anchor in (self.__mem__.get(id) for id in self._dirty)
         );
+        if full {
+            self._scan_sealed = False;
+        }
     }
     self._reclaim_dead_txn();
     unflushed: list[UnflushedAnchor] = [];

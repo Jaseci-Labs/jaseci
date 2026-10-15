@@ -1187,6 +1187,30 @@ test "a scan that ran a node's own getters is never sealed" {
             JacRuntime.exec_ctx = old;
             ctx.close();
         }
+        later = _ctx(td);
+        JacRuntime.exec_ctx = later;
+        try {
+            _ = later.user_root;
+            bags = later.mem.batch_get([bag_id]);
+            bag_arch = _as_any(bags[bag_id].archetype);
+            later.mem.commit();
+            later.mem.seal_scan();
+            peekers = later.mem.batch_get([peek_id]);
+            PEEK_TARGETS.append(bag_arch);
+            _as_any(peekers[peek_id].archetype).n = 1;
+            later.mem.commit();
+            in_memory = bag_arch.items.count(99);
+            later.mem.commit();
+            stored = _stored(later, bag_id, "items") or "";
+            assert stored.count("99") >= in_memory , (
+                "a sealed commit that fell back to a full scan for a getter node "
+                f"must clear the seal: {in_memory} appends were in memory, the row holds {stored}"
+            );
+        } finally {
+            PEEK_TARGETS.clear();
+            JacRuntime.exec_ctx = old;
+            later.close();
+        }
     }
 }
 
