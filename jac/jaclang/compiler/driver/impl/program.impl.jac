@@ -1104,16 +1104,6 @@ impl JacProgram.ingest_comptime_producers(
     }
 }
 
-impl JacProgram.run_schedule(
-    self: JacProgram,
-    mod: uni.Module,
-    passes: PassSchedule,
-    cancel_token: (CancelToken | None) = None
-) -> None {
-    import from jaclang.compiler.driver.pipeline { execute_passes }
-    execute_passes(self, mod, passes, cancel_token);
-}
-
 impl JacProgram.count_module_blocking_errors(self: JacProgram, mod_path: str) -> int {
     count = 0;
     for e in self.errors_had {

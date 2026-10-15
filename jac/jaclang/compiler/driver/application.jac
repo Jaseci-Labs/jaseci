@@ -209,13 +209,10 @@ def _tree_source(
 ) -> ManifestSource {
     import from jaclang.compiler.driver.unit_products { import_edge_rows }
     if imported {
-        import from jaclang.compiler.driver.pipeline {
-            require_product,
-            CompilationProduct
-        }
+        import from jaclang.compiler.driver.pipeline { require, CompilationProduct }
         manifest = mod.gen.interop_manifest;
         if not (manifest and manifest.surface) {
-            require_product(program, mod, CompilationProduct.BOUNDARIES);
+            require(program, mod, CompilationProduct.BOUNDARIES);
         }
     }
     return ManifestSource(
@@ -432,6 +429,16 @@ def _prepare_sealed(
     }
     manifest = json.loads(serve_manifest.read_text());
     manifest['root'] = image_root;
+    recorded: dict[str, set[str]] = {
+        os.path.realpath(os.path.join(image_root, source)): {
+            os.path.realpath(os.path.join(image_root, dependency))
+            for dependency in dependencies
+        } for (source, dependencies) in (manifest.get('runtime_imports') or {}).items()
+    };
+    def imports_of(code: any, path: str) -> set[str] {
+        known = recorded.get(path);
+        return known if known is not None else runtime_sources(code, path, image_root);
+    }
     revision = PreparedApplication(
         image_root, `entry, services=tuple(entries[1:]), dev=False
     );
@@ -487,9 +494,7 @@ def _prepare_sealed(
                 );
             }
             revision.code[path] = code;
-            pending.update(
-                runtime_sources(code, path, image_root) - revision.code.keys()
-            );
+            pending.update(imports_of(code, path) - revision.code.keys());
             continue;
         }
         sealed = compiler._sealed_jir_data(path);
@@ -517,10 +522,7 @@ def _prepare_sealed(
             );
         }
         revision.native[path] = compiler.get_native_interop_setup(path, program);
-        pending.update(
-            runtime_sources(revision.code[path], path, image_root)
-                - revision.code.keys()
-        );
+        pending.update(imports_of(revision.code[path], path) - revision.code.keys());
     }
     revision.applications = [
         PreparedApplication(
@@ -704,12 +706,15 @@ def _prepare(
         capture(path);
     }
     import from jaclang.project.kernel_compile { host_prepared }
+    import from jaclang.compiler.driver.jir { begin_prepare_memo, end_prepare_memo }
     with compile_progress.listen(capture) {
+        memo = begin_prepare_memo();
         try {
             return _prepare_revision(
                 `entry, program, `root, entries, client, dev, console, inputs
             );
         } finally {
+            end_prepare_memo(memo);
             host_prepared();
         }
     }
@@ -947,10 +952,21 @@ def _prepare_revision(
     }
     revision.manifests[`entry]['spa_routes'] = routes;
     import from jaclang.compiler.backends.py.artifact_imports {
-        runtime_sources,
-        package_sources
+        import_specs,
+        package_sources,
+        resolve_imports
     }
     sections = {};
+    previous_code: dict[str, any] = candidate.get('code') or {}
+        if isinstance(candidate, dict)
+        else {};
+    previous_specs: dict[str, list[tuple[int, str, (tuple[str, ...] | None)]]] = candidate.get(
+        'import_specs'
+    )
+        or {}
+        if isinstance(candidate, dict)
+        else {};
+    specs_of: dict[str, list[tuple[int, str, (tuple[str, ...] | None)]]] = {};
     pending = `set(entries);
     for path in entries {
         pending.update(package_sources(path, `root));
@@ -992,7 +1008,12 @@ def _prepare_revision(
         revision.code[path] = code;
         sections[path] = _sections(path, program);
         revision.native[path] = compiler.get_native_interop_setup(path, program);
-        pending.update((runtime_sources(code, path, `root) - revision.code.keys()));
+        known = previous_specs.get(path);
+        specs = known
+            if known is not None and previous_code.get(path) == code
+            else import_specs(code, path);
+        specs_of[path] = specs;
+        pending.update(resolve_imports(specs, path, `root) - revision.code.keys());
     }
 
     project_facts: dict[str, tuple[str, any]] = {
@@ -1076,6 +1097,7 @@ def _prepare_revision(
                 if revision.client_compiler is not None
                 else False,
             code=revision.code,
+            import_specs=specs_of,
             manifests=revision.manifests,
             sections=sections,
             outputs=outputs,

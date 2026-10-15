@@ -36,6 +36,7 @@ from jaclang.runtime.archetype import (
     light_hop_answers,
     light_in,
     light_out,
+    new_connect_edge,
 )
 
 __all__ = [
@@ -106,7 +107,7 @@ def connect0(
             if light and not (src.persistent or tgt.persistent):
                 light_connect(src, cls, tgt)
                 continue
-            e = ct() if isinstance(ct, type) else ct
+            e, built_with = new_connect_edge(ct, conn_assign)
             e.__jac__ = EdgeAnchor(archetype=e, source=src, target=tgt, is_undirected=False)
             src.edges.append(e.__jac__)
             tgt.edges.append(e.__jac__)
@@ -115,7 +116,8 @@ def connect0(
                 tgt.mixed = True
             if conn_assign:
                 for fld, val in zip(conn_assign[0], conn_assign[1], strict=False):
-                    setattr(e, fld, val)
+                    if fld not in built_with:
+                        setattr(e, fld, val)
     return right
 
 

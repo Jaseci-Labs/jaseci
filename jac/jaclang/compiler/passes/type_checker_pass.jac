@@ -1,4 +1,5 @@
 import from jaclang.compiler.frontend.roles { Kid }
+import from jaclang.compiler.driver.pipeline_types { AnalysisFact, PassContract }
 import from jaclang.compiler.frontend.unitree {
     Module,
     TreeWalker,
@@ -176,6 +177,7 @@ glob FW_INTERVAL_OPS: dict[str, str] = {
      };
 
 walker TypeCheckPass(TreePass) {
+    static has contract: PassContract = PassContract(provides=(AnalysisFact.TYPE_OF, ));
     has evaluator: TypeEvaluator postinit,
         _deferred_writes: list[tuple[Expr, (UniNode | None)]] postinit,
         _lambda_depth: int = 0,
