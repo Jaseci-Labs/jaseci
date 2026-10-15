@@ -609,6 +609,25 @@ test "gap 54 typeddict keyed access and dict methods" {
 }
 
 # =========================================================================
+# Gap #54b: a TypedDict parameter accepted any value, because TypedDicts went
+# through protocol matching and only methods were compared. Now it accepts a
+# TypedDict whose fields cover it at the same types, or a dict literal whose
+# keys are declared fields and whose values fit.
+# =========================================================================
+test "gap 54b typeddict assignment checks fields" {
+    program = compile_and_check("checker_typeddict_assign.jac");
+
+    assert len(program.errors_had) == 6 , "Gap #54b: TypedDict assignment. "
+    f"Expected exactly 6 type errors but got {len(program.errors_had)}. "
+    f"Errors: {[e.pretty_print() for e in program.errors_had[:8]]}";
+    for err in program.errors_had {
+        assert "parameter 'u' of type UserDoc" in str(err) , (
+            f"Gap #54b: unexpected error: {err.pretty_print()}"
+        );
+    }
+}
+
+# =========================================================================
 # Gap #55: Literal[...] type annotations were widened to Any/object, so a
 # mismatched literal was never caught and Literal-keyed overloads could not
 # discriminate. They now resolve to literal types (a union for multiple

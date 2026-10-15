@@ -134,7 +134,6 @@ def stubcat_region(exe: str = "") -> (Region | None) {
 
 
 def running_executable -> str {
-    import from jaclang.jac0core.handoff { process_executable }
     return process_executable();
 }
 
@@ -166,7 +165,6 @@ def interpreter_runtime_dir -> (str | None) {
 
 
 def _runtime_dir_for_key(key: str) -> (str | None) {
-    import from jaclang.cache.registry { bucket }
     if not key {
         return None;
     }
