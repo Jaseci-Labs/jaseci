@@ -765,6 +765,14 @@ def _row_unit(path: str, row: dict[str, any]) -> any {
     );
 }
 
+def _file_digest(path: str) -> str {
+    try {
+        return hashlib.sha256(Path(path).read_bytes()).hexdigest();
+    } except OSError {
+        return '';
+    }
+}
+
 def _reusable_interfaces(
     previous: dict[str, dict[str, any]],
     entries: list[str],
@@ -790,6 +798,13 @@ def _reusable_interfaces(
             continue;
         }
         if sorted(resolve_imports(known, path, `root)) != row['imports'] {
+            continue;
+        }
+        digests = row.get('py_digests');
+        if digests is None {
+            continue;
+        }
+        if any(_file_digest(dep) != digest for (dep, digest) in digests.items()) {
             continue;
         }
         seeds[path] = PythonInterface(
@@ -1218,7 +1233,12 @@ def _prepare_revision(
         resolved = resolve_imports(specs, path, `root);
         real = os.path.realpath(path);
         if real in unit_rows {
-            unit_rows[real] = unit_rows[real] | {'imports': sorted(resolved)};
+            row = dict(unit_rows[real]);
+            row['imports'] = sorted(resolved);
+            row['py_digests'] = {
+                dep: _file_digest(dep) for dep in resolved if dep.endswith('.py')
+            };
+            unit_rows[real] = row;
         }
         pending.update(resolved - revision.code.keys());
     }

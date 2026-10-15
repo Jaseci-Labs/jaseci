@@ -429,6 +429,43 @@ test "a module whose import now resolves elsewhere is analysed again" {
     }
 }
 
+test "a changed Python import is not served from the last prepare" {
+    tmp = tempfile.mkdtemp(prefix="jac-prepared-kernel-python-");
+    base = Path(tmp);
+    path = base / 'main.jac';
+    try {
+        (base / 'mods').mkdir();
+        (base / 'mods' / 'helper.py').write_text("def scale(x):\n    return x * 2\n");
+        (base / 'mods' / 'b.jac').write_text(
+            "import from mods.helper { scale }\n"
+                + "def:pub b_value -> int { return scale(1); }\n"
+        );
+        path.write_text(
+            "import from mods.b { b_value }\n"
+                + "walker:pub Total { can go with Root entry { report b_value(); } }\n"
+        );
+        kernel_prepare(path, tmp, []);
+        forget(str(path));
+        (base / 'mods' / 'helper.py').write_text(
+            "def scale(x, y):\n    return x * y\n"
+        );
+        analysed: list[str] = [];
+        failed = False;
+        try {
+            kernel_prepare(path, tmp, analysed);
+        } except Exception {
+            failed = True;
+        }
+        assert 'b.jac' in analysed , (
+            f"b.jac imports a Python file that changed; it must be analysed again: {analysed}"
+        );
+        assert failed , "b.jac calls scale(1) after scale gained a required parameter";
+    } finally {
+        forget(str(path));
+        shutil.rmtree(tmp, ignore_errors=True);
+    }
+}
+
 test "an edit that changes a module's interface re-checks its importers" {
     tmp = tempfile.mkdtemp(prefix="jac-prepared-kernel-iface-");
     path = Path(tmp) / 'main.jac';
