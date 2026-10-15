@@ -4,8 +4,6 @@ import json;
 import os;
 import sys;
 import from ctypes.util { find_library }
-import from jaclang.runtime.scalars { numeric_shapes }
-import from jaclang.runtime.region { escape_regions, restore_regions }
 
 def _scalar_ctypes -> dict[str, any] {
     out: dict[str, any] = {};

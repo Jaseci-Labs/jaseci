@@ -123,8 +123,6 @@ impl TypeEvaluator.validate_arg_types(
 }
 
 impl TypeEvaluator._c_lent_args(args: MatchArgsToParamsResult) -> set[Expr | KWPair] {
-    import from jaclang.compiler.c_interop { c_abi_callee, c_lent_elem }
-    import from jaclang.compiler.frontend.constant { is_borrow_kind }
     lent: set[Expr | KWPair] = set();
     for (arg, param) in args.arg_params.items() {
         if param is None

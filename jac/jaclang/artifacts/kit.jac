@@ -1,6 +1,5 @@
 import os;
 import sys;
-import type from jaclang.jac0core.sealed { SealedImage }
 
 glob _KIT: list[tuple[str, (SealedImage | None)]] = [],
      PR_KIT_EVENT: str = "pull_request",

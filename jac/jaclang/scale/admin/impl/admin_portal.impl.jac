@@ -1,32 +1,7 @@
 import logging;
-import from jaclang.server.serving.datatypes { Request }
-import from jaclang.server.serving.datatypes {
-    FileResponse,
-    JSONResponse,
-    RedirectResponse,
-    Response
-}
+
 import mimetypes;
 import from pathlib { Path }
-import from jaclang.scale.admin.console_build { resolve_console }
-import from jaclang.server.transport { TransportResponse, Meta }
-import from jaclang.server.server { JsonValue }
-import from jaclang.server.serving.endpoint {
-    HTTPMethod,
-    JEndPoint,
-    APIParameter,
-    ParameterType
-}
-import from jaclang.scale.config.config_loader { get_scale_config }
-import from jaclang.server.identity.user_manager { UserRole, UserManager }
-import from jaclang.server.identity.assurance { METHOD_PASSWORD, second_factor_claims }
-import from jaclang.server.identity.second_factor { SecondFactorUnavailable }
-import from jaclang.server.identity.audit { client_ip }
-import from jaclang.server.identity.auth_models { IdentityInputModel }
-import from jaclang.server.identity.rate_limit { AttemptsExhausted }
-import from jaclang.server.endpoints.auth { refused, throttled }
-import from jaclang.runtime.runtime { JacRuntime as Jac }
-import from jaclang.runtime.constants { Constants as Con }
 
 glob logger = logging.getLogger(__name__);
 
@@ -100,7 +75,6 @@ impl JacAPIServerAdmin.register_admin_endpoints -> None {
         )
     );
 
-    import from jaclang.server.serving.datatypes { Request }
     def reset_password_handler(
         request: Request, current_password: str, new_password: str
     ) -> TransportResponse {
@@ -1124,7 +1098,7 @@ impl JacAPIServerAdmin.admin_graph_data(
             content={'error': 'Forbidden', 'message': 'Admin access required'}
         );
     }
-    import from jaclang.runtime.graph_utils { collect_node_connections }
+
     target_username = username or Con.GUEST.value;
     root_id = self._require_user_manager().get_root_id(target_username);
     if not root_id {
@@ -1312,7 +1286,6 @@ glob _LATENCY_CUTS: list[float] = [0.025, 0.1, 0.5, 2.5];
 
 
 def _classify_path(path: str) -> str {
-    import from jaclang.scale.runtime.routing { GATEWAY_WELLKNOWN_SEGMENTS }
     head: str = path.strip('/').split('/')[0];
     if head == 'health' or head == 'healthz' {
         return 'health';

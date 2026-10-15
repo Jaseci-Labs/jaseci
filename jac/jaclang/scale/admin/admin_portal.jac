@@ -1,23 +1,4 @@
 import from pathlib { Path }
-import from jaclang.server.serving.datatypes { Request }
-import from jaclang.server.serving.datatypes {
-    FileResponse,
-    HTMLResponse,
-    JSONResponse,
-    Response
-}
-import from jaclang.server.transport { TransportResponse }
-import from jaclang.server.serving.endpoint {
-    HTTPMethod,
-    JEndPoint,
-    APIParameter,
-    ParameterType
-}
-import from jaclang.scale.config.config_loader { get_scale_config }
-import from jaclang.server.server { EndpointHost }
-import from jaclang.server.identity.user_manager { UserManager }
-import from jaclang.scale.observability.metrics { MetricsCollector }
-import from jaclang.scale.admin.console_build { AdminConsole }
 
 obj JacAPIServerAdmin {
     has server: (EndpointHost | None) = None,

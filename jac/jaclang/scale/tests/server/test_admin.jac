@@ -629,7 +629,7 @@ test "admin console pages answer without waiting on a console build" {
     prior_cwd = os.getcwd();
     try {
         for row in rows {
-            name = row["name"];
+            name = str(row["name"]);
             tmp = Path(tempfile.mkdtemp(prefix="admin_console_"));
             try {
                 project = tmp / "project";
