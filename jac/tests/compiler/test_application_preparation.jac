@@ -355,6 +355,80 @@ test "an edit reached through a plain import and an empty helper match a cold pr
     }
 }
 
+test "an edit through a re-exported name matches a cold prepare" {
+    tmp = tempfile.mkdtemp(prefix="jac-prepared-kernel-reexport-");
+    base = Path(tmp);
+    path = base / 'main.jac';
+    def write_app(a_sig: str, call: str) {
+        (base / 'mods').mkdir(exist_ok=True);
+        (base / 'mods' / 'a.jac').write_text(
+            f"def:pub a_value{a_sig} -> int {{ return 3; }}\n"
+        );
+        (base / 'mods' / 'b.jac').write_text(
+            "import from mods.a { a_value }\n"
+                + "def:pub b_value -> int { return 1; }\n"
+        );
+        path.write_text(
+            "import from mods.b { a_value, b_value }\n"
+                + f"walker:pub Total {{ can go with Root entry {{ report {call} + b_value(); }} }}\n"
+        );
+    }
+    try {
+        write_app("(x: int)", "a_value(2)");
+        kernel_prepare(path, tmp, []);
+        forget(str(path));
+        write_app("", "a_value()");
+        edited = kernel_prepare(path, tmp, []);
+        forget(str(path));
+        shutil.rmtree(base / '.jac' / 'cache' / 'applications');
+        cold = kernel_prepare(path, tmp, []);
+        assert edited.manifests == cold.manifests , (
+            "a valid edit through a re-exported name must prepare like a cold prepare"
+        );
+    } finally {
+        forget(str(path));
+        shutil.rmtree(tmp, ignore_errors=True);
+    }
+}
+
+test "a module whose import now resolves elsewhere is analysed again" {
+    tmp = tempfile.mkdtemp(prefix="jac-prepared-kernel-moved-");
+    base = Path(tmp);
+    path = base / 'main.jac';
+    try {
+        (base / 'mods').mkdir();
+        (base / 'mods' / 'a.jac').write_text(
+            "def:pub a_value(x: int) -> int { return x; }\n"
+        );
+        (base / 'mods' / 'b.jac').write_text(
+            "import from mods.a { a_value }\n"
+                + "def:pub b_value -> int { return a_value(1); }\n"
+        );
+        path.write_text(
+            "import from mods.b { b_value }\n"
+                + "walker:pub Total { can go with Root entry { report b_value(); } }\n"
+        );
+        kernel_prepare(path, tmp, []);
+        forget(str(path));
+        (base / 'mods' / 'a.jac').unlink();
+        (base / 'mods' / 'a').mkdir();
+        (base / 'mods' / 'a' / '__init__.jac').write_text(
+            "node Thing { has n: int = 0; }\n"
+                + "def:pub a_value(x: int) -> int { Thing(n=x); return x; }\n"
+        );
+        edited = kernel_prepare(path, tmp, []);
+        forget(str(path));
+        shutil.rmtree(base / '.jac' / 'cache' / 'applications');
+        cold = kernel_prepare(path, tmp, []);
+        assert edited.manifests == cold.manifests , (
+            "b.jac's import moved to a package; reusing its saved row left stale metadata"
+        );
+    } finally {
+        forget(str(path));
+        shutil.rmtree(tmp, ignore_errors=True);
+    }
+}
+
 test "an edit that changes a module's interface re-checks its importers" {
     tmp = tempfile.mkdtemp(prefix="jac-prepared-kernel-iface-");
     path = Path(tmp) / 'main.jac';

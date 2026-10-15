@@ -3309,6 +3309,9 @@ graph import compiler.backends.py {
         generated_python
     }
     codegen_shim --> compiler.tools.lang_tools.AstTool.ir { generated_python }
+    artifact_imports --> compiler.driver.application._reusable_interfaces {
+        resolve_imports
+    }
     artifact_imports --> compiler.driver.application._prepare_revision {
         package_sources
     }

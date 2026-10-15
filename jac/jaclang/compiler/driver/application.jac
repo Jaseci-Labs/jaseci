@@ -766,18 +766,30 @@ def _row_unit(path: str, row: dict[str, any]) -> any {
 }
 
 def _reusable_interfaces(
-    previous: dict[str, dict[str, any]], entries: list[str]
+    previous: dict[str, dict[str, any]],
+    entries: list[str],
+    specs: dict[str, list[tuple[int, str, (tuple[str, ...] | None)]]],
+    `root: str
 ) -> dict[str, any] {
     import base64;
     import from jaclang.compiler.driver.jir { compute_module_key }
     import from jaclang.compiler.frontend.kernel_inputs { PythonInterface }
+    import from jaclang.compiler.backends.py.artifact_imports { resolve_imports }
     held = {os.path.realpath(path) for path in entries};
+    by_real = {os.path.realpath(source): found for (source, found) in specs.items()};
     seeds: dict[str, any] = {};
     for (path, row) in previous.items() {
         if path in held or not row.get('iface') or not os.path.isfile(path) {
             continue;
         }
         if compute_module_key(path) != row.get('key') {
+            continue;
+        }
+        known = by_real.get(path);
+        if known is None or 'imports' not in row {
+            continue;
+        }
+        if sorted(resolve_imports(known, path, `root)) != row['imports'] {
             continue;
         }
         seeds[path] = PythonInterface(
@@ -840,7 +852,8 @@ def _kernel_units(
     before: int,
     inputs: dict[str, str],
     previous: dict[str, dict[str, any]],
-    rows: dict[str, dict[str, any]]
+    rows: dict[str, dict[str, any]],
+    specs: dict[str, list[tuple[int, str, (tuple[str, ...] | None)]]]
 ) -> (dict[str, ManifestSource] | None) {
     import copy;
     import from jaclang.compiler.frontend.host { active_host }
@@ -849,7 +862,8 @@ def _kernel_units(
         kernel_compile_application
     }
     selfhost = program._get_compiler().selfhost;
-    seeds = _reusable_interfaces(previous, entries);
+    seeds = _reusable_interfaces(previous, entries, specs, `root);
+    warned = len(program.warnings_had);
     units: dict[str, ManifestSource] = {};
     def compile_target(path: str) -> bool {
         options = copy.copy(program.options);
@@ -862,7 +876,6 @@ def _kernel_units(
         if compiled is None {
             return False;
         }
-        _check(program, before);
         for reached in compiled.analysis.modules {
             if not selfhost.is_selfhost(selfhost.resolve(reached.path, program)) {
                 _capture_input(reached.path, inputs);
@@ -881,15 +894,31 @@ def _kernel_units(
         forget_application_units();
         rows.clear();
         units.clear();
+        del program.errors_had[before:];
+        del program.warnings_had[warned:];
         targets = list(entries);
-        while targets {
+        failed = False;
+        while targets and not failed {
             for path in targets {
                 if not compile_target(path) {
-                    forget_application_units();
-                    return None;
+                    failed = True;
+                    break;
                 }
             }
-            targets = _unreached_changes(units, rows, previous, seeds);
+            if not failed {
+                targets = _unreached_changes(units, rows, previous, seeds);
+            }
+        }
+        if failed or (seeds and len(program.errors_had) > before) {
+            if not seeds {
+                forget_application_units();
+                if failed {
+                    return None;
+                }
+                break;
+            }
+            seeds.clear();
+            continue;
         }
         changed = {
             path
@@ -908,6 +937,7 @@ def _kernel_units(
             seeds.pop(path, None);
         }
     }
+    _check(program, before);
     frontier = list(units);
     while frontier {
         row = rows.get(frontier.pop()) or {};
@@ -1056,8 +1086,21 @@ def _prepare_revision(
         if isinstance(candidate, dict)
         else {};
     unit_rows: dict[str, dict[str, any]] = {};
+    recorded_specs: dict[str, list[tuple[int, str, (tuple[str, ...] | None)]]] = candidate.get(
+        'import_specs'
+    )
+        or {}
+        if isinstance(candidate, dict)
+        else {};
     units: (dict[str, ManifestSource] | None) = _kernel_units(
-        program, entries, `root, before, inputs, previous_rows, unit_rows
+        program,
+        entries,
+        `root,
+        before,
+        inputs,
+        previous_rows,
+        unit_rows,
+        recorded_specs
     );
     if units is None {
         import from jaclang.compiler.driver.pipeline_runner { compile_application }
@@ -1172,7 +1215,12 @@ def _prepare_revision(
             if known is not None and previous_code.get(path) == code
             else import_specs(code, path);
         specs_of[path] = specs;
-        pending.update(resolve_imports(specs, path, `root) - revision.code.keys());
+        resolved = resolve_imports(specs, path, `root);
+        real = os.path.realpath(path);
+        if real in unit_rows {
+            unit_rows[real] = unit_rows[real] | {'imports': sorted(resolved)};
+        }
+        pending.update(resolved - revision.code.keys());
     }
 
     project_facts: dict[str, tuple[str, any]] = {
