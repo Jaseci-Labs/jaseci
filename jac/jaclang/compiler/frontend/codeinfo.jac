@@ -257,6 +257,9 @@ glob NATIVE_ARCH_SCOPE_SEP: str = "$",
 
 def cached_realpath(path: str) -> str {
     import os;
+    if not os.path.isabs(path) {
+        return os.path.realpath(path);
+    }
     found = _realpath_memo.get(path);
     if found is None {
         found = os.path.realpath(path);
