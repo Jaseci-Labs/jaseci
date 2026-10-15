@@ -1278,7 +1278,9 @@ def _gc_weak_clear(realm: Realm) {
 """A minor collection's roots beyond gc_mark_roots: every live generator
 state (a handful at a time; mutated on each suspend without a barrier), the
 children of the remembered old objects (already marked, so the trace would
-stop at them) and the values logged by the non-object barriers."""
+stop at them) and of the old mapped `arguments` objects (their parameter
+bindings live in the activation's locals list, written without a barrier),
+and the values logged by the non-object barriers."""
 def _gc_minor_roots(realm: Realm) -> None {
     mr_g: int = 0;
     while mr_g < len(realm.generators) {
@@ -1297,6 +1299,15 @@ def _gc_minor_roots(realm: Realm) -> None {
             and mr_oid <= realm.objmark_len
             and read_byte(mr_mp, mr_oid - 1) == mr_eb {
             _gc_trace_obj(realm, mr_oid, mr_work, mr_mp, mr_eb);
+            _gc_drain(realm, mr_work);
+        }
+    }
+    for mr_aid in realm.args_slots {
+        if mr_aid > 0
+            and mr_aid <= len(realm.objects)
+            and mr_aid <= realm.objmark_len
+            and read_byte(mr_mp, mr_aid - 1) == mr_eb {
+            _gc_trace_obj(realm, mr_aid, mr_work, mr_mp, mr_eb);
             _gc_drain(realm, mr_work);
         }
     }

@@ -32867,13 +32867,21 @@ obj VM {
             # Generational (docs/GENERATIONAL_GC.md §4.8): a collection every
             # nursery-full of allocations; the next one is major once the heap
             # (old garbage included — a minor frees only young cells) has grown
-            # past the last major's live set by the growth policy.
+            # past the last major's live set by the growth policy. The heap
+            # counts the closure / Map / Set rows too: a minor frees none that
+            # are old, so old dead closures alone must still bring a major.
             if gc_gen_on() {
+                _gc_ncells: int = _gc_nlive + len(self.realm.closures)
+                    - len(self.realm.free_closure_slots)
+                    + len(self.realm.maps)
+                    - len(self.realm.free_map_slots)
+                    + len(self.realm.sets)
+                    - len(self.realm.free_set_slots);
                 if not self.realm.gc_last_minor {
-                    self.realm.gc_major_live = _gc_nlive;
+                    self.realm.gc_major_live = _gc_ncells;
                 }
                 _gc_mlive: int = self.realm.gc_major_live;
-                self.realm.gc_next_major = _gc_nlive
+                self.realm.gc_next_major = _gc_ncells
                     >= _gc_mlive + (_gc_mlive * gc_growth_pct_for(_gc_mlive)) // 100;
                 self.realm.gc_threshold = gc_nursery();
             }

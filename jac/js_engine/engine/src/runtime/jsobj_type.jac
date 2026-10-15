@@ -801,7 +801,7 @@ obj:pub JSObject {
     """Element i, 0 <= i < elen(). Unchecked unless JAC_SLOT_CHECK=1."""
     def:pub eget(i: int) -> JSValue {
         if _SLOT_CHECK != 0 {
-            _slot_check(self.ep, i, "element read");
+            _slot_check(self.elen(), i, "element read");
         }
         return read_u64(self.ep, 16 + i * 8);
     }
@@ -809,7 +809,7 @@ obj:pub JSObject {
     """Store v as element i, 0 <= i < elen()."""
     def:pub eset(i: int, v: JSValue) -> None {
         if _SLOT_CHECK != 0 {
-            _slot_check(self.ep, i, "element write");
+            _slot_check(self.elen(), i, "element write");
         }
         self.wb(v);
         write_i64(self.ep, 16 + i * 8, v);
