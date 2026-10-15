@@ -2,21 +2,6 @@ import hashlib;
 import json;
 import os;
 import sys;
-import from jaclang.compiler.driver.compile_options {
-    CompileOptions,
-    NATIVE_LINK_MODE_BITCODE,
-    NATIVE_LINK_MODE_OBJECTS
-}
-import type from jaclang.compiler.kernel_target { KernelTarget }
-import type from jaclang.compiler.driver.program { JacProgram }
-import type from jaclang.compiler.backends.native.link_plan { LinkPlan, LinkResult }
-import from jaclang.artifacts.model {
-    Artifact,
-    ArtifactKind,
-    Probe,
-    ReleasePolicy,
-    Source
-}
 
 glob NOT_BUILT: str = "not built",
      LAYOUT_SIDECAR_SUFFIX: str = ".layout.json",
@@ -47,7 +32,6 @@ def kernel_lib_name -> str {
 }
 
 def source_tree_kernel_path -> str {
-    import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
     return os.path.join(jaclang_pkg_root(), "compiler", kernel_lib_name());
 }
 
@@ -79,7 +63,6 @@ def sealed_link_refusal(record: dict[str, any], sidecar: dict[str, any]) -> str 
 }
 
 def _from_sealed_image -> (ResolvedKernel | None) {
-    import from jaclang.jac0core { sealed }
     image = sealed._jaclang_image();
     if image is None {
         return None;
@@ -153,9 +136,6 @@ def kernel_plan(
     mode: str = "",
     target: (KernelTarget | None) = None
 ) -> LinkPlan {
-    import from jaclang.compiler.driver.program { JacProgram }
-    import from jaclang.compiler.native_scope { kernel_root_path }
-    import from jaclang.compiler.backends.native.link_plan { build_link_plan }
     program = prog if prog is not None else JacProgram();
     options = kernel_options();
     root_path = target.root_module_path() if target is not None else kernel_root_path();
@@ -177,7 +157,6 @@ def _sha256_file(path: str) -> str {
 }
 
 def _unit_label(path: str) -> str {
-    import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
     try {
         return os.path.relpath(path, os.path.dirname(jaclang_pkg_root()));
     } except ValueError {
@@ -188,12 +167,6 @@ def _unit_label(path: str) -> str {
 def unit_drift(
     sidecar: dict[str, any], recorded: dict[str, any], units: list[str]
 ) -> list[str] {
-    import from jaclang.compiler.driver.jir {
-        native_producer_digest,
-        running_compiler_digest,
-        unit_source_digest
-    }
-    import from jaclang.compiler.frontend.codeinfo { native_unit_identity }
     options = kernel_options();
     drift: list[str] = [];
     if str(sidecar.get("compiler_digest", ""))
@@ -254,7 +227,7 @@ def _inspect(
     if actual != (expected_sha or sidecar.get("artifact_sha256")) {
         return (None, ["the kernel does not match the hash its record carries"]);
     }
-    import from jaclang.compiler.driver.jir { sidecar_unit_paths }
+
     units = sidecar_unit_paths(sidecar);
     recorded = sidecar.get("unit_sources");
     if not units or not isinstance(recorded, dict) or not recorded {
@@ -266,7 +239,6 @@ def _inspect(
 
 
 def _bundled_kernel -> tuple[str, dict[str, any]] | None {
-    import from jaclang.artifacts.kit { kit_image }
     found = kit_image();
     if found is None {
         return None;
@@ -343,7 +315,6 @@ obj KernelArtifact(Artifact) {
 }
 
 def refuse_unloadable {
-    import from jaclang.compiler.native_compiler { load_failure }
     failed = load_failure();
     if failed is None {
         return;
@@ -367,7 +338,6 @@ def refuse_unloadable {
 }
 
 def resolve_kernel -> (ResolvedKernel | None) {
-    import from jaclang.artifacts.router { resolve }
     found = resolve("kernel").found;
     if found is None {
         return None;
@@ -385,8 +355,6 @@ def build_kernel(
     log: (Callable[[str], None] | None) = None,
     link_mode: str = KERNEL_DEV_LINK_MODE
 ) -> LinkResult {
-    import from jaclang.artifacts.router { publish }
-    import from jaclang.compiler.backends.native.kernel_stage0 { link_kernel }
     destination = dst or source_tree_kernel_path();
     tmp = f"{destination}.{os.getpid()}.tmp";
     try {

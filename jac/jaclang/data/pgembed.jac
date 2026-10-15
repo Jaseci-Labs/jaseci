@@ -1,5 +1,5 @@
 import hashlib;
-import type from jaclang.data.dbcatalog { DbRecord }
+
 import logging;
 import os;
 import signal;
@@ -7,8 +7,6 @@ import subprocess;
 import threading;
 import time;
 import from pathlib { Path }
-import from jaclang.data.dbcatalog { DbKind }
-import from jaclang.data.store { ConnInfo }
 
 glob logger = logging.getLogger(__name__),
      SOCK_PORT = 5432,

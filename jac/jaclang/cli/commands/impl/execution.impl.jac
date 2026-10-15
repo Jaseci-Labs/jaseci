@@ -1,33 +1,13 @@
-import from jaclang.server.build_status { BuildMonitor }
 import marshal;
 import os;
 import sys;
 import types;
 import from pathlib { Path }
-import from jaclang.cli.console { console, use_line_buffered_output }
-import from jaclang.cli.commands.cli_helpers { proc_file as _proc_file }
-import from jaclang.server.assembly {
-    gateway_colocates as _gateway_colocates,
-    service_apps as _service_apps
-}
-import from jaclang.project.kinds { RunPlan }
-import type from jaclang.project.config { AppConfig, JacConfig }
+
 import type from importlib.metadata { EntryPoint }
-import type from jaclang.runtime.native_library { SharedNativeEngine }
-import type from jaclang.compiler.backends.native.llvm.binding.executionengine {
-    ExecutionEngine
-}
 
 def _discover_config_from_file(filename: str) -> None {
     import from pathlib { Path }
-    import from jaclang.project.config {
-        JacConfig,
-        get_config,
-        project_scope_is_pinned,
-        set_config
-    }
-    import from jaclang.project.pyvenv { add_venv_to_path }
-    import from jaclang.runtime.runtime { JacRuntime as Jac }
 
     file_path = Path(filename).resolve();
 
@@ -65,7 +45,6 @@ def _project_label(config: any) -> str {
 
 
 def _app_serves(config: any, app: any) -> bool {
-    import from jaclang.project.kinds { kind_spec }
     try {
         spec = kind_spec(config.resolved_kind(app));
     } except Exception {
@@ -116,9 +95,6 @@ def _scope_notice(message: str) {
 
 def _pin_run_scope(filename: str, takeover: (bool | None)) -> None {
     import from pathlib { Path }
-    import from jaclang.project.config { JacConfig, get_config, pin_project_scope }
-    import from jaclang.project.pyvenv { add_venv_to_path }
-    import from jaclang.runtime.runtime { JacRuntime as Jac }
 
     file_path = Path(filename).resolve();
     Jac.set_full_target_path(str(file_path));
@@ -179,7 +155,6 @@ def _pin_run_scope(filename: str, takeover: (bool | None)) -> None {
 }
 
 def _default_codespace_is_native -> bool {
-    import from jaclang.project.config { get_config, PlacementConfig }
     cfg = get_config();
     effective = cfg.placement.default_codespace
         if cfg is not None
@@ -247,7 +222,6 @@ def _print_plan(plan: RunPlan, app: any) {
 }
 
 def _workspace_plans(cfg: any, project_root: str) -> list[RunPlan] {
-    import from jaclang.project.kinds { plan_app_run, plan_workspace }
     try {
         return plan_workspace(cfg, project_root);
     } except ValueError {}
@@ -423,8 +397,6 @@ def _serve_with(
     app_name: str,
     takeover: bool = False
 ) -> int {
-    import from jaclang.project.providers { initialize_provider_registry }
-
     if not entry_path {
         console.error(
             "Nothing to serve: no entry-point resolved.\n"
@@ -512,8 +484,6 @@ def _show_run(
 def _run_jab(
     filename: str, port: (int | None), args: list[str], serve_only: bool
 ) -> int {
-    import from jaclang.dist.jab { materialize_jab }
-
     try {
         img_root = materialize_jab(filename);
     } except Exception as e {
@@ -526,8 +496,6 @@ def _run_jab(
 impl run_jab_image(
     img_root: Path, port: (int | None), args: list[str], serve_only: bool, label: str
 ) -> int {
-    import from jaclang.dist.jab { jab_app_meta }
-
     meta = jab_app_meta(img_root);
     kind = str(meta.get("kind") or "cli");
     entry_meta: dict[str, any] = meta.get("entry") or {};
@@ -627,8 +595,6 @@ def _cli_port(text: str) -> (int | None) {
 }
 
 def _jab_native_bin(img_root: Path, entry_rel: str) -> (str | None) {
-    import from jaclang.jac0core.ext_registry { base_stem }
-    import from jaclang.server.sealed_serve { NATIVE_DIR_REL }
     try {
         import jaclang.compiler.backends.native.llvm.binding as llvm;
         triple = str(llvm.get_default_triple());
@@ -656,8 +622,6 @@ def _is_file_target(target: str) -> bool {
 
 def _load_cwd_config -> any {
     import from pathlib { Path }
-    import from jaclang.project.config { get_config }
-    import from jaclang.project.providers { initialize_provider_registry }
 
     initialize_provider_registry();
     existing_config = get_config();
@@ -697,8 +661,6 @@ def _file_app(cfg: any, target: str, takeover: (bool | None)) -> any {
 def _resolve_target(
     target: str, takeover: (bool | None) = None
 ) -> tuple[JacConfig | None, AppConfig | None, str, int] {
-    import from jaclang.project.config { get_config }
-
     if _is_file_target(target) {
         _pin_run_scope(target, takeover);
         _discover_config_from_file(target);
@@ -750,8 +712,6 @@ def _resolve_target(
 def _resolve_plan(
     target: str, takeover: (bool | None) = None
 ) -> tuple[RunPlan | None, JacConfig | None, AppConfig | None, str, int] {
-    import from jaclang.project.kinds { plan_app_run }
-
     (cfg, app, file, rc) = _resolve_target(target, takeover);
     if rc {
         return (None, cfg, None, file, rc);
@@ -798,11 +758,6 @@ def _in_compiler_tree(file: Path, project_root: Path) -> bool {
 def _load_executable(
     filename: str, base: str, main: bool, force_codespace: str = ''
 ) -> types.ModuleType {
-    import from jaclang.runtime.runtime { JacRuntime as Jac }
-    import from jaclang.compiler.driver.application { prepare_application }
-    import from jaclang.runtime.prepared { load_prepared_module }
-    import from jaclang.project.workspace { workspace_for_path }
-    import from jaclang.project.config { get_config_for_path }
     program = Jac.get_program();
     compiler = program._get_compiler();
     compiler_owned = compiler.selfhost.is_selfhost(
@@ -835,9 +790,6 @@ def _load_executable(
 def _invoke_entrypoint(
     filename: str, entrypoint: str, args: list[str], main: bool, root_id: str, nd: str
 ) -> int {
-    import from jaclang.runtime.runtime { JacRuntime as Jac }
-    import from jaclang.runtime.constructs { WalkerArchetype }
-
     if not filename.endswith('.jac') {
         console.error('Not a valid file!\nOnly supports `.jac`');
         return 1;
@@ -1031,9 +983,6 @@ def _exec_file(
     args: list[str],
     backend: str = ""
 ) -> int {
-    import from jaclang.runtime.runtime { JacRuntime as Jac }
-    import from jaclang.project.config { get_config }
-
     _discover_config_from_file(filename);
 
     if not cache {
@@ -1050,10 +999,7 @@ def _exec_file(
     sys.argv = [filename] + list(args);
     (base, mod, mach) = _proc_file(filename);
     lng = filename.split('.')[-1];
-    import from jaclang.compiler.frontend.codeinfo {
-        get_effective_default_codespace_override,
-        set_effective_default_codespace
-    }
+
     previous_codespace = get_effective_default_codespace_override();
     try {
         if backend {
@@ -1228,8 +1174,6 @@ def _serve_fleet(
     if not fleet and _gateway_colocates(cfg) {
         return None;
     }
-    import from jaclang.project.kinds { plan_app_run }
-    import from jaclang.scale.plugin { scale_local_serve }
 
     project_root = (
         str(cfg.project_root)
@@ -1268,10 +1212,7 @@ impl serve(
     app: str = "",
     workers: str = ""
 ) -> int {
-    import from jaclang.runtime.runtime { JacRuntime as Jac }
     import from pathlib { Path }
-    import from jaclang.compiler.frontend.codeinfo { set_effective_default_codespace }
-    import from jaclang.project.config { get_config }
 
     use_line_buffered_output();
     set_effective_default_codespace('server');
@@ -1304,7 +1245,6 @@ impl serve(
         }
     }
 
-    import from jaclang.scale.runtime.provider { mark_scale_runtime }
     mark_scale_runtime();
     fleet_rc = _serve_fleet(cfg, served, filename, port, fleet, dev, no_client);
     if fleet_rc is not None {
@@ -1337,8 +1277,6 @@ impl serve(
         api_port_pinned = port_pinned;
     }
 
-    import from jaclang.server.settings { ServeConfigError, ServeSettings }
-    import from jaclang.server.serving.supervisor { worker_metrics_dir }
     overrides: dict[str, any] = {
         'port': actual_api_port,
         'strict_port': api_port_pinned,
@@ -1571,10 +1509,6 @@ def _watchdog_importable -> bool {
 }
 
 def _ensure_watchdog_installed -> bool {
-    import from jaclang.project.config { get_config }
-    import from jaclang.project.pyvenv { add_venv_to_path }
-    import from jaclang.project.providers { InstallContext, get_python_provider }
-
     if _watchdog_importable() {
         return True;
     }
@@ -1638,7 +1572,7 @@ def _serves_web_client(kind: (str | None), platform: (str | None)) -> bool {
 
 def _count_jac_files(directory: str) -> int {
     import from pathlib { Path }
-    import from jaclang.compiler.frontend.codeinfo { is_compiler_source_path }
+
     try {
         path = Path(directory);
         if path.is_file() {
@@ -1718,7 +1652,6 @@ def _print_startup_message(
 }
 
 def _find_free_port(start: int, skip_port: int = 0, strict: bool = False) -> int {
-    import from jaclang.server.net { find_available_port }
     try {
         return find_available_port(
             start, max_retries=50, skip_port=skip_port, strict=strict
@@ -1784,8 +1717,6 @@ def _start_vite_dev_server(
 }
 
 impl debug(filename: str, main: bool = True, cache: bool = False) -> int {
-    import from jaclang.compiler.driver.program { JacProgram }
-    import from jaclang.runtime.debugger { debugger as db }
     if len(sys.argv) > 1 and sys.argv[1] == "debug" {
         console.print(
             "note: 'jac debug' is deprecated; use jac run <file> --debug", style="muted"
@@ -1818,8 +1749,6 @@ impl debug(filename: str, main: bool = True, cache: bool = False) -> int {
 }
 
 def _tool_site_dirs(use_global: bool) -> list[tuple[str, Path]] {
-    import from jaclang.project.tool_paths { python_project_site, python_global_site }
-
     sites: list[tuple[str, Path]] = [];
     if not use_global {
         proj_site = python_project_site();
@@ -1933,9 +1862,6 @@ def _run_entry_point(
 
 def _run_node_tool(name: str, bin_path: Path, args: list[str]) -> int {
     import subprocess;
-    import from jaclang.project.config { get_config }
-    import from jaclang.artifacts.model { ArtifactUnavailable }
-    import from jaclang.client.js_runtime { js_runtime_path }
 
     try {
         bun = js_runtime_path();
@@ -1950,13 +1876,6 @@ def _run_node_tool(name: str, bin_path: Path, args: list[str]) -> int {
 }
 
 def _tool_tiers(use_global: bool, use_node: bool) -> list[tuple[str, str, Path]] {
-    import from jaclang.project.config { get_config }
-    import from jaclang.project.tool_paths {
-        python_project_site,
-        python_global_site,
-        node_bin_dir
-    }
-
     config = get_config();
 
     universe: list[tuple[str, str, Path]] = [];
@@ -2047,7 +1966,6 @@ impl x(
         return _list_tools(tiers);
     }
 
-    import from jaclang.project.config { get_config }
     cfg_x = get_config();
     if cfg_x is not None and name in (cfg_x.scripts or {}) {
         import from jaclang.cli.commands.project { script }

@@ -1,26 +1,4 @@
 import os;
-import from jaclang.compiler.driver.compile_options { CompileOptions }
-import from jaclang.compiler.driver.program { JacProgram }
-import from jaclang.compiler.frontend.host { HostServices }
-import from jaclang.compiler.driver.unit_products { UnitProducts }
-import from jaclang.compiler.frontend.kernel_analyze {
-    ANALYSIS_CRASHED,
-    AnalysisReport,
-    CompileReport,
-    ModuleReport,
-    kernel_trace,
-    run_kernel_compile
-}
-import from jaclang.project.kernel_snapshot {
-    COMPILE_ENTRY,
-    KernelAnalysisError,
-    call_with_asker,
-    host_deferred,
-    _IFACE_BUILT,
-    other_compiler_report,
-    kernel_snapshot,
-    loaded_kernel
-}
 
 glob KERNEL_TIMING_ENV: str = "JAC_KERNEL_TIMING",
      SLOW_COMPILE_SECONDS: float = 20.0,
@@ -112,14 +90,13 @@ def kernel_compile(
 }
 
 def kernel_route(program: JacProgram, path: str) -> tuple[bool, bool] {
-    import from jaclang.compiler.frontend.codeinfo { is_compiler_source_path }
     if program.internal or is_compiler_source_path(path) or _HOST_PREPARING {
         return (False, False);
     }
     if kernel_compile_in_process() {
         return (True, True);
     }
-    import from jaclang.compiler.native_compiler { ensure_loaded }
+
     if ensure_loaded() is None {
         import from jaclang.compiler.backends.native.kernel_resolve {
             refuse_unloadable
@@ -158,9 +135,9 @@ def kernel_compile_reported(
         f"kernel compiled {path}: {len(compiled.units)} unit(s), "
         f"{len(compiled.analysis.errors)} error(s)"
     );
-    import from jaclang.compiler.frontend.kernel_host { replay_event_rows }
+
     replay_event_rows(host, compiled.analysis.events);
-    import from jaclang.project.kernel_check { alert_of }
+
     for diag in compiled.analysis.errors {
         program.errors_had.append(alert_of(diag));
     }

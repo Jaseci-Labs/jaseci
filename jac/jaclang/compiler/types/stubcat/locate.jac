@@ -1,15 +1,6 @@
-import type from jaclang.compiler.types.stubcat.reader { StubCatalog }
 import hashlib;
 import os;
 import sys;
-import from jaclang.compiler.types.stubcat.format { FORMAT_VERSION }
-import from jaclang.artifacts.model {
-    Artifact,
-    ArtifactKind,
-    Probe,
-    ReleasePolicy,
-    Source
-}
 
 obj CatalogOrigin {
     has path: str,
@@ -121,12 +112,10 @@ def bundled_catalog_path(pkg_dir: str) -> str {
 }
 
 def dev_catalog_path(pkg_dir: str) -> str {
-    import from jaclang.cache.registry { bucket }
     return str(bucket("jir-stubcat").path() / (catalog_key(pkg_dir) + ".bin"));
 }
 
 def _open_file(path: str, pkg_dir: str) -> StubCatalog | None {
-    import from jaclang.compiler.types.stubcat.reader { open_catalog_file }
     try {
         found = open_catalog_file(path, pkg_dir);
         if found is not None {
@@ -142,7 +131,6 @@ def _open_file(path: str, pkg_dir: str) -> StubCatalog | None {
 def _open_region(
     exe: str, offset: int, length: int, pkg_dir: str
 ) -> StubCatalog | None {
-    import from jaclang.compiler.types.stubcat.reader { open_catalog_region }
     try {
         found = open_catalog_region(exe, offset, length, pkg_dir);
         if found is not None {
@@ -156,7 +144,6 @@ def _open_region(
 }
 
 def _region_probe(exe: str, source: Source, pkg: str, check_key: bool) -> Probe {
-    import from jaclang.dist.fused_binary { stubcat_region }
     region = stubcat_region(exe);
     if region is None {
         return Probe.missing();
@@ -198,11 +185,10 @@ obj StubcatArtifact(Artifact) {
         requires: list[str] = ["typeshed"];
 
     override def probe_sealed -> (Probe | None) {
-        import from jaclang.jac0core { sealed }
         if sealed._jaclang_image() is None {
             return None;
         }
-        import from jaclang.dist.fused_binary { running_executable }
+
         pkg = jaclang_pkg_dir();
         embedded = _region_probe(running_executable(), Source.SEALED, pkg, False);
         if embedded.found is not None {
@@ -223,11 +209,10 @@ obj StubcatArtifact(Artifact) {
     }
 
     override def probe_kit -> Probe {
-        import from jaclang.artifacts.kit { kit_image, kit_path }
         if kit_image() is None {
             return Probe.missing("this process runs on no kit");
         }
-        import from jaclang.dist.fused_binary { running_executable }
+
         pkg = jaclang_pkg_dir();
         embedded = _region_probe(running_executable(), Source.KIT, pkg, True);
         if embedded.found is not None or not embedded.absent {
@@ -243,8 +228,6 @@ obj StubcatArtifact(Artifact) {
     }
 
     override def build(log: Callable[[str], None], force: bool, exact: bool) {
-        import from jaclang.compiler.types.stubcat.build { build_catalog }
-        import from jaclang.cache.registry { maybe_sweep }
         pkg = jaclang_pkg_dir();
         out = dev_catalog_path(pkg);
         log(f"  building the stub catalog into {out}");
@@ -260,7 +243,6 @@ obj TypeshedArtifact(Artifact) {
         summary: str = "the vendored typeshed stdlib stubs";
 
     override def probe_sealed -> (Probe | None) {
-        import from jaclang.jac0core { sealed }
         if sealed._jaclang_image() is None {
             return None;
         }
@@ -276,7 +258,6 @@ obj TypeshedArtifact(Artifact) {
     }
 
     override def build(log: Callable[[str], None], force: bool, exact: bool) {
-        import from jaclang.dist.payload.fetch { fetch_typeshed }
         fetch_typeshed(os.path.dirname(jaclang_pkg_dir()));
     }
 }
@@ -307,7 +288,6 @@ def _read_trimmed(path: str) -> str {
 }
 
 def _publish(cat: StubCatalog | None) -> StubCatalog | None {
-    import from jaclang.jac0core.stubcat_hook { set_active }
     if cat is not None and not _CATALOG_CACHE {
         _CATALOG_CACHE.append(cat);
         set_active(cat);
@@ -321,11 +301,11 @@ def open_catalog -> StubCatalog | None {
     if _CATALOG_CACHE {
         return _CATALOG_CACHE[0];
     }
-    import from jaclang.jac0core.stubcat_hook { catalog_disabled }
+
     if catalog_disabled() {
         return None;
     }
-    import from jaclang.artifacts.router { resolve }
+
     found = resolve("stubcat").found;
     if found is None {
         return None;
@@ -339,7 +319,6 @@ def open_catalog -> StubCatalog | None {
 }
 
 def reset_catalog_cache {
-    import from jaclang.jac0core.stubcat_hook { set_active }
     _CATALOG_CACHE.clear();
     _DIGEST_CACHE.clear();
     _ORIGIN.clear();
