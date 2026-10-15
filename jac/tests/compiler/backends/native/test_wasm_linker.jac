@@ -262,6 +262,7 @@ const env = {
   memcmp: (a, b, n) => { const m = new Uint8Array(M.mem.buffer); n = Number(n);
     for (let i = 0; i < n; i++) { const e = m[a+i] - m[b+i]; if (e) return e; } return 0; },
   puts: () => 0, printf: () => 0, snprintf: () => 0, getenv: () => 0, fflush: () => 0,
+  write: (fd, ptr, n) => Number(n),
   abort: () => { throw new Error("abort"); },
   __multi3: (res, al, ah, bl, bh) => { const K = (1n<<64n)-1n;
     const a = (BigInt.asUintN(64,ah)<<64n)|BigInt.asUintN(64,al);
