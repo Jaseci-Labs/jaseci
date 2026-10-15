@@ -355,3 +355,32 @@ test "--dry-run classifies an sv import as the run does while its target still h
         assert "sv {" not in (root_path / "notes" / "store.jac").read_text();
     }
 }
+
+
+test "a client sv import keeps its placement when another import shares its line" {
+    import from pathlib { Path }
+    with tempfile.TemporaryDirectory() as tmpdir {
+        root_path = Path(tmpdir);
+        toml_text = (
+            '[project]\nname = "notes"\nkind = "web-app"\nentry-point = "main"\n'
+        );
+        (root_path / "jac.toml").write_text(toml_text);
+        (root_path / "main.jac").write_text(
+            "def:pub app -> JsxElement {\n    return <div>notes</div>;\n}\n"
+        );
+        (root_path / "analytics.jac").write_text("walker:pub Track {}\n");
+        (root_path / "notes").mkdir();
+        (root_path / "notes" / "store.jac").write_text(NOTES_STORE);
+        (root_path / "notes" / "NotesShell.jac").write_text(
+            NOTES_SHELL.replace(
+                "sv import from .store { list_notes }\n",
+                "sv import from .store { list_notes } import from analytics { Track }\n"
+            )
+                + "\ndef:pub ping -> bool {\n    Track();\n    return True;\n}\n"
+        );
+        assert fix("placement", [str(root_path)]) == 0;
+        assert (root_path / "jac.toml").read_text() == toml_text , (
+            (root_path / "jac.toml").read_text()
+        );
+    }
+}

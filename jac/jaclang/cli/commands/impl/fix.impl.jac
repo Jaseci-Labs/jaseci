@@ -519,7 +519,7 @@ def _format_source(src: str, file_path: str) -> (str | None) {
 }
 
 
-def _import_placements(file_path: str, src: str) -> dict[int, tuple[str, str, bool]] {
+def _client_imports(file_path: str, src: str) -> dict[tuple[int, str], bool] {
     import jaclang.compiler.frontend.unitree as uni;
     import from jaclang.compiler.driver.program { JacProgram }
     prog = JacProgram();
@@ -531,17 +531,16 @@ def _import_placements(file_path: str, src: str) -> dict[int, tuple[str, str, bo
     if prog.count_module_errors(os.path.normpath(mod.loc.mod_path)) {
         return {};
     }
-    placed: dict[int, tuple[str, str, bool]] = {};
+    client: dict[tuple[int, str], bool] = {};
     for stmt in mod.body {
         if isinstance(stmt, uni.Import) and stmt.from_loc is not None {
-            placed[stmt.loc.first_line] = (
-                stmt.from_loc.dot_path_str,
-                getattr(stmt?.code_context, 'value', ''),
-                bool(getattr(stmt, 'codespace_dual', False))
-            );
+            key = (stmt.loc.first_line, stmt.from_loc.dot_path_str);
+            client[key] = client.get(key, True)
+                and getattr(stmt?.code_context, 'value', '') == 'client'
+                and not getattr(stmt, 'codespace_dual', False);
         }
     }
-    return placed;
+    return client;
 }
 
 
@@ -1127,18 +1126,15 @@ impl fix(
         entry_stem = _project_entry_stem(os.path.join(app_root, 'jac.toml'));
         tables = apps_by_root.setdefault(app_root, {});
         causes = causes_by_root.setdefault(app_root, {});
-        placed = _import_placements(path, migrated_text.get(path, ''));
+        client = _client_imports(path, migrated_text.get(path, ''));
         for imp in imports {
             tgt = imp.target;
-            got = placed.get(imp.line);
-            if got is not None and got[0] != tgt {
-                got = None;
-            }
-            if got is not None and got[1] == 'client' and not got[2] {
+            client_only = client.get((imp.line, tgt));
+            if client_only {
                 continue;
             }
             cause = f"{path}:{imp.line}";
-            if got is None {
+            if client_only is None {
                 unverified.append(
                     f"{cause} 'sv import from {tgt}' (placement not inferred; "
                     "treated as a server-to-server import)"
