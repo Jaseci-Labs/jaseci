@@ -164,14 +164,14 @@ impl ExecutionManager._finalize_call_response(
 ) -> dict[str, JsonValue] | Generator | AsyncGenerator {
     call_state.reports.put_nowait(call_state._sentinel);
     reports = await self.report_collector(call_state);
-    await Jac.acommit();
     if isgenerator(result) or isinstance(result, AsyncGenerator) {
+        await Jac.acommit();
         return result;
     }
     if isgenerator(reports) or isinstance(reports, AsyncGenerator) {
+        await Jac.acommit();
         return reports;
     }
-    Jac.get_context().mem.seal_scan();
 
     envelope: dict[str, object] = {
         'result': Serializer.serialize(result, api_mode=True)
@@ -179,6 +179,8 @@ impl ExecutionManager._finalize_call_response(
             else result,
         'reports': Serializer.serialize(reports, api_mode=True)
     };
+    await Jac.acommit();
+    Jac.get_context().mem.seal_scan();
     ctx = Jac.get_context();
     if ctx.diagnostics {
         envelope['warnings'] = [d.to_dict() for d in ctx.diagnostics];

@@ -186,15 +186,22 @@ obj Memory {
     def _fire_on_commit {
         fired = self._on_commit;
         self._on_commit = [];
-        if fired {
-            self.unseal_scan();
+        if not fired {
+            return;
         }
-        for cb in fired {
-            try {
-                cb();
-            } except Exception as e {
-                logger.warning(f"on_commit callback failed: {type(e).__name__}: {e}");
+        self.unseal_scan();
+        try {
+            for cb in fired {
+                try {
+                    cb();
+                } except Exception as e {
+                    logger.warning(
+                        f"on_commit callback failed: {type(e).__name__}: {e}"
+                    );
+                }
             }
+        } finally {
+            self.unseal_scan();
         }
     }
 

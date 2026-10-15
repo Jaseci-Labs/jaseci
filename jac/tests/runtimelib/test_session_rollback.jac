@@ -944,6 +944,17 @@ test "commits after a sealed scan skip in-place scans until user code runs again
             assert _stored(ctx, bag_id, "items") == "[1, 2, 3, 4]" , (
                 "an on_commit callback runs user code; the next commit must scan"
             );
+            def commit_then_append {
+                ctx.mem.commit();
+                bag_arch.items.append(5);
+            }
+            ctx.mem.on_commit(commit_then_append);
+            ctx.mem.commit();
+            ctx.mem.seal_scan();
+            ctx.mem.commit();
+            assert _stored(ctx, bag_id, "items") == "[1, 2, 3, 4, 5]" , (
+                "a callback that commits and then appends must not leave a clean scan"
+            );
         } finally {
             JacRuntime.exec_ctx = old;
             ctx.close();
