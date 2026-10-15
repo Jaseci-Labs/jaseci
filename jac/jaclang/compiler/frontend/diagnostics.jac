@@ -434,10 +434,10 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
      E0098 = _err(
          "E0098",
          Category.SYNTAX,
-         "An edge rule's patterns name modules under this arch.jac; 'any' is not a pattern",
-         help="An arch.jac governs only the modules below it, so a rule's targets"
+         "An edge rule's patterns name modules under this archwire.jac; 'any' is not a pattern",
+         help="An archwire.jac governs only the modules below it, so a rule's targets"
          " are patterns over those modules (`*` for all of them). Importers"
-         " outside the directory are governed by their own arch.jac."
+         " outside the directory are governed by their own archwire.jac."
      ),
      E0099 = _err(
          "E0099",
@@ -882,8 +882,8 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
      W2084 = _warn(
          "W2084",
          Category.SEMANTIC,
-         "'{name}' is not a module under this arch.jac, so {what} is inert",
-         help="Wiring only reaches modules that exist below the arch.jac, so a"
+         "'{name}' is not a module under this archwire.jac, so {what} is inert",
+         help="Wiring only reaches modules that exist below the archwire.jac, so a"
          " name that matches none generates nothing and checks nothing. Fix the"
          " spelling, or remove the wiring if the modules are gone; a distribution"
          " that leaves them out on purpose can ignore this."
@@ -1119,12 +1119,12 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
      E1144 = _err(
          "E1144",
          Category.IMPORT,
-         "Import of '{module}' is not declared by arch.jac for '{consumer}'",
-         help="'{consumer}' sits under an arch.jac, so every import it makes of a"
-         " module below that arch.jac must be a wire. Add `{wire}` to arch.jac,"
+         "Import of '{module}' is not declared by archwire.jac for '{consumer}'",
+         help="'{consumer}' sits under an archwire.jac, so every import it makes of a"
+         " module below that archwire.jac must be a wire. Add `{wire}` to archwire.jac,"
          " or run `jac arch sync` to add every missing wire. An inline"
          " suppression does not silence this; changing the boundary is a change"
-         " to arch.jac."
+         " to archwire.jac."
      ),
      E1145 = _err(
          "E1145",
@@ -1919,17 +1919,18 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
      E2088 = _err(
          "E2088",
          Category.SEMANTIC,
-         "'graph import' is only valid in a file named arch.jac",
+         "'graph import' is only valid in a file named archwire.jac",
          help="A wiring block generates imports for other modules, so it lives in"
-         " the arch.jac of the directory whose modules it wires. Move this block"
-         " into that arch.jac (create one beside the modules if needed); the"
-         " nearest arch.jac above a module governs it."
+         " the archwire.jac of the directory whose modules it wires. Move this block"
+         " into that archwire.jac (create one beside the modules if needed); the"
+         " nearest archwire.jac above a module governs it. The wiring file was"
+         " named arch.jac before: rename an existing arch.jac to archwire.jac."
      ),
      E2089 = _err(
          "E2089",
          Category.SEMANTIC,
-         "arch.jac declares wiring only; this {kind} does not belong here",
-         help="arch.jac holds `graph import { ... }` blocks and nothing else."
+         "archwire.jac declares wiring only; this {kind} does not belong here",
+         help="archwire.jac holds `graph import { ... }` blocks and nothing else."
          " Move this statement into a module."
      ),
      E2090 = _err(
@@ -1960,17 +1961,17 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
      E2093 = _err(
          "E2093",
          Category.SEMANTIC,
-         "arch.jac has syntax errors, so the wiring for '{consumer}' may be"
+         "archwire.jac has syntax errors, so the wiring for '{consumer}' may be"
          " incomplete",
          help="Only the wires that still parsed were applied to this module. Fix"
-         " the errors reported for arch.jac and check again."
+         " the errors reported for archwire.jac and check again."
      ),
      E2094 = _err(
          "E2094",
          Category.SEMANTIC,
-         "Import of '{module}' inside '{scope}' is not declared by arch.jac for"
+         "Import of '{module}' inside '{scope}' is not declared by archwire.jac for"
          " '{consumer}'",
-         help="A module under an arch.jac takes its imports of the modules below"
+         help="A module under an archwire.jac takes its imports of the modules below"
          " it from wires. A wire whose consumer"
          " continues past the module into a class, function or method"
          " (`pkg.mod.Class.method`) lands its import in that body, so the import"
@@ -2159,9 +2160,9 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
      W3053 = _warn(
          "W3053",
          Category.LINT,
-         "Import of '{name}' from '{module}' is already provided by arch.jac"
+         "Import of '{name}' from '{module}' is already provided by archwire.jac"
          " [remove-wired-import]",
-         help="arch.jac wires this binding into the module, so the written import"
+         help="archwire.jac wires this binding into the module, so the written import"
          " is redundant. `jac fmt --lintfix` removes it; `jac arch sync` does"
          " the same for every covered module."
      ),
