@@ -180,7 +180,7 @@ impl ExecutionManager._finalize_call_response(
             else result,
         'reports': Serializer.serialize(reports, api_mode=True)
     };
-    if _plain_value(reports) and (not serialize_result or _plain_value(result)) {
+    if _plain_value(reports) and _plain_value(result) {
         Jac.get_context().mem.seal_scan();
     }
     ctx = Jac.get_context();
