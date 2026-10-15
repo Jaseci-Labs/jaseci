@@ -232,6 +232,8 @@ node ClassType(TypeBase) {
 
     has private: ClassDetailsPrivate { getter; setter(private: ClassDetailsPrivate); }
     has shared: ClassDetailsShared { getter; }
+    has _tv_key: str = "",
+        _tv_solution: (dict[str, TypeBase] | None) = None;
 
     def init(
         *,

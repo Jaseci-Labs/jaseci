@@ -2249,7 +2249,8 @@ impl TypeEvaluator.validate_typevar_variance(func: Ability) -> None {
     }
 
     class_tvars: dict[str, TypeVarType] = {};
-    for tp in class_type.shared.type_params {
+    type_params: list[TypeVarType] = class_type.shared.type_params;
+    for tp in type_params {
         class_tvars[tp.name] = tp;
     }
 

@@ -286,6 +286,7 @@ impl ClassDetailsShared.init(
     self._identity_key = _identity_key;
     self._derived_special_types = _derived_special_types;
     self.ct_params = ct_params;
+    self._fresh_epoch = -1;
     self.symbol_table = symbol_table;
     self.mro = [];
     self.type_params = type_params;
@@ -387,6 +388,8 @@ impl ClassType.init(
     self.flags = flags;
     self._shared = _shared;
     self.private = private or ClassDetailsPrivate();
+    self._tv_key = "";
+    self._tv_solution = None;
 }
 
 impl ModuleType.init(

@@ -651,14 +651,12 @@ impl mro_signature(cls: ClassType) -> list[tuple[int, str]] {
 
 impl ensure_mro_fresh(cls: ClassType, _visiting: (set[int] | None) = None) -> bool {
     shared = cls.shared;
-    if getattr(shared, "_fresh_epoch", -1) == CLASS_GRAPH_EPOCH[0] {
+    if shared._fresh_epoch == CLASS_GRAPH_EPOCH[0] {
         return False;
     }
     changed = _ensure_mro_fresh(cls, _visiting);
     if _visiting is None or not _visiting {
-        try {
-            shared._fresh_epoch = CLASS_GRAPH_EPOCH[0];
-        } except AttributeError {}
+        shared._fresh_epoch = CLASS_GRAPH_EPOCH[0];
     }
     return changed;
 }
@@ -884,23 +882,21 @@ impl shadowed_type_var_names(
 impl build_type_var_solution(class_type: ClassType) -> dict[str, TypeBase] {
     private = class_type.private;
     mro = class_type.shared.mro;
-    key = (
-        id(private),
-        tuple(id(arg) for arg in (private.type_args or [])),
-        id(mro),
-        len(mro)
-    );
-    cache = class_type._acc_cache;
-    if cache is None {
-        cache = {};
-        class_type._acc_cache = cache;
+    parts: list[str] = [str(id(private)), str(id(mro)), str(len(mro))];
+    targs: list[TypeBase] = private.type_args;
+    if targs {
+        for arg in targs {
+            parts.append(str(id(arg)));
+        }
     }
-    held = cache.get("_tv_solution");
-    if held is not None and held[0] == key {
-        return held[1];
+    key = ",".join(parts);
+    held = class_type._tv_solution;
+    if held is not None and class_type._tv_key == key {
+        return held;
     }
-    solution = CachedSolution(_build_type_var_solution(class_type));
-    cache["_tv_solution"] = (key, solution);
+    solution = _build_type_var_solution(class_type);
+    class_type._tv_key = key;
+    class_type._tv_solution = solution;
     return solution;
 }
 
@@ -1088,7 +1084,7 @@ def _apply_to_function(
     class_type: (ClassType | None),
     shadowed: (set[str] | None) = None
 ) -> FunctionType {
-    if not isinstance(solution, CachedSolution) {
+    if class_type is None or class_type._tv_solution is not solution {
         return _apply_to_function_uncached(func, solution, class_type, shadowed);
     }
     memo_key = (
