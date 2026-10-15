@@ -419,6 +419,8 @@ impl Session.postinit -> None {
     self._contended = set();
     self._queued = [];
     self._last_conflict = set();
+    self._scan_clean = False;
+    self._scan_sealed = False;
 }
 
 
@@ -656,6 +658,7 @@ impl Session.abort -> None {
         self._snapshot_reads.clear();
         self._on_commit = [];
         self._lost = False;
+        self.unseal_scan();
     }
 }
 
@@ -759,6 +762,7 @@ impl Session._ensure_txn -> None {
 
 impl Session.unit_enter(key: (str | None) = None) -> None {
     with self._lock {
+        self.unseal_scan();
         ro = key is not None and ro_units_enabled() and not unit_writes_recorded(key);
         self._active_units += 1;
         if ro {
@@ -949,11 +953,27 @@ impl Session.flush(full: bool = False) -> None {
 }
 
 
+impl Session.seal_scan -> None {
+    with self._lock {
+        self._scan_sealed = self._scan_clean;
+    }
+}
+
+
+impl Session.unseal_scan -> None {
+    with self._lock {
+        self._scan_clean = False;
+        self._scan_sealed = False;
+    }
+}
+
+
 impl Session._flush_locked(full: bool) -> None {
     store = self._store;
     if store is None {
         return;
     }
+    full = full and not self._scan_sealed;
     self._reclaim_dead_txn();
     unflushed: list[UnflushedAnchor] = [];
     while True {
@@ -1002,6 +1022,9 @@ impl Session._flush_locked(full: bool) -> None {
         self._deleted.clear();
     }
     self._dirty.clear();
+    if full {
+        self._scan_clean = True;
+    }
 }
 
 

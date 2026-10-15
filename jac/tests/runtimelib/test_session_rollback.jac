@@ -863,6 +863,95 @@ test "a commit re-hashes only loaded anchors whose fields can change in place" {
 }
 
 
+test "commits after a sealed scan skip in-place scans until user code runs again" {
+    with TemporaryDirectory() as td {
+        old = JacRuntime.exec_ctx;
+        seed = _ctx(td);
+        JacRuntime.exec_ctx = seed;
+        bag_id = UUID(int=0);
+        scalar_id = UUID(int=0);
+        try {
+            scalar_id = _loose(seed, 1).ensure_id();
+            bag: NodeAnchor = _as_any(RBag(items=[1])).__jac__;
+            bag.persistent = True;
+            seed.mem.put(bag);
+            bag_id = bag.ensure_id();
+            seed.mem.commit();
+        } finally {
+            JacRuntime.exec_ctx = old;
+            seed.close();
+        }
+        ctx = _ctx(td);
+        JacRuntime.exec_ctx = ctx;
+        dumps_calls: list[int] = [];
+        import json;
+        real_dumps = json.dumps;
+        def counting_dumps(*args: any, **kwargs: any) -> str {
+            if kwargs.get("sort_keys") {
+                dumps_calls.append(1);
+            }
+            return real_dumps(*args, **kwargs);
+        }
+        try {
+            _ = ctx.user_root;
+            loaded = ctx.mem.batch_get([bag_id, scalar_id]);
+            bag_arch = _as_any(loaded[bag_id].archetype);
+            ctx.mem.commit();
+            ctx.mem.seal_scan();
+            json.dumps = counting_dumps;
+            try {
+                ctx.mem.commit();
+                ctx.mem.commit();
+            } finally {
+                json.dumps = real_dumps;
+            }
+            assert dumps_calls == [] , (
+                f"two commits after a sealed scan hashed {len(dumps_calls)} stored "
+                "forms; no user code ran, so nothing can have changed in place"
+            );
+            _as_any(loaded[scalar_id].archetype).n = 9;
+            ctx.mem.commit();
+            assert _stored(ctx, scalar_id, "n") == "9" , (
+                "a field write after a sealed scan must still land"
+            );
+            ctx.mem.seal_scan();
+            ctx.mem.unit_enter();
+            bag_arch.items.append(2);
+            ctx.mem.unit_exit();
+            ctx.mem.commit();
+            assert _stored(ctx, bag_id, "items") == "[1, 2]" , (
+                "entering a unit runs user code; its in-place change must be scanned"
+            );
+            ctx.mem.seal_scan();
+            def append_three {
+                bag_arch.items.append(3);
+            }
+            ctx.on_commit(append_three);
+            ctx.run_pending_effects();
+            ctx.mem.seal_scan();
+            ctx.mem.commit();
+            assert _stored(ctx, bag_id, "items") == "[1, 2, 3]" , (
+                "a pending effect runs user code; a seal after it must not skip the scan"
+            );
+            ctx.mem.seal_scan();
+            def append_four {
+                bag_arch.items.append(4);
+            }
+            ctx.mem.on_commit(append_four);
+            ctx.mem.commit();
+            ctx.mem.seal_scan();
+            ctx.mem.commit();
+            assert _stored(ctx, bag_id, "items") == "[1, 2, 3, 4]" , (
+                "an on_commit callback runs user code; the next commit must scan"
+            );
+        } finally {
+            JacRuntime.exec_ctx = old;
+            ctx.close();
+        }
+    }
+}
+
+
 test "a write the session was not told about survives a retried flush" {
     with TemporaryDirectory() as td {
         old = JacRuntime.exec_ctx;

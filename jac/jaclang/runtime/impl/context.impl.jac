@@ -115,6 +115,7 @@ impl ExecutionContext.run_pending_effects -> None {
     }
     effects = self.pending_effects;
     self.pending_effects = [];
+    self.mem.unseal_scan();
     for effect in effects {
         try {
             effect();

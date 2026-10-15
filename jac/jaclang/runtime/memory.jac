@@ -186,6 +186,9 @@ obj Memory {
     def _fire_on_commit {
         fired = self._on_commit;
         self._on_commit = [];
+        if fired {
+            self.unseal_scan();
+        }
         for cb in fired {
             try {
                 cb();
@@ -196,6 +199,8 @@ obj Memory {
     }
 
     def read_barrier {}
+    def seal_scan {}
+    def unseal_scan {}
     def flush(full: bool = False) {}
     def reset_fetch_count {}
     def get_fetch_count -> int {

@@ -171,6 +171,7 @@ impl ExecutionManager._finalize_call_response(
     if isgenerator(reports) or isinstance(reports, AsyncGenerator) {
         return reports;
     }
+    Jac.get_context().mem.seal_scan();
 
     envelope: dict[str, object] = {
         'result': Serializer.serialize(result, api_mode=True)
