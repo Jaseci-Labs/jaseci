@@ -108,6 +108,12 @@ obj CFloorArtifact(Artifact) {
     }
 
     override def build_blocker -> str {
+        if self.target() != osarch() {
+            return (
+                f"`zig build build-python` builds the C floor only for this host ({osarch()}); "
+                f"build it on a {self.target()} host or use a kit that carries it"
+            );
+        }
         return _zig_blocker();
     }
 

@@ -174,23 +174,37 @@ def refusal_status -> (int | None) {
 }
 
 
-def settle_envelope(envelope: TransportResponse) -> (TransportResponse | JSONResponse) {
+def has_response_choice -> bool {
     exchange = _exchange.get();
     if exchange is None {
-        return envelope;
+        return False;
+    }
+    return exchange.choice.status is not None or bool(exchange.choice.headers);
+}
+
+
+def apply_response_choice(response: any) -> any {
+    exchange = _exchange.get();
+    if exchange is None {
+        return response;
     }
     choice = exchange.choice;
-    if choice.status is None and not choice.headers {
-        return envelope;
-    }
-    import from jaclang.server.serving.app { transport_to_response }
-    response = transport_to_response(envelope);
     if choice.status is not None {
         response.status_code = choice.status;
-        response.content['ok'] = choice.status < 400;
     }
     for (name, value) in choice.headers.values() {
         response.headers.set(name, value);
     }
+    return response;
+}
+
+
+def settle_envelope(envelope: TransportResponse) -> (TransportResponse | JSONResponse) {
+    if not has_response_choice() {
+        return envelope;
+    }
+    import from jaclang.server.serving.app { transport_to_response }
+    response = apply_response_choice(transport_to_response(envelope));
+    response.content['ok'] = response.status_code < 400;
     return response;
 }
