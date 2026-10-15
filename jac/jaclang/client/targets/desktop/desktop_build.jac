@@ -6,6 +6,7 @@ import sys;
 import from pathlib { Path }
 import from jaclang.cli.console { console }
 import from jaclang.client.targets.desktop._dev_launch { desktop_launch_env }
+import from jaclang.project.app_kinds { kind_has_server }
 
 def _jaclang_src_roots -> list[Path] {
     roots: list[Path] = [];
@@ -285,7 +286,7 @@ def serving_app_for(config: any, entry_file: Path, backend: str) -> str {
     } except ValueError {
         chosen = None;
     }
-    if chosen is not None and chosen.has_server {
+    if chosen is not None and kind_has_server(chosen.kind) {
         return chosen.name;
     }
     for app in config.serving_apps() {
