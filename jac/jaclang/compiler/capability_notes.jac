@@ -1,6 +1,4 @@
 import os;
-import type from jaclang.compiler.driver.program { JacProgram }
-import from jaclang.compiler.frontend.unitree { Module, UniNode }
 
 glob TARGET_NATIVE: str = "native",
      TARGET_CLIENT: str = "client",

@@ -1,7 +1,6 @@
 import inspect;
 import logging;
 import from json { dumps, loads }
-import from jaclang.server.serving.executor { iterate_sync }
 
 
 glob _logger: logging.Logger = logging.getLogger("jaclang.server.serving.sse");
