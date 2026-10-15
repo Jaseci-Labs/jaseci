@@ -895,6 +895,14 @@ walker TypeEvaluator {
     ) -> TypeBase | None;
 
     def _typeddict_as_dict(base_type: ClassType) -> ClassType | None;
+    def _assign_typeddict(
+        src_type: ClassType, dest_type: ClassType, strict: bool = False
+    ) -> bool;
+
+    def _typeddict_for_dict_literal(
+        expr: DictVal, expected_type: TypeBase | None
+    ) -> ClassType | None;
+
     def _synthesize_typeddict_method(
         base_type: ClassType, method: str
     ) -> OverloadedType | None;
