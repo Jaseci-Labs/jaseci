@@ -2472,7 +2472,7 @@ impl JacAutoLintPass._strip_wired_imports(nd: uni.Module) -> None {
         }
         twins: set[tuple[str, str, str, str]] = set();
         for other in owner.get_all_sub_nodes(typ=uni.Import) {
-            if other is not imp {
+            if other is not imp and scope_path_of(other) == scope {
                 twins |= self._resolved_import_keys(other, spec);
             }
         }

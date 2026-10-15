@@ -409,6 +409,8 @@ impl ImportWiringPass._emit_nested(
         module=binding.provider,
         consumer=consumer,
         scope=".".join(scope) if scope else consumer,
-        fix=f"Add `{binding.wire_text(target)}` to arch.jac, or run `jac arch sync`."
+        fix=f"Add `{binding.wire_text(
+            target
+        )}` to archwire.jac, or run `jac arch sync`."
     );
 }

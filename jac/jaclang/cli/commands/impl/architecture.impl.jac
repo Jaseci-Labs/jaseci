@@ -56,7 +56,7 @@ def _project_root -> (str | None) {
     if cfg is None or cfg.project_root is None {
         console.error(
             "no jac.toml found; run `jac arch` inside a project",
-            hint="arch.jac lives beside jac.toml",
+            hint="archwire.jac lives beside jac.toml",
         );
         return None;
     }
@@ -582,7 +582,7 @@ impl arch(
     }
     if scope and not os.path.isdir(scope) {
         console.error(
-            f"'{scope}' is not a directory; `jac arch` takes the directory an arch.jac governs"
+            f"'{scope}' is not a directory; `jac arch` takes the directory an archwire.jac governs"
         );
         return 2;
     }
