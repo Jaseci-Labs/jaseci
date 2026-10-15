@@ -115,12 +115,17 @@ impl ExecutionContext.run_pending_effects -> None {
     }
     effects = self.pending_effects;
     self.pending_effects = [];
-    for effect in effects {
-        try {
-            effect();
-        } except Exception as e {
-            logger.error(f"on_commit effect failed: {e}");
+    self.mem.unseal_scan();
+    try {
+        for effect in effects {
+            try {
+                effect();
+            } except Exception as e {
+                logger.error(f"on_commit effect failed: {e}");
+            }
         }
+    } finally {
+        self.mem.unseal_scan();
     }
 }
 

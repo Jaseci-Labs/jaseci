@@ -5,6 +5,8 @@ import json;
 import os;
 import from inspect { iscoroutine }
 import from typing { get_type_hints }
+import from enum { Enum }
+import from uuid { UUID }
 
 impl ExecutionManager.report_collector(
     call_state: CallState
@@ -178,12 +180,32 @@ impl ExecutionManager._finalize_call_response(
             else result,
         'reports': Serializer.serialize(reports, api_mode=True)
     };
+    if _plain_value(reports) and _plain_value(result) {
+        Jac.get_context().mem.seal_scan();
+    }
     ctx = Jac.get_context();
     if ctx.diagnostics {
         envelope['warnings'] = [d.to_dict() for d in ctx.diagnostics];
         ctx.diagnostics.clear();
     }
     return dict[(str, JsonValue)](envelope);
+}
+
+def _plain_value(val: object) -> bool {
+    kind = type(val);
+    if val is None or kind in (str, int, float, bool, UUID) or isinstance(val, Enum) {
+        return True;
+    }
+    if isinstance(val, (list, tuple)) and kind in (list, tuple) {
+        return all(_plain_value(item) for item in val);
+    }
+    if isinstance(val, dict) and kind is dict {
+        return all(
+            type(k) in (str, int, float, bool) and _plain_value(v)
+            for (k, v) in val.items()
+        );
+    }
+    return False;
 }
 
 async def _run_function_with_occ(
