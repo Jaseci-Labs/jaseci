@@ -538,6 +538,58 @@ obj NativeUnitRegistry {
         return self.compile_unit(resolved, options, products=products);
     }
 
+    def dep_iface(
+        path: str, options: CompileOptions, products: bool = True
+    ) -> (NativeIface | None) {
+        """The interface a unit being lowered consumes from a dependency.
+        While a session discovers a unit's dependencies, a dependency with no
+        entry yet is recorded for the session to lower first instead of being
+        lowered inside the consumer's pass: a nested lowering keeps every
+        consumer's partial IR alive down the whole import chain.""";
+        resolved = os.path.realpath(path);
+        session = self.session;
+        if session is not None and resolved in session.unlowerable {
+            return None;
+        }
+        if session is not None and session.discovering() {
+            ent = self.ensure(
+                resolved,
+                compile_on_miss=False,
+                options=options,
+                check_deps=False,
+                products=products
+            );
+            if ent is not None {
+                return ent.iface;
+            }
+            if resolved not in self.building
+                and os.path.isfile(resolved)
+                and self.not_native.get(resolved)
+                    != NativeUnitRegistry._source_key(resolved) {
+                session.defer(resolved);
+            }
+            return None;
+        }
+        ent = self.ensure(
+            resolved,
+            compile_on_miss=True,
+            options=options,
+            check_deps=False,
+            products=products
+        );
+        return ent.iface if ent is not None else None;
+    }
+
+    def dep_discovery_open -> bool {
+        return self.session is not None and self.session.discovering();
+    }
+
+    def close_dep_deferral -> bool {
+        """End dependency discovery for the unit being lowered; True when it
+        deferred a dependency, so its lowering stops before emitting code.""";
+        return self.session.close_discovery() if self.session is not None else False;
+    }
+
     def known_native_deps(path: str, options: CompileOptions) -> list[str] {
         resolved = os.path.realpath(path);
         ent = self.entries.get(resolved);
@@ -840,7 +892,26 @@ obj NativeBuildSession {
         options: CompileOptions,
         prog: JacProgram postinit,
         lowered: dict[str, Module] = {},
-        source_keys: dict[str, str | None] = {};
+        source_keys: dict[str, str | None] = {},
+        deferred: list[set[str]] = [],
+        discovery_open: list[bool] = [],
+        unlowerable: set[str] = set();
+
+    def discovering -> bool {
+        return bool(self.discovery_open) and self.discovery_open[-1];
+    }
+
+    def defer(path: str) {
+        self.deferred[-1].add(path);
+    }
+
+    def close_discovery -> bool {
+        if not self.discovering() {
+            return False;
+        }
+        self.discovery_open[-1] = False;
+        return bool(self.deferred[-1]);
+    }
 
     def postinit {
         import from jaclang.compiler.driver.program { JacProgram }
@@ -890,10 +961,42 @@ obj NativeBuildSession {
             set_effective_default_codespace("native");
             import from jaclang.compiler.driver.pipeline { invalidate, require }
             import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
-            invalidate(self.prog, mod, CompilationProduct.NATIVE_LOWER);
-            started = self.registry.note_step("lower", resolved);
-            require(self.prog, mod, CompilationProduct.NATIVE_LOWER);
-            self.registry._timed("NATIVE_LOWER", started);
+            discover = True;
+            attempted: set[str] = set();
+            while True {
+                invalidate(self.prog, mod, CompilationProduct.NATIVE_LOWER);
+                warnings_before = len(self.prog.warnings_had);
+                started = self.registry.note_step("lower", resolved);
+                self.deferred.append(set());
+                self.discovery_open.append(discover);
+                try {
+                    require(self.prog, mod, CompilationProduct.NATIVE_LOWER);
+                } finally {
+                    pending = self.deferred.pop();
+                    self.discovery_open.pop();
+                }
+                self.registry._timed("NATIVE_LOWER", started);
+                if not pending {
+                    break;
+                }
+                del self.prog.errors_had[errors_before:];
+                del self.prog.warnings_had[warnings_before:];
+                invalidate(self.prog, mod, CompilationProduct.NATIVE_LOWER);
+                lowered_any = False;
+                for dep in sorted(pending - attempted) {
+                    attempted.add(dep);
+                    if self.registry.ensure(
+                        dep, compile_on_miss=False, options=opts, check_deps=False
+                    )
+                        is not None
+                        or self.lower(dep) is not None {
+                        lowered_any = True;
+                    } else {
+                        self.unlowerable.add(dep);
+                    }
+                }
+                discover = lowered_any;
+            }
             self.registry._event("native_unit_lower");
             self.registry.note_slow_step("lowering", resolved, started);
             if len(self.prog.errors_had) > errors_before

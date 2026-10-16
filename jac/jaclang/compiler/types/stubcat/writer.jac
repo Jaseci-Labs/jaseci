@@ -1532,6 +1532,24 @@ def build_module_iface(
     path_mapper: Callable[[str], str] | None = None,
     spans: bool = True
 ) -> bytes {
+    body = module_iface_body(mod, evaluator, pkg_dir, path_mapper, spans);
+    digest = hashlib.sha256(body).hexdigest();
+    return digest.encode("utf-8") + body;
+}
+
+def module_iface_shape(mod: Module, evaluator: any, pkg_dir: str) -> str {
+    return hashlib.sha256(
+        module_iface_body(mod, evaluator, pkg_dir, None, False)
+    ).hexdigest();
+}
+
+def module_iface_body(
+    mod: Module,
+    evaluator: any,
+    pkg_dir: str,
+    path_mapper: Callable[[str], str] | None,
+    spans: bool
+) -> bytes {
     writer = CatalogWriter(
         evaluator=evaluator,
         pkg_dir=pkg_dir,
@@ -1547,6 +1565,5 @@ def build_module_iface(
     if writer.orphans or writer.failures {
         raise IncoherentInterface(key, writer.orphans, writer.failure_log);
     }
-    digest = hashlib.sha256(body).hexdigest();
-    return digest.encode("utf-8") + body;
+    return body;
 }

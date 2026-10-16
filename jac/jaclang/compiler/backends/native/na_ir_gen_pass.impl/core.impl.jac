@@ -149,6 +149,9 @@ impl NaIRGenPass._run_impl(ir_in: uni.Module) -> uni.Module {
             _lower_exc
         );
     }
+    if self._deps_deferred {
+        return self.module;
+    }
     self._settle_module();
     return self.module;
 }
@@ -247,6 +250,13 @@ impl NaIRGenPass._lower_module -> None {
     self._forward_declare_archetype_names(self.module);
 
     self._register_imported_struct_types();
+    if active_host().native_dep_discovery_open(self.prog) {
+        self._discover_kernel_deps();
+    }
+    if active_host().native_deps_deferred(self.prog) {
+        self._deps_deferred = True;
+        return;
+    }
     self._declare_pending_clib_globals();
     self._declare_pending_clib_abilities();
     self._declare_clib_definitions();
@@ -602,6 +612,32 @@ impl NaIRGenPass._dep_iface(imported_mod: uni.Module) -> (NativeIface | None) {
         opts.no_ir_cache = False;
     }
     return active_host().native_dep_iface(self.prog, path, opts);
+}
+
+impl NaIRGenPass._discover_kernel_deps -> None {
+    """The kernel units a lowering consults on demand, the formatting kernel
+    from an f-string and the OSP kernels from an archetype, are asked for
+    while dependencies are still being discovered, so a missing one is
+    lowered before this unit instead of inside it.""";
+    rels: list[str] = [FMT_KERNEL_REL];
+    if self.imported_osp_archs
+        or any(
+            arch.arch_kind is not None and arch.arch_kind in ("node", "edge", "walker")
+            for arch in self.module.get_all_sub_nodes(uni.Archetype)
+        ) {
+        rels.extend([OSP_KERNEL_REL, OSP_GRAPH_REL]);
+    }
+    this_path = os.path.realpath(self.module.loc.mod_path or "");
+    for rel in rels {
+        path = kernel_unit_path(rel);
+        if os.path.realpath(path) == this_path {
+            continue;
+        }
+        unit = self._load_native_unit_module(path);
+        if unit is not None {
+            self._dep_iface(unit);
+        }
+    }
 }
 
 impl NaIRGenPass._dep_is_native_unit(imported_mod: uni.Module, path: str) -> bool {
