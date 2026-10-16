@@ -275,12 +275,12 @@ test "a repeated statement is parsed once per connection and reused by name" {
 }
 
 
-test "a statement that parsed but failed at execute stays reusable" {
+test "a statement whose first execution fails stays prepared and reusable" {
     with TemporaryDirectory() as td {
         conn = _live_conn(td);
         try {
             conn.run("CREATE TEMP TABLE uniq_marker (k int PRIMARY KEY)");
-            conn.run("INSERT INTO uniq_marker VALUES (:k)", k=1);
+            conn.run("INSERT INTO uniq_marker SELECT 1");
             failed = False;
             try {
                 conn.run("INSERT INTO uniq_marker VALUES (:k)", k=1);
@@ -290,7 +290,48 @@ test "a statement that parsed but failed at execute stays reusable" {
             assert failed , "a duplicate key was accepted";
             conn.run("INSERT INTO uniq_marker VALUES (:k)", k=2);
             assert conn.run("SELECT count(*)::int FROM uniq_marker") == [(2, )];
-            assert _prepared(conn, "INSERT INTO uniq_marker") == 1;
+            assert _prepared(conn, "VALUES ($1)") == 1 , (
+                "the statement whose first execution failed was prepared again"
+            );
+        } finally {
+            conn.close();
+        }
+    }
+}
+
+
+test "a partial reset keeps the session's statements" {
+    with TemporaryDirectory() as td {
+        conn = _live_conn(td);
+        try {
+            assert conn.run("SELECT :x::int AS partial_marker", x=1) == [(1, )];
+            conn.run("DISCARD TEMP");
+            assert conn.run("SELECT :x::int AS partial_marker", x=2) == [(2, )];
+            assert _prepared(conn, "partial_marker") == 1 , (
+                "a reset that keeps prepared statements made the client prepare it again"
+            );
+        } finally {
+            conn.close();
+        }
+    }
+}
+
+
+test "deallocating one statement forgets only that one" {
+    with TemporaryDirectory() as td {
+        conn = _live_conn(td);
+        try {
+            conn.run("SELECT :x::int AS keep_marker", x=1);
+            conn.run("SELECT :x::int AS drop_marker", x=1);
+            dropped = conn.run(
+                "SELECT name FROM pg_prepared_statements WHERE statement LIKE :m",
+                m="%drop_marker%"
+            )[0][0];
+            conn.run(f'DEALLOCATE "{dropped}"');
+            assert conn.run("SELECT :x::int AS drop_marker", x=2) == [(2, )];
+            assert conn.run("SELECT :x::int AS keep_marker", x=2) == [(2, )];
+            assert _prepared(conn, "keep_marker") == 1;
+            assert _prepared(conn, "drop_marker") == 1;
         } finally {
             conn.close();
         }

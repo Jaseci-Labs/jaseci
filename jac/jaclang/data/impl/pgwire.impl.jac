@@ -408,7 +408,12 @@ impl PgWireConnection._handle_async(msg_type: str, payload: bytes) -> bool {
 impl PgWireConnection.run(sql: str, **params: any) -> list[any] {
     assert not self._closed , 'connection is closed';
     (pos_sql, args) = _named_to_positional(sql, params);
-    resets = pos_sql.lstrip()[:10].upper().startswith(('DISCARD', 'DEALLOCATE'));
+    words = pos_sql.split();
+    verb = ' '.join(words[:3]).upper();
+    drops_all = verb.startswith(
+        ('DISCARD ALL', 'DEALLOCATE ALL', 'DEALLOCATE PREPARE ALL')
+    );
+    resets = drops_all or verb.startswith('DEALLOCATE');
     name: str = '';
     fresh = False;
     if not resets {
@@ -505,8 +510,22 @@ impl PgWireConnection.run(sql: str, **params: any) -> list[any] {
         if mtype == 'Z' {
             self._drain_async();
             if resets and err is None {
-                self._stmts.clear();
-                self._evicted = [];
+                if drops_all {
+                    self._stmts.clear();
+                    self._evicted = [];
+                } else {
+                    gone = words[-1].strip('"');
+                    for (text, held) in list(self._stmts.items()) {
+                        if held == gone {
+                            del self._stmts[text];
+                        }
+                    }
+                    self._evicted = [
+                        old
+                        for old in self._evicted
+                        if old != gone
+                    ];
+                }
             }
             if fresh and parsed {
                 self._stmts[pos_sql] = name;
@@ -517,8 +536,7 @@ impl PgWireConnection.run(sql: str, **params: any) -> list[any] {
             if err is not None {
                 code = err.get('C', '');
                 if code == '26000' and not fresh {
-                    self._stmts.clear();
-                    self._evicted = [];
+                    self._stmts.pop(pos_sql, None);
                     if payload[:1] == b'I' {
                         return self.run(sql, **params);
                     }
