@@ -903,7 +903,7 @@ The original rejected text remains available on `raw_output` (see [`OutputConver
 |-------|------------------------|
 | before each request | sends it with what is left as its timeout; with nothing left, raises `LLMTimeout` |
 | a transient failure | retries (`[byllm.streaming] num_retries`) only if the backoff fits in what is left |
-| a streamed answer | caps the `[byllm.streaming]` connect, read, write and pool timeouts at what is left, and checks the deadline on every chunk |
+| a streamed answer | caps the `[byllm.streaming]` connect, read, write and pool timeouts at what is left, and waits for each chunk at most what is left, so a provider that goes quiet mid-stream cannot hold the call |
 | an async call | cancels the request when the deadline passes, even while the provider is still sending bytes |
 | the provider client | LiteLLM and the OpenAI client (`proxy` mode) send one request per attempt; byLLM owns every retry |
 

@@ -1743,8 +1743,7 @@ impl BaseLLM.dispatch_streaming(mt_run: MTRuntime) -> Generator[str, None, None]
         self._arm_attempt(mt_run, params, True);
         try {
             response = self.model_call_with_stream(params);
-            for chunk in response {
-                deadline.check();
+            for chunk in deadline.iterate(response) {
                 stream_model = chunk?.model or stream_model;
                 if chunk?.choices and chunk?.choices?[0]?.finish_reason {
                     finish_reason = str(chunk?.choices?[0]?.finish_reason);
@@ -1816,8 +1815,7 @@ impl BaseLLM.dispatch_streaming_with_tools(
         );
         try {
             _stream_resp = self.model_call_with_stream(params);
-            for chunk in _stream_resp {
-                deadline.check();
+            for chunk in deadline.iterate(_stream_resp) {
                 chunks.append(chunk);
                 pending_before = len(mt_run._tool_arg_deltas);
                 if stream_args {

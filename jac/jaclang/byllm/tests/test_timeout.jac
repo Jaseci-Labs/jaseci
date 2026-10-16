@@ -8,7 +8,7 @@ import from jaclang.byllm.exceptions { LLMTimeout, RateLimitError }
 import from jaclang.byllm.lib { MockLLM, Model, ModelPool }
 import from jaclang.byllm.llm { _is_timeout_error, _is_transient_error }
 import from jaclang.testing.requires { require_module }
-import from support { call, fail, mk_run, say }
+import from support { call, fail, mk_run, say, text_chunk }
 
 
 """Run `work`, naming the error it raises in place of its result."""
@@ -167,6 +167,26 @@ test "one deadline covers everything a call does" {
         return (_outcome(read_slowly), len(llm.seen));
     }
 
+    def quiet_stream(budget: float) -> tuple[str, int] {
+        asked: list[int] = [];
+
+        def goes_quiet(**_kwargs: any) -> any {
+            asked.append(1);
+            def chunks -> any {
+                yield text_chunk("partial ");
+                time.sleep(5.0);
+            }
+            return chunks();
+        }
+        model = Model(model_name="gpt-4o-mini", api_key="sk-test", timeout=budget);
+        with mock.patch("litellm.completion", goes_quiet) {
+            got = _outcome(
+                lambda { "".join(model.dispatch_streaming(mk_run(stream=True))); }
+            );
+        }
+        return (got, len(asked));
+    }
+
     def silent_provider(budget: float) -> tuple[str, int] {
         asked: list[int] = [];
 
@@ -210,6 +230,13 @@ test "one deadline covers everything a call does" {
         (
             "a stream read slower than the deadline is cut off",
             slow_reader,
+            0.5,
+            "LLMTimeout",
+            1
+        ),
+        (
+            "a stream whose provider goes quiet is cut off",
+            quiet_stream,
             0.5,
             "LLMTimeout",
             1
