@@ -2353,7 +2353,10 @@ walker NaIRGenPass(CompilerPass) {
         kw: uni.KWPair, edge_arch: (str | None)
     ) -> (str | None);
 
-    def _osp_connect_assign_value(kw: uni.KWPair) -> (ir.Value | None);
+    def _osp_connect_assign_value(
+        kw: uni.KWPair, keep: bool = False
+    ) -> (ir.Value | None);
+
     def _codegen_disconnect(nd: uni.BinaryExpr) -> (ir.Value | None);
     def _osp_disc_list_operand(expr: (uni.UniNode | None)) -> bool;
     def _codegen_edge_ref_trailer(nd: uni.EdgeRefTrailer) -> (ir.Value | None);
@@ -2505,6 +2508,11 @@ walker NaIRGenPass(CompilerPass) {
     ) -> ir.Value;
 
     def _str_cmp_parts_of(val: ir.Value) -> (tuple[ir.Value, ir.Value] | None);
+    def _emit_memcmp_nz(a: ir.Value, b: ir.Value, n: ir.Value, name: str) -> ir.Value;
+    def _emit_str_parts_cmp(
+        op: str, l_data: ir.Value, l_len: ir.Value, r_data: ir.Value, r_len: ir.Value
+    ) -> ir.Value;
+
     def _emit_str_dup_helper -> None;
     def _call_str_dup(b: ir.IRBuilder, ptr: ir.Value, name: str = "s.dup") -> ir.Value;
     def _emit_str_len_raw_helper -> None;

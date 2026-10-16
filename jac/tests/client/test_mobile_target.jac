@@ -20,7 +20,7 @@ glob _client_dir = (
      ),
      _targets_dir = _client_dir / "targets";
 
-# Imports a module takes from arch.jac are woven in at compile time, so the
+# Imports a module takes from archwire.jac are woven in at compile time, so the
 # source contract reads the file together with its wiring annex.
 def _woven_text(path: Path) -> str {
     import from jaclang.compiler.driver.wiring { wiring_annex_for }

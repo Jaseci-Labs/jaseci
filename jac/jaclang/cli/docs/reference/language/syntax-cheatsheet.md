@@ -112,7 +112,7 @@ import from ..parent.mod { SomeClass }
 # Include merges a module's namespace into the current scope
 include random;
 
-# Imports between modules under an arch.jac come from its wires instead:
+# Imports between modules under an archwire.jac come from its wires instead:
 #   graph import core { util --> core.svc { now } }   # generates the import into core.svc
 # See reference/wiring.md
 

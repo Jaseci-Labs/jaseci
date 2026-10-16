@@ -36,7 +36,7 @@ import from jaclang.compiler.passes.annex_weave {
     relative_twin
 }
 
-glob ARCH_FILE_NAME: str = "arch.jac",
+glob ARCH_FILE_NAME: str = "archwire.jac",
      SKIPPED_PROJECT_DIRS: tuple[str, ...] = ("node_modules", "__pycache__"),
      RECORDS_FORMAT: int = 2;
 

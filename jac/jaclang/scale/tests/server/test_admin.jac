@@ -555,8 +555,16 @@ test "admin index page" {
         if response.status_code == 200 {
             assert "text/html" in response.headers.get("content-type", "");
         }
-        # An app page under /admin wins the navigation; the console's own
-        # asset requests, which do not accept html, stay with the console.
+    } finally {
+        client.close();
+    }
+}
+
+test "an app page under /admin wins a navigation and the console keeps its assets" {
+    client = make_client();
+    try {
+        # The console's own asset requests do not accept html, so they stay
+        # with the console while a browser navigation gets the app's page.
         page = {"Accept": "text/html"};
         control = client.get("/admin/quotes", headers=page);
         assert control.status_code in [200, 503] , control.status_code;
