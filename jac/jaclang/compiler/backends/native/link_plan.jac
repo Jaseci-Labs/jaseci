@@ -1,56 +1,9 @@
-import type from jaclang.compiler.backends.native.llvm.binding.value { ValueRef }
-import type from jaclang.compiler.frontend.codeinfo { InteropBinding }
-import from jaclang.jac0core.cache_paths { atomic_write }
 import ctypes;
 import hashlib;
 import json;
 import os;
 import sys;
 import time;
-import jaclang.compiler.backends.native.llvm.binding as llvm;
-import type from jaclang.compiler.backends.native.llvm.binding {
-    ExecutionEngine,
-    ModuleRef,
-    TargetMachine
-}
-import from jaclang.compiler.driver.compile_options {
-    CompileOptions,
-    NATIVE_LINK_MODE_BITCODE,
-    NATIVE_LINK_MODE_OBJECTS,
-    env_na_debug
-}
-import from jaclang.compiler.driver.native_iface {
-    NativeIface,
-    layout_digest as layout_digest_of,
-    merge_class_layouts
-}
-import from jaclang.compiler.backends.native.link_glue {
-    ENTRY_SYMBOL,
-    GlueSpec,
-    GlueUnit,
-    RC_THREADED_SYMBOL,
-    REGION_DIED_HOOK,
-    SHARED_INIT_SYMBOL,
-    SHARED_MAIN_SYMBOL,
-    STR_NEW_SYMBOL,
-    init_object_codegen,
-    link_glue_ir
-}
-import from jaclang.compiler.backends.native.na_compile_pass {
-    NATIVE_CODE_MODEL,
-    NATIVE_RELOC_MODEL,
-    optimize_unit
-}
-import from jaclang.compiler.backends.native.static_link {
-    clib_needed_libs,
-    clib_symbol_lib_map,
-    collect_floor_archives,
-    load_musl_static,
-    load_outline_atomics
-}
-import from jaclang.compiler.frontend.codeinfo { JAC_ENTRY_SYMBOL, kernel_unit_path }
-import type from jaclang.compiler.driver.program { JacProgram }
-import from jaclang.compiler.driver.jir { sidecar_unit_paths, unit_source_digest }
 
 glob PLAN_DIGEST_FORMAT: int = 3;
 
@@ -209,12 +162,12 @@ obj LinkPlan {
         h.update(self.mode.encode());
         h.update(self.triple.encode());
         h.update(self.options.codegen_identity().encode());
-        import from jaclang.compiler.driver.jir { native_producer_digest }
+
         h.update(native_producer_digest(self.options.kernel_build).encode());
         if self.library_api {
             h.update(b"library-api");
         }
-        import from jaclang.compiler.frontend.codeinfo { native_unit_identity }
+
         for u in self.units {
             h.update(native_unit_identity(u.path).encode());
             h.update(u.modkey.encode());
@@ -446,7 +399,6 @@ def build_link_plan(
     mode: str = "",
     native_unit: bool = False
 ) -> LinkPlan {
-    import from jaclang.compiler.driver.nativecache { NativeBuildSession }
     opts = options if options is not None else CompileOptions();
     if native_unit and not opts.native_unit {
         opts = opts.clone_for_native_import();
@@ -458,10 +410,7 @@ def build_link_plan(
     }
     session = NativeBuildSession(registry=registry, options=opts);
     registry.session = session;
-    import from jaclang.compiler.driver.compile_options {
-        push_native_target,
-        pop_native_target
-    }
+
     target_token = push_native_target(opts.native_target or "");
     try {
         plan = _build_link_plan(prog, roots, opts, mode, native_unit);
@@ -528,7 +477,7 @@ def _build_link_plan(
                 f"failed to lower ({detail})"
             );
         }
-        import from jaclang.compiler.driver.jir { module_cache_key }
+
         try {
             modkey = module_cache_key(path);
         } except OSError {
@@ -555,8 +504,6 @@ def _build_link_plan(
         walk_unit(root_u, []);
     }
 
-    import from jaclang.compiler.driver.dependency_graph { dependency_groups }
-    import from jaclang.compiler.frontend.codeinfo { is_kernel_unit_path }
     seen: set[str] = set();
     ordered: list[LinkUnit] = [];
     while True {
@@ -683,7 +630,7 @@ def _build_link_plan(
     check_prefix_collisions(ordered);
     check_pub_collisions(ordered);
     initialization_order(ordered, real_roots);
-    import from jaclang.compiler.driver.na_coverage { na_coverage_replay }
+
     for unit in ordered {
         na_coverage_replay(unit.path, unit.iface.coverage or {"outcome": "native"});
     }
@@ -722,7 +669,7 @@ def callback_glue_ir(plan: LinkPlan) -> str {
     if not plan.callback_bindings {
         return "";
     }
-    import from jaclang.compiler.backends.native.link_glue { bind_shared_callbacks }
+
     wanted = {binding.name for binding in plan.callback_bindings};
     declarations: dict[str, str] = {};
     defined: set[str] = set();
@@ -761,7 +708,6 @@ def callback_glue_ir(plan: LinkPlan) -> str {
 }
 
 def heap_glue_ir(plan: LinkPlan) -> tuple[str, list[str]] {
-    import from jaclang.compiler.backends.native.link_glue { inject_heap_accounting }
     declarations: dict[str, str] = {};
     defined: set[str] = set();
 
@@ -991,7 +937,7 @@ def plan_objects(
             df.write(str(merged));
         }
     }
-    import from jaclang.compiler.driver.compile_options { env_symmap_requested }
+
     if env_symmap_requested() {
         name_private_functions(merged);
     }
@@ -1010,8 +956,7 @@ def _write_sidecar(
 ) -> tuple[dict[str, any], str] {
     classes = plan.merged_layout();
     ldigest = layout_digest_of(classes);
-    import from jaclang.compiler.frontend.codeinfo { native_unit_identity }
-    import from jaclang.compiler.driver.jir { native_producer_digest }
+
     unit_paths = [u.path for u in plan.units];
     sidecar = {
         "classes": classes,
@@ -1052,7 +997,6 @@ def _sha256_of(path: str) -> str {
 def _reuse_artifact(
     plan: LinkPlan, output_path: str, action_digest: str
 ) -> (LinkResult | None) {
-    import from jaclang.compiler.driver.jir { cache_mode }
     (rebuild, _) = cache_mode();
     if rebuild
         or plan.options.no_ir_cache
@@ -1395,7 +1339,6 @@ def wasm_program_ir(plan: LinkPlan) -> str {
 def link_wasm(
     plan: LinkPlan, output_path: str, app_imports: (set | None) = None
 ) -> LinkResult {
-    import from jaclang.compiler.backends.native.wasm_build { emit_wasm_from_ir }
     merged_ir = wasm_program_ir(plan);
     imports: set[str] = set(app_imports or set());
     imports.update(plan.clib_symbol_lib().keys());
@@ -1486,7 +1429,7 @@ def _jit_image_path(plan: LinkPlan) -> (str | None) {
     the codegen identity and the compiler, which is everything the merged
     and optimized module depends on. Debug builds, IR dumps and cache
     bypasses never reuse an image.""";
-    import from jaclang.compiler.driver.jir { cache_mode, get_jir_cache_dir }
+
     (rebuild, _) = cache_mode();
     if rebuild
         or plan.options.no_ir_cache
@@ -1619,7 +1562,6 @@ def jit_engine_for_cached(
 }
 
 def internalize_native_implementation(module: ModuleRef, exports: list[str]) {
-    import from jaclang.compiler.backends.native.llvm.binding.value { Visibility }
     public = set(exports);
     values: list[ValueRef] = list(module.functions);
     values.extend(module.global_variables);

@@ -1,17 +1,5 @@
 import json;
 
-import from jaclang.compiler.backends.native.na_constants {
-    FACT_CODEC_NAME,
-    FACT_CODEC_TABLES,
-    FACT_IMPORT_PATHS,
-    FACT_OS,
-    FACT_PRIMITIVE_METHODS,
-    FACT_SEALED_RUNTIME,
-    FACT_SEP,
-    FACT_STRUCT_LAYOUTS,
-    FACT_TARGET
-}
-
 glob _HELD: dict[str, str] = {};
 
 def host_native_fact(kind: str, key: str) -> str {
@@ -70,7 +58,6 @@ def compute_fact(kind: str, key: str) -> str {
 }
 
 def target_fact(target: str) -> str {
-    import jaclang.compiler.backends.native.llvm.binding as llvm;
     if target {
         llvm.initialize_all_targets();
         llvm.initialize_all_asmprinters();
@@ -84,7 +71,6 @@ def target_fact(target: str) -> str {
 }
 
 def struct_layouts_fact(key: str) -> str {
-    import jaclang.compiler.backends.native.llvm.binding as llvm;
     (data_layout, _, probe) = key.partition(FACT_SEP);
     (counts_text, _, probe_ir) = probe.partition(FACT_SEP);
     counts: dict[str, int] = json.loads(counts_text);
@@ -125,8 +111,7 @@ def codec_tables_fact -> str {
 
 def primitive_methods_fact(type_name: str) -> str {
     import inspect;
-    import jaclang.compiler.backends.native.primitives_native as emitters;
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
+
     found: any = None;
     for (name_of_type, suffix) in JAC_TYPE_REGISTRY.emitter_items() {
         if name_of_type == type_name {

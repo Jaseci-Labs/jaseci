@@ -1,48 +1,3 @@
-import from jaclang.compiler.passes.context { CompileContext, CompilerPass }
-import from jaclang.compiler.frontend.unitree {
-    Ability,
-    ArchHas,
-    Archetype,
-    Assignment,
-    AstSymbolNode,
-    AstTypedVarNode,
-    AtomTrailer,
-    BinaryExpr,
-    BuiltinType,
-    Enum,
-    Expr,
-    FuncCall,
-    FuncSignature,
-    GlobalVars,
-    HasVar,
-    Import,
-    IndexSlice,
-    KWPair,
-    Module,
-    ModuleItem,
-    Name,
-    Null,
-    ParamVar,
-    Token,
-    TupleVal,
-    TypeParam,
-    UnaryExpr,
-    UniNode,
-    UniScopeNode
-}
-
-import type from jaclang.compiler.driver.program { JacProgram }
-import type from jaclang.compiler.types.types {
-    ClassDetailsShared,
-    ClassType,
-    TypeBase
-}
-import from jaclang.compiler.frontend.const_fold { fold_const }
-import from jaclang.compiler.frontend.constant { OwnershipKind, Tokens as Tok }
-import from jaclang.compiler.frontend.diagnostics { E5030, W5031, W5032 }
-import from jaclang.compiler.frontend.module_facts { ModuleFacts }
-import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
-
 glob LAYOUT_COMPATIBLE_PRIMITIVES: set[str] = {
          "int",
          "float",
@@ -162,8 +117,7 @@ def open_dispatch(arch: Archetype) -> bool {
     runs only when the owner lets go, and a class whose only behavior is its
     hook stays flat so a headerless build can embed it inline in an own field.
     """;
-    import from jaclang.compiler.frontend.constant { SymbolAccess }
-    import from jaclang.compiler.c_interop { is_clib_archetype }
+
     if arch.access_type == SymbolAccess.PRIVATE or is_clib_archetype(arch) {
         return False;
     }
@@ -185,8 +139,7 @@ def get_layout_registry(module: Module, prog: JacProgram) -> LayoutRegistry {
         return reg;
     }
 
-    import from jaclang.compiler.driver.pipeline { require_product, CompilationProduct }
-    if not require_product(prog, module, CompilationProduct.LAYOUT) {
+    if not require(prog, module, CompilationProduct.LAYOUT) {
         raise RuntimeError(f"Layout preparation failed: {module.loc.mod_path}");
     }
     return module.gen.layout_registry or LayoutRegistry();
@@ -255,9 +208,7 @@ def archetype_native_name(arch: Archetype) -> str {
 
 def record_interface_twins(native_mod: Module, prog: JacProgram) {
     import os;
-    import from jaclang.compiler.frontend.codeinfo { bundled_stdlib_module_of }
-    import from jaclang.compiler.native_bindings { interface_type, typeshed_stub_path }
-    import from jaclang.compiler.types.types { ClassType }
+
     if native_mod.loc is None or not native_mod.loc.mod_path.endswith(".jac") {
         return;
     }
@@ -298,7 +249,6 @@ def record_interface_twins(native_mod: Module, prog: JacProgram) {
 }
 
 def _archetype_native_name(arch: Archetype, name: str) -> str {
-    import from jaclang.compiler.frontend.codeinfo { native_arch_name }
     if arch.name is not None and is_enum_class_type(arch.name.type) {
         return name;
     }
@@ -335,7 +285,6 @@ def _declared_native_name(shared: ClassDetailsShared) -> str {
 }
 
 def referenced_archetype(expr: (UniNode | None)) -> (Archetype | None) {
-    import from jaclang.compiler.types.types { ClassType }
     if expr is None {
         return None;
     }
@@ -364,7 +313,6 @@ def referenced_archetype(expr: (UniNode | None)) -> (Archetype | None) {
 }
 
 def referenced_native_name(expr: (UniNode | None)) -> (str | None) {
-    import from jaclang.compiler.types.types { ClassType }
     arch = referenced_archetype(expr);
     if arch is not None {
         return archetype_native_name(arch);
@@ -380,7 +328,6 @@ def referenced_native_name(expr: (UniNode | None)) -> (str | None) {
 }
 
 def class_type_native_name(typ: (TypeBase | None)) -> (str | None) {
-    import from jaclang.compiler.types.types { ClassType }
     if not isinstance(typ, ClassType) or typ._shared is None {
         return None;
     }
@@ -406,17 +353,11 @@ def interface_class_native_name(shared: ClassDetailsShared) -> str {
     if key is None or not key[0].endswith(".jac") {
         return shared.class_name;
     }
-    import from jaclang.compiler.frontend.codeinfo { native_arch_name }
+
     return native_arch_name(key[0], shared.class_name);
 }
 
 def native_type_key(typ: TypeBase) -> str {
-    import from jaclang.compiler.types.types {
-        ClassType,
-        FunctionType,
-        OverloadedType,
-        UnionType
-    }
     if isinstance(typ, ClassType) {
         if typ._shared is None {
             return typ.mangle();
@@ -453,7 +394,7 @@ def native_type_key(typ: TypeBase) -> str {
 
 def declaring_module_path(base_expr: Expr) -> str {
     import os;
-    import from jaclang.compiler.types.types { ClassType }
+
     base_type = base_expr.type;
     if isinstance(base_type, ClassType) and base_type._shared is not None {
         scope = base_type.shared.symbol_table;
@@ -733,12 +674,10 @@ def adopt_ancestor_methods(lay: ArchetypeLayout, ancestors: list[ArchetypeLayout
 }
 
 def is_erased_base_name(name: str, archetypes: dict[str, Archetype]) -> bool {
-    import from jaclang.compiler.frontend.codeinfo { NATIVE_ERASED_BASES }
     return name in NATIVE_ERASED_BASES and name not in archetypes;
 }
 
 def enum_class_of(t: (TypeBase | None)) -> (ClassType | None) {
-    import from jaclang.compiler.types.types { ClassType }
     if isinstance(t, ClassType) and t._shared is not None and t.shared.is_enum_class {
         return t;
     }
@@ -770,7 +709,6 @@ def enum_value_type_of(t: (TypeBase | None)) -> (TypeBase | None) {
 }
 
 def class_form_enum_scalar(t: (TypeBase | None)) -> (str | None) {
-    import from jaclang.compiler.types.types { ClassType }
     cls = enum_class_of(t);
     if cls is None or not isinstance(cls.shared.symbol_table, Archetype) {
         return None;
@@ -899,7 +837,6 @@ def class_form_enum_literal(t: ClassType, member: str) -> (str | int | None) {
 def class_form_enum_member(
     t: (TypeBase | None)
 ) -> (tuple[(str, (str | int), str)] | None) {
-    import from jaclang.compiler.types.types { EnumMemberType }
     if not isinstance(t, EnumMemberType) {
         return None;
     }
@@ -942,6 +879,7 @@ obj LayoutRegistry {
 }
 
 walker LayoutPass(CompilerPass) {
+    static has contract: PassContract = PassContract();
     has registry: LayoutRegistry postinit,
         isinstance_targets: set[str] postinit;
 

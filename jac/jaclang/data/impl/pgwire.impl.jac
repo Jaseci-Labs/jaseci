@@ -29,6 +29,10 @@ impl _encode_param(v: any) -> (bytes | None) {
 impl _array_literal(vals: any) -> str {
     parts: list[str] = [];
     for v in vals {
+        if v is None {
+            parts.append('NULL');
+            continue;
+        }
         s = str(v);
         escaped = s.replace('\\', '\\\\').replace('"', '\\"');
         parts.append(f'"{escaped}"');

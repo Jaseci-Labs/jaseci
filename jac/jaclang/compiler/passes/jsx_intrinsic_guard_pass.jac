@@ -1,17 +1,3 @@
-import from jaclang.compiler.frontend.unitree {
-    Module,
-    TreeWalker,
-    UniNode,
-    JsxElement,
-    Name,
-    Token
-}
-import from jaclang.compiler.passes.context { CompileContext, TreePass }
-import from jaclang.compiler.frontend.diagnostics { E1105 }
-
-import from jaclang.runtime.osp_kernel { osp_skip_rest }
-import from jaclang.project.mobui_scope { mobui_module_exempt }
-
 glob _GENERIC_SUGGESTION: str = "an @jac/mobui component",
      _tag_suggestions: (dict[str, str] | None) = None;
 
@@ -30,6 +16,7 @@ def _suggestion_for(tag: str) -> str {
 }
 
 walker JsxIntrinsicGuardPass(TreePass) {
+    static has contract: PassContract = PassContract(kernel_safe=True);
     has _enforced_root: (str | None) = None,
         _exempt_paths: dict[str, bool] = {};
 
