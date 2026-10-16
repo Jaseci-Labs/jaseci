@@ -2,7 +2,6 @@ import dis;
 import os;
 import types;
 import from pathlib { Path }
-import from jaclang.compiler.frontend.host { active_host }
 
 def import_specs(
     code: types.CodeType, source: str
@@ -48,7 +47,6 @@ def import_specs(
 def resolve_imports(
     specs: list[tuple[int, str, (tuple[str, ...] | None)]], source: str, `root: str
 ) -> set[str] {
-    import from jaclang.project.modresolver { project_mounts }
     sources: set[str] = `set();
     mounts = project_mounts(`root);
     for (level, name, names) in specs {

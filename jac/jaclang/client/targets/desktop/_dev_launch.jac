@@ -3,8 +3,6 @@ import sys;
 import sysconfig;
 import site;
 import from pathlib { Path }
-import from jaclang.project.config { get_config }
-import from jaclang.project.pyvenv { get_venv_site_packages }
 
 glob DESKTOP_WEBKIT_ENV: list[tuple[str, str]] = [
          ("GDK_BACKEND", "x11"),
@@ -79,7 +77,7 @@ def _prepend_env_path(env: dict[str, str], key: str, path: str) -> None {
 
 def _dev_roots_from_env -> dict[str, str] {
     roots: dict[str, str] = {};
-    import from jaclang.compiler.driver.jir { dev_source }
+
     dev_src = dev_source();
     if not dev_src {
         return roots;

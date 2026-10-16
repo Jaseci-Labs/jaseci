@@ -1,8 +1,6 @@
 import os;
 import time;
 import from pathlib { Path }
-import from jaclang.scale._optdeps.kubernetes { client, ApiException }
-import from jaclang.scale.deploy.target.kubernetes.cluster_provider { ClusterProvider }
 
 glob _LOCAL_FALLBACK_NOTE: str = (
          "Falling back to local provider semantics: service URLs will be "

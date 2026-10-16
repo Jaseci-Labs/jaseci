@@ -1,8 +1,6 @@
 import gzip;
 import inspect;
 import zlib;
-import from jaclang.server.serving.datatypes { Headers, Request, Response }
-import from jaclang.server.serving.executor { iterate_sync }
 
 glob COMPRESSIBLE_TYPES: list[str] = [
          'text/',

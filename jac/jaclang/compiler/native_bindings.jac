@@ -1,33 +1,4 @@
 import os;
-import from jaclang.compiler.frontend.unitree {
-    Ability,
-    Archetype,
-    AtomTrailer,
-    Enum,
-    FuncCall,
-    GlobalVars,
-    Import,
-    ModuleItem,
-    FuncSignature,
-    HasVar,
-    KWPair,
-    Module,
-    Name,
-    Symbol,
-    TypeAlias,
-    UniNode,
-    UniScopeNode,
-    resolved_decl_of
-}
-import from jaclang.compiler.frontend.constant { ParamKind, Tokens as Tok }
-import from jaclang.compiler.types.types {
-    ClassType,
-    FunctionType,
-    OverloadedType,
-    TypeBase
-}
-import from jaclang.compiler.frontend.module_facts { ModuleFacts }
-import type from jaclang.compiler.driver.program { JacProgram }
 
 glob NATIVE_FILE_CLASSES: dict[str, str] = {
          "TextIOWrapper": "File",
@@ -488,12 +459,6 @@ impl conformance_mismatches(
 impl NativeBindings.surface(
     prog: JacProgram, stub_module: str, base_dir: str
 ) -> (dict[str, NativeBinding] | None) {
-    import from jaclang.compiler.frontend.codeinfo {
-        NATIVE_STDLIB_EXTENSIONS,
-        NATIVE_SUPPORTED_STDLIB,
-        is_bundled_native_module,
-        resolve_native_module
-    }
     if stub_module in self.modules {
         return self.modules[stub_module];
     }
@@ -577,7 +542,6 @@ impl interface_module_name(home: Module) -> str {
 }
 
 def is_owning_scope(scope: UniScopeNode) -> bool {
-    import from jaclang.compiler.types.stubcat.reader { CatScope }
     return UniScopeNode.is_python_scoping(scope) or isinstance(scope, CatScope);
 }
 
@@ -675,7 +639,6 @@ impl native_library_module_name(path: str) -> (str | None) {
 }
 
 impl typeshed_stub_path(name: str) -> (str | None) {
-    import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
     stubs_dir = os.path.join(jaclang_pkg_root(), "vendor", "typeshed", "stdlib");
     rel = name.replace(".", os.sep);
     for candidate in (
@@ -784,7 +747,7 @@ impl import_gaps(prog: JacProgram, imp: Import, base_dir: str) -> list[str] {
     if table is None {
         return [];
     }
-    import from jaclang.compiler.frontend.codeinfo { resolve_native_module }
+
     (_src, full_path) = resolve_native_module(lib, base_dir, allow_inferred=False);
     if full_path is None {
         return [];
