@@ -1,5 +1,6 @@
 import struct;
 import os;
+import sys;
 
 
 glob ELFMAG = b"\x7fELF",
