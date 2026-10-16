@@ -338,24 +338,34 @@ impl parse_ar_symbol_index(data: bytes) -> dict[str, int] {
 
 
 impl object_undefined_symbols(mem: bytes) -> list[str] {
+    return _object_symbols(mem, False);
+}
+
+
+impl object_defined_symbols(mem: bytes) -> list[str] {
+    return _object_symbols(mem, True);
+}
+
+
+def _object_symbols(mem: bytes, defined: bool) -> list[str] {
     if len(mem) < 4 {
         return [];
     }
     magic = mem[0:4];
     if magic == b"\xcf\xfa\xed\xfe" {
-        return _macho_obj_undefs(mem);
+        return _macho_obj_symbols(mem, defined);
     }
     if magic == b"\x7fELF" {
-        return _elf_obj_undefs(mem);
+        return _elf_obj_symbols(mem, defined);
     }
     return [];
 }
 
 
-def _macho_obj_undefs(mem: bytes) -> list[str] {
-    undefs: list[str] = [];
+def _macho_obj_symbols(mem: bytes, defined: bool) -> list[str] {
+    found: list[str] = [];
     if len(mem) < 32 {
-        return undefs;
+        return found;
     }
     ncmds = _u("<I", mem, 16);
     off = 32;
@@ -380,10 +390,16 @@ def _macho_obj_undefs(mem: bytes) -> list[str] {
                 n_type = _u("<B", mem, e + 4);
                 n_sect = _u("<B", mem, e + 5);
 
-                if (n_type & 0x0e) == 0 and (n_type & 0x01) != 0 and n_sect == 0 {
+                external = (n_type & 0x01) != 0;
+                kind = n_type & 0x0e;
+                if (
+                    (n_type & 0xe0) == 0 and external and kind in (0x0e, 0x02)
+                        if defined
+                        else kind == 0 and external and n_sect == 0
+                ) {
                     name = _ar_cstr(strtab, n_strx);
                     if name {
-                        undefs.append(name);
+                        found.append(name);
                     }
                 }
             }
@@ -393,14 +409,14 @@ def _macho_obj_undefs(mem: bytes) -> list[str] {
         }
         off = off + cmdsize;
     }
-    return undefs;
+    return found;
 }
 
 
-def _elf_obj_undefs(mem: bytes) -> list[str] {
-    undefs: list[str] = [];
+def _elf_obj_symbols(mem: bytes, defined: bool) -> list[str] {
+    found: list[str] = [];
     if len(mem) < 64 {
-        return undefs;
+        return found;
     }
     e_shoff = _u("<Q", mem, 0x28);
     e_shentsize = _u("<H", mem, 0x3a);
@@ -424,7 +440,7 @@ def _elf_obj_undefs(mem: bytes) -> list[str] {
         }
     }
     if symtab_ent == 0 {
-        return undefs;
+        return found;
     }
     strsh = e_shoff + strtab_idx * e_shentsize;
     str_off = _u("<Q", mem, strsh + 0x18);
@@ -441,14 +457,14 @@ def _elf_obj_undefs(mem: bytes) -> list[str] {
         st_shndx = _u("<H", mem, e + 6);
         bind = st_info >> 4;
 
-        if st_shndx == 0 and bind >= 1 {
+        if bind >= 1 and (st_shndx != 0) == defined {
             name = _ar_cstr(strtab, st_name);
             if name {
-                undefs.append(name);
+                found.append(name);
             }
         }
     }
-    return undefs;
+    return found;
 }
 
 

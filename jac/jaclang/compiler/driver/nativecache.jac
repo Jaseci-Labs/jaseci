@@ -33,7 +33,8 @@ import from jaclang.compiler.driver.jir {
 import from jaclang.compiler.driver.compile_options { CompileOptions }
 import from jaclang.compiler.driver.native_iface { NativeIface }
 
-glob SLOW_STEP_SECONDS: float = 2.0;
+glob SLOW_STEP_SECONDS: float = 2.0,
+     DEMOTED_SYMBOL_SUFFIX: str = ".__jac_demoted";
 
 obj NativeUnitEntry {
     has path: str,
@@ -126,6 +127,21 @@ obj NativeUnitRegistry {
         }
         ent = self.entries.get(real);
         if ent is None {
+            return False;
+        }
+        unbound = session.unbound_symbols(real, list(digests.keys()));
+        if unbound is None or unbound {
+            self._event("native_dep_adopt_refused");
+            self._miss(
+                real,
+                "lowered while a dependency was still being built, and binds "
+                    + (
+                        ", ".join(unbound[:8])
+                            if unbound
+                            else "symbols this build cannot check"
+                    )
+                    + " that the dependency does not define natively"
+            );
             return False;
         }
         for (dep, digest) in digests.items() {
@@ -919,6 +935,39 @@ obj NativeBuildSession {
         }
     }
 
+    def unbound_symbols(path: str, deps: list[str]) -> (list[str] | None) {
+        consumer = self.lowered.get(os.path.realpath(path));
+        bound = _ir_symbols(consumer.gen.llvm_ir if consumer is not None else None);
+        if bound is None {
+            return None;
+        }
+        declared = bound[1];
+        unbound: set[str] = set();
+        for dep in deps {
+            real = os.path.realpath(dep);
+            provider = self.lowered.get(real);
+            ent = self.registry.entries.get(real);
+            provided = _ir_symbols(
+                provider.gen.llvm_ir if provider is not None else None
+            );
+            if provided is None or ent is None {
+                return None;
+            }
+            defined = provided[0];
+            prefix = f"{ent.iface.prefix}." if ent.iface.prefix else "";
+            for symbol in declared {
+                if symbol not in defined
+                    and (
+                        (prefix and symbol.startswith(prefix))
+                        or (symbol + DEMOTED_SYMBOL_SUFFIX) in defined
+                    ) {
+                    unbound.add(symbol);
+                }
+            }
+        }
+        return sorted(unbound);
+    }
+
     def finish(paths: list[str]) {
         import from jaclang.compiler.driver.compile_options {
             push_native_target,
@@ -1047,6 +1096,24 @@ glob _closure_memo:
          dict[str, tuple[tuple[(tuple[int, int] | None), ...], list[str], list[str]]] = {},
      _dep_digest_memo: dict[str, tuple[tuple[int, int], str]] = {},
      VERDICT_CLOSURE_LIMIT: int = 4096;
+
+def _ir_symbols(unit_ir: any) -> (tuple[set[str], set[str]] | None) {
+    if unit_ir is None
+        or not hasattr(unit_ir, "functions")
+        or not hasattr(unit_ir, "global_variables") {
+        return None;
+    }
+    defined: set[str] = set();
+    declared: set[str] = set();
+    for value in list(unit_ir.functions) + list(unit_ir.global_variables) {
+        if value.is_declaration {
+            declared.add(str(value.name));
+        } else {
+            defined.add(str(value.name));
+        }
+    }
+    return (defined, declared);
+}
 
 def _stat_key(path: str) -> (tuple[int, int] | None) {
     try {
