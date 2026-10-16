@@ -3341,6 +3341,7 @@ walker NaIRGenPass(CompilerPass) {
     def _import_bound_native_fn(
         nd: uni.FuncCall, func_name: str
     ) -> (ir.Function | None);
+
     def _transfer_own_args(
         nd: uni.FuncCall,
         func: (ir.Function | None),
