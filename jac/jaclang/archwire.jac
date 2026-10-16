@@ -12738,6 +12738,15 @@ graph import runtime {
         register_py_callbacks
     }
     interop_bridge --> runtime.prepared.execute_module { NativeLibrary }
+    interop_bridge --> compiler.backends.native.link_glue.bind_shared_callbacks {
+        interop_callback_symbol
+    }
+    interop_bridge --> compiler.backends.native.link_plan._interop_sym {
+        interop_callback_symbol
+    }
+    interop_bridge --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._codegen_call {
+        interop_callback_symbol
+    }
     interop_bridge --> runtime.source_app._load_application {
         NativeCallback,
         NativeLibrary
