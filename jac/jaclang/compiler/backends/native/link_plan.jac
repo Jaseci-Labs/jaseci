@@ -1294,6 +1294,10 @@ def link_artifact(
     );
 }
 
+def _unmangled(symbol: str, mangled: bool) -> str {
+    return symbol[1:] if mangled and symbol.startswith("_") else symbol;
+}
+
 def unresolved_unit_symbols(plan: LinkPlan, objects: list[bytes]) -> list[str] {
     labels = (
         [os.path.basename(u.path) for u in plan.units] + ["the link glue"]
@@ -1303,9 +1307,12 @@ def unresolved_unit_symbols(plan: LinkPlan, objects: list[bytes]) -> list[str] {
     defined: set[str] = set();
     wanted: dict[str, list[str]] = {};
     for (label, blob) in zip(labels, objects) {
-        defined.update(object_defined_symbols(blob));
+        mangled = blob[:4] == b"\xcf\xfa\xed\xfe";
+        for symbol in object_defined_symbols(blob) {
+            defined.add(_unmangled(symbol, mangled));
+        }
         for symbol in object_undefined_symbols(blob) {
-            wanted.setdefault(symbol, []).append(label);
+            wanted.setdefault(_unmangled(symbol, mangled), []).append(label);
         }
     }
     owners = {

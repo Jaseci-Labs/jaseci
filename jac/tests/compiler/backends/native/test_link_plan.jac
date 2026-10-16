@@ -695,9 +695,15 @@ test "a cycle unit lowered before its dependency demoted a name it calls lowers 
     }
 }
 
-def _host_object(tm: any, text: str) -> bytes {
+def _target_object(triple: str, text: str) -> bytes {
     import jaclang.compiler.backends.native.llvm.binding as llvm;
-    return tm.emit_object(llvm.parse_assembly(text));
+    llvm.initialize_all_targets();
+    llvm.initialize_all_asmprinters();
+    tm = llvm.Target.from_triple(triple).create_target_machine(reloc="pic");
+    mod = llvm.parse_assembly(text);
+    mod.triple = triple;
+    mod.data_layout = str(tm.target_data);
+    return tm.emit_object(mod);
 }
 
 test "a link refuses unit objects that reference a symbol no unit defines" {
@@ -707,13 +713,17 @@ test "a link refuses unit objects that reference a symbol no unit defines" {
         unresolved_unit_symbols
     }
     import from jaclang.compiler.driver.native_iface { NativeIface }
-    import jaclang.compiler.backends.native.llvm.binding as llvm;
-    if _can_link_host() {
-        llvm.initialize_all_targets();
-        llvm.initialize_all_asmprinters();
-        tm = llvm.Target.from_default_triple().create_target_machine(reloc="pic");
-        caller = _host_object(
-            tm,
+    units = [
+        LinkUnit(
+            path=f"/units/{name}.jac",
+            prefix=name,
+            digest=name,
+            iface=NativeIface(module=name, prefix=name)
+        ) for name in ("caller_unit", "callee_unit")
+    ];
+    for triple in ("x86_64-unknown-linux-gnu", "arm64-apple-macosx11.0.0") {
+        caller = _target_object(
+            triple,
             'declare void @"callee_unit.gone"()\n'
                 + 'declare void @"probe"()\n'
                 + 'declare void @"callee_unit.kept"()\n'
@@ -725,35 +735,29 @@ test "a link refuses unit objects that reference a symbol no unit defines" {
                 + '  %r = call i32 @"puts"(ptr null)\n'
                 + '  ret void\n}\n'
         );
-        callee = _host_object(
-            tm,
+        callee = _target_object(
+            triple,
             'define void @"callee_unit.kept"() { ret void }\n'
                 + 'define void @"probe.__jac_demoted"() { ret void }\n'
         );
-        glue = _host_object(tm, 'define void @"jac_glue_marker"() { ret void }\n');
-        units = [
-            LinkUnit(
-                path=f"/units/{name}.jac",
-                prefix=name,
-                digest=name,
-                iface=NativeIface(module=name, prefix=name)
-            ) for name in ("caller_unit", "callee_unit")
-        ];
+        glue = _target_object(
+            triple, 'define void @"jac_glue_marker"() { ret void }\n'
+        );
         plan = LinkPlan(
             prog=JacProgram(),
             options=_opts(),
             roots=[units[0].path],
             units=units,
             mode="objects",
-            triple=llvm.get_default_triple()
+            triple=triple
         );
         found = unresolved_unit_symbols(plan, [caller, callee, glue]);
-        assert len(found) == 2 , found;
+        assert len(found) == 2 , (triple, found);
         assert found[0].startswith("callee_unit.gone (not defined by callee_unit.jac")
-            and "used by caller_unit.jac" in found[0];
+            and "used by caller_unit.jac" in found[0] , (triple, found);
         assert found[1].startswith("probe (demoted to Python")
-            and "used by caller_unit.jac" in found[1];
-        assert unresolved_unit_symbols(plan, [caller, callee, glue][1:]) == [];
+            and "used by caller_unit.jac" in found[1] , (triple, found);
+        assert unresolved_unit_symbols(plan, [callee, glue]) == [];
     }
 }
 
