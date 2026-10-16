@@ -937,7 +937,10 @@ obj NativeBuildSession {
 
     def unbound_symbols(path: str, deps: list[str]) -> (list[str] | None) {
         consumer = self.lowered.get(os.path.realpath(path));
-        bound = _ir_symbols(consumer.gen.llvm_ir if consumer is not None else None);
+        if consumer is None {
+            return None;
+        }
+        bound = _ir_symbols(consumer.gen.llvm_ir);
         if bound is None {
             return None;
         }
@@ -964,6 +967,14 @@ obj NativeBuildSession {
                     unbound.add(symbol);
                 }
             }
+        }
+        if unbound {
+            used = _ir_referenced_symbols(consumer.gen.llvm_ir);
+            unbound = {
+                symbol
+                for symbol in unbound
+                if symbol in used
+            };
         }
         return sorted(unbound);
     }
@@ -1113,6 +1124,22 @@ def _ir_symbols(unit_ir: any) -> (tuple[set[str], set[str]] | None) {
         }
     }
     return (defined, declared);
+}
+
+def _ir_referenced_symbols(unit_ir: any) -> set[str] {
+    import re;
+    used: set[str] = set();
+    for line in str(unit_ir).splitlines() {
+        if line.startswith("declare ") {
+            continue;
+        }
+        for (quoted, bare) in re.findall(
+            r'@(?:"([^"]+)"|([-a-zA-Z$._][-a-zA-Z$._0-9]*))', line
+        ) {
+            used.add(quoted or bare);
+        }
+    }
+    return used;
 }
 
 def _stat_key(path: str) -> (tuple[int, int] | None) {

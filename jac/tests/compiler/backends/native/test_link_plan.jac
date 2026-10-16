@@ -695,6 +695,28 @@ test "a cycle unit lowered before its dependency demoted a name it calls lowers 
     }
 }
 
+test "a cycle unit that imports a demoted name without calling it keeps its single lowering" {
+    with tempfile.TemporaryDirectory(prefix="jac-native-cycle-unused-") as root_dir {
+        even = Path(root_dir) / "even.jac";
+        odd = Path(root_dir) / "odd.jac";
+        even.write_text(
+            "import from odd { odd }\n"
+                + "def:pub probe(x: any) -> int { return x.bit_length(); }\n"
+                + "def:pub even(n: int) -> bool { if n == 0 { return True; } return odd(n - 1); }\n"
+        );
+        odd.write_text(
+            "import from even { even, probe }\n"
+                + "def:pub odd(n: int) -> bool { if n == 0 { return False; } return even(n - 1); }\n"
+        );
+        prog = JacProgram();
+        plan = build_link_plan(prog, [str(even)], _opts());
+        events = prog.analysis.cache_events;
+        assert events.get("native_dep_adopt", 0) >= 1 , events;
+        assert events.get("native_dep_adopt_refused", 0) == 0 , events;
+        assert events.get("native_unit_lower", 0) == len(plan.units) , events;
+    }
+}
+
 def _target_object(triple: str, text: str) -> bytes {
     import jaclang.compiler.backends.native.llvm.binding as llvm;
     llvm.initialize_all_targets();
