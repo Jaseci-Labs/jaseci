@@ -443,6 +443,37 @@ def _macho_install_name(lib: str) -> str {
     return f"@loader_path/{lib}";
 }
 
+def macho_stub_symbols(
+    job: NativeLinkJob, undefined: list[str]
+) -> dict[str, list[str]] {
+    """The text stubs a Mach-O link names: each dylib it loads, with the
+    symbols bound to it two-level. An executable binds a C import to the
+    library its program named, or to libSystem. A dylib binds none of them:
+    it is loaded into a host process (a Python interpreter, an app) whose
+    images provide them, so every import stays a flat lookup
+    (`-undefined dynamic_lookup`) and the stubs only record which dylibs to
+    load.""";
+    by_lib: dict[str, list[str]] = {};
+    for lib in [MACHO_SYSTEM_DYLIB] + job.needed_libs {
+        by_lib.setdefault(_macho_install_name(lib), []);
+    }
+    if job.shared {
+        return by_lib;
+    }
+    for sym in undefined {
+        bare = sym[1:] if sym.startswith("_") else sym;
+        if bare in job.archive_symbols {
+            continue;
+        }
+        lib = job.symbol_lib_map.get(bare, MACHO_SYSTEM_DYLIB);
+        if lib == "@process" {
+            continue;
+        }
+        by_lib.setdefault(_macho_install_name(lib), []).append(sym);
+    }
+    return by_lib;
+}
+
 def _link_macho(job: NativeLinkJob, work: str) -> list[str] {
     arch = MACHO_ARCH.get(triple_arch_of(job.triple), "arm64");
     version = _macho_version(job.triple, arch);
@@ -469,21 +500,7 @@ def _link_macho(job: NativeLinkJob, work: str) -> list[str] {
             args += ["-exported_symbol", "_" + sym];
         }
     }
-    by_lib: dict[str, list[str]] = {};
-    for lib in [MACHO_SYSTEM_DYLIB] + job.needed_libs {
-        by_lib.setdefault(_macho_install_name(lib), []);
-    }
-    for sym in _undefined_symbols(job.objects) {
-        bare = sym[1:] if sym.startswith("_") else sym;
-        if bare in job.archive_symbols {
-            continue;
-        }
-        lib = job.symbol_lib_map.get(bare, MACHO_SYSTEM_DYLIB);
-        if lib == "@process" {
-            continue;
-        }
-        by_lib.setdefault(_macho_install_name(lib), []).append(sym);
-    }
+    by_lib = macho_stub_symbols(job, _undefined_symbols(job.objects));
     index = 0;
     for lib in by_lib {
         stub = os.path.join(work, f"stub{index}.tbd");

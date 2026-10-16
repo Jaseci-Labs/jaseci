@@ -17,6 +17,7 @@ import from jaclang.compiler.backends.native.native_link {
     NativeLinkError,
     NativeLinkJob,
     link_native,
+    macho_stub_symbols,
     musl_runtime
 }
 import from jaclang.compiler.backends.native.wasm_build { link_wasm_object }
@@ -255,5 +256,50 @@ test "a C wasm object with no named exports exports every function it defines" {
         content = link_wasm_object(obj_path.read_bytes(), functions);
         raw = content;
         assert b"\x04init" in raw and b"\x04tick" in raw , "functions not exported";
+    }
+}
+
+test "a macOS dylib leaves its C imports to the host process" {
+    undefined = ["_PyGILState_Ensure", "_malloc", "_raylib_probe"];
+    shared = NativeLinkJob(
+        platform="macho",
+        triple="arm64-apple-darwin",
+        output_path="libprobe.dylib",
+        shared=True,
+        needed_libs=["/usr/lib/libSystem.B.dylib", "libraylib.dylib"]
+    );
+    stubs = macho_stub_symbols(shared, undefined);
+    assert set(stubs)
+        == {"/usr/lib/libSystem.B.dylib", "@loader_path/libraylib.dylib"} , stubs;
+    assert all(not syms for syms in stubs.values()) , f"a dylib bound imports two-level: {stubs}";
+    executable = NativeLinkJob(
+        platform="macho",
+        triple="arm64-apple-darwin",
+        output_path="probe",
+        needed_libs=["/usr/lib/libSystem.B.dylib", "libraylib.dylib"],
+        symbol_lib_map={"raylib_probe": "libraylib.dylib"}
+    );
+    stubs = macho_stub_symbols(executable, undefined);
+    assert stubs["@loader_path/libraylib.dylib"] == ["_raylib_probe"] , stubs;
+    assert "_malloc" in stubs["/usr/lib/libSystem.B.dylib"] , stubs;
+    relobj = _object(
+        "declare i32 @PyGILState_Ensure()\n"
+            + "define i32 @probe() {\n  %r = call i32 @PyGILState_Ensure()\n  ret i32 %r\n}\n",
+        "arm64-apple-darwin"
+    );
+    with tempfile.TemporaryDirectory() as work {
+        out = os.path.join(work, "libprobe.dylib");
+        link_native(
+            NativeLinkJob(
+                platform="macho",
+                triple="arm64-apple-darwin",
+                output_path=out,
+                shared=True,
+                objects=[relobj],
+                needed_libs=["/usr/lib/libSystem.B.dylib"],
+                export_symbols=["probe"]
+            )
+        );
+        assert Path(out).read_bytes()[:4] == b"\xcf\xfa\xed\xfe";
     }
 }
