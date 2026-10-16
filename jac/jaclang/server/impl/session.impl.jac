@@ -259,6 +259,22 @@ def _ancestry_of(arch: (object | None)) -> list[str] {
 }
 
 
+"""An edge endpoint's archetype, read without loading a stub endpoint; None
+when neither the endpoint nor the session holds it."""
+def _endpoint_archetype(
+    end: (Anchor | None), mem: dict[UUID, Anchor]
+) -> (object | None) {
+    if end is None {
+        return None;
+    }
+    arch = end.__dict__.get('archetype');
+    if arch is None and (held := mem.get(end.ensure_id())) is not None {
+        arch = held.__dict__.get('archetype');
+    }
+    return arch;
+}
+
+
 glob _GETTER_CLASSES: dict[type, bool] = {};
 
 def _runs_getters(arch: object) -> bool {
@@ -1014,8 +1030,17 @@ impl Session._flush_locked(full: bool) -> None {
     }
     if unflushed {
         rows = [self._serialize(u.anchor, u.stored) for u in unflushed];
+        retyped = [
+            row.id
+            for row in rows
+            if row.kind == 'NodeAnchor'
+                and row.arch_type
+                and (was := self._rows.current(row.id)) is not None
+                and was.arch_type not in ('', row.arch_type)
+        ];
         try {
             store.upsert(rows);
+            store.retype_edges(retyped);
         } except WriteConflict as wc {
             self._last_conflict = {wc.anchor_id};
             raise;
@@ -1027,7 +1052,10 @@ impl Session._flush_locked(full: bool) -> None {
             raise WriteConflict(anchor_id=rows[0].id) from e;
         }
         for (row, u) in zip(rows, unflushed) {
-            self._rows.upserted(row.id, RowState(hash=u.hash, version=row.version));
+            self._rows.upserted(
+                row.id,
+                RowState(hash=u.hash, version=row.version, arch_type=row.arch_type)
+            );
             u.anchor.hash = u.hash;
             _settle_written(u.anchor, u.written);
         }
@@ -1117,10 +1145,16 @@ impl Session._serialize(
     src: (UUID | None) = None;
     dst: (UUID | None) = None;
     undirected = False;
+    src_type = '';
+    dst_type = '';
     if isinstance(anchor, EdgeAnchor) {
         src = anchor.source.ensure_id() if anchor.source is not None else None;
         dst = anchor.target.ensure_id() if anchor.target is not None else None;
         undirected = anchor.is_undirected;
+        src_arch = _endpoint_archetype(anchor.source, self.__mem__);
+        dst_arch = _endpoint_archetype(anchor.target, self.__mem__);
+        src_type = storage_type(type(src_arch)) if src_arch is not None else '';
+        dst_type = storage_type(type(dst_arch)) if dst_arch is not None else '';
     }
     row_id = anchor.ensure_id();
     return AnchorRow(
@@ -1135,6 +1169,8 @@ impl Session._serialize(
         src=src,
         dst=dst,
         undirected=undirected,
+        src_type=src_type,
+        dst_type=dst_type,
         ancestry=_ancestry_of(arch)
     );
 }
@@ -1180,7 +1216,9 @@ impl Session._materialize(row: AnchorRow) -> (Anchor | None) {
         anchor.version = row.version;
     }
     self.__mem__[row.id] = anchor;
-    self._rows.loaded(row.id, RowState(hash=anchor.hash, version=row.version));
+    self._rows.loaded(
+        row.id, RowState(hash=anchor.hash, version=row.version, arch_type=row.arch_type)
+    );
     if self._store is not None
         and self._store.txn_isolation() is TxnIsolation.SNAPSHOT_READ_ONLY {
         self._snapshot_reads.add(row.id);

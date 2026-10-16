@@ -237,14 +237,22 @@ def _edge_branches(fid: str, dir: int) -> list[tuple[str, str]] {
 }
 
 
-def _edge_join(alias: str, fid: str, dir: int, econds: list[str]) -> str {
+"""`reach` names the text[] params of the node types the hop reaches. Each arm
+tests the endpoint type its edge rows recorded for the side they reach, so the
+index skips edges into other types; each list carries '' for rows whose
+endpoint type was never recorded."""
+def _edge_join(
+    alias: str, fid: str, dir: int, econds: list[str], reach: list[str]
+) -> str {
     arms: list[str] = [];
     for (cond, other) in _edge_branches(fid, dir) {
         if fid == 'f0.id' {
             end = 'e.src' if other == 'e.dst' else 'e.dst';
             cond += f" AND {end} = ANY(CAST(:origin AS uuid[]))";
         }
-        where = ' AND '.join(["e.kind = 'EdgeAnchor'", cond] + econds);
+        col = 'e.dst_type' if other == 'e.dst' else 'e.src_type';
+        typed = [f"{col} = ANY(CAST(:{key} AS text[]))" for key in reach];
+        where = ' AND '.join(["e.kind = 'EdgeAnchor'", cond] + econds + typed);
         arms.append(f"SELECT e.*, {other} AS other FROM anchors e WHERE {where}");
     }
     return f"JOIN LATERAL ({' UNION ALL '.join(arms)}) {alias} ON TRUE";
@@ -300,16 +308,19 @@ impl compile_query(
                 econds.append(cond);
             }
         }
-        joins.append(_edge_join(e, fid, hop.dir, econds));
         nconds = [f"{nd_alias}.id = {e}.other", f"{nd_alias}.kind = 'NodeAnchor'"];
+        reach: list[str] = [];
         for (k, nt) in enumerate(_nd_types(hop)) {
             import from jaclang.data.type_identity { storage_type }
             tname = storage_type(nt);
             if tname {
                 names = _type_names(tname, store, types);
                 nconds.append(_type_cond(nd_alias, names, params, f"h{n}n{k}"));
+                reach.append(f"h{n}n{k}r");
+                params[reach[-1]] = names + [''];
             }
         }
+        joins.append(_edge_join(e, fid, hop.dir, econds, reach));
         node_names = [str(getattr(nt, '__name__', '')) for nt in _nd_types(hop)];
         for (j, p) in enumerate(hop.preds) {
             cond = _pred_cond(

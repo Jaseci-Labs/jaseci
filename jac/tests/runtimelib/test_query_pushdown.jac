@@ -21,7 +21,7 @@ import from uuid { UUID, uuid4 }
 import from jaclang.runtime.graph_query { GraphQuery, QHop, QPred }
 import from jaclang.server.session { runtime_for_base }
 import from jaclang.data.sqlcompile { CompiledQuery, compile_query }
-import from jaclang.data.store { AnchorRow, PgStore }
+import from jaclang.data.store { AnchorRow, PgStore, SCHEMA_STAMP_KEY }
 
 node PMsg {
     has body: str = "",
@@ -390,6 +390,52 @@ test "a typed hop matches a subtype another store registered after this one open
             assert len(ids) == 8 , ids;
         } finally {
             other.close();
+            store.close();
+        }
+    }
+}
+
+
+test "a database from before endpoint types gains them at its next schema boot" {
+    with TemporaryDirectory() as td {
+        store = _store(td);
+        try {
+            hub = _seed_hub(store);
+            store.rows(
+                "ALTER TABLE anchors DROP COLUMN src_type, DROP COLUMN dst_type", {}
+            );
+            store.rows(
+                "CREATE INDEX idx_anchors_src ON anchors (src, arch_type) "
+                    + "WHERE src IS NOT NULL",
+                {}
+            );
+            store.kv_put(SCHEMA_STAMP_KEY, "0:before-endpoint-types");
+        } finally {
+            store.close();
+        }
+        store = _store(td);
+        try {
+            untyped = store.rows(
+                "SELECT count(*) FROM anchors WHERE kind = 'EdgeAnchor' "
+                    + "AND (src_type = '' OR dst_type = '')",
+                {}
+            );
+            assert int(untyped[0][0]) == 0 , (
+                f"{untyped[0][0]} edges kept no endpoint types after the schema boot"
+            );
+            indexes = sorted(
+                str(r[0])
+                for r in store.rows(
+                    "SELECT indexname FROM pg_indexes WHERE tablename = 'anchors' "
+                        + "AND indexname LIKE 'idx_anchors_src%'",
+                    {}
+                )
+            );
+            assert indexes == ["idx_anchors_src_typed"] , indexes;
+            (ids, _, plan) = _hop(store, hub, 2, PRare);
+            assert len(ids) == 7 , ids;
+            assert "dst_type" in plan , plan;
+        } finally {
             store.close();
         }
     }
