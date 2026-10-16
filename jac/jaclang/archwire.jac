@@ -3005,6 +3005,10 @@ graph import compiler.backends.native {
     linker_common --> compiler.backends.native.link_plan.link_artifact {
         object_undefined_symbols
     }
+    linker_common --> compiler.backends.native.link_plan.unresolved_unit_symbols {
+        object_defined_symbols,
+        object_undefined_symbols
+    }
     na_compile_pass --> compiler.driver.nativecache.NativeBuildSession.lower {
         settle_unit_ir
     }

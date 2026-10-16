@@ -657,6 +657,132 @@ test "an import cycle settles without repeating frontend analysis or optimizatio
     }
 }
 
+test "a cycle unit lowered before its dependency demoted a name it calls lowers again" {
+    with tempfile.TemporaryDirectory(prefix="jac-native-cycle-demote-") as root_dir {
+        even = Path(root_dir) / "even.jac";
+        odd = Path(root_dir) / "odd.jac";
+        even.write_text(
+            "import from odd { odd }\n"
+                + "def:pub probe(x: any) -> int { return x.bit_length(); }\n"
+                + "def:pub even(n: int) -> bool { if n == 0 { return True; } return odd(n - 1); }\n"
+        );
+        odd.write_text(
+            "import from even { even, probe }\n"
+                + "def odd(n: int) -> bool { if n == 0 { return False; } return even(n - 1); }\n"
+                + "def:pub odd_probe(n: int) -> int { return probe(n); }\n"
+        );
+        prog = JacProgram();
+        plan = build_link_plan(prog, [str(even)], _opts());
+        events = prog.analysis.cache_events;
+        assert events.get("native_dep_adopt_refused", 0) >= 1 , events;
+        odd_unit = plan.unit(str(odd.resolve()));
+        assert odd_unit is not None and "odd_probe" in odd_unit.iface.demoted;
+        for unit in plan.units {
+            consumed = prog.native_units().entries[unit.path].dep_digests;
+            for dep in unit.iface.deps {
+                dependency = plan.unit(dep);
+                assert dependency is not None;
+                assert consumed[dep] == dependency.digest;
+            }
+        }
+        if _can_link_host() {
+            suffix = ".dylib" if sys.platform == "darwin" else ".so";
+            out = str(Path(root_dir) / ("libeven" + suffix));
+            link_artifact(plan, out, ArtifactKind.SHARED);
+            import ctypes;
+            assert ctypes.CDLL(out).even(4) == 1;
+        }
+    }
+}
+
+test "a cycle unit that imports a demoted name without calling it keeps its single lowering" {
+    with tempfile.TemporaryDirectory(prefix="jac-native-cycle-unused-") as root_dir {
+        even = Path(root_dir) / "even.jac";
+        odd = Path(root_dir) / "odd.jac";
+        even.write_text(
+            "import from odd { odd }\n"
+                + "def:pub probe(x: any) -> int { return x.bit_length(); }\n"
+                + "def:pub even(n: int) -> bool { if n == 0 { return True; } return odd(n - 1); }\n"
+        );
+        odd.write_text(
+            "import from even { even, probe }\n"
+                + "def:pub odd(n: int) -> bool { if n == 0 { return False; } return even(n - 1); }\n"
+        );
+        prog = JacProgram();
+        plan = build_link_plan(prog, [str(even)], _opts());
+        events = prog.analysis.cache_events;
+        assert events.get("native_dep_adopt", 0) >= 1 , events;
+        assert events.get("native_dep_adopt_refused", 0) == 0 , events;
+        assert events.get("native_unit_lower", 0) == len(plan.units) , events;
+    }
+}
+
+def _target_object(triple: str, text: str) -> bytes {
+    import jaclang.compiler.backends.native.llvm.binding as llvm;
+    llvm.initialize_all_targets();
+    llvm.initialize_all_asmprinters();
+    tm = llvm.Target.from_triple(triple).create_target_machine(reloc="pic");
+    mod = llvm.parse_assembly(text);
+    mod.triple = triple;
+    mod.data_layout = str(tm.target_data);
+    return tm.emit_object(mod);
+}
+
+test "a link refuses unit objects that reference a symbol no unit defines" {
+    import from jaclang.compiler.backends.native.link_plan {
+        LinkPlan,
+        LinkUnit,
+        unresolved_unit_symbols
+    }
+    import from jaclang.compiler.driver.native_iface { NativeIface }
+    units = [
+        LinkUnit(
+            path=f"/units/{name}.jac",
+            prefix=name,
+            digest=name,
+            iface=NativeIface(module=name, prefix=name)
+        ) for name in ("caller_unit", "callee_unit")
+    ];
+    for triple in ("x86_64-unknown-linux-gnu", "arm64-apple-macosx11.0.0") {
+        caller = _target_object(
+            triple,
+            'declare void @"callee_unit.gone"()\n'
+                + 'declare void @"probe"()\n'
+                + 'declare void @"callee_unit.kept"()\n'
+                + 'declare i32 @"puts"(ptr)\n'
+                + 'define void @"caller_unit.run"() {\n'
+                + '  call void @"callee_unit.gone"()\n'
+                + '  call void @"probe"()\n'
+                + '  call void @"callee_unit.kept"()\n'
+                + '  %r = call i32 @"puts"(ptr null)\n'
+                + '  ret void\n}\n'
+        );
+        callee = _target_object(
+            triple,
+            'define void @"callee_unit.kept"() { ret void }\n'
+                + 'define void @"probe.__jac_demoted"() { ret void }\n'
+        );
+        glue = _target_object(
+            triple, 'define void @"jac_glue_marker"() { ret void }\n'
+        );
+        plan = LinkPlan(
+            prog=JacProgram(),
+            options=_opts(),
+            roots=[units[0].path],
+            units=units,
+            mode="objects",
+            triple=triple
+        );
+        found = unresolved_unit_symbols(plan, [caller, callee, glue]);
+        assert len(found) == 2 , (triple, found);
+        assert found[0].startswith("callee_unit.gone (not defined by callee_unit.jac")
+            and "used by caller_unit.jac" in found[0] , (triple, found);
+        assert found[1].startswith("probe (demoted to Python")
+            and "used by caller_unit.jac" in found[1] , (triple, found);
+        assert unresolved_unit_symbols(plan, [callee, glue]) == [];
+    }
+}
+
 test "object emission preserves the native record without an existing disk entry" {
     import from jaclang.compiler.driver.jir {
         get_module_cache_path,
