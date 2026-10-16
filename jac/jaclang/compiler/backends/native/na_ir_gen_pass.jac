@@ -246,6 +246,7 @@ walker NaIRGenPass(CompilerPass) {
         _legality: (NativeLegality | None) = None,
         _claimed_units: set[int] = set(),
         _internal_errors: list[Alert] = [],
+        _deps_deferred: bool = False,
         _sig_decl_kind: (str | None) = None,
         _class_name_consts: dict[str, ir.Constant] = {},
         _isa_fn: (ir.Function | None) = None,

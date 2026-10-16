@@ -250,6 +250,10 @@ obj HostServices {
         return None;
     }
 
+    def native_deps_deferred(program: JacProgram) -> bool {
+        return False;
+    }
+
     def held_native_iface(
         program: JacProgram, path: str, options: CompileOptions
     ) -> str {

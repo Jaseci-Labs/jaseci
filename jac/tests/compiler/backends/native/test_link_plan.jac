@@ -1181,3 +1181,32 @@ test "an edit inside one unit's body lowers that unit alone" {
         if cold.get(name) != warm.get(name)
     };
 }
+
+test "a dependency lowers only after its consumer's pass has let go of its IR" {
+    import gc;
+    root_dir = _diamond_copy();
+    prog = JacProgram();
+    opts = _opts();
+    prog.options = opts;
+    live_at_lower: list[int] = [];
+    def progress(line: str) {
+        if " lower " in line {
+            gc.collect();
+            live_at_lower.append(
+                sum(
+                    1
+                    for o in gc.get_objects()
+                    if type(o).__name__ == "NaIRGenPass"
+                )
+            );
+        }
+    }
+    prog.native_units().progress = progress;
+    plan = build_link_plan(prog, [os.path.join(root_dir, "top.jac")], opts);
+    lowered = {os.path.basename(u.path) for u in plan.units};
+    assert set(UNITS) <= lowered , lowered;
+    assert live_at_lower , "no unit was lowered";
+    assert max(live_at_lower) == 0 , (
+        f"a lowering started inside another unit's pass: {live_at_lower}"
+    );
+}

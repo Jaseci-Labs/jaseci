@@ -149,6 +149,9 @@ impl NaIRGenPass._run_impl(ir_in: uni.Module) -> uni.Module {
             _lower_exc
         );
     }
+    if self._deps_deferred {
+        return self.module;
+    }
     self._settle_module();
     return self.module;
 }
@@ -247,6 +250,10 @@ impl NaIRGenPass._lower_module -> None {
     self._forward_declare_archetype_names(self.module);
 
     self._register_imported_struct_types();
+    if active_host().native_deps_deferred(self.prog) {
+        self._deps_deferred = True;
+        return;
+    }
     self._declare_pending_clib_globals();
     self._declare_pending_clib_abilities();
     self._declare_clib_definitions();
