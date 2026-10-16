@@ -15,6 +15,7 @@ materialised into Python.
 
 import from pathlib { Path }
 import from tempfile { TemporaryDirectory }
+import from uuid { UUID }
 import from jaclang.runtime.runtime { JacRuntime }
 import from jaclang.runtime.context { ExecutionContext }
 
@@ -305,6 +306,105 @@ test "a typed hop reads only the edges that reach its node type" {
                 f"a hop to 3 FItems among 300 FNoise neighbours read {reads} anchors "
                 "rows; it reads the edges into other types"
             );
+        } finally {
+            JacRuntime.exec_ctx = old;
+            ctx2.close();
+        }
+    }
+}
+
+
+test "typed hops in every direction read only the edges that reach their type" {
+    with TemporaryDirectory() as td {
+        old = JacRuntime.exec_ctx;
+        ctx = _ctx(td);
+        JacRuntime.exec_ctx = ctx;
+        try {
+            b = FBoard(name="dirs");
+            root ++> b;
+            b ++> FItem(rank=0);
+            FItem(rank=10) ++> b;
+            b <++> FItem(rank=20);
+            FItem(rank=21) <++> b;
+            for _ in range(100) {
+                b ++> FNoise();
+                FNoise() ++> b;
+                b <++> FNoise();
+                FNoise() <++> b;
+            }
+            ctx.mem.commit();
+        } finally {
+            JacRuntime.exec_ctx = old;
+            ctx.close();
+        }
+        ctx2 = _ctx(td);
+        JacRuntime.exec_ctx = ctx2;
+        try {
+            b2 = [root-->[?:FBoard]][0];
+            for (label, want) in [
+                ("out", [0, 20, 21]),
+                ("in", [10, 20, 21]),
+                ("any", [0, 10, 20, 21])
+            ] {
+                before = _anchor_reads(ctx2);
+                got = [b2-->[?:FItem]]
+                    if label == "out"
+                    else ([b2<--[?:FItem]] if label == "in" else [b2<-->[?:FItem]]);
+                reads = _anchor_reads(ctx2) - before;
+                ranks = sorted([_as_any(x).rank for x in got]);
+                assert ranks == want , f"{label}: {ranks}";
+                assert reads < 60 , (
+                    f"{label}: a hop to {len(want)} FItems among 400 FNoise edges read "
+                    f"{reads} anchors rows"
+                );
+            }
+        } finally {
+            JacRuntime.exec_ctx = old;
+            ctx2.close();
+        }
+    }
+}
+
+
+test "an edge write takes its endpoint type from the stored node, not a stale copy" {
+    with TemporaryDirectory() as td {
+        old = JacRuntime.exec_ctx;
+        ctx = _ctx(td);
+        JacRuntime.exec_ctx = ctx;
+        try {
+            b = FBoard(name="stale");
+            root ++> b;
+            b +>:FNote(note="a"):+> FItem(rank=1);
+            ctx.mem.commit();
+        } finally {
+            JacRuntime.exec_ctx = old;
+            ctx.close();
+        }
+        ctx2 = _ctx(td);
+        JacRuntime.exec_ctx = ctx2;
+        try {
+            b2 = [root-->[?:FBoard]][0];
+            items = [b2->:FNote:->[?:FItem]];
+            notes = [edge b2->:FNote:->];
+            assert len(items) == 1 and len(notes) == 1;
+            iid = str(_as_any(items[0]).__jac__.id);
+            other = _ctx(td);
+            try {
+                ostore = other.mem.store;
+                assert ostore is not None;
+                ostore.rows(
+                    "UPDATE anchors SET arch_type = 'renamed.FItem' "
+                        + "WHERE id = CAST(:i AS uuid)",
+                    {"i": iid}
+                );
+                ostore.retype_edges([UUID(iid)]);
+            } finally {
+                other.close();
+            }
+            _as_any(notes[0]).note = "b";
+            ctx2.mem.commit();
+            assert _edge_types(ctx2, "props::text LIKE '%FNote%'")[0][1]
+                == "renamed.FItem" , _edge_types(ctx2, "props::text LIKE '%FNote%'");
         } finally {
             JacRuntime.exec_ctx = old;
             ctx2.close();

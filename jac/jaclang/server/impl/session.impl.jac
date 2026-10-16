@@ -259,22 +259,6 @@ def _ancestry_of(arch: (object | None)) -> list[str] {
 }
 
 
-"""An edge endpoint's archetype, read without loading a stub endpoint; None
-when neither the endpoint nor the session holds it."""
-def _endpoint_archetype(
-    end: (Anchor | None), mem: dict[UUID, Anchor]
-) -> (object | None) {
-    if end is None {
-        return None;
-    }
-    arch = end.__dict__.get('archetype');
-    if arch is None and (held := mem.get(end.ensure_id())) is not None {
-        arch = held.__dict__.get('archetype');
-    }
-    return arch;
-}
-
-
 glob _GETTER_CLASSES: dict[type, bool] = {};
 
 def _runs_getters(arch: object) -> bool {
@@ -1151,8 +1135,12 @@ impl Session._serialize(
         src = anchor.source.ensure_id() if anchor.source is not None else None;
         dst = anchor.target.ensure_id() if anchor.target is not None else None;
         undirected = anchor.is_undirected;
-        src_arch = _endpoint_archetype(anchor.source, self.__mem__);
-        dst_arch = _endpoint_archetype(anchor.target, self.__mem__);
+        src_arch = anchor.source.__dict__.get('archetype')
+            if anchor.source is not None
+            else None;
+        dst_arch = anchor.target.__dict__.get('archetype')
+            if anchor.target is not None
+            else None;
         src_type = storage_type(type(src_arch)) if src_arch is not None else '';
         dst_type = storage_type(type(dst_arch)) if dst_arch is not None else '';
     }

@@ -1042,7 +1042,11 @@ impl PgStore.upsert(rows_in: list[AnchorRow]) -> None {
                 f"(CAST(:id{i} AS uuid), :kind{i}, :arch_type{i}, "
                 f":arch_module{i}, :fp{i}, CAST(:root_id{i} AS uuid), "
                 f"CAST(:src{i} AS uuid), CAST(:dst{i} AS uuid), "
-                f":undirected{i}, :src_type{i}, :dst_type{i}, "
+                f":undirected{i}, "
+                f"COALESCE((SELECT n.arch_type FROM anchors n "
+                f"WHERE n.id = CAST(:src{i} AS uuid)), :src_type{i}), "
+                f"COALESCE((SELECT n.arch_type FROM anchors n "
+                f"WHERE n.id = CAST(:dst{i} AS uuid)), :dst_type{i}), "
                 f"CAST(:props{i} AS jsonb), :fv{i}, :ver{i}, now())"
             );
             params[f"id{i}"] = str(row.id);
@@ -1079,12 +1083,8 @@ impl PgStore.upsert(rows_in: list[AnchorRow]) -> None {
                 src = EXCLUDED.src,
                 dst = EXCLUDED.dst,
                 undirected = EXCLUDED.undirected,
-                src_type = CASE
-                    WHEN EXCLUDED.src_type <> '' OR EXCLUDED.src IS DISTINCT FROM anchors.src
-                    THEN EXCLUDED.src_type ELSE anchors.src_type END,
-                dst_type = CASE
-                    WHEN EXCLUDED.dst_type <> '' OR EXCLUDED.dst IS DISTINCT FROM anchors.dst
-                    THEN EXCLUDED.dst_type ELSE anchors.dst_type END,
+                src_type = EXCLUDED.src_type,
+                dst_type = EXCLUDED.dst_type,
                 props = EXCLUDED.props,
                 format_version = EXCLUDED.format_version,
                 version = EXCLUDED.version + 1,
