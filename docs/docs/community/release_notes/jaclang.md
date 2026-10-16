@@ -2,7 +2,13 @@
 
 This document provides a summary of new features, improvements, and bug fixes in each version of **Jaclang**. For details on changes that might require updates to your existing code, please refer to the [Breaking Changes](../breaking-changes.md) page.
 
-## jaclang 0.34.23 (Latest Release)
+## jaclang 0.34.24 (Latest Release)
+
+### Bug Fixes
+
+- **Fix: a `Protocol[...]` base makes a protocol**: a class declared with a subscripted `Protocol[...]` base, such as `AbstractContextManager`, `os.PathLike` or `Awaitable`, was not recognised as a protocol, so `ExitStack().enter_context(open(path))`, `enter_context(patch.object(...))` and any user context manager failed with E1053. Generic protocols now match structurally: members are checked at the protocol's type arguments (a `bytes` path is not an `os.PathLike[str]`), an overloaded member is matched by the overload that fits, and only a class that lists `Protocol` among its direct bases is a protocol.
+
+## jaclang 0.34.23
 
 ### Bug Fixes
 
