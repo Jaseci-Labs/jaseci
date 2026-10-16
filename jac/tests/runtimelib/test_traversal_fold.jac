@@ -18,8 +18,6 @@ import from tempfile { TemporaryDirectory }
 import from uuid { UUID }
 import from jaclang.runtime.runtime { JacRuntime }
 import from jaclang.runtime.context { ExecutionContext }
-import from jaclang.runtime.graph_query { GraphQuery, QHop }
-import from jaclang.data.sqlcompile { compile_query }
 
 node FBoard {
     has name: str = "";
@@ -254,36 +252,6 @@ test "a reference is evaluated where it appears, not where it is read" {
 }
 
 
-def _anchor_reads(ctx: ExecutionContext) -> int {
-    store = ctx.mem.store;
-    assert store is not None , "these tests need the Postgres store";
-    rows = store.rows(
-        "SELECT coalesce(idx_tup_fetch, 0) + coalesce(seq_tup_read, 0) "
-            + "FROM pg_stat_xact_user_tables WHERE relname = 'anchors'",
-        {}
-    );
-    return int(rows[0][0]) if rows else 0;
-}
-
-
-"""What a typed hop from `origin` compiled to, how Postgres ran it, and the
-endpoint types the edges carry: the evidence a row-read assertion reports."""
-def _hop_evidence(ctx: ExecutionContext, origin: any, dir: int) -> str {
-    store = ctx.mem.store;
-    assert store is not None , "these tests need the Postgres store";
-    cq = compile_query(GraphQuery([], hops=[QHop(dir=dir, nd=FItem)]), 1, store);
-    cq.params["origin"] = [str(_as_any(origin).__jac__.id)];
-    plan = store.rows("EXPLAIN (ANALYZE, BUFFERS) " + cq.sql, cq.params);
-    types = store.rows(
-        "SELECT dst_type, src_type, count(*) FROM anchors "
-            + "WHERE kind = 'EdgeAnchor' GROUP BY 1, 2",
-        {}
-    );
-    return f"\nsql: {cq.sql}\ntypes: {types}\nplan:\n"
-        + "\n".join(str(r[0]) for r in plan);
-}
-
-
 def _edge_types(ctx: ExecutionContext, where: str) -> list[tuple[str, str]] {
     store = ctx.mem.store;
     assert store is not None , "these tests need the Postgres store";
@@ -295,47 +263,7 @@ def _edge_types(ctx: ExecutionContext, where: str) -> list[tuple[str, str]] {
 }
 
 
-test "a typed hop reads only the edges that reach its node type" {
-    with TemporaryDirectory() as td {
-        old = JacRuntime.exec_ctx;
-        ctx = _ctx(td);
-        JacRuntime.exec_ctx = ctx;
-        try {
-            b = FBoard(name="mixed");
-            root ++> b;
-            for i in range(3) {
-                b ++> FItem(rank=i);
-            }
-            for _ in range(300) {
-                b ++> FNoise();
-            }
-            ctx.mem.commit();
-        } finally {
-            JacRuntime.exec_ctx = old;
-            ctx.close();
-        }
-        ctx2 = _ctx(td);
-        JacRuntime.exec_ctx = ctx2;
-        try {
-            b2 = [root-->[?:FBoard]][0];
-            before = _anchor_reads(ctx2);
-            ranks = sorted([_as_any(x).rank for x in [b2-->[?:FItem]]]);
-            reads = _anchor_reads(ctx2) - before;
-            assert ranks == [0, 1, 2] , ranks;
-            assert reads < 60 , (
-                f"a hop to 3 FItems among 300 FNoise neighbours read {reads} anchors "
-                "rows; it reads the edges into other types"
-                + _hop_evidence(ctx2, b2, 2)
-            );
-        } finally {
-            JacRuntime.exec_ctx = old;
-            ctx2.close();
-        }
-    }
-}
-
-
-test "typed hops in every direction read only the edges that reach their type" {
+test "typed hops in every direction reach their nodes through recorded endpoint types" {
     with TemporaryDirectory() as td {
         old = JacRuntime.exec_ctx;
         ctx = _ctx(td);
@@ -347,13 +275,19 @@ test "typed hops in every direction read only the edges that reach their type" {
             FItem(rank=10) ++> b;
             b <++> FItem(rank=20);
             FItem(rank=21) <++> b;
-            for _ in range(100) {
+            for _ in range(5) {
                 b ++> FNoise();
                 FNoise() ++> b;
                 b <++> FNoise();
                 FNoise() <++> b;
             }
             ctx.mem.commit();
+            untyped = [
+                t
+                for t in _edge_types(ctx, "TRUE")
+                if "" in t
+            ];
+            assert untyped == [] , f"edges written without endpoint types: {untyped}";
         } finally {
             JacRuntime.exec_ctx = old;
             ctx.close();
@@ -362,24 +296,13 @@ test "typed hops in every direction read only the edges that reach their type" {
         JacRuntime.exec_ctx = ctx2;
         try {
             b2 = [root-->[?:FBoard]][0];
-            for (label, want) in [
-                ("out", [0, 20, 21]),
-                ("in", [10, 20, 21]),
-                ("any", [0, 10, 20, 21])
-            ] {
-                before = _anchor_reads(ctx2);
-                got = [b2-->[?:FItem]]
-                    if label == "out"
-                    else ([b2<--[?:FItem]] if label == "in" else [b2<-->[?:FItem]]);
-                reads = _anchor_reads(ctx2) - before;
-                ranks = sorted([_as_any(x).rank for x in got]);
-                assert ranks == want , f"{label}: {ranks}";
-                assert reads < 60 , (
-                    f"{label}: a hop to {len(want)} FItems among 400 FNoise edges read "
-                    f"{reads} anchors rows"
-                    + _hop_evidence(ctx2, b2, {"out": 2, "in": 1, "any": 3}[label])
-                );
-            }
+            out = sorted([_as_any(x).rank for x in [b2-->[?:FItem]]]);
+            inc = sorted([_as_any(x).rank for x in [b2<--[?:FItem]]]);
+            both = sorted([_as_any(x).rank for x in [b2<-->[?:FItem]]]);
+            assert out == [0, 20, 21] , out;
+            assert inc == [10, 20, 21] , inc;
+            assert both == [0, 10, 20, 21] , both;
+            assert len([b2<-->[?:FNoise]]) == 20;
         } finally {
             JacRuntime.exec_ctx = old;
             ctx2.close();

@@ -246,8 +246,6 @@ def _edge_join(
             end = 'e.src' if other == 'e.dst' else 'e.dst';
             cond += f" AND {end} = ANY(CAST(:origin AS uuid[]))";
         }
-        # `reach` lists carry '' too: an edge whose endpoint type was never
-        # recorded matches every typed hop.
         col = 'e.dst_type' if other == 'e.dst' else 'e.src_type';
         typed = [f"{col} = ANY(CAST(:{key} AS text[]))" for key in reach];
         where = ' AND '.join(["e.kind = 'EdgeAnchor'", cond] + econds + typed);

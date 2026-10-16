@@ -523,3 +523,55 @@ test "a database from before endpoint types gains them at its next schema boot" 
         }
     }
 }
+
+
+def _typed_edge_row(src: AnchorRow, dst: AnchorRow) -> AnchorRow {
+    row = _edge_row(src.id, dst.id);
+    row.src_type = src.arch_type;
+    row.dst_type = dst.arch_type;
+    return row;
+}
+
+
+test "a typed hop reads only the edges into its node type" {
+    with TemporaryDirectory() as td {
+        store = _store(td);
+        try {
+            hub = _node_row("PHub", ["PHub"]);
+            rows: list[AnchorRow] = [hub];
+            for (arch, anc, count, outgoing) in [
+                ("PRare", ["PRare"], 4, True),
+                ("PRare", ["PRare"], 2, False),
+                ("PFiller", ["PFiller"], 2000, True),
+                ("PFiller", ["PFiller"], 2000, False)
+            ] {
+                for _ in range(count) {
+                    nd = _node_row(arch, anc);
+                    rows.append(nd);
+                    rows.append(
+                        _typed_edge_row(hub, nd)
+                            if outgoing
+                            else _typed_edge_row(nd, hub)
+                    );
+                }
+            }
+            store.upsert(rows);
+            _seed_filler(store, 3000);
+            for (d, want) in [(2, 4), (1, 2), (3, 6)] {
+                (ids, examined, plan) = _hop(store, hub.id, d, PRare);
+                assert len(ids) == want and len(set(ids)) == want , (
+                    f"dir={d}: expected {want} PRare nodes, got {ids}"
+                );
+                # Before 17 the planner may keep a second-column `= ANY` as a filter.
+                if store.server_version() >= 17 {
+                    assert examined < 200 , (
+                        f"dir={d}: the hop examined {examined} rows to reach {want} "
+                        f"PRare nodes among 4000 PFiller edges: {plan}"
+                    );
+                }
+            }
+        } finally {
+            store.close();
+        }
+    }
+}
