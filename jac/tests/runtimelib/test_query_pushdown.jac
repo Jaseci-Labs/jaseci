@@ -450,3 +450,30 @@ test "a subtype the transaction registers itself reaches its next typed hop" {
         }
     }
 }
+
+
+test "under read committed every typed hop sees a subtype another store just registered" {
+    with TemporaryDirectory() as td {
+        store = _store(td);
+        other = _store(td);
+        try {
+            hub = _seed_hub(store);
+            store.begin(TxnIsolation.READ_COMMITTED);
+            try {
+                before = _hop(store, hub, 2, PRare)[0];
+                fresh = _node_row("PRareCommitted", ["PRareCommitted", "PRare"]);
+                other.upsert([fresh, _edge_row(hub, fresh.id)]);
+                after = _hop(store, hub, 2, PRare)[0];
+            } finally {
+                store.rollback();
+            }
+            assert str(fresh.id) not in before , before;
+            assert str(fresh.id) in after , (
+                f"a read committed hop missed a subtype committed by another store: {after}"
+            );
+        } finally {
+            other.close();
+            store.close();
+        }
+    }
+}
