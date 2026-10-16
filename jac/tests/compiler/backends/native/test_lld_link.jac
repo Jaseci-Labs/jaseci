@@ -1,0 +1,141 @@
+"""LLD links every native artifact in-process (native_link.jac).
+
+These cover the parts of that link no other test reaches: a Windows
+executable cross-linked on any host (import libraries written in-process for
+each DLL, CRT aliases imported under the CRT's own names), a wasm module whose
+host-ABI imports move to the host module after wasm-ld, and a failed link
+surfacing LLD's own message.
+"""
+
+import os;
+import struct;
+import subprocess;
+import tempfile;
+import from pathlib { Path }
+import from tests.support { jac_command, TESTS_DIR }
+import from jaclang.compiler.backends.native.native_link {
+    NativeLinkError,
+    NativeLinkJob,
+    link_native
+}
+import from jaclang.compiler.backends.native.wasm_build { link_wasm_object }
+import from jaclang.compiler.backends.native.wasm_artifact { wasm_import_map }
+import jaclang.compiler.backends.native.llvm.binding as llvm;
+
+glob FIXTURES = os.path.join(TESTS_DIR, "compiler", "backends", "native", "fixtures");
+
+"""The DLL names a PE image's import directory lists."""
+def _pe_import_dlls(raw: bytes) -> list[str] {
+    e_lfanew = struct.unpack_from("<I", raw, 0x3C)[0];
+    nsections = struct.unpack_from("<H", raw, e_lfanew + 6)[0];
+    opt_size = struct.unpack_from("<H", raw, e_lfanew + 20)[0];
+    opt = e_lfanew + 24;
+    (import_rva, _import_size) = struct.unpack_from("<II", raw, opt + 120);
+    sections = [
+        struct.unpack_from("<8sIIII", raw, opt + opt_size + i * 40)
+        for i in range(nsections)
+    ];
+    def to_offset(rva: int) -> int {
+        for (_name, vsize, vaddr, rawsize, rawptr) in sections {
+            if vaddr <= rva < vaddr + max(vsize, rawsize) {
+                return rawptr + rva - vaddr;
+            }
+        }
+        raise AssertionError(f"rva {hex(rva)} lies in no section");
+    }
+    dlls: list[str] = [];
+    descriptor = to_offset(import_rva);
+    while True {
+        name_rva = struct.unpack_from("<I", raw, descriptor + 12)[0];
+        if name_rva == 0 {
+            break;
+        }
+        start = to_offset(name_rva);
+        dlls.append(raw[start:raw.index(b"\x00", start)].decode());
+        descriptor += 20;
+    }
+    return dlls;
+}
+
+test "a Windows executable cross-links with import libraries for its DLLs" {
+    with tempfile.TemporaryDirectory() as work {
+        out = os.path.join(work, "pe_smoke.exe");
+        built = subprocess.run(
+            jac_command(
+                "build",
+                "--native",
+                "--target-triple",
+                "x86_64-pc-windows-msvc",
+                os.path.join(FIXTURES, "pe_smoke.jac"),
+                "-o",
+                out
+            ),
+            capture_output=True,
+            text=True,
+            timeout=900
+        );
+        assert built.returncode == 0 , built.stdout[-800:] + built.stderr[-800:];
+        raw = Path(out).read_bytes();
+        assert raw[:2] == b"MZ" , "missing MZ signature";
+        e_lfanew = struct.unpack_from("<I", raw, 0x3C)[0];
+        assert raw[e_lfanew:e_lfanew + 4] == b"PE\x00\x00" , "missing PE signature";
+        chars = struct.unpack_from("<H", raw, e_lfanew + 22)[0];
+        assert not (chars & 0x2000) , "an executable must not be marked IMAGE_FILE_DLL";
+        dlls = [d.lower() for d in _pe_import_dlls(raw)];
+        assert "ucrtbase.dll" in dlls , dlls;
+        assert "kernel32.dll" in dlls , dlls;
+    }
+}
+
+test "a wasm module imports its host ABI from the host module and the rest from env" {
+    llvm.initialize_all_targets();
+    llvm.initialize_all_asmprinters();
+    module = llvm.parse_assembly(
+        'target triple = "wasm32-unknown-unknown"\n'
+            + "declare i32 @write(i32, ptr, i32)\n"
+            + "declare i32 @app_hook(i32)\n"
+            + "define i32 @run(ptr %p) {\n"
+            + "  %a = call i32 @write(i32 1, ptr %p, i32 3)\n"
+            + "  %b = call i32 @app_hook(i32 %a)\n"
+            + "  ret i32 %b\n}\n"
+    );
+    tm = llvm.Target.from_triple("wasm32-unknown-unknown").create_target_machine(opt=2);
+    wasm_obj = tm.emit_object(module);
+    content = link_wasm_object(
+        wasm_obj, ["run"], host_abi={"write"}, host_module="jac_host1", app_imports={"app_hook"}
+    );
+    imports = wasm_import_map(content);
+    assert imports.get("jac_host1") == ["write"] , imports;
+    assert imports.get("env") == ["app_hook"] , imports;
+    raised = "";
+    try {
+        link_wasm_object(
+            wasm_obj, ["run"], host_abi={"write"}, host_module="jac_host1", app_imports=set()
+        );
+    } except RuntimeError as e {
+        raised = str(e);
+    }
+    assert "app_hook" in raised and "neither part of the" in raised , raised;
+}
+
+test "a failed link reports LLD's own message" {
+    with tempfile.TemporaryDirectory() as work {
+        raised = "";
+        try {
+            link_native(
+                NativeLinkJob(
+                    platform="elf",
+                    triple="x86_64-unknown-linux-gnu",
+                    output_path=os.path.join(work, "libmissing.so"),
+                    shared=True,
+                    archives=[os.path.join(work, "missing.a")],
+                    export_symbols=["nothing"]
+                )
+            );
+        } except NativeLinkError as e {
+            raised = str(e);
+        }
+        assert "missing.a" in raised , raised;
+        assert not os.path.exists(os.path.join(work, "libmissing.so"));
+    }
+}

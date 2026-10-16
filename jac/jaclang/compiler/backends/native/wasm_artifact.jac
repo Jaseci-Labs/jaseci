@@ -20,6 +20,7 @@ def wasm_ld_args(
         "-o",
         output_path,
         "--no-entry",
+        "--no-stack-first",
         f"--initial-memory={memory_pages * 65536}",
         f"--global-base={WASM_GLOBAL_BASE}",
         "-z",
