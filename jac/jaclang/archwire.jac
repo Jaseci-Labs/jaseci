@@ -3372,6 +3372,7 @@ graph import compiler.driver {
     bccache --> compiler.tests.test_global_narrowing { discover_base_file }
     bccache --> compiler.tools.code_intel { discover_annex_files }
     bccache --> lsp.server.engine { discover_annex_files, discover_base_file }
+    bccache --> compiler.tools.impl_annex { discover_annex_files }
     bccache --> server.hmr { discover_base_file }
     bccache --> testing.test_runner._suite_source { discover_base_file }
     boundary_classify --> compiler.backends.es.esast_gen_pass.EsastGenPass._is_client_native_import {
@@ -4161,6 +4162,7 @@ graph import compiler.driver {
     program --> dist.source.project { JacProgram }
     program --> lsp.server.engine { JacProgram }
     program --> lsp.server.module_manager { JacProgram }
+    program --> compiler.tools.impl_annex { JacProgram }
     type program --> runtime.build_services { JacProgram }
     type program --> runtime.runtime { JacProgram }
     program --> scale.tests.apps.test_fleet_from_apps { JacProgram }
@@ -9770,6 +9772,9 @@ graph import compiler.tools {
     }
     jac_formatter_pass --> compiler.driver.pipeline.format_passes { JacFormatPass }
     jac_formatter_pass --> compiler.driver.pipeline.format_text_passes { JacFormatPass }
+    impl_annex --> cli.commands.analysis { merge_impl_moves, write_impl_moves }
+    impl_annex --> cli.commands.architecture { write_impl_moves }
+    impl_annex --> lsp.server.engine { write_impl_moves }
     normalize_pass --> compiler.driver.pipeline.normalize_passes { NormalizePass }
     unparse_pass --> compiler.driver.pipeline.unparse_passes { UnparsePass }
 }
