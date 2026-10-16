@@ -16,6 +16,7 @@ def build_native_product(base: Path, record: dict[str, any]) {
         import from jaclang.compiler.backends.native.wasm_artifact {
             rename_wasm_imports,
             wasm_ld_args,
+            wasm_object_functions,
             write_allowed_imports
         }
         import from jaclang.compiler.backends.native.wasm_host_abi {
@@ -48,7 +49,8 @@ def build_native_product(base: Path, record: dict[str, any]) {
                 + wasm_ld_args(
                     str(wasm_path),
                     [str(obj_path)],
-                    list(record['exports']),
+                    list(record['exports'])
+                        or wasm_object_functions(obj_path.read_bytes()),
                     str(allow_path)
                 ),
             check=True

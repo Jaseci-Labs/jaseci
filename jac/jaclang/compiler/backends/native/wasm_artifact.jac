@@ -35,6 +35,70 @@ def wasm_ld_args(
     return args + inputs;
 }
 
+def wasm_object_functions(obj_bytes: bytes) -> list[str] {
+    """The functions a wasm relocatable object defines and does not keep
+    local, read from its `linking` section's symbol table: what a module
+    exports when its caller names no exports. (The wasm target hides
+    symbols by default, so visibility does not decide this.)""";
+    names: list[str] = [];
+    o = 8;
+    while o < len(obj_bytes) {
+        sid = obj_bytes[o];
+        (size, body) = read_uleb128(obj_bytes, o + 1);
+        end = body + size;
+        if sid == 0 {
+            (section, p) = read_leb_name(obj_bytes, body);
+            if section == "linking" {
+                (_version, p) = read_uleb128(obj_bytes, p);
+                while p < end {
+                    kind = obj_bytes[p];
+                    (sub_size, q) = read_uleb128(obj_bytes, p + 1);
+                    sub_end = q + sub_size;
+                    if kind == 8 {
+                        names.extend(_symbol_table_functions(obj_bytes, q));
+                    }
+                    p = sub_end;
+                }
+            }
+        }
+        o = end;
+    }
+    return names;
+}
+
+def _symbol_table_functions(b: bytes, p: int) -> list[str] {
+    names: list[str] = [];
+    (count, p) = read_uleb128(b, p);
+    i = 0;
+    while i < count {
+        kind = b[p];
+        (flags, p) = read_uleb128(b, p + 1);
+        undefined = bool(flags & 0x10);
+        if kind == 1 {
+            (name, p) = read_leb_name(b, p);
+            if not undefined {
+                (_segment, p) = read_uleb128(b, p);
+                (_offset, p) = read_uleb128(b, p);
+                (_size, p) = read_uleb128(b, p);
+            }
+        } elif kind == 3 {
+            (_index, p) = read_uleb128(b, p);
+            name = "";
+        } else {
+            (_index, p) = read_uleb128(b, p);
+            name = "";
+            if not undefined or flags & 0x40 {
+                (name, p) = read_leb_name(b, p);
+            }
+            if kind == 0 and not undefined and not flags & 0x2 and name {
+                names.append(name);
+            }
+        }
+        i += 1;
+    }
+    return names;
+}
+
 def write_allowed_imports(path: str, names: list[str]) {
     with open(path, "w") as f {
         f.write("".join(f"{name}\n" for name in sorted(set(names))));

@@ -20,7 +20,10 @@ import from jaclang.compiler.backends.native.native_link {
     musl_runtime
 }
 import from jaclang.compiler.backends.native.wasm_build { link_wasm_object }
-import from jaclang.compiler.backends.native.wasm_artifact { wasm_import_map }
+import from jaclang.compiler.backends.native.wasm_artifact {
+    wasm_import_map,
+    wasm_object_functions
+}
 import jaclang.compiler.backends.native.llvm.binding as llvm;
 
 glob FIXTURES = os.path.join(
@@ -214,5 +217,43 @@ test "a static link's unresolved-symbol warnings reach the caller" {
             )
         );
         assert any("nowhere_defined" in w for w in warnings) , warnings;
+    }
+}
+
+test "a C wasm object with no named exports exports every function it defines" {
+    import shutil;
+    zig = shutil.which("zig");
+    if zig is None {
+        return;
+    }
+    with tempfile.TemporaryDirectory() as work {
+        source = Path(work) / "arena.c";
+        source.write_text(
+            "static int state;\n"
+                + "int init(void) { state = 1; return state; }\n"
+                + "int tick(int n) { state += n; return state; }\n"
+                + "static int helper(void) { return state; }\n"
+                + "int peek(void) { return helper(); }\n"
+        );
+        obj_path = Path(work) / "arena.o";
+        subprocess.run(
+            [
+                zig,
+                "cc",
+                "-target",
+                "wasm32-wasi",
+                "-O2",
+                "-c",
+                str(source),
+                "-o",
+                str(obj_path)
+            ],
+            check=True
+        );
+        functions = wasm_object_functions(obj_path.read_bytes());
+        assert sorted(functions) == ["init", "peek", "tick"] , functions;
+        content = link_wasm_object(obj_path.read_bytes(), functions);
+        raw = content;
+        assert b"\x04init" in raw and b"\x04tick" in raw , "functions not exported";
     }
 }
