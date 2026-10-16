@@ -108,7 +108,7 @@ test "zip method constants mirror zipfile" {
     assert ZIP_DEFLATED == zipfile.ZIP_DEFLATED;
 }
 
-test "slice_wanted selects the LLVM archives, llvm headers, and (macOS) libLTO" {
+test "slice_wanted selects the LLVM and LLD archives and headers, and (macOS) libLTO" {
     assert slice_wanted("lib/libLLVMCore.a", False);
     assert slice_wanted("lib/libLLVMSupport.a", True);
     assert slice_wanted("include/llvm/ADT/ArrayRef.h", False);
@@ -119,6 +119,11 @@ test "slice_wanted selects the LLVM archives, llvm headers, and (macOS) libLTO" 
     assert not slice_wanted("bin/clang", True);
     assert not slice_wanted("lib/libLTO.dylib", False);
     assert slice_wanted("lib/libLTO.dylib", True);
+    assert slice_wanted("lib/liblldELF.a", False);
+    assert slice_wanted("lib/liblldCommon.a", True);
+    assert slice_wanted("include/lld/Common/Driver.h", False);
+    assert not slice_wanted("lib/liblldb.a", False);
+    assert not slice_wanted("include/lldb/API/LLDB.h", False);
 }
 
 test "central directory parsing agrees with zipfile on a synthetic zip" {
