@@ -8,7 +8,7 @@ import from jaclang.byllm.exceptions { LLMTimeout, RateLimitError }
 import from jaclang.byllm.lib { MockLLM, Model, ModelPool }
 import from jaclang.byllm.llm { _is_timeout_error, _is_transient_error }
 import from jaclang.testing.requires { require_module }
-import from support { call, fail, mk_run, say, text_chunk }
+import from support { call, mk_run, say, text_chunk }
 
 
 """Run `work`, naming the error it raises in place of its result."""
@@ -132,9 +132,44 @@ test "one deadline covers everything a call does" {
     }
 
     def retry_after_failure(budget: float) -> tuple[str, int] {
-        llm = MockLLM(outputs=[fail(transient), say("recovered")], timeout=budget);
-        got = _outcome(lambda { llm.dispatch_no_streaming(mk_run()).output; });
-        return (got, len(llm.seen));
+        answer = litellm.completion;
+        timeouts: list[float] = [];
+
+        def fails_once(**kwargs: any) -> any {
+            timeouts.append(float(kwargs["timeout"]));
+            if len(timeouts) == 1 {
+                raise transient;
+            }
+            return answer(
+                model="gpt-4o-mini",
+                messages=kwargs["messages"],
+                mock_response="recovered"
+            );
+        }
+        model = Model(model_name="gpt-4o-mini", api_key="sk-test", timeout=budget);
+        with mock.patch("litellm.completion", fails_once) {
+            got = _outcome(lambda { model.dispatch_no_streaming(mk_run()).output; });
+        }
+        # The 1s backoff is spent by the time the retry goes out.
+        if len(timeouts) == 2 and timeouts[1] > timeouts[0] - 0.9 {
+            got = "retried with a fresh budget";
+        }
+        return (got, len(timeouts));
+    }
+
+    def slow_failure(budget: float) -> tuple[str, int] {
+        asked: list[int] = [];
+
+        def fails_late(**_kwargs: any) -> any {
+            asked.append(1);
+            time.sleep(0.8);
+            raise transient;
+        }
+        model = Model(model_name="gpt-4o-mini", api_key="sk-test", timeout=budget);
+        with mock.patch("litellm.completion", fails_late) {
+            got = _outcome(lambda { model.dispatch_no_streaming(mk_run()); });
+        }
+        return (got, len(asked));
     }
 
     def tool_loop(budget: float) -> tuple[str, int] {
@@ -207,16 +242,16 @@ test "one deadline covers everything a call does" {
     # (label, scenario, call budget, outcome, requests sent)
     for (label, scenario, budget, outcome, requests) in [
         (
-            "a retry whose backoff fits is taken",
+            "a retry whose backoff fits gets only what is left",
             retry_after_failure,
             30.0,
             "recovered",
             2
         ),
         (
-            "a retry whose backoff outlasts the deadline is skipped",
-            retry_after_failure,
-            0.5,
+            "a request that spends the budget leaves no time to retry",
+            slow_failure,
+            1.5,
             "APIConnectionError",
             1
         ),
