@@ -5,15 +5,7 @@ graph import {
     materialize --> bringup { materialize }
     report --> bringup | embed { die }
     report --> materialize { die, say }
-    trailer --> materialize {
-        MAGIC,
-        OVERLAY_MAGIC,
-        TRAILER_LEN,
-        Trailer,
-        parse_trailer,
-        region_start,
-        rt_key
-    }
+    trailer --> materialize { MAGIC, OVERLAY_MAGIC, TRAILER_LEN, Trailer, parse_trailer, region_start, rt_key }
     embed --> js_engine { CStrArray, export_ca_bundle }
     report --> js_engine { die }
 }
