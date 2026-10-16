@@ -18,6 +18,8 @@ import from tempfile { TemporaryDirectory }
 import from uuid { UUID }
 import from jaclang.runtime.runtime { JacRuntime }
 import from jaclang.runtime.context { ExecutionContext }
+import from jaclang.runtime.graph_query { GraphQuery, QHop }
+import from jaclang.data.sqlcompile { compile_query }
 
 node FBoard {
     has name: str = "";
@@ -264,6 +266,24 @@ def _anchor_reads(ctx: ExecutionContext) -> int {
 }
 
 
+"""What a typed hop from `origin` compiled to, how Postgres ran it, and the
+endpoint types the edges carry: the evidence a row-read assertion reports."""
+def _hop_evidence(ctx: ExecutionContext, origin: any, dir: int) -> str {
+    store = ctx.mem.store;
+    assert store is not None , "these tests need the Postgres store";
+    cq = compile_query(GraphQuery([], hops=[QHop(dir=dir, nd=FItem)]), 1, store);
+    cq.params["origin"] = [str(_as_any(origin).__jac__.id)];
+    plan = store.rows("EXPLAIN (ANALYZE, BUFFERS) " + cq.sql, cq.params);
+    types = store.rows(
+        "SELECT dst_type, src_type, count(*) FROM anchors "
+            + "WHERE kind = 'EdgeAnchor' GROUP BY 1, 2",
+        {}
+    );
+    return f"\nsql: {cq.sql}\ntypes: {types}\nplan:\n"
+        + "\n".join(str(r[0]) for r in plan);
+}
+
+
 def _edge_types(ctx: ExecutionContext, where: str) -> list[tuple[str, str]] {
     store = ctx.mem.store;
     assert store is not None , "these tests need the Postgres store";
@@ -305,6 +325,7 @@ test "a typed hop reads only the edges that reach its node type" {
             assert reads < 60 , (
                 f"a hop to 3 FItems among 300 FNoise neighbours read {reads} anchors "
                 "rows; it reads the edges into other types"
+                + _hop_evidence(ctx2, b2, 2)
             );
         } finally {
             JacRuntime.exec_ctx = old;
@@ -356,6 +377,7 @@ test "typed hops in every direction read only the edges that reach their type" {
                 assert reads < 60 , (
                     f"{label}: a hop to {len(want)} FItems among 400 FNoise edges read "
                     f"{reads} anchors rows"
+                    + _hop_evidence(ctx2, b2, {"out": 2, "in": 1, "any": 3}[label])
                 );
             }
         } finally {

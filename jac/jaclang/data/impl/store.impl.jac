@@ -740,9 +740,6 @@ impl PgStore._apply_schema_ddl -> None {
 }
 
 
-"""Records the endpoint types of edges written before the columns existed, in
-id order and in chunks so no statement holds many row locks. Rows left at ''
-(a chunk that hit a lock, an endpoint that is gone) still answer every hop."""
 impl PgStore._backfill_endpoint_types -> None {
     after = str(UUID(int=0));
     while True {
@@ -1155,8 +1152,6 @@ impl PgStore.upsert(rows_in: list[AnchorRow]) -> None {
 }
 
 
-"""Re-records the endpoint type on every edge of nodes whose stored type
-changed, so a typed hop keeps finding them."""
 impl PgStore.retype_edges(ids: list[UUID]) -> None {
     if not ids {
         return;

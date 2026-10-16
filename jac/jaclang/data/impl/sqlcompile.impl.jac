@@ -237,10 +237,6 @@ def _edge_branches(fid: str, dir: int) -> list[tuple[str, str]] {
 }
 
 
-"""`reach` names the text[] params of the node types the hop reaches. Each arm
-tests the endpoint type its edge rows recorded for the side they reach, so the
-index skips edges into other types; each list carries '' for rows whose
-endpoint type was never recorded."""
 def _edge_join(
     alias: str, fid: str, dir: int, econds: list[str], reach: list[str]
 ) -> str {
@@ -250,6 +246,8 @@ def _edge_join(
             end = 'e.src' if other == 'e.dst' else 'e.dst';
             cond += f" AND {end} = ANY(CAST(:origin AS uuid[]))";
         }
+        # `reach` lists carry '' too: an edge whose endpoint type was never
+        # recorded matches every typed hop.
         col = 'e.dst_type' if other == 'e.dst' else 'e.src_type';
         typed = [f"{col} = ANY(CAST(:{key} AS text[]))" for key in reach];
         where = ' AND '.join(["e.kind = 'EdgeAnchor'", cond] + econds + typed);
