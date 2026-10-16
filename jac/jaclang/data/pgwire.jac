@@ -5,12 +5,13 @@ import logging;
 import secrets as _pysecrets;
 import socket;
 import struct;
-import from collections { deque }
+import from collections { OrderedDict, deque }
 import from functools { lru_cache }
 glob logger = logging.getLogger(__name__),
      PROTOCOL_VERSION = 196608,
      READ_CHUNK = 65536,
      REWRITE_CACHE_SIZE = 1024,
+     STATEMENT_CACHE_SIZE = 512,
      __all__ = ['PgWireConnection', 'PgWireError'];
 
 
@@ -40,7 +41,10 @@ obj PgWireConnection {
         _sock: (any | None) postinit,
         _closed: bool postinit,
         _rbuf: bytearray postinit,
-        _rpos: int postinit;
+        _rpos: int postinit,
+        _stmts: OrderedDict postinit,
+        _stmt_seq: int postinit,
+        _evicted: list[str] postinit;
 
     def postinit -> None;
     def run(sql: str, **params: any) -> list[tuple[any, ...]];
