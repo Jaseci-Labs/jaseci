@@ -1211,7 +1211,7 @@ def link_artifact(
             for (sym, raw) in clib_symbol_lib.items()
             if raw in floor_handled
         },
-        static=static_musl
+        static_musl=static_musl
     );
     try {
         link_native(job);

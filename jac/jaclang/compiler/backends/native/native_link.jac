@@ -42,7 +42,7 @@ obj NativeLinkJob {
         symbol_lib_map: dict[str, str] = {},
         export_symbols: list[str] = [],
         archive_symbols: set[str] = set(),
-        static: bool = False;
+        static_musl: bool = False;
 }
 
 obj WasmLinkJob {
@@ -322,7 +322,7 @@ def _link_elf(job: NativeLinkJob, work: str) {
         "noexecstack",
         "--hash-style=both"
     ];
-    if job.static {
+    if job.static_musl {
         crt = [p for p in job.crt_objects if os.path.basename(p) != "crtn.o"];
         crtn = [p for p in job.crt_objects if os.path.basename(p) == "crtn.o"];
         args += ["-static", "--warn-unresolved-symbols"];

@@ -3106,6 +3106,7 @@ graph import compiler.backends.native.llvm {
     }
     binding as llvm --> compiler.backends.native.wasm_build._load_libc_module;
     binding as llvm --> compiler.backends.native.wasm_build.prepare_wasm_module;
+    binding as llvm --> compiler.backends.native.wasm_build._exported_functions;
     binding as llvm --> compiler.driver.compiler.JacCompiler._load_native_from_cache;
     type binding --> compiler.driver.compiler.JacCompiler._load_native_from_cache {
         ExecutionEngine
