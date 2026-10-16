@@ -936,13 +936,41 @@ def compute_module_key(source_path: str) -> str {
     return _memoized("module", source_path, _compute_module_key_uncached);
 }
 
-glob _WIRING_DIGESTS: dict[str, dict[str, str]] = {};
+glob _WIRING_DIGESTS: dict[str, dict[str, str]] = {},
+     _ARCH_STAMPS: dict[str, tuple[tuple[int, int, str], str]] = {};
+
+def _arch_stamp(arch: str, package_name: str) -> (str | None) {
+    try {
+        st = os.stat(arch);
+    } except OSError {
+        return None;
+    }
+    probe = (st.st_mtime_ns, st.st_size, package_name);
+    held = _ARCH_STAMPS.get(arch);
+    if held is not None and held[0] == probe {
+        return held[1];
+    }
+    h = hashlib.sha256();
+    try {
+        with open(arch, "rb") as f {
+            h.update(f.read());
+        }
+    } except OSError {
+        return None;
+    }
+    h.update(b"\0");
+    h.update(package_name.encode());
+    stamp = h.hexdigest();
+    _ARCH_STAMPS[arch] = (probe, stamp);
+    return stamp;
+}
 
 def stored_wiring_digest(source_path: str) -> str {
     import json;
     import from jaclang.compiler.frontend.host { active_host }
     import from jaclang.compiler.driver.wiring {
         arch_file_for,
+        import_prefix_for,
         is_arch_file,
         wiring_digest_for
     }
@@ -955,29 +983,17 @@ def stored_wiring_digest(source_path: str) -> str {
     }
     root_dir = os.path.dirname(arch);
     facts = active_host().project_facts(root_dir);
-    h = hashlib.sha256();
-    try {
-        with open(arch, "rb") as f {
-            h.update(f.read());
-        }
-    } except OSError {
+    package_name = (facts.package_name or "") if facts is not None else "";
+    stamp = _arch_stamp(arch, package_name + "\x00" + import_prefix_for(root_dir));
+    if stamp is None {
         return wiring_digest_for(source_path);
     }
-    h.update(b"\0");
-    if facts is not None {
-        h.update((facts.package_name or "").encode());
-        for pattern in facts.arch_closed {
-            h.update(b"\0");
-            h.update(pattern.encode());
-        }
-    }
-    stamp = h.hexdigest();
     relative = os.path.relpath(
         os.path.realpath(source_path), os.path.realpath(root_dir)
     );
     table = _WIRING_DIGESTS.get(stamp);
     store = os.path.join(
-        str(get_jir_cache_dir()), "wiring", stamp[:2], stamp + ".json"
+        str(get_jir_cache_dir()), "wiring-v2", stamp[:2], stamp + ".json"
     );
     if table is None {
         table = {};

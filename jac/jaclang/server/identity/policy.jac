@@ -2,14 +2,6 @@ import hashlib;
 import logging;
 import re;
 import secrets;
-import from jaclang.server.identity.common_passwords { COMMON_PASSWORDS }
-import from jaclang.server.identity.config { auth_settings }
-import from jaclang.server.serving.client { request_sync }
-import from jaclang.server.settings {
-    IDENTIFIER_KINDS,
-    PASSWORD_CLASSES,
-    PasswordSettings
-}
 
 glob logger = logging.getLogger(__name__),
      POLICY_VIOLATION: str = 'POLICY_VIOLATION',

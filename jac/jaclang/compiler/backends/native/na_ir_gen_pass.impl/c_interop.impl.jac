@@ -1,26 +1,3 @@
-import from jaclang.compiler.c_interop {
-    c_array_elem,
-    c_builtin_kind,
-    c_bytes_array_values,
-    c_bytes_elem_shape,
-    c_bytes_literal,
-    c_variadic_param,
-    is_va_list_type,
-    c_scalar_constant,
-    c_string_literal,
-    c_type_arg,
-    clib_global_of_name,
-    is_builtin_addressof_call,
-    foreign_read_copies,
-    foreign_struct_of_type,
-    is_builtin_pin_call,
-    is_pinned_type,
-    is_ptr_type,
-    is_ptr_view_type,
-    foreign_field_of,
-    named_function_of
-}
-
 impl NaIRGenPass._foreign_struct_name_of_type(t: any) -> (str | None) {
     arch = foreign_struct_of_type(t);
     if arch is None or arch.name is None {
@@ -63,8 +40,6 @@ impl NaIRGenPass._ptr_view_type -> ir.Type {
 }
 
 impl NaIRGenPass._c_scalar_llvm(t: any) -> (ir.Type | None) {
-    import from jaclang.compiler.types.types { ClassType as _CClassType }
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
     if is_ptr_type(t) {
         return ir.IntType(64);
     }
@@ -546,7 +521,6 @@ impl NaIRGenPass._clib_param_info(p: uni.ParamVar) -> dict[str, any] {
 }
 
 impl NaIRGenPass._clib_param_borrowed(p: uni.ParamVar) -> bool {
-    import from jaclang.compiler.frontend.constant { is_borrow_kind }
     tag = p.type_tag;
     if tag is None {
         return False;
@@ -590,7 +564,6 @@ impl NaIRGenPass._c_decl_type_of(type_expr: uni.UniNode) -> any {
 }
 
 impl NaIRGenPass._clib_place_ptr(expr: uni.Expr) -> (ir.Value | None) {
-    import from jaclang.compiler.frontend.constant { is_borrow_kind }
     if isinstance(expr, uni.UnaryExpr) and is_borrow_kind(expr.ownership) {
         expr = expr.operand;
     }
@@ -699,7 +672,6 @@ impl NaIRGenPass._codegen_clib_args(
 }
 
 impl NaIRGenPass._c_vararg(arg: uni.Expr) -> (ir.Value | None) {
-    import from jaclang.compiler.frontend.constant { is_borrow_kind }
     if isinstance(arg, uni.UnaryExpr) and is_borrow_kind(arg.ownership) {
         return self._c_vararg_address(arg);
     }
@@ -756,7 +728,6 @@ impl NaIRGenPass._c_lent_address(arg: uni.UnaryExpr, elem: any) -> (ir.Value | N
 }
 
 impl NaIRGenPass._c_vararg_value(val: ir.Value, arg: uni.Expr) -> (ir.Value | None) {
-    import from jaclang.compiler.frontend.constant { is_borrow_kind }
     if isinstance(arg, uni.UnaryExpr) and is_borrow_kind(arg.ownership) {
         return self._c_vararg_address(arg);
     }

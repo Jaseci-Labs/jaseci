@@ -1,5 +1,3 @@
-import from jaclang.compiler.c_interop { c_variadic_param, clib_block_defines }
-import from jaclang.compiler.driver.pipeline_types { AnalysisFact }
 def scalar_llvm_type(`entry: JacTypeEntry) -> ir.Type {
     if `entry.is_float {
         return ir.FloatType() if `entry.width == 32 else ir.DoubleType();
@@ -17,7 +15,6 @@ def _source_param_names(func: ir.Function) -> list[str] {
 }
 
 def _native_emitter_of(suffix: str) -> (object | None) {
-    import jaclang.compiler.backends.native.primitives_native as _pn;
     if suffix == "IntEmitter" {
         return _pn.NativeIntEmitter();
     }
@@ -77,7 +74,7 @@ impl NaIRGenPass.postinit -> None {
     );
     self.llvm_module.data_layout = _ni_target[0];
     self.llvm_module.triple = _ni_target[1];
-    import from jaclang.compiler.frontend.codeinfo { native_unit_prefix }
+
     self._unit_prefix = native_unit_prefix(_ni_src) if _ni_src else "jac_native";
 
     if _ni_src and _ni_opts.native_debug {
@@ -107,7 +104,7 @@ impl NaIRGenPass.postinit -> None {
 
     _byte_ptr = ir.IntType(8).as_pointer();
     self._type_map = {};
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
+
     for _scalar in JAC_TYPE_REGISTRY.scalar_entries() {
         if _scalar.name == "str" {
             continue;
@@ -170,7 +167,7 @@ impl NaIRGenPass._settle_module -> None {
     the legality table for the driver to place the module in the server
     codespace. On a module that must be native they stay errors. A backend
     crash is never a refusal.""";
-    import from jaclang.compiler.passes.placement_pass { settle_native_module }
+
     if self._internal_errors {
         self.ctx.errors_had.extend(self._internal_errors);
         self._internal_errors = [];
@@ -221,7 +218,6 @@ impl NaIRGenPass._internal_error(
 }
 
 impl NaIRGenPass._lower_module -> None {
-    import from jaclang.compiler.passes.placement_pass { build_native_legality }
     self._legality = build_native_legality(self.module, self.prog);
     self._claimed_units = set();
     self._internal_errors = [];
@@ -388,16 +384,7 @@ impl NaIRGenPass._glob_init_symbols -> tuple[list[str], list[str]] {
 
 impl NaIRGenPass._export_native_iface -> None {
     import os as _ni_os;
-    import from jaclang.compiler.driver.native_iface {
-        NativeClassLayout,
-        NativeFieldSlot,
-        NativeIface
-    }
-    import from jaclang.compiler.frontend.codeinfo {
-        native_glob_init_name,
-        native_module_key,
-        native_unit_spelling
-    }
+
     mod_path = self.module.loc.mod_path if self.module?.loc else "";
     iface = NativeIface(
         module=native_module_key(mod_path) if mod_path else "",
@@ -529,12 +516,6 @@ impl NaIRGenPass._prefix_of_module(mod: (uni.Module | None)) -> str {
 impl NaIRGenPass._symbol_for(
     name: str, owner: (uni.Module | None) = None, is_pub: bool = False
 ) -> str {
-    import from jaclang.compiler.frontend.codeinfo {
-        native_def_symbol,
-        native_symbol_name,
-        native_unit_identity,
-        native_unit_spelling
-    }
     module = owner if owner is not None else self.module;
     name = native_unit_spelling(name, module.loc.mod_path);
     bundled_library = native_unit_identity(module.loc.mod_path).startswith(
@@ -637,7 +618,7 @@ impl NaIRGenPass._dep_is_native_unit(imported_mod: uni.Module, path: str) -> boo
         or os.path.realpath(path) in self._native_dep_paths {
         return True;
     }
-    import from jaclang.compiler.placement.placement_facts { native_unit }
+
     return native_unit(path, self.prog.options.native_unit, self.prog);
 }
 
@@ -651,7 +632,7 @@ impl NaIRGenPass._load_native_unit_module(path: str) -> (uni.Module | None) {
     if not _lu_os.path.isfile(real) {
         return None;
     }
-    import from jaclang.compiler.driver.compile_options { CompileOptions as _UnitOpts }
+
     saved = self.prog.options;
     try {
         return self.prog.compile(
@@ -671,7 +652,6 @@ impl NaIRGenPass._load_native_unit_module(path: str) -> (uni.Module | None) {
 }
 
 impl NaIRGenPass._is_kernel_unit -> bool {
-    import from jaclang.compiler.frontend.codeinfo { is_kernel_unit_path }
     return bool(self.module?.loc) and is_kernel_unit_path(self.module.loc.mod_path);
 }
 
@@ -891,15 +871,6 @@ impl NaIRGenPass._layout_pointee_names -> dict[str, str] {
 }
 
 impl NaIRGenPass._export_native_layout -> None {
-    import from jaclang.compiler.frontend.codeinfo {
-        NativeModuleLayout,
-        NativeStructLayout,
-        NativeFieldInfo,
-        NativeEnumLayout,
-        NativeFuncLayout,
-        NativeTupleLayout,
-        NativeTestLayout
-    }
     layout = NativeModuleLayout(str_headerless=self._nogc_headerless());
     pointee_names = self._layout_pointee_names();
     struct_names: dict[str, str] = {};
@@ -1126,7 +1097,6 @@ impl NaIRGenPass._exported_accessors(arch_name: str) -> dict[(str, dict[(str, st
 impl NaIRGenPass._ret_tuple_hints(
     fname: str, ret_tuple: any
 ) -> (list[str | None] | None) {
-    import from jaclang.compiler.frontend.codeinfo { NativeTupleLayout }
     if not isinstance(ret_tuple, NativeTupleLayout) {
         return None;
     }
@@ -1158,10 +1128,6 @@ impl NaIRGenPass._ret_tuple_hints(
 
 impl NaIRGenPass._register_imported_struct_types -> None {
     import os;
-    import from jaclang.compiler.frontend.codeinfo {
-        resolve_native_module,
-        is_bundled_native_module
-    }
 
     processed_modules: set[str] = set();
     imported_mods: list[tuple[str, uni.Module]] = [];
@@ -1419,7 +1385,6 @@ impl NaIRGenPass._register_imported_struct_types -> None {
         self._register_imported_hierarchy(imported_mod);
     }
 
-    import from jaclang.compiler.passes.layout_pass { adopt_imported_bases }
     adopt_imported_bases(self.module, header_identity=not self._nogc_headerless());
     self._report_unreachable_overrides();
 
@@ -1514,7 +1479,7 @@ impl NaIRGenPass._walk_imported_module_type_names(imported_mod: uni.Module) -> N
             }
         }
     }
-    import from jaclang.compiler.passes.layout_pass { record_interface_twins }
+
     record_interface_twins(imported_mod, self.prog);
 }
 
@@ -1684,7 +1649,7 @@ impl NaIRGenPass._register_imported_hierarchy(imported_mod: uni.Module) -> None 
     module and `adopt_imported_bases` rewrites the object this registry holds,
     so the two must be one object: the defining module's layout replaces any
     copy that reached this registry first.""";
-    import from jaclang.compiler.passes.layout_pass { get_layout_registry }
+
     _imp_reg = get_layout_registry(imported_mod, self.prog);
     _cons_reg = get_layout_registry(self.module, self.prog);
     _owned = set(_imp_reg.local_names) - set(_cons_reg.local_names);
@@ -1965,7 +1930,7 @@ impl NaIRGenPass._ensure_dep_inference(dep_mod: uni.Module) -> None {
     if self.prog.analysis.provides(dep_mod, AnalysisFact.TYPE_OF) {
         return;
     }
-    import from jaclang.compiler.driver.pipeline { require, CompilationProduct }
+
     if not require(self.prog, dep_mod, CompilationProduct.ANALYSIS) {
         raise NativeRefused(
             f"Native dependency analysis failed: {dep_mod.loc.mod_path}"
@@ -2001,7 +1966,7 @@ impl NaIRGenPass._check_native_import_names(
     the compiler intercepts (`os.getpid`) needs no definition.
     """;
     import os;
-    import from jaclang.compiler.types.type_utils { lookup_symtab }
+
     by_path: dict[str, uni.Module] = {};
     for (_, _mod) in imported_mods {
         if _mod?.loc and _mod.loc.mod_path {
@@ -2219,7 +2184,6 @@ impl NaIRGenPass._define_clib_struct(decl: uni.Archetype) -> None {
 }
 
 impl NaIRGenPass._ensure_clib_struct(t: any) -> (str | None) {
-    import from jaclang.compiler.c_interop { foreign_struct_of_type }
     arch = foreign_struct_of_type(t);
     if arch is None or arch.name is None {
         return None;
@@ -2276,8 +2240,7 @@ impl NaIRGenPass._ensure_emitters -> dict[str, object] {
     if self._native_emitters is not None {
         return self._native_emitters;
     }
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
-    import jaclang.compiler.backends.native.primitives_native as _pn;
+
     emitters: dict[str, object] = {};
     for (_tn, _suffix) in JAC_TYPE_REGISTRY.emitter_items() {
         _made = _native_emitter_of(_suffix);
@@ -2327,7 +2290,7 @@ impl NaIRGenPass._dispatch_primitive_method(
     target = self._str_norm(target);
     originals = list(args);
     args = [self._str_borrow(_a) for _a in args];
-    import jaclang.compiler.backends.native.primitives_native as _pm_pn;
+
     _emitter = self._ensure_emitters().get(type_name);
     if not isinstance(_emitter, PrimitiveEmitter) {
         return None;

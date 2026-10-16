@@ -1,5 +1,4 @@
 impl primitive_type_name_of(ty: (TypeBase | None)) -> (str | None) {
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
     if not isinstance(ty, ClassType) {
         return None;
     }
@@ -16,8 +15,6 @@ impl primitive_type_name_of(ty: (TypeBase | None)) -> (str | None) {
 }
 
 impl expr_primitive_name(expr_node: UniNode) -> str {
-    import from jaclang.compiler.frontend.unitree { CfgExpr }
-
     while isinstance(expr_node, CfgExpr) {
         expr_node = expr_node.expr;
     }
@@ -173,6 +170,18 @@ impl class_implements_protocol(
                 cls_func_type = _method_entry_type(evaluator, cls_method);
                 if isinstance(proto_func_type, FunctionType)
                     and isinstance(cls_func_type, FunctionType) {
+                    if proto.private is not None and proto.private.type_args {
+                        proto_func_type = proto_func_type.specialize(proto);
+                        cls_member = evaluator._lookup_class_member(cls, name);
+                        impl_func = evaluator._protocol_member_impl(
+                            proto_func_type, cls_member, cls
+                        )
+                            if cls_member is not None
+                            else None;
+                        if impl_func is not None {
+                            cls_func_type = impl_func;
+                        }
+                    }
                     if not evaluator._assign_callable(cls_func_type, proto_func_type) {
                         return False;
                     }
@@ -347,8 +356,6 @@ impl origin_of_local_name(nd: UniNode, local: str) -> tuple[str, (str | None)] {
 impl collect_member_syms(
     scope: UniScopeNode, name: str, deep: bool = False
 ) -> list[Symbol] {
-    import from jaclang.compiler.frontend.helpers { evaluate_version_condition }
-
     def live_branches(guard: IfStmt) -> list[UniScopeNode] {
         eval_result = evaluate_version_condition(guard.condition);
         if eval_result is None or eval_result {
@@ -644,14 +651,12 @@ impl mro_signature(cls: ClassType) -> list[tuple[int, str]] {
 
 impl ensure_mro_fresh(cls: ClassType, _visiting: (set[int] | None) = None) -> bool {
     shared = cls.shared;
-    if getattr(shared, "_fresh_epoch", -1) == CLASS_GRAPH_EPOCH[0] {
+    if shared._fresh_epoch == CLASS_GRAPH_EPOCH[0] {
         return False;
     }
     changed = _ensure_mro_fresh(cls, _visiting);
     if _visiting is None or not _visiting {
-        try {
-            shared._fresh_epoch = CLASS_GRAPH_EPOCH[0];
-        } except AttributeError {}
+        shared._fresh_epoch = CLASS_GRAPH_EPOCH[0];
     }
     return changed;
 }
@@ -877,23 +882,21 @@ impl shadowed_type_var_names(
 impl build_type_var_solution(class_type: ClassType) -> dict[str, TypeBase] {
     private = class_type.private;
     mro = class_type.shared.mro;
-    key = (
-        id(private),
-        tuple(id(arg) for arg in (private.type_args or [])),
-        id(mro),
-        len(mro)
-    );
-    cache = class_type._acc_cache;
-    if cache is None {
-        cache = {};
-        class_type._acc_cache = cache;
+    parts: list[str] = [str(id(private)), str(id(mro)), str(len(mro))];
+    targs: list[TypeBase] = private.type_args;
+    if targs {
+        for arg in targs {
+            parts.append(str(id(arg)));
+        }
     }
-    held = cache.get("_tv_solution");
-    if held is not None and held[0] == key {
-        return held[1];
+    key = ",".join(parts);
+    held = class_type._tv_solution;
+    if held is not None and class_type._tv_key == key {
+        return held;
     }
-    solution = CachedSolution(_build_type_var_solution(class_type));
-    cache["_tv_solution"] = (key, solution);
+    solution = _build_type_var_solution(class_type);
+    class_type._tv_key = key;
+    class_type._tv_solution = solution;
     return solution;
 }
 
@@ -1081,7 +1084,7 @@ def _apply_to_function(
     class_type: (ClassType | None),
     shadowed: (set[str] | None) = None
 ) -> FunctionType {
-    if not isinstance(solution, CachedSolution) {
+    if class_type is None or class_type._tv_solution is not solution {
         return _apply_to_function_uncached(func, solution, class_type, shadowed);
     }
     memo_key = (

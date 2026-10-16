@@ -1,13 +1,8 @@
-import from jaclang.compiler.passes.osp_analysis { OSP_ANY_TAGS }
 impl NaIRGenPass._register_osp_kernel_module -> None {
     if not self._osp_active() {
         return;
     }
-    import from jaclang.compiler.frontend.codeinfo {
-        OSP_GRAPH_REL,
-        OSP_KERNEL_REL,
-        kernel_unit_path
-    }
+
     kernel_mod = self._load_native_unit_module(kernel_unit_path(OSP_KERNEL_REL));
     graph_mod = self._load_native_unit_module(kernel_unit_path(OSP_GRAPH_REL));
     if kernel_mod is None or graph_mod is None {
@@ -33,7 +28,6 @@ impl NaIRGenPass._register_osp_kernel_module -> None {
 }
 
 impl NaIRGenPass._osp_kernel_init_fns -> list[ir.Function] {
-    import from jaclang.compiler.frontend.codeinfo { native_glob_init_name }
     out: list[ir.Function] = [];
     _init_units: list[uni.Module | None] = [self._osp_kernel_mod, self._osp_graph_mod];
     for unit in _init_units {
@@ -60,7 +54,7 @@ impl NaIRGenPass._compute_osp_model(archetypes: list[uni.Archetype]) -> None {
             self.arch_ast_map[_n] = arch;
         }
     }
-    import from jaclang.compiler.passes.osp_analysis { get_osp_model }
+
     _model = get_osp_model(
         self.module,
         archetypes=(list(archetypes) + list(self.arch_ast_map.values())),
@@ -1096,7 +1090,7 @@ impl NaIRGenPass._osp_connect_assign_early(
         if self._osp_connect_assign_field(kw, edge_arch) is None {
             return None;
         }
-        value = self._osp_connect_assign_value(kw);
+        value = self._osp_connect_assign_value(kw, keep=True);
         if value is None {
             return None;
         }
@@ -1129,7 +1123,7 @@ impl NaIRGenPass._osp_connect_assign_hold(
             );
             return None;
         }
-        value = self._osp_connect_assign_value(kw);
+        value = self._osp_connect_assign_value(kw, keep=True);
         if value is None {
             return None;
         }
@@ -1163,7 +1157,15 @@ impl NaIRGenPass._osp_connect_assign_field(
     return field_name;
 }
 
-impl NaIRGenPass._osp_connect_assign_value(kw: uni.KWPair) -> (ir.Value | None) {
+impl NaIRGenPass._osp_connect_assign_value(
+    kw: uni.KWPair, keep: bool = False
+) -> (ir.Value | None) {
+    """Lower one attribute value of a typed connect.
+
+    With `keep`, the value is held before a later value is evaluated, so a
+    borrowed one (`f=h.text`) takes its own reference: a later value such as
+    `g=reset(h)` could otherwise free it before it is stored.
+    """;
     _errs = len(self.ctx.errors_had);
     value = self._codegen_expr(kw.value);
     if value is None and len(self.ctx.errors_had) == _errs {
@@ -1173,6 +1175,13 @@ impl NaIRGenPass._osp_connect_assign_value(kw: uni.KWPair) -> (ir.Value | None) 
             kind="expression",
             name=type(kw.value).__name__
         );
+    }
+    if value is not None
+        and keep
+        and not self._is_owned(value)
+        and not self._nogc_headerless() {
+        self._emit_take_ref(value, op="conn_assign_keep");
+        value = self._mark_reference_owned(value);
     }
     return value;
 }
@@ -1647,8 +1656,7 @@ impl NaIRGenPass._emit_jid(nd: uni.FuncCall) -> (ir.Value | None) {
     first request and never reuses it, matching the id shape of the other
     backends. Like the client runtime, only nodes and edges have a jid; any
     other argument is refused here rather than failing at run time.""";
-    import from jaclang.compiler.passes.layout_pass { get_layout_registry }
-    import from jaclang.compiler.types.types { ClassType, UnionType }
+
     params: list[uni.Expr | uni.KWPair] = list(nd.params or []);
     arg = params[0] if len(params) == 1 else None;
     arch = self._struct_name_of(arg) if isinstance(arg, uni.Expr) else None;

@@ -3,7 +3,6 @@ import queue;
 import threading;
 import time;
 import from typing { Generator }
-import from jaclang.byllm.exceptions { LLMTimeout }
 
 obj CallDeadline {
     has budget: float | None = None,
