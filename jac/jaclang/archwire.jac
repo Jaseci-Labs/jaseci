@@ -12738,6 +12738,10 @@ graph import runtime {
         register_py_callbacks
     }
     interop_bridge --> runtime.prepared.execute_module { NativeLibrary }
+    scalars --> runtime.interop_bridge {
+        sized_float_names,
+        sized_int_names
+    }
     interop_bridge --> compiler.backends.native.link_glue.bind_shared_callbacks {
         interop_callback_symbol
     }

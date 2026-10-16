@@ -3,7 +3,6 @@ import hashlib;
 import logging;
 import from collections.abc { Callable, Iterable }
 import from typing { Protocol }
-import from jaclang.runtime.scalars { sized_float_names, sized_int_names }
 class CallbackSignature(Protocol) {
     has name: str,
         ret_type: str,
