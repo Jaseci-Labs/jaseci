@@ -16,6 +16,7 @@ outside the subset; scripts/check_seed_manifest.py is the gate.
 from __future__ import annotations
 
 import enum
+import keyword
 import os
 import re
 from dataclasses import dataclass, field
@@ -1410,6 +1411,7 @@ def transform_tokens(tokens: list[Token], *, allow_cast: bool = True) -> list[To
             and tokens[i + 1].type == TT.LPAREN
             and out
             and out[-1].type == TT.NAME
+            and not keyword.iskeyword(out[-1].value)
             and _paren_group_spans_subscript(tokens, i + 1)
         ):
             bracket_depth += 1

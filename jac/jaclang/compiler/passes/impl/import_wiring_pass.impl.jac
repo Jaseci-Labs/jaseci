@@ -30,13 +30,21 @@ impl ImportWiringPass._check_arch_module(mod: Module) -> None {
     for stmt in mod.body {
         if isinstance(stmt, GraphImport) {
             blocks.append(stmt);
-        } elif not isinstance(stmt, (String, EmptyToken)) {
+        } elif isinstance(stmt, String) {
+            self.ctx.emit(E2089, node_override=stmt, kind="docstring");
+        } elif not isinstance(stmt, EmptyToken) {
             self.ctx.emit(
                 E2089,
                 node_override=stmt,
                 kind=pascal_to_snake(type(stmt).__name__).replace("_", " ")
             );
         }
+    }
+    if mod.doc is not None {
+        self.ctx.emit(E2089, node_override=mod.doc, kind="docstring");
+    }
+    for comment in mod.source.comments {
+        self.ctx.emit(E2089, node_override=comment, kind="comment");
     }
     if not is_root or spec is None {
         return;
@@ -74,7 +82,7 @@ impl ImportWiringPass._check_scope(
     name = block.scope_prefix;
     if spec.module_file(name) is None and not spec.is_package_dir(name) {
         self.ctx.emit(
-            W2084, node_override=sc, name=name, what="this graph import block"
+            E2097, node_override=sc, name=name, what="this graph import block"
         );
     }
 }
@@ -82,30 +90,30 @@ impl ImportWiringPass._check_scope(
 impl ImportWiringPass._check_wire(spec: WiringSpec, wire: ImportWire) -> None {
     provider = wire.provider_path;
     provider_ok = spec.module_file(provider) is not None;
-    live: list[ModulePath] = [];
-    for c in wire.consumers {
-        split = spec.split_consumer(c.dot_path_str);
-        head = split[0] if split is not None else c.dot_path_str;
-        if spec.module_file(head) is not None or spec.is_package_dir(c.dot_path_str) {
-            live.append(c);
-        }
-    }
-    if not provider_ok and live {
+    if not provider_ok {
         self.ctx.emit(E1141, node_override=wire.provider, module=provider);
     }
+    for target in wire.targets {
+        self._check_target(spec, provider, provider_ok, target);
+    }
+}
+
+impl ImportWiringPass._check_target(
+    spec: WiringSpec, provider: str, provider_ok: bool, target: WireTarget
+) -> None {
     names: (list[tuple[str, UniNode]] | None) = None;
-    if not wire.is_module_form {
-        names = [(item.name.value, item) for item in wire.items];
+    if not target.is_module_form {
+        names = [(item.name.value, item) for item in target.items];
     }
     seen_modules: set[str] = set();
-    for consumer_node in wire.consumers {
-        split = spec.split_consumer(consumer_node.dot_path_str);
-        consumer = split[0] if split is not None else consumer_node.dot_path_str;
+    for (consumer_node, path) in zip(target.consumers, target.consumer_paths) {
+        split = spec.split_consumer(path);
+        consumer = split[0] if split is not None else path;
         if split is not None and consumer in seen_modules {
             self.ctx.emit(
                 E1142,
                 node_override=consumer_node,
-                module=consumer_node.dot_path_str,
+                module=path,
                 detail=f"this wire already names '{consumer}'; a wire lands in each"
                 " module once, so give the other scope its own wire"
             );
@@ -123,7 +131,7 @@ impl ImportWiringPass._check_wire(spec: WiringSpec, wire: ImportWire) -> None {
                 );
             } else {
                 self.ctx.emit(
-                    W2084,
+                    E2097,
                     node_override=consumer_node,
                     name=consumer,
                     what="this wire's import into it"
@@ -153,28 +161,28 @@ impl ImportWiringPass._check_wire(spec: WiringSpec, wire: ImportWire) -> None {
 impl ImportWiringPass._check_rule_liveness(spec: WiringSpec, rule: ImportRule) -> None {
     modules = spec.project_modules();
     top_level = {m.split(".")[0] for m in modules};
-    prefix = rule.block.scope_prefix;
-    for p in rule.sources {
-        full = ModulePattern.join_scope(prefix, p.dotted);
-        if full and full.split(".")[0] not in top_level {
+    record = rule_record(rule);
+    for (pattern, node) in zip(record.sources, rule.sources) {
+        if pattern.is_string
+            or (pattern.dotted and pattern.dotted.split(".")[0] not in top_level) {
             continue;
         }
-        if not any([p.matches(m, prefix) for m in modules]) {
+        if not any([pattern.matches(m) for m in modules]) {
             self.ctx.emit(
-                W2083,
-                node_override=p,
-                name=rule.name.value,
-                what=f"source pattern '{pattern_text(p)}'"
+                E2098,
+                node_override=node,
+                name=record.name,
+                what=f"source pattern '{pattern.text}'"
             );
         }
     }
-    for t in rule.targets {
-        if not any([t.matches(m) for m in modules]) {
+    for (pattern, node) in zip(record.targets, rule.targets) {
+        if not any([pattern.matches(m) for m in modules]) {
             self.ctx.emit(
-                W2083,
-                node_override=t,
-                name=rule.name.value,
-                what=f"target pattern '{pattern_text(t)}'"
+                E2098,
+                node_override=node,
+                name=record.name,
+                what=f"target pattern '{pattern.text}'"
             );
         }
     }
@@ -290,105 +298,51 @@ impl ImportWiringPass._check_import(
     if src == spec.path or src.endswith(".test.jac") {
         return;
     }
-    from_loc = imp.from_loc;
-    if from_loc is not None {
-        project_provider = spec.import_provider(from_loc);
-        if project_provider == consumer {
-            return;
-        }
-        provider = project_provider
-            if project_provider is not None
-            else from_loc.dot_path_str;
-        form = import_form(imp.is_absorb, imp.is_typed, imp.is_comptime, True);
-        names: list[tuple[str, UniNode]] = [];
-        for item in imp.items {
-            if not isinstance(item, ModuleItem) {
-                continue;
-            }
-            alias = item.alias.value if item.alias is not None else "";
-            names.append((item.name.value, item));
-            if nested and project_provider is not None {
-                key = (project_provider, form, item.name.value, alias);
-                if key not in provided {
-                    self._emit_nested(
-                        WireBinding(
-                            provider=project_provider,
-                            form=form,
-                            name=item.name.value,
-                            alias=alias
-                        ),
-                        item,
-                        consumer,
-                        scope
-                    );
-                }
-            }
-            if enforce and project_provider is not None {
-                key = (project_provider, form, item.name.value, alias);
-                if key not in provided {
-                    binding = WireBinding(
-                        provider=project_provider,
-                        form=form,
-                        name=item.name.value,
-                        alias=alias
-                    );
-                    self.ctx.emit(
-                        E1144,
-                        node_override=item,
-                        module=project_provider,
-                        consumer=consumer,
-                        wire=binding.wire_text(consumer)
-                    );
-                }
-            }
-        }
-        self._check_edge(spec, provider, consumer, names, imp);
-        return;
-    }
-    form = import_form(imp.is_absorb, imp.is_typed, imp.is_comptime, False);
-    for item in imp.items {
-        if not isinstance(item, ModulePath) {
+    for (binding, item) in spec.import_bindings(imp) {
+        if binding.provider == consumer or binding.key() in provided {
             continue;
         }
-        project_provider = spec.import_provider(item);
-        if project_provider == consumer {
-            continue;
-        }
-        provider = project_provider
-            if project_provider is not None
-            else item.dot_path_str;
-        alias = item.alias.value if item.alias is not None else "";
-        if nested
-            and project_provider is not None
-            and (project_provider, form, "", alias) not in provided {
-            self._emit_nested(
-                WireBinding(provider=project_provider, form=form, alias=alias),
-                item,
-                consumer,
-                scope
+        if nested {
+            self._emit_nested(spec, binding, item, consumer, scope);
+        } elif enforce {
+            self.ctx.emit(
+                E1144,
+                node_override=item,
+                module=binding.provider,
+                consumer=consumer,
+                wire=spec.wire_suggestion(binding, consumer)
             );
         }
-        if enforce and project_provider is not None {
-            key = (project_provider, form, "", alias);
-            if key not in provided {
-                binding = WireBinding(
-                    provider=project_provider, form=form, alias=alias
-                );
-                self.ctx.emit(
-                    E1144,
-                    node_override=item,
-                    module=project_provider,
-                    consumer=consumer,
-                    wire=binding.wire_text(consumer)
-                );
+    }
+    from_loc = imp.from_loc;
+    if from_loc is not None {
+        provider = spec.import_provider(from_loc) or from_loc.dot_path_str;
+        if provider != consumer {
+            names = [
+                (item.name.value, item)
+                for item in imp.items
+                if isinstance(item, ModuleItem)
+            ];
+            self._check_edge(spec, provider, consumer, names, imp);
+        }
+        return;
+    }
+    for item in imp.items {
+        if isinstance(item, ModulePath) {
+            provider = spec.import_provider(item) or item.dot_path_str;
+            if provider != consumer {
+                self._check_edge(spec, provider, consumer, None, item);
             }
         }
-        self._check_edge(spec, provider, consumer, None, item);
     }
 }
 
 impl ImportWiringPass._emit_nested(
-    binding: WireBinding, at: UniNode, consumer: str, scope: (list[str] | None)
+    spec: WiringSpec,
+    binding: WireBinding,
+    at: UniNode,
+    consumer: str,
+    scope: (list[str] | None)
 ) -> None {
     if scope is None {
         self.ctx.emit(
@@ -409,8 +363,102 @@ impl ImportWiringPass._emit_nested(
         module=binding.provider,
         consumer=consumer,
         scope=".".join(scope) if scope else consumer,
-        fix=f"Add `{binding.wire_text(
-            target
-        )}` to archwire.jac, or run `jac arch sync`."
+        fix=f"Add {spec.wire_suggestion(binding, target)} of archwire.jac."
     );
+}
+
+impl report_unused_wires(reporter: CompilerPass, mod: Module) -> None {
+    for unused in unused_wire_bindings(mod) {
+        reporter.ctx.emit(
+            E1146,
+            node_override=unused.at,
+            name=unused.binding.bound_name(),
+            consumer=unused.consumer,
+            line=unused.wire.line
+        );
+    }
+}
+
+impl unused_wire_bindings(mod: Module) -> list[UnusedBinding] {
+    found: list[UnusedBinding] = [];
+    path = mod.loc.mod_path;
+    if not path or is_arch_file(path) {
+        return found;
+    }
+    spec = wiring_for_path(path);
+    consumer = spec.module_name(path) if spec is not None else None;
+    if spec is None or consumer is None {
+        return found;
+    }
+    wires = spec.consumer_wires(consumer);
+    if not wires {
+        return found;
+    }
+    bound: dict[tuple[str, tuple[str, str, str, str]], UniNode] = {};
+    for imp in ModuleFacts.iter_module_imports(mod) {
+        for (binding, item) in spec.import_bindings(imp) {
+            bound.setdefault(("", binding.key()), item);
+        }
+    }
+    for imp in ModuleFacts.iter_nested_imports(mod) {
+        scope_path = scope_path_of(imp);
+        if scope_path is not None {
+            for (binding, item) in spec.import_bindings(imp) {
+                bound.setdefault((".".join(scope_path), binding.key()), item);
+            }
+        }
+    }
+    exports = ModuleFacts.literal_exports(mod) or set();
+    owners: (dict[str, (Ability | ImplDef)] | None) = None;
+    read: dict[str, set[str]] = {};
+    for wire in wires {
+        scope = ".".join(spec.consumer_scope(consumer, wire));
+        for binding in wire.bindings() {
+            name = binding.bound_name();
+            at = bound.get((scope, binding.key()));
+            if at is None
+                or "include" in binding.form.split(" ")
+                or (binding.is_module_form() and not binding.alias)
+                or (not scope and name in exports) {
+                continue;
+            }
+            if scope not in read {
+                body: UniNode = mod;
+                if scope {
+                    if owners is None {
+                        owners = scope_owners(mod);
+                    }
+                    body = owners.get(scope, mod);
+                }
+                read[scope] = names_read_in(body);
+            }
+            if name not in read[scope] {
+                found.append(
+                    UnusedBinding(
+                        consumer=consumer + "." + scope if scope else consumer,
+                        wire=wire,
+                        binding=binding,
+                        at=at
+                    )
+                );
+            }
+        }
+    }
+    return found;
+}
+
+impl names_read_in(body: UniNode) -> set[str] {
+    names: set[str] = set();
+    for nd in body.get_all_sub_nodes(typ=Name) {
+        parent = nd.parent;
+        if nd.expr_ctx != ExprCtx.LOAD
+            or (isinstance(parent, AtomTrailer) and parent.is_attr and parent.right is nd)
+            or (isinstance(parent, KWPair) and parent.key is nd)
+            or (isinstance(parent, JsxElementName) and parent.parts[0] is not nd)
+            or nd.find_parent_of_type(Import) is not None {
+            continue;
+        }
+        names.add(nd.value);
+    }
+    return names;
 }

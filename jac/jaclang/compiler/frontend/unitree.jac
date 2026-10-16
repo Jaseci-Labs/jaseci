@@ -981,17 +981,16 @@ node ImportWire(UniNode) {
     has is_absorb: bool = False,
         is_typed: bool = False,
         is_comptime: bool = False,
-        is_module_form: bool = False;
+        is_grouped: bool = False;
 
     has provider: ModulePath { getter; }
-    has consumers: Sequence[ModulePath] { getter; }
-    has items: Sequence[WireItem] { getter; }
+    has targets: Sequence[WireTarget] { getter; }
 
     def init(
         *,
         provider: ModulePath,
-        consumers: Sequence[ModulePath],
-        items: (Sequence[WireItem] | None),
+        targets: Sequence[WireTarget],
+        is_grouped: bool = False,
         is_absorb: bool = False,
         is_typed: bool = False,
         is_comptime: bool = False,
@@ -1002,6 +1001,25 @@ node ImportWire(UniNode) {
 
     has block: GraphImport { getter; }
     has provider_path: str { getter; }
+
+    def __repr__ -> str;
+}
+
+node WireTarget(UniNode) {
+    has is_module_form: bool = False;
+    has consumers: Sequence[ModulePath] { getter; }
+    has items: Sequence[WireItem] { getter; }
+
+    def init(
+        *,
+        consumers: Sequence[ModulePath],
+        items: (Sequence[WireItem] | None),
+        kid: Sequence[UniNode] = []
+    ) -> None;
+
+    def postinit -> None;
+
+    has wire: ImportWire { getter; }
     has consumer_paths: list[str] { getter; }
 
     def __repr__ -> str;
@@ -1044,7 +1062,6 @@ node ModulePattern(UniNode) {
     has dotted: str { getter; }
 
     static def join_scope(prefix: str, name: str) -> str;
-    def matches(module: str, prefix: str = "") -> bool;
     def __repr__ -> str;
 }
 

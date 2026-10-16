@@ -1928,8 +1928,20 @@ impl ImportWire.provider_path.getter -> str {
     );
 }
 
-impl ImportWire.consumer_paths.getter -> list[str] {
-    return [c.dot_path_str for c in self.consumers];
+impl WireTarget.postinit -> None {
+    UniNode.postinit(self);
+}
+
+impl WireTarget.wire.getter -> ImportWire {
+    if (not self.parent or not isinstance(self.parent, ImportWire)) {
+        raise ValueError('ImportWire parent not found. Not Possible.');
+    }
+    return self.parent;
+}
+
+impl WireTarget.consumer_paths.getter -> list[str] {
+    scope = self.wire.block.scope_prefix;
+    return [ModulePattern.join_scope(scope, c.dot_path_str) for c in self.consumers];
 }
 
 impl ImportRule.postinit -> None {
@@ -1973,14 +1985,6 @@ impl WireItem.postinit -> None {
 impl WireItem.binding.getter -> str {
     al = self.alias;
     return al.value if al is not None else self.name.value;
-}
-
-impl ModulePattern.matches(module: str, prefix: str = "") -> bool {
-    base = ModulePattern.join_scope(prefix, self.dotted);
-    if self.is_glob {
-        return (not base) or module == base or module.startswith(base + ".");
-    }
-    return module == base;
 }
 
 impl Archetype.postinit -> None {

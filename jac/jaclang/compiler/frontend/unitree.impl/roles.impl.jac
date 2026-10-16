@@ -392,12 +392,20 @@ impl ImportWire.provider.getter -> ModulePath {
     return ([self->:ProviderRole:->][0]) as ModulePath;
 }
 
-impl ImportWire.consumers.getter -> Sequence[ModulePath] {
+impl ImportWire.targets.getter -> Sequence[WireTarget] {
+    return ([self->:TargetsRole:->]) as Sequence[WireTarget];
+}
+
+impl WireTarget.consumers.getter -> Sequence[ModulePath] {
     return ([self->:ConsumersRole:->]) as Sequence[ModulePath];
 }
 
-impl ImportWire.items.getter -> Sequence[WireItem] {
+impl WireTarget.items.getter -> Sequence[WireItem] {
     return ([self->:ItemsRole:->]) as Sequence[WireItem];
+}
+
+impl WireTarget.__repr__ -> str {
+    return f"{type(self).__name__}";
 }
 
 impl ImportWire.__repr__ -> str {
@@ -2004,8 +2012,8 @@ impl GraphImport.init(
 impl ImportWire.init(
     *,
     provider: ModulePath,
-    consumers: Sequence[ModulePath],
-    items: (Sequence[WireItem] | None),
+    targets: Sequence[WireTarget],
+    is_grouped: bool = False,
     is_absorb: bool = False,
     is_typed: bool = False,
     is_comptime: bool = False,
@@ -2014,10 +2022,19 @@ impl ImportWire.init(
     self.is_absorb = is_absorb;
     self.is_typed = is_typed;
     self.is_comptime = is_comptime;
+    self.is_grouped = is_grouped;
+    self._link(kid, {ProviderRole: provider, TargetsRole: targets});
+    self.postinit();
+}
+
+impl WireTarget.init(
+    *,
+    consumers: Sequence[ModulePath],
+    items: (Sequence[WireItem] | None),
+    kid: Sequence[UniNode] = []
+) -> None {
     self.is_module_form = items is None;
-    self._link(
-        kid, {ProviderRole: provider, ConsumersRole: consumers, ItemsRole: items or []}
-    );
+    self._link(kid, {ConsumersRole: consumers, ItemsRole: items or []});
     self.postinit();
 }
 

@@ -1655,12 +1655,12 @@ graph import {
     compiler.driver.source_products --> dist.publish.builder { python_source }
     compiler.driver.source_products --> dist.publish.runtime_vendor._compile_runtime_module { python_source }
     compiler.driver.source_products --> dist.source.project { python_source }
-    compiler.driver.wiring --> cli.commands.architecture { ARCH_FILE_NAME, WireRec, arch_file_for, WiringSpec, scope_path_of, wiring_for_path }
+    compiler.driver.wiring --> cli.commands.architecture { ARCH_FILE_NAME, WireBinding, WiringSpec, arch_file_for, render_wiring, scope_path_of, wiring_facts, wiring_for_path }
     compiler.driver.wiring --> dist.precompile_bytecode.find_jac_files { is_arch_file }
     compiler.driver.wiring --> compiler.driver.jir.unit_source_digest { wiring_digest_for }
     compiler.driver.wiring --> compiler.frontend.parser.frontend.annex_sources { wiring_annex_for }
-    compiler.driver.wiring --> compiler.passes.import_wiring_pass { RuleRec, WireBinding, WireRec, WiringSpec, pattern_text, is_arch_file, scope_owners, scope_path_of, wiring_for_path }
-    compiler.driver.wiring --> compiler.tools.jac_auto_lint_pass { WiringSpec, compiled_by_seed, is_arch_file, scope_path_of, WireRec, wire_record, wiring_for_path }
+    compiler.driver.wiring --> compiler.passes.import_wiring_pass { RuleRec, WireBinding, WireRec, WiringSpec, rule_record, is_arch_file, scope_owners, scope_path_of, wiring_for_path }
+    compiler.driver.wiring --> compiler.tools.jac_auto_lint_pass { WireRec, WiringSpec, compiled_by_seed, scope_path_of, wiring_for_path }
     compiler.driver.bccache --> project.compiler_host.ProjectHost.annex_files { discover_annex_files }
     compiler.driver.bccache --> project.compiler_host.ProjectHost.base_file { discover_base_file }
     compiler.driver.bccache --> project.compiler_host.ProjectHost.is_annex_path_of { host_layout_tables }
@@ -2211,7 +2211,7 @@ graph import {
     compiler.frontend.diagnostics --> compiler.passes.decl_impl_match_pass.DeclImplMatchPass._populate_inline_init_symbols { W2080 }
     compiler.frontend.diagnostics --> compiler.passes.decl_impl_match_pass.DeclImplMatchPass._populate_self_member_symbols { W2080 }
     compiler.frontend.diagnostics --> compiler.passes.graph_lowering_pass { E0084, E0085 }
-    compiler.frontend.diagnostics --> compiler.passes.import_wiring_pass { E1141, E1142, E1143, E1144, E2088, E2089, E2090, E2091, E2092, E2093, E2094, W2083 }
+    compiler.frontend.diagnostics --> compiler.passes.import_wiring_pass { E1141, E1142, E1143, E1144, E2088, E2089, E2090, E2091, E1146, E2092, E2093, E2094, E2097, E2098 }
     compiler.frontend.diagnostics --> compiler.passes.jsx_intrinsic_guard_pass { E1105 }
     compiler.frontend.diagnostics --> compiler.passes.layout_pass { E5030, W5031, W5032 }
     compiler.frontend.diagnostics --> compiler.passes.ownership_check_pass { E1301, E1302, E1303, E1304, E1305, E1306, E1307, E1308, E1309, E1311, E1313, E1314, E1315, E1316, E1317, E1318, E1320, E1321, E1322, E1323, E1401, E1402, E1403, E1404, E1405, E1406, W1310, W1312 }
@@ -2229,7 +2229,7 @@ graph import {
     compiler.frontend.diagnostics --> compiler.symbol_utils { E5082, E5084, W6006, W6007 }
     type compiler.frontend.diagnostics --> compiler.symbol_utils { DiagnosticInfo }
     compiler.frontend.diagnostics --> compiler.symbol_utils.report_serverless_kind_errors { E5087 }
-    compiler.frontend.diagnostics --> compiler.tools.jac_auto_lint_pass { E3012, W3001, W3002, W3003, W3004, W3005, W3007, W3008, W3009, W3010, W3013, W3020, W3021, W3022, W3023, W3024, W3025, W3030, W3035, W3036, W3037, W3038, W3039, W3040, W3041, W3042, W3043, W3050, W3051, W3052, W3053 }
+    compiler.frontend.diagnostics --> compiler.tools.jac_auto_lint_pass { E3012, W3001, W3002, W3003, W3004, W3005, W3007, W3008, W3009, W3010, W3013, W3020, W3021, W3022, W3023, W3024, W3025, W3030, W3035, W3036, W3037, W3038, W3039, W3040, W3041, W3042, W3043, W3050, W3051, W3053 }
     compiler.frontend.diagnostics --> compiler.tools.jac_auto_lint_pass.JacAutoLintPass._check_filter_compare_tautology { W3040 }
     compiler.frontend.diagnostics --> compiler.tools.jac_formatter_pass { E5051, W5050 }
     compiler.frontend.diagnostics --> compiler.types.enum_utils { E1001 }
@@ -2346,7 +2346,7 @@ graph import {
     compiler.frontend.unitree as uni --> compiler.frontend.helpers.evaluate_version_condition;
     compiler.frontend.unitree --> compiler.frontend.module_facts { Ability, Archetype, Assignment, AtomTrailer, ConcurrentExpr, ContextAwareNode, ElementStmt, Enum, FuncCall, GlobalVars, ImplDef, Import, LambdaExpr, ListVal, Module, ModuleCode, ModuleItem, Name, TupleVal, UniNode, YieldExpr, literal_string_value }
     compiler.frontend.unitree --> compiler.frontend.parser.frontend { CommentToken, Expr, Module, Source }
-    compiler.frontend.unitree --> compiler.frontend.parser.parser { Ability, ArchHas, Archetype, AssertStmt, AssignCompr, Assignment, AstDocNode, AtomTrailer, AtomUnit, AwaitExpr, AwaitingClause, BinaryExpr, Bool, BoolExpr, BuiltinType, CastExpr, CfgExpr, CodeBlockStmt, CompareExpr, ConcurrentExpr, ConnectOp, ContextAwareNode, CtrlStmt, DeleteStmt, DictCompr, DictVal, DisconnectOp, DisengageStmt, EdgeOpRef, EdgeRefTrailer, ElementStmt, Ellipsis as EllipsisLit, ElseIf, ElseStmt, EmptyToken, Enum, EventSignature, Except, Expr, ExprAsItem, ExprStmt, FString, FilterCompr, FinallyStmt, Float, ForeverStmt, FormattedValue, FuncCall, FuncSignature, GenCompr, GlobalVars, GraphExpr, HasVar, IfElseExpr, IfStmt, ImplDef, GraphImport, Import, ImportRule, ImportWire, InForStmt, IndexSlice, InnerCompr, Int, IterForStmt, JsxAttribute, JsxChild, JsxComment, JsxElement, JsxElementName, JsxExpression, JsxNormalAttribute, JsxSlot, JsxSpreadAttribute, JsxText, KVPair, KWPair, LambdaExpr, ListCompr, ListVal, MatchArch, MatchAs, MatchCase, MatchKVPair, MatchMapping, MatchOr, MatchPattern, MatchSequence, MatchSingleton, MatchStar, MatchStmt, MatchValue, MatchWild, Module, ModuleCode, ModuleItem, ModulePath, ModulePattern, MultiString, Name, NameAtom, Null, OpenStmt, ParamVar, PyInlineCode, RaiseStmt, ReportStmt, ReturnStmt, SemDef, Semi, SetCompr, SetVal, Slice, Source, SpecialVarRef, String, SubTag, SwitchCase, SwitchStmt, Test, Token, TryStmt, TupleVal, TypeAlias, TypeParam, TypedCtxBlock, UnaryExpr, UniNode, VisitStmt, WhileStmt, WireItem, WithStmt, YieldExpr }
+    compiler.frontend.unitree --> compiler.frontend.parser.parser { Ability, ArchHas, Archetype, AssertStmt, AssignCompr, Assignment, AstDocNode, AtomTrailer, AtomUnit, AwaitExpr, AwaitingClause, BinaryExpr, Bool, BoolExpr, BuiltinType, CastExpr, CfgExpr, CodeBlockStmt, CompareExpr, ConcurrentExpr, ConnectOp, ContextAwareNode, CtrlStmt, DeleteStmt, DictCompr, DictVal, DisconnectOp, DisengageStmt, EdgeOpRef, EdgeRefTrailer, ElementStmt, Ellipsis as EllipsisLit, ElseIf, ElseStmt, EmptyToken, Enum, EventSignature, Except, Expr, ExprAsItem, ExprStmt, FString, FilterCompr, FinallyStmt, Float, ForeverStmt, FormattedValue, FuncCall, FuncSignature, GenCompr, GlobalVars, GraphExpr, HasVar, IfElseExpr, IfStmt, ImplDef, GraphImport, Import, ImportRule, ImportWire, InForStmt, IndexSlice, InnerCompr, Int, IterForStmt, JsxAttribute, JsxChild, JsxComment, JsxElement, JsxElementName, JsxExpression, JsxNormalAttribute, JsxSlot, JsxSpreadAttribute, JsxText, KVPair, KWPair, LambdaExpr, ListCompr, ListVal, MatchArch, MatchAs, MatchCase, MatchKVPair, MatchMapping, MatchOr, MatchPattern, MatchSequence, MatchSingleton, MatchStar, MatchStmt, MatchValue, MatchWild, Module, ModuleCode, ModuleItem, ModulePath, ModulePattern, MultiString, Name, NameAtom, Null, OpenStmt, ParamVar, PyInlineCode, RaiseStmt, ReportStmt, ReturnStmt, SemDef, Semi, SetCompr, SetVal, Slice, Source, SpecialVarRef, String, SubTag, SwitchCase, SwitchStmt, Test, Token, TryStmt, TupleVal, TypeAlias, TypeParam, TypedCtxBlock, UnaryExpr, UniNode, VisitStmt, WhileStmt, WireItem, WireTarget, WithStmt, YieldExpr }
     type compiler.frontend.unitree --> compiler.frontend.relations { Ability, AstTypedVarNode, ConditionalNode, ContextAwareNode, Expr, FuncCall, Import, Module, NameAtom, Symbol, UniCFGNode, UniScopeNode }
     type compiler.frontend.unitree --> compiler.frontend.roles { Ability, ArchHas, Archetype, AssertStmt, AssignCompr, Assignment, AstAccessNode, AstDocNode, AstElseBodyNode, AstTypedVarNode, AtomTrailer, AwaitingClause, CastExpr, CfgExpr, CompareExpr, ConcurrentExpr, ConnectOp, CtrlStmt, DictCompr, DictVal, DisconnectOp, EdgeOpRef, EdgeRefTrailer, ElseIf, ElseStmt, Enum, EventSignature, Except, Expr, ExprAsItem, FString, FilterCompr, FinallyStmt, FormattedValue, FuncSignature, GlobalVars, HasVar, IfElseExpr, ImplDef, GraphImport, Import, ImportRule, ImportWire, IndexSlice, InnerCompr, IterForStmt, JsxAttribute, JsxChild, JsxElement, JsxElementName, KVPair, KWPair, ListCompr, MatchArch, MatchCase, MatchKVPair, MatchOr, MatchPattern, Module, ModuleItem, ModulePath, ModulePattern, MultiString, Name, NameAtom, ParamVar, ProgramModule, PyInlineCode, RaiseStmt, Slice, String, SubTag, SwitchCase, Test, Token, TryStmt, TypeParam, TypedCtxBlock, UnaryExpr, UniNode, VisitStmt, WireItem }
     type compiler.frontend.unitree --> compiler.frontend.srcloc { Source, Token }
@@ -2366,7 +2366,7 @@ graph import {
     compiler.frontend.unitree as uni --> compiler.passes.freeze_structure_pass;
     compiler.frontend.unitree as uni --> compiler.passes.graph_lowering_pass;
     compiler.frontend.unitree --> compiler.passes.graph_lowering_pass { TreeWalker }
-    compiler.frontend.unitree --> compiler.passes.import_wiring_pass { Ability, EmptyToken, ImplDef, GraphImport, Import, ImportRule, ImportWire, Module, ModuleItem, ModulePath, ModulePattern, String, UniNode }
+    compiler.frontend.unitree --> compiler.passes.import_wiring_pass { Ability, AtomTrailer, EmptyToken, ImplDef, GraphImport, Import, ImportRule, ImportWire, JsxElementName, KWPair, Module, ModuleItem, ModulePath, Name, String, UniNode, WireTarget }
     compiler.frontend.unitree --> compiler.passes.jsx_intrinsic_guard_pass { JsxElement, Module, Name, Token, TreeWalker, UniNode }
     compiler.frontend.unitree --> compiler.passes.layout_pass { Ability, ArchHas, Archetype, Assignment, AstSymbolNode, AstTypedVarNode, AtomTrailer, BinaryExpr, BuiltinType, Enum, Expr, FuncCall, FuncSignature, HasVar, Import, IndexSlice, Module, ModuleItem, Name, Null, TupleVal, TypeParam, UnaryExpr, UniNode }
     compiler.frontend.unitree --> compiler.passes.mtir_gen_pass { Ability, Archetype, Assignment, AstSymbolNode, AtomTrailer, BinaryExpr, Bool, BuiltinType, EdgeOpRef, EdgeRefTrailer, Enum, EventSignature, Expr, FilterCompr, Float, FuncCall, FuncSignature, Int, KWPair, ListVal, Module, MultiString, Name, NameAtom, String, Symbol, Token, TupleVal, UniNode, UniScopeNode, VisitStmt }
@@ -2450,7 +2450,6 @@ graph import {
     compiler.frontend.unitree --> lsp.server.utils { Symbol, UniScopeNode }
     compiler.frontend.codeinfo --> compiler.driver.wiring.WiringSpec.import_provider { is_bundled_native_module }
     compiler.frontend.codeinfo --> compiler.passes.ownership_check_pass.OwnershipCheckPass._nogc_resolve_provenance { NOGC_NATIVE_STDLIB, bundled_stdlib_module_of }
-    compiler.frontend.diagnostics --> compiler.passes.import_wiring_pass { W2084 }
     compiler.frontend.codeinfo --> compiler.backends.native.kernel_stage0.running_kernel_target { KERNEL_UNIT_REL, jaclang_pkg_root }
     compiler.frontend.codeinfo --> compiler.backends.native.link_plan { JAC_ENTRY_SYMBOL }
     compiler.frontend.codeinfo --> compiler.backends.native.link_plan.LinkPlan.plan_digest | compiler.native_scope.package_host_edge { native_unit_identity }
@@ -6366,4 +6365,11 @@ graph import {
     runtime.na_stdlib._zstd_native --> runtime.na_stdlib.compression.zstd { ZSTD_C_COMPRESSION_LEVEL, ZSTD_D_WINDOW_LOG_MAX, zstd_cctx_free, zstd_cctx_new, zstd_cctx_set, zstd_compress2, zstd_compress_bound, zstd_dctx_free, zstd_dctx_new, zstd_dctx_set, zstd_decompress_stream, zstd_error_name, zstd_frame_content_size, zstd_frame_dict_id, zstd_is_error, zstd_version_number }
     runtime.na_stdlib.datetime --> runtime.na_stdlib.zoneinfo { _MAXORDINAL, _ord2ymd }
     runtime.na_stdlib.http.client --> runtime.na_stdlib.urllib.request { HTTPResponse }
+    compiler.frontend.parser.frontend --> compiler.driver.wiring.canonical_wiring_source { parse_woven }
+    compiler.passes.import_wiring_pass --> compiler.passes.static_analysis_pass { report_unused_wires }
+    compiler.passes.import_wiring_pass --> cli.commands.architecture { unused_wire_bindings }
+    compiler.driver.compile_options --> cli.commands.architecture { CompileOptions }
+    compiler.driver.wiring --> compiler.driver.compiler.JacCompiler.jac_str_formatter { canonical_wiring_source, is_arch_file }
+
+    compiler.frontend.constant --> compiler.passes.import_wiring_pass { ExprCtx }
 }

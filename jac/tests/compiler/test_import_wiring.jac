@@ -447,6 +447,41 @@ test "jac fmt renders archwire.jac in its one canonical layout" {
 }
 
 
+test "a provider feeding consumers different names is written once, as a list" {
+    base = _standard(
+        arch=(
+            "graph import {\n"
+            "    core.util --> core.svc { now }\n"
+            "    core.util --> core.other { now as clock }\n"
+            "    core.util --> core.svc { later }\n"
+            "}\n"
+        )
+    );
+    try {
+        _write(base, "core/util.jac", _UTIL + "\ndef later -> str {\n    return now();\n}\n");
+        text = _formatted(base, "archwire.jac");
+        assert text
+            == (
+                "graph import core {\n"
+                "    util --> [\n"
+                "        other { now as clock },\n"
+                "        svc { later, now },\n"
+                "    ]\n"
+                "}\n"
+            ) , text;
+        _write(base, "archwire.jac", text);
+        assert _formatted(base, "archwire.jac") == text;
+        _write(base, "core/svc.jac", "def serve -> str {\n    return now() + later();\n}\n");
+        _write(base, "core/other.jac", "def tick -> str {\n    return clock();\n}\n");
+        assert _errors(_compile(base, "core/svc.jac")) == [];
+        assert _errors(_compile(base, "core/other.jac")) == [];
+        assert _errors(_compile(base, "archwire.jac")) == [];
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
 test "jac fmt breaks a long fan-out one consumer per line" {
     consumers = [f"app.screen_{i}" for i in range(8)];
     files = {

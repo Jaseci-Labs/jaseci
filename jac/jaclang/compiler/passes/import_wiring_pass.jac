@@ -1,20 +1,25 @@
 import os;
 import from jaclang.compiler.driver.pipeline_types { AnalysisFact, PassContract }
 import from jaclang.compiler.passes.context { CompileContext, CompilerPass }
+import from jaclang.compiler.frontend.constant { ExprCtx }
 import from jaclang.compiler.frontend.unitree {
     Ability,
+    AtomTrailer,
     EmptyToken,
     ImplDef,
     GraphImport,
     Import,
     ImportRule,
     ImportWire,
+    JsxElementName,
+    KWPair,
     Module,
     ModuleItem,
     ModulePath,
-    ModulePattern,
+    Name,
     String,
-    UniNode
+    UniNode,
+    WireTarget
 }
 import from jaclang.compiler.frontend.module_facts { ModuleFacts }
 import from jaclang.compiler.driver.wiring {
@@ -22,7 +27,7 @@ import from jaclang.compiler.driver.wiring {
     WireBinding,
     WireRec,
     WiringSpec,
-    pattern_text,
+    rule_record,
     scope_owners,
     is_arch_file,
     scope_path_of,
@@ -35,6 +40,7 @@ import from jaclang.compiler.frontend.diagnostics {
     E1142,
     E1143,
     E1144,
+    E1146,
     E2088,
     E2089,
     E2090,
@@ -42,8 +48,8 @@ import from jaclang.compiler.frontend.diagnostics {
     E2092,
     E2093,
     E2094,
-    W2083,
-    W2084
+    E2097,
+    E2098
 }
 
 walker ImportWiringPass(CompilerPass) {
@@ -53,6 +59,9 @@ walker ImportWiringPass(CompilerPass) {
     def _check_arch_module(mod: Module) -> None;
     def _check_scope(spec: WiringSpec, block: GraphImport, seen: set[int]) -> None;
     def _check_wire(spec: WiringSpec, wire: ImportWire) -> None;
+    def _check_target(
+        spec: WiringSpec, provider: str, provider_ok: bool, target: WireTarget
+    ) -> None;
     def _check_rule_liveness(spec: WiringSpec, rule: ImportRule) -> None;
     def _check_edge(
         spec: WiringSpec,
@@ -74,8 +83,23 @@ walker ImportWiringPass(CompilerPass) {
     ) -> None;
 
     def _emit_nested(
-        binding: WireBinding, at: UniNode, consumer: str, scope: (list[str] | None)
+        spec: WiringSpec,
+        binding: WireBinding,
+        at: UniNode,
+        consumer: str,
+        scope: (list[str] | None)
     ) -> None;
 
     static def _rule_names(rules: list[RuleRec]) -> str;
 }
+
+obj UnusedBinding {
+    has consumer: str,
+        wire: WireRec,
+        binding: WireBinding,
+        at: UniNode;
+}
+
+def report_unused_wires(reporter: CompilerPass, mod: Module) -> None;
+def unused_wire_bindings(mod: Module) -> list[UnusedBinding];
+def names_read_in(body: UniNode) -> set[str];

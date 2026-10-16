@@ -38,7 +38,7 @@ import from jaclang.compiler.passes.annex_weave {
 
 glob ARCH_FILE_NAME: str = "archwire.jac",
      SKIPPED_PROJECT_DIRS: tuple[str, ...] = ("node_modules", "__pycache__"),
-     RECORDS_FORMAT: int = 2;
+     RECORDS_FORMAT: int = 3;
 
 obj WireBinding {
     has provider: str,
@@ -50,20 +50,26 @@ obj WireBinding {
         return (self.provider, self.form, self.name, self.alias);
     }
 
-    def wire_text(consumer: str) -> str;
+    def is_module_form -> bool {
+        return "from" not in self.form.split(" ");
+    }
+
+    def bound_name -> str {
+        return self.alias or self.name;
+    }
 }
 
 obj PatternRec {
     has dotted: str,
         is_glob: bool = False,
+        is_string: bool = False,
         text: str = "";
 
-    def matches(module: str, prefix: str = "") -> bool;
+    def matches(module: str) -> bool;
 }
 
 obj RuleRec {
     has name: str,
-        scope: str,
         sources: list[PatternRec] = [],
         targets: list[PatternRec] = [],
         item_names: set[str] = set(),
@@ -104,7 +110,7 @@ obj WiringSpec {
         _prefix: (str | None) = None,
         _owned_dirs: dict[str, bool] = {},
         _scopes: dict[tuple[str, int], list[str]] = {},
-        _wire_lines: dict[int, WireRec] = {},
+        _wire_lines: dict[int, list[WireRec]] = {},
         package_prefix: str = "";
 
     def postinit -> None;
@@ -116,7 +122,7 @@ obj WiringSpec {
     def owns(path: str) -> bool;
     def split_consumer(path: str) -> (tuple[str, list[str]] | None);
     def consumer_scope(consumer: str, wire: WireRec) -> list[str];
-    def wire_at_line(line: int) -> (WireRec | None);
+    def wire_at_line(line: int, consumer: str) -> (WireRec | None);
     def is_package_dir(name: str) -> bool;
     def project_modules -> list[str];
     def _scan_modules(directory: str, found: list[str], seen: set[str]) -> None;
@@ -131,6 +137,8 @@ obj WiringSpec {
     ) -> dict[tuple[str, str, str, str], WireRec];
 
     def import_provider(path_node: ModulePath) -> (str | None);
+    def import_bindings(imp: Import) -> list[tuple[WireBinding, UniNode]];
+    def wire_suggestion(binding: WireBinding, consumer: str) -> str;
     def rules_for_provider(provider: str) -> list[RuleRec];
     def rules_admitting(provider: str, consumer: str) -> list[RuleRec];
     static def admitted_names(rules: list[RuleRec]) -> (set[str] | None);
@@ -166,11 +174,32 @@ def dedupe_generated_imports(mod: Module) -> None;
 def compiled_by_seed(path: str) -> bool;
 def is_kernel_abi_contract(path: str) -> bool;
 def is_native_stdlib_source(path: str) -> bool;
-def pattern_text(pattern: ModulePattern) -> str;
-def pattern_record(pattern: ModulePattern) -> PatternRec;
+def pattern_record(pattern: ModulePattern, scope: str = "") -> PatternRec;
 def rule_record(rule: ImportRule) -> RuleRec;
-def wire_record(wire: ImportWire, source: str = "") -> WireRec;
+def wire_records(wire: ImportWire, source: str = "") -> list[WireRec];
+def module_records(mod: Module, source: str) -> tuple[list[WireRec], list[RuleRec]];
 def parse_records(source: str, path: str) -> tuple[bool, list[WireRec], list[RuleRec]];
+def wire_block(provider: str, consumer: str) -> str;
+def block_relative(block: str, name: str) -> str;
+def wire_text(
+    block: str,
+    binding: WireBinding,
+    consumers: list[str],
+    items: (list[tuple[str, str]] | None) = None
+) -> str;
+
+def render_wiring(
+    spec: WiringSpec, facts: list[tuple[str, WireBinding]], rules: list[RuleRec]
+) -> str;
+
+def wiring_facts(wires: list[WireRec]) -> list[tuple[str, WireBinding]];
+def _rule_text(rule: RuleRec) -> str;
+def _target_text(consumers: list[str], items: (list[tuple[str, str]] | None)) -> str;
+def _entry_order(
+    pair: tuple[list[str], (list[tuple[str, str]] | None)]
+) -> tuple[list[str], list[tuple[str, str]]];
+def _block_text(block: str, body: list[str]) -> str;
+def canonical_wiring_source(source: str, path: str) -> str;
 def encode_records(
     parse_failed: bool, wires: list[WireRec], rules: list[RuleRec]
 ) -> str;

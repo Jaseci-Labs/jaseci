@@ -140,6 +140,7 @@ import from jaclang.compiler.frontend.unitree {
     UniNode,
     VisitStmt,
     WireItem,
+    WireTarget,
     WhileStmt,
     WithStmt,
     YieldExpr,
@@ -608,10 +609,11 @@ obj Parser {
     def parse_import_wire -> ImportWire | None;
     def parse_module_pattern -> ModulePattern;
     def parse_wire_module_path(context: str) -> ModulePath;
+    def parse_wire_target(is_absorb: bool, provider: ModulePath) -> WireTarget | None;
     def parse_wire_payload(kid: list[UniNode], in_rule: bool) -> list[WireItem];
     def _expect_wire_arrow(kid: list[UniNode]) -> bool;
     def _wire_path_ahead -> bool;
-    def _skip_wiring_stmt -> None;
+    def _skip_wiring_stmt(open_lists: int = 0) -> None;
     def parse_sem_def -> SemDef;
     def parse_type_alias -> TypeAlias;
     def parse_type_params -> tuple[(list[TypeParam], list[Token])];

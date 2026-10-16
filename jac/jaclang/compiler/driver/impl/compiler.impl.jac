@@ -1057,23 +1057,34 @@ impl JacCompiler._prepare_tool_program(
 impl JacCompiler.jac_file_formatter(
     file_path: str, auto_lint: bool = False
 ) -> JacProgram {
-    source_str = read_file_with_encoding(file_path);
-    (prog, current_mod) = JacCompiler._prepare_tool_program(source_str, file_path);
-    if current_mod is None {
-        return prog;
-    }
-    import from jaclang.compiler.driver.pipeline { require }
-    require(
-        prog,
-        current_mod,
-        CompilationProduct.FORMAT_LINTFIX if auto_lint else CompilationProduct.FORMAT
+    return JacCompiler.jac_str_formatter(
+        read_file_with_encoding(file_path), file_path, auto_lint
     );
-    prog.reset_module_root(uni.ProgramModule(main_mod=current_mod));
-    return prog;
 }
 
 impl JacCompiler.jac_str_formatter(
     source_str: str, file_path: str, auto_lint: bool = False
+) -> JacProgram {
+    import from jaclang.compiler.driver.wiring {
+        canonical_wiring_source,
+        is_arch_file
+    }
+    prog = JacCompiler._format_program(source_str, file_path, auto_lint);
+    if not is_arch_file(file_path) or prog.errors_had or prog.mod.main is None {
+        return prog;
+    }
+    canonical = canonical_wiring_source(source_str, file_path);
+    if canonical != source_str {
+        laid_out = JacCompiler._format_program(canonical, file_path, auto_lint);
+        if not laid_out.errors_had and laid_out.mod.main is not None {
+            prog.mod.main.gen.jac = laid_out.mod.main.gen.jac;
+        }
+    }
+    return prog;
+}
+
+impl JacCompiler._format_program(
+    source_str: str, file_path: str, auto_lint: bool
 ) -> JacProgram {
     (prog, current_mod) = JacCompiler._prepare_tool_program(source_str, file_path);
     if current_mod is None {

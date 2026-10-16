@@ -376,5 +376,9 @@ obj JacCompiler(SessionHooks) {
         source_str: str, file_path: str, auto_lint: bool = False
     ) -> JacProgram;
 
+    static def _format_program(
+        source_str: str, file_path: str, auto_lint: bool
+    ) -> JacProgram;
+
     static def jac_file_linter(file_path: str) -> JacProgram;
 }
