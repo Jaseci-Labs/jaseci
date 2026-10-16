@@ -3024,7 +3024,8 @@ graph import compiler.backends.native {
     }
     na_constants --> compiler.backends.native.na_ir_gen_pass {
         RC_CYCLE_PACE,
-        RC_UNTRACED_BIT
+        RC_UNTRACED_BIT,
+        JACVAL_STRUCT_TAG
     }
     link_glue --> compiler.backends.native.link_plan { RC_THREADED_SYMBOL }
     na_compile_pass --> compiler.driver.nativecache.NativeBuildSession._optimize_in_parallel {
@@ -9361,6 +9362,9 @@ graph import compiler.passes {
 }
 
 graph import compiler.placement {
+    placement --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._codegen_test {
+        native_blocker_in
+    }
     placement --> cli.commands.fix._verify_claims { element_display_name }
     placement --> compiler.driver.compiler.JacCompiler._restore_sections {
         summary_store
