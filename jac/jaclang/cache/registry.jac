@@ -128,7 +128,7 @@ glob RETIRED: tuple[str, ...] = (
          Bucket(
              name="admin",
              relpath="admin",
-             policy=Policy(ttl_days=30.0),
+             policy=Policy(ttl_days=30.0, markers=[".used"]),
              summary="built admin consoles, one per UI source and compiler"
          ),
          Bucket(

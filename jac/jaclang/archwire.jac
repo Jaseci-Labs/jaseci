@@ -586,6 +586,7 @@ graph import byllm.tests.fixtures.scope_dir {
 
 graph import cache {
     registry --> scale.admin.console_build.console_cache_dir { bucket }
+    registry --> scale.admin.console_build.AdminConsole._note_hit { bucket }
     locking --> scale.admin.console_build.AdminConsole._run { FileLock }
     home --> cache.policy { CACHEDIR_TAG }
     home --> cache.registry { CACHEDIR_TAG, cache_home, ensure_cache_dir, ensure_root }

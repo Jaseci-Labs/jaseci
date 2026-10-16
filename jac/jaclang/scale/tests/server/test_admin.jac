@@ -735,6 +735,11 @@ test "admin console pages answer without waiting on a console build" {
                     asset = client.get("/admin/app.js");
                     assert asset.status_code == 200 , name;
                     assert row["body"] in asset.text , name;
+                    if row["builds"] {
+                        assert (console.entry_dir() / ".used").exists() , (
+                            f"{name}: serving the console did not record its use"
+                        );
+                    }
                 }
                 # Let any build the settled request started reach the build
                 # function before counting.

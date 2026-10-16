@@ -9,13 +9,13 @@ import threading;
 import time;
 import from enum { StrEnum }
 import from pathlib { Path }
-import from jaclang.server.serving.datatypes { HTMLResponse, Response }
 
 glob logger = logging.getLogger(__name__),
      BUILD_TIMEOUT_SECONDS: int = 300,
      RETRY_AFTER_FAILURE_SECONDS: float = 60.0,
      RETRY_AFTER_BUILDING_SECONDS: int = 5,
      LOCK_POLL_SECONDS: float = 0.5,
+     NOTE_HIT_EVERY_SECONDS: float = 86400.0,
      SOURCE_SKIP: tuple[str, ...] = (".jac", "node_modules", "__pycache__");
 
 enum ConsoleState(StrEnum) {
@@ -32,7 +32,6 @@ obj ConsoleStatus {
 }
 
 def build_with_jac(src: Path) -> Path {
-    import from jaclang.scale.runtime.context.util { jac_executable }
     result = subprocess.run(
         [jac_executable(), "build", "--as", "client", "main.jac"],
         cwd=str(src),
@@ -49,12 +48,10 @@ def build_with_jac(src: Path) -> Path {
 }
 
 def package_ui_dir -> Path {
-    import from jaclang.scale.admin { admin_portal }
     return Path(admin_portal.__file__).parent / "ui";
 }
 
 def console_cache_dir -> Path {
-    import from jaclang.cache.registry { bucket }
     return bucket("admin").path();
 }
 
@@ -117,7 +114,8 @@ obj AdminConsole {
         _mutex: (threading.Lock | None) = None,
         _worker: (threading.Thread | None) = None,
         _failed_at: float = 0.0,
-        _error: str = "";
+        _error: str = "",
+        _hit_noted_at: float = 0.0;
 
     def postinit {
         self._mutex = threading.Lock();
@@ -148,6 +146,7 @@ obj AdminConsole {
 
     def status -> ConsoleStatus {
         if self.is_built() {
+            self._note_hit();
             return ConsoleStatus(state=ConsoleState.READY, dist_dir=self.dist_dir());
         }
         with self._mutex {
@@ -193,8 +192,19 @@ obj AdminConsole {
         return ConsoleStatus(state=ConsoleState.BUILDING);
     }
 
+    def _note_hit -> None {
+        now = time.monotonic();
+        if self._hit_noted_at and now - self._hit_noted_at < NOTE_HIT_EVERY_SECONDS {
+            return;
+        }
+        self._hit_noted_at = now;
+
+        try {
+            bucket("admin").note_hit(self.entry_dir());
+        } except OSError {}
+    }
+
     def _run -> None {
-        import from jaclang.cache.locking { FileLock }
         try {
             self.cache_dir.mkdir(parents=True, exist_ok=True);
             lock = FileLock(self.cache_dir / f"{self.key()}.lock");
@@ -230,7 +240,7 @@ obj AdminConsole {
         return self.cache_dir / f"{self.key()}.failed";
     }
 
-    def _refuse_recent_failure -> None {
+    def _refuse_recent_failure {
         stamp = self._failure_stamp();
         try {
             if time.time() - stamp.stat().st_mtime < self.retry_after {
