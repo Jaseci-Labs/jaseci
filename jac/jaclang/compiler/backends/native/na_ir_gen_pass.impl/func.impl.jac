@@ -754,7 +754,6 @@ impl NaIRGenPass._codegen_test(nd: uni.Test) -> None {
     }
     test_name = nd.name.sym_name;
 
-    import from jaclang.compiler.placement.placement { native_blocker_in }
     _test_blocker = native_blocker_in(nd);
     if _test_blocker {
         nd.code_context = CodeContext.SERVER;
