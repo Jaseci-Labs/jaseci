@@ -1,113 +1,7 @@
-import from jaclang.compiler.frontend.roles { Kid }
 import os;
 import hashlib;
 import json;
 import struct;
-import from jaclang.compiler.frontend.unitree {
-    Ability,
-    Archetype,
-    Assignment,
-    AtomTrailer,
-    ElseIf,
-    DictCompr,
-    ElseStmt,
-    Enum,
-    FuncSignature,
-    HasVar,
-    IfStmt,
-    InnerCompr,
-    ListCompr,
-    Import,
-    KWPair,
-    Module,
-    ModulePath,
-    Name,
-    ParamVar,
-    Symbol,
-    UniScopeNode
-}
-import from jaclang.compiler.frontend.helpers { evaluate_version_condition }
-import from jaclang.compiler.types.types {
-    AnyType,
-    ClassDetailsShared,
-    ClassType,
-    EnumMemberInfo,
-    EnumMemberType,
-    FunctionType,
-    ModuleType,
-    NeverType,
-    OverloadedType,
-    Parameter,
-    TypeBase,
-    TypeVarType,
-    UnionType,
-    UnknownType
-}
-import from jaclang.compiler.frontend.constant { BindingKind, ImmutabilityKind }
-import from jaclang.compiler.types.stubcat.format {
-    ACCESS_PRIVATE,
-    ACCESS_PROTECTED,
-    ACCESS_PUBLIC,
-    ARCH_CLASS,
-    ARCH_ENUM,
-    ARCH_NONE,
-    ARCH_OBJ,
-    SH_EXTERN,
-    HEADER_SIZE,
-    Header,
-    LIT_BOOL,
-    LIT_INT,
-    LIT_NONE,
-    LIT_STR,
-    MOD_EXTERNAL,
-    MOD_JAC_INTERNAL,
-    MOD_TYPESHED,
-    PM_CLS,
-    PM_COMPTIME,
-    PM_HAS_DEFAULT,
-    PM_SELF,
-    SC_CLASS,
-    SC_FUNCTION,
-    SC_MODULE,
-    SC_OTHER,
-    SH_BUILTIN,
-    SH_DATACLASS,
-    SH_ENUM,
-    SH_NAMEDTUPLE,
-    SH_ROOT,
-    SH_STDLIB,
-    SH_TYPEDDICT,
-    SH_XREF,
-    SYMF_DEFER,
-    SYMF_FINAL,
-    SYMF_HAS_DEFAULT,
-    SYMF_INSTANCE_METHOD,
-    SYMF_NA_ESCAPES,
-    SYMF_NA_REGION_HANDLE,
-    SYMF_NA_STACK_OK,
-    SYMF_PARAM_REBOUND,
-    SYMF_READONLY,
-    TV_CLASS_PARAM,
-    TV_CONTRAVARIANT,
-    TV_COVARIANT,
-    TV_PARAM_SPEC,
-    TV_SELF,
-    TY_ANY,
-    TY_CLASS,
-    TY_ENUM_MEMBER,
-    TY_FUNCTION,
-    TY_MODULE,
-    TY_NEVER,
-    TY_OVERLOAD,
-    TY_TYPEVAR,
-    TY_UNION,
-    TY_UNKNOWN,
-    pack_header,
-    put_ref,
-    put_refs,
-    put_svar,
-    put_uvar
-}
 
 obj ScopeMembers {
     has names: dict[str, Symbol] = {},
@@ -321,6 +215,7 @@ obj CatalogWriter {
         external_modules: set[any] postinit,
         boundary: (Module | None) = None,
         path_mapper: Callable[[str], str] | None = None,
+        spans: bool = True,
         failures: int = 0,
         evaluated: int = 0,
         failure_log: list[str] = [],
@@ -704,7 +599,6 @@ obj CatalogWriter {
     }
 
     def property_facts(sym: Symbol) -> tuple[int, int, (TypeBase | None)] {
-        import from jaclang.compiler.types.type_utils { PropertyWriteKind }
         kind = 0;
         write_kind = 0;
         write_type: (TypeBase | None) = None;
@@ -1048,7 +942,7 @@ obj CatalogWriter {
         put_ref(out, parent);
         put_ref(out, self.ref_module(module_of(scope)));
         put_ref(out, self.ref_symbol(owner));
-        loc = scope.loc;
+        loc = scope.loc if self.spans else None;
         put_uvar(out, max(loc.first_line, 0) if loc else 0);
         put_uvar(out, max(loc.col_start, 0) if loc else 0);
         put_uvar(out, max(loc.last_line, 0) if loc else 0);
@@ -1133,7 +1027,7 @@ obj CatalogWriter {
         }
         put_uvar(out, access);
         put_uvar(out, 1 if sym.imported else 0);
-        loc = sym.decl.loc if sym.decl else None;
+        loc = sym.decl.loc if sym.decl and self.spans else None;
         put_uvar(out, max(loc.first_line, 0) if loc else 0);
         put_uvar(out, max(loc.col_start, 0) if loc else 0);
         put_uvar(out, max(loc.last_line, 0) if loc else 0);
@@ -1214,7 +1108,7 @@ obj CatalogWriter {
                 }
             }
         } except Exception {}
-        import from jaclang.compiler.types.stubcat.reader { CatProvider }
+
         catalog_origin = sym.provider;
         if isinstance(catalog_origin, CatProvider) {
             symbits |= catalog_origin.symbits & (SYMF_HAS_DEFAULT | SYMF_DEFER);
@@ -1635,10 +1529,15 @@ def build_module_iface(
     mod: Module,
     evaluator: any,
     pkg_dir: str,
-    path_mapper: Callable[[str], str] | None = None
+    path_mapper: Callable[[str], str] | None = None,
+    spans: bool = True
 ) -> bytes {
     writer = CatalogWriter(
-        evaluator=evaluator, pkg_dir=pkg_dir, boundary=mod, path_mapper=path_mapper
+        evaluator=evaluator,
+        pkg_dir=pkg_dir,
+        boundary=mod,
+        path_mapper=path_mapper,
+        spans=spans
     );
     dotted = mod.name or "";
     writer.add_module(mod, dotted);

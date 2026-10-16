@@ -1,30 +1,6 @@
 import json;
 import os;
 import sys;
-import from jaclang.compiler.driver.module_analysis { ModuleAnalysis }
-import from jaclang.compiler.driver.program { JacProgram }
-import from jaclang.compiler.frontend.host {
-    active_host,
-    install_host,
-    set_package_root
-}
-import from jaclang.compiler.frontend.kernel_host { HostAsker, KernelHost }
-import from jaclang.compiler.frontend.kernel_inputs {
-    KernelInputs,
-    json_int,
-    json_map,
-    json_maps,
-    json_opt_str,
-    json_str_list
-}
-import from jaclang.compiler.frontend.module_facts { ModuleFacts }
-import from jaclang.compiler.frontend.srcloc { Span }
-import from jaclang.compiler.driver.unit_products {
-    UnitProducts,
-    products_from_record,
-    products_record
-}
-import from jaclang.compiler.passes.context { Alert }
 
 glob ANALYSIS_OK: int = 0,
      ANALYSIS_BLOCKED: int = 1,
@@ -263,7 +239,8 @@ def diag_of(alert: Alert) -> AnalysisDiag {
 }
 
 def module_report(task: ModuleAnalysis) -> ModuleReport {
-    done = task.program.analysis.completed_passes.get(id(task.module));
+    build = task.program.analysis.peek(task.module);
+    done = build.done if build is not None else None;
     native = task.native
         or (
             not task.parse_failed and ModuleFacts.has_native_context_stmts(task.module)

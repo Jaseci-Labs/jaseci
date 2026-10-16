@@ -5,42 +5,11 @@ import json;
 import os;
 import tarfile;
 import from pathlib { Path }
-import from jaclang.jac0core.ext_registry { is_annex }
-import type from jaclang.compiler.driver.program { JacProgram }
-import from jaclang.project.config { JacConfig }
-import from jaclang.dist.publish.metadata { generate_metadata, generate_pyproject_toml }
-import from jaclang.dist.publish.py_imports { rewrite_imports, wheel_module_name }
-import from jaclang.compiler.driver.source_products { python_source }
-import from jaclang.dist.publish.runtime_vendor {
-    build_runtime_closure,
-    scan_jaclang_imports
-}
-import from jaclang.dist.publish.wheel_meta {
-    generate_wheel_file,
-    generate_entry_points,
-    wheel_filename,
-    dist_info_dirname,
-    sdist_filename
-}
-import from jaclang.dist.publish.record {
-    record_entry_from_bytes,
-    generate_record,
-    RecordEntry
-}
-import from jaclang.dist.publish.sources {
-    collect_source_files,
-    read_source_file,
-    SourceFile
-}
-import from jaclang.dist.publish.wheel_archive { BUILD_DATA_FILE, wheel_bytes }
 
 glob _VENDOR_DIRNAME: str = "_jac_vendor";
 
 
 def _module_is_client_source(source_path: Path) -> bool {
-    import from jaclang.compiler.driver.compile_options { CompileOptions }
-    import from jaclang.compiler.frontend.constant { CodeContext }
-    import from jaclang.compiler.driver.program { JacProgram as JacProgramRt }
     try {
         mod = JacProgramRt().compile(
             str(source_path), options=CompileOptions(symtab_ir_only=True)
@@ -438,8 +407,6 @@ impl WheelBuilder._top_level_names(src_data: dict[str, bytes]) -> list[str] {
 }
 
 def _backend_source -> str {
-    import from jaclang.compiler.driver.program { JacProgram as JacProgramRt }
-    import from jaclang.dist.publish { wheel_archive }
     source = python_source(str(wheel_archive.__file__), JacProgramRt())[0];
     leaked = scan_jaclang_imports(source);
     if leaked {

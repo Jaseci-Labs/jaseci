@@ -599,6 +599,7 @@ impl JacProgram.parse_source(
             annex_sources(file_path),
             early_context=codespace or ('' if infer_native else 'server')
         );
+        active_host().place_wired_imports(parsed);
         if codespace == 'client' {
             _coerce_client_module(parsed);
             parsed.gen.placement_mode = 'declared';
@@ -1102,16 +1103,6 @@ impl JacProgram.ingest_comptime_producers(
     } finally {
         self.options = saved_opts;
     }
-}
-
-impl JacProgram.run_schedule(
-    self: JacProgram,
-    mod: uni.Module,
-    passes: PassSchedule,
-    cancel_token: (CancelToken | None) = None
-) -> None {
-    import from jaclang.compiler.driver.pipeline { execute_passes }
-    execute_passes(self, mod, passes, cancel_token);
 }
 
 impl JacProgram.count_module_blocking_errors(self: JacProgram, mod_path: str) -> int {

@@ -1,32 +1,5 @@
 import from enum { IntEnum, auto }
 import from pathlib { Path }
-import from jaclang.compiler.frontend.constant { ParamKind }
-import type from jaclang.compiler.frontend.unitree { Expr, Symbol }
-import type from jaclang.compiler.frontend.unitree { UniScopeNode as SymbolTable }
-import type from jaclang.compiler.types.ct_value { CtValue }
-import from jaclang.compiler.frontend.relations {
-    BaseOf,
-    BoundOf,
-    ConstraintOf,
-    DeclScopeOf,
-    EnumClassOf,
-    EnumMemberOf,
-    GuardOf,
-    MemberInfoOf,
-    MroOf,
-    OverloadOf,
-    ParamDefaultOf,
-    ParamOf,
-    ParamTypeOf,
-    PrivOf,
-    ReturnsOf,
-    SharedOf,
-    TypeArgOf,
-    TypeMemberOf,
-    TypeParamOf,
-    UnionMemberOf,
-    ValueTypeOf
-}
 
 enum TypeCategory(IntEnum) {
     Unbound,
@@ -169,6 +142,7 @@ node ClassDetailsShared {
         _native_name: (tuple[SymbolTable, str] | None) = None,
         _acc_cache: (dict[str, any] | None) = None,
         _mro_sig: (list[tuple[int, str]] | None) = None,
+        _fresh_epoch: int = -1,
         _provisional: bool = False,
         _heal_stamp: int = 0;
 
@@ -258,6 +232,8 @@ node ClassType(TypeBase) {
 
     has private: ClassDetailsPrivate { getter; setter(private: ClassDetailsPrivate); }
     has shared: ClassDetailsShared { getter; }
+    has _tv_key: str = "",
+        _tv_solution: (dict[str, TypeBase] | None) = None;
 
     def init(
         *,
@@ -482,3 +458,5 @@ node EnumMemberType(TypeBase) {
     def __str__ -> str;
     def get_value_type -> TypeBase;
 }
+
+glob CLASS_GRAPH_EPOCH: list[int] = [0];

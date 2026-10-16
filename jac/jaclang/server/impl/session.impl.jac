@@ -1,5 +1,4 @@
 def _database_config(base_path: (str | None)) -> DatabaseConfig {
-    import from jaclang.project.config { DatabaseConfig, get_config_for_dir }
     config = get_config_for_dir(base_path) if base_path else None;
     return config.database if config is not None else DatabaseConfig();
 }
@@ -24,15 +23,13 @@ impl conninfo_from_url(url: str) -> ConnInfo {
 
 
 impl shared_pg_data_dir -> str {
-    import from jaclang.cache.registry { bucket }
     return str(bucket("pg").path() / 'main');
 }
 
 
 impl project_database(base_path: str, target_path: (str | None)) -> ProjectDatabase {
     import hashlib;
-    import from jaclang.runtime.graph_utils { get_name }
-    import from jaclang.project.workspace { workspace_for_path }
+
     workspace = workspace_for_path(target_path or base_path);
     database_root = os.path.realpath(base_path);
     in_project = False;
@@ -151,7 +148,6 @@ def _drop_owned_at_exit -> None {
 
 
 impl own_child_databases -> None {
-    import from jaclang.data.dbcatalog { process_alive, this_host }
     outer = scratch_owner_pid();
     if outer == os.getpid() {
         return;
@@ -166,7 +162,6 @@ impl own_child_databases -> None {
 
 
 impl drop_owned_databases(data_dir: str = '') -> int {
-    import from jaclang.data.dbcatalog { connect_admin, drop_database, owned_databases }
     rt = PgRuntime(data_dir=data_dir or shared_pg_data_dir(), database=MAINTENANCE_DB);
     if not rt.is_running() {
         return 0;
@@ -248,12 +243,6 @@ impl takeover_project(base_path: str, target_path: (str | None) = None) -> int {
 
 
 def _ancestry_of(arch: (object | None)) -> list[str] {
-    import from jaclang.runtime.constructs {
-        Archetype,
-        NodeArchetype,
-        EdgeArchetype,
-        WalkerArchetype
-    }
     if arch is None {
         return [];
     }
@@ -269,6 +258,23 @@ def _ancestry_of(arch: (object | None)) -> list[str] {
     return out;
 }
 
+
+glob _GETTER_CLASSES: dict[type, bool] = {};
+
+def _runs_getters(arch: object) -> bool {
+    cls = type(arch);
+    found = _GETTER_CLASSES.get(cls);
+    if found is None {
+        found = any(
+            isinstance(member, property)
+            for klass in cls.__mro__
+            if klass is not object and not klass.__module__.startswith('jaclang.')
+            for member in vars(klass).values()
+        );
+        _GETTER_CLASSES[cls] = found;
+    }
+    return found;
+}
 
 def _settle_written(anchor: Anchor, seen: int) {
     if seen and anchor.__dict__.get('_field_written', 0) == seen {
@@ -430,6 +436,9 @@ impl Session.postinit -> None {
     self._contended = set();
     self._queued = [];
     self._last_conflict = set();
+    self._scan_clean = False;
+    self._scan_sealed = False;
+    self._scan_safe = True;
 }
 
 
@@ -667,12 +676,12 @@ impl Session.abort -> None {
         self._snapshot_reads.clear();
         self._on_commit = [];
         self._lost = False;
+        self.unseal_scan();
     }
 }
 
 
 impl Session._forget_loaded -> None {
-    import from jaclang.runtime.osp_graph_sv { sv_forget_edge }
     for (id, anchor) in list(self.__mem__.items()) {
         if not anchor.is_populated() or not anchor.persistent {
             continue;
@@ -687,7 +696,6 @@ impl Session._forget_loaded -> None {
 
 
 impl Session.quarantine_ref(referrer: (Anchor | None), stub: Anchor) -> None {
-    import from jaclang.runtime.osp_graph_sv { sv_forget_by_id }
     sid = stub.ensure_id();
     sv_forget_by_id(sid, self);
     if self._store is not None {
@@ -740,7 +748,6 @@ impl Session._raise_ro_retry -> None {
 
 
 impl Session._drop_snapshot_reads -> None {
-    import from jaclang.runtime.osp_graph_sv { sv_forget_edge }
     for id in self._snapshot_reads {
         if id in self._dirty or id in self._deleted {
             continue;
@@ -773,6 +780,7 @@ impl Session._ensure_txn -> None {
 
 impl Session.unit_enter(key: (str | None) = None) -> None {
     with self._lock {
+        self.unseal_scan();
         ro = key is not None and ro_units_enabled() and not unit_writes_recorded(key);
         self._active_units += 1;
         if ro {
@@ -963,10 +971,34 @@ impl Session.flush(full: bool = False) -> None {
 }
 
 
+impl Session.seal_scan -> None {
+    with self._lock {
+        self._scan_sealed = self._scan_clean;
+    }
+}
+
+
+impl Session.unseal_scan -> None {
+    with self._lock {
+        self._scan_clean = False;
+        self._scan_sealed = False;
+    }
+}
+
+
 impl Session._flush_locked(full: bool) -> None {
     store = self._store;
     if store is None {
         return;
+    }
+    if full and self._scan_sealed {
+        full = any(
+            anchor is not None and _runs_getters(anchor.archetype)
+            for anchor in (self.__mem__.get(id) for id in self._dirty)
+        );
+        if full {
+            self._scan_sealed = False;
+        }
     }
     self._reclaim_dead_txn();
     unflushed: list[UnflushedAnchor] = [];
@@ -1016,14 +1048,18 @@ impl Session._flush_locked(full: bool) -> None {
         self._deleted.clear();
     }
     self._dirty.clear();
+    if full {
+        self._scan_clean = self._scan_safe;
+    }
 }
 
 
 impl Session._unflushed(full: bool) -> list[UnflushedAnchor] {
     import from jaclang { JacRuntimeInterface as JacRI }
-    import from jaclang.data.serializer { Serializer }
+
     candidates = list(self.__mem__.keys()) if full else list(self._dirty.keys());
     out: list[UnflushedAnchor] = [];
+    safe = True;
     for id in candidates {
         anchor = self.__mem__.get(id);
         if anchor is None or not anchor.persistent or not anchor.is_populated() {
@@ -1038,6 +1074,9 @@ impl Session._unflushed(full: bool) -> list[UnflushedAnchor] {
             continue;
         }
         written = anchor.__dict__.get('_field_written', 0);
+        if safe and _runs_getters(anchor.archetype) {
+            safe = False;
+        }
         stored: (dict[str, object] | None) = None;
         try {
             stored = Serializer.stored_form(anchor);
@@ -1054,6 +1093,7 @@ impl Session._unflushed(full: bool) -> list[UnflushedAnchor] {
             UnflushedAnchor(anchor=anchor, stored=stored, hash=h, written=written)
         );
     }
+    self._scan_safe = safe;
     return out;
 }
 
@@ -1061,8 +1101,6 @@ impl Session._unflushed(full: bool) -> list[UnflushedAnchor] {
 impl Session._serialize(
     anchor: Anchor, stored: (dict[str, object] | None) = None
 ) -> AnchorRow {
-    import from jaclang.data.serializer { Serializer }
-    import from jaclang.data.type_identity { storage_type, type_module }
     if stored is None {
         stored = Serializer.stored_form(anchor);
     }
@@ -1104,14 +1142,13 @@ impl Session._serialize(
 
 impl Session._materialize(row: AnchorRow) -> (Anchor | None) {
     import from functools { partial }
-    import from jaclang.data.serializer { Serializer }
+
     self._foreign_refs.discard(row.id);
     existing = self.__mem__.get(row.id);
     if existing is not None and existing.is_populated() {
         return existing;
     }
-    import from jaclang.data.type_identity { resolution_scope, ForeignType }
-    import from jaclang.runtime.prepared { application_for }
+
     application = application_for(self.target_path) if self.target_path else None;
     try {
         with resolution_scope(application) {
@@ -1153,7 +1190,6 @@ impl Session._materialize(row: AnchorRow) -> (Anchor | None) {
 
 
 impl Session._load_edges(nd: NodeAnchor) -> list[EdgeAnchor] {
-    import from jaclang.data.serializer { Serializer }
     loaded = nd.__dict__.get('edges');
     if loaded is not None {
         return loaded;
@@ -1366,6 +1402,6 @@ impl Session.close -> None {
     self._deleted.clear();
     self._rows.clear();
     self._lost = False;
-    import from jaclang.runtime.osp_graph_sv { sv_store_closed }
+
     sv_store_closed(self);
 }

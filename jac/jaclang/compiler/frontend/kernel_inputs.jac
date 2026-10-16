@@ -1,16 +1,5 @@
 import base64;
 import json;
-import from jaclang.compiler.driver.compile_options { CompileOptions }
-import from jaclang.compiler.frontend.host {
-    CheckSettings,
-    HostPlatform,
-    LintSettings,
-    ProjectDefaults,
-    ProjectFacts
-}
-import from jaclang.compiler.frontend.source_layout { LayoutTables }
-import from jaclang.compiler.types.ct_value { CtEnvironment }
-import from jaclang.project.workspace_model { AppSpec, WorkspaceSpec }
 
 glob KERNEL_INPUTS_VERSION: int = 2,
      KEY_SEP: str = "\x1f";
@@ -23,6 +12,7 @@ obj RequestOptions {
         native_require: list[str] = [],
         iface_ok: bool = False,
         need_full_ast: bool = False,
+        native_tree_demand: bool = False,
         no_ir_cache: bool = False,
         resolve_annex_parent: bool = False,
         aot_mode: bool = False,
@@ -61,6 +51,7 @@ obj RequestOptions {
             native_require=list(self.native_require),
             iface_ok=self.iface_ok,
             need_full_ast=self.need_full_ast,
+            native_tree_demand=self.native_tree_demand,
             no_ir_cache=self.no_ir_cache,
             resolve_annex_parent=self.resolve_annex_parent,
             aot_mode=self.aot_mode,
@@ -96,7 +87,9 @@ obj RequestOptions {
 obj PythonInterface {
     has path: str,
         pkg_dir: str,
-        data: bytes = b"";
+        data: bytes = b"",
+        placement: str = "",
+        effects: str = "";
 }
 
 obj ImportResolution {
@@ -272,6 +265,7 @@ def request_of(options: CompileOptions) -> RequestOptions {
         native_require=list(options.native_require or []),
         iface_ok=options.iface_ok,
         need_full_ast=options.need_full_ast,
+        native_tree_demand=options.native_tree_demand,
         no_ir_cache=options.no_ir_cache,
         resolve_annex_parent=options.resolve_annex_parent,
         aot_mode=options.aot_mode,
@@ -314,6 +308,7 @@ def request_to_dict(request: RequestOptions) -> dict[str, any] {
         "native_require": list(request.native_require),
         "iface_ok": request.iface_ok,
         "need_full_ast": request.need_full_ast,
+        "native_tree_demand": request.native_tree_demand,
         "no_ir_cache": request.no_ir_cache,
         "resolve_annex_parent": request.resolve_annex_parent,
         "aot_mode": request.aot_mode,
@@ -355,6 +350,7 @@ def request_from_dict(raw: dict[str, any]) -> RequestOptions {
         native_require=json_str_list(raw.get("native_require")),
         iface_ok=bool(raw.get("iface_ok", False)),
         need_full_ast=bool(raw.get("need_full_ast", False)),
+        native_tree_demand=bool(raw.get("native_tree_demand", False)),
         no_ir_cache=bool(raw.get("no_ir_cache", False)),
         resolve_annex_parent=bool(raw.get("resolve_annex_parent", False)),
         aot_mode=bool(raw.get("aot_mode", False)),
@@ -450,7 +446,6 @@ def facts_to_dict(facts: ProjectFacts) -> dict[str, any] {
     return {
         "project_root": facts.project_root,
         "check": check_to_dict(facts.check),
-        "arch_closed": list(facts.arch_closed),
         "client_framework": facts.client_framework,
         "package_name": facts.package_name,
         "package_exports": list(facts.package_exports),
@@ -462,7 +457,6 @@ def facts_from_dict(raw: dict[str, any]) -> ProjectFacts {
     return ProjectFacts(
         project_root=str(raw.get("project_root", "")),
         check=check_from_dict(json_map(raw.get("check"))),
-        arch_closed=json_str_list(raw.get("arch_closed")),
         client_framework=str(raw.get("client_framework", "react")),
         package_name=str(raw.get("package_name", "")),
         package_exports=json_str_list(raw.get("package_exports")),
@@ -803,7 +797,9 @@ def answers_to_dict(inputs: KernelInputs) -> dict[str, any] {
             {
                 "path": r.path,
                 "pkg_dir": r.pkg_dir,
-                "data": base64.b64encode(r.data).decode("ascii")
+                "data": base64.b64encode(r.data).decode("ascii"),
+                "placement": r.placement,
+                "effects": r.effects
             } for r in inputs.python_ifaces
         ]
     };
@@ -910,7 +906,9 @@ def merge_answers(inputs: KernelInputs, raw: dict[str, any]) {
             PythonInterface(
                 path=str(r.get("path", "")),
                 pkg_dir=str(r.get("pkg_dir", "")),
-                data=base64.b64decode(str(r.get("data", "")).encode("ascii"))
+                data=base64.b64decode(str(r.get("data", "")).encode("ascii")),
+                placement=str(r.get("placement", "")),
+                effects=str(r.get("effects", ""))
             )
         );
     }

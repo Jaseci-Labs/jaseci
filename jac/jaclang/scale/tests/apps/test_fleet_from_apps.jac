@@ -396,7 +396,7 @@ test "edge analysis visits modules registered while analyzing either hub" {
     import jaclang.compiler.driver.pipeline as pipeline;
     with patch.object(JacProgram, "compile"), patch.object(
         JacProgram, "execution_hubs", return_value=[user_hub, compiler_hub]
-    ), patch.object(pipeline, "require_product", analyze) {
+    ), patch.object(pipeline, "require", analyze) {
         edges = _compiled_app_edges("main.jac", "web", "web-app", "/tmp");
         assert set(edges) == {("web", "orders"), ("orders", "db")} , (
             edges,
