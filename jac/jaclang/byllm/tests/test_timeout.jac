@@ -238,6 +238,35 @@ test "one deadline covers everything a call does" {
         return ("held back", len(asked));
     }
 
+    def closed_on_stop(budget: float) -> tuple[str, int] {
+        held: list[any] = [];
+        closed: list[int] = [];
+
+        def slow_answer(**_kwargs: any) -> any {
+            def chunks -> any {
+                try {
+                    for _ in range(500) {
+                        time.sleep(0.01);
+                        yield text_chunk("x");
+                    }
+                } finally {
+                    closed.append(1);
+                }
+            }
+            # The provider keeps its stream, so only an explicit close ends it.
+            held.append(chunks());
+            return held[0];
+        }
+        model = Model(model_name="gpt-4o-mini", api_key="sk-test", timeout=budget);
+        with mock.patch("litellm.completion", slow_answer) {
+            stream = model.dispatch_streaming(mk_run(stream=True));
+            next(stream);
+            stream.close();
+            time.sleep(0.3);
+        }
+        return ("closed" if closed else "left open", len(held));
+    }
+
     def quiet_stream(budget: float) -> tuple[str, int] {
         asked: list[int] = [];
 
@@ -310,6 +339,13 @@ test "one deadline covers everything a call does" {
             held_back,
             30.0,
             "held back",
+            1
+        ),
+        (
+            "a reader stopped mid-chunk closes the provider's stream",
+            closed_on_stop,
+            30.0,
+            "closed",
             1
         ),
         (

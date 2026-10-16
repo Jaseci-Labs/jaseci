@@ -65,10 +65,21 @@ obj CallDeadline {
             return False;
         }
 
+        def release {
+            source = stream?.completion_stream or stream;
+            close = source?.close;
+            if callable(close) {
+                try {
+                    close();
+                } except Exception {}
+            }
+        }
+
         def pump {
             try {
                 for item in stream {
                     if not deliver((item, None)) {
+                        release();
                         return;
                     }
                 }
@@ -104,13 +115,7 @@ obj CallDeadline {
             }
         } finally {
             stopped.set();
-            source = stream?.completion_stream or stream;
-            close = source?.close;
-            if callable(close) {
-                try {
-                    close();
-                } except Exception {}
-            }
+            release();
         }
     }
 
