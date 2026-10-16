@@ -37,7 +37,9 @@ def write_import_library(
             err
         );
         if failed {
-            raise RuntimeError(f"cannot write the import library for {dll_name}: {err}");
+            raise RuntimeError(
+                f"cannot write the import library for {dll_name}: {err}"
+            );
         }
     }
 }
@@ -65,7 +67,9 @@ def image_symbol_addresses(data: bytes) -> list[tuple[str, int]] {
 
 def _symbol_rows(data: bytes, with_locals: bool) -> list[tuple[str, str, int]] {
     with ffi.OutputString() as out {
-        failed = ffi.lib.LLVMPY_ObjectSymbols(data, len(data), 1 if with_locals else 0, out);
+        failed = ffi.lib.LLVMPY_ObjectSymbols(
+            data, len(data), 1 if with_locals else 0, out
+        );
         text = str(out);
     }
     if failed {

@@ -209,7 +209,9 @@ def entry_elf_ir -> str {
 def entry_elf_static_ir -> str {
     """musl's crt1.o enters `__libc_start_main`, which runs `.init_array`
     itself before `main`.""";
-    return "; --- ELF entry point (musl static) ---\n" + argv_globals_ir() + _main_body();
+    return "; --- ELF entry point (musl static) ---\n"
+        + argv_globals_ir()
+        + _main_body();
 }
 
 def entry_macho_ir -> str {

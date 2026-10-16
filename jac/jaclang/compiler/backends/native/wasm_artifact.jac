@@ -128,7 +128,9 @@ def rename_wasm_imports(wasm_bytes: bytes, names: set[str], module: str) -> byte
             if kind == 0 and field in names {
                 mod_name = module;
             }
-            entries += _name_bytes(mod_name) + _name_bytes(field) + wasm_bytes[desc_start:p];
+            entries += _name_bytes(mod_name)
+                + _name_bytes(field)
+                + wasm_bytes[desc_start:p];
             i += 1;
         }
         out.append(2);

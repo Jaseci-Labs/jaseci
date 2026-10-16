@@ -236,7 +236,9 @@ test "ELF shared object loads and runs through the C ABI" {
     (relobj, exports) = emit_shared_object(FIXTURE, "x86_64-unknown-linux-gnu");
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d {
         out = os.path.join(d, "libshared_export.so");
-        link_shared_object("x86_64-unknown-linux-gnu", relobj, out, exports, ["libc.so.6", "libm.so.6"]);
+        link_shared_object(
+            "x86_64-unknown-linux-gnu", relobj, out, exports, ["libc.so.6", "libm.so.6"]
+        );
         raw = Path(out).read_bytes();
         assert raw[:4] == b"\x7fELF" , "not an ELF image";
         e_type = struct.unpack_from("<H", raw, 16)[0];
@@ -418,7 +420,9 @@ test "ELF shared object initializes a global clib struct on dlopen" {
     );
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d {
         out = os.path.join(d, "libshared_glob_struct.so");
-        link_shared_object("x86_64-unknown-linux-gnu", relobj, out, exports, ["libc.so.6"]);
+        link_shared_object(
+            "x86_64-unknown-linux-gnu", relobj, out, exports, ["libc.so.6"]
+        );
         # Only a Linux x86_64 host can dlopen + execute the produced .so.
         if sys.platform.startswith("linux")
             and ("x86_64" in llvm.get_default_triple()) {
@@ -456,7 +460,9 @@ test "Mach-O dylib has MH_DYLIB filetype, export trie, and init section" {
     (relobj, exports) = emit_shared_object(FIXTURE, "x86_64-apple-darwin");
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d {
         out = os.path.join(d, "libshared_export.dylib");
-        link_shared_object("x86_64-apple-darwin", relobj, out, exports, ["/usr/lib/libSystem.B.dylib"]);
+        link_shared_object(
+            "x86_64-apple-darwin", relobj, out, exports, ["/usr/lib/libSystem.B.dylib"]
+        );
         raw = Path(out).read_bytes();
         assert struct.unpack_from("<I", raw, 0)[0] == 0xFEEDFACF , "not a Mach-O 64 image";
         info = _macho_info(raw);
@@ -475,7 +481,9 @@ def _build_scalar_dylib(triple: str, name: str) -> dict[str, any] {
     (relobj, exports) = emit_shared_object("shared_export_scalar.jac", triple);
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d {
         out = os.path.join(d, name);
-        link_shared_object(triple, relobj, out, exports, ["/usr/lib/libSystem.B.dylib"]);
+        link_shared_object(
+            triple, relobj, out, exports, ["/usr/lib/libSystem.B.dylib"]
+        );
         info = _macho_info(Path(out).read_bytes());
         assert info["filetype"] == 6 , f"expected MH_DYLIB (6), got {info['filetype']}";
         return info;
@@ -522,7 +530,9 @@ test "Mach-O dylib dlopen/dlsym round-trip resolves :pub exports (macOS host onl
     (relobj, exports) = emit_shared_object("shared_export_scalar.jac", triple);
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d {
         out = os.path.join(d, "libdlopen_roundtrip.dylib");
-        link_shared_object(triple, relobj, out, exports, ["/usr/lib/libSystem.B.dylib"]);
+        link_shared_object(
+            triple, relobj, out, exports, ["/usr/lib/libSystem.B.dylib"]
+        );
         import ctypes;
         lib = ctypes.CDLL(out);  # dlopen — fails if the load-command fix regressed
         # Resolve whichever spelling the export trie carries — bare (the linker's
@@ -562,7 +572,9 @@ test "Mach-O dylib export trie uses bare (non-underscored) :pub names (macOS hos
     (relobj, exports) = emit_shared_object("shared_export_scalar.jac", triple);
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d {
         out = os.path.join(d, "libtrie_probe.dylib");
-        link_shared_object(triple, relobj, out, exports, ["/usr/lib/libSystem.B.dylib"]);
+        link_shared_object(
+            triple, relobj, out, exports, ["/usr/lib/libSystem.B.dylib"]
+        );
         import ctypes;
         lib = ctypes.CDLL(out);
         bare = lib?.jadd;
@@ -577,7 +589,9 @@ test "PE dll has IMAGE_FILE_DLL, export directory, and a non-zero entry" {
     (relobj, exports) = emit_shared_object(FIXTURE, "x86_64-pc-windows-msvc");
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d {
         out = os.path.join(d, "libshared_export.dll");
-        link_shared_object("x86_64-pc-windows-msvc", relobj, out, exports, ["msvcrt.dll"]);
+        link_shared_object(
+            "x86_64-pc-windows-msvc", relobj, out, exports, ["msvcrt.dll"]
+        );
         raw = Path(out).read_bytes();
         assert raw[0:2] == b"MZ" , "missing MZ signature";
         e_lfanew = struct.unpack_from("<I", raw, 0x3C)[0];
@@ -817,9 +831,7 @@ test "a shared library linked on this host loads its system C library" {
     soname = ctypes.util.find_library("crypto");
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d {
         out = os.path.join(d, "libshared_system_clib.so");
-        with patch.object(
-            link_plan, "floor_archives", return_value=([], set())
-        ) {
+        with patch.object(link_plan, "floor_archives", return_value=([], set())) {
             link_shared("shared_system_clib.jac", llvm.get_default_triple(), out);
         }
         needed = _elf_needed(Path(out).read_bytes());

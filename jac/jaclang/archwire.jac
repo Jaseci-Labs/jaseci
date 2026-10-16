@@ -3058,7 +3058,10 @@ graph import compiler.backends.native {
     primitives_native as _pn --> compiler.backends.native.na_ir_gen_pass._native_emitter_of;
     win_floor --> compiler.backends.native.link_glue.link_glue_ir { win_floor_ir }
     win_floor --> compiler.backends.native.link_plan.link_artifact { WIN_CRT_DLL }
-    win_floor --> compiler.backends.native.native_link { win_import_dll, win_import_name }
+    win_floor --> compiler.backends.native.native_link {
+        win_import_dll,
+        win_import_name
+    }
     win_floor_ir --> compiler.backends.native.win_floor.win_floor_ir { WIN_FLOOR_IR }
     win_floor_ir --> compiler.backends.native.win_floor.win_import_dll {
         WIN_FLOOR_KERNEL32

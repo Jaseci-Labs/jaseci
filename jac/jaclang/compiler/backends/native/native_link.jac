@@ -12,7 +12,11 @@ glob ELF_INTERPRETERS: dict[str, list[str]] = {
              "/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1"
          ]
      },
-     MACHO_ARCH: dict[str, str] = {"aarch64": "arm64", "arm64": "arm64", "x86_64": "x86_64"},
+     MACHO_ARCH: dict[str, str] = {
+         "aarch64": "arm64",
+         "arm64": "arm64",
+         "x86_64": "x86_64"
+     },
      MACHO_MIN_VERSION: dict[str, str] = {"arm64": "11.0", "x86_64": "10.15"},
      MACHO_SYSTEM_DYLIB: str = "/usr/lib/libSystem.B.dylib",
      PE_MACHINE: dict[str, int] = {"x86_64": 0x8664, "aarch64": 0xAA64},
@@ -248,7 +252,9 @@ def _undefined_symbols(objects: list[bytes]) -> list[str] {
 
 def link_native(job: NativeLinkJob) {
     """Link one native artifact with LLD, in this process.""";
-    os.makedirs(os.path.dirname(os.path.abspath(job.output_path)) or ".", exist_ok=True);
+    os.makedirs(
+        os.path.dirname(os.path.abspath(job.output_path)) or ".", exist_ok=True
+    );
     work = tempfile.mkdtemp(prefix="jac-link-");
     try {
         if job.platform == "elf" {
@@ -329,8 +335,16 @@ def _link_elf(job: NativeLinkJob, work: str) {
         members reference glibc-only symbols (`getcontext`, `fopen64`) on
         paths a static musl program never takes; those resolve to 0 with a
         warning, as they always have.""";
-        crt = [p for p in job.crt_objects if os.path.basename(p) != "crtn.o"];
-        crtn = [p for p in job.crt_objects if os.path.basename(p) == "crtn.o"];
+        crt = [
+            p
+            for p in job.crt_objects
+            if os.path.basename(p) != "crtn.o"
+        ];
+        crtn = [
+            p
+            for p in job.crt_objects
+            if os.path.basename(p) == "crtn.o"
+        ];
         args += ["-static", "--warn-unresolved-symbols"];
         args += crt + inputs + job.archives + crtn;
         _run_lld(args, "static ELF");
@@ -389,7 +403,11 @@ def _tbd(path: str, install_name: str, target: str, symbols: list[str]) {
     ];
     if symbols {
         quoted = ", ".join(f"'{s}'" for s in symbols);
-        lines += ["exports:", f"  - targets: [ {target} ]", f"    symbols: [ {quoted} ]"];
+        lines += [
+            "exports:",
+            f"  - targets: [ {target} ]",
+            f"    symbols: [ {quoted} ]"
+        ];
     }
     lines.append("...");
     with open(path, "w") as f {

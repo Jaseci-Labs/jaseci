@@ -46,11 +46,11 @@ def build_native_product(base: Path, record: dict[str, any]) {
         subprocess.run(
             [wasm_ld]
                 + wasm_ld_args(
-                str(wasm_path),
-                [str(obj_path)],
-                list(record['exports']),
-                str(allow_path)
-            ),
+                    str(wasm_path),
+                    [str(obj_path)],
+                    list(record['exports']),
+                    str(allow_path)
+                ),
             check=True
         );
         content = rename_wasm_imports(

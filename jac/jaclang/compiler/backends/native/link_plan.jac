@@ -1224,7 +1224,9 @@ def link_artifact(
             import from jaclang.artifacts.kit { osarch }
             message += (
                 "\nThe AArch64 outline atomics (libclang_rt.atomics.a) are not "
-                f"built for this target: run `jac native build musl@{osarch(plan.triple)}`."
+                f"built for this target: run `jac native build musl@{osarch(
+                    plan.triple
+                )}`."
             );
         }
         raise LinkPlanError(message) from None;

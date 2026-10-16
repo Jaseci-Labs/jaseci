@@ -22,7 +22,9 @@ import from jaclang.compiler.backends.native.wasm_build { link_wasm_object }
 import from jaclang.compiler.backends.native.wasm_artifact { wasm_import_map }
 import jaclang.compiler.backends.native.llvm.binding as llvm;
 
-glob FIXTURES = os.path.join(TESTS_DIR, "compiler", "backends", "native", "fixtures");
+glob FIXTURES = os.path.join(
+         TESTS_DIR, "compiler", "backends", "native", "fixtures"
+     );
 
 """The DLL names a PE image's import directory lists."""
 def _pe_import_dlls(raw: bytes) -> list[str] {
@@ -102,7 +104,11 @@ test "a wasm module imports its host ABI from the host module and the rest from 
     tm = llvm.Target.from_triple("wasm32-unknown-unknown").create_target_machine(opt=2);
     wasm_obj = tm.emit_object(module);
     content = link_wasm_object(
-        wasm_obj, ["run"], host_abi={"write"}, host_module="jac_host1", app_imports={"app_hook"}
+        wasm_obj,
+        ["run"],
+        host_abi={"write"},
+        host_module="jac_host1",
+        app_imports={"app_hook"}
     );
     imports = wasm_import_map(content);
     assert imports.get("jac_host1") == ["write"] , imports;
@@ -110,7 +116,11 @@ test "a wasm module imports its host ABI from the host module and the rest from 
     raised = "";
     try {
         link_wasm_object(
-            wasm_obj, ["run"], host_abi={"write"}, host_module="jac_host1", app_imports=set()
+            wasm_obj,
+            ["run"],
+            host_abi={"write"},
+            host_module="jac_host1",
+            app_imports=set()
         );
     } except RuntimeError as e {
         raised = str(e);
