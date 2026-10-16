@@ -7290,7 +7290,7 @@ impl Parser.parse_module_pattern -> ModulePattern {
     if self.check(TokenKind.TYP_ANY) {
         any_tok = self.expect(TokenKind.TYP_ANY);
         self.emit_diag(
-            "An edge rule's patterns name modules under this arch.jac; 'any' is not a pattern",
+            "An edge rule's patterns name modules under this archwire.jac; 'any' is not a pattern",
             "E0098",
             loc=any_tok.loc
         );

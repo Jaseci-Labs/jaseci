@@ -186,7 +186,10 @@ obj Session(Memory) {
         _foreign_refs: set[UUID] postinit,
         _contended: set[UUID] postinit,
         _queued: list[UUID] postinit,
-        _last_conflict: set[UUID] postinit;
+        _last_conflict: set[UUID] postinit,
+        _scan_clean: bool postinit,
+        _scan_sealed: bool postinit,
+        _scan_safe: bool postinit;
 
     override def new_session(target_path: str) -> Session {
         if self.store is None {
@@ -245,6 +248,8 @@ obj Session(Memory) {
     def read_scope_enter -> None;
     def read_scope_exit -> None;
     def flush(full: bool = False) -> None;
+    def seal_scan -> None;
+    def unseal_scan -> None;
     def _flush_locked(full: bool) -> None;
     def _unflushed(full: bool) -> list[UnflushedAnchor];
     def ensure_writable_txn -> None;

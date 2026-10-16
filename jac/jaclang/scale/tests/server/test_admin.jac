@@ -571,15 +571,14 @@ test "admin console pages answer without waiting on a console build" {
         );
     }
 
-    # Each row: whether the project carries a staged console, how the build
-    # behaves, whether a console built from other sources already sits in the
-    # cache, and what /admin/ serves once the build has settled.
+    # Each row: whether the project carries a console under .jac/admin (staged
+    # by a deploy, or left unmarked by an older build), how the build behaves,
+    # and what /admin/ serves once the build has settled.
     rows = [
         {
             "name": "a staged console is served and nothing builds",
             "staged": True,
             "build": "instant",
-            "stale": False,
             "first": 200,
             "settled": 200,
             "body": "staged",
@@ -589,7 +588,6 @@ test "admin console pages answer without waiting on a console build" {
             "name": "a running build answers 503 and is not started twice",
             "staged": False,
             "build": "gated",
-            "stale": False,
             "first": 503,
             "settled": 200,
             "body": "built",
@@ -599,17 +597,15 @@ test "admin console pages answer without waiting on a console build" {
             "name": "a failed build backs off instead of rebuilding",
             "staged": False,
             "build": "fails",
-            "stale": False,
             "first": 503,
             "settled": 503,
             "body": "",
             "builds": 1
         },
         {
-            "name": "a console built from other sources is rebuilt",
-            "staged": False,
+            "name": "a console an older build left in .jac/admin is not served",
+            "staged": "unmarked",
             "build": "gated",
-            "stale": True,
             "first": 503,
             "settled": 200,
             "body": "built",
@@ -635,7 +631,10 @@ test "admin console pages answer without waiting on a console build" {
                 project = tmp / "project";
                 project.mkdir();
                 if row["staged"] {
-                    write_console(project / ".jac" / "admin", "staged");
+                    staged = write_console(project / ".jac" / "admin", "staged");
+                    if row["staged"] != "unmarked" {
+                        (staged / ".staged").touch();
+                    }
                 }
                 os.chdir(str(project));
 
@@ -658,22 +657,6 @@ test "admin console pages answer without waiting on a console build" {
                         gate.wait(30);
                     }
                     return write_console(src / ".jac" / "client" / "dist", "built");
-                }
-
-                if row["stale"] {
-                    other = tmp / "other_ui";
-                    shutil.copytree(str(source), str(other));
-                    (other / "main.jac").write_text(
-                        (other / "main.jac").read_text() + "\n# older console\n"
-                    );
-                    def build_older(src: Path) -> Path {
-                        return write_console(src / ".jac" / "client" / "dist", "stale");
-                    }
-                    older = AdminConsole(
-                        source_dir=other, cache_dir=cache, build_fn=build_older
-                    );
-                    older.status();
-                    assert older.wait_for(30).state == ConsoleState.READY , name;
                 }
 
                 console = AdminConsole(
@@ -718,6 +701,24 @@ test "admin console pages answer without waiting on a console build" {
                     );
                 } else {
                     console.wait_for(30);
+                }
+                if row["build"] == "fails" {
+                    # A sibling process shares the backoff instead of
+                    # starting the same failing build again.
+                    other_calls: list[str] = [];
+                    def build_other(src: Path) -> Path {
+                        other_calls.append(str(src));
+                        return write_console(src / ".jac" / "client" / "dist", "other");
+                    }
+                    other = AdminConsole(
+                        source_dir=source,
+                        cache_dir=cache,
+                        build_fn=build_other,
+                        retry_after=300.0
+                    );
+                    other.status();
+                    other.wait_for(30);
+                    assert other_calls == [] , f"{name}: the failed build was retried";
                 }
 
                 settled = client.get("/admin/quotes");

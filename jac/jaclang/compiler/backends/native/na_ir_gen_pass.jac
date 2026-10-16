@@ -2353,7 +2353,10 @@ walker NaIRGenPass(CompilerPass) {
         kw: uni.KWPair, edge_arch: (str | None)
     ) -> (str | None);
 
-    def _osp_connect_assign_value(kw: uni.KWPair) -> (ir.Value | None);
+    def _osp_connect_assign_value(
+        kw: uni.KWPair, keep: bool = False
+    ) -> (ir.Value | None);
+
     def _codegen_disconnect(nd: uni.BinaryExpr) -> (ir.Value | None);
     def _osp_disc_list_operand(expr: (uni.UniNode | None)) -> bool;
     def _codegen_edge_ref_trailer(nd: uni.EdgeRefTrailer) -> (ir.Value | None);

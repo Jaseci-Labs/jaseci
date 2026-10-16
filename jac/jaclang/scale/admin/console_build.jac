@@ -16,7 +16,6 @@ glob logger = logging.getLogger(__name__),
      RETRY_AFTER_FAILURE_SECONDS: float = 60.0,
      RETRY_AFTER_BUILDING_SECONDS: int = 5,
      LOCK_POLL_SECONDS: float = 0.5,
-     NOTE_HIT_EVERY_SECONDS: float = 86400.0,
      SOURCE_SKIP: tuple[str, ...] = (".jac", "node_modules", "__pycache__");
 
 enum ConsoleState(StrEnum) {
@@ -84,7 +83,7 @@ def _compiler_digest -> str {
     try {
         jir = importlib.import_module("jaclang.compiler.driver.jir");
         return str(jir.running_compiler_digest());
-    } except Exception {
+    } except ImportError {
         return "";
     }
 }
@@ -118,8 +117,7 @@ obj AdminConsole {
         _mutex: (threading.Lock | None) = None,
         _worker: (threading.Thread | None) = None,
         _failed_at: float = 0.0,
-        _error: str = "",
-        _hit_noted_at: float = 0.0;
+        _error: str = "";
 
     def postinit {
         self._mutex = threading.Lock();
@@ -150,7 +148,6 @@ obj AdminConsole {
 
     def status -> ConsoleStatus {
         if self.is_built() {
-            self._note_hit();
             return ConsoleStatus(state=ConsoleState.READY, dist_dir=self.dist_dir());
         }
         with self._mutex {
@@ -196,17 +193,6 @@ obj AdminConsole {
         return ConsoleStatus(state=ConsoleState.BUILDING);
     }
 
-    def _note_hit -> None {
-        now = time.monotonic();
-        if self._hit_noted_at and now - self._hit_noted_at < NOTE_HIT_EVERY_SECONDS {
-            return;
-        }
-        self._hit_noted_at = now;
-        try {
-            (self.entry_dir() / ".used").touch();
-        } except OSError {}
-    }
-
     def _run -> None {
         import from jaclang.cache.locking { FileLock }
         try {
@@ -220,7 +206,13 @@ obj AdminConsole {
             }
             try {
                 if not self.is_built() {
-                    self._build_locked();
+                    self._refuse_recent_failure();
+                    try {
+                        self._build_locked();
+                    } except Exception as e {
+                        self._failure_stamp().write_text(str(e));
+                        raise;
+                    }
                 }
             } finally {
                 lock.release();
@@ -232,6 +224,19 @@ obj AdminConsole {
                 self._error = str(e);
             }
         }
+    }
+
+    def _failure_stamp -> Path {
+        return self.cache_dir / f"{self.key()}.failed";
+    }
+
+    def _refuse_recent_failure -> None {
+        stamp = self._failure_stamp();
+        try {
+            if time.time() - stamp.stat().st_mtime < self.retry_after {
+                raise RuntimeError(stamp.read_text() or "a recent build failed");
+            }
+        } except OSError {}
     }
 
     def _build_locked {
@@ -256,19 +261,12 @@ obj AdminConsole {
             }
             shutil.move(str(built), str(staging / "dist"));
             _remove_tree(src);
-            (staging / ".used").touch();
             _remove_tree(target);
             os.replace(str(staging), str(target));
             logger.info(f"Admin console built in {time.monotonic() - started:.1f}s");
         } finally {
             _remove_tree(staging);
         }
-        try {
-            if self.cache_dir == console_cache_dir() {
-                import from jaclang.cache.registry { maybe_sweep }
-                maybe_sweep("admin");
-            }
-        } except Exception {}
     }
 }
 
@@ -289,7 +287,7 @@ def default_admin_console -> AdminConsole {
 def resolve_console(
     staged_dir: Path, console: (AdminConsole | None) = None
 ) -> (Path | Response) {
-    if (staged_dir / "index.html").is_file() {
+    if (staged_dir / "index.html").is_file() and (staged_dir / ".staged").is_file() {
         return staged_dir;
     }
     status = (console or default_admin_console()).status();

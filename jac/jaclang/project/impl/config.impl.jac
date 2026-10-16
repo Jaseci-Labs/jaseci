@@ -1755,7 +1755,7 @@ def _apply_memory_native_placement(cfg: JacConfig, data: dict[str, any]) {
     }
     if "arch" in data {
         raise ValueError(
-            "[arch] was removed from jac.toml: an arch.jac seals the directory it"
+            "[arch] was removed from jac.toml: an archwire.jac seals the directory it"
             " sits in. Delete the [arch] table and run `jac arch init --strip` in"
             " each directory it closed."
         );

@@ -88,7 +88,7 @@ glob RETIRED: tuple[str, ...] = (
          Bucket(
              name="apps",
              relpath="apps",
-             policy=Policy(ttl_days=30.0, markers=[".used"]),
+             policy=Policy(ttl_days=30.0),
              summary="materialized app images (.jab), content-keyed"
          ),
          Bucket(
@@ -128,7 +128,7 @@ glob RETIRED: tuple[str, ...] = (
          Bucket(
              name="admin",
              relpath="admin",
-             policy=Policy(ttl_days=30.0, markers=[".used"]),
+             policy=Policy(ttl_days=30.0),
              summary="built admin consoles, one per UI source and compiler"
          ),
          Bucket(

@@ -242,7 +242,7 @@ test "a module wired by the arch file compiles in the kernel" {
     with TemporaryDirectory() as td {
         base = Path(os.path.realpath(td));
         (base / 'jac.toml').write_text(CONFIG);
-        (base / 'arch.jac').write_text(
+        (base / 'archwire.jac').write_text(
             'graph import {\n    edge CoreInternal: core.* --> core.*;\n}\n\n'
                 + 'graph import core {\n    util --> core.svc { Spark }\n}\n'
         );
@@ -261,7 +261,7 @@ test "a module wired by the arch file compiles in the kernel" {
         emitted = outcome.unit(entry_file);
         assert emitted is not None;
         assert_same_products(emitted, expected);
-        arch_file = str(base / 'arch.jac');
+        arch_file = str(base / 'archwire.jac');
         checked = compile_in_process(arch_file);
         assert checked.analysis.status == ANALYSIS_OK , checked.analysis.message;
         assert not checked.analysis.misses , checked.analysis.misses;
@@ -334,7 +334,7 @@ def write_application(base: Path) {
             + 'walker:pub Ping { can go with Root entry { report helper(1); } }\n'
     );
     (base / 'deep.jac').write_text('def:pub twice(x: int) -> int { return x * 2; }\n');
-    (base / 'arch.jac').write_text(
+    (base / 'archwire.jac').write_text(
         'graph import {\n    edge SideInternal: side.* --> side.*;\n'
             + '    util --> main { helper }\n    include deep --> main;\n}\n\n'
             + 'graph import side {\n    tool --> side.user { Wrench }\n}\n'

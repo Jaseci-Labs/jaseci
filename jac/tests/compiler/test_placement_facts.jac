@@ -142,7 +142,7 @@ test "placement_pins imports stay within the documented allowlist" {
     pkg = os.path.join(JAC_ROOT, "jaclang");
     offenders: list[str] = [];
     for p in sorted(Path(pkg).rglob("*.jac")) {
-        if not p.is_file() or p.name == "arch.jac" {
+        if not p.is_file() or p.name == "archwire.jac" {
             continue;
         }
         rel = p.relative_to(JAC_ROOT).as_posix();
@@ -154,7 +154,7 @@ test "placement_pins imports stay within the documented allowlist" {
             offenders.append(rel);
         }
     }
-    # Imports that arch.jac wires in are checked through the wiring itself.
+    # Imports that archwire.jac wires in are checked through the wiring itself.
     allowed_bases = {
         os.path.realpath(
             discover_base_file(os.path.join(JAC_ROOT, a)) or os.path.join(JAC_ROOT, a)

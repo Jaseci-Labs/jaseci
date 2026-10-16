@@ -87,7 +87,9 @@ obj RequestOptions {
 obj PythonInterface {
     has path: str,
         pkg_dir: str,
-        data: bytes = b"";
+        data: bytes = b"",
+        placement: str = "",
+        effects: str = "";
 }
 
 obj ImportResolution {
@@ -795,7 +797,9 @@ def answers_to_dict(inputs: KernelInputs) -> dict[str, any] {
             {
                 "path": r.path,
                 "pkg_dir": r.pkg_dir,
-                "data": base64.b64encode(r.data).decode("ascii")
+                "data": base64.b64encode(r.data).decode("ascii"),
+                "placement": r.placement,
+                "effects": r.effects
             } for r in inputs.python_ifaces
         ]
     };
@@ -902,7 +906,9 @@ def merge_answers(inputs: KernelInputs, raw: dict[str, any]) {
             PythonInterface(
                 path=str(r.get("path", "")),
                 pkg_dir=str(r.get("pkg_dir", "")),
-                data=base64.b64decode(str(r.get("data", "")).encode("ascii"))
+                data=base64.b64decode(str(r.get("data", "")).encode("ascii")),
+                placement=str(r.get("placement", "")),
+                effects=str(r.get("effects", ""))
             )
         );
     }
