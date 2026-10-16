@@ -536,13 +536,17 @@ def kernel_snapshot(
     path: str,
     options: CompileOptions,
     emit_closure: bool = False,
-    emit_cached: bool = True
+    emit_cached: bool = True,
+    seeds: (list[PythonInterface] | None) = None
 ) -> KernelSnapshot {
     seed = session_inputs(host, program, path, options);
     seed.emit_closure = emit_closure;
+    seeds = seeds or [];
+    seed.python_ifaces.extend(seeds);
     snapshot = KernelSnapshot(
         host=host, program=program, options=options, seed=seed, emit_cached=emit_cached
     );
+    snapshot.shipped.update(iface.path for iface in seeds);
     if in_other_compiler_tree(path) {
         snapshot.other_compiler = path;
     }

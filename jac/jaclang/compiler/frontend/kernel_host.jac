@@ -412,6 +412,19 @@ obj KernelHost(HostServices) {
         }
         self._served[resolved] = ServedInterface(catalog=catalog, module=mod);
         program.stamp_app_facts(mod);
+        if iface.effects {
+            mod.gen.callable_effects = json.loads(iface.effects);
+        }
+        if iface.placement {
+            import from jaclang.compiler.placement.placement { summary_store }
+            import from jaclang.compiler.placement.placement_export {
+                summary_from_dict
+            }
+            restored = summary_from_dict(json.loads(iface.placement));
+            if restored is not None {
+                summary_store(program)[os.path.abspath(resolved)] = restored;
+            }
+        }
         return mod;
     }
 
@@ -431,6 +444,9 @@ obj KernelHost(HostServices) {
         products = unit_products(module, task.program);
         if not products.path {
             products.path = real;
+        }
+        if real.endswith(".jac") {
+            unit_interface(module, task.program, products);
         }
         self.units[real] = products;
     }
