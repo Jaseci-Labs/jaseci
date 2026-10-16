@@ -250,6 +250,10 @@ obj HostServices {
         return None;
     }
 
+    def native_dep_discovery_open(program: JacProgram) -> bool {
+        return False;
+    }
+
     def native_deps_deferred(program: JacProgram) -> bool {
         return False;
     }

@@ -1207,6 +1207,7 @@ walker NaIRGenPass(CompilerPass) {
     def _is_catalog_module(mod: uni.Module) -> bool;
     def _full_ast_of(full_path: str) -> (uni.Module | None);
     def _dep_iface(imported_mod: uni.Module) -> (NativeIface | None);
+    def _discover_kernel_deps -> None;
     def _dep_is_native_unit(imported_mod: uni.Module, path: str) -> bool;
     def _load_native_unit_module(path: str) -> (uni.Module | None);
     def _is_kernel_unit -> bool;

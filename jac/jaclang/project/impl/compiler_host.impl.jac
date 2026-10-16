@@ -317,6 +317,10 @@ impl ProjectHost.native_dep_iface(
     );
 }
 
+impl ProjectHost.native_dep_discovery_open(program: JacProgram) -> bool {
+    return program.native_units().dep_discovery_open();
+}
+
 impl ProjectHost.native_deps_deferred(program: JacProgram) -> bool {
     return program.native_units().close_dep_deferral();
 }

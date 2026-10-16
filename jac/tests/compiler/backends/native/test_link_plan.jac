@@ -1182,9 +1182,11 @@ test "an edit inside one unit's body lowers that unit alone" {
     };
 }
 
-test "a dependency lowers only after its consumer's pass has let go of its IR" {
+"""The number of `NaIRGenPass` instances alive each time a unit starts
+lowering, over a cold build of `entry`. A dependency lowered inside its
+consumer's pass shows up as a live pass."""
+def _live_passes_at_lower(entry_path: str) -> tuple[list[int], set[str]] {
     import gc;
-    root_dir = _diamond_copy();
     prog = JacProgram();
     opts = _opts();
     opts.no_ir_cache = True;
@@ -1203,11 +1205,34 @@ test "a dependency lowers only after its consumer's pass has let go of its IR" {
         }
     }
     prog.native_units().progress = progress;
-    plan = build_link_plan(prog, [os.path.join(root_dir, "top.jac")], opts);
-    lowered = {os.path.basename(u.path) for u in plan.units};
+    plan = build_link_plan(prog, [entry_path], opts);
+    return (live_at_lower, {os.path.basename(u.path) for u in plan.units});
+}
+
+test "a dependency lowers only after its consumer's pass has let go of its IR" {
+    root_dir = _diamond_copy();
+    (live_at_lower, lowered) = _live_passes_at_lower(os.path.join(root_dir, "top.jac"));
     assert set(UNITS) <= lowered , lowered;
     assert live_at_lower , "no unit was lowered";
     assert max(live_at_lower) == 0 , (
         f"a lowering started inside another unit's pass: {live_at_lower}"
+    );
+}
+
+test "the OSP kernels lower before the unit that consults them" {
+    root_dir = tempfile.mkdtemp(prefix="jac-kernel-deps-");
+    Path(root_dir, "lib.jac").write_text(
+        "node Spot {\n    has v: int = 0;\n}\n\n"
+        "def label(x: int, name: str) -> str {\n    return f\"{name:>8}={x}\";\n}\n"
+    );
+    Path(root_dir, "top.jac").write_text(
+        "import from lib { Spot, label }\n\n"
+        "def run(n: int) -> str {\n    s = Spot(v=n);\n    return label(s.v, \"spot\");\n}\n"
+    );
+    (live_at_lower, lowered) = _live_passes_at_lower(os.path.join(root_dir, "top.jac"));
+    kernels = {"osp_kernel.jac", "osp_graph.jac"};
+    assert {"lib.jac", "top.jac"} | kernels <= lowered , lowered;
+    assert max(live_at_lower) == 0 , (
+        f"a kernel lowered inside a consumer's pass: {live_at_lower}"
     );
 }

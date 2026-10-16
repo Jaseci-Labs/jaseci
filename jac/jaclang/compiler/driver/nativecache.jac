@@ -564,6 +564,10 @@ obj NativeUnitRegistry {
         return ent.iface if ent is not None else None;
     }
 
+    def dep_discovery_open -> bool {
+        return self.session is not None and self.session.discovering();
+    }
+
     def close_dep_deferral -> bool {
         """End dependency discovery for the unit being lowered; True when it
         deferred a dependency, so its lowering stops before emitting code.""";
