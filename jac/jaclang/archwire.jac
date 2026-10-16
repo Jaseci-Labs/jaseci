@@ -6335,6 +6335,12 @@ graph import compiler {
         backends.native.na_ir_gen_pass.NaIRGenPass._demote_native_test {
             native_test_symbol
         },
+        backends.native.na_ir_gen_pass.NaIRGenPass._discover_kernel_deps {
+            FMT_KERNEL_REL,
+            OSP_GRAPH_REL,
+            OSP_KERNEL_REL,
+            kernel_unit_path
+        },
         backends.native.na_ir_gen_pass.NaIRGenPass._emit_class_display_fn
             | native_compiler.NativeCompiler._resolve_classes { NATIVE_ARCH_SCOPE_SEP },
         backends.native.na_ir_gen_pass.NaIRGenPass._emit_glob_init_func {
@@ -10442,7 +10448,11 @@ graph import compiler {
     }
     types.stubcat.writer ++> [
         driver.ifacecache.IfaceRegistry._encode_iface { IncoherentInterface },
-        driver.unit_products.unit_interface { IncoherentInterface, build_module_iface },
+        driver.unit_products.unit_interface {
+            IncoherentInterface,
+            build_module_iface,
+            module_iface_shape
+        },
     ]
     types.ts_decl_parser --> tests.test_jac_mobui_typing { parse_dts }
     types.type_evaluator ++> [
@@ -11036,6 +11046,10 @@ graph import compiler.backends.native {
             _find_entry_vaddr,
             _resolve_patch_site,
             _resolve_seg_vaddr
+        },
+        link_plan.unresolved_unit_symbols {
+            object_defined_symbols,
+            object_undefined_symbols
         },
         macho_linker {
             _align,
