@@ -1,28 +1,3 @@
-import from jaclang.compiler.frontend.unitree {
-    Ability,
-    Archetype,
-    Assignment,
-    AtomTrailer,
-    AtomUnit,
-    BinaryExpr,
-    Ellipsis,
-    Enum,
-    FuncSignature,
-    HasVar,
-    IndexSlice,
-    Module,
-    MultiString,
-    NameAtom,
-    Null,
-    String,
-    Token,
-    TupleVal,
-    TypeAlias,
-    UniNode,
-    resolved_decl_of
-}
-import from jaclang.compiler.capability_notes { TARGET_NATIVE, TARGET_SERVER }
-
 glob PYTHON_NATIVE_WIRE: tuple[str, ...] = ('int', 'float', 'bool', 'str'),
      JSON_SCALARS: tuple[str, ...] = (
          'str',
@@ -67,7 +42,6 @@ glob PYTHON_NATIVE_WIRE: tuple[str, ...] = ('int', 'float', 'bool', 'str'),
      );
 
 def python_native_wire -> set[str] {
-    import from jaclang.runtime.scalars { sized_scalar_names }
     return set(PYTHON_NATIVE_WIRE) | set(sized_scalar_names());
 }
 
@@ -209,7 +183,6 @@ def alias_value(scope: (Module | None), name: str) -> (UniNode | None) {
 def non_string_key(
     tag: (UniNode | None), scope: (Module | None), depth: int
 ) -> (str | None) {
-    import from jaclang.runtime.scalars { sized_scalar_names }
     (key, key_args) = annotation_shape(tag);
     if key in ('', '...', 'str', 'any', 'Any') {
         return None;
@@ -256,8 +229,6 @@ def json_refusal(
     to_server: bool,
     seen: set[str]
 ) -> (tuple[str, str] | None) {
-    import from jaclang.compiler.frontend.unparse { unparse_node }
-    import from jaclang.runtime.scalars { sized_scalar_names }
     (head, args) = annotation_shape(tag);
     spelled = unparse_node(tag) if tag is not None else 'any';
     if head == '' or head == '...' {
@@ -365,7 +336,6 @@ def json_refusal(
 def signature_refusals(
     decl: Ability, src: str, dst: str, placing: bool = False
 ) -> list[tuple[str, str, str]] {
-    import from jaclang.compiler.frontend.unparse { unparse_node }
     out: list[tuple[str, str, str]] = [];
     sig = decl.signature;
     if not isinstance(sig, FuncSignature) or src == dst {
@@ -425,7 +395,6 @@ def archetype_refusals(
 }
 
 def archetype_fields(decl: Archetype) -> list[tuple[HasVar, (Module | None)]] {
-    import from jaclang.compiler.passes.layout_pass { referenced_archetype }
     out: list[tuple[HasVar, (Module | None)]] = [];
     seen: set[int] = set();
     pending: list[Archetype] = [decl];

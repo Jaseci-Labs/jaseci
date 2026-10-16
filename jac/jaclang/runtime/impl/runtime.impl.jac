@@ -774,8 +774,14 @@ impl JacModule.jac_import(
                 spec.loader.exec_module(module);
             }
         } elif (reload_module and (module_name in sys.modules)) {
-            module = importlib.reload(sys.modules[module_name]);
-            JacRuntimeInterface.load_module(module_name, module, force=True);
+            import from jaclang.runtime.preparation_lock { PREPARATION_LOCK }
+            with PREPARATION_LOCK {
+                loaded = sys.modules.get(module_name);
+                module = importlib.reload(loaded)
+                    if loaded is not None
+                    else importlib.import_module(module_name);
+                JacRuntimeInterface.load_module(module_name, module, force=True);
+            }
         } else {
             module = importlib.import_module(module_name);
             JacRuntimeInterface.load_module(
@@ -1259,7 +1265,7 @@ impl JacGraph.heavy_edge(
 ) -> EdgeArchetype {
     import from jaclang.runtime.osp_graph_sv { sv_conn }
     ct = conn_type or GenericEdge;
-    `edge = ct() if isinstance(ct, `type) else ct;
+    (`edge, built_with) = new_connect_edge(ct, conn_assign);
     eanch = `edge.__jac__=EdgeAnchor(
         archetype=`edge, source=source, target=target, is_undirected=is_undirected
     );
@@ -1272,6 +1278,9 @@ impl JacGraph.heavy_edge(
     sv_conn(source, target, eanch, is_undirected);
     if conn_assign {
         for (fld, val) in zip(conn_assign[0], conn_assign[1], strict=False) {
+            if fld in built_with {
+                continue;
+            }
             if hasattr(`edge, fld) {
                 setattr(`edge, fld, val);
             } else {
