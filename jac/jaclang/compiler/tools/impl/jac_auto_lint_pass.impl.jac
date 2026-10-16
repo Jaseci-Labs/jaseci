@@ -2800,9 +2800,10 @@ impl JacAutoLintPass._impl_text(
     ab: uni.Ability, owner: str, lbrace: uni.Token, rbrace: uni.Token, code: str
 ) -> str {
     header = code[ab.name_ref.pos_end:lbrace.pos_start].strip();
-    sep = "" if header.startswith("(") or not header else " ";
+    sep = "" if header.startswith("(") else " ";
+    header = f"{header} " if header else "";
     body = code[lbrace.pos_end:rbrace.pos_start];
-    return f"impl {owner}{self._written_name(ab.name_ref)}{sep}{header} {{{body}}}";
+    return f"impl {owner}{self._written_name(ab.name_ref)}{sep}{header}{{{body}}}";
 }
 
 impl JacAutoLintPass._written_name(name_ref: uni.Name) -> str {
