@@ -354,7 +354,6 @@ def bind_shared_callbacks(
     assert isinstance(module, llvm.ModuleRef);
     definitions: list[str] = [];
     callbacks: list[InteropBinding] = [];
-    import from jaclang.runtime.interop_bridge { interop_callback_symbol }
     for binding in bindings {
         _sym = interop_callback_symbol(binding);
         function = module.get_function(_sym);

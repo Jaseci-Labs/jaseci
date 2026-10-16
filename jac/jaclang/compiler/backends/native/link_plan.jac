@@ -666,7 +666,6 @@ def _target_machine(plan: LinkPlan, kind: ArtifactKind) -> TargetMachine {
 }
 
 def _interop_sym(binding: InteropBinding) -> str {
-    import from jaclang.runtime.interop_bridge { interop_callback_symbol }
     return interop_callback_symbol(binding);
 }
 
@@ -674,7 +673,6 @@ def callback_glue_ir(plan: LinkPlan) -> str {
     if not plan.callback_bindings {
         return "";
     }
-    import from jaclang.compiler.backends.native.link_glue { bind_shared_callbacks }
     wanted = {_interop_sym(binding) for binding in plan.callback_bindings};
     declarations: dict[str, str] = {};
     defined: set[str] = set();
