@@ -31,7 +31,7 @@ comptime SPEC_ARCH: CommandSpec = CommandSpec(
                  typ=bool,
                  `default=False,
                  help="With sync: also remove wired names their consumers never use "
-                 "(compiles each covered module; a one-time cleanup, not a workflow)",
+                 "(a one-time cleanup, not a workflow)",
                  short=""
              ),
              Arg.create(

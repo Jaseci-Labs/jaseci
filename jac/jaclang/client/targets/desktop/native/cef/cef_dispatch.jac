@@ -213,9 +213,6 @@ import from "libcef.so" {
             get_render_handler: Callable[[int], int] = 0,
             get_request_handler: Callable[[int], int] = 0,
             on_process_message_received: Callable[[int, int, int, i32, int], int] = 0;
-    }  obj cef_ptr_wrap_t {
-        has p0: int = 0,
-            p1: int = 0;
     }  obj cef_app_t {
         has size: int = 0,
             add_ref: Callable[[int], None] = 0,

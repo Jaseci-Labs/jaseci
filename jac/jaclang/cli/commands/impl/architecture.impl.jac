@@ -87,12 +87,12 @@ def _unused_facts(
     spec: WiringSpec, modules: list[tuple[str, str]]
 ) -> set[tuple[str, tuple[str, str, str, str]]] {
     unused: set[tuple[str, tuple[str, str, str, str]]] = set();
+    host = active_host();
     for (module, path) in modules {
-        if not spec.is_covered(module) {
+        mod = host.woven_module(path, None) if spec.is_covered(module) else None;
+        if mod is None {
             continue;
         }
-        prog = JacProgram();
-        mod = prog.compile(path, options=CompileOptions(no_cgen=True));
         for found in unused_wire_bindings(mod) {
             unused.add((found.consumer, found.binding.key()));
         }

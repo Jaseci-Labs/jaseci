@@ -574,11 +574,17 @@ glob _KERNEL_CELL: list[any] = [],
      _LOADED: dict[str, NativeCompiler] = {},
      _FAILED: list[tuple[str, str, str]] = [];
 
+def runtime_builtin_initializing -> bool {
+    held = sys.modules.get("jaclang.runtime.builtin");
+    spec = held.__spec__ if held is not None else None;
+    return spec is not None and bool(getattr(spec, "_initializing", False));
+}
+
 def ensure_loaded -> (NativeCompiler | None) {
     if _KERNEL_CELL {
         return _KERNEL_CELL[0];
     }
-    if _RESOLVED or _RESOLVING {
+    if _RESOLVED or _RESOLVING or runtime_builtin_initializing() {
         return None;
     }
     import from jaclang.jac0core.artifact_registry { resolution_in_flight }

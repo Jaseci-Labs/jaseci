@@ -990,3 +990,20 @@ test "the strip removes a function's wired import that a nested function repeats
         shutil.rmtree(base, ignore_errors=True);
     }
 }
+
+
+test "a name read inside an import from c block counts as used" {
+    base = _standard(
+        arch=_ARCH.replace(
+            "    core.util ++> app.main { now as when }\n",
+            "    core.util ++> app.main { now as when }\n"
+            "    core.other ++> app.main { helper }\n"
+        ),
+        main=_MAIN + "\nimport from c {\n    glob:priv handlers: list[int] = [helper()];\n}\n"
+    );
+    try {
+        assert "E1146" not in _errors(_compile(base, "app/main.jac"));
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}

@@ -203,7 +203,6 @@ graph import {
             | client.targets.static_target
             | client.targets.web_target.WebTarget.dev
             | client.vite_bundler
-            | client.vite_client_bundle
             | compiler.backends.native.elf_linker
             | compiler.driver.application.prepare_application
             | compiler.tools.lang_tools
@@ -305,11 +304,7 @@ graph import {
         server.server.JacAPIServer._validate_or_raise { cpu_quota },
         server.server.JacAPIServer.serve_background { cpu_quota },
         server.settings { cpu_quota, memory_headroom_bytes },
-        testing.test_runner {
-            WorkPool,
-            should_retire as _should_retire,
-            worker_rss_mb as _worker_rss_mb
-        },
+        testing.test_runner { WorkPool, should_retire as _should_retire },
         testing.test_runner._test_retire { env_int },
         testing.test_runner._test_rss_cap_mb { env_int },
         testing.test_runner.resolve_jobs { resolve_jobs as _resolve_pool_jobs },
@@ -454,8 +449,7 @@ graph import {
         cli.commands.execution._start_vite_dev_server { ViteBundler },
         cli.commands.execution.serve._announce_ready { DEV_PROXY_PREFIXES },
     ]
-    client.vite_client_bundle ++> compiler.driver.application._prepare
-        | compiler.driver.build_services.CompilerBuildServices.client_builder {
+    client.vite_client_bundle ++> compiler.driver.build_services.CompilerBuildServices.client_builder {
         make_client_bundle_builder
     }
     client.vite_client_bundle --> compiler.driver.application._prepare_revision {
@@ -474,9 +468,6 @@ graph import {
     }
     compiler.backends.es.client_kernel_cache ++> project.compiler_host.ProjectHost.client_osp_core_js {
         osp_core_js
-    }
-    compiler.backends.es.esast_gen_pass ++> dist.publish.npm_sources._compile_module {
-        EsastGenPass
     }
     type compiler.backends.es.framework_backend ++> client.client_surface {
         FrameworkBackend
@@ -644,8 +635,6 @@ graph import {
     ]
     compiler.driver.compile_options ++> [
         cli.commands.analysis._check_file_job
-            | cli.commands.architecture
-            | cli.commands.execution._exec_file
             | dist.precompile_bytecode._application_sources
             | dist.publish.builder._module_is_client_source
             | dist.publish.npm_sources._compile_module
@@ -665,7 +654,6 @@ graph import {
         cli.commands.native_build.native_build {
             CompileOptions,
             NATIVE_LINK_MODES,
-            pop_native_target,
             push_native_target
         },
         dist.precompile_bytecode.precompile_native_unit { CompileOptions },
@@ -990,7 +978,6 @@ graph import {
             is_native_by_location,
             is_shared_runtime_module
         },
-        lsp.server.utils { CodeLocInfo },
         project.kernel_check.parity_mismatches | server.watcher.watch_roots {
             is_compiler_source_path
         },
@@ -1010,7 +997,7 @@ graph import {
         dist.publish.builder._module_is_client_source
             | server.hmr
             | testing.cl_test_runner.module_is_client { CodeContext },
-        lsp.server.engine { SymbolType, TOKEN_MAP },
+        lsp.server.engine { TOKEN_MAP },
         lsp.server.server {
             JacSemTokenModifier as SemTokMod,
             JacSemTokenType as SemTokType
@@ -1023,6 +1010,7 @@ graph import {
     compiler.frontend.diagnostics ++> client.client_diagnostics._diag
         | project.kernel_check.alert_of { DIAGNOSTICS }
     compiler.frontend.host ++> [
+        cli.commands.architecture | project.kernel_check { active_host },
         project.compiler_host {
             CheckSettings,
             HostPlatform,
@@ -1038,7 +1026,6 @@ graph import {
             HOST_FACT_SEP,
             HOST_FACT_STDLIB_MODULES
         },
-        project.kernel_check { active_host },
         project.kernel_compile { HostServices },
         project.kernel_snapshot {
             HostServices,
@@ -1090,7 +1077,6 @@ graph import {
             KEY_SEP,
             KernelInputs,
             ManifestSets,
-            NpmAnswer,
             PythonInterface,
             answers_to_dict,
             pair_key,
@@ -1164,7 +1150,6 @@ graph import {
         DEDENT,
         ENDMARKER,
         FSTRING_MIDDLE,
-        INDENT,
         NEWLINE,
         NL,
         NUMBER,
@@ -1184,19 +1169,13 @@ graph import {
         project.compiler_host.ProjectHost.path_facts { path_facts_of },
     ]
     compiler.frontend.srcloc ++> [
-        lsp.server.utils | project.kernel_check { Span },
+        lsp.server.utils { CodeLocInfo, Span },
+        project.kernel_check { Span },
         project.textio.span_for_file { Span as SrcSpan },
     ]
     type compiler.frontend.srcloc ++> project.source | project.textio { Span }
     compiler.frontend.unitree ++> [
-        cli.commands.architecture {
-            GraphImport,
-            Import,
-            ImportRule,
-            ImportWire,
-            ModuleItem,
-            ModulePath
-        },
+        cli.commands.architecture { Import },
         dist.publish.dts {
             Ability,
             Archetype,
@@ -1243,7 +1222,7 @@ graph import {
             kernel_root_path,
             native_scope_paths
         },
-        dist.precompile_bytecode.seal_native { in_native_scope_path, kernel_root_path },
+        dist.precompile_bytecode.seal_native { in_native_scope_path },
     ]
     compiler.native_scope --> dist.precompile_bytecode.native_roots { kernel_root_path }
     compiler.passes.annex_weave ++> cli.commands.architecture { import_form }
@@ -1263,7 +1242,6 @@ graph import {
         inferred_hints
     }
     compiler.passes.ownership_hints --> cli.commands.analysis.explain { inferred_hints }
-    compiler.passes.pyast_load_pass ++> cli.commands.transform.py2jac { PyastBuildPass }
     compiler.placement.placement ++> cli.commands.fix._verify_claims {
         element_display_name
     }
@@ -1347,7 +1325,7 @@ graph import {
             TypeBase
         },
         lsp.server.utils { ClassType, ModuleType, TypeBase },
-        packages.api { ClassType, FunctionType, ParamKind },
+        packages.api { ClassType, FunctionType },
     ]
     comptime ++> [
         byllm.cli
@@ -1449,10 +1427,7 @@ graph import {
         server.session.Session._unflushed { Serializer },
     ]
     data.serializer --> compiler.tests.test_fixed_width_equivalence { Serializer }
-    data.storage ++> [
-        scale.plugin | scale.tests.data.test_s3_storage { Storage },
-        scale.tests.data.test_storage { LocalStorage },
-    ]
+    data.storage ++> scale.tests.data.test_storage { LocalStorage }
     data.storage --> runtime.runtime.JacPersistence.store
         | scale.storage.factory.StorageFactory.create { LocalStorage }
     type data.storage ++> scale.runtime.provider { Storage }
@@ -1562,16 +1537,10 @@ graph import {
         client.targets.desktop.desktop_build.stage_program { build_jab },
     ]
     dist.source.project --> cli.commands.build._build_app { export_project }
-    jac0 ++> [
-        dist.precompile_bytecode._seal_boot_unit {
-            compile_jac as jac0_compile,
-            discover_impl_files as jac0_impls
-        },
-        dist.precompile_bytecode.seal_bootstrap {
-            compile_jac as jac0_compile,
-            discover_impl_files as jac0_impls
-        },
-    ]
+    jac0 ++> dist.precompile_bytecode._seal_boot_unit {
+        compile_jac as jac0_compile,
+        discover_impl_files as jac0_impls
+    }
     jac0 --> dist.publish.runtime_vendor._compile_runtime_module {
         compile_jac,
         discover_impl_files
@@ -1805,13 +1774,22 @@ graph import {
     project ++> cli.commands.native_build.native_build { get_config }
     project --> compiler.backends.native.wasm_build._project_gc_settings { get_config }
     project.app_kinds ++> [
-        compiler.driver.pipeline_runner.compile_application { kind_has_client },
+        cli.commands.execution._app_serves { kind_spec },
+        cli.commands.project._create_app { is_valid_kind },
+        cli.commands.project._create_body { is_valid_kind },
+        client.cli.run_client_start
+            | client.npm_provider._app_wants_client
+            | compiler.driver.pipeline_runner.compile_application
+            | scale.runtime.fleet._has_client
+            | server.static_files { kind_has_client },
+        client.cli.setup { kind_has_client },
         compiler.placement.placement.project_has_server
             | compiler.placement.placement_pins { kind_codespace },
         dist.seal.build_serve_manifest { kind_has_server },
         dist.source.project.export_project { kind_has_client, kind_has_server },
     ]
     project.app_kinds --> [
+        cli.commands.build._build_app { kind_has_client },
         compiler.driver.program.JacProgram.stamp_app_facts { UI_MOBUI },
         runtime.source_app.main { kind_has_server },
     ]
@@ -1869,11 +1847,11 @@ graph import {
             | cli.commands.analysis._configured_check_excludes
             | cli.commands.architecture
             | cli.commands.build.build
+            | cli.commands.config.config
             | cli.commands.execution._ensure_watchdog_installed
             | cli.commands.mcp.mcp_cmd
             | cli.commands.project.bundle
             | cli.shadcn.cli.retheme
-            | client.asset_processor
             | client.targets.desktop._dev_launch
             | client.targets.pwa_build
             | client.targets.registry.target_for_app
@@ -1909,7 +1887,6 @@ graph import {
             | cli.commands.execution._tool_tiers
             | cli.commands.project.remove { get_config },
         cli.commands.code
-            | cli.commands.config._config_unset
             | cli.commands.project._create_app
             | client.vite_bundler.ViteBundler.init
             | scale.tests.server.test_examples
@@ -1918,7 +1895,6 @@ graph import {
             | cli.commands.fix._ensure_workspace
             | client.cli
             | client.client_diagnostics.is_debug_mode
-            | client.config_loader
             | client.npm_provider
             | client.targets.react_native.scaffold
             | dist.publish.builder
@@ -1963,16 +1939,13 @@ graph import {
             TestConfig
         },
         cli.commands.config._output_toml | packages.lock { toml_value },
-        cli.commands.config.config { JacConfig, get_config },
         cli.commands.execution._default_codespace_is_native {
             PlacementConfig,
             get_config
         },
         cli.commands.execution._discover_config_from_file {
-            JacConfig,
             get_config,
-            project_scope_is_pinned,
-            set_config
+            project_scope_is_pinned
         },
         cli.commands.execution._load_executable
             | client.artifact.client_output_dir
@@ -2065,7 +2038,7 @@ graph import {
         data.pg_dist | server.session { DatabaseConfig },
     ]
     project.config_schema ++> [
-        scale.config.validation { report_schema_findings, validate_against_schema },
+        scale.config.validation { validate_against_schema },
         scale.tests.misc.test_config_validation { report_schema_findings },
     ]
     project.config_schema --> [
@@ -2115,24 +2088,15 @@ graph import {
             plan_app_run
         },
         cli.commands.execution | scale.plugin { RunPlan },
-        cli.commands.execution._app_serves { kind_spec },
         cli.commands.execution._serve_fleet { plan_app_run },
         cli.commands.execution._workspace_plans { plan_app_run, plan_workspace },
-        cli.commands.project._create_app { VALID_KINDS, is_valid_kind },
-        cli.commands.project._create_body { VALID_KINDS, is_valid_kind },
+        cli.commands.project._create_app { VALID_KINDS },
+        cli.commands.project._create_body { VALID_KINDS },
         cli.commands.project._run_blurb { VALID_KINDS },
-        client.cli.run_client_start
-            | client.npm_provider._app_wants_client
-            | scale.runtime.fleet._has_client
-            | server.static_files { kind_has_client },
-        client.cli.setup { kind_has_client },
         dist.precompile_bytecode.app_metadata { resolve_app_kind, resolve_entry },
         scale.plugin._resolve_deploy_target { resolve_entry },
     ]
-    project.kinds --> [
-        cli.commands.build._build_app { kind_has_client },
-        cli.commands.execution._exec_file { resolve_app_kind },
-    ]
+    project.kinds --> cli.commands.execution._exec_file { resolve_app_kind }
     project.mobui_scope ++> compiler.passes.jsx_intrinsic_guard_pass {
         mobui_module_exempt
     }
@@ -2196,21 +2160,15 @@ graph import {
     ]
     project.providers ++> [
         cli.commands.execution._ensure_watchdog_installed
-            | cli.commands.project.remove { InstallContext, get_python_provider },
+            | cli.commands.project.install { InstallContext, get_python_provider },
         cli.commands.execution._load_cwd_config { initialize_provider_registry },
         cli.commands.execution._serve_with { initialize_provider_registry },
         cli.commands.project._rewrite_compatible_pins { get_python_provider },
         cli.commands.project._update_pypi { get_python_provider },
         cli.commands.project.deps { resolve_plan },
-        cli.commands.project.install {
-            InstallContext,
-            get_provider_registry,
-            get_python_provider,
-            resolve_plan
-        },
-        cli.commands.project.update { InstallContext, get_python_provider },
+        cli.commands.project.remove { InstallContext, get_python_provider },
+        cli.commands.project.update | client.cli.run_npm_add { InstallContext },
         client.cli._npm_context { get_provider_registry },
-        client.cli.run_npm_add { InstallContext },
         client.cli.run_npm_remove { InstallContext },
         client.npm_provider {
             EcosystemProvider,
@@ -2251,7 +2209,6 @@ graph import {
             get_venv_site_packages,
             make_git_spec
         },
-        cli.commands.project.update { make_git_spec },
         client.targets.desktop._dev_launch
             | packages.commands._org_collisions
             | scale.injector.bundle._venv_stage { get_venv_site_packages },
@@ -2278,10 +2235,9 @@ graph import {
     project.template_loader ++> [
         cli.commands.fix._ensure_workspace { migrate_implicit_app },
         cli.commands.project._create_app { scaffold_app },
-        cli.commands.project._create_body
+        cli.commands.project._resolve_bundled_template
             | cli.shadcn.cli._build_shadcn_template_info
             | client.plugin_config._load_template { load_template_from_directory },
-        cli.commands.project._resolve_bundled_template { load_template_from_directory },
         cli.commands.project._resolve_template { load_template_from_directory },
     ]
     project.template_registry ++> [
@@ -2357,12 +2313,7 @@ graph import {
     runtime.archetype ++> [
         byllm.llm._mock_jsonable { Archetype },
         byllm.visit_routing { Anchor, Archetype, ObjectSpatialFunction },
-        byllm.visit_routing._candidate_for {
-            EdgeAnchor,
-            EdgeArchetype,
-            NodeAnchor,
-            NodeArchetype
-        },
+        byllm.visit_routing._candidate_for { EdgeAnchor, EdgeArchetype, NodeAnchor },
         byllm.visit_routing._route_context {
             EdgeAnchor,
             EdgeArchetype,
@@ -2371,7 +2322,7 @@ graph import {
             WalkerAnchor
         },
         compiler.native_compiler.NativeCompiler._register { NodeArchetype },
-        data.query_planner { Anchor, EdgeAnchor, anchor_key },
+        data.query_planner { Anchor, anchor_key },
         data.query_planner._acl_pushdown_root { Archetype, Root },
         data.serializer {
             Access,
@@ -2424,10 +2375,7 @@ graph import {
             | lib.jaclib { EdgeDir },
         data.dbcatalog.holds_no_data
             | scale.admin.admin_portal
-            | scale.server.inprocess
             | scale.server.websocket_ext
-            | scale.tests.data.test_eager_spawn
-            | scale.tests.microservices.test_microservice
             | server.endpoints.colocated
             | server.endpoints.pages
             | server.endpoints.walkers
@@ -2470,11 +2418,10 @@ graph import {
         },
     ]
     runtime.constructs --> server.task_scheduler.Scheduler._execute { WalkerArchetype }
-    type runtime.constructs ++> server.server { Archetype, WalkerArchetype }
+    type runtime.constructs ++> server.server { WalkerArchetype }
     runtime.context ++> [
         scale.memory.context | server.server { CallState, ExecutionContext },
-        scale.plugin
-            | scale.tests.server.test_middleware_async_root
+        scale.tests.server.test_middleware_async_root
             | server.request_scope
             | server.sv_client._local_call { ExecutionContext },
         server.sv_client._local_spawn { ExecutionContext },
@@ -2508,7 +2455,6 @@ graph import {
             | scale.tests.microservices.test_binary_injector { host_arch },
         scale.utils.vendor_wheels { release_arch },
         server.session.project_database { get_name },
-        server.session.project_db_name { get_name },
     ]
     runtime.graph_walk ++> data.query_planner {
         access_gated,
@@ -2558,12 +2504,10 @@ graph import {
     ]
     runtime.object_model ++> [
         cli.NonGPT
-            | compiler.native_compiler.NativeCompiler._field_annotations
+            | compiler.native_compiler.NativeCompiler._register_defaults
             | data.contracts
             | data.serializer
-            | scale.memory.context
-            | server.server { MISSING },
-        compiler.native_compiler.NativeCompiler._register_defaults { MISSING },
+            | scale.memory.context { MISSING },
         comptime { MISSING as _MISSING, ObjectField as _field },
         scale.sdk.spec.DeploySpec.from_config { fields },
         scale.server.sso_ext | scale.sso.oauth_session { asdict },
@@ -2620,12 +2564,13 @@ graph import {
         cli.commands.execution._load_executable | server.assembly.colocate_services {
             load_prepared_module
         },
-        compiler.driver.application._prepare { PreparedApplication, publish },
-        compiler.driver.application._prepare_revision { PreparedApplication, publish },
+        compiler.driver.application._prepare | dist.source.client {
+            PreparedApplication
+        },
+        compiler.driver.application._prepare_revision { PreparedApplication },
         compiler.driver.application._prepare_sealed { PreparedApplication, publish },
         compiler.driver.pipeline_runner.compile_application
             | server.watcher.watch_roots { holds_application_code },
-        dist.source.client { PreparedApplication },
         dist.source.project { PreparedApplication, application_namespace },
         project.config.JacConfig.app_for_path { origin_for_source },
         server.endpoint_contract.check_endpoint_contract
@@ -2661,228 +2606,6 @@ graph import {
         | compiler.driver.build_services
         | data.type_identity
         | server.assembly { PreparedApplication }
-    runtime.python.bindings.abc ++> compiler.backends.py.jacpython.native_api {
-        PyInit__abc
-    }
-    runtime.python.bindings.array ++> compiler.backends.py.jacpython.native_api {
-        PyInit_array
-    }
-    runtime.python.bindings.asyncio ++> compiler.backends.py.jacpython.native_api {
-        PyInit__asyncio
-    }
-    runtime.python.bindings.atexit ++> compiler.backends.py.jacpython.native_api {
-        PyInit_atexit
-    }
-    runtime.python.bindings.binascii ++> compiler.backends.py.jacpython.native_api {
-        PyInit_binascii
-    }
-    runtime.python.bindings.bisect ++> compiler.backends.py.jacpython.native_api {
-        PyInit__bisect
-    }
-    runtime.python.bindings.blake2 ++> compiler.backends.py.jacpython.native_api {
-        PyInit__blake2
-    }
-    runtime.python.bindings.bz2 ++> compiler.backends.py.jacpython.native_api {
-        PyInit__bz2
-    }
-    runtime.python.bindings.cmath ++> compiler.backends.py.jacpython.native_api {
-        PyInit_cmath
-    }
-    runtime.python.bindings.codecs ++> compiler.backends.py.jacpython.native_api {
-        PyInit__codecs
-    }
-    runtime.python.bindings.codecs_cn ++> compiler.backends.py.jacpython.native_api {
-        PyInit__codecs_cn
-    }
-    runtime.python.bindings.codecs_hk ++> compiler.backends.py.jacpython.native_api {
-        PyInit__codecs_hk
-    }
-    runtime.python.bindings.codecs_iso2022 ++> compiler.backends.py.jacpython.native_api {
-        PyInit__codecs_iso2022
-    }
-    runtime.python.bindings.codecs_jp ++> compiler.backends.py.jacpython.native_api {
-        PyInit__codecs_jp
-    }
-    runtime.python.bindings.codecs_kr ++> compiler.backends.py.jacpython.native_api {
-        PyInit__codecs_kr
-    }
-    runtime.python.bindings.codecs_tw ++> compiler.backends.py.jacpython.native_api {
-        PyInit__codecs_tw
-    }
-    runtime.python.bindings.collections ++> compiler.backends.py.jacpython.native_api {
-        PyInit__collections
-    }
-    runtime.python.bindings.csv ++> compiler.backends.py.jacpython.native_api {
-        PyInit__csv
-    }
-    runtime.python.bindings.datetime ++> compiler.backends.py.jacpython.native_api {
-        PyInit__datetime
-    }
-    runtime.python.bindings.decimal ++> compiler.backends.py.jacpython.native_api {
-        PyInit__decimal
-    }
-    runtime.python.bindings.elementtree ++> compiler.backends.py.jacpython.native_api {
-        PyInit__elementtree
-    }
-    runtime.python.bindings.errno ++> compiler.backends.py.jacpython.native_api {
-        PyInit_errno
-    }
-    runtime.python.bindings.fcntl ++> compiler.backends.py.jacpython.native_api {
-        PyInit_fcntl
-    }
-    runtime.python.bindings.functools ++> compiler.backends.py.jacpython.native_api {
-        PyInit__functools
-    }
-    runtime.python.bindings.grp ++> compiler.backends.py.jacpython.native_api {
-        PyInit_grp
-    }
-    runtime.python.bindings.hashopenssl ++> compiler.backends.py.jacpython.native_api {
-        PyInit__hashlib
-    }
-    runtime.python.bindings.heapq ++> compiler.backends.py.jacpython.native_api {
-        PyInit__heapq
-    }
-    runtime.python.bindings.hmac ++> compiler.backends.py.jacpython.native_api {
-        PyInit__hmac
-    }
-    runtime.python.bindings.itertools ++> compiler.backends.py.jacpython.native_api {
-        PyInit_itertools
-    }
-    runtime.python.bindings.json ++> compiler.backends.py.jacpython.native_api {
-        PyInit__json
-    }
-    runtime.python.bindings.locale ++> compiler.backends.py.jacpython.native_api {
-        PyInit__locale
-    }
-    runtime.python.bindings.lsprof ++> compiler.backends.py.jacpython.native_api {
-        PyInit__lsprof
-    }
-    runtime.python.bindings.lzma ++> compiler.backends.py.jacpython.native_api {
-        PyInit__lzma
-    }
-    runtime.python.bindings.math ++> compiler.backends.py.jacpython.native_api {
-        PyInit_math
-    }
-    runtime.python.bindings.md5 ++> compiler.backends.py.jacpython.native_api {
-        PyInit__md5
-    }
-    runtime.python.bindings.mmap ++> compiler.backends.py.jacpython.native_api {
-        PyInit_mmap
-    }
-    runtime.python.bindings.multibytecodec ++> compiler.backends.py.jacpython.native_api {
-        PyInit__multibytecodec
-    }
-    runtime.python.bindings.multiprocessing ++> compiler.backends.py.jacpython.native_api {
-        PyInit__multiprocessing
-    }
-    runtime.python.bindings.opcode ++> compiler.backends.py.jacpython.native_api {
-        PyInit__opcode
-    }
-    runtime.python.bindings.operator ++> compiler.backends.py.jacpython.native_api {
-        PyInit__operator
-    }
-    runtime.python.bindings.pickle ++> compiler.backends.py.jacpython.native_api {
-        PyInit__pickle
-    }
-    runtime.python.bindings.posix ++> compiler.backends.py.jacpython.native_api {
-        PyInit_posix
-    }
-    runtime.python.bindings.posixshmem ++> compiler.backends.py.jacpython.native_api {
-        PyInit__posixshmem
-    }
-    runtime.python.bindings.posixsubprocess ++> compiler.backends.py.jacpython.native_api {
-        PyInit__posixsubprocess
-    }
-    runtime.python.bindings.pwd ++> compiler.backends.py.jacpython.native_api {
-        PyInit_pwd
-    }
-    runtime.python.bindings.pyexpat ++> compiler.backends.py.jacpython.native_api {
-        PyInit_pyexpat
-    }
-    runtime.python.bindings.queue ++> compiler.backends.py.jacpython.native_api {
-        PyInit__queue
-    }
-    runtime.python.bindings.random ++> compiler.backends.py.jacpython.native_api {
-        PyInit__random
-    }
-    runtime.python.bindings.resource ++> compiler.backends.py.jacpython.native_api {
-        PyInit_resource
-    }
-    runtime.python.bindings.select ++> compiler.backends.py.jacpython.native_api {
-        PyInit_select
-    }
-    runtime.python.bindings.sha1 ++> compiler.backends.py.jacpython.native_api {
-        PyInit__sha1
-    }
-    runtime.python.bindings.sha2 ++> compiler.backends.py.jacpython.native_api {
-        PyInit__sha2
-    }
-    runtime.python.bindings.sha3 ++> compiler.backends.py.jacpython.native_api {
-        PyInit__sha3
-    }
-    runtime.python.bindings.socket ++> compiler.backends.py.jacpython.native_api {
-        PyInit__socket
-    }
-    runtime.python.bindings.sqlite3 ++> compiler.backends.py.jacpython.native_api {
-        PyInit__sqlite3
-    }
-    runtime.python.bindings.sre ++> compiler.backends.py.jacpython.native_api {
-        PyInit__sre
-    }
-    runtime.python.bindings.ssl ++> compiler.backends.py.jacpython.native_api {
-        PyInit__ssl
-    }
-    runtime.python.bindings.stat ++> compiler.backends.py.jacpython.native_api {
-        PyInit__stat
-    }
-    runtime.python.bindings.statistics ++> compiler.backends.py.jacpython.native_api {
-        PyInit__statistics
-    }
-    runtime.python.bindings.struct ++> compiler.backends.py.jacpython.native_api {
-        PyInit__struct
-    }
-    runtime.python.bindings.suggestions ++> compiler.backends.py.jacpython.native_api {
-        PyInit__suggestions
-    }
-    runtime.python.bindings.sysconfig ++> compiler.backends.py.jacpython.native_api {
-        PyInit__sysconfig
-    }
-    runtime.python.bindings.syslog ++> compiler.backends.py.jacpython.native_api {
-        PyInit_syslog
-    }
-    runtime.python.bindings.termios ++> compiler.backends.py.jacpython.native_api {
-        PyInit_termios
-    }
-    runtime.python.bindings.time ++> compiler.backends.py.jacpython.native_api {
-        PyInit_time
-    }
-    runtime.python.bindings.tracemalloc ++> compiler.backends.py.jacpython.native_api {
-        PyInit__tracemalloc
-    }
-    runtime.python.bindings.types ++> compiler.backends.py.jacpython.native_api {
-        PyInit__types
-    }
-    runtime.python.bindings.typing ++> compiler.backends.py.jacpython.native_api {
-        PyInit__typing
-    }
-    runtime.python.bindings.unicodedata ++> compiler.backends.py.jacpython.native_api {
-        PyInit_unicodedata
-    }
-    runtime.python.bindings.uuid ++> compiler.backends.py.jacpython.native_api {
-        PyInit__uuid
-    }
-    runtime.python.bindings.weakref ++> compiler.backends.py.jacpython.native_api {
-        PyInit__weakref
-    }
-    runtime.python.bindings.zlib ++> compiler.backends.py.jacpython.native_api {
-        PyInit_zlib
-    }
-    runtime.python.bindings.zoneinfo ++> compiler.backends.py.jacpython.native_api {
-        PyInit__zoneinfo
-    }
-    runtime.python.bindings.zstd ++> compiler.backends.py.jacpython.native_api {
-        PyInit__zstd
-    }
     runtime.python.capi ++> [
         compiler.backends.py.jacpython.native_api {
             boundary_failure,
@@ -2933,7 +2656,6 @@ graph import {
     runtime.python.constant_output ++> compiler.backends.py.jacpython.native_api
         | compiler.frontend.python.ast_output { constant_object }
     runtime.python.cpython_api ++> [
-        compiler.backends.py.jacpython.compiler_emit { NULL },
         compiler.backends.py.jacpython.native_api {
             NULL,
             PyErr_SetObject,
@@ -2988,11 +2710,9 @@ graph import {
             jacpy_set_owned,
             jacpy_text
         },
-        compiler.frontend.python.compiler_symtable { _PyST_GetScope, _Py_Mangle },
         compiler.frontend.python.source_encoding {
             PyErr_ExceptionMatches,
             PyExc_LookupError,
-            PyObject,
             jacpy_codec_valid,
             jacpy_fd_line
         },
@@ -3007,7 +2727,6 @@ graph import {
             jacpy_source_kind,
             jacpy_utf8
         },
-        compiler.frontend.python.tokenizer { _PyToken_ThreeChars },
     ]
     runtime.python.native_services ++> [
         compiler.frontend.python.ast_input { take_buffer },
@@ -3032,61 +2751,9 @@ graph import {
         compiler.frontend.python.parser_actions.pa_warn_escape { warn },
         compiler.frontend.python.source_encoding { take_buffer },
     ]
-    runtime.python.object_model.bool ++> compiler.backends.py.jacpython.native_api {
-        PyBool_Type
-    }
-    runtime.python.object_model.capsule ++> compiler.backends.py.jacpython.native_api {
-        PyCapsule_Type
-    }
-    runtime.python.object_model.cell ++> compiler.backends.py.jacpython.native_api {
-        PyCell_Type
-    }
-    runtime.python.object_model.complex ++> compiler.backends.py.jacpython.native_api {
-        PyComplex_Type
-    }
-    runtime.python.object_model.enumerate ++> compiler.backends.py.jacpython.native_api {
-        PyEnum_Type
-    }
-    runtime.python.object_model.file ++> compiler.backends.py.jacpython.native_api {
-        PyStdPrinter_Type
-    }
-    runtime.python.object_model.genericalias ++> compiler.backends.py.jacpython.native_api {
-        Py_GenericAliasType
-    }
-    runtime.python.object_model.interpolation ++> compiler.backends.py.jacpython.native_api {
-        _PyInterpolation_Type
-    }
-    runtime.python.object_model.iterator ++> compiler.backends.py.jacpython.native_api {
-        PySeqIter_Type
-    }
-    runtime.python.object_model.method ++> compiler.backends.py.jacpython.native_api {
-        PyMethod_Type
-    }
-    runtime.python.object_model.namespace ++> compiler.backends.py.jacpython.native_api {
-        _PyNamespace_Type
-    }
-    runtime.python.object_model.picklebuffer ++> compiler.backends.py.jacpython.native_api {
-        PyPickleBuffer_Type
-    }
-    runtime.python.object_model.range ++> compiler.backends.py.jacpython.native_api {
-        PyRange_Type
-    }
-    runtime.python.object_model.slice ++> compiler.backends.py.jacpython.native_api {
-        PySlice_Type
-    }
-    runtime.python.object_model.structseq ++> compiler.backends.py.jacpython.native_api {
-        PyStructSequence_UnnamedField
-    }
-    runtime.python.object_model.template ++> compiler.backends.py.jacpython.native_api {
-        _PyTemplate_Type
-    }
-    runtime.python.object_model.union ++> compiler.backends.py.jacpython.native_api {
-        _PyUnion_Type
-    }
     runtime.python.objects ++> [
         compiler.backends.py.jacpython.assembler { PyCode },
         compiler.backends.py.jacpython.codegen_util {
-            PyCode,
             PyInt,
             PyObj,
             PySlice,
@@ -3100,16 +2767,9 @@ graph import {
             hashkey_equal,
             py_none
         },
-        compiler.backends.py.jacpython.compiler_codegen {
-            PyCode,
-            PyInt,
-            PyNoneType,
-            PyObj,
-            PySlice,
-            PyStr,
-            PyTuple,
-            py_none
-        },
+        compiler.backends.py.jacpython.compiler_codegen
+            | compiler.backends.py.jacpython.compiler_exc
+            | compiler.backends.py.jacpython.compiler_loops { py_none },
         compiler.backends.py.jacpython.compiler_defs {
             PyCode,
             PyInt,
@@ -3127,28 +2787,15 @@ graph import {
             PyNoneType,
             PyObj,
             PySet,
-            PySlice,
             PyStr,
             PyTuple,
             is_error,
             py_none
         },
-        compiler.backends.py.jacpython.compiler_exc
-            | compiler.backends.py.jacpython.compiler_loops { py_none },
-        compiler.backends.py.jacpython.compiler_ir {
-            PyBool,
-            PyBytes,
-            PyCode,
-            PyComplex,
-            PyFloat,
-            PyInt,
-            PyObj,
-            PySet,
-            PySlice,
-            PyStr,
-            PyTuple,
-            py_none
-        },
+        compiler.backends.py.jacpython.compiler_ir
+            | compiler.frontend.python.ast_input
+            | compiler.frontend.python.ast_nodes
+            | compiler.frontend.python.ast_output { PyObj },
         compiler.backends.py.jacpython.compiler_match {
             PyInt,
             PyObj,
@@ -3177,9 +2824,6 @@ graph import {
             PyStr,
             PyTuple
         },
-        compiler.frontend.python.ast_input
-            | compiler.frontend.python.ast_nodes
-            | compiler.frontend.python.ast_output { PyObj },
         compiler.frontend.python.ast_validation {
             PyBool,
             PyBytes,
@@ -3213,7 +2857,6 @@ graph import {
             PyComplex,
             PyEllipsis,
             PyFloat,
-            PyInt,
             PyNoneType,
             PyObj,
             PyStr,
@@ -3233,11 +2876,7 @@ graph import {
             CMP_LE,
             CMP_LT,
             CMP_NE,
-            CO_ASYNC_GENERATOR,
-            CO_COROUTINE,
-            CO_GENERATOR,
             CO_METHOD,
-            CO_NESTED,
             CO_NEWLOCALS,
             CO_OPTIMIZED,
             CO_VARARGS,
@@ -3265,103 +2904,12 @@ graph import {
             NB_POWER,
             NB_REMAINDER,
             NB_RSHIFT,
-            NB_SUBSCR,
             NB_SUBTRACT,
             NB_TRUE_DIVIDE,
             NB_XOR,
-            OP_BUILD_LIST,
-            OP_BUILD_MAP,
-            OP_BUILD_SET,
-            OP_BUILD_TUPLE,
-            OP_CALL,
-            OP_CALL_INTRINSIC_1,
-            OP_CALL_KW,
-            OP_CHECK_EXC_MATCH,
-            OP_CLEANUP_THROW,
-            OP_COMPARE_OP,
-            OP_COPY,
-            OP_COPY_FREE_VARS,
-            OP_DELETE_ATTR,
-            OP_DELETE_FAST,
-            OP_DELETE_NAME,
-            OP_DELETE_SUBSCR,
-            OP_DICT_UPDATE,
-            OP_END_ASYNC_FOR,
-            OP_END_FOR,
-            OP_END_SEND,
-            OP_FOR_ITER,
-            OP_GET_AITER,
-            OP_GET_ANEXT,
-            OP_GET_AWAITABLE,
-            OP_GET_ITER,
-            OP_GET_LEN,
-            OP_GET_YIELD_FROM_ITER,
-            OP_IMPORT_FROM,
-            OP_IMPORT_NAME,
-            OP_IS_OP,
-            OP_JUMP_BACKWARD,
-            OP_JUMP_BACKWARD_NO_INTERRUPT,
-            OP_JUMP_FORWARD,
-            OP_LIST_APPEND,
-            OP_LIST_EXTEND,
-            OP_LOAD_ATTR,
-            OP_LOAD_BUILD_CLASS,
-            OP_LOAD_COMMON_CONSTANT,
-            OP_LOAD_CONST,
-            OP_LOAD_DEREF,
-            OP_LOAD_FAST,
-            OP_LOAD_FAST_AND_CLEAR,
-            OP_LOAD_FAST_BORROW,
-            OP_LOAD_FAST_BORROW_LOAD_FAST_BORROW,
-            OP_LOAD_FAST_CHECK,
-            OP_LOAD_GLOBAL,
-            OP_LOAD_LOCALS,
-            OP_LOAD_NAME,
-            OP_LOAD_SMALL_INT,
-            OP_LOAD_SPECIAL,
-            OP_MAKE_CELL,
-            OP_MAKE_FUNCTION,
-            OP_MAP_ADD,
-            OP_MATCH_CLASS,
-            OP_MATCH_KEYS,
-            OP_MATCH_MAPPING,
-            OP_MATCH_SEQUENCE,
-            OP_NOP,
-            OP_NOT_TAKEN,
-            OP_POP_EXCEPT,
-            OP_POP_ITER,
-            OP_POP_JUMP_IF_FALSE,
-            OP_POP_JUMP_IF_NONE,
-            OP_POP_JUMP_IF_NOT_NONE,
-            OP_POP_JUMP_IF_TRUE,
-            OP_POP_TOP,
-            OP_PUSH_EXC_INFO,
-            OP_PUSH_NULL,
-            OP_RAISE_VARARGS,
-            OP_RERAISE,
-            OP_RESUME,
-            OP_RETURN_GENERATOR,
-            OP_RETURN_VALUE,
-            OP_SEND,
-            OP_SET_ADD,
-            OP_SET_FUNCTION_ATTRIBUTE,
-            OP_SET_UPDATE,
-            OP_STORE_ATTR,
-            OP_STORE_DEREF,
-            OP_STORE_FAST,
-            OP_STORE_FAST_LOAD_FAST,
-            OP_STORE_FAST_STORE_FAST,
-            OP_STORE_NAME,
-            OP_STORE_SUBSCR,
-            OP_SWAP,
-            OP_TO_BOOL,
             OP_UNARY_INVERT,
             OP_UNARY_NEGATIVE,
             OP_UNARY_NOT,
-            OP_UNPACK_EX,
-            OP_UNPACK_SEQUENCE,
-            OP_WITH_EXCEPT_START,
-            OP_YIELD_VALUE,
             compare_filter_oparg,
             compare_oparg
         },
@@ -3382,7 +2930,6 @@ graph import {
             OP_LOAD_DEREF,
             OP_LOAD_FAST,
             OP_LOAD_FAST_BORROW,
-            OP_LOAD_FROM_DICT_OR_GLOBALS,
             OP_LOAD_GLOBAL,
             OP_LOAD_NAME,
             OP_LOAD_SMALL_INT,
@@ -3396,159 +2943,51 @@ graph import {
             OP_SETUP_ANNOTATIONS,
             OP_SET_ADD,
             OP_SET_FUNCTION_ATTRIBUTE,
-            OP_STORE_ATTR,
             OP_STORE_DEREF,
-            OP_STORE_FAST,
             OP_STORE_NAME,
             OP_STORE_SUBSCR,
             OP_SWAP,
             compare_oparg
         },
         compiler.backends.py.jacpython.compiler_codegen {
-            CMP_EQ,
-            CMP_GE,
-            CMP_GT,
-            CMP_LE,
-            CMP_LT,
-            CMP_NE,
-            CO_ASYNC_GENERATOR,
             CO_COROUTINE,
-            CO_GENERATOR,
-            CO_NESTED,
-            CO_NEWLOCALS,
-            CO_OPTIMIZED,
-            CO_VARARGS,
-            CO_VARKEYWORDS,
-            NB_ADD,
-            NB_AND,
-            NB_FLOOR_DIVIDE,
-            NB_INPLACE_ADD,
-            NB_INPLACE_AND,
-            NB_INPLACE_FLOOR_DIVIDE,
-            NB_INPLACE_LSHIFT,
-            NB_INPLACE_MATRIX_MULTIPLY,
-            NB_INPLACE_MULTIPLY,
-            NB_INPLACE_OR,
-            NB_INPLACE_POWER,
-            NB_INPLACE_REMAINDER,
-            NB_INPLACE_RSHIFT,
-            NB_INPLACE_SUBTRACT,
-            NB_INPLACE_TRUE_DIVIDE,
-            NB_INPLACE_XOR,
-            NB_LSHIFT,
-            NB_MATRIX_MULTIPLY,
-            NB_MULTIPLY,
-            NB_OR,
-            NB_POWER,
-            NB_REMAINDER,
-            NB_RSHIFT,
             NB_SUBSCR,
-            NB_SUBTRACT,
-            NB_TRUE_DIVIDE,
-            NB_XOR,
             OP_BINARY_OP,
-            OP_BINARY_SLICE,
-            OP_BUILD_LIST,
-            OP_BUILD_MAP,
-            OP_BUILD_SET,
             OP_BUILD_SLICE,
             OP_BUILD_TUPLE,
             OP_CALL,
             OP_CALL_INTRINSIC_1,
-            OP_CALL_KW,
-            OP_CHECK_EXC_MATCH,
-            OP_CLEANUP_THROW,
-            OP_COMPARE_OP,
-            OP_CONTAINS_OP,
             OP_COPY,
-            OP_COPY_FREE_VARS,
             OP_DELETE_ATTR,
             OP_DELETE_DEREF,
             OP_DELETE_FAST,
             OP_DELETE_GLOBAL,
             OP_DELETE_NAME,
             OP_DELETE_SUBSCR,
-            OP_DICT_UPDATE,
-            OP_END_ASYNC_FOR,
             OP_END_FOR,
-            OP_END_SEND,
-            OP_FOR_ITER,
-            OP_GET_AITER,
-            OP_GET_ANEXT,
-            OP_GET_AWAITABLE,
-            OP_GET_ITER,
-            OP_GET_LEN,
-            OP_GET_YIELD_FROM_ITER,
-            OP_IMPORT_FROM,
-            OP_IMPORT_NAME,
-            OP_IS_OP,
             OP_JUMP_BACKWARD,
-            OP_JUMP_BACKWARD_NO_INTERRUPT,
             OP_JUMP_FORWARD,
-            OP_LIST_APPEND,
-            OP_LIST_EXTEND,
             OP_LOAD_ATTR,
-            OP_LOAD_BUILD_CLASS,
             OP_LOAD_COMMON_CONSTANT,
             OP_LOAD_CONST,
-            OP_LOAD_DEREF,
             OP_LOAD_FAST,
-            OP_LOAD_FAST_AND_CLEAR,
-            OP_LOAD_FAST_BORROW,
-            OP_LOAD_FAST_BORROW_LOAD_FAST_BORROW,
-            OP_LOAD_FAST_CHECK,
-            OP_LOAD_GLOBAL,
-            OP_LOAD_LOCALS,
-            OP_LOAD_NAME,
-            OP_LOAD_SMALL_INT,
-            OP_LOAD_SPECIAL,
             OP_MAKE_CELL,
-            OP_MAKE_FUNCTION,
-            OP_MAP_ADD,
-            OP_MATCH_CLASS,
-            OP_MATCH_KEYS,
-            OP_MATCH_MAPPING,
-            OP_MATCH_SEQUENCE,
             OP_NOP,
-            OP_NOT_TAKEN,
-            OP_POP_EXCEPT,
             OP_POP_ITER,
-            OP_POP_JUMP_IF_FALSE,
-            OP_POP_JUMP_IF_NONE,
-            OP_POP_JUMP_IF_NOT_NONE,
-            OP_POP_JUMP_IF_TRUE,
             OP_POP_TOP,
-            OP_PUSH_EXC_INFO,
-            OP_PUSH_NULL,
             OP_RAISE_VARARGS,
-            OP_RERAISE,
             OP_RESUME,
-            OP_RETURN_GENERATOR,
             OP_RETURN_VALUE,
-            OP_SEND,
-            OP_SET_ADD,
-            OP_SET_FUNCTION_ATTRIBUTE,
-            OP_SET_UPDATE,
             OP_STORE_ATTR,
             OP_STORE_DEREF,
             OP_STORE_FAST,
-            OP_STORE_FAST_LOAD_FAST,
-            OP_STORE_FAST_STORE_FAST,
             OP_STORE_GLOBAL,
             OP_STORE_NAME,
             OP_STORE_SLICE,
             OP_STORE_SUBSCR,
             OP_SWAP,
-            OP_TO_BOOL,
-            OP_UNARY_INVERT,
-            OP_UNARY_NEGATIVE,
-            OP_UNARY_NOT,
             OP_UNPACK_EX,
             OP_UNPACK_SEQUENCE,
-            OP_WITH_EXCEPT_START,
-            OP_YIELD_VALUE,
-            compare_filter_oparg,
-            compare_oparg,
             is_scope_exit_opcode,
             is_unconditional_jump_opcode
         },
@@ -3565,7 +3004,6 @@ graph import {
             OP_CALL,
             OP_CALL_INTRINSIC_1,
             OP_CALL_INTRINSIC_2,
-            OP_CALL_KW,
             OP_COMPARE_OP,
             OP_COPY,
             OP_COPY_FREE_VARS,
@@ -3588,54 +3026,18 @@ graph import {
             OP_RETURN_VALUE,
             OP_SET_FUNCTION_ATTRIBUTE,
             OP_STORE_DEREF,
-            OP_STORE_FAST,
             OP_STORE_NAME,
             OP_SWAP,
             OP_UNPACK_SEQUENCE,
             compare_oparg
         },
         compiler.backends.py.jacpython.compiler_emit {
-            CMP_EQ,
-            CMP_GE,
-            CMP_GT,
-            CMP_LE,
-            CMP_LT,
-            CMP_NE,
             CO_ASYNC_GENERATOR,
-            CO_COROUTINE,
             CO_GENERATOR,
             CO_NESTED,
             CO_NEWLOCALS,
             CO_OPTIMIZED,
-            CO_VARARGS,
-            CO_VARKEYWORDS,
-            NB_ADD,
-            NB_AND,
-            NB_FLOOR_DIVIDE,
-            NB_INPLACE_ADD,
-            NB_INPLACE_AND,
-            NB_INPLACE_FLOOR_DIVIDE,
-            NB_INPLACE_LSHIFT,
-            NB_INPLACE_MATRIX_MULTIPLY,
-            NB_INPLACE_MULTIPLY,
-            NB_INPLACE_OR,
-            NB_INPLACE_POWER,
-            NB_INPLACE_REMAINDER,
-            NB_INPLACE_RSHIFT,
-            NB_INPLACE_SUBTRACT,
-            NB_INPLACE_TRUE_DIVIDE,
-            NB_INPLACE_XOR,
-            NB_LSHIFT,
-            NB_MATRIX_MULTIPLY,
-            NB_MULTIPLY,
-            NB_OR,
-            NB_POWER,
-            NB_REMAINDER,
-            NB_RSHIFT,
             NB_SUBSCR,
-            NB_SUBTRACT,
-            NB_TRUE_DIVIDE,
-            NB_XOR,
             OP_BINARY_OP,
             OP_BINARY_SLICE,
             OP_BUILD_INTERPOLATION,
@@ -3650,18 +3052,12 @@ graph import {
             OP_CALL_FUNCTION_EX,
             OP_CALL_INTRINSIC_1,
             OP_CALL_KW,
-            OP_CHECK_EXC_MATCH,
             OP_CLEANUP_THROW,
             OP_COMPARE_OP,
             OP_CONTAINS_OP,
             OP_CONVERT_VALUE,
             OP_COPY,
             OP_COPY_FREE_VARS,
-            OP_DELETE_ATTR,
-            OP_DELETE_FAST,
-            OP_DELETE_GLOBAL,
-            OP_DELETE_NAME,
-            OP_DELETE_SUBSCR,
             OP_DICT_MERGE,
             OP_DICT_UPDATE,
             OP_END_ASYNC_FOR,
@@ -3674,10 +3070,7 @@ graph import {
             OP_GET_ANEXT,
             OP_GET_AWAITABLE,
             OP_GET_ITER,
-            OP_GET_LEN,
             OP_GET_YIELD_FROM_ITER,
-            OP_IMPORT_FROM,
-            OP_IMPORT_NAME,
             OP_IS_OP,
             OP_JUMP_BACKWARD,
             OP_JUMP_BACKWARD_NO_INTERRUPT,
@@ -3685,32 +3078,23 @@ graph import {
             OP_LIST_APPEND,
             OP_LIST_EXTEND,
             OP_LOAD_ATTR,
-            OP_LOAD_BUILD_CLASS,
-            OP_LOAD_COMMON_CONSTANT,
             OP_LOAD_CONST,
             OP_LOAD_DEREF,
             OP_LOAD_FAST,
             OP_LOAD_FAST_AND_CLEAR,
             OP_LOAD_FAST_BORROW,
             OP_LOAD_FAST_BORROW_LOAD_FAST_BORROW,
-            OP_LOAD_FAST_CHECK,
             OP_LOAD_FROM_DICT_OR_DEREF,
             OP_LOAD_FROM_DICT_OR_GLOBALS,
             OP_LOAD_GLOBAL,
             OP_LOAD_LOCALS,
             OP_LOAD_NAME,
             OP_LOAD_SMALL_INT,
-            OP_LOAD_SPECIAL,
             OP_LOAD_SUPER_ATTR,
             OP_MAKE_CELL,
             OP_MAKE_FUNCTION,
             OP_MAP_ADD,
-            OP_MATCH_CLASS,
-            OP_MATCH_KEYS,
-            OP_MATCH_MAPPING,
-            OP_MATCH_SEQUENCE,
             OP_NOP,
-            OP_NOT_TAKEN,
             OP_POP_EXCEPT,
             OP_POP_ITER,
             OP_POP_JUMP_IF_FALSE,
@@ -3718,9 +3102,7 @@ graph import {
             OP_POP_JUMP_IF_NOT_NONE,
             OP_POP_JUMP_IF_TRUE,
             OP_POP_TOP,
-            OP_PUSH_EXC_INFO,
             OP_PUSH_NULL,
-            OP_RAISE_VARARGS,
             OP_RERAISE,
             OP_RESUME,
             OP_RETURN_GENERATOR,
@@ -3729,7 +3111,6 @@ graph import {
             OP_SET_ADD,
             OP_SET_FUNCTION_ATTRIBUTE,
             OP_SET_UPDATE,
-            OP_STORE_ATTR,
             OP_STORE_DEREF,
             OP_STORE_FAST,
             OP_STORE_FAST_LOAD_FAST,
@@ -3737,16 +3118,9 @@ graph import {
             OP_STORE_FAST_STORE_FAST,
             OP_STORE_GLOBAL,
             OP_STORE_NAME,
-            OP_STORE_SLICE,
-            OP_STORE_SUBSCR,
             OP_SWAP,
             OP_TO_BOOL,
-            OP_UNARY_INVERT,
-            OP_UNARY_NEGATIVE,
-            OP_UNARY_NOT,
-            OP_UNPACK_EX,
             OP_UNPACK_SEQUENCE,
-            OP_WITH_EXCEPT_START,
             OP_YIELD_VALUE,
             compare_filter_oparg,
             compare_oparg
@@ -3754,25 +3128,19 @@ graph import {
         compiler.backends.py.jacpython.compiler_exc {
             OP_BUILD_LIST,
             OP_CALL,
-            OP_CALL_INTRINSIC_1,
             OP_CALL_INTRINSIC_2,
             OP_CHECK_EG_MATCH,
             OP_CHECK_EXC_MATCH,
             OP_CLEANUP_THROW,
             OP_COPY,
-            OP_END_FOR,
-            OP_END_SEND,
             OP_GET_AWAITABLE,
-            OP_JUMP_BACKWARD,
             OP_JUMP_BACKWARD_NO_INTERRUPT,
             OP_JUMP_FORWARD,
             OP_LIST_APPEND,
             OP_LOAD_CONST,
             OP_LOAD_SPECIAL,
             OP_NOP,
-            OP_NOT_TAKEN,
             OP_POP_EXCEPT,
-            OP_POP_ITER,
             OP_POP_JUMP_IF_FALSE,
             OP_POP_JUMP_IF_NONE,
             OP_POP_JUMP_IF_NOT_NONE,
@@ -3782,7 +3150,6 @@ graph import {
             OP_RAISE_VARARGS,
             OP_RERAISE,
             OP_RESUME,
-            OP_RETURN_VALUE,
             OP_SEND,
             OP_STORE_FAST,
             OP_SWAP,
@@ -3807,11 +3174,7 @@ graph import {
             OP_JUMP_FORWARD,
             OP_LOAD_CONST,
             OP_NOP,
-            OP_NOT_TAKEN,
             OP_POP_ITER,
-            OP_POP_JUMP_IF_FALSE,
-            OP_POP_JUMP_IF_TRUE,
-            OP_POP_TOP,
             OP_RETURN_VALUE,
             has_target,
             is_scope_exit_opcode,
@@ -3844,7 +3207,6 @@ graph import {
             OP_POP_JUMP_IF_NONE,
             OP_POP_JUMP_IF_NOT_NONE,
             OP_POP_TOP,
-            OP_STORE_FAST_STORE_FAST,
             OP_SWAP,
             OP_UNPACK_EX,
             OP_UNPACK_SEQUENCE,
@@ -3955,32 +3317,16 @@ graph import {
             | server.server.ModuleIntrospector._check_module_freshness
             | server.static_files { JacRuntime as Jac },
         cli.commands.execution._exec_file
-            | cli.mcp.compiler_bridge.CompilerBridge.get_ast_snippet._do_ast
+            | cli.mcp.compiler_bridge.CompilerBridge.py_to_jac._do_py2jac
             | client.targets.web_target._get_client_function_name
-            | dist.seal.build_serve_manifest
             | server.hmr.HotReloader._recompile_client_unified
             | server.server.ModuleIntrospector._resolve_declared { JacRuntime as Jac },
         cli.commands.execution._invoke_entrypoint
-            | cli.mcp.compiler_bridge.CompilerBridge.jac_to_js._do_jac2js
+            | cli.mcp.compiler_bridge.CompilerBridge.typecheck_snippet._do_typecheck
             | server.server.ModuleIntrospector.route_spec { JacRuntime as Jac },
-        cli.commands.execution._load_executable
-            | cli.mcp.compiler_bridge.CompilerBridge.jac_to_py._do_jac2py {
-            JacRuntime as Jac
-        },
-        cli.commands.execution._pin_run_scope
-            | cli.mcp.compiler_bridge.CompilerBridge.lint_snippet._do_lint {
-            JacRuntime as Jac
-        },
-        cli.commands.execution.serve
-            | cli.mcp.compiler_bridge.CompilerBridge.parse_snippet._do_parse {
-            JacRuntime as Jac
-        },
-        cli.mcp.compiler_bridge.CompilerBridge.py_to_jac._do_py2jac {
-            JacRuntime as Jac
-        },
-        cli.mcp.compiler_bridge.CompilerBridge.typecheck_snippet._do_typecheck {
-            JacRuntime as Jac
-        },
+        cli.commands.execution._load_executable { JacRuntime as Jac },
+        cli.commands.execution._pin_run_scope { JacRuntime as Jac },
+        cli.commands.execution.serve { JacRuntime as Jac },
         data.query_planner.LazyRefs._mem | lib.jaclib | testing.runner {
             JacRuntimeInterface
         },
@@ -4020,12 +3366,7 @@ graph import {
         },
         compiler.backends.es.jac_runtime_js._build_types_runtime_js { numeric_shapes },
         compiler.backends.es.primitives_es.ESBuiltinEmitter.emit_wrapping { is_sized },
-        compiler.backends.native.na_ir_gen_pass {
-            ScalarShape,
-            range_of,
-            shape_of,
-            wrap_value
-        },
+        compiler.backends.native.na_ir_gen_pass { ScalarShape, range_of, shape_of },
         compiler.backends.py.jcir_facts | compiler.boundary_rules.json_refusal {
             sized_scalar_names
         },
@@ -4248,6 +3589,7 @@ graph import {
     }
     server.identity.user_manager ++> [
         runtime.runtime.JacPersistence.get_user_manager
+            | scale.admin.admin_portal
             | scale.runtime.gateway.microservice_gateway
             | scale.sso.oauth_session
             | scale.sso.sso_auth
@@ -4258,7 +3600,6 @@ graph import {
             | scale.tests.server.test_firebase_auth_sso
             | scale.tests.server.test_sso
             | scale.tests.server.test_ws_hardening { UserManager },
-        scale.admin.admin_portal { UserManager, UserRole },
         scale.server.jobs_ext { SYSTEM_USER, UserRole },
         scale.server.webhook_ext { SYSTEM_USER },
         scale.tests.server.oauth_fixtures
@@ -4356,11 +3697,8 @@ graph import {
             | scale.tests.server.test_served_app_route
             | scale.tests.server.test_sv_outbox_endpoints
             | testing.testing { JacAPIServer },
-        scale.admin.admin_portal | scale.admin.llm_telemetry {
-            EndpointHost,
-            JsonValue
-        },
-        scale.admin.deploy_health
+        scale.admin.admin_portal
+            | scale.admin.deploy_health
             | scale.admin.logs
             | scale.admin.network
             | scale.admin.ops
@@ -4369,7 +3707,7 @@ graph import {
             | scale.admin.workloads
             | scale.runtime.gateway.microservice_gateway
             | scale.tests.server.test_sso { EndpointHost },
-        scale.plugin { JacAPIServer as JacServer, ServerExtension },
+        scale.admin.llm_telemetry { EndpointHost, JsonValue },
         scale.server.webhook_ext { JacAPIServer, JsonValue, ServerExtension },
         scale.tests.server.test_auth_policy_startup { EndpointHost, ServerExtension },
     ]
@@ -4509,6 +3847,7 @@ graph import {
             | scale.server.jobs_ext
             | scale.server.webhook_ext
             | scale.tests.server.test_firebase_auth_sso
+            | scale.tests.server.test_oauth_providers
             | scale.tests.server.test_registration_limits
             | scale.tests.server.test_static_fallback { Request },
         scale.admin.deploy_health
@@ -4520,8 +3859,7 @@ graph import {
             | scale.admin.traces { JSONResponse, Request },
         scale.observability.prometheus_metrics { Response },
         scale.runtime.context.errors
-            | scale.tests.microservices.test_rate_limit.next_handler
-            | scale.tests.server.test_serving_tail { JSONResponse },
+            | scale.tests.microservices.test_rate_limit.next_handler { JSONResponse },
         scale.runtime.gateway.embedded_gateway
             | scale.server.extensions
             | scale.tests.microservices.test_gateway_webapp {
@@ -4535,10 +3873,7 @@ graph import {
             Request,
             Response
         },
-        scale.runtime.transport.http_forward | scale.tests.server.test_bodiless_status {
-            Response,
-            StreamingResponse
-        },
+        scale.runtime.transport.http_forward { StreamingResponse },
         scale.server.sso_ext | scale.sso.provider | scale.sso.sso_auth {
             RedirectResponse,
             Request,
@@ -4553,7 +3888,7 @@ graph import {
         scale.tests.microservices.test_gateway
             | scale.tests.microservices.test_rate_limit
             | scale.tests.server.test_serve { Headers, Request, URL },
-        scale.tests.server.test_oauth_providers { RedirectResponse, Request },
+        scale.tests.server.test_bodiless_status { Response, StreamingResponse },
         scale.tests.server.test_oauth_providers._callback_request { QueryParams, URL },
         scale.tests.server.test_sso {
             Headers,
@@ -4596,7 +3931,6 @@ graph import {
             | scale.admin.admin_portal
             | scale.admin.llm_telemetry
             | scale.admin.logs
-            | scale.admin.ops
             | scale.admin.traces
             | scale.admin.workloads
             | scale.server.jobs_ext
@@ -4609,6 +3943,7 @@ graph import {
         },
         scale.admin.deploy_health
             | scale.admin.network
+            | scale.admin.ops
             | scale.admin.podenv
             | scale.server.extensions
             | scale.tests.server.test_bodiless_status
@@ -4773,7 +4108,6 @@ graph import {
         scale.memory.context.JScaleExecutionContext.init
             | scale.server.extensions.EventsExtension.register
             | scale.websocket.backplane.build_backplane { scale_db_url },
-        scale.runtime.provider { shared_store as _pg_anchor },
         scale.scheduler.scheduler
             | scale.sso.oauth_session.OAuthSession.complete_native
             | scale.webhook.webhook
@@ -4804,27 +4138,20 @@ graph import {
     ]
     server.task_scheduler ++> [
         runtime.builtin.schedule { ScheduleSpec },
-        scale.scheduler.scheduler {
-            ScheduleTrigger,
-            Scheduler,
-            schedule_namespace,
-            tick_of
-        },
+        scale.scheduler.scheduler { Scheduler, schedule_namespace, tick_of },
         scale.tests.server.test_scheduler_multipod { ScheduleSpec, Scheduler, tick_of },
     ]
     server.transport ++> [
         scale.admin.admin_portal
-            | scale.admin.llm_telemetry
             | scale.admin.workloads
             | scale.server.jobs_ext
             | scale.server.webhook_ext
             | scale.shared.utils
             | scale.sso.sso_auth
-            | scale.tests.server.test_sso
             | scale.webhook.webhook { Meta, TransportResponse },
-        scale.admin.logs
-            | scale.server.sso_ext
-            | scale.tests.server.test_firebase_auth_sso { TransportResponse },
+        scale.server.sso_ext | scale.tests.server.test_firebase_auth_sso {
+            TransportResponse
+        },
     ]
     server.watcher ++> [
         client.targets.client_dev_common
@@ -5055,7 +4382,7 @@ graph import byllm {
             MockToolCall
         },
         tests.support { MockError, MockLLM, MockRawResponse, MockToolCall },
-        tests.test_byllm { Image, MockLLM, Model, ModelPool, Video },
+        tests.test_byllm | tests.test_streaming { MockLLM, Model },
         tests.test_compaction { MockLLM, Model, ModelPool },
         tests.test_document { Document, MockLLM },
         tests.test_media { ConfigurationError, Image, MockLLM, Video },
@@ -5068,7 +4395,6 @@ graph import byllm {
             StreamEvent
         },
         tests.test_model_pool | tests.test_timeout { Model, ModelPool },
-        tests.test_streaming { MockLLM, Model },
         tests.test_systemone { Decision, MockLLM, MockSystemOne, Model },
         tests.test_tool_arg_streaming { MockLLM, MockRawResponse, MockToolCall },
         tests.test_tools { MockLLM, MockRawResponse },
@@ -5112,7 +4438,6 @@ graph import byllm {
     ]
     model_cache ++> [
         cli._cmd_model {
-            ensure_model,
             force_pull,
             get_cache_dir,
             is_downloaded,
@@ -5209,7 +4534,6 @@ graph import byllm {
             Image,
             IterationAction,
             IterationContext,
-            LiteLLMMessage,
             Message,
             MessageRole,
             MockError,
@@ -5238,7 +4562,7 @@ graph import byllm {
         systemone.build_state { Media },
         systemone.lower { image_resp_kind },
         tests.support { Message, MessageRole, StreamEvent, Tool },
-        tests.test_byllm { Message, MessageRole, Tool },
+        tests.test_byllm { Tool },
         tests.test_compaction { MockToolCall },
         tests.test_conversation | visit_routing.route_visit { Message, MessageRole },
         tests.test_multimodal_tool_results {
@@ -5340,12 +4664,6 @@ graph import byllm.tests {
     ]
 }
 
-graph import byllm.tests.fixtures {
-    import_dir.importable_schema ++> importer_main { get_imported_data }
-    scope_dir.module_alpha ++> scope_main { process_data as alpha_process }
-    scope_dir.module_beta ++> scope_main { process_data as beta_process }
-}
-
 graph import cache {
     home ++> [
         policy { CACHEDIR_TAG },
@@ -5355,7 +4673,6 @@ graph import cache {
     policy ++> registry {
         CacheEntry,
         EntryKind,
-        KeepMatch,
         Policy,
         Retention,
         SWEEP_SENTINEL,
@@ -5418,12 +4735,11 @@ graph import cli {
             | commands.native
             | commands.precompile
             | commands.project
-            | commands.tools
-            | manifest { Arg, ArgKind, CommandSpec },
+            | commands.tools { Arg, ArgKind, CommandSpec },
         commands.mcp | shadcn.cli { Arg, CommandSpec },
         commands.tools._extract_commands { ArgKind },
         dispatch { Arg, ArgKind, CommandSpec, arg_consumes_value },
-        executor | manifest_help { CommandSpec },
+        executor | manifest | manifest_help { CommandSpec },
         executor.CommandExecutor.execute { CommandSpec },
         executor.CommandExecutor.run_handler { CommandSpec },
         manifest_parse {
@@ -5698,11 +5014,9 @@ graph import client {
         compiler { ClientBuildInputs, ClientBundle, ClientBundleError },
         compiler.ViteCompiler._compile_wasm_module { client_program },
         compiler.ViteCompiler.prepare_bundle { client_program },
-        import_processor
-            | jac_client_compiler
-            | npm_provider
-            | route_scanner
-            | vite_bundler { ClientBundleError },
+        jac_client_compiler | npm_provider | route_scanner | vite_bundler {
+            ClientBundleError
+        },
         vite_client_bundle {
             ClientBuildInputs,
             ClientBundle,
@@ -5847,7 +5161,6 @@ graph import client {
         config_loader {
             CORE_DEV_DEPS,
             CORE_RUNTIME_DEPS,
-            LEGACY_META_PACKAGES,
             OPTIONAL_RUNTIME_DEPS,
             app_npm_deps
         },
@@ -5889,7 +5202,7 @@ graph import client {
         RN_HTML_VIEW_TAGS as _VIEW_TAGS
     }
     targets.registry ++> [
-        cli { ClientTarget, target_for_app },
+        cli { target_for_app },
         cli.run_client_build { target_for_kind },
         cli.run_client_start { target_for_kind },
         npm_provider.app_npm_deps { KIND_TARGET },
@@ -6084,7 +5397,7 @@ graph import client.targets.desktop.native {
         },
         host_boot.boot { SessionStore },
     ]
-    webview.webview ++> plugin_bridge { Webview, respond }
+    webview.webview ++> plugin_bridge { respond }
 }
 
 graph import client.targets.desktop.native.cef {
@@ -6110,8 +5423,7 @@ graph import client.targets.react_native {
             stage_compiled_entry,
             stage_native_image_assets,
             strip_css_imports,
-            write_api_base_shim,
-            write_native_entry
+            write_api_base_shim
         },
         scaffold { build_native_index_entry_body },
     ]
@@ -6132,7 +5444,7 @@ graph import client.targets.react_native {
 }
 
 graph import compiler {
-    backends.es ++> tools.lang_tools { EsastGenPass, es_node_to_dict }
+    backends.es ++> tools.lang_tools { es_node_to_dict }
     backends.es --> tests.xbackend_equiv { EsastGenPass }
     backends.es.backends.registry ++> driver.build_services.CompilerBuildServices.client_runtime_basename {
         resolve_active_backend,
@@ -6212,8 +5524,7 @@ graph import compiler {
         },
     ]
     backends.py.artifact_imports ++> [
-        driver.application._prepare { package_sources, runtime_sources },
-        driver.application._prepare_sealed { package_sources, runtime_sources },
+        driver.application._prepare_sealed { runtime_sources },
         driver.application._reusable_interfaces { resolve_imports },
         driver.pipeline_runner.compile_application { package_sources },
     ]
@@ -6364,8 +5675,6 @@ graph import compiler {
             opaque_c_of_type
         },
         passes.type_checker_pass.TypeCheckPass._check_c_interop_import {
-            c_type_arg,
-            foreign_struct_of_type,
             is_foreign_struct_archetype,
             is_pinned_type
         },
@@ -6433,8 +5742,12 @@ graph import compiler {
             CrossAppKind,
             classify_cross_app_import
         },
-        backends.es.esast_gen_pass.EsastGenPass._partition_client_import_items
-            | placement.placement_solver._is_sv_import { import_crosses_apps },
+        backends.es.esast_gen_pass.EsastGenPass._partition_client_import_items {
+            ClientImportVerdict,
+            classify_client_import_item,
+            import_crosses_apps,
+            is_client_boundary_import
+        },
         backends.es.esast_gen_pass.EsastGenPass._record_sv_backend
             | passes.boundary_analysis_pass.BoundaryAnalysisPass._register_sv_import {
             import_crosses_apps,
@@ -6503,21 +5816,19 @@ graph import compiler {
             _stamp_context_element
         },
         passes.static_analysis_pass.StaticAnalysisPass._check_client_imports {
+            ClientImportVerdict,
+            classify_client_import_item,
+            is_client_boundary_import,
             is_client_native_edge_import
         },
         passes.wasm_contract.host_contracts { symbol_linked_source_module },
         placement.placement_facts.discover_spaces
             | placement.placement_solver._materialize_module { hub_module_for_path },
+        placement.placement_solver._is_sv_import { import_crosses_apps },
         placement.placement_solver._pullable_by_client_reference {
             is_server_anchored_module
         },
         placement.placement_solver.dependency_summary { hub_module_for_path },
-        symbol_utils {
-            ClientImportVerdict,
-            classify_client_import_item,
-            is_client_boundary_import,
-            symbol_linked_source_module
-        },
     ]
     driver.boundary_classify --> [
         backends.py.jcir_gen_pass.JcirGenPass._generate_sv_to_sv_stubs {
@@ -6536,10 +5847,20 @@ graph import compiler {
             is_service_app_entry
         },
         placement.placement.native_blocker_scan { ability_delegates_to_model },
+        placement.placement_export.collect_placement_rows {
+            ClientImportVerdict,
+            classify_client_import_item,
+            is_client_boundary_import
+        },
         placement.placement_solver._closure_pullable { is_server_anchored_module },
-        placement.placement_solver._pull_boundary_import { plain_native_import_target },
+        placement.placement_solver._pull_boundary_import {
+            plain_native_import_target,
+            symbol_linked_source_module
+        },
         types.type_evaluator.TypeEvaluator._is_sv_async_call {
+            ClientImportVerdict,
             CrossAppKind,
+            classify_client_import_item,
             classify_cross_app_import,
             is_client_native_edge_import
         },
@@ -6622,7 +5943,7 @@ graph import compiler {
             running_compiler_digest,
             unit_source_digest
         },
-        backends.native.link_plan { sidecar_unit_paths, unit_source_digest },
+        backends.native.link_plan { unit_source_digest },
         backends.native.link_plan.LinkPlan.plan_digest { native_producer_digest },
         backends.native.link_plan._build_link_plan.walk_unit { module_cache_key },
         backends.native.link_plan._jit_image_path { cache_mode, get_jir_cache_dir },
@@ -6630,16 +5951,6 @@ graph import compiler {
         backends.native.link_plan._write_sidecar { native_producer_digest },
         backends.native.na_compile_pass.NativeCompilePass._emit_debug_products {
             get_native_debug_dir
-        },
-        tools.code_intel {
-            HEADER_SIZE,
-            SECTIONS_MAGIC,
-            SEC_SYMINDEX,
-            create_header,
-            get_module_cache_path,
-            parse_header,
-            read_sections,
-            write_sections
         },
     ]
     driver.jir --> backends.native.kernel_resolve.KernelArtifact.build {
@@ -6807,7 +6118,6 @@ graph import compiler {
             | tests.test_zstd_equivalence
             | tools.cfg_dot.cfg_dot_from_file
             | tools.code_intel
-            | tools.jac_auto_lint_pass.JacAutoLintPass._base_decl_archetypes
             | tools.jac_formatter_pass.format_module
             | tools.lang_tools
             | types.stubcat.build.build_catalog { JacProgram },
@@ -6819,7 +6129,6 @@ graph import compiler {
     type driver.program ++> backends.native.kernel_resolve
         | backends.native.kernel_stage0
         | backends.native.link_plan
-        | boundary_audit
         | capability_notes
         | frontend.host
         | frontend.parser.frontend
@@ -6836,7 +6145,6 @@ graph import compiler {
         | placement.placement_solver
         | placement.placement_work
         | symbol_utils
-        | tools.jac_auto_lint_pass
         | types.stubcat.build
         | types.type_evaluator { JacProgram }
     driver.selfhost ++> types.stubcat.build.build_catalog { SelfHostCache }
@@ -6918,15 +6226,23 @@ graph import compiler {
         passes.cfg_build_pass.CFGBuildPass.exit_if_else_expr {
             collect_narrowing_symbols
         },
-        symbol_utils {
-            classify_condition_key,
-            collect_assigned_symbols,
-            collect_assignment_target_keys,
-            collect_narrowing_symbols,
-            find_destructure_index_path,
-            get_expr_key,
-            int_subscript_suffix,
+        types.type_evaluator.TypeEvaluator._get_type_of_lhs_assignment {
+            find_destructure_index_path
+        },
+        types.type_evaluator.TypeEvaluator._loop_body_writes_target {
+            collect_assignment_target_keys
+        },
+        types.type_evaluator.TypeEvaluator._narrowed_type_for_expr {
             reference_key_deps
+        },
+    ]
+    expr_keys --> [
+        types.type_evaluator.TypeEvaluator._get_type_from_flow_node {
+            collect_assignment_target_keys,
+            find_destructure_index_path
+        },
+        types.type_evaluator.TypeEvaluator.create_key_for_reference {
+            int_subscript_suffix
         },
     ]
     field_semantics ++> [
@@ -7051,9 +6367,6 @@ graph import compiler {
         },
         backends.native.na_ir_gen_pass.NaIRGenPass._find_source_ability
             | native_bindings.import_gaps { resolve_native_module },
-        backends.native.na_ir_gen_pass.NaIRGenPass._forward_declare_imported_ability {
-            native_def_symbol
-        },
         backends.native.na_ir_gen_pass.NaIRGenPass._from_imported_intercept
             | passes.layout_pass.record_interface_twins
             | types.types.ClassDetailsShared.same_class { bundled_stdlib_module_of },
@@ -7145,7 +6458,6 @@ graph import compiler {
         driver.compiler.JacCompiler._check_native_abi { NATIVE_ABI_VERSION },
         driver.compiler.JacCompiler._load_native_from_cache
             | driver.nativecache.NativeUnitRegistry.adopt_lowered { CodeGenTarget },
-        driver.compiler.JacCompiler._restore_sections { ClientArtifact },
         driver.compiler.JacCompiler._wants_native_engine
             | driver.program.JacProgram.toolchain_dependency
             | driver.selfhost.SelfHostCache.owns
@@ -7201,10 +6513,8 @@ graph import compiler {
             resolve_native_module
         },
         native_scope.binds_bare_arch_names { kernel_unit_rels },
-        native_scope.scope_allows_inferred_path {
-            native_unit_compile_active,
-            native_unit_identity
-        },
+        native_scope.scope_allows_inferred_path
+            | placement.placement_solver._native_deps_ok { native_unit_compile_active },
         passes.boundary_analysis_pass {
             BoundaryTypeInfo,
             InteropBinding,
@@ -7228,7 +6538,6 @@ graph import compiler {
             is_native_variant_path,
             is_selected_native_variant
         },
-        placement.placement_solver._native_deps_ok { native_unit_compile_active },
         placement.placement_solver.native_closure_blocker {
             native_unit_compile_active
         },
@@ -7358,7 +6667,7 @@ graph import compiler {
         backends.native.na_ir_gen_pass.NaIRGenPass._folded_ord { fold_const },
     ]
     frontend.constant ++> [
-        backends.es.esast_gen_pass | passes.boundary_analysis_pass | symbol_utils {
+        backends.es.esast_gen_pass | symbol_utils {
             CodeContext,
             SymbolType,
             Tokens as Tok
@@ -7406,8 +6715,7 @@ graph import compiler {
         backends.native.na_ir_gen_pass.NaIRGenPass._codegen_assignment {
             SymbolStorage
         },
-        backends.native.na_ir_gen_pass.NaIRGenPass._codegen_unary
-            | passes.type_checker_pass.TypeCheckPass._check_borrowed_scalar_forward {
+        backends.native.na_ir_gen_pass.NaIRGenPass._codegen_unary {
             OwnershipKind,
             is_borrow_kind
         },
@@ -7427,6 +6735,7 @@ graph import compiler {
             | passes.type_checker_pass.TypeCheckPass.exit_impl_def
             | tools.cfg_dot.CoalesceBBPass._node_label
             | tools.comment_attach_pass
+            | tools.jac_auto_lint_pass
             | types.operations
             | types.type_evaluator.TypeEvaluator._find_predicate_for { Tokens as Tok },
         backends.native.na_ir_gen_pass.NaIRGenPass._hl_view_base_licensed
@@ -7466,24 +6775,19 @@ graph import compiler {
             Tokens as Tok,
             is_borrow_kind
         },
-        driver.boundary_classify | placement.placement {
-            CodeContext,
-            SymbolAccess,
-            Tokens as Tok
-        },
-        driver.compiler
-            | driver.ifacecache.IfaceRegistry._client_edges
+        driver.boundary_classify { CodeContext, SymbolAccess, Tokens as Tok },
+        driver.ifacecache.IfaceRegistry._client_edges
             | driver.module_compile
             | driver.program.JacProgram.stamp_boundary_facts
             | driver.unit_products
             | jc_unit
-            | passes.boundary_analysis_pass.BoundaryAnalysisPass._get_context
+            | passes.boundary_analysis_pass
             | passes.placement_pass
             | passes.static_analysis_pass.StaticAnalysisPass._check_client_imports
             | placement.placement_export
             | placement.placement_facts.settle_server
-            | symbol_utils.report_placement_warnings
-            | tools.normalize_pass { CodeContext },
+            | placement.placement_solver
+            | symbol_utils.report_placement_warnings { CodeContext },
         driver.module_analysis.run_analysis { CodeContext as _CodeCtx },
         native_bindings | types.type_utils { ParamKind, Tokens as Tok },
         passes.access_check_pass
@@ -7492,6 +6796,7 @@ graph import compiler {
             | passes.sym_tab_build_pass
             | passes.variant_agreement_pass { SymbolAccess },
         passes.ast_validation_pass { CodeContext, DeleteTargetError, Tokens as Tok },
+        passes.boundary_analysis_pass.BoundaryAnalysisPass._get_context { CodeContext },
         passes.capability_check_pass.PortabilityWarnPass._check_js_keywords { ExprCtx },
         passes.capability_check_pass.native_capability_violations {
             CodeContext,
@@ -7499,8 +6804,8 @@ graph import compiler {
             Tokens as Tok
         },
         passes.endpoint_effect_pass { SymbolType, Tokens as Tok },
-        passes.layout_pass { OwnershipKind, Tokens as Tok },
-        passes.osp_analysis | placement.placement_solver { CodeContext, Tokens as Tok },
+        passes.layout_pass | types.ct_eval { OwnershipKind, Tokens as Tok },
+        passes.osp_analysis { CodeContext, Tokens as Tok },
         passes.ownership_check_pass {
             OwnershipKind,
             SymbolStorage,
@@ -7529,12 +6834,15 @@ graph import compiler {
         passes.semantic_analysis_pass { ExprCtx, Tokens as Tok },
         passes.static_analysis_pass { ExprCtx, SymbolType, client_state_setter_name },
         passes.type_checker_pass { ImmutabilityKind, Tokens as Tok },
+        passes.type_checker_pass.TypeCheckPass._check_borrowed_scalar_forward {
+            OwnershipKind
+        },
         passes.type_checker_pass.TypeCheckPass.exit_ability { OwnershipKind },
+        placement.placement { SymbolAccess, Tokens as Tok },
         tools.doc_ir_gen_pass { Tokens as Tok, is_mut_kind },
-        tools.jac_auto_lint_pass | types.fixed_width { TOKEN_MAP, Tokens as Tok },
         tools.unparse_pass { OwnershipKind, is_mut_kind },
         types.builtin_extensions { ParamKind, SymbolAccess, SymbolType, Tokens },
-        types.ct_eval { CodeContext, OwnershipKind, Tokens as Tok },
+        types.fixed_width { TOKEN_MAP, Tokens as Tok },
         types.stubcat.reader {
             BindingKind,
             ImmutabilityKind,
@@ -7695,7 +7003,7 @@ graph import compiler {
         passes.boundary_analysis_pass.BoundaryAnalysisPass._reject_owned_type_import {
             E5108
         },
-        passes.capability_check_pass { E5096, W6001, W6002, W6003, W6004 },
+        passes.capability_check_pass { W6001, W6002, W6003, W6004 },
         passes.context { DiagnosticInfo, E9001, LINT_ALIASES, Severity },
         passes.decl_impl_match_pass {
             E2009,
@@ -7797,8 +7105,6 @@ graph import compiler {
         },
         passes.sym_tab_build_pass { E0064, E0077 },
         passes.type_checker_pass {
-            Category,
-            DiagnosticInfo,
             E0033,
             E0108,
             E0109,
@@ -7911,8 +7217,6 @@ graph import compiler {
             E0033,
             E0049,
             E0108,
-            E0109,
-            E1001,
             E1002,
             E1010,
             E1023,
@@ -7945,9 +7249,6 @@ graph import compiler {
             E1073,
             E1080,
             E1081,
-            E1096,
-            E1097,
-            E1098,
             E1099,
             E1100,
             E1101,
@@ -8166,6 +7467,7 @@ graph import compiler {
             | driver.module_compile
             | driver.program.JacProgram.stamp_native_import_facts
             | native_bindings
+            | passes.capability_check_pass
             | passes.import_wiring_pass
             | passes.layout_pass
             | passes.osp_analysis
@@ -8176,7 +7478,7 @@ graph import compiler {
             | types.type_evaluator.TypeEvaluator._init_prelude_from_sources {
             ModuleFacts
         },
-        backends.es.esast_gen_pass.EsastGenPass.prepare | passes.capability_check_pass {
+        backends.es.esast_gen_pass.EsastGenPass.prepare {
             ModuleFacts,
             client_capability_violations
         },
@@ -8216,7 +7518,6 @@ graph import compiler {
     frontend.parser.tokens ++> [
         jc_unit { CommentData, SrcDiag },
         tools.grammar_extract_pass { BUILTIN_TYPE_KINDS, TokenKind },
-        tools.jac_auto_lint_pass { KEYWORDS },
     ]
     type frontend.parser.tokens ++> native_compiler { CommentData, SrcDiag }
     frontend.python.annotation_unparse ++> backends.py.jacpython.product_compile {
@@ -8226,7 +7527,6 @@ graph import compiler {
     frontend.python.ast_nodes ++> [
         backends.py.jacpython.codegen_util {
             Add,
-            And,
             AnnAssign,
             Assert,
             Assign,
@@ -8273,19 +7573,12 @@ graph import compiler {
             Lambda,
             List,
             ListComp,
-            Load,
             Lt,
             LtE,
             MatMult,
             Match,
             MatchAs,
-            MatchClass,
-            MatchMapping,
             MatchOr,
-            MatchSequence,
-            MatchSingleton,
-            MatchStar,
-            MatchValue,
             Mod,
             Mult,
             Name,
@@ -8293,7 +7586,6 @@ graph import compiler {
             Nonlocal,
             Not,
             NotEq,
-            Or,
             Pass,
             Pow,
             RShift,
@@ -8303,7 +7595,6 @@ graph import compiler {
             SetComp,
             Slice,
             Starred,
-            Store,
             Sub,
             Subscript,
             TemplateStr,
@@ -8311,7 +7602,6 @@ graph import compiler {
             TryStar,
             Tuple,
             TypeAlias,
-            UAdd,
             USub,
             UnaryOp,
             While,
@@ -8321,10 +7611,8 @@ graph import compiler {
             alias,
             arguments,
             ast_node,
-            comprehension,
             expr,
             keyword,
-            match_case,
             operator,
             pattern,
             stmt
@@ -8392,8 +7680,6 @@ graph import compiler {
             stmt
         },
         backends.py.jacpython.compiler_codegen {
-            Add,
-            And,
             AnnAssign,
             Assert,
             Assign,
@@ -8402,100 +7688,36 @@ graph import compiler {
             AsyncWith,
             Attribute,
             AugAssign,
-            Await,
-            BinOp,
-            BitAnd,
-            BitOr,
-            BitXor,
-            BoolOp,
             Break,
             ClassDef,
-            Compare,
             Constant,
             Continue,
             Delete,
-            Dict,
-            DictComp,
-            Div,
-            Eq,
-            ExceptHandler,
             Expr,
-            FloorDiv,
             For,
-            FormattedValue,
             FunctionDef,
-            GeneratorExp,
             Global,
-            Gt,
-            GtE,
             If,
-            IfExp,
             Import,
             ImportFrom,
-            In,
-            Interpolation,
-            Invert,
-            Is,
-            IsNot,
-            JoinedStr,
-            LShift,
-            Lambda,
             List,
-            ListComp,
-            Load,
-            Lt,
-            LtE,
-            MatMult,
             Match,
-            MatchAs,
-            MatchClass,
-            MatchMapping,
-            MatchOr,
-            MatchSequence,
-            MatchSingleton,
-            MatchStar,
-            MatchValue,
-            Mod,
-            Mult,
             Name,
-            NamedExpr,
             Nonlocal,
-            Not,
-            NotEq,
-            NotIn,
-            Or,
             Pass,
-            Pow,
-            RShift,
             Raise,
             Return,
-            Set,
-            SetComp,
             Slice,
             Starred,
-            Store,
-            Sub,
             Subscript,
-            TemplateStr,
             Try,
             TryStar,
             Tuple,
             TypeAlias,
-            UAdd,
-            USub,
-            UnaryOp,
             While,
             With,
-            Yield,
-            YieldFrom,
-            alias,
-            arguments,
             ast_node,
-            comprehension,
             expr,
-            keyword,
-            match_case,
-            pattern,
             stmt
         },
         backends.py.jacpython.compiler_defs {
@@ -8517,128 +7739,62 @@ graph import compiler {
             TypeVarTuple,
             arguments,
             expr,
-            keyword,
             stmt,
             type_param
         },
         backends.py.jacpython.compiler_emit {
-            Add,
             And,
-            AnnAssign,
-            Assert,
-            Assign,
-            AsyncFor,
-            AsyncFunctionDef,
-            AsyncWith,
             Attribute,
-            AugAssign,
             Await,
             BinOp,
-            BitAnd,
-            BitOr,
-            BitXor,
             BoolOp,
-            Break,
             Call,
-            ClassDef,
             Compare,
             Constant,
-            Continue,
-            Delete,
             Dict,
             DictComp,
-            Div,
-            Eq,
-            ExceptHandler,
-            Expr,
-            FloorDiv,
-            For,
             FormattedValue,
-            FunctionDef,
             GeneratorExp,
-            Global,
-            Gt,
-            GtE,
-            If,
             IfExp,
-            Import,
-            ImportFrom,
             In,
             Interpolation,
-            Invert,
             Is,
             IsNot,
             JoinedStr,
-            LShift,
             Lambda,
             List,
             ListComp,
             Load,
-            Lt,
-            LtE,
-            MatMult,
-            Match,
-            MatchAs,
-            MatchClass,
-            MatchMapping,
-            MatchOr,
-            MatchSequence,
-            MatchSingleton,
-            MatchStar,
-            MatchValue,
-            Mod,
-            Mult,
             Name,
             NamedExpr,
-            Nonlocal,
             Not,
-            NotEq,
             NotIn,
             Or,
-            Pass,
-            Pow,
-            RShift,
-            Raise,
-            Return,
             Set,
             SetComp,
             Slice,
             Starred,
-            Store,
-            Sub,
             Subscript,
             TemplateStr,
-            Try,
-            TryStar,
             Tuple,
-            TypeAlias,
             UAdd,
             USub,
             UnaryOp,
-            While,
-            With,
             Yield,
             YieldFrom,
             alias,
             arguments,
             ast_node,
             comprehension,
-            expr,
-            keyword,
-            match_case,
-            pattern,
-            stmt
+            expr
         },
         backends.py.jacpython.compiler_exc {
             AsyncWith,
             ExceptHandler,
-            Pass,
             Raise,
-            Return,
             Try,
             TryStar,
             With,
-            expr,
             stmt
         },
         backends.py.jacpython.compiler_ir { stmt },
@@ -8648,8 +7804,7 @@ graph import compiler {
             For,
             If,
             Name,
-            While,
-            stmt
+            While
         },
         backends.py.jacpython.compiler_match {
             Attribute,
@@ -8683,9 +7838,7 @@ graph import compiler {
         validate_ast_value
     }
     frontend.python.compiler_diagnostics ++> [
-        backends.py.jacpython.compiler_codegen | backends.py.jacpython.compiler_emit {
-            lowering_diagnostic
-        },
+        backends.py.jacpython.compiler_emit { lowering_diagnostic },
         backends.py.jacpython.compiler_ir { compiler_diagnostic },
         backends.py.jacpython.flowgraph {
             compiler_diagnostic,
@@ -8711,20 +7864,14 @@ graph import compiler {
             sym_set_scope
         },
         backends.py.jacpython.compiler_codegen {
-            DEF_COMP_ITER,
             SCOPE_CELL,
             SCOPE_FREE,
             SCOPE_GLOBAL_EXPLICIT,
             SCOPE_GLOBAL_IMPLICIT,
-            SCOPE_LOCAL,
-            mangle_name,
             scope_kind,
             sym_block,
-            sym_block_tuple_names,
             sym_dict_get,
-            sym_flag_set,
-            sym_scope_of,
-            sym_sorted_names
+            sym_scope_of
         },
         backends.py.jacpython.compiler_defs {
             SCOPE_GLOBAL_EXPLICIT,
@@ -8858,7 +8005,6 @@ graph import compiler {
             DocRole,
             ElseValueRole,
             ExprRole,
-            ItemsRole,
             Kid,
             NameRefRole,
             ReturnTypeRole,
@@ -9177,8 +8323,7 @@ graph import compiler {
             ModuleItem,
             ModulePath,
             Name,
-            Symbol,
-            UniNode
+            Symbol
         },
         passes.ast_validation_pass {
             Ability,
@@ -9195,7 +8340,6 @@ graph import compiler {
             Enum,
             ExprAsItem,
             ExprStmt,
-            FString,
             ForeverStmt,
             FuncCall,
             FuncSignature,
@@ -9213,21 +8357,17 @@ graph import compiler {
             KWPair,
             LambdaExpr,
             ListVal,
-            Literal,
             MatchStmt,
             Module,
             ModuleCode,
-            MultiString,
             Name,
             ParamVar,
             ReturnStmt,
             SpecialVarRef,
             SwitchStmt,
             Token,
-            TreeWalker,
             TryStmt,
             TupleVal,
-            UnaryExpr,
             UniNode,
             WhileStmt,
             WithStmt,
@@ -9267,7 +8407,6 @@ graph import compiler {
             Slice,
             String,
             Token,
-            TreeWalker,
             TupleVal,
             UnaryExpr,
             UniNode,
@@ -9315,7 +8454,7 @@ graph import compiler {
             YieldExpr,
             in_type_position
         },
-        passes.cfg_build_pass | tools.cfg_dot {
+        passes.cfg_build_pass {
             Ability,
             Archetype,
             AssertStmt,
@@ -9347,7 +8486,6 @@ graph import compiler {
             ListCompr,
             MatchCase,
             MatchStmt,
-            Module,
             ModuleCode,
             Name,
             OpenStmt,
@@ -9360,7 +8498,6 @@ graph import compiler {
             SwitchStmt,
             Test,
             Token,
-            TreeWalker,
             TryStmt,
             TypeAlias,
             TypedCtxBlock,
@@ -9426,20 +8563,13 @@ graph import compiler {
             Module,
             MultiString,
             Name,
-            SpecialVarRef,
             String,
             Symbol,
             Token,
-            TreeWalker,
             UniNode,
             UniScopeNode,
             ability_of_symbol
         },
-        passes.graph_lowering_pass
-            | tools.doc_ir_gen_pass
-            | tools.grammar_extract_pass
-            | tools.jac_auto_lint_pass
-            | tools.unparse_pass { TreeWalker },
         passes.import_wiring_pass {
             Ability,
             AtomTrailer,
@@ -9459,14 +8589,7 @@ graph import compiler {
             UniNode,
             WireTarget
         },
-        passes.jsx_intrinsic_guard_pass {
-            JsxElement,
-            Module,
-            Name,
-            Token,
-            TreeWalker,
-            UniNode
-        },
+        passes.jsx_intrinsic_guard_pass { JsxElement, Module, Name, Token, UniNode },
         passes.layout_pass {
             Ability,
             ArchHas,
@@ -9549,7 +8672,6 @@ graph import compiler {
             Except,
             Expr,
             FString,
-            FinallyStmt,
             FuncCall,
             FuncSignature,
             GlobalVars,
@@ -9784,11 +8906,9 @@ graph import compiler {
             ImplDef,
             InForStmt,
             InnerCompr,
-            Module,
             Name,
             ParamVar,
             SpecialVarRef,
-            TreeWalker,
             TypedCtxBlock,
             UniNode,
             VisitStmt
@@ -9887,7 +9007,6 @@ graph import compiler {
             Symbol,
             Test,
             Token,
-            TreeWalker,
             TryStmt,
             TypeAlias,
             TypeParam,
@@ -9923,7 +9042,6 @@ graph import compiler {
             Except,
             Expr,
             ExprAsItem,
-            FString,
             FilterCompr,
             FormattedValue,
             FuncCall,
@@ -9942,14 +9060,12 @@ graph import compiler {
             KWPair,
             LambdaExpr,
             ListVal,
-            Literal,
             MatchArch,
             MatchAs,
             Module,
             ModuleCode,
             ModuleItem,
             ModulePath,
-            MultiString,
             Name,
             Null,
             ParamVar,
@@ -9958,11 +9074,9 @@ graph import compiler {
             ReturnStmt,
             Slice,
             SpecialVarRef,
-            String,
             SubTag,
             Symbol,
             Token,
-            TreeWalker,
             TupleVal,
             TypeAlias,
             UnaryExpr,
@@ -10011,14 +9125,12 @@ graph import compiler {
             FuncCall,
             GlobalVars,
             HasVar,
-            ImplDef,
             Import,
             KWPair,
             Module,
             ModuleItem,
             ModulePath,
             Name,
-            NameAtom,
             ParamVar,
             Symbol,
             Token,
@@ -10030,7 +9142,40 @@ graph import compiler {
         tests.test_jac_mobui_typing { Import, ModuleItem, Name },
         tests.test_module_exports { Module, PythonModuleAst, Source },
         tests.test_test_block_analysis { FuncCall, Module, Name, Test },
-        tools.normalize_pass { EmptyToken, Tok, Token, TreeWalker },
+        tools.cfg_dot {
+            Ability,
+            Archetype,
+            BoolExpr,
+            CfgExpr,
+            CodeBlockStmt,
+            ElseIf,
+            ElseStmt,
+            Except,
+            Expr,
+            FinallyStmt,
+            ForeverStmt,
+            GlobalVars,
+            IfElseExpr,
+            IfStmt,
+            InForStmt,
+            IterForStmt,
+            MatchCase,
+            MatchStmt,
+            ModuleCode,
+            ReturnStmt,
+            SemDef,
+            Semi,
+            SwitchCase,
+            SwitchStmt,
+            Token,
+            TryStmt,
+            TypeAlias,
+            UniCFGNode,
+            UniNode,
+            WhileStmt,
+            WithStmt
+        },
+        tools.normalize_pass { EmptyToken, Tok, Token },
         tools.treeprinter.print_ast_tree { AstSymbolNode, Token },
         types.builtin_extensions { Name, Source },
         types.ct_eval {
@@ -10051,7 +9196,6 @@ graph import compiler {
             CtrlStmt,
             DictCompr,
             DictVal,
-            ElseIf,
             ElseStmt,
             Enum,
             Expr,
@@ -10087,7 +9231,6 @@ graph import compiler {
             Semi,
             SetCompr,
             SetVal,
-            Slice,
             SpecialVarRef,
             String,
             Symbol,
@@ -10108,7 +9251,6 @@ graph import compiler {
             Enum,
             Int,
             Name,
-            NameAtom,
             String,
             UniNode
         },
@@ -10292,14 +9434,12 @@ graph import compiler {
             ElseIf,
             ElseStmt,
             Expr,
-            HasVar,
             IfStmt,
             ImplDef,
             Import,
             KWPair,
             Module,
             ModuleItem,
-            ModulePath,
             Name,
             Symbol,
             UnaryExpr,
@@ -10395,7 +9535,6 @@ graph import compiler {
             IntrinsicDispatch
         },
         passes.type_checker_pass.TypeCheckPass._check_intrinsic_collision
-            | symbol_utils.classify_call
             | types.type_evaluator.TypeEvaluator._intrinsic_function_type {
             IntrinsicRegistry
         },
@@ -10513,13 +9652,21 @@ graph import compiler {
     ]
     passes.comptime_resolve_pass --> driver.pipeline.ir_passes { ComptimeResolvePass }
     passes.context ++> [
-        backends.es.esast_gen_pass | backends.py.jcir_gen_pass { TreePass },
+        backends.es.esast_gen_pass
+            | backends.py.jcir_gen_pass
+            | tools.cfg_dot
+            | tools.doc_ir_gen_pass
+            | tools.grammar_extract_pass
+            | tools.jac_auto_lint_pass
+            | tools.normalize_pass
+            | tools.unparse_pass { TreePass },
         backends.native.na_compile_pass
             | backends.py.jcir_bc_gen_pass
             | driver.context_passes
+            | placement.placement_solver
             | tools.comment_attach_pass
-            | tools.jac_formatter_pass { CompileContext, CompilerPass },
-        backends.native.na_ir_gen_pass { Alert, CompileContext, CompilerPass },
+            | tools.jac_formatter_pass { CompilerPass },
+        backends.native.na_ir_gen_pass { Alert, CompilerPass },
         driver.ifacecache._alert_from_record
             | driver.module_compile.report_missing_native_ir
             | driver.program
@@ -10529,18 +9676,10 @@ graph import compiler {
         driver.pass_driver { Alert, CompilerPass, DiagnosticPolicy },
         driver.pipeline { CompilerPass, PassSchedule },
         driver.progstate { Alert, CompileContext, PassResult },
-        jc_unit { Alert, CompileContext },
+        jc_unit | types.type_evaluator { CompileContext },
         native_compiler.NativeCompiler.take_pass_results {
             PassResult as CompletedPassResult
         },
-        placement.placement_solver { CompilerPass },
-        tools.cfg_dot
-            | tools.doc_ir_gen_pass
-            | tools.grammar_extract_pass
-            | tools.jac_auto_lint_pass
-            | tools.normalize_pass
-            | tools.unparse_pass { CompileContext, TreePass },
-        types.type_evaluator { CompileContext },
     ]
     type passes.context ++> [
         native_compiler { Alert, PassResult },
@@ -10651,9 +9790,6 @@ graph import compiler {
         backends.native.na_ir_gen_pass.NaIRGenPass._exc_stored_message {
             EXC_MESSAGE_FIELD
         },
-        backends.native.na_ir_gen_pass.NaIRGenPass._exception_handler_targets {
-            class_type_native_name
-        },
         backends.native.na_ir_gen_pass.NaIRGenPass._exception_member_name {
             class_type_native_name
         },
@@ -10694,9 +9830,6 @@ graph import compiler {
         },
         backends.native.na_ir_gen_pass.NaIRGenPass._nogc_type_arg_mangles {
             native_type_key
-        },
-        backends.native.na_ir_gen_pass.NaIRGenPass._osp_edge_class_name {
-            class_type_native_name
         },
         backends.native.na_ir_gen_pass.NaIRGenPass._register_archetypes {
             get_layout_registry,
@@ -10997,9 +10130,6 @@ graph import compiler {
             symbol_owner_archetype
         },
         backends.es.esast_gen_pass.EsastGenPass._partition_client_import_items {
-            ClientImportVerdict,
-            classify_client_import_item,
-            is_client_boundary_import,
             report_dead_client_import
         },
         backends.es.esast_gen_pass.EsastGenPass._resolve_call_ability {
@@ -11043,9 +10173,6 @@ graph import compiler {
             report_serverless_kind_errors
         },
         passes.static_analysis_pass.StaticAnalysisPass._check_client_imports {
-            ClientImportVerdict,
-            classify_client_import_item,
-            is_client_boundary_import,
             report_dead_client_import,
             resolve_import_source_module
         },
@@ -11056,15 +10183,6 @@ graph import compiler {
         passes.type_checker_pass.TypeCheckPass._check_intrinsic_collision
             | types.type_evaluator.TypeEvaluator._intrinsic_function_type {
             intrinsic_registry_if_ready
-        },
-        types.type_evaluator.TypeEvaluator._get_type_of_lhs_assignment {
-            find_destructure_index_path
-        },
-        types.type_evaluator.TypeEvaluator._loop_body_writes_target {
-            collect_assignment_target_keys
-        },
-        types.type_evaluator.TypeEvaluator._narrowed_type_for_expr {
-            reference_key_deps
         },
         types.type_evaluator.TypeEvaluator._resolve_importer_path {
             resolve_importer_path_from_node
@@ -11082,29 +10200,12 @@ graph import compiler {
             CallKind,
             classify_call
         },
-        placement.placement_export.collect_placement_rows {
-            ClientImportVerdict,
-            classify_client_import_item,
-            is_client_boundary_import,
+        placement.placement_export.collect_placement_rows
+            | types.type_evaluator.TypeEvaluator._is_sv_async_call {
             resolve_import_source_module
         },
         placement.placement_solver.PlacementApplyPass._run_impl {
             report_serverless_kind_errors
-        },
-        placement.placement_solver._pull_boundary_import {
-            symbol_linked_source_module
-        },
-        types.type_evaluator.TypeEvaluator._get_type_from_flow_node {
-            collect_assignment_target_keys,
-            find_destructure_index_path
-        },
-        types.type_evaluator.TypeEvaluator._is_sv_async_call {
-            ClientImportVerdict,
-            classify_client_import_item,
-            resolve_import_source_module
-        },
-        types.type_evaluator.TypeEvaluator.create_key_for_reference {
-            int_subscript_suffix
         },
     ]
     tools.cfg_dot ++> driver.pipeline.cfg_dot_passes { CoalesceBBPass }
@@ -11166,7 +10267,6 @@ graph import compiler {
         },
         backends.es.esast_gen_pass.EsastGenPass.exit_archetype
             | backends.native.na_ir_gen_pass.NaIRGenPass._codegen_sized_builtin_call
-            | c_interop.c_type_spec
             | passes.type_checker_pass.TypeCheckPass.exit_archetype
             | types.type_evaluator.TypeEvaluator._is_typed_c_declaration {
             JAC_TYPE_REGISTRY
@@ -11227,97 +10327,51 @@ graph import compiler {
         },
         backends.native.na_ir_gen_pass.NaIRGenPass._instantiate_generic { ct_mangle },
         backends.py.jcir_gen_pass.JcirGenPass._ct_kind {
-            CtBool,
-            CtBytes,
             CtDict,
             CtEnumMember,
-            CtFloat,
             CtFunc,
-            CtInt,
             CtList,
-            CtNone,
             CtRecord,
             CtSet,
-            CtStr,
             CtTuple,
             CtType,
-            ct_host_scalar,
-            ct_is_materializable,
-            ct_is_scalar,
-            ct_repr
+            ct_is_scalar
         },
         backends.py.jcir_gen_pass.JcirGenPass._ct_materializable {
-            CtBool,
-            CtBytes,
-            CtDict,
-            CtEnumMember,
-            CtFloat,
-            CtFunc,
-            CtInt,
-            CtList,
-            CtNone,
-            CtRecord,
-            CtSet,
-            CtStr,
-            CtTuple,
-            CtType,
-            ct_host_scalar,
-            ct_is_materializable,
-            ct_is_scalar,
-            ct_repr
+            ct_is_materializable
         },
         backends.py.jcir_gen_pass.JcirGenPass._ct_order_key {
             CtBool,
             CtBytes,
-            CtDict,
             CtEnumMember,
             CtFloat,
             CtFunc,
             CtInt,
-            CtList,
             CtNone,
-            CtRecord,
             CtSet,
             CtStr,
             CtTuple,
             CtType,
-            ct_host_scalar,
-            ct_is_materializable,
-            ct_is_scalar,
             ct_repr
         },
         backends.py.jcir_gen_pass.JcirGenPass._materialize {
-            CtBool,
-            CtBytes,
             CtDict,
             CtEnumMember,
-            CtFloat,
             CtFunc,
             CtInt,
             CtList,
-            CtNone,
             CtRecord,
             CtSet,
-            CtStr,
             CtTuple,
             CtType,
             ct_host_scalar,
-            ct_is_materializable,
-            ct_is_scalar,
-            ct_repr
+            ct_is_scalar
         },
         backends.py.jcir_gen_pass.JcirGenPass.int_const_of { int_host, int_wide_bytes },
         frontend.host.HostServices.ct_environment | frontend.kernel_inputs {
             CtEnvironment
         },
-        passes.type_checker_pass {
-            CT_DEFERRED,
-            CtValue,
-            ct_is_iterable,
-            ct_str,
-            ct_truthy,
-            ct_type_name
-        },
+        passes.type_checker_pass { ct_is_iterable, ct_str, ct_truthy, ct_type_name },
     ]
     type types.ct_value ++> [
         backends.py.jcir_gen_pass { CtInt, CtRecord, CtValue },
@@ -11401,7 +10455,7 @@ graph import compiler {
     types.type_utils ++> [
         backends.es.esast_gen_pass.EsastGenPass._expr_type_name { expr_primitive_name },
         backends.es.esast_gen_pass.EsastGenPass._resolve_primitive_type_name
-            | backends.native.na_ir_gen_pass.NaIRGenPass._agg_key_args {
+            | backends.native.na_ir_gen_pass.NaIRGenPass._container_class_name {
             primitive_type_name_of
         },
         backends.es.esast_gen_pass.EsastGenPass._try_primitive_op {
@@ -11409,9 +10463,6 @@ graph import compiler {
         },
         backends.native.na_ir_gen_pass.NaIRGenPass._check_native_import_names {
             lookup_symtab
-        },
-        backends.native.na_ir_gen_pass.NaIRGenPass._container_class_name {
-            primitive_type_name_of
         },
         backends.native.na_ir_gen_pass.NaIRGenPass._is_boolean_result_expr {
             primitive_type_name_of
@@ -11485,14 +10536,15 @@ graph import compiler {
             FunctionType,
             ParameterCategory
         },
-        backends.es.esast_gen_pass.EsastGenPass._exit_name_impl
-            | passes.layout_pass.is_enum_class_type { ClassType as _ClassType },
+        backends.es.esast_gen_pass.EsastGenPass._exit_name_impl {
+            ClassType as _ClassType
+        },
         backends.es.esast_gen_pass.EsastGenPass._field_constructor_args
-            | backends.native.na_ir_gen_pass.NaIRGenPass._exception_handler_targets
+            | backends.native.na_ir_gen_pass.NaIRGenPass._exception_member_name
             | passes.layout_pass.declaring_module_path
             | passes.ownership_check_pass._is_class_object { ClassType },
         backends.es.esast_gen_pass.EsastGenPass._osp_expr_arch_name
-            | backends.native.na_ir_gen_pass.NaIRGenPass._exception_member_name
+            | backends.native.na_ir_gen_pass.NaIRGenPass._sort_key_orderable
             | passes.layout_pass.enum_class_of { ClassType },
         backends.native.na_ir_gen_pass {
             ClassType,
@@ -11523,8 +10575,6 @@ graph import compiler {
         backends.native.na_ir_gen_pass.NaIRGenPass._lower_clib_function_type {
             FunctionType as CallbackType
         },
-        backends.native.na_ir_gen_pass.NaIRGenPass._sort_key_orderable
-            | passes.layout_pass.record_interface_twins { ClassType },
         backends.native.na_ir_gen_pass.NaIRGenPass._sort_key_return_type
             | c_interop.c_param_type { FunctionType },
         backends.native.na_ir_gen_pass.NaIRGenPass._typed_elem_llvm_of {
@@ -11542,16 +10592,14 @@ graph import compiler {
         frontend.kernel_host { ClassDetailsShared, ClassType, TypeBase },
         native_bindings { ClassType, FunctionType, OverloadedType, TypeBase },
         passes.capability_check_pass._class_bounded_typevar { ClassType, TypeVarType },
-        passes.layout_pass.class_form_enum_member {
-            EnumMemberType,
-            EnumMemberType as _EnumMemberType
-        },
+        passes.layout_pass.class_form_enum_member { EnumMemberType },
         passes.layout_pass.native_type_key {
             ClassType,
             FunctionType,
             OverloadedType,
             UnionType
         },
+        passes.layout_pass.record_interface_twins { ClassType },
         passes.layout_pass.referenced_archetype { ClassType },
         passes.layout_pass.referenced_native_name { ClassType },
         passes.ownership_check_pass.OwnershipCheckPass._emit_place_intrinsic_diagnostics {
@@ -11767,7 +10815,6 @@ graph import compiler.backends.es {
             | jac_runtime_js._build_types_runtime_js { JSCodeGenerator },
     ]
     es_unparse --> esast_gen_pass.EsastGenPass.exit_func_call { JSCodeGenerator }
-    esast_gen_pass ++> client_kernel_cache._lower { EsastGenPass }
     type esast_gen_pass ++> jsx_processor { EsastGenPass }
     estree as es ++> backends.react
         | backends.solid
@@ -11956,7 +11003,6 @@ graph import compiler.backends.native {
     kernel_stage0 ++> kernel_resolve.build_kernel { link_kernel }
     link_glue ++> [
         link_plan {
-            ENTRY_SYMBOL,
             GlueSpec,
             GlueUnit,
             RC_THREADED_SYMBOL,
@@ -12051,7 +11097,7 @@ graph import compiler.backends.native {
             native_demoted_ir_symbols,
             native_linked_ir_text
         },
-        link_plan { NATIVE_CODE_MODEL, NATIVE_RELOC_MODEL, optimize_unit },
+        link_plan { NATIVE_CODE_MODEL, NATIVE_RELOC_MODEL },
         wasm_build.prepare_wasm_module { optimize_unit },
     ]
     na_constants ++> [
@@ -12081,7 +11127,6 @@ graph import compiler.backends.native {
             FACT_PRIMITIVE_METHODS,
             FACT_SEALED_RUNTIME,
             FACT_SEP,
-            FACT_STRUCT_LAYOUTS,
             FACT_TARGET,
             JACVAL_ELLIPSIS_TAG,
             LIVE_NODE_NEXT_OFF,
@@ -12093,8 +11138,6 @@ graph import compiler.backends.native {
             NATIVE_COPY_FUNCS,
             NATIVE_OSPATH_FUNCS,
             NATIVE_OS_FUNCS,
-            NATIVE_RANDOM_FUNCS,
-            NATIVE_STRUCT_FUNCS,
             RC_BUFFERED_BIT,
             RC_COLOR_BLACK,
             RC_COLOR_GRAY,
@@ -12191,7 +11234,6 @@ graph import compiler.backends.native.llvm.binding {
         ffi { _is_shutting_down },
         module | targets | value { _decode_string, _encode_string },
     ]
-    config ++> targets { _has_svml as has_svml }
     context ++> module { get_global_context }
     initfini ++> targets { llvm_version_info }
     linker ++> module { link_modules }
@@ -12281,58 +11323,26 @@ graph import compiler.backends.py {
 
 graph import compiler.backends.py.jacpython {
     assembler ++> compiler_annotations
-        | compiler_codegen
         | compiler_defs
         | compiler_emit
         | product_compile { assemble }
     codegen_util ++> [
-        compiler_annotations { expr_loc, nloc, no_loc, stmt_loc },
+        compiler_annotations { expr_loc, nloc, stmt_loc },
         compiler_codegen {
-            args_have_kw_defaults,
-            ast_cmp_kind,
             ast_node_name,
-            async_function_def_loc,
-            binop_id,
             body_docstring,
-            body_is_try_except_only,
-            body_is_try_finally_only,
-            call_effective_args,
-            call_func_loc,
-            class_effective_bases,
-            class_effective_keywords,
-            cmpop_filter_oparg,
-            cmpop_oparg,
-            comp_bound_names_from_target,
-            comp_dict_map_loc,
-            comp_leftmost_leaf,
-            comp_name_bound,
-            display_all_constant,
-            display_const_items,
-            display_has_starred,
             exec_tail_emits_code,
             expr_loc,
             fold_slice_const,
-            function_argcounts,
-            function_code_flags,
-            function_def_loc,
-            import_bind_name,
             inplace_binop_id,
             is_seq_literal,
-            loop_body_has_break,
-            match_pattern_loc,
-            match_pattern_unwrap_or,
-            match_pattern_wildcard,
             nloc,
             seq_target_elts,
             starred_target_index,
             stmt_loc,
-            top_loc,
-            try_fold_binop,
-            try_handler_span,
-            unary_opcode
+            top_loc
         },
         compiler_defs {
-            async_function_def_loc,
             body_docstring,
             class_effective_bases,
             class_effective_keywords,
@@ -12340,7 +11350,6 @@ graph import compiler.backends.py.jacpython {
             expr_loc,
             function_argcounts,
             function_code_flags,
-            function_def_loc,
             import_bind_name,
             nested_code_qualname,
             nloc,
@@ -12350,72 +11359,35 @@ graph import compiler.backends.py.jacpython {
             args_have_kw_defaults,
             ast_cmp_kind,
             ast_node_name,
-            async_function_def_loc,
             binop_id,
-            body_is_try_except_only,
-            body_is_try_finally_only,
             call_effective_args,
             call_effective_keywords,
             call_func_loc,
-            class_effective_bases,
-            class_effective_keywords,
-            cmpop_filter_oparg,
-            cmpop_oparg,
-            comp_bound_names_from_target,
             comp_dict_map_loc,
             comp_leftmost_leaf,
             comp_name_bound,
             display_all_constant,
             display_const_items,
             display_has_starred,
-            exec_tail_emits_code,
             expr_loc,
             fold_default_leaf_values,
             fold_slice_const,
             function_argcounts,
             function_code_flags,
-            function_def_loc,
-            import_bind_name,
-            inplace_binop_id,
-            is_seq_literal,
-            loop_body_has_break,
-            match_pattern_loc,
-            match_pattern_unwrap_or,
-            match_pattern_wildcard,
             nested_code_qualname,
             nloc,
-            seq_target_elts,
-            starred_target_index,
-            stmt_loc,
-            top_loc,
             try_fold_binop,
-            try_handler_span,
             unary_opcode
         },
-        compiler_exc {
-            body_is_try_except_only,
-            body_is_try_finally_only,
-            exec_tail_emits_code,
-            expr_loc,
-            nloc,
-            stmt_loc,
-            try_handler_span
-        },
-        compiler_loops {
-            exec_tail_emits_code,
-            expr_loc,
-            loop_body_has_break,
-            loop_body_has_try,
-            nloc
-        },
+        compiler_exc { exec_tail_emits_code, expr_loc, nloc, stmt_loc },
+        compiler_loops { expr_loc, nloc },
         compiler_match {
             exec_tail_emits_code,
             expr_loc,
             match_pattern_loc,
             match_pattern_unwrap_or,
             match_pattern_wildcard,
-            nloc,
-            stmt_loc
+            nloc
         },
     ]
     compiler_annotations ++> [
@@ -12436,21 +11408,13 @@ graph import compiler.backends.py.jacpython {
     ]
     compiler_codegen ++> [
         compiler_annotations.ann_store_target_tos
-            | compiler_emit.emit_comprehension_loop { visit_store_target_tos },
+            | compiler_emit.emit_comprehension_loop
+            | compiler_loops { visit_store_target_tos },
         compiler_defs { emit_name_store, visit_stmt },
         compiler_exc {
             emit_module_return,
             emit_name_delete,
             emit_name_store,
-            emit_unit_loop_exit_epilogue,
-            visit_return_stmt,
-            visit_stmt_tail,
-            visit_stmts,
-            visit_store_target_tos
-        },
-        compiler_loops {
-            emit_module_return,
-            emit_tail_and_finish,
             visit_stmt_tail,
             visit_stmts,
             visit_store_target_tos
@@ -12471,74 +11435,30 @@ graph import compiler.backends.py.jacpython {
             codegen_busy,
             codegen_fail,
             codegen_mangle,
-            fast_local_index,
             fast_varnames_from_sym,
             freevars_from_sym,
             localsplus_index,
             localsplus_index_u,
-            visit_expr,
-            visit_subscript_index
+            visit_expr
         },
         compiler_codegen {
             cellvars_from_sym,
             codegen_busy,
             codegen_fail,
             codegen_mangle,
-            comp_append_handler,
-            comp_emit_bind_target,
-            comp_emit_cleanup,
-            comp_emit_filters,
-            comp_emit_setup,
-            comp_emit_single_elt,
-            comp_finish_loop,
-            comp_lead_loopvar_slot,
-            comp_name_fast_index,
-            comp_target_slots,
-            compile_lambda_cfg,
-            emit_anext_send_loop_footer,
-            emit_anext_send_loop_header,
-            emit_await_send_except_regions,
-            emit_await_send_loop_footer,
-            emit_await_send_loop_header,
-            emit_branch_if_test_false,
             emit_branch_if_test_true,
-            emit_cmp_link,
             emit_control_unwind,
-            emit_folded_int,
-            emit_function_defaults,
-            emit_function_kwdefaults,
-            emit_function_prologue,
             emit_generator_except_handler,
-            emit_make_function_with_closure,
-            emit_name_load,
             emit_return_unwind,
-            emit_send_delegation_loop,
             emit_slice_bound,
-            emit_slice_load,
-            emit_starred_list_build,
             emit_suspendable_prologue,
             fast_local_index,
             fast_varnames_from_sym,
             finish_control_unwind,
             flush_pending_await_footers,
-            freevars_from_sym,
-            is_none_identity_test,
             localsplus_index,
             localsplus_index_u,
-            name_load_opcode,
-            register_int_literal_const,
-            try_emit_fast_local_pair_load,
-            unit_fail,
-            varname_index,
-            visit_boolop,
-            visit_comp_dict_kv,
-            visit_comp_elt,
-            visit_compare,
-            visit_dict_comp,
             visit_expr,
-            visit_lambda,
-            visit_list_comp,
-            visit_set_comp,
             visit_subscript_index,
             visit_test_expr
         },
@@ -12556,10 +11476,8 @@ graph import compiler.backends.py.jacpython {
             emit_function_kwdefaults,
             emit_function_prologue,
             emit_generator_except_handler,
-            emit_local_or_cell_store,
             emit_make_function_with_closure,
             emit_name_load,
-            fast_local_index,
             fast_varnames_from_sym,
             flush_pending_await_footers,
             freevars_from_sym,
@@ -12573,20 +11491,13 @@ graph import compiler.backends.py.jacpython {
             await_send_loop,
             codegen_busy,
             codegen_fail,
-            emit_await_send_except_regions,
-            emit_await_send_loop_footer,
-            emit_await_send_loop_header,
-            emit_return_unwind,
             emit_send_delegation_loop,
             visit_expr
         },
         compiler_loops {
             codegen_busy,
             codegen_fail,
-            emit_anext_send_loop_footer,
-            emit_anext_send_loop_header,
             emit_branch_if_test_false,
-            emit_branch_if_test_true,
             emit_send_delegation_loop,
             visit_expr,
             visit_test_expr
@@ -12601,10 +11512,7 @@ graph import compiler.backends.py.jacpython {
             visit_test_expr
         },
     ]
-    compiler_exc ++> [
-        compiler_defs { emit_deferred_comp_handlers },
-        compiler_loops { emit_anext_send_except_regions },
-    ]
+    compiler_exc ++> compiler_defs { emit_deferred_comp_handlers }
     compiler_exc as dispatch_exc ++> [
         compiler_codegen.finish_source_scope
             | compiler_emit.compile_genexp_cfg
@@ -12625,22 +11533,7 @@ graph import compiler.backends.py.jacpython {
             loc,
             same_loc
         },
-        codegen_util {
-            basicblock,
-            cfg_builder,
-            cinstr,
-            cloc,
-            comp_handler,
-            except_region,
-            loc,
-            loop_frame,
-            mk_instr,
-            mk_jump,
-            new_cfg_builder,
-            no_loc,
-            stmt_cont,
-            unverified_cfg
-        },
+        codegen_util { cloc, loc },
         compiler_annotations {
             basicblock,
             cfg_builder,
@@ -12648,6 +11541,7 @@ graph import compiler.backends.py.jacpython {
             cloc,
             loc,
             new_cfg_builder,
+            no_loc,
             stmt_cont,
             unverified_cfg
         },
@@ -12657,13 +11551,8 @@ graph import compiler.backends.py.jacpython {
             cfg_builder,
             cinstr,
             cloc,
-            comp_handler,
             control_unwind,
-            except_region,
             loc,
-            loop_frame,
-            mk_instr,
-            mk_jump,
             new_cfg_builder,
             no_loc,
             stmt_cont,
@@ -12682,22 +11571,16 @@ graph import compiler.backends.py.jacpython {
             await_footer_job,
             basicblock,
             cfg_builder,
-            cinstr,
             cleanup_frame,
             cloc,
             comp_handler,
             control_unwind,
             except_region,
             loc,
-            loop_frame,
-            mk_instr,
-            mk_jump,
             new_cfg_builder,
             no_loc,
-            stmt_cont,
             try_await_frame,
-            unverified_cfg,
-            with_unwind_rec
+            unverified_cfg
         },
         compiler_exc {
             await_footer_job,
@@ -12706,11 +11589,9 @@ graph import compiler.backends.py.jacpython {
             cleanup_frame,
             cloc,
             except_region,
-            loc,
             no_loc,
             stmt_cont,
-            try_await_frame,
-            with_unwind_rec
+            try_await_frame
         },
         compiler_loops {
             basicblock,
@@ -12719,11 +11600,9 @@ graph import compiler.backends.py.jacpython {
             cinstr,
             cloc,
             except_region,
-            loc,
             loop_frame,
             mk_instr,
             mk_jump,
-            no_loc,
             same_loc,
             stmt_cont
         },
@@ -12742,8 +11621,7 @@ graph import compiler.backends.py.jacpython {
     flowgraph ++> [
         assembler { flatten_blocks, verified_cfg },
         compiler_annotations | compiler_defs | product_compile { verify_cfg },
-        compiler_codegen { optimize_swap_range, verify_cfg },
-        compiler_emit { build_layout_pos, layout_pos, optimize_swap_range, verify_cfg },
+        compiler_emit { build_layout_pos, layout_pos, verify_cfg },
         compiler_exc { build_layout_pos, layout_pos },
         compiler_loops { MAX_COPY_SIZE, copy_cinstr },
         compiler_match { optimize_swap_range },
@@ -12792,34 +11670,24 @@ graph import compiler.driver {
         _coerce_native_module
     }
     compilation_context ++> [
-        application._prepare | ifacecache.artifact_cache_path {
+        application._sections | ifacecache.artifact_cache_path {
             cache_scope,
             program_for
         },
-        application._sections { cache_scope, program_for },
         application._semantic_metadata
             | ifacecache.IfaceRegistry.ensure
             | unit_products.dependency_span_rows { program_for },
-        compiler.JacCompiler.compile {
-            bind_options,
+        compiler.JacCompiler.get_bytecode
+            | ifacecache.IfaceRegistry._compilation_scope
+            | session_compile.compile_in_session {
             compilation_scope,
-            context_program
-        },
-        compiler.JacCompiler.get_bytecode {
-            bind_options,
-            compilation_scope,
-            context_program,
             owner_scope_options
         },
         compiler.JacCompiler.get_client_artifact {
-            bind_options,
             compilation_scope,
-            context_program,
             owner_scope_options
         },
-        compiler.JacCompiler.last_client_artifact
-            | ifacecache.IfaceRegistry._compilation_scope
-            | session_compile.compile_in_session {
+        compiler.JacCompiler.last_client_artifact {
             compilation_scope,
             owner_scope_options
         },
@@ -12883,13 +11751,8 @@ graph import compiler.driver {
         nativecache.NativeUnitRegistry.record_module { env_na_debug },
     ]
     type compile_options ++> pipeline | program { CancelToken }
-    compiler ++> [
-        build_services.CompilerBuildServices.compiler
-            | program.JacProgram._get_compiler { JacCompiler },
-        program.JacProgram.jac_file_formatter { JacCompiler },
-        program.JacProgram.jac_file_linter { JacCompiler },
-        program.JacProgram.jac_str_formatter { JacCompiler },
-    ]
+    compiler ++> build_services.CompilerBuildServices.compiler
+        | program.JacProgram._get_compiler { JacCompiler }
     type compiler ++> build_services | program { JacCompiler }
     context_passes ++> pipeline {
         AbsorbImportsPass,
@@ -12908,7 +11771,6 @@ graph import compiler.driver {
             read_sections
         },
         application._identity { compiler_generation },
-        application._prepare { cache_mode },
         application._prepare_revision { ct_dep_digest },
         application._prepare_sealed {
             HEADER_SIZE,
@@ -12986,19 +11848,16 @@ graph import compiler.driver {
         ifacecache.artifact_cache_path { get_module_cache_path },
         nativecache {
             NativeStamp,
-            PRECOMPILE_SENTINEL,
             SEC_NBITCODE,
             SEC_NCTDEPS,
             SEC_NIFACE,
             SEC_NOBJ,
-            SEC_PLACEMENT,
             cache_mode,
             carried_native_sections,
             compute_content_sha256,
             ct_dep_text_fresh,
             current_native_stamp,
             get_module_cache_path,
-            is_module_cache_valid,
             jir_cacheable_source_path,
             module_cache_invalid_reason,
             module_cache_key,
@@ -13074,8 +11933,6 @@ graph import compiler.driver {
             require
         },
         compiler.JacCompiler.assemble_python { require },
-        compiler.JacCompiler.jac_file_formatter { require },
-        compiler.JacCompiler.jac_str_formatter { require },
         module_analysis.ModuleAnalysis.ready { product_ready },
         module_compile { product_passes, unavailable },
         source_failures.bootstrap_tier_failure_details { tier_reason },
@@ -13092,7 +11949,6 @@ graph import compiler.driver {
         ifacecache.IfaceRegistry._prepare { product_facts },
         nativecache.NativeBuildSession.lower { invalidate, require },
     ]
-    pipeline_runner ++> application._prepare { compile_application }
     pipeline_runner --> [
         application._prepare_revision { compile_application },
         application.prepare_route_metadata { route_exports },
@@ -13100,7 +11956,7 @@ graph import compiler.driver {
     pipeline_types ++> [
         compiler { AnalysisFact, CompilationProduct },
         context_passes { PassContract },
-        ifacecache | program { AnalysisFact },
+        ifacecache { AnalysisFact },
         module_analysis { AnalysisFact, CompilationProduct, ProductRequest },
         module_compile { CompilationProduct, ProductRequest },
         pipeline {
@@ -13167,10 +12023,6 @@ graph import compiler.driver {
     type session_compile ++> module_analysis { SessionHooks }
     setup_progress ++> compiler { setup_progress }
     source_failures ++> [
-        application._prepare {
-            bootstrap_tier_failure_details,
-            module_scoped_failure_details
-        },
         compiler {
             CompilerSourceError,
             bootstrap_tier_failure_details,
@@ -13255,14 +12107,7 @@ graph import compiler.frontend {
             NATIVE_ERASED_TYPE_MARKERS,
             TYPE_PARAM_CONSTRUCTORS
         },
-        parser.parser {
-            CodeContext,
-            OwnershipKind,
-            ParamKind,
-            SymbolAccess,
-            SymbolType,
-            Tokens as Tok
-        },
+        parser.parser { CodeContext, OwnershipKind, ParamKind, Tokens as Tok },
         unitree {
             BUILTIN_CALLABLE_NAMES,
             BindingKind,
@@ -13501,8 +12346,8 @@ graph import compiler.frontend {
         kernel_inputs { LayoutTables },
     ]
     srcloc ++> [
-        codeinfo | unitree { CodeLocInfo },
         kernel_analyze | parser.frontend { Span },
+        unitree { CodeLocInfo },
     ]
     unitree ++> [
         const_fold {
@@ -13827,15 +12672,7 @@ graph import compiler.frontend.parser {
     parser ++> frontend { Parser, parse_expression as _parse_expression }
     tokens ++> [
         frontend { CommentData, SrcDiag },
-        lexer {
-            CommentData,
-            LexToken,
-            SourceLoc,
-            SrcDiag,
-            TokenKind,
-            is_special_var_kind,
-            lookup_keyword
-        },
+        lexer { CommentData, LexToken, SourceLoc, SrcDiag, TokenKind, lookup_keyword },
         parser {
             CommentData,
             LexToken,
@@ -14040,7 +12877,6 @@ graph import compiler.frontend.python {
             expr_context,
             keyword,
             match_case,
-            mod,
             operator,
             pattern,
             stmt,
@@ -14278,21 +13114,14 @@ graph import compiler.frontend.python {
             arg,
             arguments,
             ast_node,
-            boolop,
-            cmpop,
             comprehension,
             excepthandler,
             expr,
-            expr_context,
             keyword,
             match_case,
-            mod,
-            operator,
             pattern,
             stmt,
-            type_ignore,
             type_param,
-            unaryop,
             withitem
         },
         ast_walk {
@@ -14425,7 +13254,6 @@ graph import compiler.frontend.python {
             Call,
             ClassDef,
             Compare,
-            Del,
             Delete,
             Dict,
             DictComp,
@@ -14444,7 +13272,6 @@ graph import compiler.frontend.python {
             Lambda,
             List,
             ListComp,
-            Load,
             Match,
             MatchAs,
             MatchClass,
@@ -14454,7 +13281,6 @@ graph import compiler.frontend.python {
             MatchSingleton,
             MatchStar,
             MatchValue,
-            Module,
             Name,
             NamedExpr,
             Nonlocal,
@@ -14466,7 +13292,6 @@ graph import compiler.frontend.python {
             SetComp,
             Slice,
             Starred,
-            Store,
             Subscript,
             TemplateStr,
             Try,
@@ -14486,7 +13311,6 @@ graph import compiler.frontend.python {
             ast_node,
             comprehension,
             expr,
-            match_case,
             pattern,
             stmt,
             type_param
@@ -14511,7 +13335,6 @@ graph import compiler.frontend.python {
             Continue,
             Del,
             Delete,
-            Dict,
             DictComp,
             Expr,
             For,
@@ -14561,38 +13384,24 @@ graph import compiler.frontend.python {
         parser {
             Add,
             And,
-            AnnAssign,
             Assert,
-            Assign,
             AsyncFor,
             AsyncFunctionDef,
             AsyncWith,
-            Attribute,
-            AugAssign,
             Await,
-            BinOp,
             BitAnd,
             BitOr,
             BitXor,
-            BoolOp,
-            Break,
-            Call,
             ClassDef,
-            Compare,
-            Constant,
-            Continue,
             Del,
-            Delete,
             Dict,
             DictComp,
             Div,
             Eq,
             ExceptHandler,
-            Expr,
             Expression,
             FloorDiv,
             For,
-            FormattedValue,
             FunctionDef,
             FunctionType,
             GeneratorExp,
@@ -14600,16 +13409,13 @@ graph import compiler.frontend.python {
             Gt,
             GtE,
             If,
-            IfExp,
             Import,
             ImportFrom,
             In,
             Interactive,
-            Interpolation,
             Invert,
             Is,
             IsNot,
-            JoinedStr,
             LShift,
             Lambda,
             List,
@@ -14622,9 +13428,7 @@ graph import compiler.frontend.python {
             MatchAs,
             MatchClass,
             MatchMapping,
-            MatchOr,
             MatchSequence,
-            MatchSingleton,
             MatchStar,
             MatchValue,
             Mod,
@@ -14642,24 +13446,17 @@ graph import compiler.frontend.python {
             Pow,
             RShift,
             Raise,
-            Return,
             Set,
             SetComp,
-            Slice,
-            Starred,
             Store,
             Sub,
-            Subscript,
-            TemplateStr,
             Try,
             TryStar,
-            Tuple,
             TypeAlias,
             TypeVar,
             TypeVarTuple,
             UAdd,
             USub,
-            UnaryOp,
             While,
             With,
             Yield,
@@ -14667,12 +13464,10 @@ graph import compiler.frontend.python {
             alias,
             arg,
             arguments,
-            ast_node,
             cmpop,
             comprehension,
             excepthandler,
             expr,
-            expr_context,
             keyword,
             match_case,
             mod,
@@ -14683,8 +13478,6 @@ graph import compiler.frontend.python {
             withitem
         },
         parser_actions {
-            Add,
-            And,
             AnnAssign,
             Assign,
             AsyncFunctionDef,
@@ -14692,9 +13485,6 @@ graph import compiler.frontend.python {
             AugAssign,
             Await,
             BinOp,
-            BitAnd,
-            BitOr,
-            BitXor,
             BoolOp,
             Break,
             Call,
@@ -14702,78 +13492,47 @@ graph import compiler.frontend.python {
             Compare,
             Constant,
             Continue,
-            Del,
             Delete,
             Dict,
             DictComp,
-            Div,
-            Eq,
             Expr,
             Expression,
-            FloorDiv,
             FormattedValue,
             FunctionDef,
             GeneratorExp,
-            Gt,
-            GtE,
             IfExp,
             ImportFrom,
-            In,
             Interpolation,
-            Invert,
-            Is,
-            IsNot,
             JoinedStr,
-            LShift,
             Lambda,
             List,
             ListComp,
             Load,
-            Lt,
-            LtE,
-            MatMult,
             MatchOr,
             MatchSingleton,
-            Mod,
             Module,
-            Mult,
             Name,
             NamedExpr,
-            Not,
-            NotEq,
-            NotIn,
-            Or,
             Pass,
-            Pow,
-            RShift,
             Return,
             Set,
             SetComp,
             Slice,
             Starred,
-            Store,
-            Sub,
             Subscript,
             TemplateStr,
             Tuple,
-            UAdd,
-            USub,
             UnaryOp,
             Yield,
             YieldFrom,
             alias,
             arg,
             arguments,
-            ast_node,
             boolop,
             cmpop,
-            comprehension,
-            excepthandler,
             expr,
             expr_context,
             keyword,
-            match_case,
-            mod,
             operator,
             pattern,
             stmt,
@@ -14789,8 +13548,6 @@ graph import compiler.frontend.python {
         compiler_validate { ast_child_buffer, ast_child_visitor, visit_ast_children },
     ]
     compiler_diagnostics ++> compiler_symtable {
-        compiler_diag_kind,
-        compiler_diag_message,
         compiler_diagnostic,
         symbol_diagnostic
     }
@@ -14835,7 +13592,6 @@ graph import compiler.frontend.python {
         pa_ast_unaryop,
         pa_aug_op,
         pa_call_args,
-        pa_call_from_optional_args,
         pa_call_keywords,
         pa_check,
         pa_check_fstring_conversion,
@@ -14850,7 +13606,6 @@ graph import compiler.frontend.python {
         pa_concatenate_tstrings,
         pa_constant_bool,
         pa_constant_ellipsis,
-        pa_constant_from_expr,
         pa_constant_from_fstring_middle,
         pa_constant_from_string,
         pa_constant_from_token,
@@ -14861,13 +13616,9 @@ graph import compiler.frontend.python {
         pa_ensure_imaginary,
         pa_ensure_real,
         pa_err_occurred,
-        pa_expr_end_col_offset,
-        pa_expr_end_lineno,
-        pa_expr_lineno,
         pa_formatted_value,
         pa_function_def_decorators,
         pa_get_cmpops,
-        pa_get_expr_name,
         pa_get_exprs,
         pa_get_keys,
         pa_get_last_comprehension_item,
@@ -14877,7 +13628,6 @@ graph import compiler.frontend.python {
         pa_interactive_exit,
         pa_interpolation,
         pa_join_names_with_dot,
-        pa_join_sequences,
         pa_join_sequences_kw_or_starred,
         pa_joined_str,
         pa_key_pattern_pair,
@@ -14901,16 +13651,12 @@ graph import compiler.frontend.python {
         pa_raise_syntax_known_expr,
         pa_raise_syntax_known_range,
         pa_raise_type_param_error,
-        pa_seq_append_to_end,
         pa_seq_append_to_end_expr,
-        pa_seq_append_to_end_stmt,
         pa_seq_count_dots,
         pa_seq_delete_starred_exprs,
         pa_seq_extract_starred_exprs,
         pa_seq_first,
         pa_seq_flatten,
-        pa_seq_get,
-        pa_seq_insert_front,
         pa_seq_insert_front_alias,
         pa_seq_insert_front_arg,
         pa_seq_insert_front_expr,
@@ -14922,7 +13668,6 @@ graph import compiler.frontend.python {
         pa_seq_insert_front_type_param,
         pa_seq_insert_front_withitem,
         pa_seq_last,
-        pa_seq_len,
         pa_set_context,
         pa_setup_full_format_spec,
         pa_singleton_seq,
@@ -14941,7 +13686,6 @@ graph import compiler.frontend.python {
             STAR_TARGETS,
             peg_check_memo,
             peg_enter_rule,
-            peg_expect_forced_result,
             peg_expect_forced_token,
             peg_expect_soft_keyword,
             peg_expect_token,
@@ -14970,9 +13714,7 @@ graph import compiler.frontend.python {
     ]
     source_encoding ++> source_input { source_encoding }
     syntax_error ++> [
-        compiler_diagnostics | compiler_validate | source_encoding | source_input {
-            syntax_failure
-        },
+        compiler_validate | source_encoding | source_input { syntax_failure },
         parser { decode_source_lines, source_character_column, syntax_failure },
         parser_actions { source_line_bytes, syntax_failure },
     ]
@@ -14988,7 +13730,6 @@ graph import compiler.frontend.python {
             NEWLINE,
             NT_OFFSET,
             NUMBER,
-            OP,
             STRING,
             TSTRING_END,
             TSTRING_MIDDLE,
@@ -14998,17 +13739,12 @@ graph import compiler.frontend.python {
         parser_actions { mk_diag, tok_loc },
         peg_runtime {
             COMMENT,
-            DEDENT,
             ENDMARKER,
             ERRORTOKEN,
-            INDENT,
             NAME,
             NEWLINE,
             NL,
-            NT_OFFSET,
             NUMBER,
-            TOK_NO_COLUMN,
-            TOK_NO_LINE,
             TYPE_IGNORE,
             is_whitespace_token,
             mk_diag,
@@ -15019,11 +13755,9 @@ graph import compiler.frontend.python {
         },
         tokenizer {
             COLON,
-            COMMA,
             COMMENT,
             DEDENT,
             ENDMARKER,
-            ERRORTOKEN,
             EXACT_TOKEN_TYPES,
             FSTRING_END,
             FSTRING_MIDDLE,
@@ -15050,7 +13784,6 @@ graph import compiler.frontend.python {
             mk_diag,
             tok_diag,
             tok_loc_span,
-            tok_no_loc,
             tok_token
         },
     ]
@@ -15074,12 +13807,13 @@ graph import compiler.passes {
             | layout_pass
             | mtir_gen_pass
             | ownership_check_pass
+            | package_boundary_pass
             | pyast_load_pass
             | rc_facts_pass
             | region_infer_pass
             | sem_def_match_pass
             | static_analysis_pass
-            | variant_agreement_pass { CompileContext, CompilerPass },
+            | variant_agreement_pass { CompilerPass },
         ast_validation_pass
             | boundary_analysis_pass
             | cfg_build_pass
@@ -15087,11 +13821,10 @@ graph import compiler.passes {
             | graph_lowering_pass
             | jsx_intrinsic_guard_pass
             | semantic_analysis_pass
-            | sym_tab_build_pass
-            | type_checker_pass { CompileContext, TreePass },
+            | sym_tab_build_pass { TreePass },
         execution { Alert, CompileContext, CompilerPass, DiagnosticPolicy, PassResult },
-        package_boundary_pass { CompilerPass },
         placement_pass { Alert, CompilerPass },
+        type_checker_pass { CompileContext, TreePass },
     ]
     dataflow ++> [
         ownership_check_pass {
@@ -15151,7 +13884,6 @@ graph import compiler.placement {
             get_module_summary,
             record_placement_evidence,
             scan_native_blockers,
-            summarize_module,
             summary_store
         },
         placement_solver._endpoint_veto_applies { project_has_server },
@@ -15251,9 +13983,7 @@ graph import compiler.tests {
 graph import compiler.tools {
     cfg_dot ++> lang_tools { cfg_dot_from_file }
     doc_ir as doc ++> doc_ir_gen_pass | jac_formatter_pass;
-    doc_ir_gen_pass ++> jac_formatter_pass.format_module | lang_tools { DocIRGenPass }
     jac_formatter_pass ++> lang_tools { unparse_module }
-    normalize_pass ++> jac_formatter_pass.unparse_module { NormalizePass }
     reactive_use_walk ++> jac_auto_lint_pass { ReactiveUseWalker }
     treeprinter ++> lang_tools {
         print_ast_tree,
@@ -15278,15 +14008,13 @@ graph import compiler.types {
     }
     ct_eval ++> type_evaluator { CtEvaluator }
     ct_format ++> [
-        ct_builtins { ct_binary, ct_format, ct_str_format, pad_text },
+        ct_builtins { ct_binary, ct_format, ct_str_format },
         ct_eval { ct_binary, ct_convert, ct_format, ct_inplace },
     ]
     ct_int ++> [
         ct_builtins {
-            MAX_STR_DIGITS,
             mag_bit_length,
             mag_divmod,
-            mag_from_int,
             mag_gcd,
             mag_isqrt,
             mag_low_bits_nonzero,
@@ -15296,7 +14024,6 @@ graph import compiler.types {
             mag_to_int
         },
         ct_ops {
-            MAG_MASK,
             MAG_SHIFT,
             MAX_STR_DIGITS,
             mag_add,
@@ -15331,7 +14058,6 @@ graph import compiler.types {
     ct_ops ++> [
         ct_builtins {
             ct_binop,
-            ct_contains,
             ct_hash,
             ct_int_parse,
             ct_lt,
@@ -15366,7 +14092,6 @@ graph import compiler.types {
         ct_format {
             ct_binop,
             ct_getitem,
-            int_abs,
             int_is_neg,
             int_to_base_str,
             int_to_float,
@@ -15398,7 +14123,6 @@ graph import compiler.types {
             CtValue,
             CtView,
             as_ct_int,
-            ct_eq,
             ct_exc,
             ct_exc_value,
             ct_iter,
@@ -15427,7 +14151,6 @@ graph import compiler.types {
             mk_set,
             mk_str,
             mk_tuple,
-            range_len,
             set_add,
             set_discard,
             set_has
@@ -15463,9 +14186,7 @@ graph import compiler.types {
             CtTuple,
             CtType,
             CtValue,
-            CtView,
             as_ct_int,
-            ascii_escape,
             ct_eq,
             ct_exc,
             ct_exc_is,
@@ -15484,19 +14205,16 @@ graph import compiler.types {
             mk_set,
             mk_str,
             mk_tuple,
-            range_len,
-            set_add
+            range_len
         },
         ct_format {
             CtBool,
-            CtBytes,
             CtDict,
             CtEnumMember,
             CtError,
             CtFloat,
             CtInt,
             CtList,
-            CtNone,
             CtRecord,
             CtSet,
             CtStr,
@@ -15510,16 +14228,11 @@ graph import compiler.types {
             ct_repr,
             ct_str,
             ct_type_name,
-            dict_get,
             dict_set,
             float_to_ct_int,
-            int_decimal,
             mk_str
         },
         ct_ops {
-            CT_FALSE,
-            CT_NONE,
-            CT_TRUE,
             CtBool,
             CtBytes,
             CtDeferred,
@@ -15534,7 +14247,6 @@ graph import compiler.types {
             CtNone,
             CtRaise,
             CtRange,
-            CtRecord,
             CtSet,
             CtStr,
             CtTuple,
@@ -15549,9 +14261,7 @@ graph import compiler.types {
             ct_is_unhashable,
             ct_iter,
             ct_len,
-            ct_repr,
             ct_same_or_eq,
-            ct_str,
             ct_truthy,
             ct_type_name,
             dict_copy,
@@ -15573,7 +14283,6 @@ graph import compiler.types {
             mk_set,
             mk_str,
             mk_tuple,
-            range_len,
             set_add,
             set_has,
             set_key_of,
@@ -15590,7 +14299,6 @@ graph import compiler.types {
         operations {
             arithmetic_result_type,
             both_numeric,
-            folded_number,
             numeric_name_of,
             shift_result_type,
             unify_numeric_operands
@@ -15622,7 +14330,6 @@ graph import compiler.types {
         type_evaluator.TypeEvaluator._is_instance_method_member {
             SYMF_INSTANCE_METHOD
         },
-        type_evaluator.TypeEvaluator._is_unbound_method_call { SYMF_INSTANCE_METHOD },
         type_evaluator.TypeEvaluator._merge_catalog_field_params {
             SYMF_DEFER,
             SYMF_HAS_DEFAULT
@@ -15662,10 +14369,6 @@ graph import compiler.types {
             apply_solved_type_vars,
             build_type_var_solution
         },
-        stubcat.writer.CatalogWriter.property_facts
-            | type_evaluator.TypeEvaluator._classify_property_symbol {
-            PropertyWriteKind
-        },
         type_evaluator {
             ClassMember,
             ParamAssignmentTracker,
@@ -15679,7 +14382,6 @@ graph import compiler.types {
             compute_mro_linearization,
             convert_to_instance,
             get_declared_generator_return_type,
-            is_generator_family_type,
             lookup_symtab,
             shadowed_type_var_names,
             specialize_for_base_class,
@@ -15687,6 +14389,7 @@ graph import compiler.types {
         },
         type_evaluator.TypeEvaluator._apply_function_decorators
             | types.FunctionType.specialize_func_type_vars { apply_solved_type_vars },
+        type_evaluator.TypeEvaluator._classify_property_symbol { PropertyWriteKind },
         type_evaluator.TypeEvaluator._heal_ancestry { ensure_mro_fresh },
         type_evaluator.TypeEvaluator._heal_class_bases { linearize_mro, mro_signature },
         type_evaluator.TypeEvaluator._lookup_class_member { ensure_mro_fresh },
@@ -15718,7 +14421,7 @@ graph import compiler.types {
             ParameterCategory,
             TypeBase
         },
-        ct_eval { ClassType, ModuleType, TypeBase, UnknownType },
+        ct_eval { ClassType, ModuleType, TypeBase },
         enum_utils { ClassType, EnumMemberInfo, TypeBase },
         fixed_width { AnyType, ClassType, TypeBase, UnionType, UnknownType },
         operations {
@@ -15773,7 +14476,6 @@ graph import compiler.types {
             ClassDetailsPrivate,
             ClassDetailsShared,
             ClassType,
-            EnumMemberInfo,
             EnumMemberType,
             FunctionType,
             FunctionTypeFlags,
@@ -16065,7 +14767,7 @@ graph import dist.payload {
     assemble ++> cli { MkPayloadOpts, mk_payload }
     assemble --> cli.dispatch { resolve_python, run_stubcat }
     fetch ++> [
-        assemble { TYPESHED_VENDOR, fetch_typeshed },
+        assemble { TYPESHED_VENDOR },
         cli { fetch_bun, fetch_llvm, fetch_typeshed, typeshed_sha },
     ]
     fsutil ++> [
@@ -16170,7 +14872,7 @@ graph import dist.publish {
     runtime_npm ++> npm_sources { runtime_api_names }
     runtime_vendor ++> builder { build_runtime_closure, scan_jaclang_imports }
     sources ++> [
-        builder { SourceFile, collect_source_files, read_source_file },
+        builder { collect_source_files, read_source_file },
         npm_sources { EXCLUDED_DIRS },
     ]
     wheel_archive ++> [
@@ -16229,8 +14931,7 @@ graph import lsp.protocol {
         TextDocumentSyncKind,
         VersionedTextDocumentIdentifier,
         WINDOW_LOG_MESSAGE,
-        WINDOW_SHOW_MESSAGE,
-        WORKSPACE_SEMANTIC_TOKENS_REFRESH
+        WINDOW_SHOW_MESSAGE
     }
 }
 
@@ -16283,7 +14984,6 @@ graph import packages {
             RegistryError,
             api_rel_path,
             index_rel_path,
-            parse_index_lines,
             registry_named
         },
         resolve { IndexEntry, Registry, RegistryError, registry_named, registry_urls },
@@ -16328,7 +15028,7 @@ graph import packages {
     resolve ++> [
         artifact.package_manifest { manifest_npm, manifest_pypi },
         commands { manifest_inputs },
-        install { ResolveError, manifest_inputs, pip_requirement, resolve_graph },
+        install { ResolveError, manifest_inputs, resolve_graph },
         templates { running_jac_version },
     ]
     semver ++> [
@@ -16349,24 +15049,13 @@ graph import packages {
 
 graph import project {
     app_kinds ++> [
-        apps.AppConfig.entry_path { kind_entry },
+        apps.AppConfig.entry_path | template_loader.migrate_implicit_app { kind_entry },
         apps.AppConfig.ui { kind_ui },
         apps.parse_apps { KIND_SPECS },
-        kinds {
-            KIND_SPECS,
-            KindSpec,
-            MOBILE_PLATFORMS,
-            UI_DOM,
-            UI_MOBUI,
-            VALID_KINDS,
-            is_valid_kind,
-            kind_entry,
-            kind_has_client,
-            kind_is_mobui,
-            kind_spec,
-            kind_ui
-        },
-        workspace { UI_MOBUI, kind_codespace, kind_entry, kind_has_server, kind_ui },
+        config.JacConfig.serving_apps | template_registry._core_template { kind_spec },
+        kinds { KIND_SPECS, KindSpec, VALID_KINDS },
+        template_loader.scaffold_app { kind_entry },
+        workspace { kind_codespace, kind_entry, kind_has_server, kind_ui },
     ]
     apps ++> [
         config { AppConfig, implicit_app, parse_apps },
@@ -16452,11 +15141,10 @@ graph import project {
     }
     kinds ++> [
         config.JacConfig.resolved_kind { resolve_app_kind, resolve_entry },
-        config.JacConfig.serving_apps | template_registry._core_template { kind_spec },
         providers.capability_dependencies { plan_app_run },
-        template_loader.migrate_implicit_app { kind_entry },
-        template_loader.scaffold_app { KIND_SPECS, kind_entry },
-        template_registry.TemplateRegistry.list_kinds { KIND_SPECS },
+        template_loader.scaffold_app | template_registry.TemplateRegistry.list_kinds {
+            KIND_SPECS
+        },
     ]
     modresolver ++> [
         apps.resolve_entry_path | compiler_host.ProjectHost.resolve_local_module {
@@ -16483,7 +15171,7 @@ graph import project {
         config.find_project_root { find_project_root as _find_project_root },
         kernel_snapshot.other_compiler_dir { COMPILER_PACKAGE },
         kernel_snapshot.session_inputs { get_jac_search_paths, get_typeshed_paths },
-        package_scope { MOUNTS_DIR_NAME, is_scoped_package_name, module_name_in },
+        package_scope { MOUNTS_DIR_NAME, is_scoped_package_name },
     ]
     package_scope ++> dependencies { is_package_name }
     persistence ++> [
@@ -16500,7 +15188,6 @@ graph import project {
         },
         providers {
             ensure_venv,
-            get_venv_site_packages,
             make_git_spec,
             make_pip_spec,
             run_pip,
@@ -16614,7 +15301,6 @@ graph import runtime {
     builtin --> archetype.Archetype.__init_subclass__ { _jac_region_instrument }
     cinterop as _cinterop_mod --> builtin.__getattr__;
     constants ++> [
-        archetype { EdgeDir },
         context { Constants as Con },
         runtime { EdgeDir, colors },
     ]
@@ -17081,7 +15767,6 @@ graph import runtime.python {
             | modules.fcntl
             | modules.hashlib
             | modules.hashopenssl
-            | modules.hmac
             | modules.lzma
             | modules.multibytecodec
             | modules.pickle
@@ -17161,13 +15846,7 @@ graph import runtime.python {
         },
         modules.opcode { borrowed_false, borrowed_none, borrowed_true },
         modules.socket { convert_unsigned_int },
-        modules.sqlite3 {
-            ClassToken,
-            bad_argument,
-            borrowed_false,
-            borrowed_none,
-            borrowed_true
-        },
+        modules.sqlite3 { ClassToken, bad_argument, borrowed_false, borrowed_true },
         modules.ssl { bad_argument, borrowed_false, borrowed_none, borrowed_true },
     ]
     bindings.members ++> [
@@ -17240,7 +15919,10 @@ graph import runtime.python {
             | object_model.template
             | object_model.union { visit_reference },
         modules.decimal_number { jacpy_binding_state_set, visit_reference },
-        modules.elementtree { jacpy_binding_module_native_get, visit_reference },
+        modules.elementtree | modules.pyexpat {
+            jacpy_binding_module_native_get,
+            visit_reference
+        },
         modules.hashopenssl {
             MethodDefinition,
             jacpy_binding_module_native_get,
@@ -17248,14 +15930,10 @@ graph import runtime.python {
             jacpy_binding_state_get
         },
         modules.posix_core { jacpy_binding_module_native_get, jacpy_binding_state_get },
-        modules.posix_fileio | modules.posix_ids { add_state_owned },
-        modules.posix_process { add_state_owned, jacpy_binding_state_set },
-        modules.posix_stat { add_state_owned, jacpy_binding_module_native_get },
-        modules.pyexpat | modules.sqlite3 | modules.zoneinfo {
-            jacpy_binding_module_native_get,
-            jacpy_binding_module_native_present,
-            visit_reference
+        modules.posix_fileio | modules.posix_ids | modules.posix_stat {
+            add_state_owned
         },
+        modules.posix_process { add_state_owned, jacpy_binding_state_set },
         modules.select {
             MethodCallbacks,
             MethodDefinition,
@@ -17263,6 +15941,11 @@ graph import runtime.python {
             jacpy_binding_module_native_get,
             jacpy_binding_module_native_present,
             jacpy_binding_state_get,
+            visit_reference
+        },
+        modules.sqlite3 | modules.zoneinfo {
+            jacpy_binding_module_native_get,
+            jacpy_binding_module_native_present,
             visit_reference
         },
         modules.sre | modules.zstd {
@@ -17312,8 +15995,6 @@ graph import runtime.python {
             clear_payload,
             dispose_payload,
             jacpy_binding_dealloc_guard,
-            jacpy_binding_native_get,
-            jacpy_binding_native_present,
             jacpy_binding_native_set,
             jacpy_binding_own_get,
             jacpy_binding_own_present,
@@ -17321,7 +16002,6 @@ graph import runtime.python {
         },
         modules.posix_stat {
             dispose_payload,
-            jacpy_binding_native_clear,
             jacpy_binding_native_get,
             jacpy_binding_native_present,
             jacpy_binding_native_set
@@ -17424,10 +16104,9 @@ graph import runtime.python {
             jacpy_binding_basicsize,
             jacpy_binding_matches,
             jacpy_binding_owner,
-            jacpy_binding_token,
-            jacpy_binding_type_matches
+            jacpy_binding_token
         },
-        modules.lsprof { descriptor_get, jacpy_binding_allocate },
+        modules.lsprof { descriptor_get },
         modules.multibytecodec | modules.struct {
             jacpy_binding_allocate,
             jacpy_binding_owner
@@ -17473,8 +16152,8 @@ graph import runtime.python {
             text_value,
             type_name
         },
-        bindings.array { object_error, text_object },
-        bindings.asyncio | bindings.module | modules.openssl { c_string_copy },
+        bindings.array | bindings.functools { object_error, text_object },
+        bindings.asyncio | bindings.module { c_string_copy },
         bindings.clinic.abc
             | bindings.clinic.array
             | bindings.clinic.asyncio
@@ -17562,7 +16241,6 @@ graph import runtime.python {
             | bindings.resource
             | bindings.select
             | bindings.socket
-            | bindings.ssl
             | bindings.termios
             | bindings.time
             | modules.abc
@@ -17583,12 +16261,8 @@ graph import runtime.python {
             | modules.suggestions
             | modules.termios
             | modules.zoneinfo { object_error },
-        bindings.functools | bindings.operator {
-            boundary_failure,
-            object_error,
-            text_object
-        },
         bindings.json { boundary_failure, object_error, object_tuple, type_name },
+        bindings.operator { boundary_failure, object_error, text_object },
         bindings.pickle { builtin_kind, builtin_type, object_error, text_value },
         bindings.stat | bindings.syslog | modules.lzma | modules.stat | modules.zstd {
             boundary_failure,
@@ -17625,13 +16299,7 @@ graph import runtime.python {
             read_buffer,
             write_buffer
         },
-        modules.cmath {
-            boundary_failure,
-            checked,
-            object_error,
-            object_tuple,
-            required
-        },
+        modules.cmath { boundary_failure, object_error, object_tuple, required },
         modules.collections {
             boundary_failure,
             checked,
@@ -17793,7 +16461,7 @@ graph import runtime.python {
             object_tuple,
             required
         },
-        modules.posix_stat { audit_event, boundary_failure },
+        modules.posix_stat { audit_event },
         modules.pyexpat {
             StaticText,
             c_string_text,
@@ -17810,7 +16478,7 @@ graph import runtime.python {
             text_value,
             type_name
         },
-        modules.socket { boundary_failure, c_string_text, object_error },
+        modules.socket { c_string_text, object_error },
         modules.socket_address {
             c_string_length,
             c_string_text,
@@ -17865,7 +16533,7 @@ graph import runtime.python {
             text_object,
             text_value
         },
-        tokenize { boundary_failure, checked, required, text_object },
+        tokenize { checked, required, text_object },
     ]
     capi --> [
         modules.json { repr_value, serialization_note, type_name },
@@ -17997,7 +16665,6 @@ graph import runtime.python {
             | bindings.codecs_tw
             | bindings.itertools
             | bindings.posixshmem
-            | bindings.state
             | bindings.statistics
             | bindings.suggestions
             | bindings.sysconfig
@@ -18020,7 +16687,6 @@ graph import runtime.python {
         },
         bindings.clinic.abc
             | bindings.clinic.fcntl
-            | bindings.clinic.json
             | bindings.clinic.locale
             | bindings.clinic.mmap
             | bindings.clinic.operator
@@ -18265,7 +16931,6 @@ graph import runtime.python {
             PyInterpreterState_Get,
             PyLong_FromDouble,
             PyLong_FromLong,
-            PyMemberDef,
             PyMethodDef,
             PyModule_Add,
             PyModule_AddIntConstant,
@@ -18319,12 +16984,10 @@ graph import runtime.python {
             PyUnicode_FromString,
             PyUnicode_InternFromString,
             Py_NewRef,
-            Py_None,
             jacpy_is_type,
             jacpy_release
         },
         bindings.elementtree {
-            NULL,
             PyExc_SyntaxError,
             PyImport_ImportModule,
             PyImport_ImportModuleAttrString,
@@ -18373,7 +17036,6 @@ graph import runtime.python {
             Py_NotImplemented,
             Py_TYPE,
             jacpy_dict_size,
-            jacpy_error_pending,
             jacpy_recursion_enter,
             jacpy_release,
             jacpy_tuple_item,
@@ -18386,7 +17048,6 @@ graph import runtime.python {
             jacpy_struct_sequence_type
         },
         bindings.hashopenssl {
-            NULL,
             PyLong_FromLong,
             PyModule_Add,
             PyModule_AddIntConstant,
@@ -18492,7 +17153,6 @@ graph import runtime.python {
             jacpy_release
         },
         bindings.posix {
-            NULL,
             PyDict_New,
             PyDict_SetItemString,
             PyExc_ImportError,
@@ -18579,7 +17239,6 @@ graph import runtime.python {
             PyMem_Free,
             PyMem_Malloc,
             PyMemberDef,
-            PyMethodDef,
             PyModule_Add,
             PyModule_AddIntConstant,
             PyModule_AddObjectRef,
@@ -18597,7 +17256,6 @@ graph import runtime.python {
             PyDict_New,
             PyExc_Exception,
             PyImport_ImportModuleAttrString,
-            PyLong_FromLong,
             PyModule_AddIntConstant,
             PyModule_AddObjectRef,
             PyObject,
@@ -18617,7 +17275,6 @@ graph import runtime.python {
             PyType_FromModuleAndSpec,
             PyType_Slot,
             PyType_Spec,
-            Py_None,
             jacpy_release
         },
         bindings.ssl {
@@ -18815,15 +17472,7 @@ graph import runtime.python {
             jacpy_set_new,
             jacpy_tuple_set_owned
         },
-        layouts {
-            PyMemberDef,
-            PyMethodDef,
-            PyObject,
-            PyType_Slot,
-            PyType_Spec,
-            Py_buffer,
-            Py_complex
-        },
+        layouts { PyMemberDef, PyMethodDef, PyObject, Py_buffer, Py_complex },
         modules.abc {
             NULL,
             PyDict_Pop,
@@ -18985,7 +17634,6 @@ graph import runtime.python {
             PyObject,
             PyObject_CallFinalizerFromDealloc,
             PyObject_CallMethodObjArgs,
-            PyObject_CallNoArgs,
             PyObject_CallOneArg,
             PyObject_ClearManagedDict,
             PyObject_ClearWeakRefs,
@@ -19048,8 +17696,6 @@ graph import runtime.python {
             PyList_New,
             PyList_SetItem,
             PyList_Size,
-            PyMem_Free,
-            PyMem_Malloc,
             PyObject,
             PyObject_CallMethodObjArgs,
             PyObject_CallNoArgs,
@@ -19111,7 +17757,6 @@ graph import runtime.python {
             jacpy_tuple_set_owned
         },
         modules.binary_scalars {
-            NULL,
             PyLong_FromLongLong,
             PyLong_FromUnsignedLongLong,
             PyObject
@@ -19188,7 +17833,6 @@ graph import runtime.python {
             PyMem_RawMalloc,
             PyMem_Realloc,
             PyObject,
-            PyThreadState,
             PyThread_acquire_lock,
             PyThread_allocate_lock,
             PyThread_free_lock,
@@ -19368,8 +18012,7 @@ graph import runtime.python {
             jacpy_set_exception,
             jacpy_tuple_item,
             jacpy_type_check,
-            jacpy_unicode_size,
-            jacpy_writer_new
+            jacpy_unicode_size
         },
         modules.datetime { NULL, PyArg_UnpackTuple, PyObject },
         modules.datetime_date {
@@ -19417,7 +18060,6 @@ graph import runtime.python {
             PyErr_SetString,
             PyErr_WarnEx,
             PyExc_DeprecationWarning,
-            PyExc_OverflowError,
             PyExc_TypeError,
             PyExc_UnicodeEncodeError,
             PyExc_ValueError,
@@ -19509,7 +18151,6 @@ graph import runtime.python {
             PyObject_CallMethod,
             PyObject_CallNoArgs,
             PySequence_GetItem,
-            PyUnicodeWriter,
             PyUnicodeWriter_Create,
             PyUnicodeWriter_Discard,
             PyUnicodeWriter_Finish,
@@ -19654,7 +18295,6 @@ graph import runtime.python {
             PyObject_GenericSetAttr,
             PyObject_GetIter,
             PyObject_IsTrue,
-            PyTuple_Pack,
             PyType_GetModule,
             PyUnicode_CompareWithASCIIString,
             PyUnicode_FromFormat,
@@ -19675,7 +18315,6 @@ graph import runtime.python {
             PyErr_NoMemory,
             PyErr_Occurred,
             PyErr_SetString,
-            PyExc_RuntimeError,
             PyExc_TypeError,
             PyExc_ValueError,
             PyFloat_AsDouble,
@@ -19690,7 +18329,6 @@ graph import runtime.python {
             PyMem_Free,
             PyMem_Malloc,
             PyObject,
-            PyObject_CallOneArg,
             PyObject_GetAttrString,
             PyObject_IsInstance,
             PyTuple_GetItem,
@@ -19698,7 +18336,6 @@ graph import runtime.python {
             PyUnicode_GetLength,
             PyUnicode_ReadChar,
             Py_NewRef,
-            Py_None,
             Py_NotImplemented,
             _PyUnicode_IsWhitespace,
             _PyUnicode_ToDecimalDigit,
@@ -19727,7 +18364,6 @@ graph import runtime.python {
             PyFloat_AsDouble,
             PyFloat_FromString,
             PyImport_ImportModuleAttrString,
-            PyLongWriter,
             PyLongWriter_Create,
             PyLongWriter_Finish,
             PyLong_AsSsize_t,
@@ -19741,7 +18377,6 @@ graph import runtime.python {
             PyMem_Malloc,
             PyObject,
             PyObject_Call,
-            PyObject_CallFunction,
             PyObject_CallMethod,
             PyObject_CallOneArg,
             PyObject_GC_UnTrack,
@@ -19760,7 +18395,6 @@ graph import runtime.python {
             Py_BuildValue,
             Py_NewRef,
             Py_None,
-            Py_NotImplemented,
             _PyLong_GCD,
             jacpy_bytes_address,
             jacpy_bytes_from_memory,
@@ -19827,7 +18461,6 @@ graph import runtime.python {
             PyDict_PopString,
             PyDict_SetItem,
             PyDict_Size,
-            PyDict_Type,
             PyDict_Update,
             PyErr_Clear,
             PyErr_ExceptionMatches,
@@ -19875,7 +18508,6 @@ graph import runtime.python {
             PyObject_RichCompareBool,
             PyObject_SetAttr,
             PyObject_SetAttrString,
-            PyObject_Vectorcall,
             PySequence_Fast,
             PyTuple_GetItem,
             PyTuple_New,
@@ -19965,7 +18597,6 @@ graph import runtime.python {
             PyExc_SystemError,
             PyExc_TypeError,
             PyIter_Next,
-            PyLong_AsLongLong,
             PyLong_FromLongLong,
             PyODict_Type,
             PyObject,
@@ -20209,7 +18840,6 @@ graph import runtime.python {
             PyList_Append,
             PyList_GetItemRef,
             PyList_Sort,
-            PyLong_AsLongLong,
             PyLong_FromLongLong,
             PyLong_FromVoidPtr,
             PyMapping_Items,
@@ -20236,7 +18866,6 @@ graph import runtime.python {
             Py_None,
             jacpy_dict_default,
             jacpy_dict_size,
-            jacpy_error_pending,
             jacpy_fast_item,
             jacpy_fast_size,
             jacpy_float_repr,
@@ -20255,8 +18884,7 @@ graph import runtime.python {
             jacpy_recursion_enter,
             jacpy_release,
             jacpy_tuple_item,
-            jacpy_unicode_size,
-            jacpy_writer_new
+            jacpy_unicode_size
         },
         modules.locale {
             NULL,
@@ -20623,7 +19251,6 @@ graph import runtime.python {
             jacpy_is_code,
             jacpy_release
         },
-        modules.openssl { NULL, PyErr_Format, PyErr_SetString, PyObject },
         modules.operator {
             NULL,
             PyDict_Next,
@@ -20631,7 +19258,6 @@ graph import runtime.python {
             PyExc_TypeError,
             PyImport_ImportModuleAttrString,
             PyList_GetItemRef,
-            PyLong_AsLongLong,
             PyNumber_Absolute,
             PyNumber_Add,
             PyNumber_And,
@@ -20668,7 +19294,6 @@ graph import runtime.python {
             PyObject_GetItem,
             PyObject_IsTrue,
             PyObject_LengthHint,
-            PyObject_Repr,
             PyObject_RichCompare,
             PyObject_SetItem,
             PySequence_Concat,
@@ -20689,11 +19314,9 @@ graph import runtime.python {
             jacpy_list_size,
             jacpy_power,
             jacpy_release,
-            jacpy_text,
             jacpy_tuple_item,
             jacpy_tuple_set_owned,
-            jacpy_unicode_split,
-            jacpy_utf8
+            jacpy_unicode_split
         },
         modules.output_buffer {
             NULL,
@@ -20824,7 +19447,6 @@ graph import runtime.python {
             PyList_GetItemRef,
             PyLong_AsLongLong,
             PyLong_FromLongLong,
-            PyLong_FromUnsignedLongLong,
             PyLong_FromVoidPtr,
             PyMapping_Items,
             PyNumber_Add,
@@ -20884,7 +19506,6 @@ graph import runtime.python {
             PyExc_Exception,
             PyExc_ImportError,
             PyExc_RuntimeError,
-            PyExc_TypeError,
             PyExc_ValueError,
             PyImport_Import,
             PyImport_ImportModuleAttrString,
@@ -20984,11 +19605,9 @@ graph import runtime.python {
             PyThreadState,
             PyThreadState_GetInterpreter,
             PyThreadState_GetUnchecked,
-            PyThread_get_thread_ident,
             PyUnicode_AsWideCharString,
             PyUnicode_DecodeFSDefaultAndSize,
             PyUnicode_EncodeFSDefault,
-            PyUnicode_FSConverter,
             PyUnicode_InternFromString,
             Py_NewRef,
             Py_None,
@@ -21262,7 +19881,6 @@ graph import runtime.python {
             PyEval_SaveThread,
             PyExc_FileNotFoundError,
             PyExc_NotImplementedError,
-            PyExc_TypeError,
             PyExc_Warning,
             PyFloat_FromDouble,
             PyList_Append,
@@ -21290,7 +19908,6 @@ graph import runtime.python {
             Py_XNewRef,
             _PyLong_FromTime_t,
             _Py_dup,
-            jacpy_bytes_length,
             jacpy_closedir,
             jacpy_errno,
             jacpy_fdopendir,
@@ -21388,9 +20005,7 @@ graph import runtime.python {
             PyMem_RawRealloc,
             PyObject,
             PySequence_Contains,
-            PyThreadState,
             PyUnicode_EncodeFSDefault,
-            PyUnicode_FromString,
             jacpy_fs_text,
             jacpy_release
         },
@@ -21654,7 +20269,6 @@ graph import runtime.python {
             Py_BuildValue,
             Py_NewRef,
             Py_None,
-            Py_buffer,
             _Py_dup,
             jacpy_buffer_release,
             jacpy_bytes_address,
@@ -21748,7 +20362,6 @@ graph import runtime.python {
             PyErr_NoMemory,
             PyErr_Occurred,
             PyErr_ResourceWarning,
-            PyErr_SetFromErrno,
             PyErr_SetRaisedException,
             PyErr_SetString,
             PyErr_WarnEx,
@@ -21804,7 +20417,6 @@ graph import runtime.python {
         },
         modules.sqlite3 {
             NULL,
-            PyBool_Type,
             PyByteArray_FromObject,
             PyByteArray_Type,
             PyBytes_AsString,
@@ -21832,7 +20444,6 @@ graph import runtime.python {
             PyEval_SaveThread,
             PyExc_AttributeError,
             PyExc_DeprecationWarning,
-            PyExc_Exception,
             PyExc_ImportError,
             PyExc_IndexError,
             PyExc_MemoryError,
@@ -21870,13 +20481,9 @@ graph import runtime.python {
             PyMem_Free,
             PyMem_Malloc,
             PyMem_RawFree,
-            PyModule_AddIntConstant,
-            PyModule_AddObjectRef,
-            PyModule_AddStringConstant,
             PyNumber_AsSsize_t,
             PyObject,
             PyObject_Call,
-            PyObject_CallFinalizerFromDealloc,
             PyObject_CallFunction,
             PyObject_CallFunctionObjArgs,
             PyObject_CallMethodObjArgs,
@@ -21926,7 +20533,6 @@ graph import runtime.python {
             _Py_IsInterpreterFinalizing,
             jacpy_buffer_new,
             jacpy_bytes_from_memory,
-            jacpy_is_bytearray,
             jacpy_is_dict,
             jacpy_is_exact_float,
             jacpy_is_exact_list,
@@ -21934,10 +20540,8 @@ graph import runtime.python {
             jacpy_is_exact_tuple,
             jacpy_is_exact_unicode,
             jacpy_is_float,
-            jacpy_is_list,
             jacpy_is_long,
             jacpy_is_slice,
-            jacpy_is_tuple,
             jacpy_is_type,
             jacpy_is_unicode,
             jacpy_memory_copy,
@@ -22115,7 +20719,6 @@ graph import runtime.python {
             PyUnicode_FSConverter,
             PyUnicode_FromEncodedObject,
             PyUnicode_FromFormat,
-            PyUnicode_FromString,
             PyWeakref_GetRef,
             PyWeakref_NewRef,
             Py_BuildValue,
@@ -22130,7 +20733,6 @@ graph import runtime.python {
             _PyDeadline_Init,
             _PyLong_FromTime_t,
             _PyLong_UnsignedLongLong_Converter,
-            jacpy_buffer_release,
             jacpy_bytes_address,
             jacpy_bytes_from_memory,
             jacpy_bytes_length,
@@ -22203,7 +20805,6 @@ graph import runtime.python {
             PyUnicodeWriter_Format,
             PyUnicodeWriter_WriteASCII,
             PyUnicode_FromFormat,
-            PyUnicode_FromString,
             PyWeakref_GetRef,
             Py_BuildValue,
             Py_NewRef,
@@ -22506,10 +21107,8 @@ graph import runtime.python {
         modules.zlib {
             NULL,
             PyBytes_AsString,
-            PyBytes_FromStringAndSize,
             PyBytes_Size,
             PyErr_NoMemory,
-            PyErr_SetNone,
             PyErr_SetString,
             PyEval_RestoreThread,
             PyEval_SaveThread,
@@ -22536,9 +21135,7 @@ graph import runtime.python {
             Py_NewRef,
             Py_TYPE,
             _PyBytes_Resize,
-            jacpy_buffer_acquire,
             jacpy_buffer_new,
-            jacpy_buffer_release,
             jacpy_fs_text,
             jacpy_memory_copy,
             jacpy_memory_move,
@@ -22594,7 +21191,6 @@ graph import runtime.python {
             Py_TYPE,
             _PyErr_ChainExceptions1,
             _PyType_Name,
-            jacpy_is_tuple,
             jacpy_release,
             jacpy_type_check
         },
@@ -23159,7 +21755,6 @@ graph import runtime.python {
             PyUnicode_FromFormat,
             PyVectorcall_NARGS,
             Py_BuildValue,
-            Py_IncRef,
             Py_NewRef,
             Py_None,
             Py_NotImplemented,
@@ -23334,19 +21929,6 @@ graph import runtime.python {
             jacpy_is_type,
             jacpy_is_unicode,
             jacpy_release
-        },
-        objects {
-            NULL,
-            PyErr_SetFromErrnoWithFilenameObjects,
-            PyObject_IsTrue,
-            PyObject_RichCompare,
-            PyObject_RichCompareBool,
-            PySequence_Fast,
-            PySequence_GetItem,
-            PySequence_Tuple,
-            PyUnicode_Format,
-            _Py_c_pow,
-            _Py_c_quot
         },
         symtable {
             NULL,
@@ -24027,7 +22609,6 @@ graph import runtime.python {
             PY_TYPE_SLOT_SIZE,
             PY_TYPE_SPEC_SIZE,
             PyStructSequence_Desc,
-            PyStructSequence_Field,
             PyStructSequence_SIZE,
             PyTupleObject,
             PyTupleObject_ITEMS,
@@ -24543,10 +23124,7 @@ graph import runtime.python {
     modules.datetime ++> [
         bindings.clinic.datetime {
             datetime_date_fromtimestamp_impl,
-            datetime_date_replace_impl,
             datetime_datetime_now_impl,
-            datetime_datetime_replace_impl,
-            datetime_time_replace_impl,
             iso_calendar_date_new_impl
         },
         bindings.datetime {
@@ -25662,245 +24240,6 @@ graph import runtime.python {
             wrap
         },
     ]
-    modules.posix ++> bindings.clinic.posix {
-        CHMOD_DEFAULT_FOLLOW_SYMLINKS,
-        DEFAULT_DIR_FD,
-        DirEntry_token,
-        EFD_CLOEXEC,
-        MFD_CLOEXEC,
-        PATH_HAVE_FCHDIR,
-        PATH_HAVE_FCHMOD,
-        PATH_HAVE_FCHOWN,
-        PATH_HAVE_FDOPENDIR,
-        PATH_HAVE_FEXECVE,
-        PATH_HAVE_FPATHCONF,
-        PATH_HAVE_FSTATVFS,
-        PATH_HAVE_FTRUNCATE,
-        PATH_T_INITIALIZE,
-        PATH_T_INITIALIZE_P,
-        PATH_UTIME_HAVE_FD,
-        convert_FACCESSAT_DIR_FD_CONVERTER,
-        convert_FCHMODAT_DIR_FD_CONVERTER,
-        convert_FCHOWNAT_DIR_FD_CONVERTER,
-        convert_FSTATAT_DIR_FD_CONVERTER,
-        convert_FUTIMENSAT_DIR_FD_CONVERTER,
-        convert_MKDIRAT_DIR_FD_CONVERTER,
-        convert_MKFIFOAT_DIR_FD_CONVERTER,
-        convert_MKNODAT_DIR_FD_CONVERTER,
-        convert_OPENAT_DIR_FD_CONVERTER,
-        convert_Py_off_t_converter,
-        convert_READLINKAT_DIR_FD_CONVERTER,
-        convert_SYMLINKAT_DIR_FD_CONVERTER,
-        convert_UNLINKAT_DIR_FD_CONVERTER,
-        convert__Py_Dev_Converter,
-        convert__Py_Gid_Converter,
-        convert__Py_Uid_Converter,
-        convert_conv_confname,
-        convert_dir_fd_converter,
-        convert_id_t,
-        convert_idtype_t_converter,
-        convert_path_converter,
-        fileno,
-        os_DirEntry___fspath___impl,
-        os_DirEntry_inode_impl,
-        os_DirEntry_is_dir_impl,
-        os_DirEntry_is_file_impl,
-        os_DirEntry_is_junction_impl,
-        os_DirEntry_is_symlink_impl,
-        os_DirEntry_stat_impl,
-        os_WCOREDUMP_impl,
-        os_WEXITSTATUS_impl,
-        os_WIFCONTINUED_impl,
-        os_WIFEXITED_impl,
-        os_WIFSIGNALED_impl,
-        os_WIFSTOPPED_impl,
-        os_WSTOPSIG_impl,
-        os_WTERMSIG_impl,
-        os__create_environ_impl,
-        os__exit_impl,
-        os__fcopyfile_impl,
-        os__inputhook_impl,
-        os__is_inputhook_installed_impl,
-        os__path_normpath_impl,
-        os__path_splitroot_ex_impl,
-        os_abort_impl,
-        os_access_impl,
-        os_chdir_impl,
-        os_chflags_impl,
-        os_chmod_impl,
-        os_chown_impl,
-        os_chroot_impl,
-        os_close_impl,
-        os_closerange_impl,
-        os_confstr_impl,
-        os_copy_file_range_impl,
-        os_cpu_count_impl,
-        os_ctermid_impl,
-        os_device_encoding_impl,
-        os_dup2_impl,
-        os_dup_impl,
-        os_eventfd_impl,
-        os_eventfd_read_impl,
-        os_eventfd_write_impl,
-        os_execv_impl,
-        os_execve_impl,
-        os_fchdir_impl,
-        os_fchmod_impl,
-        os_fchown_impl,
-        os_fdatasync_impl,
-        os_fork1_impl,
-        os_fork_impl,
-        os_forkpty_impl,
-        os_fpathconf_impl,
-        os_fspath_impl,
-        os_fstat_impl,
-        os_fstatvfs_impl,
-        os_fsync_impl,
-        os_ftruncate_impl,
-        os_get_blocking_impl,
-        os_get_inheritable_impl,
-        os_get_terminal_size_impl,
-        os_getcwd_impl,
-        os_getcwdb_impl,
-        os_getegid_impl,
-        os_geteuid_impl,
-        os_getgid_impl,
-        os_getgrouplist_darwin_impl,
-        os_getgrouplist_linux_impl,
-        os_getgroups_impl,
-        os_getloadavg_impl,
-        os_getlogin_impl,
-        os_getpgid_impl,
-        os_getpgrp_impl,
-        os_getpid_impl,
-        os_getppid_impl,
-        os_getpriority_impl,
-        os_getrandom_impl,
-        os_getresgid_impl,
-        os_getresuid_impl,
-        os_getsid_impl,
-        os_getuid_impl,
-        os_getxattr_impl,
-        os_grantpt_impl,
-        os_initgroups_darwin_impl,
-        os_initgroups_linux_impl,
-        os_isatty_impl,
-        os_kill_impl,
-        os_killpg_impl,
-        os_lchflags_impl,
-        os_lchmod_impl,
-        os_lchown_impl,
-        os_link_impl,
-        os_listdir_impl,
-        os_listxattr_impl,
-        os_lockf_impl,
-        os_login_tty_impl,
-        os_lseek_impl,
-        os_lstat_impl,
-        os_major_impl,
-        os_makedev_impl,
-        os_memfd_create_impl,
-        os_minor_impl,
-        os_mkdir_impl,
-        os_mkfifo_impl,
-        os_mknod_impl,
-        os_nice_impl,
-        os_open_impl,
-        os_openpty_impl,
-        os_pathconf_impl,
-        os_pidfd_open_impl,
-        os_pipe2_impl,
-        os_pipe_impl,
-        os_posix_fadvise_impl,
-        os_posix_fallocate_impl,
-        os_posix_openpt_impl,
-        os_posix_spawn_impl,
-        os_posix_spawnp_impl,
-        os_pread_impl,
-        os_preadv_impl,
-        os_ptsname_impl,
-        os_putenv_impl,
-        os_pwrite_impl,
-        os_pwritev_impl,
-        os_read_impl,
-        os_readinto_impl,
-        os_readlink_impl,
-        os_readv_impl,
-        os_register_at_fork_impl,
-        os_remove_impl,
-        os_removexattr_impl,
-        os_rename_impl,
-        os_replace_impl,
-        os_rmdir_impl,
-        os_scandir_impl,
-        os_sched_get_priority_max_impl,
-        os_sched_get_priority_min_impl,
-        os_sched_getaffinity_impl,
-        os_sched_getparam_impl,
-        os_sched_getscheduler_impl,
-        os_sched_param_impl,
-        os_sched_rr_get_interval_impl,
-        os_sched_setaffinity_impl,
-        os_sched_setparam_impl,
-        os_sched_setscheduler_impl,
-        os_sched_yield_impl,
-        os_sendfile_darwin_impl,
-        os_sendfile_linux_impl,
-        os_set_blocking_impl,
-        os_set_inheritable_impl,
-        os_setegid_impl,
-        os_seteuid_impl,
-        os_setgid_impl,
-        os_setgroups_impl,
-        os_setns_impl,
-        os_setpgid_impl,
-        os_setpgrp_impl,
-        os_setpriority_impl,
-        os_setregid_impl,
-        os_setresgid_impl,
-        os_setresuid_impl,
-        os_setreuid_impl,
-        os_setsid_impl,
-        os_setuid_impl,
-        os_setxattr_impl,
-        os_splice_impl,
-        os_stat_impl,
-        os_statvfs_impl,
-        os_strerror_impl,
-        os_symlink_impl,
-        os_sync_impl,
-        os_sysconf_impl,
-        os_system_impl,
-        os_tcgetpgrp_impl,
-        os_tcsetpgrp_impl,
-        os_timerfd_create_impl,
-        os_timerfd_gettime_impl,
-        os_timerfd_gettime_ns_impl,
-        os_timerfd_settime_impl,
-        os_timerfd_settime_ns_impl,
-        os_times_impl,
-        os_truncate_impl,
-        os_ttyname_impl,
-        os_umask_impl,
-        os_uname_impl,
-        os_unlink_impl,
-        os_unlockpt_impl,
-        os_unsetenv_impl,
-        os_unshare_impl,
-        os_urandom_impl,
-        os_utime_impl,
-        os_wait3_impl,
-        os_wait4_impl,
-        os_wait_impl,
-        os_waitid_impl,
-        os_waitpid_impl,
-        os_waitstatus_to_exitcode_impl,
-        os_write_impl,
-        os_writev_impl,
-        return_Py_off_t,
-        return_dev_t,
-        stdout
-    }
     modules.posix_constants ++> bindings.posix {
         CONFSTR_TABLE,
         CONSTANTS,
@@ -25945,37 +24284,298 @@ graph import runtime.python {
         PATHCONF_TABLE,
         SYSCONF_TABLE
     }
-    modules.posix_core ++> bindings.posix {
-        PosixState,
-        STATE_BILLION,
-        STATE_COUNT,
-        STATE_DIR_ENTRY_TYPE,
-        STATE_SCANDIR_ITERATOR_TYPE,
-        STATE_SCHED_PARAM_TYPE,
-        STATE_ST_MODE,
-        convertenviron,
-        state_object
-    }
-    modules.posix_fileio ++> bindings.posix { posix_fileio_exec }
-    modules.posix_files ++> bindings.posix { posix_files_exec }
-    modules.posix_ids ++> bindings.posix { posix_ids_exec }
+    modules.posix_core ++> [
+        bindings.clinic.posix {
+            CHMOD_DEFAULT_FOLLOW_SYMLINKS,
+            DEFAULT_DIR_FD,
+            EFD_CLOEXEC,
+            MFD_CLOEXEC,
+            PATH_HAVE_FCHDIR,
+            PATH_HAVE_FCHMOD,
+            PATH_HAVE_FCHOWN,
+            PATH_HAVE_FDOPENDIR,
+            PATH_HAVE_FEXECVE,
+            PATH_HAVE_FPATHCONF,
+            PATH_HAVE_FSTATVFS,
+            PATH_HAVE_FTRUNCATE,
+            PATH_T_INITIALIZE,
+            PATH_T_INITIALIZE_P,
+            PATH_UTIME_HAVE_FD,
+            convert_FACCESSAT_DIR_FD_CONVERTER,
+            convert_FCHMODAT_DIR_FD_CONVERTER,
+            convert_FCHOWNAT_DIR_FD_CONVERTER,
+            convert_FSTATAT_DIR_FD_CONVERTER,
+            convert_FUTIMENSAT_DIR_FD_CONVERTER,
+            convert_MKDIRAT_DIR_FD_CONVERTER,
+            convert_MKFIFOAT_DIR_FD_CONVERTER,
+            convert_MKNODAT_DIR_FD_CONVERTER,
+            convert_OPENAT_DIR_FD_CONVERTER,
+            convert_Py_off_t_converter,
+            convert_READLINKAT_DIR_FD_CONVERTER,
+            convert_SYMLINKAT_DIR_FD_CONVERTER,
+            convert_UNLINKAT_DIR_FD_CONVERTER,
+            convert__Py_Dev_Converter,
+            convert__Py_Gid_Converter,
+            convert__Py_Uid_Converter,
+            convert_conv_confname,
+            convert_dir_fd_converter,
+            convert_id_t,
+            convert_idtype_t_converter,
+            convert_path_converter,
+            fileno,
+            return_Py_off_t,
+            return_dev_t,
+            stdout
+        },
+        bindings.posix {
+            PosixState,
+            STATE_BILLION,
+            STATE_COUNT,
+            STATE_DIR_ENTRY_TYPE,
+            STATE_SCANDIR_ITERATOR_TYPE,
+            STATE_SCHED_PARAM_TYPE,
+            STATE_ST_MODE,
+            convertenviron,
+            state_object
+        },
+    ]
+    modules.posix_fileio ++> [
+        bindings.clinic.posix {
+            os__fcopyfile_impl,
+            os_close_impl,
+            os_closerange_impl,
+            os_copy_file_range_impl,
+            os_ctermid_impl,
+            os_device_encoding_impl,
+            os_dup2_impl,
+            os_dup_impl,
+            os_eventfd_impl,
+            os_eventfd_read_impl,
+            os_eventfd_write_impl,
+            os_get_blocking_impl,
+            os_get_inheritable_impl,
+            os_get_terminal_size_impl,
+            os_grantpt_impl,
+            os_isatty_impl,
+            os_login_tty_impl,
+            os_lseek_impl,
+            os_memfd_create_impl,
+            os_open_impl,
+            os_openpty_impl,
+            os_pipe2_impl,
+            os_pipe_impl,
+            os_posix_openpt_impl,
+            os_pread_impl,
+            os_preadv_impl,
+            os_ptsname_impl,
+            os_pwrite_impl,
+            os_pwritev_impl,
+            os_read_impl,
+            os_readinto_impl,
+            os_readv_impl,
+            os_sendfile_darwin_impl,
+            os_sendfile_linux_impl,
+            os_set_blocking_impl,
+            os_set_inheritable_impl,
+            os_splice_impl,
+            os_timerfd_create_impl,
+            os_timerfd_gettime_impl,
+            os_timerfd_gettime_ns_impl,
+            os_timerfd_settime_impl,
+            os_timerfd_settime_ns_impl,
+            os_ttyname_impl,
+            os_unlockpt_impl,
+            os_write_impl,
+            os_writev_impl
+        },
+        bindings.posix { posix_fileio_exec },
+    ]
+    modules.posix_files ++> [
+        bindings.clinic.posix {
+            os__path_normpath_impl,
+            os__path_splitroot_ex_impl,
+            os_access_impl,
+            os_chdir_impl,
+            os_chflags_impl,
+            os_chmod_impl,
+            os_chown_impl,
+            os_chroot_impl,
+            os_fchdir_impl,
+            os_fchmod_impl,
+            os_fchown_impl,
+            os_fdatasync_impl,
+            os_fpathconf_impl,
+            os_fsync_impl,
+            os_ftruncate_impl,
+            os_getcwd_impl,
+            os_getcwdb_impl,
+            os_getxattr_impl,
+            os_lchflags_impl,
+            os_lchmod_impl,
+            os_lchown_impl,
+            os_link_impl,
+            os_listxattr_impl,
+            os_lockf_impl,
+            os_major_impl,
+            os_makedev_impl,
+            os_minor_impl,
+            os_mkdir_impl,
+            os_mkfifo_impl,
+            os_mknod_impl,
+            os_pathconf_impl,
+            os_posix_fadvise_impl,
+            os_posix_fallocate_impl,
+            os_readlink_impl,
+            os_remove_impl,
+            os_removexattr_impl,
+            os_rename_impl,
+            os_replace_impl,
+            os_rmdir_impl,
+            os_setxattr_impl,
+            os_symlink_impl,
+            os_sync_impl,
+            os_truncate_impl,
+            os_umask_impl,
+            os_unlink_impl,
+            os_utime_impl
+        },
+        bindings.posix { posix_files_exec },
+    ]
+    modules.posix_ids ++> [
+        bindings.clinic.posix {
+            os__create_environ_impl,
+            os__inputhook_impl,
+            os__is_inputhook_installed_impl,
+            os_confstr_impl,
+            os_cpu_count_impl,
+            os_fspath_impl,
+            os_getegid_impl,
+            os_geteuid_impl,
+            os_getgid_impl,
+            os_getgrouplist_darwin_impl,
+            os_getgrouplist_linux_impl,
+            os_getgroups_impl,
+            os_getlogin_impl,
+            os_getpgid_impl,
+            os_getpgrp_impl,
+            os_getpid_impl,
+            os_getppid_impl,
+            os_getrandom_impl,
+            os_getresgid_impl,
+            os_getresuid_impl,
+            os_getsid_impl,
+            os_getuid_impl,
+            os_initgroups_darwin_impl,
+            os_initgroups_linux_impl,
+            os_putenv_impl,
+            os_setegid_impl,
+            os_seteuid_impl,
+            os_setgid_impl,
+            os_setgroups_impl,
+            os_setpgid_impl,
+            os_setpgrp_impl,
+            os_setregid_impl,
+            os_setresgid_impl,
+            os_setresuid_impl,
+            os_setreuid_impl,
+            os_setsid_impl,
+            os_setuid_impl,
+            os_strerror_impl,
+            os_sysconf_impl,
+            os_tcgetpgrp_impl,
+            os_tcsetpgrp_impl,
+            os_uname_impl,
+            os_unsetenv_impl,
+            os_urandom_impl
+        },
+        bindings.posix { posix_ids_exec },
+    ]
     modules.posix_platform ++> bindings.posix { PLATFORM, runtime_function }
-    modules.posix_process ++> bindings.posix { posix_process_exec, sched_param_reduce }
-    modules.posix_stat ++> bindings.posix {
-        DIR_ENTRY_MEMBERS,
-        DIR_ENTRY_RECORD_SIZE,
-        DirEntry_dealloc,
-        DirEntry_repr,
-        DirEntry_token,
-        ScandirIterator_close,
-        ScandirIterator_dealloc,
-        ScandirIterator_enter,
-        ScandirIterator_exit,
-        ScandirIterator_finalize,
-        ScandirIterator_iternext,
-        ScandirIterator_token,
-        posix_stat_exec
-    }
+    modules.posix_process ++> [
+        bindings.clinic.posix {
+            os_WCOREDUMP_impl,
+            os_WEXITSTATUS_impl,
+            os_WIFCONTINUED_impl,
+            os_WIFEXITED_impl,
+            os_WIFSIGNALED_impl,
+            os_WIFSTOPPED_impl,
+            os_WSTOPSIG_impl,
+            os_WTERMSIG_impl,
+            os__exit_impl,
+            os_abort_impl,
+            os_execv_impl,
+            os_execve_impl,
+            os_fork1_impl,
+            os_fork_impl,
+            os_forkpty_impl,
+            os_getloadavg_impl,
+            os_getpriority_impl,
+            os_kill_impl,
+            os_killpg_impl,
+            os_nice_impl,
+            os_pidfd_open_impl,
+            os_posix_spawn_impl,
+            os_posix_spawnp_impl,
+            os_register_at_fork_impl,
+            os_sched_get_priority_max_impl,
+            os_sched_get_priority_min_impl,
+            os_sched_getaffinity_impl,
+            os_sched_getparam_impl,
+            os_sched_getscheduler_impl,
+            os_sched_param_impl,
+            os_sched_rr_get_interval_impl,
+            os_sched_setaffinity_impl,
+            os_sched_setparam_impl,
+            os_sched_setscheduler_impl,
+            os_sched_yield_impl,
+            os_setns_impl,
+            os_setpriority_impl,
+            os_system_impl,
+            os_times_impl,
+            os_unshare_impl,
+            os_wait3_impl,
+            os_wait4_impl,
+            os_wait_impl,
+            os_waitid_impl,
+            os_waitpid_impl,
+            os_waitstatus_to_exitcode_impl
+        },
+        bindings.posix { posix_process_exec, sched_param_reduce },
+    ]
+    modules.posix_stat ++> [
+        bindings.clinic.posix {
+            DirEntry_token,
+            os_DirEntry___fspath___impl,
+            os_DirEntry_inode_impl,
+            os_DirEntry_is_dir_impl,
+            os_DirEntry_is_file_impl,
+            os_DirEntry_is_junction_impl,
+            os_DirEntry_is_symlink_impl,
+            os_DirEntry_stat_impl,
+            os_fstat_impl,
+            os_fstatvfs_impl,
+            os_listdir_impl,
+            os_lstat_impl,
+            os_scandir_impl,
+            os_stat_impl,
+            os_statvfs_impl
+        },
+        bindings.posix {
+            DIR_ENTRY_MEMBERS,
+            DIR_ENTRY_RECORD_SIZE,
+            DirEntry_dealloc,
+            DirEntry_repr,
+            DirEntry_token,
+            ScandirIterator_close,
+            ScandirIterator_dealloc,
+            ScandirIterator_enter,
+            ScandirIterator_exit,
+            ScandirIterator_finalize,
+            ScandirIterator_iternext,
+            ScandirIterator_token,
+            posix_stat_exec
+        },
+    ]
     modules.posixshmem ++> bindings.clinic.posixshmem {
         _posixshmem_shm_open_impl,
         _posixshmem_shm_unlink_impl
@@ -26080,9 +24680,6 @@ graph import runtime.python {
     modules.resource_records ++> bindings.resource { HAS_PRLIMIT, PLATFORM }
     modules.select ++> [
         bindings.clinic.select {
-            EPOLLIN,
-            EPOLLOUT,
-            EPOLLPRI,
             POLLIN,
             POLLOUT,
             POLLPRI,
@@ -26135,7 +24732,10 @@ graph import runtime.python {
             poll_token
         },
     ]
-    modules.select_constants ++> bindings.select { CONSTANTS, PLATFORM }
+    modules.select_constants ++> [
+        bindings.clinic.select { EPOLLIN, EPOLLOUT, EPOLLPRI },
+        bindings.select { CONSTANTS, PLATFORM },
+    ]
     modules.select_platform ++> bindings.select {
         HAS_EPOLL,
         HAS_KQUEUE,
@@ -27099,18 +25699,12 @@ graph import runtime.python {
     object_model.complex ++> [
         bindings.cmath | modules.decimal_number { PyComplex_FromDoubles },
         constant_input { PyComplex_ImagAsDouble, PyComplex_RealAsDouble },
-        modules.cmath {
-            PyComplex_FromDoubles,
-            PyComplex_ImagAsDouble,
-            PyComplex_RealAsDouble,
-            _Py_c_abs
-        },
-        modules.decimal_convert { PyComplex_AsCComplex },
-        modules.struct {
+        modules.cmath | modules.struct {
             PyComplex_FromDoubles,
             PyComplex_ImagAsDouble,
             PyComplex_RealAsDouble
         },
+        modules.decimal_convert { PyComplex_AsCComplex },
     ]
     object_model.file ++> bindings.converters | modules.select {
         PyObject_AsFileDescriptor
@@ -27438,67 +26032,21 @@ graph import runtime.python.bindings {
     ]
     buffer ++> [
         array { BufferLayout, jacpy_binding_buffer_dispose, jacpy_binding_buffer_fill },
-        clinic.abc
-            | clinic.array
-            | clinic.asyncio
+        clinic.array
             | clinic.binascii
-            | clinic.bisect
             | clinic.blake2
             | clinic.bz2
-            | clinic.cmath
             | clinic.codecs
-            | clinic.collections
-            | clinic.csv
-            | clinic.datetime
-            | clinic.elementtree
-            | clinic.fcntl
-            | clinic.functools
-            | clinic.grp
             | clinic.hashopenssl
-            | clinic.heapq
-            | clinic.hmac
-            | clinic.itertools
-            | clinic.json
-            | clinic.locale
-            | clinic.lsprof
             | clinic.lzma
-            | clinic.math
-            | clinic.md5
             | clinic.mmap
             | clinic.multibytecodec
-            | clinic.multiprocessing
-            | clinic.opcode
-            | clinic.operator
-            | clinic.pickle
             | clinic.posix
-            | clinic.posixshmem
-            | clinic.posixsubprocess
-            | clinic.pwd
-            | clinic.pyexpat
-            | clinic.queue
-            | clinic.random
-            | clinic.resource
-            | clinic.select
-            | clinic.sha1
-            | clinic.sha2
-            | clinic.sha3
             | clinic.socket
             | clinic.sqlite3
-            | clinic.sre
             | clinic.ssl
-            | clinic.statistics
             | clinic.struct
-            | clinic.suggestions
-            | clinic.sysconfig
-            | clinic.syslog
-            | clinic.termios
-            | clinic.time
-            | clinic.tracemalloc
-            | clinic.typing
-            | clinic.unicodedata
-            | clinic.weakref
             | clinic.zlib
-            | clinic.zoneinfo
             | clinic.zstd
             | converters
             | struct { BufferArgument },
@@ -27880,7 +26428,6 @@ graph import runtime.python.bindings {
     }
     converters ++> [
         array { convert_unicode_char },
-        clinic.abc | clinic.csv | clinic.functools { argument_label },
         clinic.array {
             argument_label,
             convert_buffer,
@@ -27891,13 +26438,7 @@ graph import runtime.python.bindings {
             convert_unicode_char,
             defining_class
         },
-        clinic.asyncio {
-            argument_label,
-            borrowed_none,
-            convert_bool,
-            defining_class,
-            return_int
-        },
+        clinic.asyncio { borrowed_none, convert_bool, defining_class, return_int },
         clinic.binascii {
             argument_label,
             convert_bool,
@@ -27907,7 +26448,6 @@ graph import runtime.python.bindings {
             return_unsigned
         },
         clinic.bisect {
-            argument_label,
             borrowed_none,
             convert_optional_ssize,
             convert_ssize,
@@ -27949,7 +26489,7 @@ graph import runtime.python.bindings {
             new_checks_arguments,
             return_int
         },
-        clinic.datetime { argument_label, borrowed_none, convert_int },
+        clinic.datetime { borrowed_none, convert_int },
         clinic.elementtree {
             argument_label,
             bad_argument,
@@ -27981,7 +26521,7 @@ graph import runtime.python.bindings {
             return_int
         },
         clinic.heapq { argument_label, bad_argument },
-        clinic.hmac { argument_label, defining_class },
+        clinic.hmac { defining_class },
         clinic.itertools {
             argument_label,
             bad_argument,
@@ -27997,13 +26537,7 @@ graph import runtime.python.bindings {
             convert_str,
             convert_unicode
         },
-        clinic.lsprof {
-            argument_label,
-            convert_bool,
-            convert_double,
-            defining_class,
-            return_int
-        },
+        clinic.lsprof { convert_bool, convert_double, defining_class, return_int },
         clinic.lzma {
             argument_label,
             borrowed_none,
@@ -28011,18 +26545,8 @@ graph import runtime.python.bindings {
             convert_int,
             convert_ssize
         },
-        clinic.math {
-            argument_label,
-            borrowed_none,
-            convert_double,
-            return_bool,
-            return_double
-        },
-        clinic.md5 | clinic.sha1 | clinic.sha2 {
-            argument_label,
-            convert_bool,
-            defining_class
-        },
+        clinic.math { borrowed_none, convert_double, return_bool, return_double },
+        clinic.md5 | clinic.sha1 | clinic.sha2 { convert_bool, defining_class },
         clinic.mmap {
             argument_label,
             borrowed_none,
@@ -28049,14 +26573,8 @@ graph import runtime.python.bindings {
             convert_int,
             convert_str
         },
-        clinic.opcode {
-            argument_label,
-            borrowed_none,
-            convert_int,
-            return_bool,
-            return_int
-        },
-        clinic.operator { argument_label, convert_ssize, return_bool, return_ssize },
+        clinic.opcode { borrowed_none, convert_int, return_bool, return_int },
+        clinic.operator { convert_ssize, return_bool, return_ssize },
         clinic.pickle {
             argument_label,
             borrowed_none,
@@ -28116,7 +26634,6 @@ graph import runtime.python.bindings {
             defining_class
         },
         clinic.queue {
-            argument_label,
             borrowed_none,
             convert_bool,
             defining_class,
@@ -28125,13 +26642,12 @@ graph import runtime.python.bindings {
             return_ssize
         },
         clinic.random {
-            argument_label,
             borrowed_none,
             convert_uint64,
             init_checks_arguments,
             return_int
         },
-        clinic.resource { argument_label, borrowed_none, convert_int, return_int },
+        clinic.resource { borrowed_none, convert_int, return_int },
         clinic.select {
             argument_label,
             borrowed_none,
@@ -28143,7 +26659,6 @@ graph import runtime.python.bindings {
         },
         clinic.sha3 { argument_label, convert_bool, convert_unsigned_long },
         clinic.socket {
-            argument_label,
             convert_PyUnicode_FSConverter,
             convert_buffer,
             convert_int,
@@ -28198,7 +26713,7 @@ graph import runtime.python.bindings {
             convert_text_buffer,
             new_checks_arguments
         },
-        clinic.statistics { argument_label, convert_double, return_double },
+        clinic.statistics { convert_double, return_double },
         clinic.struct {
             argument_label,
             convert_buffer,
@@ -28208,7 +26723,7 @@ graph import runtime.python.bindings {
         },
         clinic.syslog { argument_label, convert_long, convert_unicode, return_long },
         clinic.termios { argument_label, convert_fildes, convert_int },
-        clinic.tracemalloc { argument_label, convert_int },
+        clinic.tracemalloc | datetime | zlib { convert_int },
         clinic.unicodedata {
             SizedText,
             argument_label,
@@ -28243,7 +26758,6 @@ graph import runtime.python.bindings {
             convert_int,
             convert_ssize
         },
-        datetime | zlib { convert_int },
         multibytecodec | sha2 { ClassToken },
         syslog { argument_label, convert_int, convert_str },
     ]
@@ -28345,7 +26859,6 @@ graph import runtime.python.bindings {
             | clinic.heapq
             | clinic.hmac
             | clinic.itertools
-            | clinic.json
             | clinic.locale
             | clinic.lsprof
             | clinic.lzma
@@ -28397,7 +26910,7 @@ graph import runtime.python.bindings {
             | stat
             | syslog
             | uuid { MethodCallbacks, MethodDefinition, ModuleDefinition, ModuleHooks },
-        collections | functools {
+        collections {
             MethodCallbacks,
             MethodDefinition,
             ModuleDefinition,
@@ -28457,6 +26970,16 @@ graph import runtime.python.bindings {
             | typing
             | unicodedata
             | weakref { ModuleDefinition, ModuleHooks },
+        functools {
+            MethodCallbacks,
+            MethodDefinition,
+            ModuleDefinition,
+            ModuleHooks,
+            add_owned,
+            jacpy_binding_state_get,
+            jacpy_binding_state_set,
+            visit_reference
+        },
         hashopenssl {
             ModuleDefinition,
             ModuleHooks,
@@ -28589,7 +27112,6 @@ graph import runtime.python.bindings {
             MethodDefinition,
             ModuleDefinition,
             ModuleHooks,
-            add_state_owned,
             jacpy_binding_module_native_set,
             jacpy_binding_state_get,
             jacpy_binding_state_set
@@ -28757,68 +27279,10 @@ graph import runtime.python.bindings {
             TypeHooks,
             jacpy_binding_record
         },
-        clinic.abc
-            | clinic.array
-            | clinic.asyncio
-            | clinic.binascii
-            | clinic.bisect
-            | clinic.blake2
-            | clinic.bz2
-            | clinic.cmath
-            | clinic.codecs
-            | clinic.collections
-            | clinic.csv
-            | clinic.datetime
-            | clinic.elementtree
-            | clinic.fcntl
-            | clinic.functools
-            | clinic.grp
-            | clinic.hashopenssl
-            | clinic.heapq
-            | clinic.hmac
-            | clinic.itertools
-            | clinic.json
-            | clinic.locale
-            | clinic.lsprof
-            | clinic.lzma
-            | clinic.math
-            | clinic.md5
-            | clinic.mmap
-            | clinic.multibytecodec
-            | clinic.multiprocessing
-            | clinic.opcode
-            | clinic.operator
-            | clinic.pickle
-            | clinic.posix
-            | clinic.posixshmem
-            | clinic.posixsubprocess
-            | clinic.pwd
-            | clinic.pyexpat
-            | clinic.queue
-            | clinic.random
-            | clinic.resource
-            | clinic.select
-            | clinic.sha1
-            | clinic.sha2
-            | clinic.sha3
-            | clinic.socket
-            | clinic.sqlite3
-            | clinic.sre
-            | clinic.ssl
-            | clinic.statistics
-            | clinic.struct
-            | clinic.suggestions
-            | clinic.sysconfig
-            | clinic.syslog
-            | clinic.termios
-            | clinic.time
-            | clinic.tracemalloc
-            | clinic.typing
-            | clinic.unicodedata
-            | clinic.weakref
-            | clinic.zlib
-            | clinic.zoneinfo
-            | clinic.zstd { PropertyCallbacks, PropertyDefinition },
+        clinic.asyncio | clinic.hmac | clinic.sqlite3 | clinic.ssl | clinic.zstd {
+            PropertyCallbacks,
+            PropertyDefinition
+        },
         collections {
             PropertyCallbacks,
             PropertyDefinition,
@@ -28998,7 +27462,6 @@ graph import runtime.python.modules {
         cjkcodecs_mappings_jp { DbcsMap, PairEncodeMap },
         codecs_cn {
             DecodeWriter,
-            Gb18030Range,
             MBERR_EXCEPTION,
             MBERR_TOOFEW,
             MBERR_TOOSMALL,
@@ -29147,7 +27610,6 @@ graph import runtime.python.modules {
             CodecCapsule,
             DecodeWriter,
             MBENC_FLUSH,
-            MBENC_MAX,
             MBERR_EXCEPTION,
             MBERR_INTERNAL,
             MBERR_TOOFEW,
@@ -29159,7 +27621,6 @@ graph import runtime.python.modules {
     cjkcodecs_jis ++> [
         codecs_iso2022 {
             emulate_2000_decode_plane1,
-            emulate_2000_decode_plane2,
             emulate_2000_encode_bmp,
             emulate_2000_encode_emp,
             jisx0201_k_decode,
@@ -29297,12 +27758,11 @@ graph import runtime.python.modules {
     ]
     datetime_format ++> [
         datetime_date { build_struct_time, format_ctime, time_time, wrap_strftime },
-        datetime_datetime { build_struct_time, format_ctime, format_utcoffset },
+        datetime_datetime { build_struct_time, format_ctime },
         datetime_time { format_utcoffset, wrap_strftime },
     ]
     datetime_objects ++> [
         datetime {
-            STATE_ISOCALENDAR_DATE_TYPE,
             new_date_ex,
             new_date_subclass_ex,
             new_datetime_ex,
@@ -29357,7 +27817,6 @@ graph import runtime.python.modules {
             date_get_second,
             date_type,
             datetime_check,
-            datetime_dst,
             datetime_tzinfo_of,
             datetime_utcoffset,
             delta_bool,
@@ -29372,7 +27831,6 @@ graph import runtime.python.modules {
             get_year,
             has_tzinfo,
             new_date,
-            new_datetime,
             new_datetime_ex2,
             new_datetime_subclass_ex,
             new_datetime_subclass_fold_ex,
@@ -29400,7 +27858,6 @@ graph import runtime.python.modules {
             utc
         },
         datetime_delta {
-            STATE_SECONDS_PER_DAY,
             STATE_US_PER_DAY,
             STATE_US_PER_HOUR,
             STATE_US_PER_MINUTE,
@@ -29537,7 +27994,6 @@ graph import runtime.python.modules {
             DEC_ERRORS,
             INVALID_SIGNALDICT_ERROR_MSG,
             PyDecContextManagerObject,
-            PyDecContextObject,
             PyDecSignalDictObject,
             Py_EQ_OP,
             Py_NE_OP,
@@ -29589,9 +28045,7 @@ graph import runtime.python.modules {
             Py_NE_OP,
             STATE_RATIONAL,
             builtin_methods,
-            context_or_current,
             ctx_of,
-            current_context_borrowed,
             dec_addstatus,
             dec_alloc,
             dec_check,
@@ -29607,7 +28061,6 @@ graph import runtime.python.modules {
         },
         decimal_number {
             PyDecObject,
-            PyFloat_Type,
             PyLong_Type,
             Py_EQ_OP,
             Py_GE_OP,
@@ -29708,7 +28161,6 @@ graph import runtime.python.modules {
             XML_GetFeatureList,
             XML_GetInputContext,
             XML_GetSpecifiedAttributeCount,
-            XML_Memory_Handling_Suite,
             XML_Parse,
             XML_ParseBuffer,
             XML_ParserCreate_MM,
@@ -29866,7 +28318,6 @@ graph import runtime.python.modules {
             MPD_IEEE_CONTEXT_MAX_BITS,
             MPD_IEEE_Invalid_operation,
             MPD_MAX_SIGNAL_LIST,
-            MPD_Malloc_error,
             MPD_Overflow,
             MPD_ROUND_HALF_EVEN,
             MPD_ROUND_HALF_UP,
@@ -29930,8 +28381,7 @@ graph import runtime.python.modules {
             mpd_set_sign,
             mpd_setdigits,
             mpd_seterror,
-            mpd_setspecial,
-            mpd_t
+            mpd_setspecial
         },
         decimal_number {
             MPD_CONST_DATA,
@@ -30007,10 +28457,8 @@ graph import runtime.python.modules {
             MPD_Invalid_context,
             MPD_Invalid_operation,
             MPD_Malloc_error,
-            MPD_Max_status,
             MPD_Not_implemented,
             MPD_Overflow,
-            MPD_ROUND_GUARD,
             MPD_Rounded,
             MPD_STATIC,
             MPD_STATIC_DATA,
@@ -30403,7 +28851,6 @@ graph import runtime.python.modules {
             SSL_CTX_free,
             SSL_SESSION_free,
             SSL_free,
-            SSL_get_error,
             SSL_get_shutdown,
             SSL_get_verify_result,
             SSL_set_shutdown,
@@ -30597,7 +29044,6 @@ graph import runtime.python.modules {
             SSL_R_CERTIFICATE_VERIFY_FAILED,
             SSL_R_UNEXPECTED_EOF_WHILE_READING,
             SSL_SENT_SHUTDOWN,
-            SSL_VERIFY_POST_HANDSHAKE,
             TLS1_1_VERSION,
             TLS1_2_VERSION,
             TLS1_3_VERSION,
@@ -30765,48 +29211,6 @@ graph import runtime.python.modules {
     ]
     posix_core ++> [
         grp { _PyLong_FromGid, _Py_Gid_Converter },
-        posix {
-            CHMOD_DEFAULT_FOLLOW_SYMLINKS,
-            DEFAULT_DIR_FD,
-            EFD_CLOEXEC,
-            MFD_CLOEXEC,
-            PATH_HAVE_FCHDIR,
-            PATH_HAVE_FCHMOD,
-            PATH_HAVE_FCHOWN,
-            PATH_HAVE_FDOPENDIR,
-            PATH_HAVE_FEXECVE,
-            PATH_HAVE_FPATHCONF,
-            PATH_HAVE_FSTATVFS,
-            PATH_HAVE_FTRUNCATE,
-            PATH_T_INITIALIZE,
-            PATH_T_INITIALIZE_P,
-            PATH_UTIME_HAVE_FD,
-            convert_FACCESSAT_DIR_FD_CONVERTER,
-            convert_FCHMODAT_DIR_FD_CONVERTER,
-            convert_FCHOWNAT_DIR_FD_CONVERTER,
-            convert_FSTATAT_DIR_FD_CONVERTER,
-            convert_FUTIMENSAT_DIR_FD_CONVERTER,
-            convert_MKDIRAT_DIR_FD_CONVERTER,
-            convert_MKFIFOAT_DIR_FD_CONVERTER,
-            convert_MKNODAT_DIR_FD_CONVERTER,
-            convert_OPENAT_DIR_FD_CONVERTER,
-            convert_Py_off_t_converter,
-            convert_READLINKAT_DIR_FD_CONVERTER,
-            convert_SYMLINKAT_DIR_FD_CONVERTER,
-            convert_UNLINKAT_DIR_FD_CONVERTER,
-            convert__Py_Dev_Converter,
-            convert__Py_Gid_Converter,
-            convert__Py_Uid_Converter,
-            convert_conv_confname,
-            convert_dir_fd_converter,
-            convert_id_t,
-            convert_idtype_t_converter,
-            convert_path_converter,
-            fileno,
-            return_Py_off_t,
-            return_dev_t,
-            stdout
-        },
         posix_fileio {
             DEFAULT_DIR_FD,
             INT_MAX,
@@ -30873,7 +29277,6 @@ graph import runtime.python.modules {
         },
         posix_stat {
             DEFAULT_DIR_FD,
-            PosixState,
             STATE_BILLION,
             STATE_DIR_ENTRY_TYPE,
             STATE_SCANDIR_ITERATOR_TYPE,
@@ -30886,7 +29289,6 @@ graph import runtime.python.modules {
             argument_unavailable_error,
             dir_fd_and_fd_invalid,
             fd_and_follow_symlinks_invalid,
-            interned,
             path_and_dir_fd_invalid,
             path_error,
             path_object_error,
@@ -30905,54 +29307,6 @@ graph import runtime.python.modules {
         },
         pwd { _PyLong_FromUid, _Py_Uid_Converter },
     ]
-    posix_fileio ++> posix {
-        os__fcopyfile_impl,
-        os_close_impl,
-        os_closerange_impl,
-        os_copy_file_range_impl,
-        os_ctermid_impl,
-        os_device_encoding_impl,
-        os_dup2_impl,
-        os_dup_impl,
-        os_eventfd_impl,
-        os_eventfd_read_impl,
-        os_eventfd_write_impl,
-        os_get_blocking_impl,
-        os_get_inheritable_impl,
-        os_get_terminal_size_impl,
-        os_grantpt_impl,
-        os_isatty_impl,
-        os_login_tty_impl,
-        os_lseek_impl,
-        os_memfd_create_impl,
-        os_open_impl,
-        os_openpty_impl,
-        os_pipe2_impl,
-        os_pipe_impl,
-        os_posix_openpt_impl,
-        os_pread_impl,
-        os_preadv_impl,
-        os_ptsname_impl,
-        os_pwrite_impl,
-        os_pwritev_impl,
-        os_read_impl,
-        os_readinto_impl,
-        os_readv_impl,
-        os_sendfile_darwin_impl,
-        os_sendfile_linux_impl,
-        os_set_blocking_impl,
-        os_set_inheritable_impl,
-        os_splice_impl,
-        os_timerfd_create_impl,
-        os_timerfd_gettime_impl,
-        os_timerfd_gettime_ns_impl,
-        os_timerfd_settime_impl,
-        os_timerfd_settime_ns_impl,
-        os_ttyname_impl,
-        os_unlockpt_impl,
-        os_write_impl,
-        os_writev_impl
-    }
     posix_fileio_platform ++> posix_fileio {
         PY_READ_MAX,
         copy_file_range_call,
@@ -30976,54 +29330,6 @@ graph import runtime.python.modules {
         timerfd_gettime_call,
         timerfd_settime_call
     }
-    posix_files ++> posix {
-        os__path_normpath_impl,
-        os__path_splitroot_ex_impl,
-        os_access_impl,
-        os_chdir_impl,
-        os_chflags_impl,
-        os_chmod_impl,
-        os_chown_impl,
-        os_chroot_impl,
-        os_fchdir_impl,
-        os_fchmod_impl,
-        os_fchown_impl,
-        os_fdatasync_impl,
-        os_fpathconf_impl,
-        os_fsync_impl,
-        os_ftruncate_impl,
-        os_getcwd_impl,
-        os_getcwdb_impl,
-        os_getxattr_impl,
-        os_lchflags_impl,
-        os_lchmod_impl,
-        os_lchown_impl,
-        os_link_impl,
-        os_listxattr_impl,
-        os_lockf_impl,
-        os_major_impl,
-        os_makedev_impl,
-        os_minor_impl,
-        os_mkdir_impl,
-        os_mkfifo_impl,
-        os_mknod_impl,
-        os_pathconf_impl,
-        os_posix_fadvise_impl,
-        os_posix_fallocate_impl,
-        os_readlink_impl,
-        os_remove_impl,
-        os_removexattr_impl,
-        os_rename_impl,
-        os_replace_impl,
-        os_rmdir_impl,
-        os_setxattr_impl,
-        os_symlink_impl,
-        os_sync_impl,
-        os_truncate_impl,
-        os_umask_impl,
-        os_unlink_impl,
-        os_utime_impl
-    }
     posix_files_platform ++> posix_files {
         MODE_T_MASK,
         PLATFORM,
@@ -31046,52 +29352,6 @@ graph import runtime.python.modules {
         xattr_remove,
         xattr_set
     }
-    posix_ids ++> posix {
-        os__create_environ_impl,
-        os__inputhook_impl,
-        os__is_inputhook_installed_impl,
-        os_confstr_impl,
-        os_cpu_count_impl,
-        os_fspath_impl,
-        os_getegid_impl,
-        os_geteuid_impl,
-        os_getgid_impl,
-        os_getgrouplist_darwin_impl,
-        os_getgrouplist_linux_impl,
-        os_getgroups_impl,
-        os_getlogin_impl,
-        os_getpgid_impl,
-        os_getpgrp_impl,
-        os_getpid_impl,
-        os_getppid_impl,
-        os_getrandom_impl,
-        os_getresgid_impl,
-        os_getresuid_impl,
-        os_getsid_impl,
-        os_getuid_impl,
-        os_initgroups_darwin_impl,
-        os_initgroups_linux_impl,
-        os_putenv_impl,
-        os_setegid_impl,
-        os_seteuid_impl,
-        os_setgid_impl,
-        os_setgroups_impl,
-        os_setpgid_impl,
-        os_setpgrp_impl,
-        os_setregid_impl,
-        os_setresgid_impl,
-        os_setresuid_impl,
-        os_setreuid_impl,
-        os_setsid_impl,
-        os_setuid_impl,
-        os_strerror_impl,
-        os_sysconf_impl,
-        os_tcgetpgrp_impl,
-        os_tcsetpgrp_impl,
-        os_uname_impl,
-        os_unsetenv_impl,
-        os_urandom_impl
-    }
     posix_ids_platform ++> posix_ids {
         LOGIN_NAME_SIZE,
         UTSNAME_FIELD_SIZE,
@@ -31113,54 +29373,6 @@ graph import runtime.python.modules {
         posix_process { environment_table },
     ]
     posix_platform --> posix_core { fildes_call }
-    posix_process ++> posix {
-        os_WCOREDUMP_impl,
-        os_WEXITSTATUS_impl,
-        os_WIFCONTINUED_impl,
-        os_WIFEXITED_impl,
-        os_WIFSIGNALED_impl,
-        os_WIFSTOPPED_impl,
-        os_WSTOPSIG_impl,
-        os_WTERMSIG_impl,
-        os__exit_impl,
-        os_abort_impl,
-        os_execv_impl,
-        os_execve_impl,
-        os_fork1_impl,
-        os_fork_impl,
-        os_forkpty_impl,
-        os_getloadavg_impl,
-        os_getpriority_impl,
-        os_kill_impl,
-        os_killpg_impl,
-        os_nice_impl,
-        os_pidfd_open_impl,
-        os_posix_spawn_impl,
-        os_posix_spawnp_impl,
-        os_register_at_fork_impl,
-        os_sched_get_priority_max_impl,
-        os_sched_get_priority_min_impl,
-        os_sched_getaffinity_impl,
-        os_sched_getparam_impl,
-        os_sched_getscheduler_impl,
-        os_sched_param_impl,
-        os_sched_rr_get_interval_impl,
-        os_sched_setaffinity_impl,
-        os_sched_setparam_impl,
-        os_sched_setscheduler_impl,
-        os_sched_yield_impl,
-        os_setns_impl,
-        os_setpriority_impl,
-        os_system_impl,
-        os_times_impl,
-        os_unshare_impl,
-        os_wait3_impl,
-        os_wait4_impl,
-        os_wait_impl,
-        os_waitid_impl,
-        os_waitpid_impl,
-        os_waitstatus_to_exitcode_impl
-    }
     posix_process_platform ++> posix_process {
         FILE_ACTIONS_SIZE,
         SIGSET_SIZE,
@@ -31199,23 +29411,6 @@ graph import runtime.python.modules {
         spawnattr_setschedpolicy,
         unshare_call
     }
-    posix_stat ++> posix {
-        DirEntry_token,
-        os_DirEntry___fspath___impl,
-        os_DirEntry_inode_impl,
-        os_DirEntry_is_dir_impl,
-        os_DirEntry_is_file_impl,
-        os_DirEntry_is_junction_impl,
-        os_DirEntry_is_symlink_impl,
-        os_DirEntry_stat_impl,
-        os_fstat_impl,
-        os_fstatvfs_impl,
-        os_listdir_impl,
-        os_lstat_impl,
-        os_scandir_impl,
-        os_stat_impl,
-        os_statvfs_impl
-    }
     posix_stat_platform ++> posix_stat {
         STATVFS_RECORD_SIZE,
         STAT_EXTRA_FIELDS,
@@ -31253,9 +29448,6 @@ graph import runtime.python.modules {
         time { rusage },
     ]
     select_constants ++> select {
-        EPOLLIN,
-        EPOLLOUT,
-        EPOLLPRI,
         EPOLL_CLOEXEC,
         EPOLL_CTL_ADD,
         EPOLL_CTL_DEL,
@@ -31271,7 +29463,6 @@ graph import runtime.python.modules {
     select_platform ++> select {
         EPOLL_DATA_OFFSET,
         EPOLL_EVENT_SIZE,
-        KEVENT_MEMBERS,
         KEVENT_SIZE,
         epoll_create1,
         epoll_ctl,
@@ -31297,7 +29488,6 @@ graph import runtime.python.modules {
         socket {
             free_addrbuf,
             freeaddrinfo,
-            get_u16,
             getaddrinfo,
             make_ipv4_addr,
             make_ipv6_addr,
@@ -31309,7 +29499,6 @@ graph import runtime.python.modules {
         },
         socket_object {
             free_addrbuf,
-            get_u32,
             getsockaddrarg,
             getsockaddrlen,
             makesockaddr,
@@ -31317,7 +29506,6 @@ graph import runtime.python.modules {
             new_view,
             put_u32
         },
-        ssl { new_view },
     ]
     socket_constants ++> [
         socket {
@@ -31415,7 +29603,6 @@ graph import runtime.python.modules {
             new_sockobject,
             ntohl,
             ntohs,
-            set_error,
             set_gaierror,
             set_herror,
             sock_cloexec_works,
@@ -31482,7 +29669,6 @@ graph import runtime.python.modules {
     socket_platform ++> [
         socket {
             HAS_GETHOSTBYNAME_R,
-            HAS_SA_LEN,
             HAS_SOCK_CLOEXEC,
             PLATFORM,
             addrinfo,
@@ -31506,7 +29692,6 @@ graph import runtime.python.modules {
             HAS_PACKET,
             HAS_QIPCRTR,
             HAS_RDS,
-            HAS_SA_LEN,
             HAS_SYSTEM,
             HAS_TIPC,
             HAS_VSOCK,
@@ -31543,18 +29728,6 @@ graph import runtime.python.modules {
     ]
     sre_constants ++> [
         sre {
-            SRE_AT_BEGINNING,
-            SRE_AT_BEGINNING_LINE,
-            SRE_AT_BEGINNING_STRING,
-            SRE_AT_BOUNDARY,
-            SRE_AT_END,
-            SRE_AT_END_LINE,
-            SRE_AT_END_STRING,
-            SRE_AT_LOC_BOUNDARY,
-            SRE_AT_LOC_NON_BOUNDARY,
-            SRE_AT_NON_BOUNDARY,
-            SRE_AT_UNI_BOUNDARY,
-            SRE_AT_UNI_NON_BOUNDARY,
             SRE_FLAG_ASCII,
             SRE_FLAG_DEBUG,
             SRE_FLAG_DOTALL,
@@ -31704,8 +29877,6 @@ graph import runtime.python.modules {
     ssl_core ++> [
         ssl {
             AlpnProtocols,
-            CertificateState,
-            HAS_SSLv3,
             HAS_TLSv1,
             HAS_TLSv1_1,
             HAS_TLSv1_2,
@@ -31727,7 +29898,6 @@ graph import runtime.python.modules {
             PY_SSL_CERT_REQUIRED,
             PY_SSL_CLIENT,
             PY_SSL_DEFAULT_CIPHER_STRING,
-            PY_SSL_ERROR_NO_SOCKET,
             PY_SSL_MIN_PROTOCOL,
             PY_SSL_SERVER,
             PY_SSL_VERSION_SSL2,
@@ -32052,10 +30222,12 @@ graph import scale {
         tests.misc.test_optional_deps { BackgroundScheduler, HAS_APSCHEDULER },
     ]
     _optdeps.apscheduler --> tests.misc.test_optional_deps;
-    _optdeps.firebase_auth ++> [
-        sso.firebase { HAS_FIREBASE_ADMIN, auth, credentials, firebase_admin },
-        tests.server.test_firebase_auth_sso { firebase_admin as _real_firebase_admin },
-    ]
+    _optdeps.firebase_auth ++> sso.firebase {
+        HAS_FIREBASE_ADMIN,
+        auth,
+        credentials,
+        firebase_admin
+    }
     _optdeps.gcs ++> [
         storage.gcs_storage { NotFound, StorageClient, require_google_cloud_storage },
         tests.misc.test_optional_deps { HAS_GCS, StorageClient },
@@ -32148,7 +30320,7 @@ graph import scale {
         runtime.gateway.microservice_gateway | server.extensions {
             JacAPIServerLLMTelemetry
         },
-        tests.misc.test_llm_telemetry { LLMCallRecord, TelemetryStore, Trace },
+        tests.misc.test_llm_telemetry { TelemetryStore },
     ]
     admin.logs ++> runtime.gateway.microservice_gateway
         | server.extensions
@@ -32235,7 +30407,6 @@ graph import scale {
             | admin.logs
             | admin.ops
             | admin.service_urls
-            | admin.traces
             | deploy.database.kubernetes_postgres
             | deploy.target.kubernetes.kubernetes_target
             | emailer.factory.configured
@@ -32278,16 +30449,15 @@ graph import scale {
         tests.data.test_firebase_env
             | tests.deploy.test_client_build_stage
             | tests.deploy.test_database_intent
+            | tests.deploy.test_deploy_k8s
             | tests.deploy.test_gateway_config_isolation
             | tests.deploy.test_service_routing
             | tests.misc.test_service_urls
-            | tests.misc.test_shared_store_failure
             | tests.server.test_scheduler_endpoints {
             get_scale_config,
             reset_scale_config
         },
-        tests.deploy.test_deploy_k8s
-            | tests.deploy.test_deployment_overlay
+        tests.deploy.test_deployment_overlay
             | tests.misc.test_config_loader
             | tests.misc.test_config_validation {
             JacScaleConfig,
@@ -32394,12 +30564,10 @@ graph import scale {
         scheduler_min_interval
     }
     deploy.autoscale.autoscaler ++> [
-        sdk | sdk.client { AutoscalerRuntimeStatus, AutoscalerTransition },
-        tests.deploy.test_deploy_k8s | tests.deploy.test_factories {
-            AutoscalerSpec,
-            Trigger
-        },
+        sdk { AutoscalerRuntimeStatus, AutoscalerTransition },
+        sdk.client { AutoscalerRuntimeStatus },
         tests.deploy.test_deployment_overlay { Autoscaler, AutoscalerSpec },
+        tests.deploy.test_factories { AutoscalerSpec, Trigger },
         tests.deploy.test_http_activation_microservices {
             AutoscalerSpec,
             Trigger,
@@ -32407,7 +30575,6 @@ graph import scale {
         },
     ]
     deploy.autoscale.factory ++> sdk.client
-        | tests.deploy.test_deploy_k8s
         | tests.deploy.test_factories
         | tests.deploy.test_service_routing { AutoscalerFactory }
     deploy.autoscale.hpa_autoscaler ++> tests.deploy.test_factories { HPAAutoscaler }
@@ -32633,8 +30800,7 @@ graph import scale {
     ]
     events.broker ++> [
         config.config_loader.JacScaleConfig.get_events_config { RetryPolicy },
-        tests.data.test_local_stream { Event, RetryPolicy },
-        tests.data.test_pg_stream { Event },
+        tests.data.test_local_stream | tests.data.test_pg_stream { Event },
         tests.misc.test_events {
             Event,
             EventStreamBroker,
@@ -32656,8 +30822,8 @@ graph import scale {
         LocalEventStream
     }
     events.streams.postgres ++> [
-        runtime.provider | tests.misc.test_events { PgEventStream },
         tests.data.test_pg_stream { PgEventStream, _STREAM_SCHEMA },
+        tests.misc.test_events { PgEventStream },
     ]
     events.streams.postgres --> server.extensions.EventsExtension.register {
         PgEventStream
@@ -32968,7 +31134,6 @@ graph import scale {
         deploy.target.kubernetes.target { resolve_interceptor_service_address },
         tests.deploy.test_service_routing {
             KEDA_INTERCEPTOR_SERVICE_ADDRESS,
-            ServiceRoute,
             k8s_service_dns_host,
             resolve_http_activation_config,
             resolve_interceptor_service_address,
@@ -33083,7 +31248,6 @@ graph import scale {
         tests.apps.test_app_scale_overrides { fleet_from_config },
         tests.apps.test_fleet_from_apps {
             FLEET_ENV,
-            FleetSpec,
             ROOT_PREFIX,
             consumer_provider_edges,
             fleet_from_config,
@@ -33148,6 +31312,7 @@ graph import scale {
     ]
     runtime.gateway.service_registry ++> [
         deploy.target.kubernetes.runtime_resolver
+            | tests.deploy.test_deployer
             | tests.deploy.test_pod_env
             | tests.microservices.test_embedded_gateway
             | tests.microservices.test_stop_signal_scope {
@@ -33155,7 +31320,6 @@ graph import scale {
             ServiceRegistry
         },
         tests.apps.test_fleet_from_apps
-            | tests.deploy.test_deployer
             | tests.microservices.test_app_routes
             | tests.microservices.test_boot_grace
             | tests.microservices.test_boot_order
@@ -33264,7 +31428,6 @@ graph import scale {
     ]
     runtime.rpc.rpc as rpc_mod ++> tests.server.test_sv_auth_forward;
     runtime.transport.http_forward ++> tests.server.test_stream_ws {
-        ForwardResult,
         raw_forward,
         stream_forward
     }
@@ -33362,7 +31525,6 @@ graph import scale {
         tests.misc.test_state_backend_selection { get_state_backend, in_fleet },
     ]
     state.factory as factory_mod ++> tests.misc.test_state_backend_selection;
-    state.pg_state_backend ++> runtime.provider { PgStateBackend as _state_anchor }
     state.state_backend ++> [
         runtime.middleware.rate_limit { StateBackend },
         tests.misc.test_state_backend_selection { InProcessStateBackend },
@@ -33465,7 +31627,6 @@ graph import scale.admin {
 graph import scale.config {
     firebase_env ++> config_loader {
         FIREBASE_AUTH_PROJECT_ID_ENV,
-        FIRESTORE_PROJECT_ID_ENV,
         resolve_firebase_project_id
     }
     plugin_config ++> [
@@ -33537,7 +31698,6 @@ graph import scale.deploy.autoscale {
             DEFAULT_CPU_UTILIZATION_TARGET,
             DEFAULT_MEMORY_UTILIZATION_TARGET,
             Trigger,
-            TriggerAuth,
             condition,
             normalize_conditions,
             transition_from,
@@ -33886,10 +32046,10 @@ graph import scale.runtime {
 
 graph import scale.runtime.cli {
     _narrow ++> [
-        diagnostics { bget, dget, effective_resources, iget, lget, pod_spec, sget },
+        diagnostics { bget, dget, effective_resources, iget, lget, pod_spec },
         plan { dget, fget, iget, lget, pod_spec, sget },
     ]
-    diagnostics ++> plan { Diagnostic, PlanValidator, has_errors }
+    diagnostics ++> plan { Diagnostic, PlanValidator }
 }
 
 graph import scale.runtime.context {
@@ -33903,7 +32063,7 @@ graph import scale.runtime.context {
 }
 
 graph import scale.runtime.gateway {
-    dispatch ++> embedded_gateway { ROUTE_PROXY, ROUTE_STATIC, classify_route }
+    dispatch ++> embedded_gateway { ROUTE_PROXY, classify_route }
     dispatch --> microservice_gateway.MicroserviceGateway.setup.dispatcher {
         ROUTE_ADMIN,
         ROUTE_BUILTIN,
@@ -34015,7 +32175,6 @@ graph import scale.tests {
         microservices.test_app_routes { ScaleTestClient, make_client },
         server.test_admin {
             ADMIN_BOOTSTRAP_PASSWORD,
-            ScaleTestClient,
             extract_data,
             fresh_totp_code,
             make_client,
@@ -34023,15 +32182,18 @@ graph import scale.tests {
         },
         server.test_admin_workloads
             | server.test_error_envelope
-            | server.test_firebase_auth_sso { extract_data, make_client },
+            | server.test_file_upload
+            | server.test_firebase_auth_sso
+            | server.test_middleware_async_root { extract_data, make_client },
         server.test_auth_policy_http
             | server.test_health_fail_soft
             | server.test_ws_functions
             | server.test_ws_hardening { make_client },
-        server.test_file_upload
-            | server.test_middleware_async_root
-            | server.test_restspec
-            | server.test_webhook { ScaleTestClient, extract_data, make_client },
+        server.test_restspec | server.test_webhook {
+            ScaleTestClient,
+            extract_data,
+            make_client
+        },
         server.test_scheduler_endpoints { ScaleTestClient },
         server.test_serve {
             ScaleTestClient,
@@ -34173,7 +32335,6 @@ graph import server {
         endpoints.second_factor {
             AAL1,
             AAL2,
-            METHOD_PASSWORD,
             METHOD_TOTP,
             second_factor_claims,
             token_assurance
@@ -34297,7 +32458,7 @@ graph import server {
             needs_rehash as _needs_rehash,
             verify_password as _scrypt_verify
         },
-        identity.user_manager { JWTError, JWTExpiredError, jwt_decode, jwt_encode },
+        identity.user_manager { JWTExpiredError, jwt_decode, jwt_encode },
         settings.AuthSettings.resolve_secret {
             PLACEHOLDER_JWT_SECRET,
             project_signing_secret
@@ -34434,7 +32595,6 @@ graph import server {
             | endpoints.walkers
             | middleware { Meta, TransportResponse },
     ]
-    type watcher ++> hmr { ChangeType, FileChangeEvent, JacFileWatcher }
 }
 
 graph import server.endpoints {
@@ -34512,8 +32672,7 @@ graph import server.serving {
             RedirectResponse,
             Request,
             Response,
-            StreamingResponse,
-            parse_query_string
+            StreamingResponse
         },
         client | proxy { Headers },
         coerce { Request, UploadFile },

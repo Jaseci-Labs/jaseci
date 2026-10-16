@@ -894,7 +894,7 @@ def _pull_boundary_import(
         targets.append(hub_target);
     }
     try {
-        import from jaclang.compiler.symbol_utils { symbol_linked_source_module }
+        import from jaclang.compiler.driver.boundary_classify { symbol_linked_source_module }
         linked = symbol_linked_source_module(imp);
         if (
             linked is not None
