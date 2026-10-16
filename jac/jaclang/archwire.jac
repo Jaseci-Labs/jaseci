@@ -1910,6 +1910,9 @@ graph import compiler {
     native_scope --> dist.precompile_bytecode.seal_native { kernel_root_path }
     passes --> compiler.tools.code_intel { Alert }
     symbol_utils --> compiler.backends.es.esast_gen_pass { return_type_is_jsx }
+    symbol_utils --> compiler.passes.boundary_analysis_pass.BoundaryAnalysisPass.enter_import {
+        import_target_pinned_server
+    }
     symbol_utils --> compiler.backends.es.esast_gen_pass.EsastGenPass._bind_client_value_refs {
         client_bridged_endpoint,
         client_value_ref_targets,
@@ -2821,6 +2824,17 @@ graph import compiler.backends.native {
         inject_heap_accounting
     }
     link_plan --> cli.commands.native_build { LinkPlan }
+    link_plan --> cli.commands.native_build._sealed_native_plan { build_link_plan }
+    link_plan --> cli.commands.native_build._entry_lib_link {
+        ArtifactKind,
+        LinkPlanError,
+        link_artifact
+    }
+    link_plan --> cli.commands.native_build.native_build_sealed_pair {
+        ArtifactKind,
+        LinkPlanError,
+        link_artifact
+    }
     link_plan --> cli.commands.native_build.native_build {
         ArtifactKind,
         LinkPlanError,
@@ -3104,6 +3118,7 @@ graph import compiler.backends.native.llvm {
     binding as llvm --> cli.commands.execution._jab_native_bin;
     binding as llvm --> cli.commands.native_build._application_ir;
     binding as llvm --> compiler.backends.native.link_glue.bind_shared_callbacks;
+    binding as llvm --> cli.commands.execution._jab_native_artifact;
     binding as llvm --> compiler.backends.native.link_glue.init_object_codegen;
     binding as llvm --> compiler.backends.native.link_plan;
     type binding --> compiler.backends.native.link_plan {
@@ -3598,6 +3613,8 @@ graph import compiler.driver {
         CompileOptions
     }
     compile_options --> compiler.backends.native.elf_linker.ElfLinker.link {
+    compile_options --> cli.commands.native_build._sealed_native_plan { CompileOptions }
+
         env_symmap_requested
     }
     compile_options --> compiler.backends.native.kernel_resolve {
@@ -4053,6 +4070,7 @@ graph import compiler.driver {
     program --> cli.commands.analysis.grammar { JacProgram }
     program --> cli.commands.analysis.lint { JacProgram }
     program --> cli.commands.architecture { JacProgram }
+    program --> cli.commands.native_build._sealed_native_plan { JacProgram }
     program --> cli.commands.execution.debug { JacProgram }
     program --> cli.commands.fix._format_source { JacProgram }
     program --> cli.commands.fix._verify_claims { JacProgram }
@@ -6244,6 +6262,7 @@ graph import compiler.frontend {
     srcloc --> lsp.server.utils { Span }
     type srcloc --> project.source { Span }
     unitree --> cli.commands.analysis._check_file_job { Source as _Src }
+    unitree --> cli.commands.native_build._callback_source_path { Module }
     unitree --> cli.commands.architecture {
         GraphImport,
         Import,
@@ -9364,6 +9383,9 @@ graph import compiler.passes {
 }
 
 graph import compiler.placement {
+    placement_facts --> compiler.symbol_utils.import_target_pinned_server {
+        pinned_module_space
+    }
     placement --> cli.commands.fix._verify_claims { element_display_name }
     placement --> compiler.driver.compiler.JacCompiler._restore_sections {
         summary_store
@@ -11506,6 +11528,10 @@ graph import jac0core {
     ext_registry --> cli.commands.cli_helpers { base_stem, is_jac, is_python }
     ext_registry --> cli.commands.execution._jab_native_bin { base_stem }
     ext_registry --> cli.commands.execution._jab_native_lib { base_stem }
+    ext_registry --> cli.commands.native_build._sealed_native_plan {
+        is_jac,
+        is_retired_native_marker
+    }
     ext_registry --> cli.commands.native_build.native_build {
         base_stem,
         is_jac,
@@ -12742,6 +12768,7 @@ graph import runtime {
         register_py_callbacks
     }
     interop_bridge --> runtime.prepared.execute_module { NativeLibrary }
+    scalars --> runtime.interop_bridge._sized_ctypes_tables { numeric_shapes }
     interop_bridge --> cli.commands.execution._run_native_lib {
         NativeCallback,
         NativeLibrary,
@@ -15825,6 +15852,7 @@ graph import server {
     sealed_serve --> cli.commands.execution._jab_interop_callbacks {
         interop_record_path
     }
+    sealed_serve --> cli.commands.native_build.native_build_sealed_pair { interop_record_path }
     sealed_serve --> client.artifact.client_output_dir { client_dist_for }
     sealed_serve --> client.artifact.prebuilt_bundle {
         client_dist_for,
