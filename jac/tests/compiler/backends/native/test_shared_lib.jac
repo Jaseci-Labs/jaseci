@@ -697,7 +697,7 @@ test "jac build --native --lib initialises runtime globals via __jac_shared_init
 # has, and nacompile's link two-level-bound every one of those symbols to it
 # (dyld reported libSystem): every macOS build of 0.37.3 died at first run with
 # `Symbol not found: _PyDict_GetItem`. These pin both halves of the fix in
-# linker_common, on any host.
+# native_link, on any host.
 
 test "a darwin shared build binds its C imports through the process" {
     needed: list[str] = ["/usr/lib/libSystem.B.dylib"];

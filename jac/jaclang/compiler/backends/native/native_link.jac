@@ -279,6 +279,8 @@ def _elf_interpreter(triple: str) -> str {
 def _empty_object(work: str, triple: str) -> str {
     path = os.path.join(work, "empty.o");
     if not os.path.exists(path) {
+        llvm.initialize_all_targets();
+        llvm.initialize_all_asmprinters();
         target = llvm.Target.from_triple(triple);
         tm = target.create_target_machine(reloc="pic");
         module = llvm.parse_assembly(f'target triple = "{triple}"\n');
@@ -343,7 +345,15 @@ def _link_elf(job: NativeLinkJob, work: str) {
         }
         args += ["--version-script", script];
     } else {
-        args += ["-pie", "--dynamic-linker", _elf_interpreter(job.triple), "-z", "undefs"];
+        args += [
+            "-pie",
+            "--dynamic-linker",
+            _elf_interpreter(job.triple),
+            "-z",
+            "undefs",
+            "-z",
+            "dynamic-undefined-weak"
+        ];
     }
     args.append("--no-as-needed");
     index = 0;
