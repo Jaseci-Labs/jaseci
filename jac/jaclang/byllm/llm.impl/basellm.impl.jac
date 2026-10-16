@@ -881,10 +881,11 @@ impl BaseLLM._may_retry(mt_run: MTRuntime, e: Exception, attempt: int) -> bool {
         return False;
     }
     deadline = self._call_deadline(mt_run);
-    if deadline.allows(_retry_delay(attempt + 1)) {
+    left = deadline.remaining();
+    if left is None or left > _retry_delay(attempt + 1) {
         return True;
     }
-    left = max(0.0, deadline.remaining() or 0.0);
+    left = max(0.0, left);
     self.log_info(
         f"Transient LLM error ({type(e).__name__}) on {self.model_name}; not "
         f"retrying with {left:.1f}s left of the {deadline.budget:g}s timeout"
@@ -899,12 +900,6 @@ impl BaseLLM._await_within_deadline(mt_run: MTRuntime, pending: Awaitable) -> an
     left = deadline.remaining();
     if left is None {
         return await pending;
-    }
-    if left <= 0 {
-        if asyncio.iscoroutine(pending) {
-            pending.close();
-        }
-        raise deadline.expired();
     }
     try {
         return await asyncio.wait_for(pending, timeout=left);

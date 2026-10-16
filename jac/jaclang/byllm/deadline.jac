@@ -32,11 +32,6 @@ obj CallDeadline {
         return max(0.0, min(seconds, left));
     }
 
-    def allows(delay: float) -> bool {
-        left = self.remaining();
-        return left is None or left > delay;
-    }
-
     def check {
         left = self.remaining();
         if left is not None and left <= 0 {
