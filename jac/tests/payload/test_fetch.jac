@@ -311,10 +311,10 @@ test "source and LLVM pins agree with the payload" {
         and ma.zip_size == 743879473;
     assert ma.triple == "aarch64-apple-darwin";
     mx = slices["macos-x86_64"];
-    assert mx.dirname == "LLVM-22.1.8-macOS-X64"
+    assert mx.dirname == "LLVM-22.1.8-macOS-X64-lld"
         and not mx.upstream
-        and mx.zip_size == 49613317;
-    assert mx.triple == "x86_64-apple-darwin";
+        and mx.zip_size == 109599841;
+    assert mx.triple == "x86_64-apple-darwin-lld";
     for rel in p.llvm.slices.values() {
         assert len(rel.manifest_sha256) == 64;
         assert rel.dirname.startswith("LLVM-22.1.8-");
