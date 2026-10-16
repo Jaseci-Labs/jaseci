@@ -200,7 +200,6 @@ impl MicroserviceGateway.bootstrap_admin_ui -> None {
 }
 
 impl MicroserviceGateway.serve_admin_asset(asset_path: str) -> Response | None {
-    import from jaclang.scale.admin.console_build { resolve_console }
     admin_dist = resolve_console(Path(self.admin_dist_dir), self.admin_console);
     if isinstance(admin_dist, Response) {
         return admin_dist;
