@@ -428,10 +428,14 @@ impl PgWireConnection.run(sql: str, **params: any) -> list[any] {
         }
     }
     bind += struct.pack(_INT16, 0);
-    out = b''.join(_frame('C', b'S' + old.encode('ascii') + b'\x00') for old in self._evicted);
+    out = b''.join(
+        _frame('C', b'S' + old.encode('ascii') + b'\x00') for old in self._evicted
+    );
     self._evicted = [];
     if fresh or resets {
-        out += _frame('P', stmt + pos_sql.encode('utf-8') + b'\x00' + struct.pack(_INT16, 0));
+        out += _frame(
+            'P', stmt + pos_sql.encode('utf-8') + b'\x00' + struct.pack(_INT16, 0)
+        );
     }
     sock: any = self._sock;
     sock.sendall(

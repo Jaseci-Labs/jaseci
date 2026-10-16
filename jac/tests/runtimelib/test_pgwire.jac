@@ -262,7 +262,8 @@ test "a repeated statement is parsed once per connection and reused by name" {
         conn = _live_conn(td);
         try {
             for i in range(5) {
-                assert conn.run("SELECT :x::int + 41 AS reuse_marker", x=i) == [(i + 41, )];
+                assert conn.run("SELECT :x::int + 41 AS reuse_marker", x=i)
+                    == [(i + 41, )];
             }
             assert _prepared(conn, "reuse_marker") == 1 , (
                 "five runs of one statement did not share one prepared statement"
