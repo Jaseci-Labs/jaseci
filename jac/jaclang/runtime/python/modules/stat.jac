@@ -5,7 +5,6 @@ and permission bits are POSIX and identical on every supported platform; the
 BSD file flags that differ live in stat_platform.jac and its per-OS variants.
 """
 
-
 glob S_IMODE: u64 = 0o7777,
      S_IFMT: u64 = 0o170000,
      S_IFDIR: u64 = 0o040000,

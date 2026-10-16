@@ -1,7 +1,5 @@
 """The _lzma module: LZMACompressor, LZMADecompressor, LZMAError and the constants."""
 
-
-
 def:priv compressor_dealloc(instance: ptr[PyObject]) {
     dispose_payload(instance, LZMACompressor_token.handle);
 }

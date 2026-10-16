@@ -1,7 +1,6 @@
 """The _elementtree module: Element, SubElement, TreeBuilder, XMLParser,
 ParseError and the element iterator."""
 
-
 # element_methods, in _elementtree.c's order.
 glob:priv ELEMENT_METHOD_ORDER: list[str] = [
          "clear",

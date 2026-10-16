@@ -1,4 +1,3 @@
-
 def _literal_names(value: (Expr | None)) -> (list[str] | None) {
     if not isinstance(value, ListVal) {
         return None;

@@ -692,7 +692,11 @@ def abi_contract_digest(pkg_root: str) -> str {
     for rel in KERNEL_ABI_CONTRACT_REL {
         h.update(rel.encode("utf-8"));
         path = os.path.join(pkg_root, *rel.split("/"));
-        h.update((unit_source_digest(path) if os.path.isfile(path) else "missing").encode("utf-8"));
+        h.update(
+            (unit_source_digest(path) if os.path.isfile(path) else "missing").encode(
+                "utf-8"
+            )
+        );
     }
     return h.hexdigest();
 }

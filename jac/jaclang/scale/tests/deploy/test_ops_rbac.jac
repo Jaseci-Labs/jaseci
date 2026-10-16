@@ -1,5 +1,3 @@
-
-
 def _all_verbs(role: dict[str, any]) -> list[str] {
     out: list[str] = [];
     for rule in role["rules"] {

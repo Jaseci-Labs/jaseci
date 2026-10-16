@@ -8,7 +8,6 @@ setgroups' count, the setresuid family, struct utsname, the login name buffer
 and the getrandom system call) lives in posix_ids_platform.<os>.jac.
 """
 
-
 import from c {
     def getegid -> u32;  def geteuid -> u32;  def getgid -> u32;  def getuid -> u32;  def getpid -> i32;  def getppid -> i32;  def getpgid(
         pid: i32

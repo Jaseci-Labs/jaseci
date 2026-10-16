@@ -5,7 +5,6 @@ argument binding, and module exception identities remain at the object ABI.
 See ../LICENSE.cpython.
 """
 
-
 def _binascii_error(message: str) {
     raise module_failure(message=message);
 }

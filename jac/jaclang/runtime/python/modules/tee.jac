@@ -6,7 +6,6 @@ standard trashcan mechanism bounds destruction of long block chains.
 Derived from CPython 3.14.6; see ../LICENSE.cpython.
 """
 
-
 obj tee_block {
     has source: ptr[PyObject] = NULL,
         next_block: ptr[PyObject] = NULL,

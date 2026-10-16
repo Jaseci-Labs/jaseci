@@ -1,6 +1,5 @@
 """The _abc module: the _abc_data type and module state over the generated clinic table."""
 
-
 def:priv data_dealloc(instance: ptr[PyObject]) {
     dispose_payload(instance, abc_data_token.handle);
 }

@@ -1,7 +1,6 @@
 """The _hmac module: the HMAC type, UnknownHashError and the one-shot functions
 over the generated clinic glue."""
 
-
 def:priv hmac_dealloc(instance: ptr[PyObject]) {
     dispose_payload(instance, HMAC_token.handle);
 }

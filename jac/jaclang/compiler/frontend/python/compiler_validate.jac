@@ -1,12 +1,9 @@
-
-
 # AST validation for the P4 back track (INTEGRATION_PLAN Phase 2).
 #
 # Owns language legality independent of scope resolution: placement of return,
 # break, continue, and yield; expression contexts on names, attributes, and
 # subscripts; legal store and delete targets. Codegen receives validated AST
 # only via product_compile.jac.
-
 
 # Feature versions constrain source grammar; AST inputs are already parsed.
 def validate_feature_version(value: any, version: int) {

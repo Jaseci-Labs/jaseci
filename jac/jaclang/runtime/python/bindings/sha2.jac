@@ -1,7 +1,6 @@
 """The _sha2 module: SHA224Type and SHA256Type over SHA256Type's generated
 methods, SHA384Type and SHA512Type over SHA512Type's."""
 
-
 def:priv sha256_dealloc(instance: ptr[PyObject]) {
     dispose_payload(instance, SHA256Type_token.definition_of(Py_TYPE(instance)));
 }

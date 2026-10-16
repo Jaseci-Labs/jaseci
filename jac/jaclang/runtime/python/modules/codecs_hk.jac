@@ -4,7 +4,6 @@ imported through that module's map capsule as the C does. See
 ../LICENSE.cpython.
 """
 
-
 import from c {
     # The big5 map of _codecs_tw, which big5hkscs_codec_init imports (the
     # C's CJK_MOD_SPECIFIC_STATE).

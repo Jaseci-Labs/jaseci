@@ -31,7 +31,6 @@ Backend support today (see each fixture's docstring for specifics):
     is how "support landed" becomes an enforced regression.
 """
 
-
 # ---------------------------------------------------------------------------
 # Spawn/dispatch core.
 # ---------------------------------------------------------------------------

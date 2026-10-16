@@ -8,7 +8,6 @@ lives in `_PyRuntime`, whose layout differs between builds, so it is reached
 through object_api.c's `jacpy_open_code_hook`. See ../LICENSE.cpython.
 """
 
-
 # The newline and EOF characters the universal-newline reader compares.
 glob:priv CR: i32 = 13,
      LF: i32 = 10,

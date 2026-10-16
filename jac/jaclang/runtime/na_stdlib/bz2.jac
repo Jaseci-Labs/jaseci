@@ -1,4 +1,3 @@
-
 glob BZ_OK: int = 0,
      BZ_OUTBUFF_FULL: int = -8;
 

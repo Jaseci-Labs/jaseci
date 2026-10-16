@@ -5,7 +5,6 @@ The C library interface is uuid_library.<os>.jac: whether the target has
 <uuid/uuid.h>, uuid_generate_time_safe() and a stable MAC address source.
 """
 
-
 glob UUID_SIZE: i64 = 16;
 
 # generate_time_safe() -> (bytes, status): the status is None where the

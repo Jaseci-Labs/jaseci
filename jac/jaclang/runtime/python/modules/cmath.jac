@@ -4,7 +4,6 @@ Recovered algorithms are checked against pinned CPython 3.14.6, with real
 transcendentals supplied by libm. See ../LICENSE.cpython.
 """
 
-
 obj complex_parts {
     has real: float,
         imag: float;

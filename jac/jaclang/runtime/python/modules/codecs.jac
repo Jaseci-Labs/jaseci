@@ -7,7 +7,6 @@ An `errors` or `encoding` argument is C's `const char *`, NULL when omitted.
 The Windows-only mbcs, oem and code_page codecs are not built on POSIX.
 """
 
-
 glob:priv PY_SSIZE_T_MAX: i64 = 0x7FFFFFFFFFFFFFFF,
      HEX_DIGITS: str = "0123456789abcdef";
 

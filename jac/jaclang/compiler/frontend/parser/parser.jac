@@ -1,6 +1,3 @@
-
-
-
 glob TOKEN_KIND_TO_TOK: dict[TokenKind, str] = {
          TokenKind.INT: Tok.INT.value,
          TokenKind.HEX: Tok.HEX.value,

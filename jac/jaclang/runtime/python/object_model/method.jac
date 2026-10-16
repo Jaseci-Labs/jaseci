@@ -11,7 +11,6 @@ does. `__new__` parses its arguments as Objects/clinic/classobject.c.h does.
 See ../LICENSE.cpython.
 """
 
-
 import from c {
     glob:priv method_methods: list[PyMethodDef] = [
              PyMethodDef(

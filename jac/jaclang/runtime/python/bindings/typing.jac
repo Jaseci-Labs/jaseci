@@ -3,7 +3,6 @@
 Derived from CPython 3.14.6 Modules/_typingmodule.c; see ../LICENSE.cpython.
 """
 
-
 # Positions in jacpy_typing_types(), the interpreter's cached typing types in
 # the declaration order of struct _Py_interp_cached_objects.
 glob:priv CACHED: list[tuple[str, int]] = [

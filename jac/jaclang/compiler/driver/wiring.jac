@@ -165,11 +165,11 @@ def _target_text(consumers: list[str], items: (list[tuple[str, str]] | None)) ->
 def _entry_order(
     pair: tuple[list[str], (list[tuple[str, str]] | None)]
 ) -> tuple[list[str], list[tuple[str, str]]];
+
 def _block_text(block: str, body: list[str]) -> str;
 def canonical_wiring_source(source: str, path: str) -> str;
-def prune_wiring_source(
-    source: str, path: str, dropped: Callable[[str], bool]
-) -> str;
+def prune_wiring_source(source: str, path: str, dropped: Callable[[str], bool]) -> str;
+
 def encode_records(
     parse_failed: bool, wires: list[WireRec], rules: list[RuleRec]
 ) -> str;

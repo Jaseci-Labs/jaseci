@@ -1,4 +1,3 @@
-
 glob AF_UNSPEC: int = 0,
      AF_INET: int = 2,
      AF_INET6: int = IPV6_FAMILY;

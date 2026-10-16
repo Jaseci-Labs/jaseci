@@ -1,6 +1,5 @@
 """The fcntl module: generated clinic tables and the platform constants."""
 
-
 def:priv execute(module: ptr[PyObject]) -> i32 {
     if PLATFORM == "" or len(CONSTANTS) == 0 {
         object_error(

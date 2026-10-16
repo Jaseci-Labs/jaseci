@@ -1,6 +1,5 @@
 """The _stat module: mode predicates and constants, compiled into JacPython."""
 
-
 glob:priv METH_O: i64 = 8;
 
 def:priv predicate(value: ptr[PyObject], kind: u64) -> ptr[PyObject] {

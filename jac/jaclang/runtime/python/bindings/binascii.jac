@@ -1,6 +1,5 @@
 """The binascii module: its clinic-generated functions and exception types."""
 
-
 # binascii_exec(): Error (a ValueError) and Incomplete, in state slots 0 and 1.
 def:priv execute(module: ptr[PyObject]) -> i32 {
     if not add_state_owned(

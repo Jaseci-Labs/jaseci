@@ -10,6 +10,7 @@ walker ImportWiringPass(CompilerPass) {
     def _check_target(
         spec: WiringSpec, provider: str, provider_ok: bool, target: WireTarget
     ) -> None;
+
     def _check_rule_liveness(spec: WiringSpec, rule: ImportRule) -> None;
     def _check_edge(
         spec: WiringSpec,

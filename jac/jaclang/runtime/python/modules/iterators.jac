@@ -6,7 +6,6 @@ replacement contents have been published. Derived from CPython 3.14.6;
 see ../LICENSE.cpython.
 """
 
-
 # These values identify iterator policies in the native bindings.
 enum pipeline_kind {
     ACCUMULATE = 0,

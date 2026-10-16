@@ -1,7 +1,5 @@
 """The _bz2 module: BZ2Compressor and BZ2Decompressor over the generated clinic glue."""
 
-
-
 def:priv compressor_dealloc(instance: ptr[PyObject]) {
     dispose_payload(instance, BZ2Compressor_token.handle);
 }

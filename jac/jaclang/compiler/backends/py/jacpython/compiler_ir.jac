@@ -1,4 +1,3 @@
-
 # Compiler IR for the P4 back track (PLAN.md P0.10).
 #
 # Source-location, instruction, basic-block, and compile-unit objects shared by
@@ -7,7 +6,6 @@
 #
 # na-clean leaf: no host calls, no import cycles. Location encoding matches
 # CPython 3.14 (PEP 626); col offsets are 0-based byte offsets, NO_COLUMN = -1.
-
 
 # A source location. lineno/end_lineno are 1-based; col_offset/end_col_offset are
 # 0-based. Matches CPython's `location` struct (Python/compile.c).

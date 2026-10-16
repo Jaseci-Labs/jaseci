@@ -74,7 +74,6 @@ test "handshake headers are case-insensitive on the filter" {
 The forwarders used to be exercised against an aiohttp server; the runtime no
 longer depends on aiohttp, so the upstream is the same server jac ships."""
 def _spawn_upstream -> tuple[object, object, str] {
-
     def echo(request: Request) -> Response {
         return Response(content=request.body, media_type="application/octet-stream");
     }
@@ -328,7 +327,6 @@ obj FakeClientWS {
 def _spawn_ws_upstream(
     captured_headers: list[any] | None = None
 ) -> tuple[object, object, str] {
-
     async def ws_echo(ws: any) {
         if captured_headers is not None {
             captured_headers.append(dict(ws.headers.items()));
@@ -431,7 +429,6 @@ test "websocket_forward closes the client with 1011 when the upstream handshake 
 
 """Upstream that selects a subprotocol, the way vite's HMR server does."""
 def _spawn_ws_upstream_with_protocol(protocol: str) -> tuple[any, any, str] {
-
     async def ws_echo(ws: any) {
         offered: str = str(ws.headers.get("sec-websocket-protocol") or "");
         await ws.accept(subprotocol=protocol if protocol in offered else "");

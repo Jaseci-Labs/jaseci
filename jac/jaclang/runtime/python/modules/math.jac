@@ -5,8 +5,6 @@ chains of growing intermediate integers. Derived from CPython 3.14.6;
 see ../LICENSE.cpython.
 """
 
-
-
 def:priv bits(value: i64) -> int {
     n = value;
     result = 0;

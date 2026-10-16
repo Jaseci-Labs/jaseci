@@ -8,7 +8,6 @@ comes from layouts.jac and embeds the exporter's `Py_buffer`. See
 ../LICENSE.cpython.
 """
 
-
 import from c {
     glob:priv picklebuf_keywords: list[ptr[u8]] = [ptr[u8](""), ptr[u8]()],
          picklebuf_as_buffer: PyBufferProcs = PyBufferProcs(

@@ -1,6 +1,5 @@
 """The grp module: generated clinic tables plus the struct_group type."""
 
-
 def:priv execute(module: ptr[PyObject]) -> i32 {
     if PLATFORM == "" {
         object_error(

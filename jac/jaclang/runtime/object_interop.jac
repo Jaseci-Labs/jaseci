@@ -1,4 +1,3 @@
-
 def is_record(value: object) -> bool {
     if is_jac_object(value) {
         return True;

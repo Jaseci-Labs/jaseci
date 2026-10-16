@@ -377,7 +377,6 @@ impl JacWalker.`spawn(
 }
 
 impl JacWalker.`disengage(`walker: WalkerArchetype) -> bool {
-
     `walker.__jac__.disengaged = True;
     osp_disengage();
     return True;
@@ -1569,7 +1568,6 @@ impl JacLLM.`by(model: LLMModel) -> Callable {
 }
 
 impl JacLLM.by_operator(lhs: any, rhs: any) -> any {
-
     lhs_list = lhs if isinstance(lhs, list) else [lhs];
     if all(isinstance(element, (NodeArchetype, EdgeArchetype)) for element in lhs_list)
         and isinstance(rhs, BaseLLM) {

@@ -9,7 +9,6 @@ cached in the module's native state, as the C module's hash table caches
 them per interpreter.
 """
 
-
 glob HASH_token = ClassToken(),
      HMAC_token = ClassToken();
 

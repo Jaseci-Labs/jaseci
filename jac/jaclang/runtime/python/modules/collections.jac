@@ -5,8 +5,6 @@ and all collection algorithms execute in Jac. Derived from CPython 3.14.6;
 see ../LICENSE.cpython.
 """
 
-
-
 obj deque_state {
     has items: object_ring = object_ring(),
         maxlen: i64 = -1,

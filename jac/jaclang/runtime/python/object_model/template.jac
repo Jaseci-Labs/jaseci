@@ -7,7 +7,6 @@ functions under theirs. The object layouts come from layouts.jac. See
 ../LICENSE.cpython.
 """
 
-
 import from c {
     glob _PyTemplateIter_Type: PyTypeObject = PyTypeObject(
              ob_base=PyVarObject(

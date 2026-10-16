@@ -3,7 +3,6 @@
 The tracer itself hooks the allocators in Python/tracemalloc.c.
 """
 
-
 def:priv none -> ptr[PyObject] {
     return Py_NewRef(borrowed_none());
 }

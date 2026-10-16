@@ -1,4 +1,3 @@
-
 walker BoundaryAnalysisPass(TreePass) {
     static has contract: PassContract = PassContract();
     has _func_defs: dict[(str, tuple[(InteropContext, Ability)])] = {},

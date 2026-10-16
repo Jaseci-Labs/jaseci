@@ -1,6 +1,4 @@
-
 def _is_version_info_access(expr: Expr) -> bool {
-
     if not isinstance(expr, uni.AtomTrailer) {
         return False;
     }
@@ -16,7 +14,6 @@ def _is_version_info_access(expr: Expr) -> bool {
 }
 
 def _is_type_checking_ref(expr: Expr) -> bool {
-
     inner = expr;
     if isinstance(expr, uni.AtomUnit) {
         unwrapped = expr.value;
@@ -37,7 +34,6 @@ def _is_type_checking_ref(expr: Expr) -> bool {
 }
 
 def _extract_version_tuple(expr: Expr) -> tuple[int, int] | None {
-
     if not isinstance(expr, uni.TupleVal) {
         return None;
     }
@@ -52,7 +48,6 @@ def _extract_version_tuple(expr: Expr) -> tuple[int, int] | None {
 }
 
 def evaluate_version_condition(condition: Expr) -> bool | None {
-
     cond = condition;
     if isinstance(condition, uni.AtomUnit) {
         unwrapped = condition.value;

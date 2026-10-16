@@ -1,5 +1,3 @@
-
-
 walker JcirBytecodeGenPass(CompilerPass) {
     static has contract: PassContract = PassContract();
 

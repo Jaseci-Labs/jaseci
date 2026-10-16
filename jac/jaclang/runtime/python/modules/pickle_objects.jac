@@ -5,7 +5,6 @@ traversal, identity validation and map selection execute in native Jac.
 Derived from CPython 3.14.6; see ../LICENSE.cpython.
 """
 
-
 def attribute_path(
     value: ptr[PyObject], name: ptr[PyObject], dotted: bool
 ) -> ptr[PyObject] {

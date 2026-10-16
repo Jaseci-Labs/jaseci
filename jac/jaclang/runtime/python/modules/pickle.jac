@@ -1,7 +1,5 @@
 """Public native ABI for pickle state and Python object adapters."""
 
-
-
 def retain_optional(value: ptr[PyObject]) -> ptr[PyObject] {
     if value != 0 {
         return Py_NewRef(value);

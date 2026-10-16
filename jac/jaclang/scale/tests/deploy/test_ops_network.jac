@@ -1,7 +1,5 @@
 """Focused tests for V-03 endpoints/ingress/PVC pure reshape helpers."""
 
-
-
 obj NetworkHost(JacAPIServerNetwork) {
     has server: any = None;
 }

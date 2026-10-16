@@ -8,8 +8,6 @@ buffer / iterable of ints (``ident[0:4] = b"..."``), which the old
 element-assignment model rejected.
 """
 
-
-
 """Type-check a Jac source string and return the emitted error messages."""
 def check_errors(src: str) -> list[str] {
     prog = JacProgram();

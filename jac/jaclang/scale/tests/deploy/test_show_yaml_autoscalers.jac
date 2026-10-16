@@ -2,8 +2,6 @@
 bundle carries autoscaler CONFIGS, not manifests; render_autoscaler_manifests
 turns them into the same objects the apply path builds, from the same spec."""
 
-
-
 test "hpa engine renders the HPA manifest the apply path would build" {
     target = KubernetesTarget(config=KubernetesConfig(app_name="t", namespace="t-ns"));
     bundle = {

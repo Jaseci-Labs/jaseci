@@ -5,8 +5,6 @@ Matsumoto and Takuji Nishimura. See the Mersenne Twister notice in
 ../LICENSE.cpython. No host random implementation is called.
 """
 
-
-
 obj mt19937(NativeState) {
     has words: list[u32] = [u32(0) for i in range(624)],
         index: int = 0;

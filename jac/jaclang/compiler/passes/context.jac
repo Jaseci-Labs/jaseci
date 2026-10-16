@@ -1,4 +1,3 @@
-
 obj Alert {
     has msg: str,
         loc: Span,

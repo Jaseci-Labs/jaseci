@@ -1,6 +1,5 @@
 """The _md5 module: the md5 type over its generated clinic glue."""
 
-
 def:priv md5_dealloc(instance: ptr[PyObject]) {
     dispose_payload(instance, MD5Type_token.handle);
 }

@@ -1,4 +1,3 @@
-
 walker GraphLoweringPass(TreePass) {
     static has contract: PassContract = PassContract(kernel_safe=True);
     has _serial: int = 0,

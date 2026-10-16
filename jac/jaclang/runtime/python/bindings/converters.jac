@@ -7,7 +7,6 @@ the binding's invoke() turns into a NULL result. Messages follow
 Python/getargs.c and Tools/clinic so upstream tests see the same text.
 """
 
-
 def argument_label(argname: str, position: int) -> str {
     return f"argument {position}" if not argname else f"argument '{argname}'";
 }

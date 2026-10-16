@@ -2,7 +2,6 @@
 # from compiler_codegen.jac. Pure mechanical move; see compiler_codegen.jac for
 # the module-initialization ordering contract.
 
-
 def visit_cleanup_stmts(
     g: cfg_builder, body: list[stmt], ann_ctx: ann_scope_plan | None
 ) -> stmt_cont {

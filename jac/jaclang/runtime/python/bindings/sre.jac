@@ -8,7 +8,6 @@ through the generated clinic glue, and Match.group through a METH_VARARGS
 callback as in the C. See ../LICENSE.cpython.
 """
 
-
 # --------------------------------------------------------- method tables
 
 def:priv class_getitem(doc: str) -> MethodDefinition {

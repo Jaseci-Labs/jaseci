@@ -1,4 +1,3 @@
-
 obj WovenAnnex {
     has source: str,
         path: str,

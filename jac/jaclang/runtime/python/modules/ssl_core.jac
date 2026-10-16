@@ -14,7 +14,6 @@ selection runs inside SSL_do_handshake()); such a callback reads only C
 memory the context owns, never a Python object or native state.
 """
 
-
 # ---------------------------------------------------------------------------
 # The C module's enums and constants.
 

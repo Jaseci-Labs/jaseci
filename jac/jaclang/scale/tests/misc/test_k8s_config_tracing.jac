@@ -1,5 +1,3 @@
-
-
 test "KubernetesConfig round-trips tracing_enabled" {
     on = KubernetesConfig.from_dict(KubernetesConfig, {"tracing_enabled": True});
     assert on.tracing_enabled == True;

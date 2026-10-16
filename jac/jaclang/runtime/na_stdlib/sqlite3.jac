@@ -1,4 +1,3 @@
-
 glob apilevel: str = "2.0",
      paramstyle: str = "qmark",
      threadsafety: int = 3,

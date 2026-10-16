@@ -5,7 +5,6 @@ false, no Prometheus), and unit tests for the pure projection helpers
 (status / pod-owner heuristics, name validation).
 """
 
-
 # ============================================================================
 # Endpoint auth gating
 # ============================================================================

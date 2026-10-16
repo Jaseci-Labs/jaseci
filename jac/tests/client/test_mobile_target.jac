@@ -78,7 +78,13 @@ test "the mobile kind resolves to the mobile target" {
         target_for_kind
     }
     import from jaclang.project.kinds { KIND_SPECS }
-    import from jaclang.project.app_kinds { MOBILE_PLATFORMS, UI_MOBUI, kind_has_client, kind_is_mobui, kind_ui }
+    import from jaclang.project.app_kinds {
+        MOBILE_PLATFORMS,
+        UI_MOBUI,
+        kind_has_client,
+        kind_is_mobui,
+        kind_ui
+    }
 
     # The kind is the whole story: no client axis, no alias table.
     assert KIND_TARGET["mobile"] == "mobile";

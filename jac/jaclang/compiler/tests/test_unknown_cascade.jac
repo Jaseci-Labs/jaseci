@@ -15,7 +15,6 @@ strict-Unknown discipline the checker_prod_unknown_* fixtures enforce:
 - Genuinely mistyped ops on resolved types keep reporting.
 """
 
-
 def check_src(src: str) -> list[str] {
     prog = JacProgram();
     prog.compile(

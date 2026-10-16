@@ -8,7 +8,6 @@ The object layouts, `gaobject` and `gaiterobject`, come from layouts.jac.
 See ../LICENSE.cpython.
 """
 
-
 # Attributes of the alias itself, which take priority over `__origin__`'s.
 glob:priv ATTR_EXCEPTIONS: list[str] = [
          "__class__",

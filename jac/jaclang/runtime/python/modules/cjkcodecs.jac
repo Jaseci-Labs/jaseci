@@ -10,7 +10,6 @@ codecs and maps are process-lifetime C data, so the per-module lists C
 allocates are the static arrays themselves. See ../LICENSE.cpython.
 """
 
-
 import from c {
     # multibytecodec.h: 8 bytes of state a codec uses as it wants, read and
     # written bytewise so getstate() is independent of byte order.

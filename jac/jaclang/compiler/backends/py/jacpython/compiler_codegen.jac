@@ -13,7 +13,6 @@
 # Product module: imports compiler_ir + opcode_meta + ast_nodes only. No host
 # tokenize/ast/compile/marshal.
 
-
 def emit_name_store(g: cfg_builder, name: str, tloc: cloc) {
     name = codegen_mangle(g, name);
     # Cell/free scope FIRST (see emit_name_load in compiler_emit): a

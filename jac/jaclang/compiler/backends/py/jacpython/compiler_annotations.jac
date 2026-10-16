@@ -7,7 +7,6 @@
 # scope finalization fills them after emitting the body. Class finalization
 # creates a closure containing the class namespace and any enclosing cells.
 
-
 # One deferred annotation: an annotated name plus its expression, in
 # construction order (the index baked into the SET_ADD registration).
 obj ann_entry {

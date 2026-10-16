@@ -15,7 +15,6 @@ and names the loop's steps S_*; gen_sre.jac expands them. See
 ../LICENSE.cpython.
 """
 
-
 import from c {
     def memcpy(target: ptr, source: ptr, size: u64) -> ptr;  def memchr(
         source: ptr, value: i32, size: u64

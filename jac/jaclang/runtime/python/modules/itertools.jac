@@ -6,7 +6,6 @@ combinatorics, grouping and tee. Derived from CPython 3.14.6; see
 ../LICENSE.cpython.
 """
 
-
 enum Kind {
     ACCUMULATE = 0,
     BATCHED = 1,

@@ -1,6 +1,5 @@
 """The time module: its method table, struct_time, the clock constants and time zone."""
 
-
 glob:priv METH_VARARGS: i64 = 1,
      METH_NOARGS: i64 = 4,
      METH_O: i64 = 8,

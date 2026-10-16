@@ -420,8 +420,7 @@ impl WireRec.bindings -> list[WireBinding] {
             name=name,
             alias=alias,
             injected=self.is_injected
-        )
-        for (name, alias) in self.items
+        ) for (name, alias) in self.items
     ];
 }
 
@@ -561,8 +560,7 @@ impl wire_records(wire: ImportWire, source: str = "") -> list[WireRec] {
                     (
                         item.name.value,
                         item.alias.value if item.alias is not None else ""
-                    )
-                    for item in target.items
+                    ) for item in target.items
                 ],
             line=first.line_no
         );
@@ -633,8 +631,7 @@ impl _encode_patterns(patterns: list[PatternRec]) -> str {
                 + ("1" if p.is_glob else "0")
                 + ("1" if p.is_string else "0")
                 + "\x1d"
-                + p.text
-            for p in patterns
+                + p.text for p in patterns
         ]
     );
 }
@@ -1151,7 +1148,9 @@ impl _target_text(consumers: list[str], items: (list[tuple[str, str]] | None)) -
     if items is None {
         return right;
     }
-    payload = ", ".join([name + (" as " + alias if alias else "") for (name, alias) in items]);
+    payload = ", ".join(
+        [name + (" as " + alias if alias else "") for (name, alias) in items]
+    );
     return f"{right} {{ {payload} }}";
 }
 
@@ -1196,9 +1195,8 @@ impl render_wiring(
 ) -> str {
     heads: dict[str, str] = {};
     payloads: dict[tuple[str, str, str, str, str], list[tuple[str, str]]] = {};
-    groups: dict[
-        tuple[str, str, str, str, str, tuple[tuple[str, str], ...]], list[str]
-    ] = {};
+    groups:
+        dict[tuple[str, str, str, str, str, tuple[tuple[str, str], ...]], list[str]] = {};
     for (consumer, binding) in facts {
         if consumer not in heads {
             split = spec.split_consumer(consumer);
@@ -1226,12 +1224,15 @@ impl render_wiring(
     for ((block, provider, form, arrow, consumer), items) in payloads.items() {
         groups.setdefault(
             (block, provider, form, "", arrow, tuple(sorted(items))), []
-        ).append(consumer);
+        ).append(
+            consumer
+        );
     }
-    statements: dict[
-        tuple[str, str, str, str, str],
-        list[tuple[list[str], (list[tuple[str, str]] | None)]]
-    ] = {};
+    statements:
+        dict[
+            tuple[str, str, str, str, str],
+            list[tuple[list[str], (list[tuple[str, str]] | None)]]
+        ] = {};
     for ((block, provider, form, alias, arrow, items), consumers) in groups.items() {
         module_form = "from" not in form.split(" ");
         prefix = " ".join(
@@ -1265,7 +1266,9 @@ impl render_wiring(
     }
     wires: dict[str, list[tuple[tuple[str, str, str, str], str]]] = {};
     for ((block, provider, prefix, alias, arrow), entries) in statements.items() {
-        head = " ".join(([prefix] if prefix else []) + [block_relative(block, provider)]);
+        head = " ".join(
+            ([prefix] if prefix else []) + [block_relative(block, provider)]
+        );
         if alias {
             head = head + " as " + alias;
         }
@@ -1274,7 +1277,8 @@ impl render_wiring(
             for (consumers, items) in sorted(entries, key=_entry_order)
         ];
         if len(texts) == 1 {
-            text = f"{head} {arrow} {texts[0]}" + (";" if entries[0][1] is None else "");
+            text = f"{head} {arrow} {texts[0]}"
+                + (";" if entries[0][1] is None else "");
         } else {
             text = f"{head} {arrow} [\n"
                 + "".join(["    " + t + ",\n" for t in texts])
@@ -1296,9 +1300,16 @@ impl render_wiring(
         blocks.append(_block_text("", policy + top_wires));
     }
     for block in sorted(
-        [b for b in wires.keys() if b], key=lambda (b: str) { b.split("."); }
+        [
+            b
+            for b in wires.keys()
+            if b
+        ],
+        key=lambda (b: str) { b.split("."); }
     ) {
-        blocks.append(_block_text(block, [text for (_key, text) in sorted(wires[block])]));
+        blocks.append(
+            _block_text(block, [text for (_key, text) in sorted(wires[block])])
+        );
     }
     return "\n\n".join(blocks) + "\n" if blocks else "";
 }
@@ -1308,7 +1319,9 @@ impl canonical_wiring_source(source: str, path: str) -> str {
     if had_error
         or mod.doc is not None
         or mod.source.comments
-        or any([not isinstance(stmt, (GraphImport, EmptyToken)) for stmt in mod.body]) {
+        or any(
+            [not isinstance(stmt, (GraphImport, EmptyToken)) for stmt in mod.body]
+        ) {
         return source;
     }
     (wires, rules) = module_records(mod, source);

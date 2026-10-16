@@ -1,8 +1,6 @@
 """The _struct module: s_new, the hand-written pack and pack_into, the
 slots, and the clinic-generated methods over modules/struct.jac's state."""
 
-
-
 def:priv create(
     type: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
 ) -> ptr[PyObject] {

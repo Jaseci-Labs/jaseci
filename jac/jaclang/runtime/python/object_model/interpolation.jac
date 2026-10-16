@@ -8,7 +8,6 @@ its arguments as Objects/clinic/interpolationobject.c.h does. The object
 layout, `interpolationobject`, comes from layouts.jac. See ../LICENSE.cpython.
 """
 
-
 import from c {
     glob:priv interpolation_members: list[PyMemberDef] = [
              PyMemberDef(

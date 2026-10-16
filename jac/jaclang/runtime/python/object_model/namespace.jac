@@ -6,7 +6,6 @@ and the C API use them unchanged. The object layout, `_PyNamespaceObject`,
 comes from layouts.jac. See ../LICENSE.cpython.
 """
 
-
 import from c {
     glob:priv namespace_members: list[PyMemberDef] = [
              PyMemberDef(

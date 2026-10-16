@@ -9,7 +9,6 @@ pyconfig.h); the glue's per-target tables add the one definition each
 target has of getgrouplist, initgroups and sendfile.
 """
 
-
 import from c {
     # os_sched_param_reduce_method, added to sched_param after it is made.
     glob:priv sched_param_reduce_method: PyMethodDef = PyMethodDef(

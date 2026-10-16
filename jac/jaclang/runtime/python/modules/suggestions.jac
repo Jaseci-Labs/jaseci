@@ -3,7 +3,6 @@
 The Levenshtein search itself is Python/suggestions.c, which tracebacks share.
 """
 
-
 def _suggestions__generate_suggestions_impl(
     module: ptr[PyObject], candidates: ptr[PyObject], item: ptr[PyObject]
 ) -> ptr[PyObject] {

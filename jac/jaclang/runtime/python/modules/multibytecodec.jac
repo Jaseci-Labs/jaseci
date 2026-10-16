@@ -7,7 +7,6 @@ native state. The encode and decode loops, the error-callback protocol and
 getstate()/setstate() follow the C. See ../LICENSE.cpython.
 """
 
-
 import from c {
     # MultibyteEncodeBuffer. The codec advances `inpos` and `outbuf` through
     # their addresses, which are the record's first two words; `replpos` is

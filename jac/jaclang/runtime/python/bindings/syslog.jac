@@ -1,6 +1,5 @@
 """The syslog module: generated clinic tables, the hand-parsed syslog() and constants."""
 
-
 # syslog([priority=LOG_INFO,] message): a clinic optional group, parsed as
 # the generated C does, by argument count.
 def:priv syslog_call(module: ptr[PyObject], args: ptr[PyObject]) -> ptr[PyObject] {

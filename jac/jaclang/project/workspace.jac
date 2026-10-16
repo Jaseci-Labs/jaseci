@@ -7,7 +7,6 @@ import from contextlib { contextmanager }
 import from contextvars { ContextVar }
 
 
-
 obj WorkspaceResolution {
     has paths: dict[str, str] = {},
         workspaces: dict[str, WorkspaceSpec | None] = {};

@@ -1,7 +1,6 @@
 """The math module: its clinic-generated functions, the FUNC1/FUNC2 ones
 mathmodule.c writes by hand, and the constants."""
 
-
 # FUNC1/FUNC1A/FUNC1D/FUNC1AD: METH_O over math_1().
 def:priv acos_call(module: ptr[PyObject], value: ptr[PyObject]) -> ptr[PyObject] {
     return jacpy_math_unary(0, value);

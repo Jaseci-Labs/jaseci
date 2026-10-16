@@ -3,7 +3,6 @@ import os;
 import ctypes;
 
 
-
 class _MissingShimFunc {
     """Stands in for a shim function when no shim exists.
 

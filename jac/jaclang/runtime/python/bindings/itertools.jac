@@ -1,7 +1,6 @@
 """The itertools module: its types, built from itertoolsmodule.c's docs and
 method tables, over the construction modules/itertools.jac keeps."""
 
-
 # Each type's tp_doc.
 glob:priv docs = [
          accumulate_doc,

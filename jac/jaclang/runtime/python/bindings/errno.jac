@@ -5,7 +5,6 @@ The codes come from errno_constants.<os>.jac, generated from the target's
 <errno.h> by scripts/jacpython/gen_constants.jac.
 """
 
-
 def:priv add_errcode(
     module_dict: ptr[PyObject], error_dict: ptr[PyObject], name: str, code: i64
 ) -> bool {

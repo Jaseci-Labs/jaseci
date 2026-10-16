@@ -5,7 +5,6 @@ CPython supplies Unicode storage, containers, scalar construction and exceptions
 Derived from CPython 3.14.6; see ../LICENSE.cpython.
 """
 
-
 def write_ascii(writer: ptr[PyUnicodeWriter], text: str) {
     checked(PyUnicodeWriter_WriteASCII(writer, text, i64(len(text))));
 }

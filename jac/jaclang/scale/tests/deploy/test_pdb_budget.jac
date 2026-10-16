@@ -7,9 +7,6 @@ down for its whole boot window. These drive the real manifest builder and the
 real plan validator.
 """
 
-
-
-
 def _pdbs(services: dict[str, any]) -> dict[str, any] {
     import tempfile;
     import from pathlib { Path }

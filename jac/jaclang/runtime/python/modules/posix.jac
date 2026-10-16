@@ -8,4 +8,3 @@ posix_files (filesystem operations), posix_fileio (descriptor I/O,
 terminals, eventfd and timerfd), posix_process (fork, exec, spawn, wait,
 scheduling) and posix_ids (ids, groups, uname, sysconf, the environment).
 """
-

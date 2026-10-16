@@ -10,7 +10,6 @@ posix_fileio_platform.<os>.jac. HAVE_OPENAT_RUNTIME and
 HAVE_PTSNAME_R_RUNTIME are always true for the supported deployment targets.
 """
 
-
 import from c {
     obj winsize {
         has ws_row: u16 = 0,

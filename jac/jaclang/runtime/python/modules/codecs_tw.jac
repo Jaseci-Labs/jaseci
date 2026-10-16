@@ -2,7 +2,6 @@
 encodings, big5 and cp950) in native Jac. See ../LICENSE.cpython.
 """
 
-
 # BIG5 codec
 
 def big5_encode(

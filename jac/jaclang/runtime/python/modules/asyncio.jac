@@ -7,7 +7,6 @@ here, with the Task step machinery and the type slots the binding installs;
 the object layouts, state and Future primitives are in asyncio_core.jac.
 """
 
-
 glob Future_token = ClassToken(),
      Task_token = ClassToken();
 

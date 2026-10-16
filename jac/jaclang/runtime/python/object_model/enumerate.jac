@@ -7,7 +7,6 @@ entry points parse positional and keyword arguments by hand as the C file
 does. The object layouts come from layouts.jac. See ../LICENSE.cpython.
 """
 
-
 import from c {
     glob:priv enum_keywords: list[ptr[u8]] = [
              ptr[u8]("iterable"),

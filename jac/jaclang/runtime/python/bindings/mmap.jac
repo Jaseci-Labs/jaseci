@@ -1,6 +1,5 @@
 """The mmap module: the mmap type with its buffer, sequence and mapping protocols."""
 
-
 glob:priv INTERNAL: list[str] = [
          "_SC_PAGESIZE",
          "MS_SYNC",

@@ -1,6 +1,5 @@
 """The _lsprof module: the Profiler type and the two stats struct sequences."""
 
-
 # Untracked first: flushing unmatched calls can run the user's timer.
 def:priv profiler_dealloc(instance: ptr[PyObject]) {
     jacpy_binding_untrack(instance);

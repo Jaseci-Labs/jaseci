@@ -1,7 +1,6 @@
 """The _zstd module: ZstdDict, ZstdCompressor, ZstdDecompressor, ZstdError and
 the zstd constants, over the generated clinic glue."""
 
-
 def:priv dict_dealloc(instance: ptr[PyObject]) {
     dispose_payload(instance, ZstdDict_token.handle);
 }

@@ -18,7 +18,15 @@ import from pathlib { Path }
 import from jaclang.cli.commands { execution }
 import from jaclang.project.config { JacConfig, set_config }
 import from jaclang.project.apps { AppConfig }
-import from jaclang.project.kinds { plan_app_run, plan_workspace, resolve_app_kind, resolve_entry, RunPlan, KIND_SPECS, VALID_KINDS }
+import from jaclang.project.kinds {
+    plan_app_run,
+    plan_workspace,
+    resolve_app_kind,
+    resolve_entry,
+    RunPlan,
+    KIND_SPECS,
+    VALID_KINDS
+}
 import from jaclang.project.app_kinds { is_valid_kind, kind_entry, kind_spec }
 
 glob _tmp_dirs: list[str] = [];

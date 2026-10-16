@@ -9,7 +9,6 @@ modules/sre_ucs{1,2,4}.jac, with its own copies of the helpers it runs on
 every step. See ../LICENSE.cpython.
 """
 
-
 import from c {
     # SRE_REPEAT: a REPEAT operator's context. `pattern` points at the
     # operator's arguments; the pool links chain the used and unused records.

@@ -2,7 +2,6 @@
 # compiler_codegen.jac. Pure mechanical move; see compiler_codegen.jac for the
 # module-initialization ordering contract.
 
-
 # ---------------- break-edge tail duplication (CPython parity) ----------------
 #
 # CPython lowers `break` as an unwind plus a jump to the loop's exit anchor,

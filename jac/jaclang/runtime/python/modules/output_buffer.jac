@@ -5,7 +5,6 @@ see ../LICENSE.cpython. A codec writes into the current block through a cursor
 and a free count; finish() joins the used bytes, reusing a lone full block.
 """
 
-
 glob:priv KB: i64 = 1024,
      MB: i64 = 1024 * 1024,
      BLOCK_SIZES: list[i64] = [

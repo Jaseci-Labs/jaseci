@@ -1,4 +1,3 @@
-
 obj ModuleFacts {
     static def ability_is_generator(ability: Ability) -> bool {
         pending: list[UniNode] = list(ModuleFacts.unwrap_body(ability) or []);

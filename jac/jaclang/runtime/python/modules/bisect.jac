@@ -5,7 +5,6 @@ orchestration execute here, without converting the sequence to a Jac list.
 Derived from CPython 3.14.6; see ../LICENSE.cpython.
 """
 
-
 # The type slots bisect calls directly: sq_item (ssizeargfunc) and
 # tp_richcompare (richcmpfunc).
 import from c {

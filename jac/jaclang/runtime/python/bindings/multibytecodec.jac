@@ -1,8 +1,6 @@
 """The _multibytecodec module: MultibyteCodec and the incremental and stream
 codec types over their generated clinic glue."""
 
-
-
 # The "errors" property's context: which stateful type it reads.
 glob:priv ENCODER: u64 = 0,
      DECODER: u64 = 1,

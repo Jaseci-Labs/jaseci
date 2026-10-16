@@ -5,8 +5,6 @@ One test per helper added for the fix.  Each proves the *new* behavior
 covered by the existing test_parallel.jac suite.
 """
 
-
-
 test "normalize_tool_result preserves list[Media]" {
     items = [Text(text="ok"), Image(url="https://example.com/x.png")];
     out = normalize_tool_result(items);

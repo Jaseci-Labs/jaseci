@@ -1,8 +1,6 @@
 """The array module: array_new, the sequence, mapping and buffer slots, and
 the clinic-generated methods over the state modules/array.jac keeps."""
 
-
-
 # array_new: PyArg_ParseTuple(args, "C|O:array", ...).
 glob:priv array_signature = CallSignature(
          "array", ["typecode", "initializer"], 1, 2, 2, parser=PARSE_FORMAT

@@ -1,6 +1,5 @@
 """The _uuid module: generate_time_safe() and the library capability flags."""
 
-
 glob:priv METH_NOARGS: i64 = 4;
 
 def:priv execute(module: ptr[PyObject]) -> i32 {

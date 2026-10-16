@@ -2,7 +2,6 @@
 types as C-layout specs over the generated clinic tables, the module state
 and the execution slot in Modules/_asynciomodule.c's order."""
 
-
 import from c {
     glob:priv futureiter_methods: list[PyMethodDef] = [
              PyMethodDef(

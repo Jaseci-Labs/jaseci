@@ -1,6 +1,5 @@
 """The _tracemalloc module over its generated clinic table."""
 
-
 glob:priv definition = ModuleDefinition(
          "_tracemalloc",
          "Debug module to trace memory blocks allocated by Python.",

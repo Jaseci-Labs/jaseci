@@ -4,7 +4,6 @@ euc_jisx0213 and shift_jisx0213) in native Jac, with alg_jisx0201.h and
 emu_jisx0213_2000.h. See ../LICENSE.cpython.
 """
 
-
 def:priv pair_code(body: int, modifier: int) -> int {
     return find_pairencmap(
         body, modifier, addressof(cjk_jisx0213_pair_encmap), JISX0213_ENCPAIRS

@@ -1,10 +1,8 @@
-
 # Symbol table for the P4 front track (INTEGRATION_PLAN Phase 5).
 #
 # Two-pass scope analysis over validated AST: raw def/use collection, then
 # LOCAL/GLOBAL/FREE/CELL classification matching CPython 3.14 symtable.c.
 # Codegen consumes sym_facts; product_compile runs this after validation.
-
 
 # CPython symtable flag bits (Include/internal/pycore_symtable.h).
 glob DEF_GLOBAL: int = 1,

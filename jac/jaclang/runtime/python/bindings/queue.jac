@@ -1,6 +1,5 @@
 """The _queue module: SimpleQueue over native FIFO state, and Empty."""
 
-
 def:priv deallocate(instance: ptr[PyObject]) {
     dispose_payload(instance, queue_type.handle);
 }

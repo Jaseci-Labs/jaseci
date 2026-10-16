@@ -1,6 +1,5 @@
 """posix file descriptor primitives for a target with no posix_fileio_platform.<os>.jac; the binding rejects it."""
 
-
 import from c {
     obj iovec {
         has iov_base: ptr = ptr(),

@@ -1,6 +1,5 @@
 """The pwd module: generated clinic tables plus the struct_passwd type."""
 
-
 def:priv execute(module: ptr[PyObject]) -> i32 {
     if PLATFORM == "" {
         object_error(

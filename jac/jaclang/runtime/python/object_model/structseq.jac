@@ -10,7 +10,6 @@ counts are the type's `n_sequence_fields`, `n_fields` and `n_unnamed_fields`.
 ../LICENSE.cpython.
 """
 
-
 import from c {
     glob PyTuple_Type: PyTypeObject;
     # Fields with this name have only a field index, not a field name. They

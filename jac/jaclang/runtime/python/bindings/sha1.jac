@@ -1,6 +1,5 @@
 """The _sha1 module: the sha1 type over its generated clinic glue."""
 
-
 def:priv sha1_dealloc(instance: ptr[PyObject]) {
     dispose_payload(instance, SHA1Type_token.handle);
 }

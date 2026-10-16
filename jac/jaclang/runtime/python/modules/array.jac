@@ -6,7 +6,6 @@ logical size until the final buffer release. Derived from CPython 3.14.6;
 see ../LICENSE.cpython.
 """
 
-
 obj array_state {
     has storage: ptr[PyObject] = NULL,
         code: int = 0,

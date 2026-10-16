@@ -2,7 +2,6 @@
 hand-written defaultdict and _tuplegetter, and the clinic-generated methods
 over the state modules/collections.jac keeps."""
 
-
 def:priv reference_value(
     instance: ptr[PyObject], definition: ptr
 ) -> (ReferenceState | None) {

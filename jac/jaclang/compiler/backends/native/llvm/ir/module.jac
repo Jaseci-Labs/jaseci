@@ -1,4 +1,3 @@
-
 """The cache key of one metadata operand: equal operands share a key.
 
 Constants compare by their text and metadata strings by their string; every

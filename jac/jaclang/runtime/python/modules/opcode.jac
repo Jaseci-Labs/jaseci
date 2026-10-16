@@ -5,7 +5,6 @@ metadata and stack effects are the native compiler's own tables in
 opcode_meta.jac, so dis and the compiler cannot disagree.
 """
 
-
 glob ENABLE_SPECIALIZATION: i64 = 1,
      ENABLE_SPECIALIZATION_FT: i64 = 1;
 

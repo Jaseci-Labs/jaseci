@@ -71,10 +71,7 @@ comptime SPEC_ARCH: CommandSpec = CommandSpec(
                  "Add a wire for every import a module writes that its archwire.jac does "
                  "not declare"
              ),
-             (
-                 "jac arch sync --prune",
-                 "Also remove the wired names no consumer uses"
-             ),
+             ("jac arch sync --prune", "Also remove the wired names no consumer uses"),
              ("jac arch graph", "Print the wiring as a mermaid diagram"),
              (
                  "jac arch graph --format json -o wiring.json",

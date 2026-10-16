@@ -1,4 +1,3 @@
-
 glob:pub ZIP_STORED: int = 0,
      ZIP_DEFLATED: int = 8;
 

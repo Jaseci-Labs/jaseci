@@ -1,4 +1,3 @@
-
 glob _PLACEHOLDER: set = {
          "__linear_memory",
          "__indirect_function_table",

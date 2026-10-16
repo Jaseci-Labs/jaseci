@@ -1,5 +1,3 @@
-
-
 test "proxy uses the longest matching service prefix on a member subpath" {
     decision = classify_route("/orders/function/create", ["/o", "/orders"]);
     assert decision.kind == ROUTE_PROXY;

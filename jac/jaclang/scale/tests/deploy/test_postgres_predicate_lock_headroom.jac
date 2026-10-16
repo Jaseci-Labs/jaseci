@@ -13,7 +13,6 @@ already provisions headroom for that; the Kubernetes provisioner shipped the
 stock defaults, which is the configuration the incident ran on.
 """
 
-
 glob OBSERVED_PEAK_SIREAD_LOCKS = 17406,
      OBSERVED_SIREAD_LOCKS_PER_CONN = 870;
 

@@ -1,6 +1,5 @@
 """The cmath module: its clinic-generated functions and constants."""
 
-
 # cmath_exec(): pi, e, tau, inf, infj, nan and nanj.
 def:priv execute(module: ptr[PyObject]) -> i32 {
     names = ["pi", "e", "tau", "inf", "nan"];

@@ -1,5 +1,3 @@
-
-
 glob C_BUILTIN_TYPES: tuple[str, ...] = ("ptr", "PtrView", "Pinned", "VaList");
 
 def clib_import_of(nd: (UniNode | None)) -> (Import | None) {

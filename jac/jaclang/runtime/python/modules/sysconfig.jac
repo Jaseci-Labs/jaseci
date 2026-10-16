@@ -1,4 +1,3 @@
-
 """Build variables for sysconfig; derived from CPython 3.14.6 Modules/_sysconfig.c.
 
 Release runtimes are neither free-threaded nor debug builds.

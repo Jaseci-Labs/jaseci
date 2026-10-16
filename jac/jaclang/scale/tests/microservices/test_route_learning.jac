@@ -7,8 +7,6 @@ gateway permanently misses the routes of every service that was slow to start.
 A service is only quotable once it is healthy.
 """
 
-
-
 def _entry(status: ServiceStatus) -> ServiceEntry {
     return ServiceEntry(
         name="scoring",

@@ -75,7 +75,7 @@ def _standard(arch: str = _ARCH, svc: str = _SVC, main: str = _MAIN) -> str {
 }
 
 
-def _write(base: str, rel: str, text: str) -> None {
+def _write(base: str, rel: str, text: str) {
     path = os.path.join(base, rel);
     os.makedirs(os.path.dirname(path), exist_ok=True);
     with open(path, "w") as f {
@@ -242,7 +242,11 @@ test "a payload rule admits only the names it lists" {
         arch=arch, main="def greet -> str {\n    return when() + serve();\n}\n"
     );
     try {
-        _write(base, "core/util.jac", _UTIL + "\ndef serve -> str {\n    return now();\n}\n");
+        _write(
+            base,
+            "core/util.jac",
+            _UTIL + "\ndef serve -> str {\n    return now();\n}\n"
+        );
         prog = _compile(base, "archwire.jac");
         assert _errors(prog) == ["E2091"] , _errors(prog);
         _write(
@@ -332,9 +336,10 @@ test "wiring blocks belong in archwire.jac and nothing else belongs there" {
 
 test "archwire.jac holds facts only, so a comment or docstring is an error" {
     base = _standard(
-        arch="\"\"\"The wiring.\"\"\"\n\n# core first\n" + _ARCH.replace(
-            "    util ++> svc { now }\n", "    util ++> svc { now }  # the clock\n"
-        )
+        arch="\"\"\"The wiring.\"\"\"\n\n# core first\n"
+            + _ARCH.replace(
+                "    util ++> svc { now }\n", "    util ++> svc { now }  # the clock\n"
+            )
     );
     try {
         arch = _compile(base, "archwire.jac");
@@ -457,7 +462,11 @@ test "a provider feeding consumers different names is written once, as a list" {
         )
     );
     try {
-        _write(base, "core/util.jac", _UTIL + "\ndef later -> str {\n    return now();\n}\n");
+        _write(
+            base,
+            "core/util.jac",
+            _UTIL + "\ndef later -> str {\n    return now();\n}\n"
+        );
         text = _formatted(base, "archwire.jac");
         assert text
             == (
@@ -470,7 +479,9 @@ test "a provider feeding consumers different names is written once, as a list" {
             ) , text;
         _write(base, "archwire.jac", text);
         assert _formatted(base, "archwire.jac") == text;
-        _write(base, "core/svc.jac", "def serve -> str {\n    return now() + later();\n}\n");
+        _write(
+            base, "core/svc.jac", "def serve -> str {\n    return now() + later();\n}\n"
+        );
         _write(base, "core/other.jac", "def tick -> str {\n    return clock();\n}\n");
         assert _errors(_compile(base, "core/svc.jac")) == [];
         assert _errors(_compile(base, "core/other.jac")) == [];
@@ -570,7 +581,9 @@ test "an unaliased module wire loads for effect; an aliased one must be used" {
         _write(
             base,
             "app/main.jac",
-            _MAIN.replace("serve() + when()", "serve() + when() + str(other_mod.helper())")
+            _MAIN.replace(
+                "serve() + when()", "serve() + when() + str(other_mod.helper())"
+            )
         );
         assert _errors(_compile(base, "app/main.jac")) == [];
     } finally {
@@ -581,7 +594,8 @@ test "an unaliased module wire loads for effect; an aliased one must be used" {
 
 test "a scoped wire's name unused in its function is an error" {
     base = _standard(
-        arch=_ARCH + "\ngraph import {\n    core.other ++> app.main.greet { helper }\n}\n"
+        arch=_ARCH
+            + "\ngraph import {\n    core.other ++> app.main.greet { helper }\n}\n"
     );
     try {
         assert _errors(_compile(base, "app/main.jac")) == ["E1146"];
@@ -599,17 +613,13 @@ test "a scoped wire's name unused in its function is an error" {
 
 test "a name used only in an impl annex counts as used" {
     base = _standard(
-        main=(
-            "def greet -> str;\n"
-            "\n"
-            "with entry {\n"
-            "    print(greet());\n"
-            "}\n"
-        )
+        main=("def greet -> str;\n" "\n" "with entry {\n" "    print(greet());\n" "}\n")
     );
     try {
         _write(
-            base, "app/main.impl.jac", "impl greet -> str {\n    return serve() + when();\n}\n"
+            base,
+            "app/main.impl.jac",
+            "impl greet -> str {\n    return serve() + when();\n}\n"
         );
         assert _errors(_compile(base, "app/main.jac")) == [];
     } finally {
@@ -875,13 +885,13 @@ test "an import that runs where it is written is declared by a --> wire" {
     try {
         prog = _compile(base, "app/main.jac");
         assert _errors(prog) == ["E2094"] , _errors(prog);
-        assert "core.other --> app.main.greet { helper }" in str(
-            prog.errors_had[0].pretty_print()
-        );
+        assert "core.other --> app.main.greet { helper }"
+            in str(prog.errors_had[0].pretty_print());
         _write(
             base,
             "archwire.jac",
-            _ARCH + "\ngraph import {\n    core.other ++> app.main.greet { helper }\n}\n"
+            _ARCH
+                + "\ngraph import {\n    core.other ++> app.main.greet { helper }\n}\n"
         );
         injected = _compile(base, "app/main.jac");
         assert _errors(injected) == ["E2094"] , _errors(injected);
@@ -889,7 +899,8 @@ test "an import that runs where it is written is declared by a --> wire" {
         _write(
             base,
             "archwire.jac",
-            _ARCH + "\ngraph import {\n    core.other --> app.main.greet { helper }\n}\n"
+            _ARCH
+                + "\ngraph import {\n    core.other --> app.main.greet { helper }\n}\n"
         );
         assert _errors(_compile(base, "app/main.jac")) == [];
         _write(base, "app/main.jac", _MAIN);
@@ -903,7 +914,8 @@ test "an import that runs where it is written is declared by a --> wire" {
 
 test "an import after other statements runs where it is written too" {
     base = _standard(
-        arch=_ARCH + "\ngraph import {\n    core.other --> app.main.greet { helper }\n}\n",
+        arch=_ARCH
+            + "\ngraph import {\n    core.other --> app.main.greet { helper }\n}\n",
         main=(
             "def greet -> str {\n"
             "    first = serve() + when();\n"
@@ -999,7 +1011,8 @@ test "a name read inside an import from c block counts as used" {
             "    core.util ++> app.main { now as when }\n"
             "    core.other ++> app.main { helper }\n"
         ),
-        main=_MAIN + "\nimport from c {\n    glob:priv handlers: list[int] = [helper()];\n}\n"
+        main=_MAIN
+            + "\nimport from c {\n    glob:priv handlers: list[int] = [helper()];\n}\n"
     );
     try {
         assert "E1146" not in _errors(_compile(base, "app/main.jac"));

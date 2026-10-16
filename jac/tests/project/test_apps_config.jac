@@ -7,8 +7,20 @@ import from tempfile { TemporaryDirectory }
 import from jaclang.project.apps { AppConfig, implicit_app, parse_apps }
 import from jaclang.project.config { JacConfig }
 import from jaclang.project.plugin_config { PluginConfigBase }
-import from jaclang.project.kinds { KIND_SPECS, plan_app_run, plan_workspace, resolve_app_kind }
-import from jaclang.project.app_kinds { MOBILE_PLATFORMS, UI_DOM, UI_MOBUI, kind_has_client, kind_is_mobui, kind_ui }
+import from jaclang.project.kinds {
+    KIND_SPECS,
+    plan_app_run,
+    plan_workspace,
+    resolve_app_kind
+}
+import from jaclang.project.app_kinds {
+    MOBILE_PLATFORMS,
+    UI_DOM,
+    UI_MOBUI,
+    kind_has_client,
+    kind_is_mobui,
+    kind_ui
+}
 import from jaclang.project.mobui_scope { mobui_module_exempt }
 import jaclang.project.mobui_scope as pure_mod;
 import jaclang.project.config as config_mod;

@@ -1,4 +1,3 @@
-
 test "service entry has correct defaults" {
     `entry = ServiceEntry(name="orders", file="orders.jac", prefix="/api/orders");
     assert `entry.port == 0;

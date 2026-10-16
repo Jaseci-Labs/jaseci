@@ -7,7 +7,6 @@
 #
 # Product module: imports token_model + tokenizer only.
 
-
 # Keyword token ids start at 500 in CPython's pegen generator (parser_generator.py).
 glob PEG_KEYWORD_TYPE_BASE: int = 500;
 glob STAR_TARGETS: int = 0,

@@ -1,6 +1,5 @@
 """The unicodedata module: the UCD type, ucd_3_2_0 and the name capsule."""
 
-
 def:priv ucd_dealloc(instance: ptr[PyObject]) {
     dispose_payload(instance, UCD_token.handle);
 }

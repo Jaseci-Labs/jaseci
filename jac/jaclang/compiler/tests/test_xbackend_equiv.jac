@@ -1,6 +1,5 @@
 """The JavaScript equivalence harness accepts bundles larger than argv limits."""
 
-
 test "JavaScript equivalence helpers accept large bundles" {
     script = "/*"
         + "x" * (256 * 1024)

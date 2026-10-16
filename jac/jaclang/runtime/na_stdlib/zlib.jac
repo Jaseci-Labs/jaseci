@@ -1,5 +1,3 @@
-
-
 def:pub crc32(data: bytes, value: int = 0) -> int {
     return z_crc32(value, data, len(data));
 }

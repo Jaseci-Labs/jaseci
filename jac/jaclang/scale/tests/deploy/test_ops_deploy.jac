@@ -4,8 +4,6 @@ The K8s `.to_dict()` reshaping is pure, so these feed mocked payloads (the
 live list calls are integration-tested on a real cluster).
 """
 
-
-
 obj DeployHost(JacAPIServerDeployHealth) {
     has server: any = None;
 }

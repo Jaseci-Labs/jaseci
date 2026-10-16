@@ -1,4 +1,3 @@
-
 import from math { isfinite as _isf, isinf as _isi, isnan as _isn }
 
 def _scale_up(value: float) -> float {

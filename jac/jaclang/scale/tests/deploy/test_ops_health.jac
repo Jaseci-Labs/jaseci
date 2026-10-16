@@ -5,8 +5,6 @@ feed them mocked probe results. Plus a registration smoke test (an
 unregistered /admin/ops/* would fall to the SPA catchall and serve HTML).
 """
 
-
-
 obj OpsHost(JacAPIServerOps) {
     has server: any = None;
 }

@@ -1,6 +1,5 @@
 """The select module: select(), poll, epoll (Linux), kqueue and kevent (macOS)."""
 
-
 glob:priv POLL_TYPE: int = 0,
      EPOLL_TYPE: int = 1,
      KEVENT_TYPE: int = 2,

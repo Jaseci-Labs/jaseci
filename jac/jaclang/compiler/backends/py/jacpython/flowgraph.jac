@@ -8,7 +8,6 @@
 # Product module: imports compiler_ir + opcode_meta + objects only.
 # Never imports assembler.
 
-
 # Verified CFG: flat instruction stream with stack depth, ready for assembly.
 # Phase 3 adds hard errors on underflow and inconsistent joins via diag.
 obj verified_cfg {

@@ -4,8 +4,6 @@ Originally generated from CPython 3.14.6 Grammar/python.gram (starts: eval, file
 Maintained directly in Jac.
 """
 
-
-
 glob RULE__gather_101: int = NT_OFFSET + 0,
      RULE__gather_104: int = NT_OFFSET + 1,
      RULE__gather_106: int = NT_OFFSET + 2,

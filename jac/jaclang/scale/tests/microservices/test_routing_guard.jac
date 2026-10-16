@@ -1,5 +1,3 @@
-
-
 test "an app route under a gateway segment is rejected" {
     caught = "";
     try {

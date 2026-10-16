@@ -1,6 +1,5 @@
 """posix stat primitives for a target with no posix_stat_platform.<os>.jac; the binding rejects it."""
 
-
 glob PLATFORM: str = "",
      STATVFS_RECORD_SIZE: int = 8,
      STAT_EXTRA_FIELDS: list[tuple[str, str]] = [];

@@ -9,7 +9,6 @@ records themselves are C-layout structs walked and called here. The
 interpreter hooks are C functions defined under their C names.
 """
 
-
 glob:priv PY_EQ: i32 = 2;
 
 """The current interpreter's list of Python callbacks (borrowed)."""

@@ -1,6 +1,5 @@
 """The zlib module: its three stream types, the error type and the constants."""
 
-
 def:priv compress_dealloc(instance: ptr[PyObject]) {
     dispose_payload(instance, Compress_token.handle);
 }

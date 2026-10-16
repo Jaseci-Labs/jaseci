@@ -2,7 +2,6 @@
 # Pure mechanical move; see compiler_codegen.jac for the module-initialization
 # ordering contract.
 
-
 obj match_pat_ctx {
     has stores: list[str],
         on_top: int,

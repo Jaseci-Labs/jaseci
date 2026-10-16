@@ -2,7 +2,6 @@
 # extracted from compiler_codegen.jac. Pure mechanical move; see
 # compiler_codegen.jac for the module-initialization ordering contract.
 
-
 # CPython's import prefix keeps int 0 in co_consts even though level uses
 # LOAD_SMALL_INT (same dead-small-int slot as literal folding).
 def ensure_import_prefix_consts(g: cfg_builder) {

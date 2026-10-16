@@ -5,7 +5,6 @@ traversal, framing and callback orchestration execute in Jac machine code.
 Derived from CPython 3.14.6; see ../LICENSE.cpython.
 """
 
-
 obj pickle_state {
     has stream: pickle_writer = pickle_writer(),
         memo: ptr[PyObject] = NULL,

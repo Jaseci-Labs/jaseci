@@ -2,7 +2,6 @@
 hierarchy, the published constants and the execution slots in
 Modules/_ssl.c's order."""
 
-
 # ---------------------------------------------------------------------------
 # SSLError
 

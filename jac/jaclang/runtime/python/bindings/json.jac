@@ -1,6 +1,5 @@
 """JSON scanner and encoder bindings, with native-owned Python settings."""
 
-
 obj JsonScannerState(ReferenceState) {
     has strict: i64 = 1;
 }

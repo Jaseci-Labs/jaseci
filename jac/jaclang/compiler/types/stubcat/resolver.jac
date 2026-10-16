@@ -1,4 +1,3 @@
-
 obj CatalogResolver {
     def resolve_module(path: str) -> (Module | None) abst;
     def resolve_shared(

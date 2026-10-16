@@ -4,7 +4,6 @@ The format plan owns typed Jac fields; Python values and exported buffers stay
 at the shared object boundary. Derived from CPython 3.14.6; see ../LICENSE.cpython.
 """
 
-
 obj format_field {
     has code: int,
         offset: int,

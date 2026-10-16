@@ -3,7 +3,6 @@
 Derived from CPython 3.14.6 Modules/_typesmodule.c; see ../LICENSE.cpython.
 """
 
-
 glob:priv TYPES: list[tuple[str, ptr[PyObject]]] = [
          ("AsyncGeneratorType", addressof(PyAsyncGen_Type)),
          ("BuiltinFunctionType", addressof(PyCFunction_Type)),

@@ -1,5 +1,3 @@
-
-
 glob OSP_ANY_TAGS: dict[str, int] = {
          "Node": -2,
          "Edge": -3,

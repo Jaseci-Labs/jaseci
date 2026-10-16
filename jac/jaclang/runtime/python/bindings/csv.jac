@@ -1,6 +1,5 @@
 """CSV declarations, owned callbacks, and interpreter-local native configuration."""
 
-
 obj CsvReaderState(ReferenceState) {
     has native: csv_reader;
 

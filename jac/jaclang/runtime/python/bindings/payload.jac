@@ -1,6 +1,5 @@
 """Native state owned by a Python object through an opaque ABI payload slot."""
 
-
 import from c {
     # get returns an owned native reference; set retains its borrowed argument.
     def jacpy_binding_native_get(

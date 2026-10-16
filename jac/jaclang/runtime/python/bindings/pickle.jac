@@ -2,7 +2,6 @@
 hand-written attribute hooks, memo getsets and members, and the
 clinic-generated methods and functions over modules/pickle.jac's state."""
 
-
 def:priv traverse(
     instance: ptr[PyObject], visitor: ptr[PyObject], context: ptr[PyObject]
 ) -> i32 {

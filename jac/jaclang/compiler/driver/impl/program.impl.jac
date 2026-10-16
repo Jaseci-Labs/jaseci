@@ -768,7 +768,6 @@ impl JacProgram.stamp_app_facts(self: JacProgram, mod: uni.Module) -> None {
 }
 
 impl JacProgram.stamp_boundary_facts(self: JacProgram, mod: uni.Module) -> None {
-
     base_dir = '.';
     if mod.loc {
         base_dir = os.path.dirname(mod.loc.mod_path);

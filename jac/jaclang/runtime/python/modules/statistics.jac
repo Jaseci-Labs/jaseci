@@ -5,7 +5,6 @@ approximation evaluates natively over machine doubles.
 Derived from CPython 3.14.6; see ../LICENSE.cpython.
 """
 
-
 # Wichura, M.J. (1988). "Algorithm AS241: The Percentage Points of the Normal
 # Distribution". Applied Statistics 37 (3): 477-484. Each branch below is one
 # ratio of two degree-seven polynomials in a branch-specific variable.

@@ -1,4 +1,3 @@
-
 def point_width(data: bytes, pos: int) -> int {
     lead = data[pos];
     if lead < 128 {

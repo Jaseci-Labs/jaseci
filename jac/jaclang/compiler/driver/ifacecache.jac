@@ -119,7 +119,6 @@ def _alert_record(alert: any) -> dict[str, any] {
 }
 
 def _alert_from_record(rec: dict[str, any]) -> any {
-
     code_str: str = str(rec.get("code") or "");
     code = DIAGNOSTICS.get(code_str) if code_str else None;
     related: list[any] = [];

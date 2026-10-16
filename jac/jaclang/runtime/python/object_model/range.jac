@@ -9,7 +9,6 @@ freelists as rangeobject.c does. Lengths above PY_SSIZE_T_MAX are supported
 with int arithmetic. See ../LICENSE.cpython.
 """
 
-
 import from c {
     glob PyLong_Type: PyTypeObject; glob:priv range_as_sequence:
              PySequenceMethods = PySequenceMethods(

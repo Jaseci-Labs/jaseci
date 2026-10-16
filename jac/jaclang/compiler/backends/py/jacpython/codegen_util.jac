@@ -1,8 +1,6 @@
-
 # Pure leaf helpers extracted from compiler_codegen.jac (no cfg_builder,
 # no visit_*/emit_* calls) so the recursive codegen core is smaller to read.
 # Imports mirror the header of compiler_codegen.jac (foundational modules only).
-
 
 # Deep-fold one default expression into its constant value, collecting the
 # scalar leaf exprs in CPython visit (pre-)order. Tuples fold recursively like

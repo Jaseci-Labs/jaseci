@@ -8,7 +8,6 @@ collations, the authorizer, progress and trace handlers, destructors) take the
 GIL first, and their contexts are C records SQLite keeps pointers to.
 """
 
-
 import from c {
     # SQLite's opaque handles.
     obj sqlite3_db;  obj sqlite3_stmt;  obj sqlite3_context;  obj sqlite3_value;  obj sqlite3_blob;  obj sqlite3_backup;

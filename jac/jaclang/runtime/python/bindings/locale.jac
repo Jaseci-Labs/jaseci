@@ -6,7 +6,6 @@ read from the C library. The gettext functions exist only where the C library
 has <libintl.h>.
 """
 
-
 glob:priv LIBINTL: list[str] = [
          "gettext",
          "dgettext",

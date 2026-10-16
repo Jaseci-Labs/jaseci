@@ -5,8 +5,6 @@ handed the deployer, so a configured `false` was overridden and a configured
 `gateway_config` is injected as a plain dict, which is the same seam
 `_gateway_cfg` reads in production."""
 
-
-
 def _target(
     monitoring: bool, logs: bool = False, tracing: bool = False
 ) -> KubernetesTarget {

@@ -9,7 +9,6 @@ callbacks are C function pointers C code stores and Jac calls. See
 ../LICENSE.cpython.
 """
 
-
 import from c {
     def strcmp(left: ptr[u8], right: ptr[u8]) -> i32;  def strlen(
         text: ptr[u8]

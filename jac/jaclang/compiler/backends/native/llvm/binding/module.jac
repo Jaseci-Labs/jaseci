@@ -7,6 +7,7 @@ import from ctypes {
     c_size_t,
     string_at
 }
+
 """
     Create Module from a LLVM IR string
     """

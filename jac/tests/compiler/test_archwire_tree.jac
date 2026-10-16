@@ -42,7 +42,9 @@ def _arch_files(top: str) -> list[str] {
 
 
 def _dropped(path: str) -> bool {
-    return skip_jaclang(os.path.relpath(os.path.realpath(path), _PKG).replace(os.sep, "/"));
+    return skip_jaclang(
+        os.path.relpath(os.path.realpath(path), _PKG).replace(os.sep, "/")
+    );
 }
 
 
@@ -74,7 +76,10 @@ test "the payload ships archwire.jac without the wires that reach modules it dro
         for wire in spec.wires {
             for consumer in wire.consumers {
                 split = spec.split_consumer(consumer);
-                for end in [wire.provider, split[0] if split is not None else consumer] {
+                for end in [
+                    wire.provider,
+                    split[0] if split is not None else consumer
+                ] {
                     found = spec.module_file(end);
                     if found is not None and _dropped(found) {
                         stray.append(f"{wire.provider} --> {consumer}");
@@ -84,7 +89,9 @@ test "the payload ships archwire.jac without the wires that reach modules it dro
         }
         assert not stray , stray[:5];
         assert kept < everything;
-        assert not os.path.exists(os.path.join(site, "runtime", "python", ARCH_FILE_NAME));
+        assert not os.path.exists(
+            os.path.join(site, "runtime", "python", ARCH_FILE_NAME)
+        );
     } finally {
         shutil.rmtree(site, ignore_errors=True);
     }
@@ -94,9 +101,9 @@ test "the payload ships archwire.jac without the wires that reach modules it dro
 test "every archwire.jac in the tree is in canonical layout" {
     tops = [_PKG, os.path.join(os.path.dirname(_PKG), "examples")];
     files = [
-        path for top in tops
-        if os.path.isdir(top)
-        for path in _arch_files(top)
+        path
+        for top in tops
+        if os.path.isdir(top) for path in _arch_files(top)
     ];
     assert files;
     drifted: list[str] = [];

@@ -499,7 +499,11 @@ impl names_read_in(body: UniNode) -> set[str] {
     for nd in body.get_all_sub_nodes(typ=Name) {
         parent = nd.parent;
         if nd.expr_ctx != ExprCtx.LOAD
-            or (isinstance(parent, AtomTrailer) and parent.is_attr and parent.right is nd)
+            or (
+                isinstance(parent, AtomTrailer)
+                and parent.is_attr
+                and parent.right is nd
+            )
             or (isinstance(parent, KWPair) and parent.key is nd)
             or (isinstance(parent, JsxElementName) and parent.parts[0] is not nd)
             or nd.find_parent_of_type(ModulePath) is not None

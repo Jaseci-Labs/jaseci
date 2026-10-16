@@ -1,4 +1,3 @@
-
 glob JCIR_BUILTIN_NAMES: frozenset[str] = frozenset(
          {
              "APIProtocol",

@@ -7,7 +7,6 @@ reach them as pyexpat.c does. A failing handler adds a traceback entry for the
 pyexpat.c line CPython reports, stops the parser and clears every handler.
 """
 
-
 import from c {
     # xmlparseobject after its header; `intern` comes first so the member
     # descriptor reads it at offset 0.

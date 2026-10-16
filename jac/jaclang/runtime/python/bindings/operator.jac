@@ -1,8 +1,6 @@
 """The _operator module: its clinic-generated functions, the hand-written
 call(), and the itemgetter, attrgetter and methodcaller types."""
 
-
-
 def:priv call_call(
     module: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]
 ) -> ptr[PyObject] {

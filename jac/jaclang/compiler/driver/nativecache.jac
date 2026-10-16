@@ -105,7 +105,6 @@ obj NativeUnitRegistry {
     }
 
     static def _source_key(path: str) -> (str | None) {
-
         prior_codespace = get_effective_default_codespace_override();
         target_token = push_native_target('');
         try {

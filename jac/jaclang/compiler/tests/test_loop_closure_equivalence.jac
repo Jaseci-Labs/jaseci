@@ -6,7 +6,6 @@ lasts; once the pass ends the closure keeps its own copy. The server lane pins
 the expected values and the client and native lanes must agree with it.
 """
 
-
 glob EXPECTED: dict[str, any] = {
          "target": [1, 2, 3],
          "body_local": [10, 20, 30],

@@ -1,6 +1,5 @@
 """The _weakref module over its generated clinic table and the weakref types."""
 
-
 glob:priv TYPES: list[tuple[str, ptr[PyObject]]] = [
          ("ref", addressof(_PyWeakref_RefType)),
          ("ReferenceType", addressof(_PyWeakref_RefType)),

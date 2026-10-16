@@ -1,7 +1,6 @@
 """Native compiler entry points: each request returns a retained CPython value
 or zero with the Python exception set."""
 
-
 # Object-model ports define interpreter types and objects under their C names
 # (Objects/boolobject.c: PyBool_Type, _Py_FalseStruct, _Py_TrueStruct).
 glob PyCF_ONLY_AST: int = 1024;

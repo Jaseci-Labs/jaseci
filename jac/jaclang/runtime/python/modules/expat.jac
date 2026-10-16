@@ -6,7 +6,6 @@ directly and exports the PyExpat_CAPI record; _elementtree reaches Expat only
 through that record, as CPython's does.
 """
 
-
 import from c {
     # XML_Content: one node of an element declaration's content model.
     obj XML_Content {

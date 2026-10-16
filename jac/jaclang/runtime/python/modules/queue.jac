@@ -6,8 +6,6 @@ references are visible to its cycle collector through the borrowed-item ABI.
 Derived from CPython 3.14.6; see ../LICENSE.cpython.
 """
 
-
-
 obj queue_state(NativeState) {
     has lock: ptr,
         items: object_ring = object_ring(),

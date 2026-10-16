@@ -1,5 +1,3 @@
-
-
 walker AppContextPass(CompilerPass) {
     static has contract: PassContract = PassContract();
 

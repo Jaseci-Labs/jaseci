@@ -1,6 +1,5 @@
 """Native BOM and coding-cookie detection for Python source input."""
 
-
 def normal_encoding(name: str) -> str {
     prefix = name[:12].lower().replace("_", "-");
     if prefix == "utf-8" or prefix.startswith("utf-8-") {

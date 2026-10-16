@@ -17,7 +17,6 @@ decides when a lookup rebalances, so per-tree streams need no lock and change
 no result.
 """
 
-
 obj RotatingNode {
     has key: int = 0,
         left: RotatingNode | None = None,

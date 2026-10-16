@@ -1,7 +1,5 @@
 """AST preprocessing for CPython 3.14 source and AST compilation."""
 
-
-
 def ast_constant(value: PyObj, location: expr | None = None) -> Constant {
     return Constant(
         value=value,

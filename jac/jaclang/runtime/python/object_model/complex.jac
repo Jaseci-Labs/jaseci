@@ -14,7 +14,6 @@ callers lend `&mut` locals for the result pair, so no operation allocates. `__ne
 arguments as Objects/clinic/complexobject.c.h does. See ../LICENSE.cpython.
 """
 
-
 # The libm status a complex operation reports in place of errno.
 glob:priv OK: i64 = 0,
      DOMAIN: i64 = 1,

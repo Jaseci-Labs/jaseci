@@ -5,7 +5,6 @@ framing and cursor progression are Jac policies. Derived from CPython 3.14.6;
 see ../LICENSE.cpython.
 """
 
-
 def stream_error(kind: ptr[PyObject], message: str) {
     cause = PyErr_GetRaisedException();
     try {

@@ -4,7 +4,6 @@
 # objects. Generated parser rules call these helpers; this file is hand-written
 # and grows with each grammar profile.
 
-
 # The characters a backslash may escape in a str literal, as code points.
 glob VALID_ESCAPE_POINTS: set[int] = {
          ord(c) for c in "\\\"'abfnrtv\n\r01234567xuUN"

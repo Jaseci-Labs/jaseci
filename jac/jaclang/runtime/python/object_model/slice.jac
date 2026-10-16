@@ -10,7 +10,6 @@ layouts.jac; slices are recycled through the interpreter's freelist as
 sliceobject.c does. See ../LICENSE.cpython.
 """
 
-
 # code based on tuplehash() of Objects/tupleobject.c (64-bit Py_uhash_t)
 glob:priv XXPRIME_1: u64 = 11400714785074694791,
      XXPRIME_2: u64 = 14029467366897019727,

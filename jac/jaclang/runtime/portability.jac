@@ -1,4 +1,3 @@
-
 glob PY_STDLIB_BY_KIND: dict[str, (set[str] | None)] = {
          "web-app": set(),
          "web-static": set(),

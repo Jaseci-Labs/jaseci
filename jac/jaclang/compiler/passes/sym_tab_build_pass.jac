@@ -1,5 +1,3 @@
-
-
 glob TEST_ASSERT_METHOD_NAMES: tuple[str, ...] = (
          'assertAlmostEqual',
          'assertCountEqual',

@@ -6,7 +6,6 @@ dict makes a token consumable once per replica. These tests drive the real
 store object with a hand-rolled broken-database boundary stub at the API edge.
 """
 
-
 obj BrokenDb {
     def rows(sql: str, params: dict[str, any]) -> list[any] {
         raise RuntimeError("db down");

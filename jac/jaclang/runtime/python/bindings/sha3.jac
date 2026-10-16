@@ -1,7 +1,6 @@
 """The _sha3 module: the four SHA-3 types over sha3_224's generated methods and
 the two SHAKE types over shake_128's."""
 
-
 def:priv sha3_dealloc(instance: ptr[PyObject]) {
     dispose_payload(instance, SHA3_token.definition_of(Py_TYPE(instance)));
 }

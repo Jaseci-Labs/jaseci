@@ -2966,7 +2966,9 @@ impl DocIRGenPass.exit_wire_target with uni.WireTarget exit {
             head.append(i.gen.doc_ir);
         }
     }
-    parts: list[doc.DocType] = [self.group(self.concat([*head, self.indent(self.concat(rest))]))];
+    parts: list[doc.DocType] = [
+        self.group(self.concat([*head, self.indent(self.concat(rest))]))
+    ];
     if tail {
         parts.append(self.space());
         parts.extend(tail);

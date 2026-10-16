@@ -15,7 +15,6 @@ compare_results uses intersection semantics: only keys present in both dicts
 are checked, so a backend that returns {} (unimplemented) is silently skipped.
 """
 
-
 import ctypes;
 import importlib;
 import json;

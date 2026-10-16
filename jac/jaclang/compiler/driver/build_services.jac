@@ -1,4 +1,3 @@
-
 obj CompilerBuildServices(BuildServices) {
     def compiler -> JacCompiler {
         return JacCompiler();

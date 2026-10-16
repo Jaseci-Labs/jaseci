@@ -1,4 +1,3 @@
-
 type LoopStmt = InForStmt | IterForStmt | WhileStmt | ForeverStmt;
 
 obj PassLink {

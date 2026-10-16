@@ -1,11 +1,9 @@
-
 # Expression-side lowering: visit_expr, expression/comprehension/lambda
 # visitors, call/slice/await emission primitives, and the shared name/
 # const/cell plumbing used by both expression and statement lowering.
 
 # Statement dispatch lives in compiler_codegen.jac. Imports of statement and
 # exception helpers stay at their call sites to allow module initialization.
-
 
 # Record the first codegen diagnostic on the builder's unit.
 def codegen_fail(g: cfg_builder, kind: str, message: str) {

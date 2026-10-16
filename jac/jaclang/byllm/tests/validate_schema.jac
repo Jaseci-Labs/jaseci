@@ -12,7 +12,6 @@ To run a specific test:
   jac test <path-to-this-file> -t <test-name>
 """
 
-
 glob llm = Model(model_name="gpt-4o-mini",);
 
 """

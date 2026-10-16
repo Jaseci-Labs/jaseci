@@ -14,7 +14,6 @@ native state. The free-threaded build's critical sections and
 stop-the-world pauses have no counterpart: every JacPython build has a GIL.
 """
 
-
 import from c {
     # FutureObj: FutureObj_HEAD(fut).
     obj FutureObj {

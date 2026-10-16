@@ -6,7 +6,6 @@ import unittest.mock;
 import from tempfile { mkdtemp }
 
 
-
 def _as_any(value: any) -> any {
     return value;
 }

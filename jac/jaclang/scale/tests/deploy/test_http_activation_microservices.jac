@@ -3,7 +3,6 @@ import unittest.mock;
 import from types { SimpleNamespace }
 
 
-
 def _builder(
     services: dict[str, any], k8s_config: KubernetesConfig | None = None
 ) -> ManifestBuilder {

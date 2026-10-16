@@ -1,5 +1,3 @@
-
-
 obj Hash {
     has _ctx: int,
         digest_size: int,

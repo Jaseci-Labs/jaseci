@@ -8,7 +8,6 @@ native Jac.
 with types.GenericAlias is genericalias.jac's. See ../LICENSE.cpython.
 """
 
-
 import from c {
     # Defined by genericalias.jac, which imports this module.
     glob Py_GenericAliasType: PyTypeObject; def _Py_make_parameters(

@@ -1,5 +1,3 @@
-
-
 obj:pub HMAC {
     has _ctx: int,
         digest_size: int,

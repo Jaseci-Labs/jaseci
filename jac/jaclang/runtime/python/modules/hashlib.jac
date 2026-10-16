@@ -10,7 +10,6 @@ ENTER_HASHLIB and LEAVE_HASHLIB do. The lock is a PyThread lock, allocated
 when the object first needs it.
 """
 
-
 glob HASHLIB_GIL_MINSIZE: i64 = 2048,
      UINT32_MAX: i64 = 0xFFFFFFFF;
 

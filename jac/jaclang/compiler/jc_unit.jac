@@ -7,7 +7,6 @@ import from c { def __jac_region_depth -> int;  }
 import from c { def __jac_region_unwind(depth: int) -> None;  }
 
 
-
 obj JcState {
     has p_errs: int = 0,
         lex_errs: int = 0,

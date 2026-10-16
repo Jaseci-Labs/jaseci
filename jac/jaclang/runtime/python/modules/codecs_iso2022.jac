@@ -5,7 +5,6 @@ character sets' maps are _codecs_kr's, _codecs_jp's and _codecs_cn's,
 imported through their map capsules as the C does. See ../LICENSE.cpython.
 """
 
-
 # STATE
 #
 #   state->c[0-3]

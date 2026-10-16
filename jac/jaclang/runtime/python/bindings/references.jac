@@ -1,6 +1,5 @@
 """Shared ownership and cycle-collector visibility for Python reference fields."""
 
-
 obj ReferenceState(NativeState) {
     has references: list[ptr[PyObject]];
 

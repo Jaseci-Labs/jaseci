@@ -5,7 +5,6 @@ runtime's ordered dictionary. No Python implementation of these policies runs.
 Derived from CPython 3.14.6; see ../LICENSE.cpython.
 """
 
-
 # A two-argument object call owns the callable arguments for the whole callback.
 def:pub jacpy_reduce(
     function: ptr[PyObject], iterable: ptr[PyObject], initial: ptr[PyObject]

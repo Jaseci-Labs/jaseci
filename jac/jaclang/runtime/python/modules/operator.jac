@@ -3,7 +3,6 @@
 Derived from CPython 3.14.6; see ../LICENSE.cpython.
 """
 
-
 # Preparing dotted paths once avoids reparsing attributes on every invocation.
 def:pub jacpy_operator_prepare(kind: i64, args: ptr[PyObject]) -> ptr[PyObject] {
     result: ptr[PyObject] = NULL;

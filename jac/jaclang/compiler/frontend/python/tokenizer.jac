@@ -4,8 +4,6 @@ Source decoding stays outside the scanner. An optional refill callback supplies
 decoded lines for streaming tokenization; parsing uses an existing source string.
 """
 
-
-
 glob TABSIZE: int = 8,
      MAXINDENT: int = 100,
      # The scanner reads code points, as CPython's tok_nextc reads ints. This

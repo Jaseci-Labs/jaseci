@@ -1,7 +1,6 @@
 """The pyexpat module: the xmlparser type, ExpatError, the errors and model
 submodules, and the expat_CAPI capsule."""
 
-
 # xmlparse_methods, in pyexpat.c's order.
 glob:priv METHOD_ORDER: list[str] = [
          "Parse",

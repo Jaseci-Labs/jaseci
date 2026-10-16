@@ -68,12 +68,15 @@ test "jac0 weaves module-level and scoped wires where the full compiler does" {
             f.write(source);
         }
         impl_src = "impl Clock.read -> str {\n    return soon();\n}\n";
-        python = compile_jac(source, svc, [(impl_src, svc.replace(".jac", ".impl.jac"))]);
+        python = compile_jac(
+            source, svc, [(impl_src, svc.replace(".jac", ".impl.jac"))]
+        );
         assert "from core.util import now" in python , python;
         assert python.index("The service.") < python.index("from core.util import now");
         read_at = python.index("def read");
         assert python.index("from core.util import later as soon") > read_at , python;
-        assert "import later\n" not in python and "import later," not in python , python;
+        assert "import later\n" not in python
+            and "import later," not in python , python;
     } finally {
         shutil.rmtree(base, ignore_errors=True);
     }
@@ -117,7 +120,9 @@ test "jac0 and WiringSpec weave the same imports into every seed module" {
                 for named in imp.names {
                     parts = named.split(" as ");
                     alias = parts[1] if len(parts) > 1 else "";
-                    woven.add(f"{'.'.join(scope)}|{imp.module}|{form}|{parts[0]}|{alias}");
+                    woven.add(
+                        f"{'.'.join(scope)}|{imp.module}|{form}|{parts[0]}|{alias}"
+                    );
                 }
             }
         }

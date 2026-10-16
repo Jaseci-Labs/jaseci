@@ -6,7 +6,6 @@ by the evaluator and the C API use them unchanged. The cell layout is
 Include/cpython/cellobject.h's `PyCellObject`. See ../LICENSE.cpython.
 """
 
-
 import from c {
     glob:priv cell_getsetlist: list[PyGetSetDef] = [
              PyGetSetDef(

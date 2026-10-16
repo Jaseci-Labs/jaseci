@@ -1,4 +1,3 @@
-
 obj FieldInitialization {
     has default_expr: Expr | None,
         factory_expr: Expr | None = None,

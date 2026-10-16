@@ -1,6 +1,5 @@
 """Test for restspec decorator functionality."""
 
-
 def _as_any(v: any) -> any {
     return v;
 }

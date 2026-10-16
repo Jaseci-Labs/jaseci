@@ -1,4 +1,3 @@
-
 glob:pub MINYEAR: int = 1,
      MAXYEAR: int = 9999;
 

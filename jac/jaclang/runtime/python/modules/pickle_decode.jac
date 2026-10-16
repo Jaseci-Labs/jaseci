@@ -5,7 +5,6 @@ supplies retained values and the object protocol at callback boundaries.
 Derived from CPython 3.14.6; see ../LICENSE.cpython.
 """
 
-
 obj unpickle_state {
     has stream: pickle_reader = pickle_reader(),
         stack: list[ptr[PyObject]] = [],

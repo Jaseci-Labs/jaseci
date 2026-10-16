@@ -4,8 +4,6 @@ MockLLM is public API that users test their own apps with, so each promise in th
 byLLM reference's "What each output becomes" table is pinned here.
 """
 
-
-
 obj Person {
     has name: str,
         age: int;

@@ -7,7 +7,6 @@ The module state holds the _abc_data type, the interned attribute names and
 the invalidation counter that every register() call advances.
 """
 
-
 glob abc_data_token = ClassToken();
 
 # Module state references: the _abc_data type, then the interned names.

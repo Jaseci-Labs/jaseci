@@ -1,7 +1,6 @@
 """The _blake2 module: blake2b and blake2s over blake2b's generated methods;
 only their constructors differ."""
 
-
 def:priv blake2_dealloc(instance: ptr[PyObject]) {
     dispose_payload(instance, Blake2_token.definition_of(Py_TYPE(instance)));
 }

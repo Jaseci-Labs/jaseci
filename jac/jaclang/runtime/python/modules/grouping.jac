@@ -5,7 +5,6 @@ operands and publish state before releasing Python references.
 Derived from CPython 3.14.6; see ../LICENSE.cpython.
 """
 
-
 obj group_state {
     has make_group: Callable[[ptr[PyObject], ptr[PyObject]], ptr[PyObject]],
         source: ptr[PyObject] = NULL,

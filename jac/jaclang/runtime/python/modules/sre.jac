@@ -9,7 +9,6 @@ binding layer's reference slots, indexed by the STATE_* constants. See
 ../LICENSE.cpython.
 """
 
-
 import from c {
     def memset(target: ptr, value: i32, size: u64) -> ptr;  def memcmp(
         left: ptr, right: ptr, size: u64

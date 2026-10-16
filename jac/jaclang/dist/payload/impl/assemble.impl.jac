@@ -76,9 +76,9 @@ impl ship_wiring(package_root: str, site_package: str) {
         shipped = prune_wiring_source(
             source,
             source_path,
-            lambda (path: str) {
-                skip_jaclang(os.path.relpath(path, package_root).replace(os.sep, "/"));
-            }
+            lambda (path: str) { skip_jaclang(
+                os.path.relpath(path, package_root).replace(os.sep, "/")
+            ); }
         );
         target = os.path.join(site_package, rel);
         make_dirs(os.path.dirname(target));

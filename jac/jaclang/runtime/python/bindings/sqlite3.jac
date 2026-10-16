@@ -1,7 +1,6 @@
 """The _sqlite3 module: Connection, Cursor, Row, Blob, PrepareProtocol, Statement,
 the DB-API exceptions and the SQLite constants."""
 
-
 def:priv connection_dealloc(instance: ptr[PyObject]) {
     if PyObject_CallFinalizerFromDealloc(instance) < 0 {
         return;

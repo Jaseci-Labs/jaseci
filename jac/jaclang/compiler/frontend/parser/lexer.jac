@@ -1,4 +1,3 @@
-
 enum LexerMode {
     NORMAL = "normal",
     FSTRING_DQ = "fstring_dq",

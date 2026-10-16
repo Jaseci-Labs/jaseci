@@ -1,6 +1,5 @@
 """Native public symbol-table data and projection from compiler scopes."""
 
-
 glob PUBLIC_DEF_FREE_CLASS: int = 64,
      PUBLIC_DEF_COMP_CELL: int = 2048,
      TYPE_FUNCTION: int = 0,

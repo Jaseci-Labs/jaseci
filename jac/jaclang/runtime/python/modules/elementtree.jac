@@ -8,7 +8,6 @@ joined when read. XMLParser reaches Expat only through the pyexpat.expat_CAPI
 capsule, whose handlers call back here with the parser object as user data.
 """
 
-
 import from c {
     # ElementObject after its header.
     obj element_record {

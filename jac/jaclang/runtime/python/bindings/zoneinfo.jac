@@ -1,7 +1,5 @@
 """The _zoneinfo module: the ZoneInfo type, a datetime.tzinfo subclass."""
 
-
-
 # The record holds the state's key borrowed: zeroed before the state goes.
 def:priv zoneinfo_dealloc(instance: ptr[PyObject]) {
     record_clear(jacpy_binding_record(instance, ZoneInfo_token.handle), 8);

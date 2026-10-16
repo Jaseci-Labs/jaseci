@@ -8,7 +8,6 @@ _PyUnicode_Name_CAPI capsule that the unicode-escape codec imports for
 \\N{...}. See ../LICENSE.cpython.
 """
 
-
 # For Hangul decomposition.
 glob:priv SBase: int = 0xAC00,
      LBase: int = 0x1100,

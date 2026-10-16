@@ -4,8 +4,6 @@ the KEDA HTTP Add-on interceptor. Every function under test here is
 pure dict-in/dict-out, so no Kubernetes API client or config-loader mocking
 is needed anywhere in this file."""
 
-
-
 test "resolve_http_activation_config merges per-service over top-level and honors enabled on both" {
     for (label, top, app, expect_port) in [
         ("neither side configured", {}, {}, None),

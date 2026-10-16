@@ -1,6 +1,5 @@
 """The _codecs_jp module: getcodec() and the module's map capsules."""
 
-
 def:priv execute(module: ptr[PyObject]) -> i32 {
     return codecs_jp_exec(module);
 }

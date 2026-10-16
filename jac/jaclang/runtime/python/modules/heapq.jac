@@ -5,7 +5,6 @@ list length before accessing slots. Swaps use the current slots, including
 changes made by comparisons. Derived from CPython; see ../LICENSE.cpython.
 """
 
-
 def heap_size_unchanged(heap: ptr[PyObject], size: i64) -> bool {
     if jacpy_list_size(heap) != size {
         object_error(PyExc_RuntimeError, "list changed size during iteration");

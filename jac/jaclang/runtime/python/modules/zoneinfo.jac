@@ -11,7 +11,6 @@ strong LRU cache of the ZoneInfo base class; subclasses keep a weak cache in
 their `_weak_cache` attribute.
 """
 
-
 # The handle of the module definition, which the binding fills in, so a type
 # finds its module as PyType_GetModuleByDef() does.
 obj DefinitionHandle {

@@ -6,7 +6,6 @@ methods' _impl functions keep their C names and live here; the machinery
 they share is in ssl_core.jac and certificate decoding in ssl_cert.jac.
 """
 
-
 # enum py_ssl_encoding (_ssl.h)
 glob PY_SSL_ENCODING_PEM: i32 = i32(X509_FILETYPE_PEM),
      PY_SSL_ENCODING_DER: i32 = i32(X509_FILETYPE_ASN1),

@@ -1,6 +1,5 @@
 """The _heapq module: its clinic-generated functions and __about__."""
 
-
 # heapq_exec(): the module's __about__ text.
 def:priv execute(module: ptr[PyObject]) -> i32 {
     if not add_owned(module, "__about__", PyUnicode_FromString(__about__)) {

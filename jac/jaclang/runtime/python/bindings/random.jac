@@ -1,6 +1,5 @@
 """The _random module: the Random type over native Mersenne Twister state."""
 
-
 # PyType_GenericNew, with the instance's native generator state.
 def:priv create(
     type: ptr[PyObject], args: ptr[PyObject], kwargs: ptr[PyObject]

@@ -2408,9 +2408,7 @@ impl JacAutoLintPass._strip_usestate_imports(nd: uni.Module) -> None {
 }
 
 impl JacAutoLintPass._strip_wired_imports(nd: uni.Module) -> None {
-    if not self.lint_enabled
-        or self.report_only
-        or self.ctx._is_suppressed(W3053) {
+    if not self.lint_enabled or self.report_only or self.ctx._is_suppressed(W3053) {
         return;
     }
     own_path = nd.loc.mod_path;

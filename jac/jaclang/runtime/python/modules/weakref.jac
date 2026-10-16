@@ -4,7 +4,6 @@ The weakref types and the per-object reference list belong to the object
 model (Objects/weakrefobject.c); this module only exposes them.
 """
 
-
 def _weakref_getweakrefcount_impl(module: ptr[PyObject], object: ptr[PyObject]) -> i64 {
     return _PyWeakref_GetWeakrefCount(object);
 }

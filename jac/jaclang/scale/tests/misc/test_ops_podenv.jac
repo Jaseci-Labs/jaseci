@@ -4,8 +4,6 @@ Redaction is the safety-critical bit: only allowlisted keys show their
 value; secretRef values are never resolved.
 """
 
-
-
 obj PodEnvHost(JacAPIServerPodEnv) {
     has server: any = None;
 }

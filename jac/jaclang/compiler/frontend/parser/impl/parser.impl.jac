@@ -1,4 +1,3 @@
-
 impl Parser.current -> LexToken {
     if self.pos < self._tokens_len {
         return self.tokens[self.pos];

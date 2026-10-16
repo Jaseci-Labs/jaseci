@@ -1,5 +1,3 @@
-
-
 walker DeclImplMatchPass(CompilerPass) {
     static has contract: PassContract = PassContract(
         requires=(AnalysisFact.SYM_OF, ),

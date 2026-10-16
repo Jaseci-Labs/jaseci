@@ -4,7 +4,6 @@
 # converts them to user-visible PyError objects at the outer seam; compiler
 # internals must not use runtime py_error as control flow.
 
-
 def report_token_warnings(scanner: tok_state) {
     if not scanner.warnings {
         return;

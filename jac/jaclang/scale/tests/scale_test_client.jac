@@ -104,7 +104,6 @@ obj ScaleTestClient {
     }
 
     def _initialize {
-
         self._runtime = prepare_inprocess_runtime(
             self._jac_file,
             self._base_path,

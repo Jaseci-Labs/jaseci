@@ -1,6 +1,5 @@
 """The atexit module: register, unregister and the private test hooks."""
 
-
 glob:priv METH_VARARGS_KEYWORDS: i64 = 3,
      METH_NOARGS: i64 = 4,
      METH_O: i64 = 8;

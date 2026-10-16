@@ -3,7 +3,6 @@
 Derived from CPython 3.14.6; see ../LICENSE.cpython.
 """
 
-
 enum combination_kind {
     PRODUCT = 14,
     COMBINATIONS = 15,

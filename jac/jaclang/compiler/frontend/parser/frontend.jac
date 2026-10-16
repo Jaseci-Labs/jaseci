@@ -1,5 +1,3 @@
-
-
 def _replay_diags(
     diags: list[SrcDiag], from_pass: type, prog: JacProgram, diag_src: Source
 ) {

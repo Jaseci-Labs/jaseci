@@ -8,7 +8,6 @@ API use them unchanged. The object layouts come from layouts.jac. See
 ../LICENSE.cpython.
 """
 
-
 import from c {
     glob:priv seqiter_methods: list[PyMethodDef] = [
              PyMethodDef(

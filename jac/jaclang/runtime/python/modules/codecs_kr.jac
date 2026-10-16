@@ -2,7 +2,6 @@
 euc_kr, cp949 and johab) in native Jac. See ../LICENSE.cpython.
 """
 
-
 # EUC-KR codec
 
 glob:priv EUCKR_JAMO_FIRSTBYTE: int = 0xA4,

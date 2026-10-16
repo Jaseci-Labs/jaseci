@@ -2,7 +2,6 @@
 clinic tables, and the module's execution slots in Modules/_hashopenssl.c's
 order."""
 
-
 def:priv evp_dealloc(instance: ptr[PyObject]) {
     dispose_payload(instance, HASH_token.definition_of(Py_TYPE(instance)));
 }

@@ -1,4 +1,3 @@
-
 class Context {
     has scope: _utils.NameScope,
         identified_types: dict[str, types.IdentifiedStructType];

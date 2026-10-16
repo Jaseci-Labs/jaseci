@@ -1,4 +1,3 @@
-
 edge SymOf: NameAtom --> Symbol {}
 
 edge Defines: Symbol --> NameAtom {}

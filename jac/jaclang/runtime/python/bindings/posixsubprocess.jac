@@ -1,6 +1,5 @@
 """The _posixsubprocess module: the generated fork_exec() clinic table."""
 
-
 def:priv execute(module: ptr[PyObject]) -> i32 {
     if PLATFORM == "" or len(CONSTANTS) == 0 {
         object_error(

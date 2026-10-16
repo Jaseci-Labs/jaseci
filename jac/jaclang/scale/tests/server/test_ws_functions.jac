@@ -4,7 +4,6 @@ Uses the in-process ServingTestClient transport (no subprocess / dev server),
 so it exercises the jac-native serving WebSocket routes directly.
 """
 
-
 """A test client whose app carries the WebSocket routes (the scale
 extensions register them as part of the one assembly)."""
 def _ws_client -> any {

@@ -1,5 +1,3 @@
-
-
 def _make_gateway(dist: str = "/nonexistent-dist") -> EmbeddedGateway {
     reg = ServiceRegistry();
     reg.register(ServiceEntry(name="orders", file="orders.jac", prefix="/orders"));

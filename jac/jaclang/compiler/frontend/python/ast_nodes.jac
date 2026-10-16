@@ -4,7 +4,6 @@ Originally generated from CPython 3.14.6 Parser/Python.asdl.
 Maintained directly in Jac.
 """
 
-
 # Concrete AST kinds. The numbering is the boundary contract with
 # JAC_AST_KINDS in jac/bootstrap/python/compiler_runtime.c.
 enum ast_kind {

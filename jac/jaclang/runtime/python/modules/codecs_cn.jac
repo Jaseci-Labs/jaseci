@@ -2,7 +2,6 @@
 encodings: gb2312, gbk, gb18030 and hz) in native Jac. See ../LICENSE.cpython.
 """
 
-
 # codecs in this file use the first byte of MultibyteCodec_State.c[8]
 # to store a 0 or 1 state value
 glob:priv CN_STATE_OFFSET: int = 0;

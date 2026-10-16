@@ -6,7 +6,6 @@ directly: `register_diagnostics_endpoints` against a recording host, then the
 endpoint's own callback.
 """
 
-
 import asyncio;
 import from pathlib { Path }
 import from tempfile { TemporaryDirectory }

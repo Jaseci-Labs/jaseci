@@ -9,7 +9,6 @@ The macro values are generated in openssl_constants.jac. OpenSSL objects are
 opaque `ptr`s; a C string OpenSSL returns is a `ptr[u8]`.
 """
 
-
 import from c {
     # crypto.h, err.h
     def OpenSSL_version_num -> u64;  def OpenSSL_version(kind: i32) -> ptr[u8];  def CRYPTO_free(

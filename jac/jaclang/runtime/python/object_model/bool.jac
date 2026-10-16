@@ -6,7 +6,6 @@ under their C names, statically allocated and immortal exactly as
 `Py_False` in C are the addresses of these objects. See ../LICENSE.cpython.
 """
 
-
 import from c {
     glob PyType_Type: PyTypeObject,
          PyLong_Type: PyTypeObject,

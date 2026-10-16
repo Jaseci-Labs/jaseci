@@ -222,7 +222,9 @@ def _arch_init(force: bool, strip: bool, directory: str) -> int {
     facts = _collect_facts(spec, modules);
     _write_arch(arch_path, render_wiring(spec, facts, []));
     console.success(
-        f"wrote {ARCH_FILE_NAME}: {len(facts)} wired names sealing {len(modules)} modules"
+        f"wrote {ARCH_FILE_NAME}: {len(facts)} wired names sealing {len(
+            modules
+        )} modules"
     );
     if strip {
         changed = _strip_modules([path for (_name, path) in modules]);

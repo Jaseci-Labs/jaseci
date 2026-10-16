@@ -1,4 +1,3 @@
-
 obj Span {
     has mod_path: str = '',
         first_line: int = 0,

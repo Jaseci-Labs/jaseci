@@ -4,7 +4,6 @@ CPython owns public objects and protocol calls; typed native state owns parsing
 and quoting. Derived from CPython 3.14.6; see ../LICENSE.cpython.
 """
 
-
 obj CsvConfig(NativeState) {
     has limit: i64 = 128 * 1024;
 

@@ -1,6 +1,5 @@
 """Argument ownership and signature binding shared by native Python adapters."""
 
-
 # A call's arguments bound to parameters, as new references (NULL for an
 # omitted one). A parser that converts while it binds (PARSE_FORMAT_KEYWORDS)
 # leaves its TypeError in `failure`, raised by reach() when conversion gets

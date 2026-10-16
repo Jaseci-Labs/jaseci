@@ -1,6 +1,3 @@
-
-
-
 def _builder(
     services: dict[str, any], k8s_config: KubernetesConfig | None = None
 ) -> ManifestBuilder {

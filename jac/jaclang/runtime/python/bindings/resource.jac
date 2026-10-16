@@ -1,6 +1,5 @@
 """The resource module: generated clinic tables, struct_rusage and the constants."""
 
-
 glob:priv INTERNAL: list[str] = ["RLIM_INFINITY", "RLIM_NLIMITS"];
 
 def:priv execute(module: ptr[PyObject]) -> i32 {

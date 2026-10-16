@@ -494,7 +494,6 @@ impl JcirGenPass._c_copy_rewrite(nd: AtomTrailer) -> None {
 }
 
 impl JcirGenPass._is_c_global_value(nd: Name) -> bool {
-
     if clib_global_of_name(nd) is None
         or (
             nd.find_parent_of_type(Import) is not None

@@ -1,6 +1,5 @@
 """The _multiprocessing module: SemLock, sem_unlink() and the flags dict."""
 
-
 glob:priv INT_MAX: i64 = 0x7FFFFFFF;
 
 def:priv semlock_dealloc(instance: ptr[PyObject]) {

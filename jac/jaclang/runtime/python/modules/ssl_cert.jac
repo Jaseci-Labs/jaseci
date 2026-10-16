@@ -6,7 +6,6 @@ helpers), Modules/_ssl/cert.c and Modules/_ssl/misc.c; see
 ../LICENSE.cpython.
 """
 
-
 glob:priv ERRORS_ERROR: ptr[u8] = ptr[u8]("error"),
      ERRORS_STRICT: ptr[u8] = ptr[u8]("strict");
 

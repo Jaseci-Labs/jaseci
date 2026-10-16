@@ -1,4 +1,3 @@
-
 glob _CMP_MAP: dict[str, str] = {
          '>': 'gt',
          '<': 'lt',

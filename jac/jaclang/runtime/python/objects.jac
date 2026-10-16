@@ -5,7 +5,6 @@
 # until compiler values can be separated from the remaining object slots.
 # Its only import is opcode_meta, which defines the NB_* operation kinds.
 
-
 #
 # Behavior dispatches through virtual slot methods (CPython's tp_*/nb_*/sq_*/mp_*
 # tables as overridable methods -> na vtable, no function-pointer indirection).

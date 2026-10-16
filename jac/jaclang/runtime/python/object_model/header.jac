@@ -7,7 +7,6 @@ Include/cpython/tupleobject.h, Py_REFCNT and Py_RETURN_RICHCOMPARE are here
 too. See ../LICENSE.cpython.
 """
 
-
 import from c {
     glob PyType_Type: PyTypeObject,
          # Defined by bool.jac; Py_True and Py_False are their addresses.

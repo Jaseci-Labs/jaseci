@@ -7,7 +7,6 @@
 #
 # Product module: imports flowgraph + compiler_ir + opcode_meta + objects only.
 
-
 glob CONTINUATION_BIT: int = 64;
 
 def append_except_varint(out: list[int], value: int, first_msb: int) {
