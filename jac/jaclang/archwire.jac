@@ -11086,8 +11086,7 @@ graph import compiler.types.stubcat {
     }
     writer --> compiler.driver.unit_products.unit_interface {
         IncoherentInterface,
-        build_module_iface,
-        module_iface_shape
+        build_module_iface
     }
 }
 

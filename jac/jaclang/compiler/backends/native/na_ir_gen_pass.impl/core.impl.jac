@@ -616,10 +616,17 @@ impl NaIRGenPass._dep_iface(imported_mod: uni.Module) -> (NativeIface | None) {
 
 impl NaIRGenPass._discover_kernel_deps -> None {
     """The kernel units a lowering consults on demand, the formatting kernel
-    from an f-string and the OSP kernels from an archetype, are asked for
-    while dependencies are still being discovered, so a missing one is
-    lowered before this unit instead of inside it.""";
-    rels: list[str] = [FMT_KERNEL_REL];
+    from an f-string format spec and the OSP kernels from an archetype, are
+    asked for while dependencies are still being discovered, so a missing
+    one is lowered before this unit instead of inside it. Only the kernels
+    this unit can reach are asked for.""";
+    rels: list[str] = [];
+    if any(
+        fv.format_spec is not None
+        for fv in self.module.get_all_sub_nodes(uni.FormattedValue)
+    ) {
+        rels.append(FMT_KERNEL_REL);
+    }
     if self.imported_osp_archs
         or any(
             arch.arch_kind is not None and arch.arch_kind in ("node", "edge", "walker")
