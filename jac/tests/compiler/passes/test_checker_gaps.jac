@@ -729,3 +729,24 @@ test "gap 59 an is None check on a type that cannot be None does not leak NoneTy
     assert len(msgs) == 1 , f"Gap #59: expected only the still-typed error. Got: {msgs}";
     assert "Cannot assign" in msgs[0] and "int" in msgs[0] , msgs;
 }
+
+# =========================================================================
+# Gap #60: the native backend lowers from the types the checker stamps, and
+# an arm the checker considers impossible is still lowered. A receiver there
+# keeps its declared type; typing it Never left `child.gen` with no native
+# lowering and aborted the kernel seal (E5092 on EsJsxProcessor.element).
+# =========================================================================
+test "gap 60 a receiver in an impossible arm keeps its declared type" {
+    program = compile_and_check("checker_impossible_arm_receiver.jac");
+    assert not program.errors_had , [str(e) for e in program.errors_had];
+    path = os.path.join(CHECKER_FIXTURES, "checker_impossible_arm_receiver.jac");
+    mod = program.mod.hub[path];
+    receivers = [
+        trailer.target
+        for trailer in mod.get_all_sub_nodes(uni.AtomTrailer)
+        if isinstance(trailer.right, uni.Name) and trailer.right.value == "gen"
+    ];
+    assert len(receivers) == 1 , receivers;
+    stamped = str(receivers[0].type);
+    assert stamped == "Text" , f"Gap #60: impossible-arm receiver stamped {stamped}";
+}
