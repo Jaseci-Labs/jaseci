@@ -98,6 +98,24 @@ impl _sql_pairs(
         }
         tail = list(cq.residual.get(last) or []);
     }
+    if len(origin_ids) == 1 and eff.limit is None and not eff.offset {
+        key = (cq.sql, _param_key(cq.params));
+        hit = mem.hop_cached(key, origin_ids[0]);
+        if hit is not None {
+            return (hit, tail);
+        }
+        siblings = mem.hop_siblings(origin_ids[0]);
+        if len(siblings) > 1 and origin_ids[0] in siblings {
+            by_origin = _hop_by_origin(store, cq, list(siblings));
+            mem.hop_store(key, by_origin);
+            reached = _unique_nodes([p for pairs in by_origin.values() for p in pairs]);
+            if reached {
+                mem.batch_get(reached);
+                mem.note_siblings(reached);
+            }
+            return (by_origin.get(origin_ids[0], []), tail);
+        }
+    }
     cq.params['origin'] = [str(i) for i in origin_ids];
     out: list[tuple[(UUID | None), (UUID | None)]] = [];
     for r in store.rows(cq.sql, cq.params) {
@@ -106,6 +124,34 @@ impl _sql_pairs(
         out.append((nid, eid));
     }
     return (out, tail);
+}
+
+
+def _hop_by_origin(
+    store: any, cq: any, origins: list[UUID]
+) -> dict[UUID, list[tuple[(UUID | None), (UUID | None)]]] {
+    by_origin: dict[UUID, list[tuple[(UUID | None), (UUID | None)]]] = {
+        o: [] for o in origins
+    };
+    params = dict(cq.params);
+    params['origin'] = [str(o) for o in origins];
+    for r in store.rows(cq.sql, params) {
+        nid = UUID(str(r[0])) if r[0] is not None else None;
+        eid = UUID(str(r[1])) if r[1] is not None else None;
+        by_origin[UUID(str(r[2]))].append((nid, eid));
+    }
+    return by_origin;
+}
+
+
+def _param_key(params: dict[str, any]) -> tuple[tuple[str, str], ...] {
+    return tuple(
+        sorted(
+            (k, repr(v))
+            for (k, v) in params.items()
+            if k != 'origin'
+        )
+    );
 }
 
 
@@ -211,6 +257,13 @@ impl resolve_query(mem: Session, q: GraphQuery) -> list[Anchor] {
     }
     (pairs, local, tail) = _resolve_pairs(mem, q, len(q.hops));
     ids = _unique_nodes(pairs);
+    mem.note_siblings(
+        [
+            i
+            for i in ids
+            if isinstance(i, UUID)
+        ]
+    );
     out = _materialize_ids(mem, ids, local);
     if tail {
         out = [
