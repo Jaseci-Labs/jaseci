@@ -1594,7 +1594,7 @@ impl ElfLinker.build_executable -> bytes {
 
         sh_name_to_idx: dict[str, int] = {};
         for (_si, _sp) in enumerate(sh_specs) {
-            sh_name_to_idx[_sp[0]] = _si;
+            sh_name_to_idx[str(_sp[0])] = _si;
         }
         text_idx = sh_name_to_idx.get(".text", 0);
         seg_shndx: dict[str, int] = {

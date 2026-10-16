@@ -201,13 +201,18 @@ impl TypeEvaluator._tuple_literal_index_type(
     return self._extract_tuple_element_type(cls, real_idx);
 }
 
-impl TypeEvaluator._container_value_type(value_type: TypeBase, at: Expr) -> TypeBase {
+impl TypeEvaluator._container_value_type(
+    value_type: TypeBase, at: Expr, widen: bool = False
+) -> TypeBase {
     if in_type_position(at, include_subscripts=False) {
         return value_type;
     }
     if isinstance(value_type, UnionType) {
         return self._union_narrowed_types(
-            [self._container_value_type(member, at) for member in value_type.types]
+            [
+                self._container_value_type(member, at, widen)
+                for member in value_type.types
+            ]
         );
     }
     if isinstance(value_type, ClassType)
@@ -220,6 +225,13 @@ impl TypeEvaluator._container_value_type(value_type: TypeBase, at: Expr) -> Type
         wrapped = self.prefetch.type_class.clone_as_instance();
         wrapped.private.type_args = [self._convert_to_instance(value_type)];
         return wrapped;
+    }
+    if widen {
+        if isinstance(value_type, EnumMemberType)
+            and value_type.enum_class is not None {
+            return self._convert_to_instance(value_type.enum_class);
+        }
+        return self._widen_literal_for_declaration(value_type);
     }
     return value_type;
 }
