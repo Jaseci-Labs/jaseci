@@ -395,3 +395,25 @@ test "a namespace this app may not delete still gives up its database" {
         "database and its volume stay with no way to reclaim them by re-running"
     );
 }
+
+
+test "only the target's cluster loader reads a kubeconfig under deploy" {
+    import from pathlib { Path }
+    deploy = Path(__file__).resolve().parent.parent.parent / "deploy";
+    offenders: list[str] = [];
+    for path in sorted(deploy.rglob("*.jac")) {
+        if path.name == "kubernetes_target.jac" {
+            continue;
+        }
+        text = path.read_text();
+        for name in ("load_kube_config", "load_incluster_config") {
+            if name in text {
+                offenders.append(f"{path.relative_to(deploy)}: {name}");
+            }
+        }
+    }
+    assert not offenders , (
+        "a kubeconfig load outside _load_cluster_config repoints the process-wide "
+        f"client at whatever the ambient context names: {offenders}"
+    );
+}
