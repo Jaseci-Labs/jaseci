@@ -1187,6 +1187,7 @@ test "a dependency lowers only after its consumer's pass has let go of its IR" {
     root_dir = _diamond_copy();
     prog = JacProgram();
     opts = _opts();
+    opts.no_ir_cache = True;
     prog.options = opts;
     live_at_lower: list[int] = [];
     def progress(line: str) {
