@@ -1209,6 +1209,14 @@ def link_artifact(
     }
     plan.prog.native_units().note_link(False);
     (objects, _) = plan_objects(plan, spec, kind, tm, log=log);
+    unresolved = unresolved_unit_symbols(plan, objects);
+    if unresolved {
+        raise LinkPlanError(
+            "native units reference symbols no unit of the plan defines: "
+                + "; ".join(unresolved[:8])
+                + (f" (+{len(unresolved) - 8} more)" if len(unresolved) > 8 else "")
+        );
+    }
     link_started = time.perf_counter();
     inputs.objects = objects;
     inputs.archive_members = archive_members;
@@ -1284,6 +1292,55 @@ def link_artifact(
         classes=classes,
         units=[u.path for u in plan.units]
     );
+}
+
+def _unmangled(symbol: str, mangled: bool) -> str {
+    return symbol[1:] if mangled and symbol.startswith("_") else symbol;
+}
+
+def unresolved_unit_symbols(plan: LinkPlan, objects: list[bytes]) -> list[str] {
+    labels = (
+        [os.path.basename(u.path) for u in plan.units] + ["the link glue"]
+            if len(objects) == len(plan.units) + 1
+            else ["the linked program"] * len(objects)
+    );
+    defined: set[str] = set();
+    wanted: dict[str, list[str]] = {};
+    for (label, blob) in zip(labels, objects) {
+        mangled = blob[:4] == b"\xcf\xfa\xed\xfe";
+        for symbol in object_defined_symbols(blob) {
+            defined.add(_unmangled(symbol, mangled));
+        }
+        for symbol in object_undefined_symbols(blob) {
+            wanted.setdefault(_unmangled(symbol, mangled), []).append(label);
+        }
+    }
+    owners = {
+        f"{u.prefix}.": os.path.basename(u.path)
+        for u in plan.units
+        if u.prefix
+    };
+    out: list[str] = [];
+    for symbol in sorted(wanted) {
+        if symbol in defined {
+            continue;
+        }
+        owner = next(
+            (
+                unit
+                for (prefix, unit) in owners.items()
+                if symbol.startswith(prefix)
+            ),
+            None
+        );
+        demoted = (symbol + ".__jac_demoted") in defined;
+        if owner is None and not demoted {
+            continue;
+        }
+        why = "demoted to Python" if demoted else f"not defined by {owner}";
+        out.append(f"{symbol} ({why}; used by {', '.join(wanted[symbol])})");
+    }
+    return out;
 }
 
 def expose_root_exports(plan: LinkPlan, merged: ModuleRef) -> list[str] {
