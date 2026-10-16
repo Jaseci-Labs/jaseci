@@ -1,5 +1,3 @@
-import jaclang.compiler.backends.native.llvm.ir._utils as _utils;
-import jaclang.compiler.backends.native.llvm.ir.types as types;
 
 class Context {
     has scope: _utils.NameScope,

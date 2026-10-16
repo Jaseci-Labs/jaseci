@@ -254,33 +254,44 @@ impl ImportWiringPass._check_module(mod: Module, spec: WiringSpec) -> None {
     if spec.parse_failed {
         self.ctx.emit(E2093, node_override=mod, consumer=consumer);
     }
-    provided = spec.consumer_bindings(consumer);
+    declared: set[tuple[str, tuple[str, str, str, str]]] = set();
     for imp in ModuleFacts.iter_module_imports(mod) {
-        self._check_import(spec, imp, consumer, provided, True);
+        self._check_import(spec, imp, consumer, [], declared);
     }
     for imp in ModuleFacts.iter_nested_imports(mod) {
-        scope = scope_path_of(imp);
-        scoped = spec.consumer_bindings(consumer, scope) if scope is not None else {};
-        self._check_import(
-            spec, imp, consumer, scoped, False, nested=True, scope=scope
-        );
+        self._check_import(spec, imp, consumer, scope_path_of(imp), declared);
     }
     owners: (dict[str, (Ability | ImplDef)] | None) = None;
     for wire in spec.consumer_wires(consumer) {
         scope = spec.consumer_scope(consumer, wire);
-        if not scope {
+        target = ".".join([consumer, *scope]);
+        if scope {
+            if owners is None {
+                owners = scope_owners(mod);
+            }
+            if ".".join(scope) not in owners {
+                self.ctx.emit(
+                    E1142,
+                    node_override=mod,
+                    module=target,
+                    detail=f"'{consumer}' has no function or method '{'.'.join(scope)}'"
+                );
+                continue;
+            }
+        }
+        if wire.is_injected {
             continue;
         }
-        if owners is None {
-            owners = scope_owners(mod);
-        }
-        if ".".join(scope) not in owners {
-            self.ctx.emit(
-                E1142,
-                node_override=mod,
-                module=consumer + "." + ".".join(scope),
-                detail=f"'{consumer}' has no function or method '{'.'.join(scope)}'"
-            );
+        for binding in wire.bindings() {
+            if (".".join(scope), binding.key()) not in declared {
+                self.ctx.emit(
+                    E1147,
+                    node_override=mod,
+                    name=binding.bound_name() or binding.provider,
+                    consumer=target,
+                    line=wire.line
+                );
+            }
         }
     }
 }
@@ -289,28 +300,55 @@ impl ImportWiringPass._check_import(
     spec: WiringSpec,
     imp: Import,
     consumer: str,
-    provided: dict[tuple[str, str, str, str], WireRec],
-    enforce: bool,
-    nested: bool = False,
-    scope: (list[str] | None) = None
+    scope: (list[str] | None),
+    declared: set[tuple[str, tuple[str, str, str, str]]]
 ) -> None {
     src = imp.loc.mod_path;
     if src == spec.path or src.endswith(".test.jac") {
         return;
     }
+    provided = spec.consumer_bindings(consumer, scope) if scope is not None else {};
+    positional = is_positional_import(imp);
     for (binding, item) in spec.import_bindings(imp) {
-        if binding.provider == consumer or binding.key() in provided {
+        if binding.provider == consumer {
             continue;
         }
-        if nested {
-            self._emit_nested(spec, binding, item, consumer, scope);
-        } elif enforce {
+        held = provided.get(binding.key());
+        if scope is None {
+            self.ctx.emit(
+                E2094,
+                node_override=item,
+                module=binding.provider,
+                consumer=consumer,
+                scope="an unnamed ability",
+                fix="No wire can name an unnamed ability; move the import into a named"
+                " function or method and wire that."
+            );
+            continue;
+        }
+        if positional and held is not None and not held.is_injected {
+            declared.add((".".join(scope), binding.key()));
+            continue;
+        }
+        fix = ImportWiringPass._written_import_fix(
+            spec, binding, ".".join([consumer, *scope]), held, positional
+        );
+        if scope {
+            self.ctx.emit(
+                E2094,
+                node_override=item,
+                module=binding.provider,
+                consumer=consumer,
+                scope=".".join(scope),
+                fix=fix
+            );
+        } else {
             self.ctx.emit(
                 E1144,
                 node_override=item,
                 module=binding.provider,
                 consumer=consumer,
-                wire=spec.wire_suggestion(binding, consumer)
+                fix=fix
             );
         }
     }
@@ -337,34 +375,40 @@ impl ImportWiringPass._check_import(
     }
 }
 
-impl ImportWiringPass._emit_nested(
+impl ImportWiringPass._written_import_fix(
     spec: WiringSpec,
     binding: WireBinding,
-    at: UniNode,
     consumer: str,
-    scope: (list[str] | None)
-) -> None {
-    if scope is None {
-        self.ctx.emit(
-            E2094,
-            node_override=at,
-            module=binding.provider,
-            consumer=consumer,
-            scope="an unnamed ability",
-            fix="No wire can name an unnamed ability; move the import into a named"
-            " function or method and wire that."
+    held: (WireRec | None),
+    positional: bool
+) -> str {
+    if positional {
+        declared = WireBinding(
+            provider=binding.provider,
+            form=binding.form,
+            name=binding.name,
+            alias=binding.alias,
+            injected=False
         );
-        return;
+        if held is None {
+            return f"It runs where it is written (inside a block, or after other"
+            f" statements), so it stays written: declare it with"
+            f" {spec.wire_suggestion(declared, consumer)} of archwire.jac.";
+        }
+        return f"It runs where it is written (inside a block, or after other"
+        f" statements), so archwire.jac line {held.line} must declare it with '-->'"
+        " instead of injecting it with '++>', which would move it to the top of the"
+        " body.";
     }
-    target = ".".join([consumer, *scope]);
-    self.ctx.emit(
-        E2094,
-        node_override=at,
-        module=binding.provider,
-        consumer=consumer,
-        scope=".".join(scope) if scope else consumer,
-        fix=f"Add {spec.wire_suggestion(binding, target)} of archwire.jac."
-    );
+    if held is None {
+        return f"Add {spec.wire_suggestion(binding, consumer)} of archwire.jac and"
+        " delete this import.";
+    }
+    if held.is_injected {
+        return f"archwire.jac line {held.line} already injects it, so delete this import.";
+    }
+    return f"archwire.jac line {held.line} only declares it; make that wire '++>' and"
+    " delete this import.";
 }
 
 impl report_unused_wires(reporter: CompilerPass, mod: Module) -> None {
@@ -412,6 +456,9 @@ impl unused_wire_bindings(mod: Module) -> list[UnusedBinding] {
     owners: (dict[str, (Ability | ImplDef)] | None) = None;
     read: dict[str, set[str]] = {};
     for wire in wires {
+        if not wire.is_injected {
+            continue;
+        }
         scope = ".".join(spec.consumer_scope(consumer, wire));
         for binding in wire.bindings() {
             name = binding.bound_name();

@@ -1,6 +1,3 @@
-import from jaclang.scale.deploy.target.kubernetes.kubernetes_config {
-    KubernetesConfig
-}
 
 
 test "KubernetesConfig round-trips tracing_enabled" {

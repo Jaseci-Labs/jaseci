@@ -1,8 +1,3 @@
-import from jaclang.compiler.frontend.constant {
-    Tokens as Tok,
-    SymbolAccess,
-    SymbolType
-}
 
 impl Parser.current -> LexToken {
     if self.pos < self._tokens_len {
@@ -7333,7 +7328,14 @@ impl Parser.parse_import_rule -> ImportRule | None {
         sources.append(pat);
         kid.append(pat);
     }
-    self._expect_wire_arrow(kid);
+    if self.check(TokenKind.CARROW_R) {
+        self.emit_diag(
+            "An edge rule only checks imports; write 'source --> target'", "E0086"
+        );
+        self.advance();
+    } else {
+        self._expect_wire_arrow(kid);
+    }
     targets: list[ModulePattern] = [self.parse_module_pattern()];
     kid.append(targets[0]);
     while self.match_tok(TokenKind.BW_OR) {
@@ -7386,7 +7388,10 @@ impl Parser.parse_import_wire -> ImportWire | None {
         self._skip_wiring_stmt();
         return None;
     }
-    if not self._expect_wire_arrow(kid) {
+    injected = self.check(TokenKind.CARROW_R);
+    if injected {
+        kid.append(self.consume_uni(TokenKind.CARROW_R));
+    } elif not self._expect_wire_arrow(kid) {
         self._skip_wiring_stmt();
         return None;
     }
@@ -7432,6 +7437,7 @@ impl Parser.parse_import_wire -> ImportWire | None {
         provider=provider,
         targets=targets,
         is_grouped=grouped,
+        is_injected=injected,
         is_absorb=is_absorb,
         is_typed=is_typed,
         is_comptime=is_comptime,
@@ -7548,8 +7554,14 @@ impl Parser.parse_wire_payload(kid: list[UniNode], in_rule: bool) -> list[WireIt
 }
 
 impl Parser._expect_wire_arrow(kid: list[UniNode]) -> bool {
-    if self.check_any(TokenKind.ARROW_L, TokenKind.ARROW_BI) {
-        self.emit_diag("A wire is directed: write 'provider --> consumer'", "E0086");
+    if self.check_any(
+        TokenKind.ARROW_L, TokenKind.ARROW_BI, TokenKind.CARROW_L, TokenKind.CARROW_BI
+    ) {
+        self.emit_diag(
+            "A wire is directed: write 'provider ++> consumer' to inject the import,"
+            " or 'provider --> consumer' to declare one the consumer writes",
+            "E0086"
+        );
         self.advance();
         return False;
     }
@@ -7559,7 +7571,11 @@ impl Parser._expect_wire_arrow(kid: list[UniNode]) -> bool {
 
 impl Parser._wire_path_ahead -> bool {
     return self.check_peek_any(
-        TokenKind.ARROW_R, TokenKind.DOT, TokenKind.KW_AS, TokenKind.BW_OR
+        TokenKind.ARROW_R,
+        TokenKind.CARROW_R,
+        TokenKind.DOT,
+        TokenKind.KW_AS,
+        TokenKind.BW_OR
     );
 }
 

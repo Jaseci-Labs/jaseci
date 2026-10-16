@@ -1,9 +1,3 @@
-import from jaclang.scale.runtime.gateway.dispatch {
-    classify_route,
-    ROUTE_ADMIN,
-    ROUTE_PROXY,
-    ROUTE_STATIC
-}
 
 
 test "proxy uses the longest matching service prefix on a member subpath" {

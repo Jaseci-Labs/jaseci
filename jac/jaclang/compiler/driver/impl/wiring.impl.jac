@@ -341,6 +341,9 @@ impl WiringSpec.annex_source(consumer: str) -> (str | None) {
     }
     placed: dict[int, list[tuple[int, str]]] = {};
     for wire in wires {
+        if not wire.is_injected {
+            continue;
+        }
         for (line0, col, text) in self._wire_pieces(wire) {
             placed.setdefault(line0, []).append((col, text));
         }
@@ -375,7 +378,14 @@ impl WiringSpec.digest_for(consumer: str) -> str {
         for binding in wire.bindings() {
             rows.append(
                 "\x1f".join(
-                    [scope, binding.form, provider, binding.name, binding.alias]
+                    [
+                        scope,
+                        binding.form,
+                        provider,
+                        binding.name,
+                        binding.alias,
+                        "++>" if binding.injected else "-->"
+                    ]
                 )
             );
         }
@@ -397,13 +407,20 @@ impl WireRec.bindings -> list[WireBinding] {
                 form=import_form(
                     self.is_absorb, self.is_typed, self.is_comptime, False
                 ),
-                alias=self.alias
+                alias=self.alias,
+                injected=self.is_injected
             )
         ];
     }
     form = import_form(self.is_absorb, self.is_typed, self.is_comptime, True);
     return [
-        WireBinding(provider=self.provider, form=form, name=name, alias=alias)
+        WireBinding(
+            provider=self.provider,
+            form=form,
+            name=name,
+            alias=alias,
+            injected=self.is_injected
+        )
         for (name, alias) in self.items
     ];
 }
@@ -425,7 +442,6 @@ impl WiringSpec.consumer_bindings(
 }
 
 impl WiringSpec.import_provider(path_node: ModulePath) -> (str | None) {
-    import from jaclang.compiler.frontend.codeinfo { is_bundled_native_module }
     if path_node.level == 0
         and path_node.string_path_value is None
         and (
@@ -537,6 +553,7 @@ impl wire_records(wire: ImportWire, source: str = "") -> list[WireRec] {
             is_absorb=wire.is_absorb,
             is_typed=wire.is_typed,
             is_comptime=wire.is_comptime,
+            is_injected=wire.is_injected,
             alias=alias.value if alias is not None and target.is_module_form else "",
             items=[]
                 if target.is_module_form
@@ -596,7 +613,6 @@ impl module_records(mod: Module, source: str) -> tuple[list[WireRec], list[RuleR
 impl parse_records(
     source: str, path: str
 ) -> tuple[bool, list[WireRec], list[RuleRec]] {
-    import from jaclang.compiler.frontend.parser.frontend { parse_woven }
     (mod, had_error) = parse_woven(source, path, None, [], load_kernel=False);
     (wires, rules) = module_records(mod, source);
     return (bool(had_error), wires, rules);
@@ -652,7 +668,8 @@ impl encode_records(
         flags = ("1" if w.is_module_form else "0")
             + ("1" if w.is_absorb else "0")
             + ("1" if w.is_typed else "0")
-            + ("1" if w.is_comptime else "0");
+            + ("1" if w.is_comptime else "0")
+            + ("1" if w.is_injected else "0");
         items = "\x1e".join([name + "\x1d" + alias for (name, alias) in w.items]);
         lines.append(
             "\x1f".join(
@@ -701,7 +718,7 @@ impl decode_records(text: str) -> (tuple[bool, list[WireRec], list[RuleRec]] | N
         f = line.split("\x1f");
         if f[0] == "W" and len(f) == 11 {
             flags = f[3];
-            if len(flags) != 4
+            if len(flags) != 5
                 or not (
                     f[6].isdigit()
                     and f[7].isdigit()
@@ -726,6 +743,7 @@ impl decode_records(text: str) -> (tuple[bool, list[WireRec], list[RuleRec]] | N
                     is_absorb=flags[1] == "1",
                     is_typed=flags[2] == "1",
                     is_comptime=flags[3] == "1",
+                    is_injected=flags[4] == "1",
                     alias=f[4],
                     items=items,
                     line=int(f[6]),
@@ -782,35 +800,6 @@ impl arch_file_for(path: str) -> (str | None) {
     }
 }
 
-impl compiled_by_seed(path: str) -> bool {
-    import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
-    host = active_host();
-    pkg = os.path.realpath(jaclang_pkg_root());
-    base = host.base_file(path);
-    real = os.path.realpath(base if base is not None else path);
-    if not real.startswith(pkg + os.sep) {
-        return False;
-    }
-    return host.is_seed_source(real[len(pkg) + 1:].replace(os.sep, "/"));
-}
-
-impl is_kernel_abi_contract(path: str) -> bool {
-    import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
-    import from jaclang.compiler.native_scope { KERNEL_ABI_CONTRACT_REL }
-    pkg = os.path.realpath(jaclang_pkg_root());
-    real = os.path.realpath(path);
-    if not real.startswith(pkg + os.sep) {
-        return False;
-    }
-    return real[len(pkg) + 1:].replace(os.sep, "/") in KERNEL_ABI_CONTRACT_REL;
-}
-
-impl is_native_stdlib_source(path: str) -> bool {
-    import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
-    stdlib = os.path.join(os.path.realpath(jaclang_pkg_root()), "runtime", "na_stdlib");
-    return os.path.realpath(path).startswith(stdlib + os.sep);
-}
-
 impl is_stdlib_module(name: str) -> bool {
     if not _STDLIB_NAMES {
         _STDLIB_NAMES.append(
@@ -842,6 +831,23 @@ impl scope_path_of(nd: UniNode) -> (list[str] | None) {
         cur = cur.parent;
     }
     return names;
+}
+
+impl is_positional_import(imp: Import) -> bool {
+    owner = imp.parent;
+    if not isinstance(owner, (Module, Ability, ImplDef)) {
+        return True;
+    }
+    for stmt in [owner->:BodyRole:->] {
+        if stmt is imp {
+            return False;
+        }
+        if stmt.loc.mod_path == imp.loc.mod_path
+            and not isinstance(stmt, (Import, String, EmptyToken)) {
+            return True;
+        }
+    }
+    return False;
 }
 
 impl scope_owners(mod: Module) -> dict[str, (Ability | ImplDef)] {
@@ -953,76 +959,38 @@ impl wiring_for_path(path: str) -> (WiringSpec | None) {
     return spec;
 }
 
-impl dedupe_generated_imports(mod: Module) -> None {
+impl place_wired_imports(mod: Module) -> None {
     spec = wiring_for_path(mod.loc.mod_path);
     if spec is None {
         return;
     }
     consumer = spec.module_name(mod.loc.mod_path) or "";
-    consumer_import = spec.import_name(consumer);
-    written: set[tuple[str, str, str, str]] = set();
     generated: list[Import] = [];
-    removed: set[int] = set();
+    scoped: set[int] = set();
     owners: (dict[str, (Ability | ImplDef)] | None) = None;
     for stmt in mod.body {
-        if not isinstance(stmt, Import) {
+        if not isinstance(stmt, Import) or stmt.loc.mod_path != spec.path {
             continue;
         }
-        if stmt.loc.mod_path == spec.path {
-            wire = spec.wire_at_line(stmt.loc.first_line, consumer);
-            scope = spec.consumer_scope(consumer, wire) if wire is not None else [];
-            if scope {
-                removed.add(id(stmt));
-                if owners is None {
-                    owners = scope_owners(mod);
-                }
-                owner = owners.get(".".join(scope));
-                if owner is None {
-                    continue;
-                }
-                in_scope: set[tuple[str, str, str, str]] = set();
-                for imp in owner.get_all_sub_nodes(typ=Import) {
-                    if scope_path_of(imp) == scope {
-                        in_scope |= import_keys(imp);
-                    }
-                }
-                doomed: set[int] = set();
-                for (key, item) in import_items(stmt) {
-                    if key in in_scope
-                        or relative_twin(key, consumer_import) in in_scope {
-                        doomed.add(id(item));
-                    }
-                }
-                if not doomed or not stmt.prune_items(doomed) {
-                    inject_into_scope(owner, stmt);
-                }
-                continue;
-            }
+        wire = spec.wire_at_line(stmt.loc.first_line, consumer);
+        scope = spec.consumer_scope(consumer, wire) if wire is not None else [];
+        if not scope {
             generated.append(stmt);
             continue;
         }
-        written |= import_keys(stmt);
-    }
-    for stmt in (generated if written else []) {
-        doomed: set[int] = set();
-        for (key, item) in import_items(stmt) {
-            if key in written or relative_twin(key, consumer_import) in written {
-                doomed.add(id(item));
-            }
+        scoped.add(id(stmt));
+        if owners is None {
+            owners = scope_owners(mod);
         }
-        if doomed and stmt.prune_items(doomed) {
-            removed.add(id(stmt));
+        owner = owners.get(".".join(scope));
+        if owner is not None {
+            inject_into_scope(owner, stmt);
         }
     }
-    hoisted = [
-        stmt
-        for stmt in generated
-        if id(stmt) not in removed
-    ];
-    if not removed and not hoisted {
+    if not generated and not scoped {
         return;
     }
-    moved = {id(stmt) for stmt in hoisted} | removed;
+    moved = {id(stmt) for stmt in generated} | scoped;
     rest = [
         s
         for s in mod.body
@@ -1042,9 +1010,9 @@ impl dedupe_generated_imports(mod: Module) -> None {
             }
         }
     }
-    mod._role_set(BodyRole, [*hoisted, *rest]);
+    mod._role_set(BodyRole, [*generated, *rest]);
     mod.set_kids(
-        nodes=[*kids[:anchor], *hoisted, *kids[anchor:]] or [EmptyToken()],
+        nodes=[*kids[:anchor], *generated, *kids[anchor:]] or [EmptyToken()],
         pos_update=False
     );
     mod._invalidate_sub_node_tab();
@@ -1163,12 +1131,13 @@ impl wire_text(
     ];
     head = " ".join(words + [block_relative(block, binding.provider)]);
     relative = [block_relative(block, c) for c in consumers];
+    arrow = "++>" if binding.injected else "-->";
     if binding.is_module_form() {
         alias = " as " + binding.alias if binding.alias else "";
-        return f"{head}{alias} --> {_target_text(relative, None)};";
+        return f"{head}{alias} {arrow} {_target_text(relative, None)};";
     }
     pairs = items if items is not None else [(binding.name, binding.alias)];
-    return f"{head} --> {_target_text(relative, pairs)}";
+    return f"{head} {arrow} {_target_text(relative, pairs)}";
 }
 
 impl _entry_order(
@@ -1226,36 +1195,44 @@ impl render_wiring(
     spec: WiringSpec, facts: list[tuple[str, WireBinding]], rules: list[RuleRec]
 ) -> str {
     heads: dict[str, str] = {};
-    payloads: dict[tuple[str, str, str, str], list[tuple[str, str]]] = {};
-    groups: dict[tuple[str, str, str, str, tuple[tuple[str, str], ...]], list[str]] = {};
+    payloads: dict[tuple[str, str, str, str, str], list[tuple[str, str]]] = {};
+    groups: dict[
+        tuple[str, str, str, str, str, tuple[tuple[str, str], ...]], list[str]
+    ] = {};
     for (consumer, binding) in facts {
         if consumer not in heads {
             split = spec.split_consumer(consumer);
             heads[consumer] = split[0] if split is not None else consumer;
         }
         block = wire_block(binding.provider, heads[consumer]);
+        arrow = "++>" if binding.injected else "-->";
         if binding.is_module_form() {
             held = groups.setdefault(
-                (block, binding.provider, binding.form, binding.alias, ()), []
+                (block, binding.provider, binding.form, binding.alias, arrow, ()), []
             );
             if consumer not in held {
                 held.append(consumer);
             }
             continue;
         }
-        items = payloads.setdefault((block, binding.provider, binding.form, consumer), []);
+        items = payloads.setdefault(
+            (block, binding.provider, binding.form, arrow, consumer), []
+        );
         pair = (binding.name, binding.alias);
         if pair not in items {
             items.append(pair);
         }
     }
-    for ((block, provider, form, consumer), items) in payloads.items() {
-        groups.setdefault((block, provider, form, "", tuple(sorted(items))), []).append(
-            consumer
-        );
+    for ((block, provider, form, arrow, consumer), items) in payloads.items() {
+        groups.setdefault(
+            (block, provider, form, "", arrow, tuple(sorted(items))), []
+        ).append(consumer);
     }
-    statements: dict[tuple[str, str, str, str], list[tuple[list[str], (list[tuple[str, str]] | None)]]] = {};
-    for ((block, provider, form, alias, items), consumers) in groups.items() {
+    statements: dict[
+        tuple[str, str, str, str, str],
+        list[tuple[list[str], (list[tuple[str, str]] | None)]]
+    ] = {};
+    for ((block, provider, form, alias, arrow, items), consumers) in groups.items() {
         module_form = "from" not in form.split(" ");
         prefix = " ".join(
             [
@@ -1277,14 +1254,17 @@ impl render_wiring(
                     taken.append(consumer);
                 }
             }
-            statements.setdefault((block, provider, prefix, alias), []).append(
-                ([block_relative(block, c) for c in taken], None if module_form else list(items))
+            statements.setdefault((block, provider, prefix, alias, arrow), []).append(
+                (
+                    [block_relative(block, c) for c in taken],
+                    None if module_form else list(items)
+                )
             );
             pending = rest;
         }
     }
-    wires: dict[str, list[tuple[tuple[str, str, str], str]]] = {};
-    for ((block, provider, prefix, alias), entries) in statements.items() {
+    wires: dict[str, list[tuple[tuple[str, str, str, str], str]]] = {};
+    for ((block, provider, prefix, alias, arrow), entries) in statements.items() {
         head = " ".join(([prefix] if prefix else []) + [block_relative(block, provider)]);
         if alias {
             head = head + " as " + alias;
@@ -1294,13 +1274,14 @@ impl render_wiring(
             for (consumers, items) in sorted(entries, key=_entry_order)
         ];
         if len(texts) == 1 {
-            only = texts[0];
-            text = f"{head} --> {only}" + (";" if entries[0][1] is None else "");
+            text = f"{head} {arrow} {texts[0]}" + (";" if entries[0][1] is None else "");
         } else {
-            text = f"{head} --> [\n" + "".join(["    " + t + ",\n" for t in texts]) + "]";
+            text = f"{head} {arrow} [\n"
+                + "".join(["    " + t + ",\n" for t in texts])
+                + "]";
         }
         wires.setdefault(block, []).append(
-            ((block_relative(block, provider), prefix, alias), text)
+            ((block_relative(block, provider), prefix, alias, arrow), text)
         );
     }
     policy = [
@@ -1323,7 +1304,6 @@ impl render_wiring(
 }
 
 impl canonical_wiring_source(source: str, path: str) -> str {
-    import from jaclang.compiler.frontend.parser.frontend { parse_woven }
     (mod, had_error) = parse_woven(source, path, None, [], load_kernel=False);
     if had_error
         or mod.doc is not None
@@ -1339,4 +1319,29 @@ impl canonical_wiring_source(source: str, path: str) -> str {
         rules=rules
     );
     return render_wiring(spec, wiring_facts(wires), rules);
+}
+
+impl prune_wiring_source(
+    source: str, path: str, dropped: Callable[[str], bool]
+) -> str {
+    (parse_failed, wires, rules) = parse_records(source, path);
+    if parse_failed {
+        return source;
+    }
+    spec = WiringSpec(
+        root_dir=os.path.dirname(os.path.abspath(path)),
+        path=path,
+        wires=wires,
+        rules=rules
+    );
+    kept: list[tuple[str, WireBinding]] = [];
+    for (consumer, binding) in wiring_facts(wires) {
+        split = spec.split_consumer(consumer);
+        ends = [binding.provider, split[0] if split is not None else consumer];
+        files = [spec.module_file(end) for end in ends];
+        if not any([f is not None and dropped(f) for f in files]) {
+            kept.append((consumer, binding));
+        }
+    }
+    return render_wiring(spec, kept, rules);
 }

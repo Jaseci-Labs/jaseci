@@ -1,6 +1,5 @@
 """Minimal fixture for testing function-based tool extraction."""
 
-import from jaclang.byllm.lib { MockLLM, MockToolCall }
 
 """Calculate age from birth year."""
 def calculate_age(birth_year: int, current_year: int) -> int {

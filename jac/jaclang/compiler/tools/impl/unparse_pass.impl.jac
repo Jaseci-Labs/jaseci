@@ -1238,7 +1238,7 @@ impl UnparsePass.exit_import_wire with uni.ImportWire exit {
         parts.append("type");
     }
     parts.append(here.provider.gen.jac);
-    parts.append("-->");
+    parts.append("++>" if here.is_injected else "-->");
     if here.is_grouped {
         parts.append("[" + ", ".join([t.gen.jac for t in here.targets]) + "]");
     } else {

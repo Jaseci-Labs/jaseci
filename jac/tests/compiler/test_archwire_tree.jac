@@ -1,14 +1,23 @@
 """The repository's own archwire.jac files hold true facts in canonical form.
 
-The payload drops the natively lowered subtrees whole, so an archwire.jac that
-ships must not wire a module the payload drops; and every archwire.jac in the
-tree must already be in the layout `jac fmt` renders.
+jaclang/archwire.jac is the one graph of jaclang's imports, natively lowered
+subtrees included. The payload drops those subtrees, so it ships a copy of the
+graph without the wires that reach them; and every archwire.jac in the tree is
+already in the layout `jac fmt` renders.
 """
 
 import os;
+import shutil;
+import tempfile;
 import jaclang;
 import from jaclang.compiler.driver.program { JacProgram }
-import from jaclang.compiler.driver.wiring { ARCH_FILE_NAME, wiring_for_path }
+import from jaclang.compiler.driver.wiring {
+    ARCH_FILE_NAME,
+    WiringSpec,
+    parse_records,
+    wiring_facts
+}
+import from jaclang.dist.payload.assemble { ship_wiring }
 import from jaclang.dist.payload.fsutil { skip_jaclang }
 
 glob _PKG: str = os.path.dirname(os.path.realpath(jaclang.__file__));
@@ -37,32 +46,48 @@ def _dropped(path: str) -> bool {
 }
 
 
-test "no archwire.jac the payload ships wires a module the payload drops" {
-    shipped = [
-        path
-        for path in _arch_files(_PKG)
-        if not _dropped(path)
-    ];
-    assert shipped;
-    stray: list[str] = [];
-    for arch in shipped {
-        spec = wiring_for_path(arch);
-        assert spec is not None , arch;
+def _facts(source: str, path: str) -> tuple[WiringSpec, set[str]] {
+    (failed, wires, rules) = parse_records(source, path);
+    assert not failed , path;
+    spec = WiringSpec(root_dir=_PKG, path=path, wires=wires, rules=rules);
+    return (
+        spec,
+        {f"{consumer}|{binding.key()}" for (consumer, binding) in wiring_facts(wires)}
+    );
+}
+
+
+test "the payload ships archwire.jac without the wires that reach modules it drops" {
+    source_path = os.path.join(_PKG, ARCH_FILE_NAME);
+    with open(source_path) as f {
+        source = f.read();
+    }
+    site = tempfile.mkdtemp(prefix="jac_ship_wiring_");
+    try {
+        ship_wiring(_PKG, site);
+        with open(os.path.join(site, ARCH_FILE_NAME)) as f {
+            shipped = f.read();
+        }
+        (spec, kept) = _facts(shipped, source_path);
+        (_spec, everything) = _facts(source, source_path);
+        stray: list[str] = [];
         for wire in spec.wires {
-            heads = [wire.provider];
             for consumer in wire.consumers {
                 split = spec.split_consumer(consumer);
-                heads.append(split[0] if split is not None else consumer);
-            }
-            for head in heads {
-                found = spec.module_file(head);
-                if found is not None and _dropped(found) {
-                    stray.append(f"{os.path.relpath(arch, _PKG)}:{wire.line} {head}");
+                for end in [wire.provider, split[0] if split is not None else consumer] {
+                    found = spec.module_file(end);
+                    if found is not None and _dropped(found) {
+                        stray.append(f"{wire.provider} --> {consumer}");
+                    }
                 }
             }
         }
+        assert not stray , stray[:5];
+        assert kept < everything;
+        assert not os.path.exists(os.path.join(site, "runtime", "python", ARCH_FILE_NAME));
+    } finally {
+        shutil.rmtree(site, ignore_errors=True);
     }
-    assert not stray , f"{len(stray)} wires reach dropped modules, e.g. {stray[:5]}";
 }
 
 

@@ -4,7 +4,6 @@ A pool dispatches through a litellm Router, never through its members. Fake
 `router.completion` and leave the pool itself real.
 """
 
-import from jaclang.byllm.lib { Model, ModelPool }
 import from support { text_chunk }
 
 

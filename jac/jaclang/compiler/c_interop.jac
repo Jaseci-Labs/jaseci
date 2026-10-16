@@ -1,21 +1,4 @@
-import from jaclang.compiler.frontend.unitree {
-    Ability,
-    Archetype,
-    Assignment,
-    AtomTrailer,
-    AtomUnit,
-    Expr,
-    GlobalVars,
-    Import,
-    Name,
-    ParamVar,
-    Symbol,
-    UnaryExpr,
-    resolved_decl_of,
-    UniNode
-}
 
-import type from jaclang.compiler.types.types { ClassType, TypeBase }
 
 glob C_BUILTIN_TYPES: tuple[str, ...] = ("ptr", "PtrView", "Pinned", "VaList");
 
@@ -31,7 +14,6 @@ def clib_import_of(nd: (UniNode | None)) -> (Import | None) {
 }
 
 def clib_block_defines(imp: (UniNode | None)) -> bool {
-    import from jaclang.compiler.frontend.unitree { Ability }
     if not isinstance(imp, Import) or not imp.clib_decls {
         return False;
     }
@@ -119,7 +101,6 @@ def is_va_list_type(t: (TypeBase | None)) -> bool {
 }
 
 def c_variadic_param(sig: (UniNode | None)) -> (ParamVar | None) {
-    import from jaclang.compiler.frontend.unitree { FuncSignature }
     if not isinstance(sig, FuncSignature) or sig.varargs is None {
         return None;
     }
@@ -215,7 +196,6 @@ def foreign_read_copies(nd: (UniNode | None)) -> bool {
 def _ambient_c_call_returns(
     call: (UniNode | None), name: str
 ) -> list[(TypeBase | None)] {
-    import from jaclang.compiler.frontend.unitree { FuncCall, Name }
     if not isinstance(call, FuncCall)
         or not isinstance(call.target, Name)
         or call.target.value != name {
@@ -254,7 +234,6 @@ def is_c_value_type(t: (TypeBase | None)) -> bool {
 }
 
 def c_call_borrows_args(call: (UniNode | None)) -> bool {
-    import from jaclang.compiler.frontend.unitree { FuncCall }
     if not isinstance(call, FuncCall) {
         return False;
     }
@@ -300,8 +279,6 @@ def c_spec_same(a: any, b: any) -> bool {
 }
 
 def c_abi_callee(call: (UniNode | None)) -> (Ability | None) {
-    import from jaclang.compiler.frontend.unitree { FuncCall }
-    import from jaclang.compiler.symbol_utils { resolved_callee }
     if not isinstance(call, FuncCall) {
         return None;
     }
@@ -313,7 +290,6 @@ def c_abi_callee(call: (UniNode | None)) -> (Ability | None) {
 }
 
 def c_lent_arg_elem(arg: (UniNode | None)) -> (TypeBase | None) {
-    import from jaclang.compiler.frontend.constant { is_borrow_kind }
     if not isinstance(arg, UnaryExpr) or not is_borrow_kind(arg.ownership) {
         return None;
     }
@@ -326,8 +302,6 @@ def c_lent_arg_elem(arg: (UniNode | None)) -> (TypeBase | None) {
 }
 
 def c_param_type(call: UniNode, param: ParamVar) -> (TypeBase | None) {
-    import from jaclang.compiler.frontend.unitree { FuncCall }
-    import from jaclang.compiler.types.types { FunctionType }
     if param.type is not None {
         return param.type;
     }
@@ -345,8 +319,6 @@ def c_param_type(call: UniNode, param: ParamVar) -> (TypeBase | None) {
 }
 
 def c_lent_param(arg: UniNode) -> (ParamVar | None) {
-    import from jaclang.compiler.frontend.constant { is_borrow_kind }
-    import from jaclang.compiler.frontend.unitree { FuncCall, FuncSignature, KWPair }
     call = arg.parent;
     if not isinstance(call, FuncCall) {
         return None;
@@ -386,7 +358,6 @@ def c_type_spec(
     annotation: (UniNode | None) = None,
     written_in: (UniNode | None) = None
 ) -> list[any] {
-    import from jaclang.compiler.types.types { ClassType, FunctionType, UnionType }
     spelled = written_in if written_in is not None else annotation;
     if isinstance(t, UnionType) {
         members = [
@@ -449,7 +420,6 @@ def c_type_spec(
 }
 
 def _spelled_c_type_name(arch: Archetype, written_in: (UniNode | None)) -> str {
-    import from jaclang.compiler.frontend.unitree { Name }
     declared: str = arch.name.value;
     if written_in is None {
         return declared;
@@ -467,7 +437,6 @@ def _spelled_c_type_name(arch: Archetype, written_in: (UniNode | None)) -> str {
 }
 
 def _spec_for_name(name: str) -> (list[any] | None) {
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
     if name == "str" {
         return ["str"];
     }
@@ -484,7 +453,6 @@ def _spec_for_name(name: str) -> (list[any] | None) {
 }
 
 def _annotation_name(annotation: (UniNode | None)) -> (str | None) {
-    import from jaclang.compiler.frontend.unitree { Name, Null }
     if isinstance(annotation, Null) {
         return "None";
     }
@@ -510,13 +478,6 @@ def clib_global_of_symbol(sym: (Symbol | None)) -> (Assignment | None) {
 }
 
 def clib_global_of_name(nd: (UniNode | None)) -> (Assignment | None) {
-    import from jaclang.compiler.frontend.unitree {
-        Ability,
-        ImplDef,
-        LambdaExpr,
-        Module,
-        Test
-    }
     if not isinstance(nd, Name) or nd.sym is None {
         return None;
     }
@@ -547,11 +508,6 @@ def clib_global_of_name(nd: (UniNode | None)) -> (Assignment | None) {
 }
 
 def c_string_literal(expr: (UniNode | None)) -> (str | None) {
-    import from jaclang.compiler.frontend.unitree {
-        FString,
-        MultiString,
-        literal_string_value
-    }
     if expr is None
         or (
             isinstance(expr, MultiString)
@@ -563,7 +519,6 @@ def c_string_literal(expr: (UniNode | None)) -> (str | None) {
 }
 
 def named_function_of(nd: (UniNode | None)) -> (UniNode | None) {
-    import from jaclang.compiler.frontend.unitree { Ability, Name }
     while isinstance(nd, AtomUnit) and isinstance(nd.value, Expr) {
         nd = nd.value;
     }
@@ -576,7 +531,6 @@ def named_function_of(nd: (UniNode | None)) -> (UniNode | None) {
 }
 
 def final_glob_value(nd: (UniNode | None)) -> (Expr | None) {
-    import from jaclang.compiler.frontend.unitree { Name }
     if not isinstance(nd, Name) or nd.sym is None {
         return None;
     }
@@ -603,9 +557,6 @@ def final_glob_value(nd: (UniNode | None)) -> (Expr | None) {
 }
 
 def c_scalar_constant(expr: (UniNode | None), depth: int = 0) -> tuple[bool, any] {
-    import from jaclang.compiler.frontend.unitree { BinaryExpr, FuncCall, Name }
-    import from jaclang.compiler.frontend.const_fold { fold_const }
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
     if depth > 32 {
         return (False, None);
     }
@@ -633,7 +584,6 @@ def c_scalar_constant(expr: (UniNode | None), depth: int = 0) -> tuple[bool, any
 }
 
 def _fold_with_finals(expr: UniNode, depth: int) -> tuple[bool, any] {
-    import from jaclang.compiler.frontend.unitree { BinaryExpr }
     if isinstance(expr, UnaryExpr) {
         (ok, value) = c_scalar_constant(expr.operand, depth + 1);
         if not ok or not isinstance(value, int) or isinstance(value, bool) {
@@ -702,7 +652,6 @@ def c_array_elem(t: (TypeBase | None)) -> (TypeBase | None) {
 }
 
 def c_bytes_literal(expr: (UniNode | None)) -> (bytes | None) {
-    import from jaclang.compiler.frontend.unitree { MultiString, String }
     while isinstance(expr, AtomUnit) and isinstance(expr.value, Expr) {
         expr = expr.value;
     }
@@ -718,7 +667,6 @@ def c_bytes_literal(expr: (UniNode | None)) -> (bytes | None) {
 }
 
 def c_bytes_elem_shape(elem: (TypeBase | None)) -> (tuple[int, bool] | None) {
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
     cls = _class_of(elem);
     if cls is None or cls._shared is None or not cls.is_builtin() {
         return None;
@@ -738,7 +686,6 @@ def c_bytes_array_values(data: bytes, width: int, signed: bool) -> list[int] {
 }
 
 def c_bytes_array_definition(assign: Assignment, ctype: (TypeBase | None)) -> bool {
-    import from jaclang.compiler.frontend.unitree { MultiString, String }
     value = assign.value;
     while isinstance(value, AtomUnit) and isinstance(value.value, Expr) {
         value = value.value;

@@ -1,17 +1,6 @@
 import os;
 import json;
 import from collections.abc { Callable }
-import jaclang.compiler.frontend.unitree as uni;
-import from jaclang.compiler.frontend.constant { CodeContext }
-import type from jaclang.compiler.driver.program { JacProgram }
-import from jaclang.compiler.placement.placement {
-    PLACEMENT_SCHEMA,
-    ElementSummary,
-    PlacementSummary,
-    element_display_name,
-    get_module_summary,
-    placement_evidence_for
-}
 
 def escapes_record(escapes: list[tuple[int, str]]) -> list[any] {
     rows: list[any] = [];

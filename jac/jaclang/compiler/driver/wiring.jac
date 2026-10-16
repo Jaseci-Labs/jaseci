@@ -3,48 +3,17 @@ import os;
 import from collections.abc { Iterator }
 import from contextlib { contextmanager }
 import from contextvars { ContextVar }
-import from jaclang.compiler.frontend.unitree {
-    Ability,
-    Archetype,
-    EmptyToken,
-    Enum,
-    ImplDef,
-    GraphImport,
-    Import,
-    ImportRule,
-    ImportWire,
-    Module,
-    ModuleItem,
-    ModulePath,
-    ModulePattern,
-    Token,
-    UniNode
-}
-import from jaclang.compiler.frontend.constant { Tokens as Tok }
-import from jaclang.compiler.frontend.roles { BodyRole, Kid }
-import from jaclang.compiler.frontend.host {
-    HOST_FACT_GIT_IGNORED,
-    HOST_FACT_SEP,
-    HOST_FACT_STDLIB_MODULES,
-    active_host
-}
-import from jaclang.compiler.passes.annex_weave {
-    WovenAnnex,
-    import_form,
-    import_items,
-    import_keys,
-    relative_twin
-}
 
 glob ARCH_FILE_NAME: str = "archwire.jac",
      SKIPPED_PROJECT_DIRS: tuple[str, ...] = ("node_modules", "__pycache__"),
-     RECORDS_FORMAT: int = 3;
+     RECORDS_FORMAT: int = 4;
 
 obj WireBinding {
     has provider: str,
         form: str,
         name: str = "",
-        alias: str = "";
+        alias: str = "",
+        injected: bool = True;
 
     def key -> tuple[str, str, str, str] {
         return (self.provider, self.form, self.name, self.alias);
@@ -83,6 +52,7 @@ obj WireRec {
         is_absorb: bool = False,
         is_typed: bool = False,
         is_comptime: bool = False,
+        is_injected: bool = True,
         alias: str = "",
         items: list[tuple[str, str]] = [],
         line: int = 0,
@@ -170,10 +140,7 @@ def arch_file_for(path: str) -> (str | None);
 def wiring_for_path(path: str) -> (WiringSpec | None);
 def wiring_annex_for(file_path: str) -> (WovenAnnex | None);
 def wiring_digest_for(file_path: str) -> str;
-def dedupe_generated_imports(mod: Module) -> None;
-def compiled_by_seed(path: str) -> bool;
-def is_kernel_abi_contract(path: str) -> bool;
-def is_native_stdlib_source(path: str) -> bool;
+def place_wired_imports(mod: Module) -> None;
 def pattern_record(pattern: ModulePattern, scope: str = "") -> PatternRec;
 def rule_record(rule: ImportRule) -> RuleRec;
 def wire_records(wire: ImportWire, source: str = "") -> list[WireRec];
@@ -200,6 +167,9 @@ def _entry_order(
 ) -> tuple[list[str], list[tuple[str, str]]];
 def _block_text(block: str, body: list[str]) -> str;
 def canonical_wiring_source(source: str, path: str) -> str;
+def prune_wiring_source(
+    source: str, path: str, dropped: Callable[[str], bool]
+) -> str;
 def encode_records(
     parse_failed: bool, wires: list[WireRec], rules: list[RuleRec]
 ) -> str;
@@ -213,6 +183,7 @@ def is_stdlib_module(name: str) -> bool;
 
 def _load_spec(root_dir: str, arch_path: str) -> WiringSpec;
 def scope_path_of(nd: UniNode) -> (list[str] | None);
+def is_positional_import(imp: Import) -> bool;
 def scope_owners(mod: Module) -> dict[str, (Ability | ImplDef)];
 def inject_into_scope(owner: (Ability | ImplDef), stmt: UniNode) -> None;
 def local_module_name(root_dir: str, path: str) -> (str | None);

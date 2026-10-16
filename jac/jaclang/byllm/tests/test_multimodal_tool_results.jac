@@ -5,14 +5,6 @@ One test per helper added for the fix.  Each proves the *new* behavior
 covered by the existing test_parallel.jac suite.
 """
 
-import from jaclang.byllm.types {
-    ToolCallResultMsg,
-    Text,
-    Image,
-    normalize_tool_result,
-    content_preview,
-    reroute_tool_images_to_user_message
-}
 
 
 test "normalize_tool_result preserves list[Media]" {

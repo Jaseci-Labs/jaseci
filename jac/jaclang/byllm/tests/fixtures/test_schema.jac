@@ -1,6 +1,5 @@
 """A module whose name ends in 'a', for scope name resolution."""
 
-import from jaclang.byllm.lib { Model }
 
 glob llm = Model(model_name="gpt-4o-mini");
 

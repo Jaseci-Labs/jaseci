@@ -6,9 +6,6 @@ display-only and opt-in; each test pins one invariant."""
 
 import litellm;
 import from unittest { mock }
-import jaclang.byllm.llm as _byllm_llm_mod;
-import from jaclang.byllm.lib { MockLLM, MockRawResponse, MockToolCall }
-import from jaclang.byllm.exceptions { FinishToolError, OutputConversionError }
 import from support { call, calls, event_types, events_of, fail, mk_run, say }
 
 glob SHIPPED_DEFAULTS: dict[str, any] = {

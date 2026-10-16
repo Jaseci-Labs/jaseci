@@ -2408,15 +2408,13 @@ impl JacAutoLintPass._strip_usestate_imports(nd: uni.Module) -> None {
 }
 
 impl JacAutoLintPass._strip_wired_imports(nd: uni.Module) -> None {
-    if not self.lint_enabled or self.ctx._is_suppressed(W3053) {
+    if not self.lint_enabled
+        or self.report_only
+        or self.ctx._is_suppressed(W3053) {
         return;
     }
     own_path = nd.loc.mod_path;
-
-    if self._is_file_excluded(own_path)
-        or compiled_by_seed(own_path)
-        or is_kernel_abi_contract(own_path)
-        or is_native_stdlib_source(own_path) {
+    if self._is_file_excluded(own_path) {
         return;
     }
     spec = wiring_for_path(own_path);
@@ -2470,18 +2468,7 @@ impl JacAutoLintPass._strip_wired_imports(nd: uni.Module) -> None {
         if not isinstance(owner, (uni.Ability, uni.ImplDef)) {
             continue;
         }
-        twins: set[tuple[str, str, str, str]] = set();
-        for other in owner.get_all_sub_nodes(typ=uni.Import) {
-            if other is not imp and scope_path_of(other) == scope {
-                twins |= {b.key() for (b, _item) in spec.import_bindings(other)};
-            }
-        }
-        provided_here = {
-            k: v
-            for (k, v) in spec.consumer_bindings(consumer, scope).items()
-            if k not in twins
-        };
-        doomed = self._wired_items(imp, spec, provided_here);
+        doomed = self._wired_items(imp, spec, spec.consumer_bindings(consumer, scope));
         if not doomed or not imp.prune_items(doomed) {
             continue;
         }
@@ -2526,18 +2513,19 @@ impl JacAutoLintPass._wired_items(
     provided: dict[tuple[str, str, str, str], WireRec]
 ) -> set[int] {
     doomed: set[int] = set();
-    if not provided {
+    if not provided or is_positional_import(stmt) {
         return doomed;
     }
     for (binding, item) in spec.import_bindings(stmt) {
-        if binding.key() in provided
+        held = provided.get(binding.key());
+        if held is not None
+            and held.is_injected
             and self.ctx.emit(
                 W3053,
                 node_override=item,
                 name=binding.name or binding.provider,
                 module=binding.provider
-            )
-            and not self.report_only {
+            ) {
             doomed.add(id(item));
         }
     }

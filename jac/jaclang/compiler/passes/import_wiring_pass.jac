@@ -1,56 +1,4 @@
 import os;
-import from jaclang.compiler.driver.pipeline_types { AnalysisFact, PassContract }
-import from jaclang.compiler.passes.context { CompileContext, CompilerPass }
-import from jaclang.compiler.frontend.constant { ExprCtx }
-import from jaclang.compiler.frontend.unitree {
-    Ability,
-    AtomTrailer,
-    EmptyToken,
-    ImplDef,
-    GraphImport,
-    Import,
-    ImportRule,
-    ImportWire,
-    JsxElementName,
-    KWPair,
-    Module,
-    ModuleItem,
-    ModulePath,
-    Name,
-    String,
-    UniNode,
-    WireTarget
-}
-import from jaclang.compiler.frontend.module_facts { ModuleFacts }
-import from jaclang.compiler.driver.wiring {
-    RuleRec,
-    WireBinding,
-    WireRec,
-    WiringSpec,
-    rule_record,
-    scope_owners,
-    is_arch_file,
-    scope_path_of,
-    wiring_for_path
-}
-import from jaclang.project.source { pascal_to_snake }
-import from jaclang.compiler.passes.annex_weave { import_form }
-import from jaclang.compiler.frontend.diagnostics {
-    E1141,
-    E1142,
-    E1143,
-    E1144,
-    E1146,
-    E2088,
-    E2089,
-    E2090,
-    E2091,
-    E2092,
-    E2093,
-    E2094,
-    E2097,
-    E2098
-}
 
 walker ImportWiringPass(CompilerPass) {
     static has contract: PassContract = PassContract(requires=(AnalysisFact.SYM_OF, ));
@@ -76,19 +24,17 @@ walker ImportWiringPass(CompilerPass) {
         spec: WiringSpec,
         imp: Import,
         consumer: str,
-        provided: dict[tuple[str, str, str, str], WireRec],
-        enforce: bool,
-        nested: bool = False,
-        scope: (list[str] | None) = None
+        scope: (list[str] | None),
+        declared: set[tuple[str, tuple[str, str, str, str]]]
     ) -> None;
 
-    def _emit_nested(
+    static def _written_import_fix(
         spec: WiringSpec,
         binding: WireBinding,
-        at: UniNode,
         consumer: str,
-        scope: (list[str] | None)
-    ) -> None;
+        held: (WireRec | None),
+        positional: bool
+    ) -> str;
 
     static def _rule_names(rules: list[RuleRec]) -> str;
 }

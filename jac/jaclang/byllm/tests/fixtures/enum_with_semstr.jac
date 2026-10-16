@@ -1,4 +1,3 @@
-import from jaclang.byllm.lib { Model }
 
 glob llm = Model(model_name="gpt-4o-mini", config={"verbose": True});
 

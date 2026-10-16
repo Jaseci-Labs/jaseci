@@ -70,7 +70,6 @@ impl SymTabBuildPass.exit_global_vars with GlobalVars exit {
 }
 
 impl SymTabBuildPass._declare_global_vars(nd: GlobalVars) -> None {
-    import from jaclang.compiler.frontend.constant { SymbolType }
     for i in nd.assignments {
         for j in i.target {
             if isinstance(j, AstSymbolNode) {
@@ -105,7 +104,6 @@ impl SymTabBuildPass.exit_assignment with Assignment exit {
 }
 
 impl SymTabBuildPass.exit_binary_expr with BinaryExpr exit {
-    import from jaclang.compiler.frontend.constant { Tokens as Tok }
     if not (isinstance(here.op, Token) and (here.op.name == Tok.WALRUS_EQ)) {
         return;
     }

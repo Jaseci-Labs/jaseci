@@ -1,6 +1,5 @@
 """Minimal fixture for testing method-based tool extraction."""
 
-import from jaclang.byllm.lib { MockLLM, MockToolCall }
 
 """Calculator service with tool-based methods."""
 obj CalculatorService {

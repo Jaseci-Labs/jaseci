@@ -3,9 +3,6 @@
 Assert on the request byLLM actually sent, not on a rendered string.
 """
 
-import from jaclang.byllm.lib { Image, Video }
-import from jaclang.byllm.lib { ConfigurationError, MockLLM }
-import from jaclang.testing.requires { require_module }
 import from support {
     prompt_text,
     data_url,

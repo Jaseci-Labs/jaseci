@@ -1,15 +1,3 @@
-import from jaclang.compiler.frontend.srcloc { CodeLocInfo, Span }
-import from jaclang.compiler.frontend.diagnostics {
-    DiagnosticInfo,
-    E9001,
-    LINT_ALIASES,
-    Severity
-}
-import from jaclang.compiler.frontend.diagnostic_utils { resolve_diagnostic_tokens }
-import from jaclang.compiler.frontend.unitree { Module, Source, TreeWalker, UniNode }
-import from jaclang.compiler.driver.compile_options { CancelToken }
-import from jaclang.compiler.driver.pipeline_types { PassContract }
-import type from jaclang.compiler.driver.program { JacProgram }
 
 obj Alert {
     has msg: str,

@@ -3,11 +3,6 @@
 import socket;
 import threading;
 import time;
-import from jaclang.byllm._optdeps.litellm { litellm }
-import from jaclang.byllm.exceptions { LLMTimeout, RateLimitError }
-import from jaclang.byllm.lib { Model, ModelPool }
-import from jaclang.byllm.llm { _is_timeout_error, _is_transient_error }
-import from jaclang.testing.requires { require_module }
 import from support { mk_run }
 
 

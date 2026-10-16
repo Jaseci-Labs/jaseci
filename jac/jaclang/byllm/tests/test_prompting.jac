@@ -5,7 +5,6 @@ returns, enums and scalars on the way back. Assert on both directions.
 """
 
 import from jaclang { JacRuntimeInterface as Jac }
-import from jaclang.byllm.lib { MockLLM }
 import from support { call, fixture_path, prompt_text, roles, say, tool_names }
 
 

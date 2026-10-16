@@ -7,7 +7,6 @@ with routing_candidates() instead of writing them out.
 
 import os;
 import from jaclang { JacRuntimeInterface as Jac }
-import from jaclang.runtime.runtime { JacRuntime }
 import from fixtures.routing_graph {
     Agent,
     Hub,

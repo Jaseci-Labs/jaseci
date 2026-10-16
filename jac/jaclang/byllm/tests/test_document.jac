@@ -7,7 +7,6 @@ import base64;
 import os;
 import tempfile;
 import from pathlib { Path }
-import from jaclang.byllm.lib { Document, MockLLM }
 import from support { document_blocks, say, user_blocks }
 
 

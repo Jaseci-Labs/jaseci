@@ -436,7 +436,6 @@ impl UniNode.resolve_tok_range -> tuple[(Token, Token)] {
 }
 
 impl UniNode.gen_token(name: Tok, value: (str | None) = None) -> Token {
-    import from jaclang.compiler.frontend.constant { TOKEN_MAP }
     if value is None {
         value = DELIM_MAP[name]
             if (name in DELIM_MAP)
@@ -1632,7 +1631,6 @@ impl Import.is_jac.getter -> bool {
 }
 
 impl Import.__jac_detected.getter -> bool {
-    import from jaclang.compiler.frontend.host { active_host }
     host = active_host();
     if self.from_loc {
         target = self.from_loc.resolve_relative_path();
@@ -1758,7 +1756,6 @@ impl ModulePath.base_module_name.getter -> str {
 }
 
 impl ModulePath.resolve_relative_path(target_item: (str | None) = None) -> str {
-    import from jaclang.compiler.frontend.host { active_host }
     bundled = self.native_bundled_path();
     if bundled is not None {
         return bundled;
@@ -1781,11 +1778,6 @@ impl ModulePath.resolve_relative_path(target_item: (str | None) = None) -> str {
 
 impl ModulePath.native_bundled_path -> (str | None) {
     import os;
-    import from jaclang.compiler.frontend.codeinfo {
-        is_bundled_native_module,
-        NATIVE_STDLIB_EXTENSIONS,
-        resolve_native_module
-    }
     mod_path = self.loc.mod_path if self.loc else None;
     if not self.in_native_context() {
         return None;
@@ -2653,7 +2645,6 @@ impl DeleteStmt.is_location(target: Expr) -> bool {
 
 
 impl DeleteStmt.type_has_graph_member(t: (TypeBase | None)) -> bool {
-    import from jaclang.compiler.types.types { ClassType, TypeVarType, UnionType }
     if isinstance(t, TypeVarType) {
         return DeleteStmt.type_has_graph_member(t.bound);
     }
@@ -2678,7 +2669,6 @@ impl DeleteStmt.type_has_graph_member(t: (TypeBase | None)) -> bool {
 }
 
 impl DeleteStmt.type_may_hold_graph(t: (TypeBase | None)) -> bool {
-    import from jaclang.compiler.types.types { ClassType, UnionType }
     if DeleteStmt.type_has_graph_member(t) {
         return True;
     }

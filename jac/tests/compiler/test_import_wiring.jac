@@ -36,12 +36,12 @@ glob _UTIL: str = "def now -> str {\n    return \"t\";\n}\n",
          "    edge AppOverCore: core.* --> app.*;\n"
          "    edge CoreInternal: core.* --> core.*;\n"
          "\n"
-         "    core.svc --> app.main { serve }\n"
-         "    core.util --> app.main { now as when }\n"
+         "    core.svc ++> app.main { serve }\n"
+         "    core.util ++> app.main { now as when }\n"
          "}\n"
          "\n"
          "graph import core {\n"
-         "    util --> svc { now }\n"
+         "    util ++> svc { now }\n"
          "}\n"
      );
 
@@ -152,7 +152,7 @@ test "a wire-bound name resolves to the provider's declaration" {
                 "}\n"
                 "\n"
                 "graph import core {\n"
-                "    util --> svc { Spark }\n"
+                "    util ++> svc { Spark }\n"
                 "}\n"
             ),
             "core/util.jac": "obj Spark {\n    has x: int = 0;\n}\n",
@@ -199,16 +199,15 @@ test "a covered module's own imports are matched item by item" {
     );
     try {
         prog = _compile(base, "core/svc.jac");
-        assert _errors(prog) == ["E1144"] , _errors(prog);
-        e1144 = [
-            e
+        assert _errors(prog) == ["E1144", "E1144"] , _errors(prog);
+        shown = [
+            str(e.pretty_print())
             for e in prog.errors_had
             if e.code and e.code.code == "E1144"
-        ][0];
-        shown = str(e1144.pretty_print());
-        assert "other --> svc { helper }" in shown , shown;
-        assert "graph import core" in shown , shown;
-        assert _warnings(prog).count("W3053") == 1 , _warnings(prog);
+        ];
+        assert "already injects it" in shown[0] , shown[0];
+        assert "other ++> svc { helper }" in shown[1] , shown[1];
+        assert "graph import core" in shown[1] , shown[1];
     } finally {
         shutil.rmtree(base, ignore_errors=True);
     }
@@ -236,7 +235,7 @@ test "a payload rule admits only the names it lists" {
         "graph import {\n"
         "    edge CoreApi: core.* --> app.* { now }\n"
         "\n"
-        "    core.util --> app.main { now as when, serve }\n"
+        "    core.util ++> app.main { now as when, serve }\n"
         "}\n"
     );
     base = _standard(
@@ -266,15 +265,15 @@ test "archwire.jac itself is checked for its scope, endpoints and rules" {
         "    edge Dup: core.* --> app.*;\n"
         "    edge Dup: app.* --> app.*;\n"
         "\n"
-        "    core.util --> core;\n"
-        "    core.util --> core.absent { now }\n"
-        "    core.util --> core.util;\n"
-        "    gone --> core.absent { now }\n"
-        "    os --> core.svc;\n"
+        "    core.util ++> core;\n"
+        "    core.util ++> core.absent { now }\n"
+        "    core.util ++> core.util;\n"
+        "    gone ++> core.absent { now }\n"
+        "    os ++> core.svc;\n"
         "}\n"
         "\n"
         "graph import nowhere {\n"
-        "    thing --> svc { x }\n"
+        "    thing ++> svc { x }\n"
         "}\n"
     );
     base = _standard(arch=arch);
@@ -304,7 +303,7 @@ test "archwire.jac itself is checked for its scope, endpoints and rules" {
 
 
 test "wiring aimed at modules that do not exist is an error" {
-    base = _standard(arch=_ARCH + "\ngraph import vanished {\n    x --> y { z }\n}\n");
+    base = _standard(arch=_ARCH + "\ngraph import vanished {\n    x ++> y { z }\n}\n");
     try {
         arch = _compile(base, "archwire.jac");
         assert sorted(_errors(arch)) == ["E1141", "E2097", "E2097"] , _errors(arch);
@@ -318,7 +317,7 @@ test "wiring aimed at modules that do not exist is an error" {
 test "wiring blocks belong in archwire.jac and nothing else belongs there" {
     base = _standard(
         arch=_ARCH + "\nimport os;\n\nglob X: int = 1;\n",
-        svc="graph import {\n    core.util --> core.svc { now }\n}\n\n" + _SVC
+        svc="graph import {\n    core.util ++> core.svc { now }\n}\n\n" + _SVC
     );
     try {
         arch = _compile(base, "archwire.jac");
@@ -334,7 +333,7 @@ test "wiring blocks belong in archwire.jac and nothing else belongs there" {
 test "archwire.jac holds facts only, so a comment or docstring is an error" {
     base = _standard(
         arch="\"\"\"The wiring.\"\"\"\n\n# core first\n" + _ARCH.replace(
-            "    util --> svc { now }\n", "    util --> svc { now }  # the clock\n"
+            "    util ++> svc { now }\n", "    util ++> svc { now }  # the clock\n"
         )
     );
     try {
@@ -350,19 +349,19 @@ test "archwire.jac holds facts only, so a comment or docstring is an error" {
 test "wiring syntax has its own diagnostics" {
     cases = [
         ("graph import { a <-- b { x } }", "E0086"),
-        ("graph import { a | b --> c { x } }", "E0087"),
-        ("graph import { any --> c { x } }", "E0087"),
-        ("graph import { a --> b.* { x } }", "E0088"),
-        ("graph import { a as p --> b { x } }", "E0089"),
-        ("graph import { a --> b { x, x } }", "E0090"),
-        ("graph import { include a --> b { x } }", "E0091"),
+        ("graph import { a | b ++> c { x } }", "E0087"),
+        ("graph import { any ++> c { x } }", "E0087"),
+        ("graph import { a ++> b.* { x } }", "E0088"),
+        ("graph import { a as p ++> b { x } }", "E0089"),
+        ("graph import { a ++> b { x, x } }", "E0090"),
+        ("graph import { include a ++> b { x } }", "E0091"),
         ("graph import { edge a.* --> b.*; }", "E0092"),
-        ("graph import \"pkg\" { a --> b { x } }", "E0093"),
+        ("graph import \"pkg\" { a ++> b { x } }", "E0093"),
         ("graph import { 42; }", "E0094"),
-        ("graph import { a --> b { *, x } }", "E0095"),
+        ("graph import { a ++> b { *, x } }", "E0095"),
         ("graph import { edge R: a.* --> b.* { x as y } }", "E0096"),
         ("graph import { edge R: a.* --> any; }", "E0098"),
-        ("impl import { a --> b { x } }", "E0099"),
+        ("impl import { a ++> b { x } }", "E0099"),
 
     ];
     for (src, code) in cases {
@@ -406,20 +405,20 @@ test "lint autofix removes wired imports" {
 test "jac fmt renders archwire.jac in its one canonical layout" {
     messy = (
         "graph import {\n"
-        "    core.util --> core.svc { now }\n"
-        "    core.svc --> app.main { serve }\n"
-        "    core.svc --> app.main { serve }\n"
+        "    core.util ++> core.svc { now }\n"
+        "    core.svc ++> app.main { serve }\n"
+        "    core.svc ++> app.main { serve }\n"
         "}\n"
         "\n"
         "graph import core {\n"
         "    edge CoreInternal: * --> *;\n"
-        "    util --> other { now }\n"
+        "    util ++> other { now }\n"
         "}\n"
         "\n"
         "graph import {\n"
         "    edge AppOverCore: core.* --> app.*;\n"
-        "    core.util --> app.main { now as when }\n"
-        "    core.util --> app.main { serve as serve_now }\n"
+        "    core.util ++> app.main { now as when }\n"
+        "    core.util ++> app.main { serve as serve_now }\n"
         "}\n"
     );
     canonical = (
@@ -427,12 +426,12 @@ test "jac fmt renders archwire.jac in its one canonical layout" {
         "    edge AppOverCore: core.* --> app.*;\n"
         "    edge CoreInternal: core.* --> core.*;\n"
         "\n"
-        "    core.svc --> app.main { serve }\n"
-        "    core.util --> app.main { now as when, serve as serve_now }\n"
+        "    core.svc ++> app.main { serve }\n"
+        "    core.util ++> app.main { now as when, serve as serve_now }\n"
         "}\n"
         "\n"
         "graph import core {\n"
-        "    util --> other | svc { now }\n"
+        "    util ++> other | svc { now }\n"
         "}\n"
     );
     base = _standard(arch=messy);
@@ -451,9 +450,9 @@ test "a provider feeding consumers different names is written once, as a list" {
     base = _standard(
         arch=(
             "graph import {\n"
-            "    core.util --> core.svc { now }\n"
-            "    core.util --> core.other { now as clock }\n"
-            "    core.util --> core.svc { later }\n"
+            "    core.util ++> core.svc { now }\n"
+            "    core.util ++> core.other { now as clock }\n"
+            "    core.util ++> core.svc { later }\n"
             "}\n"
         )
     );
@@ -463,7 +462,7 @@ test "a provider feeding consumers different names is written once, as a list" {
         assert text
             == (
                 "graph import core {\n"
-                "    util --> [\n"
+                "    util ++> [\n"
                 "        other { now as clock },\n"
                 "        svc { later, now },\n"
                 "    ]\n"
@@ -487,7 +486,7 @@ test "jac fmt breaks a long fan-out one consumer per line" {
     files = {
         "archwire.jac": (
             "graph import {\n"
-            + "".join([f"    core.util --> {c} {{ now }}\n" for c in consumers])
+            + "".join([f"    core.util ++> {c} {{ now }}\n" for c in consumers])
             + "}\n"
         ),
         "core/util.jac": _UTIL
@@ -499,7 +498,7 @@ test "jac fmt breaks a long fan-out one consumer per line" {
     try {
         text = _formatted(base, "archwire.jac");
         assert all([len(line) <= 88 for line in text.split("\n")]) , text;
-        assert text.count("--> ") == 1 , text;
+        assert text.count("++> ") == 1 , text;
         for c in consumers {
             assert text.count(c) == 1 , (c, text);
         }
@@ -515,9 +514,9 @@ test "jac fmt breaks a long fan-out one consumer per line" {
 test "a wired name its consumer never uses is an error at the wire" {
     base = _standard(
         arch=_ARCH.replace(
-            "    core.util --> app.main { now as when }\n",
-            "    core.util --> app.main { now as when }\n"
-            "    core.other --> app.main { helper }\n"
+            "    core.util ++> app.main { now as when }\n",
+            "    core.util ++> app.main { now as when }\n"
+            "    core.other ++> app.main { helper }\n"
         )
     );
     try {
@@ -530,7 +529,7 @@ test "a wired name its consumer never uses is an error at the wire" {
         ][0];
         assert err.loc.mod_path.endswith("archwire.jac") , err.loc.mod_path;
         assert _read(base, "archwire.jac").split("\n")[err.loc.first_line - 1].strip()
-            == "core.other --> app.main { helper }";
+            == "core.other ++> app.main { helper }";
         assert "helper" in str(err.pretty_print());
     } finally {
         shutil.rmtree(base, ignore_errors=True);
@@ -541,9 +540,9 @@ test "a wired name its consumer never uses is an error at the wire" {
 test "a name listed in __all__ is a declared export, not an unused wire" {
     base = _standard(
         arch=_ARCH.replace(
-            "    core.util --> app.main { now as when }\n",
-            "    core.util --> app.main { now as when }\n"
-            "    core.other --> app.main { helper }\n"
+            "    core.util ++> app.main { now as when }\n",
+            "    core.util ++> app.main { now as when }\n"
+            "    core.other ++> app.main { helper }\n"
         ),
         main=_MAIN + "\nglob __all__ = [\"greet\", \"helper\"];\n"
     );
@@ -558,10 +557,10 @@ test "a name listed in __all__ is a declared export, not an unused wire" {
 test "an unaliased module wire loads for effect; an aliased one must be used" {
     base = _standard(
         arch=_ARCH.replace(
-            "    core.util --> app.main { now as when }\n",
-            "    core.util --> app.main { now as when }\n"
-            "    core.other --> app.main;\n"
-            "    core.other as other_mod --> app.main;\n"
+            "    core.util ++> app.main { now as when }\n",
+            "    core.util ++> app.main { now as when }\n"
+            "    core.other ++> app.main;\n"
+            "    core.other as other_mod ++> app.main;\n"
         )
     );
     try {
@@ -582,7 +581,7 @@ test "an unaliased module wire loads for effect; an aliased one must be used" {
 
 test "a scoped wire's name unused in its function is an error" {
     base = _standard(
-        arch=_ARCH + "\ngraph import {\n    core.other --> app.main.greet { helper }\n}\n"
+        arch=_ARCH + "\ngraph import {\n    core.other ++> app.main.greet { helper }\n}\n"
     );
     try {
         assert _errors(_compile(base, "app/main.jac")) == ["E1146"];
@@ -634,21 +633,21 @@ test "jac arch init derives the canonical wiring that covers the project" {
         }
     );
     try {
-        assert _arch_init(False, False, base) == 0;
+        assert _arch_init(False, True, base) == 0;
         assert _read(base, "archwire.jac")
             == (
                 "graph import {\n"
-                "    core.svc --> app.main { serve }\n"
-                "    core.util --> app.main { now as when }\n"
+                "    core.svc ++> app.main { serve }\n"
+                "    core.util ++> app.main { now as when }\n"
                 "}\n"
                 "\n"
                 "graph import core {\n"
-                "    util --> svc { now }\n"
+                "    util ++> svc { now }\n"
                 "}\n"
             ) , _read(base, "archwire.jac");
         prog = _compile(base, "app/main.jac");
         assert _errors(prog) == [] , _errors(prog);
-        assert _warnings(prog).count("W3053") == 2 , _warnings(prog);
+        assert "import from core" not in _read(base, "app/main.jac");
     } finally {
         shutil.rmtree(base, ignore_errors=True);
     }
@@ -658,9 +657,9 @@ test "jac arch init derives the canonical wiring that covers the project" {
 test "jac arch sync adds missing wires and --prune drops unused ones" {
     base = _standard(
         arch=_ARCH.replace(
-            "    core.util --> app.main { now as when }\n",
-            "    core.util --> app.main { now as when }\n"
-            "    core.other --> app.main { helper }\n"
+            "    core.util ++> app.main { now as when }\n",
+            "    core.util ++> app.main { now as when }\n"
+            "    core.other ++> app.main { helper }\n"
         ),
         svc="import from core.other { helper }\n\n"
             + "def serve -> str {\n    return now() + str(helper());\n}\n"
@@ -668,13 +667,13 @@ test "jac arch sync adds missing wires and --prune drops unused ones" {
     try {
         assert _arch_sync(False, base, False) == 0;
         synced = _read(base, "archwire.jac");
-        assert "    other --> svc { helper }\n" in synced , synced;
-        assert "    util --> svc { now }\n" in synced , synced;
-        assert "core.other --> app.main { helper }" in synced , synced;
+        assert "    other ++> svc { helper }\n" in synced , synced;
+        assert "    util ++> svc { now }\n" in synced , synced;
+        assert "core.other ++> app.main { helper }" in synced , synced;
         assert _arch_sync(False, base, True) == 0;
         pruned = _read(base, "archwire.jac");
-        assert "core.other --> app.main" not in pruned , pruned;
-        assert "    other --> svc { helper }\n" in pruned , pruned;
+        assert "core.other ++> app.main" not in pruned , pruned;
+        assert "    other ++> svc { helper }\n" in pruned , pruned;
         assert _formatted(base, "archwire.jac") == pruned;
         assert _errors(_compile(base, "app/main.jac")) == [];
     } finally {
@@ -687,12 +686,12 @@ test "rules are optional: a provider no rule names flows anywhere under archwire
     base = _standard(
         arch=(
             "graph import {\n"
-            "    core.svc --> app.main { serve }\n"
-            "    core.util --> app.main { now as when }\n"
+            "    core.svc ++> app.main { serve }\n"
+            "    core.util ++> app.main { now as when }\n"
             "}\n"
             "\n"
             "graph import core {\n"
-            "    util --> svc { now }\n"
+            "    util ++> svc { now }\n"
             "}\n"
         )
     );
@@ -740,7 +739,7 @@ test "a rule's targets are relative to its block, like a wire's consumers" {
             "graph import core {\n"
             "    edge CoreInternal: * --> *;\n"
             "\n"
-            "    util --> svc { now }\n"
+            "    util ++> svc { now }\n"
             "}\n"
         ),
         main="import from core.svc { serve }\n\ndef greet -> str {\n    return serve();\n}\n"
@@ -792,7 +791,7 @@ test "a function-level project import in a sealed module is an error" {
         prog = _compile(base, "app/main.jac");
         assert _errors(prog) == ["E2094"] , _errors(prog);
         shown = str(prog.errors_had[0].pretty_print());
-        assert "other --> app.main.greet { helper }" in shown , shown;
+        assert "other ++> app.main.greet { helper }" in shown , shown;
         _write(
             base,
             "archwire.jac",
@@ -801,16 +800,12 @@ test "a function-level project import in a sealed module is an error" {
                 "    edge CoreInternal: core.* --> core.*;\n"
                 "    edge Lazy: core.other --> extra.*;\n"
             ).replace(
-                "    core.util --> app.main { now as when }\n",
-                "    core.other --> extra.lazy.t { helper }\n"
-                "    core.util --> app.main { now as when }\n"
+                "    core.util ++> app.main { now as when }\n",
+                "    core.other ++> extra.lazy.t { helper }\n"
+                "    core.util ++> app.main { now as when }\n"
             )
         );
-        _write(
-            base,
-            "extra/lazy.jac",
-            "def t -> int {\n    import from core.other { helper }\n    return helper();\n}\n"
-        );
+        _write(base, "extra/lazy.jac", "def t -> int {\n    return helper();\n}\n");
         lazy = _compile(base, "extra/lazy.jac");
         assert _errors(lazy) == [] , _errors(lazy);
     } finally {
@@ -843,7 +838,7 @@ test "a nested archwire.jac is its own boundary with names relative to it" {
         svc="import from lib.a { f }\n\ndef serve -> str {\n    return now() + str(f());\n}\n"
     );
     try {
-        _write(base, "lib/archwire.jac", "graph import {\n    a --> b { f }\n}\n");
+        _write(base, "lib/archwire.jac", "graph import {\n    a ++> b { f }\n}\n");
         _write(base, "lib/a.jac", "def f -> int {\n    return 1;\n}\n");
         _write(base, "lib/b.jac", "def g -> int {\n    return f();\n}\n");
         assert _errors(_compile(base, "lib/b.jac")) == [];
@@ -854,27 +849,71 @@ test "a nested archwire.jac is its own boundary with names relative to it" {
 }
 
 
-test "a written import a wire duplicates is emitted once" {
+test "a written import a wire injects is an error that says to delete it" {
     base = _standard(svc="import from core.util { now }\n\n" + _SVC);
     try {
-        prog = JacProgram();
-        mod = prog.compile(
-            os.path.join(base, "core", "svc.jac"), options=CompileOptions(no_cgen=True)
+        prog = _compile(base, "core/svc.jac");
+        assert _errors(prog) == ["E1144"] , _errors(prog);
+        assert "already injects it" in str(prog.errors_had[0].pretty_print());
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+test "an import that runs where it is written is declared by a --> wire" {
+    guarded = (
+        "def greet -> str {\n"
+        "    if True {\n"
+        "        import from core.other { helper }\n"
+        "        return serve() + when() + str(helper());\n"
+        "    }\n"
+        "    return serve() + when();\n"
+        "}\n"
+    );
+    base = _standard(main=guarded);
+    try {
+        prog = _compile(base, "app/main.jac");
+        assert _errors(prog) == ["E2094"] , _errors(prog);
+        assert "core.other --> app.main.greet { helper }" in str(
+            prog.errors_had[0].pretty_print()
         );
-        bound = [
-            item.name.value for imp in ModuleFacts.iter_module_imports(mod)
-            for item in imp.items
-            if isinstance(item, ModuleItem)
-        ];
-        assert bound == ["now"] , bound;
-        assert [
-            w.code.code
-            for w in prog.warnings_had
-            if w.code is not None
-        ].count(
-            "W3053"
+        _write(
+            base,
+            "archwire.jac",
+            _ARCH + "\ngraph import {\n    core.other ++> app.main.greet { helper }\n}\n"
+        );
+        injected = _compile(base, "app/main.jac");
+        assert _errors(injected) == ["E2094"] , _errors(injected);
+        assert "instead of injecting it" in str(injected.errors_had[0].pretty_print());
+        _write(
+            base,
+            "archwire.jac",
+            _ARCH + "\ngraph import {\n    core.other --> app.main.greet { helper }\n}\n"
+        );
+        assert _errors(_compile(base, "app/main.jac")) == [];
+        _write(base, "app/main.jac", _MAIN);
+        missing = _compile(base, "app/main.jac");
+        assert _errors(missing) == ["E1147"] , _errors(missing);
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+test "an import after other statements runs where it is written too" {
+    base = _standard(
+        arch=_ARCH + "\ngraph import {\n    core.other --> app.main.greet { helper }\n}\n",
+        main=(
+            "def greet -> str {\n"
+            "    first = serve() + when();\n"
+            "    import from core.other { helper }\n"
+            "    return first + str(helper());\n"
+            "}\n"
         )
-            == 1;
+    );
+    try {
+        assert _errors(_compile(base, "app/main.jac")) == [];
     } finally {
         shutil.rmtree(base, ignore_errors=True);
     }
@@ -892,18 +931,17 @@ test "jac arch init refuses a directory whose modules a parent archwire.jac feed
 }
 
 
-test "a written import in a nested function does not cancel its parent's wire" {
+test "a nested function takes its own wire, not its parent's" {
     base = _standard(
         arch=(
             "graph import {\n"
-            "    core.util --> app.main.greet { now as when }\n"
-            "    core.util --> app.main.greet.inner { now as when }\n"
+            "    core.util ++> app.main.greet { now as when }\n"
+            "    core.util ++> app.main.greet.inner { now as when }\n"
             "}\n"
         ),
         main=(
             "def greet -> str {\n"
             "    def inner -> str {\n"
-            "        import from core.util { now as when }\n"
             "        return when();\n"
             "    }\n"
             "    return when() + inner();\n"
@@ -925,7 +963,7 @@ test "a written import in a nested function does not cancel its parent's wire" {
 
 test "the strip removes a function's wired import that a nested function repeats" {
     base = _standard(
-        arch="graph import {\n    core.util --> app.main.greet { now as when }\n}\n",
+        arch="graph import {\n    core.util ++> app.main.greet { now as when }\n}\n",
         main=(
             "def greet -> str {\n"
             "    import from core.util { now as when }\n"

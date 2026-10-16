@@ -65,7 +65,9 @@ def _collect_facts(
                 }
                 consumer = ".".join([module, *scope]);
                 provided = spec.consumer_bindings(module, scope);
+                injected = not is_positional_import(imp);
                 for (binding, _item) in spec.import_bindings(imp) {
+                    binding.injected = injected;
                     key = (consumer, binding.key());
                     if binding.provider == module
                         or binding.key() in provided

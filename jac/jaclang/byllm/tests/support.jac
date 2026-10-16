@@ -21,12 +21,7 @@ import logging;
 import os;
 import from unittest { mock }
 import from jaclang { JacRuntimeInterface as Jac }
-import from jaclang.byllm.llm { BaseLLM }
-import from jaclang.byllm.lib { MockLLM, MockToolCall, MockRawResponse, MockError }
-import from jaclang.byllm.mtir { MTRuntime }
-import from jaclang.byllm.types { Message, MessageRole, StreamEvent, Tool }
 
-import from jaclang.byllm.llm { MockSystemOne }
 
 glob FIXTURE_DIR: str = os.path.join(os.path.dirname(__file__), "fixtures"),
      TOKENS: dict[str, any] = {
@@ -386,8 +381,6 @@ A file inside the jaclang package compiles into the compiler's program instead, 
 MTIR it registers never reaches `JacRuntime.program`. CI runs such tests from a copy.
 """
 def need_outside_jaclang(path: str) {
-    import from jaclang.runtime.runtime { JacRuntime }
-    import from jaclang.testing.test_runner { strict_mode }
     program = JacRuntime.get_program();
     if JacRuntime.get_selfhost().resolve(path, program) is program {
         return;

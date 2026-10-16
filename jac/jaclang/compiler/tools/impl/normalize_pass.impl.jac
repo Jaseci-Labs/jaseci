@@ -1806,7 +1806,7 @@ impl NormalizePass.enter_import_wire with uni.ImportWire entry {
         new_kid.append(here.gen_token(Tok.TYP_TYPE));
     }
     new_kid.append(here.provider);
-    new_kid.append(here.gen_token(Tok.ARROW_R));
+    new_kid.append(here.gen_token(Tok.CARROW_R if here.is_injected else Tok.ARROW_R));
     targets = here.targets;
     if here.is_grouped {
         new_kid.append(here.gen_token(Tok.LSQUARE));

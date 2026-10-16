@@ -1103,11 +1103,11 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
      E1144 = _err(
          "E1144",
          Category.IMPORT,
-         "Import of '{module}' is not declared by archwire.jac for '{consumer}'",
-         help="'{consumer}' sits under an archwire.jac, so every import it makes of a"
-         " module below that archwire.jac must be a wire. Add {wire} of"
-         " archwire.jac. An inline suppression does not silence this; changing"
-         " the boundary is a change to archwire.jac."
+         "Import of '{module}' is written in '{consumer}'; under archwire.jac it is a wire",
+         help="'{consumer}' sits under an archwire.jac, which is the only place its"
+         " imports of the modules below it are declared: every one is generated"
+         " from a wire. {fix} An inline suppression does not silence this;"
+         " changing the boundary is a change to archwire.jac."
      ),
      E1146 = _err(
          "E1146",
@@ -1910,6 +1910,17 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
          " type's default value. Write the implementation, mark the declaration"
          " `abst` if a subclass is meant to supply it, or delete the declaration."
      ),
+     E1147 = _err(
+         "E1147",
+         Category.IMPORT,
+         "'{name}' is declared into '{consumer}' by a '-->' wire, but '{consumer}' does"
+         " not write that import where it runs",
+         help="A '-->' wire declares an import its consumer writes in place because it"
+         " must run there: inside an if, try, loop or with block, or after other"
+         " statements. archwire.jac line {line} declares one '{consumer}' does not"
+         " write that way: inject it with '++>' if the module needs it, or remove the"
+         " wire."
+     ),
      E2088 = _err(
          "E2088",
          Category.SEMANTIC,
@@ -1965,13 +1976,13 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
      E2094 = _err(
          "E2094",
          Category.SEMANTIC,
-         "Import of '{module}' inside '{scope}' is not declared by archwire.jac for"
-         " '{consumer}'",
+         "Import of '{module}' inside '{scope}' is written in '{consumer}'; under"
+         " archwire.jac it is a scoped wire",
          help="A module under an archwire.jac takes its imports of the modules below"
-         " it from wires. A wire whose consumer"
-         " continues past the module into a class, function or method"
-         " (`pkg.mod.Class.method`) lands its import in that body, so the import"
-         " stays lazy. {fix} An inline suppression does not silence this."
+         " it from wires. A wire whose consumer continues past the module into a"
+         " class, function or method (`pkg.mod.Class.method`) lands its import in"
+         " that body, so the import stays lazy. {fix} An inline suppression does"
+         " not silence this."
      ),
      E2095 = _err(
          "E2095",

@@ -1,4 +1,3 @@
-import from jaclang.runtime.scalars { sized_scalar_names }
 
 glob JCIR_BUILTIN_NAMES: frozenset[str] = frozenset(
          {

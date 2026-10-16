@@ -1,20 +1,3 @@
-import from jaclang.runtime.archetype {
-    AccessLevel,
-    access_level_cast,
-    Anchor,
-    Archetype,
-    EdgeAnchor,
-    EdgeArchetype,
-    GenericEdge,
-    JsxElement,
-    NodeAnchor,
-    NodeArchetype,
-    ObjectSpatialFunction,
-    PermissionDenied,
-    Root,
-    WalkerAnchor,
-    WalkerArchetype
-}
 
 glob __all__ = [
          'AccessLevel',

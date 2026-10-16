@@ -1,8 +1,3 @@
-import from jaclang.compiler.frontend.roles { Kid }
-import jaclang.compiler.frontend.unitree as uni;
-import from jaclang.compiler.frontend.constant { CodeContext, Tokens as Tok }
-import from jaclang.compiler.frontend.module_facts { ModuleFacts }
-import from jaclang.runtime.osp_tag { stable_osp_tag }
 
 
 glob OSP_ANY_TAGS: dict[str, int] = {
@@ -164,10 +159,6 @@ obj OspAnalysis {
     }
 
     static def native_slot_triggers(ability: uni.Ability) -> list[str] {
-        import from jaclang.compiler.passes.layout_pass {
-            native_type_key,
-            referenced_native_name
-        }
         names: list[str] = [];
         if ability.event_triggers is not None {
             for t in ability.event_triggers {
