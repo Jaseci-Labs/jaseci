@@ -697,6 +697,7 @@ impl BaseLLM._compact_messages(mt_run: MTRuntime, cp: dict[str, any]) -> bool {
     );
     original_len = len(mt_run.messages);
     msg_dicts = mt_run.get_msg_list();
+    tokens_before = _estimate_tokens(msg_dicts);
     if on_compaction {
         compacted = on_compaction(msg_dicts, keep_recent);
         if not isinstance(compacted, list) or len(compacted) < 2 {
@@ -722,7 +723,6 @@ impl BaseLLM._compact_messages(mt_run: MTRuntime, cp: dict[str, any]) -> bool {
             msg_dicts, keep_recent, model_for_compaction, mt_run, int(cp["ctx_window"])
         );
     }
-    tokens_before = _estimate_tokens(msg_dicts);
     tokens_after = _estimate_tokens(compacted);
     if tokens_after >= tokens_before {
         return False;
@@ -954,9 +954,10 @@ impl BaseLLM._nonconforming_feedback(
         f"[byllm] typed-output attempt {attempt}/{max_attempts} "
             + "returned a non-conforming value; retrying"
     );
+    type_name = type_display_name(mt_run.resp_type);
     err = OutputConversionError(
         f"LLM returned a non-conforming value for return type "
-            + f"'{mt_run.resp_type}' (got '{type(result).__name__}'); the "
+            + f"'{type_name}' (got '{type(result).__name__}'); the "
             + "response was likely empty or not valid JSON"
     );
     reason = (
@@ -982,10 +983,7 @@ impl BaseLLM._typed_retry_exhausted(
 impl BaseLLM._typed_retry_feedback(
     mt_run: MTRuntime, reason: str, prev_output: str
 ) -> Message {
-    rt = mt_run.resp_type;
-    type_name = rt.__name__
-        if (rt is not None and hasattr(rt, "__name__"))
-        else str(rt);
+    type_name = type_display_name(mt_run.resp_type);
 
     schema = mt_run.get_typed_output_schema();
     schema_txt = (

@@ -1,5 +1,4 @@
 import jaclang;
-
 def _read_version_from_toml(toml_path: Path) -> (str | None) {
     try {
         data = tomllib.loads(toml_path.read_text(encoding='utf-8'));
@@ -15,7 +14,6 @@ def _read_version_from_toml(toml_path: Path) -> (str | None) {
 }
 
 impl resolve_cli_version -> str {
-    import from jaclang.jac0core.handoff { handoff }
     dev_source = str(handoff().get('compiler_source') or '');
     if dev_source {
         toml_path = Path(dev_source) / 'jac.toml';
@@ -83,8 +81,6 @@ def _print_error(message: str) {
 }
 
 def _render_version_line -> str {
-    import from jaclang.cli.manifest_help { _color, _TITLE, _use_color }
-
     sys_info = f"{platform.system()} {platform.machine()}";
     ver = resolve_cli_version();
     use_color = _use_color();
@@ -92,13 +88,6 @@ def _render_version_line -> str {
 }
 
 impl handle_manifest_route(raw_argv: list[str]) -> None {
-    import from jaclang.cli.manifest { TOMBSTONED_VERBS, known_command_names }
-    import from jaclang.cli.manifest_help {
-        format_curated_help,
-        format_logo,
-        format_verbose_help
-    }
-
     if raw_argv in (['-V'], ['--version']) {
         _write_stdout(_render_version_line());
         return;
@@ -159,6 +148,5 @@ impl handle_manifest_route(raw_argv: list[str]) -> None {
         sys.`exit(2);
     }
 
-    import from jaclang.cli.dispatch { run_selected_command }
     run_selected_command(command_name);
 }

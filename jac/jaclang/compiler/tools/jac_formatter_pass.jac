@@ -1,11 +1,7 @@
-import from jaclang.compiler.passes.context { CompileContext, CompilerPass }
 import from collections { deque }
-import jaclang.compiler.tools.doc_ir as doc;
-import jaclang.compiler.frontend.unitree as uni;
-import from jaclang.compiler.frontend.roles { BodyRole, Kid }
-import from jaclang.compiler.frontend.diagnostics { W5050, E5051 }
 
 walker JacFormatPass(CompilerPass) {
+    static has contract: PassContract = PassContract();
     has indent_size: int = 4,
         MAX_LINE_LENGTH: int = 88,
         _probe_cache: dict[tuple[int, int, int], bool] = {},
@@ -40,21 +36,14 @@ walker JacFormatPass(CompilerPass) {
 }
 
 def format_module(mod: uni.Module) -> str {
-    import from jaclang.compiler.tools.doc_ir_gen_pass { DocIRGenPass }
-    import from jaclang.compiler.driver.pipeline_runner { run_utility }
-    import from jaclang.compiler.driver.pipeline_types { UtilityProduct }
-    import from jaclang.compiler.driver.program { JacProgram }
     return run_utility(
-        UtilityProduct.FORMAT,
-        run_utility(UtilityProduct.DOC, mod, JacProgram()).module,
+        CompilationProduct.FORMAT_TEXT,
+        run_utility(CompilationProduct.DOC, mod, JacProgram()).module,
         JacProgram()
     ).module.gen.jac;
 }
 
 def unparse_module(mod: uni.Module, requires_format: bool = True) -> str {
-    import from jaclang.compiler.tools.normalize_pass { NormalizePass }
-    import from jaclang.compiler.driver.program { JacProgram }
-
     own_path = mod.loc.mod_path;
     saved_body = mod.body;
     saved_kid = [mod->:Kid:->];
@@ -78,13 +67,13 @@ def unparse_module(mod: uni.Module, requires_format: bool = True) -> str {
             mod.set_kids(nodes=head_kid or [uni.EmptyToken()]);
         }
         try {
-            import from jaclang.compiler.driver.pipeline_runner { run_utility }
-            import from jaclang.compiler.driver.pipeline_types { UtilityProduct }
-            run_utility(UtilityProduct.NORMALIZE, mod, JacProgram());
+            import from jaclang.compiler.driver.pipeline { run_utility }
+            import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
+            run_utility(CompilationProduct.NORMALIZE, mod, JacProgram());
             if requires_format {
                 return format_module(mod);
             }
-            run_utility(UtilityProduct.UNPARSE, mod, JacProgram());
+            run_utility(CompilationProduct.UNPARSE, mod, JacProgram());
             return mod.gen.jac;
         } finally {
             if filtered {

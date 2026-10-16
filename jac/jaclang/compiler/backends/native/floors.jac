@@ -1,20 +1,11 @@
 import hashlib;
 import os;
 import sys;
-import from jaclang.artifacts.model {
-    Artifact,
-    ArtifactKind,
-    Probe,
-    ReleasePolicy,
-    Source
-}
-import from jaclang.artifacts.kit { osarch, runtime_floor_root }
 
 glob WASM_FLOOR_MANIFEST: str = "SOURCES.sha256",
      PYTHON_VARIANTS: tuple[str, ...] = ("cpython", "jacpython");
 
 def _repo_root -> str {
-    import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
     return os.path.dirname(jaclang_pkg_root());
 }
 
@@ -65,7 +56,6 @@ obj CFloorArtifact(Artifact) {
     }
 
     override def probe_sealed -> (Probe | None) {
-        import from jaclang.jac0core { sealed }
         if sealed._jaclang_image() is None {
             return None;
         }
@@ -108,6 +98,12 @@ obj CFloorArtifact(Artifact) {
     }
 
     override def build_blocker -> str {
+        if self.target() != osarch() {
+            return (
+                f"`zig build build-python` builds the C floor only for this host ({osarch()}); "
+                f"build it on a {self.target()} host or use a kit that carries it"
+            );
+        }
         return _zig_blocker();
     }
 
@@ -129,7 +125,6 @@ obj MuslArtifact(Artifact) {
     }
 
     override def probe_sealed -> (Probe | None) {
-        import from jaclang.jac0core { sealed }
         if sealed._jaclang_image() is None {
             return None;
         }
@@ -230,7 +225,6 @@ obj WasmLibcArtifact(Artifact) {
         summary: str = "the wasm32 libc bitcode (the wasm host-contract floor)";
 
     override def probe_sealed -> (Probe | None) {
-        import from jaclang.jac0core { sealed }
         if sealed._jaclang_image() is None {
             return None;
         }

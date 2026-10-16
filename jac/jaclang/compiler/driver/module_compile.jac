@@ -1,23 +1,10 @@
 import os;
-import time;
-import from jaclang.compiler.passes.context { PassSchedule }
 import from jaclang.compiler.driver.pipeline_types {
-    AnalysisFact,
-    CompilationPhase,
-    CompilationProduct
+    CompilationProduct,
+    ProductRequest
 }
-import from jaclang.compiler.driver.pipeline {
-    _codegen_sched_loading,
-    codegen_backend_passes,
-    product_ready,
-    providers_of_product,
-    register_product_schedule,
-    require_product,
-    schedule_tier_reason,
-    validate_schedule
-}
+import from jaclang.compiler.driver.pipeline { product_passes, unavailable }
 import from jaclang.compiler.frontend.host { active_host }
-import from jaclang.compiler.driver.context_passes { NativeImportFactsPass }
 import from jaclang.compiler.backends.py.jcir_gen_pass { JcirGenPass }
 import from jaclang.compiler.driver.compile_options { CompileOptions }
 import from jaclang.compiler.driver.program { JacProgram }
@@ -26,212 +13,142 @@ import jaclang.compiler.frontend.unitree as uni;
 import from jaclang.compiler.frontend.constant { CodeContext }
 import from jaclang.compiler.frontend.module_facts { ModuleFacts }
 import from jaclang.compiler.driver.module_analysis {
-    ANALYSIS_PHASES,
     ModuleAnalysis,
+    PlanStep,
     analyze_module,
-    cancelled,
-    record_phase
+    run_plan
 }
 
-glob CODEGEN_SCHED_DEPS: tuple[str, ...] = (
-         'jaclang.compiler.passes.rc_facts_pass',
-         'jaclang.compiler.backends.es',
-         'jaclang.compiler.passes.freeze_structure_pass'
-     ),
-     NATIVE_CODEGEN_DEPS: tuple[str, ...] = (
-         'jaclang.compiler.backends.native.na_ir_gen_pass',
-
-     ),
-     _native_sched_failure: list[str] = [];
-
-obj ModuleCompilation {
-    has session: SessionHooks,
-        analysis: ModuleAnalysis;
-
-    def run_phase(phase: CompilationPhase) {
-        if phase == CompilationPhase.NATIVE_CHECKS {
-            self.native_checks();
-        } elif phase == CompilationPhase.CLIENT_DEPENDENCIES {
-            self.client_dependencies();
-        } elif phase == CompilationPhase.INTERFACE {
-            self.interface();
-        } elif phase == CompilationPhase.CODEGEN {
-            self.codegen();
-        }
+def session_of(task: ModuleAnalysis) -> SessionHooks {
+    session = task.session;
+    if session is None {
+        raise RuntimeError(f"codegen steps for {task.path} ran without a session");
     }
+    return session;
+}
 
-    def native_checks {
-        import from jaclang.compiler.placement.placement_facts { variant_selected }
-        analysis = self.analysis;
-        options = analysis.options;
-        if not (
-            variant_selected(analysis.path) is not False
-            and options.no_cgen
-            and (options.native_parity or options.native_required_for(analysis.path))
-            and not options.symtab_ir_only
-            and not analysis.parse_failed
-            and not analysis.blocked
-            and product_ready(
-                analysis.program, analysis.module, CompilationProduct.ANALYSIS
+def admits_native_checks(task: ModuleAnalysis) -> bool {
+    import from jaclang.compiler.placement.placement_facts { variant_selected }
+    options = task.options;
+    return variant_selected(task.path) is not False
+        and options.no_cgen
+        and (options.native_parity or options.native_required_for(task.path))
+        and not options.symtab_ir_only
+        and not task.parse_failed
+        and not task.blocked
+        and task.ready(CompilationProduct.ANALYSIS)
+        and (task.native or ModuleFacts.has_native_context_stmts(task.module))
+        and not unavailable(CompilationProduct.NATIVE_LOWER);
+}
+
+def run_native_checks(task: ModuleAnalysis) {
+    lowered = task.require(CompilationProduct.NATIVE_IR);
+    if lowered and task.options.native_required_for(task.path) {
+        session_of(task).assemble_native(task.program, task.module, True);
+    }
+}
+
+def admits_client_dependencies(task: ModuleAnalysis) -> bool {
+    options = task.options;
+    return not (
+        task.parse_failed or task.blocked or options.symtab_ir_only or options.no_cgen
+    );
+}
+
+def run_client_dependencies(task: ModuleAnalysis) {
+    options = task.options;
+    program = task.program;
+    host = active_host();
+    seen: set[str] = set();
+    worklist: list[uni.Module | None] = [task.module];
+    paths: list[str] = [];
+    dep_options = CompileOptions(no_cgen=True, cancel_token=options.cancel_token);
+    while worklist or paths {
+        if worklist {
+            current = worklist.pop();
+            if current is not None {
+                paths.extend(client_import_paths(current));
+            }
+            continue;
+        }
+        dep_path = paths.pop();
+        if dep_path in seen {
+            continue;
+        }
+        seen.add(dep_path);
+        dep = program.find_module(dep_path);
+        has_facts = dep is not None
+            and dep.gen
+            and dep.gen.interop_manifest
+            and bool(dep.gen.interop_manifest.bindings);
+        if not has_facts and not program.has_failed_parse(dep_path) {
+            served = host.client_boundary_facts(program, dep_path);
+            if served is not None {
+                paths.extend(os.path.abspath(edge) for edge in served);
+                continue;
+            }
+            dep = session_of(task).compile(dep_path, program, None, dep_options);
+        }
+        worklist.append(dep);
+    }
+    program.options = options;
+}
+
+def admits_interface(task: ModuleAnalysis) -> bool {
+    options = task.options;
+    closure = session_of(task).closure_options() or options;
+    if task.parse_failed or task.blocked or task.source is not None {
+        return False;
+    }
+    return (options.no_cgen and not options.symtab_ir_only)
+        or (
+            closure.no_cgen
+            and not closure.symtab_ir_only
+            and not (
+                task.program.internal and active_host().in_compiler_tree(task.path)
             )
-        ) {
-            return;
-        }
-        if not (
-            analysis.native or ModuleFacts.has_native_context_stmts(analysis.module)
-        )
-            or native_codegen() is None {
-            return;
-        }
-        lowered = require_product(
-            analysis.program,
-            analysis.module,
-            CompilationProduct.NATIVE_IR,
-            cancel_token=options.cancel_token
         );
-        if lowered and options.native_required_for(analysis.path) {
-            self.session.assemble_native(analysis.program, analysis.module, True);
-        }
-    }
+}
 
-    def client_dependencies {
-        analysis = self.analysis;
-        options = analysis.options;
-        if analysis.parse_failed
-            or analysis.blocked
-            or options.symtab_ir_only
-            or options.no_cgen {
-            return;
-        }
-        program = analysis.program;
-        host = active_host();
-        seen: set[str] = set();
-        worklist: list[uni.Module | None] = [analysis.module];
-        paths: list[str] = [];
-        dep_options = CompileOptions(no_cgen=True, cancel_token=options.cancel_token);
-        while worklist or paths {
-            if worklist {
-                current = worklist.pop();
-                if current is not None {
-                    paths.extend(client_import_paths(current));
-                }
-                continue;
-            }
-            dep_path = paths.pop();
-            if dep_path in seen {
-                continue;
-            }
-            seen.add(dep_path);
-            dep = program.find_module(dep_path);
-            has_facts = dep is not None
-                and dep.gen
-                and dep.gen.interop_manifest
-                and bool(dep.gen.interop_manifest.bindings);
-            if not has_facts and not program.has_failed_parse(dep_path) {
-                served = host.client_boundary_facts(program, dep_path);
-                if served is not None {
-                    paths.extend(os.path.abspath(edge) for edge in served);
-                    continue;
-                }
-                dep = self.session.compile(dep_path, program, None, dep_options);
-            }
-            worklist.append(dep);
-        }
-        program.options = options;
-    }
+def run_interface(task: ModuleAnalysis) {
+    task.require(CompilationProduct.INTERFACE);
+}
 
-    def interface {
-        analysis = self.analysis;
-        options = analysis.options;
-        closure = self.session.closure_options() or options;
-        if analysis.parse_failed or analysis.blocked or analysis.source is not None {
-            return;
-        }
-        wants = (options.no_cgen and not options.symtab_ir_only)
-            or (
-                closure.no_cgen
-                and not closure.symtab_ir_only
-                and not (
-                    analysis.program.internal
-                    and active_host().in_compiler_tree(analysis.path)
-                )
-            );
-        if wants {
-            require_product(
-                analysis.program,
-                analysis.module,
-                CompilationProduct.INTERFACE,
-                cancel_token=options.cancel_token
-            );
-        }
-    }
+def admits_codegen(task: ModuleAnalysis) -> bool {
+    options = task.options;
+    return not (
+        task.parse_failed or task.blocked or options.no_cgen or options.symtab_ir_only
+    );
+}
 
-    def codegen {
-        analysis = self.analysis;
-        options = analysis.options;
-        if analysis.parse_failed
-            or analysis.blocked
-            or options.no_cgen
-            or options.symtab_ir_only {
-            return;
-        }
-        program = analysis.program;
-        module = analysis.module;
-        program.options = options;
-        if not analysis.full_head {
-            program.run_schedule(
-                mod=module,
-                passes=get_bootstrap_code_gen(),
-                cancel_token=options.cancel_token
-            );
-            self.session.assemble_python(program, module);
-            return;
-        }
-        needs_native = analysis.native or ModuleFacts.has_native_context_stmts(module);
-        if needs_native
-            and not product_ready(program, module, CompilationProduct.ANALYSIS)
-            and not require_product(
-                program,
-                module,
-                CompilationProduct.ANALYSIS,
-                cancel_token=options.cancel_token
-            ) {
-            analysis.blocked = True;
-            return;
-        }
-        schedule = get_py_code_gen(
-            native=needs_native, provided=program.analysis.analyses_run.provided(module)
-        );
-        python_start = len(schedule);
-        for (index, step) in enumerate(schedule) {
-            if step is NativeImportFactsPass {
-                python_start = index;
-                break;
-            }
-        }
-        if python_start > 0 {
-            program.run_schedule(
-                mod=module,
-                passes=schedule[:python_start],
-                cancel_token=options.cancel_token
-            );
-        }
-        if module.gen.has_native_ir() {
-            self.session.assemble_native(program, module, False);
-        }
-        if python_start < len(schedule) {
-            program.run_schedule(
-                mod=module,
-                passes=schedule[python_start:],
-                cancel_token=options.cancel_token
-            );
-        }
-        self.session.assemble_python(program, module);
-        if module.decided_codespace == 'native' {
-            scrubbed = scrub_native_artifacts_on_error(program, module);
-            if options.aot_mode and not scrubbed {
-                report_missing_native_ir(program, module);
-            }
+def run_codegen(task: ModuleAnalysis) {
+    options = task.options;
+    program = task.program;
+    module = task.module;
+    program.options = options;
+    if not task.has_full_ir() {
+        task.require(CompilationProduct.PY_IR);
+        session_of(task).assemble_python(program, module);
+        return;
+    }
+    needs_native = task.native or ModuleFacts.has_native_context_stmts(module);
+    if needs_native
+        and not task.ready(CompilationProduct.ANALYSIS)
+        and not task.require(CompilationProduct.ANALYSIS) {
+        task.blocked = True;
+        return;
+    }
+    task.require(CompilationProduct.CODEGEN, ProductRequest(native=needs_native));
+    if module.gen.has_native_ir() {
+        session_of(task).assemble_native(program, module, False);
+    }
+    task.require(CompilationProduct.PY_IR);
+    task.require(CompilationProduct.FROZEN);
+    session_of(task).assemble_python(program, module);
+    if module.decided_codespace == 'native' {
+        scrubbed = scrub_native_artifacts_on_error(program, module);
+        if options.aot_mode and not scrubbed {
+            report_missing_native_ir(program, module);
         }
     }
 }
@@ -283,7 +200,7 @@ def report_missing_native_ir(program: JacProgram, mod: uni.Module) -> None {
     if not mod_path or program.count_module_errors(mod_path) > 0 {
         return;
     }
-    reason = native_schedule_failure();
+    reason = unavailable(CompilationProduct.NATIVE_LOWER);
     if not reason {
         (available, why) = active_host().native_pipeline_available();
         if not available {
@@ -300,13 +217,9 @@ def report_missing_native_ir(program: JacProgram, mod: uni.Module) -> None {
             "diagnostic; this is a compiler bug -- please report it"
         );
     }
-    from_pass: type = JcirGenPass;
-    schedule = native_codegen();
-    if schedule is not None {
-        for step in schedule {
-            from_pass = step;
-        }
-    }
+    from_pass: type = JcirGenPass
+        if reason
+        else product_passes(CompilationProduct.NATIVE_LOWER)[-1];
     deliver_alerts(
         [
             Alert(
@@ -324,18 +237,18 @@ def report_missing_native_ir(program: JacProgram, mod: uni.Module) -> None {
     );
 }
 
-glob CODEGEN_PHASES: list[CompilationPhase] = [
-         CompilationPhase.NATIVE_CHECKS,
-         CompilationPhase.CLIENT_DEPENDENCIES,
-         CompilationPhase.INTERFACE,
-         CompilationPhase.CODEGEN
-     ];
-
-def module_pipeline -> list[CompilationPhase] {
-    phases: list[CompilationPhase] = list(ANALYSIS_PHASES);
-    phases.extend(CODEGEN_PHASES);
-    return phases;
-}
+glob CODEGEN_PLAN: tuple[PlanStep, ...] = (
+         PlanStep(
+             name="NATIVE_CHECKS", admit=admits_native_checks, run=run_native_checks
+         ),
+         PlanStep(
+             name="CLIENT_DEPENDENCIES",
+             admit=admits_client_dependencies,
+             run=run_client_dependencies
+         ),
+         PlanStep(name="INTERFACE", admit=admits_interface, run=run_interface),
+         PlanStep(name="CODEGEN", admit=admits_codegen, run=run_codegen)
+     );
 
 def analyze_for_compile(
     program: JacProgram, path: str, options: CompileOptions, source: str | None
@@ -347,26 +260,6 @@ def analyze_for_compile(
     return analysis;
 }
 
-def run_codegen_phases(
-    session: SessionHooks,
-    program: JacProgram,
-    analysis: ModuleAnalysis,
-    options: CompileOptions
-) {
-    task = ModuleCompilation(session, analysis);
-    for phase in CODEGEN_PHASES {
-        if cancelled(options) {
-            break;
-        }
-        started = time.perf_counter();
-        try {
-            task.run_phase(phase);
-        } finally {
-            record_phase(program, phase, started);
-        }
-    }
-}
-
 def compile_task(
     session: SessionHooks,
     program: JacProgram,
@@ -375,7 +268,8 @@ def compile_task(
     source: str | None = None
 ) -> ModuleAnalysis {
     analysis = analyze_for_compile(program, path, options, source);
-    run_codegen_phases(session, program, analysis, options);
+    analysis.session = session;
+    run_plan(analysis, CODEGEN_PLAN);
     return analysis;
 }
 
@@ -387,100 +281,4 @@ def compile_module(
     source: str | None = None
 ) -> uni.Module {
     return compile_task(session, program, path, options, source).module;
-}
-
-def _codegen_tier_reason -> str {
-    if _codegen_sched_loading.get() {
-        return 'the codegen schedule was still loading';
-    }
-    dep = active_host().module_in_flight(
-        list(CODEGEN_SCHED_DEPS) + list(NATIVE_CODEGEN_DEPS)
-    );
-    if dep {
-        return f"'{dep}', a dependency of the codegen schedule, was mid-import";
-    }
-    return schedule_tier_reason();
-}
-
-def _note_native_schedule_failure(reason: str) {
-    _native_sched_failure.clear();
-    if reason {
-        _native_sched_failure.append(reason);
-    }
-}
-
-def native_schedule_failure -> str {
-    return _native_sched_failure[0] if _native_sched_failure else "";
-}
-
-def native_codegen -> (PassSchedule | None) {
-    found = codegen_backend_passes("native");
-    if found is not None {
-        return found;
-    }
-    try {
-        active_host().load_modules(list(NATIVE_CODEGEN_DEPS));
-    } except ImportError as e {
-        active_host().schedule_import_failed(e);
-        _note_native_schedule_failure(f"{type(e).__name__}: {e}");
-        return None;
-    }
-    return codegen_backend_passes("native");
-}
-
-def get_bootstrap_code_gen -> PassSchedule {
-    return [NativeImportFactsPass, JcirGenPass];
-}
-
-def get_py_code_gen(
-    native: bool = True, provided: (set[AnalysisFact] | None) = None
-) -> PassSchedule {
-    if _codegen_tier_reason() {
-        return get_bootstrap_code_gen();
-    }
-    token = _codegen_sched_loading.set(True);
-    try {
-        active_host().load_modules(list(CODEGEN_SCHED_DEPS));
-        import from jaclang.compiler.backends.es.esast_gen_pass { EsastGenPass }
-        import from jaclang.compiler.passes.rc_facts_pass { RcFactsPass }
-        import from jaclang.compiler.passes.freeze_structure_pass {
-            FreezeStructurePass
-        }
-        passes: PassSchedule = [RcFactsPass, EsastGenPass];
-        if native {
-            schedule = native_codegen();
-            if schedule is not None {
-                for step in schedule {
-                    passes.append(step);
-                }
-                _note_native_schedule_failure("");
-            }
-        }
-        passes.extend(get_bootstrap_code_gen());
-        passes.append(FreezeStructurePass);
-        return validate_schedule(
-            passes,
-            preprovided=providers_of_product(CompilationProduct.ANALYSIS)
-                if provided is None
-                else provided,
-            origin='codegen schedule'
-        );
-    } except ImportError as e {
-        active_host().schedule_import_failed(e);
-        if native {
-            _note_native_schedule_failure(f"{type(e).__name__}: {e}");
-        }
-        return get_bootstrap_code_gen();
-    } finally {
-        _codegen_sched_loading.reset(token);
-    }
-}
-
-def client_product_schedule -> PassSchedule {
-    import from jaclang.compiler.backends.es.esast_gen_pass { EsastGenPass }
-    return [EsastGenPass];
-}
-
-with entry {
-    register_product_schedule(CompilationProduct.CLIENT, client_product_schedule);
 }

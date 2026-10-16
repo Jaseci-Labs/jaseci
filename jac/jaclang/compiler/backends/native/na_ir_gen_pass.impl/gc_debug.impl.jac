@@ -1,4 +1,3 @@
-import jaclang.compiler.backends.native.llvm.ir as ir;
 import os;
 
 impl NaIRGenPass._emit_rc_debug_globals -> None {

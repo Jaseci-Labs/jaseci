@@ -40,38 +40,45 @@ obj DiagnosticInfo {
     }
 }
 
-def _fill_template(template: str, kwargs: dict[str, object]) -> (str | None) {
-    esc_open = chr(1);
-    esc_close = chr(2);
-    out = template.replace("{{", esc_open).replace("}}", esc_close);
-    for (k, v) in kwargs.items() {
-        key = "{" + str(k) + "}";
-        out = out.replace(key, str(v));
+def _placeholder_name(text: str) -> bool {
+    if not text {
+        return False;
     }
-    scan = 0;
-    while True {
-        b_open = out.find("{", scan);
-        if b_open < 0 {
-            break;
+    for ch in text {
+        if not (ch.isalnum() or ch == "_") {
+            return False;
         }
-        b_close = out.find("}", b_open + 1);
-        if b_close < 0 {
-            break;
+    }
+    return True;
+}
+
+def _fill_template(template: str, kwargs: dict[str, object]) -> (str | None) {
+    out: list[str] = [];
+    i = 0;
+    n = len(template);
+    while i < n {
+        ch = template[i];
+        if (ch == "{" or ch == "}") and i + 1 < n and template[i + 1] == ch {
+            out.append(ch);
+            i += 2;
+            continue;
         }
-        inner = out[b_open + 1:b_close];
-        is_name = len(inner) > 0;
-        for ch in inner {
-            if not (ch.isalnum() or ch == "_") {
-                is_name = False;
-                break;
+        if ch == "{" {
+            close = template.find("}", i + 1);
+            if close > i and _placeholder_name(template[i + 1:close]) {
+                key = template[i + 1:close];
+                if key not in kwargs {
+                    return None;
+                }
+                out.append(str(kwargs[key]));
+                i = close + 1;
+                continue;
             }
         }
-        if is_name {
-            return None;
-        }
-        scan = b_open + 1;
+        out.append(ch);
+        i += 1;
     }
-    return out.replace(esc_open, "{").replace(esc_close, "}");
+    return "".join(out);
 }
 
 glob DIAGNOSTICS: dict[str, DiagnosticInfo] = {};
@@ -393,15 +400,15 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
      E0093 = _err(
          "E0093",
          Category.SYNTAX,
-         "An 'impl import' scope is a dotted package name",
-         help="Write `impl import core.docs {{ ... }}`; names inside are then"
+         "A 'graph import' scope is a dotted package name",
+         help="Write `graph import core.docs {{ ... }}`; names inside are then"
          " relative to that package."
      ),
      E0094 = _err(
          "E0094",
          Category.SYNTAX,
          "Expected a wire ('provider --> consumer') or an edge rule here",
-         help="An `impl import` block holds wires and `edge Name:` rules only."
+         help="A `graph import` block holds wires and `edge Name:` rules only."
      ),
      E0095 = _err(
          "E0095",
@@ -423,6 +430,21 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
          Category.SYNTAX,
          "`return tail` needs a function call",
          help="A guaranteed tail call replaces the current frame with the callee's, so its operand is a call: `return tail next_step(state);`."
+     ),
+     E0098 = _err(
+         "E0098",
+         Category.SYNTAX,
+         "An edge rule's patterns name modules under this archwire.jac; 'any' is not a pattern",
+         help="An archwire.jac governs only the modules below it, so a rule's targets"
+         " are patterns over those modules (`*` for all of them). Importers"
+         " outside the directory are governed by their own archwire.jac."
+     ),
+     E0099 = _err(
+         "E0099",
+         Category.SYNTAX,
+         "Wiring blocks are written 'graph import'; 'impl import' was removed",
+         help="Rename the block header: `graph import core {{ ... }}`. The body is"
+         " unchanged."
      ),
      W0060 = _warn(
          "W0060",
@@ -857,6 +879,15 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
          help="A pattern that matches nothing constrains nothing. Check the"
          " spelling, or remove the rule if the modules it governed are gone."
      ),
+     W2084 = _warn(
+         "W2084",
+         Category.SEMANTIC,
+         "'{name}' is not a module under this archwire.jac, so {what} is inert",
+         help="Wiring only reaches modules that exist below the archwire.jac, so a"
+         " name that matches none generates nothing and checks nothing. Fix the"
+         " spelling, or remove the wiring if the modules are gone; a distribution"
+         " that leaves them out on purpose can ignore this."
+     ),
      E1119 = _err(
          "E1119",
          Category.TYPE,
@@ -1066,13 +1097,6 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
          " which fails at run time with 'cannot import name ... from partially"
          " initialized module'. Remove the import and use the names directly."
      ),
-     E1140 = _err(
-         "E1140",
-         Category.IMPORT,
-         "'{scope}' is not a package or module under the project root",
-         help="Names inside an `impl import {scope} {{ ... }}` block are relative to"
-         " its header, so the header must name something the project contains."
-     ),
      E1141 = _err(
          "E1141",
          Category.IMPORT,
@@ -1095,12 +1119,12 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
      E1144 = _err(
          "E1144",
          Category.IMPORT,
-         "Import of '{module}' is not declared by arch.jac for '{consumer}'",
-         help="'{consumer}' is sealed: arch.jac names it, or [arch] closed in"
-         " jac.toml covers it, so every project-module import it writes must be"
-         " a wire. Add `{wire}` to arch.jac, or run `jac arch sync` to add every"
-         " missing wire. An inline suppression does not silence this; loosening"
-         " the boundary is a change to arch.jac or jac.toml."
+         "Import of '{module}' is not declared by archwire.jac for '{consumer}'",
+         help="'{consumer}' sits under an archwire.jac, so every import it makes of a"
+         " module below that archwire.jac must be a wire. Add `{wire}` to archwire.jac,"
+         " or run `jac arch sync` to add every missing wire. An inline"
+         " suppression does not silence this; changing the boundary is a change"
+         " to archwire.jac."
      ),
      E1145 = _err(
          "E1145",
@@ -1895,17 +1919,18 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
      E2088 = _err(
          "E2088",
          Category.SEMANTIC,
-         "'impl import' is only valid in the arch.jac beside jac.toml",
+         "'graph import' is only valid in a file named archwire.jac",
          help="A wiring block generates imports for other modules, so it lives in"
-         " one place: the arch.jac at the project root. Move this block there;"
-         " an arch.jac elsewhere is an ordinary module, and per-package wiring"
-         " files are not read yet."
+         " the archwire.jac of the directory whose modules it wires. Move this block"
+         " into that archwire.jac (create one beside the modules if needed); the"
+         " nearest archwire.jac above a module governs it. The wiring file was"
+         " named arch.jac before: rename an existing arch.jac to archwire.jac."
      ),
      E2089 = _err(
          "E2089",
          Category.SEMANTIC,
-         "arch.jac declares wiring only; this {kind} does not belong here",
-         help="arch.jac holds `impl import { ... }` blocks and nothing else."
+         "archwire.jac declares wiring only; this {kind} does not belong here",
+         help="archwire.jac holds `graph import { ... }` blocks and nothing else."
          " Move this statement into a module."
      ),
      E2090 = _err(
@@ -1936,20 +1961,21 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
      E2093 = _err(
          "E2093",
          Category.SEMANTIC,
-         "arch.jac has syntax errors, so the wiring for '{consumer}' may be"
+         "archwire.jac has syntax errors, so the wiring for '{consumer}' may be"
          " incomplete",
          help="Only the wires that still parsed were applied to this module. Fix"
-         " the errors reported for arch.jac and check again."
+         " the errors reported for archwire.jac and check again."
      ),
      E2094 = _err(
          "E2094",
          Category.SEMANTIC,
-         "Function-level import of '{module}' inside the sealed module '{consumer}'",
-         help="A sealed module's project-module imports are wires in arch.jac, and"
-         " a wire is module-level, so an import inside a function body would be a"
-         " dependency the wiring file cannot show. Move the import to module level"
-         " and wire it, or leave this module unmentioned by arch.jac and outside"
-         " [arch] closed if it needs a lazy import."
+         "Import of '{module}' inside '{scope}' is not declared by archwire.jac for"
+         " '{consumer}'",
+         help="A module under an archwire.jac takes its imports of the modules below"
+         " it from wires. A wire whose consumer"
+         " continues past the module into a class, function or method"
+         " (`pkg.mod.Class.method`) lands its import in that body, so the import"
+         " stays lazy. {fix} An inline suppression does not silence this."
      ),
      E2095 = _err(
          "E2095",
@@ -2134,9 +2160,9 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
      W3053 = _warn(
          "W3053",
          Category.LINT,
-         "Import of '{name}' from '{module}' is already provided by arch.jac"
+         "Import of '{name}' from '{module}' is already provided by archwire.jac"
          " [remove-wired-import]",
-         help="arch.jac wires this binding into the module, so the written import"
+         help="archwire.jac wires this binding into the module, so the written import"
          " is redundant. `jac fmt --lintfix` removes it; `jac arch sync` does"
          " the same for every covered module."
      ),
