@@ -18,3 +18,34 @@ def unreachable_attr(t: str) -> int {
 def still_typed {
     bad: int = "x";
 }
+
+obj Atom {}
+
+obj Slot {
+    has ref: (Atom | None) = None;
+}
+
+def names(slots: list[Slot], out: dict[str, int]) {
+    for s in slots {
+        name = s.ref?.missing;
+        if not name {
+            continue;
+        }
+        out[name] = 1;
+    }
+}
+
+obj Settings {
+    has files: (list[str] | None) = None;
+
+    def load {
+        self.files = ["a"];
+    }
+}
+
+def reload(c: Settings) {
+    assert c.files is None;
+    c.load();
+    assert c.files is not None;
+    assert "a" in c.files;
+}

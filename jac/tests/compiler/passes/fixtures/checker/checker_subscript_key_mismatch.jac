@@ -24,3 +24,13 @@ obj Holder {
 def key_checked_after_none(h: (Holder | None), k: (int | str)) -> str {
     return take_str(h.table[k]) if h is not None and k in h.table else "";
 }
+
+def union_key(k: (int | str | None), table: dict[(int | str), str]) -> str {
+    return take_str(table[k]) if k in table else "";
+}
+
+def float_key(k: float, table: dict[int, str]) {
+    if k in table {
+        print(k.bit_length());
+    }
+}

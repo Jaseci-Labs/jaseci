@@ -697,14 +697,16 @@ test "gap 57 container literals widen enum members to their class" {
 # as an undiagnosed Unknown, so the mismatch surfaced at the next use as
 # "Cannot assign <Unknown> to parameter ...". The rejected index is reported
 # where it is written, as a class subscript already was, and nothing
-# downstream cascades from it. A `k in container` check narrows `k` to the
-# container's key type, so a guarded subscript is not rejected.
+# downstream cascades from it. A `k in container` check keeps the members of
+# `k` that can compare equal to the container's key type, so a guarded
+# subscript is not rejected and a float key in an int dict stays a float.
 # =========================================================================
 test "gap 58 a rejected subscript index is reported at the index" {
     program = compile_and_check("checker_subscript_key_mismatch.jac");
     msgs = [str(e) for e in program.errors_had];
-    assert len(msgs) == 1 , f"Gap #58: expected one error at the index; `in` checks narrow the key. Got: {msgs}";
-    assert "parameter 'key' of type int" in msgs[0] , msgs;
+    assert len(msgs) == 2 , f"Gap #58: expected the rejected index and the float member. Got: {msgs}";
+    assert any("parameter 'key' of type int" in m for m in msgs) , msgs;
+    assert any("bit_length" in m for m in msgs) , msgs;
     warns = [
         str(w)
         for w in program.warnings_had
@@ -720,7 +722,9 @@ test "gap 58 a rejected subscript index is reported at the index" {
 # Never read as "not narrowed", so the join fell back to the declared type.
 # Inside an `isinstance` block the NoneType arm leaked into the join and
 # rejected a later subscript. The impossible arm is Never, a join drops it,
-# and attribute access or a call on Never is Never.
+# and attribute access, a call or a comparison on Never is Never. A
+# truthiness check on a value that is always None narrows its truthy arm
+# to Never too.
 # =========================================================================
 test "gap 59 an is None check on a type that cannot be None narrows to Never" {
     program = compile_and_check("checker_none_check_on_non_optional.jac");

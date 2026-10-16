@@ -1773,6 +1773,8 @@ impl TypeEvaluator._get_type_of_expression_core(
                     or right_type.is_any_type()
                     or left_type.is_any_instance()
                     or right_type.is_any_instance()
+                    or isinstance(left_type, NeverType)
+                    or isinstance(right_type, NeverType)
                 ) {
                     continue;
                 }
@@ -5702,15 +5704,15 @@ impl TypeEvaluator._find_predicate_for(
                     return None;
                 }
                 key_type = container_type.private.type_args[0];
-                if not isinstance(key_type, ClassType)
-                    or not key_type.is_class_instance() {
+                if isinstance(key_type, UnknownType) or self.is_any_type(key_type) {
                     return None;
                 }
                 return NarrowingPredicate(
                     key=key,
                     narrow_type=key_type,
                     is_inverted=False,
-                    narrows_on_false=False
+                    narrows_on_false=False,
+                    by_equality=True
                 );
 
             case NarrowingKind.ISINSTANCE
@@ -5810,7 +5812,8 @@ impl TypeEvaluator._find_predicate_for(
                     } else {
                         check_type = target.declared_type;
                     }
-                    if self._union_contains_none(check_type) {
+                    if self._union_contains_none(check_type)
+                        or self.is_none_type(check_type) {
                         none_inst = self._convert_to_instance(
                             self.prefetch.none_type_class
                         );
