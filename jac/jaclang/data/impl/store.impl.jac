@@ -378,7 +378,10 @@ def _park_conn(info: any, conn: any, in_txn: bool, listened: bool) -> None {
         if in_txn {
             conn.run('ROLLBACK');
         }
-        conn.run('DISCARD ALL');
+        conn.run(
+            "DO $$ BEGIN PERFORM pg_advisory_unlock_all(); EXECUTE 'RESET ALL'; "
+                + "EXECUTE 'UNLISTEN *'; EXECUTE 'DISCARD TEMP'; EXECUTE 'DISCARD SEQUENCES'; END $$"
+        );
         if listened {
             conn.notifications.clear();
         }
