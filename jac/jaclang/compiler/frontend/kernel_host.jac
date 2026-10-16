@@ -2,65 +2,11 @@ import json;
 import os;
 import sys;
 import from contextlib { contextmanager }
-import from jaclang.compiler.frontend.host {
-    active_host,
-    install_host,
-    CheckSettings,
-    HostPlatform,
-    HostServices,
-    LintSettings,
-    PathFacts,
-    ProjectDefaults,
-    ProjectFacts
-}
-import from jaclang.compiler.frontend.kernel_inputs {
-    DeclaredDependencies,
-    ImportResolution,
-    KernelInputs,
-    LocalResolution,
-    KEY_SEP,
-    NpmAnswer,
-    PythonInterface,
-    json_map,
-    local_key,
-    merge_answers,
-    pair_key,
-    resolution_key
-}
-import from jaclang.compiler.frontend.source_layout {
-    annex_files_of,
-    base_file_of,
-    is_annex_path_of,
-    list_directory,
-    package_init_of,
-    path_facts_of
-}
-import from jaclang.compiler.driver.compile_options { CompileOptions }
-import from jaclang.compiler.driver.compilation_context { package_owned }
-import from jaclang.compiler.driver.session_compile { SessionHooks, compile_in_session }
-import from jaclang.compiler.driver.module_analysis { ModuleAnalysis, analyze_module }
-import from jaclang.compiler.driver.module_compile { compile_task }
-import from jaclang.compiler.driver.unit_products { UnitProducts, unit_products }
-import from jaclang.compiler.driver.program { JacProgram }
-import from jaclang.compiler.types.stubcat.reader { StubCatalog, open_catalog_region }
-import from jaclang.compiler.types.stubcat.resolver { CatalogResolver }
-import from jaclang.compiler.types.stubcat.modiface { iface_module, open_module_iface }
-import from jaclang.compiler.types.types { ClassDetailsShared, ClassType, TypeBase }
-import from jaclang.compiler.frontend.unitree { Module, UniScopeNode }
-import from jaclang.project.workspace_model { AppSpec, WorkspaceSpec }
-import type from jaclang.compiler.types.ct_value { CtEnvironment }
-import type from jaclang.compiler.passes.annex_weave { WovenAnnex }
-import type from jaclang.compiler.driver.compiler { JacCompiler }
-import type from jaclang.compiler.driver.ifacecache { IfaceRegistry }
-import type from jaclang.compiler.driver.nativecache { NativeUnitRegistry }
-import from jaclang.compiler.driver.native_iface { NativeIface }
-import type from jaclang.compiler.frontend.kernel_analyze { CompileReport }
 
 glob _CATALOGS: dict[str, StubCatalog] = {};
 
 glob HOST_ONLY_ANSWER: str = "host_only",
      EMIT_QUESTION: str = "emit_unit",
-     NATIVE_GENERATOR_MODULE: str = "jaclang.compiler.backends.native.na_ir_gen_pass",
      EVENT_NOTE: str = "note",
      EVENT_COVERAGE: str = "coverage";
 
@@ -466,6 +412,19 @@ obj KernelHost(HostServices) {
         }
         self._served[resolved] = ServedInterface(catalog=catalog, module=mod);
         program.stamp_app_facts(mod);
+        if iface.effects {
+            mod.gen.callable_effects = json.loads(iface.effects);
+        }
+        if iface.placement {
+            import from jaclang.compiler.placement.placement { summary_store }
+            import from jaclang.compiler.placement.placement_export {
+                summary_from_dict
+            }
+            restored = summary_from_dict(json.loads(iface.placement));
+            if restored is not None {
+                summary_store(program)[os.path.abspath(resolved)] = restored;
+            }
+        }
         return mod;
     }
 
@@ -485,6 +444,9 @@ obj KernelHost(HostServices) {
         products = unit_products(module, task.program);
         if not products.path {
             products.path = real;
+        }
+        if real.endswith(".jac") {
+            unit_interface(module, task.program, products);
         }
         self.units[real] = products;
     }
@@ -922,7 +884,6 @@ obj KernelHost(HostServices) {
     }
 
     def wiring_file(path: str) -> (str | None) {
-        import from jaclang.compiler.driver.wiring { arch_file_for, is_arch_file }
         self.census.count("wiring_file");
         if is_arch_file(path) {
             return None;
@@ -935,22 +896,60 @@ obj KernelHost(HostServices) {
         return self.inputs.manifest.is_seed(rel_path);
     }
 
+    def wiring_records(digest: str) -> str {
+        if self.kernel_only("wiring_records") {
+            return "";
+        }
+        with self.delegating("wiring_records") as host {
+            answer = host.wiring_records(digest);
+        }
+        return answer;
+    }
+
+    def keep_wiring_records(digest: str, text: str) {
+        self.census.count("keep_wiring_records");
+        if self.fallback is not None {
+            self.fallback.keep_wiring_records(digest, text);
+        }
+    }
+
     def native_parse(
         source_str: str,
         file_path: str,
         program: (JacProgram | None),
         annexes: list[WovenAnnex],
-        early_context: str = ""
+        early_context: str = "",
+        load_kernel: bool = True
     ) -> (tuple[Module, bool] | None) {
         if self.kernel_only("native_parse") {
             return None;
         }
         with self.delegating("native_parse") as host {
             answer = host.native_parse(
-                source_str, file_path, program, annexes, early_context
+                source_str, file_path, program, annexes, early_context, load_kernel
             );
         }
         return answer;
+    }
+
+    def woven_module(path: str, program: (JacProgram | None)) -> (Module | None) {
+        if self.kernel_only("woven_module") {
+            return None;
+        }
+        with self.delegating("woven_module") as host {
+            answer = host.woven_module(path, program);
+        }
+        return answer;
+    }
+
+    def place_wired_imports(module: Module) {
+        if self.kernel_only("place_wired_imports") {
+            dedupe_generated_imports(module);
+            return;
+        }
+        with self.delegating("place_wired_imports") as host {
+            host.place_wired_imports(module);
+        }
     }
 
     def drop_python_lane_products(path: str, program: JacProgram) {
@@ -1028,12 +1027,6 @@ obj KernelHost(HostServices) {
     def lower_dependency(
         program: JacProgram, real: str, options: CompileOptions
     ) -> (NativeIface | None) {
-        import from jaclang.compiler.passes.rc_facts_pass { RcFactsPass }
-        import from jaclang.compiler.backends.native.na_ir_gen_pass { NaIRGenPass }
-        import from jaclang.compiler.frontend.codeinfo {
-            get_effective_default_codespace_override,
-            set_effective_default_codespace
-        }
         self._lowering.add(real);
         previous = program.options;
         codespace = get_effective_default_codespace_override();
@@ -1048,16 +1041,13 @@ obj KernelHost(HostServices) {
             opts.no_cgen = False;
             program.options = opts;
             set_effective_default_codespace("native");
-            import from jaclang.compiler.driver.pipeline {
-                product_ready,
-                require_product
-            }
+            import from jaclang.compiler.driver.pipeline { product_ready, require }
             import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
             if not product_ready(program, module, CompilationProduct.ANALYSIS)
-                and not require_product(program, module, CompilationProduct.ANALYSIS) {
+                and not require(program, module, CompilationProduct.ANALYSIS) {
                 return None;
             }
-            program.run_schedule(module, [RcFactsPass, NaIRGenPass]);
+            require(program, module, CompilationProduct.NATIVE_LOWER);
             if len(program.errors_had) > mark {
                 return None;
             }
@@ -1365,21 +1355,6 @@ obj KernelHost(HostServices) {
 
     def load_modules(names: list[str]) {
         self.census.count("load_modules");
-        if NATIVE_GENERATOR_MODULE in names and self.fallback is None {
-            import from jaclang.compiler.driver.pipeline {
-                register_codegen_backend,
-                register_product_schedule
-            }
-            import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
-            import from jaclang.compiler.backends.native.na_ir_gen_pass {
-                native_codegen_schedule,
-                native_ir_product_schedule
-            }
-            register_codegen_backend("native", native_codegen_schedule);
-            register_product_schedule(
-                CompilationProduct.NATIVE_IR, native_ir_product_schedule
-            );
-        }
     }
 
     def module_in_flight(names: list[str]) -> str {

@@ -5,7 +5,6 @@ import hashlib;
 import importlib;
 import platform;
 import from pathlib { Path }
-import from jaclang.client.targets.desktop.app_layout { AppLayout }
 
 
 glob PLUGIN_BOOTSTRAP_MODULES: list[str] = [
@@ -60,7 +59,6 @@ def preferred_port(app_name: str) -> int {
 
 
 def host_executable -> str {
-    import from jaclang.jac0core.handoff { process_executable }
     return process_executable();
 }
 
@@ -104,7 +102,6 @@ def _bootstrap_plugin_host(plugin_configs: dict[str, any]) -> any {
 
 
 def _ensure_jac_meta_importer {
-    import from jaclang.meta_importer { JacMetaImporter }
     if not any(isinstance(f, JacMetaImporter) for f in sys.meta_path) {
         sys.meta_path.insert(0, JacMetaImporter());
     }
@@ -157,10 +154,6 @@ def serve_program(
     host: any,
     store: any
 ) -> tuple[any, int, any] {
-    import from jaclang.client.targets.desktop.native.broker_extension {
-        DesktopBrokerExtension
-    }
-    import from jaclang.scale.server.inprocess { prepare_inprocess_runtime }
     _ensure_jac_meta_importer();
     broker = DesktopBrokerExtension(store=store, host=host);
     remote = backend != EMBEDDED;
@@ -212,7 +205,6 @@ def serve_program(
 
 
 def boot(config_json: str) -> HostContext {
-    import from jaclang.client.targets.desktop.native.oauth_broker { SessionStore }
     cfg = json.loads(config_json);
     app_name = str(cfg.get("app_name") or "app");
     mode = str(cfg.get("mode") or "webview");

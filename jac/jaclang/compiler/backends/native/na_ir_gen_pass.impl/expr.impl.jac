@@ -581,8 +581,6 @@ impl NaIRGenPass._codegen_lambda(nd: uni.LambdaExpr) -> (ir.Value | None) {
 }
 
 impl NaIRGenPass._binds_variable(nd: uni.Expr) -> bool {
-    import from jaclang.compiler.frontend.constant { SymbolType }
-    import from jaclang.compiler.frontend.unitree { ability_of_symbol }
     if not isinstance(nd, uni.Name) or nd.sym is None {
         return False;
     }
@@ -696,7 +694,7 @@ impl NaIRGenPass._codegen_name(nd: uni.Name) -> (ir.Value | None) {
         import os;
         return self._make_global_string(os.path.realpath(self.module.loc.mod_path));
     }
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
+
     _np = nd.parent;
     _is_call_target = isinstance(_np, uni.FuncCall) and _np.target is nd;
     if JAC_TYPE_REGISTRY.is_sized(var_name) and not _is_call_target {
@@ -2042,7 +2040,6 @@ impl NaIRGenPass._codegen_compare_chain(
 }
 
 impl NaIRGenPass._codegen_unary(nd: uni.UnaryExpr) -> (ir.Value | None) {
-    import from jaclang.compiler.c_interop { c_lent_arg_elem }
     lent = c_lent_arg_elem(nd);
     if lent is not None {
         return self._c_lent_address(nd, lent);
@@ -2051,7 +2048,7 @@ impl NaIRGenPass._codegen_unary(nd: uni.UnaryExpr) -> (ir.Value | None) {
     if operand is None {
         return None;
     }
-    import from jaclang.compiler.frontend.constant { is_borrow_kind, OwnershipKind }
+
     if is_borrow_kind(nd.ownership) {
         return operand;
     }
@@ -2511,7 +2508,6 @@ impl NaIRGenPass._codegen_atom_trailer(nd: uni.AtomTrailer) -> (ir.Value | None)
 }
 
 impl NaIRGenPass._null_safe_on_value(target: uni.Expr) -> bool {
-    import from jaclang.compiler.frontend.constant { SymbolType }
     inner: uni.UniNode = target;
     if isinstance(inner, uni.CfgExpr) {
         inner = inner.expr;
@@ -2891,6 +2887,14 @@ impl NaIRGenPass._codegen_plain_trailer(nd: uni.AtomTrailer) -> (ir.Value | None
                 }
                 if _real_cls in self.struct_types
                     and _real_cls not in self.local_vars {
+                    if self._is_runtime_class_value(nd.target) {
+                        _dyn_sf = self._codegen_class_value_static(
+                            nd.target, _real_cls, right_name
+                        );
+                        if _dyn_sf is not None {
+                            return _dyn_sf;
+                        }
+                    }
                     for _rcn in self._mro_of(_real_cls) {
                         _rsf = f"{_rcn}.{right_name}";
                         if _rsf in self.static_fields {
@@ -3396,8 +3400,7 @@ impl NaIRGenPass._final_variant_value(
     never from the portable module's placeholder. None when the variant
     declares no such Final glob, which leaves the read a load.""";
     import os;
-    import from jaclang.compiler.c_interop { final_glob_value }
-    import from jaclang.compiler.frontend.codeinfo { native_variant_of }
+
     mod = value.find_parent_of_type(uni.Module);
     if mod is None or mod.loc is None or not mod.loc.mod_path {
         return value;
@@ -3424,7 +3427,6 @@ impl NaIRGenPass._final_variant_value(
 impl NaIRGenPass._final_scalar_value(
     nd: uni.Name, value_type: ir.Type
 ) -> (ir.Value | None) {
-    import from jaclang.compiler.c_interop { c_scalar_constant, final_glob_value }
     value = final_glob_value(nd);
     if value is None {
         return None;

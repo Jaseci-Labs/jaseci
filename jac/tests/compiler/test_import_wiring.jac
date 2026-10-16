@@ -1,8 +1,8 @@
-"""arch.jac wiring: wires generate imports, a module arch.jac names is sealed in
-both directions, and rules constrain flows.
+"""archwire.jac wiring: wires generate imports, an archwire.jac closes the directory it
+sits in, and rules restrict flows.
 
 Each test writes a small project under a fresh temp dir with a jac.toml, an
-arch.jac and a few modules, compiles one module through JacProgram and reads
+archwire.jac and a few modules, compiles one module through JacProgram and reads
 the diagnostic codes back. The wiring spec is content-keyed per project root,
 so every test gets its own root.
 """
@@ -16,12 +16,10 @@ import from jaclang.compiler.driver.wiring { WiringSpec }
 import from jaclang.compiler.frontend.parser.frontend { parse }
 import from jaclang.compiler.frontend.module_facts { ModuleFacts }
 import from jaclang.compiler.frontend.unitree { ModuleItem }
-import from jaclang.cli.commands.arch {
+import from jaclang.cli.commands.architecture {
+    _arch_init,
     _collect_rows,
-    _dependency_cone,
-    _derive_rules,
-    _render_blocks,
-    _render_rules
+    _render_blocks
 }
 
 glob _UTIL: str = "def now -> str {\n    return \"t\";\n}\n",
@@ -37,13 +35,13 @@ glob _UTIL: str = "def now -> str {\n    return \"t\";\n}\n",
          "}\n"
      ),
      _ARCH: str = (
-         "impl import {\n"
+         "graph import {\n"
          "    edge CoreInternal: core.* --> core.*;\n"
          "    edge AppOverCore: core.* --> app.*;\n"
          "    edge AppInternal: app.* --> app.*;\n"
          "}\n"
          "\n"
-         "impl import core {\n"
+         "graph import core {\n"
          "    util --> core.svc { now }\n"
          "    svc --> app.main { serve }\n"
          "    util --> app.main { now as when }\n"
@@ -70,7 +68,7 @@ def _project(files: dict[str, str], toml_extra: str = "") -> str {
 def _standard(arch: str = _ARCH, svc: str = _SVC, main: str = _MAIN) -> str {
     return _project(
         {
-            "arch.jac": arch,
+            "archwire.jac": arch,
             "core/util.jac": _UTIL,
             "core/other.jac": _OTHER,
             "core/svc.jac": svc,
@@ -112,7 +110,7 @@ test "wires generate the consumer's imports and a scoped block is relative on th
         assert _errors(prog) == [] , _errors(prog);
         assert "W2001" not in _warnings(prog) , _warnings(prog);
         assert "W1051" not in _warnings(prog) , _warnings(prog);
-        arch = _compile(base, "arch.jac");
+        arch = _compile(base, "archwire.jac");
         assert _errors(arch) == [] , _errors(arch);
         assert "W1051" not in _warnings(arch) , _warnings(arch);
     } finally {
@@ -125,12 +123,12 @@ test "a wire-bound name resolves to the provider's declaration" {
     import from jaclang.compiler.frontend.unitree { Archetype, FuncCall, Module, Name }
     base = _project(
         {
-            "arch.jac": (
-                "impl import {\n"
+            "archwire.jac": (
+                "graph import {\n"
                 "    edge CoreInternal: core.* --> core.*;\n"
                 "}\n"
                 "\n"
-                "impl import core {\n"
+                "graph import core {\n"
                 "    util --> core.svc { Spark }\n"
                 "}\n"
             ),
@@ -194,17 +192,8 @@ test "a covered module's own imports are matched item by item" {
 }
 
 
-test "an unmentioned module is left alone but rules still apply to it" {
-    base = _standard(
-        main=(
-            "import from core.svc { serve }\n"
-            "import from core.util { now as when }\n"
-            "\n"
-            "def greet -> str {\n"
-            "    return serve() + when();\n"
-            "}\n"
-        )
-    );
+test "a module archwire.jac never names is still sealed and still ruled" {
+    base = _standard();
     try {
         os.makedirs(os.path.join(base, "extra"), exist_ok=True);
         with open(os.path.join(base, "extra", "rogue.jac"), "w") as f {
@@ -213,7 +202,7 @@ test "an unmentioned module is left alone but rules still apply to it" {
             );
         }
         prog = _compile(base, "extra/rogue.jac");
-        assert _errors(prog) == ["E2090"] , _errors(prog);
+        assert sorted(_errors(prog)) == ["E1144", "E2090"] , _errors(prog);
     } finally {
         shutil.rmtree(base, ignore_errors=True);
     }
@@ -222,11 +211,11 @@ test "an unmentioned module is left alone but rules still apply to it" {
 
 test "a payload rule admits only the names it lists" {
     arch = (
-        "impl import {\n"
+        "graph import {\n"
         "    edge CoreApi: core.* --> app.* { now }\n"
         "}\n"
         "\n"
-        "impl import core {\n"
+        "graph import core {\n"
         "    util --> app.main { now as when }\n"
         "    util --> app.main { serve }\n"
         "}\n"
@@ -236,7 +225,7 @@ test "a payload rule admits only the names it lists" {
         with open(os.path.join(base, "core", "util.jac"), "w") as f {
             f.write(_UTIL + "\ndef serve -> str {\n    return now();\n}\n");
         }
-        prog = _compile(base, "arch.jac");
+        prog = _compile(base, "archwire.jac");
         assert _errors(prog) == ["E2091"] , _errors(prog);
         with open(os.path.join(base, "app", "main.jac"), "w") as f {
             f.write("import core.util;\n\ndef greet -> str {\n    return when();\n}\n");
@@ -249,42 +238,43 @@ test "a payload rule admits only the names it lists" {
 }
 
 
-test "arch.jac itself is checked for its scope, endpoints, rules and cycles" {
+test "archwire.jac itself is checked for its scope, endpoints, rules and cycles" {
     arch = (
-        "impl import nowhere {\n"
+        "graph import nowhere {\n"
         "    thing --> core.svc { x }\n"
         "}\n"
         "\n"
-        "impl import {\n"
+        "graph import {\n"
         "    edge Dup: core.* --> app.*;\n"
         "    edge Dup: app.* --> app.*;\n"
         "    edge Dead: core.missing --> app.*;\n"
         "    os --> core.svc;\n"
         "    core.util --> core.util;\n"
         "    core.util --> core.absent { now }\n"
+        "    gone --> core.absent { now }\n"
         "    core.util --> core;\n"
         "}\n"
     );
     base = _standard(arch=arch);
     try {
-        prog = _compile(base, "arch.jac");
+        prog = _compile(base, "archwire.jac");
         codes = sorted(_errors(prog));
-        assert codes
-            == ["E1140", "E1141", "E1141", "E1142", "E1142", "E1143", "E2092"] , codes;
+        assert codes == ["E1141", "E1141", "E1142", "E1143", "E2092"] , codes;
         assert _warnings(prog).count("W2083") == 1 , _warnings(prog);
+        assert _warnings(prog).count("W2084") == 3 , _warnings(prog);
     } finally {
         shutil.rmtree(base, ignore_errors=True);
     }
 }
 
 
-test "wiring blocks belong in arch.jac and nothing else belongs there" {
+test "wiring blocks belong in archwire.jac and nothing else belongs there" {
     base = _standard(
         arch=_ARCH + "\nimport os;\n\nglob X: int = 1;\n",
-        svc="impl import {\n    core.util --> core.svc { now }\n}\n\n" + _SVC
+        svc="graph import {\n    core.util --> core.svc { now }\n}\n\n" + _SVC
     );
     try {
-        arch = _compile(base, "arch.jac");
+        arch = _compile(base, "archwire.jac");
         assert sorted(_errors(arch)) == ["E2089", "E2089"] , _errors(arch);
         svc = _compile(base, "core/svc.jac");
         assert "E2088" in _errors(svc) , _errors(svc);
@@ -296,30 +286,32 @@ test "wiring blocks belong in arch.jac and nothing else belongs there" {
 
 test "wiring syntax has its own diagnostics" {
     cases = [
-        ("impl import { a <-- b { x } }", "E0086"),
-        ("impl import { a | b --> c { x } }", "E0087"),
-        ("impl import { any --> c { x } }", "E0087"),
-        ("impl import { a --> b.* { x } }", "E0088"),
-        ("impl import { a as p --> b { x } }", "E0089"),
-        ("impl import { a --> b { x, x } }", "E0090"),
-        ("impl import { include a --> b { x } }", "E0091"),
-        ("impl import { edge a.* --> b.*; }", "E0092"),
-        ("impl import \"pkg\" { a --> b { x } }", "E0093"),
-        ("impl import { 42; }", "E0094"),
-        ("impl import { a --> b { *, x } }", "E0095"),
-        ("impl import { edge R: a.* --> b.* { x as y } }", "E0096"),
+        ("graph import { a <-- b { x } }", "E0086"),
+        ("graph import { a | b --> c { x } }", "E0087"),
+        ("graph import { any --> c { x } }", "E0087"),
+        ("graph import { a --> b.* { x } }", "E0088"),
+        ("graph import { a as p --> b { x } }", "E0089"),
+        ("graph import { a --> b { x, x } }", "E0090"),
+        ("graph import { include a --> b { x } }", "E0091"),
+        ("graph import { edge a.* --> b.*; }", "E0092"),
+        ("graph import \"pkg\" { a --> b { x } }", "E0093"),
+        ("graph import { 42; }", "E0094"),
+        ("graph import { a --> b { *, x } }", "E0095"),
+        ("graph import { edge R: a.* --> b.* { x as y } }", "E0096"),
+        ("graph import { edge R: a.* --> any; }", "E0098"),
+        ("impl import { a --> b { x } }", "E0099"),
 
     ];
     for (src, code) in cases {
         prog = JacProgram();
-        parse(src, "arch.jac", prog=prog);
+        parse(src, "archwire.jac", prog=prog);
         assert code in _errors(prog) , (src, _errors(prog));
     }
 }
 
 
-test "a broken arch.jac still applies the wires that parsed and says so" {
-    base = _standard(arch=_ARCH + "\nimpl import {\n    a <-- b;\n}\n");
+test "a broken archwire.jac still applies the wires that parsed and says so" {
+    base = _standard(arch=_ARCH + "\ngraph import {\n    a <-- b;\n}\n");
     try {
         prog = _compile(base, "app/main.jac");
         assert _errors(prog) == ["E2093"] , _errors(prog);
@@ -347,7 +339,7 @@ test "lint autofix removes wired imports and duplicate wires" {
         assert "import from core.util" not in text , text;
         assert "import from core.other { helper }" in text , text;
         arch = JacProgram.jac_file_formatter(
-            os.path.join(base, "arch.jac"), auto_lint=True
+            os.path.join(base, "archwire.jac"), auto_lint=True
         );
         assert "W3052"
             in [
@@ -381,21 +373,17 @@ test "jac arch init derives a wiring that covers the project" {
         }
     );
     try {
-        spec = WiringSpec(
-            root_dir=base, path=os.path.join(base, "arch.jac"), source=""
-        );
+        spec = WiringSpec(root_dir=base, path=os.path.join(base, "archwire.jac"));
         modules = [
             (name, spec.module_file(name) or "") for name in spec.project_modules()
         ];
-        rows = _collect_rows(spec, modules, False);
-        rules = _derive_rules(spec, rows);
-        assert rules == ["edge CoreFlows: core.* --> app.* | core.*;"] , rules;
-        text = _render_rules(rules) + "\n" + _render_blocks(rows);
-        assert "impl import core {" in text , text;
+        rows = _collect_rows(spec, modules);
+        text = _render_blocks(rows);
+        assert "graph import core {" in text , text;
         assert "util --> app.main { now as when }" in text , text;
         assert "util --> core.svc { now }" in text , text;
         assert "os" not in text , text;
-        with open(os.path.join(base, "arch.jac"), "w") as f {
+        with open(os.path.join(base, "archwire.jac"), "w") as f {
             f.write(text);
         }
         prog = _compile(base, "app/main.jac");
@@ -407,10 +395,10 @@ test "jac arch init derives a wiring that covers the project" {
 }
 
 
-test "a wire seals its provider, so a provider no rule names admits nothing" {
+test "rules are optional: a provider no rule names flows anywhere under archwire.jac" {
     base = _standard(
         arch=(
-            "impl import core {\n"
+            "graph import core {\n"
             "    util --> core.svc { now }\n"
             "    svc --> app.main { serve }\n"
             "    util --> app.main { now as when }\n"
@@ -418,21 +406,18 @@ test "a wire seals its provider, so a provider no rule names admits nothing" {
         )
     );
     try {
-        prog = _compile(base, "arch.jac");
-        assert _errors(prog) == ["E2090", "E2090", "E2090"] , _errors(prog);
-        text = str(prog.errors_had[0].pretty_print());
-        assert "no rule names it" in text , text;
-        assert "edge CoreFlows: core.* --> core.*;" in text , text;
+        assert _errors(_compile(base, "archwire.jac")) == [];
+        assert _errors(_compile(base, "app/main.jac")) == [];
     } finally {
         shutil.rmtree(base, ignore_errors=True);
     }
 }
 
 
-test "a rule pattern seals the modules it matches in both directions" {
+test "a rule restricts only the providers it names" {
     base = _standard(
         arch=(
-            "impl import {\n"
+            "graph import {\n"
             "    edge CoreInternal: core.* --> core.*;\n"
             "    edge AppOverCore: core.* --> app.*;\n"
             "}\n"
@@ -452,43 +437,32 @@ test "a rule pattern seals the modules it matches in both directions" {
             );
         }
         free = _compile(base, "extra/free.jac");
-        assert _errors(free) == ["E2090"] , _errors(free);
+        assert sorted(_errors(free)) == ["E1144", "E2090"] , _errors(free);
     } finally {
         shutil.rmtree(base, ignore_errors=True);
     }
 }
 
 
-test "[arch] closed seals modules arch.jac never names, even before arch.jac exists" {
+test "a directory without archwire.jac is ordinary code, and [arch] in jac.toml is an error" {
+    import from jaclang.project.config { JacConfig }
     base = _project(
         {
             "core/util.jac": _UTIL,
             "core/svc.jac": "import from core.util { now }\n\n" + _SVC
-        },
-        toml_extra="\n[arch]\nclosed = [\"core.*\"]\n"
+        }
     );
     try {
-        prog = _compile(base, "core/svc.jac");
-        assert _errors(prog) == ["E1144", "E2090"] , _errors(prog);
-        with open(os.path.join(base, "arch.jac"), "w") as f {
-            f.write(
-                "impl import {\n    edge CoreFlows: core.* --> core.*;\n}\n"
-                "\nimpl import core {\n    util --> core.svc { now }\n}\n"
+        assert _errors(_compile(base, "core/svc.jac")) == [];
+        raised = "";
+        try {
+            JacConfig.from_toml_str(
+                "[project]\nname = \"x\"\n\n[arch]\nclosed = [\"*\"]\n"
             );
+        } except ValueError as e {
+            raised = str(e);
         }
-        with open(os.path.join(base, "core", "svc.jac"), "w") as f {
-            f.write(_SVC);
-        }
-        prog2 = _compile(base, "core/svc.jac");
-        assert _errors(prog2) == [] , _errors(prog2);
-        os.makedirs(os.path.join(base, "extra"), exist_ok=True);
-        with open(os.path.join(base, "extra", "open.jac"), "w") as f {
-            f.write(
-                "import from core.util { now }\n\ndef t -> str {\n    return now();\n}\n"
-            );
-        }
-        prog3 = _compile(base, "extra/open.jac");
-        assert _errors(prog3) == ["E2090"] , _errors(prog3);
+        assert "archwire.jac" in raised , raised;
     } finally {
         shutil.rmtree(base, ignore_errors=True);
     }
@@ -507,11 +481,14 @@ test "a function-level project import in a sealed module is an error" {
     try {
         prog = _compile(base, "app/main.jac");
         assert _errors(prog) == ["E2094"] , _errors(prog);
-        with open(os.path.join(base, "arch.jac"), "w") as f {
+        with open(os.path.join(base, "archwire.jac"), "w") as f {
             f.write(
                 _ARCH.replace(
-                    "}\n\nimpl import core",
-                    "    edge Lazy: core.other --> any;\n}\n\nimpl import core"
+                    "    util --> core.svc { now }\n",
+                    "    util --> core.svc { now }\n    other --> extra.lazy.t { helper }\n"
+                ).replace(
+                    "    edge AppInternal: app.* --> app.*;\n",
+                    "    edge AppInternal: app.* --> app.*;\n    edge Lazy: core.other --> extra.*;\n"
                 )
             );
         }
@@ -529,7 +506,7 @@ test "a function-level project import in a sealed module is an error" {
 }
 
 
-test "sealing diagnostics ignore inline suppression" {
+test "wiring diagnostics ignore inline suppression" {
     base = _standard(
         svc=(
             "import from core.other { helper }  # jac:ignore[E1144]\n"
@@ -548,25 +525,38 @@ test "sealing diagnostics ignore inline suppression" {
 }
 
 
-test "jac arch init with a scope wires a package's dependency cone" {
-    base = _project(
-        {
-            "core/util.jac": _UTIL,
-            "core/other.jac": _OTHER,
-            "core/svc.jac": "import from core.util { now }\n\n" + _SVC,
-            "app/main.jac": "import from core.svc { serve }\n\ndef greet -> str {\n    return serve();\n}\n",
-            "extra/tool.jac": "import from core.other { helper }\n\ndef t -> int {\n    return helper();\n}\n"
-        }
+test "a nested archwire.jac is its own boundary with names relative to it" {
+    base = _standard(
+        svc="import from lib.a { f }\n\ndef serve -> str {\n    return now() + str(f());\n}\n"
     );
     try {
-        spec = WiringSpec(
-            root_dir=base, path=os.path.join(base, "arch.jac"), source=""
-        );
-        modules = [
-            (name, spec.module_file(name) or "") for name in spec.project_modules()
-        ];
-        cone = sorted([name for (name, _p) in _dependency_cone(spec, modules, "app")]);
-        assert cone == ["app.main", "core.svc", "core.util"] , cone;
+        os.makedirs(os.path.join(base, "lib"), exist_ok=True);
+        with open(os.path.join(base, "lib", "archwire.jac"), "w") as f {
+            f.write("graph import {\n    a --> b { f }\n}\n");
+        }
+        with open(os.path.join(base, "lib", "a.jac"), "w") as f {
+            f.write("def f -> int {\n    return 1;\n}\n");
+        }
+        with open(os.path.join(base, "lib", "b.jac"), "w") as f {
+            f.write("def g -> int {\n    return f();\n}\n");
+        }
+        assert _errors(_compile(base, "lib/b.jac")) == [];
+        assert _errors(_compile(base, "core/svc.jac")) == [];
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+test "wiring aimed at modules that do not exist is inert" {
+    base = _standard(
+        arch=_ARCH + "\ngraph import vanished {\n    x --> vanished.y { z }\n}\n"
+    );
+    try {
+        arch = _compile(base, "archwire.jac");
+        assert _errors(arch) == [] , _errors(arch);
+        assert _warnings(arch).count("W2084") == 2 , _warnings(arch);
+        assert _errors(_compile(base, "app/main.jac")) == [];
     } finally {
         shutil.rmtree(base, ignore_errors=True);
     }
@@ -594,6 +584,79 @@ test "a written import a wire duplicates is emitted once" {
             "W3053"
         )
             == 1;
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+test "jac arch init refuses a directory whose modules a parent archwire.jac feeds" {
+    base = _standard();
+    try {
+        assert _arch_init(False, False, os.path.join(base, "core")) == 1;
+        assert not os.path.exists(os.path.join(base, "core", "archwire.jac"));
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+test "a written import in a nested function does not cancel its parent's wire" {
+    base = _standard(
+        arch=(
+            "graph import core {\n"
+            "    util --> app.main.greet { now as when }\n"
+            "    util --> app.main.greet.inner { now as when }\n"
+            "}\n"
+        ),
+        main=(
+            "def greet -> str {\n"
+            "    def inner -> str {\n"
+            "        import from core.util { now as when }\n"
+            "        return when();\n"
+            "    }\n"
+            "    return when() + inner();\n"
+            "}\n"
+            "\n"
+            "with entry {\n"
+            "    print(greet());\n"
+            "}\n"
+        )
+    );
+    try {
+        prog = _compile(base, "app/main.jac");
+        assert _errors(prog) == [] , _errors(prog);
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+test "the strip removes a function's wired import that a nested function repeats" {
+    base = _standard(
+        arch="graph import core {\n    util --> app.main.greet { now as when }\n}\n",
+        main=(
+            "def greet -> str {\n"
+            "    import from core.util { now as when }\n"
+            "    def inner -> str {\n"
+            "        import from core.util { now as when }\n"
+            "        return when();\n"
+            "    }\n"
+            "    return when() + inner();\n"
+            "}\n"
+            "\n"
+            "with entry {\n"
+            "    print(greet());\n"
+            "}\n"
+        )
+    );
+    try {
+        prog = JacProgram.jac_file_formatter(
+            os.path.join(base, "app", "main.jac"), auto_lint=True
+        );
+        text = prog.mod.main.gen.jac;
+        assert text.count("import from core.util") == 1 , text;
+        assert text.index("def inner") < text.index("import from core.util") , text;
     } finally {
         shutil.rmtree(base, ignore_errors=True);
     }
