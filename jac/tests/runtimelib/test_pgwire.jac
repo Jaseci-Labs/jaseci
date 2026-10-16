@@ -327,7 +327,9 @@ test "deallocating one statement forgets only that one" {
                 "SELECT name FROM pg_prepared_statements WHERE statement LIKE :m",
                 m="%drop_marker%"
             )[0][0];
-            conn.run(f'DEALLOCATE "{dropped}"');
+            conn.run(
+                f'DEALLOCATE "{dropped}"; -- one statement, quoted, with a comment'
+            );
             assert conn.run("SELECT :x::int AS drop_marker", x=2) == [(2, )];
             assert conn.run("SELECT :x::int AS keep_marker", x=2) == [(2, )];
             assert _prepared(conn, "keep_marker") == 1;
@@ -400,6 +402,29 @@ test "a statement dropped behind the client's back is prepared again outside a t
             assert conn.run("SELECT :x::int AS dropped_marker", x=1) == [(1, )];
             conn.run("DO $$ BEGIN EXECUTE 'DEALLOCATE ALL'; END $$");
             assert conn.run("SELECT :x::int AS dropped_marker", x=3) == [(3, )];
+        } finally {
+            conn.close();
+        }
+    }
+}
+
+
+test "an unquoted deallocation with a trailing semicolon forgets that statement" {
+    with TemporaryDirectory() as td {
+        conn = _live_conn(td);
+        try {
+            conn.run("SELECT :x::int AS bare_marker", x=1);
+            name = conn.run(
+                "SELECT name FROM pg_prepared_statements WHERE statement LIKE :m",
+                m="%bare_marker%"
+            )[0][0];
+            conn.run(f"DEALLOCATE PREPARE {name.upper()};");
+            conn.run("BEGIN");
+            try {
+                assert conn.run("SELECT :x::int AS bare_marker", x=2) == [(2, )];
+            } finally {
+                conn.run("ROLLBACK");
+            }
         } finally {
             conn.close();
         }

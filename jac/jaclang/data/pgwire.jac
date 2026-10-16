@@ -1,6 +1,7 @@
 import base64;
 import hashlib;
 import hmac;
+import re;
 import logging;
 import secrets as _pysecrets;
 import socket;
@@ -12,6 +13,11 @@ glob logger = logging.getLogger(__name__),
      READ_CHUNK = 65536,
      REWRITE_CACHE_SIZE = 1024,
      STATEMENT_CACHE_SIZE = 512,
+     _SQL_COMMENT = re.compile('--[^\\n]*|/\\*.*?\\*/', re.S),
+     _DEALLOCATE_ONE = re.compile(
+         '\\s*DEALLOCATE\\s+(?:PREPARE\\s+)?(?:"((?:[^"]|"")+)"|([A-Za-z_][A-Za-z0-9_$]*))\\s*;?\\s*$',
+         re.I
+     ),
      __all__ = ['PgWireConnection', 'PgWireError'];
 
 

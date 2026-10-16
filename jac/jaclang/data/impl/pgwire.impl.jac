@@ -408,8 +408,8 @@ impl PgWireConnection._handle_async(msg_type: str, payload: bytes) -> bool {
 impl PgWireConnection.run(sql: str, **params: any) -> list[any] {
     assert not self._closed , 'connection is closed';
     (pos_sql, args) = _named_to_positional(sql, params);
-    words = pos_sql.split();
-    verb = ' '.join(words[:3]).upper();
+    bare = _SQL_COMMENT.sub(' ', pos_sql);
+    verb = ' '.join(bare.split()[:3]).upper();
     drops_all = verb.startswith(
         ('DISCARD ALL', 'DEALLOCATE ALL', 'DEALLOCATE PREPARE ALL')
     );
@@ -514,7 +514,20 @@ impl PgWireConnection.run(sql: str, **params: any) -> list[any] {
                     self._stmts.clear();
                     self._evicted = [];
                 } else {
-                    gone = words[-1].strip('"');
+                    one = _DEALLOCATE_ONE.match(bare);
+                    if one is None {
+                        self._evicted = list(self._stmts.values());
+                        self._stmts.clear();
+                    }
+                    gone = '';
+                    if one is not None {
+                        quoted = one.group(1);
+                        if quoted {
+                            gone = quoted.replace('""', '"');
+                        } else {
+                            gone = (one.group(2) or '').lower();
+                        }
+                    }
                     for (text, held) in list(self._stmts.items()) {
                         if held == gone {
                             del self._stmts[text];
