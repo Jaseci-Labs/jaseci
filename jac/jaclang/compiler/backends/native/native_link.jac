@@ -220,11 +220,16 @@ def clib_symbol_lib_map(
     return symbol_lib_map;
 }
 
-def _run_lld(args: list[str], what: str) {
+def _run_lld(args: list[str], what: str) -> list[str] {
     (code, text) = llvm.lld_link(args);
     if code != 0 {
         raise NativeLinkError(f"{what} link failed:\n{text.strip()}");
     }
+    return [
+        line
+        for line in text.splitlines()
+        if "warning:" in line
+    ];
 }
 
 def _write_objects(work: str, objects: list[bytes], suffix: str) -> list[str] {
@@ -250,26 +255,40 @@ def _undefined_symbols(objects: list[bytes]) -> list[str] {
     return sorted(undefined - defined);
 }
 
-def link_native(job: NativeLinkJob) {
-    """Link one native artifact with LLD, in this process.""";
-    os.makedirs(
-        os.path.dirname(os.path.abspath(job.output_path)) or ".", exist_ok=True
-    );
+def link_native(job: NativeLinkJob) -> list[str] {
+    """Link one native artifact with LLD, in this process, and return the
+    warnings LLD printed. The image is written beside the destination and
+    moved into place only once the link succeeded, so a reader never sees a
+    partial file.""";
+    final = job.output_path;
+    directory = os.path.dirname(os.path.abspath(final)) or ".";
+    os.makedirs(directory, exist_ok=True);
+    if not job.soname {
+        job.soname = os.path.basename(final);
+    }
+    staged = os.path.join(directory, f".{os.path.basename(final)}.{os.getpid()}.lld");
     work = tempfile.mkdtemp(prefix="jac-link-");
+    job.output_path = staged;
     try {
         if job.platform == "elf" {
-            _link_elf(job, work);
+            warnings = _link_elf(job, work);
         } elif job.platform == "macho" {
-            _link_macho(job, work);
+            warnings = _link_macho(job, work);
         } elif job.platform == "pe" {
-            _link_pe(job, work);
+            warnings = _link_pe(job, work);
         } else {
             raise NativeLinkError(f"no native linker for the {job.platform} format");
         }
+        os.chmod(staged, 0o755);
+        os.replace(staged, final);
     } finally {
+        job.output_path = final;
         shutil.rmtree(work, ignore_errors=True);
+        if os.path.exists(staged) {
+            os.unlink(staged);
+        }
     }
-    os.chmod(job.output_path, 0o755);
+    return warnings;
 }
 
 def _elf_interpreter(triple: str) -> str {
@@ -319,7 +338,7 @@ def _elf_stub_library(work: str, triple: str, soname: str, index: int) -> str {
     return stub;
 }
 
-def _link_elf(job: NativeLinkJob, work: str) {
+def _link_elf(job: NativeLinkJob, work: str) -> list[str] {
     inputs = _write_objects(work, job.objects, ".o");
     args = [
         "ld.lld",
@@ -347,12 +366,11 @@ def _link_elf(job: NativeLinkJob, work: str) {
         ];
         args += ["-static", "--warn-unresolved-symbols"];
         args += crt + inputs + job.archives + crtn;
-        _run_lld(args, "static ELF");
-        return;
+        return _run_lld(args, "static ELF");
     }
     args += ["-rpath", "$ORIGIN", "--enable-new-dtags"];
     if job.shared {
-        args += ["-shared", "-soname", job.soname or os.path.basename(job.output_path)];
+        args += ["-shared", "-soname", job.soname];
         script = os.path.join(work, "exports.map");
         with open(script, "w") as f {
             f.write("{\n  global:\n");
@@ -380,7 +398,7 @@ def _link_elf(job: NativeLinkJob, work: str) {
         index += 1;
     }
     args += inputs + job.archives;
-    _run_lld(args, "shared ELF" if job.shared else "ELF");
+    return _run_lld(args, "shared ELF" if job.shared else "ELF");
 }
 
 def _macho_version(triple: str, arch: str) -> str {
@@ -415,7 +433,17 @@ def _tbd(path: str, install_name: str, target: str, symbols: list[str]) {
     }
 }
 
-def _link_macho(job: NativeLinkJob, work: str) {
+def _macho_install_name(lib: str) -> str {
+    """A dylib named by a relative path loads from beside the binary, as an
+    ELF library does through RUNPATH $ORIGIN: `libraylib.dylib` is recorded
+    as `@loader_path/libraylib.dylib`.""";
+    if lib.startswith("/") or lib.startswith("@") {
+        return lib;
+    }
+    return f"@loader_path/{lib}";
+}
+
+def _link_macho(job: NativeLinkJob, work: str) -> list[str] {
     arch = MACHO_ARCH.get(triple_arch_of(job.triple), "arm64");
     version = _macho_version(job.triple, arch);
     target = f"{arch}-macos";
@@ -436,15 +464,14 @@ def _link_macho(job: NativeLinkJob, work: str) {
         "dynamic_lookup"
     ];
     if job.shared {
-        soname = job.soname or os.path.basename(job.output_path);
-        args += ["-dylib", "-install_name", f"@rpath/{soname}"];
+        args += ["-dylib", "-install_name", f"@rpath/{job.soname}"];
         for sym in job.export_symbols {
             args += ["-exported_symbol", "_" + sym];
         }
     }
     by_lib: dict[str, list[str]] = {};
     for lib in [MACHO_SYSTEM_DYLIB] + job.needed_libs {
-        by_lib.setdefault(lib, []);
+        by_lib.setdefault(_macho_install_name(lib), []);
     }
     for sym in _undefined_symbols(job.objects) {
         bare = sym[1:] if sym.startswith("_") else sym;
@@ -455,7 +482,7 @@ def _link_macho(job: NativeLinkJob, work: str) {
         if lib == "@process" {
             continue;
         }
-        by_lib.setdefault(lib, []).append(sym);
+        by_lib.setdefault(_macho_install_name(lib), []).append(sym);
     }
     index = 0;
     for lib in by_lib {
@@ -465,10 +492,10 @@ def _link_macho(job: NativeLinkJob, work: str) {
         index += 1;
     }
     args += inputs + job.archives;
-    _run_lld(args, "Mach-O dylib" if job.shared else "Mach-O");
+    return _run_lld(args, "Mach-O dylib" if job.shared else "Mach-O");
 }
 
-def _link_pe(job: NativeLinkJob, work: str) {
+def _link_pe(job: NativeLinkJob, work: str) -> list[str] {
     arch = triple_arch_of(job.triple);
     machine = PE_MACHINE.get(arch);
     if machine is None {
@@ -513,7 +540,7 @@ def _link_pe(job: NativeLinkJob, work: str) {
         index += 1;
     }
     args += inputs + job.archives;
-    _run_lld(args, "PE DLL" if job.shared else "PE");
+    return _run_lld(args, "PE DLL" if job.shared else "PE");
 }
 
 def link_wasm_module(job: WasmLinkJob) {

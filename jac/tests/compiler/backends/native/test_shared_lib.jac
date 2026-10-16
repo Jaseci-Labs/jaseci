@@ -608,6 +608,24 @@ test "PE dll has IMAGE_FILE_DLL, export directory, and a non-zero entry" {
 }
 
 
+test "a PE dll built through link_artifact keeps its entry point through optimization" {
+    # Windows links whole-program (bitcode) and optimizes; the DLL entry glue
+    # must stay external for lld-link's /entry to find it.
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d {
+        out = os.path.join(d, "libshared_export.dll");
+        link_shared(FIXTURE, "x86_64-pc-windows-msvc", out);
+        raw = Path(out).read_bytes();
+        e_lfanew = struct.unpack_from("<I", raw, 0x3C)[0];
+        chars = struct.unpack_from("<H", raw, e_lfanew + 4 + 18)[0];
+        assert chars & 0x2000 , "IMAGE_FILE_DLL characteristic not set";
+        opt = e_lfanew + 4 + 20;
+        assert struct.unpack_from("<I", raw, opt + 16)[0] != 0 , "DllMain entry point not set";
+        (_exp_rva, exp_sz) = struct.unpack_from("<II", raw, opt + 112);
+        assert exp_sz > 0 , "no export directory";
+    }
+}
+
+
 # ─── CLI shared-init regression ──────────────────────────────────────────────
 # The test helpers above build `__jac_shared_init` through the link plan's
 # glue, which names each unit's initializer from its interface. The old

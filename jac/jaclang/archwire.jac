@@ -2913,6 +2913,7 @@ graph import compiler.backends.native {
         MACHO_SYSTEM_DYLIB,
         NativeLinkError,
         NativeLinkJob,
+        PE_DLL_ENTRY,
         clib_needed_libs,
         clib_symbol_lib_map,
         floor_archives,

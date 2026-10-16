@@ -869,6 +869,7 @@ def optimize_whole_program(
             + [
                 SHARED_INIT_SYMBOL,
                 SHARED_MAIN_SYMBOL,
+                PE_DLL_ENTRY,
                 "jac_retain",
                 "jac_release",
                 "jac_str_new",
@@ -1217,7 +1218,7 @@ def link_artifact(
         static_musl=static_musl
     );
     try {
-        link_native(job);
+        warnings = link_native(job);
     } except NativeLinkError as e {
         message = str(e);
         if "__aarch64_" in message and atomics is None {
@@ -1230,6 +1231,13 @@ def link_artifact(
             );
         }
         raise LinkPlanError(message) from None;
+    }
+    for warning in warnings {
+        if log is not None {
+            log(f"  {warning}");
+        } else {
+            sys.stderr.write(warning + "\n");
+        }
     }
     if env_symmap_requested() {
         write_symbol_map(output_path);

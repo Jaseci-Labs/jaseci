@@ -16,7 +16,8 @@ import from tests.support { jac_command, TESTS_DIR }
 import from jaclang.compiler.backends.native.native_link {
     NativeLinkError,
     NativeLinkJob,
-    link_native
+    link_native,
+    musl_runtime
 }
 import from jaclang.compiler.backends.native.wasm_build { link_wasm_object }
 import from jaclang.compiler.backends.native.wasm_artifact { wasm_import_map }
@@ -128,15 +129,17 @@ test "a wasm module imports its host ABI from the host module and the rest from 
     assert "app_hook" in raised and "neither part of the" in raised , raised;
 }
 
-test "a failed link reports LLD's own message" {
+test "a failed link reports LLD's own message and leaves the old output in place" {
     with tempfile.TemporaryDirectory() as work {
+        out = os.path.join(work, "libmissing.so");
+        Path(out).write_bytes(b"previous build");
         raised = "";
         try {
             link_native(
                 NativeLinkJob(
                     platform="elf",
                     triple="x86_64-unknown-linux-gnu",
-                    output_path=os.path.join(work, "libmissing.so"),
+                    output_path=out,
                     shared=True,
                     archives=[os.path.join(work, "missing.a")],
                     export_symbols=["nothing"]
@@ -146,6 +149,70 @@ test "a failed link reports LLD's own message" {
             raised = str(e);
         }
         assert "missing.a" in raised , raised;
-        assert not os.path.exists(os.path.join(work, "libmissing.so"));
+        assert Path(out).read_bytes() == b"previous build" , "a failed link replaced the output";
+        assert sorted(os.listdir(work)) == ["libmissing.so"] , os.listdir(work);
+    }
+}
+
+"""Emit `ir` as a position-independent object for `triple`."""
+def _object(ir: str, triple: str) -> bytes {
+    llvm.initialize_all_targets();
+    llvm.initialize_all_asmprinters();
+    module = llvm.parse_assembly(f'target triple = "{triple}"\n' + ir);
+    tm = llvm.Target.from_triple(triple).create_target_machine(
+        opt=2, reloc="pic", codemodel="small"
+    );
+    return tm.emit_object(module);
+}
+
+test "a dylib named by a bare file name loads from beside the binary" {
+    triple = "arm64-apple-darwin";
+    relobj = _object(
+        "declare i32 @raylib_probe()\n"
+            + "define i32 @main() {\n  %r = call i32 @raylib_probe()\n  ret i32 %r\n}\n",
+        triple
+    );
+    with tempfile.TemporaryDirectory() as work {
+        out = os.path.join(work, "probe");
+        link_native(
+            NativeLinkJob(
+                platform="macho",
+                triple=triple,
+                output_path=out,
+                objects=[relobj],
+                needed_libs=["/usr/lib/libSystem.B.dylib", "libraylib.dylib"],
+                symbol_lib_map={"raylib_probe": "libraylib.dylib"}
+            )
+        );
+        raw = Path(out).read_bytes();
+        assert b"@loader_path/libraylib.dylib\x00" in raw , "bare dylib name not made loader-relative";
+    }
+}
+
+test "a static link's unresolved-symbol warnings reach the caller" {
+    triple = "x86_64-unknown-linux-gnu";
+    runtime = musl_runtime(triple);
+    if runtime is None {
+        return;
+    }
+    (crt, archives) = runtime;
+    relobj = _object(
+        "declare i32 @nowhere_defined()\n"
+            + "define i32 @main() {\n  %r = call i32 @nowhere_defined()\n  ret i32 %r\n}\n",
+        triple
+    );
+    with tempfile.TemporaryDirectory() as work {
+        warnings = link_native(
+            NativeLinkJob(
+                platform="elf",
+                triple=triple,
+                output_path=os.path.join(work, "probe"),
+                objects=[relobj],
+                crt_objects=crt,
+                archives=archives,
+                static_musl=True
+            )
+        );
+        assert any("nowhere_defined" in w for w in warnings) , warnings;
     }
 }
