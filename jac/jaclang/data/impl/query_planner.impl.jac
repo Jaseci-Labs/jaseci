@@ -98,7 +98,11 @@ impl _sql_pairs(
         }
         tail = list(cq.residual.get(last) or []);
     }
-    if len(origin_ids) == 1 and eff.limit is None and not eff.offset {
+    if upto > 0
+        and len(origin_ids) == 1
+        and eff.limit is None
+        and not eff.offset
+        and mem.batching() {
         key = (cq.sql, _param_key(cq.params));
         hit = mem.hop_cached(key, origin_ids[0]);
         if hit is not None {

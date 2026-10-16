@@ -193,6 +193,7 @@ obj Session(Memory) {
                 tuple[tuple[int, int], dict[UUID, list[tuple[any, any]]]]
             ] postinit,
         _hop_siblings: dict[UUID, tuple[UUID, ...]] postinit,
+        _hop_groups_token: (tuple[int, int] | None) postinit,
         _queued: list[UUID] postinit,
         _last_conflict: set[UUID] postinit,
         _scan_clean: bool postinit,
@@ -251,6 +252,8 @@ obj Session(Memory) {
     def reset_fetch_count -> None;
     def get_fetch_count -> int;
     def _hop_token -> (tuple[int, int] | None);
+    def batching -> bool;
+    def _drop_hop_state -> None;
     def note_siblings(ids: list[UUID]) -> None;
     def hop_siblings(origin: UUID) -> tuple[UUID, ...];
     def hop_cached(key: any, origin: UUID) -> (list[tuple[any, any]] | None);

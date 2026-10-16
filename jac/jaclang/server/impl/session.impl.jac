@@ -437,6 +437,7 @@ impl Session.postinit -> None {
     self._hop_writes = 0;
     self._hop_cache = {};
     self._hop_siblings = {};
+    self._hop_groups_token = None;
     self._queued = [];
     self._last_conflict = set();
     self._scan_clean = False;
@@ -685,6 +686,7 @@ impl Session.abort -> None {
 
 
 impl Session._forget_loaded -> None {
+    self._drop_hop_state();
     for (id, anchor) in list(self.__mem__.items()) {
         if not anchor.is_populated() or not anchor.persistent {
             continue;
@@ -1409,6 +1411,7 @@ impl Session.close -> None {
     self._deleted.clear();
     self._rows.clear();
     self._lost = False;
+    self._drop_hop_state();
 
     sv_store_closed(self);
 }
@@ -1430,9 +1433,29 @@ impl Session._hop_token -> (tuple[int, int] | None) {
 }
 
 
+impl Session.batching -> bool {
+    return self._hop_token() is not None;
+}
+
+
+impl Session._drop_hop_state -> None {
+    self._hop_siblings = {};
+    self._hop_cache = {};
+    self._hop_groups_token = None;
+}
+
+
 impl Session.note_siblings(ids: list[UUID]) -> None {
     if len(ids) < 2 {
         return;
+    }
+    token = self._hop_token();
+    if token is None {
+        return;
+    }
+    if token != self._hop_groups_token {
+        self._hop_siblings = {};
+        self._hop_groups_token = token;
     }
     group = tuple(ids[:HOP_BATCH_LIMIT]);
     for i in group {
@@ -1442,6 +1465,9 @@ impl Session.note_siblings(ids: list[UUID]) -> None {
 
 
 impl Session.hop_siblings(origin: UUID) -> tuple[UUID, ...] {
+    if self._hop_groups_token is None or self._hop_groups_token != self._hop_token() {
+        return ();
+    }
     return self._hop_siblings.get(origin, ());
 }
 

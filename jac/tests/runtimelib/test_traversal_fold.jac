@@ -383,3 +383,58 @@ test "a bounded hop from sibling nodes keeps each node's own bound" {
         }
     }
 }
+
+
+test "batching stays off where a hop's answer is not fixed, and ends with the transaction" {
+    import from jaclang.data.query_planner { resolve_query_prefix }
+    import from jaclang.data.store { TxnIsolation }
+    import from jaclang.runtime.graph_query { GraphQuery, QHop }
+    import from jaclang.server.session { Session }
+    with TemporaryDirectory() as td {
+        old = JacRuntime.exec_ctx;
+        ctx = _ctx(td);
+        JacRuntime.exec_ctx = ctx;
+        try {
+            _seed_nested(4, 2);
+            ctx.mem.commit();
+        } finally {
+            JacRuntime.exec_ctx = old;
+            ctx.close();
+        }
+        ctx2 = _ctx(td);
+        JacRuntime.exec_ctx = ctx2;
+        try {
+            board = [root-->[?:FBoard]][0];
+            items = list([board->:FHas:->[?:FItem]]);
+            first = items[0];
+            sess = ctx2.mem;
+            assert isinstance(sess, Session);
+            prefix = resolve_query_prefix(
+                sess, GraphQuery([first], hops=[QHop(dir=2, `edge=FSubOf, nd=FSub)]), 0
+            );
+            assert prefix == [first.__jac__.id] , prefix;
+            assert len(sess.hop_siblings(first.__jac__.id)) == 4;
+            sess.abort();
+            assert sess.hop_siblings(first.__jac__.id) == () , (
+                "a sibling group outlived the transaction that read it"
+            );
+            store = sess.store;
+            assert store is not None;
+            store.begin(TxnIsolation.READ_COMMITTED);
+            try {
+                again = list([[root-->[?:FBoard]][0]->:FHas:->[?:FItem]]);
+                assert not sess.batching() , "read committed hops must not batch";
+                for it in again {
+                    base = _as_any(it).rank * 100;
+                    ranks = sorted([_as_any(x).rank for x in [it->:FSubOf:->[?:FSub]]]);
+                    assert ranks == [base, base + 1] , ranks;
+                }
+            } finally {
+                store.rollback();
+            }
+        } finally {
+            JacRuntime.exec_ctx = old;
+            ctx2.close();
+        }
+    }
+}
