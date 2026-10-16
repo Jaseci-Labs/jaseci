@@ -4,14 +4,7 @@ import sys;
 import types;
 import from pathlib { Path }
 import from ctypes { CDLL }
-import from jaclang.cli.console { console, use_line_buffered_output }
-import from jaclang.cli.commands.cli_helpers { proc_file as _proc_file }
-import from jaclang.server.assembly {
-    gateway_colocates as _gateway_colocates,
-    service_apps as _service_apps
-}
-import from jaclang.project.kinds { RunPlan }
-import type from jaclang.project.config { AppConfig, JacConfig }
+
 import type from importlib.metadata { EntryPoint }
 
 def _discover_config_from_file(filename: str) -> None {
@@ -659,7 +652,6 @@ def _cli_port(text: str) -> (int | None) {
 def _jab_native_artifact(
     img_root: Path, filename: str, need_exec: bool = False
 ) -> (str | None) {
-    import from jaclang.server.sealed_serve { NATIVE_DIR_REL }
     try {
         import jaclang.compiler.backends.native.llvm.binding as llvm;
         triple = str(llvm.get_default_triple());
@@ -677,14 +669,11 @@ def _jab_native_artifact(
 }
 
 def _jab_native_bin(img_root: Path, entry_rel: str) -> (str | None) {
-    import from jaclang.jac0core.ext_registry { base_stem }
     stem = base_stem(os.path.basename(entry_rel));
     return _jab_native_artifact(img_root, stem, need_exec=True);
 }
 
 def _jab_native_lib(img_root: Path, entry_rel: str) -> (str | None) {
-    import from jaclang.jac0core.ext_registry { base_stem }
-    import from jaclang.server.sealed_serve { native_lib_name }
     stem = base_stem(os.path.basename(entry_rel));
     return _jab_native_artifact(img_root, native_lib_name(stem));
 }
@@ -695,7 +684,7 @@ class NativeEntryStartedError(Exception) {}
 
 def _jab_interop_callbacks(lib_path: str) -> list[dict[str, any]] {
     import json;
-    import from jaclang.server.sealed_serve { interop_record_path }
+
     record = interop_record_path(lib_path);
     if not record.is_file() {
         return [];
@@ -723,11 +712,7 @@ def _run_native_lib(
 ) -> (int | None) {
     callbacks = callbacks or [];
     import ctypes;
-    import from jaclang.runtime.interop_bridge {
-        NativeCallback,
-        NativeLibrary,
-        resolve_sv_callbacks
-    }
+
     bindings = [
         NativeCallback(
             name=cb["name"],

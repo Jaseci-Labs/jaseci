@@ -15822,7 +15822,9 @@ graph import server {
     sealed_serve --> cli.commands.execution._jab_native_bin { NATIVE_DIR_REL }
     sealed_serve --> cli.commands.execution._jab_native_artifact { NATIVE_DIR_REL }
     sealed_serve --> cli.commands.execution._jab_native_lib { native_lib_name }
-    sealed_serve --> cli.commands.execution._jab_interop_callbacks { interop_record_path }
+    sealed_serve --> cli.commands.execution._jab_interop_callbacks {
+        interop_record_path
+    }
     sealed_serve --> client.artifact.client_output_dir { client_dist_for }
     sealed_serve --> client.artifact.prebuilt_bundle {
         client_dist_for,
@@ -15850,10 +15852,7 @@ graph import server {
     sealed_serve --> dist.precompile_bytecode.seal_runtime_closure {
         SERVE_MANIFEST_REL
     }
-    sealed_serve --> dist.seal.bake_native_payloads {
-        NATIVE_DIR_REL,
-        native_lib_name
-    }
+    sealed_serve --> dist.seal.bake_native_payloads { NATIVE_DIR_REL, native_lib_name }
     sealed_serve --> dist.seal.bake_serve_payloads {
         CLIENT_DIST_REL,
         SERVE_MANIFEST_REL

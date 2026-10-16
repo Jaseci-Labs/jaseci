@@ -727,7 +727,7 @@ def callback_glue_ir(plan: LinkPlan) -> str {
     if not plan.callback_bindings {
         return "";
     }
-    import from jaclang.compiler.backends.native.link_glue { bind_shared_callbacks }
+
     (bindings, declarations) = resolved_callback_bindings(plan);
     if not bindings {
         return "";

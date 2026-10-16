@@ -139,9 +139,6 @@ def ensure_client_dist(config: any, entry_file: Path) -> (Path | None) {
 
 def bake_native_payloads(config: any, pkg_copy: Path, app: str = "") -> bool {
     import os;
-    import from jaclang.jac0core.ext_registry { base_stem }
-    import from jaclang.compiler.placement.placement_solver { native_default_path_ok }
-    import from jaclang.server.sealed_serve { NATIVE_DIR_REL, native_lib_name }
 
     entry_file = resolve_entry_file(config, app);
     if entry_file is None or not native_default_path_ok(str(entry_file)) {
@@ -158,7 +155,7 @@ def bake_native_payloads(config: any, pkg_copy: Path, app: str = "") -> bool {
     out_dir = pkg_copy / NATIVE_DIR_REL / triple;
     out_dir.mkdir(parents=True, exist_ok=True);
     console.print(f"  Compiling native binary for {triple}", style="muted");
-    import from jaclang.cli.commands.native_build { native_build_sealed_pair }
+
     rc = native_build_sealed_pair(
         filename=str(entry_file),
         exe_output=str(out_dir / stem),

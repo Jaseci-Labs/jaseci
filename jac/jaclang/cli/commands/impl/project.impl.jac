@@ -1146,11 +1146,7 @@ impl update(
     if pypi {
         return _update_pypi(config, packages, dev, ctx);
     }
-    import from jaclang.packages.commands {
-        PYPI_HINT,
-        install_project,
-        split_package_specs
-    }
+
     (specs, stray) = split_package_specs(packages if packages is not None else []);
     if stray {
         console.error(f"Not Jac package names: {', '.join(stray)}", hint=PYPI_HINT);

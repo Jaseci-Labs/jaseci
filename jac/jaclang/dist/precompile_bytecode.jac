@@ -823,13 +823,6 @@ def app_metadata(pkg_path: Path, pkg_name: str, app: str = "") -> dict[str, any]
     if not (pkg_path / "jac.toml").is_file() {
         return {};
     }
-    import from jaclang.project.config { get_config_for_path }
-    import from jaclang.project.kinds { resolve_app_kind, resolve_entry }
-    import from jaclang.server.sealed_serve {
-        CLIENT_DIST_REL,
-        NATIVE_DIR_REL,
-        native_lib_suffix
-    }
 
     config = get_config_for_path(pkg_path);
     if config is None {
