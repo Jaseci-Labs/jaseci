@@ -109,7 +109,8 @@ enum NarrowingKind {
     TYPE_IS = "type_is",
     TYPE_GUARD = "type_guard",
     MEMBERSHIP_IN = "membership_in",
-    MEMBERSHIP_NOT_IN = "membership_not_in"
+    MEMBERSHIP_NOT_IN = "membership_not_in",
+    MEMBERSHIP_KEY = "membership_key"
 }
 
 enum EndpointVerdict {
@@ -588,7 +589,10 @@ walker TypeEvaluator {
     def validate_call_args(expr: FuncCall) -> TypeBase;
     def _validate_call_type(expr: FuncCall, caller_type: TypeBase) -> TypeBase;
     def _evaluate_call_args(expr: FuncCall) -> None;
-    def _container_value_type(value_type: TypeBase, at: Expr) -> TypeBase;
+    def _container_value_type(
+        value_type: TypeBase, at: Expr, widen: bool = False
+    ) -> TypeBase;
+
     def _make_coroutine_type(inner: TypeBase) -> TypeBase;
     def _is_awaitable_type(t: TypeBase) -> bool;
     def _unwrap_awaitable_type(t: TypeBase, node_: UniNode) -> TypeBase;
@@ -765,6 +769,7 @@ walker TypeEvaluator {
 
     def _narrow_type_to(base_type: TypeBase, narrow_type: TypeBase) -> TypeBase | None;
     def _narrow_member_to(member: TypeBase, narrow_type: TypeBase) -> TypeBase | None;
+    def _never_holds_none(base_type: TypeBase) -> bool;
     def _narrow_type_by_equality(
         base_type: TypeBase, compared: TypeBase
     ) -> TypeBase | None;

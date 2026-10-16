@@ -677,3 +677,54 @@ test "gap 56 keyword param does not cascade into E1051" {
         f"'too many positional arguments' (E1051). Got: {msgs}"
     );
 }
+
+# =========================================================================
+# Gap #57: a container literal kept each enum member's literal type, so
+# `{Op.LT: "<", Op.GT: ">"}` was a dict keyed by `<Op.LT> | <Op.GT>`. Indexing
+# it with an `Op`, or appending an `Op` to `[Op.LT, Op.GT]`, matched nothing
+# and typed as Unknown. An unconstrained list, set or dict literal widens its
+# members to their enum class, as it already widens other literals.
+# =========================================================================
+test "gap 57 container literals widen enum members to their class" {
+    program = compile_and_check("checker_enum_member_containers.jac");
+    msgs = [str(e) for e in program.errors_had];
+    assert len(msgs) == 1 , f"Gap #57: expected only the str-to-int error. Got: {msgs}";
+    assert "parameter 'n' of type int" in msgs[0] , msgs;
+}
+
+# =========================================================================
+# Gap #58: a subscript whose index no `__getitem__` signature accepts typed
+# as an undiagnosed Unknown, so the mismatch surfaced at the next use as
+# "Cannot assign <Unknown> to parameter ...". The rejected index is reported
+# where it is written, as a class subscript already was, and nothing
+# downstream cascades from it. A `k in container` check narrows `k` to the
+# container's key type, so a guarded subscript is not rejected.
+# =========================================================================
+test "gap 58 a rejected subscript index is reported at the index" {
+    program = compile_and_check("checker_subscript_key_mismatch.jac");
+    msgs = [str(e) for e in program.errors_had];
+    assert len(msgs) == 1 , f"Gap #58: expected one error at the index; `in` checks narrow the key. Got: {msgs}";
+    assert "parameter 'key' of type int" in msgs[0] , msgs;
+    warns = [
+        str(w)
+        for w in program.warnings_had
+        if "W1051" in str(w)
+    ];
+    assert not warns , f"Gap #58: the diagnosed subscript also warned: {warns}";
+}
+
+
+# =========================================================================
+# Gap #59: a positive `is None` check on a type that cannot hold None
+# narrowed it to NoneType, and a path whose every predecessor narrowed to
+# Never read as "not narrowed", so the join fell back to the declared type.
+# Inside an `isinstance` block the NoneType arm leaked into the join and
+# rejected a later subscript. The impossible arm is Never, a join drops it,
+# and attribute access or a call on Never is Never.
+# =========================================================================
+test "gap 59 an is None check on a type that cannot be None narrows to Never" {
+    program = compile_and_check("checker_none_check_on_non_optional.jac");
+    msgs = [str(e) for e in program.errors_had];
+    assert len(msgs) == 1 , f"Gap #59: expected only the still-typed error. Got: {msgs}";
+    assert "Cannot assign" in msgs[0] and "int" in msgs[0] , msgs;
+}

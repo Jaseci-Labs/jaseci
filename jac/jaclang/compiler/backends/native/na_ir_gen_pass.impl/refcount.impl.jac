@@ -3348,8 +3348,13 @@ impl NaIRGenPass._emit_str_parts_cmp(
     sign = bld.phi(i32, name="sord");
     sign.add_incoming(s_ge, ge_end_bb);
     sign.add_incoming(s_lt, lt_end_bb);
-    _sym = {Tok.LT: "<", Tok.GT: ">", Tok.LTE: "<=", Tok.GTE: ">="}[op];
-    return bld.icmp_signed(_sym, sign, zero32, name="scmp3");
+    comparisons: dict[str, str] = {
+        Tok.LT: "<",
+        Tok.GT: ">",
+        Tok.LTE: "<=",
+        Tok.GTE: ">="
+    };
+    return bld.icmp_signed(comparisons[op], sign, zero32, name="scmp3");
 }
 
 impl NaIRGenPass._nogc_str_free_owned(val: ir.Value) -> None {
