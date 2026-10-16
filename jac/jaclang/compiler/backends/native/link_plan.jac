@@ -14,7 +14,8 @@ enum ArtifactKind {
     JIT = "jit"
 }
 
-glob LIBC_SHARED_NAMES: tuple[str, ...] = ("libc.so.6", "libm.so.6");
+glob LIBC_SHARED_NAMES: tuple[str, ...] = ("libc.so.6", "libm.so.6"),
+     EXECUTABLE_ENTRY_SYMBOLS: list[str] = ["main", "_start", "_jac_win_start"];
 
 class LinkPlanError(RuntimeError) {}
 
@@ -878,7 +879,9 @@ def optimize_whole_program(
         internalize_native_implementation(merged, exports);
     }
     if kind == ArtifactKind.EXECUTABLE {
-        mpm.add_internalize_pass();
+        """The entry points stay external: the linker resolves the C runtime's
+        `main` and the image's entry symbol by name across objects.""";
+        internalize_native_implementation(merged, EXECUTABLE_ENTRY_SYMBOLS);
     }
     mpm.run(merged, pb);
 }

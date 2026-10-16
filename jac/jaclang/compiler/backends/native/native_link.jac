@@ -325,6 +325,10 @@ def _link_elf(job: NativeLinkJob, work: str) {
         "--hash-style=both"
     ];
     if job.static_musl {
+        """The C floor archives are built against glibc, and a few of their
+        members reference glibc-only symbols (`getcontext`, `fopen64`) on
+        paths a static musl program never takes; those resolve to 0 with a
+        warning, as they always have.""";
         crt = [p for p in job.crt_objects if os.path.basename(p) != "crtn.o"];
         crtn = [p for p in job.crt_objects if os.path.basename(p) == "crtn.o"];
         args += ["-static", "--warn-unresolved-symbols"];
