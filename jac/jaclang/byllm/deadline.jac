@@ -4,6 +4,8 @@ import threading;
 import time;
 import from typing { Generator }
 
+glob _STREAM_BUFFER: int = 64;
+
 obj CallDeadline {
     has budget: float | None = None,
         model: str = "",
@@ -47,21 +49,39 @@ obj CallDeadline {
             yield from stream;
             return;
         }
-        items: queue.Queue[tuple[any, Exception | None]] = queue.Queue();
+        items: queue.Queue[tuple[any, Exception | None]] = queue.Queue(
+            maxsize=_STREAM_BUFFER
+        );
+        stopped = threading.Event();
         finished = object();
+
+        def deliver(slot: tuple[any, Exception | None]) -> bool {
+            while not stopped.is_set() {
+                try {
+                    items.put(slot, timeout=0.1);
+                    return True;
+                } except queue.Full {}
+            }
+            return False;
+        }
 
         def pump {
             try {
                 for item in stream {
-                    items.put((item, None));
+                    if not deliver((item, None)) {
+                        return;
+                    }
                 }
-                items.put((finished, None));
+                deliver((finished, None));
             } except Exception as e {
-                items.put((None, e));
+                deliver((None, e));
             }
         }
         threading.Thread(
-            target=contextvars.copy_context().run, args=(pump, ), daemon=True
+            target=contextvars.copy_context().run,
+            args=(pump, ),
+            name="byllm-stream",
+            daemon=True
         ).start();
         try {
             while True {
@@ -83,6 +103,7 @@ obj CallDeadline {
                 yield item;
             }
         } finally {
+            stopped.set();
             source = stream?.completion_stream or stream;
             close = source?.close;
             if callable(close) {

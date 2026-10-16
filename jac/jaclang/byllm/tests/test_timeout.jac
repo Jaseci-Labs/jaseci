@@ -1,6 +1,7 @@
 """The call timeout (#9622, #9760): one deadline for a whole `by llm()` call, and LLMTimeout."""
 
 import asyncio;
+import threading;
 import time;
 import from unittest { mock }
 import from jaclang.byllm._optdeps.litellm { litellm }
@@ -202,6 +203,41 @@ test "one deadline covers everything a call does" {
         return (_outcome(read_slowly), len(llm.seen));
     }
 
+    def held_back(budget: float) -> tuple[str, int] {
+        pulled: list[int] = [];
+        asked: list[int] = [];
+
+        def long_answer(**_kwargs: any) -> any {
+            asked.append(1);
+            def chunks -> any {
+                for _ in range(5000) {
+                    pulled.append(1);
+                    yield text_chunk("x");
+                }
+            }
+            return chunks();
+        }
+        model = Model(model_name="gpt-4o-mini", api_key="sk-test", timeout=budget);
+        earlier = set(threading.enumerate());
+        with mock.patch("litellm.completion", long_answer) {
+            stream = model.dispatch_streaming(mk_run(stream=True));
+            next(stream);
+            time.sleep(0.3);
+            ahead = len(pulled);
+            stream.close();
+            time.sleep(0.3);
+        }
+        if ahead > 70 {
+            return (f"the provider ran {ahead} chunks ahead", len(asked));
+        }
+        if any(
+            t.name == "byllm-stream" and t not in earlier for t in threading.enumerate()
+        ) {
+            return ("the reader outlived the caller", len(asked));
+        }
+        return ("held back", len(asked));
+    }
+
     def quiet_stream(budget: float) -> tuple[str, int] {
         asked: list[int] = [];
 
@@ -267,6 +303,13 @@ test "one deadline covers everything a call does" {
             slow_reader,
             0.5,
             "LLMTimeout",
+            1
+        ),
+        (
+            "a slow reader holds the provider back, and stopping ends the reads",
+            held_back,
+            30.0,
+            "held back",
             1
         ),
         (
