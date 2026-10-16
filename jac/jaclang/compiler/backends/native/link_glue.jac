@@ -313,10 +313,13 @@ def platform_entry_ir(spec: GlueSpec) -> str {
 }
 
 def shared_init_registration_ir(spec: GlueSpec) -> str {
-    """How the loader runs `__jac_shared_init` when it loads the library. ELF
-    and Mach-O list it as a constructor, after every other one the image
-    carries (the glue is the last input). A PE DLL has no C runtime to run
-    constructors, so its entry point calls it on DLL_PROCESS_ATTACH.""";
+    """How the loader runs `__jac_shared_init` when it loads the library.
+    ELF lists it in `.init_array` directly: LLVM, left to `llvm.global_ctors`,
+    emits ELF constructors into `.ctors`, which only a crtbegin.o runs. The
+    glue is the last input, so it runs after every constructor the inputs
+    carry. Mach-O lists it as a module initializer. A PE DLL has no C runtime
+    to run constructors, so its entry point calls it on
+    DLL_PROCESS_ATTACH.""";
     if spec.platform == "pe" {
         return (
             f"define i32 @__jac_dll_main(ptr %module, i32 %reason, ptr %reserved) {{\n"
@@ -331,7 +334,15 @@ def shared_init_registration_ir(spec: GlueSpec) -> str {
             "}\n\n"
         );
     }
-    if spec.platform in ("elf", "macho") {
+    if spec.platform == "elf" {
+        return (
+            f"@__jac_shared_init_entry = internal constant ptr @{SHARED_INIT_SYMBOL}, "
+            "section \".init_array\", align 8\n"
+            "@llvm.used = appending global [1 x ptr] [ptr @__jac_shared_init_entry], "
+            "section \"llvm.metadata\"\n\n"
+        );
+    }
+    if spec.platform == "macho" {
         return (
             "@llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] "
             f"[{{ i32, ptr, ptr }} {{ i32 65535, ptr @{SHARED_INIT_SYMBOL}, ptr null }}]\n\n"
