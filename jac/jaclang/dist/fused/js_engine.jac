@@ -1,6 +1,5 @@
 import os;
-import from .embed { CStrArray, export_ca_bundle }
-import from .report { die }
+
 import from _dl_native { dlopen, dlsym, dl_error, RTLD_NOW, RTLD_GLOBAL }
 
 import from c {

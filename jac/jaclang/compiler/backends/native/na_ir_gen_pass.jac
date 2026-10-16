@@ -1,155 +1,5 @@
-import from jaclang.compiler.frontend.roles { Kid }
-import from jaclang.compiler.passes.context { Alert, CompileContext, CompilerPass }
-import from jaclang.compiler.driver.pipeline_types { AnalysisFact, PassContract }
-import from jaclang.compiler.driver.native_iface { NativeIface, NativeExport }
-import from jaclang.compiler.frontend.host { active_host }
-import from jaclang.compiler.backends.native.na_constants {
-    FACT_CODEC_NAME,
-    FACT_CODEC_TABLES,
-    FACT_OS,
-    FACT_PRIMITIVE_METHODS,
-    FACT_SEALED_RUNTIME,
-    FACT_SEP,
-    FACT_STRUCT_LAYOUTS,
-    FACT_TARGET
-}
-import jaclang.compiler.frontend.unitree as uni;
-import from jaclang.compiler.frontend.loop_links {
-    LoopLinks,
-    LoopStmt,
-    PassLink,
-    enclosing_loop,
-    frame_owns
-}
 import os;
 import sys;
-import jaclang.compiler.backends.native.llvm.ir as ir;
-import from jaclang.compiler.backends.native.primitives_native {
-    NativeEmitCtx,
-    NativeSetEmitter,
-    NativeDictEmitter
-}
-import from jaclang.compiler.backends.common.primitives { PrimitiveEmitter }
-import from jaclang.compiler.backends.native.lowering {
-    NativeLoweringIssue,
-    NativeLoweringKind
-}
-import from jaclang.runtime.scalars { ScalarShape }
-
-import from jaclang.compiler.frontend.codeinfo {
-    HDR_ALLOC_ID_OFF,
-    HDR_DTOR_OFF,
-    HDR_MAGIC,
-    HDR_MAGIC_SHIFT_BASE,
-    HDR_RC_OFF,
-    HDR_TAG_OFF,
-    HDR_TOTAL,
-    JACSTR_DESC_FIELDS,
-    NativeFuncLayout,
-    RC_SENTINEL,
-    is_package_keyed_path,
-    native_unit_identity,
-    str_len_tag,
-    STR_LEN_TAG_BIT,
-    STR_LEN_TAG_SHIFT
-}
-import from jaclang.compiler.frontend.constant {
-    CodeContext,
-    OwnershipKind,
-    SymbolAccess,
-    Tokens as Tok
-}
-import from jaclang.compiler.frontend.diagnostics {
-    DiagnosticInfo,
-    E5026,
-    E5088,
-    E5089,
-    E5113,
-    E5090,
-    E5091,
-    E1158,
-    E5092,
-    E5095,
-    E5114,
-    E1145,
-    E9001,
-    E9002
-}
-import from jaclang.compiler.intrinsic_registry { IntrinsicEntry }
-import from jaclang.compiler.passes.layout_pass {
-    accessor_slot_name,
-    ACCESSOR_SLOT_SUFFIX,
-    archetype_accessors,
-    ArchetypeLayout,
-    EnumLayout,
-    VTABLE_DROP_SLOT,
-    VTABLE_HEADER_SLOTS
-}
-import from jaclang.compiler.type_registry { JacTypeEntry }
-import from jaclang.compiler.frontend.module_facts { ModuleFacts }
-import from jaclang.compiler.passes.placement_pass {
-    NativeLegality,
-    NativeRefusal,
-    NativeRefused
-}
-import from jaclang.compiler.types.types {
-    ClassType,
-    ModuleType,
-    Parameter,
-    TypeBase,
-    UnionType,
-    FunctionType as SemanticFunctionType
-}
-import from jaclang.compiler.frontend.const_fold { fold_const }
-import from jaclang.compiler.types.ct_value {
-    CtBool,
-    CtBytes,
-    CtFloat,
-    CtInt,
-    CtNone,
-    CtStr,
-    CtValue,
-    ct_iter,
-    ct_mangle,
-    ct_truthy
-}
-import type from jaclang.compiler.types.ct_eval { CtEvaluator }
-import type from jaclang.compiler.passes.osp_analysis { OspSlot }
-import from jaclang.runtime.osp_tag { stable_osp_tag }
-import from jaclang.compiler.backends.native.na_constants {
-    CLASS_DISPLAY_OFF,
-    CLASS_RECORD_ANCESTRY,
-    CLASS_RECORD_STATICS,
-    CLASS_RECORD_STATICS_COUNT,
-    VTABLE_SET_BUCKETS,
-    VTABLE_SET_SYMBOL,
-    EXC_LINEAGE_BITS,
-    EXC_LINEAGE_MIX,
-    EXC_LINEAGE_SLOTS,
-    JACVAL_ELLIPSIS_TAG,
-    LIVE_NODE_NEXT_OFF,
-    LIVE_NODE_RC_OFF,
-    LIVE_NODE_SIZE,
-    LIVE_NODE_TAG_OFF,
-    LIVE_NODE_USER_OFF,
-    NATIVE_CONTAINER_CODES,
-    NATIVE_COPY_FUNCS,
-    NATIVE_OS_FUNCS,
-    NATIVE_OSPATH_FUNCS,
-    NATIVE_RANDOM_FUNCS,
-    NATIVE_STRUCT_FUNCS,
-    RC_BUFFERED_BIT,
-    RC_COLOR_BLACK,
-    RC_COLOR_GRAY,
-    RC_COLOR_PURPLE,
-    RC_COLOR_SHIFT,
-    RC_COLOR_WHITE,
-    RC_CYCLE_PACE,
-    RC_CYCLE_THRESHOLD,
-    RC_UNTRACED_BIT,
-    UNBOUND_CAUGHT,
-    stdlib_intercepted
-}
 
 glob GEN_PENDING_FLAG_OFF: int = 8,
      GEN_PENDING_TYPE_OFF: int = 16,
@@ -1677,6 +1527,7 @@ walker NaIRGenPass(CompilerPass) {
     def _emit_exc_lineage_match(type_val: ir.Value, bases: list[int]) -> ir.Value;
     def _register_exc_lineage(cause: (uni.Expr | None), type_id: int) -> None;
     def _codegen_raise(nd: uni.RaiseStmt) -> None;
+    def _exc_arg_message(arg: uni.Expr) -> (ir.Value | None);
     def _raise_has_frame_handler(nd: uni.RaiseStmt) -> bool;
     def _codegen_try(nd: uni.TryStmt) -> None;
     def _codegen_expr(nd: (uni.UniNode | None)) -> (ir.Value | None);
@@ -2502,7 +2353,10 @@ walker NaIRGenPass(CompilerPass) {
         kw: uni.KWPair, edge_arch: (str | None)
     ) -> (str | None);
 
-    def _osp_connect_assign_value(kw: uni.KWPair) -> (ir.Value | None);
+    def _osp_connect_assign_value(
+        kw: uni.KWPair, keep: bool = False
+    ) -> (ir.Value | None);
+
     def _codegen_disconnect(nd: uni.BinaryExpr) -> (ir.Value | None);
     def _osp_disc_list_operand(expr: (uni.UniNode | None)) -> bool;
     def _codegen_edge_ref_trailer(nd: uni.EdgeRefTrailer) -> (ir.Value | None);
@@ -2654,6 +2508,11 @@ walker NaIRGenPass(CompilerPass) {
     ) -> ir.Value;
 
     def _str_cmp_parts_of(val: ir.Value) -> (tuple[ir.Value, ir.Value] | None);
+    def _emit_memcmp_nz(a: ir.Value, b: ir.Value, n: ir.Value, name: str) -> ir.Value;
+    def _emit_str_parts_cmp(
+        op: str, l_data: ir.Value, l_len: ir.Value, r_data: ir.Value, r_len: ir.Value
+    ) -> ir.Value;
+
     def _emit_str_dup_helper -> None;
     def _call_str_dup(b: ir.IRBuilder, ptr: ir.Value, name: str = "s.dup") -> ir.Value;
     def _emit_str_len_raw_helper -> None;

@@ -55,15 +55,15 @@ def no_drop(program: JacProgram, module: Module) {}
 def no_precheck {}
 
 obj ProductSpec {
-    has needs: tuple[CompilationProduct, ...] = (),
+    has needs: list[CompilationProduct] = [],
         passes: Callable[[ProductRequest], PassSchedule] = no_passes,
         bootstrap:
             Callable[[ProductRequest], (PassSchedule | None)] = unavailable_schedule,
         action: Callable[[JacProgram, Module], bool] = no_action,
         drop: Callable[[JacProgram, Module], None] = no_drop,
         precheck: Callable[[], None] = no_precheck,
-        loads: tuple[str, ...] = (),
-        tier_with: tuple[CompilationProduct, ...] = (),
+        loads: list[str] = [],
+        tier_with: list[CompilationProduct] = [],
         tiered: bool = False,
         acts: bool = False,
         cached: bool = False,
@@ -308,7 +308,7 @@ def require_typeshed_stubs -> None {
     }
 }
 
-glob IR_LOADS: tuple[str, ...] = (
+glob IR_LOADS: list[str] = [
          'jaclang.compiler.symbol_utils',
          'jaclang.compiler.expr_keys',
          'jaclang.compiler.type_registry',
@@ -325,8 +325,8 @@ glob IR_LOADS: tuple[str, ...] = (
          'jaclang.compiler.passes.mtir_gen_pass',
          'jaclang.compiler.passes.comptime_resolve_pass',
          'jaclang.project.mobui_scope'
-     ),
-     ANALYSIS_LOADS: tuple[str, ...] = (
+     ],
+     ANALYSIS_LOADS: list[str] = [
          'jaclang.compiler.field_semantics',
          'jaclang.compiler.passes.type_checker_pass',
          'jaclang.compiler.types.type_evaluator',
@@ -355,23 +355,20 @@ glob IR_LOADS: tuple[str, ...] = (
          'jaclang.compiler.passes.ownership_check_pass',
          'jaclang.compiler.passes.region_infer_pass',
          'jaclang.compiler.tools.jac_auto_lint_pass'
-     ),
-     CODEGEN_LOADS: tuple[str, ...] = (
+     ],
+     CODEGEN_LOADS: list[str] = [
          'jaclang.compiler.passes.rc_facts_pass',
          'jaclang.compiler.backends.es',
          'jaclang.compiler.passes.freeze_structure_pass'
-     ),
-     NATIVE_LOADS: tuple[str, ...] = (
-         'jaclang.compiler.backends.native.na_ir_gen_pass',
-
-     );
+     ],
+     NATIVE_LOADS: list[str] = ['jaclang.compiler.backends.native.na_ir_gen_pass', ];
 
 glob PRODUCTS: dict[CompilationProduct, ProductSpec] = {
          CompilationProduct.SYMBOLS: ProductSpec(
              passes=symbols_passes,
              bootstrap=symbols_passes,
-             loads=('jaclang.compiler.symbol_utils', ),
-             tier_with=(CompilationProduct.IR, ),
+             loads=['jaclang.compiler.symbol_utils'],
+             tier_with=[CompilationProduct.IR],
              tiered=True,
              on_import_error=ImportFallback.BOOTSTRAP
          ),
@@ -385,7 +382,7 @@ glob PRODUCTS: dict[CompilationProduct, ProductSpec] = {
          CompilationProduct.FLOW: ProductSpec(passes=flow_passes, cached=True),
          CompilationProduct.PLACEMENT: ProductSpec(action=place_module, acts=True),
          CompilationProduct.ANALYSIS: ProductSpec(
-             needs=(CompilationProduct.FLOW, ),
+             needs=[CompilationProduct.FLOW],
              passes=analysis_passes,
              precheck=require_typeshed_stubs,
              loads=ANALYSIS_LOADS,
@@ -397,7 +394,7 @@ glob PRODUCTS: dict[CompilationProduct, ProductSpec] = {
              action=prepare_interface, acts=True, cached=True
          ),
          CompilationProduct.CLIENT: ProductSpec(
-             needs=(CompilationProduct.ANALYSIS, ),
+             needs=[CompilationProduct.ANALYSIS],
              passes=client_passes,
              drop=drop_client,
              cached=True
@@ -407,7 +404,7 @@ glob PRODUCTS: dict[CompilationProduct, ProductSpec] = {
              passes=codegen_passes,
              bootstrap=empty_schedule,
              loads=CODEGEN_LOADS,
-             tier_with=(CompilationProduct.IR, CompilationProduct.NATIVE_LOWER, ),
+             tier_with=[CompilationProduct.IR, CompilationProduct.NATIVE_LOWER],
              tiered=True,
              on_import_error=ImportFallback.REPORT
          ),
@@ -415,27 +412,27 @@ glob PRODUCTS: dict[CompilationProduct, ProductSpec] = {
          CompilationProduct.FROZEN: ProductSpec(
              passes=frozen_passes,
              bootstrap=empty_schedule,
-             tier_with=(CompilationProduct.CODEGEN, ),
+             tier_with=[CompilationProduct.CODEGEN],
              tiered=True,
              on_import_error=ImportFallback.REPORT
          ),
          CompilationProduct.BYTECODE: ProductSpec(
-             needs=(CompilationProduct.PY_IR, ), passes=bytecode_passes
+             needs=[CompilationProduct.PY_IR], passes=bytecode_passes
          ),
          CompilationProduct.NATIVE_IR: ProductSpec(
-             needs=(CompilationProduct.FLOW, CompilationProduct.ANALYSIS, ),
+             needs=[CompilationProduct.FLOW, CompilationProduct.ANALYSIS],
              passes=native_ir_passes,
              loads=NATIVE_LOADS,
              cached=True
          ),
          CompilationProduct.NATIVE_LOWER: ProductSpec(
-             needs=(CompilationProduct.ANALYSIS, ),
+             needs=[CompilationProduct.ANALYSIS],
              passes=native_lower_passes,
              drop=drop_native_ir,
              loads=NATIVE_LOADS
          ),
          CompilationProduct.NATIVE_OBJECT: ProductSpec(
-             needs=(CompilationProduct.NATIVE_LOWER, ),
+             needs=[CompilationProduct.NATIVE_LOWER],
              passes=native_object_passes,
              drop=drop_native_object
          ),

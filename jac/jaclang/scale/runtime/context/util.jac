@@ -28,7 +28,6 @@ def pick_free_port(
 }
 
 def jac_executable -> str {
-    import from jaclang.dist.fused_binary { jac_binary }
     return jac_binary() or shutil.which("jac") or "jac";
 }
 
