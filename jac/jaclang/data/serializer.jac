@@ -40,7 +40,8 @@ glob logger = logging.getLogger(__name__),
      _FROZEN_EXACT: frozenset = frozenset(
          {NoneType, bool, int, float, str, bytes, UUID, date, datetime}
      ),
-     _TYPE_SHAPES: dict[any, tuple[any, tuple[any, ...]]] = {};
+     _TYPE_SHAPES: dict[int, tuple[any, any, tuple[any, ...]]] = {},
+     _TYPE_SHAPES_LIMIT: int = 4096;
 
 obj ImportFailure {
     has attempts: int = 0,

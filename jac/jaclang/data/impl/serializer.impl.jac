@@ -1388,14 +1388,15 @@ impl frozen_fields(anchor: Anchor) -> bool {
 
 
 impl _type_shape(target_type: object) -> tuple[object, tuple[object, ...]] {
-    try {
-        hit = _TYPE_SHAPES.get(target_type);
-    } except TypeError {
-        return (get_origin(target_type), get_args(target_type));
+    hit = _TYPE_SHAPES.get(id(target_type));
+    if hit is not None and hit[0] is target_type {
+        return (hit[1], hit[2]);
     }
-    if hit is None {
-        hit = (get_origin(target_type), get_args(target_type));
-        _TYPE_SHAPES[target_type] = hit;
+    origin = get_origin(target_type);
+    args = get_args(target_type);
+    if len(_TYPE_SHAPES) >= _TYPE_SHAPES_LIMIT {
+        _TYPE_SHAPES.clear();
     }
-    return hit;
+    _TYPE_SHAPES[id(target_type)] = (target_type, origin, args);
+    return (origin, args);
 }
