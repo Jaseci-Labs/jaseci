@@ -1236,7 +1236,9 @@ def _prepare_revision(
             row = dict(unit_rows[real]);
             row['imports'] = sorted(resolved);
             row['py_digests'] = {
-                dep: _file_digest(dep) for dep in resolved if dep.endswith('.py')
+                dep: _file_digest(dep)
+                for dep in resolved
+                if dep.endswith('.py')
             };
             unit_rows[real] = row;
         }

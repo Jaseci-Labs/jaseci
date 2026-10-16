@@ -435,7 +435,9 @@ test "a changed Python import is not served from the last prepare" {
     path = base / 'main.jac';
     try {
         (base / 'mods').mkdir();
-        (base / 'mods' / 'helper.py').write_text("def scale(x):\n    return x * 2\n");
+        (base / 'mods' / 'helper.py').write_text(
+            "def scale(x: int) -> int:\n    return x * 2\n"
+        );
         (base / 'mods' / 'b.jac').write_text(
             "import from mods.helper { scale }\n"
                 + "def:pub b_value -> int { return scale(1); }\n"
@@ -447,7 +449,7 @@ test "a changed Python import is not served from the last prepare" {
         kernel_prepare(path, tmp, []);
         forget(str(path));
         (base / 'mods' / 'helper.py').write_text(
-            "def scale(x, y):\n    return x * y\n"
+            "def scale(x: int, y: int) -> int:\n    return x * y\n"
         );
         analysed: list[str] = [];
         failed = False;
