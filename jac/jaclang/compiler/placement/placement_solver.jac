@@ -1,4 +1,5 @@
 import from jaclang.compiler.passes.context { CompilerPass }
+import from jaclang.compiler.driver.pipeline_types { AnalysisFact, PassContract }
 import os;
 import jaclang.compiler.frontend.unitree as uni;
 import from jaclang.compiler.frontend.constant { CodeContext, Tokens as Tok }
@@ -53,10 +54,14 @@ def _native_dep_scan(
     import from jaclang.compiler.driver.program { JacProgram }
     import from jaclang.compiler.frontend.host { active_host }
     import from jaclang.compiler.frontend.parser.frontend { parse as rd_parse }
-
-    files = [path] + active_host().annex_files(path, '.impl.jac');
+    host = active_host();
+    files = [path]
+        + host.annex_files(path, '.impl.jac')
+        + host.annex_files(path, '.test.jac');
+    arch = host.wiring_file(path);
+    stamped = files + ([arch] if arch is not None else []);
     fresh: list[tuple[str, float, int]] = [];
-    for f in files {
+    for f in stamped {
         try {
             fresh.append((f, os.path.getmtime(f), os.path.getsize(f)));
         } except OSError {
@@ -70,11 +75,16 @@ def _native_dep_scan(
     }
     sv_reason = '';
     deps: list[str] = [];
-    if not sv_reason {
-        base_dir = os.path.dirname(os.path.abspath(path)) or '.';
+    base_dir = os.path.dirname(os.path.abspath(path)) or '.';
+    woven = host.woven_module(path, JacProgram()) if arch is not None else None;
+    if woven is not None {
+        (sv_reason, deps) = scan_native_blockers(
+            woven, base_dir, allow_pub=True, hold_exempt=hold_exempt
+        );
+    } else {
         for f in files {
             try {
-                src = active_host().read_source(f);
+                src = host.read_source(f);
             } except Exception {
                 sv_reason = "unreadable annex";
                 break;
@@ -589,8 +599,9 @@ def solve_module_placement(
 
     def _invalidate_stale_codegen {
         if stamp_count[0] and (module.gen.js or module.gen.es_ast is not None) {
-            import from jaclang.compiler.driver.pipeline { invalidate_client_product }
-            invalidate_client_product(prog, module);
+            import from jaclang.compiler.driver.pipeline { invalidate }
+            import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
+            invalidate(prog, module, CompilationProduct.CLIENT);
         }
     }
 
@@ -965,10 +976,11 @@ def invalidate_importers_es(prog: JacProgram, mod_path: str) -> list[uni.Module]
                 continue;
             }
             if isinstance(target, str) and os.path.realpath(target) == key {
-                import from jaclang.compiler.driver.pipeline {
-                    invalidate_client_product
+                import from jaclang.compiler.driver.pipeline { invalidate }
+                import from jaclang.compiler.driver.pipeline_types {
+                    CompilationProduct
                 }
-                invalidate_client_product(prog, m);
+                invalidate(prog, m, CompilationProduct.CLIENT);
                 cleared.append(m);
                 break;
             }
@@ -978,6 +990,16 @@ def invalidate_importers_es(prog: JacProgram, mod_path: str) -> list[uni.Module]
 }
 
 walker PlacementApplyPass(CompilerPass) {
+    static has contract: PassContract = PassContract(
+        requires=(AnalysisFact.SYM_OF, ),
+        provides=(
+            AnalysisFact.PLACED_IN,
+            AnalysisFact.DECIDED_CODESPACE,
+            AnalysisFact.CODESPACE_PULL,
+
+        )
+    );
+
     def _run_impl(ir_in: uni.Module) -> uni.Module;
     can run_walk with uni.Module entry;
 }

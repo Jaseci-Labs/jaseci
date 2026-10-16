@@ -2,7 +2,6 @@ import re;
 import ssl;
 import from pathlib { Path }
 import from urllib.parse { urlsplit }
-import from jaclang.runtime.object_interop { fields, is_record }
 
 
 impl TlsSettings.build_context -> any {
@@ -40,10 +39,6 @@ impl TlsSettings.build_context -> any {
 
 
 impl AuthSettings.resolve_secret(base_path: str) -> str {
-    import from jaclang.server.serving.authcrypt {
-        PLACEHOLDER_JWT_SECRET,
-        project_signing_secret
-    }
     secret = self.secret.strip();
     if secret and secret != PLACEHOLDER_JWT_SECRET {
         return secret;
@@ -332,7 +327,6 @@ impl AuthSettings.problems -> list[str] {
 
 
 impl secret_home(base_path: str) -> str {
-    import from jaclang.project.config { find_project_root }
     start = Path(base_path) if base_path else Path.cwd();
     found = find_project_root(start);
     if found is not None {

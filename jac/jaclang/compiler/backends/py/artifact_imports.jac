@@ -2,12 +2,11 @@ import dis;
 import os;
 import types;
 import from pathlib { Path }
-import from jaclang.compiler.frontend.host { active_host }
 
-def runtime_sources(code: types.CodeType, source: str, `root: str) -> set[str] {
-    import from jaclang.project.modresolver { project_mounts }
-    sources: set[str] = `set();
-    mounts = project_mounts(`root);
+def import_specs(
+    code: types.CodeType, source: str
+) -> list[tuple[int, str, (tuple[str, ...] | None)]] {
+    specs: list[tuple[int, str, (tuple[str, ...] | None)]] = [];
     pending = [code];
     while pending {
         unit = pending.pop();
@@ -33,52 +32,68 @@ def runtime_sources(code: types.CodeType, source: str, `root: str) -> set[str] {
                     f'Nonconstant import level in prepared module {source}'
                 );
             }
-            name = instruction.argval;
-            base = Path(source).parent;
-            if level {
-                for _ in range((level - 1)) {
-                    base = base.parent;
-                }
-                roots = [base];
-            } else {
-                roots = `list(`dict.fromkeys([base, Path(`root)]));
-                if mounts {
-                    roots.append(Path(mounts));
-                }
+            specs.append(
+                (
+                    level,
+                    str(instruction.argval),
+                    names if isinstance(names, tuple) else None
+                )
+            );
+        }
+    }
+    return specs;
+}
+
+def resolve_imports(
+    specs: list[tuple[int, str, (tuple[str, ...] | None)]], source: str, `root: str
+) -> set[str] {
+    sources: set[str] = `set();
+    mounts = project_mounts(`root);
+    for (level, name, names) in specs {
+        base = Path(source).parent;
+        if level {
+            for _ in range((level - 1)) {
+                base = base.parent;
             }
-            for search_root in roots {
-                target = search_root.joinpath(*name.split('.'))
-                    if name
-                    else search_root;
-                resolved = active_host().resolve_local_module(
-                    str(search_root), name.split('.') if name else []
-                );
-                if resolved and resolved[1] in ('jac', 'py') {
-                    sources.add(os.path.realpath(resolved[0]));
-                } elif not target.is_dir() {
-                    continue;
-                }
-                if target.is_dir() and isinstance(names, tuple) {
-                    for member in names {
-                        child = active_host().resolve_local_module(
-                            str(target), [member]
-                        );
-                        if child and child[1] in ('jac', 'py') {
-                            sources.add(os.path.realpath(child[0]));
-                        }
+            roots = [base];
+        } else {
+            roots = `list(`dict.fromkeys([base, Path(`root)]));
+            if mounts {
+                roots.append(Path(mounts));
+            }
+        }
+        for search_root in roots {
+            target = search_root.joinpath(*name.split('.')) if name else search_root;
+            resolved = active_host().resolve_local_module(
+                str(search_root), name.split('.') if name else []
+            );
+            if resolved and resolved[1] in ('jac', 'py') {
+                sources.add(os.path.realpath(resolved[0]));
+            } elif not target.is_dir() {
+                continue;
+            }
+            if target.is_dir() and isinstance(names, tuple) {
+                for member in names {
+                    child = active_host().resolve_local_module(str(target), [member]);
+                    if child and child[1] in ('jac', 'py') {
+                        sources.add(os.path.realpath(child[0]));
                     }
                 }
-                sources.update(
-                    package_sources(
-                        str(target / '__init__') if target.is_dir() else str(target),
-                        str(search_root)
-                    )
-                );
-                break;
             }
+            sources.update(
+                package_sources(
+                    str(target / '__init__') if target.is_dir() else str(target),
+                    str(search_root)
+                )
+            );
+            break;
         }
     }
     return sources;
+}
+
+def runtime_sources(code: types.CodeType, source: str, `root: str) -> set[str] {
+    return resolve_imports(import_specs(code, source), source, `root);
 }
 
 def package_sources(source: str, project_root: str) -> set[str] {

@@ -209,13 +209,10 @@ def _tree_source(
 ) -> ManifestSource {
     import from jaclang.compiler.driver.unit_products { import_edge_rows }
     if imported {
-        import from jaclang.compiler.driver.pipeline {
-            require_product,
-            CompilationProduct
-        }
+        import from jaclang.compiler.driver.pipeline { require, CompilationProduct }
         manifest = mod.gen.interop_manifest;
         if not (manifest and manifest.surface) {
-            require_product(program, mod, CompilationProduct.BOUNDARIES);
+            require(program, mod, CompilationProduct.BOUNDARIES);
         }
     }
     return ManifestSource(
@@ -432,6 +429,16 @@ def _prepare_sealed(
     }
     manifest = json.loads(serve_manifest.read_text());
     manifest['root'] = image_root;
+    recorded: dict[str, set[str]] = {
+        os.path.realpath(os.path.join(image_root, source)): {
+            os.path.realpath(os.path.join(image_root, dependency))
+            for dependency in dependencies
+        } for (source, dependencies) in (manifest.get('runtime_imports') or {}).items()
+    };
+    def imports_of(code: any, path: str) -> set[str] {
+        known = recorded.get(path);
+        return known if known is not None else runtime_sources(code, path, image_root);
+    }
     revision = PreparedApplication(
         image_root, `entry, services=tuple(entries[1:]), dev=False
     );
@@ -487,9 +494,7 @@ def _prepare_sealed(
                 );
             }
             revision.code[path] = code;
-            pending.update(
-                runtime_sources(code, path, image_root) - revision.code.keys()
-            );
+            pending.update(imports_of(code, path) - revision.code.keys());
             continue;
         }
         sealed = compiler._sealed_jir_data(path);
@@ -517,10 +522,7 @@ def _prepare_sealed(
             );
         }
         revision.native[path] = compiler.get_native_interop_setup(path, program);
-        pending.update(
-            runtime_sources(revision.code[path], path, image_root)
-                - revision.code.keys()
-        );
+        pending.update(imports_of(revision.code[path], path) - revision.code.keys());
     }
     revision.applications = [
         PreparedApplication(
@@ -589,77 +591,84 @@ def prepare_application(
         get_effective_default_codespace_override,
         set_effective_default_codespace
     }
-    previous = get_effective_default_codespace_override();
-    set_effective_default_codespace('server');
-    watched = bool(os.environ.get('JAC_KERNEL_TIMING'));
-    if watched {
-        import faulthandler;
-        try {
-            faulthandler.dump_traceback_later(
-                SLOW_PREPARE_SECONDS, repeat=True, file=sys.stderr
-            );
-        } except (ValueError, OSError) {
-            watched = False;
-        }
-    }
-    try {
-        with console.status('Preparing application...', file=sys.stderr) as status {
-            status.update(progress);
-            with compile_progress.listen(begin, finish) {
-                import from jaclang.compiler.driver.compilation_context {
-                    bind_options,
-                    context_program
-                }
-                import from jaclang.compiler.driver.compile_options { CompileOptions }
-                import from jaclang.runtime.prepared { publish }
-                applications: list[PreparedApplication] = [];
-                for path in entries {
-                    options = bind_options(
-                        path,
-                        program,
-                        CompileOptions(
-                            default_codespace='server',
-                            force_codespace=force_codespace,
-                            skip_native_engine=program.options.skip_native_engine,
-                            entry_point=path,
-                            project_root=`root
-                        )
-                    );
-                    actual = context_program(program, options);
-                    applications.append(
-                        _prepare(
-                            path,
-                            actual,
-                            `root,
-                            [path],
-                            client and path == `entry,
-                            dev,
-                            console
-                        )
-                    );
-                }
-                revision = applications[0];
-                for application in applications {
-                    _warn_private_declarations(application, console);
-                    application.name = application.manifests.get(
-                        application.entry, {}
-                    ).get(
-                        'app', ''
-                    );
-                }
-                revision.services = tuple(entries[1:]);
-                revision.applications = applications[1:];
-                publish(revision);
-                _release_compile_state(program);
-                return revision;
-            }
-        }
-    } finally {
+    import from jaclang.runtime.preparation_lock { PREPARATION_LOCK }
+    with PREPARATION_LOCK {
+        previous = get_effective_default_codespace_override();
+        set_effective_default_codespace('server');
+        watched = bool(os.environ.get('JAC_KERNEL_TIMING'));
         if watched {
             import faulthandler;
-            faulthandler.cancel_dump_traceback_later();
+            try {
+                faulthandler.dump_traceback_later(
+                    SLOW_PREPARE_SECONDS, repeat=True, file=sys.stderr
+                );
+            } except (ValueError, OSError) {
+                watched = False;
+            }
         }
-        set_effective_default_codespace(previous);
+        try {
+            with console.status(
+                'Preparing application...', file=sys.stderr
+            ) as status {
+                status.update(progress);
+                with compile_progress.listen(begin, finish) {
+                    import from jaclang.compiler.driver.compilation_context {
+                        bind_options,
+                        context_program
+                    }
+                    import from jaclang.compiler.driver.compile_options {
+                        CompileOptions
+                    }
+                    import from jaclang.runtime.prepared { publish }
+                    applications: list[PreparedApplication] = [];
+                    for path in entries {
+                        options = bind_options(
+                            path,
+                            program,
+                            CompileOptions(
+                                default_codespace='server',
+                                force_codespace=force_codespace,
+                                skip_native_engine=program.options.skip_native_engine,
+                                entry_point=path,
+                                project_root=`root
+                            )
+                        );
+                        actual = context_program(program, options);
+                        applications.append(
+                            _prepare(
+                                path,
+                                actual,
+                                `root,
+                                [path],
+                                client and path == `entry,
+                                dev,
+                                console
+                            )
+                        );
+                    }
+                    revision = applications[0];
+                    for application in applications {
+                        _warn_private_declarations(application, console);
+                        application.name = application.manifests.get(
+                            application.entry, {}
+                        ).get(
+                            'app', ''
+                        );
+                    }
+                    revision.services = tuple(entries[1:]);
+                    revision.applications = applications[1:];
+                    publish(revision);
+                    _release_compile_state(program);
+                    return revision;
+                }
+            }
+        } finally {
+            if watched {
+                import faulthandler;
+                faulthandler.cancel_dump_traceback_later();
+            }
+            set_effective_default_codespace(previous);
+        }
     }
 }
 
@@ -704,12 +713,15 @@ def _prepare(
         capture(path);
     }
     import from jaclang.project.kernel_compile { host_prepared }
+    import from jaclang.compiler.driver.jir { begin_prepare_memo, end_prepare_memo }
     with compile_progress.listen(capture) {
+        memo = begin_prepare_memo();
         try {
             return _prepare_revision(
                 `entry, program, `root, entries, client, dev, console, inputs
             );
         } finally {
+            end_prepare_memo(memo);
             host_prepared();
         }
     }
@@ -724,8 +736,139 @@ def _unit_lookup(
     return lookup;
 }
 
+def _unit_row(unit: any) -> dict[str, any] {
+    import from jaclang.compiler.driver.jir { compute_module_key }
+    return {
+        'key': compute_module_key(unit.path),
+        'iface': unit.iface,
+        'shape': unit.iface_shape,
+        'effects': unit.effects,
+        'placement': unit.placement,
+        'app': unit.app,
+        'persistence': list(unit.persistence),
+        'import_edges': list(unit.import_edges),
+        'jac_deps': list(unit.jac_deps),
+        'interop': unit.interop,
+        'client_manifest': unit.client_manifest
+    };
+}
+
+def _row_unit(path: str, row: dict[str, any]) -> any {
+    import from jaclang.compiler.driver.unit_products { UnitProducts }
+    return UnitProducts(
+        path=path,
+        app=row['app'],
+        persistence=list(row['persistence']),
+        import_edges=list(row['import_edges']),
+        interop=row['interop'],
+        client_manifest=row['client_manifest']
+    );
+}
+
+def _file_digest(path: str) -> str {
+    try {
+        return hashlib.sha256(Path(path).read_bytes()).hexdigest();
+    } except OSError {
+        return '';
+    }
+}
+
+def _reusable_interfaces(
+    previous: dict[str, dict[str, any]],
+    entries: list[str],
+    specs: dict[str, list[tuple[int, str, (tuple[str, ...] | None)]]],
+    `root: str
+) -> dict[str, any] {
+    import base64;
+    import from jaclang.compiler.driver.jir { compute_module_key }
+    import from jaclang.compiler.frontend.kernel_inputs { PythonInterface }
+    import from jaclang.compiler.backends.py.artifact_imports { resolve_imports }
+    held = {os.path.realpath(path) for path in entries};
+    by_real = {os.path.realpath(source): found for (source, found) in specs.items()};
+    seeds: dict[str, any] = {};
+    for (path, row) in previous.items() {
+        if path in held or not row.get('iface') or not os.path.isfile(path) {
+            continue;
+        }
+        if compute_module_key(path) != row.get('key') {
+            continue;
+        }
+        known = by_real.get(path);
+        if known is None or 'imports' not in row {
+            continue;
+        }
+        if sorted(resolve_imports(known, path, `root)) != row['imports'] {
+            continue;
+        }
+        digests = row.get('py_digests');
+        if digests is None {
+            continue;
+        }
+        if any(_file_digest(dep) != digest for (dep, digest) in digests.items()) {
+            continue;
+        }
+        seeds[path] = PythonInterface(
+            path=path,
+            pkg_dir=os.path.dirname(path),
+            data=base64.b64decode(row['iface']),
+            placement=row.get('placement') or '',
+            effects=row.get('effects') or ''
+        );
+    }
+    return seeds;
+}
+
+def _importers_of(
+    changed: set[str], rows: dict[str, dict[str, any]], among: set[str]
+) -> set[str] {
+    found: set[str] = set();
+    for path in among {
+        row = rows.get(path) or {};
+        for dep in row.get('jac_deps') or [] {
+            if dep in changed {
+                found.add(path);
+                break;
+            }
+        }
+    }
+    return found;
+}
+
+def _unreached_changes(
+    units: dict[str, ManifestSource],
+    rows: dict[str, dict[str, any]],
+    previous: dict[str, dict[str, any]],
+    seeds: dict[str, any]
+) -> list[str] {
+    seen = `set(units);
+    frontier = list(units);
+    missing: list[str] = [];
+    while frontier {
+        path = frontier.pop();
+        row = rows.get(path) or previous.get(path) or {};
+        for dep in row.get('jac_deps') or [] {
+            if dep in seen or dep not in previous {
+                continue;
+            }
+            seen.add(dep);
+            frontier.append(dep);
+            if dep not in seeds and dep not in units and os.path.isfile(dep) {
+                missing.append(dep);
+            }
+        }
+    }
+    return missing;
+}
+
 def _kernel_units(
-    program: any, entries: list[str], `root: str, before: int, inputs: dict[str, str]
+    program: any,
+    entries: list[str],
+    `root: str,
+    before: int,
+    inputs: dict[str, str],
+    previous: dict[str, dict[str, any]],
+    rows: dict[str, dict[str, any]],
+    specs: dict[str, list[tuple[int, str, (tuple[str, ...] | None)]]]
 ) -> (dict[str, ManifestSource] | None) {
     import copy;
     import from jaclang.compiler.frontend.host { active_host }
@@ -733,31 +876,93 @@ def _kernel_units(
         forget_application_units,
         kernel_compile_application
     }
-    forget_application_units();
     selfhost = program._get_compiler().selfhost;
+    seeds = _reusable_interfaces(previous, entries, specs, `root);
+    warned = len(program.warnings_had);
     units: dict[str, ManifestSource] = {};
-    for path in entries {
+    def compile_target(path: str) -> bool {
         options = copy.copy(program.options);
         options.project_root = `root;
         options.no_cgen = False;
         options.skip_native_engine = True;
-        compiled = kernel_compile_application(active_host(), program, path, options);
+        compiled = kernel_compile_application(
+            active_host(), program, path, options, seeds=list(seeds.values())
+        );
         if compiled is None {
-            forget_application_units();
-            return None;
+            return False;
         }
-        _check(program, before);
         for reached in compiled.analysis.modules {
             if not selfhost.is_selfhost(selfhost.resolve(reached.path, program)) {
                 _capture_input(reached.path, inputs);
             }
         }
         for unit in compiled.units {
-            units.setdefault(os.path.realpath(unit.path), _unit_source(unit));
+            real = os.path.realpath(unit.path);
+            if real not in units {
+                units[real] = _unit_source(unit);
+                rows[real] = _unit_row(unit);
+            }
         }
-        if os.path.realpath(path) not in units {
-            forget_application_units();
-            return None;
+        return os.path.realpath(path) in units;
+    }
+    while True {
+        forget_application_units();
+        rows.clear();
+        units.clear();
+        del program.errors_had[before:];
+        del program.warnings_had[warned:];
+        targets = list(entries);
+        failed = False;
+        while targets and not failed {
+            for path in targets {
+                if not compile_target(path) {
+                    failed = True;
+                    break;
+                }
+            }
+            if not failed {
+                targets = _unreached_changes(units, rows, previous, seeds);
+            }
+        }
+        if failed or (seeds and len(program.errors_had) > before) {
+            if not seeds {
+                forget_application_units();
+                if failed {
+                    return None;
+                }
+                break;
+            }
+            seeds.clear();
+            continue;
+        }
+        changed = {
+            path
+            for (path, row) in rows.items()
+            if path in previous
+                and (
+                    previous[path].get('shape') != row['shape']
+                    or previous[path].get('effects') != row['effects']
+                )
+        };
+        stale = _importers_of(changed, previous, `set(seeds) - `set(units));
+        if not stale {
+            break;
+        }
+        for path in stale {
+            seeds.pop(path, None);
+        }
+    }
+    _check(program, before);
+    frontier = list(units);
+    while frontier {
+        row = rows.get(frontier.pop()) or {};
+        for dep in row.get('jac_deps') or [] {
+            if dep in seeds and dep not in units {
+                _capture_input(dep, inputs);
+                units[dep] = _unit_source(_row_unit(dep, previous[dep]));
+                rows[dep] = previous[dep];
+                frontier.append(dep);
+            }
         }
     }
     return units;
@@ -892,8 +1097,25 @@ def _prepare_revision(
     before = len(program.errors_had);
     import copy;
     modules: dict[str, uni.Module] = {};
+    previous_rows: dict[str, dict[str, any]] = candidate.get('unit_rows') or {}
+        if isinstance(candidate, dict)
+        else {};
+    unit_rows: dict[str, dict[str, any]] = {};
+    recorded_specs: dict[str, list[tuple[int, str, (tuple[str, ...] | None)]]] = candidate.get(
+        'import_specs'
+    )
+        or {}
+        if isinstance(candidate, dict)
+        else {};
     units: (dict[str, ManifestSource] | None) = _kernel_units(
-        program, entries, `root, before, inputs
+        program,
+        entries,
+        `root,
+        before,
+        inputs,
+        previous_rows,
+        unit_rows,
+        recorded_specs
     );
     if units is None {
         import from jaclang.compiler.driver.pipeline_runner { compile_application }
@@ -947,10 +1169,21 @@ def _prepare_revision(
     }
     revision.manifests[`entry]['spa_routes'] = routes;
     import from jaclang.compiler.backends.py.artifact_imports {
-        runtime_sources,
-        package_sources
+        import_specs,
+        package_sources,
+        resolve_imports
     }
     sections = {};
+    previous_code: dict[str, any] = candidate.get('code') or {}
+        if isinstance(candidate, dict)
+        else {};
+    previous_specs: dict[str, list[tuple[int, str, (tuple[str, ...] | None)]]] = candidate.get(
+        'import_specs'
+    )
+        or {}
+        if isinstance(candidate, dict)
+        else {};
+    specs_of: dict[str, list[tuple[int, str, (tuple[str, ...] | None)]]] = {};
     pending = `set(entries);
     for path in entries {
         pending.update(package_sources(path, `root));
@@ -992,7 +1225,24 @@ def _prepare_revision(
         revision.code[path] = code;
         sections[path] = _sections(path, program);
         revision.native[path] = compiler.get_native_interop_setup(path, program);
-        pending.update((runtime_sources(code, path, `root) - revision.code.keys()));
+        known = previous_specs.get(path);
+        specs = known
+            if known is not None and previous_code.get(path) == code
+            else import_specs(code, path);
+        specs_of[path] = specs;
+        resolved = resolve_imports(specs, path, `root);
+        real = os.path.realpath(path);
+        if real in unit_rows {
+            row = dict(unit_rows[real]);
+            row['imports'] = sorted(resolved);
+            row['py_digests'] = {
+                dep: _file_digest(dep)
+                for dep in resolved
+                if dep.endswith('.py')
+            };
+            unit_rows[real] = row;
+        }
+        pending.update(resolved - revision.code.keys());
     }
 
     project_facts: dict[str, tuple[str, any]] = {
@@ -1076,6 +1326,8 @@ def _prepare_revision(
                 if revision.client_compiler is not None
                 else False,
             code=revision.code,
+            import_specs=specs_of,
+            unit_rows=unit_rows,
             manifests=revision.manifests,
             sections=sections,
             outputs=outputs,
@@ -1127,18 +1379,21 @@ def prepare_dynamic_module(
     console.print(f'Preparing dynamically imported module: {path}', file=sys.stderr);
     import from jaclang.compiler.driver.compilation_context { program_for }
     import from jaclang.runtime.prepared { publish }
-    actual = program_for(application.entry, program);
-    revision = _prepare(
-        application.entry,
-        actual,
-        application.root,
-        [application.entry, path],
-        application.client_enabled,
-        application.dev,
-        console
-    );
-    revision.services = application.services;
-    revision.applications = application.applications;
-    publish(revision);
-    return revision;
+    import from jaclang.runtime.preparation_lock { PREPARATION_LOCK }
+    with PREPARATION_LOCK {
+        actual = program_for(application.entry, program);
+        revision = _prepare(
+            application.entry,
+            actual,
+            application.root,
+            [application.entry, path],
+            application.client_enabled,
+            application.dev,
+            console
+        );
+        revision.services = application.services;
+        revision.applications = application.applications;
+        publish(revision);
+        return revision;
+    }
 }
