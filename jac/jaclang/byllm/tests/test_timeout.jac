@@ -287,6 +287,61 @@ test "one deadline covers everything a call does" {
         return (got, len(asked));
     }
 
+    def slow_open(budget: float) -> tuple[str, int] {
+        asked: list[int] = [];
+
+        def opens_late(**_kwargs: any) -> any {
+            asked.append(1);
+            time.sleep(2.0);
+            return iter([text_chunk("late")]);
+        }
+        model = Model(model_name="gpt-4o-mini", api_key="sk-test", timeout=budget);
+        started = time.monotonic();
+        with mock.patch("litellm.completion", opens_late) {
+            got = _outcome(
+                lambda { "".join(model.dispatch_streaming(mk_run(stream=True))); }
+            );
+        }
+        if time.monotonic() - started > 1.5 {
+            got = f"{got}, but only once the stream opened";
+        }
+        return (got, len(asked));
+    }
+
+    def async_stream_closed(budget: float) -> tuple[str, int] {
+        held: list[any] = [];
+        closed: list[int] = [];
+
+        async def answer(**_kwargs: any) -> any {
+            async def chunks -> any {
+                try {
+                    for _ in range(100) {
+                        yield text_chunk("x");
+                    }
+                } finally {
+                    closed.append(1);
+                }
+            }
+            # The provider keeps its stream, so only an explicit close ends it.
+            held.append(chunks());
+            return held[0];
+        }
+        model = Model(model_name="gpt-4o-mini", api_key="sk-test", timeout=budget);
+
+        # Checked before asyncio.run ends, since its shutdown closes every
+        # async generator still open.
+        async def stop_early -> str {
+            stream = model.adispatch_streaming(mk_run(stream=True));
+            await stream.__anext__();
+            await stream.aclose();
+            return "closed" if closed else "left open";
+        }
+        with mock.patch("litellm.acompletion", answer) {
+            got = _outcome(lambda { asyncio.run(stop_early()); });
+        }
+        return (got, len(held));
+    }
+
     def silent_provider(budget: float) -> tuple[str, int] {
         asked: list[int] = [];
 
@@ -353,6 +408,20 @@ test "one deadline covers everything a call does" {
             quiet_stream,
             0.5,
             "LLMTimeout",
+            1
+        ),
+        (
+            "a stream that takes too long to open is cut off",
+            slow_open,
+            0.5,
+            "LLMTimeout",
+            1
+        ),
+        (
+            "an async stream the caller stops early is closed",
+            async_stream_closed,
+            30.0,
+            "closed",
             1
         ),
         (

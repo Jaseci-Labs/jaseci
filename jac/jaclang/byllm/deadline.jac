@@ -39,9 +39,13 @@ obj CallDeadline {
         }
     }
 
-    def iterate(stream: Iterable[any]) -> Generator[any, None, None] {
+    def iterate(
+        start: Callable, opened: list[any] | None = None
+    ) -> Generator[any, None, None] {
+        held: list[any] = opened if opened is not None else [];
         if self.budget is None {
-            yield from stream;
+            held.append(start());
+            yield from held[0];
             return;
         }
         items: queue.Queue[tuple[any, Exception | None]] = queue.Queue(
@@ -61,7 +65,10 @@ obj CallDeadline {
         }
 
         def release {
-            source = stream?.completion_stream or stream;
+            if not held {
+                return;
+            }
+            source = held[0]?.completion_stream or held[0];
             close = source?.close;
             if callable(close) {
                 try {
@@ -72,7 +79,12 @@ obj CallDeadline {
 
         def pump {
             try {
-                for item in stream {
+                held.append(start());
+                if stopped.is_set() {
+                    release();
+                    return;
+                }
+                for item in held[0] {
                     if not deliver((item, None)) {
                         release();
                         return;

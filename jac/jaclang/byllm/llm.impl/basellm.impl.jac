@@ -1735,8 +1735,9 @@ impl BaseLLM.dispatch_streaming(mt_run: MTRuntime) -> Generator[str, None, None]
         produced = False;
         self._arm_attempt(mt_run, params, True);
         try {
-            response = self.model_call_with_stream(params);
-            for chunk in deadline.iterate(response) {
+            for chunk in deadline.iterate(
+                lambda { self.model_call_with_stream(params); }
+            ) {
                 stream_model = chunk?.model or stream_model;
                 if chunk?.choices and chunk?.choices?[0]?.finish_reason {
                     finish_reason = str(chunk?.choices?[0]?.finish_reason);
@@ -1807,8 +1808,10 @@ impl BaseLLM.dispatch_streaming_with_tools(
             max_per_call=int(settings.get("max_per_call", _TOOL_DELTA_MAX_PER_CALL))
         );
         try {
-            _stream_resp = self.model_call_with_stream(params);
-            for chunk in deadline.iterate(_stream_resp) {
+            opened: list[any] = [];
+            for chunk in deadline.iterate(
+                lambda { self.model_call_with_stream(params); }, opened
+            ) {
                 chunks.append(chunk);
                 pending_before = len(mt_run._tool_arg_deltas);
                 if stream_args {
@@ -1859,7 +1862,9 @@ impl BaseLLM.dispatch_streaming_with_tools(
     usage_data: dict[str, any] = {};
     actual_model = self.model_name;
     try {
-        rebuilt = _rebuild_stream_chunks(chunks, _stream_resp?.logging_obj);
+        rebuilt = _rebuild_stream_chunks(
+            chunks, opened[0]?.logging_obj if opened else None
+        );
         if rebuilt {
             message = coerce_message_dict(rebuilt.get("choices", [])[0].get("message"));
             usage_data = rebuilt.get("usage", {}) or {};
@@ -1985,6 +1990,7 @@ impl BaseLLM.adispatch_streaming(mt_run: MTRuntime) -> AsyncIterator[str] {
         finish_reason = "";
         produced = False;
         self._arm_attempt(mt_run, params, True);
+        response: any = None;
         try {
             response = await self._await_within_deadline(
                 mt_run, self.model_call_with_stream_async(params)
@@ -2024,6 +2030,8 @@ impl BaseLLM.adispatch_streaming(mt_run: MTRuntime) -> AsyncIterator[str] {
                 continue;
             }
             raise;
+        } finally {
+            await _aclose_stream(response);
         }
     }
 
@@ -2033,6 +2041,20 @@ impl BaseLLM.adispatch_streaming(mt_run: MTRuntime) -> AsyncIterator[str] {
     if not produced {
         _raise_if_empty_truncation(finish_reason, "", None);
     }
+}
+
+async def _aclose_stream(stream: any) {
+    import inspect;
+    close = stream?.aclose or stream?.close;
+    if not callable(close) {
+        return;
+    }
+    try {
+        closing = close();
+        if inspect.isawaitable(closing) {
+            await closing;
+        }
+    } except Exception {}
 }
 
 glob _IMAGE_CALL_PARAMS: tuple[str, ...] = (
