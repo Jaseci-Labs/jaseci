@@ -409,13 +409,18 @@ impl PgWireConnection.run(sql: str, **params: any) -> list[any] {
     assert not self._closed , 'connection is closed';
     (pos_sql, args) = _named_to_positional(sql, params);
     resets = pos_sql.lstrip()[:10].upper().startswith(('DISCARD', 'DEALLOCATE'));
-    name = '' if resets else self._stmts.get(pos_sql);
-    fresh = name is None;
-    if fresh {
-        self._stmt_seq += 1;
-        name = f"j{self._stmt_seq}";
-    } elif not resets {
-        self._stmts.move_to_end(pos_sql);
+    name: str = '';
+    fresh = False;
+    if not resets {
+        cached: (str | None) = self._stmts.get(pos_sql);
+        if cached is None {
+            fresh = True;
+            self._stmt_seq += 1;
+            name = f"j{self._stmt_seq}";
+        } else {
+            name = cached;
+            self._stmts.move_to_end(pos_sql);
+        }
     }
     stmt = name.encode('ascii') + b'\x00';
     bind = b'\x00' + stmt + struct.pack(_INT16, 0) + struct.pack(_INT16, len(args));
