@@ -5888,7 +5888,8 @@ graph import compiler.frontend {
         W3050,
         W3051,
         W3052,
-        W3053
+        W3053,
+        W3054
     }
     diagnostics --> compiler.tools.jac_auto_lint_pass.JacAutoLintPass._check_filter_compare_tautology {
         W3040
