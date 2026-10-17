@@ -62,7 +62,7 @@ An import of a name the runtime resolves outside the boundary is never a wired i
 
 Every module under an `archwire.jac` takes its imports of the modules below it from wires, matched on the whole binding: provider, form (`import`, `import from`, `include`, `type`, `comptime`), name and alias.
 
-- A written import a wire already provides is `W3053` (`remove-wired-import`), and `jac fmt --lintfix` deletes it.
+- A written import a wire already provides is `W3053` (`remove-wired-import`), and `jac fmt --lintfix` deletes it. An `include` is the exception once a declaration precedes it, as every include in an impl annex does: the generated include sits at the head of the module, and an include is textual, so moving it ahead of names it follows would change which declaration comes first. It stays written, and the wire declares it.
 - A written import no wire provides is `E1144`, and the message carries the exact wire to add.
 - An import inside a function body must match a wire whose consumer names that function (`E2094` otherwise, with the scoped wire to add). An import in the body proper is removed by `jac fmt --lintfix` like a module-level one; an import nested in an `if` or `try` stays written, since moving it to the top of the function would change when it runs, and the wire declares it.
 
