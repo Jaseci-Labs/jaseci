@@ -29,6 +29,7 @@ people's PRs without the user asking.
 ## 1. Where things are
 
 ### Repo and branches
+
 - Working tree: `/home/jac/repos/jacpy-comp` (a git **worktree**; the stash is
   shared with other worktrees: never use `git stash`).
 - Local branch: `jacpy-comp`. Its commits are pushed to the fork remote `fork`
@@ -37,6 +38,7 @@ people's PRs without the user asking.
 - Base: `b176cb0266` (main when the work started).
 
 ### Commits on the branch (oldest first)
+
 | commit | what |
 |---|---|
 | `3a6ca6383a` | range/slice port + all JACPYTHON=1 build/runtime fixes + workflow |
@@ -47,6 +49,7 @@ people's PRs without the user asking.
 | `d4f06248c5`, `b6bc80b3e8`, `4bd115eec4` | benchmark/workflow fixes + C-only control benchmarks |
 
 ### Files that matter
+
 - Ports: `jac/jaclang/runtime/python/{boolobject,capsule,cellobject,enumobject,iterobject,namespaceobject,rangeobject,sliceobject,refcount}.jac`
 - Generated C-API declarations: `jac/jaclang/runtime/python/cpython_api.jac`
   (**never hand-edit**; regenerate, Section 3.4).
@@ -95,6 +98,7 @@ people's PRs without the user asking.
 ## 3. How to do each kind of step
 
 ### 3.1 The Mac
+
 - `ssh -o ConnectTimeout=20 jaseci@100.88.159.83` (tailscale; 48 GB, ~13 GB used
   by an MLX training job you must not touch).
 - Repo copy: `~/repos/jacpy-comp` (a snapshot, **not** real git). Sync files you
@@ -103,10 +107,12 @@ people's PRs without the user asking.
   `md5sum < local` vs `ssh ... md5 -q repos/jacpy-comp/<path>`.
 
 ### 3.2 Guarded commands on the Mac
+
 `/tmp/gcheck.sh TAG cmd...` runs `cmd` in `~/repos/jacpy-comp/jac`, kills the
 tree above 20 GiB, writes `/tmp/TAG.log` ending with `EXIT=<rc> PEAK_KB=<kb>`.
 `/tmp/gcheck2.sh` is the same but honours `GDIR=<dir>` for the working dir.
 If `/tmp` was wiped, recreate gcheck.sh:
+
 ```sh
 #!/bin/sh
 tag=$1; shift
@@ -122,20 +128,25 @@ while kill -0 $pid 2>/dev/null; do
 done
 wait $pid; echo "EXIT=$? PEAK_KB=$peak" >> /tmp/$tag.log
 ```
+
 macOS has no `timeout`; `/tmp/to.sh SECS cmd...` is a small replacement.
 
 ### 3.3 Type-check (`jac check`) — kernel-off mode
+
 The normal path rebuilds the compiler kernel (>20 GiB). Use:
+
 ```sh
 ssh jaseci@100.88.159.83 '/tmp/gcheck.sh chk env JAC_COMPILER_LIB=off JAC_KERNEL_BUILDING=1 \
   ./zig-out/bin/jac check jaclang/runtime/python/rangeobject.jac jaclang/runtime/python/sliceobject.jac; \
   grep -A4 "Error:" /tmp/chk.log | head -40; grep -E "ok \[|FAILED|EXIT" /tmp/chk.log'
 ```
+
 Warnings (W30xx, W2003) are fine. Lines quoting `# Py_None ...` comments under
 "Error:" greps are context, not errors; trust the `ok [` / `FAILED` lines.
 Check `cpython_api.jac` and `native_api.jac` too after any port change.
 
 ### 3.4 Regenerate `cpython_api.jac` (after adding/removing any C call in a port)
+
 ```sh
 ssh jaseci@100.88.159.83 'cd ~/repos/jacpy-comp; GDIR=$PWD /tmp/gcheck2.sh gencapi \
   env PATH=$PWD/jac/zig-out/bin:$PATH JAC_COMPILER_LIB=off JAC_KERNEL_BUILDING=1 \
@@ -143,11 +154,13 @@ ssh jaseci@100.88.159.83 'cd ~/repos/jacpy-comp; GDIR=$PWD /tmp/gcheck2.sh genca
 scp -q jaseci@100.88.159.83:repos/jacpy-comp/jac/jaclang/runtime/python/cpython_api.jac \
   jac/jaclang/runtime/python/cpython_api.jac
 ```
+
 "No Jac mapping for these called functions" means a new C helper uses a type
 gen_capi cannot map (function-pointer typedefs etc.). Fix by making the C
 helper take `void *` and cast inside (see `jacpy_capsule_call_*`).
 
 ### 3.5 Build only the native object (fast, ~10 min, ~6.5 GB) and inspect machine code
+
 ```sh
 ssh jaseci@100.88.159.83 'cd ~/repos/jacpy-comp/jac; rm -rf /tmp/prepnat_out; \
   /tmp/gcheck.sh prepnat env DYLD_FALLBACK_LIBRARY_PATH=$HOME/tools/zstd/lib \
@@ -155,24 +168,29 @@ ssh jaseci@100.88.159.83 'cd ~/repos/jacpy-comp/jac; rm -rf /tmp/prepnat_out; \
   bootstrap/python/prepare_native.py $PWD /tmp/prepnat_out macos-aarch64; \
   grep -E "^error|demot|EXIT|JacPython:" /tmp/prepnat.log | sort | uniq -c | head'
 ```
+
 Success line: `JacPython: built native compiler object; no interpreted demotions`.
 Any `demoting X to Python-only` line is a **regression**: the function no longer
 lowers natively (and any static type table referencing it breaks).
 Disassemble one function (names are `<module>_<hash>.<fn>`):
+
 ```sh
 ssh jaseci@100.88.159.83 'otool -tvV /tmp/prepnat_out/jacpython.o | \
   awk "/enumobject_.*\.enum_next:/{f=1} f{print} f&&/^_/&&!/enum_next:/{exit}" | head -80'
 ```
+
 In a relocatable `.o`, external calls show as `bl <own address>`: count them,
 that is the number of out-of-line calls. Compare with C:
 `otool -tvV -p _enum_next .python-build/cpython/macos-aarch64/python/install/lib/libpython3.14.dylib`.
 
 ### 3.6 Full JacPython build on the Mac (~15–25 min, ~7 GB)
+
 ```sh
 ssh jaseci@100.88.159.83 'rm -f /tmp/jpbuild.log; nohup /tmp/gcheck.sh jpbuild env JACPYTHON=1 \
   JAC_PYTHON_JOBS=2 HOMEBREW_PREFIX=$HOME/tools/brewshim DYLD_FALLBACK_LIBRARY_PATH=$HOME/tools/zstd/lib \
   PATH=$HOME/tools/zig:$PATH $HOME/tools/zig/zig build -Ddev -j2 >/dev/null 2>&1 &'
 ```
+
 Poll `/tmp/jpbuild.log` for `EXIT=`. Interpreter:
 `~/repos/jacpy-comp/jac/.python-build/jacpython/macos-aarch64/python/install/bin/python3.14`.
 Stock C build for comparison: same path with `cpython` instead of `jacpython`.
@@ -181,6 +199,7 @@ Crash triage: no debugger over ssh; read
 the `triggered` thread's frames).
 
 ### 3.7 CI (the real measurement)
+
 - Push (rule 2.5) → `jacpython-perf.yml` runs on the PR (~40–50 min).
 - Find the run for your commit:
   `gh run list -R jaseci-labs/jac --branch jacpython-perf --workflow jacpython-perf.yml --limit 6 --json headSha,databaseId,status`
@@ -195,8 +214,10 @@ the `triggered` thread's frames).
 ## 4. Immediate work (do in this order)
 
 ### 4.1 Unblock Contribution Checks: no `.py` files — DONE in `8aa9055` (benchmark embedded in the workflow)
+
 `scripts/jacpython/bench_objects.py` trips "New Python (.py) files detected".
 Do **not** ask for the skip label. Move the benchmark into the workflow:
+
 1. Delete `scripts/jacpython/bench_objects.py`.
 2. In `jacpython-perf.yml`, add a step that writes the same script to
    `$RUNNER_TEMP/bench_objects.py` with a quoted heredoc (`cat > ... <<'PY'`),
@@ -207,6 +228,7 @@ Do **not** ask for the skip label. Move the benchmark into the workflow:
 Check docs/AGENTS.md mention of `scripts/jacpython/bench_objects.py` and update.
 
 ### 4.2 Find out why pre-commit.ci fails — DONE in `b286590` (`ban-em-dashes` on Markdown; fixed the migration doc). Re-check it passes.
+
 `gh pr checks 9930 -R jaseci-labs/jac` → open the `pre-commit.ci - pr` link
 (results.pre-commit.ci). It usually means a hook (jac-format, lint, deslop) wants
 changes it could not autofix. Read the failing hook's output, fix by hand,
@@ -214,6 +236,7 @@ commit, push. If the hook needs `jac` (can't run locally), apply the change the
 log shows verbatim. Expect the bot to also push autofix commits: rebase on them.
 
 ### 4.3 **Revert the kernel memory hack before merge** — DONE in `8aa9055`
+
 Commit `3a6ca6383a` changed `jac/jaclang/compiler/backends/native/kernel_resolve.jac`
 `kernel_options()`: `native_threads=4 → 1`, `opt_level=2 → 0`. That was a local
 experiment to fit the kernel build in memory. It ships an **unoptimized compiler
@@ -222,9 +245,11 @@ kernel** to everyone. Restore `native_threads=4` and `opt_level=2` exactly.
 CI builds it.)
 
 ### 4.4 Read the C-only control results
+
 A CI run on `4bd115eec4` adds `ctl_list_index`, `ctl_int_add`, `ctl_dict_get`,
 `ctl_list_iter`, `ctl_call`, `ctl_len_list`: they touch **no** ported code.
 Fetch its table (3.7).
+
 - If controls show ratio ≈1.00 (±0.05): the gaps in Section 5 are in the ports.
   Go to Section 5.
 - If controls show 1.1–1.3 like the object benches: the JacPython runtime is
@@ -238,9 +263,11 @@ JacPython bytecode gets exactly the same specialized instructions as C
 (verified with `dis.get_instructions(f, adaptive=True)`).
 
 ### 4.5 Make the comparison fair: add main's JacPython as the third interpreter — DONE in `8aa9055` (workflow now reports branch/main; 3 interleaved rounds)
+
 "Parity with the C impl" really means: this branch's JacPython vs **main's
 JacPython** (same runtime, C objects). The stock CPython differs in more than
 the objects (Jac compiler, other Jac ports like `itertools`, link inputs).
+
 1. In `jacpython-perf.yml`, before building, add a job step (or a second job)
    that checks out `main` into `$RUNNER_TEMP/main` (`actions/checkout@v5` with
    `ref: main`, `path: main`) and runs `JACPYTHON=1 zig build build-python` in
@@ -266,6 +293,7 @@ each change: check (3.3), native build (3.5, must say "no interpreted
 demotions"), push, read CI.
 
 ### 5.1 Hot paths and known remaining differences
+
 Find every residue call in the ports:
 `grep -n "jacpy_[a-z_]*(" jac/jaclang/runtime/python/*object.jac jac/jaclang/runtime/python/capsule.jac | grep -v "def jacpy_"`
 Classify each as hot (per call/iteration) or cold (errors, repr, reduce, GC).
@@ -281,8 +309,10 @@ Only hot ones matter. Known hot ones:
 | range_iter 1.23 | `FOR_ITER_RANGE` in ceval (C) | none in Jac per item | build-wide (4.4/4.5) |
 
 ### 5.2 `py_decref` not always inlined
+
 `refcount.jac` `py_decref` sometimes stays an out-of-line 8-instruction function
 (C's `Py_DECREF` is always inlined). Options, in order:
+
 1. Look for an always-inline attribute in the native backend
    (`grep -rn "alwaysinline\|always_inline\|attributes.add" jac/jaclang/compiler/backends/native/`).
    If one exists for Jac functions, use it on `py_incref`/`py_decref`.
@@ -296,6 +326,7 @@ Also (**DONE in `702f8a9`**): `py_decref`'s checked `rc - 1` produced a `b.vs` b
 so it cannot overflow), same for `rc + 1` in `py_incref`.
 
 ### 5.3 Rules for touching hot code (all learned the hard way)
+
 - Cross-module calls: each port declares its own opaque `obj PyObject`; these
   types do **not** unify. Shared helpers must take bare `ptr` (see
   `refcount.jac`). A `ptr[PyObject]` *return* value from another Jac module
@@ -335,6 +366,7 @@ so it cannot overflow), same for `rc + 1` in `py_incref`.
   docstrings inside function bodies are errors (use `#`).
 
 ### 5.4 After each perf change
+
 1. `jac check` the changed ports + `cpython_api.jac` (3.3).
 2. Regenerate `cpython_api.jac` if C calls changed (3.4).
 3. Native build: "no interpreted demotions" (3.5). Disassemble the function you
@@ -350,9 +382,11 @@ so it cannot overflow), same for `rc + 1` in `py_incref`.
 ## 6. Finish line (merge readiness)
 
 ### 6.1 Full CI on the PR
+
 `gh pr checks 9930 -R jaseci-labs/jac`. Required: `build-kit`, `jac-check`,
 `test-*` jobs from `ci.yml`, `Contribution Checks`, `pre-commit.ci`. For each
 failure: get the job log (3.7), read the first `##[error]`, fix, push.
+
 - `build-kit` builds the sealed kit with the native compiler (`na_ir_gen_pass`
   changes are here). A failure mentioning `demoting` or E5092 in compiler
   modules means a compiler change regressed lowering: compare against a green
@@ -361,6 +395,7 @@ failure: get the job log (3.7), read the first `##[error]`, fix, push.
 - If a check needs a label or maintainer action, tell the user; don't add labels.
 
 ### 6.2 Correctness re-verification (once, at the end)
+
 Run in CI (already in the workflow) and confirm in the log:
 `test_bool test_range test_slice test_enumerate test_iter test_iterlen test_types test_scope test_funcattrs test_itertools test_contains test_index test_int test_long test_list test_tuple test_builtin`
 → only `test_bool` (`+False` folded), `test_scope` (class-body implicit global
@@ -369,6 +404,7 @@ uses LOAD_GLOBAL), `test_tuple` (`(1,2)*5` not folded) fail. Also add
 removes; if unavailable, skip and note it).
 
 ### 6.3 If you edit `compiler-bridge.patch`
+
 Hunks are zero-context and match by line number of the **pristine**
 `Makefile.pre.in` (Python 3.14.6; extract it from
 `jac/.python-build/jacpython/sources/74d0d71d…tar.gz`, member
@@ -378,6 +414,7 @@ Hunks are zero-context and match by line number of the **pristine**
 then apply `build-graph.patch`'s Makefile part after it (it must still apply).
 
 ### 6.4 Final docs
+
 - `jacpython-migration.md`: the paragraph after the rangeobject section lists
   the native-ABI rules and the perf state; make it match the final code.
 - AGENTS.md: every entry's "Remaining cost" accurate.
@@ -389,6 +426,7 @@ then apply `build-graph.patch`'s Makefile part after it (it must still apply).
 ---
 
 ## 7. Out of scope (report, don't fix here)
+
 - ~~JacPython compiler: `+False` and `(1,2)*5` not constant-folded; class-body
   implicit globals use `LOAD_GLOBAL` instead of `LOAD_NAME`.~~ **FIXED
   2026-10-11** (see Progress note): constant folding now mirrors CPython
@@ -411,6 +449,7 @@ then apply `build-graph.patch`'s Makefile part after it (it must still apply).
 ---
 
 ## 8. If you get stuck
+
 - Build broke after a compiler change: bisect by copying files from a clean
   `HEAD` tree. Recipe used before: `git archive HEAD jac/jaclang jac/bootstrap
   | gzip > head.tgz`, extract on the Mac to `~/repos/jacpy-head`, symlink
@@ -428,6 +467,7 @@ then apply `build-graph.patch`'s Makefile part after it (it must still apply).
   question.
 
 ## Progress note (2026-10-10, commit 1c4cf1776b)
+
 - Run 38069627309 (branch vs main JacPython): range_iter/neg_iter/reversed
   are ~1.0 vs main, so the earlier ~1.2 vs C on those rows is build-wide (main
   shows it too), not the ports.
