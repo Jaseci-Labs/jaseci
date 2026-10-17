@@ -204,6 +204,7 @@ impl PgStore.postinit -> None {
     self._isolation = None;
     self._known_types = set();
     self._txn_types = set();
+    self._txn_subtypes = {};
     self._listeners = [];
     self._listen_thread = None;
     self._listen_stop = None;
@@ -378,7 +379,10 @@ def _park_conn(info: any, conn: any, in_txn: bool, listened: bool) -> None {
         if in_txn {
             conn.run('ROLLBACK');
         }
-        conn.run('DISCARD ALL');
+        conn.run(
+            "DO $$ BEGIN PERFORM pg_advisory_unlock_all(); EXECUTE 'RESET ALL'; "
+                + "EXECUTE 'UNLISTEN *'; EXECUTE 'DISCARD TEMP'; EXECUTE 'DISCARD SEQUENCES'; END $$"
+        );
         if listened {
             conn.notifications.clear();
         }
@@ -856,6 +860,7 @@ impl PgStore.begin(isolation: TxnIsolation = TxnIsolation.SERIALIZABLE) -> None 
         self._in_txn = True;
         self._isolation = isolation;
         self._txn_types = set();
+        self._txn_subtypes = {};
         try {
             self._run("SET LOCAL lock_timeout = '10s'", {});
         } except Exception {}
@@ -1081,6 +1086,7 @@ impl PgStore.upsert(rows_in: list[AnchorRow]) -> None {
         for pair in pairs {
             registered.add(pair[0]);
         }
+        self._txn_subtypes = {};
     }
 }
 
@@ -1121,14 +1127,23 @@ impl PgStore.root_ids -> list[UUID] {
 
 
 impl PgStore.subtype_names(type_name: str) -> list[str] {
-    rows = self._run(
-        'SELECT type_name FROM graph_types WHERE ancestor = :t', {'t': type_name}
-    );
-    names = [str(r[0]) for r in rows];
-    if type_name not in names {
-        names.append(type_name);
+    with self._lock {
+        snapshot = self._in_txn and self._isolation != TxnIsolation.READ_COMMITTED;
+        if snapshot and type_name in self._txn_subtypes {
+            return list(self._txn_subtypes[type_name]);
+        }
+        rows = self._run(
+            'SELECT type_name FROM graph_types WHERE ancestor = :t', {'t': type_name}
+        );
+        names = [str(r[0]) for r in rows];
+        if type_name not in names {
+            names.append(type_name);
+        }
+        if snapshot {
+            self._txn_subtypes[type_name] = names;
+        }
+        return list(names);
     }
-    return names;
 }
 
 
