@@ -2943,6 +2943,7 @@ graph import compiler.backends.native {
         rename_wasm_imports,
         wasm_assets,
         wasm_ld_args,
+        wasm_object_functions,
         write_allowed_imports
     }
     wasm_build --> cli.commands.native_build.native_build { app_declared_imports }
