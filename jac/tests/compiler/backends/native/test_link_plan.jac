@@ -1374,9 +1374,9 @@ def _work_per_attempt(entry_path: str) -> tuple[dict[str, int], list[tuple[str, 
     prog.options = opts;
     helper_runs: dict[str, int] = {};
     stopped: list[tuple[str, int]] = [];
-    emit_helpers = NaIRGenPass._emit_rc_helpers;
-    run_impl = NaIRGenPass._run_impl;
-    def counting_helpers(gen: NaIRGenPass) -> None {
+    emit_helpers: any = NaIRGenPass._emit_rc_helpers;
+    run_impl: any = NaIRGenPass._run_impl;
+    def counting_helpers(gen: NaIRGenPass) {
         name = os.path.basename(gen.module.loc.mod_path);
         helper_runs[name] = helper_runs.get(name, 0) + 1;
         emit_helpers(gen);
