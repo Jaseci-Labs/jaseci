@@ -195,16 +195,28 @@ impl NaIRGenPass._unpack_into(
             }
             continue;
         }
-        if var_name in self.local_vars {
+        fresh = var_name not in self.local_vars;
+        if not fresh {
             alloca = self.local_vars[var_name];
             if not isinstance(alloca.type, ir.PointerType) {
                 return False;
             }
             slot_type = alloca.pointee_type;
-            stored = self._coerce_container_element(elem_val, slot_type)
-                if slot_type == self.jacval_type
-                else self._coerce_type(elem_val, slot_type);
-        } else {
+            _target_ty = self._lower_type(target.type)
+                if isinstance(target, uni.Expr)
+                else None;
+            fresh = slot_type != self.jacval_type
+                and _target_ty is not None
+                and _target_ty != slot_type
+                and elem_val.type != slot_type;
+            if not fresh {
+                stored = self._coerce_container_element(elem_val, slot_type)
+                    if slot_type == self.jacval_type
+                    else self._coerce_type(elem_val, slot_type);
+                fresh = stored.type != slot_type;
+            }
+        }
+        if fresh {
             _i8p = ir.IntType(8).as_pointer();
             _want = self._lower_type(target.type)
                 if isinstance(target, uni.Expr)
