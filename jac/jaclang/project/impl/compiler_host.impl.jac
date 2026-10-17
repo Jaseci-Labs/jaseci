@@ -312,14 +312,17 @@ impl ProjectHost.client_stub_globals -> list[str] {
 impl ProjectHost.native_dep_iface(
     program: JacProgram, path: str, options: CompileOptions
 ) -> (NativeIface | None) {
-    ent = program.native_units().ensure(
-        path,
-        compile_on_miss=True,
-        options=options,
-        check_deps=False,
-        products=not options.no_cgen
+    return program.native_units().dep_iface(
+        path, options, products=not options.no_cgen
     );
-    return ent.iface if ent is not None else None;
+}
+
+impl ProjectHost.native_dep_discovery_open(program: JacProgram) -> bool {
+    return program.native_units().dep_discovery_open();
+}
+
+impl ProjectHost.native_deps_deferred(program: JacProgram) -> bool {
+    return program.native_units().close_dep_deferral();
 }
 
 impl ProjectHost.held_native_iface(
