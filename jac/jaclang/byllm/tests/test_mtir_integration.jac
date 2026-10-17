@@ -12,9 +12,24 @@ Note: MTIR extraction from compiled code is tested in:
 
 import sys;
 import tempfile;
+import from jaclang.runtime.object_interop { fields }
 import from pathlib { Path }
 
 import from jaclang { JacRuntime }
+import from jaclang.runtime.semantic {
+    ClassInfo,
+    EnumInfo,
+    FieldInfo,
+    FunctionInfo,
+    MethodInfo,
+    ParamInfo,
+    TypeForm,
+    mk_dict,
+    mk_form,
+    mk_list,
+    type_to_str,
+}
+import from jaclang.compiler.driver.program { JacProgram }
 import from support { fixture_path, load_fixture, need_outside_jaclang }
 
 # =============================================================================

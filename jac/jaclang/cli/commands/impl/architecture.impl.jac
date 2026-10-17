@@ -100,17 +100,17 @@ def _unused_facts(
     return unused;
 }
 
-def _format_source(text: str, path: str) -> str {
-    prog = JacProgram.jac_str_formatter(text, path);
-    if prog.errors_had or prog.mod.main is None {
-        return text;
-    }
-    return prog.mod.main.gen.jac;
-}
-
-def _write_arch(arch_path: str, text: str) {
+def _write_arch(arch_path: str, text: str) -> bool {
     import tempfile;
-    formatted = _format_source(text, arch_path);
+    prog = JacProgram.jac_str_formatter(text, arch_path);
+    if prog.errors_had or prog.mod.main is None {
+        console.error(
+            f"refusing to write {arch_path}: the rendered wiring does not parse",
+            hint=str(prog.errors_had[0]) if prog.errors_had else None
+        );
+        return False;
+    }
+    formatted = prog.mod.main.gen.jac;
     (fd, tmp) = tempfile.mkstemp(
         dir=os.path.dirname(arch_path) or ".", prefix=".arch.", suffix=".tmp"
     );
@@ -125,6 +125,7 @@ def _write_arch(arch_path: str, text: str) {
         }
         raise err;
     }
+    return True;
 }
 
 def _strip_modules(paths: list[str]) -> int {
@@ -220,7 +221,9 @@ def _arch_init(force: bool, strip: bool, directory: str) -> int {
         }
     }
     facts = _collect_facts(spec, modules);
-    _write_arch(arch_path, render_wiring(spec, facts, []));
+    if not _write_arch(arch_path, render_wiring(spec, facts, [])) {
+        return 1;
+    }
     console.success(
         f"wrote {ARCH_FILE_NAME}: {len(facts)} wired names sealing {len(
             modules
@@ -272,7 +275,9 @@ def _sync_one(arch_path: str, strip: bool, prune: bool) -> int {
         for (consumer, binding) in wiring_facts(spec.wires) + added
         if (consumer, binding.key()) not in dropped
     ];
-    _write_arch(arch_path, render_wiring(spec, facts, spec.rules));
+    if not _write_arch(arch_path, render_wiring(spec, facts, spec.rules)) {
+        return 1;
+    }
     console.success(
         f"{arch_path}: added {len(added)} wired names, removed {len(dropped)} unused"
     );

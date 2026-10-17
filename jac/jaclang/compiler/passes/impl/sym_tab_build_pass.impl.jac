@@ -247,9 +247,11 @@ impl SymTabBuildPass.exit_module_item with ModuleItem exit {
 }
 
 impl SymTabBuildPass.enter_archetype with Archetype entry {
+    absorbed = False;
     if self.cur_sym_tab {
         existing_sym = self.cur_scope.names_in_scope.get(here.sym_name, None);
-        if existing_sym {
+        absorbed = existing_sym is not None and existing_sym.imported;
+        if existing_sym and not absorbed {
             nd_native = here.in_native_context();
             nd_client = here.in_client_context();
             for d in existing_sym.defn {
@@ -271,7 +273,9 @@ impl SymTabBuildPass.enter_archetype with Archetype entry {
     }
     self.push_scope_and_link(here);
     assert (here.parent_scope is not None);
-    here.parent_scope.def_insert(here, access_spec=here, single_decl='archetype');
+    here.parent_scope.def_insert(
+        here, access_spec=here, single_decl='archetype', force_overwrite=absorbed
+    );
 }
 
 impl SymTabBuildPass.exit_archetype with Archetype exit {

@@ -3,7 +3,10 @@ import sys;
 import from "libcef.so" {
     def cef_execute_process(args: int, app: int, sandbox: int) -> i32;  def cef_version_info(
         which: i32
-    ) -> i32;  obj cef_app_t {
+    ) -> i32;  obj cef_ptr_wrap_t {
+        has p0: int = 0,
+            p1: int = 0;
+    }  obj cef_app_t {
         has size: int = 0,
             add_ref: int = 0,
             release: int = 0,

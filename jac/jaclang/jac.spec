@@ -553,7 +553,8 @@ import_wire ::=
     "comptime"? ("include" | "type")? (
         "any"
         | "*"
-        | wire_module_path ("." | "|" | "[" (wire_target ","?)* "]" | wire_target ";")
+        | wire_module_path
+          ("." | "|" | "++>" ("[" (wire_target ","?)* "]" | wire_target ";"))
     )
 
 wire_target ::= ("any" | "*" | STRING | wire_module_path ("." | "|")?) wire_payload?

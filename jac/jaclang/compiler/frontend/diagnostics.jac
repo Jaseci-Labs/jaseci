@@ -407,7 +407,7 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
      E0094 = _err(
          "E0094",
          Category.SYNTAX,
-         "Expected a wire ('provider --> consumer') or an edge rule here",
+         "Expected a wire ('provider ++> consumer') or an edge rule here",
          help="A `graph import` block holds wires and `edge Name:` rules only."
      ),
      E0095 = _err(

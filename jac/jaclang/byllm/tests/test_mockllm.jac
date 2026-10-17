@@ -4,6 +4,17 @@ MockLLM is public API that users test their own apps with, so each promise in th
 byLLM reference's "What each output becomes" table is pinned here.
 """
 
+import from jaclang.byllm.lib {
+    MockLLM,
+    Model,
+    MockToolCall,
+    MockRawResponse,
+    MockError,
+    StreamEvent
+}
+import from jaclang.byllm.exceptions { OutputConversionError }
+
+
 obj Person {
     has name: str,
         age: int;

@@ -11,9 +11,12 @@ graph import {
     core.ai ++> cli.commands.score { optional_review }
     core.docs.graph ++> [
         cli.commands.docs { DocsStatus, docs_status },
-        web.main { doc_page, doc_tree, docs_status, llms_txt },
+        web.main,
     ]
-    core.docs.sync ++> cli.commands.docs | web.main { docs_sync_tick }
+    core.docs.sync ++> [
+        cli.commands.docs { docs_sync_tick },
+        web.main,
+    ]
     core.github ++> cli.commands.score {
         RepoMeta,
         code_breakdown,
@@ -24,16 +27,9 @@ graph import {
         text_of,
         untar
     }
-    core.install ++> web.main { ensure_install, install_sh }
-    core.jacyac.github.auth ++> desktop.main | web.main {
-        begin_github,
-        complete_native_github,
-        finish_github,
-        github_callback_mode,
-        github_enabled,
-        poll_github
-    }
-    core.jacyac.github.repos ++> desktop.main | web.main { github_repositories }
+    core.install ++> web.main;
+    core.jacyac.github.auth ++> desktop.main | web.main;
+    core.jacyac.github.repos ++> desktop.main | web.main;
     core.jacyac.limits ++> cli.commands.feed { PostingDenied }
     core.jacyac.native.JacYacMobile ++> mobile.main { JacYacMobile }
     core.leaderboard.scoring ++> cli.commands.score {
@@ -42,7 +38,7 @@ graph import {
         analyze,
         score
     }
-    core.packages.catalog ++> web.main { package_catalog, package_detail }
+    core.packages.catalog ++> web.main;
     core.site.docs.DocsShell ++> desktop.pages.docs.index | web.pages.docs.index {
         DocsShell
     }
@@ -61,15 +57,7 @@ graph import {
         | web.pages.packages.index { PackagesShell }
     core.site.ui.SiteShell ++> desktop.pages.layout | web.pages.layout { SiteShell }
     core.social_graph ++> cli.commands.feed { create_tweet, load_feed }
-    core.source.files ++> web.main {
-        SourceFile,
-        SourceSpan,
-        SourceView,
-        example_sources,
-        source_file,
-        source_span,
-        source_tree
-    }
+    core.source.files ++> web.main;
 }
 
 graph import cli {
@@ -114,8 +102,6 @@ graph import core {
         site.docs.DocsGraphFloat { TreeNode },
         site.docs.DocsShell {
             DocPageView,
-            DocTree,
-            DocsStatus,
             TreeNode,
             VersionInfo,
             doc_page,
@@ -274,9 +260,7 @@ graph import core {
         | site.jacyac.components.ProjectCard
         | site.jacyac.components.Sidebar
         | site.jacyac.components.TweetCard
-        | site.landing.BookSection
         | site.landing.CopyCommand
-        | site.landing.Hero
         | site.landing.Reveal
         | site.source.FloatingSource
         | site.ui.CodeBlock
@@ -306,15 +290,7 @@ graph import core {
 graph import core.brand {
     logo ++> styles { logo_xml }
     tokens ++> [
-        styles {
-            Colors,
-            dark_palette,
-            font_family,
-            fonts,
-            light_palette,
-            radii,
-            spacing
-        },
+        styles { Colors, dark_palette, font_family, light_palette, radii, spacing },
         theme { Colors, dark_palette, light_palette },
     ]
 }
@@ -388,8 +364,7 @@ graph import core.jacyac.native {
     components.TweetCard ++> screens.ChannelsScreen
         | screens.FeedScreen
         | screens.ProfileScreen { TweetCard }
-    icon ++> JacYacMobile
-        | components.BridgeBanner
+    icon ++> components.BridgeBanner
         | components.StatusView
         | components.TabBar
         | components.TweetCard
@@ -610,7 +585,7 @@ graph import core.site.game {
     arena ++> webgl_host { frame, get_deaths, get_hp, get_score, init, shutdown }
     gmath ++> [
         arena { clampf, jsin, lerp },
-        sim { DEG2RAD, Rng, jcos, jsin, jsqrt, rand01, rand_range, rand_sign },
+        sim { DEG2RAD, Rng, jcos, jsin, jsqrt, rand_range, rand_sign },
     ]
     platform_rl ++> arena {
         KEY_A,

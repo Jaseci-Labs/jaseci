@@ -1,5 +1,7 @@
 """Tool use and the ReAct loop: finish_tool, and recovering when a model skips it."""
 
+import from jaclang.byllm.types { IterationAction, IterationContext }
+import from jaclang.byllm.lib { MockLLM, MockRawResponse }
 import from support { call, finish, prompt_text, say, tool_names }
 
 

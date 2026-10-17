@@ -1,6 +1,7 @@
 """A reply cut off at max_tokens never passes as a finished answer."""
 
 import asyncio;
+import from jaclang.byllm.lib { Model, OutputTruncatedError }
 import from support { call, chunk_text, finish, say, scripted, stream_events }
 
 

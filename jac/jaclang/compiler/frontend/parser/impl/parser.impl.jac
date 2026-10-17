@@ -140,10 +140,7 @@ impl Parser.check_name -> bool {
 }
 
 impl Parser.is_name_usable_token -> bool {
-    if self.check_any(TokenKind.KW_ROOT, TokenKind.KW_SUPER) {
-        return False;
-    }
-    return is_special_var_kind(self.current().kind) or self.is_builtin_type_token();
+    return is_name_usable_kind(self.current().kind);
 }
 
 impl Parser.is_keyword_token -> bool {
@@ -7327,14 +7324,7 @@ impl Parser.parse_import_rule -> ImportRule | None {
         sources.append(pat);
         kid.append(pat);
     }
-    if self.check(TokenKind.CARROW_R) {
-        self.emit_diag(
-            "An edge rule only checks imports; write 'source --> target'", "E0086"
-        );
-        self.advance();
-    } else {
-        self._expect_wire_arrow(kid);
-    }
+    self._expect_rule_arrow(kid);
     targets: list[ModulePattern] = [self.parse_module_pattern()];
     kid.append(targets[0]);
     while self.match_tok(TokenKind.BW_OR) {
@@ -7566,6 +7556,17 @@ impl Parser._expect_wire_arrow(kid: list[UniNode]) -> bool {
     }
     kid.append(self.consume_uni(TokenKind.ARROW_R));
     return True;
+}
+
+impl Parser._expect_rule_arrow(kid: list[UniNode]) -> None {
+    if self.check(TokenKind.CARROW_R) {
+        self.emit_diag(
+            "An edge rule only checks imports; write 'source --> target'", "E0086"
+        );
+        self.advance();
+        return;
+    }
+    self._expect_wire_arrow(kid);
 }
 
 impl Parser._wire_path_ahead -> bool {

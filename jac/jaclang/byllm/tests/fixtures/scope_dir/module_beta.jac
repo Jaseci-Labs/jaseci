@@ -1,5 +1,6 @@
 """module_beta's `process_data`, which shares its name with module_alpha's."""
 
+import from jaclang.byllm.lib { MockLLM }
 
 obj BetaResult {
     has value: str;

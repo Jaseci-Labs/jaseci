@@ -1020,3 +1020,123 @@ test "a name read inside an import from c block counts as used" {
         shutil.rmtree(base, ignore_errors=True);
     }
 }
+
+
+test "grouped targets on one line each reach their own function" {
+    base = _standard(
+        arch=_ARCH
+            + "\ngraph import {\n"
+            + "    core.other ++> [app.main.greet { helper }, app.main.again { helper as h }]\n"
+            + "}\n",
+        main=(
+            "def greet -> str {\n"
+            "    return serve() + when() + str(helper());\n"
+            "}\n"
+            "\n"
+            "def again -> int {\n"
+            "    return h();\n"
+            "}\n"
+        )
+    );
+    try {
+        assert _errors(_compile(base, "app/main.jac")) == [];
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+test "jac fmt keeps the escape on a wired name that is a keyword" {
+    base = _standard(
+        arch=_ARCH.replace(
+            "    core.util ++> app.main { now as when }\n",
+            "    core.util ++> app.main { `return as result, now as when }\n"
+        )
+    );
+    try {
+        text = _formatted(base, "archwire.jac");
+        assert "`return as result" in text , text;
+        _write(base, "archwire.jac", text);
+        assert _formatted(base, "archwire.jac") == text;
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+test "a local name that shadows a wired one does not count as its use" {
+    base = _standard(
+        arch=_ARCH.replace(
+            "    core.util ++> app.main { now as when }\n",
+            "    core.util ++> app.main { now as when }\n"
+            "    core.other ++> app.main { helper }\n"
+        ),
+        main=_MAIN + "\ndef twice(helper: int) -> int {\n    return helper * 2;\n}\n"
+    );
+    try {
+        assert _errors(_compile(base, "app/main.jac")) == ["E1146"];
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+test "a name a --> wire declares but the function never reads is unused too" {
+    base = _standard(
+        arch=_ARCH
+            + "\ngraph import {\n    core.other --> app.main.greet { helper }\n}\n",
+        main=(
+            "def greet -> str {\n"
+            "    if True {\n"
+            "        import from core.other { helper }\n"
+            "    }\n"
+            "    return serve() + when();\n"
+            "}\n"
+        )
+    );
+    try {
+        assert _errors(_compile(base, "app/main.jac")) == ["E1146"];
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+test "a module's own archetype shadows one an included module brings in" {
+    base = _project(
+        {
+            "archwire.jac": "graph import {\n    include core.shared ++> core.host;\n}\n",
+            "core/shared.jac": "obj Pair {\n    has a: int = 0;\n}\n\ndef make -> Pair {\n    return Pair(a=1);\n}\n",
+            "core/host.jac": (
+                "obj Pair {\n    has a: int = 0;\n}\n\n"
+                "def use -> int {\n    return Pair(a=2).a + make().a;\n}\n"
+            )
+        }
+    );
+    try {
+        assert "E0077" not in _errors(_compile(base, "core/host.jac"));
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+test "a wired keyword-named function read in code counts as used" {
+    base = _standard(
+        arch=_ARCH.replace(
+            "    core.util ++> app.main { now as when }\n",
+            "    core.util ++> app.main { `init, now as when }\n"
+        ),
+        main="cl def boot -> str {\n    return init() + when();\n}\n"
+    );
+    try {
+        _write(
+            base,
+            "core/util.jac",
+            _UTIL + "\ncl def `init -> str {\n    return now();\n}\n"
+        );
+        assert "E1146" not in _errors(_compile(base, "app/main.jac"));
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}

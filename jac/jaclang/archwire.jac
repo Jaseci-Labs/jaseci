@@ -775,15 +775,6 @@ graph import {
         },
     ]
     compiler.driver.jir --> [
-        byllm.tests.test_mtir_integration {
-            HEADER_SIZE,
-            SECTIONS_MAGIC,
-            SEC_BYTECODE,
-            SEC_MTIR,
-            get_module_cache_path,
-            read_sections,
-            write_sections
-        },
         cli.commands.cache._live_keys { compiler_generation },
         cli.commands.execution._exec_file { scrub_cache_dirs },
         dist.payload.assemble.assemble_site { write_compiler_identity },
@@ -838,8 +829,7 @@ graph import {
         | cli.commands.transform.py2jac
         | project.compiler_host.ProjectHost.parse_python { CompilationProduct }
     compiler.driver.program ++> [
-        byllm.tests.test_mtir_integration
-            | cli.commands.analysis._check_file_job
+        cli.commands.analysis._check_file_job
             | cli.commands.architecture
             | cli.commands.execution.debug
             | cli.commands.fix._format_source
@@ -885,8 +875,7 @@ graph import {
         dist.publish.builder._module_is_client_source { JacProgram as JacProgramRt },
     ]
     compiler.driver.program --> [
-        byllm.tests.test_byllm
-            | dist.precompile_bytecode.sealable_sources
+        dist.precompile_bytecode.sealable_sources
             | scale.tests.apps.test_fleet_from_apps { JacProgram },
         dist.publish.builder.WheelBuilder._assemble_src_data {
             JacProgram as JacProgramRt
@@ -2496,9 +2485,8 @@ graph import {
             is_record
         },
         byllm.systemone._state_value { fields as record_fields, is_record },
-        byllm.tests.test_mtir_integration
-            | compiler.native_compiler.NativeCompiler._field_annotations { fields },
         cli.NonGPT { fields as dc_fields, is_record },
+        compiler.native_compiler.NativeCompiler._field_annotations { fields },
         compiler.native_compiler.NativeCompiler._register_defaults { fields },
         comptime { fields as _record_fields, is_record as _is_record },
     ]
@@ -3294,8 +3282,6 @@ graph import {
     }
     runtime.runtime ++> [
         byllm.lib
-            | byllm.tests.support.need_outside_jaclang
-            | byllm.tests.test_routing
             | client.client_bundle.client_program
             | project.plugin_config
             | scale.memory.context.JScaleExecutionContext.init
@@ -3335,15 +3321,14 @@ graph import {
         testing.test_runner._fresh_jac_state { JacRuntime, JacRuntimeInterface },
     ]
     runtime.runtime --> [
-        byllm.tests.test_byllm
-            | cli.commands.analysis.check.run_units
+        byllm.visit_routing._candidate_for { JacRuntimeInterface },
+        cli.commands.analysis.check.run_units
             | compiler.driver.compiler.JacCompiler.selfhost.getter
             | compiler.driver.selfhost.SelfHostCache.program.getter
             | compiler.tests.test_stubcat_roundtrip.small_catalog
             | project.config.JacConfig.app_for_target
             | server.serving.supervisor.WorkerSupervisor._spawn
             | server.shared_store.shared_store { JacRuntime },
-        byllm.visit_routing._candidate_for { JacRuntimeInterface },
         cli.console._get_console
             | client.cli.run_client_build
             | client.targets.client_dev_common.dev_proxy_paths
@@ -3399,7 +3384,11 @@ graph import {
             VarInfo
         },
         byllm.systemone { ClassInfo, EnumInfo, FunctionInfo, TypeForm, VarInfo },
-        byllm.tests.test_mtir_integration | compiler.passes.mtir_gen_pass {
+        byllm.types { Info },
+        byllm.visit_routing { ClassInfo },
+        compiler.driver.compiler { info_graph_from_json },
+        compiler.driver.unit_products { Info, info_graph_to_json },
+        compiler.passes.mtir_gen_pass {
             ClassInfo,
             EnumInfo,
             FieldInfo,
@@ -3412,18 +3401,6 @@ graph import {
             mk_list,
             type_to_str
         },
-        byllm.tests.test_systemone {
-            ClassInfo,
-            EnumInfo,
-            FieldInfo,
-            FunctionInfo,
-            ParamInfo,
-            TypeForm
-        },
-        byllm.types { Info },
-        byllm.visit_routing { ClassInfo },
-        compiler.driver.compiler { info_graph_from_json },
-        compiler.driver.unit_products { Info, info_graph_to_json },
     ]
     type runtime.semantic ++> compiler.driver.program | compiler.driver.progstate {
         Info
@@ -4170,12 +4147,10 @@ graph import {
         run_cl_test_file
     }
     testing.requires ++> [
-        byllm.tests.test_media
-            | byllm.tests.test_timeout
-            | scale.tests.server.test_scheduler_endpoints
-            | scale.tests.server.test_scheduler_multipod { require_module },
         scale.tests.deploy.test_deploy_k8s { require_flag },
         scale.tests.microservices.test_fat_bundle { require_network },
+        scale.tests.server.test_scheduler_endpoints
+            | scale.tests.server.test_scheduler_multipod { require_module },
     ]
     testing.runner ++> compiler.driver.build_services.CompilerBuildServices.run_test {
         run_test
@@ -4187,7 +4162,6 @@ graph import {
         runtime.runtime.JacTest.jac_test { JacTestCheck },
     ]
     testing.test_runner ++> [
-        byllm.tests.support.need_outside_jaclang { strict_mode },
         cli.commands.analysis.test { run_tests },
         scale.tests.support { STRICT_ENV, strict_mode },
     ]
@@ -4285,26 +4259,13 @@ graph import byllm {
     _optdeps.litellm ++> [
         exceptions { when_litellm_loaded },
         llm { _disable_debugging, litellm, when_litellm_loaded },
-        tests.test_compaction_conversation | tests.test_telemetry_ | types {
-            LiteLLMMessage
-        },
-        tests.test_timeout { litellm },
+        types { LiteLLMMessage },
     ]
     _optdeps.loguru ++> llm | visit_routing { logger }
     _optdeps.openai ++> llm { AsyncOpenAI, OpenAI, openai }
     _optdeps.pillow ++> types { PILImageCls, open_image }
     _optdeps.pydantic ++> schema | types { TypeAdapter }
-    config_loader ++> [
-        llm | mtir { get_byllm_config },
-        tests.test_compaction | tests.test_parallel | tests.test_typed_retry {
-            get_byllm_config,
-            reset_byllm_config
-        },
-    ]
-    config_loader --> [
-        tests.test_byllm { JacByllmConfig, get_byllm_config, reset_byllm_config },
-        tests.test_usage { JacByllmConfig },
-    ]
+    config_loader ++> llm | mtir { get_byllm_config }
     exceptions ++> [
         lib {
             AuthenticationError,
@@ -4332,96 +4293,14 @@ graph import byllm {
         },
         mcp { McpError },
         mtir { ConfigurationError, OutputConversionError },
-        schema | tests.test_streaming { ConfigurationError },
-        systemone | tests.test_mockllm | tests.test_typed_retry {
-            OutputConversionError
-        },
-        tests.test_byllm {
-            ConfigurationError,
-            FinishToolError,
-            McpError,
-            OutputConversionError
-        },
-        tests.test_compaction { CompactionNotEffectiveError, ConfigurationError },
-        tests.test_systemone {
-            AuthenticationError,
-            ByLLMError,
-            ConfigurationError,
-            RateLimitError
-        },
-        tests.test_timeout { LLMTimeout, RateLimitError },
-        tests.test_tool_arg_streaming { FinishToolError, OutputConversionError },
+        schema { ConfigurationError },
+        systemone { OutputConversionError },
         types { ByLLMError, FinishToolError },
-    ]
-    exceptions --> tests.test_byllm {
-        AuthenticationError,
-        ModelNotFoundError,
-        RateLimitError
-    }
-    lib ++> [
-        tests.fixtures.async_by_llm
-            | tests.fixtures.enum_no_value
-            | tests.fixtures.enum_with_semstr
-            | tests.fixtures.test_schema
-            | tests.test_parallel
-            | tests.validate_schema { Model },
-        tests.fixtures.basic
-            | tests.fixtures.basic_compile
-            | tests.fixtures.import_dir.importable_schema
-            | tests.fixtures.proj
-            | tests.fixtures.scope_dir.module_alpha
-            | tests.fixtures.scope_dir.module_beta
-            | tests.test_compaction_budget
-            | tests.test_compaction_conversation
-            | tests.test_conversation
-            | tests.test_conversation_system_prompt
-            | tests.test_prompting
-            | tests.test_typed_retry { MockLLM },
-        tests.fixtures.tool_function | tests.fixtures.tool_method {
-            MockLLM,
-            MockToolCall
-        },
-        tests.support { MockError, MockLLM, MockRawResponse, MockToolCall },
-        tests.test_byllm | tests.test_streaming { MockLLM, Model },
-        tests.test_compaction { MockLLM, Model, ModelPool },
-        tests.test_document { Document, MockLLM },
-        tests.test_media { ConfigurationError, Image, MockLLM, Video },
-        tests.test_mockllm {
-            MockError,
-            MockLLM,
-            MockRawResponse,
-            MockToolCall,
-            Model,
-            StreamEvent
-        },
-        tests.test_model_pool | tests.test_timeout { Model, ModelPool },
-        tests.test_systemone { Decision, MockLLM, MockSystemOne, Model },
-        tests.test_tool_arg_streaming { MockLLM, MockRawResponse, MockToolCall },
-        tests.test_tools { MockLLM, MockRawResponse },
-        tests.test_truncated_tool_calls { Model, OutputTruncatedError },
-        tests.test_usage { MockLLM, Model, OutputTruncatedError },
     ]
     llm ++> [
         lib { MockLLM, MockSystemOne, Model, ModelPool, SystemOneModel },
-        tests.fixtures.async_stream_by_llm | tests.test_parallel | visit_routing {
-            BaseLLM
-        },
-        tests.support { BaseLLM, MockSystemOne },
-        tests.test_compaction { BaseLLM, LocalLLM },
-        tests.test_systemone { SystemOneModel },
-        tests.test_timeout { _is_timeout_error, _is_transient_error },
+        visit_routing { BaseLLM },
     ]
-    llm --> tests.test_byllm {
-        _CACHE_CONTROL_EPHEMERAL,
-        _apply_prompt_caching,
-        _is_prompt_caching_eligible
-    }
-    llm as _byllm_llm_mod ++> tests.test_byllm
-        | tests.test_compaction
-        | tests.test_compaction_budget
-        | tests.test_telemetry_
-        | tests.test_tool_arg_streaming
-        | tests.test_usage;
     local_runtime ++> [
         cli._cmd_model { LOCAL_MODELS, list_local_aliases },
         llm {
@@ -4433,7 +4312,7 @@ graph import byllm {
         },
     ]
     mcp ++> [
-        lib | tests.test_byllm { McpClient, McpTool },
+        lib { McpClient, McpTool },
         mtir | types { McpTool },
     ]
     model_cache ++> [
@@ -4447,35 +4326,19 @@ graph import byllm {
         llm { ensure_model },
     ]
     mtir ++> [
-        lib | tests.test_systemone | tests.test_telemetry_ { MTIR, MTRuntime },
-        llm
-            | systemone
-            | tests.support
-            | tests.test_byllm
-            | tests.test_usage
-            | visit_routing.route_visit { MTRuntime },
+        lib { MTIR, MTRuntime },
+        llm | systemone | visit_routing.route_visit { MTRuntime },
     ]
-    mtir --> tests.test_mtir_integration { MTIR }
     type mtir ++> telemetry { MTRuntime }
     parallel ++> [
         lib { dispatch_batch, mark_serialize },
         llm { _PARALLEL_TOOL_HINT, _index_by_identity, dispatch_batch },
-        tests.test_parallel {
-            _PARALLEL_TOOL_HINT,
-            _WORKER_POOL,
-            _index_by_identity,
-            _is_async,
-            dispatch_batch,
-            mark_serialize
-        },
     ]
     schema ++> [
         llm { inject_schema_hint, type_display_name },
         mtir { json_to_instance, type_display_name, type_to_schema },
-        tests.test_byllm { type_display_name },
         types { tool_to_schema, type_display_name },
     ]
-    schema as schema --> tests.test_mtir_integration;
     systemone ++> [
         lib { Decision },
         llm {
@@ -4491,28 +4354,18 @@ graph import byllm {
             resolve_model_name,
             wrap_result
         },
-        tests.test_systemone { ROUTE_SELECT_ATTR, assemble, lower, resolve_model_name },
         visit_routing { ROUTE_SELECT_ATTR },
     ]
     telemetry ++> [
         lib { register_agent_callback },
         llm { _aggregate_usage, _current_invocation_id, _emit_agent_telemetry },
-        tests.test_streaming { _current_invocation_id },
-        tests.test_telemetry_ {
-            _agent_callbacks,
-            _emit_agent_telemetry,
-            register_agent_callback
-        },
-        tests.test_usage { _agent_callbacks, register_agent_callback },
     ]
-    telemetry --> tests.test_telemetry_ { _current_invocation_id }
     tool_protocol ++> llm {
         coerce_message_dict,
         inject_tool_hint,
         recover_tool_calls,
         response_field
     }
-    tool_protocol --> tests.test_byllm { linearize_tool_messages, recover_tool_calls }
     types ++> [
         lib {
             Document,
@@ -4561,22 +4414,7 @@ graph import byllm {
         parallel { ToolCallResultMsg, normalize_tool_result },
         systemone.build_state { Media },
         systemone.lower { image_resp_kind },
-        tests.support { Message, MessageRole, StreamEvent, Tool },
-        tests.test_byllm { Tool },
-        tests.test_compaction { MockToolCall },
-        tests.test_conversation | visit_routing.route_visit { Message, MessageRole },
-        tests.test_multimodal_tool_results {
-            Image,
-            Text,
-            ToolCallResultMsg,
-            content_preview,
-            normalize_tool_result,
-            reroute_tool_images_to_user_message
-        },
-        tests.test_parallel { Message, MessageRole, MockToolCall, Tool },
-        tests.test_telemetry_ { Message, MessageRole, Text },
-        tests.test_tools { IterationAction, IterationContext },
-        tests.test_usage { IterationContext, MockToolCall },
+        visit_routing.route_visit { Message, MessageRole },
     ]
 }
 
@@ -4584,83 +4422,6 @@ graph import byllm._optdeps {
     _deferred ++> [
         litellm { DeferredClassMeta, DeferredModule, is_installed, when_loaded },
         openai { DeferredClassMeta, DeferredModule, is_installed },
-    ]
-}
-
-graph import byllm.tests {
-    fixtures ++> test_byllm | test_mtir_integration { python_lib_mode }
-    fixtures.agent_graph ++> test_routing { MathAgent, PoemAgent, Team, supervisor }
-    fixtures.agent_graph as ag ++> test_routing;
-    fixtures.routing_graph ++> test_routing {
-        Agent,
-        Hub,
-        Route,
-        collector,
-        leaky,
-        picker,
-        router,
-        stream_router
-    }
-    fixtures.routing_graph as rg ++> test_routing;
-    support ++> [
-        test_byllm {
-            FIXTURE_DIR,
-            call as tool_call,
-            capture_logs,
-            capture_loguru,
-            finish,
-            fixture_path,
-            load_fixture,
-            mk_run,
-            prompt_text,
-            say,
-            scripted,
-            text_chunk,
-            tool_names
-        },
-        test_compaction { call, fail, finish, fixture_path, scripted },
-        test_conversation { call, finish, say },
-        test_media {
-            data_url,
-            fixture_path,
-            media_blocks,
-            need,
-            prompt_text,
-            roles,
-            say,
-            user_blocks
-        },
-        test_model_pool { text_chunk },
-        test_mtir_integration { fixture_path, load_fixture, need_outside_jaclang },
-        test_parallel { mk_run },
-        test_prompting { call, fixture_path, prompt_text, roles, say, tool_names },
-        test_routing { RoutingLLM, prompt_text, routing_candidates, say },
-        test_streaming {
-            call,
-            chunk_text,
-            event_types,
-            events_of,
-            fail,
-            finish,
-            mk_run,
-            prompt_text,
-            say,
-            scripted,
-            stream_events
-        },
-        test_tool_arg_streaming {
-            call,
-            calls,
-            event_types,
-            events_of,
-            fail,
-            mk_run,
-            say
-        },
-        test_tools { call, finish, prompt_text, say, tool_names },
-        test_truncated_tool_calls { call, say, scripted },
-        test_typed_retry { FIXTURE_DIR, fail, prompt_text, say },
-        test_usage { TOKENS, call, events_of, finish, mk_run, say, scripted },
     ]
 }
 
@@ -7500,6 +7261,7 @@ graph import compiler {
     frontend.parser.frontend ++> [
         driver.wiring.canonical_wiring_source { parse_woven },
         driver.wiring.parse_records { parse_woven },
+        driver.wiring.prune_wiring_source { parse_woven },
         passes.variant_agreement_pass.VariantAgreementPass._parse_sibling
             | tests.test_module_exports { parse },
         placement.placement_solver._native_dep_scan
@@ -7522,6 +7284,7 @@ graph import compiler {
         },
     ]
     frontend.parser.tokens ++> [
+        driver.wiring { is_name_usable_kind, lookup_keyword },
         jc_unit { CommentData, SrcDiag },
         tools.grammar_extract_pass { BUILTIN_TYPE_KINDS, TokenKind },
     ]
@@ -8591,6 +8354,7 @@ graph import compiler {
             ModuleItem,
             ModulePath,
             Name,
+            SpecialVarRef,
             String,
             UniNode,
             WireTarget
@@ -12694,6 +12458,7 @@ graph import compiler.frontend.parser {
             SrcDiag,
             TokenKind,
             is_builtin_type_kind,
+            is_name_usable_kind,
             is_reserved_kind,
             is_special_var_kind
         },
@@ -16167,7 +15932,7 @@ graph import runtime.python {
             type_name
         },
         bindings.array | bindings.functools { object_error, text_object },
-        bindings.asyncio | bindings.module { c_string_copy },
+        bindings.asyncio | bindings.module | bindings.type { c_string_copy },
         bindings.clinic.abc
             | bindings.clinic.array
             | bindings.clinic.asyncio
@@ -17377,8 +17142,10 @@ graph import runtime.python {
         },
         bindings.type {
             NULL,
+            PyErr_NoMemory,
             PyMem_Free,
             PyMem_Malloc,
+            PyMem_RawCalloc,
             PyObject,
             PyType_GetSlot,
             Py_TYPE,

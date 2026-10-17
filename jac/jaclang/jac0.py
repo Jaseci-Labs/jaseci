@@ -3426,43 +3426,62 @@ def _after_docstring(body: list) -> int:
     return 0
 
 
-def _scope_body(module: Module, codegen: CodeGen, scope: tuple[str, ...]) -> list | None:
-    """The body a scoped wire lands in: the deepest ``impl`` naming a prefix
-    of the scope, or the module itself, then nested classes and functions."""
+def _scope_bodies(
+    module: Module, codegen: CodeGen, scope: tuple[str, ...]
+) -> list[list]:
+    """Every body a scoped wire lands in, as the full compiler finds them: the
+    ``impl`` naming the deepest prefix of the scope, or the module, then the
+    nested classes and functions; a path names every match (functions nested
+    in unnamed blocks such as tests share one path)."""
     scope = tuple(_SOURCE_NAMES.get(name, name) for name in scope)
-    impls = {impl.target: impl for held in codegen.impl_registry.values() for impl in held}
-    body: list | None = module.body
+    impls: dict[str, list] = {}
+    for held in codegen.impl_registry.values():
+        for impl in held:
+            impls.setdefault(impl.target, []).append(impl)
+    bodies: list[list] = [module.body]
     rest = scope
     for depth in range(len(scope), 0, -1):
-        impl = impls.get(".".join(scope[:depth]))
-        if impl is not None:
-            body = impl.body
+        found = impls.get(".".join(scope[:depth]))
+        if found:
+            bodies = [impl.body for impl in found]
             rest = scope[depth:]
             break
     for name in rest:
-        found = None
-        for node in body or []:
-            if isinstance(node, (ClassDef, FuncDef)) and node.name == name:
-                found = node
-                break
-        if found is None:
-            return None
-        body = found.body
-    return body
+        bodies = [
+            node.body
+            for body in bodies
+            for node in _named_children(body)
+            if node.name == name
+        ]
+    return bodies
+
+
+def _named_children(body: list) -> list:
+    """Classes and functions in a body, looking through unnamed blocks."""
+    out: list = []
+    for node in body:
+        if isinstance(node, (ClassDef, FuncDef)):
+            out.append(node)
+        else:
+            for nested in vars(node).values() if hasattr(node, "__dict__") else ():
+                if isinstance(nested, list) and nested and not isinstance(nested[0], str):
+                    out.extend(_named_children(nested))
+    return out
 
 
 def weave_wiring(module: Module, codegen: CodeGen, filename: str) -> None:
     """Place the imports archwire.jac generates for this module where the full
     compiler places them: module level, or the top of the scoped body."""
     for scope, imports in wired_imports(filename).items():
-        body = module.body if not scope else _scope_body(module, codegen, scope)
-        if body is None:
+        bodies = [module.body] if not scope else _scope_bodies(module, codegen, scope)
+        if not bodies:
             raise ParseError(
                 f"{filename}: archwire.jac wires imports into '{'.'.join(scope)}',"
                 " which this module does not declare"
             )
-        at = _after_docstring(body)
-        body[at:at] = imports
+        for body in bodies:
+            at = _after_docstring(body)
+            body[at:at] = imports
 
 
 def discover_impl_files(jac_path: str) -> list[str]:

@@ -4,6 +4,8 @@ byLLM appends to the caller's list in place. The system prompt and finish_tool
 plumbing are filtered out on the way; a real tool result is not.
 """
 
+import from jaclang.byllm.types { Message, MessageRole }
+import from jaclang.byllm.lib { MockLLM }
 import from support { call, finish, say }
 
 

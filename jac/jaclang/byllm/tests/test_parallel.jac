@@ -38,6 +38,18 @@ import from concurrent.futures { ThreadPoolExecutor }
 
 import os;
 
+import from jaclang.byllm.parallel {
+    dispatch_batch,
+    _is_async,
+    _index_by_identity,
+    mark_serialize,
+    _PARALLEL_TOOL_HINT,
+    _WORKER_POOL
+}
+import from jaclang.byllm.types { Message, MessageRole, Tool, MockToolCall }
+import from jaclang.byllm.llm { BaseLLM }
+import from jaclang.byllm.lib { Model }
+import from jaclang.byllm.config_loader { reset_byllm_config, get_byllm_config }
 import from support { mk_run }
 
 # ---------------------------------------------------------------------------

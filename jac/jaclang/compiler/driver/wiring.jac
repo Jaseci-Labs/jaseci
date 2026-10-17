@@ -1,3 +1,4 @@
+import copy;
 import hashlib;
 import os;
 import from collections.abc { Iterator }
@@ -92,7 +93,9 @@ obj WiringSpec {
     def owns(path: str) -> bool;
     def split_consumer(path: str) -> (tuple[str, list[str]] | None);
     def consumer_scope(consumer: str, wire: WireRec) -> list[str];
-    def wire_at_line(line: int, consumer: str) -> (WireRec | None);
+    def wire_for_import(
+        stmt: Import, consumer: str, taken: set[int]
+    ) -> (WireRec | None);
     def is_package_dir(name: str) -> bool;
     def project_modules -> list[str];
     def _scan_modules(directory: str, found: list[str], seen: set[str]) -> None;
@@ -161,6 +164,7 @@ def render_wiring(
 
 def wiring_facts(wires: list[WireRec]) -> list[tuple[str, WireBinding]];
 def _rule_text(rule: RuleRec) -> str;
+def _wire_name(name: str) -> str;
 def _target_text(consumers: list[str], items: (list[tuple[str, str]] | None)) -> str;
 def _entry_order(
     pair: tuple[list[str], (list[tuple[str, str]] | None)]
@@ -184,6 +188,6 @@ def is_stdlib_module(name: str) -> bool;
 def _load_spec(root_dir: str, arch_path: str) -> WiringSpec;
 def scope_path_of(nd: UniNode) -> (list[str] | None);
 def is_positional_import(imp: Import) -> bool;
-def scope_owners(mod: Module) -> dict[str, (Ability | ImplDef)];
+def scope_owners(mod: Module) -> dict[str, list[(Ability | ImplDef)]];
 def inject_into_scope(owner: (Ability | ImplDef), stmt: UniNode) -> None;
 def local_module_name(root_dir: str, path: str) -> (str | None);

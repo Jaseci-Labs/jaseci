@@ -261,7 +261,7 @@ impl ImportWiringPass._check_module(mod: Module, spec: WiringSpec) -> None {
     for imp in ModuleFacts.iter_nested_imports(mod) {
         self._check_import(spec, imp, consumer, scope_path_of(imp), declared);
     }
-    owners: (dict[str, (Ability | ImplDef)] | None) = None;
+    owners: (dict[str, list[(Ability | ImplDef)]] | None) = None;
     for wire in spec.consumer_wires(consumer) {
         scope = spec.consumer_scope(consumer, wire);
         target = ".".join([consumer, *scope]);
@@ -453,12 +453,9 @@ impl unused_wire_bindings(mod: Module) -> list[UnusedBinding] {
         }
     }
     exports = ModuleFacts.literal_exports(mod) or set();
-    owners: (dict[str, (Ability | ImplDef)] | None) = None;
+    owners: (dict[str, list[(Ability | ImplDef)]] | None) = None;
     read: dict[str, set[str]] = {};
     for wire in wires {
-        if not wire.is_injected {
-            continue;
-        }
         scope = ".".join(spec.consumer_scope(consumer, wire));
         for binding in wire.bindings() {
             name = binding.bound_name();
@@ -470,14 +467,14 @@ impl unused_wire_bindings(mod: Module) -> list[UnusedBinding] {
                 continue;
             }
             if scope not in read {
-                body: UniNode = mod;
+                bodies: list[UniNode] = [mod];
                 if scope {
                     if owners is None {
                         owners = scope_owners(mod);
                     }
-                    body = owners.get(scope, mod);
+                    bodies = list(owners.get(scope, [mod]));
                 }
-                read[scope] = names_read_in(body);
+                read[scope] = set().union(*[names_read_in(b, mod) for b in bodies]);
             }
             if name not in read[scope] {
                 found.append(
@@ -494,11 +491,21 @@ impl unused_wire_bindings(mod: Module) -> list[UnusedBinding] {
     return found;
 }
 
-impl names_read_in(body: UniNode) -> set[str] {
+impl names_read_in(body: UniNode, mod: Module) -> set[str] {
     names: set[str] = set();
-    for nd in body.get_all_sub_nodes(typ=Name) {
+    for nd in [
+        *body.get_all_sub_nodes(typ=Name),
+        *body.get_all_sub_nodes(typ=SpecialVarRef)
+    ] {
         parent = nd.parent;
+        sym = nd.sym;
         if nd.expr_ctx != ExprCtx.LOAD
+            or (
+                sym is not None
+                and not sym.imported
+                and sym.decl is not None
+                and sym.decl.find_parent_of_type(Module) is mod
+            )
             or (
                 isinstance(parent, AtomTrailer)
                 and parent.is_attr

@@ -454,6 +454,7 @@ obj Parser {
     def parse_wire_target(is_absorb: bool, provider: ModulePath) -> WireTarget | None;
     def parse_wire_payload(kid: list[UniNode], in_rule: bool) -> list[WireItem];
     def _expect_wire_arrow(kid: list[UniNode]) -> bool;
+    def _expect_rule_arrow(kid: list[UniNode]) -> None;
     def _wire_path_ahead -> bool;
     def _skip_wiring_stmt(open_lists: int = 0) -> None;
     def parse_sem_def -> SemDef;

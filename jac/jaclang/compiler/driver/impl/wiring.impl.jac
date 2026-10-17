@@ -179,12 +179,29 @@ impl WiringSpec.consumer_scope(consumer: str, wire: WireRec) -> list[str] {
     return self._scopes.get((consumer, id(wire)), []);
 }
 
-impl WiringSpec.wire_at_line(line: int, consumer: str) -> (WireRec | None) {
+impl WiringSpec.wire_for_import(
+    stmt: Import, consumer: str, taken: set[int]
+) -> (WireRec | None) {
     held = self.consumer_wires(consumer);
-    for wire in self._wire_lines.get(line, []) {
-        if any([w is wire for w in held]) {
-            return wire;
+    from_loc = stmt.from_loc;
+    written = {
+        (item.name.value, item.alias.value if item.alias is not None else "")
+        for item in stmt.items
+        if isinstance(item, ModuleItem)
+    };
+    for wire in self._wire_lines.get(stmt.loc.first_line, []) {
+        if wire.index in taken or not any([w is wire for w in held]) {
+            continue;
         }
+        if from_loc is not None
+            and (
+                from_loc.dot_path_str != self.import_name(wire.provider)
+                or written != set(wire.items)
+            ) {
+            continue;
+        }
+        taken.add(wire.index);
+        return wire;
     }
     return None;
 }
@@ -847,14 +864,15 @@ impl is_positional_import(imp: Import) -> bool {
     return False;
 }
 
-impl scope_owners(mod: Module) -> dict[str, (Ability | ImplDef)] {
-    index: dict[str, (Ability | ImplDef)] = {};
+impl scope_owners(mod: Module) -> dict[str, list[(Ability | ImplDef)]] {
+    index: dict[str, list[(Ability | ImplDef)]] = {};
+    implemented: set[str] = set();
     for impl_node in mod.get_all_sub_nodes(typ=ImplDef) {
         base = scope_path_of(impl_node);
         if base is not None and isinstance(impl_node.body, `list) {
-            index.setdefault(
-                ".".join([*base, *[t.sym_name for t in impl_node.target]]), impl_node
-            );
+            path = ".".join([*base, *[t.sym_name for t in impl_node.target]]);
+            index.setdefault(path, []).append(impl_node);
+            implemented.add(path);
         }
     }
     for ability in mod.get_all_sub_nodes(typ=Ability) {
@@ -862,7 +880,10 @@ impl scope_owners(mod: Module) -> dict[str, (Ability | ImplDef)] {
         if base is not None
             and ability.name_ref is not None
             and isinstance(ability.body, `list) {
-            index.setdefault(".".join([*base, ability.name_ref.sym_name]), ability);
+            path = ".".join([*base, ability.name_ref.sym_name]);
+            if path not in implemented {
+                index.setdefault(path, []).append(ability);
+            }
         }
     }
     return index;
@@ -964,12 +985,13 @@ impl place_wired_imports(mod: Module) -> None {
     consumer = spec.module_name(mod.loc.mod_path) or "";
     generated: list[Import] = [];
     scoped: set[int] = set();
-    owners: (dict[str, (Ability | ImplDef)] | None) = None;
+    owners: (dict[str, list[(Ability | ImplDef)]] | None) = None;
+    taken: set[int] = set();
     for stmt in mod.body {
         if not isinstance(stmt, Import) or stmt.loc.mod_path != spec.path {
             continue;
         }
-        wire = spec.wire_at_line(stmt.loc.first_line, consumer);
+        wire = spec.wire_for_import(stmt, consumer, taken);
         scope = spec.consumer_scope(consumer, wire) if wire is not None else [];
         if not scope {
             generated.append(stmt);
@@ -979,9 +1001,8 @@ impl place_wired_imports(mod: Module) -> None {
         if owners is None {
             owners = scope_owners(mod);
         }
-        owner = owners.get(".".join(scope));
-        if owner is not None {
-            inject_into_scope(owner, stmt);
+        for (n, owner) in enumerate(owners.get(".".join(scope), [])) {
+            inject_into_scope(owner, stmt if n == 0 else copy.deepcopy(stmt));
         }
     }
     if not generated and not scoped {
@@ -1130,7 +1151,7 @@ impl wire_text(
     relative = [block_relative(block, c) for c in consumers];
     arrow = "++>" if binding.injected else "-->";
     if binding.is_module_form() {
-        alias = " as " + binding.alias if binding.alias else "";
+        alias = " as " + _wire_name(binding.alias) if binding.alias else "";
         return f"{head}{alias} {arrow} {_target_text(relative, None)};";
     }
     pairs = items if items is not None else [(binding.name, binding.alias)];
@@ -1149,9 +1170,17 @@ impl _target_text(consumers: list[str], items: (list[tuple[str, str]] | None)) -
         return right;
     }
     payload = ", ".join(
-        [name + (" as " + alias if alias else "") for (name, alias) in items]
+        [
+            _wire_name(name) + (" as " + _wire_name(alias) if alias else "")
+            for (name, alias) in items
+        ]
     );
     return f"{right} {{ {payload} }}";
+}
+
+impl _wire_name(name: str) -> str {
+    kind = lookup_keyword(name);
+    return "`" + name if kind is not None and not is_name_usable_kind(kind) else name;
 }
 
 impl wiring_facts(wires: list[WireRec]) -> list[tuple[str, WireBinding]] {
@@ -1174,8 +1203,10 @@ impl wiring_facts(wires: list[WireRec]) -> list[tuple[str, WireBinding]] {
 impl _rule_text(rule: RuleRec) -> str {
     sources = " | ".join(sorted([p.text for p in rule.sources]));
     targets = " | ".join(sorted([p.text for p in rule.targets]));
-    tail = ";" if rule.is_open else " { " + ", ".join(sorted(rule.item_names)) + " }";
-    return f"edge {rule.name}: {sources} --> {targets}{tail}";
+    tail = ";"
+        if rule.is_open
+        else " { " + ", ".join([_wire_name(n) for n in sorted(rule.item_names)]) + " }";
+    return f"edge {_wire_name(rule.name)}: {sources} --> {targets}{tail}";
 }
 
 impl _block_text(block: str, body: list[str]) -> str {
@@ -1270,7 +1301,7 @@ impl render_wiring(
             ([prefix] if prefix else []) + [block_relative(block, provider)]
         );
         if alias {
-            head = head + " as " + alias;
+            head = head + " as " + _wire_name(alias);
         }
         texts = [
             _target_text(consumers, items)
@@ -1337,24 +1368,32 @@ impl canonical_wiring_source(source: str, path: str) -> str {
 impl prune_wiring_source(
     source: str, path: str, dropped: Callable[[str], bool]
 ) -> str {
-    (parse_failed, wires, rules) = parse_records(source, path);
-    if parse_failed {
+    (mod, had_error) = parse_woven(source, path, None, [], load_kernel=False);
+    if had_error {
         return source;
     }
     spec = WiringSpec(
-        root_dir=os.path.dirname(os.path.abspath(path)),
-        path=path,
-        wires=wires,
-        rules=rules
+        root_dir=os.path.dirname(os.path.abspath(path)), path=path, wires=[], rules=[]
     );
-    kept: list[tuple[str, WireBinding]] = [];
-    for (consumer, binding) in wiring_facts(wires) {
-        split = spec.split_consumer(consumer);
-        ends = [binding.provider, split[0] if split is not None else consumer];
-        files = [spec.module_file(end) for end in ends];
-        if not any([f is not None and dropped(f) for f in files]) {
-            kept.append((consumer, binding));
+    text = list(source);
+    for stmt in mod.body {
+        if not isinstance(stmt, GraphImport) {
+            continue;
+        }
+        for item in stmt.body {
+            if not isinstance(item, ImportWire) {
+                continue;
+            }
+            found = spec.module_file(item.provider_path);
+            if found is None or not dropped(found) {
+                continue;
+            }
+            for at in range(item.loc.pos_start, item.loc.pos_end) {
+                if text[at] != "\n" {
+                    text[at] = " ";
+                }
+            }
         }
     }
-    return render_wiring(spec, kept, rules);
+    return "".join(text);
 }

@@ -1,5 +1,6 @@
 """A bare enum, whose members carry no values, as a `by llm()` return type."""
 
+import from jaclang.byllm.lib { Model }
 
 enum Tell { YES, NO }
 

@@ -7,6 +7,8 @@ keep three assistant rounds.
 
 import litellm;
 
+import jaclang.byllm.llm as _byllm_llm_mod;
+import from jaclang.byllm.lib { MockLLM }
 import from support { call, capture_loguru, fail, finish, roles, sent_messages }
 
 

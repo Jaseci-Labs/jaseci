@@ -2,14 +2,15 @@
 
 jaclang/archwire.jac is the one graph of jaclang's imports, natively lowered
 subtrees included. The payload drops those subtrees, so it ships a copy of the
-graph without the wires that reach them; and every archwire.jac in the tree is
+graph with every wire from them blanked in place: each surviving wire keeps the
+line and column a checkout compiles it at, so a module woven in the payload and
+in a checkout carries the same interface. Every archwire.jac in the tree is
 already in the layout `jac fmt` renders.
 """
 
 import os;
 import shutil;
 import tempfile;
-import jaclang;
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.compiler.driver.wiring {
     ARCH_FILE_NAME,
@@ -20,7 +21,10 @@ import from jaclang.compiler.driver.wiring {
 import from jaclang.dist.payload.assemble { ship_wiring }
 import from jaclang.dist.payload.fsutil { skip_jaclang }
 
-glob _PKG: str = os.path.dirname(os.path.realpath(jaclang.__file__));
+glob _PKG: str = os.path.join(
+         os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))),
+         "jaclang"
+     );
 
 
 def _arch_files(top: str) -> list[str] {
@@ -59,7 +63,7 @@ def _facts(source: str, path: str) -> tuple[WiringSpec, set[str]] {
 }
 
 
-test "the payload ships archwire.jac without the wires that reach modules it drops" {
+test "the payload ships archwire.jac with the wires from modules it drops blanked in place" {
     source_path = os.path.join(_PKG, ARCH_FILE_NAME);
     with open(source_path) as f {
         source = f.read();
@@ -70,24 +74,23 @@ test "the payload ships archwire.jac without the wires that reach modules it dro
         with open(os.path.join(site, ARCH_FILE_NAME)) as f {
             shipped = f.read();
         }
+        assert len(shipped) == len(source) , "the shipped copy must keep every offset";
         (spec, kept) = _facts(shipped, source_path);
-        (_spec, everything) = _facts(source, source_path);
+        (full, everything) = _facts(source, source_path);
+        placed = {(wire.provider, wire.line, wire.col) for wire in full.wires};
         stray: list[str] = [];
+        moved: list[str] = [];
         for wire in spec.wires {
-            for consumer in wire.consumers {
-                split = spec.split_consumer(consumer);
-                for end in [
-                    wire.provider,
-                    split[0] if split is not None else consumer
-                ] {
-                    found = spec.module_file(end);
-                    if found is not None and _dropped(found) {
-                        stray.append(f"{wire.provider} --> {consumer}");
-                    }
-                }
+            found = spec.module_file(wire.provider);
+            if found is not None and _dropped(found) {
+                stray.append(wire.provider);
+            }
+            if (wire.provider, wire.line, wire.col) not in placed {
+                moved.append(wire.provider);
             }
         }
         assert not stray , stray[:5];
+        assert not moved , moved[:5];
         assert kept < everything;
         assert not os.path.exists(
             os.path.join(site, "runtime", "python", ARCH_FILE_NAME)

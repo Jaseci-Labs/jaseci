@@ -49,4 +49,4 @@ obj UnusedBinding {
 
 def report_unused_wires(reporter: CompilerPass, mod: Module) -> None;
 def unused_wire_bindings(mod: Module) -> list[UnusedBinding];
-def names_read_in(body: UniNode) -> set[str];
+def names_read_in(body: UniNode, mod: Module) -> set[str];

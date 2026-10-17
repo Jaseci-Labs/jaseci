@@ -343,9 +343,6 @@ class JacMetaImporter(MetaPathFinder, Loader):
             )
 
         file_path = module.__spec__.origin
-        if os.path.exists("/tmp/zz_trace_on"):
-            with open("/tmp/zz_trace.log", "a") as _f:
-                _f.write(f"EXEC {module.__name__}\n")
 
         # Bootstrap tier: a sealed module the manifest flags as bootstrap, or (in
         # an unsealed tree) a .jac the seed manifest covers. Either way it is

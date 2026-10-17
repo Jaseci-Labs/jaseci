@@ -1,6 +1,8 @@
 """Compaction over a `conversation=` history that already holds tool calls: the call
 must reach the summariser, and the model, in the same shape as one made during the turn."""
 
+import from jaclang.byllm.lib { MockLLM }
+import from jaclang.byllm._optdeps.litellm { LiteLLMMessage }
 import from support { call, finish, say }
 
 

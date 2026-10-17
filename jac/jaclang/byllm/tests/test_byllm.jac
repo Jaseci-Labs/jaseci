@@ -8,8 +8,21 @@ import unittest.mock;
 import yaml;
 import from fixtures { python_lib_mode }
 
+import jaclang.byllm.llm as _byllm_llm_mod;
+import from jaclang.byllm.lib { Image, Model, ModelPool, Video }
 import types;
+import from jaclang.byllm.mtir { MTRuntime }
+import from jaclang.byllm.exceptions {
+    OutputConversionError,
+    ConfigurationError,
+    FinishToolError,
+    McpError
+}
+import from jaclang.byllm.mcp { McpClient, McpTool }
+import from jaclang.byllm.schema { type_display_name }
+import from jaclang.byllm.types { Tool, Message, MessageRole }
 import from jaclang { JacRuntimeInterface as Jac }
+import from jaclang.byllm.lib { MockLLM }
 import from support {
     FIXTURE_DIR,
     capture_logs,
@@ -1354,7 +1367,7 @@ test "litellm settings and load hooks apply when litellm is first imported" {
     out = _fresh_probe(
         "import sys\n"
         "import jaclang.byllm.llm as llm\n"
-        "from jaclang.byllm._optdeps.litellm import when_litellm_loaded\n"
+        "from jaclang.byllm._optdeps.litellm import LiteLLMMessage, when_litellm_loaded\n"
         "llm.Model(model_name='gpt-4o-mini')\n"
         "seen = []\n"
         "when_litellm_loaded(lambda mod: seen.append(mod.__name__))\n"
@@ -1362,9 +1375,9 @@ test "litellm settings and load hooks apply when litellm is first imported" {
         "print('seen=' + ','.join(seen))\n"
         "print('drop_params=' + str(litellm.drop_params))\n"
         "print('suppress=' + str(litellm.suppress_debug_info))\n"
-        "msg = llm.LiteLLMMessage(role='assistant', content='hi')\n"
+        "msg = LiteLLMMessage(role='assistant', content='hi')\n"
         "print('message=' + str(isinstance(msg, litellm.types.utils.Message)))\n"
-        "print('stand_in=' + str(isinstance(msg, llm.LiteLLMMessage)))\n"
+        "print('stand_in=' + str(isinstance(msg, LiteLLMMessage)))\n"
         "print('proxy_same=' + str(llm.litellm.completion is litellm.completion))\n"
         "from jaclang.byllm.exceptions import LLMTimeout\n"
         "print('timeout_is_provider=' + str(issubclass(LLMTimeout, litellm.Timeout)))\n"

@@ -4,6 +4,7 @@ Compaction hands back copies of the messages, the system prompt among them, and
 whatever the list holds is replayed on the next call.
 """
 
+import from jaclang.byllm.lib { MockLLM }
 import from support { call, capture_loguru, finish, roles, say }
 
 

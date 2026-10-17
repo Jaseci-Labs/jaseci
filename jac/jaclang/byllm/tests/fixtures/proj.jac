@@ -1,5 +1,6 @@
 """A module whose name ends in 'j', for scope name resolution."""
 
+import from jaclang.byllm.lib { MockLLM }
 
 obj Project {
     has title: str;

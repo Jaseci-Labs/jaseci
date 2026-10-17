@@ -4,6 +4,7 @@ acall_llm is deliberately not mocked, so the whole chain runs.
 """
 
 import litellm;
+import from jaclang.byllm.llm { BaseLLM }
 
 
 def _chunk(text: str) -> object {

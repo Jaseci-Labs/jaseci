@@ -1,5 +1,6 @@
 """Minimal fixture to verify basic MTIR compilation works."""
 
+import from jaclang.byllm.lib { MockLLM }
 
 """A simple person."""
 obj Person {
