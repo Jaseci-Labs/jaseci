@@ -321,10 +321,6 @@ def _restore_target(prev_target: (str | None)) {
 
 
 def _sealed_native_plan(filename: str) -> (tuple[object, LinkPlan, any] | None) {
-    import from jaclang.jac0core.ext_registry { is_jac, is_retired_native_marker }
-    import from jaclang.compiler.driver.program { JacProgram }
-    import from jaclang.compiler.driver.compile_options { CompileOptions }
-    import from jaclang.compiler.backends.native.link_plan { build_link_plan }
 
     if not is_jac(filename) {
         console.error("Input must be a .jac file.");
@@ -366,11 +362,6 @@ def _sealed_native_plan(filename: str) -> (tuple[object, LinkPlan, any] | None) 
 
 
 def _entry_lib_link(plan: LinkPlan, output: str) -> int {
-    import from jaclang.compiler.backends.native.link_plan {
-        ArtifactKind,
-        LinkPlanError,
-        link_artifact
-    }
     try {
         link_artifact(plan, output, ArtifactKind.ENTRY_LIB, log=console.print);
     } except LinkPlanError as e {
@@ -401,8 +392,7 @@ def _build_native_entry_lib(filename: str, output: str) -> int {
 def _callback_source_path(binding: any, proj_dir: str) -> str {
     nd = binding.ast_node;
     if nd is not None {
-        import from jaclang.compiler.frontend.unitree { Module }
-        mod = nd.find_parent_of_type(Module);
+            mod = nd.find_parent_of_type(Module);
         if mod is not None and mod.loc.mod_path {
             return os.path.relpath(mod.loc.mod_path, proj_dir);
         }
@@ -413,7 +403,6 @@ def _callback_source_path(binding: any, proj_dir: str) -> str {
 
 impl native_build_sealed_pair(filename: str, exe_output: str, lib_output: str) -> int {
     import json;
-    import from jaclang.server.sealed_serve { interop_record_path }
 
     built = _sealed_native_plan(filename);
     if built is None {
@@ -423,9 +412,6 @@ impl native_build_sealed_pair(filename: str, exe_output: str, lib_output: str) -
     manifest = ir_module.gen.interop_manifest if ir_module else None;
     bindings = list(manifest.native_imports) if manifest else [];
     plan.callback_bindings = bindings;
-    import from jaclang.compiler.backends.native.link_plan {
-        resolved_callback_bindings
-    }
     (glue_bindings, _) = resolved_callback_bindings(plan);
     _interop_record = interop_record_path(lib_output);
     _proj_dir = os.path.dirname(os.path.abspath(filename));

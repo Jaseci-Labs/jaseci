@@ -15839,7 +15839,9 @@ graph import server {
     sealed_serve --> cli.commands.execution._jab_interop_callbacks {
         interop_record_path
     }
-    sealed_serve --> cli.commands.native_build.native_build_sealed_pair { interop_record_path }
+    sealed_serve --> cli.commands.native_build.native_build_sealed_pair {
+        interop_record_path
+    }
     sealed_serve --> client.artifact.client_output_dir { client_dist_for }
     sealed_serve --> client.artifact.prebuilt_bundle {
         client_dist_for,
@@ -37792,4 +37794,3 @@ graph import runtime.python.object_model {
     union --> compiler.backends.py.jacpython.native_api { _PyUnion_Type }
     union --> runtime.python.object_model.genericalias { _Py_union_type_or }
 }
-
