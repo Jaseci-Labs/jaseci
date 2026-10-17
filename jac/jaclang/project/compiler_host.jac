@@ -66,6 +66,8 @@ obj ProjectHost(HostServices) {
         program: JacProgram, path: str, options: CompileOptions
     ) -> (NativeIface | None);
 
+    def native_dep_discovery_open(program: JacProgram) -> bool;
+    def native_deps_deferred(program: JacProgram) -> bool;
     def held_native_iface(
         program: JacProgram, path: str, options: CompileOptions
     ) -> str;
