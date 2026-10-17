@@ -1,10 +1,3 @@
-import from jaclang.compiler.frontend.roles { Kid }
-import from jaclang.compiler.frontend.unitree { TreeWalker }
-import from jaclang.compiler.passes.context { CompileContext, TreePass }
-import jaclang.compiler.frontend.unitree as uni;
-
-import from jaclang.compiler.frontend.parser.tokens { BUILTIN_TYPE_KINDS, TokenKind }
-
 def is_nil_expr(nd: object) -> bool {
     if isinstance(nd, uni.CfgExpr) {
         return is_nil_expr(nd.expr);
@@ -139,6 +132,7 @@ obj ConditionResult {
 }
 
 walker GrammarExtractPass(TreePass) {
+    static has contract: PassContract = PassContract();
     has rules: list[GrammarRule] = [],
         target_class: str = "Parser",
         diagnostics: list[dict[str, any]] = [],

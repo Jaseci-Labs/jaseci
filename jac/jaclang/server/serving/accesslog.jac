@@ -3,7 +3,6 @@ import logging;
 import sys;
 import time;
 import from urllib.parse { unquote_plus }
-import from jaclang.server.serving.drain { HEALTH_PATHS }
 
 glob ACCESS_LOGGER_NAME: str = 'jaclang.serving.access',
      access_logger: logging.Logger = logging.getLogger(ACCESS_LOGGER_NAME),

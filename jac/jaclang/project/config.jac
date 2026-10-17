@@ -1,11 +1,9 @@
-import from jaclang.project.persistence { PersistenceConfig }
 import os;
 import re;
 import sys;
 import tomllib;
 import from pathlib { Path }
-import from jaclang.project.apps { AppConfig, implicit_app, parse_apps }
-import from jaclang.project.dependencies { PackageDep }
+
 glob CAPABILITY_SECTIONS: tuple[str, ...] = (
          "byllm",
          "scale",
@@ -60,10 +58,6 @@ obj NativeConfig {
         threads: int = 4;
 }
 
-obj ArchConfig {
-    has closed: list[str] = [];
-}
-
 obj MemoryConfig {
     has profile: str = "managed",
         enforce: list[str] = [],
@@ -79,8 +73,7 @@ obj PlacementConfig {
 }
 
 obj BuildConfig {
-    has dir: str = ".jac",
-        native_closure_cap: int = 256;
+    has dir: str = ".jac";
 }
 
 obj TestConfig {
@@ -304,7 +297,6 @@ obj JacConfig {
         run: RunConfig = RunConfig(),
         build: BuildConfig = BuildConfig(),
         native: NativeConfig = NativeConfig(),
-        arch: ArchConfig = ArchConfig(),
         memory: MemoryConfig = MemoryConfig(),
         placement: PlacementConfig = PlacementConfig(),
         `test: TestConfig = TestConfig(),

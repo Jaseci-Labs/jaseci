@@ -1,5 +1,4 @@
 import json;
-import jaclang.compiler.backends.native.llvm.ir as ir;
 
 glob LOWERING_METADATA: str = "jac.native.lowering.v1",
      _HEX_DIGITS: str = "0123456789abcdef",

@@ -1,36 +1,7 @@
-import from jaclang.server.endpoint_contract { check_endpoint_contract }
-import from jaclang.server.exchange { refusal_status, settle_envelope }
 import json;
 import logging;
 import from inspect { isgenerator }
 import from typing { AsyncGenerator, get_type_hints }
-import from jaclang.data.serializer { Serializer }
-import from jaclang.runtime.constants { Constants as Con }
-import from jaclang.runtime.builtin { APIProtocol }
-import from jaclang.server.serving.coerce { is_upload_type }
-import from jaclang.server.serving.datatypes {
-    FileResponse,
-    Request,
-    Response,
-    StreamingResponse
-}
-import from jaclang.server.serving.endpoint {
-    APIParameter,
-    HTTPMethod,
-    JEndPoint,
-    ParameterType
-}
-import from jaclang.server.outbox {
-    remember_response,
-    replay_cached,
-    scoped_idempotency_key
-}
-import from jaclang.server.serving.files { file_response }
-import from jaclang.server.serving.router { path_param_names }
-import from jaclang.server.serving.sse { sse_frame_stream }
-import from jaclang.server.server { JacAPIServer, JsonValue, target_restspec }
-import from jaclang.server.sv_client { IDEMPOTENCY_HEADER, bridge_identity }
-import from jaclang.server.transport { Meta, TransportResponse }
 
 glob logger: logging.Logger = logging.getLogger('jaclang.serve');
 
@@ -119,6 +90,13 @@ def _raw_response(
 ) -> (Response | TransportResponse) {
     media_type = declared_media_type;
     if isinstance(payload, Response) {
+        if has_response_choice() {
+            return TransportResponse.fail(
+                code='CONFLICTING_RESPONSE',
+                message='A function that returns a Response must not also call respond()',
+                meta=Meta(extra={'http_status': 500})
+            );
+        }
         header_text = [payload.media_type or ''];
         for (name, value) in payload.headers.items() {
             header_text.append(name);
@@ -170,7 +148,7 @@ def _raw_response(
     } else {
         body = json.dumps(Serializer.serialize(payload, api_mode=True)).encode('utf-8');
     }
-    return Response(content=body, media_type=media_type);
+    return apply_response_choice(Response(content=body, media_type=media_type));
 }
 
 
@@ -259,7 +237,7 @@ def walker_callback(
         if nd {
             kwargs['_jac_spawn_node'] = nd;
         }
-        import from jaclang.server.sv_client { consumer_app }
+
         walker_cls = server.introspector.target(walker_name);
         if walker_cls is None {
             return _unavailable('Walker', walker_name);
@@ -428,7 +406,7 @@ def function_callback(
         if requires_auth and not username {
             return _unauthorized();
         }
-        import from jaclang.server.sv_client { consumer_app }
+
         func_obj = server.introspector.target(func_name);
         if func_obj is None {
             return _unavailable('Function', func_name);

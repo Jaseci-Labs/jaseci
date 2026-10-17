@@ -1,12 +1,4 @@
-import from jaclang.compiler.backends.native.linker_common {
-    object_undefined_symbols,
-    select_ar_members,
-    ArMember
-}
-
 def floor_lib_dir(triple: str) -> (str | None) {
-    import from jaclang.artifacts.router { resolve }
-    import from jaclang.artifacts.kit { osarch }
     found = resolve(f"c-floor@{osarch(triple)}").found;
     return found.path if found is not None else None;
 }
@@ -96,8 +88,29 @@ def collect_floor_archives(
 }
 
 
+def elf_runtime_soname(name: str) -> str {
+    import ctypes.util;
+    import re;
+    matched = re.fullmatch(r"lib([^/]+)\.so", name);
+    if matched is None {
+        return name;
+    }
+    try {
+        found = ctypes.util.find_library(matched.group(1));
+    } except Exception {
+        return name;
+    }
+    if found and "/" not in found and found.startswith(name + ".") {
+        return found;
+    }
+    return name;
+}
+
 def clib_needed_libs(
-    needed_libs: list[str], clib_paths: list[str], floor_handled: set[str]
+    needed_libs: list[str],
+    clib_paths: list[str],
+    floor_handled: set[str],
+    host_elf: bool = False
 ) -> dict[str, str] {
     import os;
     lib_norm: dict[str, str] = {};
@@ -119,6 +132,8 @@ def clib_needed_libs(
             needed = "libm.so.6";
         } elif base in ["libc.dylib", "libm.dylib"] {
             needed = "/usr/lib/libSystem.B.dylib";
+        } elif host_elf and needed == base {
+            needed = elf_runtime_soname(base);
         }
         if needed not in needed_libs {
             needed_libs.append(needed);
@@ -151,8 +166,6 @@ def clib_symbol_lib_map(
 }
 
 def musl_lib_dir(triple: str) -> (str | None) {
-    import from jaclang.artifacts.router { resolve }
-    import from jaclang.artifacts.kit { osarch }
     found = resolve(f"musl@{osarch(triple)}").found;
     return found.path if found is not None else None;
 }
@@ -203,7 +216,7 @@ obj StaticRuntime {
 
 def load_outline_atomics(triple: str) -> (StaticRuntime | None) {
     import os;
-    import from jaclang.runtime.graph_utils { triple_arch }
+
     if triple_arch(triple) != "aarch64" or "linux" not in triple {
         return None;
     }

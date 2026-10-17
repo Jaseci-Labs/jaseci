@@ -3,8 +3,7 @@
 The `jac` binary runs it as `node`: invoked under that name, the launcher
 loads the library and calls `jac_main(argc, argv)`, which runs this module's
 entry -- the package-manager commands (`install`, `add`, `x`, `run`, ...)
-first, then the Node-style script runner. A host already running Python calls
-`js_pm` for package-manager work instead.
+first, then the Node-style script runner.
 """
 
 import from engine.src.parser.parser { parse }
@@ -19,8 +18,10 @@ import from engine.src.runtime.realm {
     gc_min_threshold_set,
     gc_default_set,
     gc_growth_pct_set,
-    gc_floor_pct_set
+    gc_floor_pct_set,
+    gc_nursery_set
 }
+import from engine.src.runtime.gc_barrier { gc_gen_set }
 import from engine.src.vm.vm { vm_ic_enable, vm_dump_pair_stats }
 import from engine.src.builtins.process {
     process_do_exit,
@@ -53,7 +54,6 @@ import from engine.src.ffi.libc {
     write
 }
 import from engine.src.pm.cli { pm_try_dispatch }
-import from engine.src.runtime.mem { read_ptr, str_from_foreign_cstr }
 import from engine.src.runtime.global {
     GlobalContext,
     global_context_create,
@@ -523,27 +523,6 @@ def print_bytecode(fns: list[CompiledFunction]) {
     print("─────────────────────────────────────────────────────────");
 }
 
-# ── Library entry points ──────────────────────────────────────────────────────
-# Loaded as libjs_engine.so, the engine runs as `node` through `jac_main(argc,
-# argv)` (the entry below) and answers package-manager calls in-process here.
-
-"""Run one package-manager command for a host that loads the engine as a
-library, with C argv semantics (`argv[0]` is the program name, then e.g.
-`install` or `add -d vite`), in the current directory; returns its exit code.
-The host owns the process: it sets the directory beforehand and restores its
-directory and umask afterwards (the installer clears the umask)."""
-def:pub js_pm(argc: int, argv: int) -> int {
-    args: list[str] = [];
-    i: int = 0;
-    while i < argc {
-        args.append(str_from_foreign_cstr(read_ptr(argv, 8 * i)));
-        i = i + 1;
-    }
-    rc: int = pm_try_dispatch(args);
-    fflush(0);
-    return rc if rc >= 0 else 2;
-}
-
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 import sys;
@@ -918,6 +897,14 @@ with entry {
     gc_floor_env: str = getenv("JAC_GC_FLOOR");
     if gc_floor_env != None {
         gc_floor_pct_set(int(gc_floor_env));
+    }
+    # Generational collection (docs/GENERATIONAL_GC.md): on unless
+    # JAC_GC_GEN=0; JAC_GC_NURSERY sets the allocations between collections.
+    gc_gen_env: str = getenv("JAC_GC_GEN");
+    gc_gen_set(gc_gen_env == None or gc_gen_env != "0");
+    gc_nur_env: str = getenv("JAC_GC_NURSERY");
+    if gc_nur_env != None {
+        gc_nursery_set(int(gc_nur_env));
     }
     gc_str_env: str = getenv("JAC_GC_STR_MB");
     if gc_str_env != None {

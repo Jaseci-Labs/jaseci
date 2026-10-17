@@ -75,7 +75,9 @@ glob JACVAL_ELLIPSIS_TAG: int = 9;
 
 glob CLASS_DISPLAY_OFF: int = 24;
 
-glob CLASS_RECORD_ANCESTRY: int = 6;
+glob CLASS_RECORD_ANCESTRY: int = 6,
+     CLASS_RECORD_STATICS_COUNT: int = 7,
+     CLASS_RECORD_STATICS: int = 8;
 
 glob VTABLE_SET_SYMBOL: str = "__jac_vtables",
      VTABLE_SET_BUCKETS: int = 256;

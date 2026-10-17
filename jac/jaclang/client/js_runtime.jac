@@ -1,13 +1,6 @@
 import json;
 import os;
 import platform;
-import from jaclang.artifacts.model {
-    Artifact,
-    ArtifactKind,
-    Probe,
-    ReleasePolicy,
-    Source
-}
 
 glob BUN_VERSION: str = "1.3.11",
      RECORD_SUFFIX: str = ".artifact.json",
@@ -23,7 +16,6 @@ def bun_path_in(pkg_dir: str) -> str {
 }
 
 def write_bun_record(path: str) {
-    import from jaclang.jac0core.cache_paths { atomic_write }
     atomic_write(
         path + RECORD_SUFFIX, json.dumps({"version": BUN_VERSION}).encode("utf-8")
     );
@@ -56,7 +48,6 @@ def _probe_bun(path: str, source: Source) -> Probe {
 }
 
 def _pkg_dir -> str {
-    import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
     return jaclang_pkg_root();
 }
 
@@ -67,7 +58,6 @@ obj BunArtifact(Artifact) {
         summary: str = "bun (the shipped JavaScript runtime)";
 
     override def probe_sealed -> (Probe | None) {
-        import from jaclang.jac0core { sealed }
         image = sealed._jaclang_image();
         if image is None {
             return None;
@@ -80,7 +70,6 @@ obj BunArtifact(Artifact) {
     }
 
     override def probe_kit -> Probe {
-        import from jaclang.artifacts.kit { kit_image }
         found = kit_image();
         if found is None {
             return Probe.missing("this process runs on no kit");
@@ -93,8 +82,6 @@ obj BunArtifact(Artifact) {
     }
 
     override def build(log: Callable[[str], None], force: bool, exact: bool) {
-        import from jaclang.artifacts.kit { osarch }
-        import from jaclang.dist.payload.fetch { fetch_bun }
         fetch_bun(osarch(), os.path.dirname(self.checkout_path()));
     }
 }
@@ -129,7 +116,6 @@ def js_engine_inputs_digest(repo_root: str) -> str {
 }
 
 def installed_engine_dir -> str {
-    import from jaclang.cache.registry { bucket }
     return str(bucket("js-engine").path() / "current");
 }
 
@@ -141,7 +127,6 @@ def _installed_engine -> Probe {
 }
 
 def ensure_node_link(engine: str) -> str {
-    import from jaclang.jac0core.handoff { process_executable }
     link = os.path.join(engine, "bin", "node");
     exe = process_executable();
     try {
@@ -192,7 +177,6 @@ obj JsEngineArtifact(Artifact) {
         hosts: list[str] = ["linux-x86_64"];
 
     override def probe_sealed -> (Probe | None) {
-        import from jaclang.jac0core { sealed }
         import sys;
         if sealed._jaclang_image() is None {
             return None;
@@ -227,49 +211,61 @@ obj JsEngineArtifact(Artifact) {
         return js_engine_build_dir();
     }
 
+    override def built -> Probe {
+        found = self.probe_checkout();
+        if found.found is None {
+            return found;
+        }
+        if _engine_record(installed_engine_dir()) != _engine_record(found.found.path) {
+            return Probe.stale(["the engine is built but not installed"]);
+        }
+        return found;
+    }
+
     override def build_blocker -> str {
         import shutil;
         if not os.path.isdir(os.path.join(_repo_root(), "js_engine")) {
             return "this tree has no js_engine/";
         }
-        return "" if shutil.which("zig") else "zig is not on PATH";
+        if shutil.which("zig") or self.probe_checkout().found is not None {
+            return "";
+        }
+        return "zig is not on PATH";
     }
 
     override def build(log: Callable[[str], None], force: bool, exact: bool) {
         import subprocess;
-        import from jaclang.jac0core.cache_paths { atomic_write }
-        log("  zig build js-engine (about 18 minutes and 7 GB cold)");
-        subprocess.run(["zig", "build", "js-engine"], cwd=_repo_root(), check=True);
-        atomic_write(
-            os.path.join(js_engine_build_dir(), RECORD_SUFFIX),
-            json.dumps({"inputs": js_engine_inputs_digest(_repo_root())}).encode(
-                "utf-8"
-            )
-        );
+
+        if force or self.probe_checkout().found is None {
+            log("  zig build js-engine (about 18 minutes and 7 GB cold)");
+            subprocess.run(["zig", "build", "js-engine"], cwd=_repo_root(), check=True);
+            atomic_write(
+                os.path.join(js_engine_build_dir(), RECORD_SUFFIX),
+                json.dumps({"inputs": js_engine_inputs_digest(_repo_root())}).encode(
+                    "utf-8"
+                )
+            );
+        }
         ensure_node_link(js_engine_build_dir());
         _install_engine(js_engine_build_dir());
         log(f"  installed for every jac at {installed_engine_dir()}");
     }
 
     override def floor_present -> bool {
-        import from jaclang.artifacts.router { resolve }
         return resolve("bun").found is not None;
     }
 
     override def provide_floor(log: Callable[[str], None]) {
-        import from jaclang.artifacts.router { build }
         build(["bun"], log);
     }
 }
 
 def _engine -> (str | None) {
-    import from jaclang.artifacts.router { resolve }
     found = resolve("js-engine").found;
     return found.path if found is not None else None;
 }
 
 def js_runtime_path -> str {
-    import from jaclang.artifacts.router { require }
     if _engine() is not None {
         import from jaclang.client.js_engine { node_executable }
         return node_executable();
@@ -280,13 +276,14 @@ def js_runtime_path -> str {
 }
 
 def run_pm(args: list[str], cwd: str, capture: bool = False) -> tuple[int, str] {
-    if _engine() is not None {
-        import from jaclang.client.js_engine { run_pm as engine_pm }
-        return engine_pm(args, cwd, capture);
-    }
     import subprocess;
+    runtime = js_runtime_path();
+    env = dict(os.environ);
+    if _engine() is not None {
+        env["PATH"] = os.path.dirname(runtime) + os.pathsep + env.get("PATH", "");
+    }
     result = subprocess.run(
-        [js_runtime_path()] + list(args), cwd=cwd, text=True, capture_output=capture
+        [runtime] + list(args), cwd=cwd, env=env, text=True, capture_output=capture
     );
     if not capture {
         return (result.returncode, "");

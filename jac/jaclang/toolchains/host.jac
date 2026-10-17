@@ -2,7 +2,6 @@ import os;
 import platform;
 import subprocess;
 import from pathlib { Path }
-import from jaclang.cli.console { console }
 
 def host_platform -> str {
     systems = {"Linux": "linux", "Darwin": "mac", "Windows": "windows"};
@@ -52,6 +51,5 @@ def run_step(
 
 
 def use_system_tools -> bool {
-    import from jaclang.project.config { use_system_toolchains }
     return use_system_toolchains();
 }

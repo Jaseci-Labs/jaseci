@@ -70,31 +70,10 @@ def _with_engine(engine: (str | None), fn: any) -> any {
     }
 }
 
-test "a current engine runs the tools and the package manager; otherwise bun does" {
-    calls: list[tuple[list[str], str, bool]] = [];
-    def engine_pm(args: list[str], cwd: str, capture: bool) -> tuple[int, str] {
-        calls.append((list(args), cwd, capture));
-        return (0, "engine");
-    }
-    with TemporaryDirectory() as tmp {
-        def with_engine -> any {
-            with patch(
-                "jaclang.client.js_engine.node_executable",
-                return_value=f"{tmp}/bin/node"
-            ), patch("jaclang.client.js_engine.run_pm", side_effect=engine_pm) {
-                return (
-                    js_runtime.js_runtime_path(),
-                    js_runtime.run_pm(["install"], tmp, capture=True)
-                );
-            }
-        }
-        (path, outcome) = _with_engine(tmp, with_engine);
-        assert path == f"{tmp}/bin/node";
-        assert outcome == (0, "engine") and calls == [(["install"], tmp, True)];
-    }
-    ran: list[list[str]] = [];
-    def bun_run(argv: list[str], **kwargs: any) -> any {
-        ran.append(list(argv));
+test "the package manager runs in a child process, on the engine when one is current" {
+    ran: list[tuple[list[str], str]] = [];
+    def child(argv: list[str], **kwargs: any) -> any {
+        ran.append((list(argv), str(kwargs["env"].get("PATH", ""))));
         class _Done {
             has returncode: int = 0,
                 stdout: str = "out",
@@ -102,15 +81,55 @@ test "a current engine runs the tools and the package manager; otherwise bun doe
         }
         return _Done();
     }
+    with TemporaryDirectory() as tmp {
+        link = f"{tmp}/bin/node";
+        def with_engine -> any {
+            with patch("jaclang.client.js_engine.node_executable", return_value=link), patch(
+                "subprocess.run", side_effect=child
+            ) {
+                return (
+                    js_runtime.js_runtime_path(),
+                    js_runtime.run_pm(["install"], tmp, capture=True)
+                );
+            }
+        }
+        (path, outcome) = _with_engine(tmp, with_engine);
+        assert path == link;
+        assert outcome == (0, "out");
+        (argv, search) = ran[-1];
+        assert argv == [link, "install"];
+        assert search.split(os.pathsep)[0] == f"{tmp}/bin" , "install scripts must find the engine's node first";
+    }
     def with_bun -> any {
         with patch.object(js_runtime, "js_runtime_path", return_value="/opt/bun"), patch(
-            "subprocess.run", side_effect=bun_run
+            "subprocess.run", side_effect=child
         ) {
             return js_runtime.run_pm(["add", "vite"], "/proj", capture=True);
         }
     }
     assert _with_engine(None, with_bun) == (0, "out");
-    assert ran == [["/opt/bun", "add", "vite"]];
+    assert ran[-1][0] == ["/opt/bun", "add", "vite"];
+}
+
+test "a restored build is installed without being rebuilt" {
+    import subprocess;
+    with TemporaryDirectory() as tmp {
+        repo = _tree(Path(tmp));
+        built = _built_engine(repo, js_runtime.js_engine_inputs_digest(str(repo)));
+        installed = Path(tmp) / "cache" / "js-engine" / "current";
+        with patch.object(js_runtime, "_repo_root", return_value=str(repo)), patch.object(
+            js_runtime, "installed_engine_dir", return_value=str(installed)
+        ), patch("subprocess.run", side_effect=AssertionError("no rebuild")), patch(
+            "shutil.which", return_value=None
+        ) {
+            artifact = JsEngineArtifact();
+            assert artifact.built().found is None , "built but not installed is not current";
+            assert artifact.build_blocker() == "" , "installing a current build needs no zig";
+            artifact.build(lambda (line: str) {}, False, False);
+            assert (installed / "libjs_engine.so").is_file();
+            assert artifact.built().found is not None;
+        }
+    }
 }
 
 test "a release image that carries no engine runs bun quietly" {

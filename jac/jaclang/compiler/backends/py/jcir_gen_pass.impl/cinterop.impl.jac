@@ -536,7 +536,7 @@ impl JcirGenPass._c_vararg_rewrite(nd: FuncCall, fixed: int) -> None {
         or any([isinstance(p, KWPair) for p in params]) {
         return;
     }
-    call_args = call.get('args');
+    call_args = call.items('args');
     if len(call_args) != len(params) {
         return;
     }
@@ -553,4 +553,5 @@ impl JcirGenPass._c_vararg_rewrite(nd: FuncCall, fixed: int) -> None {
             []
         );
     }
+    call.setf('args', call_args);
 }

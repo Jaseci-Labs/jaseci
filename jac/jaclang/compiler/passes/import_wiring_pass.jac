@@ -1,8 +1,11 @@
 import os;
+import from jaclang.compiler.driver.pipeline_types { AnalysisFact, PassContract }
 import from jaclang.compiler.passes.context { CompileContext, CompilerPass }
 import from jaclang.compiler.frontend.unitree {
+    Ability,
     EmptyToken,
-    ImplImport,
+    ImplDef,
+    GraphImport,
     Import,
     ImportRule,
     ImportWire,
@@ -15,15 +18,19 @@ import from jaclang.compiler.frontend.unitree {
 }
 import from jaclang.compiler.frontend.module_facts { ModuleFacts }
 import from jaclang.compiler.driver.wiring {
+    RuleRec,
     WireBinding,
+    WireRec,
     WiringSpec,
+    pattern_text,
+    scope_owners,
     is_arch_file,
+    scope_path_of,
     wiring_for_path
 }
 import from jaclang.project.source { pascal_to_snake }
 import from jaclang.compiler.passes.annex_weave { import_form }
 import from jaclang.compiler.frontend.diagnostics {
-    E1140,
     E1141,
     E1142,
     E1143,
@@ -35,13 +42,16 @@ import from jaclang.compiler.frontend.diagnostics {
     E2092,
     E2093,
     E2094,
-    W2083
+    W2083,
+    W2084
 }
 
 walker ImportWiringPass(CompilerPass) {
+    static has contract: PassContract = PassContract(requires=(AnalysisFact.SYM_OF, ));
+
     can run_walk with Module entry;
     def _check_arch_module(mod: Module) -> None;
-    def _check_scope(spec: WiringSpec, block: ImplImport, seen: set[int]) -> None;
+    def _check_scope(spec: WiringSpec, block: GraphImport, seen: set[int]) -> None;
     def _check_wire(spec: WiringSpec, wire: ImportWire) -> None;
     def _check_rule_liveness(spec: WiringSpec, rule: ImportRule) -> None;
     def _check_edge(
@@ -57,12 +67,15 @@ walker ImportWiringPass(CompilerPass) {
         spec: WiringSpec,
         imp: Import,
         consumer: str,
-        provided: dict[tuple[str, str, str, str], ImportWire],
+        provided: dict[tuple[str, str, str, str], WireRec],
         enforce: bool,
-        nested: bool = False
+        nested: bool = False,
+        scope: (list[str] | None) = None
     ) -> None;
 
-    static def _rule_names(rules: list[ImportRule]) -> str;
-    static def _package_pattern(module: str) -> str;
-    static def _rule_name_for(module: str) -> str;
+    def _emit_nested(
+        binding: WireBinding, at: UniNode, consumer: str, scope: (list[str] | None)
+    ) -> None;
+
+    static def _rule_names(rules: list[RuleRec]) -> str;
 }

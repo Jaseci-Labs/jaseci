@@ -194,9 +194,7 @@ import from napi.src.napi_ops {
     NAPI_CLOSING,
     NAPI_BIGINT_EXPECTED,
     NAPI_DATE_EXPECTED,
-    NAPI_ARRAYBUFFER_EXPECTED,
-    NAPI_DETACHABLE_ARRAYBUFFER_EXPECTED,
-    NAPI_WOULD_DEADLOCK
+    NAPI_ARRAYBUFFER_EXPECTED
 }
 
 import from engine.src.runtime.jsobject {
