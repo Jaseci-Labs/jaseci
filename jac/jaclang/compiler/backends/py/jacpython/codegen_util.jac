@@ -901,6 +901,11 @@ def fold_seq_repeat(nobj: PyObj, seq: PyObj) -> PyObj | None {
         return None;
     }
     n = (nobj as PyInt).val;
+    if size == 0 {
+        # An empty sequence repeats to itself for any count; skip the
+        # per-repetition construction (a huge count would stall the fold).
+        return seq;
+    }
     if size > 0 {
         cap = FOLD_MAX_COLLECTION if isinstance(seq, PyTuple) else FOLD_MAX_STR;
         if n < 0 or n > cap // size {

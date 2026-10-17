@@ -426,19 +426,24 @@ def calliter_iternext(op: ptr[PyObject]) -> ptr[PyObject] {
             return result;
         }
         if ok > 0 {
-            # Py_CLEAR both fields: decref before clearing so the references
-            # the iterator owned are released (dealloc skips NULL fields).
-            py_xdecref(it.it_callable);
-            py_xdecref(it.it_sentinel);
+            # Py_CLEAR semantics: null the fields BEFORE releasing the
+            # references — a finalizer triggered by the decrefs can reenter
+            # this iterator through next() and must not see stale fields.
+            callable = it.it_callable;
+            sentinel = it.it_sentinel;
             it.it_callable = ptr[PyObject]();
             it.it_sentinel = ptr[PyObject]();
+            py_xdecref(callable);
+            py_xdecref(sentinel);
         }
     } elif PyErr_ExceptionMatches(PyExc_StopIteration) {
         PyErr_Clear();
-        py_xdecref(it.it_callable);
-        py_xdecref(it.it_sentinel);
+        callable = it.it_callable;
+        sentinel = it.it_sentinel;
         it.it_callable = ptr[PyObject]();
         it.it_sentinel = ptr[PyObject]();
+        py_xdecref(callable);
+        py_xdecref(sentinel);
     }
     if result != ptr[PyObject]() {
         py_xdecref(result);

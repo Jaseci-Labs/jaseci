@@ -726,7 +726,7 @@ def slice_hash(op: ptr[PyObject]) -> i64 {
         return -1;
     }
     acc = wrapping_add(acc, wrapping_mul(lane, XXPRIME2));
-    acc = acc << 31 | acc >> 33;
+    acc = wrapping_shl(acc, 31) | acc >> 33;
     acc = wrapping_mul(acc, XXPRIME1);
 
     lane = _slice_hash_lane(v.stop);
@@ -734,7 +734,7 @@ def slice_hash(op: ptr[PyObject]) -> i64 {
         return -1;
     }
     acc = wrapping_add(acc, wrapping_mul(lane, XXPRIME2));
-    acc = acc << 31 | acc >> 33;
+    acc = wrapping_shl(acc, 31) | acc >> 33;
     acc = wrapping_mul(acc, XXPRIME1);
 
     lane = _slice_hash_lane(v.step);
@@ -742,7 +742,7 @@ def slice_hash(op: ptr[PyObject]) -> i64 {
         return -1;
     }
     acc = wrapping_add(acc, wrapping_mul(lane, XXPRIME2));
-    acc = acc << 31 | acc >> 33;
+    acc = wrapping_shl(acc, 31) | acc >> 33;
     acc = wrapping_mul(acc, XXPRIME1);
 
     if acc == u64.wrap(-1) {

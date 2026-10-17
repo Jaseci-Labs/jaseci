@@ -205,7 +205,11 @@ obj PyInt(PyObj) {
     }
 
     def nb_binop(kind: int, other: PyObj) -> PyObj {
-        if other.t != "int" {
+        # PyBigInt also carries t="int"; casting it to PyInt would read the
+        # wrong object's fields. Only genuine PyInt operands are handled
+        # here, so a big-int operand surfaces as TypeError (fold code
+        # treats that as "leave unfolded", and the runtime raises).
+        if not isinstance(other, PyInt) {
             return py_error("TypeError", "unsupported operand types");
         }
         b = (other as PyInt).val;

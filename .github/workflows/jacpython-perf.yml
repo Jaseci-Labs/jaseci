@@ -79,6 +79,7 @@ jobs:
           echo "b=$b" >> "$GITHUB_OUTPUT"
 
       - name: CPython tests for the ported objects (branch JacPython)
+        id: ported_object_tests
         continue-on-error: true
         run: |
           set -euo pipefail
@@ -101,7 +102,7 @@ jobs:
       # perf table), so a failure needs to surface in the run summary and
       # as an annotation, not just as a red step somebody has to look for.
       - name: Say plainly that the ported-object tests failed
-        if: failure()
+        if: steps.ported_object_tests.outcome == 'failure'
         run: |
           {
             echo "### Ported-object CPython tests failed (non-blocking)"
