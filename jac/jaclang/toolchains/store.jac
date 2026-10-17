@@ -11,9 +11,6 @@ import from pathlib { Path }
 import from http.client { HTTPResponse }
 import from urllib.request { Request, urlopen }
 import from urllib.parse { urlsplit }
-import from jaclang.cli.console { console }
-import from jaclang.cache.registry { bucket, maybe_sweep }
-import from jaclang.jac0core.cache_paths { FileLock }
 
 obj Artifact {
     has name: str,
@@ -42,7 +39,6 @@ obj Artifact {
 }
 
 def offline -> bool {
-    import from jaclang.project.config { offline_mode }
     return offline_mode();
 }
 

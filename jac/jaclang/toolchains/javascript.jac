@@ -1,9 +1,7 @@
 import os;
 import from pathlib { Path }
-import from jaclang.toolchains.store { offline }
 
 def native_node -> Path {
-    import from jaclang.toolchains.tools { tool_path }
     return tool_path("node");
 }
 

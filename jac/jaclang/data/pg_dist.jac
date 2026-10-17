@@ -6,15 +6,6 @@ import subprocess;
 import urllib.request;
 import zipfile;
 import from pathlib { Path }
-import type from jaclang.project.config { DatabaseConfig }
-import from jaclang.artifacts.model {
-    Artifact,
-    ArtifactKind,
-    ArtifactUnavailable,
-    Probe,
-    ReleasePolicy,
-    Source
-}
 
 glob logger = logging.getLogger(__name__),
      PG_MAJOR: int = 19,
@@ -30,13 +21,11 @@ glob logger = logging.getLogger(__name__),
      );
 
 def _database_config -> (DatabaseConfig | None) {
-    import from jaclang.project.config { get_config }
     config = get_config();
     return config.database if config is not None else None;
 }
 
 def _configured_dist -> str {
-    import from jaclang.project.config { get_config }
     config = get_config();
     if config is None or not config.database.postgres_dist {
         return "";
@@ -64,7 +53,6 @@ def pinned_major -> int {
 }
 
 def dist_cache_dir -> str {
-    import from jaclang.cache.registry { bucket }
     return str(bucket("pg").path() / 'dist');
 }
 
@@ -194,7 +182,6 @@ def _published(slug: str) -> list[str] {
 }
 
 def _unpack(slug: str, version: str, dist_dir: str) {
-    import from jaclang.toolchains.store { Artifact as Download, fetch, extract }
     name = f"embedded-postgres-binaries-{slug}";
     jar_url = f"{ZONKY_BASE}{slug}/{version}/{name}-{version}.jar";
     with urllib.request.urlopen(jar_url + '.sha1', timeout=30) as response {
@@ -225,7 +212,6 @@ def _unpack(slug: str, version: str, dist_dir: str) {
 }
 
 def download_dist -> str {
-    import from jaclang.jac0core.cache_paths { FileLock }
     slug = platform_slug();
     if slug is None {
         raise ArtifactUnavailable(
@@ -314,7 +300,6 @@ obj PostgresArtifact(Artifact) {
 }
 
 def postgres_bin_dir -> str {
-    import from jaclang.artifacts.router { require }
     found = require("postgres").found;
     assert found is not None;
     return found.path;

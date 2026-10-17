@@ -2,8 +2,6 @@ import subprocess;
 import hashlib;
 import json;
 import from pathlib { Path }
-import from jaclang.cli.console { console }
-import from jaclang.client.js_runtime { js_runtime_path, run_pm }
 
 def resolve_node_tool_entry(project_dir: Path, tool: str) -> (Path | None) {
     shim = project_dir / "node_modules" / ".bin" / tool;
@@ -27,8 +25,6 @@ def resolve_node_tool(project_dir: Path, tool: str) -> list[str] {
 }
 
 def run_manifest_install(project_dir: Path) {
-    import from jaclang.jac0core.cache_paths { FileLock }
-    import from jaclang.toolchains.store { offline }
     with FileLock(project_dir / ".jac-dependencies.lock") {
         stamp = project_dir / ".jac-dependencies.sha256";
         current = _deps_current(project_dir, stamp, manifest_signature(project_dir));
