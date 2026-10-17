@@ -531,6 +531,40 @@ test "a kernel compile with no unit is final only when it reported errors" {
     }
 }
 
+"""JCIR the bytecode assembler rejects is a compile error in the module, the
+E5043 the host's own compile reports, not an internal failure of the run."""
+test "a kernel unit the assembler rejects reports the host's E5043" {
+    import from unittest.mock { patch }
+    with TemporaryDirectory() as td {
+        base = Path(os.path.realpath(td));
+        (base / 'jac.toml').write_text(CONFIG);
+        entry_file = str(base / 'early_exit.jac');
+        Path(entry_file).write_text(
+            'with entry {\n    x = 1;\n    if x {\n        return;\n    }\n    print(x);\n}\n'
+        );
+        program = JacProgram();
+        with patch("jaclang.project.kernel_compile._IN_PROCESS", [True]) {
+            code = program._get_compiler().get_bytecode(entry_file, program);
+        }
+        assert code is None;
+        kernel_msgs = [
+            e.msg
+            for e in program.errors_had
+            if e.code is not None and e.code.code == "E5043"
+        ];
+        assert kernel_msgs , [str(e) for e in program.errors_had];
+        assert "'return' outside function" in kernel_msgs[0] , kernel_msgs;
+        host = JacProgram();
+        host.compile(entry_file, options=compile_options());
+        host_msgs = [
+            e.msg
+            for e in host.errors_had
+            if e.code is not None and e.code.code == "E5043"
+        ];
+        assert kernel_msgs == host_msgs , (kernel_msgs, host_msgs);
+    }
+}
+
 """A module placed in the native codespace resolves `import time` to the
 module the native stdlib ships. A kernel run with no host to ask cannot
 answer for those modules, and one that stops only for want of such answers

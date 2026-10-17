@@ -352,10 +352,14 @@ impl JacCompiler._adopt_kernel_compile(
     adopted: (bytes | None) = None;
     for unit in native_first(compiled.units) {
         with compile_progress.track(unit.path) {
-            bytecode = assemble_jcir(unit.jcir);
+            (bytecode, rejected) = assemble_jcir(unit.jcir, unit.path);
             if bytecode is None {
                 if not unit.jcir and unit is not target {
                     continue;
+                }
+                if rejected {
+                    program.errors_had.extend(rejected);
+                    return (True, None);
                 }
                 raise RuntimeError(
                     "the native compiler kernel emitted no assemblable JCIR for "
