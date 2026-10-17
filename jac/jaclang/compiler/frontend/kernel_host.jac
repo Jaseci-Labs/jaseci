@@ -14,6 +14,9 @@ class HostOnlyError(RuntimeError) {}
 
 obj HostAsker {
     def ask(method: str, key: str) -> str abst;
+    def record_interface(
+        program: JacProgram, module: Module, products: UnitProducts
+    ) {}
 }
 
 enum HostEventKind { NOTE, COVERAGE, COLLECT }
@@ -445,8 +448,9 @@ obj KernelHost(HostServices) {
         if not products.path {
             products.path = real;
         }
-        if real.endswith(".jac") {
-            unit_interface(module, task.program, products);
+        asker = self.asker;
+        if real.endswith(".jac") and asker is not None {
+            asker.record_interface(task.program, module, products);
         }
         self.units[real] = products;
     }
