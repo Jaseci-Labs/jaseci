@@ -230,6 +230,7 @@ def unit_line_count(path: str) -> int {
 
 def plan_kernel_prefix(stop_after: int, log: Callable[[str], None]) -> int {
     import gc;
+    import from operator { itemgetter }
     program = JacProgram();
     registry = program.native_units();
     registry.progress = log;
@@ -259,7 +260,7 @@ def plan_kernel_prefix(stop_after: int, log: Callable[[str], None]) -> int {
     );
     log("  Lowering time per unit (lines include annexes):");
     for (path, seconds) in sorted(
-        registry.unit_lower_seconds.items(), key=lambda row: -row[1]
+        registry.unit_lower_seconds.items(), key=itemgetter(1), reverse=True
     ) {
         log(f"    {seconds:7.2f}s {unit_line_count(path):7d} lines  {native_unit_identity(path)}");
     }
