@@ -3376,6 +3376,16 @@ graph import compiler.driver {
     bccache --> server.hmr { discover_base_file }
     bccache --> testing.test_runner._suite_source { discover_base_file }
     boundary_classify --> compiler.backends.es.esast_gen_pass.EsastGenPass._is_client_native_import {
+    boundary_classify --> compiler.placement.placement._element_reqs { classify_import }
+    boundary_classify --> compiler.placement.placement.module_anchor_reasons {
+        is_service_app_entry,
+        ability_delegates_to_model,
+        classify_import
+    }
+    boundary_classify --> compiler.placement.placement.native_blocker_in {
+        ability_delegates_to_model
+    }
+
         import_binds_client_native
     }
     boundary_classify --> compiler.backends.es.esast_gen_pass.EsastGenPass._is_service_bridge_import {
@@ -5100,6 +5110,7 @@ graph import compiler.frontend {
         set_native_target_override
     }
     type codeinfo --> compiler.driver.compiler { CodeGenTarget, NativeModuleLayout }
+    type codeinfo --> runtime.interop_bridge { InteropManifest }
     codeinfo --> compiler.driver.compiler.JacCompiler._cached_client_artifact {
         ClientArtifact
     }
@@ -12742,6 +12753,7 @@ graph import runtime {
         register_py_callbacks
     }
     interop_bridge --> runtime.prepared.execute_module { NativeLibrary }
+    interop_bridge --> cli.commands.execution._exec_file { ensure_py_funcs_loaded }
     interop_bridge --> runtime.source_app._load_application {
         NativeCallback,
         NativeLibrary
@@ -13004,6 +13016,8 @@ graph import runtime {
     runtime --> project.config.JacConfig.app_for_target { JacRuntime }
     runtime --> project.plugin_config { JacRuntime }
     runtime --> runtime.archetype.EdgeAnchor.detach { JacRuntime }
+    runtime --> runtime.interop_bridge._pyb_import_module { JacModule }
+    runtime --> runtime.interop_bridge.ensure_py_funcs_loaded { JacModule }
     runtime --> runtime.archetype.NodeAnchor.all_edges { JacRuntimeInterface }
     runtime --> runtime.archetype.Root.__getattr__ { JacRuntime }
     runtime --> runtime.archetype._dirty_setattr { JacRuntime }
