@@ -408,7 +408,7 @@ def run_kernel_analysis(
 obj CompileReport {
     has analysis: AnalysisReport,
         units: list[UnitProducts] = [],
-        analyses: dict[str, any] = {};
+        analyses: dict[str, ModuleAnalysis] = {};
 
     def unit(path: str) -> (UnitProducts | None) {
         resolved = os.path.realpath(path);
@@ -458,6 +458,6 @@ def run_kernel_compile(
     return CompileReport(
         analysis=run.outcome(path),
         units=list(run.host.units.values()),
-        analyses=dict(run.host.analyses)
+        analyses=run.host.analyses
     );
 }
