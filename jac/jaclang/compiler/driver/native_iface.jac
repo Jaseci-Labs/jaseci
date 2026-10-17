@@ -43,6 +43,7 @@ def resolve_native_unit_ref(ref: str, anchor: str = "") -> str {
     import from jaclang.compiler.frontend.host { active_host }
     import from jaclang.compiler.backends.native.na_constants {
         FACT_IMPORT_PATHS,
+        FACT_PACKAGE_STORE,
         FACT_SEP
     }
     for search_dir in active_host().native_fact(FACT_IMPORT_PATHS, "").split(
@@ -52,6 +53,24 @@ def resolve_native_unit_ref(ref: str, anchor: str = "") -> str {
             candidate = os.path.join(search_dir, ref);
             if os.path.isfile(candidate) {
                 return candidate;
+            }
+        }
+    }
+    """A package from the store is rooted at its `<version>-<sha>` directory
+    under `<store>/<org>/<name>/`, a place no consumer's root or import path
+    leads to.""";
+    store = active_host().native_fact(FACT_PACKAGE_STORE, "");
+    if store and os.path.isdir(store) {
+        for org in sorted(os.listdir(store)) {
+            org_dir = os.path.join(store, org);
+            if not os.path.isdir(org_dir) {
+                continue;
+            }
+            for name in sorted(os.listdir(org_dir)) {
+                candidate = os.path.join(org_dir, name, ref);
+                if os.path.isfile(candidate) {
+                    return candidate;
+                }
             }
         }
     }

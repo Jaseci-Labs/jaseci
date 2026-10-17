@@ -58,7 +58,7 @@ A consumer path may continue past the module into a class, function or method: `
 
 ### Imports that run where they are written
 
-An injected import lands at the top of its body. An import that must run somewhere else, inside an `if`, `try`, loop or `with` block, or after other statements (an early return, a guard), stays written in place, because moving it would change when it runs: an optional dependency caught by `except ImportError` would fail before the `try`, and a cycle-breaking import would run too early. Such an import is declared with `-->`, which checks the import and never injects it:
+An injected import lands at the top of its body. An import that must run somewhere else, inside an `if`, `try`, loop or `with` block, or after other statements (an early return, a guard), stays written in place, because moving it would change when it runs: an optional dependency caught by `except ImportError` would fail before the `try`, and a cycle-breaking import would run too early. An `include` in an `.impl.jac` annex is positional too: an include is textual, the annex merges after the module's own body, and moving the include to the head would put its declarations ahead of names it follows. Such an import is declared with `-->`, which checks the import and never injects it:
 
 ```jac
 graph import {

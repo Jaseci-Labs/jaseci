@@ -848,6 +848,9 @@ impl scope_path_of(nd: UniNode) -> (list[str] | None) {
 }
 
 impl is_positional_import(imp: Import) -> bool {
+    if imp.is_absorb and active_host().base_file(imp.loc.mod_path) is not None {
+        return True;
+    }
     owner = imp.parent;
     if not isinstance(owner, (Module, Ability, ImplDef)) {
         return True;

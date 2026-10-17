@@ -1,7 +1,7 @@
 graph import {
     artifacts.kit ++> [
         client.js_runtime.BunArtifact.build
-            | compiler.backends.native.static_link.floor_lib_dir { osarch },
+            | compiler.backends.native.native_link.floor_lib_dir { osarch },
         client.js_runtime.BunArtifact.probe_kit
             | compiler.backends.native.kernel_resolve._bundled_kernel
             | dist.interpreter.JacPythonArtifact.probe_kit { kit_image },
@@ -11,7 +11,7 @@ graph import {
             kit_image,
             kit_path
         },
-        compiler.backends.native.static_link.musl_lib_dir { osarch },
+        compiler.backends.native.native_link.musl_lib_dir { osarch },
         dist.precompile_bytecode.kit_omissions { pr_kit_omits },
     ]
     artifacts.kit --> compiler.backends.native.link_plan.link_artifact { osarch }
@@ -59,11 +59,11 @@ graph import {
             | toolchains.tools.tool_path { require },
         client.js_runtime.JsEngineArtifact.floor_present
             | compiler.backends.native.kernel_resolve.resolve_kernel
-            | compiler.backends.native.static_link.floor_lib_dir
+            | compiler.backends.native.native_link.floor_lib_dir
             | compiler.backends.native.wasm_build._wasm_libc_dir
             | compiler.types.stubcat.locate.open_catalog { resolve },
         client.js_runtime.JsEngineArtifact.provide_floor { build },
-        client.js_runtime._engine | compiler.backends.native.static_link.musl_lib_dir {
+        client.js_runtime._engine | compiler.backends.native.native_link.musl_lib_dir {
             resolve
         },
         compiler.backends.native.kernel_resolve.build_kernel { publish },
@@ -203,7 +203,6 @@ graph import {
             | client.targets.static_target
             | client.targets.web_target.WebTarget.dev
             | client.vite_bundler
-            | compiler.backends.native.elf_linker
             | compiler.driver.application.prepare_application
             | compiler.tools.lang_tools
             | dist.precompile_bytecode
@@ -512,8 +511,15 @@ graph import {
         SEALED_LINK_MODE,
         kernel_lib_name
     }
-    compiler.backends.native.kernel_resolve --> project.kernel_check.kernel_check
-        | project.kernel_compile.kernel_route { refuse_unloadable }
+    compiler.backends.native.kernel_resolve --> [
+        project.kernel_check.analysis_kernel { KernelLoadError },
+        project.kernel_check.kernel_check | project.kernel_compile.kernel_route {
+            refuse_unloadable
+        },
+    ]
+    compiler.backends.native.kernel_stage0 --> dist.precompile_bytecode.seal_native {
+        refuse_missing_entries
+    }
     compiler.backends.native.link_plan ++> [
         cli.commands.native_build { LinkPlan },
         cli.commands.native_build.native_build {
@@ -555,7 +561,11 @@ graph import {
         wasm_assets
     }
     compiler.backends.native.wasm_artifact --> dist.source.build.build_native_product {
-        wasm_assets
+        rename_wasm_imports,
+        wasm_assets,
+        wasm_ld_args,
+        wasm_object_functions,
+        write_allowed_imports
     }
     compiler.backends.native.wasm_build ++> dist.source.client.write_client {
         prepare_wasm_module
@@ -567,9 +577,6 @@ graph import {
     compiler.backends.native.wasm_host_abi --> dist.source.build.build_native_product {
         WASM_HOST_ABI,
         WASM_HOST_MODULE
-    }
-    compiler.backends.native.wasm_linker --> dist.source.build.build_native_product {
-        WasmLinker
     }
     compiler.backends.py.artifact_imports ++> dist.precompile_bytecode.seal_runtime_closure {
         runtime_sources
@@ -922,7 +929,9 @@ graph import {
         | project.compiler_host.ProjectHost.native_pipeline_available {
         native_pipeline_available
     }
-    compiler.driver.unit_products ++> project.kernel_compile { UnitProducts }
+    compiler.driver.unit_products ++> project.kernel_compile | project.kernel_snapshot {
+        UnitProducts
+    }
     compiler.driver.wiring ++> [
         cli.commands.architecture {
             ARCH_FILE_NAME,
@@ -1298,6 +1307,11 @@ graph import {
     type compiler.types.stubcat.reader ++> project.compiler_host { StubCatalog }
     compiler.types.stubcat.writer ++> [
         dist.precompile_bytecode.precompile_unit_context,
+        project.kernel_snapshot.KernelSnapshot.record_interface {
+            IncoherentInterface,
+            build_module_iface,
+            module_iface_shape
+        },
         project.kernel_snapshot.python_interface {
             IncoherentInterface,
             build_module_iface
@@ -1576,11 +1590,9 @@ graph import {
         artifacts.router.publish | compiler.driver.jir { FileLock, atomic_write },
         cache.home { get_cache_home },
         client.js_runtime.JsEngineArtifact.build
-            | compiler.backends.native.elf_linker
             | compiler.backends.native.link_plan
             | compiler.backends.native.llvm.shim_path.write_shim_record
-            | compiler.backends.native.macho_linker
-            | compiler.backends.native.pe_linker
+            | compiler.backends.native.native_link
             | compiler.types.stubcat.build
             | scale.injector.binary { atomic_write },
         client.js_runtime.write_bun_record { atomic_write },
@@ -2137,6 +2149,7 @@ graph import {
         packages.store { store_root },
     ]
     project.package_scope --> [
+        compiler.backends.native.host_facts.host_native_fact { store_root },
         compiler.driver.jir._module_cache_root { in_store },
         compiler.driver.jir._module_projection { is_dependency_module },
     ]
@@ -2434,7 +2447,6 @@ graph import {
         lib.jaclib { GraphQuery, QHop, QOrder, QPred },
     ]
     runtime.graph_utils ++> [
-        compiler.backends.native.static_link.load_outline_atomics { triple_arch },
         scale.admin.admin_portal.JacAPIServerAdmin.admin_graph_data
             | server.endpoints.pages.register_graph_endpoints.graph_data {
             collect_node_connections
@@ -5266,6 +5278,7 @@ graph import compiler {
     ]
     backends.native.na_constants --> driver.native_iface.resolve_native_unit_ref {
         FACT_IMPORT_PATHS,
+        FACT_PACKAGE_STORE,
         FACT_SEP
     }
     backends.native.na_ir_gen_pass ++> [
@@ -5643,8 +5656,6 @@ graph import compiler {
             | tests.test_unknown_cascade
             | tests.test_zstd_equivalence
             | tools.lang_tools { CompileOptions },
-        backends.native.elf_linker.ElfLinker.link
-            | backends.native.link_plan.plan_objects { env_symmap_requested },
         backends.native.kernel_resolve {
             CompileOptions,
             NATIVE_LINK_MODE_BITCODE,
@@ -5660,6 +5671,8 @@ graph import compiler {
             pop_native_target,
             push_native_target
         },
+        backends.native.link_plan.link_artifact { env_symmap_requested },
+        backends.native.link_plan.plan_objects { env_symmap_requested },
         backends.native.llvm | backends.native.llvm.ir.types {
             env_typed_pointers_enabled
         },
@@ -5916,7 +5929,7 @@ graph import compiler {
     driver.unit_products ++> [
         boundary_audit.boundary_audit { interop_record },
         frontend.kernel_analyze { UnitProducts, products_from_record, products_record },
-        frontend.kernel_host { UnitProducts, unit_interface, unit_products },
+        frontend.kernel_host { UnitProducts, native_products, unit_products },
     ]
     driver.wiring ++> [
         frontend.kernel_host.KernelHost.place_wired_imports { place_wired_imports },
@@ -6023,6 +6036,7 @@ graph import compiler {
         backends.es.client_kernel_cache._es_backend_fingerprint
             | backends.native.floors._repo_root
             | backends.native.kernel_resolve._unit_label
+            | backends.native.kernel_stage0.link_kernel
             | backends.native.llvm.shim_path._repo_root
             | driver.pass_driver._alert_in_internal_stub
             | driver.setup_progress
@@ -6051,6 +6065,10 @@ graph import compiler {
         backends.native.kernel_resolve.unit_drift
             | backends.native.link_plan.LinkPlan.plan_digest
             | native_scope.package_host_edge { native_unit_identity },
+        backends.native.kernel_stage0.missing_kernel_entries
+            | backends.native.na_ir_gen_pass.NaIRGenPass._register_entry_globals {
+            native_def_symbol
+        },
         backends.native.kernel_stage0.running_kernel_target {
             KERNEL_UNIT_REL,
             jaclang_pkg_root
@@ -6146,9 +6164,6 @@ graph import compiler {
         backends.native.na_ir_gen_pass.NaIRGenPass._pyb_base_of
             | passes.capability_check_pass.base_expr_is_erased
             | passes.layout_pass.is_erased_base_name { NATIVE_ERASED_BASES },
-        backends.native.na_ir_gen_pass.NaIRGenPass._register_entry_globals {
-            native_def_symbol
-        },
         backends.native.na_ir_gen_pass.NaIRGenPass._register_imported_struct_types
             | driver.program.JacProgram.stamp_boundary_facts {
             is_bundled_native_module,
@@ -9352,6 +9367,7 @@ graph import compiler {
     ]
     type kernel_target ++> backends.native.kernel_resolve { KernelTarget }
     native_bindings ++> [
+        passes.endpoint_effect_pass.callable_key { is_owning_scope },
         passes.layout_pass.record_interface_twins {
             interface_type,
             typeshed_stub_path
@@ -10207,14 +10223,9 @@ graph import compiler {
     types.stubcat.resolver ++> driver.ifacecache | frontend.kernel_host {
         CatalogResolver
     }
-    types.stubcat.writer ++> [
-        driver.ifacecache.IfaceRegistry._encode_iface { IncoherentInterface },
-        driver.unit_products.unit_interface {
-            IncoherentInterface,
-            build_module_iface,
-            module_iface_shape
-        },
-    ]
+    types.stubcat.writer ++> driver.ifacecache.IfaceRegistry._encode_iface {
+        IncoherentInterface
+    }
     types.ts_decl_parser --> tests.test_jac_mobui_typing { parse_dts }
     types.type_evaluator ++> [
         driver.program.JacProgram.get_type_evaluator { TypeEvaluator },
@@ -10761,7 +10772,6 @@ graph import compiler.backends.native {
         na_ir_gen_pass { classify_foreign_fn },
         na_ir_gen_pass.NaIRGenPass._build_jc_layout { struct_layouts },
     ]
-    elf_linker --> link_plan.link_artifact { ElfLinker }
     foreign ++> [
         abi.classify_foreign_fn | na_ir_gen_pass.NaIRGenPass._clib_struct_layout {
             foreign_struct_layout
@@ -10789,6 +10799,7 @@ graph import compiler.backends.native {
     ]
     link_plan ++> [
         kernel_resolve.kernel_plan { build_link_plan },
+        kernel_stage0 { LinkPlan },
         kernel_stage0.link_kernel { ArtifactKind, link_artifact },
     ]
     link_plan --> na_compile_pass.NativeCompilePass._run_impl {
@@ -10799,53 +10810,18 @@ graph import compiler.backends.native {
         kernel_resolve { LinkPlan, LinkResult },
         kernel_stage0 { LinkResult },
     ]
-    linker_common ++> [
-        elf_linker {
-            _align,
-            _append_to_blob,
-            _build_strtab,
-            _find_entry_vaddr,
-            _resolve_patch_site,
-            _resolve_seg_vaddr
-        },
-        link_plan.unresolved_unit_symbols {
-            object_defined_symbols,
-            object_undefined_symbols
-        },
-        macho_linker {
-            _align,
-            _append_to_blob,
-            _build_strtab,
-            _find_entry_vaddr,
-            _resolve_patch_site,
-            _resolve_seg_vaddr,
-            encode_uleb128
-        },
-        pe_linker { _align, _append_to_blob, _resolve_seg_vaddr },
-        static_link { ArMember, object_undefined_symbols, select_ar_members },
-        wasm_artifact.wasm_import_map | wasm_build.wasm_import_map {
-            read_leb_name,
-            read_uleb128
-        },
-        wasm_linker {
-            encode_sleb128,
-            encode_uleb128,
-            encode_uleb128_padded5,
-            read_leb_name,
-            read_sleb128,
-            read_uleb128
-        },
-    ]
-    linker_common --> link_plan.link_artifact { object_undefined_symbols }
     llvm.binding as llvm ++> [
         host_facts.struct_layouts_fact
+            | kernel_stage0.unit_issue_details
             | link_glue.bind_shared_callbacks
             | link_plan
             | na_compile_pass
-            | wasm_build._load_libc_module,
+            | native_link
+            | wasm_build._exported_functions,
         host_facts.target_fact
             | link_glue.init_object_codegen
-            | wasm_build.prepare_wasm_module,
+            | wasm_build._load_libc_module,
+        wasm_build.prepare_wasm_module,
     ]
     type llvm.binding ++> [
         link_plan { ExecutionEngine, ModuleRef, TargetMachine },
@@ -10857,16 +10833,15 @@ graph import compiler.backends.native {
     llvm.ir as ir ++> abi | lowering | na_ir_gen_pass | primitives_native;
     llvm.ir.types ++> link_glue.bind_shared_callbacks { _wrapname }
     lowering ++> [
-        entry_points.validate_native_application | na_compile_pass.require_native_ir {
-            native_lowering_issues
-        },
+        entry_points.validate_native_application
+            | kernel_stage0.unit_issue_details
+            | na_compile_pass.require_native_ir { native_lowering_issues },
         na_compile_pass.native_demoted_ir_symbols {
             NativeLoweringKind,
             native_lowering_issues
         },
         na_ir_gen_pass { NativeLoweringIssue, NativeLoweringKind },
     ]
-    macho_linker --> link_plan.link_artifact { MachOLinker }
     na_compile_pass ++> [
         entry_points.validate_native_application {
             native_demoted_ir_symbols,
@@ -10882,6 +10857,7 @@ graph import compiler.backends.native {
             FACT_CODEC_TABLES,
             FACT_IMPORT_PATHS,
             FACT_OS,
+            FACT_PACKAGE_STORE,
             FACT_PRIMITIVE_METHODS,
             FACT_SEALED_RUNTIME,
             FACT_SEP,
@@ -10929,7 +10905,22 @@ graph import compiler.backends.native {
         },
     ]
     type na_ir_gen_pass ++> primitives_native { NaIRGenPass }
-    pe_linker --> link_plan.link_artifact { PeLinker }
+    native_link ++> [
+        link_plan {
+            MACHO_SYSTEM_DYLIB,
+            NativeLinkError,
+            NativeLinkJob,
+            PE_DLL_ENTRY,
+            clib_needed_libs,
+            clib_symbol_lib_map,
+            floor_archives,
+            link_native,
+            musl_runtime,
+            outline_atomics_archive,
+            write_symbol_map
+        },
+        wasm_build { NativeLinkError, WasmLinkJob, link_wasm_module },
+    ]
     primitives_native ++> na_ir_gen_pass {
         NativeDictEmitter,
         NativeEmitCtx,
@@ -10942,21 +10933,17 @@ graph import compiler.backends.native {
     ]
     primitives_native as emitters ++> host_facts.primitive_methods_fact;
     region_abi ++> na_ir_gen_pass { REGION_KERNEL_ABI }
-    static_link ++> link_plan {
-        clib_needed_libs,
-        clib_symbol_lib_map,
-        collect_floor_archives,
-        load_musl_static,
-        load_outline_atomics
-    }
+    wasm_artifact ++> [
+        native_link { wasm_ld_args, write_allowed_imports },
+        wasm_build { rename_wasm_imports },
+    ]
     wasm_build ++> link_plan.link_wasm { emit_wasm_from_ir }
     wasm_host_abi ++> [
         wasm_artifact { WASM_HOST_MODULE },
         wasm_build._link_wasm_libc { WASM_HOST_ABI },
         wasm_build.emit_wasm_from_ir { WASM_HOST_ABI, WASM_HOST_MODULE },
     ]
-    wasm_linker ++> wasm_build.emit_wasm_from_ir { WasmLinker }
-    win_floor ++> pe_linker { win_import_dll, win_import_name }
+    win_floor ++> native_link { win_import_dll, win_import_name }
     win_floor --> [
         link_glue.link_glue_ir { win_floor_ir },
         link_plan.link_artifact { WIN_CRT_DLL },
@@ -10974,6 +10961,7 @@ graph import compiler.backends.native.llvm {
             | binding.dylib
             | binding.initfini
             | binding.linker
+            | binding.lld
             | binding.module
             | binding.newpassmanagers
             | binding.object_file
@@ -10988,6 +10976,7 @@ graph import compiler.backends.native.llvm {
     include binding.executionengine ++> binding;
     include binding.initfini ++> binding;
     include binding.linker ++> binding;
+    include binding.lld ++> binding;
     include binding.module ++> binding;
     include binding.newpassmanagers ++> binding;
     include binding.object_file ++> binding;

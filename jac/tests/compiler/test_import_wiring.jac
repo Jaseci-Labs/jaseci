@@ -1140,3 +1140,35 @@ test "a wired keyword-named function read in code counts as used" {
         shutil.rmtree(base, ignore_errors=True);
     }
 }
+
+
+test "a wired include an annex writes stays written and is declared" {
+    base = _project(
+        {
+            "archwire.jac": (
+                "graph import core {\n"
+                "    include common ++> head;\n"
+                "    include common --> svc;\n"
+                "}\n"
+            ),
+            "core/common.jac": "def common_fn -> int {\n    return 1;\n}\n",
+            "core/head.jac": "include core.common;\n\ndef local_fn -> int {\n    return 2;\n}\n",
+            "core/svc.jac": "def local_fn -> int {\n    return 2;\n}\n",
+            "core/impl/svc.impl.jac": "include core.common;\n"
+        }
+    );
+    try {
+        head = JacProgram.jac_file_formatter(
+            os.path.join(base, "core", "head.jac"), auto_lint=True
+        );
+        assert "include core.common" not in head.mod.main.gen.jac , head.mod.main.gen.jac;
+        annex = JacProgram.jac_file_formatter(
+            os.path.join(base, "core", "impl", "svc.impl.jac"), auto_lint=True
+        );
+        assert "include core.common" in annex.mod.main.gen.jac , annex.mod.main.gen.jac;
+        errors = _errors(_compile(base, "core/svc.jac"));
+        assert "E1144" not in errors and "E1147" not in errors , errors;
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}

@@ -242,53 +242,101 @@ def emit_wasm_from_ir(
     llvm_ir_str: str, export_funcs: list[str] = [], app_imports: (set | None) = None
 ) -> bytes {
     (mod, tm, libc_linked) = prepare_wasm_module(llvm_ir_str);
+    exports = list(export_funcs) or _exported_functions(mod);
     obj_bytes = tm.emit_object(mod);
     assert isinstance(obj_bytes, bytes);
     if not libc_linked {
-        return WasmLinker.link([obj_bytes], export_funcs, 256);
+        return link_wasm_object(obj_bytes, exports);
     }
-    return WasmLinker.link(
-        [obj_bytes],
-        export_funcs,
-        256,
+    return link_wasm_object(
+        obj_bytes,
+        exports,
         host_abi=WASM_HOST_ABI,
         host_module=WASM_HOST_MODULE,
-        app_imports=app_imports,
+        app_imports=app_imports
     );
 }
 
-def wasm_import_map(wasm_bytes: bytes) -> dict[str, any] {
-    out = {};
-    o = 8;
-    while o < len(wasm_bytes) {
-        sid = wasm_bytes[o];
-        o += 1;
-        (size, o) = read_uleb128(wasm_bytes, o);
-        end = o + size;
-        if sid == 2 {
-            (cnt, o) = read_uleb128(wasm_bytes, o);
-            ci = 0;
-            while ci < cnt and o < end {
-                (mod_nm, o) = read_leb_name(wasm_bytes, o);
-                (fld, o) = read_leb_name(wasm_bytes, o);
-                kind = wasm_bytes[o];
-                o += 1;
-                if kind == 0 {
-                    (_t, o) = read_uleb128(wasm_bytes, o);
-                    out.setdefault(mod_nm, []).append(fld);
-                } else {
-                    break;
-                }
-                ci += 1;
-            }
-            break;
+def _exported_functions(mod: ModuleRef) -> list[str] {
+    """Every function the module defines with external linkage and default
+    visibility: a wasm module's host calls its functions by these names.""";
+    names: list[str] = [];
+    for fn in _mod_functions(mod) {
+        if not fn.is_declaration
+            and fn.linkage == llvm.Linkage.external
+            and fn.visibility == llvm.Visibility.default
+            and not str(fn.name).startswith("llvm.") {
+            names.append(str(fn.name));
         }
-        o = end;
     }
-    for k in out {
-        out[k].sort();
+    return names;
+}
+
+def link_wasm_object(
+    obj_bytes: bytes,
+    export_funcs: list[str],
+    host_abi: (set | None) = None,
+    host_module: str = "",
+    app_imports: (set | None) = None
+) -> bytes {
+    """Link one wasm object into a module with wasm-ld. Its undefined
+    functions become imports: the host ABI's are imported from
+    `host_module`, and once the app's imports are known, any other import
+    is an error.""";
+    import tempfile;
+    allowed: (list[str] | None) = None;
+    if app_imports is not None {
+        allowed = sorted(set(host_abi or set()) | set(app_imports));
     }
-    return out;
+    (fd, out_path) = tempfile.mkstemp(suffix=".wasm");
+    os.close(fd);
+    try {
+        link_wasm_module(
+            WasmLinkJob(
+                objects=[obj_bytes],
+                output_path=out_path,
+                export_funcs=export_funcs,
+                allowed_imports=allowed
+            )
+        );
+        with open(out_path, "rb") as f {
+            content = f.read();
+        }
+    } except NativeLinkError as e {
+        raise RuntimeError(_unexpected_import_message(str(e), host_module)) from None;
+    } finally {
+        os.unlink(out_path);
+    }
+    if host_abi is not None and host_module {
+        content = rename_wasm_imports(content, set(host_abi), host_module);
+    }
+    return content;
+}
+
+def _unexpected_import_message(link_error: str, host_module: str) -> str {
+    import re;
+    matched = re.search(r"undefined symbol: (\S+)", link_error);
+    if matched is None {
+        return link_error;
+    }
+    name = matched.group(1);
+    if name.startswith("__jac64_") {
+        return (
+            f"wasm import '{name}' is a wasm_rt floor adapter, not "
+            + "an app symbol: the vendored libc bitcode is stale and does "
+            + "not define it. Rebuild the floor (`zig build "
+            + "vendor-wasm-libc`) rather than adding it to "
+            + "wasm_host_abi.jac -- the host ABI is syscalls only, and a "
+            + "host-side allocator cannot return a linear-memory pointer."
+        );
+    }
+    return (
+        f"wasm import '{name}' is neither part of the "
+        + f"{host_module or 'host'} ABI nor declared by the app; "
+        + "the native floor references a symbol missing from the "
+        + "vendored wasm_rt libc (compiler drift) -- add it to "
+        + "wasm_rt or to wasm_host_abi.jac"
+    );
 }
 
 def app_declared_imports(ir_module: UniModule, plan: any = None) -> set[str] {

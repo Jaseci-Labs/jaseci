@@ -2826,6 +2826,12 @@ impl NaIRGenPass._codegen_method_call_inner(nd: uni.FuncCall) -> (ir.Value | Non
                 nd, _sup_full, _sup_names, _self_val, self._self_arch
             );
         }
+        if _sup_full is None and method_name == "init" {
+            _field_init = self._codegen_super_field_init(nd);
+            if _field_init is not None {
+                return _field_init;
+            }
+        }
         if self._pyb_base_of(self._self_arch) is not None {
             _pyb_sup = self._codegen_pyb_super_call(nd, method_name);
             if _pyb_sup is not None {
@@ -4925,6 +4931,152 @@ impl NaIRGenPass._receiver_routed_method_fn(
         }
     }
     return _sfunc;
+}
+
+impl NaIRGenPass._codegen_super_field_init(nd: uni.FuncCall) -> (ir.Value | None) {
+    """`super.init(...)` that reaches the initializer an `obj` derives from
+    its `has` fields. No ancestor defines `init`, so there is no function to
+    call; the derived initializer only assigns its fields, which lowers as
+    those field stores on `self`. Returns None, emitting nothing, for anything
+    that initializer would do beyond the stores: a post-initializer to run, a
+    defaulted field to reset, a property setter, or an ancestor this unit
+    cannot see.""";
+    owner = self._self_arch;
+    if owner is None {
+        return None;
+    }
+    mro = self._mro_of(owner);
+    if len(mro) < 2 {
+        return None;
+    }
+    anc = mro[1];
+    if self._arch_is_osp_name(anc) or self._pyb_base_of(anc) is not None {
+        return None;
+    }
+    lifecycle = ("init", "__init__", "postinit", "__post_init__");
+    for cls in self._mro_of(anc) {
+        arch = self.arch_ast_map.get(cls);
+        if not isinstance(arch, uni.Archetype)
+            or arch.arch_type.name != Tok.KW_OBJECT {
+            return None;
+        }
+        for slot in lifecycle {
+            full = f"{cls}.{slot}";
+            if full in self.method_funcs or full in self._native_skipped_methods {
+                return None;
+            }
+        }
+        for stmt in (ModuleFacts.unwrap_body(arch) or []) {
+            if isinstance(stmt, uni.Ability)
+                and stmt.name_ref is not None
+                and stmt.name_ref.sym_name in lifecycle {
+                return None;
+            }
+        }
+    }
+    order = self.struct_constructor_order.get(anc);
+    anc_fields = self.struct_field_indices.get(anc);
+    own_fields = self.struct_field_indices.get(owner, {});
+    if order is None or anc_fields is None {
+        return None;
+    }
+    pairs: list[tuple[str, uni.Expr]] = [];
+    keyword: list[tuple[str, uni.Expr]] = [];
+    for param in (nd.params or []) {
+        if isinstance(param, uni.KWPair) {
+            if param.key is None {
+                return None;
+            }
+            keyword.append((param.key.sym_name, param.value));
+        } else {
+            if len(pairs) >= len(order) {
+                return None;
+            }
+            pairs.append((order[len(pairs)], param));
+        }
+    }
+    for kw_pair in keyword {
+        pairs.append(kw_pair);
+    }
+    covered: set[str] = set();
+    inline_fields = self.struct_field_inline.get(owner, set());
+    for (fname, _expr) in pairs {
+        if fname in covered
+            or fname not in anc_fields
+            or fname not in own_fields
+            or fname in inline_fields
+            or self._erased_field(owner, fname)
+            or self._accessor_slot_of(owner, fname, "setter") is not None {
+            return None;
+        }
+        covered.add(fname);
+    }
+    for fname in self.struct_field_defaults.get(anc, {}) {
+        if fname not in covered {
+            return None;
+        }
+    }
+    self_slot = self.local_vars.get("self");
+    if self_slot is None {
+        return None;
+    }
+    """Every argument is evaluated before any field changes, as the call would
+    evaluate them before the initializer runs: `super.init(1, self.x)` reads
+    the `x` the child had, not the 1 it is about to store. Each value is also
+    made owned before the next is evaluated: a borrowed read such as
+    `self.first` would otherwise be released, or its text freed, by the store
+    into `first` before the store into another field takes it. The store then
+    moves the owned value into its field.""";
+    values: list[tuple[str, uni.Expr, ir.Value, bool]] = [];
+    field_types = self.struct_field_types.get(owner, {});
+    borrow_fields = self.struct_field_borrow.get(owner, set());
+    for (fname, expr) in pairs {
+        val = self._codegen_expr(expr);
+        if val is None {
+            return None;
+        }
+        text_owned = False;
+        if self._gc_mode() != "none" {
+            ftype = field_types.get(fname);
+            if self._is_reference_type(val.type)
+                and ftype is not None
+                and self._is_reference_type(ftype)
+                and fname not in borrow_fields
+                and not self._is_owned(val) {
+                self._emit_take_ref(val, op="super_init");
+                self._mark_owned(val);
+            }
+        } elif self._nogc_headerless() {
+            text_kind = self._nogc_text_field(owner, fname);
+            if text_kind {
+                val = self._nogc_own_text(expr, val, text_kind);
+                is_text = (
+                    self._str_desc_ty is not None and val.type == self._str_desc_ty
+                )
+                    or (text_kind == "str" and val.type == ir.IntType(8).as_pointer())
+                    or (text_kind == "bytes" and self._is_bytes_value(val));
+                if not is_text {
+                    return None;
+                }
+                self._mark_owned(val);
+                text_owned = True;
+            } elif self._nogc_owned_world()
+                and isinstance(val.type, ir.PointerType)
+                and not self._is_owned(val) {
+                return None;
+            }
+        }
+        values.append((fname, expr, val, text_owned));
+    }
+    self_val = self.builder.load(self_slot, name="super.self");
+    for (fname, expr, val, text_owned) in values {
+        if text_owned {
+            self._emit_field_store(nd, self_val, owner, fname, val);
+        } else {
+            self._emit_field_store(nd, self_val, owner, fname, val, value_node=expr);
+        }
+    }
+    return ir.Constant(ir.IntType(8).as_pointer(), None);
 }
 
 impl NaIRGenPass._emit_class_routed_call(
