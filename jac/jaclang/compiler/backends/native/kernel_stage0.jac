@@ -233,13 +233,18 @@ def plan_kernel_prefix(stop_after: int, log: Callable[[str], None]) -> int {
     import from operator { itemgetter }
     program = JacProgram();
     registry = program.native_units();
-    registry.progress = log;
+    started = time.perf_counter();
+
+    def stamped(line: str) {
+        log(f"[{time.perf_counter() - started:7.1f}s] {line}");
+    }
+
+    registry.progress = stamped;
     registry.cold = True;
     program.iface_registry().cold = True;
     registry.stop_after = stop_after;
     pauses = GcPauses();
     gc.callbacks.append(pauses.observe);
-    started = time.perf_counter();
     log(f"  Planning the kernel uncached until {stop_after} units are lowered");
     try {
         kernel_plan(program, mode=KERNEL_DEV_LINK_MODE);
@@ -258,6 +263,10 @@ def plan_kernel_prefix(stop_after: int, log: Callable[[str], None]) -> int {
         f"  GC: {pauses.collections} gen-2 collections, "
         f"{pauses.total_seconds:.1f}s paused, longest {pauses.longest_seconds:.2f}s"
     );
+    for (path, why) in sorted(registry.failures.items()) {
+        reason = why.strip().splitlines()[-1] if why.strip() else "no reason recorded";
+        log(f"  Failed to lower {native_unit_identity(path)}: {reason}");
+    }
     log("  Lowering time per unit (lines include annexes):");
     for (path, seconds) in sorted(
         registry.unit_lower_seconds.items(), key=itemgetter(1), reverse=True

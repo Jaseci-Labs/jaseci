@@ -623,7 +623,7 @@ impl NaIRGenPass._defer_missing_deps -> bool {
     if not active_host().native_dep_discovery_open(self.prog) {
         return False;
     }
-    imported_mods = self._native_imports();
+    imported_mods = self._native_imports(transitive=False);
     for (_, imported_mod) in imported_mods {
         self._dep_iface(imported_mod);
     }
@@ -1201,10 +1201,19 @@ impl NaIRGenPass._ret_tuple_hints(
     return hints if _any else None;
 }
 
-impl NaIRGenPass._native_imports -> list[tuple[str, uni.Module]] {
+impl NaIRGenPass._has_own_code(mod: (uni.Module | None)) -> bool {
+    return mod is None
+        or self._is_catalog_module(mod)
+        or any(
+            not isinstance(s, uni.Import) or clib_block_defines(s)
+            for s in ModuleFacts.iter_context_stmts(mod)
+        );
+}
+
+impl NaIRGenPass._native_imports(transitive: bool = True) -> list[tuple[str, uni.Module]] {
     import os;
 
-    if self._native_imports_walked {
+    if transitive and self._native_imports_walked {
         return self._native_import_walk;
     }
     processed_modules: set[str] = set();
@@ -1362,6 +1371,11 @@ impl NaIRGenPass._native_imports -> list[tuple[str, uni.Module]] {
             );
         }
 
+        """Only the full walk follows a module that has code of its own: its
+        dependencies are its own to discover when it is lowered.""";
+        if not transitive and self._has_own_code(imported_mod) {
+            continue;
+        }
         sub_base = os.path.dirname(os.path.abspath(full_path));
         for sub_imp in ModuleFacts.iter_module_imports(imported_mod)
             + ModuleFacts.iter_nested_imports(imported_mod, CodeContext.NATIVE) {
@@ -1424,16 +1438,7 @@ impl NaIRGenPass._native_imports -> list[tuple[str, uni.Module]] {
             }
             continue;
         }
-        _direct_mod = self.prog.mod.hub.get(_direct);
-        _has_own_code = (
-            _direct_mod is None
-            or self._is_catalog_module(_direct_mod)
-            or any(
-                not isinstance(s, uni.Import) or clib_block_defines(s)
-                for s in ModuleFacts.iter_context_stmts(_direct_mod)
-            )
-        );
-        if _has_own_code {
+        if self._has_own_code(self.prog.mod.hub.get(_direct)) {
             self._note_native_dep(_direct);
         } else {
             """A module made only of imports and includes is a re-export
@@ -1442,9 +1447,12 @@ impl NaIRGenPass._native_imports -> list[tuple[str, uni.Module]] {
         }
     }
 
-    self._native_import_walk = self._permuted_walk_order(imported_mods);
-    self._native_imports_walked = True;
-    return self._native_import_walk;
+    walk = self._permuted_walk_order(imported_mods);
+    if transitive {
+        self._native_import_walk = walk;
+        self._native_imports_walked = True;
+    }
+    return walk;
 }
 
 impl NaIRGenPass._register_imported_struct_types -> None {

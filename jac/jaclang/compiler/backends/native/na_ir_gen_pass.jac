@@ -1180,7 +1180,8 @@ walker NaIRGenPass(CompilerPass) {
     can run_walk with uni.Module entry;
     def _publish_lowering_failure(here: uni.Module) -> None;
     def _register_imported_struct_types -> None;
-    def _native_imports -> list[tuple[str, uni.Module]];
+    def _native_imports(transitive: bool = True) -> list[tuple[str, uni.Module]];
+    def _has_own_code(mod: (uni.Module | None)) -> bool;
     def _defer_missing_deps -> bool;
     def _permuted_walk_order(
         mods: list[tuple[str, uni.Module]]
