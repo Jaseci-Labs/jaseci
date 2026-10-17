@@ -5050,6 +5050,15 @@ impl NaIRGenPass._codegen_super_field_init(nd: uni.FuncCall) -> (ir.Value | None
             text_kind = self._nogc_text_field(owner, fname);
             if text_kind {
                 val = self._nogc_own_text(expr, val, text_kind);
+                is_text = (
+                    self._str_desc_ty is not None and val.type == self._str_desc_ty
+                )
+                    or (text_kind == "str" and val.type == ir.IntType(8).as_pointer())
+                    or (text_kind == "bytes" and self._is_bytes_value(val));
+                if not is_text {
+                    return None;
+                }
+                self._mark_owned(val);
                 text_owned = True;
             } elif self._nogc_owned_world()
                 and isinstance(val.type, ir.PointerType)

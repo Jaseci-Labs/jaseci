@@ -336,9 +336,10 @@ test "super.init owns each argument before it replaces a field a later one reads
     out = assert_native_identity(_fixture("super_init_borrowed_text.jac"));
     assert out.splitlines()
         == [
-            "seed0-new seed0-old",
-            "seed1-new seed1-old",
-            "seed2-new seed2-old",
-            "780"
+            "seed0-new seed0-old seed0!",
+            "seed1-new seed1-old seed1!",
+            "seed2-new seed2-old seed2!",
+            "1050"
         ] , out;
+    _assert_nogc_leak_free("super_init_borrowed_text.jac");
 }
