@@ -163,7 +163,8 @@ impl fetch_llvm(dest: str) {
     }
     marker_lib = "libLTO.dylib" if macos and rel.upstream else "libLLVMCore.a";
     marker = os.path.join(dest, rel.dirname, "lib", marker_lib);
-    if file_exists(marker) {
+    lld_marker = os.path.join(dest, rel.dirname, "lib", "liblldCommon.a");
+    if file_exists(marker) and file_exists(lld_marker) {
         log(f"fetch-llvm: already present at {dest}/{rel.dirname}");
         return;
     }
@@ -174,11 +175,24 @@ impl fetch_llvm(dest: str) {
     if not file_exists(marker) {
         die(f"fetch-llvm: fetch produced no {marker_lib}");
     }
+    if not file_exists(lld_marker) {
+        die(
+            "fetch-llvm: the slice carries no LLD archives (liblldCommon.a); pin a slice built with LLD"
+        );
+    }
     log(f"fetch-llvm: ready at {dest}/{rel.dirname}");
 }
 
 impl slice_wanted(name: str, macos: bool) -> bool {
     if name.startswith("lib/libLLVM") and name.endswith(".a") {
+        return True;
+    }
+    if name.startswith("lib/liblld")
+        and not name.startswith("lib/liblldb")
+        and name.endswith(".a") {
+        return True;
+    }
+    if name.startswith("include/lld/") {
         return True;
     }
     if name.startswith("include/llvm/") or name.startswith("include/llvm-c/") {

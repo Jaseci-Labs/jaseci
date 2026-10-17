@@ -91,6 +91,7 @@ obj Store {
     def rollback -> None abst;
     def in_txn -> bool abst;
     def txn_isolation -> (TxnIsolation | None) abst;
+    def txn_serial -> int;
     def load_full(ids: list[UUID]) -> dict[UUID, AnchorRow] abst;
     def adjacency(
         node_id: UUID, after: (tuple[int, UUID] | None), limit: int
@@ -145,6 +146,8 @@ obj PgStore(Store) {
         _isolation: (TxnIsolation | None) postinit,
         _known_types: set[str] postinit,
         _txn_types: set[str] postinit,
+        _txn_serial: int postinit,
+        _txn_subtypes: dict[str, list[str]] postinit,
         _listeners: list[ChannelListener] postinit,
         _listen_thread: (any | None) postinit,
         _listen_stop: (any | None) postinit,
@@ -166,6 +169,7 @@ obj PgStore(Store) {
     def rollback -> None;
     def in_txn -> bool;
     def txn_isolation -> (TxnIsolation | None);
+    def txn_serial -> int;
     def load_full(ids: list[UUID]) -> dict[UUID, AnchorRow];
     def adjacency(
         node_id: UUID, after: (tuple[int, UUID] | None), limit: int

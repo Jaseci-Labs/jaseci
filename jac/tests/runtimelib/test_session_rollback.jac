@@ -796,6 +796,39 @@ test "loading anchors hashes only those whose fields can change in place" {
 }
 
 
+test "frozen_value accepts exactly the immutable value kinds" {
+    import from decimal { Decimal }
+    import from datetime { date, datetime, time, timedelta }
+    import from jaclang.data.serializer { frozen_value }
+    import from jaclang.data.store { TxnIsolation }
+    frozen = [
+        None,
+        True,
+        0,
+        1.5,
+        complex(0, 2),
+        "s",
+        bytes([98]),
+        Decimal("1.0"),
+        UUID(int=1),
+        date(2026, 1, 1),
+        datetime(2026, 1, 1),
+        time(1),
+        timedelta(1),
+        TxnIsolation.SERIALIZABLE,
+        (1, "a", (None, 2)),
+        frozenset({1, 2})
+    ];
+    thawed = [[1], {"a": 1}, {1}, object(), (1, [2]), bytearray(3)];
+    for v in frozen {
+        assert frozen_value(v) , f"{v!r} should count as immutable";
+    }
+    for v in thawed {
+        assert not frozen_value(v) , f"{v!r} can change in place";
+    }
+}
+
+
 test "a commit re-hashes only loaded anchors whose fields can change in place" {
     with TemporaryDirectory() as td {
         old = JacRuntime.exec_ctx;

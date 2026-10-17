@@ -21,7 +21,7 @@ import from uuid { UUID, uuid4 }
 import from jaclang.runtime.graph_query { GraphQuery, QHop, QPred }
 import from jaclang.server.session { runtime_for_base }
 import from jaclang.data.sqlcompile { CompiledQuery, compile_query }
-import from jaclang.data.store { AnchorRow, PgStore }
+import from jaclang.data.store { AnchorRow, PgStore, TxnIsolation }
 
 node PMsg {
     has body: str = "",
@@ -388,6 +388,89 @@ test "a typed hop matches a subtype another store registered after this one open
             ids = [str(r[0]) for r in store.rows(cq.sql, cq.params)];
             assert str(late.id) in ids , f"subtype registered elsewhere missed: {ids}";
             assert len(ids) == 8 , ids;
+        } finally {
+            other.close();
+            store.close();
+        }
+    }
+}
+
+
+"""Index and sequential scans of graph_types in the store's open transaction."""
+def _type_reads(store: PgStore) -> int {
+    rows = store.rows(
+        "SELECT coalesce(seq_scan, 0) + coalesce(idx_scan, 0) "
+            + "FROM pg_stat_xact_user_tables WHERE relname = 'graph_types'",
+        {}
+    );
+    return int(rows[0][0]) if rows else 0;
+}
+
+
+test "a snapshot transaction resolves a typed hop's subtypes once, not once per hop" {
+    with TemporaryDirectory() as td {
+        store = _store(td);
+        try {
+            hub = _seed_hub(store);
+            store.begin(TxnIsolation.SNAPSHOT_READ_ONLY);
+            try {
+                first = _hop(store, hub, 2, PRare)[0];
+                after_first = _type_reads(store);
+                second = _hop(store, hub, 2, PRare)[0];
+                again = _type_reads(store) - after_first;
+            } finally {
+                store.rollback();
+            }
+            assert first == second and len(first) == 7 , (first, second);
+            assert again == 0 , f"the second hop of the same type read graph_types again ({again} scans)";
+        } finally {
+            store.close();
+        }
+    }
+}
+
+
+test "a subtype the transaction registers itself reaches its next typed hop" {
+    with TemporaryDirectory() as td {
+        store = _store(td);
+        try {
+            hub = _seed_hub(store);
+            store.begin(TxnIsolation.SERIALIZABLE);
+            try {
+                _hop(store, hub, 2, PRare);
+                mid = _node_row("PRareMid", ["PRareMid", "PRare"]);
+                store.upsert([mid, _edge_row(hub, mid.id)]);
+                ids = _hop(store, hub, 2, PRare)[0];
+            } finally {
+                store.rollback();
+            }
+            assert str(mid.id) in ids , f"a subtype registered in this transaction was missed: {ids}";
+        } finally {
+            store.close();
+        }
+    }
+}
+
+
+test "under read committed every typed hop sees a subtype another store just registered" {
+    with TemporaryDirectory() as td {
+        store = _store(td);
+        other = _store(td);
+        try {
+            hub = _seed_hub(store);
+            store.begin(TxnIsolation.READ_COMMITTED);
+            try {
+                before = _hop(store, hub, 2, PRare)[0];
+                fresh = _node_row("PRareCommitted", ["PRareCommitted", "PRare"]);
+                other.upsert([fresh, _edge_row(hub, fresh.id)]);
+                after = _hop(store, hub, 2, PRare)[0];
+            } finally {
+                store.rollback();
+            }
+            assert str(fresh.id) not in before , before;
+            assert str(fresh.id) in after , (
+                f"a read committed hop missed a subtype committed by another store: {after}"
+            );
         } finally {
             other.close();
             store.close();

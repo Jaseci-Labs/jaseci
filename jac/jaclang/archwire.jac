@@ -779,7 +779,6 @@ graph import cli {
     console --> client.targets.web_target.WebTarget.dev { console }
     console --> client.vite_bundler { console }
     console --> client.vite_client_bundle { console }
-    console --> compiler.backends.native.elf_linker { console }
     console --> compiler.driver.application.prepare_application { console }
     console --> compiler.driver.application.prepare_dynamic_module { console }
     console --> compiler.tools.lang_tools { console }
@@ -2364,6 +2363,9 @@ graph import compiler {
         type_tag_borrows
     }
     kernel_target --> compiler.native_scope.binds_bare_arch_names { target_package_rel }
+    native_bindings --> compiler.passes.endpoint_effect_pass.callable_key {
+        is_owning_scope
+    }
     native_bindings --> compiler.passes.layout_pass.record_interface_twins {
         interface_type,
         typeshed_stub_path
@@ -2783,7 +2785,6 @@ graph import compiler.backends.native {
     }
     c_emit --> dist.native_product.write_native_product { emit_c }
     c_emit --> dist.source.client.write_client { emit_c }
-    elf_linker --> compiler.backends.native.link_plan.link_artifact { ElfLinker }
     foreign --> compiler.backends.native.abi.classify_foreign_fn {
         foreign_struct_layout
     }
@@ -2853,48 +2854,6 @@ graph import compiler.backends.native {
         build_link_plan,
         link_artifact
     }
-    linker_common --> compiler.backends.native.elf_linker {
-        _align,
-        _append_to_blob,
-        _build_strtab,
-        _find_entry_vaddr,
-        _resolve_patch_site,
-        _resolve_seg_vaddr
-    }
-    linker_common --> compiler.backends.native.macho_linker {
-        _align,
-        _append_to_blob,
-        _build_strtab,
-        _find_entry_vaddr,
-        _resolve_patch_site,
-        _resolve_seg_vaddr,
-        encode_uleb128
-    }
-    linker_common --> compiler.backends.native.pe_linker {
-        _align,
-        _append_to_blob,
-        _resolve_seg_vaddr
-    }
-    linker_common --> compiler.backends.native.static_link {
-        object_undefined_symbols,
-        select_ar_members
-    }
-    linker_common --> compiler.backends.native.wasm_artifact.wasm_import_map {
-        read_leb_name,
-        read_uleb128
-    }
-    linker_common --> compiler.backends.native.wasm_build.wasm_import_map {
-        read_leb_name,
-        read_uleb128
-    }
-    linker_common --> compiler.backends.native.wasm_linker {
-        encode_sleb128,
-        encode_uleb128,
-        encode_uleb128_padded5,
-        read_leb_name,
-        read_sleb128,
-        read_uleb128
-    }
     lowering --> compiler.backends.native.entry_points.validate_native_application {
         native_lowering_issues
     }
@@ -2910,7 +2869,9 @@ graph import compiler.backends.native {
         NativeLoweringKind
     }
     lowering --> compiler.tests.test_prim_equivalence { native_lowering_issues }
-    macho_linker --> compiler.backends.native.link_plan.link_artifact { MachOLinker }
+    lowering --> compiler.backends.native.kernel_stage0.unit_issue_details {
+        native_lowering_issues
+    }
     na_compile_pass --> cli.commands.analysis.explain { native_linked_ir_text }
     na_compile_pass --> compiler.backends.native.entry_points.validate_native_application {
         native_demoted_ir_symbols,
@@ -2947,7 +2908,6 @@ graph import compiler.backends.native {
         RC_CYCLE_THRESHOLD
     }
     type na_ir_gen_pass --> compiler.backends.native.primitives_native { NaIRGenPass }
-    pe_linker --> compiler.backends.native.link_plan.link_artifact { PeLinker }
     primitives_native --> compiler.backends.native.na_ir_gen_pass {
         NativeDictEmitter,
         NativeEmitCtx,
@@ -2955,14 +2915,36 @@ graph import compiler.backends.native {
     }
     primitives_native as _pn --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._ensure_emitters;
     region_abi --> compiler.backends.native.na_ir_gen_pass { REGION_KERNEL_ABI }
-    static_link --> compiler.backends.native.link_plan {
+    native_link --> compiler.backends.native.link_plan {
+        MACHO_SYSTEM_DYLIB,
+        NativeLinkError,
+        NativeLinkJob,
+        PE_DLL_ENTRY,
         clib_needed_libs,
         clib_symbol_lib_map,
-        collect_floor_archives,
-        load_musl_static
+        floor_archives,
+        link_native,
+        musl_runtime,
+        outline_atomics_archive,
+        write_symbol_map
+    }
+    native_link --> compiler.backends.native.wasm_build {
+        NativeLinkError,
+        WasmLinkJob,
+        link_wasm_module
     }
     wasm_artifact --> client.compiler.ViteCompiler._compile_wasm_module { wasm_assets }
-    wasm_artifact --> dist.source.build.build_native_product { wasm_assets }
+    wasm_artifact --> compiler.backends.native.native_link {
+        wasm_ld_args,
+        write_allowed_imports
+    }
+    wasm_artifact --> compiler.backends.native.wasm_build { rename_wasm_imports }
+    wasm_artifact --> dist.source.build.build_native_product {
+        rename_wasm_imports,
+        wasm_assets,
+        wasm_ld_args,
+        write_allowed_imports
+    }
     wasm_build --> cli.commands.native_build.native_build { app_declared_imports }
     wasm_build --> compiler.backends.native.link_plan.link_wasm { emit_wasm_from_ir }
     wasm_build --> compiler.driver.pipeline_runner.wasm_artifact { emit_wasm_from_ir }
@@ -2985,8 +2967,6 @@ graph import compiler.backends.native {
         WASM_HOST_ABI,
         WASM_HOST_MODULE
     }
-    wasm_linker --> compiler.backends.native.wasm_build.emit_wasm_from_ir { WasmLinker }
-    wasm_linker --> dist.source.build.build_native_product { WasmLinker }
     kernel_resolve --> compiler.backends.native.kernel_stage0 {
         KERNEL_DEV_LINK_MODE,
         kernel_plan
@@ -2995,16 +2975,14 @@ graph import compiler.backends.native {
     kernel_stage0 --> compiler.backends.native.kernel_resolve.build_kernel {
         link_kernel
     }
+    kernel_stage0 --> dist.precompile_bytecode.seal_native { refuse_missing_entries }
     link_plan --> compiler.backends.native.kernel_stage0.link_kernel {
         ArtifactKind,
         link_artifact
     }
     link_plan --> dist.precompile_bytecode.prebuild_native_closure { build_link_plan }
     type link_plan --> compiler.backends.native.kernel_resolve { LinkPlan }
-    type link_plan --> compiler.backends.native.kernel_stage0 { LinkResult }
-    linker_common --> compiler.backends.native.link_plan.link_artifact {
-        object_undefined_symbols
-    }
+    type link_plan --> compiler.backends.native.kernel_stage0 { LinkPlan, LinkResult }
     na_compile_pass --> compiler.driver.nativecache.NativeBuildSession.lower {
         settle_unit_ir
     }
@@ -3013,7 +2991,6 @@ graph import compiler.backends.native {
         NATIVE_CONTAINER_CODES,
         NATIVE_COPY_FUNCS
     }
-    static_link --> compiler.backends.native.link_plan { load_outline_atomics }
     na_constants --> compiler.backends.native.na_ir_gen_pass {
         EXC_LINEAGE_BITS,
         EXC_LINEAGE_MIX,
@@ -3033,11 +3010,11 @@ graph import compiler.backends.native {
     }
     floors --> dist.payload.vendor { WASM_FLOOR_MANIFEST }
     host_facts --> project.compiler_host.ProjectHost.native_fact { host_native_fact }
+    kernel_resolve --> project.kernel_check.analysis_kernel { KernelLoadError }
     kernel_resolve --> project.kernel_check.kernel_check { refuse_unloadable }
     kernel_resolve --> project.kernel_compile.kernel_route { refuse_unloadable }
     link_glue --> compiler.backends.native.link_plan { SHARED_MAIN_SYMBOL }
     type link_plan --> compiler.backends.native.kernel_resolve { LinkResult }
-    linker_common --> compiler.backends.native.static_link { ArMember }
     na_compile_pass --> compiler.driver.nativecache.NativeUnitRegistry.adopt_lowered {
         emit_unit_object,
         optimize_unit_texts,
@@ -3090,7 +3067,10 @@ graph import compiler.backends.native {
     primitives_native as _pn --> compiler.backends.native.na_ir_gen_pass._native_emitter_of;
     win_floor --> compiler.backends.native.link_glue.link_glue_ir { win_floor_ir }
     win_floor --> compiler.backends.native.link_plan.link_artifact { WIN_CRT_DLL }
-    win_floor --> compiler.backends.native.pe_linker { win_import_dll, win_import_name }
+    win_floor --> compiler.backends.native.native_link {
+        win_import_dll,
+        win_import_name
+    }
     win_floor_ir --> compiler.backends.native.win_floor.win_floor_ir { WIN_FLOOR_IR }
     win_floor_ir --> compiler.backends.native.win_floor.win_import_dll {
         WIN_FLOOR_KERNEL32
@@ -3103,6 +3083,7 @@ graph import compiler.backends.native.llvm {
     binding as llvm --> compiler.backends.native.link_glue.bind_shared_callbacks;
     binding as llvm --> compiler.backends.native.link_glue.init_object_codegen;
     binding as llvm --> compiler.backends.native.link_plan;
+    binding as llvm --> compiler.backends.native.kernel_stage0.unit_issue_details;
     type binding --> compiler.backends.native.link_plan {
         ExecutionEngine,
         ModuleRef,
@@ -3118,6 +3099,7 @@ graph import compiler.backends.native.llvm {
     }
     binding --> compiler.backends.native.llvm.binding.initfini { ffi }
     binding --> compiler.backends.native.llvm.binding.linker { ffi }
+    binding --> compiler.backends.native.llvm.binding.lld { ffi }
     binding --> compiler.backends.native.llvm.binding.module { ffi }
     binding --> compiler.backends.native.llvm.binding.newpassmanagers { ffi }
     binding --> compiler.backends.native.llvm.binding.object_file { ffi }
@@ -3125,6 +3107,7 @@ graph import compiler.backends.native.llvm {
     binding --> compiler.backends.native.llvm.binding.targets { ffi }
     binding --> compiler.backends.native.llvm.binding.value { ffi }
     binding as llvm --> compiler.backends.native.na_compile_pass;
+    binding as llvm --> compiler.backends.native.native_link;
     type binding --> compiler.backends.native.na_compile_pass {
         ModuleRef,
         TargetMachine
@@ -3136,6 +3119,7 @@ graph import compiler.backends.native.llvm {
     }
     binding as llvm --> compiler.backends.native.wasm_build._load_libc_module;
     binding as llvm --> compiler.backends.native.wasm_build.prepare_wasm_module;
+    binding as llvm --> compiler.backends.native.wasm_build._exported_functions;
     binding as llvm --> compiler.driver.compiler.JacCompiler._load_native_from_cache;
     type binding --> compiler.driver.compiler.JacCompiler._load_native_from_cache {
         ExecutionEngine
@@ -3182,6 +3166,7 @@ graph import compiler.backends.native.llvm.binding {
     include initfini --> compiler.backends.native.llvm.binding;
     initfini --> compiler.backends.native.llvm.binding.targets { llvm_version_info }
     include linker --> compiler.backends.native.llvm.binding;
+    include lld --> compiler.backends.native.llvm.binding;
     linker --> compiler.backends.native.llvm.binding.module { link_modules }
     include module --> compiler.backends.native.llvm.binding;
     include newpassmanagers --> compiler.backends.native.llvm.binding;
@@ -3594,7 +3579,7 @@ graph import compiler.driver {
     compile_options --> compiler.backends.es.client_kernel_cache._lower {
         CompileOptions
     }
-    compile_options --> compiler.backends.native.elf_linker.ElfLinker.link {
+    compile_options --> compiler.backends.native.link_plan.link_artifact {
         env_symmap_requested
     }
     compile_options --> compiler.backends.native.kernel_resolve {
@@ -4574,12 +4559,9 @@ graph import compiler.driver {
         products_from_record,
         products_record
     }
-    unit_products --> compiler.frontend.kernel_host {
-        UnitProducts,
-        unit_interface,
-        unit_products
-    }
+    unit_products --> compiler.frontend.kernel_host { UnitProducts, unit_products }
     unit_products --> project.kernel_compile { UnitProducts }
+    type unit_products --> project.kernel_snapshot { UnitProducts }
     wiring --> compiler.driver.jir.stored_wiring_digest {
         arch_file_for,
         import_prefix_for,
@@ -4928,6 +4910,12 @@ graph import compiler.frontend {
     }
     codeinfo --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._codegen_test {
         native_test_symbol
+    }
+    codeinfo --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._discover_kernel_deps {
+        FMT_KERNEL_REL,
+        OSP_GRAPH_REL,
+        OSP_KERNEL_REL,
+        kernel_unit_path
     }
     codeinfo --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._emit_class_display_fn {
         NATIVE_ARCH_SCOPE_SEP
@@ -7924,6 +7912,10 @@ graph import compiler.frontend {
         KERNEL_UNIT_REL,
         jaclang_pkg_root
     }
+    codeinfo --> compiler.backends.native.kernel_stage0.missing_kernel_entries {
+        native_def_symbol
+    }
+    codeinfo --> compiler.backends.native.kernel_stage0.link_kernel { jaclang_pkg_root }
     codeinfo --> compiler.backends.native.link_plan { JAC_ENTRY_SYMBOL }
     codeinfo --> compiler.backends.native.link_plan.LinkPlan.plan_digest | compiler.native_scope.package_host_edge {
         native_unit_identity
@@ -11076,9 +11068,10 @@ graph import compiler.types.stubcat {
     reader --> compiler.passes.endpoint_effect_pass.EndpointEffectPass._served_effects {
         CatModule
     }
-    writer --> compiler.driver.unit_products.unit_interface {
+    writer --> project.kernel_snapshot.KernelSnapshot.record_interface {
         IncoherentInterface,
-        build_module_iface
+        build_module_iface,
+        module_iface_shape
     }
 }
 
@@ -11495,10 +11488,8 @@ graph import jac0core {
     cache_paths --> compiler.backends.es.client_kernel_cache._cache_dir {
         get_jir_cache_dir
     }
-    cache_paths --> compiler.backends.native.elf_linker { atomic_write }
+    cache_paths --> compiler.backends.native.native_link { atomic_write }
     cache_paths --> compiler.backends.native.link_plan { atomic_write }
-    cache_paths --> compiler.backends.native.macho_linker { atomic_write }
-    cache_paths --> compiler.backends.native.pe_linker { atomic_write }
     cache_paths --> compiler.driver.jir { FileLock, atomic_write }
     cache_paths --> compiler.driver.jir.get_jir_cache_dir { get_jir_cache_dir as _root }
     ext_registry --> cli.commands.analysis._drop_covered_annexes { is_annex }
@@ -13140,9 +13131,6 @@ graph import runtime {
     }
     archetype --> runtime.graph_utils.collect_node_connections { AccessLevel }
     runtime --> runtime.graph_utils.collect_node_connections { JacRuntimeInterface }
-    graph_utils --> compiler.backends.native.static_link.load_outline_atomics {
-        triple_arch
-    }
     portability --> compiler.placement.placement_solver { supports }
     semantic --> byllm.schema { TypeForm }
     semantic --> byllm.tests.test_mtir_integration { TypeForm, mk_form, type_to_str }
@@ -37023,8 +37011,8 @@ graph import artifacts {
         kit_image,
         kit_path
     }
-    kit --> compiler.backends.native.static_link.floor_lib_dir { osarch }
-    kit --> compiler.backends.native.static_link.musl_lib_dir { osarch }
+    kit --> compiler.backends.native.native_link.floor_lib_dir { osarch }
+    kit --> compiler.backends.native.native_link.musl_lib_dir { osarch }
     kit --> compiler.types.stubcat.locate.StubcatArtifact.probe_kit {
         kit_image,
         kit_path
@@ -37115,8 +37103,8 @@ graph import artifacts {
     router --> compiler.backends.native.kernel_resolve.build_kernel { publish }
     router --> compiler.backends.native.kernel_resolve.resolve_kernel { resolve }
     router --> compiler.backends.native.llvm.shim_path.shim_path { require }
-    router --> compiler.backends.native.static_link.floor_lib_dir { resolve }
-    router --> compiler.backends.native.static_link.musl_lib_dir { resolve }
+    router --> compiler.backends.native.native_link.floor_lib_dir { resolve }
+    router --> compiler.backends.native.native_link.musl_lib_dir { resolve }
     router --> compiler.backends.native.wasm_build._link_wasm_libc { require }
     router --> compiler.backends.native.wasm_build._wasm_libc_dir { resolve }
     router --> compiler.driver.toolchain.native_pipeline_available { resolve }
