@@ -2087,6 +2087,7 @@ walker NaIRGenPass(CompilerPass) {
         _given_recv_cls: (str | None)
     ) -> (ir.Value | None);
 
+    def _codegen_super_field_init(nd: uni.FuncCall) -> (ir.Value | None);
     def _receiver_routed_method_fn(
         nd: uni.UniNode, _sfull: str, _mnames: list[str], _recv_cls: (str | None)
     ) -> (ir.Function | None);

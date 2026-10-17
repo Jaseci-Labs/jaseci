@@ -6,7 +6,8 @@ glob FACT_SEP: str = "\x1e",
      FACT_CODEC_NAME: str = "codec_name",
      FACT_PRIMITIVE_METHODS: str = "primitive_methods",
      FACT_SEALED_RUNTIME: str = "sealed_runtime",
-     FACT_IMPORT_PATHS: str = "import_paths";
+     FACT_IMPORT_PATHS: str = "import_paths",
+     FACT_PACKAGE_STORE: str = "package_store";
 
 glob NATIVE_COPY_FUNCS: set[str] = {"copy", "deepcopy"};
 glob NATIVE_OS_FUNCS: set[str] = {
