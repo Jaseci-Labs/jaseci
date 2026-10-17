@@ -75,7 +75,7 @@ def _escape_rows(value: object) -> list[tuple[int, str]] {
     out: list[tuple[int, str]] = [];
     if isinstance(value, list) {
         for item in value {
-            if isinstance(item, list) {
+            if isinstance(item, list) and len(item) >= 2 {
                 out.append((int(item[0]), str(item[1])));
             }
         }

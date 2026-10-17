@@ -3044,6 +3044,7 @@ graph import compiler.backends.native {
     }
     floors --> dist.payload.vendor { WASM_FLOOR_MANIFEST }
     host_facts --> project.compiler_host.ProjectHost.native_fact { host_native_fact }
+    kernel_resolve --> project.kernel_check.analysis_kernel { KernelLoadError }
     kernel_resolve --> project.kernel_check.kernel_check { refuse_unloadable }
     kernel_resolve --> project.kernel_compile.kernel_route { refuse_unloadable }
     link_glue --> compiler.backends.native.link_plan { SHARED_MAIN_SYMBOL }

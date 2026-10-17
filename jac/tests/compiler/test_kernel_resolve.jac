@@ -566,27 +566,42 @@ test "a failed kernel build publishes nothing and sweeps its stage" {
     }
 }
 
-test "a loaded kernel without jc_analyze stops jac check instead of falling back" {
-    import types;
+def _check_job(request: dict[(str, any)]) -> any {
     import jaclang.project.kernel_check as kernel_check;
-    import jaclang.compiler.native_compiler as native_compiler;
     import from jaclang.compiler.driver.program { JacProgram }
-    app = os.path.join(tempfile.gettempdir(), "app.jac");
+    kernel_check.kernel_check(
+        JacProgram(),
+        os.path.join(tempfile.gettempdir(), f"app_{request['path']}.jac"),
+        kernel_options()
+    );
+}
+
+test "a loaded kernel without jc_analyze stops a multi-file check once" {
+    import types;
+    import jaclang.compiler.native_compiler as native_compiler;
+    import from jaclang.cli.workpool { WorkPool }
     lib = os.path.join(tempfile.gettempdir(), "libjac_compiler.so");
     kernel = types.SimpleNamespace(lib=object(), lib_path=lib);
-    told = "";
+    recorded: list[int] = [];
+    pool = WorkPool(
+        items=["a", "b", "c"],
+        job=_check_job,
+        on_record=lambda (idx: int, record: dict[(str, any)]) { recorded.append(idx); }
+    );
+    stopped: (KernelLoadError | None) = None;
     with patch.object(native_compiler, "ensure_loaded", return_value=kernel) {
         try {
-            kernel_check.kernel_check(JacProgram(), app, kernel_options());
-        } except kernel_check.KernelCheckError as e {
-            told = str(e);
+            pool.run_inline();
+        } except KernelLoadError as e {
+            stopped = e;
         }
     }
-    assert told.startswith(
-        f"the native compiler kernel could not analyze {app}: the loaded kernel has no jc_analyze"
-    ) , told;
-    assert f"kernel: {lib}" in told
-        and "jac native build kernel --force" in told , told;
+    assert stopped is not None , "the check went on without its kernel's jc_analyze";
+    told = str(stopped.code);
+    assert told.startswith("jac: the native compiler kernel cannot analyze") , told;
+    assert f"kernel: {lib}" in told and "has no jc_analyze" in told , told;
+    assert "jac native build kernel --force" in told , told;
+    assert recorded == [] , recorded;
 }
 
 """A kernel plan whose entry unit demoted `jc_analyze`, through a chain of

@@ -133,7 +133,10 @@ test "a placement summary record round-trips and skips rows of the wrong shape" 
     assert summary_to_dict(restored) == summary_to_dict(summary);
     record = summary_to_dict(summary);
     record["anchors"] = "walk";
-    record["elements"] = [{"index": 5, "refs": "0", "escapes": [[1, "y"], "z"]}, "row"];
+    record["elements"] = [
+        {"index": 5, "refs": "0", "escapes": [[1, "y"], "z", [], [2]]},
+        "row"
+    ];
     odd = summary_from_dict(record);
     assert odd is not None and odd.anchors == [] and len(odd.elements) == 1;
     assert odd.elements[0].index == 5
