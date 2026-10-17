@@ -321,7 +321,6 @@ def _restore_target(prev_target: (str | None)) {
 
 
 def _sealed_native_plan(filename: str) -> (tuple[object, LinkPlan, any] | None) {
-
     if not is_jac(filename) {
         console.error("Input must be a .jac file.");
         return None;
@@ -392,7 +391,7 @@ def _build_native_entry_lib(filename: str, output: str) -> int {
 def _callback_source_path(binding: any, proj_dir: str) -> str {
     nd = binding.ast_node;
     if nd is not None {
-            mod = nd.find_parent_of_type(Module);
+        mod = nd.find_parent_of_type(Module);
         if mod is not None and mod.loc.mod_path {
             return os.path.relpath(mod.loc.mod_path, proj_dir);
         }
