@@ -1,5 +1,4 @@
 impl _jac_graph_json(file: (str | None) = None) -> str {
-    import from jaclang.runtime.graph_utils { collect_node_connections }
     jac = _get_jac();
     visited_nodes: set = set();
     connections: set = set();
@@ -151,7 +150,6 @@ impl _get_llm -> LLMModel {
 impl _get_archetype_alias -> Callable[..., any] {
     def factory(old_name: str) -> Callable {
         def decorator(cls: type) -> type {
-            import from jaclang.data.serializer { Serializer }
             Serializer.register_alias(old_name, cls);
             return cls;
         }
@@ -162,7 +160,6 @@ impl _get_archetype_alias -> Callable[..., any] {
 
 impl _get_schema_builder(name: str) -> Callable[..., any] {
     def builder(*args: any, **kwargs: any) -> any {
-        import jaclang.data.schema_rules as _rules;
         return getattr(_rules, name)(*args, **kwargs);
     }
     return builder;
@@ -204,7 +201,6 @@ impl _get_jid -> Callable[..., any] {
 }
 
 impl _get_access_level -> type[AccessLevel] {
-    import from jaclang.runtime.constructs { AccessLevel }
     return AccessLevel;
 }
 
@@ -271,49 +267,12 @@ impl RaisesContext.`match(regexp: str) -> bool {
 }
 
 impl restspec(**specs: any) -> Callable {
-    import logging;
     import from jaclang { JacRuntimeInterface as Jac }
-    import from jaclang.server.serving.endpoint { HTTPMethod }
-    import type from jaclang.server.server { JacAPIServer }
+
     ServerCls: type[JacAPIServer] = Jac.get_api_server_class();
     SpecsCls = ServerCls.RestSpecs;
 
-    protocol = specs.get('protocol');
-    if protocol is not None and not isinstance(protocol, APIProtocol) {
-        raw_p = str(protocol).strip().lower();
-        try {
-            specs['protocol'] = APIProtocol('websocket' if raw_p == 'ws' else raw_p);
-        } except ValueError {
-            raise ValueError(
-                f"@restspec protocol={protocol!r} is not recognized. Expected "
-                "APIProtocol.HTTP / WEBHOOK / WEBSOCKET (or the strings "
-                "'http', 'webhook', 'websocket'/'ws')."
-            );
-        }
-    }
-    method = specs.get('method');
-    if method is not None and not isinstance(method, HTTPMethod) {
-        try {
-            specs['method'] = HTTPMethod(str(method).strip().upper());
-        } except ValueError {
-            raise ValueError(
-                f"@restspec method={method!r} is not routable. Expected one "
-                f"of: {', '.join([m.value for m in HTTPMethod])}."
-            );
-        }
-    }
-    scheme = specs.get('scheme');
-    if scheme is not None {
-        raw_s = str(scheme).strip().lower();
-        if raw_s not in ('', 'jac', 'github') {
-            raise ValueError(
-                f"@restspec scheme={scheme!r} is not recognized. Expected "
-                "'jac' (api key plus timestamped HMAC, the default) or "
-                "'github' (X-Hub-Signature-256 over the raw body)."
-            );
-        }
-        specs['scheme'] = '' if raw_s == 'jac' else raw_s;
-    }
+    specs = restspec_fields(specs);
 
     def decorator(cls: type) -> type {
         spec = SpecsCls(**specs);
@@ -373,7 +332,6 @@ def _validate_restspec_target(spec: any, target: any) {
 }
 
 impl schedule(**kwargs: any) -> Callable {
-    import from jaclang.server.task_scheduler { ScheduleSpec }
     import from jaclang.runtime.builtin { ScheduleTrigger }
     trigger = kwargs.pop("trigger", ScheduleTrigger.STATIC);
     if isinstance(trigger, str) {
@@ -477,6 +435,5 @@ impl _jac_chunks(xs: any, n: int) -> list[any] {
 }
 
 def _is_sized_type_name(name: str) -> bool {
-    import from jaclang.runtime.scalars { is_sized }
     return is_sized(name);
 }

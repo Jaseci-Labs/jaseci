@@ -1710,7 +1710,6 @@ impl ESRangeEmitter.emit_op_contains(
 impl ESBuiltinEmitter.emit_print(
     self: ESBuiltinEmitter, ctx: ESEmitCtx, args: list[str]
 ) -> (str | None) {
-    import from jaclang.runtime.scalars { shape_of }
     names: list[str] = ctx.arg_type_names or [];
     shown: list[str] = [];
     for (i, a) in enumerate(args) {
@@ -1727,16 +1726,9 @@ impl ESBuiltinEmitter.emit_print(
     return _fcall("console.log", shown);
 }
 
-impl ESBuiltinEmitter.emit_sized_cast(
-    self: ESBuiltinEmitter, name: str, args: list[str]
-) -> (str | None) {
-    return _rt("fw", "cast_" + name, [args[0] if args else "0"]);
-}
-
 impl ESBuiltinEmitter.emit_wrapping(
     self: ESBuiltinEmitter, ctx: ESEmitCtx, op: str, args: list[str]
 ) -> (str | None) {
-    import from jaclang.runtime.scalars { is_sized }
     sized_name: (str | None) = None;
     for n in (ctx.arg_type_names or []) {
         if is_sized(n) {
@@ -1812,7 +1804,6 @@ impl ESBuiltinEmitter.emit_len(
 impl ESBuiltinEmitter.emit_abs(
     self: ESBuiltinEmitter, ctx: ESEmitCtx, args: list[str]
 ) -> (str | None) {
-    import from jaclang.runtime.scalars { is_sized }
     names: list[str] = ctx.arg_type_names or [];
     if args and names and is_sized(names[0]) {
         return _rt("fw", "abs_" + names[0], [args[0]]);
@@ -1922,7 +1913,10 @@ impl ESBuiltinEmitter.emit_issubclass(
 impl ESBuiltinEmitter.emit_type(
     self: ESBuiltinEmitter, ctx: ESEmitCtx, args: list[str]
 ) -> (str | None) {
-    return "typeof " + args[0];
+    if len(args) != 1 {
+        return None;
+    }
+    return _rt("builtin", "type", args);
 }
 
 impl ESBuiltinEmitter.emit_id(

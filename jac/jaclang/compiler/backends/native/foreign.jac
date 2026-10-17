@@ -1,7 +1,3 @@
-import jaclang.compiler.frontend.unitree as uni;
-import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
-import from jaclang.compiler.frontend.constant { is_borrow_kind }
-
 def collect_foreign_structs(
     modules: list[uni.Module]
 ) -> dict[str, list[tuple[str, str | None]]] {
@@ -39,9 +35,14 @@ def declared_type_name(type_expr: (uni.UniNode | None)) -> (str | None) {
     if isinstance(type_expr, uni.Name) {
         return type_expr.value;
     }
-    val = type_expr?.value;
-    if isinstance(val, str) {
-        return val;
+    if isinstance(type_expr, uni.Token) {
+        return type_expr.value;
+    }
+    if isinstance(type_expr, uni.JsxText) {
+        text = type_expr.value;
+        if isinstance(text, str) {
+            return text;
+        }
     }
     return None;
 }

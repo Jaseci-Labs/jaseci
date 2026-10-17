@@ -1,23 +1,42 @@
-import from jaclang.compiler.backends.native.llvm { ir }
-
 def struct_layouts(module: ir.Module) -> dict[str, tuple[list[int], int]] {
-    """Read identified struct offsets and sizes from LLVM's target ABI.""";
-    import from jaclang.compiler.backends.native.llvm { binding }
+    """Read identified struct offsets and sizes from LLVM's target ABI. LLVM
+    is the host's: the probe module and each struct's member count go to it,
+    and the offsets and sizes come back.""";
+    import json;
+
     probe = ir.Module(name="layout", context=module.context);
     probe.data_layout = module.data_layout;
+    counts: dict[str, int] = {};
     for (name, struct) in module.context.identified_types.items() {
         if not struct.is_opaque {
             ir.GlobalVariable(probe, struct, name=name);
+            counts[name] = len(struct.members());
         }
     }
     layouts: dict[str, tuple[list[int], int]] = {};
-    with binding.parse_assembly(str(probe)) as bound, binding.create_target_data(
+    if not counts {
+        return layouts;
+    }
+    answered = active_host().native_fact(
+        FACT_STRUCT_LAYOUTS,
         str(module.data_layout)
-    ) as target_data {
-        for value in bound.global_variables {
-            count = len(module.context.identified_types[value.name].elements);
-            layouts[value.name] = target_data.get_global_struct_layout(value, count);
+            + FACT_SEP
+            + json.dumps(counts, sort_keys=True)
+            + FACT_SEP
+            + str(probe)
+    );
+    for line in answered.split("\n") {
+        fields = line.split("\t");
+        if len(fields) != 3 {
+            continue;
         }
+        offsets: list[int] = [];
+        for offset in fields[2].split(",") {
+            if offset {
+                offsets.append(int(offset));
+            }
+        }
+        layouts[fields[0]] = (offsets, int(fields[1]));
     }
     return layouts;
 }
@@ -195,11 +214,41 @@ def classify_struct_aapcs(
     };
 }
 
+def classify_struct_win64(
+    size: int, align: int, scalars: list[tuple[int, bool, int]]
+) -> dict[str, any] {
+    """The Microsoft x64 convention: a record of exactly 1, 2, 4 or 8 bytes
+    travels in one integer register whatever its fields are, floats included;
+    any other is passed as a pointer to a copy the caller owns, and returned
+    through a hidden pointer.""";
+    if size in (1, 2, 4, 8) {
+        return {
+            "size": size,
+            "align": align,
+            "memory": False,
+            "coerce": [ir.IntType(size * 8)],
+            "byval": False,
+            "safe": False
+        };
+    }
+    return {
+        "size": size,
+        "align": align if size else 1,
+        "memory": True,
+        "coerce": [],
+        "byval": False,
+        "safe": False
+    };
+}
+
 def classify_struct(
     size: int, align: int, scalars: list[tuple[int, bool, int]], triple: str
 ) -> dict[str, any] {
     if "aarch64" in triple or "arm64" in triple {
         return classify_struct_aapcs(size, align, scalars);
+    }
+    if "windows" in triple or "msvc" in triple or "mingw" in triple {
+        return classify_struct_win64(size, align, scalars);
     }
     return classify_struct_sysv(size, align, scalars);
 }
@@ -211,7 +260,6 @@ def classify_foreign_fn(
     triple: str,
     force: bool = False
 ) -> (dict[str, any] | None) {
-    import from jaclang.compiler.backends.native.foreign { foreign_struct_layout }
     has_struct = ret_tname is not None and ret_tname in structs;
     for (_pn, _tn) in params {
         if _tn is not None and _tn in structs {
@@ -223,8 +271,14 @@ def classify_foreign_fn(
     }
     sig: list[tuple[str, str | int | ir.Type]] = [];
     param_plan: list[dict[str, any]] = [];
-    for (i, (pname, tname)) in enumerate(params) {
-        pn = pname or f"arg{i}";
+    for i in range(len(params)) {
+        (pname, tname) = params[i];
+        pn = f"arg{i}";
+        if pname is not None {
+            if pname != "" {
+                pn = pname;
+            }
+        }
         if tname is not None and tname in structs {
             (sz, al, leaves) = foreign_struct_layout(structs, tname);
             cls = classify_struct(sz, al, leaves, triple);
@@ -272,9 +326,12 @@ def classify_foreign_fn(
         if rcls["memory"] {
             sret = True;
             sig_ret = ("void", );
-            sig = [("sretptr", ret_tname)] + sig;
+            sig.insert(0, ("sretptr", ret_tname));
             for pp in param_plan {
-                pp["argpos"] += 1;
+                shifted = pp["argpos"];
+                if isinstance(shifted, int) {
+                    pp["argpos"] = shifted + 1;
+                }
             }
             ret_plan = {"kind": "sret", "sname": ret_tname, "align": rcls["align"]};
         } else {

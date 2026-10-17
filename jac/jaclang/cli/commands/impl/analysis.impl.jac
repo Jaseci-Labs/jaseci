@@ -1,21 +1,50 @@
 import from pathlib { Path }
 import from fnmatch { fnmatch }
-import from jaclang.cli.console { console }
-import from jaclang.cli.check_report {
-    print_file_progress,
-    print_section,
-    print_failed_summary,
-    print_final_summary,
-    print_native_coverage,
-    print_placement_report
-}
 
 def _maybe_malloc_trim {
-    import from jaclang.cli.workpool { maybe_malloc_trim }
     maybe_malloc_trim();
 }
 
 glob _CHECK_STATE: dict[(str, any)] = {"prog": None, "coverage_on": False};
+
+glob _CHECK_HEAP: dict[(str, int)] = {"base_rss": -1},
+     CHECK_HEAP_REGROW_MB: int = 512;
+
+def _unit_weight(unit: dict[(str, any)]) -> int {
+    import os;
+
+    path = str(unit['path']);
+    try {
+        size = os.path.getsize(path);
+    } except OSError {
+        return 0;
+    }
+    try {
+        for annex in discover_annex_files(path, '.impl.jac') {
+            size += os.path.getsize(annex);
+        }
+    } except Exception {}
+    return size;
+}
+
+def _settle_check_heap {
+    import gc;
+    import os;
+    if os.environ.get('JAC_GC_NO_COMPILE_BOOST') {
+        return;
+    }
+
+    rss = worker_rss_mb();
+    if _CHECK_HEAP["base_rss"] < 0 {
+        _CHECK_HEAP["base_rss"] = rss;
+    } elif rss - _CHECK_HEAP["base_rss"] > CHECK_HEAP_REGROW_MB {
+        gc.unfreeze();
+        gc.collect();
+        maybe_malloc_trim();
+        _CHECK_HEAP["base_rss"] = worker_rss_mb();
+    }
+    gc.freeze();
+}
 
 def _wire_list(value: any) -> list[any] {
     return value if isinstance(value, list) else [];
@@ -47,12 +76,10 @@ def _diag_wire(alert: any) -> dict[(str, any)] {
 }
 
 def _check_rss_cap_mb -> int {
-    import from jaclang.cli.workpool { env_int }
     return env_int("JAC_CHECK_RECYCLE_MB", 3072);
 }
 
 def _check_retire(served: int, rss_mb: int) -> bool {
-    import from jaclang.cli.workpool { env_int, should_retire }
     return should_retire(
         served, env_int("JAC_CHECK_RECYCLE", 0), rss_mb, _check_rss_cap_mb()
     );
@@ -86,9 +113,7 @@ def _is_app_name(target: str) -> bool {
 
 def _check_file_job(request: dict[(str, any)]) -> dict[(str, any)] {
     import os;
-    import from jaclang.compiler.driver.program { JacProgram }
-    import from jaclang.compiler.driver.bccache { discover_base_file }
-    import from jaclang.compiler.driver.compile_options { CompileOptions }
+
     opts = _wire_dict(request.get("opts"));
     file_path = str(request["path"]);
     result: dict[(str, any)] = {
@@ -167,7 +192,12 @@ def _check_file_job(request: dict[(str, any)]) -> dict[(str, any)] {
                 kernel_view: any = None;
                 if not opts.get("placements") and not opts.get("native_coverage") {
                     import from jaclang.project.kernel_check { kernel_check }
-                    kernel_view = kernel_check(prog, file_path, compile_options);
+                    kernel_view = kernel_check(
+                        prog,
+                        file_path,
+                        compile_options,
+                        parity=bool(opts.get("kernel_parity"))
+                    );
                 }
                 adopted = kernel_view is not None and kernel_view.adopted;
                 if not adopted {
@@ -208,8 +238,8 @@ def _check_file_job(request: dict[(str, any)]) -> dict[(str, any)] {
             result['placements'] = collect_placement_rows(prog);
         }
         if opts.get("native_coverage") {
-            import from jaclang.compiler.driver.na_coverage { _na_coverage }
-            result['coverage'] = dict(_na_coverage);
+            import from jaclang.compiler.driver.na_coverage { na_coverage_snapshot }
+            result['coverage'] = na_coverage_snapshot();
         }
         for m in prog.mod.hub.values() {
             m.terminals = [];
@@ -277,6 +307,20 @@ def _check_file_job(request: dict[(str, any)]) -> dict[(str, any)] {
     }
 }
 
+def _check_file_job_settled(request: dict[(str, any)]) -> dict[(str, any)] {
+    result = _check_file_job(request);
+    _settle_check_heap();
+    return result;
+}
+
+def _release_check_heap {
+    import gc;
+    if _CHECK_HEAP["base_rss"] >= 0 {
+        gc.unfreeze();
+        _CHECK_HEAP["base_rss"] = -1;
+    }
+}
+
 impl check(
     paths: list[str],
     print_errs: bool = True,
@@ -289,26 +333,24 @@ impl check(
     native_coverage: bool = False,
     placements: bool = False,
     jobs: str = "",
-    app: str = ""
+    app: str = "",
+    kernel_parity: bool = False
 ) -> int {
-    import from jaclang.compiler.frontend.diagnostic_utils { resolve_diagnostic_tokens }
-    import from jaclang.cli.workpool {
-        WorkPool,
-        forced_serial,
-        jobs_setting,
-        pool_available,
-        resolve_jobs
-    }
-    import from jaclang.project.config { get_config }
     import from time { time }
     if lint_only {
         return lint(paths=paths, fix=fix, ignore=ignore);
     }
     import gc;
     import os;
-    import from jaclang.compiler.driver.compiler { CHECK_GC_THRESHOLDS }
+
     if not os.environ.get('JAC_GC_NO_COMPILE_BOOST') {
         gc.set_threshold(*CHECK_GC_THRESHOLDS);
+    }
+    if not parse_only {
+        try {
+            import from jaclang.compiler.driver.ifacecache { prime_iface_codec }
+            prime_iface_codec();
+        } except Exception {}
     }
     if isinstance(paths, str) {
         paths = [paths];
@@ -328,7 +370,6 @@ impl check(
         );
     }
 
-    import from jaclang.project.workspace { workspace_for_path }
     ws = workspace_for_path(os.getcwd()) if not paths else None;
     units: list[dict[(str, any)]] = [];
     had_path_errors = False;
@@ -432,6 +473,7 @@ impl check(
         'parse_only': parse_only,
         'native_coverage': native_coverage,
         'placements': placements,
+        'kernel_parity': kernel_parity,
         'suppress_codes': list(suppressed_codes),
         'ignore': list(ignore_list)
     };
@@ -452,6 +494,9 @@ impl check(
             and workers > 1
             and total > 1
         );
+        if use_pool {
+            batch = sorted(batch, key=_unit_weight, reverse=True);
+        }
 
         def request_extra(idx: int, path: str) -> dict[(str, any)] {
             unit = batch[idx];
@@ -502,7 +547,7 @@ impl check(
 
         pool = WorkPool(
             items=[u['path'] for u in batch],
-            job=_check_file_job,
+            job=_check_file_job_settled,
             on_record=on_record,
             jobs=min(workers, max(1, total)),
             request_extra=request_extra,
@@ -516,9 +561,20 @@ impl check(
             try {
                 JacRuntime.get_compiler().ensure_stub_catalog();
             } except Exception {}
-            pool.run();
+            if not os.environ.get('JAC_GC_NO_COMPILE_BOOST') {
+                gc.freeze();
+            }
+            try {
+                pool.run();
+            } finally {
+                gc.unfreeze();
+            }
         } else {
-            pool.run_inline();
+            try {
+                pool.run_inline();
+            } finally {
+                _release_check_heap();
+            }
         }
     }
 
@@ -603,7 +659,6 @@ impl check(
 impl lint(
     paths: list[str], fix: bool = False, ignore: (list[str] | None) = None
 ) -> int {
-    import from jaclang.compiler.driver.program { JacProgram }
     if isinstance(paths, str) {
         paths = [paths];
     }
@@ -776,8 +831,7 @@ def _format_single_file_worker(
     logical_path: str = ""
 ) -> dict[str, any] {
     import os;
-    import from jaclang.compiler.driver.program { JacProgram }
-    import from jaclang.project.textio { read_file_with_encoding }
+
     path_obj = Path(file_path);
 
     effective_logical = logical_path or file_path;
@@ -1052,14 +1106,7 @@ impl format(
     jobs: str = ""
 ) -> int {
     import os;
-    import from jaclang.cli.workpool {
-        WorkPool,
-        forced_serial,
-        jobs_setting,
-        pool_available,
-        resolve_jobs
-    }
-    import from jaclang.project.config { get_config }
+
     if isinstance(paths, str) {
         paths = [paths];
     }
@@ -1221,38 +1268,36 @@ impl format(
                 {'path': res['path'], 'errors': res['syntax_errors'], 'warnings': []}
             );
         } elif res['changed'] {
-            changed_files += 1;
             if check {
+                changed_files += 1;
                 unformatted_files.append(res['path']);
             } else {
+                outputs: list[tuple[str, str]] = [];
                 if res['formatted_code'] is not None {
+                    outputs.append((res['path'], res['formatted_code']));
+                }
+                outputs.extend(res['impl_results']);
+                write_errors: list[str] = [];
+                for (out_path, code) in outputs {
                     try {
                         if to_screen {
-                            console.print(
-                                res['formatted_code'], markup=False, highlight=False
-                            );
+                            console.print(code, markup=False, highlight=False);
                         } else {
-                            with open(res['path'], 'w', encoding='utf-8') as f {
-                                f.write(res['formatted_code']);
+                            with open(out_path, 'w', encoding='utf-8') as f {
+                                f.write(code);
                             }
                         }
                     } except Exception as e {
-                        console.error(f"Error writing to '{res['path']}': {e}");
+                        write_errors.append(f"Error writing to '{out_path}': {e}");
                     }
                 }
-                impl_pairs: list[tuple[str, str]] = res['impl_results'];
-                for (impl_path, impl_code) in impl_pairs {
-                    try {
-                        if to_screen {
-                            console.print(impl_code, markup=False, highlight=False);
-                        } else {
-                            with open(impl_path, 'w', encoding='utf-8') as f {
-                                f.write(impl_code);
-                            }
-                        }
-                    } except Exception as e {
-                        console.error(f"Error writing to '{impl_path}': {e}");
-                    }
+                if write_errors {
+                    failed_files += 1;
+                    failed_results.append(
+                        {'path': res['path'], 'errors': write_errors, 'warnings': []}
+                    );
+                } else {
+                    changed_files += 1;
                 }
             }
         }
@@ -1327,7 +1372,7 @@ impl precommit(
     import shutil;
     import subprocess;
     import tempfile;
-    import from jaclang.project.config { get_config }
+
     if install {
         return _install_precommit_hook(force);
     }
@@ -1637,9 +1682,7 @@ impl `test(
     jobs: str = ""
 ) -> int {
     import os;
-    import from jaclang.project.config { get_config }
-    import from jaclang.testing.test_runner { run_tests }
-    import from jaclang.cli.workpool { jobs_setting }
+
     if isinstance(paths, str) {
         paths = [paths];
     }
@@ -1780,16 +1823,12 @@ impl `test(
 }
 
 impl gen_parser -> int {
-    import from jaclang.compiler { gen_all_parsers }
     gen_all_parsers();
     console.success('Parser generated.');
     return 0;
 }
 
 impl grammar(output: str = "", strict: bool = False) -> int {
-    import from jaclang.compiler.driver.program { JacProgram }
-    import from jaclang.compiler.driver.compile_options { CompileOptions }
-    import from jaclang.compiler.tools.grammar_extract_pass { GrammarExtractPass }
     import jaclang;
     parser_path = str(
         Path(jaclang.__file__).parent
@@ -1810,10 +1849,11 @@ impl grammar(output: str = "", strict: bool = False) -> int {
         }
         return 1;
     }
-    import from jaclang.compiler.driver.pipeline_runner { run_utility }
-    import from jaclang.compiler.driver.pipeline_types { UtilityProduct }
+
     import from typing { cast }
-    pass_ = cast(GrammarExtractPass, run_utility(UtilityProduct.GRAMMAR, mod, prog));
+    pass_ = cast(
+        GrammarExtractPass, run_utility(CompilationProduct.GRAMMAR, mod, prog)
+    );
     if len(pass_.rules) == 0 {
         console.error("No grammar rules extracted.");
         return 1;
@@ -1865,8 +1905,8 @@ def _iter_jac_files(
                     walked.append(str(jac_file));
                 }
             }
-            if _drop_git_ignored([str(path_obj)]) {
-                result.extend(_drop_git_ignored(walked));
+            if drop_git_ignored([str(path_obj)]) {
+                result.extend(drop_git_ignored(walked));
             } else {
                 result.extend(walked);
             }
@@ -1883,8 +1923,7 @@ def _iter_jac_files(
 
 def _drop_covered_annexes(files: list[str], explicit: set[str]) -> list[str] {
     import os;
-    import from jaclang.compiler.driver.bccache { discover_base_file }
-    import from jaclang.jac0core.ext_registry { is_annex }
+
     modules = {
         os.path.realpath(f)
         for f in files
@@ -1904,19 +1943,17 @@ def _drop_covered_annexes(files: list[str], explicit: set[str]) -> list[str] {
 }
 
 def _normalize_ignore_patterns(ignore: list[str]) -> list[str] {
-    import from jaclang.project.source { normalize_exclude_patterns }
     return normalize_exclude_patterns(ignore);
 }
 
 def _configured_check_excludes -> list[str] {
-    import from jaclang.project.config { get_config }
     config = get_config();
     return list(config.check.exclude) if config is not None else [];
 }
 
 def _is_project_wide_run(paths: list[str]) -> bool {
     import os;
-    import from jaclang.project.config { get_config }
+
     if not paths {
         return True;
     }
@@ -1928,52 +1965,13 @@ def _is_project_wide_run(paths: list[str]) -> bool {
     return os.path.realpath(paths[0]) == os.path.realpath(proj);
 }
 
-def _drop_git_ignored(paths: list[str]) -> list[str] {
-    import subprocess;
-    if not paths {
-        return paths;
-    }
-    try {
-        proc = subprocess.run(
-            ['git', 'check-ignore', '--stdin'],
-            input="\n".join(paths),
-            capture_output=True,
-            text=True,
-            check=False
-        );
-    } except (OSError, ValueError) {
-        return paths;
-    }
-
-    if proc.returncode not in (0, 1) {
-        return paths;
-    }
-    ignored = {
-        line
-        for line in proc.stdout.splitlines()
-        if line
-    };
-    if not ignored {
-        return paths;
-    }
-    return [
-        p
-        for p in paths
-        if p not in ignored
-    ];
-}
-
-
 def _should_ignore(file_path: str, ignore_patterns: list[str]) -> bool {
-    import from jaclang.project.source { path_matches_exclude }
     return path_matches_exclude(file_path, ignore_patterns);
 }
 
 impl explain(topic: str, filename: str, output: str = "", memory: str = "") -> int {
     import os;
-    import from jaclang.cli.console { console }
-    import from jaclang.compiler.driver.program { JacProgram }
-    import from jaclang.compiler.driver.compile_options { CompileOptions }
+
     if not os.path.isfile(filename) {
         console.error(f"File not found: {filename}");
         return 1;
@@ -2025,9 +2023,7 @@ impl explain(topic: str, filename: str, output: str = "", memory: str = "") -> i
         return 0;
     }
     import re;
-    import from jaclang.compiler.backends.native.na_compile_pass {
-        native_linked_ir_text
-    }
+
     mod = prog.compile(
         file_path=path,
         options=CompileOptions(aot_mode=True, default_codespace="native")

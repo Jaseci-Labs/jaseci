@@ -140,7 +140,7 @@ glob TYPE_PARAM_CONSTRUCTORS: frozenset[str] = frozenset(
          {"TypeVar", "ParamSpec", "TypeVarTuple"}
      ),
      NATIVE_ERASED_TYPE_MARKERS: frozenset[str] = frozenset({"TypeAlias"}),
-     NATIVE_ERASED_ANNOTATIONS: frozenset[str] = frozenset({"ClassVar"});
+     NATIVE_ERASED_ANNOTATIONS: frozenset[str] = frozenset({"ClassVar", "Literal"});
 
 glob BROWSER_SEED_GLOBALS: frozenset[str] = frozenset(
          {
@@ -467,6 +467,7 @@ class Tokens(StrEnum) {
         KW_SKIP = 'KW_SKIP';
         KW_REPORT = 'KW_REPORT';
         KW_RETURN = 'KW_RETURN';
+        KW_TAIL = 'KW_TAIL';
         KW_DELETE = 'KW_DELETE';
         KW_TRY = 'KW_TRY';
         KW_EXCEPT = 'KW_EXCEPT';

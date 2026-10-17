@@ -3,16 +3,6 @@ import threading;
 import time;
 import uuid;
 import from collections { OrderedDict }
-import from jaclang.server.serving.datatypes { Request }
-import from jaclang.server.serving.datatypes { JSONResponse }
-import from jaclang.server.transport { TransportResponse, Meta }
-import from jaclang.server.server { JsonValue }
-import from jaclang.server.serving.endpoint {
-    HTTPMethod,
-    JEndPoint,
-    APIParameter,
-    ParameterType
-}
 
 import json as json_module;
 
@@ -543,13 +533,11 @@ glob _telemetry_store: TelemetryStore | None = None;
 
 
 impl JacAPIServerLLMTelemetry.register_llm_telemetry_endpoints -> None {
-    import from jaclang.scale.config.config_loader { get_scale_config }
     telemetry_cfg = get_scale_config().get_telemetry_config();
     _telemetry_store = TelemetryStore(max_traces=telemetry_cfg.get('max_traces', 1000));
     store = _telemetry_store;
 
-    try {
-        import litellm;
+    def _attach_litellm_logger(litellm_module: any) {
         import from litellm.integrations.custom_logger { CustomLogger }
 
         class JacLLMLogger(CustomLogger) {
@@ -631,9 +619,19 @@ impl JacAPIServerLLMTelemetry.register_llm_telemetry_endpoints -> None {
             }
         }
 
-        jac_logger = JacLLMLogger(store);
-        litellm.callbacks.append(jac_logger);
+        litellm_module.callbacks.append(JacLLMLogger(store));
         logger.info("LLM telemetry: litellm CustomLogger registered");
+    }
+
+    try {
+        import from jaclang.byllm._optdeps.litellm { HAS_LITELLM, when_litellm_loaded }
+        if HAS_LITELLM {
+            when_litellm_loaded(_attach_litellm_logger);
+        } else {
+            logger.info(
+                "LLM telemetry: litellm not available, skipping litellm callback"
+            );
+        }
     } except ImportError {
         logger.info("LLM telemetry: litellm not available, skipping litellm callback");
     } except Exception as e {

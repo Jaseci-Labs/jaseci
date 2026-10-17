@@ -1,21 +1,11 @@
-import from jaclang.data.type_identity {
-    class_facts,
-    storage_type,
-    type_module,
-    register_type,
-    resolve_type,
-    resolution_required,
-    TypeResolutionError,
-    UnavailableType
-}
 import importlib;
 import logging;
 import sys;
 import threading;
 import from time { monotonic }
-import from jaclang.runtime.object_interop { fields, is_record }
-import from jaclang.runtime.object_model { MISSING }
-import from datetime { date, datetime, time }
+
+import from datetime { date, datetime, time, timedelta }
+import from decimal { Decimal }
 import from enum { Enum }
 import from hashlib { sha256 }
 import from json { dumps as _json_dumps }
@@ -23,27 +13,9 @@ import from typing { cast, get_args, get_origin }
 import from types { NoneType, UnionType }
 import from typing { Union }
 import from uuid { UUID }
-import from jaclang.runtime.typecache { get_field_types }
-import from jaclang.runtime.archetype {
-    Anchor,
-    NodeAnchor,
-    EdgeAnchor,
-    WalkerAnchor,
-    ObjectAnchor,
-    Permission,
-    Access,
-    AccessLevel,
-    access_level_cast
-}
-import from jaclang.runtime.constructs {
-    Archetype,
-    NodeArchetype,
-    WalkerArchetype,
-    Root,
-    GenericEdge
-}
 
 glob logger = logging.getLogger(__name__),
+     FROZEN_BASELINE: int = 1,
      FINGERPRINT_LENGTH: int = 16,
      _MAX_WARNED_CLASS_KEYS: int = 1024,
      _MAX_IMPORT_FAILURES: int = 1024,
@@ -51,7 +23,25 @@ glob logger = logging.getLogger(__name__),
      _IMPORT_RETRY_CEILING_SECONDS: float = 900.0,
      _IMPORT_RETRY_MAX_DOUBLINGS: int = 8,
      _PLAIN_WIRE_SCALARS: frozenset = frozenset({str, int, float, bool}),
-     _SIZED_FIELD_CACHE: dict[type, any] = {};
+     _SIZED_FIELD_CACHE: dict[type, any] = {},
+     _FROZEN_SCALARS: tuple[type, ...] = (
+         bool,
+         int,
+         float,
+         complex,
+         str,
+         bytes,
+         Decimal,
+         UUID,
+         date,
+         time,
+         timedelta
+     ),
+     _FROZEN_EXACT: frozenset = frozenset(
+         {NoneType, bool, int, float, str, bytes, UUID, date, datetime}
+     ),
+     _TYPE_SHAPES: dict[int, tuple[any, any, tuple[any, ...]]] = {},
+     _TYPE_SHAPES_LIMIT: int = 4096;
 
 obj ImportFailure {
     has attempts: int = 0,
@@ -130,7 +120,11 @@ obj Serializer {
         data: dict[str, object], anchor: Anchor
     ) -> (object | None);
 
-    static def _compute_hash(anchor: Anchor) -> int;
+    static def stored_form(anchor: Anchor) -> dict[str, object];
+    static def stored_hash(
+        anchor: Anchor, stored: (dict[str, object] | None) = None
+    ) -> int;
+
     static def serialize_fields(
         anchor: Anchor, field_names: set[str]
     ) -> dict[str, object];
@@ -143,3 +137,8 @@ glob _register_hook: object = Archetype.install_subclass_hook(
      ),
      _register_root: object = Serializer.register(cast(type, Root)),
      _register_generic_edge: object = Serializer.register(cast(type, GenericEdge));
+
+
+def frozen_value(value: any) -> bool;
+def _type_shape(target_type: object) -> tuple[object, tuple[object, ...]];
+def frozen_fields(anchor: Anchor) -> bool;

@@ -1,34 +1,7 @@
-import from jaclang.server.endpoint_contract { check_endpoint_contract }
 import json;
 import logging;
 import from inspect { isgenerator }
 import from typing { AsyncGenerator, get_type_hints }
-import from jaclang.data.serializer { Serializer }
-import from jaclang.runtime.constants { Constants as Con }
-import from jaclang.runtime.builtin { APIProtocol }
-import from jaclang.server.serving.coerce { is_upload_type }
-import from jaclang.server.serving.datatypes { Request, Response, StreamingResponse }
-import from jaclang.server.serving.endpoint {
-    APIParameter,
-    HTTPMethod,
-    JEndPoint,
-    ParameterType
-}
-import from jaclang.server.outbox {
-    remember_response,
-    replay_cached,
-    scoped_idempotency_key
-}
-import from jaclang.server.serving.router { path_param_names }
-import from jaclang.server.serving.sse { sse_frame_stream }
-import from jaclang.server.server {
-    JacAPIServer,
-    JsonValue,
-    target_restspec,
-    target_schedule_spec
-}
-import from jaclang.server.sv_client { IDEMPOTENCY_HEADER, bridge_identity }
-import from jaclang.server.transport { Meta, TransportResponse }
 
 glob logger: logging.Logger = logging.getLogger('jaclang.serve');
 
@@ -38,6 +11,15 @@ def _unauthorized -> TransportResponse {
         code='UNAUTHORIZED',
         message='Unauthorized',
         meta=Meta(extra={'http_status': 401})
+    );
+}
+
+
+def _unavailable(kind: str, name: str) -> TransportResponse {
+    return TransportResponse.fail(
+        code='TARGET_UNAVAILABLE',
+        message=f"{kind} '{name}' could not be loaded; see the server log",
+        meta=Meta(extra={'http_status': 500})
     );
 }
 
@@ -52,7 +34,7 @@ def request_caller(server: JacAPIServer, request: Request) -> (str | None) {
         return None;
     }
     if not server.user_manager.user_exists(ident) {
-        server.user_manager.create_user(ident, '__no_password__');
+        server.user_manager.create_internal_user(ident, '__no_password__');
     }
     return ident;
 }
@@ -89,8 +71,84 @@ def _failure(result: dict[str, any], fallback: str) -> TransportResponse {
     return TransportResponse.fail(
         code=str(result.get('error_code') or 'EXECUTION_ERROR').upper(),
         message=result.get('error', fallback),
-        meta=Meta(extra={'http_status': int(result.get('http_status') or 500)})
+        meta=Meta(
+            extra={
+                'http_status': int(result.get('http_status') or refusal_status() or 500)
+            }
+        )
     );
+}
+
+
+def _single_line(text: str) -> bool {
+    return '\r' not in text and '\n' not in text and '\x00' not in text;
+}
+
+
+def _raw_response(
+    request: Request, payload: any, declared_media_type: str
+) -> (Response | TransportResponse) {
+    media_type = declared_media_type;
+    if isinstance(payload, Response) {
+        if has_response_choice() {
+            return TransportResponse.fail(
+                code='CONFLICTING_RESPONSE',
+                message='A function that returns a Response must not also call respond()',
+                meta=Meta(extra={'http_status': 500})
+            );
+        }
+        header_text = [payload.media_type or ''];
+        for (name, value) in payload.headers.items() {
+            header_text.append(name);
+            header_text.append(value);
+        }
+        if not all(_single_line(str(text)) for text in header_text) {
+            return TransportResponse.fail(
+                code='INVALID_RESPONSE_HEADER',
+                message='A response header must not contain a line break',
+                meta=Meta(extra={'http_status': 500})
+            );
+        }
+        if isinstance(payload, FileResponse) {
+            file_headers = dict(payload.headers.items());
+            cache_control = 'no-cache';
+            for name in list(file_headers) {
+                if name.lower() == 'cache-control' {
+                    cache_control = file_headers.pop(name);
+                }
+            }
+            return file_response(
+                request,
+                payload.path,
+                cache_control=cache_control,
+                media_type=payload.media_type,
+                extra_headers=file_headers
+            );
+        }
+        return payload;
+    }
+    if isinstance(payload, tuple)
+        and len(payload) == 2
+        and isinstance(payload[1], str) {
+        (payload, media_type) = payload;
+        if not media_type or not _single_line(media_type) {
+            return TransportResponse.fail(
+                code='INVALID_RESPONSE_HEADER',
+                message='A response media type must be one non-empty line',
+                meta=Meta(extra={'http_status': 500})
+            );
+        }
+    }
+    if isinstance(payload, (bytes, bytearray, memoryview)) {
+        body = bytes(payload);
+    } elif isinstance(payload, str) {
+        body = payload.encode('utf-8');
+    } elif payload is None {
+        body = b"";
+    } else {
+        body = json.dumps(Serializer.serialize(payload, api_mode=True)).encode('utf-8');
+    }
+    return apply_response_choice(Response(content=body, media_type=media_type));
 }
 
 
@@ -121,10 +179,10 @@ def _param_kind(
 def walker_parameters(
     server: JacAPIServer,
     walker_name: str,
+    walker_cls: type,
     invoke_on_root: bool,
     method: HTTPMethod = HTTPMethod.POST
 ) -> list[APIParameter] {
-    walker_cls = server.get_walkers()[walker_name];
     restspec: any = target_restspec(walker_cls);
     path_names = path_param_names(str(restspec.path) if restspec?.path else None);
     fields = server.introspector.introspect_walker(walker_cls)['fields'];
@@ -170,7 +228,7 @@ def walker_callback(
     requires_auth = server.introspector.is_auth_required_for_walker(walker_name);
 
     async def callback(
-        request: Request, nd: (str | None) = None, **kwargs: JsonValue
+        request: Request, /, nd: (str | None) = None, **kwargs: JsonValue
     ) -> (TransportResponse | StreamingResponse | Response) {
         username = request_caller(server, request);
         if requires_auth and not username {
@@ -179,13 +237,13 @@ def walker_callback(
         if nd {
             kwargs['_jac_spawn_node'] = nd;
         }
-        import from jaclang.server.sv_client { consumer_app }
+
+        walker_cls = server.introspector.target(walker_name);
+        if walker_cls is None {
+            return _unavailable('Walker', walker_name);
+        }
         mismatch = check_endpoint_contract(
-            request,
-            server.get_walkers()[walker_name],
-            "walker",
-            walker_name,
-            consumer_app()
+            request, walker_cls, "walker", walker_name, consumer_app()
         );
         if mismatch is not None {
             return mismatch;
@@ -197,7 +255,7 @@ def walker_callback(
             return replay;
         }
         result = await server.execution_manager.spawn_walker(
-            server.get_walkers()[walker_name], kwargs, caller
+            walker_cls, kwargs, caller
         );
         if isgenerator(result) or isinstance(result, AsyncGenerator) {
             return _stream(result);
@@ -207,9 +265,12 @@ def walker_callback(
         }
         return remember_response(
             idem,
-            TransportResponse.success(
-                data=result, meta=Meta(extra={'http_status': 200})
-            )
+            settle_envelope(
+                TransportResponse.success(
+                    data=result, meta=Meta(extra={'http_status': 200})
+                )
+            ),
+            committed=True
         );
     }
     return callback;
@@ -217,35 +278,38 @@ def walker_callback(
 
 
 def register_walker_endpoints(server: JacAPIServer) {
-    for walker_name in list(server.get_walkers()) {
-        walker_cls = server.get_walkers()[walker_name];
-        protocol = server.introspector.walker_protocol(walker_name);
-        if protocol in (APIProtocol.WEBHOOK, APIProtocol.WEBSOCKET) {
+    introspector = server.introspector;
+    for rec in introspector.served('walker') {
+        walker_name = rec.name;
+        if introspector.is_scheduled(walker_name) {
             continue;
         }
-        if target_schedule_spec(walker_cls) is not None {
+        restspec: any = introspector.route_spec(walker_name);
+        if restspec?.protocol
+            and APIProtocol(restspec.protocol)
+                in (APIProtocol.WEBHOOK, APIProtocol.WEBSOCKET) {
             continue;
         }
-        restspec: any = target_restspec(walker_cls);
         method: HTTPMethod = (
             HTTPMethod(restspec.method) if restspec?.method else HTTPMethod.POST
         );
         path: str = str(restspec.path) if restspec?.path else f"/walker/{walker_name}";
-        requires_auth = server.introspector.is_auth_required_for_walker(walker_name);
+        requires_auth = introspector.is_auth_required_for_walker(walker_name);
         callback = walker_callback(server, walker_name);
         server.add_endpoint(
             JEndPoint(
                 method=method,
                 path=f"{path}/{{nd}}",
                 callback=callback,
-                parameters=walker_parameters(
-                    server, walker_name, invoke_on_root=False, method=method
+                parameter_source=_walker_parameter_source(
+                    server, walker_name, False, method
                 ),
                 tags=['Walkers'],
                 summary=f"Spawn {walker_name} on a node",
                 description=f"Spawn the {walker_name} walker on the node named by `nd`.",
                 requires_auth=requires_auth,
-                forward_undeclared_query_params=False
+                forward_undeclared_query_params=False,
+                yields_to_declared=True
             )
         );
         server.add_endpoint(
@@ -253,8 +317,8 @@ def register_walker_endpoints(server: JacAPIServer) {
                 method=method,
                 path=path,
                 callback=callback,
-                parameters=walker_parameters(
-                    server, walker_name, invoke_on_root=True, method=method
+                parameter_source=_walker_parameter_source(
+                    server, walker_name, True, method
                 ),
                 tags=['Walkers'],
                 summary=f"Spawn {walker_name}",
@@ -267,10 +331,32 @@ def register_walker_endpoints(server: JacAPIServer) {
 }
 
 
+def _walker_parameter_source(
+    server: JacAPIServer, walker_name: str, invoke_on_root: bool, method: HTTPMethod
+) -> Callable[[], list[APIParameter]] {
+    def source -> list[APIParameter] {
+        walker_cls = server.introspector.target(walker_name);
+        if walker_cls is None {
+            return [];
+        }
+        return walker_parameters(
+            server,
+            walker_name,
+            walker_cls,
+            invoke_on_root=invoke_on_root,
+            method=method
+        );
+    }
+    return source;
+}
+
+
 def function_parameters(
-    server: JacAPIServer, func_name: str, method: HTTPMethod = HTTPMethod.POST
+    server: JacAPIServer,
+    func_name: str,
+    func_obj: Callable,
+    method: HTTPMethod = HTTPMethod.POST
 ) -> list[APIParameter] {
-    func_obj = server.get_functions()[func_name];
     restspec: any = target_restspec(func_obj);
     path_names = path_param_names(str(restspec.path) if restspec?.path else None);
     fields = server.introspector.introspect_callable(func_obj)['parameters'];
@@ -305,24 +391,26 @@ def function_parameters(
 
 
 def function_callback(
-    server: JacAPIServer, func_name: str
+    server: JacAPIServer, func_name: str, restspec: any
 ) -> Callable[..., (TransportResponse | StreamingResponse | Response)] {
     requires_auth = server.introspector.is_auth_required_for_function(func_name);
-    func_obj = server.get_functions()[func_name];
-    restspec: any = target_restspec(func_obj);
     raw_body: bool = restspec is not None and not restspec.envelope;
     raw_media: str = str(restspec.produces or 'text/plain')
         if restspec
         else 'text/plain';
 
     async def callback(
-        request: Request, **kwargs: JsonValue
+        request: Request, /, **kwargs: JsonValue
     ) -> (TransportResponse | StreamingResponse | Response) {
         username = request_caller(server, request);
         if requires_auth and not username {
             return _unauthorized();
         }
-        import from jaclang.server.sv_client { consumer_app }
+
+        func_obj = server.introspector.target(func_name);
+        if func_obj is None {
+            return _unavailable('Function', func_name);
+        }
         mismatch = check_endpoint_contract(
             request, func_obj, "func", func_name, consumer_app()
         );
@@ -337,10 +425,7 @@ def function_callback(
         }
         logger.debug(f"function {func_name}: {sorted(kwargs)}");
         result = await server.execution_manager.execute_function(
-            server.get_functions()[func_name],
-            kwargs,
-            caller,
-            serialize_result=not raw_body
+            func_obj, kwargs, caller, serialize_result=not raw_body
         );
         if isgenerator(result) or isinstance(result, AsyncGenerator) {
             return _stream(result);
@@ -350,24 +435,16 @@ def function_callback(
         }
         if raw_body {
             payload = result.get('result') if isinstance(result, dict) else result;
-            if isinstance(payload, (bytes, bytearray, memoryview)) {
-                body = bytes(payload);
-            } elif isinstance(payload, str) {
-                body = payload.encode('utf-8');
-            } elif payload is None {
-                body = b"";
-            } else {
-                body = json.dumps(Serializer.serialize(payload, api_mode=True)).encode(
-                    'utf-8'
-                );
-            }
-            return Response(content=body, media_type=raw_media);
+            return _raw_response(request, payload, raw_media);
         }
         return remember_response(
             idem,
-            TransportResponse.success(
-                data=result, meta=Meta(extra={'http_status': 200})
-            )
+            settle_envelope(
+                TransportResponse.success(
+                    data=result, meta=Meta(extra={'http_status': 200})
+                )
+            ),
+            committed=True
         );
     }
     return callback;
@@ -375,15 +452,17 @@ def function_callback(
 
 
 def register_function_endpoints(server: JacAPIServer) {
-    for func_name in list(server.get_functions()) {
-        func_obj = server.get_functions()[func_name];
-        if target_schedule_spec(func_obj) is not None {
+    introspector = server.introspector;
+    for rec in introspector.served('function') {
+        func_name = rec.name;
+        if introspector.is_scheduled(func_name) {
             continue;
         }
-        if server.introspector.function_protocol(func_name) == APIProtocol.WEBSOCKET {
+        restspec: any = introspector.route_spec(func_name);
+        if restspec?.protocol
+            and APIProtocol(restspec.protocol) == APIProtocol.WEBSOCKET {
             continue;
         }
-        restspec: any = target_restspec(func_obj);
         method: HTTPMethod = (
             HTTPMethod(restspec.method) if restspec?.method else HTTPMethod.POST
         );
@@ -396,17 +475,29 @@ def register_function_endpoints(server: JacAPIServer) {
             JEndPoint(
                 method=method,
                 path=path,
-                callback=function_callback(server, func_name),
-                parameters=function_parameters(server, func_name, method=method),
+                callback=function_callback(server, func_name, restspec),
+                parameter_source=_function_parameter_source(server, func_name, method),
                 media_type=raw_media,
                 tags=['Functions'],
                 summary=f"Call {func_name}",
                 description=f"Call the {func_name} function.",
-                requires_auth=server.introspector.is_auth_required_for_function(
-                    func_name
-                ),
+                requires_auth=introspector.is_auth_required_for_function(func_name),
                 forward_undeclared_query_params=False
             )
         );
     }
+}
+
+
+def _function_parameter_source(
+    server: JacAPIServer, func_name: str, method: HTTPMethod
+) -> Callable[[], list[APIParameter]] {
+    def source -> list[APIParameter] {
+        func_obj = server.introspector.target(func_name);
+        if func_obj is None {
+            return [];
+        }
+        return function_parameters(server, func_name, func_obj, method=method);
+    }
+    return source;
 }

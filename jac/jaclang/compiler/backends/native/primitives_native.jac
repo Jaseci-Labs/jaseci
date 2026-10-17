@@ -1,23 +1,3 @@
-import from jaclang.compiler.backends.native.llvm { ir }
-import from jaclang.compiler.backends.common.primitives {
-    IntEmitter,
-    FloatEmitter,
-    ComplexEmitter,
-    StrEmitter,
-    BytesEmitter,
-    ListEmitter,
-    DictEmitter,
-    SetEmitter,
-    FrozensetEmitter,
-    TupleEmitter,
-    RangeEmitter,
-    BuiltinEmitter
-}
-import type from jaclang.compiler.backends.native.na_ir_gen_pass { NaIRGenPass }
-import type from jaclang.compiler.types.types { TypeBase }
-import from jaclang.compiler.frontend.constant { Tokens as Tok }
-import from jaclang.compiler.frontend.unitree { Expr, UniNode }
-
 obj NativeEmitCtx {
     has pass_ref: NaIRGenPass,
         type_key: str = "",
@@ -575,6 +555,22 @@ class NativeStrEmitter(StrEmitter[(ir.Value, NativeEmitCtx)]) {
 
 
 class NativeBytesEmitter(BytesEmitter[(ir.Value, NativeEmitCtx)]) {
+    def _kernel_call(
+        self: NativeBytesEmitter, ctx: NativeEmitCtx, name: str, values: list[ir.Value]
+    ) -> (ir.Value | None);
+
+    def _optional_bytes(
+        self: NativeBytesEmitter, ctx: NativeEmitCtx, arg: ir.Value, target: ir.Value
+    ) -> (tuple[ir.Value, ir.Value] | None);
+
+    def _emit_strip(
+        self: NativeBytesEmitter,
+        ctx: NativeEmitCtx,
+        target: ir.Value,
+        args: list[ir.Value],
+        which: int
+    ) -> (ir.Value | None);
+
     def emit_decode(
         self: NativeBytesEmitter,
         ctx: NativeEmitCtx,
@@ -1236,7 +1232,7 @@ class NativeSetEmitter(SetEmitter[(ir.Value, NativeEmitCtx)]) {
         ctx: NativeEmitCtx,
         src_set: ir.Value,
         prefix: str,
-        body_cb: object
+        body_cb: Callable[[ir.IRBuilder, ir.Value], None]
     ) -> None;
 
     def _emit_set_relation(
@@ -1659,7 +1655,13 @@ class NativeBuiltinEmitter(BuiltinEmitter[(ir.Value, NativeEmitCtx)]) {
             return p._mark_owned(p._emit_bytes_repr(arg_val));
         }
         if isinstance(arg_val.type, ir.IntType) and arg_val.type.width == 1 {
-            return p._bool_text(b, arg_val, "repr.bool");
+            _repr_flag = p._bool_text(b, arg_val, "repr.bool");
+            if p._nogc_headerless() {
+                return p._mark_owned(
+                    p._call_str_dup(b, _repr_flag, name="repr.bool.own")
+                );
+            }
+            return _repr_flag;
         }
         if isinstance(arg_val.type, ir.IntType) {
             buf_ptr = b.call(p.rc_alloc_fn, [ir.Constant(i64, 64)], name="repr.buf");
@@ -1731,6 +1733,9 @@ class NativeBuiltinEmitter(BuiltinEmitter[(ir.Value, NativeEmitCtx)]) {
             i8.as_pointer(),
             name="chr.cached.str"
         );
+        if p._nogc_headerless() {
+            cached = p._call_str_dup(b, cached, name="chr.cached.own");
+        }
         ascii_end = b.basic_block;
         b.branch(done_bb);
         b.position_at_end(wide_bb);

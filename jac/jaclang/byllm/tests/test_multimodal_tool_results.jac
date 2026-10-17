@@ -108,3 +108,39 @@ test "reroute: consecutive tool messages flush ONE trailing user msg with all im
     ];
     assert img_urls == ["u1", "u3"];
 }
+
+
+test "reroute: a file block leaves the tool message and follows it in a user message" {
+    file_block = {
+        "type": "file",
+        "file": {
+            "file_data": "data:application/pdf;base64,JVBERi0=",
+            "filename": "a.pdf"
+        }
+    };
+    msgs = [
+        {"role": "assistant", "content": None, "tool_calls": []},
+        {
+            "role": "tool",
+            "tool_call_id": "call_1",
+            "name": "fetch_brief",
+            "content": [{"type": "text", "text": "PASS"}, file_block]
+        },
+        {
+            "role": "tool",
+            "tool_call_id": "call_2",
+            "name": "fetch_spec",
+            "content": [file_block]
+        }
+    ];
+    out = reroute_tool_images_to_user_message(msgs);
+    assert out[1]["content"] == "PASS";
+    assert out[2]["role"] == "tool" and "document attached" in out[2]["content"];
+    assert out[3]["role"] == "user";
+    assert [
+        b
+        for b in out[3]["content"]
+        if b.get("type") == "file"
+    ]
+        == [file_block, file_block];
+}
