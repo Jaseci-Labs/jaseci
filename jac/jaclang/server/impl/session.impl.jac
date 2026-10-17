@@ -1,33 +1,11 @@
-def _toml_section(base_path: (str | None), section: str) -> dict[str, any] {
-    if not base_path {
-        return {};
-    }
-    manifest = os.path.join(base_path, 'jac.toml');
-    if not os.path.isfile(manifest) {
-        return {};
-    }
-    try {
-        import tomllib;
-        with open(manifest, 'rb') as f {
-            data = tomllib.load(f);
-        }
-        return data.get(section) or {};
-    } except Exception as e {
-        logger.warning(f"could not read [{section}] from {manifest}: {e}");
-        return {};
-    }
+def _database_config(base_path: (str | None)) -> DatabaseConfig {
+    config = get_config_for_dir(base_path) if base_path else None;
+    return config.database if config is not None else DatabaseConfig();
 }
 
 
 impl promotions_for(base_path: (str | None)) -> dict[str, list[str]] {
-    raw: any = _toml_section(base_path, 'database').get('indexes') or {};
-    out: dict[str, list[str]] = {};
-    for (arch, fields_l) in raw.items() {
-        if isinstance(fields_l, list) {
-            out[str(arch)] = [str(x) for x in fields_l];
-        }
-    }
-    return out;
+    return dict(_database_config(base_path).indexes);
 }
 
 
@@ -45,15 +23,13 @@ impl conninfo_from_url(url: str) -> ConnInfo {
 
 
 impl shared_pg_data_dir -> str {
-    import from jaclang.data.pgembed { dist_cache_dir }
-    return os.path.join(os.path.dirname(dist_cache_dir()), 'main');
+    return str(bucket("pg").path() / 'main');
 }
 
 
 impl project_database(base_path: str, target_path: (str | None)) -> ProjectDatabase {
     import hashlib;
-    import from jaclang.runtime.graph_utils { get_name }
-    import from jaclang.project.workspace { workspace_for_path }
+
     workspace = workspace_for_path(target_path or base_path);
     database_root = os.path.realpath(base_path);
     in_project = False;
@@ -172,7 +148,6 @@ def _drop_owned_at_exit -> None {
 
 
 impl own_child_databases -> None {
-    import from jaclang.data.dbcatalog { process_alive, this_host }
     outer = scratch_owner_pid();
     if outer == os.getpid() {
         return;
@@ -187,7 +162,6 @@ impl own_child_databases -> None {
 
 
 impl drop_owned_databases(data_dir: str = '') -> int {
-    import from jaclang.data.dbcatalog { connect_admin, drop_database, owned_databases }
     rt = PgRuntime(data_dir=data_dir or shared_pg_data_dir(), database=MAINTENANCE_DB);
     if not rt.is_running() {
         return 0;
@@ -213,10 +187,7 @@ impl drop_owned_databases(data_dir: str = '') -> int {
 impl retention_days_for(base_path: (str | None)) -> int {
     raw: str = os.environ.get(RETENTION_ENV, '').strip();
     if not raw {
-        raw = str(_toml_section(base_path, 'database').get('retention_days') or '');
-    }
-    if not raw {
-        return 0;
+        return _database_config(base_path).retention_days;
     }
     try {
         days = int(raw);
@@ -272,12 +243,6 @@ impl takeover_project(base_path: str, target_path: (str | None) = None) -> int {
 
 
 def _ancestry_of(arch: (object | None)) -> list[str] {
-    import from jaclang.runtime.constructs {
-        Archetype,
-        NodeArchetype,
-        EdgeArchetype,
-        WalkerArchetype
-    }
     if arch is None {
         return [];
     }
@@ -294,6 +259,30 @@ def _ancestry_of(arch: (object | None)) -> list[str] {
 }
 
 
+glob _GETTER_CLASSES: dict[type, bool] = {};
+
+def _runs_getters(arch: object) -> bool {
+    cls = type(arch);
+    found = _GETTER_CLASSES.get(cls);
+    if found is None {
+        found = any(
+            isinstance(member, property)
+            for klass in cls.__mro__
+            if klass is not object and not klass.__module__.startswith('jaclang.')
+            for member in vars(klass).values()
+        );
+        _GETTER_CLASSES[cls] = found;
+    }
+    return found;
+}
+
+def _settle_written(anchor: Anchor, seen: int) {
+    if seen and anchor.__dict__.get('_field_written', 0) == seen {
+        anchor.__dict__.pop('_field_written', None);
+    }
+}
+
+
 def _is_serialization_conflict(e: Exception) -> bool {
     if isinstance(e, WriteConflict) {
         return False;
@@ -304,7 +293,29 @@ def _is_serialization_conflict(e: Exception) -> bool {
         c: BaseException = cur;
         for arg in getattr(c, 'args', ()) {
             if isinstance(arg, dict)
-                and arg.get('C') in ('40001', '40P01', '55P03', '08006') {
+                and arg.get('C') in ('40001', '40P01', '53200', '55P03', '08006') {
+                return True;
+            }
+        }
+        cur = c.__cause__ or c.__context__;
+        seen += 1;
+    }
+    return False;
+}
+
+
+impl transient_db_error(e: Exception) -> bool {
+    return _is_serialization_conflict(e);
+}
+
+
+def _is_lock_timeout(e: Exception) -> bool {
+    seen = 0;
+    cur: (BaseException | None) = e;
+    while cur is not None and seen < 8 {
+        c: BaseException = cur;
+        for arg in getattr(c, 'args', ()) {
+            if isinstance(arg, dict) and arg.get('C') == '55P03' {
                 return True;
             }
         }
@@ -422,6 +433,16 @@ impl Session.postinit -> None {
     self._unit_stack = [];
     self._snapshot_reads = set();
     self._foreign_refs = set();
+    self._contended = set();
+    self._hop_writes = 0;
+    self._hop_cache = {};
+    self._hop_siblings = {};
+    self._hop_groups_token = None;
+    self._queued = [];
+    self._last_conflict = set();
+    self._scan_clean = False;
+    self._scan_sealed = False;
+    self._scan_safe = True;
 }
 
 
@@ -624,6 +645,7 @@ impl Session.commit(anchor: (Anchor | None) = None) -> None {
                 try {
                     self.flush(full=True);
                     self._commit_txn();
+                    self._leave_queue();
                     break;
                 } except Exception as e {
                     if not _is_serialization_conflict(e) {
@@ -649,6 +671,8 @@ impl Session.commit(anchor: (Anchor | None) = None) -> None {
 
 impl Session.abort -> None {
     with self._lock {
+        self._contended |= self._last_conflict;
+        self._last_conflict = set();
         self._rollback_txn();
         self._forget_loaded();
         self._dirty.clear();
@@ -656,12 +680,13 @@ impl Session.abort -> None {
         self._snapshot_reads.clear();
         self._on_commit = [];
         self._lost = False;
+        self.unseal_scan();
     }
 }
 
 
 impl Session._forget_loaded -> None {
-    import from jaclang.runtime.osp_graph_sv { sv_forget_edge }
+    self._drop_hop_state();
     for (id, anchor) in list(self.__mem__.items()) {
         if not anchor.is_populated() or not anchor.persistent {
             continue;
@@ -676,7 +701,6 @@ impl Session._forget_loaded -> None {
 
 
 impl Session.quarantine_ref(referrer: (Anchor | None), stub: Anchor) -> None {
-    import from jaclang.runtime.osp_graph_sv { sv_forget_by_id }
     sid = stub.ensure_id();
     sv_forget_by_id(sid, self);
     if self._store is not None {
@@ -729,7 +753,6 @@ impl Session._raise_ro_retry -> None {
 
 
 impl Session._drop_snapshot_reads -> None {
-    import from jaclang.runtime.osp_graph_sv { sv_forget_edge }
     for id in self._snapshot_reads {
         if id in self._dirty or id in self._deleted {
             continue;
@@ -752,7 +775,7 @@ impl Session._ensure_txn -> None {
         self._reclaim_dead_txn();
         wanted = self._txn_isolation();
         if not self._store.in_txn() {
-            self._store.begin(wanted);
+            self._begin_txn(wanted);
         } elif wanted is TxnIsolation.SERIALIZABLE {
             self._begin_writable();
         }
@@ -762,6 +785,7 @@ impl Session._ensure_txn -> None {
 
 impl Session.unit_enter(key: (str | None) = None) -> None {
     with self._lock {
+        self.unseal_scan();
         ro = key is not None and ro_units_enabled() and not unit_writes_recorded(key);
         self._active_units += 1;
         if ro {
@@ -952,10 +976,34 @@ impl Session.flush(full: bool = False) -> None {
 }
 
 
+impl Session.seal_scan -> None {
+    with self._lock {
+        self._scan_sealed = self._scan_clean;
+    }
+}
+
+
+impl Session.unseal_scan -> None {
+    with self._lock {
+        self._scan_clean = False;
+        self._scan_sealed = False;
+    }
+}
+
+
 impl Session._flush_locked(full: bool) -> None {
     store = self._store;
     if store is None {
         return;
+    }
+    if full and self._scan_sealed {
+        full = any(
+            anchor is not None and _runs_getters(anchor.archetype)
+            for anchor in (self.__mem__.get(id) for id in self._dirty)
+        );
+        if full {
+            self._scan_sealed = False;
+        }
     }
     self._reclaim_dead_txn();
     unflushed: list[UnflushedAnchor] = [];
@@ -969,49 +1017,92 @@ impl Session._flush_locked(full: bool) -> None {
             break;
         }
     }
+    wrote = bool(unflushed or self._deleted);
     if unflushed {
         rows = [self._serialize(u.anchor, u.stored) for u in unflushed];
-        store.upsert(rows);
+        try {
+            store.upsert(rows);
+        } except WriteConflict as wc {
+            self._last_conflict = {wc.anchor_id};
+            raise;
+        } except Exception as e {
+            if self._queued or not _is_lock_timeout(e) {
+                raise;
+            }
+            self._last_conflict = {row.id for row in rows};
+            raise WriteConflict(anchor_id=rows[0].id) from e;
+        }
         for (row, u) in zip(rows, unflushed) {
             self._rows.upserted(row.id, RowState(hash=u.hash, version=row.version));
             u.anchor.hash = u.hash;
+            _settle_written(u.anchor, u.written);
         }
     }
     if self._deleted {
-        store.delete(list(self._deleted));
+        try {
+            store.delete(list(self._deleted));
+        } except Exception as e {
+            if self._queued or not _is_lock_timeout(e) {
+                raise;
+            }
+            self._last_conflict = set(self._deleted);
+            raise WriteConflict(anchor_id=sorted(self._deleted)[0]) from e;
+        }
         for id in self._deleted {
             self._rows.removed(id);
         }
         self._deleted.clear();
     }
     self._dirty.clear();
+    if wrote {
+        self._hop_writes += 1;
+    }
+    if full {
+        self._scan_clean = self._scan_safe;
+    }
 }
 
 
 impl Session._unflushed(full: bool) -> list[UnflushedAnchor] {
     import from jaclang { JacRuntimeInterface as JacRI }
-    import from jaclang.data.serializer { Serializer }
+
     candidates = list(self.__mem__.keys()) if full else list(self._dirty.keys());
     out: list[UnflushedAnchor] = [];
+    safe = True;
     for id in candidates {
         anchor = self.__mem__.get(id);
         if anchor is None or not anchor.persistent or not anchor.is_populated() {
             continue;
+        }
+        known = self._rows.current(id);
+        if full
+            and id not in self._dirty
+            and known is not None
+            and known.hash != 0
+            and frozen_fields(anchor) {
+            continue;
+        }
+        written = anchor.__dict__.get('_field_written', 0);
+        if safe and _runs_getters(anchor.archetype) {
+            safe = False;
         }
         stored: (dict[str, object] | None) = None;
         try {
             stored = Serializer.stored_form(anchor);
         } except Exception {}
         h = Serializer.stored_hash(anchor, stored);
-        known = self._rows.current(id);
         if h != 0 and known is not None and known.hash == h and id not in self._dirty {
+            _settle_written(anchor, written);
             continue;
         }
         if not JacRI.check_write_access(anchor, op_hint="field_write") {
             continue;
         }
-        out.append(UnflushedAnchor(anchor=anchor, stored=stored, hash=h));
+        out.append(
+            UnflushedAnchor(anchor=anchor, stored=stored, hash=h, written=written)
+        );
     }
+    self._scan_safe = safe;
     return out;
 }
 
@@ -1019,8 +1110,6 @@ impl Session._unflushed(full: bool) -> list[UnflushedAnchor] {
 impl Session._serialize(
     anchor: Anchor, stored: (dict[str, object] | None) = None
 ) -> AnchorRow {
-    import from jaclang.data.serializer { Serializer }
-    import from jaclang.data.type_identity { storage_type, type_module }
     if stored is None {
         stored = Serializer.stored_form(anchor);
     }
@@ -1062,14 +1151,13 @@ impl Session._serialize(
 
 impl Session._materialize(row: AnchorRow) -> (Anchor | None) {
     import from functools { partial }
-    import from jaclang.data.serializer { Serializer }
+
     self._foreign_refs.discard(row.id);
     existing = self.__mem__.get(row.id);
     if existing is not None and existing.is_populated() {
         return existing;
     }
-    import from jaclang.data.type_identity { resolution_scope, ForeignType }
-    import from jaclang.runtime.prepared { application_for }
+
     application = application_for(self.target_path) if self.target_path else None;
     try {
         with resolution_scope(application) {
@@ -1111,7 +1199,6 @@ impl Session._materialize(row: AnchorRow) -> (Anchor | None) {
 
 
 impl Session._load_edges(nd: NodeAnchor) -> list[EdgeAnchor] {
-    import from jaclang.data.serializer { Serializer }
     loaded = nd.__dict__.get('edges');
     if loaded is not None {
         return loaded;
@@ -1170,10 +1257,114 @@ impl Session._begin_writable -> None {
             }
             self._commit_txn();
             self._drop_snapshot_reads();
-            self._store.begin(TxnIsolation.SERIALIZABLE);
+            self._begin_txn(TxnIsolation.SERIALIZABLE);
         } elif not self._store.in_txn() {
-            self._store.begin(TxnIsolation.SERIALIZABLE);
+            self._begin_txn(TxnIsolation.SERIALIZABLE);
         }
+    }
+}
+
+
+impl Session._begin_txn(isolation: TxnIsolation) -> None {
+    backing = self._store;
+    if backing is None {
+        return;
+    }
+    backing.begin(isolation);
+    if not self._queued and isolation is TxnIsolation.SERIALIZABLE {
+        backing.lock_wait(FIRST_LOCK_WAIT);
+    }
+}
+
+
+impl Session.wait_turn -> None {
+    with self._lock {
+        backing = self._store;
+        if backing is None or not self._contended {
+            return;
+        }
+        wanted = sorted(self._contended);
+        if wanted != sorted(self._queued) {
+            if self._queued {
+                held = self._queued;
+                self._queued = [];
+                backing.queue_exit(held);
+            }
+            if not backing.queue_enter(wanted) {
+                self._contended.clear();
+                return;
+            }
+            self._queued = wanted;
+        }
+        if backing.in_txn() {
+            return;
+        }
+        pinned = sorted(self._queued);
+        for _ in range(PIN_ATTEMPTS) {
+            backing.begin(TxnIsolation.SERIALIZABLE);
+            try {
+                backing.lock_rows(pinned);
+                return;
+            } except Exception as e {
+                if not _is_serialization_conflict(e) {
+                    raise;
+                }
+                backing.rollback();
+            }
+        }
+    }
+}
+
+
+glob _SESSION_POOL: list[any] = [];
+
+
+def _session_pool -> any {
+    if not _SESSION_POOL {
+        import from concurrent.futures { ThreadPoolExecutor }
+        _SESSION_POOL.append(
+            ThreadPoolExecutor(
+                max_workers=SESSION_THREADS, thread_name_prefix="jac-session-io"
+            )
+        );
+    }
+    return _SESSION_POOL[0];
+}
+
+
+async def _off_loop(work: Callable) -> any {
+    import asyncio;
+    import contextvars;
+    context = contextvars.copy_context();
+    def in_context -> any {
+        return context.run(work);
+    }
+    return await asyncio.get_running_loop().run_in_executor(
+        _session_pool(), in_context
+    );
+}
+
+
+impl Session.acommit(anchor: (Anchor | None) = None) -> None {
+    def settle {
+        self.commit(anchor);
+    }
+    await _off_loop(settle);
+}
+
+
+impl Session._leave_queue -> None {
+    self._contended.clear();
+    self._last_conflict = set();
+    held = self._queued;
+    self._queued = [];
+    if not held or self._store is None {
+        return;
+    }
+    try {
+        self._store.queue_exit(held);
+    } except Exception as e {
+        logger.warning(f"releasing the write queue failed: {type(e).__name__}: {e}");
     }
 }
 
@@ -1211,7 +1402,7 @@ impl Session.close -> None {
     } except Exception as e {
         logger.warning(f"commit on close failed: {type(e).__name__}: {e}");
     }
-
+    self._leave_queue();
     if self._store is not None {
         self._store.close();
     }
@@ -1220,6 +1411,88 @@ impl Session.close -> None {
     self._deleted.clear();
     self._rows.clear();
     self._lost = False;
-    import from jaclang.runtime.osp_graph_sv { sv_store_closed }
+    self._drop_hop_state();
+
     sv_store_closed(self);
+}
+
+
+impl Session._hop_token -> (tuple[int, int] | None) {
+    store = self._store;
+    if store is None or not store.in_txn() {
+        return None;
+    }
+    if store.txn_isolation() is TxnIsolation.READ_COMMITTED {
+        return None;
+    }
+    serial = store.txn_serial();
+    if serial < 0 {
+        return None;
+    }
+    return (serial, self._hop_writes);
+}
+
+
+impl Session.batching -> bool {
+    return self._hop_token() is not None;
+}
+
+
+impl Session._drop_hop_state -> None {
+    self._hop_siblings = {};
+    self._hop_cache = {};
+    self._hop_groups_token = None;
+}
+
+
+impl Session.note_siblings(ids: list[UUID]) -> None {
+    if len(ids) < 2 {
+        return;
+    }
+    token = self._hop_token();
+    if token is None {
+        return;
+    }
+    if token != self._hop_groups_token {
+        self._hop_siblings = {};
+        self._hop_groups_token = token;
+    }
+    group = tuple(ids[:HOP_BATCH_LIMIT]);
+    for i in group {
+        self._hop_siblings[i] = group;
+    }
+}
+
+
+impl Session.hop_siblings(origin: UUID) -> tuple[UUID, ...] {
+    if self._hop_groups_token is None or self._hop_groups_token != self._hop_token() {
+        return ();
+    }
+    return self._hop_siblings.get(origin, ());
+}
+
+
+impl Session.hop_cached(key: any, origin: UUID) -> (list[tuple[any, any]] | None) {
+    held = self._hop_cache.get(key);
+    if held is None or held[0] != self._hop_token() {
+        return None;
+    }
+    return held[1].get(origin);
+}
+
+
+impl Session.hop_store(key: any, by_origin: dict[UUID, list[tuple[any, any]]]) -> None {
+    token = self._hop_token();
+    if token is None {
+        return;
+    }
+    stale = [
+        k
+        for (k, held) in self._hop_cache.items()
+        if held[0] != token
+    ];
+    for k in stale {
+        del self._hop_cache[k];
+    }
+    self._hop_cache[key] = (token, by_origin);
 }

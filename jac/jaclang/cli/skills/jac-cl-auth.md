@@ -12,6 +12,8 @@ Client auth uses four helpers from `@jac/runtime`. **Return types differ - get t
 | `jacLogout()` | no | `None` | - (call it, no assign) |
 | `jacIsLoggedIn()` | no | `bool` | - (use inline) |
 
+The first argument is a bare string or an explicit identity. `jacSignup` types a bare string from the server's auth policy (`GET /user/auth-policy`, fetched once): it is sent as an `email` identity when it contains `@` or when the project turns usernames off, and as a `username` identity otherwise. `jacLogin` types by shape alone (`@` means email); the server finds the account by value either way. Pass `{"type": "email" | "username", "value": ...}` to choose yourself, or a list of them to `jacSignup` to register both. A password the policy rejects comes back as `signup_result.error` (for example "the password is too short"); the default policy needs 8 characters and refuses common passwords.
+
 These patterns apply in any client code - plain `.jac` components inferred client (the `@jac/runtime` import itself is a string-path npm import, which is client-only syntax - see `jac-codespaces`).
 
 The two return types behave differently for failure checks. `jacLogin` returns a plain `bool` - `if not ok { ... }` detects a failed login directly. `jacSignup` returns a **`SignupResult`** record. Check `signup_result.success` and read `signup_result.error` for a failure message; the record itself is truthy even when signup fails.
@@ -161,6 +163,17 @@ client_secret = "..."
 ```
 
 The server then exposes `/sso/{platform}/login`, `/sso/{platform}/register`, and the OAuth callback. Client side, `await jacSsoLogin("google")` (async, returns `bool`) hands off to the provider and resolves once the token lands; `jacSetToken(token)` stores a token directly (used by SSO callback pages).
+
+## Email verification (`verification = "required"`)
+
+When the project sets `[serve.auth.email] verification = "required"` (see `jac-sv-auth`), a new account cannot sign in until the emailed link is used, and the helpers do not report that state:
+
+- `jacSignup` returns `success=True` and mails the link; `SignupResult` has no field saying verification is pending.
+- `jacLogin` then returns `False`, the same as for a wrong password (the server's `403 EMAIL_NOT_VERIFIED` is not surfaced), and the server mails a fresh link.
+
+So in a project with verification required, do not run the 3-step signup flow above. After a successful `jacSignup`, show "check your email" and stop. On a failed `jacLogin`, say the password may be wrong or the email unverified, and that a new link was sent.
+
+The link points at `verify_url_template` (for example `https://app.example.com/verify?token={token}`). There is no runtime helper for the page it opens: add that route yourself, read `token` from `useLocation().search` (see `jac-cl-routing` for query params), `await fetch("/user/verify-identity", ...)` with a JSON body `{"token": token}`, then send the user to the login page. An expired or reused token answers `400 INVALID_TOKEN`; signing in again mails a new link.
 
 ## Auth-relevant `@jac/runtime` exports
 

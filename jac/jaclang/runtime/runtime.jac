@@ -31,7 +31,8 @@ import from jaclang.runtime.archetype {
     light_disconnect,
     light_edge_view,
     light_hop,
-    light_hop_answers
+    light_hop_answers,
+    new_connect_edge
 }
 import from jaclang.runtime.constants { EdgeDir, colors }
 import from jaclang.runtime.graph_query { GraphQuery, QHop, QPred, filter_query_nodes }
@@ -558,6 +559,7 @@ class JacRuntime(JacRuntimeInterface) {
     ) -> None;
 
     static def set_context(context: ExecutionContext) -> None;
+    static def request_context -> (ExecutionContext | None);
     static def push_request_context(context: ExecutionContext) -> any;
     static def reset_request_context(token: any) -> None;
     static def after_fork_in_child -> None;

@@ -35,7 +35,11 @@ obj UnitProducts {
         native_ir: str = "",
         native_iface: str = "",
         native_layout: str = "",
-        native_deps: list[str] = [];
+        native_deps: list[str] = [],
+        iface: str = "",
+        iface_shape: str = "",
+        effects: str = "",
+        jac_deps: list[str] = [];
 }
 
 def definition_span_rows(tree: uni.Module) -> list[str] {
@@ -97,6 +101,46 @@ def dependency_span_rows(module: uni.Module, program: JacProgram) -> list[str] {
         rows.extend(definition_span_rows(dep));
     }
     return rows;
+}
+
+def jac_dependencies(module: uni.Module) -> list[str] {
+    found: set[str] = set();
+    for item in module.get_all_sub_nodes(uni.Import) {
+        if not item.is_jac {
+            continue;
+        }
+        paths: list[uni.ModulePath] = [
+            target
+            for target in item.items
+            if isinstance(target, uni.ModulePath)
+        ];
+        if item.from_loc is not None {
+            paths.append(item.from_loc);
+        }
+        sources: list[str] = [];
+        for path in paths {
+            try {
+                sources.append(path.resolve_relative_path());
+            } except Exception {
+                continue;
+            }
+        }
+        for target in item.items {
+            if isinstance(target, uni.ModuleItem) {
+                try {
+                    sources.append(target.resolve_relative_path());
+                } except Exception {
+                    continue;
+                }
+            }
+        }
+        for source in sources {
+            if source and source.endswith(".jac") and os.path.isfile(source) {
+                found.add(os.path.realpath(source));
+            }
+        }
+    }
+    return sorted(found);
 }
 
 def import_edge_rows(module: uni.Module) -> list[str] {
@@ -501,10 +545,14 @@ def unit_products(module: uni.Module, program: JacProgram) -> UnitProducts {
     products.app = module.app or "";
     products.persistence = list(module.persistence);
     products.import_edges = import_edge_rows(module);
+    products.jac_deps = jac_dependencies(module);
     if module.gen.client_manifest is not None {
         products.client_manifest = json.dumps(
             manifest_record(module.gen.client_manifest)
         );
+    }
+    if module.gen.callable_effects {
+        products.effects = json.dumps(module.gen.callable_effects, sort_keys=True);
     }
     native_products(module, products);
     return products;
@@ -546,7 +594,11 @@ def products_record(products: UnitProducts) -> dict[str, any] {
         "native_ir": products.native_ir,
         "native_iface": products.native_iface,
         "native_layout": products.native_layout,
-        "native_deps": list(products.native_deps)
+        "native_deps": list(products.native_deps),
+        "iface": products.iface,
+        "iface_shape": products.iface_shape,
+        "effects": products.effects,
+        "jac_deps": list(products.jac_deps)
     };
 }
 
@@ -570,7 +622,11 @@ def products_from_record(raw: dict[str, any]) -> UnitProducts {
         native_ir=str(raw.get("native_ir", "")),
         native_iface=str(raw.get("native_iface", "")),
         native_layout=str(raw.get("native_layout", "")),
-        native_deps=json_str_list(raw.get("native_deps"))
+        native_deps=json_str_list(raw.get("native_deps")),
+        iface=str(raw.get("iface", "")),
+        iface_shape=str(raw.get("iface_shape", "")),
+        effects=str(raw.get("effects", "")),
+        jac_deps=json_str_list(raw.get("jac_deps"))
     );
 }
 

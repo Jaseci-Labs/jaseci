@@ -37,7 +37,7 @@ async def _sse_frame_stream_inner(source: any) -> AsyncIterator[str] {
                 yield format_sse_event(dumps(item, `default=_sse_json_default));
             }
         } else {
-            for item in source {
+            async for item in iterate_sync(source) {
                 yield format_sse_event(dumps(item, `default=_sse_json_default));
             }
         }

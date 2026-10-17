@@ -174,7 +174,7 @@ test "get_bytecode adopts a kernel compile and keeps no host tree" {
         write_project(base);
         entry_file = str(base / 'main.jac');
         program = JacProgram();
-        with patch.dict(os.environ, {"JAC_KERNEL_COMPILE": "inprocess"}) {
+        with patch("jaclang.project.kernel_compile._IN_PROCESS", [True]) {
             code = program._get_compiler().get_bytecode(entry_file, program);
         }
         assert code is not None;
@@ -242,9 +242,9 @@ test "a module wired by the arch file compiles in the kernel" {
     with TemporaryDirectory() as td {
         base = Path(os.path.realpath(td));
         (base / 'jac.toml').write_text(CONFIG);
-        (base / 'arch.jac').write_text(
-            'impl import {\n    edge CoreInternal: core.* --> core.*;\n}\n\n'
-                + 'impl import core {\n    util --> core.svc { Spark }\n}\n'
+        (base / 'archwire.jac').write_text(
+            'graph import {\n    edge CoreInternal: core.* --> core.*;\n}\n\n'
+                + 'graph import core {\n    util --> core.svc { Spark }\n}\n'
         );
         (base / 'core').mkdir();
         (base / 'core' / 'util.jac').write_text(
@@ -261,7 +261,7 @@ test "a module wired by the arch file compiles in the kernel" {
         emitted = outcome.unit(entry_file);
         assert emitted is not None;
         assert_same_products(emitted, expected);
-        arch_file = str(base / 'arch.jac');
+        arch_file = str(base / 'archwire.jac');
         checked = compile_in_process(arch_file);
         assert checked.analysis.status == ANALYSIS_OK , checked.analysis.message;
         assert not checked.analysis.misses , checked.analysis.misses;
@@ -334,9 +334,10 @@ def write_application(base: Path) {
             + 'walker:pub Ping { can go with Root entry { report helper(1); } }\n'
     );
     (base / 'deep.jac').write_text('def:pub twice(x: int) -> int { return x * 2; }\n');
-    (base / 'arch.jac').write_text(
-        'impl import {\n    edge SideInternal: side.* --> side.*;\n}\n\n'
-            + 'impl import side {\n    tool --> side.user { Wrench }\n}\n'
+    (base / 'archwire.jac').write_text(
+        'graph import {\n    edge SideInternal: side.* --> side.*;\n'
+            + '    util --> main { helper }\n    include deep --> main;\n}\n\n'
+            + 'graph import side {\n    tool --> side.user { Wrench }\n}\n'
     );
     (base / 'side').mkdir();
     (base / 'side' / 'tool.jac').write_text(
@@ -346,8 +347,7 @@ def write_application(base: Path) {
         'def turn -> int {\n    return Wrench(size=1).size;\n}\n'
     );
     (base / 'main.jac').write_text(
-        'import from util { helper }\ninclude deep;\n'
-            + 'node Item { has label: str = ""; }\n'
+        'node Item { has label: str = ""; }\n'
             + 'def:pub go(n: int) -> int { return helper(n) + twice(n); }\n'
             + 'def quiet(n: int) -> int { return n; }\n'
             + 'with entry { print(go(3)); }\n'
@@ -475,6 +475,14 @@ test "a jaclang import in an impl folder annex compiles in the kernel" {
     }
 }
 
+"""A stand-in `host_kernel_compile` that answers every call with `canned`."""
+def _answering(canned: CompileReport) -> Callable[..., CompileReport] {
+    def answer(*args: any, **kwargs: any) -> CompileReport {
+        return canned;
+    }
+    return answer;
+}
+
 """A kernel compile can come back with no unit for the entry. If the kernel
 reported errors, the module is compiled and failed, and the host must not
 compile it again, whichever codespace it was placed in: a native module's
@@ -510,10 +518,9 @@ test "a kernel compile with no unit is final only when it reported errors" {
                     errors=list(errors)
                 )
             );
-            def answer(*args: any, **kwargs: any) -> CompileReport {
-                return canned;
-            }
-            with patch.object(kernel_compile_mod, "host_kernel_compile", answer) {
+            with patch.object(
+                kernel_compile_mod, "host_kernel_compile", _answering(canned)
+            ) {
                 (handled, code) = compiler._adopt_kernel_compile(
                     entry_file, program, compile_options()
                 );
@@ -692,7 +699,7 @@ test "an application being prepared on the host keeps its module compiles there"
     import jaclang.project.kernel_compile as kernel_compile_mod;
     with TemporaryDirectory() as td {
         entry_file = str(Path(os.path.realpath(td)) / 'main.jac');
-        with patch.dict(os.environ, {"JAC_KERNEL_COMPILE": "inprocess"}) {
+        with patch("jaclang.project.kernel_compile._IN_PROCESS", [True]) {
             assert kernel_compile_mod.kernel_route(JacProgram(), entry_file)
                 == (True, True);
             kernel_compile_mod.host_preparing(entry_file);
@@ -768,6 +775,9 @@ one session per entry, the entry's client manifest read from its unit, and
 the client compiler fed from the artifacts those units carry. It used to
 prepare on the host, services included."""
 test "an application with a client prepares through the kernel" {
+    if loaded_kernel() is None {
+        return;
+    }
     import from unittest.mock { patch }
     import from jaclang.compiler.driver.application { prepare_application }
     import jaclang.project.kernel_compile as kernel_compile_mod;

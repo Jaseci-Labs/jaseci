@@ -422,10 +422,7 @@ impl Serializer._deserialize_value(val: object) -> object {
 impl Serializer.register(cls: type) -> None {
     register_type(cls);
     Serializer._registry[f"{cls.__module__}.{cls.__name__}"] = cls;
-    import from jaclang.runtime.typecache {
-        invalidate as _invalidate_typecache,
-        warm as _warm_typecache
-    }
+
     _invalidate_typecache(cls);
 
     _warm_typecache(cls);
@@ -436,7 +433,6 @@ impl Serializer.register(cls: type) -> None {
         setattr(cls, '__jac_fingerprint__', '');
     }
 
-    import from jaclang.data.schema_rules { collect_rules }
     if (rules := collect_rules(cls)) {
         for old_name in rules.was_names {
             Serializer.register_alias(old_name, cls);
@@ -481,7 +477,6 @@ impl Serializer.register_alias(old_name: str, cls: type) -> None {
 impl Serializer.repair(
     data: dict[str, object], cls: type
 ) -> tuple[dict[str, object], list[str]] {
-    import from jaclang.data.schema_rules { apply_rules, merged_rules_for, repair_mode }
     mode = repair_mode();
     if mode == 'off' {
         return (data, []);
@@ -519,7 +514,7 @@ impl Serializer.coerce(val: object, target_type: object) -> tuple[object, bool] 
         return (val, False);
     }
 
-    (origin, args) = (get_origin(target_type), get_args(target_type));
+    (origin, args) = _type_shape(target_type);
     if origin is Union or origin is UnionType {
         non_none = [
             a
@@ -630,7 +625,6 @@ impl Serializer.coerce(val: object, target_type: object) -> tuple[object, bool] 
 }
 
 impl Serializer.fingerprint(cls: type) -> str {
-    import from jaclang.data.type_identity { schema_type }
     field_types = get_field_types(cls);
     field_pairs: list[list[str]] = [];
     if is_record(cls) {
@@ -1059,7 +1053,9 @@ impl Serializer._deserialize_anchor(data: dict[str, object]) -> (Anchor | None) 
             }
         }
 
-        anchor.hash = Serializer.stored_hash(anchor);
+        anchor.hash = FROZEN_BASELINE
+            if frozen_fields(anchor)
+            else Serializer.stored_hash(anchor);
         return anchor;
     } except TypeResolutionError {
         raise;
@@ -1118,7 +1114,6 @@ impl Serializer._deserialize_access(data: object) -> Access {
 impl Serializer._deserialize_archetype(
     data: dict[str, object], anchor: Anchor
 ) -> (object | None) {
-    import from jaclang.data.schema_rules { ATTIC_KEY, REPAIRS_ATTR, repair_mode }
     raw_type_name = data.get('__type__');
     raw_module_name = data.get('__module__');
     if not isinstance(raw_type_name, str) or not isinstance(raw_module_name, str) {
@@ -1161,8 +1156,7 @@ impl Serializer._deserialize_archetype(
             (coerced, ok) = Serializer.coerce(deser_v, target);
             if not ok {
                 field_key = f"{module_name}.{type_name}.{k}";
-                origin = get_origin(target);
-                args = get_args(target);
+                (origin, args) = _type_shape(target);
                 is_optional = (
                     (origin is Union or origin is UnionType) and NoneType in args
                 );
@@ -1355,4 +1349,54 @@ impl Serializer.stored_hash(
     } except Exception {
         return 0;
     }
+}
+
+
+impl frozen_value(value: any) -> bool {
+    if type(value) in _FROZEN_EXACT or isinstance(value, _FROZEN_SCALARS) {
+        return True;
+    }
+    if isinstance(value, Enum) {
+        return frozen_value(value.value);
+    }
+    if isinstance(value, (tuple, frozenset)) {
+        return all(frozen_value(item) for item in value);
+    }
+    return False;
+}
+
+
+impl frozen_fields(anchor: Anchor) -> bool {
+    if anchor.__dict__.get('_field_written') {
+        return False;
+    }
+    arch = anchor.archetype;
+    if not type(arch).__dict__.get('__jac_tracked__', False) {
+        return False;
+    }
+    fields = arch?.__dict__;
+    if not isinstance(fields, dict) {
+        return False;
+    }
+    for (name, value) in fields.items() {
+        if name != '__jac__' and not frozen_value(value) {
+            return False;
+        }
+    }
+    return True;
+}
+
+
+impl _type_shape(target_type: object) -> tuple[object, tuple[object, ...]] {
+    hit = _TYPE_SHAPES.get(id(target_type));
+    if hit is not None and hit[0] is target_type {
+        return (hit[1], hit[2]);
+    }
+    origin = get_origin(target_type);
+    args = get_args(target_type);
+    if len(_TYPE_SHAPES) >= _TYPE_SHAPES_LIMIT {
+        _TYPE_SHAPES.clear();
+    }
+    _TYPE_SHAPES[id(target_type)] = (target_type, origin, args);
+    return (origin, args);
 }

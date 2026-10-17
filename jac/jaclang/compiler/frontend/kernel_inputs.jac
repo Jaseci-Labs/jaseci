@@ -1,17 +1,5 @@
 import base64;
 import json;
-import from jaclang.compiler.driver.compile_options { CompileOptions }
-import from jaclang.compiler.frontend.host {
-    CheckSettings,
-    HostPlatform,
-    LintSettings,
-    NativeVerdict,
-    ProjectDefaults,
-    ProjectFacts
-}
-import from jaclang.compiler.frontend.source_layout { LayoutTables }
-import from jaclang.compiler.types.ct_value { CtEnvironment }
-import from jaclang.project.workspace_model { AppSpec, WorkspaceSpec }
 
 glob KERNEL_INPUTS_VERSION: int = 2,
      KEY_SEP: str = "\x1f";
@@ -24,6 +12,7 @@ obj RequestOptions {
         native_require: list[str] = [],
         iface_ok: bool = False,
         need_full_ast: bool = False,
+        native_tree_demand: bool = False,
         no_ir_cache: bool = False,
         resolve_annex_parent: bool = False,
         aot_mode: bool = False,
@@ -62,6 +51,7 @@ obj RequestOptions {
             native_require=list(self.native_require),
             iface_ok=self.iface_ok,
             need_full_ast=self.need_full_ast,
+            native_tree_demand=self.native_tree_demand,
             no_ir_cache=self.no_ir_cache,
             resolve_annex_parent=self.resolve_annex_parent,
             aot_mode=self.aot_mode,
@@ -97,7 +87,9 @@ obj RequestOptions {
 obj PythonInterface {
     has path: str,
         pkg_dir: str,
-        data: bytes = b"";
+        data: bytes = b"",
+        placement: str = "",
+        effects: str = "";
 }
 
 obj ImportResolution {
@@ -229,7 +221,6 @@ obj KernelInputs {
         app_of: dict[str, str] = {},
         project_root_of: dict[str, str] = {},
         lint_of: dict[str, LintSettings] = {},
-        verdicts: dict[str, (NativeVerdict | None)] = {},
         untyped: dict[str, bool] = {},
         siblings: dict[str, str] = {},
         client_pulls: dict[str, str] = {},
@@ -274,6 +265,7 @@ def request_of(options: CompileOptions) -> RequestOptions {
         native_require=list(options.native_require or []),
         iface_ok=options.iface_ok,
         need_full_ast=options.need_full_ast,
+        native_tree_demand=options.native_tree_demand,
         no_ir_cache=options.no_ir_cache,
         resolve_annex_parent=options.resolve_annex_parent,
         aot_mode=options.aot_mode,
@@ -316,6 +308,7 @@ def request_to_dict(request: RequestOptions) -> dict[str, any] {
         "native_require": list(request.native_require),
         "iface_ok": request.iface_ok,
         "need_full_ast": request.need_full_ast,
+        "native_tree_demand": request.native_tree_demand,
         "no_ir_cache": request.no_ir_cache,
         "resolve_annex_parent": request.resolve_annex_parent,
         "aot_mode": request.aot_mode,
@@ -357,6 +350,7 @@ def request_from_dict(raw: dict[str, any]) -> RequestOptions {
         native_require=json_str_list(raw.get("native_require")),
         iface_ok=bool(raw.get("iface_ok", False)),
         need_full_ast=bool(raw.get("need_full_ast", False)),
+        native_tree_demand=bool(raw.get("native_tree_demand", False)),
         no_ir_cache=bool(raw.get("no_ir_cache", False)),
         resolve_annex_parent=bool(raw.get("resolve_annex_parent", False)),
         aot_mode=bool(raw.get("aot_mode", False)),
@@ -417,7 +411,6 @@ def check_from_dict(raw: dict[str, any]) -> CheckSettings {
 def defaults_to_dict(defaults: ProjectDefaults) -> dict[str, any] {
     return {
         "default_codespace": defaults.default_codespace,
-        "native_closure_cap": defaults.native_closure_cap,
         "native_require": list(defaults.native_require),
         "native_target": defaults.native_target,
         "native_debug": defaults.native_debug,
@@ -435,7 +428,6 @@ def defaults_to_dict(defaults: ProjectDefaults) -> dict[str, any] {
 def defaults_from_dict(raw: dict[str, any]) -> ProjectDefaults {
     return ProjectDefaults(
         default_codespace=str(raw.get("default_codespace", "")),
-        native_closure_cap=json_int(raw.get("native_closure_cap")),
         native_require=json_str_list(raw.get("native_require")),
         native_target=str(raw.get("native_target", "")),
         native_debug=bool(raw.get("native_debug", False)),
@@ -454,7 +446,6 @@ def facts_to_dict(facts: ProjectFacts) -> dict[str, any] {
     return {
         "project_root": facts.project_root,
         "check": check_to_dict(facts.check),
-        "arch_closed": list(facts.arch_closed),
         "client_framework": facts.client_framework,
         "package_name": facts.package_name,
         "package_exports": list(facts.package_exports),
@@ -466,7 +457,6 @@ def facts_from_dict(raw: dict[str, any]) -> ProjectFacts {
     return ProjectFacts(
         project_root=str(raw.get("project_root", "")),
         check=check_from_dict(json_map(raw.get("check"))),
-        arch_closed=json_str_list(raw.get("arch_closed")),
         client_framework=str(raw.get("client_framework", "react")),
         package_name=str(raw.get("package_name", "")),
         package_exports=json_str_list(raw.get("package_exports")),
@@ -556,27 +546,6 @@ def workspace_from_dict(raw: dict[str, any]) -> WorkspaceSpec {
         persistence_namespace=str(raw.get("persistence_namespace", "main")),
         base_pins=json_str_map(raw.get("base_pins")),
         base_npm_names=set(json_str_list(raw.get("base_npm_names")))
-    );
-}
-
-def verdict_to_dict(verdict: (NativeVerdict | None)) -> (dict[str, any] | None) {
-    if verdict is None {
-        return None;
-    }
-    return {
-        "demoted": verdict.demoted,
-        "code": verdict.code,
-        "detail": verdict.detail,
-        "deps": [list(row) for row in verdict.deps]
-    };
-}
-
-def verdict_from_dict(raw: dict[str, any]) -> NativeVerdict {
-    return NativeVerdict(
-        demoted=bool(raw.get("demoted", False)),
-        code=str(raw.get("code", "")),
-        detail=str(raw.get("detail", "")),
-        deps=json_str_pairs(raw.get("deps"))
     );
 }
 
@@ -781,10 +750,6 @@ def answers_to_dict(inputs: KernelInputs) -> dict[str, any] {
         "lint_of": {
             path: lint_to_dict(lint) for (path, lint) in inputs.lint_of.items()
         },
-        "verdicts": {
-            path: verdict_to_dict(verdict)
-            for (path, verdict) in inputs.verdicts.items()
-        },
         "untyped": dict(inputs.untyped),
         "siblings": dict(inputs.siblings),
         "client_pulls": dict(inputs.client_pulls),
@@ -832,7 +797,9 @@ def answers_to_dict(inputs: KernelInputs) -> dict[str, any] {
             {
                 "path": r.path,
                 "pkg_dir": r.pkg_dir,
-                "data": base64.b64encode(r.data).decode("ascii")
+                "data": base64.b64encode(r.data).decode("ascii"),
+                "placement": r.placement,
+                "effects": r.effects
             } for r in inputs.python_ifaces
         ]
     };
@@ -890,11 +857,6 @@ def merge_answers(inputs: KernelInputs, raw: dict[str, any]) {
     for (path, lint) in json_map(raw.get("lint_of")).items() {
         inputs.lint_of[path] = lint_from_dict(json_map(lint));
     }
-    for (path, verdict) in json_map(raw.get("verdicts")).items() {
-        inputs.verdicts[path] = verdict_from_dict(json_map(verdict))
-            if verdict is not None
-            else None;
-    }
     for r in json_maps(raw.get("imports")) {
         inputs.imports.append(
             ImportResolution(
@@ -944,7 +906,9 @@ def merge_answers(inputs: KernelInputs, raw: dict[str, any]) {
             PythonInterface(
                 path=str(r.get("path", "")),
                 pkg_dir=str(r.get("pkg_dir", "")),
-                data=base64.b64decode(str(r.get("data", "")).encode("ascii"))
+                data=base64.b64decode(str(r.get("data", "")).encode("ascii")),
+                placement=str(r.get("placement", "")),
+                effects=str(r.get("effects", ""))
             )
         );
     }

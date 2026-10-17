@@ -119,7 +119,7 @@ At deploy time (`jac scale deploy`), the pin selects the **pod runtime**: the de
 - **Range** -> the newest published release that satisfies it.
 - **No published release satisfies the pin** (or the matching release lacks the pod's CPU arch or a `jac-*` asset) -> the deploy **aborts** with an error naming the pin; a pinned deploy never silently ships a different version. Fix or remove `jac-version` to proceed.
 
-The pin is honored only on the default (stable) channel; the `[dev]`, `[experimental]`, and `JAC_SCALE_BINARY_PATH` (local) channels select the pod binary by their own rules and ignore it.
+The pin is honored only on the default (stable) channel; the `[dev]`, `[experimental]`, and `[dev] pod_binary` (local) channels select the pod binary by their own rules and ignore it.
 
 ---
 
@@ -326,7 +326,7 @@ conflict_max_attempts = 5    # max walker/function attempts under "retry"
 conflict_backoff_ms = 0      # linear backoff between replay attempts (0 = none)
 
 [serve.workers]
-count = "1"              # Worker processes; "auto" = the CPU quota. JAC_SERVE_WORKERS
+count = ""               # Worker processes; unset = as many as fit (see below), "auto" = the CPU quota. JAC_SERVE_WORKERS
 threads = "auto"         # Sync-handler threads per worker; "auto" sizes from the quota. JAC_SERVE_THREADS
 max_requests = 0         # Recycle a worker after this many requests (0 = never). JAC_SERVE_MAX_REQUESTS
 max_requests_jitter = 0  # Random extra requests so workers do not recycle together
@@ -379,9 +379,62 @@ ping_timeout = 20.0      # Seconds to answer the ping before the socket is close
 secret = ""              # JWT signing secret. JAC_SERVE_AUTH_SECRET. Required in a cluster; a laptop mints one per project
 algorithm = "HS256"
 token_ttl_days = 7
-password_hash_cost = 14  # log2 of the scrypt work factor, 10..17
 session_cookie = false   # Also set an HttpOnly jac_session cookie that authorizes GET/HEAD, for <img>/<video>/downloads. JAC_SERVE_AUTH_SESSION_COOKIE
+
+[serve.auth.identifiers]
+username = "optional"    # "required" | "optional" | "off". An account always needs at least one identifier
+email = "optional"       # "required" | "optional" | "off"
+login_with = []          # Identifier kinds that may log in; [] = both. "off" only stops new identifiers of a kind
+
+[serve.auth.username]
+min_length = 1
+max_length = 64
+pattern = ""             # Optional regex a new username must match. "@" is always rejected
+
+[serve.auth.email]
+verification = "none"    # "none" | "optional" | "required" (no session until the emailed link is used)
+allowed_domains = []     # [] = any domain
+verify_token_ttl_seconds = 86400
+reset_token_ttl_seconds = 1800
+verify_url_template = "" # "{token}" is replaced; empty mails the bare token
+reset_url_template = ""
+send_verification_per_hour = 5
+forgot_password_per_hour = 3
+
+[serve.auth.password]
+min_length = 8
+max_length = 128
+require = []             # Any of "lower", "upper", "digit", "symbol"
+reject_common = true     # Refuse passwords on the bundled common-password list
+reject_identifiers = true # Refuse a password that contains the username or the email local part
+breached_check = false   # Look the password up in a breach corpus by k-anonymity range; makes an outbound call
+history = 0              # Previous passwords that may not be reused; 0 = reuse allowed
+max_age_days = 0         # 0 = never expires
+hash_cost = 14           # log2 of the scrypt work factor, 10..17
+
+[serve.auth.registration]
+enabled = true           # false = no self-registration; accounts are created by an admin
+challenge = false        # Proof-of-work challenge before /user/register
+attempts_per_hour = 0    # Per source address; 0 = unlimited
+challenges_per_10_minutes = 0
+
+[serve.auth.lockout]
+max_attempts = 10        # Failed logins per source address and identity in the window; 0 = unlimited. Needs [serve.proxy] trusted behind an ingress
+window_seconds = 900
+
+[serve.auth.second_factor]
+issuer = ""              # Name shown in authenticator apps; empty = "Jac"
+attempts = 5
+lockout_seconds = 900
+challenge_ttl_seconds = 300
 ```
+
+Every `[serve.auth]` key can be overridden by an environment variable named
+`JAC_SERVE_AUTH_<TABLE>_<KEY>`, for example `JAC_SERVE_AUTH_PASSWORD_MIN_LENGTH`
+or `JAC_SERVE_AUTH_SECOND_FACTOR_ISSUER`. An unknown key under `[serve.auth]`
+stops the server at startup, so a misspelled security setting is never silently
+ignored. See [Auth policy](../plugins/jac-scale-http.md#auth-policy) for what
+each table does.
 
 The served app's client is at `/`. Other client-capable apps in the workspace whose bundle exists (`jac build --all` writes `dist/<app>/`) are served at `/cl/<app-name>/` -- a fixed prefix with no config key. Serving apps answer under their `route` (default `/api/<name>`, see [`[apps]`](#apps)).
 
@@ -399,6 +452,15 @@ keeps a slow request from stalling every other request. Anything that only
 works in one process is refused when `count > 1`: `--dev` hot reload, a
 memory WebSocket backplane, or events without a database.
 
+Left unset, `count` starts one worker per core of the quota, no more than
+available memory allows at 512 MiB per worker, and falls back to one worker
+(saying why at startup) whenever more would be refused for one of the reasons
+above, so `--dev` and single-process features keep working without
+configuration. In a cluster an unset count is one worker per pod; pods scale
+by replicas, and `jac scale deploy` sets `JAC_SERVE_WORKERS` to `1` unless
+`count` is configured. Set `count` explicitly to pin it: an explicit value is
+never lowered, and is refused instead when it cannot work.
+
 `on_conflict` controls what happens when two concurrent requests race a "look it up, create it if missing" against the same node and the loser's commit is rejected. `retry` (default) re-runs the request against the now-current graph so it converges on the winner's node; `fail` surfaces a typed `409 write_conflict` for the client to handle. See [Persistence -> Concurrent writes: check-then-create](../persistence.md#concurrent-writes-check-then-create-and-convergence) for the full model.
 
 ---
@@ -410,7 +472,6 @@ Build configuration:
 ```toml
 [build]
 dir = ".jac"                # Build artifacts directory
-native_closure_cap = 256    # Largest native closure the whole-module path will link
 ```
 
 The `dir` setting controls where all build artifacts are stored:
@@ -493,19 +554,6 @@ without executing it. The policy is included in analysis and code-generation
 cache identities.
 
 A built binary reads two environment variables at run time and no others: `JAC_GC=off` disables collection for leak debugging (collection is on by default under `managed`), and `JAC_THREADS` overrides the `flow for` width. Nothing at compile time reads the environment; `jac explain memory|placement|ir` replaces the old diagnostic variables.
-
----
-
-### [arch]
-
-The default for modules that `arch.jac` does not name. See [Project Wiring](../wiring.md).
-
-```toml
-[arch]
-closed = []               # Module-name patterns sealed even when arch.jac never names them
-```
-
-A module `arch.jac` names is sealed in both directions: its project-module imports must be wires, and it flows only where a rule admits. `closed` extends that to modules the file never mentions, including packages not yet written, and applies even before `arch.jac` exists. `["*"]` closes the whole project; a pattern list such as `["core.*"]` closes it one package at a time. The policy is part of every module's cache identity, so changing it rebuilds the affected modules.
 
 ---
 
@@ -684,6 +732,39 @@ failures, and annex failures are never cached as clean. `--cache` / precommit
 enable this format cache explicitly and do **not** consult `[cache].enabled`
 (that flag gates the bytecode cache). The directory is git-ignored, so it is
 safe to delete at any time. See [`jac fmt --cache`](../cli/index.md#jac-fmt).
+
+---
+
+### [dev]
+
+Settings for working on jac itself or shipping a build of it. None of them is
+read by a sealed release; a `[dev]` table also selects the `dev` deploy channel.
+
+```toml
+[dev]
+jaclang_source = "../jac"   # run the compiler from this checkout
+exact = false               # true: never reuse an earlier compiler's products
+pod_binary = "../jac/zig-out/bin/jac"  # ship this jac to scale pods (channel local)
+```
+
+### [network]
+
+```toml
+[network]
+offline = false  # true: never download; a missing toolchain, package,
+                 # scaffold or Postgres distribution is an error naming why
+```
+
+### [toolchains]
+
+```toml
+[toolchains]
+system = true    # false: ignore a compatible tool already on the system
+                 # (a JDK 21 at JAVA_HOME, Node 22 on PATH) and use jac's
+                 # pinned managed copy -- reproducible CI setups
+```
+
+See [Toolchains](../../build/toolchains.md).
 
 ---
 

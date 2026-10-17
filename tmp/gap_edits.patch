@@ -1,0 +1,806 @@
+diff --git a/jac/jaclang/compiler/backends/native/kernel_resolve.jac b/jac/jaclang/compiler/backends/native/kernel_resolve.jac
+index b241d962f0..3459535a76 100644
+--- a/jac/jaclang/compiler/backends/native/kernel_resolve.jac
++++ b/jac/jaclang/compiler/backends/native/kernel_resolve.jac
+@@ -193,10 +193,10 @@ def kernel_options -> CompileOptions {
+         nogc_enforce_all=False,
+         memory_enforce=[],
+         memory_exempt=[],
+-        native_threads=4,
++        native_threads=1,
+         rc_debug_codegen=False,
+         native_debug=False,
+-        opt_level=2,
++        opt_level=0,
+         dump_ir_path="",
+         debug_ir=False,
+         rc_stats=False,
+diff --git a/jac/jaclang/compiler/backends/native/na_ir_gen_pass.impl/c_interop.impl.jac b/jac/jaclang/compiler/backends/native/na_ir_gen_pass.impl/c_interop.impl.jac
+index ff4fe89ec6..9187b4af60 100644
+--- a/jac/jaclang/compiler/backends/native/na_ir_gen_pass.impl/c_interop.impl.jac
++++ b/jac/jaclang/compiler/backends/native/na_ir_gen_pass.impl/c_interop.impl.jac
+@@ -236,6 +236,77 @@ impl NaIRGenPass._codegen_c_interop_trailer(
+             self._c_load_scalar(self._pinned_value_slot(box), elem, "pinned.value")
+         );
+     }
++    if nd.is_attr {
++        sname = self._foreign_struct_name_of_type(target_type);
++        if sname is None {
++            tname = self._get_name(nd.target);
++            gv = self.global_vars.get(tname) if tname is not None else None;
++            cand_ty: (ir.Type | None) = None;
++            if gv is not None {
++                if isinstance(gv.type, ir.PointerType) {
++                    cand_ty = gv.type.pointee;
++                }
++            } elif tname is not None {
++                lv = self.local_vars.get(tname);
++                if lv is not None and isinstance(lv.type, ir.PointerType) {
++                    inner = lv.type.pointee;
++                    if isinstance(inner, ir.PointerType) {
++                        cand_ty = inner.pointee;
++                    } else {
++                        cand_ty = inner;
++                    }
++                }
++            }
++            if (
++                isinstance(cand_ty, ir.IdentifiedStructType)
++                and cand_ty.name in self.clib_struct_names
++            ) {
++                sname = cand_ty.name;
++            }
++        }
++        if sname is not None {
++            fname = self._get_name(nd.right);
++            order = self.struct_field_order.get(sname);
++            if fname is not None and order and fname in order {
++                base = self._codegen_expr(nd.target);
++                if (
++                    base is not None
++                    and isinstance(base.type, ir.PointerType)
++                ) {
++                    idx = order.index(fname);
++                    slot = self.builder.gep(
++                        base,
++                        [
++                            ir.Constant(ir.IntType(32), 0),
++                            ir.Constant(ir.IntType(32), idx)
++                        ],
++                        name=f"c.field.{fname}.ptr"
++                    );
++                    if self._foreign_struct_name_of_type(nd.right.type)
++                        is not None {
++                        return (True, slot);
++                    }
++                    return (
++                        True,
++                        self._c_load_scalar(slot, nd.right.type, "c.field")
++                    );
++                }
++            }
++        }
++    }
++    if nd.is_attr and is_ptr_type(target_type) {
++        got = self._foreign_ptr_field_slot(
++            self._codegen_expr(nd.target), target_type, self._get_name(nd.right)
++        );
++        if got is None {
++            return (False, None);
++        }
++        (slot, _field_type) = got;
++        if isinstance(slot.type, ir.IntType) {
++            return (True, slot);
++        }
++        return (True, self._c_load_scalar(slot, nd.right.type, "c.ptr.field"));
++    }
+     return (False, None);
+ }
+ 
+@@ -262,6 +333,46 @@ impl NaIRGenPass._c_interop_store(
+         elem = c_type_arg(target_type);
+         sname = self._foreign_struct_name_of_type(elem);
+         slot = box if sname is not None else self._pinned_value_slot(box);
++    } elif target.is_attr and is_ptr_type(target_type) {
++        got = self._foreign_ptr_field_slot(
++            self._codegen_expr(target.target), target_type, self._get_name(target.right)
++        );
++        if got is None {
++            return False;
++        }
++        (slot, _field_type) = got;
++        if isinstance(slot.type, ir.IntType) {
++            self.ctx.emit(
++                E5092,
++                node_override=target,
++                kind="assignment",
++                name="nested C struct field through a pointer"
++            );
++            return True;
++        }
++        if nd.aug_op is not None {
++            current = self._c_load_scalar(slot, target.right.type, "c.aug.cur");
++            updated = self._apply_scalar_aug_op(
++                current,
++                value,
++                nd.aug_op.value,
++                nd.value,
++                unsigned=self._is_unsigned_node(target),
++                checked=self._is_sized_node(target) or self._is_sized_node(nd.value)
++            );
++            if updated is None {
++                self.ctx.emit(
++                    E5092,
++                    node_override=target,
++                    kind="augmented assignment",
++                    name=nd.aug_op.value
++                );
++                return True;
++            }
++            value = updated;
++        }
++        self._c_store_scalar(value, slot, target.right.type);
++        return True;
+     } else {
+         return False;
+     }
+@@ -430,6 +541,82 @@ impl NaIRGenPass._codegen_c_interop_call(
+     return (False, None);
+ }
+ 
++impl NaIRGenPass._foreign_ptr_field_slot(
++    addr: (ir.Value | None), ptr_type: any, field_name: (str | None)
++) -> (tuple[ir.Value, any] | None) {
++    # `p.field` on `ptr[T]` where T is a C-layout struct. Returns the
++    # field's slot (typed pointer) for scalar fields, or the field's raw
++    # address (i64, no copy) for nested-struct fields. `None` when the
++    # receiver is not a pointer to a known C-layout struct.
++    import from jaclang.compiler.c_interop { c_type_arg }
++    if addr is None or field_name is None {
++        return None;
++    }
++    sname = self._foreign_struct_name_of_type(c_type_arg(ptr_type));
++    if sname is None or sname not in self.struct_field_order {
++        return None;
++    }
++    order = self.struct_field_order[sname];
++    if field_name not in order {
++        return None;
++    }
++    layout = self._clib_struct_layout(sname);
++    offset = layout[2][order.index(field_name)][0];
++    i64 = ir.IntType(64);
++    field_addr = self.builder.add(addr, ir.Constant(i64, offset), name="c.field.addr");
++    llt = self.struct_field_types.get(sname, {}).get(field_name);
++    if llt is None
++        or not isinstance(llt, (ir.IntType, ir.FloatType, ir.DoubleType)) {
++        return (field_addr, None);
++    }
++    slot = self.builder.inttoptr(field_addr, llt.as_pointer(), name="c.field.slot");
++    return (slot, None);
++}
++
++impl NaIRGenPass._codegen_ptr_arith(
++    op: str, nd: uni.BinaryExpr, left: ir.Value, right: ir.Value
++) -> (ir.Value | None) {
++    # `ptr[T]` values are addresses (i64). C parity: `p + n` and `p - n`
++    # scale by `sizeof(T)`; `p - q` is the element count between them. An
++    # untyped operand (bare `ptr`, unknown element) scales by one byte.
++    import from jaclang.compiler.c_interop { c_type_arg, is_ptr_type }
++    import from jaclang.compiler.frontend.constant { Tokens as Tok }
++    i64 = ir.IntType(64);
++    b = self.builder;
++    l_is_ptr = is_ptr_type(nd.left.type);
++    r_is_ptr = is_ptr_type(nd.right.type);
++    if not l_is_ptr and not r_is_ptr {
++        return None;
++    }
++    if l_is_ptr and r_is_ptr {
++        if op != Tok.MINUS {
++            return None;
++        }
++        diff = b.sub(left, right, name="ptr.diff");
++        info = self._c_elem_info(c_type_arg(nd.left.type));
++        if info is None {
++            return diff;
++        }
++        return b.sdiv(diff, self._sizeof_llvm(info[0]), name="ptr.elemdiff");
++    }
++    if not l_is_ptr {
++        return None;
++    }
++    if not isinstance(right.type, ir.IntType) {
++        return None;
++    }
++    off = self._coerce_type(right, i64);
++    info = self._c_elem_info(c_type_arg(nd.left.type));
++    scaled = off;
++    if info is not None {
++        scaled = b.mul(off, self._sizeof_llvm(info[0]), name="ptr.scale");
++    }
++    if op == Tok.MINUS {
++        return b.sub(left, scaled, name="ptr.sub");
++    }
++    return b.add(left, scaled, name="ptr.add");
++}
++
+ impl NaIRGenPass._codegen_pin(arg: uni.Expr) -> (ir.Value | None) {
+     elem = arg?.type;
+     sname = self._foreign_struct_name_of_type(elem);
+diff --git a/jac/jaclang/compiler/backends/native/na_ir_gen_pass.impl/core.impl.jac b/jac/jaclang/compiler/backends/native/na_ir_gen_pass.impl/core.impl.jac
+index f09a31adb6..305531870f 100644
+--- a/jac/jaclang/compiler/backends/native/na_ir_gen_pass.impl/core.impl.jac
++++ b/jac/jaclang/compiler/backends/native/na_ir_gen_pass.impl/core.impl.jac
+@@ -174,6 +174,9 @@ impl NaIRGenPass._run_impl(ir_in: uni.Module) -> uni.Module {
+     self._codegen_entry(_entry_nodes);
+     self._finalize_trace_lookup();
+     self._finish_osp_reclaim_hook();
++    if self.static_struct_inits {
++        self._flush_static_struct_inits();
++    }
+ 
+     if self.has_native_code {
+         if self.ctx.errors_had {
+diff --git a/jac/jaclang/compiler/backends/native/na_ir_gen_pass.impl/expr.impl.jac b/jac/jaclang/compiler/backends/native/na_ir_gen_pass.impl/expr.impl.jac
+index cfd347d51d..40a6221c9b 100644
+--- a/jac/jaclang/compiler/backends/native/na_ir_gen_pass.impl/expr.impl.jac
++++ b/jac/jaclang/compiler/backends/native/na_ir_gen_pass.impl/expr.impl.jac
+@@ -632,6 +632,21 @@ impl NaIRGenPass._codegen_name(nd: uni.Name) -> (ir.Value | None) {
+ 
+     if var_name in self.global_vars {
+         global_var = self.global_vars[var_name];
++        if (
++            isinstance(global_var.type, ir.PointerType)
++            and isinstance(global_var.type.pointee, ir.IdentifiedStructType)
++            and global_var.type.pointee.name in self.clib_struct_names
++        ) {
++            """Static C-layout struct globals are used through their address
++            (the symbol IS the struct), matching C `extern struct` semantics
++            and the pointer-flavoured uses of boxed struct globs.""";
++            return global_var;
++        }
++        if isinstance(
++            global_var.type, (ir.LiteralStructType, ir.IdentifiedStructType)
++        ) {
++            return global_var;
++        }
+         return self.builder.load(global_var, name=f"glob.{var_name}");
+     }
+     if var_name == "__file__" and self.module?.loc and self.module.loc.mod_path {
+@@ -729,6 +744,12 @@ impl NaIRGenPass._codegen_binary(nd: uni.BinaryExpr) -> (ir.Value | None) {
+     if left is None or right is None {
+         return None;
+     }
++    if isinstance(nd.op, uni.Token) and op in (Tok.PLUS, Tok.MINUS) {
++        _ptr_arith = self._codegen_ptr_arith(op, nd, left, right);
++        if _ptr_arith is not None {
++            return _ptr_arith;
++        }
++    }
+     result: (ir.Value | None);
+     _unsigned = self._is_unsigned_node(nd) or self._is_unsigned_node(nd.left);
+     _checked = (
+diff --git a/jac/jaclang/compiler/backends/native/na_ir_gen_pass.impl/globals.impl.jac b/jac/jaclang/compiler/backends/native/na_ir_gen_pass.impl/globals.impl.jac
+index c7ce68257d..0b0f2e1d5c 100644
+--- a/jac/jaclang/compiler/backends/native/na_ir_gen_pass.impl/globals.impl.jac
++++ b/jac/jaclang/compiler/backends/native/na_ir_gen_pass.impl/globals.impl.jac
+@@ -132,16 +132,21 @@ impl NaIRGenPass._codegen_global_vars(nd: uni.GlobalVars) -> None {
+             }
+ 
+             var_type: ir.Type = ir.IntType(64);
++            _static_sname = self._static_struct_init_name(assign);
+             if assign.type_tag is not None {
+-                _widened = self._widened_tuple_decl_type(assign.type_tag, assign.value);
+-                if (
+-                    _widened is None
+-                    and self._quiet_glob_type(assign.type_tag) is None
+-                    and not self._glob_native_use_exists(target)
+-                ) {
+-                    continue;
++                if _static_sname is not None {
++                    var_type = self._clib_c_type(_static_sname);
++                } else {
++                    _widened = self._widened_tuple_decl_type(assign.type_tag, assign.value);
++                    if (
++                        _widened is None
++                        and self._quiet_glob_type(assign.type_tag) is None
++                        and not self._glob_native_use_exists(target)
++                    ) {
++                        continue;
++                    }
++                    var_type = self._resolve_decl_type(assign.type_tag, assign.value);
+                 }
+-                var_type = self._resolve_decl_type(assign.type_tag, assign.value);
+             } elif assign.value is not None {
+                 inferred = self._infer_global_init_type(assign.value);
+                 if inferred is not None {
+@@ -180,13 +185,26 @@ impl NaIRGenPass._codegen_global_vars(nd: uni.GlobalVars) -> None {
+                 }
+             }
+ 
+-            const_init = self._codegen_const_expr(assign.value, var_type)
+-                if assign.value is not None
+-                else None;
+-            if const_init is not None {
+-                global_var.initializer = const_init;
+-            } else {
++            const_init: (ir.Constant | None) = None;
++            if _static_sname is not None {
+                 global_var.initializer = ir.Constant(var_type, None);
++                _static_call = (
++                    assign.value if isinstance(assign.value, uni.FuncCall) else None
++                );
++                if _static_call is not None {
++                    self.static_struct_inits.append(
++                        (var_name, _static_sname, _static_call)
++                    );
++                }
++            } else {
++                const_init = self._codegen_const_expr(assign.value, var_type)
++                    if assign.value is not None
++                    else None;
++                if const_init is not None {
++                    global_var.initializer = const_init;
++                } else {
++                    global_var.initializer = ir.Constant(var_type, None);
++                }
+             }
+             self.global_vars[var_name] = global_var;
+             self.global_var_types[var_name] = var_type;
+@@ -196,7 +214,11 @@ impl NaIRGenPass._codegen_global_vars(nd: uni.GlobalVars) -> None {
+                 else "(current module)";
+             self.has_native_code = True;
+ 
+-            if assign.value is not None and const_init is None {
++            if (
++                assign.value is not None
++                and const_init is None
++                and _static_sname is None
++            ) {
+                 self._global_init_nodes.append((var_name, assign.value, var_type));
+             }
+         }
+@@ -287,3 +309,257 @@ impl NaIRGenPass._register_enums(module: uni.Module) -> None {
+         }
+     }
+ }
++
++impl NaIRGenPass._static_struct_name_of_call(nd: uni.UniNode) -> (str | None) {
++    if not isinstance(nd, uni.FuncCall) {
++        return None;
++    }
++    callee = self._arch_ref_key(nd.target);
++    if callee is None or callee not in self.clib_struct_names {
++        return None;
++    }
++    if callee not in self.struct_types
++        or not self.struct_field_order.get(callee)
++    {
++        return None;
++    }
++    return callee;
++}
++
++impl NaIRGenPass._static_struct_init_name(assign: uni.Assignment) -> (str | None) {
++    if assign.value is None or assign.type_tag is None {
++        return None;
++    }
++    declared = self._static_struct_name_of_call(assign.value);
++    if declared is None {
++        return None;
++    }
++    tag_name = self._get_name(assign.type_tag.tag)
++        if isinstance(assign.type_tag, uni.SubTag)
++        else None;
++    if tag_name != declared {
++        return None;
++    }
++    return declared;
++}
++
++impl NaIRGenPass._build_static_struct_const(
++    sname: str, call: uni.FuncCall, depth: int
++) -> (ir.Constant | None) {
++    if depth > 8 {
++        return None;
++    }
++    stype = self.struct_types.get(sname);
++    field_order = self.struct_field_order.get(sname) or [];
++    if stype is None or not field_order {
++        return None;
++    }
++    pos: list[uni.Expr] = [];
++    kw: dict[str, uni.Expr] = {};
++    for p in (call.params or []) {
++        if isinstance(p, uni.KWPair) {
++            k = self._get_name(p.key);
++            if k is None {
++                return None;
++            }
++            kw[k] = p.value;
++        } else {
++            pos.append(p);
++        }
++    }
++    ctor_order = self.struct_constructor_order.get(sname) or field_order;
++    if len(pos) > len(ctor_order) {
++        return None;
++    }
++    given: dict[str, uni.Expr] = dict(kw);
++    for (i, v) in enumerate(pos) {
++        given[ctor_order[i]] = v;
++    }
++    consts: list[ir.Constant] = [];
++    for fname in field_order {
++        ftype = self.struct_field_types.get(sname, {}).get(fname);
++        if ftype is None {
++            return None;
++        }
++        nd = given.get(fname);
++        if nd is None {
++            nd = self.struct_field_defaults.get(sname, {}).get(fname);
++        }
++        c = self._build_static_field_const(ftype, nd, depth + 1);
++        if c is None {
++            self.emit(
++                E5092,
++                kind="static struct member",
++                name=f"{sname}.{fname}",
++                help_text=(
++                    "This member's value could not be lowered to a "
++                    f"compile-time constant for the static struct initializer "
++                    f"(field lowers to '{ftype}'; member AST node is "
++                    f"{type(nd).__name__})."
++                ),
++            );
++            return None;
++        }
++        consts.append(c);
++    }
++    return ir.Constant(stype, consts);
++}
++
++impl NaIRGenPass._build_static_field_const(
++    ftype: ir.Type, nd: (uni.UniNode | None), depth: int
++) -> (ir.Constant | None) {
++    if nd is None {
++        return ir.Constant(ftype, None);
++    }
++    nm = self._get_name(nd);
++    if nm == "None" {
++        return ir.Constant(ftype, None);
++    }
++    if isinstance(nd, (uni.String, uni.MultiString)) {
++        lit = nd.lit_value;
++        if isinstance(lit, str) {
++            return self._static_c_string_global(lit, ftype);
++        }
++    }
++    if isinstance(nd, uni.FuncCall) {
++        nested = self._static_struct_name_of_call(nd);
++        if nested is not None and ftype == self.struct_types.get(nested) {
++            return self._build_static_struct_const(nested, nd, depth);
++        }
++        return None;
++    }
++    cv = nd.ct_value if isinstance(nd, uni.Expr) else None;
++    if cv is not None and not cv.is_deferred {
++        if isinstance(cv, CtBool) {
++            return ir.Constant(ftype, 1 if cv.value else 0);
++        }
++        if isinstance(cv, CtInt) and not cv.mag {
++            return ir.Constant(ftype, cv.small);
++        }
++        if isinstance(cv, CtFloat) {
++            return ir.Constant(ftype, cv.value);
++        }
++    }
++    import from jaclang.compiler.frontend.const_fold { fold_const }
++    (ok, v) = fold_const(nd);
++    if ok {
++        if isinstance(v, bool) {
++            return ir.Constant(ftype, 1 if v else 0);
++        }
++        if isinstance(v, (int, float)) {
++            return ir.Constant(ftype, v);
++        }
++    }
++    if nm is not None {
++        fn = self.func_symtab.get(nm);
++        if fn is None {
++            for _pub in (True, False) {
++                _g = self.llvm_module.globals.get(self._symbol_for(nm, None, _pub));
++                if isinstance(_g, ir.Function) {
++                    fn = _g;
++                    break;
++                }
++            }
++        }
++        if fn is not None {
++            if isinstance(ftype, ir.PointerType)
++                and isinstance(ftype.pointee, ir.FunctionType) {
++                return fn.bitcast(ftype);
++            }
++            if ftype == ir.IntType(64) {
++                return fn.ptrtoint(ir.IntType(64));
++            }
++            if ftype == ir.IntType(8).as_pointer() {
++                return fn.bitcast(ftype);
++            }
++            return None;
++        }
++        gv = self.global_vars.get(nm);
++        if gv is None {
++            for _pub in (True, False) {
++                _g = self.llvm_module.globals.get(self._symbol_for(nm, None, _pub));
++                if isinstance(_g, ir.GlobalVariable) {
++                    gv = _g;
++                    break;
++                }
++            }
++        }
++        if gv is not None {
++            if ftype == ir.IntType(64) {
++                return gv.ptrtoint(ir.IntType(64));
++            }
++            if isinstance(ftype, ir.PointerType) {
++                return gv.bitcast(ftype);
++            }
++            return None;
++        }
++        return None;
++    }
++    if isinstance(nd, uni.AtomTrailer) and nd.is_attr {
++        a = self._get_name(nd.target);
++        b = self._get_name(nd.right);
++        if a is not None and b is not None {
++            key = f"{a}.{b}";
++            if key in self.enum_values {
++                if isinstance(ftype, ir.IntType) {
++                    ordinal = self.enum_member_ordinal.get(key, 0);
++                    return ir.Constant(ftype, ordinal);
++                }
++            }
++        }
++    }
++    return None;
++}
++
++impl NaIRGenPass._static_c_string_global(
++    text: str, want: ir.Type
++) -> (ir.Constant | None) {
++    data = (text + "\0").encode("utf8");
++    key = f".cstr\x00{text}";
++    g = self._interned_strs.get(key);
++    if g is None {
++        arr = ir.ArrayType(ir.IntType(8), len(data));
++        g = ir.GlobalVariable(
++            self.llvm_module, arr, name=f".cstr.{self._str_count}"
++        );
++        self._str_count = self._str_count + 1;
++        g.linkage = "private";
++        g.global_constant = True;
++        g.initializer = ir.Constant(arr, bytearray(data));
++        self._interned_strs[key] = g;
++    }
++    i8p = ir.IntType(8).as_pointer();
++    if isinstance(want, ir.PointerType) {
++        return g.bitcast(want);
++    }
++    if want == ir.IntType(64) {
++        return g.bitcast(i8p).ptrtoint(ir.IntType(64));
++    }
++    return None;
++}
++
++impl NaIRGenPass._flush_static_struct_inits -> None {
++    for (var_name, sname, call) in self.static_struct_inits {
++        gv = self.global_vars.get(var_name);
++        if gv is None {
++            continue;
++        }
++        c = self._build_static_struct_const(sname, call, 0);
++        if c is None {
++            self.emit(
++                E5092,
++                kind="static struct initializer",
++                name=var_name,
++                help_text=(
++                    f"Global '{var_name}' has C struct type '{sname}' and is "
++                    "exposed to C linkers; every member must be a compile-time "
++                    "constant (integer/float literal, string literal, None, "
++                    "enum member, named function, or another static struct)."
++                ),
++            );
++            continue;
++        }
++        gv.initializer = c;
++    }
++    self.static_struct_inits = [];
++}
+diff --git a/jac/jaclang/compiler/backends/native/na_ir_gen_pass.jac b/jac/jaclang/compiler/backends/native/na_ir_gen_pass.jac
+index d30102d03a..634669f9fb 100644
+--- a/jac/jaclang/compiler/backends/native/na_ir_gen_pass.jac
++++ b/jac/jaclang/compiler/backends/native/na_ir_gen_pass.jac
+@@ -291,6 +291,7 @@ walker NaIRGenPass(CompilerPass) {
+         arch_type_params: dict[str, list[str]] = {},
+         struct_field_inline: dict[str, set] = {},
+         struct_field_borrow: dict[str, set] = {},
++        static_struct_inits: list[tuple[str, str, uni.FuncCall]] = [],
+         _subclassed_arch_names: (set[str] | None) = None,
+         _aos_deciding: set[str] = set(),
+         _self_owned: bool = False,
+@@ -939,6 +940,12 @@ walker NaIRGenPass(CompilerPass) {
+     def _pinned_value_slot(box: ir.Value) -> ir.Value;
+     def _codegen_c_interop_call(nd: uni.FuncCall) -> tuple[bool, (ir.Value | None)];
+     def _codegen_pin(arg: uni.Expr) -> (ir.Value | None);
++    def _codegen_ptr_arith(
++        op: str, nd: uni.BinaryExpr, left: ir.Value, right: ir.Value
++    ) -> (ir.Value | None);
++    def _foreign_ptr_field_slot(
++        addr: (ir.Value | None), ptr_type: any, field_name: (str | None)
++    ) -> (tuple[ir.Value, any] | None);
+     def _c_release_temp(val: ir.Value) -> None;
+     def _clib_param_info(p: uni.ParamVar) -> dict[str, any];
+     def _clib_ret_is_cptr(sig: uni.FuncSignature) -> bool;
+@@ -1679,6 +1686,16 @@ walker NaIRGenPass(CompilerPass) {
+     def _codegen_const_expr(
+         nd: uni.UniNode, target_type: ir.Type
+     ) -> (ir.Constant | None);
++    def _static_struct_init_name(assign: uni.Assignment) -> (str | None);
++    def _static_struct_name_of_call(nd: uni.UniNode) -> (str | None);
++    def _build_static_struct_const(
++        sname: str, call: uni.FuncCall, depth: int
++    ) -> (ir.Constant | None);
++    def _build_static_field_const(
++        ftype: ir.Type, nd: (uni.UniNode | None), depth: int
++    ) -> (ir.Constant | None);
++    def _static_c_string_global(text: str, want: ir.Type) -> (ir.Constant | None);
++    def _flush_static_struct_inits() -> None;
+ 
+     def _emit_hash_core_helpers(
+         family: str,
+diff --git a/jac/jaclang/compiler/types/jac_builtins.pyi b/jac/jaclang/compiler/types/jac_builtins.pyi
+index b0138ae1b0..c636791da2 100644
+--- a/jac/jaclang/compiler/types/jac_builtins.pyi
++++ b/jac/jaclang/compiler/types/jac_builtins.pyi
+@@ -184,15 +184,18 @@ def region_of(__x: object) -> Region | None: ...
+ # ── C interop ──────────────────────────────────────────────────────
+ # `ptr[T]` is a non-owning address of C memory holding T (a sized scalar, a
+ # foreign struct, or an opaque C type); bare `ptr` is `void*`. It is plain
+-# data: it can be compared, null-tested and passed back to C, never
+-# dereferenced, offset or freed from Jac. `ptr[T](p)` retypes an address.
++# data: it can be compared, null-tested, passed back to C, offset by an
++# integer (`p + n`, `p - n`, `p - q`) and converted to and from an integer
++# address (`int(p)`, `ptr[T](i)`); it is never dereferenced or freed from
++# Jac. `ptr[T](p)` retypes an address.
+ _PtrT = TypeVar("_PtrT", covariant=True)
+ _ViewT = TypeVar("_ViewT")
+ _PinT = TypeVar("_PinT")
+ 
+ class ptr(Generic[_PtrT]):
+-    # `ptr[T]()` is the null pointer; `ptr[T](p)` retypes an address.
+-    def __init__(self, address: ptr[object] = ...) -> None: ...
++    # `ptr[T]()` is the null pointer; `ptr[T](p)` retypes an address;
++    # `ptr[T](i)` converts an integer address. `int(p)` converts back.
++    def __init__(self, address: ptr[object] | int = ...) -> None: ...
+     def is_null(self) -> bool: ...
+     # A borrowed, bounds-checked window of `n` elements starting at the
+     # address. It is a local view: it may not outlive its scope.
+@@ -200,6 +203,8 @@ class ptr(Generic[_PtrT]):
+     def __eq__(self, other: object) -> bool: ...
+     def __ne__(self, other: object) -> bool: ...
+     def __hash__(self) -> int: ...
++    # Integer address form of the pointer (ptrtoint), for tag-bit math.
++    def __int__(self) -> int: ...
+ 
+ class PtrView(Generic[_ViewT]):
+     def __len__(self) -> int: ...
+diff --git a/jac/jaclang/compiler/types/operations.jac b/jac/jaclang/compiler/types/operations.jac
+index bbe7dab778..dcbc65356d 100644
+--- a/jac/jaclang/compiler/types/operations.jac
++++ b/jac/jaclang/compiler/types/operations.jac
+@@ -223,6 +223,32 @@ def get_complex_arith_result_type(
+     return None;
+ }
+ 
++def get_pointer_arith_result_type(
++    evaluator: TypeEvaluator, left_type: TypeBase, right_type: TypeBase, op: str
++) -> TypeBase | None {
++    # C parity: `p + n` and `p - n` stay `ptr[T]`; `p - q` is the integer
++    # offset; `n + p` is rejected (falls through to the magic-method lookup).
++    l_ptr = _is_builtin_instance_named(left_type, "ptr");
++    r_ptr = _is_builtin_instance_named(right_type, "ptr");
++    if op == Tok.MINUS and l_ptr and r_ptr {
++        int_class = evaluator.prefetch.int_class;
++        if int_class is None {
++            return None;
++        }
++        return evaluator._convert_to_instance(int_class);
++    }
++    if not l_ptr {
++        return None;
++    }
++    if op != Tok.PLUS and op != Tok.MINUS {
++        return None;
++    }
++    if not is_int_kind_type(right_type) {
++        return None;
++    }
++    return left_type;
++}
++
+ def get_pow_result_type(
+     evaluator: TypeEvaluator,
+     left_type: TypeBase,
+@@ -436,6 +462,12 @@ def get_type_of_binary_operation(
+                     return pow_type;
+                 }
+             }
++            pointer_type = get_pointer_arith_result_type(
++                evaluator, left_type, right_type, expr.op.name
++            );
++            if pointer_type is not None {
++                return pointer_type;
++            }
+             promoted_type = get_numeric_promotion_type(
+                 evaluator,
+                 left_type,
+diff --git a/jac/jaclang/compiler/types/type_evaluator.impl/type_evaluator.impl.jac b/jac/jaclang/compiler/types/type_evaluator.impl/type_evaluator.impl.jac
+index c179a4cd84..22c6abfe09 100644
+--- a/jac/jaclang/compiler/types/type_evaluator.impl/type_evaluator.impl.jac
++++ b/jac/jaclang/compiler/types/type_evaluator.impl/type_evaluator.impl.jac
+@@ -699,6 +699,36 @@ impl TypeEvaluator._get_type_of_expression_core(
+             }
+ 
+             if expr.is_attr {
++                import from jaclang.compiler.c_interop {
++                    c_type_arg,
++                    foreign_struct_of_type,
++                    is_ptr_type
++                }
++                if is_ptr_type(base_type) and isinstance(expr.right, Name) {
++                    _fs_arch = foreign_struct_of_type(c_type_arg(base_type));
++                    if _fs_arch is not None {
++                        _fs_cls = self.get_type_of_class(_fs_arch);
++                        if isinstance(_fs_cls, ClassType) {
++                            _fld = self._lookup_object_member(
++                                _fs_cls.clone_as_instance(), expr.right.value
++                            );
++                            if _fld is not None {
++                                _fld_sym_type = self.get_type_of_symbol(_fld.symbol);
++                                if isinstance(_fld_sym_type, UnknownType)
++                                    and _fld_sym_type.is_incomplete {
++                                    return _fld_sym_type;
++                                }
++                                if isinstance(_fld_sym_type, ClassType)
++                                    and not _fld_sym_type.is_instance() {
++                                    _fld_sym_type = _fld_sym_type.clone_as_instance();
++                                }
++                                _fld.symbol.add_use(expr.right);
++                                expr.right.type = _fld_sym_type;
++                                return _fld_sym_type;
++                            }
++                        }
++                    }
++                }
+                 if isinstance(base_type, UnknownType) {
+                     assert isinstance(expr.right, Name);
+ 
+@@ -3741,6 +3771,16 @@ impl TypeEvaluator.assign_type(
+             ) {
+             return True;
+         }
++        if (
++            isinstance(src_type, ClassType)
++            and src_type.is_literal_type()
++            and isinstance(src_type.get_literal_value(), str)
++        ) {
++            import from jaclang.compiler.c_interop { is_ptr_type }
++            if is_ptr_type(dest_type) {
++                return True;
++            }
++        }
+     }
+ 
+     _rt_base_kinds: dict[str, tuple[str, ...]] = {

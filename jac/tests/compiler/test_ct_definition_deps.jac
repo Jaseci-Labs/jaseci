@@ -136,13 +136,46 @@ test "definition positions from an analysed tree give the parsed digests" {
         rows = definition_span_rows(analysed);
         assert any(str(annex) in row for row in rows) , rows;
         jir_mod._DEFINITION_TEXTS.clear();
+        jir_mod._DEFINITION_DIGESTS.clear();
         jir_mod.seed_definition_texts(rows);
         def refuse(*args: any, **kwargs: any) -> any {
             raise AssertionError("the files were parsed again");
         }
-        with patch.object(JacProgram, "parse_source", refuse) {
-            seeded = {name: definition_digest(str(decl), name) for name in names};
+        with TemporaryDirectory() as fresh_store {
+            def empty_store(key: str) -> Path {
+                return Path(fresh_store) / key;
+            }
+            with patch.object(jir_mod, "_definition_digest_file", empty_store) {
+                with patch.object(JacProgram, "parse_source", refuse) {
+                    seeded = {
+                        name: definition_digest(str(decl), name) for name in names
+                    };
+                }
+            }
         }
         assert seeded == parsed;
+    }
+}
+
+test "a definition's digest is answered from disk without reparsing its files" {
+    import jaclang.compiler.driver.jir as jir_mod;
+    with TemporaryDirectory() as directory {
+        (decl, annex) = write_module(directory);
+        before = definition_digest(str(decl), "Box.first");
+        assert before;
+        jir_mod._DEFINITION_TEXTS.clear();
+        jir_mod._DEFINITION_DIGESTS.clear();
+        reparse = jir_mod._definition_texts;
+        def refuse(path: str) -> dict[str, list[str]] {
+            raise AssertionError(f"reparsed {path} for a digest already on disk");
+        }
+        jir_mod._definition_texts = refuse;
+        try {
+            assert definition_digest(str(decl), "Box.first") == before;
+        } finally {
+            jir_mod._definition_texts = reparse;
+        }
+        annex.write_text(IMPL.replace("self.items[0]", "self.items[3]"));
+        assert definition_digest(str(decl), "Box.first") != before;
     }
 }

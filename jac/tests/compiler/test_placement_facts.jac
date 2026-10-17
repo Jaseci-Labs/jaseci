@@ -129,16 +129,20 @@ test "placement_pins imports stay within the documented allowlist" {
         "jaclang/project/modresolver.jac",
         "jaclang/compiler/passes/impl/boundary_analysis_pass.impl.jac",
         "jaclang/compiler/passes/impl/static_analysis_pass.impl.jac",
+        "jaclang/compiler/passes/placement_pass.jac",
         "jaclang/lsp/server/impl/engine.impl.jac",
         "jaclang/compiler/placement/placement.jac",
         "jaclang/compiler/placement/placement_facts.jac",
         "jaclang/compiler/placement/placement_pins.jac",
         "jaclang/compiler/placement/placement_solver.jac"
     };
+    import from jaclang.compiler.driver.bccache { discover_base_file }
+    import from jaclang.compiler.driver.wiring { wiring_for_path }
+
     pkg = os.path.join(JAC_ROOT, "jaclang");
     offenders: list[str] = [];
     for p in sorted(Path(pkg).rglob("*.jac")) {
-        if not p.is_file() {
+        if not p.is_file() or p.name == "archwire.jac" {
             continue;
         }
         rel = p.relative_to(JAC_ROOT).as_posix();
@@ -148,6 +152,32 @@ test "placement_pins imports stay within the documented allowlist" {
         if "placement_pins" in p.read_text(encoding="utf-8", errors="ignore")
             and rel not in allow {
             offenders.append(rel);
+        }
+    }
+    # Imports that archwire.jac wires in are checked through the wiring itself.
+    allowed_bases = {
+        os.path.realpath(
+            discover_base_file(os.path.join(JAC_ROOT, a)) or os.path.join(JAC_ROOT, a)
+        ) for a in allow
+    };
+    spec = wiring_for_path(
+        os.path.join(pkg, "compiler", "placement", "placement_pins.jac")
+    );
+    assert spec is not None;
+    for wire in spec.wires {
+        if not wire.provider.endswith("placement_pins") {
+            continue;
+        }
+        for consumer in wire.consumers {
+            split = spec.split_consumer(consumer);
+            owner = split[0] if split is not None else consumer;
+            path = spec.module_file(owner);
+            if path is None or "/tests/" in path {
+                continue;
+            }
+            if os.path.realpath(path) not in allowed_bases {
+                offenders.append(os.path.relpath(path, JAC_ROOT));
+            }
         }
     }
     assert not offenders , offenders;

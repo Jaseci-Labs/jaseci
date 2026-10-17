@@ -6,12 +6,14 @@ impl TypeEvaluator.validate_arg_types(
 ) -> bool {
     has_errors: bool = False;
     binding_failures: set[Expr | KWPair] = set();
+    trial: list[tuple[UniNode, str, str, bool]] = [];
 
     bindings: dict[str, TypeBase] = solved_type_vars
         if solved_type_vars is not None
         else {};
+    lent = self._c_lent_args(args);
     for (arg, param) in args.arg_params.items() {
-        if param is None or param.param_type is None {
+        if param is None or param.param_type is None or arg in lent {
             continue;
         }
         value = arg.value if isinstance(arg, KWPair) else arg;
@@ -27,7 +29,7 @@ impl TypeEvaluator.validate_arg_types(
     }
 
     for (arg, param) in args.arg_params.items() {
-        if param is None or param.param_type is None {
+        if param is None or param.param_type is None or arg in lent {
             continue;
         }
         expected = param.param_type;
@@ -72,13 +74,24 @@ impl TypeEvaluator.validate_arg_types(
             }
         }
 
-        verdict = self.assign_expr(
-            value,
-            arg_type,
-            expected,
-            strict=self._is_strict_site(arg),
-            probe=checking_overload
-        );
+        outer_trial = self._trial_notes;
+        if checking_overload {
+            self._trial_notes = [];
+        }
+        try {
+            verdict = self.assign_expr(
+                value,
+                arg_type,
+                expected,
+                strict=self._is_strict_site(arg),
+                probe=checking_overload
+            );
+        } finally {
+            if checking_overload and self._trial_notes is not None {
+                trial.extend(self._trial_notes);
+            }
+            self._trial_notes = outer_trial;
+        }
         if not verdict.ok {
             has_errors = True;
             if mismatches is not None {
@@ -103,7 +116,28 @@ impl TypeEvaluator.validate_arg_types(
             }
         }
     }
+    if checking_overload {
+        self._last_trial_notes = [] if has_errors else trial;
+    }
     return not has_errors;
+}
+
+impl TypeEvaluator._c_lent_args(args: MatchArgsToParamsResult) -> set[Expr | KWPair] {
+    lent: set[Expr | KWPair] = set();
+    for (arg, param) in args.arg_params.items() {
+        if param is None
+            or param.param_type is None
+            or not isinstance(arg, UnaryExpr)
+            or not is_borrow_kind(arg.ownership)
+            or c_abi_callee(arg.parent) is None {
+            continue;
+        }
+        operand = self._convert_to_instance(self.get_type_of_expression(arg.operand));
+        if c_lent_elem(param.param_type, operand) is not None {
+            lent.add(arg);
+        }
+    }
+    return lent;
 }
 
 def _q(value: object) -> str {
@@ -288,6 +322,10 @@ impl TypeEvaluator._evaluate_call_args(expr: FuncCall) -> None {
 impl TypeEvaluator._validate_call_type(
     expr: FuncCall, caller_type: TypeBase
 ) -> TypeBase {
+    if isinstance(caller_type, NeverType) {
+        self._evaluate_call_args(expr);
+        return caller_type;
+    }
     if isinstance(caller_type, UnionType) {
         return self._union_narrowed_types(
             [self._validate_call_type(expr, member) for member in caller_type.types]
@@ -724,6 +762,10 @@ impl TypeEvaluator._validate_call_type(
                     expr, self._create_object_init_method(caller_type)
                 );
             }
+        } elif self._dataclass_shadows_base_init(caller_type) {
+            self._validate_constructor_method(
+                expr, self._create_object_init_method(caller_type)
+            );
         }
         if matched_method is not None {
             expr.callee_signature = matched_method;
@@ -1254,7 +1296,115 @@ impl TypeEvaluator._infer_type_args_from_method(
         }
     }
 
+    via_init = self._type_args_from_init_overload(caller_type, expr, init_method);
+    if via_init {
+        return via_init;
+    }
+
     return direct_args;
+}
+
+impl TypeEvaluator._type_args_from_init_overload(
+    caller_type: ClassType, expr: FuncCall, raw_ctor: FunctionType
+) -> list[TypeBase] {
+    if not (raw_ctor.parameters and raw_ctor.parameters[0].is_cls) {
+        return [];
+    }
+    init_member: ClassMember | None = None;
+    for name in ['init', '__init__'] {
+        found = self._lookup_class_member(caller_type, name);
+        if found is not None and found.class_type.shared.class_name != "object" {
+            init_member = found;
+            break;
+        }
+    }
+    if init_member is None {
+        return [];
+    }
+    overloads: list[FunctionType] = [];
+    raw_type = self.get_type_of_symbol(init_member.symbol);
+    if isinstance(raw_type, OverloadedType) {
+        for raw_overload in raw_type.overloads {
+            overloads.append(raw_overload);
+        }
+    } elif isinstance(raw_type, FunctionType) {
+        overloads.append(raw_type);
+    }
+    for overload_sym in (init_member.overloads or []) {
+        overload_type = self.get_type_of_symbol(overload_sym);
+        if isinstance(overload_type, FunctionType) and overload_type not in overloads {
+            overloads.append(overload_type);
+        }
+    }
+    for overload in overloads {
+        ctor_overload = self._strip_implicit_self_cls(overload);
+        arg_param_match = self.match_args_to_params(
+            expr.params, expr, ctor_overload, checking_overload=True
+        );
+        if arg_param_match.argument_errors
+            or not self.validate_arg_types(arg_param_match, checking_overload=True) {
+            continue;
+        }
+        bindings = self._collect_type_var_bindings(
+            overload, expr, is_constructor_call=True
+        );
+        spread: Parameter | None = None;
+        named: list[str] = [];
+        for parameter in overload.parameters {
+            if parameter.param_kind == ParamKind.KWARG {
+                spread = parameter;
+            } else {
+                named.append(parameter.name);
+            }
+        }
+        if spread is not None and spread.param_type is not None {
+            for arg in expr.params {
+                if isinstance(arg, KWPair)
+                    and isinstance(arg.key, Name)
+                    and arg.key.value not in named {
+                    self.assign_type_to_type_var(
+                        spread.param_type,
+                        self.get_type_of_expression(arg.value),
+                        bindings
+                    );
+                }
+            }
+        }
+        shaped: list[TypeBase] = [];
+        receiver: TypeBase | None = None;
+        if overload.parameters and overload.parameters[0].is_self {
+            receiver = overload.parameters[0].param_type;
+        }
+        if isinstance(receiver, ClassType)
+            and receiver.shared is caller_type.shared
+            and receiver.private.type_args
+            and len(receiver.private.type_args)
+                == len(caller_type.shared.type_params) {
+            for receiver_arg in receiver.private.type_args {
+                shaped.append(self._substitute_type_vars(receiver_arg, bindings));
+            }
+        } else {
+            for type_param in caller_type.shared.type_params {
+                if type_param.name {
+                    shaped.append(bindings.get(type_param.name, UnknownType()));
+                }
+            }
+        }
+        solved: list[TypeBase] = [];
+        known = False;
+        for shaped_arg in shaped {
+            if isinstance(shaped_arg, TypeVarType) {
+                solved.append(UnknownType());
+            } else {
+                solved.append(self._widen_literal_for_declaration(shaped_arg));
+                if not isinstance(shaped_arg, UnknownType) {
+                    known = True;
+                }
+            }
+        }
+        return solved if known else [];
+    }
+    return [];
 }
 
 impl TypeEvaluator._substitute_type_vars(

@@ -490,7 +490,9 @@ obj NativeIface {
         layout: (NativeModuleLayout | None) = None,
         deps: list[str] = [],
         coverage: dict[str, any] = {},
-        headerless: bool = False;
+        headerless: bool = False,
+        runtime_globals: list[str] = [],
+        init_reads: list[str] = [];
 
     def digest_fields -> dict[str, any] {
         return {
@@ -530,6 +532,8 @@ obj NativeIface {
     def _with_references(fields: dict[str, any]) -> dict[str, any] {
         fields["deps"] = [native_unit_ref(x) for x in self.deps];
         fields["coverage"] = dict(self.coverage);
+        fields["runtime_globals"] = list(self.runtime_globals);
+        fields["init_reads"] = list(self.init_reads);
         return fields;
     }
 
@@ -592,7 +596,9 @@ obj NativeIface {
             ),
             deps=_json_str_list(d.get("deps")),
             coverage=coverage,
-            headerless=bool(d.get("headerless", False))
+            headerless=bool(d.get("headerless", False)),
+            runtime_globals=_json_str_list(d.get("runtime_globals")),
+            init_reads=_json_str_list(d.get("init_reads"))
         );
     }
 

@@ -4,21 +4,13 @@ import threading;
 import from collections.abc { Generator }
 import from uuid { UUID }
 
-import from jaclang.runtime.archetype { Anchor, EdgeAnchor, NodeAnchor, Root }
-import from jaclang.runtime.memory { Memory }
-import from jaclang.data.dbcatalog {
-    DbKind,
-    MAINTENANCE_DB,
-    SCRATCH_PREFIX,
-    stop_heartbeat
-}
-import from jaclang.data.pgembed { PgRuntime }
-import from jaclang.runtime.exceptions { ReadOnlyRetry, TransactionLost, WriteConflict }
-import from jaclang.data.store { AnchorRow, ConnInfo, PgStore, Store, TxnIsolation }
-
 glob logger = logging.getLogger(__name__),
      MAX_RETRIES = 5,
+     PIN_ATTEMPTS = 20,
+     FIRST_LOCK_WAIT = '250ms',
+     SESSION_THREADS = 16,
      EDGE_PAGE = 1000,
+     HOP_BATCH_LIMIT = 1000,
      SCRATCH_ENV = 'JAC_DB_SCRATCH',
      SCRATCH_OWNER_ENV = 'JAC_DB_SCRATCH_OWNER',
      RETENTION_ENV = 'JAC_DB_RETENTION_DAYS',
@@ -46,6 +38,7 @@ glob logger = logging.getLogger(__name__),
          'ro_units_enabled',
          'unit_writes_recorded',
          'record_unit_writes',
+         'transient_db_error',
          'SCRATCH_ENV',
          'SCRATCH_OWNER_ENV',
          'RETENTION_ENV',
@@ -80,6 +73,9 @@ def unit_writes_recorded(key: str) -> bool {
     }
     return True;
 }
+
+
+def transient_db_error(e: Exception) -> bool;
 
 
 def record_unit_writes(key: str) {
@@ -147,7 +143,8 @@ obj TxnWrites {
 obj UnflushedAnchor {
     has anchor: Anchor,
         stored: (dict[str, object] | None),
-        hash: int;
+        hash: int,
+        written: int = 0;
 }
 
 
@@ -187,7 +184,21 @@ obj Session(Memory) {
         _ro_units: int postinit,
         _unit_stack: list[tuple[(str | None), bool]] postinit,
         _snapshot_reads: set[UUID] postinit,
-        _foreign_refs: set[UUID] postinit;
+        _foreign_refs: set[UUID] postinit,
+        _contended: set[UUID] postinit,
+        _hop_writes: int postinit,
+        _hop_cache:
+            dict[
+                any,
+                tuple[tuple[int, int], dict[UUID, list[tuple[any, any]]]]
+            ] postinit,
+        _hop_siblings: dict[UUID, tuple[UUID, ...]] postinit,
+        _hop_groups_token: (tuple[int, int] | None) postinit,
+        _queued: list[UUID] postinit,
+        _last_conflict: set[UUID] postinit,
+        _scan_clean: bool postinit,
+        _scan_sealed: bool postinit,
+        _scan_safe: bool postinit;
 
     override def new_session(target_path: str) -> Session {
         if self.store is None {
@@ -240,17 +251,30 @@ obj Session(Memory) {
     def run_request(body: Callable) -> any;
     def reset_fetch_count -> None;
     def get_fetch_count -> int;
+    def _hop_token -> (tuple[int, int] | None);
+    def batching -> bool;
+    def _drop_hop_state -> None;
+    def note_siblings(ids: list[UUID]) -> None;
+    def hop_siblings(origin: UUID) -> tuple[UUID, ...];
+    def hop_cached(key: any, origin: UUID) -> (list[tuple[any, any]] | None);
+    def hop_store(key: any, by_origin: dict[UUID, list[tuple[any, any]]]) -> None;
     def unit_enter(key: (str | None) = None) -> None;
     def unit_exit -> None;
     def unit_depth -> int;
     def read_scope_enter -> None;
     def read_scope_exit -> None;
     def flush(full: bool = False) -> None;
+    def seal_scan -> None;
+    def unseal_scan -> None;
     def _flush_locked(full: bool) -> None;
     def _unflushed(full: bool) -> list[UnflushedAnchor];
     def ensure_writable_txn -> None;
     def read_barrier -> None;
     def _begin_writable -> None;
+    def wait_turn -> None;
+    def _begin_txn(isolation: TxnIsolation) -> None;
+    override async def acommit(anchor: (Anchor | None) = None) -> None;
+    def _leave_queue -> None;
     def _commit_txn -> None;
     def _rollback_txn -> None;
     def _replay_txn(cause: Exception, exhausted: bool = False) -> None;

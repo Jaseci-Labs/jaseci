@@ -1,15 +1,9 @@
-import jaclang.compiler.backends.native.llvm.ir as ir;
-
 def struct_layouts(module: ir.Module) -> dict[str, tuple[list[int], int]] {
     """Read identified struct offsets and sizes from LLVM's target ABI. LLVM
     is the host's: the probe module and each struct's member count go to it,
     and the offsets and sizes come back.""";
     import json;
-    import from jaclang.compiler.frontend.host { active_host }
-    import from jaclang.compiler.backends.native.na_constants {
-        FACT_SEP,
-        FACT_STRUCT_LAYOUTS
-    }
+
     probe = ir.Module(name="layout", context=module.context);
     probe.data_layout = module.data_layout;
     counts: dict[str, int] = {};
@@ -220,11 +214,41 @@ def classify_struct_aapcs(
     };
 }
 
+def classify_struct_win64(
+    size: int, align: int, scalars: list[tuple[int, bool, int]]
+) -> dict[str, any] {
+    """The Microsoft x64 convention: a record of exactly 1, 2, 4 or 8 bytes
+    travels in one integer register whatever its fields are, floats included;
+    any other is passed as a pointer to a copy the caller owns, and returned
+    through a hidden pointer.""";
+    if size in (1, 2, 4, 8) {
+        return {
+            "size": size,
+            "align": align,
+            "memory": False,
+            "coerce": [ir.IntType(size * 8)],
+            "byval": False,
+            "safe": False
+        };
+    }
+    return {
+        "size": size,
+        "align": align if size else 1,
+        "memory": True,
+        "coerce": [],
+        "byval": False,
+        "safe": False
+    };
+}
+
 def classify_struct(
     size: int, align: int, scalars: list[tuple[int, bool, int]], triple: str
 ) -> dict[str, any] {
     if "aarch64" in triple or "arm64" in triple {
         return classify_struct_aapcs(size, align, scalars);
+    }
+    if "windows" in triple or "msvc" in triple or "mingw" in triple {
+        return classify_struct_win64(size, align, scalars);
     }
     return classify_struct_sysv(size, align, scalars);
 }
@@ -236,7 +260,6 @@ def classify_foreign_fn(
     triple: str,
     force: bool = False
 ) -> (dict[str, any] | None) {
-    import from jaclang.compiler.backends.native.foreign { foreign_struct_layout }
     has_struct = ret_tname is not None and ret_tname in structs;
     for (_pn, _tn) in params {
         if _tn is not None and _tn in structs {

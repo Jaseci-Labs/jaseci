@@ -1,18 +1,5 @@
+import hashlib;
 import logging;
-import from jaclang.scale.injector.pvc_injector { PvcInjector, bundle_pvc_path }
-import from jaclang.scale.injector.binary {
-    download_release_binary,
-    host_seal_platform,
-    node_arch,
-    pack_binary_bytes,
-    resolve_console_version,
-    resolve_deploy_version,
-    stage_admin_dist,
-    toolchain_object_key
-}
-import from jaclang.runtime.graph_utils { host_arch }
-import from jaclang.scale.injector.bundle { bundle_object_key, content_address }
-import from jaclang.scale.config.dev_config { Channel }
 
 glob logger = logging.getLogger(__name__),
      DRY_RUN_DIGEST: str = "sha256-computed-at-deploy";
@@ -23,6 +10,7 @@ obj BinaryInjector(PvcInjector) {
         _toolchain_object_key: str = "",
         _toolchain_bytes: bytes = b"",
         _pod_binary_bytes: bytes = b"",
+        _pod_binary_sha256: str = "",
         _seal_binary_bytes: bytes = b"",
         _pod_arch: str = "";
 
@@ -35,8 +23,11 @@ obj BinaryInjector(PvcInjector) {
         );
 
         pod_arch = node_arch();
-        payload = download_release_binary(self.channel.value, pod_arch, version);
+        payload = read_local_binary(project_dir)
+            if self.channel == Channel.LOCAL
+            else download_release_binary(self.channel.value, pod_arch, version);
         self._pod_binary_bytes = payload;
+        self._pod_binary_sha256 = hashlib.sha256(payload).hexdigest();
         self._pod_arch = pod_arch;
         self._seal_binary_bytes = self._resolve_seal_binary(payload, pod_arch, version);
         super.prepare(app_name, namespace, project_dir);
@@ -70,6 +61,13 @@ obj BinaryInjector(PvcInjector) {
         paths.append(bundle_pvc_path(self._toolchain_object_key));
         return paths;
     }
+
+    def _skip_when_image_binary -> dict[str, str] {
+        if not self._pod_binary_sha256 or not self._toolchain_object_key {
+            return {};
+        }
+        return {bundle_pvc_path(self._toolchain_object_key): self._pod_binary_sha256};
+    }
 }
 
 
@@ -82,9 +80,6 @@ def select_injector(
     access_mode: str = "ReadWriteMany",
     fleet: any = None
 ) -> tuple[PvcInjector, str] {
-    import from jaclang.cli.console { console }
-    import from jaclang.scale.config.dev_config { resolve_dev_channel }
-
     channel = resolve_dev_channel(project_dir);
     blurbs = {
         Channel.LOCAL: "shipping the local jac binary",

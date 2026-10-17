@@ -1583,6 +1583,21 @@ glob JAC_RUNTIME_JS_OBJECT: str = r"""{
     }
   },
 
+  // A closure created in a loop body reaches the loop's own names through a
+  // link made once per pass: it shares the function's binding until the pass
+  // ends, then keeps the value the binding held as its own.
+  passLink(get, set) {
+    return {
+      get v() { return get(); },
+      set v(value) { set(value); },
+      detach() {
+        let own = get();
+        get = () => own;
+        set = (value) => { own = value; };
+      }
+    };
+  },
+
   fw: __JAC_FW_RUNTIME__,
 
   exc: __JAC_EXC_RUNTIME__
@@ -1593,7 +1608,6 @@ glob JAC_RUNTIME_JS_OBJECT: str = r"""{
      JAC_RUNTIME_GLOBAL: str = "__jacRuntime";
 
 def _build_exc_runtime_js -> str {
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
     lines: list[str] = ["(() => {"];
     exports: list[str] = [];
     for (name, parent) in JAC_TYPE_REGISTRY.exception_entries() {
@@ -1632,15 +1646,6 @@ def _build_exc_runtime_js -> str {
 }
 
 def _build_types_runtime_js -> str {
-    import from jaclang.compiler.frontend.constant { TOKEN_MAP }
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
-    import from jaclang.compiler.backends.es.es_unparse { JSCodeGenerator }
-    import from jaclang.compiler.backends.es.primitives_es {
-        ESBuiltinEmitter,
-        ESEmitCtx,
-        es_sized_cast
-    }
-    import from jaclang.compiler.backends.common.primitives { PrimitiveEmitter }
     emitter: PrimitiveEmitter[(str, ESEmitCtx)] = ESBuiltinEmitter();
     ctx = ESEmitCtx(unparser=JSCodeGenerator());
     entries: list[str] = [];
@@ -1697,7 +1702,7 @@ def _build_types_runtime_js -> str {
     }
     entries.append('    object: _t("object", (...a) => ({}))');
     entries.append('    NoneType: _t("NoneType", (...a) => null)');
-    import from jaclang.runtime.scalars { numeric_shapes }
+
     sized_lines: list[str] = [];
     for shape in numeric_shapes() {
         if not shape.sized {
@@ -1741,7 +1746,6 @@ def _build_types_runtime_js -> str {
 }
 
 def _build_fw_runtime_js -> str {
-    import from jaclang.runtime.scalars { numeric_shapes, range_of }
     rows: list[str] = [];
     for shape in numeric_shapes() {
         if not shape.sized {
@@ -1973,7 +1977,6 @@ def point_jac_prelude_at(js: str, target: str = "") -> str {
 }
 
 def build_osp_core_js -> str {
-    import from jaclang.compiler.frontend.host { active_host }
     return active_host().client_osp_core_js();
 }
 

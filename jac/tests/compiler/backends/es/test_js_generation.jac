@@ -12,6 +12,7 @@ import tempfile;
 import from pathlib { Path }
 import from tests.support { JAC_ROOT }
 import from tests.compiler.backends.es.codegen_helpers {
+    analyze_fixture_and_emit_js,
     compile_fixture_to_js,
     compile_fixture_to_js_production,
     run_js_module,
@@ -553,6 +554,49 @@ test "lambda assignment to an enclosing local stays a closure rebind" {
     );
     assert "let count = (count + 1);" not in js_code;
     assert_balanced_syntax(js_code, temp_path);
+}
+
+test "every handler a for slot builds acts on its own item" {
+    # #8168: a local assigned in a `for` slot body, bare or annotated, is local
+    # to the loop, so each handler keeps its own iteration's value. The loop
+    # target, a .map() lambda-body local (#8130) and a parameter-bound factory
+    # are the same contract.
+    fixture_file_path = os.path.join(FIXTURES, "for_slot_handlers.jac");
+    (prog, js_code) = analyze_fixture_and_emit_js(fixture_file_path);
+    assert not prog.errors_had , "\n".join(e.pretty_print() for e in prog.errors_had);
+
+    harness = (
+        "\nfunction __jacJsx(tag, props, kids) {"
+        " return {tag, props, kids: kids === undefined ? [] : kids}; }\n"
+        "const out = [];\n"
+        "const tree = Handlers({items: [{id: 'first'}, {id: 'second'}, {id: 'last'}],"
+        " sink: (t) => out.push(t)});\n"
+        "const found = [];\n"
+        "(function walk(n, section) {\n"
+        "  if (n == null || typeof n !== 'object') return;\n"
+        "  if (Array.isArray(n)) { for (const c of n) walk(c, section); return; }\n"
+        "  if (n.props && n.props.id) section = n.props.id;\n"
+        "  if (n.props && typeof n.props.onClick === 'function')"
+        " found.push([section, n.props.onClick]);\n"
+        "  walk(n.kids, section);\n"
+        "})(tree, '?');\n"
+        "const bySection = {};\n"
+        "for (const [s, fn] of found) { out.length = 0; fn();"
+        " (bySection[s] = bySection[s] || []).push(out[0]); }\n"
+        "console.log(JSON.stringify(bySection));\n"
+    );
+    result = run_js_module(js_code + harness);
+    assert result.returncode == 0 , (
+        f"for-slot handlers crashed in Node:\nstderr={result.stderr!r}\njs:\n{js_code}"
+    );
+    got = json.loads(result.stdout.strip());
+    for section in ["for_slot", "annotated", "factory", "map_lambda", "loop_target"] {
+        assert got.get(section)
+            == [f"{section}:{item}" for item in ["first", "second", "last"]] , (
+            f"every '{section}' handler must act on its own item, got {got}\njs:\n{js_code}"
+        );
+    }
+    assert_balanced_syntax(js_code, fixture_file_path);
 }
 
 test "lambda returning dict literal parenthesises the arrow body" {

@@ -3,34 +3,6 @@ import logging;
 import time;
 import from inspect { isgenerator }
 import from typing { AsyncGenerator }
-import from jaclang.runtime.constants { Constants as Con }
-import from jaclang.runtime.builtin { APIProtocol }
-import from jaclang.server.server { JacAPIServer, ServerExtension }
-import from jaclang.server.serving.datatypes { WebSocketDisconnect }
-import from jaclang.server.serving.ws { WebSocket }
-import from jaclang.scale.config.config_loader { get_scale_config }
-import from jaclang.scale.websocket.backplane { MemoryBackplane, build_backplane }
-import from jaclang.scale.websocket.protocol {
-    AUTH_HANDSHAKE_TIMEOUT_SECONDS,
-    HEARTBEAT_MISSED_ALLOWED,
-    HEARTBEAT_SECONDS,
-    SEND_TIMEOUT_SECONDS,
-    ws_authenticate,
-    ws_error_frame,
-    ws_execute_target,
-    ws_handle_control,
-    ws_heartbeat_loop,
-    ws_pre_accept_auth,
-    ws_receive_frame,
-    ws_reject_auth,
-    ws_reject_pre_accept,
-    ws_reject_registration
-}
-import from jaclang.scale.websocket.websocket {
-    ConnectionContext,
-    WebSocketConnectionManager,
-    _ws_stream_result
-}
 
 glob logger: logging.Logger = logging.getLogger(__name__);
 
@@ -47,7 +19,8 @@ async def serve_ws_connection(
     max_bytes: int,
     target_timeout: float,
     msgs_per_sec: float,
-    make_awaitable: any
+    make_awaitable: any,
+    open_scope: Callable[[], RequestScope]
 ) {
     rate_capacity = max(msgs_per_sec, 1.0);
     user_id: (str | None) = None;
@@ -132,27 +105,44 @@ async def serve_ws_connection(
                 continue;
             }
             data.pop('token', None);
-            (ok, result) = await ws_execute_target(
-                websocket,
-                label,
-                target_name,
-                make_awaitable(data, (ctx.user_id or Con.GUEST.value)),
-                target_timeout
-            );
-            if not ok {
-                continue;
-            }
-            if isgenerator(result) or isinstance(result, AsyncGenerator) {
-                await _ws_stream_result(send_result, result);
-            } elif isinstance(result, dict) and 'error' in result {
+            try {
+                scope = open_scope();
+            } except Exception as scope_err {
+                logger.error(
+                    f"WS request context unavailable for {label.lower()}="
+                    f"'{target_name}': {type(scope_err).__name__}: {scope_err}",
+                    exc_info=True
+                );
                 await websocket.send_json(
                     ws_error_frame(
-                        'EXECUTION_ERROR',
-                        result.get('error', f"{label} execution failed")
+                        'SERVICE_UNAVAILABLE', 'unable to reach the database'
                     )
                 );
-            } else {
-                await send_result({'ok': True, 'data': result});
+                continue;
+            }
+            with scope {
+                (ok, result) = await ws_execute_target(
+                    websocket,
+                    label,
+                    target_name,
+                    make_awaitable(data, (ctx.user_id or Con.GUEST.value)),
+                    target_timeout
+                );
+                if not ok {
+                    continue;
+                }
+                if isgenerator(result) or isinstance(result, AsyncGenerator) {
+                    await _ws_stream_result(send_result, result, scope.abort);
+                } elif isinstance(result, dict) and 'error' in result {
+                    await websocket.send_json(
+                        ws_error_frame(
+                            'EXECUTION_ERROR',
+                            result.get('error', f"{label} execution failed")
+                        )
+                    );
+                } else {
+                    await send_result({'ok': True, 'data': result});
+                }
             }
         }
     } except WebSocketDisconnect {
@@ -253,7 +243,8 @@ obj WebSocketExtension(ServerExtension) {
                 max_bytes,
                 float(ws_cfg['target_timeout_seconds']),
                 float(ws_cfg['messages_per_second']),
-                make_awaitable
+                make_awaitable,
+                server.request_scope
             );
         }
         return websocket_handler;

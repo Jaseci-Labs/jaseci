@@ -17,7 +17,13 @@ import from jaclang.compiler.native_compiler { ensure_loaded }
 import from jaclang.compiler.passes.ast_validation_pass { ASTValidationPass }
 import from jaclang.compiler.passes.sym_tab_build_pass { SymTabBuildPass }
 import from jaclang.compiler.passes.graph_lowering_pass { GraphLoweringPass }
-import from jaclang.compiler.passes.early_passes { EARLY_PASSES }
+import from jaclang.compiler.driver.pipeline { early_passes }
+
+"""The kernel results still waiting to be replayed for `mod`."""
+def pending_early(prog: JacProgram, mod: Module) -> dict[str, any] {
+    build = prog.analysis.peek(mod);
+    return dict(build.early) if build is not None else {};
+}
 
 test "native early analysis lowers graph construction before binding" {
     kernel = ensure_loaded();
@@ -31,7 +37,7 @@ test "native early analysis lowers graph construction before binding" {
             early_context="client"
         );
         assert not failed;
-        assert id(mod) in prog.analysis.early_passes;
+        assert pending_early(prog, mod);
         run_pass(GraphLoweringPass, mod, prog);
         run_pass(ASTValidationPass, mod, prog);
         run_pass(SymTabBuildPass, mod, prog);
@@ -138,20 +144,20 @@ test "native early passes preserve the store parser's symbol graph" {
             SOURCE, "early_scopes.jac", native, [], early_context="server"
         );
         assert not failed;
-        pending = native.analysis.early_passes[id(nat_mod)].results;
-        assert sorted(pending) == sorted(p.__name__ for p in EARLY_PASSES);
+        pending = pending_early(native, nat_mod);
+        assert sorted(pending) == sorted(p.__name__ for p in early_passes());
         before = scope_profile(nat_mod);
-        for early in EARLY_PASSES {
+        for early in early_passes() {
             run_pass(early, nat_mod, native);
         }
-        assert id(nat_mod) not in native.analysis.early_passes;
-        assert all(native.analysis.pass_runs[p.__name__] == 1 for p in EARLY_PASSES);
+        assert not pending_early(native, nat_mod);
+        assert all(native.analysis.pass_runs[p.__name__] == 1 for p in early_passes());
         assert scope_profile(nat_mod) == before;
 
         store = JacProgram();
         (store_mod, store_failed) = parse(SOURCE, "early_scopes.jac", store);
         assert not store_failed;
-        for early in EARLY_PASSES {
+        for early in early_passes() {
             run_pass(early, store_mod, store);
         }
         assert scope_profile(nat_mod) == scope_profile(store_mod);
@@ -205,8 +211,8 @@ test "application modules run their early passes in the kernel" {
             prog.analysis.record_early = spy;
             prog.compile(str(path), options=CompileOptions(no_cgen=True));
             assert not prog.errors_had;
-            assert sorted(recorded) == sorted(p.__name__ for p in EARLY_PASSES);
-            assert not prog.analysis.early_passes;
+            assert sorted(recorded) == sorted(p.__name__ for p in early_passes());
+            assert not any(b.early for b in prog.analysis.builds.values());
         }
     }
 }
@@ -335,13 +341,13 @@ test "kernel early passes match the store parser's flow, impl, and semantic fact
         );
         assert not failed;
         assert kernel.skipped() == 0;
-        for early in EARLY_PASSES {
+        for early in early_passes() {
             run_pass(early, nat_mod, native);
         }
         store = JacProgram();
         (store_mod, store_failed) = parse(FLOW_SOURCE, "early_flow.jac", store);
         assert not store_failed;
-        for early in EARLY_PASSES {
+        for early in early_passes() {
             run_pass(early, store_mod, store);
         }
         nat_profile = flow_profile(nat_mod);

@@ -6,19 +6,7 @@ import time;
 import from compression.zstd { ZstdFile }
 import from io { BytesIO }
 import from c { def atoi(s: str) -> i32;  }
-import from .trailer {
-    MAGIC,
-    OVERLAY_MAGIC,
-    REGION_DESC_LEN,
-    TRAILER_LEN,
-    Trailer,
-    parse_region_desc,
-    parse_trailer,
-    region_start,
-    rt_key
-}
-import from ._libc { read_at, getuid, listdir, write_file }
-import from .report { die, say }
+
 import from _cache_platform { platform_cache_home }
 
 glob CACHEDIR_TAG: str = "CACHEDIR.TAG",
@@ -65,36 +53,6 @@ def:pub overlay_for_path(exe_path: str) -> Overlay | None {
         return None;
     }
     return peek_overlay(exe_path, total);
-}
-
-def:pub peek_stubcat(exe_path: str, total: int) -> Overlay | None {
-    trailer = trailer_at(exe_path, total, MAGIC);
-    if trailer is None {
-        return None;
-    }
-    poff = region_start(total, trailer.payload_len);
-    if poff < REGION_DESC_LEN {
-        return None;
-    }
-    desc = parse_region_desc(
-        read_at(exe_path, poff - REGION_DESC_LEN, REGION_DESC_LEN)
-    );
-    if desc is None or desc.length <= 0 or desc.off + desc.length > poff {
-        return None;
-    }
-    return Overlay(off=desc.off, length=desc.length);
-}
-
-def:pub stubcat_for_path(exe_path: str) -> Overlay | None {
-    total = os.path.getsize(exe_path);
-    if total < TRAILER_LEN {
-        return None;
-    }
-    ovl = peek_overlay(exe_path, total);
-    if ovl is not None {
-        total = ovl.off;
-    }
-    return peek_stubcat(exe_path, total);
 }
 
 def dir_writable(path: str) -> bool {

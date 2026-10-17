@@ -465,30 +465,43 @@ test "cascade: importer of a demoted module demotes with it" {
     assert mod.decided_codespace == '' , "importer of a demoted dep must demote too";
 }
 
-test "closure cap exceeded skips native inference with a note" {
-    import io;
-    import sys;
-    import from jaclang.compiler.frontend.codeinfo { set_native_closure_cap }
-    set_native_closure_cap(1);
-    buf = io.StringIO();
-    old_stderr = sys.stderr;
-    sys.stderr = buf;
-    try {
-        mod = compile_with_default("nadefault_capchain_a.jac", "native", cgen=True);
-    } finally {
-        sys.stderr = old_stderr;
-        set_native_closure_cap(0);
+test "an import closure of any size can be native when every module can be" {
+    import tempfile;
+    import from jaclang.compiler.placement.placement_solver {
+        native_default_path_ok,
+        native_closure_blocker
     }
-    assert mod.decided_codespace == '' , "cap-exceeded root must stay server";
-    assert stamp_of(mod, "fa") == 'server';
-    assert "native_closure_cap" in buf.getvalue() , (
-        f"note must name the knob, got: {buf.getvalue()!r}"
-    );
+    # 300 pure modules, each importing the next: past the 256 the closure
+    # walks once stopped at, after which the root fell back to the server.
+    count = 300;
+    with tempfile.TemporaryDirectory() as folder {
+        for i in range(count) {
+            body = f"return f{i + 1}() + 1;" if i + 1 < count else f"return {i};";
+            head = f"import from link{i + 1} {{ f{i + 1} }}\n\n"
+                if i + 1 < count
+                else "";
+            text = f"{head}def f{i} -> int {{\n    {body}\n}}\n";
+            with open(os.path.join(folder, f"link{i}.jac"), "w") as handle {
+                handle.write(text);
+            }
+        }
+        root_path = os.path.join(folder, "link0.jac");
+        assert native_default_path_ok(root_path) , "a long pure chain must stay native";
+        prog = JacProgram();
+        prog.compile(
+            root_path, options=CompileOptions(default_codespace="native", no_cgen=True)
+        );
+        assert not prog.errors_had , [str(e) for e in prog.errors_had];
+        (blocker, bridged) = native_closure_blocker(
+            prog, root_path, [os.path.join(folder, "link1.jac")]
+        );
+        assert blocker == '' and not bridged , blocker;
+    }
 }
 
-test "capped chain still infers native under the default cap" {
+test "a short pure import chain infers native" {
     mod = compile_with_default("nadefault_capchain_a.jac", "native", cgen=True);
-    assert mod.decided_codespace == 'native' , "3-module pure chain fits default cap";
+    assert mod.decided_codespace == 'native' , "3-module pure chain lowers native";
     assert mod.gen.native_engine is not None;
 }
 
