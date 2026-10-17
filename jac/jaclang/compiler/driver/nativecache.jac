@@ -33,7 +33,8 @@ import from jaclang.compiler.driver.jir {
 import from jaclang.compiler.driver.compile_options { CompileOptions }
 import from jaclang.compiler.driver.native_iface { NativeIface }
 
-glob SLOW_STEP_SECONDS: float = 2.0;
+glob SLOW_STEP_SECONDS: float = 2.0,
+     DEMOTED_SYMBOL_SUFFIX: str = ".__jac_demoted";
 
 obj NativeUnitEntry {
     has path: str,
@@ -126,6 +127,21 @@ obj NativeUnitRegistry {
         }
         ent = self.entries.get(real);
         if ent is None {
+            return False;
+        }
+        unbound = session.unbound_symbols(real, list(digests.keys()));
+        if unbound is None or unbound {
+            self._event("native_dep_adopt_refused");
+            self._miss(
+                real,
+                "lowered while a dependency was still being built, and binds "
+                    + (
+                        ", ".join(unbound[:8])
+                            if unbound
+                            else "symbols this build cannot check"
+                    )
+                    + " that the dependency does not define natively"
+            );
             return False;
         }
         for (dep, digest) in digests.items() {
@@ -522,6 +538,58 @@ obj NativeUnitRegistry {
         return self.compile_unit(resolved, options, products=products);
     }
 
+    def dep_iface(
+        path: str, options: CompileOptions, products: bool = True
+    ) -> (NativeIface | None) {
+        """The interface a unit being lowered consumes from a dependency.
+        While a session discovers a unit's dependencies, a dependency with no
+        entry yet is recorded for the session to lower first instead of being
+        lowered inside the consumer's pass: a nested lowering keeps every
+        consumer's partial IR alive down the whole import chain.""";
+        resolved = os.path.realpath(path);
+        session = self.session;
+        if session is not None and resolved in session.unlowerable {
+            return None;
+        }
+        if session is not None and session.discovering() {
+            ent = self.ensure(
+                resolved,
+                compile_on_miss=False,
+                options=options,
+                check_deps=False,
+                products=products
+            );
+            if ent is not None {
+                return ent.iface;
+            }
+            if resolved not in self.building
+                and os.path.isfile(resolved)
+                and self.not_native.get(resolved)
+                    != NativeUnitRegistry._source_key(resolved) {
+                session.defer(resolved);
+            }
+            return None;
+        }
+        ent = self.ensure(
+            resolved,
+            compile_on_miss=True,
+            options=options,
+            check_deps=False,
+            products=products
+        );
+        return ent.iface if ent is not None else None;
+    }
+
+    def dep_discovery_open -> bool {
+        return self.session is not None and self.session.discovering();
+    }
+
+    def close_dep_deferral -> bool {
+        """End dependency discovery for the unit being lowered; True when it
+        deferred a dependency, so its lowering stops before emitting code.""";
+        return self.session.close_discovery() if self.session is not None else False;
+    }
+
     def known_native_deps(path: str, options: CompileOptions) -> list[str] {
         resolved = os.path.realpath(path);
         ent = self.entries.get(resolved);
@@ -824,7 +892,26 @@ obj NativeBuildSession {
         options: CompileOptions,
         prog: JacProgram postinit,
         lowered: dict[str, Module] = {},
-        source_keys: dict[str, str | None] = {};
+        source_keys: dict[str, str | None] = {},
+        deferred: list[set[str]] = [],
+        discovery_open: list[bool] = [],
+        unlowerable: set[str] = set();
+
+    def discovering -> bool {
+        return bool(self.discovery_open) and self.discovery_open[-1];
+    }
+
+    def defer(path: str) {
+        self.deferred[-1].add(path);
+    }
+
+    def close_discovery -> bool {
+        if not self.discovering() {
+            return False;
+        }
+        self.discovery_open[-1] = False;
+        return bool(self.deferred[-1]);
+    }
 
     def postinit {
         import from jaclang.compiler.driver.program { JacProgram }
@@ -874,10 +961,42 @@ obj NativeBuildSession {
             set_effective_default_codespace("native");
             import from jaclang.compiler.driver.pipeline { invalidate, require }
             import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
-            invalidate(self.prog, mod, CompilationProduct.NATIVE_LOWER);
-            started = self.registry.note_step("lower", resolved);
-            require(self.prog, mod, CompilationProduct.NATIVE_LOWER);
-            self.registry._timed("NATIVE_LOWER", started);
+            discover = True;
+            attempted: set[str] = set();
+            while True {
+                invalidate(self.prog, mod, CompilationProduct.NATIVE_LOWER);
+                warnings_before = len(self.prog.warnings_had);
+                started = self.registry.note_step("lower", resolved);
+                self.deferred.append(set());
+                self.discovery_open.append(discover);
+                try {
+                    require(self.prog, mod, CompilationProduct.NATIVE_LOWER);
+                } finally {
+                    pending = self.deferred.pop();
+                    self.discovery_open.pop();
+                }
+                self.registry._timed("NATIVE_LOWER", started);
+                if not pending {
+                    break;
+                }
+                del self.prog.errors_had[errors_before:];
+                del self.prog.warnings_had[warnings_before:];
+                invalidate(self.prog, mod, CompilationProduct.NATIVE_LOWER);
+                lowered_any = False;
+                for dep in sorted(pending - attempted) {
+                    attempted.add(dep);
+                    if self.registry.ensure(
+                        dep, compile_on_miss=False, options=opts, check_deps=False
+                    )
+                        is not None
+                        or self.lower(dep) is not None {
+                        lowered_any = True;
+                    } else {
+                        self.unlowerable.add(dep);
+                    }
+                }
+                discover = lowered_any;
+            }
             self.registry._event("native_unit_lower");
             self.registry.note_slow_step("lowering", resolved, started);
             if len(self.prog.errors_had) > errors_before
@@ -917,6 +1036,50 @@ obj NativeBuildSession {
             pop_native_target(target_token);
             reset_native_unit_compile(unit_token);
         }
+    }
+
+    def unbound_symbols(path: str, deps: list[str]) -> (list[str] | None) {
+        consumer = self.lowered.get(os.path.realpath(path));
+        if consumer is None {
+            return None;
+        }
+        bound = _ir_symbols(consumer.gen.llvm_ir);
+        if bound is None {
+            return None;
+        }
+        declared = bound[1];
+        unbound: set[str] = set();
+        for dep in deps {
+            real = os.path.realpath(dep);
+            provider = self.lowered.get(real);
+            ent = self.registry.entries.get(real);
+            provided = _ir_symbols(
+                provider.gen.llvm_ir if provider is not None else None
+            );
+            if provided is None or ent is None {
+                return None;
+            }
+            defined = provided[0];
+            prefix = f"{ent.iface.prefix}." if ent.iface.prefix else "";
+            for symbol in declared {
+                if symbol not in defined
+                    and (
+                        (prefix and symbol.startswith(prefix))
+                        or (symbol + DEMOTED_SYMBOL_SUFFIX) in defined
+                    ) {
+                    unbound.add(symbol);
+                }
+            }
+        }
+        if unbound {
+            used = _ir_referenced_symbols(consumer.gen.llvm_ir);
+            unbound = {
+                symbol
+                for symbol in unbound
+                if symbol in used
+            };
+        }
+        return sorted(unbound);
     }
 
     def finish(paths: list[str]) {
@@ -1047,6 +1210,40 @@ glob _closure_memo:
          dict[str, tuple[tuple[(tuple[int, int] | None), ...], list[str], list[str]]] = {},
      _dep_digest_memo: dict[str, tuple[tuple[int, int], str]] = {},
      VERDICT_CLOSURE_LIMIT: int = 4096;
+
+def _ir_symbols(unit_ir: any) -> (tuple[set[str], set[str]] | None) {
+    if unit_ir is None
+        or not hasattr(unit_ir, "functions")
+        or not hasattr(unit_ir, "global_variables") {
+        return None;
+    }
+    defined: set[str] = set();
+    declared: set[str] = set();
+    for value in list(unit_ir.functions) + list(unit_ir.global_variables) {
+        if value.is_declaration {
+            declared.add(str(value.name));
+        } else {
+            defined.add(str(value.name));
+        }
+    }
+    return (defined, declared);
+}
+
+def _ir_referenced_symbols(unit_ir: any) -> set[str] {
+    import re;
+    used: set[str] = set();
+    for line in str(unit_ir).splitlines() {
+        if line.startswith("declare ") {
+            continue;
+        }
+        for (quoted, bare) in re.findall(
+            r'@(?:"([^"]+)"|([-a-zA-Z$._][-a-zA-Z$._0-9]*))', line
+        ) {
+            used.add(quoted or bare);
+        }
+    }
+    return used;
+}
 
 def _stat_key(path: str) -> (tuple[int, int] | None) {
     try {

@@ -3005,6 +3005,10 @@ graph import compiler.backends.native {
     linker_common --> compiler.backends.native.link_plan.link_artifact {
         object_undefined_symbols
     }
+    linker_common --> compiler.backends.native.link_plan.unresolved_unit_symbols {
+        object_defined_symbols,
+        object_undefined_symbols
+    }
     na_compile_pass --> compiler.driver.nativecache.NativeBuildSession.lower {
         settle_unit_ir
     }
@@ -4926,6 +4930,12 @@ graph import compiler.frontend {
     }
     codeinfo --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._codegen_test {
         native_test_symbol
+    }
+    codeinfo --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._discover_kernel_deps {
+        FMT_KERNEL_REL,
+        OSP_GRAPH_REL,
+        OSP_KERNEL_REL,
+        kernel_unit_path
     }
     codeinfo --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._emit_class_display_fn {
         NATIVE_ARCH_SCOPE_SEP
@@ -11076,7 +11086,8 @@ graph import compiler.types.stubcat {
     }
     writer --> compiler.driver.unit_products.unit_interface {
         IncoherentInterface,
-        build_module_iface
+        build_module_iface,
+        module_iface_shape
     }
 }
 
