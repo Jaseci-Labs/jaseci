@@ -558,24 +558,6 @@ def unit_products(module: uni.Module, program: JacProgram) -> UnitProducts {
     return products;
 }
 
-def unit_interface(module: uni.Module, program: JacProgram, products: UnitProducts) {
-    import from jaclang.compiler.types.stubcat.writer {
-        IncoherentInterface,
-        build_module_iface,
-        module_iface_shape
-    }
-    evaluator = program.get_type_evaluator();
-    pkg_dir = os.path.dirname(os.path.realpath(module.loc.mod_path));
-    try {
-        data = build_module_iface(module, evaluator, pkg_dir);
-        shape = module_iface_shape(module, evaluator, pkg_dir);
-    } except IncoherentInterface {
-        return;
-    }
-    products.iface = base64.b64encode(data).decode("ascii");
-    products.iface_shape = shape;
-}
-
 def native_products(module: uni.Module, products: UnitProducts) {
     import from jaclang.compiler.driver.native_iface { native_layout_to_dict }
     gen = module.gen;

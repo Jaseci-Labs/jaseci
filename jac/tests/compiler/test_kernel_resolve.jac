@@ -565,3 +565,148 @@ test "a failed kernel build publishes nothing and sweeps its stage" {
         );
     }
 }
+
+test "a loaded kernel without jc_analyze stops jac check instead of falling back" {
+    import types;
+    import jaclang.project.kernel_check as kernel_check;
+    import jaclang.compiler.native_compiler as native_compiler;
+    import from jaclang.compiler.driver.program { JacProgram }
+    app = os.path.join(tempfile.gettempdir(), "app.jac");
+    lib = os.path.join(tempfile.gettempdir(), "libjac_compiler.so");
+    kernel = types.SimpleNamespace(lib=object(), lib_path=lib);
+    told = "";
+    with patch.object(native_compiler, "ensure_loaded", return_value=kernel) {
+        try {
+            kernel_check.kernel_check(JacProgram(), app, kernel_options());
+        } except kernel_check.KernelCheckError as e {
+            told = str(e);
+        }
+    }
+    assert told.startswith(
+        f"the native compiler kernel could not analyze {app}: the loaded kernel has no jc_analyze"
+    ) , told;
+    assert f"kernel: {lib}" in told
+        and "jac native build kernel --force" in told , told;
+}
+
+"""A kernel plan whose entry unit demoted `jc_analyze`, through a chain of
+two more units, and kept `jc_run` and `jc_reg_seal`."""
+def _entry_plan(pkg_root: str) -> any {
+    import from jaclang.compiler.backends.native.link_plan { LinkPlan, LinkUnit }
+    import from jaclang.compiler.driver.native_iface { NativeExport, NativeIface }
+    import from jaclang.compiler.driver.program { JacProgram }
+    compiler_dir = os.path.join(pkg_root, "compiler");
+    os.makedirs(compiler_dir, exist_ok=True);
+    Path(compiler_dir, "jc_unit.jac").write_text(
+        "def:pub jc_run(source: str) -> int { return 0; }\n"
+            + "def:pub jc_analyze(inputs: str) -> int { return run_kernel_analysis(inputs); }\n"
+            + "def helper -> int { return 1; }\n"
+    );
+    Path(compiler_dir, "jc_materialize.jac").write_text(
+        "def:pub jc_reg_seal -> int { return 0; }\n"
+    );
+    def unit(
+        rel: str, exports: list[str], demoted: list[str], deps: list[str]
+    ) -> LinkUnit {
+        path = os.path.realpath(os.path.join(pkg_root, rel));
+        iface = NativeIface(
+            module=rel,
+            prefix=os.path.basename(rel).split(".")[0],
+            exports={
+                name: NativeExport(
+                    name=name, symbol=name, kind="function", is_pub=True
+                ) for name in exports
+            },
+            demoted=demoted,
+            deps=[os.path.realpath(os.path.join(pkg_root, d)) for d in deps]
+        );
+        return LinkUnit(path=path, prefix=iface.prefix, iface=iface, digest=rel);
+    }
+    units = [
+        unit(
+            "compiler/jc_unit.jac",
+            ["jc_run"],
+            ["jc_analyze"],
+            ["compiler/kernel_analyze.jac"]
+        ),
+        unit("compiler/jc_materialize.jac", ["jc_reg_seal"], [], []),
+        unit(
+            "compiler/kernel_analyze.jac",
+            [],
+            ["run_kernel_analysis"],
+            ["compiler/unit_products.jac"]
+        ),
+        unit("compiler/unit_products.jac", [], ["jac_dependencies"], [])
+    ];
+    return LinkPlan(
+        prog=JacProgram(),
+        options=kernel_options(),
+        roots=[units[0].path],
+        units=units,
+        mode="objects",
+        triple="x86_64-unknown-linux-gnu"
+    );
+}
+
+test "a kernel plan that demoted an entry point names it and the chain that demoted it" {
+    import from jaclang.compiler.backends.native.kernel_stage0 {
+        KernelEntryError,
+        declared_entry_points,
+        missing_kernel_entries,
+        refuse_missing_entries
+    }
+    assert declared_entry_points(
+        "def:pub jc_a(x: int) -> int { return x; }\ndef jc_b -> int { return 1; }\n"
+            + "    def:pub nested -> int { return 2; }\ndef:pub jc_c -> int { return 3; }\n"
+    )
+        == ["jc_a", "jc_c"];
+    with tempfile.TemporaryDirectory(prefix="jac-kernel-entries-") as tmp {
+        pkg_root = os.path.join(tmp, "jaclang");
+        plan = _entry_plan(pkg_root);
+        reasons = {
+            os.path.realpath(os.path.join(pkg_root, "compiler/jc_unit.jac")): {
+                "jc_analyze": "jaclang/compiler/jc_unit.jac, line 2, col 52: Native lowering failed for function 'run_kernel_analysis'"
+            },
+            os.path.realpath(os.path.join(pkg_root, "compiler/kernel_analyze.jac")): {
+                "run_kernel_analysis": "jaclang/compiler/kernel_analyze.jac, line 9, col 5: Native lowering failed for function 'jac_dependencies'"
+            },
+            os.path.realpath(os.path.join(pkg_root, "compiler/unit_products.jac")): {
+                "jac_dependencies": "jaclang/compiler/unit_products.jac, line 4, col 26: Native lowering failed for method 'resolve_relative_path (on an `any` receiver)'"
+            }
+        };
+        problems = missing_kernel_entries(
+            plan,
+            pkg_root,
+            lambda (path: str) -> dict[str, str] { return reasons.get(path, {}); }
+        );
+        assert len(problems) == 1 , problems;
+        told = problems[0];
+        assert told.startswith(
+            "jc_analyze is not exported; it was demoted to Python:"
+        ) , told;
+        steps = told.split("\n")[1:];
+        assert len(steps) == 3 , told;
+        assert "jc_analyze (jaclang/compiler/jc_unit.jac)" in steps[0] , told;
+        assert "run_kernel_analysis (jaclang/compiler/kernel_analyze.jac)" in steps[1]
+            and steps[1].strip().startswith("<- ") , told;
+        assert "jac_dependencies (jaclang/compiler/unit_products.jac)" in steps[2]
+            and "resolve_relative_path (on an `any` receiver)" in steps[2] , told;
+        refused = "";
+        with patch(
+            "jaclang.compiler.backends.native.kernel_stage0.unit_issue_details",
+            return_value=lambda (path: str) -> dict[str, str] { return reasons.get(
+                path, {}
+            ); }
+        ) {
+            try {
+                refuse_missing_entries(plan, pkg_root);
+            } except KernelEntryError as e {
+                refused = str(e);
+            }
+        }
+        assert refused.startswith(
+            "the native compiler kernel would not export the entry points its loader calls:"
+        ) , refused;
+        assert "jc_analyze is not exported" in refused , refused;
+    }
+}

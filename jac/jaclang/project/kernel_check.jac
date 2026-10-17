@@ -13,10 +13,15 @@ obj KernelCheck {
 
 class KernelCheckError(RuntimeError) {}
 
-def analysis_kernel -> any {
+def analysis_kernel(path: str) -> any {
     kernel = ensure_loaded();
-    if kernel is None or not hasattr(kernel.lib, "jc_analyze") {
-        return None;
+    if kernel is not None and not hasattr(kernel.lib, "jc_analyze") {
+        raise KernelCheckError(
+            f"the native compiler kernel could not analyze {path}: the loaded "
+            f"kernel has no jc_analyze\n"
+            f"  kernel: {kernel.lib_path}\n"
+            "  fix:    rebuild it with `jac native build kernel --force`"
+        );
     }
     return kernel;
 }
@@ -98,7 +103,7 @@ def kernel_check(
     if is_compiler_source_path(path) {
         return KernelCheck();
     }
-    kernel = analysis_kernel();
+    kernel = analysis_kernel(path);
     if kernel is None {
         import from jaclang.compiler.backends.native.kernel_resolve {
             refuse_unloadable

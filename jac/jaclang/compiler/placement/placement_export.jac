@@ -41,6 +41,64 @@ def element_to_dict(es: ElementSummary) -> dict[str, any] {
     };
 }
 
+def _str_list(value: object) -> list[str] {
+    out: list[str] = [];
+    if isinstance(value, list) {
+        for item in value {
+            out.append(str(item));
+        }
+    }
+    return out;
+}
+
+def _int_list(value: object) -> list[int] {
+    out: list[int] = [];
+    if isinstance(value, list) {
+        for item in value {
+            out.append(int(item));
+        }
+    }
+    return out;
+}
+
+def _str_rows(value: object) -> list[list[str]] {
+    out: list[list[str]] = [];
+    if isinstance(value, list) {
+        for item in value {
+            out.append(_str_list(item));
+        }
+    }
+    return out;
+}
+
+def _escape_rows(value: object) -> list[tuple[int, str]] {
+    out: list[tuple[int, str]] = [];
+    if isinstance(value, list) {
+        for item in value {
+            if isinstance(item, list) {
+                out.append((int(item[0]), str(item[1])));
+            }
+        }
+    }
+    return out;
+}
+
+def _maps(value: object) -> list[dict[str, any]] {
+    out: list[dict[str, any]] = [];
+    if isinstance(value, list) {
+        for item in value {
+            if isinstance(item, dict) {
+                row: dict[str, any] = {};
+                for (key, field) in item.items() {
+                    row[str(key)] = field;
+                }
+                out.append(row);
+            }
+        }
+    }
+    return out;
+}
+
 def element_from_dict(d: dict[str, any]) -> ElementSummary {
     es = ElementSummary();
     es.index = int(d.get('index', -1));
@@ -51,12 +109,12 @@ def element_from_dict(d: dict[str, any]) -> ElementSummary {
     es.sv_import = bool(d.get('sv_import', False));
     es.import_eco = str(d.get('import_eco', ''));
     es.import_jac_target = str(d.get('import_jac_target', ''));
-    es.import_items = [str(x) for x in d.get('import_items', [])];
-    es.import_py_targets = [str(x) for x in d.get('import_py_targets', [])];
-    es.reqs = [[str(x) for x in r] for r in d.get('reqs', [])];
-    es.refs = [int(x) for x in d.get('refs', [])];
-    es.escapes = [(int(e[0]), str(e[1])) for e in d.get('escapes', [])];
-    es.glob_writes = [int(x) for x in d.get('glob_writes', [])];
+    es.import_items = _str_list(d.get('import_items'));
+    es.import_py_targets = _str_list(d.get('import_py_targets'));
+    es.reqs = _str_rows(d.get('reqs'));
+    es.refs = _int_list(d.get('refs'));
+    es.escapes = _escape_rows(d.get('escapes'));
+    es.glob_writes = _int_list(d.get('glob_writes'));
     return es;
 }
 
@@ -80,15 +138,11 @@ def summary_from_dict(d: dict[str, any]) -> (PlacementSummary | None) {
     ps = PlacementSummary();
     ps.mod_path = str(d.get('mod_path', ''));
     ps.decided = str(d.get('decided', ''));
-    ps.anchors = [str(x) for x in d.get('anchors', [])];
+    ps.anchors = _str_list(d.get('anchors'));
     ps.native_blocker = str(d.get('native_blocker', ''));
-    ps.jac_deps = [str(x) for x in d.get('jac_deps', [])];
+    ps.jac_deps = _str_list(d.get('jac_deps'));
     ps.has_refs = bool(d.get('has_refs', False));
-    ps.elements = [
-        element_from_dict(e)
-        for e in d.get('elements', [])
-        if isinstance(e, dict)
-    ];
+    ps.elements = [element_from_dict(e) for e in _maps(d.get('elements'))];
     return ps;
 }
 
