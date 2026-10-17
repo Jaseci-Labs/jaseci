@@ -79,6 +79,20 @@ class Enough(BaseException):
     pass
 
 
+if os.environ.get("GC_PROBE_TRACE"):
+    from jaclang.compiler.driver import nativecache
+
+    heap_type = getattr(nativecache, "SessionHeap", None)
+    if heap_type is not None:
+        plain_settle = heap_type.settle
+
+        def traced_settle(self):
+            spent = plain_settle(self)
+            print(f"  settle at {time.perf_counter() - origin[0]:.1f}s took {spent:.2f}s", flush=True)
+            return spent
+
+        heap_type.settle = traced_settle
+
 before = state()
 try:
     with open("/proc/self/clear_refs", "w") as f:
@@ -139,4 +153,5 @@ for g in range(3):
     print(f"  gen{g}: collections={count} pause={pause:.2f}s max={worst:.2f}s collected={collected}")
 print(f"  gc pause total={total:.2f}s ({100 * total / wall:.1f}% of wall)")
 print(f"  collections over 0.5s (t, gen, s): {stalls}")
+print(prog.native_units().phase_summary())
 print(f"  collector before={before} after={state()} {'restored' if state() == before else 'CHANGED'}")
