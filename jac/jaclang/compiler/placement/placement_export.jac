@@ -51,12 +51,18 @@ def element_from_dict(d: dict[str, any]) -> ElementSummary {
     es.sv_import = bool(d.get('sv_import', False));
     es.import_eco = str(d.get('import_eco', ''));
     es.import_jac_target = str(d.get('import_jac_target', ''));
-    es.import_items = [str(x) for x in d.get('import_items', [])];
-    es.import_py_targets = [str(x) for x in d.get('import_py_targets', [])];
-    es.reqs = [[str(x) for x in r] for r in d.get('reqs', [])];
-    es.refs = [int(x) for x in d.get('refs', [])];
-    es.escapes = [(int(e[0]), str(e[1])) for e in d.get('escapes', [])];
-    es.glob_writes = [int(x) for x in d.get('glob_writes', [])];
+    import_items: list[any] = d.get('import_items', []);
+    import_py_targets: list[any] = d.get('import_py_targets', []);
+    reqs: list[list[any]] = d.get('reqs', []);
+    refs: list[any] = d.get('refs', []);
+    escapes: list[list[any]] = d.get('escapes', []);
+    glob_writes: list[any] = d.get('glob_writes', []);
+    es.import_items = [str(x) for x in import_items];
+    es.import_py_targets = [str(x) for x in import_py_targets];
+    es.reqs = [[str(x) for x in r] for r in reqs];
+    es.refs = [int(x) for x in refs];
+    es.escapes = [(int(e[0]), str(e[1])) for e in escapes];
+    es.glob_writes = [int(x) for x in glob_writes];
     return es;
 }
 
@@ -80,13 +86,16 @@ def summary_from_dict(d: dict[str, any]) -> (PlacementSummary | None) {
     ps = PlacementSummary();
     ps.mod_path = str(d.get('mod_path', ''));
     ps.decided = str(d.get('decided', ''));
-    ps.anchors = [str(x) for x in d.get('anchors', [])];
+    anchors: list[any] = d.get('anchors', []);
+    jac_deps: list[any] = d.get('jac_deps', []);
+    elements: list[any] = d.get('elements', []);
+    ps.anchors = [str(x) for x in anchors];
     ps.native_blocker = str(d.get('native_blocker', ''));
-    ps.jac_deps = [str(x) for x in d.get('jac_deps', [])];
+    ps.jac_deps = [str(x) for x in jac_deps];
     ps.has_refs = bool(d.get('has_refs', False));
     ps.elements = [
         element_from_dict(e)
-        for e in d.get('elements', [])
+        for e in elements
         if isinstance(e, dict)
     ];
     return ps;

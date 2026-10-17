@@ -445,9 +445,6 @@ obj KernelHost(HostServices) {
         if not products.path {
             products.path = real;
         }
-        if real.endswith(".jac") {
-            unit_interface(module, task.program, products);
-        }
         self.units[real] = products;
     }
 

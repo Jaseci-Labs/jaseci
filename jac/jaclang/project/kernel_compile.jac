@@ -51,6 +51,12 @@ def kernel_compile(
         );
     } elif in_process {
         outcome = run_kernel_compile(snapshot.text(), path, source, snapshot);
+        for unit in outcome.units {
+            task = outcome.analyses.get(os.path.realpath(unit.path));
+            if task is not None and unit.path.endswith(".jac") {
+                unit_interface(task.module, task.program, unit);
+            }
+        }
     } else {
         kernel = loaded_kernel(COMPILE_ENTRY);
         outcome = CompileReport.from_json(

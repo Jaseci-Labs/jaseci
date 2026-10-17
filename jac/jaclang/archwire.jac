@@ -4578,12 +4578,8 @@ graph import compiler.driver {
         products_from_record,
         products_record
     }
-    unit_products --> compiler.frontend.kernel_host {
-        UnitProducts,
-        unit_interface,
-        unit_products
-    }
-    unit_products --> project.kernel_compile { UnitProducts }
+    unit_products --> compiler.frontend.kernel_host { UnitProducts, unit_products }
+    unit_products --> project.kernel_compile { UnitProducts, unit_interface }
     wiring --> compiler.driver.jir.stored_wiring_digest {
         arch_file_for,
         import_prefix_for,
