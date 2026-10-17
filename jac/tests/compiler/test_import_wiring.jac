@@ -661,3 +661,33 @@ test "the strip removes a function's wired import that a nested function repeats
         shutil.rmtree(base, ignore_errors=True);
     }
 }
+
+
+test "the strip keeps a wired include that hoisting would move ahead of declarations" {
+    base = _project(
+        {
+            "archwire.jac": (
+                "graph import core {\n"
+                "    include shared --> core.head;\n"
+                "    include shared --> core.svc;\n"
+                "}\n"
+            ),
+            "core/shared.jac": "def shared_fn -> int {\n    return 1;\n}\n",
+            "core/head.jac": "include core.shared;\n\ndef own -> int {\n    return 2;\n}\n",
+            "core/svc.jac": "def own -> int {\n    return 2;\n}\n",
+            "core/impl/svc.impl.jac": "include core.shared;\n"
+        }
+    );
+    try {
+        head = JacProgram.jac_file_formatter(
+            os.path.join(base, "core", "head.jac"), auto_lint=True
+        );
+        assert "include core.shared" not in head.mod.main.gen.jac , head.mod.main.gen.jac;
+        annex = JacProgram.jac_file_formatter(
+            os.path.join(base, "core", "impl", "svc.impl.jac"), auto_lint=True
+        );
+        assert "include core.shared" in annex.mod.main.gen.jac , annex.mod.main.gen.jac;
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
