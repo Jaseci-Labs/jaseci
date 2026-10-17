@@ -1210,6 +1210,21 @@ impl NaIRGenPass._has_own_code(mod: (uni.Module | None)) -> bool {
         );
 }
 
+impl NaIRGenPass._declares_native_visible(mod: uni.Module) -> bool {
+    for stmt in ModuleFacts.iter_context_stmts(mod) {
+        if isinstance(stmt, uni.Import) and not stmt.clib_decls {
+            continue;
+        }
+        if isinstance(stmt, uni.ContextAwareNode)
+            and stmt.code_context == CodeContext.CLIENT
+            and not stmt.codespace_dual {
+            continue;
+        }
+        return True;
+    }
+    return False;
+}
+
 impl NaIRGenPass._native_imports(transitive: bool = True) -> list[tuple[str, uni.Module]] {
     import os;
 
@@ -1460,7 +1475,9 @@ impl NaIRGenPass._register_imported_struct_types -> None {
 
     imported_mods = self._native_imports();
     for (_, imported_mod) in imported_mods {
-        self._ensure_dep_inference(imported_mod);
+        if self._declares_native_visible(imported_mod) {
+            self._ensure_dep_inference(imported_mod);
+        }
     }
 
     """Keep a name's binding only where the named module defines that global
