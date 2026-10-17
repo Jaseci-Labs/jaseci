@@ -514,7 +514,7 @@ impl Serializer.coerce(val: object, target_type: object) -> tuple[object, bool] 
         return (val, False);
     }
 
-    (origin, args) = (get_origin(target_type), get_args(target_type));
+    (origin, args) = _type_shape(target_type);
     if origin is Union or origin is UnionType {
         non_none = [
             a
@@ -1156,8 +1156,7 @@ impl Serializer._deserialize_archetype(
             (coerced, ok) = Serializer.coerce(deser_v, target);
             if not ok {
                 field_key = f"{module_name}.{type_name}.{k}";
-                origin = get_origin(target);
-                args = get_args(target);
+                (origin, args) = _type_shape(target);
                 is_optional = (
                     (origin is Union or origin is UnionType) and NoneType in args
                 );
@@ -1354,30 +1353,10 @@ impl Serializer.stored_hash(
 
 
 impl frozen_value(value: any) -> bool {
-    import datetime;
-    import decimal;
-    import enum;
-    import uuid;
-    if value is None
-        or isinstance(
-            value,
-            (
-                bool,
-                int,
-                float,
-                complex,
-                str,
-                bytes,
-                decimal.Decimal,
-                uuid.UUID,
-                datetime.date,
-                datetime.time,
-                datetime.timedelta
-            )
-        ) {
+    if type(value) in _FROZEN_EXACT or isinstance(value, _FROZEN_SCALARS) {
         return True;
     }
-    if isinstance(value, enum.Enum) {
+    if isinstance(value, Enum) {
         return frozen_value(value.value);
     }
     if isinstance(value, (tuple, frozenset)) {
@@ -1405,4 +1384,19 @@ impl frozen_fields(anchor: Anchor) -> bool {
         }
     }
     return True;
+}
+
+
+impl _type_shape(target_type: object) -> tuple[object, tuple[object, ...]] {
+    hit = _TYPE_SHAPES.get(id(target_type));
+    if hit is not None and hit[0] is target_type {
+        return (hit[1], hit[2]);
+    }
+    origin = get_origin(target_type);
+    args = get_args(target_type);
+    if len(_TYPE_SHAPES) >= _TYPE_SHAPES_LIMIT {
+        _TYPE_SHAPES.clear();
+    }
+    _TYPE_SHAPES[id(target_type)] = (target_type, origin, args);
+    return (origin, args);
 }

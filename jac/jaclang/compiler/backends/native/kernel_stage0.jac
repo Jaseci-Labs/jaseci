@@ -1,7 +1,134 @@
 import os;
 import time;
 
-glob STAGE0_UNKNOWN_FORMAT: int = 3;
+glob STAGE0_UNKNOWN_FORMAT: int = 3,
+     KERNEL_ENTRY_SOURCES: tuple[str, ...] = (
+         "compiler/jc_unit.jac",
+         "compiler/jc_materialize.jac"
+     );
+
+class KernelEntryError(RuntimeError) {}
+
+def declared_entry_points(source: str) -> list[str] {
+    import re;
+    return re.findall(r"^def:pub\s+([A-Za-z_][A-Za-z0-9_]*)", source, re.MULTILINE);
+}
+
+def unit_issue_details(plan: LinkPlan) -> Callable[[str], dict[str, str]] {
+    registry = plan.prog.native_units();
+    cache: dict[str, dict[str, str]] = {};
+
+    def details(path: str) -> dict[str, str] {
+        found = cache.get(path);
+        if found is not None {
+            return found;
+        }
+        out: dict[str, str] = {};
+        bitcode = registry.bitcode_for(path, plan.options);
+        if bitcode is not None {
+            for issue in native_lowering_issues(str(llvm.parse_bitcode(bitcode))) {
+                out.setdefault(issue.symbol, issue.detail);
+            }
+        }
+        cache[path] = out;
+        return out;
+    }
+    return details;
+}
+
+def demotion_chain(
+    plan: LinkPlan,
+    path: str,
+    name: str,
+    details: Callable[[str], dict[str, str]],
+    pkg_root: str
+) -> list[str] {
+    import re;
+    chain: list[str] = [];
+    seen: set[str] = set();
+    current: (str | None) = name;
+    owner: (str | None) = path;
+    while current is not None and owner is not None {
+        step = f"{owner}:{current}";
+        if step in seen {
+            break;
+        }
+        seen.add(step);
+        detail = details(owner).get(current, "");
+        label = os.path.relpath(owner, os.path.dirname(pkg_root));
+        chain.append(f"{current} ({label})" + (f": {detail}" if detail else ""));
+        called = re.search(
+            r"Native lowering failed for (?:function|method) '([^']+)'", detail
+        );
+        if called is None {
+            break;
+        }
+        current = called.group(1);
+        here = plan.unit(owner);
+        candidates = [here] if here is not None else [];
+        if here is not None {
+            candidates.extend(plan.unit(dep) for dep in here.iface.deps);
+        }
+        candidates.extend(plan.units);
+        owner = next(
+            (
+                unit.path
+                for unit in candidates
+                if unit is not None and current in unit.iface.demoted
+            ),
+            None
+        );
+    }
+    return chain;
+}
+
+def missing_kernel_entries(
+    plan: LinkPlan,
+    pkg_root: str,
+    details: (Callable[[str], dict[str, str]] | None) = None
+) -> list[str] {
+    issues = details if details is not None else unit_issue_details(plan);
+    problems: list[str] = [];
+    for rel in KERNEL_ENTRY_SOURCES {
+        source_path = os.path.realpath(os.path.join(pkg_root, rel));
+        unit = plan.unit(source_path);
+        if unit is None {
+            problems.append(f"{rel} is not a unit of the kernel plan");
+            continue;
+        }
+        with open(source_path, encoding="utf-8") as handle {
+            declared = declared_entry_points(handle.read());
+        }
+        exported = set(unit.iface.pub_symbols());
+        for name in declared {
+            if native_def_symbol(name) in exported {
+                continue;
+            }
+            chain = demotion_chain(plan, unit.path, name, issues, pkg_root);
+            problems.append(
+                f"{name} is not exported"
+                    + (
+                        "; it was demoted to Python:\n      "
+                            + "\n      <- ".join(chain)
+                            if chain
+                            else ""
+                    )
+            );
+        }
+    }
+    return problems;
+}
+
+def refuse_missing_entries(plan: LinkPlan, pkg_root: str) {
+    problems = missing_kernel_entries(plan, pkg_root);
+    if problems {
+        raise KernelEntryError(
+            "the native compiler kernel would not export the entry points its "
+            "loader calls:\n  "
+                + "\n  ".join(problems)
+        );
+    }
+}
 
 def running_kernel_target(pkg_root: str = "") -> KernelTarget {
     return KernelTarget(
@@ -37,6 +164,11 @@ def link_kernel(
             );
         }
         plan = kernel_plan(program, mode=mode, target=target);
+        pkg_root = jaclang_pkg_root();
+        if target is not None {
+            pkg_root = str(target.root);
+        }
+        refuse_missing_entries(plan, pkg_root);
         planned = time.perf_counter();
         if log is not None {
             log(

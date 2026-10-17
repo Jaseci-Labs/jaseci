@@ -53,17 +53,33 @@ def _literal_names(value: (Expr | None)) -> (list[str] | None) {
     return names;
 }
 
-def callable_key(sym: Symbol) -> tuple[(UniScopeNode | None), str] {
+obj CallableKey {
+    has owner: (UniScopeNode | None) = None,
+        key: str = "";
+}
+
+def callable_key(sym: Symbol) -> CallableKey {
+    import from jaclang.compiler.native_bindings { is_owning_scope }
     parts: list[str] = [sym.sym_name];
     cur: (UniScopeNode | None) = sym.parent_tab;
     while cur is not None and not isinstance(cur, Module) {
-        if UniScopeNode.is_python_scoping(cur) or hasattr(cur, "cat_kind") {
+        if is_owning_scope(cur) {
             parts.append(cur.scope_name);
         }
         cur = cur.parent_scope;
     }
     parts.reverse();
-    return (cur, ".".join(parts));
+    return CallableKey(owner=cur, key=".".join(parts));
+}
+
+def _summary_strings(value: object) -> list[str] {
+    out: list[str] = [];
+    if isinstance(value, list) {
+        for item in value {
+            out.append(str(item));
+        }
+    }
+    return out;
 }
 
 walker EndpointEffectPass(TreePass) {
@@ -145,7 +161,7 @@ walker EndpointEffectPass(TreePass) {
                 }
                 summary = self._summary(ability);
                 if summary is not None {
-                    effects[callable_key(sym)[1]] = summary;
+                    effects[callable_key(sym).key] = summary;
                 }
             }
         } finally {
@@ -162,15 +178,13 @@ walker EndpointEffectPass(TreePass) {
             return done;
         }
         self._summarizing.add(key);
-        saved = (
-            self._is_writer,
-            self._unknown,
-            set(self._declared_reads),
-            set(self._declared_writes),
-            set(self._assumptions),
-            set(self._touches),
-            set(self._visited)
-        );
+        was_writer = self._is_writer;
+        was_unknown = self._unknown;
+        reads = set(self._declared_reads);
+        writes = set(self._declared_writes);
+        assumptions = set(self._assumptions);
+        touches = set(self._touches);
+        visited = set(self._visited);
         self._is_writer = False;
         self._unknown = False;
         self._declared_reads.clear();
@@ -200,15 +214,13 @@ walker EndpointEffectPass(TreePass) {
             "writes": sorted(self._declared_writes),
             "assumptions": sorted(self._assumptions)
         };
-        (
-            self._is_writer,
-            self._unknown,
-            self._declared_reads,
-            self._declared_writes,
-            self._assumptions,
-            self._touches,
-            self._visited
-        ) = saved;
+        self._is_writer = was_writer;
+        self._unknown = was_unknown;
+        self._declared_reads = reads;
+        self._declared_writes = writes;
+        self._assumptions = assumptions;
+        self._touches = touches;
+        self._visited = visited;
         self._summarizing.discard(key);
         self._summaries[key] = summary;
         return summary;
@@ -220,28 +232,37 @@ walker EndpointEffectPass(TreePass) {
         if sym is None {
             return None;
         }
-        (owner, key) = callable_key(sym);
+        found = callable_key(sym);
+        owner = found.owner;
         if not isinstance(owner, CatModule) {
             return None;
         }
-        return owner.gen.callable_effects.get(key);
+        return owner.gen.callable_effects.get(found.key);
     }
 
     def _apply(summary: dict[str, any], call: FuncCall) {
-        if summary["declared"] {
+        if bool(summary.get("declared", False)) {
             import from jaclang.compiler.frontend.unparse { unparse_node }
             self._assumptions.add("Declared effects of " + unparse_node(call.target));
         }
-        if summary["writer"] {
+        if bool(summary.get("writer", False)) {
             self._is_writer = True;
         }
-        if summary["unknown"] {
+        if bool(summary.get("unknown", False)) {
             self._unknown = True;
         }
-        self._touches.update(summary["touches"]);
-        self._declared_reads.update(summary["reads"]);
-        self._declared_writes.update(summary["writes"]);
-        self._assumptions.update(summary["assumptions"]);
+        for name in _summary_strings(summary.get("touches")) {
+            self._touches.add(name);
+        }
+        for name in _summary_strings(summary.get("reads")) {
+            self._declared_reads.add(name);
+        }
+        for name in _summary_strings(summary.get("writes")) {
+            self._declared_writes.add(name);
+        }
+        for name in _summary_strings(summary.get("assumptions")) {
+            self._assumptions.add(name);
+        }
     }
 
     def _classify(

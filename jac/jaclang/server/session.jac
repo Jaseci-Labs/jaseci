@@ -10,6 +10,7 @@ glob logger = logging.getLogger(__name__),
      FIRST_LOCK_WAIT = '250ms',
      SESSION_THREADS = 16,
      EDGE_PAGE = 1000,
+     HOP_BATCH_LIMIT = 1000,
      SCRATCH_ENV = 'JAC_DB_SCRATCH',
      SCRATCH_OWNER_ENV = 'JAC_DB_SCRATCH_OWNER',
      RETENTION_ENV = 'JAC_DB_RETENTION_DAYS',
@@ -185,6 +186,14 @@ obj Session(Memory) {
         _snapshot_reads: set[UUID] postinit,
         _foreign_refs: set[UUID] postinit,
         _contended: set[UUID] postinit,
+        _hop_writes: int postinit,
+        _hop_cache:
+            dict[
+                any,
+                tuple[tuple[int, int], dict[UUID, list[tuple[any, any]]]]
+            ] postinit,
+        _hop_siblings: dict[UUID, tuple[UUID, ...]] postinit,
+        _hop_groups_token: (tuple[int, int] | None) postinit,
         _queued: list[UUID] postinit,
         _last_conflict: set[UUID] postinit,
         _scan_clean: bool postinit,
@@ -242,6 +251,13 @@ obj Session(Memory) {
     def run_request(body: Callable) -> any;
     def reset_fetch_count -> None;
     def get_fetch_count -> int;
+    def _hop_token -> (tuple[int, int] | None);
+    def batching -> bool;
+    def _drop_hop_state -> None;
+    def note_siblings(ids: list[UUID]) -> None;
+    def hop_siblings(origin: UUID) -> tuple[UUID, ...];
+    def hop_cached(key: any, origin: UUID) -> (list[tuple[any, any]] | None);
+    def hop_store(key: any, by_origin: dict[UUID, list[tuple[any, any]]]) -> None;
     def unit_enter(key: (str | None) = None) -> None;
     def unit_exit -> None;
     def unit_depth -> int;

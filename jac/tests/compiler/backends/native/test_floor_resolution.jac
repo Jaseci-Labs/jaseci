@@ -118,7 +118,7 @@ test "a wasm libc floor is current only while its manifest matches wasm_rt" {
 }
 
 test "static linking asks the router for the target's floors" {
-    import from jaclang.compiler.backends.native.static_link {
+    import from jaclang.compiler.backends.native.native_link {
         floor_lib_dir,
         musl_lib_dir
     }
