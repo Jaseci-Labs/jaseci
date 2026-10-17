@@ -1,5 +1,3 @@
-import from jaclang.server.settings { AuthSettings }
-
 glob _active: list[any] = [AuthSettings(), '', None];
 
 
@@ -33,5 +31,5 @@ def token_ttl_days -> int {
 }
 
 def password_hash_cost -> int {
-    return auth_settings().password_hash_cost;
+    return auth_settings().password.hash_cost;
 }

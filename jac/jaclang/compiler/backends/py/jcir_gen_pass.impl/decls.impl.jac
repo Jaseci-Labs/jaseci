@@ -1,3 +1,4 @@
+import from jaclang.compiler.c_interop { c_variadic_param }
 impl JcirGenPass._get_sem_decorator(nd: UniNode) -> (CgNode | None) {
     semstr: str = '';
     inner_semstr: dict[(str, str)] = {};
@@ -264,7 +265,7 @@ impl JcirGenPass.exit_ability with Ability exit {
             if (
                 tinfo.cls == 'Tuple' and isinstance(event_sig.arch_tag_info, TupleVal)
             ) {
-                telts = tinfo.get('elts');
+                telts = tinfo.items('elts');
                 if (len(telts) > 1) {
                     trigger_arg = telts[0];
                     for elem in telts[1:] {
@@ -356,6 +357,28 @@ impl JcirGenPass.exit_ability with Ability exit {
     if body_hoists {
         body = [*body_hoists, *body];
     }
+    va_param = c_variadic_param(here.signature);
+    if va_param is not None {
+        va_name = va_param.name.value;
+        body = [
+            self.nod(
+                'Assign',
+                ['targets', 'value'],
+                [
+                    [
+                        self.nod(
+                            'Name', ['id', 'ctx'], [va_name, self.nod('Store', [], [])]
+                        )
+                    ],
+                    self.call_node(
+                        self.builtin_name('VaList'), [self.name_load(va_name)], []
+                    )
+                ],
+                jac_node=va_param
+            ),
+            *body
+        ];
+    }
     body = self._scope_cleanup_body(here, body);
     directive_stmts = self.scope_directive_stmts(
         [here, here.body if isinstance(here.body, ImplDef) else None]
@@ -444,6 +467,20 @@ impl JcirGenPass.exit_ability with Ability exit {
         ['name', 'args', 'body', 'decorator_list', 'returns', 'type_params'],
         [func_name_out, func_args_out, body, decorator_list, ast_returns, []]
     );
+    if self._closure_bindings(here) {
+        bound = self.nod(
+            'Name',
+            ['id', 'ctx'],
+            [func_name_out, self.nod('Store', [], [], jac_node=here)],
+            jac_node=here
+        );
+        made = self._linked_closure_factory(func_def, here);
+        self.set_out(
+            here,
+            [self.nod('Assign', ['targets', 'value'], [[bound], made], jac_node=here)]
+        );
+        return;
+    }
     self.set_out(here, [func_def]);
 }
 
@@ -529,7 +566,7 @@ impl JcirGenPass.exit_event_signature with EventSignature exit {
     if here.arch_tag_info {
         tag_recipe = self.val(here.arch_tag_info);
         if (tag_recipe.cls == 'Tuple' and isinstance(here.arch_tag_info, TupleVal)) {
-            telts = tag_recipe.get('elts');
+            telts = tag_recipe.items('elts');
             if (len(telts) > 1) {
                 annotation = telts[0];
                 for elem in telts[1:] {
@@ -633,10 +670,14 @@ impl JcirGenPass.exit_param_var with ParamVar exit {
 }
 
 impl JcirGenPass.exit_arch_has with ArchHas exit {
-    vars_py = self._flatten_ast_list([self.outs(v) for v in here.vars]);
+    vars_py: list[CgItem] = [];
+    for var in here.vars {
+        vars_py.extend(self.outs(var));
+    }
     if here.doc {
         doc = self.nod('Expr', ['value'], [self.val(here.doc)], jac_node=here.doc);
-        self.set_out(here, [doc] + vars_py);
+        vars_py.insert(0, doc);
+        self.set_out(here, vars_py);
     } else {
         self.set_out(here, vars_py);
     }

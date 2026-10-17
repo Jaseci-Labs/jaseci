@@ -2,13 +2,11 @@ import os;
 import shutil;
 import subprocess;
 import from pathlib { Path }
-import from jaclang.toolchains.host { run_step }
-import from jaclang.toolchains.store { offline }
 
 def install_linux_packages(packages: dict[str, list[str]]) {
     if offline() {
         raise RuntimeError(
-            "Required system libraries are missing and JAC_OFFLINE is enabled. Run setup online first."
+            "Required system libraries are missing and jac.toml sets `[network] offline`. Run setup online first."
         );
     }
     for (manager, names) in packages.items() {
@@ -76,7 +74,6 @@ def webkit_module -> str {
 }
 
 def ensure_linux_desktop {
-    import from jaclang.toolchains.host { host_platform }
     host = host_platform();
     if not host.startswith("linux-") {
         raise RuntimeError(f"WebKitGTK provisioning needs a Linux host, not {host}.");
@@ -126,7 +123,6 @@ def mac_desktop_ready -> bool {
 
 
 def ensure_desktop_host -> str {
-    import from jaclang.toolchains.host { host_platform }
     host = host_platform();
     if host.startswith("linux-") {
         ensure_linux_desktop();
@@ -143,20 +139,7 @@ def ensure_desktop_host -> str {
 
 
 def ensure_patchelf -> str {
-    found = shutil.which("patchelf");
-    if found {
-        return found;
-    }
-    import from jaclang.toolchains.pins { PATCHELF_ARTIFACTS }
-    import from jaclang.toolchains.store { install }
-    import from jaclang.toolchains.host { host_platform }
-    artifact = PATCHELF_ARTIFACTS.get(host_platform());
-    if artifact is None {
-        raise RuntimeError("No patchelf distribution for this host.");
-    }
-    marker = "patchelf-0.17.2.4.data/scripts/patchelf";
-    directory = install(artifact, marker);
-    return str(directory / marker);
+    return str(tool_path("patchelf"));
 }
 
 

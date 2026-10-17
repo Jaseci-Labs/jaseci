@@ -1,63 +1,15 @@
 import logging;
+import secrets;
 import time;
-import from jaclang.scale.deploy.target.kubernetes.kubernetes_target {
-    KubernetesTargetBase
-}
-import from jaclang.scale.config.app_config { AppConfig }
-import from jaclang.scale.models.deployment_result { DeploymentResult }
-import from jaclang.scale.models.deploy_context { DeployContext }
-import from jaclang.scale.models.resource_status { ResourceStatus, assess_workload }
-import from jaclang.scale._optdeps.kubernetes { client, ApiException }
-import from jaclang.scale.deploy.target.kubernetes.utils.kubernetes_utils {
-    ensure_namespace_exists,
-    create_k8s_secret,
-    delete_if_exists,
-    delete_k8s_secret,
-    delete_namespace,
-    get_cluster_provider,
-    namespace_is_owned,
-    privileged_pss_labels,
-    resolve_signing_secret,
-    PSS_ENFORCE_LABEL,
-    _resolve_current_rs_hashes,
-    _refresh_rs_hashes
-}
-import from jaclang.scale.deploy.target.kubernetes.kubernetes_config {
-    KubernetesConfig
-}
-import from jaclang.scale.deploy.target.kubernetes.manifest_builder {
-    with_config_revision,
-    CONFIG_REVISION_ANNOTATION,
-    ManifestBuilder,
-    ScalingMode
-}
-import from jaclang.scale.runtime.context.util { GATEWAY_NAME, k8s_safe_name }
-import from jaclang.scale.deploy.target.kubernetes.database_provisioner {
-    DatabaseProvisioner
-}
-import from jaclang.scale.deploy.autoscale.factory { AutoscalerFactory }
-import from jaclang.scale.deploy.autoscale.autoscaler {
-    AutoscalerSpec,
-    Trigger,
-    TriggerAuth
-}
-import from jaclang.scale.deploy.autoscale.keda_autoscaler { KEDAAutoscaler }
-import from jaclang.scale.deploy.autoscale.http_activation_config {
-    apply_http_activation_for_target,
-    destroy_http_activation_for_target
-}
-import from jaclang.scale.runtime.context.service_routing {
-    resolve_interceptor_service_address
-}
-import from jaclang.scale.deploy.target.kubernetes.monitoring { MonitoringDeployer }
-import from jaclang.scale.config.config_loader { get_scale_config }
-import from jaclang.scale.injector.pvc_injector {
-    bundle_keys_from_pod_spec,
-    bundle_pvc_name
-}
-import from jaclang.scale.runtime.fleet { FleetSpec }
 
-glob logger = logging.getLogger(__name__),
+glob MINTED_SECRET_NOTES: dict[str, str] = {
+         SIGNING_SECRET_ENV: "Minted a JWT signing secret, kept across redeploys. Set "
+         "[scale.secrets] JAC_SERVE_AUTH_SECRET to control it yourself.",
+         ADMIN_PASSWORD_ENV: "Minted the bootstrap admin password into the app Secret "
+         "as JAC_SCALE_ADMIN_PASSWORD, kept across redeploys. Set [scale.admin] "
+         "default_password to control it yourself."
+     },
+     logger = logging.getLogger(__name__),
      REVISION_ANNOTATION: str = "deployment.kubernetes.io/revision",
      FLEET_SELECTOR: str = "managed=jac-scale,jac-scale.role in (microservice,gateway)";
 
@@ -145,6 +97,25 @@ def fleet_targets_for_release(
 }
 
 
+def replacing_init_containers(body: dict[str, any]) -> dict[str, any] {
+    pod_spec: dict[str, any] = dict(
+        dict(dict(body.get("spec") or {}).get("template") or {}).get("spec") or {}
+    );
+    if "initContainers" not in pod_spec {
+        return body;
+    }
+    pod_spec["initContainers"] = list(pod_spec["initContainers"])
+        + [{"$patch": "replace"}];
+    template = dict(body["spec"]["template"]);
+    template["spec"] = pod_spec;
+    spec = dict(body["spec"]);
+    spec["template"] = template;
+    patched = dict(body);
+    patched["spec"] = spec;
+    return patched;
+}
+
+
 def restorable_pod_template(template: dict[str, any]) -> dict[str, any] {
     cleaned = dict(template);
     metadata = dict(cleaned.get("metadata") or {});
@@ -207,7 +178,6 @@ obj KubernetesTarget(KubernetesTargetBase) {
         app_overrides: dict[str, dict[str, any]] = {};
 
     def _gateway_cfg -> dict[str, any] {
-        import from jaclang.scale.config.config_loader { normalize_gateway_config }
         if self.gateway_config is not None {
             return normalize_gateway_config(self.gateway_config);
         }
@@ -223,7 +193,7 @@ obj KubernetesTarget(KubernetesTargetBase) {
                 "under [scale.kubernetes] in jac.toml."
             );
         }
-        import from jaclang.scale.injector.binary { deploy_generation_refusal }
+
         refusal = deploy_generation_refusal(app_config.code_folder);
         if refusal {
             return DeploymentResult(success=False, message=refusal);
@@ -428,8 +398,12 @@ obj KubernetesTarget(KubernetesTargetBase) {
                             companion_app_names is not None
                             and app in companion_app_names
                         );
+
                     crashing = (
-                        owned and restarts >= 3 and reason not in imagepull_reasons
+                        owned
+                        and restarts >= 3
+                        and not cs.ready
+                        and reason not in imagepull_reasons
                     );
                     if crashing and not pod_crash {
                         pod_crash = str(cs.name);
@@ -553,7 +527,6 @@ obj KubernetesTarget(KubernetesTargetBase) {
         import time;
         import sys;
         import from kubernetes { client }
-        import from jaclang.cli.console { console }
 
         names: list[str] = [];
         app_labels: list[str] = [];
@@ -763,9 +736,6 @@ obj KubernetesTarget(KubernetesTargetBase) {
     def _pod_failure_detail(
         core_v1: any, namespace: str, pod_name: str, pod: any = None
     ) -> str {
-        import from jaclang.scale.deploy.target.kubernetes.utils.kubernetes_utils {
-            describe_pod_status
-        }
         detail = describe_pod_status(core_v1, namespace, pod_name, pod);
         term_lines: list[str] = [];
         try {
@@ -942,7 +912,6 @@ obj KubernetesTarget(KubernetesTargetBase) {
     }
 
     def generate_manifests(app_config: AppConfig) -> dict[str, any] {
-        import from jaclang.scale.injector.binary { resolve_pod_base_image }
         self.k8s_config.python_image = resolve_pod_base_image(
             app_config.code_folder, self.k8s_config.python_image, probe=not self.dry_run
         );
@@ -1002,7 +971,7 @@ obj KubernetesTarget(KubernetesTargetBase) {
                     }
                 )
             ];
-            if has_memory_request {
+            if cfg.get("memory_request_configured", False) {
                 triggers.append(
                     Trigger(
                         type="memory",
@@ -1151,17 +1120,22 @@ obj KubernetesTarget(KubernetesTargetBase) {
         config_revision: str = "";
         user_secret = bundle.get("user_secret");
         if user_secret {
-            if resolve_signing_secret(
-                core_v1,
-                namespace,
-                user_secret["metadata"]["name"],
-                user_secret["stringData"]
-            )
-                and self.logger {
-                self.logger.info(
-                    "Minted a JWT signing secret, kept across redeploys. Set "
-                    "[scale.secrets] JAC_SERVE_AUTH_SECRET to control it yourself."
-                );
+            fresh = {
+                SIGNING_SECRET_ENV: secrets.token_urlsafe(48),
+                ADMIN_PASSWORD_ENV: minted_password(bundle.get("admin_password_rules"))
+            };
+            for (key, minted_note) in MINTED_SECRET_NOTES.items() {
+                if resolve_minted_secret(
+                    core_v1,
+                    namespace,
+                    user_secret["metadata"]["name"],
+                    user_secret["stringData"],
+                    key,
+                    fresh[key]
+                )
+                    and self.logger {
+                    self.logger.info(minted_note);
+                }
             }
             config_revision = create_k8s_secret(
                 core_v1,
@@ -1210,8 +1184,11 @@ obj KubernetesTarget(KubernetesTargetBase) {
         deployments: dict[str, dict[str, any]] = bundle["deployments"];
         for (svc_name, raw_manifest) in deployments.items() {
             dep_manifest = with_config_revision(raw_manifest, config_revision);
-            patch_body = self._deployment_patch_body(
-                dep_manifest, dict(scaling.get(svc_name, {}))
+            patch_body = replacing_init_containers(
+                self._deployment_patch_body(
+                    dep_manifest, dict(scaling.get(svc_name, {}))
+                )
+                    or dep_manifest
             );
             self._apply_or_replace(
                 apps_v1,

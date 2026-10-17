@@ -40,38 +40,45 @@ obj DiagnosticInfo {
     }
 }
 
-def _fill_template(template: str, kwargs: dict[str, object]) -> (str | None) {
-    esc_open = chr(1);
-    esc_close = chr(2);
-    out = template.replace("{{", esc_open).replace("}}", esc_close);
-    for (k, v) in kwargs.items() {
-        key = "{" + str(k) + "}";
-        out = out.replace(key, str(v));
+def _placeholder_name(text: str) -> bool {
+    if not text {
+        return False;
     }
-    scan = 0;
-    while True {
-        b_open = out.find("{", scan);
-        if b_open < 0 {
-            break;
+    for ch in text {
+        if not (ch.isalnum() or ch == "_") {
+            return False;
         }
-        b_close = out.find("}", b_open + 1);
-        if b_close < 0 {
-            break;
+    }
+    return True;
+}
+
+def _fill_template(template: str, kwargs: dict[str, object]) -> (str | None) {
+    out: list[str] = [];
+    i = 0;
+    n = len(template);
+    while i < n {
+        ch = template[i];
+        if (ch == "{" or ch == "}") and i + 1 < n and template[i + 1] == ch {
+            out.append(ch);
+            i += 2;
+            continue;
         }
-        inner = out[b_open + 1:b_close];
-        is_name = len(inner) > 0;
-        for ch in inner {
-            if not (ch.isalnum() or ch == "_") {
-                is_name = False;
-                break;
+        if ch == "{" {
+            close = template.find("}", i + 1);
+            if close > i and _placeholder_name(template[i + 1:close]) {
+                key = template[i + 1:close];
+                if key not in kwargs {
+                    return None;
+                }
+                out.append(str(kwargs[key]));
+                i = close + 1;
+                continue;
             }
         }
-        if is_name {
-            return None;
-        }
-        scan = b_open + 1;
+        out.append(ch);
+        i += 1;
     }
-    return out.replace(esc_open, "{").replace(esc_close, "}");
+    return "".join(out);
 }
 
 glob DIAGNOSTICS: dict[str, DiagnosticInfo] = {};
@@ -393,15 +400,15 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
      E0093 = _err(
          "E0093",
          Category.SYNTAX,
-         "An 'impl import' scope is a dotted package name",
-         help="Write `impl import core.docs {{ ... }}`; names inside are then"
+         "A 'graph import' scope is a dotted package name",
+         help="Write `graph import core.docs {{ ... }}`; names inside are then"
          " relative to that package."
      ),
      E0094 = _err(
          "E0094",
          Category.SYNTAX,
          "Expected a wire ('provider --> consumer') or an edge rule here",
-         help="An `impl import` block holds wires and `edge Name:` rules only."
+         help="A `graph import` block holds wires and `edge Name:` rules only."
      ),
      E0095 = _err(
          "E0095",
@@ -417,6 +424,27 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
          "A rule payload lists names without aliases",
          help="A rule's payload says which names may cross; an alias belongs to"
          " the wire or module that imports the name."
+     ),
+     E0097 = _err(
+         "E0097",
+         Category.SYNTAX,
+         "`return tail` needs a function call",
+         help="A guaranteed tail call replaces the current frame with the callee's, so its operand is a call: `return tail next_step(state);`."
+     ),
+     E0098 = _err(
+         "E0098",
+         Category.SYNTAX,
+         "An edge rule's patterns name modules under this archwire.jac; 'any' is not a pattern",
+         help="An archwire.jac governs only the modules below it, so a rule's targets"
+         " are patterns over those modules (`*` for all of them). Importers"
+         " outside the directory are governed by their own archwire.jac."
+     ),
+     E0099 = _err(
+         "E0099",
+         Category.SYNTAX,
+         "Wiring blocks are written 'graph import'; 'impl import' was removed",
+         help="Rename the block header: `graph import core {{ ... }}`. The body is"
+         " unchanged."
      ),
      W0060 = _warn(
          "W0060",
@@ -851,6 +879,15 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
          help="A pattern that matches nothing constrains nothing. Check the"
          " spelling, or remove the rule if the modules it governed are gone."
      ),
+     W2084 = _warn(
+         "W2084",
+         Category.SEMANTIC,
+         "'{name}' is not a module under this archwire.jac, so {what} is inert",
+         help="Wiring only reaches modules that exist below the archwire.jac, so a"
+         " name that matches none generates nothing and checks nothing. Fix the"
+         " spelling, or remove the wiring if the modules are gone; a distribution"
+         " that leaves them out on purpose can ignore this."
+     ),
      E1119 = _err(
          "E1119",
          Category.TYPE,
@@ -1060,13 +1097,6 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
          " which fails at run time with 'cannot import name ... from partially"
          " initialized module'. Remove the import and use the names directly."
      ),
-     E1140 = _err(
-         "E1140",
-         Category.IMPORT,
-         "'{scope}' is not a package or module under the project root",
-         help="Names inside an `impl import {scope} {{ ... }}` block are relative to"
-         " its header, so the header must name something the project contains."
-     ),
      E1141 = _err(
          "E1141",
          Category.IMPORT,
@@ -1089,12 +1119,22 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
      E1144 = _err(
          "E1144",
          Category.IMPORT,
-         "Import of '{module}' is not declared by arch.jac for '{consumer}'",
-         help="'{consumer}' is sealed: arch.jac names it, or [arch] closed in"
-         " jac.toml covers it, so every project-module import it writes must be"
-         " a wire. Add `{wire}` to arch.jac, or run `jac arch sync` to add every"
-         " missing wire. An inline suppression does not silence this; loosening"
-         " the boundary is a change to arch.jac or jac.toml."
+         "Import of '{module}' is not declared by archwire.jac for '{consumer}'",
+         help="'{consumer}' sits under an archwire.jac, so every import it makes of a"
+         " module below that archwire.jac must be a wire. Add `{wire}` to archwire.jac,"
+         " or run `jac arch sync` to add every missing wire. An inline"
+         " suppression does not silence this; changing the boundary is a change"
+         " to archwire.jac."
+     ),
+     E1145 = _err(
+         "E1145",
+         Category.IMPORT,
+         "Cannot import name '{name}' from Jac module '{module}': it defines no such name",
+         help="The module declares no global, function, archetype, enum or import"
+         " named '{name}'. Native lowering binds an imported name to the symbol"
+         " its defining unit exports, and there is none, so the build stops here"
+         " rather than lowering every use of the name to a null value. Import a"
+         " name the module defines, or add the definition to it."
      ),
      E1150 = _err(
          "E1150",
@@ -1128,6 +1168,89 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
          " must be a sized scalar, `int`, `float`, `bool`, a foreign struct or a"
          " `ptr`. A bare `ptr` or a `ptr` to an opaque C type has no element size:"
          " retype it first with `ptr[T](p)`.",
+         blocks_codegen=True
+     ),
+     E1153 = _err(
+         "E1153",
+         Category.TYPE,
+         "C data symbol '{name}' {reason}",
+         help="`glob name: T;` in a C library import declares a variable C"
+         " defines, and `glob name: T = value;` defines one: Jac provides the"
+         " C-layout storage under that symbol name. A symbol of C plain data (a"
+         " sized scalar, `int`, `float`, `bool` or a `ptr`) reads and writes the"
+         " variable in place. A symbol of a foreign struct or an opaque C type is"
+         " a C object Jac handles only by address: `addressof(name)` is its"
+         " `ptr[T]`. An opaque C type has no layout, so Jac cannot define one.",
+         blocks_codegen=True
+     ),
+     E1154 = _err(
+         "E1154",
+         Category.TYPE,
+         "addressof() takes a C data symbol, not {what}",
+         help="`addressof(name)` is the address of a variable C defines, declared"
+         " as `glob name: T;` in a C library import. A Jac value has no stable C"
+         " address: lend C the address of Jac storage through a `&T` / `&mut T`"
+         " parameter, or keep one alive with `pin(value)`.",
+         blocks_codegen=True
+     ),
+     E1155 = _err(
+         "E1155",
+         Category.TYPE,
+         "C data definition '{name}' {reason}",
+         help="A C data symbol Jac defines is laid out at link time, so its"
+         " initializer is a C constant: a literal, `None`, `ptr[T]()`, an integer"
+         " address, `ptr[u8](\"text\")`, `addressof(symbol)`, a named function"
+         " for a callback field, `ptr(function)` for the address of a named"
+         " function, a `ptr[T](...)` cast of any of these addresses, or a"
+         " constructor of a foreign struct whose arguments are all of these."
+         " An array is a list literal of these, or for sized integer elements"
+         " a bytes literal of its little-endian elements.",
+         blocks_codegen=True
+     ),
+     E1156 = _err(
+         "E1156",
+         Category.TYPE,
+         "A C string pointer is made from a string literal of bytes, not {what}",
+         help="`ptr[u8](\"text\")` (or `ptr[i8]`) is the address of an immortal,"
+         " NUL-terminated copy of the literal, like a C string literal. A string"
+         " computed at run time has no fixed C address: encode it and lend C a"
+         " buffer instead.",
+         blocks_codegen=True
+     ),
+     E1157 = _err(
+         "E1157",
+         Category.TYPE,
+         "C variadic {what}",
+         help="A C variadic function (`*args: VaList`, or a C library function"
+         " with `*args`) passes each extra argument by C's default promotions, so"
+         " an extra argument is a sized scalar, `int`, `float`, `bool`, a `ptr`,"
+         " `str` or `bytes`, and the function has no keyword-only or `**`"
+         " parameters.",
+         blocks_codegen=True
+     ),
+     E1158 = _err(
+         "E1158",
+         Category.TYPE,
+         "C function definition '{name}' {reason}",
+         help="A `def` with a body in a C library import defines a C function"
+         " under that exact symbol with the C calling convention, so C code and"
+         " other modules call it as they call any C function. Its parameters and"
+         " result are C data: sized scalars, `int`, `float`, `bool`, `ptr`,"
+         " foreign structs by value and named-function callbacks, with no `&`"
+         " borrows. A C variadic definition (`*args: VaList`) passes its fixed"
+         " parameters as scalars or pointers only.",
+         blocks_codegen=True
+     ),
+     E1159 = _err(
+         "E1159",
+         Category.TYPE,
+         "'{name}' is a borrowed scalar parameter; {what}",
+         help="A `&mut` parameter of a Jac function that holds a scalar (a number,"
+         " a bool or a pointer) is a value: assigning it, or lending it on to a"
+         " function that writes through it, changes only the function's copy and"
+         " never reaches the caller. Return the new value (a tuple for several),"
+         " or take a `ptr[T]` to storage the caller owns. `&mut local` lends a"
+         " scalar's storage only to a C function, where the write lands.",
          blocks_codegen=True
      ),
      E1301 = _err(
@@ -1722,6 +1845,12 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
          "inside '{owner}' and its subclasses.",
          help="Access protected (`:protect`) members from within the declaring class or a subclass, or mark the member `:pub` to expose it more broadly."
      ),
+     E2036 = _err(
+         "E2036",
+         Category.SEMANTIC,
+         "Duplicate definition of '{name}': it replaces the definition on line {line}.",
+         help="A module-level name can be defined once. The later definition is the one that runs, while calls are checked against the earlier one, so rename or remove one of them. Use `impl {name}` to give a declaration its body, or `@overload` for alternative signatures."
+     ),
      E2037 = _err(
          "E2037",
          Category.SEMANTIC,
@@ -1790,17 +1919,18 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
      E2088 = _err(
          "E2088",
          Category.SEMANTIC,
-         "'impl import' is only valid in the arch.jac beside jac.toml",
+         "'graph import' is only valid in a file named archwire.jac",
          help="A wiring block generates imports for other modules, so it lives in"
-         " one place: the arch.jac at the project root. Move this block there;"
-         " an arch.jac elsewhere is an ordinary module, and per-package wiring"
-         " files are not read yet."
+         " the archwire.jac of the directory whose modules it wires. Move this block"
+         " into that archwire.jac (create one beside the modules if needed); the"
+         " nearest archwire.jac above a module governs it. The wiring file was"
+         " named arch.jac before: rename an existing arch.jac to archwire.jac."
      ),
      E2089 = _err(
          "E2089",
          Category.SEMANTIC,
-         "arch.jac declares wiring only; this {kind} does not belong here",
-         help="arch.jac holds `impl import { ... }` blocks and nothing else."
+         "archwire.jac declares wiring only; this {kind} does not belong here",
+         help="archwire.jac holds `graph import { ... }` blocks and nothing else."
          " Move this statement into a module."
      ),
      E2090 = _err(
@@ -1831,20 +1961,21 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
      E2093 = _err(
          "E2093",
          Category.SEMANTIC,
-         "arch.jac has syntax errors, so the wiring for '{consumer}' may be"
+         "archwire.jac has syntax errors, so the wiring for '{consumer}' may be"
          " incomplete",
          help="Only the wires that still parsed were applied to this module. Fix"
-         " the errors reported for arch.jac and check again."
+         " the errors reported for archwire.jac and check again."
      ),
      E2094 = _err(
          "E2094",
          Category.SEMANTIC,
-         "Function-level import of '{module}' inside the sealed module '{consumer}'",
-         help="A sealed module's project-module imports are wires in arch.jac, and"
-         " a wire is module-level, so an import inside a function body would be a"
-         " dependency the wiring file cannot show. Move the import to module level"
-         " and wire it, or leave this module unmentioned by arch.jac and outside"
-         " [arch] closed if it needs a lazy import."
+         "Import of '{module}' inside '{scope}' is not declared by archwire.jac for"
+         " '{consumer}'",
+         help="A module under an archwire.jac takes its imports of the modules below"
+         " it from wires. A wire whose consumer"
+         " continues past the module into a class, function or method"
+         " (`pkg.mod.Class.method`) lands its import in that body, so the import"
+         " stays lazy. {fix} An inline suppression does not silence this."
      ),
      E2095 = _err(
          "E2095",
@@ -2029,9 +2160,9 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
      W3053 = _warn(
          "W3053",
          Category.LINT,
-         "Import of '{name}' from '{module}' is already provided by arch.jac"
+         "Import of '{name}' from '{module}' is already provided by archwire.jac"
          " [remove-wired-import]",
-         help="arch.jac wires this binding into the module, so the written import"
+         help="archwire.jac wires this binding into the module, so the written import"
          " is redundant. `jac fmt --lintfix` removes it; `jac arch sync` does"
          " the same for every covered module."
      ),
@@ -2199,11 +2330,6 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
          Category.CODEGEN,
          "Formatter displaced {count} comment(s) to end of file -- refusing to save (use 'jac format' to inspect)"
      ),
-     E5060 = _err(
-         "E5060",
-         Category.CODEGEN,
-         "C library import declaration '{name}' must not have a body"
-     ),
      E5090 = _err(
          "E5090",
          Category.CODEGEN,
@@ -2332,6 +2458,30 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
          Category.CODEGEN,
          "Constructing '{cls}' would run '{owner}.postinit' on a Python shadow the native object cannot see",
          help="A native class over a Python-side base owns two halves: its own slots live in the native struct, the base's live on a Python shadow instance the bridge keeps beside it. Construction runs the base's `__post_init__` on that shadow, where the subclass's native slots do not exist and its method overrides are not on the shadow's class -- so a store the base initializer makes is invisible natively, and a call it dispatches reaches the base's body rather than the override. The object comes out with its declared defaults and nothing says so. Give '{cls}' a `postinit` of its own -- it suppresses the base's and can chain into it with `super.postinit()`, which does bridge -- or bring the base into the native unit so the whole chain lowers."
+     ),
+     E5116 = _err(
+         "E5116",
+         Category.CODEGEN,
+         "Native library declaration does not conform to its interface: {reason}",
+         help="A native standard-library module implements the interface the Python stubs declare for the module of the same name. Every public function, parameter and member it has must be one that interface declares, so a program typed against the interface means the same thing in every codespace. Make the extra name private with a leading underscore, rename it to match, or leave it out; a name the interface declares and this module lacks is fine, and is reported to callers as a native gap."
+     ),
+     E5115 = _err(
+         "E5115",
+         Category.CODEGEN,
+         "Type '{type}' on {what} of '{name}' has no wire form between client and server code: {reason}",
+         help="A client call to a server function is a request: arguments are bound from JSON and the result is serialized to JSON. What crosses is a scalar (str, int, float, bool, bytes, None), a list, tuple or set of types that cross, a dict with str keys, an enum, an archetype whose fields all cross, or a union of those. An upload crosses only as a parameter of a server function, and a generator only as a streamed result. Give the function a signature made of those, or keep the value on one side and pass an identifier for it."
+     ),
+     E5113 = _err(
+         "E5113",
+         Category.CODEGEN,
+         "'{cls}.{meth}' overrides '{base}.{meth}', but '{base}.{caller}' calls '{base}.{meth}' for a '{cls}' too: '{base}' is compiled in '{module}' without dispatch",
+         help="Which classes carry a vtable is decided per module, and '{base}' is nobody's parent in '{module}', so it was lowered flat: '{base}.{caller}' binds its `self.{meth}()` straight to '{base}.{meth}'. '{cls}' inherits '{caller}', so calling it on a '{cls}' runs the base's '{meth}', not this override -- the wrong body runs and nothing else says so. Declare '{base}.{meth}' abstract (`def {meth}(...) abst;`) so '{base}' reserves dispatch for implementations in other modules, override '{caller}' on '{cls}' as well, or keep '{cls}' in the module that declares '{base}'."
+     ),
+     E5114 = _err(
+         "E5114",
+         Category.CODEGEN,
+         "`return tail` cannot be a guaranteed tail call: {reason}",
+         help="A guaranteed tail call (LLVM `musttail`) reuses the caller's frame, so nothing may run after the call: the callee takes the caller's parameter list and return type and calling convention exactly, is not variadic, receives no address of a caller local, and the caller has no owned value, open region, `finally` or `with` block left to clean up at the return. Restructure so the call is the last thing the function does, or use a plain `return`."
      ),
      E5112 = _err(
          "E5112",

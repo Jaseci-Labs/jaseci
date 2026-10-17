@@ -486,6 +486,24 @@ glob STR_NA_GAPS: list[any] = [
              ["na"]
          ),
          (
+             "errno bundled",
+             "prim_errno.jac",
+             "errno_py",
+             "errno_cl",
+             "errno_na",
+             ["na"]
+         ),
+         ("glob bundled", "prim_glob.jac", "glob_py", "glob_cl", "glob_na", ["na"]),
+         ("stat bundled", "prim_stat.jac", "stat_py", "stat_cl", "stat_na", ["na"]),
+         (
+             "platform bundled",
+             "prim_platform.jac",
+             "platform_py",
+             "platform_cl",
+             "platform_na",
+             ["na"]
+         ),
+         (
              "secrets bundled",
              "prim_secrets.jac",
              "secrets_py",
@@ -585,6 +603,14 @@ glob STR_NA_GAPS: list[any] = [
          ),
          ("csv bundled", "prim_csv.jac", "csv_py", "csv_cl", "csv_na", ["na"]),
          (
+             "itertools bundled",
+             "prim_itertools.jac",
+             "itertools_py",
+             "itertools_cl",
+             "itertools_na",
+             ["na"]
+         ),
+         (
              "pprint bundled",
              "prim_pprint.jac",
              "pprint_py",
@@ -609,6 +635,14 @@ glob STR_NA_GAPS: list[any] = [
              ["na"]
          ),
          ("random", "prim_random.jac", "random_py", "random_cl", "random_na", ["na"]),
+         (
+             "bare from-imported stdlib names",
+             "prim_from_imports.jac",
+             "from_imports_py",
+             "from_imports_cl",
+             "from_imports_na",
+             ["na"]
+         ),
          (
              "any dispatch",
              "prim_any.jac",
@@ -679,6 +713,14 @@ glob STR_NA_GAPS: list[any] = [
              "builtins_introspection_py",
              "builtins_introspection_cl",
              "builtins_introspection_na"
+         ),
+         (
+             "type identity",
+             "prim_builtins_introspection.jac",
+             "type_identity_py",
+             "type_identity_cl",
+             "builtins_introspection_na",
+             ["cl"]
          ),
          (
              "match sequence",

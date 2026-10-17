@@ -12,12 +12,22 @@ in default CI.
 
 import os;
 import from pathlib { Path }
+import from tests.support { offline_project }
 
 # Client target modules ship with core under jaclang/client/.
 glob _client_dir = (
          Path(os.path.dirname(__file__)).parent.parent / "jaclang" / "client"
      ),
      _targets_dir = _client_dir / "targets";
+
+# Imports a module takes from archwire.jac are woven in at compile time, so the
+# source contract reads the file together with its wiring annex.
+def _woven_text(path: Path) -> str {
+    import from jaclang.compiler.driver.wiring { wiring_annex_for }
+
+    annex = wiring_annex_for(str(path));
+    return path.read_text() + ("\n" + annex.source if annex else "");
+}
 
 def _register_client_targets {
     import from jaclang.client.targets.register { register_targets }
@@ -218,8 +228,8 @@ def _run_with_mobile_stubs(target: any, calls: list[str], action: any) -> str {
 }
 
 """A throwaway mobile project: jac.toml plus the env that keeps dev off the
-network (no LAN probe) and online (JAC_OFFLINE cleared unless asked for)."""
-def _mobile_project(tmp: str, offline: bool = False) -> Path {
+network (no LAN probe)."""
+def _mobile_project(tmp: str) -> Path {
     project_dir = Path(tmp);
     (project_dir / "jac.toml").write_text(
         "[project]\nname = \"t\"\nversion = \"1.0\"\nkind = \"mobile\"\n"
@@ -227,24 +237,14 @@ def _mobile_project(tmp: str, offline: bool = False) -> Path {
         encoding="utf-8"
     );
     os.environ["JAC_RN_DEV_HOST"] = "127.0.0.1";
-    if offline {
-        os.environ["JAC_OFFLINE"] = "1";
-    } else {
-        os.environ.pop("JAC_OFFLINE", None);
-    }
     return project_dir;
 }
 
-def _restore_mobile_env(prev_host: str | None, prev_offline: str | None) {
+def _restore_mobile_env(prev_host: str | None) {
     if prev_host is None {
         os.environ.pop("JAC_RN_DEV_HOST", None);
     } else {
         os.environ["JAC_RN_DEV_HOST"] = prev_host;
-    }
-    if prev_offline is None {
-        os.environ.pop("JAC_OFFLINE", None);
-    } else {
-        os.environ["JAC_OFFLINE"] = prev_offline;
     }
 }
 
@@ -259,7 +259,6 @@ test "mobile dev provisions a missing scaffold and proceeds" {
 
     _register_client_targets();
     prev_host = os.environ.get("JAC_RN_DEV_HOST");
-    prev_offline = os.environ.get("JAC_OFFLINE");
     try {
         with tempfile.TemporaryDirectory() as tmp {
             project_dir = _mobile_project(tmp);
@@ -280,7 +279,7 @@ test "mobile dev provisions a missing scaffold and proceeds" {
             assert (rn_dir / "package.json").exists();
         }
     } finally {
-        _restore_mobile_env(prev_host, prev_offline);
+        _restore_mobile_env(prev_host);
     }
 }
 
@@ -295,7 +294,6 @@ test "mobile dev refreshes native deps on an existing scaffold" {
 
     _register_client_targets();
     prev_host = os.environ.get("JAC_RN_DEV_HOST");
-    prev_offline = os.environ.get("JAC_OFFLINE");
     try {
         with tempfile.TemporaryDirectory() as tmp {
             project_dir = _mobile_project(tmp);
@@ -318,11 +316,11 @@ test "mobile dev refreshes native deps on an existing scaffold" {
             );
         }
     } finally {
-        _restore_mobile_env(prev_host, prev_offline);
+        _restore_mobile_env(prev_host);
     }
 }
 
-test "mobile dev under JAC_OFFLINE refuses to provision a missing scaffold" {
+test "mobile dev in an offline project refuses to provision a missing scaffold" {
     # Provisioning needs the network. Offline, a missing scaffold is the one
     # case that still stops with the explicit command, and nothing is written.
     import tempfile;
@@ -331,27 +329,28 @@ test "mobile dev under JAC_OFFLINE refuses to provision a missing scaffold" {
 
     _register_client_targets();
     prev_host = os.environ.get("JAC_RN_DEV_HOST");
-    prev_offline = os.environ.get("JAC_OFFLINE");
     try {
         with tempfile.TemporaryDirectory() as tmp {
-            project_dir = _mobile_project(tmp, offline=True);
+            project_dir = _mobile_project(tmp);
             target = target_for_kind("mobile", project_dir);
             rn_dir = resolve_rn_project_dir(project_dir);
             calls: list[str] = [];
             def _dev {
                 target.dev(project_dir / "main.jac", project_dir);
             }
-            msg = _run_with_mobile_stubs(target, calls, _dev);
+            with offline_project() {
+                msg = _run_with_mobile_stubs(target, calls, _dev);
+            }
             assert "jac setup <app>" in msg , (
                 f"offline with no scaffold must name the exact command: {msg!r}"
             );
-            assert "JAC_OFFLINE" in msg , f"the error must say why: {msg!r}";
+            assert "[network] offline" in msg , f"the error must say why: {msg!r}";
             assert "--client" not in msg;
             assert calls == [] , f"nothing may be provisioned offline; got {calls}";
             assert not rn_dir.exists() , "no partial scaffold may be written offline";
         }
     } finally {
-        _restore_mobile_env(prev_host, prev_offline);
+        _restore_mobile_env(prev_host);
     }
 }
 
@@ -364,7 +363,6 @@ test "mobile build provisions a missing scaffold before compiling" {
 
     _register_client_targets();
     prev_host = os.environ.get("JAC_RN_DEV_HOST");
-    prev_offline = os.environ.get("JAC_OFFLINE");
     try {
         with tempfile.TemporaryDirectory() as tmp {
             project_dir = _mobile_project(tmp);
@@ -379,7 +377,7 @@ test "mobile build provisions a missing scaffold before compiling" {
             assert calls == [f"scaffold:{rn_dir}", f"deps:{rn_dir}", "compile"] , calls;
         }
     } finally {
-        _restore_mobile_env(prev_host, prev_offline);
+        _restore_mobile_env(prev_host);
     }
 }
 
@@ -394,7 +392,6 @@ test "explicit setup and lazy ensure_ready share one provisioning path" {
 
     _register_client_targets();
     prev_host = os.environ.get("JAC_RN_DEV_HOST");
-    prev_offline = os.environ.get("JAC_OFFLINE");
     try {
         with tempfile.TemporaryDirectory() as tmp {
             project_dir = _mobile_project(tmp);
@@ -420,7 +417,7 @@ test "explicit setup and lazy ensure_ready share one provisioning path" {
             );
         }
     } finally {
-        _restore_mobile_env(prev_host, prev_offline);
+        _restore_mobile_env(prev_host);
     }
 
     impl_content = (_targets_dir / "impl" / "mobile_target.impl.jac").read_text();
@@ -508,7 +505,8 @@ test "native runtime file ships parallel to the web runtime" {
         f"client_runtime_native.jac not found at {runtime_native}"
     );
     assert runtime_native_impl.exists();
-    assert "import from client_react_core" in runtime_native.read_text();
+    assert "import from jaclang.client.client_react_core"
+        in _woven_text(runtime_native);
 
     core_content = runtime_core.read_text();
     cl_content = runtime_native.read_text();
@@ -978,7 +976,7 @@ test "html tag map is shared between build lint and native runtime" {
     }
 
     runtime_native = _client_dir / "client_runtime_native.jac";
-    runtime_text = runtime_native.read_text();
+    runtime_text = _woven_text(runtime_native);
     assert "html_tag_map" in runtime_text;
     assert "RN_HTML_VIEW_TAGS as _VIEW_TAGS" in runtime_text;
     assert "RN_HTML_TEXT_TAGS as _TEXT_TAGS" in runtime_text;
@@ -1216,7 +1214,7 @@ test "build_expo_start_argv emits expected metro flags" {
         rn_dir = Path(tmp);
         `entry = _stub_node_tool(rn_dir, "expo", "expo");
         with unittest.mock.patch(
-            "jaclang.client.targets.node_tooling_common.get_bun",
+            "jaclang.client.targets.node_tooling_common.js_runtime_path",
             side_effect=_fake_get_bun
         ) {
             argv = build_expo_start_argv(rn_dir, 8081, clear_cache=True);
@@ -1411,7 +1409,7 @@ test "react native common owns detect_lan_ipv4 and imports no Capacitor helpers"
     import from jaclang.client.targets.react_native.common { detect_lan_ipv4 }
 
     common_path = _targets_dir / "react_native" / "common.jac";
-    content = common_path.read_text();
+    content = _woven_text(common_path);
     assert "node_tooling_common" in content;
     # The Capacitor target and its helper modules are gone; nothing may
     # reach for them.
@@ -1560,8 +1558,10 @@ test "node tooling runs installs and tools on the bundled bun only" {
         `entry = _stub_node_tool(project_dir, "expo", "expo");
         with unittest.mock.patch("subprocess.run", side_effect=_fake_run) {
             with unittest.mock.patch(
-                "jaclang.client.targets.node_tooling_common.get_bun",
+                "jaclang.client.targets.node_tooling_common.js_runtime_path",
                 side_effect=_fake_get_bun
+            ), unittest.mock.patch(
+                "jaclang.client.js_runtime.js_runtime_path", side_effect=_fake_get_bun
             ) {
                 run_manifest_install(project_dir);
                 runner = resolve_node_tool(project_dir, "expo");
@@ -1606,46 +1606,41 @@ test "run_manifest_install skips bun install while the stamp is current" {
         return "/opt/jac/_bun/bun";
     }
 
-    prev_offline = os.environ.pop("JAC_OFFLINE", None);
-    try {
-        with tempfile.TemporaryDirectory() as tmp {
-            project_dir = Path(tmp);
-            (project_dir / "package.json").write_text(
-                '{"dependencies": {"expo": "1.0.0"}}\n', encoding="utf-8"
+    with tempfile.TemporaryDirectory() as tmp {
+        project_dir = Path(tmp);
+        (project_dir / "package.json").write_text(
+            '{"dependencies": {"expo": "1.0.0"}}\n', encoding="utf-8"
+        );
+        with unittest.mock.patch("subprocess.run", side_effect=_fake_run), unittest.mock.patch(
+            "jaclang.client.targets.node_tooling_common.js_runtime_path",
+            side_effect=_fake_get_bun
+        ), unittest.mock.patch(
+            "jaclang.client.js_runtime.js_runtime_path", side_effect=_fake_get_bun
+        ) {
+            run_manifest_install(project_dir);
+            assert calls == [["/opt/jac/_bun/bun", "install"]] , calls;
+            assert (project_dir / ".jac-dependencies.sha256").is_file() , (
+                "a successful install writes the stamp"
             );
-            with unittest.mock.patch("subprocess.run", side_effect=_fake_run), unittest.mock.patch(
-                "jaclang.client.targets.node_tooling_common.get_bun",
-                side_effect=_fake_get_bun
-            ) {
-                run_manifest_install(project_dir);
-                assert calls == [["/opt/jac/_bun/bun", "install"]] , calls;
-                assert (project_dir / ".jac-dependencies.sha256").is_file() , (
-                    "a successful install writes the stamp"
-                );
-                # The stamp matches but node_modules is empty (the fake install
-                # wrote nothing): still not current, so install runs again.
-                run_manifest_install(project_dir);
-                assert len(calls) == 2 , (
-                    f"a stamp without the packages on disk is not current: {calls}"
-                );
-                (project_dir / "node_modules" / "expo").mkdir(parents=True);
-                run_manifest_install(project_dir);
-                assert len(calls) == 2 , (
-                    f"stamp current and packages present: no install; got {calls}"
-                );
-                # Editing the manifest invalidates the stamp.
-                (project_dir / "package.json").write_text(
-                    '{"dependencies": {"expo": "1.0.1"}}\n', encoding="utf-8"
-                );
-                run_manifest_install(project_dir);
-                assert len(calls) == 3 , (
-                    f"a changed manifest must reinstall; got {calls}"
-                );
-            }
-        }
-    } finally {
-        if prev_offline is not None {
-            os.environ["JAC_OFFLINE"] = prev_offline;
+            # The stamp matches but node_modules is empty (the fake install
+            # wrote nothing): still not current, so install runs again.
+            run_manifest_install(project_dir);
+            assert len(calls) == 2 , (
+                f"a stamp without the packages on disk is not current: {calls}"
+            );
+            (project_dir / "node_modules" / "expo").mkdir(parents=True);
+            run_manifest_install(project_dir);
+            assert len(calls) == 2 , (
+                f"stamp current and packages present: no install; got {calls}"
+            );
+            # Editing the manifest invalidates the stamp.
+            (project_dir / "package.json").write_text(
+                '{"dependencies": {"expo": "1.0.1"}}\n', encoding="utf-8"
+            );
+            run_manifest_install(project_dir);
+            assert len(calls) == 3 , (
+                f"a changed manifest must reinstall; got {calls}"
+            );
         }
     }
 }
@@ -1663,7 +1658,7 @@ test "node tooling refuses to run a tool that is not installed locally" {
     # falling back to `bun x` would silently reintroduce the node dependency.
     with tempfile.TemporaryDirectory() as tmp {
         with unittest.mock.patch(
-            "jaclang.client.targets.node_tooling_common.get_bun",
+            "jaclang.client.targets.node_tooling_common.js_runtime_path",
             side_effect=_fake_get_bun
         ) {
             try {
@@ -1682,23 +1677,28 @@ test "node tooling raises actionably when the bundled bun is missing" {
     import unittest.mock;
     import from jaclang.client.targets.node_tooling_common { resolve_node_tool }
 
-    def _no_bun -> None {
-        return None;
-    }
+    import jaclang.artifacts.router as router;
+    import from jaclang.artifacts.model { Probe }
+    import from jaclang.client.js_runtime { BunArtifact }
 
+    router.forget();
     with tempfile.TemporaryDirectory() as tmp {
-        with unittest.mock.patch(
-            "jaclang.client.targets.node_tooling_common.get_bun", side_effect=_no_bun
+        with unittest.mock.patch.object(
+            BunArtifact, "probe_sealed", return_value=None
+        ), unittest.mock.patch.object(
+            BunArtifact, "probe_checkout", return_value=Probe.missing()
+        ), unittest.mock.patch.object(
+            BunArtifact, "probe_kit", return_value=Probe.missing()
         ) {
             try {
                 resolve_node_tool(Path(tmp), "expo");
                 assert False , "expected RuntimeError when bundled bun is absent";
             } except RuntimeError as e {
-                assert "fetch-bun" in str(e);
-                assert "JAC_BUN" in str(e);
+                assert "jac native build bun" in str(e) , str(e);
             }
         }
     }
+    router.forget();
 }
 
 test "expo prebuild runs even when native tree and prebuild state exist" {

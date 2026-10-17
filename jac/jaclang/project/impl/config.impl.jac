@@ -67,7 +67,6 @@ impl UnresolvedRef.reason -> str {
 }
 
 impl find_project_root(start: Path | None = None) -> tuple[Path, Path] | None {
-    import from jaclang.project.modresolver { find_project_root as _find_project_root }
     return _find_project_root(start);
 }
 
@@ -95,7 +94,6 @@ impl JacConfig.discover(
 }
 
 impl JacConfig.load(toml_path: Path) -> JacConfig {
-    import from jaclang.project.tomlio { read_toml_with_encoding }
     if not toml_path.exists() {
         raise FileNotFoundError(f"Configuration file not found: {toml_path}");
     }
@@ -194,7 +192,13 @@ impl JacConfig.apply_profile(
         if section in profile {
             profile_section: dict[str, any] = profile[section];
             for (key, value) in profile_section.items() {
-                if hasattr(obj, key) {
+                if not hasattr(obj, key) {
+                    continue;
+                }
+                current = getattr(obj, key);
+                if isinstance(current, dict) and isinstance(value, dict) {
+                    setattr(obj, key, _deep_merge(current, value));
+                } else {
                     setattr(obj, key, value);
                 }
             }
@@ -294,7 +298,6 @@ impl JacConfig.apply_profile_overlay(profile_name: str | None = None) -> None {
 }
 
 impl JacConfig.merge_from_toml_file(toml_path: Path) -> None {
-    import from jaclang.project.tomlio { read_toml_with_encoding }
     if not toml_path.exists() {
         return;
     }
@@ -968,7 +971,6 @@ impl toml_value(value: any) -> str {
 impl JacConfig.merge_dependency_tables(
     data: dict[str, any], section_prefix: str = ""
 ) -> None {
-    import from jaclang.project.dependencies { split_dependency_table }
     if isinstance(data.get("registries"), dict) {
         for (name, url) in data["registries"].items() {
             self.registries[str(name)] = str(url);
@@ -1167,7 +1169,12 @@ impl _parse_toml_data(
         access_data: dict[str, any] = serve_data.get("access_log", {}) or {};
         compression_data: dict[str, any] = serve_data.get("compression", {}) or {};
         ws_data: dict[str, any] = serve_data.get("websocket", {}) or {};
-        auth_data: dict[str, any] = serve_data.get("auth", {}) or {};
+        auth_data = serve_data.get("auth", {});
+        if not isinstance(auth_data, dict) {
+            raise ValueError(
+                f"[serve.auth] must be a table, got {type(auth_data).__name__}"
+            );
+        }
         cors_raw = serve_data.get("cors_origins", ["*"]);
         config.serve = ServeConfig(
             host=str(serve_data.get("host", "0.0.0.0")),
@@ -1179,11 +1186,12 @@ impl _parse_toml_data(
             cors_origins=[str(_o) for _o in cors_raw]
                 if isinstance(cors_raw, list)
                 else [str(cors_raw)],
+            public_origin=str(serve_data.get("public_origin", "")),
             on_conflict=on_conflict,
             conflict_max_attempts=serve_data.get("conflict_max_attempts", 5),
             conflict_backoff_ms=serve_data.get("conflict_backoff_ms", 0),
             workers=ServeWorkersConfig(
-                count=str(workers_data.get("count", "1")),
+                count=str(workers_data.get("count", "")),
                 threads=str(workers_data.get("threads", "auto")),
                 max_requests=int(workers_data.get("max_requests", 0)),
                 max_requests_jitter=int(workers_data.get("max_requests_jitter", 0)),
@@ -1238,21 +1246,7 @@ impl _parse_toml_data(
                 ping_interval=float(ws_data.get("ping_interval", 20.0)),
                 ping_timeout=float(ws_data.get("ping_timeout", 20.0))
             ),
-            auth=ServeAuthConfig(
-                secret=str(auth_data.get("secret", "")),
-                algorithm=str(auth_data.get("algorithm", "HS256")),
-                token_ttl_days=int(auth_data.get("token_ttl_days", 7)),
-                password_hash_cost=int(auth_data.get("password_hash_cost", 14)),
-                registration_challenge=bool(
-                    auth_data.get("registration_challenge", False)
-                ),
-                registration_attempts_per_hour=max(
-                    0, int(auth_data.get("registration_attempts_per_hour", 0))
-                ),
-                registration_challenges_per_10_minutes=max(
-                    0, int(auth_data.get("registration_challenges_per_10_minutes", 0))
-                )
-            )
+            auth=auth_data
         );
     }
     if "format" in data {
@@ -1318,11 +1312,38 @@ impl _parse_toml_data(
         client_data = data["client"];
         config.client = ClientConfig(framework=client_data.get("framework", "react"));
     }
+    if isinstance(data.get("database"), dict) {
+        db_data: dict[str, any] = data["database"];
+        indexes = db_data.get("indexes");
+        days = str(db_data.get("retention_days") or "0").strip();
+        config.database = DatabaseConfig(
+            indexes={
+                str(arch): [str(field) for field in fields]
+                for (arch, fields) in (
+                    indexes.items() if isinstance(indexes, dict) else []
+                )
+                if isinstance(fields, list)
+            },
+            retention_days=int(days) if days.isdigit() else 0,
+            postgres_dist=str(db_data.get("postgres_dist") or ""),
+            postgres_version=str(db_data.get("postgres_version") or "")
+        );
+    }
+    if isinstance(data.get("network"), dict) {
+        config.network = NetworkConfig(offline=data["network"].get("offline") is True);
+    }
+    if isinstance(data.get("toolchains"), dict) {
+        config.toolchains = ToolchainsConfig(
+            system=data["toolchains"].get("system", True) is not False
+        );
+    }
     if "dev" in data {
         dev_data = data["dev"];
 
         config.dev = DevConfig(
             jaclang_source=str(dev_data.get("jaclang_source", "")),
+            exact=dev_data.get("exact") is True,
+            pod_binary=str(dev_data.get("pod_binary", "")),
             jobs=str(dev_data.get("jobs", "")),
             test_jobs=str(dev_data.get("test_jobs", "")),
             check_jobs=str(dev_data.get("check_jobs", "")),
@@ -1380,7 +1401,7 @@ impl _parse_toml_data(
         app = implicit_app(config);
         config.apps = {app.name: app};
     }
-    import from jaclang.project.persistence { parse_persistence }
+
     config.persistence = parse_persistence(
         data.get("persistence", {}), config.project.name
     );
@@ -1562,7 +1583,7 @@ impl JacConfig.resolved_kind(app: AppConfig) -> str {
     if app.kind {
         return app.kind;
     }
-    import from jaclang.project.kinds { resolve_app_kind, resolve_entry }
+
     root_dir = str(self.project_root) if self.project_root else "";
     entry_file = resolve_entry(self, root_dir, app) if root_dir else "";
     return resolve_app_kind(self, app, entry_file);
@@ -1613,7 +1634,6 @@ impl JacConfig.app_for_target(entry_path: str = "") -> AppConfig | None {
 }
 
 impl JacConfig.app_for_path(abs_path: str) -> AppConfig | None {
-    import from jaclang.runtime.prepared { origin_for_source }
     abs_path = origin_for_source(abs_path);
     if self.project_root is None {
         return None;
@@ -1627,7 +1647,6 @@ impl JacConfig.app_for_path(abs_path: str) -> AppConfig | None {
 }
 
 impl JacConfig.serving_apps -> list[AppConfig] {
-    import from jaclang.project.kinds { kind_spec }
     out: list[AppConfig] = [];
     for app in self.apps.values() {
         spec = kind_spec(self.resolved_kind(app));
@@ -1646,7 +1665,7 @@ def _apply_build_section(cfg: JacConfig, data: dict[str, any]) -> None {
     if "build" not in data or not isinstance(data["build"], dict) {
         return;
     }
-    import from jaclang.cli.console { console }
+
     build_data = data["build"];
     for (_old_key, _new_home) in [
         ("default_codespace", "[placement] default"),
@@ -1658,27 +1677,16 @@ def _apply_build_section(cfg: JacConfig, data: dict[str, any]) -> None {
             );
         }
     }
-    _builtin_cap = BuildConfig().native_closure_cap;
-    try {
-        _cap = int(build_data.get("native_closure_cap", _builtin_cap));
-    } except (TypeError, ValueError) {
-        _cap = 0;
-    }
-    if _cap < 1 {
+    if "native_closure_cap" in build_data {
         console.warning(
-            f"[build] native_closure_cap="
-            f"'{build_data.get('native_closure_cap')}' must be a positive "
-            f"integer; defaulting to {_builtin_cap}."
+            "jac.toml: [build] native_closure_cap was retired; a module's whole "
+            "import closure is always judged for native placement."
         );
-        _cap = _builtin_cap;
     }
-    cfg.build = BuildConfig(
-        dir=str(build_data.get("dir", BuildConfig().dir)), native_closure_cap=_cap
-    );
+    cfg.build = BuildConfig(dir=str(build_data.get("dir", BuildConfig().dir)));
 }
 
 def _apply_memory_native_placement(cfg: JacConfig, data: dict[str, any]) {
-    import from jaclang.cli.console { console }
     for (_old, _new) in [("gc", "[memory] profile / enforce / exempt")] {
         if _old in data {
             console.error(f"jac.toml: the [{_old}] section was retired; use {_new}.");
@@ -1745,17 +1753,12 @@ def _apply_memory_native_placement(cfg: JacConfig, data: dict[str, any]) {
             cfg.native.threads = 4;
         }
     }
-    if "arch" in data and isinstance(data["arch"], dict) {
-        arch_data = data["arch"];
-        if "closed" in arch_data {
-            if not isinstance(arch_data["closed"], list)
-                or not all(
-                    isinstance(pattern, str) for pattern in arch_data["closed"]
-                ) {
-                raise ValueError("[arch] closed must be a list of module patterns");
-            }
-            cfg.arch.closed = list(arch_data["closed"]);
-        }
+    if "arch" in data {
+        raise ValueError(
+            "[arch] was removed from jac.toml: an archwire.jac seals the directory it"
+            " sits in. Delete the [arch] table and run `jac arch init --strip` in"
+            " each directory it closed."
+        );
     }
     if "placement" in data
         and isinstance(data["placement"], dict)

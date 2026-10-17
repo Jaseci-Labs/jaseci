@@ -132,6 +132,7 @@ import from jaclang.compiler.frontend.roles {
 import from jaclang.compiler.frontend.relations {
     Absorbs,
     CalleeDecl,
+    CalleeSignature,
     EventTriggerOf,
     NarrowedTypeOf,
     TypeOf,
@@ -852,6 +853,7 @@ obj ImportBoundaryFacts {
     has native_from_path: (str | None) = None,
         from_loc_resolved: (str | None) = None,
         is_service: bool = False,
+        pinned_server: bool = False,
         client_native_edge: bool = False,
         sv_abilities: dict[(str, Ability)] = {},
         sv_walkers: dict[(str, Archetype)] = {},
@@ -933,6 +935,7 @@ node ModulePath(UniNode) {
     def resolve_relative_path(target_item: (str | None) = None) -> str;
     def resolve_relative_path_list -> list[str];
     def native_bundled_path -> (str | None);
+    def native_variant_path -> (str | None);
     def __repr__ -> str;
 }
 
@@ -955,7 +958,7 @@ node ModuleItem(UniNode) {
     def __repr__ -> str;
 }
 
-node ImplImport(ElementStmt) {
+node GraphImport(ElementStmt) {
     has scope: (ModulePath | None) { getter; }
     has body: Sequence[ImportWire | ImportRule] { getter; }
 
@@ -997,7 +1000,7 @@ node ImportWire(UniNode) {
 
     def postinit -> None;
 
-    has block: ImplImport { getter; }
+    has block: GraphImport { getter; }
     has provider_path: str { getter; }
     has consumer_paths: list[str] { getter; }
 
@@ -1022,24 +1025,18 @@ node ImportRule(UniNode) {
 
     def postinit -> None;
 
-    has block: ImplImport { getter; }
+    has block: GraphImport { getter; }
     has item_names: set[str] { getter; }
 
     def __repr__ -> str;
 }
 
 node ModulePattern(UniNode) {
-    has is_glob: bool = False,
-        is_any: bool = False;
-
+    has is_glob: bool = False;
     has path: (ModulePath | None) { getter; }
 
     def init(
-        *,
-        path: (ModulePath | None),
-        is_glob: bool = False,
-        is_any: bool = False,
-        kid: Sequence[UniNode] = []
+        *, path: (ModulePath | None), is_glob: bool = False, kid: Sequence[UniNode] = []
     ) -> None;
 
     def postinit -> None;
@@ -1251,6 +1248,7 @@ node FuncSignature(UniNode) {
 
     def postinit -> None;
     def get_parameters -> list[ParamVar];
+    def get_named_parameters -> list[ParamVar];
 
     has is_static: bool { getter; }
     has is_in_py_class: bool { getter; }
@@ -1626,11 +1624,17 @@ node ReportStmt(CodeBlockStmt) {
 }
 
 node ReturnStmt(CodeBlockStmt) {
-    has is_implicit: bool = False;
+    has is_implicit: bool = False,
+        is_tail: bool = False;
+
     has expr: (Expr | None) { getter; }
 
     def init(
-        *, expr: (Expr | None), is_implicit: bool = False, kid: Sequence[UniNode] = []
+        *,
+        expr: (Expr | None),
+        is_implicit: bool = False,
+        is_tail: bool = False,
+        kid: Sequence[UniNode] = []
     ) -> None;
 
     def postinit -> None;
@@ -2037,6 +2041,11 @@ node FuncCall(Expr) {
     has callee_decl: (Ability | None) {
         getter;
         setter(callee_decl: (Ability | None));
+    }
+
+    has callee_signature: (TypeBase | None) {
+        getter;
+        setter(callee_signature: (TypeBase | None));
     }
 
     has target: Expr { getter; }
@@ -2956,6 +2965,8 @@ def kind_has_runtime_binding(
 def has_runtime_binding(sym: Symbol, space: CodeContext) -> bool;
 
 def is_client_destined(nd: UniNode) -> bool;
+
+def is_comptime_stmt(nd: UniNode) -> bool;
 
 def type_only_import_of(nd: NameAtom) -> (ModuleItem | None);
 

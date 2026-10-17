@@ -1,16 +1,4 @@
 import math;
-import from jaclang.compiler.types.ct_int {
-    MAX_STR_DIGITS,
-    mag_add_small,
-    mag_bit_length,
-    mag_cmp,
-    mag_decimal_digits,
-    mag_from_int,
-    mag_shl,
-    mag_to_int
-}
-import type from jaclang.compiler.frontend.unitree { Ability }
-import type from jaclang.compiler.types.types { ClassType, TypeBase }
 
 class CtNotComptime(Exception) {}
 
@@ -281,6 +269,34 @@ def int_host(v: CtInt) -> int {
     }
     val = mag_to_int(v.mag);
     return -val if v.neg else val;
+}
+
+def int_wide_bytes(v: CtInt) -> (bytes | None) {
+    if not v.mag {
+        return None;
+    }
+    if mag_bit_length(v.mag) <= 63 {
+        return None;
+    }
+    out = bytearray();
+    acc = 0;
+    held = 0;
+    for limb in v.mag {
+        acc = acc | (limb << held);
+        held += MAG_SHIFT;
+        while held >= 8 {
+            out.append(acc & 255);
+            acc = acc >> 8;
+            held -= 8;
+        }
+    }
+    if held > 0 and acc != 0 {
+        out.append(acc & 255);
+    }
+    while out and out[-1] == 0 {
+        out.pop();
+    }
+    return bytes(out);
 }
 
 def int_decimal(v: CtInt) -> str {

@@ -1,6 +1,4 @@
 import from pathlib { Path }
-import type from jaclang.project.config { JacConfig }
-import type from jaclang.project.apps { AppConfig }
 
 def client_workspace_app(
     config: JacConfig | None, entry_path: str = ""
@@ -34,6 +32,16 @@ def client_assets_config(
     app = client_workspace_app(config, entry_path);
     effective = config.effective_for_app(app.name) if app is not None else config;
     return effective.get_plugin_config('client').get('assets', {});
+}
+
+
+def client_input_dirs(
+    config: JacConfig | None, project_dir: Path, entry_path: str = ""
+) -> list[str] {
+    return [
+        str(client_assets_dir(config, project_dir, entry_path)),
+        str(client_app_root(config, project_dir, entry_path) / 'pages')
+    ];
 }
 
 

@@ -328,6 +328,10 @@ impl NaIRGenPass._unbox_any_container(
     b = self.builder;
     _res = b.call(_fn, [jv], name="jv.view");
     _payload = b.extract_value(jv, 1, name="jv.view.payload");
+    if self._is_owned(jv) {
+        return self._adopt_any_view(_res, _payload, target_type);
+    }
+    _res.is_owned = False;
     if not self._binding_function_active() {
         return _res;
     }
@@ -360,6 +364,32 @@ impl NaIRGenPass._unbox_any_container(
     return _res;
 }
 
+impl NaIRGenPass._adopt_any_view(
+    view: ir.Value, payload: ir.Value, target_type: ir.Type
+) -> ir.Value {
+    b = self.builder;
+    _null = ir.Constant(target_type, None);
+    _failed = b.and_(
+        b.icmp_unsigned("==", view, _null, name="jv.adopt.null"),
+        b.icmp_unsigned(
+            "!=", payload, ir.Constant(ir.IntType(64), 0), name="jv.adopt.some"
+        ),
+        name="jv.adopt.failed"
+    );
+    self._emit_runtime_raise(
+        _failed,
+        "TypeError",
+        "container elements cannot be viewed as any: unsupported element or key type"
+    );
+    b = self.builder;
+    _raw = b.inttoptr(payload, target_type, name="jv.adopt.raw");
+    _fresh = b.icmp_unsigned("!=", view, _raw, name="jv.adopt.fresh");
+    self._emit_rc_release_typed(
+        b.select(_fresh, _raw, _null, name="jv.adopt.replaced"), op="any_view"
+    );
+    return self._mark_owned(view);
+}
+
 impl NaIRGenPass._binding_function_active -> bool {
     """Do the current bindings belong to the function being emitted into?
 
@@ -372,9 +402,8 @@ impl NaIRGenPass._binding_function_active -> bool {
     }
     _fn = self.builder.function;
     for _slot in self.local_vars.values() {
-        _blk = _slot?.parent;
-        if isinstance(_blk, ir.Block) {
-            return _blk.parent is _fn;
+        if isinstance(_slot, ir.Instruction) {
+            return _slot.parent.parent is _fn;
         }
     }
     return False;
@@ -714,7 +743,7 @@ impl NaIRGenPass._codegen_dict_val(nd: uni.DictVal) -> (ir.Value | None) {
     }
 
     first_pair = nd.kv_pairs[0];
-    first_key = self._codegen_expr(first_pair.key);
+    first_key = self._str_norm_optional(self._codegen_expr(first_pair.key));
     first_val = self._str_norm_optional(self._codegen_expr(first_pair.value));
     if first_key is None or first_val is None {
         return None;
@@ -786,6 +815,7 @@ impl NaIRGenPass._codegen_dict_val(nd: uni.DictVal) -> (ir.Value | None) {
     self._rc_call_with_ctx(_set_fn, _set_args, op="dict_init", loc=_dinit_loc);
 
     self._release_owned_args([first_store_key, first_store_val], op="dict_init");
+    self._nogc_release_dict_key(first_store_key);
 
     for i in range(1, len(nd.kv_pairs)) {
         pair = nd.kv_pairs[i];
@@ -813,6 +843,7 @@ impl NaIRGenPass._codegen_dict_val(nd: uni.DictVal) -> (ir.Value | None) {
             self._rc_call_with_ctx(_set_fn, _set_args, op="dict_init", loc=_dinit_loc);
 
             self._release_owned_args([k, v], op="dict_init");
+            self._nogc_release_dict_key(k);
         }
     }
 
@@ -885,6 +916,7 @@ impl NaIRGenPass._codegen_dict_unpack(nd: uni.DictVal) -> (ir.Value | None) {
             }
             self._rc_call_with_ctx(set_fn, setter_args, op="dict_init");
             self._release_owned_args([key, value], op="dict_init");
+            self._nogc_release_dict_key(key);
         }
     }
     return result;
@@ -950,9 +982,7 @@ impl NaIRGenPass._codegen_dict_set(
     _orig_value = value;
     key_val = self._coerce_type(key_val, key_type);
     value = self._coerce_type(value, val_type);
-    _dset_ctx_loc = getattr(
-        _orig_value, 'jac_loc', f"{os.path.basename(self.module.loc.mod_path)}:0"
-    );
+    _dset_ctx_loc = _orig_value.jac_loc;
     (_set_fn, _kh) = self._static_key_op(helpers, "set", key_node);
     _set_args = [target_val, key_val, value];
     if _kh is not None {
@@ -961,6 +991,7 @@ impl NaIRGenPass._codegen_dict_set(
     self._rc_call_with_ctx(_set_fn, _set_args, op="dict_set", loc=_dset_ctx_loc);
 
     self._release_owned_args([key_val, value], op="dict_set");
+    self._nogc_release_dict_key(key_val);
 }
 
 impl NaIRGenPass._emit_dict_eq(
