@@ -2973,6 +2973,7 @@ graph import compiler.backends.native {
         kernel_plan
     }
     kernel_resolve --> dist.precompile_bytecode.seal_native { SEALED_LINK_MODE }
+    kernel_stage0 --> cli.commands.native { plan_kernel_prefix }
     kernel_stage0 --> compiler.backends.native.kernel_resolve.build_kernel {
         link_kernel
     }
@@ -3972,6 +3973,9 @@ graph import compiler.driver {
     type native_iface --> compiler.frontend.codeinfo { NativeIface }
     native_iface --> compiler.tests.test_native_kernel_cache { NativeIface }
     native_iface --> dist.precompile_bytecode.seal_native { NativeIface }
+    nativecache --> compiler.backends.native.kernel_stage0.plan_kernel_prefix {
+        NativeBuildStopped
+    }
     nativecache --> compiler.backends.native.link_plan.build_link_plan {
         NativeBuildSession
     }
@@ -4576,6 +4580,9 @@ graph import compiler.driver {
         wiring_digest_for
     }
     bccache --> cli.commands.analysis._unit_weight { discover_annex_files }
+    bccache --> compiler.backends.native.kernel_stage0.unit_line_count {
+        discover_annex_files
+    }
     boundary_classify --> compiler.driver.program.JacProgram.stamp_native_import_facts {
         clib_decl_type_names
     }
@@ -4811,6 +4818,9 @@ graph import compiler.driver {
         CompilationProduct
     }
     program --> compiler.backends.native.kernel_stage0.link_kernel { JacProgram }
+    program --> compiler.backends.native.kernel_stage0.plan_kernel_prefix {
+        JacProgram
+    }
     type program --> compiler.capability_notes { JacProgram }
     type program --> compiler.native_bindings { JacProgram }
     type program --> compiler.passes.placement_pass { JacProgram }
@@ -8395,6 +8405,9 @@ graph import compiler.frontend {
     codeinfo --> cli.commands.native_build._application_ir { is_toolchain_unit }
     codeinfo --> client.js_runtime._pkg_dir { jaclang_pkg_root }
     codeinfo --> compiler.backends.native.floors._repo_root { jaclang_pkg_root }
+    codeinfo --> compiler.backends.native.kernel_stage0.plan_kernel_prefix {
+        native_unit_identity
+    }
     codeinfo --> compiler.backends.native.kernel_resolve._unit_label {
         jaclang_pkg_root
     }

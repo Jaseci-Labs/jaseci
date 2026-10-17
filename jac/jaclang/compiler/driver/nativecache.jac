@@ -36,6 +36,8 @@ import from jaclang.compiler.driver.native_iface { NativeIface }
 glob SLOW_STEP_SECONDS: float = 2.0,
      DEMOTED_SYMBOL_SUFFIX: str = ".__jac_demoted";
 
+class NativeBuildStopped(BaseException) {}
+
 obj NativeUnitEntry {
     has path: str,
         digest: str,
@@ -60,7 +62,11 @@ obj NativeUnitRegistry {
         failures: dict[str, str] = {},
         compiled_paths: list[str] = [],
         progress: (Callable[[str], None] | None) = None,
-        progress_steps: int = 0;
+        progress_steps: int = 0,
+        cold: bool = False,
+        stop_after: int = 0,
+        lowered_units: int = 0,
+        unit_lower_seconds: dict[str, float] = {};
 
     def postinit {
         self.building = set();
@@ -196,6 +202,12 @@ obj NativeUnitRegistry {
 
     def _timed(name: str, started: float) {
         self._add_time(name, time.perf_counter() - started);
+    }
+
+    def _timed_unit(name: str, path: str, started: float) {
+        elapsed = time.perf_counter() - started;
+        self._add_time(name, elapsed);
+        self.unit_lower_seconds[path] = self.unit_lower_seconds.get(path, 0.0) + elapsed;
     }
 
     def phase_summary -> str {
@@ -515,7 +527,7 @@ obj NativeUnitRegistry {
             );
         }
         (rebuild, _) = cache_mode();
-        if not rebuild and not options.no_ir_cache {
+        if not rebuild and not options.no_ir_cache and not self.cold {
             self.checking.add(resolved);
             try {
                 found = self._read_from_disk(
@@ -918,6 +930,9 @@ obj NativeBuildSession {
         self.prog = JacProgram();
         self.prog.options = self.options.clone_for_native_import();
         self.prog._natives = self.registry;
+        if self.registry.cold {
+            self.prog.iface_registry().cold = True;
+        }
     }
 
     def lower(path: str, use_str: (str | None) = None) -> (NativeUnitEntry | None) {
@@ -975,7 +990,7 @@ obj NativeBuildSession {
                     pending = self.deferred.pop();
                     self.discovery_open.pop();
                 }
-                self.registry._timed("NATIVE_LOWER", started);
+                self.registry._timed_unit("NATIVE_LOWER", resolved, started);
                 if not pending {
                     break;
                 }
@@ -1013,6 +1028,10 @@ obj NativeBuildSession {
             self.lowered[resolved] = mod;
             ent = self.registry.record_module(mod, opts);
             self.registry._stash_products(resolved, mod.gen);
+            self.registry.lowered_units += 1;
+            if 0 < self.registry.stop_after <= self.registry.lowered_units {
+                raise NativeBuildStopped();
+            }
             return ent;
         } except Exception {
             import traceback;

@@ -195,6 +195,77 @@ def link_kernel(
     }
 }
 
+obj GcPauses {
+    has collections: int = 0,
+        total_seconds: float = 0.0,
+        longest_seconds: float = 0.0,
+        _started: float = 0.0;
+
+    def observe(phase: str, info: dict[str, int]) {
+        if info.get("generation") != 2 {
+            return;
+        }
+        if phase == "start" {
+            self._started = time.perf_counter();
+            return;
+        }
+        pause = time.perf_counter() - self._started;
+        self.collections += 1;
+        self.total_seconds += pause;
+        self.longest_seconds = max(self.longest_seconds, pause);
+    }
+}
+
+def unit_line_count(path: str) -> int {
+    total = 0;
+    for source in [path] + discover_annex_files(path, ".impl.jac") {
+        try {
+            with open(source, "rb") as f {
+                total += f.read().count(b"\n");
+            }
+        } except OSError {}
+    }
+    return total;
+}
+
+def plan_kernel_prefix(stop_after: int, log: Callable[[str], None]) -> int {
+    import gc;
+    program = JacProgram();
+    registry = program.native_units();
+    registry.progress = log;
+    registry.cold = True;
+    program.iface_registry().cold = True;
+    registry.stop_after = stop_after;
+    pauses = GcPauses();
+    gc.callbacks.append(pauses.observe);
+    started = time.perf_counter();
+    log(f"  Planning the kernel uncached until {stop_after} units are lowered");
+    try {
+        kernel_plan(program, mode=KERNEL_DEV_LINK_MODE);
+        log("  The whole kernel was planned before the stop");
+    } except NativeBuildStopped {
+    } finally {
+        registry.progress = None;
+        gc.callbacks.remove(pauses.observe);
+    }
+    log(
+        f"  Kernel prefix: {registry.lowered_units} units lowered in "
+        f"{time.perf_counter() - started:.1f}s (nothing linked)"
+    );
+    log(registry.phase_summary());
+    log(
+        f"  GC: {pauses.collections} gen-2 collections, "
+        f"{pauses.total_seconds:.1f}s paused, longest {pauses.longest_seconds:.2f}s"
+    );
+    log("  Lowering time per unit (lines include annexes):");
+    for (path, seconds) in sorted(
+        registry.unit_lower_seconds.items(), key=lambda row: -row[1]
+    ) {
+        log(f"    {seconds:7.2f}s {unit_line_count(path):7d} lines  {native_unit_identity(path)}");
+    }
+    return registry.lowered_units;
+}
+
 def build_target_kernel(
     spec_path: str, dst: str, log: (Callable[[str], None] | None) = None
 ) -> int {
