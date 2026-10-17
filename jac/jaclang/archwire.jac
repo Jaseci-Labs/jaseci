@@ -3613,10 +3613,9 @@ graph import compiler.driver {
         CompileOptions
     }
     compile_options --> compiler.backends.native.elf_linker.ElfLinker.link {
-    compile_options --> cli.commands.native_build._sealed_native_plan { CompileOptions }
-
         env_symmap_requested
     }
+    compile_options --> cli.commands.native_build._sealed_native_plan { CompileOptions }
     compile_options --> compiler.backends.native.kernel_resolve {
         CompileOptions,
         NATIVE_LINK_MODE_BITCODE
