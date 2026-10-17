@@ -4981,26 +4981,31 @@ impl NaIRGenPass._codegen_super_field_init(nd: uni.FuncCall) -> (ir.Value | None
         return None;
     }
     pairs: list[tuple[str, uni.Expr]] = [];
-    positional: list[uni.Expr] = [];
+    keyword: list[tuple[str, uni.Expr]] = [];
     for param in (nd.params or []) {
         if isinstance(param, uni.KWPair) {
             if param.key is None {
                 return None;
             }
-            pairs.append((param.key.sym_name, param.value));
+            keyword.append((param.key.sym_name, param.value));
         } else {
-            positional.append(param);
+            if len(pairs) >= len(order) {
+                return None;
+            }
+            pairs.append((order[len(pairs)], param));
         }
     }
-    if len(positional) > len(order) {
-        return None;
+    for kw_pair in keyword {
+        pairs.append(kw_pair);
     }
-    pairs = list(zip(order, positional)) + pairs;
     covered: set[str] = set();
+    inline_fields = self.struct_field_inline.get(owner, set());
     for (fname, _expr) in pairs {
         if fname in covered
             or fname not in anc_fields
             or fname not in own_fields
+            or fname in inline_fields
+            or self._erased_field(owner, fname)
             or self._accessor_slot_of(owner, fname, "setter") is not None {
             return None;
         }
@@ -5017,18 +5022,50 @@ impl NaIRGenPass._codegen_super_field_init(nd: uni.FuncCall) -> (ir.Value | None
     }
     """Every argument is evaluated before any field changes, as the call would
     evaluate them before the initializer runs: `super.init(1, self.x)` reads
-    the `x` the child had, not the 1 it is about to store.""";
-    values: list[tuple[str, uni.Expr, ir.Value]] = [];
+    the `x` the child had, not the 1 it is about to store. Each value is also
+    made owned before the next is evaluated: a borrowed read such as
+    `self.first` would otherwise be released, or its text freed, by the store
+    into `first` before the store into another field takes it. The store then
+    moves the owned value into its field.""";
+    values: list[tuple[str, uni.Expr, ir.Value, bool]] = [];
+    field_types = self.struct_field_types.get(owner, {});
+    borrow_fields = self.struct_field_borrow.get(owner, set());
     for (fname, expr) in pairs {
         val = self._codegen_expr(expr);
         if val is None {
             return None;
         }
-        values.append((fname, expr, val));
+        text_owned = False;
+        if self._gc_mode() != "none" {
+            ftype = field_types.get(fname);
+            if self._is_reference_type(val.type)
+                and ftype is not None
+                and self._is_reference_type(ftype)
+                and fname not in borrow_fields
+                and not self._is_owned(val) {
+                self._emit_take_ref(val, op="super_init");
+                self._mark_owned(val);
+            }
+        } elif self._nogc_headerless() {
+            text_kind = self._nogc_text_field(owner, fname);
+            if text_kind {
+                val = self._nogc_own_text(expr, val, text_kind);
+                text_owned = True;
+            } elif self._nogc_owned_world()
+                and isinstance(val.type, ir.PointerType)
+                and not self._is_owned(val) {
+                return None;
+            }
+        }
+        values.append((fname, expr, val, text_owned));
     }
     self_val = self.builder.load(self_slot, name="super.self");
-    for (fname, expr, val) in values {
-        self._emit_field_store(nd, self_val, owner, fname, val, value_node=expr);
+    for (fname, expr, val, text_owned) in values {
+        if text_owned {
+            self._emit_field_store(nd, self_val, owner, fname, val);
+        } else {
+            self._emit_field_store(nd, self_val, owner, fname, val, value_node=expr);
+        }
     }
     return ir.Constant(ir.IntType(8).as_pointer(), None);
 }

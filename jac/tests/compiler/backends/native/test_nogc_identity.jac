@@ -331,3 +331,14 @@ test "a string returned from a local container preserves its bytes after cleanup
     out = assert_native_identity(_fixture("borrowed_string_return.jac"));
     assert out.splitlines() == ["3", "98", "c"] , out;
 }
+
+test "super.init owns each argument before it replaces a field a later one reads" {
+    out = assert_native_identity(_fixture("super_init_borrowed_text.jac"));
+    assert out.splitlines()
+        == [
+            "seed0-new seed0-old",
+            "seed1-new seed1-old",
+            "seed2-new seed2-old",
+            "780"
+        ] , out;
+}
