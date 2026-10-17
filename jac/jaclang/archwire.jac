@@ -2855,26 +2855,28 @@ graph import compiler.backends.native {
         link_artifact
     }
     lowering --> compiler.backends.native.entry_points.validate_native_application {
-        native_lowering_issues
+        native_fallbacks_in_ir
     }
-    lowering --> compiler.backends.native.na_compile_pass.native_demoted_ir_symbols {
-        NativeLoweringKind,
-        native_lowering_issues
+    lowering --> compiler.backends.native.na_compile_pass.unit_fallbacks {
+        native_fallbacks_in_ir
     }
-    lowering --> compiler.backends.native.na_compile_pass.require_native_ir {
-        native_lowering_issues
-    }
+    type lowering --> compiler.backends.native.na_compile_pass { NativeFallbacks }
     lowering --> compiler.backends.native.na_ir_gen_pass {
+        DEMOTED_SUFFIX,
         NativeLoweringIssue,
-        NativeLoweringKind
+        NativeLoweringKind,
+        native_fallbacks
     }
+    lowering --> compiler.driver.nativecache.NativeUnitRegistry.adopt_lowered {
+        native_fallbacks_in_ir
+    }
+    type lowering --> compiler.frontend.codeinfo { NativeFallbacks }
     lowering --> compiler.tests.test_prim_equivalence { native_lowering_issues }
     lowering --> compiler.backends.native.kernel_stage0.unit_issue_details {
         native_lowering_issues
     }
     na_compile_pass --> cli.commands.analysis.explain { native_linked_ir_text }
     na_compile_pass --> compiler.backends.native.entry_points.validate_native_application {
-        native_demoted_ir_symbols,
         native_linked_ir_text
     }
     na_compile_pass --> compiler.backends.native.link_plan {
@@ -3007,8 +3009,9 @@ graph import compiler.backends.native {
     }
     link_glue --> compiler.backends.native.link_plan { RC_THREADED_SYMBOL }
     na_compile_pass --> compiler.driver.nativecache.NativeBuildSession._optimize_in_parallel {
-        optimize_unit_texts,
-        require_native_ir
+        optimize_unit_bitcodes,
+        unit_bitcode,
+        unit_fallbacks
     }
     floors --> dist.payload.vendor { WASM_FLOOR_MANIFEST }
     host_facts --> project.compiler_host.ProjectHost.native_fact { host_native_fact }
@@ -3019,8 +3022,7 @@ graph import compiler.backends.native {
     type link_plan --> compiler.backends.native.kernel_resolve { LinkResult }
     na_compile_pass --> compiler.driver.nativecache.NativeUnitRegistry.adopt_lowered {
         emit_unit_object,
-        optimize_unit_texts,
-        require_native_ir
+        optimize_unit_ir
     }
     na_compile_pass --> compiler.driver.pipeline.native_object_passes {
         NativeCompilePass
@@ -4890,6 +4892,7 @@ graph import compiler.frontend {
     codeinfo --> compiler.backends.native.link_glue.inject_heap_accounting { HDR_TOTAL }
     codeinfo --> compiler.backends.native.link_plan { kernel_unit_path }
     type codeinfo --> compiler.backends.native.link_plan { InteropBinding }
+    type codeinfo --> compiler.backends.native.na_compile_pass { CodeGenTarget }
     codeinfo --> compiler.backends.native.link_plan._build_link_plan {
         is_kernel_unit_path
     }

@@ -1,25 +1,69 @@
+glob _STRUCT_LAYOUTS: dict[str, tuple[list[int], int]] = {};
+
+def layout_identity(llt: ir.Type, memo: dict[str, str]) -> str {
+    """What an LLVM type's layout depends on: its members, and the members of
+    every struct it embeds. Pointers end the walk, since their layout does not
+    depend on what they point to.""";
+    if isinstance(llt, ir.PointerType) {
+        return "ptr";
+    }
+    if isinstance(llt, ir.IdentifiedStructType) {
+        known = memo.get(llt.name);
+        if known is None {
+            memo[llt.name] = "%" + llt.name;
+            members = ",".join(layout_identity(m, memo) for m in llt.members());
+            known = f"%{llt.name}{'<' if llt.packed else ''}{{{members}}}";
+            memo[llt.name] = known;
+        }
+        return known;
+    }
+    if isinstance(llt, ir.BaseStructType) {
+        members = ",".join(layout_identity(m, memo) for m in llt.members());
+        return f"{'<' if llt.packed else ''}{{{members}}}";
+    }
+    if isinstance(llt, (ir.ArrayType, ir.VectorType)) {
+        return f"[{llt.count}x{layout_identity(llt.element, memo)}]";
+    }
+    return str(llt);
+}
+
 def struct_layouts(module: ir.Module) -> dict[str, tuple[list[int], int]] {
     """Read identified struct offsets and sizes from LLVM's target ABI. LLVM
     is the host's: the probe module and each struct's member count go to it,
-    and the offsets and sizes come back.""";
+    and the offsets and sizes come back. A layout is asked for once per
+    distinct struct identity and data layout in a process.""";
     import json;
 
+    data_layout = str(module.data_layout);
+    memo: dict[str, str] = {};
+    layouts: dict[str, tuple[list[int], int]] = {};
+    pending: dict[str, str] = {};
+    for (name, struct) in module.context.identified_types.items() {
+        if struct.is_opaque {
+            continue;
+        }
+        key = data_layout + "\x1f" + layout_identity(struct, memo);
+        known = _STRUCT_LAYOUTS.get(key);
+        if known is None {
+            pending[name] = key;
+        } else {
+            layouts[name] = known;
+        }
+    }
+    if not pending {
+        return layouts;
+    }
     probe = ir.Module(name="layout", context=module.context);
     probe.data_layout = module.data_layout;
     counts: dict[str, int] = {};
-    for (name, struct) in module.context.identified_types.items() {
-        if not struct.is_opaque {
-            ir.GlobalVariable(probe, struct, name=name);
-            counts[name] = len(struct.members());
-        }
-    }
-    layouts: dict[str, tuple[list[int], int]] = {};
-    if not counts {
-        return layouts;
+    for name in pending {
+        struct = module.context.identified_types[name];
+        ir.GlobalVariable(probe, struct, name=name);
+        counts[name] = len(struct.members());
     }
     answered = active_host().native_fact(
         FACT_STRUCT_LAYOUTS,
-        str(module.data_layout)
+        data_layout
             + FACT_SEP
             + json.dumps(counts, sort_keys=True)
             + FACT_SEP
@@ -36,7 +80,9 @@ def struct_layouts(module: ir.Module) -> dict[str, tuple[list[int], int]] {
                 offsets.append(int(offset));
             }
         }
-        layouts[fields[0]] = (offsets, int(fields[1]));
+        layout = (offsets, int(fields[1]));
+        layouts[fields[0]] = layout;
+        _STRUCT_LAYOUTS[pending[fields[0]]] = layout;
     }
     return layouts;
 }

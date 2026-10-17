@@ -319,6 +319,14 @@ impl NaIRGenPass._lower_module -> None {
         self.module.gen.ir_module = self.llvm_module;
         self.module.gen.llvm_ir = self.llvm_module;
         self.module.gen.native_deps = list(self._native_dep_paths);
+        self.module.gen.native_fallbacks = native_fallbacks(
+            self._lowering_issues,
+            [
+                func.name.removesuffix(DEMOTED_SUFFIX)
+                for func in self.llvm_module.functions
+                if not func.is_declaration and func.name.endswith(DEMOTED_SUFFIX)
+            ]
+        );
 
         import os;
         if self.prog.options.rc_stats {
@@ -764,7 +772,7 @@ impl NaIRGenPass._rename_demoted_symbol(name: str, func: ir.Function) -> None {
     self._unit_exports.pop(name, None);
     try {
         self.llvm_module.globals.pop(func.name, None);
-        func.name = f"{func.name}.__jac_demoted";
+        func.name = f"{func.name}{DEMOTED_SUFFIX}";
         self.llvm_module.globals[func.name] = func;
     } except Exception {}
 }
@@ -871,7 +879,7 @@ impl NaIRGenPass._reaches_seam_stub(func: ir.Function, seen: set[int]) -> (str |
                     if linked is not None and linked[1].name_ref is not None {
                         return linked[1].name_ref.sym_name;
                     }
-                    return op.name.removesuffix(".__jac_demoted");
+                    return op.name.removesuffix(DEMOTED_SUFFIX);
                 }
                 if op.blocks and op.linkage in ("private", "internal") {
                     found = self._reaches_seam_stub(op, seen);

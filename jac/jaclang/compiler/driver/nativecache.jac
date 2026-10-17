@@ -719,8 +719,10 @@ obj NativeUnitRegistry {
         import json;
         import from jaclang.compiler.backends.native.na_compile_pass {
             emit_unit_object,
-            optimize_unit_texts,
-            require_native_ir
+            optimize_unit_ir
+        }
+        import from jaclang.compiler.backends.native.lowering {
+            native_fallbacks_in_ir
         }
         import from jaclang.compiler.driver.native_iface { native_layout_from_dict }
         import from jaclang.compiler.frontend.codeinfo { CodeGenTarget }
@@ -734,23 +736,23 @@ obj NativeUnitRegistry {
             return None;
         }
         iface.resolve_deps(resolved);
+        fallbacks = native_fallbacks_in_ir(ir_text);
         if opts.native_required_for(resolved) {
-            require_native_ir(ir_text);
+            fallbacks.require();
         }
         if opts.debug_ir {
             import from jaclang.compiler.frontend.host { active_host }
             active_host().save_native_debug_ir(resolved, ir_text);
         }
         debug = bool(opts.native_debug);
-        bitcode = optimize_unit_texts(
-            [ir_text], opts, 0 if debug else int(opts.opt_level or 0)
-        )[0];
+        bitcode = optimize_unit_ir(ir_text, opts, 0 if debug else int(opts.opt_level or 0));
         carrier = self.prog.hub.artifacts.get(resolved);
         if carrier is None {
             carrier = CodeGenTarget();
             self.prog.hub.artifacts[resolved] = carrier;
         }
         carrier.llvm_ir = ir_text;
+        carrier.native_fallbacks = fallbacks;
         carrier.native_iface = iface;
         carrier.native_bitcode = bitcode;
         carrier.native_object = emit_unit_object(bitcode, opts) if debug else None;
@@ -1180,8 +1182,9 @@ obj NativeBuildSession {
         """Ahead-of-time units with no cached bitcode are optimized together
         on a thread pool; each worker parses into its own LLVM context.""";
         import from jaclang.compiler.backends.native.na_compile_pass {
-            optimize_unit_texts,
-            require_native_ir
+            optimize_unit_bitcodes,
+            unit_bitcode,
+            unit_fallbacks
         }
         opts = self.prog.options;
         if opts.native_debug
@@ -1200,7 +1203,7 @@ obj NativeBuildSession {
                 continue;
             }
             if opts.native_required_for(path) {
-                require_native_ir(str(mod.gen.llvm_ir));
+                unit_fallbacks(mod.gen).require();
             }
             todo.append((path, mod));
         }
@@ -1210,8 +1213,10 @@ obj NativeBuildSession {
         started = self.registry.note_step(
             "optimize", detail=f"{len(todo)} units in parallel"
         );
-        bitcodes = optimize_unit_texts(
-            [str(mod.gen.llvm_ir) for (_, mod) in todo], opts, int(opts.opt_level or 0)
+        bitcodes = optimize_unit_bitcodes(
+            [unit_bitcode(mod.gen.llvm_ir) for (_, mod) in todo],
+            opts,
+            int(opts.opt_level or 0)
         );
         self.registry._timed("NATIVE_OPTIMIZE", started);
         self.registry.note_slow_step("optimizing", "", started);
