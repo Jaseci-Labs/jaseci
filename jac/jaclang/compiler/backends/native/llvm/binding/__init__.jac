@@ -10,3 +10,4 @@ include jaclang.compiler.backends.native.llvm.binding.value;
 include jaclang.compiler.backends.native.llvm.binding.object_file;
 include jaclang.compiler.backends.native.llvm.binding.context;
 include jaclang.compiler.backends.native.llvm.binding.config;
+include jaclang.compiler.backends.native.llvm.binding.lld;

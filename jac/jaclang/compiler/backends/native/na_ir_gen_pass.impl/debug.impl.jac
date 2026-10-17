@@ -1,4 +1,3 @@
-import from jaclang.compiler.frontend.host { active_host }
 import os;
 import sys;
 

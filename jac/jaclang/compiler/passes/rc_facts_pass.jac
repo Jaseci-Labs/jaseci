@@ -1,55 +1,3 @@
-import from jaclang.compiler.passes.context { CompileContext, CompilerPass }
-import from jaclang.compiler.driver.pipeline_types { AnalysisFact, PassContract }
-import from jaclang.compiler.frontend.unitree {
-    Ability,
-    Assignment,
-    AtomTrailer,
-    BinaryExpr,
-    BoolExpr,
-    CompareExpr,
-    ConnectOp,
-    DictCompr,
-    DictVal,
-    Expr,
-    FString,
-    FuncCall,
-    FuncSignature,
-    ImplDef,
-    IfElseExpr,
-    IfStmt,
-    InForStmt,
-    IterForStmt,
-    KWPair,
-    LambdaExpr,
-    ListCompr,
-    ListVal,
-    Module,
-    ModuleCode,
-    MultiString,
-    Name,
-    NameAtom,
-    ParamVar,
-    ReturnStmt,
-    SetVal,
-    same_lexical_scope,
-    String,
-    Symbol,
-    Test,
-    Token,
-    UnaryExpr,
-    UniCFGNode,
-    UniNode,
-    WhileStmt
-}
-import from jaclang.compiler.passes.dataflow { SymId, solve_backward_gen_kill }
-import from jaclang.compiler.frontend.constant {
-    ExprCtx,
-    OwnershipKind,
-    SymbolStorage,
-    Tokens as Tok,
-    is_borrow_kind
-}
-
 enum Ownership {
     OWNED = "owned",
     BORROWED = "borrowed",
@@ -58,7 +6,6 @@ enum Ownership {
 }
 
 def method_returns_borrow(callee: (Ability | None)) -> bool {
-    import from jaclang.compiler.expr_keys { type_tag_borrows }
     if not isinstance(callee, Ability)
         or not callee.is_method
         or callee.is_static

@@ -11,7 +11,10 @@ here would not be seen through another module's import of it.
     barrier flags the row (FLAG_REMEMBERED) so an id is recorded once.
   * Logged values — references stored into an old non-object container
     (closure fields, Map / Set storages, native-function props) since the
-    last collection; the next minor collection traces them as roots.
+    last collection; the next minor collection traces them as roots. A
+    store allocates nothing, so a loop of stores never brings the collection
+    that clears the list: past a cap it is compacted to its distinct values
+    (at most the heap), and the cap doubles from what is left.
 """
 
 import from engine.src.runtime.jsvalue { JSValue, jsv_is_cell }
@@ -19,7 +22,8 @@ import from engine.src.runtime.jsvalue { JSValue, jsv_is_cell }
 glob _GC_GEN_ON: bool = False,
      _GC_REM_OBJS: list[int] = [],
      _GC_REM_VALS: list[JSValue] = [],
-     _GC_REM_GENS: list[int] = [];
+     _GC_REM_GENS: list[int] = [],
+     _GC_REM_VALS_CAP: int = 4096;
 
 # JSGeneratorState.cell_flags bit: the state is in the remembered list (above
 # the 0xFF DEAD sentinel, like the object flags).
@@ -59,6 +63,28 @@ collection (non-cells need no tracing)."""
 def:pub gc_log_val(v: JSValue) -> None {
     if _GC_GEN_ON and jsv_is_cell(v) {
         _GC_REM_VALS.append(v);
+        if len(_GC_REM_VALS) >= _GC_REM_VALS_CAP {
+            _gc_rem_vals_compact();
+        }
+    }
+}
+
+"""Drop the repeated values from the log and double the cap from what is
+left (amortized O(1) per store; the log stays within twice the distinct
+values stored since the last collection)."""
+def _gc_rem_vals_compact -> None {
+    rc_seen: dict[int, bool] = {};
+    rc_kept: list[JSValue] = [];
+    for rc_v in _GC_REM_VALS {
+        if rc_v not in rc_seen {
+            rc_seen[rc_v] = True;
+            rc_kept.append(rc_v);
+        }
+    }
+    _GC_REM_VALS = rc_kept;
+    _GC_REM_VALS_CAP = 4096;
+    if 2 * len(rc_kept) > _GC_REM_VALS_CAP {
+        _GC_REM_VALS_CAP = 2 * len(rc_kept);
     }
 }
 
@@ -90,6 +116,7 @@ def:pub gc_barrier_reset -> None {
     _GC_REM_OBJS = [];
     _GC_REM_VALS = [];
     _GC_REM_GENS = [];
+    _GC_REM_VALS_CAP = 4096;
 }
 
 """Add `n` young bytes (a buffer's growth); the next cell allocation checks the

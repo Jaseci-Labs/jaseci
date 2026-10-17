@@ -1309,6 +1309,15 @@ def _gc_minor_roots(realm: Realm) -> None {
             _gc_drain(realm, mr_work);
         }
     }
+    for mr_aid in realm.args_slots {
+        if mr_aid > 0
+            and mr_aid <= len(realm.objects)
+            and mr_aid <= realm.objmark_len
+            and read_byte(mr_mp, mr_aid - 1) == mr_eb {
+            _gc_trace_obj(realm, mr_aid, mr_work, mr_mp, mr_eb);
+            _gc_drain(realm, mr_work);
+        }
+    }
     for mr_v in gc_rem_vals() {
         gc_trace(realm, mr_v);
     }

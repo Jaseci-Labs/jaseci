@@ -4,6 +4,7 @@ import os;
 import struct;
 import sys;
 import zlib;
+import from contextvars { ContextVar }
 import from pathlib { Path }
 import from jaclang.jac0core.cache_paths { FileLock, atomic_write }
 import from jaclang.compiler.frontend.codeinfo {
@@ -833,7 +834,7 @@ def _check_policy_digest(source_path: str) -> str {
     return hashlib.sha256(json.dumps(policy, sort_keys=True).encode()).hexdigest();
 }
 
-def _project_env_fingerprint(source_path: str) -> str {
+def _project_env_fingerprint_uncached(source_path: str) -> str {
     h = hashlib.sha256();
     h.update(_module_codespace_mode(source_path).encode());
     h.update(_check_policy_digest(source_path).encode());
@@ -886,13 +887,90 @@ def _module_projection(source_path: str) -> str {
     return options.module_projection();
 }
 
-glob _WIRING_DIGESTS: dict[str, dict[str, str]] = {};
+glob _PREPARE_MEMO: ContextVar[dict[str, str] | None] = ContextVar(
+         'jac_prepare_memo', `default=None
+     );
+
+def begin_prepare_memo -> any {
+    return _PREPARE_MEMO.set({});
+}
+
+def end_prepare_memo(token: any) {
+    _PREPARE_MEMO.reset(token);
+}
+
+def _memoized(kind: str, source_path: str, compute: any) -> str {
+    memo = _PREPARE_MEMO.get();
+    if memo is None {
+        return compute(source_path);
+    }
+    import from jaclang.compiler.driver.compilation_context { active_options }
+    import from jaclang.compiler.frontend.host { active_host }
+    import from jaclang.compiler.frontend.codeinfo {
+        _native_target_ctx,
+        get_effective_default_codespace_override
+    }
+    key = "\x1f".join(
+        [
+            kind,
+            source_path,
+            str(id(active_options())),
+            str(id(active_host())),
+            get_effective_default_codespace_override(),
+            repr(_native_target_ctx.get(None))
+        ]
+    );
+    found = memo.get(key);
+    if found is None {
+        found = compute(source_path);
+        memo[key] = found;
+    }
+    return found;
+}
+
+def _project_env_fingerprint(source_path: str) -> str {
+    return _memoized("env", source_path, _project_env_fingerprint_uncached);
+}
+
+def compute_module_key(source_path: str) -> str {
+    return _memoized("module", source_path, _compute_module_key_uncached);
+}
+
+glob _WIRING_DIGESTS: dict[str, dict[str, str]] = {},
+     _ARCH_STAMPS: dict[str, tuple[tuple[int, int, str], str]] = {};
+
+def _arch_stamp(arch: str, package_name: str) -> (str | None) {
+    try {
+        st = os.stat(arch);
+    } except OSError {
+        return None;
+    }
+    probe = (st.st_mtime_ns, st.st_size, package_name);
+    held = _ARCH_STAMPS.get(arch);
+    if held is not None and held[0] == probe {
+        return held[1];
+    }
+    h = hashlib.sha256();
+    try {
+        with open(arch, "rb") as f {
+            h.update(f.read());
+        }
+    } except OSError {
+        return None;
+    }
+    h.update(b"\0");
+    h.update(package_name.encode());
+    stamp = h.hexdigest();
+    _ARCH_STAMPS[arch] = (probe, stamp);
+    return stamp;
+}
 
 def stored_wiring_digest(source_path: str) -> str {
     import json;
     import from jaclang.compiler.frontend.host { active_host }
     import from jaclang.compiler.driver.wiring {
         arch_file_for,
+        import_prefix_for,
         is_arch_file,
         wiring_digest_for
     }
@@ -905,29 +983,17 @@ def stored_wiring_digest(source_path: str) -> str {
     }
     root_dir = os.path.dirname(arch);
     facts = active_host().project_facts(root_dir);
-    h = hashlib.sha256();
-    try {
-        with open(arch, "rb") as f {
-            h.update(f.read());
-        }
-    } except OSError {
+    package_name = (facts.package_name or "") if facts is not None else "";
+    stamp = _arch_stamp(arch, package_name + "\x00" + import_prefix_for(root_dir));
+    if stamp is None {
         return wiring_digest_for(source_path);
     }
-    h.update(b"\0");
-    if facts is not None {
-        h.update((facts.package_name or "").encode());
-        for pattern in facts.arch_closed {
-            h.update(b"\0");
-            h.update(pattern.encode());
-        }
-    }
-    stamp = h.hexdigest();
     relative = os.path.relpath(
         os.path.realpath(source_path), os.path.realpath(root_dir)
     );
     table = _WIRING_DIGESTS.get(stamp);
     store = os.path.join(
-        str(get_jir_cache_dir()), "wiring", stamp[:2], stamp + ".json"
+        str(get_jir_cache_dir()), "wiring-v2", stamp[:2], stamp + ".json"
     );
     if table is None {
         table = {};
@@ -997,7 +1063,7 @@ def sidecar_unit_paths(sidecar: dict[str, any]) -> list[str] {
     return out;
 }
 
-def compute_module_key(source_path: str) -> str {
+def _compute_module_key_uncached(source_path: str) -> str {
     """A module the running compiler package owns is keyed canonically,
     whatever compilation scope is active: the package's precompile, the
     compiler's bootstrap, a consumer's analysis and a native build session

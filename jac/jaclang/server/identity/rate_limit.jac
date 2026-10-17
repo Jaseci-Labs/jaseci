@@ -1,7 +1,6 @@
 import hashlib;
 import math;
 import logging;
-import from jaclang.server.shared_store { shared_store }
 
 obj AttemptsExhausted(Exception) {
     has retry_after: int = 1;
