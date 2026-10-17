@@ -26,10 +26,10 @@ obj Square(Shape) {
 }
 
 obj Base {
-    has kind: Kind;
-    has name: str;
-    has tags: list[str];
-    has tag: Tag;
+    has kind: Kind,
+        name: str,
+        tags: list[str],
+        tag: Tag;
 }
 
 obj Mid(Base) {}
@@ -43,11 +43,41 @@ obj Leaf(Mid) {
     }
 }
 
+obj Pair {
+    has x: int,
+        y: int;
+}
+
+obj PairChild(Pair) {
+    def init {
+        self.x = 9;
+        super.init(1, self.x);
+    }
+}
+
+obj Named {
+    has first: str,
+        second: str;
+}
+
+obj NamedChild(Named) {
+    def init(seed: str) {
+        self.first = seed + "-old";
+        super.init(seed + "-new", self.first);
+    }
+}
+
 with entry {
     sq = Square(3.0);
     print(sq.kind.value, sq.side, sq.area());
     for i in range(3) {
         leaf = Leaf(i, f"n{i}");
         print(leaf.extra, leaf.kind.value, leaf.name, leaf.tags, leaf.tag.label);
+    }
+    pc = PairChild();
+    print(pc.x, pc.y);
+    for i in range(3) {
+        nc = NamedChild(f"s{i}");
+        print(nc.first, nc.second);
     }
 }

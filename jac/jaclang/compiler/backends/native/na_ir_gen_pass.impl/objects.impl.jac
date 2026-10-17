@@ -5015,12 +5015,19 @@ impl NaIRGenPass._codegen_super_field_init(nd: uni.FuncCall) -> (ir.Value | None
     if self_slot is None {
         return None;
     }
-    self_val = self.builder.load(self_slot, name="super.self");
+    """Every argument is evaluated before any field changes, as the call would
+    evaluate them before the initializer runs: `super.init(1, self.x)` reads
+    the `x` the child had, not the 1 it is about to store.""";
+    values: list[tuple[str, uni.Expr, ir.Value]] = [];
     for (fname, expr) in pairs {
         val = self._codegen_expr(expr);
         if val is None {
             return None;
         }
+        values.append((fname, expr, val));
+    }
+    self_val = self.builder.load(self_slot, name="super.self");
+    for (fname, expr, val) in values {
         self._emit_field_store(nd, self_val, owner, fname, val, value_node=expr);
     }
     return ir.Constant(ir.IntType(8).as_pointer(), None);

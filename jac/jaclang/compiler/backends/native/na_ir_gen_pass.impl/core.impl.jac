@@ -1243,10 +1243,10 @@ impl NaIRGenPass._register_imported_struct_types -> None {
     _canon_src: dict[str, any] = {};
     dep_edges: dict[str, list[str]] = {};
     typed_only: dict[str, bool] = {};
-    comptime_only: dict[str, bool] = {};
+    runtime_edges: dict[str, list[str]] = {};
     qi = 0;
     while qi < len(wq) {
-        (mod_name, cur_base, parent_key, typed, ct_reach) = wq[qi];
+        (mod_name, cur_base, parent_key, typed, ct_edge) = wq[qi];
         qi += 1;
         assert mod_name is not None;
         (src_mod_str, full_path) = resolve_native_module(mod_name, cur_base);
@@ -1264,7 +1264,9 @@ impl NaIRGenPass._register_imported_struct_types -> None {
             dep_edges[_edge_from] = [abs_key];
         }
         typed_only[abs_key] = typed and typed_only.get(abs_key, True);
-        comptime_only[abs_key] = ct_reach and comptime_only.get(abs_key, True);
+        if not ct_edge {
+            runtime_edges.setdefault(_edge_from, []).append(abs_key);
+        }
         if abs_key in processed_modules {
             continue;
         }
@@ -1330,7 +1332,7 @@ impl NaIRGenPass._register_imported_struct_types -> None {
                         sub_base,
                         abs_key,
                         typed or bool(sub_imp.is_typed),
-                        ct_reach or bool(sub_imp.is_comptime)
+                        bool(sub_imp.is_comptime)
                     )
                 );
             }
@@ -1344,6 +1346,20 @@ impl NaIRGenPass._register_imported_struct_types -> None {
         if v
     };
 
+    """A module reached only through comptime imports is read while this
+    module compiles and binds nothing at run time. Runtime reach is settled on
+    the whole import graph, since the walk visits each module's imports once
+    and a comptime path may reach a module before a runtime one does.""";
+    runtime_reached: set[str] = set();
+    _rt_todo: list[str] = list(runtime_edges.get("", []));
+    while _rt_todo {
+        _rt = _rt_todo.pop();
+        if _rt not in runtime_reached {
+            runtime_reached.add(_rt);
+            _rt_todo.extend(runtime_edges.get(_rt, []));
+        }
+    }
+
     _dep_seen: set[str] = set();
     _dep_todo: list[str] = list(dep_edges.get("", []));
     while _dep_todo {
@@ -1352,10 +1368,7 @@ impl NaIRGenPass._register_imported_struct_types -> None {
             continue;
         }
         _dep_seen.add(_direct);
-        if comptime_only.get(_direct, False) {
-            """A module reached only through a comptime import is read while
-            this module compiles and binds nothing at run time: it is no link
-            edge, and one that lowers no native code has no unit to link.""";
+        if _direct not in runtime_reached {
             continue;
         }
         if typed_only.get(_direct, False) {
