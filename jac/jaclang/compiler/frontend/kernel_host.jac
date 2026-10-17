@@ -14,6 +14,9 @@ class HostOnlyError(RuntimeError) {}
 
 obj HostAsker {
     def ask(method: str, key: str) -> str abst;
+    def record_interface(
+        program: JacProgram, module: Module, products: UnitProducts
+    ) {}
 }
 
 enum HostEventKind { NOTE, COVERAGE, COLLECT }
@@ -445,8 +448,9 @@ obj KernelHost(HostServices) {
         if not products.path {
             products.path = real;
         }
-        if real.endswith(".jac") {
-            unit_interface(module, task.program, products);
+        asker = self.asker;
+        if real.endswith(".jac") and asker is not None {
+            asker.record_interface(task.program, module, products);
         }
         self.units[real] = products;
     }
@@ -1022,6 +1026,26 @@ obj KernelHost(HostServices) {
             self._native_ifaces[real] = found;
         }
         return found;
+    }
+
+    def native_dep_discovery_open(program: JacProgram) -> bool {
+        if self.fallback is not None {
+            with self.delegating("native_dep_discovery_open") as host {
+                answer = host.native_dep_discovery_open(program);
+            }
+            return answer;
+        }
+        return False;
+    }
+
+    def native_deps_deferred(program: JacProgram) -> bool {
+        if self.fallback is not None {
+            with self.delegating("native_deps_deferred") as host {
+                answer = host.native_deps_deferred(program);
+            }
+            return answer;
+        }
+        return False;
     }
 
     def lower_dependency(

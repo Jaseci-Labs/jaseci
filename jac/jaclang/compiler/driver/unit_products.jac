@@ -109,16 +109,32 @@ def jac_dependencies(module: uni.Module) -> list[str] {
         if not item.is_jac {
             continue;
         }
-        targets: list[any] = list(item.items);
+        paths: list[uni.ModulePath] = [
+            target
+            for target in item.items
+            if isinstance(target, uni.ModulePath)
+        ];
         if item.from_loc is not None {
-            targets.append(item.from_loc);
+            paths.append(item.from_loc);
         }
-        for target in targets {
+        sources: list[str] = [];
+        for path in paths {
             try {
-                source = target.resolve_relative_path();
+                sources.append(path.resolve_relative_path());
             } except Exception {
                 continue;
             }
+        }
+        for target in item.items {
+            if isinstance(target, uni.ModuleItem) {
+                try {
+                    sources.append(target.resolve_relative_path());
+                } except Exception {
+                    continue;
+                }
+            }
+        }
+        for source in sources {
             if source and source.endswith(".jac") and os.path.isfile(source) {
                 found.add(os.path.realpath(source));
             }
@@ -540,23 +556,6 @@ def unit_products(module: uni.Module, program: JacProgram) -> UnitProducts {
     }
     native_products(module, products);
     return products;
-}
-
-def unit_interface(module: uni.Module, program: JacProgram, products: UnitProducts) {
-    import from jaclang.compiler.types.stubcat.writer {
-        IncoherentInterface,
-        build_module_iface
-    }
-    evaluator = program.get_type_evaluator();
-    pkg_dir = os.path.dirname(os.path.realpath(module.loc.mod_path));
-    try {
-        data = build_module_iface(module, evaluator, pkg_dir);
-        shape = build_module_iface(module, evaluator, pkg_dir, spans=False);
-    } except IncoherentInterface {
-        return;
-    }
-    products.iface = base64.b64encode(data).decode("ascii");
-    products.iface_shape = shape[:64].decode("ascii");
 }
 
 def native_products(module: uni.Module, products: UnitProducts) {
