@@ -1,6 +1,3 @@
-import from jaclang.compiler.frontend.constant { OwnershipKind }
-import from jaclang.compiler.c_interop { clib_import_of }
-
 glob _RC_THREAD_SPAWN_FNS: frozenset[str] = frozenset(
          {"pthread_create", "thrd_create", "CreateThread", "_beginthreadex"}
      );
@@ -170,14 +167,13 @@ impl NaIRGenPass._transfer_own_args(
 }
 
 impl NaIRGenPass._callee_ability_of(nd: uni.FuncCall) -> (uni.Ability | None) {
-    import from jaclang.compiler.symbol_utils { resolved_callee }
     decl = resolved_callee(nd);
     return self._native_variant_decl(decl) if decl is not None else None;
 }
 
 impl NaIRGenPass._native_variant_decl(decl: uni.Ability) -> uni.Ability {
     import os;
-    import from jaclang.compiler.frontend.codeinfo { native_variant_of }
+
     mod = decl.find_parent_of_type(uni.Module);
     if mod is None
         or mod.loc is None
@@ -1278,7 +1274,6 @@ impl NaIRGenPass._native_module_call_target(
         return None;
     }
 
-    import from jaclang.compiler.symbol_utils { imported_module_name }
     mod_name = imported_module_name(trailer.target);
     method_name = self._get_name(trailer.right);
     if mod_name is None or method_name is None {
@@ -1326,7 +1321,7 @@ impl NaIRGenPass._from_imported_intercept(nd: uni.FuncCall) -> tuple[str, str] |
     local or module definition that shadows the name never matches. The stub is
     named by its place in the stdlib tree, not its file stem: `os` is a package
     whose stub is `os/__init__.pyi`.""";
-    import from jaclang.compiler.frontend.codeinfo { bundled_stdlib_module_of }
+
     if not isinstance(nd.target, uni.Name) or nd.target.sym is None {
         return None;
     }
@@ -1345,8 +1340,6 @@ impl NaIRGenPass._from_imported_intercept(nd: uni.FuncCall) -> tuple[str, str] |
 impl NaIRGenPass._codegen_intrinsic(
     nd: uni.FuncCall, intr: IntrinsicEntry
 ) -> (ir.Value | None) {
-    import from jaclang.compiler.intrinsic_registry { IntrinsicDispatch }
-
     positional: list[uni.Expr] = [];
     _has_kw = False;
     for p in (nd.params or []) {
@@ -1595,11 +1588,7 @@ impl NaIRGenPass._codegen_synthetic_call(
     call = uni.FuncCall(
         target=target, params=params, genai_call=None, kid=[target, *params]
     );
-    import from jaclang.compiler.symbol_utils {
-        ability_of_symbol,
-        classify_call,
-        resolve_expr_symbol
-    }
+
     call.call_kind = classify_call(call).value;
     call.callee_decl = ability_of_symbol(resolve_expr_symbol(target));
     owner = origin.parent;
@@ -1615,13 +1604,6 @@ impl NaIRGenPass._codegen_synthetic_call(
 }
 
 impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
-    import from jaclang.compiler.intrinsic_registry { INTRINSIC_REGISTRY }
-    import from jaclang.compiler.erased_imports { erased_identity_call_arg }
-    import from jaclang.compiler.field_semantics {
-        field_initialization,
-        is_field_marker
-    }
-
     _identity_arg = erased_identity_call_arg(nd);
     if _identity_arg is not None {
         return self._codegen_expr(_identity_arg);
@@ -2161,19 +2143,18 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
                 "ascii"
             ) {
             params_l: list[uni.Expr | uni.KWPair] = list(nd.params or []);
+            _ez_setlike = func_name in ("set", "frozenset");
             _ez_peer = self._spec_from_container_ptr(self._peer_container_ty)
-                if not params_l and func_name in ("list", "set")
+                if not params_l and (func_name == "list" or _ez_setlike)
                 else None;
             if not params_l
-                and func_name in ("list", "set")
+                and (func_name == "list" or _ez_setlike)
                 and (self._empty_ctor_args_of(nd) or _ez_peer is not None) {
                 _ez_args = self._empty_ctor_args_of(nd);
                 _ez_elem: ir.Type = ir.IntType(8).as_pointer();
                 _ez_spec = "ptr";
                 if not _ez_args and _ez_peer is not None {
-                    _ez_pt = self.set_helpers
-                        if func_name == "set"
-                        else self.list_helpers;
+                    _ez_pt = self.set_helpers if _ez_setlike else self.list_helpers;
                     _ez_ph = _ez_pt.get(_ez_peer);
                     if _ez_ph is not None {
                         _ez_peer_new = self.builder.call(
@@ -2202,7 +2183,7 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
                         }
                     }
                 }
-                if func_name == "set" {
+                if _ez_setlike {
                     (_ez_spec, _ez_size) = self._hash_key_spec(_ez_elem);
                     self._emit_set_helpers(_ez_spec, _ez_elem, _ez_size);
                     _ez_h = self.set_helpers.get(_ez_spec);
@@ -3619,7 +3600,6 @@ impl NaIRGenPass._emit_isinstance_user(
 }
 
 impl NaIRGenPass._flow_future_licensed(nd: uni.ConcurrentExpr) -> (uni.Name | None) {
-    import from jaclang.compiler.frontend.constant { Tokens as Tok }
     asgn = nd.parent;
     if not (
         isinstance(asgn, uni.Assignment)
@@ -3672,7 +3652,6 @@ impl NaIRGenPass._flow_future_licensed(nd: uni.ConcurrentExpr) -> (uni.Name | No
 }
 
 impl NaIRGenPass._try_flow_future(nd: uni.ConcurrentExpr) -> (ir.Value | None) {
-    import from jaclang.compiler.frontend.constant { Tokens as Tok }
     if nd.tok is None {
         return None;
     }
@@ -4172,7 +4151,6 @@ impl NaIRGenPass._consume_kw_spreads(
 impl NaIRGenPass._codegen_sized_builtin_call(
     nd: uni.FuncCall, func_name: (str | None), call_kind: str
 ) -> (ir.Value | None) {
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
     if call_kind == "method" and isinstance(nd.target, uni.AtomTrailer) {
         _owner = self._get_name(nd.target.target);
         _attr = self._get_name(nd.target.right);
@@ -4321,7 +4299,7 @@ impl NaIRGenPass._folded_ord(nd: uni.FuncCall) -> (ir.Constant | None) {
     `c == '#'`; folding keeps each of those a constant instead of a runtime
     decode of a static string.
     """;
-    import from jaclang.compiler.frontend.const_fold { fold_const }
+
     params = list(nd.params or []);
     if len(params) != 1 or not isinstance(params[0], uni.Expr) {
         return None;

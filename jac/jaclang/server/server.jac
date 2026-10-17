@@ -4,19 +4,8 @@ import threading;
 import from inspect { isgenerator }
 import from pathlib { Path }
 import from typing { AsyncGenerator, Generator, TypeAlias }
-import from jaclang.runtime.builtin { APIProtocol }
-import from jaclang.runtime.context { CallState, ExecutionContext }
-import from jaclang.server.identity.mail { IdentityMailer, verification_problems }
-import from jaclang.server.identity.user_manager { UserManager }
-import from jaclang.server.request_scope { RequestScope }
-import from jaclang.server.serving.app { ServingApp }
-import from jaclang.server.serving.drain { DrainState }
-import from jaclang.server.serving.endpoint { JEndPoint, WSEndPoint }
-import from jaclang.server.serving.supervisor { WorkerHandle }
-import from jaclang.server.settings { ServeSettings }
-import from jaclang.server.task_scheduler { Scheduler }
+
 import from jaclang { JacRuntime as Jac }
-import type from jaclang.runtime.constructs { WalkerArchetype }
 
 glob JsonValue: TypeAlias = None
          | str
@@ -85,7 +74,6 @@ def target_schedule_spec(target: any) -> any {
 }
 
 def restspec_fields(specs: dict[str, any]) -> dict[str, any] {
-    import from jaclang.server.serving.endpoint { HTTPMethod }
     specs = dict(specs);
     protocol = specs.get('protocol');
     if protocol is not None and not isinstance(protocol, APIProtocol) {

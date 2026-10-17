@@ -8,7 +8,6 @@ records as lists with named index constants (no tuples in Jac).
 import from engine.src.runtime.jsstring {
     str_substr,
     str_char_at,
-    str_len,
     str_to_float
 }
 import from engine.src.builtins.calendars.calendar_dispatch { calendar_is_known }

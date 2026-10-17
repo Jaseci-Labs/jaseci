@@ -1763,6 +1763,12 @@ impl ModulePath.resolve_relative_path(target_item: (str | None) = None) -> str {
     if bundled is not None {
         return bundled;
     }
+    if target_item is None {
+        variant = self.native_variant_path();
+        if variant is not None {
+            return variant;
+        }
+    }
     spv = self.string_path_value;
     if spv is not None {
         return active_host().resolve_module(spv, self.loc.mod_path, string_spec=True)[
@@ -1794,6 +1800,31 @@ impl ModulePath.native_bundled_path -> (str | None) {
     base_dir = os.path.dirname(mod_path) if mod_path else os.getcwd();
     (_src, full_path) = resolve_native_module(base, base_dir);
     return full_path;
+}
+
+impl ModulePath.native_variant_path -> (str | None) {
+    import os;
+    mod_path = self.loc.mod_path if self.loc else None;
+    if not mod_path
+        or self.level == 0
+        or self.string_path_value is not None
+        or not self.path
+        or "/runtime/na_stdlib/" not in mod_path.replace("\\", "/") {
+        return None;
+    }
+    base = os.path.dirname(mod_path);
+    for _ in range(self.level - 1) {
+        base = os.path.dirname(base);
+    }
+    candidate = base;
+    for segment in self.path {
+        candidate = os.path.join(candidate, segment.value);
+    }
+    if os.path.isfile(candidate + ".jac") or os.path.isdir(candidate) {
+        return None;
+    }
+    import from jaclang.compiler.frontend.codeinfo { _native_variant_path }
+    return _native_variant_path(candidate);
 }
 
 impl ModulePath.resolve_relative_path_list -> list[str] {
@@ -1871,11 +1902,11 @@ impl ModuleItem.resolve_relative_path -> str {
     return self.from_mod_path.resolve_relative_path(target_item=item_name);
 }
 
-impl ImplImport.postinit -> None {
+impl GraphImport.postinit -> None {
     UniNode.postinit(self);
 }
 
-impl ImplImport.scope_prefix.getter -> str {
+impl GraphImport.scope_prefix.getter -> str {
     sc = self.scope;
     return sc.dot_path_str if sc is not None else "";
 }
@@ -1884,9 +1915,9 @@ impl ImportWire.postinit -> None {
     UniNode.postinit(self);
 }
 
-impl ImportWire.block.getter -> ImplImport {
-    if (not self.parent or not isinstance(self.parent, ImplImport)) {
-        raise ValueError('ImplImport parent not found. Not Possible.');
+impl ImportWire.block.getter -> GraphImport {
+    if (not self.parent or not isinstance(self.parent, GraphImport)) {
+        raise ValueError('GraphImport parent not found. Not Possible.');
     }
     return self.parent;
 }
@@ -1905,9 +1936,9 @@ impl ImportRule.postinit -> None {
     UniNode.postinit(self);
 }
 
-impl ImportRule.block.getter -> ImplImport {
-    if (not self.parent or not isinstance(self.parent, ImplImport)) {
-        raise ValueError('ImplImport parent not found. Not Possible.');
+impl ImportRule.block.getter -> GraphImport {
+    if (not self.parent or not isinstance(self.parent, GraphImport)) {
+        raise ValueError('GraphImport parent not found. Not Possible.');
     }
     return self.parent;
 }
@@ -1945,9 +1976,6 @@ impl WireItem.binding.getter -> str {
 }
 
 impl ModulePattern.matches(module: str, prefix: str = "") -> bool {
-    if self.is_any {
-        return True;
-    }
     base = ModulePattern.join_scope(prefix, self.dotted);
     if self.is_glob {
         return (not base) or module == base or module.startswith(base + ".");

@@ -148,7 +148,7 @@ All three block code generation for the module that reports them.
 |------|---------|
 | `E0082` | Cannot assign to state field '{name}' during render (component body statements run on every render and state writes are immediately visible; move the assignment into a `can` ability, an event handler, or a method) |
 
-### Wiring (arch.jac)
+### Wiring (archwire.jac)
 
 | Code | Message |
 |------|---------|
@@ -159,11 +159,13 @@ All three block code generation for the module that reports them.
 | `E0090` | Duplicate '{name}' in a wire payload |
 | `E0091` | 'include' takes no payload |
 | `E0092` | An edge rule is named: 'edge Name: source --> target' |
-| `E0093` | An 'impl import' scope is a dotted package name |
+| `E0093` | A 'graph import' scope is a dotted package name |
 | `E0094` | Expected a wire ('provider --> consumer') or an edge rule here |
 | `E0095` | '*' must be the only item in a payload |
 | `E0096` | A rule payload lists names without aliases |
 | `E0097` | `return tail` needs a function call |
+| `E0098` | An edge rule's patterns name modules under this archwire.jac; 'any' is not a pattern |
+| `E0099` | Wiring blocks are written 'graph import'; 'impl import' was removed |
 
 ### Parser Warnings
 
@@ -469,17 +471,16 @@ Emitted by `StaticAnalysisPass` for refused `import from` items. All three block
 
 ---
 
-### Project Wiring (arch.jac)
+### Project Wiring (archwire.jac)
 
 See [Project Wiring](wiring.md).
 
 | Code | Message |
 |------|---------|
-| `E1140` | '{scope}' is not a package or module under the project root |
 | `E1141` | '{module}' is not a project module, so it cannot be a wire's provider |
 | `E1142` | '{module}' cannot be a wire's consumer: {detail} |
 | `E1143` | A wire cannot connect '{module}' to itself |
-| `E1144` | Import of '{module}' is not declared by arch.jac for '{consumer}' |
+| `E1144` | Import of '{module}' is not declared by archwire.jac for '{consumer}' |
 
 ### Unresolved Names
 
@@ -552,20 +553,21 @@ An app's walkers and `def:pub` functions form its public boundary. Other declara
 | `E2013` | Parameter name mismatch: declaration has {decl_name} but implementation has {impl_name} |
 | `E2087` | '{name}' is declared but never implemented |
 
-### Project Wiring (arch.jac)
+### Project Wiring (archwire.jac)
 
 | Code | Message |
 |------|---------|
-| `E2088` | 'impl import' is only valid in the arch.jac beside jac.toml |
-| `E2089` | arch.jac declares wiring only; this {kind} does not belong here |
+| `E2088` | 'graph import' is only valid in a file named archwire.jac |
+| `E2089` | archwire.jac declares wiring only; this {kind} does not belong here |
 | `E2090` | '{provider} --> {consumer}' is not permitted by any edge rule |
 | `E2091` | '{name}' is not admitted across '{provider} --> {consumer}' by {rules} |
 | `E2092` | Edge rule '{name}' is declared more than once |
-| `E2093` | arch.jac has syntax errors, so the wiring for '{consumer}' may be incomplete |
-| `E2094` | Function-level import of '{module}' inside the sealed module '{consumer}' |
+| `E2093` | archwire.jac has syntax errors, so the wiring for '{consumer}' may be incomplete |
+| `E2094` | Import of '{module}' inside '{scope}' is not declared by archwire.jac for '{consumer}' |
 | `E2095` | Import '{module}' names a module of this package by a bare path; import it as '{qualified}' |
 | `E2096` | '{module}' is not exported by the package '{package}' |
 | `W2083` | Edge rule '{name}': {what} matches no module |
+| `W2084` | '{name}' is not a module under this archwire.jac, so {what} is inert |
 
 ### JSX Slot Body Rules
 
@@ -624,7 +626,7 @@ Emitted by `jac check --lint`. Rules can be configured in [`jac.toml`](config/in
 | `W3050` | `strip-comments` | Comment can be removed | opt-in |
 | `W3051` | `strip-docstrings` | Docstring can be removed | opt-in |
 | `W3052` | `remove-duplicate-wire` | This wire is already declared by an earlier wire | default |
-| `W3053` | `remove-wired-import` | Import of '{name}' from '{module}' is already provided by arch.jac | default |
+| `W3053` | `remove-wired-import` | Import of '{name}' from '{module}' is already provided by archwire.jac | default |
 
 > **opt-in group**: `strip-comments` and `strip-docstrings` are destructive "deslop" rules. They are **never** activated by `select = ["all"]` or `["default"]`; they fire only when named explicitly in [`[check.lint]`](config/index.md#checklint). See the config reference for details.
 

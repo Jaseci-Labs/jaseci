@@ -1,11 +1,5 @@
 import importlib;
 import types;
-import from jaclang.byllm._optdeps._deferred {
-    DeferredClassMeta,
-    DeferredModule,
-    is_installed,
-    when_loaded
-}
 
 glob HAS_LITELLM: bool = is_installed("litellm");
 

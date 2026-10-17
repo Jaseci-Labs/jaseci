@@ -1,62 +1,16 @@
-import from jaclang.compiler.frontend.roles { Kid }
-import from jaclang.compiler.frontend.unitree {
-    Module,
-    TreeWalker,
-    UniNode,
-    Ability,
-    Archetype,
-    AssertStmt,
-    AstElseBodyNode,
-    AtomUnit,
-    AwaitingClause,
-    BoolExpr,
-    CfgExpr,
-    CodeBlockStmt,
-    CtrlStmt,
-    DictCompr,
-    DisengageStmt,
-    ElseIf,
-    ElseStmt,
-    Except,
-    Expr,
-    FinallyStmt,
-    ForeverStmt,
-    GenCompr,
-    GlobalVars,
-    IfElseExpr,
-    IfStmt,
-    ImplDef,
-    InForStmt,
-    InnerCompr,
-    IterForStmt,
-    JsxSlot,
-    LambdaExpr,
-    ListCompr,
-    MatchCase,
-    MatchStmt,
-    ModuleCode,
-    Name,
-    OpenStmt,
-    RaiseStmt,
-    ReturnStmt,
-    SemDef,
-    Semi,
-    SetCompr,
-    SwitchCase,
-    SwitchStmt,
-    Test,
-    Token,
-    TryStmt,
-    TypeAlias,
-    TypedCtxBlock,
-    UniCFGNode,
-    WhileStmt,
-    WithStmt
-}
-import from jaclang.compiler.passes.context { CompileContext, TreePass }
 import from typing { cast }
 
 walker CFGBuildPass(TreePass) {
+    static has contract: PassContract = PassContract(
+        provides=(
+            AnalysisFact.CFG_SUCC,
+            AnalysisFact.CFG_TRUE,
+            AnalysisFact.CFG_FALSE,
+
+        ),
+        kernel_safe=True
+    );
+
     def link_bbs(source: UniCFGNode, target: UniCFGNode) -> None;
     def _link_sequential(body: Sequence[CodeBlockStmt]) -> None;
     def _exit_wired(nd: UniCFGNode) -> bool;
@@ -154,6 +108,5 @@ def unwrap_to_bool(cfg: CfgExpr) -> BoolExpr | None {
 }
 
 def _bool_is_and(expr: BoolExpr) -> bool {
-    import from jaclang.compiler.frontend.constant { Tokens as Tok }
     return isinstance(expr.op, Token) and expr.op.name == Tok.KW_AND;
 }

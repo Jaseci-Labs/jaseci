@@ -74,7 +74,6 @@ impl ProjectHost.project_facts(path: str) -> (ProjectFacts | None) {
     facts = ProjectFacts(
         project_root=project_root,
         check=check_settings_of(cfg.check),
-        arch_closed=list(cfg.arch.closed),
         client_framework=cfg.client.framework if cfg.client else "react",
         package_name=package_name_of(cfg.project.name),
         package_exports=list(cfg.project.exports),
@@ -313,14 +312,17 @@ impl ProjectHost.client_stub_globals -> list[str] {
 impl ProjectHost.native_dep_iface(
     program: JacProgram, path: str, options: CompileOptions
 ) -> (NativeIface | None) {
-    ent = program.native_units().ensure(
-        path,
-        compile_on_miss=True,
-        options=options,
-        check_deps=False,
-        products=not options.no_cgen
+    return program.native_units().dep_iface(
+        path, options, products=not options.no_cgen
     );
-    return ent.iface if ent is not None else None;
+}
+
+impl ProjectHost.native_dep_discovery_open(program: JacProgram) -> bool {
+    return program.native_units().dep_discovery_open();
+}
+
+impl ProjectHost.native_deps_deferred(program: JacProgram) -> bool {
+    return program.native_units().close_dep_deferral();
 }
 
 impl ProjectHost.held_native_iface(
@@ -356,8 +358,46 @@ impl ProjectHost.save_native_debug_ir(path: str, text: str) {
 }
 
 impl ProjectHost.native_fact(kind: str, key: str) -> str {
+    import sys;
+    import from jaclang.compiler.frontend.host {
+        HOST_FACT_GIT_IGNORED,
+        HOST_FACT_SEP,
+        HOST_FACT_STDLIB_MODULES
+    }
+    if kind == HOST_FACT_STDLIB_MODULES {
+        return HOST_FACT_SEP.join(sorted(sys.stdlib_module_names));
+    }
+    if kind == HOST_FACT_GIT_IGNORED {
+        return HOST_FACT_SEP.join(_git_ignored_under(key));
+    }
     import from jaclang.compiler.backends.native.host_facts { host_native_fact }
     return host_native_fact(kind, key);
+}
+
+def _git_ignored_under(root_dir: str) -> list[str] {
+    import os;
+    import from jaclang.project.textio { drop_git_ignored }
+    paths: list[str] = [];
+    for (directory, dirs, files) in os.walk(root_dir) {
+        dirs[:] = [
+            d
+            for d in dirs
+            if not d.startswith(".") and d not in ("node_modules", "__pycache__")
+        ];
+        for name in files {
+            if name.endswith(".jac") {
+                paths.append(os.path.realpath(os.path.join(directory, name)));
+            }
+        }
+    }
+    kept = set(drop_git_ignored(paths, cwd=root_dir));
+    return sorted(
+        [
+            p
+            for p in paths
+            if p not in kept
+        ]
+    );
 }
 
 impl ProjectHost.native_units_for(program: JacProgram) -> NativeUnitRegistry {
@@ -368,31 +408,11 @@ impl ProjectHost.native_units_for(program: JacProgram) -> NativeUnitRegistry {
     return program._natives;
 }
 
-impl ProjectHost.native_verdict(
-    path: str, program: (JacProgram | None) = None
-) -> (NativeVerdict | None) {
-    try {
-        if program is not None {
-            return program.native_units().verdict_for(path);
-        }
-        import from jaclang.compiler.driver.nativecache { read_native_verdict }
-        return read_native_verdict(path);
-    } except Exception {
-        return None;
-    }
-}
-
 impl ProjectHost.record_native_coverage(
     path: str, outcome: str, code: str = "", detail: str = ""
 ) {
     import from jaclang.compiler.driver.na_coverage { na_coverage_record }
     na_coverage_record(path, outcome, code, detail);
-}
-
-impl ProjectHost.record_native_verdict(
-    program: JacProgram, path: str, code: str, detail: str
-) {
-    program.native_units().record_verdict(path, code, detail);
 }
 
 impl ProjectHost.native_analyze(
@@ -459,6 +479,50 @@ impl ProjectHost.wiring_file(path: str) -> (str | None) {
     return arch_file_for(path);
 }
 
+def _wiring_records_path(digest: str) -> str {
+    import hashlib;
+    import os;
+    import from jaclang.compiler.driver.jir {
+        get_jir_cache_dir,
+        running_compiler_digest
+    }
+    name = hashlib.sha256(
+        (digest + "\x00" + running_compiler_digest()).encode()
+    ).hexdigest();
+    return os.path.join(
+        str(get_jir_cache_dir()), "wiring-spec", name[:2], name + ".txt"
+    );
+}
+
+impl ProjectHost.wiring_records(digest: str) -> str {
+    try {
+        with open(_wiring_records_path(digest), "r", encoding="utf-8") as f {
+            return f.read();
+        }
+    } except (OSError, RuntimeError, UnicodeDecodeError) {
+        return "";
+    }
+}
+
+impl ProjectHost.keep_wiring_records(digest: str, text: str) {
+    import os;
+    import tempfile;
+    try {
+        path = _wiring_records_path(digest);
+        directory = os.path.dirname(path);
+        os.makedirs(directory, exist_ok=True);
+        (fd, scratch) = tempfile.mkstemp(dir=directory, suffix=".tmp");
+        try {
+            with os.fdopen(fd, "w", encoding="utf-8") as f {
+                f.write(text);
+            }
+            os.replace(scratch, path);
+        } except OSError {
+            os.unlink(scratch);
+        }
+    } except (OSError, RuntimeError) {}
+}
+
 impl ProjectHost.is_seed_source(rel_path: str) -> bool {
     import from jaclang.bootstrap_manifest { is_seed_source }
     return is_seed_source(rel_path);
@@ -469,7 +533,8 @@ impl ProjectHost.native_parse(
     file_path: str,
     program: (JacProgram | None),
     annexes: list[WovenAnnex],
-    early_context: str = ""
+    early_context: str = "",
+    load_kernel: bool = True
 ) -> (tuple[Module, bool] | None) {
     import from jaclang.compiler.frontend.parser.frontend { finish_parse }
     import jaclang.compiler.native_compiler as _jc;
@@ -477,11 +542,14 @@ impl ProjectHost.native_parse(
     if natives is not None and natives.progress is not None {
         natives.note_step("parse", file_path);
     }
-    kernel = _jc.ensure_loaded();
+    kernel = _jc.ensure_loaded()
+        if load_kernel
+        else (_jc._KERNEL_CELL[0] if _jc._KERNEL_CELL else None);
     if kernel is None {
         return None;
     }
-    kernel.prepare_early(early_context if program is not None else "");
+    wired = any([bool(annex.consumer) for annex in annexes]);
+    kernel.prepare_early(early_context if program is not None and not wired else "");
     for annex in annexes {
         kernel.annex(annex);
     }
@@ -507,6 +575,30 @@ impl ProjectHost.native_parse(
         }
     }
     return (module, had_error);
+}
+
+impl ProjectHost.woven_module(
+    path: str, program: (JacProgram | None)
+) -> (Module | None) {
+    import from jaclang.compiler.frontend.parser.frontend { annex_sources, parse_woven }
+    try {
+        source = self.read_source(path);
+    } except Exception {
+        return None;
+    }
+    (module, had_error) = parse_woven(
+        source, path, program, annex_sources(path), load_kernel=False
+    );
+    if had_error {
+        return None;
+    }
+    self.place_wired_imports(module);
+    return module;
+}
+
+impl ProjectHost.place_wired_imports(module: Module) {
+    import from jaclang.compiler.driver.wiring { dedupe_generated_imports }
+    dedupe_generated_imports(module);
 }
 
 impl ProjectHost.resolve_local_module(
@@ -589,9 +681,10 @@ impl ProjectHost.parse_python(
 ) -> tuple[Module, bool] {
     import ast as py_ast;
     import jaclang.compiler.frontend.unitree as uni;
-    import from jaclang.compiler.driver.pipeline_runner { run_utility, UtilityProduct }
+    import from jaclang.compiler.driver.pipeline { run_utility }
+    import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
     built = run_utility(
-        UtilityProduct.PYTHON_AST,
+        CompilationProduct.PYTHON_AST,
         uni.PythonModuleAst(
             py_ast.parse(source_str),
             orig_src=uni.Source(source_str, mod_path=file_path)

@@ -1,20 +1,9 @@
-import from jaclang.data.type_identity {
-    class_facts,
-    storage_type,
-    type_module,
-    register_type,
-    resolve_type,
-    resolution_required,
-    TypeResolutionError,
-    UnavailableType
-}
 import importlib;
 import logging;
 import sys;
 import threading;
 import from time { monotonic }
-import from jaclang.runtime.object_interop { fields, is_record }
-import from jaclang.runtime.object_model { MISSING }
+
 import from datetime { date, datetime, time }
 import from enum { Enum }
 import from hashlib { sha256 }
@@ -23,27 +12,9 @@ import from typing { cast, get_args, get_origin }
 import from types { NoneType, UnionType }
 import from typing { Union }
 import from uuid { UUID }
-import from jaclang.runtime.typecache { get_field_types }
-import from jaclang.runtime.archetype {
-    Anchor,
-    NodeAnchor,
-    EdgeAnchor,
-    WalkerAnchor,
-    ObjectAnchor,
-    Permission,
-    Access,
-    AccessLevel,
-    access_level_cast
-}
-import from jaclang.runtime.constructs {
-    Archetype,
-    NodeArchetype,
-    WalkerArchetype,
-    Root,
-    GenericEdge
-}
 
 glob logger = logging.getLogger(__name__),
+     FROZEN_BASELINE: int = 1,
      FINGERPRINT_LENGTH: int = 16,
      _MAX_WARNED_CLASS_KEYS: int = 1024,
      _MAX_IMPORT_FAILURES: int = 1024,
@@ -147,3 +118,7 @@ glob _register_hook: object = Archetype.install_subclass_hook(
      ),
      _register_root: object = Serializer.register(cast(type, Root)),
      _register_generic_edge: object = Serializer.register(cast(type, GenericEdge));
+
+
+def frozen_value(value: any) -> bool;
+def frozen_fields(anchor: Anchor) -> bool;

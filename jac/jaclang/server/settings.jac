@@ -1,7 +1,5 @@
 import logging;
 import os;
-import from jaclang.project.config { JacConfig, ServeConfig }
-import from jaclang.cli.workpool { cpu_quota, memory_headroom_bytes }
 
 glob ENV_PREFIX: str = 'JAC_SERVE_',
      WORKERS_AUTO: str = 'auto',

@@ -472,7 +472,6 @@ Build configuration:
 ```toml
 [build]
 dir = ".jac"                # Build artifacts directory
-native_closure_cap = 256    # Largest native closure the whole-module path will link
 ```
 
 The `dir` setting controls where all build artifacts are stored:
@@ -555,19 +554,6 @@ without executing it. The policy is included in analysis and code-generation
 cache identities.
 
 A built binary reads two environment variables at run time and no others: `JAC_GC=off` disables collection for leak debugging (collection is on by default under `managed`), and `JAC_THREADS` overrides the `flow for` width. Nothing at compile time reads the environment; `jac explain memory|placement|ir` replaces the old diagnostic variables.
-
----
-
-### [arch]
-
-The default for modules that `arch.jac` does not name. See [Project Wiring](../wiring.md).
-
-```toml
-[arch]
-closed = []               # Module-name patterns sealed even when arch.jac never names them
-```
-
-A module `arch.jac` names is sealed in both directions: its project-module imports must be wires, and it flows only where a rule admits. `closed` extends that to modules the file never mentions, including packages not yet written, and applies even before `arch.jac` exists. `["*"]` closes the whole project; a pattern list such as `["core.*"]` closes it one package at a time. The policy is part of every module's cache identity, so changing it rebuilds the affected modules.
 
 ---
 

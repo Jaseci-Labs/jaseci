@@ -1,7 +1,3 @@
-import from jaclang.compiler.backends.native.abi { classify_foreign_fn }
-import from jaclang.compiler.c_interop { c_variadic_param }
-import from jaclang.compiler.frontend.constant { OwnershipKind }
-
 impl NaIRGenPass._forward_declare_functions(module: uni.Module) -> None {
     for stmt in ModuleFacts.iter_context_stmts(module, CodeContext.NATIVE) {
         self._maybe_declare_ability(stmt);
@@ -91,7 +87,7 @@ impl NaIRGenPass._maybe_declare_ability(
     self._sig_decl_kind = _saved_sig_kind;
 
     local_type = ir.FunctionType(ret_type, param_types, var_arg=va_param is not None);
-    import from jaclang.compiler.frontend.codeinfo { NativeModuleLayout }
+
     _layout: (NativeModuleLayout | None) = imp_layout
         if isinstance(imp_layout, NativeModuleLayout)
         else None;
@@ -391,7 +387,7 @@ glob RETURNS_TWICE_EXTERNS: frozenset[str] = frozenset(
      );
 
 def _mark_returns_twice(name: str, func: ir.Function) {
-    if name in RETURNS_TWICE_EXTERNS and "returns_twice" not in func.attributes {
+    if name in RETURNS_TWICE_EXTERNS {
         func.attributes.add("returns_twice");
     }
 }
@@ -592,8 +588,8 @@ impl NaIRGenPass._codegen_ability(nd: uni.Ability) -> None {
     }
     func = self.func_symtab.get(name);
     if func is None {
-        if id(nd) in self._capability_demotions {
-            self._claimed_capability_demotions.add(id(nd));
+        if self._static_refusals(nd) is not None {
+            self._claimed_units.add(id(nd));
         }
         return;
     }
@@ -605,10 +601,10 @@ impl NaIRGenPass._codegen_ability(nd: uni.Ability) -> None {
         }
     }
 
-    _pre_viols = self._capability_demotions.get(id(nd));
+    _pre_viols = self._static_refusals(nd);
     if _pre_viols is not None {
-        self._claimed_capability_demotions.add(id(nd));
-        if self._predemote_capability_unit(name, func, _pre_viols) {
+        self._claimed_units.add(id(nd));
+        if self._stub_refused_unit(name, func, _pre_viols) {
             self._rename_demoted_symbol(name, func);
             return;
         }
@@ -626,21 +622,7 @@ impl NaIRGenPass._codegen_ability(nd: uni.Ability) -> None {
             self._codegen_generator(nd, func);
         } except Exception as _gen_exc {
             _gen_raised = True;
-            if self._na_debug_on() {
-                import sys;
-                sys.stderr.write(
-                    f"NA_DEBUG raise {name}: {type(_gen_exc).__name__}: {_gen_exc}\n"
-                );
-            }
-            self.emit(
-                E5092,
-                node_override=nd,
-                kind="function (native emitter error in)",
-                name=name,
-                help_text=f"The native backend raised {type(_gen_exc).__name__} "
-                f"while lowering this function; it falls back to its Python "
-                f"implementation. Original error: {_gen_exc}"
-            );
+            self._internal_error(nd, "function", name, _gen_exc, _gen_mark);
         }
         if _gen_raised and self._demote_method_if_unlowerable(name, func, _gen_mark) {
             self._rename_demoted_symbol(name, func);
@@ -708,22 +690,7 @@ impl NaIRGenPass._codegen_ability(nd: uni.Ability) -> None {
             func, self._func_loc.get(name, nd.loc.first_line if nd.loc else 1)
         );
     } except Exception as _codegen_exc {
-        if self._na_debug_on() {
-            import sys;
-            sys.stderr.write(
-                f"NA_DEBUG raise {name}: "
-                f"{type(_codegen_exc).__name__}: {_codegen_exc}\n"
-            );
-        }
-        self.emit(
-            E5092,
-            node_override=nd,
-            kind="function (native emitter error in)",
-            name=name,
-            help_text=f"The native backend raised {type(_codegen_exc).__name__} "
-            f"while lowering this function; it falls back to its Python "
-            f"implementation. Original error: {_codegen_exc}"
-        );
+        self._internal_error(nd, "function", name, _codegen_exc, _local_mark);
     } finally {
         self._leave_function(state);
     }
@@ -747,7 +714,6 @@ impl NaIRGenPass._codegen_ability(nd: uni.Ability) -> None {
 }
 
 impl NaIRGenPass._codegen_test(nd: uni.Test) -> None {
-    import from jaclang.compiler.frontend.codeinfo { native_test_symbol }
     i8p = ir.IntType(8).as_pointer();
     i32 = ir.IntType(32);
     if self._exc_raise_fn is None {
@@ -809,15 +775,7 @@ impl NaIRGenPass._codegen_test(nd: uni.Test) -> None {
         self.builder.ret(exc_msg);
         self._finalize_di_locations(func, line);
     } except Exception as _codegen_exc {
-        self.emit(
-            E5092,
-            node_override=nd,
-            kind="test (native emitter error in)",
-            name=test_name,
-            help_text=f"The native backend raised {type(_codegen_exc).__name__} "
-            f"while lowering this test; it runs in the server codespace "
-            f"instead. Original error: {_codegen_exc}"
-        );
+        self._internal_error(nd, "test", test_name, _codegen_exc, _local_mark);
     } finally {
         self._leave_function(state);
     }
@@ -837,7 +795,7 @@ impl NaIRGenPass._demote_native_test(
 ) -> None {
     """A test that cannot run natively is a seam like any function: it leaves
     the native test table and runs its Python body in the server codespace.""";
-    import from jaclang.compiler.frontend.codeinfo { native_test_symbol }
+
     line = nd.loc.first_line if nd.loc else 0;
     key = native_test_symbol(nd.name.sym_name, line);
     if not self._demote_method_if_unlowerable(key, func, local_mark, keep_func=True) {
@@ -1002,7 +960,6 @@ impl NaIRGenPass._codegen_nested_ability(nd: uni.Ability) -> None {
 }
 
 impl NaIRGenPass._predeclare_nested_siblings(nd: uni.Ability) -> None {
-    import from jaclang.compiler.frontend.constant { SymbolType }
     _p = nd.parent;
     _frame: (uni.UniNode | None) = None;
     while _p is not None {
@@ -1521,7 +1478,6 @@ impl NaIRGenPass._define_function(name: str, fnty: ir.FunctionType) -> ir.Functi
 }
 
 impl NaIRGenPass._emit_glob_init_func -> None {
-    import from jaclang.compiler.frontend.codeinfo { native_glob_init_name }
     fnty = ir.FunctionType(ir.VoidType(), []);
     func = self._define_function(
         native_glob_init_name(self.module.loc.mod_path)
@@ -1702,11 +1658,6 @@ impl NaIRGenPass._codegen_entry(nodes: list[uni.ModuleCode]) -> None {
         return;
     }
     i64 = ir.IntType(64);
-
-    import from jaclang.compiler.frontend.codeinfo {
-        native_entry_name,
-        native_runtime_probe_name
-    }
 
     fnty = ir.FunctionType(ir.VoidType(), []);
     _entry_sym = native_entry_name(self.module.loc.mod_path)
