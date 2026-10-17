@@ -1111,7 +1111,8 @@ obj CatalogWriter {
 
         catalog_origin = sym.provider;
         if isinstance(catalog_origin, CatProvider) {
-            symbits |= catalog_origin.symbits & (SYMF_HAS_DEFAULT | SYMF_DEFER);
+            symbits |= catalog_origin.symbits
+                & (SYMF_HAS_DEFAULT | SYMF_DEFER | SYMF_INSTANCE_METHOD);
         }
         put_uvar(out, symbits);
         return bytes(out);
