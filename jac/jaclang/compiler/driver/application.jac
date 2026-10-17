@@ -1026,10 +1026,7 @@ def _prepare_revision(
         revision.sources = sorted(record['dependencies']);
         revision.manifests = record['manifests'];
         for (path, sections) in record['sections'].items() {
-            import from jaclang.compiler.driver.compilation_context {
-                program_for,
-                cache_scope
-            }
+            import from jaclang.compiler.driver.compilation_context { program_for }
             actual = program_for(path, program);
             compiler._restore_sections(path, actual, sections);
         }

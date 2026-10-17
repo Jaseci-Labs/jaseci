@@ -3475,10 +3475,7 @@ graph import {
     server.exchange --> scale.tests.server.test_restspec { current_request, respond }
     server.hmr ++> compiler.driver.build_services.CompilerBuildServices.hot_reloader
         | scale.tests.server.test_build_status_endpoint { HotReloader }
-    server.hmr --> [
-        cli.commands.execution._start_vite_dev_server { HotReloader },
-        cli.commands.execution.serve { HotReloader },
-    ]
+    server.hmr --> cli.commands.execution.serve { HotReloader }
     type server.hmr ++> compiler.driver.build_services
         | runtime.build_services
         | testing.testing { HotReloader }
@@ -11478,11 +11475,11 @@ graph import compiler.driver {
         },
     ]
     compilation_context --> [
-        application._prepare_revision { cache_scope, program_for },
-        application.prepare_application { bind_options, context_program },
-        application.prepare_dynamic_module
+        application._prepare_revision
             | program.JacProgram.load_dependency_module
             | source_products.python_source { program_for },
+        application.prepare_application { bind_options, context_program },
+        application.prepare_dynamic_module { program_for },
         jir._memoized { active_options },
     ]
     compile_options ++> [
@@ -11515,11 +11512,9 @@ graph import compiler.driver {
         },
     ]
     compile_options --> [
-        application.prepare_application | ifacecache.IfaceRegistry._ensure_in_context {
+        application.prepare_application | ifacecache.IfaceRegistry._verify_iface {
             CompileOptions
         },
-        ifacecache.IfaceRegistry._verify_analysis { CompileOptions },
-        ifacecache.IfaceRegistry._verify_iface { CompileOptions },
         nativecache.NativeBuildSession.lower {
             env_na_debug,
             pop_native_target,
@@ -13332,7 +13327,6 @@ graph import compiler.frontend.python {
     }
     compiler_diagnostics --> [
         compiler_validate {
-            compiler_diag_kind,
             compiler_diagnostic,
             syntax_warning,
             validation_diagnostic
@@ -31987,7 +31981,7 @@ graph import scale.tests {
     ]
     scale_test_client --> [
         microservices.test_gateway { extract_data, make_client },
-        misc.test_llm_telemetry { ScaleTestClient, extract_data, make_client },
+        misc.test_llm_telemetry { make_client },
         misc.test_metrics { ScaleTestClient },
         server.test_oauth_session { fresh_totp_code },
     ]

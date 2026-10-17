@@ -1696,7 +1696,6 @@ def _start_vite_dev_server(
         }
 
         try {
-            import from jaclang.server.hmr { HotReloader }
             reloader = BuildMonitor.active;
             if reloader is not None {
                 reloader.attach_client_bundler(bundler);

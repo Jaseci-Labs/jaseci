@@ -96,6 +96,7 @@ obj WiringSpec {
     def wire_for_import(
         stmt: Import, consumer: str, taken: set[int]
     ) -> (WireRec | None);
+
     def is_package_dir(name: str) -> bool;
     def project_modules -> list[str];
     def _scan_modules(directory: str, found: list[str], seen: set[str]) -> None;

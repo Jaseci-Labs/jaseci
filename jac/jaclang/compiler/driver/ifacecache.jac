@@ -520,7 +520,6 @@ obj IfaceRegistry(CatalogResolver) {
         self.building.add(resolved);
         try {
             self._event("dep_miss_compile");
-            import from jaclang.compiler.driver.compile_options { CompileOptions }
             before_errors = len(self.prog.errors_had);
             before_warnings = len(self.prog.warnings_had);
             options = self.prog.options.for_symbols();
@@ -1200,7 +1199,6 @@ obj IfaceRegistry(CatalogResolver) {
         prog2 = self._fresh_verify_program();
         self.verifying = True;
         try {
-            import from jaclang.compiler.driver.compile_options { CompileOptions }
             try {
                 import copy;
                 verified_options = copy.copy(options);

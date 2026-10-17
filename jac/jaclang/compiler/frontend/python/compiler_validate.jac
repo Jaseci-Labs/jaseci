@@ -100,7 +100,6 @@ obj feature_version_walk(ast_child_visitor) {
 import from jaclang.compiler.frontend.python.compiler_diagnostics {
     compiler_diagnostic,
     validation_diagnostic,
-    compiler_diag_kind,
     syntax_warning,
 }
 
