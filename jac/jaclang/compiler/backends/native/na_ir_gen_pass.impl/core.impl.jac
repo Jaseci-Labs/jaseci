@@ -612,11 +612,6 @@ impl NaIRGenPass._dep_iface(imported_mod: uni.Module) -> (NativeIface | None) {
 }
 
 impl NaIRGenPass._defer_missing_deps -> bool {
-    """While the session discovers this unit's dependencies, ask for the
-    interface of every dependency the lowering will consult, its native
-    imports and the kernel units it uses on demand, before building any IR.
-    True when one was deferred: the attempt stops here, the session lowers
-    the dependencies, and the next attempt finds every interface in place.""";
     if not active_host().native_dep_discovery_open(self.prog) {
         return False;
     }
@@ -634,21 +629,33 @@ impl NaIRGenPass._discover_kernel_deps(
     """The kernel units a lowering consults on demand, the formatting kernel
     from an f-string and the OSP kernels from an archetype, are asked for
     while dependencies are still being discovered, so a missing one is
-    lowered before this unit instead of inside it. An imported node, edge or
-    walker is what the import walk records in `imported_osp_archs`.""";
+    lowered before this unit instead of inside it.""";
     rels: list[str] = [FMT_KERNEL_REL];
-    if any(
+    uses_osp = any(
         arch.arch_kind is not None and arch.arch_kind in ("node", "edge", "walker")
         for arch in self.module.get_all_sub_nodes(uni.Archetype)
-    )
-        or any(
-            isinstance(stmt, uni.Archetype)
-                and stmt.arch_kind is not None
+    );
+    for (_, imported_mod) in imported_mods {
+        if uses_osp {
+            break;
+        }
+        for stmt in ModuleFacts.iter_context_stmts(imported_mod) {
+            if (
+                isinstance(stmt, uni.ContextAwareNode)
+                and stmt.code_context == CodeContext.CLIENT
+                and not stmt.codespace_dual
+            ) {
+                continue;
+            }
+            if isinstance(stmt, uni.Archetype)
                 and stmt.name is not None
-                and not (stmt.code_context == CodeContext.CLIENT and not stmt.codespace_dual)
-            for (_, imported_mod) in imported_mods
-            for stmt in ModuleFacts.iter_context_stmts(imported_mod)
-        ) {
+                and stmt.arch_kind is not None {
+                uses_osp = True;
+                break;
+            }
+        }
+    }
+    if uses_osp {
         rels.extend([OSP_KERNEL_REL, OSP_GRAPH_REL]);
     }
     this_path = os.path.realpath(self.module.loc.mod_path or "");
@@ -1187,12 +1194,9 @@ impl NaIRGenPass._ret_tuple_hints(
 }
 
 impl NaIRGenPass._native_imports -> list[tuple[str, uni.Module]] {
-    """The modules this unit's native imports reach, walked once per pass:
-    dependency discovery and the import stage share one walk. The walk
-    builds no IR.""";
     import os;
 
-    if self._native_import_walk is not None {
+    if self._native_imports_walked {
         return self._native_import_walk;
     }
     processed_modules: set[str] = set();
@@ -1432,6 +1436,7 @@ impl NaIRGenPass._native_imports -> list[tuple[str, uni.Module]] {
     }
 
     self._native_import_walk = self._permuted_walk_order(imported_mods);
+    self._native_imports_walked = True;
     return self._native_import_walk;
 }
 
