@@ -2577,7 +2577,11 @@ impl NaIRGenPass._nogc_elem_prep(
     if isinstance(expr, uni.FString) or self._is_owned(val) {
         return val;
     }
-    if isinstance(expr, uni.AtomTrailer) and isinstance(expr.right, uni.IndexSlice) {
+    """A slice of a string is fresh text; an index is a character from the
+    static per-byte cache, which an owner must copy.""";
+    if isinstance(expr, uni.AtomTrailer)
+        and isinstance(expr.right, uni.IndexSlice)
+        and expr.right.is_range {
         _bm = "";
         try {
             _bm = expr.target.type.mangle() if expr.target.type is not None else "";

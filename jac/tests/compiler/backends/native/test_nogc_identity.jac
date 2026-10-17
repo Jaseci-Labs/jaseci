@@ -343,3 +343,9 @@ test "super.init owns each argument before it replaces a field a later one reads
         ] , out;
     _assert_nogc_leak_free("super_init_borrowed_text.jac");
 }
+
+test "a character indexed from a string reaches each owner as a copy" {
+    out = assert_native_identity(_fixture("str_index_owners.jac"));
+    assert out.splitlines() == ["a b ['c']", "a b ['c']", "900"] , out;
+    _assert_nogc_leak_free("str_index_owners.jac");
+}
