@@ -621,9 +621,7 @@ impl EsastGenPass.exit_dict_val with uni.DictVal exit {
                 key=key,
                 value=value,
                 kind='init',
-                computed=not isinstance(
-                    kv_pair.key, (uni.Name, uni.Literal, uni.MultiString)
-                )
+                computed=not isinstance(kv_pair.key, (uni.Literal, uni.MultiString))
             ),
             jac_node=kv_pair
         );

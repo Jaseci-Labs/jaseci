@@ -394,3 +394,18 @@ def sum_gen() -> int {
     assert "yield (index * 3)" in js or "yield index * 3" in js , f"yield must survive lowering: {js[0:600]}";
     assert "for (const v of _jac.builtin.iter(gen_vals(3)))" in js , f"generator calls must stay iterable in for-of: {js[0:600]}";
 }
+
+test "a variable dict key is computed in client code, as on the server" {
+    code = """def with_key(d: dict[str, int], k: str, v: int) -> dict[str, int] {
+    return {**d, k: v};
+}
+
+def plain(k: str, v: int) -> dict[str, int] {
+    return {k: v, "fixed": v};
+}
+""";
+    mod = compile_inline(code, client=True);
+    js = mod.gen.js;
+    assert "{...d, [k]: v}" in js , f"a variable key after a spread must be computed: {js[0:600]}";
+    assert "{[k]: v, \"fixed\": v}" in js , f"a variable key must be computed, a string key not: {js[0:600]}";
+}
