@@ -47,21 +47,6 @@ glob OUTBOX_SCHEMA_SQL: list[str] = [
     )
     """,
          """
-    ALTER TABLE anchors
-        ADD COLUMN IF NOT EXISTS src_type text NOT NULL DEFAULT '',
-        ADD COLUMN IF NOT EXISTS dst_type text NOT NULL DEFAULT ''
-    """,
-         """
-    CREATE INDEX IF NOT EXISTS idx_anchors_src_typed
-        ON anchors (src, dst_type, arch_type) WHERE src IS NOT NULL
-    """,
-         """
-    CREATE INDEX IF NOT EXISTS idx_anchors_dst_typed
-        ON anchors (dst, src_type, arch_type) WHERE dst IS NOT NULL
-    """,
-         'DROP INDEX IF EXISTS idx_anchors_src',
-         'DROP INDEX IF EXISTS idx_anchors_dst',
-         """
     CREATE INDEX IF NOT EXISTS idx_anchors_kind_type
         ON anchors (kind, arch_type)
     """,
@@ -106,7 +91,19 @@ glob OUTBOX_SCHEMA_SQL: list[str] = [
         ON jac_docs (collection, (doc->>'user_id'))
     """
      ]
-         + OUTBOX_SCHEMA_SQL;
+         + OUTBOX_SCHEMA_SQL,
+     _TYPED_EDGE_SQL: list[str] = [
+         """
+    CREATE INDEX IF NOT EXISTS idx_anchors_src_typed
+        ON anchors (src, dst_type, arch_type) WHERE src IS NOT NULL
+    """,
+         """
+    CREATE INDEX IF NOT EXISTS idx_anchors_dst_typed
+        ON anchors (dst, src_type, arch_type) WHERE dst IS NOT NULL
+    """,
+         'DROP INDEX IF EXISTS idx_anchors_src',
+         'DROP INDEX IF EXISTS idx_anchors_dst'
+     ];
 
 
 impl ConnInfo.dsn -> str {
@@ -730,6 +727,17 @@ impl PgStore._apply_schema_ddl -> None {
                 'NOT NULL DEFAULT 0',
                 {}
             );
+        }
+        if self._promoted_column_type('dst_type') is None {
+            self._run(
+                "ALTER TABLE anchors "
+                "ADD COLUMN IF NOT EXISTS src_type text NOT NULL DEFAULT '', "
+                "ADD COLUMN IF NOT EXISTS dst_type text NOT NULL DEFAULT ''",
+                {}
+            );
+        }
+        for stmt in _TYPED_EDGE_SQL {
+            self._run(stmt, {});
         }
         self._apply_promotions();
         self._property_graph_ddl();
