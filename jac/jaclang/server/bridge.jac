@@ -2,26 +2,26 @@ import json;
 
 
 def serialize_response(resp: any) -> str {
-    import from jaclang.server.serving.app { transport_to_response }
-    import from jaclang.server.serving.datatypes { JSONResponse }
-    import from jaclang.server.transport { TransportResponse }
     if isinstance(resp, TransportResponse) {
         resp = transport_to_response(resp);
     }
     if isinstance(resp, JSONResponse) {
-        return json.dumps(
-            {"status": resp.status_code, "body": resp.content}, `default=str
-        );
+        cached: dict[str, any] = {"status": resp.status_code, "body": resp.content};
+        if resp.headers.items() {
+            cached["headers"] = resp.headers.items();
+        }
+        return json.dumps(cached, `default=str);
     }
     return json.dumps({"status": 200, "body": resp}, `default=str);
 }
 
 
 def replay_response(cached: str) -> any {
-    import from jaclang.server.serving.datatypes { JSONResponse }
     payload = json.loads(cached);
     return JSONResponse(
-        content=payload.get("body"), status_code=int(payload.get("status", 200))
+        content=payload.get("body"),
+        status_code=int(payload.get("status", 200)),
+        headers=[(name, value) for (name, value) in payload.get("headers") or []]
     );
 }
 
@@ -61,11 +61,7 @@ def bridge_error_from(exc: Exception, app: str, name: str) -> BridgeError {
     }
     import asyncio;
     import socket;
-    import from jaclang.server.serving.client {
-        ClientConnectionError,
-        ClientReadTimeout,
-        ClientRequestNotSent
-    }
+
     detail = str(exc) or exc.__class__.__name__;
     if isinstance(
         exc, (ClientReadTimeout, asyncio.TimeoutError, socket.timeout, TimeoutError)

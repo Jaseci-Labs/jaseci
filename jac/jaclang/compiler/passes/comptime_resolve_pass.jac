@@ -1,19 +1,3 @@
-import from jaclang.compiler.frontend.roles { Kid }
-import from jaclang.runtime.osp_kernel { osp_skip_rest }
-import from jaclang.compiler.passes.type_checker_pass { TypeCheckPass }
-import from jaclang.compiler.frontend.unitree {
-    Ability,
-    AssertStmt,
-    Assignment,
-    GlobalVars,
-    IfStmt,
-    Import,
-    InForStmt,
-    ParamVar,
-    TypeParam,
-    UniNode
-}
-
 def _is_comptime_marker(nd: UniNode) -> bool {
     if isinstance(nd, GlobalVars) {
         return nd.is_frozen;
@@ -72,6 +56,10 @@ def comptime_reach(top: UniNode) -> set[int] {
 }
 
 walker ComptimeResolvePass(TypeCheckPass) {
+    static has contract: PassContract = PassContract(
+        provides=(AnalysisFact.COMPTIME, )
+    );
+
     has _armed: bool = False,
         _keep: set[int] = set();
 

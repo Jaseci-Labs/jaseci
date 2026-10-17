@@ -1,5 +1,3 @@
-import type from jaclang.compiler.backends.es.framework_backend { FrameworkBackend }
-
 obj RuntimeSymbol {
     has name: str,
         source: str = "@jac/runtime",
@@ -20,6 +18,12 @@ def runtime_symbol(name: str) -> (RuntimeSymbol | None) {
         }
     }
     return None;
+}
+
+glob WASM_HOST_MODULE: str = "@jac/wasm_host";
+
+def injected_virtual_modules(backend: FrameworkBackend) -> list[str] {
+    return [backend.runtime_module(), WASM_HOST_MODULE];
 }
 
 def runtime_import_source(name: str, backend: (FrameworkBackend | None) = None) -> str {
@@ -67,20 +71,15 @@ def _required_runtime_globals(
 def with_runtime_globals(
     js_code: str, backend: (FrameworkBackend | None) = None
 ) -> str {
-    import re;
     (names, src) = _required_runtime_globals(backend);
-    missing = [
-        name
-        for name in names
-        if re.search(r"\b" + re.escape(name) + r"\b", js_code) is not None
-            and re.search(
-                r"(?m)^(?:export\s+)?(?:async\s+)?(?:function|const|let|var|class)\s+"
-                    + re.escape(name)
-                    + r"\b",
-                js_code
-            )
-                is None
-    ];
+    referenced = set(js_identifiers(js_code));
+    declared = js_top_level_declarations(js_code);
+    missing: list[str] = [];
+    for name in names {
+        if name in referenced and name not in declared {
+            missing.append(name);
+        }
+    }
     if not missing {
         return js_code;
     }
@@ -92,8 +91,5 @@ def with_runtime_globals(
 }
 
 def prepend_active_runtime_globals(js_code: str) -> str {
-    import from jaclang.compiler.backends.es.backends.registry {
-        resolve_active_backend
-    }
     return with_runtime_globals(js_code, resolve_active_backend());
 }

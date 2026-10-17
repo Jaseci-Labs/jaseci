@@ -12,8 +12,11 @@ writer needs them; a bundled binary would carry the catalog instead).
 import os;
 import tempfile;
 import from jaclang.compiler.types.stubcat.build { build_catalog }
+import from unittest.mock { patch }
+import from jaclang.artifacts.model { Probe, Source }
+import jaclang.artifacts.router as router;
 import from jaclang.compiler.types.stubcat.locate {
-    ENV_FILE,
+    StubcatArtifact,
     jaclang_pkg_dir,
     reset_catalog_cache,
     typeshed_stdlib_dir
@@ -198,8 +201,14 @@ test "a catalog-backed check of a small program is clean" {
     (cat, out) = small_catalog();
     import from jaclang.compiler.driver.program { JacProgram }
     import from jaclang.compiler.driver.compile_options { CompileOptions }
-    previous = os.environ.get(ENV_FILE);
-    os.environ[ENV_FILE] = out;
+    small = Probe.hit(
+        Source.CHECKOUT, out, {"catalog": cat, "offset": 0, "length": len(cat.buf)}
+    );
+    sealed = patch.object(StubcatArtifact, "probe_sealed", return_value=None);
+    checkout = patch.object(StubcatArtifact, "probe_checkout", return_value=small);
+    sealed.start();
+    checkout.start();
+    router.forget();
     reset_catalog_cache();
     try {
         prog = JacProgram();
@@ -230,11 +239,9 @@ test "a catalog-backed check of a small program is clean" {
         errors = [str(e) for e in prog.errors_had];
         assert errors == [] , errors;
     } finally {
-        if previous is None {
-            os.environ.pop(ENV_FILE, None);
-        } else {
-            os.environ[ENV_FILE] = previous;
-        }
+        checkout.stop();
+        sealed.stop();
+        router.forget();
         reset_catalog_cache();
     }
 }

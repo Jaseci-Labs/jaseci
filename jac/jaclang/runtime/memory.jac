@@ -3,8 +3,6 @@ import threading;
 import from collections.abc { Generator }
 import from uuid { UUID }
 
-import from jaclang.runtime.archetype { Anchor, Root }
-
 glob logger = logging.getLogger(__name__),
      __all__ = ['Memory'];
 
@@ -188,16 +186,28 @@ obj Memory {
     def _fire_on_commit {
         fired = self._on_commit;
         self._on_commit = [];
-        for cb in fired {
-            try {
-                cb();
-            } except Exception as e {
-                logger.warning(f"on_commit callback failed: {type(e).__name__}: {e}");
+        if not fired {
+            return;
+        }
+        self.unseal_scan();
+        try {
+            for cb in fired {
+                try {
+                    cb();
+                } except Exception as e {
+                    logger.warning(
+                        f"on_commit callback failed: {type(e).__name__}: {e}"
+                    );
+                }
             }
+        } finally {
+            self.unseal_scan();
         }
     }
 
     def read_barrier {}
+    def seal_scan {}
+    def unseal_scan {}
     def flush(full: bool = False) {}
     def reset_fetch_count {}
     def get_fetch_count -> int {

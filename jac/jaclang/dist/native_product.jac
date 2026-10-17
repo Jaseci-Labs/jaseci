@@ -1,6 +1,4 @@
 import from pathlib { Path }
-import type from jaclang.compiler.frontend.unitree { Module }
-import type from jaclang.compiler.driver.program { JacProgram }
 
 
 def write_native_product(
@@ -12,20 +10,12 @@ def write_native_product(
     emit_source: bool = True,
     program: JacProgram | None = None
 ) -> dict[str, any] {
-    import from jaclang.compiler.driver.program { JacProgram }
-    import from jaclang.compiler.backends.native.link_plan {
-        ArtifactKind,
-        build_link_plan,
-        whole_program_module,
-        optimize_merged_program,
-        link_artifact
-    }
     if program is None {
         program = JacProgram();
     }
     plan = build_link_plan(program, [module.loc.mod_path], program.options);
     manifest = module.gen.interop_manifest;
-    bindings = manifest.native_imports if shared else [];
+    bindings = manifest.callable_native_imports if shared else [];
     plan.callback_bindings = list(bindings);
     kind = ArtifactKind.SHARED if shared else ArtifactKind.EXECUTABLE;
     if not shared and any(unit.iface.python_imports for unit in plan.units) {

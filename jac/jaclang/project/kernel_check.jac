@@ -1,19 +1,8 @@
 import os;
 import sys;
-import from jaclang.compiler.driver.compile_options { CompileOptions }
-import from jaclang.compiler.frontend.kernel_analyze {
-    AnalysisDiag,
-    AnalysisReport,
-    DiagSpan
-}
-import from jaclang.compiler.driver.program { JacProgram }
-import from jaclang.compiler.frontend.host { active_host }
-import from jaclang.compiler.frontend.srcloc { Span }
-import from jaclang.compiler.passes.context { Alert }
-import from jaclang.project.kernel_snapshot { kernel_analysis }
 
-glob KERNEL_ANALYZE_ENV: str = "JAC_KERNEL_ANALYZE",
-     _PASS_TYPES: dict[str, type] = {};
+glob _PASS_TYPES: dict[str, type] = {},
+     _STAND_INS: dict[str, type] = {};
 
 obj KernelCheck {
     has outcome: (AnalysisReport | None) = None,
@@ -22,27 +11,33 @@ obj KernelCheck {
         failure: str = "";
 }
 
-def kernel_analyze_mode -> str {
-    raw = os.environ.get(KERNEL_ANALYZE_ENV, "").strip().lower();
-    if raw in ("0", "off", "false", "no") {
-        return "off";
-    }
-    if raw == "parity" {
-        return "parity";
-    }
-    return "on";
-}
+class KernelCheckError(RuntimeError) {}
 
 def analysis_kernel -> any {
-    if kernel_analyze_mode() == "off" {
-        return None;
-    }
-    import from jaclang.compiler.native_compiler { ensure_loaded }
     kernel = ensure_loaded();
-    if kernel is None or not hasattr(kernel.lib, "jc_analyze") {
-        return None;
+    if kernel is not None and not hasattr(kernel.lib, "jc_analyze") {
+        import from jaclang.compiler.backends.native.kernel_resolve { KernelLoadError }
+        raise KernelLoadError(
+            "jac: the native compiler kernel cannot analyze\n"
+            f"  kernel: {kernel.lib_path}\n"
+            "  error:  the loaded kernel has no jc_analyze\n"
+            "  fix:    rebuild it with `jac native build kernel --force`"
+        );
     }
     return kernel;
+}
+
+def loaded_pass_type(name: str) -> (type | None) {
+    for (mod_name, mod) in list(sys.modules.items()) {
+        if mod is None or not mod_name.startswith("jaclang.compiler.") {
+            continue;
+        }
+        candidate = getattr(mod, name, None);
+        if isinstance(candidate, type) and issubclass(candidate, CompilerPass) {
+            return candidate;
+        }
+    }
+    return None;
 }
 
 def pass_type_named(name: str) -> type {
@@ -50,20 +45,18 @@ def pass_type_named(name: str) -> type {
     if found is not None {
         return found;
     }
-    import from jaclang.compiler.passes.context { CompilerPass }
-    for (mod_name, mod) in list(sys.modules.items()) {
-        if mod is None or not mod_name.startswith("jaclang.compiler.") {
-            continue;
-        }
-        candidate = getattr(mod, name, None);
-        if isinstance(candidate, type) and issubclass(candidate, CompilerPass) {
-            _PASS_TYPES[name] = candidate;
-            return candidate;
-        }
+    found = loaded_pass_type(name);
+    if found is not None {
+        _PASS_TYPES[name] = found;
+        return found;
     }
-    placeholder = type(name or "KernelPass", (CompilerPass, ), {});
-    _PASS_TYPES[name] = placeholder;
-    return placeholder;
+    stand_in = _STAND_INS.get(name);
+    if stand_in is None {
+        import from jaclang.compiler.passes.context { CompilerPass }
+        stand_in = type(name or "KernelPass", (CompilerPass, ), {});
+        _STAND_INS[name] = stand_in;
+    }
+    return stand_in;
 }
 
 def span_of(record: DiagSpan) -> Span {
@@ -82,7 +75,6 @@ def span_of(record: DiagSpan) -> Span {
 }
 
 def alert_of(diag: AnalysisDiag) -> Alert {
-    import from jaclang.compiler.frontend.diagnostics { DIAGNOSTICS }
     return Alert(
         msg=diag.msg or diag.message,
         loc=span_of(diag.span),
@@ -107,36 +99,52 @@ def diag_row(diag: AnalysisDiag) -> tuple[str, str, int, int] {
 }
 
 def kernel_check(
-    program: JacProgram, path: str, options: CompileOptions
+    program: JacProgram, path: str, options: CompileOptions, parity: bool = False
 ) -> KernelCheck {
-    import from jaclang.compiler.frontend.codeinfo { is_compiler_source_path }
     if is_compiler_source_path(path) {
         return KernelCheck();
     }
-    mode = kernel_analyze_mode();
     kernel = analysis_kernel();
     if kernel is None {
+        import from jaclang.compiler.backends.native.kernel_resolve {
+            refuse_unloadable
+        }
+        refuse_unloadable();
         return KernelCheck();
     }
     try {
         outcome = kernel_analysis(active_host(), program, path, options, isolated=True);
     } except Exception as err {
-        return KernelCheck(
-            parity=mode == "parity", failure=f"{type(err).__name__}: {err}"
-        );
+        if not parity {
+            raise KernelCheckError(
+                f"the native compiler kernel could not analyze {path}: "
+                f"{type(err).__name__}: {err}"
+            ) from err;
+        }
+        return KernelCheck(parity=True, failure=f"{type(err).__name__}: {err}");
     }
-    if outcome.misses {
-        return KernelCheck(
-            outcome=outcome,
-            parity=mode == "parity",
-            failure=f"the kernel lacked host answers ({outcome.misses[0]})"
-        );
-    }
-    entry_module = outcome.module(path);
-    if entry_module is None or entry_module.native {
+    if host_deferred(outcome) {
         return KernelCheck(outcome=outcome);
     }
-    if mode == "parity" {
+    if outcome.misses {
+        failure = f"the kernel lacked host answers ({outcome.misses[0]})";
+        if not parity {
+            raise KernelCheckError(
+                f"the native compiler kernel could not analyze {path}: {failure}"
+            );
+        }
+        return KernelCheck(outcome=outcome, parity=True, failure=failure);
+    }
+    entry_module = outcome.module(path);
+    if entry_module is None {
+        raise KernelCheckError(
+            f"the native compiler kernel analyzed {path} but reported no module for it"
+        );
+    }
+    if entry_module.native {
+        return KernelCheck(outcome=outcome);
+    }
+    if parity {
         return KernelCheck(outcome=outcome, parity=True);
     }
     for diag in outcome.errors {
@@ -174,7 +182,7 @@ def parity_mismatches(
     if outcome is None {
         return [];
     }
-    import from jaclang.compiler.frontend.codeinfo { is_compiler_source_path }
+
     out: list[str] = [];
     for (label, host_rows, kernel_rows) in (
         (

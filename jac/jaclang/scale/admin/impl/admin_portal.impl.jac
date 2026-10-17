@@ -1,27 +1,8 @@
 import logging;
-import from jaclang.server.serving.datatypes { Request }
-import from jaclang.server.serving.datatypes {
-    FileResponse,
-    HTMLResponse,
-    JSONResponse,
-    RedirectResponse,
-    Response
-}
+
 import mimetypes;
 import subprocess;
 import from pathlib { Path }
-import from jaclang.server.transport { TransportResponse, Meta }
-import from jaclang.server.server { JsonValue }
-import from jaclang.server.serving.endpoint {
-    HTTPMethod,
-    JEndPoint,
-    APIParameter,
-    ParameterType
-}
-import from jaclang.scale.config.config_loader { get_scale_config }
-import from jaclang.server.identity.user_manager { UserRole, UserManager }
-import from jaclang.runtime.runtime { JacRuntime as Jac }
-import from jaclang.runtime.constants { Constants as Con }
 
 glob logger = logging.getLogger(__name__);
 
@@ -70,6 +51,22 @@ impl JacAPIServerAdmin.register_admin_endpoints -> None {
                     default_value=None,
                     description='Admin password',
                     kind=ParameterType.BODY
+                ),
+                APIParameter(
+                    name='code',
+                    data_type='string',
+                    required=False,
+                    default_value='',
+                    description='Current second factor code, when the account has a verified factor',
+                    kind=ParameterType.BODY
+                ),
+                APIParameter(
+                    name='recovery_code',
+                    data_type='string',
+                    required=False,
+                    default_value='',
+                    description='Single-use recovery code, in place of code',
+                    kind=ParameterType.BODY
                 )
             ],
             response_model=None,
@@ -79,7 +76,6 @@ impl JacAPIServerAdmin.register_admin_endpoints -> None {
         )
     );
 
-    import from jaclang.server.serving.datatypes { Request }
     async def reset_password_handler(
         request: Request, current_password: str, new_password: str
     ) -> TransportResponse {
@@ -177,10 +173,14 @@ impl JacAPIServerAdmin.register_admin_endpoints -> None {
         )
     );
     async def create_user_handler(
-        request: Request, username: str, password: str, role: str = 'user'
+        request: Request,
+        password: str,
+        username: str = '',
+        role: str = 'user',
+        email: str = ''
     ) -> TransportResponse {
         authorization = request.headers.get('Authorization');
-        return self.admin_create_user(username, password, role, authorization);
+        return self.admin_create_user(username, password, role, authorization, email);
     }
     server.add_endpoint(
         JEndPoint(
@@ -191,9 +191,17 @@ impl JacAPIServerAdmin.register_admin_endpoints -> None {
                 APIParameter(
                     name='username',
                     data_type='string',
-                    required=True,
-                    default_value=None,
-                    description='Username for new user',
+                    required=False,
+                    default_value='',
+                    description='Username for new user, when [serve.auth.identifiers] accepts one',
+                    kind=ParameterType.BODY
+                ),
+                APIParameter(
+                    name='email',
+                    data_type='string',
+                    required=False,
+                    default_value='',
+                    description='Email for new user, when [serve.auth.identifiers] accepts one',
                     kind=ParameterType.BODY
                 ),
                 APIParameter(
@@ -540,15 +548,10 @@ impl JacAPIServerAdmin.bootstrap_admin -> None {
     }
     result = self._require_user_manager().bootstrap_admin_user(
         admin_username=str(admin_config.get('username', 'admin')),
-        default_password=str(admin_config.get('default_password', 'changeme'))
+        password=str(admin_config.get('default_password') or '')
     );
-    if 'error' not in result {
-        if 'created' in result.get('message', '').lower() {
-            logger.warning(
-                f"Admin user created with default credentials. "
-                "Please change the password immediately!"
-            );
-        }
+    if 'error' in result {
+        logger.error(f"Admin user was not created: {result['error']}");
     }
 }
 
@@ -594,7 +597,13 @@ impl JacAPIServerAdmin.require_admin_json(
     return None;
 }
 
-impl JacAPIServerAdmin.admin_login(username: str, password: str) -> TransportResponse {
+impl JacAPIServerAdmin.admin_login(
+    username: str,
+    password: str,
+    code: str = '',
+    recovery_code: str = '',
+    request: (Request | None) = None
+) -> TransportResponse {
     if not username or not password {
         return TransportResponse.fail(
             code='VALIDATION_ERROR',
@@ -602,7 +611,12 @@ impl JacAPIServerAdmin.admin_login(username: str, password: str) -> TransportRes
             meta=Meta(extra={'http_status': 400})
         );
     }
-    result = self._require_user_manager().authenticate(username, password);
+    source = client_ip(request) if request is not None else '';
+    try {
+        result = self._require_user_manager().authenticate(username, password, source);
+    } except AttemptsExhausted as limit {
+        return throttled(limit.retry_after, 'Sign-in');
+    }
     if not result {
         return TransportResponse.fail(
             code='UNAUTHORIZED',
@@ -619,8 +633,51 @@ impl JacAPIServerAdmin.admin_login(username: str, password: str) -> TransportRes
             meta=Meta(extra={'http_status': 403})
         );
     }
+    unverified = self._require_user_manager().unverified_email(user_id);
+    if unverified is not None {
+        if self.server is not None {
+            self.server.mailer().send_verification(user_id, unverified, source);
+        }
+        return TransportResponse.fail(
+            code='EMAIL_NOT_VERIFIED',
+            message='Verify your email address to sign in. A new link has been sent.',
+            meta=Meta(extra={'http_status': 403})
+        );
+    }
+    assurance: (dict[str, any] | None) = None;
+    if result.get('second_factor_required') {
+        if not code and not recovery_code {
+            return TransportResponse.fail(
+                code='MFA_REQUIRED',
+                message='A second factor code is required',
+                meta=Meta(extra={'http_status': 401})
+            );
+        }
+        try {
+            proof = self._require_user_manager().second_factors().prove(
+                user_id, str(code or ''), str(recovery_code or '')
+            );
+        } except SecondFactorUnavailable {
+            return TransportResponse.fail(
+                code='SECOND_FACTOR_UNAVAILABLE',
+                message='Second factor verification is temporarily unavailable. Please try again.',
+                meta=Meta(extra={'http_status': 503})
+            );
+        }
+        if proof.get('code') == 'RATE_LIMITED' {
+            return throttled(int(proof.get('retry_after') or 1), 'Sign-in');
+        }
+        if not proof.get('ok') {
+            return TransportResponse.fail(
+                code='INVALID_CODE',
+                message='Code is invalid or already used',
+                meta=Meta(extra={'http_status': 401})
+            );
+        }
+        assurance = second_factor_claims([METHOD_PASSWORD, str(proof['method'])]);
+    }
     requires_reset = self._require_user_manager().requires_password_reset(user_id);
-    token = self._require_user_manager().create_jwt_token(user_id);
+    token = self._require_user_manager().create_jwt_token(user_id, assurance=assurance);
     return TransportResponse.success(
         data={
             'message': 'Login successful',
@@ -660,30 +717,17 @@ impl JacAPIServerAdmin.reset_password(
             meta=Meta(extra={'http_status': 400})
         );
     }
-    if len(new_password) < 8 {
-        return TransportResponse.fail(
-            code='VALIDATION_ERROR',
-            message='Password must be at least 8 characters',
-            meta=Meta(extra={'http_status': 400})
-        );
-    }
-
     result = self._require_user_manager().update_password(
         user_id, current_password, new_password
     );
     if 'error' in result {
-        return TransportResponse.fail(
-            code='UPDATE_FAILED',
-            message=result.get('error', 'Password update failed'),
-            meta=Meta(extra={'http_status': 400})
-        );
+        return refused(result, 'UPDATE_FAILED');
     }
-
-    self._require_user_manager().set_requires_password_reset(user_id, False);
-
-    new_token = self._require_user_manager().create_jwt_token(user_id);
     return TransportResponse.success(
-        data={'message': 'Password updated successfully', 'token': new_token},
+        data={
+            'message': 'Password updated successfully',
+            'token': self._require_user_manager().refresh_jwt_token(token) or token
+        },
         meta=Meta(extra={'http_status': 200})
     );
 }
@@ -750,27 +794,49 @@ impl JacAPIServerAdmin.admin_get_user(
 }
 
 impl JacAPIServerAdmin.admin_create_user(
-    username: str, password: str, role: str = 'user', Authorization: str | None = None
+    username: str = '',
+    password: str = '',
+    role: str = 'user',
+    Authorization: str | None = None,
+    email: str = ''
 ) -> TransportResponse {
     error = self.require_admin(Authorization);
     if error {
         return error;
     }
-    if not username or not password {
+    try {
+        identities = [
+            IdentityInputModel.from_dict({'type': kind, 'value': value}).model_dump()
+            for (kind, value) in (('username', username), ('email', email))
+            if value
+        ];
+    } except ValueError as invalid {
         return TransportResponse.fail(
             code='VALIDATION_ERROR',
-            message='Username and password required',
+            message=str(invalid),
+            meta=Meta(extra={'http_status': 400})
+        );
+    }
+    if not identities or not password {
+        return TransportResponse.fail(
+            code='VALIDATION_ERROR',
+            message='A username or email, and a password, are required',
             meta=Meta(extra={'http_status': 400})
         );
     }
     result = self._require_user_manager().create_user_as_admin(
-        username=username, password=password, role=role, requires_password_reset=True
+        identities=identities,
+        password=password,
+        role=role,
+        requires_password_reset=True
     );
     if 'error' in result {
-        return TransportResponse.fail(
-            code='CREATE_FAILED',
-            message=result.get('error', 'User creation failed'),
-            meta=Meta(extra={'http_status': 400})
+        return refused(result, 'CREATE_FAILED');
+    }
+    if self.server is not None {
+        self.server.mailer().announce(
+            self._require_user_manager().get_user(str(result.get('user_id') or ''))
+                or {}
         );
     }
     return TransportResponse.success(
@@ -1037,7 +1103,7 @@ impl JacAPIServerAdmin.admin_graph_data(
             content={'error': 'Forbidden', 'message': 'Admin access required'}
         );
     }
-    import from jaclang.runtime.graph_utils { collect_node_connections }
+
     target_username = username or Con.GUEST.value;
     root_id = self._require_user_manager().get_root_id(target_username);
     if not root_id {
@@ -1225,7 +1291,6 @@ glob _LATENCY_CUTS: list[float] = [0.025, 0.1, 0.5, 2.5];
 
 
 def _classify_path(path: str) -> str {
-    import from jaclang.scale.runtime.routing { GATEWAY_WELLKNOWN_SEGMENTS }
     head: str = path.strip('/').split('/')[0];
     if head == 'health' or head == 'healthz' {
         return 'health';
@@ -1493,7 +1558,6 @@ impl JacAPIServerAdmin.build_admin_client(force: bool = False) -> bool {
         return True;
     }
 
-    import from jaclang.scale.admin { admin_portal }
     admin_dir = Path(admin_portal.__file__).parent;
 
     ui_dir = admin_dir / "ui";

@@ -260,7 +260,7 @@ element_stmt ::=
     | ability
     | global_var
     | comptime_element
-    | impl_import
+    | graph_import
     | impl_def
     | sem_def
     | PYNLINE
@@ -392,7 +392,7 @@ literal_for_mapping ::= INT | FLOAT | multistring | "-" (INT | FLOAT)?
 
 class_pattern_args ::= "(" (((NAME | KWESC_NAME) "=" pattern | pattern) ","?)* ")"
 
-return_stmt ::= "return" expression? ";"
+return_stmt ::= "return" NAME? expression? ";"
 
 yield_stmt ::= "yield" "from"? expression?
 
@@ -536,7 +536,8 @@ visit_stmt ::= "visit" (":" expression ":")? expression (else_stmt | ";")?
 
 report_stmt ::= "report" expression ";"
 
-impl_import ::= "impl" "import" wire_module_path?? "{" (import_rule | import_wire)* "}"
+graph_import ::=
+    ("impl" | "graph") "import" wire_module_path?? "{" (import_rule | import_wire)* "}"
 
 wire_module_path ::=
     (STRING | (NAME | KWESC_NAME) ("." (NAME | KWESC_NAME))*)

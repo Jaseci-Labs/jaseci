@@ -5,8 +5,8 @@ import datetime;
 import logging;
 import math;
 import os;
-import from jaclang.runtime.builtin { ScheduleTrigger }
-import from jaclang.server.serving.drain { DrainState }
+import socket;
+import uuid;
 
 glob _scheduler_instance: (Scheduler | None) = None,
      logger = logging.getLogger(__name__),
@@ -76,6 +76,10 @@ obj Scheduler {
         claim: (Callable[[str, int], bool] | None) = None,
         namespace: str = "",
         _failing_claims: set[str] = set(),
+        hold: (Callable[[str, int, str], bool] | None) = None,
+        release: (Callable[[str, str], bool] | None) = None,
+        hold_ttl: int = 30,
+        _owner: str = "",
         drain: (DrainState | None) = None,
         _in_flight: dict[int, tuple[str, threading.Thread]] = {},
         _flight_lock: threading.Lock = threading.Lock(),
@@ -89,7 +93,14 @@ obj Scheduler {
     def start -> None;
     def start_if_pending -> None;
     def _may_fire(task: ScheduledTask, due: datetime.datetime) -> bool;
+    def _run_key(task: ScheduledTask) -> str;
+    def _hold_owner -> str;
+    def _take_hold(task: ScheduledTask) -> bool;
+    def _hold_run(task: ScheduledTask) -> bool;
+    def _keep_hold(task: ScheduledTask, beat: threading.Event) -> None;
+    def _release_run(task: ScheduledTask) -> None;
     def _still_running(task: ScheduledTask) -> bool;
+    def _start(thread: threading.Thread, task: ScheduledTask) -> bool;
     def _launch(task: ScheduledTask) -> None;
     def _run_tracked(task: ScheduledTask) -> None;
     def stop(timeout: (float | None) = None) -> None;

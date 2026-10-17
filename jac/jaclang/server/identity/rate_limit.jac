@@ -1,7 +1,14 @@
 import hashlib;
 import math;
 import logging;
-import from jaclang.server.shared_store { shared_store }
+
+obj AttemptsExhausted(Exception) {
+    has retry_after: int = 1;
+}
+
+def limit_key(scope: str, actor: str) -> str {
+    return "ratelimit:" + hashlib.sha256((scope + ":" + actor).encode()).hexdigest();
+}
 
 def consume_limit(scope: str, actor: str, limit: int, seconds: int) -> int {
     if limit <= 0 {
@@ -12,7 +19,7 @@ def consume_limit(scope: str, actor: str, limit: int, seconds: int) -> int {
         if db is None {
             return -1;
         }
-        key = "ratelimit:" + hashlib.sha256((scope + ":" + actor).encode()).hexdigest();
+        key = limit_key(scope, actor);
         params = {"k": key, "cap": limit, "ttl": seconds};
         rows = db.rows(
             """
@@ -39,5 +46,24 @@ def consume_limit(scope: str, actor: str, limit: int, seconds: int) -> int {
     } except Exception as error {
         logging.getLogger(__name__).warning(f"Rate limit storage failed: {error}");
         return -1;
+    }
+}
+
+def refund_limit(scope: str, actor: str) -> None {
+    try {
+        db = shared_store();
+        if db is None {
+            return;
+        }
+        db.rows(
+            """
+            UPDATE kv_state
+            SET value = GREATEST(CAST(value AS integer) - 1, 0)::text
+            WHERE key = :k AND expires_at > now()
+            """,
+            {"k": limit_key(scope, actor)}
+        );
+    } except Exception as error {
+        logging.getLogger(__name__).warning(f"Rate limit refund failed: {error}");
     }
 }

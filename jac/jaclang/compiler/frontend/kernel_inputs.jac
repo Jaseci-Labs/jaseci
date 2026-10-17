@@ -1,17 +1,5 @@
 import base64;
 import json;
-import from jaclang.compiler.driver.compile_options { CompileOptions }
-import from jaclang.compiler.frontend.host {
-    CheckSettings,
-    HostPlatform,
-    LintSettings,
-    NativeVerdict,
-    ProjectDefaults,
-    ProjectFacts
-}
-import from jaclang.compiler.frontend.source_layout { LayoutTables }
-import from jaclang.compiler.types.ct_value { CtEnvironment }
-import from jaclang.project.workspace_model { AppSpec, WorkspaceSpec }
 
 glob KERNEL_INPUTS_VERSION: int = 2,
      KEY_SEP: str = "\x1f";
@@ -24,10 +12,12 @@ obj RequestOptions {
         native_require: list[str] = [],
         iface_ok: bool = False,
         need_full_ast: bool = False,
+        native_tree_demand: bool = False,
         no_ir_cache: bool = False,
         resolve_annex_parent: bool = False,
         aot_mode: bool = False,
         native_unit: bool = False,
+        kernel_build: bool = False,
         force_codespace: str = "",
         memory_profile: str = "managed",
         nogc_enforce_all: bool = False,
@@ -42,7 +32,15 @@ obj RequestOptions {
         ui: str = "",
         project_root: (str | None) = None,
         strict_dependencies: bool = False,
-        package_canonical: bool = False;
+        package_canonical: bool = False,
+        na_gc_mode: str = "",
+        native_debug: bool = False,
+        rc_debug_codegen: bool = False,
+        rc_stats: bool = False,
+        nogc_debug: bool = False,
+        na_debug: bool = False,
+        native_threads: int = -1,
+        opt_level: int = -1;
 
     def to_options -> CompileOptions {
         return CompileOptions(
@@ -53,10 +51,12 @@ obj RequestOptions {
             native_require=list(self.native_require),
             iface_ok=self.iface_ok,
             need_full_ast=self.need_full_ast,
+            native_tree_demand=self.native_tree_demand,
             no_ir_cache=self.no_ir_cache,
             resolve_annex_parent=self.resolve_annex_parent,
             aot_mode=self.aot_mode,
             native_unit=self.native_unit,
+            kernel_build=self.kernel_build,
             force_codespace=self.force_codespace,
             memory_profile=self.memory_profile,
             nogc_enforce_all=self.nogc_enforce_all,
@@ -71,7 +71,15 @@ obj RequestOptions {
             ui=self.ui,
             project_root=self.project_root,
             strict_dependencies=self.strict_dependencies,
-            package_canonical=self.package_canonical
+            package_canonical=self.package_canonical,
+            na_gc_mode=self.na_gc_mode or None,
+            native_debug=self.native_debug,
+            rc_debug_codegen=self.rc_debug_codegen,
+            rc_stats=self.rc_stats,
+            nogc_debug=self.nogc_debug,
+            na_debug=self.na_debug,
+            native_threads=self.native_threads if self.native_threads >= 0 else None,
+            opt_level=self.opt_level if self.opt_level >= 0 else None
         );
     }
 }
@@ -79,7 +87,9 @@ obj RequestOptions {
 obj PythonInterface {
     has path: str,
         pkg_dir: str,
-        data: bytes = b"";
+        data: bytes = b"",
+        placement: str = "",
+        effects: str = "";
 }
 
 obj ImportResolution {
@@ -187,6 +197,9 @@ obj KernelInputs {
         native_pipeline: bool = False,
         native_pipeline_reason: str = "",
         native_pipeline_known: bool = False,
+        osp_core_js: str = "",
+        client_stub_globals: list[str] = [],
+        client_stub_globals_known: bool = False,
         stub_catalog_active: bool = False,
         stub_catalog_dir: str = "",
         stub_catalog_file: str = "",
@@ -196,6 +209,9 @@ obj KernelInputs {
         search_paths: list[str] = [],
         native_session_active: bool = False,
         scanned_modules: int = 0,
+        emit_paths: list[str] = [],
+        emit_closure: bool = False,
+        emit_of: dict[str, bool] = {},
         manifest: ManifestSets = ManifestSets(),
         layout: LayoutTables = LayoutTables(),
         project_facts: dict[str, ProjectFacts] = {},
@@ -205,9 +221,11 @@ obj KernelInputs {
         app_of: dict[str, str] = {},
         project_root_of: dict[str, str] = {},
         lint_of: dict[str, LintSettings] = {},
-        verdicts: dict[str, (NativeVerdict | None)] = {},
         untyped: dict[str, bool] = {},
         siblings: dict[str, str] = {},
+        client_pulls: dict[str, str] = {},
+        native_ifaces: dict[str, str] = {},
+        native_facts: dict[str, str] = {},
         path_aliases: dict[str, bool] = {},
         virtual_modules: dict[str, str] = {},
         imports: list[ImportResolution] = [],
@@ -247,10 +265,12 @@ def request_of(options: CompileOptions) -> RequestOptions {
         native_require=list(options.native_require or []),
         iface_ok=options.iface_ok,
         need_full_ast=options.need_full_ast,
+        native_tree_demand=options.native_tree_demand,
         no_ir_cache=options.no_ir_cache,
         resolve_annex_parent=options.resolve_annex_parent,
         aot_mode=options.aot_mode,
         native_unit=options.native_unit,
+        kernel_build=options.kernel_build,
         force_codespace=options.force_codespace,
         memory_profile=options.memory_profile or "managed",
         nogc_enforce_all=bool(options.nogc_enforce_all),
@@ -265,7 +285,17 @@ def request_of(options: CompileOptions) -> RequestOptions {
         ui=options.ui,
         project_root=options.project_root,
         strict_dependencies=options.strict_dependencies,
-        package_canonical=options.package_canonical
+        package_canonical=options.package_canonical,
+        na_gc_mode=options.na_gc_mode or "",
+        native_debug=bool(options.native_debug),
+        rc_debug_codegen=bool(options.rc_debug_codegen),
+        rc_stats=bool(options.rc_stats),
+        nogc_debug=bool(options.nogc_debug),
+        na_debug=bool(options.na_debug),
+        native_threads=options.native_threads
+            if options.native_threads is not None
+            else -1,
+        opt_level=options.opt_level if options.opt_level is not None else -1
     );
 }
 
@@ -278,10 +308,12 @@ def request_to_dict(request: RequestOptions) -> dict[str, any] {
         "native_require": list(request.native_require),
         "iface_ok": request.iface_ok,
         "need_full_ast": request.need_full_ast,
+        "native_tree_demand": request.native_tree_demand,
         "no_ir_cache": request.no_ir_cache,
         "resolve_annex_parent": request.resolve_annex_parent,
         "aot_mode": request.aot_mode,
         "native_unit": request.native_unit,
+        "kernel_build": request.kernel_build,
         "force_codespace": request.force_codespace,
         "memory_profile": request.memory_profile,
         "nogc_enforce_all": request.nogc_enforce_all,
@@ -296,7 +328,15 @@ def request_to_dict(request: RequestOptions) -> dict[str, any] {
         "ui": request.ui,
         "project_root": request.project_root,
         "strict_dependencies": request.strict_dependencies,
-        "package_canonical": request.package_canonical
+        "package_canonical": request.package_canonical,
+        "na_gc_mode": request.na_gc_mode,
+        "native_debug": request.native_debug,
+        "rc_debug_codegen": request.rc_debug_codegen,
+        "rc_stats": request.rc_stats,
+        "nogc_debug": request.nogc_debug,
+        "na_debug": request.na_debug,
+        "native_threads": request.native_threads,
+        "opt_level": request.opt_level
     };
 }
 
@@ -310,10 +350,12 @@ def request_from_dict(raw: dict[str, any]) -> RequestOptions {
         native_require=json_str_list(raw.get("native_require")),
         iface_ok=bool(raw.get("iface_ok", False)),
         need_full_ast=bool(raw.get("need_full_ast", False)),
+        native_tree_demand=bool(raw.get("native_tree_demand", False)),
         no_ir_cache=bool(raw.get("no_ir_cache", False)),
         resolve_annex_parent=bool(raw.get("resolve_annex_parent", False)),
         aot_mode=bool(raw.get("aot_mode", False)),
         native_unit=bool(raw.get("native_unit", False)),
+        kernel_build=bool(raw.get("kernel_build", False)),
         force_codespace=str(raw.get("force_codespace", "")),
         memory_profile=str(raw.get("memory_profile", "managed")),
         nogc_enforce_all=bool(raw.get("nogc_enforce_all", False)),
@@ -328,7 +370,15 @@ def request_from_dict(raw: dict[str, any]) -> RequestOptions {
         ui=str(raw.get("ui", "")),
         project_root=str(project_root) if project_root is not None else None,
         strict_dependencies=bool(raw.get("strict_dependencies", False)),
-        package_canonical=bool(raw.get("package_canonical", False))
+        package_canonical=bool(raw.get("package_canonical", False)),
+        na_gc_mode=str(raw.get("na_gc_mode", "")),
+        native_debug=bool(raw.get("native_debug", False)),
+        rc_debug_codegen=bool(raw.get("rc_debug_codegen", False)),
+        rc_stats=bool(raw.get("rc_stats", False)),
+        nogc_debug=bool(raw.get("nogc_debug", False)),
+        na_debug=bool(raw.get("na_debug", False)),
+        native_threads=json_int(raw.get("native_threads"), -1),
+        opt_level=json_int(raw.get("opt_level"), -1)
     );
 }
 
@@ -361,7 +411,6 @@ def check_from_dict(raw: dict[str, any]) -> CheckSettings {
 def defaults_to_dict(defaults: ProjectDefaults) -> dict[str, any] {
     return {
         "default_codespace": defaults.default_codespace,
-        "native_closure_cap": defaults.native_closure_cap,
         "native_require": list(defaults.native_require),
         "native_target": defaults.native_target,
         "native_debug": defaults.native_debug,
@@ -379,7 +428,6 @@ def defaults_to_dict(defaults: ProjectDefaults) -> dict[str, any] {
 def defaults_from_dict(raw: dict[str, any]) -> ProjectDefaults {
     return ProjectDefaults(
         default_codespace=str(raw.get("default_codespace", "")),
-        native_closure_cap=json_int(raw.get("native_closure_cap")),
         native_require=json_str_list(raw.get("native_require")),
         native_target=str(raw.get("native_target", "")),
         native_debug=bool(raw.get("native_debug", False)),
@@ -398,7 +446,6 @@ def facts_to_dict(facts: ProjectFacts) -> dict[str, any] {
     return {
         "project_root": facts.project_root,
         "check": check_to_dict(facts.check),
-        "arch_closed": list(facts.arch_closed),
         "client_framework": facts.client_framework,
         "package_name": facts.package_name,
         "package_exports": list(facts.package_exports),
@@ -410,7 +457,6 @@ def facts_from_dict(raw: dict[str, any]) -> ProjectFacts {
     return ProjectFacts(
         project_root=str(raw.get("project_root", "")),
         check=check_from_dict(json_map(raw.get("check"))),
-        arch_closed=json_str_list(raw.get("arch_closed")),
         client_framework=str(raw.get("client_framework", "react")),
         package_name=str(raw.get("package_name", "")),
         package_exports=json_str_list(raw.get("package_exports")),
@@ -500,27 +546,6 @@ def workspace_from_dict(raw: dict[str, any]) -> WorkspaceSpec {
         persistence_namespace=str(raw.get("persistence_namespace", "main")),
         base_pins=json_str_map(raw.get("base_pins")),
         base_npm_names=set(json_str_list(raw.get("base_npm_names")))
-    );
-}
-
-def verdict_to_dict(verdict: (NativeVerdict | None)) -> (dict[str, any] | None) {
-    if verdict is None {
-        return None;
-    }
-    return {
-        "demoted": verdict.demoted,
-        "code": verdict.code,
-        "detail": verdict.detail,
-        "deps": [list(row) for row in verdict.deps]
-    };
-}
-
-def verdict_from_dict(raw: dict[str, any]) -> NativeVerdict {
-    return NativeVerdict(
-        demoted=bool(raw.get("demoted", False)),
-        code=str(raw.get("code", "")),
-        detail=str(raw.get("detail", "")),
-        deps=json_str_pairs(raw.get("deps"))
     );
 }
 
@@ -659,7 +684,7 @@ def json_int(value: object, fallback: int = 0) -> int {
 
 def inputs_to_dict(inputs: KernelInputs) -> dict[str, any] {
     defaults = inputs.project_defaults;
-    return {
+    record: dict[str, any] = {
         "version": inputs.version,
         "entry_path": inputs.entry_path,
         "package_root": inputs.package_root,
@@ -669,9 +694,6 @@ def inputs_to_dict(inputs: KernelInputs) -> dict[str, any] {
         "project_defaults": defaults_to_dict(defaults)
             if defaults is not None
             else None,
-        "check_settings": {
-            app: check_to_dict(check) for (app, check) in inputs.check_settings.items()
-        },
         "host_platform": {
             "machine": inputs.host_platform.machine,
             "python_major": inputs.host_platform.python_major,
@@ -686,6 +708,9 @@ def inputs_to_dict(inputs: KernelInputs) -> dict[str, any] {
         "native_pipeline": inputs.native_pipeline,
         "native_pipeline_reason": inputs.native_pipeline_reason,
         "native_pipeline_known": inputs.native_pipeline_known,
+        "osp_core_js": inputs.osp_core_js,
+        "client_stub_globals": list(inputs.client_stub_globals),
+        "client_stub_globals_known": inputs.client_stub_globals_known,
         "stub_catalog_active": inputs.stub_catalog_active,
         "stub_catalog_dir": inputs.stub_catalog_dir,
         "stub_catalog_file": inputs.stub_catalog_file,
@@ -695,8 +720,21 @@ def inputs_to_dict(inputs: KernelInputs) -> dict[str, any] {
         "search_paths": list(inputs.search_paths),
         "native_session_active": inputs.native_session_active,
         "scanned_modules": inputs.scanned_modules,
+        "emit_paths": list(inputs.emit_paths),
+        "emit_closure": inputs.emit_closure,
         "manifest": manifest_to_dict(inputs.manifest),
-        "layout": layout_to_dict(inputs.layout),
+        "layout": layout_to_dict(inputs.layout)
+    };
+    record.update(answers_to_dict(inputs));
+    return record;
+}
+
+def answers_to_dict(inputs: KernelInputs) -> dict[str, any] {
+    return {
+        "check_settings": {
+            app: check_to_dict(check) for (app, check) in inputs.check_settings.items()
+        },
+        "emit_of": dict(inputs.emit_of),
         "project_facts": {
             owner_root: facts_to_dict(facts)
             for (owner_root, facts) in inputs.project_facts.items()
@@ -712,12 +750,11 @@ def inputs_to_dict(inputs: KernelInputs) -> dict[str, any] {
         "lint_of": {
             path: lint_to_dict(lint) for (path, lint) in inputs.lint_of.items()
         },
-        "verdicts": {
-            path: verdict_to_dict(verdict)
-            for (path, verdict) in inputs.verdicts.items()
-        },
         "untyped": dict(inputs.untyped),
         "siblings": dict(inputs.siblings),
+        "client_pulls": dict(inputs.client_pulls),
+        "native_ifaces": dict(inputs.native_ifaces),
+        "native_facts": dict(inputs.native_facts),
         "path_aliases": dict(inputs.path_aliases),
         "virtual_modules": dict(inputs.virtual_modules),
         "imports": [
@@ -760,7 +797,9 @@ def inputs_to_dict(inputs: KernelInputs) -> dict[str, any] {
             {
                 "path": r.path,
                 "pkg_dir": r.pkg_dir,
-                "data": base64.b64encode(r.data).decode("ascii")
+                "data": base64.b64encode(r.data).decode("ascii"),
+                "placement": r.placement,
+                "effects": r.effects
             } for r in inputs.python_ifaces
         ]
     };
@@ -773,59 +812,39 @@ def json_opt_str(value: object) -> (str | None) {
     return str(value);
 }
 
-def inputs_from_dict(raw: dict[str, any]) -> KernelInputs {
-    version = json_int(raw.get("version"), 0);
-    if version != KERNEL_INPUTS_VERSION {
-        raise ValueError(
-            f"kernel inputs version {version} does not match {KERNEL_INPUTS_VERSION}"
-        );
+def merge_str_map(into: dict[str, str], value: object) {
+    for (key, text) in json_str_map(value).items() {
+        into[key] = text;
     }
-    defaults_raw = raw.get("project_defaults");
-    platform_raw = json_map(raw.get("host_platform"));
-    env_raw = json_map(raw.get("ct_environment"));
-    inputs = KernelInputs(
-        version=version,
-        entry_path=str(raw.get("entry_path", "")),
-        package_root=str(raw.get("package_root", "")),
-        module_projection=str(raw.get("module_projection", "")),
-        target_app=str(raw.get("target_app", "")),
-        request=request_from_dict(json_map(raw.get("request"))),
-        project_defaults=defaults_from_dict(json_map(defaults_raw))
-            if defaults_raw is not None
-            else None,
-        host_platform=HostPlatform(
-            machine=str(platform_raw.get("machine", "")),
-            python_major=json_int(platform_raw.get("python_major")),
-            python_minor=json_int(platform_raw.get("python_minor"))
-        ),
-        ct_environment=CtEnvironment(
-            os=str(env_raw.get("os", "linux")), arch=str(env_raw.get("arch", ""))
-        ),
-        target_triple=str(raw.get("target_triple", "")),
-        target_triple_known=bool(raw.get("target_triple_known", False)),
-        native_pipeline=bool(raw.get("native_pipeline", False)),
-        native_pipeline_reason=str(raw.get("native_pipeline_reason", "")),
-        native_pipeline_known=bool(raw.get("native_pipeline_known", False)),
-        stub_catalog_active=bool(raw.get("stub_catalog_active", False)),
-        stub_catalog_dir=str(raw.get("stub_catalog_dir", "")),
-        stub_catalog_file=str(raw.get("stub_catalog_file", "")),
-        stub_catalog_offset=json_int(raw.get("stub_catalog_offset"), 0),
-        stub_catalog_length=json_int(raw.get("stub_catalog_length"), 0),
-        typeshed_roots=json_str_list(raw.get("typeshed_roots")),
-        search_paths=json_str_list(raw.get("search_paths")),
-        native_session_active=bool(raw.get("native_session_active", False)),
-        scanned_modules=json_int(raw.get("scanned_modules"), 0),
-        manifest=manifest_from_dict(json_map(raw.get("manifest"))),
-        layout=layout_from_dict(json_map(raw.get("layout"))),
-        facts_of=json_str_map(raw.get("facts_of")),
-        workspace_of=json_str_map(raw.get("workspace_of")),
-        app_of=json_str_map(raw.get("app_of")),
-        project_root_of=json_str_map(raw.get("project_root_of")),
-        untyped=json_bool_map(raw.get("untyped")),
-        siblings=json_str_map(raw.get("siblings")),
-        path_aliases=json_bool_map(raw.get("path_aliases")),
-        virtual_modules=json_str_map(raw.get("virtual_modules"))
-    );
+}
+
+def merge_bool_map(into: dict[str, bool], value: object) {
+    for (key, flag) in json_bool_map(value).items() {
+        into[key] = flag;
+    }
+}
+
+def merge_answers(inputs: KernelInputs, raw: dict[str, any]) {
+    merge_str_map(inputs.facts_of, raw.get("facts_of"));
+    merge_str_map(inputs.workspace_of, raw.get("workspace_of"));
+    merge_str_map(inputs.app_of, raw.get("app_of"));
+    merge_str_map(inputs.project_root_of, raw.get("project_root_of"));
+    merge_bool_map(inputs.untyped, raw.get("untyped"));
+    merge_str_map(inputs.siblings, raw.get("siblings"));
+    merge_str_map(inputs.client_pulls, raw.get("client_pulls"));
+    merge_str_map(inputs.native_ifaces, raw.get("native_ifaces"));
+    merge_str_map(inputs.native_facts, raw.get("native_facts"));
+    merge_bool_map(inputs.path_aliases, raw.get("path_aliases"));
+    merge_str_map(inputs.virtual_modules, raw.get("virtual_modules"));
+    merge_bool_map(inputs.emit_of, raw.get("emit_of"));
+    core_js = str(raw.get("osp_core_js", ""));
+    if core_js {
+        inputs.osp_core_js = core_js;
+    }
+    if bool(raw.get("client_stub_globals_known", False)) {
+        inputs.client_stub_globals = json_str_list(raw.get("client_stub_globals"));
+        inputs.client_stub_globals_known = True;
+    }
     for (app, check) in json_map(raw.get("check_settings")).items() {
         inputs.check_settings[app] = check_from_dict(json_map(check));
     }
@@ -837,11 +856,6 @@ def inputs_from_dict(raw: dict[str, any]) -> KernelInputs {
     }
     for (path, lint) in json_map(raw.get("lint_of")).items() {
         inputs.lint_of[path] = lint_from_dict(json_map(lint));
-    }
-    for (path, verdict) in json_map(raw.get("verdicts")).items() {
-        inputs.verdicts[path] = verdict_from_dict(json_map(verdict))
-            if verdict is not None
-            else None;
     }
     for r in json_maps(raw.get("imports")) {
         inputs.imports.append(
@@ -892,9 +906,64 @@ def inputs_from_dict(raw: dict[str, any]) -> KernelInputs {
             PythonInterface(
                 path=str(r.get("path", "")),
                 pkg_dir=str(r.get("pkg_dir", "")),
-                data=base64.b64decode(str(r.get("data", "")).encode("ascii"))
+                data=base64.b64decode(str(r.get("data", "")).encode("ascii")),
+                placement=str(r.get("placement", "")),
+                effects=str(r.get("effects", ""))
             )
         );
     }
+}
+
+def inputs_from_dict(raw: dict[str, any]) -> KernelInputs {
+    version = json_int(raw.get("version"), 0);
+    if version != KERNEL_INPUTS_VERSION {
+        raise ValueError(
+            f"kernel inputs version {version} does not match {KERNEL_INPUTS_VERSION}"
+        );
+    }
+    defaults_raw = raw.get("project_defaults");
+    platform_raw = json_map(raw.get("host_platform"));
+    env_raw = json_map(raw.get("ct_environment"));
+    inputs = KernelInputs(
+        version=version,
+        entry_path=str(raw.get("entry_path", "")),
+        package_root=str(raw.get("package_root", "")),
+        module_projection=str(raw.get("module_projection", "")),
+        target_app=str(raw.get("target_app", "")),
+        request=request_from_dict(json_map(raw.get("request"))),
+        project_defaults=defaults_from_dict(json_map(defaults_raw))
+            if defaults_raw is not None
+            else None,
+        host_platform=HostPlatform(
+            machine=str(platform_raw.get("machine", "")),
+            python_major=json_int(platform_raw.get("python_major")),
+            python_minor=json_int(platform_raw.get("python_minor"))
+        ),
+        ct_environment=CtEnvironment(
+            os=str(env_raw.get("os", "linux")), arch=str(env_raw.get("arch", ""))
+        ),
+        target_triple=str(raw.get("target_triple", "")),
+        target_triple_known=bool(raw.get("target_triple_known", False)),
+        native_pipeline=bool(raw.get("native_pipeline", False)),
+        native_pipeline_reason=str(raw.get("native_pipeline_reason", "")),
+        native_pipeline_known=bool(raw.get("native_pipeline_known", False)),
+        osp_core_js=str(raw.get("osp_core_js", "")),
+        client_stub_globals=json_str_list(raw.get("client_stub_globals")),
+        client_stub_globals_known=bool(raw.get("client_stub_globals_known", False)),
+        stub_catalog_active=bool(raw.get("stub_catalog_active", False)),
+        stub_catalog_dir=str(raw.get("stub_catalog_dir", "")),
+        stub_catalog_file=str(raw.get("stub_catalog_file", "")),
+        stub_catalog_offset=json_int(raw.get("stub_catalog_offset"), 0),
+        stub_catalog_length=json_int(raw.get("stub_catalog_length"), 0),
+        typeshed_roots=json_str_list(raw.get("typeshed_roots")),
+        search_paths=json_str_list(raw.get("search_paths")),
+        native_session_active=bool(raw.get("native_session_active", False)),
+        scanned_modules=json_int(raw.get("scanned_modules"), 0),
+        emit_paths=json_str_list(raw.get("emit_paths")),
+        emit_closure=bool(raw.get("emit_closure", False)),
+        manifest=manifest_from_dict(json_map(raw.get("manifest"))),
+        layout=layout_from_dict(json_map(raw.get("layout")))
+    );
+    merge_answers(inputs, raw);
     return inputs;
 }
