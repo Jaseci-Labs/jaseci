@@ -1183,7 +1183,7 @@ impl NaIRGenPass._register_imported_struct_types -> None {
     for _nested_imp in _nested_native {
         _native_ids.add(id(_nested_imp));
     }
-    wq: list[tuple[str, str, str | None, bool]] = [];
+    wq: list[tuple[str, str, str | None, bool, bool]] = [];
     for imp in ModuleFacts.iter_module_imports(self.module) + _nested_native {
         mod_name = self._extract_import_module_name(imp);
         if not mod_name {
@@ -1211,7 +1211,9 @@ impl NaIRGenPass._register_imported_struct_types -> None {
                 }
             }
         }
-        wq.append((mod_name, entry_base, None, bool(imp.is_typed)));
+        wq.append(
+            (mod_name, entry_base, None, bool(imp.is_typed), bool(imp.is_comptime))
+        );
         """A name this module imports from a module is bound to that module:
         another imported module defining a global of the same name (two
         generated constant tables both named CONSTANTS) must not supply it.""";
@@ -1241,9 +1243,10 @@ impl NaIRGenPass._register_imported_struct_types -> None {
     _canon_src: dict[str, any] = {};
     dep_edges: dict[str, list[str]] = {};
     typed_only: dict[str, bool] = {};
+    comptime_only: dict[str, bool] = {};
     qi = 0;
     while qi < len(wq) {
-        (mod_name, cur_base, parent_key, typed) = wq[qi];
+        (mod_name, cur_base, parent_key, typed, ct_reach) = wq[qi];
         qi += 1;
         assert mod_name is not None;
         (src_mod_str, full_path) = resolve_native_module(mod_name, cur_base);
@@ -1261,6 +1264,7 @@ impl NaIRGenPass._register_imported_struct_types -> None {
             dep_edges[_edge_from] = [abs_key];
         }
         typed_only[abs_key] = typed and typed_only.get(abs_key, True);
+        comptime_only[abs_key] = ct_reach and comptime_only.get(abs_key, True);
         if abs_key in processed_modules {
             continue;
         }
@@ -1321,7 +1325,13 @@ impl NaIRGenPass._register_imported_struct_types -> None {
             sub_name = self._extract_import_module_name(sub_imp);
             if sub_name {
                 wq.append(
-                    (sub_name, sub_base, abs_key, typed or bool(sub_imp.is_typed))
+                    (
+                        sub_name,
+                        sub_base,
+                        abs_key,
+                        typed or bool(sub_imp.is_typed),
+                        ct_reach or bool(sub_imp.is_comptime)
+                    )
                 );
             }
         }
@@ -1342,6 +1352,12 @@ impl NaIRGenPass._register_imported_struct_types -> None {
             continue;
         }
         _dep_seen.add(_direct);
+        if comptime_only.get(_direct, False) {
+            """A module reached only through a comptime import is read while
+            this module compiles and binds nothing at run time: it is no link
+            edge, and one that lowers no native code has no unit to link.""";
+            continue;
+        }
         if typed_only.get(_direct, False) {
             import from jaclang.compiler.placement.placement_facts {
                 native_unit as _typed_native_unit

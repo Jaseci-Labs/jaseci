@@ -110,6 +110,18 @@ test "a registry package resolves, locks, mounts and imports" {
             env=env
         );
         assert "HI!" in run.stdout , run.stdout + run.stderr;
+        warm = subprocess.run(
+            jac_command("run", "main.jac"),
+            cwd=str(w.app),
+            capture_output=True,
+            text=True,
+            env=env
+        );
+        assert "HI!" in warm.stdout , warm.stdout + warm.stderr;
+        assert "did not lower" not in warm.stderr , (
+            "a warm run must find the store packages its cached units reference: "
+            + warm.stderr
+        );
     }
 }
 
