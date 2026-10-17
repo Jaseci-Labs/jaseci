@@ -1260,6 +1260,12 @@ def seal_native(
     plan = build_link_plan(
         prog, roots, options, mode=SEALED_LINK_MODE, native_unit=True
     );
+    if pkg_name == "jaclang" {
+        import from jaclang.compiler.backends.native.kernel_stage0 {
+            refuse_missing_entries
+        }
+        refuse_missing_entries(plan, str(pkg_path));
+    }
     result = link_artifact(
         plan, str(artifact_path), ArtifactKind.SHARED, log=console.print
     );
