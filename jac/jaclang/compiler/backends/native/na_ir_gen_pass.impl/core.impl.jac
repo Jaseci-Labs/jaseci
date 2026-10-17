@@ -1343,7 +1343,6 @@ impl NaIRGenPass._native_imports -> list[tuple[str, uni.Module]] {
             }
             continue;
         }
-        self._ensure_dep_inference(imported_mod);
         processed_modules.add(abs_key);
         _canon_src[abs_key] = src_mod_str;
         imported_mods.append((src_mod_str, imported_mod));
@@ -1452,6 +1451,9 @@ impl NaIRGenPass._register_imported_struct_types -> None {
     import os;
 
     imported_mods = self._native_imports();
+    for (_, imported_mod) in imported_mods {
+        self._ensure_dep_inference(imported_mod);
+    }
 
     """Keep a name's binding only where the named module defines that global
     itself; a name it re-exports resolves by walk order as before.""";

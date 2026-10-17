@@ -3975,6 +3975,7 @@ graph import compiler.driver {
     type native_iface --> compiler.frontend.codeinfo { NativeIface }
     native_iface --> compiler.tests.test_native_kernel_cache { NativeIface }
     native_iface --> dist.precompile_bytecode.seal_native { NativeIface }
+    compiler --> compiler.driver.nativecache.SessionHeap.take { COMPILE_GC_THRESHOLDS }
     nativecache --> compiler.backends.native.kernel_stage0.plan_kernel_prefix {
         NativeBuildStopped
     }

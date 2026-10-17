@@ -15,11 +15,8 @@ import weakref;
 import from pathlib { Path }
 import from jaclang.compiler.driver.compile_options { CompileOptions }
 import from jaclang.compiler.driver.program { JacProgram }
-import from jaclang.compiler.driver.nativecache {
-    NativeBuildSession,
-    SessionHeap,
-    SESSION_FULL_GC_EVERY
-}
+import from jaclang.compiler.driver.compiler { COMPILE_GC_THRESHOLDS }
+import from jaclang.compiler.driver.nativecache { NativeBuildSession, SessionHeap }
 import from jaclang.compiler.backends.native.link_plan { build_link_plan }
 
 glob FIXTURES = str(Path(__file__).resolve().parent / "fixtures" / "link_diamond"),
@@ -72,7 +69,7 @@ test "garbage a unit drops is reclaimed at the boundary, and survivors are froze
         assert dropped_ref() is None , "a cycle dropped before the boundary must be reclaimed";
         assert kept_ref() is kept;
         assert not _is_scanned(kept) , "a survivor of the boundary must be frozen";
-        assert gc.get_threshold()[2] >= SESSION_FULL_GC_EVERY;
+        assert gc.get_threshold()[0] >= COMPILE_GC_THRESHOLDS[0];
     } finally {
         gc.enable();
         heap.release();
@@ -89,7 +86,7 @@ test "only one session holds the collector, and none takes it from a frozen proc
     try {
         assert not inner.take() , "a nested session leaves the outer policy alone";
         inner.release();
-        assert gc.get_threshold()[2] >= SESSION_FULL_GC_EVERY;
+        assert gc.get_threshold()[0] >= COMPILE_GC_THRESHOLDS[0];
     } finally {
         outer.release();
     }
@@ -126,7 +123,7 @@ test "a link plan hands the collector back exactly as it found it" {
         registry = prog.native_units();
 
         def note(line: str) {
-            seen.append((gc.get_freeze_count(), gc.get_threshold()[2]));
+            seen.append((gc.get_freeze_count(), gc.get_threshold()[0]));
         }
         registry.progress = note;
         plan = build_link_plan(prog, [os.path.join(root_dir, "top.jac")], opts);
@@ -134,8 +131,8 @@ test "a link plan hands the collector back exactly as it found it" {
         assert _collector_state() == before;
         assert any(frozen > 0 for (frozen, _) in seen) , "the session froze its units' products";
         assert any(
-            full >= SESSION_FULL_GC_EVERY
-            for (frozen, full) in seen
+            young >= COMPILE_GC_THRESHOLDS[0]
+            for (frozen, young) in seen
             if frozen > 0
         );
         assert "gc settle" in registry.phase_summary();

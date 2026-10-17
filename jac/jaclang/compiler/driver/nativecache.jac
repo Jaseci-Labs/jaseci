@@ -36,7 +36,6 @@ import from jaclang.compiler.driver.native_iface { NativeIface }
 
 glob SLOW_STEP_SECONDS: float = 2.0,
      DEMOTED_SYMBOL_SUFFIX: str = ".__jac_demoted",
-     SESSION_FULL_GC_EVERY: int = 100,
      _HEAP_HELD: list[bool] = [False];
 
 class NativeBuildStopped(BaseException) {}
@@ -926,9 +925,11 @@ obj SessionHeap {
         }
         _HEAP_HELD[0] = True;
         self.held = True;
+        import from jaclang.compiler.driver.compiler { COMPILE_GC_THRESHOLDS }
         self.thresholds = gc.get_threshold();
-        (young, middle, full) = self.thresholds;
-        gc.set_threshold(young, middle, max(full, SESSION_FULL_GC_EVERY));
+        if self.thresholds[0] < COMPILE_GC_THRESHOLDS[0] {
+            gc.set_threshold(*COMPILE_GC_THRESHOLDS);
+        }
         return True;
     }
 
