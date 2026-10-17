@@ -3611,7 +3611,7 @@ graph import compiler.driver {
     compile_options --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._opaque_field_if_unlowerable {
         env_na_debug as _er_dbg
     }
-    compile_options --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._register_imported_struct_types {
+    compile_options --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._native_imports {
         env_na_debug,
         env_na_debug as _ti_dbg
     }
@@ -4993,7 +4993,7 @@ graph import compiler.frontend {
     codeinfo --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._register_entry_globals {
         native_def_symbol
     }
-    codeinfo --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._register_imported_struct_types {
+    codeinfo --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._native_imports {
         is_bundled_native_module,
         native_unit_compile_active as _typed_nuc,
         resolve_native_module
@@ -9411,7 +9411,7 @@ graph import compiler.placement {
     placement_facts --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._dep_is_native_unit {
         native_unit
     }
-    placement_facts --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._register_imported_struct_types {
+    placement_facts --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._native_imports {
         native_unit as _typed_native_unit
     }
     placement_facts --> compiler.driver.nativecache.NativeUnitRegistry.known_native_deps {
