@@ -2944,6 +2944,7 @@ graph import compiler.backends.native {
         rename_wasm_imports,
         wasm_assets,
         wasm_ld_args,
+        wasm_object_functions,
         write_allowed_imports
     }
     wasm_build --> cli.commands.native_build.native_build { app_declared_imports }
@@ -3033,6 +3034,7 @@ graph import compiler.backends.native {
         FACT_CODEC_TABLES,
         FACT_IMPORT_PATHS,
         FACT_OS,
+        FACT_PACKAGE_STORE,
         FACT_PRIMITIVE_METHODS,
         FACT_SEALED_RUNTIME,
         FACT_SEP,
@@ -3058,6 +3060,7 @@ graph import compiler.backends.native {
     }
     na_constants --> compiler.driver.native_iface.resolve_native_unit_ref {
         FACT_IMPORT_PATHS,
+        FACT_PACKAGE_STORE,
         FACT_SEP
     }
     na_ir_gen_pass --> compiler.driver.pipeline.codegen_passes { NaIRGenPass }
@@ -4561,7 +4564,11 @@ graph import compiler.driver {
         products_from_record,
         products_record
     }
-    unit_products --> compiler.frontend.kernel_host { UnitProducts, unit_products }
+    unit_products --> compiler.frontend.kernel_host {
+        UnitProducts,
+        native_products,
+        unit_products
+    }
     unit_products --> project.kernel_compile { UnitProducts }
     type unit_products --> project.kernel_snapshot { UnitProducts }
     wiring --> compiler.driver.jir.stored_wiring_digest {
@@ -12378,6 +12385,9 @@ graph import project {
         module_name_in
     }
     modresolver --> project.package_scope.package_root_of { find_jac_project_root }
+    package_scope --> compiler.backends.native.host_facts.host_native_fact {
+        store_root
+    }
     package_scope --> compiler.driver.jir._module_cache_root { in_store }
     package_scope --> compiler.driver.jir._module_projection { is_dependency_module }
     package_scope --> dist.seal.vendor_packages | packages.mounts { mounts_dir }

@@ -2424,6 +2424,7 @@ impl JacAutoLintPass._strip_wired_imports(nd: uni.Module) -> None {
         return;
     }
     consumer = spec.module_name(own_path);
+    in_annex = consumer is None;
     if consumer is None {
         head = active_host().base_file(own_path);
         consumer = spec.module_name(head) if head else None;
@@ -2435,6 +2436,7 @@ impl JacAutoLintPass._strip_wired_imports(nd: uni.Module) -> None {
     removed: set[int] = set();
     new_body: list[uni.UniNode] = [];
     changed = False;
+    past_imports = in_annex;
     for stmt in nd.body {
         if (
             not isinstance(stmt, uni.Import)
@@ -2443,6 +2445,16 @@ impl JacAutoLintPass._strip_wired_imports(nd: uni.Module) -> None {
                 or stmt.loc.mod_path.endswith((".impl.jac", ".test.jac"))
             )
         ) {
+            past_imports = past_imports or not isinstance(stmt, uni.Import);
+            new_body.append(stmt);
+            continue;
+        }
+        """An include is textual and its generated copy is hoisted to the head
+        of the module, so one written after a declaration (an annex's include
+        lands after the module's own body) would move ahead of names it now
+        follows. An annex merges after that body, so its includes always
+        stay. The wire still declares them.""";
+        if stmt.is_absorb and past_imports {
             new_body.append(stmt);
             continue;
         }
