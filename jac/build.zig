@@ -687,7 +687,7 @@ fn addLlvmShim(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.bu
         "executionengine.cpp", "initfini.cpp",      "linker.cpp",
         "memorymanager.cpp",   "module.cpp",        "newpassmanagers.cpp",
         "object_file.cpp",     "orcjit.cpp",        "targets.cpp",
-        "type.cpp",            "value.cpp",
+        "type.cpp",            "value.cpp",         "lld.cpp",
     };
     // -Wno-deprecated-declarations: the vendored llvmlite shim still calls a few
     // APIs LLVM 22 marks deprecated (e.g. LLVMGetGlobalContext); the warning to
@@ -759,6 +759,16 @@ fn placedShimCurrent(b: *std.Build, target: std.Build.ResolvedTarget) bool {
     const rel = b.fmt("{s}/{s}.artifact.json", .{ SHIM_PLACE_DIR, shimFileName(target) });
     const recorded = b.build_root.handle.readFileAlloc(b.graph.io, rel, b.allocator, .limited(4096)) catch return false;
     return std.mem.eql(u8, std.mem.trimEnd(u8, recorded, "\n"), std.mem.trimEnd(u8, shimRecord(b, target), "\n"));
+}
+
+/// The static archives the shim links: LLVM's components and LLD's drivers
+/// (native/lld.cpp runs `lld::lldMain` in-process, so jac links its native
+/// output without a system linker). LLDB ships in the same lib/ and is not
+/// an LLD archive.
+fn shimArchive(name: []const u8) bool {
+    if (!std.mem.endsWith(u8, name, ".a")) return false;
+    if (std.mem.startsWith(u8, name, "libLLVM")) return true;
+    return std.mem.startsWith(u8, name, "liblld") and !std.mem.startsWith(u8, name, "liblldb");
 }
 
 /// Linux link path for the LLVMPY_* shim. Which path a target takes is decided by
@@ -844,13 +854,13 @@ fn linuxShim(
     // descriptors) so the libc++ LLVM archives' newer-glibc refs resolve without
     // raising the floor above 2.17 (#7082). Harmless if unreferenced (weak, hidden).
     if (use_zig) cc.addFileArg(b.path("native/glibc_compat.cpp"));
-    // Link every LLVM static archive inside a group (their refs are circular); the
-    // linker drops what the shim never references.
+    // Link every LLVM and LLD static archive inside a group (their refs are
+    // circular); the linker drops what the shim never references.
     cc.addArg("-Wl,--start-group");
     var it = dir.iterate();
     while (it.next(io) catch @panic("jacllvm: lib iterate failed")) |entry| {
         if (entry.kind != .file) continue;
-        if (std.mem.startsWith(u8, entry.name, "libLLVM") and std.mem.endsWith(u8, entry.name, ".a")) {
+        if (shimArchive(entry.name)) {
             cc.addFileArg(.{ .cwd_relative = b.fmt("{s}/{s}", .{ libdir, entry.name }) });
         }
     }
@@ -929,11 +939,12 @@ fn macosShim(
     cc.addArg(b.fmt("-I{s}/include", .{llvm_dir}));
     // Shim sources passed directly (not as a .a) so ld64 keeps every LLVMPY_*.
     for (shim_srcs) |f| cc.addFileArg(b.path(b.fmt("native/{s}", .{f})));
-    // Link every LLVM static archive; ld64 drops what the shim never references.
+    // Link every LLVM and LLD static archive; ld64 drops what the shim never
+    // references.
     var it = dir.iterate();
     while (it.next(io) catch @panic("jacllvm: lib iterate failed")) |entry| {
         if (entry.kind != .file) continue;
-        if (std.mem.startsWith(u8, entry.name, "libLLVM") and std.mem.endsWith(u8, entry.name, ".a")) {
+        if (shimArchive(entry.name)) {
             cc.addFileArg(.{ .cwd_relative = b.fmt("{s}/{s}", .{ libdir, entry.name }) });
         }
     }

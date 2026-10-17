@@ -13,7 +13,12 @@ def build_native_product(base: Path, record: dict[str, any]) {
     compiler = shlex.split(os.environ.get('CC', 'clang'));
     command = compiler + ['-O2', '-fwrapv', '-fno-strict-aliasing', '-fno-builtin'];
     if record['kind'] == 'wasm' {
-        import from jaclang.compiler.backends.native.wasm_linker { WasmLinker }
+        import from jaclang.compiler.backends.native.wasm_artifact {
+            rename_wasm_imports,
+            wasm_ld_args,
+            wasm_object_functions,
+            write_allowed_imports
+        }
         import from jaclang.compiler.backends.native.wasm_host_abi {
             WASM_HOST_ABI,
             WASM_HOST_MODULE
@@ -25,14 +30,36 @@ def build_native_product(base: Path, record: dict[str, any]) {
             command.append('--sysroot=' + sysroot);
         }
         subprocess.run(command + ['-c', str(source), '-o', str(obj_path)], check=True);
-        linker = WasmLinker();
-        content = linker.link(
-            [obj_path.read_bytes()],
-            export_funcs=record['exports'],
-            host_abi=WASM_HOST_ABI,
-            host_module=WASM_HOST_MODULE,
-            app_imports=set(record['imports'])
+        wasm_ld = os.environ.get('WASM_LD', '');
+        if not wasm_ld {
+            wasm_ld = subprocess.run(
+                compiler + ['-print-prog-name=wasm-ld'],
+                check=True,
+                capture_output=True,
+                text=True
+            ).stdout.strip();
+        }
+        allow_path = output.with_suffix('.imports.txt');
+        write_allowed_imports(
+            str(allow_path), list(WASM_HOST_ABI) + list(record['imports'])
         );
+        wasm_path = output.with_suffix('.linked.wasm');
+        subprocess.run(
+            [wasm_ld]
+                + wasm_ld_args(
+                    str(wasm_path),
+                    [str(obj_path)],
+                    list(record['exports'])
+                        or wasm_object_functions(obj_path.read_bytes()),
+                    str(allow_path)
+                ),
+            check=True
+        );
+        content = rename_wasm_imports(
+            wasm_path.read_bytes(), set(WASM_HOST_ABI), WASM_HOST_MODULE
+        );
+        wasm_path.unlink();
+        allow_path.unlink();
         import from jaclang.compiler.backends.native.wasm_artifact { wasm_assets }
         for (name, data) in wasm_assets(output.stem, content).items() {
             (output.parent / name).write_bytes(data);
