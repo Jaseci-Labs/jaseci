@@ -13009,7 +13009,7 @@ graph import runtime {
     runtime --> project.config.JacConfig.app_for_target { JacRuntime }
     runtime --> project.plugin_config { JacRuntime }
     runtime --> runtime.archetype.EdgeAnchor.detach { JacRuntime }
-    runtime --> runtime.interop_bridge._pyb_import_module { JacModule }
+
     runtime --> runtime.interop_bridge.ensure_py_funcs_loaded { JacModule }
     runtime --> runtime.archetype.NodeAnchor.all_edges { JacRuntimeInterface }
     runtime --> runtime.archetype.Root.__getattr__ { JacRuntime }
