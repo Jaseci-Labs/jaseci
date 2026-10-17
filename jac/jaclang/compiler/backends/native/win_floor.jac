@@ -55,7 +55,7 @@ def win_import_dll(name: str, declared: (str | None), crt: str = "") -> str {
     program named for it, if it named one; `crt` is the C runtime the link
     asked for, the UCRT if it asked for none.""";
     import os;
-    import from jaclang.compiler.backends.native.win_floor_ir { WIN_FLOOR_KERNEL32 }
+
     if declared {
         base = os.path.basename(declared.replace("\\", "/"));
         if base.lower().endswith(".dll") and base.lower() not in WIN_CRT_LIBRARIES {
@@ -159,6 +159,6 @@ def win_floor_ir -> str {
     from the floor as `__ucrt_<name>` (WIN_UCRT_PREFIX), and a library named
     in WIN_CRT_LIBRARIES is the CRT, not a DLL of that name.
     """;
-    import from jaclang.compiler.backends.native.win_floor_ir { WIN_FLOOR_IR }
+
     return "; --- Windows floor ---\n" + _win_jmp_ir() + WIN_FLOOR_IR;
 }

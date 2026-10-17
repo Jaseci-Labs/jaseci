@@ -158,8 +158,6 @@ import from engine.src.builtins.temporal {
     temporal_constrain_ymd,
     temporal_str_copy,
     temporal_resolve_zone_offset_seconds,
-    temporal_zoned_from_epoch_ns_string,
-    temporal_zoned_from_epoch_ns_string_on,
     temporal_format_time_to_string,
     temporal_read_zdt_tostring,
     _temporal_round_wallclock,

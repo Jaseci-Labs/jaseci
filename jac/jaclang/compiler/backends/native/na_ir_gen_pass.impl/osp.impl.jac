@@ -1,13 +1,8 @@
-import from jaclang.compiler.passes.osp_analysis { OSP_ANY_TAGS }
 impl NaIRGenPass._register_osp_kernel_module -> None {
     if not self._osp_active() {
         return;
     }
-    import from jaclang.compiler.frontend.codeinfo {
-        OSP_GRAPH_REL,
-        OSP_KERNEL_REL,
-        kernel_unit_path
-    }
+
     kernel_mod = self._load_native_unit_module(kernel_unit_path(OSP_KERNEL_REL));
     graph_mod = self._load_native_unit_module(kernel_unit_path(OSP_GRAPH_REL));
     if kernel_mod is None or graph_mod is None {
@@ -33,7 +28,6 @@ impl NaIRGenPass._register_osp_kernel_module -> None {
 }
 
 impl NaIRGenPass._osp_kernel_init_fns -> list[ir.Function] {
-    import from jaclang.compiler.frontend.codeinfo { native_glob_init_name }
     out: list[ir.Function] = [];
     _init_units: list[uni.Module | None] = [self._osp_kernel_mod, self._osp_graph_mod];
     for unit in _init_units {
@@ -60,7 +54,7 @@ impl NaIRGenPass._compute_osp_model(archetypes: list[uni.Archetype]) -> None {
             self.arch_ast_map[_n] = arch;
         }
     }
-    import from jaclang.compiler.passes.osp_analysis { get_osp_model }
+
     _model = get_osp_model(
         self.module,
         archetypes=(list(archetypes) + list(self.arch_ast_map.values())),
@@ -853,6 +847,8 @@ impl NaIRGenPass._codegen_connect(nd: uni.BinaryExpr) -> (ir.Value | None) {
     edge_obj: (ir.Value | None) = None;
     edge_arch: (str | None) = None;
     edge_fresh = True;
+    built_with: set[str] = set();
+    early: (dict[int, ir.Value] | None) = None;
     if co.conn_type is not None {
         edge_name = self._osp_static_edge_name(co.conn_type);
         edge_arch = edge_name or self._osp_edge_class_name(co.conn_type);
@@ -864,10 +860,29 @@ impl NaIRGenPass._codegen_connect(nd: uni.BinaryExpr) -> (ir.Value | None) {
                 return None;
             }
             edge_tag = self._osp_edge_tag(co.conn_type, nd, descriptor);
+            ctor_kws = self._osp_edge_ctor_assigns(co, edge_name)
+                if edge_name is not None
+                else [];
             factory = self._osp_edge_factory(edge_name)
                 if edge_name is not None
                 else self.func_symtab.get("osp_new_edge");
-            if factory is not None {
+            if ctor_kws and edge_name is not None {
+                if held is None {
+                    early = self._osp_connect_assign_early(co, edge_arch);
+                    if early is None {
+                        return None;
+                    }
+                }
+                edge_obj = self._osp_edge_build_with(
+                    co, edge_name, ctor_kws, held, early, nd
+                );
+                if edge_obj is None {
+                    return None;
+                }
+                for kw in ctor_kws {
+                    built_with.add(self._get_name(kw.key) or "");
+                }
+            } elif factory is not None {
                 args: list[ir.Value] = [];
                 if descriptor is not None {
                     args.append(
@@ -913,7 +928,7 @@ impl NaIRGenPass._codegen_connect(nd: uni.BinaryExpr) -> (ir.Value | None) {
     if not self._osp_pins_refs() {
         self._osp_make_immortal(edge_obj);
     }
-    if not self._osp_connect_assign(co, edge_obj, edge_arch, held) {
+    if not self._osp_connect_assign(co, edge_obj, edge_arch, held, built_with, early) {
         return None;
     }
     _argtys = osp_conn_fn.function_type.args;
@@ -1007,14 +1022,19 @@ impl NaIRGenPass._osp_connect_assign(
     co: uni.ConnectOp,
     edge_obj: ir.Value,
     edge_arch: (str | None),
-    held: (list[tuple[ir.Value, ir.Value]] | None) = None
+    held: (list[tuple[ir.Value, ir.Value]] | None) = None,
+    built_with: (set[str] | None) = None,
+    early: (dict[int, ir.Value] | None) = None
 ) -> bool {
     """Apply a typed connect's attribute assignments to its new edge.
 
     `a +>:E:f=v, g=w:+> b` builds `E` with no arguments and then sets each
     named field, as the Python runtime does, so a field left out keeps its
     default. The values are evaluated left to right after the edge exists and
-    before it joins the graph. A connect that builds one edge per node of a
+    before it joins the graph. When `E`'s constructor requires some of the
+    names, every value was evaluated left to right before the edge was built
+    (`early`), the edge was built with the required ones (`built_with`), and
+    only the others are set here. A connect that builds one edge per node of a
     list evaluates them once, before the first edge (`held`), and each edge
     takes its own reference.
     """;
@@ -1029,6 +1049,9 @@ impl NaIRGenPass._osp_connect_assign(
         );
     }
     for (position, kw) in enumerate(assign.assigns) {
+        if built_with and kw.key is not None and self._get_name(kw.key) in built_with {
+            continue;
+        }
         field_name = self._osp_connect_assign_field(kw, edge_arch);
         if field_name is None or edge_arch is None {
             return False;
@@ -1043,7 +1066,9 @@ impl NaIRGenPass._osp_connect_assign(
             );
             continue;
         }
-        value = self._osp_connect_assign_value(kw);
+        value = early.pop(id(kw.value))
+            if early is not None and id(kw.value) in early
+            else self._osp_connect_assign_value(kw);
         if value is None {
             return False;
         }
@@ -1052,6 +1077,26 @@ impl NaIRGenPass._osp_connect_assign(
         );
     }
     return True;
+}
+
+impl NaIRGenPass._osp_connect_assign_early(
+    co: uni.ConnectOp, edge_arch: (str | None)
+) -> (dict[int, ir.Value] | None) {
+    early: dict[int, ir.Value] = {};
+    if co.conn_assign is None {
+        return early;
+    }
+    for kw in co.conn_assign.assigns {
+        if self._osp_connect_assign_field(kw, edge_arch) is None {
+            return None;
+        }
+        value = self._osp_connect_assign_value(kw, keep=True);
+        if value is None {
+            return None;
+        }
+        early[id(kw.value)] = value;
+    }
+    return early;
 }
 
 impl NaIRGenPass._osp_connect_assign_hold(
@@ -1078,7 +1123,7 @@ impl NaIRGenPass._osp_connect_assign_hold(
             );
             return None;
         }
-        value = self._osp_connect_assign_value(kw);
+        value = self._osp_connect_assign_value(kw, keep=True);
         if value is None {
             return None;
         }
@@ -1112,7 +1157,15 @@ impl NaIRGenPass._osp_connect_assign_field(
     return field_name;
 }
 
-impl NaIRGenPass._osp_connect_assign_value(kw: uni.KWPair) -> (ir.Value | None) {
+impl NaIRGenPass._osp_connect_assign_value(
+    kw: uni.KWPair, keep: bool = False
+) -> (ir.Value | None) {
+    """Lower one attribute value of a typed connect.
+
+    With `keep`, the value is held before a later value is evaluated, so a
+    borrowed one (`f=h.text`) takes its own reference: a later value such as
+    `g=reset(h)` could otherwise free it before it is stored.
+    """;
     _errs = len(self.ctx.errors_had);
     value = self._codegen_expr(kw.value);
     if value is None and len(self.ctx.errors_had) == _errs {
@@ -1122,6 +1175,13 @@ impl NaIRGenPass._osp_connect_assign_value(kw: uni.KWPair) -> (ir.Value | None) 
             kind="expression",
             name=type(kw.value).__name__
         );
+    }
+    if value is not None
+        and keep
+        and not self._is_owned(value)
+        and not self._nogc_headerless() {
+        self._emit_take_ref(value, op="conn_assign_keep");
+        value = self._mark_reference_owned(value);
     }
     return value;
 }
@@ -1596,8 +1656,7 @@ impl NaIRGenPass._emit_jid(nd: uni.FuncCall) -> (ir.Value | None) {
     first request and never reuses it, matching the id shape of the other
     backends. Like the client runtime, only nodes and edges have a jid; any
     other argument is refused here rather than failing at run time.""";
-    import from jaclang.compiler.passes.layout_pass { get_layout_registry }
-    import from jaclang.compiler.types.types { ClassType, UnionType }
+
     params: list[uni.Expr | uni.KWPair] = list(nd.params or []);
     arg = params[0] if len(params) == 1 else None;
     arch = self._struct_name_of(arg) if isinstance(arg, uni.Expr) else None;

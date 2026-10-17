@@ -332,8 +332,8 @@ test "version-condition comparisons match the operator table they replaced" {
     import sys;
     import ast as py_ast;
     import from jaclang.compiler.frontend.unitree { IfStmt, PythonModuleAst, Source }
-    import from jaclang.compiler.driver.pipeline_runner { run_utility }
-    import from jaclang.compiler.driver.pipeline_types { UtilityProduct }
+    import from jaclang.compiler.driver.pipeline { run_utility }
+    import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
     import from jaclang.compiler.frontend.helpers { evaluate_version_condition }
     code = "import sys\n"
     "if sys.version_info >= (3, 11):\n    a = 1\n"
@@ -346,7 +346,7 @@ test "version-condition comparisons match the operator table they replaced" {
     "if sys.platform == 'linux':\n    h = 1\n";
     prog = JacProgram();
     mod = run_utility(
-        UtilityProduct.PYTHON_AST,
+        CompilationProduct.PYTHON_AST,
         PythonModuleAst(
             py_ast.parse(code), orig_src=Source(code, "test_version_ops.py")
         ),

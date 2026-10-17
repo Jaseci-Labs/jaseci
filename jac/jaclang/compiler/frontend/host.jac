@@ -14,13 +14,6 @@ import type from jaclang.compiler.driver.compile_options { CompileOptions }
 import type from jaclang.compiler.driver.module_analysis { ModuleAnalysis }
 import type from jaclang.compiler.frontend.kernel_analyze { CompileReport }
 
-obj NativeVerdict {
-    has demoted: bool = False,
-        code: str = "",
-        detail: str = "",
-        deps: list[list[str]] = [];
-}
-
 obj CheckSettings {
     has suppress: list[str] = [],
         suppress_categories: list[str] = [],
@@ -34,7 +27,6 @@ obj CheckSettings {
 
 obj ProjectDefaults {
     has default_codespace: str,
-        native_closure_cap: int,
         native_require: list[str],
         native_target: str,
         native_debug: bool,
@@ -71,7 +63,6 @@ obj LintSettings {
 obj ProjectFacts {
     has project_root: str,
         check: CheckSettings,
-        arch_closed: list[str] = [],
         client_framework: str = "react",
         package_name: str = "",
         package_exports: list[str] = [],
@@ -82,6 +73,10 @@ obj HostServices {
     @contextmanager
     def session -> Iterator[None] {
         yield ;
+    }
+
+    def in_kernel -> bool {
+        return False;
     }
 
     def project_defaults -> (ProjectDefaults | None) {
@@ -219,16 +214,27 @@ obj HostServices {
         return False;
     }
 
+    def wiring_records(digest: str) -> str {
+        return "";
+    }
+
+    def keep_wiring_records(digest: str, text: str) {}
     def native_parse(
         source_str: str,
         file_path: str,
         program: (JacProgram | None),
         annexes: list[WovenAnnex],
-        early_context: str = ""
+        early_context: str = "",
+        load_kernel: bool = True
     ) -> (tuple[Module, bool] | None) {
         return None;
     }
 
+    def woven_module(path: str, program: (JacProgram | None)) -> (Module | None) {
+        return None;
+    }
+
+    def place_wired_imports(module: Module) {}
     def drop_python_lane_products(path: str, program: JacProgram) {}
     def compiler_for(program: JacProgram) -> JacCompiler {
         raise RuntimeError("no compiler host is installed");
@@ -242,6 +248,14 @@ obj HostServices {
         program: JacProgram, path: str, options: CompileOptions
     ) -> (NativeIface | None) {
         return None;
+    }
+
+    def native_dep_discovery_open(program: JacProgram) -> bool {
+        return False;
+    }
+
+    def native_deps_deferred(program: JacProgram) -> bool {
+        return False;
     }
 
     def held_native_iface(
@@ -293,18 +307,8 @@ obj HostServices {
         return False;
     }
 
-    def native_verdict(
-        path: str, program: (JacProgram | None) = None
-    ) -> (NativeVerdict | None) {
-        return None;
-    }
-
     def record_native_coverage(
         path: str, outcome: str, code: str = "", detail: str = ""
-    ) {}
-
-    def record_native_verdict(
-        program: JacProgram, path: str, code: str, detail: str
     ) {}
 
     def native_analyze(
@@ -409,6 +413,10 @@ obj HostServices {
 }
 
 obj NeutralHost(HostServices) {}
+
+glob HOST_FACT_SEP: str = "\x1e",
+     HOST_FACT_STDLIB_MODULES: str = "stdlib_modules",
+     HOST_FACT_GIT_IGNORED: str = "git_ignored";
 
 glob _HOSTS: list[HostServices] = [],
      _KERNEL_HOST_MODE: list[str] = [],

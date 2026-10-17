@@ -1,8 +1,6 @@
 import logging;
 import from contextvars { Token }
 import from types { TracebackType }
-import from jaclang.runtime.context { ExecutionContext }
-import from jaclang.runtime.runtime { JacRuntime }
 
 glob logger: logging.Logger = logging.getLogger('jaclang.serve');
 

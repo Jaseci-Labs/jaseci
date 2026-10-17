@@ -34,6 +34,10 @@ Anchors live in an `anchors` table with `jsonb` payloads; the same database also
 
 `PgWireConnection.run` and `PgStore.rows` accept named SQL parameters such as `:name`. Only executable placeholders are bound: ordinary strings, quoted identifiers, dollar-quoted strings, `E'...'` escape strings, and SQL comments retain their text. Repeated names share one positional parameter, and PostgreSQL `::` casts remain unchanged.
 
+### Array NULL parameters
+
+When using `PgWireConnection.run` directly, `None` inside an array parameter represents a SQL `NULL` element. For example, binding `[1, None, 3]` to `:values::int[]` preserves the missing middle value. Strings such as `"None"`, `"NULL"`, and the empty string remain text values in a `text[]` parameter.
+
 !!! info "Attachment, disconnection, and deletion"
     Reachability from persistent graph state promotes transient nodes and edges into storage. It is not a continuous garbage-collection rule for stored records: removing an edge does not automatically delete a previously persisted node. Use explicit deletion when the record should be destroyed. Ordinary local values and transient graphs do not become durable merely because their types are declared in Jac.
 

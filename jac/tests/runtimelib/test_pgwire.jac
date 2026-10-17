@@ -136,6 +136,15 @@ test "array literal escapes quotes and backslashes" {
 }
 
 
+test "array null elements stay distinct from strings" {
+    assert _array_literal([None, 'None', 'NULL', 'null', ''])
+        == '{NULL,"None","NULL","null",""}';
+    assert _array_literal((1, None, 3)) == '{"1",NULL,"3"}';
+    assert _array_literal({None}) == '{NULL}';
+    assert _array_literal([]) == '{}';
+}
+
+
 test "error fields parse into the sqlstate dict shape" {
     payload = b'SERROR\x00C40001\x00Mdeadlock\x00\x00';
     fields = _parse_error_fields(payload);
@@ -237,6 +246,28 @@ test "named params preserve SQL literals and bind counts against Postgres" {
                 assert conn.run(sql, **params) == expected;
             }
             assert conn.run('SELECT 42::int') == [(42, )];
+        } finally {
+            conn.close();
+        }
+    }
+}
+
+
+test "array parameters preserve SQL null elements" {
+    with TemporaryDirectory() as td {
+        conn = _live_conn(td);
+        try {
+            assert conn.run(
+                "SELECT array_to_json(:v::text[])::text",
+                v=[None, 'None', 'NULL', 'null', '']
+            )
+                == [('[null,"None","NULL","null",""]', )];
+            assert conn.run("SELECT array_to_json(:v::int[])::text", v=(1, None, 3))
+                == [('[1,null,3]', )];
+            assert conn.run(
+                "SELECT array_to_json(:v::bool[])::text", v=[True, None, False]
+            )
+                == [('[true,null,false]', )];
         } finally {
             conn.close();
         }

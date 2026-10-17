@@ -1,5 +1,4 @@
 impl names -> list[str] {
-    import from jaclang.jac0core.artifact_registry { ARTIFACTS }
     return list(ARTIFACTS);
 }
 
@@ -9,7 +8,7 @@ impl artifact_named(name: str) -> Artifact {
         return found;
     }
     import importlib;
-    import from jaclang.jac0core.artifact_registry { ARTIFACTS }
+
     (base, _, variant) = name.partition("@");
     target = ARTIFACTS.get(base);
     if target is None {
@@ -30,7 +29,7 @@ impl resolve(name: str) -> Resolution {
     if known is not None {
         return known;
     }
-    import from jaclang.jac0core.artifact_registry { resolution_in_flight }
+
     if resolution_in_flight() {
         return Resolution(name=name, reason="still loading", quiet=True, deferred=True);
     }
@@ -71,7 +70,6 @@ impl forget(name: str = "") -> None {
 }
 
 impl building_now -> frozenset[str] {
-    import from jaclang.jac0core.artifact_registry { building as marked }
     return marked();
 }
 
@@ -80,7 +78,6 @@ impl building(names: list[str]) -> _BuildingSpan {
 }
 
 impl _BuildingSpan.__enter__ -> _BuildingSpan {
-    import from jaclang.jac0core.artifact_registry { begin }
     self.added = begin(self.added);
     forget();
     return self;
@@ -89,7 +86,6 @@ impl _BuildingSpan.__enter__ -> _BuildingSpan {
 impl _BuildingSpan.__exit__(
     _exc_type: object, _exc_value: object, _traceback: object
 ) -> bool {
-    import from jaclang.jac0core.artifact_registry { end }
     end(self.added);
     forget();
     return False;
@@ -122,7 +118,7 @@ impl build_order(requested: list[str]) -> list[str] {
 
 impl publish(stage: str, destination: str, companions: tuple[str, ...] = ()) -> None {
     import from pathlib { Path }
-    import from jaclang.jac0core.cache_paths { FileLock, atomic_write }
+
     payloads = [(destination, Path(stage).read_bytes(), 0o755)];
     for suffix in companions {
         payloads.append(
@@ -171,6 +167,7 @@ impl build(
     exact: bool = False,
     strict: bool = False
 ) -> list[str] {
+    import subprocess;
     built: list[str] = [];
     for name in build_order(requested) {
         artifact = artifact_named(name);
@@ -195,8 +192,17 @@ impl build(
             continue;
         }
         log(f"building {name}");
-        with building([name]) {
-            artifact.build(log, force, exact);
+        try {
+            with building([name]) {
+                artifact.build(log, force, exact);
+            }
+        } except subprocess.CalledProcessError as e {
+            command = " ".join(str(part) for part in e.cmd)
+                if isinstance(e.cmd, (list, tuple))
+                else str(e.cmd);
+            raise ArtifactUnavailable(
+                f"{name}: `{command}` failed (exit status {e.returncode}); see its output above"
+            ) from None;
         }
         forget(name);
         after = artifact.built();

@@ -666,8 +666,10 @@ test "context isolation native excluded from python" {
     ir = prog.compile(str(os.path.join(FIXTURES, "mixed_contexts.jac")));
     # Python source should NOT contain native_add
     py_src = generated_python(ir.gen);
-    assert "native_add" not in py_src;
-    # Python source should contain server_hello
+    assert "return a + b" not in py_src , "the native body must not be in the Python output";
+    assert "get_function_address" in py_src , (
+        "a Python importer reaches native_add through its native call stub"
+    );
     assert "server_hello" in py_src;
 }
 

@@ -1,20 +1,12 @@
 import ctypes;
 import os;
 import sys;
-import from jaclang.artifacts.model {
-    Artifact,
-    ArtifactKind,
-    Probe,
-    ReleasePolicy,
-    Source
-}
 
 def running_jacpython -> bool {
     return hasattr(ctypes.pythonapi, "_PyJac_CompilerRequired");
 }
 
 def _repo_root -> str {
-    import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
     return os.path.dirname(jaclang_pkg_root());
 }
 
@@ -43,7 +35,6 @@ obj JacPythonArtifact(Artifact) {
         hosts: list[str] = ["linux", "darwin"];
 
     override def probe_sealed -> (Probe | None) {
-        import from jaclang.jac0core { sealed }
         if sealed._jaclang_image() is None {
             return None;
         }
@@ -57,7 +48,6 @@ obj JacPythonArtifact(Artifact) {
     }
 
     override def probe_kit -> Probe {
-        import from jaclang.artifacts.kit { kit_image }
         if kit_image() is None {
             return Probe.missing("this process runs on no kit");
         }

@@ -2,13 +2,6 @@ import hashlib;
 import json;
 import os;
 import sys;
-import from jaclang.artifacts.model {
-    Artifact,
-    ArtifactKind,
-    Probe,
-    ReleasePolicy,
-    Source
-}
 
 glob TOOLCHAIN_INPUTS: tuple[str, ...] = (
          "build.zig",
@@ -16,7 +9,9 @@ glob TOOLCHAIN_INPUTS: tuple[str, ...] = (
          "bootstrap/pins.json"
      ),
      NATIVE_SOURCE_SUFFIXES: tuple[str, ...] = (".cpp", ".h", ".hpp"),
-     RECORD_SUFFIX: str = ".artifact.json";
+     RECORD_SUFFIX: str = ".artifact.json",
+     LLVM_PINS: str = "bootstrap/pins.json",
+     LLVM_CACHE_DIR: str = ".llvm-build";
 
 def shim_name -> str {
     if os.name == "posix" {
@@ -29,8 +24,33 @@ def placed_shim_path -> str {
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), shim_name());
 }
 
+def llvm_host -> str {
+    import platform;
+    system = {"linux": "linux", "darwin": "macos"}.get(sys.platform, sys.platform);
+    machine = platform.machine().lower();
+    machine = {"amd64": "x86_64", "arm64": "aarch64"}.get(machine, machine);
+    return f"{system}-{machine}";
+}
+
+def pinned_llvm_blocker(repo_root: str) -> str {
+    pins = os.path.join(repo_root, *LLVM_PINS.split("/"));
+    try {
+        with open(pins, encoding="utf-8") as f {
+            slices = json.load(f)["llvm"]["slices"];
+        }
+    } except (OSError, ValueError, KeyError, TypeError) {
+        return f"this tree has no LLVM pin ({LLVM_PINS})";
+    }
+    host = llvm_host();
+    if host in slices {
+        return "";
+    }
+    return f"{LLVM_PINS} pins no LLVM release for this host ({host}); pinned: {', '.join(
+        sorted(slices)
+    )}";
+}
+
 def _repo_root -> str {
-    import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
     return os.path.dirname(jaclang_pkg_root());
 }
 
@@ -71,7 +91,6 @@ def shim_inputs_digest(repo_root: str) -> str {
 }
 
 def write_shim_record(shim_path: str, repo_root: str) {
-    import from jaclang.jac0core.cache_paths { atomic_write }
     atomic_write(
         shim_path + RECORD_SUFFIX,
         json.dumps({"inputs": shim_inputs_digest(repo_root)}).encode("utf-8")
@@ -118,7 +137,6 @@ obj ShimArtifact(Artifact) {
         floor: str = "Python placement for native-default code";
 
     override def probe_sealed -> (Probe | None) {
-        import from jaclang.jac0core { sealed }
         if sealed._jaclang_image() is None {
             return None;
         }
@@ -133,7 +151,6 @@ obj ShimArtifact(Artifact) {
     }
 
     override def probe_kit -> Probe {
-        import from jaclang.artifacts.kit { kit_image, kit_path }
         if kit_image() is None {
             return Probe.missing("this process runs on no kit");
         }
@@ -151,7 +168,10 @@ obj ShimArtifact(Artifact) {
 
     override def build_blocker -> str {
         import shutil;
-        return "" if shutil.which("zig") else "zig is not on PATH";
+        if not shutil.which("zig") {
+            return "zig is not on PATH";
+        }
+        return pinned_llvm_blocker(_repo_root());
     }
 
     override def build(log: Callable[[str], None], force: bool, exact: bool) {
@@ -161,6 +181,10 @@ obj ShimArtifact(Artifact) {
             os.remove(record);
         }
         log(
+            f"  zig build fetch-llvm (the pinned LLVM into {LLVM_CACHE_DIR}/, about 84 MB once)"
+        );
+        subprocess.run(["zig", "build", "fetch-llvm"], cwd=_repo_root(), check=True);
+        log(
             "  zig build jacllvm (links the pinned LLVM; places the shim and its record)"
         );
         subprocess.run(["zig", "build", "jacllvm"], cwd=_repo_root(), check=True);
@@ -168,7 +192,6 @@ obj ShimArtifact(Artifact) {
 }
 
 def shim_path -> str {
-    import from jaclang.artifacts.router { require }
     found = require("llvm-shim").found;
     assert found is not None;
     return found.path;

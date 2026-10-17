@@ -1,15 +1,9 @@
-import jaclang.compiler.backends.native.llvm.ir as ir;
-
 def struct_layouts(module: ir.Module) -> dict[str, tuple[list[int], int]] {
     """Read identified struct offsets and sizes from LLVM's target ABI. LLVM
     is the host's: the probe module and each struct's member count go to it,
     and the offsets and sizes come back.""";
     import json;
-    import from jaclang.compiler.frontend.host { active_host }
-    import from jaclang.compiler.backends.native.na_constants {
-        FACT_SEP,
-        FACT_STRUCT_LAYOUTS
-    }
+
     probe = ir.Module(name="layout", context=module.context);
     probe.data_layout = module.data_layout;
     counts: dict[str, int] = {};
@@ -266,7 +260,6 @@ def classify_foreign_fn(
     triple: str,
     force: bool = False
 ) -> (dict[str, any] | None) {
-    import from jaclang.compiler.backends.native.foreign { foreign_struct_layout }
     has_struct = ret_tname is not None and ret_tname in structs;
     for (_pn, _tn) in params {
         if _tn is not None and _tn in structs {

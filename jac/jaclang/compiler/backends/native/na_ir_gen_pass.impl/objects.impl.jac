@@ -1,6 +1,3 @@
-import from jaclang.compiler.c_interop { foreign_read_copies, is_pinned_type }
-import from jaclang.compiler.expr_keys { type_tag_borrows }
-
 def _is_bar_expr(nd: uni.UniNode) -> bool {
     if not isinstance(nd, uni.BinaryExpr) {
         return False;
@@ -18,17 +15,14 @@ impl NaIRGenPass._devirt_closed_world(arch_name: str) -> bool {
 }
 
 impl NaIRGenPass._arch_key(arch: uni.Archetype) -> str {
-    import from jaclang.compiler.passes.layout_pass { archetype_native_name }
     return archetype_native_name(arch);
 }
 
 impl NaIRGenPass._arch_ref_key(nd: (uni.UniNode | None)) -> (str | None) {
-    import from jaclang.compiler.passes.layout_pass { referenced_native_name }
     return referenced_native_name(nd);
 }
 
 impl NaIRGenPass._arch_display(arch_name: str) -> str {
-    import from jaclang.compiler.frontend.codeinfo { native_arch_display }
     return native_arch_display(arch_name);
 }
 
@@ -51,7 +45,6 @@ impl NaIRGenPass._native_archetypes(module: uni.Module) -> list[uni.Archetype] {
         }
     }
 
-    import from jaclang.compiler.passes.layout_pass { get_layout_registry }
     layout_reg = get_layout_registry(self.module, self.prog);
     out: list[uni.Archetype] = [];
     for a in result.values() {
@@ -92,7 +85,6 @@ impl NaIRGenPass._register_archetypes(module: uni.Module) -> None {
 
     self._compute_osp_model(archetypes);
 
-    import from jaclang.compiler.passes.layout_pass { get_layout_registry }
     layout_reg = get_layout_registry(self.module, self.prog);
     for arch in archetypes {
         arch_name = self._arch_key(arch);
@@ -172,7 +164,6 @@ impl NaIRGenPass._register_archetypes(module: uni.Module) -> None {
         }
     }
 
-    import from jaclang.compiler.passes.layout_pass { get_layout_registry as _no_glr }
     _no_reg = _no_glr(self.module, self.prog);
     for (base_name, layout) in self.vtable_layouts.items() {
         if not self._devirt_closed_world(base_name) {
@@ -323,7 +314,7 @@ impl NaIRGenPass._predemote_capability_constructors -> None {
     partition up front makes the refusal independent of which archetype the
     backend reaches first.
     """;
-    if not self._capability_demotions {
+    if self._legality is None or not self._legality.units {
         return;
     }
     _slots = self._constructor_slots();
@@ -336,7 +327,7 @@ impl NaIRGenPass._predemote_capability_constructors -> None {
         if _ability is None {
             continue;
         }
-        _viols = self._capability_demotions.get(id(_ability));
+        _viols = self._static_refusals(_ability);
         if _viols is None {
             continue;
         }
@@ -344,8 +335,8 @@ impl NaIRGenPass._predemote_capability_constructors -> None {
         if _func is None {
             continue;
         }
-        self._claimed_capability_demotions.add(id(_ability));
-        self._predemote_capability_unit(
+        self._claimed_units.add(id(_ability));
+        self._stub_refused_unit(
             _full,
             _func,
             _viols,
@@ -413,8 +404,6 @@ impl NaIRGenPass._demoted_init_of(type_name: str) -> (str | None) {
 impl NaIRGenPass._visit_nonprimary_ancestor_methods(
     arch: uni.Archetype, declare: bool
 ) -> None {
-    import from jaclang.compiler.passes.layout_pass { get_layout_registry }
-    import from jaclang.compiler.symbol_utils { collect_method_names }
     layout_reg = get_layout_registry(self.module, self.prog);
     arch_name = self._arch_key(arch);
     mro = self._mro_of(arch_name);
@@ -479,10 +468,7 @@ impl NaIRGenPass._codegen_archetype(nd: uni.Archetype, imported: bool = False) -
     if struct_type is None {
         return;
     }
-    import from jaclang.compiler.passes.layout_pass {
-        EXC_MESSAGE_FIELD,
-        get_layout_registry
-    }
+
     _owner_mod = nd.find_parent_of_type(uni.Module) or self.module;
     layout = get_layout_registry(_owner_mod, self.prog).get_layout(arch_name);
     if layout is None {
@@ -670,7 +656,7 @@ impl NaIRGenPass._codegen_archetype(nd: uni.Archetype, imported: bool = False) -
         for f in layout.fields
         if f.name != EXC_MESSAGE_FIELD
     ];
-    import from jaclang.compiler.field_semantics { positional_field_names }
+
     constructor_fields: list[uni.HasVar] = [];
     for field in layout.fields {
         declaration = field.decl_node;
@@ -880,7 +866,6 @@ impl NaIRGenPass._register_static_fields(
 impl NaIRGenPass._register_class_consts(
     nd: uni.Archetype, arch_name: str, block: uni.ModuleCode
 ) -> None {
-    import from jaclang.compiler.passes.layout_pass { class_form_enum_scalar }
     if nd.name is None or class_form_enum_scalar(nd.name.type) is not None {
         return;
     }
@@ -1135,11 +1120,11 @@ impl NaIRGenPass._codegen_method(
         return;
     }
 
-    _pre_viols = self._capability_demotions.get(id(method));
+    _pre_viols = self._static_refusals(method);
     if _pre_viols is not None {
-        self._claimed_capability_demotions.add(id(method));
+        self._claimed_units.add(id(method));
         _pre_virtual = method_name in self.vtable_method_indices.get(arch_name, {});
-        if self._predemote_capability_unit(
+        if self._stub_refused_unit(
             full_name, func, _pre_viols, keep_func=_pre_virtual
         ) {
             return;
@@ -1250,21 +1235,8 @@ impl NaIRGenPass._codegen_method(
                 func, method.loc.first_line if method.loc else 1
             );
         } except Exception as _codegen_exc {
-            if self._na_debug_on() {
-                import sys;
-                sys.stderr.write(
-                    f"NA_DEBUG raise {full_name}: "
-                    f"{type(_codegen_exc).__name__}: {_codegen_exc}\n"
-                );
-            }
-            self.emit(
-                E5092,
-                node_override=method,
-                kind="method (native emitter error in)",
-                name=full_name,
-                help_text=f"The native backend raised {type(_codegen_exc).__name__} "
-                f"while lowering this method; it falls back to its Python "
-                f"implementation. Original error: {_codegen_exc}"
+            self._internal_error(
+                method, "method", full_name, _codegen_exc, _local_mark
             );
         }
     } finally {
@@ -1283,17 +1255,97 @@ impl NaIRGenPass._demote_method_if_unlowerable(
     keep_func: bool = False,
     stub_body: bool = True
 ) -> bool {
+    """Settle one unit after its lowering ran. Diagnostics the unit recorded
+    since `local_mark` are a refusal the static legality rules did not predict:
+    they move out of the pending list into the legality table as late refusals
+    and the unit is placed on its Python-only implementation. Where the module
+    requires native, or the unit belongs to an element that must be native (an
+    element pin, a native-only construct), they stay behind as errors as
+    well. A unit of a native element in a mixed module has no Python
+    implementation to fall back on: its diagnostics stay pending and the
+    module settles on the server as a whole.""";
     if len(self.ctx.errors_had) <= local_mark {
         return False;
     }
-    _own = list(self.ctx.errors_had[local_mark:]);
 
-    _na_debug = self._na_debug_on();
+    _own = list(self.ctx.errors_had[local_mark:]);
+    _refusals = [refusal_from_alert(_diag) for _diag in _own];
+    if self._legality is not None {
+        self._legality.late[full_name] = _refusals;
+    }
+    required = self.prog.options.native_required_for(self.module.loc.mod_path)
+        or self._owner_required(full_name);
+    if not required and not self._lacks_python_body(full_name) {
+        del self.ctx.errors_had[local_mark:];
+    }
+    self._place_unit_python(
+        full_name, func, _refusals, keep_func=keep_func, stub_body=stub_body
+    );
+    return True;
+}
+
+impl NaIRGenPass._owner_element(full_name: str) -> (uni.UniNode | None) {
+    owner_name = full_name.split(".")[0];
+    for elem in self.module.body {
+        if isinstance(elem, uni.Archetype) and self._arch_key(elem) == owner_name {
+            return elem;
+        }
+        if element_display_name(elem) == owner_name {
+            return elem;
+        }
+    }
+    return None;
+}
+
+impl NaIRGenPass._owner_required(full_name: str) -> bool {
+    """Whether the unit belongs to a top-level element of an inferred module
+    that must be native: an element pin or a native-only construct.""";
+    if self.module.gen.placement_mode != "inferred" {
+        return False;
+    }
+    owner = self._owner_element(full_name);
+    if owner is None {
+        return False;
+    }
+
+    need = element_requirements(self.module, self.prog).get(id(owner));
+    return need is not None and need[0] == "native";
+}
+
+impl NaIRGenPass._lacks_python_body(full_name: str) -> bool {
+    """Whether the unit belongs to a native element of an inferred module that
+    placement left part native and part Python. The Python backend emits no
+    body for such an element, only a stub that calls its native symbol, so
+    the unit has no Python implementation to fall back on.""";
+    if self.module.gen.placement_mode != "inferred"
+        or self.module.decided_codespace == "native" {
+        return False;
+    }
+    owner = self._owner_element(full_name);
+    return isinstance(owner, uni.ContextAwareNode)
+        and owner.code_context == CodeContext.NATIVE;
+}
+
+impl NaIRGenPass._place_unit_python(
+    full_name: str,
+    func: ir.Function,
+    refusals: list[NativeRefusal],
+    keep_func: bool = False,
+    stub_body: bool = True
+) -> None {
+    _first = refusals[0];
+    if self._na_debug_on() {
+        import sys;
+        sys.stderr.write(f"NA_DEBUG demote {full_name}\n");
+        for _refusal in refusals {
+            sys.stderr.write(f"NA_DEBUG   {_refusal.full()}\n");
+        }
+    }
     if self._seam_warnings_on()
         and not self.prog.options.native_required_for(self.module.loc.mod_path) {
         import from jaclang.compiler.frontend.host { active_host }
         import from jaclang.compiler.frontend.codeinfo { native_display_text }
-        _why = "; ".join(str(e) for e in _own);
+        _why = "; ".join(_r.located() for _r in refusals);
         active_host().note(
             native_display_text(
                 f"native seam -- demoting {full_name} to Python-only "
@@ -1302,36 +1354,23 @@ impl NaIRGenPass._demote_method_if_unlowerable(
             style="warning"
         );
     }
-    if _na_debug {
-        import sys;
-        sys.stderr.write(f"NA_DEBUG demote {full_name}\n");
-        for _diag in _own {
-            sys.stderr.write(f"NA_DEBUG   {_diag.pretty_print()}\n");
-        }
-    }
     if stub_body {
         try {
             import from jaclang.compiler.driver.na_coverage { na_coverage_seam }
-            _first_code = _own[0].code.code if _own[0].code is not None else "";
-            _code_tag = f"[{_first_code}] " if _first_code else "";
+            _code_tag = f"[{_first.code}] " if _first.code else "";
             na_coverage_seam(
                 self.module.loc.mod_path,
-                f"{full_name}: {_code_tag}" + str(_own[0]).split('\n')[0]
+                f"{full_name}: {_code_tag}" + _first.located(),
+                late=_first.late
             );
         } except Exception {}
-    }
-    if not self.prog.options.native_required_for(self.module.loc.mod_path) {
-        del self.ctx.errors_had[local_mark:];
-    }
-
-    if stub_body {
         self._record_lowering_issue(
             NativeLoweringIssue(
                 symbol=full_name,
                 kind=NativeLoweringKind.CALLABLE,
                 source=self.module.loc.mod_path,
-                code=_own[0].code.code if _own[0].code is not None else "",
-                detail=_own[0].pretty_print()
+                code=_first.code,
+                detail=_first.full()
             )
         );
         func.blocks.clear();
@@ -1357,14 +1396,13 @@ impl NaIRGenPass._demote_method_if_unlowerable(
             name=full_name,
             help_text=(
                 "This ability could not be lowered ("
-                + str(_own[0]).split("\n")[0]
+                + _first.headline()
                 + "). A walker runs its abilities through the native graph "
                 "engine, which has no caller to refuse, so the module cannot "
                 "stay native with it."
             )
         );
     }
-    return True;
 }
 
 impl NaIRGenPass._seam_warnings_on -> bool {
@@ -1372,7 +1410,7 @@ impl NaIRGenPass._seam_warnings_on -> bool {
     if self._na_debug_on() or bool(self.prog.options.native_debug) {
         return True;
     }
-    import from jaclang.compiler.frontend.host { active_host }
+
     defaults = active_host().project_defaults();
     return defaults.check.warn_native_seams if defaults is not None else True;
 }
@@ -1549,7 +1587,7 @@ impl NaIRGenPass._trigger_struct_names(method: uni.Ability) -> list[str] {
         tag = sig.arch_tag_info if isinstance(sig, uni.EventSignature) else None;
         return self._trigger_member_structs(tag);
     }
-    import from jaclang.compiler.passes.osp_analysis { OspAnalysis }
+
     return [
         nm
         for nm in OspAnalysis.native_slot_triggers(method)
@@ -1652,7 +1690,6 @@ impl NaIRGenPass._emit_field_access_refusal(
 impl NaIRGenPass._class_const_declarer(
     arch_name: str, field_name: str
 ) -> (str | None) {
-    import from jaclang.compiler.passes.layout_pass { get_layout_registry }
     _seen: list[str] = list(self._mro_of(arch_name));
     for _cls in get_layout_registry(self.module, self.prog).mro_order {
         if arch_name in self._mro_of(_cls) and _cls not in _seen {
@@ -1687,14 +1724,11 @@ impl NaIRGenPass._class_const_declarer(
 }
 
 impl NaIRGenPass._mro_of(arch_name: str) -> list[str] {
-    import from jaclang.compiler.passes.layout_pass { get_layout_registry }
     mro = get_layout_registry(self.module, self.prog).get_mro(arch_name);
     return mro or [arch_name];
 }
 
 impl NaIRGenPass._arch_layout(arch_name: str) -> (ArchetypeLayout | None) {
-    import from jaclang.compiler.passes.layout_pass { get_layout_registry }
-
     _owner = None;
     _arch_nd = self.arch_ast_map.get(arch_name);
     if _arch_nd is not None {
@@ -1799,12 +1833,10 @@ impl NaIRGenPass._codegen_event_method(arch_name: str, method: uni.Ability) -> N
     if func is None or not isinstance(sig, uni.EventSignature) {
         return;
     }
-    _pre_viols = self._capability_demotions.get(id(method));
+    _pre_viols = self._static_refusals(method);
     if _pre_viols is not None {
-        self._claimed_capability_demotions.add(id(method));
-        if self._predemote_capability_unit(
-            full_name, func, _pre_viols, keep_func=True
-        ) {
+        self._claimed_units.add(id(method));
+        if self._stub_refused_unit(full_name, func, _pre_viols, keep_func=True) {
             return;
         }
     }
@@ -1967,9 +1999,9 @@ impl NaIRGenPass._codegen_instantiation(
     nd: (uni.FuncCall | uni.Name),
     type_name_override: (str | None) = None,
     ctor_params: (list[uni.Expr | uni.KWPair] | None) = None,
-    ctor_values: (dict[str, ir.Value] | None) = None
+    ctor_values: (dict[str, ir.Value] | None) = None,
+    ctor_pre: (dict[int, ir.Value] | None) = None
 ) -> (ir.Value | None) {
-    import from jaclang.compiler.passes.layout_pass { EXC_MESSAGE_FIELD }
     _ctor_ref = nd.target if isinstance(nd, uni.FuncCall) else nd;
     type_name = type_name_override
         if type_name_override is not None
@@ -2237,7 +2269,7 @@ impl NaIRGenPass._codegen_instantiation(
     foreign_fields = self.struct_field_foreign.get(type_name, set());
 
     set_fields: set[str] = set();
-    _pre_args: dict[int, ir.Value] = {};
+    _pre_args: dict[int, ir.Value] = dict(ctor_pre) if ctor_pre is not None else {};
     if _msg_slot is not None and _pos_all {
         if not self._store_exc_message(
             obj_ptr, type_name, _pos_all, _pre_args, shared=not _msg_only
@@ -2674,7 +2706,7 @@ impl NaIRGenPass._unregistered_class_target(target: uni.UniNode) -> (str | None)
     if not isinstance(target, uni.Expr) {
         return None;
     }
-    import from jaclang.compiler.symbol_utils { resolve_expr_symbol }
+
     sym = resolve_expr_symbol(target);
     decl = sym.decl if sym is not None else None;
     if decl is None {
@@ -2755,7 +2787,7 @@ impl NaIRGenPass._codegen_method_call_inner(nd: uni.FuncCall) -> (ir.Value | Non
         self._refuse_unlowered_method_call(nd, None, None, _mc_mark);
         return None;
     }
-    import from jaclang.compiler.symbol_utils { imported_module_name }
+
     module_name = imported_module_name(trailer.target);
     target_name = module_name or self._get_name(trailer.target);
     if module_name is None and target_name != "super" {
@@ -3584,7 +3616,6 @@ impl NaIRGenPass._emit_obj_str(val: ir.Value) -> (ir.Value | None) {
 }
 
 impl NaIRGenPass._emit_subclass_str(val: ir.Value, type_name: str) -> ir.Value {
-    import from jaclang.compiler.passes.layout_pass { get_layout_registry }
     variants: list[tuple[ir.GlobalVariable, ir.Function]] = [];
     if self._arch_has_vtable(type_name) {
         registry = get_layout_registry(self.module, self.prog);
@@ -3938,7 +3969,6 @@ impl NaIRGenPass._emit_dispatched_field_ptr(
     parts: (list[str] | None) = None,
     missing_ok: bool = False
 ) -> (ir.Value | None) {
-    import from jaclang.compiler.passes.layout_pass { get_layout_registry as _df_glr }
     reg = _df_glr(self.module, self.prog);
     _base_lay = reg.get_layout(type_name);
     if _base_lay is None or not _base_lay.has_vtable {
@@ -4137,7 +4167,6 @@ impl NaIRGenPass._class_const_global(
 impl NaIRGenPass._class_const_variants(
     arch_name: str, field_name: str
 ) -> tuple[list[tuple[str, ir.GlobalVariable, ir.GlobalVariable]], bool] {
-    import from jaclang.compiler.passes.layout_pass { get_layout_registry }
     reg = get_layout_registry(self.module, self.prog);
     out: list[tuple[str, ir.GlobalVariable, ir.GlobalVariable]] = [];
     _whole = True;
@@ -4389,7 +4418,10 @@ impl NaIRGenPass._nogc_drop_replaced_field(
     if not isinstance(ftype, ir.PointerType) {
         return;
     }
-    _pname = getattr(ftype.pointee, "name", "") or "";
+    _pname = "";
+    if isinstance(ftype.pointee, ir.IdentifiedStructType) {
+        _pname = ftype.pointee.name;
+    }
     if _pname not in self.struct_types or _pname in self.clib_struct_names {
         return;
     }
@@ -5023,7 +5055,7 @@ impl NaIRGenPass._jc_reference_schema(
 ) -> (dict[str, any] | None) {
     """Combine semantic reference types with the backend's container ABI.""";
     args = semantic.private.type_args or [] if isinstance(semantic, ClassType) else [];
-    import from jaclang.compiler.passes.layout_pass { class_type_native_name }
+
     semantic_name = (class_type_native_name(semantic) or "")
         if isinstance(semantic, ClassType)
         else "";
@@ -5093,7 +5125,6 @@ impl NaIRGenPass._jc_reference_schema(
 }
 
 impl NaIRGenPass._build_jc_layout -> dict[str, any] {
-    import from jaclang.compiler.backends.native.abi { struct_layouts }
     layouts = struct_layouts(self.llvm_module);
     classes: dict[str, any] = {};
     _model = self.module.gen.native_osp_model;
@@ -5249,7 +5280,7 @@ impl NaIRGenPass._report_unreachable_overrides -> None {
     vtable dispatches through it and is never reported.
     """;
     import os;
-    import from jaclang.compiler.passes.layout_pass { get_layout_registry }
+
     if self.module is None or self.module.loc is None {
         return;
     }

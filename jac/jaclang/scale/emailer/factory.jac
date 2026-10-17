@@ -1,6 +1,5 @@
 import importlib;
 import logging;
-import from jaclang.scale.emailer.emailer { Emailer }
 
 glob _registry: dict[str, type] = {},
      logger = logging.getLogger(__name__);
@@ -87,6 +86,5 @@ def create(config: dict[str, any]) -> Emailer | None {
 }
 
 def configured -> Emailer | None {
-    import from jaclang.scale.config.config_loader { get_scale_config }
     return create(get_scale_config().get_emailer_config());
 }

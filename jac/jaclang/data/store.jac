@@ -5,9 +5,6 @@ import threading;
 import from enum { StrEnum }
 import from uuid { UUID }
 
-import from jaclang.data.pgwire { PgWireError }
-import from jaclang.runtime.exceptions { WriteConflict }
-
 glob logger = logging.getLogger(__name__),
      SCHEMA_VERSION = 1,
      SCHEMA_STAMP_KEY = 'schema_fingerprint',
@@ -148,6 +145,7 @@ obj PgStore(Store) {
         _isolation: (TxnIsolation | None) postinit,
         _known_types: set[str] postinit,
         _txn_types: set[str] postinit,
+        _txn_subtypes: dict[str, list[str]] postinit,
         _listeners: list[ChannelListener] postinit,
         _listen_thread: (any | None) postinit,
         _listen_stop: (any | None) postinit,

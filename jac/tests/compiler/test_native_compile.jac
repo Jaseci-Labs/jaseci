@@ -242,9 +242,9 @@ test "a module wired by the arch file compiles in the kernel" {
     with TemporaryDirectory() as td {
         base = Path(os.path.realpath(td));
         (base / 'jac.toml').write_text(CONFIG);
-        (base / 'arch.jac').write_text(
-            'impl import {\n    edge CoreInternal: core.* --> core.*;\n}\n\n'
-                + 'impl import core {\n    util --> core.svc { Spark }\n}\n'
+        (base / 'archwire.jac').write_text(
+            'graph import {\n    edge CoreInternal: core.* --> core.*;\n}\n\n'
+                + 'graph import core {\n    util --> core.svc { Spark }\n}\n'
         );
         (base / 'core').mkdir();
         (base / 'core' / 'util.jac').write_text(
@@ -261,7 +261,7 @@ test "a module wired by the arch file compiles in the kernel" {
         emitted = outcome.unit(entry_file);
         assert emitted is not None;
         assert_same_products(emitted, expected);
-        arch_file = str(base / 'arch.jac');
+        arch_file = str(base / 'archwire.jac');
         checked = compile_in_process(arch_file);
         assert checked.analysis.status == ANALYSIS_OK , checked.analysis.message;
         assert not checked.analysis.misses , checked.analysis.misses;
@@ -334,9 +334,10 @@ def write_application(base: Path) {
             + 'walker:pub Ping { can go with Root entry { report helper(1); } }\n'
     );
     (base / 'deep.jac').write_text('def:pub twice(x: int) -> int { return x * 2; }\n');
-    (base / 'arch.jac').write_text(
-        'impl import {\n    edge SideInternal: side.* --> side.*;\n}\n\n'
-            + 'impl import side {\n    tool --> side.user { Wrench }\n}\n'
+    (base / 'archwire.jac').write_text(
+        'graph import {\n    edge SideInternal: side.* --> side.*;\n'
+            + '    util --> main { helper }\n    include deep --> main;\n}\n\n'
+            + 'graph import side {\n    tool --> side.user { Wrench }\n}\n'
     );
     (base / 'side').mkdir();
     (base / 'side' / 'tool.jac').write_text(
@@ -346,8 +347,7 @@ def write_application(base: Path) {
         'def turn -> int {\n    return Wrench(size=1).size;\n}\n'
     );
     (base / 'main.jac').write_text(
-        'import from util { helper }\ninclude deep;\n'
-            + 'node Item { has label: str = ""; }\n'
+        'node Item { has label: str = ""; }\n'
             + 'def:pub go(n: int) -> int { return helper(n) + twice(n); }\n'
             + 'def quiet(n: int) -> int { return n; }\n'
             + 'with entry { print(go(3)); }\n'

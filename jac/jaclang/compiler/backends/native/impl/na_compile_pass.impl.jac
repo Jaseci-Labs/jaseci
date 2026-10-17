@@ -111,6 +111,7 @@ impl NativeCompilePass._run_impl(ir_in: uni.Module) -> uni.Module {
         return ir_in;
     }
     options = self.prog.options;
+    verifying = False;
     try {
         if options.native_required_for(module.loc.mod_path) {
             require_native_ir(str(module.gen.llvm_ir));
@@ -130,7 +131,9 @@ impl NativeCompilePass._run_impl(ir_in: uni.Module) -> uni.Module {
         } else {
             unit_ir = module.gen.llvm_ir;
             mod = llvm.parse_assembly(str(unit_ir), llvm.create_context());
+            verifying = True;
             mod.verify();
+            verifying = False;
             opt_level = 0 if native_debug else int(options.opt_level or 0);
             optimize_unit(mod, target_machine, opt_level);
             module.gen.native_bitcode = module_bitcode(mod);
@@ -201,9 +204,23 @@ impl NativeCompilePass._run_impl(ir_in: uni.Module) -> uni.Module {
             self.ctx.emit(
                 E5026, symbol=e.symbol, existing_module=e.first, new_module=e.second
             );
+        } elif verifying {
+            self.ctx.emit(
+                E5020,
+                error=str(e),
+                help_text="The native backend produced IR that does not verify. "
+                "This is a compiler bug -- please report it. Pin the module to "
+                "the server codespace under [placement.pins] in jac.toml to keep "
+                "working until it is fixed."
+            );
+            return ir_in;
         } else {
             self.ctx.emit(E5020, error=str(e));
         }
+        import from jaclang.compiler.passes.placement_pass { settle_native_module }
+        settle_native_module(
+            module, self.prog, self.ctx.errors_had, self.ctx.warnings_had
+        );
     }
     return ir_in;
 }
@@ -233,7 +250,7 @@ impl NativeCompilePass._emit_debug_products(
     module: uni.Module, mod: ModuleRef, target_machine: TargetMachine
 ) -> str {
     import os;
-    import from jaclang.compiler.driver.jir { get_native_debug_dir }
+
     mod_path = module.loc.mod_path if module.loc else "jac_native";
     stem = os.path.splitext(os.path.basename(mod_path))[0];
     ir_dir = str(get_native_debug_dir(mod_path));
@@ -310,7 +327,6 @@ impl native_linked_ir_text(module: uni.Module) -> str {
 
 
 impl require_native_ir(llvm_ir_text: str) -> None {
-    import from jaclang.compiler.backends.native.lowering { native_lowering_issues }
     issues = native_lowering_issues(llvm_ir_text);
     symbols = set(native_demoted_ir_symbols(llvm_ir_text));
     symbols.update(issue.symbol for issue in issues);
@@ -331,10 +347,7 @@ impl native_demoted_ir_symbols(llvm_ir_text: str) -> list[str] {
         r'|([A-Za-z0-9_.$\-]+\.__jac_demoted))\(',
         _ds_re.MULTILINE
     );
-    import from jaclang.compiler.backends.native.lowering {
-        NativeLoweringKind,
-        native_lowering_issues
-    }
+
     found: set[str] = {
         issue.symbol
         for issue in native_lowering_issues(llvm_ir_text)
