@@ -204,6 +204,7 @@ impl PgStore.postinit -> None {
     self._isolation = None;
     self._known_types = set();
     self._txn_types = set();
+    self._txn_serial = 0;
     self._txn_subtypes = {};
     self._listeners = [];
     self._listen_thread = None;
@@ -860,6 +861,7 @@ impl PgStore.begin(isolation: TxnIsolation = TxnIsolation.SERIALIZABLE) -> None 
         self._in_txn = True;
         self._isolation = isolation;
         self._txn_types = set();
+        self._txn_serial += 1;
         self._txn_subtypes = {};
         try {
             self._run("SET LOCAL lock_timeout = '10s'", {});
@@ -901,6 +903,16 @@ impl PgStore.rollback -> None {
 
 impl PgStore.in_txn -> bool {
     return self._in_txn;
+}
+
+
+impl Store.txn_serial -> int {
+    return -1;
+}
+
+
+impl PgStore.txn_serial -> int {
+    return self._txn_serial;
 }
 
 

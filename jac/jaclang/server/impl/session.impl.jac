@@ -434,6 +434,10 @@ impl Session.postinit -> None {
     self._snapshot_reads = set();
     self._foreign_refs = set();
     self._contended = set();
+    self._hop_writes = 0;
+    self._hop_cache = {};
+    self._hop_siblings = {};
+    self._hop_groups_token = None;
     self._queued = [];
     self._last_conflict = set();
     self._scan_clean = False;
@@ -682,6 +686,7 @@ impl Session.abort -> None {
 
 
 impl Session._forget_loaded -> None {
+    self._drop_hop_state();
     for (id, anchor) in list(self.__mem__.items()) {
         if not anchor.is_populated() or not anchor.persistent {
             continue;
@@ -1012,6 +1017,7 @@ impl Session._flush_locked(full: bool) -> None {
             break;
         }
     }
+    wrote = bool(unflushed or self._deleted);
     if unflushed {
         rows = [self._serialize(u.anchor, u.stored) for u in unflushed];
         try {
@@ -1048,6 +1054,9 @@ impl Session._flush_locked(full: bool) -> None {
         self._deleted.clear();
     }
     self._dirty.clear();
+    if wrote {
+        self._hop_writes += 1;
+    }
     if full {
         self._scan_clean = self._scan_safe;
     }
@@ -1402,6 +1411,88 @@ impl Session.close -> None {
     self._deleted.clear();
     self._rows.clear();
     self._lost = False;
+    self._drop_hop_state();
 
     sv_store_closed(self);
+}
+
+
+impl Session._hop_token -> (tuple[int, int] | None) {
+    store = self._store;
+    if store is None or not store.in_txn() {
+        return None;
+    }
+    if store.txn_isolation() is TxnIsolation.READ_COMMITTED {
+        return None;
+    }
+    serial = store.txn_serial();
+    if serial < 0 {
+        return None;
+    }
+    return (serial, self._hop_writes);
+}
+
+
+impl Session.batching -> bool {
+    return self._hop_token() is not None;
+}
+
+
+impl Session._drop_hop_state -> None {
+    self._hop_siblings = {};
+    self._hop_cache = {};
+    self._hop_groups_token = None;
+}
+
+
+impl Session.note_siblings(ids: list[UUID]) -> None {
+    if len(ids) < 2 {
+        return;
+    }
+    token = self._hop_token();
+    if token is None {
+        return;
+    }
+    if token != self._hop_groups_token {
+        self._hop_siblings = {};
+        self._hop_groups_token = token;
+    }
+    group = tuple(ids[:HOP_BATCH_LIMIT]);
+    for i in group {
+        self._hop_siblings[i] = group;
+    }
+}
+
+
+impl Session.hop_siblings(origin: UUID) -> tuple[UUID, ...] {
+    if self._hop_groups_token is None or self._hop_groups_token != self._hop_token() {
+        return ();
+    }
+    return self._hop_siblings.get(origin, ());
+}
+
+
+impl Session.hop_cached(key: any, origin: UUID) -> (list[tuple[any, any]] | None) {
+    held = self._hop_cache.get(key);
+    if held is None or held[0] != self._hop_token() {
+        return None;
+    }
+    return held[1].get(origin);
+}
+
+
+impl Session.hop_store(key: any, by_origin: dict[UUID, list[tuple[any, any]]]) -> None {
+    token = self._hop_token();
+    if token is None {
+        return;
+    }
+    stale = [
+        k
+        for (k, held) in self._hop_cache.items()
+        if held[0] != token
+    ];
+    for k in stale {
+        del self._hop_cache[k];
+    }
+    self._hop_cache[key] = (token, by_origin);
 }
