@@ -38,7 +38,6 @@ from jaclang.runtime.archetype import (
     light_in,
     light_out,
     new_connect_edge,
-    own_edges,
 )
 
 __all__ = [
@@ -111,8 +110,8 @@ def connect0(
                 continue
             e, built_with = new_connect_edge(ct, conn_assign)
             e.__jac__ = EdgeAnchor(archetype=e, source=src, target=tgt, is_undirected=False)
-            own_edges(src).append(e.__jac__)
-            own_edges(tgt).append(e.__jac__)
+            src.edges.append(e.__jac__)
+            tgt.edges.append(e.__jac__)
             if is_light_edge_type(cls):
                 src.mixed = True
                 tgt.mixed = True

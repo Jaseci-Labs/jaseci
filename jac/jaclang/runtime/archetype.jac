@@ -25,7 +25,6 @@ glob _NO_TRIGGER = object(),
      _subclass_hook_lock = Lock();
 
 glob _light_edge_types: dict[type, bool] = {},
-     NO_EDGES: list[EdgeAnchor] = [],
      _edge_ctor_args: dict[type, tuple[str, ...]] = {},
      _edge_subtypes: dict[type, tuple[type, ...]] = {},
      _tracked_classes: dict[type, type] = {};
@@ -216,7 +215,7 @@ class NodeArchetype(Archetype) {
 
     @cached_property
     def __jac__(self: NodeArchetype) -> NodeAnchor {
-        return NodeAnchor(archetype=self, edges=NO_EDGES);
+        return NodeAnchor(archetype=self, edges=[]);
     }
 }
 
@@ -527,15 +526,6 @@ def _drop_back(d: (dict[type, any] | None), cls: type, src: NodeArchetype) -> bo
         }
     }
     return False;
-}
-
-def own_edges(anchor: NodeAnchor) -> list[EdgeAnchor] {
-    """An anchor starts on the shared empty edge list and takes a list of its
-    own when its first heavy edge connects; most nodes never get one.""";
-    if anchor.edges is NO_EDGES {
-        anchor.edges = [];
-    }
-    return anchor.edges;
 }
 
 def light_connect(src: NodeAnchor, cls: type, tgt: NodeAnchor) {

@@ -12574,7 +12574,6 @@ graph import runtime {
         light_edge_view,
         light_hop,
         light_hop_answers,
-        own_edges,
         same_anchor
     }
     archetype --> runtime.runtime.JacLLM.by_operator { EdgeArchetype, NodeArchetype }
