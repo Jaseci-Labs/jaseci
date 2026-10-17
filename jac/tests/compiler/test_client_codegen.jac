@@ -394,3 +394,13 @@ def sum_gen() -> int {
     assert "yield (index * 3)" in js or "yield index * 3" in js , f"yield must survive lowering: {js[0:600]}";
     assert "for (const v of _jac.builtin.iter(gen_vals(3)))" in js , f"generator calls must stay iterable in for-of: {js[0:600]}";
 }
+
+test "a conditional expression tests an and/or of collections with Python truthiness" {
+    code = """def zones_of(x: dict[str, int], d: dict[str, list[int]]) -> list[int] {
+    return d["zones"] if x and d["zones"] else [];
+}
+""";
+    mod = compile_inline(code, client=True);
+    js = mod.gen.js;
+    assert "_jac.builtin.bool(_jac.poly.and_(x, " in js , f"an empty dict operand must test false, as in an if statement: {js[0:600]}";
+}
