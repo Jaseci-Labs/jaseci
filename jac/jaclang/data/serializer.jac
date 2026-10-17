@@ -4,7 +4,8 @@ import sys;
 import threading;
 import from time { monotonic }
 
-import from datetime { date, datetime, time }
+import from datetime { date, datetime, time, timedelta }
+import from decimal { Decimal }
 import from enum { Enum }
 import from hashlib { sha256 }
 import from json { dumps as _json_dumps }
@@ -22,7 +23,25 @@ glob logger = logging.getLogger(__name__),
      _IMPORT_RETRY_CEILING_SECONDS: float = 900.0,
      _IMPORT_RETRY_MAX_DOUBLINGS: int = 8,
      _PLAIN_WIRE_SCALARS: frozenset = frozenset({str, int, float, bool}),
-     _SIZED_FIELD_CACHE: dict[type, any] = {};
+     _SIZED_FIELD_CACHE: dict[type, any] = {},
+     _FROZEN_SCALARS: tuple[type, ...] = (
+         bool,
+         int,
+         float,
+         complex,
+         str,
+         bytes,
+         Decimal,
+         UUID,
+         date,
+         time,
+         timedelta
+     ),
+     _FROZEN_EXACT: frozenset = frozenset(
+         {NoneType, bool, int, float, str, bytes, UUID, date, datetime}
+     ),
+     _TYPE_SHAPES: dict[int, tuple[any, any, tuple[any, ...]]] = {},
+     _TYPE_SHAPES_LIMIT: int = 4096;
 
 obj ImportFailure {
     has attempts: int = 0,
@@ -121,4 +140,5 @@ glob _register_hook: object = Archetype.install_subclass_hook(
 
 
 def frozen_value(value: any) -> bool;
+def _type_shape(target_type: object) -> tuple[object, tuple[object, ...]];
 def frozen_fields(anchor: Anchor) -> bool;

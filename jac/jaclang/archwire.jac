@@ -2363,6 +2363,9 @@ graph import compiler {
         type_tag_borrows
     }
     kernel_target --> compiler.native_scope.binds_bare_arch_names { target_package_rel }
+    native_bindings --> compiler.passes.endpoint_effect_pass.callable_key {
+        is_owning_scope
+    }
     native_bindings --> compiler.passes.layout_pass.record_interface_twins {
         interface_type,
         typeshed_stub_path
@@ -2866,6 +2869,9 @@ graph import compiler.backends.native {
         NativeLoweringKind
     }
     lowering --> compiler.tests.test_prim_equivalence { native_lowering_issues }
+    lowering --> compiler.backends.native.kernel_stage0.unit_issue_details {
+        native_lowering_issues
+    }
     na_compile_pass --> cli.commands.analysis.explain { native_linked_ir_text }
     na_compile_pass --> compiler.backends.native.entry_points.validate_native_application {
         native_demoted_ir_symbols,
@@ -2969,13 +2975,14 @@ graph import compiler.backends.native {
     kernel_stage0 --> compiler.backends.native.kernel_resolve.build_kernel {
         link_kernel
     }
+    kernel_stage0 --> dist.precompile_bytecode.seal_native { refuse_missing_entries }
     link_plan --> compiler.backends.native.kernel_stage0.link_kernel {
         ArtifactKind,
         link_artifact
     }
     link_plan --> dist.precompile_bytecode.prebuild_native_closure { build_link_plan }
     type link_plan --> compiler.backends.native.kernel_resolve { LinkPlan }
-    type link_plan --> compiler.backends.native.kernel_stage0 { LinkResult }
+    type link_plan --> compiler.backends.native.kernel_stage0 { LinkPlan, LinkResult }
     na_compile_pass --> compiler.driver.nativecache.NativeBuildSession.lower {
         settle_unit_ir
     }
@@ -3003,6 +3010,7 @@ graph import compiler.backends.native {
     }
     floors --> dist.payload.vendor { WASM_FLOOR_MANIFEST }
     host_facts --> project.compiler_host.ProjectHost.native_fact { host_native_fact }
+    kernel_resolve --> project.kernel_check.analysis_kernel { KernelLoadError }
     kernel_resolve --> project.kernel_check.kernel_check { refuse_unloadable }
     kernel_resolve --> project.kernel_compile.kernel_route { refuse_unloadable }
     link_glue --> compiler.backends.native.link_plan { SHARED_MAIN_SYMBOL }
@@ -3075,6 +3083,7 @@ graph import compiler.backends.native.llvm {
     binding as llvm --> compiler.backends.native.link_glue.bind_shared_callbacks;
     binding as llvm --> compiler.backends.native.link_glue.init_object_codegen;
     binding as llvm --> compiler.backends.native.link_plan;
+    binding as llvm --> compiler.backends.native.kernel_stage0.unit_issue_details;
     type binding --> compiler.backends.native.link_plan {
         ExecutionEngine,
         ModuleRef,
@@ -4550,12 +4559,9 @@ graph import compiler.driver {
         products_from_record,
         products_record
     }
-    unit_products --> compiler.frontend.kernel_host {
-        UnitProducts,
-        unit_interface,
-        unit_products
-    }
+    unit_products --> compiler.frontend.kernel_host { UnitProducts, unit_products }
     unit_products --> project.kernel_compile { UnitProducts }
+    type unit_products --> project.kernel_snapshot { UnitProducts }
     wiring --> compiler.driver.jir.stored_wiring_digest {
         arch_file_for,
         import_prefix_for,
@@ -7904,6 +7910,10 @@ graph import compiler.frontend {
         KERNEL_UNIT_REL,
         jaclang_pkg_root
     }
+    codeinfo --> compiler.backends.native.kernel_stage0.missing_kernel_entries {
+        native_def_symbol
+    }
+    codeinfo --> compiler.backends.native.kernel_stage0.link_kernel { jaclang_pkg_root }
     codeinfo --> compiler.backends.native.link_plan { JAC_ENTRY_SYMBOL }
     codeinfo --> compiler.backends.native.link_plan.LinkPlan.plan_digest | compiler.native_scope.package_host_edge {
         native_unit_identity
@@ -11056,7 +11066,7 @@ graph import compiler.types.stubcat {
     reader --> compiler.passes.endpoint_effect_pass.EndpointEffectPass._served_effects {
         CatModule
     }
-    writer --> compiler.driver.unit_products.unit_interface {
+    writer --> project.kernel_snapshot.KernelSnapshot.record_interface {
         IncoherentInterface,
         build_module_iface,
         module_iface_shape
