@@ -3376,16 +3376,6 @@ graph import compiler.driver {
     bccache --> server.hmr { discover_base_file }
     bccache --> testing.test_runner._suite_source { discover_base_file }
     boundary_classify --> compiler.backends.es.esast_gen_pass.EsastGenPass._is_client_native_import {
-    boundary_classify --> compiler.placement.placement._element_reqs { classify_import }
-    boundary_classify --> compiler.placement.placement.module_anchor_reasons {
-        is_service_app_entry,
-        ability_delegates_to_model,
-        classify_import
-    }
-    boundary_classify --> compiler.placement.placement.native_blocker_in {
-        ability_delegates_to_model
-    }
-
         import_binds_client_native
     }
     boundary_classify --> compiler.backends.es.esast_gen_pass.EsastGenPass._is_service_bridge_import {
@@ -3487,6 +3477,9 @@ graph import compiler.driver {
         ability_delegates_to_model,
         classify_import,
         is_service_app_entry
+    }
+    boundary_classify --> compiler.placement.placement.native_blocker_in {
+        ability_delegates_to_model
     }
     boundary_classify --> compiler.placement.placement_facts.discover_spaces {
         hub_module_for_path
