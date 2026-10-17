@@ -382,7 +382,7 @@ impl compile_query(
         tail += f" OFFSET {int(q.offset)}";
     }
     out.sql = (
-        f"SELECT n{n}.id, e{n}.id "
+        f"SELECT n{n}.id, e{n}.id, f0.id "
         f"FROM unnest(CAST(:origin AS uuid[])) WITH ORDINALITY AS f0(id, ord) "
         f"LEFT JOIN anchors s1 ON s1.id = f0.id "
         + ' '.join(joins)

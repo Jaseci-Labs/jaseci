@@ -19,6 +19,8 @@ import from jaclang.data.pgembed { PgRuntime }
 import from jaclang.data.pgload { connect as pg_connect }
 import from jaclang.server.session { shared_pg_data_dir, project_db_name }
 import from jaclang.data.pgwire {
+    PgWireError,
+    STATEMENT_CACHE_SIZE,
     _array_literal,
     _named_to_positional,
     _parse_error_fields,
@@ -242,6 +244,189 @@ test "a notification that shares a read with ReadyForQuery reaches the listener"
         } finally {
             listener.close();
             sender.close();
+        }
+    }
+}
+
+
+def _prepared(conn: any, marker: str) -> int {
+    return conn.run(
+        "SELECT count(*)::int FROM pg_prepared_statements WHERE statement LIKE :m",
+        m=f"%{marker}%"
+    )[0][0];
+}
+
+
+test "a repeated statement is parsed once per connection and reused by name" {
+    with TemporaryDirectory() as td {
+        conn = _live_conn(td);
+        try {
+            for i in range(5) {
+                assert conn.run("SELECT :x::int + 41 AS reuse_marker", x=i)
+                    == [(i + 41, )];
+            }
+            assert _prepared(conn, "reuse_marker") == 1 , (
+                "five runs of one statement did not share one prepared statement"
+            );
+        } finally {
+            conn.close();
+        }
+    }
+}
+
+
+test "a statement whose first execution fails stays prepared and reusable" {
+    with TemporaryDirectory() as td {
+        conn = _live_conn(td);
+        try {
+            conn.run("CREATE TEMP TABLE uniq_marker (k int PRIMARY KEY)");
+            conn.run("INSERT INTO uniq_marker SELECT 1");
+            failed = False;
+            try {
+                conn.run("INSERT INTO uniq_marker VALUES (:k)", k=1);
+            } except PgWireError {
+                failed = True;
+            }
+            assert failed , "a duplicate key was accepted";
+            conn.run("INSERT INTO uniq_marker VALUES (:k)", k=2);
+            assert conn.run("SELECT count(*)::int FROM uniq_marker") == [(2, )];
+            assert _prepared(conn, "VALUES ($1)") == 1 , (
+                "the statement whose first execution failed was prepared again"
+            );
+        } finally {
+            conn.close();
+        }
+    }
+}
+
+
+test "a partial reset keeps the session's statements" {
+    with TemporaryDirectory() as td {
+        conn = _live_conn(td);
+        try {
+            assert conn.run("SELECT :x::int AS partial_marker", x=1) == [(1, )];
+            conn.run("DISCARD TEMP");
+            assert conn.run("SELECT :x::int AS partial_marker", x=2) == [(2, )];
+            assert _prepared(conn, "partial_marker") == 1 , (
+                "a reset that keeps prepared statements made the client prepare it again"
+            );
+        } finally {
+            conn.close();
+        }
+    }
+}
+
+
+test "deallocating one statement forgets only that one" {
+    with TemporaryDirectory() as td {
+        conn = _live_conn(td);
+        try {
+            conn.run("SELECT :x::int AS keep_marker", x=1);
+            conn.run("SELECT :x::int AS drop_marker", x=1);
+            dropped = conn.run(
+                "SELECT name FROM pg_prepared_statements WHERE statement LIKE :m",
+                m="%drop_marker%"
+            )[0][0];
+            conn.run(
+                f'DEALLOCATE "{dropped}"; -- one statement, quoted, with a comment'
+            );
+            assert conn.run("SELECT :x::int AS drop_marker", x=2) == [(2, )];
+            assert conn.run("SELECT :x::int AS keep_marker", x=2) == [(2, )];
+            assert _prepared(conn, "keep_marker") == 1;
+            assert _prepared(conn, "drop_marker") == 1;
+        } finally {
+            conn.close();
+        }
+    }
+}
+
+
+test "a cached statement whose result columns change recovers by the next call" {
+    with TemporaryDirectory() as td {
+        conn = _live_conn(td);
+        try {
+            conn.run("CREATE TEMP TABLE shape_marker (a int)");
+            conn.run("INSERT INTO shape_marker VALUES (1)");
+            assert conn.run("SELECT * FROM shape_marker") == [(1, )];
+            conn.run("ALTER TABLE shape_marker ADD COLUMN b int DEFAULT 7");
+            try {
+                conn.run("SELECT * FROM shape_marker");
+            } except PgWireError as e {
+                assert "0A000" in str(e) , str(e);
+            }
+            assert conn.run("SELECT * FROM shape_marker") == [(1, 7)];
+        } finally {
+            conn.close();
+        }
+    }
+}
+
+
+test "statements past the cache size are closed on the server" {
+    with TemporaryDirectory() as td {
+        conn = _live_conn(td);
+        try {
+            for i in range(STATEMENT_CACHE_SIZE + 20) {
+                conn.run(f"SELECT {i} AS evict_marker_{i}");
+            }
+            held = _prepared(conn, "evict_marker_");
+            assert held <= STATEMENT_CACHE_SIZE , (
+                f"{held} statements held for a cache of {STATEMENT_CACHE_SIZE}"
+            );
+        } finally {
+            conn.close();
+        }
+    }
+}
+
+
+test "statements keep working after the session is reset for the pool" {
+    with TemporaryDirectory() as td {
+        conn = _live_conn(td);
+        try {
+            assert conn.run("SELECT :x::int AS discard_marker", x=1) == [(1, )];
+            conn.run("DISCARD ALL");
+            assert conn.run("SELECT :x::int AS discard_marker", x=2) == [(2, )];
+            assert _prepared(conn, "discard_marker") == 1;
+        } finally {
+            conn.close();
+        }
+    }
+}
+
+
+test "a statement dropped behind the client's back is prepared again outside a transaction" {
+    with TemporaryDirectory() as td {
+        conn = _live_conn(td);
+        try {
+            assert conn.run("SELECT :x::int AS dropped_marker", x=1) == [(1, )];
+            conn.run("DO $$ BEGIN EXECUTE 'DEALLOCATE ALL'; END $$");
+            assert conn.run("SELECT :x::int AS dropped_marker", x=3) == [(3, )];
+        } finally {
+            conn.close();
+        }
+    }
+}
+
+
+test "an unquoted deallocation with a trailing semicolon forgets that statement" {
+    with TemporaryDirectory() as td {
+        conn = _live_conn(td);
+        try {
+            conn.run("SELECT :x::int AS bare_marker", x=1);
+            name = conn.run(
+                "SELECT name FROM pg_prepared_statements WHERE statement LIKE :m",
+                m="%bare_marker%"
+            )[0][0];
+            conn.run(f"DEALLOCATE PREPARE {name.upper()};");
+            conn.run("BEGIN");
+            try {
+                assert conn.run("SELECT :x::int AS bare_marker", x=2) == [(2, )];
+            } finally {
+                conn.run("ROLLBACK");
+            }
+        } finally {
+            conn.close();
         }
     }
 }

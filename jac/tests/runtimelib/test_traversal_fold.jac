@@ -35,6 +35,12 @@ edge FNote: FBoard --> FItem {
     has note: str = "";
 }
 
+node FSub {
+    has rank: int = 0;
+}
+
+edge FSubOf: FItem --> FSub {}
+
 
 def _as_any(v: any) -> any {
     return v;
@@ -247,6 +253,195 @@ test "a reference is evaluated where it appears, not where it is read" {
         } finally {
             JacRuntime.exec_ctx = old;
             ctx.close();
+        }
+    }
+}
+
+
+def _seed_nested(items: int, subs: int) -> FBoard {
+    b = FBoard(name="nested");
+    root ++> b;
+    for i in range(items) {
+        it = FItem(rank=i);
+        b +>:FHas():+> it;
+        for j in range(subs) {
+            it +>:FSubOf():+> FSub(rank=i * 100 + j);
+        }
+    }
+    return b;
+}
+
+
+def _anchor_scans(ctx: ExecutionContext) -> int {
+    store = ctx.mem.store;
+    assert store is not None , "these tests need the Postgres store";
+    rows = store.rows(
+        "SELECT coalesce(idx_scan, 0) + coalesce(seq_scan, 0) "
+            + "FROM pg_stat_xact_user_tables WHERE relname = 'anchors'",
+        {}
+    );
+    return int(rows[0][0]) if rows else 0;
+}
+
+
+test "hops from nodes one query returned run once for all of them" {
+    with TemporaryDirectory() as td {
+        old = JacRuntime.exec_ctx;
+        ctx = _ctx(td);
+        JacRuntime.exec_ctx = ctx;
+        try {
+            _seed_nested(12, 3);
+            ctx.mem.commit();
+        } finally {
+            JacRuntime.exec_ctx = old;
+            ctx.close();
+        }
+        ctx2 = _ctx(td);
+        JacRuntime.exec_ctx = ctx2;
+        try {
+            board = [root-->[?:FBoard]][0];
+            items = list([board->:FHas:->[?:FItem]]);
+            assert len(items) == 12;
+            first = sorted([_as_any(x).rank for x in [items[0]->:FSubOf:->[?:FSub]]]);
+            before = _anchor_scans(ctx2);
+            got: dict[int, list[int]] = {};
+            for it in items {
+                got[_as_any(it).rank] = sorted(
+                    [_as_any(x).rank for x in [it->:FSubOf:->[?:FSub]]]
+                );
+            }
+            scans = _anchor_scans(ctx2) - before;
+            for (rank, ranks) in got.items() {
+                assert ranks == [rank * 100, rank * 100 + 1, rank * 100 + 2] , (
+                    rank,
+                    ranks
+                );
+            }
+            assert first == got[_as_any(items[0]).rank];
+            assert scans < 4 , (
+                f"hops from 12 nodes one query returned scanned anchors {scans} times "
+                f"after the first; they run as one batched hop"
+            );
+        } finally {
+            JacRuntime.exec_ctx = old;
+            ctx2.close();
+        }
+    }
+}
+
+
+test "a write between batched hops reaches the next hop" {
+    with TemporaryDirectory() as td {
+        old = JacRuntime.exec_ctx;
+        ctx = _ctx(td);
+        JacRuntime.exec_ctx = ctx;
+        try {
+            _seed_nested(6, 2);
+            ctx.mem.commit();
+        } finally {
+            JacRuntime.exec_ctx = old;
+            ctx.close();
+        }
+        ctx2 = _ctx(td);
+        JacRuntime.exec_ctx = ctx2;
+        try {
+            board = [root-->[?:FBoard]][0];
+            items = list([board->:FHas:->[?:FItem]]);
+            [items[0]->:FSubOf:->[?:FSub]];
+            target = items[4];
+            target +>:FSubOf():+> FSub(rank=999);
+            ranks = sorted([_as_any(x).rank for x in [target->:FSubOf:->[?:FSub]]]);
+            assert 999 in ranks , f"a sub-node connected before the hop was missed: {ranks}";
+            assert len(ranks) == 3 , ranks;
+        } finally {
+            JacRuntime.exec_ctx = old;
+            ctx2.close();
+        }
+    }
+}
+
+
+test "a bounded hop from sibling nodes keeps each node's own bound" {
+    with TemporaryDirectory() as td {
+        old = JacRuntime.exec_ctx;
+        ctx = _ctx(td);
+        JacRuntime.exec_ctx = ctx;
+        try {
+            _seed_nested(5, 4);
+            ctx.mem.commit();
+        } finally {
+            JacRuntime.exec_ctx = old;
+            ctx.close();
+        }
+        ctx2 = _ctx(td);
+        JacRuntime.exec_ctx = ctx2;
+        try {
+            board = [root-->[?:FBoard]][0];
+            items = list([board->:FHas:->[?:FItem]]);
+            for it in items {
+                head = [it->:FSubOf:->[?:FSub]][:2];
+                assert len(head) == 2 , (_as_any(it).rank, head);
+                base = _as_any(it).rank * 100;
+                assert all(base <= _as_any(x).rank < base + 4 for x in head) , head;
+            }
+        } finally {
+            JacRuntime.exec_ctx = old;
+            ctx2.close();
+        }
+    }
+}
+
+
+test "batching stays off where a hop's answer is not fixed, and ends with the transaction" {
+    import from jaclang.data.query_planner { resolve_query_prefix }
+    import from jaclang.data.store { TxnIsolation }
+    import from jaclang.runtime.graph_query { GraphQuery, QHop }
+    import from jaclang.server.session { Session }
+    with TemporaryDirectory() as td {
+        old = JacRuntime.exec_ctx;
+        ctx = _ctx(td);
+        JacRuntime.exec_ctx = ctx;
+        try {
+            _seed_nested(4, 2);
+            ctx.mem.commit();
+        } finally {
+            JacRuntime.exec_ctx = old;
+            ctx.close();
+        }
+        ctx2 = _ctx(td);
+        JacRuntime.exec_ctx = ctx2;
+        try {
+            board = [root-->[?:FBoard]][0];
+            items = list([board->:FHas:->[?:FItem]]);
+            first = items[0];
+            sess = ctx2.mem;
+            assert isinstance(sess, Session);
+            prefix = resolve_query_prefix(
+                sess, GraphQuery([first], hops=[QHop(dir=2, `edge=FSubOf, nd=FSub)]), 0
+            );
+            assert prefix == [first.__jac__.id] , prefix;
+            assert len(sess.hop_siblings(first.__jac__.id)) == 4;
+            sess.abort();
+            assert sess.hop_siblings(first.__jac__.id) == () , (
+                "a sibling group outlived the transaction that read it"
+            );
+            store = sess.store;
+            assert store is not None;
+            store.begin(TxnIsolation.READ_COMMITTED);
+            try {
+                again = list([[root-->[?:FBoard]][0]->:FHas:->[?:FItem]]);
+                assert not sess.batching() , "read committed hops must not batch";
+                for it in again {
+                    base = _as_any(it).rank * 100;
+                    ranks = sorted([_as_any(x).rank for x in [it->:FSubOf:->[?:FSub]]]);
+                    assert ranks == [base, base + 1] , ranks;
+                }
+            } finally {
+                store.rollback();
+            }
+        } finally {
+            JacRuntime.exec_ctx = old;
+            ctx2.close();
         }
     }
 }
