@@ -686,6 +686,11 @@ test "concurrency" {
     assert "13" in output;
 }
 
+test "flow binds its call's arguments at launch" {
+    output = run_jac(os.path.join(FIXTURES, "flow_arg_binding.jac"));
+    assert "['a', 'b', 'c', 'a!', 'b!', 'c!']" in output;
+}
+
 test "async ability" {
     output = run_jac(os.path.join(FIXTURES, "async_ability.jac"));
     lines = output.split("\n");

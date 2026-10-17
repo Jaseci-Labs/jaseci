@@ -471,36 +471,38 @@ impl JcirGenPass.exit_concurrent_expr with ConcurrentExpr exit {
         }
     }
     if func {
-        lambda_ex = [
-            self.nod(
-                'Lambda',
-                ['args', 'body'],
-                [
-                    self.nod(
-                        'arguments',
-                        [
-                            'posonlyargs',
-                            'args',
-                            'kwonlyargs',
-                            'kw_defaults',
-                            'defaults'
-                        ],
-                        [[], [], [], [], []]
-                    ),
-                    self.val(here.target)
-                ]
-            )
-        ];
-        self.set_out(
-            here,
-            [
-                self.call_node(
-                    self.jaclib_obj(func),
-                    lambda_ex if (func == 'thread_run') else [self.val(here.target)],
-                    []
+        target = self.val(here.target);
+        args: list[CgItem] = [target];
+        keywords: list[CgItem] = [];
+        # `flow f(a, k=b)` hands the callee and its arguments to the pool, so they are evaluated
+        # at launch. A deferred `lambda: f(a)` would read `a` when the task starts, which in a
+        # loop or comprehension can be a later iteration's value.
+        if func == 'thread_run' and target.cls == 'Call' {
+            args = [target.get('func')] + list(target.get('args'));
+            keywords = list(target.get('keywords'));
+        } elif func == 'thread_run' {
+            args = [
+                self.nod(
+                    'Lambda',
+                    ['args', 'body'],
+                    [
+                        self.nod(
+                            'arguments',
+                            [
+                                'posonlyargs',
+                                'args',
+                                'kwonlyargs',
+                                'kw_defaults',
+                                'defaults'
+                            ],
+                            [[], [], [], [], []]
+                        ),
+                        target
+                    ]
                 )
-            ]
-        );
+            ];
+        }
+        self.set_out(here, [self.call_node(self.jaclib_obj(func), args, keywords)]);
     }
 }
 
