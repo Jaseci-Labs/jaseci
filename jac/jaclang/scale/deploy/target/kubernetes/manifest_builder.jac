@@ -231,6 +231,16 @@ def with_config_revision(manifest: dict[str, any], revision: str) -> dict[str, a
 }
 
 
+def _default_request_within_limit(request: str, limit: str) -> str {
+    try {
+        if parse_storage_quantity(request) > parse_storage_quantity(limit) {
+            return limit;
+        }
+    } except ValueError {}
+    return request;
+}
+
+
 obj ManifestBuilder {
     has k8s_config: KubernetesConfig,
         secrets: dict[str, str] = {},
@@ -1279,6 +1289,15 @@ obj ManifestBuilder {
         }
         if memory_limit_val is None {
             memory_limit_val = "8Gi" if is_gateway else "4Gi";
+        }
+        if (
+            memory_request_val
+            and memory_limit_val
+            and self._configured_memory_request(svc_cfg) is None
+        ) {
+            memory_request_val = _default_request_within_limit(
+                memory_request_val, str(memory_limit_val)
+            );
         }
         cpu_request_val = svc_cfg.get("cpu_request");
         if cpu_request_val is None {
