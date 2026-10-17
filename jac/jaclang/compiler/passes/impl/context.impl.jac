@@ -74,13 +74,9 @@ impl DiagnosticPolicy.is_suppressed(
             or (kebab_name is not None and kebab_name in self.lint_ignore)
         );
 
-        non_default_codes: set[str] = {"E3012"};
-
-        explicit_only_codes: set[str] = {"W3050", "W3051"};
+        non_default_codes: set[str] = {"E3012", "W3050", "W3051", "W3054"};
         enabled = False;
-        if diag.code in explicit_only_codes {
-            enabled = code_in_select;
-        } elif "all" in self.lint_select {
+        if "all" in self.lint_select {
             enabled = True;
         } elif "default" in self.lint_select {
             enabled = (diag.code not in non_default_codes) or code_in_select;

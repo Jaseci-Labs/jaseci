@@ -530,7 +530,11 @@ impl JacAutoLintPass.entry_written_names(module: uni.Module) -> set[str] {
 }
 
 impl JacAutoLintPass.enter_module with uni.Module entry {
-    if not self.lint_enabled or self.report_only {
+    if not self.lint_enabled {
+        return;
+    }
+    if self.report_only {
+        self._separate_impls(here, here.body);
         return;
     }
     module = here;
@@ -595,6 +599,7 @@ impl JacAutoLintPass.enter_module with uni.Module entry {
     if not self.ctx._is_suppressed(W3003) {
         new_body = self.combine_consecutive_glob(new_body);
     }
+    new_body.extend(self._separate_impls(module, new_body));
     module._role_set(BodyRole, new_body);
     module._invalidate_sub_node_tab();
     new_kid: list[uni.UniNode] = [];
@@ -1271,7 +1276,7 @@ impl JacAutoLintPass._reparse_signature(
     sig: uni.FuncSignature
 ) -> (uni.FuncSignature | None) {
     loc = sig.loc;
-    text = loc.orig_src.code[loc.pos_start:loc.pos_end];
+    text = loc.orig_src.code.encode("utf-8")[loc.pos_start:loc.pos_end].decode("utf-8");
     (tokens, _comments, _diags, lex_errors) = tokenize_full(text, loc.mod_path);
     parser = Parser(tokens=tokens, file_path=loc.mod_path, source_code=text);
     parsed = parser.parse_func_signature();
@@ -2703,6 +2708,195 @@ impl JacAutoLintPass._strip_noise(nd: uni.Module) -> None {
     if not self.ctx._is_suppressed(W3051) {
         self._strip_docstrings(nd);
     }
+}
+
+impl JacAutoLintPass._separate_impls(
+    module: uni.Module, body: Sequence[uni.UniNode]
+) -> list[uni.ImplDef] {
+    floated: list[uni.ImplDef] = [];
+    if self.ctx._is_suppressed(W3054) or self._is_file_excluded(module.loc.mod_path) {
+        return floated;
+    }
+    found: list[tuple[uni.Ability, list[uni.Name]]] = [];
+    self._collect_inline_abilities(body, [], found);
+    for (ab, path) in found {
+        line = module.loc.last_line + 2;
+        if floated {
+            line = ab.name_ref.loc.first_line;
+            if line == ab.loc.last_line {
+                line -= 1;
+            }
+        }
+        impl_node = self._impl_header(ab, path, line);
+        if impl_node is None {
+            continue;
+        }
+        name = ab.name_ref.value if isinstance(ab.name_ref, uni.Name) else "";
+        if not self.ctx.emit(W3054, node_override=ab, name=name) or self.report_only {
+            continue;
+        }
+        self._move_body_to_impl(ab, impl_node);
+        floated.append(impl_node);
+    }
+    return floated;
+}
+
+impl JacAutoLintPass._collect_inline_abilities(
+    body: Sequence[uni.UniNode],
+    path: list[uni.Name],
+    found: list[tuple[uni.Ability, list[uni.Name]]]
+) -> None {
+    aliases = {"__init__": "init", "__post_init__": "postinit"};
+    taken: dict[str, int] = {};
+    for item in body {
+        names: list[str] = [];
+        if isinstance(item, uni.Ability) and isinstance(item.name_ref, uni.Name) {
+            names = [item.name_ref.value];
+        } elif isinstance(item, uni.ArchHas) {
+            names = [var.name.value for var in item.vars];
+        } elif isinstance(item, (uni.Archetype, uni.Enum)) {
+            names = [item.name.value];
+        }
+        for nm in names {
+            key = aliases.get(nm, nm);
+            taken[key] = taken.get(key, 0) + 1;
+        }
+    }
+    for item in body {
+        if isinstance(item, uni.Ability) {
+            name = item.name_ref.value if isinstance(item.name_ref, uni.Name) else "";
+            if taken.get(aliases.get(name, name), 0) == 1 and self._can_separate(item) {
+                found.append((item, path));
+            }
+        } elif isinstance(item, (uni.Archetype, uni.Enum))
+            and isinstance(item.body, list) {
+            self._collect_inline_abilities(item.body, path + [item.name], found);
+        }
+    }
+}
+
+impl JacAutoLintPass._can_separate(ab: uni.Ability) -> bool {
+    if ab.accessor_kind or ab.is_abstract or ab.is_comptime or ab.type_params {
+        return False;
+    }
+    if not isinstance(ab.name_ref, uni.Name) or not isinstance(ab.body, list) {
+        return False;
+    }
+    if self._property_role_of_ability(ab) and not self.ctx._is_suppressed(W3043) {
+        return False;
+    }
+    kids = [ab->:Kid:->];
+    return (
+        any(k is ab.name_ref for k in kids)
+        and isinstance(kids[-1], uni.Token)
+        and kids[-1].name == Tok.RBRACE
+        and any(isinstance(k, uni.Token) and k.name == Tok.LBRACE for k in kids)
+    );
+}
+
+impl JacAutoLintPass._impl_target_text(
+    ab: uni.Ability, path: list[uni.Name]
+) -> (str | None) {
+    parts: list[str] = [];
+    for nm in path + [ab.name_ref] {
+        if not isinstance(nm, uni.Name) {
+            return None;
+        }
+        parts.append(("`" if nm.is_kwesc else "") + nm.value);
+    }
+    if ab.is_method and not self.ctx._is_suppressed(W3004) {
+        if parts[-1] == "__init__" {
+            parts[-1] = "init";
+        } elif parts[-1] == "__post_init__" {
+            parts[-1] = "postinit";
+        }
+    }
+    return ".".join(parts);
+}
+
+impl JacAutoLintPass._impl_header(
+    ab: uni.Ability, path: list[uni.Name], line: int
+) -> (uni.ImplDef | None) {
+    target = self._impl_target_text(ab, path);
+    if target is None {
+        return None;
+    }
+    src = ab.loc.orig_src;
+    sig = ab.signature;
+    sig_text = "";
+    sig_start = 0;
+    if sig is not None and [sig->:Kid:->] {
+        sig_start = sig.loc.pos_start;
+        sig_text = src.code.encode("utf-8")[sig_start:sig.loc.pos_end].decode("utf-8");
+    }
+    head = "impl " + target + (" " if isinstance(sig, uni.EventSignature) else "");
+    text = head + sig_text + " {}";
+    (tokens, _comments, _diags, lex_errors) = tokenize_full(text, ab.loc.mod_path);
+    parser = Parser(tokens=tokens, file_path=ab.loc.mod_path, source_code=text);
+    impl_node = parser.parse_impl_def();
+    if lex_errors or parser.error_count or not parser.at_end() {
+        return None;
+    }
+    spec = impl_node.spec;
+    if not sig_text {
+        if spec is not None {
+            return None;
+        }
+    } elif type(spec) is not type(sig) {
+        return None;
+    }
+    name_pos = ab.name_ref.loc.pos_start;
+    head_len = len(head.encode("utf-8"));
+    offset = sig_start - head_len;
+    stack: list[uni.UniNode] = [impl_node];
+    while stack {
+        nd = stack.pop();
+        if isinstance(nd, uni.Token) {
+            nd.orig_src = src;
+            nd.line_no = line;
+            nd.end_line = line;
+            nd.c_start = _HEADER_COL + nd.pos_start;
+            nd.c_end = _HEADER_COL + nd.pos_end;
+            if sig_text and nd.pos_start >= head_len {
+                nd.pos_start += offset;
+                nd.pos_end += offset;
+            } else {
+                nd.pos_start = name_pos;
+                nd.pos_end = name_pos;
+            }
+        }
+        for k in [nd->:Kid:->] {
+            if k is not None {
+                stack.append(k);
+            }
+        }
+    }
+    return impl_node;
+}
+
+impl JacAutoLintPass._move_body_to_impl(ab: uni.Ability, impl_node: uni.ImplDef) -> None {
+    kids = [ab->:Kid:->];
+    lb_idx = 0;
+    for (i, k) in enumerate(kids) {
+        if isinstance(k, uni.Token) and k.name == Tok.LBRACE {
+            lb_idx = i;
+            break;
+        }
+    }
+    lbrace = kids[lb_idx];
+    body = list(ab.body);
+    semi = ab.gen_token(Tok.SEMI);
+    semi.line_no = lbrace.line_no;
+    semi.end_line = lbrace.line_no;
+    semi.c_start = lbrace.c_start;
+    semi.c_end = lbrace.c_end;
+    semi.pos_start = lbrace.pos_start;
+    semi.pos_end = lbrace.pos_end;
+    ab._role_set(BodyRole, None);
+    ab.set_kids(kids[:lb_idx] + [semi]);
+    head_kids = [impl_node->:Kid:->][:-2];
+    impl_node._role_set(BodyRole, body);
+    impl_node.set_kids(head_kids + kids[lb_idx:]);
 }
 
 impl JacAutoLintPass._strip_docstrings(start: uni.UniNode) -> None {

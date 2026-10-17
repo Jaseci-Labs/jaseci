@@ -5883,7 +5883,8 @@ graph import compiler.frontend {
         W3050,
         W3051,
         W3052,
-        W3053
+        W3053,
+        W3054
     }
     diagnostics --> compiler.tools.jac_auto_lint_pass.JacAutoLintPass._check_filter_compare_tautology {
         W3040
@@ -8839,8 +8840,14 @@ graph import compiler.frontend.parser {
         parse as rd_parse
     }
     frontend --> project.compiler_host.ProjectHost.native_parse { finish_parse }
+    lexer --> compiler.tools.jac_auto_lint_pass.JacAutoLintPass._impl_header {
+        tokenize_full
+    }
     lexer --> compiler.tools.jac_auto_lint_pass.JacAutoLintPass._reparse_signature {
         tokenize_full
+    }
+    parser --> compiler.tools.jac_auto_lint_pass.JacAutoLintPass._impl_header {
+        Parser
     }
     parser --> compiler.tools.jac_auto_lint_pass.JacAutoLintPass._reparse_signature {
         Parser

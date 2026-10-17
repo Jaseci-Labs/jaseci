@@ -1,6 +1,8 @@
 import keyword;
 import os;
 
+glob _HEADER_COL = 10000;
+
 walker JacAutoLintPass(TreePass) {
     static has contract: PassContract = PassContract();
     has lint_enabled: bool = True,
@@ -141,6 +143,24 @@ walker JacAutoLintPass(TreePass) {
     can exit_expr_stmt with uni.ExprStmt exit;
     can exit_module with uni.Module exit;
     def _strip_noise(nd: uni.Module) -> None;
+    def _separate_impls(
+        module: uni.Module, body: Sequence[uni.UniNode]
+    ) -> list[uni.ImplDef];
+
+    def _collect_inline_abilities(
+        body: Sequence[uni.UniNode],
+        path: list[uni.Name],
+        found: list[tuple[uni.Ability, list[uni.Name]]]
+    ) -> None;
+
+    def _can_separate(ab: uni.Ability) -> bool;
+    def _impl_target_text(ab: uni.Ability, path: list[uni.Name]) -> (str | None);
+    def _impl_header(
+        ab: uni.Ability, path: list[uni.Name], line: int
+    ) -> (uni.ImplDef | None);
+
+    def _move_body_to_impl(ab: uni.Ability, impl_node: uni.ImplDef) -> None;
+
     def _strip_docstrings(start: uni.UniNode) -> None;
     def _collect_doc_nodes(start: uni.UniNode) -> list[tuple[uni.UniNode, uni.String]];
     def _check_stale_has_read(ability_node: uni.Ability) -> None;
