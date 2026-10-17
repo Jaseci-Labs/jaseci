@@ -1,6 +1,5 @@
 import struct;
 import sys;
-import zlib;
 
 impl JirHeader.to_bytes -> bytes {
     return struct.pack(
@@ -8,7 +7,7 @@ impl JirHeader.to_bytes -> bytes {
         self.magic,
         self.format_version,
         self.python_version,
-        self.jaclang_version_hash,
+        self.reserved,
         self.source_content_hash,
         self.node_count,
         self.symbol_count,
@@ -18,13 +17,6 @@ impl JirHeader.to_bytes -> bytes {
 }
 
 impl JirHeader.is_compatible -> bool {
-    expected_py = (sys.version_info.major << 8) | sys.version_info.minor;
-    if self.python_version != expected_py {
-        return False;
-    }
-    expected_jac = zlib.crc32(jaclang_version().encode()) & 0xFFFFFFFF;
-    if self.jaclang_version_hash != expected_jac {
-        return False;
-    }
-    return True;
+    return self.python_version
+        == ((sys.version_info.major << 8) | sys.version_info.minor);
 }

@@ -102,13 +102,8 @@ def _digests(inventory: dict[str, tuple[int, int, str]]) -> dict[str, str] {
     return {path: stamp[2] for (path, stamp) in inventory.items()};
 }
 
-def _identity -> tuple[str, str | None, str] {
-    import from jaclang.compiler.driver.jir { compiler_generation }
-    return (
-        compiler_generation(),
-        sys.implementation.cache_tag,
-        os.environ.get('JAC_PROFILE', '')
-    );
+def _identity -> tuple[str | None, str] {
+    return (sys.implementation.cache_tag, os.environ.get('JAC_PROFILE', ''));
 }
 
 def _write(path: any, value: any) {
@@ -190,7 +185,7 @@ obj ManifestSource {
 }
 
 def _import_edges_of(rows: list[str]) -> list[tuple[bool, str, list[str]]] {
-    import from jaclang.compiler.driver.unit_products { DEF_DEP_SEP as EDGE_SEP }
+    import from jaclang.compiler.driver.unit_products { ROW_SEP as EDGE_SEP }
     edges: list[tuple[bool, str, list[str]]] = [];
     for row in rows {
         parts = row.split(EDGE_SEP);
@@ -681,10 +676,10 @@ def _release_compile_state(program: any) {
 }
 
 def _capture_input(path: str, inputs: dict[str, str]) {
-    import from jaclang.compiler.driver.jir { ct_dep_digest }
+    import from jaclang.compiler.driver.jir { source_digest }
     path = os.path.realpath(path);
     if path not in inputs {
-        inputs[path] = ct_dep_digest(path, with_annexes=True);
+        inputs[path] = source_digest(path);
     }
 }
 
@@ -979,7 +974,7 @@ def _prepare_revision(
     inputs: dict[str, str]
 ) -> PreparedApplication {
     import from jaclang.runtime.prepared { PreparedApplication, publish }
-    import from jaclang.compiler.driver.jir { ct_dep_digest }
+    import from jaclang.compiler.driver.jir { source_digest }
     inventory_root = `root
         if client
         else os.path.join(os.path.dirname(`entry), 'pages');
@@ -1036,7 +1031,7 @@ def _prepare_revision(
                 for (path, stamp) in candidate['outputs'].items()
             )
                 and all(
-                    (ct_dep_digest(path, with_annexes=True) == digest)
+                    (source_digest(path) == digest)
                     for (path, digest) in candidate['dependencies'].items()
                 ) {
                 record = candidate;
@@ -1282,7 +1277,7 @@ def _prepare_revision(
         _capture_input(path, inputs);
     }
     if any(
-        ct_dep_digest(path, with_annexes=True) != digest
+        source_digest(path) != digest
         for (path, digest) in inputs.items()
     ) {
         raise RuntimeError(

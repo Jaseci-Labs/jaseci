@@ -498,37 +498,6 @@ impl UniNode.in_native_context -> bool {
     return self.codespace() == CodeContext.NATIVE;
 }
 
-impl Module.record_comptime_dependency(path: str, body: bool = False) -> None {
-    import os;
-    if not path {
-        return;
-    }
-    resolved = os.path.realpath(path);
-    if self.loc and os.path.realpath(self.loc.mod_path) == resolved {
-        return;
-    }
-    if resolved not in self.ct_file_deps {
-        self.ct_file_deps.append(resolved);
-    }
-    if body and resolved not in self.ct_body_deps {
-        self.ct_body_deps.append(resolved);
-    }
-}
-
-impl Module.record_comptime_definition(path: str, qualname: str) -> None {
-    import os;
-    if not path or not qualname {
-        return;
-    }
-    resolved = os.path.realpath(path);
-    if self.loc and os.path.realpath(self.loc.mod_path) == resolved {
-        return;
-    }
-    row = (resolved, qualname);
-    if row not in self.ct_def_deps {
-        self.ct_def_deps.append(row);
-    }
-}
 
 impl Module.declares_codespace(ctx: CodeContext, path_hint: str = '') -> bool {
     if ctx != CodeContext.SERVER and self.decided_codespace == ctx.value {
@@ -1468,9 +1437,6 @@ impl Module.postinit -> None {
     self.src_terminals = self.terminals;
     self.codespace_inferred = False;
     self.persistence = [];
-    self.ct_file_deps = [];
-    self.ct_body_deps = [];
-    self.ct_def_deps = [];
     self.rc_last_use = {};
     self.rc_scope_cleanup = {};
     _rc_move_in: set[int] = set();
@@ -3906,25 +3872,6 @@ impl in_type_position(nd: UniNode, include_subscripts: bool = True) -> bool {
         parent = cur.parent;
     }
     return False;
-}
-
-impl definition_qualname(decl: UniNode) -> str {
-    if not isinstance(decl, (Ability, Archetype, Enum)) {
-        return "";
-    }
-    name = decl.sym_name;
-    if not name {
-        return "";
-    }
-    parts: list[str] = [name];
-    cur = decl.parent;
-    while cur is not None and not isinstance(cur, Module) {
-        if isinstance(cur, (Archetype, Enum)) {
-            parts.insert(0, cur.sym_name);
-        }
-        cur = cur.parent;
-    }
-    return ".".join(parts);
 }
 
 impl bind_assignment_targets(nd: Assignment) -> None {

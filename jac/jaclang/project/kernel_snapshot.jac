@@ -97,9 +97,7 @@ def file_stamp(path: str) -> str {
 def interface_cache_file(path: str) -> str {
     import hashlib;
 
-    key = hashlib.sha256(
-        (running_compiler_digest() + "\x1f" + path).encode("utf-8")
-    ).hexdigest();
+    key = hashlib.sha256(path.encode("utf-8")).hexdigest();
     return os.path.join(
         str(get_jir_cache_dir()), "kernel_ifaces", key[:2], key + ".json"
     );

@@ -195,6 +195,30 @@ def link_kernel(
     }
 }
 
+def plan_kernel_prefix(stop_after: int, log: Callable[[str], None]) -> int {
+    program = JacProgram();
+    registry = program.native_units();
+    registry.progress = log;
+    registry.cold = True;
+    program.iface_registry().cold = True;
+    registry.stop_after = stop_after;
+    started = time.perf_counter();
+    log(f"  Planning the kernel uncached until {stop_after} units are lowered");
+    try {
+        kernel_plan(program, mode=KERNEL_DEV_LINK_MODE);
+        log("  The whole kernel was planned before the stop");
+    } except NativeBuildStopped {
+    } finally {
+        registry.progress = None;
+    }
+    log(
+        f"  Kernel prefix: {registry.lowered_units} units lowered in "
+        f"{time.perf_counter() - started:.1f}s (nothing linked)"
+    );
+    log(registry.phase_summary());
+    return registry.lowered_units;
+}
+
 def build_target_kernel(
     spec_path: str, dst: str, log: (Callable[[str], None] | None) = None
 ) -> int {

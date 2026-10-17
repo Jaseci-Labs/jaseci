@@ -793,13 +793,11 @@ test "native-only dependencies stay in the target rather than the compiler host"
     assert host.peek_program() is None;
 }
 
-test "native dependency caches use the running compiler identity" {
+test "native dependency caches are stamped with the native ABI" {
     import from unittest.mock { patch }
     import from jaclang.compiler.driver.jir { current_native_stamp }
     options = _pinned_opts();
-    with patch(
-        "jaclang.compiler.driver.jir.running_compiler_digest", return_value="compiler-a"
-    ) {
+    with patch("jaclang.compiler.driver.jir.native_abi_digest", return_value="abi-a") {
         first = current_native_stamp(options.codegen_identity(), "").key();
         assert first == current_native_stamp(options.codegen_identity(), "").key();
         assert first
@@ -807,9 +805,7 @@ test "native dependency caches use the running compiler identity" {
                 _pinned_opts(native_required=True).codegen_identity(), ""
             ).key();
     }
-    with patch(
-        "jaclang.compiler.driver.jir.running_compiler_digest", return_value="compiler-b"
-    ) {
+    with patch("jaclang.compiler.driver.jir.native_abi_digest", return_value="abi-b") {
         assert first != current_native_stamp(options.codegen_identity(), "").key();
     }
 }

@@ -53,8 +53,7 @@ import from jaclang.compiler.frontend.codeinfo {
 }
 import from jaclang.compiler.driver.jir {
     get_module_cache_path,
-    module_cache_key,
-    module_env_fingerprint
+    module_cache_key
 }
 import from jaclang.testing.cl_test_runner { _COLOR_CACHE, module_is_client }
 
@@ -98,15 +97,9 @@ test "a compiler-source module keys the same under every ambient codespace" {
     saved = get_effective_default_codespace_override();
     try {
         set_effective_default_codespace("server");
-        server_env = module_env_fingerprint(SYMBOL_UTILS);
         server_key = module_cache_key(SYMBOL_UTILS);
         set_effective_default_codespace("native");
-        native_env = module_env_fingerprint(SYMBOL_UTILS);
         native_key = module_cache_key(SYMBOL_UTILS);
-        assert server_env == native_env , (
-            "the ambient codespace changed a compiler-source env fingerprint: "
-            f"server={server_env} native={native_env}"
-        );
         assert server_key == native_key , (
             "the ambient codespace changed a compiler-source module key: "
             f"server={server_key} native={native_key}"

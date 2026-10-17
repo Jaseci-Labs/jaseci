@@ -169,12 +169,8 @@ def unit_drift(
 ) -> list[str] {
     options = kernel_options();
     drift: list[str] = [];
-    if str(sidecar.get("compiler_digest", ""))
-        not in (
-            running_compiler_digest(),
-            native_producer_digest(options.kernel_build)
-        ) {
-        drift.append("the compiler's native ABI changed");
+    if str(sidecar.get("native_abi", "")) != native_abi_digest() {
+        drift.append("the native ABI changed");
     }
     if str(sidecar.get("codegen_identity", "")) != options.base_codegen_identity() {
         drift.append("native code generation changed");
@@ -306,10 +302,6 @@ obj KernelArtifact(Artifact) {
     }
 
     override def build(log: Callable[[str], None], force: bool, exact: bool) {
-        if exact {
-            import from jaclang.compiler.driver.jir { require_exact_compiler_products }
-            require_exact_compiler_products();
-        }
         build_kernel(source_tree_kernel_path(), log=log);
     }
 }

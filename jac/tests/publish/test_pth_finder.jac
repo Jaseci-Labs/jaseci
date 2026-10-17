@@ -135,7 +135,7 @@ def _override_result(
             );
         }
         with patch.object(_jac_finder, "_baked_source_dir", return_value=baked), patch.object(
-            _jac_finder, "_dev_table", return_value=(toml_src, False)
+            _jac_finder, "_dev_table", return_value=toml_src
         ) {
             _jac_finder.apply_dev_source_override();
         }

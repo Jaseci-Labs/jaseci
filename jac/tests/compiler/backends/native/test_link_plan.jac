@@ -168,7 +168,7 @@ test "the layout sidecar records the inputs a kernel is accepted by" {
     if _can_link_host() {
         import from jaclang.compiler.backends.native.kernel_resolve { read_sidecar }
         import from jaclang.compiler.backends.native.link_plan { unit_source_digest }
-        import from jaclang.compiler.driver.jir { running_compiler_digest }
+        import from jaclang.compiler.driver.jir { native_abi_digest }
         import from jaclang.compiler.frontend.codeinfo { native_unit_identity }
         root_dir = _diamond_copy();
         (prog, plan) = _plan_for(root_dir);
@@ -176,7 +176,7 @@ test "the layout sidecar records the inputs a kernel is accepted by" {
         link_artifact(plan, output, ArtifactKind.EXECUTABLE);
         sidecar = read_sidecar(output);
         assert sidecar is not None;
-        assert sidecar["compiler_digest"] == running_compiler_digest();
+        assert sidecar["native_abi"] == native_abi_digest();
         assert sidecar["codegen_identity"] == _opts().base_codegen_identity();
         assert sidecar["triple"] == plan.triple;
         assert sidecar["unit_sources"]
@@ -311,43 +311,6 @@ test "settlement refreshes edges and removes dependencies no longer reachable" {
         assert compile_unit.call_count == 1;
     }
     assert [u.path for u in plan.units] == [paths["new"], paths["top"]];
-}
-
-test "an imported generic body invalidates native code after a bytecode cache merge" {
-    if _can_link_host() {
-        import from jaclang.compiler.driver.jir {
-            SEC_CTDEPS,
-            SEC_NCTDEPS,
-            get_module_cache_path,
-            read_section_bytes,
-            write_module_cache
-        }
-        scratch = Path(tempfile.mkdtemp(prefix="jac-generic-incremental-"));
-        base = scratch / "base.jac";
-        base.write_text("def pick[T](xs: list[T]) -> T { return xs[0]; }");
-        top = scratch / "top.jac";
-        top.write_text(
-            "import from base { pick }\nwith entry { print(pick([1, 2])); }"
-        );
-        (prog, plan) = _plan_for(str(scratch));
-        native_deps = read_section_bytes(
-            get_module_cache_path(str(top)).read_bytes(), SEC_NCTDEPS
-        );
-        assert native_deps is not None;
-        write_module_cache(str(top), None, extra_sections={SEC_CTDEPS: b""});
-        assert read_section_bytes(
-            get_module_cache_path(str(top)).read_bytes(), SEC_NCTDEPS
-        )
-            == native_deps;
-        base.write_text("def pick[T](xs: list[T]) -> T { return xs[1]; }");
-        (updated_prog, updated_plan) = _plan_for(str(scratch));
-        assert str(top.resolve()) in updated_prog.native_units().compiled_paths;
-        output = str(scratch / "program");
-        link_artifact(updated_plan, output, ArtifactKind.EXECUTABLE);
-        run = subprocess.run([output], capture_output=True, text=True);
-        assert run.returncode == 0 , run.stderr;
-        assert run.stdout.strip() == "2" , run.stdout;
-    }
 }
 
 test "an interface edit moves the dependents' recorded digests" {
@@ -784,20 +747,12 @@ test "a link refuses unit objects that reference a symbol no unit defines" {
 }
 
 test "object emission preserves the native record without an existing disk entry" {
-    import from jaclang.compiler.driver.jir {
-        get_module_cache_path,
-        ct_deps_section,
-        rebase_ct_deps_section
-    }
+    import from jaclang.compiler.driver.jir { get_module_cache_path }
     root_dir = _diamond_copy();
     (prog, plan) = _plan_for(root_dir, NATIVE_LINK_MODE_BITCODE);
     registry = prog.native_units();
     path = plan.root_unit().path;
     prior = registry.entries[path];
-    prior.compile_deps_base = root_dir;
-    prior.compile_deps = rebase_ct_deps_section(
-        ct_deps_section([os.path.join(root_dir, "base.jac")]), root_dir
-    );
     get_module_cache_path(path).unlink();
     assert registry.object_for(path, _opts()) is not None;
     warm = JacProgram().native_units().ensure(
@@ -979,7 +934,7 @@ test "concurrent JIR writers preserve every native variant and bytecode" {
         def writer(index: int) -> bool {
             barrier.wait(timeout=30);
             stamp = jir.NativeStamp(
-                compiler_digest="compiler", codegen_identity=str(index), triple="target"
+                abi="abi", codegen_identity=str(index), triple="target"
             );
             return jir.write_module_cache(
                 source,
@@ -998,12 +953,12 @@ test "concurrent JIR writers preserve every native variant and bytecode" {
         section = jir.read_section_bytes(data, jir.SEC_NBITCODE);
         for index in range(8) {
             stamp = jir.NativeStamp(
-                compiler_digest="compiler", codegen_identity=str(index), triple="target"
+                abi="abi", codegen_identity=str(index), triple="target"
             );
             assert jir.native_section_payload(section, stamp) == str(index).encode();
         }
         replacement = jir.NativeStamp(
-            compiler_digest="new compiler", codegen_identity="0", triple="target"
+            abi="new abi", codegen_identity="0", triple="target"
         );
         assert jir.write_module_cache(
             source, None, extra_sections={jir.SEC_NBITCODE: replacement.pack(b"new")}
@@ -1022,7 +977,7 @@ test "replacing native bitcode invalidates its previous optional object" {
         source = str(Path(cache_dir) / "products.jac");
         Path(source).write_text("with entry { print(42); }\n");
         stamp = jir.NativeStamp(
-            compiler_digest="compiler", codegen_identity="options", triple="target"
+            abi="abi", codegen_identity="options", triple="target"
         );
         assert jir.write_module_cache(
             source,

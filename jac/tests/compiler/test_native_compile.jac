@@ -93,7 +93,6 @@ def assert_same_products(kernel: UnitProducts, host: UnitProducts) {
     assert kernel.client == host.client;
     assert kernel.placement == host.placement;
     assert kernel.mtir == host.mtir;
-    assert sorted(kernel.ct_file_deps) == sorted(host.ct_file_deps);
 }
 
 test "the kernel's compile code run in process emits the host's products" {

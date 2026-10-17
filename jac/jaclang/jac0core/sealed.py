@@ -38,10 +38,6 @@ kind/capabilities/entry/payloads)::
       "python_tag": "cpython-314",
       "jir_format_version": 13,
       "jaclang_version": "0.8.7",
-      "compiler_digest": "409:9f2c...",  # optional: the compiler that built
-                                         # this image (jir.compiler_source_digest;
-                                         # informational -- the seal already
-                                         # verified every JIR against it, see #8178)
       "modules": {                      # key: source path relative to pkg dir
         "compiler/symbol_utils.jac": {
           "module": "jaclang.compiler.symbol_utils",
@@ -115,7 +111,7 @@ MANIFEST_FORMATS_ACCEPTED = (2, 3, 4, 5, 6, 7, 8, MANIFEST_FORMAT)
 # pure-Python section reader below, so they need none of the .jac machinery
 # (jir.jac's reader is itself a jac0core module).
 PRECOMPILE_SENTINEL = "__PKG_ROOT__"
-JIR_FORMAT_VERSION = 30
+JIR_FORMAT_VERSION = 31
 HEADER_SIZE = 32
 SECTIONS_MAGIC = b"JIRX"
 SEC_BYTECODE = 0x02

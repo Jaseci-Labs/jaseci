@@ -1342,7 +1342,6 @@ impl _parse_toml_data(
 
         config.dev = DevConfig(
             jaclang_source=str(dev_data.get("jaclang_source", "")),
-            exact=dev_data.get("exact") is True,
             pod_binary=str(dev_data.get("pod_binary", "")),
             jobs=str(dev_data.get("jobs", "")),
             test_jobs=str(dev_data.get("test_jobs", "")),

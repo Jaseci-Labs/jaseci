@@ -23,13 +23,6 @@ def _live_keys -> dict[str, set[str]] {
             live["rt"] = entries;
         }
     } except Exception {}
-    try {
-        import from jaclang.compiler.driver.jir { compiler_generation }
-
-        generation = {compiler_generation()};
-        live["jir-modules"] = generation;
-        live["project"] = generation;
-    } except Exception {}
     return live;
 }
 

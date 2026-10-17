@@ -614,13 +614,9 @@ graph import cache {
         maybe_sweep_dir
     }
     policy --> compiler.driver.jir._sweep_once { maybe_sweep_dir }
-    policy --> compiler.driver.jir.sweep_stale_generations { sweep_dir }
     registry --> byllm.model_cache.get_cache_dir { bucket }
     registry --> cli.commands.cache { RETIRED, gc, purge, status, unmanaged }
-    registry --> compiler.driver.jir._manifest_compiler_digest { bucket, maybe_sweep }
     registry --> compiler.driver.jir._sweep_once { bucket, maybe_sweep }
-    registry --> compiler.driver.jir._touch_generation { bucket }
-    registry --> compiler.driver.jir.sweep_stale_generations { bucket }
     registry --> compiler.types.stubcat.locate.dev_catalog_path { bucket }
     registry --> dist.fused_binary._runtime_dir_for_key { bucket }
     registry --> dist.jab { bucket, maybe_sweep }
@@ -2188,8 +2184,6 @@ graph import compiler {
         is_client_boundary_import,
         resolve_import_source_module
     }
-    kernel_target --> compiler.driver.jir._ct_pkg_ref { target_package_rel }
-    kernel_target --> compiler.driver.jir._ct_row_path { target_pkg_root }
     native_scope --> dist.precompile_bytecode._compiler_kernel_units {
         kernel_root_path,
         native_scope_paths
@@ -2198,7 +2192,7 @@ graph import compiler {
         KERNEL_ABI_CONTRACT_REL
     }
     c_interop --> compiler.passes.ownership_check_pass { is_ptr_type }
-    kernel_target --> compiler.driver.jir.native_producer_digest { target_pkg_root }
+    kernel_target --> compiler.driver.jir.native_abi_digest { target_pkg_root }
     erased_imports --> compiler.passes.rc_facts_pass.result_ownership {
         erased_identity_call_arg
     }
@@ -2973,6 +2967,7 @@ graph import compiler.backends.native {
         kernel_plan
     }
     kernel_resolve --> dist.precompile_bytecode.seal_native { SEALED_LINK_MODE }
+    kernel_stage0 --> cli.commands.native { plan_kernel_prefix }
     kernel_stage0 --> compiler.backends.native.kernel_resolve.build_kernel {
         link_kernel
     }
@@ -3317,10 +3312,7 @@ graph import compiler.backends.py {
 }
 
 graph import compiler.driver {
-    jir --> project.compiler_host._wiring_records_path {
-        get_jir_cache_dir,
-        running_compiler_digest
-    }
+    jir --> project.compiler_host._wiring_records_path { get_jir_cache_dir }
     application --> cli.commands.execution.serve { prepare_application }
     application --> client.targets.client_dev_common.dev_proxy_paths {
         prepare_application
@@ -3727,11 +3719,7 @@ graph import compiler.driver {
         read_sections,
         write_sections
     }
-    jir --> cli.commands.cache._live_keys { compiler_generation }
     jir --> cli.commands.execution._exec_file { scrub_cache_dirs }
-    jir --> compiler.backends.es.client_kernel_cache._artifact_path {
-        running_compiler_digest
-    }
     jir --> compiler.backends.native.link_plan {
         sidecar_unit_paths,
         unit_source_digest
@@ -3749,7 +3737,6 @@ graph import compiler.driver {
         get_module_cache_path,
         read_sections
     }
-    jir --> compiler.driver.application._identity { compiler_generation }
     jir --> compiler.driver.application._prepare { cache_mode }
     jir --> compiler.driver.application._prepare_sealed {
         HEADER_SIZE,
@@ -3781,14 +3768,9 @@ graph import compiler.driver {
         read_sections,
         write_module_cache
     }
-    jir --> compiler.driver.compiler.JacCompiler._get_bytecode {
-        PRECOMPILE_SENTINEL,
-        SEC_CTDEPS as _PC_CTDEPS
-    }
+    jir --> compiler.driver.compiler.JacCompiler._get_bytecode { PRECOMPILE_SENTINEL }
     jir --> compiler.driver.compiler.JacCompiler._get_precompiled_jir_bytecode {
         PRECOMPILE_SENTINEL,
-        SEC_CTDEPS,
-        absolutize_ct_deps_section,
         bundle_dir_allowed,
         cache_mode
     }
@@ -3808,7 +3790,6 @@ graph import compiler.driver {
     jir --> compiler.driver.ifacecache {
         DepRow,
         JirPaths,
-        SEC_CTDEPS,
         SEC_DEPS,
         SEC_DIAG,
         SEC_IFACE,
@@ -3842,12 +3823,10 @@ graph import compiler.driver {
     jir --> compiler.driver.nativecache {
         NativeStamp,
         SEC_NBITCODE,
-        SEC_NCTDEPS,
         SEC_NIFACE,
         SEC_NOBJ,
         SEC_PLACEMENT,
         cache_mode,
-        ct_dep_text_fresh,
         current_native_stamp,
         get_module_cache_path,
         is_module_cache_valid,
@@ -3865,7 +3844,6 @@ graph import compiler.driver {
     }
     jir --> compiler.driver.nativecache.NativeUnitRegistry.product_sections {
         SEC_NDEPS,
-        absolutize_ct_deps_section,
         native_deps_section
     }
     jir --> compiler.tools.code_intel {
@@ -3889,7 +3867,6 @@ graph import compiler.driver {
         PRECOMPILE_SENTINEL,
         SECTIONS_MAGIC,
         SEC_BYTECODE,
-        SEC_CTDEPS,
         SEC_DEBUG_SRC,
         SEC_DEPS,
         SEC_DIAG,
@@ -3910,17 +3887,9 @@ graph import compiler.driver {
         read_jir_paths,
         read_section_bytes,
         read_sections,
-        rebase_ct_deps_section,
-        running_compiler_digest,
         write_precompiled_jir
     }
-    jir --> dist.precompile_bytecode._native_extra {
-        NativeStamp,
-        SEC_NCTDEPS,
-        native_section_variants,
-        pack_native_variants,
-        rebase_placement_section
-    }
+    jir --> dist.precompile_bytecode._native_extra { rebase_placement_section }
     jir --> dist.precompile_bytecode._precompile_unit { cache_mode }
     jir --> dist.precompile_bytecode.run_precompile { read_debug_source }
     jir --> dist.precompile_bytecode.seal_native {
@@ -3936,7 +3905,6 @@ graph import compiler.driver {
         compute_precompile_module_key,
         module_cache_key,
         precompiled_jir_matches_source,
-        running_compiler_digest,
         write_precompiled_jir
     }
     na_coverage --> cli.commands.analysis._check_file_job { na_coverage_begin }
@@ -3972,6 +3940,9 @@ graph import compiler.driver {
     type native_iface --> compiler.frontend.codeinfo { NativeIface }
     native_iface --> compiler.tests.test_native_kernel_cache { NativeIface }
     native_iface --> dist.precompile_bytecode.seal_native { NativeIface }
+    nativecache --> compiler.backends.native.kernel_stage0.plan_kernel_prefix {
+        NativeBuildStopped
+    }
     nativecache --> compiler.backends.native.link_plan.build_link_plan {
         NativeBuildSession
     }
@@ -4323,10 +4294,7 @@ graph import compiler.driver {
     jir --> project.compiler_host.ProjectHost.drop_python_lane_products {
         drop_python_lane_products
     }
-    jir --> project.kernel_snapshot.interface_cache_file {
-        get_jir_cache_dir,
-        running_compiler_digest
-    }
+    jir --> project.kernel_snapshot.interface_cache_file { get_jir_cache_dir }
     module_analysis --> compiler.frontend.kernel_analyze { ModuleAnalysis }
     module_analysis --> compiler.frontend.kernel_host | project.kernel_snapshot {
         ModuleAnalysis,
@@ -4440,30 +4408,20 @@ graph import compiler.driver {
     }
     compile_options --> packages.api.package_surface { CompileOptions }
     jir --> compiler.backends.native.link_plan.LinkPlan.plan_digest {
-        native_producer_digest
+        native_abi_digest
     }
-    jir --> compiler.backends.native.link_plan._write_sidecar { native_producer_digest }
-    jir --> compiler.driver.application._capture_input { ct_dep_digest }
-    jir --> compiler.driver.application._prepare_revision { cache_mode, ct_dep_digest }
-    jir --> compiler.driver.compiler { FLAG_CARRIED, carried_module_bytecode }
-    jir --> compiler.driver.compiler.JacCompiler._get_bytecode {
-        SEC_CTDEPS as _CARRY_CTDEPS
-    }
-    jir --> compiler.driver.ifacecache { module_ct_deps_section }
+    jir --> compiler.backends.native.link_plan._write_sidecar { native_abi_digest }
+    jir --> compiler.driver.application._capture_input { source_digest }
+    jir --> compiler.driver.application._prepare_revision { cache_mode, source_digest }
     jir --> compiler.driver.nativecache {
         PRECOMPILE_SENTINEL,
-        carried_native_sections,
         compute_content_sha256,
         module_cache_invalid_reason,
-        module_ct_deps_section,
-        native_producer_digest,
-        stale_ct_dep_rows,
         write_module_cache
     }
     jir --> compiler.driver.nativecache.NativeUnitRegistry.emit_objects {
         write_module_cache
     }
-    jir --> dist.precompile_bytecode { require_exact_compiler_products }
     jir --> packages.artifact.package_manifest | packages.resolve.resolve_graph {
         jaclang_version
     }
@@ -4472,7 +4430,7 @@ graph import compiler.driver {
     pipeline_runner --> compiler.driver.application._prepare_revision {
         compile_application
     }
-    program --> compiler.driver.jir._definition_texts | compiler.driver.nativecache._module_files_and_imports | packages.api.package_surface {
+    program --> compiler.driver.nativecache._module_files_and_imports | packages.api.package_surface {
         JacProgram
     }
     source_failures --> compiler.driver.application._prepare_revision {
@@ -4486,22 +4444,14 @@ graph import compiler.driver {
         compilation_scope,
         owner_scope_options
     }
-    compilation_context --> compiler.driver.unit_products.dependency_span_rows {
-        program_for
-    }
     compile_options --> compiler.backends.native.link_plan.plan_objects {
         env_symmap_requested
     }
     compile_options --> compiler.driver.module_compile { CompileOptions }
     compile_options --> project.kernel_compile { CompileOptions }
     compiler --> project.compiler_host.ProjectHost.client_pulls { cached_client_pulls }
-    jir --> client.client_bundle.ClientBundleBuilder._signature { ct_dep_digest }
+    jir --> client.client_bundle.ClientBundleBuilder._signature { source_digest }
     jir --> compiler.driver.application._stamp { compute_content_sha256 }
-    jir --> compiler.driver.compiler {
-        SEC_CTDEPS,
-        ct_deps_section,
-        seed_definition_texts
-    }
     jir --> project.compiler_host.ProjectHost.in_compiler_tree { is_compiler_tree_path }
     jir --> project.kernel_snapshot.compiled_already {
         get_module_cache_path,
@@ -4530,7 +4480,7 @@ graph import compiler.driver {
     }
     unit_products --> compiler.boundary_audit.boundary_audit { interop_record }
     unit_products --> compiler.driver.application._import_edges_of {
-        DEF_DEP_SEP as EDGE_SEP
+        ROW_SEP as EDGE_SEP
     }
     unit_products --> compiler.driver.application._tree_source { import_edge_rows }
     unit_products --> compiler.driver.application._unit_source {
@@ -4542,7 +4492,6 @@ graph import compiler.driver {
         client_artifact_from_json,
         client_artifact_json,
         client_artifact_of,
-        definition_deps,
         interop_manifest_of,
         interop_record,
         placement_record,
@@ -4554,9 +4503,6 @@ graph import compiler.driver {
     unit_products --> compiler.driver.ifacecache.IfaceRegistry.client_boundary_facts {
         interop_manifest_of
     }
-    unit_products --> compiler.driver.jir._definition_texts { definition_span_rows }
-    unit_products --> compiler.driver.jir._texts_of_spans { DEF_DEP_SEP }
-    unit_products --> compiler.driver.jir.seed_definition_texts { DEF_DEP_SEP }
     unit_products --> compiler.frontend.kernel_analyze {
         UnitProducts,
         products_from_record,
@@ -4607,13 +4553,9 @@ graph import compiler.driver {
         compute_content_sha256
     }
     jir --> client.targets.desktop._dev_launch._dev_roots_from_env { dev_source }
-    jir --> compiler.backends.native.kernel_resolve.KernelArtifact.build {
-        require_exact_compiler_products
-    }
     jir --> compiler.backends.native.kernel_resolve._inspect { sidecar_unit_paths }
     jir --> compiler.backends.native.kernel_resolve.unit_drift {
-        native_producer_digest,
-        running_compiler_digest,
+        native_abi_digest,
         unit_source_digest
     }
     jir --> compiler.driver.application._prepare {
@@ -4811,6 +4753,9 @@ graph import compiler.driver {
         CompilationProduct
     }
     program --> compiler.backends.native.kernel_stage0.link_kernel { JacProgram }
+    program --> compiler.backends.native.kernel_stage0.plan_kernel_prefix {
+        JacProgram
+    }
     type program --> compiler.capability_notes { JacProgram }
     type program --> compiler.native_bindings { JacProgram }
     type program --> compiler.passes.placement_pass { JacProgram }
@@ -4848,9 +4793,6 @@ graph import compiler.frontend {
     type codeinfo --> client.jac_client_compiler { ClientArtifact, ClientManifest }
     type codeinfo --> client.jac_to_js { ClientArtifact, ClientManifest }
     codeinfo --> client.vite_client_bundle { ClientArtifact }
-    codeinfo --> compiler.backends.es.client_kernel_cache._es_backend_fingerprint {
-        jaclang_pkg_root
-    }
     codeinfo --> compiler.backends.es.client_kernel_cache._unit_source_path {
         kernel_unit_path
     }
@@ -8279,19 +8221,16 @@ graph import compiler.frontend {
         native_test_symbol
     }
     codeinfo --> compiler.types.stubcat.build._cached_catalog { jaclang_pkg_root }
-    codeinfo --> compiler.driver.jir | compiler.passes.package_boundary_pass.PackageBoundaryPass.run_walk {
+    codeinfo --> compiler.passes.package_boundary_pass.PackageBoundaryPass.run_walk {
         is_compiler_source_path
     }
-    codeinfo --> compiler.driver.jir.native_producer_digest { NATIVE_ABI_VERSION }
+    codeinfo --> compiler.driver.jir.native_abi_digest { NATIVE_ABI_VERSION }
     constant --> packages.api { SymbolAccess, SymbolType }
     diagnostics --> compiler.passes.package_boundary_pass { E2095, E2096 }
     host --> compiler.passes.package_boundary_pass { ProjectFacts, active_host }
     host --> compiler.types.ct_eval.CtEvaluator._embed { active_host }
     module_facts --> compiler.driver.boundary_classify.python_side_name_refs | compiler.passes.package_boundary_pass {
         ModuleFacts
-    }
-    unitree --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._record_generic_definition | compiler.types.ct_eval {
-        definition_qualname
     }
     unitree --> compiler.passes.layout_pass { GlobalVars, ParamVar }
     unitree --> compiler.passes.package_boundary_pass { Import, Module, ModulePath }
@@ -8334,7 +8273,6 @@ graph import compiler.frontend {
     host --> compiler.driver.compiler.JacCompiler._adopt_kernel_compile { active_host }
     host --> compiler.driver.jir.stored_wiring_digest { active_host }
     host --> compiler.driver.module_compile { active_host }
-    host --> compiler.driver.unit_products.dependency_span_rows { active_host }
     host --> compiler.placement.placement_solver._held_pull_ids { active_host }
     host --> compiler.placement.placement_solver._pull_into_target { active_host }
     host --> project.kernel_compile { HostServices }
@@ -11062,7 +11000,6 @@ graph import compiler.types.stubcat {
     format --> compiler.types.stubcat.reader { SH_EXTERN }
     format --> compiler.types.stubcat.writer { SH_EXTERN }
     locate --> project.kernel_snapshot.session_inputs { catalog_origin }
-    reader --> compiler.driver.unit_products.dependency_span_rows { CatModule }
     reader --> compiler.placement.placement_solver._import_source_module { CatModule }
     reader --> compiler.types.stubcat.writer.CatalogWriter.encode_symbol { CatProvider }
     build --> compiler.types.stubcat.locate.StubcatArtifact.build { build_catalog }
@@ -11632,7 +11569,6 @@ graph import jac0core {
         process_executable
     }
     handoff --> compiler.driver.jir._handoff { handoff }
-    handoff --> compiler.driver.jir.require_exact_compiler_products { update_handoff }
     handoff --> compiler.driver.jir.set_cache_mode { update_handoff }
     handoff --> dist.fused_binary.running_executable { process_executable }
     handoff --> jac0core.artifact_registry._marks { handoff }

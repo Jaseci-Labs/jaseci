@@ -482,13 +482,8 @@ impl ProjectHost.wiring_file(path: str) -> (str | None) {
 def _wiring_records_path(digest: str) -> str {
     import hashlib;
     import os;
-    import from jaclang.compiler.driver.jir {
-        get_jir_cache_dir,
-        running_compiler_digest
-    }
-    name = hashlib.sha256(
-        (digest + "\x00" + running_compiler_digest()).encode()
-    ).hexdigest();
+    import from jaclang.compiler.driver.jir { get_jir_cache_dir }
+    name = hashlib.sha256(digest.encode()).hexdigest();
     return os.path.join(
         str(get_jir_cache_dir()), "wiring-spec", name[:2], name + ".txt"
     );

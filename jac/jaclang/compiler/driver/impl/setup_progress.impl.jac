@@ -3,21 +3,9 @@ impl SetupProgress.postinit -> None {
 }
 
 impl SetupProgress._atexit_handler -> None {
-    noun = "module" if self._reuse_count == 1 else "modules";
-    if (self._banner_shown and (self._compile_count > 0)) {
-        reused = (
-            f", {self._reuse_count} reused from an earlier compiler build"
-                if self._reuse_count > 0
-                else ""
-        );
+    if self._banner_shown and self._compile_count > 0 {
         sys.stderr.write(
-            f"Jac setup complete ({self._compile_count} modules compiled and cached{reused})\n"
-        );
-        sys.stderr.flush();
-    } elif self._reuse_count > 0 {
-        sys.stderr.write(
-            f"Compiler sources changed: {self._reuse_count} unchanged compiler {noun} "
-            "reused from an earlier compiler build ([dev] exact = true in jac.toml rebuilds them)\n"
+            f"Jac setup complete ({self._compile_count} modules compiled and cached)\n"
         );
         sys.stderr.flush();
     }
@@ -28,16 +16,6 @@ impl SetupProgress._register_exit -> None {
         self._exit_registered = True;
         atexit.register(self._atexit_handler);
     }
-}
-
-impl SetupProgress.on_internal_reuse(file_path: str) -> None {
-    normalized = os.path.normpath(file_path);
-    if (normalized in self._seen_files) {
-        return;
-    }
-    self._seen_files.add(normalized);
-    self._reuse_count += 1;
-    self._register_exit();
 }
 
 impl SetupProgress.on_internal_compile(file_path: str) -> None {

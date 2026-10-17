@@ -76,10 +76,7 @@ def _resolve_fresh(sealed: bool = False) -> tuple[(ResolvedKernel | None), str] 
 }
 
 def _sidecar_for(lib: str, unit: str, **overrides: any) -> dict[str, any] {
-    import from jaclang.compiler.driver.jir {
-        running_compiler_digest,
-        unit_source_digest
-    }
+    import from jaclang.compiler.driver.jir { native_abi_digest, unit_source_digest }
     import from jaclang.compiler.frontend.codeinfo { native_unit_identity }
     options = kernel_options();
     ident = native_unit_identity(unit);
@@ -90,7 +87,7 @@ def _sidecar_for(lib: str, unit: str, **overrides: any) -> dict[str, any] {
         "layout_digest": "l",
         "units": [unit],
         "unit_ids": [ident],
-        "compiler_digest": running_compiler_digest(),
+        "native_abi": native_abi_digest(),
         "codegen_identity": options.base_codegen_identity(),
         "triple": options.effective_triple(),
         "python": f"{sys.version_info.major}.{sys.version_info.minor}",
@@ -364,7 +361,7 @@ test "a kernel is accepted by its units' content and names what moved" {
         Path(unit).write_text("def one -> int {\n    return 1;\n}\n");
         assert _inspect(lib)[0] is not None;
         for (field, value) in [
-            ("compiler_digest", "another compiler"),
+            ("native_abi", "another abi"),
             ("codegen_identity", "gc=none"),
             ("triple", "wasm32-unknown-unknown"),
             ("python", "2.7"),

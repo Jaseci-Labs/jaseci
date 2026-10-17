@@ -1,7 +1,7 @@
 """The cache authority: one root rule, one registry of buckets, one sweep.
 
 `~/.cache/jac` used to have five independent root resolvers and, apart from
-the module-generation bucket, nothing was ever evicted. `jaclang.cache` now
+the compiled-module bucket, nothing was ever evicted. `jaclang.cache` now
 owns the root (JAC_CACHE_HOME, else XDG_CACHE_HOME/jac, else the platform
 default), stamps CACHEDIR.TAG, declares every bucket with its retention
 policy, and provides the single best-effort sweep every writer and `jac cache`
@@ -54,7 +54,6 @@ glob DAY: float = 86400.0,
          "jir-modules",
          "jir-bootstrap",
          "jir-stubcat",
-         "jir-digests",
          "apps",
          "pkgs",
          "pkg-git",
@@ -261,19 +260,17 @@ test "sweep_dir walks to the declared depth and prunes emptied parents" {
 
 test "sweep_dir only sees entries matching the bucket pattern" {
     base = Path(tempfile.mkdtemp());
-    digest = base / "compiler_digest.abcd1234.json";
-    digest.write_bytes(b"{}");
+    entry = base / "mod.abcd1234.cpython-314.jir";
+    entry.write_bytes(b"x");
     other = base / "notes.txt";
     other.write_bytes(b"keep");
-    backdate(digest, 40.0 * DAY);
+    backdate(entry, 40.0 * DAY);
     backdate(other, 40.0 * DAY);
-    policy = Policy(
-        retention=Retention.LAST_USE, ttl_days=14.0, pattern="compiler_digest.*.json"
-    );
+    policy = Policy(retention=Retention.LAST_USE, ttl_days=14.0, pattern="*.jir");
     result = sweep_dir(base, policy);
-    assert not digest.exists();
+    assert not entry.exists();
     assert other.exists() , "the sweep removed something the bucket does not own";
-    assert result.removed == ["compiler_digest.abcd1234.json"];
+    assert result.removed == ["mod.abcd1234.cpython-314.jir"];
 }
 
 test "sweep_dir is best-effort: an undeletable entry is skipped, not raised" {
@@ -324,21 +321,21 @@ test "JAC_CACHE_TTL_DAYS overrides every bucket default and a bucket env overrid
     specific = Policy(
         retention=Retention.LAST_USE,
         ttl_days=14.0,
-        ttl_env="JAC_CACHE_GENERATION_TTL_DAYS"
+        ttl_env="JAC_CACHE_MODULE_TTL_DAYS"
     );
     with patch.dict(os.environ, {"JAC_CACHE_TTL_DAYS": "3"}) {
-        os.environ.pop("JAC_CACHE_GENERATION_TTL_DAYS", None);
+        os.environ.pop("JAC_CACHE_MODULE_TTL_DAYS", None);
         assert generic.ttl_seconds() == 3.0 * DAY;
         assert specific.ttl_seconds() == 3.0 * DAY;
     }
     with patch.dict(
-        os.environ, {"JAC_CACHE_TTL_DAYS": "3", "JAC_CACHE_GENERATION_TTL_DAYS": "7"}
+        os.environ, {"JAC_CACHE_TTL_DAYS": "3", "JAC_CACHE_MODULE_TTL_DAYS": "7"}
     ) {
         assert generic.ttl_seconds() == 3.0 * DAY;
         assert specific.ttl_seconds() == 7.0 * DAY;
     }
     with patch.dict(os.environ, {"JAC_CACHE_TTL_DAYS": "not-a-number"}) {
-        os.environ.pop("JAC_CACHE_GENERATION_TTL_DAYS", None);
+        os.environ.pop("JAC_CACHE_MODULE_TTL_DAYS", None);
         assert generic.ttl_seconds() == 14.0 * DAY , "garbage in the env falls back to the default";
     }
 }
@@ -445,21 +442,20 @@ test "inspection and purge include staging while unknown JIR content remains vis
         rows = {r.name: r for r in status()};
         assert rows["toolchains-installed"].size_bytes == 1024;
         assert rows["rt"].size_bytes == 1024;
-        assert rows["jir-digests"].size_bytes == 0;
         assert unmanaged() == [("jir/unregistered", 1024)];
         with patch(
             "jaclang.cache.policy.temporary_owner", return_value=WriterState.INACTIVE
         ) {
             # Lazy compiler imports can populate other buckets in this private root.
             # Account for the fixture buckets only, including the unmanaged JIR.
-            dry = purge(["toolchains-installed", "rt", "jir-digests"], dry_run=True);
+            dry = purge(["toolchains-installed", "rt"], dry_run=True);
         }
         assert dry.reclaimed_bytes == 2048;
         assert install.exists() and runtime.exists();
         with patch(
             "jaclang.cache.policy.temporary_owner", return_value=WriterState.INACTIVE
         ) {
-            result = purge(["toolchains-installed", "rt", "jir-digests"]);
+            result = purge(["toolchains-installed", "rt"]);
         }
         assert result.reclaimed_bytes == 2048;
         assert not install.exists() and not runtime.exists();

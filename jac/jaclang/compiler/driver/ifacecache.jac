@@ -10,7 +10,6 @@ import type from jaclang.compiler.types.types { ClassDetailsShared }
 import from jaclang.compiler.types.stubcat.resolver { CatalogResolver }
 import from jaclang.compiler.driver.jir {
     DepRow,
-    SEC_CTDEPS,
     SEC_DEPS,
     SEC_DIAG,
     SEC_IFACE,
@@ -18,7 +17,6 @@ import from jaclang.compiler.driver.jir {
     SEC_PATH_ROOT,
     JirPaths,
     cache_mode,
-    module_ct_deps_section,
     deps_section,
     get_module_cache_path,
     is_compiler_tree_path,
@@ -203,6 +201,7 @@ obj IfaceRegistry(CatalogResolver) {
         _iface_bytes: dict[str, EncodedInterface] = {},
         _incoherent: set[str] = set(),
         verifying: bool = False,
+        cold: bool = False,
         closure_token: int = 0,
         _pkg_dir_memo: str = "";
 
@@ -546,7 +545,7 @@ obj IfaceRegistry(CatalogResolver) {
             return self._register_from_disk(resolved, check_deps=False);
         }
         (rebuild, _) = cache_mode();
-        if not rebuild {
+        if not rebuild and not self.cold {
             self.checking.add(resolved);
             try {
                 found = self._register_from_disk(resolved, check_deps=True);
@@ -996,10 +995,6 @@ obj IfaceRegistry(CatalogResolver) {
                 get_module_summary(mod, self.prog)
             );
         } except Exception {}
-        ct_rows = module_ct_deps_section(mod);
-        if ct_rows is not None {
-            sections[SEC_CTDEPS] = ct_rows;
-        }
         if not options.symtab_ir_only {
             try {
                 import from jaclang.compiler.driver.jir { SEC_INTEROP }

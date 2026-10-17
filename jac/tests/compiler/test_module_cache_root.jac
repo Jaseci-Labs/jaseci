@@ -13,10 +13,7 @@ import tempfile;
 import from pathlib { Path }
 import from jaclang.compiler.frontend.host { active_host }
 import from jaclang.project.compiler_host { ProjectHost }
-import from jaclang.compiler.driver.jir {
-    get_module_cache_path,
-    module_env_fingerprint
-}
+import from jaclang.compiler.driver.jir { get_module_cache_path, module_cache_key }
 import from jaclang.project.config {
     get_config,
     get_config_for_path,
@@ -79,7 +76,7 @@ test "a module's env key is the same inside and outside the config probe guards"
     try {
         pin_project_scope(get_config_for_path(base));
         for path in [str(mod), internal] {
-            plain = module_env_fingerprint(path);
+            plain = module_cache_key(path);
             # The enclosing-project kind chain and its probe guard are gone
             # (#8823): the host's project-defaults guard is the only
             # re-entrancy guard left.
@@ -87,12 +84,12 @@ test "a module's env key is the same inside and outside the config probe guards"
             assert isinstance(host, ProjectHost);
             host._defaults_active = True;
             try {
-                guarded = module_env_fingerprint(path);
+                guarded = module_cache_key(path);
             } finally {
                 host._defaults_active = False;
             }
             assert plain == guarded , (
-                f"the env key of {os.path.basename(path)} must not depend on the "
+                f"the cache key of {os.path.basename(path)} must not depend on the "
                 "config probe guards"
             );
         }

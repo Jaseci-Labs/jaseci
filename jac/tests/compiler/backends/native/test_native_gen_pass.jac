@@ -4550,7 +4550,7 @@ test "jir bitcode cache round-trip" {
         SECTIONS_MAGIC,
         HEADER_SIZE,
         read_sections,
-        running_compiler_digest,
+        native_abi_digest,
         SEC_NBITCODE
     }
 
@@ -4585,9 +4585,7 @@ test "jir bitcode cache round-trip" {
     assert stamp.triple == llvm.get_default_triple() , (
         f"Triple mismatch: {stamp.triple} != {llvm.get_default_triple()}"
     );
-    assert stamp.compiler_digest == running_compiler_digest() , (
-        "stamp does not carry the running compiler digest"
-    );
+    assert stamp.abi == native_abi_digest() , "stamp does not carry the native ABI";
     assert stamp.codegen_identity , "stamp carries no codegen identity";
     assert len(payload) > 0 , "Bitcode should not be empty";
 

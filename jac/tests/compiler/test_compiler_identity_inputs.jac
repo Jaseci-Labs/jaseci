@@ -1,43 +1,15 @@
-"""One binary, several compiler trees, one cache: the slots must not collide.
+"""What a compiler identity covers, and where a module's cache entry lives.
 
-The dev loop picks a compiler source per process from the nearest `jac.toml`,
-so two checkouts can compile the same file concurrently through the same
-binary. The module cache keyed only the source path, and the compiler identity
-lived in the JIR's ENVKEY -- a field read *after* the file was opened. Both
-trees therefore targeted one filename and each rejected, then overwrote, what
-the other had just written: correct results, unbounded rebuilds.
-
-The compiler digest now names a generation directory, so each tree owns its
-own slot. Generations are cheap to create -- every compiler edit mints one --
-so an unused generation is swept once it goes untouched past the TTL, and the
-pre-generation flat layout retires the same way. The live generation is held
-by identity, never by age.
+Module caches are keyed on each module's own source, so the compiler identity
+no longer reaches them. It still names whole artifacts (sealed images and
+release payloads), and these tests pin which inputs it covers. A module has
+exactly one cache entry, directly under its cache root.
 """
 
 import os;
 import tempfile;
-import time;
 import from pathlib { Path }
-import jaclang.compiler.driver.jir as jir;
-import from jaclang.compiler.driver.jir {
-    get_module_cache_path,
-    get_native_debug_dir,
-    sweep_stale_generations
-}
-
-glob GEN_A: str = "a" * 16,
-     GEN_B: str = "b" * 16,
-     GEN_C: str = "c" * 16,
-     STALE_AGE: float = 40.0 * 86400.0;
-
-def _pin_generation(tag: str) {
-    jir._COMPILER_GENERATION_CACHE.clear();
-    jir._COMPILER_GENERATION_CACHE.append(tag);
-}
-
-def _unpin_generation {
-    jir._COMPILER_GENERATION_CACHE.clear();
-}
+import from jaclang.compiler.driver.jir { get_module_cache_path, get_native_debug_dir }
 
 def _seeded_module -> str {
     tmp = tempfile.mkdtemp();
@@ -48,104 +20,23 @@ def _seeded_module -> str {
     return src;
 }
 
-def _age(path: Path) {
-    old = time.time() - STALE_AGE;
-    os.utime(path, (old, old));
-}
-
-test "two compiler generations get disjoint cache slots for one module" {
+test "a module has one cache entry, directly under its cache root" {
     src = _seeded_module();
-    _pin_generation(GEN_A);
-    first = get_module_cache_path(src);
-    _pin_generation(GEN_B);
-    second = get_module_cache_path(src);
-    _unpin_generation();
-    assert first != second , "one cache slot served two compiler generations";
-    assert first.name == second.name , "only the generation directory may differ";
-    assert first.parent.name == GEN_A;
-    assert second.parent.name == GEN_B;
-    assert first.parent.parent == second.parent.parent , (
-        "generations must be siblings under one cache root"
+    entry = get_module_cache_path(src);
+    assert entry == get_module_cache_path(src);
+    assert entry.suffix == ".jir";
+    assert entry.parent == get_native_debug_dir(src).parent , (
+        "a module entry sits below another directory than its cache root"
     );
 }
 
-test "native artifacts ride the generation of the compiler that emitted them" {
+test "native debug output sits beside the module entries" {
     src = _seeded_module();
-    _pin_generation(GEN_A);
-    native = get_native_debug_dir(src);
-    _unpin_generation();
-    assert native.name == "native-debug";
-    assert native.parent.name == GEN_A , (
-        "native artifacts escaped their compiler's generation"
-    );
-}
-
-test "the sweep drops abandoned generations and keeps the live one" {
-    cache_root = Path(tempfile.mkdtemp());
-    for tag in [GEN_A, GEN_B, GEN_C] {
-        gen = cache_root / tag;
-        gen.mkdir();
-        (gen / "mod.deadbeef.cpython-314.jir").write_bytes(b"x");
-    }
-    _age(cache_root / GEN_A);
-    _age(cache_root / GEN_C);
-    removed = sweep_stale_generations(cache_root, GEN_A);
-    assert removed == 1 , f"expected one generation swept, got {removed}";
-    assert (cache_root / GEN_A).is_dir() , "the live generation was swept despite its age";
-    assert (cache_root / GEN_B).is_dir() , "a recently used generation was swept";
-    assert not (cache_root / GEN_C).exists() , "the abandoned generation survived";
-}
-
-test "the sweep retires the pre-generation flat layout" {
-    cache_root = Path(tempfile.mkdtemp());
-    legacy = cache_root / "mod.deadbeef.cpython-314.jir";
-    legacy.write_bytes(b"x");
-    native = cache_root / "native";
-    native.mkdir();
-    (native / "mod.o").write_bytes(b"x");
-    _age(legacy);
-    _age(native);
-    removed = sweep_stale_generations(cache_root, GEN_A);
-    assert removed == 2 , f"expected the flat layout retired, got {removed}";
-    assert not legacy.exists() , "a flat-layout jir survived";
-    assert not native.exists() , "the flat-layout native directory survived";
-}
-
-test "an unrelated file in the cache root is never swept" {
-    cache_root = Path(tempfile.mkdtemp());
-    keeper = cache_root / "notes.txt";
-    keeper.write_text("not ours");
-    _age(keeper);
-    removed = sweep_stale_generations(cache_root, GEN_A);
-    assert removed == 0 , "the sweep removed something it does not own";
-    assert keeper.exists();
-}
-
-test "a zero TTL disables the sweep" {
-    cache_root = Path(tempfile.mkdtemp());
-    gen = cache_root / GEN_C;
-    gen.mkdir();
-    _age(gen);
-    prior = os.environ.get("JAC_CACHE_GENERATION_TTL_DAYS");
-    os.environ["JAC_CACHE_GENERATION_TTL_DAYS"] = "0";
-    try {
-        removed = sweep_stale_generations(cache_root, GEN_A);
-    } finally {
-        if prior is None {
-            del os.environ["JAC_CACHE_GENERATION_TTL_DAYS"];
-        } else {
-            os.environ["JAC_CACHE_GENERATION_TTL_DAYS"] = prior;
-        }
-    }
-    assert removed == 0 , "a zero TTL still swept a generation";
-    assert gen.is_dir();
+    assert get_native_debug_dir(src).name == "native-debug";
 }
 
 test "JacPython sources participate in the producing compiler identity" {
-    import from jaclang.compiler.driver.jir {
-        compiler_source_digest,
-        _manifest_compiler_digest
-    }
+    import from jaclang.compiler.driver.jir { compiler_source_digest }
     prefixes = (
         "compiler/frontend/python/",
         "compiler/backends/py/jacpython/",
@@ -159,7 +50,6 @@ test "JacPython sources participate in the producing compiler identity" {
             before = compiler_source_digest(pkg);
             src.write_text("def f() -> int { return 2; }\n");
             assert compiler_source_digest(pkg) != before;
-            assert _manifest_compiler_digest(pkg) != before;
         }
     }
 }
@@ -246,10 +136,7 @@ test "compiler identity excludes applications tests and generated artifacts" {
 }
 
 test "native-only units join the compiler identity by path, not by content" {
-    import from jaclang.compiler.driver.jir {
-        compiler_source_digest,
-        _manifest_compiler_digest
-    }
+    import from jaclang.compiler.driver.jir { compiler_source_digest }
     with tempfile.TemporaryDirectory() as pkg {
         unit = Path(pkg) / "runtime/na_stdlib/fnmatch.jac";
         unit.parent.mkdir(parents=True);
@@ -258,12 +145,10 @@ test "native-only units join the compiler identity by path, not by content" {
         compiler.parent.mkdir(parents=True);
         compiler.write_text("def f -> int { return 1; }\n");
         before = compiler_source_digest(pkg);
-        assert _manifest_compiler_digest(pkg) == before;
         unit.write_text("def f -> int { return 2; }\n");
         assert compiler_source_digest(pkg) == before , (
             "an edit to a native-only unit changed the compiler identity"
         );
-        assert _manifest_compiler_digest(pkg) == before;
         added = Path(pkg) / "runtime/na_stdlib/glob.jac";
         added.write_text("def g -> int { return 1; }\n");
         assert compiler_source_digest(pkg) != before , (

@@ -15,7 +15,7 @@ import from jaclang.runtime.semantic { Info, info_graph_to_json }
 import from jaclang.runtime.surface { SurfaceEntry }
 
 glob CLIENT_RECORD_VERSION: int = 4,
-     DEF_DEP_SEP: str = "\x1f";
+     ROW_SEP: str = "\x1f";
 
 obj UnitProducts {
     has path: str,
@@ -24,10 +24,6 @@ obj UnitProducts {
         interop: str = "",
         client: str = "",
         placement: str = "",
-        ct_file_deps: list[str] = [],
-        ct_body_deps: list[str] = [],
-        ct_def_deps: list[str] = [],
-        def_spans: list[str] = [],
         app: str = "",
         persistence: list[str] = [],
         import_edges: list[str] = [],
@@ -40,67 +36,6 @@ obj UnitProducts {
         iface_shape: str = "",
         effects: str = "",
         jac_deps: list[str] = [];
-}
-
-def definition_span_rows(tree: uni.Module) -> list[str] {
-    rows: list[str] = [];
-    for ability in tree.get_all_sub_nodes(uni.Ability) {
-        note_definition_span(rows, ability, uni.definition_qualname(ability));
-    }
-    for arch in tree.get_all_sub_nodes(uni.Archetype) {
-        note_definition_span(rows, arch, uni.definition_qualname(arch));
-    }
-    for enum_def in tree.get_all_sub_nodes(uni.Enum) {
-        note_definition_span(rows, enum_def, uni.definition_qualname(enum_def));
-    }
-    for impl_def in tree.get_all_sub_nodes(uni.ImplDef) {
-        parts: list[str] = [part.sym_name for part in impl_def.target];
-        note_definition_span(rows, impl_def, ".".join(parts));
-    }
-    return rows;
-}
-
-def note_definition_span(rows: list[str], definition: uni.UniNode, qualname: str) {
-    loc = definition.loc;
-    if not qualname or loc is None or not loc.mod_path {
-        return;
-    }
-    rows.append(
-        os.path.realpath(loc.mod_path)
-            + DEF_DEP_SEP
-            + qualname
-            + DEF_DEP_SEP
-            + str(loc.pos_start)
-            + ","
-            + str(loc.pos_end)
-    );
-}
-
-def dependency_span_rows(module: uni.Module, program: JacProgram) -> list[str] {
-    import from jaclang.compiler.driver.compilation_context { program_for }
-    import from jaclang.compiler.frontend.host { active_host }
-    import from jaclang.compiler.types.stubcat.reader { CatModule }
-    rows: list[str] = [];
-    seen: set[str] = set();
-    for (path, _) in module.ct_def_deps {
-        if path in seen {
-            continue;
-        }
-        seen.add(path);
-        dep = program.mod.hub.get(path);
-        if dep is None {
-            dep = program_for(path, program).mod.hub.get(path);
-        }
-        if dep is None or dep.stub_only or isinstance(dep, CatModule) {
-            continue;
-        }
-        rows.append(path + DEF_DEP_SEP + DEF_DEP_SEP + "0,0");
-        for annex in active_host().annex_files(path, ".impl.jac") {
-            rows.append(os.path.realpath(annex) + DEF_DEP_SEP + DEF_DEP_SEP + "0,0");
-        }
-        rows.extend(definition_span_rows(dep));
-    }
-    return rows;
 }
 
 def jac_dependencies(module: uni.Module) -> list[str] {
@@ -173,9 +108,9 @@ def import_edge_rows(module: uni.Module) -> list[str] {
         }
         rows.append(
             ("1" if item.is_absorb else "0")
-                + DEF_DEP_SEP
+                + ROW_SEP
                 + source
-                + DEF_DEP_SEP
+                + ROW_SEP
                 + ",".join(names)
         );
     }
@@ -513,16 +448,8 @@ def placement_record(module: uni.Module, program: JacProgram) -> str {
 def unit_products(module: uni.Module, program: JacProgram) -> UnitProducts {
     products = UnitProducts(
         path=module.loc.mod_path,
-        jcir=module.gen.jcir or b"",
-        ct_file_deps=list(module.ct_file_deps),
-        ct_body_deps=list(module.ct_body_deps),
-        ct_def_deps=[
-            path + DEF_DEP_SEP + qualname for (path, qualname) in module.ct_def_deps
-        ]
+        jcir=module.gen.jcir or b""
     );
-    if module.ct_def_deps {
-        products.def_spans = dependency_span_rows(module, program);
-    }
     owned: dict[(str, Info)] = {};
     for scope in program.analysis.mtir_owned.get(module.loc.mod_path, []) {
         info = program.mtir_map.get(scope);
@@ -583,10 +510,6 @@ def products_record(products: UnitProducts) -> dict[str, any] {
         "interop": products.interop,
         "client": products.client,
         "placement": products.placement,
-        "ct_file_deps": list(products.ct_file_deps),
-        "ct_body_deps": list(products.ct_body_deps),
-        "ct_def_deps": list(products.ct_def_deps),
-        "def_spans": list(products.def_spans),
         "app": products.app,
         "persistence": list(products.persistence),
         "import_edges": list(products.import_edges),
@@ -611,10 +534,6 @@ def products_from_record(raw: dict[str, any]) -> UnitProducts {
         interop=str(raw.get("interop", "")),
         client=str(raw.get("client", "")),
         placement=str(raw.get("placement", "")),
-        ct_file_deps=json_str_list(raw.get("ct_file_deps")),
-        ct_body_deps=json_str_list(raw.get("ct_body_deps")),
-        ct_def_deps=json_str_list(raw.get("ct_def_deps")),
-        def_spans=json_str_list(raw.get("def_spans")),
         app=str(raw.get("app", "")),
         persistence=json_str_list(raw.get("persistence")),
         import_edges=json_str_list(raw.get("import_edges")),
@@ -628,15 +547,4 @@ def products_from_record(raw: dict[str, any]) -> UnitProducts {
         effects=str(raw.get("effects", "")),
         jac_deps=json_str_list(raw.get("jac_deps"))
     );
-}
-
-def definition_deps(products: UnitProducts) -> list[tuple[str, str]] {
-    out: list[tuple[str, str]] = [];
-    for row in products.ct_def_deps {
-        (path, _, qualname) = row.partition(DEF_DEP_SEP);
-        if path and qualname {
-            out.append((path, qualname));
-        }
-    }
-    return out;
 }

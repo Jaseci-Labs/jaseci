@@ -244,7 +244,6 @@ obj ToolchainsConfig {
 
 obj DevConfig {
     has jaclang_source: str = "",
-        exact: bool = False,
         pod_binary: str = "",
         jobs: str = "",
         test_jobs: str = "",

@@ -105,7 +105,6 @@ test "a bytecode compile preserves native products across compilation contexts" 
         SEC_NOBJ,
         SEC_NBITCODE,
         SEC_NDEPS,
-        SEC_NCTDEPS,
         SEC_BYTECODE,
         get_module_cache_path,
         read_section_bytes,
@@ -124,7 +123,7 @@ test "a bytecode compile preserves native products across compilation contexts" 
         cache = get_module_cache_path(str(source));
         before = cache.read_bytes();
         stamp = program.native_units().stamp_for(options, str(source));
-        sections = [SEC_NIFACE, SEC_NOBJ, SEC_NBITCODE, SEC_NDEPS, SEC_NCTDEPS];
+        sections = [SEC_NIFACE, SEC_NOBJ, SEC_NBITCODE, SEC_NDEPS];
         assert all(
             read_section_bytes(before, section) is not None for section in sections
         );

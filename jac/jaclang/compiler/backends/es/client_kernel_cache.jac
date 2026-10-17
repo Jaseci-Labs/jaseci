@@ -13,23 +13,6 @@ def _cache_dir -> str {
     return d;
 }
 
-def _es_backend_fingerprint -> str {
-    import glob as _g;
-
-    es_dir = os.path.join(jaclang_pkg_root(), "compiler", "backends", "es");
-    h = hashlib.sha256();
-    for pat in ["*.jac", os.path.join("impl", "*.jac")] {
-        for p in sorted(_g.`glob(os.path.join(es_dir, pat))) {
-            try {
-                with open(p, "rb") as f {
-                    h.update(f.read());
-                }
-            } except Exception {}
-        }
-    }
-    return h.hexdigest()[:16];
-}
-
 def _unit_source_path -> tuple[str, str] {
     texts: list[str] = [];
     for rel in OSP_CORE_PARTS {
@@ -51,11 +34,7 @@ def _unit_source_path -> tuple[str, str] {
 }
 
 def _artifact_path(source_digest: str) -> str {
-    h = hashlib.sha256();
-    h.update(running_compiler_digest().encode());
-    h.update(source_digest.encode());
-    h.update(_es_backend_fingerprint().encode());
-    return os.path.join(_cache_dir(), f"osp_core_cl.{h.hexdigest()[:16]}.mjs");
+    return os.path.join(_cache_dir(), f"osp_core_cl.{source_digest}.mjs");
 }
 
 def _lower(cl_copy: str) -> str {

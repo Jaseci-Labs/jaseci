@@ -29,7 +29,7 @@ import from jaclang.compiler.backends.native.link_plan {
 }
 import from jaclang.compiler.driver.native_iface { NativeIface }
 
-glob STAMP = NativeStamp(compiler_digest="c", codegen_identity="g", triple="t");
+glob STAMP = NativeStamp(abi="c", codegen_identity="g", triple="t");
 
 def sections_of(path: str) -> dict[int, bytes] {
     data = get_module_cache_path(path).read_bytes();

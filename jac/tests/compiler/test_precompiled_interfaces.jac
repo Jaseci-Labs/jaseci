@@ -73,7 +73,6 @@ test "skipping analysis changes no precompiled product, only analysis dependency
     import from jaclang.compiler.driver.jir {
         HEADER_SIZE,
         SECTIONS_MAGIC,
-        SEC_CTDEPS,
         SEC_DEPS,
         read_sections
     }
@@ -95,7 +94,7 @@ test "skipping analysis changes no precompiled product, only analysis dependency
             assert start >= 0;
             sections[skipped] = read_sections(data, start + len(SECTIONS_MAGIC));
         }
-        records = {SEC_CTDEPS, SEC_DEPS};
+        records = {SEC_DEPS};
         for key in set(sections[False]) | set(sections[True]) {
             if key not in records {
                 assert sections[False].get(key) == sections[True].get(key) , (

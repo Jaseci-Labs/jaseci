@@ -43,7 +43,6 @@ glob RETIRED: tuple[str, ...] = (
          "toolchains/cocoapods",
          "jir/kernel_units"
      ),
-     GENERATION_PATTERN: str = "[0-9a-f]" * 16,
      BUCKETS: list[Bucket] = [
          Bucket(
              name="rt",
@@ -56,10 +55,10 @@ glob RETIRED: tuple[str, ...] = (
              relpath="jir/modules",
              policy=Policy(
                  ttl_days=14.0,
-                 pattern=GENERATION_PATTERN + "|native|*.jir",
-                 ttl_env="JAC_CACHE_GENERATION_TTL_DAYS"
+                 pattern="*.jir|native-debug",
+                 ttl_env="JAC_CACHE_MODULE_TTL_DAYS"
              ),
-             summary="compiled modules, one generation per compiler digest"
+             summary="compiled modules, one entry per source file"
          ),
          Bucket(
              name="jir-bootstrap",
@@ -78,12 +77,6 @@ glob RETIRED: tuple[str, ...] = (
              relpath="jir/jit",
              policy=Policy(ttl_days=14.0, pattern="*.bc"),
              summary="optimized whole-program images for the in-process JIT, one per link plan"
-         ),
-         Bucket(
-             name="jir-digests",
-             relpath="jir",
-             policy=Policy(ttl_days=14.0, pattern="compiler_digest.*.json"),
-             summary="compiler source digests, one per checkout"
          ),
          Bucket(
              name="apps",

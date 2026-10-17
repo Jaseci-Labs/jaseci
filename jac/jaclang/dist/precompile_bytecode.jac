@@ -25,20 +25,6 @@ def _phase(label: str) {
     }
 }
 
-def compiler_identity -> str {
-    digest = running_compiler_digest();
-    if digest.startswith("0:") {
-        raise RuntimeError(
-            "Precompile aborted: no compiler sources found under the running "
-            "jaclang package, so this build cannot state which compiler it is. "
-            "Every seeded .jir would then be reusable by any other compiler at "
-            "this version -- the #8178 failure mode. Check that the seed tree and "
-            "compiler/ ship with the running jaclang."
-        );
-    }
-    return digest;
-}
-
 def find_package_dir(source_dir: str) -> str | None {
     src = Path(source_dir).resolve();
     if not src.is_dir() {
@@ -367,21 +353,6 @@ def _native_extra(jac_path: str, pkg_root: str) -> dict[int, bytes] {
                 import from jaclang.compiler.driver.jir { rebase_placement_section }
                 raw = rebase_placement_section(raw, os.path.normpath(pkg_root));
             }
-            if sec == SEC_NCTDEPS {
-                rebased: dict[str, bytes] = {};
-                for (key, record) in native_section_variants(raw).items() {
-                    unpacked = NativeStamp.unpack_record(record);
-                    if unpacked is not None {
-                        wrapped = unpacked[0].pack(
-                            rebase_ct_deps_section(
-                                unpacked[1], os.path.normpath(pkg_root)
-                            )
-                        );
-                        rebased.update(native_section_variants(wrapped));
-                    }
-                }
-                raw = pack_native_variants(rebased);
-            }
             out[int(sec)] = raw;
         }
     } except Exception {}
@@ -445,12 +416,6 @@ def _unit_extra(jac_path: str, pkg_root: str, embed_src: bool) -> dict[int, byte
                     }
                 }
                 extra[SEC_PATH_ROOT] = paths.to_bytes(os.path.realpath(pkg_root));
-            }
-            raw = read_section_bytes(data, SEC_CTDEPS);
-            if raw is not None {
-                extra[SEC_CTDEPS] = rebase_ct_deps_section(
-                    raw, os.path.normpath(pkg_root)
-                );
             }
         }
     } except OSError {}
@@ -1043,28 +1008,23 @@ def seal_finalize(
         return 1;
     }
 
-    identity = compiler_identity();
     _phase("completeness check");
     foreign: list[str] = [];
     for p in sealable_sources(str(pkg_path), app) {
         rel = Path(p).relative_to(pkg_path);
         jir = precompiled_dir / pyver / rel.with_suffix(".jir");
-        if not precompiled_jir_matches_source(
-            jir.read_bytes(), p, identity, str(pkg_path)
-        ) {
+        if not precompiled_jir_matches_source(jir.read_bytes(), p) {
             foreign.append(str(rel));
         }
     }
     if foreign {
         console.error(
             f"Seal aborted: {len(foreign)} module(s) carry stale JIRs "
-            f"(first: {foreign[:5]}). Their source, compiler identity, or "
-            "compile-time dependencies no longer match. Delete "
+            f"(first: {foreign[:5]}). Their source no longer matches. Delete "
             f"{precompiled_dir} and re-run the precompile."
         );
         return 1;
     }
-    console.print(f"  Compiler identity: {identity} (verified over every JIR)");
 
     out_dir = precompiled_dir / pyver;
 
@@ -1424,7 +1384,6 @@ def write_manifest(
         "python_tag": pyver,
         "jir_format_version": FORMAT_VERSION,
         "jaclang_version": jac_ver,
-        "compiler_digest": compiler_identity(),
         "modules": modules
     };
     if payloads {
@@ -1557,7 +1516,6 @@ def run_precompile(
     jobs_arg: str = "",
     app: str = ""
 ) {
-    require_exact_compiler_products();
     exclude_seed = seal or seal_compile;
     package_dir = find_package_dir(source_dir);
     if package_dir is None {
@@ -1592,7 +1550,6 @@ def run_precompile(
 
     console.print(f"Precompiling {pkg_name} for {pyver}...");
     console.print(f"  Package directory: {package_dir}");
-    console.print(f"  Compiler identity: {compiler_identity()}");
     if skip_analysis {
         console.print("  Analysis: skipped for Python-lane units (toolchain package)");
     }
@@ -1697,9 +1654,7 @@ def run_precompile(
         try {
             if jir_path.is_file() {
                 existing = jir_path.read_bytes();
-                if precompiled_jir_matches_source(
-                    existing, jac_path, package_root=package_dir
-                )
+                if precompiled_jir_matches_source(existing, jac_path)
                     and embed_src == (read_debug_source(existing) is not None) {
                     return {"status": "reused", "rel": str(rel)};
                 }

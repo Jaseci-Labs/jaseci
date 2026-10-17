@@ -8,18 +8,12 @@ import from jaclang.compiler.driver.jir {
     PRECOMPILE_SENTINEL,
     compute_content_sha256,
     NativeStamp,
-    SEC_NCTDEPS,
-    module_ct_deps_section,
-    ct_dep_text_fresh,
-    stale_ct_dep_rows,
     SEC_NBITCODE,
     SEC_NIFACE,
     SEC_NOBJ,
     SEC_PLACEMENT,
     cache_mode,
-    carried_native_sections,
     current_native_stamp,
-    native_producer_digest,
     write_module_cache,
     get_module_cache_path,
     is_module_cache_valid,
@@ -36,6 +30,8 @@ import from jaclang.compiler.driver.native_iface { NativeIface }
 glob SLOW_STEP_SECONDS: float = 2.0,
      DEMOTED_SYMBOL_SUFFIX: str = ".__jac_demoted";
 
+class NativeBuildStopped(BaseException) {}
+
 obj NativeUnitEntry {
     has path: str,
         digest: str,
@@ -45,8 +41,6 @@ obj NativeUnitEntry {
         source_key: (str | None) = None,
         object_bytes: (bytes | None) = None,
         bitcode: (bytes | None) = None,
-        compile_deps: bytes = b"",
-        compile_deps_base: str = "",
         dep_digests: dict[str, str] = {};
 }
 
@@ -60,7 +54,10 @@ obj NativeUnitRegistry {
         failures: dict[str, str] = {},
         compiled_paths: list[str] = [],
         progress: (Callable[[str], None] | None) = None,
-        progress_steps: int = 0;
+        progress_steps: int = 0,
+        cold: bool = False,
+        stop_after: int = 0,
+        lowered_units: int = 0;
 
     def postinit {
         self.building = set();
@@ -242,38 +239,16 @@ obj NativeUnitRegistry {
     ) -> NativeStamp {
         opts = options if options is not None else self._options();
         return current_native_stamp(
-            opts.unit_codegen_identity(path),
-            opts.effective_triple(),
-            native_producer_digest(opts.kernel_build)
+            opts.unit_codegen_identity(path), opts.effective_triple()
         );
     }
 
-    def _carry(resolved: str, stamp: NativeStamp) -> bool {
-        carried = carried_native_sections(resolved, stamp.compiler_digest);
-        if not carried {
-            return False;
-        }
-        write_module_cache(resolved, None, extra_sections=carried);
-        self._event("native_carry");
-        return True;
-    }
-
-    def _module_jir(
-        resolved: str, stamp: (NativeStamp | None) = None
-    ) -> (tuple[bytes, str] | None) {
+    def _module_jir(resolved: str) -> (tuple[bytes, str] | None) {
         try {
             cache_path = get_module_cache_path(resolved);
             why = module_cache_invalid_reason(resolved, cache_path);
-            data = b"" if why else cache_path.read_bytes();
-            if stamp is not None
-                and native_section_payload(read_section_bytes(data, SEC_NIFACE), stamp)
-                    is None
-                and self._carry(resolved, stamp) {
-                why = module_cache_invalid_reason(resolved, cache_path);
-                data = b"" if why else cache_path.read_bytes();
-            }
             if not why {
-                return (data, "", );
+                return (cache_path.read_bytes(), "", );
             }
             self._miss(resolved, why);
         } except Exception {}
@@ -287,10 +262,7 @@ obj NativeUnitRegistry {
     def _entry_fresh(ent: NativeUnitEntry) -> bool {
         """Use the shared source key, including annex membership and content.
         A deleted file differs from a unit that never had a source file.""";
-        return ent.source_key == NativeUnitRegistry._source_key(ent.path)
-            and ct_dep_text_fresh(
-                ent.compile_deps.decode("utf-8"), ent.compile_deps_base
-            );
+        return ent.source_key == NativeUnitRegistry._source_key(ent.path);
     }
 
     def _register(
@@ -312,14 +284,12 @@ obj NativeUnitRegistry {
         path: str,
         iface: NativeIface,
         options: (CompileOptions | None) = None,
-        dep_digests: (dict[str, str] | None) = None,
-        compile_deps: bytes = b""
+        dep_digests: (dict[str, str] | None) = None
     ) -> NativeUnitEntry {
         resolved = os.path.realpath(path);
         ent = self._register(
             resolved, iface, self.stamp_for(options, resolved), "compile"
         );
-        ent.compile_deps = compile_deps;
         ent.dep_digests = dict(dep_digests or {});
         gen = self._live_gen(resolved);
         if gen is not None {
@@ -350,8 +320,7 @@ obj NativeUnitRegistry {
             module.loc.mod_path,
             gen.native_iface,
             options,
-            dep_digests=self.dep_digests(list(gen.native_deps or [])),
-            compile_deps=module_ct_deps_section(module) or b""
+            dep_digests=self.dep_digests(list(gen.native_deps or []))
         );
         ent.object_bytes = gen.native_object;
         ent.bitcode = gen.native_bitcode;
@@ -398,7 +367,7 @@ obj NativeUnitRegistry {
         if live is not None and live.stamp.matches(stamp) {
             return sorted(live.dep_digests.items());
         }
-        found = self._module_jir(resolved, stamp);
+        found = self._module_jir(resolved);
         if found is None {
             return [];
         }
@@ -436,7 +405,7 @@ obj NativeUnitRegistry {
         check_deps: bool,
         options: (CompileOptions | None) = None
     ) -> (NativeUnitEntry | None) {
-        found = self._module_jir(resolved, stamp);
+        found = self._module_jir(resolved);
         if found is None {
             return None;
         }
@@ -447,25 +416,6 @@ obj NativeUnitRegistry {
             self._miss(resolved, "no native products for this codegen");
             return None;
         }
-        compile_deps = native_section_payload(
-            read_section_bytes(data, SEC_NCTDEPS), stamp
-        );
-        if compile_deps is None {
-            self._event("native_comptime_miss");
-            self._miss(resolved, "no comptime dependency record for this codegen");
-            return None;
-        }
-        if not ct_dep_text_fresh(compile_deps.decode("utf-8"), base_dir) {
-            self._event("native_comptime_miss");
-            self._miss(
-                resolved,
-                "comptime dependency changed: "
-                    + ", ".join(
-                        stale_ct_dep_rows(compile_deps.decode("utf-8"), base_dir)
-                    )
-            );
-            return None;
-        }
         iface.resolve_deps(resolved);
         if check_deps
             and not self._deps_match(data, stamp, base_dir, resolved, options) {
@@ -474,8 +424,6 @@ obj NativeUnitRegistry {
             return None;
         }
         ent = self._register(resolved, iface, stamp, "disk");
-        ent.compile_deps = compile_deps;
-        ent.compile_deps_base = base_dir;
         ent.dep_digests = dict(read_native_dep_hashes(data, stamp, base_dir, resolved));
         ent.object_bytes = native_section_payload(
             read_section_bytes(data, SEC_NOBJ), stamp
@@ -515,7 +463,7 @@ obj NativeUnitRegistry {
             );
         }
         (rebuild, _) = cache_mode();
-        if not rebuild and not options.no_ir_cache {
+        if not rebuild and not options.no_ir_cache and not self.cold {
             self.checking.add(resolved);
             try {
                 found = self._read_from_disk(
@@ -597,7 +545,7 @@ obj NativeUnitRegistry {
         if ent is not None and ent.stamp.matches(stamp) {
             return sorted(os.path.realpath(d) for d in ent.iface.deps);
         }
-        found = self._module_jir(resolved, stamp);
+        found = self._module_jir(resolved);
         if found is None {
             return [];
         }
@@ -630,16 +578,9 @@ obj NativeUnitRegistry {
         if ent is None {
             return {};
         }
-        import from jaclang.compiler.driver.jir {
-            SEC_NDEPS,
-            native_deps_section,
-            absolutize_ct_deps_section
-        }
+        import from jaclang.compiler.driver.jir { SEC_NDEPS, native_deps_section }
         stamp = ent.stamp;
         sections: dict[int, bytes] = {
-            SEC_NCTDEPS: stamp.pack(
-                absolutize_ct_deps_section(ent.compile_deps, ent.compile_deps_base)
-            ),
             SEC_NIFACE: stamp.pack(ent.iface.to_bytes()),
             SEC_NDEPS: stamp.pack(native_deps_section(ent.dep_digests))
         };
@@ -697,7 +638,6 @@ obj NativeUnitRegistry {
         iface_text: str,
         layout_json: str,
         deps: list[str],
-        compile_deps: bytes,
         options: (CompileOptions | None) = None
     ) -> (NativeUnitEntry | None) {
         import json;
@@ -746,8 +686,7 @@ obj NativeUnitRegistry {
             resolved,
             iface,
             opts,
-            dep_digests=self.dep_digests(list(deps)),
-            compile_deps=compile_deps
+            dep_digests=self.dep_digests(list(deps))
         );
         ent.bitcode = bitcode;
         ent.object_bytes = carrier.native_object;
@@ -781,7 +720,7 @@ obj NativeUnitRegistry {
             return ent.digest;
         }
         stamp = self.stamp_for(None, resolved);
-        found = self._module_jir(resolved, stamp);
+        found = self._module_jir(resolved);
         import from jaclang.compiler.driver.compile_options { env_na_debug }
         if found is None {
             if env_na_debug() {
@@ -918,6 +857,9 @@ obj NativeBuildSession {
         self.prog = JacProgram();
         self.prog.options = self.options.clone_for_native_import();
         self.prog._natives = self.registry;
+        if self.registry.cold {
+            self.prog.iface_registry().cold = True;
+        }
     }
 
     def lower(path: str, use_str: (str | None) = None) -> (NativeUnitEntry | None) {
@@ -1013,6 +955,10 @@ obj NativeBuildSession {
             self.lowered[resolved] = mod;
             ent = self.registry.record_module(mod, opts);
             self.registry._stash_products(resolved, mod.gen);
+            self.registry.lowered_units += 1;
+            if 0 < self.registry.stop_after <= self.registry.lowered_units {
+                raise NativeBuildStopped();
+            }
             return ent;
         } except Exception {
             import traceback;

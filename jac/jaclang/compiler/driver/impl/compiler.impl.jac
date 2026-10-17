@@ -249,38 +249,10 @@ impl JacCompiler._get_bytecode(
     allow_unsealed = (not rebuild) and (not no_precompile);
     precompiled = self._get_precompiled_jir_bytecode(full_target, allow_unsealed);
     if precompiled is not None {
-        (precompiled_bc, precompiled_ctdeps) = precompiled;
         try {
-            import from jaclang.compiler.driver.jir { SEC_CTDEPS as _PC_CTDEPS }
-            _pc_sections: dict[int, bytes] = {};
-            if precompiled_ctdeps {
-                _pc_sections[_PC_CTDEPS] = precompiled_ctdeps;
-            }
-            write_module_cache(
-                full_target,
-                precompiled_bc,
-                flags=FLAG_PRECOMPILED,
-                extra_sections=_pc_sections
-            );
+            write_module_cache(full_target, precompiled, flags=FLAG_PRECOMPILED);
         } except Exception {}
-        return marshal.loads(precompiled_bc);
-    }
-    carried = None if rebuild else carried_module_bytecode(full_target);
-    if carried is not None {
-        (carried_bc, carried_ctdeps) = carried;
-        try {
-            import from jaclang.compiler.driver.jir { SEC_CTDEPS as _CARRY_CTDEPS }
-            write_module_cache(
-                full_target,
-                carried_bc,
-                flags=FLAG_CARRIED,
-                extra_sections=(
-                    {_CARRY_CTDEPS: carried_ctdeps} if carried_ctdeps else {}
-                )
-            );
-        } except Exception {}
-        setup_progress.on_internal_reuse(full_target);
-        return marshal.loads(carried_bc);
+        return marshal.loads(precompiled);
     }
 
     is_internal = actual_program.internal;
@@ -365,9 +337,7 @@ impl JacCompiler._adopt_kernel_compile(
             sections = unit_sections(unit, bytecode);
             if unit.native_ir {
                 sections.update(
-                    self._adopt_native_unit(
-                        unit, program, options, sections.get(SEC_CTDEPS, b"")
-                    )
+                    self._adopt_native_unit(unit, program, options)
                 );
             }
             try {
@@ -443,10 +413,7 @@ impl JacCompiler.kernel_native_entry(
 }
 
 impl JacCompiler._adopt_native_unit(
-    unit: UnitProducts,
-    program: JacProgram,
-    options: CompileOptions,
-    compile_deps: bytes
+    unit: UnitProducts, program: JacProgram, options: CompileOptions
 ) -> dict[int, bytes] {
     registry = program.native_units();
     ent = registry.adopt_lowered(
@@ -455,7 +422,6 @@ impl JacCompiler._adopt_native_unit(
         unit.native_iface,
         unit.native_layout,
         unit.native_deps,
-        compile_deps,
         options
     );
     if ent is None {
@@ -691,12 +657,10 @@ impl JacCompiler._precompiled_jir_data(full_target: str) -> (tuple[bytes, str] |
 
 impl JacCompiler._get_precompiled_jir_bytecode(
     full_target: str, allow_unsealed: bool = True
-) -> (tuple[bytes, bytes] | None) {
+) -> (bytes | None) {
     import from pathlib { Path as _Path }
     import from jaclang.compiler.driver.jir {
         PRECOMPILE_SENTINEL,
-        SEC_CTDEPS,
-        absolutize_ct_deps_section,
         bundle_dir_allowed,
         cache_mode
     }
@@ -727,27 +691,16 @@ impl JacCompiler._get_precompiled_jir_bytecode(
                 break;
             }
             if os.path.isfile(jir_path) {
-                served: (tuple[bytes, bytes] | None) = None;
+                served: (bytes | None) = None;
                 try {
                     jir_data = _Path(jir_path).read_bytes();
-                    trusted = (
-                        sealed_img is not None
-                        or (
-                            precompiled_jir_matches_source(
-                                jir_data, norm_file, package_root=norm_root
-                            )
-                        )
-                    );
+                    trusted = sealed_img is not None
+                        or precompiled_jir_matches_source(jir_data, norm_file);
                     if trusted {
                         bc = read_bytecode_only(jir_data);
                         if bc is not None {
-                            _ct_raw = read_section_bytes(jir_data, SEC_CTDEPS);
-                            served = (
-                                patch_co_filenames_bytes(bc, PRECOMPILE_SENTINEL, d),
-                                absolutize_ct_deps_section(_ct_raw, norm_root)
-                                    if _ct_raw
-                                    else b"",
-
+                            served = patch_co_filenames_bytes(
+                                bc, PRECOMPILE_SENTINEL, d
                             );
                         }
                     }

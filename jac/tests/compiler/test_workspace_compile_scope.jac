@@ -4,7 +4,7 @@ import builtins;
 import from pathlib { Path }
 import from tempfile { TemporaryDirectory }
 import from unittest.mock { patch }
-import from jaclang.compiler.driver.jir { module_env_fingerprint }
+import from jaclang.compiler.driver.jir { module_cache_key }
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.project.config { get_explicit_config, set_config }
 
@@ -31,7 +31,7 @@ test "a file's cache fingerprint and compilation stay within its imports (#9095)
             };
             program = JacProgram();
             with patch("builtins.open", wraps=builtins.open) as opened {
-                module_env_fingerprint(str(target));
+                module_cache_key(str(target));
                 program.compile(str(target));
             }
             assert not program.errors_had , "\n".join(

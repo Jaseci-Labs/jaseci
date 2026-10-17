@@ -95,9 +95,8 @@ def _baked_source_dir() -> str | None:
         return None
 
 
-def _dev_table() -> tuple[str | None, bool]:
-    """``[dev] jaclang_source`` (absolute) and ``[dev] exact`` from the nearest
-    ``jac.toml``.
+def _dev_table() -> str | None:
+    """``[dev] jaclang_source`` (absolute) from the nearest ``jac.toml``.
 
     The stanza is read from the NEAREST ``jac.toml`` -- the same project root
     every other config setting resolves against (see ``_find_project_toml``), so
@@ -108,21 +107,20 @@ def _dev_table() -> tuple[str | None, bool]:
     """
     toml = _find_project_toml()
     if toml is None:
-        return (None, False)
+        return None
     with open(toml, "rb") as handle:
         raw = handle.read()
     if b"[dev]" not in raw:
-        return (None, False)
+        return None
     import tomllib
 
     section = tomllib.loads(raw.decode("utf-8")).get("dev")
     if not isinstance(section, dict):
-        return (None, False)
-    exact = section.get("exact") is True
+        return None
     src = section.get("jaclang_source")
     if not isinstance(src, str) or not src:
-        return (None, exact)
-    return (os.path.abspath(os.path.join(os.path.dirname(toml), src)), exact)
+        return None
+    return os.path.abspath(os.path.join(os.path.dirname(toml), src))
 
 
 def _is_bare_checkout(src_dir: str) -> bool:
@@ -165,7 +163,6 @@ def apply_dev_source_override() -> None:
 
            [dev]
            jaclang_source = "jac"   # dir CONTAINING jaclang/, relative to jac.toml
-           exact = true             # optional: never reuse an earlier compiler's products
 
        Inside a repo that declares its own compiler source, THAT source is the
        developer's intent -- even when the running binary is a linked dev
@@ -187,7 +184,7 @@ def apply_dev_source_override() -> None:
     the tree already chose.
 
     The decision is recorded in the handoff (``compiler_source``, empty for the
-    bundled compiler, and ``exact``). ``compiler_source`` is also the scope of
+    bundled compiler). ``compiler_source`` is also the scope of
     the ``_precompiled`` bundle lookup: the shipped, version-keyed bundle
     inside the binary's payload belongs to another jaclang and must never
     serve a source run, while a bundle INSIDE this tree was built from it and
@@ -200,9 +197,8 @@ def apply_dev_source_override() -> None:
         if "compiler_source" in inherited:
             # The top of this process tree already chose; its children run it.
             src_dir = str(inherited.get("compiler_source") or "") or None
-            exact = bool(inherited.get("exact"))
         else:
-            (src_dir, exact) = _dev_table()
+            src_dir = _dev_table()
             if src_dir is not None and _is_bare_checkout(src_dir):
                 sys.stderr.write(
                     f"jac: ignoring the dev compiler source {src_dir}: the tree "
@@ -218,7 +214,7 @@ def apply_dev_source_override() -> None:
             if src_dir in sys.path:
                 sys.path.remove(src_dir)
             sys.path.insert(0, src_dir)
-        update_handoff(compiler_source=src_dir or "", exact=exact or None)
+        update_handoff(compiler_source=src_dir or "")
     except Exception:
         # Dev convenience only; fall back to the bundled jaclang.
         pass

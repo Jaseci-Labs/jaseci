@@ -162,7 +162,7 @@ test "the section in the module JIR carries the stamp of its compile" {
     assert payload is not None;
     assert stamp.codegen_identity == prog.options.unit_codegen_identity(path);
     assert NativeIface.read_digest(payload) == mod.gen.native_iface.digest();
-    other = NativeStamp(compiler_digest="x", codegen_identity="y", triple="z");
+    other = NativeStamp(abi="x", codegen_identity="y", triple="z");
     assert native_section_payload(raw, other) is None , "a foreign stamp reads as absent";
 }
 
@@ -227,7 +227,6 @@ test "native products and relocatable paths coexist in one JIR" {
         SEC_NBITCODE,
         SEC_NOBJ,
         SEC_NDEPS,
-        SEC_NCTDEPS,
         read_jir_paths,
         read_section_bytes,
         write_precompiled_jir
@@ -240,12 +239,11 @@ test "native products and relocatable paths coexist in one JIR" {
         SEC_NBITCODE,
         SEC_NOBJ,
         SEC_NDEPS,
-        SEC_NCTDEPS,
         SEC_PATH_ROOT
     ];
     assert len(set(sections)) == len(sections);
     stamp = NativeStamp(
-        compiler_digest="compiler", codegen_identity="options", triple="target"
+        abi="abi", codegen_identity="options", triple="target"
     );
     iface = NativeIface(module="example", prefix="example");
     data = write_precompiled_jir(

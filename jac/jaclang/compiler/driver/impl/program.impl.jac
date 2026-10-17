@@ -216,12 +216,6 @@ impl JacProgram.load_dependency_module(
 
     if importer_path is not None {
         self.record_dependency(importer_path, resolved_path);
-        if need_tree {
-            importer = self.find_module(JacProgram.hub_key(importer_path));
-            if importer is not None {
-                importer.record_comptime_dependency(resolved_path);
-            }
-        }
     }
     active_host().note_program_dependency(self, resolved_path);
     return mod;

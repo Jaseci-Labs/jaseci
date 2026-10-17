@@ -125,61 +125,7 @@ obj CtEvaluator(CtCaller) {
         _active: set[tuple[str, int]] = set(),
         _enum_cache: dict[int, list[CtEnumMember]] = {},
         _handling: list[CtExc] = [],
-        _ret: CtValue = CT_NONE,
-        _ct_root: (Module | None) = None;
-
-    def _enter_root(nd: UniNode) -> (Module | None) {
-        prev = self._ct_root;
-        if prev is None {
-            self._ct_root = nd.find_parent_of_type(Module);
-        }
-        return prev;
-    }
-
-    def _note_ct_path(path: str, body: bool = False) {
-        owner = self._ct_root;
-        if owner is None or not path {
-            return;
-        }
-        owner.record_comptime_dependency(path, body);
-    }
-
-    def _note_producer(home: (Module | None), body: bool = False) {
-        if home is None or home is self._ct_root {
-            return;
-        }
-        path = _norm_path(home.loc.mod_path if home.loc else "");
-        if not path.endswith(".jac") {
-            return;
-        }
-        try {
-            self._note_ct_path(os.path.realpath(path), body=body);
-        } except OSError {}
-    }
-
-    def _note_definition(nd: UniNode) {
-        home = nd.find_parent_of_type(Module);
-        evaluated = self._ct_root;
-        if home is None or evaluated is None or home is evaluated {
-            return;
-        }
-        path = _norm_path(home.loc.mod_path if home.loc else "");
-        if not path.endswith(".jac") {
-            return;
-        }
-        owner: (UniNode | None) = nd;
-        while owner is not None and not isinstance(owner, (Ability, Archetype, Enum)) {
-            owner = owner.parent;
-        }
-        qualname = definition_qualname(owner) if owner is not None else "";
-        try {
-            if qualname {
-                evaluated.record_comptime_definition(os.path.realpath(path), qualname);
-            } else {
-                self._note_ct_path(os.path.realpath(path), body=True);
-            }
-        } except OSError {}
-    }
+        _ret: CtValue = CT_NONE;
 
     def try_eval(nd: Expr, demand: bool = False) -> (CtValue | None) {
         self.last_error = None;
@@ -192,7 +138,6 @@ obj CtEvaluator(CtCaller) {
         saved_barriers = self.barriers;
         saved_demand = self.demand;
         saved_handling = self._handling;
-        saved_root = self._enter_root(nd);
         self.frames = [];
         self.barriers = [];
         self._handling = [];
@@ -230,13 +175,11 @@ obj CtEvaluator(CtCaller) {
             self.barriers = saved_barriers;
             self.demand = saved_demand;
             self._handling = saved_handling;
-            self._ct_root = saved_root;
         }
     }
 
     def eval_with_bindings(nd: Expr, bindings: dict[str, CtValue]) -> CtValue {
         saved_demand = self.demand;
-        saved_root = self._enter_root(nd);
         try {
             self.demand = True;
             self.push_frame(barrier=True);
@@ -247,7 +190,6 @@ obj CtEvaluator(CtCaller) {
         } finally {
             self.pop_frame();
             self.demand = saved_demand;
-            self._ct_root = saved_root;
         }
     }
 
@@ -1008,7 +950,6 @@ obj CtEvaluator(CtCaller) {
     }
 
     def _eval_binding(asn: Assignment) -> CtValue {
-        self._note_producer(asn.find_parent_of_type(Module));
         if asn.value is None {
             raise CtError("comptime binding has no initializer");
         }
@@ -1080,7 +1021,6 @@ obj CtEvaluator(CtCaller) {
     }
 
     def _enum_members(nd: Enum) -> list[CtEnumMember] {
-        self._note_definition(nd);
         key = id(nd);
         if key in self._enum_cache {
             return self._enum_cache[key];
@@ -1900,7 +1840,6 @@ obj CtEvaluator(CtCaller) {
             for hv in self._has_vars_of(ct)
             if not hv.accessors
         ];
-        self._note_definition(node_);
         fields: dict[str, CtValue] = {};
         init_ab = self._user_method(ct, "init") or self._user_method(ct, "__init__");
         if init_ab is not None {
@@ -2000,7 +1939,6 @@ obj CtEvaluator(CtCaller) {
         }
         params = ability.signature.get_parameters();
         kw: dict[str, CtValue] = `dict(kwargs);
-        self._note_definition(ability);
         self.push_frame(barrier=True);
         self.call_stack.append(name);
         try {
@@ -2092,10 +2030,6 @@ obj CtEvaluator(CtCaller) {
         } except OSError as e {
             raise CtError(f"embed_file: cannot read {path}: {e}");
         }
-        if mod is not None and path not in mod.ct_file_deps {
-            mod.ct_file_deps.append(path);
-        }
-        self._note_ct_path(path);
         self.burn(len(data) // 64 + 1);
         if as_bytes {
             return mk_bytes(data);
@@ -2453,7 +2387,6 @@ obj CtEvaluator(CtCaller) {
             }
             rec_asn = self._class_binding(base.class_type, name);
             if rec_asn is not None and rec_asn.value is not None {
-                self._note_definition(rec_asn);
                 return self.eval_with_bindings(rec_asn.value, base.ct_args or {});
             }
             m = self._find_method(base.class_type, name);
@@ -2487,7 +2420,6 @@ obj CtEvaluator(CtCaller) {
             }
             bound_asn = self._class_binding(self._class_type_of(base), name);
             if bound_asn is not None and bound_asn.value is not None {
-                self._note_definition(bound_asn);
                 return self.eval_with_bindings(bound_asn.value, base.ct_args or {});
             }
             meth = self._find_method(self._class_type_of(base), name);

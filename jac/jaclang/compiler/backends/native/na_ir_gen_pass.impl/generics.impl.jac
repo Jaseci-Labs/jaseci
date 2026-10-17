@@ -488,20 +488,9 @@ impl NaIRGenPass._instantiate_generic(
     return fn;
 }
 
-impl NaIRGenPass._record_generic_definition(ability: uni.Ability) -> None {
-    path = ability.loc.mod_path;
-    qualname = definition_qualname(ability);
-    if qualname {
-        self.module.record_comptime_definition(path, qualname);
-    } else {
-        self.module.record_comptime_dependency(path, body=True);
-    }
-}
-
 impl NaIRGenPass._stamp_mono_fn(
     ability: uni.Ability, spec_name: str, memo_key: str
 ) -> (ir.Function | None) {
-    self._record_generic_definition(ability);
     name = ability.name_ref.sym_name if ability.name_ref else "unnamed";
     sig = ability.signature;
     if not isinstance(sig, uni.FuncSignature) {
@@ -655,7 +644,6 @@ impl NaIRGenPass._stamp_mono_method(
     spec_name: str,
     memo_key: str
 ) -> (ir.Function | None) {
-    self._record_generic_definition(ability);
     full_name = f"{arch_name}.{method_name}";
     if full_name in self._native_skipped_methods {
         return None;

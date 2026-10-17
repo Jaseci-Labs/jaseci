@@ -12,7 +12,6 @@ import from jaclang.compiler.driver.jir {
     compute_precompile_module_key,
     module_cache_key,
     precompiled_jir_matches_source,
-    running_compiler_digest,
     write_precompiled_jir
 }
 
@@ -110,46 +109,21 @@ test "the compiler digest ignores build artifacts and non-compiler modules" {
 }
 
 
-test "a compiler source edit changes the payload precompile module key" {
+test "a payload seed is reused exactly while its own source is unchanged" {
     with tempfile.TemporaryDirectory() as tmp {
         src = os.path.join(tmp, "probe.jac");
         Path(src).write_text("with entry { print(1); }\n");
-        before = compiler_source_digest(
-            _stage_compiler_tree(os.path.join(tmp, "before"), "emit(1);\n")
-        );
-        after = compiler_source_digest(
-            _stage_compiler_tree(os.path.join(tmp, "after"), "emit(2);\n")
-        );
-        assert compute_precompile_module_key(src, before)
-            != compute_precompile_module_key(src, after) , "the payload module key survived a codegen change at one version";
-        assert compute_precompile_module_key(src, before)
-            == compute_precompile_module_key(src, before);
-        assert compute_precompile_module_key(src)
-            == compute_precompile_module_key(src, running_compiler_digest());
-    }
-}
-
-
-test "the payload seed is reusable only for the compiler that wrote it" {
-    with tempfile.TemporaryDirectory() as tmp {
-        src = os.path.join(tmp, "probe.jac");
-        Path(src).write_text("with entry { print(1); }\n");
-        before = compiler_source_digest(
-            _stage_compiler_tree(os.path.join(tmp, "before"), "emit(1);\n")
-        );
-        after = compiler_source_digest(
-            _stage_compiler_tree(os.path.join(tmp, "after"), "emit(2);\n")
-        );
         seed = write_precompiled_jir(
-            b"marshalled", compute_precompile_module_key(src, before), FLAG_PRECOMPILED
+            b"marshalled", compute_precompile_module_key(src), FLAG_PRECOMPILED
         );
-        assert precompiled_jir_matches_source(seed, src, before) , "an unchanged compiler must still reuse its own seed";
-        assert not precompiled_jir_matches_source(seed, src, after) , "the seed served a jir compiled by a different compiler";
+        assert precompiled_jir_matches_source(seed, src) , "an unchanged module must reuse its own seed";
+        Path(src).write_text("with entry { print(2); }\n");
+        assert not precompiled_jir_matches_source(seed, src) , "the seed served a jir compiled from other source";
     }
 }
 
 
-test "the running compiler digest covers the real compiler tree" {
+test "the compiler identity covers the real compiler tree" {
     import jaclang;
     pkg = os.path.dirname(os.path.abspath(jaclang.__file__));
     rels = compiler_source_files(pkg);
@@ -175,8 +149,7 @@ test "the running compiler digest covers the real compiler tree" {
             or rel.endswith(".jac")
             or rel.endswith(".py") , f"{rel} is neither compiler source nor its input manifest";
     }
-    assert running_compiler_digest() == compiler_source_digest(pkg);
-    assert running_compiler_digest() == running_compiler_digest();
+    assert compiler_source_digest(pkg) == compiler_source_digest(pkg);
 }
 
 

@@ -1389,58 +1389,6 @@ test "test_cross_module_imported_func_no_false_errors" {
     }
 }
 
-"""Stale JIR caches from older compiler versions must be rejected.
-
-Regression test: a cache written by a buggy compiler (before #5195)
-would lose FuncSignature.params, causing false E1052 errors on every
-call site.  is_module_cache_valid must reject caches whose
-jaclang_version_hash doesn't match the running compiler.
-"""
-test "test_jir_cache_invalidated_on_version_mismatch" {
-    import struct;
-    import tempfile;
-    import shutil;
-    import from jaclang.compiler.driver.jir {
-        is_module_cache_valid,
-        HEADER_FMT,
-        HEADER_SIZE
-    }
-
-    setup_test();
-    try {
-        # A full compile writes the bytecode module cache; dependency loads
-        # derive trees per process and persist nothing (#8190).
-        import from jaclang.compiler.driver.compiler { JacCompiler }
-        import from jaclang.compiler.driver.program { JacProgram }
-        dep_src = fixture_path("cross_module_func.jac");
-        import from jaclang.compiler.driver.compilation_context { cache_scope }
-        program = JacProgram();
-        JacCompiler().get_bytecode(dep_src, program);
-        cache_path = artifact_cache_path(dep_src, program);
-
-        # Sanity: cache should exist and be valid right now.
-        assert cache_path.exists() , "module cache was not written";
-        with cache_scope(program.options) {
-            assert is_module_cache_valid(dep_src, cache_path) , "Fresh cache should be valid";
-        }
-
-        # Tamper: overwrite jaclang_version_hash with a fake value.
-        data = bytearray(cache_path.read_bytes());
-        # Header layout <4sHHIIIIII>: jaclang_version_hash is at offset 8.
-        struct.pack_into("<I", data, 8, 0xDEADBEEF);
-        cache_path.write_bytes(bytes(data));
-
-        # The cache should now be rejected.
-        with cache_scope(program.options) {
-            assert not is_module_cache_valid(dep_src, cache_path) , (
-                "Cache with mismatched jaclang_version_hash should be invalid"
-            );
-        }
-    } finally {
-        teardown_test();
-    }
-}
-
 test "test_cross_module_imported_func_sem_token" {
     import from jaclang.compiler.frontend.constant { JacSemTokenType }
     setup_test();
