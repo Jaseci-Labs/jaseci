@@ -6011,10 +6011,7 @@ graph import compiler.frontend {
     }
     module_facts --> compiler.passes.import_wiring_pass { ModuleFacts }
     module_facts --> compiler.passes.osp_analysis { ModuleFacts }
-    module_facts --> compiler.passes.type_checker_pass.TypeCheckPass.exit_ability {
-        ModuleFacts
-    }
-    module_facts --> compiler.passes.type_checker_pass.TypeCheckPass.exit_return_stmt {
+    module_facts --> compiler.passes.type_checker_pass.TypeCheckPass._is_generator {
         ModuleFacts
     }
     module_facts --> compiler.tests.test_module_exports { ModuleFacts }
