@@ -3079,6 +3079,7 @@ graph import compiler.backends.native {
     win_floor_ir --> compiler.backends.native.win_floor.win_import_dll {
         WIN_FLOOR_KERNEL32
     }
+    llvm --> compiler.backends.native.na_ir_gen_pass { ir }
 }
 
 graph import compiler.backends.native.llvm {
@@ -3087,7 +3088,6 @@ graph import compiler.backends.native.llvm {
     binding as llvm --> compiler.backends.native.link_glue.bind_shared_callbacks;
     binding as llvm --> compiler.backends.native.link_glue.init_object_codegen;
     binding as llvm --> compiler.backends.native.link_plan;
-    llvm --> compiler.backends.native.na_ir_gen_pass { ir }
     binding as llvm --> compiler.backends.native.na_ir_gen_pass;
     binding as llvm --> compiler.backends.native.kernel_stage0.unit_issue_details;
     type binding --> compiler.backends.native.link_plan {
