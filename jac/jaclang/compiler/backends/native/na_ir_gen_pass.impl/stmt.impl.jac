@@ -4880,12 +4880,44 @@ impl NaIRGenPass._codegen_for_indexed(
                 ),
                 _str_next_slot
             );
-            self.builder.store(
-                self._call_utf8_char_at(
-                    self.builder, collection_val, len_val, body_idx, name="for.ch"
+            _ch_byte = self.builder.zext(
+                self.builder.load(
+                    self.builder.gep(collection_val, [body_idx], name="for.ch.p"),
+                    name="for.ch.b"
                 ),
-                allocas[0]
+                i64,
+                name="for.ch.bv"
             );
+            _ch_cached = self.builder.gep(
+                self._get_char_cache_gv(),
+                [
+                    ir.Constant(ir.IntType(32), 0),
+                    _ch_byte,
+                    ir.Constant(ir.IntType(32), 2),
+                    ir.Constant(ir.IntType(32), 0)
+                ],
+                name="for.ch.cached"
+            );
+            _ch_ascii_bb = self.builder.block;
+            _ch_wide_bb = func.append_basic_block(name="for.ch.wide");
+            _ch_done_bb = func.append_basic_block(name="for.ch.done");
+            self.builder.cbranch(
+                self.builder.icmp_unsigned(
+                    "<", _ch_byte, ir.Constant(i64, 0x80), name="for.ch.isasc"
+                ),
+                _ch_done_bb,
+                _ch_wide_bb
+            );
+            self.builder.position_at_end(_ch_wide_bb);
+            _ch_wide = self._call_utf8_char_at(
+                self.builder, collection_val, len_val, body_idx, name="for.ch.multi"
+            );
+            self.builder.branch(_ch_done_bb);
+            self.builder.position_at_end(_ch_done_bb);
+            _ch_val = self.builder.phi(_ch_cached.type, name="for.ch");
+            _ch_val.add_incoming(_ch_cached, _ch_ascii_bb);
+            _ch_val.add_incoming(_ch_wide, _ch_wide_bb);
+            self.builder.store(_ch_val, allocas[0]);
         } elif kind == "bytes" {
             _by_ptr = self.builder.gep(
                 self._bytes_data_ptr(collection_val), [body_idx], name="for.by.ptr"

@@ -419,12 +419,20 @@ impl NaIRGenPass._emit_utf8_helpers -> None {
     pages_gv.linkage = "private";
     pages_gv.initializer = ir.Constant(pages_ty, None);
     pages_gv.align = 8;
+    lock_gv = ir.GlobalVariable(self.llvm_module, i64, name="__jac_cp_pages_lock");
+    lock_gv.linkage = "private";
+    lock_gv.initializer = zero;
+    lock_gv.align = 8;
     int_fn = self._define_function(
         "__jac_utf8_intern", ir.FunctionType(i8p, [i64, i8p, i64])
     );
     int_fn.linkage = "private";
     (t_cp, t_src, t_w) = (int_fn.args[0], int_fn.args[1], int_fn.args[2]);
     _t_entry = int_fn.append_basic_block("entry");
+    _t_look = int_fn.append_basic_block("look");
+    _t_hit = int_fn.append_basic_block("hit");
+    _t_lock = int_fn.append_basic_block("lock");
+    _t_held = int_fn.append_basic_block("held");
     _t_mkpage = int_fn.append_basic_block("page.new");
     _t_page = int_fn.append_basic_block("page");
     _t_mk = int_fn.append_basic_block("char.new");
@@ -435,8 +443,29 @@ impl NaIRGenPass._emit_utf8_helpers -> None {
         [ir.Constant(i32, 0), b.lshr(t_cp, ir.Constant(i64, 8), name="u8i.hi")],
         name="u8i.pslot"
     );
+    t_lo = b.and_(t_cp, ir.Constant(i64, 255), name="u8i.lo");
     t_pg = b.load_atomic(t_slot, "acquire", 8, name="u8i.pg");
-    b.cbranch(b.icmp_unsigned("==", t_pg, zero, name="u8i.nopage"), _t_mkpage, _t_page);
+    b.cbranch(b.icmp_unsigned("==", t_pg, zero, name="u8i.nopage"), _t_lock, _t_look);
+    b = ir.IRBuilder(_t_look);
+    t_ent = b.load_atomic(
+        b.gep(
+            b.inttoptr(t_pg, i64.as_pointer(), name="u8i.pp0"), [t_lo], name="u8i.es0"
+        ),
+        "acquire",
+        8,
+        name="u8i.ent0"
+    );
+    b.cbranch(b.icmp_unsigned("==", t_ent, zero, name="u8i.miss0"), _t_lock, _t_hit);
+    b = ir.IRBuilder(_t_hit);
+    b.ret(b.inttoptr(t_ent, i8p, name="u8i.char0"));
+    b = ir.IRBuilder(_t_lock);
+    t_busy = b.atomic_rmw("xchg", lock_gv, one, ordering="acquire", name="u8i.lock");
+    b.cbranch(b.icmp_unsigned("!=", t_busy, zero, name="u8i.busy"), _t_lock, _t_held);
+    b = ir.IRBuilder(_t_held);
+    t_pg1 = b.load_atomic(t_slot, "acquire", 8, name="u8i.pg1");
+    b.cbranch(
+        b.icmp_unsigned("==", t_pg1, zero, name="u8i.nopage1"), _t_mkpage, _t_page
+    );
     b = ir.IRBuilder(_t_mkpage);
     t_np = b.call(malloc_fn, [ir.Constant(i64, 2048)], name="u8i.np");
     b.call(memset_fn, [t_np, ir.Constant(i32, 0), ir.Constant(i64, 2048)]);
@@ -445,15 +474,13 @@ impl NaIRGenPass._emit_utf8_helpers -> None {
     b.branch(_t_page);
     b = ir.IRBuilder(_t_page);
     t_pgv = b.phi(i64, name="u8i.page");
-    t_pgv.add_incoming(t_pg, _t_entry);
+    t_pgv.add_incoming(t_pg1, _t_held);
     t_pgv.add_incoming(t_npi, _t_mkpage);
     t_eslot = b.gep(
-        b.inttoptr(t_pgv, i64.as_pointer(), name="u8i.pp"),
-        [b.and_(t_cp, ir.Constant(i64, 255), name="u8i.lo")],
-        name="u8i.eslot"
+        b.inttoptr(t_pgv, i64.as_pointer(), name="u8i.pp"), [t_lo], name="u8i.eslot"
     );
-    t_ent = b.load_atomic(t_eslot, "acquire", 8, name="u8i.ent");
-    b.cbranch(b.icmp_unsigned("==", t_ent, zero, name="u8i.miss"), _t_mk, _t_done);
+    t_ent1 = b.load_atomic(t_eslot, "acquire", 8, name="u8i.ent");
+    b.cbranch(b.icmp_unsigned("==", t_ent1, zero, name="u8i.miss"), _t_mk, _t_done);
     b = ir.IRBuilder(_t_mk);
     t_buf = b.call(
         malloc_fn,
@@ -483,8 +510,9 @@ impl NaIRGenPass._emit_utf8_helpers -> None {
     b.branch(_t_done);
     b = ir.IRBuilder(_t_done);
     t_res = b.phi(i64, name="u8i.res");
-    t_res.add_incoming(t_ent, _t_page);
+    t_res.add_incoming(t_ent1, _t_page);
     t_res.add_incoming(t_di, _t_mk);
+    b.store_atomic(zero, lock_gv, "release", 8);
     b.ret(b.inttoptr(t_res, i8p, name="u8i.char"));
 
     fffd_ty = ir.ArrayType(i8, 4);
