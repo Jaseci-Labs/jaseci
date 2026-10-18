@@ -465,6 +465,21 @@ test "JAC_PIP_TIMEOUT sets the pip timeout, 0 meaning no limit" {
     with patch.dict(os.environ, {"JAC_PIP_TIMEOUT": "soon"}) {
         assert pip_timeout() == 300.0;
     }
+    for bad in ("-1", "nan", "inf") {
+        with patch.dict(os.environ, {"JAC_PIP_TIMEOUT": bad}) {
+            assert pip_timeout() == 300.0 , bad;
+        }
+    }
+}
+
+test "a global install uses the configured pip timeout" {
+    with patch.dict(os.environ, {"JAC_PIP_TIMEOUT": "900"}), patch(
+        "subprocess.run"
+    ) as mock_run {
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="");
+        assert PythonProvider()._install_global(["requests"], InstallContext());
+        assert mock_run.call_args.kwargs["timeout"] == 900.0;
+    }
 }
 
 test "run_pip hands the configured timeout to pip" {

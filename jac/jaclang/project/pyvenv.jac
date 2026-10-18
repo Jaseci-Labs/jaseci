@@ -15,7 +15,10 @@ def pip_timeout -> float | None {
     } except ValueError {
         return DEFAULT_PIP_TIMEOUT_S;
     }
-    return seconds if seconds > 0 else None;
+    if seconds == 0 {
+        return None;
+    }
+    return seconds if 0 < seconds < float("inf") else DEFAULT_PIP_TIMEOUT_S;
 }
 
 
