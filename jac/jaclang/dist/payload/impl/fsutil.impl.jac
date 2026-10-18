@@ -258,6 +258,17 @@ impl run_child(argv: list[str], env: dict[str, str] | None, allow_fail: bool) ->
         label = " ".join(os.path.basename(a) for a in argv[1:4]);
         log(f"   ({label}: {took:.1f}s)");
     }
+    if rc < 0 {
+        import signal;
+        try {
+            how = signal.Signals(-rc).name;
+        } except ValueError {
+            how = f"signal {-rc}";
+        }
+        log(f"   {argv[0]} killed by {how} after {took:.1f}s");
+    } elif not ok {
+        log(f"   {argv[0]} exited {rc} after {took:.1f}s");
+    }
     if not ok and not allow_fail {
         die(f"command failed: {argv[0]}");
     }

@@ -454,6 +454,12 @@ jobs:
         # its in-tree place, and the build reuses it there. The release
         # channel's prebuilt asset is named by the hash of the same inputs, so
         # placing it and adopting it is equally sound.
+        # build.zig streams mkpayload live under CI (-Dpayload-progress). The
+        # seal children are plain Python, so these make their output
+        # line-buffered and a native fault print its stack.
+        env:
+          PYTHONUNBUFFERED: "1"
+          PYTHONFAULTHANDLER: "1"
         run: |
           if [ "${{ steps.shim-fetch.outputs.hit }}" = "true" ]; then
             PLACED="jaclang/compiler/backends/native/llvm/$(basename "${{ steps.shim-fetch.outputs.file }}" | sed -E 's/^libjacllvm-.*\.(so|dylib)$/libjacllvm.\1/')"
