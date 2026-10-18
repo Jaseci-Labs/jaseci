@@ -2093,6 +2093,9 @@ impl NaIRGenPass._declare_import(pending: PendingImport) -> (ir.Function | None)
     imports.forget(pending, _owner_name);
     scope = self.scope;
     self.scope = scope.outermost();
+    """The module's own definition of the name, declared since the import was
+    registered, keeps the bare name.""";
+    binds_bare = pending.binds_bare and self.scope.functions.get(name) is None;
     try {
         _is_pub = bool(nd.access and nd.access.tag.name == Tok.KW_PUB);
         _already = self.llvm_module.globals.get(
@@ -2105,7 +2108,7 @@ impl NaIRGenPass._declare_import(pending: PendingImport) -> (ir.Function | None)
             if _owner_name {
                 self.scope.bind_function(f"{_owner_name}.{name}", _already);
             }
-            if pending.binds_bare {
+            if binds_bare {
                 self.scope.bind_function(name, _already);
                 if _owner_name {
                     self._func_def_mod[name] = _owner_name;
@@ -2122,7 +2125,7 @@ impl NaIRGenPass._declare_import(pending: PendingImport) -> (ir.Function | None)
         self._maybe_declare_ability(nd, pending.layout);
         func = self._module_functions.get(pending.module_key);
         self._record_linked_decl(func, nd);
-        if not pending.binds_bare {
+        if not binds_bare {
             if _prev is not None {
                 self.scope.bind_function(name, _prev);
             } else {
