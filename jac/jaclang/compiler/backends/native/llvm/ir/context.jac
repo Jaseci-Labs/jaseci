@@ -1,6 +1,3 @@
-import jaclang.compiler.backends.native.llvm.ir._utils as _utils;
-import jaclang.compiler.backends.native.llvm.ir.types as types;
-
 glob _NAME_CHARS: str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._$-",
      _DIGITS: str = "0123456789",
      _HEX_DIGITS: str = "0123456789abcdefABCDEF";

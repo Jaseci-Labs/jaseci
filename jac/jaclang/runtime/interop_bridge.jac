@@ -1,8 +1,6 @@
 import ctypes;
 import from collections.abc { Callable, Iterable }
 import from typing { Protocol }
-import from jaclang.runtime.cinterop { shape_ctype }
-import from jaclang.runtime.scalars { shape_of }
 class CallbackSignature(Protocol) {
     has name: str,
         symbol: str,
