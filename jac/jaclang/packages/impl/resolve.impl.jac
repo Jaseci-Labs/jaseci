@@ -53,9 +53,6 @@ impl GraphSource.note_requirement(name: str, req: Requirement) {
 }
 
 impl GraphSource.add_local(dep: PackageDep, base: Path) -> LocalPackage {
-    if dep.name in self.locals {
-        return self.locals[dep.name];
-    }
     if dep.kind() == "path" {
         tree = resolve_path(base, dep.path);
         if not (tree / "jac.toml").is_file() {
@@ -72,9 +69,23 @@ impl GraphSource.add_local(dep: PackageDep, base: Path) -> LocalPackage {
         } except GitError as e {
             raise ResolveError(f"{dep.name}: {e}");
         }
-        (_, sha256) = pack_checkout(co);
+        sha256 = "";
         tree = co.tree;
         source = f"git+{dep.git}#{co.commit}";
+    }
+    if dep.name in self.locals {
+        existing = self.locals[dep.name];
+        if existing.source != source {
+            raise ResolveError(
+                f"{dep.name}: conflicting sources {existing.source} requested by "
+                f"{self.local_requesters[dep.name]} and {source} requested by {base
+                    / 'jac.toml'}"
+            );
+        }
+        return existing;
+    }
+    if dep.kind() == "git" {
+        (_, sha256) = pack_checkout(co);
     }
     cfg = JacConfig.load(tree / "jac.toml");
     if cfg.project.name != dep.name {
@@ -96,6 +107,7 @@ impl GraphSource.add_local(dep: PackageDep, base: Path) -> LocalPackage {
         sha256=sha256
     );
     self.locals[dep.name] = pkg;
+    self.local_requesters[dep.name] = base / "jac.toml";
     for nested in cfg.dependencies.values() {
         if nested.kind() != "registry" {
             self.add_local(nested, tree);

@@ -102,6 +102,12 @@ impl HostServices.parse_python(
     raise RuntimeError("no compiler host is installed");
 }
 
+impl HostServices.stub_interface(
+    program: JacProgram, file_path: str
+) -> (Module | None) {
+    return None;
+}
+
 impl HostServices.ct_environment -> CtEnvironment {
     return CtEnvironment();
 }

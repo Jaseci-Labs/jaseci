@@ -2415,7 +2415,9 @@ impl JacAutoLintPass._strip_usestate_imports(nd: uni.Module) -> None {
 }
 
 impl JacAutoLintPass._strip_wired_imports(nd: uni.Module) -> None {
-    if not self.lint_enabled or self.report_only or self.ctx._is_suppressed(W3053) {
+    if not self.lint_enabled
+        or self.report_only
+        or (self.ctx._is_suppressed(W3053) and self.ctx._is_suppressed(W3054)) {
         return;
     }
     own_path = nd.loc.mod_path;
@@ -2426,15 +2428,28 @@ impl JacAutoLintPass._strip_wired_imports(nd: uni.Module) -> None {
     if spec is None {
         return;
     }
+    head_path = own_path;
     consumer = spec.module_name(own_path);
     if consumer is None {
         head = active_host().base_file(own_path);
         consumer = spec.module_name(head) if head else None;
+        head_path = head or own_path;
     }
     if consumer is None {
         return;
     }
     provided = spec.consumer_bindings(consumer);
+    held: list[ScopeReads] = [];
+    def reads -> list[ScopeReads] {
+        if not held {
+            held.append(ScopeReads(mod=nd));
+            woven = active_host().woven_module(head_path, None);
+            if woven is not None {
+                held.append(ScopeReads(mod=woven));
+            }
+        }
+        return held;
+    }
     removed: set[int] = set();
     new_body: list[uni.UniNode] = [];
     changed = False;
@@ -2449,7 +2464,7 @@ impl JacAutoLintPass._strip_wired_imports(nd: uni.Module) -> None {
             new_body.append(stmt);
             continue;
         }
-        doomed = self._wired_items(stmt, spec, provided);
+        doomed = self._wired_items(stmt, spec, provided, reads, "");
         if not doomed {
             new_body.append(stmt);
             continue;
@@ -2466,14 +2481,13 @@ impl JacAutoLintPass._strip_wired_imports(nd: uni.Module) -> None {
             continue;
         }
         scope = scope_path_of(imp);
-        if not scope {
-            continue;
-        }
         owner = imp.parent;
-        if not isinstance(owner, (uni.Ability, uni.ImplDef)) {
+        if scope is None or owner is None or imp not in [owner->:BodyRole:->] {
             continue;
         }
-        doomed = self._wired_items(imp, spec, spec.consumer_bindings(consumer, scope));
+        doomed = self._wired_items(
+            imp, spec, spec.consumer_bindings(consumer, scope), reads, ".".join(scope)
+        );
         if not doomed or not imp.prune_items(doomed) {
             continue;
         }
@@ -2515,22 +2529,43 @@ impl JacAutoLintPass._strip_wired_imports(nd: uni.Module) -> None {
 impl JacAutoLintPass._wired_items(
     stmt: uni.Import,
     spec: WiringSpec,
-    provided: dict[tuple[str, str, str, str], WireRec]
+    provided: dict[tuple[str, str, str, str], WireRec],
+    reads: Callable[[], list[ScopeReads]],
+    scope: str
 ) -> set[int] {
     doomed: set[int] = set();
-    if not provided or is_positional_import(stmt) {
-        return doomed;
-    }
+    positional = is_positional_import(stmt);
     for (binding, item) in spec.import_bindings(stmt) {
         held = provided.get(binding.key());
-        if held is not None
-            and held.is_injected
-            and self.ctx.emit(
-                W3053,
-                node_override=item,
-                name=binding.name or binding.provider,
-                module=binding.provider
-            ) {
+        name = binding.name or binding.provider;
+        if held is not None {
+            if held.is_injected
+                and not positional
+                and self.ctx.emit(
+                    W3053, node_override=item, name=name, module=binding.provider
+                ) {
+                doomed.add(id(item));
+            }
+            continue;
+        }
+        if is_effect_binding(binding) {
+            continue;
+        }
+        bound = binding.bound_name();
+        if any(
+            [
+                (
+                    not scope
+                    and bound in (ModuleFacts.literal_exports(view.mod) or set())
+                )
+                    or bound in view.names(scope) for view in reads()
+            ]
+        ) {
+            continue;
+        }
+        if self.ctx.emit(
+            W3054, node_override=item, name=name, module=binding.provider
+        ) {
             doomed.add(id(item));
         }
     }
@@ -2577,7 +2612,7 @@ impl JacAutoLintPass._separate_impls(
     module: uni.Module, body: Sequence[uni.UniNode]
 ) -> list[uni.ImplDef] {
     floated: list[uni.ImplDef] = [];
-    if self.ctx._is_suppressed(W3054) or self._is_file_excluded(module.loc.mod_path) {
+    if self.ctx._is_suppressed(W3055) or self._is_file_excluded(module.loc.mod_path) {
         return floated;
     }
     found: list[tuple[uni.Ability, list[uni.Name]]] = [];
@@ -2599,7 +2634,7 @@ impl JacAutoLintPass._separate_impls(
             continue;
         }
         name = name_ref.value;
-        if not self.ctx.emit(W3054, node_override=ab, name=name) or self.report_only {
+        if not self.ctx.emit(W3055, node_override=ab, name=name) or self.report_only {
             continue;
         }
         sig = ab.signature;

@@ -327,6 +327,40 @@ test "an import of a stdlib package with an empty stub compiles in the kernel" {
     }
 }
 
+"""A typed package whose compiled extension ships only a `.pyi` stub
+(`cryptography`'s `_rust` bindings do). The host serves the kernel an
+interface for the stub as it does for a `.py` module, so the kernel neither
+misses it nor hands the compile back."""
+test "an import of a third-party package whose module is only a stub compiles in the kernel" {
+    import sys;
+    with TemporaryDirectory() as td {
+        base = Path(os.path.realpath(td));
+        site = base / 'venv' / 'lib' / 'site-packages';
+        pkg = site / 'stubbed_ext';
+        pkg.mkdir(parents=True);
+        (pkg / 'py.typed').write_text('');
+        (pkg / '__init__.py').write_text('from stubbed_ext._native import ping\n');
+        (pkg / '_native.pyi').write_text('def ping(x: int) -> int: ...\n');
+        app = base / 'app';
+        app.mkdir();
+        (app / 'jac.toml').write_text(CONFIG);
+        (app / 'main.jac').write_text(
+            'import from stubbed_ext { ping }\n\n'
+                + 'def call -> int {\n    return ping(1);\n}\n'
+        );
+        entry_file = str(app / 'main.jac');
+        sys.path.insert(0, str(site));
+        try {
+            outcome = compile_in_process(entry_file);
+        } finally {
+            sys.path.remove(str(site));
+        }
+        assert outcome.analysis.status == ANALYSIS_OK , outcome.analysis.message;
+        assert not outcome.analysis.misses , outcome.analysis.misses;
+        assert outcome.unit(entry_file) is not None;
+    }
+}
+
 def write_application(base: Path) {
     (base / 'jac.toml').write_text(CONFIG);
     (base / 'util.jac').write_text(
@@ -335,7 +369,9 @@ def write_application(base: Path) {
     );
     (base / 'deep.jac').write_text('def:pub twice(x: int) -> int { return x * 2; }\n');
     (base / 'archwire.jac').write_text(
-        'graph import {\n    edge SideInternal: side.* --> side.*;\n'
+        'graph import {\n    edge Deep: deep --> main;\n'
+            + '    edge SideInternal: side.* --> side.*;\n'
+            + '    edge Util: util --> main;\n\n'
             + '    util ++> main { helper }\n    include deep ++> main;\n}\n\n'
             + 'graph import side {\n    tool ++> user { Wrench }\n}\n'
     );

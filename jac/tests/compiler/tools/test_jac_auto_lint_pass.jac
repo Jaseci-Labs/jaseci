@@ -1549,7 +1549,7 @@ def format_separate_impls(select: list[str]) -> str {
     }
 }
 
-test "W3054 separate-impls moves bodies into impls at the bottom of the module" {
+test "W3055 separate-impls moves bodies into impls at the bottom of the module" {
     formatted = format_separate_impls(["separate-impls"]);
     assert "    def bar(x: int, y: str = \"s\") -> int;\n" in formatted;
     assert "        def deep -> int;\n" in formatted;
@@ -1574,7 +1574,7 @@ test "W3054 separate-impls moves bodies into impls at the bottom of the module" 
     assert "impl Foo.tiny {}" in tail;
 }
 
-test "W3054 leaves bodies that an impl cannot name in place" {
+test "W3055 leaves bodies that an impl cannot name in place" {
     formatted = format_separate_impls(["separate-impls"]);
     # Generic methods, nameless abilities and nested functions stay inline.
     assert "    def generic[T](x: T) -> T {\n        return x;" in formatted;
@@ -1587,7 +1587,7 @@ test "W3054 leaves bodies that an impl cannot name in place" {
     assert "impl Field.init" not in formatted;
 }
 
-test "W3054 separate-impls is idempotent" {
+test "W3055 separate-impls is idempotent" {
     formatted = format_separate_impls(["separate-impls"]);
     with tempfile.TemporaryDirectory() as tmpdir {
         path = os.path.join(tmpdir, "again.jac");
@@ -1608,7 +1608,7 @@ test "W3054 separate-impls is idempotent" {
     assert again == formatted;
 }
 
-test "W3054 separate-impls is on under all and off under default" {
+test "W3055 separate-impls is on under all and off under default" {
     assert "impl Foo.bar(" in format_separate_impls(["all"]);
     assert "impl Foo.bar(" not in format_separate_impls(["default"]);
     assert "impl Foo.bar(" not in format_separate_impls(["default", "strip-comments"]);

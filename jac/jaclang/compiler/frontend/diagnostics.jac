@@ -1935,6 +1935,23 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
          help="A pattern that matches nothing constrains nothing. Fix the spelling,"
          " or remove the pattern (or the rule) if the modules it governed are gone."
      ),
+     E2099 = _err(
+         "E2099",
+         Category.SEMANTIC,
+         "'{provider} --> {consumer}' crosses from top-level package '{source}' into"
+         " '{target}', and no rule admits it; add `{rule}`",
+         help="Under archwire.jac every import between top-level packages is"
+         " admitted by an edge rule, so each dependency between packages is a"
+         " stated decision. Add the rule to the root block (or a target to a rule"
+         " naming '{source}'); `jac arch sync` adds it to the rule it proposes."
+     ),
+     E2100 = _err(
+         "E2100",
+         Category.SEMANTIC,
+         "Edge rule '{name}': the bare '*' {side} states no architecture",
+         help="A rule admits a flow between named parts of the project. Name the"
+         " package the rule governs, as in `core.*`, instead of every module."
+     ),
      W3001 = _warn(
          "W3001",
          Category.LINT,
@@ -2103,6 +2120,15 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
      W3054 = _warn(
          "W3054",
          Category.LINT,
+         "Import of '{name}' from '{module}' is neither wired nor read"
+         " [remove-dead-import]",
+         help="Under archwire.jac a written import of a module below it is a wire;"
+         " this one has no wire and nothing reads it, so it is dead."
+         " `jac fmt --lintfix` removes it, and so does `jac arch sync --prune`."
+     ),
+     W3055 = _warn(
+         "W3055",
+         Category.LINT,
          "Body of '{name}' belongs in a separate impl [separate-impls]",
          help="On under select = [\"all\"] (not [\"default\"]) or when "
          "\"separate-impls\" is named in [check.lint] select. "
@@ -2141,7 +2167,8 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
          "strip-comments": "W3050",
          "strip-docstrings": "W3051",
          "remove-wired-import": "W3053",
-         "separate-impls": "W3054"
+         "remove-dead-import": "W3054",
+         "separate-impls": "W3055"
      },
      E5001 = _err(
          "E5001",

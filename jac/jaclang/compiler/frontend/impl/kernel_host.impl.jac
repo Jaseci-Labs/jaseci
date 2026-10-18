@@ -758,6 +758,17 @@ impl KernelHost.parse_python(
     return answer;
 }
 
+impl KernelHost.stub_interface(program: JacProgram, file_path: str) -> (Module | None) {
+    if not self.in_kernel() {
+        return None;
+    }
+    served = self.python_module(program, file_path);
+    if served is None and self.ask("parse_python", file_path) {
+        served = self.python_module(program, file_path);
+    }
+    return served;
+}
+
 impl KernelHost.ct_environment -> CtEnvironment {
     self.census.count("ct_environment");
     return self.inputs.ct_environment;

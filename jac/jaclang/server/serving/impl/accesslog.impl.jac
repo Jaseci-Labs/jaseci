@@ -1,3 +1,23 @@
+impl _scrub_query(query: str) -> str {
+    if not query {
+        return query;
+    }
+    scrubbed: list[str] = [];
+    for component in query.split('&') {
+        key = component.split('=', 1)[0];
+        if unquote_plus(key).lower() in CREDENTIAL_QUERY_KEYS {
+            scrubbed.append(f"{key}={REDACTED_QUERY_VALUE}");
+        } else {
+            scrubbed.append(component);
+        }
+    }
+    return '&'.join(scrubbed);
+}
+
+impl AccessRecord.postinit {
+    self.query = _scrub_query(self.query);
+}
+
 impl AccessRecord.as_dict -> dict[str, any] {
     return {
         'ts': time.strftime('%Y-%m-%dT%H:%M:%S', time.gmtime(self.ts))

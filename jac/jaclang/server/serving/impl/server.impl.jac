@@ -429,7 +429,11 @@ impl ServingServer._read_request(
         await writer.drain();
     }
     (body, spool) = await self._read_body(reader, headers);
-    split = urlsplit(target);
+    try {
+        split = urlsplit(target);
+    } except ValueError {
+        raise ProtocolError();
+    }
     peer = writer.get_extra_info('peername');
     peer_host = peer[0] if peer else '';
     forwarded = self._proxy.resolve(peer_host, headers);
@@ -464,10 +468,14 @@ impl ServingServer._declared_length(headers: Headers) -> (int | None) {
         raise ProtocolError();
     }
     text = distinct.pop();
-    if not text.isdigit() {
+    if not text.isascii() or not text.isdigit() {
         raise ProtocolError();
     }
-    return int(text);
+    try {
+        return int(text);
+    } except ValueError {
+        raise ProtocolError();
+    }
 }
 
 impl ServingServer._spool_sink(headers: Headers) -> any {
@@ -503,7 +511,14 @@ impl ServingServer._read_body(
         total = 0;
         while True {
             size_line: bytes = await self._read_line(reader, body_timeout);
-            size_text = size_line.decode('latin-1').strip().split(';')[0];
+            size_text = size_line.decode('latin-1').strip().split(';')[0].strip();
+            if (
+                not size_text
+                or not size_text.isascii()
+                or not all(ch in '0123456789abcdefABCDEF' for ch in size_text)
+            ) {
+                raise ProtocolError();
+            }
             int_fn: any = int;
             try {
                 size = int_fn(size_text, 16);

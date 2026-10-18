@@ -2,9 +2,15 @@ import json;
 import logging;
 import sys;
 import time;
+import from urllib.parse { unquote_plus }
 
 glob ACCESS_LOGGER_NAME: str = 'jaclang.serving.access',
-     access_logger: logging.Logger = logging.getLogger(ACCESS_LOGGER_NAME);
+     access_logger: logging.Logger = logging.getLogger(ACCESS_LOGGER_NAME),
+     CREDENTIAL_QUERY_KEYS: set[str] = {'token', 'access_token', 'api_key'},
+     REDACTED_QUERY_VALUE: str = '[REDACTED]';
+
+
+def _scrub_query(query: str) -> str;
 
 
 obj AccessRecord {
@@ -22,6 +28,7 @@ obj AccessRecord {
         scheme: str = 'http',
         ts: float = 0.0;
 
+    def postinit;
     def as_dict -> dict[str, any];
     def as_text -> str;
 }

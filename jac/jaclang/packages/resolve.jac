@@ -30,6 +30,7 @@ obj GraphSource(PackageSource) {
         unlock_all: bool = False,
         jac_version: Version = Version.parse("0.0.0"),
         locals: dict[str, LocalPackage] = {},
+        local_requesters: dict[str, Path] = {},
         origin_registry: dict[str, str] = {},
         prerelease: set[str] = set();
 

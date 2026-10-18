@@ -1425,6 +1425,14 @@ impl NaIRGenPass._native_imports(
         if _direct not in runtime_reached {
             continue;
         }
+        if not self._has_own_code(self.prog.mod.hub.get(_direct)) {
+            """A module made only of imports and includes is a re-export
+            surface, typed or not: the units behind it are what this module
+            links to. An empty package (its names wired by archwire) has
+            nothing behind it and nothing to link.""";
+            _dep_todo.extend(dep_edges.get(_direct, []));
+            continue;
+        }
         if typed_only.get(_direct, False) {
             import from jaclang.compiler.placement.placement_facts {
                 native_unit as _typed_native_unit
@@ -1437,13 +1445,7 @@ impl NaIRGenPass._native_imports(
             }
             continue;
         }
-        if self._has_own_code(self.prog.mod.hub.get(_direct)) {
-            self._note_native_dep(_direct);
-        } else {
-            """A module made only of imports and includes is a re-export
-            surface: the units behind it are what this module links to.""";
-            _dep_todo.extend(dep_edges.get(_direct, []));
-        }
+        self._note_native_dep(_direct);
     }
 
     walk = self._permuted_walk_order(imported_mods);

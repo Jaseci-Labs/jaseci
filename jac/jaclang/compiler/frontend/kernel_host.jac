@@ -164,6 +164,7 @@ obj KernelHost(HostServices) {
         source_str: str, file_path: str, program: JacProgram
     ) -> tuple[Module, bool];
 
+    def stub_interface(program: JacProgram, file_path: str) -> (Module | None);
     def ct_environment -> CtEnvironment;
     def path_facts(path: str) -> PathFacts;
     def host_platform -> HostPlatform;
