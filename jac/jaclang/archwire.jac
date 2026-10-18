@@ -2861,7 +2861,7 @@ graph import compiler.backends.native {
         native_fallbacks_in_ir
     }
     type lowering --> compiler.backends.native.na_compile_pass { NativeFallbacks }
-    symbol_scope --> compiler.backends.native.na_ir_gen_pass { SymbolScope }
+    symbol_scope --> compiler.backends.native.na_ir_gen_pass { SymbolScope, SymbolSource }
     lowering --> compiler.backends.native.na_ir_gen_pass {
         DEMOTED_SUFFIX,
         NativeLoweringIssue,
@@ -4896,6 +4896,7 @@ graph import compiler.frontend {
     codeinfo --> compiler.backends.native.link_plan { kernel_unit_path }
     type codeinfo --> compiler.backends.native.link_plan { InteropBinding }
     type codeinfo --> compiler.backends.native.na_compile_pass { CodeGenTarget }
+    type codeinfo --> compiler.backends.native.na_ir_gen_pass { NativeModuleLayout }
     codeinfo --> compiler.backends.native.link_plan._build_link_plan {
         is_kernel_unit_path
     }

@@ -119,6 +119,44 @@ obj NativeFunctionState {
             list[tuple[ir.Function, tuple[ir.Value, ir.Value, ir.Value]]];
 }
 
+obj PendingImport {
+    has decl: uni.Ability,
+        layout: (NativeModuleLayout | None),
+        module_key: tuple[str, str],
+        binds_bare: bool;
+}
+
+"""The functions this unit's imports define, declared the first time this unit
+names one: by its bare name where this module binds it to that function, and
+by its module-qualified name."""
+obj ImportedFunctions(SymbolSource[ir.Function]) {
+    has lowering: NaIRGenPass,
+        by_name: dict[str, PendingImport] = {},
+        by_key: dict[tuple[str, str], PendingImport] = {};
+
+    override def provides(name: str) -> bool {
+        return name in self.by_name;
+    }
+
+    override def resolve(name: str) -> (ir.Function | None) {
+        pending = self.by_name.get(name);
+        if pending is None {
+            return None;
+        }
+        return self.lowering._declare_import(pending);
+    }
+
+    def forget(pending: PendingImport, owner_name: str) {
+        name = pending.module_key[1];
+        for key in [name, f"{owner_name}.{name}"] {
+            if self.by_name.get(key) is pending {
+                del self.by_name[key];
+            }
+        }
+        self.by_key.pop(pending.module_key, None);
+    }
+}
+
 walker NaIRGenPass(CompilerPass) {
     static has contract: PassContract = PassContract(
         requires=(
@@ -430,6 +468,7 @@ walker NaIRGenPass(CompilerPass) {
         _func_loc: dict[str, int] = {},
         _func_def_mod: dict[str, str] = {},
         _module_functions: dict[tuple[str, str], ir.Function] = {},
+        _imports: (ImportedFunctions | None) = None,
         _linked_fn_decls: dict[int, tuple[ir.Function | None, uni.Ability]] = {},
         _pyb_base_memo: dict[str, tuple[str, str] | None] = {},
         _pyb_helper_fns: dict[str, ir.Function] = {},
@@ -1237,6 +1276,11 @@ walker NaIRGenPass(CompilerPass) {
         nd: uni.Ability, unavailable: (set | None) = None, imp_layout: any = None
     ) -> None;
 
+    def _declares_lazily(nd: uni.Ability) -> bool;
+    def _defer_import(pending: PendingImport, owner_name: str) -> None;
+    def _declare_import(pending: PendingImport) -> (ir.Function | None);
+    def _module_function(key: tuple[str, str]) -> (ir.Function | None);
+    def _module_function_known(key: tuple[str, str]) -> bool;
     def _record_linked_decl(func: (ir.Function | None), decl: uni.Ability) -> None;
     def _ensure_dep_inference(dep_mod: uni.Module) -> None;
     def _imported_function_demotions(imported_mod: uni.Module) -> (set | None);

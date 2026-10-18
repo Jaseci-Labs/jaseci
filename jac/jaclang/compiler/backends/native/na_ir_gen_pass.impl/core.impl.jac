@@ -60,6 +60,9 @@ def _native_emitter_of(suffix: str) -> (object | None) {
 impl NaIRGenPass.postinit -> None {
     import os as _ni_os;
 
+    self._imports = ImportedFunctions(lowering=self);
+    self.func_symtab.source = self._imports;
+
     self.loop_links = LoopLinks.of(self.module);
 
     _ni_opts = self.prog.options;
@@ -1968,19 +1971,19 @@ impl NaIRGenPass._register_imported_globals(
 impl NaIRGenPass._forward_declare_imported_ability(
     nd: uni.Ability, unavailable: (set | None) = None, imp_layout: any = None
 ) -> None {
+    import from jaclang.compiler.frontend.codeinfo { NativeModuleLayout }
     name = nd.name_ref.sym_name if nd.name_ref else None;
     if name is None {
         return;
     }
     _owner = nd.find_parent_of_type(uni.Module);
     _owner_name = _owner.name if _owner is not None else "";
-    if _owner is not None
-        and (os.path.realpath(_owner.source.file_path), name)
-            in self._module_functions {
+    _owner_path = os.path.realpath(_owner.source.file_path) if _owner is not None else "";
+    if _owner is not None and self._module_function_known((_owner_path, name)) {
         return;
     }
-    _existing = self.func_symtab.get(name);
-    if _existing is not None {
+    _bound = self.func_symtab.contains(name);
+    if _bound {
         """A second imported module defining the same name declares its
         function under the module-qualified key; the bare name keeps the
         binding it already has. Two `:pub` definitions share one bare
@@ -2004,59 +2007,133 @@ impl NaIRGenPass._forward_declare_imported_ability(
         it neither declares nor marks its name as demoted.""";
         return;
     }
+    _layout = imp_layout if isinstance(imp_layout, NativeModuleLayout) else None;
     if not nd.type_params {
-        import from jaclang.compiler.frontend.codeinfo { NativeModuleLayout }
-        _fd_unlisted = False;
-        if isinstance(imp_layout, NativeModuleLayout) {
-            _fd_unlisted = not name.startswith("__")
-                and name not in imp_layout.functions;
-        }
+        _fd_unlisted = _layout is not None
+            and not name.startswith("__")
+            and name not in _layout.functions;
         _fd_demoted = (unavailable is not None and name in unavailable) or _fd_unlisted;
         if _fd_demoted {
             if _owner_name {
                 self._native_skipped_methods.add(f"{_owner_name}.{name}");
             }
-            if _existing is None {
+            if not _bound {
                 self._native_skipped_methods.add(name);
             }
             if _owner is not None {
-                self._native_skipped_import_origin.setdefault(name, set()).add(
-                    os.path.realpath(_owner.source.file_path)
-                );
+                self._native_skipped_import_origin.setdefault(name, set()).add(_owner_path);
             }
             return;
         }
     }
-    _is_pub = bool(nd.access and nd.access.tag.name == Tok.KW_PUB);
-    _already = self.llvm_module.globals.get(self._symbol_for(name, _owner, _is_pub));
-    if isinstance(_already, ir.Function) {
-        """The module already declares this symbol (a kernel walk bound it
-        under its bare name without recording the owner): bind it, never
-        declare it twice.""";
-        if _owner_name {
-            self.func_symtab.set(f"{_owner_name}.{name}", _already);
+    pending = PendingImport(
+        decl=nd, layout=_layout, module_key=(_owner_path, name), binds_bare=not _bound
+    );
+    if _owner is not None and self._declares_lazily(nd) {
+        self._defer_import(pending, _owner_name);
+    } else {
+        self._declare_import(pending);
+    }
+}
+
+"""Whether an imported function is declared on first reference: one whose
+declaration only binds its symbol. Generic, compile-time, decorated and
+generator functions register state the moment they are declared."""
+impl NaIRGenPass._declares_lazily(nd: uni.Ability) -> bool {
+    return isinstance(nd.signature, uni.FuncSignature)
+        and not nd.type_params
+        and not nd.is_comptime
+        and not nd.decorators
+        and not self._ability_has_ct_params(nd)
+        and not self._ability_is_generator(nd);
+}
+
+impl NaIRGenPass._defer_import(pending: PendingImport, owner_name: str) -> None {
+    imports = self._imports;
+    assert imports is not None;
+    name = pending.module_key[1];
+    if pending.binds_bare {
+        imports.by_name[name] = pending;
+        if owner_name {
+            self._func_def_mod[name] = owner_name;
         }
-        if _existing is None {
-            self.func_symtab.set(name, _already);
+    }
+    if owner_name {
+        imports.by_name[f"{owner_name}.{name}"] = pending;
+    }
+    imports.by_key[pending.module_key] = pending;
+}
+
+"""Declare an imported function into the module's outermost scope, whatever
+scope is lowering when it is first named: under its module-qualified name, and
+under its bare name only where this module binds that name to it."""
+impl NaIRGenPass._declare_import(pending: PendingImport) -> (ir.Function | None) {
+    nd = pending.decl;
+    name = pending.module_key[1];
+    _owner = nd.find_parent_of_type(uni.Module);
+    _owner_name = _owner.name if _owner is not None else "";
+    imports = self._imports;
+    assert imports is not None;
+    imports.forget(pending, _owner_name);
+    scope = self.func_symtab;
+    self.func_symtab = scope.outermost();
+    try {
+        _is_pub = bool(nd.access and nd.access.tag.name == Tok.KW_PUB);
+        _already = self.llvm_module.globals.get(self._symbol_for(name, _owner, _is_pub));
+        if isinstance(_already, ir.Function) {
+            """The module already declares this symbol (a kernel walk bound it
+            under its bare name without recording the owner): bind it, never
+            declare it twice.""";
             if _owner_name {
-                self._func_def_mod[name] = _owner_name;
+                self.func_symtab.set(f"{_owner_name}.{name}", _already);
+            }
+            if pending.binds_bare {
+                self.func_symtab.set(name, _already);
+                if _owner_name {
+                    self._func_def_mod[name] = _owner_name;
+                }
+            }
+            if _owner is not None {
+                self._module_functions[pending.module_key] = _already;
+            }
+            self._record_linked_decl(_already, nd);
+            return _already;
+        }
+        _prev = self.func_symtab.names.get(name);
+        _prev_def_mod = self._func_def_mod.get(name);
+        self._maybe_declare_ability(nd, pending.layout);
+        func = self._module_functions.get(pending.module_key);
+        self._record_linked_decl(func, nd);
+        if not pending.binds_bare {
+            if _prev is not None {
+                self.func_symtab.set(name, _prev);
+            } else {
+                self.func_symtab.drop(name);
+            }
+            if _prev_def_mod is not None {
+                self._func_def_mod[name] = _prev_def_mod;
             }
         }
-        if _owner is not None {
-            self._module_functions[(os.path.realpath(_owner.source.file_path), name)] = _already;
-        }
-        self._record_linked_decl(_already, nd);
-        return;
+        return func;
+    } finally {
+        self.func_symtab = scope;
     }
-    _prev_def_mod = self._func_def_mod.get(name);
-    self._maybe_declare_ability(nd, imp_layout);
-    self._record_linked_decl(self.func_symtab.get(name), nd);
-    if _existing is not None {
-        self.func_symtab.set(name, _existing);
-        if _prev_def_mod is not None {
-            self._func_def_mod[name] = _prev_def_mod;
-        }
+}
+
+impl NaIRGenPass._module_function(key: tuple[str, str]) -> (ir.Function | None) {
+    found = self._module_functions.get(key);
+    if found is not None {
+        return found;
     }
+    imports = self._imports;
+    pending = imports.by_key.get(key) if imports is not None else None;
+    return self._declare_import(pending) if pending is not None else None;
+}
+
+impl NaIRGenPass._module_function_known(key: tuple[str, str]) -> bool {
+    imports = self._imports;
+    return key in self._module_functions
+        or (imports is not None and key in imports.by_key);
 }
 
 impl NaIRGenPass._record_linked_decl(
