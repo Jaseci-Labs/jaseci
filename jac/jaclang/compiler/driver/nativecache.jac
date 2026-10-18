@@ -232,7 +232,8 @@ obj NativeUnitRegistry {
             f"{events.get('native_unit_codegen', 0)}/"
             f"{events.get('native_object_emit', 0)}; "
             f"interface hits {events.get('native_iface_hit', 0)}, "
-            f"dependency misses {events.get('native_dep_miss', 0)}"
+            f"dependency misses {events.get('native_dep_miss', 0)}, "
+            f"lowered inside a consumer {events.get('native_nested_lower', 0)}"
         );
     }
 
@@ -679,6 +680,9 @@ obj NativeUnitRegistry {
         layouts that lowering records; a build that later needs the products
         compiles the unit again through `bitcode_for` or `object_for`.""";
         if self.session is not None {
+            if self.session.discovery_open {
+                self._event("native_nested_lower");
+            }
             return self.session.lower(path, use_str);
         }
         import from jaclang.compiler.backends.native.link_plan { build_link_plan }

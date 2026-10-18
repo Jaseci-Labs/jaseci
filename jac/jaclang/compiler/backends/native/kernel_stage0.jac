@@ -228,6 +228,14 @@ def unit_line_count(path: str) -> int {
     return total;
 }
 
+"""The process's peak resident set so far, in GB."""
+def peak_rss_gb -> float {
+    import resource;
+    import sys;
+    peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss;
+    return peak / (1 << 30) if sys.platform == "darwin" else peak / (1 << 20);
+}
+
 def plan_kernel_prefix(stop_after: int, log: Callable[[str], None]) -> int {
     import gc;
     import from operator { itemgetter }
@@ -236,7 +244,7 @@ def plan_kernel_prefix(stop_after: int, log: Callable[[str], None]) -> int {
     started = time.perf_counter();
 
     def stamped(line: str) {
-        log(f"[{time.perf_counter() - started:7.1f}s] {line}");
+        log(f"[{time.perf_counter() - started:7.1f}s {peak_rss_gb():5.1f}G] {line}");
     }
 
     registry.progress = stamped;
@@ -256,7 +264,8 @@ def plan_kernel_prefix(stop_after: int, log: Callable[[str], None]) -> int {
     }
     log(
         f"  Kernel prefix: {registry.lowered_units} units lowered in "
-        f"{time.perf_counter() - started:.1f}s (nothing linked)"
+        f"{time.perf_counter() - started:.1f}s (nothing linked), "
+            f"peak RSS {peak_rss_gb():.1f} GB"
     );
     log(registry.phase_summary());
     log(

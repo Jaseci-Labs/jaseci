@@ -357,6 +357,7 @@ impl settle_unit_ir(module: uni.Module) -> None {
         return;
     }
     module.gen.ir_module = None;
+    unit_ir.release();
 }
 
 impl native_linked_ir_text(module: uni.Module) -> str {
