@@ -228,7 +228,7 @@ impl NaIRGenPass._reads_unlowered_local(nd: uni.UniNode) -> bool {
     for _sub in _reads {
         if _sub.value in _names
             and _sub.value not in self.local_vars
-            and not self.func_symtab.contains(_sub.value)
+            and not self.scope.binds_function(_sub.value)
             and _sub.value not in self.global_vars {
             return True;
         }
@@ -624,15 +624,15 @@ impl NaIRGenPass._codegen_name(nd: uni.Name) -> (ir.Value | None) {
         _self_val: (ir.Value | None) = None;
         if "self" in self.local_vars {
             _self_val = self.builder.load(self.local_vars["self"], name="self");
-        } elif self.func_symtab.contains("self") {
-            _self_val = self.func_symtab.get("self");
+        } elif self.scope.binds_function("self") {
+            _self_val = self.scope.function("self");
         }
         if _self_val is not None {
             return self._codegen_field_access(_self_val, var_name, _ct_owner, nd);
         }
     }
-    _has_caps = self.lambda_captures.contains(var_name)
-        or self.nested_captures.contains(var_name);
+    _has_caps = self.scope.lambda_captures(var_name) is not None
+        or self.scope.closure(var_name) is not None;
     if _has_caps {
         _np = nd.parent;
         _is_call_target = isinstance(_np, uni.FuncCall) and _np.target is nd;
@@ -658,16 +658,16 @@ impl NaIRGenPass._codegen_name(nd: uni.Name) -> (ir.Value | None) {
         }
         return value;
     }
-    if self.func_symtab.contains(var_name)
+    if self.scope.binds_function(var_name)
         and not (
             var_name in self.global_vars
-            and self.func_symtab.get(var_name) is self.clib_extern_fns.get(var_name)
+            and self.scope.function(var_name) is self.clib_extern_fns.get(var_name)
         )
         and not (
-            isinstance(self.func_symtab.get(var_name), ir.Function)
+            isinstance(self.scope.function(var_name), ir.Function)
             and self._binds_variable(nd)
         ) {
-        return self.func_symtab.get(var_name);
+        return self.scope.function(var_name);
     }
 
     c_global = self._clib_global_of(nd);
@@ -866,7 +866,7 @@ impl NaIRGenPass._codegen_spawn(nd: uni.BinaryExpr) -> (ir.Value | None) {
         walker_val = right_val if _root_right else left_val;
         loc_val = left_val if _root_right else right_val;
         _osp_ready = self._osp_rt_global is not None
-            and self.func_symtab.contains("osp_spawn");
+            and self.scope.binds_function("osp_spawn");
         _tag = self._codegen_class_osp_tag(walker_val) if _osp_ready else None;
         if _tag is not None {
             return self._codegen_kernel_spawn("Walker", walker_val, loc_val, _tag);
@@ -901,7 +901,7 @@ impl NaIRGenPass._codegen_spawn(nd: uni.BinaryExpr) -> (ir.Value | None) {
     if (_spawn_model is not None)
         and (walker_name in _spawn_model.tags)
         and (self._osp_rt_global is not None)
-        and self.func_symtab.contains("osp_spawn") {
+        and self.scope.binds_function("osp_spawn") {
         return self._codegen_kernel_spawn(walker_name, walker_val, loc_val);
     }
 
@@ -921,7 +921,7 @@ impl NaIRGenPass._codegen_kernel_spawn(
     if self._osp_ensure_fn is not None {
         self.builder.call(self._osp_ensure_fn, []);
     }
-    osp_spawn_fn = self.func_symtab.get("osp_spawn");
+    osp_spawn_fn = self.scope.function("osp_spawn");
     if osp_spawn_fn is None {
         return walker_val;
     }
@@ -948,7 +948,7 @@ impl NaIRGenPass._codegen_kernel_spawn(
             name="spawn.walker_tag"
         );
     }
-    _nd_fn = self.func_symtab.get("osp_node_desc");
+    _nd_fn = self.scope.function("osp_node_desc");
     if _nd_fn is None {
         return walker_val;
     }
@@ -956,7 +956,7 @@ impl NaIRGenPass._codegen_kernel_spawn(
     _descp = self.builder.call(
         _nd_fn, [self._coerce_type(_wtag, _nd_args[0])], name="spawn.descp"
     );
-    _dead_fn = self.func_symtab.get("osp_is_dead");
+    _dead_fn = self.scope.function("osp_is_dead");
     if _dead_fn is not None {
         _d_argtys = _dead_fn.function_type.args;
         _dead = self.builder.call(

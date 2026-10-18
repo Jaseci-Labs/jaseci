@@ -2861,7 +2861,7 @@ graph import compiler.backends.native {
         native_fallbacks_in_ir
     }
     type lowering --> compiler.backends.native.na_compile_pass { NativeFallbacks }
-    symbol_scope --> compiler.backends.native.na_ir_gen_pass { SymbolScope, SymbolSource }
+    lexical_scope --> compiler.backends.native.na_ir_gen_pass { FunctionSource, LexicalScope }
     lowering --> compiler.backends.native.na_ir_gen_pass {
         DEMOTED_SUFFIX,
         NativeLoweringIssue,
@@ -3141,6 +3141,7 @@ graph import compiler.backends.native.llvm {
     binding as llvm --> compiler.backends.native.host_facts.struct_layouts_fact;
     binding as llvm --> compiler.backends.native.host_facts.target_fact;
     ir as ir --> compiler.backends.native.abi;
+    ir as ir --> compiler.backends.native.lexical_scope;
     ir as ir --> compiler.backends.native.lowering;
     ir as ir --> compiler.backends.native.na_ir_gen_pass;
     ir as ir --> compiler.backends.native.primitives_native;

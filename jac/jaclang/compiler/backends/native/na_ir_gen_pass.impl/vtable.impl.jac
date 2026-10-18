@@ -2091,7 +2091,7 @@ impl NaIRGenPass._generate_inherited_method_wrappers -> None {
                 );
                 if not _has_self {
                     self.method_funcs[child_full] = impl_func;
-                    self.func_symtab.set(child_full, impl_func);
+                    self.scope.bind_function(child_full, impl_func);
                     continue;
                 }
 
@@ -2149,7 +2149,7 @@ impl NaIRGenPass._generate_inherited_method_wrappers -> None {
                 }
 
                 self.method_funcs[child_full] = wrapper_fn;
-                self.func_symtab.set(child_full, wrapper_fn);
+                self.scope.bind_function(child_full, wrapper_fn);
             }
         }
     }

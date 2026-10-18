@@ -160,7 +160,7 @@ glob NATIVE_SCOPE: tuple[NativeScopeEntry, ...] = (
          ),
          NativeScopeEntry(module="jaclang.compiler.backends.native.llvm.ir.builder"),
          NativeScopeEntry(module="jaclang.compiler.backends.native.lowering"),
-         NativeScopeEntry(module="jaclang.compiler.backends.native.symbol_scope"),
+         NativeScopeEntry(module="jaclang.compiler.backends.native.lexical_scope"),
          NativeScopeEntry(module="jaclang.compiler.backends.native.na_constants"),
          NativeScopeEntry(module="jaclang.compiler.backends.native.foreign"),
          NativeScopeEntry(module="jaclang.compiler.backends.native.abi"),

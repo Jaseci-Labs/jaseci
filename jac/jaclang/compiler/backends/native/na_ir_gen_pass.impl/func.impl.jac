@@ -160,7 +160,7 @@ impl NaIRGenPass._maybe_declare_ability(
         func = self._imported_string_adapter(func, local_type);
         self._record_linked_decl(func, nd);
     }
-    self.func_symtab.set(name, func);
+    self.scope.bind_function(name, func);
     _fdm = nd.find_parent_of_type(uni.Module);
     if _fdm is not None {
         self._module_functions[(os.path.realpath(_fdm.source.file_path), name)] = func;
@@ -168,7 +168,7 @@ impl NaIRGenPass._maybe_declare_ability(
         if _fdm is not self.module {
             """Two imported modules may each define a function of one name;
             a module-qualified call finds the one its module defines.""";
-            self.func_symtab.set(f"{_fdm.name}.{name}", func);
+            self.scope.bind_function(f"{_fdm.name}.{name}", func);
         }
     }
     if _fdm is None or _fdm is self.module {
@@ -494,8 +494,8 @@ impl NaIRGenPass._declare_clib_ability(nd: uni.Ability) -> None {
         );
         if name in self.extern_funcs {
             sysv_func = self.extern_funcs[name];
-        } elif self.func_symtab.contains(name) {
-            sysv_func = self.func_symtab.get(name);
+        } elif self.scope.binds_function(name) {
+            sysv_func = self.scope.function(name);
         } else {
             sysv_func = ir.Function(self.llvm_module, sysv_fnty, name=name);
         }
@@ -539,7 +539,7 @@ impl NaIRGenPass._declare_clib_ability(nd: uni.Ability) -> None {
             "sret": sysv_sret
         };
         _mark_returns_twice(name, sysv_func);
-        self.func_symtab.set(name, sysv_func);
+        self.scope.bind_function(name, sysv_func);
         self.clib_extern_fns[name] = sysv_func;
         self.has_native_code = True;
         return;
@@ -565,7 +565,7 @@ impl NaIRGenPass._declare_clib_ability(nd: uni.Ability) -> None {
         func.args[i].name = p.name.value if p.name else f"arg{i}";
     }
     _mark_returns_twice(name, func);
-    self.func_symtab.set(name, func);
+    self.scope.bind_function(name, func);
     self.clib_extern_fns[name] = func;
     self.has_native_code = True;
 }
@@ -586,7 +586,7 @@ impl NaIRGenPass._codegen_ability(nd: uni.Ability) -> None {
         and self._mono_solution is None {
         return;
     }
-    func = self.func_symtab.get(name);
+    func = self.scope.function(name);
     if func is None {
         if self._static_refusals(nd) is not None {
             self._claimed_units.add(id(nd));
@@ -669,10 +669,10 @@ impl NaIRGenPass._codegen_ability(nd: uni.Ability) -> None {
         }
 
         if body is not None {
-            _symtab_before_body = self.func_symtab;
-            self.func_symtab = _symtab_before_body.child();
+            _scope_before_body = self.scope;
+            self.scope = _scope_before_body.child();
             self._codegen_body(body);
-            self.func_symtab = _symtab_before_body;
+            self.scope = _scope_before_body;
         }
 
         if not self.builder.block.is_terminated {
@@ -868,7 +868,7 @@ impl NaIRGenPass._codegen_nested_ability(nd: uni.Ability) -> None {
             cap_modes[fv_name] = "ptr" if fv_name in rebound else "val";
         }
         for _nm in nd.get_all_sub_nodes(typ=uni.Name) {
-            _sib_entry = self.nested_captures.get(_nm.value);
+            _sib_entry = self.scope.closure(_nm.value);
             if _sib_entry is None {
                 continue;
             }
@@ -906,9 +906,9 @@ impl NaIRGenPass._codegen_nested_ability(nd: uni.Ability) -> None {
                 arg.name = f"cap.{captures[i - len(param_names)][0]}";
             }
         }
-        self.func_symtab.set(name, fn);
+        self.scope.bind_function(name, fn);
         if captures {
-            self.nested_captures.set(
+            self.scope.bind_closure(
                 name, (fn, [(cname, cmode) for (cname, cmode, _ct) in captures])
             );
         }
@@ -1145,9 +1145,9 @@ impl NaIRGenPass._predeclare_nested_siblings(nd: uni.Ability) -> None {
                 _arg.name = f"cap.{_caps[i - len(_pnames)][0]}";
             }
         }
-        self.func_symtab.set(_sname, _fn);
+        self.scope.bind_function(_sname, _fn);
         if _caps {
-            self.nested_captures.set(
+            self.scope.bind_closure(
                 _sname, (_fn, [(_c0, _c1) for (_c0, _c1, _c2) in _caps])
             );
         }
@@ -1297,10 +1297,10 @@ impl NaIRGenPass._codegen_generator(
 
         body = ModuleFacts.unwrap_body(nd);
         if body is not None {
-            _symtab_before = self.func_symtab;
-            self.func_symtab = _symtab_before.child();
+            _scope_before = self.scope;
+            self.scope = _scope_before.child();
             self._codegen_body(body);
-            self.func_symtab = _symtab_before;
+            self.scope = _scope_before;
         }
 
         if not self.builder.block.is_terminated {
@@ -1485,7 +1485,7 @@ impl NaIRGenPass._emit_glob_init_func -> None {
             else "__jac_glob_init",
         fnty
     );
-    self.func_symtab.set("__jac_glob_init", func);
+    self.scope.bind_function("__jac_glob_init", func);
     state = self._enter_function(func);
     try {
         if self._global_init_nodes {
@@ -1586,7 +1586,7 @@ impl NaIRGenPass._apply_static_decorators -> None {
         cur: ir.Value = raw_fn;
         ok = True;
         for dec in reversed(dec_names) {
-            d_fn = self.func_symtab.get(dec);
+            d_fn = self.scope.function(dec);
             if d_fn is None or len(d_fn.args) != 1 {
                 self.emit(
                     E5092,
@@ -1664,7 +1664,7 @@ impl NaIRGenPass._codegen_entry(nodes: list[uni.ModuleCode]) -> None {
         if self.module?.loc
         else "jac_entry";
     func = self._define_function(_entry_sym, fnty);
-    self.func_symtab.set("jac_entry", func);
+    self.scope.bind_function("jac_entry", func);
     self._record_export("jac_entry", func.name, "entry");
 
     self._emit_glob_init_func();
@@ -1678,7 +1678,7 @@ impl NaIRGenPass._codegen_entry(nodes: list[uni.ModuleCode]) -> None {
         first = nodes[0];
         entry_line = first.loc.first_line if first.loc else 0;
         self._attach_di_subprogram(func, "jac_entry", entry_line);
-        glob_init_fn = self.func_symtab.get("__jac_glob_init");
+        glob_init_fn = self.scope.function("__jac_glob_init");
 
         _i8p = ir.IntType(8).as_pointer();
         _i32 = ir.IntType(32);
@@ -1760,7 +1760,7 @@ impl NaIRGenPass._codegen_entry(nodes: list[uni.ModuleCode]) -> None {
 }
 
 impl NaIRGenPass._emit_rc_gc_env_off_fn -> ir.Function {
-    _existing = self.func_symtab.get("__rc_gc_env_off");
+    _existing = self.scope.function("__rc_gc_env_off");
     if _existing is not None {
         return _existing;
     }
@@ -1769,7 +1769,7 @@ impl NaIRGenPass._emit_rc_gc_env_off_fn -> ir.Function {
     _i1 = ir.IntType(1);
     fn = self._define_function("__rc_gc_env_off", ir.FunctionType(_i1, []));
     fn.linkage = "private";
-    self.func_symtab.set("__rc_gc_env_off", fn);
+    self.scope.bind_function("__rc_gc_env_off", fn);
     entry_bb = fn.append_basic_block("entry");
     check_bb = fn.append_basic_block("gc_env_check");
     b = ir.IRBuilder(entry_bb);

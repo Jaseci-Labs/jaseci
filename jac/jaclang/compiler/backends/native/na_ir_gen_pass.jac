@@ -103,9 +103,7 @@ obj NativeBindingState {
 obj NativeFunctionState {
     has bindings: NativeBindingState,
         _builder: ir.IRBuilder | None,
-        func_symtab: SymbolScope[ir.Function],
-        nested_captures: SymbolScope[tuple[ir.Function, list[tuple[str, str]]]],
-        lambda_captures: SymbolScope[list[tuple[str, ir.Value]]],
+        scope: LexicalScope,
         region_open_stack: list[int],
         loop_stack: list[tuple[ir.Block, ir.Block]],
         _self_owned: bool,
@@ -129,7 +127,7 @@ obj PendingImport {
 """The functions this unit's imports define, declared the first time this unit
 names one: by its bare name where this module binds it to that function, and
 by its module-qualified name."""
-obj ImportedFunctions(SymbolSource[ir.Function]) {
+obj ImportedFunctions(FunctionSource) {
     has lowering: NaIRGenPass,
         by_name: dict[str, PendingImport] = {},
         by_key: dict[tuple[str, str], PendingImport] = {};
@@ -177,7 +175,7 @@ walker NaIRGenPass(CompilerPass) {
         _slice_struct_type: (ir.IdentifiedStructType | None) = None,
         _jacval_type: (ir.IdentifiedStructType | None) = None,
         _builder: (ir.IRBuilder | None) = None,
-        func_symtab: SymbolScope[ir.Function] = SymbolScope(),
+        scope: LexicalScope = LexicalScope(),
         borrow_param_args: dict[str, set[int]] = {},
         local_vars: dict[str, ir.Value] = {},
         param_vars: set[str] = set(),
@@ -472,9 +470,7 @@ walker NaIRGenPass(CompilerPass) {
         _linked_fn_decls: dict[int, tuple[ir.Function | None, uni.Ability]] = {},
         _pyb_base_memo: dict[str, tuple[str, str] | None] = {},
         _pyb_helper_fns: dict[str, ir.Function] = {},
-        lambda_captures: SymbolScope[list[tuple[str, ir.Value]]] = SymbolScope(),
         _pending_lambda_captures: (list[tuple[str, ir.Value]] | None) = None,
-        nested_captures: SymbolScope[tuple[ir.Function, list[tuple[str, str]]]] = SymbolScope(),
         _nested_predecl:
             dict[
                 uni.Ability,
