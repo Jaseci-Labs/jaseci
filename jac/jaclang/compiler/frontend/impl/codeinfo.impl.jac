@@ -2,6 +2,13 @@ impl InteropBinding.is_cross_module.getter -> bool {
     return (self.source_module is not None);
 }
 
+impl InteropBinding.native_callable.getter -> bool {
+    return self.source_context == InteropContext.SERVER
+        and InteropContext.NATIVE in self.callers
+        and self.kind == 'function'
+        and bool(self.symbol);
+}
+
 impl InteropManifest.boundary_types_for(scope: str) -> dict[str, BoundaryTypeInfo] {
     return {
         name: self.boundary_types[type_id]
@@ -23,8 +30,8 @@ impl InteropManifest.native_imports.getter -> list[InteropBinding] {
 impl InteropManifest.callable_native_imports.getter -> list[InteropBinding] {
     return [
         b
-        for b in self.native_imports
-        if b.kind == 'function'
+        for b in self.bindings.values()
+        if b.native_callable
     ];
 }
 

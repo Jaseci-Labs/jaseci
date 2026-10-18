@@ -449,6 +449,12 @@ def native_unit_prefix(path: str) -> str {
     return native_safe_sym(native_module_key(path));
 }
 
+def interop_callback_symbol(provider_path: str, name: str) -> str {
+    return f"__jac_na_import_{native_unit_prefix(provider_path)}_{native_safe_sym(
+        name
+    )}";
+}
+
 def native_symbol_name(prefix: str, name: str) -> str {
     return f"{prefix}.{name}";
 }
@@ -469,7 +475,6 @@ def native_test_symbol(name: str, line: int, prefix: str = "") -> str {
     bare = f"__jac_test_{name}_{line}";
     return native_symbol_name(prefix, bare) if prefix else bare;
 }
-
 
 glob JAC_ENTRY_SYMBOL: str = "jac_entry",
      JAC_SHARED_INIT_SYMBOL: str = "__jac_shared_init";
@@ -1156,9 +1161,11 @@ obj InteropBinding {
         kind: str = 'function',
         provider_app: str = '',
         native_contract: dict[str, any] = {},
-        endpoint_id: str = '';
+        endpoint_id: str = '',
+        symbol: str = '';
 
     has is_cross_module: bool { getter; }
+    has native_callable: bool { getter; }
 }
 
 obj InteropManifest {

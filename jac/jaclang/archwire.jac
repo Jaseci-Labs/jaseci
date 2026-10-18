@@ -2847,6 +2847,7 @@ graph import compiler.backends.native {
         build_link_plan,
         link_artifact,
         optimize_merged_program,
+        unique_callbacks,
         whole_program_module
     }
     link_plan --> dist.precompile_bytecode.seal_native {
@@ -5175,6 +5176,9 @@ graph import compiler.frontend {
     }
     codeinfo --> compiler.passes.boundary_analysis_pass.BoundaryAnalysisPass._collect_boundary_type {
         endpoint_key
+    }
+    codeinfo --> compiler.passes.boundary_analysis_pass.BoundaryAnalysisPass._interop_symbol {
+        interop_callback_symbol
     }
     codeinfo --> compiler.passes.boundary_analysis_pass.BoundaryAnalysisPass._register_na_client_import {
         native_wasm_stem
@@ -8766,6 +8770,7 @@ graph import compiler.frontend {
         Archetype,
         AtomTrailer,
         ContextAwareNode,
+        FuncCall,
         ImplDef,
         Import,
         Module,
@@ -12770,19 +12775,11 @@ graph import runtime {
         register_py_callbacks
     }
     interop_bridge --> runtime.prepared.execute_module { NativeLibrary }
-    scalars --> runtime.interop_bridge { sized_float_names, sized_int_names }
-    interop_bridge --> compiler.backends.native.link_glue.bind_shared_callbacks {
-        interop_callback_symbol
-    }
-    interop_bridge --> compiler.backends.native.link_plan._interop_sym {
-        interop_callback_symbol
-    }
-    interop_bridge --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._codegen_call {
-        interop_callback_symbol
-    }
+    scalars --> runtime.interop_bridge { shape_of }
+    cinterop --> runtime.interop_bridge { shape_ctype }
     interop_bridge --> runtime.source_app._load_application {
-        NativeCallback,
-        NativeLibrary
+        NativeLibrary,
+        native_callback_of
     }
     memory --> runtime.context | server.session { Memory }
     type native_library --> cli.commands.execution { SharedNativeEngine }
@@ -13122,7 +13119,7 @@ graph import runtime {
     scalars --> compiler.types.fixed_width.adopt_literal { float_max }
     scalars --> comptime._scalar_size_align { shape_of }
     scalars --> runtime.builtin._is_sized_type_name { is_sized }
-    scalars --> runtime.cinterop { numeric_shapes }
+    scalars --> runtime.cinterop { ScalarShape, numeric_shapes }
     scalars --> runtime.sized { numeric_shapes, range_of, shape_of, wrap_value }
     semantic --> byllm.mtir { FunctionInfo, Info, MethodInfo }
     semantic --> byllm.schema {

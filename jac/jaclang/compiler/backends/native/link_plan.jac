@@ -672,15 +672,31 @@ def _target_machine(plan: LinkPlan, kind: ArtifactKind) -> TargetMachine {
     return tm;
 }
 
-def _interop_sym(binding: InteropBinding) -> str {
-    return interop_callback_symbol(binding);
+def unique_callbacks(bindings: list[InteropBinding]) -> list[InteropBinding] {
+    seen: set[str] = set();
+    unique: list[InteropBinding] = [];
+    for binding in bindings {
+        if binding.symbol not in seen {
+            seen.add(binding.symbol);
+            unique.append(binding);
+        }
+    }
+    return unique;
+}
+
+def callback_bind_exports(plan: LinkPlan) -> list[str] {
+    return [
+        '__jac_bind_' + binding.symbol
+        for binding in unique_callbacks(plan.callback_bindings)
+    ];
 }
 
 def callback_glue_ir(plan: LinkPlan) -> str {
     if not plan.callback_bindings {
         return "";
     }
-    wanted = {_interop_sym(binding) for binding in plan.callback_bindings};
+    callbacks = unique_callbacks(plan.callback_bindings);
+    wanted = {binding.symbol for binding in callbacks};
     declarations: dict[str, str] = {};
     defined: set[str] = set();
     registry = plan.prog.native_units();
@@ -702,17 +718,17 @@ def callback_glue_ir(plan: LinkPlan) -> str {
     }
     bindings = [
         b
-        for b in plan.callback_bindings
-        if _interop_sym(b) not in defined
+        for b in callbacks
+        if b.symbol not in defined
     ];
-    missing = {_interop_sym(b) for b in bindings} - set(declarations);
+    missing = {b.symbol for b in bindings} - set(declarations);
     if missing {
         raise LinkPlanError(
             "Missing callback declarations: " + ", ".join(sorted(missing))
         );
     }
     (text, _) = bind_shared_callbacks(
-        "\n".join(declarations[_interop_sym(b)] for b in bindings), bindings
+        "\n".join(declarations[b.symbol] for b in bindings), bindings
     );
     return text;
 }
@@ -770,7 +786,7 @@ def _glue_module(
     callback_ir = callback_glue_ir(plan);
     if callback_ir {
         mod.link_in(llvm.parse_assembly(callback_ir));
-        exports.extend('__jac_bind_' + _interop_sym(b) for b in plan.callback_bindings);
+        exports.extend(callback_bind_exports(plan));
     }
     mod.verify();
     return (mod, exports);
@@ -879,7 +895,7 @@ def optimize_whole_program(
                 "jac_heap_size",
                 "jac_list_heap_size"
             ];
-        exports.extend('__jac_bind_' + _interop_sym(b) for b in plan.callback_bindings);
+        exports.extend(callback_bind_exports(plan));
         internalize_native_implementation(merged, exports);
     }
     if kind == ArtifactKind.EXECUTABLE {
@@ -1125,9 +1141,7 @@ def link_artifact(
     callback_ir = callback_glue_ir(plan);
     glue_ir += callback_ir;
     if callback_ir {
-        glue_exports.extend(
-            '__jac_bind_' + _interop_sym(b) for b in plan.callback_bindings
-        );
+        glue_exports.extend(callback_bind_exports(plan));
     }
     registry = plan.prog.native_units();
     code_inputs: list[bytes] = [];

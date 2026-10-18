@@ -15,7 +15,7 @@ def write_native_product(
     }
     plan = build_link_plan(program, [module.loc.mod_path], program.options);
     manifest = module.gen.interop_manifest;
-    bindings = manifest.callable_native_imports if shared else [];
+    bindings = unique_callbacks(manifest.callable_native_imports) if shared else [];
     plan.callback_bindings = list(bindings);
     kind = ArtifactKind.SHARED if shared else ArtifactKind.EXECUTABLE;
     if not shared and any(unit.iface.python_imports for unit in plan.units) {
@@ -57,7 +57,7 @@ def write_native_product(
         'callbacks': [
             {
                 'name': binding.name,
-                'source_module': binding.source_module or '',
+                'symbol': binding.symbol,
                 'ret_type': binding.ret_type,
                 'param_types': list(binding.param_types)
             } for binding in bindings

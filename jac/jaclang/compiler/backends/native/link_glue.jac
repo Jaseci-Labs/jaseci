@@ -400,8 +400,13 @@ def bind_shared_callbacks(
     assert isinstance(module, llvm.ModuleRef);
     definitions: list[str] = [];
     callbacks: list[InteropBinding] = [];
+    bound: set[str] = set();
     for binding in bindings {
-        _sym = interop_callback_symbol(binding);
+        _sym = binding.symbol;
+        if _sym in bound {
+            continue;
+        }
+        bound.add(_sym);
         function = module.get_function(_sym);
         assert isinstance(function, llvm.ValueRef);
         if not function.is_declaration {

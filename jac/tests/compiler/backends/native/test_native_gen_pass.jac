@@ -2752,11 +2752,11 @@ test "py interop py function not defined in native ir" {
     import re;
     # Must not have a define (body) for py_double -- it lives in Python
     assert 'define i64 @"py_double"' not in llvm_ir_str;
-    # The extern is module-qualified (#9782 closed-world symbols), so the
-    # native code calls __jac_na_import_<module>_py_double instead of a
-    # bare name resolved against the process symbol table.
-    assert re.search(r'declare i64 @"__jac_na_import_\w*py_double(_\w+)?"', llvm_ir_str)
-        is not None , (
+    # The extern is module-qualified, so the native code calls
+    # __jac_na_import_<module>_py_double instead of a bare name resolved
+    # against the process symbol table.
+    symbol = ir.gen.interop_manifest.bindings["py_double"].symbol;
+    assert re.search(r'declare i64 @"?' + symbol + r'"?\(', llvm_ir_str) is not None , (
         f"expected a qualified interop declare for py_double; IR excerpt: "
         f"{[
             ln
@@ -2825,7 +2825,9 @@ test "py interop native calls python function" {
     assert eng is not None;
     # Register the Python function in the interop callback table
     py_func_table = ir.gen.interop_py_funcs;
-    py_func_table["py_double"] = lambda (x: int) { x * 2; };
+    symbol = ir.gen.interop_manifest.bindings["py_double"].symbol;
+    assert symbol.startswith("__jac_na_import_na_py_interop_") , symbol;
+    py_func_table[symbol] = lambda (x: int) { x * 2; };
     # Now call the native function
     f = get_func(eng, "native_add_one_to_doubled", ctypes.c_int64, ctypes.c_int64);
     assert f(5) == 11;  # py_double(5) = 10, + 1 = 11
