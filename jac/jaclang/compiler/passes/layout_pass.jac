@@ -518,7 +518,7 @@ def adopt_imported_bases(module: Module, header_identity: bool = True) -> list[s
             lay.mro = full;
         }
         if len(full) > len(reg.mro_order.get(name) or []) {
-            reg.mro_order[name] = list(full);
+            reg.set_mro(name, list(full));
         }
     }
     layouts = reg.layouts;
@@ -867,9 +867,13 @@ obj LayoutRegistry {
         mro_order: dict[str, list[str]] = {},
         topo_order: list[str] = [],
         local_names: list[str] = [],
-        enums: dict[str, EnumLayout] = {};
+        enums: dict[str, EnumLayout] = {},
+        _descendants: (dict[str, list[str]] | None) = None,
+        _order: (dict[str, int] | None) = None;
 
     def get_layout(name: str) -> (ArchetypeLayout | None);
+    def set_mro(name: str, mro: list[str]) -> None;
+    def descendants_of(names: list[str]) -> list[str];
     def get_enum_layout(name: str) -> (EnumLayout | None);
     def resolve_method_owner(arch_name: str, method_name: str) -> (str | None);
     def get_mro(name: str) -> list[str];

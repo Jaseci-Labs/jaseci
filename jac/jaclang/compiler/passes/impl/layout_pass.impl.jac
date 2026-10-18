@@ -154,7 +154,7 @@ impl LayoutPass._build_hierarchy(archetypes: dict[str, Archetype]) -> None {
 
     for aname in archetypes {
         if aname not in reg.mro_order {
-            reg.mro_order[aname] = self._compute_c3_mro(aname);
+            reg.set_mro(aname, self._compute_c3_mro(aname));
         }
     }
 }
@@ -170,7 +170,7 @@ impl LayoutPass._compute_c3_mro(class_name: str) -> list[str] {
     parent_mros: list[list[str]] = [];
     for p in parents {
         if p not in reg.mro_order {
-            reg.mro_order[p] = self._compute_c3_mro(p);
+            reg.set_mro(p, self._compute_c3_mro(p));
         }
         parent_mros.append(list(reg.mro_order[p]));
     }
@@ -779,6 +779,40 @@ impl LayoutRegistry.resolve_method_owner(
         }
     }
     return None;
+}
+
+impl LayoutRegistry.set_mro(name: str, mro: list[str]) -> None {
+    self.mro_order[name] = mro;
+    self._descendants = None;
+    self._order = None;
+}
+
+impl LayoutRegistry.descendants_of(names: list[str]) -> list[str] {
+    """Every class whose method resolution order holds one of `names`, the
+    named classes included, in registry order. The index is built once per
+    set of resolution orders.""";
+    index = self._descendants;
+    order = self._order;
+    if index is None or order is None {
+        index = {};
+        order = {};
+        for cls in self.mro_order {
+            order[cls] = len(order);
+            for anc in self.get_mro(cls) {
+                index.setdefault(anc, []).append(cls);
+            }
+        }
+        self._descendants = index;
+        self._order = order;
+    }
+    if len(names) == 1 {
+        return index.get(names[0], []);
+    }
+    found: set[str] = set();
+    for name in names {
+        found.update(index.get(name, []));
+    }
+    return sorted(found, key=order.__getitem__);
 }
 
 impl LayoutRegistry.get_mro(name: str) -> list[str] {

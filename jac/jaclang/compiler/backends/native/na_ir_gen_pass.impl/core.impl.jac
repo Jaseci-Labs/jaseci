@@ -1850,7 +1850,7 @@ impl NaIRGenPass._register_imported_hierarchy(imported_mod: uni.Module) -> None 
             or _have is None
             or (_name in _imp_reg.layouts and _name not in _cons_reg.layouts)
             or len(_mro) > len(_have) {
-            _cons_reg.mro_order[_name] = _mro;
+            _cons_reg.set_mro(_name, _mro);
         }
     }
     for (_name, _lay) in _imp_reg.layouts.items() {
