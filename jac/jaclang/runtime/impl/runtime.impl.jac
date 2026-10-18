@@ -1955,9 +1955,11 @@ impl JacIntrospection.get_archetype(
     return None;
 }
 
-impl JacContext.thread_run(func: Callable, *args: object, **kwargs: object) -> Future {
+impl JacContext.thread_run(
+    _flow_fn: Callable, *args: object, **kwargs: object
+) -> Future {
     _executor = JacRuntime.pool;
-    return _executor.submit(func, *args, **kwargs);
+    return _executor.submit(_flow_fn, *args, **kwargs);
 }
 
 impl JacContext.thread_wait(future: any) -> None {

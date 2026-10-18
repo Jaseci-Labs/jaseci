@@ -475,7 +475,9 @@ impl JcirGenPass.exit_concurrent_expr with ConcurrentExpr exit {
         args: list[CgItem] = [target];
         keywords: list[CgItem] = [];
 
-        if func == 'thread_run' and target.cls == 'Call' {
+        if func == 'thread_run'
+            and isinstance(here.target, FuncCall)
+            and target.cls == 'Call' {
             args = [target.get('func')] + list(target.get('args'));
             keywords = list(target.get('keywords'));
         } elif func == 'thread_run' {
