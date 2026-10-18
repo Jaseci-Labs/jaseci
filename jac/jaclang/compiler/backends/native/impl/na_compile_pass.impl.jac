@@ -4,6 +4,22 @@ impl module_functions(mod: ModuleRef) -> list[any] {
     return list(fns);
 }
 
+impl unit_function_counts(unit_ir: any) -> tuple[int, int] {
+    if not isinstance(unit_ir, llvm.ModuleRef) {
+        return (0, 0);
+    }
+    declared = 0;
+    defined = 0;
+    for fn in module_functions(unit_ir) {
+        if fn.is_declaration {
+            declared += 1;
+        } else {
+            defined += 1;
+        }
+    }
+    return (declared, defined);
+}
+
 impl module_bitcode(mod: ModuleRef) -> bytes {
     bitcode = mod.as_bitcode();
     assert isinstance(bitcode, bytes);

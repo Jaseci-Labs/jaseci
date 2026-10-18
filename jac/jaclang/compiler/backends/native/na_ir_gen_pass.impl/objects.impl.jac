@@ -117,7 +117,7 @@ impl NaIRGenPass._register_archetypes(module: uni.Module) -> None {
                             );
                             func.args[0].name = "self";
                             self._record_export(full_name, func.name, "method");
-                            self.func_symtab[full_name] = func;
+                            self.func_symtab.set(full_name, func);
                             self.method_funcs[full_name] = func;
                             self.has_native_code = True;
                         }
@@ -1083,7 +1083,7 @@ impl NaIRGenPass._forward_declare_method(
     self._apply_ownership_param_attrs(func, _m_params, _base);
     self._record_linked_decl(func, method);
     self.method_funcs[full_name] = func;
-    self.func_symtab[full_name] = func;
+    self.func_symtab.set(full_name, func);
     self._record_linked_decl(func, method);
     if _is_static {
         self.static_methods[full_name] = True;
@@ -1384,7 +1384,7 @@ impl NaIRGenPass._place_unit_python(
     if not keep_func {
         self.method_funcs.pop(full_name, None);
     }
-    self.func_symtab.pop(full_name, None);
+    self.func_symtab.drop(full_name);
     self._native_skipped_methods.add(full_name);
     self._demoted_names.add(full_name);
     self._unit_exports.pop(full_name, None);
@@ -1819,7 +1819,7 @@ impl NaIRGenPass._forward_declare_event_method(
     func.args[0].name = "self";
     func.args[1].name = "here" if self._event_from_walker(method) else "visitor";
     self.method_funcs[full_name] = func;
-    self.func_symtab[full_name] = func;
+    self.func_symtab.set(full_name, func);
     if not _imported {
         self._record_export(full_name, func.name, "method");
     }

@@ -68,7 +68,8 @@ obj NativeUnitRegistry {
         cold: bool = False,
         stop_after: int = 0,
         lowered_units: int = 0,
-        unit_lower_seconds: dict[str, float] = {};
+        unit_lower_seconds: dict[str, float] = {},
+        unit_functions: dict[str, tuple[int, int]] = {};
 
     def postinit {
         self.building = set();
@@ -1086,9 +1087,13 @@ obj NativeBuildSession {
                 return None;
             }
             import from jaclang.compiler.backends.native.na_compile_pass {
-                settle_unit_ir
+                settle_unit_ir,
+                unit_function_counts
             }
             settle_unit_ir(mod);
+            self.registry.unit_functions[resolved] = unit_function_counts(
+                mod.gen.llvm_ir
+            );
             self.lowered[resolved] = mod;
             ent = self.registry.record_module(mod, opts);
             self.registry._stash_products(resolved, mod.gen);

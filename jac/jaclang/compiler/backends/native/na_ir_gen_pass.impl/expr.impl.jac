@@ -228,7 +228,7 @@ impl NaIRGenPass._reads_unlowered_local(nd: uni.UniNode) -> bool {
     for _sub in _reads {
         if _sub.value in _names
             and _sub.value not in self.local_vars
-            and _sub.value not in self.func_symtab
+            and not self.func_symtab.contains(_sub.value)
             and _sub.value not in self.global_vars {
             return True;
         }
@@ -624,14 +624,15 @@ impl NaIRGenPass._codegen_name(nd: uni.Name) -> (ir.Value | None) {
         _self_val: (ir.Value | None) = None;
         if "self" in self.local_vars {
             _self_val = self.builder.load(self.local_vars["self"], name="self");
-        } elif "self" in self.func_symtab {
-            _self_val = self.func_symtab["self"];
+        } elif self.func_symtab.contains("self") {
+            _self_val = self.func_symtab.get("self");
         }
         if _self_val is not None {
             return self._codegen_field_access(_self_val, var_name, _ct_owner, nd);
         }
     }
-    _has_caps = var_name in self.lambda_captures or var_name in self.nested_captures;
+    _has_caps = self.lambda_captures.contains(var_name)
+        or self.nested_captures.contains(var_name);
     if _has_caps {
         _np = nd.parent;
         _is_call_target = isinstance(_np, uni.FuncCall) and _np.target is nd;
@@ -657,16 +658,16 @@ impl NaIRGenPass._codegen_name(nd: uni.Name) -> (ir.Value | None) {
         }
         return value;
     }
-    if var_name in self.func_symtab
+    if self.func_symtab.contains(var_name)
         and not (
             var_name in self.global_vars
-            and self.func_symtab[var_name] is self.clib_extern_fns.get(var_name)
+            and self.func_symtab.get(var_name) is self.clib_extern_fns.get(var_name)
         )
         and not (
-            isinstance(self.func_symtab[var_name], ir.Function)
+            isinstance(self.func_symtab.get(var_name), ir.Function)
             and self._binds_variable(nd)
         ) {
-        return self.func_symtab[var_name];
+        return self.func_symtab.get(var_name);
     }
 
     c_global = self._clib_global_of(nd);
@@ -865,7 +866,7 @@ impl NaIRGenPass._codegen_spawn(nd: uni.BinaryExpr) -> (ir.Value | None) {
         walker_val = right_val if _root_right else left_val;
         loc_val = left_val if _root_right else right_val;
         _osp_ready = self._osp_rt_global is not None
-            and "osp_spawn" in self.func_symtab;
+            and self.func_symtab.contains("osp_spawn");
         _tag = self._codegen_class_osp_tag(walker_val) if _osp_ready else None;
         if _tag is not None {
             return self._codegen_kernel_spawn("Walker", walker_val, loc_val, _tag);
@@ -900,7 +901,7 @@ impl NaIRGenPass._codegen_spawn(nd: uni.BinaryExpr) -> (ir.Value | None) {
     if (_spawn_model is not None)
         and (walker_name in _spawn_model.tags)
         and (self._osp_rt_global is not None)
-        and ("osp_spawn" in self.func_symtab) {
+        and self.func_symtab.contains("osp_spawn") {
         return self._codegen_kernel_spawn(walker_name, walker_val, loc_val);
     }
 

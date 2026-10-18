@@ -2861,6 +2861,7 @@ graph import compiler.backends.native {
         native_fallbacks_in_ir
     }
     type lowering --> compiler.backends.native.na_compile_pass { NativeFallbacks }
+    symbol_scope --> compiler.backends.native.na_ir_gen_pass { SymbolScope }
     lowering --> compiler.backends.native.na_ir_gen_pass {
         DEMOTED_SUFFIX,
         NativeLoweringIssue,
@@ -2988,7 +2989,8 @@ graph import compiler.backends.native {
     type link_plan --> compiler.backends.native.kernel_resolve { LinkPlan }
     type link_plan --> compiler.backends.native.kernel_stage0 { LinkPlan, LinkResult }
     na_compile_pass --> compiler.driver.nativecache.NativeBuildSession.lower {
-        settle_unit_ir
+        settle_unit_ir,
+        unit_function_counts
     }
     na_constants --> compiler.backends.native.na_ir_gen_pass {
         JACVAL_ELLIPSIS_TAG,

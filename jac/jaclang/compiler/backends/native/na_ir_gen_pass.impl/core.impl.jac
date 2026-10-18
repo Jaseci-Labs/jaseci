@@ -311,7 +311,7 @@ impl NaIRGenPass._lower_module -> None {
         if self.ctx.errors_had or self._internal_errors {
             return;
         }
-        if "__jac_glob_init" not in self.func_symtab {
+        if not self.func_symtab.contains("__jac_glob_init") {
             self._emit_glob_init_func();
         }
         self._volatilize_setjmp_locals();
@@ -472,7 +472,7 @@ impl NaIRGenPass._export_native_iface -> None {
             iface.enums[ename] = [str(m) for m in members];
         }
     }
-    if "__jac_glob_init" in self.func_symtab and mod_path {
+    if self.func_symtab.contains("__jac_glob_init") and mod_path {
         iface.init_symbol = native_glob_init_name(mod_path);
     }
     entry_fn = self.func_symtab.get("jac_entry");
@@ -1030,7 +1030,7 @@ impl NaIRGenPass._export_native_layout -> None {
     }
 
     method_names = set(self.method_funcs.keys());
-    for (fname, func) in self.func_symtab.items() {
+    for (fname, func) in self.func_symtab.entries() {
         if fname.startswith("__") or fname == "jac_entry" or fname in method_names {
             continue;
         }
@@ -1986,7 +1986,7 @@ impl NaIRGenPass._forward_declare_imported_ability(
         binding it already has. Two `:pub` definitions share one bare
         symbol, which the link plan reports as a collision.""";
         if not _owner_name
-            or f"{_owner_name}.{name}" in self.func_symtab
+            or self.func_symtab.contains(f"{_owner_name}.{name}")
             or self._func_def_mod.get(name) == _owner_name
             or (
                 bool(nd.access and nd.access.tag.name == Tok.KW_PUB)
@@ -2034,10 +2034,10 @@ impl NaIRGenPass._forward_declare_imported_ability(
         under its bare name without recording the owner): bind it, never
         declare it twice.""";
         if _owner_name {
-            self.func_symtab[f"{_owner_name}.{name}"] = _already;
+            self.func_symtab.set(f"{_owner_name}.{name}", _already);
         }
         if _existing is None {
-            self.func_symtab[name] = _already;
+            self.func_symtab.set(name, _already);
             if _owner_name {
                 self._func_def_mod[name] = _owner_name;
             }
@@ -2052,7 +2052,7 @@ impl NaIRGenPass._forward_declare_imported_ability(
     self._maybe_declare_ability(nd, imp_layout);
     self._record_linked_decl(self.func_symtab.get(name), nd);
     if _existing is not None {
-        self.func_symtab[name] = _existing;
+        self.func_symtab.set(name, _existing);
         if _prev_def_mod is not None {
             self._func_def_mod[name] = _prev_def_mod;
         }

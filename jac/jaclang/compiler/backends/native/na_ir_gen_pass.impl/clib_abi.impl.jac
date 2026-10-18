@@ -386,7 +386,7 @@ impl NaIRGenPass._declare_clib_definitions -> None {
         }
         self._clib_exports[name] = cfunc;
         self.clib_extern_fns.pop(name, None);
-        self.func_symtab.pop(name, None);
+        self.func_symtab.drop(name);
         self.clib_extern_names.discard(name);
         self._clib_symbol_lib.pop(name, None);
         self._maybe_declare_ability(decl, symbol=f"{name}.jac");

@@ -77,9 +77,9 @@ impl NaIRGenPass._enter_function(func: ir.Function) -> NativeFunctionState {
         _caught_error_stack=self._caught_error_stack
     );
     self._builder = ir.IRBuilder(func.append_basic_block("entry"));
-    self.func_symtab = self.func_symtab.copy();
-    self.nested_captures = self.nested_captures.copy();
-    self.lambda_captures = self.lambda_captures.copy();
+    self.func_symtab = self.func_symtab.child();
+    self.nested_captures = self.nested_captures.child();
+    self.lambda_captures = self.lambda_captures.child();
     self.region_open_stack = [];
     self.loop_stack = [];
     self._self_owned = False;

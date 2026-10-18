@@ -3487,7 +3487,7 @@ impl NaIRGenPass._codegen_assignment(nd: uni.Assignment) -> None {
         }
 
         if self._pending_lambda_captures is not None {
-            self.lambda_captures[var_name] = self._pending_lambda_captures;
+            self.lambda_captures.set(var_name, self._pending_lambda_captures);
             self._pending_lambda_captures = None;
         }
 

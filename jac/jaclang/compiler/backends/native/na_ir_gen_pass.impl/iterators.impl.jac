@@ -733,7 +733,7 @@ impl NaIRGenPass._adapter_clos_parts(clos: ir.Value) -> (NativeIterCallback | No
 
 impl NaIRGenPass._adapter_callee(fn_expr: uni.UniNode) -> (NativeIterCallback | None) {
     fname = self._get_name(fn_expr);
-    if fname is not None and fname in self.nested_captures {
+    if fname is not None and self.nested_captures.contains(fname) {
         clos = self._emit_closure_value(fname, fn_expr);
         if clos is not None {
             return self._adapter_clos_parts(clos);

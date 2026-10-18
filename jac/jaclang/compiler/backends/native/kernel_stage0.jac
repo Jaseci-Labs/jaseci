@@ -267,11 +267,17 @@ def plan_kernel_prefix(stop_after: int, log: Callable[[str], None]) -> int {
         reason = why.strip().splitlines()[-1] if why.strip() else "no reason recorded";
         log(f"  Failed to lower {native_unit_identity(path)}: {reason}");
     }
-    log("  Lowering time per unit (lines include annexes):");
+    log(
+        "  Lowering time per unit (lines include annexes; functions declared/defined):"
+    );
     for (path, seconds) in sorted(
         registry.unit_lower_seconds.items(), key=itemgetter(1), reverse=True
     ) {
-        log(f"    {seconds:7.2f}s {unit_line_count(path):7d} lines  {native_unit_identity(path)}");
+        (declared, defined) = registry.unit_functions.get(path, (0, 0));
+        log(
+            f"    {seconds:7.2f}s {unit_line_count(path):7d} lines "
+            f"{declared:6d}/{defined:<6d} {native_unit_identity(path)}"
+        );
     }
     return registry.lowered_units;
 }

@@ -14,6 +14,7 @@ def optimize_unit_bitcodes(
 ) -> list[bytes];
 
 def module_functions(mod: ModuleRef) -> list[any];
+def unit_function_counts(unit_ir: any) -> tuple[int, int];
 def settle_unit_ir(module: uni.Module) -> None;
 def create_unit_target_machine(
     options: CompileOptions, jit: bool = False

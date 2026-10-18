@@ -160,7 +160,7 @@ impl NaIRGenPass._maybe_declare_ability(
         func = self._imported_string_adapter(func, local_type);
         self._record_linked_decl(func, nd);
     }
-    self.func_symtab[name] = func;
+    self.func_symtab.set(name, func);
     _fdm = nd.find_parent_of_type(uni.Module);
     if _fdm is not None {
         self._module_functions[(os.path.realpath(_fdm.source.file_path), name)] = func;
@@ -168,7 +168,7 @@ impl NaIRGenPass._maybe_declare_ability(
         if _fdm is not self.module {
             """Two imported modules may each define a function of one name;
             a module-qualified call finds the one its module defines.""";
-            self.func_symtab[f"{_fdm.name}.{name}"] = func;
+            self.func_symtab.set(f"{_fdm.name}.{name}", func);
         }
     }
     if _fdm is None or _fdm is self.module {
@@ -494,8 +494,8 @@ impl NaIRGenPass._declare_clib_ability(nd: uni.Ability) -> None {
         );
         if name in self.extern_funcs {
             sysv_func = self.extern_funcs[name];
-        } elif name in self.func_symtab {
-            sysv_func = self.func_symtab[name];
+        } elif self.func_symtab.contains(name) {
+            sysv_func = self.func_symtab.get(name);
         } else {
             sysv_func = ir.Function(self.llvm_module, sysv_fnty, name=name);
         }
@@ -539,7 +539,7 @@ impl NaIRGenPass._declare_clib_ability(nd: uni.Ability) -> None {
             "sret": sysv_sret
         };
         _mark_returns_twice(name, sysv_func);
-        self.func_symtab[name] = sysv_func;
+        self.func_symtab.set(name, sysv_func);
         self.clib_extern_fns[name] = sysv_func;
         self.has_native_code = True;
         return;
@@ -565,7 +565,7 @@ impl NaIRGenPass._declare_clib_ability(nd: uni.Ability) -> None {
         func.args[i].name = p.name.value if p.name else f"arg{i}";
     }
     _mark_returns_twice(name, func);
-    self.func_symtab[name] = func;
+    self.func_symtab.set(name, func);
     self.clib_extern_fns[name] = func;
     self.has_native_code = True;
 }
@@ -669,7 +669,8 @@ impl NaIRGenPass._codegen_ability(nd: uni.Ability) -> None {
         }
 
         if body is not None {
-            _symtab_before_body = dict(self.func_symtab);
+            _symtab_before_body = self.func_symtab;
+            self.func_symtab = _symtab_before_body.child();
             self._codegen_body(body);
             self.func_symtab = _symtab_before_body;
         }
@@ -905,11 +906,10 @@ impl NaIRGenPass._codegen_nested_ability(nd: uni.Ability) -> None {
                 arg.name = f"cap.{captures[i - len(param_names)][0]}";
             }
         }
-        self.func_symtab[name] = fn;
+        self.func_symtab.set(name, fn);
         if captures {
-            self.nested_captures[name] = (
-                fn,
-                [(cname, cmode) for (cname, cmode, _ct) in captures]
+            self.nested_captures.set(
+                name, (fn, [(cname, cmode) for (cname, cmode, _ct) in captures])
             );
         }
         self._register_pass_links(nd, fn);
@@ -1145,11 +1145,10 @@ impl NaIRGenPass._predeclare_nested_siblings(nd: uni.Ability) -> None {
                 _arg.name = f"cap.{_caps[i - len(_pnames)][0]}";
             }
         }
-        self.func_symtab[_sname] = _fn;
+        self.func_symtab.set(_sname, _fn);
         if _caps {
-            self.nested_captures[_sname] = (
-                _fn,
-                [(_c0, _c1) for (_c0, _c1, _c2) in _caps]
+            self.nested_captures.set(
+                _sname, (_fn, [(_c0, _c1) for (_c0, _c1, _c2) in _caps])
             );
         }
         self._register_pass_links(s, _fn);
@@ -1298,7 +1297,8 @@ impl NaIRGenPass._codegen_generator(
 
         body = ModuleFacts.unwrap_body(nd);
         if body is not None {
-            _symtab_before = dict(self.func_symtab);
+            _symtab_before = self.func_symtab;
+            self.func_symtab = _symtab_before.child();
             self._codegen_body(body);
             self.func_symtab = _symtab_before;
         }
@@ -1485,7 +1485,7 @@ impl NaIRGenPass._emit_glob_init_func -> None {
             else "__jac_glob_init",
         fnty
     );
-    self.func_symtab["__jac_glob_init"] = func;
+    self.func_symtab.set("__jac_glob_init", func);
     state = self._enter_function(func);
     try {
         if self._global_init_nodes {
@@ -1664,7 +1664,7 @@ impl NaIRGenPass._codegen_entry(nodes: list[uni.ModuleCode]) -> None {
         if self.module?.loc
         else "jac_entry";
     func = self._define_function(_entry_sym, fnty);
-    self.func_symtab["jac_entry"] = func;
+    self.func_symtab.set("jac_entry", func);
     self._record_export("jac_entry", func.name, "entry");
 
     self._emit_glob_init_func();
@@ -1769,7 +1769,7 @@ impl NaIRGenPass._emit_rc_gc_env_off_fn -> ir.Function {
     _i1 = ir.IntType(1);
     fn = self._define_function("__rc_gc_env_off", ir.FunctionType(_i1, []));
     fn.linkage = "private";
-    self.func_symtab["__rc_gc_env_off"] = fn;
+    self.func_symtab.set("__rc_gc_env_off", fn);
     entry_bb = fn.append_basic_block("entry");
     check_bb = fn.append_basic_block("gc_env_check");
     b = ir.IRBuilder(entry_bb);

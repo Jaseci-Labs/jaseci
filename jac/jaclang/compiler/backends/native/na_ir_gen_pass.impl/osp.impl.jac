@@ -40,7 +40,7 @@ impl NaIRGenPass._osp_kernel_init_fns -> list[ir.Function] {
             fn = ir.Function(
                 self.llvm_module, ir.FunctionType(ir.VoidType(), []), name=name
             );
-            self.func_symtab[name] = fn;
+            self.func_symtab.set(name, fn);
         }
         out.append(fn);
     }
@@ -445,7 +445,7 @@ impl NaIRGenPass._emit_osp_setup -> None {
         "osp_register_type",
         "osp_register_desc"
     ] {
-        if _rfn not in self.func_symtab {
+        if not self.func_symtab.contains(_rfn) {
             return;
         }
     }

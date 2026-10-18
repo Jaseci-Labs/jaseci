@@ -83,7 +83,7 @@ impl NaIRGenPass._osp_edge_factory(name: str) -> ir.Function {
     }
     fn = self._define_function(symbol, ir.FunctionType(ir.IntType(64), []));
     fn.linkage = "internal";
-    self.func_symtab[symbol] = fn;
+    self.func_symtab.set(symbol, fn);
     return fn;
 }
 
