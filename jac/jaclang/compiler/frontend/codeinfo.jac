@@ -1122,7 +1122,7 @@ def native_wasm_stem(path: str) -> str {
     return stem;
 }
 
-glob NATIVE_ABI_VERSION: int = 1;
+glob NATIVE_ABI_VERSION: int = 2;
 
 obj NativeModuleLayout {
     has abi_version: int = NATIVE_ABI_VERSION,

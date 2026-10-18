@@ -1220,11 +1220,12 @@ impl NaIRGenPass._emit_str_stamp_and_new -> None {
 
     i1 = ir.IntType(1);
     ascii_fn = self._define_function(
-        "__jac_str_isascii", ir.FunctionType(i1, [i8_ptr, i64])
+        "__jac_str_isascii", ir.FunctionType(i1, [i8_ptr, i8_ptr, i64])
     );
     ascii_fn.linkage = "private";
-    ascii_fn.args[0].name = "s";
-    ascii_fn.args[1].name = "n";
+    ascii_fn.args[0].name = "root";
+    ascii_fn.args[1].name = "s";
+    ascii_fn.args[2].name = "n";
     _a_entry = ascii_fn.append_basic_block("entry");
     _a_scan = ascii_fn.append_basic_block("scan");
     _a_sbody = ascii_fn.append_basic_block("scan.body");
@@ -1234,7 +1235,7 @@ impl NaIRGenPass._emit_str_stamp_and_new -> None {
     if _headerless {
         b.cbranch(
             b.icmp_unsigned(
-                "==", ascii_fn.args[1], ir.Constant(i64, 0), name="ia.empty"
+                "==", ascii_fn.args[2], ir.Constant(i64, 0), name="ia.empty"
             ),
             _a_yes,
             _a_scan
@@ -1248,7 +1249,7 @@ impl NaIRGenPass._emit_str_stamp_and_new -> None {
         _a_null = b.icmp_unsigned(
             "==", ascii_fn.args[0], ir.Constant(i8_ptr, None), name="ia.null"
         );
-        b.cbranch(_a_null, _a_no, _a_sent);
+        b.cbranch(_a_null, _a_scan, _a_sent);
         b = ir.IRBuilder(_a_sent);
         _a_rc_slot = b.gep(
             ascii_fn.args[0], [ir.Constant(i64, HDR_RC_OFF)], name="ia.rc.slot"
@@ -1272,18 +1273,7 @@ impl NaIRGenPass._emit_str_stamp_and_new -> None {
             ir.Constant(i64, 0),
             name="ia.has.len"
         );
-        _a_len_ok = b.icmp_unsigned(
-            "==",
-            b.lshr(
-                b.and_(_a_dv, ir.Constant(i64, STR_LEN_PAYLOAD_MASK), name="ia.pay"),
-                ir.Constant(i64, STR_LEN_TAG_SHIFT),
-                name="ia.len"
-            ),
-            ascii_fn.args[1],
-            name="ia.len.ok"
-        );
-        _a_trust = b.and_(_a_tagged, _a_len_ok, name="ia.trust");
-        b.cbranch(_a_trust, _a_flag_bb, _a_scan);
+        b.cbranch(_a_tagged, _a_flag_bb, _a_scan);
         b = ir.IRBuilder(_a_flag_bb);
         _a_flag = b.icmp_unsigned(
             "!=",
@@ -1292,17 +1282,17 @@ impl NaIRGenPass._emit_str_stamp_and_new -> None {
             name="ia.flag"
         );
         b.cbranch(_a_flag, _a_yes, _a_no);
-        _a_i_preds = [_a_magic, _a_hdr];
+        _a_i_preds = [_a_entry, _a_magic, _a_hdr];
     }
     b = ir.IRBuilder(_a_scan);
     _a_i = b.phi(i64, name="ia.i");
     for _pred in _a_i_preds {
         _a_i.add_incoming(ir.Constant(i64, 0), _pred);
     }
-    _a_go = b.icmp_unsigned("<", _a_i, ascii_fn.args[1], name="ia.go");
+    _a_go = b.icmp_unsigned("<", _a_i, ascii_fn.args[2], name="ia.go");
     b.cbranch(_a_go, _a_sbody, _a_yes);
     b = ir.IRBuilder(_a_sbody);
-    _a_bp = b.gep(ascii_fn.args[0], [_a_i], name="ia.p");
+    _a_bp = b.gep(ascii_fn.args[1], [_a_i], name="ia.p");
     _a_bv = b.zext(b.load(_a_bp, name="ia.b"), i64, name="ia.bv");
     _a_hi = b.icmp_unsigned(">=", _a_bv, ir.Constant(i64, 0x80), name="ia.hi");
     _a_i1 = b.add(_a_i, ir.Constant(i64, 1), name="ia.i1");
@@ -1325,13 +1315,17 @@ impl NaIRGenPass._call_str_len(
 }
 
 impl NaIRGenPass._call_str_isascii(
-    b: ir.IRBuilder, ptr: ir.Value, nbytes: ir.Value, name: str = "s.isascii"
+    b: ir.IRBuilder,
+    base: ir.Value,
+    ptr: ir.Value,
+    nbytes: ir.Value,
+    name: str = "s.isascii"
 ) -> ir.Value {
     if self.str_isascii_fn is None {
         self._emit_str_len_helpers();
     }
     nbytes = self._coerce_type(nbytes, ir.IntType(64));
-    return b.call(self.str_isascii_fn, [ptr, nbytes], name=name);
+    return b.call(self.str_isascii_fn, [base, ptr, nbytes], name=name);
 }
 
 impl NaIRGenPass._call_str_truthy(

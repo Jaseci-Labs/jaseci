@@ -1848,76 +1848,17 @@ class NativeBuiltinEmitter(BuiltinEmitter[(ir.Value, NativeEmitCtx)]) {
         );
         ir.IRBuilder(ascii_bb).ret(lead);
         wide = ir.IRBuilder(wide_bb);
-        width = wide.select(
-            wide.icmp_unsigned("<", lead, ir.Constant(i64, 224), name="lead.two"),
-            ir.Constant(i64, 2),
+        point = p._call_utf8_decode(
+            wide, text, p._call_str_len(wide, text, name="text.len"), name="point"
+        );
+        wide.ret(
             wide.select(
-                wide.icmp_unsigned("<", lead, ir.Constant(i64, 240), name="lead.three"),
-                ir.Constant(i64, 3),
-                ir.Constant(i64, 4),
-                name="width.wide"
-            ),
-            name="width"
+                wide.icmp_signed("<", point, ir.Constant(i64, 0), name="malformed"),
+                ir.Constant(i64, 0xFFFD),
+                point,
+                name="point.or.replacement"
+            )
         );
-        complete_bb = fn.append_basic_block("complete");
-        wide.cbranch(
-            wide.icmp_unsigned(
-                "<=",
-                width,
-                p._call_str_len(wide, text, name="text.len"),
-                name="complete"
-            ),
-            complete_bb,
-            ascii_bb
-        );
-        wide = ir.IRBuilder(complete_bb);
-        point = wide.and_(
-            lead,
-            wide.select(
-                wide.icmp_unsigned("==", width, ir.Constant(i64, 2), name="mask.two"),
-                ir.Constant(i64, 31),
-                wide.select(
-                    wide.icmp_unsigned(
-                        "==", width, ir.Constant(i64, 3), name="mask.three"
-                    ),
-                    ir.Constant(i64, 15),
-                    ir.Constant(i64, 7),
-                    name="mask.wide"
-                ),
-                name="lead.mask"
-            ),
-            name="lead.bits"
-        );
-        current = wide;
-        for offset in range(1, 4) {
-            step_bb = fn.append_basic_block(f"continuation.{offset}");
-            done_bb = fn.append_basic_block(f"decoded.{offset}");
-            current.cbranch(
-                current.icmp_unsigned(
-                    ">", width, ir.Constant(i64, offset), name=f"has.{offset}"
-                ),
-                step_bb,
-                done_bb
-            );
-            ir.IRBuilder(done_bb).ret(point);
-            current = ir.IRBuilder(step_bb);
-            byte = current.zext(
-                current.load(
-                    current.gep(
-                        text, [ir.Constant(i64, offset)], name=f"byte.ptr.{offset}"
-                    ),
-                    name=f"byte.{offset}"
-                ),
-                i64,
-                name=f"byte.value.{offset}"
-            );
-            point = current.or_(
-                current.shl(point, ir.Constant(i64, 6), name=f"point.shift.{offset}"),
-                current.and_(byte, ir.Constant(i64, 63), name=f"byte.bits.{offset}"),
-                name=f"point.{offset}"
-            );
-        }
-        current.ret(point);
         return fn;
     }
 

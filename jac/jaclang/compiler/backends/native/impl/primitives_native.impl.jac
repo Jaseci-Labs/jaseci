@@ -710,39 +710,25 @@ impl NativeStrEmitter.emit_swapcase(
 
 def _str_cp_region(
     p: NaIRGenPass, b: ir.IRBuilder, target: ir.Value, bounds: list[ir.Value]
-) -> tuple[ir.Value, ir.Value, ir.Value, ir.Value, ir.Value, ir.Value] {
+) -> tuple[ir.Value, ir.Value, ir.Value, ir.Value, ir.Value, ir.Value, ir.Value] {
     i64 = ir.IntType(64);
     zero = ir.Constant(i64, 0);
     blen = p._call_str_len(b, target, name="rg.blen");
-    cplen = p._call_utf8_cplen(b, target, blen, name="rg.cplen");
-    lo = p._coerce_type(bounds[0], i64) if len(bounds) > 0 else zero;
-    hi = p._coerce_type(bounds[1], i64) if len(bounds) > 1 else cplen;
-    lo = b.select(
-        b.icmp_signed("<", lo, zero, name="rg.lo.neg"),
-        b.add(lo, cplen, name="rg.lo.wrap"),
-        lo,
-        name="rg.lo.w"
-    );
-    lo = b.select(
-        b.icmp_signed("<", lo, zero, name="rg.lo.lo"), zero, lo, name="rg.lo.c"
-    );
-    hi = b.select(
-        b.icmp_signed("<", hi, zero, name="rg.hi.neg"),
-        b.add(hi, cplen, name="rg.hi.wrap"),
-        hi,
-        name="rg.hi.w"
-    );
-    hi = b.select(
-        b.icmp_signed("<", hi, zero, name="rg.hi.lo"), zero, hi, name="rg.hi.c1"
-    );
-    hi = b.select(
-        b.icmp_signed(">", hi, cplen, name="rg.hi.hi"), cplen, hi, name="rg.hi.c2"
-    );
+    ascii = p._call_str_isascii(b, target, target, blen, name="rg.isa");
+    cplen = p._call_utf8_cplen(b, target, blen, ascii, name="rg.cplen");
+    lo = p._emit_wrap_clamp(
+        b, bounds[0], cplen, zero, ir.Constant(i64, 0x7FFFFFFFFFFFFFFF), name="rg.lo"
+    )
+        if len(bounds) > 0
+        else zero;
+    hi = p._emit_wrap_clamp(b, bounds[1], cplen, zero, cplen, name="rg.hi")
+        if len(bounds) > 1
+        else cplen;
     inverted = b.icmp_signed(">", lo, hi, name="rg.inv");
     lo_safe = b.select(inverted, hi, lo, name="rg.lo.safe");
-    lo_off = p._call_utf8_cp_off(b, target, blen, lo_safe, name="rg.lo.off");
-    hi_off = p._call_utf8_cp_off(b, target, blen, hi, name="rg.hi.off");
-    return (blen, lo, hi, lo_off, hi_off, inverted);
+    lo_off = p._call_utf8_cp_off(b, target, blen, lo_safe, ascii, name="rg.lo.off");
+    hi_off = p._call_utf8_cp_off(b, target, blen, hi, ascii, name="rg.hi.off");
+    return (blen, ascii, lo, hi, lo_off, hi_off, inverted);
 }
 
 impl NativeStrEmitter.emit_count(
@@ -757,7 +743,7 @@ impl NativeStrEmitter.emit_count(
     i64 = ir.IntType(64);
     strstr_fn = p._get_or_declare_extern("strstr", i8p, [i8p, i8p]);
     sub_len = p._call_str_len(b, args[0], name="cnt.sub.len");
-    (_, lo_cp, hi_cp, lo_off, hi_off, inverted) = _str_cp_region(
+    (_, _, lo_cp, hi_cp, lo_off, hi_off, inverted) = _str_cp_region(
         p, b, target, args[1:]
     );
     null_ptr = ir.Constant(i8p, None);
@@ -836,7 +822,7 @@ def _emit_str_find_bounded(
     strstr_fn = p._get_or_declare_extern("strstr", i8p, [i8p, i8p]);
     null_ptr = ir.Constant(i8p, None);
     sub_len = p._call_str_len(b, args[0], name="find.sub.len");
-    (_, _, _, lo_off, hi_off, inverted) = _str_cp_region(p, b, target, args[1:]);
+    (_, ascii, _, _, lo_off, hi_off, inverted) = _str_cp_region(p, b, target, args[1:]);
     target_int = b.ptrtoint(target, i64, name="find.tgt.int");
 
     if not rfind {
@@ -855,7 +841,7 @@ def _emit_str_find_bounded(
             name="find.ok"
         );
         safe_off = b.select(ok, f_off, ir.Constant(i64, 0), name="find.safe");
-        cp_pos = p._call_utf8_cplen(b, target, safe_off, name="find.cppos");
+        cp_pos = p._call_utf8_cplen(b, target, safe_off, ascii, name="find.cppos");
         return b.select(ok, cp_pos, ir.Constant(i64, -1), name="find.result");
     }
 
@@ -909,6 +895,7 @@ def _emit_str_find_bounded(
         b,
         target,
         b.select(has_hit, result, ir.Constant(i64, 0), name="rfind.safe"),
+        ascii,
         name="rfind.cppos"
     );
     cp_result = b.select(has_hit, cp_pos, result, name="rfind.cp");
@@ -1002,17 +989,17 @@ impl NativeStrEmitter._emit_affix(
             return None;
         }
     }
-    (blen, _, _, lo_off, hi_off, inverted) = _str_cp_region(p, b, target, args[1:]);
-    matched = _emit_affix_match(
+    (_, _, _, _, lo_off, hi_off, inverted) = _str_cp_region(p, b, target, args[1:]);
+    matched = _emit_affix_window_match(
         p,
         b,
         target,
-        blen,
+        lo_off,
+        hi_off,
         [
             (candidate, p._call_str_len(b, candidate, name="affix.size"))
             for candidate in candidates
         ],
-        [lo_off, hi_off],
         suffix
     );
     return b.and_(matched, b.not_(inverted, name="affix.ninv"), name="affix.region");
@@ -1027,21 +1014,41 @@ def _emit_affix_match(
     bounds: list[ir.Value],
     suffix: bool
 ) -> ir.Value {
+    i64 = ir.IntType(64);
+    zero = ir.Constant(i64, 0);
+    start = p._emit_wrap_clamp(
+        b,
+        bounds[0],
+        length,
+        zero,
+        ir.Constant(i64, 0x7FFFFFFFFFFFFFFF),
+        name="affix.lo"
+    )
+        if len(bounds) > 0
+        else zero;
+    end = p._emit_wrap_clamp(b, bounds[1], length, zero, length, name="affix.hi")
+        if len(bounds) > 1
+        else length;
+    return b.and_(
+        _emit_affix_window_match(p, b, data, start, end, candidates, suffix),
+        b.icmp_signed("<=", start, end, name="affix.ordered"),
+        name="affix.inregion"
+    );
+}
+
+def _emit_affix_window_match(
+    p: NaIRGenPass,
+    b: ir.IRBuilder,
+    data: ir.Value,
+    start: ir.Value,
+    end: ir.Value,
+    candidates: list[tuple[ir.Value, ir.Value]],
+    suffix: bool
+) -> ir.Value {
     i8p = ir.IntType(8).as_pointer();
     i32 = ir.IntType(32);
     i64 = ir.IntType(64);
-    zero = ir.Constant(i64, 0);
-    start = p._coerce_type(bounds[0], i64) if len(bounds) > 0 else zero;
-    end = p._coerce_type(bounds[1], i64) if len(bounds) > 1 else length;
-    start = b.select(b.icmp_signed("<", start, zero), b.add(start, length), start);
-    start = b.select(b.icmp_signed("<", start, zero), zero, start);
-    end = b.select(b.icmp_signed("<", end, zero), b.add(end, length), end);
-    end = b.select(b.icmp_signed("<", end, zero), zero, end);
-    end = b.select(b.icmp_signed(">", end, length), length, end);
-    available = b.sub(end, start);
-    bounds_ok = b.and_(
-        b.icmp_signed("<=", start, end), b.icmp_signed("<=", start, length)
-    );
+    available = b.sub(end, start, name="affix.avail");
     fn = b.basic_block.function;
     match_bb = fn.append_basic_block("affix.match");
     miss = fn.append_basic_block("affix.miss");
@@ -1050,8 +1057,7 @@ def _emit_affix_match(
     for (candidate, size) in candidates {
         compare = fn.append_basic_block("affix.compare");
         next_candidate = fn.append_basic_block("affix.next");
-        fits = b.and_(bounds_ok, b.icmp_signed("<=", size, available));
-        b.cbranch(fits, compare, next_candidate);
+        b.cbranch(b.icmp_signed("<=", size, available), compare, next_candidate);
         b.position_at_end(compare);
         offset = b.sub(end, size) if suffix else start;
         window = b.gep(data, [offset], name="affix.data");
@@ -1716,7 +1722,13 @@ impl NativeStrEmitter.emit_center(
     memcpy_fn = p._get_or_declare_extern("memcpy", i8p, [i8p, i8p, i64]);
     memset_fn = p._get_or_declare_extern("memset", i8p, [i8p, ir.IntType(32), i64]);
     slen = p._call_str_len(b, target, name="center.len");
-    cplen = p._call_utf8_cplen(b, target, slen, name="center.cplen");
+    cplen = p._call_utf8_cplen(
+        b,
+        target,
+        slen,
+        p._call_str_isascii(b, target, target, slen, name="center.isa"),
+        name="center.cplen"
+    );
     width = args[0];
     needs_pad = b.icmp_signed("<", cplen, width, name="center.needspad");
     func = b.basic_block.function;
@@ -1774,7 +1786,13 @@ impl NativeStrEmitter.emit_ljust(
     memcpy_fn = p._get_or_declare_extern("memcpy", i8p, [i8p, i8p, i64]);
     memset_fn = p._get_or_declare_extern("memset", i8p, [i8p, ir.IntType(32), i64]);
     slen = p._call_str_len(b, target, name="ljust.len");
-    cplen = p._call_utf8_cplen(b, target, slen, name="ljust.cplen");
+    cplen = p._call_utf8_cplen(
+        b,
+        target,
+        slen,
+        p._call_str_isascii(b, target, target, slen, name="ljust.isa"),
+        name="ljust.cplen"
+    );
     width = args[0];
     needs_pad = b.icmp_signed("<", cplen, width, name="ljust.needspad");
     func = b.basic_block.function;
@@ -1821,7 +1839,13 @@ impl NativeStrEmitter.emit_rjust(
     memcpy_fn = p._get_or_declare_extern("memcpy", i8p, [i8p, i8p, i64]);
     memset_fn = p._get_or_declare_extern("memset", i8p, [i8p, ir.IntType(32), i64]);
     slen = p._call_str_len(b, target, name="rjust.len");
-    cplen = p._call_utf8_cplen(b, target, slen, name="rjust.cplen");
+    cplen = p._call_utf8_cplen(
+        b,
+        target,
+        slen,
+        p._call_str_isascii(b, target, target, slen, name="rjust.isa"),
+        name="rjust.cplen"
+    );
     width = args[0];
     needs_pad = b.icmp_signed("<", cplen, width, name="rjust.needspad");
     func = b.basic_block.function;
@@ -1866,7 +1890,13 @@ impl NativeStrEmitter.emit_zfill(
     memcpy_fn = p._get_or_declare_extern("memcpy", i8p, [i8p, i8p, i64]);
     memset_fn = p._get_or_declare_extern("memset", i8p, [i8p, ir.IntType(32), i64]);
     slen = p._call_str_len(b, target, name="zfill.len");
-    cplen = p._call_utf8_cplen(b, target, slen, name="zfill.cplen");
+    cplen = p._call_utf8_cplen(
+        b,
+        target,
+        slen,
+        p._call_str_isascii(b, target, target, slen, name="zfill.isa"),
+        name="zfill.cplen"
+    );
     width = args[0];
     needs_pad = b.icmp_signed("<", cplen, width, name="zfill.needspad");
     func = b.basic_block.function;
@@ -2037,7 +2067,7 @@ impl NativeStrEmitter.emit_expandtabs(
     memcpy_fn = p._get_or_declare_extern(
         "memcpy", i8.as_pointer(), [i8.as_pointer(), i8.as_pointer(), i64]
     );
-    cp_len = p._call_utf8_cp_len_at(b, target, si, name="et.cplen");
+    cp_len = p._call_utf8_cp_len_at(b, target, slen, si, name="et.cplen");
     dp_ch = b.gep(buf, [di], name="et.dp.ch");
     b.call(memcpy_fn, [dp_ch, cp, cp_len]);
     next_di_ch = b.add(di, cp_len, name="et.ndi.ch");
@@ -2142,7 +2172,7 @@ impl NativeStrEmitter.emit_isascii(
     b = get_builder(p);
     slen = p._call_str_len(b, target, name="isascii.len");
 
-    return p._call_str_isascii(b, target, slen, name="isascii.ok");
+    return p._call_str_isascii(b, target, target, slen, name="isascii.ok");
 }
 
 impl NativeStrEmitter.emit_isdecimal(

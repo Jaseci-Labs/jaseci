@@ -274,21 +274,28 @@ def _hex4_str(n: int) -> str {
 }
 
 
+def _dump_plain(ch: int, ensure_ascii: bool) -> bool {
+    return ch >= 32 and ch != 34 and ch != 92 and (ch < 127 or not ensure_ascii);
+}
+
+
 def _dump_str(s: str, ensure_ascii: bool) -> str {
+    plain: bool = True;
+    for c in s {
+        if not _dump_plain(ord(c), ensure_ascii) {
+            plain = False;
+            break;
+        }
+    }
+    if plain {
+        return "\"" + s + "\"";
+    }
     parts: list[str] = ["\""];
-    n: int = len(s);
-    i: int = 0;
-    start: int = 0;
-    while i < n {
-        ch: int = ord(s[i]);
-        if ch >= 32 and ch != 34 and ch != 92 and (ch < 127 or not ensure_ascii) {
-            i += 1;
-            continue;
-        }
-        if i > start {
-            parts.append(s[start:i]);
-        }
-        if ch == 34 {
+    for c in s {
+        ch: int = ord(c);
+        if _dump_plain(ch, ensure_ascii) {
+            parts.append(c);
+        } elif ch == 34 {
             parts.append("\\\"");
         } elif ch == 92 {
             parts.append("\\\\");
@@ -304,27 +311,15 @@ def _dump_str(s: str, ensure_ascii: bool) -> str {
             parts.append("\\f");
         } elif ch < 32 {
             parts.append("\\u" + _hex4_str(ch));
-        } elif ensure_ascii and ch == 127 {
+        } elif ch == 127 {
             parts.append("\\u007f");
-        } elif ensure_ascii and ch > 127 {
-            if ch > 65535 {
-                v: int = ch - 65536;
-                parts.append("\\u" + _hex4_str(55296 + v // 1024));
-                parts.append("\\u" + _hex4_str(56320 + v % 1024));
-            } else {
-                parts.append("\\u" + _hex4_str(ch));
-            }
+        } elif ch > 65535 {
+            v: int = ch - 65536;
+            parts.append("\\u" + _hex4_str(55296 + v // 1024));
+            parts.append("\\u" + _hex4_str(56320 + v % 1024));
         } else {
-            parts.append(s[i]);
+            parts.append("\\u" + _hex4_str(ch));
         }
-        i += 1;
-        start = i;
-    }
-    if start == 0 {
-        return "\"" + s + "\"";
-    }
-    if n > start {
-        parts.append(s[start:n]);
     }
     parts.append("\"");
     return "".join(parts);

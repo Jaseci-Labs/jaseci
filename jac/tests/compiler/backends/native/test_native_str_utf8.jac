@@ -3,6 +3,63 @@ against live CPython results on multibyte inputs."""
 import ctypes;
 import from tests.support { compile_native, native_str_func as get_sfunc }
 
+glob SAMPLES: list[str] = [
+         "",
+         "a",
+         "héllo",
+         "日本語",
+         "a日b本c",
+         "🙂x🙂",
+         "café",
+         "abcabc",
+         "è",
+         "éèé"
+     ],
+     MALFORMED: list[bytes] = [
+         b"\xf0",
+         b"a\xc3",
+         b"\xa8\xa8",
+         b"\xe2\x82",
+         b"x\xf0\x9f",
+         b"\xc3\xa8\xa8",
+         b"\xff\xfez",
+         b"\xed\xa0\x80z",
+         b"\xc0\xaf",
+         b"\xf4\x90\x80\x80"
+     ],
+     _ENGINE: list[any] = [];
+
+def _eng -> any {
+    if not _ENGINE {
+        (eng, _) = compile_native("str_utf8_cps.jac");
+        _ENGINE.append(eng);
+    }
+    return _ENGINE[0];
+}
+
+"""Split bytes the way the native ops do: a unit starts at byte 0 and at every
+byte that is not a continuation byte."""
+def _units(raw: bytes) -> list[bytes] {
+    out: list[bytes] = [];
+    for (i, x) in enumerate(raw) {
+        if i == 0 or (x & 0xC0) != 0x80 {
+            out.append(bytes([x]));
+        } else {
+            out[-1] = out[-1] + bytes([x]);
+        }
+    }
+    return out;
+}
+
+def _unit_char(unit: bytes) -> bytes {
+    try {
+        text = unit.decode("utf-8", "surrogatepass");
+    } except UnicodeDecodeError {
+        return "�".encode("utf-8");
+    }
+    return unit if len(text) == 1 else "�".encode("utf-8");
+}
+
 test "str len/index/slice/find are codepoint-oriented on utf-8" {
     STRS = ["", "a", "héllo", "日本語", "a日b本c", "🙂x🙂", "café", "abcabc", "a\tb", "x\t日"];
     NEEDLES = ["", "a", "é", "日", "x", "llo", "日本", "🙂", "abc"];
@@ -152,6 +209,181 @@ test "str len/index/slice/find are codepoint-oriented on utf-8" {
                     );
                 }
             }
+        }
+    }
+}
+
+test "huge slice steps stop at the ends of a multibyte string" {
+    eng = _eng();
+    rev = get_sfunc(eng, "cp_rev_huge", ctypes.c_char_p, ctypes.c_char_p);
+    fwd = get_sfunc(eng, "cp_fwd_huge", ctypes.c_char_p, ctypes.c_char_p);
+    rev_from = get_sfunc(
+        eng, "cp_rev_huge_from", ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int64
+    );
+    for s in SAMPLES {
+        assert rev(s).decode() == s[::-1000000000000] , f"{s!r}[::-10**12]";
+        assert fwd(s).decode() == s[::1000000000000] , f"{s!r}[::10**12]";
+        for a in [-4, -1, 0, 1, 2, 5] {
+            assert rev_from(s, a).decode() == s[a::-1000000000000] , (
+                f"{s!r}[{a}::-10**12]"
+            );
+        }
+    }
+}
+
+test "malformed utf-8 stays inside its buffer" {
+    eng = _eng();
+    cp_len = get_sfunc(eng, "cp_len", ctypes.c_int64, ctypes.c_char_p);
+    cp_at = get_sfunc(eng, "cp_at", ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int64);
+    cp_iter = get_sfunc(eng, "cp_iter", ctypes.c_char_p, ctypes.c_char_p);
+    cp_reverse = get_sfunc(eng, "cp_reverse", ctypes.c_char_p, ctypes.c_char_p);
+    cp_slice = get_sfunc(
+        eng,
+        "cp_slice",
+        ctypes.c_char_p,
+        ctypes.c_char_p,
+        ctypes.c_int64,
+        ctypes.c_int64
+    );
+    cp_slice_step = get_sfunc(
+        eng,
+        "cp_slice_step",
+        ctypes.c_char_p,
+        ctypes.c_char_p,
+        ctypes.c_int64,
+        ctypes.c_int64,
+        ctypes.c_int64
+    );
+    for raw in MALFORMED {
+        units = _units(raw);
+        assert cp_len(raw) == len(units) , f"len({raw!r})";
+        assert cp_reverse(raw) == b"".join(units[::-1]) , f"{raw!r}[::-1]";
+        assert cp_iter(raw) == b"".join([_unit_char(u) + b"|" for u in units]) , (
+            f"iter({raw!r})"
+        );
+        for i in range(len(units)) {
+            assert cp_at(raw, i) == _unit_char(units[i]) , f"{raw!r}[{i}]";
+        }
+        for a in [-3, -1, 0, 1, 2, 4] {
+            for b in [-3, -1, 0, 1, 2, 4] {
+                assert cp_slice(raw, a, b) == b"".join(units[a:b]) , (
+                    f"{raw!r}[{a}:{b}]"
+                );
+                for k in [-2, -1, 1, 2] {
+                    assert cp_slice_step(raw, a, b, k) == b"".join(units[a:b:k]) , (
+                        f"{raw!r}[{a}:{b}:{k}]"
+                    );
+                }
+            }
+        }
+    }
+}
+
+test "strip with a charset removes whole codepoints" {
+    eng = _eng();
+    fns = {
+        "strip": get_sfunc(
+            eng, "cp_strip", ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p
+        ),
+        "lstrip": get_sfunc(
+            eng, "cp_lstrip", ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p
+        ),
+        "rstrip": get_sfunc(
+            eng, "cp_rstrip", ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p
+        )
+    };
+    assert fns["strip"]("è", "é").decode() == "è";
+    for s in SAMPLES + ["éaé", "日日x日", "🙂é🙂"] {
+        for chars in ["é", "è", "日", "a日", "🙂", "xé", "c", ""] {
+            for (name, fn) in fns.items() {
+                want = getattr(s, name)(chars);
+                assert fn(s, chars).decode() == want , f"{s!r}.{name}({chars!r})";
+            }
+        }
+    }
+}
+
+test "f-string precision and width count codepoints" {
+    eng = _eng();
+    prec = get_sfunc(eng, "cp_fprec", ctypes.c_char_p, ctypes.c_char_p);
+    width = get_sfunc(eng, "cp_fwidth", ctypes.c_char_p, ctypes.c_char_p);
+    both = get_sfunc(eng, "cp_fboth", ctypes.c_char_p, ctypes.c_char_p);
+    right = get_sfunc(eng, "cp_fright", ctypes.c_char_p, ctypes.c_char_p);
+    assert prec("日本語").decode() == f"[{'日本語':.2}]";
+    assert width("é").decode() == f"[{'é':3}]";
+    for s in SAMPLES {
+        assert prec(s).decode() == f"[{s:.2}]" , f"{s!r}:.2";
+        assert width(s).decode() == f"[{s:3}]" , f"{s!r}:3";
+        assert both(s).decode() == f"[{s:>5.2}]" , f"{s!r}:>5.2";
+        assert right(s).decode() == f"[{s:>4}]" , f"{s!r}:>4";
+    }
+}
+
+test "string views index, slice and iterate by codepoint" {
+    eng = _eng();
+    view_len = get_sfunc(
+        eng, "cp_view_len", ctypes.c_int64, ctypes.c_char_p, ctypes.c_int64
+    );
+    view_at = get_sfunc(
+        eng,
+        "cp_view_at",
+        ctypes.c_char_p,
+        ctypes.c_char_p,
+        ctypes.c_int64,
+        ctypes.c_int64
+    );
+    view_iter = get_sfunc(
+        eng, "cp_view_iter", ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int64
+    );
+    view_slice = get_sfunc(
+        eng,
+        "cp_view_slice",
+        ctypes.c_char_p,
+        ctypes.c_char_p,
+        ctypes.c_int64,
+        ctypes.c_int64,
+        ctypes.c_int64
+    );
+    view_rev = get_sfunc(
+        eng, "cp_view_rev", ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int64
+    );
+    owned_view_len = get_sfunc(
+        eng, "cp_owned_view_len", ctypes.c_int64, ctypes.c_char_p, ctypes.c_int64
+    );
+    owned_at = get_sfunc(
+        eng, "cp_owned_at", ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int64
+    );
+    static_views = get_sfunc(eng, "cp_static_views", ctypes.c_char_p);
+    t = "héllo wörld";
+    tv = t[3:];
+    w = "abcdef"[1:];
+    want_static = f"{len(tv)}|{tv[0]}|{tv[-1]}|{len(w)}|{w[2]}|"
+        + tv[1:4]
+        + "|"
+        + w[::-1];
+    assert static_views().decode() == want_static;
+    for s in SAMPLES + ["abcdefgh", "x" * 40 + "é"] {
+        for a in [-3, 0, 1, 2] {
+            v = s[a:];
+            assert view_len(s, a) == len(v) , f"len({s!r}[{a}:])";
+            assert view_iter(s, a).decode() == "".join([ch + "|" for ch in v]) , (
+                f"iter({s!r}[{a}:])"
+            );
+            assert view_rev(s, a).decode() == v[::-1] , f"{s!r}[{a}:][::-1]";
+            for i in range(-len(v), len(v)) {
+                assert view_at(s, a, i).decode() == v[i] , f"{s!r}[{a}:][{i}]";
+            }
+            for (b, c) in [(0, 2), (1, -1), (-2, 9), (2, 1)] {
+                assert view_slice(s, a, b, c).decode() == v[b:c] , (
+                    f"{s!r}[{a}:][{b}:{c}]"
+                );
+            }
+            o = "<" + s;
+            assert owned_view_len(s, a) == len(o[a:]) , f"len(<{s!r}[{a}:])";
+        }
+        o2 = s + ">";
+        for i in range(-len(o2), len(o2)) {
+            assert owned_at(s, i).decode() == o2[i] , f"({s!r}+'>')[{i}]";
         }
     }
 }

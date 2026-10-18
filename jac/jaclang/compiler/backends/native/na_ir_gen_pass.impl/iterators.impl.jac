@@ -230,7 +230,6 @@ impl NaIRGenPass._str_iter_next_fn -> ir.Function {
     }
     i8p = ir.IntType(8).as_pointer();
     i32 = ir.IntType(32);
-    i64 = ir.IntType(64);
     i1 = ir.IntType(1);
     state_ptr_type = self.struct_types["StrIterState"].as_pointer();
     if self.str_len_fn is None {
@@ -260,8 +259,8 @@ impl NaIRGenPass._str_iter_next_fn -> ir.Function {
     b.cbranch(ok, cont, stop);
     b.position_at_end(cont);
 
-    ch = b.call(self.utf8_cp_at_off_fn, [s_ptr, idx], name="sit.char");
-    idx_next = b.call(self.utf8_cp_len_at_fn, [s_ptr, idx], name="sit.adv");
+    ch = b.call(self.utf8_char_at_fn, [s_ptr, n, idx], name="sit.char");
+    idx_next = b.call(self.utf8_cp_len_at_fn, [s_ptr, n, idx], name="sit.adv");
     out_t = b.bitcast(fn.args[1], i8p.as_pointer(), name="sit.out");
     b.store(ch, out_t);
     b.store(b.add(idx, idx_next, name="sit.idx.next"), idx_slot);

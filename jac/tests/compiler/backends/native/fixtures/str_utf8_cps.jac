@@ -77,3 +77,93 @@ def cp_expandtabs(s: str, t: int) -> str {
 def cp_isascii(s: str) -> bool {
     return s.isascii();
 }
+
+def cp_rev_huge(s: str) -> str {
+    return "" + s[::-1000000000000];
+}
+
+def cp_fwd_huge(s: str) -> str {
+    return "" + s[::1000000000000];
+}
+
+def cp_rev_huge_from(s: str, a: int) -> str {
+    return "" + s[a::-1000000000000];
+}
+
+def cp_strip(s: str, c: str) -> str {
+    return s.strip(c);
+}
+
+def cp_lstrip(s: str, c: str) -> str {
+    return s.lstrip(c);
+}
+
+def cp_rstrip(s: str, c: str) -> str {
+    return s.rstrip(c);
+}
+
+def cp_fprec(s: str) -> str {
+    return f"[{s:.2}]";
+}
+
+def cp_fwidth(s: str) -> str {
+    return f"[{s:3}]";
+}
+
+def cp_fboth(s: str) -> str {
+    return f"[{s:>5.2}]";
+}
+
+def cp_fright(s: str) -> str {
+    return f"[{s:>4}]";
+}
+
+# `v` is a descriptor view into the argument, so these reach the view paths.
+def cp_view_len(s: str, a: int) -> int {
+    v = s[a:];
+    return len(v);
+}
+
+def cp_view_at(s: str, a: int, i: int) -> str {
+    v = s[a:];
+    return v[i];
+}
+
+def cp_view_iter(s: str, a: int) -> str {
+    v = s[a:];
+    r = "";
+    for ch in v {
+        r = r + ch + "|";
+    }
+    return r;
+}
+
+def cp_view_slice(s: str, a: int, b: int, c: int) -> str {
+    v = s[a:];
+    return "" + v[b:c];
+}
+
+def cp_view_rev(s: str, a: int) -> str {
+    v = s[a:];
+    return "" + v[::-1];
+}
+
+# Natively built roots, so the header's ASCII flag is the one the ops read.
+def cp_owned_view_len(s: str, a: int) -> int {
+    o = "<" + s;
+    v = o[a:];
+    return len(v);
+}
+
+def cp_owned_at(s: str, i: int) -> str {
+    o = s + ">";
+    return o[i];
+}
+
+# Views into static literals, whose prefix is only 16 bytes.
+def cp_static_views -> str {
+    t = "héllo wörld";
+    v = t[3:];
+    w = "abcdef"[1:];
+    return f"{len(v)}|{v[0]}|{v[-1]}|{len(w)}|{w[2]}|" + v[1:4] + "|" + w[::-1];
+}
