@@ -1,9 +1,11 @@
+import subprocess;
 import tempfile;
 import tomllib;
 import from pathlib { Path }
 import from jaclang.project.config { JacConfig }
 import from jaclang.project.dependencies { ManifestError, PackageDep }
 import from jaclang.packages.migrate { migrate_manifest }
+import from tests.support { jac_command }
 
 glob MODERN: str = (
          "[project]\nname = \"acme/app\"\nversion = \"1.0.0\"\n"
@@ -118,5 +120,33 @@ test "jac fix dependencies moves PyPI entries without touching the rest" {
         assert cfg.pypi_dependencies == {"requests": ">=2.28", "numpy": "~=2.0"};
         assert not cfg.dependencies;
         assert not migrate_manifest(path).moved;
+    }
+}
+
+test "jac fix dependencies runs on the manifest it migrates" {
+    with tempfile.TemporaryDirectory() as tmp {
+        path = Path(tmp) / "jac.toml";
+        path.write_text(LEGACY);
+        run = subprocess.run(
+            jac_command("fix", "dependencies"), cwd=tmp, capture_output=True, text=True
+        );
+        assert run.returncode == 0 , run.stdout + run.stderr;
+        assert "jac.toml is invalid" not in run.stderr , run.stderr;
+        doc = tomllib.loads(path.read_text());
+        assert doc["dependencies"]["pypi"]["requests"] == ">=2.28";
+    }
+}
+
+test "other jac fix migrations still refuse an invalid manifest" {
+    with tempfile.TemporaryDirectory() as tmp {
+        (Path(tmp) / "jac.toml").write_text(LEGACY);
+        run = subprocess.run(
+            jac_command("fix", "placement", "--dry-run"),
+            cwd=tmp,
+            capture_output=True,
+            text=True
+        );
+        assert run.returncode == 2 , run.stdout + run.stderr;
+        assert "jac.toml is invalid" in run.stderr , run.stderr;
     }
 }

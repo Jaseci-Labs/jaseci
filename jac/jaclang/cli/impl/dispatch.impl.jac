@@ -1,7 +1,9 @@
 import os;
 import sys;
 
-def _discover_project_config(profile: str | None = None) {
+def _discover_project_config(
+    profile: str | None = None, allow_invalid: bool = False
+) -> bool {
     try {
         import from jaclang.project.config { get_config }
         import from jaclang.project.pyvenv { add_venv_to_path }
@@ -13,8 +15,12 @@ def _discover_project_config(profile: str | None = None) {
     } except MalformedJacTomlError as exc {
         _exit_on_malformed_jac_toml(exc);
     } except ValueError as exc {
-        _exit_on_invalid_jac_toml(exc);
+        if not allow_invalid {
+            _exit_on_invalid_jac_toml(exc);
+        }
+        return False;
     } except Exception {}
+    return True;
 }
 
 def _exit_on_invalid_jac_toml(exc: any) {
@@ -265,11 +271,17 @@ impl run_selected_command(command_name: str) -> None {
     }
 
     args_dict = vars(args);
-    _discover_project_config(profile=args_dict.get('profile') or None);
+    config_valid = _discover_project_config(
+        profile=args_dict.get('profile') or None,
+        allow_invalid=command_name == 'fix'
+            and args_dict.get('target') == 'dependencies'
+    );
     if script_args {
         args_dict['args'] = script_args;
     }
-    _apply_profile(meta, args_dict);
+    if config_valid {
+        _apply_profile(meta, args_dict);
+    }
 
     handler = load_handler(command_name);
     spec = CommandSpec(name=meta.name, help=meta.help, handler=handler);
