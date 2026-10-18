@@ -9,17 +9,9 @@ import from jaclang.byllm.llm { BaseLLM, LocalLLM }
 import from jaclang.byllm.types { MockToolCall }
 import from jaclang.byllm.exceptions { CompactionNotEffectiveError, ConfigurationError }
 import from jaclang.byllm.config_loader { reset_byllm_config, get_byllm_config }
-import from jaclang.byllm.deadline { CallDeadline }
+import from jaclang.byllm.deadline { CallDeadline, _active_deadline }
 import from pathlib { Path }
-import from support {
-    call,
-    capture_loguru,
-    fail,
-    finish,
-    fixture_path,
-    mk_run,
-    scripted
-}
+import from support { call, capture_loguru, fail, finish, fixture_path, scripted }
 
 
 glob COMPACTION_TOML_FIXTURE = fixture_path("compaction_config");
@@ -109,14 +101,18 @@ test "default compactor produces system user summary and kept-tail structure" {
     summary_text = "Steps 1, 2, and 3 searched for q1/q2/q3.";
     summariser = MockLLM(outputs=[summary_text]);
     # The calling run has spent 20s of a 50s budget.
-    parent = mk_run();
-    parent._deadline = CallDeadline(
-        budget=50.0, model="gpt-4o-mini", started_at=time.monotonic() - 20.0
+    calling = _active_deadline.set(
+        CallDeadline(
+            budget=50.0, model="gpt-4o-mini", started_at=time.monotonic() - 20.0
+        )
     );
-
-    result: list[any] = list(
-        _byllm_llm_mod._default_compact(messages, 1, summariser, parent)
-    );
+    try {
+        result: list[any] = list(
+            _byllm_llm_mod._default_compact(messages, 1, summariser)
+        );
+    } finally {
+        _active_deadline.reset(calling);
+    }
 
     assert len(result) == 5 , f"Expected 5 messages, got {len(result)}";
     assert result[0] is sys_msg;

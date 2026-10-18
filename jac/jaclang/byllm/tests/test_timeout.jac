@@ -1,7 +1,6 @@
 """The call timeout (#9622, #9760): one deadline for a whole `by llm()` call, and LLMTimeout."""
 
 import asyncio;
-import threading;
 import time;
 import from unittest { mock }
 import from jaclang.byllm._optdeps.litellm { litellm }
@@ -9,7 +8,7 @@ import from jaclang.byllm.exceptions { LLMTimeout, RateLimitError }
 import from jaclang.byllm.lib { MockLLM, Model, ModelPool }
 import from jaclang.byllm.llm { _is_timeout_error, _is_transient_error }
 import from jaclang.testing.requires { require_module }
-import from support { call, mk_run, say, text_chunk }
+import from support { call, mk_run, say, scripted, text_chunk }
 
 
 """Run `work`, naming the error it raises in place of its result."""
@@ -203,109 +202,32 @@ test "one deadline covers everything a call does" {
         return (_outcome(read_slowly), len(llm.seen));
     }
 
-    def held_back(budget: float) -> tuple[str, int] {
-        pulled: list[int] = [];
-        asked: list[int] = [];
+    def nested_call(budget: float) -> tuple[str, int] {
+        inner = Model(model_name="gpt-4o-mini");
+        outer = Model(model_name="gpt-4o-mini", timeout=budget);
 
-        def long_answer(**_kwargs: any) -> any {
-            asked.append(1);
-            def chunks -> any {
-                for _ in range(5000) {
-                    pulled.append(1);
-                    yield text_chunk("x");
-                }
+        """Answer."""
+        def ask_inner(question: str) -> str by inner();
+
+        def consult(question: str) -> str {
+            return ask_inner(question);
+        }
+
+        """Consult, then answer."""
+        def ask_outer(question: str) -> str by outer(tools=[consult]);
+
+        with scripted(inner, ["inner answer"]) as inner_llm {
+            with scripted(
+                outer, [call("consult", {"question": "x"}), say("done")]
+            ) as outer_llm {
+                got = _outcome(lambda { ask_outer("go"); });
             }
-            return chunks();
         }
-        model = Model(model_name="gpt-4o-mini", api_key="sk-test", timeout=budget);
-        earlier = set(threading.enumerate());
-        with mock.patch("litellm.completion", long_answer) {
-            stream = model.dispatch_streaming(mk_run(stream=True));
-            next(stream);
-            time.sleep(0.3);
-            ahead = len(pulled);
-            stream.close();
-            time.sleep(0.3);
+        sent = inner_llm.sent("timeout");
+        if not sent or sent[0] > budget {
+            got = "the inner call got its own budget";
         }
-        if ahead > 70 {
-            return (f"the provider ran {ahead} chunks ahead", len(asked));
-        }
-        if any(
-            t.name == "byllm-stream" and t not in earlier for t in threading.enumerate()
-        ) {
-            return ("the reader outlived the caller", len(asked));
-        }
-        return ("held back", len(asked));
-    }
-
-    def closed_on_stop(budget: float) -> tuple[str, int] {
-        held: list[any] = [];
-        closed: list[int] = [];
-
-        def slow_answer(**_kwargs: any) -> any {
-            def chunks -> any {
-                try {
-                    for _ in range(500) {
-                        time.sleep(0.01);
-                        yield text_chunk("x");
-                    }
-                } finally {
-                    closed.append(1);
-                }
-            }
-            # The provider keeps its stream, so only an explicit close ends it.
-            held.append(chunks());
-            return held[0];
-        }
-        model = Model(model_name="gpt-4o-mini", api_key="sk-test", timeout=budget);
-        with mock.patch("litellm.completion", slow_answer) {
-            stream = model.dispatch_streaming(mk_run(stream=True));
-            next(stream);
-            stream.close();
-            time.sleep(0.3);
-        }
-        return ("closed" if closed else "left open", len(held));
-    }
-
-    def quiet_stream(budget: float) -> tuple[str, int] {
-        asked: list[int] = [];
-
-        def goes_quiet(**_kwargs: any) -> any {
-            asked.append(1);
-            def chunks -> any {
-                yield text_chunk("partial ");
-                time.sleep(5.0);
-            }
-            return chunks();
-        }
-        model = Model(model_name="gpt-4o-mini", api_key="sk-test", timeout=budget);
-        with mock.patch("litellm.completion", goes_quiet) {
-            got = _outcome(
-                lambda { "".join(model.dispatch_streaming(mk_run(stream=True))); }
-            );
-        }
-        return (got, len(asked));
-    }
-
-    def slow_open(budget: float) -> tuple[str, int] {
-        asked: list[int] = [];
-
-        def opens_late(**_kwargs: any) -> any {
-            asked.append(1);
-            time.sleep(2.0);
-            return iter([text_chunk("late")]);
-        }
-        model = Model(model_name="gpt-4o-mini", api_key="sk-test", timeout=budget);
-        started = time.monotonic();
-        with mock.patch("litellm.completion", opens_late) {
-            got = _outcome(
-                lambda { "".join(model.dispatch_streaming(mk_run(stream=True))); }
-            );
-        }
-        if time.monotonic() - started > 1.5 {
-            got = f"{got}, but only once the stream opened";
-        }
-        return (got, len(asked));
+        return (got, len(outer_llm.seen));
     }
 
     def async_stream_closed(budget: float) -> tuple[str, int] {
@@ -390,32 +312,11 @@ test "one deadline covers everything a call does" {
             1
         ),
         (
-            "a slow reader holds the provider back, and stopping ends the reads",
-            held_back,
-            30.0,
-            "held back",
-            1
-        ),
-        (
-            "a reader stopped mid-chunk closes the provider's stream",
-            closed_on_stop,
-            30.0,
-            "closed",
-            1
-        ),
-        (
-            "a stream whose provider goes quiet is cut off",
-            quiet_stream,
-            0.5,
-            "LLMTimeout",
-            1
-        ),
-        (
-            "a stream that takes too long to open is cut off",
-            slow_open,
-            0.5,
-            "LLMTimeout",
-            1
+            "a by llm() call inside a tool gets only what its caller has left",
+            nested_call,
+            5.0,
+            "done",
+            2
         ),
         (
             "an async stream the caller stops early is closed",

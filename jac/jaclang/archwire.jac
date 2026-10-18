@@ -436,8 +436,9 @@ graph import byllm {
     schema --> byllm.tests.test_byllm { type_display_name }
     schema --> byllm.types { type_display_name }
     types --> byllm.lib { Document }
-    deadline --> byllm.llm | byllm.mtir { CallDeadline }
-    deadline --> byllm.tests.test_compaction { CallDeadline }
+    deadline --> byllm.llm { CallDeadline, _active_deadline, start_deadline }
+    deadline --> byllm.mtir { CallDeadline }
+    deadline --> byllm.tests.test_compaction { CallDeadline, _active_deadline }
     exceptions --> byllm.deadline { LLMTimeout }
 }
 
@@ -492,7 +493,6 @@ graph import byllm.tests {
         fail,
         finish,
         fixture_path,
-        mk_run,
         scripted
     }
     support --> byllm.tests.test_conversation { call, finish, say }

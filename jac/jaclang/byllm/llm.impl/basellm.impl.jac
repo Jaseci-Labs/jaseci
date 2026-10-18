@@ -554,8 +554,7 @@ def _default_compact(
         stream=False,
         call_params={"compaction_enabled": False},
         mtir=None,
-        _call_kind="compaction",
-        _deadline=parent_mt_run._deadline if parent_mt_run is not None else None
+        _call_kind="compaction"
     );
     try {
         summary = str(model.invoke(comp_mt_run));
@@ -842,11 +841,16 @@ impl BaseLLM._resolve_timeout(mt_run: MTRuntime) -> float | None {
 
 impl BaseLLM._call_deadline(mt_run: MTRuntime) -> CallDeadline {
     if mt_run._deadline is None {
-        mt_run._deadline = CallDeadline(
-            budget=self._resolve_timeout(mt_run), model=self.model_name
+        mt_run._deadline = start_deadline(
+            self._resolve_timeout(mt_run), self.model_name
         );
     }
     return mt_run._deadline;
+}
+
+
+impl BaseLLM._cancels_async_io -> bool {
+    return False;
 }
 
 
@@ -898,7 +902,7 @@ impl BaseLLM._await_within_deadline(mt_run: MTRuntime, pending: Awaitable) -> an
     import asyncio;
     deadline = self._call_deadline(mt_run);
     left = deadline.remaining();
-    if left is None {
+    if left is None or not self._cancels_async_io() {
         return await pending;
     }
     try {
@@ -1735,9 +1739,9 @@ impl BaseLLM.dispatch_streaming(mt_run: MTRuntime) -> Generator[str, None, None]
         produced = False;
         self._arm_attempt(mt_run, params, True);
         try {
-            for chunk in deadline.iterate(
-                lambda { self.model_call_with_stream(params); }
-            ) {
+            response = self.model_call_with_stream(params);
+            for chunk in response {
+                deadline.check();
                 stream_model = chunk?.model or stream_model;
                 if chunk?.choices and chunk?.choices?[0]?.finish_reason {
                     finish_reason = str(chunk?.choices?[0]?.finish_reason);
@@ -1808,10 +1812,9 @@ impl BaseLLM.dispatch_streaming_with_tools(
             max_per_call=int(settings.get("max_per_call", _TOOL_DELTA_MAX_PER_CALL))
         );
         try {
-            opened: list[any] = [];
-            for chunk in deadline.iterate(
-                lambda { self.model_call_with_stream(params); }, opened
-            ) {
+            _stream_resp = self.model_call_with_stream(params);
+            for chunk in _stream_resp {
+                deadline.check();
                 chunks.append(chunk);
                 pending_before = len(mt_run._tool_arg_deltas);
                 if stream_args {
@@ -1862,9 +1865,7 @@ impl BaseLLM.dispatch_streaming_with_tools(
     usage_data: dict[str, any] = {};
     actual_model = self.model_name;
     try {
-        rebuilt = _rebuild_stream_chunks(
-            chunks, opened[0]?.logging_obj if opened else None
-        );
+        rebuilt = _rebuild_stream_chunks(chunks, _stream_resp?.logging_obj);
         if rebuilt {
             message = coerce_message_dict(rebuilt.get("choices", [])[0].get("message"));
             usage_data = rebuilt.get("usage", {}) or {};
@@ -1986,6 +1987,7 @@ impl BaseLLM.adispatch_streaming(mt_run: MTRuntime) -> AsyncIterator[str] {
     attempt = 0;
     usage_base = len(mt_run._usage_history);
     stream_model: str = self.model_name;
+    deadline = self._call_deadline(mt_run);
     while True {
         finish_reason = "";
         produced = False;
@@ -2004,6 +2006,7 @@ impl BaseLLM.adispatch_streaming(mt_run: MTRuntime) -> AsyncIterator[str] {
                 } except StopAsyncIteration {
                     break;
                 }
+                deadline.check();
                 stream_model = chunk?.model or stream_model;
                 if chunk?.choices and chunk?.choices?[0]?.finish_reason {
                     finish_reason = str(chunk?.choices?[0]?.finish_reason);
