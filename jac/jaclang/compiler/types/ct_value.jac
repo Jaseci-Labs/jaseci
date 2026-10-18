@@ -14,9 +14,7 @@ obj CtEnvironment {
 obj CtValue {
     has is_deferred: bool { getter; }
 
-    def __repr__ -> str {
-        return ct_repr(self);
-    }
+    def __repr__ -> str;
 }
 
 impl CtValue.is_deferred.getter -> bool {
@@ -147,9 +145,7 @@ obj CtRaise(Exception) {
     has exc: CtExc,
         user: bool = False;
 
-    def __str__ -> str {
-        return ct_str(self.exc);
-    }
+    def __str__ -> str;
 }
 
 glob CT_SMALL_BOUND: int = 4611686018427387904,
@@ -176,15 +172,151 @@ glob CT_SMALL_BOUND: int = 4611686018427387904,
          "RecursionError": "RuntimeError"
      };
 
-def ct_exc(kind: str, msg: str) -> CtRaise {
+def ct_exc(kind: str, msg: str) -> CtRaise;
+
+def ct_exc_value(kind: str, arg: CtValue) -> CtRaise;
+
+def ct_exc_is(kind: str, ancestor: str) -> bool;
+
+def mk_bool(b: bool) -> CtBool;
+
+def mk_int(v: int) -> CtInt;
+
+def mk_int_mag(neg: bool, mag: list[int]) -> CtInt;
+
+def mk_float(f: float) -> CtFloat;
+
+def mk_str(s: str) -> CtStr;
+
+def mk_bytes(b: bytes) -> CtBytes;
+
+def mk_list(items: list[CtValue]) -> CtList;
+
+def mk_tuple(items: list[CtValue]) -> CtTuple;
+
+def mk_dict -> CtDict;
+
+def mk_set(items: list[CtValue], frozen: bool = False) -> CtSet;
+
+def int_is_big(v: CtInt) -> bool;
+
+def int_sign_mag(v: CtInt) -> tuple[bool, list[int]];
+
+def int_host(v: CtInt) -> int;
+
+def int_wide_bytes(v: CtInt) -> (bytes | None);
+
+def int_decimal(v: CtInt) -> str;
+
+def as_ct_int(v: CtValue) -> (CtInt | None);
+
+def ct_is_unhashable(v: CtValue) -> bool;
+
+def _unhashable_name(v: CtValue) -> str;
+
+def _role_key(v: CtValue, role: str) -> str;
+
+def dict_key_of(v: CtValue) -> str;
+
+def set_key_of(v: CtValue) -> str;
+
+def dict_get(d: CtDict, key: CtValue) -> (CtValue | None);
+
+def dict_set(d: CtDict, key: CtValue, val: CtValue);
+
+def dict_delete(d: CtDict, key: CtValue) -> bool;
+
+def dict_copy(d: CtDict) -> CtDict;
+
+def set_has(s: CtSet, item: CtValue) -> bool;
+
+def set_add(s: CtSet, item: CtValue);
+
+def set_discard(s: CtSet, item: CtValue) -> bool;
+
+def range_len(r: CtRange) -> int;
+
+def ct_type_name(v: CtValue) -> str;
+
+def ct_truthy(v: CtValue) -> bool;
+
+def _float_is_integral(f: float) -> bool;
+
+def _len_prefixed(s: str) -> str;
+
+def ct_key(v: CtValue) -> str;
+
+def float_integral_decimal(f: float) -> str;
+
+def float_to_ct_int(f: float) -> CtInt;
+
+def ct_same_or_eq(a: CtValue, b: CtValue) -> bool;
+
+def ct_eq(a: CtValue, b: CtValue) -> bool;
+
+def _items_eq(a: list[CtValue], b: list[CtValue]) -> bool;
+
+def view_items_set(v: CtView) -> CtSet;
+
+def int_float_cmp(a: CtInt, f: float) -> int;
+
+def float_floor(f: float) -> float;
+
+def float_ceil(f: float) -> float;
+
+def int_cmp(a: CtInt, b: CtInt) -> int;
+
+def bytes_has(data: bytes, byte: int) -> bool;
+
+def bytes_repr(data: bytes) -> str;
+
+def ct_repr(v: CtValue) -> str;
+
+def _seen_in(v: CtValue, seen: list[CtValue]) -> bool;
+
+def _repr_items(items: list[CtValue], seen: list[CtValue]) -> str;
+
+def _repr_in(v: CtValue, seen: list[CtValue]) -> str;
+
+def _repr_container(v: CtValue, seen: list[CtValue]) -> str;
+
+def ct_str(v: CtValue) -> str;
+
+def ascii_escape(text: str) -> str;
+
+def ct_iter(v: CtValue) -> list[CtValue];
+
+def ct_is_iterable(v: CtValue) -> bool;
+
+def ct_len(v: CtValue) -> int;
+
+def ct_is_scalar(v: CtValue) -> bool;
+
+def ct_is_materializable(v: CtValue) -> bool;
+
+def ct_host_scalar(v: CtValue) -> (int | float | str | bytes | bool | None);
+
+def _fnv32(data: bytes, seed: int) -> int;
+
+def ct_mangle(v: CtValue) -> str;
+
+impl CtValue.__repr__ -> str {
+    return ct_repr(self);
+}
+
+impl CtRaise.__str__ -> str {
+    return ct_str(self.exc);
+}
+
+impl ct_exc(kind: str, msg: str) -> CtRaise {
     return CtRaise(exc=CtExc(kind=kind, args=[mk_str(msg)]));
 }
 
-def ct_exc_value(kind: str, arg: CtValue) -> CtRaise {
+impl ct_exc_value(kind: str, arg: CtValue) -> CtRaise {
     return CtRaise(exc=CtExc(kind=kind, args=[arg]));
 }
 
-def ct_exc_is(kind: str, ancestor: str) -> bool {
+impl ct_exc_is(kind: str, ancestor: str) -> bool {
     cur = kind;
     while cur {
         if cur == ancestor {
@@ -195,11 +327,11 @@ def ct_exc_is(kind: str, ancestor: str) -> bool {
     return False;
 }
 
-def mk_bool(b: bool) -> CtBool {
+impl mk_bool(b: bool) -> CtBool {
     return CT_TRUE if b else CT_FALSE;
 }
 
-def mk_int(v: int) -> CtInt {
+impl mk_int(v: int) -> CtInt {
     if -CT_SMALL_BOUND < v and v < CT_SMALL_BOUND {
         return CtInt(small=v);
     }
@@ -209,7 +341,7 @@ def mk_int(v: int) -> CtInt {
     return CtInt(mag=mag_from_int(v));
 }
 
-def mk_int_mag(neg: bool, mag: list[int]) -> CtInt {
+impl mk_int_mag(neg: bool, mag: list[int]) -> CtInt {
     if mag_bit_length(mag) <= 62 {
         val = mag_to_int(mag);
         return CtInt(small=-val if neg else val);
@@ -217,31 +349,31 @@ def mk_int_mag(neg: bool, mag: list[int]) -> CtInt {
     return CtInt(mag=mag, neg=neg);
 }
 
-def mk_float(f: float) -> CtFloat {
+impl mk_float(f: float) -> CtFloat {
     return CtFloat(value=f);
 }
 
-def mk_str(s: str) -> CtStr {
+impl mk_str(s: str) -> CtStr {
     return CtStr(value=s);
 }
 
-def mk_bytes(b: bytes) -> CtBytes {
+impl mk_bytes(b: bytes) -> CtBytes {
     return CtBytes(value=b);
 }
 
-def mk_list(items: list[CtValue]) -> CtList {
+impl mk_list(items: list[CtValue]) -> CtList {
     return CtList(items=items);
 }
 
-def mk_tuple(items: list[CtValue]) -> CtTuple {
+impl mk_tuple(items: list[CtValue]) -> CtTuple {
     return CtTuple(items=items);
 }
 
-def mk_dict -> CtDict {
+impl mk_dict -> CtDict {
     return CtDict(keys=[], vals=[], index={});
 }
 
-def mk_set(items: list[CtValue], frozen: bool = False) -> CtSet {
+impl mk_set(items: list[CtValue], frozen: bool = False) -> CtSet {
     out = CtSet(items=[], index={}, frozen=frozen);
     for item in items {
         set_add(out, item);
@@ -249,11 +381,11 @@ def mk_set(items: list[CtValue], frozen: bool = False) -> CtSet {
     return out;
 }
 
-def int_is_big(v: CtInt) -> bool {
+impl int_is_big(v: CtInt) -> bool {
     return len(v.mag) > 0;
 }
 
-def int_sign_mag(v: CtInt) -> tuple[bool, list[int]] {
+impl int_sign_mag(v: CtInt) -> tuple[bool, list[int]] {
     if v.mag {
         return (v.neg, v.mag);
     }
@@ -263,7 +395,7 @@ def int_sign_mag(v: CtInt) -> tuple[bool, list[int]] {
     return (False, mag_from_int(v.small));
 }
 
-def int_host(v: CtInt) -> int {
+impl int_host(v: CtInt) -> int {
     if not v.mag {
         return v.small;
     }
@@ -271,7 +403,7 @@ def int_host(v: CtInt) -> int {
     return -val if v.neg else val;
 }
 
-def int_wide_bytes(v: CtInt) -> (bytes | None) {
+impl int_wide_bytes(v: CtInt) -> (bytes | None) {
     if not v.mag {
         return None;
     }
@@ -299,7 +431,7 @@ def int_wide_bytes(v: CtInt) -> (bytes | None) {
     return bytes(out);
 }
 
-def int_decimal(v: CtInt) -> str {
+impl int_decimal(v: CtInt) -> str {
     if not v.mag {
         return str(v.small);
     }
@@ -313,7 +445,7 @@ def int_decimal(v: CtInt) -> str {
     return ("-" if v.neg else "") + digits;
 }
 
-def as_ct_int(v: CtValue) -> (CtInt | None) {
+impl as_ct_int(v: CtValue) -> (CtInt | None) {
     if isinstance(v, CtInt) {
         return v;
     }
@@ -323,11 +455,11 @@ def as_ct_int(v: CtValue) -> (CtInt | None) {
     return None;
 }
 
-def ct_is_unhashable(v: CtValue) -> bool {
+impl ct_is_unhashable(v: CtValue) -> bool {
     return _unhashable_name(v) != "";
 }
 
-def _unhashable_name(v: CtValue) -> str {
+impl _unhashable_name(v: CtValue) -> str {
     if isinstance(v, (CtList, CtDict, CtView, CtRecord)) {
         return ct_type_name(v);
     }
@@ -345,7 +477,7 @@ def _unhashable_name(v: CtValue) -> str {
     return "";
 }
 
-def _role_key(v: CtValue, role: str) -> str {
+impl _role_key(v: CtValue, role: str) -> str {
     inner = _unhashable_name(v);
     if inner {
         raise ct_exc(
@@ -356,15 +488,15 @@ def _role_key(v: CtValue, role: str) -> str {
     return ct_key(v);
 }
 
-def dict_key_of(v: CtValue) -> str {
+impl dict_key_of(v: CtValue) -> str {
     return _role_key(v, "a dict key");
 }
 
-def set_key_of(v: CtValue) -> str {
+impl set_key_of(v: CtValue) -> str {
     return _role_key(v, "a set element");
 }
 
-def dict_get(d: CtDict, key: CtValue) -> (CtValue | None) {
+impl dict_get(d: CtDict, key: CtValue) -> (CtValue | None) {
     idx = d.index.get(dict_key_of(key));
     if idx is None {
         return None;
@@ -372,7 +504,7 @@ def dict_get(d: CtDict, key: CtValue) -> (CtValue | None) {
     return d.vals[idx];
 }
 
-def dict_set(d: CtDict, key: CtValue, val: CtValue) {
+impl dict_set(d: CtDict, key: CtValue, val: CtValue) {
     k = dict_key_of(key);
     idx = d.index.get(k);
     if idx is None {
@@ -384,7 +516,7 @@ def dict_set(d: CtDict, key: CtValue, val: CtValue) {
     }
 }
 
-def dict_delete(d: CtDict, key: CtValue) -> bool {
+impl dict_delete(d: CtDict, key: CtValue) -> bool {
     k = dict_key_of(key);
     idx = d.index.get(k);
     if idx is None {
@@ -399,15 +531,15 @@ def dict_delete(d: CtDict, key: CtValue) -> bool {
     return True;
 }
 
-def dict_copy(d: CtDict) -> CtDict {
+impl dict_copy(d: CtDict) -> CtDict {
     return CtDict(keys=d.keys.copy(), vals=d.vals.copy(), index=d.index.copy());
 }
 
-def set_has(s: CtSet, item: CtValue) -> bool {
+impl set_has(s: CtSet, item: CtValue) -> bool {
     return set_key_of(item) in s.index;
 }
 
-def set_add(s: CtSet, item: CtValue) {
+impl set_add(s: CtSet, item: CtValue) {
     k = set_key_of(item);
     if k not in s.index {
         s.index[k] = len(s.items);
@@ -415,7 +547,7 @@ def set_add(s: CtSet, item: CtValue) {
     }
 }
 
-def set_discard(s: CtSet, item: CtValue) -> bool {
+impl set_discard(s: CtSet, item: CtValue) -> bool {
     k = set_key_of(item);
     idx = s.index.get(k);
     if idx is None {
@@ -429,7 +561,7 @@ def set_discard(s: CtSet, item: CtValue) -> bool {
     return True;
 }
 
-def range_len(r: CtRange) -> int {
+impl range_len(r: CtRange) -> int {
     if r.step > 0 {
         if r.start >= r.stop {
             return 0;
@@ -442,7 +574,7 @@ def range_len(r: CtRange) -> int {
     return (r.start - r.stop - 1) // (-r.step) + 1;
 }
 
-def ct_type_name(v: CtValue) -> str {
+impl ct_type_name(v: CtValue) -> str {
     if isinstance(v, CtNone) {
         return "NoneType";
     }
@@ -506,7 +638,7 @@ def ct_type_name(v: CtValue) -> str {
     return "CtDeferred";
 }
 
-def ct_truthy(v: CtValue) -> bool {
+impl ct_truthy(v: CtValue) -> bool {
     if isinstance(v, CtNone) {
         return False;
     }
@@ -543,7 +675,7 @@ def ct_truthy(v: CtValue) -> bool {
     return True;
 }
 
-def _float_is_integral(f: float) -> bool {
+impl _float_is_integral(f: float) -> bool {
     if f != f or f - f != 0.0 {
         return False;
     }
@@ -553,11 +685,11 @@ def _float_is_integral(f: float) -> bool {
     return float(int(f)) == f;
 }
 
-def _len_prefixed(s: str) -> str {
+impl _len_prefixed(s: str) -> str {
     return str(len(s)) + ":" + s;
 }
 
-def ct_key(v: CtValue) -> str {
+impl ct_key(v: CtValue) -> str {
     if isinstance(v, CtNone) {
         return "N";
     }
@@ -636,14 +768,14 @@ def ct_key(v: CtValue) -> str {
     raise ct_exc("TypeError", f"unhashable type: '{_unhashable_name(v)}'");
 }
 
-def float_integral_decimal(f: float) -> str {
+impl float_integral_decimal(f: float) -> str {
     if abs(f) < 4611686018427387904.0 {
         return str(int(f));
     }
     return int_decimal(float_to_ct_int(f));
 }
 
-def float_to_ct_int(f: float) -> CtInt {
+impl float_to_ct_int(f: float) -> CtInt {
     if f != f {
         raise ct_exc("ValueError", "cannot convert float NaN to integer");
     }
@@ -658,11 +790,11 @@ def float_to_ct_int(f: float) -> CtInt {
     return mk_int_mag(f < 0.0, mag_shl(mag_from_int(mant), e - 53));
 }
 
-def ct_same_or_eq(a: CtValue, b: CtValue) -> bool {
+impl ct_same_or_eq(a: CtValue, b: CtValue) -> bool {
     return a is b or ct_eq(a, b);
 }
 
-def ct_eq(a: CtValue, b: CtValue) -> bool {
+impl ct_eq(a: CtValue, b: CtValue) -> bool {
     ai = as_ct_int(a);
     bi = as_ct_int(b);
     if ai is not None and bi is not None {
@@ -789,7 +921,7 @@ def ct_eq(a: CtValue, b: CtValue) -> bool {
     return a is b;
 }
 
-def _items_eq(a: list[CtValue], b: list[CtValue]) -> bool {
+impl _items_eq(a: list[CtValue], b: list[CtValue]) -> bool {
     if len(a) != len(b) {
         return False;
     }
@@ -801,7 +933,7 @@ def _items_eq(a: list[CtValue], b: list[CtValue]) -> bool {
     return True;
 }
 
-def view_items_set(v: CtView) -> CtSet {
+impl view_items_set(v: CtView) -> CtSet {
     out = CtSet(items=[], index={}, frozen=False);
     if v.kind == "keys" {
         for k in v.source.keys {
@@ -815,7 +947,7 @@ def view_items_set(v: CtView) -> CtSet {
     return out;
 }
 
-def int_float_cmp(a: CtInt, f: float) -> int {
+impl int_float_cmp(a: CtInt, f: float) -> int {
     if f != f {
         return 2;
     }
@@ -838,7 +970,7 @@ def int_float_cmp(a: CtInt, f: float) -> int {
     return 0 if fl == f else -1;
 }
 
-def float_floor(f: float) -> float {
+impl float_floor(f: float) -> float {
     if f != f or f - f != 0.0 or abs(f) >= 4503599627370496.0 {
         return f;
     }
@@ -849,11 +981,11 @@ def float_floor(f: float) -> float {
     return t;
 }
 
-def float_ceil(f: float) -> float {
+impl float_ceil(f: float) -> float {
     return -float_floor(-f);
 }
 
-def int_cmp(a: CtInt, b: CtInt) -> int {
+impl int_cmp(a: CtInt, b: CtInt) -> int {
     if not a.mag and not b.mag {
         if a.small < b.small {
             return -1;
@@ -869,7 +1001,7 @@ def int_cmp(a: CtInt, b: CtInt) -> int {
     return -c if an else c;
 }
 
-def bytes_has(data: bytes, byte: int) -> bool {
+impl bytes_has(data: bytes, byte: int) -> bool {
     for b in data {
         if b == byte {
             return True;
@@ -878,7 +1010,7 @@ def bytes_has(data: bytes, byte: int) -> bool {
     return False;
 }
 
-def bytes_repr(data: bytes) -> str {
+impl bytes_repr(data: bytes) -> str {
     quote = "'";
     if bytes_has(data, 39) and not bytes_has(data, 34) {
         quote = "\"";
@@ -903,11 +1035,11 @@ def bytes_repr(data: bytes) -> str {
     return out + quote;
 }
 
-def ct_repr(v: CtValue) -> str {
+impl ct_repr(v: CtValue) -> str {
     return _repr_in(v, []);
 }
 
-def _seen_in(v: CtValue, seen: list[CtValue]) -> bool {
+impl _seen_in(v: CtValue, seen: list[CtValue]) -> bool {
     for s in seen {
         if s is v {
             return True;
@@ -916,7 +1048,7 @@ def _seen_in(v: CtValue, seen: list[CtValue]) -> bool {
     return False;
 }
 
-def _repr_items(items: list[CtValue], seen: list[CtValue]) -> str {
+impl _repr_items(items: list[CtValue], seen: list[CtValue]) -> str {
     parts: list[str] = [];
     for item in items {
         parts.append(_repr_in(item, seen));
@@ -924,7 +1056,7 @@ def _repr_items(items: list[CtValue], seen: list[CtValue]) -> str {
     return ", ".join(parts);
 }
 
-def _repr_in(v: CtValue, seen: list[CtValue]) -> str {
+impl _repr_in(v: CtValue, seen: list[CtValue]) -> str {
     if isinstance(v, CtNone) {
         return "None";
     }
@@ -997,7 +1129,7 @@ def _repr_in(v: CtValue, seen: list[CtValue]) -> str {
     return "<comptime deferred>";
 }
 
-def _repr_container(v: CtValue, seen: list[CtValue]) -> str {
+impl _repr_container(v: CtValue, seen: list[CtValue]) -> str {
     if isinstance(v, CtList) {
         return "[" + _repr_items(v.items, seen) + "]";
     }
@@ -1047,7 +1179,7 @@ def _repr_container(v: CtValue, seen: list[CtValue]) -> str {
     return "";
 }
 
-def ct_str(v: CtValue) -> str {
+impl ct_str(v: CtValue) -> str {
     if isinstance(v, CtStr) {
         return v.value;
     }
@@ -1066,7 +1198,7 @@ def ct_str(v: CtValue) -> str {
     return ct_repr(v);
 }
 
-def ascii_escape(text: str) -> str {
+impl ascii_escape(text: str) -> str {
     out = "";
     hexd = "0123456789abcdef";
     for ch in text {
@@ -1092,7 +1224,7 @@ def ascii_escape(text: str) -> str {
     return out;
 }
 
-def ct_iter(v: CtValue) -> list[CtValue] {
+impl ct_iter(v: CtValue) -> list[CtValue] {
     if isinstance(v, (CtList, CtTuple)) {
         return v.items.copy();
     }
@@ -1145,13 +1277,13 @@ def ct_iter(v: CtValue) -> list[CtValue] {
     raise ct_exc("TypeError", f"'{ct_type_name(v)}' object is not iterable");
 }
 
-def ct_is_iterable(v: CtValue) -> bool {
+impl ct_is_iterable(v: CtValue) -> bool {
     return isinstance(
         v, (CtList, CtTuple, CtStr, CtBytes, CtDict, CtSet, CtRange, CtView)
     );
 }
 
-def ct_len(v: CtValue) -> int {
+impl ct_len(v: CtValue) -> int {
     if isinstance(v, (CtList, CtTuple)) {
         return len(v.items);
     }
@@ -1176,11 +1308,11 @@ def ct_len(v: CtValue) -> int {
     raise ct_exc("TypeError", f"object of type '{ct_type_name(v)}' has no len()");
 }
 
-def ct_is_scalar(v: CtValue) -> bool {
+impl ct_is_scalar(v: CtValue) -> bool {
     return isinstance(v, (CtNone, CtBool, CtInt, CtFloat, CtStr, CtBytes));
 }
 
-def ct_is_materializable(v: CtValue) -> bool {
+impl ct_is_materializable(v: CtValue) -> bool {
     if ct_is_scalar(v) {
         return True;
     }
@@ -1222,7 +1354,7 @@ def ct_is_materializable(v: CtValue) -> bool {
     return False;
 }
 
-def ct_host_scalar(v: CtValue) -> (int | float | str | bytes | bool | None) {
+impl ct_host_scalar(v: CtValue) -> (int | float | str | bytes | bool | None) {
     if isinstance(v, CtBool) {
         return v.value;
     }
@@ -1241,7 +1373,7 @@ def ct_host_scalar(v: CtValue) -> (int | float | str | bytes | bool | None) {
     return None;
 }
 
-def _fnv32(data: bytes, seed: int) -> int {
+impl _fnv32(data: bytes, seed: int) -> int {
     h = seed;
     for byte in data {
         h = ((h ^ byte) * 16777619) & 4294967295;
@@ -1249,7 +1381,7 @@ def _fnv32(data: bytes, seed: int) -> int {
     return h;
 }
 
-def ct_mangle(v: CtValue) -> str {
+impl ct_mangle(v: CtValue) -> str {
     if isinstance(v, CtBool) {
         return "b1" if v.value else "b0";
     }

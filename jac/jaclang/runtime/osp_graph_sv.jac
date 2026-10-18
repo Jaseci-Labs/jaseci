@@ -24,16 +24,9 @@ class _AnchorRef(ReferenceType[Anchor]) {
 
     def __new__(
         cls: type[_AnchorRef], anchor: Anchor, store: _SvStore, key: any, handle: int
-    ) -> _AnchorRef {
-        return cast(_AnchorRef, ReferenceType.__new__(cls, anchor, _collect_handle));
-    }
+    ) -> _AnchorRef;
 
-    def init(self: _AnchorRef, anchor: Anchor, store: _SvStore, key: any, handle: int) {
-        self.store = store;
-        self.key = key;
-        self.handle = handle;
-        self.is_edge = isinstance(anchor, EdgeAnchor);
-    }
+    def init(self: _AnchorRef, anchor: Anchor, store: _SvStore, key: any, handle: int);
 }
 
 glob _obj_of_h: list[_AnchorRef | None] = [None],
@@ -43,7 +36,80 @@ glob _obj_of_h: list[_AnchorRef | None] = [None],
      _cls_of_tag_map: dict[(int, type)] = {},
      _fallback: _SvStore = _SvStore();
 
-def _mem_or_ctx(mem: any) -> any {
+def _mem_or_ctx(mem: any) -> any;
+
+def _store_for(m: any) -> _SvStore;
+
+def _handle_of(st: _SvStore, anchor: Anchor) -> int;
+
+def _collect_handle(dead_ref: ReferenceType[Anchor]) -> None;
+
+def _mint(st: _SvStore, anchor: Anchor) -> int;
+
+def handle_of(anchor: Anchor, mem: any = None) -> int;
+
+def obj_of(h: int) -> (Anchor | None);
+
+def tag_of_cls(cls: type) -> int;
+
+def cls_of_tag(tag: int) -> (type | None);
+
+def tag_for(edge_a: EdgeAnchor) -> int;
+
+def _resolve(cand: (Anchor | None), m: any) -> (Anchor | None);
+
+def sv_conn(
+    src_a: NodeAnchor,
+    tgt_a: NodeAnchor,
+    edge_a: EdgeAnchor,
+    is_undirected: bool,
+    mem: any = None
+) -> None;
+
+def sv_live_edges(
+    origin_a: NodeAnchor,
+    dir_int: int,
+    edge_type: (type | None),
+    edges_only: bool,
+    mem: any = None
+) -> list[Anchor];
+
+def sv_candidate_edges_between(
+    src_a: NodeAnchor, tgt_a: NodeAnchor, dir_int: int, mem: any = None
+) -> list[EdgeAnchor];
+
+def _conn_hydrated(e: EdgeAnchor, m: any) -> None;
+
+def sv_register_hydrated(
+    node_a: NodeAnchor, mem: any = None, fetch_stubs: bool = False
+) -> None;
+
+def sv_edge_alive(edge_a: EdgeAnchor, mem: any = None) -> bool;
+
+def _forget_handle(st: _SvStore, h: int);
+
+def sv_forget_by_id(anchor_id: any, mem: any = None);
+
+def sv_forget_edge(edge_a: EdgeAnchor, mem: any = None);
+
+def sv_store_closed(mem: any) -> int;
+
+impl _AnchorRef.__new__(
+    cls: type[_AnchorRef], anchor: Anchor, store: _SvStore, key: any, handle: int
+) -> _AnchorRef {
+    return cast(_AnchorRef, ReferenceType.__new__(cls, anchor, _collect_handle));
+}
+
+impl _AnchorRef.init(
+    self: _AnchorRef, anchor: Anchor, store: _SvStore, key: any, handle: int
+) {
+    self.store = store;
+    self.key = key;
+    self.handle = handle;
+    self.is_edge = isinstance(anchor, EdgeAnchor);
+}
+
+impl _mem_or_ctx(mem: any) -> any {
     if mem is not None {
         return mem;
     }
@@ -52,7 +118,7 @@ def _mem_or_ctx(mem: any) -> any {
     return ctx.mem if ctx is not None else None;
 }
 
-def _store_for(m: any) -> _SvStore {
+impl _store_for(m: any) -> _SvStore {
     if m is None {
         return _fallback;
     }
@@ -66,7 +132,7 @@ def _store_for(m: any) -> _SvStore {
     return st;
 }
 
-def _handle_of(st: _SvStore, anchor: Anchor) -> int {
+impl _handle_of(st: _SvStore, anchor: Anchor) -> int {
     aid = anchor.id;
     if aid is None {
         return st.h_of_key.get(id(anchor), 0);
@@ -75,7 +141,7 @@ def _handle_of(st: _SvStore, anchor: Anchor) -> int {
     return h if h != 0 else st.h_of_key.get(id(anchor), 0);
 }
 
-def _collect_handle(dead_ref: ReferenceType[Anchor]) -> None {
+impl _collect_handle(dead_ref: ReferenceType[Anchor]) -> None {
     if not isinstance(dead_ref, _AnchorRef) {
         return;
     }
@@ -98,7 +164,7 @@ def _collect_handle(dead_ref: ReferenceType[Anchor]) -> None {
     _h_free.append(h);
 }
 
-def _mint(st: _SvStore, anchor: Anchor) -> int {
+impl _mint(st: _SvStore, anchor: Anchor) -> int {
     aid = anchor.id;
     key: any = id(anchor) if aid is None else aid;
     h = st.h_of_key.get(key, 0);
@@ -125,11 +191,11 @@ def _mint(st: _SvStore, anchor: Anchor) -> int {
     return h;
 }
 
-def handle_of(anchor: Anchor, mem: any = None) -> int {
+impl handle_of(anchor: Anchor, mem: any = None) -> int {
     return _mint(_store_for(_mem_or_ctx(mem)), anchor);
 }
 
-def obj_of(h: int) -> (Anchor | None) {
+impl obj_of(h: int) -> (Anchor | None) {
     if h <= 0 or h >= len(_obj_of_h) {
         return None;
     }
@@ -137,7 +203,7 @@ def obj_of(h: int) -> (Anchor | None) {
     return found() if found is not None else None;
 }
 
-def tag_of_cls(cls: type) -> int {
+impl tag_of_cls(cls: type) -> int {
     t = _tag_of_cls.get(cls);
     if t is None {
         import from jaclang.runtime.osp_tag { stable_osp_tag }
@@ -148,15 +214,15 @@ def tag_of_cls(cls: type) -> int {
     return t;
 }
 
-def cls_of_tag(tag: int) -> (type | None) {
+impl cls_of_tag(tag: int) -> (type | None) {
     return _cls_of_tag_map.get(tag);
 }
 
-def tag_for(edge_a: EdgeAnchor) -> int {
+impl tag_for(edge_a: EdgeAnchor) -> int {
     return tag_of_cls(`type(edge_a.archetype));
 }
 
-def _resolve(cand: (Anchor | None), m: any) -> (Anchor | None) {
+impl _resolve(cand: (Anchor | None), m: any) -> (Anchor | None) {
     if cand is None or m is None or cand.id is None {
         return cand;
     }
@@ -167,7 +233,7 @@ def _resolve(cand: (Anchor | None), m: any) -> (Anchor | None) {
     return cand;
 }
 
-def sv_conn(
+impl sv_conn(
     src_a: NodeAnchor,
     tgt_a: NodeAnchor,
     edge_a: EdgeAnchor,
@@ -194,7 +260,7 @@ def sv_conn(
     );
 }
 
-def sv_live_edges(
+impl sv_live_edges(
     origin_a: NodeAnchor,
     dir_int: int,
     edge_type: (type | None),
@@ -247,7 +313,7 @@ def sv_live_edges(
     return ends;
 }
 
-def sv_candidate_edges_between(
+impl sv_candidate_edges_between(
     src_a: NodeAnchor, tgt_a: NodeAnchor, dir_int: int, mem: any = None
 ) -> list[EdgeAnchor] {
     out: list[EdgeAnchor] = [];
@@ -263,7 +329,7 @@ def sv_candidate_edges_between(
     return out;
 }
 
-def _conn_hydrated(e: EdgeAnchor, m: any) -> None {
+impl _conn_hydrated(e: EdgeAnchor, m: any) -> None {
     src_a = e.source;
     tgt_a = e.target;
     if src_a is None or tgt_a is None {
@@ -272,7 +338,7 @@ def _conn_hydrated(e: EdgeAnchor, m: any) -> None {
     sv_conn(src_a, tgt_a, e, e.is_undirected, m);
 }
 
-def sv_register_hydrated(
+impl sv_register_hydrated(
     node_a: NodeAnchor, mem: any = None, fetch_stubs: bool = False
 ) -> None {
     if not isinstance(node_a, NodeAnchor) or not node_a.is_populated() {
@@ -306,29 +372,29 @@ def sv_register_hydrated(
     }
 }
 
-def sv_edge_alive(edge_a: EdgeAnchor, mem: any = None) -> bool {
+impl sv_edge_alive(edge_a: EdgeAnchor, mem: any = None) -> bool {
     st = _store_for(_mem_or_ctx(mem));
     return _handle_of(st, edge_a) not in st.forgotten;
 }
 
-def _forget_handle(st: _SvStore, h: int) {
+impl _forget_handle(st: _SvStore, h: int) {
     if h > 0 {
         st.forgotten.add(h);
         _graph.osp_disconnect(h);
     }
 }
 
-def sv_forget_by_id(anchor_id: any, mem: any = None) {
+impl sv_forget_by_id(anchor_id: any, mem: any = None) {
     st = _store_for(_mem_or_ctx(mem));
     _forget_handle(st, st.h_of_key.get(anchor_id, 0));
 }
 
-def sv_forget_edge(edge_a: EdgeAnchor, mem: any = None) {
+impl sv_forget_edge(edge_a: EdgeAnchor, mem: any = None) {
     st = _store_for(_mem_or_ctx(mem));
     _forget_handle(st, _handle_of(st, edge_a));
 }
 
-def sv_store_closed(mem: any) -> int {
+impl sv_store_closed(mem: any) -> int {
     if mem is None {
         return 0;
     }

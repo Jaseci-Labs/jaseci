@@ -2,19 +2,7 @@ import logging;
 
 glob _agg_logger = logging.getLogger(__name__);
 
-def _prefixed_paths(paths: dict[str, any], prefix: str) -> dict[str, any] {
-    clean_prefix: str = prefix.rstrip("/");
-    result: dict[str, any] = {};
-    for (path, op) in paths.items() {
-        path_str: str = str(path);
-        if path_str.startswith("/") {
-            result[f"{clean_prefix}{path_str}"] = op;
-        } else {
-            result[f"{clean_prefix}/{path_str}"] = op;
-        }
-    }
-    return result;
-}
+def _prefixed_paths(paths: dict[str, any], prefix: str) -> dict[str, any];
 
 obj SpecFetch {
     has status: int = 0,
@@ -30,6 +18,28 @@ impl SpecFetch.answered -> bool {
 
 
 async def fetch_service_spec(
+    service_entry: ServiceEntry, timeout: float = 5.0
+) -> SpecFetch;
+
+
+async def aggregate_openapi(registry: ServiceRegistry) -> dict[str, any];
+
+impl _prefixed_paths(paths: dict[str, any], prefix: str) -> dict[str, any] {
+    clean_prefix: str = prefix.rstrip("/");
+    result: dict[str, any] = {};
+    for (path, op) in paths.items() {
+        path_str: str = str(path);
+        if path_str.startswith("/") {
+            result[f"{clean_prefix}{path_str}"] = op;
+        } else {
+            result[f"{clean_prefix}/{path_str}"] = op;
+        }
+    }
+    return result;
+}
+
+
+impl fetch_service_spec(
     service_entry: ServiceEntry, timeout: float = 5.0
 ) -> SpecFetch {
     import json;
@@ -58,7 +68,7 @@ async def fetch_service_spec(
 }
 
 
-async def aggregate_openapi(registry: ServiceRegistry) -> dict[str, any] {
+impl aggregate_openapi(registry: ServiceRegistry) -> dict[str, any] {
     import asyncio;
 
     candidates: list[tuple[str, ServiceEntry]] = [

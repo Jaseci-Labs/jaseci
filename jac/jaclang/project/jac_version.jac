@@ -1,4 +1,14 @@
-def version_key(v: str) -> tuple[int, int, int] {
+def version_key(v: str) -> tuple[int, int, int];
+
+def is_plain_version(s: str) -> bool;
+
+def split_clause(clause: str) -> tuple[str, str];
+
+def satisfies(version: str, spec: str) -> bool;
+
+def exact_pin(spec: str) -> str;
+
+impl version_key(v: str) -> tuple[int, int, int] {
     parts = (v.strip().split(".") + ["0", "0", "0"])[:3];
     out: list[int] = [];
     for p in parts {
@@ -14,11 +24,11 @@ def version_key(v: str) -> tuple[int, int, int] {
     return (out[0], out[1], out[2]);
 }
 
-def is_plain_version(s: str) -> bool {
+impl is_plain_version(s: str) -> bool {
     return all([p.isdigit() for p in s.strip().split(".")]);
 }
 
-def split_clause(clause: str) -> tuple[str, str] {
+impl split_clause(clause: str) -> tuple[str, str] {
     for op in ["==", "!=", ">=", "<=", "~=", ">", "<"] {
         if clause.startswith(op) {
             return (op, clause[len(op):].strip());
@@ -27,7 +37,7 @@ def split_clause(clause: str) -> tuple[str, str] {
     return ("==", clause.strip());
 }
 
-def satisfies(version: str, spec: str) -> bool {
+impl satisfies(version: str, spec: str) -> bool {
     v = version_key(version);
     for raw in spec.split(",") {
         clause = raw.strip();
@@ -65,7 +75,7 @@ def satisfies(version: str, spec: str) -> bool {
     return True;
 }
 
-def exact_pin(spec: str) -> str {
+impl exact_pin(spec: str) -> str {
     clauses = [
         c.strip()
         for c in spec.split(",")

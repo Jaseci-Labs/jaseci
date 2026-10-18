@@ -265,7 +265,186 @@ glob CT_BUILTIN_FUNCS: frozenset[str] = frozenset(
      CT_FACTORIAL_LIMIT: int = 5000,
      CT_ABSENT: CtNone = CtNone();
 
-def ct_method_owner(v: CtValue) -> str {
+def ct_method_owner(v: CtValue) -> str;
+
+def ct_has_method(v: CtValue, name: str) -> bool;
+
+def _arity(
+    fname: str,
+    args: list[CtValue],
+    kwargs: dict[str, CtValue],
+    names: list[str],
+    required: int
+) -> list[CtValue];
+
+def _one_arg(fname: str, args: list[CtValue], kwargs: dict[str, CtValue]) -> CtValue;
+
+def _no_args(fname: str, args: list[CtValue], kwargs: dict[str, CtValue]);
+
+def _as_index(v: CtValue) -> CtInt;
+
+def _as_small(v: CtValue) -> int;
+
+def _opt_small(v: CtValue) -> (int | None);
+
+def _as_str(v: CtValue, prefix: str) -> str;
+
+def _opt_str(v: CtValue, what: str) -> (str | None);
+
+def _str_list(items: list[str]) -> CtList;
+
+def ct_sort(
+    ev: CtCaller, items: list[CtValue], key: (CtValue | None), reverse: bool
+) -> list[CtValue];
+
+def _minmax(
+    ev: CtCaller, fname: str, args: list[CtValue], kwargs: dict[str, CtValue]
+) -> CtValue;
+
+def _sum(args: list[CtValue], kwargs: dict[str, CtValue]) -> CtValue;
+
+def _range(args: list[CtValue], kwargs: dict[str, CtValue]) -> CtRange;
+
+def _round(args: list[CtValue], kwargs: dict[str, CtValue]) -> CtValue;
+
+def _divmod(a: CtValue, b: CtValue) -> CtValue;
+
+def _reversed(v: CtValue) -> CtList;
+
+def ct_call_builtin(
+    ev: CtCaller, name: str, args: list[CtValue], kwargs: dict[str, CtValue]
+) -> CtValue;
+
+def _pairs_into(d: CtDict, src: CtValue);
+
+def _parse_int_text(text: str, shown: str, base: int) -> CtInt;
+
+def ct_construct_builtin(
+    name: str, args: list[CtValue], kwargs: dict[str, CtValue]
+) -> CtValue;
+
+def _decode(data: bytes, encoding: str, errors: str) -> CtStr;
+
+def _encode(text: str, encoding: str, errors: str) -> CtBytes;
+
+def ct_value_attr(v: CtValue, name: str) -> CtValue;
+
+def ct_type_attr(type_name: str, attr: str) -> CtValue;
+
+def ct_call_method_value(
+    ev: CtCaller, m: CtMethod, args: list[CtValue], kwargs: dict[str, CtValue]
+) -> CtValue;
+
+def ct_call_method(
+    ev: CtCaller,
+    recv: CtValue,
+    name: str,
+    args: list[CtValue],
+    kwargs: dict[str, CtValue]
+) -> CtValue;
+
+def _str_method(
+    recv: CtStr, name: str, args: list[CtValue], kwargs: dict[str, CtValue]
+) -> CtValue;
+
+def _as_bytes_arg(v: CtValue) -> bytes;
+
+def _bytes_method(
+    recv: CtBytes, name: str, args: list[CtValue], kwargs: dict[str, CtValue]
+) -> CtValue;
+
+def _seq_index_count(
+    items: list[CtValue],
+    owner: str,
+    name: str,
+    args: list[CtValue],
+    kwargs: dict[str, CtValue]
+) -> CtValue;
+
+def _list_method(
+    ev: CtCaller,
+    recv: CtList,
+    name: str,
+    args: list[CtValue],
+    kwargs: dict[str, CtValue]
+) -> CtValue;
+
+def _dict_method(
+    recv: CtDict, name: str, args: list[CtValue], kwargs: dict[str, CtValue]
+) -> CtValue;
+
+def _as_set(v: CtValue) -> CtSet;
+
+def _set_method(
+    recv: CtSet, name: str, args: list[CtValue], kwargs: dict[str, CtValue]
+) -> CtValue;
+
+def _int_method(
+    recv: CtInt, name: str, args: list[CtValue], kwargs: dict[str, CtValue]
+) -> CtValue;
+
+def _float_method(
+    recv: CtFloat, name: str, args: list[CtValue], kwargs: dict[str, CtValue]
+) -> CtValue;
+
+def _pow2(e: int) -> CtInt;
+
+def _math_float(v: CtValue) -> float;
+
+def int_frexp(a: CtInt) -> tuple[float, int];
+
+def _log_of(v: CtValue, which: str) -> float;
+
+def _log_raw(x: float, which: str) -> float;
+
+def _range_error(r: float, inputs_finite: bool) -> float;
+
+def _finite(x: float) -> bool;
+
+def _math_int_arg(v: CtValue) -> CtInt;
+
+def ct_call_math(
+    name: str, args: list[CtValue], kwargs: dict[str, CtValue]
+) -> CtValue;
+
+
+def _math_log(name: str, args: list[CtValue], kwargs: dict[str, CtValue]) -> CtValue;
+
+def _math_integer(
+    name: str, args: list[CtValue], kwargs: dict[str, CtValue]
+) -> CtValue;
+
+def _math_reduce(
+    name: str, args: list[CtValue], kwargs: dict[str, CtValue]
+) -> CtValue;
+
+def _math_classify(
+    name: str, args: list[CtValue], kwargs: dict[str, CtValue]
+) -> CtValue;
+
+def _math_parts(name: str, args: list[CtValue], kwargs: dict[str, CtValue]) -> CtValue;
+
+def _factorial(n: CtInt) -> CtInt;
+
+def _math2(name: str, x: float, y: float) -> float;
+
+def _math1(name: str, x: float) -> float;
+
+def adjust_indices(n: int, start: (int | None), end: (int | None)) -> tuple[int, int];
+
+def str_tailmatch(
+    s: str, sub: str, start: (int | None), end: (int | None), suffix: bool
+) -> bool;
+
+def str_split_ws(s: str, maxsplit: int, from_right: bool) -> list[str];
+
+def str_split_sep(s: str, sep: str, maxsplit: int, from_right: bool) -> list[str];
+
+def _bytes_match_at(b: bytes, sub: bytes, at: int) -> bool;
+
+def bytes_find(b: bytes, sub: bytes, from_right: bool) -> int;
+
+impl ct_method_owner(v: CtValue) -> str {
     if isinstance(v, CtBool) {
         return "int";
     }
@@ -275,12 +454,12 @@ def ct_method_owner(v: CtValue) -> str {
     return ct_type_name(v);
 }
 
-def ct_has_method(v: CtValue, name: str) -> bool {
+impl ct_has_method(v: CtValue, name: str) -> bool {
     owner = ct_method_owner(v);
     return owner in CT_METHODS and name in CT_METHODS[owner];
 }
 
-def _arity(
+impl _arity(
     fname: str,
     args: list[CtValue],
     kwargs: dict[str, CtValue],
@@ -325,7 +504,7 @@ def _arity(
     return slots;
 }
 
-def _one_arg(fname: str, args: list[CtValue], kwargs: dict[str, CtValue]) -> CtValue {
+impl _one_arg(fname: str, args: list[CtValue], kwargs: dict[str, CtValue]) -> CtValue {
     if kwargs {
         raise ct_exc("TypeError", f"{fname}() takes no keyword arguments");
     }
@@ -337,7 +516,7 @@ def _one_arg(fname: str, args: list[CtValue], kwargs: dict[str, CtValue]) -> CtV
     return args[0];
 }
 
-def _no_args(fname: str, args: list[CtValue], kwargs: dict[str, CtValue]) {
+impl _no_args(fname: str, args: list[CtValue], kwargs: dict[str, CtValue]) {
     if args or kwargs {
         raise ct_exc(
             "TypeError",
@@ -346,7 +525,7 @@ def _no_args(fname: str, args: list[CtValue], kwargs: dict[str, CtValue]) {
     }
 }
 
-def _as_index(v: CtValue) -> CtInt {
+impl _as_index(v: CtValue) -> CtInt {
     iv = as_ct_int(v);
     if iv is None {
         raise ct_exc(
@@ -357,7 +536,7 @@ def _as_index(v: CtValue) -> CtInt {
     return iv;
 }
 
-def _as_small(v: CtValue) -> int {
+impl _as_small(v: CtValue) -> int {
     iv = _as_index(v);
     if iv.mag {
         raise ct_exc("OverflowError", "Python int too large to convert to C ssize_t");
@@ -365,32 +544,32 @@ def _as_small(v: CtValue) -> int {
     return iv.small;
 }
 
-def _opt_small(v: CtValue) -> (int | None) {
+impl _opt_small(v: CtValue) -> (int | None) {
     if isinstance(v, CtNone) {
         return None;
     }
     return _as_small(v);
 }
 
-def _as_str(v: CtValue, prefix: str) -> str {
+impl _as_str(v: CtValue, prefix: str) -> str {
     if not isinstance(v, CtStr) {
         raise ct_exc("TypeError", prefix + ct_type_name(v));
     }
     return v.value;
 }
 
-def _opt_str(v: CtValue, what: str) -> (str | None) {
+impl _opt_str(v: CtValue, what: str) -> (str | None) {
     if isinstance(v, CtNone) {
         return None;
     }
     return _as_str(v, what);
 }
 
-def _str_list(items: list[str]) -> CtList {
+impl _str_list(items: list[str]) -> CtList {
     return mk_list([mk_str(x) for x in items]);
 }
 
-def ct_sort(
+impl ct_sort(
     ev: CtCaller, items: list[CtValue], key: (CtValue | None), reverse: bool
 ) -> list[CtValue] {
     keys: list[CtValue] = [];
@@ -444,7 +623,7 @@ def ct_sort(
     return [items[i] for i in idxs];
 }
 
-def _minmax(
+impl _minmax(
     ev: CtCaller, fname: str, args: list[CtValue], kwargs: dict[str, CtValue]
 ) -> CtValue {
     key: (CtValue | None) = None;
@@ -494,7 +673,7 @@ def _minmax(
     return best;
 }
 
-def _sum(args: list[CtValue], kwargs: dict[str, CtValue]) -> CtValue {
+impl _sum(args: list[CtValue], kwargs: dict[str, CtValue]) -> CtValue {
     slots = _arity("sum", args, kwargs, ["iterable", "start"], 1);
     items = ct_iter(slots[0]);
     result: CtValue = slots[1] if slots[1] is not CT_ABSENT else CtInt(small=0);
@@ -578,7 +757,7 @@ def _sum(args: list[CtValue], kwargs: dict[str, CtValue]) -> CtValue {
     return result;
 }
 
-def _range(args: list[CtValue], kwargs: dict[str, CtValue]) -> CtRange {
+impl _range(args: list[CtValue], kwargs: dict[str, CtValue]) -> CtRange {
     if kwargs {
         raise ct_exc("TypeError", "range() takes no keyword arguments");
     }
@@ -610,7 +789,7 @@ def _range(args: list[CtValue], kwargs: dict[str, CtValue]) -> CtRange {
     return CtRange(start=vals[0], stop=vals[1], step=step);
 }
 
-def _round(args: list[CtValue], kwargs: dict[str, CtValue]) -> CtValue {
+impl _round(args: list[CtValue], kwargs: dict[str, CtValue]) -> CtValue {
     slots = _arity("round", args, kwargs, ["number", "ndigits"], 1);
     num = slots[0];
     nd = slots[1];
@@ -636,7 +815,7 @@ def _round(args: list[CtValue], kwargs: dict[str, CtValue]) -> CtValue {
     );
 }
 
-def _divmod(a: CtValue, b: CtValue) -> CtValue {
+impl _divmod(a: CtValue, b: CtValue) -> CtValue {
     ai = as_ct_int(a);
     bi = as_ct_int(b);
     if ai is not None and bi is not None {
@@ -668,7 +847,7 @@ def _divmod(a: CtValue, b: CtValue) -> CtValue {
     );
 }
 
-def _reversed(v: CtValue) -> CtList {
+impl _reversed(v: CtValue) -> CtList {
     if isinstance(v, (CtList, CtTuple, CtStr, CtBytes, CtRange, CtDict, CtView)) {
         items = ct_iter(v);
         items.reverse();
@@ -677,7 +856,7 @@ def _reversed(v: CtValue) -> CtList {
     raise ct_exc("TypeError", f"'{ct_type_name(v)}' object is not reversible");
 }
 
-def ct_call_builtin(
+impl ct_call_builtin(
     ev: CtCaller, name: str, args: list[CtValue], kwargs: dict[str, CtValue]
 ) -> CtValue {
     if name.startswith("math.") {
@@ -882,7 +1061,7 @@ def ct_call_builtin(
     raise CtError(f"builtin '{name}' is not supported in comptime code");
 }
 
-def _pairs_into(d: CtDict, src: CtValue) {
+impl _pairs_into(d: CtDict, src: CtValue) {
     if isinstance(src, CtDict) {
         for (i, k) in enumerate(src.keys) {
             dict_set(d, k, src.vals[i]);
@@ -911,7 +1090,7 @@ def _pairs_into(d: CtDict, src: CtValue) {
     }
 }
 
-def _parse_int_text(text: str, shown: str, base: int) -> CtInt {
+impl _parse_int_text(text: str, shown: str, base: int) -> CtInt {
     got = ct_int_parse(text, base);
     if got is None {
         raise ct_exc(
@@ -921,7 +1100,7 @@ def _parse_int_text(text: str, shown: str, base: int) -> CtInt {
     return got;
 }
 
-def ct_construct_builtin(
+impl ct_construct_builtin(
     name: str, args: list[CtValue], kwargs: dict[str, CtValue]
 ) -> CtValue {
     if name == "int" {
@@ -1119,7 +1298,7 @@ def ct_construct_builtin(
     raise CtError(f"cannot construct builtin '{name}' at compile time");
 }
 
-def _decode(data: bytes, encoding: str, errors: str) -> CtStr {
+impl _decode(data: bytes, encoding: str, errors: str) -> CtStr {
     enc = encoding.lower().replace("_", "-");
     if enc not in ("utf-8", "utf8", "ascii", "latin-1", "latin1", "iso-8859-1") {
         raise CtError(f"encoding '{encoding}' is not supported in comptime code");
@@ -1134,7 +1313,7 @@ def _decode(data: bytes, encoding: str, errors: str) -> CtStr {
     }
 }
 
-def _encode(text: str, encoding: str, errors: str) -> CtBytes {
+impl _encode(text: str, encoding: str, errors: str) -> CtBytes {
     enc = encoding.lower().replace("_", "-");
     if enc not in ("utf-8", "utf8", "ascii", "latin-1", "latin1", "iso-8859-1") {
         raise CtError(f"encoding '{encoding}' is not supported in comptime code");
@@ -1149,7 +1328,7 @@ def _encode(text: str, encoding: str, errors: str) -> CtBytes {
     }
 }
 
-def ct_value_attr(v: CtValue, name: str) -> CtValue {
+impl ct_value_attr(v: CtValue, name: str) -> CtValue {
     if ct_has_method(v, name) {
         return CtMethod(owner=ct_method_owner(v), name=name, recv=v);
     }
@@ -1199,7 +1378,7 @@ def ct_value_attr(v: CtValue, name: str) -> CtValue {
     raise CtError(f"'{ct_type_name(v)}' has no attribute '{name}'");
 }
 
-def ct_type_attr(type_name: str, attr: str) -> CtValue {
+impl ct_type_attr(type_name: str, attr: str) -> CtValue {
     if f"{type_name}.{attr}" in CT_STATIC_METHODS {
         return CtMethod(owner=type_name, name=attr, recv=None);
     }
@@ -1209,7 +1388,7 @@ def ct_type_attr(type_name: str, attr: str) -> CtValue {
     raise CtError(f"{type_name} has no comptime attribute '{attr}'");
 }
 
-def ct_call_method_value(
+impl ct_call_method_value(
     ev: CtCaller, m: CtMethod, args: list[CtValue], kwargs: dict[str, CtValue]
 ) -> CtValue {
     if m.recv is not None {
@@ -1253,7 +1432,7 @@ def ct_call_method_value(
     return ct_call_method(ev, recv, m.name, args[1:], kwargs);
 }
 
-def ct_call_method(
+impl ct_call_method(
     ev: CtCaller,
     recv: CtValue,
     name: str,
@@ -1300,7 +1479,7 @@ def ct_call_method(
     raise CtError(f"'{ct_type_name(recv)}' has no callable attribute '{name}'");
 }
 
-def _str_method(
+impl _str_method(
     recv: CtStr, name: str, args: list[CtValue], kwargs: dict[str, CtValue]
 ) -> CtValue {
     s = recv.value;
@@ -1550,7 +1729,7 @@ def _str_method(
     raise CtError(f"'str' has no callable attribute '{name}'");
 }
 
-def _as_bytes_arg(v: CtValue) -> bytes {
+impl _as_bytes_arg(v: CtValue) -> bytes {
     if isinstance(v, CtBytes) {
         return v.value;
     }
@@ -1559,7 +1738,7 @@ def _as_bytes_arg(v: CtValue) -> bytes {
     );
 }
 
-def _bytes_method(
+impl _bytes_method(
     recv: CtBytes, name: str, args: list[CtValue], kwargs: dict[str, CtValue]
 ) -> CtValue {
     b = recv.value;
@@ -1659,7 +1838,7 @@ def _bytes_method(
     raise CtError(f"'bytes' has no callable attribute '{name}'");
 }
 
-def _seq_index_count(
+impl _seq_index_count(
     items: list[CtValue],
     owner: str,
     name: str,
@@ -1689,7 +1868,7 @@ def _seq_index_count(
     raise ct_exc("ValueError", f"{owner}.index(x): x not in {owner}");
 }
 
-def _list_method(
+impl _list_method(
     ev: CtCaller,
     recv: CtList,
     name: str,
@@ -1776,7 +1955,7 @@ def _list_method(
     raise CtError(f"'list' has no callable attribute '{name}'");
 }
 
-def _dict_method(
+impl _dict_method(
     recv: CtDict, name: str, args: list[CtValue], kwargs: dict[str, CtValue]
 ) -> CtValue {
     if name == "get" {
@@ -1855,14 +2034,14 @@ def _dict_method(
     raise CtError(f"'dict' has no callable attribute '{name}'");
 }
 
-def _as_set(v: CtValue) -> CtSet {
+impl _as_set(v: CtValue) -> CtSet {
     if isinstance(v, CtSet) {
         return v;
     }
     return mk_set(ct_iter(v));
 }
 
-def _set_method(
+impl _set_method(
     recv: CtSet, name: str, args: list[CtValue], kwargs: dict[str, CtValue]
 ) -> CtValue {
     if kwargs {
@@ -1956,7 +2135,7 @@ def _set_method(
     raise CtError(f"'set' has no callable attribute '{name}'");
 }
 
-def _int_method(
+impl _int_method(
     recv: CtInt, name: str, args: list[CtValue], kwargs: dict[str, CtValue]
 ) -> CtValue {
     _no_args(name, args, kwargs);
@@ -1984,7 +2163,7 @@ def _int_method(
     return mk_tuple([recv, CtInt(small=1)]);
 }
 
-def _float_method(
+impl _float_method(
     recv: CtFloat, name: str, args: list[CtValue], kwargs: dict[str, CtValue]
 ) -> CtValue {
     _no_args(name, args, kwargs);
@@ -2019,11 +2198,11 @@ def _float_method(
     return mk_tuple([num, den]);
 }
 
-def _pow2(e: int) -> CtInt {
+impl _pow2(e: int) -> CtInt {
     return mk_int_mag(False, mag_shl([1], e));
 }
 
-def _math_float(v: CtValue) -> float {
+impl _math_float(v: CtValue) -> float {
     if isinstance(v, CtFloat) {
         return v.value;
     }
@@ -2034,7 +2213,7 @@ def _math_float(v: CtValue) -> float {
     raise ct_exc("TypeError", f"must be real number, not {ct_type_name(v)}");
 }
 
-def int_frexp(a: CtInt) -> tuple[float, int] {
+impl int_frexp(a: CtInt) -> tuple[float, int] {
     (_, m) = int_sign_mag(a);
     n = mag_bit_length(m);
     if n <= 55 {
@@ -2054,7 +2233,7 @@ def int_frexp(a: CtInt) -> tuple[float, int] {
     return (x, n);
 }
 
-def _log_of(v: CtValue, which: str) -> float {
+impl _log_of(v: CtValue, which: str) -> float {
     iv = as_ct_int(v);
     if iv is not None {
         if int_is_neg(iv) or int_is_zero(iv) {
@@ -2076,7 +2255,7 @@ def _log_of(v: CtValue, which: str) -> float {
     return _log_raw(f, which);
 }
 
-def _log_raw(x: float, which: str) -> float {
+impl _log_raw(x: float, which: str) -> float {
     if which == "log2" {
         return math.log2(x);
     }
@@ -2086,22 +2265,22 @@ def _log_raw(x: float, which: str) -> float {
     return math.log(x);
 }
 
-def _range_error(r: float, inputs_finite: bool) -> float {
+impl _range_error(r: float, inputs_finite: bool) -> float {
     if inputs_finite and r - r != 0.0 and r == r {
         raise ct_exc("OverflowError", "math range error");
     }
     return r;
 }
 
-def _finite(x: float) -> bool {
+impl _finite(x: float) -> bool {
     return x - x == 0.0;
 }
 
-def _math_int_arg(v: CtValue) -> CtInt {
+impl _math_int_arg(v: CtValue) -> CtInt {
     return _as_index(v);
 }
 
-def ct_call_math(
+impl ct_call_math(
     name: str, args: list[CtValue], kwargs: dict[str, CtValue]
 ) -> CtValue {
     if name in ("log", "log2", "log10") {
@@ -2131,7 +2310,7 @@ def ct_call_math(
 }
 
 
-def _math_log(name: str, args: list[CtValue], kwargs: dict[str, CtValue]) -> CtValue {
+impl _math_log(name: str, args: list[CtValue], kwargs: dict[str, CtValue]) -> CtValue {
     if name in ("log", "log2", "log10") {
         if kwargs {
             raise ct_exc("TypeError", f"{name}() takes no keyword arguments");
@@ -2149,7 +2328,7 @@ def _math_log(name: str, args: list[CtValue], kwargs: dict[str, CtValue]) -> CtV
     raise CtError(f"math.{name} is not available in comptime code");
 }
 
-def _math_integer(
+impl _math_integer(
     name: str, args: list[CtValue], kwargs: dict[str, CtValue]
 ) -> CtValue {
     if name in ("gcd", "lcm") {
@@ -2235,7 +2414,7 @@ def _math_integer(
     raise CtError(f"math.{name} is not available in comptime code");
 }
 
-def _math_reduce(
+impl _math_reduce(
     name: str, args: list[CtValue], kwargs: dict[str, CtValue]
 ) -> CtValue {
     if name == "prod" {
@@ -2269,7 +2448,7 @@ def _math_reduce(
     raise CtError(f"math.{name} is not available in comptime code");
 }
 
-def _math_classify(
+impl _math_classify(
     name: str, args: list[CtValue], kwargs: dict[str, CtValue]
 ) -> CtValue {
     if name in ("floor", "ceil", "trunc") {
@@ -2311,7 +2490,9 @@ def _math_classify(
     raise CtError(f"math.{name} is not available in comptime code");
 }
 
-def _math_parts(name: str, args: list[CtValue], kwargs: dict[str, CtValue]) -> CtValue {
+impl _math_parts(
+    name: str, args: list[CtValue], kwargs: dict[str, CtValue]
+) -> CtValue {
     if name == "hypot" {
         if kwargs {
             raise ct_exc("TypeError", "hypot() takes no keyword arguments");
@@ -2367,7 +2548,7 @@ def _math_parts(name: str, args: list[CtValue], kwargs: dict[str, CtValue]) -> C
     raise CtError(f"math.{name} is not available in comptime code");
 }
 
-def _factorial(n: CtInt) -> CtInt {
+impl _factorial(n: CtInt) -> CtInt {
     if n.mag or n.small > CT_FACTORIAL_LIMIT {
         raise CtError("comptime factorial argument is too large");
     }
@@ -2378,7 +2559,7 @@ def _factorial(n: CtInt) -> CtInt {
     return result;
 }
 
-def _math2(name: str, x: float, y: float) -> float {
+impl _math2(name: str, x: float, y: float) -> float {
     if name == "atan2" {
         return math.atan2(x, y);
     }
@@ -2413,7 +2594,7 @@ def _math2(name: str, x: float, y: float) -> float {
     return _range_error(r, _finite(x) and _finite(y));
 }
 
-def _math1(name: str, x: float) -> float {
+impl _math1(name: str, x: float) -> float {
     got = repr(x);
     finite = _finite(x);
     if name == "sqrt" {
@@ -2507,7 +2688,7 @@ def _math1(name: str, x: float) -> float {
     raise CtError(f"math.{name} is not available in comptime code");
 }
 
-def adjust_indices(n: int, start: (int | None), end: (int | None)) -> tuple[int, int] {
+impl adjust_indices(n: int, start: (int | None), end: (int | None)) -> tuple[int, int] {
     hi = n if end is None else end;
     if hi > n {
         hi = n;
@@ -2527,7 +2708,7 @@ def adjust_indices(n: int, start: (int | None), end: (int | None)) -> tuple[int,
     return (lo, hi);
 }
 
-def str_tailmatch(
+impl str_tailmatch(
     s: str, sub: str, start: (int | None), end: (int | None), suffix: bool
 ) -> bool {
     (lo, hi) = adjust_indices(len(s), start, end);
@@ -2540,7 +2721,7 @@ def str_tailmatch(
     return s[lo:lo + len(sub)] == sub;
 }
 
-def str_split_ws(s: str, maxsplit: int, from_right: bool) -> list[str] {
+impl str_split_ws(s: str, maxsplit: int, from_right: bool) -> list[str] {
     out: list[str] = [];
     n = len(s);
     count = 0;
@@ -2599,7 +2780,7 @@ def str_split_ws(s: str, maxsplit: int, from_right: bool) -> list[str] {
     return out;
 }
 
-def str_split_sep(s: str, sep: str, maxsplit: int, from_right: bool) -> list[str] {
+impl str_split_sep(s: str, sep: str, maxsplit: int, from_right: bool) -> list[str] {
     out: list[str] = [];
     count = 0;
     if not from_right {
@@ -2631,7 +2812,7 @@ def str_split_sep(s: str, sep: str, maxsplit: int, from_right: bool) -> list[str
     return out;
 }
 
-def _bytes_match_at(b: bytes, sub: bytes, at: int) -> bool {
+impl _bytes_match_at(b: bytes, sub: bytes, at: int) -> bool {
     for k in range(len(sub)) {
         if b[at + k] != sub[k] {
             return False;
@@ -2640,7 +2821,7 @@ def _bytes_match_at(b: bytes, sub: bytes, at: int) -> bool {
     return True;
 }
 
-def bytes_find(b: bytes, sub: bytes, from_right: bool) -> int {
+impl bytes_find(b: bytes, sub: bytes, from_right: bool) -> int {
     n = len(b);
     m = len(sub);
     if m > n {

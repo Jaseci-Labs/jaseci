@@ -1,7 +1,16 @@
 import from enum { Enum }
 
 
-def _dump_value(value: any, exclude_none: bool) -> any {
+def _dump_value(value: any, exclude_none: bool) -> any;
+
+obj ApiModel {
+    def model_dump(mode: str = 'json', exclude_none: bool = False) -> dict[str, any];
+    def to_dict -> dict[str, any];
+}
+
+def require_str(data: dict[str, any], key: str, label: str = '') -> str;
+
+impl _dump_value(value: any, exclude_none: bool) -> any {
     if isinstance(value, ApiModel) {
         return value.model_dump(exclude_none=exclude_none);
     }
@@ -31,25 +40,25 @@ def _dump_value(value: any, exclude_none: bool) -> any {
     return value;
 }
 
-obj ApiModel {
-    def model_dump(mode: str = 'json', exclude_none: bool = False) -> dict[str, any] {
-        result: dict[str, any] = {};
-        for f in fields(self) {
-            value = _dump_value(getattr(self, f.name), exclude_none);
-            if exclude_none and value is None {
-                continue;
-            }
-            result[f.name] = value;
+impl ApiModel.model_dump(
+    mode: str = 'json', exclude_none: bool = False
+) -> dict[str, any] {
+    result: dict[str, any] = {};
+    for f in fields(self) {
+        value = _dump_value(getattr(self, f.name), exclude_none);
+        if exclude_none and value is None {
+            continue;
         }
-        return result;
+        result[f.name] = value;
     }
-
-    def to_dict -> dict[str, any] {
-        return self.model_dump();
-    }
+    return result;
 }
 
-def require_str(data: dict[str, any], key: str, label: str = '') -> str {
+impl ApiModel.to_dict -> dict[str, any] {
+    return self.model_dump();
+}
+
+impl require_str(data: dict[str, any], key: str, label: str = '') -> str {
     value = data.get(key);
     name = label or key;
     if not isinstance(value, str) or not value {

@@ -1,15 +1,72 @@
-def:pub loads(s: str) -> any {
+def:pub loads(s: str) -> any;
+
+
+def:pub load(fp: File) -> any;
+
+
+def:pub dumps(
+    `obj: any,
+    sort_keys: bool = False,
+    separators: (tuple[str, str] | None) = None,
+    ensure_ascii: bool = True
+) -> str;
+
+
+obj _JsonStyle {
+    has sort_keys: bool = False,
+        ensure_ascii: bool = True,
+        item_sep: str = ", ",
+        key_sep: str = ": ";
+}
+
+
+obj _JsonParser {
+    has src: str,
+        pos: int = 0;
+
+    def _cc -> int;
+    def _skip_ws;
+    def _parse_value -> any;
+    def _parse_string -> str;
+    def _hex4 -> int;
+    def _parse_number -> any;
+    def _parse_array -> any;
+    def _parse_object -> any;
+}
+
+
+def _is_digit(c: int) -> bool;
+
+
+def _hex_digit(v: int) -> str;
+
+
+def _hex4_str(n: int) -> str;
+
+
+def _dump_str(s: str, ensure_ascii: bool) -> str;
+
+
+def _dump_float(f_val: float) -> str;
+
+
+def _dump_items(items: list[any], style: _JsonStyle) -> str;
+
+
+def _dump_value(value: any, style: _JsonStyle) -> str;
+
+impl loads(s: str) -> any {
     p: _JsonParser = _JsonParser(src=s);
     return p._parse_value();
 }
 
 
-def:pub load(fp: File) -> any {
+impl load(fp: File) -> any {
     return loads(fp.read());
 }
 
 
-def:pub dumps(
+impl dumps(
     `obj: any,
     sort_keys: bool = False,
     separators: (tuple[str, str] | None) = None,
@@ -25,238 +82,225 @@ def:pub dumps(
 }
 
 
-obj _JsonStyle {
-    has sort_keys: bool = False,
-        ensure_ascii: bool = True,
-        item_sep: str = ", ",
-        key_sep: str = ": ";
+impl _JsonParser._cc -> int {
+    if self.pos >= len(self.src) {
+        return -1;
+    }
+    return ord(self.src[self.pos]);
 }
 
-
-obj _JsonParser {
-    has src: str,
-        pos: int = 0;
-
-    def _cc -> int {
-        if self.pos >= len(self.src) {
-            return -1;
-        }
-        return ord(self.src[self.pos]);
-    }
-
-    def _skip_ws {
-        while True {
-            c: int = self._cc();
-            if c == 32 or c == 9 or c == 10 or c == 13 {
-                self.pos += 1;
-            } else {
-                break;
-            }
-        }
-    }
-
-    def _parse_value -> any {
-        self._skip_ws();
+impl _JsonParser._skip_ws {
+    while True {
         c: int = self._cc();
-        if c == 123 {
-            return self._parse_object();
-        }
-        if c == 91 {
-            return self._parse_array();
-        }
-        if c == 34 {
-            return self._parse_string();
-        }
-        if c == 116 {
-            self.pos += 4;
-            return True;
-        }
-        if c == 102 {
-            self.pos += 5;
-            return False;
-        }
-        if c == 110 {
-            self.pos += 4;
-            return None;
-        }
-        return self._parse_number();
-    }
-
-    def _parse_string -> str {
-        self.pos += 1;
-        closing: int = self.src.find("\"", self.pos);
-        if closing >= 0 {
-            plain: str = self.src[self.pos:closing];
-            if plain.find("\\") < 0 {
-                self.pos = closing + 1;
-                return plain;
-            }
-        }
-        parts: list[str] = [];
-        run_start: int = self.pos;
-        while True {
-            c: int = self._cc();
-            if c == 34 or c == -1 {
-                if self.pos > run_start {
-                    parts.append(self.src[run_start:self.pos]);
-                }
-                self.pos += 1;
-                break;
-            }
-            if c == 92 {
-                if self.pos > run_start {
-                    parts.append(self.src[run_start:self.pos]);
-                }
-                self.pos += 1;
-                e: int = self._cc();
-                self.pos += 1;
-                if e == 34 {
-                    parts.append("\"");
-                } elif e == 92 {
-                    parts.append("\\");
-                } elif e == 47 {
-                    parts.append("/");
-                } elif e == 110 {
-                    parts.append("\n");
-                } elif e == 116 {
-                    parts.append("\t");
-                } elif e == 114 {
-                    parts.append("\r");
-                } elif e == 98 {
-                    parts.append(chr(8));
-                } elif e == 102 {
-                    parts.append(chr(12));
-                } elif e == 117 {
-                    parts.append(chr(self._hex4()));
-                }
-                run_start = self.pos;
-            } else {
-                self.pos += 1;
-            }
-        }
-        return "".join(parts);
-    }
-
-    def _hex4 -> int {
-        v: int = 0;
-        k: int = 0;
-        while k < 4 {
-            d: int = self._cc();
-            if d == -1 {
-                break;
-            }
-            nib: int = 0;
-            if d >= 48 and d <= 57 {
-                nib = d - 48;
-            } elif d >= 97 and d <= 102 {
-                nib = d - 87;
-            } elif d >= 65 and d <= 70 {
-                nib = d - 55;
-            }
-            v = v * 16 + nib;
+        if c == 32 or c == 9 or c == 10 or c == 13 {
             self.pos += 1;
-            k += 1;
+        } else {
+            break;
         }
-        return v;
     }
+}
 
-    def _parse_number -> any {
-        start: int = self.pos;
-        is_float: int = 0;
-        if self._cc() == 45 {
+impl _JsonParser._parse_value -> any {
+    self._skip_ws();
+    c: int = self._cc();
+    if c == 123 {
+        return self._parse_object();
+    }
+    if c == 91 {
+        return self._parse_array();
+    }
+    if c == 34 {
+        return self._parse_string();
+    }
+    if c == 116 {
+        self.pos += 4;
+        return True;
+    }
+    if c == 102 {
+        self.pos += 5;
+        return False;
+    }
+    if c == 110 {
+        self.pos += 4;
+        return None;
+    }
+    return self._parse_number();
+}
+
+impl _JsonParser._parse_string -> str {
+    self.pos += 1;
+    closing: int = self.src.find("\"", self.pos);
+    if closing >= 0 {
+        plain: str = self.src[self.pos:closing];
+        if plain.find("\\") < 0 {
+            self.pos = closing + 1;
+            return plain;
+        }
+    }
+    parts: list[str] = [];
+    run_start: int = self.pos;
+    while True {
+        c: int = self._cc();
+        if c == 34 or c == -1 {
+            if self.pos > run_start {
+                parts.append(self.src[run_start:self.pos]);
+            }
+            self.pos += 1;
+            break;
+        }
+        if c == 92 {
+            if self.pos > run_start {
+                parts.append(self.src[run_start:self.pos]);
+            }
+            self.pos += 1;
+            e: int = self._cc();
+            self.pos += 1;
+            if e == 34 {
+                parts.append("\"");
+            } elif e == 92 {
+                parts.append("\\");
+            } elif e == 47 {
+                parts.append("/");
+            } elif e == 110 {
+                parts.append("\n");
+            } elif e == 116 {
+                parts.append("\t");
+            } elif e == 114 {
+                parts.append("\r");
+            } elif e == 98 {
+                parts.append(chr(8));
+            } elif e == 102 {
+                parts.append(chr(12));
+            } elif e == 117 {
+                parts.append(chr(self._hex4()));
+            }
+            run_start = self.pos;
+        } else {
+            self.pos += 1;
+        }
+    }
+    return "".join(parts);
+}
+
+impl _JsonParser._hex4 -> int {
+    v: int = 0;
+    k: int = 0;
+    while k < 4 {
+        d: int = self._cc();
+        if d == -1 {
+            break;
+        }
+        nib: int = 0;
+        if d >= 48 and d <= 57 {
+            nib = d - 48;
+        } elif d >= 97 and d <= 102 {
+            nib = d - 87;
+        } elif d >= 65 and d <= 70 {
+            nib = d - 55;
+        }
+        v = v * 16 + nib;
+        self.pos += 1;
+        k += 1;
+    }
+    return v;
+}
+
+impl _JsonParser._parse_number -> any {
+    start: int = self.pos;
+    is_float: int = 0;
+    if self._cc() == 45 {
+        self.pos += 1;
+    }
+    while _is_digit(self._cc()) {
+        self.pos += 1;
+    }
+    if self._cc() == 46 {
+        is_float = 1;
+        self.pos += 1;
+        while _is_digit(self._cc()) {
+            self.pos += 1;
+        }
+    }
+    c: int = self._cc();
+    if c == 101 or c == 69 {
+        is_float = 1;
+        self.pos += 1;
+        sign: int = self._cc();
+        if sign == 43 or sign == 45 {
             self.pos += 1;
         }
         while _is_digit(self._cc()) {
             self.pos += 1;
         }
-        if self._cc() == 46 {
-            is_float = 1;
-            self.pos += 1;
-            while _is_digit(self._cc()) {
-                self.pos += 1;
-            }
-        }
+    }
+    numstr: str = self.src[start:self.pos];
+    if is_float == 1 {
+        return float(numstr);
+    }
+    return int(numstr);
+}
+
+impl _JsonParser._parse_array -> any {
+    self.pos += 1;
+    out: list[any] = [];
+    self._skip_ws();
+    if self._cc() == 93 {
+        self.pos += 1;
+        return out;
+    }
+    while True {
+        out.append(self._parse_value());
+        self._skip_ws();
         c: int = self._cc();
-        if c == 101 or c == 69 {
-            is_float = 1;
+        if c == 44 {
             self.pos += 1;
-            sign: int = self._cc();
-            if sign == 43 or sign == 45 {
-                self.pos += 1;
-            }
-            while _is_digit(self._cc()) {
-                self.pos += 1;
-            }
+        } elif c == 93 {
+            self.pos += 1;
+            break;
+        } else {
+            break;
         }
-        numstr: str = self.src[start:self.pos];
-        if is_float == 1 {
-            return float(numstr);
-        }
-        return int(numstr);
     }
+    return out;
+}
 
-    def _parse_array -> any {
+impl _JsonParser._parse_object -> any {
+    self.pos += 1;
+    out: dict[str, any] = {};
+    self._skip_ws();
+    if self._cc() == 125 {
         self.pos += 1;
-        out: list[any] = [];
-        self._skip_ws();
-        if self._cc() == 93 {
-            self.pos += 1;
-            return out;
-        }
-        while True {
-            out.append(self._parse_value());
-            self._skip_ws();
-            c: int = self._cc();
-            if c == 44 {
-                self.pos += 1;
-            } elif c == 93 {
-                self.pos += 1;
-                break;
-            } else {
-                break;
-            }
-        }
         return out;
     }
-
-    def _parse_object -> any {
-        self.pos += 1;
-        out: dict[str, any] = {};
+    while True {
         self._skip_ws();
-        if self._cc() == 125 {
+        key: str = self._parse_string();
+        self._skip_ws();
+        if self._cc() == 58 {
             self.pos += 1;
-            return out;
         }
-        while True {
-            self._skip_ws();
-            key: str = self._parse_string();
-            self._skip_ws();
-            if self._cc() == 58 {
-                self.pos += 1;
-            }
-            out[key] = self._parse_value();
-            self._skip_ws();
-            c: int = self._cc();
-            if c == 44 {
-                self.pos += 1;
-            } elif c == 125 {
-                self.pos += 1;
-                break;
-            } else {
-                break;
-            }
+        out[key] = self._parse_value();
+        self._skip_ws();
+        c: int = self._cc();
+        if c == 44 {
+            self.pos += 1;
+        } elif c == 125 {
+            self.pos += 1;
+            break;
+        } else {
+            break;
         }
-        return out;
     }
+    return out;
 }
 
 
-def _is_digit(c: int) -> bool {
+impl _is_digit(c: int) -> bool {
     return c >= 48 and c <= 57;
 }
 
 
-def _hex_digit(v: int) -> str {
+impl _hex_digit(v: int) -> str {
     if v < 10 {
         return chr(48 + v);
     }
@@ -264,7 +308,7 @@ def _hex_digit(v: int) -> str {
 }
 
 
-def _hex4_str(n: int) -> str {
+impl _hex4_str(n: int) -> str {
     return (
         _hex_digit((n // 4096) % 16)
         + _hex_digit((n // 256) % 16)
@@ -274,7 +318,7 @@ def _hex4_str(n: int) -> str {
 }
 
 
-def _dump_str(s: str, ensure_ascii: bool) -> str {
+impl _dump_str(s: str, ensure_ascii: bool) -> str {
     parts: list[str] = ["\""];
     n: int = len(s);
     i: int = 0;
@@ -339,7 +383,7 @@ def _dump_str(s: str, ensure_ascii: bool) -> str {
 }
 
 
-def _dump_float(f_val: float) -> str {
+impl _dump_float(f_val: float) -> str {
     if f_val != f_val {
         return "NaN";
     }
@@ -353,7 +397,7 @@ def _dump_float(f_val: float) -> str {
 }
 
 
-def _dump_items(items: list[any], style: _JsonStyle) -> str {
+impl _dump_items(items: list[any], style: _JsonStyle) -> str {
     parts: list[str] = ["["];
     n: int = len(items);
     i: int = 0;
@@ -369,7 +413,7 @@ def _dump_items(items: list[any], style: _JsonStyle) -> str {
 }
 
 
-def _dump_value(value: any, style: _JsonStyle) -> str {
+impl _dump_value(value: any, style: _JsonStyle) -> str {
     if value is None {
         return "null";
     }

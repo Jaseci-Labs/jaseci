@@ -7,12 +7,26 @@ import from hmac { compare_digest as _hmac_compare_digest }
 glob:pub DEFAULT_ENTROPY: int = 32;
 
 
-def:pub compare_digest(a: bytes, b: bytes) -> bool {
+def:pub compare_digest(a: bytes, b: bytes) -> bool;
+
+
+def:pub token_bytes(nbytes: any = None) -> bytes;
+
+
+def:pub token_hex(nbytes: any = None) -> str;
+
+
+def:pub token_urlsafe(nbytes: any = None) -> str;
+
+
+def:pub randbelow(exclusive_upper_bound: int) -> int;
+
+impl compare_digest(a: bytes, b: bytes) -> bool {
     return _hmac_compare_digest(a, b);
 }
 
 
-def:pub token_bytes(nbytes: any = None) -> bytes {
+impl token_bytes(nbytes: any = None) -> bytes {
     n: int = DEFAULT_ENTROPY;
     if isinstance(nbytes, bool) {
         n = 1 if nbytes else 0;
@@ -27,17 +41,17 @@ def:pub token_bytes(nbytes: any = None) -> bytes {
 }
 
 
-def:pub token_hex(nbytes: any = None) -> str {
+impl token_hex(nbytes: any = None) -> str {
     return to_hex(token_bytes(nbytes));
 }
 
 
-def:pub token_urlsafe(nbytes: any = None) -> str {
+impl token_urlsafe(nbytes: any = None) -> str {
     return urlsafe_b64encode(token_bytes(nbytes)).decode().rstrip("=");
 }
 
 
-def:pub randbelow(exclusive_upper_bound: int) -> int {
+impl randbelow(exclusive_upper_bound: int) -> int {
     if exclusive_upper_bound <= 0 {
         raise ValueError("Upper bound must be positive.");
     }

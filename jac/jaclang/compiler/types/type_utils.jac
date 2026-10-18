@@ -107,7 +107,11 @@ def build_solution_from_specialized_class(
 
 def specialize_for_base_class(src_type: ClassType, base_class: ClassType) -> ClassType;
 
-def is_builtin_region_type(t: (object | None), allow_class: bool = False) -> bool {
+def is_builtin_region_type(t: (object | None), allow_class: bool = False) -> bool;
+
+def expr_is_builtin_region(expr: (UniNode | None)) -> bool;
+
+impl is_builtin_region_type(t: (object | None), allow_class: bool = False) -> bool {
     if not isinstance(t, ClassType) or t.shared is None {
         return False;
     }
@@ -125,6 +129,6 @@ def is_builtin_region_type(t: (object | None), allow_class: bool = False) -> boo
     return True;
 }
 
-def expr_is_builtin_region(expr: (UniNode | None)) -> bool {
+impl expr_is_builtin_region(expr: (UniNode | None)) -> bool {
     return isinstance(expr, Expr) and is_builtin_region_type(expr.type);
 }

@@ -1,6 +1,8 @@
 import json;
 
-def boundary_audit(program: any, artifacts: list[dict[str, any]]) -> dict[str, any] {
+def boundary_audit(program: any, artifacts: list[dict[str, any]]) -> dict[str, any];
+
+impl boundary_audit(program: any, artifacts: list[dict[str, any]]) -> dict[str, any] {
     boundaries: dict[str, dict[str, any]] = {};
     effects: dict[str, dict[str, any]] = {};
     host_imports: dict[str, dict[str, any]] = {};

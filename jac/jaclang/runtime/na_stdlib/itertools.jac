@@ -6,103 +6,13 @@ def _tolist[C: Iterable](src: C) -> list[any] {
     return out;
 }
 
-def _tolist_any(src: any) -> list[any] {
-    out: list[any] = [];
-    if isinstance(src, str) {
-        sv: str = src;
-        for v in sv {
-            out.append(v);
-        }
-        return out;
-    }
-    if not isinstance(src, list) {
-        raise TypeError(
-            "itertools: variadic arguments must be lists or str on the native pathway"
-        );
-    }
-    for v in src {
-        out.append(v);
-    }
-    return out;
-}
+def _tolist_any(src: any) -> list[any];
 
-def _add_default(a: any, b: any) -> any {
-    if isinstance(a, int) {
-        av_i: int = a;
-        if isinstance(b, int) {
-            bv_i: int = b;
-            return av_i + bv_i;
-        }
-        if isinstance(b, float) {
-            bv_f: float = b;
-            return float(av_i) + bv_f;
-        }
-    } elif isinstance(a, float) {
-        av_f: float = a;
-        if isinstance(b, int) {
-            bv_i2: int = b;
-            return av_f + float(bv_i2);
-        }
-        if isinstance(b, float) {
-            bv_f2: float = b;
-            return av_f + bv_f2;
-        }
-    } elif isinstance(a, str) {
-        av_s: str = a;
-        if isinstance(b, str) {
-            bv_s: str = b;
-            return av_s + bv_s;
-        }
-    }
-    raise TypeError(
-        "accumulate(): unsupported operand types for + on the native pathway"
-    );
-}
+def _add_default(a: any, b: any) -> any;
 
-def:pub count(start: int | float = 0, step: int | float = 1) -> Iterator[any] {
-    return _count_gen(start, step);
-}
+def:pub count(start: int | float = 0, step: int | float = 1) -> Iterator[any];
 
-def _count_gen(start: int | float, step: int | float) -> Iterator[any] {
-    if isinstance(start, int) {
-        s_i: int = start;
-        if isinstance(step, int) {
-            st_i: int = step;
-            v_i: int = s_i;
-            while True {
-                yield v_i;
-                v_i += st_i;
-            }
-        }
-        if isinstance(step, float) {
-            st_f: float = step;
-            v_f: float = float(s_i);
-            while True {
-                yield v_f;
-                v_f += st_f;
-            }
-        }
-    }
-    if isinstance(start, float) {
-        s_f: float = start;
-        if isinstance(step, int) {
-            st_i2: int = step;
-            v_f2: float = s_f;
-            while True {
-                yield v_f2;
-                v_f2 += float(st_i2);
-            }
-        }
-        if isinstance(step, float) {
-            st_f2: float = step;
-            v_f3: float = s_f;
-            while True {
-                yield v_f3;
-                v_f3 += st_f2;
-            }
-        }
-    }
-}
+def _count_gen(start: int | float, step: int | float) -> Iterator[any];
 
 def:pub cycle[C: Iterable](iterable: C) -> Iterator[any] {
     return _cycle_gen(iterable);
@@ -125,25 +35,9 @@ def _cycle_gen[C: Iterable](src: C) -> Iterator[any] {
     }
 }
 
-def:pub repeat(object: any, times: int | None = None) -> Iterator[any] {
-    return _repeat_gen(object, times);
-}
+def:pub repeat(object: any, times: int | None = None) -> Iterator[any];
 
-def _repeat_gen(x: any, times: int | None) -> Iterator[any] {
-    if times is None {
-        while True {
-            yield x;
-        }
-    }
-    if isinstance(times, int) {
-        k: int = times;
-        i = 0;
-        while i < k {
-            yield x;
-            i += 1;
-        }
-    }
-}
+def _repeat_gen(x: any, times: int | None) -> Iterator[any];
 
 def:pub accumulate[C: Iterable](
     iterable: C, func: (Callable[[any, any], any] | None) = None, *, initial: any = None
@@ -213,25 +107,7 @@ def _accumulate_func[C: Iterable](
     }
 }
 
-def:pub chain(*iterables: any) -> Iterator[any] {
-    for it in iterables {
-        if isinstance(it, str) {
-            sv: str = it;
-            for v in sv {
-                yield v;
-            }
-        } else {
-            if not isinstance(it, list) {
-                raise TypeError(
-                    "itertools: variadic arguments must be lists or str on the native pathway"
-                );
-            }
-            for v in it {
-                yield v;
-            }
-        }
-    }
-}
+def:pub chain(*iterables: any) -> Iterator[any];
 
 def chain_from_iterable[C: Iterable](iterable: C) -> Iterator[any] {
     return _chain_fi_gen(iterable);
@@ -553,7 +429,233 @@ def _starmap_gen[C: Iterable](
     }
 }
 
-def:pub product(*iterables: any, repeat: int = 1) -> Iterator[any] {
+def:pub product(*iterables: any, repeat: int = 1) -> Iterator[any];
+
+def _product_gen(pools: list[list[any]]) -> Iterator[any];
+
+def:pub permutations[C: Iterable](iterable: C, r: int | None = None) -> Iterator[any] {
+    pool = _tolist(iterable);
+    n = len(pool);
+    rr = n;
+    if r is not None {
+        r0: int = r;
+        rr = r0;
+    }
+    if rr < 0 {
+        raise ValueError("r must be non-negative");
+    }
+    return _perm_gen(pool, rr);
+}
+
+def _perm_gen(pool: list[any], r: int) -> Iterator[any];
+
+def:pub combinations[C: Iterable](iterable: C, r: int) -> Iterator[any] {
+    if r < 0 {
+        raise ValueError("r must be non-negative");
+    }
+    pool = _tolist(iterable);
+    return _comb_gen(pool, r);
+}
+
+def _comb_gen(pool: list[any], r: int) -> Iterator[any];
+
+def:pub combinations_with_replacement[C: Iterable](
+    iterable: C, r: int
+) -> Iterator[any] {
+    if r < 0 {
+        raise ValueError("r must be non-negative");
+    }
+    pool = _tolist(iterable);
+    return _cwr_gen(pool, r);
+}
+
+def _cwr_gen(pool: list[any], r: int) -> Iterator[any];
+
+def:pub batched[C: Iterable](
+    iterable: C, n: int, *, strict: bool = False
+) -> Iterator[any] {
+    if n < 1 {
+        raise ValueError("n must be at least one");
+    }
+    return _batched_gen(iterable, n, strict);
+}
+
+def _batched_gen[C: Iterable](src: C, n: int, strict: bool) -> Iterator[any] {
+    cur: list[any] = [];
+    for v in src {
+        cur.append(v);
+        if len(cur) == n {
+            yield cur;
+            cur = [];
+        }
+    }
+    if len(cur) > 0 {
+        if strict {
+            raise ValueError("batched(): incomplete batch");
+        }
+        yield cur;
+    }
+}
+
+def:pub zip_longest(*iterables: any, fillvalue: any = None) -> Iterator[any];
+
+def _zip_longest_gen(pools: list[list[any]], fillvalue: any) -> Iterator[any];
+
+def:pub tee[C: Iterable](iterable: C, n: int = 2) -> list[any] {
+    if n < 0 {
+        raise ValueError("n must be >= 0");
+    }
+    source: list[any] = _tolist(iterable);
+    outs: list[any] = [];
+    for i in range(n) {
+        copy: list[any] = [];
+        for v in source {
+            copy.append(v);
+        }
+        outs.append(copy);
+    }
+    return outs;
+}
+
+impl _tolist_any(src: any) -> list[any] {
+    out: list[any] = [];
+    if isinstance(src, str) {
+        sv: str = src;
+        for v in sv {
+            out.append(v);
+        }
+        return out;
+    }
+    if not isinstance(src, list) {
+        raise TypeError(
+            "itertools: variadic arguments must be lists or str on the native pathway"
+        );
+    }
+    for v in src {
+        out.append(v);
+    }
+    return out;
+}
+
+impl _add_default(a: any, b: any) -> any {
+    if isinstance(a, int) {
+        av_i: int = a;
+        if isinstance(b, int) {
+            bv_i: int = b;
+            return av_i + bv_i;
+        }
+        if isinstance(b, float) {
+            bv_f: float = b;
+            return float(av_i) + bv_f;
+        }
+    } elif isinstance(a, float) {
+        av_f: float = a;
+        if isinstance(b, int) {
+            bv_i2: int = b;
+            return av_f + float(bv_i2);
+        }
+        if isinstance(b, float) {
+            bv_f2: float = b;
+            return av_f + bv_f2;
+        }
+    } elif isinstance(a, str) {
+        av_s: str = a;
+        if isinstance(b, str) {
+            bv_s: str = b;
+            return av_s + bv_s;
+        }
+    }
+    raise TypeError(
+        "accumulate(): unsupported operand types for + on the native pathway"
+    );
+}
+
+impl count(start: int | float = 0, step: int | float = 1) -> Iterator[any] {
+    return _count_gen(start, step);
+}
+
+impl _count_gen(start: int | float, step: int | float) -> Iterator[any] {
+    if isinstance(start, int) {
+        s_i: int = start;
+        if isinstance(step, int) {
+            st_i: int = step;
+            v_i: int = s_i;
+            while True {
+                yield v_i;
+                v_i += st_i;
+            }
+        }
+        if isinstance(step, float) {
+            st_f: float = step;
+            v_f: float = float(s_i);
+            while True {
+                yield v_f;
+                v_f += st_f;
+            }
+        }
+    }
+    if isinstance(start, float) {
+        s_f: float = start;
+        if isinstance(step, int) {
+            st_i2: int = step;
+            v_f2: float = s_f;
+            while True {
+                yield v_f2;
+                v_f2 += float(st_i2);
+            }
+        }
+        if isinstance(step, float) {
+            st_f2: float = step;
+            v_f3: float = s_f;
+            while True {
+                yield v_f3;
+                v_f3 += st_f2;
+            }
+        }
+    }
+}
+
+impl repeat(object: any, times: int | None = None) -> Iterator[any] {
+    return _repeat_gen(object, times);
+}
+
+impl _repeat_gen(x: any, times: int | None) -> Iterator[any] {
+    if times is None {
+        while True {
+            yield x;
+        }
+    }
+    if isinstance(times, int) {
+        k: int = times;
+        i = 0;
+        while i < k {
+            yield x;
+            i += 1;
+        }
+    }
+}
+
+impl chain(*iterables: any) -> Iterator[any] {
+    for it in iterables {
+        if isinstance(it, str) {
+            sv: str = it;
+            for v in sv {
+                yield v;
+            }
+        } else {
+            if not isinstance(it, list) {
+                raise TypeError(
+                    "itertools: variadic arguments must be lists or str on the native pathway"
+                );
+            }
+            for v in it {
+                yield v;
+            }
+        }
+    }
+}
+
+impl product(*iterables: any, repeat: int = 1) -> Iterator[any] {
     if repeat < 0 {
         raise ValueError("repeat argument cannot be negative");
     }
@@ -574,7 +676,7 @@ def:pub product(*iterables: any, repeat: int = 1) -> Iterator[any] {
     return _product_gen(pools);
 }
 
-def _product_gen(pools: list[list[any]]) -> Iterator[any] {
+impl _product_gen(pools: list[list[any]]) -> Iterator[any] {
     np = len(pools);
     if np == 0 {
         empty: list[any] = [];
@@ -614,21 +716,7 @@ def _product_gen(pools: list[list[any]]) -> Iterator[any] {
     }
 }
 
-def:pub permutations[C: Iterable](iterable: C, r: int | None = None) -> Iterator[any] {
-    pool = _tolist(iterable);
-    n = len(pool);
-    rr = n;
-    if r is not None {
-        r0: int = r;
-        rr = r0;
-    }
-    if rr < 0 {
-        raise ValueError("r must be non-negative");
-    }
-    return _perm_gen(pool, rr);
-}
-
-def _perm_gen(pool: list[any], r: int) -> Iterator[any] {
+impl _perm_gen(pool: list[any], r: int) -> Iterator[any] {
     n = len(pool);
     if r > n {
         return;
@@ -679,15 +767,7 @@ def _perm_gen(pool: list[any], r: int) -> Iterator[any] {
     }
 }
 
-def:pub combinations[C: Iterable](iterable: C, r: int) -> Iterator[any] {
-    if r < 0 {
-        raise ValueError("r must be non-negative");
-    }
-    pool = _tolist(iterable);
-    return _comb_gen(pool, r);
-}
-
-def _comb_gen(pool: list[any], r: int) -> Iterator[any] {
+impl _comb_gen(pool: list[any], r: int) -> Iterator[any] {
     n = len(pool);
     if r > n {
         return;
@@ -726,17 +806,7 @@ def _comb_gen(pool: list[any], r: int) -> Iterator[any] {
     }
 }
 
-def:pub combinations_with_replacement[C: Iterable](
-    iterable: C, r: int
-) -> Iterator[any] {
-    if r < 0 {
-        raise ValueError("r must be non-negative");
-    }
-    pool = _tolist(iterable);
-    return _cwr_gen(pool, r);
-}
-
-def _cwr_gen(pool: list[any], r: int) -> Iterator[any] {
+impl _cwr_gen(pool: list[any], r: int) -> Iterator[any] {
     n = len(pool);
     if r == 0 {
         empty: list[any] = [];
@@ -780,33 +850,7 @@ def _cwr_gen(pool: list[any], r: int) -> Iterator[any] {
     }
 }
 
-def:pub batched[C: Iterable](
-    iterable: C, n: int, *, strict: bool = False
-) -> Iterator[any] {
-    if n < 1 {
-        raise ValueError("n must be at least one");
-    }
-    return _batched_gen(iterable, n, strict);
-}
-
-def _batched_gen[C: Iterable](src: C, n: int, strict: bool) -> Iterator[any] {
-    cur: list[any] = [];
-    for v in src {
-        cur.append(v);
-        if len(cur) == n {
-            yield cur;
-            cur = [];
-        }
-    }
-    if len(cur) > 0 {
-        if strict {
-            raise ValueError("batched(): incomplete batch");
-        }
-        yield cur;
-    }
-}
-
-def:pub zip_longest(*iterables: any, fillvalue: any = None) -> Iterator[any] {
+impl zip_longest(*iterables: any, fillvalue: any = None) -> Iterator[any] {
     pools: list[list[any]] = [];
     for it in iterables {
         pools.append(_tolist_any(it));
@@ -814,7 +858,7 @@ def:pub zip_longest(*iterables: any, fillvalue: any = None) -> Iterator[any] {
     return _zip_longest_gen(pools, fillvalue);
 }
 
-def _zip_longest_gen(pools: list[list[any]], fillvalue: any) -> Iterator[any] {
+impl _zip_longest_gen(pools: list[list[any]], fillvalue: any) -> Iterator[any] {
     max_len = 0;
     for p in pools {
         if len(p) > max_len {
@@ -834,20 +878,4 @@ def _zip_longest_gen(pools: list[list[any]], fillvalue: any) -> Iterator[any] {
         yield row;
         i += 1;
     }
-}
-
-def:pub tee[C: Iterable](iterable: C, n: int = 2) -> list[any] {
-    if n < 0 {
-        raise ValueError("n must be >= 0");
-    }
-    source: list[any] = _tolist(iterable);
-    outs: list[any] = [];
-    for i in range(n) {
-        copy: list[any] = [];
-        for v in source {
-            copy.append(v);
-        }
-        outs.append(copy);
-    }
-    return outs;
 }

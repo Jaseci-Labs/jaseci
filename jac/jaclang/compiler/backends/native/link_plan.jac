@@ -20,43 +20,12 @@ glob LIBC_SHARED_NAMES: tuple[str, ...] = ("libc.so.6", "libm.so.6"),
 class LinkPlanError(RuntimeError) {}
 
 class SymbolCollision(LinkPlanError) {
-    def init(self: SymbolCollision, symbol: str, first: str, second: str) {
-        self.symbol = symbol;
-        self.first = first;
-        self.second = second;
-        RuntimeError.__init__(
-            self,
-            f"symbol collision: '{symbol}' is defined in both {first} and {second}"
-        );
-    }
+    def init(self: SymbolCollision, symbol: str, first: str, second: str);
 }
 
-def check_pub_collisions(units: list[LinkUnit]) {
-    owners: dict[str, str] = {};
-    for u in units {
-        for sym in u.iface.pub_symbols() {
-            first = owners.get(sym);
-            if first is not None and first != u.path {
-                raise SymbolCollision(sym, first, u.path);
-            }
-            owners[sym] = u.path;
-        }
-    }
-}
+def check_pub_collisions(units: list[LinkUnit]);
 
-def check_prefix_collisions(units: list[LinkUnit]) {
-    owners: dict[str, str] = {};
-    for u in units {
-        first = owners.get(u.prefix);
-        if first is not None and first != u.path {
-            raise LinkPlanError(
-                f"{first} and {u.path} share the native unit prefix {u.prefix}: "
-                "their package roots have the same directory name; rename one root"
-            );
-        }
-        owners[u.prefix] = u.path;
-    }
-}
+def check_prefix_collisions(units: list[LinkUnit]);
 
 obj LinkUnit {
     has path: str,
@@ -76,32 +45,10 @@ obj LinkInputs {
         export_symbols: list[str] = [],
         static_musl: bool = False;
 
-    def digest(plan_digest: str, kind: str, soname: str) -> str {
-        """Hash a build action from code inputs and runtime contents.
-        Code inputs may be bitcode before whole-program optimization.""";
-        payload = {
-            "plan": plan_digest,
-            "kind": kind,
-            "soname": soname,
-            "objects": [hashlib.sha256(b).hexdigest() for b in self.objects],
-            "archives": [_file_digest(p) for p in self.archives],
-            "crt": [_file_digest(p) for p in self.crt_objects],
-            "libraries": self.needed_libs,
-            "symbols": self.symbol_lib_map,
-            "exports": self.export_symbols,
-            "static_musl": self.static_musl
-        };
-        return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest();
-    }
+    def digest(plan_digest: str, kind: str, soname: str) -> str;
 }
 
-def _file_digest(path: str) -> str {
-    try {
-        return f"{os.path.basename(path)}:{_sha256_of(path)}";
-    } except OSError {
-        return f"{path}:missing";
-    }
-}
+def _file_digest(path: str) -> str;
 
 obj LinkResult {
     has output_path: str,
@@ -123,175 +70,372 @@ obj LinkPlan {
         callback_bindings: list[InteropBinding] = [],
         library_api: bool = False;
 
-    def unit(path: str) -> (LinkUnit | None) {
-        real = os.path.realpath(path);
-        for u in self.units {
-            if u.path == real {
-                return u;
+    def unit(path: str) -> (LinkUnit | None);
+    def root_unit -> LinkUnit;
+    def root_index -> int;
+    def init_units -> list[LinkUnit];
+    def init_symbols -> list[str];
+    def plan_digest -> str;
+    def merged_layout -> dict[str, any];
+    def layout_digest -> str;
+    def demoted_symbols -> list[str];
+    def clib_paths -> list[str];
+    def clib_symbol_lib -> dict[str, str];
+    def pub_exports -> list[str];
+    def has_unit(rel: str) -> bool;
+    def glue_spec(kind: ArtifactKind, platform: str, static_musl: bool) -> GlueSpec;
+}
+
+def initialization_order(units: list[LinkUnit], roots: list[str]) -> list[LinkUnit];
+
+def _init_cycle_message(
+    start: str, reads: dict[str, list[tuple[str, str]]], placed: set[str]
+) -> str;
+
+def _platform_of(triple: str) -> str;
+
+def build_link_plan(
+    prog: JacProgram,
+    roots: list[str],
+    options: (CompileOptions | None) = None,
+    mode: str = "",
+    native_unit: bool = False
+) -> LinkPlan;
+
+def _build_link_plan(
+    prog: JacProgram,
+    roots: list[str],
+    options: (CompileOptions | None) = None,
+    mode: str = "",
+    native_unit: bool = False
+) -> LinkPlan;
+
+def _target_machine(plan: LinkPlan, kind: ArtifactKind) -> TargetMachine;
+
+def callback_glue_ir(plan: LinkPlan) -> str;
+
+def heap_glue_ir(plan: LinkPlan) -> tuple[str, list[str]];
+
+def _glue_module(
+    plan: LinkPlan, spec: GlueSpec, tm: (TargetMachine | None) = None
+) -> tuple[ModuleRef, list[str]];
+
+def whole_program_module(
+    plan: LinkPlan, spec: GlueSpec
+) -> tuple[ModuleRef, list[str]];
+
+def unit_objects(
+    plan: LinkPlan, spec: GlueSpec, tm: TargetMachine
+) -> tuple[list[bytes], list[str]];
+
+def name_private_functions(merged: ModuleRef);
+
+def optimize_whole_program(
+    plan: LinkPlan, merged: ModuleRef, kind: ArtifactKind, tm: TargetMachine
+) -> None;
+
+def optimize_merged_program(plan: LinkPlan, merged: ModuleRef, kind: ArtifactKind);
+
+def _log_phase(
+    log: (Callable[[str], None] | None), phase: str, started: float
+) -> float;
+
+def plan_objects(
+    plan: LinkPlan,
+    spec: GlueSpec,
+    kind: ArtifactKind,
+    tm: TargetMachine,
+    log: (Callable[[str], None] | None) = None
+) -> tuple[list[bytes], list[str]];
+
+def _write_sidecar(
+    plan: LinkPlan,
+    output_path: str,
+    plan_digest: str,
+    action_digest: str = "",
+    artifact_sha256: str = ""
+) -> tuple[dict[str, any], str];
+
+def _sha256_of(path: str) -> str;
+
+def _reuse_artifact(
+    plan: LinkPlan, output_path: str, action_digest: str
+) -> (LinkResult | None);
+
+def _links_for_host(triple: str) -> bool;
+
+def link_artifact(
+    plan: LinkPlan,
+    output_path: str,
+    kind: ArtifactKind,
+    log: any = None,
+    app_imports: (set | None) = None
+) -> LinkResult;
+
+def _unmangled(symbol: str, mangled: bool) -> str;
+
+def unresolved_unit_symbols(plan: LinkPlan, objects: list[bytes]) -> list[str];
+
+def expose_root_exports(plan: LinkPlan, merged: ModuleRef) -> list[str];
+
+def wasm_program_ir(plan: LinkPlan) -> str;
+
+def link_wasm(
+    plan: LinkPlan, output_path: str, app_imports: (set | None) = None
+) -> LinkResult;
+
+def undefined_functions(mod: ModuleRef) -> list[str];
+
+def load_jit_library(lib_path: str) -> ctypes.CDLL;
+
+def _jit_image_path(plan: LinkPlan) -> (str | None);
+
+def _has_global(module: ModuleRef, name: str) -> bool;
+
+def _mark_host_rc_threaded(engine: ExecutionEngine);
+
+def jit_engine(plan: LinkPlan) -> ExecutionEngine;
+
+def jit_engine_for_module(
+    prog: JacProgram, module: any, options: CompileOptions
+) -> (ExecutionEngine | None);
+
+def jit_engine_for_cached(
+    prog: JacProgram, path: str, options: CompileOptions
+) -> (ExecutionEngine | None);
+
+def internalize_native_implementation(module: ModuleRef, exports: list[str]);
+
+impl SymbolCollision.init(self: SymbolCollision, symbol: str, first: str, second: str) {
+    self.symbol = symbol;
+    self.first = first;
+    self.second = second;
+    RuntimeError.__init__(
+        self, f"symbol collision: '{symbol}' is defined in both {first} and {second}"
+    );
+}
+
+impl check_pub_collisions(units: list[LinkUnit]) {
+    owners: dict[str, str] = {};
+    for u in units {
+        for sym in u.iface.pub_symbols() {
+            first = owners.get(sym);
+            if first is not None and first != u.path {
+                raise SymbolCollision(sym, first, u.path);
             }
+            owners[sym] = u.path;
         }
-        return None;
-    }
-
-    def root_unit -> LinkUnit {
-        for u in self.units {
-            if u.is_root {
-                return u;
-            }
-        }
-        raise LinkPlanError("link plan has no root_u unit");
-    }
-
-    def root_index -> int {
-        for (i, u) in enumerate(self.units) {
-            if u.is_root {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    def init_units -> list[LinkUnit] {
-        return initialization_order(self.units, self.roots);
-    }
-
-    def init_symbols -> list[str] {
-        return [
-            u.iface.init_symbol
-            for u in self.init_units()
-            if u.iface.init_symbol
-        ];
-    }
-
-    def plan_digest -> str {
-        h = hashlib.sha256();
-        h.update(f"plan-format={PLAN_DIGEST_FORMAT}".encode());
-        h.update(self.mode.encode());
-        h.update(self.triple.encode());
-        h.update(self.options.codegen_identity().encode());
-
-        h.update(native_producer_digest(self.options.kernel_build).encode());
-        if self.library_api {
-            h.update(b"library-api");
-        }
-
-        for u in self.units {
-            h.update(native_unit_identity(u.path).encode());
-            h.update(u.modkey.encode());
-            h.update(u.digest.encode());
-        }
-        return h.hexdigest();
-    }
-
-    def merged_layout -> dict[str, any] {
-        return merge_class_layouts([u.iface for u in self.units]);
-    }
-
-    def layout_digest -> str {
-        return layout_digest_of(self.merged_layout());
-    }
-
-    def demoted_symbols -> list[str] {
-        out: list[str] = [];
-        for u in self.units {
-            for name in u.iface.demoted {
-                out.append(f"{os.path.basename(u.path)}:{name}");
-            }
-        }
-        return sorted(out);
-    }
-
-    def clib_paths -> list[str] {
-        out: list[str] = [];
-        for u in self.units {
-            for p in u.iface.clib_paths {
-                if p not in out {
-                    out.append(p);
-                }
-            }
-        }
-        return out;
-    }
-
-    def clib_symbol_lib -> dict[str, str] {
-        out: dict[str, str] = {};
-        for u in self.units {
-            for (sym, lib) in u.iface.clib_symbol_lib.items() {
-                out.setdefault(sym, lib);
-            }
-        }
-        return out;
-    }
-
-    def pub_exports -> list[str] {
-        """The C ABI of a shared artifact. A library's is its root module's
-        `:pub` surface: in the modules it imports `:pub` is how Jac modules see
-        each other, and keeping those internal lets the whole-program optimizer
-        specialize and drop them as it does for an executable.""";
-        out: list[str] = [];
-        for u in ([self.root_unit()] if self.library_api else self.units) {
-            for sym in u.iface.pub_symbols() {
-                if sym not in out {
-                    out.append(sym);
-                }
-            }
-        }
-        return out;
-    }
-
-    def has_unit(rel: str) -> bool {
-        want = os.path.realpath(kernel_unit_path(rel));
-        return any(u.path == want for u in self.units);
-    }
-
-    def glue_spec(kind: ArtifactKind, platform: str, static_musl: bool) -> GlueSpec {
-        units: list[GlueUnit] = [];
-        str_new_symbol = "";
-        for unit in [self.root_unit()] + self.units {
-            constructor = unit.iface.exports.get(STR_NEW_SYMBOL);
-            if constructor is not None {
-                str_new_symbol = constructor.symbol;
-                break;
-            }
-        }
-        hook_supplied = any(REGION_DIED_HOOK in u.iface.exports for u in self.units);
-        root_index = -1;
-        for u in self.init_units() {
-            if u.is_root and root_index < 0 {
-                root_index = len(units);
-            }
-            exports = u.iface.exports;
-            probe = exports.get("__jac_rt_probe");
-            units.append(
-                GlueUnit(
-                    prefix=u.prefix,
-                    init_symbol=u.iface.init_symbol,
-                    entry_symbol=u.iface.entry_symbol,
-                    probe=probe.symbol if probe is not None else "",
-                    retain="jac_retain" in exports,
-                    release="jac_release" in exports,
-                    str_new=str_new_symbol
-                )
-            );
-        }
-        is_elf = platform == "elf";
-        return GlueSpec(
-            units=units,
-            root_index=root_index,
-            shared=(kind == ArtifactKind.SHARED),
-            platform=platform if kind != ArtifactKind.JIT else "jit",
-            static_musl=static_musl,
-            triple=self.triple,
-            clib_paths=self.clib_paths(),
-            needs_atexit_shim=(
-                is_elf and (kind == ArtifactKind.SHARED or not static_musl)
-            ),
-            needs_region_hook=not hook_supplied
-        );
     }
 }
 
-def initialization_order(units: list[LinkUnit], roots: list[str]) -> list[LinkUnit] {
+impl check_prefix_collisions(units: list[LinkUnit]) {
+    owners: dict[str, str] = {};
+    for u in units {
+        first = owners.get(u.prefix);
+        if first is not None and first != u.path {
+            raise LinkPlanError(
+                f"{first} and {u.path} share the native unit prefix {u.prefix}: "
+                "their package roots have the same directory name; rename one root"
+            );
+        }
+        owners[u.prefix] = u.path;
+    }
+}
+
+impl LinkInputs.digest(plan_digest: str, kind: str, soname: str) -> str {
+    """Hash a build action from code inputs and runtime contents.
+        Code inputs may be bitcode before whole-program optimization.""";
+    payload = {
+        "plan": plan_digest,
+        "kind": kind,
+        "soname": soname,
+        "objects": [hashlib.sha256(b).hexdigest() for b in self.objects],
+        "archives": [_file_digest(p) for p in self.archives],
+        "crt": [_file_digest(p) for p in self.crt_objects],
+        "libraries": self.needed_libs,
+        "symbols": self.symbol_lib_map,
+        "exports": self.export_symbols,
+        "static_musl": self.static_musl
+    };
+    return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest();
+}
+
+impl _file_digest(path: str) -> str {
+    try {
+        return f"{os.path.basename(path)}:{_sha256_of(path)}";
+    } except OSError {
+        return f"{path}:missing";
+    }
+}
+
+impl LinkPlan.unit(path: str) -> (LinkUnit | None) {
+    real = os.path.realpath(path);
+    for u in self.units {
+        if u.path == real {
+            return u;
+        }
+    }
+    return None;
+}
+
+impl LinkPlan.root_unit -> LinkUnit {
+    for u in self.units {
+        if u.is_root {
+            return u;
+        }
+    }
+    raise LinkPlanError("link plan has no root_u unit");
+}
+
+impl LinkPlan.root_index -> int {
+    for (i, u) in enumerate(self.units) {
+        if u.is_root {
+            return i;
+        }
+    }
+    return -1;
+}
+
+impl LinkPlan.init_units -> list[LinkUnit] {
+    return initialization_order(self.units, self.roots);
+}
+
+impl LinkPlan.init_symbols -> list[str] {
+    return [
+        u.iface.init_symbol
+        for u in self.init_units()
+        if u.iface.init_symbol
+    ];
+}
+
+impl LinkPlan.plan_digest -> str {
+    h = hashlib.sha256();
+    h.update(f"plan-format={PLAN_DIGEST_FORMAT}".encode());
+    h.update(self.mode.encode());
+    h.update(self.triple.encode());
+    h.update(self.options.codegen_identity().encode());
+
+    h.update(native_producer_digest(self.options.kernel_build).encode());
+    if self.library_api {
+        h.update(b"library-api");
+    }
+
+    for u in self.units {
+        h.update(native_unit_identity(u.path).encode());
+        h.update(u.modkey.encode());
+        h.update(u.digest.encode());
+    }
+    return h.hexdigest();
+}
+
+impl LinkPlan.merged_layout -> dict[str, any] {
+    return merge_class_layouts([u.iface for u in self.units]);
+}
+
+impl LinkPlan.layout_digest -> str {
+    return layout_digest_of(self.merged_layout());
+}
+
+impl LinkPlan.demoted_symbols -> list[str] {
+    out: list[str] = [];
+    for u in self.units {
+        for name in u.iface.demoted {
+            out.append(f"{os.path.basename(u.path)}:{name}");
+        }
+    }
+    return sorted(out);
+}
+
+impl LinkPlan.clib_paths -> list[str] {
+    out: list[str] = [];
+    for u in self.units {
+        for p in u.iface.clib_paths {
+            if p not in out {
+                out.append(p);
+            }
+        }
+    }
+    return out;
+}
+
+impl LinkPlan.clib_symbol_lib -> dict[str, str] {
+    out: dict[str, str] = {};
+    for u in self.units {
+        for (sym, lib) in u.iface.clib_symbol_lib.items() {
+            out.setdefault(sym, lib);
+        }
+    }
+    return out;
+}
+
+impl LinkPlan.pub_exports -> list[str] {
+    """The C ABI of a shared artifact. A library's is its root module's
+        `:pub` surface: in the modules it imports `:pub` is how Jac modules see
+        each other, and keeping those internal lets the whole-program optimizer
+        specialize and drop them as it does for an executable.""";
+    out: list[str] = [];
+    for u in ([self.root_unit()] if self.library_api else self.units) {
+        for sym in u.iface.pub_symbols() {
+            if sym not in out {
+                out.append(sym);
+            }
+        }
+    }
+    return out;
+}
+
+impl LinkPlan.has_unit(rel: str) -> bool {
+    want = os.path.realpath(kernel_unit_path(rel));
+    return any(u.path == want for u in self.units);
+}
+
+impl LinkPlan.glue_spec(
+    kind: ArtifactKind, platform: str, static_musl: bool
+) -> GlueSpec {
+    units: list[GlueUnit] = [];
+    str_new_symbol = "";
+    for unit in [self.root_unit()] + self.units {
+        constructor = unit.iface.exports.get(STR_NEW_SYMBOL);
+        if constructor is not None {
+            str_new_symbol = constructor.symbol;
+            break;
+        }
+    }
+    hook_supplied = any(REGION_DIED_HOOK in u.iface.exports for u in self.units);
+    root_index = -1;
+    for u in self.init_units() {
+        if u.is_root and root_index < 0 {
+            root_index = len(units);
+        }
+        exports = u.iface.exports;
+        probe = exports.get("__jac_rt_probe");
+        units.append(
+            GlueUnit(
+                prefix=u.prefix,
+                init_symbol=u.iface.init_symbol,
+                entry_symbol=u.iface.entry_symbol,
+                probe=probe.symbol if probe is not None else "",
+                retain="jac_retain" in exports,
+                release="jac_release" in exports,
+                str_new=str_new_symbol
+            )
+        );
+    }
+    is_elf = platform == "elf";
+    return GlueSpec(
+        units=units,
+        root_index=root_index,
+        shared=(kind == ArtifactKind.SHARED),
+        platform=platform if kind != ArtifactKind.JIT else "jit",
+        static_musl=static_musl,
+        triple=self.triple,
+        clib_paths=self.clib_paths(),
+        needs_atexit_shim=(is_elf and (kind == ArtifactKind.SHARED or not static_musl)),
+        needs_region_hook=not hook_supplied
+    );
+}
+
+impl initialization_order(units: list[LinkUnit], roots: list[str]) -> list[LinkUnit] {
     by_path: dict[str, LinkUnit] = {u.path: u for u in units};
     imports: dict[str, list[str]] = {
         u.path: [os.path.realpath(d) for d in u.iface.deps] for u in units
@@ -356,7 +500,7 @@ def initialization_order(units: list[LinkUnit], roots: list[str]) -> list[LinkUn
     return ordered;
 }
 
-def _init_cycle_message(
+impl _init_cycle_message(
     start: str, reads: dict[str, list[tuple[str, str]]], placed: set[str]
 ) -> str {
     chain: list[str] = [];
@@ -385,7 +529,7 @@ def _init_cycle_message(
     );
 }
 
-def _platform_of(triple: str) -> str {
+impl _platform_of(triple: str) -> str {
     tl = triple.lower();
     if ("windows" in tl) or ("msvc" in tl) or ("mingw" in tl) {
         return "pe";
@@ -399,7 +543,7 @@ def _platform_of(triple: str) -> str {
     return "elf";
 }
 
-def build_link_plan(
+impl build_link_plan(
     prog: JacProgram,
     roots: list[str],
     options: (CompileOptions | None) = None,
@@ -430,7 +574,7 @@ def build_link_plan(
     }
 }
 
-def _build_link_plan(
+impl _build_link_plan(
     prog: JacProgram,
     roots: list[str],
     options: (CompileOptions | None) = None,
@@ -651,7 +795,7 @@ def _build_link_plan(
     );
 }
 
-def _target_machine(plan: LinkPlan, kind: ArtifactKind) -> TargetMachine {
+impl _target_machine(plan: LinkPlan, kind: ArtifactKind) -> TargetMachine {
     init_object_codegen();
     target_ovr = plan.options.native_target or "";
     target = (
@@ -672,7 +816,7 @@ def _target_machine(plan: LinkPlan, kind: ArtifactKind) -> TargetMachine {
     return tm;
 }
 
-def callback_glue_ir(plan: LinkPlan) -> str {
+impl callback_glue_ir(plan: LinkPlan) -> str {
     if not plan.callback_bindings {
         return "";
     }
@@ -714,7 +858,7 @@ def callback_glue_ir(plan: LinkPlan) -> str {
     return text;
 }
 
-def heap_glue_ir(plan: LinkPlan) -> tuple[str, list[str]] {
+impl heap_glue_ir(plan: LinkPlan) -> tuple[str, list[str]] {
     declarations: dict[str, str] = {};
     defined: set[str] = set();
 
@@ -751,7 +895,7 @@ def heap_glue_ir(plan: LinkPlan) -> tuple[str, list[str]] {
     return inject_heap_accounting(text, managed);
 }
 
-def _glue_module(
+impl _glue_module(
     plan: LinkPlan, spec: GlueSpec, tm: (TargetMachine | None) = None
 ) -> tuple[ModuleRef, list[str]] {
     if tm is not None and not spec.data_layout {
@@ -773,7 +917,7 @@ def _glue_module(
     return (mod, exports);
 }
 
-def whole_program_module(
+impl whole_program_module(
     plan: LinkPlan, spec: GlueSpec
 ) -> tuple[ModuleRef, list[str]] {
     registry = plan.prog.native_units();
@@ -800,7 +944,7 @@ def whole_program_module(
     return (merged, exports);
 }
 
-def unit_objects(
+impl unit_objects(
     plan: LinkPlan, spec: GlueSpec, tm: TargetMachine
 ) -> tuple[list[bytes], list[str]] {
     registry = plan.prog.native_units();
@@ -837,7 +981,7 @@ def unit_objects(
     return (objs, exports);
 }
 
-def name_private_functions(merged: ModuleRef) {
+impl name_private_functions(merged: ModuleRef) {
     """Give `private` functions a symbol (`internal` linkage) so the JAC_SYMMAP
     symbol map names them. Both linkages are module-local, but a private
     function gets no symbol-table entry, so a profile charged its cost to the
@@ -852,7 +996,7 @@ def name_private_functions(merged: ModuleRef) {
     }
 }
 
-def optimize_whole_program(
+impl optimize_whole_program(
     plan: LinkPlan, merged: ModuleRef, kind: ArtifactKind, tm: TargetMachine
 ) -> None {
     opt_level = 0 if plan.options.native_debug else int(plan.options.opt_level or 0);
@@ -887,7 +1031,7 @@ def optimize_whole_program(
     mpm.run(merged, pb);
 }
 
-def optimize_merged_program(plan: LinkPlan, merged: ModuleRef, kind: ArtifactKind) {
+impl optimize_merged_program(plan: LinkPlan, merged: ModuleRef, kind: ArtifactKind) {
     """Internalize and optimize a merged whole program that is emitted as
     source rather than linked here, so the C backend translates the
     functions the roots reach instead of every unit of the runtime closure.
@@ -912,7 +1056,7 @@ def optimize_merged_program(plan: LinkPlan, merged: ModuleRef, kind: ArtifactKin
     }
 }
 
-def _log_phase(
+impl _log_phase(
     log: (Callable[[str], None] | None), phase: str, started: float
 ) -> float {
     now = time.perf_counter();
@@ -922,7 +1066,7 @@ def _log_phase(
     return now;
 }
 
-def plan_objects(
+impl plan_objects(
     plan: LinkPlan,
     spec: GlueSpec,
     kind: ArtifactKind,
@@ -957,7 +1101,7 @@ def plan_objects(
     return ([object_bytes], exports);
 }
 
-def _write_sidecar(
+impl _write_sidecar(
     plan: LinkPlan,
     output_path: str,
     plan_digest: str,
@@ -996,7 +1140,7 @@ def _write_sidecar(
     return (classes, ldigest);
 }
 
-def _sha256_of(path: str) -> str {
+impl _sha256_of(path: str) -> str {
     h = hashlib.sha256();
     with open(path, "rb") as f {
         h.update(f.read());
@@ -1004,7 +1148,7 @@ def _sha256_of(path: str) -> str {
     return h.hexdigest();
 }
 
-def _reuse_artifact(
+impl _reuse_artifact(
     plan: LinkPlan, output_path: str, action_digest: str
 ) -> (LinkResult | None) {
     (rebuild, _) = cache_mode();
@@ -1044,7 +1188,7 @@ def _reuse_artifact(
     }
 }
 
-def _links_for_host(triple: str) -> bool {
+impl _links_for_host(triple: str) -> bool {
     if not sys.platform.startswith("linux") {
         return False;
     }
@@ -1055,7 +1199,7 @@ def _links_for_host(triple: str) -> bool {
         and ("musl" in target[-1]) == ("musl" in host[-1]);
 }
 
-def link_artifact(
+impl link_artifact(
     plan: LinkPlan,
     output_path: str,
     kind: ArtifactKind,
@@ -1266,11 +1410,11 @@ def link_artifact(
     );
 }
 
-def _unmangled(symbol: str, mangled: bool) -> str {
+impl _unmangled(symbol: str, mangled: bool) -> str {
     return symbol[1:] if mangled and symbol.startswith("_") else symbol;
 }
 
-def unresolved_unit_symbols(plan: LinkPlan, objects: list[bytes]) -> list[str] {
+impl unresolved_unit_symbols(plan: LinkPlan, objects: list[bytes]) -> list[str] {
     labels = (
         [os.path.basename(u.path) for u in plan.units] + ["the link glue"]
             if len(objects) == len(plan.units) + 1
@@ -1316,7 +1460,7 @@ def unresolved_unit_symbols(plan: LinkPlan, objects: list[bytes]) -> list[str] {
     return out;
 }
 
-def expose_root_exports(plan: LinkPlan, merged: ModuleRef) -> list[str] {
+impl expose_root_exports(plan: LinkPlan, merged: ModuleRef) -> list[str] {
     """A wasm host calls the entry module's functions by the names the
     source gives them: the root unit's module-level functions and globals
     take their bare names in the merged module, the way `:pub` symbols
@@ -1359,14 +1503,14 @@ def expose_root_exports(plan: LinkPlan, merged: ModuleRef) -> list[str] {
     return exposed;
 }
 
-def wasm_program_ir(plan: LinkPlan) -> str {
+impl wasm_program_ir(plan: LinkPlan) -> str {
     spec = plan.glue_spec(ArtifactKind.WASM, "wasm", False);
     (merged, _exports) = whole_program_module(plan, spec);
     expose_root_exports(plan, merged);
     return str(merged);
 }
 
-def link_wasm(
+impl link_wasm(
     plan: LinkPlan, output_path: str, app_imports: (set | None) = None
 ) -> LinkResult {
     merged_ir = wasm_program_ir(plan);
@@ -1386,7 +1530,7 @@ def link_wasm(
     );
 }
 
-def undefined_functions(mod: ModuleRef) -> list[str] {
+impl undefined_functions(mod: ModuleRef) -> list[str] {
     names: list[str] = [];
     mod_any: any = mod;
     for fn in mod_any.functions {
@@ -1397,7 +1541,7 @@ def undefined_functions(mod: ModuleRef) -> list[str] {
     return sorted(names);
 }
 
-def load_jit_library(lib_path: str) -> ctypes.CDLL {
+impl load_jit_library(lib_path: str) -> ctypes.CDLL {
     import os;
     import sys;
     import ctypes.util;
@@ -1453,7 +1597,7 @@ def load_jit_library(lib_path: str) -> ctypes.CDLL {
     raise LinkPlanError(f"C library not found for JIT: {lib_path}");
 }
 
-def _jit_image_path(plan: LinkPlan) -> (str | None) {
+impl _jit_image_path(plan: LinkPlan) -> (str | None) {
     """Where the optimized whole-program image for this plan lives. The plan
     digest covers the units (content and interface), the mode, the triple,
     the codegen identity and the compiler, which is everything the merged
@@ -1473,7 +1617,7 @@ def _jit_image_path(plan: LinkPlan) -> (str | None) {
     return os.path.join(str(get_jir_cache_dir()), "jit", h.hexdigest()[:32] + ".bc");
 }
 
-def _has_global(module: ModuleRef, name: str) -> bool {
+impl _has_global(module: ModuleRef, name: str) -> bool {
     try {
         module.get_global_variable(name);
     } except NameError {
@@ -1482,14 +1626,14 @@ def _has_global(module: ModuleRef, name: str) -> bool {
     return True;
 }
 
-def _mark_host_rc_threaded(engine: ExecutionEngine) {
+impl _mark_host_rc_threaded(engine: ExecutionEngine) {
     address = int(engine.get_global_value_address(RC_THREADED_SYMBOL));
     if address {
         ctypes.c_uint8.from_address(address).value = 1;
     }
 }
 
-def jit_engine(plan: LinkPlan) -> ExecutionEngine {
+impl jit_engine(plan: LinkPlan) -> ExecutionEngine {
     tm = _target_machine(plan, ArtifactKind.JIT);
     registry = plan.prog.native_units();
     image = _jit_image_path(plan);
@@ -1571,7 +1715,7 @@ def jit_engine(plan: LinkPlan) -> ExecutionEngine {
     return engine;
 }
 
-def jit_engine_for_module(
+impl jit_engine_for_module(
     prog: JacProgram, module: any, options: CompileOptions
 ) -> (ExecutionEngine | None) {
     if not (module?.loc and module.loc.mod_path) {
@@ -1584,14 +1728,14 @@ def jit_engine_for_module(
     return jit_engine(plan);
 }
 
-def jit_engine_for_cached(
+impl jit_engine_for_cached(
     prog: JacProgram, path: str, options: CompileOptions
 ) -> (ExecutionEngine | None) {
     plan = build_link_plan(prog, [path], options, mode=NATIVE_LINK_MODE_BITCODE);
     return jit_engine(plan);
 }
 
-def internalize_native_implementation(module: ModuleRef, exports: list[str]) {
+impl internalize_native_implementation(module: ModuleRef, exports: list[str]) {
     public = set(exports);
     values: list[ValueRef] = list(module.functions);
     values.extend(module.global_variables);

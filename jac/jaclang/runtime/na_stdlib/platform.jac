@@ -44,7 +44,41 @@ obj:pub uname_result {
         processor: str;
 }
 
-def _load_uname {
+def _load_uname;
+
+def _processor -> str;
+
+def:pub uname -> uname_result;
+
+def:pub system -> str;
+
+def:pub `node -> str;
+
+def:pub release -> str;
+
+def:pub version -> str;
+
+def:pub machine -> str;
+
+def:pub processor -> str;
+
+def:pub architecture(
+    executable: str = "", bits: str = "", linkage: str = ""
+) -> tuple[(str, str)];
+
+def:pub libc_ver(
+    executable: str = "", lib: str = "", version: str = ""
+) -> tuple[(str, str)];
+
+def:pub python_version -> str;
+
+def:pub python_version_tuple -> tuple[(str, str, str)];
+
+def _platform_join(args: list[str]) -> str;
+
+def:pub platform(aliased: bool = False, terse: bool = False) -> str;
+
+impl _load_uname {
     if not _UC.done {
         if plat_uname_ok() {
             _UC.system = plat_sysname();
@@ -57,7 +91,7 @@ def _load_uname {
     }
 }
 
-def _processor -> str {
+impl _processor -> str {
     if not _UC.pdone {
         _UC.processor = plat_uname_p();
         _UC.pdone = True;
@@ -65,7 +99,7 @@ def _processor -> str {
     return _UC.processor;
 }
 
-def:pub uname -> uname_result {
+impl uname -> uname_result {
     _load_uname();
     return uname_result(
         system=_UC.system,
@@ -77,36 +111,36 @@ def:pub uname -> uname_result {
     );
 }
 
-def:pub system -> str {
+impl system -> str {
     _load_uname();
     return _UC.system;
 }
 
-def:pub `node -> str {
+impl `node -> str {
     _load_uname();
     return _UC.node;
 }
 
-def:pub release -> str {
+impl release -> str {
     _load_uname();
     return _UC.release;
 }
 
-def:pub version -> str {
+impl version -> str {
     _load_uname();
     return _UC.version;
 }
 
-def:pub machine -> str {
+impl machine -> str {
     _load_uname();
     return _UC.machine;
 }
 
-def:pub processor -> str {
+impl processor -> str {
     return _processor();
 }
 
-def:pub architecture(
+impl architecture(
     executable: str = "", bits: str = "", linkage: str = ""
 ) -> tuple[(str, str)] {
     b: str = bits;
@@ -120,7 +154,7 @@ def:pub architecture(
     return (b, l);
 }
 
-def:pub libc_ver(
+impl libc_ver(
     executable: str = "", lib: str = "", version: str = ""
 ) -> tuple[(str, str)] {
     if not _UC.ldone {
@@ -134,11 +168,11 @@ def:pub libc_ver(
     return (_UC.libc_n, _UC.libc_v);
 }
 
-def:pub python_version -> str {
+impl python_version -> str {
     return _PY_VERSION;
 }
 
-def:pub python_version_tuple -> tuple[(str, str, str)] {
+impl python_version_tuple -> tuple[(str, str, str)] {
     major: str = _PY_VERSION[0:_PY_VERSION.find(".")];
     rest: str = _PY_VERSION[_PY_VERSION.find(".") + 1:];
     minor: str = rest[0:rest.find(".")];
@@ -146,7 +180,7 @@ def:pub python_version_tuple -> tuple[(str, str, str)] {
     return (major, minor, patch);
 }
 
-def _platform_join(args: list[str]) -> str {
+impl _platform_join(args: list[str]) -> str {
     parts: list[str] = [];
     for a in args {
         t: str = a.strip();
@@ -189,7 +223,7 @@ def _platform_join(args: list[str]) -> str {
     return p;
 }
 
-def:pub platform(aliased: bool = False, terse: bool = False) -> str {
+impl platform(aliased: bool = False, terse: bool = False) -> str {
     if terse {
         if _UC.pdone_t {
             return _UC.pterse;

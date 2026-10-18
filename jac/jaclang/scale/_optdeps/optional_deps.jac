@@ -1,4 +1,8 @@
-def require_optional(package: str, capability: str) {
+def require_optional(package: str, capability: str);
+
+def is_optional_available(package: str) -> bool;
+
+impl require_optional(package: str, capability: str) {
     try {
         __import__(package);
     } except (ImportError, ValueError) {
@@ -9,7 +13,7 @@ def require_optional(package: str, capability: str) {
     }
 }
 
-def is_optional_available(package: str) -> bool {
+impl is_optional_available(package: str) -> bool {
     try {
         __import__(package);
         return True;

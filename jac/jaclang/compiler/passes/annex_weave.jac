@@ -14,7 +14,23 @@ obj WovenAnnex {
         consumer: str = "";
 }
 
-def merge_annex_into(nd: Module, annex_mod: Module) -> None {
+def merge_annex_into(nd: Module, annex_mod: Module) -> None;
+
+def import_form(
+    is_absorb: bool, is_typed: bool, is_comptime: bool, from_form: bool
+) -> str;
+
+def import_items(stmt: Import) -> list[tuple[tuple[str, str, str, str], UniNode]];
+
+def import_keys(stmt: Import) -> set[tuple[str, str, str, str]];
+
+def relative_twin(
+    key: tuple[str, str, str, str], consumer: str
+) -> tuple[str, str, str, str];
+
+def prune_generated_imports(mod: Module, generated_path: str, consumer: str) -> None;
+
+impl merge_annex_into(nd: Module, annex_mod: Module) -> None {
     stmts = list(annex_mod.body);
     if not stmts {
         return;
@@ -27,7 +43,7 @@ def merge_annex_into(nd: Module, annex_mod: Module) -> None {
     }
 }
 
-def import_form(
+impl import_form(
     is_absorb: bool, is_typed: bool, is_comptime: bool, from_form: bool
 ) -> str {
     words: list[str] = [];
@@ -44,7 +60,7 @@ def import_form(
     return " ".join(words);
 }
 
-def import_items(stmt: Import) -> list[tuple[tuple[str, str, str, str], UniNode]] {
+impl import_items(stmt: Import) -> list[tuple[tuple[str, str, str, str], UniNode]] {
     from_loc = stmt.from_loc;
     form = import_form(
         stmt.is_absorb, stmt.is_typed, stmt.is_comptime, from_loc is not None
@@ -61,11 +77,11 @@ def import_items(stmt: Import) -> list[tuple[tuple[str, str, str, str], UniNode]
     return out;
 }
 
-def import_keys(stmt: Import) -> set[tuple[str, str, str, str]] {
+impl import_keys(stmt: Import) -> set[tuple[str, str, str, str]] {
     return {key for (key, _item) in import_items(stmt)};
 }
 
-def relative_twin(
+impl relative_twin(
     key: tuple[str, str, str, str], consumer: str
 ) -> tuple[str, str, str, str] {
     (provider, form, name, alias) = key;
@@ -79,7 +95,7 @@ def relative_twin(
     return key;
 }
 
-def prune_generated_imports(mod: Module, generated_path: str, consumer: str) -> None {
+impl prune_generated_imports(mod: Module, generated_path: str, consumer: str) -> None {
     written: set[tuple[str, str, str, str]] = set();
     generated: list[Import] = [];
     for stmt in mod.body {

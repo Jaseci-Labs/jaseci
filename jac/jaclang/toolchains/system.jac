@@ -3,7 +3,28 @@ import shutil;
 import subprocess;
 import from pathlib { Path }
 
-def install_linux_packages(packages: dict[str, list[str]]) {
+def install_linux_packages(packages: dict[str, list[str]]);
+
+def webkit_module -> str;
+
+def ensure_linux_desktop;
+
+
+def ensure_mac_desktop;
+
+
+def mac_desktop_ready -> bool;
+
+
+def ensure_desktop_host -> str;
+
+
+def ensure_patchelf -> str;
+
+
+def desktop_system_ready -> bool;
+
+impl install_linux_packages(packages: dict[str, list[str]]) {
     if offline() {
         raise RuntimeError(
             "Required system libraries are missing and jac.toml sets `[network] offline`. Run setup online first."
@@ -59,7 +80,7 @@ def install_linux_packages(packages: dict[str, list[str]]) {
     );
 }
 
-def webkit_module -> str {
+impl webkit_module -> str {
     pkg = shutil.which("pkg-config");
     if not pkg {
         return "";
@@ -73,7 +94,7 @@ def webkit_module -> str {
     return "";
 }
 
-def ensure_linux_desktop {
+impl ensure_linux_desktop {
     host = host_platform();
     if not host.startswith("linux-") {
         raise RuntimeError(f"WebKitGTK provisioning needs a Linux host, not {host}.");
@@ -101,7 +122,7 @@ def ensure_linux_desktop {
 }
 
 
-def ensure_mac_desktop {
+impl ensure_mac_desktop {
     if mac_desktop_ready() {
         return;
     }
@@ -112,7 +133,7 @@ def ensure_mac_desktop {
 }
 
 
-def mac_desktop_ready -> bool {
+impl mac_desktop_ready -> bool {
     selector = shutil.which("xcode-select");
     if not selector
         or subprocess.run([selector, "-p"], capture_output=True).returncode != 0 {
@@ -122,7 +143,7 @@ def mac_desktop_ready -> bool {
 }
 
 
-def ensure_desktop_host -> str {
+impl ensure_desktop_host -> str {
     host = host_platform();
     if host.startswith("linux-") {
         ensure_linux_desktop();
@@ -138,11 +159,11 @@ def ensure_desktop_host -> str {
 }
 
 
-def ensure_patchelf -> str {
+impl ensure_patchelf -> str {
     return str(tool_path("patchelf"));
 }
 
 
-def desktop_system_ready -> bool {
+impl desktop_system_ready -> bool {
     return bool(webkit_module() and shutil.which("g++"));
 }

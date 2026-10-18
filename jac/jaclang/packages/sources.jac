@@ -12,7 +12,17 @@ obj GitCheckout {
         tree: Path;
 }
 
-def _git(args: list[str], cwd: Path | None = None) -> str {
+def _git(args: list[str], cwd: Path | None = None) -> str;
+
+def _mirror_dir(url: str) -> Path;
+
+def checkout(url: str, rev: str = "") -> GitCheckout;
+
+def pack_checkout(co: GitCheckout) -> tuple[bytes, str];
+
+def resolve_path(base: Path, rel: str) -> Path;
+
+impl _git(args: list[str], cwd: Path | None = None) -> str {
     try {
         done = subprocess.run(
             ["git", *args],
@@ -30,11 +40,11 @@ def _git(args: list[str], cwd: Path | None = None) -> str {
     return done.stdout.strip();
 }
 
-def _mirror_dir(url: str) -> Path {
+impl _mirror_dir(url: str) -> Path {
     return bucket("pkg-git").ensure() / hashlib.sha256(url.encode()).hexdigest()[:20];
 }
 
-def checkout(url: str, rev: str = "") -> GitCheckout {
+impl checkout(url: str, rev: str = "") -> GitCheckout {
     mirror = _mirror_dir(url);
     with FileLock(mirror.with_suffix(".lock")) {
         if not (mirror / "HEAD").is_file() {
@@ -81,12 +91,12 @@ def checkout(url: str, rev: str = "") -> GitCheckout {
     return GitCheckout(url=url, commit=commit, tree=work);
 }
 
-def pack_checkout(co: GitCheckout) -> tuple[bytes, str] {
+impl pack_checkout(co: GitCheckout) -> tuple[bytes, str] {
     data = pack_source_tree(co.tree);
     return (data, hashlib.sha256(data).hexdigest());
 }
 
-def resolve_path(base: Path, rel: str) -> Path {
+impl resolve_path(base: Path, rel: str) -> Path {
     target = Path(rel);
     if not target.is_absolute() {
         target = base / target;

@@ -42,7 +42,57 @@ obj UnitProducts {
         jac_deps: list[str] = [];
 }
 
-def definition_span_rows(tree: uni.Module) -> list[str] {
+def definition_span_rows(tree: uni.Module) -> list[str];
+
+def note_definition_span(rows: list[str], definition: uni.UniNode, qualname: str);
+
+def dependency_span_rows(module: uni.Module, program: JacProgram) -> list[str];
+
+def jac_dependencies(module: uni.Module) -> list[str];
+
+def import_edge_rows(module: uni.Module) -> list[str];
+
+def interop_record(module: uni.Module) -> dict[str, any];
+
+def app_edges_record(edges: list[tuple[str, str]]) -> list[any];
+
+def interop_manifest_of(record: dict[str, any]) -> InteropManifest;
+
+def literal_to_json(value: any) -> dict[str, any];
+
+def literal_from_json(raw: any) -> any;
+
+def str_list_map(value: any) -> dict[str, list[str]];
+
+def manifest_record(manifest: ClientManifest) -> dict[str, any];
+
+def manifest_from_record(raw: dict[str, any]) -> ClientManifest;
+
+def client_artifact_json(artifact: ClientArtifact) -> str;
+
+def source_map_record(segments: list[tuple[int, int, int, int, str]]) -> list[any];
+
+def source_segment(raw: any) -> (tuple[int, int, int, int, str] | None);
+
+def client_artifact_from_json(text: str) -> (ClientArtifact | None);
+
+def client_pulled_indexes(module: uni.Module) -> list[int];
+
+def client_artifact_of(module: uni.Module) -> (ClientArtifact | None);
+
+def placement_record(module: uni.Module, program: JacProgram) -> str;
+
+def unit_products(module: uni.Module, program: JacProgram) -> UnitProducts;
+
+def native_products(module: uni.Module, products: UnitProducts);
+
+def products_record(products: UnitProducts) -> dict[str, any];
+
+def products_from_record(raw: dict[str, any]) -> UnitProducts;
+
+def definition_deps(products: UnitProducts) -> list[tuple[str, str]];
+
+impl definition_span_rows(tree: uni.Module) -> list[str] {
     rows: list[str] = [];
     for ability in tree.get_all_sub_nodes(uni.Ability) {
         note_definition_span(rows, ability, uni.definition_qualname(ability));
@@ -60,7 +110,7 @@ def definition_span_rows(tree: uni.Module) -> list[str] {
     return rows;
 }
 
-def note_definition_span(rows: list[str], definition: uni.UniNode, qualname: str) {
+impl note_definition_span(rows: list[str], definition: uni.UniNode, qualname: str) {
     loc = definition.loc;
     if not qualname or loc is None or not loc.mod_path {
         return;
@@ -76,7 +126,7 @@ def note_definition_span(rows: list[str], definition: uni.UniNode, qualname: str
     );
 }
 
-def dependency_span_rows(module: uni.Module, program: JacProgram) -> list[str] {
+impl dependency_span_rows(module: uni.Module, program: JacProgram) -> list[str] {
     import from jaclang.compiler.driver.compilation_context { program_for }
     import from jaclang.compiler.frontend.host { active_host }
     import from jaclang.compiler.types.stubcat.reader { CatModule }
@@ -103,7 +153,7 @@ def dependency_span_rows(module: uni.Module, program: JacProgram) -> list[str] {
     return rows;
 }
 
-def jac_dependencies(module: uni.Module) -> list[str] {
+impl jac_dependencies(module: uni.Module) -> list[str] {
     found: set[str] = set();
     for item in module.get_all_sub_nodes(uni.Import) {
         if not item.is_jac {
@@ -143,7 +193,7 @@ def jac_dependencies(module: uni.Module) -> list[str] {
     return sorted(found);
 }
 
-def import_edge_rows(module: uni.Module) -> list[str] {
+impl import_edge_rows(module: uni.Module) -> list[str] {
     rows: list[str] = [];
     for item in module.body {
         if not isinstance(item, uni.Import) or not item.is_jac {
@@ -182,7 +232,7 @@ def import_edge_rows(module: uni.Module) -> list[str] {
     return rows;
 }
 
-def interop_record(module: uni.Module) -> dict[str, any] {
+impl interop_record(module: uni.Module) -> dict[str, any] {
     gen = module.gen;
     manifest = gen.interop_manifest;
     if manifest is None {
@@ -217,7 +267,7 @@ def interop_record(module: uni.Module) -> dict[str, any] {
     };
 }
 
-def app_edges_record(edges: list[tuple[str, str]]) -> list[any] {
+impl app_edges_record(edges: list[tuple[str, str]]) -> list[any] {
     rows: list[any] = [];
     for (consumer, provider) in edges {
         row: list[any] = [consumer, provider];
@@ -226,7 +276,7 @@ def app_edges_record(edges: list[tuple[str, str]]) -> list[any] {
     return rows;
 }
 
-def interop_manifest_of(record: dict[str, any]) -> InteropManifest {
+impl interop_manifest_of(record: dict[str, any]) -> InteropManifest {
     manifest = InteropManifest();
     bindings: dict[str, dict[str, any]] = record.get('bindings', {});
     for (name, data) in bindings.items() {
@@ -257,7 +307,7 @@ def interop_manifest_of(record: dict[str, any]) -> InteropManifest {
     return manifest;
 }
 
-def literal_to_json(value: any) -> dict[str, any] {
+impl literal_to_json(value: any) -> dict[str, any] {
     if value is None or isinstance(value, (bool, int, float, str)) {
         return {"v": value};
     }
@@ -288,7 +338,7 @@ def literal_to_json(value: any) -> dict[str, any] {
     return {"v": str(value)};
 }
 
-def literal_from_json(raw: any) -> any {
+impl literal_from_json(raw: any) -> any {
     import from jaclang.compiler.frontend.kernel_inputs { json_map }
     record = json_map(raw);
     if "b" in record {
@@ -310,12 +360,12 @@ def literal_from_json(raw: any) -> any {
     return record.get("v");
 }
 
-def str_list_map(value: any) -> dict[str, list[str]] {
+impl str_list_map(value: any) -> dict[str, list[str]] {
     import from jaclang.compiler.frontend.kernel_inputs { json_map, json_str_list }
     return {key: json_str_list(item) for (key, item) in json_map(value).items()};
 }
 
-def manifest_record(manifest: ClientManifest) -> dict[str, any] {
+impl manifest_record(manifest: ClientManifest) -> dict[str, any] {
     return {
         "exports": list(manifest.exports),
         "globals": list(manifest.globals),
@@ -337,7 +387,7 @@ def manifest_record(manifest: ClientManifest) -> dict[str, any] {
     };
 }
 
-def manifest_from_record(raw: dict[str, any]) -> ClientManifest {
+impl manifest_from_record(raw: dict[str, any]) -> ClientManifest {
     import from jaclang.compiler.frontend.kernel_inputs {
         json_map,
         json_maps,
@@ -371,7 +421,7 @@ def manifest_from_record(raw: dict[str, any]) -> ClientManifest {
     );
 }
 
-def client_artifact_json(artifact: ClientArtifact) -> str {
+impl client_artifact_json(artifact: ClientArtifact) -> str {
     return json.dumps(
         {
             "version": CLIENT_RECORD_VERSION,
@@ -388,7 +438,7 @@ def client_artifact_json(artifact: ClientArtifact) -> str {
     );
 }
 
-def source_map_record(segments: list[tuple[int, int, int, int, str]]) -> list[any] {
+impl source_map_record(segments: list[tuple[int, int, int, int, str]]) -> list[any] {
     rows: list[any] = [];
     for (line, col, src_line, src_col, src_path) in segments {
         row: list[any] = [line, col, src_line, src_col, src_path];
@@ -397,14 +447,14 @@ def source_map_record(segments: list[tuple[int, int, int, int, str]]) -> list[an
     return rows;
 }
 
-def source_segment(raw: any) -> (tuple[int, int, int, int, str] | None) {
+impl source_segment(raw: any) -> (tuple[int, int, int, int, str] | None) {
     if not isinstance(raw, list) or len(raw) != 5 {
         return None;
     }
     return (int(raw[0]), int(raw[1]), int(raw[2]), int(raw[3]), str(raw[4]));
 }
 
-def client_artifact_from_json(text: str) -> (ClientArtifact | None) {
+impl client_artifact_from_json(text: str) -> (ClientArtifact | None) {
     import from jaclang.compiler.frontend.kernel_inputs {
         json_map,
         json_str_list,
@@ -451,7 +501,7 @@ def client_artifact_from_json(text: str) -> (ClientArtifact | None) {
     );
 }
 
-def client_pulled_indexes(module: uni.Module) -> list[int] {
+impl client_pulled_indexes(module: uni.Module) -> list[int] {
     pulled: list[int] = [];
     for (index, stmt) in enumerate(module.body) {
         if isinstance(stmt, uni.ContextAwareNode) and stmt.codespace_dual {
@@ -461,7 +511,7 @@ def client_pulled_indexes(module: uni.Module) -> list[int] {
     return pulled;
 }
 
-def client_artifact_of(module: uni.Module) -> (ClientArtifact | None) {
+impl client_artifact_of(module: uni.Module) -> (ClientArtifact | None) {
     js = module.gen.js;
     if not js {
         return None;
@@ -500,7 +550,7 @@ def client_artifact_of(module: uni.Module) -> (ClientArtifact | None) {
     );
 }
 
-def placement_record(module: uni.Module, program: JacProgram) -> str {
+impl placement_record(module: uni.Module, program: JacProgram) -> str {
     import from jaclang.compiler.placement.placement { get_module_summary }
     import from jaclang.compiler.placement.placement_export { summary_to_dict }
     try {
@@ -510,7 +560,7 @@ def placement_record(module: uni.Module, program: JacProgram) -> str {
     }
 }
 
-def unit_products(module: uni.Module, program: JacProgram) -> UnitProducts {
+impl unit_products(module: uni.Module, program: JacProgram) -> UnitProducts {
     products = UnitProducts(
         path=module.loc.mod_path,
         jcir=module.gen.jcir or b"",
@@ -558,7 +608,7 @@ def unit_products(module: uni.Module, program: JacProgram) -> UnitProducts {
     return products;
 }
 
-def native_products(module: uni.Module, products: UnitProducts) {
+impl native_products(module: uni.Module, products: UnitProducts) {
     import from jaclang.compiler.driver.native_iface { native_layout_to_dict }
     gen = module.gen;
     built = gen.ir_module;
@@ -575,7 +625,7 @@ def native_products(module: uni.Module, products: UnitProducts) {
     products.native_deps = list(gen.native_deps);
 }
 
-def products_record(products: UnitProducts) -> dict[str, any] {
+impl products_record(products: UnitProducts) -> dict[str, any] {
     return {
         "path": products.path,
         "jcir": base64.b64encode(products.jcir).decode("ascii"),
@@ -602,7 +652,7 @@ def products_record(products: UnitProducts) -> dict[str, any] {
     };
 }
 
-def products_from_record(raw: dict[str, any]) -> UnitProducts {
+impl products_from_record(raw: dict[str, any]) -> UnitProducts {
     import from jaclang.compiler.frontend.kernel_inputs { json_str_list }
     return UnitProducts(
         path=str(raw.get("path", "")),
@@ -630,7 +680,7 @@ def products_from_record(raw: dict[str, any]) -> UnitProducts {
     );
 }
 
-def definition_deps(products: UnitProducts) -> list[tuple[str, str]] {
+impl definition_deps(products: UnitProducts) -> list[tuple[str, str]] {
     out: list[tuple[str, str]] = [];
     for row in products.ct_def_deps {
         (path, _, qualname) = row.partition(DEF_DEP_SEP);

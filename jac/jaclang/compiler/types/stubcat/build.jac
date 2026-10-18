@@ -16,7 +16,41 @@ glob PRELUDE_ORDER: tuple[str, ...] = (
          "typing_ambient"
      );
 
-def parse_versions(stdlib_dir: str) -> dict[str, tuple[int, int]] {
+def parse_versions(stdlib_dir: str) -> dict[str, tuple[int, int]];
+
+def _minor_of(text: str) -> int;
+
+def version_ok(dotted: str, versions: dict[str, tuple[int, int]], minor: int) -> bool;
+
+def typeshed_module_files(stdlib_dir: str, minor: int) -> list[tuple[str, str]];
+
+def jac_internal_stub_files(pkg_dir: str) -> list[tuple[str, str]];
+
+def _rss_mb -> int;
+
+def build_catalog(
+    out_path: str,
+    only: (list[str] | None) = None,
+    pkg_dir: (str | None) = None,
+    quiet: bool = False
+) -> dict[str, any];
+
+def _build_catalog_inner(
+    prog: JacProgram,
+    out_path: str,
+    only: (list[str] | None),
+    pkg_dir: (str | None),
+    quiet: bool,
+    started: float
+) -> dict[str, any];
+
+def _cached_catalog(pkg_dir: (str | None)) -> str;
+
+def _keep_catalog(out: str, cached: str);
+
+def main(argv: list[str]) -> int;
+
+impl parse_versions(stdlib_dir: str) -> dict[str, tuple[int, int]] {
     out: dict[str, tuple[int, int]] = {};
     path = os.path.join(stdlib_dir, "VERSIONS");
     if not os.path.isfile(path) {
@@ -39,7 +73,7 @@ def parse_versions(stdlib_dir: str) -> dict[str, tuple[int, int]] {
     return out;
 }
 
-def _minor_of(text: str) -> int {
+impl _minor_of(text: str) -> int {
     parts = text.strip().split(".");
     if len(parts) < 2 {
         return 0;
@@ -51,7 +85,7 @@ def _minor_of(text: str) -> int {
     }
 }
 
-def version_ok(dotted: str, versions: dict[str, tuple[int, int]], minor: int) -> bool {
+impl version_ok(dotted: str, versions: dict[str, tuple[int, int]], minor: int) -> bool {
     parts = dotted.split(".");
     for n in range(len(parts), 0, -1) {
         prefix = ".".join(parts[:n]);
@@ -63,7 +97,7 @@ def version_ok(dotted: str, versions: dict[str, tuple[int, int]], minor: int) ->
     return True;
 }
 
-def typeshed_module_files(stdlib_dir: str, minor: int) -> list[tuple[str, str]] {
+impl typeshed_module_files(stdlib_dir: str, minor: int) -> list[tuple[str, str]] {
     versions = parse_versions(stdlib_dir);
     out: list[tuple[str, str]] = [];
     for (walk_dir, dirs, files) in os.walk(stdlib_dir) {
@@ -91,7 +125,7 @@ def typeshed_module_files(stdlib_dir: str, minor: int) -> list[tuple[str, str]] 
     return out;
 }
 
-def jac_internal_stub_files(pkg_dir: str) -> list[tuple[str, str]] {
+impl jac_internal_stub_files(pkg_dir: str) -> list[tuple[str, str]] {
     stub_dir = jac_internal_stub_dir(pkg_dir);
     out: list[tuple[str, str]] = [];
     if not os.path.isdir(stub_dir) {
@@ -105,7 +139,7 @@ def jac_internal_stub_files(pkg_dir: str) -> list[tuple[str, str]] {
     return out;
 }
 
-def _rss_mb -> int {
+impl _rss_mb -> int {
     import resource;
     usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss;
     return int(usage // (1024 * 1024))
@@ -113,7 +147,7 @@ def _rss_mb -> int {
         else int(usage // 1024);
 }
 
-def build_catalog(
+impl build_catalog(
     out_path: str,
     only: (list[str] | None) = None,
     pkg_dir: (str | None) = None,
@@ -136,7 +170,7 @@ def build_catalog(
     }
 }
 
-def _build_catalog_inner(
+impl _build_catalog_inner(
     prog: JacProgram,
     out_path: str,
     only: (list[str] | None),
@@ -223,7 +257,7 @@ def _build_catalog_inner(
     return manifest;
 }
 
-def _cached_catalog(pkg_dir: (str | None)) -> str {
+impl _cached_catalog(pkg_dir: (str | None)) -> str {
     try {
         import from jaclang.compiler.types.stubcat.locate { dev_catalog_path }
         import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
@@ -233,7 +267,7 @@ def _cached_catalog(pkg_dir: (str | None)) -> str {
     }
 }
 
-def _keep_catalog(out: str, cached: str) {
+impl _keep_catalog(out: str, cached: str) {
     import shutil;
     try {
         os.makedirs(os.path.dirname(cached), exist_ok=True);
@@ -243,7 +277,7 @@ def _keep_catalog(out: str, cached: str) {
     } except OSError {}
 }
 
-def main(argv: list[str]) -> int {
+impl main(argv: list[str]) -> int {
     out: (str | None) = None;
     only: (list[str] | None) = None;
     pkg_dir: (str | None) = None;

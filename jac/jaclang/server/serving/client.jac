@@ -17,9 +17,7 @@ obj ClientConnectionError(Exception) {
         status_code: (int | None) = None,
         response: any = None;
 
-    def __str__ -> str {
-        return self.detail;
-    }
+    def __str__ -> str;
 }
 
 obj ClientRequestNotSent(ClientConnectionError) {}
@@ -28,9 +26,7 @@ obj ClientRequestSent(ClientConnectionError) {}
 
 obj ClientReadTimeout(ClientRequestSent) {}
 
-def _client_json_default(o: any) -> str {
-    return str(o);
-}
+def _client_json_default(o: any) -> str;
 
 obj ClientResponse {
     has status_code: int = 0,
@@ -41,93 +37,150 @@ obj ClientResponse {
         writer: any = None,
         chunked: bool = False;
 
-    def json -> any {
-        return loads(self.body) if self.body else None;
-    }
+    def json -> any;
+    def text -> str;
+    def ok -> bool;
+    async def aiter_raw -> AsyncIterator[bytes];
+    async def aiter_lines -> AsyncIterator[bytes];
+    async def aclose;
+}
 
-    def text -> str {
-        return self.body.decode('utf-8', errors='replace');
-    }
+def _split_url(url: str) -> tuple[str, str, int, str];
 
-    def ok -> bool {
-        return 200 <= self.status_code < 400;
-    }
+async def _open_stream(
+    scheme: str, host: str, port: int, timeout: float
+) -> tuple[any, any];
 
-    async def aiter_raw -> AsyncIterator[bytes] {
-        if self.reader is None {
-            if self.body {
-                yield self.body;
-            }
-            return;
+async def _read_response_head(reader: any, timeout: float) -> tuple[int, str, Headers];
+
+async def arequest(
+    method: str,
+    url: str,
+    headers: (dict[str, any] | None) = None,
+    json_body: any = None,
+    data: (bytes | str | None) = None,
+    timeout: float = DEFAULT_TIMEOUT,
+    stream: bool = False,
+    params: (dict[str, any] | None) = None
+) -> ClientResponse;
+
+async def aws_connect(
+    url: str, headers: (dict[str, any] | None) = None, timeout: float = DEFAULT_TIMEOUT
+) -> WebSocket;
+
+def run_blocking(coro: any) -> any;
+
+def request_sync(
+    method: str,
+    url: str,
+    headers: (dict[str, any] | None) = None,
+    json_body: any = None,
+    data: (bytes | str | None) = None,
+    timeout: float = DEFAULT_TIMEOUT
+) -> ClientResponse;
+
+def post_stream_aware_sync(
+    url: str,
+    json_body: any = None,
+    headers: (dict[str, any] | None) = None,
+    timeout: float = DEFAULT_TIMEOUT,
+    label: str = 'rpc'
+) -> tuple[str, any];
+
+impl ClientConnectionError.__str__ -> str {
+    return self.detail;
+}
+
+impl _client_json_default(o: any) -> str {
+    return str(o);
+}
+
+impl ClientResponse.json -> any {
+    return loads(self.body) if self.body else None;
+}
+
+impl ClientResponse.text -> str {
+    return self.body.decode('utf-8', errors='replace');
+}
+
+impl ClientResponse.ok -> bool {
+    return 200 <= self.status_code < 400;
+}
+
+impl ClientResponse.aiter_raw -> AsyncIterator[bytes] {
+    if self.reader is None {
+        if self.body {
+            yield self.body;
         }
-        if self.chunked {
-            while True {
-                size_line: bytes = await self.reader.readline();
-                if not size_line {
+        return;
+    }
+    if self.chunked {
+        while True {
+            size_line: bytes = await self.reader.readline();
+            if not size_line {
+                break;
+            }
+            size_text = size_line.decode('latin-1').strip().split(';')[0];
+            int_fn: any = int;
+            try {
+                size = int_fn(size_text, 16);
+            } except ValueError {
+                break;
+            }
+            if size == 0 {
+                break;
+            }
+            chunk: bytes = await self.reader.readexactly(size);
+            await self.reader.readexactly(2);
+            yield chunk;
+        }
+    } else {
+        length_header = self.headers.get('Content-Length');
+        if length_header {
+            remaining = int(length_header);
+            while remaining > 0 {
+                block: bytes = await self.reader.read(min(65536, remaining));
+                if not block {
                     break;
                 }
-                size_text = size_line.decode('latin-1').strip().split(';')[0];
-                int_fn: any = int;
-                try {
-                    size = int_fn(size_text, 16);
-                } except ValueError {
-                    break;
-                }
-                if size == 0 {
-                    break;
-                }
-                chunk: bytes = await self.reader.readexactly(size);
-                await self.reader.readexactly(2);
-                yield chunk;
+                remaining -= len(block);
+                yield block;
             }
         } else {
-            length_header = self.headers.get('Content-Length');
-            if length_header {
-                remaining = int(length_header);
-                while remaining > 0 {
-                    block: bytes = await self.reader.read(min(65536, remaining));
-                    if not block {
-                        break;
-                    }
-                    remaining -= len(block);
-                    yield block;
+            while True {
+                block: bytes = await self.reader.read(65536);
+                if not block {
+                    break;
                 }
-            } else {
-                while True {
-                    block: bytes = await self.reader.read(65536);
-                    if not block {
-                        break;
-                    }
-                    yield block;
-                }
+                yield block;
             }
-        }
-    }
-
-    async def aiter_lines -> AsyncIterator[bytes] {
-        buffer = b'';
-        async for block in self.aiter_raw() {
-            buffer += block;
-            while b'\n' in buffer {
-                (line, _, buffer) = buffer.partition(b'\n');
-                yield line.rstrip(b'\r');
-            }
-        }
-        if buffer {
-            yield buffer.rstrip(b'\r');
-        }
-    }
-
-    async def aclose {
-        if self.writer is not None {
-            try {
-                self.writer.close();
-            } except Exception {}
         }
     }
 }
 
-def _split_url(url: str) -> tuple[str, str, int, str] {
+impl ClientResponse.aiter_lines -> AsyncIterator[bytes] {
+    buffer = b'';
+    async for block in self.aiter_raw() {
+        buffer += block;
+        while b'\n' in buffer {
+            (line, _, buffer) = buffer.partition(b'\n');
+            yield line.rstrip(b'\r');
+        }
+    }
+    if buffer {
+        yield buffer.rstrip(b'\r');
+    }
+}
+
+impl ClientResponse.aclose {
+    if self.writer is not None {
+        try {
+            self.writer.close();
+        } except Exception {}
+    }
+}
+
+impl _split_url(url: str) -> tuple[str, str, int, str] {
     split = urlsplit(url);
     scheme = (split.scheme or 'http').lower();
     host = split.hostname or 'localhost';
@@ -145,7 +198,7 @@ def _split_url(url: str) -> tuple[str, str, int, str] {
     return (scheme, host, port, path);
 }
 
-async def _open_stream(
+impl _open_stream(
     scheme: str, host: str, port: int, timeout: float
 ) -> tuple[any, any] {
     use_tls = scheme in ('https', 'wss');
@@ -163,7 +216,7 @@ async def _open_stream(
     }
 }
 
-async def _read_response_head(reader: any, timeout: float) -> tuple[int, str, Headers] {
+impl _read_response_head(reader: any, timeout: float) -> tuple[int, str, Headers] {
     try {
         status_line: bytes = await asyncio.wait_for(reader.readline(), timeout=timeout);
     } except asyncio.TimeoutError {
@@ -197,7 +250,7 @@ async def _read_response_head(reader: any, timeout: float) -> tuple[int, str, He
     return (status, reason, headers);
 }
 
-async def arequest(
+impl arequest(
     method: str,
     url: str,
     headers: (dict[str, any] | None) = None,
@@ -288,7 +341,7 @@ async def arequest(
     return response;
 }
 
-async def aws_connect(
+impl aws_connect(
     url: str, headers: (dict[str, any] | None) = None, timeout: float = DEFAULT_TIMEOUT
 ) -> WebSocket {
     (scheme, host, port, path) = _split_url(url);
@@ -339,7 +392,7 @@ async def aws_connect(
     );
 }
 
-def run_blocking(coro: any) -> any {
+impl run_blocking(coro: any) -> any {
     try {
         asyncio.get_running_loop();
     } except RuntimeError {
@@ -351,7 +404,7 @@ def run_blocking(coro: any) -> any {
     }
 }
 
-def request_sync(
+impl request_sync(
     method: str,
     url: str,
     headers: (dict[str, any] | None) = None,
@@ -371,7 +424,7 @@ def request_sync(
     );
 }
 
-def post_stream_aware_sync(
+impl post_stream_aware_sync(
     url: str,
     json_body: any = None,
     headers: (dict[str, any] | None) = None,

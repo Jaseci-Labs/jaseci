@@ -10,7 +10,31 @@ glob MAX_PARTS: int = 1000,
      DEFAULT_SPOOL_BYTES: int = 1048576;
 
 
-def _content_type_param(header_value: str, param: str) -> (str | None) {
+def _content_type_param(header_value: str, param: str) -> (str | None);
+
+def _parse_part_headers(raw: bytes) -> dict[str, str];
+
+
+obj _PartReader {
+    has source: any,
+        delim: bytes,
+        buf: bytes = b'',
+        eof: bool = False,
+        finished: bool = False;
+
+    def _fill -> bool;
+    def _consume_delimiter_tail;
+    def skip_preamble;
+    def read_part_headers -> dict[str, str];
+    def copy_part_body(sink: any, cap: int = 0) -> int;
+}
+
+
+def parse_multipart(request: Request, spool_bytes: int = DEFAULT_SPOOL_BYTES);
+
+def parse_urlencoded_form(request: Request);
+
+impl _content_type_param(header_value: str, param: str) -> (str | None) {
     for chunk in header_value.split(';') {
         piece = chunk.strip();
         if piece.lower().startswith(f"{param}=") {
@@ -24,7 +48,7 @@ def _content_type_param(header_value: str, param: str) -> (str | None) {
     return None;
 }
 
-def _parse_part_headers(raw: bytes) -> dict[str, str] {
+impl _parse_part_headers(raw: bytes) -> dict[str, str] {
     headers: dict[str, str] = {};
     for line in raw.split(b'\r\n') {
         if b':' not in line {
@@ -39,121 +63,107 @@ def _parse_part_headers(raw: bytes) -> dict[str, str] {
 }
 
 
-obj _PartReader {
-    has source: any,
-        delim: bytes,
-        buf: bytes = b'',
-        eof: bool = False,
-        finished: bool = False;
-
-    def _fill -> bool {
-        if self.eof {
-            return False;
-        }
-        chunk = self.source.read(CHUNK_BYTES);
-        if not chunk {
-            self.eof = True;
-            return False;
-        }
-        self.buf += chunk;
-        return True;
+impl _PartReader._fill -> bool {
+    if self.eof {
+        return False;
     }
+    chunk = self.source.read(CHUNK_BYTES);
+    if not chunk {
+        self.eof = True;
+        return False;
+    }
+    self.buf += chunk;
+    return True;
+}
 
-    def _consume_delimiter_tail {
-        while len(self.buf) < 2 and self._fill() {}
-        if self.buf.startswith(b'--') {
-            self.finished = True;
-            self.buf = b'';
+impl _PartReader._consume_delimiter_tail {
+    while len(self.buf) < 2 and self._fill() {}
+    if self.buf.startswith(b'--') {
+        self.finished = True;
+        self.buf = b'';
+        return;
+    }
+    if self.buf.startswith(b'\r\n') {
+        self.buf = self.buf[2:];
+        return;
+    }
+    if self.buf.startswith(b'\n') {
+        self.buf = self.buf[1:];
+        return;
+    }
+    raise HTTPError(status_code=400, detail='Malformed multipart body');
+}
+
+impl _PartReader.skip_preamble {
+    first = self.delim;
+    while True {
+        idx = self.buf.find(first);
+        if idx >= 0 {
+            self.buf = self.buf[idx + len(first):];
+            self._consume_delimiter_tail();
             return;
         }
-        if self.buf.startswith(b'\r\n') {
-            self.buf = self.buf[2:];
-            return;
+        keep = len(first) - 1;
+        if len(self.buf) > keep {
+            self.buf = self.buf[-keep:];
         }
-        if self.buf.startswith(b'\n') {
-            self.buf = self.buf[1:];
-            return;
-        }
-        raise HTTPError(status_code=400, detail='Malformed multipart body');
-    }
-
-    def skip_preamble {
-        first = self.delim;
-        while True {
-            idx = self.buf.find(first);
-            if idx >= 0 {
-                self.buf = self.buf[idx + len(first):];
-                self._consume_delimiter_tail();
-                return;
-            }
-            keep = len(first) - 1;
-            if len(self.buf) > keep {
-                self.buf = self.buf[-keep:];
-            }
-            if not self._fill() {
-                raise HTTPError(status_code=400, detail='Malformed multipart body');
-            }
+        if not self._fill() {
+            raise HTTPError(status_code=400, detail='Malformed multipart body');
         }
     }
+}
 
-    def read_part_headers -> dict[str, str] {
-        while True {
-            idx = self.buf.find(b'\r\n\r\n');
-            if idx >= 0 {
-                raw = self.buf[:idx];
-                self.buf = self.buf[idx + 4:];
-                return _parse_part_headers(raw);
-            }
-            if len(self.buf) > MAX_PART_HEADER_BYTES {
-                raise HTTPError(
-                    status_code=431, detail='Multipart part headers too large'
-                );
-            }
-            if not self._fill() {
-                raise HTTPError(status_code=400, detail='Malformed multipart body');
-            }
+impl _PartReader.read_part_headers -> dict[str, str] {
+    while True {
+        idx = self.buf.find(b'\r\n\r\n');
+        if idx >= 0 {
+            raw = self.buf[:idx];
+            self.buf = self.buf[idx + 4:];
+            return _parse_part_headers(raw);
+        }
+        if len(self.buf) > MAX_PART_HEADER_BYTES {
+            raise HTTPError(status_code=431, detail='Multipart part headers too large');
+        }
+        if not self._fill() {
+            raise HTTPError(status_code=400, detail='Malformed multipart body');
         }
     }
+}
 
-    def copy_part_body(sink: any, cap: int = 0) -> int {
-        marker = b'\r\n' + self.delim;
-        written = 0;
-        while True {
-            idx = self.buf.find(marker);
-            if idx >= 0 {
-                piece = self.buf[:idx];
-                if cap and written + len(piece) > cap {
-                    raise HTTPError(
-                        status_code=413, detail='Multipart field too large'
-                    );
-                }
-                sink.write(piece);
-                written += len(piece);
-                self.buf = self.buf[idx + len(marker):];
-                self._consume_delimiter_tail();
-                return written;
+impl _PartReader.copy_part_body(sink: any, cap: int = 0) -> int {
+    marker = b'\r\n' + self.delim;
+    written = 0;
+    while True {
+        idx = self.buf.find(marker);
+        if idx >= 0 {
+            piece = self.buf[:idx];
+            if cap and written + len(piece) > cap {
+                raise HTTPError(status_code=413, detail='Multipart field too large');
             }
-            keep = len(marker) - 1;
-            if len(self.buf) > keep {
-                piece = self.buf[:-keep];
-                if cap and written + len(piece) > cap {
-                    raise HTTPError(
-                        status_code=413, detail='Multipart field too large'
-                    );
-                }
-                sink.write(piece);
-                written += len(piece);
-                self.buf = self.buf[-keep:];
+            sink.write(piece);
+            written += len(piece);
+            self.buf = self.buf[idx + len(marker):];
+            self._consume_delimiter_tail();
+            return written;
+        }
+        keep = len(marker) - 1;
+        if len(self.buf) > keep {
+            piece = self.buf[:-keep];
+            if cap and written + len(piece) > cap {
+                raise HTTPError(status_code=413, detail='Multipart field too large');
             }
-            if not self._fill() {
-                raise HTTPError(status_code=400, detail='Malformed multipart body');
-            }
+            sink.write(piece);
+            written += len(piece);
+            self.buf = self.buf[-keep:];
+        }
+        if not self._fill() {
+            raise HTTPError(status_code=400, detail='Malformed multipart body');
         }
     }
 }
 
 
-def parse_multipart(request: Request, spool_bytes: int = DEFAULT_SPOOL_BYTES) {
+impl parse_multipart(request: Request, spool_bytes: int = DEFAULT_SPOOL_BYTES) {
     content_type = request.headers.get('Content-Type') or '';
     boundary = _content_type_param(content_type, 'boundary');
     if not boundary {
@@ -206,7 +216,7 @@ def parse_multipart(request: Request, spool_bytes: int = DEFAULT_SPOOL_BYTES) {
     }
 }
 
-def parse_urlencoded_form(request: Request) {
+impl parse_urlencoded_form(request: Request) {
     decoded = request.body.decode('utf-8', errors='replace');
     for (key, values) in parse_qs(decoded, keep_blank_values=True).items() {
         request.form_fields.setdefault(key, []).extend(values);

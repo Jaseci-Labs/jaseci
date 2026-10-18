@@ -5,7 +5,21 @@ import unittest;
 import from importlib.util { find_spec }
 
 
-def _unmet(kind: str, name: str, hint: str) {
+def _unmet(kind: str, name: str, hint: str);
+
+
+def require_module(*names: str);
+
+
+def require_tool(*names: str);
+
+
+def require_flag(env_name: str, reason: str = "");
+
+
+def require_network(host: str = "pypi.org", port: int = 443);
+
+impl _unmet(kind: str, name: str, hint: str) {
     detail = f"missing {kind} '{name}'";
     if hint {
         detail += f" ({hint})";
@@ -17,7 +31,7 @@ def _unmet(kind: str, name: str, hint: str) {
 }
 
 
-def require_module(*names: str) {
+impl require_module(*names: str) {
     for name in names {
         found = False;
         try {
@@ -32,7 +46,7 @@ def require_module(*names: str) {
 }
 
 
-def require_tool(*names: str) {
+impl require_tool(*names: str) {
     for name in names {
         if not shutil.which(name) {
             _unmet("tool", name, "install it on PATH to run this test");
@@ -41,7 +55,7 @@ def require_tool(*names: str) {
 }
 
 
-def require_flag(env_name: str, reason: str = "") {
+impl require_flag(env_name: str, reason: str = "") {
     if os.environ.get(env_name, "").strip().lower()
         in ("", "0", "false", "no", "off") {
         detail = reason or "this test needs an environment only that flag provides";
@@ -50,7 +64,7 @@ def require_flag(env_name: str, reason: str = "") {
 }
 
 
-def require_network(host: str = "pypi.org", port: int = 443) {
+impl require_network(host: str = "pypi.org", port: int = 443) {
     try {
         socket.create_connection((host, port), timeout=5).close();
     } except OSError {

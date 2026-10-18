@@ -4,19 +4,7 @@ glob _rt_logger = logging.getLogger(__name__),
      _SPEC_PROBE_TIMEOUT_SECONDS: float = 1.0;
 
 
-def literal_prefix(template: str) -> str {
-    kept: list[str] = [];
-    for segment in template.strip("/").split("/") {
-        if not segment or "{" in segment or "*" in segment {
-            break;
-        }
-        kept.append(segment);
-    }
-    if not kept {
-        return "";
-    }
-    return "/" + "/".join(kept);
-}
+def literal_prefix(template: str) -> str;
 
 
 obj ServiceRouteTable {
@@ -38,6 +26,25 @@ obj ServiceRouteTable {
 
 
 async def learn_service_routes(
+    registry: ServiceRegistry, table: ServiceRouteTable, now: float, max_age: float
+) -> int;
+
+impl literal_prefix(template: str) -> str {
+    kept: list[str] = [];
+    for segment in template.strip("/").split("/") {
+        if not segment or "{" in segment or "*" in segment {
+            break;
+        }
+        kept.append(segment);
+    }
+    if not kept {
+        return "";
+    }
+    return "/" + "/".join(kept);
+}
+
+
+impl learn_service_routes(
     registry: ServiceRegistry, table: ServiceRouteTable, now: float, max_age: float
 ) -> int {
     import asyncio;

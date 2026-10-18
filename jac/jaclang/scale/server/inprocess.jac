@@ -9,24 +9,40 @@ obj PreparedInProcessRuntime {
         client: any | None = None,
         _prior_ctx: (ExecutionContext | None) = None;
 
-    def close {
-        if self.client is not None {
-            self.client.close();
-            self.client = None;
-        }
-
-        Jac.set_shared_root_resolver(None);
-        self.server = None;
-
-        if self._prior_ctx is not None {
-            Jac.set_context(self._prior_ctx);
-        }
-        self._prior_ctx = None;
-    }
+    def close;
 }
 
 
-def _extensions_for(profile: str) -> list[ServerExtension] {
+def _extensions_for(profile: str) -> list[ServerExtension];
+
+
+def prepare_inprocess_runtime(
+    jac_file: str,
+    base_path: str,
+    endpoint_profile: str = "full",
+    setup_background_services: bool = True,
+    transport_kind: str = "testclient",
+    extensions: (list[ServerExtension] | None) = None,
+    overrides: (dict[str, any] | None) = None
+) -> PreparedInProcessRuntime;
+
+impl PreparedInProcessRuntime.close {
+    if self.client is not None {
+        self.client.close();
+        self.client = None;
+    }
+
+    Jac.set_shared_root_resolver(None);
+    self.server = None;
+
+    if self._prior_ctx is not None {
+        Jac.set_context(self._prior_ctx);
+    }
+    self._prior_ctx = None;
+}
+
+
+impl _extensions_for(profile: str) -> list[ServerExtension] {
     if profile == "desktop" {
         return [];
     }
@@ -41,7 +57,7 @@ def _extensions_for(profile: str) -> list[ServerExtension] {
 }
 
 
-def prepare_inprocess_runtime(
+impl prepare_inprocess_runtime(
     jac_file: str,
     base_path: str,
     endpoint_profile: str = "full",

@@ -11,7 +11,27 @@ obj _Url {
 }
 
 
-def _parse_url(u: str) -> _Url {
+def _parse_url(u: str) -> _Url;
+
+
+def _request_text(host: str, path: str) -> str;
+
+
+def _fetch_raw(pu: _Url) -> bytes;
+
+
+def _find_header_end(raw: bytes) -> int;
+
+
+def _parse_response(raw: bytes, url: str) -> HTTPResponse;
+
+
+def _resolve_redirect(pu: _Url, loc: str) -> str;
+
+
+def:pub urlopen(url: str) -> HTTPResponse;
+
+impl _parse_url(u: str) -> _Url {
     scheme = "http";
     rest = u;
     if u.startswith("https://") {
@@ -39,7 +59,7 @@ def _parse_url(u: str) -> _Url {
 }
 
 
-def _request_text(host: str, path: str) -> str {
+impl _request_text(host: str, path: str) -> str {
     return "GET "
         + path
         + " HTTP/1.0\r\nHost: "
@@ -48,7 +68,7 @@ def _request_text(host: str, path: str) -> str {
 }
 
 
-def _fetch_raw(pu: _Url) -> bytes {
+impl _fetch_raw(pu: _Url) -> bytes {
     sock = create_connection((pu.host, pu.port));
     reqb = _request_text(pu.host, pu.path).encode();
     raw = b"";
@@ -75,7 +95,7 @@ def _fetch_raw(pu: _Url) -> bytes {
 }
 
 
-def _find_header_end(raw: bytes) -> int {
+impl _find_header_end(raw: bytes) -> int {
     n = len(raw);
     i = 0;
     while i + 3 < n {
@@ -91,7 +111,7 @@ def _find_header_end(raw: bytes) -> int {
 }
 
 
-def _parse_response(raw: bytes, url: str) -> HTTPResponse {
+impl _parse_response(raw: bytes, url: str) -> HTTPResponse {
     sep = _find_header_end(raw);
     header_bytes = raw[:sep] if sep != -1 else raw;
     body = raw[sep + 4:] if sep != -1 else b"";
@@ -134,7 +154,7 @@ def _parse_response(raw: bytes, url: str) -> HTTPResponse {
 }
 
 
-def _resolve_redirect(pu: _Url, loc: str) -> str {
+impl _resolve_redirect(pu: _Url, loc: str) -> str {
     if loc.startswith("http://") or loc.startswith("https://") {
         return loc;
     }
@@ -146,7 +166,7 @@ def _resolve_redirect(pu: _Url, loc: str) -> str {
 }
 
 
-def:pub urlopen(url: str) -> HTTPResponse {
+impl urlopen(url: str) -> HTTPResponse {
     cur = url;
     redirects: int = 0;
     while redirects < 10 {

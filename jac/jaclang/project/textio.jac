@@ -10,7 +10,17 @@ glob _JAC_TEXT_ENCODINGS: list[str] = [
          'utf-16be'
      ];
 
-def read_file_with_encoding(file_path: str) -> str {
+def read_file_with_encoding(file_path: str) -> str;
+
+def read_jacignore_patterns(project_root: str) -> list[str];
+
+def span_for_file(
+    mod_path: str, line: int, col: int, end_col: int = 0, source: str = ''
+) -> Span;
+
+def drop_git_ignored(paths: list[str], cwd: str = "") -> list[str];
+
+impl read_file_with_encoding(file_path: str) -> str {
     for encoding in _JAC_TEXT_ENCODINGS {
         try {
             with open(file_path, encoding=encoding) as f {
@@ -29,7 +39,7 @@ def read_file_with_encoding(file_path: str) -> str {
     );
 }
 
-def read_jacignore_patterns(project_root: str) -> list[str] {
+impl read_jacignore_patterns(project_root: str) -> list[str] {
     ignore_file = os.path.join(project_root, JACIGNORE_FILENAME);
     if not os.path.isfile(ignore_file) {
         return [];
@@ -39,7 +49,7 @@ def read_jacignore_patterns(project_root: str) -> list[str] {
     );
 }
 
-def span_for_file(
+impl span_for_file(
     mod_path: str, line: int, col: int, end_col: int = 0, source: str = ''
 ) -> Span {
     import from jaclang.compiler.frontend.srcloc { Span as SrcSpan }
@@ -90,7 +100,7 @@ def span_for_file(
     );
 }
 
-def drop_git_ignored(paths: list[str], cwd: str = "") -> list[str] {
+impl drop_git_ignored(paths: list[str], cwd: str = "") -> list[str] {
     import subprocess;
     if not paths {
         return paths;

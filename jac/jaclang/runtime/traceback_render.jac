@@ -2,7 +2,9 @@ import from traceback { TracebackException }
 import from jaclang.project.source { pretty_print_source_location }
 import from jaclang.project.textio { read_file_with_encoding }
 
-def dump_traceback(e: Exception) -> str {
+def dump_traceback(e: Exception) -> str;
+
+impl dump_traceback(e: Exception) -> str {
     trace_dump = '';
     def byte_offset_to_char_offset(string: str, offset: int) -> int {
         return len(string.encode('utf-8')[:offset].decode('utf-8', errors='replace'));

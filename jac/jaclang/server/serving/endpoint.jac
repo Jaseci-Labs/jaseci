@@ -46,17 +46,19 @@ obj JEndPoint {
         callback_spec: any = None,
         parameter_source: (Callable[[], list[APIParameter]] | None) = None;
 
-    def declared_parameters -> list[APIParameter] {
-        if self.parameter_source is not None {
-            self.parameters = self.parameter_source();
-            self.parameter_source = None;
-        }
-        return self.parameters or [];
-    }
+    def declared_parameters -> list[APIParameter];
 }
 
 obj WSEndPoint {
     has path: str,
         handler: Callable[..., any],
         summary: (str | None) = None;
+}
+
+impl JEndPoint.declared_parameters -> list[APIParameter] {
+    if self.parameter_source is not None {
+        self.parameters = self.parameter_source();
+        self.parameter_source = None;
+    }
+    return self.parameters or [];
 }

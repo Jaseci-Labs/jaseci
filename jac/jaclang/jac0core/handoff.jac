@@ -4,7 +4,13 @@ import sys;
 
 glob HANDOFF_ENV: str = "JAC_HANDOFF";
 
-def handoff -> dict[str, object] {
+def handoff -> dict[str, object];
+
+def update_handoff(**fields: object);
+
+def process_executable -> str;
+
+impl handoff -> dict[str, object] {
     raw = os.environ.get(HANDOFF_ENV, "");
     if not raw {
         return {};
@@ -20,7 +26,7 @@ def handoff -> dict[str, object] {
     return {};
 }
 
-def update_handoff(**fields: object) {
+impl update_handoff(**fields: object) {
     record = handoff();
     for (key, value) in fields.items() {
         if value is None {
@@ -36,7 +42,7 @@ def update_handoff(**fields: object) {
     }
 }
 
-def process_executable -> str {
+impl process_executable -> str {
     try {
         if sys.platform.startswith("linux") {
             return os.path.realpath("/proc/self/exe");

@@ -6,7 +6,11 @@ import subprocess;
 import from pathlib { Path }
 
 
-def build_native_product(base: Path, record: dict[str, any]) {
+def build_native_product(base: Path, record: dict[str, any]);
+
+def build(base: Path);
+
+impl build_native_product(base: Path, record: dict[str, any]) {
     source = base / record['source'];
     output = base / record['output'];
     output.parent.mkdir(parents=True, exist_ok=True);
@@ -88,7 +92,7 @@ def build_native_product(base: Path, record: dict[str, any]) {
     }
 }
 
-def build(base: Path) {
+impl build(base: Path) {
     base = base.resolve();
     runtime_manifest = base / 'jaclang' / 'runtime.json';
     if runtime_manifest.is_file() {

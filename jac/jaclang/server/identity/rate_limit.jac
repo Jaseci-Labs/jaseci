@@ -6,11 +6,17 @@ obj AttemptsExhausted(Exception) {
     has retry_after: int = 1;
 }
 
-def limit_key(scope: str, actor: str) -> str {
+def limit_key(scope: str, actor: str) -> str;
+
+def consume_limit(scope: str, actor: str, limit: int, seconds: int) -> int;
+
+def refund_limit(scope: str, actor: str) -> None;
+
+impl limit_key(scope: str, actor: str) -> str {
     return "ratelimit:" + hashlib.sha256((scope + ":" + actor).encode()).hexdigest();
 }
 
-def consume_limit(scope: str, actor: str, limit: int, seconds: int) -> int {
+impl consume_limit(scope: str, actor: str, limit: int, seconds: int) -> int {
     if limit <= 0 {
         return 0;
     }
@@ -49,7 +55,7 @@ def consume_limit(scope: str, actor: str, limit: int, seconds: int) -> int {
     }
 }
 
-def refund_limit(scope: str, actor: str) -> None {
+impl refund_limit(scope: str, actor: str) -> None {
     try {
         db = shared_store();
         if db is None {

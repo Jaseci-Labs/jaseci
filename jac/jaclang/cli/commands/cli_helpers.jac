@@ -1,7 +1,9 @@
 import os;
 
 
-def proc_file(filename: str) -> tuple[str, str, ExecutionContext] {
+def proc_file(filename: str) -> tuple[str, str, ExecutionContext];
+
+impl proc_file(filename: str) -> tuple[str, str, ExecutionContext] {
     (base, mod) = os.path.split(filename);
     base = base or './';
     if not (is_jac(filename) or is_python(filename)) {

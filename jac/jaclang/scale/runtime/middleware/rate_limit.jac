@@ -114,7 +114,12 @@ impl StateBackendRateLimiter.consume(key: str) -> tuple[bool, float] {
 }
 
 
-def _resolve_user_key(request: any) -> str | None {
+def _resolve_user_key(request: any) -> str | None;
+
+
+def build_rate_limit_middleware(cfg: dict[str, any]) -> any;
+
+impl _resolve_user_key(request: any) -> str | None {
     auth = request.headers.get("Authorization");
     if not auth {
         return None;
@@ -123,7 +128,7 @@ def _resolve_user_key(request: any) -> str | None {
 }
 
 
-def build_rate_limit_middleware(cfg: dict[str, any]) -> any {
+impl build_rate_limit_middleware(cfg: dict[str, any]) -> any {
     if not cfg.get("enabled") {
         return None;
     }

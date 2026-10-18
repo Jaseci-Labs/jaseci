@@ -1,11 +1,15 @@
 import os;
 import from pathlib { Path }
 
-def native_node -> Path {
+def native_node -> Path;
+
+def build_environment(base: dict[str, str]) -> dict[str, str];
+
+impl native_node -> Path {
     return tool_path("node");
 }
 
-def build_environment(base: dict[str, str]) -> dict[str, str] {
+impl build_environment(base: dict[str, str]) -> dict[str, str] {
     node_path = native_node();
     result: dict[str, str] = dict(base);
     result["PATH"] = str(node_path.parent) + os.pathsep + result.get("PATH", "");

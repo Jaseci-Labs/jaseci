@@ -1,4 +1,22 @@
-def _is_comptime_marker(nd: UniNode) -> bool {
+def _is_comptime_marker(nd: UniNode) -> bool;
+
+def comptime_reach(top: UniNode) -> set[int];
+
+walker ComptimeResolvePass(TypeCheckPass) {
+    static has contract: PassContract = PassContract(
+        provides=(AnalysisFact.COMPTIME, )
+    );
+
+    has _armed: bool = False,
+        _keep: set[int] = set();
+
+    can prepare with entry;
+    can finish with exit;
+    can enter_walk with UniNode entry;
+    can exit_walk with UniNode exit;
+}
+
+impl _is_comptime_marker(nd: UniNode) -> bool {
     if isinstance(nd, GlobalVars) {
         return nd.is_frozen;
     }
@@ -20,7 +38,7 @@ def _is_comptime_marker(nd: UniNode) -> bool {
     return False;
 }
 
-def comptime_reach(top: UniNode) -> set[int] {
+impl comptime_reach(top: UniNode) -> set[int] {
     keep: set[int] = set();
     stack: list[UniNode] = [top];
     marked: list[UniNode] = [];
@@ -55,55 +73,46 @@ def comptime_reach(top: UniNode) -> set[int] {
     return keep;
 }
 
-walker ComptimeResolvePass(TypeCheckPass) {
-    static has contract: PassContract = PassContract(
-        provides=(AnalysisFact.COMPTIME, )
-    );
-
-    has _armed: bool = False,
-        _keep: set[int] = set();
-
-    can prepare with entry {
-        if self.ctx.nested_depth {
-            return;
-        }
-        self._keep = comptime_reach(self.module);
-        self._armed = bool(self._keep) and not self.module.ct_resolved;
-        if self._armed {
-            self._insert_builtin_symbols();
-            self._install_client_state_setters();
-        }
+impl ComptimeResolvePass.prepare with entry {
+    if self.ctx.nested_depth {
+        return;
     }
-
-    can finish with exit {
-        if self.ctx.nested_depth {
-            return;
-        }
-        if not self._armed {
-            return;
-        }
-        self.module.ct_resolved = True;
+    self._keep = comptime_reach(self.module);
+    self._armed = bool(self._keep) and not self.module.ct_resolved;
+    if self._armed {
+        self._insert_builtin_symbols();
+        self._install_client_state_setters();
     }
+}
 
-    can enter_walk with UniNode entry {
-        if self.ctx.is_canceled() or here.ct_pruned {
-            osp_skip_rest();
-            return;
-        }
-        self.ctx.current_node = here;
-        if not self._armed or id(here) not in self._keep {
-            osp_skip_rest();
-        }
+impl ComptimeResolvePass.finish with exit {
+    if self.ctx.nested_depth {
+        return;
     }
+    if not self._armed {
+        return;
+    }
+    self.module.ct_resolved = True;
+}
 
-    can exit_walk with UniNode exit {
-        if here.ct_pruned {
-            osp_skip_rest();
-            return;
-        }
-        self.ctx.current_node = here;
-        if self.ctx.is_canceled() or not self._armed or id(here) not in self._keep {
-            osp_skip_rest();
-        }
+impl ComptimeResolvePass.enter_walk with UniNode entry {
+    if self.ctx.is_canceled() or here.ct_pruned {
+        osp_skip_rest();
+        return;
+    }
+    self.ctx.current_node = here;
+    if not self._armed or id(here) not in self._keep {
+        osp_skip_rest();
+    }
+}
+
+impl ComptimeResolvePass.exit_walk with UniNode exit {
+    if here.ct_pruned {
+        osp_skip_rest();
+        return;
+    }
+    self.ctx.current_node = here;
+    if self.ctx.is_canceled() or not self._armed or id(here) not in self._keep {
+        osp_skip_rest();
     }
 }

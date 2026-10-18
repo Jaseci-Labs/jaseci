@@ -1598,7 +1598,9 @@ test "W3054 separate-impls is idempotent" {
         config.check = CheckConfig(lint=LintConfig(select=["separate-impls"]));
         set_config(config);
         try {
-            again = JacProgram.jac_file_formatter(path, auto_lint=True).mod.main.gen.jac;
+            again = JacProgram.jac_file_formatter(
+                path, auto_lint=True
+            ).mod.main.gen.jac;
         } finally {
             set_config(None);
         }

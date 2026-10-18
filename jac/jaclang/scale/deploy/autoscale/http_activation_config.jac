@@ -1,5 +1,21 @@
 def build_http_activation_spec(
     cfg: dict[str, any], scale_target_name: str, namespace: str, service_name: str
+) -> HTTPActivationSpec | None;
+
+def apply_http_activation_for_target(
+    cfg: dict[str, any],
+    scale_target_name: str,
+    namespace: str,
+    service_name: str,
+    keda: KEDAAutoscaler
+) -> bool | None;
+
+def destroy_http_activation_for_target(
+    scale_target_name: str, namespace: str, keda: KEDAAutoscaler
+);
+
+impl build_http_activation_spec(
+    cfg: dict[str, any], scale_target_name: str, namespace: str, service_name: str
 ) -> HTTPActivationSpec | None {
     if not cfg.get("enabled", False) {
         return None;
@@ -141,7 +157,7 @@ def build_http_activation_spec(
     );
 }
 
-def apply_http_activation_for_target(
+impl apply_http_activation_for_target(
     cfg: dict[str, any],
     scale_target_name: str,
     namespace: str,
@@ -155,7 +171,7 @@ def apply_http_activation_for_target(
     return keda.apply_http_activation(spec);
 }
 
-def destroy_http_activation_for_target(
+impl destroy_http_activation_for_target(
     scale_target_name: str, namespace: str, keda: KEDAAutoscaler
 ) {
     try {

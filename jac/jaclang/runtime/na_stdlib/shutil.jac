@@ -7,7 +7,23 @@ import from ._directory_native { try_directory_names }
 import from ._errno_native { errno_message }
 
 
-def:pub which(cmd: str) -> (str | None) {
+def:pub which(cmd: str) -> (str | None);
+
+def:pub copyfile(src: str, dst: str) -> str;
+
+def:pub copy(src: str, dst: str) -> str;
+
+def:pub copy2(src: str, dst: str) -> str;
+
+def:pub move(src: str, dst: str) -> str;
+
+def:pub rmtree(path: str, ignore_errors: bool = False);
+
+def _rmtree_children(path: str, ignore_errors: bool) -> bool;
+
+def _rmtree_walk(path: str, ignore_errors: bool) -> bool;
+
+impl which(cmd: str) -> (str | None) {
     if "/" in cmd {
         if access(cmd, 1) == 0 and os.path.isfile(cmd) {
             return cmd;
@@ -30,7 +46,7 @@ def:pub which(cmd: str) -> (str | None) {
     return None;
 }
 
-def:pub copyfile(src: str, dst: str) -> str {
+impl copyfile(src: str, dst: str) -> str {
     fsrc = open(src, "rb");
     data = fsrc.read();
     fsrc.close();
@@ -40,7 +56,7 @@ def:pub copyfile(src: str, dst: str) -> str {
     return dst;
 }
 
-def:pub copy(src: str, dst: str) -> str {
+impl copy(src: str, dst: str) -> str {
     real_dst = dst;
     if os.path.isdir(dst) {
         real_dst = os.path.join(dst, os.path.basename(src));
@@ -48,11 +64,11 @@ def:pub copy(src: str, dst: str) -> str {
     return copyfile(src, real_dst);
 }
 
-def:pub copy2(src: str, dst: str) -> str {
+impl copy2(src: str, dst: str) -> str {
     return copy(src, dst);
 }
 
-def:pub move(src: str, dst: str) -> str {
+impl move(src: str, dst: str) -> str {
     real_dst = dst;
     if os.path.isdir(dst) {
         real_dst = os.path.join(dst, os.path.basename(src));
@@ -71,11 +87,11 @@ def:pub move(src: str, dst: str) -> str {
     return real_dst;
 }
 
-def:pub rmtree(path: str, ignore_errors: bool = False) {
+impl rmtree(path: str, ignore_errors: bool = False) {
     _rmtree_walk(path, ignore_errors);
 }
 
-def _rmtree_children(path: str, ignore_errors: bool) -> bool {
+impl _rmtree_children(path: str, ignore_errors: bool) -> bool {
     ok = True;
     for nm in try_directory_names(path) {
         child = os.path.join(path, nm);
@@ -97,7 +113,7 @@ def _rmtree_children(path: str, ignore_errors: bool) -> bool {
     return ok;
 }
 
-def _rmtree_walk(path: str, ignore_errors: bool) -> bool {
+impl _rmtree_walk(path: str, ignore_errors: bool) -> bool {
     ok = _rmtree_children(path, ignore_errors);
     if rmdir(path) != 0 {
         if not _rmtree_children(path, ignore_errors) {

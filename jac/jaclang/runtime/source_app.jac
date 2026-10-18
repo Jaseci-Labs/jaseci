@@ -12,7 +12,17 @@ import from jaclang.runtime.prepared {
 
 glob SOURCE_FORMAT: int = 1;
 
-def artifact_path(base: Path, relative: str) -> Path {
+def artifact_path(base: Path, relative: str) -> Path;
+
+def _load_application(record: dict[str, any], base: Path) -> PreparedApplication;
+
+def load_runtime(directory: Path);
+
+def load_project(manifest_path: Path, name: str = '') -> PreparedApplication;
+
+def main(manifest_path: str, name: str = '', argv: list[str] | None = None) -> int;
+
+impl artifact_path(base: Path, relative: str) -> Path {
     path = (base / relative).resolve();
     if not path.is_relative_to(base.resolve()) {
         raise ValueError(f'Artifact path escapes its project: {relative}');
@@ -20,7 +30,7 @@ def artifact_path(base: Path, relative: str) -> Path {
     return path;
 }
 
-def _load_application(record: dict[str, any], base: Path) -> PreparedApplication {
+impl _load_application(record: dict[str, any], base: Path) -> PreparedApplication {
     directory = artifact_path(base, record['root']);
     entry_path = artifact_path(directory, record['entry']);
     application = PreparedApplication(
@@ -67,7 +77,7 @@ def _load_application(record: dict[str, any], base: Path) -> PreparedApplication
     return application;
 }
 
-def load_runtime(directory: Path) {
+impl load_runtime(directory: Path) {
     manifest = directory / 'runtime.json';
     if manifest.is_file() {
         record = json.loads(manifest.read_text(encoding='utf-8'));
@@ -75,7 +85,7 @@ def load_runtime(directory: Path) {
     }
 }
 
-def load_project(manifest_path: Path, name: str = '') -> PreparedApplication {
+impl load_project(manifest_path: Path, name: str = '') -> PreparedApplication {
     base = manifest_path.resolve().parent;
     data = json.loads(manifest_path.read_text(encoding='utf-8'));
     if data.get('format') != SOURCE_FORMAT {
@@ -106,7 +116,7 @@ def load_project(manifest_path: Path, name: str = '') -> PreparedApplication {
     return primary;
 }
 
-def main(manifest_path: str, name: str = '', argv: list[str] | None = None) -> int {
+impl main(manifest_path: str, name: str = '', argv: list[str] | None = None) -> int {
     import sys;
     application = load_project(Path(manifest_path), name);
     import from jaclang.project.config { JacConfig, set_config }

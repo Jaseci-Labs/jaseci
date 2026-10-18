@@ -46,42 +46,19 @@ glob logger = logging.getLogger(__name__),
      ];
 
 
-def ro_units_enabled -> bool {
-    return os.environ.get(RO_UNITS_ENV, '1').strip().lower()
-        not in ('0', 'false', 'no', 'off');
-}
+def ro_units_enabled -> bool;
 
 
-def _writer_ttl -> float {
-    try {
-        return max(1.0, float(os.environ.get(RO_WRITER_TTL_ENV, '300') or 300));
-    } except ValueError {
-        return 300.0;
-    }
-}
+def _writer_ttl -> float;
 
 
-def unit_writes_recorded(key: str) -> bool {
-    import time;
-    expiry = _unit_writers.get(key);
-    if expiry is None {
-        return False;
-    }
-    if time.monotonic() >= expiry {
-        _unit_writers.pop(key, None);
-        return False;
-    }
-    return True;
-}
+def unit_writes_recorded(key: str) -> bool;
 
 
 def transient_db_error(e: Exception) -> bool;
 
 
-def record_unit_writes(key: str) {
-    import time;
-    _unit_writers[key] = time.monotonic() + _writer_ttl();
-}
+def record_unit_writes(key: str);
 
 
 obj ScratchLease {
@@ -200,22 +177,8 @@ obj Session(Memory) {
         _scan_sealed: bool postinit,
         _scan_safe: bool postinit;
 
-    override def new_session(target_path: str) -> Session {
-        if self.store is None {
-            raise RuntimeError(
-                'Cannot create a provider session without a bound store'
-            );
-        }
-        return Session(
-            _store=self.store.new_session(),
-            base_path=self.base_path,
-            target_path=target_path
-        );
-    }
-
-    override def preserve_unresolved_ref(id: UUID) -> bool {
-        return id in self._foreign_refs;
-    }
+    override def new_session(target_path: str) -> Session;
+    override def preserve_unresolved_ref(id: UUID) -> bool;
 
     has store: (Store | None) {
         getter {
@@ -291,4 +254,54 @@ obj Session(Memory) {
     ) -> AnchorRow;
 
     def _forget_loaded -> None;
+}
+
+impl ro_units_enabled -> bool {
+    return os.environ.get(RO_UNITS_ENV, '1').strip().lower()
+        not in ('0', 'false', 'no', 'off');
+}
+
+
+impl _writer_ttl -> float {
+    try {
+        return max(1.0, float(os.environ.get(RO_WRITER_TTL_ENV, '300') or 300));
+    } except ValueError {
+        return 300.0;
+    }
+}
+
+
+impl unit_writes_recorded(key: str) -> bool {
+    import time;
+    expiry = _unit_writers.get(key);
+    if expiry is None {
+        return False;
+    }
+    if time.monotonic() >= expiry {
+        _unit_writers.pop(key, None);
+        return False;
+    }
+    return True;
+}
+
+
+impl record_unit_writes(key: str) {
+    import time;
+    _unit_writers[key] = time.monotonic() + _writer_ttl();
+}
+
+
+impl Session.new_session(target_path: str) -> Session {
+    if self.store is None {
+        raise RuntimeError('Cannot create a provider session without a bound store');
+    }
+    return Session(
+        _store=self.store.new_session(),
+        base_path=self.base_path,
+        target_path=target_path
+    );
+}
+
+impl Session.preserve_unresolved_ref(id: UUID) -> bool {
+    return id in self._foreign_refs;
 }

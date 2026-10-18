@@ -55,7 +55,9 @@ class BuildServices(Protocol) {
 }
 
 @cache
-def build_services -> BuildServices {
+def build_services -> BuildServices;
+
+impl build_services -> BuildServices {
     try {
         provider = importlib.import_module('jaclang.compiler.driver.build_services');
     } except ModuleNotFoundError as error {

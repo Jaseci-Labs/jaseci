@@ -22,33 +22,166 @@ glob CT_POW_BITS_LIMIT: int = 4000000,
          "GTE": ">="
      };
 
-def ct_symbol(opn: str) -> str {
+def ct_symbol(opn: str) -> str;
+
+def int_neg(a: CtInt) -> CtInt;
+
+def int_abs(a: CtInt) -> CtInt;
+
+def int_is_zero(a: CtInt) -> bool;
+
+def int_is_neg(a: CtInt) -> bool;
+
+def _signed_add(an: bool, am: list[int], bn: bool, bm: list[int]) -> CtInt;
+
+def int_add(a: CtInt, b: CtInt) -> CtInt;
+
+def int_sub(a: CtInt, b: CtInt) -> CtInt;
+
+def int_mul(a: CtInt, b: CtInt) -> CtInt;
+
+def int_divmod(a: CtInt, b: CtInt) -> tuple[CtInt, CtInt];
+
+def int_bit_length(a: CtInt) -> int;
+
+def int_small_index(a: CtInt) -> int;
+
+def int_pow(a: CtInt, b: CtInt) -> CtValue;
+
+def int_lshift(a: CtInt, b: CtInt) -> CtInt;
+
+def int_rshift(a: CtInt, b: CtInt) -> CtInt;
+
+def int_invert(a: CtInt) -> CtInt;
+
+def int_bitop(a: CtInt, b: CtInt, op: str) -> CtInt;
+
+def int_to_float(a: CtInt) -> float;
+
+def int_truediv(a: CtInt, b: CtInt) -> float;
+
+def float_divmod(vx: float, wx: float) -> tuple[float, float];
+
+def c_fmod(vx: float, wx: float) -> float;
+
+def float_pow(v: float, w: float) -> CtValue;
+
+def _float_is_odd_int(w: float) -> bool;
+
+def to_float_operand(v: CtValue) -> (float | None);
+
+def _unsupported(sym: str, l: CtValue, r: CtValue) -> CtRaise;
+
+def _repeat_count(n: CtInt) -> int;
+
+def ct_binop(sym: str, l: CtValue, r: CtValue) -> CtValue;
+
+def set_algebra(sym: str, l: CtSet, r: CtSet, frozen: bool) -> CtSet;
+
+def _repeat(seq: CtValue, n: int) -> CtValue;
+
+def _int_binop(sym: str, a: CtInt, b: CtInt, l: CtValue, r: CtValue) -> CtValue;
+
+def _float_binop(sym: str, l: CtValue, r: CtValue) -> CtValue;
+
+def ct_unary(op: str, v: CtValue) -> CtValue;
+
+def _num_cmp(l: CtValue, r: CtValue) -> (int | None);
+
+def _apply_cmp(sym: str, c: int) -> bool;
+
+def ct_order(sym: str, l: CtValue, r: CtValue) -> bool;
+
+def _subset(a: CtSet, b: CtSet) -> bool;
+
+def ct_lt(a: CtValue, b: CtValue) -> bool;
+
+def ct_contains(container: CtValue, item: CtValue) -> bool;
+
+def ct_is(l: CtValue, r: CtValue) -> bool;
+
+def ct_compare(sym: str, l: CtValue, r: CtValue) -> bool;
+
+def _index_of(base: CtValue, key: CtValue, what: str) -> int;
+
+def ct_getitem(base: CtValue, key: CtValue) -> CtValue;
+
+def _slice_bound(v: (CtValue | None)) -> (int | None);
+
+def slice_indices(
+    length: int, lo_v: (CtValue | None), hi_v: (CtValue | None), st_v: (CtValue | None)
+) -> tuple[int, int, int, int];
+
+def ct_getslice(
+    base: CtValue, lo: (CtValue | None), hi: (CtValue | None), st: (CtValue | None)
+) -> CtValue;
+
+def ct_setitem(base: CtValue, key: CtValue, val: CtValue);
+
+def ct_int_parse(text: str, base: int) -> (CtInt | None);
+
+def ct_int_literal(text: str) -> CtInt;
+
+def int_to_base_str(a: CtInt, base: int) -> str;
+
+def int_prefixed(a: CtInt, base: int) -> str;
+
+def int_round(a: CtInt, ndigits: int) -> CtInt;
+
+def float_round_to_int(f: float) -> CtInt;
+
+glob HASH_MODULUS: int = 2305843009213693951,
+     HASH_BITS: int = 61;
+
+def _hash_rotl(x: int, bits: int) -> int;
+
+def hash_int(a: CtInt) -> int;
+
+def hash_float(f: float) -> int;
+
+glob U64_MASK_MAG: list[int] = [1073741823, 1073741823, 15],
+     U64_MOD_MAG: list[int] = [0, 0, 16],
+     XXPRIME_1: list[int] = [99338887, 954066630, 9],
+     XXPRIME_2: list[int] = [668265295, 181057780, 12],
+     XXPRIME_5: list[int] = [374761413, 525577404, 2];
+
+def _u64(m: list[int]) -> list[int];
+
+def _u64_of(v: CtInt) -> list[int];
+
+def _u64_rotl31(m: list[int]) -> list[int];
+
+def hash_tuple(items: list[CtValue]) -> CtInt;
+
+def ct_hash(v: CtValue) -> CtInt;
+
+impl ct_symbol(opn: str) -> str {
     return CT_OP_SYMBOLS.get(opn, opn);
 }
 
-def int_neg(a: CtInt) -> CtInt {
+impl int_neg(a: CtInt) -> CtInt {
     if not a.mag {
         return CtInt(small=-a.small);
     }
     return mk_int_mag(not a.neg, a.mag);
 }
 
-def int_abs(a: CtInt) -> CtInt {
+impl int_abs(a: CtInt) -> CtInt {
     if not a.mag {
         return CtInt(small=abs(a.small));
     }
     return CtInt(mag=a.mag, neg=False);
 }
 
-def int_is_zero(a: CtInt) -> bool {
+impl int_is_zero(a: CtInt) -> bool {
     return not a.mag and a.small == 0;
 }
 
-def int_is_neg(a: CtInt) -> bool {
+impl int_is_neg(a: CtInt) -> bool {
     return a.neg if a.mag else a.small < 0;
 }
 
-def _signed_add(an: bool, am: list[int], bn: bool, bm: list[int]) -> CtInt {
+impl _signed_add(an: bool, am: list[int], bn: bool, bm: list[int]) -> CtInt {
     if an == bn {
         return mk_int_mag(an, mag_add(am, bm));
     }
@@ -62,7 +195,7 @@ def _signed_add(an: bool, am: list[int], bn: bool, bm: list[int]) -> CtInt {
     return mk_int_mag(bn, mag_sub(bm, am));
 }
 
-def int_add(a: CtInt, b: CtInt) -> CtInt {
+impl int_add(a: CtInt, b: CtInt) -> CtInt {
     if not a.mag and not b.mag {
         return mk_int(a.small + b.small);
     }
@@ -71,7 +204,7 @@ def int_add(a: CtInt, b: CtInt) -> CtInt {
     return _signed_add(an, am, bn, bm);
 }
 
-def int_sub(a: CtInt, b: CtInt) -> CtInt {
+impl int_sub(a: CtInt, b: CtInt) -> CtInt {
     if not a.mag and not b.mag {
         return mk_int(a.small - b.small);
     }
@@ -80,7 +213,7 @@ def int_sub(a: CtInt, b: CtInt) -> CtInt {
     return _signed_add(an, am, not bn, bm);
 }
 
-def int_mul(a: CtInt, b: CtInt) -> CtInt {
+impl int_mul(a: CtInt, b: CtInt) -> CtInt {
     if not a.mag and not b.mag {
         x = a.small;
         y = b.small;
@@ -96,7 +229,7 @@ def int_mul(a: CtInt, b: CtInt) -> CtInt {
     return mk_int_mag(an != bn, mag_mul(am, bm));
 }
 
-def int_divmod(a: CtInt, b: CtInt) -> tuple[CtInt, CtInt] {
+impl int_divmod(a: CtInt, b: CtInt) -> tuple[CtInt, CtInt] {
     if int_is_zero(b) {
         raise ct_exc("ZeroDivisionError", "division by zero");
     }
@@ -115,19 +248,19 @@ def int_divmod(a: CtInt, b: CtInt) -> tuple[CtInt, CtInt] {
     return (mk_int_mag(True, mag_add_small(qm, 1)), mk_int_mag(bn, mag_sub(bm, rm)));
 }
 
-def int_bit_length(a: CtInt) -> int {
+impl int_bit_length(a: CtInt) -> int {
     (_, m) = int_sign_mag(a);
     return mag_bit_length(m);
 }
 
-def int_small_index(a: CtInt) -> int {
+impl int_small_index(a: CtInt) -> int {
     if a.mag {
         raise ct_exc("IndexError", "cannot fit 'int' into an index-sized integer");
     }
     return a.small;
 }
 
-def int_pow(a: CtInt, b: CtInt) -> CtValue {
+impl int_pow(a: CtInt, b: CtInt) -> CtValue {
     if int_is_neg(b) {
         return float_pow(int_to_float(a), int_to_float(b));
     }
@@ -159,7 +292,7 @@ def int_pow(a: CtInt, b: CtInt) -> CtValue {
     return result;
 }
 
-def int_lshift(a: CtInt, b: CtInt) -> CtInt {
+impl int_lshift(a: CtInt, b: CtInt) -> CtInt {
     if int_is_neg(b) {
         raise ct_exc("ValueError", "negative shift count");
     }
@@ -176,7 +309,7 @@ def int_lshift(a: CtInt, b: CtInt) -> CtInt {
     return mk_int_mag(an, mag_shl(am, b.small));
 }
 
-def int_rshift(a: CtInt, b: CtInt) -> CtInt {
+impl int_rshift(a: CtInt, b: CtInt) -> CtInt {
     if int_is_neg(b) {
         raise ct_exc("ValueError", "negative shift count");
     }
@@ -199,11 +332,11 @@ def int_rshift(a: CtInt, b: CtInt) -> CtInt {
     return mk_int_mag(True, lowered);
 }
 
-def int_invert(a: CtInt) -> CtInt {
+impl int_invert(a: CtInt) -> CtInt {
     return int_sub(int_neg(a), CtInt(small=1));
 }
 
-def int_bitop(a: CtInt, b: CtInt, op: str) -> CtInt {
+impl int_bitop(a: CtInt, b: CtInt, op: str) -> CtInt {
     if not a.mag and not b.mag {
         if op == "&" {
             return CtInt(small=a.small & b.small);
@@ -239,7 +372,7 @@ def int_bitop(a: CtInt, b: CtInt, op: str) -> CtInt {
     return mk_int_mag(neg, mag);
 }
 
-def int_to_float(a: CtInt) -> float {
+impl int_to_float(a: CtInt) -> float {
     if not a.mag {
         return float(a.small);
     }
@@ -261,7 +394,7 @@ def int_to_float(a: CtInt) -> float {
     return -out if a.neg else out;
 }
 
-def int_truediv(a: CtInt, b: CtInt) -> float {
+impl int_truediv(a: CtInt, b: CtInt) -> float {
     if int_is_zero(b) {
         raise ct_exc("ZeroDivisionError", "division by zero");
     }
@@ -319,7 +452,7 @@ def int_truediv(a: CtInt, b: CtInt) -> float {
     return -result if negate else result;
 }
 
-def float_divmod(vx: float, wx: float) -> tuple[float, float] {
+impl float_divmod(vx: float, wx: float) -> tuple[float, float] {
     if wx == 0.0 {
         raise ct_exc("ZeroDivisionError", "division by zero");
     }
@@ -344,14 +477,14 @@ def float_divmod(vx: float, wx: float) -> tuple[float, float] {
     return (floordiv, mod);
 }
 
-def c_fmod(vx: float, wx: float) -> float {
+impl c_fmod(vx: float, wx: float) -> float {
     if vx != vx or wx != wx or vx - vx != 0.0 {
         return float("nan");
     }
     return math.fmod(vx, wx);
 }
 
-def float_pow(v: float, w: float) -> CtValue {
+impl float_pow(v: float, w: float) -> CtValue {
     if w == 0.0 {
         return mk_float(1.0);
     }
@@ -411,14 +544,14 @@ def float_pow(v: float, w: float) -> CtValue {
     return mk_float(-ix if negate else ix);
 }
 
-def _float_is_odd_int(w: float) -> bool {
+impl _float_is_odd_int(w: float) -> bool {
     if w != float_floor(w) or abs(w) >= 9007199254740992.0 {
         return False;
     }
     return int(w) % 2 != 0;
 }
 
-def to_float_operand(v: CtValue) -> (float | None) {
+impl to_float_operand(v: CtValue) -> (float | None) {
     if isinstance(v, CtFloat) {
         return v.value;
     }
@@ -429,7 +562,7 @@ def to_float_operand(v: CtValue) -> (float | None) {
     return None;
 }
 
-def _unsupported(sym: str, l: CtValue, r: CtValue) -> CtRaise {
+impl _unsupported(sym: str, l: CtValue, r: CtValue) -> CtRaise {
     return ct_exc(
         "TypeError",
         f"unsupported operand type(s) for {sym}: '{ct_type_name(l)}' and '{ct_type_name(
@@ -438,14 +571,14 @@ def _unsupported(sym: str, l: CtValue, r: CtValue) -> CtRaise {
     );
 }
 
-def _repeat_count(n: CtInt) -> int {
+impl _repeat_count(n: CtInt) -> int {
     if n.mag {
         raise ct_exc("OverflowError", "cannot fit 'int' into an index-sized integer");
     }
     return max(n.small, 0);
 }
 
-def ct_binop(sym: str, l: CtValue, r: CtValue) -> CtValue {
+impl ct_binop(sym: str, l: CtValue, r: CtValue) -> CtValue {
     if isinstance(l, CtDeferred) or isinstance(r, CtDeferred) {
         raise CtDeferredSignal();
     }
@@ -539,7 +672,7 @@ def ct_binop(sym: str, l: CtValue, r: CtValue) -> CtValue {
     raise _unsupported(sym, l, r);
 }
 
-def set_algebra(sym: str, l: CtSet, r: CtSet, frozen: bool) -> CtSet {
+impl set_algebra(sym: str, l: CtSet, r: CtSet, frozen: bool) -> CtSet {
     out = mk_set([], frozen=frozen);
     if sym == "|" {
         for item in l.items {
@@ -576,7 +709,7 @@ def set_algebra(sym: str, l: CtSet, r: CtSet, frozen: bool) -> CtSet {
     return out;
 }
 
-def _repeat(seq: CtValue, n: int) -> CtValue {
+impl _repeat(seq: CtValue, n: int) -> CtValue {
     if isinstance(seq, CtStr) {
         if n and len(seq.value) * n > 100000000 {
             raise CtError("comptime sequence repetition is too large");
@@ -598,7 +731,7 @@ def _repeat(seq: CtValue, n: int) -> CtValue {
     return seq;
 }
 
-def _int_binop(sym: str, a: CtInt, b: CtInt, l: CtValue, r: CtValue) -> CtValue {
+impl _int_binop(sym: str, a: CtInt, b: CtInt, l: CtValue, r: CtValue) -> CtValue {
     if sym == "+" {
         return int_add(a, b);
     }
@@ -632,7 +765,7 @@ def _int_binop(sym: str, a: CtInt, b: CtInt, l: CtValue, r: CtValue) -> CtValue 
     raise _unsupported(sym, l, r);
 }
 
-def _float_binop(sym: str, l: CtValue, r: CtValue) -> CtValue {
+impl _float_binop(sym: str, l: CtValue, r: CtValue) -> CtValue {
     if sym in ("&", "|", "^", "<<", ">>") {
         raise _unsupported(sym, l, r);
     }
@@ -668,7 +801,7 @@ def _float_binop(sym: str, l: CtValue, r: CtValue) -> CtValue {
     raise _unsupported(sym, l, r);
 }
 
-def ct_unary(op: str, v: CtValue) -> CtValue {
+impl ct_unary(op: str, v: CtValue) -> CtValue {
     if isinstance(v, CtDeferred) {
         raise CtDeferredSignal();
     }
@@ -698,7 +831,7 @@ def ct_unary(op: str, v: CtValue) -> CtValue {
     raise ct_exc("TypeError", f"bad operand type for unary {op}: '{ct_type_name(v)}'");
 }
 
-def _num_cmp(l: CtValue, r: CtValue) -> (int | None) {
+impl _num_cmp(l: CtValue, r: CtValue) -> (int | None) {
     li = as_ct_int(l);
     ri = as_ct_int(r);
     if li is not None and ri is not None {
@@ -723,7 +856,7 @@ def _num_cmp(l: CtValue, r: CtValue) -> (int | None) {
     return None;
 }
 
-def _apply_cmp(sym: str, c: int) -> bool {
+impl _apply_cmp(sym: str, c: int) -> bool {
     if c == 2 {
         return False;
     }
@@ -739,7 +872,7 @@ def _apply_cmp(sym: str, c: int) -> bool {
     return c >= 0;
 }
 
-def ct_order(sym: str, l: CtValue, r: CtValue) -> bool {
+impl ct_order(sym: str, l: CtValue, r: CtValue) -> bool {
     if isinstance(l, CtDeferred) or isinstance(r, CtDeferred) {
         raise CtDeferredSignal();
     }
@@ -796,7 +929,7 @@ def ct_order(sym: str, l: CtValue, r: CtValue) -> bool {
     );
 }
 
-def _subset(a: CtSet, b: CtSet) -> bool {
+impl _subset(a: CtSet, b: CtSet) -> bool {
     if len(a.items) > len(b.items) {
         return False;
     }
@@ -808,11 +941,11 @@ def _subset(a: CtSet, b: CtSet) -> bool {
     return True;
 }
 
-def ct_lt(a: CtValue, b: CtValue) -> bool {
+impl ct_lt(a: CtValue, b: CtValue) -> bool {
     return ct_order("<", a, b);
 }
 
-def ct_contains(container: CtValue, item: CtValue) -> bool {
+impl ct_contains(container: CtValue, item: CtValue) -> bool {
     if isinstance(container, CtDeferred) or isinstance(item, CtDeferred) {
         raise CtDeferredSignal();
     }
@@ -898,7 +1031,7 @@ def ct_contains(container: CtValue, item: CtValue) -> bool {
     );
 }
 
-def ct_is(l: CtValue, r: CtValue) -> bool {
+impl ct_is(l: CtValue, r: CtValue) -> bool {
     if isinstance(l, CtNone) or isinstance(r, CtNone) {
         return isinstance(l, CtNone) and isinstance(r, CtNone);
     }
@@ -916,7 +1049,7 @@ def ct_is(l: CtValue, r: CtValue) -> bool {
     return l is r;
 }
 
-def ct_compare(sym: str, l: CtValue, r: CtValue) -> bool {
+impl ct_compare(sym: str, l: CtValue, r: CtValue) -> bool {
     if sym == "==" {
         return ct_eq(l, r);
     }
@@ -938,7 +1071,7 @@ def ct_compare(sym: str, l: CtValue, r: CtValue) -> bool {
     return ct_order(sym, l, r);
 }
 
-def _index_of(base: CtValue, key: CtValue, what: str) -> int {
+impl _index_of(base: CtValue, key: CtValue, what: str) -> int {
     kv = as_ct_int(key);
     if kv is None {
         tn = ct_type_name(base);
@@ -968,7 +1101,7 @@ def _index_of(base: CtValue, key: CtValue, what: str) -> int {
     return idx;
 }
 
-def ct_getitem(base: CtValue, key: CtValue) -> CtValue {
+impl ct_getitem(base: CtValue, key: CtValue) -> CtValue {
     if isinstance(base, CtDeferred) or isinstance(key, CtDeferred) {
         raise CtDeferredSignal();
     }
@@ -998,7 +1131,7 @@ def ct_getitem(base: CtValue, key: CtValue) -> CtValue {
     raise ct_exc("TypeError", f"'{ct_type_name(base)}' object is not subscriptable");
 }
 
-def _slice_bound(v: (CtValue | None)) -> (int | None) {
+impl _slice_bound(v: (CtValue | None)) -> (int | None) {
     if v is None or isinstance(v, CtNone) {
         return None;
     }
@@ -1015,7 +1148,7 @@ def _slice_bound(v: (CtValue | None)) -> (int | None) {
     return iv.small;
 }
 
-def slice_indices(
+impl slice_indices(
     length: int, lo_v: (CtValue | None), hi_v: (CtValue | None), st_v: (CtValue | None)
 ) -> tuple[int, int, int, int] {
     step = _slice_bound(st_v);
@@ -1064,7 +1197,7 @@ def slice_indices(
     return (start, stop, step, count);
 }
 
-def ct_getslice(
+impl ct_getslice(
     base: CtValue, lo: (CtValue | None), hi: (CtValue | None), st: (CtValue | None)
 ) -> CtValue {
     if isinstance(base, CtDeferred) {
@@ -1099,7 +1232,7 @@ def ct_getslice(
     return mk_list(picked) if isinstance(base, CtList) else mk_tuple(picked);
 }
 
-def ct_setitem(base: CtValue, key: CtValue, val: CtValue) {
+impl ct_setitem(base: CtValue, key: CtValue, val: CtValue) {
     if isinstance(base, CtList) {
         base.items[_index_of(base, key, "list assignment index out of range")] = val;
         return;
@@ -1116,7 +1249,7 @@ def ct_setitem(base: CtValue, key: CtValue, val: CtValue) {
     );
 }
 
-def ct_int_parse(text: str, base: int) -> (CtInt | None) {
+impl ct_int_parse(text: str, base: int) -> (CtInt | None) {
     s = text.strip();
     neg = False;
     if s.startswith("-") or s.startswith("+") {
@@ -1174,7 +1307,7 @@ def ct_int_parse(text: str, base: int) -> (CtInt | None) {
     return mk_int_mag(neg, mag);
 }
 
-def ct_int_literal(text: str) -> CtInt {
+impl ct_int_literal(text: str) -> CtInt {
     got = ct_int_parse(text, 0);
     if got is None {
         raise CtError(f"invalid integer literal {text!r}");
@@ -1182,7 +1315,7 @@ def ct_int_literal(text: str) -> CtInt {
     return got;
 }
 
-def int_to_base_str(a: CtInt, base: int) -> str {
+impl int_to_base_str(a: CtInt, base: int) -> str {
     (_, m) = int_sign_mag(a);
     if base == 10 {
         return int_decimal(int_abs(a));
@@ -1191,13 +1324,13 @@ def int_to_base_str(a: CtInt, base: int) -> str {
     return mag_to_pow2_str(m, bits);
 }
 
-def int_prefixed(a: CtInt, base: int) -> str {
+impl int_prefixed(a: CtInt, base: int) -> str {
     prefix = {16: "0x", 8: "0o", 2: "0b"}[base];
     body = int_to_base_str(a, base);
     return ("-" if int_is_neg(a) else "") + prefix + body;
 }
 
-def int_round(a: CtInt, ndigits: int) -> CtInt {
+impl int_round(a: CtInt, ndigits: int) -> CtInt {
     if ndigits >= 0 {
         return a;
     }
@@ -1214,7 +1347,7 @@ def int_round(a: CtInt, ndigits: int) -> CtInt {
     return int_mul(q, pow10);
 }
 
-def float_round_to_int(f: float) -> CtInt {
+impl float_round_to_int(f: float) -> CtInt {
     if f != f {
         raise ct_exc("ValueError", "cannot convert float NaN to integer");
     }
@@ -1232,15 +1365,12 @@ def float_round_to_int(f: float) -> CtInt {
     return float_to_ct_int(fl);
 }
 
-glob HASH_MODULUS: int = 2305843009213693951,
-     HASH_BITS: int = 61;
-
-def _hash_rotl(x: int, bits: int) -> int {
+impl _hash_rotl(x: int, bits: int) -> int {
     low = x & ((1 << (HASH_BITS - bits)) - 1);
     return (low << bits) | (x >> (HASH_BITS - bits));
 }
 
-def hash_int(a: CtInt) -> int {
+impl hash_int(a: CtInt) -> int {
     if not a.mag {
         v = a.small;
         neg = v < 0;
@@ -1262,7 +1392,7 @@ def hash_int(a: CtInt) -> int {
     return -2 if x == -1 else x;
 }
 
-def hash_float(f: float) -> int {
+impl hash_float(f: float) -> int {
     if f != f {
         raise CtError(
             "hash() of NaN depends on object identity and is not reproducible at compile time"
@@ -1295,13 +1425,7 @@ def hash_float(f: float) -> int {
     return -2 if x == -1 else x;
 }
 
-glob U64_MASK_MAG: list[int] = [1073741823, 1073741823, 15],
-     U64_MOD_MAG: list[int] = [0, 0, 16],
-     XXPRIME_1: list[int] = [99338887, 954066630, 9],
-     XXPRIME_2: list[int] = [668265295, 181057780, 12],
-     XXPRIME_5: list[int] = [374761413, 525577404, 2];
-
-def _u64(m: list[int]) -> list[int] {
+impl _u64(m: list[int]) -> list[int] {
     out: list[int] = [];
     for i in range(min(len(m), 3)) {
         out.append(m[i] & U64_MASK_MAG[i]);
@@ -1312,7 +1436,7 @@ def _u64(m: list[int]) -> list[int] {
     return out;
 }
 
-def _u64_of(v: CtInt) -> list[int] {
+impl _u64_of(v: CtInt) -> list[int] {
     (neg, m) = int_sign_mag(v);
     if not neg or not m {
         return _u64(m);
@@ -1320,11 +1444,11 @@ def _u64_of(v: CtInt) -> list[int] {
     return _u64(mag_sub(U64_MOD_MAG, _u64(m)));
 }
 
-def _u64_rotl31(m: list[int]) -> list[int] {
+impl _u64_rotl31(m: list[int]) -> list[int] {
     return _u64(mag_add(mag_shl(m, 31), mag_shr(m, 33)));
 }
 
-def hash_tuple(items: list[CtValue]) -> CtInt {
+impl hash_tuple(items: list[CtValue]) -> CtInt {
     acc = XXPRIME_5;
     for item in items {
         lane = _u64_of(ct_hash(item));
@@ -1344,7 +1468,7 @@ def hash_tuple(items: list[CtValue]) -> CtInt {
     return signed;
 }
 
-def ct_hash(v: CtValue) -> CtInt {
+impl ct_hash(v: CtValue) -> CtInt {
     if isinstance(v, CtBool) {
         return CtInt(small=1 if v.value else 0);
     }

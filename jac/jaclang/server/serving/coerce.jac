@@ -9,9 +9,7 @@ import from typing { Union, get_args, get_origin, get_type_hints }
 obj RequestValidationError(Exception) {
     has errors: list[dict[str, any]] = [];
 
-    def __str__ -> str {
-        return f"{len(self.errors)} validation error(s)";
-    }
+    def __str__ -> str;
 }
 
 glob _TRUE_STRINGS: set[str] = {'1', 'true', 'yes', 'on', 'y'},
@@ -34,7 +32,64 @@ glob _TRUE_STRINGS: set[str] = {'1', 'true', 'yes', 'on', 'y'},
      };
 
 
-def _coerce_bool(value: any) -> bool {
+def _coerce_bool(value: any) -> bool;
+
+def _construct_object(value: any, target: any) -> any;
+
+def _as_item_list(value: any) -> list[any];
+
+def is_upload_type(target: any) -> bool;
+
+def _accepts_upload(target: any) -> bool;
+
+def _accepts_upload_list(target: any) -> bool;
+
+def _accepts_single_upload(target: any) -> bool;
+
+def _without_none(target: any) -> any;
+
+def coerce_value(value: any, target: any = None) -> any;
+
+def _coerce_union(value: any, options: tuple[object, ...]) -> any;
+
+def _param_target(param: APIParameter) -> any;
+
+def _header_lookup(request: Request, name: str) -> (str | None);
+
+def _extract_raw(
+    param: APIParameter, request: Request, body_json: any
+) -> tuple[bool, any];
+
+def _fresh_default(value: any) -> any;
+
+def bind_parameters(ep: JEndPoint, request: Request, body_json: any) -> dict[str, any];
+
+obj CallbackSpec {
+    has names: set[str] = set(),
+        body_candidates: list[str] = [],
+        accepts_var_kw: bool = False,
+        wants_request: bool = False,
+        request_positional: bool = False,
+        introspectable: bool = True,
+        is_async: bool = False;
+}
+
+def build_callback_spec(callback: any) -> CallbackSpec;
+
+def get_callback_spec(ep: JEndPoint) -> CallbackSpec;
+
+def body_param_name(spec: CallbackSpec, bound: dict[str, any]) -> (str | None);
+
+def filter_kwargs_for_callback(
+    spec: CallbackSpec, kwargs: dict[str, any], request: Request
+) -> dict[str, any];
+
+impl RequestValidationError.__str__ -> str {
+    return f"{len(self.errors)} validation error(s)";
+}
+
+
+impl _coerce_bool(value: any) -> bool {
     if isinstance(value, bool) {
         return value;
     }
@@ -48,7 +103,7 @@ def _coerce_bool(value: any) -> bool {
     raise ValueError(f"invalid boolean: {value!r}");
 }
 
-def _construct_object(value: any, target: any) -> any {
+impl _construct_object(value: any, target: any) -> any {
     if isinstance(value, target) {
         return value;
     }
@@ -82,14 +137,14 @@ def _construct_object(value: any, target: any) -> any {
     return target(**kwargs);
 }
 
-def _as_item_list(value: any) -> list[any] {
+impl _as_item_list(value: any) -> list[any] {
     if isinstance(value, (list, tuple, set)) {
         return list(value);
     }
     return [value];
 }
 
-def is_upload_type(target: any) -> bool {
+impl is_upload_type(target: any) -> bool {
     if target is None {
         return False;
     }
@@ -112,7 +167,7 @@ def is_upload_type(target: any) -> bool {
     return False;
 }
 
-def _accepts_upload(target: any) -> bool {
+impl _accepts_upload(target: any) -> bool {
     origin = get_origin(target);
     if origin is Union or origin is UnionType {
         return any([_accepts_upload(arg) for arg in get_args(target)]);
@@ -120,7 +175,7 @@ def _accepts_upload(target: any) -> bool {
     return is_upload_type(target);
 }
 
-def _accepts_upload_list(target: any) -> bool {
+impl _accepts_upload_list(target: any) -> bool {
     origin = get_origin(target);
     if origin is Union or origin is UnionType {
         return any([_accepts_upload_list(arg) for arg in get_args(target)]);
@@ -128,7 +183,7 @@ def _accepts_upload_list(target: any) -> bool {
     return origin is list and is_upload_type(target);
 }
 
-def _accepts_single_upload(target: any) -> bool {
+impl _accepts_single_upload(target: any) -> bool {
     origin = get_origin(target);
     if origin is Union or origin is UnionType {
         return any([_accepts_single_upload(arg) for arg in get_args(target)]);
@@ -136,7 +191,7 @@ def _accepts_single_upload(target: any) -> bool {
     return origin is not list and is_upload_type(target);
 }
 
-def _without_none(target: any) -> any {
+impl _without_none(target: any) -> any {
     origin = get_origin(target);
     if origin is Union or origin is UnionType {
         args = [
@@ -151,7 +206,7 @@ def _without_none(target: any) -> any {
     return target;
 }
 
-def coerce_value(value: any, target: any = None) -> any {
+impl coerce_value(value: any, target: any = None) -> any {
     if isinstance(value, UploadFile) {
         return value;
     }
@@ -234,7 +289,7 @@ def coerce_value(value: any, target: any = None) -> any {
     return value;
 }
 
-def _coerce_union(value: any, options: tuple[object, ...]) -> any {
+impl _coerce_union(value: any, options: tuple[object, ...]) -> any {
     none_type = type(None);
     if value is None {
         for opt in options {
@@ -260,14 +315,14 @@ def _coerce_union(value: any, options: tuple[object, ...]) -> any {
     return value;
 }
 
-def _param_target(param: APIParameter) -> any {
+impl _param_target(param: APIParameter) -> any {
     if param.type_obj is not None {
         return param.type_obj;
     }
     return param.data_type;
 }
 
-def _header_lookup(request: Request, name: str) -> (str | None) {
+impl _header_lookup(request: Request, name: str) -> (str | None) {
     direct = request.headers.get(name);
     if direct is not None {
         return direct;
@@ -275,7 +330,7 @@ def _header_lookup(request: Request, name: str) -> (str | None) {
     return request.headers.get(name.replace('_', '-'));
 }
 
-def _extract_raw(
+impl _extract_raw(
     param: APIParameter, request: Request, body_json: any
 ) -> tuple[bool, any] {
     if param.kind == ParameterType.PATH {
@@ -341,7 +396,7 @@ def _extract_raw(
     return (False, None);
 }
 
-def _fresh_default(value: any) -> any {
+impl _fresh_default(value: any) -> any {
     if isinstance(value, (dict, list, set)) {
         import copy;
         try {
@@ -353,7 +408,9 @@ def _fresh_default(value: any) -> any {
     return value;
 }
 
-def bind_parameters(ep: JEndPoint, request: Request, body_json: any) -> dict[str, any] {
+impl bind_parameters(
+    ep: JEndPoint, request: Request, body_json: any
+) -> dict[str, any] {
     kwargs: dict[str, any] = {};
     errors: list[dict[str, any]] = [];
     declared: set[str] = set();
@@ -396,17 +453,7 @@ def bind_parameters(ep: JEndPoint, request: Request, body_json: any) -> dict[str
     return kwargs;
 }
 
-obj CallbackSpec {
-    has names: set[str] = set(),
-        body_candidates: list[str] = [],
-        accepts_var_kw: bool = False,
-        wants_request: bool = False,
-        request_positional: bool = False,
-        introspectable: bool = True,
-        is_async: bool = False;
-}
-
-def build_callback_spec(callback: any) -> CallbackSpec {
+impl build_callback_spec(callback: any) -> CallbackSpec {
     is_async = inspect.iscoroutinefunction(callback);
     try {
         sig = inspect.signature(callback);
@@ -447,14 +494,14 @@ def build_callback_spec(callback: any) -> CallbackSpec {
     );
 }
 
-def get_callback_spec(ep: JEndPoint) -> CallbackSpec {
+impl get_callback_spec(ep: JEndPoint) -> CallbackSpec {
     if ep.callback_spec is None {
         ep.callback_spec = build_callback_spec(ep.callback);
     }
     return ep.callback_spec;
 }
 
-def body_param_name(spec: CallbackSpec, bound: dict[str, any]) -> (str | None) {
+impl body_param_name(spec: CallbackSpec, bound: dict[str, any]) -> (str | None) {
     for pname in spec.body_candidates {
         if pname not in bound {
             return pname;
@@ -463,7 +510,7 @@ def body_param_name(spec: CallbackSpec, bound: dict[str, any]) -> (str | None) {
     return None;
 }
 
-def filter_kwargs_for_callback(
+impl filter_kwargs_for_callback(
     spec: CallbackSpec, kwargs: dict[str, any], request: Request
 ) -> dict[str, any] {
     if not spec.introspectable {

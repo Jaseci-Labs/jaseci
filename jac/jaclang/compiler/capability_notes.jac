@@ -20,6 +20,23 @@ def note_capability(
     code: str,
     text: str,
     requires: bool = False
+) -> None;
+
+def capability_notes_of(
+    prog: JacProgram, mod_path: str, target: str = ""
+) -> list[CapabilityNote];
+
+def forget_capability_notes(prog: JacProgram, mod_path: str);
+
+def placement_neutral(nd: UniNode) -> bool;
+
+impl note_capability(
+    prog: JacProgram,
+    site: UniNode,
+    target: str,
+    code: str,
+    text: str,
+    requires: bool = False
 ) -> None {
     path = site.loc.mod_path if site.loc is not None else "";
     if not path {
@@ -35,7 +52,7 @@ def note_capability(
     );
 }
 
-def capability_notes_of(
+impl capability_notes_of(
     prog: JacProgram, mod_path: str, target: str = ""
 ) -> list[CapabilityNote] {
     found = prog.analysis.capability_notes.get(os.path.realpath(mod_path));
@@ -52,11 +69,11 @@ def capability_notes_of(
     return out;
 }
 
-def forget_capability_notes(prog: JacProgram, mod_path: str) {
+impl forget_capability_notes(prog: JacProgram, mod_path: str) {
     prog.analysis.capability_notes.pop(os.path.realpath(mod_path), None);
 }
 
-def placement_neutral(nd: UniNode) -> bool {
+impl placement_neutral(nd: UniNode) -> bool {
     """Whether `nd` sits in code whose native placement is still open: the
     first analysis of a module that has no declared codespace and may take
     the project's native preference. What only native code can do is then a

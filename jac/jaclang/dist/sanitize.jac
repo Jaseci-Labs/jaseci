@@ -3,18 +3,28 @@ import from pathlib { Path }
 
 glob LOCAL_OVERLAY_NAME: str = "jac.local.toml";
 
-def is_secret_path(name: str) -> bool {
+def is_secret_path(name: str) -> bool;
+
+def is_dev_section(name: str) -> bool;
+
+def sanitize_jac_toml_text(text: str) -> str;
+
+def sanitized_jac_toml(base: Path) -> (str | None);
+
+def sanitize_shipped_tree(tree: Path);
+
+impl is_secret_path(name: str) -> bool {
     return name == "plugins.scale.secrets"
         or name.startswith("plugins.scale.secrets.")
         or name == "scale.secrets"
         or name.startswith("scale.secrets.");
 }
 
-def is_dev_section(name: str) -> bool {
+impl is_dev_section(name: str) -> bool {
     return name == "dev" or name.startswith("dev.");
 }
 
-def sanitize_jac_toml_text(text: str) -> str {
+impl sanitize_jac_toml_text(text: str) -> str {
     out: list[str] = [];
     pending: list[str] = [];
     in_stripped_section = False;
@@ -55,7 +65,7 @@ def sanitize_jac_toml_text(text: str) -> str {
     return "\n".join(out) + "\n";
 }
 
-def sanitized_jac_toml(base: Path) -> (str | None) {
+impl sanitized_jac_toml(base: Path) -> (str | None) {
     src = base / "jac.toml";
     if not src.is_file() {
         return None;
@@ -63,7 +73,7 @@ def sanitized_jac_toml(base: Path) -> (str | None) {
     return sanitize_jac_toml_text(src.read_text());
 }
 
-def sanitize_shipped_tree(tree: Path) {
+impl sanitize_shipped_tree(tree: Path) {
     for (dirpath, dirnames, filenames) in os.walk(str(tree)) {
         dirnames[:] = [
             d

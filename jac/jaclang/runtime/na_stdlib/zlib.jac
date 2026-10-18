@@ -12,17 +12,28 @@ import from ._zlib_native {
 }
 
 
-def:pub crc32(data: bytes, value: int = 0) -> int {
+def:pub crc32(data: bytes, value: int = 0) -> int;
+
+
+def:pub adler32(data: bytes, value: int = 1) -> int;
+
+
+def:pub compress(data: bytes, level: int = -1) -> bytes;
+
+
+def:pub decompress(data: bytes | bytearray) -> bytes;
+
+impl crc32(data: bytes, value: int = 0) -> int {
     return z_crc32(value, data, len(data));
 }
 
 
-def:pub adler32(data: bytes, value: int = 1) -> int {
+impl adler32(data: bytes, value: int = 1) -> int {
     return z_adler32(value, data, len(data));
 }
 
 
-def:pub compress(data: bytes, level: int = -1) -> bytes {
+impl compress(data: bytes, level: int = -1) -> bytes {
     source_len: int = len(data);
 
     bound: int = z_compress_bound(source_len);
@@ -36,7 +47,7 @@ def:pub compress(data: bytes, level: int = -1) -> bytes {
 }
 
 
-def:pub decompress(data: bytes | bytearray) -> bytes {
+impl decompress(data: bytes | bytearray) -> bytes {
     source: bytes;
     if isinstance(data, bytearray) {
         source = bytes(data);

@@ -4,12 +4,20 @@ import os;
 glob __all__ = ['humanize_error', 'show_tracebacks'];
 
 
-def show_tracebacks -> bool {
+def show_tracebacks -> bool;
+
+
+def _sqlstate(e: Exception) -> str;
+
+
+def humanize_error(e: Exception) -> (tuple[str, (str | None)] | None);
+
+impl show_tracebacks -> bool {
     return os.environ.get('JAC_DEBUG', '').lower() not in ('', '0', 'false');
 }
 
 
-def _sqlstate(e: Exception) -> str {
+impl _sqlstate(e: Exception) -> str {
     for arg in getattr(e, 'args', ()) {
         if isinstance(arg, dict) and 'C' in arg {
             return str(arg.get('C') or '');
@@ -19,7 +27,7 @@ def _sqlstate(e: Exception) -> str {
 }
 
 
-def humanize_error(e: Exception) -> (tuple[str, (str | None)] | None) {
+impl humanize_error(e: Exception) -> (tuple[str, (str | None)] | None) {
     if isinstance(e, PortInUseError) {
         return (
             str(e),

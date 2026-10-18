@@ -76,12 +76,146 @@ glob ACCESSOR_SLOT_SUFFIX: dict[str, str] = {
          "deleter": "__del__"
      };
 
-def accessor_slot_name(field_name: str, acc: Ability) -> (str | None) {
+def accessor_slot_name(field_name: str, acc: Ability) -> (str | None);
+
+def archetype_accessors(arch: Archetype) -> list[tuple[(str, HasVar, Ability)]];
+
+glob NON_DISPATCHED_METHODS: frozenset[str] = frozenset(
+         {"init", "postinit", "__init__", "__post_init__", "drop"}
+     );
+
+def open_dispatch(arch: Archetype) -> bool;
+
+def get_layout_registry(module: Module, prog: JacProgram) -> LayoutRegistry;
+
+def layout_slot_count(lay: ArchetypeLayout) -> int;
+
+glob _NATIVE_NAME_BY_DECL: dict[tuple[str, int, int, str], str] = {},
+     _NATIVE_NAMED_CLASSES: set[str] = set(),
+     _NATIVE_NAME_BY_STDLIB: dict[tuple[str, str], str] = {};
+
+def archetype_native_name(arch: Archetype) -> str;
+
+def record_interface_twins(native_mod: Module, prog: JacProgram);
+
+def _archetype_native_name(arch: Archetype, name: str) -> str;
+
+def _recorded_native_name(shared: ClassDetailsShared) -> (str | None);
+
+def _declared_native_name(shared: ClassDetailsShared) -> str;
+
+def referenced_archetype(expr: (UniNode | None)) -> (Archetype | None);
+
+def referenced_native_name(expr: (UniNode | None)) -> (str | None);
+
+def class_type_native_name(typ: (TypeBase | None)) -> (str | None);
+
+def interface_class_native_name(shared: ClassDetailsShared) -> str;
+
+def native_type_key(typ: TypeBase) -> str;
+
+def declaring_module_path(base_expr: Expr) -> str;
+
+def headers_agree(child: ArchetypeLayout, base: ArchetypeLayout) -> bool;
+
+def relax_vtable_header(
+    lay: ArchetypeLayout, ancestors: list[ArchetypeLayout], header_identity: bool = True
+) -> bool;
+
+def extended_mro(reg: LayoutRegistry, lay: ArchetypeLayout) -> list[str];
+
+def adopt_imported_bases(module: Module, header_identity: bool = True) -> list[str];
+
+def adopt_ancestor_slots(lay: ArchetypeLayout, ancestors: list[ArchetypeLayout]);
+
+def clone_field(finfo: FieldLayout, index: int) -> FieldLayout;
+
+def adopt_ancestor_methods(lay: ArchetypeLayout, ancestors: list[ArchetypeLayout]);
+
+def is_erased_base_name(name: str, archetypes: dict[str, Archetype]) -> bool;
+
+def enum_class_of(t: (TypeBase | None)) -> (ClassType | None);
+
+def is_enum_class_type(t: (TypeBase | None)) -> bool;
+
+def enum_decl_of(t: (TypeBase | None)) -> (Enum | Archetype | None);
+
+def enum_value_type_of(t: (TypeBase | None)) -> (TypeBase | None);
+
+def class_form_enum_scalar(t: (TypeBase | None)) -> (str | None);
+
+def class_form_enum_decls(module: Module) -> list[Archetype];
+
+def enum_member_literal(value_expr: (UniNode | None)) -> (str | int | None);
+
+def is_enum_auto(value_expr: (UniNode | None)) -> bool;
+
+def resolve_enum_member_values(
+    raw_members: list[tuple[(str, (UniNode | None))]]
+) -> list[(str | int | None)];
+
+def class_form_enum_members(
+    scope: (UniScopeNode | None)
+) -> list[tuple[(str, (UniNode | None))]];
+
+def class_form_enum_literal(t: ClassType, member: str) -> (str | int | None);
+
+def class_form_enum_member(
+    t: (TypeBase | None)
+) -> (tuple[(str, (str | int), str)] | None);
+
+obj LayoutRegistry {
+    has layouts: dict[str, ArchetypeLayout] = {},
+        class_parents: dict[str, list[str]] = {},
+        parent_mods: dict[str, list[str]] = {},
+        mro_order: dict[str, list[str]] = {},
+        topo_order: list[str] = [],
+        local_names: list[str] = [],
+        enums: dict[str, EnumLayout] = {};
+
+    def get_layout(name: str) -> (ArchetypeLayout | None);
+    def get_enum_layout(name: str) -> (EnumLayout | None);
+    def resolve_method_owner(arch_name: str, method_name: str) -> (str | None);
+    def get_mro(name: str) -> list[str];
+    def get_topo_order -> list[str];
+    def dependency_order(names: list[str]) -> list[str];
+    def is_primary_ancestor(child: str, ancestor: str) -> bool;
+}
+
+walker LayoutPass(CompilerPass) {
+    static has contract: PassContract = PassContract();
+    has registry: LayoutRegistry postinit,
+        isinstance_targets: set[str] postinit;
+
+    def postinit -> None;
+    def _run_impl(ir_in: Module) -> Module;
+    can run_walk with Module entry;
+    def _type_declaration_surface(module: Module) -> None;
+    def _collect_archetypes(module: Module) -> dict[str, Archetype];
+    def _collect_isinstance_targets(module: Module) -> None;
+    def _build_hierarchy(archetypes: dict[str, Archetype]) -> None;
+    def _compute_c3_mro(class_name: str) -> list[str];
+    def _topo_sort(arch_map: dict[str, Archetype]) -> list[str];
+    def _build_layout(arch: Archetype) -> ArchetypeLayout;
+    def _build_enum_layouts(module: Module) -> None;
+    def _compute_acyclicity -> None;
+    def _acyclic_walk(name: str, state: dict[str, int]) -> int;
+    def _expand_type_keys(key: str) -> (list[str] | None);
+    def _split_top_level(s: str, sep: str) -> list[str];
+    def _build_vtable_layout(arch_name: str, arch_map: dict[str, Archetype]) -> None;
+    def _validate_obj_fields(arch: Archetype, arch_map: dict[str, Archetype]) -> None;
+    def _is_layout_compatible_semantic_type(typ: TypeBase | None) -> bool;
+    def _is_layout_compatible_type(
+        type_node: (UniNode | None), arch_map: dict[str, Archetype]
+    ) -> bool;
+}
+
+impl accessor_slot_name(field_name: str, acc: Ability) -> (str | None) {
     suffix = ACCESSOR_SLOT_SUFFIX.get(acc.accessor_kind);
     return None if suffix is None else f"{field_name}.{suffix}";
 }
 
-def archetype_accessors(arch: Archetype) -> list[tuple[(str, HasVar, Ability)]] {
+impl archetype_accessors(arch: Archetype) -> list[tuple[(str, HasVar, Ability)]] {
     out: list[tuple[(str, HasVar, Ability)]] = [];
     for var in arch.get_has_vars() {
         if not var.accessors {
@@ -98,11 +232,7 @@ def archetype_accessors(arch: Archetype) -> list[tuple[(str, HasVar, Ability)]] 
     return out;
 }
 
-glob NON_DISPATCHED_METHODS: frozenset[str] = frozenset(
-         {"init", "postinit", "__init__", "__post_init__", "drop"}
-     );
-
-def open_dispatch(arch: Archetype) -> bool {
+impl open_dispatch(arch: Archetype) -> bool {
     """Can a module this one never sees override a method dispatched through it?
 
     Layout is decided per module, and a subclass in an importing module is
@@ -133,7 +263,7 @@ def open_dispatch(arch: Archetype) -> bool {
     return bool(archetype_accessors(arch));
 }
 
-def get_layout_registry(module: Module, prog: JacProgram) -> LayoutRegistry {
+impl get_layout_registry(module: Module, prog: JacProgram) -> LayoutRegistry {
     reg = module.gen.layout_registry;
     if reg is not None {
         return reg;
@@ -145,7 +275,7 @@ def get_layout_registry(module: Module, prog: JacProgram) -> LayoutRegistry {
     return module.gen.layout_registry or LayoutRegistry();
 }
 
-def layout_slot_count(lay: ArchetypeLayout) -> int {
+impl layout_slot_count(lay: ArchetypeLayout) -> int {
     top = 0;
     for slot in [lay.vtable_ptr_slot, lay.type_tag_slot, lay.reports_slot] {
         if slot is not None and (slot + 1) > top {
@@ -160,11 +290,7 @@ def layout_slot_count(lay: ArchetypeLayout) -> int {
     return top;
 }
 
-glob _NATIVE_NAME_BY_DECL: dict[tuple[str, int, int, str], str] = {},
-     _NATIVE_NAMED_CLASSES: set[str] = set(),
-     _NATIVE_NAME_BY_STDLIB: dict[tuple[str, str], str] = {};
-
-def archetype_native_name(arch: Archetype) -> str {
+impl archetype_native_name(arch: Archetype) -> str {
     name = arch.name.value if arch.name else "unknown";
     if arch.loc is not None and arch.loc.mod_path.endswith(".pyi") {
         import os;
@@ -206,7 +332,7 @@ def archetype_native_name(arch: Archetype) -> str {
     return native;
 }
 
-def record_interface_twins(native_mod: Module, prog: JacProgram) {
+impl record_interface_twins(native_mod: Module, prog: JacProgram) {
     import os;
 
     if native_mod.loc is None or not native_mod.loc.mod_path.endswith(".jac") {
@@ -248,7 +374,7 @@ def record_interface_twins(native_mod: Module, prog: JacProgram) {
     }
 }
 
-def _archetype_native_name(arch: Archetype, name: str) -> str {
+impl _archetype_native_name(arch: Archetype, name: str) -> str {
     if arch.name is not None and is_enum_class_type(arch.name.type) {
         return name;
     }
@@ -258,7 +384,7 @@ def _archetype_native_name(arch: Archetype, name: str) -> str {
     return native_arch_name(arch.loc.mod_path if arch.loc else "", name);
 }
 
-def _recorded_native_name(shared: ClassDetailsShared) -> (str | None) {
+impl _recorded_native_name(shared: ClassDetailsShared) -> (str | None) {
     if shared.class_name not in _NATIVE_NAMED_CLASSES {
         return None;
     }
@@ -280,11 +406,11 @@ def _recorded_native_name(shared: ClassDetailsShared) -> (str | None) {
     return found;
 }
 
-def _declared_native_name(shared: ClassDetailsShared) -> str {
+impl _declared_native_name(shared: ClassDetailsShared) -> str {
     return _recorded_native_name(shared) or interface_class_native_name(shared);
 }
 
-def referenced_archetype(expr: (UniNode | None)) -> (Archetype | None) {
+impl referenced_archetype(expr: (UniNode | None)) -> (Archetype | None) {
     if expr is None {
         return None;
     }
@@ -312,7 +438,7 @@ def referenced_archetype(expr: (UniNode | None)) -> (Archetype | None) {
     return owner if isinstance(owner, Archetype) else None;
 }
 
-def referenced_native_name(expr: (UniNode | None)) -> (str | None) {
+impl referenced_native_name(expr: (UniNode | None)) -> (str | None) {
     arch = referenced_archetype(expr);
     if arch is not None {
         return archetype_native_name(arch);
@@ -327,7 +453,7 @@ def referenced_native_name(expr: (UniNode | None)) -> (str | None) {
     return None;
 }
 
-def class_type_native_name(typ: (TypeBase | None)) -> (str | None) {
+impl class_type_native_name(typ: (TypeBase | None)) -> (str | None) {
     if not isinstance(typ, ClassType) or typ._shared is None {
         return None;
     }
@@ -348,7 +474,7 @@ def class_type_native_name(typ: (TypeBase | None)) -> (str | None) {
     return name;
 }
 
-def interface_class_native_name(shared: ClassDetailsShared) -> str {
+impl interface_class_native_name(shared: ClassDetailsShared) -> str {
     key = shared.canonical_key();
     if key is None or not key[0].endswith(".jac") {
         return shared.class_name;
@@ -357,7 +483,7 @@ def interface_class_native_name(shared: ClassDetailsShared) -> str {
     return native_arch_name(key[0], shared.class_name);
 }
 
-def native_type_key(typ: TypeBase) -> str {
+impl native_type_key(typ: TypeBase) -> str {
     if isinstance(typ, ClassType) {
         if typ._shared is None {
             return typ.mangle();
@@ -392,7 +518,7 @@ def native_type_key(typ: TypeBase) -> str {
     return typ.mangle();
 }
 
-def declaring_module_path(base_expr: Expr) -> str {
+impl declaring_module_path(base_expr: Expr) -> str {
     import os;
 
     base_type = base_expr.type;
@@ -422,13 +548,13 @@ def declaring_module_path(base_expr: Expr) -> str {
     return os.path.realpath(path) if path else "";
 }
 
-def headers_agree(child: ArchetypeLayout, base: ArchetypeLayout) -> bool {
+impl headers_agree(child: ArchetypeLayout, base: ArchetypeLayout) -> bool {
     return child.vtable_ptr_slot == base.vtable_ptr_slot
         and child.type_tag_slot == base.type_tag_slot
         and child.reports_slot == base.reports_slot;
 }
 
-def relax_vtable_header(
+impl relax_vtable_header(
     lay: ArchetypeLayout, ancestors: list[ArchetypeLayout], header_identity: bool = True
 ) -> bool {
     """Drop a vtable header a class carries only for having had a base.
@@ -475,7 +601,7 @@ def relax_vtable_header(
     return headers_agree(lay, ancestors[0]);
 }
 
-def extended_mro(reg: LayoutRegistry, lay: ArchetypeLayout) -> list[str] {
+impl extended_mro(reg: LayoutRegistry, lay: ArchetypeLayout) -> list[str] {
     out: list[str] = list(lay.mro or [lay.name]);
     trusted: set[str] = set();
     for (i, pname) in enumerate(lay.parents or []) {
@@ -507,7 +633,7 @@ def extended_mro(reg: LayoutRegistry, lay: ArchetypeLayout) -> list[str] {
     return out;
 }
 
-def adopt_imported_bases(module: Module, header_identity: bool = True) -> list[str] {
+impl adopt_imported_bases(module: Module, header_identity: bool = True) -> list[str] {
     reg: (LayoutRegistry | None) = module.gen.layout_registry;
     if reg is None {
         return [];
@@ -580,7 +706,7 @@ def adopt_imported_bases(module: Module, header_identity: bool = True) -> list[s
     return adopted;
 }
 
-def adopt_ancestor_slots(lay: ArchetypeLayout, ancestors: list[ArchetypeLayout]) {
+impl adopt_ancestor_slots(lay: ArchetypeLayout, ancestors: list[ArchetypeLayout]) {
     primary = ancestors[0];
     fields: list[FieldLayout] = [];
     field_index: dict[str, int] = {};
@@ -630,7 +756,7 @@ def adopt_ancestor_slots(lay: ArchetypeLayout, ancestors: list[ArchetypeLayout])
     }
 }
 
-def clone_field(finfo: FieldLayout, index: int) -> FieldLayout {
+impl clone_field(finfo: FieldLayout, index: int) -> FieldLayout {
     return FieldLayout(
         name=finfo.name,
         index=index,
@@ -643,7 +769,7 @@ def clone_field(finfo: FieldLayout, index: int) -> FieldLayout {
     );
 }
 
-def adopt_ancestor_methods(lay: ArchetypeLayout, ancestors: list[ArchetypeLayout]) {
+impl adopt_ancestor_methods(lay: ArchetypeLayout, ancestors: list[ArchetypeLayout]) {
     order: list[str] = [];
     source: dict[str, MethodSlot] = {};
     for anc_lay in ancestors {
@@ -673,22 +799,22 @@ def adopt_ancestor_methods(lay: ArchetypeLayout, ancestors: list[ArchetypeLayout
     lay.method_index = method_index;
 }
 
-def is_erased_base_name(name: str, archetypes: dict[str, Archetype]) -> bool {
+impl is_erased_base_name(name: str, archetypes: dict[str, Archetype]) -> bool {
     return name in NATIVE_ERASED_BASES and name not in archetypes;
 }
 
-def enum_class_of(t: (TypeBase | None)) -> (ClassType | None) {
+impl enum_class_of(t: (TypeBase | None)) -> (ClassType | None) {
     if isinstance(t, ClassType) and t._shared is not None and t.shared.is_enum_class {
         return t;
     }
     return None;
 }
 
-def is_enum_class_type(t: (TypeBase | None)) -> bool {
+impl is_enum_class_type(t: (TypeBase | None)) -> bool {
     return enum_class_of(t) is not None;
 }
 
-def enum_decl_of(t: (TypeBase | None)) -> (Enum | Archetype | None) {
+impl enum_decl_of(t: (TypeBase | None)) -> (Enum | Archetype | None) {
     cls = enum_class_of(t);
     if cls is None {
         return None;
@@ -703,12 +829,12 @@ def enum_decl_of(t: (TypeBase | None)) -> (Enum | Archetype | None) {
     return None;
 }
 
-def enum_value_type_of(t: (TypeBase | None)) -> (TypeBase | None) {
+impl enum_value_type_of(t: (TypeBase | None)) -> (TypeBase | None) {
     cls = enum_class_of(t);
     return cls.shared.enum_value_type if cls is not None else None;
 }
 
-def class_form_enum_scalar(t: (TypeBase | None)) -> (str | None) {
+impl class_form_enum_scalar(t: (TypeBase | None)) -> (str | None) {
     cls = enum_class_of(t);
     if cls is None or not isinstance(cls.shared.symbol_table, Archetype) {
         return None;
@@ -721,7 +847,7 @@ def class_form_enum_scalar(t: (TypeBase | None)) -> (str | None) {
     return value_name if value_name in ("str", "int") else None;
 }
 
-def class_form_enum_decls(module: Module) -> list[Archetype] {
+impl class_form_enum_decls(module: Module) -> list[Archetype] {
     out: list[Archetype] = [];
     for nd in module.get_all_sub_nodes(Archetype) {
         if nd.name is None {
@@ -734,7 +860,7 @@ def class_form_enum_decls(module: Module) -> list[Archetype] {
     return out;
 }
 
-def enum_member_literal(value_expr: (UniNode | None)) -> (str | int | None) {
+impl enum_member_literal(value_expr: (UniNode | None)) -> (str | int | None) {
     (folded, val) = fold_const(value_expr);
     if not folded or isinstance(val, bool) or not isinstance(val, (str, int)) {
         return None;
@@ -742,7 +868,7 @@ def enum_member_literal(value_expr: (UniNode | None)) -> (str | int | None) {
     return val;
 }
 
-def is_enum_auto(value_expr: (UniNode | None)) -> bool {
+impl is_enum_auto(value_expr: (UniNode | None)) -> bool {
     if not isinstance(value_expr, FuncCall) or value_expr.params {
         return False;
     }
@@ -768,7 +894,7 @@ def is_enum_auto(value_expr: (UniNode | None)) -> bool {
     return _mod is not None and _mod.name == "enum" and _sym.sym_name == "auto";
 }
 
-def resolve_enum_member_values(
+impl resolve_enum_member_values(
     raw_members: list[tuple[(str, (UniNode | None))]]
 ) -> list[(str | int | None)] {
     out: list[(str | int | None)] = [];
@@ -797,7 +923,7 @@ def resolve_enum_member_values(
     return out;
 }
 
-def class_form_enum_members(
+impl class_form_enum_members(
     scope: (UniScopeNode | None)
 ) -> list[tuple[(str, (UniNode | None))]] {
     out: list[tuple[(str, (UniNode | None))]] = [];
@@ -823,7 +949,7 @@ def class_form_enum_members(
     return out;
 }
 
-def class_form_enum_literal(t: ClassType, member: str) -> (str | int | None) {
+impl class_form_enum_literal(t: ClassType, member: str) -> (str | int | None) {
     _members = class_form_enum_members(t.shared.symbol_table);
     _values = resolve_enum_member_values(_members);
     for (_idx, _member) in enumerate(_members) {
@@ -834,7 +960,7 @@ def class_form_enum_literal(t: ClassType, member: str) -> (str | int | None) {
     return None;
 }
 
-def class_form_enum_member(
+impl class_form_enum_member(
     t: (TypeBase | None)
 ) -> (tuple[(str, (str | int), str)] | None) {
     if not isinstance(t, EnumMemberType) {
@@ -858,50 +984,4 @@ def class_form_enum_member(
         return (_scalar, _lit, _name);
     }
     return None;
-}
-
-obj LayoutRegistry {
-    has layouts: dict[str, ArchetypeLayout] = {},
-        class_parents: dict[str, list[str]] = {},
-        parent_mods: dict[str, list[str]] = {},
-        mro_order: dict[str, list[str]] = {},
-        topo_order: list[str] = [],
-        local_names: list[str] = [],
-        enums: dict[str, EnumLayout] = {};
-
-    def get_layout(name: str) -> (ArchetypeLayout | None);
-    def get_enum_layout(name: str) -> (EnumLayout | None);
-    def resolve_method_owner(arch_name: str, method_name: str) -> (str | None);
-    def get_mro(name: str) -> list[str];
-    def get_topo_order -> list[str];
-    def dependency_order(names: list[str]) -> list[str];
-    def is_primary_ancestor(child: str, ancestor: str) -> bool;
-}
-
-walker LayoutPass(CompilerPass) {
-    static has contract: PassContract = PassContract();
-    has registry: LayoutRegistry postinit,
-        isinstance_targets: set[str] postinit;
-
-    def postinit -> None;
-    def _run_impl(ir_in: Module) -> Module;
-    can run_walk with Module entry;
-    def _type_declaration_surface(module: Module) -> None;
-    def _collect_archetypes(module: Module) -> dict[str, Archetype];
-    def _collect_isinstance_targets(module: Module) -> None;
-    def _build_hierarchy(archetypes: dict[str, Archetype]) -> None;
-    def _compute_c3_mro(class_name: str) -> list[str];
-    def _topo_sort(arch_map: dict[str, Archetype]) -> list[str];
-    def _build_layout(arch: Archetype) -> ArchetypeLayout;
-    def _build_enum_layouts(module: Module) -> None;
-    def _compute_acyclicity -> None;
-    def _acyclic_walk(name: str, state: dict[str, int]) -> int;
-    def _expand_type_keys(key: str) -> (list[str] | None);
-    def _split_top_level(s: str, sep: str) -> list[str];
-    def _build_vtable_layout(arch_name: str, arch_map: dict[str, Archetype]) -> None;
-    def _validate_obj_fields(arch: Archetype, arch_map: dict[str, Archetype]) -> None;
-    def _is_layout_compatible_semantic_type(typ: TypeBase | None) -> bool;
-    def _is_layout_compatible_type(
-        type_node: (UniNode | None), arch_map: dict[str, Archetype]
-    ) -> bool;
 }

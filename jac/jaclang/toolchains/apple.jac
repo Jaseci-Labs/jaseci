@@ -3,7 +3,9 @@ import shutil;
 import subprocess;
 import from pathlib { Path }
 
-def ensure_apple -> dict[str, str] {
+def ensure_apple -> dict[str, str];
+
+impl ensure_apple -> dict[str, str] {
     if not host_platform().startswith("mac-") {
         raise RuntimeError(
             "iOS builds require a macOS build host with Xcode. Use a Mac or a hosted macOS builder."

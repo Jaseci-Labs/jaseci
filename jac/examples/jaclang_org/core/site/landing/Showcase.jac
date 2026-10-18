@@ -26,6 +26,18 @@ def:pub ShowcasePanel(
     points: list[str],
     link_label: str,
     link_href: str
+) -> JsxElement;
+
+def:pub Showcase -> JsxElement;
+
+impl ShowcasePanel(
+    lines: list[str],
+    file: str,
+    heading: str,
+    blurb: str,
+    points: list[str],
+    link_label: str,
+    link_href: str
 ) -> JsxElement {
     return
         <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1.15fr_1fr]">
@@ -82,7 +94,7 @@ def:pub ShowcasePanel(
         </div>;
 }
 
-def:pub Showcase -> JsxElement {
+impl Showcase -> JsxElement {
     has samples: list[SourceView] = [];
 
     async def load_samples -> None;

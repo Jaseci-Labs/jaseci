@@ -67,14 +67,7 @@ glob _CODESPACES: dict[str, Codespace] = {
          "native": Codespace(kind="native")
      };
 
-def codespace_node(kind: str) -> Codespace {
-    found = _CODESPACES.get(kind);
-    if found is None {
-        found = Codespace(kind=kind);
-        _CODESPACES[kind] = found;
-    }
-    return found;
-}
+def codespace_node(kind: str) -> Codespace;
 
 edge TypeOf: AstTypedVarNode | Expr --> TypeBase {}
 
@@ -129,3 +122,12 @@ edge EnumMemberOf: ClassDetailsShared --> EnumMemberInfo {
 }
 
 edge DeclScopeOf: ClassDetailsShared | ModuleType --> UniScopeNode {}
+
+impl codespace_node(kind: str) -> Codespace {
+    found = _CODESPACES.get(kind);
+    if found is None {
+        found = Codespace(kind=kind);
+        _CODESPACES[kind] = found;
+    }
+    return found;
+}

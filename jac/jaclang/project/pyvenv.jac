@@ -2,12 +2,97 @@ import re;
 import from pathlib { Path }
 
 
-def pip_command(python: str, args: list[str]) -> list[str] {
+def pip_command(python: str, args: list[str]) -> list[str];
+
+
+def venv_python(venv_dir: Path) -> str;
+
+
+def make_pip_spec(name: str, version: str) -> str;
+
+
+def make_git_spec(git_url: str, branch: str = "") -> str;
+
+
+def _seed_build_backend(target: Path, verbose: bool = False);
+
+
+def _raise_ensurepip_unavailable(err: str);
+
+
+def _maybe_raise_ensurepip(err: str);
+
+
+def _raise_venv_subprocess_failure(result: any, fallback: str);
+
+
+def _run_venv_subprocess(cmd: list[str], fallback: str);
+
+
+def _bootstrap_venv_pip(target: Path);
+
+
+def _create_venv_with_interpreter(interpreter: str, target: Path);
+
+
+def _bundled_runtime_python -> str | None;
+
+
+def pip_python -> str;
+
+
+def pip_env -> dict[str, str];
+
+
+def _is_fused_venv(venv_dir: Path) -> bool;
+
+
+def _venv_needs_recreate(venv_dir: Path) -> bool;
+
+
+def ensure_venv(venv_dir: Path, verbose: bool = False);
+
+
+def run_pip(
+    venv_dir: Path, args: list[str], verbose: bool = False
+) -> tuple[int, str, str];
+
+
+def _spec_base_name(spec: str) -> str;
+
+
+def _extract_terminal_error(stderr: str) -> str;
+
+
+def _identify_failed_package(specs: list[str], stderr: str) -> str | None;
+
+
+def summarize_pip_failure(specs: list[str], stderr: str) -> tuple[str | None, str];
+
+
+def _venv_python_version_tag(venv_dir: Path) -> str;
+
+
+def _discover_venv_site_packages(venv_dir: Path) -> Path | None;
+
+
+def get_venv_site_packages(venv_dir: Path) -> Path;
+
+
+def add_venv_to_path(config: JacConfig | None = None) -> None;
+
+
+def remove_venv_from_path(config: JacConfig | None = None) -> None;
+
+
+def is_venv_in_path(config: JacConfig | None = None) -> bool;
+
+impl pip_command(python: str, args: list[str]) -> list[str] {
     return [python, "-m", "pip"] + args;
 }
 
 
-def venv_python(venv_dir: Path) -> str {
+impl venv_python(venv_dir: Path) -> str {
     import sys;
     if sys.platform == "win32" {
         return str(venv_dir / "Scripts" / "python.exe");
@@ -16,7 +101,7 @@ def venv_python(venv_dir: Path) -> str {
 }
 
 
-def make_pip_spec(name: str, version: str) -> str {
+impl make_pip_spec(name: str, version: str) -> str {
     if not version or version in ("*", "latest") {
         return name;
     }
@@ -27,7 +112,7 @@ def make_pip_spec(name: str, version: str) -> str {
 }
 
 
-def make_git_spec(git_url: str, branch: str = "") -> str {
+impl make_git_spec(git_url: str, branch: str = "") -> str {
     if branch {
         return f"git+{git_url}@{branch}";
     }
@@ -35,7 +120,7 @@ def make_git_spec(git_url: str, branch: str = "") -> str {
 }
 
 
-def _seed_build_backend(target: Path, verbose: bool = False) {
+impl _seed_build_backend(target: Path, verbose: bool = False) {
     (rc, _, err) = run_pip(
         target, ["install", "--upgrade", "pip", "setuptools", "wheel"], verbose
     );
@@ -45,7 +130,7 @@ def _seed_build_backend(target: Path, verbose: bool = False) {
 }
 
 
-def _raise_ensurepip_unavailable(err: str) {
+impl _raise_ensurepip_unavailable(err: str) {
     raise RuntimeError(
         "Failed to create virtual environment: ensurepip is not available.\n"
         "On Debian/Ubuntu, install it with: sudo apt install python3-venv\n"
@@ -55,7 +140,7 @@ def _raise_ensurepip_unavailable(err: str) {
 }
 
 
-def _maybe_raise_ensurepip(err: str) {
+impl _maybe_raise_ensurepip(err: str) {
     err_msg = err.lower();
     if "ensurepip" in err_msg or "no module named" in err_msg {
         _raise_ensurepip_unavailable(err);
@@ -63,14 +148,14 @@ def _maybe_raise_ensurepip(err: str) {
 }
 
 
-def _raise_venv_subprocess_failure(result: any, fallback: str) {
+impl _raise_venv_subprocess_failure(result: any, fallback: str) {
     raw = result.stderr or result.stdout or "";
     _maybe_raise_ensurepip(raw);
     raise RuntimeError(raw.strip() or fallback);
 }
 
 
-def _run_venv_subprocess(cmd: list[str], fallback: str) {
+impl _run_venv_subprocess(cmd: list[str], fallback: str) {
     import subprocess;
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=300);
     if result.returncode != 0 {
@@ -79,7 +164,7 @@ def _run_venv_subprocess(cmd: list[str], fallback: str) {
 }
 
 
-def _bootstrap_venv_pip(target: Path) {
+impl _bootstrap_venv_pip(target: Path) {
     _run_venv_subprocess(
         [venv_python(target), "-m", "ensurepip", "--upgrade"],
         "ensurepip bootstrap failed",
@@ -87,7 +172,7 @@ def _bootstrap_venv_pip(target: Path) {
 }
 
 
-def _create_venv_with_interpreter(interpreter: str, target: Path) {
+impl _create_venv_with_interpreter(interpreter: str, target: Path) {
     _run_venv_subprocess(
         [interpreter, "-m", "venv", str(target)], "venv creation failed"
     );
@@ -95,7 +180,7 @@ def _create_venv_with_interpreter(interpreter: str, target: Path) {
 }
 
 
-def _bundled_runtime_python -> str | None {
+impl _bundled_runtime_python -> str | None {
     import os;
     import sys;
     if not os.environ.get("JAC_STANDALONE") {
@@ -127,13 +212,13 @@ def _bundled_runtime_python -> str | None {
 }
 
 
-def pip_python -> str {
+impl pip_python -> str {
     import sys;
     return _bundled_runtime_python() or sys.executable;
 }
 
 
-def pip_env -> dict[str, str] {
+impl pip_env -> dict[str, str] {
     import os;
     env = dict(os.environ);
     if env.get("JAC_STANDALONE") {
@@ -146,7 +231,7 @@ def pip_env -> dict[str, str] {
 }
 
 
-def _is_fused_venv(venv_dir: Path) -> bool {
+impl _is_fused_venv(venv_dir: Path) -> bool {
     import sys;
     py = Path(venv_python(venv_dir));
     if not py.exists() {
@@ -160,7 +245,7 @@ def _is_fused_venv(venv_dir: Path) -> bool {
 }
 
 
-def _venv_needs_recreate(venv_dir: Path) -> bool {
+impl _venv_needs_recreate(venv_dir: Path) -> bool {
     import os;
     pyvenv_cfg = venv_dir / "pyvenv.cfg";
     python_path = Path(venv_python(venv_dir));
@@ -175,7 +260,7 @@ def _venv_needs_recreate(venv_dir: Path) -> bool {
 }
 
 
-def ensure_venv(venv_dir: Path, verbose: bool = False) {
+impl ensure_venv(venv_dir: Path, verbose: bool = False) {
     import venv;
     import sys;
     import shutil;
@@ -225,7 +310,7 @@ def ensure_venv(venv_dir: Path, verbose: bool = False) {
 }
 
 
-def run_pip(
+impl run_pip(
     venv_dir: Path, args: list[str], verbose: bool = False
 ) -> tuple[int, str, str] {
     import subprocess;
@@ -242,13 +327,13 @@ def run_pip(
 }
 
 
-def _spec_base_name(spec: str) -> str {
+impl _spec_base_name(spec: str) -> str {
     m = re.`match(r"^([A-Za-z0-9._-]+)\s*(?:[<>=!~@;\[]|$)", spec.strip());
     return m.group(1).lower() if m else "";
 }
 
 
-def _extract_terminal_error(stderr: str) -> str {
+impl _extract_terminal_error(stderr: str) -> str {
     lines = [
         ln.strip()
         for ln in stderr.splitlines()
@@ -269,7 +354,7 @@ def _extract_terminal_error(stderr: str) -> str {
 }
 
 
-def _identify_failed_package(specs: list[str], stderr: str) -> str | None {
+impl _identify_failed_package(specs: list[str], stderr: str) -> str | None {
     low = stderr.lower();
     named: list[str] = [];
     for s in specs {
@@ -288,12 +373,12 @@ def _identify_failed_package(specs: list[str], stderr: str) -> str | None {
 }
 
 
-def summarize_pip_failure(specs: list[str], stderr: str) -> tuple[str | None, str] {
+impl summarize_pip_failure(specs: list[str], stderr: str) -> tuple[str | None, str] {
     return (_identify_failed_package(specs, stderr), _extract_terminal_error(stderr));
 }
 
 
-def _venv_python_version_tag(venv_dir: Path) -> str {
+impl _venv_python_version_tag(venv_dir: Path) -> str {
     pyvenv_cfg = venv_dir / "pyvenv.cfg";
     if not pyvenv_cfg.exists() {
         return "";
@@ -312,7 +397,7 @@ def _venv_python_version_tag(venv_dir: Path) -> str {
 }
 
 
-def _discover_venv_site_packages(venv_dir: Path) -> Path | None {
+impl _discover_venv_site_packages(venv_dir: Path) -> Path | None {
     lib_dir = venv_dir / "lib";
     if not lib_dir.is_dir() {
         return None;
@@ -334,7 +419,7 @@ def _discover_venv_site_packages(venv_dir: Path) -> Path | None {
 }
 
 
-def get_venv_site_packages(venv_dir: Path) -> Path {
+impl get_venv_site_packages(venv_dir: Path) -> Path {
     import sys;
     if sys.platform == "win32" {
         return venv_dir / "Lib" / "site-packages";
@@ -363,7 +448,7 @@ def get_venv_site_packages(venv_dir: Path) -> Path {
 }
 
 
-def add_venv_to_path(config: JacConfig | None = None) -> None {
+impl add_venv_to_path(config: JacConfig | None = None) -> None {
     import os;
     import sys;
 
@@ -401,7 +486,7 @@ def add_venv_to_path(config: JacConfig | None = None) -> None {
 }
 
 
-def remove_venv_from_path(config: JacConfig | None = None) -> None {
+impl remove_venv_from_path(config: JacConfig | None = None) -> None {
     import os;
     import sys;
 
@@ -439,7 +524,7 @@ def remove_venv_from_path(config: JacConfig | None = None) -> None {
 }
 
 
-def is_venv_in_path(config: JacConfig | None = None) -> bool {
+impl is_venv_in_path(config: JacConfig | None = None) -> bool {
     import sys;
 
     if config is None {

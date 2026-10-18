@@ -54,7 +54,7 @@ impl Parser.check_peek_any(*kinds: TokenKind) -> bool {
     return self.peek().kind in kinds;
 }
 
-impl Parser.postinit{
+impl Parser.postinit {
     self.source = Source(self.source_code, self.file_path);
     self._tokens_len = len(self.tokens);
 }
@@ -372,7 +372,7 @@ impl Parser.make_semi -> Semi {
     );
 }
 
-impl Parser.synchronize{
+impl Parser.synchronize {
     self.advance();
     while not self.at_end() {
         if self.check_any(
@@ -5616,13 +5616,13 @@ impl Parser.parse_archetype_member -> UniNode | None {
     return EmptyToken();
 }
 
-impl Parser._skip_semicolons{
+impl Parser._skip_semicolons {
     while self.match_tok(TokenKind.SEMI) {
         continue;
     }
 }
 
-impl Parser._error_unexpected_member{
+impl Parser._error_unexpected_member {
     self.emit_diag("Unexpected token in archetype body", "E0046");
     self.advance();
 }

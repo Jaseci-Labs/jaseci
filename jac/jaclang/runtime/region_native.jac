@@ -47,7 +47,67 @@ glob RGN_CHUNK: int = 0,
      TLS_BLOCK: int = 32,
      FLAG_ZOMBIE: int = 1;
 
-def _tls_block -> int {
+def _tls_block -> int;
+
+def _stack_push(blk: int, hdl: int);
+
+def:pub __jac_region_current -> int;
+
+def:pub __jac_region_depth -> int;
+
+def:pub __jac_region_enter(hdl: int);
+
+def:pub __jac_region_unwind(depth: int);
+
+def:pub __jac_region_leave;
+
+def:pub __jac_region_escape -> int;
+
+def:pub __jac_region_restore(depth: int);
+
+def _lock(hdl: int);
+
+def _unlock(hdl: int);
+
+def _glock(g: int);
+
+def _gunlock(g: int);
+
+def _registry_add(hdl: int);
+
+def _registry_remove(hdl: int);
+
+def _registry_holds(ptr: int) -> int;
+
+def:pub __jac_region_new -> int;
+
+def _draw_page(parent: int) -> int;
+
+def _region_grow(hdl: int, size: int);
+
+def _region_raw(hdl: int, size: int) -> int;
+
+def:pub __jac_region_alloc(hdl: int, size: int) -> int;
+
+def:pub __jac_region_log_dtor(hdl: int, o: int, fn: int);
+
+def:pub __jac_region_of(o: int) -> int;
+
+def:pub __jac_region_partition(parent: int) -> int;
+
+def _region_holds(hdl: int, ptr: int) -> int;
+
+def:pub __jac_region_owns(ptr: int) -> int;
+
+def _list_tail(head: int, link_off: int) -> int;
+
+def _reabsorb(child: int, parent: int);
+
+def _teardown(hdl: int);
+
+def:pub __jac_region_drop(hdl: int);
+
+impl _tls_block -> int {
     blk = __jac_region_tls_get();
     if blk == 0 {
         blk = malloc(TLS_BLOCK);
@@ -60,7 +120,7 @@ def _tls_block -> int {
     return blk;
 }
 
-def _stack_push(blk: int, hdl: int) {
+impl _stack_push(blk: int, hdl: int) {
     depth = __mem_load_i64(blk + TLS_DEPTH);
     cap = __mem_load_i64(blk + TLS_CAP);
     stk = __mem_load_i64(blk + TLS_STACK);
@@ -83,7 +143,7 @@ def _stack_push(blk: int, hdl: int) {
     __mem_store_i64(blk + TLS_DEPTH, depth + 1);
 }
 
-def:pub __jac_region_current -> int {
+impl __jac_region_current -> int {
     blk = __jac_region_tls_get();
     if blk == 0 {
         return 0;
@@ -91,7 +151,7 @@ def:pub __jac_region_current -> int {
     return __mem_load_i64(blk + TLS_CUR);
 }
 
-def:pub __jac_region_depth -> int {
+impl __jac_region_depth -> int {
     blk = __jac_region_tls_get();
     if blk == 0 {
         return 0;
@@ -99,13 +159,13 @@ def:pub __jac_region_depth -> int {
     return __mem_load_i64(blk + TLS_DEPTH);
 }
 
-def:pub __jac_region_enter(hdl: int) {
+impl __jac_region_enter(hdl: int) {
     blk = _tls_block();
     _stack_push(blk, hdl);
     __mem_store_i64(blk + TLS_CUR, hdl);
 }
 
-def:pub __jac_region_unwind(depth: int) {
+impl __jac_region_unwind(depth: int) {
     blk = _tls_block();
     if depth < 0 {
         depth = 0;
@@ -122,12 +182,12 @@ def:pub __jac_region_unwind(depth: int) {
     __mem_store_i64(blk + TLS_CUR, __mem_load_i64(stk + (depth - 1) * 8));
 }
 
-def:pub __jac_region_leave {
+impl __jac_region_leave {
     blk = _tls_block();
     __jac_region_unwind(__mem_load_i64(blk + TLS_DEPTH) - 1);
 }
 
-def:pub __jac_region_escape -> int {
+impl __jac_region_escape -> int {
     blk = __jac_region_tls_get();
     if blk == 0 or __mem_load_i64(blk + TLS_CUR) == 0 {
         return -1;
@@ -138,32 +198,32 @@ def:pub __jac_region_escape -> int {
     return depth;
 }
 
-def:pub __jac_region_restore(depth: int) {
+impl __jac_region_restore(depth: int) {
     if depth >= 0 {
         __jac_region_unwind(depth);
     }
 }
 
-def _lock(hdl: int) {
+impl _lock(hdl: int) {
     spins = 0;
     while __atomic_xchg_i64(hdl + RGN_LOCK, 1) != 0 {
         spins += 1;
     }
 }
 
-def _unlock(hdl: int) {
+impl _unlock(hdl: int) {
     __atomic_xchg_i64(hdl + RGN_LOCK, 0);
 }
 
-def _glock(g: int) {
+impl _glock(g: int) {
     while __atomic_xchg_i64(g + GBL_LOCK, 1) != 0 {}
 }
 
-def _gunlock(g: int) {
+impl _gunlock(g: int) {
     __atomic_xchg_i64(g + GBL_LOCK, 0);
 }
 
-def _registry_add(hdl: int) {
+impl _registry_add(hdl: int) {
     g = __jac_region_gbl_get();
     _glock(g);
     __mem_store_i64(hdl + RGN_ALLNEXT, __mem_load_i64(g + GBL_HEAD));
@@ -171,7 +231,7 @@ def _registry_add(hdl: int) {
     _gunlock(g);
 }
 
-def _registry_remove(hdl: int) {
+impl _registry_remove(hdl: int) {
     g = __jac_region_gbl_get();
     _glock(g);
     prev = 0;
@@ -193,7 +253,7 @@ def _registry_remove(hdl: int) {
     _gunlock(g);
 }
 
-def _registry_holds(ptr: int) -> int {
+impl _registry_holds(ptr: int) -> int {
     g = __jac_region_gbl_get();
     _glock(g);
     found = 0;
@@ -209,7 +269,7 @@ def _registry_holds(ptr: int) -> int {
     return found;
 }
 
-def:pub __jac_region_new -> int {
+impl __jac_region_new -> int {
     raw = malloc(HDR_TOTAL + RGN_CTRL_SIZE);
     hdl = raw + HDR_TOTAL;
     __mem_store_i64(hdl + HDR_ALLOC_ID_OFF, HDR_MAGIC_SHIFT_BASE);
@@ -225,7 +285,7 @@ def:pub __jac_region_new -> int {
     return hdl;
 }
 
-def _draw_page(parent: int) -> int {
+impl _draw_page(parent: int) -> int {
     _lock(parent);
     head = __mem_load_i64(parent + RGN_FREEPG);
     if head != 0 {
@@ -247,7 +307,7 @@ def _draw_page(parent: int) -> int {
     return run + RUN_HDR;
 }
 
-def _region_grow(hdl: int, size: int) {
+impl _region_grow(hdl: int, size: int) {
     want = ((size + CHUNK_HDR + 15) // 16) * 16;
     small = want < CHUNK_DEFAULT;
     csize = CHUNK_DEFAULT if small else want;
@@ -272,7 +332,7 @@ def _region_grow(hdl: int, size: int) {
     __mem_store_i64(hdl + RGN_CAP, csize);
 }
 
-def _region_raw(hdl: int, size: int) -> int {
+impl _region_raw(hdl: int, size: int) -> int {
     size = ((size + 15) // 16) * 16;
     chunk = __mem_load_i64(hdl + RGN_CHUNK);
     off = __mem_load_i64(hdl + RGN_OFF);
@@ -287,7 +347,7 @@ def _region_raw(hdl: int, size: int) -> int {
     return chunk + off;
 }
 
-def:pub __jac_region_alloc(hdl: int, size: int) -> int {
+impl __jac_region_alloc(hdl: int, size: int) -> int {
     o = _region_raw(hdl, size + HDR_TOTAL) + HDR_TOTAL;
     __mem_store_i64(o + HDR_ALLOC_ID_OFF, ARENA_MAGIC_SHIFT_BASE);
     __mem_store_i64(o + HDR_TAG_OFF, 0);
@@ -296,7 +356,7 @@ def:pub __jac_region_alloc(hdl: int, size: int) -> int {
     return o;
 }
 
-def:pub __jac_region_log_dtor(hdl: int, o: int, fn: int) {
+impl __jac_region_log_dtor(hdl: int, o: int, fn: int) {
     ent = _region_raw(hdl, DTOR_ENTRY);
     __mem_store_i64(ent + DTOR_NEXT, __mem_load_i64(hdl + RGN_DTL));
     __mem_store_i64(ent + DTOR_OBJ, o);
@@ -304,7 +364,7 @@ def:pub __jac_region_log_dtor(hdl: int, o: int, fn: int) {
     __mem_store_i64(hdl + RGN_DTL, ent);
 }
 
-def:pub __jac_region_of(o: int) -> int {
+impl __jac_region_of(o: int) -> int {
     if o == 0 {
         return 0;
     }
@@ -315,14 +375,14 @@ def:pub __jac_region_of(o: int) -> int {
     return __mem_load_i64(o + HDR_DTOR_OFF);
 }
 
-def:pub __jac_region_partition(parent: int) -> int {
+impl __jac_region_partition(parent: int) -> int {
     child = __jac_region_new();
     __mem_store_i64(child + RGN_PARENT, parent);
     __mem_store_i64(parent + RGN_KIDS, __mem_load_i64(parent + RGN_KIDS) + 1);
     return child;
 }
 
-def _region_holds(hdl: int, ptr: int) -> int {
+impl _region_holds(hdl: int, ptr: int) -> int {
     ck = __mem_load_i64(hdl + RGN_CHUNK);
     while ck != 0 {
         if ptr >= ck + CHUNK_HDR and ptr < ck + __mem_load_i64(ck + CHUNK_SIZE) {
@@ -333,7 +393,7 @@ def _region_holds(hdl: int, ptr: int) -> int {
     return 0;
 }
 
-def:pub __jac_region_owns(ptr: int) -> int {
+impl __jac_region_owns(ptr: int) -> int {
     if ptr == 0 {
         return 0;
     }
@@ -354,7 +414,7 @@ def:pub __jac_region_owns(ptr: int) -> int {
     return _registry_holds(ptr);
 }
 
-def _list_tail(head: int, link_off: int) -> int {
+impl _list_tail(head: int, link_off: int) -> int {
     cur = head;
     while __mem_load_i64(cur + link_off) != 0 {
         cur = __mem_load_i64(cur + link_off);
@@ -362,7 +422,7 @@ def _list_tail(head: int, link_off: int) -> int {
     return cur;
 }
 
-def _reabsorb(child: int, parent: int) {
+impl _reabsorb(child: int, parent: int) {
     _registry_remove(child);
     ch = __mem_load_i64(child + RGN_CHUNK);
     if ch != 0 {
@@ -417,7 +477,7 @@ def _reabsorb(child: int, parent: int) {
     }
 }
 
-def _teardown(hdl: int) {
+impl _teardown(hdl: int) {
     _registry_remove(hdl);
     __jac_region_died_hook(hdl);
     cur = __mem_load_i64(hdl + RGN_DTL);
@@ -449,7 +509,7 @@ def _teardown(hdl: int) {
     free(hdl - HDR_TOTAL);
 }
 
-def:pub __jac_region_drop(hdl: int) {
+impl __jac_region_drop(hdl: int) {
     if hdl == 0 {
         return;
     }

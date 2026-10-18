@@ -18,47 +18,21 @@ glob _EPOCHORDINAL: int = 719163;
 obj:pub ZoneInfoNotFoundError(KeyError) {
     has key: str = "";
 
-    def init(key: str) {
-        self.key = key;
-    }
-
-    def __str__ -> str {
-        return "'" + self.key + "'";
-    }
+    def init(key: str);
+    def __str__ -> str;
 }
 
 
-def _be_u8(b: bytes, off: int) -> int {
-    return b[off];
-}
+def _be_u8(b: bytes, off: int) -> int;
 
 
-def _be_i32(b: bytes, off: int) -> int {
-    v: int = (b[off] << 24) | (b[off + 1] << 16) | (b[off + 2] << 8) | b[off + 3];
-    if v >= 2147483648 {
-        v -= 4294967296;
-    }
-    return v;
-}
+def _be_i32(b: bytes, off: int) -> int;
 
 
-def _be_u32(b: bytes, off: int) -> int {
-    return ((b[off] << 24) | (b[off + 1] << 16) | (b[off + 2] << 8) | b[off + 3]);
-}
+def _be_u32(b: bytes, off: int) -> int;
 
 
-def _be_i64(b: bytes, off: int) -> int {
-    v: int = 0;
-    i: int = 0;
-    while i < 8 {
-        v = (v << 8) | b[off + i];
-        i += 1;
-    }
-    if v > 9223372036854775807 {
-        v -= 18446744073709551616;
-    }
-    return v;
-}
+def _be_i64(b: bytes, off: int) -> int;
 
 
 obj _ttinfo {
@@ -70,63 +44,28 @@ obj _ttinfo {
         utcoff: (timedelta | None) = None,
         dstoff: (timedelta | None) = None,
         tzname: (str | None) = None
-    ) {
-        self.utcoff = utcoff;
-        self.dstoff = dstoff;
-        self.tzname = tzname;
-    }
+    );
 
-    def __eq__(other: _ttinfo) -> bool {
-        if not _tti_field_eq(self.utcoff, other.utcoff) {
-            return False;
-        }
-        if not _tti_field_eq(self.dstoff, other.dstoff) {
-            return False;
-        }
-        return _tti_str_eq(self.tzname, other.tzname);
-    }
+    def __eq__(other: _ttinfo) -> bool;
 }
 
 
-def _tti_field_eq(a: (timedelta | None), b: (timedelta | None)) -> bool {
-    if a is None and b is None {
-        return True;
-    }
-    if a is None or b is None {
-        return False;
-    }
-    return (a as timedelta) == (b as timedelta);
-}
+def _tti_field_eq(a: (timedelta | None), b: (timedelta | None)) -> bool;
 
 
-def _tti_str_eq(a: (str | None), b: (str | None)) -> bool {
-    if a is None and b is None {
-        return True;
-    }
-    if a is None or b is None {
-        return False;
-    }
-    return (a as str) == (b as str);
-}
+def _tti_str_eq(a: (str | None), b: (str | None)) -> bool;
 
 
 glob _NO_TTINFO: _ttinfo = _ttinfo();
 
 
-def _td_seconds(td: timedelta) -> int {
-    return td.days * 86400 + td.seconds;
-}
+def _td_seconds(td: timedelta) -> int;
 
 
-def _post_epoch_days_before_year(year: int) -> int {
-    y: int = year - 1;
-    return y * 365 + y // 4 - y // 100 + y // 400 - _EPOCHORDINAL;
-}
+def _post_epoch_days_before_year(year: int) -> int;
 
 
-def _zi_isleap(year: int) -> bool {
-    return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0);
-}
+def _zi_isleap(year: int) -> bool;
 
 
 glob _ZI_DAYS_BEFORE_MONTH: list[int] = [
@@ -156,39 +95,7 @@ obj _TransOffset {
         minute: int = 0,
         second: int = 0;
 
-    def year_to_epoch(year: int) -> int {
-        if self.m == 0 {
-            d: int = self.d;
-            if self.julian and d >= 59 and _zi_isleap(year) {
-                d += 1;
-            }
-            epoch: int = (_post_epoch_days_before_year(year) + d) * 86400;
-            epoch += self.hour * 3600 + self.minute * 60 + self.second;
-            return epoch;
-        }
-        first_day: int = (
-            _post_epoch_days_before_year(year)
-            + _ZI_DAYS_BEFORE_MONTH[self.m]
-            + (1 if self.m > 2 and _zi_isleap(year) else 0)
-            + 1
-            + 6
-        )
-            % 7;
-        days_in_month: int = _ZI_MDAYS[self.m]
-            + (1 if self.m == 2 and _zi_isleap(year) else 0);
-        month_day: int = (self.d - (first_day + 1)) % 7 + 1;
-        month_day += (self.w - 1) * 7;
-        if month_day > days_in_month {
-            month_day -= 7;
-        }
-        ordinal: int = _post_epoch_days_before_year(year)
-            + _ZI_DAYS_BEFORE_MONTH[self.m]
-            + (1 if self.m > 2 and _zi_isleap(year) else 0)
-            + month_day;
-        epoch2: int = ordinal * 86400;
-        epoch2 += self.hour * 3600 + self.minute * 60 + self.second;
-        return epoch2;
-    }
+    def year_to_epoch(year: int) -> int;
 }
 
 
@@ -199,73 +106,13 @@ obj _TZStr {
         end: _TransOffset = _TransOffset(),
         dst_diff: int = 0;
 
-    def transitions(year: int) -> tuple[(int, int)] {
-        return (self.start.year_to_epoch(year), self.end.year_to_epoch(year));
-    }
-
-    def get_trans_info(ts: int, year: int, fold: int) -> _ttinfo {
-        (start, end) = self.transitions(year);
-        if (fold != 0) == (self.dst_diff >= 0) {
-            end -= self.dst_diff;
-        } else {
-            start += self.dst_diff;
-        }
-        isdst: bool = False;
-        if start < end {
-            isdst = start <= ts and ts < end;
-        } else {
-            isdst = not (end <= ts and ts < start);
-        }
-        return self.dst if isdst else self.std;
-    }
-
-    def get_trans_info_fromutc(ts: int, year: int) -> tuple[(_ttinfo, int)] {
-        (start, end) = self.transitions(year);
-        so: (timedelta | None) = self.std.utcoff;
-        do: (timedelta | None) = self.dst.utcoff;
-        if so is not None {
-            start -= _td_seconds(so);
-        }
-        if do is not None {
-            end -= _td_seconds(do);
-        }
-        isdst: bool = False;
-        if start < end {
-            isdst = start <= ts and ts < end;
-        } else {
-            isdst = not (end <= ts and ts < start);
-        }
-        ambig_start: int = 0;
-        ambig_end: int = 0;
-        if self.dst_diff > 0 {
-            ambig_start = end;
-            ambig_end = end + self.dst_diff;
-        } else {
-            ambig_start = start;
-            ambig_end = start - self.dst_diff;
-        }
-        fold: int = 0;
-        if ambig_start <= ts and ts < ambig_end {
-            fold = 1;
-        }
-        return (self.dst if isdst else self.std, fold);
-    }
+    def transitions(year: int) -> tuple[(int, int)];
+    def get_trans_info(ts: int, year: int, fold: int) -> _ttinfo;
+    def get_trans_info_fromutc(ts: int, year: int) -> tuple[(_ttinfo, int)];
 }
 
 
-def _zi_bisect_right(a: list[int], x: int) -> int {
-    lo: int = 0;
-    hi: int = len(a);
-    while lo < hi {
-        mid: int = (lo + hi) // 2;
-        if x < a[mid] {
-            hi = mid;
-        } else {
-            lo = mid + 1;
-        }
-    }
-    return lo;
-}
+def _zi_bisect_right(a: list[int], x: int) -> int;
 
 
 obj _ZoneData {
@@ -286,190 +133,477 @@ obj:pub ZoneInfo(tzinfo) {
     has key: (str | None) = None,
         _data: _ZoneData = _EMPTY_ZONE_DATA;
 
-    def init(key: str = "", _raw: bool = False) {
-        if _raw {
-            return;
-        }
-        cached: (ZoneInfo | None) = _zone_cache_get(key);
-        if cached is not None {
-            self.key = cached.key;
-            self._data = cached._data;
-            return;
-        }
-        self.key = key;
-        self._data = _zone_data_for_key(key);
-        _zone_cache_put(key, self);
-    }
-
-    static def no_cache(key: str) -> ZoneInfo {
-        z: ZoneInfo = ZoneInfo("", True);
-        z.key = key;
-        z._data = _zone_data_for_key(key);
-        return z;
-    }
-
-    static def from_file(data: bytes, key: (str | None) = None) -> ZoneInfo {
-        z: ZoneInfo = ZoneInfo("", True);
-        z.key = key;
-        z._data = _build_zone_data(_parse_tzif(data), "");
-        return z;
-    }
-
-    static def clear_cache {
-        _zone_cache.clear();
-    }
-
-    def utcoffset(dt: (datetime | None)) -> (timedelta | None) {
-        return self._find_trans(dt).utcoff;
-    }
-
-    def dst(dt: (datetime | None)) -> (timedelta | None) {
-        return self._find_trans(dt).dstoff;
-    }
-
-    def tzname(dt: (datetime | None)) -> (str | None) {
-        return self._find_trans(dt).tzname;
-    }
-
-    def fromutc(dt: datetime) -> datetime {
-        if not isinstance(dt, datetime) {
-            raise TypeError("fromutc() requires a datetime argument");
-        }
-        if dt.tzinfo is not self {
-            raise ValueError("dt.tzinfo is not self");
-        }
-        timestamp: int = self._get_local_timestamp(dt);
-        trans_utc: list[int] = self._data.trans_utc;
-        num_trans: int = len(trans_utc);
-        tti: _ttinfo;
-        fold: int = 0;
-        tb: (_ttinfo | None) = self._data.tti_before;
-        tzs: (_TZStr | None) = self._data.tz_str;
-        if num_trans >= 1 and timestamp < trans_utc[0] {
-            if tb is None {
-                tti = self._data.ttinfos[0];
-            } else {
-                tti = tb;
-            }
-            fold = 0;
-        } elif (num_trans == 0 or timestamp > trans_utc[num_trans - 1])
-            and tzs is not None {
-            (tti, fold) = tzs.get_trans_info_fromutc(timestamp, dt.year);
-        } elif num_trans == 0 {
-            tti = self._data.tz_after;
-            fold = 0;
-        } else {
-            idx: int = _zi_bisect_right(trans_utc, timestamp);
-            tti_prev: _ttinfo;
-            if num_trans > 1 and timestamp >= trans_utc[1] {
-                tti_prev = self._data.ttinfos[idx - 2];
-                tti = self._data.ttinfos[idx - 1];
-            } elif timestamp > trans_utc[num_trans - 1] {
-                tti_prev = self._data.ttinfos[num_trans - 1];
-                tti = self._data.tz_after;
-            } else {
-                if tb is None {
-                    tti_prev = self._data.ttinfos[0];
-                } else {
-                    tti_prev = tb;
-                }
-                tti = self._data.ttinfos[0];
-            }
-            poff: (timedelta | None) = tti_prev.utcoff;
-            toff: (timedelta | None) = tti.utcoff;
-            poff_us: int = 0;
-            toff_us: int = 0;
-            if poff is not None {
-                poff_us = poff._to_microseconds();
-            }
-            if toff is not None {
-                toff_us = toff._to_microseconds();
-            }
-            if (poff_us - toff_us) > (timestamp - trans_utc[idx - 1]) * 1000000 {
-                fold = 1;
-            } else {
-                fold = 0;
-            }
-        }
-        uoff_us: int = 0;
-        uoff: (timedelta | None) = tti.utcoff;
-        if uoff is not None {
-            uoff_us = uoff._to_microseconds();
-        }
-        total_us: int = timestamp * 1000000 + dt.microsecond + uoff_us;
-        days: int = total_us // 86400000000;
-        rem: int = total_us - days * 86400000000;
-        ord2: int = days + _EPOCHORDINAL;
-        if ord2 < 1 or ord2 > _MAXORDINAL {
-            raise OverflowError("result out of range");
-        }
-        (y, m, d) = _ord2ymd(ord2);
-        return datetime(
-            y,
-            m,
-            d,
-            rem // 3600000000,
-            (rem // 60000000) % 60,
-            (rem // 1000000) % 60,
-            rem % 1000000,
-            self,
-            fold
-        );
-    }
-
-    def _find_trans(dt: (datetime | None)) -> _ttinfo {
-        if dt is None {
-            if self._data.fixed_offset {
-                return self._data.tz_after;
-            }
-            return _NO_TTINFO;
-        }
-        d: datetime = dt;
-        ts: int = self._get_local_timestamp(d);
-        lt: list[int] = self._data.trans_local[d.fold];
-        num_trans: int = len(lt);
-        if num_trans > 0 and ts < lt[0] {
-            tb: (_ttinfo | None) = self._data.tti_before;
-            if tb is None {
-                return self._data.ttinfos[0];
-            }
-            return tb;
-        } elif num_trans == 0 or ts > lt[num_trans - 1] {
-            tzs: (_TZStr | None) = self._data.tz_str;
-            if tzs is not None {
-                return tzs.get_trans_info(ts, d.year, d.fold);
-            }
-            return self._data.tz_after;
-        }
-        idx: int = _zi_bisect_right(lt, ts) - 1;
-        return self._data.ttinfos[idx];
-    }
-
-    def _get_local_timestamp(dt: datetime) -> int {
-        return (dt.toordinal() - _EPOCHORDINAL) * 86400
-            + dt.hour * 3600
-            + dt.minute * 60
-            + dt.second;
-    }
-
-    def __str__ -> str {
-        k: (str | None) = self.key;
-        if k is not None {
-            return k;
-        }
-        return self.__repr__();
-    }
-
-    def __repr__ -> str {
-        if self.key is not None {
-            return "zoneinfo.ZoneInfo(key='" + self.key + "')";
-        }
-        return "zoneinfo.ZoneInfo.from_file(<bytes>)";
-    }
+    def init(key: str = "", _raw: bool = False);
+    static def no_cache(key: str) -> ZoneInfo;
+    static def from_file(data: bytes, key: (str | None) = None) -> ZoneInfo;
+    static def clear_cache;
+    def utcoffset(dt: (datetime | None)) -> (timedelta | None);
+    def dst(dt: (datetime | None)) -> (timedelta | None);
+    def tzname(dt: (datetime | None)) -> (str | None);
+    def fromutc(dt: datetime) -> datetime;
+    def _find_trans(dt: (datetime | None)) -> _ttinfo;
+    def _get_local_timestamp(dt: datetime) -> int;
+    def __str__ -> str;
+    def __repr__ -> str;
 }
 
 
-def _zone_data_for_key(key: str) -> _ZoneData {
+def _zone_data_for_key(key: str) -> _ZoneData;
+
+
+def _build_zone_data(parsed: _TzifData, file_path: str) -> _ZoneData;
+
+
+obj _TzifData {
+    has trans_idx: list[int] = [],
+        trans_utc: list[int] = [],
+        utcoff: list[int] = [],
+        isdst: list[int] = [],
+        abbr: list[str] = [],
+        tz_str: str = "";
+}
+
+
+def _parse_tzif(data: bytes) -> _TzifData;
+
+
+def _validate_tzfile_path(path: str);
+
+
+def _find_tzfile(key: str) -> tuple[(str, (bytes | None))];
+
+
+glob _zone_cache: dict[str, ZoneInfo] = {};
+
+
+def _zone_cache_get(key: str) -> (ZoneInfo | None);
+
+
+def _zone_cache_put(key: str, z: ZoneInfo);
+
+
+def:pub reset_tzpath(to: (list[str] | None) = None);
+
+
+def:pub available_timezones -> list[str];
+
+
+def _walk_tzdir(tzroot: str, prefix: str, zones: list[str]);
+
+
+def _parse_transition_time(ts: str) -> tuple[(int, int, int)];
+
+
+def _sp_zd(s: str, pos: int, maxn: int) -> tuple[(int, int)];
+
+
+def _parse_tz_delta(td: str) -> int;
+
+
+def _zi_abbr_end(s: str, pos: int) -> int;
+
+
+def _zi_strip_abbr(s: str) -> str;
+
+
+def _zi_off_end(s: str, pos: int) -> int;
+
+
+def _parse_dst_start_end(dststr: str) -> _TransOffset;
+
+
+def _atoi_zi(s: str) -> int;
+
+
+def _parse_tz_str(tz_str: str) -> tuple[(_ttinfo, (_TZStr | None))];
+
+impl ZoneInfoNotFoundError.init(key: str) {
+    self.key = key;
+}
+
+impl ZoneInfoNotFoundError.__str__ -> str {
+    return "'" + self.key + "'";
+}
+
+
+impl _be_u8(b: bytes, off: int) -> int {
+    return b[off];
+}
+
+
+impl _be_i32(b: bytes, off: int) -> int {
+    v: int = (b[off] << 24) | (b[off + 1] << 16) | (b[off + 2] << 8) | b[off + 3];
+    if v >= 2147483648 {
+        v -= 4294967296;
+    }
+    return v;
+}
+
+
+impl _be_u32(b: bytes, off: int) -> int {
+    return ((b[off] << 24) | (b[off + 1] << 16) | (b[off + 2] << 8) | b[off + 3]);
+}
+
+
+impl _be_i64(b: bytes, off: int) -> int {
+    v: int = 0;
+    i: int = 0;
+    while i < 8 {
+        v = (v << 8) | b[off + i];
+        i += 1;
+    }
+    if v > 9223372036854775807 {
+        v -= 18446744073709551616;
+    }
+    return v;
+}
+
+
+impl _ttinfo.init(
+    utcoff: (timedelta | None) = None,
+    dstoff: (timedelta | None) = None,
+    tzname: (str | None) = None
+) {
+    self.utcoff = utcoff;
+    self.dstoff = dstoff;
+    self.tzname = tzname;
+}
+
+impl _ttinfo.__eq__(other: _ttinfo) -> bool {
+    if not _tti_field_eq(self.utcoff, other.utcoff) {
+        return False;
+    }
+    if not _tti_field_eq(self.dstoff, other.dstoff) {
+        return False;
+    }
+    return _tti_str_eq(self.tzname, other.tzname);
+}
+
+
+impl _tti_field_eq(a: (timedelta | None), b: (timedelta | None)) -> bool {
+    if a is None and b is None {
+        return True;
+    }
+    if a is None or b is None {
+        return False;
+    }
+    return (a as timedelta) == (b as timedelta);
+}
+
+
+impl _tti_str_eq(a: (str | None), b: (str | None)) -> bool {
+    if a is None and b is None {
+        return True;
+    }
+    if a is None or b is None {
+        return False;
+    }
+    return (a as str) == (b as str);
+}
+
+
+impl _td_seconds(td: timedelta) -> int {
+    return td.days * 86400 + td.seconds;
+}
+
+
+impl _post_epoch_days_before_year(year: int) -> int {
+    y: int = year - 1;
+    return y * 365 + y // 4 - y // 100 + y // 400 - _EPOCHORDINAL;
+}
+
+
+impl _zi_isleap(year: int) -> bool {
+    return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0);
+}
+
+
+impl _TransOffset.year_to_epoch(year: int) -> int {
+    if self.m == 0 {
+        d: int = self.d;
+        if self.julian and d >= 59 and _zi_isleap(year) {
+            d += 1;
+        }
+        epoch: int = (_post_epoch_days_before_year(year) + d) * 86400;
+        epoch += self.hour * 3600 + self.minute * 60 + self.second;
+        return epoch;
+    }
+    first_day: int = (
+        _post_epoch_days_before_year(year)
+        + _ZI_DAYS_BEFORE_MONTH[self.m]
+        + (1 if self.m > 2 and _zi_isleap(year) else 0)
+        + 1
+        + 6
+    )
+        % 7;
+    days_in_month: int = _ZI_MDAYS[self.m]
+        + (1 if self.m == 2 and _zi_isleap(year) else 0);
+    month_day: int = (self.d - (first_day + 1)) % 7 + 1;
+    month_day += (self.w - 1) * 7;
+    if month_day > days_in_month {
+        month_day -= 7;
+    }
+    ordinal: int = _post_epoch_days_before_year(year)
+        + _ZI_DAYS_BEFORE_MONTH[self.m]
+        + (1 if self.m > 2 and _zi_isleap(year) else 0)
+        + month_day;
+    epoch2: int = ordinal * 86400;
+    epoch2 += self.hour * 3600 + self.minute * 60 + self.second;
+    return epoch2;
+}
+
+
+impl _TZStr.transitions(year: int) -> tuple[(int, int)] {
+    return (self.start.year_to_epoch(year), self.end.year_to_epoch(year));
+}
+
+impl _TZStr.get_trans_info(ts: int, year: int, fold: int) -> _ttinfo {
+    (start, end) = self.transitions(year);
+    if (fold != 0) == (self.dst_diff >= 0) {
+        end -= self.dst_diff;
+    } else {
+        start += self.dst_diff;
+    }
+    isdst: bool = False;
+    if start < end {
+        isdst = start <= ts and ts < end;
+    } else {
+        isdst = not (end <= ts and ts < start);
+    }
+    return self.dst if isdst else self.std;
+}
+
+impl _TZStr.get_trans_info_fromutc(ts: int, year: int) -> tuple[(_ttinfo, int)] {
+    (start, end) = self.transitions(year);
+    so: (timedelta | None) = self.std.utcoff;
+    do: (timedelta | None) = self.dst.utcoff;
+    if so is not None {
+        start -= _td_seconds(so);
+    }
+    if do is not None {
+        end -= _td_seconds(do);
+    }
+    isdst: bool = False;
+    if start < end {
+        isdst = start <= ts and ts < end;
+    } else {
+        isdst = not (end <= ts and ts < start);
+    }
+    ambig_start: int = 0;
+    ambig_end: int = 0;
+    if self.dst_diff > 0 {
+        ambig_start = end;
+        ambig_end = end + self.dst_diff;
+    } else {
+        ambig_start = start;
+        ambig_end = start - self.dst_diff;
+    }
+    fold: int = 0;
+    if ambig_start <= ts and ts < ambig_end {
+        fold = 1;
+    }
+    return (self.dst if isdst else self.std, fold);
+}
+
+
+impl _zi_bisect_right(a: list[int], x: int) -> int {
+    lo: int = 0;
+    hi: int = len(a);
+    while lo < hi {
+        mid: int = (lo + hi) // 2;
+        if x < a[mid] {
+            hi = mid;
+        } else {
+            lo = mid + 1;
+        }
+    }
+    return lo;
+}
+
+
+impl ZoneInfo.init(key: str = "", _raw: bool = False) {
+    if _raw {
+        return;
+    }
+    cached: (ZoneInfo | None) = _zone_cache_get(key);
+    if cached is not None {
+        self.key = cached.key;
+        self._data = cached._data;
+        return;
+    }
+    self.key = key;
+    self._data = _zone_data_for_key(key);
+    _zone_cache_put(key, self);
+}
+
+impl ZoneInfo.no_cache(key: str) -> ZoneInfo {
+    z: ZoneInfo = ZoneInfo("", True);
+    z.key = key;
+    z._data = _zone_data_for_key(key);
+    return z;
+}
+
+impl ZoneInfo.from_file(data: bytes, key: (str | None) = None) -> ZoneInfo {
+    z: ZoneInfo = ZoneInfo("", True);
+    z.key = key;
+    z._data = _build_zone_data(_parse_tzif(data), "");
+    return z;
+}
+
+impl ZoneInfo.clear_cache {
+    _zone_cache.clear();
+}
+
+impl ZoneInfo.utcoffset(dt: (datetime | None)) -> (timedelta | None) {
+    return self._find_trans(dt).utcoff;
+}
+
+impl ZoneInfo.dst(dt: (datetime | None)) -> (timedelta | None) {
+    return self._find_trans(dt).dstoff;
+}
+
+impl ZoneInfo.tzname(dt: (datetime | None)) -> (str | None) {
+    return self._find_trans(dt).tzname;
+}
+
+impl ZoneInfo.fromutc(dt: datetime) -> datetime {
+    if not isinstance(dt, datetime) {
+        raise TypeError("fromutc() requires a datetime argument");
+    }
+    if dt.tzinfo is not self {
+        raise ValueError("dt.tzinfo is not self");
+    }
+    timestamp: int = self._get_local_timestamp(dt);
+    trans_utc: list[int] = self._data.trans_utc;
+    num_trans: int = len(trans_utc);
+    tti: _ttinfo;
+    fold: int = 0;
+    tb: (_ttinfo | None) = self._data.tti_before;
+    tzs: (_TZStr | None) = self._data.tz_str;
+    if num_trans >= 1 and timestamp < trans_utc[0] {
+        if tb is None {
+            tti = self._data.ttinfos[0];
+        } else {
+            tti = tb;
+        }
+        fold = 0;
+    } elif (num_trans == 0 or timestamp > trans_utc[num_trans - 1])
+        and tzs is not None {
+        (tti, fold) = tzs.get_trans_info_fromutc(timestamp, dt.year);
+    } elif num_trans == 0 {
+        tti = self._data.tz_after;
+        fold = 0;
+    } else {
+        idx: int = _zi_bisect_right(trans_utc, timestamp);
+        tti_prev: _ttinfo;
+        if num_trans > 1 and timestamp >= trans_utc[1] {
+            tti_prev = self._data.ttinfos[idx - 2];
+            tti = self._data.ttinfos[idx - 1];
+        } elif timestamp > trans_utc[num_trans - 1] {
+            tti_prev = self._data.ttinfos[num_trans - 1];
+            tti = self._data.tz_after;
+        } else {
+            if tb is None {
+                tti_prev = self._data.ttinfos[0];
+            } else {
+                tti_prev = tb;
+            }
+            tti = self._data.ttinfos[0];
+        }
+        poff: (timedelta | None) = tti_prev.utcoff;
+        toff: (timedelta | None) = tti.utcoff;
+        poff_us: int = 0;
+        toff_us: int = 0;
+        if poff is not None {
+            poff_us = poff._to_microseconds();
+        }
+        if toff is not None {
+            toff_us = toff._to_microseconds();
+        }
+        if (poff_us - toff_us) > (timestamp - trans_utc[idx - 1]) * 1000000 {
+            fold = 1;
+        } else {
+            fold = 0;
+        }
+    }
+    uoff_us: int = 0;
+    uoff: (timedelta | None) = tti.utcoff;
+    if uoff is not None {
+        uoff_us = uoff._to_microseconds();
+    }
+    total_us: int = timestamp * 1000000 + dt.microsecond + uoff_us;
+    days: int = total_us // 86400000000;
+    rem: int = total_us - days * 86400000000;
+    ord2: int = days + _EPOCHORDINAL;
+    if ord2 < 1 or ord2 > _MAXORDINAL {
+        raise OverflowError("result out of range");
+    }
+    (y, m, d) = _ord2ymd(ord2);
+    return datetime(
+        y,
+        m,
+        d,
+        rem // 3600000000,
+        (rem // 60000000) % 60,
+        (rem // 1000000) % 60,
+        rem % 1000000,
+        self,
+        fold
+    );
+}
+
+impl ZoneInfo._find_trans(dt: (datetime | None)) -> _ttinfo {
+    if dt is None {
+        if self._data.fixed_offset {
+            return self._data.tz_after;
+        }
+        return _NO_TTINFO;
+    }
+    d: datetime = dt;
+    ts: int = self._get_local_timestamp(d);
+    lt: list[int] = self._data.trans_local[d.fold];
+    num_trans: int = len(lt);
+    if num_trans > 0 and ts < lt[0] {
+        tb: (_ttinfo | None) = self._data.tti_before;
+        if tb is None {
+            return self._data.ttinfos[0];
+        }
+        return tb;
+    } elif num_trans == 0 or ts > lt[num_trans - 1] {
+        tzs: (_TZStr | None) = self._data.tz_str;
+        if tzs is not None {
+            return tzs.get_trans_info(ts, d.year, d.fold);
+        }
+        return self._data.tz_after;
+    }
+    idx: int = _zi_bisect_right(lt, ts) - 1;
+    return self._data.ttinfos[idx];
+}
+
+impl ZoneInfo._get_local_timestamp(dt: datetime) -> int {
+    return (dt.toordinal() - _EPOCHORDINAL) * 86400
+        + dt.hour * 3600
+        + dt.minute * 60
+        + dt.second;
+}
+
+impl ZoneInfo.__str__ -> str {
+    k: (str | None) = self.key;
+    if k is not None {
+        return k;
+    }
+    return self.__repr__();
+}
+
+impl ZoneInfo.__repr__ -> str {
+    if self.key is not None {
+        return "zoneinfo.ZoneInfo(key='" + self.key + "')";
+    }
+    return "zoneinfo.ZoneInfo.from_file(<bytes>)";
+}
+
+
+impl _zone_data_for_key(key: str) -> _ZoneData {
     (path, data) = _find_tzfile(key);
     if data is None {
         raise ZoneInfoNotFoundError("No time zone found with key " + key);
@@ -478,7 +612,7 @@ def _zone_data_for_key(key: str) -> _ZoneData {
 }
 
 
-def _build_zone_data(parsed: _TzifData, file_path: str) -> _ZoneData {
+impl _build_zone_data(parsed: _TzifData, file_path: str) -> _ZoneData {
     d: _ZoneData = _ZoneData();
     d.file_path = file_path;
     trans_idx: list[int] = parsed.trans_idx;
@@ -637,17 +771,7 @@ def _build_zone_data(parsed: _TzifData, file_path: str) -> _ZoneData {
 }
 
 
-obj _TzifData {
-    has trans_idx: list[int] = [],
-        trans_utc: list[int] = [],
-        utcoff: list[int] = [],
-        isdst: list[int] = [],
-        abbr: list[str] = [],
-        tz_str: str = "";
-}
-
-
-def _parse_tzif(data: bytes) -> _TzifData {
+impl _parse_tzif(data: bytes) -> _TzifData {
     if len(data) < 44 {
         raise ValueError("Invalid TZif file: magic not found");
     }
@@ -766,7 +890,7 @@ def _parse_tzif(data: bytes) -> _TzifData {
 }
 
 
-def _validate_tzfile_path(path: str) {
+impl _validate_tzfile_path(path: str) {
     if len(path) > 0 and path[0] == "/" {
         raise ValueError("ZoneInfo keys may not be absolute paths, got: " + path);
     }
@@ -785,7 +909,7 @@ def _validate_tzfile_path(path: str) {
 }
 
 
-def _find_tzfile(key: str) -> tuple[(str, (bytes | None))] {
+impl _find_tzfile(key: str) -> tuple[(str, (bytes | None))] {
     _validate_tzfile_path(key);
     for sp in TZPATH {
         filepath: str = sp + "/" + key;
@@ -800,20 +924,17 @@ def _find_tzfile(key: str) -> tuple[(str, (bytes | None))] {
 }
 
 
-glob _zone_cache: dict[str, ZoneInfo] = {};
-
-
-def _zone_cache_get(key: str) -> (ZoneInfo | None) {
+impl _zone_cache_get(key: str) -> (ZoneInfo | None) {
     return _zone_cache.get(key);
 }
 
 
-def _zone_cache_put(key: str, z: ZoneInfo) {
+impl _zone_cache_put(key: str, z: ZoneInfo) {
     _zone_cache[key] = z;
 }
 
 
-def:pub reset_tzpath(to: (list[str] | None) = None) {
+impl reset_tzpath(to: (list[str] | None) = None) {
     src: list[str] = _DEFAULT_TZPATH if to is None else to;
     for p in src {
         if len(p) == 0 or p[0] != "/" {
@@ -827,7 +948,7 @@ def:pub reset_tzpath(to: (list[str] | None) = None) {
 }
 
 
-def:pub available_timezones -> list[str] {
+impl available_timezones -> list[str] {
     zones: list[str] = [];
     for tzroot in TZPATH {
         _walk_tzdir(tzroot, "", zones);
@@ -837,7 +958,7 @@ def:pub available_timezones -> list[str] {
 }
 
 
-def _walk_tzdir(tzroot: str, prefix: str, zones: list[str]) {
+impl _walk_tzdir(tzroot: str, prefix: str, zones: list[str]) {
     names: list[str] = try_directory_names(tzroot + "/" + prefix);
     if len(names) == 0 {
         return;
@@ -863,7 +984,7 @@ def _walk_tzdir(tzroot: str, prefix: str, zones: list[str]) {
 }
 
 
-def _parse_transition_time(ts: str) -> tuple[(int, int, int)] {
+impl _parse_transition_time(ts: str) -> tuple[(int, int, int)] {
     pos: int = 0;
     sign: int = 1;
     if pos < len(ts) and (ts[pos] == "-" or ts[pos] == "+") {
@@ -903,7 +1024,7 @@ def _parse_transition_time(ts: str) -> tuple[(int, int, int)] {
 }
 
 
-def _sp_zd(s: str, pos: int, maxn: int) -> tuple[(int, int)] {
+impl _sp_zd(s: str, pos: int, maxn: int) -> tuple[(int, int)] {
     v: int = 0;
     n: int = 0;
     while pos + n < len(s) and n < maxn {
@@ -921,7 +1042,7 @@ def _sp_zd(s: str, pos: int, maxn: int) -> tuple[(int, int)] {
 }
 
 
-def _parse_tz_delta(td: str) -> int {
+impl _parse_tz_delta(td: str) -> int {
     (h, m, s) = _parse_transition_time(td);
     if h < -24 or h > 24 {
         raise ValueError("Offset hours must be in [0, 24]: " + td);
@@ -937,7 +1058,7 @@ def _parse_tz_delta(td: str) -> int {
 }
 
 
-def _zi_abbr_end(s: str, pos: int) -> int {
+impl _zi_abbr_end(s: str, pos: int) -> int {
     if pos < len(s) and s[pos] == "<" {
         e: int = pos + 1;
         while e < len(s) and s[e] != ">" {
@@ -961,7 +1082,7 @@ def _zi_abbr_end(s: str, pos: int) -> int {
 }
 
 
-def _zi_strip_abbr(s: str) -> str {
+impl _zi_strip_abbr(s: str) -> str {
     if s.startswith("<") and s.endswith(">") {
         return s[1:len(s) - 1];
     }
@@ -969,7 +1090,7 @@ def _zi_strip_abbr(s: str) -> str {
 }
 
 
-def _zi_off_end(s: str, pos: int) -> int {
+impl _zi_off_end(s: str, pos: int) -> int {
     i: int = pos;
     if i < len(s) and (s[i] == "+" or s[i] == "-") {
         i += 1;
@@ -1015,7 +1136,7 @@ def _zi_off_end(s: str, pos: int) -> int {
 }
 
 
-def _parse_dst_start_end(dststr: str) -> _TransOffset {
+impl _parse_dst_start_end(dststr: str) -> _TransOffset {
     parts: list[str] = dststr.split("/");
     date: str = parts[0];
     o: _TransOffset = _TransOffset();
@@ -1067,7 +1188,7 @@ def _parse_dst_start_end(dststr: str) -> _TransOffset {
 }
 
 
-def _atoi_zi(s: str) -> int {
+impl _atoi_zi(s: str) -> int {
     v: int = 0;
     i: int = 0;
     while i < len(s) {
@@ -1082,7 +1203,7 @@ def _atoi_zi(s: str) -> int {
 }
 
 
-def _parse_tz_str(tz_str: str) -> tuple[(_ttinfo, (_TZStr | None))] {
+impl _parse_tz_str(tz_str: str) -> tuple[(_ttinfo, (_TZStr | None))] {
     comma: int = tz_str.find(",");
     offset_str: str = tz_str;
     rules: str = "";

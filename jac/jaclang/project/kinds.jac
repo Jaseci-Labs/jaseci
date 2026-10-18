@@ -25,31 +25,45 @@ obj RunPlan {
         }
     }
 
-    def command_line -> str {
-        parts = ["jac", "build", "--native"]
-            if self.verb == "native"
-            else ["jac", self.verb];
-        if self.app {
-            parts.append(self.app);
-        } elif self.entry_path {
-            parts.append(os.path.basename(self.entry_path));
-        }
-        for (k, v) in self.flags.items() {
-            flag = f"--{k.replace('_', '-')}";
-            if isinstance(v, bool) {
-                if v {
-                    parts.append(flag);
-                }
-            } else {
-                parts.append(flag);
-                parts.append(str(v));
-            }
-        }
-        return " ".join(parts);
-    }
+    def command_line -> str;
 }
 
-def _has_client(config: JacConfig) -> bool {
+def _has_client(config: JacConfig) -> bool;
+
+def resolve_entry(config: JacConfig, project_root: str, app: AppConfig) -> str;
+
+def resolve_app_kind(config: JacConfig, app: AppConfig, entry_path: str) -> str;
+
+def plan_app_run(
+    config: JacConfig, project_root: str, app: AppConfig, entry_override: str = ""
+) -> RunPlan;
+
+def plan_workspace(config: JacConfig, project_root: str) -> list[RunPlan];
+
+impl RunPlan.command_line -> str {
+    parts = ["jac", "build", "--native"]
+        if self.verb == "native"
+        else ["jac", self.verb];
+    if self.app {
+        parts.append(self.app);
+    } elif self.entry_path {
+        parts.append(os.path.basename(self.entry_path));
+    }
+    for (k, v) in self.flags.items() {
+        flag = f"--{k.replace('_', '-')}";
+        if isinstance(v, bool) {
+            if v {
+                parts.append(flag);
+            }
+        } else {
+            parts.append(flag);
+            parts.append(str(v));
+        }
+    }
+    return " ".join(parts);
+}
+
+impl _has_client(config: JacConfig) -> bool {
     if "jac-client" in config.pypi_dependencies {
         return True;
     }
@@ -61,12 +75,12 @@ def _has_client(config: JacConfig) -> bool {
     return False;
 }
 
-def resolve_entry(config: JacConfig, project_root: str, app: AppConfig) -> str {
+impl resolve_entry(config: JacConfig, project_root: str, app: AppConfig) -> str {
     path = app.entry_path(project_root);
     return path if os.path.isfile(path) else "";
 }
 
-def resolve_app_kind(config: JacConfig, app: AppConfig, entry_path: str) -> str {
+impl resolve_app_kind(config: JacConfig, app: AppConfig, entry_path: str) -> str {
     explicit = app.kind.strip() if app.kind else "";
     if explicit {
         return explicit;
@@ -100,7 +114,7 @@ def resolve_app_kind(config: JacConfig, app: AppConfig, entry_path: str) -> str 
     return "cli";
 }
 
-def plan_app_run(
+impl plan_app_run(
     config: JacConfig, project_root: str, app: AppConfig, entry_override: str = ""
 ) -> RunPlan {
     eff = config.effective_for_app(app.name) if app.name in config.apps else config;
@@ -158,7 +172,7 @@ def plan_app_run(
     );
 }
 
-def plan_workspace(config: JacConfig, project_root: str) -> list[RunPlan] {
+impl plan_workspace(config: JacConfig, project_root: str) -> list[RunPlan] {
     apps = list(config.apps.values()) or [implicit_app(config)];
     return [plan_app_run(config, project_root, app) for app in apps];
 }

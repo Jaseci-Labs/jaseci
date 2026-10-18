@@ -14,7 +14,17 @@ glob _tabsListVariants: any = cva(
          }
      );
 
-def:pub Tabs(props: any) -> JsxElement {
+def:pub Tabs(props: any) -> JsxElement;
+
+def:pub TabsList(props: any) -> JsxElement;
+
+def:pub TabsTrigger(props: any) -> JsxElement;
+
+def:pub TabsContent(props: any) -> JsxElement;
+
+def:pub tabsListVariants -> any;
+
+impl Tabs(props: any) -> JsxElement {
     orientation = props["orientation"] or "horizontal";
     return
         <TabsPrimitive.Root
@@ -27,7 +37,7 @@ def:pub Tabs(props: any) -> JsxElement {
         />;
 }
 
-def:pub TabsList(props: any) -> JsxElement {
+impl TabsList(props: any) -> JsxElement {
     variant = props["variant"] or "default";
     return
         <TabsPrimitive.List
@@ -40,7 +50,7 @@ def:pub TabsList(props: any) -> JsxElement {
         />;
 }
 
-def:pub TabsTrigger(props: any) -> JsxElement {
+impl TabsTrigger(props: any) -> JsxElement {
     return
         <TabsPrimitive.Trigger
             {**props}
@@ -55,7 +65,7 @@ def:pub TabsTrigger(props: any) -> JsxElement {
         />;
 }
 
-def:pub TabsContent(props: any) -> JsxElement {
+impl TabsContent(props: any) -> JsxElement {
     return
         <TabsPrimitive.Content
             {**props}
@@ -64,6 +74,6 @@ def:pub TabsContent(props: any) -> JsxElement {
         />;
 }
 
-def:pub tabsListVariants -> any {
+impl tabsListVariants -> any {
     return _tabsListVariants;
 }

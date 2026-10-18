@@ -3,7 +3,24 @@ import platform;
 import subprocess;
 import from pathlib { Path }
 
-def host_platform -> str {
+def host_platform -> str;
+
+def executable(name: str) -> str;
+
+def shared_library_name(stem: str) -> str;
+
+def run_step(
+    label: str,
+    command: list[str],
+    cwd: Path,
+    env: dict[str, str],
+    input_text: str | None = None
+);
+
+
+def use_system_tools -> bool;
+
+impl host_platform -> str {
     systems = {"Linux": "linux", "Darwin": "mac", "Windows": "windows"};
     arches = {
         "x86_64": "x64",
@@ -21,11 +38,11 @@ def host_platform -> str {
     return system + "-" + arch;
 }
 
-def executable(name: str) -> str {
+impl executable(name: str) -> str {
     return name + ".exe" if os.name == "nt" else name;
 }
 
-def shared_library_name(stem: str) -> str {
+impl shared_library_name(stem: str) -> str {
     system = platform.system();
     if system == "Darwin" {
         return "lib" + stem + ".dylib";
@@ -36,7 +53,7 @@ def shared_library_name(stem: str) -> str {
     return "lib" + stem + ".so";
 }
 
-def run_step(
+impl run_step(
     label: str,
     command: list[str],
     cwd: Path,
@@ -50,6 +67,6 @@ def run_step(
 }
 
 
-def use_system_tools -> bool {
+impl use_system_tools -> bool {
     return use_system_toolchains();
 }

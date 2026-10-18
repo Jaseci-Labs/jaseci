@@ -18,7 +18,71 @@ glob TOOLCHAIN_NATIVE_ONLY_REL: tuple[str, ...] = ("runtime", "na_stdlib"),
      );
 
 
-def native_placement_hard(prog: JacProgram, mod_path: str) -> bool {
+def native_placement_hard(prog: JacProgram, mod_path: str) -> bool;
+
+
+def native_placement_soft(prog: JacProgram, mod: uni.Module) -> bool;
+
+
+def contexts_of(module: uni.Module) -> list[str];
+
+
+def settle_server(module: uni.Module) -> bool;
+
+
+def project_root_of(source_path: str) -> (str | None);
+
+
+def require_project_root(source_path: str) -> str;
+
+
+def module_spaces(mod: (uni.Module | None)) -> set[str];
+
+
+def is_client_only(mod: (uni.Module | None)) -> bool;
+
+
+def emits_server_code(mod: (uni.Module | None)) -> bool;
+
+
+def declared_path_spaces(source_path: str, prog: JacProgram) -> set[str];
+
+
+def discover_spaces(
+    paths: list[str], prog: (JacProgram | None) = None
+) -> dict[str, set[str]];
+
+
+def pinned_module_space(source_path: str) -> str;
+
+
+def spaces_are_client_only(spaces: set[str]) -> bool;
+
+
+def client_only_paths(paths: list[str]) -> set[str];
+
+
+def _toolchain_rel(source_path: str) -> (str | None);
+
+def variant_selected(source_path: str) -> (bool | None);
+
+def native_only(source_path: str) -> bool;
+
+def native_lowered(source_path: str) -> bool;
+
+def native_unit(
+    source_path: str,
+    native_unit_compile: (bool | None) = None,
+    prog: (JacProgram | None) = None
+) -> bool;
+
+def native_units_of(package_dir: str, sources: list[str]) -> list[str];
+
+def session_declares_native(
+    options: CompileOptions, source: str, element: str, program: JacProgram
+) -> bool;
+
+impl native_placement_hard(prog: JacProgram, mod_path: str) -> bool {
     opts = prog.options;
     if opts is None {
         return False;
@@ -30,7 +94,7 @@ def native_placement_hard(prog: JacProgram, mod_path: str) -> bool {
 }
 
 
-def native_placement_soft(prog: JacProgram, mod: uni.Module) -> bool {
+impl native_placement_soft(prog: JacProgram, mod: uni.Module) -> bool {
     if mod.decided_codespace != SPACE_NATIVE and not mod.codespace_inferred {
         return False;
     }
@@ -39,7 +103,7 @@ def native_placement_soft(prog: JacProgram, mod: uni.Module) -> bool {
 }
 
 
-def contexts_of(module: uni.Module) -> list[str] {
+impl contexts_of(module: uni.Module) -> list[str] {
     return [
         elem.code_context.value if isinstance(elem, uni.ContextAwareNode) else ''
         for elem in module.body
@@ -47,7 +111,7 @@ def contexts_of(module: uni.Module) -> list[str] {
 }
 
 
-def settle_server(module: uni.Module) -> bool {
+impl settle_server(module: uni.Module) -> bool {
     import from jaclang.compiler.frontend.constant { CodeContext }
     import from jaclang.compiler.driver.boundary_classify { _stamp_context_element }
     moved = False;
@@ -67,12 +131,12 @@ def settle_server(module: uni.Module) -> bool {
 }
 
 
-def project_root_of(source_path: str) -> (str | None) {
+impl project_root_of(source_path: str) -> (str | None) {
     return active_host().project_root(source_path);
 }
 
 
-def require_project_root(source_path: str) -> str {
+impl require_project_root(source_path: str) -> str {
     proj_root = project_root_of(source_path);
     if not proj_root {
         raise ValueError(
@@ -84,7 +148,7 @@ def require_project_root(source_path: str) -> str {
 }
 
 
-def module_spaces(mod: (uni.Module | None)) -> set[str] {
+impl module_spaces(mod: (uni.Module | None)) -> set[str] {
     if mod is None {
         return {SPACE_SERVER};
     }
@@ -104,23 +168,23 @@ def module_spaces(mod: (uni.Module | None)) -> set[str] {
 }
 
 
-def is_client_only(mod: (uni.Module | None)) -> bool {
+impl is_client_only(mod: (uni.Module | None)) -> bool {
     return module_spaces(mod) == {SPACE_CLIENT};
 }
 
 
-def emits_server_code(mod: (uni.Module | None)) -> bool {
+impl emits_server_code(mod: (uni.Module | None)) -> bool {
     return SPACE_SERVER in module_spaces(mod);
 }
 
 
-def declared_path_spaces(source_path: str, prog: JacProgram) -> set[str] {
+impl declared_path_spaces(source_path: str, prog: JacProgram) -> set[str] {
     import from jaclang.compiler.placement.placement_solver { _materialize_module }
     return module_spaces(_materialize_module(source_path, prog));
 }
 
 
-def discover_spaces(
+impl discover_spaces(
     paths: list[str], prog: (JacProgram | None) = None
 ) -> dict[str, set[str]] {
     import from jaclang.compiler.driver.program { JacProgram }
@@ -148,18 +212,18 @@ def discover_spaces(
 }
 
 
-def pinned_module_space(source_path: str) -> str {
+impl pinned_module_space(source_path: str) -> str {
     import from jaclang.compiler.placement.placement_pins { config_module_pin }
     return config_module_pin(source_path);
 }
 
 
-def spaces_are_client_only(spaces: set[str]) -> bool {
+impl spaces_are_client_only(spaces: set[str]) -> bool {
     return len(spaces) == 1 and SPACE_CLIENT in spaces;
 }
 
 
-def client_only_paths(paths: list[str]) -> set[str] {
+impl client_only_paths(paths: list[str]) -> set[str] {
     facts = discover_spaces(paths);
     out: set[str] = set();
     for (p, spaces) in facts.items() {
@@ -171,12 +235,12 @@ def client_only_paths(paths: list[str]) -> set[str] {
 }
 
 
-def _toolchain_rel(source_path: str) -> (str | None) {
+impl _toolchain_rel(source_path: str) -> (str | None) {
     import from jaclang.compiler.kernel_target { target_package_rel }
     return target_package_rel(source_path);
 }
 
-def variant_selected(source_path: str) -> (bool | None) {
+impl variant_selected(source_path: str) -> (bool | None) {
     import from jaclang.compiler.frontend.codeinfo {
         is_native_variant_path,
         is_selected_native_variant
@@ -187,7 +251,7 @@ def variant_selected(source_path: str) -> (bool | None) {
     return is_selected_native_variant(source_path);
 }
 
-def native_only(source_path: str) -> bool {
+impl native_only(source_path: str) -> bool {
     selected = variant_selected(source_path);
     if selected is not None {
         return selected;
@@ -204,7 +268,7 @@ def native_only(source_path: str) -> bool {
     return active_host().is_native_only_source(rel);
 }
 
-def native_lowered(source_path: str) -> bool {
+impl native_lowered(source_path: str) -> bool {
     rel = _toolchain_rel(source_path);
     if rel is None {
         return False;
@@ -217,7 +281,7 @@ def native_lowered(source_path: str) -> bool {
     return active_host().is_native_lowered_source(rel);
 }
 
-def native_unit(
+impl native_unit(
     source_path: str,
     native_unit_compile: (bool | None) = None,
     prog: (JacProgram | None) = None
@@ -261,7 +325,7 @@ def native_unit(
     return False;
 }
 
-def native_units_of(package_dir: str, sources: list[str]) -> list[str] {
+impl native_units_of(package_dir: str, sources: list[str]) -> list[str] {
     out: list[str] = [];
     for p in sources {
         if native_unit(p, native_unit_compile=True) {
@@ -271,7 +335,7 @@ def native_units_of(package_dir: str, sources: list[str]) -> list[str] {
     return sorted(set(out));
 }
 
-def session_declares_native(
+impl session_declares_native(
     options: CompileOptions, source: str, element: str, program: JacProgram
 ) -> bool {
     import from jaclang.compiler.placement.placement_pins {

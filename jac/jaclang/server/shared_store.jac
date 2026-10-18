@@ -22,7 +22,40 @@ glob logger = logging.getLogger(__name__),
      ];
 
 
-def _after_fork_in_child {
+def _after_fork_in_child;
+
+
+with entry {
+    if hasattr(os, 'register_at_fork') {
+        os.register_at_fork(after_in_child=_after_fork_in_child);
+    }
+}
+
+
+def scale_db_url -> (str | None);
+
+
+def _url_source -> str;
+
+
+def _store_target(store: any) -> str;
+
+
+def _in_cluster -> bool;
+
+
+def _fail(reason: str);
+
+
+def shared_store_failure -> (str | None);
+
+
+def shared_store -> (any | None);
+
+
+def _failure_reason(stage: str, source: str, store: any, e: Exception) -> str;
+
+impl _after_fork_in_child {
     _lock = threading.Lock();
     store: any = _holder.pop('store', None);
     _holder.pop('key', None);
@@ -39,14 +72,7 @@ def _after_fork_in_child {
 }
 
 
-with entry {
-    if hasattr(os, 'register_at_fork') {
-        os.register_at_fork(after_in_child=_after_fork_in_child);
-    }
-}
-
-
-def scale_db_url -> (str | None) {
+impl scale_db_url -> (str | None) {
     url = os.environ.get('JAC_DB_URL', '');
     if url {
         return url;
@@ -63,12 +89,12 @@ def scale_db_url -> (str | None) {
 }
 
 
-def _url_source -> str {
+impl _url_source -> str {
     return ('JAC_DB_URL' if os.environ.get('JAC_DB_URL') else '[scale.database] url');
 }
 
 
-def _store_target(store: any) -> str {
+impl _store_target(store: any) -> str {
     try {
         info = store.conninfo;
         where = info.unix_socket_dir or info.host or '?';
@@ -79,12 +105,12 @@ def _store_target(store: any) -> str {
 }
 
 
-def _in_cluster -> bool {
+impl _in_cluster -> bool {
     return bool(os.environ.get('KUBERNETES_SERVICE_HOST', '').strip());
 }
 
 
-def _fail(reason: str) {
+impl _fail(reason: str) {
     if _holder.get('failure') == reason {
         logger.debug(f"scale shared store still unavailable: {reason}");
     } else {
@@ -96,13 +122,13 @@ def _fail(reason: str) {
 }
 
 
-def shared_store_failure -> (str | None) {
+impl shared_store_failure -> (str | None) {
     got = _holder.get('failure');
     return str(got) if got else None;
 }
 
 
-def shared_store -> (any | None) {
+impl shared_store -> (any | None) {
     with _lock {
         import from jaclang.runtime.runtime { JacRuntime }
         url = scale_db_url();
@@ -175,7 +201,7 @@ def shared_store -> (any | None) {
 }
 
 
-def _failure_reason(stage: str, source: str, store: any, e: Exception) -> str {
+impl _failure_reason(stage: str, source: str, store: any, e: Exception) -> str {
     cause = f"{type(e).__name__}: {e}";
     if stage == 'provision' {
         return f"the embedded Postgres server could not be provisioned ({cause})";

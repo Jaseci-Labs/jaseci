@@ -7,7 +7,75 @@ import from jaclang.project.app_kinds { kind_codespace }
 
 glob PIN_SPACES: tuple[str, ...] = ('server', 'client', 'native');
 
-def validate_pins(pins: dict[str, str], toml_path: str) -> dict[str, str] {
+def validate_pins(pins: dict[str, str], toml_path: str) -> dict[str, str];
+
+def module_dot_path(source_path: str, root_dir: str) -> str;
+
+def match_pin(
+    source_path: str, root_dir: str, pins: dict[str, str], element_name: str = ''
+) -> str;
+
+def config_pins_for(source_path: str) -> dict[str, str];
+
+
+def config_pin_for(source_path: str, element_name: str) -> str;
+
+
+def config_element_pin(source_path: str, element_name: str) -> str;
+
+
+def config_module_pin(source_path: str) -> str;
+
+
+def effective_pin_for(
+    source_path: str, element_name: str, prog: (JacProgram | None) = None
+) -> str;
+
+
+def effective_module_pin(source_path: str, prog: (JacProgram | None) = None) -> str;
+
+
+def config_project_kind(source_path: str) -> str;
+
+
+def config_kind_space(source_path: str, fallback_kind: str = '') -> str;
+
+
+def pins_digest(source_path: str) -> str;
+
+
+def npm_dependency_names(source_path: str) -> set[str];
+
+def client_framework(source_path: str) -> str;
+
+glob _FRAMEWORK_PACKAGES: dict[str, set[str]] = {
+         "react": {"react", "react-dom"},
+         "preact": {"preact"},
+         "solid": {"solid-js"}
+     };
+
+
+obj BareImportVerdict {
+    has world: str = 'py',
+        rule: str = 'python import',
+        path: str = '';
+}
+
+
+def npm_package_root(spec: str) -> str;
+
+def _declared_npm_rule(spec: str, source_path: str) -> str;
+
+
+def _installed_npm_rule(spec: str, source_path: str) -> str;
+
+
+def in_client_npm_world(spec: str, source_path: str) -> bool;
+
+
+def classify_bare_import(spec: str, source_path: str) -> BareImportVerdict;
+
+impl validate_pins(pins: dict[str, str], toml_path: str) -> dict[str, str] {
     for (key, space) in pins.items() {
         if space not in PIN_SPACES {
             raise ValueError(
@@ -19,7 +87,7 @@ def validate_pins(pins: dict[str, str], toml_path: str) -> dict[str, str] {
     return pins;
 }
 
-def module_dot_path(source_path: str, root_dir: str) -> str {
+impl module_dot_path(source_path: str, root_dir: str) -> str {
     path = os.path.realpath(source_path);
     relative = os.path.relpath(os.path.dirname(path), os.path.realpath(root_dir));
     parent = relative.replace(os.sep, '.')
@@ -32,7 +100,7 @@ def module_dot_path(source_path: str, root_dir: str) -> str {
     return parent or stem;
 }
 
-def match_pin(
+impl match_pin(
     source_path: str, root_dir: str, pins: dict[str, str], element_name: str = ''
 ) -> str {
     module = module_dot_path(source_path, root_dir);
@@ -47,7 +115,7 @@ def match_pin(
     return '';
 }
 
-def config_pins_for(source_path: str) -> dict[str, str] {
+impl config_pins_for(source_path: str) -> dict[str, str] {
     if not source_path {
         return {};
     }
@@ -61,7 +129,7 @@ def config_pins_for(source_path: str) -> dict[str, str] {
 }
 
 
-def config_pin_for(source_path: str, element_name: str) -> str {
+impl config_pin_for(source_path: str, element_name: str) -> str {
     if not source_path {
         return '';
     }
@@ -77,7 +145,7 @@ def config_pin_for(source_path: str, element_name: str) -> str {
 }
 
 
-def config_element_pin(source_path: str, element_name: str) -> str {
+impl config_element_pin(source_path: str, element_name: str) -> str {
     if not source_path or not element_name {
         return '';
     }
@@ -96,24 +164,24 @@ def config_element_pin(source_path: str, element_name: str) -> str {
 }
 
 
-def config_module_pin(source_path: str) -> str {
+impl config_module_pin(source_path: str) -> str {
     return config_pin_for(source_path, '');
 }
 
 
-def effective_pin_for(
+impl effective_pin_for(
     source_path: str, element_name: str, prog: (JacProgram | None) = None
 ) -> str {
     return config_pin_for(source_path, element_name);
 }
 
 
-def effective_module_pin(source_path: str, prog: (JacProgram | None) = None) -> str {
+impl effective_module_pin(source_path: str, prog: (JacProgram | None) = None) -> str {
     return effective_pin_for(source_path, '', prog);
 }
 
 
-def config_project_kind(source_path: str) -> str {
+impl config_project_kind(source_path: str) -> str {
     if not source_path {
         return '';
     }
@@ -122,13 +190,13 @@ def config_project_kind(source_path: str) -> str {
 }
 
 
-def config_kind_space(source_path: str, fallback_kind: str = '') -> str {
+impl config_kind_space(source_path: str, fallback_kind: str = '') -> str {
     kind = config_project_kind(source_path) or fallback_kind;
     return kind_codespace(kind) if kind else '';
 }
 
 
-def pins_digest(source_path: str) -> str {
+impl pins_digest(source_path: str) -> str {
     pins = config_pins_for(source_path);
     app = context_app(source_path) if source_path else None;
     facts = app.fact_digest if app is not None else '';
@@ -139,7 +207,7 @@ def pins_digest(source_path: str) -> str {
 }
 
 
-def npm_dependency_names(source_path: str) -> set[str] {
+impl npm_dependency_names(source_path: str) -> set[str] {
     if not source_path {
         return set();
     }
@@ -151,26 +219,13 @@ def npm_dependency_names(source_path: str) -> set[str] {
     return set(app.npm_names) if app is not None else set(ws.base_npm_names);
 }
 
-def client_framework(source_path: str) -> str {
+impl client_framework(source_path: str) -> str {
     facts = active_host().project_facts(source_path) if source_path else None;
     return facts.client_framework if facts is not None else "react";
 }
 
-glob _FRAMEWORK_PACKAGES: dict[str, set[str]] = {
-         "react": {"react", "react-dom"},
-         "preact": {"preact"},
-         "solid": {"solid-js"}
-     };
 
-
-obj BareImportVerdict {
-    has world: str = 'py',
-        rule: str = 'python import',
-        path: str = '';
-}
-
-
-def npm_package_root(spec: str) -> str {
+impl npm_package_root(spec: str) -> str {
     parts = [
         p
         for p in spec.split('/')
@@ -185,7 +240,7 @@ def npm_package_root(spec: str) -> str {
     return parts[0];
 }
 
-def _declared_npm_rule(spec: str, source_path: str) -> str {
+impl _declared_npm_rule(spec: str, source_path: str) -> str {
     pkg_root = npm_package_root(spec);
     if pkg_root in npm_dependency_names(source_path) {
         return 'npm dependency ([dependencies.npm])';
@@ -198,7 +253,7 @@ def _declared_npm_rule(spec: str, source_path: str) -> str {
 }
 
 
-def _installed_npm_rule(spec: str, source_path: str) -> str {
+impl _installed_npm_rule(spec: str, source_path: str) -> str {
     if active_host().has_npm_package(spec, source_path) {
         return 'npm dependency (installed under .jac/client/node_modules)';
     }
@@ -206,7 +261,7 @@ def _installed_npm_rule(spec: str, source_path: str) -> str {
 }
 
 
-def in_client_npm_world(spec: str, source_path: str) -> bool {
+impl in_client_npm_world(spec: str, source_path: str) -> bool {
     if not spec {
         return False;
     }
@@ -216,7 +271,7 @@ def in_client_npm_world(spec: str, source_path: str) -> bool {
 }
 
 
-def classify_bare_import(spec: str, source_path: str) -> BareImportVerdict {
+impl classify_bare_import(spec: str, source_path: str) -> BareImportVerdict {
     if not spec {
         return BareImportVerdict();
     }

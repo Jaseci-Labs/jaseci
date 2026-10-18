@@ -4,7 +4,44 @@ import re;
 import from types { UnionType }
 
 
-def _class_info(arch: object) -> (ClassInfo | None) {
+def _class_info(arch: object) -> (ClassInfo | None);
+
+
+def _safe_repr(value: object, limit: int = 120) -> str;
+
+
+def _describe_arch(arch: object) -> str;
+
+
+def _ability_fires(osf: ObjectSpatialFunction, wkr: object) -> bool;
+
+
+def _node_run_desc(node_arch: object, wkr: object) -> str;
+
+
+def _slugify(text: object) -> str;
+
+
+def _first_field_value(arch: object) -> object;
+
+
+def _make_handles(recs: list[dict[str, object]]) -> list[str];
+
+
+def _route_context -> tuple[object, (Anchor | None)];
+
+
+def _candidate_for(item: object, here_anchor: (Anchor | None)) -> tuple[any, ...];
+
+
+def _resolve_choice(
+    item: object, by_handle: dict[object, object], recs: list[dict[str, object]]
+) -> object;
+
+
+def route_visit(candidates: list[object], model: BaseLLM) -> list[object];
+
+impl _class_info(arch: object) -> (ClassInfo | None) {
     import from jaclang { JacRuntime }
     try {
         info = JacRuntime.fetch_mtir(type(arch));
@@ -15,7 +52,7 @@ def _class_info(arch: object) -> (ClassInfo | None) {
 }
 
 
-def _safe_repr(value: object, limit: int = 120) -> str {
+impl _safe_repr(value: object, limit: int = 120) -> str {
     try {
         text = repr(value);
     } except Exception {
@@ -29,7 +66,7 @@ def _safe_repr(value: object, limit: int = 120) -> str {
 }
 
 
-def _describe_arch(arch: object) -> str {
+impl _describe_arch(arch: object) -> str {
     if arch is None {
         return "(none)";
     }
@@ -65,7 +102,7 @@ def _describe_arch(arch: object) -> str {
 }
 
 
-def _ability_fires(osf: ObjectSpatialFunction, wkr: object) -> bool {
+impl _ability_fires(osf: ObjectSpatialFunction, wkr: object) -> bool {
     trig: (type | UnionType | tuple[((type | UnionType), ...)] | None) = None;
     try {
         trig = osf.trigger;
@@ -86,7 +123,7 @@ def _ability_fires(osf: ObjectSpatialFunction, wkr: object) -> bool {
 }
 
 
-def _node_run_desc(node_arch: object, wkr: object) -> str {
+impl _node_run_desc(node_arch: object, wkr: object) -> str {
     ci = _class_info(node_arch);
     msem: dict[str, str] = {};
     if ci is not None {
@@ -112,7 +149,7 @@ def _node_run_desc(node_arch: object, wkr: object) -> str {
 }
 
 
-def _slugify(text: object) -> str {
+impl _slugify(text: object) -> str {
     s = re.sub(r"\W+", "_", str(text)).strip("_");
     if not s {
         return "n";
@@ -124,7 +161,7 @@ def _slugify(text: object) -> str {
 }
 
 
-def _first_field_value(arch: object) -> object {
+impl _first_field_value(arch: object) -> object {
     if is_record(arch) {
         for f in fields(arch) {
             if not f.name.startswith("_") {
@@ -136,7 +173,7 @@ def _first_field_value(arch: object) -> object {
 }
 
 
-def _make_handles(recs: list[dict[str, object]]) -> list[str] {
+impl _make_handles(recs: list[dict[str, object]]) -> list[str] {
     bases = [_slugify(type(r["node"]).__name__) for r in recs];
     counts: dict[str, int] = {};
     for b in bases {
@@ -167,7 +204,7 @@ def _make_handles(recs: list[dict[str, object]]) -> list[str] {
 }
 
 
-def _route_context -> tuple[object, (Anchor | None)] {
+impl _route_context -> tuple[object, (Anchor | None)] {
     scope = _current_scope();
     if scope is None {
         return (None, None);
@@ -185,7 +222,7 @@ def _route_context -> tuple[object, (Anchor | None)] {
 }
 
 
-def _candidate_for(item: object, here_anchor: (Anchor | None)) -> tuple[any, ...] {
+impl _candidate_for(item: object, here_anchor: (Anchor | None)) -> tuple[any, ...] {
     if isinstance(item, EdgeArchetype) {
         ea = item.__jac__;
         direction = "out";
@@ -235,7 +272,7 @@ def _candidate_for(item: object, here_anchor: (Anchor | None)) -> tuple[any, ...
 }
 
 
-def _resolve_choice(
+impl _resolve_choice(
     item: object, by_handle: dict[object, object], recs: list[dict[str, object]]
 ) -> object {
     if isinstance(item, bool) {
@@ -257,7 +294,7 @@ def _resolve_choice(
 }
 
 
-def route_visit(candidates: list[object], model: BaseLLM) -> list[object] {
+impl route_visit(candidates: list[object], model: BaseLLM) -> list[object] {
     if not candidates {
         return [];
     }

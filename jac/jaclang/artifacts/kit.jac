@@ -5,7 +5,21 @@ glob _KIT: list[tuple[str, (SealedImage | None)]] = [],
      PR_KIT_EVENT: str = "pull_request",
      PR_KIT_LABEL_PREFIX: str = "native:";
 
-def kit_image -> (tuple[str, SealedImage] | None) {
+def kit_image -> (tuple[str, SealedImage] | None);
+
+def pr_kit_omits(name: str) -> bool;
+
+def _pr_labels -> set[str];
+
+def kit_path(rel: str) -> str;
+
+def _find_kit -> tuple[str, (SealedImage | None)];
+
+def runtime_floor_root(sealed: bool) -> str;
+
+def osarch(triple: str = "") -> str;
+
+impl kit_image -> (tuple[str, SealedImage] | None) {
     if not _KIT {
         _KIT.append(_find_kit());
     }
@@ -13,7 +27,7 @@ def kit_image -> (tuple[str, SealedImage] | None) {
     return (site_pkg, image) if image is not None else None;
 }
 
-def pr_kit_omits(name: str) -> bool {
+impl pr_kit_omits(name: str) -> bool {
     if os.environ.get("GITHUB_ACTIONS") != "true"
         or os.environ.get("GITHUB_EVENT_NAME") != PR_KIT_EVENT {
         return False;
@@ -21,7 +35,7 @@ def pr_kit_omits(name: str) -> bool {
     return PR_KIT_LABEL_PREFIX + name not in _pr_labels();
 }
 
-def _pr_labels -> set[str] {
+impl _pr_labels -> set[str] {
     import json;
     try {
         with open(os.environ.get("GITHUB_EVENT_PATH", ""), encoding="utf-8") as f {
@@ -39,12 +53,12 @@ def _pr_labels -> set[str] {
     };
 }
 
-def kit_path(rel: str) -> str {
+impl kit_path(rel: str) -> str {
     found = kit_image();
     return os.path.join(found[0], rel) if found is not None else "";
 }
 
-def _find_kit -> tuple[str, (SealedImage | None)] {
+impl _find_kit -> tuple[str, (SealedImage | None)] {
     import jaclang;
     site_pkg = os.path.join(os.path.dirname(sys.prefix), "site", "jaclang");
     if not os.path.isdir(os.path.join(site_pkg, "_precompiled")) {
@@ -62,7 +76,7 @@ def _find_kit -> tuple[str, (SealedImage | None)] {
     }
 }
 
-def runtime_floor_root(sealed: bool) -> str {
+impl runtime_floor_root(sealed: bool) -> str {
     """The `python/floor` directory of the runtime this process runs on: the
     sealed image's own for a sealed process, the kit's for a rerouted
     checkout. Empty when there is neither.""";
@@ -81,7 +95,7 @@ def runtime_floor_root(sealed: bool) -> str {
     return os.path.join(os.path.dirname(os.path.dirname(site_pkg)), "python", "floor");
 }
 
-def osarch(triple: str = "") -> str {
+impl osarch(triple: str = "") -> str {
     """`<os>-<arch>` as the build trees and floors name a platform
     (linux-x86_64, macos-aarch64), for a target triple or this host.""";
     import platform;

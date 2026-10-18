@@ -16,11 +16,129 @@ glob BRIDGE_TOKEN_ENV: str = "JAC_BRIDGE_TOKEN",
      _cache_epoch: list[int] = [0],
      _active_writes: dict[str, int] = {};
 
-def headless_start_args(entry_file: str, port: int) -> list[str] {
+def headless_start_args(entry_file: str, port: int) -> list[str];
+
+def app_start_args(
+    entry_file: str, port: int, dev: bool = False, api_port: int = 0
+) -> list[str];
+
+def register(app: str, url: str, route: str = "");
+
+def unregister(app: str);
+
+def registered_route(app: str) -> str;
+
+def register_local(app: str, module: any);
+
+def unregister_local(app: str);
+
+def is_local(app: str) -> bool;
+
+def register_test_client(app: str, client: any);
+
+def clear_test_clients;
+
+def clear_local_providers;
+
+def set_bearer_token(token: str);
+
+def bearer_token -> str;
+
+def bridge_identity(authorization: (str | None)) -> str;
+
+def set_consumer_app(name: str);
+
+def consumer_app -> str;
+
+def clear_read_cache(app: str = "");
+
+def _read_cache_enabled -> bool;
+
+def _read_cache_key(
+    app: str, fn: str, kwargs: dict[str, any]
+) -> tuple[str, str, str, str];
+
+def auth_headers -> dict[str, str];
+
+def request_headers(idempotency_key: str = "") -> dict[str, str];
+
+def has_consumers -> bool;
+
+def _declare_consumer_provider(consumer_app: str, provider_app: str, route: str = "");
+
+def get_consumer_providers(consumer_app: str) -> list[str];
+
+def clear_consumer_providers;
+
+def provider_route(app: str) -> str;
+
+def peer_url_env_key(app: str) -> str;
+
+def peer_route_env_key(app: str) -> str;
+
+def peer_url_from_env(app: str) -> str;
+
+def _unavailable(app: str, name: str = "") -> BridgeUnavailable;
+
+def resolve_url(app: str) -> str;
+
+def _ensure_available(app: str, name: str = "") -> None;
+
+def _scale_transport -> any;
+
+def _unwrap_envelope(data: any, app: str, name: str) -> any;
+
+def _http_call(
+    app: str, fn: str, kwargs: dict[str, any], headers: dict[str, str]
+) -> any;
+
+def function_result(data: any, app: str, fn: str) -> any;
+
+def hydrate_walker_envelope(
+    data: any, app: str, walker_name: str, stub_cls: any
+) -> any;
+
+def _http_spawn(
+    app: str,
+    walker_name: str,
+    kwargs: dict[str, any],
+    stub_cls: any,
+    headers: dict[str, str]
+) -> any;
+
+async def _await_if_needed(value: any) -> any;
+
+async def _local_call(app: str, fn: str, kwargs: dict[str, any]) -> any;
+
+async def _local_spawn(app: str, walker_name: str, kwargs: dict[str, any]) -> any;
+
+async def call(
+    app: str,
+    fn: str,
+    kwargs: dict[str, any],
+    effects: (list[str] | None) = None,
+    contract: str = ""
+) -> any;
+
+async def spawn_walker(
+    app: str,
+    walker_name: str,
+    kwargs: dict[str, any],
+    stub_cls: any,
+    idempotency_key: str = ""
+) -> any;
+
+def spawn_deferred(
+    app: str, walker_name: str, kwargs: dict[str, any], idempotency_key: str = ""
+) -> str;
+
+def ensure_all(apps: list[str]);
+
+impl headless_start_args(entry_file: str, port: int) -> list[str] {
     return ["run", "--serve", "--port", str(port), "--no-client", entry_file];
 }
 
-def app_start_args(
+impl app_start_args(
     entry_file: str, port: int, dev: bool = False, api_port: int = 0
 ) -> list[str] {
     args: list[str] = ["run", "--serve", "--port", str(port)];
@@ -35,7 +153,7 @@ def app_start_args(
     return args;
 }
 
-def register(app: str, url: str, route: str = "") {
+impl register(app: str, url: str, route: str = "") {
     _registry[app] = url.rstrip("/");
     _base_routes.pop(app, None);
     if route {
@@ -44,55 +162,55 @@ def register(app: str, url: str, route: str = "") {
     }
 }
 
-def unregister(app: str) {
+impl unregister(app: str) {
     _registry.pop(app, None);
     _base_routes.pop(app, None);
     _routes.pop(app, None);
 }
 
-def registered_route(app: str) -> str {
+impl registered_route(app: str) -> str {
     return _base_routes.get(app, "");
 }
 
-def register_local(app: str, module: any) {
+impl register_local(app: str, module: any) {
     _local_providers[app] = module;
 }
 
-def unregister_local(app: str) {
+impl unregister_local(app: str) {
     _local_providers.pop(app, None);
 }
 
-def is_local(app: str) -> bool {
+impl is_local(app: str) -> bool {
     return app in _local_providers;
 }
 
-def register_test_client(app: str, client: any) {
+impl register_test_client(app: str, client: any) {
     _test_clients[app] = client;
 }
 
-def clear_test_clients {
+impl clear_test_clients {
     _test_clients.clear();
 }
 
-def clear_local_providers {
+impl clear_local_providers {
     _local_providers.clear();
 }
 
-def set_bearer_token(token: str) {
+impl set_bearer_token(token: str) {
     _bearer_token.clear();
     if token {
         _bearer_token.append(token);
     }
 }
 
-def bearer_token -> str {
+impl bearer_token -> str {
     if _bearer_token {
         return _bearer_token[0];
     }
     return os.environ.get(BRIDGE_TOKEN_ENV, "").strip();
 }
 
-def bridge_identity(authorization: (str | None)) -> str {
+impl bridge_identity(authorization: (str | None)) -> str {
     import hmac;
     secret = os.environ.get(BRIDGE_TOKEN_ENV, "").strip();
     header = str(authorization or "");
@@ -106,18 +224,18 @@ def bridge_identity(authorization: (str | None)) -> str {
     return "";
 }
 
-def set_consumer_app(name: str) {
+impl set_consumer_app(name: str) {
     _consumer_app.clear();
     if name {
         _consumer_app.append(name);
     }
 }
 
-def consumer_app -> str {
+impl consumer_app -> str {
     return _consumer_app[0] if _consumer_app else "";
 }
 
-def clear_read_cache(app: str = "") {
+impl clear_read_cache(app: str = "") {
     _cache_epoch[0] += 1;
     if not app {
         _read_cache.clear();
@@ -133,7 +251,7 @@ def clear_read_cache(app: str = "") {
     }
 }
 
-def _read_cache_enabled -> bool {
+impl _read_cache_enabled -> bool {
     consumer = consumer_app();
     if not consumer {
         return False;
@@ -157,7 +275,7 @@ def _read_cache_enabled -> bool {
     return flags[consumer];
 }
 
-def _read_cache_key(
+impl _read_cache_key(
     app: str, fn: str, kwargs: dict[str, any]
 ) -> tuple[str, str, str, str] {
     import json;
@@ -169,7 +287,7 @@ def _read_cache_key(
     );
 }
 
-def auth_headers -> dict[str, str] {
+impl auth_headers -> dict[str, str] {
     token = bearer_token();
     if not token {
         return {};
@@ -177,7 +295,7 @@ def auth_headers -> dict[str, str] {
     return {"Authorization": f"Bearer {token}"};
 }
 
-def request_headers(idempotency_key: str = "") -> dict[str, str] {
+impl request_headers(idempotency_key: str = "") -> dict[str, str] {
     headers = auth_headers();
     if idempotency_key {
         headers[IDEMPOTENCY_HEADER] = idempotency_key;
@@ -185,11 +303,11 @@ def request_headers(idempotency_key: str = "") -> dict[str, str] {
     return headers;
 }
 
-def has_consumers -> bool {
+impl has_consumers -> bool {
     return any(bool(v) for v in _consumer_providers.values());
 }
 
-def _declare_consumer_provider(consumer_app: str, provider_app: str, route: str = "") {
+impl _declare_consumer_provider(consumer_app: str, provider_app: str, route: str = "") {
     set_consumer_app(consumer_app);
     if consumer_app not in _consumer_providers {
         _consumer_providers[consumer_app] = [];
@@ -202,32 +320,32 @@ def _declare_consumer_provider(consumer_app: str, provider_app: str, route: str 
     }
 }
 
-def get_consumer_providers(consumer_app: str) -> list[str] {
+impl get_consumer_providers(consumer_app: str) -> list[str] {
     return list(_consumer_providers.get(consumer_app, []));
 }
 
-def clear_consumer_providers {
+impl clear_consumer_providers {
     _consumer_providers.clear();
 }
 
-def provider_route(app: str) -> str {
+impl provider_route(app: str) -> str {
     return _routes.get(app, "");
 }
 
-def peer_url_env_key(app: str) -> str {
+impl peer_url_env_key(app: str) -> str {
     safe = "".join(ch if ch.isalnum() else "_" for ch in app);
     return f"JAC_APP_{safe.upper()}_URL";
 }
 
-def peer_route_env_key(app: str) -> str {
+impl peer_route_env_key(app: str) -> str {
     return peer_url_env_key(app)[:-4] + "_ROUTE";
 }
 
-def peer_url_from_env(app: str) -> str {
+impl peer_url_from_env(app: str) -> str {
     return os.environ.get(peer_url_env_key(app), "").strip();
 }
 
-def _unavailable(app: str, name: str = "") -> BridgeUnavailable {
+impl _unavailable(app: str, name: str = "") -> BridgeUnavailable {
     return BridgeUnavailable(
         app=app,
         name=name,
@@ -236,7 +354,7 @@ def _unavailable(app: str, name: str = "") -> BridgeUnavailable {
     );
 }
 
-def resolve_url(app: str) -> str {
+impl resolve_url(app: str) -> str {
     base = _registry.get(app, "");
     if not base {
         env_url = peer_url_from_env(app);
@@ -253,7 +371,7 @@ def resolve_url(app: str) -> str {
     return base;
 }
 
-def _ensure_available(app: str, name: str = "") -> None {
+impl _ensure_available(app: str, name: str = "") -> None {
     if app in _local_providers or app in _test_clients or app in _registry {
         return;
     }
@@ -265,7 +383,7 @@ def _ensure_available(app: str, name: str = "") -> None {
     raise _unavailable(app, name);
 }
 
-def _scale_transport -> any {
+impl _scale_transport -> any {
     provider = _scale_provider();
     if provider is not None and provider.sv_transport_available() {
         return provider;
@@ -273,7 +391,7 @@ def _scale_transport -> any {
     return None;
 }
 
-def _unwrap_envelope(data: any, app: str, name: str) -> any {
+impl _unwrap_envelope(data: any, app: str, name: str) -> any {
     if isinstance(data, dict) and data.get("ok") {
         return data.get("data");
     }
@@ -282,7 +400,7 @@ def _unwrap_envelope(data: any, app: str, name: str) -> any {
     raise BridgeError(app=app, name=name, detail=str(msg or "unknown error"));
 }
 
-def _http_call(
+impl _http_call(
     app: str, fn: str, kwargs: dict[str, any], headers: dict[str, str]
 ) -> any {
     label = f"{app}.{fn}";
@@ -309,7 +427,7 @@ def _http_call(
     return function_result(data, app, fn);
 }
 
-def function_result(data: any, app: str, fn: str) -> any {
+impl function_result(data: any, app: str, fn: str) -> any {
     envelope = _unwrap_envelope(data, app, fn);
     if isinstance(envelope, dict) and ("result" in envelope) {
         return envelope["result"];
@@ -317,7 +435,7 @@ def function_result(data: any, app: str, fn: str) -> any {
     return envelope;
 }
 
-def hydrate_walker_envelope(
+impl hydrate_walker_envelope(
     data: any, app: str, walker_name: str, stub_cls: any
 ) -> any {
     envelope = _unwrap_envelope(data, app, walker_name);
@@ -332,7 +450,7 @@ def hydrate_walker_envelope(
     return stub_cls._from_wire(payload);
 }
 
-def _http_spawn(
+impl _http_spawn(
     app: str,
     walker_name: str,
     kwargs: dict[str, any],
@@ -361,7 +479,7 @@ def _http_spawn(
     return hydrate_walker_envelope(data, app, walker_name, stub_cls);
 }
 
-async def _await_if_needed(value: any) -> any {
+impl _await_if_needed(value: any) -> any {
     import inspect;
     if inspect.isawaitable(value) {
         return await value;
@@ -369,7 +487,7 @@ async def _await_if_needed(value: any) -> any {
     return value;
 }
 
-async def _local_call(app: str, fn: str, kwargs: dict[str, any]) -> any {
+impl _local_call(app: str, fn: str, kwargs: dict[str, any]) -> any {
     module = _local_providers[app];
     target = getattr(module, fn, None);
     if target is None or not callable(target) {
@@ -406,7 +524,7 @@ async def _local_call(app: str, fn: str, kwargs: dict[str, any]) -> any {
     }
 }
 
-async def _local_spawn(app: str, walker_name: str, kwargs: dict[str, any]) -> any {
+impl _local_spawn(app: str, walker_name: str, kwargs: dict[str, any]) -> any {
     import from jaclang { JacRuntime }
     module = _local_providers[app];
     walker_cls = getattr(module, walker_name, None);
@@ -454,7 +572,7 @@ async def _local_spawn(app: str, walker_name: str, kwargs: dict[str, any]) -> an
     }
 }
 
-async def call(
+impl call(
     app: str,
     fn: str,
     kwargs: dict[str, any],
@@ -506,7 +624,7 @@ async def call(
     return result;
 }
 
-async def spawn_walker(
+impl spawn_walker(
     app: str,
     walker_name: str,
     kwargs: dict[str, any],
@@ -543,13 +661,13 @@ async def spawn_walker(
     }
 }
 
-def spawn_deferred(
+impl spawn_deferred(
     app: str, walker_name: str, kwargs: dict[str, any], idempotency_key: str = ""
 ) -> str {
     return enqueue(app, walker_name, kwargs, idempotency_key);
 }
 
-def ensure_all(apps: list[str]) {
+impl ensure_all(apps: list[str]) {
     for app in apps {
         _ensure_available(app);
     }

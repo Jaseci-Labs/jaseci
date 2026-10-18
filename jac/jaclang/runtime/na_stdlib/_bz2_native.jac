@@ -16,7 +16,19 @@ import from bz2 {
 }
 
 
-def _signed32(status: int) -> int {
+def _signed32(status: int) -> int;
+
+
+def:pub bz2_compress(
+    dest: bytes, dest_len: bytes, source: bytes, source_len: int, block_size: int
+) -> int;
+
+
+def:pub bz2_decompress(
+    dest: bytes, dest_len: bytes, source: bytes, source_len: int
+) -> int;
+
+impl _signed32(status: int) -> int {
     if status >= 2147483648 {
         return status - 4294967296;
     }
@@ -24,7 +36,7 @@ def _signed32(status: int) -> int {
 }
 
 
-def:pub bz2_compress(
+impl bz2_compress(
     dest: bytes, dest_len: bytes, source: bytes, source_len: int, block_size: int
 ) -> int {
     return _signed32(
@@ -35,7 +47,7 @@ def:pub bz2_compress(
 }
 
 
-def:pub bz2_decompress(
+impl bz2_decompress(
     dest: bytes, dest_len: bytes, source: bytes, source_len: int
 ) -> int {
     return _signed32(

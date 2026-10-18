@@ -13,7 +13,34 @@ glob LLVM_MAJOR: int = 22,
          'd425227fe3bd6a69299b188754403e20b0c840cf1609955c0ccbb68827e34ab9'
      );
 
-def _c_backend_slot -> Path {
+def _c_backend_slot -> Path;
+
+def _c_backend_binary -> Path;
+
+def _llvm_config -> (str | None);
+
+obj CBackendArtifact(ArtifactBase) {
+    has name: str = 'llvm-cbe',
+        kind: ArtifactKind = ArtifactKind.CAPABILITY,
+        release: ReleasePolicy = ReleasePolicy.ON_DEMAND,
+        summary: str = 'the LLVM C backend (C source export)';
+
+    override def probe_checkout -> Probe;
+    override def checkout_path -> str;
+    override def build_blocker -> str;
+    override def build(log: Callable[[str], None], force: bool, exact: bool);
+}
+
+def ensure_c_backend -> Path;
+
+def _build_c_backend;
+
+
+def c_backend_provenance -> dict[str, str | int];
+
+def c_backend_license -> Path;
+
+impl _c_backend_slot -> Path {
     patch = Path(__file__).parent / 'patches' / 'llvm-cbe-runtime-semantics.patch';
     return build_slot(
         C_BACKEND.name,
@@ -22,52 +49,45 @@ def _c_backend_slot -> Path {
     );
 }
 
-def _c_backend_binary -> Path {
+impl _c_backend_binary -> Path {
     return _c_backend_slot() / 'bin' / executable('llvm-cbe');
 }
 
-def _llvm_config -> (str | None) {
+impl _llvm_config -> (str | None) {
     return shutil.which(f'llvm-config-{LLVM_MAJOR}') or shutil.which('llvm-config');
 }
 
-obj CBackendArtifact(ArtifactBase) {
-    has name: str = 'llvm-cbe',
-        kind: ArtifactKind = ArtifactKind.CAPABILITY,
-        release: ReleasePolicy = ReleasePolicy.ON_DEMAND,
-        summary: str = 'the LLVM C backend (C source export)';
-
-    override def probe_checkout -> Probe {
-        directory = _c_backend_slot();
-        binary = _c_backend_binary();
-        if slot_ready(directory) and binary.is_file() {
-            return Probe.hit(Source.CHECKOUT, str(binary), {});
-        }
-        return Probe.missing();
+impl CBackendArtifact.probe_checkout -> Probe {
+    directory = _c_backend_slot();
+    binary = _c_backend_binary();
+    if slot_ready(directory) and binary.is_file() {
+        return Probe.hit(Source.CHECKOUT, str(binary), {});
     }
-
-    override def checkout_path -> str {
-        return str(_c_backend_binary());
-    }
-
-    override def build_blocker -> str {
-        if not _llvm_config() or not shutil.which('cmake') {
-            return f'C source export needs CMake and the LLVM {LLVM_MAJOR} development toolchain (llvm-config)';
-        }
-        return '';
-    }
-
-    override def build(log: Callable[[str], None], force: bool, exact: bool) {
-        _build_c_backend();
-    }
+    return Probe.missing();
 }
 
-def ensure_c_backend -> Path {
+impl CBackendArtifact.checkout_path -> str {
+    return str(_c_backend_binary());
+}
+
+impl CBackendArtifact.build_blocker -> str {
+    if not _llvm_config() or not shutil.which('cmake') {
+        return f'C source export needs CMake and the LLVM {LLVM_MAJOR} development toolchain (llvm-config)';
+    }
+    return '';
+}
+
+impl CBackendArtifact.build(log: Callable[[str], None], force: bool, exact: bool) {
+    _build_c_backend();
+}
+
+impl ensure_c_backend -> Path {
     found = require('llvm-cbe').found;
     assert found is not None;
     return Path(found.path);
 }
 
-def _build_c_backend {
+impl _build_c_backend {
     patch = Path(__file__).parent / 'patches' / 'llvm-cbe-runtime-semantics.patch';
     directory = _c_backend_slot();
     with FileLock(directory.with_suffix('.lock')) {
@@ -137,7 +157,7 @@ def _build_c_backend {
 }
 
 
-def c_backend_provenance -> dict[str, str | int] {
+impl c_backend_provenance -> dict[str, str | int] {
     patch = Path(__file__).parent / 'patches' / 'llvm-cbe-runtime-semantics.patch';
     return {
         'name': C_BACKEND.name,
@@ -149,6 +169,6 @@ def c_backend_provenance -> dict[str, str | int] {
     };
 }
 
-def c_backend_license -> Path {
+impl c_backend_license -> Path {
     return Path(__file__).parent / 'patches' / 'llvm-cbe-LICENSE';
 }

@@ -22,56 +22,90 @@ import from jaclang.runtime.osp_kernel {
 obj _ContextStack {
     has _var: any postinit;
 
-    def postinit {
-        self._var = ContextVar('osp_walk_stack', `default=None);
-    }
-
-    def _list -> list[any] {
-        v = self._var.get();
-        return v if v is not None else [];
-    }
-
-    def append(x: any) {
-        cur = self._var.get();
-        new = `list(cur) if cur is not None else [];
-        new.append(x);
-        self._var.set(new);
-    }
-
-    def pop -> any {
-        cur = self._var.get();
-        new = `list(cur) if cur is not None else [];
-        val = new.pop();
-        self._var.set(new);
-        return val;
-    }
-
-    def __getitem__(k: any) -> any {
-        return self._list()[k];
-    }
-
-    def __bool__ -> bool {
-        return bool(self._list());
-    }
-
-    def __len__ -> int {
-        return len(self._list());
-    }
+    def postinit;
+    def _list -> list[any];
+    def append(x: any);
+    def pop -> any;
+    def __getitem__(k: any) -> any;
+    def __bool__ -> bool;
+    def __len__ -> int;
 }
 
 with entry {
     _kernel.DEFAULT.stack = cast(list[OspWalkScope], _ContextStack());
 }
 
-def isolate_request_walk_stack {
+def isolate_request_walk_stack;
+
+glob _desc_of_cls: dict[(any, OspWalkerDesc)] = {};
+
+def _trigger_members(trig: any) -> list[type];
+
+def _slots_from(funcs: list[ObjectSpatialFunction]) -> list[OspSlot];
+
+def _mro_funcs(cls: any, attr: str) -> list[any];
+
+def desc_for(cls: any) -> OspWalkerDesc;
+
+def _sv_tag_of(handle: any) -> int;
+
+def _sv_is_a(tag: int, base: int) -> bool;
+
+glob _ndesc_of_cls: dict[type, OspNodeDesc] = {};
+
+def _sv_node_desc(tag: int) -> OspNodeDesc;
+
+def _sv_on_complete(scope: OspWalkScope, ok: bool);
+
+def make_sv_runtime -> OspRuntime;
+
+async def osp_spawn_async(
+    rt: OspRuntime, wlk: any, wdesc: OspWalkerDesc, starts: list[any]
+) -> any;
+
+impl _ContextStack.postinit {
+    self._var = ContextVar('osp_walk_stack', `default=None);
+}
+
+impl _ContextStack._list -> list[any] {
+    v = self._var.get();
+    return v if v is not None else [];
+}
+
+impl _ContextStack.append(x: any) {
+    cur = self._var.get();
+    new = `list(cur) if cur is not None else [];
+    new.append(x);
+    self._var.set(new);
+}
+
+impl _ContextStack.pop -> any {
+    cur = self._var.get();
+    new = `list(cur) if cur is not None else [];
+    val = new.pop();
+    self._var.set(new);
+    return val;
+}
+
+impl _ContextStack.__getitem__(k: any) -> any {
+    return self._list()[k];
+}
+
+impl _ContextStack.__bool__ -> bool {
+    return bool(self._list());
+}
+
+impl _ContextStack.__len__ -> int {
+    return len(self._list());
+}
+
+impl isolate_request_walk_stack {
     if isinstance(_kernel.DEFAULT.stack, _ContextStack) {
         _kernel.DEFAULT.stack._var.set([]);
     }
 }
 
-glob _desc_of_cls: dict[(any, OspWalkerDesc)] = {};
-
-def _trigger_members(trig: any) -> list[type] {
+impl _trigger_members(trig: any) -> list[type] {
     if trig is None {
         return [];
     }
@@ -84,7 +118,7 @@ def _trigger_members(trig: any) -> list[type] {
     return [trig];
 }
 
-def _slots_from(funcs: list[ObjectSpatialFunction]) -> list[OspSlot] {
+impl _slots_from(funcs: list[ObjectSpatialFunction]) -> list[OspSlot] {
     slots: list[OspSlot] = [];
     for f in funcs {
         members = _trigger_members(f.trigger);
@@ -99,7 +133,7 @@ def _slots_from(funcs: list[ObjectSpatialFunction]) -> list[OspSlot] {
     return slots;
 }
 
-def _mro_funcs(cls: any, attr: str) -> list[any] {
+impl _mro_funcs(cls: any, attr: str) -> list[any] {
     merged: dict[str, any] = {};
     for c in reversed(cls.__mro__) {
         clsfns = c.__dict__.get(attr);
@@ -112,7 +146,7 @@ def _mro_funcs(cls: any, attr: str) -> list[any] {
     return `list(merged.values());
 }
 
-def desc_for(cls: any) -> OspWalkerDesc {
+impl desc_for(cls: any) -> OspWalkerDesc {
     if cls in _desc_of_cls {
         return _desc_of_cls[cls];
     }
@@ -129,19 +163,17 @@ def desc_for(cls: any) -> OspWalkerDesc {
     return desc;
 }
 
-def _sv_tag_of(handle: any) -> int {
+impl _sv_tag_of(handle: any) -> int {
     return tag_of_cls(`type(handle));
 }
 
-def _sv_is_a(tag: int, base: int) -> bool {
+impl _sv_is_a(tag: int, base: int) -> bool {
     tc = cls_of_tag(tag);
     bc = cls_of_tag(base);
     return tc is not None and bc is not None and issubclass(tc, bc);
 }
 
-glob _ndesc_of_cls: dict[type, OspNodeDesc] = {};
-
-def _sv_node_desc(tag: int) -> OspNodeDesc {
+impl _sv_node_desc(tag: int) -> OspNodeDesc {
     cls = cls_of_tag(tag);
     if cls is None {
         return OspNodeDesc(type_tag=tag, `entry=[], `exit=[]);
@@ -156,7 +188,7 @@ def _sv_node_desc(tag: int) -> OspNodeDesc {
     return nd;
 }
 
-def _sv_on_complete(scope: OspWalkScope, ok: bool) {
+impl _sv_on_complete(scope: OspWalkScope, ok: bool) {
     if isinstance(scope.wlk, WalkerArchetype) {
         anch = scope.wlk.__jac__;
         walked: list[(NodeAnchor | EdgeAnchor)] = [];
@@ -199,7 +231,7 @@ def _sv_on_complete(scope: OspWalkScope, ok: bool) {
     }
 }
 
-def make_sv_runtime -> OspRuntime {
+impl make_sv_runtime -> OspRuntime {
     return OspRuntime(
         tag_of=_sv_tag_of,
         is_a=_sv_is_a,
@@ -208,7 +240,7 @@ def make_sv_runtime -> OspRuntime {
     );
 }
 
-async def osp_spawn_async(
+impl osp_spawn_async(
     rt: OspRuntime, wlk: any, wdesc: OspWalkerDesc, starts: list[any]
 ) -> any {
     eng = _kernel.DEFAULT;

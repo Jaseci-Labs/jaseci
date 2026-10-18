@@ -3,7 +3,9 @@ import shutil;
 import from pathlib { Path }
 
 
-def write_client(application: PreparedApplication, base: Path) -> str {
+def write_client(application: PreparedApplication, base: Path) -> str;
+
+impl write_client(application: PreparedApplication, base: Path) -> str {
     compiler = application.client_compiler;
     if compiler is None {
         raise ValueError(

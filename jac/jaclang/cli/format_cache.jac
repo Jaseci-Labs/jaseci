@@ -23,7 +23,43 @@ glob FORMAT_CACHE_SCHEMA_VERSION: str = "v1",
 
      );
 
-def _stable_dump(value: any) -> str {
+def _stable_dump(value: any) -> str;
+
+def config_fingerprint(config: any, lintfix: bool) -> str;
+
+def canonical_logical_path(path: str, project_root: (str | None) = None) -> str;
+
+def default_format_cache_dir(anchor: (Path | str)) -> Path;
+
+def _module_source_bytes(modname: str) -> bytes;
+
+def formatter_pipeline_revision -> str;
+
+def frame_unit(parts: list[bytes]) -> bytes;
+
+def _frame(label: str, payload: bytes) -> bytes;
+
+obj FormatCache {
+    has cache_dir: (Path | str | None),
+        enabled: bool = True,
+        formatter_stamp: str = "",
+        cache_root: (Path | None) = None,
+        entry_ttl: float = ENTRY_TTL_SECONDS,
+        prune_interval: float = PRUNE_INTERVAL_SECONDS,
+        max_entries: int = MAX_ENTRIES;
+
+    def postinit;
+    def make_key(
+        content: bytes, lintfix: bool, config_fingerprint: str, logical_path: str = ""
+    ) -> str;
+
+    def entry_path(key: str) -> Path;
+    def is_clean(key: str) -> bool;
+    def mark_clean(key: str);
+    def _maybe_prune;
+}
+
+impl _stable_dump(value: any) -> str {
     if value is None or isinstance(value, (bool, int, float, str)) {
         return repr(value);
     }
@@ -53,7 +89,7 @@ def _stable_dump(value: any) -> str {
     return _stable_dump(attrs);
 }
 
-def config_fingerprint(config: any, lintfix: bool) -> str {
+impl config_fingerprint(config: any, lintfix: bool) -> str {
     if config is None {
         return "none";
     }
@@ -71,7 +107,7 @@ def config_fingerprint(config: any, lintfix: bool) -> str {
     return hashlib.sha256("\n".join(parts).encode()).hexdigest();
 }
 
-def canonical_logical_path(path: str, project_root: (str | None) = None) -> str {
+impl canonical_logical_path(path: str, project_root: (str | None) = None) -> str {
     norm = os.path.normpath(path);
     if project_root {
         try {
@@ -84,7 +120,7 @@ def canonical_logical_path(path: str, project_root: (str | None) = None) -> str 
     return norm.replace(os.sep, "/");
 }
 
-def default_format_cache_dir(anchor: (Path | str)) -> Path {
+impl default_format_cache_dir(anchor: (Path | str)) -> Path {
     base = Path(anchor);
 
     if base.is_file() or base.suffix == ".jac" {
@@ -93,7 +129,7 @@ def default_format_cache_dir(anchor: (Path | str)) -> Path {
     return base.resolve() / ".jac" / "cache";
 }
 
-def _module_source_bytes(modname: str) -> bytes {
+impl _module_source_bytes(modname: str) -> bytes {
     try {
         mod = importlib.import_module(modname);
     } except Exception {
@@ -132,7 +168,7 @@ def _module_source_bytes(modname: str) -> bytes {
     return b"\0".join(chunks);
 }
 
-def formatter_pipeline_revision -> str {
+impl formatter_pipeline_revision -> str {
     h = hashlib.sha256();
     for modname in _FORMATTER_PIPELINE_MODULES {
         h.update(modname.encode());
@@ -143,110 +179,95 @@ def formatter_pipeline_revision -> str {
     return h.hexdigest()[:16];
 }
 
-def frame_unit(parts: list[bytes]) -> bytes {
+impl frame_unit(parts: list[bytes]) -> bytes {
     return b"".join([f"{len(p)}:".encode() + p for p in parts]);
 }
 
-def _frame(label: str, payload: bytes) -> bytes {
+impl _frame(label: str, payload: bytes) -> bytes {
     return f"{label}:{len(payload)}:".encode() + payload;
 }
 
-obj FormatCache {
-    has cache_dir: (Path | str | None),
-        enabled: bool = True,
-        formatter_stamp: str = "",
-        cache_root: (Path | None) = None,
-        entry_ttl: float = ENTRY_TTL_SECONDS,
-        prune_interval: float = PRUNE_INTERVAL_SECONDS,
-        max_entries: int = MAX_ENTRIES;
-
-    def postinit {
-        if bool(self.enabled) and self.cache_dir is not None {
-            self.cache_root = (
-                Path(self.cache_dir) / f"fmt-{FORMAT_CACHE_SCHEMA_VERSION}"
-            );
-        } else {
-            self.cache_root = None;
-        }
+impl FormatCache.postinit {
+    if bool(self.enabled) and self.cache_dir is not None {
+        self.cache_root = Path(self.cache_dir) / f"fmt-{FORMAT_CACHE_SCHEMA_VERSION}";
+    } else {
+        self.cache_root = None;
     }
+}
 
-    def make_key(
-        content: bytes, lintfix: bool, config_fingerprint: str, logical_path: str = ""
-    ) -> str {
-        h = hashlib.sha256();
-        h.update(_frame("stamp", self.formatter_stamp.encode()));
-        h.update(_frame("lintfix", b"1" if lintfix else b"0"));
-        h.update(_frame("cfg", config_fingerprint.encode()));
-        if lintfix {
-            h.update(_frame("path", logical_path.encode()));
-        }
-        h.update(_frame("content", content));
-        return h.hexdigest();
+impl FormatCache.make_key(
+    content: bytes, lintfix: bool, config_fingerprint: str, logical_path: str = ""
+) -> str {
+    h = hashlib.sha256();
+    h.update(_frame("stamp", self.formatter_stamp.encode()));
+    h.update(_frame("lintfix", b"1" if lintfix else b"0"));
+    h.update(_frame("cfg", config_fingerprint.encode()));
+    if lintfix {
+        h.update(_frame("path", logical_path.encode()));
     }
+    h.update(_frame("content", content));
+    return h.hexdigest();
+}
 
-    def entry_path(key: str) -> Path {
-        assert self.cache_root is not None;
-        return self.cache_root / key;
+impl FormatCache.entry_path(key: str) -> Path {
+    assert self.cache_root is not None;
+    return self.cache_root / key;
+}
+
+impl FormatCache.is_clean(key: str) -> bool {
+    if self.cache_root is None {
+        return False;
     }
-
-    def is_clean(key: str) -> bool {
-        if self.cache_root is None {
-            return False;
-        }
-        path = self.cache_root / key;
+    path = self.cache_root / key;
+    try {
+        data = path.read_bytes();
+    } except OSError {
+        return False;
+    }
+    if not data.startswith(_ENTRY_MARKER) {
         try {
-            data = path.read_bytes();
-        } except OSError {
-            return False;
-        }
-        if not data.startswith(_ENTRY_MARKER) {
-            try {
-                path.unlink();
-            } except OSError {}
-            return False;
-        }
-
-        try {
-            os.utime(path, None);
+            path.unlink();
         } except OSError {}
-        return True;
+        return False;
     }
 
-    def mark_clean(key: str) {
-        if self.cache_root is None {
-            return;
-        }
-        path = self.cache_root / key;
+    try {
+        os.utime(path, None);
+    } except OSError {}
+    return True;
+}
+
+impl FormatCache.mark_clean(key: str) {
+    if self.cache_root is None {
+        return;
+    }
+    path = self.cache_root / key;
+    try {
+        path.parent.mkdir(parents=True, exist_ok=True);
+
+        tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp");
         try {
-            path.parent.mkdir(parents=True, exist_ok=True);
-
-            tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp");
+            tmp.write_bytes(_ENTRY_MARKER);
+            os.replace(tmp, path);
+        } finally {
             try {
-                tmp.write_bytes(_ENTRY_MARKER);
-                os.replace(tmp, path);
-            } finally {
-                try {
-                    tmp.unlink();
-                } except OSError {}
-            }
-        } except OSError {
-            return;
+                tmp.unlink();
+            } except OSError {}
         }
-        self._maybe_prune();
+    } except OSError {
+        return;
     }
+    self._maybe_prune();
+}
 
-    def _maybe_prune {
-        if self.cache_root is None {
-            return;
-        }
-        policy = Policy(
-            ttl_days=self.entry_ttl / DAY_SECONDS, max_entries=self.max_entries
-        );
-        maybe_sweep_dir(
-            self.cache_root,
-            policy,
-            once_per_process=False,
-            interval=self.prune_interval
-        );
+impl FormatCache._maybe_prune {
+    if self.cache_root is None {
+        return;
     }
+    policy = Policy(
+        ttl_days=self.entry_ttl / DAY_SECONDS, max_entries=self.max_entries
+    );
+    maybe_sweep_dir(
+        self.cache_root, policy, once_per_process=False, interval=self.prune_interval
+    );
 }

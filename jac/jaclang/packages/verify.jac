@@ -20,7 +20,57 @@ obj VerifyReport {
         any_upload: bool = False;
 }
 
-def _git(base_root: Path, args: list[str]) -> str {
+def _git(base_root: Path, args: list[str]) -> str;
+
+def _at_base(base_root: Path, base: str, rel: str) -> str | None;
+
+def _owners(text: str | None) -> list[str];
+
+def _reserved(base_root: Path) -> set[str];
+
+def _changed_files(base_root: Path, base: str) -> list[str];
+
+def _check_org(
+    base_root: Path, base: str, rel: str, author: str, outcome: VerifyReport
+);
+
+def _verify_entry(
+    base_root: Path,
+    registry: Registry,
+    item: IndexEntry,
+    history: list[IndexEntry],
+    outcome: VerifyReport
+);
+
+def _check_api_file(
+    base_root: Path, stage: Path, item: IndexEntry, outcome: VerifyReport
+);
+
+def _verify_library(
+    tree: Path,
+    registry: Registry,
+    item: IndexEntry,
+    version: Version,
+    history: list[IndexEntry],
+    outcome: VerifyReport
+);
+
+def _check_index_file(
+    base_root: Path,
+    base: str,
+    rel: str,
+    author: str,
+    registry: Registry,
+    outcome: VerifyReport
+);
+
+def verify_index(
+    base_root: Path, base: str, author: str, any_upload: bool = False
+) -> VerifyReport;
+
+def run_verify(index_dir: str, base: str, author: str, mirror_out: str = "") -> int;
+
+impl _git(base_root: Path, args: list[str]) -> str {
     done = subprocess.run(
         ["git", *args], cwd=str(base_root), capture_output=True, text=True, check=False
     );
@@ -30,7 +80,7 @@ def _git(base_root: Path, args: list[str]) -> str {
     return done.stdout;
 }
 
-def _at_base(base_root: Path, base: str, rel: str) -> str | None {
+impl _at_base(base_root: Path, base: str, rel: str) -> str | None {
     if not base {
         return None;
     }
@@ -44,7 +94,7 @@ def _at_base(base_root: Path, base: str, rel: str) -> str | None {
     return done.stdout if done.returncode == 0 else None;
 }
 
-def _owners(text: str | None) -> list[str] {
+impl _owners(text: str | None) -> list[str] {
     if not text {
         return [];
     }
@@ -56,7 +106,7 @@ def _owners(text: str | None) -> list[str] {
     return [str(o).lower() for o in data.get("owners", [])];
 }
 
-def _reserved(base_root: Path) -> set[str] {
+impl _reserved(base_root: Path) -> set[str] {
     path = base_root / RESERVED_FILE;
     if not path.is_file() {
         return set();
@@ -68,7 +118,7 @@ def _reserved(base_root: Path) -> set[str] {
     };
 }
 
-def _changed_files(base_root: Path, base: str) -> list[str] {
+impl _changed_files(base_root: Path, base: str) -> list[str] {
     if not base {
         return sorted(
             [
@@ -88,7 +138,7 @@ def _changed_files(base_root: Path, base: str) -> list[str] {
     );
 }
 
-def _check_org(
+impl _check_org(
     base_root: Path, base: str, rel: str, author: str, outcome: VerifyReport
 ) {
     org = Path(rel).stem;
@@ -120,7 +170,7 @@ def _check_org(
     }
 }
 
-def _verify_entry(
+impl _verify_entry(
     base_root: Path,
     registry: Registry,
     item: IndexEntry,
@@ -188,7 +238,7 @@ def _verify_entry(
     outcome.checked.append(label);
 }
 
-def _check_api_file(
+impl _check_api_file(
     base_root: Path, stage: Path, item: IndexEntry, outcome: VerifyReport
 ) {
     label = f"{item.name} {item.version}";
@@ -218,7 +268,7 @@ def _check_api_file(
     }
 }
 
-def _verify_library(
+impl _verify_library(
     tree: Path,
     registry: Registry,
     item: IndexEntry,
@@ -265,7 +315,7 @@ def _verify_library(
     }
 }
 
-def _check_index_file(
+impl _check_index_file(
     base_root: Path,
     base: str,
     rel: str,
@@ -334,7 +384,7 @@ def _check_index_file(
     }
 }
 
-def verify_index(
+impl verify_index(
     base_root: Path, base: str, author: str, any_upload: bool = False
 ) -> VerifyReport {
     outcome = VerifyReport(any_upload=any_upload);
@@ -365,7 +415,7 @@ def verify_index(
     return outcome;
 }
 
-def run_verify(index_dir: str, base: str, author: str, mirror_out: str = "") -> int {
+impl run_verify(index_dir: str, base: str, author: str, mirror_out: str = "") -> int {
     base_root = Path(index_dir).resolve();
     if not (base_root / "config.json").is_file() {
         console.error(f"{base_root} is not a package index (no config.json)");

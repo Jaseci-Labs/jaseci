@@ -1,6 +1,8 @@
 import os;
 
-def mobui_module_exempt(mod_path: str, enforced_root: (str | None)) -> bool {
+def mobui_module_exempt(mod_path: str, enforced_root: (str | None)) -> bool;
+
+impl mobui_module_exempt(mod_path: str, enforced_root: (str | None)) -> bool {
     if not enforced_root {
         return True;
     }

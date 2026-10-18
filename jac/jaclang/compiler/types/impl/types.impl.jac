@@ -981,16 +981,7 @@ impl OverloadedType.__str__ -> str {
     return f"<overload {count} overloads>";
 }
 
-def _class_scope_category(scope: any) -> any {
-    if isinstance(scope, Archetype) {
-        return scope.sym_category;
-    }
-
-    if isinstance(scope, CatScope) and scope.cat_owner_sym is not None {
-        return scope.cat_owner_sym.sym_type;
-    }
-    return None;
-}
+def _class_scope_category(scope: any) -> any;
 
 impl ClassType.is_node_type -> bool {
     if self.shared.is_root_class or self.is_builtin("Node") {
@@ -1388,4 +1379,15 @@ impl FunctionType.is_gradual_callable_form -> bool {
 
 impl FunctionType.is_from_callable_annotation -> bool {
     return self.func_name == "";
+}
+
+impl _class_scope_category(scope: any) -> any {
+    if isinstance(scope, Archetype) {
+        return scope.sym_category;
+    }
+
+    if isinstance(scope, CatScope) and scope.cat_owner_sym is not None {
+        return scope.cat_owner_sym.sym_type;
+    }
+    return None;
 }

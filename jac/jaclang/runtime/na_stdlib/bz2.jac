@@ -4,7 +4,12 @@ glob BZ_OK: int = 0,
      BZ_OUTBUFF_FULL: int = -8;
 
 
-def:pub compress(data: bytes, compresslevel: int = 9) -> bytes {
+def:pub compress(data: bytes, compresslevel: int = 9) -> bytes;
+
+
+def:pub decompress(data: bytes) -> bytes;
+
+impl compress(data: bytes, compresslevel: int = 9) -> bytes {
     source_len: int = len(data);
 
     bound: int = source_len + (source_len // 100) + 600;
@@ -21,7 +26,7 @@ def:pub compress(data: bytes, compresslevel: int = 9) -> bytes {
 }
 
 
-def:pub decompress(data: bytes) -> bytes {
+impl decompress(data: bytes) -> bytes {
     source_len: int = len(data);
     if source_len == 0 {
         return b"";

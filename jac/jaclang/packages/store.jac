@@ -8,12 +8,22 @@ glob MARKER_NAME: str = ".jac-package.json";
 
 obj StoreError(Exception) {}
 
-def store_path(name: str, version: str, sha256: str) -> Path {
+def store_path(name: str, version: str, sha256: str) -> Path;
+
+def is_materialized(path: Path, sha256: str) -> bool;
+
+def materialize(
+    name: str, version: str, sha256: str, data: bytes, source: str
+) -> Path;
+
+def cached(name: str, version: str, sha256: str) -> Path | None;
+
+impl store_path(name: str, version: str, sha256: str) -> Path {
     (org, pkg) = name.split("/", 1);
     return store_root() / org / pkg / f"{version}-{sha256[:12]}";
 }
 
-def is_materialized(path: Path, sha256: str) -> bool {
+impl is_materialized(path: Path, sha256: str) -> bool {
     marker = path / MARKER_NAME;
     if not marker.is_file() {
         return False;
@@ -25,7 +35,7 @@ def is_materialized(path: Path, sha256: str) -> bool {
     }
 }
 
-def materialize(
+impl materialize(
     name: str, version: str, sha256: str, data: bytes, source: str
 ) -> Path {
     actual = hashlib.sha256(data).hexdigest();
@@ -72,7 +82,7 @@ def materialize(
     return dest;
 }
 
-def cached(name: str, version: str, sha256: str) -> Path | None {
+impl cached(name: str, version: str, sha256: str) -> Path | None {
     path = store_path(name, version, sha256);
     return path if is_materialized(path, sha256) else None;
 }

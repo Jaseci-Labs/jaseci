@@ -208,7 +208,41 @@ glob _DEFAULTS: dict[str, str] = {
      ],
      _UTILS_CONTENT: str = 'import from "clsx" { clsx }\nimport from "tailwind-merge" { twMerge }\n\ndef:pub cn(*inputs: any) -> str {\n    return twMerge(clsx(inputs));\n}\n';
 
-def _utils_source -> str {
+def _utils_source -> str;
+
+def normalize_shadcn_config(raw: (dict[str, any] | None)) -> dict[str, str];
+
+def load_themes -> list[dict[str, any]];
+
+def find_theme(name: str) -> any;
+
+def resolve_css_vars(shadcn_config: dict[str, str]) -> dict[str, dict[str, str]];
+
+def generate_global_css(font_value: str, css_vars: dict[str, dict[str, str]]) -> str;
+
+def generate_starter_main_jac -> str;
+
+def _render_shadcn_block(shadcn_config: dict[str, str]) -> str;
+
+def set_shadcn_section(toml_path: any, shadcn_config: dict[str, str]);
+
+def _toml_key(key: str) -> str;
+
+def _patch_npm_deps(toml_path: any, npm_deps: dict[str, str]) -> None;
+
+def _ensure_vite_tailwind(toml_path: any) -> None;
+
+def _install_component(ui_dir: any, name: str, style: str) -> list[str];
+
+def materialize_themed_starter(
+    project_root: any, project_name: str, shadcn_config: dict[str, str]
+) -> bool;
+
+def _theme_app_root(config: any, project_root: Path) -> Path;
+
+def retheme_project(config: any, overrides: dict[str, str | None]) -> bool;
+
+impl _utils_source -> str {
     src = _registry_dir() / "lib" / "utils.jac";
     if src.is_file() {
         return src.read_text();
@@ -216,7 +250,7 @@ def _utils_source -> str {
     return _UTILS_CONTENT;
 }
 
-def normalize_shadcn_config(raw: (dict[str, any] | None)) -> dict[str, str] {
+impl normalize_shadcn_config(raw: (dict[str, any] | None)) -> dict[str, str] {
     cfg: dict[str, str] = {};
     cfg.update(_DEFAULTS);
     if raw {
@@ -229,7 +263,7 @@ def normalize_shadcn_config(raw: (dict[str, any] | None)) -> dict[str, str] {
     return cfg;
 }
 
-def load_themes -> list[dict[str, any]] {
+impl load_themes -> list[dict[str, any]] {
     registry_dir: Path = _registry_dir();
     themes_path = registry_dir / "themes.json";
     if themes_path.is_file() {
@@ -240,7 +274,7 @@ def load_themes -> list[dict[str, any]] {
     return [];
 }
 
-def find_theme(name: str) -> any {
+impl find_theme(name: str) -> any {
     for theme in load_themes() {
         if theme["name"] == name {
             return theme;
@@ -249,7 +283,7 @@ def find_theme(name: str) -> any {
     return None;
 }
 
-def resolve_css_vars(shadcn_config: dict[str, str]) -> dict[str, dict[str, str]] {
+impl resolve_css_vars(shadcn_config: dict[str, str]) -> dict[str, dict[str, str]] {
     base_color = find_theme(shadcn_config.get("baseColor", "neutral"));
     theme = find_theme(shadcn_config.get("theme", "neutral"));
 
@@ -299,7 +333,7 @@ def resolve_css_vars(shadcn_config: dict[str, str]) -> dict[str, dict[str, str]]
     return {"light": light_vars, "dark": dark_vars};
 }
 
-def generate_global_css(font_value: str, css_vars: dict[str, dict[str, str]]) -> str {
+impl generate_global_css(font_value: str, css_vars: dict[str, dict[str, str]]) -> str {
     font_info = FONT_DATA.get(font_value, FONT_DATA["figtree"]);
     font_family = font_info["family"];
     font_npm = font_info["npm"];
@@ -362,7 +396,7 @@ def generate_global_css(font_value: str, css_vars: dict[str, dict[str, str]]) ->
     return "\n".join(lines);
 }
 
-def generate_starter_main_jac -> str {
+impl generate_starter_main_jac -> str {
     lines: list[str] = [
         'import from ".components.ui.button" { Button }',
         'import from ".components.ui.card" {',
@@ -389,7 +423,7 @@ def generate_starter_main_jac -> str {
     return "\n".join(lines);
 }
 
-def _render_shadcn_block(shadcn_config: dict[str, str]) -> str {
+impl _render_shadcn_block(shadcn_config: dict[str, str]) -> str {
     lines: list[str] = ["[jac-shadcn]"];
     for key in _SHADCN_KEYS {
         lines.append(key + ' = "' + str(shadcn_config.get(key, _DEFAULTS[key])) + '"');
@@ -397,7 +431,7 @@ def _render_shadcn_block(shadcn_config: dict[str, str]) -> str {
     return "\n".join(lines);
 }
 
-def set_shadcn_section(toml_path: any, shadcn_config: dict[str, str]) {
+impl set_shadcn_section(toml_path: any, shadcn_config: dict[str, str]) {
     path = Path(str(toml_path));
     content = path.read_text() if path.exists() else "";
     block = _render_shadcn_block(shadcn_config);
@@ -416,11 +450,11 @@ def set_shadcn_section(toml_path: any, shadcn_config: dict[str, str]) {
     path.write_text(content);
 }
 
-def _toml_key(key: str) -> str {
+impl _toml_key(key: str) -> str {
     return key if re.`match(r'^[A-Za-z0-9_-]+$', key) else '"' + key + '"';
 }
 
-def _patch_npm_deps(toml_path: any, npm_deps: dict[str, str]) -> None {
+impl _patch_npm_deps(toml_path: any, npm_deps: dict[str, str]) -> None {
     if not npm_deps {
         return;
     }
@@ -443,7 +477,7 @@ def _patch_npm_deps(toml_path: any, npm_deps: dict[str, str]) -> None {
     path.write_text(content);
 }
 
-def _ensure_vite_tailwind(toml_path: any) -> None {
+impl _ensure_vite_tailwind(toml_path: any) -> None {
     path = Path(str(toml_path));
     if not path.exists() {
         return;
@@ -457,7 +491,7 @@ def _ensure_vite_tailwind(toml_path: any) -> None {
     path.write_text(content.rstrip() + "\n\n" + block);
 }
 
-def _install_component(ui_dir: any, name: str, style: str) -> list[str] {
+impl _install_component(ui_dir: any, name: str, style: str) -> list[str] {
     comp = resolve_single_component(name, style);
     if not comp or "error" in comp {
         return [];
@@ -469,7 +503,7 @@ def _install_component(ui_dir: any, name: str, style: str) -> list[str] {
     return comp.get("npmDeps", []);
 }
 
-def materialize_themed_starter(
+impl materialize_themed_starter(
     project_root: any, project_name: str, shadcn_config: dict[str, str]
 ) -> bool {
     pr = Path(str(project_root));
@@ -532,7 +566,7 @@ def materialize_themed_starter(
     return True;
 }
 
-def _theme_app_root(config: any, project_root: Path) -> Path {
+impl _theme_app_root(config: any, project_root: Path) -> Path {
     try {
         app = config.resolve_app("");
     } except ValueError {
@@ -541,7 +575,7 @@ def _theme_app_root(config: any, project_root: Path) -> Path {
     return Path(app.entry_path(str(project_root))).parent;
 }
 
-def retheme_project(config: any, overrides: dict[str, str | None]) -> bool {
+impl retheme_project(config: any, overrides: dict[str, str | None]) -> bool {
     if config is None or config.project_root is None {
         console.error(
             "No jac.toml found", hint="Run this inside a jac-shadcn project."

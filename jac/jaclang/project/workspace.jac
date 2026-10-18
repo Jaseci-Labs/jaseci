@@ -28,18 +28,7 @@ glob _ws_cache: dict[str, tuple[tuple[float, ...], WorkspaceSpec]] = {},
      );
 
 @contextmanager
-def workspace_scope -> Iterator[None] {
-    if _resolution.get() is not None {
-        yield ;
-        return;
-    }
-    token = _resolution.set(WorkspaceResolution());
-    try {
-        yield ;
-    } finally {
-        _resolution.reset(token);
-    }
-}
+def workspace_scope -> Iterator[None];
 
 def workspace_for_path(path: str) -> (WorkspaceSpec | None);
 def _workspace_for_path(path: str) -> (WorkspaceSpec | None);
@@ -57,3 +46,16 @@ def persistence_namespace(raw: any, project_name: str) -> str;
 def _build_workspace(
     root_dir: str, toml_path: str, doc: dict[str, any]
 ) -> WorkspaceSpec;
+
+impl workspace_scope -> Iterator[None] {
+    if _resolution.get() is not None {
+        yield ;
+        return;
+    }
+    token = _resolution.set(WorkspaceResolution());
+    try {
+        yield ;
+    } finally {
+        _resolution.reset(token);
+    }
+}

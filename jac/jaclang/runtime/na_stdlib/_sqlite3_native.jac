@@ -60,12 +60,137 @@ glob _OUT: int = malloc(32),
      _SQLITE_TRANSIENT: int = -1;
 
 
-def:pub sq3_libversion -> str {
+def:pub sq3_libversion -> str;
+
+
+def:pub sq3_open(path: str) -> int;
+
+
+def:pub sq3_open_v2(path: str, uri: bool) -> int;
+
+
+def:pub sq3_open_err -> str;
+
+
+def:pub sq3_close(db: int) -> int;
+
+
+def:pub sq3_busy_timeout(db: int, ms: int) -> int;
+
+
+def:pub sq3_prepare(db: int, sql: str) -> int;
+
+
+def:pub sq3_prep_stmt -> int;
+
+
+def:pub sq3_prep_tail -> int;
+
+
+def:pub sq3_prep_sqlp -> int;
+
+
+def:pub sq3_tail_nonws -> int;
+
+
+def:pub sq3_free(p: int);
+
+
+def:pub sq3_step(stmt: int) -> int;
+
+
+def:pub sq3_reset(stmt: int) -> int;
+
+
+def:pub sq3_finalize(stmt: int) -> int;
+
+
+def:pub sq3_clear_bindings(stmt: int) -> int;
+
+
+def:pub sq3_column_count(stmt: int) -> int;
+
+
+def:pub sq3_column_type(stmt: int, i: int) -> int;
+
+
+def:pub sq3_column_int(stmt: int, i: int) -> int;
+
+
+def:pub sq3_column_float(stmt: int, i: int) -> float;
+
+
+def:pub sq3_column_raw(stmt: int, i: int) -> bytes;
+
+
+def:pub sq3_row(stmt: int, ncols: int) -> list[any];
+
+
+def:pub sq3_bind_seq(stmt: int, params: list[any], n: int) -> int;
+
+
+def:pub sq3_column_name(stmt: int, i: int) -> str;
+
+
+def:pub sq3_errmsg(db: int) -> str;
+
+
+def:pub sq3_errcode(db: int) -> int;
+
+
+def:pub sq3_extended_errcode(db: int) -> int;
+
+
+def:pub sq3_exec(db: int, sql: str) -> int;
+
+
+def:pub sq3_exec_err -> str;
+
+
+def:pub sq3_changes(db: int) -> int;
+
+
+def:pub sq3_total_changes(db: int) -> int;
+
+
+def:pub sq3_last_insert_rowid(db: int) -> int;
+
+
+def:pub sq3_get_autocommit(db: int) -> int;
+
+
+def:pub sq3_complete(sql: str) -> int;
+
+
+def:pub sq3_bind_parameter_count(stmt: int) -> int;
+
+
+def:pub sq3_bind_parameter_name(stmt: int, i: int) -> str;
+
+
+def:pub sq3_bind_null(stmt: int, i: int) -> int;
+
+
+def:pub sq3_bind_int(stmt: int, i: int, v: int) -> int;
+
+
+def:pub sq3_bind_double(stmt: int, i: int, v: float) -> int;
+
+
+def:pub sq3_bind_text(stmt: int, i: int, v: str) -> int;
+
+
+def:pub sq3_bind_blob(stmt: int, i: int, v: bytes) -> int;
+
+
+def:pub sq3_stmt_readonly(stmt: int) -> int;
+
+impl sq3_libversion -> str {
     return strdup(sqlite3_libversion());
 }
 
 
-def:pub sq3_open(path: str) -> int {
+impl sq3_open(path: str) -> int {
     __mem_store_i64(_OUT, 0);
     _OPEN_ERR = "";
     rc = sqlite3_open(path, _OUT);
@@ -82,7 +207,7 @@ def:pub sq3_open(path: str) -> int {
 }
 
 
-def:pub sq3_open_v2(path: str, uri: bool) -> int {
+impl sq3_open_v2(path: str, uri: bool) -> int {
     flags = 6;
     if uri {
         flags = 6 + 64;
@@ -103,24 +228,24 @@ def:pub sq3_open_v2(path: str, uri: bool) -> int {
 }
 
 
-def:pub sq3_open_err -> str {
+impl sq3_open_err -> str {
     s = _OPEN_ERR;
     _OPEN_ERR = "";
     return s;
 }
 
 
-def:pub sq3_close(db: int) -> int {
+impl sq3_close(db: int) -> int {
     return int(sqlite3_close(db));
 }
 
 
-def:pub sq3_busy_timeout(db: int, ms: int) -> int {
+impl sq3_busy_timeout(db: int, ms: int) -> int {
     return int(sqlite3_busy_timeout(db, i32(ms)));
 }
 
 
-def:pub sq3_prepare(db: int, sql: str) -> int {
+impl sq3_prepare(db: int, sql: str) -> int {
     p = malloc(strlen(sql) + 1);
     strcpy(p, sql);
     __mem_store_i64(_OUT, 0);
@@ -136,22 +261,22 @@ def:pub sq3_prepare(db: int, sql: str) -> int {
 }
 
 
-def:pub sq3_prep_stmt -> int {
+impl sq3_prep_stmt -> int {
     return __mem_load_i64(_OUT);
 }
 
 
-def:pub sq3_prep_tail -> int {
+impl sq3_prep_tail -> int {
     return __mem_load_i64(_OUT + 8);
 }
 
 
-def:pub sq3_prep_sqlp -> int {
+impl sq3_prep_sqlp -> int {
     return __mem_load_i64(_OUT + 16);
 }
 
 
-def:pub sq3_tail_nonws -> int {
+impl sq3_tail_nonws -> int {
     p = sq3_prep_tail();
     if p == 0 {
         return 0;
@@ -174,54 +299,54 @@ def:pub sq3_tail_nonws -> int {
 }
 
 
-def:pub sq3_free(p: int) {
+impl sq3_free(p: int) {
     if p != 0 {
         free(p);
     }
 }
 
 
-def:pub sq3_step(stmt: int) -> int {
+impl sq3_step(stmt: int) -> int {
     return int(sqlite3_step(stmt));
 }
 
 
-def:pub sq3_reset(stmt: int) -> int {
+impl sq3_reset(stmt: int) -> int {
     return int(sqlite3_reset(stmt));
 }
 
 
-def:pub sq3_finalize(stmt: int) -> int {
+impl sq3_finalize(stmt: int) -> int {
     return int(sqlite3_finalize(stmt));
 }
 
 
-def:pub sq3_clear_bindings(stmt: int) -> int {
+impl sq3_clear_bindings(stmt: int) -> int {
     return int(sqlite3_clear_bindings(stmt));
 }
 
 
-def:pub sq3_column_count(stmt: int) -> int {
+impl sq3_column_count(stmt: int) -> int {
     return int(sqlite3_column_count(stmt));
 }
 
 
-def:pub sq3_column_type(stmt: int, i: int) -> int {
+impl sq3_column_type(stmt: int, i: int) -> int {
     return int(sqlite3_column_type(stmt, i32(i)));
 }
 
 
-def:pub sq3_column_int(stmt: int, i: int) -> int {
+impl sq3_column_int(stmt: int, i: int) -> int {
     return int(sqlite3_column_int64(stmt, i32(i)));
 }
 
 
-def:pub sq3_column_float(stmt: int, i: int) -> float {
+impl sq3_column_float(stmt: int, i: int) -> float {
     return float(sqlite3_column_double(stmt, i32(i)));
 }
 
 
-def:pub sq3_column_raw(stmt: int, i: int) -> bytes {
+impl sq3_column_raw(stmt: int, i: int) -> bytes {
     n = int(sqlite3_column_bytes(stmt, i32(i)));
     buf = b"\x00" * n;
     if n > 0 {
@@ -231,7 +356,7 @@ def:pub sq3_column_raw(stmt: int, i: int) -> bytes {
 }
 
 
-def:pub sq3_row(stmt: int, ncols: int) -> list[any] {
+impl sq3_row(stmt: int, ncols: int) -> list[any] {
     row: list[any] = [];
     for i in range(ncols) {
         ii = i32(i);
@@ -262,7 +387,7 @@ def:pub sq3_row(stmt: int, ncols: int) -> list[any] {
 }
 
 
-def:pub sq3_bind_seq(stmt: int, params: list[any], n: int) -> int {
+impl sq3_bind_seq(stmt: int, params: list[any], n: int) -> int {
     for i in range(n) {
         v = params[i];
         j = i + 1;
@@ -289,7 +414,7 @@ def:pub sq3_bind_seq(stmt: int, params: list[any], n: int) -> int {
 }
 
 
-def:pub sq3_column_name(stmt: int, i: int) -> str {
+impl sq3_column_name(stmt: int, i: int) -> str {
     p = sqlite3_column_name(stmt, i32(i));
     if p == 0 {
         return "";
@@ -298,7 +423,7 @@ def:pub sq3_column_name(stmt: int, i: int) -> str {
 }
 
 
-def:pub sq3_errmsg(db: int) -> str {
+impl sq3_errmsg(db: int) -> str {
     p = sqlite3_errmsg(db);
     if p == 0 {
         return "";
@@ -307,23 +432,23 @@ def:pub sq3_errmsg(db: int) -> str {
 }
 
 
-def:pub sq3_errcode(db: int) -> int {
+impl sq3_errcode(db: int) -> int {
     return int(sqlite3_errcode(db));
 }
 
 
-def:pub sq3_extended_errcode(db: int) -> int {
+impl sq3_extended_errcode(db: int) -> int {
     return int(sqlite3_extended_errcode(db));
 }
 
 
-def:pub sq3_exec(db: int, sql: str) -> int {
+impl sq3_exec(db: int, sql: str) -> int {
     __mem_store_i64(_ERRP, 0);
     return int(sqlite3_exec(db, sql, 0, 0, _ERRP));
 }
 
 
-def:pub sq3_exec_err -> str {
+impl sq3_exec_err -> str {
     ep = __mem_load_i64(_ERRP);
     if ep == 0 {
         return "";
@@ -335,37 +460,37 @@ def:pub sq3_exec_err -> str {
 }
 
 
-def:pub sq3_changes(db: int) -> int {
+impl sq3_changes(db: int) -> int {
     return int(sqlite3_changes64(db));
 }
 
 
-def:pub sq3_total_changes(db: int) -> int {
+impl sq3_total_changes(db: int) -> int {
     return int(sqlite3_total_changes64(db));
 }
 
 
-def:pub sq3_last_insert_rowid(db: int) -> int {
+impl sq3_last_insert_rowid(db: int) -> int {
     return int(sqlite3_last_insert_rowid(db));
 }
 
 
-def:pub sq3_get_autocommit(db: int) -> int {
+impl sq3_get_autocommit(db: int) -> int {
     return int(sqlite3_get_autocommit(db));
 }
 
 
-def:pub sq3_complete(sql: str) -> int {
+impl sq3_complete(sql: str) -> int {
     return int(sqlite3_complete(sql));
 }
 
 
-def:pub sq3_bind_parameter_count(stmt: int) -> int {
+impl sq3_bind_parameter_count(stmt: int) -> int {
     return int(sqlite3_bind_parameter_count(stmt));
 }
 
 
-def:pub sq3_bind_parameter_name(stmt: int, i: int) -> str {
+impl sq3_bind_parameter_name(stmt: int, i: int) -> str {
     p = sqlite3_bind_parameter_name(stmt, i32(i));
     if p == 0 {
         return "";
@@ -374,31 +499,31 @@ def:pub sq3_bind_parameter_name(stmt: int, i: int) -> str {
 }
 
 
-def:pub sq3_bind_null(stmt: int, i: int) -> int {
+impl sq3_bind_null(stmt: int, i: int) -> int {
     return int(sqlite3_bind_null(stmt, i32(i)));
 }
 
 
-def:pub sq3_bind_int(stmt: int, i: int, v: int) -> int {
+impl sq3_bind_int(stmt: int, i: int, v: int) -> int {
     return int(sqlite3_bind_int64(stmt, i32(i), i64(v)));
 }
 
 
-def:pub sq3_bind_double(stmt: int, i: int, v: float) -> int {
+impl sq3_bind_double(stmt: int, i: int, v: float) -> int {
     return int(sqlite3_bind_double(stmt, i32(i), v));
 }
 
 
-def:pub sq3_bind_text(stmt: int, i: int, v: str) -> int {
+impl sq3_bind_text(stmt: int, i: int, v: str) -> int {
     return int(sqlite3_bind_text(stmt, i32(i), v, -1, i64(_SQLITE_TRANSIENT)));
 }
 
 
-def:pub sq3_bind_blob(stmt: int, i: int, v: bytes) -> int {
+impl sq3_bind_blob(stmt: int, i: int, v: bytes) -> int {
     return int(sqlite3_bind_blob(stmt, i32(i), v, i32(len(v)), i64(_SQLITE_TRANSIENT)));
 }
 
 
-def:pub sq3_stmt_readonly(stmt: int) -> int {
+impl sq3_stmt_readonly(stmt: int) -> int {
     return int(sqlite3_stmt_readonly(stmt));
 }

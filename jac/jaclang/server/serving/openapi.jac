@@ -21,6 +21,26 @@ glob _NAME_SCHEMAS: dict[str, dict[str, str]] = {
 
 def _schema_for_type(
     target: any, schemas: (dict[str, any] | None) = None
+) -> dict[str, any];
+
+def _object_schema(target: type, schemas: (dict[str, any] | None)) -> dict[str, any];
+
+def _param_schema(
+    param: APIParameter, schemas: (dict[str, any] | None) = None
+) -> dict[str, any];
+
+def _body_schema_name(ep: JEndPoint, method: str) -> str;
+
+def _openapi_path(path: str) -> str;
+
+def build_openapi(app: ServingApp) -> dict[str, any];
+
+def swagger_ui_html(openapi_url: str, title: str) -> str;
+
+def register_docs_endpoints(app: ServingApp);
+
+impl _schema_for_type(
+    target: any, schemas: (dict[str, any] | None) = None
 ) -> dict[str, any] {
     if target is None {
         return {};
@@ -66,7 +86,7 @@ def _schema_for_type(
     return {};
 }
 
-def _object_schema(target: type, schemas: (dict[str, any] | None)) -> dict[str, any] {
+impl _object_schema(target: type, schemas: (dict[str, any] | None)) -> dict[str, any] {
     if schemas is None {
         return {'type': 'object', 'title': target.__name__};
     }
@@ -104,7 +124,7 @@ def _object_schema(target: type, schemas: (dict[str, any] | None)) -> dict[str, 
     return ref;
 }
 
-def _param_schema(
+impl _param_schema(
     param: APIParameter, schemas: (dict[str, any] | None) = None
 ) -> dict[str, any] {
     if param.type_obj is not None {
@@ -113,7 +133,7 @@ def _param_schema(
     return _schema_for_type(param.data_type, schemas);
 }
 
-def _body_schema_name(ep: JEndPoint, method: str) -> str {
+impl _body_schema_name(ep: JEndPoint, method: str) -> str {
     parts = [
         seg
         for seg in ep.path.strip('/').split('/')
@@ -126,11 +146,11 @@ def _body_schema_name(ep: JEndPoint, method: str) -> str {
     return f"{ident[0].upper()}{ident[1:]}{method.capitalize()}Body";
 }
 
-def _openapi_path(path: str) -> str {
+impl _openapi_path(path: str) -> str {
     return path if path.startswith('/') else f"/{path}";
 }
 
-def build_openapi(app: ServingApp) -> dict[str, any] {
+impl build_openapi(app: ServingApp) -> dict[str, any] {
     if app.openapi_cache is not None {
         return app.openapi_cache;
     }
@@ -266,7 +286,7 @@ def build_openapi(app: ServingApp) -> dict[str, any] {
     return spec;
 }
 
-def swagger_ui_html(openapi_url: str, title: str) -> str {
+impl swagger_ui_html(openapi_url: str, title: str) -> str {
     return (
         '<!DOCTYPE html>\n<html>\n<head>\n'
         f'<title>{title} - Swagger UI</title>\n'
@@ -288,7 +308,7 @@ def swagger_ui_html(openapi_url: str, title: str) -> str {
     );
 }
 
-def register_docs_endpoints(app: ServingApp) {
+impl register_docs_endpoints(app: ServingApp) {
     if app.openapi_url {
         def _openapi_callback -> dict[str, any] {
             return build_openapi(app);

@@ -11,13 +11,7 @@ obj SessionContext {
         errors_mark: int = 0,
         warnings_mark: int = 0;
 
-    def merge_alerts {
-        if self.target is self.caller or self.target.internal {
-            return;
-        }
-        self.caller.errors_had.extend(self.target.errors_had[self.errors_mark:]);
-        self.caller.warnings_had.extend(self.target.warnings_had[self.warnings_mark:]);
-    }
+    def merge_alerts;
 }
 
 obj CompileFrame {
@@ -25,37 +19,27 @@ obj CompileFrame {
 }
 
 obj SessionHooks {
-    def enter_compile(ctx: SessionContext) -> CompileFrame {
-        return CompileFrame(nested=True);
-    }
-
-    def leave_compile(ctx: SessionContext, frame: CompileFrame) {}
-    def finish_compile(frame: CompileFrame) {}
-    def check_crash(crash: Exception, file_path: str) {}
-    def closure_options -> (CompileOptions | None) {
-        return None;
-    }
-
+    def enter_compile(ctx: SessionContext) -> CompileFrame;
+    def leave_compile(ctx: SessionContext, frame: CompileFrame);
+    def finish_compile(frame: CompileFrame);
+    def check_crash(crash: Exception, file_path: str);
+    def closure_options -> (CompileOptions | None);
     def compile(
         file_path: str,
         target_program: JacProgram,
         use_str: (str | None),
         options: CompileOptions
-    ) -> uni.Module {
-        return compile_in_session(self, file_path, target_program, use_str, options);
-    }
+    ) -> uni.Module;
 
     def compile_attempt(
         file_path: str,
         target_program: JacProgram,
         use_str: (str | None),
         options: CompileOptions
-    ) -> uni.Module {
-        return compile_once(self, file_path, target_program, use_str, options);
-    }
+    ) -> uni.Module;
 
-    def assemble_python(program: JacProgram, module: uni.Module) {}
-    def assemble_native(program: JacProgram, module: uni.Module, checking: bool) {}
+    def assemble_python(program: JacProgram, module: uni.Module);
+    def assemble_native(program: JacProgram, module: uni.Module, checking: bool);
     def run_module(
         file_path: str,
         target_program: JacProgram,
@@ -65,6 +49,90 @@ obj SessionHooks {
 }
 
 def select_context(
+    file_path: str, program: JacProgram, options: CompileOptions
+) -> SessionContext;
+
+def annex_parent(
+    file_path: str, program: JacProgram, use_str: (str | None), options: CompileOptions
+) -> (str | None);
+
+def inherit_session_options(
+    program: JacProgram, options: CompileOptions, closure: (CompileOptions | None)
+) -> CompileOptions;
+
+def compile_in_session(
+    hooks: SessionHooks,
+    file_path: str,
+    program: JacProgram,
+    use_str: (str | None),
+    options: CompileOptions
+) -> uni.Module;
+
+def compile_attempts(
+    hooks: SessionHooks,
+    file_path: str,
+    program: JacProgram,
+    use_str: (str | None),
+    options: CompileOptions
+) -> uni.Module;
+
+def compile_once(
+    hooks: SessionHooks,
+    file_path: str,
+    program: JacProgram,
+    use_str: (str | None),
+    options: CompileOptions
+) -> uni.Module;
+
+def drop_native_bindings(mod: uni.Module, resolved: str);
+
+impl SessionContext.merge_alerts {
+    if self.target is self.caller or self.target.internal {
+        return;
+    }
+    self.caller.errors_had.extend(self.target.errors_had[self.errors_mark:]);
+    self.caller.warnings_had.extend(self.target.warnings_had[self.warnings_mark:]);
+}
+
+impl SessionHooks.enter_compile(ctx: SessionContext) -> CompileFrame {
+    return CompileFrame(nested=True);
+}
+
+impl SessionHooks.leave_compile(ctx: SessionContext, frame: CompileFrame) {}
+
+impl SessionHooks.finish_compile(frame: CompileFrame) {}
+
+impl SessionHooks.check_crash(crash: Exception, file_path: str) {}
+
+impl SessionHooks.closure_options -> (CompileOptions | None) {
+    return None;
+}
+
+impl SessionHooks.compile(
+    file_path: str,
+    target_program: JacProgram,
+    use_str: (str | None),
+    options: CompileOptions
+) -> uni.Module {
+    return compile_in_session(self, file_path, target_program, use_str, options);
+}
+
+impl SessionHooks.compile_attempt(
+    file_path: str,
+    target_program: JacProgram,
+    use_str: (str | None),
+    options: CompileOptions
+) -> uni.Module {
+    return compile_once(self, file_path, target_program, use_str, options);
+}
+
+impl SessionHooks.assemble_python(program: JacProgram, module: uni.Module) {}
+
+impl SessionHooks.assemble_native(
+    program: JacProgram, module: uni.Module, checking: bool
+) {}
+
+impl select_context(
     file_path: str, program: JacProgram, options: CompileOptions
 ) -> SessionContext {
     import from jaclang.compiler.driver.compilation_context {
@@ -87,7 +155,7 @@ def select_context(
     );
 }
 
-def annex_parent(
+impl annex_parent(
     file_path: str, program: JacProgram, use_str: (str | None), options: CompileOptions
 ) -> (str | None) {
     if use_str is not None or not options.resolve_annex_parent {
@@ -104,7 +172,7 @@ def annex_parent(
     return None;
 }
 
-def inherit_session_options(
+impl inherit_session_options(
     program: JacProgram, options: CompileOptions, closure: (CompileOptions | None)
 ) -> CompileOptions {
     previous = program.options;
@@ -133,7 +201,7 @@ def inherit_session_options(
     return options;
 }
 
-def compile_in_session(
+impl compile_in_session(
     hooks: SessionHooks,
     file_path: str,
     program: JacProgram,
@@ -190,7 +258,7 @@ def compile_in_session(
     }
 }
 
-def compile_attempts(
+impl compile_attempts(
     hooks: SessionHooks,
     file_path: str,
     program: JacProgram,
@@ -205,7 +273,7 @@ def compile_attempts(
     }
 }
 
-def compile_once(
+impl compile_once(
     hooks: SessionHooks,
     file_path: str,
     program: JacProgram,
@@ -225,7 +293,7 @@ def compile_once(
     return hooks.run_module(file_path, program, use_str, options);
 }
 
-def drop_native_bindings(mod: uni.Module, resolved: str) {
+impl drop_native_bindings(mod: uni.Module, resolved: str) {
     import from jaclang.compiler.frontend.codeinfo { InteropContext, InteropManifest }
     key = os.path.realpath(resolved);
     manifest = mod.gen.interop_manifest;

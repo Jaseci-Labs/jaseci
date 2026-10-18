@@ -2,7 +2,9 @@ import subprocess;
 import tempfile;
 import from pathlib { Path }
 
-def emit_c(llvm_ir: str) -> str {
+def emit_c(llvm_ir: str) -> str;
+
+impl emit_c(llvm_ir: str) -> str {
     backend = ensure_c_backend();
     with tempfile.TemporaryDirectory(prefix='jac-c-') as temporary {
         directory = Path(temporary);

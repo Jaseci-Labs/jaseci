@@ -16,67 +16,105 @@ glob CLOCK_REALTIME: int = CLK_REALTIME,
      CLOCK_THREAD_CPUTIME_ID: int = CLK_THREAD_CPUTIME;
 
 
-def:pub time -> float {
+def:pub time -> float;
+
+
+def:pub time_ns -> int;
+
+
+def:pub monotonic -> float;
+
+
+def:pub monotonic_ns -> int;
+
+
+def:pub perf_counter -> float;
+
+
+def:pub perf_counter_ns -> int;
+
+
+def:pub process_time -> float;
+
+
+def:pub process_time_ns -> int;
+
+
+def:pub thread_time -> float;
+
+
+def:pub thread_time_ns -> int;
+
+
+def:pub clock_gettime_ns(clk_id: int) -> int;
+
+
+def:pub clock_settime_ns(clk_id: int, ns: int);
+
+
+def:pub sleep(secs: float);
+
+impl time -> float {
     return time_clock_seconds(CLOCK_REALTIME);
 }
 
 
-def:pub time_ns -> int {
+impl time_ns -> int {
     return time_clock_ns(CLOCK_REALTIME);
 }
 
 
-def:pub monotonic -> float {
+impl monotonic -> float {
     return time_clock_seconds(CLK_PY_MONOTONIC);
 }
 
 
-def:pub monotonic_ns -> int {
+impl monotonic_ns -> int {
     return time_clock_ns(CLK_PY_MONOTONIC);
 }
 
 
-def:pub perf_counter -> float {
+impl perf_counter -> float {
     return time_clock_seconds(CLK_PY_MONOTONIC);
 }
 
 
-def:pub perf_counter_ns -> int {
+impl perf_counter_ns -> int {
     return time_clock_ns(CLK_PY_MONOTONIC);
 }
 
 
-def:pub process_time -> float {
+impl process_time -> float {
     return time_clock_seconds(CLOCK_PROCESS_CPUTIME_ID);
 }
 
 
-def:pub process_time_ns -> int {
+impl process_time_ns -> int {
     return time_clock_ns(CLOCK_PROCESS_CPUTIME_ID);
 }
 
 
-def:pub thread_time -> float {
+impl thread_time -> float {
     return time_clock_seconds(CLOCK_THREAD_CPUTIME_ID);
 }
 
 
-def:pub thread_time_ns -> int {
+impl thread_time_ns -> int {
     return time_clock_ns(CLOCK_THREAD_CPUTIME_ID);
 }
 
 
-def:pub clock_gettime_ns(clk_id: int) -> int {
+impl clock_gettime_ns(clk_id: int) -> int {
     return time_clock_ns(clk_id);
 }
 
 
-def:pub clock_settime_ns(clk_id: int, ns: int) {
+impl clock_settime_ns(clk_id: int, ns: int) {
     time_clock_set_ns(clk_id, ns);
 }
 
 
-def:pub sleep(secs: float) {
+impl sleep(secs: float) {
     if secs != secs {
         raise ValueError("Invalid value NaN (not a number)");
     }

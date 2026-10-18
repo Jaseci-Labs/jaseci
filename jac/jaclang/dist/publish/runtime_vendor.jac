@@ -3,12 +3,56 @@ import json;
 import tempfile;
 import from pathlib { Path }
 
-def _pkg_root -> Path {
+def _pkg_root -> Path;
+
+def _module_to_file(pkg_root: Path, mod: str) -> Path | None;
+
+def scan_jaclang_imports(
+    py_src: str | py_ast.Module,
+    module: str = '',
+    package: bool = False,
+    include_symbols: bool = True
+) -> set[str];
+
+def _runtime_dependencies(
+    pkg_root: Path, source: py_ast.Module, module: str = '', package: bool = False
+) -> set[str];
+
+def _declared_literal(tree: py_ast.Module, name: str) -> object;
+
+def _compile_runtime_module(
+    pkg_root: Path,
+    path: Path,
+    prog: JacProgram,
+    native: dict[str, any] | None = None,
+    native_sources: bool = True
+) -> str;
+
+
+def _runtime_module_options(path: Path) -> CompileOptions;
+
+def build_runtime_closure(
+    user_codes: list[str],
+    include_byllm: bool = False,
+    extra_seeds: list[str] | None = None,
+    prepared: bool = True,
+    native_sources: bool = True
+) -> dict[str, bytes];
+
+def vendor_runtime(
+    backend_dir: Path,
+    user_codes: list[str],
+    include_byllm: bool = False,
+    extra_seeds: list[str] | None = None,
+    prepared: bool = True
+) -> int;
+
+impl _pkg_root -> Path {
     import jaclang;
     return Path(str(jaclang.__file__)).parent;
 }
 
-def _module_to_file(pkg_root: Path, mod: str) -> Path | None {
+impl _module_to_file(pkg_root: Path, mod: str) -> Path | None {
     if not mod.startswith('jaclang.') {
         return None;
     }
@@ -16,7 +60,7 @@ def _module_to_file(pkg_root: Path, mod: str) -> Path | None {
     return Path(resolved[0]) if resolved and resolved[1] in ('jac', 'py') else None;
 }
 
-def scan_jaclang_imports(
+impl scan_jaclang_imports(
     py_src: str | py_ast.Module,
     module: str = '',
     package: bool = False,
@@ -70,7 +114,7 @@ def scan_jaclang_imports(
     return found;
 }
 
-def _runtime_dependencies(
+impl _runtime_dependencies(
     pkg_root: Path, source: py_ast.Module, module: str = '', package: bool = False
 ) -> set[str] {
     for required in scan_jaclang_imports(
@@ -89,7 +133,7 @@ def _runtime_dependencies(
     return scan_jaclang_imports(source, module, package);
 }
 
-def _declared_literal(tree: py_ast.Module, name: str) -> object {
+impl _declared_literal(tree: py_ast.Module, name: str) -> object {
     for statement in tree.body {
         if isinstance(statement, py_ast.Assign) {
             targets = statement.targets;
@@ -108,7 +152,7 @@ def _declared_literal(tree: py_ast.Module, name: str) -> object {
     return None;
 }
 
-def _compile_runtime_module(
+impl _compile_runtime_module(
     pkg_root: Path,
     path: Path,
     prog: JacProgram,
@@ -153,7 +197,7 @@ def _compile_runtime_module(
 }
 
 
-def _runtime_module_options(path: Path) -> CompileOptions {
+impl _runtime_module_options(path: Path) -> CompileOptions {
     """A vendored runtime module takes the codespace the running compiler gives
     its own package: the server codespace, unless the module is native by policy
     (a bundled native library or a shared runtime module), which keeps the
@@ -168,7 +212,7 @@ def _runtime_module_options(path: Path) -> CompileOptions {
     return CompileOptions(default_codespace=SPACE_SERVER);
 }
 
-def build_runtime_closure(
+impl build_runtime_closure(
     user_codes: list[str],
     include_byllm: bool = False,
     extra_seeds: list[str] | None = None,
@@ -327,7 +371,7 @@ def build_runtime_closure(
     return closure;
 }
 
-def vendor_runtime(
+impl vendor_runtime(
     backend_dir: Path,
     user_codes: list[str],
     include_byllm: bool = False,

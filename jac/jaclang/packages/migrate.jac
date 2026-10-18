@@ -11,7 +11,13 @@ obj ManifestMigration {
         lossless: bool = True;
 }
 
-def _migrate_scope(scope: dict[str, any], prefix: str, moved: list[str]) {
+def _migrate_scope(scope: dict[str, any], prefix: str, moved: list[str]);
+
+def migrate_manifest(path: Path) -> ManifestMigration;
+
+def find_manifests(paths: list[str]) -> list[Path];
+
+impl _migrate_scope(scope: dict[str, any], prefix: str, moved: list[str]) {
     for table_name in DEP_TABLES {
         table = scope.get(table_name);
         if not isinstance(table, dict) {
@@ -29,7 +35,7 @@ def _migrate_scope(scope: dict[str, any], prefix: str, moved: list[str]) {
     }
 }
 
-def migrate_manifest(path: Path) -> ManifestMigration {
+impl migrate_manifest(path: Path) -> ManifestMigration {
     text = path.read_text(encoding="utf-8");
     old_doc = tomllib.loads(text);
     new_doc = copy.deepcopy(old_doc);
@@ -63,7 +69,7 @@ def migrate_manifest(path: Path) -> ManifestMigration {
     return result;
 }
 
-def find_manifests(paths: list[str]) -> list[Path] {
+impl find_manifests(paths: list[str]) -> list[Path] {
     found: list[Path] = [];
     for raw in paths {
         p = Path(raw);

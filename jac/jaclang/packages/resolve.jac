@@ -12,49 +12,15 @@ obj LocalPackage {
         sha256: str = "";
 }
 
-def running_jac_version -> Version {
-    try {
-        return Version.parse(jaclang_version()).release();
-    } except SemverError {
-        return Version.parse("0.0.0");
-    }
-}
+def running_jac_version -> Version;
 
-def pip_requirement(name: str, spec: str) -> str {
-    if spec.startswith("@") {
-        return f"{name} {spec}";
-    }
-    return f"{name}{spec}" if spec and spec != "*" else name;
-}
+def pip_requirement(name: str, spec: str) -> str;
 
-def manifest_pypi(config: JacConfig) -> dict[str, str] {
-    out = dict(config.pypi_dependencies);
-    for (name, info) in config.pypi_git_dependencies.items() {
-        ref = info.get("rev") or info.get("branch") or info.get("tag") or "";
-        out[name] = f"@ git+{info.get('git', '')}" + (f"@{ref}" if ref else "");
-    }
-    return out;
-}
+def manifest_pypi(config: JacConfig) -> dict[str, str];
 
-def manifest_npm(config: JacConfig) -> dict[str, str] {
-    return {
-        k: v
-        for (k, v) in config.plugin_dependencies.get("npm", {}).items()
-        if isinstance(v, str)
-    };
-}
+def manifest_npm(config: JacConfig) -> dict[str, str];
 
-def manifest_inputs(config: JacConfig) -> str {
-    return digest_of(
-        {
-            "deps": {n: d.to_toml() for (n, d) in sorted(config.dependencies.items())},
-            "dev": {
-                n: d.to_toml() for (n, d) in sorted(config.dev_dependencies.items())
-            },
-            "registries": registry_urls(config.registries)
-        }
-    );
-}
+def manifest_inputs(config: JacConfig) -> str;
 
 obj GraphSource(PackageSource) {
     has root_dir: Path,
@@ -67,193 +33,256 @@ obj GraphSource(PackageSource) {
         origin_registry: dict[str, str] = {},
         prerelease: set[str] = set();
 
-    def registry_for(name: str) -> Registry {
-        return registry_named(self.origin_registry.get(name, ""), self.registries);
-    }
-
-    def note_requirement(name: str, req: Requirement) {
-        if req.names_prerelease {
-            self.prerelease.add(name);
-        }
-    }
-
-    def add_local(dep: PackageDep, base: Path) -> LocalPackage {
-        if dep.name in self.locals {
-            return self.locals[dep.name];
-        }
-        if dep.kind() == "path" {
-            tree = resolve_path(base, dep.path);
-            if not (tree / "jac.toml").is_file() {
-                raise ResolveError(
-                    f"{dep.name}: path dependency {dep.path} has no jac.toml at {tree}"
-                );
-            }
-            source = "path+"
-                + os.path.relpath(str(tree), str(self.root_dir)).replace(os.sep, "/");
-            sha256 = "";
-        } else {
-            try {
-                co = checkout(dep.git, dep.rev);
-            } except GitError as e {
-                raise ResolveError(f"{dep.name}: {e}");
-            }
-            (_, sha256) = pack_checkout(co);
-            tree = co.tree;
-            source = f"git+{dep.git}#{co.commit}";
-        }
-        cfg = JacConfig.load(tree / "jac.toml");
-        if cfg.project.name != dep.name {
-            raise ResolveError(
-                f"{dep.name}: {dep.path or dep.git} is the package '{cfg.project.name}'"
-            );
-        }
-        try {
-            version = Version.parse(cfg.project.version);
-        } except SemverError as e {
-            raise ResolveError(f"{dep.name}: {e}");
-        }
-        pkg = LocalPackage(
-            name=dep.name,
-            version=version,
-            config=cfg,
-            tree=tree,
-            source=source,
-            sha256=sha256
-        );
-        self.locals[dep.name] = pkg;
-        for nested in cfg.dependencies.values() {
-            if nested.kind() != "registry" {
-                self.add_local(nested, tree);
-            } elif nested.registry {
-                self.origin_registry.setdefault(nested.name, nested.registry);
-            }
-        }
-        return pkg;
-    }
-
-    override def versions(name: str) -> list[Version] {
-        if name in self.locals {
-            return [self.locals[name].version];
-        }
-        try {
-            entries = self.registry_for(name).entries(name);
-        } except RegistryError as e {
-            raise ResolveError(str(e));
-        }
-        out: list[Version] = [];
-        for e in entries {
-            if e.yanked and self.locked.get(name) != e.version {
-                continue;
-            }
-            try {
-                out.append(Version.parse(e.version));
-            } except SemverError {
-                continue;
-            }
-        }
-        return out;
-    }
-
-    def _entry(name: str, version: Version) -> IndexEntry {
-        item = self.registry_for(name).find(name, str(version));
-        if item is None {
-            raise ResolveError(f"{name} {version} vanished from the index");
-        }
-        return item;
-    }
-
-    override def dependencies(name: str, version: Version) -> dict[str, Requirement] {
-        raw: dict[str, str] = {};
-        if name in self.locals {
-            for (dep_name, dep) in self.locals[name].config.dependencies.items() {
-                raw[dep_name] = dep.version;
-            }
-        } else {
-            item = self._entry(name, version);
-            for (dep_name, text) in item.deps.items() {
-                raw[dep_name] = text;
-                self.origin_registry.setdefault(
-                    dep_name, self.origin_registry.get(name, "")
-                );
-            }
-        }
-        out: dict[str, Requirement] = {};
-        for (dep_name, text) in raw.items() {
-            try {
-                req = Requirement.parse(text);
-            } except SemverError as e {
-                raise ResolveError(f"{name} {version} -> {dep_name}: {e}");
-            }
-            self.note_requirement(dep_name, req);
-            out[dep_name] = req;
-        }
-        return out;
-    }
-
-    override def unavailable_reason(name: str, version: Version) -> str {
-        if name in self.locals {
-            wanted = self.locals[name].config.project.jac_version;
-            role = "lib";
-        } else {
-            item = self._entry(name, version);
-            wanted = item.jac_version;
-            role = item.role;
-        }
-        if role != "lib" {
-            return f"it is a {role} package, not a library";
-        }
-        if wanted and not jac_satisfies(str(self.jac_version), wanted) {
-            return f"it needs jac {wanted}, this is jac {self.jac_version}";
-        }
-        return "";
-    }
-
-    override def preferred(name: str) -> Version | None {
-        if self.unlock_all or name in self.unlock {
-            return None;
-        }
-        pinned = self.locked.get(name);
-        if not pinned {
-            return None;
-        }
-        try {
-            return Version.parse(pinned);
-        } except SemverError {
-            return None;
-        }
-    }
-
-    override def allows_prerelease(name: str) -> bool {
-        return name in self.prerelease;
-    }
-
-    def locked_entry(name: str, version: Version) -> LockedPackage {
-        if name in self.locals {
-            pkg = self.locals[name];
-            return LockedPackage(
-                name=name,
-                version=str(version),
-                source=pkg.source,
-                sha256=pkg.sha256,
-                deps=sorted(pkg.config.dependencies.keys()),
-                pypi=manifest_pypi(pkg.config),
-                npm=manifest_npm(pkg.config)
-            );
-        }
-        item = self._entry(name, version);
-        return LockedPackage(
-            name=name,
-            version=str(version),
-            source=f"registry+{self.registry_for(name).base()}",
-            sha256=item.sha256,
-            deps=sorted(item.deps.keys()),
-            pypi=dict(item.pypi),
-            npm=dict(item.npm)
-        );
-    }
+    def registry_for(name: str) -> Registry;
+    def note_requirement(name: str, req: Requirement);
+    def add_local(dep: PackageDep, base: Path) -> LocalPackage;
+    override def versions(name: str) -> list[Version];
+    def _entry(name: str, version: Version) -> IndexEntry;
+    override def dependencies(name: str, version: Version) -> dict[str, Requirement];
+    override def unavailable_reason(name: str, version: Version) -> str;
+    override def preferred(name: str) -> Version | None;
+    override def allows_prerelease(name: str) -> bool;
+    def locked_entry(name: str, version: Version) -> LockedPackage;
 }
 
 def _mark_dev(
+    packages: list[LockedPackage], runtime_roots: list[str]
+) -> list[LockedPackage];
+
+def resolve_graph(
+    config: JacConfig, previous: Lockfile | None = None, update: list[str] | None = None
+) -> Lockfile;
+
+impl running_jac_version -> Version {
+    try {
+        return Version.parse(jaclang_version()).release();
+    } except SemverError {
+        return Version.parse("0.0.0");
+    }
+}
+
+impl pip_requirement(name: str, spec: str) -> str {
+    if spec.startswith("@") {
+        return f"{name} {spec}";
+    }
+    return f"{name}{spec}" if spec and spec != "*" else name;
+}
+
+impl manifest_pypi(config: JacConfig) -> dict[str, str] {
+    out = dict(config.pypi_dependencies);
+    for (name, info) in config.pypi_git_dependencies.items() {
+        ref = info.get("rev") or info.get("branch") or info.get("tag") or "";
+        out[name] = f"@ git+{info.get('git', '')}" + (f"@{ref}" if ref else "");
+    }
+    return out;
+}
+
+impl manifest_npm(config: JacConfig) -> dict[str, str] {
+    return {
+        k: v
+        for (k, v) in config.plugin_dependencies.get("npm", {}).items()
+        if isinstance(v, str)
+    };
+}
+
+impl manifest_inputs(config: JacConfig) -> str {
+    return digest_of(
+        {
+            "deps": {n: d.to_toml() for (n, d) in sorted(config.dependencies.items())},
+            "dev": {
+                n: d.to_toml() for (n, d) in sorted(config.dev_dependencies.items())
+            },
+            "registries": registry_urls(config.registries)
+        }
+    );
+}
+
+impl GraphSource.registry_for(name: str) -> Registry {
+    return registry_named(self.origin_registry.get(name, ""), self.registries);
+}
+
+impl GraphSource.note_requirement(name: str, req: Requirement) {
+    if req.names_prerelease {
+        self.prerelease.add(name);
+    }
+}
+
+impl GraphSource.add_local(dep: PackageDep, base: Path) -> LocalPackage {
+    if dep.name in self.locals {
+        return self.locals[dep.name];
+    }
+    if dep.kind() == "path" {
+        tree = resolve_path(base, dep.path);
+        if not (tree / "jac.toml").is_file() {
+            raise ResolveError(
+                f"{dep.name}: path dependency {dep.path} has no jac.toml at {tree}"
+            );
+        }
+        source = "path+"
+            + os.path.relpath(str(tree), str(self.root_dir)).replace(os.sep, "/");
+        sha256 = "";
+    } else {
+        try {
+            co = checkout(dep.git, dep.rev);
+        } except GitError as e {
+            raise ResolveError(f"{dep.name}: {e}");
+        }
+        (_, sha256) = pack_checkout(co);
+        tree = co.tree;
+        source = f"git+{dep.git}#{co.commit}";
+    }
+    cfg = JacConfig.load(tree / "jac.toml");
+    if cfg.project.name != dep.name {
+        raise ResolveError(
+            f"{dep.name}: {dep.path or dep.git} is the package '{cfg.project.name}'"
+        );
+    }
+    try {
+        version = Version.parse(cfg.project.version);
+    } except SemverError as e {
+        raise ResolveError(f"{dep.name}: {e}");
+    }
+    pkg = LocalPackage(
+        name=dep.name,
+        version=version,
+        config=cfg,
+        tree=tree,
+        source=source,
+        sha256=sha256
+    );
+    self.locals[dep.name] = pkg;
+    for nested in cfg.dependencies.values() {
+        if nested.kind() != "registry" {
+            self.add_local(nested, tree);
+        } elif nested.registry {
+            self.origin_registry.setdefault(nested.name, nested.registry);
+        }
+    }
+    return pkg;
+}
+
+impl GraphSource.versions(name: str) -> list[Version] {
+    if name in self.locals {
+        return [self.locals[name].version];
+    }
+    try {
+        entries = self.registry_for(name).entries(name);
+    } except RegistryError as e {
+        raise ResolveError(str(e));
+    }
+    out: list[Version] = [];
+    for e in entries {
+        if e.yanked and self.locked.get(name) != e.version {
+            continue;
+        }
+        try {
+            out.append(Version.parse(e.version));
+        } except SemverError {
+            continue;
+        }
+    }
+    return out;
+}
+
+impl GraphSource._entry(name: str, version: Version) -> IndexEntry {
+    item = self.registry_for(name).find(name, str(version));
+    if item is None {
+        raise ResolveError(f"{name} {version} vanished from the index");
+    }
+    return item;
+}
+
+impl GraphSource.dependencies(name: str, version: Version) -> dict[str, Requirement] {
+    raw: dict[str, str] = {};
+    if name in self.locals {
+        for (dep_name, dep) in self.locals[name].config.dependencies.items() {
+            raw[dep_name] = dep.version;
+        }
+    } else {
+        item = self._entry(name, version);
+        for (dep_name, text) in item.deps.items() {
+            raw[dep_name] = text;
+            self.origin_registry.setdefault(
+                dep_name, self.origin_registry.get(name, "")
+            );
+        }
+    }
+    out: dict[str, Requirement] = {};
+    for (dep_name, text) in raw.items() {
+        try {
+            req = Requirement.parse(text);
+        } except SemverError as e {
+            raise ResolveError(f"{name} {version} -> {dep_name}: {e}");
+        }
+        self.note_requirement(dep_name, req);
+        out[dep_name] = req;
+    }
+    return out;
+}
+
+impl GraphSource.unavailable_reason(name: str, version: Version) -> str {
+    if name in self.locals {
+        wanted = self.locals[name].config.project.jac_version;
+        role = "lib";
+    } else {
+        item = self._entry(name, version);
+        wanted = item.jac_version;
+        role = item.role;
+    }
+    if role != "lib" {
+        return f"it is a {role} package, not a library";
+    }
+    if wanted and not jac_satisfies(str(self.jac_version), wanted) {
+        return f"it needs jac {wanted}, this is jac {self.jac_version}";
+    }
+    return "";
+}
+
+impl GraphSource.preferred(name: str) -> Version | None {
+    if self.unlock_all or name in self.unlock {
+        return None;
+    }
+    pinned = self.locked.get(name);
+    if not pinned {
+        return None;
+    }
+    try {
+        return Version.parse(pinned);
+    } except SemverError {
+        return None;
+    }
+}
+
+impl GraphSource.allows_prerelease(name: str) -> bool {
+    return name in self.prerelease;
+}
+
+impl GraphSource.locked_entry(name: str, version: Version) -> LockedPackage {
+    if name in self.locals {
+        pkg = self.locals[name];
+        return LockedPackage(
+            name=name,
+            version=str(version),
+            source=pkg.source,
+            sha256=pkg.sha256,
+            deps=sorted(pkg.config.dependencies.keys()),
+            pypi=manifest_pypi(pkg.config),
+            npm=manifest_npm(pkg.config)
+        );
+    }
+    item = self._entry(name, version);
+    return LockedPackage(
+        name=name,
+        version=str(version),
+        source=f"registry+{self.registry_for(name).base()}",
+        sha256=item.sha256,
+        deps=sorted(item.deps.keys()),
+        pypi=dict(item.pypi),
+        npm=dict(item.npm)
+    );
+}
+
+impl _mark_dev(
     packages: list[LockedPackage], runtime_roots: list[str]
 ) -> list[LockedPackage] {
     by_name = {p.name: p for p in packages};
@@ -273,7 +302,7 @@ def _mark_dev(
     return packages;
 }
 
-def resolve_graph(
+impl resolve_graph(
     config: JacConfig, previous: Lockfile | None = None, update: list[str] | None = None
 ) -> Lockfile {
     if config.project_root is None {

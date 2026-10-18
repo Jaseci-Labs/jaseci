@@ -21,11 +21,44 @@ glob _scope: ContextVar[ResolutionScope | None] = ContextVar(
      _resolved: dict[int, tuple[any, WeakValueDictionary[str, type]]] = {},
      _lock: threading.RLock = threading.RLock();
 
-def module_identity(facts: tuple[str, ...]) -> str {
+def module_identity(facts: tuple[str, ...]) -> str;
+
+def class_facts(cls: type) -> tuple[str, ...];
+
+def type_module(cls: type) -> str;
+
+def register_type(cls: type);
+
+@contextmanager
+def resolution_scope(application: PreparedApplication | None) -> Iterator[None];
+
+def _cached_type(
+    application: PreparedApplication, key: str, name: str
+) -> (type | None);
+
+def _forget_resolved(application_id: int);
+
+def _remember_type(application: PreparedApplication, key: str, cls: type);
+
+def resolve_type(module_name: str, name: str) -> type;
+
+def storage_type(cls: type) -> str;
+
+def schema_type(value: object) -> str;
+
+
+def resolution_required -> bool;
+
+
+def identity_namespace(module_name: str) -> str;
+
+def index_application(application: PreparedApplication);
+
+impl module_identity(facts: tuple[str, ...]) -> str {
     return 'jac:' + json.dumps(list(facts), separators=(',', ':'));
 }
 
-def class_facts(cls: type) -> tuple[str, ...] {
+impl class_facts(cls: type) -> tuple[str, ...] {
     module = sys.modules.get(cls.__module__);
     facts = cls.__dict__.get(
         '__jac_persistence__', getattr(module, '__jac_persistence__', ())
@@ -46,7 +79,7 @@ def class_facts(cls: type) -> tuple[str, ...] {
     return ();
 }
 
-def type_module(cls: type) -> str {
+impl type_module(cls: type) -> str {
     facts = class_facts(cls);
     if facts {
         return module_identity(facts);
@@ -59,7 +92,7 @@ def type_module(cls: type) -> str {
     return cls.__module__;
 }
 
-def register_type(cls: type) {
+impl register_type(cls: type) {
     facts = class_facts(cls);
     if facts {
         setattr(cls, '__jac_persistence__', facts);
@@ -70,8 +103,7 @@ def register_type(cls: type) {
     }
 }
 
-@contextmanager
-def resolution_scope(application: PreparedApplication | None) -> Iterator[None] {
+impl resolution_scope(application: PreparedApplication | None) -> Iterator[None] {
     token = _scope.set(ResolutionScope(application));
     try {
         yield ;
@@ -80,7 +112,7 @@ def resolution_scope(application: PreparedApplication | None) -> Iterator[None] 
     }
 }
 
-def _cached_type(
+impl _cached_type(
     application: PreparedApplication, key: str, name: str
 ) -> (type | None) {
     slot = _resolved.get(id(application));
@@ -95,13 +127,13 @@ def _cached_type(
     return None;
 }
 
-def _forget_resolved(application_id: int) {
+impl _forget_resolved(application_id: int) {
     with _lock {
         _resolved.pop(application_id, None);
     }
 }
 
-def _remember_type(application: PreparedApplication, key: str, cls: type) {
+impl _remember_type(application: PreparedApplication, key: str, cls: type) {
     with _lock {
         slot = _resolved.get(id(application));
         if slot is None or slot[0]() is not application {
@@ -113,7 +145,7 @@ def _remember_type(application: PreparedApplication, key: str, cls: type) {
     }
 }
 
-def resolve_type(module_name: str, name: str) -> type {
+impl resolve_type(module_name: str, name: str) -> type {
     key = module_name + '.' + name;
     scope = _scope.get();
     application = scope.application if scope is not None else None;
@@ -163,11 +195,11 @@ def resolve_type(module_name: str, name: str) -> type {
     );
 }
 
-def storage_type(cls: type) -> str {
+impl storage_type(cls: type) -> str {
     return type_module(cls) + '.' + cls.__name__ if class_facts(cls) else cls.__name__;
 }
 
-def schema_type(value: object) -> str {
+impl schema_type(value: object) -> str {
     import from typing { get_args, get_origin }
     origin = get_origin(value);
     if origin is not None {
@@ -183,12 +215,12 @@ def schema_type(value: object) -> str {
 }
 
 
-def resolution_required -> bool {
+impl resolution_required -> bool {
     return _scope.get() is not None;
 }
 
 
-def identity_namespace(module_name: str) -> str {
+impl identity_namespace(module_name: str) -> str {
     try {
         parts = json.loads(module_name[4:]);
     } except ValueError {
@@ -206,7 +238,7 @@ def identity_namespace(module_name: str) -> str {
     return str(parts[0]);
 }
 
-def index_application(application: PreparedApplication) {
+impl index_application(application: PreparedApplication) {
     modules: dict[str, str] = {};
     namespaces: set[str] = set();
     for (source, metadata) in application.manifests.items() {

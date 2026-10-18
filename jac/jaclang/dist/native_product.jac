@@ -9,6 +9,16 @@ def write_native_product(
     memory: str = '',
     emit_source: bool = True,
     program: JacProgram | None = None
+) -> dict[str, any];
+
+impl write_native_product(
+    module: Module,
+    directory: Path,
+    relative: Path,
+    shared: bool = True,
+    memory: str = '',
+    emit_source: bool = True,
+    program: JacProgram | None = None
 ) -> dict[str, any] {
     if program is None {
         program = JacProgram();

@@ -9,20 +9,60 @@ obj ScalarShape {
         is_float: bool = False,
         sized: bool = False;
 
-    def size_bytes -> int {
-        return max(1, self.width // 8);
-    }
-
-    def align -> int {
-        return self.size_bytes();
-    }
-
-    def is_int_kind -> bool {
-        return not self.is_float;
-    }
+    def size_bytes -> int;
+    def align -> int;
+    def is_int_kind -> bool;
 }
 
-def numeric_shapes -> list[ScalarShape] {
+def numeric_shapes -> list[ScalarShape];
+
+def shape_of(name: str) -> ScalarShape | None;
+
+def is_sized(name: str) -> bool;
+
+def sized_int_names -> list[str];
+
+def sized_float_names -> list[str];
+
+def sized_scalar_names -> list[str];
+
+def shape_range(shape: ScalarShape) -> tuple[int, int];
+
+def range_of(name: str) -> tuple[int, int];
+
+def shape_float_max(shape: ScalarShape) -> float;
+
+def float_max(name: str) -> float;
+
+def shape_literal_fits(shape: ScalarShape, value: int | float) -> bool;
+
+def literal_fits(name: str, value: int | float) -> bool;
+
+def shapes_widen_to(s: ScalarShape, d: ScalarShape) -> bool;
+
+def widens_to(src: str, dst: str) -> bool;
+
+def shapes_unify(a: ScalarShape, b: ScalarShape) -> ScalarShape | None;
+
+def unify(a: str, b: str) -> str | None;
+
+def shape_wrap(shape: ScalarShape, value: int) -> int;
+
+def wrap_value(name: str, value: int) -> int;
+
+impl ScalarShape.size_bytes -> int {
+    return max(1, self.width // 8);
+}
+
+impl ScalarShape.align -> int {
+    return self.size_bytes();
+}
+
+impl ScalarShape.is_int_kind -> bool {
+    return not self.is_float;
+}
+
+impl numeric_shapes -> list[ScalarShape] {
     return [
         ScalarShape(name="int", width=64, signed=True),
         ScalarShape(name="float", width=64, is_float=True),
@@ -40,7 +80,7 @@ def numeric_shapes -> list[ScalarShape] {
     ];
 }
 
-def shape_of(name: str) -> ScalarShape | None {
+impl shape_of(name: str) -> ScalarShape | None {
     for shape in numeric_shapes() {
         if shape.name == name {
             return shape;
@@ -49,12 +89,12 @@ def shape_of(name: str) -> ScalarShape | None {
     return None;
 }
 
-def is_sized(name: str) -> bool {
+impl is_sized(name: str) -> bool {
     shape = shape_of(name);
     return shape is not None and shape.sized;
 }
 
-def sized_int_names -> list[str] {
+impl sized_int_names -> list[str] {
     return [
         s.name
         for s in numeric_shapes()
@@ -62,7 +102,7 @@ def sized_int_names -> list[str] {
     ];
 }
 
-def sized_float_names -> list[str] {
+impl sized_float_names -> list[str] {
     return [
         s.name
         for s in numeric_shapes()
@@ -70,7 +110,7 @@ def sized_float_names -> list[str] {
     ];
 }
 
-def sized_scalar_names -> list[str] {
+impl sized_scalar_names -> list[str] {
     return [
         s.name
         for s in numeric_shapes()
@@ -78,7 +118,7 @@ def sized_scalar_names -> list[str] {
     ];
 }
 
-def shape_range(shape: ScalarShape) -> tuple[int, int] {
+impl shape_range(shape: ScalarShape) -> tuple[int, int] {
     if not shape.sized or shape.is_float {
         raise ValueError(f"{shape.name} is not a sized integer type");
     }
@@ -92,7 +132,7 @@ def shape_range(shape: ScalarShape) -> tuple[int, int] {
     return (0, top * 2 + 1);
 }
 
-def range_of(name: str) -> tuple[int, int] {
+impl range_of(name: str) -> tuple[int, int] {
     shape = shape_of(name);
     if shape is None {
         raise KeyError(name);
@@ -100,7 +140,7 @@ def range_of(name: str) -> tuple[int, int] {
     return shape_range(shape);
 }
 
-def shape_float_max(shape: ScalarShape) -> float {
+impl shape_float_max(shape: ScalarShape) -> float {
     if not shape.is_float {
         raise ValueError(f"{shape.name} is not a float type");
     }
@@ -110,7 +150,7 @@ def shape_float_max(shape: ScalarShape) -> float {
     return F64_MAX;
 }
 
-def float_max(name: str) -> float {
+impl float_max(name: str) -> float {
     shape = shape_of(name);
     if shape is None {
         raise KeyError(name);
@@ -118,7 +158,7 @@ def float_max(name: str) -> float {
     return shape_float_max(shape);
 }
 
-def shape_literal_fits(shape: ScalarShape, value: int | float) -> bool {
+impl shape_literal_fits(shape: ScalarShape, value: int | float) -> bool {
     if not shape.sized {
         return False;
     }
@@ -148,7 +188,7 @@ def shape_literal_fits(shape: ScalarShape, value: int | float) -> bool {
     return lo <= int(value) <= hi;
 }
 
-def literal_fits(name: str, value: int | float) -> bool {
+impl literal_fits(name: str, value: int | float) -> bool {
     shape = shape_of(name);
     if shape is None {
         return False;
@@ -156,7 +196,7 @@ def literal_fits(name: str, value: int | float) -> bool {
     return shape_literal_fits(shape, value);
 }
 
-def shapes_widen_to(s: ScalarShape, d: ScalarShape) -> bool {
+impl shapes_widen_to(s: ScalarShape, d: ScalarShape) -> bool {
     if s.name == d.name {
         return True;
     }
@@ -178,7 +218,7 @@ def shapes_widen_to(s: ScalarShape, d: ScalarShape) -> bool {
     return d.signed and d.width > s.width;
 }
 
-def widens_to(src: str, dst: str) -> bool {
+impl widens_to(src: str, dst: str) -> bool {
     if src == dst {
         return True;
     }
@@ -190,7 +230,7 @@ def widens_to(src: str, dst: str) -> bool {
     return shapes_widen_to(s, d);
 }
 
-def shapes_unify(a: ScalarShape, b: ScalarShape) -> ScalarShape | None {
+impl shapes_unify(a: ScalarShape, b: ScalarShape) -> ScalarShape | None {
     if shapes_widen_to(a, b) {
         return b;
     }
@@ -200,7 +240,7 @@ def shapes_unify(a: ScalarShape, b: ScalarShape) -> ScalarShape | None {
     return None;
 }
 
-def unify(a: str, b: str) -> str | None {
+impl unify(a: str, b: str) -> str | None {
     if widens_to(a, b) {
         return b;
     }
@@ -210,7 +250,7 @@ def unify(a: str, b: str) -> str | None {
     return None;
 }
 
-def shape_wrap(shape: ScalarShape, value: int) -> int {
+impl shape_wrap(shape: ScalarShape, value: int) -> int {
     mask = (1 << shape.width) - 1;
     out = int(value) & mask;
     if shape.signed and out >= (1 << (shape.width - 1)) {
@@ -219,7 +259,7 @@ def shape_wrap(shape: ScalarShape, value: int) -> int {
     return out;
 }
 
-def wrap_value(name: str, value: int) -> int {
+impl wrap_value(name: str, value: int) -> int {
     shape = shape_of(name);
     if shape is None {
         raise KeyError(name);

@@ -8846,9 +8846,7 @@ graph import compiler.frontend.parser {
     lexer --> compiler.tools.jac_auto_lint_pass.JacAutoLintPass._reparse_signature {
         tokenize_full
     }
-    parser --> compiler.tools.jac_auto_lint_pass.JacAutoLintPass._impl_header {
-        Parser
-    }
+    parser --> compiler.tools.jac_auto_lint_pass.JacAutoLintPass._impl_header { Parser }
     parser --> compiler.tools.jac_auto_lint_pass.JacAutoLintPass._reparse_signature {
         Parser
     }

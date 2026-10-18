@@ -3,7 +3,17 @@ import logging;
 glob logger: logging.Logger = logging.getLogger('jaclang.serve');
 
 
-def unavailable -> TransportResponse {
+def unavailable -> TransportResponse;
+
+
+def refused(result: dict[str, any], proof_status: int) -> TransportResponse;
+
+
+def account_label(user: dict[str, any]) -> str;
+
+def register_second_factor_endpoints(server: EndpointHost);
+
+impl unavailable -> TransportResponse {
     return fail(
         'SECOND_FACTOR_UNAVAILABLE',
         'Second factor verification is temporarily unavailable. Please try again.',
@@ -12,7 +22,7 @@ def unavailable -> TransportResponse {
 }
 
 
-def refused(result: dict[str, any], proof_status: int) -> TransportResponse {
+impl refused(result: dict[str, any], proof_status: int) -> TransportResponse {
     code = str(result.get('code') or 'INVALID_CODE');
     if code == 'RATE_LIMITED' {
         return throttled(int(result.get('retry_after') or 1), 'Sign-in');
@@ -37,7 +47,7 @@ def refused(result: dict[str, any], proof_status: int) -> TransportResponse {
 }
 
 
-def account_label(user: dict[str, any]) -> str {
+impl account_label(user: dict[str, any]) -> str {
     username = primary_username(user);
     if username {
         return username;
@@ -50,7 +60,7 @@ def account_label(user: dict[str, any]) -> str {
     return str(user.get('user_id') or '');
 }
 
-def register_second_factor_endpoints(server: EndpointHost) {
+impl register_second_factor_endpoints(server: EndpointHost) {
     users = server.identity();
 
     def enroll_handler(

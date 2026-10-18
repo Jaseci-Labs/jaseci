@@ -31,79 +31,89 @@ obj:pub socket {
         proto: int = 0,
         _fd: int = -1;
 
-    def postinit {
-        self._fd = sock_open(self.family, self._socktype, self.proto);
-    }
+    def postinit;
+    def fileno -> int;
+    def _connect_sa(sa: bytes) -> bool;
+    def connect(address: tuple[(str, int)]) -> None;
+    def send(data: bytes) -> int;
+    def sendall(data: bytes);
+    def recv(bufsize: int) -> bytes;
+    def close;
+}
 
-    def fileno -> int {
-        return self._fd;
-    }
 
-    def _connect_sa(sa: bytes) -> bool {
-        return sock_connect(self._fd, sa) == 0;
-    }
+def:pub create_connection(address: tuple[(str, int)]) -> socket;
 
-    def connect(address: tuple[(str, int)]) -> None {
-        if self._fd < 0 {
-            raise OSError("socket() failed: " + errno_message());
-        }
-        host = address[0];
-        port = address[1];
-        service = str(port);
-        (addrs, rc) = resolve_all(host, service);
-        if len(addrs) == 0 {
-            raise OSError(
-                "getaddrinfo failed for " + host + ":" + service + ": " + gai_str(rc)
-            );
-        }
-        for sa in addrs {
-            fam = address_family(sa);
-            if fam == self.family and self._connect_sa(sa) {
-                return;
-            }
-        }
+impl socket.postinit {
+    self._fd = sock_open(self.family, self._socktype, self.proto);
+}
+
+impl socket.fileno -> int {
+    return self._fd;
+}
+
+impl socket._connect_sa(sa: bytes) -> bool {
+    return sock_connect(self._fd, sa) == 0;
+}
+
+impl socket.connect(address: tuple[(str, int)]) -> None {
+    if self._fd < 0 {
+        raise OSError("socket() failed: " + errno_message());
+    }
+    host = address[0];
+    port = address[1];
+    service = str(port);
+    (addrs, rc) = resolve_all(host, service);
+    if len(addrs) == 0 {
         raise OSError(
-            "connect to " + host + ":" + service + " failed: " + errno_message()
+            "getaddrinfo failed for " + host + ":" + service + ": " + gai_str(rc)
         );
     }
+    for sa in addrs {
+        fam = address_family(sa);
+        if fam == self.family and self._connect_sa(sa) {
+            return;
+        }
+    }
+    raise OSError("connect to " + host + ":" + service + " failed: " + errno_message());
+}
 
-    def send(data: bytes) -> int {
-        sent = sock_send(self._fd, data, 0);
+impl socket.send(data: bytes) -> int {
+    sent = sock_send(self._fd, data, 0);
+    if sent < 0 {
+        raise OSError("send failed: " + errno_message());
+    }
+    return sent;
+}
+
+impl socket.sendall(data: bytes) {
+    total = len(data);
+    off = 0;
+    while off < total {
+        sent = sock_send(self._fd, data, off);
         if sent < 0 {
             raise OSError("send failed: " + errno_message());
         }
-        return sent;
-    }
-
-    def sendall(data: bytes) {
-        total = len(data);
-        off = 0;
-        while off < total {
-            sent = sock_send(self._fd, data, off);
-            if sent < 0 {
-                raise OSError("send failed: " + errno_message());
-            }
-            if sent == 0 {
-                raise OSError("send returned 0 (peer closed the connection)");
-            }
-            off += sent;
+        if sent == 0 {
+            raise OSError("send returned 0 (peer closed the connection)");
         }
+        off += sent;
     }
+}
 
-    def recv(bufsize: int) -> bytes {
-        return sock_recv(self._fd, bufsize);
-    }
+impl socket.recv(bufsize: int) -> bytes {
+    return sock_recv(self._fd, bufsize);
+}
 
-    def close {
-        if self._fd >= 0 {
-            sock_close(self._fd);
-            self._fd = -1;
-        }
+impl socket.close {
+    if self._fd >= 0 {
+        sock_close(self._fd);
+        self._fd = -1;
     }
 }
 
 
-def:pub create_connection(address: tuple[(str, int)]) -> socket {
+impl create_connection(address: tuple[(str, int)]) -> socket {
     host = address[0];
     port = address[1];
     service = str(port);

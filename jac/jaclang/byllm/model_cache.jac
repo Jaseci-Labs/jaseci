@@ -6,7 +6,35 @@ import from pathlib { Path }
 
 glob _logger: logging.Logger = logging.getLogger("byllm.model_cache");
 
-def _is_interactive -> bool {
+def _is_interactive -> bool;
+
+def _emit(msg: str);
+
+def get_cache_dir -> Path;
+
+def alias_dir(alias: str) -> Path;
+
+def gguf_path(alias: str, spec: dict[str, any]) -> Path;
+
+def _consent_marker(alias: str) -> Path;
+
+def is_downloaded(alias: str, spec: dict[str, any]) -> bool;
+
+def _fmt_size(mb: int) -> str;
+
+def _resolve_consent(alias: str, spec: dict[str, any], auto_download: bool) -> bool;
+
+def _download(alias: str, spec: dict[str, any]) -> Path;
+
+def ensure_model(alias: str, spec: dict[str, any], auto_download: bool = False) -> str;
+
+def force_pull(alias: str, spec: dict[str, any]) -> str;
+
+def remove_alias(alias: str) -> bool;
+
+def list_downloaded -> list[dict[str, any]];
+
+impl _is_interactive -> bool {
     try {
         return os.isatty(0) and os.isatty(2);
     } except Exception {
@@ -14,40 +42,40 @@ def _is_interactive -> bool {
     }
 }
 
-def _emit(msg: str) {
+impl _emit(msg: str) {
     console.print(msg, end="");
 }
 
-def get_cache_dir -> Path {
+impl get_cache_dir -> Path {
     return bucket("models").ensure();
 }
 
-def alias_dir(alias: str) -> Path {
+impl alias_dir(alias: str) -> Path {
     return get_cache_dir() / alias;
 }
 
-def gguf_path(alias: str, spec: dict[str, any]) -> Path {
+impl gguf_path(alias: str, spec: dict[str, any]) -> Path {
     fname: str = str(spec["file"]);
     return alias_dir(alias) / fname;
 }
 
-def _consent_marker(alias: str) -> Path {
+impl _consent_marker(alias: str) -> Path {
     return alias_dir(alias) / ".jac_download_consent";
 }
 
-def is_downloaded(alias: str, spec: dict[str, any]) -> bool {
+impl is_downloaded(alias: str, spec: dict[str, any]) -> bool {
     p = gguf_path(alias, spec);
     return p.exists() and p.stat().st_size > 0;
 }
 
-def _fmt_size(mb: int) -> str {
+impl _fmt_size(mb: int) -> str {
     if mb >= 1024 {
         return f"{mb / 1024:.1f} GB";
     }
     return f"{mb} MB";
 }
 
-def _resolve_consent(alias: str, spec: dict[str, any], auto_download: bool) -> bool {
+impl _resolve_consent(alias: str, spec: dict[str, any], auto_download: bool) -> bool {
     env = os.environ.get("BYLLM_AUTO_DOWNLOAD");
     if env is not None {
         if env.strip().lower() in ("1", "true", "yes", "y") {
@@ -91,7 +119,7 @@ def _resolve_consent(alias: str, spec: dict[str, any], auto_download: bool) -> b
     return False;
 }
 
-def _download(alias: str, spec: dict[str, any]) -> Path {
+impl _download(alias: str, spec: dict[str, any]) -> Path {
     try {
         import from huggingface_hub { hf_hub_download }
     } except ImportError {
@@ -114,7 +142,9 @@ def _download(alias: str, spec: dict[str, any]) -> Path {
     return Path(path);
 }
 
-def ensure_model(alias: str, spec: dict[str, any], auto_download: bool = False) -> str {
+impl ensure_model(
+    alias: str, spec: dict[str, any], auto_download: bool = False
+) -> str {
     if is_downloaded(alias, spec) {
         return str(gguf_path(alias, spec));
     }
@@ -134,11 +164,11 @@ def ensure_model(alias: str, spec: dict[str, any], auto_download: bool = False) 
     return str(gguf_path(alias, spec));
 }
 
-def force_pull(alias: str, spec: dict[str, any]) -> str {
+impl force_pull(alias: str, spec: dict[str, any]) -> str {
     return ensure_model(alias, spec, auto_download=True);
 }
 
-def remove_alias(alias: str) -> bool {
+impl remove_alias(alias: str) -> bool {
     import shutil;
     d = alias_dir(alias);
     if not d.exists() {
@@ -148,7 +178,7 @@ def remove_alias(alias: str) -> bool {
     return True;
 }
 
-def list_downloaded -> list[dict[str, any]] {
+impl list_downloaded -> list[dict[str, any]] {
     cache_root = get_cache_dir();
     if not cache_root.exists() {
         return [];

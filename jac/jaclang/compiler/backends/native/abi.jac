@@ -1,4 +1,34 @@
-def struct_layouts(module: ir.Module) -> dict[str, tuple[list[int], int]] {
+def struct_layouts(module: ir.Module) -> dict[str, tuple[list[int], int]];
+
+def scalar_layout(
+    llt: (ir.Type | None)
+) -> tuple[int, int, list[tuple[int, bool, int]]];
+
+def classify_struct_sysv(
+    size: int, align: int, scalars: list[tuple[int, bool, int]]
+) -> dict[str, any];
+
+def classify_struct_aapcs(
+    size: int, align: int, scalars: list[tuple[int, bool, int]]
+) -> dict[str, any];
+
+def classify_struct_win64(
+    size: int, align: int, scalars: list[tuple[int, bool, int]]
+) -> dict[str, any];
+
+def classify_struct(
+    size: int, align: int, scalars: list[tuple[int, bool, int]], triple: str
+) -> dict[str, any];
+
+def classify_foreign_fn(
+    structs: dict[str, list[tuple[str, str | None]]],
+    params: list[tuple[(str | None), (str | None)]],
+    ret_tname: (str | None),
+    triple: str,
+    force: bool = False
+) -> (dict[str, any] | None);
+
+impl struct_layouts(module: ir.Module) -> dict[str, tuple[list[int], int]] {
     """Read identified struct offsets and sizes from LLVM's target ABI. LLVM
     is the host's: the probe module and each struct's member count go to it,
     and the offsets and sizes come back.""";
@@ -41,7 +71,7 @@ def struct_layouts(module: ir.Module) -> dict[str, tuple[list[int], int]] {
     return layouts;
 }
 
-def scalar_layout(
+impl scalar_layout(
     llt: (ir.Type | None)
 ) -> tuple[int, int, list[tuple[int, bool, int]]] {
     if isinstance(llt, ir.DoubleType) {
@@ -65,7 +95,7 @@ def scalar_layout(
     return (8, 8, [(0, False, 64)]);
 }
 
-def classify_struct_sysv(
+impl classify_struct_sysv(
     size: int, align: int, scalars: list[tuple[int, bool, int]]
 ) -> dict[str, any] {
     if size == 0 {
@@ -155,7 +185,7 @@ def classify_struct_sysv(
     };
 }
 
-def classify_struct_aapcs(
+impl classify_struct_aapcs(
     size: int, align: int, scalars: list[tuple[int, bool, int]]
 ) -> dict[str, any] {
     if size == 0 {
@@ -214,7 +244,7 @@ def classify_struct_aapcs(
     };
 }
 
-def classify_struct_win64(
+impl classify_struct_win64(
     size: int, align: int, scalars: list[tuple[int, bool, int]]
 ) -> dict[str, any] {
     """The Microsoft x64 convention: a record of exactly 1, 2, 4 or 8 bytes
@@ -241,7 +271,7 @@ def classify_struct_win64(
     };
 }
 
-def classify_struct(
+impl classify_struct(
     size: int, align: int, scalars: list[tuple[int, bool, int]], triple: str
 ) -> dict[str, any] {
     if "aarch64" in triple or "arm64" in triple {
@@ -253,7 +283,7 @@ def classify_struct(
     return classify_struct_sysv(size, align, scalars);
 }
 
-def classify_foreign_fn(
+impl classify_foreign_fn(
     structs: dict[str, list[tuple[str, str | None]]],
     params: list[tuple[(str | None), (str | None)]],
     ret_tname: (str | None),

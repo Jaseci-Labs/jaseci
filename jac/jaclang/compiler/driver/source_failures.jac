@@ -6,7 +6,27 @@ class CompilerSourceError(RuntimeError) {}
 
 glob _compiler_source_failures: dict[str, str] = {};
 
-def note_compiler_source_failure(path: str, details: str) {
+def note_compiler_source_failure(path: str, details: str);
+
+def compiler_source_failure_details(path: str) -> str;
+
+def module_scoped_failure_details(path: str, program: JacProgram) -> str;
+
+def bootstrap_tier_failure_details(path: str) -> str;
+
+def _compiler_source_root -> str;
+
+def _jac_source_failure_path(err: BaseException) -> (str | None);
+
+def fail_loud_on_compiler_source(err: ImportError) -> None;
+
+def compiler_source_failure_origin(err: BaseException) -> (str | None);
+
+def module_import_in_flight(file_path: str) -> bool;
+
+def import_error_re_enters(err: BaseException, file_path: str) -> (str | None);
+
+impl note_compiler_source_failure(path: str, details: str) {
     key = os.path.realpath(path);
     if details {
         _compiler_source_failures[key] = details;
@@ -15,15 +35,15 @@ def note_compiler_source_failure(path: str, details: str) {
     }
 }
 
-def compiler_source_failure_details(path: str) -> str {
+impl compiler_source_failure_details(path: str) -> str {
     return _compiler_source_failures.get(os.path.realpath(path), '');
 }
 
-def module_scoped_failure_details(path: str, program: JacProgram) -> str {
+impl module_scoped_failure_details(path: str, program: JacProgram) -> str {
     return '\n'.join(a.pretty_print() for a in program.diags.owned_errors(path));
 }
 
-def bootstrap_tier_failure_details(path: str) -> str {
+impl bootstrap_tier_failure_details(path: str) -> str {
     import from jaclang.compiler.driver.pipeline { tier_reason }
     import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
     reason = tier_reason(CompilationProduct.IR);
@@ -40,12 +60,12 @@ def bootstrap_tier_failure_details(path: str) -> str {
     );
 }
 
-def _compiler_source_root -> str {
+impl _compiler_source_root -> str {
     import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
     return os.path.realpath(jaclang_pkg_root());
 }
 
-def _jac_source_failure_path(err: BaseException) -> (str | None) {
+impl _jac_source_failure_path(err: BaseException) -> (str | None) {
     cursor: any = err;
     for _ in range(8) {
         if cursor is None {
@@ -60,7 +80,7 @@ def _jac_source_failure_path(err: BaseException) -> (str | None) {
     return None;
 }
 
-def fail_loud_on_compiler_source(err: ImportError) -> None {
+impl fail_loud_on_compiler_source(err: ImportError) -> None {
     path = _jac_source_failure_path(err);
     if path is None {
         return;
@@ -75,7 +95,7 @@ def fail_loud_on_compiler_source(err: ImportError) -> None {
     ) from err;
 }
 
-def compiler_source_failure_origin(err: BaseException) -> (str | None) {
+impl compiler_source_failure_origin(err: BaseException) -> (str | None) {
     `root = _compiler_source_root() + os.sep;
     cursor: any = err;
     for _ in range(8) {
@@ -100,7 +120,7 @@ def compiler_source_failure_origin(err: BaseException) -> (str | None) {
     return None;
 }
 
-def module_import_in_flight(file_path: str) -> bool {
+impl module_import_in_flight(file_path: str) -> bool {
     for mod in list(sys.modules.values()) {
         spec = mod?.__spec__;
         if spec is None {
@@ -113,7 +133,7 @@ def module_import_in_flight(file_path: str) -> bool {
     return False;
 }
 
-def import_error_re_enters(err: BaseException, file_path: str) -> (str | None) {
+impl import_error_re_enters(err: BaseException, file_path: str) -> (str | None) {
     if not isinstance(err, ImportError) or not module_import_in_flight(file_path) {
         return None;
     }

@@ -3,7 +3,9 @@ import from pathlib { Path }
 import type from jaclang.compiler.driver.program { JacProgram }
 import type from jaclang.compiler.frontend.unitree { Module }
 
-def python_source(path: str, program: JacProgram) -> tuple[str, Module | None] {
+def python_source(path: str, program: JacProgram) -> tuple[str, Module | None];
+
+impl python_source(path: str, program: JacProgram) -> tuple[str, Module | None] {
     if Path(path).suffix == '.py' {
         return (Path(path).read_text(encoding='utf-8'), None);
     }

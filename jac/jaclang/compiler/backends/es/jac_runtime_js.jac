@@ -1607,7 +1607,27 @@ glob JAC_RUNTIME_JS_OBJECT: str = r"""{
      JAC_PRELUDE_BASENAME: str = "jac_prelude.js",
      JAC_RUNTIME_GLOBAL: str = "__jacRuntime";
 
-def _build_exc_runtime_js -> str {
+def _build_exc_runtime_js -> str;
+
+def _build_types_runtime_js -> str;
+
+def _build_fw_runtime_js -> str;
+
+def build_jac_runtime_js -> str;
+
+def build_jac_prelude_module -> str;
+
+def write_jac_prelude_file(dir_path: str) -> str;
+
+def stage_jac_prelude_package(dir_path: str) -> str;
+
+def point_jac_prelude_at(js: str, target: str = "") -> str;
+
+def build_osp_core_js -> str;
+
+def build_osp_driver_js -> str;
+
+impl _build_exc_runtime_js -> str {
     lines: list[str] = ["(() => {"];
     exports: list[str] = [];
     for (name, parent) in JAC_TYPE_REGISTRY.exception_entries() {
@@ -1645,7 +1665,7 @@ def _build_exc_runtime_js -> str {
     return "\n".join(lines);
 }
 
-def _build_types_runtime_js -> str {
+impl _build_types_runtime_js -> str {
     emitter: PrimitiveEmitter[(str, ESEmitCtx)] = ESBuiltinEmitter();
     ctx = ESEmitCtx(unparser=JSCodeGenerator());
     entries: list[str] = [];
@@ -1745,7 +1765,7 @@ def _build_types_runtime_js -> str {
     );
 }
 
-def _build_fw_runtime_js -> str {
+impl _build_fw_runtime_js -> str {
     rows: list[str] = [];
     for shape in numeric_shapes() {
         if not shape.sized {
@@ -1919,7 +1939,7 @@ def _build_fw_runtime_js -> str {
     );
 }
 
-def build_jac_runtime_js -> str {
+impl build_jac_runtime_js -> str {
     return JAC_RUNTIME_JS_OBJECT.replace(
         "__JAC_EXC_RUNTIME__", _build_exc_runtime_js()
     ).replace(
@@ -1929,7 +1949,7 @@ def build_jac_runtime_js -> str {
     );
 }
 
-def build_jac_prelude_module -> str {
+impl build_jac_prelude_module -> str {
     return (
         "const _jac = (globalThis."
         + JAC_RUNTIME_GLOBAL
@@ -1939,7 +1959,7 @@ def build_jac_prelude_module -> str {
     );
 }
 
-def write_jac_prelude_file(dir_path: str) -> str {
+impl write_jac_prelude_file(dir_path: str) -> str {
     import os;
     os.makedirs(dir_path, exist_ok=True);
     out = os.path.join(dir_path, JAC_PRELUDE_BASENAME);
@@ -1949,7 +1969,7 @@ def write_jac_prelude_file(dir_path: str) -> str {
     return out;
 }
 
-def stage_jac_prelude_package(dir_path: str) -> str {
+impl stage_jac_prelude_package(dir_path: str) -> str {
     import os;
     import json;
     pkg = os.path.join(dir_path, "node_modules", "@jac", "prelude");
@@ -1968,7 +1988,7 @@ def stage_jac_prelude_package(dir_path: str) -> str {
     return pkg;
 }
 
-def point_jac_prelude_at(js: str, target: str = "") -> str {
+impl point_jac_prelude_at(js: str, target: str = "") -> str {
     dest = target or ("./" + JAC_PRELUDE_BASENAME);
     for quote in ['"', "'"] {
         js = js.replace(quote + JAC_PRELUDE_MODULE + quote, quote + dest + quote);
@@ -1976,11 +1996,11 @@ def point_jac_prelude_at(js: str, target: str = "") -> str {
     return js;
 }
 
-def build_osp_core_js -> str {
+impl build_osp_core_js -> str {
     return active_host().client_osp_core_js();
 }
 
-def build_osp_driver_js -> str {
+impl build_osp_driver_js -> str {
     return r"""
 if (!globalThis.__jacOspCore) {
   globalThis.__jacOspCore = {

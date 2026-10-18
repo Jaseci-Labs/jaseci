@@ -1,7 +1,20 @@
 import os;
 
 
-def service_apps(cfg: any, served: any) -> list[AppConfig] {
+def service_apps(cfg: any, served: any) -> list[AppConfig];
+
+def gateway_colocates(cfg: any) -> bool;
+
+def colocate_services(
+    cfg: any, served: any, base: str, application: PreparedApplication | None = None
+) -> None;
+
+
+def assemble_served_program(
+    cfg: any, served: any, base: str, application: PreparedApplication | None = None
+);
+
+impl service_apps(cfg: any, served: any) -> list[AppConfig] {
     return [
         a
         for a in cfg.serving_apps()
@@ -9,13 +22,13 @@ def service_apps(cfg: any, served: any) -> list[AppConfig] {
     ];
 }
 
-def gateway_colocates(cfg: any) -> bool {
+impl gateway_colocates(cfg: any) -> bool {
     scale_cfg: dict[str, any] = cfg.get_plugin_config("scale") or {};
     gateway = scale_cfg.get("gateway", {}) if isinstance(scale_cfg, dict) else {};
     return not (isinstance(gateway, dict) and gateway.get("colocate") is False);
 }
 
-def colocate_services(
+impl colocate_services(
     cfg: any, served: any, base: str, application: PreparedApplication | None = None
 ) -> None {
     if cfg is None or served is None or os.environ.get("JAC_SV_SIBLING") == "1" {
@@ -58,7 +71,7 @@ def colocate_services(
 }
 
 
-def assemble_served_program(
+impl assemble_served_program(
     cfg: any, served: any, base: str, application: PreparedApplication | None = None
 ) {
     colocate_services(cfg, served, base, application);

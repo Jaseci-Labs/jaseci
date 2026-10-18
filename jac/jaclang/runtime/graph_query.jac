@@ -76,6 +76,10 @@ obj GraphQuery {
 
 def filter_query_nodes(
     nodes: list[any], nd: (type | tuple[type, ...] | None), preds: list[QPred]
+) -> list[any];
+
+impl filter_query_nodes(
+    nodes: list[any], nd: (type | tuple[type, ...] | None), preds: list[QPred]
 ) -> list[any] {
     if nd is not None {
         node_types = nd if isinstance(nd, tuple) else (nd, );

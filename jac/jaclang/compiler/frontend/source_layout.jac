@@ -12,47 +12,70 @@ obj LayoutTables {
         retired_native: list[str] = [],
         retired_client: list[str] = [];
 
-    def shared_folder(suffix: str) -> str {
-        return suffix[1:-len(self.jac_suffix)];
-    }
+    def shared_folder(suffix: str) -> str;
+    def is_annex(path: str) -> bool;
+    def base_stem(path: str) -> str;
+}
 
-    def is_annex(path: str) -> bool {
-        for suffix in self.annex_folders {
-            if path.endswith(suffix) {
-                return True;
-            }
-        }
-        return False;
-    }
+def list_directory(directory: str) -> (list[str] | None);
 
-    def base_stem(path: str) -> str {
-        name = os.path.basename(path);
-        if not name.endswith(self.jac_suffix) {
-            for suffix in self.foreign_suffixes {
-                if name.endswith(suffix) {
-                    return name[:-len(suffix)];
-                }
-            }
-            return name;
+def style_annex_of(source_path: str) -> (str | None);
+
+def annex_files_of(
+    tables: LayoutTables,
+    source_path: str,
+    suffix: str,
+    listing: Callable[[str], (list[str] | None)]
+) -> list[str];
+
+def base_file_of(tables: LayoutTables, annex_path: str) -> (str | None);
+
+def is_annex_path_of(tables: LayoutTables, candidate: str, base: str) -> bool;
+
+def package_init_of(tables: LayoutTables, directory: str) -> (str | None);
+
+def path_facts_of(tables: LayoutTables, path: str) -> PathFacts;
+
+impl LayoutTables.shared_folder(suffix: str) -> str {
+    return suffix[1:-len(self.jac_suffix)];
+}
+
+impl LayoutTables.is_annex(path: str) -> bool {
+    for suffix in self.annex_folders {
+        if path.endswith(suffix) {
+            return True;
         }
-        name = name[:-len(self.jac_suffix)];
-        stems = list(self.annex_folders.values());
-        changed = True;
-        while changed {
-            changed = False;
-            for stem in stems {
-                if name.endswith(stem) {
-                    name = name[:-len(stem)];
-                    changed = True;
-                    break;
-                }
+    }
+    return False;
+}
+
+impl LayoutTables.base_stem(path: str) -> str {
+    name = os.path.basename(path);
+    if not name.endswith(self.jac_suffix) {
+        for suffix in self.foreign_suffixes {
+            if name.endswith(suffix) {
+                return name[:-len(suffix)];
             }
         }
         return name;
     }
+    name = name[:-len(self.jac_suffix)];
+    stems = list(self.annex_folders.values());
+    changed = True;
+    while changed {
+        changed = False;
+        for stem in stems {
+            if name.endswith(stem) {
+                name = name[:-len(stem)];
+                changed = True;
+                break;
+            }
+        }
+    }
+    return name;
 }
 
-def list_directory(directory: str) -> (list[str] | None) {
+impl list_directory(directory: str) -> (list[str] | None) {
     if not os.path.isdir(directory) {
         return None;
     }
@@ -63,7 +86,7 @@ def list_directory(directory: str) -> (list[str] | None) {
     }
 }
 
-def style_annex_of(source_path: str) -> (str | None) {
+impl style_annex_of(source_path: str) -> (str | None) {
     src = os.path.realpath(source_path);
     if not src.endswith(".jac") {
         return None;
@@ -72,7 +95,7 @@ def style_annex_of(source_path: str) -> (str | None) {
     return candidate if os.path.isfile(candidate) else None;
 }
 
-def annex_files_of(
+impl annex_files_of(
     tables: LayoutTables,
     source_path: str,
     suffix: str,
@@ -109,7 +132,7 @@ def annex_files_of(
     return results;
 }
 
-def base_file_of(tables: LayoutTables, annex_path: str) -> (str | None) {
+impl base_file_of(tables: LayoutTables, annex_path: str) -> (str | None) {
     src = os.path.realpath(annex_path);
     name = os.path.basename(src);
     folder = os.path.dirname(src);
@@ -140,7 +163,7 @@ def base_file_of(tables: LayoutTables, annex_path: str) -> (str | None) {
     return None;
 }
 
-def is_annex_path_of(tables: LayoutTables, candidate: str, base: str) -> bool {
+impl is_annex_path_of(tables: LayoutTables, candidate: str, base: str) -> bool {
     stem = base[:-len(tables.jac_suffix)] if base.endswith(tables.jac_suffix) else base;
     if candidate.startswith(stem) {
         rest = candidate[len(stem):];
@@ -166,7 +189,7 @@ def is_annex_path_of(tables: LayoutTables, candidate: str, base: str) -> bool {
     return False;
 }
 
-def package_init_of(tables: LayoutTables, directory: str) -> (str | None) {
+impl package_init_of(tables: LayoutTables, directory: str) -> (str | None) {
     for name in tables.init_files {
         candidate = os.path.join(directory, name);
         if os.path.exists(candidate) {
@@ -176,7 +199,7 @@ def package_init_of(tables: LayoutTables, directory: str) -> (str | None) {
     return None;
 }
 
-def path_facts_of(tables: LayoutTables, path: str) -> PathFacts {
+impl path_facts_of(tables: LayoutTables, path: str) -> PathFacts {
     marker = "";
     for suffix in tables.retired_native {
         if path.endswith(suffix) {

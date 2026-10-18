@@ -1,61 +1,8 @@
-def scalar_llvm_type(`entry: JacTypeEntry) -> ir.Type {
-    if `entry.is_float {
-        return ir.FloatType() if `entry.width == 32 else ir.DoubleType();
-    }
-    return ir.IntType(`entry.width);
-}
+def scalar_llvm_type(`entry: JacTypeEntry) -> ir.Type;
 
-def _source_param_names(func: ir.Function) -> list[str] {
-    names: list[str] = [];
-    for arg in func.args {
-        (stem, _, suffix) = arg.name.rpartition(".");
-        names.append(stem if stem and suffix.isdigit() else arg.name);
-    }
-    return names;
-}
+def _source_param_names(func: ir.Function) -> list[str];
 
-def _native_emitter_of(suffix: str) -> (object | None) {
-    if suffix == "IntEmitter" {
-        return _pn.NativeIntEmitter();
-    }
-    if suffix == "FloatEmitter" {
-        return _pn.NativeFloatEmitter();
-    }
-    if suffix == "BoolEmitter" {
-        return _pn.NativeBoolEmitter();
-    }
-    if suffix == "ComplexEmitter" {
-        return _pn.NativeComplexEmitter();
-    }
-    if suffix == "StrEmitter" {
-        return _pn.NativeStrEmitter();
-    }
-    if suffix == "BytesEmitter" {
-        return _pn.NativeBytesEmitter();
-    }
-    if suffix == "ListEmitter" {
-        return _pn.NativeListEmitter();
-    }
-    if suffix == "DictEmitter" {
-        return _pn.NativeDictEmitter();
-    }
-    if suffix == "SetEmitter" {
-        return _pn.NativeSetEmitter();
-    }
-    if suffix == "FrozensetEmitter" {
-        return _pn.NativeFrozensetEmitter();
-    }
-    if suffix == "TupleEmitter" {
-        return _pn.NativeTupleEmitter();
-    }
-    if suffix == "RangeEmitter" {
-        return _pn.NativeRangeEmitter();
-    }
-    if suffix == "BuiltinEmitter" {
-        return _pn.NativeBuiltinEmitter();
-    }
-    return None;
-}
+def _native_emitter_of(suffix: str) -> (object | None);
 
 impl NaIRGenPass.postinit -> None {
     import os as _ni_os;
@@ -2534,4 +2481,63 @@ impl NaIRGenPass._publish_lowering_failure(here: uni.Module) -> None {
         "Native module lowering failed:\n"
             + "\n".join(alert.pretty_print() for alert in self.ctx.errors_had)
     );
+}
+
+impl scalar_llvm_type(`entry: JacTypeEntry) -> ir.Type {
+    if `entry.is_float {
+        return ir.FloatType() if `entry.width == 32 else ir.DoubleType();
+    }
+    return ir.IntType(`entry.width);
+}
+
+impl _source_param_names(func: ir.Function) -> list[str] {
+    names: list[str] = [];
+    for arg in func.args {
+        (stem, _, suffix) = arg.name.rpartition(".");
+        names.append(stem if stem and suffix.isdigit() else arg.name);
+    }
+    return names;
+}
+
+impl _native_emitter_of(suffix: str) -> (object | None) {
+    if suffix == "IntEmitter" {
+        return _pn.NativeIntEmitter();
+    }
+    if suffix == "FloatEmitter" {
+        return _pn.NativeFloatEmitter();
+    }
+    if suffix == "BoolEmitter" {
+        return _pn.NativeBoolEmitter();
+    }
+    if suffix == "ComplexEmitter" {
+        return _pn.NativeComplexEmitter();
+    }
+    if suffix == "StrEmitter" {
+        return _pn.NativeStrEmitter();
+    }
+    if suffix == "BytesEmitter" {
+        return _pn.NativeBytesEmitter();
+    }
+    if suffix == "ListEmitter" {
+        return _pn.NativeListEmitter();
+    }
+    if suffix == "DictEmitter" {
+        return _pn.NativeDictEmitter();
+    }
+    if suffix == "SetEmitter" {
+        return _pn.NativeSetEmitter();
+    }
+    if suffix == "FrozensetEmitter" {
+        return _pn.NativeFrozensetEmitter();
+    }
+    if suffix == "TupleEmitter" {
+        return _pn.NativeTupleEmitter();
+    }
+    if suffix == "RangeEmitter" {
+        return _pn.NativeRangeEmitter();
+    }
+    if suffix == "BuiltinEmitter" {
+        return _pn.NativeBuiltinEmitter();
+    }
+    return None;
 }

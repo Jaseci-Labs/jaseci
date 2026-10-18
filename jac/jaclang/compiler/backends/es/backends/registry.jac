@@ -1,6 +1,12 @@
 glob _BACKENDS: dict[str, FrameworkBackend] = {};
 
-def resolve_framework_backend(framework: str) -> FrameworkBackend {
+def resolve_framework_backend(framework: str) -> FrameworkBackend;
+
+def active_framework -> str;
+
+def resolve_active_backend -> FrameworkBackend;
+
+impl resolve_framework_backend(framework: str) -> FrameworkBackend {
     backend = _BACKENDS.get(framework);
     if backend is not None {
         return backend;
@@ -26,11 +32,11 @@ def resolve_framework_backend(framework: str) -> FrameworkBackend {
     raise ValueError(f"[{E5081.code}] {E5081.format_message(framework=framework)}");
 }
 
-def active_framework -> str {
+impl active_framework -> str {
     defaults = active_host().project_defaults();
     return defaults.client_framework if defaults is not None else "react";
 }
 
-def resolve_active_backend -> FrameworkBackend {
+impl resolve_active_backend -> FrameworkBackend {
     return resolve_framework_backend(active_framework());
 }

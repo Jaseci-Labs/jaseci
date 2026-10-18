@@ -9,6 +9,16 @@ def run_test(
     maxfail: (int | None) = None,
     directory: (str | None) = None,
     verbose: bool = False
+) -> int;
+
+impl run_test(
+    filepath: str,
+    func_name: (str | None) = None,
+    filter: (str | None) = None,
+    xit: bool = False,
+    maxfail: (int | None) = None,
+    directory: (str | None) = None,
+    verbose: bool = False
 ) -> int {
     test_file = False;
     ret_count = 0;

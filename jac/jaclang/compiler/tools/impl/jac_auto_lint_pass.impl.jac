@@ -2765,7 +2765,8 @@ impl JacAutoLintPass._collect_inline_abilities(
     for item in body {
         if isinstance(item, uni.Ability) {
             name = item.name_ref.value if isinstance(item.name_ref, uni.Name) else "";
-            if taken.get(aliases.get(name, name), 0) == 1 and self._can_separate(item) {
+            if taken.get(aliases.get(name, name), 0) == 1
+                and self._can_separate(item) {
                 found.append((item, path));
             }
         } elif isinstance(item, (uni.Archetype, uni.Enum))
@@ -2874,7 +2875,9 @@ impl JacAutoLintPass._impl_header(
     return impl_node;
 }
 
-impl JacAutoLintPass._move_body_to_impl(ab: uni.Ability, impl_node: uni.ImplDef) -> None {
+impl JacAutoLintPass._move_body_to_impl(
+    ab: uni.Ability, impl_node: uni.ImplDef
+) -> None {
     kids = [ab->:Kid:->];
     lb_idx = 0;
     for (i, k) in enumerate(kids) {

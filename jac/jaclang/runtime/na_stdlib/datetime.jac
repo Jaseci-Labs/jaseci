@@ -90,23 +90,604 @@ glob _DAYS_IN_MONTH: list[int] = [
      _FRACTION_CORRECTION: list[int] = [100000, 10000, 1000, 100, 10];
 
 
-def _iabs(x: int) -> int {
+def _iabs(x: int) -> int;
+
+
+def _is_leap(year: int) -> bool;
+
+
+def _days_before_year(year: int) -> int;
+
+
+def _days_in_month(year: int, month: int) -> int;
+
+
+def _days_before_month(year: int, month: int) -> int;
+
+
+def _ymd2ord(year: int, month: int, day: int) -> int;
+
+
+def _ord2ymd(n_in: int) -> tuple[(int, int, int)];
+
+
+def _isoweek1monday(year: int) -> int;
+
+
+def _isoweek_to_gregorian(year: int, week: int, day: int) -> tuple[(int, int, int)];
+
+
+def _modf(x: float) -> tuple[(float, float)];
+
+
+def _floorf(x: float) -> float;
+
+
+def _round_half_even(x: float) -> int;
+
+
+def _float_ratio(x: float) -> tuple[(int, int)];
+
+
+def _divide_and_round(a: int, b: int) -> int;
+
+
+def _build_d2 -> list[str];
+
+
+glob _D2: list[str] = _build_d2();
+
+
+def _pad2(n: int) -> str;
+
+
+def _pad4(n: int) -> str;
+
+
+def _pad6(n: int) -> str;
+
+
+def _wb(p: int, v: int);
+
+
+def _w2(p: int, n: int);
+
+
+def _w3(p: int, n: int);
+
+
+def _w4(p: int, n: int);
+
+
+def _w6(p: int, n: int);
+
+
+def _w_uint(p: int, n: int) -> int;
+
+
+def _w_int(p: int, n: int) -> int;
+
+
+def _w_bytes(p: int, b: bytes) -> int;
+
+
+def _w_str(p: int, s: str) -> int;
+
+
+def _w_copy(p: int, src: int, n: int) -> int;
+
+
+def _w_date(p: int, y: int, m: int, d: int) -> int;
+
+
+def _w_time(p: int, hh: int, mm: int, ss: int, us: int, timespec: str) -> int;
+
+
+def _w_offset(p: int, off: (timedelta | None), sep: str) -> int;
+
+
+def _check_date_fields(year: int, month: int, day: int);
+
+
+def _check_time_fields(
+    hour: int, minute: int, second: int, microsecond: int, fold: int
+);
+
+
+def _format_offset(off: (timedelta | None), sep: str = ":") -> str;
+
+
+def _format_time(hh: int, mm: int, ss: int, us: int, timespec: str = "auto") -> str;
+
+
+def _td_repr(td: timedelta) -> str;
+
+
+def _tz_repr(tz: (tzinfo | None)) -> str;
+
+
+def _off_eq(a: (timedelta | None), b: (timedelta | None)) -> bool;
+
+
+def _check_utc_offset(offset: (timedelta | None));
+
+
+def _build_struct_time(
+    y: int, m: int, d: int, hh: int, mm: int, ss: int, dstflag: int
+) -> struct_time;
+
+
+def _localtime(t: int) -> struct_time;
+
+
+def _gmtime(t: int) -> struct_time;
+
+
+glob _NNC: int = -1;
+
+
+def _need_normalize_century -> bool;
+
+
+def _wrap_strftime(
+    us: int,
+    off: (timedelta | None),
+    tzname_val: (str | None),
+    format: str,
+    sec: int,
+    minute: int,
+    hour: int,
+    mday: int,
+    mon: int,
+    year: int,
+    wday: int,
+    yday: int,
+    isdst: int
+) -> str;
+
+
+def _wrap_strftime_slow(
+    us: int,
+    off: (timedelta | None),
+    tzname_val: (str | None),
+    format: str,
+    sec: int,
+    minute: int,
+    hour: int,
+    mday: int,
+    mon: int,
+    year: int,
+    wday: int,
+    yday: int,
+    isdst: int
+) -> str;
+
+
+def _is_ascii_digit(c: str) -> bool;
+
+
+def _dig2(s: bytes, p: int) -> int;
+
+
+def _dig4(s: bytes, p: int) -> int;
+
+
+def _atoi(s: str) -> int;
+
+
+def _find_isoformat_datetime_separator(dtstr: bytes) -> int;
+
+
+def _parse_isoformat_date(dtstr: str) -> tuple[(int, int, int)];
+
+
+def _parse_isoformat_date_range(s: bytes, lo: int, hi: int) -> tuple[(int, int, int)];
+
+
+obj _IsoTimeResult {
+    has hour: int = 0,
+        minute: int = 0,
+        second: int = 0,
+        microsecond: int = 0,
+        tzi: (tzinfo | None) = None,
+        became_next_day: bool = False,
+        error_from_components: bool = False,
+        invalid: bool = False;
+}
+
+glob _TZ_SCRATCH: _IsoTimeResult = _IsoTimeResult(),
+     _TZ_CACHE: dict[int, timezone] = {};
+
+
+def _parse_hh_mm_ss_ff(tstr: bytes, pos: int, end: int, res: _IsoTimeResult);
+
+
+def _parse_isoformat_time(tstr: str) -> _IsoTimeResult;
+
+
+def _parse_isoformat_time_at(s: bytes, lo: int) -> _IsoTimeResult;
+
+
+obj:pub timedelta {
+    has days: int = 0,
+        seconds: int = 0,
+        microseconds: int = 0;
+
+    def init(
+        days: (int | float) = 0,
+        seconds: (int | float) = 0,
+        microseconds: (int | float) = 0,
+        milliseconds: (int | float) = 0,
+        minutes: (int | float) = 0,
+        hours: (int | float) = 0,
+        weeks: (int | float) = 0
+    );
+
+    def _to_microseconds -> int;
+    def __repr__ -> str;
+    def __str__ -> str;
+    def __format__(fmt: str) -> str;
+    def total_seconds -> float;
+    def __add__(other: (timedelta | date)) -> (timedelta | date);
+    def __radd__(other: (timedelta | date)) -> (timedelta | date);
+    def __sub__(other: timedelta) -> timedelta;
+    def __rsub__(other: (timedelta | date)) -> (timedelta | date);
+    def __neg__ -> timedelta;
+    def __pos__ -> timedelta;
+    def __abs__ -> timedelta;
+    def __mul__(other: (int | float)) -> timedelta;
+    def __rmul__(other: (int | float)) -> timedelta;
+    def __floordiv__(other: (int | timedelta)) -> (timedelta | int);
+    def __truediv__(other: (int | float | timedelta)) -> (timedelta | float);
+    def __mod__(other: timedelta) -> timedelta;
+    def __divmod__(other: timedelta) -> tuple[(int, timedelta)];
+    def _cmp(other: timedelta) -> int;
+    def __eq__(other: timedelta) -> bool;
+    def __ne__(other: timedelta) -> bool;
+    def __le__(other: timedelta) -> bool;
+    def __lt__(other: timedelta) -> bool;
+    def __ge__(other: timedelta) -> bool;
+    def __gt__(other: timedelta) -> bool;
+    def __bool__ -> bool;
+
+    static has min: timedelta = timedelta(-999999999),
+        max: timedelta = timedelta(999999999, 86399, 999999),
+        resolution: timedelta = timedelta(0, 0, 1);
+}
+
+
+def _fabs(x: float) -> float;
+
+
+obj:pub struct_time {
+    has tm_year: int = 0,
+        tm_mon: int = 0,
+        tm_mday: int = 0,
+        tm_hour: int = 0,
+        tm_min: int = 0,
+        tm_sec: int = 0,
+        tm_wday: int = 0,
+        tm_yday: int = 0,
+        tm_isdst: int = 0;
+
+    def __getitem__(i: int) -> int;
+    def __len__ -> int;
+    def __repr__ -> str;
+}
+
+
+obj IsoCalendarDate {
+    has year: int = 0,
+        week: int = 0,
+        weekday: int = 0;
+
+    def __getitem__(i: int) -> int;
+    def __len__ -> int;
+    def __repr__ -> str;
+}
+
+
+obj:pub date {
+    has year: int = 0,
+        month: int = 0,
+        day: int = 0;
+
+    def init(year: int, month: int, day: int);
+    static def fromtimestamp(t: float) -> date;
+    static def today -> date;
+    static def fromordinal(n: int) -> date;
+    static def fromisoformat(date_string: str) -> date;
+    static def fromisocalendar(year: int, week: int, day: int) -> date;
+    static def strptime(date_string: str, format: str) -> date;
+    def timetuple -> struct_time;
+    def toordinal -> int;
+    def replace(
+        year: (int | None) = None, month: (int | None) = None, day: (int | None) = None
+    ) -> date;
+
+    def __eq__(other: date) -> bool;
+    def __ne__(other: date) -> bool;
+    def __le__(other: date) -> bool;
+    def __lt__(other: date) -> bool;
+    def __ge__(other: date) -> bool;
+    def __gt__(other: date) -> bool;
+    def _cmp(other: date) -> int;
+    def __add__(other: timedelta) -> date;
+    def __radd__(other: timedelta) -> date;
+    def __sub__(other: (timedelta | date)) -> (timedelta | date);
+    def weekday -> int;
+    def isoweekday -> int;
+    def isocalendar -> IsoCalendarDate;
+    def ctime -> str;
+    def strftime(format: str) -> str;
+    def __format__(fmt: str) -> str;
+    def isoformat -> str;
+    def __str__ -> str;
+    def __repr__ -> str;
+
+    static has min: date = date(1, 1, 1),
+        max: date = date(9999, 12, 31),
+        resolution: timedelta = timedelta(1);
+}
+
+
+obj:pub tzinfo {
+    def tzname(dt: (datetime | None)) -> (str | None);
+    def utcoffset(dt: (datetime | None)) -> (timedelta | None);
+    def dst(dt: (datetime | None)) -> (timedelta | None);
+    def fromutc(dt: datetime) -> datetime;
+    def __repr__ -> str;
+}
+
+
+glob _TZ_KEEP: tzinfo = tzinfo();
+
+
+obj:pub time {
+    has hour: int = 0,
+        minute: int = 0,
+        second: int = 0,
+        microsecond: int = 0,
+        tzinfo: (tzinfo | None) = None,
+        fold: int = 0;
+
+    def init(
+        hour: int = 0,
+        minute: int = 0,
+        second: int = 0,
+        microsecond: int = 0,
+        tzinfo: (tzinfo | None) = None,
+        fold: int = 0
+    );
+
+    static def fromisoformat(time_string: str) -> time;
+    static def strptime(date_string: str, format: str) -> time;
+    def _tzstr -> str;
+    def utcoffset -> (timedelta | None);
+    def tzname -> (str | None);
+    def dst -> (timedelta | None);
+    def replace(
+        hour: (int | None) = None,
+        minute: (int | None) = None,
+        second: (int | None) = None,
+        microsecond: (int | None) = None,
+        tzinfo: (tzinfo | None) = _TZ_KEEP,
+        fold: (int | None) = None
+    ) -> time;
+
+    def isoformat(timespec: str = "auto") -> str;
+    def __str__ -> str;
+    def strftime(format: str) -> str;
+    def __format__(fmt: str) -> str;
+    def __repr__ -> str;
+    def _cmp(other: time, allow_mixed: bool) -> int;
+    def __eq__(other: time) -> bool;
+    def __ne__(other: time) -> bool;
+    def __le__(other: time) -> bool;
+    def __lt__(other: time) -> bool;
+    def __ge__(other: time) -> bool;
+    def __gt__(other: time) -> bool;
+
+    static has min: time = time(0, 0, 0),
+        max: time = time(23, 59, 59, 999999),
+        resolution: timedelta = timedelta(0, 0, 1);
+}
+
+
+obj:pub datetime(date) {
+    has hour: int = 0,
+        minute: int = 0,
+        second: int = 0,
+        microsecond: int = 0,
+        tzinfo: (tzinfo | None) = None,
+        fold: int = 0;
+
+    def init(
+        year: int,
+        month: int,
+        day: int,
+        hour: int = 0,
+        minute: int = 0,
+        second: int = 0,
+        microsecond: int = 0,
+        tzinfo: (tzinfo | None) = None,
+        fold: int = 0
+    );
+
+    static def _fromepoch(
+        sec: int, us: int, utc: bool, tz: (tzinfo | None)
+    ) -> datetime;
+
+    static def fromtimestamp(t: float, tz: (tzinfo | None) = None) -> datetime;
+    static def utcfromtimestamp(t: float) -> datetime;
+    static def now(tz: (tzinfo | None) = None) -> datetime;
+    static def utcnow -> datetime;
+    static def combine(d: any, t: any, tzinfo: (tzinfo | None) = _TZ_KEEP) -> datetime;
+    static def fromisoformat(date_string: str) -> datetime;
+    static def strptime(date_string: str, format: str) -> datetime;
+    static def fromordinal(n: int) -> datetime;
+    static def fromisocalendar(year: int, week: int, day: int) -> datetime;
+    static def today -> datetime;
+    def timetuple -> struct_time;
+    def _local_u(u: int) -> int;
+    def _mktime -> int;
+    def timestamp -> float;
+    def utctimetuple -> struct_time;
+    def date -> any;
+    def time -> any;
+    def timetz -> any;
+    def replace(
+        year: (int | None) = None,
+        month: (int | None) = None,
+        day: (int | None) = None,
+        hour: (int | None) = None,
+        minute: (int | None) = None,
+        second: (int | None) = None,
+        microsecond: (int | None) = None,
+        tzinfo: (tzinfo | None) = _TZ_KEEP,
+        fold: (int | None) = None
+    ) -> datetime;
+
+    def _local_timezone -> timezone;
+    def astimezone(tz: (tzinfo | None) = None) -> datetime;
+    def ctime -> str;
+    def isoformat(sep: str = "T", timespec: str = "auto") -> str;
+    def __str__ -> str;
+    def __repr__ -> str;
+    def utcoffset -> (timedelta | None);
+    def tzname -> (str | None);
+    def dst -> (timedelta | None);
+    def _cmp(other: datetime, allow_mixed: bool) -> int;
+    def __eq__(other: datetime) -> bool;
+    def __ne__(other: datetime) -> bool;
+    def __le__(other: datetime) -> bool;
+    def __lt__(other: datetime) -> bool;
+    def __ge__(other: datetime) -> bool;
+    def __gt__(other: datetime) -> bool;
+    def __add__(other: timedelta) -> datetime;
+    static def _from_ord_hms(
+        ords: int, hour: int, minute: int, second: int, us: int, tz: (tzinfo | None)
+    ) -> datetime;
+
+    def __radd__(other: timedelta) -> datetime;
+    def __sub__(other: (timedelta | datetime)) -> (timedelta | datetime);
+    def __format__(fmt: str) -> str;
+    def strftime(format: str) -> str;
+
+    static has min: datetime = datetime(1, 1, 1),
+        max: datetime = datetime(9999, 12, 31, 23, 59, 59, 999999),
+        resolution: timedelta = timedelta(0, 0, 1);
+}
+
+
+obj:pub timezone(tzinfo) {
+    has _offset: timedelta = timedelta(0),
+        _name: str = "",
+        _named: bool = False;
+
+    def init(offset: timedelta, name: (str | None) = None);
+    def utcoffset(dt: (datetime | None)) -> (timedelta | None);
+    def tzname(dt: (datetime | None)) -> (str | None);
+    def dst(dt: (datetime | None)) -> (timedelta | None);
+    def fromutc(dt: datetime) -> datetime;
+    def _name_from_offset(delta: timedelta) -> str;
+    def __eq__(other: timezone) -> bool;
+    def __ne__(other: timezone) -> bool;
+    def __str__ -> str;
+    def __repr__ -> str;
+
+    static has utc: timezone = UTC,
+        min: timezone = timezone(timedelta(-1, 3600)),
+        max: timezone = timezone(timedelta(0, 86340));
+}
+
+
+glob:pub UTC: timezone = timezone(timedelta(0), "UTC");
+glob _EPOCH: datetime = datetime(1970, 1, 1, tzinfo=UTC);
+
+
+def _mk_date(y: int, m: int, d: int) -> date;
+
+
+def _datetime_combine(d: date, t: time, tzinfo: (tzinfo | None)) -> datetime;
+
+
+def _mk_time(h: int, mi: int, s: int, us: int, tz: (tzinfo | None), fold: int) -> time;
+
+obj _StrptimeResult {
+    has year: int = -1,
+        month: int = 1,
+        day: int = 1,
+        hour: int = 0,
+        minute: int = 0,
+        second: int = 0,
+        microsecond: int = 0,
+        weekday: int = -1,
+        julian: int = -1,
+        iso_year: int = -1,
+        iso_week: int = -1,
+        week_of_year: int = -1,
+        week_of_year_start: int = -1,
+        hour12: int = -1,
+        ampm: int = -1,
+        century: int = -1,
+        y2: int = -1,
+        tzname: str = "",
+        gmtoff_seen: bool = False,
+        gmtoff: int = 0,
+        gmtoff_fraction: int = 0,
+        tz_index: int = -1,
+        tz: (tzinfo | None) = None;
+}
+
+
+def _is_ws(c: str) -> bool;
+
+
+def _collapse_ws(s: str) -> str;
+
+
+def _sp_nomatch(data: str, fmt: str);
+
+
+def _sp_num(
+    data: str, pos: int, ndmax: int, minv: int, maxv: int, space_ok: bool
+) -> tuple[(int, int)];
+
+
+def _match_name(data: str, pos: int, names: list[str]) -> tuple[(int, int)];
+
+
+def _calc_julian_from_U_or_W(
+    year: int, week_of_year: int, day_of_week: int, week_starts_Mon: bool
+) -> int;
+
+
+def _sp_directive(r: _StrptimeResult, data: str, pos_in: int, d: str, fmt: str) -> int;
+
+
+def _sp_walk(r: _StrptimeResult, data: str, fmt: str, pos_in: int) -> int;
+
+
+def _strptime(data_string: str, format: str) -> _StrptimeResult;
+
+impl _iabs(x: int) -> int {
     return -x if x < 0 else x;
 }
 
 
-def _is_leap(year: int) -> bool {
+impl _is_leap(year: int) -> bool {
     return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0);
 }
 
 
-def _days_before_year(year: int) -> int {
+impl _days_before_year(year: int) -> int {
     y: int = year - 1;
     return y * 365 + y // 4 - y // 100 + y // 400;
 }
 
 
-def _days_in_month(year: int, month: int) -> int {
+impl _days_in_month(year: int, month: int) -> int {
     if month == 2 and _is_leap(year) {
         return 29;
     }
@@ -114,7 +695,7 @@ def _days_in_month(year: int, month: int) -> int {
 }
 
 
-def _days_before_month(year: int, month: int) -> int {
+impl _days_before_month(year: int, month: int) -> int {
     extra: int = 0;
     if month > 2 and _is_leap(year) {
         extra = 1;
@@ -123,12 +704,12 @@ def _days_before_month(year: int, month: int) -> int {
 }
 
 
-def _ymd2ord(year: int, month: int, day: int) -> int {
+impl _ymd2ord(year: int, month: int, day: int) -> int {
     return _days_before_year(year) + _days_before_month(year, month) + day;
 }
 
 
-def _ord2ymd(n_in: int) -> tuple[(int, int, int)] {
+impl _ord2ymd(n_in: int) -> tuple[(int, int, int)] {
     n: int = n_in - 1;
     n400: int = n // 146097;
     n = n - n400 * 146097;
@@ -155,7 +736,7 @@ def _ord2ymd(n_in: int) -> tuple[(int, int, int)] {
 }
 
 
-def _isoweek1monday(year: int) -> int {
+impl _isoweek1monday(year: int) -> int {
     firstday: int = _ymd2ord(year, 1, 1);
     firstweekday: int = (firstday + 6) % 7;
     week1monday: int = firstday - firstweekday;
@@ -166,7 +747,7 @@ def _isoweek1monday(year: int) -> int {
 }
 
 
-def _isoweek_to_gregorian(year: int, week: int, day: int) -> tuple[(int, int, int)] {
+impl _isoweek_to_gregorian(year: int, week: int, day: int) -> tuple[(int, int, int)] {
     if not (year >= MINYEAR and year <= MAXYEAR) {
         raise ValueError(f"year must be in {MINYEAR}..{MAXYEAR}, not {year}");
     }
@@ -190,7 +771,7 @@ def _isoweek_to_gregorian(year: int, week: int, day: int) -> tuple[(int, int, in
 }
 
 
-def _modf(x: float) -> tuple[(float, float)] {
+impl _modf(x: float) -> tuple[(float, float)] {
     if x > 9.0e18 or x < -9.0e18 {
         return (0.0, x);
     }
@@ -199,7 +780,7 @@ def _modf(x: float) -> tuple[(float, float)] {
 }
 
 
-def _floorf(x: float) -> float {
+impl _floorf(x: float) -> float {
     t: float = float(int(x));
     if x < t {
         return t - 1.0;
@@ -208,7 +789,7 @@ def _floorf(x: float) -> float {
 }
 
 
-def _round_half_even(x: float) -> int {
+impl _round_half_even(x: float) -> int {
     f: float = _floorf(x);
     diff: float = x - f;
     fi: int = int(f);
@@ -219,7 +800,7 @@ def _round_half_even(x: float) -> int {
 }
 
 
-def _float_ratio(x: float) -> tuple[(int, int)] {
+impl _float_ratio(x: float) -> tuple[(int, int)] {
     bits: int = __float_bits(x);
     sign: int = -1 if bits < 0 else 1;
     exp: int = (bits >> 52) & 2047;
@@ -256,7 +837,7 @@ def _float_ratio(x: float) -> tuple[(int, int)] {
 }
 
 
-def _divide_and_round(a: int, b: int) -> int {
+impl _divide_and_round(a: int, b: int) -> int {
     q: int = a // b;
     r: int = (a - q * b) * 2;
     greater: bool = r > b if b > 0 else r < b;
@@ -267,7 +848,7 @@ def _divide_and_round(a: int, b: int) -> int {
 }
 
 
-def _build_d2 -> list[str] {
+impl _build_d2 -> list[str] {
     r: list[str] = [];
     i: int = 0;
     while i < 100 {
@@ -282,10 +863,7 @@ def _build_d2 -> list[str] {
 }
 
 
-glob _D2: list[str] = _build_d2();
-
-
-def _pad2(n: int) -> str {
+impl _pad2(n: int) -> str {
     if n >= 0 and n < 100 {
         return _D2[n];
     }
@@ -293,7 +871,7 @@ def _pad2(n: int) -> str {
 }
 
 
-def _pad4(n: int) -> str {
+impl _pad4(n: int) -> str {
     if n >= 0 and n < 10000 {
         return _D2[n // 100] + _D2[n % 100];
     }
@@ -301,7 +879,7 @@ def _pad4(n: int) -> str {
 }
 
 
-def _pad6(n: int) -> str {
+impl _pad6(n: int) -> str {
     if n >= 0 and n < 1000000 {
         return _D2[n // 10000] + _D2[(n // 100) % 100] + _D2[n % 100];
     }
@@ -309,36 +887,36 @@ def _pad6(n: int) -> str {
 }
 
 
-def _wb(p: int, v: int) {
+impl _wb(p: int, v: int) {
     __mem_store_i8(p, i8(v));
 }
 
 
-def _w2(p: int, n: int) {
+impl _w2(p: int, n: int) {
     __mem_store_i16(p, i16(48 + n // 10 + ((48 + n % 10) << 8)));
 }
 
 
-def _w3(p: int, n: int) {
+impl _w3(p: int, n: int) {
     _wb(p, 48 + n // 100);
     _w2(p + 1, n % 100);
 }
 
 
-def _w4(p: int, n: int) {
+impl _w4(p: int, n: int) {
     _w2(p, n // 100);
     _w2(p + 2, n % 100);
 }
 
 
-def _w6(p: int, n: int) {
+impl _w6(p: int, n: int) {
     _w2(p, n // 10000);
     _w2(p + 2, (n // 100) % 100);
     _w2(p + 4, n % 100);
 }
 
 
-def _w_uint(p: int, n: int) -> int {
+impl _w_uint(p: int, n: int) -> int {
     k: int = 1;
     m: int = n;
     while m >= 10 {
@@ -356,7 +934,7 @@ def _w_uint(p: int, n: int) -> int {
 }
 
 
-def _w_int(p: int, n: int) -> int {
+impl _w_int(p: int, n: int) -> int {
     if n < 0 {
         _wb(p, 45);
         return 1 + _w_uint(p + 1, -n);
@@ -365,7 +943,7 @@ def _w_int(p: int, n: int) -> int {
 }
 
 
-def _w_bytes(p: int, b: bytes) -> int {
+impl _w_bytes(p: int, b: bytes) -> int {
     n: int = len(b);
     i: int = 0;
     while i < n {
@@ -376,7 +954,7 @@ def _w_bytes(p: int, b: bytes) -> int {
 }
 
 
-def _w_str(p: int, s: str) -> int {
+impl _w_str(p: int, s: str) -> int {
     if len(s) == 0 {
         return 0;
     }
@@ -388,7 +966,7 @@ def _w_str(p: int, s: str) -> int {
 }
 
 
-def _w_copy(p: int, src: int, n: int) -> int {
+impl _w_copy(p: int, src: int, n: int) -> int {
     i: int = 0;
     while i < n {
         _wb(p + i, int(__mem_load_i8(src + i)));
@@ -398,7 +976,7 @@ def _w_copy(p: int, src: int, n: int) -> int {
 }
 
 
-def _w_date(p: int, y: int, m: int, d: int) -> int {
+impl _w_date(p: int, y: int, m: int, d: int) -> int {
     _w4(p, y);
     _wb(p + 4, 45);
     _w2(p + 5, m);
@@ -408,7 +986,7 @@ def _w_date(p: int, y: int, m: int, d: int) -> int {
 }
 
 
-def _w_time(p: int, hh: int, mm: int, ss: int, us: int, timespec: str) -> int {
+impl _w_time(p: int, hh: int, mm: int, ss: int, us: int, timespec: str) -> int {
     ts: str = timespec;
     u: int = us;
     if ts == "auto" {
@@ -444,7 +1022,7 @@ def _w_time(p: int, hh: int, mm: int, ss: int, us: int, timespec: str) -> int {
 }
 
 
-def _w_offset(p: int, off: (timedelta | None), sep: str) -> int {
+impl _w_offset(p: int, off: (timedelta | None), sep: str) -> int {
     if off is None {
         return 0;
     }
@@ -488,7 +1066,7 @@ def _w_offset(p: int, off: (timedelta | None), sep: str) -> int {
 }
 
 
-def _check_date_fields(year: int, month: int, day: int) {
+impl _check_date_fields(year: int, month: int, day: int) {
     if not (year >= MINYEAR and year <= MAXYEAR) {
         raise ValueError(f"year must be in {MINYEAR}..{MAXYEAR}, not {year}");
     }
@@ -504,7 +1082,7 @@ def _check_date_fields(year: int, month: int, day: int) {
 }
 
 
-def _check_time_fields(
+impl _check_time_fields(
     hour: int, minute: int, second: int, microsecond: int, fold: int
 ) {
     if not (hour >= 0 and hour <= 23) {
@@ -525,7 +1103,7 @@ def _check_time_fields(
 }
 
 
-def _format_offset(off: (timedelta | None), sep: str = ":") -> str {
+impl _format_offset(off: (timedelta | None), sep: str = ":") -> str {
     s: str = "";
     if off is not None {
         o: timedelta = off;
@@ -553,7 +1131,7 @@ def _format_offset(off: (timedelta | None), sep: str = ":") -> str {
 }
 
 
-def _format_time(hh: int, mm: int, ss: int, us: int, timespec: str = "auto") -> str {
+impl _format_time(hh: int, mm: int, ss: int, us: int, timespec: str = "auto") -> str {
     ts: str = timespec;
     u: int = us;
     if ts == "auto" {
@@ -580,7 +1158,7 @@ def _format_time(hh: int, mm: int, ss: int, us: int, timespec: str = "auto") -> 
 }
 
 
-def _td_repr(td: timedelta) -> str {
+impl _td_repr(td: timedelta) -> str {
     parts: list[str] = [];
     if td.days != 0 {
         parts.append("days=" + str(td.days));
@@ -598,7 +1176,7 @@ def _td_repr(td: timedelta) -> str {
 }
 
 
-def _tz_repr(tz: (tzinfo | None)) -> str {
+impl _tz_repr(tz: (tzinfo | None)) -> str {
     if tz is None {
         return "";
     }
@@ -607,7 +1185,7 @@ def _tz_repr(tz: (tzinfo | None)) -> str {
 }
 
 
-def _off_eq(a: (timedelta | None), b: (timedelta | None)) -> bool {
+impl _off_eq(a: (timedelta | None), b: (timedelta | None)) -> bool {
     if a is None and b is None {
         return True;
     }
@@ -618,7 +1196,7 @@ def _off_eq(a: (timedelta | None), b: (timedelta | None)) -> bool {
 }
 
 
-def _check_utc_offset(offset: (timedelta | None)) {
+impl _check_utc_offset(offset: (timedelta | None)) {
     if offset is None {
         return;
     }
@@ -632,7 +1210,7 @@ def _check_utc_offset(offset: (timedelta | None)) {
 }
 
 
-def _build_struct_time(
+impl _build_struct_time(
     y: int, m: int, d: int, hh: int, mm: int, ss: int, dstflag: int
 ) -> struct_time {
     wday: int = (_ymd2ord(y, m, d) + 6) % 7;
@@ -641,7 +1219,7 @@ def _build_struct_time(
 }
 
 
-def _localtime(t: int) -> struct_time {
+impl _localtime(t: int) -> struct_time {
     dt_localtime(t);
     return struct_time(
         dt_tm(5) + 1900,
@@ -657,7 +1235,7 @@ def _localtime(t: int) -> struct_time {
 }
 
 
-def _gmtime(t: int) -> struct_time {
+impl _gmtime(t: int) -> struct_time {
     dt_gmtime(t);
     return struct_time(
         dt_tm(5) + 1900,
@@ -673,10 +1251,7 @@ def _gmtime(t: int) -> struct_time {
 }
 
 
-glob _NNC: int = -1;
-
-
-def _need_normalize_century -> bool {
+impl _need_normalize_century -> bool {
     if _NNC < 0 {
         try {
             _NNC = 1;
@@ -693,7 +1268,7 @@ def _need_normalize_century -> bool {
 }
 
 
-def _wrap_strftime(
+impl _wrap_strftime(
     us: int,
     off: (timedelta | None),
     tzname_val: (str | None),
@@ -863,7 +1438,7 @@ def _wrap_strftime(
 }
 
 
-def _wrap_strftime_slow(
+impl _wrap_strftime_slow(
     us: int,
     off: (timedelta | None),
     tzname_val: (str | None),
@@ -971,13 +1546,13 @@ def _wrap_strftime_slow(
 }
 
 
-def _is_ascii_digit(c: str) -> bool {
+impl _is_ascii_digit(c: str) -> bool {
     d: int = ord(c) - 48;
     return d >= 0 and d <= 9;
 }
 
 
-def _dig2(s: bytes, p: int) -> int {
+impl _dig2(s: bytes, p: int) -> int {
     a: int = s[p] - 48;
     b: int = s[p + 1] - 48;
     if a < 0 or a > 9 or b < 0 or b > 9 {
@@ -987,7 +1562,7 @@ def _dig2(s: bytes, p: int) -> int {
 }
 
 
-def _dig4(s: bytes, p: int) -> int {
+impl _dig4(s: bytes, p: int) -> int {
     a: int = s[p] - 48;
     b: int = s[p + 1] - 48;
     c: int = s[p + 2] - 48;
@@ -999,7 +1574,7 @@ def _dig4(s: bytes, p: int) -> int {
 }
 
 
-def _atoi(s: str) -> int {
+impl _atoi(s: str) -> int {
     n: int = len(s);
     if n == 0 {
         raise ValueError("invalid literal for int()");
@@ -1029,7 +1604,7 @@ def _atoi(s: str) -> int {
 }
 
 
-def _find_isoformat_datetime_separator(dtstr: bytes) -> int {
+impl _find_isoformat_datetime_separator(dtstr: bytes) -> int {
     len_dtstr: int = len(dtstr);
     if len_dtstr == 7 {
         return 7;
@@ -1080,13 +1655,13 @@ def _find_isoformat_datetime_separator(dtstr: bytes) -> int {
 }
 
 
-def _parse_isoformat_date(dtstr: str) -> tuple[(int, int, int)] {
+impl _parse_isoformat_date(dtstr: str) -> tuple[(int, int, int)] {
     b: bytes = dtstr.encode();
     return _parse_isoformat_date_range(b, 0, len(b));
 }
 
 
-def _parse_isoformat_date_range(s: bytes, lo: int, hi: int) -> tuple[(int, int, int)] {
+impl _parse_isoformat_date_range(s: bytes, lo: int, hi: int) -> tuple[(int, int, int)] {
     n: int = hi - lo;
     if n != 7 and n != 8 and n != 10 {
         return (-1, -1, -1);
@@ -1146,22 +1721,7 @@ def _parse_isoformat_date_range(s: bytes, lo: int, hi: int) -> tuple[(int, int, 
 }
 
 
-obj _IsoTimeResult {
-    has hour: int = 0,
-        minute: int = 0,
-        second: int = 0,
-        microsecond: int = 0,
-        tzi: (tzinfo | None) = None,
-        became_next_day: bool = False,
-        error_from_components: bool = False,
-        invalid: bool = False;
-}
-
-glob _TZ_SCRATCH: _IsoTimeResult = _IsoTimeResult(),
-     _TZ_CACHE: dict[int, timezone] = {};
-
-
-def _parse_hh_mm_ss_ff(tstr: bytes, pos: int, end: int, res: _IsoTimeResult) {
+impl _parse_hh_mm_ss_ff(tstr: bytes, pos: int, end: int, res: _IsoTimeResult) {
     if end < 0 {
         end = len(tstr);
     }
@@ -1240,12 +1800,12 @@ def _parse_hh_mm_ss_ff(tstr: bytes, pos: int, end: int, res: _IsoTimeResult) {
 }
 
 
-def _parse_isoformat_time(tstr: str) -> _IsoTimeResult {
+impl _parse_isoformat_time(tstr: str) -> _IsoTimeResult {
     return _parse_isoformat_time_at(tstr.encode(), 0);
 }
 
 
-def _parse_isoformat_time_at(s: bytes, lo: int) -> _IsoTimeResult {
+impl _parse_isoformat_time_at(s: bytes, lo: int) -> _IsoTimeResult {
     len_str: int = len(s);
     if len_str - lo < 2 {
         res0: _IsoTimeResult = _IsoTimeResult();
@@ -1317,979 +1877,905 @@ def _parse_isoformat_time_at(s: bytes, lo: int) -> _IsoTimeResult {
 }
 
 
-obj:pub timedelta {
-    has days: int = 0,
-        seconds: int = 0,
-        microseconds: int = 0;
-
-    def init(
-        days: (int | float) = 0,
-        seconds: (int | float) = 0,
-        microseconds: (int | float) = 0,
-        milliseconds: (int | float) = 0,
-        minutes: (int | float) = 0,
-        hours: (int | float) = 0,
-        weeks: (int | float) = 0
-    ) {
-        d: int = 0;
-        s: int = 0;
-        us: int = 0;
-        days_w: int = 0;
-        seconds_w: int = 0;
-        microseconds_w: int = 0;
-        milliseconds_w: int = 0;
-        minutes_w: int = 0;
-        hours_w: int = 0;
-        weeks_w: int = 0;
-        days_f: float = 0.0;
-        seconds_f: float = 0.0;
-        microseconds_f: float = 0.0;
-        milliseconds_f: float = 0.0;
-        minutes_f: float = 0.0;
-        hours_f: float = 0.0;
-        weeks_f: float = 0.0;
-        if isinstance(days, float) {
-            days_f = days;
-            if _fabs(days_f) > 1.0e15 {
-                raise OverflowError("days value too large");
-            }
-        } else {
-            days_w = days as int;
+impl timedelta.init(
+    days: (int | float) = 0,
+    seconds: (int | float) = 0,
+    microseconds: (int | float) = 0,
+    milliseconds: (int | float) = 0,
+    minutes: (int | float) = 0,
+    hours: (int | float) = 0,
+    weeks: (int | float) = 0
+) {
+    d: int = 0;
+    s: int = 0;
+    us: int = 0;
+    days_w: int = 0;
+    seconds_w: int = 0;
+    microseconds_w: int = 0;
+    milliseconds_w: int = 0;
+    minutes_w: int = 0;
+    hours_w: int = 0;
+    weeks_w: int = 0;
+    days_f: float = 0.0;
+    seconds_f: float = 0.0;
+    microseconds_f: float = 0.0;
+    milliseconds_f: float = 0.0;
+    minutes_f: float = 0.0;
+    hours_f: float = 0.0;
+    weeks_f: float = 0.0;
+    if isinstance(days, float) {
+        days_f = days;
+        if _fabs(days_f) > 1.0e15 {
+            raise OverflowError("days value too large");
         }
-        if isinstance(seconds, float) {
-            seconds_f = seconds;
-            if _fabs(seconds_f) > 9.0e17 {
-                raise OverflowError("seconds value too large");
-            }
-        } else {
-            seconds_w = seconds as int;
+    } else {
+        days_w = days as int;
+    }
+    if isinstance(seconds, float) {
+        seconds_f = seconds;
+        if _fabs(seconds_f) > 9.0e17 {
+            raise OverflowError("seconds value too large");
         }
-        if isinstance(microseconds, float) {
-            microseconds_f = microseconds;
-            if _fabs(microseconds_f) > 9.0e17 {
-                raise OverflowError("microseconds value too large");
-            }
-        } else {
-            microseconds_w = microseconds as int;
+    } else {
+        seconds_w = seconds as int;
+    }
+    if isinstance(microseconds, float) {
+        microseconds_f = microseconds;
+        if _fabs(microseconds_f) > 9.0e17 {
+            raise OverflowError("microseconds value too large");
         }
-        if isinstance(milliseconds, float) {
-            milliseconds_f = milliseconds;
-            if _fabs(milliseconds_f) > 9.0e17 {
-                raise OverflowError("milliseconds value too large");
-            }
-        } else {
-            milliseconds_w = milliseconds as int;
+    } else {
+        microseconds_w = microseconds as int;
+    }
+    if isinstance(milliseconds, float) {
+        milliseconds_f = milliseconds;
+        if _fabs(milliseconds_f) > 9.0e17 {
+            raise OverflowError("milliseconds value too large");
         }
-        if isinstance(minutes, float) {
-            minutes_f = minutes;
-            if _fabs(minutes_f) > 9.0e17 {
-                raise OverflowError("minutes value too large");
-            }
-        } else {
-            minutes_w = minutes as int;
+    } else {
+        milliseconds_w = milliseconds as int;
+    }
+    if isinstance(minutes, float) {
+        minutes_f = minutes;
+        if _fabs(minutes_f) > 9.0e17 {
+            raise OverflowError("minutes value too large");
         }
-        if isinstance(hours, float) {
-            hours_f = hours;
-            if _fabs(hours_f) > 9.0e17 {
-                raise OverflowError("hours value too large");
-            }
-        } else {
-            hours_w = hours as int;
+    } else {
+        minutes_w = minutes as int;
+    }
+    if isinstance(hours, float) {
+        hours_f = hours;
+        if _fabs(hours_f) > 9.0e17 {
+            raise OverflowError("hours value too large");
         }
-        if isinstance(weeks, float) {
-            weeks_f = weeks;
-            if _fabs(weeks_f) > 1.0e15 {
-                raise OverflowError("weeks value too large");
-            }
-        } else {
-            weeks_w = weeks as int;
+    } else {
+        hours_w = hours as int;
+    }
+    if isinstance(weeks, float) {
+        weeks_f = weeks;
+        if _fabs(weeks_f) > 1.0e15 {
+            raise OverflowError("weeks value too large");
         }
-        days_w += weeks_w * 7;
-        days_f += weeks_f * 7.0;
-        seconds_w += minutes_w * 60 + hours_w * 3600;
-        seconds_f += minutes_f * 60.0 + hours_f * 3600.0;
-        microseconds_f += milliseconds_f * 1000.0;
-        microseconds_w += milliseconds_w * 1000;
-        if days_f == 0.0 and seconds_f == 0.0 and microseconds_f == 0.0 {
-            ssec: int = microseconds_w // 1000000;
-            us = microseconds_w - ssec * 1000000;
-            s = seconds_w + ssec;
-            ddays: int = s // 86400;
-            s -= ddays * 86400;
-            d = days_w + ddays;
-            self.days = d;
-            self.seconds = s;
-            self.microseconds = us;
-            if _iabs(d) > 999999999 {
-                raise OverflowError(f"days={d}; must have magnitude <= 999999999");
-            }
-            return;
-        }
-        daysecondsfrac: float = 0.0;
-        if days_f != 0.0 {
-            fr: float = 0.0;
-            ip: float = 0.0;
-            (fr, ip) = _modf(days_f);
-            d = int(ip);
-            (fr, ip) = _modf(fr * 86400.0);
-            s = int(ip);
-            daysecondsfrac = fr;
-        } else {
-            d = days_w;
-        }
-        secondsfrac: float = daysecondsfrac;
-        if seconds_f != 0.0 {
-            fr: float = 0.0;
-            ip: float = 0.0;
-            (fr, ip) = _modf(seconds_f);
-            seconds_w = int(ip);
-            secondsfrac += fr;
-        }
-        dd: int = seconds_w // 86400;
-        seconds_w -= dd * 86400;
-        d += dd;
-        s += seconds_w;
-        usdouble: float = secondsfrac * 1000000.0;
-        if microseconds_f != 0.0 {
-            mf: int = _round_half_even(microseconds_f + usdouble);
-            ss2: int = mf // 1000000;
-            mf -= ss2 * 1000000;
-            dds: int = ss2 // 86400;
-            ss2 -= dds * 86400;
-            d += dds;
-            s += ss2;
-            microseconds_w = mf;
-        } else {
-            microseconds_w += _round_half_even(usdouble);
-        }
+    } else {
+        weeks_w = weeks as int;
+    }
+    days_w += weeks_w * 7;
+    days_f += weeks_f * 7.0;
+    seconds_w += minutes_w * 60 + hours_w * 3600;
+    seconds_f += minutes_f * 60.0 + hours_f * 3600.0;
+    microseconds_f += milliseconds_f * 1000.0;
+    microseconds_w += milliseconds_w * 1000;
+    if days_f == 0.0 and seconds_f == 0.0 and microseconds_f == 0.0 {
         ssec: int = microseconds_w // 1000000;
         us = microseconds_w - ssec * 1000000;
-        s += ssec;
+        s = seconds_w + ssec;
         ddays: int = s // 86400;
         s -= ddays * 86400;
-        d += ddays;
+        d = days_w + ddays;
         self.days = d;
         self.seconds = s;
         self.microseconds = us;
         if _iabs(d) > 999999999 {
             raise OverflowError(f"days={d}; must have magnitude <= 999999999");
         }
+        return;
     }
-
-    def _to_microseconds -> int {
-        return (self.days * 86400 + self.seconds) * 1000000 + self.microseconds;
+    daysecondsfrac: float = 0.0;
+    if days_f != 0.0 {
+        fr: float = 0.0;
+        ip: float = 0.0;
+        (fr, ip) = _modf(days_f);
+        d = int(ip);
+        (fr, ip) = _modf(fr * 86400.0);
+        s = int(ip);
+        daysecondsfrac = fr;
+    } else {
+        d = days_w;
     }
-
-    def __repr__ -> str {
-        args: str = "";
-        if self.days != 0 {
-            args += "days=" + str(self.days);
-        }
-        if self.seconds != 0 {
-            if args != "" {
-                args += ", ";
-            }
-            args += "seconds=" + str(self.seconds);
-        }
-        if self.microseconds != 0 {
-            if args != "" {
-                args += ", ";
-            }
-            args += "microseconds=" + str(self.microseconds);
-        }
-        if args == "" {
-            args = "0";
-        }
-        return "datetime.timedelta(" + args + ")";
+    secondsfrac: float = daysecondsfrac;
+    if seconds_f != 0.0 {
+        fr: float = 0.0;
+        ip: float = 0.0;
+        (fr, ip) = _modf(seconds_f);
+        seconds_w = int(ip);
+        secondsfrac += fr;
     }
+    dd: int = seconds_w // 86400;
+    seconds_w -= dd * 86400;
+    d += dd;
+    s += seconds_w;
+    usdouble: float = secondsfrac * 1000000.0;
+    if microseconds_f != 0.0 {
+        mf: int = _round_half_even(microseconds_f + usdouble);
+        ss2: int = mf // 1000000;
+        mf -= ss2 * 1000000;
+        dds: int = ss2 // 86400;
+        ss2 -= dds * 86400;
+        d += dds;
+        s += ss2;
+        microseconds_w = mf;
+    } else {
+        microseconds_w += _round_half_even(usdouble);
+    }
+    ssec: int = microseconds_w // 1000000;
+    us = microseconds_w - ssec * 1000000;
+    s += ssec;
+    ddays: int = s // 86400;
+    s -= ddays * 86400;
+    d += ddays;
+    self.days = d;
+    self.seconds = s;
+    self.microseconds = us;
+    if _iabs(d) > 999999999 {
+        raise OverflowError(f"days={d}; must have magnitude <= 999999999");
+    }
+}
 
-    def __str__ -> str {
-        mm: int = self.seconds // 60;
-        ss: int = self.seconds % 60;
-        hh: int = mm // 60;
-        mm = mm % 60;
-        p: int = dt_out_buf();
-        q: int = p;
-        if self.days != 0 {
-            q += _w_int(q, self.days);
-            q += _w_bytes(q, b" day");
-            if _iabs(self.days) != 1 {
-                _wb(q, 115);
-                q += 1;
-            }
-            q += _w_bytes(q, b", ");
+impl timedelta._to_microseconds -> int {
+    return (self.days * 86400 + self.seconds) * 1000000 + self.microseconds;
+}
+
+impl timedelta.__repr__ -> str {
+    args: str = "";
+    if self.days != 0 {
+        args += "days=" + str(self.days);
+    }
+    if self.seconds != 0 {
+        if args != "" {
+            args += ", ";
         }
-        q += _w_uint(q, hh);
-        _wb(q, 58);
-        q += 1;
-        _w2(q, mm);
-        q += 2;
-        _wb(q, 58);
-        q += 1;
-        _w2(q, ss);
-        q += 2;
-        if self.microseconds != 0 {
-            _wb(q, 46);
+        args += "seconds=" + str(self.seconds);
+    }
+    if self.microseconds != 0 {
+        if args != "" {
+            args += ", ";
+        }
+        args += "microseconds=" + str(self.microseconds);
+    }
+    if args == "" {
+        args = "0";
+    }
+    return "datetime.timedelta(" + args + ")";
+}
+
+impl timedelta.__str__ -> str {
+    mm: int = self.seconds // 60;
+    ss: int = self.seconds % 60;
+    hh: int = mm // 60;
+    mm = mm % 60;
+    p: int = dt_out_buf();
+    q: int = p;
+    if self.days != 0 {
+        q += _w_int(q, self.days);
+        q += _w_bytes(q, b" day");
+        if _iabs(self.days) != 1 {
+            _wb(q, 115);
             q += 1;
-            _w6(q, self.microseconds);
-            q += 6;
         }
-        return dt_out_str(q - p);
+        q += _w_bytes(q, b", ");
     }
-
-    def __format__(fmt: str) -> str {
-        return str(self);
+    q += _w_uint(q, hh);
+    _wb(q, 58);
+    q += 1;
+    _w2(q, mm);
+    q += 2;
+    _wb(q, 58);
+    q += 1;
+    _w2(q, ss);
+    q += 2;
+    if self.microseconds != 0 {
+        _wb(q, 46);
+        q += 1;
+        _w6(q, self.microseconds);
+        q += 6;
     }
+    return dt_out_str(q - p);
+}
 
-    def total_seconds -> float {
-        return float((self.days * 86400 + self.seconds) * 1000000 + self.microseconds)
-            / 1000000.0;
-    }
+impl timedelta.__format__(fmt: str) -> str {
+    return str(self);
+}
 
-    def __add__(other: (timedelta | date)) -> (timedelta | date) {
-        if isinstance(other, timedelta) {
-            o: timedelta = other;
-            return timedelta(
-                self.days + o.days,
-                self.seconds + o.seconds,
-                self.microseconds + o.microseconds
-            );
-        }
-        return (other as date) + self;
-    }
+impl timedelta.total_seconds -> float {
+    return float((self.days * 86400 + self.seconds) * 1000000 + self.microseconds)
+        / 1000000.0;
+}
 
-    def __radd__(other: (timedelta | date)) -> (timedelta | date) {
-        return self + other;
-    }
-
-    def __sub__(other: timedelta) -> timedelta {
+impl timedelta.__add__(other: (timedelta | date)) -> (timedelta | date) {
+    if isinstance(other, timedelta) {
+        o: timedelta = other;
         return timedelta(
-            self.days - other.days,
-            self.seconds - other.seconds,
-            self.microseconds - other.microseconds
+            self.days + o.days,
+            self.seconds + o.seconds,
+            self.microseconds + o.microseconds
         );
     }
+    return (other as date) + self;
+}
 
-    def __rsub__(other: (timedelta | date)) -> (timedelta | date) {
-        if isinstance(other, timedelta) {
-            return (other as timedelta) - self;
-        }
-        return (other as date) - self;
+impl timedelta.__radd__(other: (timedelta | date)) -> (timedelta | date) {
+    return self + other;
+}
+
+impl timedelta.__sub__(other: timedelta) -> timedelta {
+    return timedelta(
+        self.days - other.days,
+        self.seconds - other.seconds,
+        self.microseconds - other.microseconds
+    );
+}
+
+impl timedelta.__rsub__(other: (timedelta | date)) -> (timedelta | date) {
+    if isinstance(other, timedelta) {
+        return (other as timedelta) - self;
     }
+    return (other as date) - self;
+}
 
-    def __neg__ -> timedelta {
-        return timedelta(-self.days, -self.seconds, -self.microseconds);
+impl timedelta.__neg__ -> timedelta {
+    return timedelta(-self.days, -self.seconds, -self.microseconds);
+}
+
+impl timedelta.__pos__ -> timedelta {
+    return timedelta(self.days, self.seconds, self.microseconds);
+}
+
+impl timedelta.__abs__ -> timedelta {
+    if self.days < 0 {
+        return self.__neg__();
     }
+    return self;
+}
 
-    def __pos__ -> timedelta {
-        return timedelta(self.days, self.seconds, self.microseconds);
+impl timedelta.__mul__(other: (int | float)) -> timedelta {
+    if isinstance(other, int) {
+        oi: int = other;
+        return timedelta(self.days * oi, self.seconds * oi, self.microseconds * oi);
     }
-
-    def __abs__ -> timedelta {
-        if self.days < 0 {
-            return self.__neg__();
-        }
-        return self;
+    usec: int = self._to_microseconds();
+    (a, b) = _float_ratio((other as float));
+    if _iabs(usec) > 0 and _iabs(a) > 9007199254740992 // _iabs(usec) {
+        raise OverflowError("integer or float too large to convert");
     }
+    return timedelta(0, 0, _divide_and_round(usec * a, b));
+}
 
-    def __mul__(other: (int | float)) -> timedelta {
-        if isinstance(other, int) {
-            oi: int = other;
-            return timedelta(self.days * oi, self.seconds * oi, self.microseconds * oi);
-        }
-        usec: int = self._to_microseconds();
-        (a, b) = _float_ratio((other as float));
-        if _iabs(usec) > 0 and _iabs(a) > 9007199254740992 // _iabs(usec) {
-            raise OverflowError("integer or float too large to convert");
-        }
-        return timedelta(0, 0, _divide_and_round(usec * a, b));
+impl timedelta.__rmul__(other: (int | float)) -> timedelta {
+    return self * other;
+}
+
+impl timedelta.__floordiv__(other: (int | timedelta)) -> (timedelta | int) {
+    usec: int = self._to_microseconds();
+    if isinstance(other, timedelta) {
+        return usec // (other as timedelta)._to_microseconds();
     }
+    oi: int = other as int;
+    return timedelta(0, 0, usec // oi);
+}
 
-    def __rmul__(other: (int | float)) -> timedelta {
-        return self * other;
+impl timedelta.__truediv__(other: (int | float | timedelta)) -> (timedelta | float) {
+    usec: int = self._to_microseconds();
+    if isinstance(other, timedelta) {
+        return float(usec) / float((other as timedelta)._to_microseconds());
     }
-
-    def __floordiv__(other: (int | timedelta)) -> (timedelta | int) {
-        usec: int = self._to_microseconds();
-        if isinstance(other, timedelta) {
-            return usec // (other as timedelta)._to_microseconds();
-        }
-        oi: int = other as int;
-        return timedelta(0, 0, usec // oi);
+    if isinstance(other, int) {
+        return timedelta(0, 0, _divide_and_round(usec, (other as int)));
     }
-
-    def __truediv__(other: (int | float | timedelta)) -> (timedelta | float) {
-        usec: int = self._to_microseconds();
-        if isinstance(other, timedelta) {
-            return float(usec) / float((other as timedelta)._to_microseconds());
-        }
-        if isinstance(other, int) {
-            return timedelta(0, 0, _divide_and_round(usec, (other as int)));
-        }
-        (a, b) = _float_ratio((other as float));
-        if _iabs(usec) > 0 and _iabs(b) > 9007199254740992 // _iabs(usec) {
-            raise OverflowError("integer or float too large to convert");
-        }
-        return timedelta(0, 0, _divide_and_round(b * usec, a));
+    (a, b) = _float_ratio((other as float));
+    if _iabs(usec) > 0 and _iabs(b) > 9007199254740992 // _iabs(usec) {
+        raise OverflowError("integer or float too large to convert");
     }
+    return timedelta(0, 0, _divide_and_round(b * usec, a));
+}
 
-    def __mod__(other: timedelta) -> timedelta {
-        return timedelta(0, 0, self._to_microseconds() % other._to_microseconds());
+impl timedelta.__mod__(other: timedelta) -> timedelta {
+    return timedelta(0, 0, self._to_microseconds() % other._to_microseconds());
+}
+
+impl timedelta.__divmod__(other: timedelta) -> tuple[(int, timedelta)] {
+    q: int = self._to_microseconds() // other._to_microseconds();
+    r: int = self._to_microseconds() - q * other._to_microseconds();
+    return (q, timedelta(0, 0, r));
+}
+
+impl timedelta._cmp(other: timedelta) -> int {
+    a: int = self._to_microseconds();
+    b: int = other._to_microseconds();
+    if a == b {
+        return 0;
     }
+    return 1 if a > b else -1;
+}
 
-    def __divmod__(other: timedelta) -> tuple[(int, timedelta)] {
-        q: int = self._to_microseconds() // other._to_microseconds();
-        r: int = self._to_microseconds() - q * other._to_microseconds();
-        return (q, timedelta(0, 0, r));
-    }
+impl timedelta.__eq__(other: timedelta) -> bool {
+    return self._cmp(other) == 0;
+}
 
-    def _cmp(other: timedelta) -> int {
-        a: int = self._to_microseconds();
-        b: int = other._to_microseconds();
-        if a == b {
-            return 0;
-        }
-        return 1 if a > b else -1;
-    }
+impl timedelta.__ne__(other: timedelta) -> bool {
+    return self._cmp(other) != 0;
+}
 
-    def __eq__(other: timedelta) -> bool {
-        return self._cmp(other) == 0;
-    }
+impl timedelta.__le__(other: timedelta) -> bool {
+    return self._cmp(other) <= 0;
+}
 
-    def __ne__(other: timedelta) -> bool {
-        return self._cmp(other) != 0;
-    }
+impl timedelta.__lt__(other: timedelta) -> bool {
+    return self._cmp(other) < 0;
+}
 
-    def __le__(other: timedelta) -> bool {
-        return self._cmp(other) <= 0;
-    }
+impl timedelta.__ge__(other: timedelta) -> bool {
+    return self._cmp(other) >= 0;
+}
 
-    def __lt__(other: timedelta) -> bool {
-        return self._cmp(other) < 0;
-    }
+impl timedelta.__gt__(other: timedelta) -> bool {
+    return self._cmp(other) > 0;
+}
 
-    def __ge__(other: timedelta) -> bool {
-        return self._cmp(other) >= 0;
-    }
-
-    def __gt__(other: timedelta) -> bool {
-        return self._cmp(other) > 0;
-    }
-
-    def __bool__ -> bool {
-        return self.days != 0 or self.seconds != 0 or self.microseconds != 0;
-    }
-
-    static has min: timedelta = timedelta(-999999999),
-        max: timedelta = timedelta(999999999, 86399, 999999),
-        resolution: timedelta = timedelta(0, 0, 1);
+impl timedelta.__bool__ -> bool {
+    return self.days != 0 or self.seconds != 0 or self.microseconds != 0;
 }
 
 
-def _fabs(x: float) -> float {
+impl _fabs(x: float) -> float {
     return -x if x < 0.0 else x;
 }
 
 
-obj:pub struct_time {
-    has tm_year: int = 0,
-        tm_mon: int = 0,
-        tm_mday: int = 0,
-        tm_hour: int = 0,
-        tm_min: int = 0,
-        tm_sec: int = 0,
-        tm_wday: int = 0,
-        tm_yday: int = 0,
-        tm_isdst: int = 0;
-
-    def __getitem__(i: int) -> int {
-        if i == 0 {
-            return self.tm_year;
-        }
-        if i == 1 {
-            return self.tm_mon;
-        }
-        if i == 2 {
-            return self.tm_mday;
-        }
-        if i == 3 {
-            return self.tm_hour;
-        }
-        if i == 4 {
-            return self.tm_min;
-        }
-        if i == 5 {
-            return self.tm_sec;
-        }
-        if i == 6 {
-            return self.tm_wday;
-        }
-        if i == 7 {
-            return self.tm_yday;
-        }
-        if i == 8 {
-            return self.tm_isdst;
-        }
-        raise IndexError("struct_time index out of range");
+impl struct_time.__getitem__(i: int) -> int {
+    if i == 0 {
+        return self.tm_year;
     }
-
-    def __len__ -> int {
-        return 9;
+    if i == 1 {
+        return self.tm_mon;
     }
-
-    def __repr__ -> str {
-        return "time.struct_time(tm_year="
-            + str(self.tm_year)
-            + ", tm_mon="
-            + str(self.tm_mon)
-            + ", tm_mday="
-            + str(self.tm_mday)
-            + ", tm_hour="
-            + str(self.tm_hour)
-            + ", tm_min="
-            + str(self.tm_min)
-            + ", tm_sec="
-            + str(self.tm_sec)
-            + ", tm_wday="
-            + str(self.tm_wday)
-            + ", tm_yday="
-            + str(self.tm_yday)
-            + ", tm_isdst="
-            + str(self.tm_isdst)
-            + ")";
+    if i == 2 {
+        return self.tm_mday;
     }
+    if i == 3 {
+        return self.tm_hour;
+    }
+    if i == 4 {
+        return self.tm_min;
+    }
+    if i == 5 {
+        return self.tm_sec;
+    }
+    if i == 6 {
+        return self.tm_wday;
+    }
+    if i == 7 {
+        return self.tm_yday;
+    }
+    if i == 8 {
+        return self.tm_isdst;
+    }
+    raise IndexError("struct_time index out of range");
+}
+
+impl struct_time.__len__ -> int {
+    return 9;
+}
+
+impl struct_time.__repr__ -> str {
+    return "time.struct_time(tm_year="
+        + str(self.tm_year)
+        + ", tm_mon="
+        + str(self.tm_mon)
+        + ", tm_mday="
+        + str(self.tm_mday)
+        + ", tm_hour="
+        + str(self.tm_hour)
+        + ", tm_min="
+        + str(self.tm_min)
+        + ", tm_sec="
+        + str(self.tm_sec)
+        + ", tm_wday="
+        + str(self.tm_wday)
+        + ", tm_yday="
+        + str(self.tm_yday)
+        + ", tm_isdst="
+        + str(self.tm_isdst)
+        + ")";
 }
 
 
-obj IsoCalendarDate {
-    has year: int = 0,
-        week: int = 0,
-        weekday: int = 0;
-
-    def __getitem__(i: int) -> int {
-        if i == 0 {
-            return self.year;
-        }
-        if i == 1 {
-            return self.week;
-        }
-        if i == 2 {
-            return self.weekday;
-        }
-        raise IndexError("IsoCalendarDate index out of range");
+impl IsoCalendarDate.__getitem__(i: int) -> int {
+    if i == 0 {
+        return self.year;
     }
-
-    def __len__ -> int {
-        return 3;
+    if i == 1 {
+        return self.week;
     }
-
-    def __repr__ -> str {
-        return "datetime.IsoCalendarDate(year="
-            + str(self.year)
-            + ", week="
-            + str(self.week)
-            + ", weekday="
-            + str(self.weekday)
-            + ")";
+    if i == 2 {
+        return self.weekday;
     }
+    raise IndexError("IsoCalendarDate index out of range");
+}
+
+impl IsoCalendarDate.__len__ -> int {
+    return 3;
+}
+
+impl IsoCalendarDate.__repr__ -> str {
+    return "datetime.IsoCalendarDate(year="
+        + str(self.year)
+        + ", week="
+        + str(self.week)
+        + ", weekday="
+        + str(self.weekday)
+        + ")";
 }
 
 
-obj:pub date {
-    has year: int = 0,
-        month: int = 0,
-        day: int = 0;
+impl date.init(year: int, month: int, day: int) {
+    _check_date_fields(year, month, day);
+    self.year = year;
+    self.month = month;
+    self.day = day;
+}
 
-    def init(year: int, month: int, day: int) {
-        _check_date_fields(year, month, day);
-        self.year = year;
-        self.month = month;
-        self.day = day;
+impl date.fromtimestamp(t: float) -> date {
+    if t > 9.0e18 or t < -9.0e18 {
+        raise OverflowError("timestamp out of range for platform time_t");
     }
+    st: struct_time = _localtime(int(t));
+    return date(st.tm_year, st.tm_mon, st.tm_mday);
+}
 
-    static def fromtimestamp(t: float) -> date {
-        if t > 9.0e18 or t < -9.0e18 {
-            raise OverflowError("timestamp out of range for platform time_t");
-        }
-        st: struct_time = _localtime(int(t));
-        return date(st.tm_year, st.tm_mon, st.tm_mday);
+impl date.today -> date {
+    return date.fromtimestamp(float(dt_epoch_us() // 1000000));
+}
+
+impl date.fromordinal(n: int) -> date {
+    if n < 1 {
+        raise ValueError("ordinal must be >= 1");
     }
+    (y, m, d) = _ord2ymd(n);
+    return date(y, m, d);
+}
 
-    static def today -> date {
-        return date.fromtimestamp(float(dt_epoch_us() // 1000000));
+impl date.fromisoformat(date_string: str) -> date {
+    (y, m, d) = _parse_isoformat_date(date_string);
+    if y < 0 {
+        raise ValueError(f"Invalid isoformat string: '{date_string}'");
     }
+    return date(y, m, d);
+}
 
-    static def fromordinal(n: int) -> date {
-        if n < 1 {
-            raise ValueError("ordinal must be >= 1");
-        }
-        (y, m, d) = _ord2ymd(n);
-        return date(y, m, d);
+impl date.fromisocalendar(year: int, week: int, day: int) -> date {
+    (y, m, d) = _isoweek_to_gregorian(year, week, day);
+    return date(y, m, d);
+}
+
+impl date.strptime(date_string: str, format: str) -> date {
+    r: _StrptimeResult = _strptime(date_string, format);
+    return date(r.year, r.month, r.day);
+}
+
+impl date.timetuple -> struct_time {
+    return _build_struct_time(self.year, self.month, self.day, 0, 0, 0, -1);
+}
+
+impl date.toordinal -> int {
+    return _ymd2ord(self.year, self.month, self.day);
+}
+
+impl date.replace(
+    year: (int | None) = None, month: (int | None) = None, day: (int | None) = None
+) -> date {
+    y: int = self.year if year is None else year;
+    m: int = self.month if month is None else month;
+    d: int = self.day if day is None else day;
+    return date(y, m, d);
+}
+
+impl date.__eq__(other: date) -> bool {
+    if isinstance(other, datetime) {
+        return False;
     }
+    return self._cmp(other) == 0;
+}
 
-    static def fromisoformat(date_string: str) -> date {
-        (y, m, d) = _parse_isoformat_date(date_string);
-        if y < 0 {
-            raise ValueError(f"Invalid isoformat string: '{date_string}'");
-        }
-        return date(y, m, d);
+impl date.__ne__(other: date) -> bool {
+    if isinstance(other, datetime) {
+        return True;
     }
+    return self._cmp(other) != 0;
+}
 
-    static def fromisocalendar(year: int, week: int, day: int) -> date {
-        (y, m, d) = _isoweek_to_gregorian(year, week, day);
-        return date(y, m, d);
-    }
-
-    static def strptime(date_string: str, format: str) -> date {
-        r: _StrptimeResult = _strptime(date_string, format);
-        return date(r.year, r.month, r.day);
-    }
-
-    def timetuple -> struct_time {
-        return _build_struct_time(self.year, self.month, self.day, 0, 0, 0, -1);
-    }
-
-    def toordinal -> int {
-        return _ymd2ord(self.year, self.month, self.day);
-    }
-
-    def replace(
-        year: (int | None) = None, month: (int | None) = None, day: (int | None) = None
-    ) -> date {
-        y: int = self.year if year is None else year;
-        m: int = self.month if month is None else month;
-        d: int = self.day if day is None else day;
-        return date(y, m, d);
-    }
-
-    def __eq__(other: date) -> bool {
-        if isinstance(other, datetime) {
-            return False;
-        }
-        return self._cmp(other) == 0;
-    }
-
-    def __ne__(other: date) -> bool {
-        if isinstance(other, datetime) {
-            return True;
-        }
-        return self._cmp(other) != 0;
-    }
-
-    def __le__(other: date) -> bool {
-        if isinstance(other, datetime) {
-            raise TypeError(
-                "'<=' not supported between instances of 'datetime.date' and 'datetime.datetime'"
-            );
-        }
-        return self._cmp(other) <= 0;
-    }
-
-    def __lt__(other: date) -> bool {
-        if isinstance(other, datetime) {
-            raise TypeError(
-                "'<' not supported between instances of 'datetime.date' and 'datetime.datetime'"
-            );
-        }
-        return self._cmp(other) < 0;
-    }
-
-    def __ge__(other: date) -> bool {
-        if isinstance(other, datetime) {
-            raise TypeError(
-                "'>=' not supported between instances of 'datetime.date' and 'datetime.datetime'"
-            );
-        }
-        return self._cmp(other) >= 0;
-    }
-
-    def __gt__(other: date) -> bool {
-        if isinstance(other, datetime) {
-            raise TypeError(
-                "'>' not supported between instances of 'datetime.date' and 'datetime.datetime'"
-            );
-        }
-        return self._cmp(other) > 0;
-    }
-
-    def _cmp(other: date) -> int {
-        if self.year != other.year {
-            return 1 if self.year > other.year else -1;
-        }
-        if self.month != other.month {
-            return 1 if self.month > other.month else -1;
-        }
-        if self.day != other.day {
-            return 1 if self.day > other.day else -1;
-        }
-        return 0;
-    }
-
-    def __add__(other: timedelta) -> date {
-        o: int = self.toordinal() + other.days;
-        if o > 0 and o <= _MAXORDINAL {
-            return date.fromordinal(o);
-        }
-        raise OverflowError("result out of range");
-    }
-
-    def __radd__(other: timedelta) -> date {
-        return self + other;
-    }
-
-    def __sub__(other: (timedelta | date)) -> (timedelta | date) {
-        if isinstance(other, timedelta) {
-            return self + timedelta(-(other as timedelta).days);
-        }
-        if isinstance(other, datetime) {
-            raise TypeError(
-                "unsupported operand type(s) for -: 'datetime.date' and 'datetime.datetime'"
-            );
-        }
-        return timedelta(self.toordinal() - (other as date).toordinal());
-    }
-
-    def weekday -> int {
-        return (self.toordinal() + 6) % 7;
-    }
-
-    def isoweekday -> int {
-        r: int = self.toordinal() % 7;
-        return 7 if r == 0 else r;
-    }
-
-    def isocalendar -> IsoCalendarDate {
-        year: int = self.year;
-        week1monday: int = _isoweek1monday(year);
-        today: int = _ymd2ord(self.year, self.month, self.day);
-        week: int = (today - week1monday) // 7;
-        day: int = (today - week1monday) % 7;
-        if week < 0 {
-            year -= 1;
-            week1monday = _isoweek1monday(year);
-            week = (today - week1monday) // 7;
-            day = (today - week1monday) % 7;
-        } elif week >= 52 {
-            if today >= _isoweek1monday(year + 1) {
-                year += 1;
-                week = -1;
-            }
-        }
-        return IsoCalendarDate(year, week + 1, day + 1);
-    }
-
-    def ctime -> str {
-        weekday: int = self.toordinal() % 7;
-        if weekday == 0 {
-            weekday = 7;
-        }
-        ds: str = " " + str(self.day) if self.day < 10 else str(self.day);
-        return _DAYNAMES[weekday]
-            + " "
-            + _MONTHNAMES[self.month]
-            + " "
-            + ds
-            + " 00:00:00 "
-            + _pad4(self.year);
-    }
-
-    def strftime(format: str) -> str {
-        return _wrap_strftime(
-            0,
-            None,
-            None,
-            format,
-            0,
-            0,
-            0,
-            self.day,
-            self.month,
-            self.year,
-            self.weekday(),
-            _days_before_month(self.year, self.month) + self.day,
-            -1
+impl date.__le__(other: date) -> bool {
+    if isinstance(other, datetime) {
+        raise TypeError(
+            "'<=' not supported between instances of 'datetime.date' and 'datetime.datetime'"
         );
     }
+    return self._cmp(other) <= 0;
+}
 
-    def __format__(fmt: str) -> str {
-        if len(fmt) != 0 {
-            return self.strftime(fmt);
+impl date.__lt__(other: date) -> bool {
+    if isinstance(other, datetime) {
+        raise TypeError(
+            "'<' not supported between instances of 'datetime.date' and 'datetime.datetime'"
+        );
+    }
+    return self._cmp(other) < 0;
+}
+
+impl date.__ge__(other: date) -> bool {
+    if isinstance(other, datetime) {
+        raise TypeError(
+            "'>=' not supported between instances of 'datetime.date' and 'datetime.datetime'"
+        );
+    }
+    return self._cmp(other) >= 0;
+}
+
+impl date.__gt__(other: date) -> bool {
+    if isinstance(other, datetime) {
+        raise TypeError(
+            "'>' not supported between instances of 'datetime.date' and 'datetime.datetime'"
+        );
+    }
+    return self._cmp(other) > 0;
+}
+
+impl date._cmp(other: date) -> int {
+    if self.year != other.year {
+        return 1 if self.year > other.year else -1;
+    }
+    if self.month != other.month {
+        return 1 if self.month > other.month else -1;
+    }
+    if self.day != other.day {
+        return 1 if self.day > other.day else -1;
+    }
+    return 0;
+}
+
+impl date.__add__(other: timedelta) -> date {
+    o: int = self.toordinal() + other.days;
+    if o > 0 and o <= _MAXORDINAL {
+        return date.fromordinal(o);
+    }
+    raise OverflowError("result out of range");
+}
+
+impl date.__radd__(other: timedelta) -> date {
+    return self + other;
+}
+
+impl date.__sub__(other: (timedelta | date)) -> (timedelta | date) {
+    if isinstance(other, timedelta) {
+        return self + timedelta(-(other as timedelta).days);
+    }
+    if isinstance(other, datetime) {
+        raise TypeError(
+            "unsupported operand type(s) for -: 'datetime.date' and 'datetime.datetime'"
+        );
+    }
+    return timedelta(self.toordinal() - (other as date).toordinal());
+}
+
+impl date.weekday -> int {
+    return (self.toordinal() + 6) % 7;
+}
+
+impl date.isoweekday -> int {
+    r: int = self.toordinal() % 7;
+    return 7 if r == 0 else r;
+}
+
+impl date.isocalendar -> IsoCalendarDate {
+    year: int = self.year;
+    week1monday: int = _isoweek1monday(year);
+    today: int = _ymd2ord(self.year, self.month, self.day);
+    week: int = (today - week1monday) // 7;
+    day: int = (today - week1monday) % 7;
+    if week < 0 {
+        year -= 1;
+        week1monday = _isoweek1monday(year);
+        week = (today - week1monday) // 7;
+        day = (today - week1monday) % 7;
+    } elif week >= 52 {
+        if today >= _isoweek1monday(year + 1) {
+            year += 1;
+            week = -1;
         }
-        return str(self);
     }
+    return IsoCalendarDate(year, week + 1, day + 1);
+}
 
-    def isoformat -> str {
-        return _pad4(self.year) + "-" + _pad2(self.month) + "-" + _pad2(self.day);
+impl date.ctime -> str {
+    weekday: int = self.toordinal() % 7;
+    if weekday == 0 {
+        weekday = 7;
     }
+    ds: str = " " + str(self.day) if self.day < 10 else str(self.day);
+    return _DAYNAMES[weekday]
+        + " "
+        + _MONTHNAMES[self.month]
+        + " "
+        + ds
+        + " 00:00:00 "
+        + _pad4(self.year);
+}
 
-    def __str__ -> str {
-        return self.isoformat();
+impl date.strftime(format: str) -> str {
+    return _wrap_strftime(
+        0,
+        None,
+        None,
+        format,
+        0,
+        0,
+        0,
+        self.day,
+        self.month,
+        self.year,
+        self.weekday(),
+        _days_before_month(self.year, self.month) + self.day,
+        -1
+    );
+}
+
+impl date.__format__(fmt: str) -> str {
+    if len(fmt) != 0 {
+        return self.strftime(fmt);
     }
+    return str(self);
+}
 
-    def __repr__ -> str {
-        return "datetime.date("
-            + str(self.year)
-            + ", "
-            + str(self.month)
-            + ", "
-            + str(self.day)
-            + ")";
-    }
+impl date.isoformat -> str {
+    return _pad4(self.year) + "-" + _pad2(self.month) + "-" + _pad2(self.day);
+}
 
-    static has min: date = date(1, 1, 1),
-        max: date = date(9999, 12, 31),
-        resolution: timedelta = timedelta(1);
+impl date.__str__ -> str {
+    return self.isoformat();
+}
+
+impl date.__repr__ -> str {
+    return "datetime.date("
+        + str(self.year)
+        + ", "
+        + str(self.month)
+        + ", "
+        + str(self.day)
+        + ")";
 }
 
 
-obj:pub tzinfo {
-    def tzname(dt: (datetime | None)) -> (str | None) {
-        raise NotImplementedError("tzinfo subclass must override tzname()");
-    }
+impl tzinfo.tzname(dt: (datetime | None)) -> (str | None) {
+    raise NotImplementedError("tzinfo subclass must override tzname()");
+}
 
-    def utcoffset(dt: (datetime | None)) -> (timedelta | None) {
-        raise NotImplementedError("tzinfo subclass must override utcoffset()");
-    }
+impl tzinfo.utcoffset(dt: (datetime | None)) -> (timedelta | None) {
+    raise NotImplementedError("tzinfo subclass must override utcoffset()");
+}
 
-    def dst(dt: (datetime | None)) -> (timedelta | None) {
-        raise NotImplementedError("tzinfo subclass must override dst()");
-    }
+impl tzinfo.dst(dt: (datetime | None)) -> (timedelta | None) {
+    raise NotImplementedError("tzinfo subclass must override dst()");
+}
 
-    def fromutc(dt: datetime) -> datetime {
-        if not isinstance(dt, datetime) {
-            raise TypeError("fromutc() requires a datetime argument");
-        }
-        if dt.tzinfo is not self {
-            raise ValueError("dt.tzinfo is not self");
-        }
-        dtoff: (timedelta | None) = dt.utcoffset();
-        if dtoff is None {
-            raise ValueError("fromutc() requires a non-None utcoffset() result");
-        }
-        dtdst: (timedelta | None) = dt.dst();
+impl tzinfo.fromutc(dt: datetime) -> datetime {
+    if not isinstance(dt, datetime) {
+        raise TypeError("fromutc() requires a datetime argument");
+    }
+    if dt.tzinfo is not self {
+        raise ValueError("dt.tzinfo is not self");
+    }
+    dtoff: (timedelta | None) = dt.utcoffset();
+    if dtoff is None {
+        raise ValueError("fromutc() requires a non-None utcoffset() result");
+    }
+    dtdst: (timedelta | None) = dt.dst();
+    if dtdst is None {
+        raise ValueError("fromutc() requires a non-None dst() result");
+    }
+    delta: timedelta = (dtoff as timedelta) - (dtdst as timedelta);
+    if delta {
+        dt = dt + delta;
+        dtdst = dt.dst();
         if dtdst is None {
-            raise ValueError("fromutc() requires a non-None dst() result");
+            raise ValueError(
+                "fromutc(): dt.dst gave inconsistent results; cannot convert"
+            );
         }
-        delta: timedelta = (dtoff as timedelta) - (dtdst as timedelta);
-        if delta {
-            dt = dt + delta;
-            dtdst = dt.dst();
-            if dtdst is None {
-                raise ValueError(
-                    "fromutc(): dt.dst gave inconsistent results; cannot convert"
-                );
-            }
-        }
-        return dt + (dtdst as timedelta);
     }
+    return dt + (dtdst as timedelta);
+}
 
-    def __repr__ -> str {
-        return "<tzinfo>";
-    }
+impl tzinfo.__repr__ -> str {
+    return "<tzinfo>";
 }
 
 
-glob _TZ_KEEP: tzinfo = tzinfo();
+impl time.init(
+    hour: int = 0,
+    minute: int = 0,
+    second: int = 0,
+    microsecond: int = 0,
+    tzinfo: (tzinfo | None) = None,
+    fold: int = 0
+) {
+    _check_time_fields(hour, minute, second, microsecond, fold);
+    self.hour = hour;
+    self.minute = minute;
+    self.second = second;
+    self.microsecond = microsecond;
+    self.tzinfo = tzinfo;
+    self.fold = fold;
+}
 
-
-obj:pub time {
-    has hour: int = 0,
-        minute: int = 0,
-        second: int = 0,
-        microsecond: int = 0,
-        tzinfo: (tzinfo | None) = None,
-        fold: int = 0;
-
-    def init(
-        hour: int = 0,
-        minute: int = 0,
-        second: int = 0,
-        microsecond: int = 0,
-        tzinfo: (tzinfo | None) = None,
-        fold: int = 0
-    ) {
-        _check_time_fields(hour, minute, second, microsecond, fold);
-        self.hour = hour;
-        self.minute = minute;
-        self.second = second;
-        self.microsecond = microsecond;
-        self.tzinfo = tzinfo;
-        self.fold = fold;
+impl time.fromisoformat(time_string: str) -> time {
+    s: str = time_string;
+    if len(s) > 0 and s[0] == "T" {
+        s = s[1:];
     }
-
-    static def fromisoformat(time_string: str) -> time {
-        s: str = time_string;
-        if len(s) > 0 and s[0] == "T" {
-            s = s[1:];
-        }
-        r: _IsoTimeResult = _parse_isoformat_time(s);
-        if r.invalid or r.error_from_components {
-            raise ValueError(f"Invalid isoformat string: '{time_string}'");
-        }
-        return time(r.hour, r.minute, r.second, r.microsecond, r.tzi);
+    r: _IsoTimeResult = _parse_isoformat_time(s);
+    if r.invalid or r.error_from_components {
+        raise ValueError(f"Invalid isoformat string: '{time_string}'");
     }
+    return time(r.hour, r.minute, r.second, r.microsecond, r.tzi);
+}
 
-    static def strptime(date_string: str, format: str) -> time {
-        r: _StrptimeResult = _strptime(date_string, format);
-        return time(r.hour, r.minute, r.second, r.microsecond, r.tz);
+impl time.strptime(date_string: str, format: str) -> time {
+    r: _StrptimeResult = _strptime(date_string, format);
+    return time(r.hour, r.minute, r.second, r.microsecond, r.tz);
+}
+
+impl time._tzstr -> str {
+    off: (timedelta | None) = self.utcoffset();
+    return _format_offset(off);
+}
+
+impl time.utcoffset -> (timedelta | None) {
+    tzv: (tzinfo | None) = self.tzinfo;
+    if tzv is None {
+        return None;
     }
+    tz: tzinfo = tzv;
+    offset: (timedelta | None) = tz.utcoffset(None);
+    _check_utc_offset(offset);
+    return offset;
+}
 
-    def _tzstr -> str {
-        off: (timedelta | None) = self.utcoffset();
-        return _format_offset(off);
+impl time.tzname -> (str | None) {
+    tzv: (tzinfo | None) = self.tzinfo;
+    if tzv is None {
+        return None;
     }
+    tz: tzinfo = tzv;
+    return tz.tzname(None);
+}
 
-    def utcoffset -> (timedelta | None) {
-        tzv: (tzinfo | None) = self.tzinfo;
-        if tzv is None {
-            return None;
-        }
-        tz: tzinfo = tzv;
-        offset: (timedelta | None) = tz.utcoffset(None);
-        _check_utc_offset(offset);
-        return offset;
+impl time.dst -> (timedelta | None) {
+    tzv: (tzinfo | None) = self.tzinfo;
+    if tzv is None {
+        return None;
     }
+    tz: tzinfo = tzv;
+    offset: (timedelta | None) = tz.dst(None);
+    _check_utc_offset(offset);
+    return offset;
+}
 
-    def tzname -> (str | None) {
-        tzv: (tzinfo | None) = self.tzinfo;
-        if tzv is None {
-            return None;
-        }
-        tz: tzinfo = tzv;
-        return tz.tzname(None);
+impl time.replace(
+    hour: (int | None) = None,
+    minute: (int | None) = None,
+    second: (int | None) = None,
+    microsecond: (int | None) = None,
+    tzinfo: (tzinfo | None) = _TZ_KEEP,
+    fold: (int | None) = None
+) -> time {
+    h: int = self.hour if hour is None else hour;
+    mi: int = self.minute if minute is None else minute;
+    s: int = self.second if second is None else second;
+    us: int = self.microsecond if microsecond is None else microsecond;
+    tz: (tzinfo | None) = self.tzinfo if tzinfo is _TZ_KEEP else tzinfo;
+    f: int = self.fold if fold is None else fold;
+    return time(h, mi, s, us, tz, f);
+}
+
+impl time.isoformat(timespec: str = "auto") -> str {
+    p: int = dt_out_buf();
+    n: int = _w_time(
+        p, self.hour, self.minute, self.second, self.microsecond, timespec
+    );
+    n += _w_offset(p + n, self.utcoffset(), ":");
+    return dt_out_str(n);
+}
+
+impl time.__str__ -> str {
+    return self.isoformat();
+}
+
+impl time.strftime(format: str) -> str {
+    return _wrap_strftime(
+        self.microsecond,
+        self.utcoffset(),
+        self.tzname(),
+        format,
+        self.second,
+        self.minute,
+        self.hour,
+        1,
+        1,
+        1900,
+        0,
+        1,
+        -1
+    );
+}
+
+impl time.__format__(fmt: str) -> str {
+    if len(fmt) != 0 {
+        return self.strftime(fmt);
     }
+    return str(self);
+}
 
-    def dst -> (timedelta | None) {
-        tzv: (tzinfo | None) = self.tzinfo;
-        if tzv is None {
-            return None;
-        }
-        tz: tzinfo = tzv;
-        offset: (timedelta | None) = tz.dst(None);
-        _check_utc_offset(offset);
-        return offset;
+impl time.__repr__ -> str {
+    s: str = "";
+    if self.microsecond != 0 {
+        s = ", " + str(self.second) + ", " + str(self.microsecond);
+    } elif self.second != 0 {
+        s = ", " + str(self.second);
     }
-
-    def replace(
-        hour: (int | None) = None,
-        minute: (int | None) = None,
-        second: (int | None) = None,
-        microsecond: (int | None) = None,
-        tzinfo: (tzinfo | None) = _TZ_KEEP,
-        fold: (int | None) = None
-    ) -> time {
-        h: int = self.hour if hour is None else hour;
-        mi: int = self.minute if minute is None else minute;
-        s: int = self.second if second is None else second;
-        us: int = self.microsecond if microsecond is None else microsecond;
-        tz: (tzinfo | None) = self.tzinfo if tzinfo is _TZ_KEEP else tzinfo;
-        f: int = self.fold if fold is None else fold;
-        return time(h, mi, s, us, tz, f);
+    r: str = "datetime.time(" + str(self.hour) + ", " + str(self.minute) + s + ")";
+    if self.tzinfo is not None {
+        r = r[0:len(r) - 1] + ", tzinfo=" + _tz_repr(self.tzinfo) + ")";
     }
-
-    def isoformat(timespec: str = "auto") -> str {
-        p: int = dt_out_buf();
-        n: int = _w_time(
-            p, self.hour, self.minute, self.second, self.microsecond, timespec
-        );
-        n += _w_offset(p + n, self.utcoffset(), ":");
-        return dt_out_str(n);
+    if self.fold != 0 {
+        r = r[0:len(r) - 1] + ", fold=1)";
     }
+    return r;
+}
 
-    def __str__ -> str {
-        return self.isoformat();
-    }
-
-    def strftime(format: str) -> str {
-        return _wrap_strftime(
-            self.microsecond,
-            self.utcoffset(),
-            self.tzname(),
-            format,
-            self.second,
-            self.minute,
-            self.hour,
-            1,
-            1,
-            1900,
-            0,
-            1,
-            -1
-        );
-    }
-
-    def __format__(fmt: str) -> str {
-        if len(fmt) != 0 {
-            return self.strftime(fmt);
-        }
-        return str(self);
-    }
-
-    def __repr__ -> str {
-        s: str = "";
-        if self.microsecond != 0 {
-            s = ", " + str(self.second) + ", " + str(self.microsecond);
-        } elif self.second != 0 {
-            s = ", " + str(self.second);
-        }
-        r: str = "datetime.time(" + str(self.hour) + ", " + str(self.minute) + s + ")";
-        if self.tzinfo is not None {
-            r = r[0:len(r) - 1] + ", tzinfo=" + _tz_repr(self.tzinfo) + ")";
-        }
-        if self.fold != 0 {
-            r = r[0:len(r) - 1] + ", fold=1)";
-        }
-        return r;
-    }
-
-    def _cmp(other: time, allow_mixed: bool) -> int {
-        mytz: (tzinfo | None) = self.tzinfo;
-        ottz: (tzinfo | None) = other.tzinfo;
-        myoff: (timedelta | None) = None;
-        otoff: (timedelta | None) = None;
-        base_compare: bool = False;
-        if mytz is ottz {
+impl time._cmp(other: time, allow_mixed: bool) -> int {
+    mytz: (tzinfo | None) = self.tzinfo;
+    ottz: (tzinfo | None) = other.tzinfo;
+    myoff: (timedelta | None) = None;
+    otoff: (timedelta | None) = None;
+    base_compare: bool = False;
+    if mytz is ottz {
+        base_compare = True;
+    } else {
+        myoff = self.utcoffset();
+        otoff = other.utcoffset();
+        if myoff is None and otoff is None {
             base_compare = True;
+        } elif myoff is None or otoff is None {
+            base_compare = False;
         } else {
-            myoff = self.utcoffset();
-            otoff = other.utcoffset();
-            if myoff is None and otoff is None {
-                base_compare = True;
-            } elif myoff is None or otoff is None {
-                base_compare = False;
-            } else {
-                base_compare = (myoff as timedelta) == (otoff as timedelta);
-            }
+            base_compare = (myoff as timedelta) == (otoff as timedelta);
         }
-        if base_compare {
-            if self.hour != other.hour {
-                return 1 if self.hour > other.hour else -1;
-            }
-            if self.minute != other.minute {
-                return 1 if self.minute > other.minute else -1;
-            }
-            if self.second != other.second {
-                return 1 if self.second > other.second else -1;
-            }
-            if self.microsecond != other.microsecond {
-                return 1 if self.microsecond > other.microsecond else -1;
-            }
-            return 0;
+    }
+    if base_compare {
+        if self.hour != other.hour {
+            return 1 if self.hour > other.hour else -1;
         }
-        if myoff is None or otoff is None {
-            if allow_mixed {
-                return 2;
-            }
-            raise TypeError("cannot compare naive and aware times");
-        }
-        mo: timedelta = myoff;
-        oo: timedelta = otoff;
-        myhhmm: int = self.hour * 60 + self.minute
-            - (mo._to_microseconds() // 60000000);
-        othhmm: int = other.hour * 60 + other.minute
-            - (oo._to_microseconds() // 60000000);
-        if myhhmm != othhmm {
-            return 1 if myhhmm > othhmm else -1;
+        if self.minute != other.minute {
+            return 1 if self.minute > other.minute else -1;
         }
         if self.second != other.second {
             return 1 if self.second > other.second else -1;
@@ -2299,832 +2785,803 @@ obj:pub time {
         }
         return 0;
     }
-
-    def __eq__(other: time) -> bool {
-        return self._cmp(other, True) == 0;
+    if myoff is None or otoff is None {
+        if allow_mixed {
+            return 2;
+        }
+        raise TypeError("cannot compare naive and aware times");
     }
-
-    def __ne__(other: time) -> bool {
-        return self._cmp(other, True) != 0;
+    mo: timedelta = myoff;
+    oo: timedelta = otoff;
+    myhhmm: int = self.hour * 60 + self.minute - (mo._to_microseconds() // 60000000);
+    othhmm: int = other.hour * 60 + other.minute - (oo._to_microseconds() // 60000000);
+    if myhhmm != othhmm {
+        return 1 if myhhmm > othhmm else -1;
     }
-
-    def __le__(other: time) -> bool {
-        return self._cmp(other, False) <= 0;
+    if self.second != other.second {
+        return 1 if self.second > other.second else -1;
     }
-
-    def __lt__(other: time) -> bool {
-        return self._cmp(other, False) < 0;
+    if self.microsecond != other.microsecond {
+        return 1 if self.microsecond > other.microsecond else -1;
     }
+    return 0;
+}
 
-    def __ge__(other: time) -> bool {
-        return self._cmp(other, False) >= 0;
-    }
+impl time.__eq__(other: time) -> bool {
+    return self._cmp(other, True) == 0;
+}
 
-    def __gt__(other: time) -> bool {
-        return self._cmp(other, False) > 0;
-    }
+impl time.__ne__(other: time) -> bool {
+    return self._cmp(other, True) != 0;
+}
 
-    static has min: time = time(0, 0, 0),
-        max: time = time(23, 59, 59, 999999),
-        resolution: timedelta = timedelta(0, 0, 1);
+impl time.__le__(other: time) -> bool {
+    return self._cmp(other, False) <= 0;
+}
+
+impl time.__lt__(other: time) -> bool {
+    return self._cmp(other, False) < 0;
+}
+
+impl time.__ge__(other: time) -> bool {
+    return self._cmp(other, False) >= 0;
+}
+
+impl time.__gt__(other: time) -> bool {
+    return self._cmp(other, False) > 0;
 }
 
 
-obj:pub datetime(date) {
-    has hour: int = 0,
-        minute: int = 0,
-        second: int = 0,
-        microsecond: int = 0,
-        tzinfo: (tzinfo | None) = None,
-        fold: int = 0;
+impl datetime.init(
+    year: int,
+    month: int,
+    day: int,
+    hour: int = 0,
+    minute: int = 0,
+    second: int = 0,
+    microsecond: int = 0,
+    tzinfo: (tzinfo | None) = None,
+    fold: int = 0
+) {
+    _check_date_fields(year, month, day);
+    _check_time_fields(hour, minute, second, microsecond, fold);
+    self.year = year;
+    self.month = month;
+    self.day = day;
+    self.hour = hour;
+    self.minute = minute;
+    self.second = second;
+    self.microsecond = microsecond;
+    self.tzinfo = tzinfo;
+    self.fold = fold;
+}
 
-    def init(
-        year: int,
-        month: int,
-        day: int,
-        hour: int = 0,
-        minute: int = 0,
-        second: int = 0,
-        microsecond: int = 0,
-        tzinfo: (tzinfo | None) = None,
-        fold: int = 0
-    ) {
-        _check_date_fields(year, month, day);
-        _check_time_fields(hour, minute, second, microsecond, fold);
-        self.year = year;
-        self.month = month;
-        self.day = day;
-        self.hour = hour;
-        self.minute = minute;
-        self.second = second;
-        self.microsecond = microsecond;
-        self.tzinfo = tzinfo;
-        self.fold = fold;
+impl datetime._fromepoch(
+    sec: int, us: int, utc: bool, tz: (tzinfo | None)
+) -> datetime {
+    if utc {
+        dt_gmtime(sec);
+    } else {
+        dt_localtime(sec);
     }
-
-    static def _fromepoch(
-        sec: int, us: int, utc: bool, tz: (tzinfo | None)
-    ) -> datetime {
-        if utc {
-            dt_gmtime(sec);
-        } else {
-            dt_localtime(sec);
-        }
-        ss: int = dt_tm(0);
-        if ss > 59 {
-            ss = 59;
-        }
-        result: datetime = datetime(
-            dt_tm(5) + 1900, dt_tm(4) + 1, dt_tm(3), dt_tm(2), dt_tm(1), ss, us, tz
-        );
-        if tz is None and not utc {
-            off_now: int = dt_tm_gmtoff();
-            dt_localtime(sec - 86400);
-            shift: int = off_now - dt_tm_gmtoff();
-            if shift < 0 {
-                dt_localtime(sec + shift);
-                probe2: datetime = datetime(
-                    dt_tm(5) + 1900,
-                    dt_tm(4) + 1,
-                    dt_tm(3),
-                    dt_tm(2),
-                    dt_tm(1),
-                    dt_tm(0),
-                    us,
-                    None
-                );
-                if probe2 == result {
-                    result.fold = 1;
-                }
+    ss: int = dt_tm(0);
+    if ss > 59 {
+        ss = 59;
+    }
+    result: datetime = datetime(
+        dt_tm(5) + 1900, dt_tm(4) + 1, dt_tm(3), dt_tm(2), dt_tm(1), ss, us, tz
+    );
+    if tz is None and not utc {
+        off_now: int = dt_tm_gmtoff();
+        dt_localtime(sec - 86400);
+        shift: int = off_now - dt_tm_gmtoff();
+        if shift < 0 {
+            dt_localtime(sec + shift);
+            probe2: datetime = datetime(
+                dt_tm(5) + 1900,
+                dt_tm(4) + 1,
+                dt_tm(3),
+                dt_tm(2),
+                dt_tm(1),
+                dt_tm(0),
+                us,
+                None
+            );
+            if probe2 == result {
+                result.fold = 1;
             }
-        } elif tz is not None {
-            tzv: tzinfo = tz;
-            result = tzv.fromutc(result);
         }
-        return result;
+    } elif tz is not None {
+        tzv: tzinfo = tz;
+        result = tzv.fromutc(result);
     }
+    return result;
+}
 
-    static def fromtimestamp(t: float, tz: (tzinfo | None) = None) -> datetime {
-        (frac, tf) = _modf(t);
-        us: int = _round_half_even(frac * 1000000.0);
-        if us >= 1000000 {
-            tf += 1.0;
-            us -= 1000000;
-        } elif us < 0 {
-            tf -= 1.0;
-            us += 1000000;
-        }
-        if tf > 9.0e18 or tf < -9.0e18 {
-            raise OverflowError("timestamp out of range for platform time_t");
-        }
-        return datetime._fromepoch(int(tf), us, tz is not None, tz);
+impl datetime.fromtimestamp(t: float, tz: (tzinfo | None) = None) -> datetime {
+    (frac, tf) = _modf(t);
+    us: int = _round_half_even(frac * 1000000.0);
+    if us >= 1000000 {
+        tf += 1.0;
+        us -= 1000000;
+    } elif us < 0 {
+        tf -= 1.0;
+        us += 1000000;
     }
-
-    static def utcfromtimestamp(t: float) -> datetime {
-        (frac, tf) = _modf(t);
-        us: int = _round_half_even(frac * 1000000.0);
-        if us >= 1000000 {
-            tf += 1.0;
-            us -= 1000000;
-        } elif us < 0 {
-            tf -= 1.0;
-            us += 1000000;
-        }
-        if tf > 9.0e18 or tf < -9.0e18 {
-            raise OverflowError("timestamp out of range for platform time_t");
-        }
-        return datetime._fromepoch(int(tf), us, True, None);
+    if tf > 9.0e18 or tf < -9.0e18 {
+        raise OverflowError("timestamp out of range for platform time_t");
     }
+    return datetime._fromepoch(int(tf), us, tz is not None, tz);
+}
 
-    static def now(tz: (tzinfo | None) = None) -> datetime {
-        us_total: int = dt_epoch_us();
-        return datetime._fromepoch(
-            us_total // 1000000, us_total % 1000000, tz is not None, tz
-        );
+impl datetime.utcfromtimestamp(t: float) -> datetime {
+    (frac, tf) = _modf(t);
+    us: int = _round_half_even(frac * 1000000.0);
+    if us >= 1000000 {
+        tf += 1.0;
+        us -= 1000000;
+    } elif us < 0 {
+        tf -= 1.0;
+        us += 1000000;
     }
-
-    static def utcnow -> datetime {
-        us_total: int = dt_epoch_us();
-        return datetime._fromepoch(us_total // 1000000, us_total % 1000000, True, None);
+    if tf > 9.0e18 or tf < -9.0e18 {
+        raise OverflowError("timestamp out of range for platform time_t");
     }
+    return datetime._fromepoch(int(tf), us, True, None);
+}
 
-    static def combine(d: any, t: any, tzinfo: (tzinfo | None) = _TZ_KEEP) -> datetime {
-        return _datetime_combine(d, t, tzinfo);
+impl datetime.now(tz: (tzinfo | None) = None) -> datetime {
+    us_total: int = dt_epoch_us();
+    return datetime._fromepoch(
+        us_total // 1000000, us_total % 1000000, tz is not None, tz
+    );
+}
+
+impl datetime.utcnow -> datetime {
+    us_total: int = dt_epoch_us();
+    return datetime._fromepoch(us_total // 1000000, us_total % 1000000, True, None);
+}
+
+impl datetime.combine(d: any, t: any, tzinfo: (tzinfo | None) = _TZ_KEEP) -> datetime {
+    return _datetime_combine(d, t, tzinfo);
+}
+
+impl datetime.fromisoformat(date_string: str) -> datetime {
+    if len(date_string) < 7 {
+        raise ValueError(f"Invalid isoformat string: '{date_string}'");
     }
-
-    static def fromisoformat(date_string: str) -> datetime {
-        if len(date_string) < 7 {
+    dy: int = 0;
+    dm: int = 0;
+    dd: int = 0;
+    sep: int = 0;
+    b: bytes = date_string.encode();
+    sep = _find_isoformat_datetime_separator(b);
+    if sep >= 0 {
+        (dy, dm, dd) = _parse_isoformat_date_range(b, 0, sep);
+    }
+    if sep < 0 or dy < 0 {
+        raise ValueError(f"Invalid isoformat string: '{date_string}'");
+    }
+    tr: _IsoTimeResult = _IsoTimeResult();
+    if sep + 1 < len(b) {
+        tr = _parse_isoformat_time_at(b, sep + 1);
+        if tr.invalid {
             raise ValueError(f"Invalid isoformat string: '{date_string}'");
         }
-        dy: int = 0;
-        dm: int = 0;
-        dd: int = 0;
-        sep: int = 0;
-        b: bytes = date_string.encode();
-        sep = _find_isoformat_datetime_separator(b);
-        if sep >= 0 {
-            (dy, dm, dd) = _parse_isoformat_date_range(b, 0, sep);
+        if tr.error_from_components {
+            raise ValueError(
+                "minute, second, and microsecond must be 0 when hour is 24"
+            );
         }
-        if sep < 0 or dy < 0 {
-            raise ValueError(f"Invalid isoformat string: '{date_string}'");
-        }
-        tr: _IsoTimeResult = _IsoTimeResult();
-        if sep + 1 < len(b) {
-            tr = _parse_isoformat_time_at(b, sep + 1);
-            if tr.invalid {
-                raise ValueError(f"Invalid isoformat string: '{date_string}'");
-            }
-            if tr.error_from_components {
-                raise ValueError(
-                    "minute, second, and microsecond must be 0 when hour is 24"
-                );
-            }
-            if tr.became_next_day {
-                if dm >= 1 and dm <= 12 {
-                    dim: int = _days_in_month(dy, dm);
-                    if dd <= dim {
-                        dd += 1;
-                        if dd > dim {
-                            dd = 1;
-                            dm += 1;
-                            if dm > 12 {
-                                dm = 1;
-                                dy += 1;
-                            }
+        if tr.became_next_day {
+            if dm >= 1 and dm <= 12 {
+                dim: int = _days_in_month(dy, dm);
+                if dd <= dim {
+                    dd += 1;
+                    if dd > dim {
+                        dd = 1;
+                        dm += 1;
+                        if dm > 12 {
+                            dm = 1;
+                            dy += 1;
                         }
                     }
                 }
             }
         }
-        return datetime(
-            dy, dm, dd, tr.hour, tr.minute, tr.second, tr.microsecond, tr.tzi
-        );
     }
+    return datetime(dy, dm, dd, tr.hour, tr.minute, tr.second, tr.microsecond, tr.tzi);
+}
 
-    static def strptime(date_string: str, format: str) -> datetime {
-        r: _StrptimeResult = _strptime(date_string, format);
-        return datetime(
-            r.year, r.month, r.day, r.hour, r.minute, r.second, r.microsecond, r.tz
-        );
+impl datetime.strptime(date_string: str, format: str) -> datetime {
+    r: _StrptimeResult = _strptime(date_string, format);
+    return datetime(
+        r.year, r.month, r.day, r.hour, r.minute, r.second, r.microsecond, r.tz
+    );
+}
+
+impl datetime.fromordinal(n: int) -> datetime {
+    if n < 1 {
+        raise ValueError("ordinal must be >= 1");
     }
+    (y, m, d) = _ord2ymd(n);
+    return datetime(y, m, d);
+}
 
-    static def fromordinal(n: int) -> datetime {
-        if n < 1 {
-            raise ValueError("ordinal must be >= 1");
-        }
-        (y, m, d) = _ord2ymd(n);
-        return datetime(y, m, d);
+impl datetime.fromisocalendar(year: int, week: int, day: int) -> datetime {
+    (y, m, d) = _isoweek_to_gregorian(year, week, day);
+    return datetime(y, m, d);
+}
+
+impl datetime.today -> datetime {
+    return datetime.now(None);
+}
+
+impl datetime.timetuple -> struct_time {
+    d: (timedelta | None) = self.dst();
+    dstflag: int = -1;
+    if d is not None {
+        dstflag = 1 if (d as timedelta) else 0;
     }
+    return _build_struct_time(
+        self.year, self.month, self.day, self.hour, self.minute, self.second, dstflag
+    );
+}
 
-    static def fromisocalendar(year: int, week: int, day: int) -> datetime {
-        (y, m, d) = _isoweek_to_gregorian(year, week, day);
-        return datetime(y, m, d);
-    }
+impl datetime._local_u(u: int) -> int {
+    dt_localtime(u);
+    return (_ymd2ord(dt_tm(5) + 1900, dt_tm(4) + 1, dt_tm(3)) - _EPOCHORDINAL) * 86400
+        + dt_tm(2) * 3600
+        + dt_tm(1) * 60
+        + dt_tm(0);
+}
 
-    static def today -> datetime {
-        return datetime.now(None);
-    }
-
-    def timetuple -> struct_time {
-        d: (timedelta | None) = self.dst();
-        dstflag: int = -1;
-        if d is not None {
-            dstflag = 1 if (d as timedelta) else 0;
-        }
-        return _build_struct_time(
-            self.year,
-            self.month,
-            self.day,
-            self.hour,
-            self.minute,
-            self.second,
-            dstflag
-        );
-    }
-
-    def _local_u(u: int) -> int {
-        dt_localtime(u);
-        return (_ymd2ord(dt_tm(5) + 1900, dt_tm(4) + 1, dt_tm(3)) - _EPOCHORDINAL)
-            * 86400
-            + dt_tm(2) * 3600
-            + dt_tm(1) * 60
-            + dt_tm(0);
-    }
-
-    def _mktime -> int {
-        max_fold_seconds: int = 86400;
-        t: int = (_ymd2ord(self.year, self.month, self.day) - _EPOCHORDINAL) * 86400
-            + self.hour * 3600
-            + self.minute * 60
-            + self.second;
-        a: int = self._local_u(t) - t;
-        u1: int = t - a;
-        t1: int = self._local_u(u1);
-        b: int = 0;
-        if t1 == t {
-            u2a: int = u1 + (max_fold_seconds if self.fold != 0 else -max_fold_seconds);
-            b = self._local_u(u2a) - u2a;
-            if a == b {
-                return u1;
-            }
-        } else {
-            b = t1 - u1;
-        }
-        u2: int = t - b;
-        t2: int = self._local_u(u2);
-        if t2 == t {
-            return u2;
-        }
-        if t1 == t {
+impl datetime._mktime -> int {
+    max_fold_seconds: int = 86400;
+    t: int = (_ymd2ord(self.year, self.month, self.day) - _EPOCHORDINAL) * 86400
+        + self.hour * 3600
+        + self.minute * 60
+        + self.second;
+    a: int = self._local_u(t) - t;
+    u1: int = t - a;
+    t1: int = self._local_u(u1);
+    b: int = 0;
+    if t1 == t {
+        u2a: int = u1 + (max_fold_seconds if self.fold != 0 else -max_fold_seconds);
+        b = self._local_u(u2a) - u2a;
+        if a == b {
             return u1;
         }
-        if self.fold != 0 {
-            return u1 if u1 < u2 else u2;
-        }
-        return u1 if u1 > u2 else u2;
+    } else {
+        b = t1 - u1;
     }
-
-    def timestamp -> float {
-        if self.tzinfo is None {
-            s: int = self._mktime();
-            return float(s) + float(self.microsecond) / 1000000.0;
-        }
-        return ((self - _EPOCH) as timedelta).total_seconds();
+    u2: int = t - b;
+    t2: int = self._local_u(u2);
+    if t2 == t {
+        return u2;
     }
+    if t1 == t {
+        return u1;
+    }
+    if self.fold != 0 {
+        return u1 if u1 < u2 else u2;
+    }
+    return u1 if u1 > u2 else u2;
+}
 
-    def utctimetuple -> struct_time {
-        offset: (timedelta | None) = self.utcoffset();
-        s2: datetime = self;
-        if offset is not None {
-            off: timedelta = offset;
-            if off {
-                s2 = (self - off) as datetime;
+impl datetime.timestamp -> float {
+    if self.tzinfo is None {
+        s: int = self._mktime();
+        return float(s) + float(self.microsecond) / 1000000.0;
+    }
+    return ((self - _EPOCH) as timedelta).total_seconds();
+}
+
+impl datetime.utctimetuple -> struct_time {
+    offset: (timedelta | None) = self.utcoffset();
+    s2: datetime = self;
+    if offset is not None {
+        off: timedelta = offset;
+        if off {
+            s2 = (self - off) as datetime;
+        }
+    }
+    return _build_struct_time(
+        s2.year, s2.month, s2.day, s2.hour, s2.minute, s2.second, 0
+    );
+}
+
+impl datetime.date -> any {
+    return _mk_date(self.year, self.month, self.day);
+}
+
+impl datetime.time -> any {
+    return _mk_time(
+        self.hour, self.minute, self.second, self.microsecond, None, self.fold
+    );
+}
+
+impl datetime.timetz -> any {
+    return _mk_time(
+        self.hour, self.minute, self.second, self.microsecond, self.tzinfo, self.fold
+    );
+}
+
+impl datetime.replace(
+    year: (int | None) = None,
+    month: (int | None) = None,
+    day: (int | None) = None,
+    hour: (int | None) = None,
+    minute: (int | None) = None,
+    second: (int | None) = None,
+    microsecond: (int | None) = None,
+    tzinfo: (tzinfo | None) = _TZ_KEEP,
+    fold: (int | None) = None
+) -> datetime {
+    y: int = self.year if year is None else year;
+    mo: int = self.month if month is None else month;
+    d: int = self.day if day is None else day;
+    h: int = self.hour if hour is None else hour;
+    mi: int = self.minute if minute is None else minute;
+    s: int = self.second if second is None else second;
+    us: int = self.microsecond if microsecond is None else microsecond;
+    tz: (tzinfo | None) = self.tzinfo if tzinfo is _TZ_KEEP else tzinfo;
+    f: int = self.fold if fold is None else fold;
+    return datetime(y, mo, d, h, mi, s, us, tz, f);
+}
+
+impl datetime._local_timezone -> timezone {
+    ts: int = 0;
+    if self.tzinfo is None {
+        ts = self._mktime();
+        ts2: int = self.replace(fold=1 - self.fold)._mktime();
+        if ts2 != ts {
+            if (ts2 > ts) == (self.fold != 0) {
+                ts = ts2;
             }
         }
-        return _build_struct_time(
-            s2.year, s2.month, s2.day, s2.hour, s2.minute, s2.second, 0
-        );
+    } else {
+        ts = (((self - _EPOCH) as timedelta) // timedelta(0, 1)) as int;
     }
+    dt_localtime(ts);
+    gmtoff: int = dt_tm_gmtoff();
+    zone: str = dt_tm_zone();
+    return timezone(timedelta(0, gmtoff), zone);
+}
 
-    def date -> any {
-        return _mk_date(self.year, self.month, self.day);
-    }
-
-    def time -> any {
-        return _mk_time(
-            self.hour, self.minute, self.second, self.microsecond, None, self.fold
-        );
-    }
-
-    def timetz -> any {
-        return _mk_time(
-            self.hour,
-            self.minute,
-            self.second,
-            self.microsecond,
-            self.tzinfo,
-            self.fold
-        );
-    }
-
-    def replace(
-        year: (int | None) = None,
-        month: (int | None) = None,
-        day: (int | None) = None,
-        hour: (int | None) = None,
-        minute: (int | None) = None,
-        second: (int | None) = None,
-        microsecond: (int | None) = None,
-        tzinfo: (tzinfo | None) = _TZ_KEEP,
-        fold: (int | None) = None
-    ) -> datetime {
-        y: int = self.year if year is None else year;
-        mo: int = self.month if month is None else month;
-        d: int = self.day if day is None else day;
-        h: int = self.hour if hour is None else hour;
-        mi: int = self.minute if minute is None else minute;
-        s: int = self.second if second is None else second;
-        us: int = self.microsecond if microsecond is None else microsecond;
-        tz: (tzinfo | None) = self.tzinfo if tzinfo is _TZ_KEEP else tzinfo;
-        f: int = self.fold if fold is None else fold;
-        return datetime(y, mo, d, h, mi, s, us, tz, f);
-    }
-
-    def _local_timezone -> timezone {
-        ts: int = 0;
-        if self.tzinfo is None {
-            ts = self._mktime();
-            ts2: int = self.replace(fold=1 - self.fold)._mktime();
-            if ts2 != ts {
-                if (ts2 > ts) == (self.fold != 0) {
-                    ts = ts2;
-                }
-            }
-        } else {
-            ts = (((self - _EPOCH) as timedelta) // timedelta(0, 1)) as int;
-        }
-        dt_localtime(ts);
-        gmtoff: int = dt_tm_gmtoff();
-        zone: str = dt_tm_zone();
-        return timezone(timedelta(0, gmtoff), zone);
-    }
-
-    def astimezone(tz: (tzinfo | None) = None) -> datetime {
-        tzv: tzinfo = self._local_timezone() if tz is None else tz;
-        mytz: (tzinfo | None) = None;
-        myoffset: (timedelta | None) = None;
-        if self.tzinfo is None {
-            mytz = self._local_timezone();
-            myoffset = mytz.utcoffset(self);
-        } else {
-            mytz = self.tzinfo;
-            myoffset = mytz.utcoffset(self);
-            if myoffset is None {
-                mytz = self.replace(tzinfo=None)._local_timezone();
-                myoffset = mytz.utcoffset(self);
-            }
-        }
-        if tzv is mytz {
-            return self;
-        }
+impl datetime.astimezone(tz: (tzinfo | None) = None) -> datetime {
+    tzv: tzinfo = self._local_timezone() if tz is None else tz;
+    mytz: (tzinfo | None) = None;
+    myoffset: (timedelta | None) = None;
+    if self.tzinfo is None {
+        mytz = self._local_timezone();
+        myoffset = mytz.utcoffset(self);
+    } else {
+        mytz = self.tzinfo;
+        myoffset = mytz.utcoffset(self);
         if myoffset is None {
-            raise ValueError("astimezone() cannot determine UTC offset");
+            mytz = self.replace(tzinfo=None)._local_timezone();
+            myoffset = mytz.utcoffset(self);
         }
-        mo: timedelta = myoffset;
-        utc: datetime = ((self - mo) as datetime).replace(tzinfo=tzv);
-        return tzv.fromutc(utc);
     }
-
-    def ctime -> str {
-        weekday: int = self.toordinal() % 7;
-        if weekday == 0 {
-            weekday = 7;
-        }
-        ds: str = " " + str(self.day) if self.day < 10 else str(self.day);
-        return _DAYNAMES[weekday]
-            + " "
-            + _MONTHNAMES[self.month]
-            + " "
-            + ds
-            + " "
-            + _pad2(self.hour)
-            + ":"
-            + _pad2(self.minute)
-            + ":"
-            + _pad2(self.second)
-            + " "
-            + _pad4(self.year);
+    if tzv is mytz {
+        return self;
     }
-
-    def isoformat(sep: str = "T", timespec: str = "auto") -> str {
-        if len(sep) > 512 {
-            s: str = _pad4(self.year)
-                + "-"
-                + _pad2(self.month)
-                + "-"
-                + _pad2(self.day)
-                + sep
-                + _format_time(
-                    self.hour, self.minute, self.second, self.microsecond, timespec
-                );
-            off: (timedelta | None) = self.utcoffset();
-            tzs: str = _format_offset(off);
-            if tzs != "" {
-                s += tzs;
-            }
-            return s;
-        }
-        p: int = dt_out_buf();
-        n: int = _w_date(p, self.year, self.month, self.day);
-        n += _w_str(p + n, sep);
-        n += _w_time(
-            p + n, self.hour, self.minute, self.second, self.microsecond, timespec
-        );
-        n += _w_offset(p + n, self.utcoffset(), ":");
-        return dt_out_str(n);
+    if myoffset is None {
+        raise ValueError("astimezone() cannot determine UTC offset");
     }
+    mo: timedelta = myoffset;
+    utc: datetime = ((self - mo) as datetime).replace(tzinfo=tzv);
+    return tzv.fromutc(utc);
+}
 
-    def __str__ -> str {
-        return self.isoformat(" ");
+impl datetime.ctime -> str {
+    weekday: int = self.toordinal() % 7;
+    if weekday == 0 {
+        weekday = 7;
     }
+    ds: str = " " + str(self.day) if self.day < 10 else str(self.day);
+    return _DAYNAMES[weekday]
+        + " "
+        + _MONTHNAMES[self.month]
+        + " "
+        + ds
+        + " "
+        + _pad2(self.hour)
+        + ":"
+        + _pad2(self.minute)
+        + ":"
+        + _pad2(self.second)
+        + " "
+        + _pad4(self.year);
+}
 
-    def __repr__ -> str {
-        r: str = "datetime.datetime("
-            + str(self.year)
-            + ", "
-            + str(self.month)
-            + ", "
-            + str(self.day)
-            + ", "
-            + str(self.hour)
-            + ", "
-            + str(self.minute);
-        if self.microsecond != 0 {
-            r += ", " + str(self.second) + ", " + str(self.microsecond);
-        } elif self.second != 0 {
-            r += ", " + str(self.second);
+impl datetime.isoformat(sep: str = "T", timespec: str = "auto") -> str {
+    if len(sep) > 512 {
+        s: str = _pad4(self.year)
+            + "-"
+            + _pad2(self.month)
+            + "-"
+            + _pad2(self.day)
+            + sep
+            + _format_time(
+                self.hour, self.minute, self.second, self.microsecond, timespec
+            );
+        off: (timedelta | None) = self.utcoffset();
+        tzs: str = _format_offset(off);
+        if tzs != "" {
+            s += tzs;
         }
-        r += ")";
-        if self.tzinfo is not None {
-            r = r[0:len(r) - 1] + ", tzinfo=" + _tz_repr(self.tzinfo) + ")";
-        }
-        if self.fold != 0 {
-            r = r[0:len(r) - 1] + ", fold=1)";
-        }
-        return r;
+        return s;
     }
+    p: int = dt_out_buf();
+    n: int = _w_date(p, self.year, self.month, self.day);
+    n += _w_str(p + n, sep);
+    n += _w_time(
+        p + n, self.hour, self.minute, self.second, self.microsecond, timespec
+    );
+    n += _w_offset(p + n, self.utcoffset(), ":");
+    return dt_out_str(n);
+}
 
-    def utcoffset -> (timedelta | None) {
-        tzv: (tzinfo | None) = self.tzinfo;
-        if tzv is None {
-            return None;
-        }
-        tz: tzinfo = tzv;
-        offset: (timedelta | None) = tz.utcoffset(self);
-        _check_utc_offset(offset);
-        return offset;
+impl datetime.__str__ -> str {
+    return self.isoformat(" ");
+}
+
+impl datetime.__repr__ -> str {
+    r: str = "datetime.datetime("
+        + str(self.year)
+        + ", "
+        + str(self.month)
+        + ", "
+        + str(self.day)
+        + ", "
+        + str(self.hour)
+        + ", "
+        + str(self.minute);
+    if self.microsecond != 0 {
+        r += ", " + str(self.second) + ", " + str(self.microsecond);
+    } elif self.second != 0 {
+        r += ", " + str(self.second);
     }
-
-    def tzname -> (str | None) {
-        tzv: (tzinfo | None) = self.tzinfo;
-        if tzv is None {
-            return None;
-        }
-        tz: tzinfo = tzv;
-        return tz.tzname(self);
+    r += ")";
+    if self.tzinfo is not None {
+        r = r[0:len(r) - 1] + ", tzinfo=" + _tz_repr(self.tzinfo) + ")";
     }
-
-    def dst -> (timedelta | None) {
-        tzv: (tzinfo | None) = self.tzinfo;
-        if tzv is None {
-            return None;
-        }
-        tz: tzinfo = tzv;
-        offset: (timedelta | None) = tz.dst(self);
-        _check_utc_offset(offset);
-        return offset;
+    if self.fold != 0 {
+        r = r[0:len(r) - 1] + ", fold=1)";
     }
+    return r;
+}
 
-    def _cmp(other: datetime, allow_mixed: bool) -> int {
-        mytz: (tzinfo | None) = self.tzinfo;
-        ottz: (tzinfo | None) = other.tzinfo;
-        myoff: (timedelta | None) = None;
-        otoff: (timedelta | None) = None;
-        base_compare: bool = False;
-        if mytz is ottz {
-            base_compare = True;
-        } else {
-            myoff = self.utcoffset();
-            otoff = other.utcoffset();
-            if allow_mixed {
-                if not _off_eq(myoff, self.replace(fold=1 - self.fold).utcoffset()) {
-                    return 2;
-                }
-                if not _off_eq(otoff, other.replace(fold=1 - other.fold).utcoffset()) {
-                    return 2;
-                }
-            }
-            base_compare = _off_eq(myoff, otoff);
-        }
-        if base_compare {
-            if self.year != other.year {
-                return 1 if self.year > other.year else -1;
-            }
-            if self.month != other.month {
-                return 1 if self.month > other.month else -1;
-            }
-            if self.day != other.day {
-                return 1 if self.day > other.day else -1;
-            }
-            if self.hour != other.hour {
-                return 1 if self.hour > other.hour else -1;
-            }
-            if self.minute != other.minute {
-                return 1 if self.minute > other.minute else -1;
-            }
-            if self.second != other.second {
-                return 1 if self.second > other.second else -1;
-            }
-            if self.microsecond != other.microsecond {
-                return 1 if self.microsecond > other.microsecond else -1;
-            }
-            return 0;
-        }
-        if myoff is None or otoff is None {
-            if allow_mixed {
+impl datetime.utcoffset -> (timedelta | None) {
+    tzv: (tzinfo | None) = self.tzinfo;
+    if tzv is None {
+        return None;
+    }
+    tz: tzinfo = tzv;
+    offset: (timedelta | None) = tz.utcoffset(self);
+    _check_utc_offset(offset);
+    return offset;
+}
+
+impl datetime.tzname -> (str | None) {
+    tzv: (tzinfo | None) = self.tzinfo;
+    if tzv is None {
+        return None;
+    }
+    tz: tzinfo = tzv;
+    return tz.tzname(self);
+}
+
+impl datetime.dst -> (timedelta | None) {
+    tzv: (tzinfo | None) = self.tzinfo;
+    if tzv is None {
+        return None;
+    }
+    tz: tzinfo = tzv;
+    offset: (timedelta | None) = tz.dst(self);
+    _check_utc_offset(offset);
+    return offset;
+}
+
+impl datetime._cmp(other: datetime, allow_mixed: bool) -> int {
+    mytz: (tzinfo | None) = self.tzinfo;
+    ottz: (tzinfo | None) = other.tzinfo;
+    myoff: (timedelta | None) = None;
+    otoff: (timedelta | None) = None;
+    base_compare: bool = False;
+    if mytz is ottz {
+        base_compare = True;
+    } else {
+        myoff = self.utcoffset();
+        otoff = other.utcoffset();
+        if allow_mixed {
+            if not _off_eq(myoff, self.replace(fold=1 - self.fold).utcoffset()) {
                 return 2;
             }
-            raise TypeError("cannot compare naive and aware datetimes");
-        }
-        diff: timedelta = (self - other) as timedelta;
-        if diff.days < 0 {
-            return -1;
-        }
-        return 1 if diff else 0;
-    }
-
-    def __eq__(other: datetime) -> bool {
-        return self._cmp(other, True) == 0;
-    }
-
-    def __ne__(other: datetime) -> bool {
-        return self._cmp(other, True) != 0;
-    }
-
-    def __le__(other: datetime) -> bool {
-        return self._cmp(other, False) <= 0;
-    }
-
-    def __lt__(other: datetime) -> bool {
-        return self._cmp(other, False) < 0;
-    }
-
-    def __ge__(other: datetime) -> bool {
-        return self._cmp(other, False) >= 0;
-    }
-
-    def __gt__(other: datetime) -> bool {
-        return self._cmp(other, False) > 0;
-    }
-
-    def __add__(other: timedelta) -> datetime {
-        us: int = self.microsecond + other.microseconds;
-        sec: int = self.hour * 3600 + self.minute * 60 + self.second + other.seconds;
-        ord2: int = self.toordinal() + other.days;
-        if us < 0 or us > 999999 {
-            q: int = us // 1000000;
-            us -= q * 1000000;
-            sec += q;
-        }
-        if sec < 0 or sec > 86399 {
-            q2: int = sec // 86400;
-            sec -= q2 * 86400;
-            ord2 += q2;
-        }
-        if ord2 > 0 and ord2 <= _MAXORDINAL {
-            (y, m, d) = _ord2ymd(ord2);
-            return datetime(
-                y, m, d, sec // 3600, (sec % 3600) // 60, sec % 60, us, self.tzinfo
-            );
-        }
-        raise OverflowError("result out of range");
-    }
-
-    static def _from_ord_hms(
-        ords: int, hour: int, minute: int, second: int, us: int, tz: (tzinfo | None)
-    ) -> datetime {
-        (y, m, d) = _ord2ymd(ords);
-        return datetime(y, m, d, hour, minute, second, us, tz, 0);
-    }
-
-    def __radd__(other: timedelta) -> datetime {
-        return self + other;
-    }
-
-    def __sub__(other: (timedelta | datetime)) -> (timedelta | datetime) {
-        if isinstance(other, timedelta) {
-            neg: timedelta = (other as timedelta).__neg__();
-            return self + neg;
-        }
-        o2: datetime = other as datetime;
-        days1: int = self.toordinal();
-        days2: int = o2.toordinal();
-        secs1: int = self.second + self.minute * 60 + self.hour * 3600;
-        secs2: int = o2.second + o2.minute * 60 + o2.hour * 3600;
-        base: timedelta = timedelta(
-            days1 - days2, secs1 - secs2, self.microsecond - o2.microsecond
-        );
-        if self.tzinfo is o2.tzinfo {
-            return base;
-        }
-        myoff: (timedelta | None) = self.utcoffset();
-        otoff: (timedelta | None) = o2.utcoffset();
-        if _off_eq(myoff, otoff) {
-            return base;
-        }
-        if myoff is None or otoff is None {
-            raise TypeError("cannot mix naive and timezone-aware time");
-        }
-        bo: timedelta = otoff;
-        bm: timedelta = myoff;
-        return ((base + bo) as timedelta) - bm;
-    }
-
-    def __format__(fmt: str) -> str {
-        if len(fmt) != 0 {
-            return self.strftime(fmt);
-        }
-        return str(self);
-    }
-
-    def strftime(format: str) -> str {
-        dtd: (timedelta | None) = self.dst();
-        dstflag: int = -1;
-        if dtd is not None {
-            dstflag = 1 if (dtd as timedelta) else 0;
-        }
-        return _wrap_strftime(
-            self.microsecond,
-            self.utcoffset(),
-            self.tzname(),
-            format,
-            self.second,
-            self.minute,
-            self.hour,
-            self.day,
-            self.month,
-            self.year,
-            self.weekday(),
-            _days_before_month(self.year, self.month) + self.day,
-            dstflag
-        );
-    }
-
-    static has min: datetime = datetime(1, 1, 1),
-        max: datetime = datetime(9999, 12, 31, 23, 59, 59, 999999),
-        resolution: timedelta = timedelta(0, 0, 1);
-}
-
-
-obj:pub timezone(tzinfo) {
-    has _offset: timedelta = timedelta(0),
-        _name: str = "",
-        _named: bool = False;
-
-    def init(offset: timedelta, name: (str | None) = None) {
-        off: int = offset._to_microseconds();
-        if off <= -86400000000 or off >= 86400000000 {
-            raise ValueError(
-                "offset must be a timedelta strictly between -timedelta(hours=24) and timedelta(hours=24), not "
-                    + _td_repr(offset)
-            );
-        }
-        self._offset = offset;
-        if name is None {
-            self._name = "";
-            self._named = False;
-        } else {
-            self._name = name;
-            self._named = True;
-        }
-    }
-
-    def utcoffset(dt: (datetime | None)) -> (timedelta | None) {
-        if dt is None or isinstance(dt, datetime) {
-            return self._offset;
-        }
-        raise TypeError("utcoffset() argument must be a datetime instance or None");
-    }
-
-    def tzname(dt: (datetime | None)) -> (str | None) {
-        if dt is None or isinstance(dt, datetime) {
-            if not self._named {
-                return self._name_from_offset(self._offset);
+            if not _off_eq(otoff, other.replace(fold=1 - other.fold).utcoffset()) {
+                return 2;
             }
-            return self._name;
         }
-        raise TypeError("tzname() argument must be a datetime instance or None");
+        base_compare = _off_eq(myoff, otoff);
     }
-
-    def dst(dt: (datetime | None)) -> (timedelta | None) {
-        if dt is None or isinstance(dt, datetime) {
-            return None;
+    if base_compare {
+        if self.year != other.year {
+            return 1 if self.year > other.year else -1;
         }
-        raise TypeError("dst() argument must be a datetime instance or None");
+        if self.month != other.month {
+            return 1 if self.month > other.month else -1;
+        }
+        if self.day != other.day {
+            return 1 if self.day > other.day else -1;
+        }
+        if self.hour != other.hour {
+            return 1 if self.hour > other.hour else -1;
+        }
+        if self.minute != other.minute {
+            return 1 if self.minute > other.minute else -1;
+        }
+        if self.second != other.second {
+            return 1 if self.second > other.second else -1;
+        }
+        if self.microsecond != other.microsecond {
+            return 1 if self.microsecond > other.microsecond else -1;
+        }
+        return 0;
     }
-
-    def fromutc(dt: datetime) -> datetime {
-        if dt.tzinfo is not self {
-            raise ValueError("fromutc: dt.tzinfo is not self");
+    if myoff is None or otoff is None {
+        if allow_mixed {
+            return 2;
         }
-        return dt + self._offset;
+        raise TypeError("cannot compare naive and aware datetimes");
     }
-
-    def _name_from_offset(delta: timedelta) -> str {
-        if not delta {
-            return "UTC";
-        }
-        sign: str = "+";
-        d: timedelta = delta;
-        if d.__lt__(timedelta(0)) {
-            sign = "-";
-            d = d.__neg__();
-        }
-        hours: int = (d // timedelta(hours=1)) as int;
-        rest: timedelta = d % timedelta(hours=1);
-        minutes: int = (rest // timedelta(minutes=1)) as int;
-        rest2: timedelta = rest % timedelta(minutes=1);
-        seconds: int = rest2.seconds;
-        microseconds: int = rest2.microseconds;
-        if microseconds != 0 {
-            return "UTC"
-                + sign
-                + _pad2(hours)
-                + ":"
-                + _pad2(minutes)
-                + ":"
-                + _pad2(seconds)
-                + "."
-                + _pad6(microseconds);
-        }
-        if seconds != 0 {
-            return "UTC"
-                + sign
-                + _pad2(hours)
-                + ":"
-                + _pad2(minutes)
-                + ":"
-                + _pad2(seconds);
-        }
-        return "UTC" + sign + _pad2(hours) + ":" + _pad2(minutes);
+    diff: timedelta = (self - other) as timedelta;
+    if diff.days < 0 {
+        return -1;
     }
+    return 1 if diff else 0;
+}
 
-    def __eq__(other: timezone) -> bool {
-        return self._offset == other._offset;
+impl datetime.__eq__(other: datetime) -> bool {
+    return self._cmp(other, True) == 0;
+}
+
+impl datetime.__ne__(other: datetime) -> bool {
+    return self._cmp(other, True) != 0;
+}
+
+impl datetime.__le__(other: datetime) -> bool {
+    return self._cmp(other, False) <= 0;
+}
+
+impl datetime.__lt__(other: datetime) -> bool {
+    return self._cmp(other, False) < 0;
+}
+
+impl datetime.__ge__(other: datetime) -> bool {
+    return self._cmp(other, False) >= 0;
+}
+
+impl datetime.__gt__(other: datetime) -> bool {
+    return self._cmp(other, False) > 0;
+}
+
+impl datetime.__add__(other: timedelta) -> datetime {
+    us: int = self.microsecond + other.microseconds;
+    sec: int = self.hour * 3600 + self.minute * 60 + self.second + other.seconds;
+    ord2: int = self.toordinal() + other.days;
+    if us < 0 or us > 999999 {
+        q: int = us // 1000000;
+        us -= q * 1000000;
+        sec += q;
     }
-
-    def __ne__(other: timezone) -> bool {
-        return not (self._offset == other._offset);
+    if sec < 0 or sec > 86399 {
+        q2: int = sec // 86400;
+        sec -= q2 * 86400;
+        ord2 += q2;
     }
-
-    def __str__ -> str {
-        n: (str | None) = self.tzname(None);
-        if n is None {
-            return "";
-        }
-        return n;
+    if ord2 > 0 and ord2 <= _MAXORDINAL {
+        (y, m, d) = _ord2ymd(ord2);
+        return datetime(
+            y, m, d, sec // 3600, (sec % 3600) // 60, sec % 60, us, self.tzinfo
+        );
     }
+    raise OverflowError("result out of range");
+}
 
-    def __repr__ -> str {
-        if self is timezone.utc {
-            return "datetime.timezone.utc";
-        }
-        if not self._named {
-            return "datetime.timezone(" + _td_repr(self._offset) + ")";
-        }
-        return "datetime.timezone("
-            + _td_repr(self._offset)
-            + ", '"
-            + self._name
-            + "')";
+impl datetime._from_ord_hms(
+    ords: int, hour: int, minute: int, second: int, us: int, tz: (tzinfo | None)
+) -> datetime {
+    (y, m, d) = _ord2ymd(ords);
+    return datetime(y, m, d, hour, minute, second, us, tz, 0);
+}
+
+impl datetime.__radd__(other: timedelta) -> datetime {
+    return self + other;
+}
+
+impl datetime.__sub__(other: (timedelta | datetime)) -> (timedelta | datetime) {
+    if isinstance(other, timedelta) {
+        neg: timedelta = (other as timedelta).__neg__();
+        return self + neg;
     }
+    o2: datetime = other as datetime;
+    days1: int = self.toordinal();
+    days2: int = o2.toordinal();
+    secs1: int = self.second + self.minute * 60 + self.hour * 3600;
+    secs2: int = o2.second + o2.minute * 60 + o2.hour * 3600;
+    base: timedelta = timedelta(
+        days1 - days2, secs1 - secs2, self.microsecond - o2.microsecond
+    );
+    if self.tzinfo is o2.tzinfo {
+        return base;
+    }
+    myoff: (timedelta | None) = self.utcoffset();
+    otoff: (timedelta | None) = o2.utcoffset();
+    if _off_eq(myoff, otoff) {
+        return base;
+    }
+    if myoff is None or otoff is None {
+        raise TypeError("cannot mix naive and timezone-aware time");
+    }
+    bo: timedelta = otoff;
+    bm: timedelta = myoff;
+    return ((base + bo) as timedelta) - bm;
+}
 
-    static has utc: timezone = UTC,
-        min: timezone = timezone(timedelta(-1, 3600)),
-        max: timezone = timezone(timedelta(0, 86340));
+impl datetime.__format__(fmt: str) -> str {
+    if len(fmt) != 0 {
+        return self.strftime(fmt);
+    }
+    return str(self);
+}
+
+impl datetime.strftime(format: str) -> str {
+    dtd: (timedelta | None) = self.dst();
+    dstflag: int = -1;
+    if dtd is not None {
+        dstflag = 1 if (dtd as timedelta) else 0;
+    }
+    return _wrap_strftime(
+        self.microsecond,
+        self.utcoffset(),
+        self.tzname(),
+        format,
+        self.second,
+        self.minute,
+        self.hour,
+        self.day,
+        self.month,
+        self.year,
+        self.weekday(),
+        _days_before_month(self.year, self.month) + self.day,
+        dstflag
+    );
 }
 
 
-glob:pub UTC: timezone = timezone(timedelta(0), "UTC");
-glob _EPOCH: datetime = datetime(1970, 1, 1, tzinfo=UTC);
+impl timezone.init(offset: timedelta, name: (str | None) = None) {
+    off: int = offset._to_microseconds();
+    if off <= -86400000000 or off >= 86400000000 {
+        raise ValueError(
+            "offset must be a timedelta strictly between -timedelta(hours=24) and timedelta(hours=24), not "
+                + _td_repr(offset)
+        );
+    }
+    self._offset = offset;
+    if name is None {
+        self._name = "";
+        self._named = False;
+    } else {
+        self._name = name;
+        self._named = True;
+    }
+}
+
+impl timezone.utcoffset(dt: (datetime | None)) -> (timedelta | None) {
+    if dt is None or isinstance(dt, datetime) {
+        return self._offset;
+    }
+    raise TypeError("utcoffset() argument must be a datetime instance or None");
+}
+
+impl timezone.tzname(dt: (datetime | None)) -> (str | None) {
+    if dt is None or isinstance(dt, datetime) {
+        if not self._named {
+            return self._name_from_offset(self._offset);
+        }
+        return self._name;
+    }
+    raise TypeError("tzname() argument must be a datetime instance or None");
+}
+
+impl timezone.dst(dt: (datetime | None)) -> (timedelta | None) {
+    if dt is None or isinstance(dt, datetime) {
+        return None;
+    }
+    raise TypeError("dst() argument must be a datetime instance or None");
+}
+
+impl timezone.fromutc(dt: datetime) -> datetime {
+    if dt.tzinfo is not self {
+        raise ValueError("fromutc: dt.tzinfo is not self");
+    }
+    return dt + self._offset;
+}
+
+impl timezone._name_from_offset(delta: timedelta) -> str {
+    if not delta {
+        return "UTC";
+    }
+    sign: str = "+";
+    d: timedelta = delta;
+    if d.__lt__(timedelta(0)) {
+        sign = "-";
+        d = d.__neg__();
+    }
+    hours: int = (d // timedelta(hours=1)) as int;
+    rest: timedelta = d % timedelta(hours=1);
+    minutes: int = (rest // timedelta(minutes=1)) as int;
+    rest2: timedelta = rest % timedelta(minutes=1);
+    seconds: int = rest2.seconds;
+    microseconds: int = rest2.microseconds;
+    if microseconds != 0 {
+        return "UTC"
+            + sign
+            + _pad2(hours)
+            + ":"
+            + _pad2(minutes)
+            + ":"
+            + _pad2(seconds)
+            + "."
+            + _pad6(microseconds);
+    }
+    if seconds != 0 {
+        return "UTC"
+            + sign
+            + _pad2(hours)
+            + ":"
+            + _pad2(minutes)
+            + ":"
+            + _pad2(seconds);
+    }
+    return "UTC" + sign + _pad2(hours) + ":" + _pad2(minutes);
+}
+
+impl timezone.__eq__(other: timezone) -> bool {
+    return self._offset == other._offset;
+}
+
+impl timezone.__ne__(other: timezone) -> bool {
+    return not (self._offset == other._offset);
+}
+
+impl timezone.__str__ -> str {
+    n: (str | None) = self.tzname(None);
+    if n is None {
+        return "";
+    }
+    return n;
+}
+
+impl timezone.__repr__ -> str {
+    if self is timezone.utc {
+        return "datetime.timezone.utc";
+    }
+    if not self._named {
+        return "datetime.timezone(" + _td_repr(self._offset) + ")";
+    }
+    return "datetime.timezone(" + _td_repr(self._offset) + ", '" + self._name + "')";
+}
 
 
-def _mk_date(y: int, m: int, d: int) -> date {
+impl _mk_date(y: int, m: int, d: int) -> date {
     return date(y, m, d);
 }
 
 
-def _datetime_combine(d: date, t: time, tzinfo: (tzinfo | None)) -> datetime {
+impl _datetime_combine(d: date, t: time, tzinfo: (tzinfo | None)) -> datetime {
     tz: (tzinfo | None) = t.tzinfo if tzinfo is _TZ_KEEP else tzinfo;
     return datetime(
         d.year, d.month, d.day, t.hour, t.minute, t.second, t.microsecond, tz, t.fold
@@ -3132,38 +3589,14 @@ def _datetime_combine(d: date, t: time, tzinfo: (tzinfo | None)) -> datetime {
 }
 
 
-def _mk_time(h: int, mi: int, s: int, us: int, tz: (tzinfo | None), fold: int) -> time {
+impl _mk_time(
+    h: int, mi: int, s: int, us: int, tz: (tzinfo | None), fold: int
+) -> time {
     return time(h, mi, s, us, tz, fold);
 }
 
-obj _StrptimeResult {
-    has year: int = -1,
-        month: int = 1,
-        day: int = 1,
-        hour: int = 0,
-        minute: int = 0,
-        second: int = 0,
-        microsecond: int = 0,
-        weekday: int = -1,
-        julian: int = -1,
-        iso_year: int = -1,
-        iso_week: int = -1,
-        week_of_year: int = -1,
-        week_of_year_start: int = -1,
-        hour12: int = -1,
-        ampm: int = -1,
-        century: int = -1,
-        y2: int = -1,
-        tzname: str = "",
-        gmtoff_seen: bool = False,
-        gmtoff: int = 0,
-        gmtoff_fraction: int = 0,
-        tz_index: int = -1,
-        tz: (tzinfo | None) = None;
-}
 
-
-def _is_ws(c: str) -> bool {
+impl _is_ws(c: str) -> bool {
     return c == " "
         or c == "\t"
         or c == "\n"
@@ -3173,7 +3606,7 @@ def _is_ws(c: str) -> bool {
 }
 
 
-def _collapse_ws(s: str) -> str {
+impl _collapse_ws(s: str) -> str {
     out: str = "";
     in_ws: bool = False;
     i: int = 0;
@@ -3193,12 +3626,12 @@ def _collapse_ws(s: str) -> str {
 }
 
 
-def _sp_nomatch(data: str, fmt: str) {
+impl _sp_nomatch(data: str, fmt: str) {
     raise ValueError("time data '" + data + "' does not match format '" + fmt + "'");
 }
 
 
-def _sp_num(
+impl _sp_num(
     data: str, pos: int, ndmax: int, minv: int, maxv: int, space_ok: bool
 ) -> tuple[(int, int)] {
     if pos >= len(data) {
@@ -3237,7 +3670,7 @@ def _sp_num(
 }
 
 
-def _match_name(data: str, pos: int, names: list[str]) -> tuple[(int, int)] {
+impl _match_name(data: str, pos: int, names: list[str]) -> tuple[(int, int)] {
     best: int = -1;
     bestlen: int = 0;
     dlow: str = data.lower();
@@ -3258,7 +3691,7 @@ def _match_name(data: str, pos: int, names: list[str]) -> tuple[(int, int)] {
 }
 
 
-def _calc_julian_from_U_or_W(
+impl _calc_julian_from_U_or_W(
     year: int, week_of_year: int, day_of_week: int, week_starts_Mon: bool
 ) -> int {
     first_weekday: int = (_ymd2ord(year, 1, 1) + 6) % 7;
@@ -3275,7 +3708,9 @@ def _calc_julian_from_U_or_W(
 }
 
 
-def _sp_directive(r: _StrptimeResult, data: str, pos_in: int, d: str, fmt: str) -> int {
+impl _sp_directive(
+    r: _StrptimeResult, data: str, pos_in: int, d: str, fmt: str
+) -> int {
     pos: int = pos_in;
     v: int = -1;
     np: int = pos;
@@ -3610,7 +4045,7 @@ def _sp_directive(r: _StrptimeResult, data: str, pos_in: int, d: str, fmt: str) 
 }
 
 
-def _sp_walk(r: _StrptimeResult, data: str, fmt: str, pos_in: int) -> int {
+impl _sp_walk(r: _StrptimeResult, data: str, fmt: str, pos_in: int) -> int {
     pos: int = pos_in;
     i: int = 0;
     n: int = len(fmt);
@@ -3698,7 +4133,7 @@ def _sp_walk(r: _StrptimeResult, data: str, fmt: str, pos_in: int) -> int {
 }
 
 
-def _strptime(data_string: str, format: str) -> _StrptimeResult {
+impl _strptime(data_string: str, format: str) -> _StrptimeResult {
     r: _StrptimeResult = _StrptimeResult();
     data: str = _collapse_ws(data_string);
     pos: int = _sp_walk(r, data, format, 0);

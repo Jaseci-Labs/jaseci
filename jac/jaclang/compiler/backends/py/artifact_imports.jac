@@ -5,6 +5,18 @@ import from pathlib { Path }
 
 def import_specs(
     code: types.CodeType, source: str
+) -> list[tuple[int, str, (tuple[str, ...] | None)]];
+
+def resolve_imports(
+    specs: list[tuple[int, str, (tuple[str, ...] | None)]], source: str, `root: str
+) -> set[str];
+
+def runtime_sources(code: types.CodeType, source: str, `root: str) -> set[str];
+
+def package_sources(source: str, project_root: str) -> set[str];
+
+impl import_specs(
+    code: types.CodeType, source: str
 ) -> list[tuple[int, str, (tuple[str, ...] | None)]] {
     specs: list[tuple[int, str, (tuple[str, ...] | None)]] = [];
     pending = [code];
@@ -44,7 +56,7 @@ def import_specs(
     return specs;
 }
 
-def resolve_imports(
+impl resolve_imports(
     specs: list[tuple[int, str, (tuple[str, ...] | None)]], source: str, `root: str
 ) -> set[str] {
     sources: set[str] = `set();
@@ -92,11 +104,11 @@ def resolve_imports(
     return sources;
 }
 
-def runtime_sources(code: types.CodeType, source: str, `root: str) -> set[str] {
+impl runtime_sources(code: types.CodeType, source: str, `root: str) -> set[str] {
     return resolve_imports(import_specs(code, source), source, `root);
 }
 
-def package_sources(source: str, project_root: str) -> set[str] {
+impl package_sources(source: str, project_root: str) -> set[str] {
     result: set[str] = set();
     parent = Path(source).parent;
     while parent.is_relative_to(project_root) {

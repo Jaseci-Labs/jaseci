@@ -1,5 +1,13 @@
 def build_gateway_metrics(
     namespace: str = "jaclang_scale", histogram_buckets: list[float] | None = None
+) -> tuple[any, any, any];
+
+def classify_outcome(status_code: int) -> str;
+
+def render_metrics(registry: any) -> tuple[bytes, str];
+
+impl build_gateway_metrics(
+    namespace: str = "jaclang_scale", histogram_buckets: list[float] | None = None
 ) -> tuple[any, any, any] {
     try {
         import from prometheus_client { CollectorRegistry, Counter, Histogram }
@@ -41,7 +49,7 @@ def build_gateway_metrics(
     return (registry, requests, duration);
 }
 
-def classify_outcome(status_code: int) -> str {
+impl classify_outcome(status_code: int) -> str {
     if status_code <= 0 {
         return "err";
     }
@@ -57,7 +65,7 @@ def classify_outcome(status_code: int) -> str {
     return "5xx";
 }
 
-def render_metrics(registry: any) -> tuple[bytes, str] {
+impl render_metrics(registry: any) -> tuple[bytes, str] {
     if registry is None {
         return (b"", "text/plain");
     }

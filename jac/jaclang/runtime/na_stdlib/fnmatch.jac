@@ -1,4 +1,16 @@
-def _class_end(pat: str, start: int) -> int {
+def _class_end(pat: str, start: int) -> int;
+
+def _class_hit(pat: str, start: int, close: int, ch: str) -> bool;
+
+def _match(name: str, pat: str) -> bool;
+
+def normcase(s: str) -> str;
+
+def:pub fnmatchcase(name: str, pat: str) -> bool;
+
+def:pub fnmatch(name: str, pat: str) -> bool;
+
+impl _class_end(pat: str, start: int) -> int {
     n: int = len(pat);
     j: int = start + 1;
     if j < n and pat[j] == "!" {
@@ -16,7 +28,7 @@ def _class_end(pat: str, start: int) -> int {
     return j;
 }
 
-def _class_hit(pat: str, start: int, close: int, ch: str) -> bool {
+impl _class_hit(pat: str, start: int, close: int, ch: str) -> bool {
     j: int = start + 1;
     neg: bool = False;
     if j < close and pat[j] == "!" {
@@ -44,7 +56,7 @@ def _class_hit(pat: str, start: int, close: int, ch: str) -> bool {
     return hit;
 }
 
-def _match(name: str, pat: str) -> bool {
+impl _match(name: str, pat: str) -> bool {
     n: int = len(name);
     m: int = len(pat);
     i: int = 0;
@@ -98,14 +110,14 @@ def _match(name: str, pat: str) -> bool {
     return j == m;
 }
 
-def normcase(s: str) -> str {
+impl normcase(s: str) -> str {
     return s;
 }
 
-def:pub fnmatchcase(name: str, pat: str) -> bool {
+impl fnmatchcase(name: str, pat: str) -> bool {
     return _match(name, pat);
 }
 
-def:pub fnmatch(name: str, pat: str) -> bool {
+impl fnmatch(name: str, pat: str) -> bool {
     return _match(normcase(name), normcase(pat));
 }

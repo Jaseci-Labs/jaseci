@@ -22,19 +22,32 @@ obj ResourceStatusInfo {
         reason: str = "",
         message: (str | None) = None;
 
-    def is_settled -> bool {
-        return self.status in (ResourceStatus.ACTIVE, ResourceStatus.INACTIVE);
-    }
-
-    def is_serving -> bool {
-        if self.status == ResourceStatus.DEGRADED {
-            return False;
-        }
-        return self.is_settled() or self.ready_replicas >= 1;
-    }
+    def is_settled -> bool;
+    def is_serving -> bool;
 }
 
-def field_of(source: any, key: str) -> any {
+def field_of(source: any, key: str) -> any;
+
+def _count(source: any, key: str) -> int;
+
+def replica_floor_of(deployment: any) -> int;
+
+def assess_workload(
+    deployment: any, crashlooping: bool = False, replica_floor: (int | None) = None
+) -> ResourceStatusInfo;
+
+impl ResourceStatusInfo.is_settled -> bool {
+    return self.status in (ResourceStatus.ACTIVE, ResourceStatus.INACTIVE);
+}
+
+impl ResourceStatusInfo.is_serving -> bool {
+    if self.status == ResourceStatus.DEGRADED {
+        return False;
+    }
+    return self.is_settled() or self.ready_replicas >= 1;
+}
+
+impl field_of(source: any, key: str) -> any {
     if source is None {
         return None;
     }
@@ -44,11 +57,11 @@ def field_of(source: any, key: str) -> any {
     return getattr(source, key, None);
 }
 
-def _count(source: any, key: str) -> int {
+impl _count(source: any, key: str) -> int {
     return int(field_of(source, key) or 0);
 }
 
-def replica_floor_of(deployment: any) -> int {
+impl replica_floor_of(deployment: any) -> int {
     annotations = field_of(field_of(deployment, "metadata"), "annotations") or {};
     try {
         return int(annotations.get(REPLICA_FLOOR_ANNOTATION));
@@ -57,7 +70,7 @@ def replica_floor_of(deployment: any) -> int {
     }
 }
 
-def assess_workload(
+impl assess_workload(
     deployment: any, crashlooping: bool = False, replica_floor: (int | None) = None
 ) -> ResourceStatusInfo {
     if deployment is None {

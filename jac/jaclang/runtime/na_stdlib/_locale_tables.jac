@@ -1,4 +1,30 @@
-def _alias_0(d: dict[str, str]) {
+def _alias_0(d: dict[str, str]);
+
+
+def _alias_1(d: dict[str, str]);
+
+
+def _alias_2(d: dict[str, str]);
+
+
+def _alias_3(d: dict[str, str]);
+
+
+def _alias_4(d: dict[str, str]);
+
+
+def _alias_5(d: dict[str, str]);
+
+
+def:pub _load_alias -> dict[str, str];
+
+
+def _encalias_0(d: dict[str, str]);
+
+
+def:pub _load_encalias -> dict[str, str];
+
+impl _alias_0(d: dict[str, str]) {
     d["a3"] = "az_AZ.KOI8-C";
     d["a3_az"] = "az_AZ.KOI8-C";
     d["a3_az.koic"] = "az_AZ.KOI8-C";
@@ -122,7 +148,7 @@ def _alias_0(d: dict[str, str]) {
 }
 
 
-def _alias_1(d: dict[str, str]) {
+impl _alias_1(d: dict[str, str]) {
     d["dsb_de"] = "dsb_DE.UTF-8";
     d["dutch"] = "nl_NL.ISO8859-1";
     d["dutch.iso88591"] = "nl_BE.ISO8859-1";
@@ -246,7 +272,7 @@ def _alias_1(d: dict[str, str]) {
 }
 
 
-def _alias_2(d: dict[str, str]) {
+impl _alias_2(d: dict[str, str]) {
     d["hak_tw"] = "hak_TW.UTF-8";
     d["he"] = "he_IL.ISO8859-8";
     d["he_il"] = "he_IL.ISO8859-8";
@@ -370,7 +396,7 @@ def _alias_2(d: dict[str, str]) {
 }
 
 
-def _alias_3(d: dict[str, str]) {
+impl _alias_3(d: dict[str, str]) {
     d["mni_in"] = "mni_IN.UTF-8";
     d["mnw_mm"] = "mnw_MM.UTF-8";
     d["mr"] = "mr_IN.UTF-8";
@@ -494,7 +520,7 @@ def _alias_3(d: dict[str, str]) {
 }
 
 
-def _alias_4(d: dict[str, str]) {
+impl _alias_4(d: dict[str, str]) {
     d["spanish"] = "es_ES.ISO8859-1";
     d["spanish_spain"] = "es_ES.ISO8859-1";
     d["sq"] = "sq_AL.ISO8859-2";
@@ -618,12 +644,12 @@ def _alias_4(d: dict[str, str]) {
 }
 
 
-def _alias_5(d: dict[str, str]) {
+impl _alias_5(d: dict[str, str]) {
     d["zu_za"] = "zu_ZA.ISO8859-1";
 }
 
 
-def:pub _load_alias -> dict[str, str] {
+impl _load_alias -> dict[str, str] {
     d: dict[str, str] = {};
     _alias_0(d);
     _alias_1(d);
@@ -635,7 +661,7 @@ def:pub _load_alias -> dict[str, str] {
 }
 
 
-def _encalias_0(d: dict[str, str]) {
+impl _encalias_0(d: dict[str, str]) {
     d["437"] = "C";
     d["c"] = "C";
     d["en"] = "ISO8859-1";
@@ -707,7 +733,7 @@ def _encalias_0(d: dict[str, str]) {
 }
 
 
-def:pub _load_encalias -> dict[str, str] {
+impl _load_encalias -> dict[str, str] {
     d: dict[str, str] = {};
     _encalias_0(d);
     return d;

@@ -1,12 +1,87 @@
-def _jac_fmt_is_align(ch: str) -> bool {
+def _jac_fmt_is_align(ch: str) -> bool;
+
+def _jac_fmt_is_digit(ch: str) -> bool;
+
+def _jac_fmt_parse(
+    spec: str
+) -> tuple[str, str, str, int, int, int, int, str, int, str];
+
+def _jac_fmt_rep(fill: str, count: int) -> str;
+
+def _jac_fmt_pad(body: str, fill: str, align: str, width: int) -> str;
+
+def _jac_fmt_group(digits: str, sep: str, gsize: int) -> str;
+
+def _jac_fmt_has_digit(s: str) -> bool;
+
+def _jac_fmt_all_zero_val(s: str) -> bool;
+
+def _jac_fmt_finish(
+    intpart: str,
+    rest: str,
+    sign_str: str,
+    prefix: str,
+    fill: str,
+    align: str,
+    zero: int,
+    width: int,
+    grouping: str,
+    gsize: int
+) -> str;
+
+def _jac_fmt_sign_str(neg: bool, sign: str) -> str;
+
+def _jac_fmt_strip_zeros(s: str, keep_one: int) -> str;
+
+def _jac_fmt_float_none_prec(v: float, prec: int) -> str;
+
+def jac_fmt_int(v: int, spec: str) -> str;
+
+def jac_fmt_float(v: float, spec: str) -> str;
+
+def jac_fmt_str(s: str, spec: str) -> str;
+
+def jac_fmt_bool(v: bool, spec: str) -> str;
+
+def _jac_hex_digit(ch: str) -> int;
+
+def _jac_int_digit(ch: str) -> int;
+
+def _jac_int_bad(text: str, base: int);
+
+def jac_int_parse(text: str, base: int) -> int;
+
+def jac_bytes_hex(data: bytes) -> str;
+
+def jac_bytes_fromhex(text: str) -> bytes;
+
+def _jac_bytes_is_space(v: int) -> bool;
+
+def jac_bytes_upper(data: bytes) -> bytes;
+
+def jac_bytes_lower(data: bytes) -> bytes;
+
+def jac_bytes_strip(data: bytes, chars: bytes, has_chars: bool, which: int) -> bytes;
+
+def _jac_bytes_split_ws(data: bytes, maxsplit: int) -> list[bytes];
+
+def jac_bytes_split(
+    data: bytes, sep: bytes, has_sep: bool, maxsplit: int
+) -> list[bytes];
+
+def jac_bytes_replace(data: bytes, old: bytes, new: bytes, count: int) -> bytes;
+
+def jac_bytes_join(sep: bytes, parts: list[bytes]) -> bytes;
+
+impl _jac_fmt_is_align(ch: str) -> bool {
     return ch == "<" or ch == ">" or ch == "^" or ch == "=";
 }
 
-def _jac_fmt_is_digit(ch: str) -> bool {
+impl _jac_fmt_is_digit(ch: str) -> bool {
     return ch >= "0" and ch <= "9";
 }
 
-def _jac_fmt_parse(
+impl _jac_fmt_parse(
     spec: str
 ) -> tuple[str, str, str, int, int, int, int, str, int, str] {
     fill = "";
@@ -80,7 +155,7 @@ def _jac_fmt_parse(
     return (fill, align, sign, alt, zero, zc, width, grouping, prec, typ);
 }
 
-def _jac_fmt_rep(fill: str, count: int) -> str {
+impl _jac_fmt_rep(fill: str, count: int) -> str {
     out = "";
     i = 0;
     while i < count {
@@ -90,7 +165,7 @@ def _jac_fmt_rep(fill: str, count: int) -> str {
     return out;
 }
 
-def _jac_fmt_pad(body: str, fill: str, align: str, width: int) -> str {
+impl _jac_fmt_pad(body: str, fill: str, align: str, width: int) -> str {
     if width <= len(body) {
         return body;
     }
@@ -105,7 +180,7 @@ def _jac_fmt_pad(body: str, fill: str, align: str, width: int) -> str {
     return _jac_fmt_rep(fill, n) + body;
 }
 
-def _jac_fmt_group(digits: str, sep: str, gsize: int) -> str {
+impl _jac_fmt_group(digits: str, sep: str, gsize: int) -> str {
     out = "";
     cnt = 0;
     i = len(digits) - 1;
@@ -121,7 +196,7 @@ def _jac_fmt_group(digits: str, sep: str, gsize: int) -> str {
     return out;
 }
 
-def _jac_fmt_has_digit(s: str) -> bool {
+impl _jac_fmt_has_digit(s: str) -> bool {
     i = 0;
     n = len(s);
     while i < n {
@@ -133,7 +208,7 @@ def _jac_fmt_has_digit(s: str) -> bool {
     return False;
 }
 
-def _jac_fmt_all_zero_val(s: str) -> bool {
+impl _jac_fmt_all_zero_val(s: str) -> bool {
     i = 0;
     n = len(s);
     while i < n {
@@ -145,7 +220,7 @@ def _jac_fmt_all_zero_val(s: str) -> bool {
     return True;
 }
 
-def _jac_fmt_finish(
+impl _jac_fmt_finish(
     intpart: str,
     rest: str,
     sign_str: str,
@@ -194,7 +269,7 @@ def _jac_fmt_finish(
     return _jac_fmt_pad(head + grouped + rest, fill, align, width);
 }
 
-def _jac_fmt_sign_str(neg: bool, sign: str) -> str {
+impl _jac_fmt_sign_str(neg: bool, sign: str) -> str {
     if neg {
         return "-";
     }
@@ -207,7 +282,7 @@ def _jac_fmt_sign_str(neg: bool, sign: str) -> str {
     return "";
 }
 
-def _jac_fmt_strip_zeros(s: str, keep_one: int) -> str {
+impl _jac_fmt_strip_zeros(s: str, keep_one: int) -> str {
     has_dot = False;
     i = 0;
     n = len(s);
@@ -233,7 +308,7 @@ def _jac_fmt_strip_zeros(s: str, keep_one: int) -> str {
     return out;
 }
 
-def _jac_fmt_float_none_prec(v: float, prec: int) -> str {
+impl _jac_fmt_float_none_prec(v: float, prec: int) -> str {
     p = prec;
     if p == 0 {
         p = 1;
@@ -262,7 +337,7 @@ def _jac_fmt_float_none_prec(v: float, prec: int) -> str {
     return _jac_fmt_strip_zeros(format(v, "." + str(fd) + "f"), 1);
 }
 
-def jac_fmt_int(v: int, spec: str) -> str {
+impl jac_fmt_int(v: int, spec: str) -> str {
     (fill, align, sign, alt, zero, zc, width, grouping, prec, typ) = _jac_fmt_parse(
         spec
     );
@@ -376,7 +451,7 @@ def jac_fmt_int(v: int, spec: str) -> str {
     );
 }
 
-def jac_fmt_float(v: float, spec: str) -> str {
+impl jac_fmt_float(v: float, spec: str) -> str {
     (fill, align, sign, alt, zero, zc, width, grouping, prec, typ) = _jac_fmt_parse(
         spec
     );
@@ -451,7 +526,7 @@ def jac_fmt_float(v: float, spec: str) -> str {
     );
 }
 
-def jac_fmt_str(s: str, spec: str) -> str {
+impl jac_fmt_str(s: str, spec: str) -> str {
     (fill, align, sign, alt, zero, zc, width, grouping, prec, typ) = _jac_fmt_parse(
         spec
     );
@@ -491,14 +566,14 @@ def jac_fmt_str(s: str, spec: str) -> str {
     return _jac_fmt_pad(body, fill, align, width);
 }
 
-def jac_fmt_bool(v: bool, spec: str) -> str {
+impl jac_fmt_bool(v: bool, spec: str) -> str {
     if spec == "" {
         return "True" if v else "False";
     }
     return jac_fmt_int(1 if v else 0, spec);
 }
 
-def _jac_hex_digit(ch: str) -> int {
+impl _jac_hex_digit(ch: str) -> int {
     idx = "0123456789abcdefABCDEF".find(ch);
     if idx < 0 {
         return -1;
@@ -506,16 +581,16 @@ def _jac_hex_digit(ch: str) -> int {
     return idx if idx < 16 else idx - 6;
 }
 
-def _jac_int_digit(ch: str) -> int {
+impl _jac_int_digit(ch: str) -> int {
     idx = "0123456789abcdefghijklmnopqrstuvwxyz".find(ch.lower());
     return idx if idx >= 0 else 99;
 }
 
-def _jac_int_bad(text: str, base: int) {
+impl _jac_int_bad(text: str, base: int) {
     raise ValueError(f"invalid literal for int() with base {base}: '{text}'");
 }
 
-def jac_int_parse(text: str, base: int) -> int {
+impl jac_int_parse(text: str, base: int) -> int {
     if base != 0 and (base < 2 or base > 36) {
         raise ValueError("int() base must be >= 2 and <= 36, or 0");
     }
@@ -593,7 +668,7 @@ def jac_int_parse(text: str, base: int) -> int {
     return -value if neg else value;
 }
 
-def jac_bytes_hex(data: bytes) -> str {
+impl jac_bytes_hex(data: bytes) -> str {
     digits = "0123456789abcdef";
     out = "";
     for v in data {
@@ -603,7 +678,7 @@ def jac_bytes_hex(data: bytes) -> str {
     return out;
 }
 
-def jac_bytes_fromhex(text: str) -> bytes {
+impl jac_bytes_fromhex(text: str) -> bytes {
     out = bytearray();
     n = len(text);
     i = 0;
@@ -631,11 +706,11 @@ def jac_bytes_fromhex(text: str) -> bytes {
     return bytes(out);
 }
 
-def _jac_bytes_is_space(v: int) -> bool {
+impl _jac_bytes_is_space(v: int) -> bool {
     return v == 32 or (v >= 9 and v <= 13);
 }
 
-def jac_bytes_upper(data: bytes) -> bytes {
+impl jac_bytes_upper(data: bytes) -> bytes {
     out = bytearray();
     for v in data {
         out.append(v - 32 if v >= 97 and v <= 122 else v);
@@ -643,7 +718,7 @@ def jac_bytes_upper(data: bytes) -> bytes {
     return bytes(out);
 }
 
-def jac_bytes_lower(data: bytes) -> bytes {
+impl jac_bytes_lower(data: bytes) -> bytes {
     out = bytearray();
     for v in data {
         out.append(v + 32 if v >= 65 and v <= 90 else v);
@@ -651,7 +726,7 @@ def jac_bytes_lower(data: bytes) -> bytes {
     return bytes(out);
 }
 
-def jac_bytes_strip(data: bytes, chars: bytes, has_chars: bool, which: int) -> bytes {
+impl jac_bytes_strip(data: bytes, chars: bytes, has_chars: bool, which: int) -> bytes {
     start = 0;
     end = len(data);
     if which != 2 {
@@ -675,7 +750,7 @@ def jac_bytes_strip(data: bytes, chars: bytes, has_chars: bool, which: int) -> b
     return data[start:end];
 }
 
-def _jac_bytes_split_ws(data: bytes, maxsplit: int) -> list[bytes] {
+impl _jac_bytes_split_ws(data: bytes, maxsplit: int) -> list[bytes] {
     parts: list[bytes] = [];
     n = len(data);
     i = 0;
@@ -700,7 +775,7 @@ def _jac_bytes_split_ws(data: bytes, maxsplit: int) -> list[bytes] {
     return parts;
 }
 
-def jac_bytes_split(
+impl jac_bytes_split(
     data: bytes, sep: bytes, has_sep: bool, maxsplit: int
 ) -> list[bytes] {
     if not has_sep {
@@ -721,7 +796,7 @@ def jac_bytes_split(
     return parts;
 }
 
-def jac_bytes_replace(data: bytes, old: bytes, new: bytes, count: int) -> bytes {
+impl jac_bytes_replace(data: bytes, old: bytes, new: bytes, count: int) -> bytes {
     out = bytearray();
     done = 0;
     if len(old) == 0 {
@@ -751,7 +826,7 @@ def jac_bytes_replace(data: bytes, old: bytes, new: bytes, count: int) -> bytes 
     return bytes(out);
 }
 
-def jac_bytes_join(sep: bytes, parts: list[bytes]) -> bytes {
+impl jac_bytes_join(sep: bytes, parts: list[bytes]) -> bytes {
     out = bytearray();
     first = True;
     for part in parts {

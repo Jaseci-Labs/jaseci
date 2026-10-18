@@ -7,13 +7,25 @@ glob OSP_CORE_PARTS: tuple[str, ...] = (
      ),
      _OSP_CORE_JS_MEMO: list[str] = [];
 
-def _cache_dir -> str {
+def _cache_dir -> str;
+
+def _es_backend_fingerprint -> str;
+
+def _unit_source_path -> tuple[str, str];
+
+def _artifact_path(source_digest: str) -> str;
+
+def _lower(cl_copy: str) -> str;
+
+def osp_core_js -> str;
+
+impl _cache_dir -> str {
     d = os.path.join(str(get_jir_cache_dir()), "client_kernel");
     os.makedirs(d, exist_ok=True);
     return d;
 }
 
-def _es_backend_fingerprint -> str {
+impl _es_backend_fingerprint -> str {
     import glob as _g;
 
     es_dir = os.path.join(jaclang_pkg_root(), "compiler", "backends", "es");
@@ -30,7 +42,7 @@ def _es_backend_fingerprint -> str {
     return h.hexdigest()[:16];
 }
 
-def _unit_source_path -> tuple[str, str] {
+impl _unit_source_path -> tuple[str, str] {
     texts: list[str] = [];
     for rel in OSP_CORE_PARTS {
         with open(kernel_unit_path(rel), "r", encoding="utf-8") as f {
@@ -50,7 +62,7 @@ def _unit_source_path -> tuple[str, str] {
     return (path, digest);
 }
 
-def _artifact_path(source_digest: str) -> str {
+impl _artifact_path(source_digest: str) -> str {
     h = hashlib.sha256();
     h.update(running_compiler_digest().encode());
     h.update(source_digest.encode());
@@ -58,7 +70,7 @@ def _artifact_path(source_digest: str) -> str {
     return os.path.join(_cache_dir(), f"osp_core_cl.{h.hexdigest()[:16]}.mjs");
 }
 
-def _lower(cl_copy: str) -> str {
+impl _lower(cl_copy: str) -> str {
     prog = JacProgram();
     ir = prog.compile(
         file_path=cl_copy,
@@ -85,7 +97,7 @@ def _lower(cl_copy: str) -> str {
     return es_to_js(es.Program(body=kept));
 }
 
-def osp_core_js -> str {
+impl osp_core_js -> str {
     if _OSP_CORE_JS_MEMO {
         return _OSP_CORE_JS_MEMO[0];
     }

@@ -25,23 +25,55 @@ obj:pub ZipInfo {
         _raw_name: bytes = b"",
         _end_offset: int = 0;
 
-    def is_dir -> bool {
-        return self.filename.endswith("/");
-    }
+    def is_dir -> bool;
 }
 
-def _range(data: bytes, start: int, size: int) {
+def _range(data: bytes, start: int, size: int);
+
+def _uint(data: bytes, start: int, size: int) -> int;
+
+def _extra(data: bytes);
+
+def _name(raw: bytes, flags: int) -> str;
+
+def _inflate(data: bytes, size: int) -> bytes;
+
+obj:pub ZipFile {
+    has filename: str = "",
+        mode: str = "r",
+        comment: bytes = b"",
+        _data: bytes = b"",
+        _files: list[ZipInfo] = [],
+        _index: dict[str, int] = {},
+        _closed: bool = False;
+
+    def init(file: str, mode: str = "r");
+    def _parse;
+    def namelist -> list[str];
+    def infolist -> list[ZipInfo];
+    def getinfo(name: str) -> ZipInfo;
+    def read(name: str) -> bytes;
+    def close;
+    def __enter__ -> ZipFile;
+    def __exit__(exc_type: any, exc: any, tb: any) -> bool;
+}
+
+impl ZipInfo.is_dir -> bool {
+    return self.filename.endswith("/");
+}
+
+impl _range(data: bytes, start: int, size: int) {
     if start < 0 or size < 0 or start > len(data) or size > len(data) - start {
         raise BadZipFile("Truncated ZIP record");
     }
 }
 
-def _uint(data: bytes, start: int, size: int) -> int {
+impl _uint(data: bytes, start: int, size: int) -> int {
     _range(data, start, size);
     return int.from_bytes(data[start:start + size], "little");
 }
 
-def _extra(data: bytes) {
+impl _extra(data: bytes) {
     pos = 0;
     while pos < len(data) {
         kind = _uint(data, pos, 2);
@@ -54,7 +86,7 @@ def _extra(data: bytes) {
     }
 }
 
-def _name(raw: bytes, flags: int) -> str {
+impl _name(raw: bytes, flags: int) -> str {
     if flags & 2048 != 0 {
         i = 0;
         while i < len(raw) {
@@ -236,7 +268,7 @@ def _name(raw: bytes, flags: int) -> str {
     return result;
 }
 
-def _inflate(data: bytes, size: int) -> bytes {
+impl _inflate(data: bytes, size: int) -> bytes {
     if size < 0 or size > z_inflate_bound(len(data)) {
         raise BadZipFile("Invalid DEFLATE output size");
     }
@@ -252,221 +284,206 @@ def _inflate(data: bytes, size: int) -> bytes {
     return res.data;
 }
 
-obj:pub ZipFile {
-    has filename: str = "",
-        mode: str = "r",
-        comment: bytes = b"",
-        _data: bytes = b"",
-        _files: list[ZipInfo] = [],
-        _index: dict[str, int] = {},
-        _closed: bool = False;
-
-    def init(file: str, mode: str = "r") {
-        if mode != "r" {
-            raise NotImplementedError("Native ZipFile supports mode 'r' only");
-        }
-        self.filename = file;
-        self.mode = mode;
-        with open(file, "rb") as stream {
-            self._data = stream.read();
-        }
-        self._parse();
+impl ZipFile.init(file: str, mode: str = "r") {
+    if mode != "r" {
+        raise NotImplementedError("Native ZipFile supports mode 'r' only");
     }
+    self.filename = file;
+    self.mode = mode;
+    with open(file, "rb") as stream {
+        self._data = stream.read();
+    }
+    self._parse();
+}
 
-    def _parse {
-        data = self._data;
-        end = len(data) - 22;
-        lower = max(0, len(data) - 65557);
-        while end >= lower {
-            if data[end:end + 4] == b"PK\x05\x06"
-                and end + 22 + _uint(data, end + 20, 2) == len(data) {
-                break;
-            }
-            end -= 1;
+impl ZipFile._parse {
+    data = self._data;
+    end = len(data) - 22;
+    lower = max(0, len(data) - 65557);
+    while end >= lower {
+        if data[end:end + 4] == b"PK\x05\x06"
+            and end + 22 + _uint(data, end + 20, 2) == len(data) {
+            break;
         }
-        if end < lower {
-            raise BadZipFile("File is not a zip file");
+        end -= 1;
+    }
+    if end < lower {
+        raise BadZipFile("File is not a zip file");
+    }
+    if end >= 20 and data[end - 20:end - 16] == b"PK\x06\x07" {
+        raise NotImplementedError("ZIP64 is not supported on the native pathway");
+    }
+    count = _uint(data, end + 10, 2);
+    size = _uint(data, end + 12, 4);
+    offset = _uint(data, end + 16, 4);
+    if count == 65535 or size == 4294967295 or offset == 4294967295 {
+        raise NotImplementedError("ZIP64 is not supported on the native pathway");
+    }
+    if _uint(data, end + 4, 2) != 0
+        or _uint(data, end + 6, 2) != 0
+        or _uint(data, end + 8, 2) != count {
+        raise BadZipFile("Multi-disk ZIP archives are not supported");
+    }
+    start = end - size;
+    prefix = start - offset;
+    if prefix < 0 or start < 0 or count > size // 46 {
+        raise BadZipFile("Invalid central directory bounds");
+    }
+    self.comment = data[end + 22:];
+    pos = start;
+    for i in range(count) {
+        _range(data, pos, 46);
+        if pos + 46 > end or data[pos:pos + 4] != b"PK\x01\x02" {
+            raise BadZipFile("Bad central directory signature");
         }
-        if end >= 20 and data[end - 20:end - 16] == b"PK\x06\x07" {
+        flags = _uint(data, pos + 8, 2);
+        compressed = _uint(data, pos + 20, 4);
+        original = _uint(data, pos + 24, 4);
+        local = _uint(data, pos + 42, 4);
+        if compressed == 4294967295 or original == 4294967295 or local == 4294967295 {
             raise NotImplementedError("ZIP64 is not supported on the native pathway");
         }
-        count = _uint(data, end + 10, 2);
-        size = _uint(data, end + 12, 4);
-        offset = _uint(data, end + 16, 4);
-        if count == 65535 or size == 4294967295 or offset == 4294967295 {
-            raise NotImplementedError("ZIP64 is not supported on the native pathway");
-        }
-        if _uint(data, end + 4, 2) != 0
-            or _uint(data, end + 6, 2) != 0
-            or _uint(data, end + 8, 2) != count {
+        if _uint(data, pos + 34, 2) != 0 {
             raise BadZipFile("Multi-disk ZIP archives are not supported");
         }
-        start = end - size;
-        prefix = start - offset;
-        if prefix < 0 or start < 0 or count > size // 46 {
-            raise BadZipFile("Invalid central directory bounds");
+        nlen = _uint(data, pos + 28, 2);
+        elen = _uint(data, pos + 30, 2);
+        clen = _uint(data, pos + 32, 2);
+        next_pos = pos + 46 + nlen + elen + clen;
+        if next_pos > end {
+            raise BadZipFile("Truncated central directory entry");
         }
-        self.comment = data[end + 22:];
-        pos = start;
-        for i in range(count) {
-            _range(data, pos, 46);
-            if pos + 46 > end or data[pos:pos + 4] != b"PK\x01\x02" {
-                raise BadZipFile("Bad central directory signature");
-            }
-            flags = _uint(data, pos + 8, 2);
-            compressed = _uint(data, pos + 20, 4);
-            original = _uint(data, pos + 24, 4);
-            local = _uint(data, pos + 42, 4);
-            if compressed == 4294967295
-                or original == 4294967295
-                or local == 4294967295 {
-                raise NotImplementedError(
-                    "ZIP64 is not supported on the native pathway"
-                );
-            }
-            if _uint(data, pos + 34, 2) != 0 {
-                raise BadZipFile("Multi-disk ZIP archives are not supported");
-            }
-            nlen = _uint(data, pos + 28, 2);
-            elen = _uint(data, pos + 30, 2);
-            clen = _uint(data, pos + 32, 2);
-            next_pos = pos + 46 + nlen + elen + clen;
-            if next_pos > end {
-                raise BadZipFile("Truncated central directory entry");
-            }
-            raw = data[pos + 46:pos + 46 + nlen];
-            name = _name(raw, flags).split("\x00")[0];
-            extra = data[pos + 46 + nlen:pos + 46 + nlen + elen];
-            _extra(extra);
-            info = ZipInfo(
-                filename=name,
-                compress_type=_uint(data, pos + 10, 2),
-                flag_bits=flags,
-                CRC=_uint(data, pos + 16, 4),
-                compress_size=compressed,
-                file_size=original,
-                header_offset=local + prefix,
-                extra=extra,
-                comment=data[pos + 46 + nlen + elen:next_pos],
-                _raw_name=raw,
-                _end_offset=start
-            );
-            if info.header_offset < prefix or info.header_offset + 30 > start {
-                raise BadZipFile("Invalid local header offset");
-            }
-            self._index[name] = len(self._files);
-            self._files.append(info);
-            pos = next_pos;
+        raw = data[pos + 46:pos + 46 + nlen];
+        name = _name(raw, flags).split("\x00")[0];
+        extra = data[pos + 46 + nlen:pos + 46 + nlen + elen];
+        _extra(extra);
+        info = ZipInfo(
+            filename=name,
+            compress_type=_uint(data, pos + 10, 2),
+            flag_bits=flags,
+            CRC=_uint(data, pos + 16, 4),
+            compress_size=compressed,
+            file_size=original,
+            header_offset=local + prefix,
+            extra=extra,
+            comment=data[pos + 46 + nlen + elen:next_pos],
+            _raw_name=raw,
+            _end_offset=start
+        );
+        if info.header_offset < prefix or info.header_offset + 30 > start {
+            raise BadZipFile("Invalid local header offset");
         }
-        if pos != end {
-            raise BadZipFile("Invalid central directory size");
-        }
-        offsets: list[int] = [];
-        for info in self._files {
-            offsets.append(info.header_offset);
-        }
-        ordered = sorted(offsets);
-        boundaries: dict[int, int] = {};
-        for i in range(len(ordered)) {
-            if i > 0 and ordered[i] == ordered[i - 1] {
-                raise BadZipFile("Overlapping ZIP entries");
-            }
-            boundaries[ordered[i]] = ordered[i + 1] if i + 1 < len(ordered) else start;
-        }
-        for info in self._files {
-            info._end_offset = boundaries[info.header_offset];
-        }
+        self._index[name] = len(self._files);
+        self._files.append(info);
+        pos = next_pos;
     }
+    if pos != end {
+        raise BadZipFile("Invalid central directory size");
+    }
+    offsets: list[int] = [];
+    for info in self._files {
+        offsets.append(info.header_offset);
+    }
+    ordered = sorted(offsets);
+    boundaries: dict[int, int] = {};
+    for i in range(len(ordered)) {
+        if i > 0 and ordered[i] == ordered[i - 1] {
+            raise BadZipFile("Overlapping ZIP entries");
+        }
+        boundaries[ordered[i]] = ordered[i + 1] if i + 1 < len(ordered) else start;
+    }
+    for info in self._files {
+        info._end_offset = boundaries[info.header_offset];
+    }
+}
 
-    def namelist -> list[str] {
-        names: list[str] = [];
-        for info in self._files {
-            names.append(info.filename);
-        }
-        return names;
+impl ZipFile.namelist -> list[str] {
+    names: list[str] = [];
+    for info in self._files {
+        names.append(info.filename);
     }
+    return names;
+}
 
-    def infolist -> list[ZipInfo] {
-        return self._files[:];
-    }
+impl ZipFile.infolist -> list[ZipInfo] {
+    return self._files[:];
+}
 
-    def getinfo(name: str) -> ZipInfo {
-        if name not in self._index {
-            raise KeyError("There is no item named '" + name + "' in the archive");
-        }
-        return self._files[self._index[name]];
+impl ZipFile.getinfo(name: str) -> ZipInfo {
+    if name not in self._index {
+        raise KeyError("There is no item named '" + name + "' in the archive");
     }
+    return self._files[self._index[name]];
+}
 
-    def read(name: str) -> bytes {
-        if self._closed {
-            raise ValueError("Attempt to use ZIP archive that was already closed");
-        }
-        info = self.getinfo(name);
-        data = self._data;
-        pos = info.header_offset;
-        _range(data, pos, 30);
-        if data[pos:pos + 4] != b"PK\x03\x04" {
-            raise BadZipFile("Bad local file header signature");
-        }
-        flags = _uint(data, pos + 6, 2);
-        method = _uint(data, pos + 8, 2);
-        if flags != info.flag_bits or method != info.compress_type {
-            raise BadZipFile("Local and central ZIP headers disagree");
-        }
-        if flags & 1 != 0 {
-            raise NotImplementedError("Encrypted ZIP members are not supported");
-        }
-        if flags & 8288 != 0 {
-            raise NotImplementedError("Unsupported ZIP member flags");
-        }
-        if method != ZIP_STORED and method != ZIP_DEFLATED {
-            raise NotImplementedError("Unsupported ZIP compression method");
-        }
-        nlen = _uint(data, pos + 26, 2);
-        elen = _uint(data, pos + 28, 2);
-        payload = pos + 30 + nlen + elen;
-        if payload > info._end_offset
-            or info.compress_size > info._end_offset - payload {
-            raise BadZipFile("Overlapping or truncated ZIP member");
-        }
-        if data[pos + 30:pos + 30 + nlen] != info._raw_name {
-            raise BadZipFile("Local and central ZIP filenames disagree");
-        }
-        _extra(data[pos + 30 + nlen:payload]);
-        if flags & 8 == 0 {
-            if _uint(data, pos + 14, 4) != info.CRC
-                or _uint(data, pos + 18, 4) != info.compress_size
-                or _uint(data, pos + 22, 4) != info.file_size {
-                raise BadZipFile("Local and central ZIP sizes or CRC disagree");
-            }
-        }
-        compressed = data[payload:payload + info.compress_size];
-        result = compressed
-            if method == ZIP_STORED
-            else _inflate(compressed, info.file_size);
-        if len(result) != info.file_size {
-            raise BadZipFile("Bad uncompressed size for file '" + name + "'");
-        }
-        if z_crc32(0, result, len(result)) != info.CRC {
-            raise BadZipFile("Bad CRC-32 for file '" + name + "'");
-        }
-        return result;
+impl ZipFile.read(name: str) -> bytes {
+    if self._closed {
+        raise ValueError("Attempt to use ZIP archive that was already closed");
     }
+    info = self.getinfo(name);
+    data = self._data;
+    pos = info.header_offset;
+    _range(data, pos, 30);
+    if data[pos:pos + 4] != b"PK\x03\x04" {
+        raise BadZipFile("Bad local file header signature");
+    }
+    flags = _uint(data, pos + 6, 2);
+    method = _uint(data, pos + 8, 2);
+    if flags != info.flag_bits or method != info.compress_type {
+        raise BadZipFile("Local and central ZIP headers disagree");
+    }
+    if flags & 1 != 0 {
+        raise NotImplementedError("Encrypted ZIP members are not supported");
+    }
+    if flags & 8288 != 0 {
+        raise NotImplementedError("Unsupported ZIP member flags");
+    }
+    if method != ZIP_STORED and method != ZIP_DEFLATED {
+        raise NotImplementedError("Unsupported ZIP compression method");
+    }
+    nlen = _uint(data, pos + 26, 2);
+    elen = _uint(data, pos + 28, 2);
+    payload = pos + 30 + nlen + elen;
+    if payload > info._end_offset or info.compress_size > info._end_offset - payload {
+        raise BadZipFile("Overlapping or truncated ZIP member");
+    }
+    if data[pos + 30:pos + 30 + nlen] != info._raw_name {
+        raise BadZipFile("Local and central ZIP filenames disagree");
+    }
+    _extra(data[pos + 30 + nlen:payload]);
+    if flags & 8 == 0 {
+        if _uint(data, pos + 14, 4) != info.CRC
+            or _uint(data, pos + 18, 4) != info.compress_size
+            or _uint(data, pos + 22, 4) != info.file_size {
+            raise BadZipFile("Local and central ZIP sizes or CRC disagree");
+        }
+    }
+    compressed = data[payload:payload + info.compress_size];
+    result = compressed
+        if method == ZIP_STORED
+        else _inflate(compressed, info.file_size);
+    if len(result) != info.file_size {
+        raise BadZipFile("Bad uncompressed size for file '" + name + "'");
+    }
+    if z_crc32(0, result, len(result)) != info.CRC {
+        raise BadZipFile("Bad CRC-32 for file '" + name + "'");
+    }
+    return result;
+}
 
-    def close {
-        self._data = b"";
-        self._closed = True;
-    }
+impl ZipFile.close {
+    self._data = b"";
+    self._closed = True;
+}
 
-    def __enter__ -> ZipFile {
-        if self._closed {
-            raise ValueError("Attempt to use ZIP archive that was already closed");
-        }
-        return self;
+impl ZipFile.__enter__ -> ZipFile {
+    if self._closed {
+        raise ValueError("Attempt to use ZIP archive that was already closed");
     }
+    return self;
+}
 
-    def __exit__(exc_type: any, exc: any, tb: any) -> bool {
-        self.close();
-        return False;
-    }
+impl ZipFile.__exit__(exc_type: any, exc: any, tb: any) -> bool {
+    self.close();
+    return False;
 }

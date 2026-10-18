@@ -1,6 +1,14 @@
 import from "@jac/runtime" { Link }
 
-def matches(p: PackageSummary, q: str) -> bool {
+def matches(p: PackageSummary, q: str) -> bool;
+
+def:pub PackageCard(pkg: PackageSummary) -> JsxElement;
+
+def:pub PackagesIndex(
+    catalog: PackageCatalog | None, loading: bool, q: str, onFilter: any
+) -> JsxElement;
+
+impl matches(p: PackageSummary, q: str) -> bool {
     needle = q.strip().lower();
     if needle == "" {
         return True;
@@ -14,7 +22,7 @@ def matches(p: PackageSummary, q: str) -> bool {
     return False;
 }
 
-def:pub PackageCard(pkg: PackageSummary) -> JsxElement {
+impl PackageCard(pkg: PackageSummary) -> JsxElement {
     return
         <li
             className="flex flex-col gap-3 rounded-xl border border-border/60 bg-card/60 p-5 transition-colors hover:border-primary/40"
@@ -36,7 +44,7 @@ def:pub PackageCard(pkg: PackageSummary) -> JsxElement {
         </li>;
 }
 
-def:pub PackagesIndex(
+impl PackagesIndex(
     catalog: PackageCatalog | None, loading: bool, q: str, onFilter: any
 ) -> JsxElement {
     shown = [

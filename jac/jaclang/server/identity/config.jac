@@ -1,17 +1,29 @@
 glob _active: list[any] = [AuthSettings(), '', None];
 
 
-def configure_identity(settings: AuthSettings, base_path: str) {
+def configure_identity(settings: AuthSettings, base_path: str);
+
+def auth_settings -> AuthSettings;
+
+def signing_secret -> str;
+
+def signing_algorithm -> str;
+
+def token_ttl_days -> int;
+
+def password_hash_cost -> int;
+
+impl configure_identity(settings: AuthSettings, base_path: str) {
     _active[0] = settings;
     _active[1] = base_path;
     _active[2] = None;
 }
 
-def auth_settings -> AuthSettings {
+impl auth_settings -> AuthSettings {
     return _active[0];
 }
 
-def signing_secret -> str {
+impl signing_secret -> str {
     cached = _active[2];
     if cached {
         return str(cached);
@@ -22,14 +34,14 @@ def signing_secret -> str {
     return secret;
 }
 
-def signing_algorithm -> str {
+impl signing_algorithm -> str {
     return auth_settings().algorithm;
 }
 
-def token_ttl_days -> int {
+impl token_ttl_days -> int {
     return auth_settings().token_ttl_days;
 }
 
-def password_hash_cost -> int {
+impl password_hash_cost -> int {
     return auth_settings().password.hash_cost;
 }

@@ -56,13 +56,7 @@ impl parse_repo_url(url: str) -> tuple[str, str] | None {
     return (m.group(1) as str, m.group(2) as str);
 }
 
-def _api_bytes(url: str, agent: str) -> bytes {
-    data = fetch(url, agent, accept_json=True);
-    if data is None {
-        raise RuntimeError("GitHub is unavailable or rate limited");
-    }
-    return data;
-}
+def _api_bytes(url: str, agent: str) -> bytes;
 
 impl repo_meta(repo: str, agent: str) -> RepoMeta | None {
     raw = JsonEndpoint[GithubRepository](GithubRepository, API_ROOT + repo).read(
@@ -307,4 +301,12 @@ impl text_of(blob: bytes) -> str {
 
 impl mb_of(byte_count: int) -> str {
     return str(round(byte_count / 1048576.0, 1)) + " MB";
+}
+
+impl _api_bytes(url: str, agent: str) -> bytes {
+    data = fetch(url, agent, accept_json=True);
+    if data is None {
+        raise RuntimeError("GitHub is unavailable or rate limited");
+    }
+    return data;
 }

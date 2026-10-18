@@ -1,5 +1,17 @@
 def erased_import_binds(
     nd: UniNode, name: str, imported_name: str | None = None
+) -> bool;
+
+def erased_identity_call_arg(nd: FuncCall) -> (Expr | None);
+
+def is_contextmanager_decorator(
+    expr: UniNode, anchor: (UniNode | None) = None
+) -> bool;
+
+def contextmanager_ability(ab: (UniNode | None)) -> bool;
+
+impl erased_import_binds(
+    nd: UniNode, name: str, imported_name: str | None = None
 ) -> bool {
     mod = nd.find_parent_of_type(Module);
     if mod is None {
@@ -29,7 +41,7 @@ def erased_import_binds(
     return False;
 }
 
-def erased_identity_call_arg(nd: FuncCall) -> (Expr | None) {
+impl erased_identity_call_arg(nd: FuncCall) -> (Expr | None) {
     tgt = nd.target;
     if not isinstance(tgt, Name) or tgt.sym_name not in NATIVE_ERASED_IDENTITY_CALLS {
         return None;
@@ -46,7 +58,7 @@ def erased_identity_call_arg(nd: FuncCall) -> (Expr | None) {
     return params[1];
 }
 
-def is_contextmanager_decorator(
+impl is_contextmanager_decorator(
     expr: UniNode, anchor: (UniNode | None) = None
 ) -> bool {
     if not isinstance(expr, Name) {
@@ -59,7 +71,7 @@ def is_contextmanager_decorator(
         and erased_import_binds(anchor, expr.value, "contextmanager");
 }
 
-def contextmanager_ability(ab: (UniNode | None)) -> bool {
+impl contextmanager_ability(ab: (UniNode | None)) -> bool {
     if not isinstance(ab, Ability) {
         return False;
     }

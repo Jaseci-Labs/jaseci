@@ -24,7 +24,11 @@ glob _KINDS: list[dict[str, any]] = [
 
      ];
 
-def:pub PillarCard(icon: any, title: str, body: str) -> JsxElement {
+def:pub PillarCard(icon: any, title: str, body: str) -> JsxElement;
+
+def:pub Capabilities -> JsxElement;
+
+impl PillarCard(icon: any, title: str, body: str) -> JsxElement {
     return
         <Card
             className="h-full border-border/80 transition-all hover:-translate-y-1 hover:border-primary/40 hover:shadow-md"
@@ -43,7 +47,7 @@ def:pub PillarCard(icon: any, title: str, body: str) -> JsxElement {
         </Card>;
 }
 
-def:pub Capabilities -> JsxElement {
+impl Capabilities -> JsxElement {
     return
         <section
             id="build"

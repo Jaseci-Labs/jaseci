@@ -31,7 +31,19 @@ obj _BuildingSpan {
     def __exit__(_exc_type: object, _exc_value: object, _traceback: object) -> bool;
 }
 
-def _decide(artifact: Artifact) -> Resolution {
+def _decide(artifact: Artifact) -> Resolution;
+
+def omitted_by_image -> frozenset[str];
+
+def _omitted(sealed_image: bool) -> frozenset[str];
+
+def _provision(artifact: Artifact, resolution: Resolution) -> Resolution;
+
+def _to_stderr(line: str);
+
+def _announce(artifact: Artifact, resolution: Resolution);
+
+impl _decide(artifact: Artifact) -> Resolution {
     if artifact.disabled() {
         return Resolution(name=artifact.name, reason="being built", quiet=True);
     }
@@ -76,11 +88,11 @@ def _decide(artifact: Artifact) -> Resolution {
     return Resolution(name=artifact.name, reason=tree.describe());
 }
 
-def omitted_by_image -> frozenset[str] {
+impl omitted_by_image -> frozenset[str] {
     return _omitted(sealed_image=True) | _omitted(sealed_image=False);
 }
 
-def _omitted(sealed_image: bool) -> frozenset[str] {
+impl _omitted(sealed_image: bool) -> frozenset[str] {
     if sealed_image {
         import from jaclang.jac0core { sealed }
         image = sealed._jaclang_image();
@@ -91,7 +103,7 @@ def _omitted(sealed_image: bool) -> frozenset[str] {
     return found[1].omits if found is not None else frozenset();
 }
 
-def _provision(artifact: Artifact, resolution: Resolution) -> Resolution {
+impl _provision(artifact: Artifact, resolution: Resolution) -> Resolution {
     import sys;
 
     if offline_mode() {
@@ -111,12 +123,12 @@ def _provision(artifact: Artifact, resolution: Resolution) -> Resolution {
     return resolve(artifact.name);
 }
 
-def _to_stderr(line: str) {
+impl _to_stderr(line: str) {
     import sys;
     sys.stderr.write(line + "\n");
 }
 
-def _announce(artifact: Artifact, resolution: Resolution) {
+impl _announce(artifact: Artifact, resolution: Resolution) {
     if artifact.name in _ANNOUNCED
         or artifact.kind != ArtifactKind.ACCELERATOR
         or artifact.release == ReleasePolicy.FLOOR {

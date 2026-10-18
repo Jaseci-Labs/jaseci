@@ -1,4 +1,6 @@
-def setup_toolchain(name: str) -> int {
+def setup_toolchain(name: str) -> int;
+
+impl setup_toolchain(name: str) -> int {
     try {
         if name == "android" {
             import from jaclang.toolchains.android { ensure_android }

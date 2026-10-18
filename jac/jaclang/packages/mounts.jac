@@ -6,7 +6,17 @@ import from pathlib { Path }
 glob MOUNTS_RECORD: str = ".jac-mounts.json",
      COPY_MARKER: str = ".jac-mount-copy";
 
-def _current_target(item: Path) -> str {
+def _current_target(item: Path) -> str;
+
+def _remove(item: Path);
+
+def _link(item: Path, target: Path);
+
+def link_mounts(build_dir: Path, targets: dict[str, Path]) -> Path;
+
+def read_mounts(build_dir: Path) -> dict[str, str];
+
+impl _current_target(item: Path) -> str {
     if item.is_symlink() {
         return os.path.realpath(str(item));
     }
@@ -17,7 +27,7 @@ def _current_target(item: Path) -> str {
     return "";
 }
 
-def _remove(item: Path) {
+impl _remove(item: Path) {
     if item.is_symlink() or item.is_file() {
         item.unlink();
     } elif item.is_dir() {
@@ -25,7 +35,7 @@ def _remove(item: Path) {
     }
 }
 
-def _link(item: Path, target: Path) {
+impl _link(item: Path, target: Path) {
     item.parent.mkdir(parents=True, exist_ok=True);
     try {
         os.symlink(str(target), str(item), target_is_directory=True);
@@ -35,7 +45,7 @@ def _link(item: Path, target: Path) {
     }
 }
 
-def link_mounts(build_dir: Path, targets: dict[str, Path]) -> Path {
+impl link_mounts(build_dir: Path, targets: dict[str, Path]) -> Path {
     root_dir = mounts_dir(build_dir);
     root_dir.mkdir(parents=True, exist_ok=True);
     wanted = {
@@ -68,7 +78,7 @@ def link_mounts(build_dir: Path, targets: dict[str, Path]) -> Path {
     return root_dir;
 }
 
-def read_mounts(build_dir: Path) -> dict[str, str] {
+impl read_mounts(build_dir: Path) -> dict[str, str] {
     record = mounts_dir(build_dir) / MOUNTS_RECORD;
     if not record.is_file() {
         return {};

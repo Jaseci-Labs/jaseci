@@ -1,6 +1,14 @@
 import type from jaclang.compiler.frontend.unitree { Expr }
 
-def _is_version_info_access(expr: Expr) -> bool {
+def _is_version_info_access(expr: Expr) -> bool;
+
+def _is_type_checking_ref(expr: Expr) -> bool;
+
+def _extract_version_tuple(expr: Expr) -> tuple[int, int] | None;
+
+def evaluate_version_condition(condition: Expr) -> bool | None;
+
+impl _is_version_info_access(expr: Expr) -> bool {
     import jaclang.compiler.frontend.unitree as uni;
 
     if not isinstance(expr, uni.AtomTrailer) {
@@ -17,7 +25,7 @@ def _is_version_info_access(expr: Expr) -> bool {
     );
 }
 
-def _is_type_checking_ref(expr: Expr) -> bool {
+impl _is_type_checking_ref(expr: Expr) -> bool {
     import jaclang.compiler.frontend.unitree as uni;
 
     inner = expr;
@@ -39,7 +47,7 @@ def _is_type_checking_ref(expr: Expr) -> bool {
     return False;
 }
 
-def _extract_version_tuple(expr: Expr) -> tuple[int, int] | None {
+impl _extract_version_tuple(expr: Expr) -> tuple[int, int] | None {
     import jaclang.compiler.frontend.unitree as uni;
 
     if not isinstance(expr, uni.TupleVal) {
@@ -55,7 +63,7 @@ def _extract_version_tuple(expr: Expr) -> tuple[int, int] | None {
     return (major.lit_value, minor.lit_value);
 }
 
-def evaluate_version_condition(condition: Expr) -> bool | None {
+impl evaluate_version_condition(condition: Expr) -> bool | None {
     import jaclang.compiler.frontend.unitree as uni;
     import from jaclang.compiler.frontend.host { active_host }
     import from jaclang.compiler.frontend.constant { Tokens as Tok }

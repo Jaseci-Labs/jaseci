@@ -6,17 +6,29 @@ import from json { dumps, loads }
 glob _logger: logging.Logger = logging.getLogger("jaclang.server.serving.sse");
 
 
-def _sse_json_default(o: any) -> str {
+def _sse_json_default(o: any) -> str;
+
+def format_sse_event(data_text: str, event: (str | None) = None) -> str;
+
+def sse_frame_stream(source: any) -> AsyncIterator[str];
+
+async def _sse_frame_stream_inner(source: any) -> AsyncIterator[str];
+
+def parse_sse(line_iter: any) -> Iterator[tuple[str, str]];
+
+def consume_sse_events(line_iter: any, func_label: str) -> Iterator[dict[str, any]];
+
+impl _sse_json_default(o: any) -> str {
     return str(o);
 }
 
-def format_sse_event(data_text: str, event: (str | None) = None) -> str {
+impl format_sse_event(data_text: str, event: (str | None) = None) -> str {
     prefix = f"event: {event}\n" if event else '';
     lines = ''.join([f"data: {line}\n" for line in data_text.split('\n')]);
     return f"{prefix}{lines}\n";
 }
 
-def sse_frame_stream(source: any) -> AsyncIterator[str] {
+impl sse_frame_stream(source: any) -> AsyncIterator[str] {
     if not (
         inspect.isgenerator(source)
         or inspect.isasyncgen(source)
@@ -30,7 +42,7 @@ def sse_frame_stream(source: any) -> AsyncIterator[str] {
     return _sse_frame_stream_inner(source);
 }
 
-async def _sse_frame_stream_inner(source: any) -> AsyncIterator[str] {
+impl _sse_frame_stream_inner(source: any) -> AsyncIterator[str] {
     try {
         if inspect.isasyncgen(source) or hasattr(source, '__aiter__') {
             async for item in source {
@@ -54,7 +66,7 @@ async def _sse_frame_stream_inner(source: any) -> AsyncIterator[str] {
     }
 }
 
-def parse_sse(line_iter: any) -> Iterator[tuple[str, str]] {
+impl parse_sse(line_iter: any) -> Iterator[tuple[str, str]] {
     event: str = 'message';
     data_lines: list[str] = [];
     for raw in line_iter {
@@ -90,7 +102,7 @@ def parse_sse(line_iter: any) -> Iterator[tuple[str, str]] {
     }
 }
 
-def consume_sse_events(line_iter: any, func_label: str) -> Iterator[dict[str, any]] {
+impl consume_sse_events(line_iter: any, func_label: str) -> Iterator[dict[str, any]] {
     for (event_name, data_text) in parse_sse(line_iter) {
         if event_name == 'end' {
             return;

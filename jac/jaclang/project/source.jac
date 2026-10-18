@@ -1,21 +1,9 @@
 import os;
 import type from jaclang.compiler.frontend.srcloc { Span }
 
-def pascal_to_snake(pascal_string: str) -> str {
-    snake_string = '';
-    for (idx, ch) in enumerate(pascal_string) {
-        if (idx > 0) and (ch >= 'A') and (ch <= 'Z') {
-            snake_string += '_';
-        }
-        snake_string += ch;
-    }
-    return snake_string.lower();
-}
+def pascal_to_snake(pascal_string: str) -> str;
 
-def add_line_numbers(s: str) -> str {
-    lines = s.split('\n');
-    return '\n'.join([f"{(i + 1)}:       {line}" for (i, line) in enumerate(lines)]);
-}
+def add_line_numbers(s: str) -> str;
 
 class ANSIColors {
     with entry {
@@ -47,6 +35,71 @@ class ANSIColors {
 }
 
 def pretty_print_source_location(
+    file_path: str,
+    file_source: str,
+    error_line: int,
+    pos_start: int,
+    pos_end: int,
+    *,
+    colors: bool = False
+) -> str;
+
+def pretty_print_span(span: Span, *, colors: bool = False) -> str;
+
+def format_related_spans(
+    related: list[tuple[str, Span]], *, colors: bool = False
+) -> str;
+
+def render_diagnostic_header(
+    message: str,
+    code: str = '',
+    severity: str = 'error',
+    loc: (Span | None) = None,
+    *,
+    colors: bool = False
+) -> str;
+
+def render_diagnostic(
+    message: str,
+    code: str = '',
+    severity: str = 'error',
+    loc: (Span | None) = None,
+    related: (list[tuple[str, Span]] | None) = None,
+    help_text: (str | None) = None,
+    *,
+    colors: bool = False
+) -> str;
+
+def _to_posix_path(raw_path: str) -> str;
+
+
+def path_matches_exclude(
+    file_path: str, patterns: list[str], project_root: str = ""
+) -> bool;
+
+
+glob JACIGNORE_FILENAME: str = '.jacignore';
+
+
+def normalize_exclude_patterns(patterns: list[str]) -> list[str];
+
+impl pascal_to_snake(pascal_string: str) -> str {
+    snake_string = '';
+    for (idx, ch) in enumerate(pascal_string) {
+        if (idx > 0) and (ch >= 'A') and (ch <= 'Z') {
+            snake_string += '_';
+        }
+        snake_string += ch;
+    }
+    return snake_string.lower();
+}
+
+impl add_line_numbers(s: str) -> str {
+    lines = s.split('\n');
+    return '\n'.join([f"{(i + 1)}:       {line}" for (i, line) in enumerate(lines)]);
+}
+
+impl pretty_print_source_location(
     file_path: str,
     file_source: str,
     error_line: int,
@@ -141,7 +194,7 @@ def pretty_print_source_location(
     return pretty_dump[:-1];
 }
 
-def pretty_print_span(span: Span, *, colors: bool = False) -> str {
+impl pretty_print_span(span: Span, *, colors: bool = False) -> str {
     return pretty_print_source_location(
         span.mod_path,
         span.src_window,
@@ -152,7 +205,7 @@ def pretty_print_span(span: Span, *, colors: bool = False) -> str {
     );
 }
 
-def format_related_spans(
+impl format_related_spans(
     related: list[tuple[str, Span]], *, colors: bool = False
 ) -> str {
     result = '';
@@ -176,7 +229,7 @@ def format_related_spans(
     return result;
 }
 
-def render_diagnostic_header(
+impl render_diagnostic_header(
     message: str,
     code: str = '',
     severity: str = 'error',
@@ -204,7 +257,7 @@ def render_diagnostic_header(
     return f"{file_path}:{loc.first_line}:{loc.col_start} {body}";
 }
 
-def render_diagnostic(
+impl render_diagnostic(
     message: str,
     code: str = '',
     severity: str = 'error',
@@ -234,12 +287,12 @@ def render_diagnostic(
     return result;
 }
 
-def _to_posix_path(raw_path: str) -> str {
+impl _to_posix_path(raw_path: str) -> str {
     return raw_path.replace(os.sep, '/');
 }
 
 
-def path_matches_exclude(
+impl path_matches_exclude(
     file_path: str, patterns: list[str], project_root: str = ""
 ) -> bool {
     import from fnmatch { fnmatch }
@@ -277,10 +330,7 @@ def path_matches_exclude(
 }
 
 
-glob JACIGNORE_FILENAME: str = '.jacignore';
-
-
-def normalize_exclude_patterns(patterns: list[str]) -> list[str] {
+impl normalize_exclude_patterns(patterns: list[str]) -> list[str] {
     normalized: list[str] = [];
     for raw in (patterns or []) {
         stripped = raw.strip();

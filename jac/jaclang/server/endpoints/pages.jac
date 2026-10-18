@@ -13,7 +13,29 @@ glob logger: logging.Logger = logging.getLogger('jaclang.serve'),
      ASSET_CACHE_CONTROL: str = 'public, max-age=31536000, immutable';
 
 
-def _dev_client_elsewhere -> JSONResponse {
+def _dev_client_elsewhere -> JSONResponse;
+
+
+def _static_base(server: JacAPIServer) -> str;
+
+
+def _render(
+    server: JacAPIServer, name: str, args: dict[str, any], status: int = 200
+) -> Response;
+
+
+def _sibling_response(request: Request, dist: Path, rel: str) -> Response;
+
+
+def register_page_endpoints(server: JacAPIServer);
+
+
+def register_graph_endpoints(server: JacAPIServer);
+
+
+def register_diagnostics_endpoints(server: JacAPIServer);
+
+impl _dev_client_elsewhere -> JSONResponse {
     return JSONResponse(
         status_code=404,
         content={
@@ -24,7 +46,7 @@ def _dev_client_elsewhere -> JSONResponse {
 }
 
 
-def _static_base(server: JacAPIServer) -> str {
+impl _static_base(server: JacAPIServer) -> str {
     source_path = getattr(server.module, '__file__', '') or '';
     image_root = sealed_root_for(source_path) if source_path else None;
     if image_root is not None {
@@ -36,7 +58,7 @@ def _static_base(server: JacAPIServer) -> str {
 }
 
 
-def _render(
+impl _render(
     server: JacAPIServer, name: str, args: dict[str, any], status: int = 200
 ) -> Response {
     if server.introspector.dev_mode {
@@ -56,12 +78,12 @@ def _render(
 }
 
 
-def _sibling_response(request: Request, dist: Path, rel: str) -> Response {
+impl _sibling_response(request: Request, dist: Path, rel: str) -> Response {
     return file_response(request, str(sibling_app_file(dist, rel)));
 }
 
 
-def register_page_endpoints(server: JacAPIServer) {
+impl register_page_endpoints(server: JacAPIServer) {
     settings = server.resolved_settings();
     config = get_config();
     root_app = "" if settings.static_only else server.introspector.resolve_root_app();
@@ -292,7 +314,7 @@ def register_page_endpoints(server: JacAPIServer) {
 }
 
 
-def register_graph_endpoints(server: JacAPIServer) {
+impl register_graph_endpoints(server: JacAPIServer) {
     if server.introspector.has_client_route('/graph') {
         return;
     }
@@ -373,7 +395,7 @@ def register_graph_endpoints(server: JacAPIServer) {
 }
 
 
-def register_diagnostics_endpoints(server: JacAPIServer) {
+impl register_diagnostics_endpoints(server: JacAPIServer) {
     async def build_status(request: Request) -> JSONResponse {
         return JSONResponse(content=get_build_status());
     }

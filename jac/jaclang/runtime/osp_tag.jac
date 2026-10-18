@@ -1,4 +1,6 @@
-def stable_osp_tag(name: str) -> int {
+def stable_osp_tag(name: str) -> int;
+
+impl stable_osp_tag(name: str) -> int {
     _h = 5239054864098085;
     for _c in name {
         _h = _h ^ ord(_c);

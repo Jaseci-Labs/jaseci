@@ -9,12 +9,7 @@ impl IdentityStorage.verify_password(password: str, password_hash: str) -> bool 
 glob _decoy: list[str] = [];
 
 
-def decoy_hash -> str {
-    if not _decoy {
-        _decoy.append(IdentityStorage.hash_password(uuid.uuid4().hex));
-    }
-    return _decoy[0];
-}
+def decoy_hash -> str;
 
 impl IdentityStorage.create_user(
     identities: list[dict[str, any]],
@@ -506,4 +501,11 @@ impl IdentityStorage.get_sso_accounts(user_id: str) -> list[dict[str, str]] {
         }
     }
     return accounts;
+}
+
+impl decoy_hash -> str {
+    if not _decoy {
+        _decoy.append(IdentityStorage.hash_password(uuid.uuid4().hex));
+    }
+    return _decoy[0];
 }

@@ -4,12 +4,60 @@ import os;
 glob logger: logging.Logger = logging.getLogger('jaclang.serve');
 
 
-def colocated_providers -> dict[str, any] {
+def colocated_providers -> dict[str, any];
+
+
+def provider_route(config: any, provider_app: str) -> str;
+
+
+def _body(request: Request) -> (dict[str, any] | None);
+
+
+def _fail(code: str, message: str, status: int) -> TransportResponse;
+
+
+def _unit_failed(result: any) -> bool;
+
+
+def _outcome(result: any, fallback: str) -> (TransportResponse | Response);
+
+
+def _walker_callback(
+    server: JacAPIServer,
+    provider_app: str,
+    walker_name: str,
+    intro: ModuleIntrospector,
+    requires_auth: bool
+) -> Callable[..., (TransportResponse | Response)];
+
+
+def _function_callback(
+    server: JacAPIServer,
+    provider_app: str,
+    func_name: str,
+    intro: ModuleIntrospector,
+    requires_auth: bool
+) -> Callable[..., (TransportResponse | Response)];
+
+
+def _listing(names: list[str], key: str) -> Callable[..., TransportResponse];
+
+
+def _mount_provider(
+    server: JacAPIServer, provider_app: str, route: str, intro: ModuleIntrospector
+);
+
+
+def served_app_route(server: JacAPIServer) -> tuple[str, str, any];
+
+def register_colocated_endpoints(server: JacAPIServer);
+
+impl colocated_providers -> dict[str, any] {
     return dict(_local_providers);
 }
 
 
-def provider_route(config: any, provider_app: str) -> str {
+impl provider_route(config: any, provider_app: str) -> str {
     provider_cfg = config.app(provider_app) if config is not None else None;
     route: str = str(provider_cfg.effective_route())
         if provider_cfg is not None
@@ -18,7 +66,7 @@ def provider_route(config: any, provider_app: str) -> str {
 }
 
 
-def _body(request: Request) -> (dict[str, any] | None) {
+impl _body(request: Request) -> (dict[str, any] | None) {
     if not request.body {
         return {};
     }
@@ -31,19 +79,19 @@ def _body(request: Request) -> (dict[str, any] | None) {
 }
 
 
-def _fail(code: str, message: str, status: int) -> TransportResponse {
+impl _fail(code: str, message: str, status: int) -> TransportResponse {
     return TransportResponse.fail(
         code=code, message=message, meta=Meta(extra={'http_status': status})
     );
 }
 
 
-def _unit_failed(result: any) -> bool {
+impl _unit_failed(result: any) -> bool {
     return isinstance(result, dict) and 'error' in result;
 }
 
 
-def _outcome(result: any, fallback: str) -> (TransportResponse | Response) {
+impl _outcome(result: any, fallback: str) -> (TransportResponse | Response) {
     if _unit_failed(result) {
         if result.get('error') == 'User not found' {
             return _fail('UNAUTHORIZED', 'Unauthorized: unknown user', 401);
@@ -66,7 +114,7 @@ def _outcome(result: any, fallback: str) -> (TransportResponse | Response) {
 }
 
 
-def _walker_callback(
+impl _walker_callback(
     server: JacAPIServer,
     provider_app: str,
     walker_name: str,
@@ -113,7 +161,7 @@ def _walker_callback(
 }
 
 
-def _function_callback(
+impl _function_callback(
     server: JacAPIServer,
     provider_app: str,
     func_name: str,
@@ -157,7 +205,7 @@ def _function_callback(
 }
 
 
-def _listing(names: list[str], key: str) -> Callable[..., TransportResponse] {
+impl _listing(names: list[str], key: str) -> Callable[..., TransportResponse] {
     async def callback(request: Request, /, **kwargs: JsonValue) -> TransportResponse {
         return TransportResponse.success(
             data={key: list[str](names)}, meta=Meta(extra={'http_status': 200})
@@ -167,7 +215,7 @@ def _listing(names: list[str], key: str) -> Callable[..., TransportResponse] {
 }
 
 
-def _mount_provider(
+impl _mount_provider(
     server: JacAPIServer, provider_app: str, route: str, intro: ModuleIntrospector
 ) {
     walkers = [
@@ -256,7 +304,7 @@ def _mount_provider(
 }
 
 
-def served_app_route(server: JacAPIServer) -> tuple[str, str, any] {
+impl served_app_route(server: JacAPIServer) -> tuple[str, str, any] {
     served = consumer_app();
     if not served {
         return ('', '', None);
@@ -271,7 +319,7 @@ def served_app_route(server: JacAPIServer) -> tuple[str, str, any] {
     return (served, provider_route(config, served), config);
 }
 
-def register_colocated_endpoints(server: JacAPIServer) {
+impl register_colocated_endpoints(server: JacAPIServer) {
     (served, served_route, config) = served_app_route(server);
     if served and served_route {
         _mount_provider(server, served, served_route, server.introspector);

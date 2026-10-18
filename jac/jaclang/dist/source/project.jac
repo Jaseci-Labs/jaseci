@@ -6,7 +6,31 @@ import tempfile;
 import from pathlib { Path }
 
 
-def _copy_resources(source: Path, destination: Path, output: Path) {
+def _copy_resources(source: Path, destination: Path, output: Path);
+
+
+def _write_application(
+    application: PreparedApplication,
+    program: JacProgram,
+    base: Path,
+    project_root: Path,
+    output: Path,
+    sources: list[str]
+) -> dict[str, any];
+
+
+def _requirements(config: JacConfig, server: bool) -> list[str];
+
+
+def export_project(
+    config: JacConfig,
+    name: str,
+    output: Path,
+    entry_override: str = '',
+    force: bool = False
+) -> Path;
+
+impl _copy_resources(source: Path, destination: Path, output: Path) {
     excluded = set(EXCLUDED_DIRS);
     for (directory, dirs, files) in os.walk(str(source)) {
         parent: Path = Path(os.fsdecode(directory));
@@ -30,7 +54,7 @@ def _copy_resources(source: Path, destination: Path, output: Path) {
 }
 
 
-def _write_application(
+impl _write_application(
     application: PreparedApplication,
     program: JacProgram,
     base: Path,
@@ -95,7 +119,7 @@ def _write_application(
 }
 
 
-def _requirements(config: JacConfig, server: bool) -> list[str] {
+impl _requirements(config: JacConfig, server: bool) -> list[str] {
     plan = resolve_plan(config, action='serve' if server else 'run');
     dependencies = [
         dependency
@@ -106,7 +130,7 @@ def _requirements(config: JacConfig, server: bool) -> list[str] {
 }
 
 
-def export_project(
+impl export_project(
     config: JacConfig,
     name: str,
     output: Path,

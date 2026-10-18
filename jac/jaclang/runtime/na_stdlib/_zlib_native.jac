@@ -34,55 +34,30 @@ glob:pub Z_OK: int = 0,
      Z_BUF_ERROR: int = -5;
 
 
-def _signed32(status: int) -> int {
-    if status >= 2147483648 {
-        return status - 4294967296;
-    }
-    return status;
-}
+def _signed32(status: int) -> int;
 
 
-def:pub z_compress_bound(source_len: int) -> int {
-    return int(compressBound(u64(source_len)));
-}
+def:pub z_compress_bound(source_len: int) -> int;
 
 
 def:pub z_compress2(
     dest: bytes, dest_len: bytes, source: bytes, source_len: int, level: int
-) -> int {
-    return _signed32(compress2(dest, dest_len, source, u64(source_len), i32(level)));
-}
+) -> int;
 
 
-def:pub z_crc32(crc: int, buf: bytes, n: int) -> int {
-    return int(crc32_z(u64(crc), buf, u64(n)));
-}
+def:pub z_crc32(crc: int, buf: bytes, n: int) -> int;
 
 
-def:pub z_adler32(adler: int, buf: bytes, n: int) -> int {
-    return int(adler32_z(u64(adler), buf, u64(n)));
-}
+def:pub z_adler32(adler: int, buf: bytes, n: int) -> int;
 
 
-def:pub z_inflate_bound(src_len: int, slack: int = 1024) -> int {
-    return src_len * 1032 + slack;
-}
+def:pub z_inflate_bound(src_len: int, slack: int = 1024) -> int;
 
 
-def _payload_addr(buf: bytes) -> int {
-    if len(buf) == 0 {
-        return 0;
-    }
-    return memchr(buf, i32(buf[0]), u64(1));
-}
+def _payload_addr(buf: bytes) -> int;
 
 
-def _store_u32(addr: int, value: int) {
-    if value > _UINT32_MAX {
-        value = _UINT32_MAX;
-    }
-    __mem_store_i32(addr, i32.wrap(value));
-}
+def _store_u32(addr: int, value: int);
 
 
 obj:pub ZInflateResult {
@@ -94,6 +69,61 @@ obj:pub ZInflateResult {
 
 
 def:pub z_inflate_all(
+    src: bytes, src_off: int, src_len: int, window_bits: int, cap: int, ceiling: int
+) -> ZInflateResult;
+
+impl _signed32(status: int) -> int {
+    if status >= 2147483648 {
+        return status - 4294967296;
+    }
+    return status;
+}
+
+
+impl z_compress_bound(source_len: int) -> int {
+    return int(compressBound(u64(source_len)));
+}
+
+
+impl z_compress2(
+    dest: bytes, dest_len: bytes, source: bytes, source_len: int, level: int
+) -> int {
+    return _signed32(compress2(dest, dest_len, source, u64(source_len), i32(level)));
+}
+
+
+impl z_crc32(crc: int, buf: bytes, n: int) -> int {
+    return int(crc32_z(u64(crc), buf, u64(n)));
+}
+
+
+impl z_adler32(adler: int, buf: bytes, n: int) -> int {
+    return int(adler32_z(u64(adler), buf, u64(n)));
+}
+
+
+impl z_inflate_bound(src_len: int, slack: int = 1024) -> int {
+    return src_len * 1032 + slack;
+}
+
+
+impl _payload_addr(buf: bytes) -> int {
+    if len(buf) == 0 {
+        return 0;
+    }
+    return memchr(buf, i32(buf[0]), u64(1));
+}
+
+
+impl _store_u32(addr: int, value: int) {
+    if value > _UINT32_MAX {
+        value = _UINT32_MAX;
+    }
+    __mem_store_i32(addr, i32.wrap(value));
+}
+
+
+impl z_inflate_all(
     src: bytes, src_off: int, src_len: int, window_bits: int, cap: int, ceiling: int
 ) -> ZInflateResult {
     strm: bytes = b"\x00" * Z_STREAM_SIZE;

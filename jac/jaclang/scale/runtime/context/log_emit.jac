@@ -12,39 +12,59 @@ glob _SVC_NAME: str = (
      _root_logger: logging.Logger = logging.getLogger();
 
 
-def _to_str(value: any) -> str {
+def _to_str(value: any) -> str;
+
+
+class _JacJsonFormatter(logging.Formatter) {
+    def format(self: any, record: logging.LogRecord) -> str;
+}
+
+
+def emit_log_record(level_name: str, msg: str, **extras: any);
+
+
+def info(msg: str, **extras: any);
+
+def warning(msg: str, **extras: any);
+
+def error(msg: str, **extras: any);
+
+def debug(msg: str, **extras: any);
+
+
+def install_structured_logging;
+
+impl _to_str(value: any) -> str {
     return str(value);
 }
 
 
-class _JacJsonFormatter(logging.Formatter) {
-    def format(self: any, record: logging.LogRecord) -> str {
-        ts = datetime.fromtimestamp(record.created, tz=timezone.utc).isoformat();
+impl _JacJsonFormatter.format(self: any, record: logging.LogRecord) -> str {
+    ts = datetime.fromtimestamp(record.created, tz=timezone.utc).isoformat();
 
-        if ts.endswith("+00:00") {
-            ts = ts[:-6] + "Z";
-        }
-        out: dict[str, any] = {
-            "ts": ts,
-            "level": record.levelname,
-            "service": _SVC_NAME,
-            "trace_id": record?.trace_id,
-            "msg": record.getMessage()
-        };
-        extras = record?.svc_extras;
-        if extras {
-            out["extras"] = extras;
-        }
-        if record.exc_info {
-            out["exc"] = self.formatException(record.exc_info);
-        }
-
-        return json.dumps(out, `default=_to_str, ensure_ascii=False);
+    if ts.endswith("+00:00") {
+        ts = ts[:-6] + "Z";
     }
+    out: dict[str, any] = {
+        "ts": ts,
+        "level": record.levelname,
+        "service": _SVC_NAME,
+        "trace_id": record?.trace_id,
+        "msg": record.getMessage()
+    };
+    extras = record?.svc_extras;
+    if extras {
+        out["extras"] = extras;
+    }
+    if record.exc_info {
+        out["exc"] = self.formatException(record.exc_info);
+    }
+
+    return json.dumps(out, `default=_to_str, ensure_ascii=False);
 }
 
 
-def emit_log_record(level_name: str, msg: str, **extras: any) {
+impl emit_log_record(level_name: str, msg: str, **extras: any) {
     level_int: int = int(getattr(logging, level_name.upper(), logging.INFO));
     record = _root_logger.makeRecord(
         name="jaclang.scale.svlog",
@@ -62,24 +82,24 @@ def emit_log_record(level_name: str, msg: str, **extras: any) {
 }
 
 
-def info(msg: str, **extras: any) {
+impl info(msg: str, **extras: any) {
     emit_log_record("INFO", msg, **extras);
 }
 
-def warning(msg: str, **extras: any) {
+impl warning(msg: str, **extras: any) {
     emit_log_record("WARNING", msg, **extras);
 }
 
-def error(msg: str, **extras: any) {
+impl error(msg: str, **extras: any) {
     emit_log_record("ERROR", msg, **extras);
 }
 
-def debug(msg: str, **extras: any) {
+impl debug(msg: str, **extras: any) {
     emit_log_record("DEBUG", msg, **extras);
 }
 
 
-def install_structured_logging {
+impl install_structured_logging {
     if not _structured_installed {
         import from jaclang.scale.config.config_loader { peek_scale_config }
         cfg = peek_scale_config();

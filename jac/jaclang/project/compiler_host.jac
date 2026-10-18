@@ -186,7 +186,13 @@ obj ProjectHost(HostServices) {
     def default_target_triple -> str;
 }
 
-def check_settings_of(check: any) -> CheckSettings {
+def check_settings_of(check: any) -> CheckSettings;
+
+def project_defaults_of(cfg: any) -> ProjectDefaults;
+
+def client_stub_names(path: str) -> set[str];
+
+impl check_settings_of(check: any) -> CheckSettings {
     if check is None {
         return CheckSettings();
     }
@@ -203,7 +209,7 @@ def check_settings_of(check: any) -> CheckSettings {
     );
 }
 
-def project_defaults_of(cfg: any) -> ProjectDefaults {
+impl project_defaults_of(cfg: any) -> ProjectDefaults {
     native = cfg.native;
     memory = cfg.memory;
     return ProjectDefaults(
@@ -222,7 +228,7 @@ def project_defaults_of(cfg: any) -> ProjectDefaults {
     );
 }
 
-def client_stub_names(path: str) -> set[str] {
+impl client_stub_names(path: str) -> set[str] {
     import ast;
     out: set[str] = set();
     try {

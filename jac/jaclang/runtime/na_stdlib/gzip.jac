@@ -13,7 +13,12 @@ import from ._zlib_native {
 glob _MASK32: int = 4294967295;
 
 
-def:pub compress(data: bytes, compresslevel: int = 9, mtime: int = 0) -> bytes {
+def:pub compress(data: bytes, compresslevel: int = 9, mtime: int = 0) -> bytes;
+
+
+def:pub decompress(data: bytes) -> bytes;
+
+impl compress(data: bytes, compresslevel: int = 9, mtime: int = 0) -> bytes {
     source_len: int = len(data);
 
     bound: int = z_compress_bound(source_len);
@@ -46,7 +51,7 @@ def:pub compress(data: bytes, compresslevel: int = 9, mtime: int = 0) -> bytes {
 }
 
 
-def:pub decompress(data: bytes) -> bytes {
+impl decompress(data: bytes) -> bytes {
     n: int = len(data);
     if n == 0 {
         return b"";

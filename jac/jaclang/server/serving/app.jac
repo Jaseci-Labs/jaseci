@@ -7,7 +7,45 @@ import traceback;
 glob _logger: logging.Logger = logging.getLogger("jaclang.server.serving.app");
 
 
-def transport_to_response(tr: TransportResponse) -> JSONResponse {
+def transport_to_response(tr: TransportResponse) -> JSONResponse;
+
+def _slash_alternate(path: str) -> (str | None);
+
+
+def _declares_body(ep: JEndPoint) -> bool;
+
+def _parse_request_body(request: Request, ep: JEndPoint, spool_bytes: int) -> any;
+
+obj ServingApp {
+    has title: str = 'Jac API',
+        version: str = '0.1.0',
+        router: Router = Router(),
+        middlewares: list[Callable[..., any]] = [],
+        on_shutdown: list[Callable[..., any]] = [],
+        docs_url: (str | None) = '/docs',
+        openapi_url: (str | None) = '/openapi.json',
+        openapi_security: dict[str, any] = {},
+        openapi_cache: (dict[str, any] | None) = None,
+        state: dict[str, any] = {},
+        multipart_spool_bytes: int = 1048576;
+
+    def add_endpoint(ep: JEndPoint);
+    def add_ws_endpoint(ep: WSEndPoint);
+    def add_middleware(fn: Callable[..., any]);
+    def add_shutdown_hook(fn: Callable[..., any]);
+    def clear_routes;
+    def openapi -> dict[str, any];
+    async def shutdown;
+    async def dispatch(request: Request) -> Response;
+    def _wrap_middleware(
+        mw: Callable[..., any], next_handler: Callable[..., any]
+    ) -> Callable[..., any];
+
+    async def _route_and_call(request: Request) -> Response;
+    def _to_response(result: any, ep: JEndPoint) -> Response;
+}
+
+impl transport_to_response(tr: TransportResponse) -> JSONResponse {
     status = 200 if tr.ok else 500;
     if tr.meta and tr.meta.extra {
         status = tr.meta.extra.get('http_status', status);
@@ -66,7 +104,7 @@ def transport_to_response(tr: TransportResponse) -> JSONResponse {
     return response;
 }
 
-def _slash_alternate(path: str) -> (str | None) {
+impl _slash_alternate(path: str) -> (str | None) {
     if path.endswith('/') and len(path) > 1 {
         return path.rstrip('/') or '/';
     }
@@ -77,7 +115,7 @@ def _slash_alternate(path: str) -> (str | None) {
 }
 
 
-def _declares_body(ep: JEndPoint) -> bool {
+impl _declares_body(ep: JEndPoint) -> bool {
     for param in ep.declared_parameters() {
         kind_name = str(param.kind.value) if param.kind?.value else str(param.kind);
         if kind_name in ('body', 'file') {
@@ -87,7 +125,7 @@ def _declares_body(ep: JEndPoint) -> bool {
     return False;
 }
 
-def _parse_request_body(request: Request, ep: JEndPoint, spool_bytes: int) -> any {
+impl _parse_request_body(request: Request, ep: JEndPoint, spool_bytes: int) -> any {
     content_type = (request.headers.get('Content-Type') or '').lower();
     if 'multipart/form-data' in content_type {
         if request.body or request.body_file is not None {
@@ -123,185 +161,165 @@ def _parse_request_body(request: Request, ep: JEndPoint, spool_bytes: int) -> an
     return None;
 }
 
-obj ServingApp {
-    has title: str = 'Jac API',
-        version: str = '0.1.0',
-        router: Router = Router(),
-        middlewares: list[Callable[..., any]] = [],
-        on_shutdown: list[Callable[..., any]] = [],
-        docs_url: (str | None) = '/docs',
-        openapi_url: (str | None) = '/openapi.json',
-        openapi_security: dict[str, any] = {},
-        openapi_cache: (dict[str, any] | None) = None,
-        state: dict[str, any] = {},
-        multipart_spool_bytes: int = 1048576;
+impl ServingApp.add_endpoint(ep: JEndPoint) {
+    self.router.add(ep);
+    self.openapi_cache = None;
+}
 
-    def add_endpoint(ep: JEndPoint) {
-        self.router.add(ep);
-        self.openapi_cache = None;
-    }
+impl ServingApp.add_ws_endpoint(ep: WSEndPoint) {
+    self.router.add_ws(ep);
+}
 
-    def add_ws_endpoint(ep: WSEndPoint) {
-        self.router.add_ws(ep);
-    }
+impl ServingApp.add_middleware(fn: Callable[..., any]) {
+    self.middlewares.append(fn);
+}
 
-    def add_middleware(fn: Callable[..., any]) {
-        self.middlewares.append(fn);
-    }
+impl ServingApp.add_shutdown_hook(fn: Callable[..., any]) {
+    self.on_shutdown.append(fn);
+}
 
-    def add_shutdown_hook(fn: Callable[..., any]) {
-        self.on_shutdown.append(fn);
-    }
+impl ServingApp.clear_routes {
+    self.router.clear();
+    self.openapi_cache = None;
+}
 
-    def clear_routes {
-        self.router.clear();
-        self.openapi_cache = None;
-    }
+impl ServingApp.openapi -> dict[str, any] {
+    return build_openapi(self);
+}
 
-    def openapi -> dict[str, any] {
-        return build_openapi(self);
-    }
-
-    async def shutdown {
-        for hook in list(self.on_shutdown) {
-            try {
-                hook_fn: any = hook;
-                result = hook_fn();
-                if inspect.isawaitable(result) {
-                    await result;
-                }
-            } except Exception {
-                _logger.exception("shutdown hook failed");
-            }
-        }
-    }
-
-    async def dispatch(request: Request) -> Response {
-        handler: any = self._route_and_call;
-        for mw in self.middlewares {
-            handler = self._wrap_middleware(mw, handler);
-        }
+impl ServingApp.shutdown {
+    for hook in list(self.on_shutdown) {
         try {
-            return await handler(request);
-        } except RequestValidationError as ve {
-            return JSONResponse(content={'detail': ve.errors}, status_code=422);
-        } except HTTPError as he {
-            return JSONResponse(
-                content={'detail': he.detail}, status_code=he.status_code
-            );
-        } except Exception as exc {
-            _logger.error(
-                f"Unhandled error for {request.method} {request.url.path}\n"
-                    + traceback.format_exc()
-            );
-            return JSONResponse(
-                content={'error': f"{type(exc).__name__}: {exc}"}, status_code=500
-            );
-        }
-    }
-
-    def _wrap_middleware(
-        mw: Callable[..., any], next_handler: Callable[..., any]
-    ) -> Callable[..., any] {
-        mw_fn: any = mw;
-        next_fn: any = next_handler;
-
-        async def _invoke(request: Request) -> Response {
-            return await mw_fn(request, next_fn);
-        }
-        return _invoke;
-    }
-
-    async def _route_and_call(request: Request) -> Response {
-        (ep, path_params, allowed) = self.router.resolve(
-            request.method, request.url.path
-        );
-        if ep is None {
-            if allowed {
-                resp = JSONResponse(
-                    content={'detail': 'Method Not Allowed'}, status_code=405
-                );
-                resp.headers.set('Allow', ', '.join(sorted(allowed)));
-                return resp;
-            }
-            alt = _slash_alternate(request.url.path);
-            if alt is not None
-                and self.router.resolve(request.method, alt)[0] is not None {
-                query = request.url.query;
-                return RedirectResponse(
-                    url=alt + (f"?{query}" if query else ''), status_code=307
-                );
-            }
-            return JSONResponse(content={'detail': 'Not Found'}, status_code=404);
-        }
-        request.path_params = path_params;
-        spec = get_callback_spec(ep);
-        body_json = _parse_request_body(request, ep, self.multipart_spool_bytes);
-        kwargs = bind_parameters(ep, request, body_json);
-        if ep.request_model is not None {
-            body_name = body_param_name(spec, kwargs);
-            if body_name is not None {
-                try {
-                    kwargs[body_name] = coerce_value(
-                        body_json if body_json is not None else {}, ep.request_model
-                    );
-                } except RequestValidationError {
-                    raise;
-                } except Exception as e {
-                    raise RequestValidationError(
-                        errors=[{'type': 'invalid', 'loc': ['body'], 'msg': str(e)}]
-                    );
-                }
-            }
-        }
-        kwargs = filter_kwargs_for_callback(spec, kwargs, request);
-        callback_fn: any = ep.callback;
-        args: list[any] = [request] if spec.request_positional else [];
-        if spec.is_async {
-            result = await callback_fn(*args, **kwargs);
-        } else {
-            def _call_sync -> any {
-                return callback_fn(*args, **kwargs);
-            }
-            result = await asyncio.to_thread(_call_sync);
+            hook_fn: any = hook;
+            result = hook_fn();
             if inspect.isawaitable(result) {
-                result = await result;
+                await result;
             }
+        } except Exception {
+            _logger.exception("shutdown hook failed");
         }
-        return self._to_response(result, ep);
     }
+}
 
-    def _to_response(result: any, ep: JEndPoint) -> Response {
-        if isinstance(result, Response) {
-            return result;
-        }
-        if isinstance(result, TransportResponse) {
-            if inspect.isgenerator(result.data) or inspect.isasyncgen(result.data) {
-                return StreamingResponse(
-                    content=sse_frame_stream(result.data),
-                    media_type='text/event-stream',
-                    headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'}
-                );
-            }
-            resp = transport_to_response(result);
-            if ep.status_code is not None and resp.status_code == 200 {
-                resp.status_code = ep.status_code;
-            }
+impl ServingApp.dispatch(request: Request) -> Response {
+    handler: any = self._route_and_call;
+    for mw in self.middlewares {
+        handler = self._wrap_middleware(mw, handler);
+    }
+    try {
+        return await handler(request);
+    } except RequestValidationError as ve {
+        return JSONResponse(content={'detail': ve.errors}, status_code=422);
+    } except HTTPError as he {
+        return JSONResponse(content={'detail': he.detail}, status_code=he.status_code);
+    } except Exception as exc {
+        _logger.error(
+            f"Unhandled error for {request.method} {request.url.path}\n"
+                + traceback.format_exc()
+        );
+        return JSONResponse(
+            content={'error': f"{type(exc).__name__}: {exc}"}, status_code=500
+        );
+    }
+}
+
+impl ServingApp._wrap_middleware(
+    mw: Callable[..., any], next_handler: Callable[..., any]
+) -> Callable[..., any] {
+    mw_fn: any = mw;
+    next_fn: any = next_handler;
+
+    async def _invoke(request: Request) -> Response {
+        return await mw_fn(request, next_fn);
+    }
+    return _invoke;
+}
+
+impl ServingApp._route_and_call(request: Request) -> Response {
+    (ep, path_params, allowed) = self.router.resolve(request.method, request.url.path);
+    if ep is None {
+        if allowed {
+            resp = JSONResponse(
+                content={'detail': 'Method Not Allowed'}, status_code=405
+            );
+            resp.headers.set('Allow', ', '.join(sorted(allowed)));
             return resp;
         }
-        if inspect.isgenerator(result) or inspect.isasyncgen(result) {
+        alt = _slash_alternate(request.url.path);
+        if alt is not None
+            and self.router.resolve(request.method, alt)[0] is not None {
+            query = request.url.query;
+            return RedirectResponse(
+                url=alt + (f"?{query}" if query else ''), status_code=307
+            );
+        }
+        return JSONResponse(content={'detail': 'Not Found'}, status_code=404);
+    }
+    request.path_params = path_params;
+    spec = get_callback_spec(ep);
+    body_json = _parse_request_body(request, ep, self.multipart_spool_bytes);
+    kwargs = bind_parameters(ep, request, body_json);
+    if ep.request_model is not None {
+        body_name = body_param_name(spec, kwargs);
+        if body_name is not None {
+            try {
+                kwargs[body_name] = coerce_value(
+                    body_json if body_json is not None else {}, ep.request_model
+                );
+            } except RequestValidationError {
+                raise;
+            } except Exception as e {
+                raise RequestValidationError(
+                    errors=[{'type': 'invalid', 'loc': ['body'], 'msg': str(e)}]
+                );
+            }
+        }
+    }
+    kwargs = filter_kwargs_for_callback(spec, kwargs, request);
+    callback_fn: any = ep.callback;
+    args: list[any] = [request] if spec.request_positional else [];
+    if spec.is_async {
+        result = await callback_fn(*args, **kwargs);
+    } else {
+        def _call_sync -> any {
+            return callback_fn(*args, **kwargs);
+        }
+        result = await asyncio.to_thread(_call_sync);
+        if inspect.isawaitable(result) {
+            result = await result;
+        }
+    }
+    return self._to_response(result, ep);
+}
+
+impl ServingApp._to_response(result: any, ep: JEndPoint) -> Response {
+    if isinstance(result, Response) {
+        return result;
+    }
+    if isinstance(result, TransportResponse) {
+        if inspect.isgenerator(result.data) or inspect.isasyncgen(result.data) {
             return StreamingResponse(
-                content=sse_frame_stream(result),
+                content=sse_frame_stream(result.data),
                 media_type='text/event-stream',
                 headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'}
             );
         }
-        status = ep.status_code if ep.status_code is not None else 200;
-        if ep.media_type {
-            return Response(
-                content=result, status_code=status, media_type=ep.media_type
-            );
+        resp = transport_to_response(result);
+        if ep.status_code is not None and resp.status_code == 200 {
+            resp.status_code = ep.status_code;
         }
-        return JSONResponse(content=result, status_code=status);
+        return resp;
     }
+    if inspect.isgenerator(result) or inspect.isasyncgen(result) {
+        return StreamingResponse(
+            content=sse_frame_stream(result),
+            media_type='text/event-stream',
+            headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'}
+        );
+    }
+    status = ep.status_code if ep.status_code is not None else 200;
+    if ep.media_type {
+        return Response(content=result, status_code=status, media_type=ep.media_type);
+    }
+    return JSONResponse(content=result, status_code=status);
 }

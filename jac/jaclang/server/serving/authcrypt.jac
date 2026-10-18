@@ -24,12 +24,68 @@ glob SCRYPT_N: int = 16384,
      logger = logging.getLogger(__name__);
 
 
-def is_prescrypt_hash(stored: str) -> bool {
+def is_prescrypt_hash(stored: str) -> bool;
+
+
+def is_legacy_sha256_hash(stored: str) -> bool;
+
+
+def needs_rehash(stored: str) -> bool;
+
+
+def project_data_dir(base_path: str) -> str;
+
+
+def project_signing_secret(base_path: str) -> str;
+
+
+def _unpersistable_secret(path: str, reason: str) -> str;
+
+
+def _persist_secret(data_dir: str, path: str, minted: str);
+
+
+def _read_secret(path: str) -> str;
+
+
+def _warn_once(key_material: str, message: str) -> None;
+
+
+obj JWTError(Exception) {
+    has reason: str = 'invalid token';
+
+    def __str__ -> str;
+}
+
+obj JWTExpiredError(JWTError) {}
+
+def _ac_json_default(o: any) -> str;
+
+def _b64url_encode(data: bytes) -> str;
+
+def _b64url_decode(text: str) -> bytes;
+
+def _normalize_claims(payload: dict[str, any]) -> dict[str, any];
+
+def jwt_encode(payload: dict[str, any], secret: str, algorithm: str = 'HS256') -> str;
+
+def jwt_decode(
+    token: str,
+    secret: str,
+    algorithms: (list[str] | None) = None,
+    verify_exp: bool = True
+) -> dict[str, any];
+
+def hash_password(password: str, n: int = SCRYPT_N) -> str;
+
+def verify_password(password: str, stored: str) -> bool;
+
+impl is_prescrypt_hash(stored: str) -> bool {
     return isinstance(stored, str) and stored.startswith(_BCRYPT_PREFIXES);
 }
 
 
-def is_legacy_sha256_hash(stored: str) -> bool {
+impl is_legacy_sha256_hash(stored: str) -> bool {
     if not isinstance(stored, str) or len(stored) != _SHA256_HEX_LEN {
         return False;
     }
@@ -43,12 +99,12 @@ def is_legacy_sha256_hash(stored: str) -> bool {
 }
 
 
-def needs_rehash(stored: str) -> bool {
+impl needs_rehash(stored: str) -> bool {
     return is_legacy_sha256_hash(stored);
 }
 
 
-def project_data_dir(base_path: str) -> str {
+impl project_data_dir(base_path: str) -> str {
     import os;
     data_path_override = os.environ.get('JAC_DATA_PATH');
     effective = data_path_override or base_path or '.';
@@ -56,7 +112,7 @@ def project_data_dir(base_path: str) -> str {
 }
 
 
-def project_signing_secret(base_path: str) -> str {
+impl project_signing_secret(base_path: str) -> str {
     import os;
     data_dir = project_data_dir(base_path);
     path = os.path.join(data_dir, DEV_SECRET_FILENAME);
@@ -80,7 +136,7 @@ def project_signing_secret(base_path: str) -> str {
 }
 
 
-def _unpersistable_secret(path: str, reason: str) -> str {
+impl _unpersistable_secret(path: str, reason: str) -> str {
     return (
         f"no [serve.auth] secret is configured and none could be kept at {path} "
         f"({reason}). Refusing to sign with a secret this process would keep to "
@@ -92,7 +148,7 @@ def _unpersistable_secret(path: str, reason: str) -> str {
 }
 
 
-def _persist_secret(data_dir: str, path: str, minted: str) {
+impl _persist_secret(data_dir: str, path: str, minted: str) {
     import os;
     os.makedirs(data_dir, exist_ok=True);
     staging = os.path.join(data_dir, f"{DEV_SECRET_FILENAME}.{os.getpid()}.tmp");
@@ -113,7 +169,7 @@ def _persist_secret(data_dir: str, path: str, minted: str) {
 }
 
 
-def _read_secret(path: str) -> str {
+impl _read_secret(path: str) -> str {
     try {
         with open(path, 'r', encoding='utf-8') as handle {
             return handle.read().strip();
@@ -124,7 +180,7 @@ def _read_secret(path: str) -> str {
 }
 
 
-def _warn_once(key_material: str, message: str) -> None {
+impl _warn_once(key_material: str, message: str) -> None {
     key = hashlib.sha256(key_material.encode('utf-8', 'replace')).hexdigest()[:16];
     if key in _legacy_warned {
         return;
@@ -136,30 +192,24 @@ def _warn_once(key_material: str, message: str) -> None {
 }
 
 
-obj JWTError(Exception) {
-    has reason: str = 'invalid token';
-
-    def __str__ -> str {
-        return self.reason;
-    }
+impl JWTError.__str__ -> str {
+    return self.reason;
 }
 
-obj JWTExpiredError(JWTError) {}
-
-def _ac_json_default(o: any) -> str {
+impl _ac_json_default(o: any) -> str {
     return str(o);
 }
 
-def _b64url_encode(data: bytes) -> str {
+impl _b64url_encode(data: bytes) -> str {
     return urlsafe_b64encode(data).decode('ascii').rstrip('=');
 }
 
-def _b64url_decode(text: str) -> bytes {
+impl _b64url_decode(text: str) -> bytes {
     padding = '=' * (-len(text) % 4);
     return urlsafe_b64decode(text + padding);
 }
 
-def _normalize_claims(payload: dict[str, any]) -> dict[str, any] {
+impl _normalize_claims(payload: dict[str, any]) -> dict[str, any] {
     import from datetime { datetime }
     normalized = dict(payload);
     for claim in ('exp', 'iat', 'nbf') {
@@ -171,7 +221,7 @@ def _normalize_claims(payload: dict[str, any]) -> dict[str, any] {
     return normalized;
 }
 
-def jwt_encode(payload: dict[str, any], secret: str, algorithm: str = 'HS256') -> str {
+impl jwt_encode(payload: dict[str, any], secret: str, algorithm: str = 'HS256') -> str {
     if algorithm != 'HS256' {
         raise JWTError(reason=f"unsupported algorithm: {algorithm}");
     }
@@ -188,7 +238,7 @@ def jwt_encode(payload: dict[str, any], secret: str, algorithm: str = 'HS256') -
     return f"{head_part}.{body_part}.{_b64url_encode(signature)}";
 }
 
-def jwt_decode(
+impl jwt_decode(
     token: str,
     secret: str,
     algorithms: (list[str] | None) = None,
@@ -244,7 +294,7 @@ def jwt_decode(
     return payload;
 }
 
-def hash_password(password: str, n: int = SCRYPT_N) -> str {
+impl hash_password(password: str, n: int = SCRYPT_N) -> str {
     n = min(int(n), SCRYPT_MAX_N);
     salt = secrets.token_bytes(SCRYPT_SALT_BYTES);
     digest = hashlib.scrypt(
@@ -262,7 +312,7 @@ def hash_password(password: str, n: int = SCRYPT_N) -> str {
     );
 }
 
-def verify_password(password: str, stored: str) -> bool {
+impl verify_password(password: str, stored: str) -> bool {
     if is_prescrypt_hash(stored) {
         _warn_once(
             stored,

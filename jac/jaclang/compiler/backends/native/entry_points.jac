@@ -1,4 +1,16 @@
-def validate_native_application(module: Module, shared: bool, memory: str) -> str {
+def validate_native_application(module: Module, shared: bool, memory: str) -> str;
+
+def _scan_rc_machinery(llvm_ir_str: str) -> tuple[list[str], list[str]];
+
+
+def _inject_entry_elf(llvm_ir_str: str) -> str;
+
+def inject_main(llvm_ir_str: str) -> str;
+
+
+def _inject_entry_pe(llvm_ir_str: str) -> str;
+
+impl validate_native_application(module: Module, shared: bool, memory: str) -> str {
     manifest = module.gen.interop_manifest;
     if not shared and manifest.native_imports {
         names = ', '.join(binding.name for binding in manifest.native_imports);
@@ -34,7 +46,7 @@ def validate_native_application(module: Module, shared: bool, memory: str) -> st
     return llvm_ir;
 }
 
-def _scan_rc_machinery(llvm_ir_str: str) -> tuple[list[str], list[str]] {
+impl _scan_rc_machinery(llvm_ir_str: str) -> tuple[list[str], list[str]] {
     import re;
     syms: set = set();
     for m in re.finditer(r"__rc_[A-Za-z0-9_]*", llvm_ir_str) {
@@ -50,7 +62,7 @@ def _scan_rc_machinery(llvm_ir_str: str) -> tuple[list[str], list[str]] {
 }
 
 
-def _inject_entry_elf(llvm_ir_str: str) -> str {
+impl _inject_entry_elf(llvm_ir_str: str) -> str {
     has_exit = "@exit" in llvm_ir_str or '@"exit"' in llvm_ir_str;
     exit_decl = "" if has_exit else 'declare void @exit(i32) noreturn\n\n';
 
@@ -90,7 +102,7 @@ def _inject_entry_elf(llvm_ir_str: str) -> str {
         + '}\n';
 }
 
-def inject_main(llvm_ir_str: str) -> str {
+impl inject_main(llvm_ir_str: str) -> str {
     has_jac_argc = "__jac_argc" in llvm_ir_str;
     globals_ir = ""
         if has_jac_argc
@@ -131,7 +143,7 @@ def inject_main(llvm_ir_str: str) -> str {
 }
 
 
-def _inject_entry_pe(llvm_ir_str: str) -> str {
+impl _inject_entry_pe(llvm_ir_str: str) -> str {
     has_exit = "@exit" in llvm_ir_str or '@"exit"' in llvm_ir_str;
     exit_decl = "" if has_exit else 'declare void @exit(i32)\n\n';
     fltused = "" if "@_fltused" in llvm_ir_str else '@_fltused = global i32 0\n\n';

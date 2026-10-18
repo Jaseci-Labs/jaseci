@@ -57,12 +57,19 @@ glob OPS_READ_RULES: list[dict[str, any]] = [
      ];
 
 
-def ops_role_name(app_name: str) -> str {
+def ops_role_name(app_name: str) -> str;
+
+
+def build_ops_rbac(
+    app_name: str, namespace: str, sa_name: str, mutations: bool
+) -> dict[str, any];
+
+impl ops_role_name(app_name: str) -> str {
     return f"{app_name}-ops-console";
 }
 
 
-def build_ops_rbac(
+impl build_ops_rbac(
     app_name: str, namespace: str, sa_name: str, mutations: bool
 ) -> dict[str, any] {
     name = ops_role_name(app_name);

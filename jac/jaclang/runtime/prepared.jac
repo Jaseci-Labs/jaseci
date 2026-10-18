@@ -38,7 +38,70 @@ obj PreparedApplication {
 glob _applications: dict[str, PreparedApplication] = {},
      _realpaths: dict[str, str] = {};
 
-def _realpath(path: str) -> str {
+def _realpath(path: str) -> str;
+
+def publish(application: PreparedApplication);
+
+def application_for(path: str, module_name: str = "") -> (PreparedApplication | None);
+
+def application_of(target: object) -> PreparedApplication | None;
+
+def prepared_code(path: str) -> (types.CodeType | None);
+
+def prepared_manifest(path: str) -> (dict[str, any] | None);
+
+def forget(`entry: str);
+
+glob NON_APPLICATION_DIRS: tuple[str, ...] = (
+         'node_modules',
+         'venv',
+         '__pycache__',
+         'site-packages'
+     );
+
+def holds_application_code(relative_path: str) -> bool;
+
+def containing_application(
+    path: str, module_name: str = ""
+) -> (PreparedApplication | None);
+
+def load_prepared_module(
+    path: str, application: PreparedApplication | None = None, as_main: bool = False
+) -> types.ModuleType;
+
+def initialize_application(
+    application: PreparedApplication, config: any = None, served: any = None
+) -> types.ModuleType;
+
+def clear;
+
+
+def application_namespace(application: PreparedApplication) -> str;
+
+def ensure_namespace(application: PreparedApplication, name: str = '') -> str;
+
+def relative_module(path: str, application: PreparedApplication) -> str;
+
+def qualified_module(path: str, application: PreparedApplication) -> str;
+
+def module_index(application: PreparedApplication) -> ModuleIndex;
+
+def import_prepared(path: str, application: PreparedApplication) -> types.ModuleType;
+
+def entry_alias(fullname: str) -> tuple[str, str] | None;
+
+def module_builtins(application: PreparedApplication, source: str) -> dict[str, any];
+
+def execute_module(module: types.ModuleType, application: PreparedApplication);
+
+def semantic_for_scope(scope: str) -> Info | None;
+
+
+def origin_for_source(path: str) -> str;
+
+def source_for_origin(application: PreparedApplication, origin: str) -> str;
+
+impl _realpath(path: str) -> str {
     resolved = _realpaths.get(path);
     if resolved is None {
         resolved = os.path.realpath(path);
@@ -47,7 +110,7 @@ def _realpath(path: str) -> str {
     return resolved;
 }
 
-def publish(application: PreparedApplication) {
+impl publish(application: PreparedApplication) {
     import sys;
     import from jaclang.runtime.prepared_loader { PreparedFinder }
     if not any(isinstance(finder, PreparedFinder) for finder in sys.meta_path) {
@@ -62,7 +125,7 @@ def publish(application: PreparedApplication) {
     }
 }
 
-def application_for(path: str, module_name: str = "") -> (PreparedApplication | None) {
+impl application_for(path: str, module_name: str = "") -> (PreparedApplication | None) {
     resolved = _realpath(path);
     for application in _applications.values() {
         if (
@@ -85,7 +148,7 @@ def application_for(path: str, module_name: str = "") -> (PreparedApplication | 
     return None;
 }
 
-def application_of(target: object) -> PreparedApplication | None {
+impl application_of(target: object) -> PreparedApplication | None {
     import sys;
     name = getattr(target, '__module__', '');
     module = sys.modules.get(name);
@@ -93,17 +156,17 @@ def application_of(target: object) -> PreparedApplication | None {
     return application_for(source, name) if source else None;
 }
 
-def prepared_code(path: str) -> (types.CodeType | None) {
+impl prepared_code(path: str) -> (types.CodeType | None) {
     application = application_for(path);
     return application.code.get(os.path.realpath(path)) if application else None;
 }
 
-def prepared_manifest(path: str) -> (dict[str, any] | None) {
+impl prepared_manifest(path: str) -> (dict[str, any] | None) {
     application = application_for(path);
     return application.manifests.get(os.path.realpath(path)) if application else None;
 }
 
-def forget(`entry: str) {
+impl forget(`entry: str) {
     previous = _applications.pop(os.path.realpath(`entry), None);
     if previous is not None {
         for child in previous.applications {
@@ -112,21 +175,14 @@ def forget(`entry: str) {
     }
 }
 
-glob NON_APPLICATION_DIRS: tuple[str, ...] = (
-         'node_modules',
-         'venv',
-         '__pycache__',
-         'site-packages'
-     );
-
-def holds_application_code(relative_path: str) -> bool {
+impl holds_application_code(relative_path: str) -> bool {
     return not any(
         part.startswith('.') or part in NON_APPLICATION_DIRS
         for part in relative_path.split(os.sep)
     );
 }
 
-def containing_application(
+impl containing_application(
     path: str, module_name: str = ""
 ) -> (PreparedApplication | None) {
     if module_name == 'jaclang' or module_name.startswith('jaclang.') {
@@ -149,7 +205,7 @@ def containing_application(
     return max(candidates, key=lambda (a: any) { len(a.root); }, `default=None);
 }
 
-def load_prepared_module(
+impl load_prepared_module(
     path: str, application: PreparedApplication | None = None, as_main: bool = False
 ) -> types.ModuleType {
     import from jaclang.runtime.runtime { JacRuntime as Jac }
@@ -177,7 +233,7 @@ def load_prepared_module(
     return modules[0];
 }
 
-def initialize_application(
+impl initialize_application(
     application: PreparedApplication, config: any = None, served: any = None
 ) -> types.ModuleType {
     module = load_prepared_module(application.entry);
@@ -188,20 +244,20 @@ def initialize_application(
     return module;
 }
 
-def clear {
+impl clear {
     _applications.clear();
     _realpaths.clear();
 }
 
 
-def application_namespace(application: PreparedApplication) -> str {
+impl application_namespace(application: PreparedApplication) -> str {
     if application.namespace {
         return application.namespace;
     }
     return '_jac_app_' + hashlib.sha256(application.entry.encode()).hexdigest()[:16];
 }
 
-def ensure_namespace(application: PreparedApplication, name: str = '') -> str {
+impl ensure_namespace(application: PreparedApplication, name: str = '') -> str {
     import sys;
     import importlib.machinery;
     import importlib.util;
@@ -250,7 +306,7 @@ def ensure_namespace(application: PreparedApplication, name: str = '') -> str {
     return name;
 }
 
-def relative_module(path: str, application: PreparedApplication) -> str {
+impl relative_module(path: str, application: PreparedApplication) -> str {
     relative = os.path.relpath(os.path.dirname(path), application.root);
     stem = base_stem(path);
     parts = [] if relative == '.' else relative.split(os.sep);
@@ -260,13 +316,13 @@ def relative_module(path: str, application: PreparedApplication) -> str {
     return '.'.join(parts);
 }
 
-def qualified_module(path: str, application: PreparedApplication) -> str {
+impl qualified_module(path: str, application: PreparedApplication) -> str {
     relative = relative_module(path, application);
     namespace = application_namespace(application);
     return f'{namespace}.{relative}' if relative else namespace;
 }
 
-def module_index(application: PreparedApplication) -> ModuleIndex {
+impl module_index(application: PreparedApplication) -> ModuleIndex {
     size = (len(application.code), len(application.origins));
     index = application.index;
     if index is not None and index.size == size {
@@ -292,13 +348,13 @@ def module_index(application: PreparedApplication) -> ModuleIndex {
     return index;
 }
 
-def import_prepared(path: str, application: PreparedApplication) -> types.ModuleType {
+impl import_prepared(path: str, application: PreparedApplication) -> types.ModuleType {
     import importlib;
     ensure_namespace(application);
     return importlib.import_module(qualified_module(path, application));
 }
 
-def entry_alias(fullname: str) -> tuple[str, str] | None {
+impl entry_alias(fullname: str) -> tuple[str, str] | None {
     if not fullname.startswith('_jac_app_') {
         return None;
     }
@@ -323,7 +379,7 @@ def entry_alias(fullname: str) -> tuple[str, str] | None {
     return None;
 }
 
-def module_builtins(application: PreparedApplication, source: str) -> dict[str, any] {
+impl module_builtins(application: PreparedApplication, source: str) -> dict[str, any] {
     import builtins;
     import importlib;
     if not application.scope_imports {
@@ -374,7 +430,7 @@ def module_builtins(application: PreparedApplication, source: str) -> dict[str, 
     return result;
 }
 
-def execute_module(module: types.ModuleType, application: PreparedApplication) {
+impl execute_module(module: types.ModuleType, application: PreparedApplication) {
     filename = module.__file__;
     if filename is None {
         raise ImportError(f'Prepared module {module.__name__} has no source path');
@@ -411,7 +467,7 @@ def execute_module(module: types.ModuleType, application: PreparedApplication) {
     exec(code, module.__dict__);
 }
 
-def semantic_for_scope(scope: str) -> Info | None {
+impl semantic_for_scope(scope: str) -> Info | None {
     import sys;
     import from jaclang.jac0core.ext_registry { base_stem }
     parts = scope.split('.');
@@ -433,7 +489,7 @@ def semantic_for_scope(scope: str) -> Info | None {
 }
 
 
-def origin_for_source(path: str) -> str {
+impl origin_for_source(path: str) -> str {
     application = application_for(path);
     if application is None {
         return path;
@@ -442,7 +498,7 @@ def origin_for_source(path: str) -> str {
     return os.path.realpath(os.path.join(application.root, origin)) if origin else path;
 }
 
-def source_for_origin(application: PreparedApplication, origin: str) -> str {
+impl source_for_origin(application: PreparedApplication, origin: str) -> str {
     source = module_index(application).sources.get(origin);
     return source or os.path.realpath(os.path.join(application.root, origin));
 }

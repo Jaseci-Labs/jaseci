@@ -23,26 +23,60 @@ glob API_FORMAT: int = 1,
 
 obj ApiError(Exception) {}
 
-def _type_text(t: any) -> str {
+def _type_text(t: any) -> str;
+
+def _is_public(name: str, sym: Symbol) -> bool;
+
+def _decl_of(sym: Symbol) -> any;
+
+def doc_text(nd: any) -> str;
+
+def source_text(nd: any) -> str;
+
+def _with_doc(desc: dict[str, any], nd: any) -> dict[str, any];
+
+def _param_nodes(decl: any) -> dict[str, any];
+
+def _signature(ftype: any, decl: any = None) -> dict[str, any];
+
+def _field(sym: Symbol, mtype: any) -> dict[str, any];
+
+def _members(sym: Symbol, evaluator: any) -> dict[str, dict[str, any]];
+
+def describe_symbol(sym: Symbol, evaluator: any) -> dict[str, any] | None;
+
+def module_surface(mod: Module, evaluator: any) -> dict[str, dict[str, any]];
+
+def module_path_for(base_root: Path, module: str) -> Path | None;
+
+def package_surface(base_root: Path, exports: list[str]) -> dict[str, any];
+
+def _undocumented(desc: dict[str, any]) -> dict[str, any];
+
+def api_shape(surface: dict[str, any]) -> dict[str, any];
+
+def surface_digest(surface: dict[str, any]) -> str;
+
+impl _type_text(t: any) -> str {
     return str(t) if t is not None else "any";
 }
 
-def _is_public(name: str, sym: Symbol) -> bool {
+impl _is_public(name: str, sym: Symbol) -> bool {
     return not sym.imported
         and not name.startswith("_")
         and sym.access != SymbolAccess.PRIVATE;
 }
 
-def _decl_of(sym: Symbol) -> any {
+impl _decl_of(sym: Symbol) -> any {
     return sym.decl.name_of if sym.decl is not None else None;
 }
 
-def doc_text(nd: any) -> str {
+impl doc_text(nd: any) -> str {
     text = nd?.doc?.lit_value;
     return inspect.cleandoc(text) if isinstance(text, str) else "";
 }
 
-def source_text(nd: any) -> str {
+impl source_text(nd: any) -> str {
     if nd is None or nd.loc is None {
         return "";
     }
@@ -50,7 +84,7 @@ def source_text(nd: any) -> str {
     return " ".join(loc.orig_src.code[loc.pos_start:loc.pos_end].split());
 }
 
-def _with_doc(desc: dict[str, any], nd: any) -> dict[str, any] {
+impl _with_doc(desc: dict[str, any], nd: any) -> dict[str, any] {
     text = doc_text(nd);
     if text {
         desc["doc"] = text;
@@ -58,7 +92,7 @@ def _with_doc(desc: dict[str, any], nd: any) -> dict[str, any] {
     return desc;
 }
 
-def _param_nodes(decl: any) -> dict[str, any] {
+impl _param_nodes(decl: any) -> dict[str, any] {
     sig = decl?.signature;
     if sig is None or not hasattr(sig, "kwonlyargs") {
         return {};
@@ -76,7 +110,7 @@ def _param_nodes(decl: any) -> dict[str, any] {
     return {p.name.value: p for p in nodes};
 }
 
-def _signature(ftype: any, decl: any = None) -> dict[str, any] {
+impl _signature(ftype: any, decl: any = None) -> dict[str, any] {
     if not isinstance(ftype, FunctionType) {
         return {"params": [], "returns": _type_text(ftype)};
     }
@@ -102,7 +136,7 @@ def _signature(ftype: any, decl: any = None) -> dict[str, any] {
     return {"params": params, "returns": _type_text(ftype.return_type)};
 }
 
-def _field(sym: Symbol, mtype: any) -> dict[str, any] {
+impl _field(sym: Symbol, mtype: any) -> dict[str, any] {
     owner = _decl_of(sym);
     has_value = isinstance(owner, HasVar) and owner.value is not None;
     out: dict[str, any] = {
@@ -116,7 +150,7 @@ def _field(sym: Symbol, mtype: any) -> dict[str, any] {
     return out;
 }
 
-def _members(sym: Symbol, evaluator: any) -> dict[str, dict[str, any]] {
+impl _members(sym: Symbol, evaluator: any) -> dict[str, dict[str, any]] {
     out: dict[str, dict[str, any]] = {};
     scope = sym.symbol_table;
     if scope is None {
@@ -139,7 +173,7 @@ def _members(sym: Symbol, evaluator: any) -> dict[str, dict[str, any]] {
     return out;
 }
 
-def describe_symbol(sym: Symbol, evaluator: any) -> dict[str, any] | None {
+impl describe_symbol(sym: Symbol, evaluator: any) -> dict[str, any] | None {
     stype = sym.sym_type;
     if stype in ARCHETYPE_KINDS {
         ctype = evaluator.get_type_of_symbol(sym);
@@ -184,7 +218,7 @@ def describe_symbol(sym: Symbol, evaluator: any) -> dict[str, any] | None {
     return None;
 }
 
-def module_surface(mod: Module, evaluator: any) -> dict[str, dict[str, any]] {
+impl module_surface(mod: Module, evaluator: any) -> dict[str, dict[str, any]] {
     out: dict[str, dict[str, any]] = {};
     for (name, sym) in sorted(mod.names_in_scope.items()) {
         if not _is_public(name, sym) {
@@ -198,7 +232,7 @@ def module_surface(mod: Module, evaluator: any) -> dict[str, dict[str, any]] {
     return out;
 }
 
-def module_path_for(base_root: Path, module: str) -> Path | None {
+impl module_path_for(base_root: Path, module: str) -> Path | None {
     base = base_root / module.replace(".", os.sep);
     for candidate in (Path(f"{base}.jac"), base / "__init__.jac", Path(f"{base}.py")) {
         if candidate.is_file() {
@@ -208,7 +242,7 @@ def module_path_for(base_root: Path, module: str) -> Path | None {
     return None;
 }
 
-def package_surface(base_root: Path, exports: list[str]) -> dict[str, any] {
+impl package_surface(base_root: Path, exports: list[str]) -> dict[str, any] {
     program = JacProgram();
     modules: dict[str, any] = {};
     module_docs: dict[str, str] = {};
@@ -241,7 +275,7 @@ def package_surface(base_root: Path, exports: list[str]) -> dict[str, any] {
     return surface;
 }
 
-def _undocumented(desc: dict[str, any]) -> dict[str, any] {
+impl _undocumented(desc: dict[str, any]) -> dict[str, any] {
     out = {
         k: v
         for (k, v) in desc.items()
@@ -264,7 +298,7 @@ def _undocumented(desc: dict[str, any]) -> dict[str, any] {
     return out;
 }
 
-def api_shape(surface: dict[str, any]) -> dict[str, any] {
+impl api_shape(surface: dict[str, any]) -> dict[str, any] {
     out = {
         k: v
         for (k, v) in surface.items()
@@ -277,7 +311,7 @@ def api_shape(surface: dict[str, any]) -> dict[str, any] {
     return out;
 }
 
-def surface_digest(surface: dict[str, any]) -> str {
+impl surface_digest(surface: dict[str, any]) -> str {
     import hashlib;
     return "sha256:"
         + hashlib.sha256(

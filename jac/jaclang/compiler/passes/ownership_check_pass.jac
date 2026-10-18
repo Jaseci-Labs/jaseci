@@ -24,10 +24,7 @@ obj BorrowMeta {
         managed: bool = False,
         path_fields: set[str] postinit;
 
-    def postinit {
-        self.extra_owners = [];
-        self.path_fields = set();
-    }
+    def postinit;
 }
 
 walker OwnershipCheckPass(CompilerPass) {
@@ -261,4 +258,9 @@ walker OwnershipCheckPass(CompilerPass) {
     def _is_move_producing_use(nd: Name) -> bool;
     def _target_owner_sym(nd: Expr) -> (SymId | None);
     def _call_params(call: FuncCall) -> Sequence[Expr | KWPair];
+}
+
+impl BorrowMeta.postinit {
+    self.extra_owners = [];
+    self.path_fields = set();
 }

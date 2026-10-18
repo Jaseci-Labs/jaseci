@@ -21,7 +21,27 @@ import from ._socket_abi {
 glob _SOCKADDR_MAX: int = 128;
 
 
-def:pub resolve_all(host: str, service: str) -> tuple[(list[bytes], int)] {
+def:pub resolve_all(host: str, service: str) -> tuple[(list[bytes], int)];
+
+
+def:pub gai_str(rc: int) -> str;
+
+
+def:pub sock_open(family: int, socktype: int, proto: int) -> int;
+
+
+def:pub sock_connect(fd: int, sa: bytes) -> int;
+
+
+def:pub sock_send(fd: int, data: bytes, off: int) -> int;
+
+
+def:pub sock_recv(fd: int, bufsize: int) -> bytes;
+
+
+def:pub sock_close(fd: int);
+
+impl resolve_all(host: str, service: str) -> tuple[(list[bytes], int)] {
     out: list[bytes] = [];
     res_slot = b"\x00" * 8;
     rc = getaddrinfo(host, service, 0, res_slot);
@@ -55,22 +75,22 @@ def:pub resolve_all(host: str, service: str) -> tuple[(list[bytes], int)] {
 }
 
 
-def:pub gai_str(rc: int) -> str {
+impl gai_str(rc: int) -> str {
     return gai_strerror(i32(rc));
 }
 
 
-def:pub sock_open(family: int, socktype: int, proto: int) -> int {
+impl sock_open(family: int, socktype: int, proto: int) -> int {
     return socket(i32(family), i32(socktype), i32(proto));
 }
 
 
-def:pub sock_connect(fd: int, sa: bytes) -> int {
+impl sock_connect(fd: int, sa: bytes) -> int {
     return __connect(i32(fd), sa, i32(len(sa)));
 }
 
 
-def:pub sock_send(fd: int, data: bytes, off: int) -> int {
+impl sock_send(fd: int, data: bytes, off: int) -> int {
     n = len(data);
     if off >= n {
         return 0;
@@ -81,7 +101,7 @@ def:pub sock_send(fd: int, data: bytes, off: int) -> int {
 }
 
 
-def:pub sock_recv(fd: int, bufsize: int) -> bytes {
+impl sock_recv(fd: int, bufsize: int) -> bytes {
     if bufsize <= 0 {
         return b"";
     }
@@ -97,7 +117,7 @@ def:pub sock_recv(fd: int, bufsize: int) -> bytes {
 }
 
 
-def:pub sock_close(fd: int) {
+impl sock_close(fd: int) {
     if fd >= 0 {
         close(i32(fd));
     }

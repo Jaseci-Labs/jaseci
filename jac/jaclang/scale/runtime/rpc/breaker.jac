@@ -4,7 +4,19 @@ glob _BREAKER_TRIP_THRESHOLD: int = 5,
      _breaker_state: dict[str, dict[str, any]] = {},
      _breaker_lock = _BreakerLock();
 
-def breaker_should_skip(provider: str) -> bool {
+def breaker_should_skip(provider: str) -> bool;
+
+def breaker_record_success(provider: str);
+
+def breaker_record_failure(provider: str);
+
+def _breaker_reset(provider: str);
+
+def _breaker_peek(provider: str) -> dict[str, any] | None;
+
+def _breaker_force_cooldown_elapsed(provider: str);
+
+impl breaker_should_skip(provider: str) -> bool {
     import time;
     with _breaker_lock {
         st = _breaker_state.get(provider);
@@ -24,13 +36,13 @@ def breaker_should_skip(provider: str) -> bool {
     }
 }
 
-def breaker_record_success(provider: str) {
+impl breaker_record_success(provider: str) {
     with _breaker_lock {
         _breaker_state[provider] = {"state": "CLOSED", "fails": 0, "opened_at": 0.0};
     }
 }
 
-def breaker_record_failure(provider: str) {
+impl breaker_record_failure(provider: str) {
     import time;
     with _breaker_lock {
         st = _breaker_state.get(provider)
@@ -50,7 +62,7 @@ def breaker_record_failure(provider: str) {
     }
 }
 
-def _breaker_reset(provider: str) {
+impl _breaker_reset(provider: str) {
     with _breaker_lock {
         if provider in _breaker_state {
             del _breaker_state[provider];
@@ -58,14 +70,14 @@ def _breaker_reset(provider: str) {
     }
 }
 
-def _breaker_peek(provider: str) -> dict[str, any] | None {
+impl _breaker_peek(provider: str) -> dict[str, any] | None {
     with _breaker_lock {
         st = _breaker_state.get(provider);
         return dict(st) if st is not None else None;
     }
 }
 
-def _breaker_force_cooldown_elapsed(provider: str) {
+impl _breaker_force_cooldown_elapsed(provider: str) {
     with _breaker_lock {
         st = _breaker_state.get(provider);
         if st is not None {

@@ -12,33 +12,45 @@ obj DrainState {
         timeout: float = 10.0,
         reason: str = '';
 
-    def start(reason: str = 'shutdown') -> bool {
-        if self.draining {
-            return False;
-        }
-        self.draining = True;
-        self.started_at = time.monotonic();
-        self.reason = reason;
-        logger.warning(f"drain: started ({reason}, budget {self.timeout:.1f}s)");
-        return True;
-    }
-
-    def remaining -> float {
-        if not self.draining {
-            return self.timeout;
-        }
-        return max(0.0, self.timeout - (time.monotonic() - self.started_at));
-    }
-
-    def reset {
-        self.draining = False;
-        self.started_at = 0.0;
-        self.reason = '';
-    }
+    def start(reason: str = 'shutdown') -> bool;
+    def remaining -> float;
+    def reset;
 }
 
 
-def draining_response(service: str = 'service') -> Response {
+def draining_response(service: str = 'service') -> Response;
+
+
+def drain_middleware(
+    state: DrainState, service: str = 'service'
+) -> Callable[..., any];
+
+impl DrainState.start(reason: str = 'shutdown') -> bool {
+    if self.draining {
+        return False;
+    }
+    self.draining = True;
+    self.started_at = time.monotonic();
+    self.reason = reason;
+    logger.warning(f"drain: started ({reason}, budget {self.timeout:.1f}s)");
+    return True;
+}
+
+impl DrainState.remaining -> float {
+    if not self.draining {
+        return self.timeout;
+    }
+    return max(0.0, self.timeout - (time.monotonic() - self.started_at));
+}
+
+impl DrainState.reset {
+    self.draining = False;
+    self.started_at = 0.0;
+    self.reason = '';
+}
+
+
+impl draining_response(service: str = 'service') -> Response {
     resp = JSONResponse(
         status_code=503,
         content={
@@ -55,7 +67,7 @@ def draining_response(service: str = 'service') -> Response {
 }
 
 
-def drain_middleware(
+impl drain_middleware(
     state: DrainState, service: str = 'service'
 ) -> Callable[..., any] {
     async def _middleware(request: Request, call_next: any) -> Response {

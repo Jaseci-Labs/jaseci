@@ -21,28 +21,66 @@ obj Artifact {
         algorithm: str = "sha256",
         headers: dict[str, str] = {};
 
-    def key -> str {
-        for value in [self.name, self.version, self.platform] {
-            if not re.fullmatch(r"[A-Za-z0-9_.+\-]+", value) or value in [".", ".."] {
-                raise ValueError(f"Invalid toolchain identifier: {value}");
-            }
-        }
-        if self.algorithm not in ["sha256", "sha1"] {
-            raise ValueError("Unsupported artifact digest algorithm");
-        }
-        width = 64 if self.algorithm == "sha256" else 40;
-        if not re.fullmatch(f"[a-f0-9]{{{width}}}", self.digest) {
-            raise ValueError(f"Invalid {self.algorithm} digest for {self.name}");
-        }
-        return f"{self.name}/{self.version}/{self.platform}-{self.digest[:16]}";
-    }
+    def key -> str;
 }
 
-def offline -> bool {
+def offline -> bool;
+
+def file_digest(path: Path, algorithm: str = "sha256") -> str;
+
+def fetch(
+    artifact: Artifact,
+    destination: Path | None = None,
+    bucket_name: str = "toolchains-downloads"
+) -> Path;
+
+def extract(archive: Path, destination: Path);
+
+def installed(artifact: Artifact, required: str) -> (Path | None);
+
+def install(artifact: Artifact, required: str) -> Path;
+
+def _marker(bucket_name: str) -> str;
+
+def build_slot(name: str, host: str, digest: str) -> Path;
+
+def slot_ready(slot: Path) -> bool;
+
+def publish_build_slot(staged: Path, slot: Path);
+
+def install_slot(name: str, version: str, platform: str) -> Path;
+
+def slot_installed(slot: Path) -> bool;
+
+def publish_install_slot(slot: Path, meta: dict[str, str]);
+
+
+def format_size(size: int) -> str;
+
+
+def allowed_url(url: str) -> bool;
+
+impl Artifact.key -> str {
+    for value in [self.name, self.version, self.platform] {
+        if not re.fullmatch(r"[A-Za-z0-9_.+\-]+", value) or value in [".", ".."] {
+            raise ValueError(f"Invalid toolchain identifier: {value}");
+        }
+    }
+    if self.algorithm not in ["sha256", "sha1"] {
+        raise ValueError("Unsupported artifact digest algorithm");
+    }
+    width = 64 if self.algorithm == "sha256" else 40;
+    if not re.fullmatch(f"[a-f0-9]{{{width}}}", self.digest) {
+        raise ValueError(f"Invalid {self.algorithm} digest for {self.name}");
+    }
+    return f"{self.name}/{self.version}/{self.platform}-{self.digest[:16]}";
+}
+
+impl offline -> bool {
     return offline_mode();
 }
 
-def file_digest(path: Path, algorithm: str = "sha256") -> str {
+impl file_digest(path: Path, algorithm: str = "sha256") -> str {
     digest = hashlib.new(algorithm);
     with path.open("rb") as source {
         while chunk := source.read(1024 * 1024) {
@@ -52,7 +90,7 @@ def file_digest(path: Path, algorithm: str = "sha256") -> str {
     return digest.hexdigest();
 }
 
-def fetch(
+impl fetch(
     artifact: Artifact,
     destination: Path | None = None,
     bucket_name: str = "toolchains-downloads"
@@ -152,7 +190,7 @@ def fetch(
     raise RuntimeError(f"Could not download {artifact.name}");
 }
 
-def extract(archive: Path, destination: Path) {
+impl extract(archive: Path, destination: Path) {
     destination.mkdir(parents=True, exist_ok=True);
     if zipfile.is_zipfile(archive) {
         with zipfile.ZipFile(archive) as bundle {
@@ -186,7 +224,7 @@ def extract(archive: Path, destination: Path) {
     }
 }
 
-def installed(artifact: Artifact, required: str) -> (Path | None) {
+impl installed(artifact: Artifact, required: str) -> (Path | None) {
     if Path(required).is_absolute() or ".." in Path(required).parts {
         raise ValueError("Installation marker must be a relative path");
     }
@@ -196,7 +234,7 @@ def installed(artifact: Artifact, required: str) -> (Path | None) {
         else None;
 }
 
-def install(artifact: Artifact, required: str) -> Path {
+impl install(artifact: Artifact, required: str) -> Path {
     destination = bucket("toolchains-installed").path() / artifact.key();
     with FileLock(destination.with_suffix(".lock")) {
         if installed(artifact, required) is not None {
@@ -243,15 +281,15 @@ def install(artifact: Artifact, required: str) -> Path {
     return destination;
 }
 
-def _marker(bucket_name: str) -> str {
+impl _marker(bucket_name: str) -> str {
     return bucket(bucket_name).policy.markers[0];
 }
 
-def build_slot(name: str, host: str, digest: str) -> Path {
+impl build_slot(name: str, host: str, digest: str) -> Path {
     return bucket("toolchains-build").path() / name / host / digest;
 }
 
-def slot_ready(slot: Path) -> bool {
+impl slot_ready(slot: Path) -> bool {
     if not (slot / _marker("toolchains-build")).is_file() {
         return False;
     }
@@ -259,7 +297,7 @@ def slot_ready(slot: Path) -> bool {
     return True;
 }
 
-def publish_build_slot(staged: Path, slot: Path) {
+impl publish_build_slot(staged: Path, slot: Path) {
     (staged / _marker("toolchains-build")).touch();
     slot.parent.mkdir(parents=True, exist_ok=True);
     if slot.exists() {
@@ -269,11 +307,11 @@ def publish_build_slot(staged: Path, slot: Path) {
     maybe_sweep("toolchains-build");
 }
 
-def install_slot(name: str, version: str, platform: str) -> Path {
+impl install_slot(name: str, version: str, platform: str) -> Path {
     return bucket("toolchains-installed").path() / name / version / platform;
 }
 
-def slot_installed(slot: Path) -> bool {
+impl slot_installed(slot: Path) -> bool {
     if not (slot / _marker("toolchains-installed")).is_file() {
         return False;
     }
@@ -281,13 +319,13 @@ def slot_installed(slot: Path) -> bool {
     return True;
 }
 
-def publish_install_slot(slot: Path, meta: dict[str, str]) {
+impl publish_install_slot(slot: Path, meta: dict[str, str]) {
     (slot / _marker("toolchains-installed")).write_text(json.dumps(meta, indent=2));
     maybe_sweep("toolchains-installed");
 }
 
 
-def format_size(size: int) -> str {
+impl format_size(size: int) -> str {
     if size < 1024 {
         return f"{size} B";
     }
@@ -298,7 +336,7 @@ def format_size(size: int) -> str {
 }
 
 
-def allowed_url(url: str) -> bool {
+impl allowed_url(url: str) -> bool {
     parsed = urlsplit(url);
     return parsed.scheme == "https"
         or (

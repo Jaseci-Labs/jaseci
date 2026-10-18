@@ -46,10 +46,7 @@ obj WireBinding {
         name: str = "",
         alias: str = "";
 
-    def key -> tuple[str, str, str, str] {
-        return (self.provider, self.form, self.name, self.alias);
-    }
-
+    def key -> tuple[str, str, str, str];
     def wire_text(consumer: str) -> str;
 }
 
@@ -144,18 +141,7 @@ glob _spec_cache: dict[str, tuple[tuple[float, int], WiringSpec]] = {},
      _STDLIB_NAMES: list[set[str]] = [];
 
 @contextmanager
-def wiring_scope -> Iterator[None] {
-    if _resolution.get() is not None {
-        yield ;
-        return;
-    }
-    token = _resolution.set({});
-    try {
-        yield ;
-    } finally {
-        _resolution.reset(token);
-    }
-}
+def wiring_scope -> Iterator[None];
 
 def is_arch_file(path: str) -> bool;
 def arch_file_for(path: str) -> (str | None);
@@ -187,3 +173,20 @@ def scope_path_of(nd: UniNode) -> (list[str] | None);
 def scope_owners(mod: Module) -> dict[str, (Ability | ImplDef)];
 def inject_into_scope(owner: (Ability | ImplDef), stmt: UniNode) -> None;
 def local_module_name(root_dir: str, path: str) -> (str | None);
+
+impl WireBinding.key -> tuple[str, str, str, str] {
+    return (self.provider, self.form, self.name, self.alias);
+}
+
+impl wiring_scope -> Iterator[None] {
+    if _resolution.get() is not None {
+        yield ;
+        return;
+    }
+    token = _resolution.set({});
+    try {
+        yield ;
+    } finally {
+        _resolution.reset(token);
+    }
+}

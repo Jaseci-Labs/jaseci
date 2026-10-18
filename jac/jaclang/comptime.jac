@@ -49,17 +49,9 @@ obj LazyRef {
 
     has resolved: any { getter; }
 
-    def __call__(*args: any, **kwargs: any) -> any {
-        return self.resolved(*args, **kwargs);
-    }
-
-    def __getattr__(name: str) -> any {
-        return getattr(self.resolved, name);
-    }
-
-    def __repr__ -> str {
-        return f"LazyRef({self.module}.{self.qualname})";
-    }
+    def __call__(*args: any, **kwargs: any) -> any;
+    def __getattr__(name: str) -> any;
+    def __repr__ -> str;
 }
 
 impl LazyRef.resolved.getter -> any {
@@ -70,7 +62,72 @@ impl LazyRef.resolved.getter -> any {
     return cur;
 }
 
-def _host_os -> str {
+def _host_os -> str;
+
+glob codespace: Codespace = Codespace.SERVER,
+     target: TargetInfo = TargetInfo(os=_host_os(), arch=_platform.machine());
+
+def __ct_ref(module: str, qualname: str) -> any;
+
+def __ct_lazy(module: str, qualname: str) -> LazyRef;
+
+def typeof(x: any) -> type;
+
+def name(t: any) -> str;
+
+def module_of(t: any) -> str;
+
+def is_subtype(t: type, u: type) -> bool;
+
+def _semstr_of(target: any) -> (str | None);
+
+def semstr(t: any, field: str = "") -> (str | None);
+
+def fields(t: type) -> list[FieldInfo];
+
+def has_field(t: type, field: str) -> bool;
+
+def get_field(target: any, field: str) -> any;
+
+def set_field(target: any, field: str, value: any);
+
+def members(e: type) -> list[any];
+
+def set_fuel(n: int) -> None;
+
+def embed_file(path: str) -> str;
+
+def embed_bytes(path: str) -> bytes;
+
+def _scalar_size_align(t: any) -> (tuple[int, int] | None);
+
+def _size_align(t: any) -> tuple[int, int];
+
+def sizeof(t: any) -> int;
+
+def alignof(t: any) -> int;
+
+def record(cls: type, **fields: any) -> any;
+
+glob _SPECIALIZED: dict[tuple[object, ...], type] = {};
+
+def specialize(cls: type, **ct: any) -> type;
+
+def _ct_sort_key(item: tuple[str, any]) -> str;
+
+impl LazyRef.__call__(*args: any, **kwargs: any) -> any {
+    return self.resolved(*args, **kwargs);
+}
+
+impl LazyRef.__getattr__(name: str) -> any {
+    return getattr(self.resolved, name);
+}
+
+impl LazyRef.__repr__ -> str {
+    return f"LazyRef({self.module}.{self.qualname})";
+}
+
+impl _host_os -> str {
     if sys.platform.startswith("win") {
         return "windows";
     }
@@ -80,22 +137,19 @@ def _host_os -> str {
     return "linux";
 }
 
-glob codespace: Codespace = Codespace.SERVER,
-     target: TargetInfo = TargetInfo(os=_host_os(), arch=_platform.machine());
-
-def __ct_ref(module: str, qualname: str) -> any {
+impl __ct_ref(module: str, qualname: str) -> any {
     return LazyRef(module=module, qualname=qualname).resolved;
 }
 
-def __ct_lazy(module: str, qualname: str) -> LazyRef {
+impl __ct_lazy(module: str, qualname: str) -> LazyRef {
     return LazyRef(module=module, qualname=qualname);
 }
 
-def typeof(x: any) -> type {
+impl typeof(x: any) -> type {
     return `type(x);
 }
 
-def name(t: any) -> str {
+impl name(t: any) -> str {
     got = t?.__name__;
     if isinstance(got, str) {
         return got;
@@ -103,7 +157,7 @@ def name(t: any) -> str {
     return str(t);
 }
 
-def module_of(t: any) -> str {
+impl module_of(t: any) -> str {
     got = t?.__module__;
     if isinstance(got, str) {
         return got;
@@ -111,7 +165,7 @@ def module_of(t: any) -> str {
     return "";
 }
 
-def is_subtype(t: type, u: type) -> bool {
+impl is_subtype(t: type, u: type) -> bool {
     try {
         return issubclass(t, u);
     } except TypeError {
@@ -119,7 +173,7 @@ def is_subtype(t: type, u: type) -> bool {
     }
 }
 
-def _semstr_of(target: any) -> (str | None) {
+impl _semstr_of(target: any) -> (str | None) {
     got = target?._jac_semstr;
     if isinstance(got, str) and got {
         return got;
@@ -127,7 +181,7 @@ def _semstr_of(target: any) -> (str | None) {
     return None;
 }
 
-def semstr(t: any, field: str = "") -> (str | None) {
+impl semstr(t: any, field: str = "") -> (str | None) {
     if not field {
         return _semstr_of(t);
     }
@@ -141,7 +195,7 @@ def semstr(t: any, field: str = "") -> (str | None) {
     return None;
 }
 
-def fields(t: type) -> list[FieldInfo] {
+impl fields(t: type) -> list[FieldInfo] {
     out: list[FieldInfo] = [];
     if not _is_record(t) {
         return out;
@@ -174,7 +228,7 @@ def fields(t: type) -> list[FieldInfo] {
     return out;
 }
 
-def has_field(t: type, field: str) -> bool {
+impl has_field(t: type, field: str) -> bool {
     if _is_record(t) {
         for f in _record_fields(t) {
             if f.name == field {
@@ -186,38 +240,38 @@ def has_field(t: type, field: str) -> bool {
     return hasattr(t, field);
 }
 
-def get_field(target: any, field: str) -> any {
+impl get_field(target: any, field: str) -> any {
     return getattr(target, field);
 }
 
-def set_field(target: any, field: str, value: any) {
+impl set_field(target: any, field: str, value: any) {
     setattr(target, field, value);
 }
 
-def members(e: type) -> list[any] {
+impl members(e: type) -> list[any] {
     if isinstance(e, `type) and issubclass(e, _PyEnum) {
         return `list(e);
     }
     return [];
 }
 
-def set_fuel(n: int) -> None {
+impl set_fuel(n: int) -> None {
     return None;
 }
 
-def embed_file(path: str) -> str {
+impl embed_file(path: str) -> str {
     with open(path, "r", encoding="utf-8") as fh {
         return fh.read();
     }
 }
 
-def embed_bytes(path: str) -> bytes {
+impl embed_bytes(path: str) -> bytes {
     with open(path, "rb") as fh {
         return fh.read();
     }
 }
 
-def _scalar_size_align(t: any) -> (tuple[int, int] | None) {
+impl _scalar_size_align(t: any) -> (tuple[int, int] | None) {
     name = t?.__name__ if isinstance(t, `type) else str(t);
     if name == "bool" {
         return (1, 1, );
@@ -233,7 +287,7 @@ def _scalar_size_align(t: any) -> (tuple[int, int] | None) {
     return None;
 }
 
-def _size_align(t: any) -> tuple[int, int] {
+impl _size_align(t: any) -> tuple[int, int] {
     scalar = _scalar_size_align(t);
     if scalar is not None {
         return scalar;
@@ -258,15 +312,15 @@ def _size_align(t: any) -> tuple[int, int] {
     return ((off + top - 1) // top * top, top, );
 }
 
-def sizeof(t: any) -> int {
+impl sizeof(t: any) -> int {
     return _size_align(t)[0];
 }
 
-def alignof(t: any) -> int {
+impl alignof(t: any) -> int {
     return _size_align(t)[1];
 }
 
-def record(cls: type, **fields: any) -> any {
+impl record(cls: type, **fields: any) -> any {
     inst = getattr(cls, "__new__")(cls);
     for (k, v) in fields.items() {
         setattr(inst, k, v);
@@ -274,9 +328,7 @@ def record(cls: type, **fields: any) -> any {
     return inst;
 }
 
-glob _SPECIALIZED: dict[tuple[object, ...], type] = {};
-
-def specialize(cls: type, **ct: any) -> type {
+impl specialize(cls: type, **ct: any) -> type {
     import copy as _copy;
     key = (cls, tuple(sorted(ct.items(), key=_ct_sort_key)), );
     hit = _SPECIALIZED.get(key);
@@ -301,6 +353,6 @@ def specialize(cls: type, **ct: any) -> type {
     return made;
 }
 
-def _ct_sort_key(item: tuple[str, any]) -> str {
+impl _ct_sort_key(item: tuple[str, any]) -> str {
     return str(item[0]);
 }

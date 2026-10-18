@@ -7,9 +7,7 @@ import uuid;
 glob logger = logging.getLogger(__name__);
 
 
-def _lock_owner -> str {
-    return f"{socket.gethostname()}:{os.getpid()}:{uuid.uuid4().hex}";
-}
+def _lock_owner -> str;
 
 
 obj PgStateBackend(StateBackend) {
@@ -17,13 +15,29 @@ obj PgStateBackend(StateBackend) {
         _held: dict[str, str] = {},
         _held_guard: threading.Lock = threading.Lock();
 
-    def get(key: str) -> (str | None) {
-        return self.store.kv_get(key);
-    }
+    def get(key: str) -> (str | None);
+    def `set(key: str, value: str, ttl_seconds: (int | None) = None);
+    def delete(key: str);
+    def increment(
+        key: str, amount: float = 1.0, ttl_seconds: (int | None) = None
+    ) -> float;
 
-    def `set(key: str, value: str, ttl_seconds: (int | None) = None) {
-        self.store.rows(
-            """
+    def acquire_lock(key: str, ttl_seconds: int) -> bool;
+    def release_lock(key: str);
+}
+
+impl _lock_owner -> str {
+    return f"{socket.gethostname()}:{os.getpid()}:{uuid.uuid4().hex}";
+}
+
+
+impl PgStateBackend.get(key: str) -> (str | None) {
+    return self.store.kv_get(key);
+}
+
+impl PgStateBackend.`set(key: str, value: str, ttl_seconds: (int | None) = None) {
+    self.store.rows(
+        """
             INSERT INTO kv_state (key, value, expires_at, updated_at)
             VALUES (
                 :k, :v,
@@ -36,19 +50,19 @@ obj PgStateBackend(StateBackend) {
                 expires_at = EXCLUDED.expires_at,
                 updated_at = now()
             """,
-            {'k': key, 'v': value, 'ttl': ttl_seconds}
-        );
-    }
+        {'k': key, 'v': value, 'ttl': ttl_seconds}
+    );
+}
 
-    def delete(key: str) {
-        self.store.kv_delete(key);
-    }
+impl PgStateBackend.delete(key: str) {
+    self.store.kv_delete(key);
+}
 
-    def increment(
-        key: str, amount: float = 1.0, ttl_seconds: (int | None) = None
-    ) -> float {
-        rows = self.store.rows(
-            """
+impl PgStateBackend.increment(
+    key: str, amount: float = 1.0, ttl_seconds: (int | None) = None
+) -> float {
+    rows = self.store.rows(
+        """
             INSERT INTO kv_state (key, value, expires_at, updated_at)
             VALUES (
                 :k, CAST(:a AS float8)::text,
@@ -72,28 +86,27 @@ obj PgStateBackend(StateBackend) {
                 updated_at = now()
             RETURNING value
             """,
-            {'k': key, 'a': amount, 'ttl': ttl_seconds}
-        );
-        return float(str(rows[0][0]));
-    }
+        {'k': key, 'a': amount, 'ttl': ttl_seconds}
+    );
+    return float(str(rows[0][0]));
+}
 
-    def acquire_lock(key: str, ttl_seconds: int) -> bool {
-        owner = _lock_owner();
-        if not self.store.kv_acquire_lease(key, ttl_seconds, owner) {
-            return False;
-        }
-        with self._held_guard {
-            self._held[key] = owner;
-        }
-        return True;
+impl PgStateBackend.acquire_lock(key: str, ttl_seconds: int) -> bool {
+    owner = _lock_owner();
+    if not self.store.kv_acquire_lease(key, ttl_seconds, owner) {
+        return False;
     }
+    with self._held_guard {
+        self._held[key] = owner;
+    }
+    return True;
+}
 
-    def release_lock(key: str) {
-        with self._held_guard {
-            owner = self._held.pop(key, None);
-        }
-        if owner is not None {
-            self.store.kv_release_lease(key, owner);
-        }
+impl PgStateBackend.release_lock(key: str) {
+    with self._held_guard {
+        owner = self._held.pop(key, None);
+    }
+    if owner is not None {
+        self.store.kv_release_lease(key, owner);
     }
 }

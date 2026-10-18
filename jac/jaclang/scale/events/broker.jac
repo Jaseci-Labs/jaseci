@@ -4,10 +4,7 @@ import uuid;
 
 enum StreamPosition { EARLIEST = 'earliest', LATEST = 'latest', }
 
-def starts_at_earliest(start_from: any) -> bool {
-    token = start_from.value if isinstance(start_from, StreamPosition) else start_from;
-    return token == StreamPosition.EARLIEST.value;
-}
+def starts_at_earliest(start_from: any) -> bool;
 
 obj Event {
     has event_type: str = "",
@@ -44,7 +41,45 @@ obj MethodParam {
         `default: any = None;
 }
 
-def _method_params(fn: any) -> list[MethodParam] {
+def _method_params(fn: any) -> list[MethodParam];
+
+def _signature_faults(
+    method: str, want: list[MethodParam], got: list[MethodParam]
+) -> list[str];
+
+def _assert_signature_parity(broker_cls: type);
+
+obj EventStreamBroker {
+    class def __init_subclass__(**kwargs: object);
+    def start -> None abst;
+    def stop(drain: bool = True) -> None abst;
+    def publish(topic: str, event: Event, key: str | None = None) -> None abst;
+    def register_handler(
+        topic: str,
+        handler: Callable[[Event], any],
+        group: str | None = None,
+        retry: RetryPolicy | None = None,
+        start_from: str = StreamPosition.LATEST.value
+    ) -> None abst;
+
+    def consume(
+        topic: str,
+        group: str | None = None,
+        max_messages: int = 1,
+        timeout_seconds: float = 5.0,
+        start_from: str = StreamPosition.LATEST.value
+    ) -> list[Event] abst;
+
+    def ack(event: Event) -> None abst;
+    def health -> HealthStatus abst;
+}
+
+impl starts_at_earliest(start_from: any) -> bool {
+    token = start_from.value if isinstance(start_from, StreamPosition) else start_from;
+    return token == StreamPosition.EARLIEST.value;
+}
+
+impl _method_params(fn: any) -> list[MethodParam] {
     import inspect;
     params: list[MethodParam] = [];
     for p in inspect.signature(fn).parameters.values() {
@@ -63,7 +98,7 @@ def _method_params(fn: any) -> list[MethodParam] {
     return params;
 }
 
-def _signature_faults(
+impl _signature_faults(
     method: str, want: list[MethodParam], got: list[MethodParam]
 ) -> list[str] {
     faults: list[str] = [];
@@ -115,7 +150,7 @@ def _signature_faults(
     return faults;
 }
 
-def _assert_signature_parity(broker_cls: type) {
+impl _assert_signature_parity(broker_cls: type) {
     faults: list[str] = [];
     for (name, declared) in vars(EventStreamBroker).items() {
         if name.startswith('_') or not callable(declared) {
@@ -142,31 +177,7 @@ def _assert_signature_parity(broker_cls: type) {
     }
 }
 
-obj EventStreamBroker {
-    class def __init_subclass__(**kwargs: object) {
-        super.__init_subclass__(**kwargs);
-        _assert_signature_parity(cast(type, cls));
-    }
-
-    def start -> None abst;
-    def stop(drain: bool = True) -> None abst;
-    def publish(topic: str, event: Event, key: str | None = None) -> None abst;
-    def register_handler(
-        topic: str,
-        handler: Callable[[Event], any],
-        group: str | None = None,
-        retry: RetryPolicy | None = None,
-        start_from: str = StreamPosition.LATEST.value
-    ) -> None abst;
-
-    def consume(
-        topic: str,
-        group: str | None = None,
-        max_messages: int = 1,
-        timeout_seconds: float = 5.0,
-        start_from: str = StreamPosition.LATEST.value
-    ) -> list[Event] abst;
-
-    def ack(event: Event) -> None abst;
-    def health -> HealthStatus abst;
+impl EventStreamBroker.__init_subclass__(**kwargs: object) {
+    super.__init_subclass__(**kwargs);
+    _assert_signature_parity(cast(type, cls));
 }

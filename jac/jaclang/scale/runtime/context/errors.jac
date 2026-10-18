@@ -4,6 +4,25 @@ def error_response(
     status: int,
     service: str | None = None,
     retry_after_seconds: int | None = None
+) -> JSONResponse;
+
+def service_unavailable(service: str, reason: str) -> JSONResponse;
+
+def identity_unresolvable(detail: str) -> JSONResponse;
+
+
+def gateway_timeout(service: str) -> JSONResponse;
+
+def bad_gateway(service: str) -> JSONResponse;
+
+def not_found(path: str, message: str = "Not found") -> JSONResponse;
+
+impl error_response(
+    code: str,
+    message: str,
+    status: int,
+    service: str | None = None,
+    retry_after_seconds: int | None = None
 ) -> JSONResponse {
     err: dict[str, any] = {"code": code, "message": message};
     if service {
@@ -24,7 +43,7 @@ def error_response(
     return JSONResponse(status_code=status, content=body, headers=headers);
 }
 
-def service_unavailable(service: str, reason: str) -> JSONResponse {
+impl service_unavailable(service: str, reason: str) -> JSONResponse {
     return error_response(
         code="SERVICE_UNAVAILABLE",
         message=f"Service '{service}' is {reason}",
@@ -34,7 +53,7 @@ def service_unavailable(service: str, reason: str) -> JSONResponse {
     );
 }
 
-def identity_unresolvable(detail: str) -> JSONResponse {
+impl identity_unresolvable(detail: str) -> JSONResponse {
     return error_response(
         code="IDENTITY_UNRESOLVABLE",
         message=f"The caller's identity could not be resolved: {detail}",
@@ -43,7 +62,7 @@ def identity_unresolvable(detail: str) -> JSONResponse {
 }
 
 
-def gateway_timeout(service: str) -> JSONResponse {
+impl gateway_timeout(service: str) -> JSONResponse {
     return error_response(
         code="GATEWAY_TIMEOUT",
         message=f"Service '{service}' did not respond in time",
@@ -52,7 +71,7 @@ def gateway_timeout(service: str) -> JSONResponse {
     );
 }
 
-def bad_gateway(service: str) -> JSONResponse {
+impl bad_gateway(service: str) -> JSONResponse {
     return error_response(
         code="BAD_GATEWAY",
         message=f"Failed to reach service '{service}'",
@@ -61,6 +80,6 @@ def bad_gateway(service: str) -> JSONResponse {
     );
 }
 
-def not_found(path: str, message: str = "Not found") -> JSONResponse {
+impl not_found(path: str, message: str = "Not found") -> JSONResponse {
     return error_response(code="NOT_FOUND", message=f"{message}: {path}", status=404);
 }

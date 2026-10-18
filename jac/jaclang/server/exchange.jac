@@ -23,17 +23,8 @@ obj RequestView {
         origin: str = '',
         public_origin: str = '';
 
-    def header(name: str, fallback: (str | None) = None) -> (str | None) {
-        return self.headers.get(name.lower(), fallback);
-    }
-
-    def link(path: str = '') -> str {
-        base = self.public_origin or self.origin;
-        if path and not path.startswith('/') {
-            return base + '/' + path;
-        }
-        return base + path;
-    }
+    def header(name: str, fallback: (str | None) = None) -> (str | None);
+    def link(path: str = '') -> str;
 }
 
 
@@ -50,19 +41,69 @@ obj Exchange {
 }
 
 
-def open_exchange(request: Request, public_origin: str = '') -> any {
+def open_exchange(request: Request, public_origin: str = '') -> any;
+
+
+def close_exchange(token: any);
+
+
+def request_origin(request: Request) -> str;
+
+
+def current_request -> (RequestView | None);
+
+
+def _checked_status(status: int) -> int;
+
+
+def _checked_header(name: str, value: str) -> tuple[str, str];
+
+
+def respond(
+    status: (int | None) = None, headers: (dict[str, str] | None) = None
+) -> bool;
+
+
+def forget_response_choice;
+
+
+def refusal_status -> (int | None);
+
+
+def has_response_choice -> bool;
+
+
+def apply_response_choice(response: any) -> any;
+
+
+def settle_envelope(envelope: TransportResponse) -> (TransportResponse | JSONResponse);
+
+impl RequestView.header(name: str, fallback: (str | None) = None) -> (str | None) {
+    return self.headers.get(name.lower(), fallback);
+}
+
+impl RequestView.link(path: str = '') -> str {
+    base = self.public_origin or self.origin;
+    if path and not path.startswith('/') {
+        return base + '/' + path;
+    }
+    return base + path;
+}
+
+
+impl open_exchange(request: Request, public_origin: str = '') -> any {
     return _exchange.set(
         Exchange(request=request, public_origin=public_origin, choice=ResponseChoice())
     );
 }
 
 
-def close_exchange(token: any) {
+impl close_exchange(token: any) {
     _exchange.reset(token);
 }
 
 
-def request_origin(request: Request) -> str {
+impl request_origin(request: Request) -> str {
     netloc = (request.url.netloc or request.headers.get('Host') or '').strip();
     if not HOST_AND_PORT.match(netloc) {
         return '';
@@ -71,7 +112,7 @@ def request_origin(request: Request) -> str {
 }
 
 
-def current_request -> (RequestView | None) {
+impl current_request -> (RequestView | None) {
     exchange = _exchange.get();
     if exchange is None {
         return None;
@@ -97,7 +138,7 @@ def current_request -> (RequestView | None) {
 }
 
 
-def _checked_status(status: int) -> int {
+impl _checked_status(status: int) -> int {
     if isinstance(status, bool) or not isinstance(status, int) {
         raise ValueError(f"response status must be an integer, got {status!r}");
     }
@@ -108,7 +149,7 @@ def _checked_status(status: int) -> int {
 }
 
 
-def _checked_header(name: str, value: str) -> tuple[str, str] {
+impl _checked_header(name: str, value: str) -> tuple[str, str] {
     header_name = str(name);
     header_value = str(value);
     if not HEADER_NAME.match(header_name) {
@@ -133,7 +174,7 @@ def _checked_header(name: str, value: str) -> tuple[str, str] {
 }
 
 
-def respond(
+impl respond(
     status: (int | None) = None, headers: (dict[str, str] | None) = None
 ) -> bool {
     checked_status = None if status is None else _checked_status(status);
@@ -155,7 +196,7 @@ def respond(
 }
 
 
-def forget_response_choice {
+impl forget_response_choice {
     exchange = _exchange.get();
     if exchange is not None {
         exchange.choice = ResponseChoice();
@@ -163,7 +204,7 @@ def forget_response_choice {
 }
 
 
-def refusal_status -> (int | None) {
+impl refusal_status -> (int | None) {
     exchange = _exchange.get();
     if exchange is None or exchange.choice.status is None {
         return None;
@@ -172,7 +213,7 @@ def refusal_status -> (int | None) {
 }
 
 
-def has_response_choice -> bool {
+impl has_response_choice -> bool {
     exchange = _exchange.get();
     if exchange is None {
         return False;
@@ -181,7 +222,7 @@ def has_response_choice -> bool {
 }
 
 
-def apply_response_choice(response: any) -> any {
+impl apply_response_choice(response: any) -> any {
     exchange = _exchange.get();
     if exchange is None {
         return response;
@@ -197,7 +238,9 @@ def apply_response_choice(response: any) -> any {
 }
 
 
-def settle_envelope(envelope: TransportResponse) -> (TransportResponse | JSONResponse) {
+impl settle_envelope(
+    envelope: TransportResponse
+) -> (TransportResponse | JSONResponse) {
     if not has_response_choice() {
         return envelope;
     }

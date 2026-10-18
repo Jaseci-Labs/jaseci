@@ -6,7 +6,11 @@ glob JAC_LOGO = '   _\n  (_) __ _  ___\n  | |/ _` |/ __|\n  | | (_| | (__\n _/ |
      JAC_GITHUB_URL = 'https://github.com/Jaseci-Labs/jaseci',
      JAC_ISSUES_URL = 'https://github.com/Jaseci-Labs/jaseci/issues';
 
-def print_logo(version: str, platform_short: str | None = None) {
+def print_logo(version: str, platform_short: str | None = None);
+
+def print_version_banner(version: str);
+
+impl print_logo(version: str, platform_short: str | None = None) {
     logo_lines = JAC_LOGO.split('\n');
     console.print(logo_lines[0], style='bold cyan');
     console.print((logo_lines[1] + '     Jac Language'), style='bold cyan');
@@ -20,7 +24,7 @@ def print_logo(version: str, platform_short: str | None = None) {
     console.print(last, style='cyan');
 }
 
-def print_version_banner(version: str) {
+impl print_version_banner(version: str) {
     platform_info = platform.platform();
     if (platform.system() == 'Linux') {
         platform_short = f"Linux {platform.machine()}";

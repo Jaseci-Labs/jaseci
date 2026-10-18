@@ -18,14 +18,10 @@ import from ._math_native {
 
 import from math { isfinite as _isf, isinf as _isi, isnan as _isn }
 
-def _scale_up(value: float) -> float {
-    return value * 9007199254740992.0;
-}
+def _scale_up(value: float) -> float;
 
 
-def _scale_down(value: float) -> float {
-    return value * 7.450580596923828125e-9;
-}
+def _scale_down(value: float) -> float;
 
 glob:pub pi: float = 3.141592653589793,
      e: float = 2.718281828459045,
@@ -47,24 +43,11 @@ glob _DBL_MAX: float = 1.7976931348623157e308,
      _EDOM: int = 1,
      _ERANGE: int = 2;
 
-def _special_type(d: float) -> int {
-    if _isf(d) {
-        if d != 0.0 {
-            return 4 if m_copysign(1.0, d) == 1.0 else 1;
-        }
-        return 3 if m_copysign(1.0, d) == 1.0 else 2;
-    }
-    if _isn(d) {
-        return 6;
-    }
-    return 5 if m_copysign(1.0, d) == 1.0 else 0;
-}
+def _special_type(d: float) -> int;
 
 def _sv_entry(
     table: list[list[tuple[float, float]]], z: complex
-) -> tuple[float, float] {
-    return table[_special_type(z.real)][_special_type(z.imag)];
-}
+) -> tuple[float, float];
 
 glob _INF: float = inf,
      _NAN: float = nan,
@@ -799,7 +782,113 @@ glob _INF: float = inf,
 
      ];
 
-def _raise_err(err: int) {
+def _raise_err(err: int);
+
+def _c_sqrt(z: complex) -> tuple[float, float, int];
+
+def _c_log(z: complex) -> tuple[float, float, int];
+
+def _c_acos(z: complex) -> tuple[float, float, int];
+
+def _c_acosh(z: complex) -> tuple[float, float, int];
+
+def _c_asinh(z: complex) -> tuple[float, float, int];
+
+def _c_atanh(z: complex) -> tuple[float, float, int];
+
+def _c_cosh(z: complex) -> tuple[float, float, int];
+
+def _c_sinh(z: complex) -> tuple[float, float, int];
+
+def _c_exp(z: complex) -> tuple[float, float, int];
+
+def _c_tanh(z: complex) -> tuple[float, float, int];
+
+def _c_abs(re: float, im: float) -> tuple[float, int];
+
+def _close(
+    a: complex, b: complex, rel_tol: float = 1e-09, abs_tol: float = 0.0
+) -> bool;
+
+def _rectangular(r: float, phi: float) -> complex;
+
+def:pub acos(z: complex) -> complex;
+
+def:pub acosh(z: complex) -> complex;
+
+def:pub asin(z: complex) -> complex;
+
+def:pub asinh(z: complex) -> complex;
+
+def:pub atan(z: complex) -> complex;
+
+def:pub atanh(z: complex) -> complex;
+
+def:pub cos(z: complex) -> complex;
+
+def:pub cosh(z: complex) -> complex;
+
+def:pub exp(z: complex) -> complex;
+
+def:pub sin(z: complex) -> complex;
+
+def:pub sinh(z: complex) -> complex;
+
+def:pub sqrt(z: complex) -> complex;
+
+def:pub tan(z: complex) -> complex;
+
+def:pub tanh(z: complex) -> complex;
+
+def:pub log(z: complex, base: (complex | None) = None) -> complex;
+
+def:pub log10(z: complex) -> complex;
+
+def:pub phase(z: complex) -> float;
+
+def:pub polar(z: complex) -> tuple[float, float];
+
+def:pub rect(r: float, phi: float) -> complex;
+
+def:pub isfinite(z: complex) -> bool;
+
+def:pub isinf(z: complex) -> bool;
+
+def:pub isnan(z: complex) -> bool;
+
+def:pub isclose(
+    a: complex, b: complex, *, rel_tol: float = 1e-09, abs_tol: float = 0.0
+) -> bool;
+
+impl _scale_up(value: float) -> float {
+    return value * 9007199254740992.0;
+}
+
+
+impl _scale_down(value: float) -> float {
+    return value * 7.450580596923828125e-9;
+}
+
+impl _special_type(d: float) -> int {
+    if _isf(d) {
+        if d != 0.0 {
+            return 4 if m_copysign(1.0, d) == 1.0 else 1;
+        }
+        return 3 if m_copysign(1.0, d) == 1.0 else 2;
+    }
+    if _isn(d) {
+        return 6;
+    }
+    return 5 if m_copysign(1.0, d) == 1.0 else 0;
+}
+
+impl _sv_entry(
+    table: list[list[tuple[float, float]]], z: complex
+) -> tuple[float, float] {
+    return table[_special_type(z.real)][_special_type(z.imag)];
+}
+
+impl _raise_err(err: int) {
     if err == _EDOM {
         raise ValueError("math domain error");
     }
@@ -808,7 +897,7 @@ def _raise_err(err: int) {
     }
 }
 
-def _c_sqrt(z: complex) -> tuple[float, float, int] {
+impl _c_sqrt(z: complex) -> tuple[float, float, int] {
     if not (_isf(z.real) and _isf(z.imag)) {
         (re, im) = _sv_entry(_SQRT_SV, z);
         return (re, im, 0);
@@ -833,7 +922,7 @@ def _c_sqrt(z: complex) -> tuple[float, float, int] {
     return (d, m_copysign(s, z.imag), 0);
 }
 
-def _c_log(z: complex) -> tuple[float, float, int] {
+impl _c_log(z: complex) -> tuple[float, float, int] {
     if not (_isf(z.real) and _isf(z.imag)) {
         (re, im) = _sv_entry(_LOG_SV, z);
         return (re, im, 0);
@@ -861,7 +950,7 @@ def _c_log(z: complex) -> tuple[float, float, int] {
     return (re, m_atan2(z.imag, z.real), 0);
 }
 
-def _c_acos(z: complex) -> tuple[float, float, int] {
+impl _c_acos(z: complex) -> tuple[float, float, int] {
     if not (_isf(z.real) and _isf(z.imag)) {
         (re, im) = _sv_entry(_ACOS_SV, z);
         return (re, im, 0);
@@ -880,7 +969,7 @@ def _c_acos(z: complex) -> tuple[float, float, int] {
     return (re, im, 0);
 }
 
-def _c_acosh(z: complex) -> tuple[float, float, int] {
+impl _c_acosh(z: complex) -> tuple[float, float, int] {
     if not (_isf(z.real) and _isf(z.imag)) {
         (re, im) = _sv_entry(_ACOSH_SV, z);
         return (re, im, 0);
@@ -897,7 +986,7 @@ def _c_acosh(z: complex) -> tuple[float, float, int] {
     return (re, im, 0);
 }
 
-def _c_asinh(z: complex) -> tuple[float, float, int] {
+impl _c_asinh(z: complex) -> tuple[float, float, int] {
     if not (_isf(z.real) and _isf(z.imag)) {
         (re, im) = _sv_entry(_ASINH_SV, z);
         return (re, im, 0);
@@ -922,7 +1011,7 @@ def _c_asinh(z: complex) -> tuple[float, float, int] {
     return (re, im, 0);
 }
 
-def _c_atanh(z: complex) -> tuple[float, float, int] {
+impl _c_atanh(z: complex) -> tuple[float, float, int] {
     if not (_isf(z.real) and _isf(z.imag)) {
         (re, im) = _sv_entry(_ATANH_SV, z);
         return (re, im, 0);
@@ -959,7 +1048,7 @@ def _c_atanh(z: complex) -> tuple[float, float, int] {
     return (re, im, err);
 }
 
-def _c_cosh(z: complex) -> tuple[float, float, int] {
+impl _c_cosh(z: complex) -> tuple[float, float, int] {
     if not (_isf(z.real) and _isf(z.imag)) {
         if (_isi(z.real) and _isf(z.imag) and z.imag != 0.0) {
             if z.real > 0 {
@@ -992,7 +1081,7 @@ def _c_cosh(z: complex) -> tuple[float, float, int] {
     return (re, im, 0);
 }
 
-def _c_sinh(z: complex) -> tuple[float, float, int] {
+impl _c_sinh(z: complex) -> tuple[float, float, int] {
     if not (_isf(z.real) and _isf(z.imag)) {
         if (_isi(z.real) and _isf(z.imag) and z.imag != 0.0) {
             if z.real > 0 {
@@ -1025,7 +1114,7 @@ def _c_sinh(z: complex) -> tuple[float, float, int] {
     return (re, im, 0);
 }
 
-def _c_exp(z: complex) -> tuple[float, float, int] {
+impl _c_exp(z: complex) -> tuple[float, float, int] {
     if not (_isf(z.real) and _isf(z.imag)) {
         if (_isi(z.real) and _isf(z.imag) and z.imag != 0.0) {
             if z.real > 0 {
@@ -1059,7 +1148,7 @@ def _c_exp(z: complex) -> tuple[float, float, int] {
     return (re, im, 0);
 }
 
-def _c_tanh(z: complex) -> tuple[float, float, int] {
+impl _c_tanh(z: complex) -> tuple[float, float, int] {
     if not (_isf(z.real) and _isf(z.imag)) {
         if (_isi(z.real) and _isf(z.imag) and z.imag != 0.0) {
             if z.real > 0 {
@@ -1093,7 +1182,7 @@ def _c_tanh(z: complex) -> tuple[float, float, int] {
     return (re, im, 0);
 }
 
-def _c_abs(re: float, im: float) -> tuple[float, int] {
+impl _c_abs(re: float, im: float) -> tuple[float, int] {
     r = m_hypot(re, im);
     if _isi(r) and _isf(re) and _isf(im) {
         return (r, _ERANGE);
@@ -1101,7 +1190,7 @@ def _c_abs(re: float, im: float) -> tuple[float, int] {
     return (r, 0);
 }
 
-def _close(
+impl _close(
     a: complex, b: complex, rel_tol: float = 1e-09, abs_tol: float = 0.0
 ) -> bool {
     if rel_tol < 0.0 or abs_tol < 0.0 {
@@ -1121,7 +1210,7 @@ def _close(
     return (diff <= rel_tol * abs_b or diff <= rel_tol * abs_a or diff <= abs_tol);
 }
 
-def _rectangular(r: float, phi: float) -> complex {
+impl _rectangular(r: float, phi: float) -> complex {
     if not (_isf(r) and _isf(phi)) {
         if _isi(r) and _isf(phi) and phi != 0.0 {
             if r > 0 {
@@ -1148,91 +1237,91 @@ def _rectangular(r: float, phi: float) -> complex {
     return complex(re, im);
 }
 
-def:pub acos(z: complex) -> complex {
+impl acos(z: complex) -> complex {
     (re, im, err) = _c_acos(z);
     _raise_err(err);
     return complex(re, im);
 }
 
-def:pub acosh(z: complex) -> complex {
+impl acosh(z: complex) -> complex {
     (re, im, err) = _c_acosh(z);
     _raise_err(err);
     return complex(re, im);
 }
 
-def:pub asin(z: complex) -> complex {
+impl asin(z: complex) -> complex {
     (re, im, err) = _c_asinh(complex(-z.imag, z.real));
     _raise_err(err);
     return complex(im, -re);
 }
 
-def:pub asinh(z: complex) -> complex {
+impl asinh(z: complex) -> complex {
     (re, im, err) = _c_asinh(z);
     _raise_err(err);
     return complex(re, im);
 }
 
-def:pub atan(z: complex) -> complex {
+impl atan(z: complex) -> complex {
     (re, im, err) = _c_atanh(complex(-z.imag, z.real));
     _raise_err(err);
     return complex(im, -re);
 }
 
-def:pub atanh(z: complex) -> complex {
+impl atanh(z: complex) -> complex {
     (re, im, err) = _c_atanh(z);
     _raise_err(err);
     return complex(re, im);
 }
 
-def:pub cos(z: complex) -> complex {
+impl cos(z: complex) -> complex {
     (re, im, err) = _c_cosh(complex(-z.imag, z.real));
     _raise_err(err);
     return complex(re, im);
 }
 
-def:pub cosh(z: complex) -> complex {
+impl cosh(z: complex) -> complex {
     (re, im, err) = _c_cosh(z);
     _raise_err(err);
     return complex(re, im);
 }
 
-def:pub exp(z: complex) -> complex {
+impl exp(z: complex) -> complex {
     (re, im, err) = _c_exp(z);
     _raise_err(err);
     return complex(re, im);
 }
 
-def:pub sin(z: complex) -> complex {
+impl sin(z: complex) -> complex {
     (re, im, err) = _c_sinh(complex(-z.imag, z.real));
     _raise_err(err);
     return complex(im, -re);
 }
 
-def:pub sinh(z: complex) -> complex {
+impl sinh(z: complex) -> complex {
     (re, im, err) = _c_sinh(z);
     _raise_err(err);
     return complex(re, im);
 }
 
-def:pub sqrt(z: complex) -> complex {
+impl sqrt(z: complex) -> complex {
     (re, im, err) = _c_sqrt(z);
     _raise_err(err);
     return complex(re, im);
 }
 
-def:pub tan(z: complex) -> complex {
+impl tan(z: complex) -> complex {
     (re, im, err) = _c_tanh(complex(-z.imag, z.real));
     _raise_err(err);
     return complex(im, -re);
 }
 
-def:pub tanh(z: complex) -> complex {
+impl tanh(z: complex) -> complex {
     (re, im, err) = _c_tanh(z);
     _raise_err(err);
     return complex(re, im);
 }
 
-def:pub log(z: complex, base: (complex | None) = None) -> complex {
+impl log(z: complex, base: (complex | None) = None) -> complex {
     (re, im, err) = _c_log(z);
     _raise_err(err);
     if base is None {
@@ -1246,39 +1335,39 @@ def:pub log(z: complex, base: (complex | None) = None) -> complex {
     return complex(re, im) / complex(br, bi);
 }
 
-def:pub log10(z: complex) -> complex {
+impl log10(z: complex) -> complex {
     (re, im, err) = _c_log(z);
     _raise_err(err);
     return complex(re / _M_LN10, im / _M_LN10);
 }
 
-def:pub phase(z: complex) -> float {
+impl phase(z: complex) -> float {
     return m_atan2(z.imag, z.real);
 }
 
-def:pub polar(z: complex) -> tuple[float, float] {
+impl polar(z: complex) -> tuple[float, float] {
     (radius, err) = _c_abs(z.real, z.imag);
     _raise_err(err);
     return (radius, m_atan2(z.imag, z.real));
 }
 
-def:pub rect(r: float, phi: float) -> complex {
+impl rect(r: float, phi: float) -> complex {
     return _rectangular(r, phi);
 }
 
-def:pub isfinite(z: complex) -> bool {
+impl isfinite(z: complex) -> bool {
     return _isf(z.real) and _isf(z.imag);
 }
 
-def:pub isinf(z: complex) -> bool {
+impl isinf(z: complex) -> bool {
     return _isi(z.real) or _isi(z.imag);
 }
 
-def:pub isnan(z: complex) -> bool {
+impl isnan(z: complex) -> bool {
     return _isn(z.real) or _isn(z.imag);
 }
 
-def:pub isclose(
+impl isclose(
     a: complex, b: complex, *, rel_tol: float = 1e-09, abs_tol: float = 0.0
 ) -> bool {
     return _close(a, b, rel_tol, abs_tol);

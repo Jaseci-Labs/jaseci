@@ -5,7 +5,17 @@ import from jaclang.jac0core.ext_registry { base_stem }
 glob VALID_SPACES: tuple[str, ...] = ('server', 'client', 'native');
 
 
-def validate_pins(pins: dict[str, str], toml_path: str) -> dict[str, str] {
+def validate_pins(pins: dict[str, str], toml_path: str) -> dict[str, str];
+
+
+def module_dot_path(source_path: str, root_dir: str) -> str;
+
+
+def match_pin(
+    source_path: str, root_dir: str, pins: dict[str, str], element_name: str = ''
+) -> str;
+
+impl validate_pins(pins: dict[str, str], toml_path: str) -> dict[str, str] {
     for (key, space) in pins.items() {
         if space not in VALID_SPACES {
             raise ValueError(
@@ -18,7 +28,7 @@ def validate_pins(pins: dict[str, str], toml_path: str) -> dict[str, str] {
 }
 
 
-def module_dot_path(source_path: str, root_dir: str) -> str {
+impl module_dot_path(source_path: str, root_dir: str) -> str {
     path = os.path.realpath(source_path);
     relative = os.path.relpath(os.path.dirname(path), os.path.realpath(root_dir));
     parent = relative.replace(os.sep, '.')
@@ -32,7 +42,7 @@ def module_dot_path(source_path: str, root_dir: str) -> str {
 }
 
 
-def match_pin(
+impl match_pin(
     source_path: str, root_dir: str, pins: dict[str, str], element_name: str = ''
 ) -> str {
     module = module_dot_path(source_path, root_dir);

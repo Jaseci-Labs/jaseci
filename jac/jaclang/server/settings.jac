@@ -41,9 +41,7 @@ obj WorkerSettings {
         count_by_default: bool = False,
         threads_by_default: bool = False;
 
-    def multi_process -> bool {
-        return self.count > 1;
-    }
+    def multi_process -> bool;
 }
 
 obj TlsSettings {
@@ -52,10 +50,7 @@ obj TlsSettings {
         ca_certs: str = '',
         min_version: str = '1.2';
 
-    def enabled -> bool {
-        return bool(self.certfile);
-    }
-
+    def enabled -> bool;
     def build_context -> any;
 }
 
@@ -210,9 +205,7 @@ obj ServeSettings {
     def validate -> list[str];
     def warnings -> list[str];
     def require_valid -> None;
-    def scheme -> str {
-        return 'https' if self.tls.enabled() else 'http';
-    }
+    def scheme -> str;
 }
 
 
@@ -229,11 +222,44 @@ def overlay_table(
 def removed_table(config: (JacConfig | None)) -> list[str];
 
 
-def in_cluster -> bool {
+def in_cluster -> bool;
+
+def env_value(name: str, environ: (dict[str, str] | None) = None) -> (str | None);
+
+def env_bool(name: str, `default: bool) -> bool;
+
+def env_int(name: str, `default: int) -> int;
+
+def env_float(name: str, `default: float) -> float;
+
+def env_list(name: str, `default: list[str]) -> list[str];
+
+def resolve_count(raw: str, quota: int, label: str) -> int;
+def default_threads(worker_count: int, quota: int) -> int;
+def default_worker_count(
+    quota: int, headroom: int, clustered: bool, can_fork: bool
+) -> int;
+
+def machine_worker_count(quota: int) -> int;
+
+impl WorkerSettings.multi_process -> bool {
+    return self.count > 1;
+}
+
+impl TlsSettings.enabled -> bool {
+    return bool(self.certfile);
+}
+
+impl ServeSettings.scheme -> str {
+    return 'https' if self.tls.enabled() else 'http';
+}
+
+
+impl in_cluster -> bool {
     return bool(os.environ.get('KUBERNETES_SERVICE_HOST', '').strip());
 }
 
-def env_value(name: str, environ: (dict[str, str] | None) = None) -> (str | None) {
+impl env_value(name: str, environ: (dict[str, str] | None) = None) -> (str | None) {
     raw = (os.environ if environ is None else environ).get(ENV_PREFIX + name);
     if raw is None {
         return None;
@@ -242,7 +268,7 @@ def env_value(name: str, environ: (dict[str, str] | None) = None) -> (str | None
     return stripped;
 }
 
-def env_bool(name: str, `default: bool) -> bool {
+impl env_bool(name: str, `default: bool) -> bool {
     raw = env_value(name);
     if raw is None {
         return `default;
@@ -250,7 +276,7 @@ def env_bool(name: str, `default: bool) -> bool {
     return raw.lower() not in ('0', 'false', 'no', 'off');
 }
 
-def env_int(name: str, `default: int) -> int {
+impl env_int(name: str, `default: int) -> int {
     raw = env_value(name);
     if raw is None {
         return `default;
@@ -262,7 +288,7 @@ def env_int(name: str, `default: int) -> int {
     }
 }
 
-def env_float(name: str, `default: float) -> float {
+impl env_float(name: str, `default: float) -> float {
     raw = env_value(name);
     if raw is None {
         return `default;
@@ -274,7 +300,7 @@ def env_float(name: str, `default: float) -> float {
     }
 }
 
-def env_list(name: str, `default: list[str]) -> list[str] {
+impl env_list(name: str, `default: list[str]) -> list[str] {
     raw = env_value(name);
     if raw is None {
         return `default;
@@ -285,11 +311,3 @@ def env_list(name: str, `default: list[str]) -> list[str] {
         if part.strip()
     ];
 }
-
-def resolve_count(raw: str, quota: int, label: str) -> int;
-def default_threads(worker_count: int, quota: int) -> int;
-def default_worker_count(
-    quota: int, headroom: int, clustered: bool, can_fork: bool
-) -> int;
-
-def machine_worker_count(quota: int) -> int;

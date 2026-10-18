@@ -35,7 +35,11 @@ walker JacFormatPass(CompilerPass) {
     ) -> str;
 }
 
-def format_module(mod: uni.Module) -> str {
+def format_module(mod: uni.Module) -> str;
+
+def unparse_module(mod: uni.Module, requires_format: bool = True) -> str;
+
+impl format_module(mod: uni.Module) -> str {
     return run_utility(
         CompilationProduct.FORMAT_TEXT,
         run_utility(CompilationProduct.DOC, mod, JacProgram()).module,
@@ -43,7 +47,7 @@ def format_module(mod: uni.Module) -> str {
     ).module.gen.jac;
 }
 
-def unparse_module(mod: uni.Module, requires_format: bool = True) -> str {
+impl unparse_module(mod: uni.Module, requires_format: bool = True) -> str {
     own_path = mod.loc.mod_path;
     saved_body = mod.body;
     saved_kid = [mod->:Kid:->];

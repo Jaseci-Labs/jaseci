@@ -56,7 +56,72 @@ obj WasmLinkJob {
         allowed_imports: (list[str] | None) = None;
 }
 
-def triple_arch_of(triple: str) -> str {
+def triple_arch_of(triple: str) -> str;
+
+def floor_lib_dir(triple: str) -> (str | None);
+
+def musl_lib_dir(triple: str) -> (str | None);
+
+def clib_to_archive_name(clib_path: str) -> str;
+
+def floor_archives(clib_paths: list[str], triple: str) -> tuple[list[str], set[str]];
+
+def musl_runtime(triple: str) -> (tuple[list[str], list[str]] | None);
+
+def outline_atomics_archive(triple: str) -> (str | None);
+
+def elf_runtime_soname(name: str) -> str;
+
+def clib_needed_libs(
+    needed_libs: list[str],
+    clib_paths: list[str],
+    floor_handled: set[str],
+    host_elf: bool = False
+) -> dict[str, str];
+
+def clib_symbol_lib_map(
+    clib_symbol_lib: dict[str, str],
+    floor_handled: set[str],
+    lib_norm: dict[str, str],
+    shared: bool,
+    is_macos: bool
+) -> dict[str, str];
+
+def _run_lld(args: list[str], what: str) -> list[str];
+
+def _write_objects(work: str, objects: list[bytes], suffix: str) -> list[str];
+
+def _undefined_symbols(objects: list[bytes]) -> list[str];
+
+def link_native(job: NativeLinkJob) -> list[str];
+
+def _elf_interpreter(triple: str) -> str;
+
+def _empty_object(work: str, triple: str) -> str;
+
+def _elf_stub_library(work: str, triple: str, soname: str, index: int) -> str;
+
+def _link_elf(job: NativeLinkJob, work: str) -> list[str];
+
+def _macho_version(triple: str, arch: str) -> str;
+
+def _tbd(path: str, install_name: str, target: str, symbols: list[str]);
+
+def _macho_install_name(lib: str) -> str;
+
+def macho_stub_symbols(
+    job: NativeLinkJob, undefined: list[str]
+) -> dict[str, list[str]];
+
+def _link_macho(job: NativeLinkJob, work: str) -> list[str];
+
+def _link_pe(job: NativeLinkJob, work: str) -> list[str];
+
+def link_wasm_module(job: WasmLinkJob);
+
+def write_symbol_map(output_path: str);
+
+impl triple_arch_of(triple: str) -> str {
     head = triple.split("-", 1)[0].lower();
     if head in ("arm64", "aarch64") {
         return "aarch64";
@@ -67,21 +132,21 @@ def triple_arch_of(triple: str) -> str {
     return head;
 }
 
-def floor_lib_dir(triple: str) -> (str | None) {
+impl floor_lib_dir(triple: str) -> (str | None) {
     found = resolve(f"c-floor@{osarch(triple)}").found;
     return found.path if found is not None else None;
 }
 
-def musl_lib_dir(triple: str) -> (str | None) {
+impl musl_lib_dir(triple: str) -> (str | None) {
     found = resolve(f"musl@{osarch(triple)}").found;
     return found.path if found is not None else None;
 }
 
-def clib_to_archive_name(clib_path: str) -> str {
+impl clib_to_archive_name(clib_path: str) -> str {
     return os.path.basename(clib_path).split(".")[0] + ".a";
 }
 
-def floor_archives(clib_paths: list[str], triple: str) -> tuple[list[str], set[str]] {
+impl floor_archives(clib_paths: list[str], triple: str) -> tuple[list[str], set[str]] {
     """The C floor's static archives for the libraries a program names, and
     the libraries they stand in for. LLD loads an archive's members lazily, so
     every matching archive is passed whole and only what the program reaches
@@ -109,7 +174,7 @@ def floor_archives(clib_paths: list[str], triple: str) -> tuple[list[str], set[s
     return (archives, handled);
 }
 
-def musl_runtime(triple: str) -> (tuple[list[str], list[str]] | None) {
+impl musl_runtime(triple: str) -> (tuple[list[str], list[str]] | None) {
     """The static musl runtime: (crt objects in link order, archives).""";
     lib_dir = musl_lib_dir(triple);
     if lib_dir is None or not os.path.isfile(os.path.join(lib_dir, "libc.a")) {
@@ -131,7 +196,7 @@ def musl_runtime(triple: str) -> (tuple[list[str], list[str]] | None) {
     return (crt, archives);
 }
 
-def outline_atomics_archive(triple: str) -> (str | None) {
+impl outline_atomics_archive(triple: str) -> (str | None) {
     """AArch64 Linux code calls `__aarch64_*` outline atomics, which only
     compiler-rt's atomics archive defines.""";
     if triple_arch_of(triple) != "aarch64" or "linux" not in triple {
@@ -145,7 +210,7 @@ def outline_atomics_archive(triple: str) -> (str | None) {
     return path if os.path.isfile(path) else None;
 }
 
-def elf_runtime_soname(name: str) -> str {
+impl elf_runtime_soname(name: str) -> str {
     import ctypes.util;
     import re;
     matched = re.fullmatch(r"lib([^/]+)\.so", name);
@@ -163,7 +228,7 @@ def elf_runtime_soname(name: str) -> str {
     return name;
 }
 
-def clib_needed_libs(
+impl clib_needed_libs(
     needed_libs: list[str],
     clib_paths: list[str],
     floor_handled: set[str],
@@ -199,7 +264,7 @@ def clib_needed_libs(
     return lib_norm;
 }
 
-def clib_symbol_lib_map(
+impl clib_symbol_lib_map(
     clib_symbol_lib: dict[str, str],
     floor_handled: set[str],
     lib_norm: dict[str, str],
@@ -220,7 +285,7 @@ def clib_symbol_lib_map(
     return symbol_lib_map;
 }
 
-def _run_lld(args: list[str], what: str) -> list[str] {
+impl _run_lld(args: list[str], what: str) -> list[str] {
     (code, text) = llvm.lld_link(args);
     if code != 0 {
         raise NativeLinkError(f"{what} link failed:\n{text.strip()}");
@@ -232,7 +297,7 @@ def _run_lld(args: list[str], what: str) -> list[str] {
     ];
 }
 
-def _write_objects(work: str, objects: list[bytes], suffix: str) -> list[str] {
+impl _write_objects(work: str, objects: list[bytes], suffix: str) -> list[str] {
     paths: list[str] = [];
     for (i, blob) in enumerate(objects) {
         path = os.path.join(work, f"input{i}{suffix}");
@@ -244,7 +309,7 @@ def _write_objects(work: str, objects: list[bytes], suffix: str) -> list[str] {
     return paths;
 }
 
-def _undefined_symbols(objects: list[bytes]) -> list[str] {
+impl _undefined_symbols(objects: list[bytes]) -> list[str] {
     defined: set[str] = set();
     undefined: set[str] = set();
     for blob in objects {
@@ -255,7 +320,7 @@ def _undefined_symbols(objects: list[bytes]) -> list[str] {
     return sorted(undefined - defined);
 }
 
-def link_native(job: NativeLinkJob) -> list[str] {
+impl link_native(job: NativeLinkJob) -> list[str] {
     """Link one native artifact with LLD, in this process, and return the
     warnings LLD printed. The image is written beside the destination and
     moved into place only once the link succeeded, so a reader never sees a
@@ -291,7 +356,7 @@ def link_native(job: NativeLinkJob) -> list[str] {
     return warnings;
 }
 
-def _elf_interpreter(triple: str) -> str {
+impl _elf_interpreter(triple: str) -> str {
     candidates = ELF_INTERPRETERS.get(triple_arch_of(triple), []);
     for path in candidates {
         if os.path.exists(path) {
@@ -301,7 +366,7 @@ def _elf_interpreter(triple: str) -> str {
     return candidates[0] if candidates else "";
 }
 
-def _empty_object(work: str, triple: str) -> str {
+impl _empty_object(work: str, triple: str) -> str {
     path = os.path.join(work, "empty.o");
     if not os.path.exists(path) {
         llvm.initialize_all_targets();
@@ -316,7 +381,7 @@ def _empty_object(work: str, triple: str) -> str {
     return path;
 }
 
-def _elf_stub_library(work: str, triple: str, soname: str, index: int) -> str {
+impl _elf_stub_library(work: str, triple: str, soname: str, index: int) -> str {
     """An empty shared object whose only content is its SONAME. Linked with
     --no-as-needed it records the DT_NEEDED entry for a library the link
     never sees; the program's references to it stay dynamic imports that
@@ -338,7 +403,7 @@ def _elf_stub_library(work: str, triple: str, soname: str, index: int) -> str {
     return stub;
 }
 
-def _link_elf(job: NativeLinkJob, work: str) -> list[str] {
+impl _link_elf(job: NativeLinkJob, work: str) -> list[str] {
     inputs = _write_objects(work, job.objects, ".o");
     args = [
         "ld.lld",
@@ -401,7 +466,7 @@ def _link_elf(job: NativeLinkJob, work: str) -> list[str] {
     return _run_lld(args, "shared ELF" if job.shared else "ELF");
 }
 
-def _macho_version(triple: str, arch: str) -> str {
+impl _macho_version(triple: str, arch: str) -> str {
     import re;
     matched = re.search(r"macosx?(\d+(?:\.\d+)?)", triple.lower());
     if matched is not None {
@@ -411,7 +476,7 @@ def _macho_version(triple: str, arch: str) -> str {
     return MACHO_MIN_VERSION.get(arch, "11.0");
 }
 
-def _tbd(path: str, install_name: str, target: str, symbols: list[str]) {
+impl _tbd(path: str, install_name: str, target: str, symbols: list[str]) {
     lines = [
         "--- !tapi-tbd",
         "tbd-version: 4",
@@ -433,7 +498,7 @@ def _tbd(path: str, install_name: str, target: str, symbols: list[str]) {
     }
 }
 
-def _macho_install_name(lib: str) -> str {
+impl _macho_install_name(lib: str) -> str {
     """A dylib named by a relative path loads from beside the binary, as an
     ELF library does through RUNPATH $ORIGIN: `libraylib.dylib` is recorded
     as `@loader_path/libraylib.dylib`.""";
@@ -443,7 +508,7 @@ def _macho_install_name(lib: str) -> str {
     return f"@loader_path/{lib}";
 }
 
-def macho_stub_symbols(
+impl macho_stub_symbols(
     job: NativeLinkJob, undefined: list[str]
 ) -> dict[str, list[str]] {
     """The text stubs a Mach-O link names: each dylib it loads, with the
@@ -474,7 +539,7 @@ def macho_stub_symbols(
     return by_lib;
 }
 
-def _link_macho(job: NativeLinkJob, work: str) -> list[str] {
+impl _link_macho(job: NativeLinkJob, work: str) -> list[str] {
     arch = MACHO_ARCH.get(triple_arch_of(job.triple), "arm64");
     version = _macho_version(job.triple, arch);
     target = f"{arch}-macos";
@@ -512,7 +577,7 @@ def _link_macho(job: NativeLinkJob, work: str) -> list[str] {
     return _run_lld(args, "Mach-O dylib" if job.shared else "Mach-O");
 }
 
-def _link_pe(job: NativeLinkJob, work: str) -> list[str] {
+impl _link_pe(job: NativeLinkJob, work: str) -> list[str] {
     arch = triple_arch_of(job.triple);
     machine = PE_MACHINE.get(arch);
     if machine is None {
@@ -560,7 +625,7 @@ def _link_pe(job: NativeLinkJob, work: str) -> list[str] {
     return _run_lld(args, "PE DLL" if job.shared else "PE");
 }
 
-def link_wasm_module(job: WasmLinkJob) {
+impl link_wasm_module(job: WasmLinkJob) {
     """Link a wasm module with wasm-ld (the layout is `wasm_ld_args`).""";
     work = tempfile.mkdtemp(prefix="jac-wasm-link-");
     try {
@@ -580,7 +645,7 @@ def link_wasm_module(job: WasmLinkJob) {
     }
 }
 
-def write_symbol_map(output_path: str) {
+impl write_symbol_map(output_path: str) {
     """`<binary>.symmap`: every defined symbol of the linked image, one
     `name 0xaddress` line each, in address order.""";
     with open(output_path, "rb") as f {

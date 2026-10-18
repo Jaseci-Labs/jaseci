@@ -12,19 +12,39 @@ glob TOTP_DIGITS: int = 6,
      TOTP_SECRET_BYTES: int = 20;
 
 
-def new_totp_secret -> str {
+def new_totp_secret -> str;
+
+
+def totp_key(secret: str) -> bytes;
+
+
+def totp_code(secret: str, step: int) -> str;
+
+
+def totp_step(at: (float | None) = None) -> int;
+
+
+def normalized_code(code: any) -> str;
+
+
+def matching_step(secret: str, code: any, at: (float | None) = None) -> (int | None);
+
+
+def provisioning_uri(secret: str, account: str, issuer: str) -> str;
+
+impl new_totp_secret -> str {
     raw = secrets.token_bytes(TOTP_SECRET_BYTES);
     return base64.b32encode(raw).decode('ascii').rstrip('=');
 }
 
 
-def totp_key(secret: str) -> bytes {
+impl totp_key(secret: str) -> bytes {
     text = secret.strip().replace(' ', '').upper();
     return base64.b32decode(text + ('=' * ((0 - len(text)) % 8)));
 }
 
 
-def totp_code(secret: str, step: int) -> str {
+impl totp_code(secret: str, step: int) -> str {
     digest = hmac.new(totp_key(secret), struct.pack('>Q', step), hashlib.sha1).digest();
     offset = digest[len(digest) - 1] & 15;
     number = struct.unpack('>I', digest[offset:offset + 4])[0] & 2147483647;
@@ -32,13 +52,13 @@ def totp_code(secret: str, step: int) -> str {
 }
 
 
-def totp_step(at: (float | None) = None) -> int {
+impl totp_step(at: (float | None) = None) -> int {
     moment = time.time() if at is None else at;
     return int(moment // TOTP_PERIOD_SECONDS);
 }
 
 
-def normalized_code(code: any) -> str {
+impl normalized_code(code: any) -> str {
     if not isinstance(code, str) {
         return '';
     }
@@ -50,7 +70,7 @@ def normalized_code(code: any) -> str {
 }
 
 
-def matching_step(secret: str, code: any, at: (float | None) = None) -> (int | None) {
+impl matching_step(secret: str, code: any, at: (float | None) = None) -> (int | None) {
     presented = normalized_code(code);
     if not presented {
         return None;
@@ -74,7 +94,7 @@ def matching_step(secret: str, code: any, at: (float | None) = None) -> (int | N
 }
 
 
-def provisioning_uri(secret: str, account: str, issuer: str) -> str {
+impl provisioning_uri(secret: str, account: str, issuer: str) -> str {
     label = quote(issuer, safe='') + ':' + quote(account, safe='');
     return 'otpauth://totp/'
         + label

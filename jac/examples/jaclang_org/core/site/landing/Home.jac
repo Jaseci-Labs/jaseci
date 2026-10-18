@@ -11,7 +11,9 @@ glob HOME_NAV: list[dict[str, any]] = [
 
      ];
 
-def:pub Home -> JsxElement {
+def:pub Home -> JsxElement;
+
+impl Home -> JsxElement {
     return
         <>
             <SectionRail items={HOME_NAV}/>

@@ -35,27 +35,171 @@ obj _Toks {
     has items: list[str],
         i: int = 0;
 
-    def peek -> str {
-        if self.i >= len(self.items) {
-            return "";
-        }
-        return self.items[self.i];
-    }
-
-    def next -> str {
-        t: str = self.peek();
-        self.i += 1;
-        return t;
-    }
+    def peek -> str;
+    def next -> str;
 }
 
 
-def _is_digit(c: str) -> bool {
+def _is_digit(c: str) -> bool;
+
+
+def _plural_tokens(src: str) -> list[str];
+
+
+def _binop_prio(tok: str) -> int;
+
+
+def _binop_code(tok: str) -> int;
+
+
+def _perror(value: str) -> str;
+
+
+def _parse_plural(ts: _Toks, priority: int) -> _PNode;
+
+
+def _peval(nd: _PNode, n: int) -> int;
+
+
+def c2py_ast(plural: str) -> _PNode;
+
+
+def plural_index(tree: _PNode, n: int) -> int;
+
+
+def:pub c2py(plural: str) -> Callable[[int], int];
+
+
+def _expand_lang(loc: str) -> list[str];
+
+
+obj:pub NullTranslations {
+    has _info: dict[str, str],
+        _charset: str,
+        _fallback: NullTranslations | None;
+
+    def init;
+    def add_fallback(fallback: NullTranslations);
+    def gettext(message: str) -> str;
+    def ngettext(msgid1: str, msgid2: str, n: int) -> str;
+    def pgettext(context: str, message: str) -> str;
+    def npgettext(context: str, msgid1: str, msgid2: str, n: int) -> str;
+    def info -> dict[str, str];
+    def charset -> str;
+}
+
+
+def _u32(buf: bytes, off: int, little: bool) -> int;
+
+
+def _split_nul(data: bytes) -> list[bytes];
+
+
+obj:pub GNUTranslations(NullTranslations) {
+    has _catalog: dict[str, str],
+        _plurals: dict[str, list[str]],
+        _plural_ast: _PNode | None;
+
+    def init(data: bytes = b"");
+    def _plural(n: int) -> int;
+    def _parse_mo(buf: bytes);
+    def _read_headers(tmsg: bytes);
+    def gettext(message: str) -> str;
+    def ngettext(msgid1: str, msgid2: str, n: int) -> str;
+    def pgettext(context: str, message: str) -> str;
+    def npgettext(context: str, msgid1: str, msgid2: str, n: int) -> str;
+}
+
+
+glob:pub _default_localedir: str = "/usr/share/locale";
+
+
+def _env_languages -> list[str];
+
+
+def _nelangs(languages: (list[str] | None)) -> list[str];
+
+
+def find_all(
+    domain: str, localedir: str = "", languages: (list[str] | None) = None
+) -> list[str];
+
+
+def:pub find(
+    domain: str, localedir: str = "", languages: (list[str] | None) = None
+) -> str | None;
+
+
+def:pub translation(
+    domain: str,
+    localedir: str = "",
+    languages: (list[str] | None) = None,
+    fallback: bool = False
+) -> NullTranslations;
+
+
+obj _Domain {
+    has name: str,
+        dirs: dict[str, str];
+
+    def init;
+}
+
+glob _CUR: _Domain = _Domain();
+
+
+def:pub textdomain(domain: str = "") -> str;
+
+
+def:pub bindtextdomain(domain: str, localedir: str = "") -> str;
+
+
+def _domain_dir(domain: str) -> str;
+
+
+def:pub dgettext(domain: str, message: str) -> str;
+
+
+def:pub dngettext(domain: str, msgid1: str, msgid2: str, n: int) -> str;
+
+
+def:pub dpgettext(domain: str, context: str, message: str) -> str;
+
+
+def:pub dnpgettext(domain: str, context: str, msgid1: str, msgid2: str, n: int) -> str;
+
+
+def:pub gettext(message: str) -> str;
+
+
+def:pub ngettext(msgid1: str, msgid2: str, n: int) -> str;
+
+
+def:pub pgettext(context: str, message: str) -> str;
+
+
+def:pub npgettext(context: str, msgid1: str, msgid2: str, n: int) -> str;
+
+impl _Toks.peek -> str {
+    if self.i >= len(self.items) {
+        return "";
+    }
+    return self.items[self.i];
+}
+
+impl _Toks.next -> str {
+    t: str = self.peek();
+    self.i += 1;
+    return t;
+}
+
+
+impl _is_digit(c: str) -> bool {
     return c >= "0" and c <= "9";
 }
 
 
-def _plural_tokens(src: str) -> list[str] {
+impl _plural_tokens(src: str) -> list[str] {
     out: list[str] = [];
     n: int = len(src);
     i: int = 0;
@@ -118,7 +262,7 @@ def _plural_tokens(src: str) -> list[str] {
 }
 
 
-def _binop_prio(tok: str) -> int {
+impl _binop_prio(tok: str) -> int {
     if tok == "||" {
         return 1;
     }
@@ -141,7 +285,7 @@ def _binop_prio(tok: str) -> int {
 }
 
 
-def _binop_code(tok: str) -> int {
+impl _binop_code(tok: str) -> int {
     if tok == "||" {
         return _OP_OR;
     }
@@ -182,7 +326,7 @@ def _binop_code(tok: str) -> int {
 }
 
 
-def _perror(value: str) -> str {
+impl _perror(value: str) -> str {
     if value != "" {
         return "unexpected token in plural form: " + value;
     }
@@ -190,7 +334,7 @@ def _perror(value: str) -> str {
 }
 
 
-def _parse_plural(ts: _Toks, priority: int) -> _PNode {
+impl _parse_plural(ts: _Toks, priority: int) -> _PNode {
     tok: str = ts.next();
     nots: int = 0;
     while tok == "!" {
@@ -238,7 +382,7 @@ def _parse_plural(ts: _Toks, priority: int) -> _PNode {
 }
 
 
-def _peval(nd: _PNode, n: int) -> int {
+impl _peval(nd: _PNode, n: int) -> int {
     op: int = nd.op;
     if op == _OP_CONST {
         return nd.val;
@@ -336,7 +480,7 @@ def _peval(nd: _PNode, n: int) -> int {
 }
 
 
-def c2py_ast(plural: str) -> _PNode {
+impl c2py_ast(plural: str) -> _PNode {
     if len(plural) > 1000 {
         raise ValueError("plural form expression is too long");
     }
@@ -349,18 +493,18 @@ def c2py_ast(plural: str) -> _PNode {
 }
 
 
-def plural_index(tree: _PNode, n: int) -> int {
+impl plural_index(tree: _PNode, n: int) -> int {
     return _peval(tree, n);
 }
 
 
-def:pub c2py(plural: str) -> Callable[[int], int] {
+impl c2py(plural: str) -> Callable[[int], int] {
     tree: _PNode = c2py_ast(plural);
     return lambda (n: int) -> int { return _peval(tree, n); };
 }
 
 
-def _expand_lang(loc: str) -> list[str] {
+impl _expand_lang(loc: str) -> list[str] {
     base: str = normalize(loc);
     mask: int = 0;
     modifier: str = "";
@@ -413,75 +557,69 @@ def _expand_lang(loc: str) -> list[str] {
 }
 
 
-obj:pub NullTranslations {
-    has _info: dict[str, str],
-        _charset: str,
-        _fallback: NullTranslations | None;
+impl NullTranslations.init {
+    self._info = {};
+    self._charset = "";
+    self._fallback = None;
+}
 
-    def init {
-        self._info = {};
-        self._charset = "";
-        self._fallback = None;
-    }
-
-    def add_fallback(fallback: NullTranslations) {
-        cur: NullTranslations | None = self._fallback;
-        if cur is not None {
-            cur.add_fallback(fallback);
-        } else {
-            self._fallback = fallback;
-        }
-    }
-
-    def gettext(message: str) -> str {
-        fb: NullTranslations | None = self._fallback;
-        if fb is not None {
-            return fb.gettext(message);
-        }
-        return message;
-    }
-
-    def ngettext(msgid1: str, msgid2: str, n: int) -> str {
-        fb: NullTranslations | None = self._fallback;
-        if fb is not None {
-            return fb.ngettext(msgid1, msgid2, n);
-        }
-        if n == 1 {
-            return msgid1;
-        }
-        return msgid2;
-    }
-
-    def pgettext(context: str, message: str) -> str {
-        fb: NullTranslations | None = self._fallback;
-        if fb is not None {
-            return fb.pgettext(context, message);
-        }
-        return message;
-    }
-
-    def npgettext(context: str, msgid1: str, msgid2: str, n: int) -> str {
-        fb: NullTranslations | None = self._fallback;
-        if fb is not None {
-            return fb.npgettext(context, msgid1, msgid2, n);
-        }
-        if n == 1 {
-            return msgid1;
-        }
-        return msgid2;
-    }
-
-    def info -> dict[str, str] {
-        return self._info;
-    }
-
-    def charset -> str {
-        return self._charset;
+impl NullTranslations.add_fallback(fallback: NullTranslations) {
+    cur: NullTranslations | None = self._fallback;
+    if cur is not None {
+        cur.add_fallback(fallback);
+    } else {
+        self._fallback = fallback;
     }
 }
 
+impl NullTranslations.gettext(message: str) -> str {
+    fb: NullTranslations | None = self._fallback;
+    if fb is not None {
+        return fb.gettext(message);
+    }
+    return message;
+}
 
-def _u32(buf: bytes, off: int, little: bool) -> int {
+impl NullTranslations.ngettext(msgid1: str, msgid2: str, n: int) -> str {
+    fb: NullTranslations | None = self._fallback;
+    if fb is not None {
+        return fb.ngettext(msgid1, msgid2, n);
+    }
+    if n == 1 {
+        return msgid1;
+    }
+    return msgid2;
+}
+
+impl NullTranslations.pgettext(context: str, message: str) -> str {
+    fb: NullTranslations | None = self._fallback;
+    if fb is not None {
+        return fb.pgettext(context, message);
+    }
+    return message;
+}
+
+impl NullTranslations.npgettext(context: str, msgid1: str, msgid2: str, n: int) -> str {
+    fb: NullTranslations | None = self._fallback;
+    if fb is not None {
+        return fb.npgettext(context, msgid1, msgid2, n);
+    }
+    if n == 1 {
+        return msgid1;
+    }
+    return msgid2;
+}
+
+impl NullTranslations.info -> dict[str, str] {
+    return self._info;
+}
+
+impl NullTranslations.charset -> str {
+    return self._charset;
+}
+
+
+impl _u32(buf: bytes, off: int, little: bool) -> int {
     if little {
         return buf[off]
             | (buf[off + 1] << 8)
@@ -492,7 +630,7 @@ def _u32(buf: bytes, off: int, little: bool) -> int {
 }
 
 
-def _split_nul(data: bytes) -> list[bytes] {
+impl _split_nul(data: bytes) -> list[bytes] {
     out: list[bytes] = [];
     n: int = len(data);
     start: int = 0;
@@ -509,217 +647,208 @@ def _split_nul(data: bytes) -> list[bytes] {
 }
 
 
-obj:pub GNUTranslations(NullTranslations) {
-    has _catalog: dict[str, str],
-        _plurals: dict[str, list[str]],
-        _plural_ast: _PNode | None;
-
-    def init(data: bytes = b"") {
-        self._info = {};
-        self._charset = "";
-        self._fallback = None;
-        self._catalog = {};
-        self._plurals = {};
-        self._plural_ast = None;
-        if len(data) > 0 {
-            self._parse_mo(data);
-        }
-    }
-
-    def _plural(n: int) -> int {
-        ast: _PNode | None = self._plural_ast;
-        if ast is None {
-            if n != 1 {
-                return 1;
-            }
-            return 0;
-        }
-        return _peval(ast, n);
-    }
-
-    def _parse_mo(buf: bytes) {
-        buflen: int = len(buf);
-        if buflen < 20 {
-            raise OSError("Bad magic number");
-        }
-        little: bool = True;
-        magic: int = _u32(buf, 0, True);
-        if magic == 2500072158 {
-            little = True;
-        } elif magic == 3725722773 {
-            little = False;
-        } else {
-            raise OSError("Bad magic number");
-        }
-        version: int = _u32(buf, 4, little);
-        major: int = version >> 16;
-        if major != 0 and major != 1 {
-            raise OSError("Bad version number " + str(major));
-        }
-        msgcount: int = _u32(buf, 8, little);
-        masteridx: int = _u32(buf, 12, little);
-        transidx: int = _u32(buf, 16, little);
-        i: int = 0;
-        while i < msgcount {
-            mlen: int = _u32(buf, masteridx, little);
-            moff: int = _u32(buf, masteridx + 4, little);
-            tlen: int = _u32(buf, transidx, little);
-            toff: int = _u32(buf, transidx + 4, little);
-            mend: int = moff + mlen;
-            tend: int = toff + tlen;
-            if mend >= buflen or tend >= buflen {
-                raise OSError("File is corrupt");
-            }
-            msg: bytes = buf[moff:mend];
-            tmsg: bytes = buf[toff:tend];
-            if mlen == 0 {
-                self._read_headers(tmsg);
-            }
-            has_nul: bool = False;
-            k: int = 0;
-            while k < mlen {
-                if msg[k] == 0 {
-                    has_nul = True;
-                }
-                k += 1;
-            }
-            if has_nul {
-                ids: list[bytes] = _split_nul(msg);
-                strs: list[bytes] = _split_nul(tmsg);
-                forms: list[str] = [];
-                for sb in strs {
-                    forms.append(sb.decode());
-                }
-                self._plurals[ids[0].decode()] = forms;
-            } else {
-                self._catalog[msg.decode()] = tmsg.decode();
-            }
-            masteridx += 8;
-            transidx += 8;
-            i += 1;
-        }
-    }
-
-    def _read_headers(tmsg: bytes) {
-        text: str = tmsg.decode();
-        lastk: str = "";
-        for raw in text.split("\n") {
-            item: str = raw.strip();
-            if item == "" {
-                continue;
-            }
-            if item.startswith("#-#-#-#-#") and item.endswith("#-#-#-#-#") {
-                continue;
-            }
-            cut: int = item.find(":");
-            if cut >= 0 {
-                key: str = item[0:cut].strip().lower();
-                val: str = item[cut + 1:].strip();
-                self._info[key] = val;
-                lastk = key;
-                if key == "content-type" {
-                    marker: int = val.find("charset=");
-                    if marker >= 0 {
-                        self._charset = val[marker + 8:];
-                    }
-                } elif key == "plural-forms" {
-                    parts: list[str] = val.split(";");
-                    j: int = 0;
-                    while j < len(parts) {
-                        seg: str = parts[j];
-                        at: int = seg.find("plural=");
-                        if at >= 0 {
-                            self._plural_ast = c2py_ast(seg[at + 7:]);
-                        }
-                        j += 1;
-                    }
-                }
-            } elif lastk != "" {
-                self._info[lastk] = self._info[lastk] + "\n" + item;
-            }
-        }
-    }
-
-    def gettext(message: str) -> str {
-        if message in self._catalog {
-            return self._catalog[message];
-        }
-        if message in self._plurals {
-            forms: list[str] = self._plurals[message];
-            idx: int = self._plural(1);
-            if idx >= 0 and idx < len(forms) {
-                return forms[idx];
-            }
-        }
-        fb: NullTranslations | None = self._fallback;
-        if fb is not None {
-            return fb.gettext(message);
-        }
-        return message;
-    }
-
-    def ngettext(msgid1: str, msgid2: str, n: int) -> str {
-        if msgid1 in self._plurals {
-            forms: list[str] = self._plurals[msgid1];
-            idx: int = self._plural(n);
-            if idx >= 0 and idx < len(forms) {
-                return forms[idx];
-            }
-        }
-        fb: NullTranslations | None = self._fallback;
-        if fb is not None {
-            return fb.ngettext(msgid1, msgid2, n);
-        }
-        if n == 1 {
-            return msgid1;
-        }
-        return msgid2;
-    }
-
-    def pgettext(context: str, message: str) -> str {
-        key: str = context + "\x04" + message;
-        if key in self._catalog {
-            return self._catalog[key];
-        }
-        if key in self._plurals {
-            forms: list[str] = self._plurals[key];
-            idx: int = self._plural(1);
-            if idx >= 0 and idx < len(forms) {
-                return forms[idx];
-            }
-        }
-        fb: NullTranslations | None = self._fallback;
-        if fb is not None {
-            return fb.pgettext(context, message);
-        }
-        return message;
-    }
-
-    def npgettext(context: str, msgid1: str, msgid2: str, n: int) -> str {
-        key: str = context + "\x04" + msgid1;
-        if key in self._plurals {
-            forms: list[str] = self._plurals[key];
-            idx: int = self._plural(n);
-            if idx >= 0 and idx < len(forms) {
-                return forms[idx];
-            }
-        }
-        fb: NullTranslations | None = self._fallback;
-        if fb is not None {
-            return fb.npgettext(context, msgid1, msgid2, n);
-        }
-        if n == 1 {
-            return msgid1;
-        }
-        return msgid2;
+impl GNUTranslations.init(data: bytes = b"") {
+    self._info = {};
+    self._charset = "";
+    self._fallback = None;
+    self._catalog = {};
+    self._plurals = {};
+    self._plural_ast = None;
+    if len(data) > 0 {
+        self._parse_mo(data);
     }
 }
 
+impl GNUTranslations._plural(n: int) -> int {
+    ast: _PNode | None = self._plural_ast;
+    if ast is None {
+        if n != 1 {
+            return 1;
+        }
+        return 0;
+    }
+    return _peval(ast, n);
+}
 
-glob:pub _default_localedir: str = "/usr/share/locale";
+impl GNUTranslations._parse_mo(buf: bytes) {
+    buflen: int = len(buf);
+    if buflen < 20 {
+        raise OSError("Bad magic number");
+    }
+    little: bool = True;
+    magic: int = _u32(buf, 0, True);
+    if magic == 2500072158 {
+        little = True;
+    } elif magic == 3725722773 {
+        little = False;
+    } else {
+        raise OSError("Bad magic number");
+    }
+    version: int = _u32(buf, 4, little);
+    major: int = version >> 16;
+    if major != 0 and major != 1 {
+        raise OSError("Bad version number " + str(major));
+    }
+    msgcount: int = _u32(buf, 8, little);
+    masteridx: int = _u32(buf, 12, little);
+    transidx: int = _u32(buf, 16, little);
+    i: int = 0;
+    while i < msgcount {
+        mlen: int = _u32(buf, masteridx, little);
+        moff: int = _u32(buf, masteridx + 4, little);
+        tlen: int = _u32(buf, transidx, little);
+        toff: int = _u32(buf, transidx + 4, little);
+        mend: int = moff + mlen;
+        tend: int = toff + tlen;
+        if mend >= buflen or tend >= buflen {
+            raise OSError("File is corrupt");
+        }
+        msg: bytes = buf[moff:mend];
+        tmsg: bytes = buf[toff:tend];
+        if mlen == 0 {
+            self._read_headers(tmsg);
+        }
+        has_nul: bool = False;
+        k: int = 0;
+        while k < mlen {
+            if msg[k] == 0 {
+                has_nul = True;
+            }
+            k += 1;
+        }
+        if has_nul {
+            ids: list[bytes] = _split_nul(msg);
+            strs: list[bytes] = _split_nul(tmsg);
+            forms: list[str] = [];
+            for sb in strs {
+                forms.append(sb.decode());
+            }
+            self._plurals[ids[0].decode()] = forms;
+        } else {
+            self._catalog[msg.decode()] = tmsg.decode();
+        }
+        masteridx += 8;
+        transidx += 8;
+        i += 1;
+    }
+}
+
+impl GNUTranslations._read_headers(tmsg: bytes) {
+    text: str = tmsg.decode();
+    lastk: str = "";
+    for raw in text.split("\n") {
+        item: str = raw.strip();
+        if item == "" {
+            continue;
+        }
+        if item.startswith("#-#-#-#-#") and item.endswith("#-#-#-#-#") {
+            continue;
+        }
+        cut: int = item.find(":");
+        if cut >= 0 {
+            key: str = item[0:cut].strip().lower();
+            val: str = item[cut + 1:].strip();
+            self._info[key] = val;
+            lastk = key;
+            if key == "content-type" {
+                marker: int = val.find("charset=");
+                if marker >= 0 {
+                    self._charset = val[marker + 8:];
+                }
+            } elif key == "plural-forms" {
+                parts: list[str] = val.split(";");
+                j: int = 0;
+                while j < len(parts) {
+                    seg: str = parts[j];
+                    at: int = seg.find("plural=");
+                    if at >= 0 {
+                        self._plural_ast = c2py_ast(seg[at + 7:]);
+                    }
+                    j += 1;
+                }
+            }
+        } elif lastk != "" {
+            self._info[lastk] = self._info[lastk] + "\n" + item;
+        }
+    }
+}
+
+impl GNUTranslations.gettext(message: str) -> str {
+    if message in self._catalog {
+        return self._catalog[message];
+    }
+    if message in self._plurals {
+        forms: list[str] = self._plurals[message];
+        idx: int = self._plural(1);
+        if idx >= 0 and idx < len(forms) {
+            return forms[idx];
+        }
+    }
+    fb: NullTranslations | None = self._fallback;
+    if fb is not None {
+        return fb.gettext(message);
+    }
+    return message;
+}
+
+impl GNUTranslations.ngettext(msgid1: str, msgid2: str, n: int) -> str {
+    if msgid1 in self._plurals {
+        forms: list[str] = self._plurals[msgid1];
+        idx: int = self._plural(n);
+        if idx >= 0 and idx < len(forms) {
+            return forms[idx];
+        }
+    }
+    fb: NullTranslations | None = self._fallback;
+    if fb is not None {
+        return fb.ngettext(msgid1, msgid2, n);
+    }
+    if n == 1 {
+        return msgid1;
+    }
+    return msgid2;
+}
+
+impl GNUTranslations.pgettext(context: str, message: str) -> str {
+    key: str = context + "\x04" + message;
+    if key in self._catalog {
+        return self._catalog[key];
+    }
+    if key in self._plurals {
+        forms: list[str] = self._plurals[key];
+        idx: int = self._plural(1);
+        if idx >= 0 and idx < len(forms) {
+            return forms[idx];
+        }
+    }
+    fb: NullTranslations | None = self._fallback;
+    if fb is not None {
+        return fb.pgettext(context, message);
+    }
+    return message;
+}
+
+impl GNUTranslations.npgettext(context: str, msgid1: str, msgid2: str, n: int) -> str {
+    key: str = context + "\x04" + msgid1;
+    if key in self._plurals {
+        forms: list[str] = self._plurals[key];
+        idx: int = self._plural(n);
+        if idx >= 0 and idx < len(forms) {
+            return forms[idx];
+        }
+    }
+    fb: NullTranslations | None = self._fallback;
+    if fb is not None {
+        return fb.npgettext(context, msgid1, msgid2, n);
+    }
+    if n == 1 {
+        return msgid1;
+    }
+    return msgid2;
+}
 
 
-def _env_languages -> list[str] {
+impl _env_languages -> list[str] {
     keys: list[str] = ["LANGUAGE", "LC_ALL", "LC_MESSAGES", "LANG"];
     for k in keys {
         val: str = os.getenv(k, "");
@@ -731,7 +860,7 @@ def _env_languages -> list[str] {
 }
 
 
-def _nelangs(languages: (list[str] | None)) -> list[str] {
+impl _nelangs(languages: (list[str] | None)) -> list[str] {
     langs: list[str] = [];
     if languages is not None {
         langs = languages;
@@ -753,7 +882,7 @@ def _nelangs(languages: (list[str] | None)) -> list[str] {
 }
 
 
-def find_all(
+impl find_all(
     domain: str, localedir: str = "", languages: (list[str] | None) = None
 ) -> list[str] {
     base: str = localedir;
@@ -774,7 +903,7 @@ def find_all(
 }
 
 
-def:pub find(
+impl find(
     domain: str, localedir: str = "", languages: (list[str] | None) = None
 ) -> str | None {
     found: list[str] = find_all(domain, localedir, languages);
@@ -785,7 +914,7 @@ def:pub find(
 }
 
 
-def:pub translation(
+impl translation(
     domain: str,
     localedir: str = "",
     languages: (list[str] | None) = None,
@@ -808,20 +937,13 @@ def:pub translation(
 }
 
 
-obj _Domain {
-    has name: str,
-        dirs: dict[str, str];
-
-    def init {
-        self.name = "messages";
-        self.dirs = {};
-    }
+impl _Domain.init {
+    self.name = "messages";
+    self.dirs = {};
 }
 
-glob _CUR: _Domain = _Domain();
 
-
-def:pub textdomain(domain: str = "") -> str {
+impl textdomain(domain: str = "") -> str {
     if domain != "" {
         _CUR.name = domain;
     }
@@ -829,7 +951,7 @@ def:pub textdomain(domain: str = "") -> str {
 }
 
 
-def:pub bindtextdomain(domain: str, localedir: str = "") -> str {
+impl bindtextdomain(domain: str, localedir: str = "") -> str {
     if localedir != "" {
         _CUR.dirs[domain] = localedir;
     }
@@ -840,7 +962,7 @@ def:pub bindtextdomain(domain: str, localedir: str = "") -> str {
 }
 
 
-def _domain_dir(domain: str) -> str {
+impl _domain_dir(domain: str) -> str {
     if domain in _CUR.dirs {
         return _CUR.dirs[domain];
     }
@@ -848,7 +970,7 @@ def _domain_dir(domain: str) -> str {
 }
 
 
-def:pub dgettext(domain: str, message: str) -> str {
+impl dgettext(domain: str, message: str) -> str {
     try {
         t: NullTranslations = translation(domain, _domain_dir(domain));
         return t.gettext(message);
@@ -858,7 +980,7 @@ def:pub dgettext(domain: str, message: str) -> str {
 }
 
 
-def:pub dngettext(domain: str, msgid1: str, msgid2: str, n: int) -> str {
+impl dngettext(domain: str, msgid1: str, msgid2: str, n: int) -> str {
     try {
         t: NullTranslations = translation(domain, _domain_dir(domain));
         return t.ngettext(msgid1, msgid2, n);
@@ -871,7 +993,7 @@ def:pub dngettext(domain: str, msgid1: str, msgid2: str, n: int) -> str {
 }
 
 
-def:pub dpgettext(domain: str, context: str, message: str) -> str {
+impl dpgettext(domain: str, context: str, message: str) -> str {
     try {
         t: NullTranslations = translation(domain, _domain_dir(domain));
         return t.pgettext(context, message);
@@ -881,7 +1003,7 @@ def:pub dpgettext(domain: str, context: str, message: str) -> str {
 }
 
 
-def:pub dnpgettext(domain: str, context: str, msgid1: str, msgid2: str, n: int) -> str {
+impl dnpgettext(domain: str, context: str, msgid1: str, msgid2: str, n: int) -> str {
     try {
         t: NullTranslations = translation(domain, _domain_dir(domain));
         return t.npgettext(context, msgid1, msgid2, n);
@@ -894,21 +1016,21 @@ def:pub dnpgettext(domain: str, context: str, msgid1: str, msgid2: str, n: int) 
 }
 
 
-def:pub gettext(message: str) -> str {
+impl gettext(message: str) -> str {
     return dgettext(_CUR.name, message);
 }
 
 
-def:pub ngettext(msgid1: str, msgid2: str, n: int) -> str {
+impl ngettext(msgid1: str, msgid2: str, n: int) -> str {
     return dngettext(_CUR.name, msgid1, msgid2, n);
 }
 
 
-def:pub pgettext(context: str, message: str) -> str {
+impl pgettext(context: str, message: str) -> str {
     return dpgettext(_CUR.name, context, message);
 }
 
 
-def:pub npgettext(context: str, msgid1: str, msgid2: str, n: int) -> str {
+impl npgettext(context: str, msgid1: str, msgid2: str, n: int) -> str {
     return dnpgettext(_CUR.name, context, msgid1, msgid2, n);
 }

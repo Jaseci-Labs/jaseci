@@ -1,4 +1,28 @@
-def int_subscript_suffix(right: IndexSlice) -> str | None {
+def int_subscript_suffix(right: IndexSlice) -> str | None;
+
+def reference_key_deps(expr: Expr) -> set[str];
+
+def get_expr_key(expr: Expr) -> str | None;
+
+def _extract_first_arg_key(arg: Expr) -> str | None;
+
+def _extract_compare_left_key(left: Expr) -> str | None;
+
+def classify_condition_key(condition: Expr) -> str | None;
+
+def _predicate_call_keys(condition: FuncCall) -> set[str];
+
+def collect_narrowing_symbols(condition: Expr) -> set[str];
+
+def find_destructure_index_path(target: UniNode, key: str) -> list[int] | None;
+
+def collect_assignment_target_keys(target: UniNode) -> set[str];
+
+def collect_assigned_symbols(nd: UniNode) -> set[str];
+
+def type_tag_borrows(expr: (UniNode | None)) -> bool;
+
+impl int_subscript_suffix(right: IndexSlice) -> str | None {
     if (not right.is_range and len(right.slices) == 1) {
         idx = right.slices[0];
         if (idx.start is not None and idx.stop is None and idx.step is None) {
@@ -31,7 +55,7 @@ def int_subscript_suffix(right: IndexSlice) -> str | None {
     return None;
 }
 
-def reference_key_deps(expr: Expr) -> set[str] {
+impl reference_key_deps(expr: Expr) -> set[str] {
     deps: set[str] = set();
     cur: UniNode | None = expr;
     while cur is not None {
@@ -68,7 +92,7 @@ def reference_key_deps(expr: Expr) -> set[str] {
     return deps;
 }
 
-def get_expr_key(expr: Expr) -> str | None {
+impl get_expr_key(expr: Expr) -> str | None {
     if isinstance(expr, Name) {
         return expr.value;
     }
@@ -94,7 +118,7 @@ def get_expr_key(expr: Expr) -> str | None {
     return None;
 }
 
-def _extract_first_arg_key(arg: Expr) -> str | None {
+impl _extract_first_arg_key(arg: Expr) -> str | None {
     inner: Expr = arg;
     if isinstance(inner, AtomUnit) and isinstance(inner.value, Expr) {
         inner = inner.value;
@@ -116,7 +140,7 @@ def _extract_first_arg_key(arg: Expr) -> str | None {
     return None;
 }
 
-def _extract_compare_left_key(left: Expr) -> str | None {
+impl _extract_compare_left_key(left: Expr) -> str | None {
     inner: Expr = left;
     if isinstance(inner, AtomUnit) and isinstance(inner.value, Expr) {
         inner = inner.value;
@@ -138,7 +162,7 @@ def _extract_compare_left_key(left: Expr) -> str | None {
     return None;
 }
 
-def classify_condition_key(condition: Expr) -> str | None {
+impl classify_condition_key(condition: Expr) -> str | None {
     if isinstance(condition, FuncCall) and isinstance(condition.target, Name) {
         args = condition.params;
         if (
@@ -173,7 +197,7 @@ def classify_condition_key(condition: Expr) -> str | None {
     return None;
 }
 
-def _predicate_call_keys(condition: FuncCall) -> set[str] {
+impl _predicate_call_keys(condition: FuncCall) -> set[str] {
     keys: set[str] = set();
     positional = [
         arg
@@ -197,7 +221,7 @@ def _predicate_call_keys(condition: FuncCall) -> set[str] {
     return keys;
 }
 
-def collect_narrowing_symbols(condition: Expr) -> set[str] {
+impl collect_narrowing_symbols(condition: Expr) -> set[str] {
     symbols: set[str] = set();
 
     if isinstance(condition, CfgExpr) {
@@ -221,7 +245,7 @@ def collect_narrowing_symbols(condition: Expr) -> set[str] {
     return symbols;
 }
 
-def find_destructure_index_path(target: UniNode, key: str) -> list[int] | None {
+impl find_destructure_index_path(target: UniNode, key: str) -> list[int] | None {
     if isinstance(target, Name) {
         return [] if target.value == key else None;
     }
@@ -250,7 +274,7 @@ def find_destructure_index_path(target: UniNode, key: str) -> list[int] | None {
     return None;
 }
 
-def collect_assignment_target_keys(target: UniNode) -> set[str] {
+impl collect_assignment_target_keys(target: UniNode) -> set[str] {
     keys: set[str] = set();
     if isinstance(target, Name) {
         keys.add(target.value);
@@ -276,7 +300,7 @@ def collect_assignment_target_keys(target: UniNode) -> set[str] {
     return keys;
 }
 
-def collect_assigned_symbols(nd: UniNode) -> set[str] {
+impl collect_assigned_symbols(nd: UniNode) -> set[str] {
     symbols: set[str] = set();
 
     if isinstance(nd, Assignment) {
@@ -291,7 +315,7 @@ def collect_assigned_symbols(nd: UniNode) -> set[str] {
     return symbols;
 }
 
-def type_tag_borrows(expr: (UniNode | None)) -> bool {
+impl type_tag_borrows(expr: (UniNode | None)) -> bool {
     if expr is None {
         return False;
     }

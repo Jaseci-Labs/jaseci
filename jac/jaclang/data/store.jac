@@ -124,14 +124,7 @@ obj Store {
 
 
 obj PgStore(Store) {
-    override def new_session -> PgStore {
-        return PgStore(
-            conninfo=self.conninfo,
-            ensure_cb=self.ensure_cb,
-            promotions=dict(self.promotions),
-            auto_schema=self.auto_schema
-        );
-    }
+    override def new_session -> PgStore;
 
     has conninfo: ConnInfo,
         ensure_cb: (any | None) = None,
@@ -221,4 +214,13 @@ obj PgStore(Store) {
     def _peer_sessions -> list[dict[str, any]];
     def _reap_dead_sessions -> int;
     def _live_blockers -> list[dict[str, any]];
+}
+
+impl PgStore.new_session -> PgStore {
+    return PgStore(
+        conninfo=self.conninfo,
+        ensure_cb=self.ensure_cb,
+        promotions=dict(self.promotions),
+        auto_schema=self.auto_schema
+    );
 }

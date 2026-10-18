@@ -8,7 +8,39 @@ glob JS_SAFE_INT: int = (1 << 53) - 1,
      SIZED_TYPES: dict[str, any] = {},
      _F32: any = struct.Struct("f");
 
-def round_f32(value: float) -> float {
+def round_f32(value: float) -> float;
+
+def _mk_check(lo: int, hi: int) -> any;
+
+def _mk_shl(lo: int, hi: int, width: int) -> any;
+
+def _mk_shr(width: int) -> any;
+
+def _mk_pow(lo: int, hi: int, width: int) -> any;
+
+def _mk_invert(mask: int) -> any;
+
+def _mk_int_class(name: str, lo: int, hi: int) -> type;
+
+def _mk_float_class(name: str, narrow: bool) -> type;
+
+def _fw_wrapping(name: str, op: str, a: any, b: any = 0) -> int;
+
+def _build_family;
+
+def json_wire_form(name: str, value: any) -> any;
+
+def json_wire_read(name: str, value: any) -> any;
+
+def _wrapping_unavailable(name: str) -> any;
+
+def __getattr__(name: str) -> object;
+
+with entry {
+    _build_family();
+}
+
+impl round_f32(value: float) -> float {
     try {
         return _F32.unpack(_F32.pack(value))[0];
     } except OverflowError {
@@ -16,7 +48,7 @@ def round_f32(value: float) -> float {
     }
 }
 
-def _mk_check(lo: int, hi: int) -> any {
+impl _mk_check(lo: int, hi: int) -> any {
     def check(v: int) -> int {
         if lo <= v <= hi {
             return v;
@@ -26,7 +58,7 @@ def _mk_check(lo: int, hi: int) -> any {
     return check;
 }
 
-def _mk_shl(lo: int, hi: int, width: int) -> any {
+impl _mk_shl(lo: int, hi: int, width: int) -> any {
     def shl(a: int, b: int) -> int {
         if b < 0 or b >= width {
             raise OverflowError(SHIFT_MESSAGE);
@@ -40,7 +72,7 @@ def _mk_shl(lo: int, hi: int, width: int) -> any {
     return shl;
 }
 
-def _mk_shr(width: int) -> any {
+impl _mk_shr(width: int) -> any {
     def shr(a: int, b: int) -> int {
         if b < 0 or b >= width {
             raise OverflowError(SHIFT_MESSAGE);
@@ -50,7 +82,7 @@ def _mk_shr(width: int) -> any {
     return shr;
 }
 
-def _mk_pow(lo: int, hi: int, width: int) -> any {
+impl _mk_pow(lo: int, hi: int, width: int) -> any {
     def ipow(a: int, b: int) -> any {
         if b < 0 {
             return float(a) ** float(b);
@@ -67,14 +99,14 @@ def _mk_pow(lo: int, hi: int, width: int) -> any {
     return ipow;
 }
 
-def _mk_invert(mask: int) -> any {
+impl _mk_invert(mask: int) -> any {
     def invert(a: int) -> int {
         return (~a) & mask;
     }
     return invert;
 }
 
-def _mk_int_class(name: str, lo: int, hi: int) -> type {
+impl _mk_int_class(name: str, lo: int, hi: int) -> type {
     def __new__(cls: type, x: any = 0) -> int {
         if isinstance(x, (bool, int, float)) {
             v = int(x);
@@ -106,7 +138,7 @@ def _mk_int_class(name: str, lo: int, hi: int) -> type {
     );
 }
 
-def _mk_float_class(name: str, narrow: bool) -> type {
+impl _mk_float_class(name: str, narrow: bool) -> type {
     def __new__(cls: type, x: any = 0.0) -> float {
         if isinstance(x, (bool, int, float)) {
             v = float(x);
@@ -124,7 +156,7 @@ def _mk_float_class(name: str, narrow: bool) -> type {
     );
 }
 
-def _fw_wrapping(name: str, op: str, a: any, b: any = 0) -> int {
+impl _fw_wrapping(name: str, op: str, a: any, b: any = 0) -> int {
     row = shape_of(name);
     if row is None {
         raise TypeError(f"{name} is not a fixed-width type");
@@ -146,7 +178,7 @@ def _fw_wrapping(name: str, op: str, a: any, b: any = 0) -> int {
     return wrap_value(name, raw);
 }
 
-def _build_family {
+impl _build_family {
     for row in numeric_shapes() {
         if not row.sized {
             continue;
@@ -169,7 +201,7 @@ def _build_family {
     FW["_fw_wrapping"] = _fw_wrapping;
 }
 
-def json_wire_form(name: str, value: any) -> any {
+impl json_wire_form(name: str, value: any) -> any {
     row = shape_of(name);
     if row is None or not row.sized or row.is_float or row.width < 64 {
         return value;
@@ -181,7 +213,7 @@ def json_wire_form(name: str, value: any) -> any {
     return n;
 }
 
-def json_wire_read(name: str, value: any) -> any {
+impl json_wire_read(name: str, value: any) -> any {
     row = shape_of(name);
     if isinstance(value, str) {
         return SIZED_TYPES[name](
@@ -191,7 +223,7 @@ def json_wire_read(name: str, value: any) -> any {
     return SIZED_TYPES[name](value);
 }
 
-def _wrapping_unavailable(name: str) -> any {
+impl _wrapping_unavailable(name: str) -> any {
     def stub(*args: any, **kwargs: any) -> any {
         raise TypeError(
             f"{name} must be called directly on fixed-width operands; "
@@ -201,7 +233,7 @@ def _wrapping_unavailable(name: str) -> any {
     return stub;
 }
 
-def __getattr__(name: str) -> object {
+impl __getattr__(name: str) -> object {
     hit = FW.get(name, None);
     if hit is not None {
         return hit;
@@ -214,8 +246,4 @@ def __getattr__(name: str) -> object {
         return _wrapping_unavailable(name);
     }
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}");
-}
-
-with entry {
-    _build_family();
 }

@@ -1,4 +1,6 @@
-def:pub effects(reads: list[str] = [], writes: list[str] = []) -> Callable {
+def:pub effects(reads: list[str] = [], writes: list[str] = []) -> Callable;
+
+impl effects(reads: list[str] = [], writes: list[str] = []) -> Callable {
     for dependency in reads + writes {
         if not isinstance(dependency, str) or not dependency {
             raise ValueError("Effect dependencies must be nonempty strings");

@@ -12,7 +12,27 @@ glob AAL1: str = 'aal1',
      );
 
 
-def second_factor_claims(methods: list[str]) -> dict[str, any] {
+def second_factor_claims(methods: list[str]) -> dict[str, any];
+
+
+def carried_claims(claims: (dict[str, any] | None)) -> dict[str, any];
+
+
+def token_assurance(token: (str | None)) -> dict[str, any];
+
+
+def bind_caller_assurance(claims: (dict[str, any] | None)) -> any;
+
+
+def release_caller_assurance(binding: any);
+
+
+def caller_assurance_level -> str;
+
+
+def caller_authentication_methods -> list[str];
+
+impl second_factor_claims(methods: list[str]) -> dict[str, any] {
     ordered: list[str] = [];
     for method in methods {
         if method and method not in ordered {
@@ -23,7 +43,7 @@ def second_factor_claims(methods: list[str]) -> dict[str, any] {
 }
 
 
-def carried_claims(claims: (dict[str, any] | None)) -> dict[str, any] {
+impl carried_claims(claims: (dict[str, any] | None)) -> dict[str, any] {
     if not isinstance(claims, dict) or claims.get('aal') != AAL2 {
         return {};
     }
@@ -40,7 +60,7 @@ def carried_claims(claims: (dict[str, any] | None)) -> dict[str, any] {
 }
 
 
-def token_assurance(token: (str | None)) -> dict[str, any] {
+impl token_assurance(token: (str | None)) -> dict[str, any] {
     if not token {
         return {};
     }
@@ -58,17 +78,17 @@ def token_assurance(token: (str | None)) -> dict[str, any] {
 }
 
 
-def bind_caller_assurance(claims: (dict[str, any] | None)) -> any {
+impl bind_caller_assurance(claims: (dict[str, any] | None)) -> any {
     return _caller_assurance.set(claims);
 }
 
 
-def release_caller_assurance(binding: any) {
+impl release_caller_assurance(binding: any) {
     _caller_assurance.reset(binding);
 }
 
 
-def caller_assurance_level -> str {
+impl caller_assurance_level -> str {
     claims = _caller_assurance.get();
     if claims is None {
         return '';
@@ -77,7 +97,7 @@ def caller_assurance_level -> str {
 }
 
 
-def caller_authentication_methods -> list[str] {
+impl caller_authentication_methods -> list[str] {
     claims = _caller_assurance.get();
     if not claims {
         return [];

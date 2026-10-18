@@ -1,5 +1,17 @@
 def collect_foreign_structs(
     modules: list[uni.Module]
+) -> dict[str, list[tuple[str, str | None]]];
+
+def declared_type_name(type_expr: (uni.UniNode | None)) -> (str | None);
+
+def collect_foreign_fns(modules: list[uni.Module]) -> dict[str, dict[str, any]];
+
+def foreign_struct_layout(
+    structs: dict[str, list[tuple[str, str | None]]], name: str
+) -> tuple[int, int, list[tuple[int, bool, int]]];
+
+impl collect_foreign_structs(
+    modules: list[uni.Module]
 ) -> dict[str, list[tuple[str, str | None]]] {
     out: dict[str, list[tuple[str, str | None]]] = {};
     for mod in modules {
@@ -28,7 +40,7 @@ def collect_foreign_structs(
     return out;
 }
 
-def declared_type_name(type_expr: (uni.UniNode | None)) -> (str | None) {
+impl declared_type_name(type_expr: (uni.UniNode | None)) -> (str | None) {
     if type_expr is None {
         return None;
     }
@@ -47,7 +59,7 @@ def declared_type_name(type_expr: (uni.UniNode | None)) -> (str | None) {
     return None;
 }
 
-def collect_foreign_fns(modules: list[uni.Module]) -> dict[str, dict[str, any]] {
+impl collect_foreign_fns(modules: list[uni.Module]) -> dict[str, dict[str, any]] {
     out: dict[str, dict[str, any]] = {};
     for mod in modules {
         if mod is None {
@@ -94,7 +106,7 @@ def collect_foreign_fns(modules: list[uni.Module]) -> dict[str, dict[str, any]] 
     return out;
 }
 
-def foreign_struct_layout(
+impl foreign_struct_layout(
     structs: dict[str, list[tuple[str, str | None]]], name: str
 ) -> tuple[int, int, list[tuple[int, bool, int]]] {
     fields = structs.get(name, []);

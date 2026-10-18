@@ -1,6 +1,23 @@
 import json;
 
-def _app_purpose(purpose: str) -> str {
+def _app_purpose(purpose: str) -> str;
+
+def _decode(record: dict[str, any]) -> dict[str, any];
+
+def token_create(
+    purpose: str,
+    subject: str,
+    ttl_seconds: int,
+    payload: (dict[str, any] | None) = None
+) -> str;
+
+def token_peek(purpose: str, token: str) -> (dict[str, any] | None);
+
+def token_consume(purpose: str, token: str) -> (dict[str, any] | None);
+
+def token_revoke(purpose: str, subject: str) -> int;
+
+impl _app_purpose(purpose: str) -> str {
     p = purpose.strip();
     if not p {
         raise ValueError("token purpose must be a non-empty string");
@@ -8,7 +25,7 @@ def _app_purpose(purpose: str) -> str {
     return f"app:{p}";
 }
 
-def _decode(record: dict[str, any]) -> dict[str, any] {
+impl _decode(record: dict[str, any]) -> dict[str, any] {
     raw = record.get('identity_value');
     payload: any = {};
     if isinstance(raw, str) and raw {
@@ -25,7 +42,7 @@ def _decode(record: dict[str, any]) -> dict[str, any] {
     };
 }
 
-def token_create(
+impl token_create(
     purpose: str,
     subject: str,
     ttl_seconds: int,
@@ -39,16 +56,16 @@ def token_create(
     );
 }
 
-def token_peek(purpose: str, token: str) -> (dict[str, any] | None) {
+impl token_peek(purpose: str, token: str) -> (dict[str, any] | None) {
     record = AuthTokenStore.instance().peek_token(token, _app_purpose(purpose));
     return _decode(record) if record is not None else None;
 }
 
-def token_consume(purpose: str, token: str) -> (dict[str, any] | None) {
+impl token_consume(purpose: str, token: str) -> (dict[str, any] | None) {
     record = AuthTokenStore.instance().consume_token(token, _app_purpose(purpose));
     return _decode(record) if record is not None else None;
 }
 
-def token_revoke(purpose: str, subject: str) -> int {
+impl token_revoke(purpose: str, subject: str) -> int {
     return AuthTokenStore.instance().revoke_user_tokens(subject, _app_purpose(purpose));
 }

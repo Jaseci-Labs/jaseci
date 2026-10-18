@@ -12,7 +12,72 @@ obj CtFormatSpec {
         kind: str = "";
 }
 
-def _read_int(spec: str, pos: int) -> tuple[int, int] {
+def _read_int(spec: str, pos: int) -> tuple[int, int];
+
+def parse_format_spec(
+    spec: str, owner: str, default_type: str, default_align: str
+) -> CtFormatSpec;
+
+def _bad_separator(sep: str, kind: str) -> str;
+
+def _unknown_code(kind: str, owner: str) -> str;
+
+def group_digits(digits: str, min_width: int, sep: str, size: int) -> str;
+
+def _layout_number(
+    fs: CtFormatSpec,
+    negative: bool,
+    prefix: str,
+    digits: str,
+    remainder: str,
+    sep: str,
+    group_size: int
+) -> str;
+
+def format_int(v: CtInt, spec: str, owner: str) -> str;
+
+def format_str(s: str, spec: str) -> str;
+
+def pad_text(text: str, width: int, align: str, fill: str) -> str;
+
+def format_float(f: float, spec: str) -> str;
+
+def ct_format(v: CtValue, spec: str) -> str;
+
+def ct_convert(v: CtValue, conv: str) -> CtValue;
+
+def _percent_int_digits(
+    v: CtInt, conv: str, prec: int, alternate: bool
+) -> tuple[bool, str, str];
+
+def _percent_number_arg(v: CtValue, conv: str) -> CtInt;
+
+def ct_percent_format(fmt: str, args: CtValue) -> str;
+
+obj CtFormatState {
+    has args: list[CtValue],
+        kwargs: dict[str, CtValue],
+        auto_idx: int = 0,
+        mode: str = "";
+}
+
+def ct_str_format(fmt: str, args: list[CtValue], kwargs: dict[str, CtValue]) -> str;
+
+def _str_format(fmt: str, st: CtFormatState, depth: int) -> str;
+
+def _render_field(field: str, st: CtFormatState, depth: int) -> str;
+
+def _field_value(name: str, st: CtFormatState) -> CtValue;
+
+def _positional(st: CtFormatState, idx: int) -> CtValue;
+
+def _format_attr(value: CtValue, attr: str) -> CtValue;
+
+def ct_binary(sym: str, l: CtValue, r: CtValue) -> CtValue;
+
+def ct_inplace(sym: str, cur: CtValue, val: CtValue) -> CtValue;
+
+impl _read_int(spec: str, pos: int) -> tuple[int, int] {
     start = pos;
     val = 0;
     while pos < len(spec) and "0" <= spec[pos] and spec[pos] <= "9" {
@@ -25,7 +90,7 @@ def _read_int(spec: str, pos: int) -> tuple[int, int] {
     return (val if pos > start else -1, pos);
 }
 
-def parse_format_spec(
+impl parse_format_spec(
     spec: str, owner: str, default_type: str, default_align: str
 ) -> CtFormatSpec {
     out = CtFormatSpec(align=default_align, kind=default_type);
@@ -126,7 +191,7 @@ def parse_format_spec(
     return out;
 }
 
-def _bad_separator(sep: str, kind: str) -> str {
+impl _bad_separator(sep: str, kind: str) -> str {
     o = ord(kind) if kind else 0;
     if o > 32 and o < 128 {
         return f"Cannot specify '{sep}' with '{kind}'.";
@@ -134,7 +199,7 @@ def _bad_separator(sep: str, kind: str) -> str {
     return f"Cannot specify '{sep}' with '\\x{format(o, 'x')}'.";
 }
 
-def _unknown_code(kind: str, owner: str) -> str {
+impl _unknown_code(kind: str, owner: str) -> str {
     o = ord(kind);
     if o > 32 and o < 128 {
         return f"Unknown format code '{kind}' for object of type '{owner}'";
@@ -142,7 +207,7 @@ def _unknown_code(kind: str, owner: str) -> str {
     return f"Unknown format code '\\x{format(o, 'x')}' for object of type '{owner}'";
 }
 
-def group_digits(digits: str, min_width: int, sep: str, size: int) -> str {
+impl group_digits(digits: str, min_width: int, sep: str, size: int) -> str {
     min_width = max(0, min_width);
     remaining = len(digits);
     pieces: list[str] = [];
@@ -181,7 +246,7 @@ def group_digits(digits: str, min_width: int, sep: str, size: int) -> str {
     return "".join(pieces);
 }
 
-def _layout_number(
+impl _layout_number(
     fs: CtFormatSpec,
     negative: bool,
     prefix: str,
@@ -224,7 +289,7 @@ def _layout_number(
         + fs.fill * rpad;
 }
 
-def format_int(v: CtInt, spec: str, owner: str) -> str {
+impl format_int(v: CtInt, spec: str, owner: str) -> str {
     fs = parse_format_spec(spec, owner, "d", ">");
     k = fs.kind;
     if k in ("e", "E", "f", "F", "g", "G", "%") {
@@ -288,7 +353,7 @@ def format_int(v: CtInt, spec: str, owner: str) -> str {
     );
 }
 
-def format_str(s: str, spec: str) -> str {
+impl format_str(s: str, spec: str) -> str {
     fs = parse_format_spec(spec, "str", "s", "<");
     if fs.kind != "s" {
         raise ct_exc("ValueError", _unknown_code(fs.kind, "str"));
@@ -319,7 +384,7 @@ def format_str(s: str, spec: str) -> str {
     return pad_text(text, fs.width, fs.align, fs.fill);
 }
 
-def pad_text(text: str, width: int, align: str, fill: str) -> str {
+impl pad_text(text: str, width: int, align: str, fill: str) -> str {
     n = len(text);
     total = max(width, n) if width >= 0 else n;
     if align == ">" {
@@ -332,7 +397,7 @@ def pad_text(text: str, width: int, align: str, fill: str) -> str {
     return fill * lpad + text + fill * (total - n - lpad);
 }
 
-def format_float(f: float, spec: str) -> str {
+impl format_float(f: float, spec: str) -> str {
     try {
         return format(f, spec);
     } except ValueError as e {
@@ -340,7 +405,7 @@ def format_float(f: float, spec: str) -> str {
     }
 }
 
-def ct_format(v: CtValue, spec: str) -> str {
+impl ct_format(v: CtValue, spec: str) -> str {
     if not spec {
         return ct_str(v);
     }
@@ -361,7 +426,7 @@ def ct_format(v: CtValue, spec: str) -> str {
     );
 }
 
-def ct_convert(v: CtValue, conv: str) -> CtValue {
+impl ct_convert(v: CtValue, conv: str) -> CtValue {
     if conv == "r" {
         return mk_str(ct_repr(v));
     }
@@ -374,7 +439,7 @@ def ct_convert(v: CtValue, conv: str) -> CtValue {
     return v;
 }
 
-def _percent_int_digits(
+impl _percent_int_digits(
     v: CtInt, conv: str, prec: int, alternate: bool
 ) -> tuple[bool, str, str] {
     base = 10;
@@ -400,7 +465,7 @@ def _percent_int_digits(
     return (int_is_neg(v), prefix, digits);
 }
 
-def _percent_number_arg(v: CtValue, conv: str) -> CtInt {
+impl _percent_number_arg(v: CtValue, conv: str) -> CtInt {
     iv = as_ct_int(v);
     if iv is not None {
         return iv;
@@ -419,7 +484,7 @@ def _percent_number_arg(v: CtValue, conv: str) -> CtInt {
     );
 }
 
-def ct_percent_format(fmt: str, args: CtValue) -> str {
+impl ct_percent_format(fmt: str, args: CtValue) -> str {
     items: list[CtValue] = [];
     mapping: (CtValue | None) = None;
     if isinstance(args, CtTuple) {
@@ -634,18 +699,11 @@ def ct_percent_format(fmt: str, args: CtValue) -> str {
     return out;
 }
 
-obj CtFormatState {
-    has args: list[CtValue],
-        kwargs: dict[str, CtValue],
-        auto_idx: int = 0,
-        mode: str = "";
-}
-
-def ct_str_format(fmt: str, args: list[CtValue], kwargs: dict[str, CtValue]) -> str {
+impl ct_str_format(fmt: str, args: list[CtValue], kwargs: dict[str, CtValue]) -> str {
     return _str_format(fmt, CtFormatState(args=args, kwargs=kwargs), 2);
 }
 
-def _str_format(fmt: str, st: CtFormatState, depth: int) -> str {
+impl _str_format(fmt: str, st: CtFormatState, depth: int) -> str {
     if depth < 0 {
         raise ct_exc("ValueError", "Max string recursion exceeded");
     }
@@ -698,7 +756,7 @@ def _str_format(fmt: str, st: CtFormatState, depth: int) -> str {
     return out;
 }
 
-def _render_field(field: str, st: CtFormatState, depth: int) -> str {
+impl _render_field(field: str, st: CtFormatState, depth: int) -> str {
     k = 0;
     while k < len(field) and field[k] not in "!:" {
         if field[k] == "[" {
@@ -741,7 +799,7 @@ def _render_field(field: str, st: CtFormatState, depth: int) -> str {
     return ct_format(value, spec);
 }
 
-def _field_value(name: str, st: CtFormatState) -> CtValue {
+impl _field_value(name: str, st: CtFormatState) -> CtValue {
     k = 0;
     while k < len(name) and name[k] not in ".[" {
         k += 1;
@@ -805,7 +863,7 @@ def _field_value(name: str, st: CtFormatState) -> CtValue {
     return value;
 }
 
-def _positional(st: CtFormatState, idx: int) -> CtValue {
+impl _positional(st: CtFormatState, idx: int) -> CtValue {
     if idx >= len(st.args) {
         raise ct_exc(
             "IndexError",
@@ -815,7 +873,7 @@ def _positional(st: CtFormatState, idx: int) -> CtValue {
     return st.args[idx];
 }
 
-def _format_attr(value: CtValue, attr: str) -> CtValue {
+impl _format_attr(value: CtValue, attr: str) -> CtValue {
     if isinstance(value, CtRecord) and attr in value.fields {
         return value.fields[attr];
     }
@@ -832,14 +890,14 @@ def _format_attr(value: CtValue, attr: str) -> CtValue {
     );
 }
 
-def ct_binary(sym: str, l: CtValue, r: CtValue) -> CtValue {
+impl ct_binary(sym: str, l: CtValue, r: CtValue) -> CtValue {
     if sym == "%" and isinstance(l, CtStr) {
         return mk_str(ct_percent_format(l.value, r));
     }
     return ct_binop(sym, l, r);
 }
 
-def ct_inplace(sym: str, cur: CtValue, val: CtValue) -> CtValue {
+impl ct_inplace(sym: str, cur: CtValue, val: CtValue) -> CtValue {
     if sym == "+" and isinstance(cur, CtList) {
         cur.items.extend(ct_iter(val));
         return cur;

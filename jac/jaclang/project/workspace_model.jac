@@ -35,6 +35,8 @@ obj WorkspaceSpec {
     def serving_apps -> list[AppSpec];
 }
 
-def normalized_path(path: str) -> str {
+def normalized_path(path: str) -> str;
+
+impl normalized_path(path: str) -> str {
     return os.path.normcase(os.path.realpath(os.path.abspath(path)));
 }

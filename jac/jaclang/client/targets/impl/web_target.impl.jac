@@ -7,18 +7,9 @@ glob DEFAULT_FUNCTION_NAME = "app",
      JAC_FILE_EXTENSION = ".jac",
      JAC_LANG_ID = "jac";
 
-def _parse_entry_file(entry_file: Path) -> tuple[str, str] {
-    (base, mod) = os.path.split(str(entry_file));
-    base = base or "./";
-    if mod.endswith(JAC_FILE_EXTENSION) {
-        mod = mod[:-len(JAC_FILE_EXTENSION)];
-    }
-    return (base, mod);
-}
+def _parse_entry_file(entry_file: Path) -> tuple[str, str];
 
-def _pwa_enabled(project_dir: Path) -> bool {
-    return JacClientConfig(project_dir).is_pwa_enabled();
-}
+def _pwa_enabled(project_dir: Path) -> bool;
 
 impl WebTarget.setup(project_dir: Path) -> None {
     if _pwa_enabled(project_dir) {
@@ -130,7 +121,35 @@ impl WebTarget.build(
     return bundle_path;
 }
 
-def _get_client_function_name(loaded_mod: types.ModuleType) -> str {
+def _get_client_function_name(loaded_mod: types.ModuleType) -> str;
+
+def _build_css_link(bundler: ViteBundler) -> str;
+
+def _get_app_meta_data -> dict[str, any];
+
+
+def _generate_index_html(
+    bundle_path: Path,
+    bundler: ViteBundler,
+    loaded_mod: types.ModuleType,
+    function_name: str,
+    project_dir: Path
+);
+
+impl _parse_entry_file(entry_file: Path) -> tuple[str, str] {
+    (base, mod) = os.path.split(str(entry_file));
+    base = base or "./";
+    if mod.endswith(JAC_FILE_EXTENSION) {
+        mod = mod[:-len(JAC_FILE_EXTENSION)];
+    }
+    return (base, mod);
+}
+
+impl _pwa_enabled(project_dir: Path) -> bool {
+    return JacClientConfig(project_dir).is_pwa_enabled();
+}
+
+impl _get_client_function_name(loaded_mod: types.ModuleType) -> str {
     mod_path = loaded_mod?.__file__;
     if not mod_path {
         return DEFAULT_FUNCTION_NAME;
@@ -157,7 +176,7 @@ def _get_client_function_name(loaded_mod: types.ModuleType) -> str {
     return DEFAULT_FUNCTION_NAME;
 }
 
-def _build_css_link(bundler: ViteBundler) -> str {
+impl _build_css_link(bundler: ViteBundler) -> str {
     import hashlib;
 
     css_file = bundler.find_css();
@@ -172,7 +191,7 @@ def _build_css_link(bundler: ViteBundler) -> str {
     return '';
 }
 
-def _get_app_meta_data -> dict[str, any] {
+impl _get_app_meta_data -> dict[str, any] {
     config = get_config();
     if not config {
         return {};
@@ -185,7 +204,7 @@ def _get_app_meta_data -> dict[str, any] {
 }
 
 
-def _generate_index_html(
+impl _generate_index_html(
     bundle_path: Path,
     bundler: ViteBundler,
     loaded_mod: types.ModuleType,

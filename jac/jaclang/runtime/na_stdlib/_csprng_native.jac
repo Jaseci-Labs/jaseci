@@ -1,7 +1,9 @@
 import from crypto { def RAND_bytes(buf: bytes, num: i32) -> i32;  }
 
 
-def:pub csprng_bytes(n: int) -> bytes {
+def:pub csprng_bytes(n: int) -> bytes;
+
+impl csprng_bytes(n: int) -> bytes {
     if n < 0 {
         raise ValueError("negative argument not allowed");
     }

@@ -7,37 +7,97 @@ glob sep: str = "/",
      pardir: str = "..",
      curdir: str = ".";
 
-def:pub exists(path: str) -> bool {
+def:pub exists(path: str) -> bool;
+
+def:pub isfile(path: str) -> bool;
+
+def:pub isdir(s: str) -> bool;
+
+def:pub realpath(filename: str) -> str;
+
+def:pub getsize(filename: str) -> int;
+
+def:pub getmtime(filename: str) -> float;
+
+
+def:pub isabs(s: str) -> bool;
+
+
+def _all_slashes(s: str) -> bool;
+
+
+def _rstrip_slashes(s: str) -> str;
+
+
+def:pub split(p: str) -> tuple[(str, str)];
+
+
+def:pub dirname(p: str) -> str;
+
+
+def:pub basename(p: str) -> str;
+
+
+def:pub splitext(p: str) -> tuple[(str, str)];
+
+
+def _join2(a: str, b: str) -> str;
+
+
+def:pub join(
+    a: str,
+    p1: (str | None) = None,
+    p2: (str | None) = None,
+    p3: (str | None) = None,
+    p4: (str | None) = None
+) -> str;
+
+
+def:pub abspath(path: str) -> str;
+
+
+def:pub normcase(s: str) -> str;
+
+
+def:pub relpath(path: str, start: str = ".") -> str;
+
+
+def:pub normpath(path: str) -> str;
+
+
+def:pub expanduser(path: str) -> str;
+
+impl exists(path: str) -> bool {
     return os.path.exists(path);
 }
 
-def:pub isfile(path: str) -> bool {
+impl isfile(path: str) -> bool {
     return os.path.isfile(path);
 }
 
-def:pub isdir(s: str) -> bool {
+impl isdir(s: str) -> bool {
     return os.path.isdir(s);
 }
 
-def:pub realpath(filename: str) -> str {
+impl realpath(filename: str) -> str {
     return os.path.realpath(filename);
 }
 
-def:pub getsize(filename: str) -> int {
+impl getsize(filename: str) -> int {
     return os.path.getsize(filename);
 }
 
-def:pub getmtime(filename: str) -> float {
+impl getmtime(filename: str) -> float {
     return os.path.getmtime(filename);
 }
 
 
-def:pub isabs(s: str) -> bool {
+impl isabs(s: str) -> bool {
     return s.startswith("/");
 }
 
 
-def _all_slashes(s: str) -> bool {
+impl _all_slashes(s: str) -> bool {
     n: int = len(s);
     if n == 0 {
         return False;
@@ -53,7 +113,7 @@ def _all_slashes(s: str) -> bool {
 }
 
 
-def _rstrip_slashes(s: str) -> str {
+impl _rstrip_slashes(s: str) -> str {
     end: int = len(s);
     while end > 0 and s[end - 1] == "/" {
         end -= 1;
@@ -62,7 +122,7 @@ def _rstrip_slashes(s: str) -> str {
 }
 
 
-def:pub split(p: str) -> tuple[(str, str)] {
+impl split(p: str) -> tuple[(str, str)] {
     i: int = p.rfind("/") + 1;
     head: str = p[:i];
     tail: str = p[i:];
@@ -73,19 +133,19 @@ def:pub split(p: str) -> tuple[(str, str)] {
 }
 
 
-def:pub dirname(p: str) -> str {
+impl dirname(p: str) -> str {
     (head, tail) = split(p);
     return head;
 }
 
 
-def:pub basename(p: str) -> str {
+impl basename(p: str) -> str {
     (head, tail) = split(p);
     return tail;
 }
 
 
-def:pub splitext(p: str) -> tuple[(str, str)] {
+impl splitext(p: str) -> tuple[(str, str)] {
     sep_index: int = p.rfind("/");
     dot_index: int = p.rfind(".");
     if dot_index > sep_index {
@@ -101,7 +161,7 @@ def:pub splitext(p: str) -> tuple[(str, str)] {
 }
 
 
-def _join2(a: str, b: str) -> str {
+impl _join2(a: str, b: str) -> str {
     if b.startswith("/") {
         return b;
     }
@@ -112,7 +172,7 @@ def _join2(a: str, b: str) -> str {
 }
 
 
-def:pub join(
+impl join(
     a: str,
     p1: (str | None) = None,
     p2: (str | None) = None,
@@ -136,7 +196,7 @@ def:pub join(
 }
 
 
-def:pub abspath(path: str) -> str {
+impl abspath(path: str) -> str {
     if not isabs(path) {
         path = join(os.getcwd(), path);
     }
@@ -144,12 +204,12 @@ def:pub abspath(path: str) -> str {
 }
 
 
-def:pub normcase(s: str) -> str {
+impl normcase(s: str) -> str {
     return s;
 }
 
 
-def:pub relpath(path: str, start: str = ".") -> str {
+impl relpath(path: str, start: str = ".") -> str {
     if path == "" {
         raise ValueError("no path specified");
     }
@@ -190,7 +250,7 @@ def:pub relpath(path: str, start: str = ".") -> str {
 }
 
 
-def:pub normpath(path: str) -> str {
+impl normpath(path: str) -> str {
     if path == "" {
         return ".";
     }
@@ -231,7 +291,7 @@ def:pub normpath(path: str) -> str {
 }
 
 
-def:pub expanduser(path: str) -> str {
+impl expanduser(path: str) -> str {
     if not path.startswith("~") {
         return path;
     }

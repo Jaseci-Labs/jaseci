@@ -17,7 +17,15 @@ glob REGION_KERNEL_ABI: dict[str, tuple[bool, int]] = {
          "__jac_region_owns": (True, 1)
      };
 
-def _region_layout_facts -> dict[str, int] {
+def _region_layout_facts -> dict[str, int];
+
+def _declared_int(source: str, name: str) -> (str | None);
+
+def verify_region_layout(source: str);
+
+def verify_region_unit(path: str);
+
+impl _region_layout_facts -> dict[str, int] {
     import from jaclang.compiler.frontend.codeinfo {
         HDR_ALLOC_ID_OFF,
         HDR_DTOR_OFF,
@@ -41,7 +49,7 @@ def _region_layout_facts -> dict[str, int] {
     };
 }
 
-def _declared_int(source: str, name: str) -> (str | None) {
+impl _declared_int(source: str, name: str) -> (str | None) {
     lead = f"{name}: int = ";
     at = source.find(lead);
     while at >= 0 {
@@ -65,7 +73,7 @@ def _declared_int(source: str, name: str) -> (str | None) {
     return None;
 }
 
-def verify_region_layout(source: str) {
+impl verify_region_layout(source: str) {
     facts = _region_layout_facts();
     for (name, want) in facts.items() {
         declared = _declared_int(source, name);
@@ -86,7 +94,7 @@ def verify_region_layout(source: str) {
     }
 }
 
-def verify_region_unit(path: str) {
+impl verify_region_unit(path: str) {
     with open(path, "r", encoding="utf-8") as f {
         verify_region_layout(f.read());
     }

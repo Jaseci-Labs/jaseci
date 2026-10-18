@@ -172,7 +172,39 @@ obj Document(Media) {
 }
 
 
-def image_resp_kind(resp_type: type | None) -> str {
+def image_resp_kind(resp_type: type | None) -> str;
+
+
+def serialize_media_content(content: list[any]) -> list[dict[str, any]];
+
+
+def normalize_tool_result(value: any) -> str | list[Media];
+
+
+def content_preview(content: any, max_len: int) -> str;
+
+
+glob TOOL_MEDIA_BLOCKS: tuple[str, ...] = ("image_url", "image", "file");
+
+def reroute_tool_images_to_user_message(
+    messages: list[dict[str, object] | LiteLLMMessage]
+) -> list[dict[str, object] | LiteLLMMessage];
+
+
+def _is_tool_msg(msg: object) -> bool;
+
+
+def _tool_msg_has_image(msg: object) -> bool;
+
+
+def _split_tool_msg_images(
+    msg: dict[str, any]
+) -> tuple[dict[str, any], list[dict[str, any]]];
+
+
+def response_dict(value: object) -> dict[str, any];
+
+impl image_resp_kind(resp_type: type | None) -> str {
     if resp_type is Image {
         return "one";
     }
@@ -183,7 +215,7 @@ def image_resp_kind(resp_type: type | None) -> str {
 }
 
 
-def serialize_media_content(content: list[any]) -> list[dict[str, any]] {
+impl serialize_media_content(content: list[any]) -> list[dict[str, any]] {
     blocks: list[dict[str, any]] = [];
     for item in content {
         if isinstance(item, dict) {
@@ -204,7 +236,7 @@ def serialize_media_content(content: list[any]) -> list[dict[str, any]] {
 }
 
 
-def normalize_tool_result(value: any) -> str | list[Media] {
+impl normalize_tool_result(value: any) -> str | list[Media] {
     if isinstance(value, str) {
         return value;
     }
@@ -222,7 +254,7 @@ def normalize_tool_result(value: any) -> str | list[Media] {
 }
 
 
-def content_preview(content: any, max_len: int) -> str {
+impl content_preview(content: any, max_len: int) -> str {
     if isinstance(content, str) {
         return content[:max_len];
     }
@@ -244,9 +276,7 @@ def content_preview(content: any, max_len: int) -> str {
 }
 
 
-glob TOOL_MEDIA_BLOCKS: tuple[str, ...] = ("image_url", "image", "file");
-
-def reroute_tool_images_to_user_message(
+impl reroute_tool_images_to_user_message(
     messages: list[dict[str, object] | LiteLLMMessage]
 ) -> list[dict[str, object] | LiteLLMMessage] {
     if not any(_tool_msg_has_image(m) for m in messages) {
@@ -283,12 +313,12 @@ def reroute_tool_images_to_user_message(
 }
 
 
-def _is_tool_msg(msg: object) -> bool {
+impl _is_tool_msg(msg: object) -> bool {
     return isinstance(msg, dict) and msg.get("role") == "tool";
 }
 
 
-def _tool_msg_has_image(msg: object) -> bool {
+impl _tool_msg_has_image(msg: object) -> bool {
     if not (isinstance(msg, dict) and msg.get("role") == "tool") {
         return False;
     }
@@ -305,7 +335,7 @@ def _tool_msg_has_image(msg: object) -> bool {
 }
 
 
-def _split_tool_msg_images(
+impl _split_tool_msg_images(
     msg: dict[str, any]
 ) -> tuple[dict[str, any], list[dict[str, any]]] {
     content = msg.get("content");
@@ -343,7 +373,7 @@ def _split_tool_msg_images(
 }
 
 
-def response_dict(value: object) -> dict[str, any] {
+impl response_dict(value: object) -> dict[str, any] {
     if isinstance(value, dict) {
         return value;
     }

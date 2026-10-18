@@ -4,7 +4,9 @@ import from ._errno_native { last_errno, raise_os_error }
 
 def:pub replace_file(
     src: str, dst: str, src_dir_fd: int | None, dst_dir_fd: int | None
-) {
+);
+
+impl replace_file(src: str, dst: str, src_dir_fd: int | None, dst_dir_fd: int | None) {
     if "\x00" in src or "\x00" in dst {
         raise ValueError("embedded null byte");
     }

@@ -1,4 +1,29 @@
-def dget(blob: any, key: str) -> dict[str, any] {
+def dget(blob: any, key: str) -> dict[str, any];
+
+
+def lget(blob: any, key: str) -> list[any];
+
+
+def sget(blob: any, key: str) -> str | None;
+
+
+def bget(blob: any, key: str, fallback: bool) -> bool;
+
+
+def iget(blob: any, key: str, fallback: int) -> int;
+
+
+def fget(blob: any, key: str, fallback: float) -> float;
+
+
+def pod_spec(deployment: any) -> dict[str, any];
+
+
+def effective_resources(
+    deployment: any
+) -> tuple[str | None, str | None, str | None, str | None];
+
+impl dget(blob: any, key: str) -> dict[str, any] {
     if not isinstance(blob, dict) {
         return {};
     }
@@ -7,7 +32,7 @@ def dget(blob: any, key: str) -> dict[str, any] {
 }
 
 
-def lget(blob: any, key: str) -> list[any] {
+impl lget(blob: any, key: str) -> list[any] {
     if not isinstance(blob, dict) {
         return [];
     }
@@ -16,7 +41,7 @@ def lget(blob: any, key: str) -> list[any] {
 }
 
 
-def sget(blob: any, key: str) -> str | None {
+impl sget(blob: any, key: str) -> str | None {
     if not isinstance(blob, dict) {
         return None;
     }
@@ -25,7 +50,7 @@ def sget(blob: any, key: str) -> str | None {
 }
 
 
-def bget(blob: any, key: str, fallback: bool) -> bool {
+impl bget(blob: any, key: str, fallback: bool) -> bool {
     if not isinstance(blob, dict) {
         return fallback;
     }
@@ -34,7 +59,7 @@ def bget(blob: any, key: str, fallback: bool) -> bool {
 }
 
 
-def iget(blob: any, key: str, fallback: int) -> int {
+impl iget(blob: any, key: str, fallback: int) -> int {
     if not isinstance(blob, dict) {
         return fallback;
     }
@@ -50,7 +75,7 @@ def iget(blob: any, key: str, fallback: int) -> int {
 }
 
 
-def fget(blob: any, key: str, fallback: float) -> float {
+impl fget(blob: any, key: str, fallback: float) -> float {
     if not isinstance(blob, dict) {
         return fallback;
     }
@@ -66,12 +91,12 @@ def fget(blob: any, key: str, fallback: float) -> float {
 }
 
 
-def pod_spec(deployment: any) -> dict[str, any] {
+impl pod_spec(deployment: any) -> dict[str, any] {
     return dget(dget(dget(deployment, "spec"), "template"), "spec");
 }
 
 
-def effective_resources(
+impl effective_resources(
     deployment: any
 ) -> tuple[str | None, str | None, str | None, str | None] {
     containers = lget(pod_spec(deployment), "containers");

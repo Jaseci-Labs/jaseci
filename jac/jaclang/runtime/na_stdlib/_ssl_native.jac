@@ -35,7 +35,42 @@ glob _ERR_REASON_MASK: int = 8388607,
      _SSL_R_UNEXPECTED_EOF_WHILE_READING: int = 294;
 
 
-def:pub ctx_new_verifying -> int {
+def:pub ctx_new_verifying -> int;
+
+
+def:pub ctx_load_ca_file(ctx: int, cafile: str) -> int;
+
+
+def:pub ctx_load_default_ca(ctx: int) -> int;
+
+
+def:pub ctx_free(ctx: int);
+
+
+def:pub ssl_new_client(ctx: int, fd: int, hostname: str, check_hostname: bool) -> int;
+
+
+def:pub do_handshake(ssl: int) -> int;
+
+
+def:pub verify_result(ssl: int) -> int;
+
+
+def:pub verify_message(code: int) -> str;
+
+
+def:pub last_error -> str;
+
+
+def:pub ssl_write_all(ssl: int, data: bytes) -> int;
+
+
+def:pub ssl_read(ssl: int, bufsize: int) -> bytes;
+
+
+def:pub ssl_close(ssl: int);
+
+impl ctx_new_verifying -> int {
     ctx = SSL_CTX_new(TLS_client_method());
     if ctx == 0 {
         return 0;
@@ -45,24 +80,24 @@ def:pub ctx_new_verifying -> int {
 }
 
 
-def:pub ctx_load_ca_file(ctx: int, cafile: str) -> int {
+impl ctx_load_ca_file(ctx: int, cafile: str) -> int {
     return SSL_CTX_load_verify_locations(ctx, cafile, 0);
 }
 
 
-def:pub ctx_load_default_ca(ctx: int) -> int {
+impl ctx_load_default_ca(ctx: int) -> int {
     return SSL_CTX_set_default_verify_paths(ctx);
 }
 
 
-def:pub ctx_free(ctx: int) {
+impl ctx_free(ctx: int) {
     if ctx != 0 {
         SSL_CTX_free(ctx);
     }
 }
 
 
-def:pub ssl_new_client(ctx: int, fd: int, hostname: str, check_hostname: bool) -> int {
+impl ssl_new_client(ctx: int, fd: int, hostname: str, check_hostname: bool) -> int {
     ssl = SSL_new(ctx);
     if ssl == 0 {
         return 0;
@@ -82,22 +117,22 @@ def:pub ssl_new_client(ctx: int, fd: int, hostname: str, check_hostname: bool) -
 }
 
 
-def:pub do_handshake(ssl: int) -> int {
+impl do_handshake(ssl: int) -> int {
     return SSL_connect(ssl);
 }
 
 
-def:pub verify_result(ssl: int) -> int {
+impl verify_result(ssl: int) -> int {
     return SSL_get_verify_result(ssl);
 }
 
 
-def:pub verify_message(code: int) -> str {
+impl verify_message(code: int) -> str {
     return X509_verify_cert_error_string(i64(code));
 }
 
 
-def:pub last_error -> str {
+impl last_error -> str {
     e = ERR_get_error();
     if e == 0 {
         return "unknown error";
@@ -106,7 +141,7 @@ def:pub last_error -> str {
 }
 
 
-def:pub ssl_write_all(ssl: int, data: bytes) -> int {
+impl ssl_write_all(ssl: int, data: bytes) -> int {
     total = len(data);
     off = 0;
     while off < total {
@@ -121,7 +156,7 @@ def:pub ssl_write_all(ssl: int, data: bytes) -> int {
 }
 
 
-def:pub ssl_read(ssl: int, bufsize: int) -> bytes {
+impl ssl_read(ssl: int, bufsize: int) -> bytes {
     if bufsize <= 0 {
         return b"";
     }
@@ -144,7 +179,7 @@ def:pub ssl_read(ssl: int, bufsize: int) -> bytes {
 }
 
 
-def:pub ssl_close(ssl: int) {
+impl ssl_close(ssl: int) {
     if ssl != 0 {
         SSL_shutdown(ssl);
         SSL_free(ssl);

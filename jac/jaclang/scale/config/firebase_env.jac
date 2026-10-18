@@ -9,6 +9,13 @@ glob FIREBASE_PROJECT_ID_ENV: str = "FIREBASE_PROJECT_ID",
 def resolve_firebase_project_id(
     specific_env_vars: (list[str] | str | None) = None,
     config_value: (str | None) = None
+) -> (str | None);
+
+def firebase_project_id_env_hint -> str;
+
+impl resolve_firebase_project_id(
+    specific_env_vars: (list[str] | str | None) = None,
+    config_value: (str | None) = None
 ) -> (str | None) {
     env_vars: list[str];
     if isinstance(specific_env_vars, str) {
@@ -34,7 +41,7 @@ def resolve_firebase_project_id(
     return None;
 }
 
-def firebase_project_id_env_hint -> str {
+impl firebase_project_id_env_hint -> str {
     return (
         "Set FIREBASE_PROJECT_ID (shared), or a subsystem env var: "
         "FIREBASE_AUTH_PROJECT_ID (SSO), FIRESTORE_PROJECT_ID (Firestore), "

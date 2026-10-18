@@ -12,7 +12,15 @@ glob _DIR_LISTINGS: dict[str, tuple[int, list[str]]] = {},
      LISTING_SETTLE_NS: int = 2_000_000_000,
      _LAYOUT_TABLES: list[LayoutTables] = [];
 
-def host_layout_tables -> LayoutTables {
+def host_layout_tables -> LayoutTables;
+
+def _dir_entries(directory: str) -> (list[str] | None);
+
+def discover_annex_files(source_path: str, suffix: str = '.impl.jac') -> list[str];
+
+def discover_base_file(annex_path: str) -> (str | None);
+
+impl host_layout_tables -> LayoutTables {
     if not _LAYOUT_TABLES {
         import from jaclang.jac0core.ext_registry {
             ANNEX_FOLDER,
@@ -41,7 +49,7 @@ def host_layout_tables -> LayoutTables {
     return _LAYOUT_TABLES[0];
 }
 
-def _dir_entries(directory: str) -> (list[str] | None) {
+impl _dir_entries(directory: str) -> (list[str] | None) {
     """The names in a directory, cached by the directory's mtime. Annex
     discovery runs for every import of every program in a process, and a
     directory that has not changed costs one stat instead of a scan. A
@@ -73,10 +81,10 @@ def _dir_entries(directory: str) -> (list[str] | None) {
     return names;
 }
 
-def discover_annex_files(source_path: str, suffix: str = '.impl.jac') -> list[str] {
+impl discover_annex_files(source_path: str, suffix: str = '.impl.jac') -> list[str] {
     return annex_files_of(host_layout_tables(), source_path, suffix, _dir_entries);
 }
 
-def discover_base_file(annex_path: str) -> (str | None) {
+impl discover_base_file(annex_path: str) -> (str | None) {
     return base_file_of(host_layout_tables(), annex_path);
 }

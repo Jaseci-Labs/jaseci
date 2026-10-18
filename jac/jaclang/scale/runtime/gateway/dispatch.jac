@@ -28,7 +28,20 @@ obj RouteDecision {
 }
 
 
-def _normalize(path: str) -> str {
+def _normalize(path: str) -> str;
+
+
+def _first_segment(norm_path: str) -> str;
+
+
+def _longest_prefix_match(norm_path: str, service_prefixes: list[str]) -> str;
+
+
+def classify_route(
+    path: str, service_prefixes: list[str], client_pages: bool = False
+) -> RouteDecision;
+
+impl _normalize(path: str) -> str {
     trimmed = path.strip("/");
     if trimmed == "" {
         return "/";
@@ -37,7 +50,7 @@ def _normalize(path: str) -> str {
 }
 
 
-def _first_segment(norm_path: str) -> str {
+impl _first_segment(norm_path: str) -> str {
     trimmed = norm_path.strip("/");
     if trimmed == "" {
         return "";
@@ -46,7 +59,7 @@ def _first_segment(norm_path: str) -> str {
 }
 
 
-def _longest_prefix_match(norm_path: str, service_prefixes: list[str]) -> str {
+impl _longest_prefix_match(norm_path: str, service_prefixes: list[str]) -> str {
     best = "";
     for prefix in service_prefixes {
         if norm_path.startswith(prefix + "/") {
@@ -61,7 +74,7 @@ def _longest_prefix_match(norm_path: str, service_prefixes: list[str]) -> str {
 }
 
 
-def classify_route(
+impl classify_route(
     path: str, service_prefixes: list[str], client_pages: bool = False
 ) -> RouteDecision {
     norm = _normalize(path);

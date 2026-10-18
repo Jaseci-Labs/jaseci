@@ -10,7 +10,19 @@ glob _SEEK_SET: int = 0,
      _SEEK_END: int = 2,
      _PREALLOC_CAP: int = 67108864;
 
-def:pub open_stream(path: str, mode: str) -> int {
+def:pub open_stream(path: str, mode: str) -> int;
+
+def:pub close_stream(stream: int);
+
+def:pub read_stream(stream: int, size: int, path: str) -> bytes;
+
+def:pub read_stream_all(stream: int, path: str) -> bytes;
+
+def:pub seek_stream(stream: int, offset: int, whence: int, path: str) -> int;
+
+def:pub read_file_bytes(path: str) -> bytes;
+
+impl open_stream(path: str, mode: str) -> int {
     if "\x00" in path {
         raise ValueError("embedded null byte");
     }
@@ -21,11 +33,11 @@ def:pub open_stream(path: str, mode: str) -> int {
     return stream;
 }
 
-def:pub close_stream(stream: int) {
+impl close_stream(stream: int) {
     fclose(stream);
 }
 
-def:pub read_stream(stream: int, size: int, path: str) -> bytes {
+impl read_stream(stream: int, size: int, path: str) -> bytes {
     if size <= 0 {
         return b"";
     }
@@ -40,7 +52,7 @@ def:pub read_stream(stream: int, size: int, path: str) -> bytes {
     return buffer[:count];
 }
 
-def:pub read_stream_all(stream: int, path: str) -> bytes {
+impl read_stream_all(stream: int, path: str) -> bytes {
     buffer = b"\x00" * 65536;
     result = bytearray();
     while True {
@@ -56,14 +68,14 @@ def:pub read_stream_all(stream: int, path: str) -> bytes {
     return bytes(result);
 }
 
-def:pub seek_stream(stream: int, offset: int, whence: int, path: str) -> int {
+impl seek_stream(stream: int, offset: int, whence: int, path: str) -> int {
     if fseek(stream, i64(offset), i32(whence)) != i32(0) {
         raise_os_error("seek", path, last_errno());
     }
     return int(ftell(stream));
 }
 
-def:pub read_file_bytes(path: str) -> bytes {
+impl read_file_bytes(path: str) -> bytes {
     stream = open_stream(path, "rb");
     try {
         hint = -1;

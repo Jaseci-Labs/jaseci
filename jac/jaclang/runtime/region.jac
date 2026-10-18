@@ -3,7 +3,39 @@ import weakref;
 
 glob _region_tls: any = threading.local();
 
-def _stack -> list[JacRegion] {
+def _stack -> list[JacRegion];
+
+obj JacRegion {
+    has _drops: list[any] = [],
+        _parent: any = None;
+
+    def partition(n: int = 0) -> any;
+    def _jac_open;
+    def _jac_close;
+    def _jac_register(item: any);
+    def _jac_drop;
+    def __del__;
+}
+
+def escape_regions -> list[JacRegion];
+
+def restore_regions(saved: list[JacRegion]);
+
+def open_region(r: any);
+
+def close_region(r: any);
+
+def register_drop(item: any);
+
+def region_of(item: any) -> any;
+
+def instrument_drops(cls: any);
+
+def is_drop_hook(member: any) -> bool;
+
+def run_drop(item: any);
+
+impl _stack -> list[JacRegion] {
     s = _region_tls?.stack;
     if s is None {
         s = [];
@@ -12,94 +44,89 @@ def _stack -> list[JacRegion] {
     return s;
 }
 
-obj JacRegion {
-    has _drops: list[any] = [],
-        _parent: any = None;
-
-    def partition(n: int = 0) -> any {
-        if n <= 0 {
-            c = JacRegion();
-            c._parent = self;
-            return c;
-        }
-        out: list[JacRegion] = [];
-        for _i in range(n) {
-            c = JacRegion();
-            c._parent = self;
-            out.append(c);
-        }
-        return tuple(out);
+impl JacRegion.partition(n: int = 0) -> any {
+    if n <= 0 {
+        c = JacRegion();
+        c._parent = self;
+        return c;
     }
-
-    def _jac_open {
-        _stack().append(self);
+    out: list[JacRegion] = [];
+    for _i in range(n) {
+        c = JacRegion();
+        c._parent = self;
+        out.append(c);
     }
+    return tuple(out);
+}
 
-    def _jac_close {
-        s = _stack();
-        i = len(s) - 1;
-        while i >= 0 {
-            if s[i] is self {
-                s.pop(i);
-                return;
-            }
-            i -= 1;
-        }
-    }
+impl JacRegion._jac_open {
+    _stack().append(self);
+}
 
-    def _jac_register(item: any) {
-        self._drops.append(item);
-    }
-
-    def _jac_drop {
-        _pending = self._drops;
-        self._drops = [];
-        _p = self._parent;
-        if _p is not None {
-            self._parent = None;
-            _p._drops.extend(_pending);
+impl JacRegion._jac_close {
+    s = _stack();
+    i = len(s) - 1;
+    while i >= 0 {
+        if s[i] is self {
+            s.pop(i);
             return;
         }
-        for o in reversed(_pending) {
-            try {
-                run_drop(o);
-            } except Exception {
-                continue;
-            }
-        }
-    }
-
-    def __del__ {
-        self._jac_drop();
+        i -= 1;
     }
 }
 
-def escape_regions -> list[JacRegion] {
+impl JacRegion._jac_register(item: any) {
+    self._drops.append(item);
+}
+
+impl JacRegion._jac_drop {
+    _pending = self._drops;
+    self._drops = [];
+    _p = self._parent;
+    if _p is not None {
+        self._parent = None;
+        _p._drops.extend(_pending);
+        return;
+    }
+    for o in reversed(_pending) {
+        try {
+            run_drop(o);
+        } except Exception {
+            continue;
+        }
+    }
+}
+
+impl JacRegion.__del__ {
+    self._jac_drop();
+}
+
+impl escape_regions -> list[JacRegion] {
     s = _stack();
     saved = list(s);
     s.clear();
     return saved;
 }
 
-def restore_regions(saved: list[JacRegion]) {
+impl restore_regions(saved: list[JacRegion]) {
     s = _stack();
     s.clear();
     s.extend(saved);
 }
 
-def open_region(r: any) {
+impl open_region(r: any) {
     if isinstance(r, JacRegion) {
         r._jac_open();
     }
 }
 
-def close_region(r: any) {
+impl close_region(r: any) {
     if isinstance(r, JacRegion) {
         r._jac_close();
     }
 }
 
-def register_drop(item: any) {
+impl register_drop(item: any) {
     s = _stack();
     if s {
         s[-1]._jac_register(item);
@@ -107,12 +134,12 @@ def register_drop(item: any) {
     }
 }
 
-def region_of(item: any) -> any {
+impl region_of(item: any) -> any {
     ref = item?._jac_region;
     return ref() if ref is not None else None;
 }
 
-def instrument_drops(cls: any) {
+impl instrument_drops(cls: any) {
     _orig_init: any = getattr(cls, "__init__");
     def _region_init(inst: any, *args: any, **kwargs: any) {
         _orig_init(inst, *args, **kwargs);
@@ -132,7 +159,7 @@ def instrument_drops(cls: any) {
     setattr(cls, "__del__", _drop_on_release);
 }
 
-def is_drop_hook(member: any) -> bool {
+impl is_drop_hook(member: any) -> bool {
     if isinstance(member, (staticmethod, classmethod))
         or not callable(member)
         or getattr(member, "__jac_entry", False)
@@ -148,7 +175,7 @@ def is_drop_hook(member: any) -> bool {
     return declared == 1;
 }
 
-def run_drop(item: any) {
+impl run_drop(item: any) {
     if item is None or getattr(item, "_jac_drop_done", False) {
         return;
     }

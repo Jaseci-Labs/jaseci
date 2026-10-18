@@ -31,7 +31,48 @@ import from crypto { def HMAC_Final(ctx: int, md_out: bytes, outlen: bytes) -> i
 
 glob _EVP_MAX_MD_SIZE: int = 64;
 
-def:pub evp_md_for(name: str) -> int {
+def:pub evp_md_for(name: str) -> int;
+
+
+def:pub digest_size_for(name: str) -> int;
+
+
+def:pub block_size_for(name: str) -> int;
+
+
+def:pub ctx_require(ctx: int, what: str);
+
+
+def:pub evp_ctx_new(md: int) -> int;
+
+
+def:pub evp_ctx_update(ctx: int, data: bytes);
+
+
+def:pub evp_ctx_clone(ctx: int) -> int;
+
+
+def:pub evp_ctx_digest(ctx: int) -> bytes;
+
+
+def:pub evp_ctx_free(ctx: int);
+
+
+def:pub hmac_ctx_new(md: int, key: bytes) -> int;
+
+
+def:pub hmac_ctx_update(ctx: int, data: bytes);
+
+
+def:pub hmac_ctx_clone(ctx: int) -> int;
+
+
+def:pub hmac_ctx_digest(ctx: int) -> bytes;
+
+
+def:pub hmac_ctx_free(ctx: int);
+
+impl evp_md_for(name: str) -> int {
     if name == "md5" {
         return EVP_md5();
     } elif name == "sha1" {
@@ -61,7 +102,7 @@ def:pub evp_md_for(name: str) -> int {
 }
 
 
-def:pub digest_size_for(name: str) -> int {
+impl digest_size_for(name: str) -> int {
     if name == "md5" {
         return 16;
     } elif name == "sha1" {
@@ -91,7 +132,7 @@ def:pub digest_size_for(name: str) -> int {
 }
 
 
-def:pub block_size_for(name: str) -> int {
+impl block_size_for(name: str) -> int {
     if name == "md5" {
         return 64;
     } elif name == "sha1" {
@@ -121,14 +162,14 @@ def:pub block_size_for(name: str) -> int {
 }
 
 
-def:pub ctx_require(ctx: int, what: str) {
+impl ctx_require(ctx: int, what: str) {
     if ctx == 0 {
         raise ValueError(what + " object is finalized");
     }
 }
 
 
-def:pub evp_ctx_new(md: int) -> int {
+impl evp_ctx_new(md: int) -> int {
     ctx: int = EVP_MD_CTX_new();
     if ctx == 0 {
         raise ValueError("EVP_MD_CTX_new failed (out of memory)");
@@ -141,14 +182,14 @@ def:pub evp_ctx_new(md: int) -> int {
 }
 
 
-def:pub evp_ctx_update(ctx: int, data: bytes) {
+impl evp_ctx_update(ctx: int, data: bytes) {
     if EVP_DigestUpdate(ctx, data, u64(len(data))) != 1 {
         raise ValueError("EVP_DigestUpdate failed");
     }
 }
 
 
-def:pub evp_ctx_clone(ctx: int) -> int {
+impl evp_ctx_clone(ctx: int) -> int {
     tmp: int = EVP_MD_CTX_new();
     if tmp == 0 {
         raise ValueError("EVP_MD_CTX_new failed (out of memory)");
@@ -161,7 +202,7 @@ def:pub evp_ctx_clone(ctx: int) -> int {
 }
 
 
-def:pub evp_ctx_digest(ctx: int) -> bytes {
+impl evp_ctx_digest(ctx: int) -> bytes {
     tmp: int = evp_ctx_clone(ctx);
     out = b"\x00" * _EVP_MAX_MD_SIZE;
 
@@ -175,12 +216,12 @@ def:pub evp_ctx_digest(ctx: int) -> bytes {
 }
 
 
-def:pub evp_ctx_free(ctx: int) {
+impl evp_ctx_free(ctx: int) {
     EVP_MD_CTX_free(ctx);
 }
 
 
-def:pub hmac_ctx_new(md: int, key: bytes) -> int {
+impl hmac_ctx_new(md: int, key: bytes) -> int {
     ctx: int = HMAC_CTX_new();
     if ctx == 0 {
         raise ValueError("HMAC_CTX_new failed (out of memory)");
@@ -193,14 +234,14 @@ def:pub hmac_ctx_new(md: int, key: bytes) -> int {
 }
 
 
-def:pub hmac_ctx_update(ctx: int, data: bytes) {
+impl hmac_ctx_update(ctx: int, data: bytes) {
     if HMAC_Update(ctx, data, u64(len(data))) != 1 {
         raise ValueError("HMAC_Update failed");
     }
 }
 
 
-def:pub hmac_ctx_clone(ctx: int) -> int {
+impl hmac_ctx_clone(ctx: int) -> int {
     tmp: int = HMAC_CTX_new();
     if tmp == 0 {
         raise ValueError("HMAC_CTX_new failed (out of memory)");
@@ -213,7 +254,7 @@ def:pub hmac_ctx_clone(ctx: int) -> int {
 }
 
 
-def:pub hmac_ctx_digest(ctx: int) -> bytes {
+impl hmac_ctx_digest(ctx: int) -> bytes {
     tmp: int = hmac_ctx_clone(ctx);
     out = b"\x00" * _EVP_MAX_MD_SIZE;
 
@@ -227,6 +268,6 @@ def:pub hmac_ctx_digest(ctx: int) -> bytes {
 }
 
 
-def:pub hmac_ctx_free(ctx: int) {
+impl hmac_ctx_free(ctx: int) {
     HMAC_CTX_free(ctx);
 }

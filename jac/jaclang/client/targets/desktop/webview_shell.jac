@@ -6,6 +6,24 @@ import from typing { Optional }
 
 def _assemble_native_host(
     entry_file: Path, project_dir: Path, output_dir: Path, dist_dir: Optional[Path]
+) -> Path;
+
+def webview_build(
+    entry_file: Path, project_dir: Path, out_dir: Path, web_bundle: Path
+) -> Path;
+
+def webview_start(binary: Path);
+
+def webview_dev(
+    entry_file: Path,
+    project_dir: Path,
+    out_dir: Path,
+    port: int = 8000,
+    api_port: int = 0
+);
+
+impl _assemble_native_host(
+    entry_file: Path, project_dir: Path, output_dir: Path, dist_dir: Optional[Path]
 ) -> Path {
     cfg = get_desktop_config(project_dir);
     cfg.validate();
@@ -93,7 +111,7 @@ def _assemble_native_host(
     return binary;
 }
 
-def webview_build(
+impl webview_build(
     entry_file: Path, project_dir: Path, out_dir: Path, web_bundle: Path
 ) -> Path {
     ensure_dev_build_env();
@@ -111,7 +129,7 @@ def webview_build(
     return binary;
 }
 
-def webview_start(binary: Path) {
+impl webview_start(binary: Path) {
     env = desktop_app_runtime_env();
     console.print(f"\n🚀 Launching {binary.name}", style="bold green");
     try {
@@ -121,7 +139,7 @@ def webview_start(binary: Path) {
     }
 }
 
-def webview_dev(
+impl webview_dev(
     entry_file: Path,
     project_dir: Path,
     out_dir: Path,

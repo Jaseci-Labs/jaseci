@@ -17,7 +17,32 @@ glob WEBVIEW_HEADER: Artifact = Artifact(
      ),
      MACOS_DESKTOP_MIN_VERSION: str = "12.0";
 
-def source_workspace(source: Path, name: str) -> Path {
+def source_workspace(source: Path, name: str) -> Path;
+
+def webview_library_name -> str;
+
+obj WebviewBuild {
+    has label: str,
+        library: str,
+        identity: str,
+        compile_args: list[str],
+        link_args: list[str] = [],
+        webkit_module: str = "";
+
+    def command(source: Path, output: Path) -> list[str];
+}
+
+def linux_webview_build(module: str, version: str, flags: list[str]) -> WebviewBuild;
+
+def mac_webview_build(macos_version: str, machine: str) -> WebviewBuild;
+
+def _webview_build_for_host(host: str) -> WebviewBuild;
+
+def ensure_webview(directory: Path) -> Path;
+
+def build_webview(directory: Path, build: WebviewBuild) -> Path;
+
+impl source_workspace(source: Path, name: str) -> Path {
     digest = hashlib.sha256();
     digest.update(file_digest(Path(sys.executable)).encode());
     files = sorted(
@@ -50,24 +75,15 @@ def source_workspace(source: Path, name: str) -> Path {
     return destination;
 }
 
-def webview_library_name -> str {
+impl webview_library_name -> str {
     return shared_library_name("webview");
 }
 
-obj WebviewBuild {
-    has label: str,
-        library: str,
-        identity: str,
-        compile_args: list[str],
-        link_args: list[str] = [],
-        webkit_module: str = "";
-
-    def command(source: Path, output: Path) -> list[str] {
-        return self.compile_args + [str(source), "-o", str(output)] + self.link_args;
-    }
+impl WebviewBuild.command(source: Path, output: Path) -> list[str] {
+    return self.compile_args + [str(source), "-o", str(output)] + self.link_args;
 }
 
-def linux_webview_build(module: str, version: str, flags: list[str]) -> WebviewBuild {
+impl linux_webview_build(module: str, version: str, flags: list[str]) -> WebviewBuild {
     return WebviewBuild(
         label="Building native WebKitGTK wrapper",
         library="libwebview.so",
@@ -86,7 +102,7 @@ def linux_webview_build(module: str, version: str, flags: list[str]) -> WebviewB
     );
 }
 
-def mac_webview_build(macos_version: str, machine: str) -> WebviewBuild {
+impl mac_webview_build(macos_version: str, machine: str) -> WebviewBuild {
     return WebviewBuild(
         label="Building native WKWebView wrapper",
         library="libwebview.dylib",
@@ -113,7 +129,7 @@ def mac_webview_build(macos_version: str, machine: str) -> WebviewBuild {
     );
 }
 
-def _webview_build_for_host(host: str) -> WebviewBuild {
+impl _webview_build_for_host(host: str) -> WebviewBuild {
     if host.startswith("mac-") {
         return mac_webview_build(platform.mac_ver()[0], platform.machine());
     }
@@ -133,12 +149,12 @@ def _webview_build_for_host(host: str) -> WebviewBuild {
     return linux_webview_build(module, version, shlex.split(flags));
 }
 
-def ensure_webview(directory: Path) -> Path {
+impl ensure_webview(directory: Path) -> Path {
     host = ensure_desktop_host();
     return build_webview(directory, _webview_build_for_host(host));
 }
 
-def build_webview(directory: Path, build: WebviewBuild) -> Path {
+impl build_webview(directory: Path, build: WebviewBuild) -> Path {
     output = directory / build.library;
     stamp = directory / ".webview-build";
     with FileLock(directory / ".build.lock") {

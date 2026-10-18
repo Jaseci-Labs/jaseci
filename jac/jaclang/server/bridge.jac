@@ -1,7 +1,36 @@
 import json;
 
 
-def serialize_response(resp: any) -> str {
+def serialize_response(resp: any) -> str;
+
+
+def replay_response(cached: str) -> any;
+
+
+obj BridgeError(RuntimeError) {
+    has app: str = "",
+        name: str = "",
+        detail: str = "",
+        status: int = 0;
+
+    def __str__ -> str;
+}
+
+obj BridgeUnavailable(BridgeError) {}
+
+obj BridgeTimeout(BridgeError) {}
+
+obj BridgeRejected(BridgeError) {}
+
+
+def bridge_error_for_status(
+    status: int, app: str, name: str, detail: str
+) -> BridgeError;
+
+
+def bridge_error_from(exc: Exception, app: str, name: str) -> BridgeError;
+
+impl serialize_response(resp: any) -> str {
     if isinstance(resp, TransportResponse) {
         resp = transport_to_response(resp);
     }
@@ -16,7 +45,7 @@ def serialize_response(resp: any) -> str {
 }
 
 
-def replay_response(cached: str) -> any {
+impl replay_response(cached: str) -> any {
     payload = json.loads(cached);
     return JSONResponse(
         content=payload.get("body"),
@@ -26,26 +55,13 @@ def replay_response(cached: str) -> any {
 }
 
 
-obj BridgeError(RuntimeError) {
-    has app: str = "",
-        name: str = "",
-        detail: str = "",
-        status: int = 0;
-
-    def __str__ -> str {
-        label = f"{self.app}.{self.name}" if self.name else self.app;
-        return f"bridge to '{label}' failed: {self.detail or 'unknown error'}";
-    }
+impl BridgeError.__str__ -> str {
+    label = f"{self.app}.{self.name}" if self.name else self.app;
+    return f"bridge to '{label}' failed: {self.detail or 'unknown error'}";
 }
 
-obj BridgeUnavailable(BridgeError) {}
 
-obj BridgeTimeout(BridgeError) {}
-
-obj BridgeRejected(BridgeError) {}
-
-
-def bridge_error_for_status(
+impl bridge_error_for_status(
     status: int, app: str, name: str, detail: str
 ) -> BridgeError {
     if 400 <= status < 500 {
@@ -55,7 +71,7 @@ def bridge_error_for_status(
 }
 
 
-def bridge_error_from(exc: Exception, app: str, name: str) -> BridgeError {
+impl bridge_error_from(exc: Exception, app: str, name: str) -> BridgeError {
     if isinstance(exc, BridgeError) {
         return exc;
     }

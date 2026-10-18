@@ -6,7 +6,16 @@ import from typing { get_args, get_origin, get_type_hints, Union }
 
 obj:pub ContractError(ValueError) {}
 
-def:pub decode_contract(value: any, contract: any, path: str = "response") -> any {
+def:pub decode_contract(value: any, contract: any, path: str = "response") -> any;
+
+obj:pub JsonEndpoint[T] {
+    has response_type: type[T],
+        path: str;
+
+    def read(fetcher: Callable[[str], bytes]) -> T;
+}
+
+impl decode_contract(value: any, contract: any, path: str = "response") -> any {
     origin = get_origin(contract);
     args = get_args(contract);
     if contract is typing.Any {
@@ -62,11 +71,6 @@ def:pub decode_contract(value: any, contract: any, path: str = "response") -> an
     return contract(**kwargs);
 }
 
-obj:pub JsonEndpoint[T] {
-    has response_type: type[T],
-        path: str;
-
-    def read(fetcher: Callable[[str], bytes]) -> T {
-        return decode_contract(json.loads(fetcher(self.path)), self.response_type);
-    }
+impl JsonEndpoint.read(fetcher: Callable[[str], bytes]) -> T {
+    return decode_contract(json.loads(fetcher(self.path)), self.response_type);
 }

@@ -11,6 +11,10 @@ obj ReadinessCheck {
 
 def register_health_endpoints(
     app: ServingApp, drain: DrainState, checks: (list[ReadinessCheck] | None) = None
+);
+
+impl register_health_endpoints(
+    app: ServingApp, drain: DrainState, checks: (list[ReadinessCheck] | None) = None
 ) {
     probes: list[ReadinessCheck] = list(checks or []);
 

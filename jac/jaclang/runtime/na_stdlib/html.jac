@@ -2400,7 +2400,27 @@ glob _NAMED_SET: str = "\t\n\f <&#;",
      };
 
 
-def:pub escape(s: str, quote: bool = True) -> str {
+def:pub escape(s: str, quote: bool = True) -> str;
+
+
+def:pub unescape(s: str) -> str;
+
+
+def _is_digit(ch: str) -> bool;
+
+
+def _is_hex(ch: str) -> bool;
+
+
+def _charref_end(s: str, start: int) -> int;
+
+
+def _charref_number(digits: str, base: int) -> int;
+
+
+def _replace_charref(ref: str) -> str;
+
+impl escape(s: str, quote: bool = True) -> str {
     s = s.replace("&", "&amp;");
     s = s.replace("<", "&lt;");
     s = s.replace(">", "&gt;");
@@ -2412,7 +2432,7 @@ def:pub escape(s: str, quote: bool = True) -> str {
 }
 
 
-def:pub unescape(s: str) -> str {
+impl unescape(s: str) -> str {
     if "&" not in s {
         return s;
     }
@@ -2438,17 +2458,17 @@ def:pub unescape(s: str) -> str {
 }
 
 
-def _is_digit(ch: str) -> bool {
+impl _is_digit(ch: str) -> bool {
     return ch >= "0" and ch <= "9";
 }
 
 
-def _is_hex(ch: str) -> bool {
+impl _is_hex(ch: str) -> bool {
     return _is_digit(ch) or (ch >= "a" and ch <= "f") or (ch >= "A" and ch <= "F");
 }
 
 
-def _charref_end(s: str, start: int) -> int {
+impl _charref_end(s: str, start: int) -> int {
     n: int = len(s);
     if start >= n {
         return -1;
@@ -2481,7 +2501,7 @@ def _charref_end(s: str, start: int) -> int {
 }
 
 
-def _charref_number(digits: str, base: int) -> int {
+impl _charref_number(digits: str, base: int) -> int {
     value: int = 0;
     for ch in digits {
         if ch == ";" {
@@ -2502,7 +2522,7 @@ def _charref_number(digits: str, base: int) -> int {
 }
 
 
-def _replace_charref(ref: str) -> str {
+impl _replace_charref(ref: str) -> str {
     if ref[0] == "#" {
         num: int = 0;
         if ref[1] == "x" or ref[1] == "X" {

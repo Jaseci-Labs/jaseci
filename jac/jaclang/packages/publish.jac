@@ -21,7 +21,48 @@ obj PublishPlan {
         problems: list[str] = [];
 }
 
-def source_url(config: JacConfig) -> str {
+def source_url(config: JacConfig) -> str;
+
+def surface_in_blob(data: bytes) -> dict[str, any] | None;
+
+def previous_release(entries: list[IndexEntry], version: Version) -> IndexEntry | None;
+
+def previous_surface(
+    registry: Registry, previous: IndexEntry
+) -> dict[str, any] | None;
+
+def api_changes(
+    registry: Registry, previous: IndexEntry, surface: dict[str, any]
+) -> list[ApiChange];
+
+def gate_problems(config: JacConfig, role: str) -> list[str];
+
+def check_gate(config: JacConfig) -> bool;
+
+def plan_publish(
+    config: JacConfig, registry: Registry, run_check: bool = True
+) -> PublishPlan;
+
+def report_plan(plan: PublishPlan);
+
+def index_repo(registry: Registry) -> str;
+
+def open_index_pull(
+    registry: Registry,
+    item: IndexEntry,
+    data: bytes | None,
+    title: str,
+    body: str,
+    surface: dict[str, any] | None = None
+) -> str;
+
+def publish_project(
+    config: JacConfig, dry_run: bool = False, registry_name: str = "", output: str = ""
+) -> int;
+
+def yank_version(config: JacConfig, version: str, registry_name: str = "") -> int;
+
+impl source_url(config: JacConfig) -> str {
     for key in SOURCE_URL_KEYS {
         value = str(config.project.urls.get(key, "")).strip();
         if value {
@@ -31,7 +72,7 @@ def source_url(config: JacConfig) -> str {
     return "";
 }
 
-def surface_in_blob(data: bytes) -> dict[str, any] | None {
+impl surface_in_blob(data: bytes) -> dict[str, any] | None {
     wanted = f"{MANIFEST_DIR}/{API_FILE}";
     with tarfile.open(fileobj=io.BytesIO(data), mode="r:*") as tf {
         for member in tf.getmembers() {
@@ -44,7 +85,9 @@ def surface_in_blob(data: bytes) -> dict[str, any] | None {
     return None;
 }
 
-def previous_release(entries: list[IndexEntry], version: Version) -> IndexEntry | None {
+impl previous_release(
+    entries: list[IndexEntry], version: Version
+) -> IndexEntry | None {
     best: IndexEntry | None = None;
     best_version: Version | None = None;
     for e in entries {
@@ -67,7 +110,7 @@ def previous_release(entries: list[IndexEntry], version: Version) -> IndexEntry 
     return best;
 }
 
-def previous_surface(
+impl previous_surface(
     registry: Registry, previous: IndexEntry
 ) -> dict[str, any] | None {
     published = registry.api(previous.name, previous.version);
@@ -77,7 +120,7 @@ def previous_surface(
     return surface_in_blob(registry.fetch_blob(previous));
 }
 
-def api_changes(
+impl api_changes(
     registry: Registry, previous: IndexEntry, surface: dict[str, any]
 ) -> list[ApiChange] {
     old = previous_surface(registry, previous);
@@ -87,7 +130,7 @@ def api_changes(
     return diff_surfaces(old, surface);
 }
 
-def gate_problems(config: JacConfig, role: str) -> list[str] {
+impl gate_problems(config: JacConfig, role: str) -> list[str] {
     problems: list[str] = [];
     ident = package_identity(config);
     if not is_package_name(ident.name) {
@@ -123,7 +166,7 @@ def gate_problems(config: JacConfig, role: str) -> list[str] {
     return problems;
 }
 
-def check_gate(config: JacConfig) -> bool {
+impl check_gate(config: JacConfig) -> bool {
     return check(
         paths=[str(config.project_root)],
         ignore=[".jac", "node_modules", ".git", "_precompiled"],
@@ -132,7 +175,7 @@ def check_gate(config: JacConfig) -> bool {
         == 0;
 }
 
-def plan_publish(
+impl plan_publish(
     config: JacConfig, registry: Registry, run_check: bool = True
 ) -> PublishPlan {
     role = project_role(config);
@@ -199,7 +242,7 @@ def plan_publish(
     );
 }
 
-def report_plan(plan: PublishPlan) {
+impl report_plan(plan: PublishPlan) {
     e = plan.item;
     console.print(
         f"\n  {e.name} {e.version} ({e.role}), sha256 {e.sha256[:16]}, "
@@ -220,7 +263,7 @@ def report_plan(plan: PublishPlan) {
     }
 }
 
-def index_repo(registry: Registry) -> str {
+impl index_repo(registry: Registry) -> str {
     repo = str(registry.settings().get("repo", ""));
     if not repo or "/" not in repo {
         raise PublishError(
@@ -230,7 +273,7 @@ def index_repo(registry: Registry) -> str {
     return repo;
 }
 
-def open_index_pull(
+impl open_index_pull(
     registry: Registry,
     item: IndexEntry,
     data: bytes | None,
@@ -285,7 +328,7 @@ def open_index_pull(
     return gh.open_pull(repo, f"{login}:{branch}", "main", title, body);
 }
 
-def publish_project(
+impl publish_project(
     config: JacConfig, dry_run: bool = False, registry_name: str = "", output: str = ""
 ) -> int {
     try {
@@ -342,7 +385,7 @@ def publish_project(
     return 0;
 }
 
-def yank_version(config: JacConfig, version: str, registry_name: str = "") -> int {
+impl yank_version(config: JacConfig, version: str, registry_name: str = "") -> int {
     ident = package_identity(config);
     try {
         registry = registry_named(registry_name, config.registries);

@@ -29,13 +29,37 @@ glob GATEWAY_API_SEGMENTS: tuple[str, ...] = (
      );
 
 
-def _derive_builtin_prefixes -> tuple[str, ...] {
+def _derive_builtin_prefixes -> tuple[str, ...];
+
+
+def _derive_service_owned_segments -> tuple[str, ...];
+
+
+glob GATEWAY_BUILTIN_PREFIXES: tuple[str, ...] = _derive_builtin_prefixes(),
+     GATEWAY_BARE_API_PATHS: set[str] = {
+         f"/{seg}" for seg in GATEWAY_BARE_API_SEGMENTS
+     },
+     GATEWAY_SERVICE_OWNED_SEGMENTS: tuple[str, ...] = _derive_service_owned_segments();
+
+
+def is_learnable_prefix(prefix: str) -> bool;
+
+
+def is_gateway_owned_segment(segment: str) -> bool;
+
+
+def guard_route_prefix(name: str, prefix: str);
+
+
+def format_route_lines(routes: dict[str, str]) -> list[str];
+
+impl _derive_builtin_prefixes -> tuple[str, ...] {
     segs = [GATEWAY_CLIENT_SEGMENT] + list(GATEWAY_API_SEGMENTS);
     return tuple([f"/{seg}/" for seg in segs]);
 }
 
 
-def _derive_service_owned_segments -> tuple[str, ...] {
+impl _derive_service_owned_segments -> tuple[str, ...] {
     shared = set(GATEWAY_DISCOVERY_SEGMENTS) | set(GATEWAY_REPLICATED_SEGMENTS);
     return tuple(
         [
@@ -47,14 +71,7 @@ def _derive_service_owned_segments -> tuple[str, ...] {
 }
 
 
-glob GATEWAY_BUILTIN_PREFIXES: tuple[str, ...] = _derive_builtin_prefixes(),
-     GATEWAY_BARE_API_PATHS: set[str] = {
-         f"/{seg}" for seg in GATEWAY_BARE_API_SEGMENTS
-     },
-     GATEWAY_SERVICE_OWNED_SEGMENTS: tuple[str, ...] = _derive_service_owned_segments();
-
-
-def is_learnable_prefix(prefix: str) -> bool {
+impl is_learnable_prefix(prefix: str) -> bool {
     segs = prefix.strip("/").split("/");
     head = segs[0];
     if head not in _GATEWAY_OWNED_PREFIX_SEGMENTS {
@@ -64,12 +81,12 @@ def is_learnable_prefix(prefix: str) -> bool {
 }
 
 
-def is_gateway_owned_segment(segment: str) -> bool {
+impl is_gateway_owned_segment(segment: str) -> bool {
     return segment in _GATEWAY_OWNED_PREFIX_SEGMENTS;
 }
 
 
-def guard_route_prefix(name: str, prefix: str) {
+impl guard_route_prefix(name: str, prefix: str) {
     seg = prefix.strip("/").split("/")[0];
     if seg in _GATEWAY_OWNED_PREFIX_SEGMENTS {
         raise ValueError(
@@ -81,7 +98,7 @@ def guard_route_prefix(name: str, prefix: str) {
 }
 
 
-def format_route_lines(routes: dict[str, str]) -> list[str] {
+impl format_route_lines(routes: dict[str, str]) -> list[str] {
     names = sorted(routes.keys());
     if not names {
         return [];

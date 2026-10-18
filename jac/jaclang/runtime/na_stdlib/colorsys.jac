@@ -3,7 +3,27 @@ glob ONE_THIRD: float = 1.0 / 3.0,
      TWO_THIRD: float = 2.0 / 3.0;
 
 
-def:pub rgb_to_yiq(r: float, g: float, b: float) -> tuple[float, float, float] {
+def:pub rgb_to_yiq(r: float, g: float, b: float) -> tuple[float, float, float];
+
+
+def:pub yiq_to_rgb(y: float, i: float, q: float) -> tuple[float, float, float];
+
+
+def:pub rgb_to_hls(r: float, g: float, b: float) -> tuple[float, float, float];
+
+
+def _v(m1: float, m2: float, hue: float) -> float;
+
+
+def:pub hls_to_rgb(h: float, l: float, s: float) -> tuple[float, float, float];
+
+
+def:pub rgb_to_hsv(r: float, g: float, b: float) -> tuple[float, float, float];
+
+
+def:pub hsv_to_rgb(h: float, s: float, v: float) -> tuple[float, float, float];
+
+impl rgb_to_yiq(r: float, g: float, b: float) -> tuple[float, float, float] {
     y: float = 0.30 * r + 0.59 * g + 0.11 * b;
     i: float = 0.74 * (r - y) - 0.27 * (b - y);
     q: float = 0.48 * (r - y) + 0.41 * (b - y);
@@ -11,7 +31,7 @@ def:pub rgb_to_yiq(r: float, g: float, b: float) -> tuple[float, float, float] {
 }
 
 
-def:pub yiq_to_rgb(y: float, i: float, q: float) -> tuple[float, float, float] {
+impl yiq_to_rgb(y: float, i: float, q: float) -> tuple[float, float, float] {
     r: float = y + 0.9468822170900693 * i + 0.6235565819861433 * q;
     g: float = y - 0.27478764629897834 * i - 0.6356910791873801 * q;
     b: float = y - 1.1085450346420322 * i + 1.7090069284064666 * q;
@@ -37,7 +57,7 @@ def:pub yiq_to_rgb(y: float, i: float, q: float) -> tuple[float, float, float] {
 }
 
 
-def:pub rgb_to_hls(r: float, g: float, b: float) -> tuple[float, float, float] {
+impl rgb_to_hls(r: float, g: float, b: float) -> tuple[float, float, float] {
     maxc: float = r;
     if g > maxc {
         maxc = g;
@@ -80,7 +100,7 @@ def:pub rgb_to_hls(r: float, g: float, b: float) -> tuple[float, float, float] {
 }
 
 
-def _v(m1: float, m2: float, hue: float) -> float {
+impl _v(m1: float, m2: float, hue: float) -> float {
     h: float = hue % 1.0;
     if h < ONE_SIXTH {
         return m1 + (m2 - m1) * h * 6.0;
@@ -95,7 +115,7 @@ def _v(m1: float, m2: float, hue: float) -> float {
 }
 
 
-def:pub hls_to_rgb(h: float, l: float, s: float) -> tuple[float, float, float] {
+impl hls_to_rgb(h: float, l: float, s: float) -> tuple[float, float, float] {
     if s == 0.0 {
         return (l, l, l);
     }
@@ -110,7 +130,7 @@ def:pub hls_to_rgb(h: float, l: float, s: float) -> tuple[float, float, float] {
 }
 
 
-def:pub rgb_to_hsv(r: float, g: float, b: float) -> tuple[float, float, float] {
+impl rgb_to_hsv(r: float, g: float, b: float) -> tuple[float, float, float] {
     maxc: float = r;
     if g > maxc {
         maxc = g;
@@ -147,7 +167,7 @@ def:pub rgb_to_hsv(r: float, g: float, b: float) -> tuple[float, float, float] {
 }
 
 
-def:pub hsv_to_rgb(h: float, s: float, v: float) -> tuple[float, float, float] {
+impl hsv_to_rgb(h: float, s: float, v: float) -> tuple[float, float, float] {
     if s == 0.0 {
         return (v, v, v);
     }

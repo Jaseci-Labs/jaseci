@@ -1,10 +1,27 @@
-def _hex2(c: int) -> str {
+def _hex2(c: int) -> str;
+
+
+def _repr_str(s: str) -> str;
+
+
+def _str_gt(a: str, b: str) -> bool;
+
+
+def _sorted_keys(keys: list[str]) -> list[str];
+
+
+def _format(value: any) -> str;
+
+
+def:pub pformat(object: any) -> str;
+
+impl _hex2(c: int) -> str {
     digits: str = "0123456789abcdef";
     return digits[c // 16] + digits[c % 16];
 }
 
 
-def _repr_str(s: str) -> str {
+impl _repr_str(s: str) -> str {
     has_single: bool = False;
     has_double: bool = False;
     i: int = 0;
@@ -50,7 +67,7 @@ def _repr_str(s: str) -> str {
 }
 
 
-def _str_gt(a: str, b: str) -> bool {
+impl _str_gt(a: str, b: str) -> bool {
     m: int = len(a);
     if len(b) < m {
         m = len(b);
@@ -68,7 +85,7 @@ def _str_gt(a: str, b: str) -> bool {
 }
 
 
-def _sorted_keys(keys: list[str]) -> list[str] {
+impl _sorted_keys(keys: list[str]) -> list[str] {
     i: int = 1;
     n: int = len(keys);
     while i < n {
@@ -85,7 +102,7 @@ def _sorted_keys(keys: list[str]) -> list[str] {
 }
 
 
-def _format(value: any) -> str {
+impl _format(value: any) -> str {
     if isinstance(value, bool) {
         flag: bool = value;
         if flag {
@@ -148,6 +165,6 @@ def _format(value: any) -> str {
 }
 
 
-def:pub pformat(object: any) -> str {
+impl pformat(object: any) -> str {
     return _format(object);
 }

@@ -1,5 +1,9 @@
 def install_builtin_extensions(
     list_class: ClassType | None, int_class: ClassType | None
+) -> None;
+
+impl install_builtin_extensions(
+    list_class: ClassType | None, int_class: ClassType | None
 ) -> None {
     if list_class is None or int_class is None {
         return;

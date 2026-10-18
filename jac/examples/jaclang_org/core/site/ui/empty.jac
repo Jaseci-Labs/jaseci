@@ -13,7 +13,19 @@ glob _emptyMediaVariants: any = cva(
          }
      );
 
-def:pub Empty(props: any) -> JsxElement {
+def:pub Empty(props: any) -> JsxElement;
+
+def:pub EmptyHeader(props: any) -> JsxElement;
+
+def:pub EmptyMedia(props: any) -> JsxElement;
+
+def:pub EmptyTitle(props: any) -> JsxElement;
+
+def:pub EmptyDescription(props: any) -> JsxElement;
+
+def:pub EmptyContent(props: any) -> JsxElement;
+
+impl Empty(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     <div
         {**attrs}
@@ -27,7 +39,7 @@ def:pub Empty(props: any) -> JsxElement {
     </div>
 }
 
-def:pub EmptyHeader(props: any) -> JsxElement {
+impl EmptyHeader(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     <div
         {**attrs}
@@ -38,7 +50,7 @@ def:pub EmptyHeader(props: any) -> JsxElement {
     </div>
 }
 
-def:pub EmptyMedia(props: any) -> JsxElement {
+impl EmptyMedia(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     variant = props["variant"] or "default";
     computedClass = cn(
@@ -56,7 +68,7 @@ def:pub EmptyMedia(props: any) -> JsxElement {
     </div>
 }
 
-def:pub EmptyTitle(props: any) -> JsxElement {
+impl EmptyTitle(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     <div
         {**attrs}
@@ -67,7 +79,7 @@ def:pub EmptyTitle(props: any) -> JsxElement {
     </div>
 }
 
-def:pub EmptyDescription(props: any) -> JsxElement {
+impl EmptyDescription(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     <div
         {**attrs}
@@ -81,7 +93,7 @@ def:pub EmptyDescription(props: any) -> JsxElement {
     </div>
 }
 
-def:pub EmptyContent(props: any) -> JsxElement {
+impl EmptyContent(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     <div
         {**attrs}

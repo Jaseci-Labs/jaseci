@@ -7,7 +7,36 @@ glob _config_loaded: bool = False,
      _config_ok: bool = False;
 
 
-def k8s_available -> bool {
+def k8s_available -> bool;
+
+
+def _ensure_config -> bool;
+
+
+def ops_namespace -> str;
+
+
+def core_api -> any;
+
+
+def apps_api -> any;
+
+
+def networking_api -> any;
+
+
+def autoscaling_api -> any;
+
+
+def custom_objects_api -> any;
+
+
+def api_error_detail(e: any) -> str;
+
+
+def unavailable_detail -> str;
+
+impl k8s_available -> bool {
     if not HAS_KUBERNETES {
         return False;
     }
@@ -15,7 +44,7 @@ def k8s_available -> bool {
 }
 
 
-def _ensure_config -> bool {
+impl _ensure_config -> bool {
     if _config_loaded {
         return _config_ok;
     }
@@ -37,12 +66,12 @@ def _ensure_config -> bool {
 }
 
 
-def ops_namespace -> str {
+impl ops_namespace -> str {
     return in_cluster_namespace();
 }
 
 
-def core_api -> any {
+impl core_api -> any {
     if not _ensure_config() {
         return None;
     }
@@ -55,7 +84,7 @@ def core_api -> any {
 }
 
 
-def apps_api -> any {
+impl apps_api -> any {
     if not _ensure_config() {
         return None;
     }
@@ -68,7 +97,7 @@ def apps_api -> any {
 }
 
 
-def networking_api -> any {
+impl networking_api -> any {
     if not _ensure_config() {
         return None;
     }
@@ -81,7 +110,7 @@ def networking_api -> any {
 }
 
 
-def autoscaling_api -> any {
+impl autoscaling_api -> any {
     if not _ensure_config() {
         return None;
     }
@@ -94,7 +123,7 @@ def autoscaling_api -> any {
 }
 
 
-def custom_objects_api -> any {
+impl custom_objects_api -> any {
     """The client for KEDA's ScaledObject and TriggerAuthentication.
 
     Reaching these also needs the `keda.sh` rule in OPS_READ_RULES, which a pod
@@ -113,7 +142,7 @@ def custom_objects_api -> any {
 }
 
 
-def api_error_detail(e: any) -> str {
+impl api_error_detail(e: any) -> str {
     status = e?.status;
     reason = str(getattr(e, "reason", "") or "");
     if status == 403 {
@@ -129,7 +158,7 @@ def api_error_detail(e: any) -> str {
 }
 
 
-def unavailable_detail -> str {
+impl unavailable_detail -> str {
     if not HAS_KUBERNETES {
         return "kubernetes client not installed (image lacks the 'deploy.k8s' capability).";
     }

@@ -1,4 +1,24 @@
-def:pub _default_knownfiles -> list[str] {
+def:pub _default_knownfiles -> list[str];
+
+
+def:pub _default_suffix_map -> dict[str, str];
+
+
+def:pub _default_encodings_map -> dict[str, str];
+
+
+def:pub _default_types_ext -> list[str];
+
+
+def:pub _default_types_val -> list[str];
+
+
+def:pub _default_common_ext -> list[str];
+
+
+def:pub _default_common_val -> list[str];
+
+impl _default_knownfiles -> list[str] {
     f: list[str] = [];
     f.append("/etc/mime.types");
     f.append("/etc/httpd/mime.types");
@@ -13,7 +33,7 @@ def:pub _default_knownfiles -> list[str] {
 }
 
 
-def:pub _default_suffix_map -> dict[str, str] {
+impl _default_suffix_map -> dict[str, str] {
     d: dict[str, str] = {};
     d[".svgz"] = ".svg.gz";
     d[".tgz"] = ".tar.gz";
@@ -25,7 +45,7 @@ def:pub _default_suffix_map -> dict[str, str] {
 }
 
 
-def:pub _default_encodings_map -> dict[str, str] {
+impl _default_encodings_map -> dict[str, str] {
     d: dict[str, str] = {};
     d[".gz"] = "gzip";
     d[".Z"] = "compress";
@@ -36,7 +56,7 @@ def:pub _default_encodings_map -> dict[str, str] {
 }
 
 
-def:pub _default_types_ext -> list[str] {
+impl _default_types_ext -> list[str] {
     e: list[str] = [];
     e.append(".js");
     e.append(".mjs");
@@ -240,7 +260,7 @@ def:pub _default_types_ext -> list[str] {
 }
 
 
-def:pub _default_types_val -> list[str] {
+impl _default_types_val -> list[str] {
     v: list[str] = [];
     v.append("text/javascript");
     v.append("text/javascript");
@@ -446,7 +466,7 @@ def:pub _default_types_val -> list[str] {
 }
 
 
-def:pub _default_common_ext -> list[str] {
+impl _default_common_ext -> list[str] {
     e: list[str] = [];
     e.append(".rtf");
     e.append(".apk");
@@ -461,7 +481,7 @@ def:pub _default_common_ext -> list[str] {
 }
 
 
-def:pub _default_common_val -> list[str] {
+impl _default_common_val -> list[str] {
     v: list[str] = [];
     v.append("application/rtf");
     v.append("application/vnd.android.package-archive");

@@ -18,13 +18,67 @@ glob logger = logging.getLogger(__name__),
      ];
 
 
-def pool_enabled -> bool {
+def pool_enabled -> bool;
+
+
+def _pool_max -> int;
+
+
+def _pool_total_max -> int;
+
+
+def _idle_ttl -> float;
+
+
+def pool_key(info: any) -> str;
+
+
+def _sock_gone(conn: any) -> bool;
+
+
+def _discard(conn: any);
+
+
+def checkout(info: any) -> (any | None);
+
+
+def release(info: any, conn: any) -> None;
+
+
+def _evict_oldest_locked(keep: int) -> list[any];
+
+
+def drain_all;
+
+
+def forget_all;
+
+
+def detach(conn: any) -> None;
+
+
+def _before_fork;
+
+
+def _after_fork_in_child;
+
+
+with entry {
+    if hasattr(os, 'register_at_fork') {
+        os.register_at_fork(before=_before_fork, after_in_child=_after_fork_in_child);
+    }
+}
+
+
+def pool_stats -> dict[str, int];
+
+impl pool_enabled -> bool {
     return os.environ.get('JAC_DB_POOL', '1').strip().lower()
         not in ('0', 'false', 'no', 'off');
 }
 
 
-def _pool_max -> int {
+impl _pool_max -> int {
     try {
         return max(0, int(os.environ.get('JAC_DB_POOL_MAX', '16') or 16));
     } except ValueError {
@@ -33,7 +87,7 @@ def _pool_max -> int {
 }
 
 
-def _pool_total_max -> int {
+impl _pool_total_max -> int {
     try {
         return max(0, int(os.environ.get('JAC_DB_POOL_TOTAL_MAX', '48') or 48));
     } except ValueError {
@@ -42,7 +96,7 @@ def _pool_total_max -> int {
 }
 
 
-def _idle_ttl -> float {
+impl _idle_ttl -> float {
     try {
         return max(1.0, float(os.environ.get('JAC_DB_POOL_IDLE_S', '300') or 300));
     } except ValueError {
@@ -51,7 +105,7 @@ def _idle_ttl -> float {
 }
 
 
-def pool_key(info: any) -> str {
+impl pool_key(info: any) -> str {
     import hashlib;
     where = info.unix_socket_dir or info.host or '';
     raw: str = str(info.password or '');
@@ -60,7 +114,7 @@ def pool_key(info: any) -> str {
 }
 
 
-def _sock_gone(conn: any) -> bool {
+impl _sock_gone(conn: any) -> bool {
     import select;
     if getattr(conn, '_closed', False) {
         return True;
@@ -77,14 +131,14 @@ def _sock_gone(conn: any) -> bool {
 }
 
 
-def _discard(conn: any) {
+impl _discard(conn: any) {
     try {
         conn.close();
     } except Exception {}
 }
 
 
-def checkout(info: any) -> (any | None) {
+impl checkout(info: any) -> (any | None) {
     if not pool_enabled() {
         return None;
     }
@@ -108,7 +162,7 @@ def checkout(info: any) -> (any | None) {
 }
 
 
-def release(info: any, conn: any) -> None {
+impl release(info: any, conn: any) -> None {
     if conn is None {
         return;
     }
@@ -152,7 +206,7 @@ def release(info: any, conn: any) -> None {
 }
 
 
-def _evict_oldest_locked(keep: int) -> list[any] {
+impl _evict_oldest_locked(keep: int) -> list[any] {
     total = sum(len(bucket) for bucket in _pools.values());
     if total <= keep {
         return [];
@@ -179,7 +233,7 @@ def _evict_oldest_locked(keep: int) -> list[any] {
 }
 
 
-def drain_all {
+impl drain_all {
     with _lock {
         buckets = list(_pools.values());
         _pools.clear();
@@ -192,7 +246,7 @@ def drain_all {
 }
 
 
-def forget_all {
+impl forget_all {
     with _lock {
         buckets = list(_pools.values());
         _pools.clear();
@@ -205,7 +259,7 @@ def forget_all {
 }
 
 
-def detach(conn: any) -> None {
+impl detach(conn: any) -> None {
     if conn is None {
         return;
     }
@@ -220,25 +274,18 @@ def detach(conn: any) -> None {
 }
 
 
-def _before_fork {
+impl _before_fork {
     drain_all();
 }
 
 
-def _after_fork_in_child {
+impl _after_fork_in_child {
     _lock = threading.Lock();
     forget_all();
 }
 
 
-with entry {
-    if hasattr(os, 'register_at_fork') {
-        os.register_at_fork(before=_before_fork, after_in_child=_after_fork_in_child);
-    }
-}
-
-
-def pool_stats -> dict[str, int] {
+impl pool_stats -> dict[str, int] {
     with _lock {
         return {key: len(bucket) for (key, bucket) in _pools.items()};
     }

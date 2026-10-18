@@ -7,7 +7,27 @@ glob DEFAULT_CACHE_CONTROL: str = 'public, max-age=3600',
      _DIGESTS: dict[str, tuple[tuple[int, int, int], str]] = {};
 
 
-def guess_media_type(name: str) -> str {
+def guess_media_type(name: str) -> str;
+
+
+def _etag(path: str, stat: os.stat_result) -> str;
+
+
+def _not_modified(request: Request, etag: str, mtime: float) -> bool;
+
+
+def _parse_range(header: str, size: int) -> (tuple[int, int] | None);
+
+
+def file_response(
+    request: Request,
+    path: str,
+    cache_control: str = DEFAULT_CACHE_CONTROL,
+    media_type: (str | None) = None,
+    extra_headers: (dict[str, str] | None) = None
+) -> Response;
+
+impl guess_media_type(name: str) -> str {
     lowered = name.lower();
     if lowered.endswith('.css') {
         return 'text/css; charset=utf-8';
@@ -25,7 +45,7 @@ def guess_media_type(name: str) -> str {
 }
 
 
-def _etag(path: str, stat: os.stat_result) -> str {
+impl _etag(path: str, stat: os.stat_result) -> str {
     key = (stat.st_ino, stat.st_size, stat.st_mtime_ns);
     cached = _DIGESTS.get(path);
     if cached is not None and cached[0] == key {
@@ -43,7 +63,7 @@ def _etag(path: str, stat: os.stat_result) -> str {
 }
 
 
-def _not_modified(request: Request, etag: str, mtime: float) -> bool {
+impl _not_modified(request: Request, etag: str, mtime: float) -> bool {
     inm = request.headers.get('If-None-Match');
     if inm is not None {
         tags = [t.strip() for t in inm.split(',')];
@@ -62,7 +82,7 @@ def _not_modified(request: Request, etag: str, mtime: float) -> bool {
 }
 
 
-def _parse_range(header: str, size: int) -> (tuple[int, int] | None) {
+impl _parse_range(header: str, size: int) -> (tuple[int, int] | None) {
     spec = header.strip();
     if not spec.lower().startswith('bytes=') {
         return None;
@@ -94,7 +114,7 @@ def _parse_range(header: str, size: int) -> (tuple[int, int] | None) {
 }
 
 
-def file_response(
+impl file_response(
     request: Request,
     path: str,
     cache_control: str = DEFAULT_CACHE_CONTROL,

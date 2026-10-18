@@ -40,26 +40,45 @@ class ObjectField {
         self.kw_only = kw_only;
     }
 
-    def bind(self: ObjectField, name: str, annotation: object) -> ObjectField {
-        return ObjectField(
-            name=name,
-            annotation=annotation,
-            `default=self.`default,
-            default_factory=self.default_factory,
-            `init=self.`init,
-            repr=self.repr,
-            kw_only=self.kw_only
-        );
-    }
+    def bind(self: ObjectField, name: str, annotation: object) -> ObjectField;
 }
 
 
-def is_jac_object(value: object) -> bool {
+def is_jac_object(value: object) -> bool;
+
+def fields(value: object) -> tuple[ObjectField, ...];
+
+def _is_class_var(annotation: object) -> bool;
+
+def _install_init(cls: type, declared: list[ObjectField]);
+
+def make_object(cls: type) -> type;
+
+def _pydantic_schema(cls: type, source: object, handler: any) -> object;
+
+def asdict(value: object) -> dict[str, object];
+
+def _asdict_value(value: object) -> object;
+
+impl ObjectField.bind(self: ObjectField, name: str, annotation: object) -> ObjectField {
+    return ObjectField(
+        name=name,
+        annotation=annotation,
+        `default=self.`default,
+        default_factory=self.default_factory,
+        `init=self.`init,
+        repr=self.repr,
+        kw_only=self.kw_only
+    );
+}
+
+
+impl is_jac_object(value: object) -> bool {
     cls = value if isinstance(value, `type) else type(value);
     return hasattr(cls, "__jac_fields__");
 }
 
-def fields(value: object) -> tuple[ObjectField, ...] {
+impl fields(value: object) -> tuple[ObjectField, ...] {
     cls = value if isinstance(value, `type) else type(value);
     declared = cast(dict[str, ObjectField] | None, cls?.__jac_fields__);
     if declared is None {
@@ -68,7 +87,7 @@ def fields(value: object) -> tuple[ObjectField, ...] {
     return tuple(declared.values());
 }
 
-def _is_class_var(annotation: object) -> bool {
+impl _is_class_var(annotation: object) -> bool {
     if annotation is PyClassVar or get_origin(annotation) is PyClassVar {
         return True;
     }
@@ -79,7 +98,7 @@ def _is_class_var(annotation: object) -> bool {
     return False;
 }
 
-def _install_init(cls: type, declared: list[ObjectField]) {
+impl _install_init(cls: type, declared: list[ObjectField]) {
     """Generate a real signature so ordinary Python binding stays authoritative.
 
     Defaults are passed through a private namespace rather than interpolated
@@ -162,7 +181,7 @@ def _install_init(cls: type, declared: list[ObjectField]) {
     setattr(cls, "__init__", initializer);
 }
 
-def make_object(cls: type) -> type {
+impl make_object(cls: type) -> type {
     """Install Jac's field contract without generating equality or hashing.""";
     declared: dict[str, ObjectField] = {};
     for base in reversed(cls.__mro__[1:]) {
@@ -223,19 +242,19 @@ def make_object(cls: type) -> type {
     return cls;
 }
 
-def _pydantic_schema(cls: type, source: object, handler: any) -> object {
+impl _pydantic_schema(cls: type, source: object, handler: any) -> object {
     import from jaclang.runtime.object_pydantic { object_schema }
     return object_schema(cls, source, handler);
 }
 
-def asdict(value: object) -> dict[str, object] {
+impl asdict(value: object) -> dict[str, object] {
     if isinstance(value, `type) or not is_jac_object(value) {
         raise TypeError("Expected a Jac object instance");
     }
     return {f.name: _asdict_value(getattr(value, f.name)) for f in fields(value)};
 }
 
-def _asdict_value(value: object) -> object {
+impl _asdict_value(value: object) -> object {
     if is_jac_object(value) and not isinstance(value, `type) {
         return asdict(value);
     }

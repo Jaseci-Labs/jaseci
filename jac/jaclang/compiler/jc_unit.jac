@@ -55,27 +55,105 @@ obj JcState {
 glob _JC: JcState = JcState(),
      _ANNEXES: list[tuple[str, str, str]] = [];
 
-def:pub jc_probe -> int {
+def:pub jc_probe -> int;
+
+def:pub jc_set_asker(callback: int) -> int;
+
+def:pub jc_answer(text: str) -> int;
+
+def _drop_h(h: int);
+
+def _clear_results;
+
+def:pub jc_set_early(context: int) -> int;
+
+def:pub jc_completed -> int;
+
+def:pub jc_pass_time(index: int) -> float;
+
+def:pub jc_take_pass_name(index: int) -> int;
+
+def:pub jc_take_pass_alerts(index: int, warnings: int) -> int;
+
+def:pub jc_annex(source: str, path: str, consumer: str) -> int;
+
+def _weave(r: Region, mod: Module) -> int;
+
+def _materialize(
+    r: Region,
+    mod: Module,
+    p_diags: list[SrcDiag],
+    comments: list[CommentData],
+    lex_diags: list[SrcDiag]
+) -> int;
+
+def _has_absorb_import(mod: Module) -> bool;
+
+def _run_early_passes(mod: Module) -> list[CompileContext];
+
+def _finish_unit(
+    r: Region,
+    mod: Module,
+    p_diags: list[SrcDiag],
+    comments: list[CommentData],
+    lex_diags: list[SrcDiag]
+) -> int;
+
+def _alert_tag -> int;
+
+def _run_in_region(src: str, path: str) -> int;
+
+def _drop_stale_regions;
+
+def:pub jc_run(src: str, path: str) -> int;
+
+def:pub jc_take_module -> int;
+
+def:pub jc_take_diags -> int;
+
+def:pub jc_take_lexdiags -> int;
+
+def:pub jc_take_comments -> int;
+
+def:pub jc_err_count -> int;
+
+def:pub jc_lex_errs -> int;
+
+def _mz_list(items: list[any], hint: int) -> int;
+
+def _register_shape_keys;
+
+def:pub jc_analyze(inputs: str, path: str, source: str, has_source: int) -> int;
+
+def:pub jc_compile(inputs: str, path: str, source: str, has_source: int) -> int;
+
+def:pub jc_take_compile -> int;
+
+def:pub jc_take_analysis -> int;
+
+def:pub jc_rc_debug(v: int) -> int;
+
+impl jc_probe -> int {
     return 44061;
 }
 
-def:pub jc_set_asker(callback: int) -> int {
+impl jc_set_asker(callback: int) -> int {
     set_host_callback(callback);
     return 0;
 }
 
-def:pub jc_answer(text: str) -> int {
+impl jc_answer(text: str) -> int {
     take_host_answer(text);
     return 0;
 }
 
-def _drop_h(h: int) {
+impl _drop_h(h: int) {
     if h != 0 {
         Py_DecRef(h);
     }
 }
 
-def _clear_results {
+impl _clear_results {
     _drop_h(_JC.mod_h);
     _drop_h(_JC.diags_h);
     _drop_h(_JC.lexdiags_h);
@@ -101,38 +179,38 @@ def _clear_results {
     _JC.lex_errs = 0;
 }
 
-def:pub jc_set_early(context: int) -> int {
+impl jc_set_early(context: int) -> int {
     _JC.early_context = context;
     return 0;
 }
 
-def:pub jc_completed -> int {
+impl jc_completed -> int {
     return len(_JC.pass_times);
 }
 
-def:pub jc_pass_time(index: int) -> float {
+impl jc_pass_time(index: int) -> float {
     return _JC.pass_times[index];
 }
 
-def:pub jc_take_pass_name(index: int) -> int {
+impl jc_take_pass_name(index: int) -> int {
     h = _JC.pass_names_h[index];
     _JC.pass_names_h[index] = 0;
     return h;
 }
 
-def:pub jc_take_pass_alerts(index: int, warnings: int) -> int {
+impl jc_take_pass_alerts(index: int, warnings: int) -> int {
     handles = _JC.pass_warnings_h if warnings != 0 else _JC.pass_errors_h;
     h = handles[index];
     handles[index] = 0;
     return h;
 }
 
-def:pub jc_annex(source: str, path: str, consumer: str) -> int {
+impl jc_annex(source: str, path: str, consumer: str) -> int {
     _ANNEXES.append((source, path, consumer));
     return 0;
 }
 
-def _weave(r: Region, mod: Module) -> int {
+impl _weave(r: Region, mod: Module) -> int {
     for (source, path, _consumer) in _ANNEXES {
         (a_mod, a_errs, _pd, _cm, _ld, a_lex_errs) = parse_program(source, path);
         if a_errs > 0 or a_lex_errs > 0 {
@@ -148,7 +226,7 @@ def _weave(r: Region, mod: Module) -> int {
     return 0;
 }
 
-def _materialize(
+impl _materialize(
     r: Region,
     mod: Module,
     p_diags: list[SrcDiag],
@@ -167,7 +245,7 @@ def _materialize(
     return 0;
 }
 
-def _has_absorb_import(mod: Module) -> bool {
+impl _has_absorb_import(mod: Module) -> bool {
     for imp in mod.get_all_sub_nodes(Import) {
         if imp.is_absorb {
             return True;
@@ -176,7 +254,7 @@ def _has_absorb_import(mod: Module) -> bool {
     return False;
 }
 
-def _run_early_passes(mod: Module) -> list[CompileContext] {
+impl _run_early_passes(mod: Module) -> list[CompileContext] {
     done: list[CompileContext] = [];
     if _JC.early_context == 0 or _JC.p_errs != 0 or _JC.lex_errs != 0 {
         return done;
@@ -201,7 +279,7 @@ def _run_early_passes(mod: Module) -> list[CompileContext] {
     return done;
 }
 
-def _finish_unit(
+impl _finish_unit(
     r: Region,
     mod: Module,
     p_diags: list[SrcDiag],
@@ -223,12 +301,12 @@ def _finish_unit(
     return 0;
 }
 
-def _alert_tag -> int {
+impl _alert_tag -> int {
     import from jaclang.runtime.osp_tag { stable_osp_tag }
     return stable_osp_tag("Alert");
 }
 
-def _run_in_region(src: str, path: str) -> int {
+impl _run_in_region(src: str, path: str) -> int {
     status = 0;
     r = Region();
     in r {
@@ -247,13 +325,13 @@ def _run_in_region(src: str, path: str) -> int {
     return status;
 }
 
-def _drop_stale_regions {
+impl _drop_stale_regions {
     if __jac_region_depth() != 0 {
         __jac_region_unwind(0);
     }
 }
 
-def:pub jc_run(src: str, path: str) -> int {
+impl jc_run(src: str, path: str) -> int {
     _clear_results();
     status = _run_in_region(src, path);
     _drop_stale_regions();
@@ -262,39 +340,39 @@ def:pub jc_run(src: str, path: str) -> int {
     return status;
 }
 
-def:pub jc_take_module -> int {
+impl jc_take_module -> int {
     h = _JC.mod_h;
     _JC.mod_h = 0;
     return h;
 }
 
-def:pub jc_take_diags -> int {
+impl jc_take_diags -> int {
     h = _JC.diags_h;
     _JC.diags_h = 0;
     return h;
 }
 
-def:pub jc_take_lexdiags -> int {
+impl jc_take_lexdiags -> int {
     h = _JC.lexdiags_h;
     _JC.lexdiags_h = 0;
     return h;
 }
 
-def:pub jc_take_comments -> int {
+impl jc_take_comments -> int {
     h = _JC.comments_h;
     _JC.comments_h = 0;
     return h;
 }
 
-def:pub jc_err_count -> int {
+impl jc_err_count -> int {
     return _JC.p_errs;
 }
 
-def:pub jc_lex_errs -> int {
+impl jc_lex_errs -> int {
     return _JC.lex_errs;
 }
 
-def _mz_list(items: list[any], hint: int) -> int {
+impl _mz_list(items: list[any], hint: int) -> int {
     out = PyList_New(len(items));
     i = 0;
     for it in items {
@@ -304,7 +382,7 @@ def _mz_list(items: list[any], hint: int) -> int {
     return out;
 }
 
-def _register_shape_keys {
+impl _register_shape_keys {
     probe: dict[type, str] = {};
     probe[BodyRole] = "one";
     probe[SpecRole] = "one";
@@ -312,7 +390,7 @@ def _register_shape_keys {
     jc_mz_shape_keys(id(probe));
 }
 
-def:pub jc_analyze(inputs: str, path: str, source: str, has_source: int) -> int {
+impl jc_analyze(inputs: str, path: str, source: str, has_source: int) -> int {
     _drop_stale_regions();
     _drop_h(_JC.analysis_h);
     _JC.analysis_h = 0;
@@ -332,7 +410,7 @@ def:pub jc_analyze(inputs: str, path: str, source: str, has_source: int) -> int 
     return status;
 }
 
-def:pub jc_compile(inputs: str, path: str, source: str, has_source: int) -> int {
+impl jc_compile(inputs: str, path: str, source: str, has_source: int) -> int {
     _drop_stale_regions();
     _drop_h(_JC.compile_h);
     _JC.compile_h = 0;
@@ -354,19 +432,19 @@ def:pub jc_compile(inputs: str, path: str, source: str, has_source: int) -> int 
     return status;
 }
 
-def:pub jc_take_compile -> int {
+impl jc_take_compile -> int {
     h = _JC.compile_h;
     _JC.compile_h = 0;
     return h;
 }
 
-def:pub jc_take_analysis -> int {
+impl jc_take_analysis -> int {
     h = _JC.analysis_h;
     _JC.analysis_h = 0;
     return h;
 }
 
-def:pub jc_rc_debug(v: int) -> int {
+impl jc_rc_debug(v: int) -> int {
     if v != 0 {
         __rc_debug_enable();
     } else {

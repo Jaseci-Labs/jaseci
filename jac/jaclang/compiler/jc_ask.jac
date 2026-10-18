@@ -12,15 +12,21 @@ obj AskState {
 
 glob _ASK: AskState = AskState();
 
-def set_host_callback(callback: int) {
+def set_host_callback(callback: int);
+
+def take_host_answer(text: str);
+
+def ask_host(method: str, key: str) -> str;
+
+impl set_host_callback(callback: int) {
     _ASK.callback = callback;
 }
 
-def take_host_answer(text: str) {
+impl take_host_answer(text: str) {
     _ASK.answer = text;
 }
 
-def ask_host(method: str, key: str) -> str {
+impl ask_host(method: str, key: str) -> str {
     callback = _ASK.callback;
     if callback == 0 {
         return "";

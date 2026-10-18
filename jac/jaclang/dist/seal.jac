@@ -5,7 +5,51 @@ import tempfile;
 import from pathlib { Path }
 
 
-def seal_copy_ignore(_dir: str, items: list[str]) -> list[str] {
+def seal_copy_ignore(_dir: str, items: list[str]) -> list[str];
+
+def run_precompiler(src_dir: str, flags: list[str]) -> int;
+
+def resolve_entry_file(config: any, app: str = "") -> (Path | None);
+
+def _without_keys(record: dict[str, any], dropped: str) -> dict[str, any];
+
+def _portable_manifest(manifest: dict[str, any]) -> dict[str, any];
+
+def build_serve_manifest(entry_file: Path, proj_root: Path) -> (dict[str, any] | None);
+
+
+def ensure_client_dist(config: any, entry_file: Path) -> (Path | None);
+
+def bake_native_payloads(config: any, pkg_copy: Path, app: str = "") -> bool;
+
+def bake_serve_payloads(
+    config: any, pkg_copy: Path, app: str = "", bake_client: bool = True
+) -> bool;
+
+def vendor_packages(config: any, pkg_copy: Path);
+
+def make_sealed_image(
+    config: any,
+    parent: Path,
+    name: str,
+    out_dir: (Path | None) = None,
+    app: str = "",
+    bake_client: bool = True
+) -> (Path | None);
+
+def vendor_jab_deps(config: any, img: Path) -> bool;
+
+
+def build_jab(
+    config: any,
+    out_path: Path,
+    app: str = "",
+    fat: bool = False,
+    bake_client: bool = True,
+    require_entry: bool = False
+) -> Path;
+
+impl seal_copy_ignore(_dir: str, items: list[str]) -> list[str] {
     drop = [
         "__pycache__",
         "node_modules",
@@ -26,7 +70,7 @@ def seal_copy_ignore(_dir: str, items: list[str]) -> list[str] {
     ];
 }
 
-def run_precompiler(src_dir: str, flags: list[str]) -> int {
+impl run_precompiler(src_dir: str, flags: list[str]) -> int {
     import sys;
     import subprocess;
 
@@ -41,7 +85,7 @@ def run_precompiler(src_dir: str, flags: list[str]) -> int {
     return subprocess.call([sys.executable, "-c", code]);
 }
 
-def resolve_entry_file(config: any, app: str = "") -> (Path | None) {
+impl resolve_entry_file(config: any, app: str = "") -> (Path | None) {
     proj_root = config.project_root;
     chosen = bundle_app(config, app);
     if chosen is None or proj_root is None {
@@ -63,7 +107,7 @@ def resolve_entry_file(config: any, app: str = "") -> (Path | None) {
     return None;
 }
 
-def _without_keys(record: dict[str, any], dropped: str) -> dict[str, any] {
+impl _without_keys(record: dict[str, any], dropped: str) -> dict[str, any] {
     return {
         key: value
         for (key, value) in record.items()
@@ -71,7 +115,7 @@ def _without_keys(record: dict[str, any], dropped: str) -> dict[str, any] {
     };
 }
 
-def _portable_manifest(manifest: dict[str, any]) -> dict[str, any] {
+impl _portable_manifest(manifest: dict[str, any]) -> dict[str, any] {
     result = _without_keys(manifest, 'root');
     if result.get('surface') {
         result['surface'] = {
@@ -82,7 +126,9 @@ def _portable_manifest(manifest: dict[str, any]) -> dict[str, any] {
     return result;
 }
 
-def build_serve_manifest(entry_file: Path, proj_root: Path) -> (dict[str, any] | None) {
+impl build_serve_manifest(
+    entry_file: Path, proj_root: Path
+) -> (dict[str, any] | None) {
     program = JacProgram();
     program.options = CompileOptions(skip_native_engine=True);
 
@@ -119,7 +165,7 @@ def build_serve_manifest(entry_file: Path, proj_root: Path) -> (dict[str, any] |
 }
 
 
-def ensure_client_dist(config: any, entry_file: Path) -> (Path | None) {
+impl ensure_client_dist(config: any, entry_file: Path) -> (Path | None) {
     dist = client_app_dir_for(config, str(entry_file)) / 'dist';
     try {
         js_runtime_path();
@@ -137,7 +183,7 @@ def ensure_client_dist(config: any, entry_file: Path) -> (Path | None) {
     return dist if dist.is_dir() else None;
 }
 
-def bake_native_payloads(config: any, pkg_copy: Path, app: str = "") -> bool {
+impl bake_native_payloads(config: any, pkg_copy: Path, app: str = "") -> bool {
     import os;
 
     entry_file = resolve_entry_file(config, app);
@@ -164,7 +210,7 @@ def bake_native_payloads(config: any, pkg_copy: Path, app: str = "") -> bool {
     return True;
 }
 
-def bake_serve_payloads(
+impl bake_serve_payloads(
     config: any, pkg_copy: Path, app: str = "", bake_client: bool = True
 ) -> bool {
     import json;
@@ -209,7 +255,7 @@ def bake_serve_payloads(
     return True;
 }
 
-def vendor_packages(config: any, pkg_copy: Path) {
+impl vendor_packages(config: any, pkg_copy: Path) {
     import os;
 
     if not has_packages(config) {
@@ -239,7 +285,7 @@ def vendor_packages(config: any, pkg_copy: Path) {
     );
 }
 
-def make_sealed_image(
+impl make_sealed_image(
     config: any,
     parent: Path,
     name: str,
@@ -318,7 +364,7 @@ def make_sealed_image(
     }
 }
 
-def vendor_jab_deps(config: any, img: Path) -> bool {
+impl vendor_jab_deps(config: any, img: Path) -> bool {
     plan = resolve_plan(config, include_dev=False);
     py_prov = get_python_provider();
     py_deps = [
@@ -380,7 +426,7 @@ def vendor_jab_deps(config: any, img: Path) -> bool {
 }
 
 
-def build_jab(
+impl build_jab(
     config: any,
     out_path: Path,
     app: str = "",

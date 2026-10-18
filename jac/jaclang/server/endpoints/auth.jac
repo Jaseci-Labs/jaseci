@@ -11,6 +11,37 @@ def fail(
     status: int,
     extra: (dict[str, any] | None) = None,
     details: (dict[str, any] | None) = None
+) -> TransportResponse;
+
+
+def refused(
+    result: dict[str, any], fallback: str, statuses: (dict[str, int] | None) = None
+) -> TransportResponse;
+
+
+def throttled(retry: int, what: str) -> TransportResponse;
+
+
+def ok(
+    data: dict[str, any], status: int = 200, extra: (dict[str, any] | None) = None
+) -> TransportResponse;
+
+
+def registration_limit(
+    request: Request, scope: str, cap: int, seconds: int
+) -> TransportResponse | None;
+
+def register_auth_endpoints(server: EndpointHost);
+
+
+def register_mail_endpoints(server: EndpointHost);
+
+impl fail(
+    code: str,
+    message: str,
+    status: int,
+    extra: (dict[str, any] | None) = None,
+    details: (dict[str, any] | None) = None
 ) -> TransportResponse {
     meta_extra: dict[str, any] = {'http_status': status};
     if extra {
@@ -22,7 +53,7 @@ def fail(
 }
 
 
-def refused(
+impl refused(
     result: dict[str, any], fallback: str, statuses: (dict[str, int] | None) = None
 ) -> TransportResponse {
     code = str(result.get('code') or fallback);
@@ -36,7 +67,7 @@ def refused(
 }
 
 
-def throttled(retry: int, what: str) -> TransportResponse {
+impl throttled(retry: int, what: str) -> TransportResponse {
     if retry < 0 {
         return fail(
             'LIMIT_UNAVAILABLE',
@@ -53,7 +84,7 @@ def throttled(retry: int, what: str) -> TransportResponse {
 }
 
 
-def ok(
+impl ok(
     data: dict[str, any], status: int = 200, extra: (dict[str, any] | None) = None
 ) -> TransportResponse {
     meta_extra: dict[str, any] = {'http_status': status};
@@ -64,14 +95,14 @@ def ok(
 }
 
 
-def registration_limit(
+impl registration_limit(
     request: Request, scope: str, cap: int, seconds: int
 ) -> TransportResponse | None {
     retry = consume_limit(scope, client_ip(request), cap, seconds);
     return throttled(retry, 'Registration') if retry != 0 else None;
 }
 
-def register_auth_endpoints(server: EndpointHost) {
+impl register_auth_endpoints(server: EndpointHost) {
     users = server.identity();
 
     def challenge_handler(request: Request) -> TransportResponse {
@@ -656,7 +687,7 @@ def register_auth_endpoints(server: EndpointHost) {
 }
 
 
-def register_mail_endpoints(server: EndpointHost) {
+impl register_mail_endpoints(server: EndpointHost) {
     users = server.identity();
 
     async def send_verification_handler(

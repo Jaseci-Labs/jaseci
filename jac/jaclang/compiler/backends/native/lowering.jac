@@ -7,7 +7,29 @@ glob LOWERING_METADATA: str = "jac.native.lowering.v1",
 
 enum NativeLoweringKind { CALLABLE = "callable", FIELD = "field" }
 
-def _lowering_kind(name: str) -> NativeLoweringKind {
+def _lowering_kind(name: str) -> NativeLoweringKind;
+
+obj NativeLoweringIssue {
+    has symbol: str,
+        kind: NativeLoweringKind,
+        source: str,
+        code: str,
+        detail: str;
+
+    def record(module: ir.Module);
+}
+
+def _skip_blanks(text: str, at: int) -> int;
+
+def _node_references(operands: str) -> list[str];
+
+def _lowering_roots(llvm_ir_text: str) -> list[str];
+
+def _hex_nodes(llvm_ir_text: str) -> dict[str, str];
+
+def native_lowering_issues(llvm_ir_text: str) -> list[NativeLoweringIssue];
+
+impl _lowering_kind(name: str) -> NativeLoweringKind {
     if name == "callable" {
         return NativeLoweringKind.CALLABLE;
     }
@@ -17,32 +39,24 @@ def _lowering_kind(name: str) -> NativeLoweringKind {
     raise ValueError(f"{name!r} is not a valid NativeLoweringKind");
 }
 
-obj NativeLoweringIssue {
-    has symbol: str,
-        kind: NativeLoweringKind,
-        source: str,
-        code: str,
-        detail: str;
-
-    def record(module: ir.Module) {
-        payload = json.dumps(
-            [self.symbol, self.kind.value, self.source, self.code, self.detail],
-            ensure_ascii=True
-        ).encode(
-            "utf-8"
-        ).hex();
-        module.add_named_metadata(LOWERING_METADATA, [payload]);
-    }
+impl NativeLoweringIssue.record(module: ir.Module) {
+    payload = json.dumps(
+        [self.symbol, self.kind.value, self.source, self.code, self.detail],
+        ensure_ascii=True
+    ).encode(
+        "utf-8"
+    ).hex();
+    module.add_named_metadata(LOWERING_METADATA, [payload]);
 }
 
-def _skip_blanks(text: str, at: int) -> int {
+impl _skip_blanks(text: str, at: int) -> int {
     while at < len(text) and text[at] in _BLANKS {
         at += 1;
     }
     return at;
 }
 
-def _node_references(operands: str) -> list[str] {
+impl _node_references(operands: str) -> list[str] {
     found: list[str] = [];
     at = 0;
     while at < len(operands) {
@@ -62,7 +76,7 @@ def _node_references(operands: str) -> list[str] {
     return found;
 }
 
-def _lowering_roots(llvm_ir_text: str) -> list[str] {
+impl _lowering_roots(llvm_ir_text: str) -> list[str] {
     roots: list[str] = [];
     marker = "!" + LOWERING_METADATA;
     at = llvm_ir_text.find(marker);
@@ -95,7 +109,7 @@ def _lowering_roots(llvm_ir_text: str) -> list[str] {
     return roots;
 }
 
-def _hex_nodes(llvm_ir_text: str) -> dict[str, str] {
+impl _hex_nodes(llvm_ir_text: str) -> dict[str, str] {
     nodes: dict[str, str] = {};
     for line in llvm_ir_text.split("\n") {
         if len(line) < 2 or line[0] != "!" or line[1] not in _DEC_DIGITS {
@@ -136,7 +150,7 @@ def _hex_nodes(llvm_ir_text: str) -> dict[str, str] {
     return nodes;
 }
 
-def native_lowering_issues(llvm_ir_text: str) -> list[NativeLoweringIssue] {
+impl native_lowering_issues(llvm_ir_text: str) -> list[NativeLoweringIssue] {
     roots = _lowering_roots(llvm_ir_text);
     if not roots {
         return [];

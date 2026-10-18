@@ -1,23 +1,114 @@
 import os;
 
-def _wasm_libc_dir -> (str | None) {
+def _wasm_libc_dir -> (str | None);
+
+def _mod_functions(mod: ModuleRef) -> list[ValueRef];
+
+def _mod_globals(mod: ModuleRef) -> list[ValueRef];
+
+def _load_libc_module(libc_dir: str, triple: str) -> (ModuleRef | None);
+
+glob _LATE_BOUND: set = {
+         "memcpy",
+         "memmove",
+         "memset",
+         "__multi3",
+         "puts",
+         "putchar",
+         "strlen",
+         "strcmp",
+         "strncmp",
+         "strchr",
+         "strcpy",
+         "stpcpy",
+         "memcmp",
+         "memchr",
+         "calloc",
+         "malloc",
+         "free",
+         "sqrt",
+         "pow",
+         "exp",
+         "exp2",
+         "log",
+         "log2",
+         "fabs",
+         "fmod",
+         "ldexp",
+         "scalbn",
+
+     },
+     _BACKEND_BOUND: set = {"memcpy", "memmove", "memset", "__multi3"},
+     _ABI64_ADAPTED: set[str] = {
+         "strlen",
+         "malloc",
+         "calloc",
+         "realloc",
+         "malloc_usable_size",
+         "memcpy",
+         "memmove",
+         "memset",
+         "memcmp",
+         "memmem",
+         "strncmp",
+         "strtol",
+         "snprintf",
+
+     };
+
+
+def _assert_abi64_adapters(
+    needed: list[str], provided: set[str], libc_dir: str
+) -> None;
+
+def _link_wasm_libc(mod: ModuleRef) -> bool;
+
+def _internalize_late_bound(mod: ModuleRef);
+
+def prepare_wasm_module(llvm_ir_str: str) -> tuple[ModuleRef, TargetMachine, bool];
+
+def emit_wasm_from_ir(
+    llvm_ir_str: str, export_funcs: list[str] = [], app_imports: (set | None) = None
+) -> bytes;
+
+def _exported_functions(mod: ModuleRef) -> list[str];
+
+def link_wasm_object(
+    obj_bytes: bytes,
+    export_funcs: list[str],
+    host_abi: (set | None) = None,
+    host_module: str = "",
+    app_imports: (set | None) = None
+) -> bytes;
+
+def _unexpected_import_message(link_error: str, host_module: str) -> str;
+
+def app_declared_imports(ir_module: UniModule, plan: any = None) -> set[str];
+
+def _project_gc_settings -> tuple[str, list[str], list[str]];
+
+def _assert_ir_rc_free(llvm_ir_str: str, file_path: str);
+
+def compile_to_wasm(file_path: str, export_funcs: list[str] = []) -> bytes;
+
+impl _wasm_libc_dir -> (str | None) {
     found = resolve("wasm-libc").found;
     return found.path if found is not None else None;
 }
 
-def _mod_functions(mod: ModuleRef) -> list[ValueRef] {
+impl _mod_functions(mod: ModuleRef) -> list[ValueRef] {
     fns = mod.functions;
     assert isinstance(fns, Iterator);
     return list(fns);
 }
 
-def _mod_globals(mod: ModuleRef) -> list[ValueRef] {
+impl _mod_globals(mod: ModuleRef) -> list[ValueRef] {
     gvs = mod.global_variables;
     assert isinstance(gvs, Iterator);
     return list(gvs);
 }
 
-def _load_libc_module(libc_dir: str, triple: str) -> (ModuleRef | None) {
+impl _load_libc_module(libc_dir: str, triple: str) -> (ModuleRef | None) {
     parts = sorted(
         [
             f
@@ -71,56 +162,8 @@ def _load_libc_module(libc_dir: str, triple: str) -> (ModuleRef | None) {
     return merged;
 }
 
-glob _LATE_BOUND: set = {
-         "memcpy",
-         "memmove",
-         "memset",
-         "__multi3",
-         "puts",
-         "putchar",
-         "strlen",
-         "strcmp",
-         "strncmp",
-         "strchr",
-         "strcpy",
-         "stpcpy",
-         "memcmp",
-         "memchr",
-         "calloc",
-         "malloc",
-         "free",
-         "sqrt",
-         "pow",
-         "exp",
-         "exp2",
-         "log",
-         "log2",
-         "fabs",
-         "fmod",
-         "ldexp",
-         "scalbn",
 
-     },
-     _BACKEND_BOUND: set = {"memcpy", "memmove", "memset", "__multi3"},
-     _ABI64_ADAPTED: set[str] = {
-         "strlen",
-         "malloc",
-         "calloc",
-         "realloc",
-         "malloc_usable_size",
-         "memcpy",
-         "memmove",
-         "memset",
-         "memcmp",
-         "memmem",
-         "strncmp",
-         "strtol",
-         "snprintf",
-
-     };
-
-
-def _assert_abi64_adapters(
+impl _assert_abi64_adapters(
     needed: list[str], provided: set[str], libc_dir: str
 ) -> None {
     missing = sorted(
@@ -145,7 +188,7 @@ def _assert_abi64_adapters(
     );
 }
 
-def _link_wasm_libc(mod: ModuleRef) -> bool {
+impl _link_wasm_libc(mod: ModuleRef) -> bool {
     found = require("wasm-libc").found;
     assert found is not None;
     libc_dir = found.path;
@@ -209,7 +252,7 @@ def _link_wasm_libc(mod: ModuleRef) -> bool {
     return True;
 }
 
-def _internalize_late_bound(mod: ModuleRef) {
+impl _internalize_late_bound(mod: ModuleRef) {
     for fn in _mod_functions(mod) {
         if fn.name in _LATE_BOUND
             and fn.name not in _BACKEND_BOUND
@@ -219,7 +262,7 @@ def _internalize_late_bound(mod: ModuleRef) {
     }
 }
 
-def prepare_wasm_module(llvm_ir_str: str) -> tuple[ModuleRef, TargetMachine, bool] {
+impl prepare_wasm_module(llvm_ir_str: str) -> tuple[ModuleRef, TargetMachine, bool] {
     llvm.initialize_all_targets();
     llvm.initialize_all_asmprinters();
     mod = llvm.parse_assembly(llvm_ir_str);
@@ -238,7 +281,7 @@ def prepare_wasm_module(llvm_ir_str: str) -> tuple[ModuleRef, TargetMachine, boo
     return (mod, tm, libc_linked);
 }
 
-def emit_wasm_from_ir(
+impl emit_wasm_from_ir(
     llvm_ir_str: str, export_funcs: list[str] = [], app_imports: (set | None) = None
 ) -> bytes {
     (mod, tm, libc_linked) = prepare_wasm_module(llvm_ir_str);
@@ -257,7 +300,7 @@ def emit_wasm_from_ir(
     );
 }
 
-def _exported_functions(mod: ModuleRef) -> list[str] {
+impl _exported_functions(mod: ModuleRef) -> list[str] {
     """Every function the module defines with external linkage and default
     visibility: a wasm module's host calls its functions by these names.""";
     names: list[str] = [];
@@ -272,7 +315,7 @@ def _exported_functions(mod: ModuleRef) -> list[str] {
     return names;
 }
 
-def link_wasm_object(
+impl link_wasm_object(
     obj_bytes: bytes,
     export_funcs: list[str],
     host_abi: (set | None) = None,
@@ -313,7 +356,7 @@ def link_wasm_object(
     return content;
 }
 
-def _unexpected_import_message(link_error: str, host_module: str) -> str {
+impl _unexpected_import_message(link_error: str, host_module: str) -> str {
     import re;
     matched = re.search(r"undefined symbol: (\S+)", link_error);
     if matched is None {
@@ -339,7 +382,7 @@ def _unexpected_import_message(link_error: str, host_module: str) -> str {
     );
 }
 
-def app_declared_imports(ir_module: UniModule, plan: any = None) -> set[str] {
+impl app_declared_imports(ir_module: UniModule, plan: any = None) -> set[str] {
     names: set[str] = set();
     gen = ir_module.gen;
     sym_lib = gen._clib_symbol_lib;
@@ -360,7 +403,7 @@ def app_declared_imports(ir_module: UniModule, plan: any = None) -> set[str] {
     return names;
 }
 
-def _project_gc_settings -> tuple[str, list[str], list[str]] {
+impl _project_gc_settings -> tuple[str, list[str], list[str]] {
     gc_mode = "cycles";
     enf_mods: list[str] = [];
     enf_grand: list[str] = [];
@@ -378,7 +421,7 @@ def _project_gc_settings -> tuple[str, list[str], list[str]] {
     return (gc_mode, enf_mods, enf_grand);
 }
 
-def _assert_ir_rc_free(llvm_ir_str: str, file_path: str) {
+impl _assert_ir_rc_free(llvm_ir_str: str, file_path: str) {
     import re;
     syms: set[str] = set();
     for m in re.finditer(r"__rc_[A-Za-z0-9_]*", llvm_ir_str) {
@@ -401,6 +444,6 @@ def _assert_ir_rc_free(llvm_ir_str: str, file_path: str) {
     }
 }
 
-def compile_to_wasm(file_path: str, export_funcs: list[str] = []) -> bytes {
+impl compile_to_wasm(file_path: str, export_funcs: list[str] = []) -> bytes {
     return build_wasm(JacProgram(), file_path, export_funcs);
 }

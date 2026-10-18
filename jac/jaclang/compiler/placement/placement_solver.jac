@@ -31,11 +31,146 @@ glob _SPACE_BY_NAME: dict[str, CodeContext] = {
      },
      _na_scan_memo: dict[str, NativeDepScan] = {};
 
-def native_scan_memo_clear {
+def native_scan_memo_clear;
+
+def placement_work(prog: JacProgram) -> PlacementWork;
+
+def refresh_placement_module(module: uni.Module, prog: JacProgram);
+
+def _native_dep_scan(
+    path: str, hold_exempt: bool = False
+) -> (tuple[str, list[str]] | None);
+
+def _native_deps_ok(
+    root_path: str, root_deps: list[str], hold_exempt: bool = False
+) -> bool;
+
+def native_default_path_ok(path: str) -> bool;
+
+def native_placement_candidate(
+    module: uni.Module, prog: JacProgram
+) -> tuple[bool, str];
+
+def dependency_summary(prog: JacProgram, path: str) -> (PlacementSummary | None);
+
+def native_closure_blocker(
+    prog: JacProgram, root_path: str, deps: list[str]
+) -> tuple[str, bool];
+
+def _endpoint_veto_applies(module: uni.Module) -> bool;
+
+def _top_element(module: uni.Module, nd: uni.UniNode) -> (uni.UniNode | None);
+
+def _is_client_top(elem: uni.UniNode) -> bool;
+
+def _py_import_client_portable(elem: uni.Import, app_kind: str = '') -> bool;
+
+def _pullable_by_client_reference(
+    elem: uni.UniNode, module: uni.Module, body_refs: dict[int, set[int]]
+) -> bool;
+
+def _ref_top_ids(module: uni.Module, elem: uni.UniNode) -> set[int];
+
+def _is_sv_import(elem: uni.UniNode) -> bool;
+
+def _named_top_element(target: uni.Module, name: str) -> (uni.UniNode | None);
+
+def _materialize_module(path: str, prog: JacProgram) -> (uni.Module | None);
+
+def _import_source_module(elem: uni.Import, prog: JacProgram) -> (uni.Module | None);
+
+def _closure_pullable(
+    top: uni.UniNode, module: uni.Module, prog: JacProgram, seen: set[int]
+) -> bool;
+
+def _module_externally_pinned(mod_path: str) -> bool;
+
+def _python_backend_forced(prog: JacProgram) -> bool;
+
+def _seed_from_summary(module: uni.Module, prog: JacProgram) -> int;
+
+def solve_module_placement(
+    module: uni.Module,
+    prog: JacProgram,
+    seed_ref_ids: (set[int] | None) = None,
+    dual: bool = False,
+    pull_dependents: bool = True
+) -> int;
+
+def _emit_solver_warning(
+    prog: JacProgram, diag: DiagnosticInfo, nd: uni.UniNode, name: str
+);
+
+def _warn_state_forks(target: uni.Module, prog: JacProgram);
+
+def _held_pull_ids(target: uni.Module, target_path: str) -> set[int];
+
+def _pull_into_target(
+    imp: uni.Import, target: uni.Module, module: uni.Module, prog: JacProgram
+) -> int;
+
+def _pull_boundary_import(
+    imp: uni.Import, module: uni.Module, prog: JacProgram
+) -> int;
+
+def solve_program_placement(entry_mod: uni.Module, prog: JacProgram);
+
+def invalidate_importers_es(prog: JacProgram, mod_path: str) -> list[uni.Module];
+
+walker PlacementApplyPass(CompilerPass) {
+    static has contract: PassContract = PassContract(
+        requires=(AnalysisFact.SYM_OF, ),
+        provides=(
+            AnalysisFact.PLACED_IN,
+            AnalysisFact.DECIDED_CODESPACE,
+            AnalysisFact.CODESPACE_PULL,
+
+        )
+    );
+
+    def _run_impl(ir_in: uni.Module) -> uni.Module;
+    can run_walk with uni.Module entry;
+}
+
+impl PlacementApplyPass._run_impl(ir_in: uni.Module) -> uni.Module {
+    """What syntax alone decides about placement is decided here, before the
+    module is typed: client seeds, and whether the module's native preference
+    is open. A construct that closes it (an async or by-llm ability, inline
+    Python, an endpoint, a Python-only import, persistent-graph access) is
+    known from the tree, and the checker needs the answer to know whether a
+    native-only idiom is a requirement or an error.""";
+    import from jaclang.compiler.symbol_utils { report_serverless_kind_errors }
+    if ir_in.loc is not None {
+        self.prog.analysis.placement_refusals.pop(
+            os.path.realpath(ir_in.loc.mod_path), None
+        );
+    }
+    if ir_in.gen.native_undecided and ir_in.loc is not None and ir_in.loc.mod_path {
+        import from jaclang.compiler.placement.placement { native_blocker_scan }
+        base_dir = os.path.dirname(os.path.abspath(ir_in.loc.mod_path)) or ".";
+        closed = native_blocker_scan(ir_in, base_dir).first();
+        if closed {
+            ir_in.gen.native_undecided = False;
+            ir_in.gen.native_closed_why = closed;
+        }
+    }
+    refresh_placement_module(ir_in, self.prog);
+    if solve_module_placement(ir_in, self.prog) {
+        placement_work(self.prog).changed(ir_in);
+    }
+    report_serverless_kind_errors(self, ir_in);
+    return ir_in;
+}
+
+impl PlacementApplyPass.run_walk with uni.Module entry {
+    self.module = self._run_impl(here);
+}
+
+impl native_scan_memo_clear {
     _na_scan_memo.clear();
 }
 
-def placement_work(prog: JacProgram) -> PlacementWork {
+impl placement_work(prog: JacProgram) -> PlacementWork {
     work = prog.analysis.placement_work;
     if work is None {
         work = PlacementWork();
@@ -44,11 +179,11 @@ def placement_work(prog: JacProgram) -> PlacementWork {
     return work;
 }
 
-def refresh_placement_module(module: uni.Module, prog: JacProgram) {
+impl refresh_placement_module(module: uni.Module, prog: JacProgram) {
     placement_work(prog).refresh(module);
 }
 
-def _native_dep_scan(
+impl _native_dep_scan(
     path: str, hold_exempt: bool = False
 ) -> (tuple[str, list[str]] | None) {
     import from jaclang.compiler.driver.program { JacProgram }
@@ -111,7 +246,7 @@ def _native_dep_scan(
     return (sv_reason, deps);
 }
 
-def _native_deps_ok(
+impl _native_deps_ok(
     root_path: str, root_deps: list[str], hold_exempt: bool = False
 ) -> bool {
     import from jaclang.compiler.frontend.codeinfo { native_unit_compile_active }
@@ -144,7 +279,7 @@ def _native_deps_ok(
     return True;
 }
 
-def native_default_path_ok(path: str) -> bool {
+impl native_default_path_ok(path: str) -> bool {
     ap = os.path.abspath(path);
 
     _ap_posix = ap.replace(os.sep, "/");
@@ -160,7 +295,7 @@ def native_default_path_ok(path: str) -> bool {
     return _native_deps_ok(ap, deps, hold_exempt=exempt);
 }
 
-def native_placement_candidate(
+impl native_placement_candidate(
     module: uni.Module, prog: JacProgram
 ) -> tuple[bool, str] {
     import from jaclang.compiler.frontend.host { active_host }
@@ -195,7 +330,7 @@ def native_placement_candidate(
     return (True, '');
 }
 
-def dependency_summary(prog: JacProgram, path: str) -> (PlacementSummary | None) {
+impl dependency_summary(prog: JacProgram, path: str) -> (PlacementSummary | None) {
     import from jaclang.compiler.driver.boundary_classify { hub_module_for_path }
     key = os.path.abspath(path);
     store = summary_store(prog);
@@ -219,7 +354,7 @@ def dependency_summary(prog: JacProgram, path: str) -> (PlacementSummary | None)
     return get_module_summary(mod, prog, with_refs=False);
 }
 
-def native_closure_blocker(
+impl native_closure_blocker(
     prog: JacProgram, root_path: str, deps: list[str]
 ) -> tuple[str, bool] {
     import from jaclang.compiler.frontend.codeinfo { native_unit_compile_active }
@@ -256,12 +391,12 @@ def native_closure_blocker(
     return ('', False);
 }
 
-def _endpoint_veto_applies(module: uni.Module) -> bool {
+impl _endpoint_veto_applies(module: uni.Module) -> bool {
     import from jaclang.compiler.placement.placement { project_has_server }
     return project_has_server(module);
 }
 
-def _top_element(module: uni.Module, nd: uni.UniNode) -> (uni.UniNode | None) {
+impl _top_element(module: uni.Module, nd: uni.UniNode) -> (uni.UniNode | None) {
     cur: (uni.UniNode | None) = nd;
     while (cur is not None and cur.parent is not module) {
         cur = cur.parent;
@@ -269,12 +404,12 @@ def _top_element(module: uni.Module, nd: uni.UniNode) -> (uni.UniNode | None) {
     return cur;
 }
 
-def _is_client_top(elem: uni.UniNode) -> bool {
+impl _is_client_top(elem: uni.UniNode) -> bool {
     return isinstance(elem, uni.ContextAwareNode)
         and elem.code_context == CodeContext.CLIENT;
 }
 
-def _py_import_client_portable(elem: uni.Import, app_kind: str = '') -> bool {
+impl _py_import_client_portable(elem: uni.Import, app_kind: str = '') -> bool {
     kind = app_kind or 'web-app';
     targets: list[str] = [];
     if elem.from_loc is not None {
@@ -297,7 +432,7 @@ def _py_import_client_portable(elem: uni.Import, app_kind: str = '') -> bool {
     return True;
 }
 
-def _pullable_by_client_reference(
+impl _pullable_by_client_reference(
     elem: uni.UniNode, module: uni.Module, body_refs: dict[int, set[int]]
 ) -> bool {
     import from jaclang.compiler.driver.boundary_classify { is_server_anchored_module }
@@ -339,7 +474,7 @@ def _pullable_by_client_reference(
     return True;
 }
 
-def _ref_top_ids(module: uni.Module, elem: uni.UniNode) -> set[int] {
+impl _ref_top_ids(module: uni.Module, elem: uni.UniNode) -> set[int] {
     refs: set[int] = set();
     for nm in elem.get_all_sub_nodes(uni.Name) {
         par = nm.parent;
@@ -367,13 +502,13 @@ def _ref_top_ids(module: uni.Module, elem: uni.UniNode) -> set[int] {
     return refs;
 }
 
-def _is_sv_import(elem: uni.UniNode) -> bool {
+impl _is_sv_import(elem: uni.UniNode) -> bool {
     import from jaclang.compiler.driver.boundary_classify { import_crosses_apps }
     return isinstance(elem, uni.Import)
         and (elem.is_service_import or import_crosses_apps(elem));
 }
 
-def _named_top_element(target: uni.Module, name: str) -> (uni.UniNode | None) {
+impl _named_top_element(target: uni.Module, name: str) -> (uni.UniNode | None) {
     sym = target.names_in_scope.get(name) if target.names_in_scope else None;
     decl = sym.decl if sym is not None else None;
     if decl is None {
@@ -382,7 +517,7 @@ def _named_top_element(target: uni.Module, name: str) -> (uni.UniNode | None) {
     return _top_element(target, decl);
 }
 
-def _materialize_module(path: str, prog: JacProgram) -> (uni.Module | None) {
+impl _materialize_module(path: str, prog: JacProgram) -> (uni.Module | None) {
     import from jaclang.compiler.driver.boundary_classify { hub_module_for_path }
     found = hub_module_for_path(path, prog);
     if found is not None {
@@ -398,7 +533,7 @@ def _materialize_module(path: str, prog: JacProgram) -> (uni.Module | None) {
     }
 }
 
-def _import_source_module(elem: uni.Import, prog: JacProgram) -> (uni.Module | None) {
+impl _import_source_module(elem: uni.Import, prog: JacProgram) -> (uni.Module | None) {
     if elem.from_loc is None {
         return None;
     }
@@ -416,7 +551,7 @@ def _import_source_module(elem: uni.Import, prog: JacProgram) -> (uni.Module | N
     return found;
 }
 
-def _closure_pullable(
+impl _closure_pullable(
     top: uni.UniNode, module: uni.Module, prog: JacProgram, seen: set[int]
 ) -> bool {
     work = placement_work(prog);
@@ -479,16 +614,16 @@ def _closure_pullable(
     return True;
 }
 
-def _module_externally_pinned(mod_path: str) -> bool {
+impl _module_externally_pinned(mod_path: str) -> bool {
     import from jaclang.compiler.placement.placement_pins { config_module_pin }
     return config_module_pin(mod_path) != '';
 }
 
-def _python_backend_forced(prog: JacProgram) -> bool {
+impl _python_backend_forced(prog: JacProgram) -> bool {
     return prog.options.force_codespace == "server";
 }
 
-def _seed_from_summary(module: uni.Module, prog: JacProgram) -> int {
+impl _seed_from_summary(module: uni.Module, prog: JacProgram) -> int {
     import from jaclang.compiler.driver.boundary_classify { _stamp_context_element }
     mod_path = module.loc.mod_path or '';
     ps = get_module_summary(module, prog);
@@ -557,7 +692,7 @@ def _seed_from_summary(module: uni.Module, prog: JacProgram) -> int {
     return seeded;
 }
 
-def solve_module_placement(
+impl solve_module_placement(
     module: uni.Module,
     prog: JacProgram,
     seed_ref_ids: (set[int] | None) = None,
@@ -775,7 +910,7 @@ def solve_module_placement(
     return stamp_count[0];
 }
 
-def _emit_solver_warning(
+impl _emit_solver_warning(
     prog: JacProgram, diag: DiagnosticInfo, nd: uni.UniNode, name: str
 ) {
     import from jaclang.compiler.passes.context { Alert }
@@ -802,7 +937,7 @@ def _emit_solver_warning(
     } except Exception {}
 }
 
-def _warn_state_forks(target: uni.Module, prog: JacProgram) {
+impl _warn_state_forks(target: uni.Module, prog: JacProgram) {
     import from jaclang.compiler.frontend.diagnostics { W6006 }
     ps = get_module_summary(target, prog);
     written: set[int] = set();
@@ -827,7 +962,7 @@ def _warn_state_forks(target: uni.Module, prog: JacProgram) {
     }
 }
 
-def _held_pull_ids(target: uni.Module, target_path: str) -> set[int] {
+impl _held_pull_ids(target: uni.Module, target_path: str) -> set[int] {
     import from jaclang.compiler.frontend.host { active_host }
     held: set[int] = set();
     for part in active_host().client_pulls(target_path).split(",") {
@@ -842,7 +977,7 @@ def _held_pull_ids(target: uni.Module, target_path: str) -> set[int] {
     return held;
 }
 
-def _pull_into_target(
+impl _pull_into_target(
     imp: uni.Import, target: uni.Module, module: uni.Module, prog: JacProgram
 ) -> int {
     seed_ids: set[int] = set();
@@ -898,7 +1033,7 @@ def _pull_into_target(
     return new_stamps;
 }
 
-def _pull_boundary_import(
+impl _pull_boundary_import(
     imp: uni.Import, module: uni.Module, prog: JacProgram
 ) -> int {
     work = placement_work(prog);
@@ -950,7 +1085,7 @@ def _pull_boundary_import(
     return new_stamps;
 }
 
-def solve_program_placement(entry_mod: uni.Module, prog: JacProgram) {
+impl solve_program_placement(entry_mod: uni.Module, prog: JacProgram) {
     work = placement_work(prog);
     work.track(entry_mod);
     for module in list(prog.mod.hub.values()) {
@@ -959,7 +1094,7 @@ def solve_program_placement(entry_mod: uni.Module, prog: JacProgram) {
     work.drain(prog);
 }
 
-def invalidate_importers_es(prog: JacProgram, mod_path: str) -> list[uni.Module] {
+impl invalidate_importers_es(prog: JacProgram, mod_path: str) -> list[uni.Module] {
     cleared: list[uni.Module] = [];
     key = os.path.realpath(mod_path);
     for m in list(prog.mod.hub.values()) {
@@ -987,53 +1122,4 @@ def invalidate_importers_es(prog: JacProgram, mod_path: str) -> list[uni.Module]
         }
     }
     return cleared;
-}
-
-walker PlacementApplyPass(CompilerPass) {
-    static has contract: PassContract = PassContract(
-        requires=(AnalysisFact.SYM_OF, ),
-        provides=(
-            AnalysisFact.PLACED_IN,
-            AnalysisFact.DECIDED_CODESPACE,
-            AnalysisFact.CODESPACE_PULL,
-
-        )
-    );
-
-    def _run_impl(ir_in: uni.Module) -> uni.Module;
-    can run_walk with uni.Module entry;
-}
-
-impl PlacementApplyPass._run_impl(ir_in: uni.Module) -> uni.Module {
-    """What syntax alone decides about placement is decided here, before the
-    module is typed: client seeds, and whether the module's native preference
-    is open. A construct that closes it (an async or by-llm ability, inline
-    Python, an endpoint, a Python-only import, persistent-graph access) is
-    known from the tree, and the checker needs the answer to know whether a
-    native-only idiom is a requirement or an error.""";
-    import from jaclang.compiler.symbol_utils { report_serverless_kind_errors }
-    if ir_in.loc is not None {
-        self.prog.analysis.placement_refusals.pop(
-            os.path.realpath(ir_in.loc.mod_path), None
-        );
-    }
-    if ir_in.gen.native_undecided and ir_in.loc is not None and ir_in.loc.mod_path {
-        import from jaclang.compiler.placement.placement { native_blocker_scan }
-        base_dir = os.path.dirname(os.path.abspath(ir_in.loc.mod_path)) or ".";
-        closed = native_blocker_scan(ir_in, base_dir).first();
-        if closed {
-            ir_in.gen.native_undecided = False;
-            ir_in.gen.native_closed_why = closed;
-        }
-    }
-    refresh_placement_module(ir_in, self.prog);
-    if solve_module_placement(ir_in, self.prog) {
-        placement_work(self.prog).changed(ir_in);
-    }
-    report_serverless_kind_errors(self, ir_in);
-    return ir_in;
-}
-
-impl PlacementApplyPass.run_walk with uni.Module entry {
-    self.module = self._run_impl(here);
 }

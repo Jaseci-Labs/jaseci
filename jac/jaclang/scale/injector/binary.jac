@@ -16,14 +16,124 @@ glob BINARY_ARCNAME: str = "bin/jac",
      _HTTP_TIMEOUT: int = 60;
 
 
-def _node_architecture(k8s_node: object) -> str {
+def _node_architecture(k8s_node: object) -> str;
+
+
+def cluster_node_archs -> list[str];
+
+
+def node_arch -> str;
+
+
+def _http_get_bytes(url: str) -> bytes;
+
+
+glob GH_REPO: str = "jaseci-labs/jac";
+
+
+def _list_release_versions(repo: str) -> list[str];
+
+
+def _resolve_target_version(repo: str, spec: str) -> str;
+
+
+def _pick_stable_assets(meta: any, suffix: str) -> tuple[str, str];
+
+
+glob _deploy_version_memo: dict[str, any] = {};
+
+
+def resolve_deploy_version(project_dir: str, channel: str) -> str;
+
+
+def deploy_generation_refusal(
+    project_dir: str, channel: str = "", offline: bool = False
+) -> str;
+
+
+def resolve_console_version(
+    project_dir: str, channel: str, deploy_version: str
+) -> str;
+
+
+def resolve_pinned_version(project_dir: str) -> str;
+
+
+def reset_deploy_version_cache;
+
+
+def host_seal_platform -> str;
+
+
+def stable_release_meta(version: str = "") -> dict[str, any];
+
+
+def _no_asset_message(meta: dict[str, any], suffix: str, version: str) -> str;
+
+
+def preflight_pod_runtime(project_dir: str, channel: str, arch: str) -> str;
+
+
+def read_local_binary(project_dir: str) -> bytes;
+
+
+def download_release_binary(
+    channel: str, arch: str, version: str = "", plat: str = "linux"
+) -> bytes;
+
+
+def _fetch_verified_asset(
+    url: str, checksum_url: str, cache_file: Path, what: str
+) -> bytes;
+
+
+def host_toolchain_path(project_dir: str, channel: str = "") -> str;
+
+
+glob OFFICIAL_IMAGE: str = "jaseci/jaclang";
+
+
+def resolve_pod_base_image(
+    project_dir: str, configured: str, probe: bool = True
+) -> str;
+
+
+def _scale_cache_root -> Path;
+
+
+def _binary_cache_path(
+    channel: str, arch: str, plat: str = "linux", version: str = ""
+) -> Path;
+
+
+def _admin_dist_cache_path(channel: str, version: str = "") -> Path;
+
+
+def pack_binary_bytes(binary_bytes: bytes) -> bytes;
+
+
+def admin_dist_source(channel: str, version: str) -> str;
+
+
+def _admin_dist_urls(channel: str, version: str = "") -> tuple[str, str];
+
+
+def download_admin_dist(channel: str, version: str = "") -> bytes | None;
+
+
+def stage_admin_dist(project_dir: str, channel: str, version: str = "") -> bool;
+
+
+def toolchain_object_key(app_name: str, digest: str) -> str;
+
+impl _node_architecture(k8s_node: object) -> str {
     status = k8s_node?.status;
     info = status?.node_info;
     return str(getattr(info, "architecture", "") or "");
 }
 
 
-def cluster_node_archs -> list[str] {
+impl cluster_node_archs -> list[str] {
     try {
         import from kubernetes { client }
     } except ImportError {
@@ -47,7 +157,7 @@ def cluster_node_archs -> list[str] {
 }
 
 
-def node_arch -> str {
+impl node_arch -> str {
     `override = os.environ.get("JAC_NODE_ARCH", "");
     if `override {
         return release_arch(`override);
@@ -66,7 +176,7 @@ def node_arch -> str {
 }
 
 
-def _http_get_bytes(url: str) -> bytes {
+impl _http_get_bytes(url: str) -> bytes {
     resp = urlopen(url, timeout=_HTTP_TIMEOUT);
     try {
         return bytes(resp.read());
@@ -76,10 +186,7 @@ def _http_get_bytes(url: str) -> bytes {
 }
 
 
-glob GH_REPO: str = "jaseci-labs/jac";
-
-
-def _list_release_versions(repo: str) -> list[str] {
+impl _list_release_versions(repo: str) -> list[str] {
     api = f"https://api.github.com/repos/{repo}/releases?per_page=100";
     try {
         arr = json.loads(_http_get_bytes(api).decode("utf-8"));
@@ -110,7 +217,7 @@ def _list_release_versions(repo: str) -> list[str] {
 }
 
 
-def _resolve_target_version(repo: str, spec: str) -> str {
+impl _resolve_target_version(repo: str, spec: str) -> str {
     spec = spec.strip();
     if not spec {
         return "";
@@ -137,7 +244,7 @@ def _resolve_target_version(repo: str, spec: str) -> str {
 }
 
 
-def _pick_stable_assets(meta: any, suffix: str) -> tuple[str, str] {
+impl _pick_stable_assets(meta: any, suffix: str) -> tuple[str, str] {
     binary_url = "";
     checksum_url = "";
     for asset in meta.get("assets", []) {
@@ -156,10 +263,7 @@ def _pick_stable_assets(meta: any, suffix: str) -> tuple[str, str] {
 }
 
 
-glob _deploy_version_memo: dict[str, any] = {};
-
-
-def resolve_deploy_version(project_dir: str, channel: str) -> str {
+impl resolve_deploy_version(project_dir: str, channel: str) -> str {
     if channel != Channel.STABLE.value {
         return "";
     }
@@ -167,7 +271,7 @@ def resolve_deploy_version(project_dir: str, channel: str) -> str {
 }
 
 
-def deploy_generation_refusal(
+impl deploy_generation_refusal(
     project_dir: str, channel: str = "", offline: bool = False
 ) -> str {
     channel = channel or resolve_dev_channel(project_dir).value;
@@ -204,7 +308,7 @@ def deploy_generation_refusal(
 }
 
 
-def resolve_console_version(
+impl resolve_console_version(
     project_dir: str, channel: str, deploy_version: str
 ) -> str {
     if deploy_version {
@@ -217,7 +321,7 @@ def resolve_console_version(
 }
 
 
-def resolve_pinned_version(project_dir: str) -> str {
+impl resolve_pinned_version(project_dir: str) -> str {
     found = find_project_root(Path(project_dir));
     if found is None {
         return "";
@@ -252,12 +356,12 @@ def resolve_pinned_version(project_dir: str) -> str {
 }
 
 
-def reset_deploy_version_cache {
+impl reset_deploy_version_cache {
     _deploy_version_memo.clear();
 }
 
 
-def host_seal_platform -> str {
+impl host_seal_platform -> str {
     plat = host_os();
     if plat in ("linux", "macos") {
         return plat;
@@ -271,7 +375,7 @@ def host_seal_platform -> str {
 }
 
 
-def stable_release_meta(version: str = "") -> dict[str, any] {
+impl stable_release_meta(version: str = "") -> dict[str, any] {
     api = f"https://api.github.com/repos/{GH_REPO}/releases/tags/v{version}"
         if version
         else f"https://api.github.com/repos/{GH_REPO}/releases/latest";
@@ -289,7 +393,7 @@ def stable_release_meta(version: str = "") -> dict[str, any] {
 }
 
 
-def _no_asset_message(meta: dict[str, any], suffix: str, version: str) -> str {
+impl _no_asset_message(meta: dict[str, any], suffix: str, version: str) -> str {
     tag = str(meta.get("tag_name", version or "latest"));
     return (
         f"No `jac-*{suffix}` asset on the {GH_REPO} release ({tag}). The node "
@@ -299,7 +403,7 @@ def _no_asset_message(meta: dict[str, any], suffix: str, version: str) -> str {
 }
 
 
-def preflight_pod_runtime(project_dir: str, channel: str, arch: str) -> str {
+impl preflight_pod_runtime(project_dir: str, channel: str, arch: str) -> str {
     if channel != Channel.STABLE.value {
         return "";
     }
@@ -316,7 +420,7 @@ def preflight_pod_runtime(project_dir: str, channel: str, arch: str) -> str {
 }
 
 
-def read_local_binary(project_dir: str) -> bytes {
+impl read_local_binary(project_dir: str) -> bytes {
     local = local_pod_binary(project_dir);
     if not local {
         raise RuntimeError(
@@ -335,7 +439,7 @@ def read_local_binary(project_dir: str) -> bytes {
 }
 
 
-def download_release_binary(
+impl download_release_binary(
     channel: str, arch: str, version: str = "", plat: str = "linux"
 ) -> bytes {
     repo = GH_REPO;
@@ -388,7 +492,7 @@ def download_release_binary(
 }
 
 
-def _fetch_verified_asset(
+impl _fetch_verified_asset(
     url: str, checksum_url: str, cache_file: Path, what: str
 ) -> bytes {
     if not checksum_url {
@@ -409,7 +513,7 @@ def _fetch_verified_asset(
 }
 
 
-def host_toolchain_path(project_dir: str, channel: str = "") -> str {
+impl host_toolchain_path(project_dir: str, channel: str = "") -> str {
     channel = channel or resolve_dev_channel(project_dir).value;
     version = resolve_deploy_version(project_dir, channel);
     if not version or version == resolve_cli_version().strip() {
@@ -428,10 +532,7 @@ def host_toolchain_path(project_dir: str, channel: str = "") -> str {
 }
 
 
-glob OFFICIAL_IMAGE: str = "jaseci/jaclang";
-
-
-def resolve_pod_base_image(
+impl resolve_pod_base_image(
     project_dir: str, configured: str, probe: bool = True
 ) -> str {
     if configured {
@@ -495,12 +596,12 @@ def resolve_pod_base_image(
 }
 
 
-def _scale_cache_root -> Path {
+impl _scale_cache_root -> Path {
     return bucket("scale-binaries").path();
 }
 
 
-def _binary_cache_path(
+impl _binary_cache_path(
     channel: str, arch: str, plat: str = "linux", version: str = ""
 ) -> Path {
     tag = f"{channel}-{version}" if version else channel;
@@ -508,13 +609,13 @@ def _binary_cache_path(
 }
 
 
-def _admin_dist_cache_path(channel: str, version: str = "") -> Path {
+impl _admin_dist_cache_path(channel: str, version: str = "") -> Path {
     tag = f"{channel}-{version}" if version else channel;
     return _scale_cache_root() / f"jac-{tag}-admin-dist.tar.gz";
 }
 
 
-def pack_binary_bytes(binary_bytes: bytes) -> bytes {
+impl pack_binary_bytes(binary_bytes: bytes) -> bytes {
     buf = io.BytesIO();
     (tar, gz) = open_det_tar(buf);
     try {
@@ -531,7 +632,7 @@ def pack_binary_bytes(binary_bytes: bytes) -> bytes {
 }
 
 
-def admin_dist_source(channel: str, version: str) -> str {
+impl admin_dist_source(channel: str, version: str) -> str {
     if channel == "dev" {
         return "dev";
     }
@@ -542,7 +643,7 @@ def admin_dist_source(channel: str, version: str) -> str {
 }
 
 
-def _admin_dist_urls(channel: str, version: str = "") -> tuple[str, str] {
+impl _admin_dist_urls(channel: str, version: str = "") -> tuple[str, str] {
     repo = GH_REPO;
     suffix = "-admin-dist.tar.gz";
     source = admin_dist_source(channel, version);
@@ -582,7 +683,7 @@ def _admin_dist_urls(channel: str, version: str = "") -> tuple[str, str] {
 }
 
 
-def download_admin_dist(channel: str, version: str = "") -> bytes | None {
+impl download_admin_dist(channel: str, version: str = "") -> bytes | None {
     try {
         (dist_url, checksum_url) = _admin_dist_urls(channel, version);
         if not dist_url {
@@ -618,7 +719,7 @@ def download_admin_dist(channel: str, version: str = "") -> bytes | None {
 }
 
 
-def stage_admin_dist(project_dir: str, channel: str, version: str = "") -> bool {
+impl stage_admin_dist(project_dir: str, channel: str, version: str = "") -> bool {
     dest = Path(project_dir) / ".jac" / "admin";
     try {
         payload = download_admin_dist(channel, version);
@@ -669,6 +770,6 @@ def stage_admin_dist(project_dir: str, channel: str, version: str = "") -> bool 
 }
 
 
-def toolchain_object_key(app_name: str, digest: str) -> str {
+impl toolchain_object_key(app_name: str, digest: str) -> str {
     return f"toolchain/{app_name}/{digest}.tar.gz";
 }

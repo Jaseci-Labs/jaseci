@@ -14,7 +14,9 @@ import from c {
 import from c { def strlen(pointer: int) -> u64;  }
 import from c { def memcpy(target: bytes, source: int, length: u64) -> int;  }
 
-def:pub user_home(name: str) -> str | None {
+def:pub user_home(name: str) -> str | None;
+
+impl user_home(name: str) -> str | None {
     if "\x00" in name {
         raise ValueError("embedded null byte");
     }

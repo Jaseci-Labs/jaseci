@@ -3,14 +3,64 @@ glob MAG_SHIFT: int = 30,
      MAG_MASK: int = 1073741823,
      MAX_STR_DIGITS: int = 4300;
 
-def mag_norm(m: list[int]) -> list[int] {
+def mag_norm(m: list[int]) -> list[int];
+
+def mag_from_int(v: int) -> list[int];
+
+def mag_to_int(m: list[int]) -> int;
+
+def mag_is_zero(m: list[int]) -> bool;
+
+def mag_cmp(a: list[int], b: list[int]) -> int;
+
+def mag_add(a: list[int], b: list[int]) -> list[int];
+
+def mag_sub(a: list[int], b: list[int]) -> list[int];
+
+def mag_mul(a: list[int], b: list[int]) -> list[int];
+
+def mag_mul_small(a: list[int], s: int) -> list[int];
+
+def mag_add_small(a: list[int], s: int) -> list[int];
+
+def mag_divmod_small(a: list[int], d: int) -> tuple[list[int], int];
+
+def mag_bit_length(a: list[int]) -> int;
+
+def mag_shl(a: list[int], bits: int) -> list[int];
+
+def mag_shr(a: list[int], bits: int) -> list[int];
+
+def mag_low_bits_nonzero(a: list[int], bits: int) -> bool;
+
+def mag_divmod(a: list[int], b: list[int]) -> tuple[list[int], list[int]];
+
+def mag_decimal_digits(a: list[int]) -> str;
+
+def mag_to_pow2_str(a: list[int], bits_per_digit: int) -> str;
+
+def mag_parse_digits(text: str, base: int) -> (list[int] | None);
+
+def digit_value(ch: str) -> int;
+
+def mag_pow2(bits: int) -> list[int];
+
+def mag_isqrt(n: list[int]) -> list[int];
+
+def mag_gcd(a: list[int], b: list[int]) -> list[int];
+
+def twos_limbs(neg: bool, mag: list[int], width: int) -> list[int];
+
+def twos_to_signed(limbs: list[int], neg: bool) -> tuple[bool, list[int]];
+
+impl mag_norm(m: list[int]) -> list[int] {
     while m and m[-1] == 0 {
         m.pop();
     }
     return m;
 }
 
-def mag_from_int(v: int) -> list[int] {
+impl mag_from_int(v: int) -> list[int] {
     out: list[int] = [];
     while v > 0 {
         out.append(v & MAG_MASK);
@@ -19,7 +69,7 @@ def mag_from_int(v: int) -> list[int] {
     return out;
 }
 
-def mag_to_int(m: list[int]) -> int {
+impl mag_to_int(m: list[int]) -> int {
     out = 0;
     i = len(m) - 1;
     while i >= 0 {
@@ -29,11 +79,11 @@ def mag_to_int(m: list[int]) -> int {
     return out;
 }
 
-def mag_is_zero(m: list[int]) -> bool {
+impl mag_is_zero(m: list[int]) -> bool {
     return len(m) == 0;
 }
 
-def mag_cmp(a: list[int], b: list[int]) -> int {
+impl mag_cmp(a: list[int], b: list[int]) -> int {
     if len(a) != len(b) {
         return 1 if len(a) > len(b) else -1;
     }
@@ -47,7 +97,7 @@ def mag_cmp(a: list[int], b: list[int]) -> int {
     return 0;
 }
 
-def mag_add(a: list[int], b: list[int]) -> list[int] {
+impl mag_add(a: list[int], b: list[int]) -> list[int] {
     if len(a) < len(b) {
         (a, b) = (b, a);
     }
@@ -67,7 +117,7 @@ def mag_add(a: list[int], b: list[int]) -> list[int] {
     return out;
 }
 
-def mag_sub(a: list[int], b: list[int]) -> list[int] {
+impl mag_sub(a: list[int], b: list[int]) -> list[int] {
     out: list[int] = [];
     borrow = 0;
     for i in range(len(a)) {
@@ -86,7 +136,7 @@ def mag_sub(a: list[int], b: list[int]) -> list[int] {
     return mag_norm(out);
 }
 
-def mag_mul(a: list[int], b: list[int]) -> list[int] {
+impl mag_mul(a: list[int], b: list[int]) -> list[int] {
     if not a or not b {
         return [];
     }
@@ -113,7 +163,7 @@ def mag_mul(a: list[int], b: list[int]) -> list[int] {
     return mag_norm(out);
 }
 
-def mag_mul_small(a: list[int], s: int) -> list[int] {
+impl mag_mul_small(a: list[int], s: int) -> list[int] {
     out: list[int] = [];
     carry = 0;
     for limb in a {
@@ -128,7 +178,7 @@ def mag_mul_small(a: list[int], s: int) -> list[int] {
     return mag_norm(out);
 }
 
-def mag_add_small(a: list[int], s: int) -> list[int] {
+impl mag_add_small(a: list[int], s: int) -> list[int] {
     out: list[int] = a.copy();
     carry = s;
     i = 0;
@@ -144,7 +194,7 @@ def mag_add_small(a: list[int], s: int) -> list[int] {
     return out;
 }
 
-def mag_divmod_small(a: list[int], d: int) -> tuple[list[int], int] {
+impl mag_divmod_small(a: list[int], d: int) -> tuple[list[int], int] {
     q: list[int] = [0] * len(a);
     rem = 0;
     i = len(a) - 1;
@@ -157,7 +207,7 @@ def mag_divmod_small(a: list[int], d: int) -> tuple[list[int], int] {
     return (mag_norm(q), rem);
 }
 
-def mag_bit_length(a: list[int]) -> int {
+impl mag_bit_length(a: list[int]) -> int {
     if not a {
         return 0;
     }
@@ -170,7 +220,7 @@ def mag_bit_length(a: list[int]) -> int {
     return (len(a) - 1) * MAG_SHIFT + bits;
 }
 
-def mag_shl(a: list[int], bits: int) -> list[int] {
+impl mag_shl(a: list[int], bits: int) -> list[int] {
     if not a {
         return [];
     }
@@ -193,7 +243,7 @@ def mag_shl(a: list[int], bits: int) -> list[int] {
     return out;
 }
 
-def mag_shr(a: list[int], bits: int) -> list[int] {
+impl mag_shr(a: list[int], bits: int) -> list[int] {
     limbs = bits // MAG_SHIFT;
     rem = bits % MAG_SHIFT;
     if limbs >= len(a) {
@@ -211,7 +261,7 @@ def mag_shr(a: list[int], bits: int) -> list[int] {
     return mag_norm(out);
 }
 
-def mag_low_bits_nonzero(a: list[int], bits: int) -> bool {
+impl mag_low_bits_nonzero(a: list[int], bits: int) -> bool {
     limbs = bits // MAG_SHIFT;
     rem = bits % MAG_SHIFT;
     for i in range(min(limbs, len(a))) {
@@ -225,7 +275,7 @@ def mag_low_bits_nonzero(a: list[int], bits: int) -> bool {
     return False;
 }
 
-def mag_divmod(a: list[int], b: list[int]) -> tuple[list[int], list[int]] {
+impl mag_divmod(a: list[int], b: list[int]) -> tuple[list[int], list[int]] {
     if mag_cmp(a, b) < 0 {
         return ([], a.copy());
     }
@@ -291,7 +341,7 @@ def mag_divmod(a: list[int], b: list[int]) -> tuple[list[int], list[int]] {
     return (mag_norm(q), rem);
 }
 
-def mag_decimal_digits(a: list[int]) -> str {
+impl mag_decimal_digits(a: list[int]) -> str {
     if not a {
         return "0";
     }
@@ -310,7 +360,7 @@ def mag_decimal_digits(a: list[int]) -> str {
     return out;
 }
 
-def mag_to_pow2_str(a: list[int], bits_per_digit: int) -> str {
+impl mag_to_pow2_str(a: list[int], bits_per_digit: int) -> str {
     if not a {
         return "0";
     }
@@ -333,7 +383,7 @@ def mag_to_pow2_str(a: list[int], bits_per_digit: int) -> str {
     return "".join(out);
 }
 
-def mag_parse_digits(text: str, base: int) -> (list[int] | None) {
+impl mag_parse_digits(text: str, base: int) -> (list[int] | None) {
     out: list[int] = [];
     for ch in text {
         d = digit_value(ch);
@@ -345,7 +395,7 @@ def mag_parse_digits(text: str, base: int) -> (list[int] | None) {
     return mag_norm(out);
 }
 
-def digit_value(ch: str) -> int {
+impl digit_value(ch: str) -> int {
     o = ord(ch);
     if 48 <= o <= 57 {
         return o - 48;
@@ -359,11 +409,11 @@ def digit_value(ch: str) -> int {
     return -1;
 }
 
-def mag_pow2(bits: int) -> list[int] {
+impl mag_pow2(bits: int) -> list[int] {
     return mag_shl([1], bits);
 }
 
-def mag_isqrt(n: list[int]) -> list[int] {
+impl mag_isqrt(n: list[int]) -> list[int] {
     if not n {
         return [];
     }
@@ -379,7 +429,7 @@ def mag_isqrt(n: list[int]) -> list[int] {
     return x;
 }
 
-def mag_gcd(a: list[int], b: list[int]) -> list[int] {
+impl mag_gcd(a: list[int], b: list[int]) -> list[int] {
     x = a.copy();
     y = b.copy();
     while y {
@@ -390,7 +440,7 @@ def mag_gcd(a: list[int], b: list[int]) -> list[int] {
     return x;
 }
 
-def twos_limbs(neg: bool, mag: list[int], width: int) -> list[int] {
+impl twos_limbs(neg: bool, mag: list[int], width: int) -> list[int] {
     out: list[int] = mag.copy();
     while len(out) < width {
         out.append(0);
@@ -407,7 +457,7 @@ def twos_limbs(neg: bool, mag: list[int], width: int) -> list[int] {
     return out;
 }
 
-def twos_to_signed(limbs: list[int], neg: bool) -> tuple[bool, list[int]] {
+impl twos_to_signed(limbs: list[int], neg: bool) -> tuple[bool, list[int]] {
     if not neg {
         return (False, mag_norm(limbs.copy()));
     }

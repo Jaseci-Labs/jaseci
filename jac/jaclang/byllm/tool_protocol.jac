@@ -5,7 +5,65 @@ import from types { SimpleNamespace }
 
 glob _TOOL_PROTOCOL_HEADER = "# Calling tools";
 
-def _render_tool(tool: object) -> str {
+def _render_tool(tool: object) -> str;
+
+
+def format_tools_for_prompt(tools: list[dict[str, any]]) -> str;
+
+
+def attach_tool_hint(
+    messages: list[dict[str, any]], block: str
+) -> list[dict[str, any]];
+
+
+def response_field(val: object, key: str) -> object;
+
+
+def _tool_call_name_args(tc: object) -> tuple[str, dict[str, any]];
+
+
+def linearize_tool_messages(messages: list[dict[str, any]]) -> list[dict[str, any]];
+
+
+def inject_tool_hint(params: dict[str, any]) -> dict[str, any];
+
+
+def _merge_stop(existing: object, extra: list[str]) -> list[str];
+
+def _balanced(text: str, start: int, open_ch: str, close_ch: str) -> str | None;
+
+
+def _call_fields(cobj: object) -> dict[str, any] | None;
+
+
+def _extract_json_call(content: str, tool_names: list[str]) -> dict[str, any] | None;
+
+
+def _split_top_level(text: str) -> list[str];
+
+
+def _parse_value(token: str) -> object;
+
+
+def _parse_kwargs(argstr: str) -> dict[str, any];
+
+
+def _extract_paren_call(content: str, tool_names: list[str]) -> dict[str, any] | None;
+
+
+def _extract_first_tool_call(
+    content: str, tool_names: list[str]
+) -> dict[str, any] | None;
+
+
+def coerce_message_dict(message: object) -> dict[str, any];
+
+
+def recover_tool_calls(
+    message: object, tool_names: list[str] | None = None
+) -> dict[str, any];
+
+impl _render_tool(tool: object) -> str {
     if not isinstance(tool, dict) {
         return "";
     }
@@ -43,7 +101,7 @@ def _render_tool(tool: object) -> str {
 }
 
 
-def format_tools_for_prompt(tools: list[dict[str, any]]) -> str {
+impl format_tools_for_prompt(tools: list[dict[str, any]]) -> str {
     rendered: list[str] = [];
     for tool in tools {
         block = _render_tool(tool);
@@ -73,7 +131,7 @@ def format_tools_for_prompt(tools: list[dict[str, any]]) -> str {
 }
 
 
-def attach_tool_hint(
+impl attach_tool_hint(
     messages: list[dict[str, any]], block: str
 ) -> list[dict[str, any]] {
     out: list[dict[str, any]] = list(messages);
@@ -111,7 +169,7 @@ def attach_tool_hint(
 }
 
 
-def response_field(val: object, key: str) -> object {
+impl response_field(val: object, key: str) -> object {
     if isinstance(val, dict) {
         return val.get(key);
     }
@@ -119,7 +177,7 @@ def response_field(val: object, key: str) -> object {
 }
 
 
-def _tool_call_name_args(tc: object) -> tuple[str, dict[str, any]] {
+impl _tool_call_name_args(tc: object) -> tuple[str, dict[str, any]] {
     fn = response_field(tc, "function");
     name = response_field(tc, "name") or response_field(fn, "name");
     raw_args = response_field(tc, "arguments") or response_field(fn, "arguments");
@@ -138,7 +196,7 @@ def _tool_call_name_args(tc: object) -> tuple[str, dict[str, any]] {
 }
 
 
-def linearize_tool_messages(messages: list[dict[str, any]]) -> list[dict[str, any]] {
+impl linearize_tool_messages(messages: list[dict[str, any]]) -> list[dict[str, any]] {
     out: list[dict[str, any]] = [];
     for m in messages {
         if response_field(m, "tool_call_id") is not None {
@@ -176,7 +234,7 @@ def linearize_tool_messages(messages: list[dict[str, any]]) -> list[dict[str, an
 }
 
 
-def inject_tool_hint(params: dict[str, any]) -> dict[str, any] {
+impl inject_tool_hint(params: dict[str, any]) -> dict[str, any] {
     tools = params.get("tools");
     msgs = params.get("messages");
     if not isinstance(msgs, list) {
@@ -206,7 +264,7 @@ def inject_tool_hint(params: dict[str, any]) -> dict[str, any] {
 }
 
 
-def _merge_stop(existing: object, extra: list[str]) -> list[str] {
+impl _merge_stop(existing: object, extra: list[str]) -> list[str] {
     out: list[str] = [];
     if isinstance(existing, str) and existing {
         out.append(existing);
@@ -225,7 +283,7 @@ def _merge_stop(existing: object, extra: list[str]) -> list[str] {
     return out;
 }
 
-def _balanced(text: str, start: int, open_ch: str, close_ch: str) -> str | None {
+impl _balanced(text: str, start: int, open_ch: str, close_ch: str) -> str | None {
     depth = 0;
     in_str = False;
     quote = "";
@@ -260,7 +318,7 @@ def _balanced(text: str, start: int, open_ch: str, close_ch: str) -> str | None 
 }
 
 
-def _call_fields(cobj: object) -> dict[str, any] | None {
+impl _call_fields(cobj: object) -> dict[str, any] | None {
     if not isinstance(cobj, dict) {
         return None;
     }
@@ -289,7 +347,7 @@ def _call_fields(cobj: object) -> dict[str, any] | None {
 }
 
 
-def _extract_json_call(content: str, tool_names: list[str]) -> dict[str, any] | None {
+impl _extract_json_call(content: str, tool_names: list[str]) -> dict[str, any] | None {
     i = 0;
     while i < len(content) {
         if content[i] == "{" {
@@ -341,7 +399,7 @@ def _extract_json_call(content: str, tool_names: list[str]) -> dict[str, any] | 
 }
 
 
-def _split_top_level(text: str) -> list[str] {
+impl _split_top_level(text: str) -> list[str] {
     parts: list[str] = [];
     buf = "";
     depth = 0;
@@ -382,7 +440,7 @@ def _split_top_level(text: str) -> list[str] {
 }
 
 
-def _parse_value(token: str) -> object {
+impl _parse_value(token: str) -> object {
     t = token.strip();
     if not t {
         return "";
@@ -397,7 +455,7 @@ def _parse_value(token: str) -> object {
 }
 
 
-def _parse_kwargs(argstr: str) -> dict[str, any] {
+impl _parse_kwargs(argstr: str) -> dict[str, any] {
     out: dict[str, any] = {};
     for part in _split_top_level(argstr) {
         m = re.`match("\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*[:=]\\s*", part);
@@ -410,7 +468,7 @@ def _parse_kwargs(argstr: str) -> dict[str, any] {
 }
 
 
-def _extract_paren_call(content: str, tool_names: list[str]) -> dict[str, any] | None {
+impl _extract_paren_call(content: str, tool_names: list[str]) -> dict[str, any] | None {
     for m in re.finditer("([A-Za-z_][A-Za-z0-9_]*)\\s*([\\(\\{])", content) {
         name = m.group(1);
         if name not in tool_names {
@@ -434,7 +492,7 @@ def _extract_paren_call(content: str, tool_names: list[str]) -> dict[str, any] |
 }
 
 
-def _extract_first_tool_call(
+impl _extract_first_tool_call(
     content: str, tool_names: list[str]
 ) -> dict[str, any] | None {
     json_call = _extract_json_call(content, tool_names);
@@ -451,7 +509,7 @@ def _extract_first_tool_call(
 }
 
 
-def coerce_message_dict(message: object) -> dict[str, any] {
+impl coerce_message_dict(message: object) -> dict[str, any] {
     if isinstance(message, dict) {
         return message;
     }
@@ -465,7 +523,7 @@ def coerce_message_dict(message: object) -> dict[str, any] {
 }
 
 
-def recover_tool_calls(
+impl recover_tool_calls(
     message: object, tool_names: list[str] | None = None
 ) -> dict[str, any] {
     msg: dict[str, any] = coerce_message_dict(message);

@@ -42,46 +42,7 @@ obj RequestOptions {
         native_threads: int = -1,
         opt_level: int = -1;
 
-    def to_options -> CompileOptions {
-        return CompileOptions(
-            symtab_ir_only=self.symtab_ir_only,
-            no_cgen=self.no_cgen,
-            native_parity=self.native_parity,
-            native_required=self.native_required,
-            native_require=list(self.native_require),
-            iface_ok=self.iface_ok,
-            need_full_ast=self.need_full_ast,
-            native_tree_demand=self.native_tree_demand,
-            no_ir_cache=self.no_ir_cache,
-            resolve_annex_parent=self.resolve_annex_parent,
-            aot_mode=self.aot_mode,
-            native_unit=self.native_unit,
-            kernel_build=self.kernel_build,
-            force_codespace=self.force_codespace,
-            memory_profile=self.memory_profile,
-            nogc_enforce_all=self.nogc_enforce_all,
-            memory_enforce=list(self.memory_enforce),
-            memory_exempt=list(self.memory_exempt),
-            native_target=self.native_target,
-            suppress_codes=list(self.suppress_codes),
-            default_codespace=self.default_codespace,
-            app_kind=self.app_kind,
-            target_app=self.target_app,
-            entry_point=self.entry_point,
-            ui=self.ui,
-            project_root=self.project_root,
-            strict_dependencies=self.strict_dependencies,
-            package_canonical=self.package_canonical,
-            na_gc_mode=self.na_gc_mode or None,
-            native_debug=self.native_debug,
-            rc_debug_codegen=self.rc_debug_codegen,
-            rc_stats=self.rc_stats,
-            nogc_debug=self.nogc_debug,
-            na_debug=self.na_debug,
-            native_threads=self.native_threads if self.native_threads >= 0 else None,
-            opt_level=self.opt_level if self.opt_level >= 0 else None
-        );
-    }
+    def to_options -> CompileOptions;
 }
 
 obj PythonInterface {
@@ -99,9 +60,7 @@ obj ImportResolution {
         path: str = "",
         language: str = "";
 
-    def key -> str {
-        return resolution_key(self.target, self.base_path, self.string_spec);
-    }
+    def key -> str;
 }
 
 obj LocalResolution {
@@ -111,9 +70,7 @@ obj LocalResolution {
         path: str = "",
         language: str = "";
 
-    def key -> str {
-        return local_key(self.base, self.parts);
-    }
+    def key -> str;
 }
 
 obj NpmAnswer {
@@ -125,9 +82,7 @@ obj NpmAnswer {
         entry_known: bool = False,
         declarations_known: bool = False;
 
-    def key -> str {
-        return pair_key(self.spec, self.base_path);
-    }
+    def key -> str;
 }
 
 obj DeclaredDependencies {
@@ -135,9 +90,7 @@ obj DeclaredDependencies {
         fallback_app: str = "",
         names: (list[str] | None) = None;
 
-    def key -> str {
-        return pair_key(self.module_path, self.fallback_app);
-    }
+    def key -> str;
 }
 
 obj ManifestSets {
@@ -146,39 +99,9 @@ obj ManifestSets {
         native_only_dirs: list[str] = [],
         native_lowered: list[str] = [];
 
-    def is_seed(rel: str) -> bool {
-        for entry_path in self.seed_paths {
-            if entry_path.endswith("/") {
-                if rel.startswith(entry_path) {
-                    return True;
-                }
-            } elif rel == entry_path {
-                return True;
-            }
-        }
-        return False;
-    }
-
-    def is_native_only(rel: str) -> bool {
-        if rel in self.native_only_files {
-            return True;
-        }
-        for directory in self.native_only_dirs {
-            if rel.startswith(directory + "/") {
-                return True;
-            }
-        }
-        return False;
-    }
-
-    def is_native_lowered(rel: str) -> bool {
-        for prefix in self.native_lowered {
-            if rel == prefix or rel.startswith(prefix + "/") {
-                return True;
-            }
-        }
-        return False;
-    }
+    def is_seed(rel: str) -> bool;
+    def is_native_only(rel: str) -> bool;
+    def is_native_lowered(rel: str) -> bool;
 }
 
 obj KernelInputs {
@@ -234,29 +157,197 @@ obj KernelInputs {
         declared: list[DeclaredDependencies] = [],
         python_ifaces: list[PythonInterface] = [];
 
-    def to_json -> str {
-        return json.dumps(inputs_to_dict(self), sort_keys=True);
-    }
-
-    static def from_json(text: str) -> KernelInputs {
-        return inputs_from_dict(json_map(json.loads(text)));
-    }
+    def to_json -> str;
+    static def from_json(text: str) -> KernelInputs;
 }
 
-def resolution_key(target: str, base_path: str, string_spec: bool) -> str {
+def resolution_key(target: str, base_path: str, string_spec: bool) -> str;
+
+def local_key(base: str, parts: list[str]) -> str;
+
+def pair_key(first: str, second: str) -> str;
+
+def request_of(options: CompileOptions) -> RequestOptions;
+
+def request_to_dict(request: RequestOptions) -> dict[str, any];
+
+def request_from_dict(raw: dict[str, any]) -> RequestOptions;
+
+def check_to_dict(check: CheckSettings) -> dict[str, any];
+
+def check_from_dict(raw: dict[str, any]) -> CheckSettings;
+
+def defaults_to_dict(defaults: ProjectDefaults) -> dict[str, any];
+
+def defaults_from_dict(raw: dict[str, any]) -> ProjectDefaults;
+
+def facts_to_dict(facts: ProjectFacts) -> dict[str, any];
+
+def facts_from_dict(raw: dict[str, any]) -> ProjectFacts;
+
+def lint_to_dict(lint: LintSettings) -> dict[str, any];
+
+def lint_from_dict(raw: dict[str, any]) -> LintSettings;
+
+def app_to_dict(app: AppSpec) -> dict[str, any];
+
+def app_from_dict(raw: dict[str, any]) -> AppSpec;
+
+def workspace_to_dict(ws: WorkspaceSpec) -> dict[str, any];
+
+def workspace_from_dict(raw: dict[str, any]) -> WorkspaceSpec;
+
+def layout_to_dict(layout: LayoutTables) -> dict[str, any];
+
+def layout_from_dict(raw: dict[str, any]) -> LayoutTables;
+
+def manifest_to_dict(manifest: ManifestSets) -> dict[str, any];
+
+def manifest_from_dict(raw: dict[str, any]) -> ManifestSets;
+
+def optional_list(raw: object) -> (list[str] | None);
+
+def json_str_list(value: object) -> list[str];
+
+def json_str_pairs(value: object) -> list[list[str]];
+
+def json_str_map(value: object) -> dict[str, str];
+
+def json_bool_map(value: object) -> dict[str, bool];
+
+def json_map(value: object) -> dict[str, any];
+
+def json_maps(value: object) -> list[dict[str, any]];
+
+def json_int(value: object, fallback: int = 0) -> int;
+
+def inputs_to_dict(inputs: KernelInputs) -> dict[str, any];
+
+def answers_to_dict(inputs: KernelInputs) -> dict[str, any];
+
+def json_opt_str(value: object) -> (str | None);
+
+def merge_str_map(into: dict[str, str], value: object);
+
+def merge_bool_map(into: dict[str, bool], value: object);
+
+def merge_answers(inputs: KernelInputs, raw: dict[str, any]);
+
+def inputs_from_dict(raw: dict[str, any]) -> KernelInputs;
+
+impl RequestOptions.to_options -> CompileOptions {
+    return CompileOptions(
+        symtab_ir_only=self.symtab_ir_only,
+        no_cgen=self.no_cgen,
+        native_parity=self.native_parity,
+        native_required=self.native_required,
+        native_require=list(self.native_require),
+        iface_ok=self.iface_ok,
+        need_full_ast=self.need_full_ast,
+        native_tree_demand=self.native_tree_demand,
+        no_ir_cache=self.no_ir_cache,
+        resolve_annex_parent=self.resolve_annex_parent,
+        aot_mode=self.aot_mode,
+        native_unit=self.native_unit,
+        kernel_build=self.kernel_build,
+        force_codespace=self.force_codespace,
+        memory_profile=self.memory_profile,
+        nogc_enforce_all=self.nogc_enforce_all,
+        memory_enforce=list(self.memory_enforce),
+        memory_exempt=list(self.memory_exempt),
+        native_target=self.native_target,
+        suppress_codes=list(self.suppress_codes),
+        default_codespace=self.default_codespace,
+        app_kind=self.app_kind,
+        target_app=self.target_app,
+        entry_point=self.entry_point,
+        ui=self.ui,
+        project_root=self.project_root,
+        strict_dependencies=self.strict_dependencies,
+        package_canonical=self.package_canonical,
+        na_gc_mode=self.na_gc_mode or None,
+        native_debug=self.native_debug,
+        rc_debug_codegen=self.rc_debug_codegen,
+        rc_stats=self.rc_stats,
+        nogc_debug=self.nogc_debug,
+        na_debug=self.na_debug,
+        native_threads=self.native_threads if self.native_threads >= 0 else None,
+        opt_level=self.opt_level if self.opt_level >= 0 else None
+    );
+}
+
+impl ImportResolution.key -> str {
+    return resolution_key(self.target, self.base_path, self.string_spec);
+}
+
+impl LocalResolution.key -> str {
+    return local_key(self.base, self.parts);
+}
+
+impl NpmAnswer.key -> str {
+    return pair_key(self.spec, self.base_path);
+}
+
+impl DeclaredDependencies.key -> str {
+    return pair_key(self.module_path, self.fallback_app);
+}
+
+impl ManifestSets.is_seed(rel: str) -> bool {
+    for entry_path in self.seed_paths {
+        if entry_path.endswith("/") {
+            if rel.startswith(entry_path) {
+                return True;
+            }
+        } elif rel == entry_path {
+            return True;
+        }
+    }
+    return False;
+}
+
+impl ManifestSets.is_native_only(rel: str) -> bool {
+    if rel in self.native_only_files {
+        return True;
+    }
+    for directory in self.native_only_dirs {
+        if rel.startswith(directory + "/") {
+            return True;
+        }
+    }
+    return False;
+}
+
+impl ManifestSets.is_native_lowered(rel: str) -> bool {
+    for prefix in self.native_lowered {
+        if rel == prefix or rel.startswith(prefix + "/") {
+            return True;
+        }
+    }
+    return False;
+}
+
+impl KernelInputs.to_json -> str {
+    return json.dumps(inputs_to_dict(self), sort_keys=True);
+}
+
+impl KernelInputs.from_json(text: str) -> KernelInputs {
+    return inputs_from_dict(json_map(json.loads(text)));
+}
+
+impl resolution_key(target: str, base_path: str, string_spec: bool) -> str {
     flag = "1" if string_spec else "0";
     return flag + KEY_SEP + target + KEY_SEP + base_path;
 }
 
-def local_key(base: str, parts: list[str]) -> str {
+impl local_key(base: str, parts: list[str]) -> str {
     return base + KEY_SEP + "/".join(parts);
 }
 
-def pair_key(first: str, second: str) -> str {
+impl pair_key(first: str, second: str) -> str {
     return first + KEY_SEP + second;
 }
 
-def request_of(options: CompileOptions) -> RequestOptions {
+impl request_of(options: CompileOptions) -> RequestOptions {
     return RequestOptions(
         symtab_ir_only=options.symtab_ir_only,
         no_cgen=options.no_cgen,
@@ -299,7 +390,7 @@ def request_of(options: CompileOptions) -> RequestOptions {
     );
 }
 
-def request_to_dict(request: RequestOptions) -> dict[str, any] {
+impl request_to_dict(request: RequestOptions) -> dict[str, any] {
     return {
         "symtab_ir_only": request.symtab_ir_only,
         "no_cgen": request.no_cgen,
@@ -340,7 +431,7 @@ def request_to_dict(request: RequestOptions) -> dict[str, any] {
     };
 }
 
-def request_from_dict(raw: dict[str, any]) -> RequestOptions {
+impl request_from_dict(raw: dict[str, any]) -> RequestOptions {
     project_root = raw.get("project_root");
     return RequestOptions(
         symtab_ir_only=bool(raw.get("symtab_ir_only", False)),
@@ -382,7 +473,7 @@ def request_from_dict(raw: dict[str, any]) -> RequestOptions {
     );
 }
 
-def check_to_dict(check: CheckSettings) -> dict[str, any] {
+impl check_to_dict(check: CheckSettings) -> dict[str, any] {
     return {
         "suppress": list(check.suppress),
         "suppress_categories": list(check.suppress_categories),
@@ -395,7 +486,7 @@ def check_to_dict(check: CheckSettings) -> dict[str, any] {
     };
 }
 
-def check_from_dict(raw: dict[str, any]) -> CheckSettings {
+impl check_from_dict(raw: dict[str, any]) -> CheckSettings {
     return CheckSettings(
         suppress=json_str_list(raw.get("suppress")),
         suppress_categories=json_str_list(raw.get("suppress_categories")),
@@ -408,7 +499,7 @@ def check_from_dict(raw: dict[str, any]) -> CheckSettings {
     );
 }
 
-def defaults_to_dict(defaults: ProjectDefaults) -> dict[str, any] {
+impl defaults_to_dict(defaults: ProjectDefaults) -> dict[str, any] {
     return {
         "default_codespace": defaults.default_codespace,
         "native_require": list(defaults.native_require),
@@ -425,7 +516,7 @@ def defaults_to_dict(defaults: ProjectDefaults) -> dict[str, any] {
     };
 }
 
-def defaults_from_dict(raw: dict[str, any]) -> ProjectDefaults {
+impl defaults_from_dict(raw: dict[str, any]) -> ProjectDefaults {
     return ProjectDefaults(
         default_codespace=str(raw.get("default_codespace", "")),
         native_require=json_str_list(raw.get("native_require")),
@@ -442,7 +533,7 @@ def defaults_from_dict(raw: dict[str, any]) -> ProjectDefaults {
     );
 }
 
-def facts_to_dict(facts: ProjectFacts) -> dict[str, any] {
+impl facts_to_dict(facts: ProjectFacts) -> dict[str, any] {
     return {
         "project_root": facts.project_root,
         "check": check_to_dict(facts.check),
@@ -453,7 +544,7 @@ def facts_to_dict(facts: ProjectFacts) -> dict[str, any] {
     };
 }
 
-def facts_from_dict(raw: dict[str, any]) -> ProjectFacts {
+impl facts_from_dict(raw: dict[str, any]) -> ProjectFacts {
     return ProjectFacts(
         project_root=str(raw.get("project_root", "")),
         check=check_from_dict(json_map(raw.get("check"))),
@@ -464,7 +555,7 @@ def facts_from_dict(raw: dict[str, any]) -> ProjectFacts {
     );
 }
 
-def lint_to_dict(lint: LintSettings) -> dict[str, any] {
+impl lint_to_dict(lint: LintSettings) -> dict[str, any] {
     return {
         "check": check_to_dict(lint.check),
         "exclude": list(lint.exclude),
@@ -472,7 +563,7 @@ def lint_to_dict(lint: LintSettings) -> dict[str, any] {
     };
 }
 
-def lint_from_dict(raw: dict[str, any]) -> LintSettings {
+impl lint_from_dict(raw: dict[str, any]) -> LintSettings {
     return LintSettings(
         check=check_from_dict(json_map(raw.get("check"))),
         exclude=json_str_list(raw.get("exclude")),
@@ -480,7 +571,7 @@ def lint_from_dict(raw: dict[str, any]) -> LintSettings {
     );
 }
 
-def app_to_dict(app: AppSpec) -> dict[str, any] {
+impl app_to_dict(app: AppSpec) -> dict[str, any] {
     return {
         "name": app.name,
         "kind": app.kind,
@@ -498,7 +589,7 @@ def app_to_dict(app: AppSpec) -> dict[str, any] {
     };
 }
 
-def app_from_dict(raw: dict[str, any]) -> AppSpec {
+impl app_from_dict(raw: dict[str, any]) -> AppSpec {
     return AppSpec(
         name=str(raw.get("name", "")),
         kind=str(raw.get("kind", "")),
@@ -516,7 +607,7 @@ def app_from_dict(raw: dict[str, any]) -> AppSpec {
     );
 }
 
-def workspace_to_dict(ws: WorkspaceSpec) -> dict[str, any] {
+impl workspace_to_dict(ws: WorkspaceSpec) -> dict[str, any] {
     return {
         "project_root": ws.project_root,
         "toml_path": ws.toml_path,
@@ -530,7 +621,7 @@ def workspace_to_dict(ws: WorkspaceSpec) -> dict[str, any] {
     };
 }
 
-def workspace_from_dict(raw: dict[str, any]) -> WorkspaceSpec {
+impl workspace_from_dict(raw: dict[str, any]) -> WorkspaceSpec {
     apps: dict[str, AppSpec] = {};
     for entry_raw in json_maps(raw.get("apps")) {
         app = app_from_dict(entry_raw);
@@ -549,7 +640,7 @@ def workspace_from_dict(raw: dict[str, any]) -> WorkspaceSpec {
     );
 }
 
-def layout_to_dict(layout: LayoutTables) -> dict[str, any] {
+impl layout_to_dict(layout: LayoutTables) -> dict[str, any] {
     return {
         "jac_suffix": layout.jac_suffix,
         "annex_folders": dict(layout.annex_folders),
@@ -563,7 +654,7 @@ def layout_to_dict(layout: LayoutTables) -> dict[str, any] {
     };
 }
 
-def layout_from_dict(raw: dict[str, any]) -> LayoutTables {
+impl layout_from_dict(raw: dict[str, any]) -> LayoutTables {
     folders = json_str_map(raw.get("annex_folders"));
     order = json_str_list(raw.get("annex_order"))
         if "annex_order" in raw
@@ -584,7 +675,7 @@ def layout_from_dict(raw: dict[str, any]) -> LayoutTables {
     );
 }
 
-def manifest_to_dict(manifest: ManifestSets) -> dict[str, any] {
+impl manifest_to_dict(manifest: ManifestSets) -> dict[str, any] {
     return {
         "seed_paths": list(manifest.seed_paths),
         "native_only_files": list(manifest.native_only_files),
@@ -593,7 +684,7 @@ def manifest_to_dict(manifest: ManifestSets) -> dict[str, any] {
     };
 }
 
-def manifest_from_dict(raw: dict[str, any]) -> ManifestSets {
+impl manifest_from_dict(raw: dict[str, any]) -> ManifestSets {
     return ManifestSets(
         seed_paths=json_str_list(raw.get("seed_paths")),
         native_only_files=json_str_list(raw.get("native_only_files")),
@@ -602,14 +693,14 @@ def manifest_from_dict(raw: dict[str, any]) -> ManifestSets {
     );
 }
 
-def optional_list(raw: object) -> (list[str] | None) {
+impl optional_list(raw: object) -> (list[str] | None) {
     if raw is None {
         return None;
     }
     return json_str_list(raw);
 }
 
-def json_str_list(value: object) -> list[str] {
+impl json_str_list(value: object) -> list[str] {
     out: list[str] = [];
     if isinstance(value, list) {
         for item in value {
@@ -619,7 +710,7 @@ def json_str_list(value: object) -> list[str] {
     return out;
 }
 
-def json_str_pairs(value: object) -> list[list[str]] {
+impl json_str_pairs(value: object) -> list[list[str]] {
     out: list[list[str]] = [];
     if isinstance(value, list) {
         for item in value {
@@ -632,7 +723,7 @@ def json_str_pairs(value: object) -> list[list[str]] {
     return out;
 }
 
-def json_str_map(value: object) -> dict[str, str] {
+impl json_str_map(value: object) -> dict[str, str] {
     out: dict[str, str] = {};
     if isinstance(value, dict) {
         for (key, item) in value.items() {
@@ -642,7 +733,7 @@ def json_str_map(value: object) -> dict[str, str] {
     return out;
 }
 
-def json_bool_map(value: object) -> dict[str, bool] {
+impl json_bool_map(value: object) -> dict[str, bool] {
     out: dict[str, bool] = {};
     if isinstance(value, dict) {
         for (key, item) in value.items() {
@@ -652,7 +743,7 @@ def json_bool_map(value: object) -> dict[str, bool] {
     return out;
 }
 
-def json_map(value: object) -> dict[str, any] {
+impl json_map(value: object) -> dict[str, any] {
     out: dict[str, any] = {};
     if isinstance(value, dict) {
         for (key, item) in value.items() {
@@ -662,7 +753,7 @@ def json_map(value: object) -> dict[str, any] {
     return out;
 }
 
-def json_maps(value: object) -> list[dict[str, any]] {
+impl json_maps(value: object) -> list[dict[str, any]] {
     out: list[dict[str, any]] = [];
     if isinstance(value, list) {
         for item in value {
@@ -672,7 +763,7 @@ def json_maps(value: object) -> list[dict[str, any]] {
     return out;
 }
 
-def json_int(value: object, fallback: int = 0) -> int {
+impl json_int(value: object, fallback: int = 0) -> int {
     if isinstance(value, bool) {
         return 1 if value else 0;
     }
@@ -682,7 +773,7 @@ def json_int(value: object, fallback: int = 0) -> int {
     return fallback;
 }
 
-def inputs_to_dict(inputs: KernelInputs) -> dict[str, any] {
+impl inputs_to_dict(inputs: KernelInputs) -> dict[str, any] {
     defaults = inputs.project_defaults;
     record: dict[str, any] = {
         "version": inputs.version,
@@ -729,7 +820,7 @@ def inputs_to_dict(inputs: KernelInputs) -> dict[str, any] {
     return record;
 }
 
-def answers_to_dict(inputs: KernelInputs) -> dict[str, any] {
+impl answers_to_dict(inputs: KernelInputs) -> dict[str, any] {
     return {
         "check_settings": {
             app: check_to_dict(check) for (app, check) in inputs.check_settings.items()
@@ -805,26 +896,26 @@ def answers_to_dict(inputs: KernelInputs) -> dict[str, any] {
     };
 }
 
-def json_opt_str(value: object) -> (str | None) {
+impl json_opt_str(value: object) -> (str | None) {
     if value is None {
         return None;
     }
     return str(value);
 }
 
-def merge_str_map(into: dict[str, str], value: object) {
+impl merge_str_map(into: dict[str, str], value: object) {
     for (key, text) in json_str_map(value).items() {
         into[key] = text;
     }
 }
 
-def merge_bool_map(into: dict[str, bool], value: object) {
+impl merge_bool_map(into: dict[str, bool], value: object) {
     for (key, flag) in json_bool_map(value).items() {
         into[key] = flag;
     }
 }
 
-def merge_answers(inputs: KernelInputs, raw: dict[str, any]) {
+impl merge_answers(inputs: KernelInputs, raw: dict[str, any]) {
     merge_str_map(inputs.facts_of, raw.get("facts_of"));
     merge_str_map(inputs.workspace_of, raw.get("workspace_of"));
     merge_str_map(inputs.app_of, raw.get("app_of"));
@@ -914,7 +1005,7 @@ def merge_answers(inputs: KernelInputs, raw: dict[str, any]) {
     }
 }
 
-def inputs_from_dict(raw: dict[str, any]) -> KernelInputs {
+impl inputs_from_dict(raw: dict[str, any]) -> KernelInputs {
     version = json_int(raw.get("version"), 0);
     if version != KERNEL_INPUTS_VERSION {
         raise ValueError(

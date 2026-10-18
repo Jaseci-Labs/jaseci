@@ -106,18 +106,63 @@ obj CapabilityClosure {
         capabilities: list[str] = [],
         deps: dict[str, str] = {};
 
-    def is_empty -> bool {
-        return not self.deps;
-    }
-
-    def package_names -> list[str] {
-        return sorted(self.deps.keys());
-    }
+    def is_empty -> bool;
+    def package_names -> list[str];
 }
 
 glob _registry: dict[str, Capability] | None = None;
 
-def get_capability_registry -> dict[str, Capability] {
+def get_capability_registry -> dict[str, Capability];
+
+def get_capability(name: str) -> Capability | None;
+
+def all_capability_names -> list[str];
+
+def _normalize_package(name: str) -> str;
+
+def derive_capabilities(
+    intent: dict[str, any] | None, commands: list[str] | None = None
+) -> set[str];
+
+def scale_intent_from_config(config: JacConfig) -> dict[str, any];
+
+def command_capabilities(action: str, scale: bool = False) -> list[str];
+
+def _expand_requires(cap_names: set[str]) -> set[str];
+
+def resolve_closure(cap_names: set[str], context: str) -> CapabilityClosure;
+
+def resolve_closures(cap_names: set[str]) -> dict[str, CapabilityClosure];
+
+def byllm_intent_capabilities(config: JacConfig) -> set[str];
+
+def resolve_config_closures(
+    config: JacConfig, action: str = "serve", scale: bool = False
+) -> dict[str, CapabilityClosure];
+
+def capability_for_package(package: str) -> str | None;
+
+def missing_capability_error(capability: str) -> str;
+
+def package_missing_error(package: str) -> str;
+
+def missing_capability_dists(capability: str) -> list[str];
+
+def ensure_global_capability(capability: str) -> bool;
+
+def require_optional(package: str, capability: str);
+
+def is_optional_available(package: str) -> bool;
+
+impl CapabilityClosure.is_empty -> bool {
+    return not self.deps;
+}
+
+impl CapabilityClosure.package_names -> list[str] {
+    return sorted(self.deps.keys());
+}
+
+impl get_capability_registry -> dict[str, Capability] {
     if _registry is None {
         built: dict[str, Capability] = {};
         for (name, spec) in CAPABILITY_SPECS.items() {
@@ -143,15 +188,15 @@ def get_capability_registry -> dict[str, Capability] {
     return _registry;
 }
 
-def get_capability(name: str) -> Capability | None {
+impl get_capability(name: str) -> Capability | None {
     return get_capability_registry().get(name);
 }
 
-def all_capability_names -> list[str] {
+impl all_capability_names -> list[str] {
     return sorted(get_capability_registry().keys());
 }
 
-def _normalize_package(name: str) -> str {
+impl _normalize_package(name: str) -> str {
     base = name;
     if "[" in base {
         base = base[:base.index("[")];
@@ -159,7 +204,7 @@ def _normalize_package(name: str) -> str {
     return base.strip().lower().replace("_", "-").replace(".", "-");
 }
 
-def derive_capabilities(
+impl derive_capabilities(
     intent: dict[str, any] | None, commands: list[str] | None = None
 ) -> set[str] {
     caps: set[str] = set(commands or []);
@@ -195,7 +240,7 @@ def derive_capabilities(
     return caps;
 }
 
-def scale_intent_from_config(config: JacConfig) -> dict[str, any] {
+impl scale_intent_from_config(config: JacConfig) -> dict[str, any] {
     if config is None {
         return {};
     }
@@ -210,7 +255,7 @@ def scale_intent_from_config(config: JacConfig) -> dict[str, any] {
     return {};
 }
 
-def command_capabilities(action: str, scale: bool = False) -> list[str] {
+impl command_capabilities(action: str, scale: bool = False) -> list[str] {
     if action != "serve" {
         return [];
     }
@@ -221,7 +266,7 @@ def command_capabilities(action: str, scale: bool = False) -> list[str] {
     return caps;
 }
 
-def _expand_requires(cap_names: set[str]) -> set[str] {
+impl _expand_requires(cap_names: set[str]) -> set[str] {
     available = get_capability_registry();
     unknown = sorted(
         [
@@ -249,7 +294,7 @@ def _expand_requires(cap_names: set[str]) -> set[str] {
     return full;
 }
 
-def resolve_closure(cap_names: set[str], context: str) -> CapabilityClosure {
+impl resolve_closure(cap_names: set[str], context: str) -> CapabilityClosure {
     registry = get_capability_registry();
     full = _expand_requires(cap_names);
     selected: list[str] = [];
@@ -266,14 +311,14 @@ def resolve_closure(cap_names: set[str], context: str) -> CapabilityClosure {
     return CapabilityClosure(context=context, capabilities=selected, deps=deps);
 }
 
-def resolve_closures(cap_names: set[str]) -> dict[str, CapabilityClosure] {
+impl resolve_closures(cap_names: set[str]) -> dict[str, CapabilityClosure] {
     return {
         RUNTIME: resolve_closure(cap_names, RUNTIME),
         DEPLOY: resolve_closure(cap_names, DEPLOY)
     };
 }
 
-def byllm_intent_capabilities(config: JacConfig) -> set[str] {
+impl byllm_intent_capabilities(config: JacConfig) -> set[str] {
     caps: set[str] = set();
     if config is None {
         return caps;
@@ -292,7 +337,7 @@ def byllm_intent_capabilities(config: JacConfig) -> set[str] {
     return caps;
 }
 
-def resolve_config_closures(
+impl resolve_config_closures(
     config: JacConfig, action: str = "serve", scale: bool = False
 ) -> dict[str, CapabilityClosure] {
     intent = scale_intent_from_config(config);
@@ -301,7 +346,7 @@ def resolve_config_closures(
     return resolve_closures(caps);
 }
 
-def capability_for_package(package: str) -> str | None {
+impl capability_for_package(package: str) -> str | None {
     target = _normalize_package(package);
     for name in all_capability_names() {
         cap = get_capability(name);
@@ -317,7 +362,7 @@ def capability_for_package(package: str) -> str | None {
     return None;
 }
 
-def missing_capability_error(capability: str) -> str {
+impl missing_capability_error(capability: str) -> str {
     cap = get_capability(capability);
     if cap is None {
         return (
@@ -334,7 +379,7 @@ def missing_capability_error(capability: str) -> str {
     );
 }
 
-def package_missing_error(package: str) -> str {
+impl package_missing_error(package: str) -> str {
     cap = capability_for_package(package);
     if cap is None {
         return (
@@ -345,7 +390,7 @@ def package_missing_error(package: str) -> str {
     return f"'{package}' is missing. {missing_capability_error(cap)}";
 }
 
-def missing_capability_dists(capability: str) -> list[str] {
+impl missing_capability_dists(capability: str) -> list[str] {
     import from importlib.metadata { distribution, PackageNotFoundError }
     registry = get_capability_registry();
     if capability not in registry {
@@ -371,7 +416,7 @@ def missing_capability_dists(capability: str) -> list[str] {
     return sorted(missing);
 }
 
-def ensure_global_capability(capability: str) -> bool {
+impl ensure_global_capability(capability: str) -> bool {
     import importlib;
     import subprocess;
 
@@ -397,7 +442,7 @@ def ensure_global_capability(capability: str) -> bool {
     return result.returncode == 0 and not missing_capability_dists(capability);
 }
 
-def require_optional(package: str, capability: str) {
+impl require_optional(package: str, capability: str) {
     try {
         __import__(package);
     } except (ImportError, ValueError) {
@@ -408,7 +453,7 @@ def require_optional(package: str, capability: str) {
     }
 }
 
-def is_optional_available(package: str) -> bool {
+impl is_optional_available(package: str) -> bool {
     try {
         __import__(package);
         return True;

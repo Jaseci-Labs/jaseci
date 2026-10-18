@@ -3,7 +3,30 @@ import from jaclang.compiler.driver.compile_options { CompileOptions }
 import from jaclang.compiler.driver.program { JacProgram }
 import jaclang.compiler.frontend.unitree as uni;
 
-def wasm_ir(program: JacProgram, file_path: str) -> tuple[str, set[str]] {
+def wasm_ir(program: JacProgram, file_path: str) -> tuple[str, set[str]];
+
+def wasm_artifact(program: JacProgram, file_path: str, exports: list[str]) -> bytes;
+
+
+def native_application(
+    program: JacProgram,
+    file_path: str,
+    target: str = '',
+    memory: str = '',
+    debug: bool = False,
+    no_ir_cache: bool = False
+) -> tuple[uni.Module, CompileOptions];
+
+
+def build_wasm(program: JacProgram, path: str, exports: list[str]) -> bytes;
+
+def route_exports(program: JacProgram, path: str) -> tuple[str | None, str | None];
+
+def compile_application(
+    program: JacProgram, entry_path: str, options: CompileOptions
+) -> uni.Module;
+
+impl wasm_ir(program: JacProgram, file_path: str) -> tuple[str, set[str]] {
     import from jaclang.compiler.backends.native.wasm_build {
         _project_gc_settings,
         _assert_ir_rc_free,
@@ -73,14 +96,14 @@ def wasm_ir(program: JacProgram, file_path: str) -> tuple[str, set[str]] {
     return (llvm_ir_str, app_imports);
 }
 
-def wasm_artifact(program: JacProgram, file_path: str, exports: list[str]) -> bytes {
+impl wasm_artifact(program: JacProgram, file_path: str, exports: list[str]) -> bytes {
     import from jaclang.compiler.backends.native.wasm_build { emit_wasm_from_ir }
     (llvm_ir, app_imports) = wasm_ir(program, file_path);
     return emit_wasm_from_ir(llvm_ir, exports, app_imports=app_imports);
 }
 
 
-def native_application(
+impl native_application(
     program: JacProgram,
     file_path: str,
     target: str = '',
@@ -113,11 +136,11 @@ def native_application(
 }
 
 
-def build_wasm(program: JacProgram, path: str, exports: list[str]) -> bytes {
+impl build_wasm(program: JacProgram, path: str, exports: list[str]) -> bytes {
     return wasm_artifact(program, path, exports);
 }
 
-def route_exports(program: JacProgram, path: str) -> tuple[str | None, str | None] {
+impl route_exports(program: JacProgram, path: str) -> tuple[str | None, str | None] {
     real = os.path.realpath(path);
     builder = program._get_compiler();
     artifact = builder.get_client_artifact(real, program);
@@ -130,7 +153,7 @@ def route_exports(program: JacProgram, path: str) -> tuple[str | None, str | Non
     return (artifact.manifest.page_export, artifact.manifest.layout_export);
 }
 
-def compile_application(
+impl compile_application(
     program: JacProgram, entry_path: str, options: CompileOptions
 ) -> uni.Module {
     import copy;

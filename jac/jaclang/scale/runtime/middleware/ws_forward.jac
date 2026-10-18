@@ -16,7 +16,29 @@ glob _logger = logging.getLogger(__name__),
      };
 
 
-def _to_ws_scheme(url: str) -> str {
+def _to_ws_scheme(url: str) -> str;
+
+
+def _select_handshake_headers(
+    client_headers: dict[str, str], peer: str
+) -> dict[str, str];
+
+
+async def _pump_client_to_upstream(client_ws: any, upstream_ws: any);
+
+
+async def _pump_upstream_to_client(upstream_ws: any, client_ws: any);
+
+
+async def websocket_forward(
+    client_ws: any,
+    upstream_url: str,
+    request_headers: dict[str, str],
+    timeout: int = 30,
+    on_upstream: any = None
+) -> None;
+
+impl _to_ws_scheme(url: str) -> str {
     if url.startswith("http://") {
         return "ws://" + url[7:];
     }
@@ -27,7 +49,7 @@ def _to_ws_scheme(url: str) -> str {
 }
 
 
-def _select_handshake_headers(
+impl _select_handshake_headers(
     client_headers: dict[str, str], peer: str
 ) -> dict[str, str] {
     out: dict[str, str] = {};
@@ -55,7 +77,7 @@ def _select_handshake_headers(
 }
 
 
-async def _pump_client_to_upstream(client_ws: any, upstream_ws: any) {
+impl _pump_client_to_upstream(client_ws: any, upstream_ws: any) {
     try {
         while True {
             frame = await client_ws.receive();
@@ -74,7 +96,7 @@ async def _pump_client_to_upstream(client_ws: any, upstream_ws: any) {
 }
 
 
-async def _pump_upstream_to_client(upstream_ws: any, client_ws: any) {
+impl _pump_upstream_to_client(upstream_ws: any, client_ws: any) {
     try {
         while True {
             frame = await upstream_ws.receive();
@@ -93,7 +115,7 @@ async def _pump_upstream_to_client(upstream_ws: any, client_ws: any) {
 }
 
 
-async def websocket_forward(
+impl websocket_forward(
     client_ws: any,
     upstream_url: str,
     request_headers: dict[str, str],

@@ -4,7 +4,32 @@ import time;
 glob logger: logging.Logger = logging.getLogger('jaclang.serve');
 
 
-def bearer_token(request: Request) -> (str | None) {
+def bearer_token(request: Request) -> (str | None);
+
+
+def presented_token(request: Request) -> tuple[(str | None), bool];
+
+
+def jwt_middleware(user_manager: UserManager) -> Callable[..., any];
+
+
+def _service_unavailable(detail: str) -> JSONResponse;
+
+
+def request_context_middleware(
+    open_scope: Callable[[], RequestScope], public_origin: str = ''
+) -> Callable[..., any];
+
+
+def metrics_middleware(metrics: any, exempt_path: str = '') -> Callable[..., any];
+
+
+def unauthorized(message: str = 'Unauthorized') -> TransportResponse;
+
+
+def require_user(request: Request) -> tuple[(str | None), (TransportResponse | None)];
+
+impl bearer_token(request: Request) -> (str | None) {
     authorization = request.headers.get('Authorization');
     if authorization and authorization.startswith('Bearer ') {
         return authorization[7:];
@@ -13,7 +38,7 @@ def bearer_token(request: Request) -> (str | None) {
 }
 
 
-def presented_token(request: Request) -> tuple[(str | None), bool] {
+impl presented_token(request: Request) -> tuple[(str | None), bool] {
     if request.headers.get('Authorization') is not None {
         return (bearer_token(request), False);
     }
@@ -22,7 +47,7 @@ def presented_token(request: Request) -> tuple[(str | None), bool] {
 }
 
 
-def jwt_middleware(user_manager: UserManager) -> Callable[..., any] {
+impl jwt_middleware(user_manager: UserManager) -> Callable[..., any] {
     async def _middleware(request: Request, call_next: any) -> Response {
         username: (str | None) = None;
         user_root_id: (str | None) = None;
@@ -54,7 +79,7 @@ def jwt_middleware(user_manager: UserManager) -> Callable[..., any] {
 }
 
 
-def _service_unavailable(detail: str) -> JSONResponse {
+impl _service_unavailable(detail: str) -> JSONResponse {
     resp = JSONResponse(
         status_code=503,
         content={
@@ -67,7 +92,7 @@ def _service_unavailable(detail: str) -> JSONResponse {
 }
 
 
-def request_context_middleware(
+impl request_context_middleware(
     open_scope: Callable[[], RequestScope], public_origin: str = ''
 ) -> Callable[..., any] {
     async def _middleware(request: Request, call_next: any) -> Response {
@@ -137,7 +162,7 @@ def request_context_middleware(
 }
 
 
-def metrics_middleware(metrics: any, exempt_path: str = '') -> Callable[..., any] {
+impl metrics_middleware(metrics: any, exempt_path: str = '') -> Callable[..., any] {
     async def _middleware(request: Request, call_next: any) -> Response {
         next_fn: any = call_next;
         if exempt_path and request.url.path == exempt_path {
@@ -161,14 +186,14 @@ def metrics_middleware(metrics: any, exempt_path: str = '') -> Callable[..., any
 }
 
 
-def unauthorized(message: str = 'Unauthorized') -> TransportResponse {
+impl unauthorized(message: str = 'Unauthorized') -> TransportResponse {
     return TransportResponse.fail(
         code='UNAUTHORIZED', message=message, meta=Meta(extra={'http_status': 401})
     );
 }
 
 
-def require_user(request: Request) -> tuple[(str | None), (TransportResponse | None)] {
+impl require_user(request: Request) -> tuple[(str | None), (TransportResponse | None)] {
     username = request.state?.username;
     if not username {
         return (None, unauthorized('Invalid or expired token'));

@@ -1,5 +1,9 @@
 def application_edges(
     entry_path: str, app_name: str, app_kind: str, project_root: str
+) -> list[tuple[str, str]];
+
+impl application_edges(
+    entry_path: str, app_name: str, app_kind: str, project_root: str
 ) -> list[tuple[str, str]] {
     import from jaclang.compiler.driver.program { JacProgram }
     import from jaclang.compiler.driver.compile_options { CompileOptions }

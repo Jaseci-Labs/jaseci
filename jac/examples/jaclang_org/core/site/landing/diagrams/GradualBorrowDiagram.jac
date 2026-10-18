@@ -5,7 +5,11 @@ glob MPath: any = motion.path,
      MText: any = motion.text,
      MCircle: any = motion.circle;
 
-def:pub TaxChip(x: int, y: int, w: int, label: str) -> JsxElement {
+def:pub TaxChip(x: int, y: int, w: int, label: str) -> JsxElement;
+
+def:pub GradualBorrowDiagram -> JsxElement;
+
+impl TaxChip(x: int, y: int, w: int, label: str) -> JsxElement {
     return
         <g opacity="0.75">
             <rect
@@ -31,7 +35,7 @@ def:pub TaxChip(x: int, y: int, w: int, label: str) -> JsxElement {
         </g>;
 }
 
-def:pub GradualBorrowDiagram -> JsxElement {
+impl GradualBorrowDiagram -> JsxElement {
     return
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <div

@@ -24,7 +24,11 @@ obj Session {
         logout: Callable[[], None];
 }
 
-def:pub useSession -> Session {
+def:pub useSession -> Session;
+
+def:pub stored_username -> str;
+
+impl useSession -> Session {
     has loggedIn: bool = False,
         checking: bool = True,
         signup: bool = False,
@@ -144,7 +148,7 @@ def:pub useSession -> Session {
     );
 }
 
-def:pub stored_username -> str {
+impl stored_username -> str {
     return __getLocalStorage("jacyac_username")
         or __getLocalStorage("lx_username")
         or __getLocalStorage("socialize_username")

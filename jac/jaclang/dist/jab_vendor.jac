@@ -31,7 +31,81 @@ glob _NO_MATCH_RE = re.compile(
      _NO_DIST_HEADER: str = "no matching distributions available for your environment:";
 
 
-def manylinux_tags(arch: str, glibc: tuple[int, int]) -> list[str] {
+def manylinux_tags(arch: str, glibc: tuple[int, int]) -> list[str];
+
+
+obj WheelTarget {
+    has arch: str,
+        python_version: str,
+        glibc: tuple[int, int];
+
+    def platform_tag -> str;
+    def host_build_compatible -> bool;
+    def platform_tags -> list[str];
+    def pip_args(allow_host_build: bool = False) -> list[str];
+    def describe -> str;
+}
+
+
+obj WheelDownloadResult {
+    has ok: bool,
+        missing: list[str] = [],
+        detail: str = "";
+}
+
+
+def vendor_dir(img_root: Path) -> Path;
+
+
+def wheels_dir(img_root: Path) -> Path;
+
+
+def site_dir(img_root: Path) -> Path;
+
+
+def has_vendored(img_root: Path) -> bool;
+
+
+def _pip(args: list[str]) -> tuple[int, str];
+
+
+def download_wheels(
+    specs: list[str], dest: Path, target: (WheelTarget | None) = None
+) -> WheelDownloadResult;
+
+
+def _resolve_wheels(
+    specs: list[str], dest: Path, target: (WheelTarget | None), build_dir: Path
+) -> WheelDownloadResult;
+
+
+def _missing_requirements(out: str) -> dict[str, list[str]];
+
+
+def _project_name(req: str) -> str;
+
+
+def _build_from_source(
+    missing: dict[str, list[str]], dest: Path
+) -> tuple[dict[str, list[Path]], str];
+
+
+def _reject_unfit(
+    unfit: list[str], built: dict[str, list[Path]], target: (WheelTarget | None)
+) -> str;
+
+
+def write_vendor_manifest(
+    img_root: Path, specs: list[str], python_tag: str = "", platform_tag: str = ""
+);
+
+
+def _install_offline(wheels: Path, site: Path);
+
+
+def activate_vendored(img_root: Path) -> Path | None;
+
+impl manylinux_tags(arch: str, glibc: tuple[int, int]) -> list[str] {
     (major, minor) = glibc;
     oldest = 5 if arch in ("x86_64", "i686") else 17;
     tags: list[str] = [];
@@ -46,78 +120,65 @@ def manylinux_tags(arch: str, glibc: tuple[int, int]) -> list[str] {
 }
 
 
-obj WheelTarget {
-    has arch: str,
-        python_version: str,
-        glibc: tuple[int, int];
+impl WheelTarget.platform_tag -> str {
+    return f"manylinux_{self.glibc[0]}_{self.glibc[1]}_{self.arch}";
+}
 
-    def platform_tag -> str {
-        return f"manylinux_{self.glibc[0]}_{self.glibc[1]}_{self.arch}";
+impl WheelTarget.host_build_compatible -> bool {
+    if sys.platform != "linux" or platform.machine() != self.arch {
+        return False;
+    }
+    (libc, version) = platform.libc_ver();
+    if libc != "glibc" or not re.fullmatch(r"\d+\.\d+", version) {
+        return False;
+    }
+    (major, minor) = version.split(".");
+    return (int(major), int(minor)) <= self.glibc;
+}
+
+impl WheelTarget.platform_tags -> list[str] {
+    return manylinux_tags(self.arch, self.glibc);
+}
+
+impl WheelTarget.pip_args(allow_host_build: bool = False) -> list[str] {
+    args = ["--python-version", self.python_version, "--implementation", "cp"];
+    for tag in self.platform_tags() {
+        args = args + ["--platform", tag];
     }
 
-    def host_build_compatible -> bool {
-        if sys.platform != "linux" or platform.machine() != self.arch {
-            return False;
-        }
-        (libc, version) = platform.libc_ver();
-        if libc != "glibc" or not re.fullmatch(r"\d+\.\d+", version) {
-            return False;
-        }
-        (major, minor) = version.split(".");
-        return (int(major), int(minor)) <= self.glibc;
+    if allow_host_build and self.host_build_compatible() {
+        args = args + ["--platform", f"linux_{self.arch}"];
     }
+    return args;
+}
 
-    def platform_tags -> list[str] {
-        return manylinux_tags(self.arch, self.glibc);
-    }
-
-    def pip_args(allow_host_build: bool = False) -> list[str] {
-        args = ["--python-version", self.python_version, "--implementation", "cp"];
-        for tag in self.platform_tags() {
-            args = args + ["--platform", tag];
-        }
-
-        if allow_host_build and self.host_build_compatible() {
-            args = args + ["--platform", f"linux_{self.arch}"];
-        }
-        return args;
-    }
-
-    def describe -> str {
-        return f"{self.platform_tag()} on python {self.python_version}";
-    }
+impl WheelTarget.describe -> str {
+    return f"{self.platform_tag()} on python {self.python_version}";
 }
 
 
-obj WheelDownloadResult {
-    has ok: bool,
-        missing: list[str] = [],
-        detail: str = "";
-}
-
-
-def vendor_dir(img_root: Path) -> Path {
+impl vendor_dir(img_root: Path) -> Path {
     return Path(img_root) / VENDOR_DIR_REL;
 }
 
 
-def wheels_dir(img_root: Path) -> Path {
+impl wheels_dir(img_root: Path) -> Path {
     return vendor_dir(img_root) / WHEELS_SUBDIR;
 }
 
 
-def site_dir(img_root: Path) -> Path {
+impl site_dir(img_root: Path) -> Path {
     return vendor_dir(img_root) / SITE_SUBDIR;
 }
 
 
-def has_vendored(img_root: Path) -> bool {
+impl has_vendored(img_root: Path) -> bool {
     wd = wheels_dir(img_root);
     return wd.is_dir() and any(wd.`glob("*.whl"));
 }
 
 
-def _pip(args: list[str]) -> tuple[int, str] {
+impl _pip(args: list[str]) -> tuple[int, str] {
     result = subprocess.run(
         pip_command(pip_python(), args), capture_output=True, text=True, env=pip_env()
     );
@@ -129,7 +190,7 @@ def _pip(args: list[str]) -> tuple[int, str] {
 }
 
 
-def download_wheels(
+impl download_wheels(
     specs: list[str], dest: Path, target: (WheelTarget | None) = None
 ) -> WheelDownloadResult {
     if not specs {
@@ -142,7 +203,7 @@ def download_wheels(
 }
 
 
-def _resolve_wheels(
+impl _resolve_wheels(
     specs: list[str], dest: Path, target: (WheelTarget | None), build_dir: Path
 ) -> WheelDownloadResult {
     flags = ["download", "--only-binary=:all:", "--dest", str(dest)];
@@ -199,7 +260,7 @@ def _resolve_wheels(
 }
 
 
-def _missing_requirements(out: str) -> dict[str, list[str]] {
+impl _missing_requirements(out: str) -> dict[str, list[str]] {
     found: dict[str, list[str]] = {};
     for m in _NO_MATCH_RE.finditer(out) {
         req = m.group(1).strip();
@@ -241,13 +302,13 @@ def _missing_requirements(out: str) -> dict[str, list[str]] {
 }
 
 
-def _project_name(req: str) -> str {
+impl _project_name(req: str) -> str {
     head = re.split(r"[\s<>=!~;\[(@]", req.strip(), maxsplit=1)[0];
     return re.sub(r"[-_.]+", "-", head).lower();
 }
 
 
-def _build_from_source(
+impl _build_from_source(
     missing: dict[str, list[str]], dest: Path
 ) -> tuple[dict[str, list[Path]], str] {
     produced: dict[str, list[Path]] = {};
@@ -288,7 +349,7 @@ def _build_from_source(
 }
 
 
-def _reject_unfit(
+impl _reject_unfit(
     unfit: list[str], built: dict[str, list[Path]], target: (WheelTarget | None)
 ) -> str {
     where = target.describe() if target is not None else "this host";
@@ -308,7 +369,7 @@ def _reject_unfit(
 }
 
 
-def write_vendor_manifest(
+impl write_vendor_manifest(
     img_root: Path, specs: list[str], python_tag: str = "", platform_tag: str = ""
 ) {
     vd = vendor_dir(img_root);
@@ -333,7 +394,7 @@ def write_vendor_manifest(
 }
 
 
-def _install_offline(wheels: Path, site: Path) {
+impl _install_offline(wheels: Path, site: Path) {
     if site.is_dir() {
         return;
     }
@@ -366,7 +427,7 @@ def _install_offline(wheels: Path, site: Path) {
 }
 
 
-def activate_vendored(img_root: Path) -> Path | None {
+impl activate_vendored(img_root: Path) -> Path | None {
     if not has_vendored(img_root) {
         return None;
     }

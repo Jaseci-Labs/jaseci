@@ -7,19 +7,7 @@ glob GEN_PENDING_FLAG_OFF: int = 8,
      GEN_PENDING_MSG_OFF: int = 32,
      GEN_FRAME_HEADER: int = 40;
 
-def _jc_optional_payload(semantic: (TypeBase | None)) -> (TypeBase | None) {
-    if not isinstance(semantic, UnionType) {
-        return semantic;
-    }
-    present = [
-        member
-        for member in semantic.types
-        if not (
-            isinstance(member, ClassType) and member.shared.class_name == "NoneType"
-        )
-    ];
-    return present[0] if len(present) == 1 else None;
-}
+def _jc_optional_payload(semantic: (TypeBase | None)) -> (TypeBase | None);
 
 obj NativeFinalizer {
     has body: uni.FinallyStmt | None,
@@ -3427,4 +3415,18 @@ walker NaIRGenPass(CompilerPass) {
     def _decl_field_llvm_types(arch_name: str) -> (dict[str, ir.Type] | None);
     def _lower_view_container(t: any) -> (ir.Type | None);
     def _program_has_subclasses(arch_name: str) -> bool;
+}
+
+impl _jc_optional_payload(semantic: (TypeBase | None)) -> (TypeBase | None) {
+    if not isinstance(semantic, UnionType) {
+        return semantic;
+    }
+    present = [
+        member
+        for member in semantic.types
+        if not (
+            isinstance(member, ClassType) and member.shared.class_name == "NoneType"
+        )
+    ];
+    return present[0] if len(present) == 1 else None;
 }

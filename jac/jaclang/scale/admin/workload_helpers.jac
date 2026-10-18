@@ -1,4 +1,10 @@
-def phase_to_status(ready: int, desired: int, restarts: int) -> str {
+def phase_to_status(ready: int, desired: int, restarts: int) -> str;
+
+def owner_name_from_pod(pod: str) -> str;
+
+def match_owner(pod: str, names: list[str]) -> str;
+
+impl phase_to_status(ready: int, desired: int, restarts: int) -> str {
     if desired > 0 and ready == 0 and restarts > 0 {
         return "Broken";
     }
@@ -14,7 +20,7 @@ def phase_to_status(ready: int, desired: int, restarts: int) -> str {
     return "Unknown";
 }
 
-def owner_name_from_pod(pod: str) -> str {
+impl owner_name_from_pod(pod: str) -> str {
     if not pod {
         return "";
     }
@@ -32,7 +38,7 @@ def owner_name_from_pod(pod: str) -> str {
     return "-".join(parts[:-2]);
 }
 
-def match_owner(pod: str, names: list[str]) -> str {
+impl match_owner(pod: str, names: list[str]) -> str {
     best: str = "";
     for nm in names {
         if (pod == nm or pod.startswith(nm + "-")) and len(nm) > len(best) {

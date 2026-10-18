@@ -16,7 +16,45 @@ import from jaclang.dist.fused.trailer {
     rt_key
 }
 
-def fused_base_length(data: bytes) -> int {
+def fused_base_length(data: bytes) -> int;
+
+def has_runtime(path: str = "") -> bool;
+
+def append_overlay(base_path: str, jab_path: str, out_path: str) -> bool;
+
+def graft_runtime(self_path: str, host_path: str) -> bool;
+
+
+def _runtime_tail(exe: str) -> (tuple[int, Trailer] | None);
+
+
+def runtime_trailer(exe: str) -> (Trailer | None);
+
+
+def stubcat_region(exe: str = "") -> (Region | None);
+
+
+def running_executable -> str;
+
+
+def jac_binary -> str;
+
+
+def running_runtime_key(path: str = "") -> str;
+
+
+def interpreter_runtime_dir -> (str | None);
+
+
+def _runtime_dir_for_key(key: str) -> (str | None);
+
+
+def materialized_runtime_dir(path: str = "") -> (str | None);
+
+
+def running_runtime_entries -> set[str];
+
+impl fused_base_length(data: bytes) -> int {
     total = len(data);
     if total < TRAILER_LEN {
         return -1;
@@ -34,7 +72,7 @@ def fused_base_length(data: bytes) -> int {
     return total;
 }
 
-def has_runtime(path: str = "") -> bool {
+impl has_runtime(path: str = "") -> bool {
     exe = Path(path or os.path.realpath(sys.executable));
     if not exe.is_file() {
         return False;
@@ -42,7 +80,7 @@ def has_runtime(path: str = "") -> bool {
     return fused_base_length(exe.read_bytes()) >= 0;
 }
 
-def append_overlay(base_path: str, jab_path: str, out_path: str) -> bool {
+impl append_overlay(base_path: str, jab_path: str, out_path: str) -> bool {
     base = Path(base_path).read_bytes();
     if len(base) < TRAILER_LEN or parse_trailer(base[-TRAILER_LEN:], MAGIC) is None {
         return False;
@@ -58,7 +96,7 @@ def append_overlay(base_path: str, jab_path: str, out_path: str) -> bool {
     return True;
 }
 
-def graft_runtime(self_path: str, host_path: str) -> bool {
+impl graft_runtime(self_path: str, host_path: str) -> bool {
     data = Path(self_path).read_bytes();
     base_total = fused_base_length(data);
     if base_total < 0 {
@@ -79,7 +117,7 @@ def graft_runtime(self_path: str, host_path: str) -> bool {
 }
 
 
-def _runtime_tail(exe: str) -> (tuple[int, Trailer] | None) {
+impl _runtime_tail(exe: str) -> (tuple[int, Trailer] | None) {
     if not os.path.isfile(exe) {
         return None;
     }
@@ -105,13 +143,13 @@ def _runtime_tail(exe: str) -> (tuple[int, Trailer] | None) {
 }
 
 
-def runtime_trailer(exe: str) -> (Trailer | None) {
+impl runtime_trailer(exe: str) -> (Trailer | None) {
     found = _runtime_tail(exe);
     return found[1] if found is not None else None;
 }
 
 
-def stubcat_region(exe: str = "") -> (Region | None) {
+impl stubcat_region(exe: str = "") -> (Region | None) {
     path = exe or running_executable();
     found = _runtime_tail(path);
     if found is None {
@@ -133,25 +171,25 @@ def stubcat_region(exe: str = "") -> (Region | None) {
 }
 
 
-def running_executable -> str {
+impl running_executable -> str {
     return process_executable();
 }
 
 
-def jac_binary -> str {
+impl jac_binary -> str {
     """This process's executable when it is a fused jac binary, else empty.""";
     exe = running_executable();
     return exe if runtime_trailer(exe) is not None else "";
 }
 
 
-def running_runtime_key(path: str = "") -> str {
+impl running_runtime_key(path: str = "") -> str {
     t = runtime_trailer(path or running_executable());
     return rt_key(t.hash16()) if t is not None else "";
 }
 
 
-def interpreter_runtime_dir -> (str | None) {
+impl interpreter_runtime_dir -> (str | None) {
     try {
         cand = Path(sys.prefix).resolve().parent;
     } except OSError {
@@ -164,7 +202,7 @@ def interpreter_runtime_dir -> (str | None) {
 }
 
 
-def _runtime_dir_for_key(key: str) -> (str | None) {
+impl _runtime_dir_for_key(key: str) -> (str | None) {
     if not key {
         return None;
     }
@@ -183,7 +221,7 @@ def _runtime_dir_for_key(key: str) -> (str | None) {
 }
 
 
-def materialized_runtime_dir(path: str = "") -> (str | None) {
+impl materialized_runtime_dir(path: str = "") -> (str | None) {
     if not path {
         here = interpreter_runtime_dir();
         if here is not None {
@@ -194,7 +232,7 @@ def materialized_runtime_dir(path: str = "") -> (str | None) {
 }
 
 
-def running_runtime_entries -> set[str] {
+impl running_runtime_entries -> set[str] {
     names: set[str] = set();
     here = interpreter_runtime_dir();
     if here is not None {

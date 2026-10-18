@@ -4,7 +4,15 @@ import os;
 import tarfile;
 import from pathlib { Path }
 
-def det_tar_member(info: tarfile.TarInfo) -> tarfile.TarInfo {
+def det_tar_member(info: tarfile.TarInfo) -> tarfile.TarInfo;
+
+def open_det_tar(buf: io.BytesIO) -> tuple[tarfile.TarFile, gzip.GzipFile];
+
+def tar_gz_dir(top: Path) -> bytes;
+
+def extract_tar_gz(data: bytes, dest: Path);
+
+impl det_tar_member(info: tarfile.TarInfo) -> tarfile.TarInfo {
     info.mtime = 0;
     info.uid = 0;
     info.gid = 0;
@@ -13,12 +21,12 @@ def det_tar_member(info: tarfile.TarInfo) -> tarfile.TarInfo {
     return info;
 }
 
-def open_det_tar(buf: io.BytesIO) -> tuple[tarfile.TarFile, gzip.GzipFile] {
+impl open_det_tar(buf: io.BytesIO) -> tuple[tarfile.TarFile, gzip.GzipFile] {
     gz = gzip.GzipFile(fileobj=buf, mode="wb", mtime=0);
     return (tarfile.open(fileobj=gz, mode="w"), gz);
 }
 
-def tar_gz_dir(top: Path) -> bytes {
+impl tar_gz_dir(top: Path) -> bytes {
     buf = io.BytesIO();
     with tarfile.open(fileobj=buf, mode="w") as tf {
         for (dirpath, dirnames, filenames) in os.walk(str(top)) {
@@ -36,7 +44,7 @@ def tar_gz_dir(top: Path) -> bytes {
     return gzip.compress(buf.getvalue(), 6, mtime=0);
 }
 
-def extract_tar_gz(data: bytes, dest: Path) {
+impl extract_tar_gz(data: bytes, dest: Path) {
     with tarfile.open(fileobj=io.BytesIO(data), mode="r:*") as tf {
         tf.extractall(dest, filter="data");
     }

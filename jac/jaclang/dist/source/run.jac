@@ -5,7 +5,9 @@ import subprocess;
 import sys;
 import from pathlib { Path }
 
-def main(manifest_path: str) -> int {
+def main(manifest_path: str) -> int;
+
+impl main(manifest_path: str) -> int {
     manifest = Path(manifest_path).resolve();
     data = json.loads(manifest.read_text(encoding='utf-8'));
     parser = argparse.ArgumentParser(add_help=False);

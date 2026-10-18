@@ -1,7 +1,9 @@
 import os;
 
 
-def service_base_url(env_var: str, svc_suffix: str, port: int) -> str {
+def service_base_url(env_var: str, svc_suffix: str, port: int) -> str;
+
+impl service_base_url(env_var: str, svc_suffix: str, port: int) -> str {
     env = os.getenv(env_var, "").strip();
     if env {
         return env.rstrip("/");

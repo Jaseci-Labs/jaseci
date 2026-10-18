@@ -33,7 +33,51 @@ import from jaclang.compiler.backends.py.codegen_ir {
     _r_varint
 }
 
-def decode_ops(code: bytes, container: CirContainer) -> list[tuple[any, ...]] {
+def decode_ops(code: bytes, container: CirContainer) -> list[tuple[any, ...]];
+
+def _call_kw(cls: any, kw: dict[str, object]) -> any;
+
+obj CirSplice {
+    has stmts: list[ast.stmt] = [];
+}
+
+obj CirCompiledModule {
+    has mod_path: str,
+        tree: ast.Module,
+        code_obj: any = None,
+        bytecode: bytes = b"";
+}
+
+obj CirResult {
+    has modules: list[CirCompiledModule] = [],
+        diags: list[CirDiag] = [];
+}
+
+def cir_bind_classes(class_names: list[str]) -> list[type];
+
+def cir_bind_keys(key_names: list[str]) -> list[str];
+
+def _parse_splice(
+    src: str, line_offset: int, python_compiler: any = None
+) -> CirSplice;
+
+def _pop_values(stack: list[object], n: int, what: str) -> list[object];
+
+def transcribe_module(
+    mod: CirModule,
+    classes: list[type],
+    keys: list[str],
+    container: CirContainer,
+    python_compiler: any = None
+) -> any;
+
+def transcribe(ir_bytes: bytes) -> tuple[list[tuple[str, ast.Module]], list[CirDiag]];
+
+def compile_ir(ir_bytes: bytes, python_compiler: any = None) -> CirResult;
+
+def generated_python(gen: CodeGenTarget) -> str;
+
+impl decode_ops(code: bytes, container: CirContainer) -> list[tuple[any, ...]] {
     ops: list[tuple[any, ...]] = [];
     pos = 0;
     loc_l1 = 0;
@@ -159,27 +203,11 @@ def decode_ops(code: bytes, container: CirContainer) -> list[tuple[any, ...]] {
     return ops;
 }
 
-def _call_kw(cls: any, kw: dict[str, object]) -> any {
+impl _call_kw(cls: any, kw: dict[str, object]) -> any {
     return cls(**kw);
 }
 
-obj CirSplice {
-    has stmts: list[ast.stmt] = [];
-}
-
-obj CirCompiledModule {
-    has mod_path: str,
-        tree: ast.Module,
-        code_obj: any = None,
-        bytecode: bytes = b"";
-}
-
-obj CirResult {
-    has modules: list[CirCompiledModule] = [],
-        diags: list[CirDiag] = [];
-}
-
-def cir_bind_classes(class_names: list[str]) -> list[type] {
+impl cir_bind_classes(class_names: list[str]) -> list[type] {
     out: list[type] = [];
     for name in class_names {
         cls = getattr(ast, name, None);
@@ -195,7 +223,7 @@ def cir_bind_classes(class_names: list[str]) -> list[type] {
     return out;
 }
 
-def cir_bind_keys(key_names: list[str]) -> list[str] {
+impl cir_bind_keys(key_names: list[str]) -> list[str] {
     out: list[str] = [];
     for name in key_names {
         out.append(sys.intern(name));
@@ -203,7 +231,7 @@ def cir_bind_keys(key_names: list[str]) -> list[str] {
     return out;
 }
 
-def _parse_splice(
+impl _parse_splice(
     src: str, line_offset: int, python_compiler: any = None
 ) -> CirSplice {
     compiler = python_compiler if python_compiler is not None else compile;
@@ -226,7 +254,7 @@ def _parse_splice(
     return CirSplice(stmts=list(tree.body));
 }
 
-def _pop_values(stack: list[object], n: int, what: str) -> list[object] {
+impl _pop_values(stack: list[object], n: int, what: str) -> list[object] {
     if n > len(stack) {
         raise CodegenIrFormatError(
             f"{what} pops {n} values but only {len(stack)} are on the stack"
@@ -240,7 +268,7 @@ def _pop_values(stack: list[object], n: int, what: str) -> list[object] {
     return vals;
 }
 
-def transcribe_module(
+impl transcribe_module(
     mod: CirModule,
     classes: list[type],
     keys: list[str],
@@ -355,7 +383,7 @@ def transcribe_module(
     raise CodegenIrFormatError(f"module stream for {mod.mod_path} has no OP_END");
 }
 
-def transcribe(ir_bytes: bytes) -> tuple[list[tuple[str, ast.Module]], list[CirDiag]] {
+impl transcribe(ir_bytes: bytes) -> tuple[list[tuple[str, ast.Module]], list[CirDiag]] {
     container = read_container(ir_bytes);
     classes = cir_bind_classes(container.class_names);
     keys = cir_bind_keys(container.key_names);
@@ -366,7 +394,7 @@ def transcribe(ir_bytes: bytes) -> tuple[list[tuple[str, ast.Module]], list[CirD
     return (mods, list(container.diags), );
 }
 
-def compile_ir(ir_bytes: bytes, python_compiler: any = None) -> CirResult {
+impl compile_ir(ir_bytes: bytes, python_compiler: any = None) -> CirResult {
     container = read_container(ir_bytes);
     classes = cir_bind_classes(container.class_names);
     keys = cir_bind_keys(container.key_names);
@@ -404,7 +432,7 @@ def compile_ir(ir_bytes: bytes, python_compiler: any = None) -> CirResult {
     return CirResult(modules=modules, diags=diags);
 }
 
-def generated_python(gen: CodeGenTarget) -> str {
+impl generated_python(gen: CodeGenTarget) -> str {
     if gen.py_text is None {
         if not gen.py_ast {
             return "";

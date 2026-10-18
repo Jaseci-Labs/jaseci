@@ -1,4 +1,9 @@
-def _not_found(kind: str, name: str) -> TransportResponse {
+def _not_found(kind: str, name: str) -> TransportResponse;
+
+
+def register_introspection_endpoints(server: JacAPIServer);
+
+impl _not_found(kind: str, name: str) -> TransportResponse {
     return TransportResponse.fail(
         code='NOT_FOUND',
         message=f"{kind} '{name}' not found",
@@ -7,7 +12,7 @@ def _not_found(kind: str, name: str) -> TransportResponse {
 }
 
 
-def register_introspection_endpoints(server: JacAPIServer) {
+impl register_introspection_endpoints(server: JacAPIServer) {
     name_param = [
         APIParameter(
             name='name', data_type='string', required=True, kind=ParameterType.PATH

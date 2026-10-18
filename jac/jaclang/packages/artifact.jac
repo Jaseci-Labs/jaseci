@@ -26,7 +26,48 @@ obj PackageIdentity {
         version: str;
 }
 
-def package_copy_ignore(directory: str, items: list[str]) -> list[str] {
+def package_copy_ignore(directory: str, items: list[str]) -> list[str];
+
+def stage_source_tree(src: Path, dest: Path);
+
+def pack_source_tree(src: Path) -> bytes;
+
+def read_identity(tree: Path) -> PackageIdentity;
+
+def expect_identity(tree: Path, name: str, version: str = "");
+
+def rel_posix(path: Path, base: Path) -> str;
+
+glob PACKAGE_MANIFEST_FORMAT: int = 1,
+     MANIFEST_DIR: str = "_precompiled",
+     MANIFEST_FILE: str = "MANIFEST.json",
+     API_FILE: str = "API.json",
+     ROLE_APP: str = "app",
+     ROLE_LIB: str = "lib",
+     ROLE_TEMPLATE: str = "template";
+
+obj BuiltPackage {
+    has data: bytes,
+        sha256: str,
+        manifest: dict[str, any],
+        surface: dict[str, any] = {};
+}
+
+def project_role(config: any) -> str;
+
+def template_identity(config: any) -> PackageIdentity;
+
+def package_identity(config: any) -> PackageIdentity;
+
+def package_manifest(
+    config: any, role: str, surface: dict[str, any]
+) -> dict[str, any];
+
+def read_package_manifest(tree: Path) -> dict[str, any] | None;
+
+def build_package(config: any) -> BuiltPackage;
+
+impl package_copy_ignore(directory: str, items: list[str]) -> list[str] {
     return [
         it
         for it in items
@@ -34,12 +75,12 @@ def package_copy_ignore(directory: str, items: list[str]) -> list[str] {
     ];
 }
 
-def stage_source_tree(src: Path, dest: Path) {
+impl stage_source_tree(src: Path, dest: Path) {
     shutil.copytree(src, dest, ignore=package_copy_ignore, symlinks=False);
     sanitize_shipped_tree(dest);
 }
 
-def pack_source_tree(src: Path) -> bytes {
+impl pack_source_tree(src: Path) -> bytes {
     stage = Path(tempfile.mkdtemp(prefix="jac-pack-"));
     try {
         tree = stage / "pkg";
@@ -50,7 +91,7 @@ def pack_source_tree(src: Path) -> bytes {
     }
 }
 
-def read_identity(tree: Path) -> PackageIdentity {
+impl read_identity(tree: Path) -> PackageIdentity {
     manifest = read_package_manifest(tree);
     if manifest is not None and manifest.get("role") in (ROLE_LIB, ROLE_TEMPLATE) {
         return PackageIdentity(
@@ -81,7 +122,7 @@ def read_identity(tree: Path) -> PackageIdentity {
     );
 }
 
-def expect_identity(tree: Path, name: str, version: str = "") {
+impl expect_identity(tree: Path, name: str, version: str = "") {
     found = read_identity(tree);
     if found.name != name {
         raise ArtifactError(
@@ -95,26 +136,11 @@ def expect_identity(tree: Path, name: str, version: str = "") {
     }
 }
 
-def rel_posix(path: Path, base: Path) -> str {
+impl rel_posix(path: Path, base: Path) -> str {
     return os.path.relpath(str(path), str(base)).replace(os.sep, "/");
 }
 
-glob PACKAGE_MANIFEST_FORMAT: int = 1,
-     MANIFEST_DIR: str = "_precompiled",
-     MANIFEST_FILE: str = "MANIFEST.json",
-     API_FILE: str = "API.json",
-     ROLE_APP: str = "app",
-     ROLE_LIB: str = "lib",
-     ROLE_TEMPLATE: str = "template";
-
-obj BuiltPackage {
-    has data: bytes,
-        sha256: str,
-        manifest: dict[str, any],
-        surface: dict[str, any] = {};
-}
-
-def project_role(config: any) -> str {
+impl project_role(config: any) -> str {
     raw = config.get_section("jacpack");
     if raw is not None {
         return ROLE_TEMPLATE;
@@ -125,21 +151,21 @@ def project_role(config: any) -> str {
     return ROLE_APP;
 }
 
-def template_identity(config: any) -> PackageIdentity {
+impl template_identity(config: any) -> PackageIdentity {
     raw = config.get_section("jacpack") or {};
     return PackageIdentity(
         name=str(raw.get("name", "")), version=str(raw.get("version", ""))
     );
 }
 
-def package_identity(config: any) -> PackageIdentity {
+impl package_identity(config: any) -> PackageIdentity {
     if project_role(config) == ROLE_TEMPLATE {
         return template_identity(config);
     }
     return PackageIdentity(name=config.project.name, version=config.project.version);
 }
 
-def package_manifest(
+impl package_manifest(
     config: any, role: str, surface: dict[str, any]
 ) -> dict[str, any] {
     ident = package_identity(config);
@@ -166,7 +192,7 @@ def package_manifest(
     return manifest;
 }
 
-def read_package_manifest(tree: Path) -> dict[str, any] | None {
+impl read_package_manifest(tree: Path) -> dict[str, any] | None {
     import json;
     path = tree / MANIFEST_DIR / MANIFEST_FILE;
     if not path.is_file() {
@@ -180,7 +206,7 @@ def read_package_manifest(tree: Path) -> dict[str, any] | None {
     return data if isinstance(data, dict) else None;
 }
 
-def build_package(config: any) -> BuiltPackage {
+impl build_package(config: any) -> BuiltPackage {
     import hashlib;
     import json;
 

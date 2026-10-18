@@ -8,11 +8,48 @@ obj SyncResult {
         resolved: bool = False;
 }
 
-def lock_path(config: JacConfig) -> Path {
+def lock_path(config: JacConfig) -> Path;
+
+def load_lock(config: JacConfig) -> Lockfile | None;
+
+def has_packages(config: JacConfig) -> bool;
+
+def lock_is_current(config: JacConfig, lock: Lockfile | None) -> bool;
+
+def project_dir(config: JacConfig) -> Path;
+
+def fetch_locked(config: JacConfig, pkg: LockedPackage) -> Path;
+
+def _registry_for_source(config: JacConfig, base: str) -> any;
+
+def mount_targets(
+    config: JacConfig, lock: Lockfile, include_dev: bool = True
+) -> dict[str, Path];
+
+def sync(
+    config: JacConfig,
+    update: list[str] | None = None,
+    frozen: bool = False,
+    include_dev: bool = True
+) -> SyncResult;
+
+def write_lock(config: JacConfig, lock: Lockfile);
+
+def package_pip_requirements(
+    lock: Lockfile | None, include_dev: bool
+) -> list[tuple[str, str, str]];
+
+def package_npm_requirements(
+    lock: Lockfile | None, include_dev: bool
+) -> list[tuple[str, str, str]];
+
+def describe_sync(result: SyncResult);
+
+impl lock_path(config: JacConfig) -> Path {
     return Lockfile.path_for(project_dir(config));
 }
 
-def load_lock(config: JacConfig) -> Lockfile | None {
+impl load_lock(config: JacConfig) -> Lockfile | None {
     try {
         return Lockfile.read(lock_path(config));
     } except LockError as e {
@@ -20,23 +57,23 @@ def load_lock(config: JacConfig) -> Lockfile | None {
     }
 }
 
-def has_packages(config: JacConfig) -> bool {
+impl has_packages(config: JacConfig) -> bool {
     return bool(config.dependencies or config.dev_dependencies)
         or is_package_name(config.project.name);
 }
 
-def lock_is_current(config: JacConfig, lock: Lockfile | None) -> bool {
+impl lock_is_current(config: JacConfig, lock: Lockfile | None) -> bool {
     return lock is not None and lock.inputs == manifest_inputs(config);
 }
 
-def project_dir(config: JacConfig) -> Path {
+impl project_dir(config: JacConfig) -> Path {
     if config.project_root is None {
         raise InstallError("packages need a project (jac.toml)");
     }
     return Path(config.project_root);
 }
 
-def fetch_locked(config: JacConfig, pkg: LockedPackage) -> Path {
+impl fetch_locked(config: JacConfig, pkg: LockedPackage) -> Path {
     kind = pkg.source_kind();
     if kind == "path" {
         target = (project_dir(config) / pkg.source_ref()).resolve();
@@ -82,7 +119,7 @@ def fetch_locked(config: JacConfig, pkg: LockedPackage) -> Path {
     raise InstallError(f"{pkg.name}: unknown lock source '{pkg.source}'");
 }
 
-def _registry_for_source(config: JacConfig, base: str) -> any {
+impl _registry_for_source(config: JacConfig, base: str) -> any {
     for (name, url) in registry_urls(config.registries).items() {
         candidate = registry_named(name, config.registries);
         if candidate.base() == base {
@@ -92,7 +129,7 @@ def _registry_for_source(config: JacConfig, base: str) -> any {
     return Registry(name=base, url=base);
 }
 
-def mount_targets(
+impl mount_targets(
     config: JacConfig, lock: Lockfile, include_dev: bool = True
 ) -> dict[str, Path] {
     targets: dict[str, Path] = {};
@@ -108,7 +145,7 @@ def mount_targets(
     return targets;
 }
 
-def sync(
+impl sync(
     config: JacConfig,
     update: list[str] | None = None,
     frozen: bool = False,
@@ -143,11 +180,11 @@ def sync(
     return SyncResult(lock=lock, targets=targets, resolved=resolved);
 }
 
-def write_lock(config: JacConfig, lock: Lockfile) {
+impl write_lock(config: JacConfig, lock: Lockfile) {
     lock.write(lock_path(config));
 }
 
-def package_pip_requirements(
+impl package_pip_requirements(
     lock: Lockfile | None, include_dev: bool
 ) -> list[tuple[str, str, str]] {
     out: list[tuple[str, str, str]] = [];
@@ -165,7 +202,7 @@ def package_pip_requirements(
     return out;
 }
 
-def package_npm_requirements(
+impl package_npm_requirements(
     lock: Lockfile | None, include_dev: bool
 ) -> list[tuple[str, str, str]] {
     out: list[tuple[str, str, str]] = [];
@@ -183,7 +220,7 @@ def package_npm_requirements(
     return out;
 }
 
-def describe_sync(result: SyncResult) {
+impl describe_sync(result: SyncResult) {
     if not result.lock.packages {
         return;
     }

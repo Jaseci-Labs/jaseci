@@ -11,41 +11,67 @@ obj WasmValueContract {
         maximum: str = "",
         name: str = "";
 
-    def to_dict -> dict[str, any] {
-        out: dict[str, any] = {
-            "type": self.type_name,
-            "mode": self.mode,
-            "kind": self.kind
-        };
-        if self.bits {
-            out["bits"] = self.bits;
-            out["signed"] = self.signed;
-            out["numeric"] = "float" if self.is_float else "int";
-            if not self.is_float {
-                out["minimum"] = self.minimum;
-                out["maximum"] = self.maximum;
-            }
-        }
-        if self.name {
-            out["name"] = self.name;
-        }
-        return out;
-    }
+    def to_dict -> dict[str, any];
 }
 
 obj WasmFunctionContract {
     has params: list[WasmValueContract],
         result: WasmValueContract;
 
-    def to_dict -> dict[str, any] {
-        return {
-            "params": [p.to_dict() for p in self.params],
-            "result": self.result.to_dict()
-        };
-    }
+    def to_dict -> dict[str, any];
 }
 
-def _ownership_mode(ownership: OwnershipKind) -> str {
+def _ownership_mode(ownership: OwnershipKind) -> str;
+
+def value_contract(
+    expr: (Expr | None),
+    ownership: OwnershipKind = OwnershipKind.NONE,
+    host: bool = False
+) -> WasmValueContract;
+
+def function_contract(decl: Ability, host: bool = False) -> WasmFunctionContract;
+
+def host_contracts(
+    module: (Module | None), program: JacProgram
+) -> dict[str, WasmFunctionContract];
+
+def host_contract_dicts(
+    module: (Module | None), program: JacProgram
+) -> dict[str, dict[str, any]];
+
+def _host_type(name: str) -> str;
+
+def check_host_call(call: FuncCall, program: JacProgram) -> None;
+
+impl WasmValueContract.to_dict -> dict[str, any] {
+    out: dict[str, any] = {
+        "type": self.type_name,
+        "mode": self.mode,
+        "kind": self.kind
+    };
+    if self.bits {
+        out["bits"] = self.bits;
+        out["signed"] = self.signed;
+        out["numeric"] = "float" if self.is_float else "int";
+        if not self.is_float {
+            out["minimum"] = self.minimum;
+            out["maximum"] = self.maximum;
+        }
+    }
+    if self.name {
+        out["name"] = self.name;
+    }
+    return out;
+}
+
+impl WasmFunctionContract.to_dict -> dict[str, any] {
+    return {
+        "params": [p.to_dict() for p in self.params],
+        "result": self.result.to_dict()
+    };
+}
+
+impl _ownership_mode(ownership: OwnershipKind) -> str {
     if ownership == OwnershipKind.OWN {
         return "own";
     }
@@ -58,7 +84,7 @@ def _ownership_mode(ownership: OwnershipKind) -> str {
     return "value";
 }
 
-def value_contract(
+impl value_contract(
     expr: (Expr | None),
     ownership: OwnershipKind = OwnershipKind.NONE,
     host: bool = False
@@ -110,7 +136,7 @@ def value_contract(
     return WasmValueContract(type_name=name, mode=mode, kind="handle");
 }
 
-def function_contract(decl: Ability, host: bool = False) -> WasmFunctionContract {
+impl function_contract(decl: Ability, host: bool = False) -> WasmFunctionContract {
     sig = decl.signature;
     if not isinstance(sig, FuncSignature) {
         raise ValueError("Wasm exports require a function signature");
@@ -130,7 +156,7 @@ def function_contract(decl: Ability, host: bool = False) -> WasmFunctionContract
     );
 }
 
-def host_contracts(
+impl host_contracts(
     module: (Module | None), program: JacProgram
 ) -> dict[str, WasmFunctionContract] {
     visited: set[str] = set();
@@ -164,7 +190,7 @@ def host_contracts(
     return contracts;
 }
 
-def host_contract_dicts(
+impl host_contract_dicts(
     module: (Module | None), program: JacProgram
 ) -> dict[str, dict[str, any]] {
     return {
@@ -173,7 +199,7 @@ def host_contract_dicts(
     };
 }
 
-def _host_type(name: str) -> str {
+impl _host_type(name: str) -> str {
     shape = JAC_TYPE_REGISTRY.shape_of(name);
     if shape is not None and shape.sized {
         return "float" if shape.is_float else "int";
@@ -181,7 +207,7 @@ def _host_type(name: str) -> str {
     return name;
 }
 
-def check_host_call(call: FuncCall, program: JacProgram) -> None {
+impl check_host_call(call: FuncCall, program: JacProgram) -> None {
     callee = call.target;
     if not isinstance(callee, Name) or callee.value != "bind_na_host" {
         return;

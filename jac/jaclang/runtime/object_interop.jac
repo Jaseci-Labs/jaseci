@@ -5,7 +5,11 @@ import from jaclang.runtime.object_model {
     is_jac_object
 }
 
-def is_record(value: object) -> bool {
+def is_record(value: object) -> bool;
+
+def fields(value: object) -> tuple[ObjectField, ...];
+
+impl is_record(value: object) -> bool {
     if is_jac_object(value) {
         return True;
     }
@@ -13,7 +17,7 @@ def is_record(value: object) -> bool {
     return dataclasses.is_dataclass(value);
 }
 
-def fields(value: object) -> tuple[ObjectField, ...] {
+impl fields(value: object) -> tuple[ObjectField, ...] {
     if is_jac_object(value) {
         return jac_fields(value);
     }

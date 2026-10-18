@@ -13,7 +13,155 @@ glob PROFILE_MAX_KEYS: int = 20,
      IDENTITY_TYPES: set[str] = {'email', 'username'};
 
 
-def validate_profile(profile: dict[str, any] | None) -> dict[str, any] | None {
+def validate_profile(profile: dict[str, any] | None) -> dict[str, any] | None;
+
+
+obj IdentityInputModel(ApiModel) {
+    has type: str,
+        value: str;
+
+    static def from_dict(data: any) -> IdentityInputModel;
+}
+
+obj CredentialInput(ApiModel) {
+    has type: str,
+        password: str;
+
+    static def from_dict(data: any) -> CredentialInput;
+}
+
+obj RegisterRequest(ApiModel) {
+    has identities: list[IdentityInputModel],
+        credential: CredentialInput,
+        profile: (dict[str, any] | None) = None,
+        challenge: (dict[str, any] | None) = None;
+
+    static def from_dict(data: any) -> RegisterRequest;
+}
+
+obj LoginRequest(ApiModel) {
+    has identity: IdentityInputModel,
+        credential: CredentialInput;
+
+    static def from_dict(data: any) -> LoginRequest;
+}
+
+obj FirebaseTokenRequest(ApiModel) {
+    has id_token: str;
+
+    static def from_dict(data: any) -> FirebaseTokenRequest;
+}
+
+obj UpdatePasswordRequest(ApiModel) {
+    has current_password: str,
+        new_password: str,
+        username: str = '';
+
+    static def from_dict(data: any) -> UpdatePasswordRequest;
+}
+
+obj UpdateUsernameRequest(ApiModel) {
+    has new_username: str,
+        current_username: str = '';
+
+    static def from_dict(data: any) -> UpdateUsernameRequest;
+}
+
+obj AddIdentityRequest(ApiModel) {
+    has identity: IdentityInputModel,
+        is_recovery: bool = False;
+
+    static def from_dict(data: any) -> AddIdentityRequest;
+}
+
+obj VerifyIdentityRequest(ApiModel) {
+    has token: str;
+
+    static def from_dict(data: any) -> VerifyIdentityRequest;
+}
+
+obj SendVerificationRequest(ApiModel) {
+    has identity: IdentityInputModel;
+
+    static def from_dict(data: any) -> SendVerificationRequest;
+}
+
+obj ForgotPasswordRequest(ApiModel) {
+    has identity: IdentityInputModel;
+
+    static def from_dict(data: any) -> ForgotPasswordRequest;
+}
+
+obj ResetPasswordRequest(ApiModel) {
+    has token: str,
+        new_password: str;
+
+    static def from_dict(data: any) -> ResetPasswordRequest;
+}
+
+def optional_str(data: dict[str, any], key: str) -> str;
+
+obj EnrollFactorRequest(ApiModel) {
+    has password: str,
+        code: str = '',
+        recovery_code: str = '';
+
+    static def from_dict(data: any) -> EnrollFactorRequest;
+}
+
+obj VerifyFactorRequest(ApiModel) {
+    has factor_id: str,
+        code: str;
+
+    static def from_dict(data: any) -> VerifyFactorRequest;
+}
+
+obj RemoveFactorRequest(ApiModel) {
+    has factor_id: str,
+        code: str = '',
+        recovery_code: str = '';
+
+    static def from_dict(data: any) -> RemoveFactorRequest;
+}
+
+obj SecondFactorLoginRequest(ApiModel) {
+    has challenge_token: str,
+        code: str = '',
+        recovery_code: str = '';
+
+    static def from_dict(data: any) -> SecondFactorLoginRequest;
+}
+
+obj UpdateProfileRequest(ApiModel) {
+    has profile: dict[str, any];
+
+    static def from_dict(data: any) -> UpdateProfileRequest;
+}
+
+obj UpdateProfileResponse(ApiModel) {
+    has message: str,
+        profile: dict[str, any] = {};
+}
+
+obj MeIdentity(ApiModel) {
+    has type: str,
+        verified: bool = False,
+        is_recovery: bool = False,
+        value: (str | None) = None,
+        provider: (str | None) = None;
+}
+
+obj MeResponse(ApiModel) {
+    has user_id: str,
+        role: str = 'user',
+        status: str = 'active',
+        identities: list[MeIdentity] = [],
+        profile: dict[str, any] = {},
+        created_at: (str | None) = None,
+        updated_at: (str | None) = None;
+}
+
+impl validate_profile(profile: dict[str, any] | None) -> dict[str, any] | None {
     if profile is None {
         return None;
     }
@@ -53,215 +201,156 @@ def validate_profile(profile: dict[str, any] | None) -> dict[str, any] | None {
 }
 
 
-obj IdentityInputModel(ApiModel) {
-    has type: str,
-        value: str;
-
-    static def from_dict(data: any) -> IdentityInputModel {
-        if not isinstance(data, dict) {
-            raise ValueError('identity must be an object');
-        }
-        type_value = require_str(data, 'type', 'identity.type');
-        if type_value not in IDENTITY_TYPES {
-            raise ValueError("identity.type must be one of 'email' or 'username'");
-        }
-        value = require_str(data, 'value', 'identity.value');
-        if type_value == 'email' and not EMAIL_PATTERN.`match(value) {
-            raise ValueError('identity.value is not a valid email address');
-        }
-        return IdentityInputModel(type=type_value, value=value);
+impl IdentityInputModel.from_dict(data: any) -> IdentityInputModel {
+    if not isinstance(data, dict) {
+        raise ValueError('identity must be an object');
     }
+    type_value = require_str(data, 'type', 'identity.type');
+    if type_value not in IDENTITY_TYPES {
+        raise ValueError("identity.type must be one of 'email' or 'username'");
+    }
+    value = require_str(data, 'value', 'identity.value');
+    if type_value == 'email' and not EMAIL_PATTERN.`match(value) {
+        raise ValueError('identity.value is not a valid email address');
+    }
+    return IdentityInputModel(type=type_value, value=value);
 }
 
-obj CredentialInput(ApiModel) {
-    has type: str,
-        password: str;
-
-    static def from_dict(data: any) -> CredentialInput {
-        if not isinstance(data, dict) {
-            raise ValueError('credential must be an object');
-        }
-        type_value = require_str(data, 'type', 'credential.type');
-        allowed = {member.value for member in CredentialType};
-        if type_value not in allowed {
-            raise ValueError(f"credential.type must be one of {sorted(allowed)}");
-        }
-        password = require_str(data, 'password', 'credential.password');
-        return CredentialInput(type=type_value, password=password);
+impl CredentialInput.from_dict(data: any) -> CredentialInput {
+    if not isinstance(data, dict) {
+        raise ValueError('credential must be an object');
     }
+    type_value = require_str(data, 'type', 'credential.type');
+    allowed = {member.value for member in CredentialType};
+    if type_value not in allowed {
+        raise ValueError(f"credential.type must be one of {sorted(allowed)}");
+    }
+    password = require_str(data, 'password', 'credential.password');
+    return CredentialInput(type=type_value, password=password);
 }
 
-obj RegisterRequest(ApiModel) {
-    has identities: list[IdentityInputModel],
-        credential: CredentialInput,
-        profile: (dict[str, any] | None) = None,
-        challenge: (dict[str, any] | None) = None;
-
-    static def from_dict(data: any) -> RegisterRequest {
-        if not isinstance(data, dict) {
-            raise ValueError('request body must be an object');
-        }
-
-        raw_identities = data.get('identities');
-        if not isinstance(raw_identities, list) or len(raw_identities) == 0 {
-            raise ValueError('identities must be a non-empty list');
-        }
-        if 'credential' not in data {
-            raise ValueError('credential is required');
-        }
-        return RegisterRequest(
-            identities=[IdentityInputModel.from_dict(item) for item in raw_identities],
-            credential=CredentialInput.from_dict(data.get('credential')),
-            profile=validate_profile(data.get('profile')),
-            challenge=data.get('challenge')
-                if isinstance(data.get('challenge'), dict)
-                else None
-        );
+impl RegisterRequest.from_dict(data: any) -> RegisterRequest {
+    if not isinstance(data, dict) {
+        raise ValueError('request body must be an object');
     }
+
+    raw_identities = data.get('identities');
+    if not isinstance(raw_identities, list) or len(raw_identities) == 0 {
+        raise ValueError('identities must be a non-empty list');
+    }
+    if 'credential' not in data {
+        raise ValueError('credential is required');
+    }
+    return RegisterRequest(
+        identities=[IdentityInputModel.from_dict(item) for item in raw_identities],
+        credential=CredentialInput.from_dict(data.get('credential')),
+        profile=validate_profile(data.get('profile')),
+        challenge=data.get('challenge')
+            if isinstance(data.get('challenge'), dict)
+            else None
+    );
 }
 
-obj LoginRequest(ApiModel) {
-    has identity: IdentityInputModel,
-        credential: CredentialInput;
-
-    static def from_dict(data: any) -> LoginRequest {
-        if not isinstance(data, dict) {
-            raise ValueError('request body must be an object');
-        }
-        if 'identity' not in data {
-            raise ValueError('identity is required');
-        }
-        if 'credential' not in data {
-            raise ValueError('credential is required');
-        }
-        return LoginRequest(
-            identity=IdentityInputModel.from_dict(data.get('identity')),
-            credential=CredentialInput.from_dict(data.get('credential'))
-        );
+impl LoginRequest.from_dict(data: any) -> LoginRequest {
+    if not isinstance(data, dict) {
+        raise ValueError('request body must be an object');
     }
+    if 'identity' not in data {
+        raise ValueError('identity is required');
+    }
+    if 'credential' not in data {
+        raise ValueError('credential is required');
+    }
+    return LoginRequest(
+        identity=IdentityInputModel.from_dict(data.get('identity')),
+        credential=CredentialInput.from_dict(data.get('credential'))
+    );
 }
 
-obj FirebaseTokenRequest(ApiModel) {
-    has id_token: str;
-
-    static def from_dict(data: any) -> FirebaseTokenRequest {
-        if not isinstance(data, dict) {
-            raise ValueError('request body must be an object');
-        }
-        return FirebaseTokenRequest(id_token=require_str(data, 'id_token'));
+impl FirebaseTokenRequest.from_dict(data: any) -> FirebaseTokenRequest {
+    if not isinstance(data, dict) {
+        raise ValueError('request body must be an object');
     }
+    return FirebaseTokenRequest(id_token=require_str(data, 'id_token'));
 }
 
-obj UpdatePasswordRequest(ApiModel) {
-    has current_password: str,
-        new_password: str,
-        username: str = '';
-
-    static def from_dict(data: any) -> UpdatePasswordRequest {
-        if not isinstance(data, dict) {
-            raise ValueError('request body must be an object');
-        }
-        return UpdatePasswordRequest(
-            current_password=require_str(data, 'current_password'),
-            new_password=require_str(data, 'new_password'),
-            username=str(data.get('username') or '')
-        );
+impl UpdatePasswordRequest.from_dict(data: any) -> UpdatePasswordRequest {
+    if not isinstance(data, dict) {
+        raise ValueError('request body must be an object');
     }
+    return UpdatePasswordRequest(
+        current_password=require_str(data, 'current_password'),
+        new_password=require_str(data, 'new_password'),
+        username=str(data.get('username') or '')
+    );
 }
 
-obj UpdateUsernameRequest(ApiModel) {
-    has new_username: str,
-        current_username: str = '';
-
-    static def from_dict(data: any) -> UpdateUsernameRequest {
-        if not isinstance(data, dict) {
-            raise ValueError('request body must be an object');
-        }
-        return UpdateUsernameRequest(
-            new_username=require_str(data, 'new_username'),
-            current_username=str(data.get('current_username') or '')
-        );
+impl UpdateUsernameRequest.from_dict(data: any) -> UpdateUsernameRequest {
+    if not isinstance(data, dict) {
+        raise ValueError('request body must be an object');
     }
+    return UpdateUsernameRequest(
+        new_username=require_str(data, 'new_username'),
+        current_username=str(data.get('current_username') or '')
+    );
 }
 
-obj AddIdentityRequest(ApiModel) {
-    has identity: IdentityInputModel,
-        is_recovery: bool = False;
-
-    static def from_dict(data: any) -> AddIdentityRequest {
-        if not isinstance(data, dict) {
-            raise ValueError('request body must be an object');
-        }
-        if 'identity' not in data {
-            raise ValueError('identity is required');
-        }
-        return AddIdentityRequest(
-            identity=IdentityInputModel.from_dict(data.get('identity')),
-            is_recovery=bool(data.get('is_recovery', False))
-        );
+impl AddIdentityRequest.from_dict(data: any) -> AddIdentityRequest {
+    if not isinstance(data, dict) {
+        raise ValueError('request body must be an object');
     }
+    if 'identity' not in data {
+        raise ValueError('identity is required');
+    }
+    return AddIdentityRequest(
+        identity=IdentityInputModel.from_dict(data.get('identity')),
+        is_recovery=bool(data.get('is_recovery', False))
+    );
 }
 
-obj VerifyIdentityRequest(ApiModel) {
-    has token: str;
-
-    static def from_dict(data: any) -> VerifyIdentityRequest {
-        if not isinstance(data, dict) {
-            raise ValueError('request body must be an object');
-        }
-        return VerifyIdentityRequest(token=require_str(data, 'token'));
+impl VerifyIdentityRequest.from_dict(data: any) -> VerifyIdentityRequest {
+    if not isinstance(data, dict) {
+        raise ValueError('request body must be an object');
     }
+    return VerifyIdentityRequest(token=require_str(data, 'token'));
 }
 
-obj SendVerificationRequest(ApiModel) {
-    has identity: IdentityInputModel;
-
-    static def from_dict(data: any) -> SendVerificationRequest {
-        if not isinstance(data, dict) {
-            raise ValueError('request body must be an object');
-        }
-        if 'identity' not in data {
-            raise ValueError('identity is required');
-        }
-        return SendVerificationRequest(
-            identity=IdentityInputModel.from_dict(data.get('identity'))
-        );
+impl SendVerificationRequest.from_dict(data: any) -> SendVerificationRequest {
+    if not isinstance(data, dict) {
+        raise ValueError('request body must be an object');
     }
+    if 'identity' not in data {
+        raise ValueError('identity is required');
+    }
+    return SendVerificationRequest(
+        identity=IdentityInputModel.from_dict(data.get('identity'))
+    );
 }
 
-obj ForgotPasswordRequest(ApiModel) {
-    has identity: IdentityInputModel;
-
-    static def from_dict(data: any) -> ForgotPasswordRequest {
-        if not isinstance(data, dict) {
-            raise ValueError('request body must be an object');
-        }
-        if 'identity' not in data {
-            raise ValueError('identity is required');
-        }
-        return ForgotPasswordRequest(
-            identity=IdentityInputModel.from_dict(data.get('identity'))
-        );
+impl ForgotPasswordRequest.from_dict(data: any) -> ForgotPasswordRequest {
+    if not isinstance(data, dict) {
+        raise ValueError('request body must be an object');
     }
+    if 'identity' not in data {
+        raise ValueError('identity is required');
+    }
+    return ForgotPasswordRequest(
+        identity=IdentityInputModel.from_dict(data.get('identity'))
+    );
 }
 
-obj ResetPasswordRequest(ApiModel) {
-    has token: str,
-        new_password: str;
-
-    static def from_dict(data: any) -> ResetPasswordRequest {
-        if not isinstance(data, dict) {
-            raise ValueError('request body must be an object');
-        }
-        kw: dict[str, str] = {};
-        comptime for f in fields(ResetPasswordRequest) {
-            kw[f.name] = require_str(data, f.name);
-        }
-        return ResetPasswordRequest(**kw);
+impl ResetPasswordRequest.from_dict(data: any) -> ResetPasswordRequest {
+    if not isinstance(data, dict) {
+        raise ValueError('request body must be an object');
     }
+    kw: dict[str, str] = {};
+    comptime for f in fields(ResetPasswordRequest) {
+        kw[f.name] = require_str(data, f.name);
+    }
+    return ResetPasswordRequest(**kw);
 }
 
-def optional_str(data: dict[str, any], key: str) -> str {
+impl optional_str(data: dict[str, any], key: str) -> str {
     value = data.get(key);
     if value is None {
         return '';
@@ -272,107 +361,57 @@ def optional_str(data: dict[str, any], key: str) -> str {
     return value;
 }
 
-obj EnrollFactorRequest(ApiModel) {
-    has password: str,
-        code: str = '',
-        recovery_code: str = '';
-
-    static def from_dict(data: any) -> EnrollFactorRequest {
-        if not isinstance(data, dict) {
-            raise ValueError('request body must be an object');
-        }
-        return EnrollFactorRequest(
-            password=require_str(data, 'password'),
-            code=optional_str(data, 'code'),
-            recovery_code=optional_str(data, 'recovery_code')
-        );
+impl EnrollFactorRequest.from_dict(data: any) -> EnrollFactorRequest {
+    if not isinstance(data, dict) {
+        raise ValueError('request body must be an object');
     }
+    return EnrollFactorRequest(
+        password=require_str(data, 'password'),
+        code=optional_str(data, 'code'),
+        recovery_code=optional_str(data, 'recovery_code')
+    );
 }
 
-obj VerifyFactorRequest(ApiModel) {
-    has factor_id: str,
-        code: str;
-
-    static def from_dict(data: any) -> VerifyFactorRequest {
-        if not isinstance(data, dict) {
-            raise ValueError('request body must be an object');
-        }
-        return VerifyFactorRequest(
-            factor_id=require_str(data, 'factor_id'), code=require_str(data, 'code')
-        );
+impl VerifyFactorRequest.from_dict(data: any) -> VerifyFactorRequest {
+    if not isinstance(data, dict) {
+        raise ValueError('request body must be an object');
     }
+    return VerifyFactorRequest(
+        factor_id=require_str(data, 'factor_id'), code=require_str(data, 'code')
+    );
 }
 
-obj RemoveFactorRequest(ApiModel) {
-    has factor_id: str,
-        code: str = '',
-        recovery_code: str = '';
-
-    static def from_dict(data: any) -> RemoveFactorRequest {
-        if not isinstance(data, dict) {
-            raise ValueError('request body must be an object');
-        }
-        return RemoveFactorRequest(
-            factor_id=require_str(data, 'factor_id'),
-            code=optional_str(data, 'code'),
-            recovery_code=optional_str(data, 'recovery_code')
-        );
+impl RemoveFactorRequest.from_dict(data: any) -> RemoveFactorRequest {
+    if not isinstance(data, dict) {
+        raise ValueError('request body must be an object');
     }
+    return RemoveFactorRequest(
+        factor_id=require_str(data, 'factor_id'),
+        code=optional_str(data, 'code'),
+        recovery_code=optional_str(data, 'recovery_code')
+    );
 }
 
-obj SecondFactorLoginRequest(ApiModel) {
-    has challenge_token: str,
-        code: str = '',
-        recovery_code: str = '';
-
-    static def from_dict(data: any) -> SecondFactorLoginRequest {
-        if not isinstance(data, dict) {
-            raise ValueError('request body must be an object');
-        }
-        return SecondFactorLoginRequest(
-            challenge_token=require_str(data, 'challenge_token'),
-            code=optional_str(data, 'code'),
-            recovery_code=optional_str(data, 'recovery_code')
-        );
+impl SecondFactorLoginRequest.from_dict(data: any) -> SecondFactorLoginRequest {
+    if not isinstance(data, dict) {
+        raise ValueError('request body must be an object');
     }
+    return SecondFactorLoginRequest(
+        challenge_token=require_str(data, 'challenge_token'),
+        code=optional_str(data, 'code'),
+        recovery_code=optional_str(data, 'recovery_code')
+    );
 }
 
-obj UpdateProfileRequest(ApiModel) {
-    has profile: dict[str, any];
-
-    static def from_dict(data: any) -> UpdateProfileRequest {
-        if not isinstance(data, dict) {
-            raise ValueError('request body must be an object');
-        }
-
-        raw_profile = data.get('profile');
-        if raw_profile is None {
-            raise ValueError('profile is required and must not be null');
-        }
-        validated = validate_profile(raw_profile);
-        return UpdateProfileRequest(profile=validated or {});
+impl UpdateProfileRequest.from_dict(data: any) -> UpdateProfileRequest {
+    if not isinstance(data, dict) {
+        raise ValueError('request body must be an object');
     }
-}
 
-obj UpdateProfileResponse(ApiModel) {
-    has message: str,
-        profile: dict[str, any] = {};
-}
-
-obj MeIdentity(ApiModel) {
-    has type: str,
-        verified: bool = False,
-        is_recovery: bool = False,
-        value: (str | None) = None,
-        provider: (str | None) = None;
-}
-
-obj MeResponse(ApiModel) {
-    has user_id: str,
-        role: str = 'user',
-        status: str = 'active',
-        identities: list[MeIdentity] = [],
-        profile: dict[str, any] = {},
-        created_at: (str | None) = None,
-        updated_at: (str | None) = None;
+    raw_profile = data.get('profile');
+    if raw_profile is None {
+        raise ValueError('profile is required and must not be null');
+    }
+    validated = validate_profile(raw_profile);
+    return UpdateProfileRequest(profile=validated or {});
 }

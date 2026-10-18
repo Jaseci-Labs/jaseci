@@ -11,7 +11,157 @@ glob _FORMAT: int = 9,
      SLOW_PREPARE_SECONDS: int = 45,
      _SKIP: set[str] = {'.jac', '.git', '.venv', 'venv', 'node_modules', '__pycache__'};
 
-def _stamp(path: str, previous: any = None) -> tuple[int, int, str] {
+def _stamp(path: str, previous: any = None) -> tuple[int, int, str];
+
+def _runtime_output(name: str) -> bool;
+
+def _inventory(
+    `root: any,
+    inputs: bool = False,
+    previous: (dict[str, tuple[int, int, str]] | None) = None
+) -> dict[str, tuple[int, int, str]];
+
+def _client_inventory(
+    `root: str,
+    dirs: list[str],
+    files: list[str],
+    previous: (dict[str, tuple[int, int, str]] | None) = None
+) -> dict[str, tuple[int, int, str]];
+
+def _digests(inventory: dict[str, tuple[int, int, str]]) -> dict[str, str];
+
+def _identity -> tuple[str, str | None, str];
+
+def _write(path: any, value: any);
+
+def _sections(path: any, program: any) -> dict[int, bytes];
+
+def _context_sections(path: any) -> dict[int, bytes];
+
+def _project_modules(program: any, `root: any) -> dict[str, uni.Module];
+
+def _semantic_metadata(revision: PreparedApplication, program: any);
+
+obj ManifestSource {
+    has path: str,
+        app: str = '',
+        persistence: any = None,
+        edges: list[tuple[bool, str, list[str]]] = [],
+        interop: any = None,
+        client: any = None;
+}
+
+def _import_edges_of(rows: list[str]) -> list[tuple[bool, str, list[str]]];
+
+def _tree_source(
+    program: any, mod: uni.Module, imported: bool = True
+) -> ManifestSource;
+
+def _unit_source(unit: any) -> ManifestSource;
+
+def _manifest(program: any, path: any, `root: any, mod: any = None) -> dict[str, any];
+
+def build_manifest(
+    `root: str,
+    main: ManifestSource,
+    lookup: Callable[[str], ManifestSource | None],
+    project: list[ManifestSource]
+) -> dict[str, any];
+
+def _warn_private_declarations(application: PreparedApplication, console: any);
+
+
+def _check(program: any, before: any);
+
+def _prepare_sealed(
+    `entry: str, program: any, image_root: str, entries: list[str]
+) -> PreparedApplication;
+
+def prepare_application(
+    `entry: str,
+    program: any,
+    `root: (str | None) = None,
+    services: any = (),
+    client: bool = False,
+    dev: bool = True,
+    force_codespace: str = ''
+) -> PreparedApplication;
+
+def _release_compile_state(program: any);
+
+def _capture_input(path: str, inputs: dict[str, str]);
+
+def _prepare(
+    `entry: any,
+    program: any,
+    `root: any,
+    entries: any,
+    client: any,
+    dev: any,
+    console: any
+) -> PreparedApplication;
+
+def _unit_lookup(
+    units: dict[str, ManifestSource]
+) -> Callable[[str], ManifestSource | None];
+
+def _unit_row(unit: any) -> dict[str, any];
+
+def _row_unit(path: str, row: dict[str, any]) -> any;
+
+def _file_digest(path: str) -> str;
+
+def _reusable_interfaces(
+    previous: dict[str, dict[str, any]],
+    entries: list[str],
+    specs: dict[str, list[tuple[int, str, (tuple[str, ...] | None)]]],
+    `root: str
+) -> dict[str, any];
+
+def _importers_of(
+    changed: set[str], rows: dict[str, dict[str, any]], among: set[str]
+) -> set[str];
+
+def _unreached_changes(
+    units: dict[str, ManifestSource],
+    rows: dict[str, dict[str, any]],
+    previous: dict[str, dict[str, any]],
+    seeds: dict[str, any]
+) -> list[str];
+
+def _kernel_units(
+    program: any,
+    entries: list[str],
+    `root: str,
+    before: int,
+    inputs: dict[str, str],
+    previous: dict[str, dict[str, any]],
+    rows: dict[str, dict[str, any]],
+    specs: dict[str, list[tuple[int, str, (tuple[str, ...] | None)]]]
+) -> (dict[str, ManifestSource] | None);
+
+def _prepare_revision(
+    `entry: any,
+    program: any,
+    `root: any,
+    entries: any,
+    client: any,
+    dev: any,
+    console: any,
+    inputs: dict[str, str]
+) -> PreparedApplication;
+
+def prepare_route_metadata(`root: str, program: any) -> (list[str] | None);
+
+def reprepare_application(
+    application: PreparedApplication, program: any
+) -> PreparedApplication;
+
+def prepare_dynamic_module(
+    path: str, program: any, application: PreparedApplication
+) -> PreparedApplication;
+
+impl _stamp(path: str, previous: any = None) -> tuple[int, int, str] {
     import from jaclang.compiler.driver.jir { compute_content_sha256 }
     import from jaclang.compiler.driver.bccache { LISTING_SETTLE_NS }
     st = os.stat(path);
@@ -31,11 +181,11 @@ def _stamp(path: str, previous: any = None) -> tuple[int, int, str] {
     );
 }
 
-def _runtime_output(name: str) -> bool {
+impl _runtime_output(name: str) -> bool {
     return name.endswith(('.log', '.db', '.db-wal', '.db-shm', '.sqlite', '.sqlite3'));
 }
 
-def _inventory(
+impl _inventory(
     `root: any,
     inputs: bool = False,
     previous: (dict[str, tuple[int, int, str]] | None) = None
@@ -62,7 +212,7 @@ def _inventory(
     return result;
 }
 
-def _client_inventory(
+impl _client_inventory(
     `root: str,
     dirs: list[str],
     files: list[str],
@@ -98,11 +248,11 @@ def _client_inventory(
     return result;
 }
 
-def _digests(inventory: dict[str, tuple[int, int, str]]) -> dict[str, str] {
+impl _digests(inventory: dict[str, tuple[int, int, str]]) -> dict[str, str] {
     return {path: stamp[2] for (path, stamp) in inventory.items()};
 }
 
-def _identity -> tuple[str, str | None, str] {
+impl _identity -> tuple[str, str | None, str] {
     import from jaclang.compiler.driver.jir { compiler_generation }
     return (
         compiler_generation(),
@@ -111,7 +261,7 @@ def _identity -> tuple[str, str | None, str] {
     );
 }
 
-def _write(path: any, value: any) {
+impl _write(path: any, value: any) {
     path.parent.mkdir(parents=True, exist_ok=True);
     tmp: str = "";
     try {
@@ -127,7 +277,7 @@ def _write(path: any, value: any) {
     }
 }
 
-def _sections(path: any, program: any) -> dict[int, bytes] {
+impl _sections(path: any, program: any) -> dict[int, bytes] {
     import from jaclang.compiler.driver.compilation_context { cache_scope, program_for }
     actual = program_for(path, program);
     with cache_scope(actual.options) {
@@ -135,7 +285,7 @@ def _sections(path: any, program: any) -> dict[int, bytes] {
     }
 }
 
-def _context_sections(path: any) -> dict[int, bytes] {
+impl _context_sections(path: any) -> dict[int, bytes] {
     import from jaclang.compiler.driver.jir {
         get_module_cache_path,
         HEADER_SIZE,
@@ -151,7 +301,7 @@ def _context_sections(path: any) -> dict[int, bytes] {
     return read_sections(data, (pos + len(SECTIONS_MAGIC))) if (pos >= 0) else {};
 }
 
-def _project_modules(program: any, `root: any) -> dict[str, uni.Module] {
+impl _project_modules(program: any, `root: any) -> dict[str, uni.Module] {
     result: dict[str, uni.Module] = {};
     selfhost = program._get_compiler().selfhost;
     for hub in program.execution_hubs() {
@@ -166,7 +316,7 @@ def _project_modules(program: any, `root: any) -> dict[str, uni.Module] {
     return result;
 }
 
-def _semantic_metadata(revision: PreparedApplication, program: any) {
+impl _semantic_metadata(revision: PreparedApplication, program: any) {
     import from jaclang.compiler.driver.compilation_context { program_for }
     import from jaclang.jac0core.ext_registry { base_stem }
     for path in revision.code {
@@ -180,16 +330,7 @@ def _semantic_metadata(revision: PreparedApplication, program: any) {
     }
 }
 
-obj ManifestSource {
-    has path: str,
-        app: str = '',
-        persistence: any = None,
-        edges: list[tuple[bool, str, list[str]]] = [],
-        interop: any = None,
-        client: any = None;
-}
-
-def _import_edges_of(rows: list[str]) -> list[tuple[bool, str, list[str]]] {
+impl _import_edges_of(rows: list[str]) -> list[tuple[bool, str, list[str]]] {
     import from jaclang.compiler.driver.unit_products { DEF_DEP_SEP as EDGE_SEP }
     edges: list[tuple[bool, str, list[str]]] = [];
     for row in rows {
@@ -204,7 +345,7 @@ def _import_edges_of(rows: list[str]) -> list[tuple[bool, str, list[str]]] {
     return edges;
 }
 
-def _tree_source(
+impl _tree_source(
     program: any, mod: uni.Module, imported: bool = True
 ) -> ManifestSource {
     import from jaclang.compiler.driver.unit_products { import_edge_rows }
@@ -225,7 +366,7 @@ def _tree_source(
     );
 }
 
-def _unit_source(unit: any) -> ManifestSource {
+impl _unit_source(unit: any) -> ManifestSource {
     import json;
     import from jaclang.compiler.driver.unit_products {
         interop_manifest_of,
@@ -243,7 +384,7 @@ def _unit_source(unit: any) -> ManifestSource {
     );
 }
 
-def _manifest(program: any, path: any, `root: any, mod: any = None) -> dict[str, any] {
+impl _manifest(program: any, path: any, `root: any, mod: any = None) -> dict[str, any] {
     mod = mod if (mod is not None) else program.find_module(path);
     if (mod is None) {
         raise RuntimeError(f'Preparation did not produce metadata for {path}');
@@ -267,7 +408,7 @@ def _manifest(program: any, path: any, `root: any, mod: any = None) -> dict[str,
     );
 }
 
-def build_manifest(
+impl build_manifest(
     `root: str,
     main: ManifestSource,
     lookup: Callable[[str], ManifestSource | None],
@@ -366,7 +507,7 @@ def build_manifest(
     );
 }
 
-def _warn_private_declarations(application: PreparedApplication, console: any) {
+impl _warn_private_declarations(application: PreparedApplication, console: any) {
     import from jaclang.project.workspace { app_for_path }
     app = app_for_path(application.entry);
     if app is None or not app.has_server {
@@ -387,14 +528,14 @@ def _warn_private_declarations(application: PreparedApplication, console: any) {
 }
 
 
-def _check(program: any, before: any) {
+impl _check(program: any, before: any) {
     errors = program.errors_had[before:];
     if errors {
         raise RuntimeError('\n'.join(e.pretty_print() for e in errors));
     }
 }
 
-def _prepare_sealed(
+impl _prepare_sealed(
     `entry: str, program: any, image_root: str, entries: list[str]
 ) -> PreparedApplication {
     import json;
@@ -541,7 +682,7 @@ def _prepare_sealed(
     return revision;
 }
 
-def prepare_application(
+impl prepare_application(
     `entry: str,
     program: any,
     `root: (str | None) = None,
@@ -672,7 +813,7 @@ def prepare_application(
     }
 }
 
-def _release_compile_state(program: any) {
+impl _release_compile_state(program: any) {
     import from jaclang.project.kernel_compile { forget_application_units }
     import from jaclang.project.kernel_snapshot { forget_interface_memo }
     program._get_compiler().release_compile_state(program);
@@ -680,7 +821,7 @@ def _release_compile_state(program: any) {
     forget_interface_memo();
 }
 
-def _capture_input(path: str, inputs: dict[str, str]) {
+impl _capture_input(path: str, inputs: dict[str, str]) {
     import from jaclang.compiler.driver.jir { ct_dep_digest }
     path = os.path.realpath(path);
     if path not in inputs {
@@ -688,7 +829,7 @@ def _capture_input(path: str, inputs: dict[str, str]) {
     }
 }
 
-def _prepare(
+impl _prepare(
     `entry: any,
     program: any,
     `root: any,
@@ -727,7 +868,7 @@ def _prepare(
     }
 }
 
-def _unit_lookup(
+impl _unit_lookup(
     units: dict[str, ManifestSource]
 ) -> Callable[[str], ManifestSource | None] {
     def lookup(source: str) -> (ManifestSource | None) {
@@ -736,7 +877,7 @@ def _unit_lookup(
     return lookup;
 }
 
-def _unit_row(unit: any) -> dict[str, any] {
+impl _unit_row(unit: any) -> dict[str, any] {
     import from jaclang.compiler.driver.jir { compute_module_key }
     return {
         'key': compute_module_key(unit.path),
@@ -753,7 +894,7 @@ def _unit_row(unit: any) -> dict[str, any] {
     };
 }
 
-def _row_unit(path: str, row: dict[str, any]) -> any {
+impl _row_unit(path: str, row: dict[str, any]) -> any {
     import from jaclang.compiler.driver.unit_products { UnitProducts }
     return UnitProducts(
         path=path,
@@ -765,7 +906,7 @@ def _row_unit(path: str, row: dict[str, any]) -> any {
     );
 }
 
-def _file_digest(path: str) -> str {
+impl _file_digest(path: str) -> str {
     try {
         return hashlib.sha256(Path(path).read_bytes()).hexdigest();
     } except OSError {
@@ -773,7 +914,7 @@ def _file_digest(path: str) -> str {
     }
 }
 
-def _reusable_interfaces(
+impl _reusable_interfaces(
     previous: dict[str, dict[str, any]],
     entries: list[str],
     specs: dict[str, list[tuple[int, str, (tuple[str, ...] | None)]]],
@@ -818,7 +959,7 @@ def _reusable_interfaces(
     return seeds;
 }
 
-def _importers_of(
+impl _importers_of(
     changed: set[str], rows: dict[str, dict[str, any]], among: set[str]
 ) -> set[str] {
     found: set[str] = set();
@@ -834,7 +975,7 @@ def _importers_of(
     return found;
 }
 
-def _unreached_changes(
+impl _unreached_changes(
     units: dict[str, ManifestSource],
     rows: dict[str, dict[str, any]],
     previous: dict[str, dict[str, any]],
@@ -860,7 +1001,7 @@ def _unreached_changes(
     return missing;
 }
 
-def _kernel_units(
+impl _kernel_units(
     program: any,
     entries: list[str],
     `root: str,
@@ -968,7 +1109,7 @@ def _kernel_units(
     return units;
 }
 
-def _prepare_revision(
+impl _prepare_revision(
     `entry: any,
     program: any,
     `root: any,
@@ -1342,7 +1483,7 @@ def _prepare_revision(
     return revision;
 }
 
-def prepare_route_metadata(`root: str, program: any) -> (list[str] | None) {
+impl prepare_route_metadata(`root: str, program: any) -> (list[str] | None) {
     if not (Path(`root) / 'pages').is_dir() {
         return None;
     }
@@ -1359,7 +1500,7 @@ def prepare_route_metadata(`root: str, program: any) -> (list[str] | None) {
     ];
 }
 
-def reprepare_application(
+impl reprepare_application(
     application: PreparedApplication, program: any
 ) -> PreparedApplication {
     return prepare_application(
@@ -1372,7 +1513,7 @@ def reprepare_application(
     );
 }
 
-def prepare_dynamic_module(
+impl prepare_dynamic_module(
     path: str, program: any, application: PreparedApplication
 ) -> PreparedApplication {
     import from jaclang.cli.console { console }

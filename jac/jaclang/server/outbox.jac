@@ -9,9 +9,7 @@ import uuid;
 import from collections { OrderedDict }
 
 obj DeliveryReceipt {
-    static def _from_wire(payload: dict[str, any]) -> DeliveryReceipt {
-        return DeliveryReceipt();
-    }
+    static def _from_wire(payload: dict[str, any]) -> DeliveryReceipt;
 }
 
 glob logger = logging.getLogger(__name__),
@@ -191,3 +189,7 @@ def _lru_put(key: str, expires_at: float, result: str) -> None;
 def _run_coro(coro: any) -> any;
 async def _deliver_one(item: OutboxEntry) -> any;
 def _worker_loop(interval_s: float, stop: threading.Event) -> None;
+
+impl DeliveryReceipt._from_wire(payload: dict[str, any]) -> DeliveryReceipt {
+    return DeliveryReceipt();
+}

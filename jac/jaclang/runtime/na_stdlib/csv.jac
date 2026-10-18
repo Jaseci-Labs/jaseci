@@ -1,4 +1,9 @@
-def _parse_line(line: str) -> list[str] {
+def _parse_line(line: str) -> list[str];
+
+
+def:pub reader(lines: list[str]) -> list[list[str]];
+
+impl _parse_line(line: str) -> list[str] {
     fields: list[str] = [];
     n: int = len(line);
     if n == 0 {
@@ -44,7 +49,7 @@ def _parse_line(line: str) -> list[str] {
 }
 
 
-def:pub reader(lines: list[str]) -> list[list[str]] {
+impl reader(lines: list[str]) -> list[list[str]] {
     rows: list[list[str]] = [];
     i: int = 0;
     n: int = len(lines);

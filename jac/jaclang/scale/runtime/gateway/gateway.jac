@@ -1,15 +1,19 @@
 obj Gateway {
     has middleware: MiddlewareRegistry postinit;
 
-    def postinit {
-        self.middleware = MiddlewareRegistry();
-    }
+    def postinit;
+    def setup;
+    def serve(on_ready: any = None);
+}
 
-    def setup {
-        raise NotImplementedError("setup() must be implemented by a Gateway");
-    }
+impl Gateway.postinit {
+    self.middleware = MiddlewareRegistry();
+}
 
-    def serve(on_ready: any = None) {
-        raise NotImplementedError("serve() must be implemented by a Gateway");
-    }
+impl Gateway.setup {
+    raise NotImplementedError("setup() must be implemented by a Gateway");
+}
+
+impl Gateway.serve(on_ready: any = None) {
+    raise NotImplementedError("serve() must be implemented by a Gateway");
 }

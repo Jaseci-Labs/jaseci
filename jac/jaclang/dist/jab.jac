@@ -9,19 +9,29 @@ import from pathlib { Path }
 
 glob JAB_SUFFIX: str = ".jab";
 
-def is_jab(path: str) -> bool {
+def is_jab(path: str) -> bool;
+
+def materialize_jab(jab_path: str) -> Path;
+
+def materialize_jab_bytes(data: bytes, expected_sha256: str = "") -> Path;
+
+def _materialize_jab_data(data: bytes, label: str, expected_sha256: str = "") -> Path;
+
+def jab_app_meta(img_root: Path) -> dict[str, any];
+
+impl is_jab(path: str) -> bool {
     return path.lower().endswith(JAB_SUFFIX);
 }
 
-def materialize_jab(jab_path: str) -> Path {
+impl materialize_jab(jab_path: str) -> Path {
     return _materialize_jab_data(Path(jab_path).read_bytes(), jab_path);
 }
 
-def materialize_jab_bytes(data: bytes, expected_sha256: str = "") -> Path {
+impl materialize_jab_bytes(data: bytes, expected_sha256: str = "") -> Path {
     return _materialize_jab_data(data, "<app image>", expected_sha256);
 }
 
-def _materialize_jab_data(data: bytes, label: str, expected_sha256: str = "") -> Path {
+impl _materialize_jab_data(data: bytes, label: str, expected_sha256: str = "") -> Path {
     digest = hashlib.sha256(data).hexdigest();
     if expected_sha256 and digest != expected_sha256 {
         raise RuntimeError(
@@ -70,7 +80,7 @@ def _materialize_jab_data(data: bytes, label: str, expected_sha256: str = "") ->
     return dest;
 }
 
-def jab_app_meta(img_root: Path) -> dict[str, any] {
+impl jab_app_meta(img_root: Path) -> dict[str, any] {
     raw = json.loads(
         (img_root / "_precompiled" / MANIFEST_NAME).read_text(encoding="utf-8")
     );

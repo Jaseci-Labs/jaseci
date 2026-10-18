@@ -11,7 +11,46 @@ glob _log: logging.Logger = logging.getLogger(__name__),
      _lock: any = threading.RLock(),
      _state: dict[str, any] = {"watcher": None};
 
-def is_installed(name: str) -> bool {
+def is_installed(name: str) -> bool;
+
+def _fire(name: str, module: any) -> None;
+
+class _NotifyingLoader(importlib.abc.Loader) {
+    def init(self: any, inner: any, name: str);
+    def create_module(self: any, spec: any) -> any;
+    def exec_module(self: any, module: any);
+    def __getattr__(self: any, attr: str) -> any;
+}
+
+class _LoadWatcher(importlib.abc.MetaPathFinder) {
+    def find_spec(
+        self: any, fullname: str, path: any = None, target: any = None
+    ) -> any;
+}
+
+def when_loaded(name: str, callback: any) -> None;
+
+def is_loaded(name: str) -> bool;
+
+class DeferredModule {
+    def init(self: any, name: str);
+    def _deferred_load(self: any) -> any;
+    def __getattr__(self: any, attr: str) -> any;
+    def __setattr__(self: any, attr: str, value: any);
+    def __delattr__(self: any, attr: str);
+    def __dir__(self: any) -> list[str];
+    def __repr__(self: any) -> str;
+}
+
+def _resolve(module_name: str, path: str, load: bool) -> any;
+
+class DeferredClassMeta(type) {
+    def __instancecheck__(cls: any, candidate: any) -> bool;
+    def __subclasscheck__(cls: any, sub: any) -> bool;
+    def __call__(cls: any, *args: any, **kwargs: any) -> any;
+}
+
+impl is_installed(name: str) -> bool {
     if name in sys.modules {
         return True;
     }
@@ -22,7 +61,7 @@ def is_installed(name: str) -> bool {
     }
 }
 
-def _fire(name: str, module: any) -> None {
+impl _fire(name: str, module: any) -> None {
     with _lock {
         if name in _fired {
             return;
@@ -39,55 +78,51 @@ def _fire(name: str, module: any) -> None {
     }
 }
 
-class _NotifyingLoader(importlib.abc.Loader) {
-    def init(self: any, inner: any, name: str) {
-        self._inner = inner;
-        self._name = name;
-    }
-
-    def create_module(self: any, spec: any) -> any {
-        return self._inner.create_module(spec);
-    }
-
-    def exec_module(self: any, module: any) {
-        module.__loader__ = self._inner;
-        if module.__spec__ is not None {
-            module.__spec__.loader = self._inner;
-        }
-        self._inner.exec_module(module);
-        _fire(self._name, module);
-    }
-
-    def __getattr__(self: any, attr: str) -> any {
-        return getattr(self._inner, attr);
-    }
+impl _NotifyingLoader.init(self: any, inner: any, name: str) {
+    self._inner = inner;
+    self._name = name;
 }
 
-class _LoadWatcher(importlib.abc.MetaPathFinder) {
-    def find_spec(
-        self: any, fullname: str, path: any = None, target: any = None
-    ) -> any {
-        if fullname not in _hooks or fullname in _fired {
-            return None;
-        }
-        for finder in list(sys.meta_path) {
-            if finder is self or not hasattr(finder, "find_spec") {
-                continue;
-            }
-            spec = finder.find_spec(fullname, path, target);
-            if spec is None {
-                continue;
-            }
-            if spec.loader is not None and hasattr(spec.loader, "exec_module") {
-                spec.loader = _NotifyingLoader(spec.loader, fullname);
-            }
-            return spec;
-        }
+impl _NotifyingLoader.create_module(self: any, spec: any) -> any {
+    return self._inner.create_module(spec);
+}
+
+impl _NotifyingLoader.exec_module(self: any, module: any) {
+    module.__loader__ = self._inner;
+    if module.__spec__ is not None {
+        module.__spec__.loader = self._inner;
+    }
+    self._inner.exec_module(module);
+    _fire(self._name, module);
+}
+
+impl _NotifyingLoader.__getattr__(self: any, attr: str) -> any {
+    return getattr(self._inner, attr);
+}
+
+impl _LoadWatcher.find_spec(
+    self: any, fullname: str, path: any = None, target: any = None
+) -> any {
+    if fullname not in _hooks or fullname in _fired {
         return None;
     }
+    for finder in list(sys.meta_path) {
+        if finder is self or not hasattr(finder, "find_spec") {
+            continue;
+        }
+        spec = finder.find_spec(fullname, path, target);
+        if spec is None {
+            continue;
+        }
+        if spec.loader is not None and hasattr(spec.loader, "exec_module") {
+            spec.loader = _NotifyingLoader(spec.loader, fullname);
+        }
+        return spec;
+    }
+    return None;
 }
 
-def when_loaded(name: str, callback: any) -> None {
+impl when_loaded(name: str, callback: any) -> None {
     with _lock {
         loaded = sys.modules.get(name);
         if loaded is None {
@@ -105,50 +140,48 @@ def when_loaded(name: str, callback: any) -> None {
     callback(loaded);
 }
 
-def is_loaded(name: str) -> bool {
+impl is_loaded(name: str) -> bool {
     return name in sys.modules;
 }
 
-class DeferredModule {
-    def init(self: any, name: str) {
-        object.__setattr__(self, "_deferred_name", name);
-        object.__setattr__(self, "_deferred_module", None);
-    }
-
-    def _deferred_load(self: any) -> any {
-        module = object.__getattribute__(self, "_deferred_module");
-        if module is None {
-            module = importlib.import_module(
-                object.__getattribute__(self, "_deferred_name")
-            );
-            object.__setattr__(self, "_deferred_module", module);
-        }
-        return module;
-    }
-
-    def __getattr__(self: any, attr: str) -> any {
-        return getattr(self._deferred_load(), attr);
-    }
-
-    def __setattr__(self: any, attr: str, value: any) {
-        setattr(self._deferred_load(), attr, value);
-    }
-
-    def __delattr__(self: any, attr: str) {
-        delattr(self._deferred_load(), attr);
-    }
-
-    def __dir__(self: any) -> list[str] {
-        return dir(self._deferred_load());
-    }
-
-    def __repr__(self: any) -> str {
-        name = object.__getattribute__(self, "_deferred_name");
-        return "<deferred module " + repr(name) + ">";
-    }
+impl DeferredModule.init(self: any, name: str) {
+    object.__setattr__(self, "_deferred_name", name);
+    object.__setattr__(self, "_deferred_module", None);
 }
 
-def _resolve(module_name: str, path: str, load: bool) -> any {
+impl DeferredModule._deferred_load(self: any) -> any {
+    module = object.__getattribute__(self, "_deferred_module");
+    if module is None {
+        module = importlib.import_module(
+            object.__getattribute__(self, "_deferred_name")
+        );
+        object.__setattr__(self, "_deferred_module", module);
+    }
+    return module;
+}
+
+impl DeferredModule.__getattr__(self: any, attr: str) -> any {
+    return getattr(self._deferred_load(), attr);
+}
+
+impl DeferredModule.__setattr__(self: any, attr: str, value: any) {
+    setattr(self._deferred_load(), attr, value);
+}
+
+impl DeferredModule.__delattr__(self: any, attr: str) {
+    delattr(self._deferred_load(), attr);
+}
+
+impl DeferredModule.__dir__(self: any) -> list[str] {
+    return dir(self._deferred_load());
+}
+
+impl DeferredModule.__repr__(self: any) -> str {
+    name = object.__getattribute__(self, "_deferred_name");
+    return "<deferred module " + repr(name) + ">";
+}
+
+impl _resolve(module_name: str, path: str, load: bool) -> any {
     module = sys.modules.get(module_name);
     if module is None {
         if not load {
@@ -163,20 +196,16 @@ def _resolve(module_name: str, path: str, load: bool) -> any {
     return target;
 }
 
-class DeferredClassMeta(type) {
-    def __instancecheck__(cls: any, candidate: any) -> bool {
-        real = _resolve(cls._deferred_module, cls._deferred_path, False);
-        return real is not None and isinstance(candidate, real);
-    }
+impl DeferredClassMeta.__instancecheck__(cls: any, candidate: any) -> bool {
+    real = _resolve(cls._deferred_module, cls._deferred_path, False);
+    return real is not None and isinstance(candidate, real);
+}
 
-    def __subclasscheck__(cls: any, sub: any) -> bool {
-        real = _resolve(cls._deferred_module, cls._deferred_path, False);
-        return real is not None and issubclass(sub, real);
-    }
+impl DeferredClassMeta.__subclasscheck__(cls: any, sub: any) -> bool {
+    real = _resolve(cls._deferred_module, cls._deferred_path, False);
+    return real is not None and issubclass(sub, real);
+}
 
-    def __call__(cls: any, *args: any, **kwargs: any) -> any {
-        return _resolve(cls._deferred_module, cls._deferred_path, True)(
-            *args, **kwargs
-        );
-    }
+impl DeferredClassMeta.__call__(cls: any, *args: any, **kwargs: any) -> any {
+    return _resolve(cls._deferred_module, cls._deferred_path, True)(*args, **kwargs);
 }

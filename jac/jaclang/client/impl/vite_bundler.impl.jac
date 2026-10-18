@@ -1,23 +1,10 @@
 import threading;
 
 
-def _require_bun -> str {
-    return js_runtime_path();
-}
+def _require_bun -> str;
 
 
-def _build_vite_command(build_dir: Path, args: list[str]) -> list[str] {
-    bun = _require_bun();
-    `entry = resolve_node_tool_entry(build_dir, 'vite');
-    if `entry is None {
-        raise ClientBundleError(
-            f"Vite is not installed under {build_dir / 'node_modules'}. "
-            "Dependencies are installed before every build, so an absent "
-            "vite means that install did not complete."
-        ) from None;
-    }
-    return [bun, str(`entry)] + args;
-}
+def _build_vite_command(build_dir: Path, args: list[str]) -> list[str];
 
 impl ViteBundler._get_client_dir(self: ViteBundler) -> Path {
     if self.build_dir is not None {
@@ -355,33 +342,7 @@ impl ViteBundler._resolve_api_base_url(
 }
 
 
-def _to_js_expr(value: any) -> str {
-    if value is None {
-        return "null";
-    }
-
-    if isinstance(value, bool) {
-        return "true" if value else "false";
-    }
-
-    if isinstance(value, (int, float)) {
-        return json.dumps(value);
-    }
-
-    if value?.isoformat {
-        return json.dumps(json.dumps(value.isoformat()));
-    }
-
-    if isinstance(value, str) {
-        return json.dumps(json.dumps(value));
-    }
-
-    try {
-        return json.dumps(value);
-    } except (TypeError, ValueError) {
-        return json.dumps(json.dumps(str(value)));
-    }
-}
+def _to_js_expr(value: any) -> str;
 
 impl ViteBundler._format_define_entries(
     self: ViteBundler, api_base_url: str, custom_defines: dict[str, any]
@@ -397,20 +358,10 @@ impl ViteBundler._format_define_entries(
     return ',\n'.join(entries);
 }
 
-def _proxy_entry(key: str, api_port: int) -> str {
-    return (
-        f'\n      "{key}": {{'
-        f'\n        target: "http://localhost:{api_port}",'
-        '\n        changeOrigin: true,'
-        '\n      },'
-    );
-}
+def _proxy_entry(key: str, api_port: int) -> str;
 
 
-def _exact_proxy_key(path: str) -> str {
-    import re;
-    return '^' + re.escape(path).replace('\\', '\\\\') + '$';
-}
+def _exact_proxy_key(path: str) -> str;
 
 
 impl ViteBundler._generate_vite_config_content(
@@ -1196,55 +1147,17 @@ impl ViteBundler.create_npmrc(self: ViteBundler) -> Optional[Path] {
     return npmrc_path;
 }
 
-def _toml_config_to_js(config_data: dict[str, any]) -> str {
-    return f"module.exports = {json.dumps(
-        {
-            k: v
-            for (k, v) in config_data.items()
-            if k not in CONFIG_META_KEYS
-        },
-        indent=2
-    )};\n";
-}
+def _toml_config_to_js(config_data: dict[str, any]) -> str;
 
-def _toml_config_from_raw(config_data: dict[str, any]) -> str {
-    content = str(config_data.get('raw', '')).strip();
-    return content + '\n' if content else '';
-}
+def _toml_config_from_raw(config_data: dict[str, any]) -> str;
 
 def _build_vite_dev_command(
     build_dir: Path, config_rel: Path, port: int, host: str = ""
-) -> list[str] {
-    cmd = _build_vite_command(
-        build_dir, ['--config', str(config_rel), '--port', str(port)]
-    );
-    if host {
-        cmd.append('--host');
-        cmd.append(host);
-    } else {
-        cmd.append('--host');
-    }
-    return cmd;
-}
+) -> list[str];
 
-def _is_vite_ready_line(line: str) -> bool {
-    line_lower = line.lower();
-    for pattern in VITE_READY_PATTERNS {
-        if pattern in line_lower {
-            return True;
-        }
-    }
-    return False;
-}
+def _is_vite_ready_line(line: str) -> bool;
 
-def _is_vite_url_line(line: str) -> bool {
-    for pattern in VITE_URL_PATTERNS {
-        if pattern in line {
-            return True;
-        }
-    }
-    return False;
-}
+def _is_vite_url_line(line: str) -> bool;
 
 impl _forward_vite_output(
     proc: any,
@@ -1340,13 +1253,7 @@ impl ViteBundler.start_dev_server(
     return process;
 }
 
-def _dev_head_scripts -> str {
-    config = get_config();
-    client_cfg = config.get_plugin_config('client') if config else None;
-    meta_data = client_cfg.get('app_meta_data', {}) if client_cfg else {};
-    tags = HeaderBuilder(meta_data, 'dev').build_scripts();
-    return ''.join(f'    {tag}\n' for tag in tags);
-}
+def _dev_head_scripts -> str;
 
 impl ViteBundler._ensure_dev_index_html(self: ViteBundler, build_dir: Path) -> None {
     index_html = build_dir / 'index.html';
@@ -1637,4 +1544,125 @@ impl ViteBundler._start_vite_with_output_capture(
         }
     }
     return process;
+}
+
+impl _require_bun -> str {
+    return js_runtime_path();
+}
+
+
+impl _build_vite_command(build_dir: Path, args: list[str]) -> list[str] {
+    bun = _require_bun();
+    `entry = resolve_node_tool_entry(build_dir, 'vite');
+    if `entry is None {
+        raise ClientBundleError(
+            f"Vite is not installed under {build_dir / 'node_modules'}. "
+            "Dependencies are installed before every build, so an absent "
+            "vite means that install did not complete."
+        ) from None;
+    }
+    return [bun, str(`entry)] + args;
+}
+
+
+impl _to_js_expr(value: any) -> str {
+    if value is None {
+        return "null";
+    }
+
+    if isinstance(value, bool) {
+        return "true" if value else "false";
+    }
+
+    if isinstance(value, (int, float)) {
+        return json.dumps(value);
+    }
+
+    if value?.isoformat {
+        return json.dumps(json.dumps(value.isoformat()));
+    }
+
+    if isinstance(value, str) {
+        return json.dumps(json.dumps(value));
+    }
+
+    try {
+        return json.dumps(value);
+    } except (TypeError, ValueError) {
+        return json.dumps(json.dumps(str(value)));
+    }
+}
+
+impl _proxy_entry(key: str, api_port: int) -> str {
+    return (
+        f'\n      "{key}": {{'
+        f'\n        target: "http://localhost:{api_port}",'
+        '\n        changeOrigin: true,'
+        '\n      },'
+    );
+}
+
+
+impl _exact_proxy_key(path: str) -> str {
+    import re;
+    return '^' + re.escape(path).replace('\\', '\\\\') + '$';
+}
+
+
+impl _toml_config_to_js(config_data: dict[str, any]) -> str {
+    return f"module.exports = {json.dumps(
+        {
+            k: v
+            for (k, v) in config_data.items()
+            if k not in CONFIG_META_KEYS
+        },
+        indent=2
+    )};\n";
+}
+
+impl _toml_config_from_raw(config_data: dict[str, any]) -> str {
+    content = str(config_data.get('raw', '')).strip();
+    return content + '\n' if content else '';
+}
+
+impl _build_vite_dev_command(
+    build_dir: Path, config_rel: Path, port: int, host: str = ""
+) -> list[str] {
+    cmd = _build_vite_command(
+        build_dir, ['--config', str(config_rel), '--port', str(port)]
+    );
+    if host {
+        cmd.append('--host');
+        cmd.append(host);
+    } else {
+        cmd.append('--host');
+    }
+    return cmd;
+}
+
+impl _is_vite_ready_line(line: str) -> bool {
+    line_lower = line.lower();
+    for pattern in VITE_READY_PATTERNS {
+        if pattern in line_lower {
+            return True;
+        }
+    }
+    return False;
+}
+
+impl _is_vite_url_line(line: str) -> bool {
+    for pattern in VITE_URL_PATTERNS {
+        if pattern in line {
+            return True;
+        }
+    }
+    return False;
+}
+
+impl _dev_head_scripts -> str {
+    config = get_config();
+    client_cfg = config.get_plugin_config('client') if config else None;
+    meta_data = client_cfg.get('app_meta_data', {}) if client_cfg else {};
+    tags = HeaderBuilder(meta_data, 'dev').build_scripts();
+    return ''.join(f'    {tag}\n' for tag in tags);
 }

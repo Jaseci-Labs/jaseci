@@ -72,10 +72,7 @@ def:pub jc_reg_value(
     key_off: int,
     data_off: int,
     order_off: int
-) -> int {
-    _VALUES[index] = ValueRow(code, tag, child, key_off, data_off, order_off);
-    return 0;
-}
+) -> int;
 
 glob P_KEY: int = 0,
      P_CODE: int = 1,
@@ -146,6 +143,168 @@ def:pub jc_reg_consts(
     k_jac: int,
     k_shapes: int,
     k_arch: int
+) -> int;
+
+def:pub jc_reg_shape_roles(body_h: int, spec_h: int, acc_h: int) -> int;
+
+def jc_mz_shape_keys(probe: int);
+
+def:pub jc_reg_class(
+    tag: int, cls_h: int, size: int, tagged: int, is_node: int
+) -> int;
+
+def:pub jc_reg_field(
+    tag: int, key_h: int, code: int, off: int, aux_tag: int, enum_h: int, flags: int
+) -> int;
+
+def:pub jc_reg_default(tag: int, key_h: int, kind: int) -> int;
+
+def:pub jc_reg_edge(tag: int, cls_h: int) -> int;
+
+glob _HINTS: list[int] = [0, 0];
+
+def:pub jc_reg_hint_tags(srcdiag_tag: int, commentdata_tag: int) -> int;
+
+def hint_srcdiag -> int;
+
+def hint_commentdata -> int;
+
+def _ld64(addr: int) -> int;
+
+def _ld8(addr: int) -> int;
+
+def _tag_at(h: int) -> int;
+
+def _nlist_len(l: int) -> int;
+
+def _seq_element_tag(layout: int) -> int;
+
+def _plan_row(row: ClassRow, src: FieldRow, slot_default: int);
+
+def _build_plan(row: ClassRow);
+
+def:pub jc_reg_seal -> int;
+
+obj Mz {
+    has map: dict[int, int] = {},
+        q: list[int] = [],
+        q_hint: list[int] = [],
+        ref_o: list[int] = [],
+        ref_k: list[int] = [],
+        ref_t: list[int] = [],
+        lst_l: list[int] = [],
+        lst_i: list[int] = [],
+        lst_t: list[int] = [],
+        vis_o: list[int] = [],
+        nd_o: list[int] = [],
+        nd_lo: list[int] = [],
+        nd_mid: list[int] = [],
+        adj: list[int] = [],
+        strs: dict[int, int] = {},
+        skipped: int = 0,
+        containers: list[ContainerCopy] = [];
+}
+
+def _enqueue(m: Mz, h: int, hint: int);
+
+def _hash_order_extent(h: int, order: int) -> int;
+
+def _hashed(code: int) -> bool;
+
+def _container_order(h: int, row: ValueRow) -> int;
+
+def _container_extent(h: int, row: ValueRow, order: int) -> int;
+
+def _container_slot(row: ValueRow, order: int, i: int) -> int;
+
+def _container_items(h: int, row: ValueRow) -> int;
+
+def _enqueue_value(m: Mz, h: int, layout: int);
+
+def _str(m: Mz, p: int) -> int;
+
+def _copy_value(m: Mz, h: int, layout: int) -> int;
+
+def _defer_ref(m: Mz, o: int, k: int, t: int, hint: int, slot_default: int);
+
+def _set_fresh(o: int, k: int, v: int) -> None;
+
+def _set_default(o: int, k: int, kind: int);
+
+def _set_enum(o: int, k: int, enum_h: int, raw: int);
+
+def _copy_union(m: Mz, o: int, k: int, flags: int, slot_default: int, a: int) -> None;
+
+def _copy_list(m: Mz, o: int, k: int, hint: int, p: int);
+
+def _defer_container(
+    m: Mz, o: int, k: int, value: int, layout: int, slot_default: int
+);
+
+def _copy_seq(m: Mz, o: int, k: int, p: int, aux: int, flags: int, slot_default: int);
+
+def _str_is(p: int, word: int, n: int) -> bool;
+
+def _shape_value(p: int) -> int;
+
+def _copy_shapes(o: int, k: int, layout_id: int, slot_default: int, a: int);
+
+def _apply_plan(m: Mz, row: ClassRow, h: int, o: int);
+
+def _resolve_row(h: int, hint: int) -> int;
+
+def _visit(m: Mz, h: int, hint: int) -> None;
+
+def _record_adj(m: Mz, h: int, o: int);
+
+def _patch_refs(m: Mz);
+
+def _edge_dict(m: Mz, lo: int, hi: int, weak: bool) -> int;
+
+glob ANCHOR_TAG: int = 1;
+
+def _new_anchor(m: Mz, o: int) -> int;
+
+def _edge_lists(m: Mz, o: int, lo: int, mid: int, hi: int) -> None;
+
+def _all_edges(m: Mz);
+
+def _release(m: Mz);
+
+def _run(start_h: int, start_hint: int, do_edges: int) -> int;
+
+def:pub jc_mz_run(h: int) -> int;
+
+def:pub jc_mz_obj(h: int, hint: int) -> int;
+
+def:pub jc_mz_skipped -> int;
+
+impl jc_reg_value(
+    index: int,
+    code: int,
+    tag: int,
+    child: int,
+    key_off: int,
+    data_off: int,
+    order_off: int
+) -> int {
+    _VALUES[index] = ValueRow(code, tag, child, key_off, data_off, order_off);
+    return 0;
+}
+
+impl jc_reg_consts(
+    none_h: int,
+    true_h: int,
+    false_h: int,
+    empty_h: int,
+    s_none: int,
+    s_one: int,
+    s_many: int,
+    k_out: int,
+    k_in: int,
+    k_jac: int,
+    k_shapes: int,
+    k_arch: int
 ) -> int {
     _K.none_h = none_h;
     _K.true_h = true_h;
@@ -162,14 +321,14 @@ def:pub jc_reg_consts(
     return 0;
 }
 
-def:pub jc_reg_shape_roles(body_h: int, spec_h: int, acc_h: int) -> int {
+impl jc_reg_shape_roles(body_h: int, spec_h: int, acc_h: int) -> int {
     _K.body_h = body_h;
     _K.spec_h = spec_h;
     _K.acc_h = acc_h;
     return 0;
 }
 
-def jc_mz_shape_keys(probe: int) {
+impl jc_mz_shape_keys(probe: int) {
     if _K.shapes_layout not in _VALUES {
         return;
     }
@@ -193,9 +352,7 @@ def jc_mz_shape_keys(probe: int) {
     }
 }
 
-def:pub jc_reg_class(
-    tag: int, cls_h: int, size: int, tagged: int, is_node: int
-) -> int {
+impl jc_reg_class(tag: int, cls_h: int, size: int, tagged: int, is_node: int) -> int {
     _CLS[tag] = ClassRow(
         cls_h=cls_h,
         size=size,
@@ -209,7 +366,7 @@ def:pub jc_reg_class(
     return 0;
 }
 
-def:pub jc_reg_field(
+impl jc_reg_field(
     tag: int, key_h: int, code: int, off: int, aux_tag: int, enum_h: int, flags: int
 ) -> int {
     if tag not in _CLS {
@@ -227,7 +384,7 @@ def:pub jc_reg_field(
     return 0;
 }
 
-def:pub jc_reg_default(tag: int, key_h: int, kind: int) -> int {
+impl jc_reg_default(tag: int, key_h: int, kind: int) -> int {
     if tag not in _CLS {
         return 1;
     }
@@ -237,44 +394,42 @@ def:pub jc_reg_default(tag: int, key_h: int, kind: int) -> int {
     return 0;
 }
 
-def:pub jc_reg_edge(tag: int, cls_h: int) -> int {
+impl jc_reg_edge(tag: int, cls_h: int) -> int {
     _EDGE[tag] = cls_h;
     return 0;
 }
 
-glob _HINTS: list[int] = [0, 0];
-
-def:pub jc_reg_hint_tags(srcdiag_tag: int, commentdata_tag: int) -> int {
+impl jc_reg_hint_tags(srcdiag_tag: int, commentdata_tag: int) -> int {
     _HINTS[0] = srcdiag_tag;
     _HINTS[1] = commentdata_tag;
     return 0;
 }
 
-def hint_srcdiag -> int {
+impl hint_srcdiag -> int {
     return _HINTS[0];
 }
 
-def hint_commentdata -> int {
+impl hint_commentdata -> int {
     return _HINTS[1];
 }
 
-def _ld64(addr: int) -> int {
+impl _ld64(addr: int) -> int {
     return __mem_load_i64(addr);
 }
 
-def _ld8(addr: int) -> int {
+impl _ld8(addr: int) -> int {
     return (__mem_load_i64(addr & -8) >> ((addr & 7) * 8)) & 255;
 }
 
-def _tag_at(h: int) -> int {
+impl _tag_at(h: int) -> int {
     return _ld64(h + 8);
 }
 
-def _nlist_len(l: int) -> int {
+impl _nlist_len(l: int) -> int {
     return _ld64(l);
 }
 
-def _seq_element_tag(layout: int) -> int {
+impl _seq_element_tag(layout: int) -> int {
     if layout not in _VALUES {
         return 0;
     }
@@ -285,7 +440,7 @@ def _seq_element_tag(layout: int) -> int {
     return -1;
 }
 
-def _plan_row(row: ClassRow, src: FieldRow, slot_default: int) {
+impl _plan_row(row: ClassRow, src: FieldRow, slot_default: int) {
     aux = src.aux_tag;
     flags = src.flags;
     if src.code == CODE_NATLIST or src.code == CODE_OPTLIST {
@@ -305,7 +460,7 @@ def _plan_row(row: ClassRow, src: FieldRow, slot_default: int) {
     row.plan.append(slot_default);
 }
 
-def _build_plan(row: ClassRow) {
+impl _build_plan(row: ClassRow) {
     last: dict[int, int] = {};
     i = 0;
     for fr in row.rows {
@@ -343,68 +498,48 @@ def _build_plan(row: ClassRow) {
     }
 }
 
-def:pub jc_reg_seal -> int {
+impl jc_reg_seal -> int {
     for tag in _CLS {
         _build_plan(_CLS[tag]);
     }
     return 0;
 }
 
-obj Mz {
-    has map: dict[int, int] = {},
-        q: list[int] = [],
-        q_hint: list[int] = [],
-        ref_o: list[int] = [],
-        ref_k: list[int] = [],
-        ref_t: list[int] = [],
-        lst_l: list[int] = [],
-        lst_i: list[int] = [],
-        lst_t: list[int] = [],
-        vis_o: list[int] = [],
-        nd_o: list[int] = [],
-        nd_lo: list[int] = [],
-        nd_mid: list[int] = [],
-        adj: list[int] = [],
-        strs: dict[int, int] = {},
-        skipped: int = 0,
-        containers: list[ContainerCopy] = [];
-}
-
-def _enqueue(m: Mz, h: int, hint: int) {
+impl _enqueue(m: Mz, h: int, hint: int) {
     if h != 0 {
         m.q.append(h);
         m.q_hint.append(hint);
     }
 }
 
-def _hash_order_extent(h: int, order: int) -> int {
+impl _hash_order_extent(h: int, order: int) -> int {
     if order == 0 {
         return 0;
     }
     return _ld64(order + _ld64(h + 8) * 16);
 }
 
-def _hashed(code: int) -> bool {
+impl _hashed(code: int) -> bool {
     return code == CODE_NATDICT or code == CODE_NATSET;
 }
 
-def _container_order(h: int, row: ValueRow) -> int {
+impl _container_order(h: int, row: ValueRow) -> int {
     return _ld64(h + row.order_off) if _hashed(row.code) else 0;
 }
 
-def _container_extent(h: int, row: ValueRow, order: int) -> int {
+impl _container_extent(h: int, row: ValueRow, order: int) -> int {
     return _hash_order_extent(h, order) if _hashed(row.code) else _ld64(h);
 }
 
-def _container_slot(row: ValueRow, order: int, i: int) -> int {
+impl _container_slot(row: ValueRow, order: int, i: int) -> int {
     return _ld64(order + i * 8) if _hashed(row.code) else i;
 }
 
-def _container_items(h: int, row: ValueRow) -> int {
+impl _container_items(h: int, row: ValueRow) -> int {
     return _ld64(h + (row.key_off if row.code == CODE_NATSET else row.data_off));
 }
 
-def _enqueue_value(m: Mz, h: int, layout: int) {
+impl _enqueue_value(m: Mz, h: int, layout: int) {
     if h == 0 {
         return;
     }
@@ -423,7 +558,7 @@ def _enqueue_value(m: Mz, h: int, layout: int) {
     }
 }
 
-def _str(m: Mz, p: int) -> int {
+impl _str(m: Mz, p: int) -> int {
     if p in m.strs {
         s = m.strs[p];
         Py_IncRef(s);
@@ -437,7 +572,7 @@ def _str(m: Mz, p: int) -> int {
     return s;
 }
 
-def _copy_value(m: Mz, h: int, layout: int) -> int {
+impl _copy_value(m: Mz, h: int, layout: int) -> int {
     if h == 0 {
         Py_IncRef(_K.none_h);
         return _K.none_h;
@@ -484,7 +619,7 @@ def _copy_value(m: Mz, h: int, layout: int) -> int {
     return out;
 }
 
-def _defer_ref(m: Mz, o: int, k: int, t: int, hint: int, slot_default: int) {
+impl _defer_ref(m: Mz, o: int, k: int, t: int, hint: int, slot_default: int) {
     if slot_default >= 0 {
         done = m.map.get(t, -1);
         if done >= 0 {
@@ -499,7 +634,7 @@ def _defer_ref(m: Mz, o: int, k: int, t: int, hint: int, slot_default: int) {
     _enqueue(m, t, hint);
 }
 
-def _set_fresh(o: int, k: int, v: int) -> None {
+impl _set_fresh(o: int, k: int, v: int) -> None {
     if v == 0 {
         PyErr_Clear();
         PyObject_SetAttr(o, k, _K.none_h);
@@ -509,7 +644,7 @@ def _set_fresh(o: int, k: int, v: int) -> None {
     Py_DecRef(v);
 }
 
-def _set_default(o: int, k: int, kind: int) {
+impl _set_default(o: int, k: int, kind: int) {
     if kind == DEFAULT_LIST {
         _set_fresh(o, k, PyList_New(0));
     } elif kind == DEFAULT_DICT {
@@ -521,7 +656,7 @@ def _set_default(o: int, k: int, kind: int) {
     }
 }
 
-def _set_enum(o: int, k: int, enum_h: int, raw: int) {
+impl _set_enum(o: int, k: int, enum_h: int, raw: int) {
     member = 0;
     if enum_h != 0 {
         kk = PyLong_FromLongLong(raw);
@@ -531,7 +666,7 @@ def _set_enum(o: int, k: int, enum_h: int, raw: int) {
     PyObject_SetAttr(o, k, member if member != 0 else _K.none_h);
 }
 
-def _copy_union(m: Mz, o: int, k: int, flags: int, slot_default: int, a: int) -> None {
+impl _copy_union(m: Mz, o: int, k: int, flags: int, slot_default: int, a: int) -> None {
     kind = _ld8(a);
     pay = _ld64(a + 8);
     if kind == 7 {
@@ -553,7 +688,7 @@ def _copy_union(m: Mz, o: int, k: int, flags: int, slot_default: int, a: int) ->
     PyObject_SetAttr(o, k, _K.none_h);
 }
 
-def _copy_list(m: Mz, o: int, k: int, hint: int, p: int) {
+impl _copy_list(m: Mz, o: int, k: int, hint: int, p: int) {
     n = _nlist_len(p) if p != 0 else 0;
     pl = PyList_New(n);
     if pl == 0 {
@@ -583,7 +718,7 @@ def _copy_list(m: Mz, o: int, k: int, hint: int, p: int) {
     Py_DecRef(pl);
 }
 
-def _defer_container(
+impl _defer_container(
     m: Mz, o: int, k: int, value: int, layout: int, slot_default: int
 ) {
     if slot_default >= 0 {
@@ -593,7 +728,7 @@ def _defer_container(
     _enqueue_value(m, value, layout);
 }
 
-def _copy_seq(m: Mz, o: int, k: int, p: int, aux: int, flags: int, slot_default: int) {
+impl _copy_seq(m: Mz, o: int, k: int, p: int, aux: int, flags: int, slot_default: int) {
     if flags == 0 or p == 0 {
         _copy_list(m, o, k, aux if flags == 0 else 0, p);
     } else {
@@ -601,7 +736,7 @@ def _copy_seq(m: Mz, o: int, k: int, p: int, aux: int, flags: int, slot_default:
     }
 }
 
-def _str_is(p: int, word: int, n: int) -> bool {
+impl _str_is(p: int, word: int, n: int) -> bool {
     i = 0;
     while i <= n {
         if _ld8(p + i) != ((word >> (i * 8)) & 255) {
@@ -612,7 +747,7 @@ def _str_is(p: int, word: int, n: int) -> bool {
     return True;
 }
 
-def _shape_value(p: int) -> int {
+impl _shape_value(p: int) -> int {
     if p == 0 {
         return _K.s_none;
     }
@@ -625,7 +760,7 @@ def _shape_value(p: int) -> int {
     return _K.s_none;
 }
 
-def _copy_shapes(o: int, k: int, layout_id: int, slot_default: int, a: int) {
+impl _copy_shapes(o: int, k: int, layout_id: int, slot_default: int, a: int) {
     nd = _ld64(a + 8) if _ld8(a) != 0 else 0;
     if nd == 0 or layout_id not in _VALUES {
         _set_default(o, k, slot_default);
@@ -678,7 +813,7 @@ def _copy_shapes(o: int, k: int, layout_id: int, slot_default: int, a: int) {
     Py_DecRef(out);
 }
 
-def _apply_plan(m: Mz, row: ClassRow, h: int, o: int) {
+impl _apply_plan(m: Mz, row: ClassRow, h: int, o: int) {
     plan = row.plan;
     n = len(plan);
     i = 0;
@@ -758,7 +893,7 @@ def _apply_plan(m: Mz, row: ClassRow, h: int, o: int) {
     }
 }
 
-def _resolve_row(h: int, hint: int) -> int {
+impl _resolve_row(h: int, hint: int) -> int {
     if hint != 0 and hint in _CLS {
         hrow: ClassRow = _CLS[hint];
         if hrow.tagged == 0 {
@@ -775,7 +910,7 @@ def _resolve_row(h: int, hint: int) -> int {
     return 0;
 }
 
-def _visit(m: Mz, h: int, hint: int) -> None {
+impl _visit(m: Mz, h: int, hint: int) -> None {
     if h in m.map {
         return;
     }
@@ -801,7 +936,7 @@ def _visit(m: Mz, h: int, hint: int) -> None {
     }
 }
 
-def _record_adj(m: Mz, h: int, o: int) {
+impl _record_adj(m: Mz, h: int, o: int) {
     lo = len(m.adj);
     osp_adj_fill(h, DIR_OUT, m.adj);
     mid = len(m.adj);
@@ -820,7 +955,7 @@ def _record_adj(m: Mz, h: int, o: int) {
     }
 }
 
-def _patch_refs(m: Mz) {
+impl _patch_refs(m: Mz) {
     n = len(m.ref_o);
     i = 0;
     while i < n {
@@ -841,7 +976,7 @@ def _patch_refs(m: Mz) {
     }
 }
 
-def _edge_dict(m: Mz, lo: int, hi: int, weak: bool) -> int {
+impl _edge_dict(m: Mz, lo: int, hi: int, weak: bool) -> int {
     d = 0;
     cur_tag = 0;
     cur_pl = 0;
@@ -895,9 +1030,7 @@ def _edge_dict(m: Mz, lo: int, hi: int, weak: bool) -> int {
     return d;
 }
 
-glob ANCHOR_TAG: int = 1;
-
-def _new_anchor(m: Mz, o: int) -> int {
+impl _new_anchor(m: Mz, o: int) -> int {
     if ANCHOR_TAG not in _CLS {
         return PyObject_GetAttr(o, _K.k_jac);
     }
@@ -913,7 +1046,7 @@ def _new_anchor(m: Mz, o: int) -> int {
     return a;
 }
 
-def _edge_lists(m: Mz, o: int, lo: int, mid: int, hi: int) -> None {
+impl _edge_lists(m: Mz, o: int, lo: int, mid: int, hi: int) -> None {
     d_out = _edge_dict(m, lo, mid, False);
     d_in = _edge_dict(m, mid, hi, True);
     if d_out == 0 and d_in == 0 {
@@ -939,7 +1072,7 @@ def _edge_lists(m: Mz, o: int, lo: int, mid: int, hi: int) -> None {
     }
 }
 
-def _all_edges(m: Mz) {
+impl _all_edges(m: Mz) {
     n = len(m.nd_o);
     i = 0;
     while i < n {
@@ -949,7 +1082,7 @@ def _all_edges(m: Mz) {
     }
 }
 
-def _release(m: Mz) {
+impl _release(m: Mz) {
     for o in m.vis_o {
         Py_DecRef(o);
     }
@@ -958,7 +1091,7 @@ def _release(m: Mz) {
     }
 }
 
-def _run(start_h: int, start_hint: int, do_edges: int) -> int {
+impl _run(start_h: int, start_hint: int, do_edges: int) -> int {
     gc_was = PyGC_IsEnabled();
     if gc_was != 0 {
         PyGC_Disable();
@@ -1008,14 +1141,14 @@ def _run(start_h: int, start_hint: int, do_edges: int) -> int {
     return out;
 }
 
-def:pub jc_mz_run(h: int) -> int {
+impl jc_mz_run(h: int) -> int {
     return _run(h, 0, 1);
 }
 
-def:pub jc_mz_obj(h: int, hint: int) -> int {
+impl jc_mz_obj(h: int, hint: int) -> int {
     return _run(h, hint, 0);
 }
 
-def:pub jc_mz_skipped -> int {
+impl jc_mz_skipped -> int {
     return _STATS[0];
 }

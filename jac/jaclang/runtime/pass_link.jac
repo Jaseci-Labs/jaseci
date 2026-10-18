@@ -5,10 +5,7 @@ class GlobalCell {
     has namespace: dict[str, object],
         name: str;
 
-    def init(self: GlobalCell, namespace: dict[str, object], name: str) {
-        self.namespace = namespace;
-        self.name = name;
-    }
+    def init(self: GlobalCell, namespace: dict[str, object], name: str);
 
     has cell_contents: object {
         getter {
@@ -30,32 +27,43 @@ class PassLink {
     static has __slots__: tuple[str, ...] = ("cell", );
     has cell: (types.CellType | GlobalCell);
 
-    def init(self: PassLink, cell: (types.CellType | GlobalCell)) {
-        self.cell = cell;
-    }
+    def init(self: PassLink, cell: (types.CellType | GlobalCell));
+    static def of_local(probe: types.FunctionType) -> PassLink;
+    static def of_global(namespace: dict[str, object], name: str) -> PassLink;
+    def put(self: PassLink, value: object) -> object;
+    def detach(self: PassLink) -> None;
+}
 
-    static def of_local(probe: types.FunctionType) -> PassLink {
-        closure = probe.__closure__;
-        assert closure , "a pass link probe reads exactly one enclosing local";
-        return PassLink(closure[0]);
-    }
+impl GlobalCell.init(self: GlobalCell, namespace: dict[str, object], name: str) {
+    self.namespace = namespace;
+    self.name = name;
+}
 
-    static def of_global(namespace: dict[str, object], name: str) -> PassLink {
-        return PassLink(GlobalCell(namespace, name));
-    }
+impl PassLink.init(self: PassLink, cell: (types.CellType | GlobalCell)) {
+    self.cell = cell;
+}
 
-    def put(self: PassLink, value: object) -> object {
-        self.cell.cell_contents = value;
-        return value;
-    }
+impl PassLink.of_local(probe: types.FunctionType) -> PassLink {
+    closure = probe.__closure__;
+    assert closure , "a pass link probe reads exactly one enclosing local";
+    return PassLink(closure[0]);
+}
 
-    def detach(self: PassLink) -> None {
-        try {
-            value = self.cell.cell_contents;
-        } except (ValueError, NameError) {
-            self.cell = types.CellType();
-            return;
-        }
-        self.cell = types.CellType(value);
+impl PassLink.of_global(namespace: dict[str, object], name: str) -> PassLink {
+    return PassLink(GlobalCell(namespace, name));
+}
+
+impl PassLink.put(self: PassLink, value: object) -> object {
+    self.cell.cell_contents = value;
+    return value;
+}
+
+impl PassLink.detach(self: PassLink) -> None {
+    try {
+        value = self.cell.cell_contents;
+    } except (ValueError, NameError) {
+        self.cell = types.CellType();
+        return;
     }
+    self.cell = types.CellType(value);
 }

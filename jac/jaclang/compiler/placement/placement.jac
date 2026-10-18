@@ -36,12 +36,7 @@ obj NativeBlockerScan {
         deps: list[str] = [],
         dep_imports: list[tuple[uni.Import, str]] = [];
 
-    def first -> str {
-        if self.module {
-            return self.module;
-        }
-        return self.sites[0][1] if self.sites else '';
-    }
+    def first -> str;
 }
 
 obj ElementSummary {
@@ -72,7 +67,84 @@ obj PlacementSummary {
         elements: list[ElementSummary] = [];
 }
 
-def element_display_name(stmt: uni.UniNode) -> str {
+def element_display_name(stmt: uni.UniNode) -> str;
+
+def _endpoint_evidence(stmt: uni.UniNode) -> str;
+
+def project_kind_name(module: (uni.Module | None)) -> str;
+
+def project_has_server(module: (uni.Module | None)) -> bool;
+
+def _resolve_import_path(nd: (uni.ModulePath | uni.ModuleItem)) -> (str | None);
+
+def _fill_import_facts(es: ElementSummary, imp: uni.Import);
+
+def module_has_root_access(stmt: uni.UniNode) -> bool;
+
+def _element_reqs(stmt: uni.UniNode) -> list[list[str]];
+
+def _summary_top_element(module: uni.Module, nd: uni.UniNode) -> (uni.UniNode | None);
+
+def _element_ref_ids(module: uni.Module, elem: uni.UniNode) -> set[int];
+
+def _escape_kind(nm: uni.Name, elem: uni.UniNode) -> str;
+
+def _element_escape_edges(
+    module: uni.Module, elem: uni.UniNode
+) -> list[tuple[int, str]];
+
+def _element_glob_write_ids(module: uni.Module, elem: uni.UniNode) -> set[int];
+
+def _is_filter_field_name(nm: uni.Name) -> bool;
+
+def _names_a_member(nm: uni.Name) -> bool;
+
+def _references_browser_seed_global(elem: uni.UniNode) -> str;
+
+def module_anchor_reasons(module: uni.Module) -> list[str];
+
+def _erased_only_import(imp: uni.Import) -> bool;
+
+def native_blocker_scan(
+    module: uni.Module,
+    base_dir: str,
+    allow_pub: bool = False,
+    hold_exempt: bool = False
+) -> NativeBlockerScan;
+
+def scan_native_blockers(
+    module: uni.Module,
+    base_dir: str,
+    allow_pub: bool = False,
+    hold_exempt: bool = False
+) -> tuple[str, list[str]];
+
+def summarize_module(
+    module: uni.Module, with_refs: bool = True, prog: (JacProgram | None) = None
+) -> PlacementSummary;
+
+def summary_store(prog: JacProgram) -> dict[str, PlacementSummary];
+
+def record_decided(prog: JacProgram, module: uni.Module);
+
+def jac_import_targets(module: uni.Module) -> list[str];
+
+def record_placement_evidence(prog: JacProgram, mod_path: str, index: int, note: str);
+
+def placement_evidence_for(prog: JacProgram, mod_path: str, index: int) -> list[str];
+
+def get_module_summary(
+    module: uni.Module, prog: JacProgram, with_refs: bool = True
+) -> PlacementSummary;
+
+impl NativeBlockerScan.first -> str {
+    if self.module {
+        return self.module;
+    }
+    return self.sites[0][1] if self.sites else '';
+}
+
+impl element_display_name(stmt: uni.UniNode) -> str {
     if isinstance(stmt, uni.Ability) and isinstance(stmt.name_ref, uni.Name) {
         return stmt.name_ref.value;
     }
@@ -108,7 +180,7 @@ def element_display_name(stmt: uni.UniNode) -> str {
     return f"<{type(stmt).__name__}>";
 }
 
-def _endpoint_evidence(stmt: uni.UniNode) -> str {
+impl _endpoint_evidence(stmt: uni.UniNode) -> str {
     if not isinstance(stmt, (uni.Ability, uni.GlobalVars, uni.Archetype, uni.Enum)) {
         return '';
     }
@@ -124,7 +196,7 @@ def _endpoint_evidence(stmt: uni.UniNode) -> str {
     return '';
 }
 
-def project_kind_name(module: (uni.Module | None)) -> str {
+impl project_kind_name(module: (uni.Module | None)) -> str {
     if module is None {
         return '';
     }
@@ -135,12 +207,12 @@ def project_kind_name(module: (uni.Module | None)) -> str {
     return config_project_kind(module.loc.mod_path or '') if module.loc else '';
 }
 
-def project_has_server(module: (uni.Module | None)) -> bool {
+impl project_has_server(module: (uni.Module | None)) -> bool {
     import from jaclang.project.app_kinds { kind_codespace }
     return kind_codespace(project_kind_name(module)) != 'client';
 }
 
-def _resolve_import_path(nd: (uni.ModulePath | uni.ModuleItem)) -> (str | None) {
+impl _resolve_import_path(nd: (uni.ModulePath | uni.ModuleItem)) -> (str | None) {
     path = '';
     try {
         if isinstance(nd, uni.ModulePath) {
@@ -157,7 +229,7 @@ def _resolve_import_path(nd: (uni.ModulePath | uni.ModuleItem)) -> (str | None) 
     return None;
 }
 
-def _fill_import_facts(es: ElementSummary, imp: uni.Import) {
+impl _fill_import_facts(es: ElementSummary, imp: uni.Import) {
     es.import_eco = imp.ecosystem;
     es.sv_import = imp.is_service_import;
     if imp.from_loc is not None {
@@ -186,7 +258,7 @@ def _fill_import_facts(es: ElementSummary, imp: uni.Import) {
     }
 }
 
-def module_has_root_access(stmt: uni.UniNode) -> bool {
+impl module_has_root_access(stmt: uni.UniNode) -> bool {
     mod = stmt
         if isinstance(stmt, uni.Module)
         else stmt.find_parent_of_type(uni.Module);
@@ -209,7 +281,7 @@ def module_has_root_access(stmt: uni.UniNode) -> bool {
     return found;
 }
 
-def _element_reqs(stmt: uni.UniNode) -> list[list[str]] {
+impl _element_reqs(stmt: uni.UniNode) -> list[list[str]] {
     reqs: list[list[str]] = [];
     if isinstance(stmt, uni.Import) {
         eco = stmt.ecosystem;
@@ -261,7 +333,7 @@ def _element_reqs(stmt: uni.UniNode) -> list[list[str]] {
     return reqs;
 }
 
-def _summary_top_element(module: uni.Module, nd: uni.UniNode) -> (uni.UniNode | None) {
+impl _summary_top_element(module: uni.Module, nd: uni.UniNode) -> (uni.UniNode | None) {
     cur: (uni.UniNode | None) = nd;
     while (cur is not None and cur.parent is not module) {
         cur = cur.parent;
@@ -269,7 +341,7 @@ def _summary_top_element(module: uni.Module, nd: uni.UniNode) -> (uni.UniNode | 
     return cur;
 }
 
-def _element_ref_ids(module: uni.Module, elem: uni.UniNode) -> set[int] {
+impl _element_ref_ids(module: uni.Module, elem: uni.UniNode) -> set[int] {
     refs: set[int] = set();
     for nm in elem.get_all_sub_nodes(uni.Name) {
         par = nm.parent;
@@ -297,7 +369,7 @@ def _element_ref_ids(module: uni.Module, elem: uni.UniNode) -> set[int] {
     return refs;
 }
 
-def _escape_kind(nm: uni.Name, elem: uni.UniNode) -> str {
+impl _escape_kind(nm: uni.Name, elem: uni.UniNode) -> str {
     prev: uni.UniNode = nm;
     cur = nm.parent;
     while cur is not None and cur is not elem {
@@ -325,7 +397,7 @@ def _escape_kind(nm: uni.Name, elem: uni.UniNode) -> str {
     return '';
 }
 
-def _element_escape_edges(
+impl _element_escape_edges(
     module: uni.Module, elem: uni.UniNode
 ) -> list[tuple[int, str]] {
     edges: list[tuple[int, str]] = [];
@@ -366,7 +438,7 @@ def _element_escape_edges(
     return edges;
 }
 
-def _element_glob_write_ids(module: uni.Module, elem: uni.UniNode) -> set[int] {
+impl _element_glob_write_ids(module: uni.Module, elem: uni.UniNode) -> set[int] {
     writes: set[int] = set();
     for assign in elem.get_all_sub_nodes(uni.Assignment) {
         for tgt in assign.target {
@@ -392,7 +464,7 @@ def _element_glob_write_ids(module: uni.Module, elem: uni.UniNode) -> set[int] {
     return writes;
 }
 
-def _is_filter_field_name(nm: uni.Name) -> bool {
+impl _is_filter_field_name(nm: uni.Name) -> bool {
     par = nm.parent;
     if isinstance(par, uni.FilterCompr) {
         return par.f_type is not nm;
@@ -412,7 +484,7 @@ def _is_filter_field_name(nm: uni.Name) -> bool {
     );
 }
 
-def _names_a_member(nm: uni.Name) -> bool {
+impl _names_a_member(nm: uni.Name) -> bool {
     par = nm.parent;
     if isinstance(par, uni.AtomTrailer) and par.is_attr and par.right is nm {
         return True;
@@ -430,7 +502,7 @@ def _names_a_member(nm: uni.Name) -> bool {
     return _is_filter_field_name(nm);
 }
 
-def _references_browser_seed_global(elem: uni.UniNode) -> str {
+impl _references_browser_seed_global(elem: uni.UniNode) -> str {
     import from jaclang.compiler.frontend.constant { BROWSER_SEED_GLOBALS }
     for nm in elem.get_all_sub_nodes(uni.Name) {
         if nm.value not in BROWSER_SEED_GLOBALS {
@@ -450,7 +522,7 @@ def _references_browser_seed_global(elem: uni.UniNode) -> str {
     return '';
 }
 
-def module_anchor_reasons(module: uni.Module) -> list[str] {
+impl module_anchor_reasons(module: uni.Module) -> list[str] {
     import from jaclang.compiler.placement.placement_pins { config_module_pin }
     reasons: list[str] = [];
     mod_path = module.loc.mod_path or '';
@@ -501,7 +573,7 @@ def module_anchor_reasons(module: uni.Module) -> list[str] {
     return reasons;
 }
 
-def _erased_only_import(imp: uni.Import) -> bool {
+impl _erased_only_import(imp: uni.Import) -> bool {
     import from jaclang.compiler.frontend.codeinfo { native_erased_import_names }
     if imp.from_loc is None or imp.is_absorb {
         return False;
@@ -516,7 +588,7 @@ def _erased_only_import(imp: uni.Import) -> bool {
     return native_erased_import_names(imp.from_loc.dot_path_str, names);
 }
 
-def native_blocker_scan(
+impl native_blocker_scan(
     module: uni.Module,
     base_dir: str,
     allow_pub: bool = False,
@@ -694,7 +766,7 @@ def native_blocker_scan(
     return scan;
 }
 
-def scan_native_blockers(
+impl scan_native_blockers(
     module: uni.Module,
     base_dir: str,
     allow_pub: bool = False,
@@ -704,7 +776,7 @@ def scan_native_blockers(
     return (scan.first(), scan.deps);
 }
 
-def summarize_module(
+impl summarize_module(
     module: uni.Module, with_refs: bool = True, prog: (JacProgram | None) = None
 ) -> PlacementSummary {
     ps = PlacementSummary();
@@ -784,11 +856,11 @@ def summarize_module(
     return ps;
 }
 
-def summary_store(prog: JacProgram) -> dict[str, PlacementSummary] {
+impl summary_store(prog: JacProgram) -> dict[str, PlacementSummary] {
     return prog.analysis.placement_summaries;
 }
 
-def record_decided(prog: JacProgram, module: uni.Module) {
+impl record_decided(prog: JacProgram, module: uni.Module) {
     if module.loc is None or not module.loc.mod_path {
         return;
     }
@@ -798,7 +870,7 @@ def record_decided(prog: JacProgram, module: uni.Module) {
     }
 }
 
-def jac_import_targets(module: uni.Module) -> list[str] {
+impl jac_import_targets(module: uni.Module) -> list[str] {
     targets: list[str] = [];
     for imp in module.get_all_sub_nodes(uni.Import) {
         nodes: list[(uni.ModulePath | uni.ModuleItem)] = [];
@@ -823,7 +895,7 @@ def jac_import_targets(module: uni.Module) -> list[str] {
     return targets;
 }
 
-def record_placement_evidence(prog: JacProgram, mod_path: str, index: int, note: str) {
+impl record_placement_evidence(prog: JacProgram, mod_path: str, index: int, note: str) {
     evidence = prog.analysis.placement_evidence;
     key = f"{os.path.abspath(mod_path)}::{index}";
     notes = evidence.get(key);
@@ -836,13 +908,13 @@ def record_placement_evidence(prog: JacProgram, mod_path: str, index: int, note:
     }
 }
 
-def placement_evidence_for(prog: JacProgram, mod_path: str, index: int) -> list[str] {
+impl placement_evidence_for(prog: JacProgram, mod_path: str, index: int) -> list[str] {
     return prog.analysis.placement_evidence.get(
         f"{os.path.abspath(mod_path)}::{index}", []
     );
 }
 
-def get_module_summary(
+impl get_module_summary(
     module: uni.Module, prog: JacProgram, with_refs: bool = True
 ) -> PlacementSummary {
     store = prog.analysis.placement_summaries;

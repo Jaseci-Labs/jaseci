@@ -10,6 +10,8 @@ with entry {
     }
 }
 
-def require_google_cloud_storage {
+def require_google_cloud_storage;
+
+impl require_google_cloud_storage {
     require_optional("google.cloud.storage", "storage.gcs");
 }

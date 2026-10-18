@@ -67,7 +67,16 @@ glob _PRIM_NAMES: frozenset[str] = frozenset(
      _ANY_NAMES: frozenset[str] = frozenset({'any', 'unknown', 'this'}),
      _VOID_NAMES: frozenset[str] = frozenset({'void', 'undefined', 'null'});
 
-def _tokenize(src: str) -> (list[tuple[(str, str)]] | None) {
+def _tokenize(src: str) -> (list[tuple[(str, str)]] | None);
+
+def parse_dts(source: str) -> (dict[str, TsDecl] | None);
+
+def _parse_dts_inner(source: str) -> (dict[str, TsDecl] | None);
+
+
+def ts_decl_binding_kind(decl: TsDecl, decls: dict[str, TsDecl]) -> BindingKind;
+
+impl _tokenize(src: str) -> (list[tuple[(str, str)]] | None) {
     toks: list[tuple[(str, str)]] = [];
     i = 0;
     n = len(src);
@@ -180,7 +189,7 @@ def _tokenize(src: str) -> (list[tuple[(str, str)]] | None) {
     return toks;
 }
 
-def parse_dts(source: str) -> (dict[str, TsDecl] | None) {
+impl parse_dts(source: str) -> (dict[str, TsDecl] | None) {
     try {
         return _parse_dts_inner(source);
     } except Exception {
@@ -188,7 +197,7 @@ def parse_dts(source: str) -> (dict[str, TsDecl] | None) {
     }
 }
 
-def _parse_dts_inner(source: str) -> (dict[str, TsDecl] | None) {
+impl _parse_dts_inner(source: str) -> (dict[str, TsDecl] | None) {
     toks = _tokenize(source);
     if toks is None {
         return None;
@@ -1185,7 +1194,7 @@ def _parse_dts_inner(source: str) -> (dict[str, TsDecl] | None) {
 }
 
 
-def ts_decl_binding_kind(decl: TsDecl, decls: dict[str, TsDecl]) -> BindingKind {
+impl ts_decl_binding_kind(decl: TsDecl, decls: dict[str, TsDecl]) -> BindingKind {
     cur = decl;
     seen: set[int] = set();
     while id(cur) not in seen {

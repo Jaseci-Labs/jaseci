@@ -25,29 +25,96 @@ glob TYPE_SYSTEM_ROOTS: tuple[str, ...] = (
      _OPENED_FROM: list[CatalogOrigin] = [],
      _ORIGIN: list[CatalogOrigin] = [];
 
-def catalog_origin -> (CatalogOrigin | None) {
+def catalog_origin -> (CatalogOrigin | None);
+
+def _opened(path: str, offset: int, length: int);
+
+def jaclang_pkg_dir -> str;
+
+def typeshed_stdlib_dir(pkg_dir: str) -> str;
+
+def jac_internal_stub_dir(pkg_dir: str) -> str;
+
+def _digest_files(pkg_dir: str) -> list[str];
+
+def type_system_digest(pkg_dir: (str | None) = None) -> str;
+
+def catalog_key(pkg_dir: (str | None) = None) -> str;
+
+def bundled_catalog_path(pkg_dir: str) -> str;
+
+def dev_catalog_path(pkg_dir: str) -> str;
+
+def _open_file(path: str, pkg_dir: str) -> StubCatalog | None;
+
+def _open_region(
+    exe: str, offset: int, length: int, pkg_dir: str
+) -> StubCatalog | None;
+
+def _region_probe(exe: str, source: Source, pkg: str, check_key: bool) -> Probe;
+
+def _file_probe(path: str, source: Source, pkg: str, check_key: bool) -> Probe;
+
+obj StubcatArtifact(Artifact) {
+    has name: str = "stubcat",
+        kind: ArtifactKind = ArtifactKind.ACCELERATOR,
+        release: ReleasePolicy = ReleasePolicy.REQUIRED,
+        summary: str = "the stub catalog (pre-resolved typeshed types)",
+        floor: str = "parsing the typeshed stubs",
+        requires: list[str] = ["typeshed"];
+
+    override def probe_sealed -> (Probe | None);
+    override def probe_checkout -> Probe;
+    override def probe_kit -> Probe;
+    override def checkout_path -> str;
+    override def build(log: Callable[[str], None], force: bool, exact: bool);
+}
+
+obj TypeshedArtifact(Artifact) {
+    has name: str = "typeshed",
+        kind: ArtifactKind = ArtifactKind.CAPABILITY,
+        release: ReleasePolicy = ReleasePolicy.REQUIRED,
+        summary: str = "the vendored typeshed stdlib stubs";
+
+    override def probe_sealed -> (Probe | None);
+    override def probe_checkout -> Probe;
+    override def checkout_path -> str;
+    override def build(log: Callable[[str], None], force: bool, exact: bool);
+}
+
+def _typeshed_probe(source: Source, check_pin: bool) -> Probe;
+
+def _read_trimmed(path: str) -> str;
+
+def _publish(cat: StubCatalog | None) -> StubCatalog | None;
+
+def open_catalog -> StubCatalog | None;
+
+def reset_catalog_cache;
+
+impl catalog_origin -> (CatalogOrigin | None) {
     return _ORIGIN[0] if _ORIGIN else None;
 }
 
-def _opened(path: str, offset: int, length: int) {
+impl _opened(path: str, offset: int, length: int) {
     _OPENED_FROM.clear();
     _OPENED_FROM.append(CatalogOrigin(path=path, offset=offset, length=length));
 }
 
-def jaclang_pkg_dir -> str {
+impl jaclang_pkg_dir -> str {
     import jaclang;
     return os.path.dirname(os.path.realpath(str(jaclang.__file__)));
 }
 
-def typeshed_stdlib_dir(pkg_dir: str) -> str {
+impl typeshed_stdlib_dir(pkg_dir: str) -> str {
     return os.path.join(pkg_dir, "vendor", "typeshed", "stdlib");
 }
 
-def jac_internal_stub_dir(pkg_dir: str) -> str {
+impl jac_internal_stub_dir(pkg_dir: str) -> str {
     return os.path.join(pkg_dir, "compiler", "types");
 }
 
-def _digest_files(pkg_dir: str) -> list[str] {
+impl _digest_files(pkg_dir: str) -> list[str] {
     rels: list[str] = [];
     for root_entry in TYPE_SYSTEM_ROOTS {
         target = os.path.join(pkg_dir, *root_entry.split("/"));
@@ -77,7 +144,7 @@ def _digest_files(pkg_dir: str) -> list[str] {
     return sorted(rels);
 }
 
-def type_system_digest(pkg_dir: (str | None) = None) -> str {
+impl type_system_digest(pkg_dir: (str | None) = None) -> str {
     if _DIGEST_CACHE {
         return _DIGEST_CACHE[0];
     }
@@ -98,7 +165,7 @@ def type_system_digest(pkg_dir: (str | None) = None) -> str {
     return digest;
 }
 
-def catalog_key(pkg_dir: (str | None) = None) -> str {
+impl catalog_key(pkg_dir: (str | None) = None) -> str {
     h = hashlib.sha256();
     h.update(f"stubcat-format={FORMAT_VERSION}".encode());
     h.update(f"|python={sys.version_info.major}.{sys.version_info.minor}".encode());
@@ -107,15 +174,15 @@ def catalog_key(pkg_dir: (str | None) = None) -> str {
     return h.hexdigest()[:32];
 }
 
-def bundled_catalog_path(pkg_dir: str) -> str {
+impl bundled_catalog_path(pkg_dir: str) -> str {
     return os.path.join(pkg_dir, "_precompiled", "stubcat.bin");
 }
 
-def dev_catalog_path(pkg_dir: str) -> str {
+impl dev_catalog_path(pkg_dir: str) -> str {
     return str(bucket("jir-stubcat").path() / (catalog_key(pkg_dir) + ".bin"));
 }
 
-def _open_file(path: str, pkg_dir: str) -> StubCatalog | None {
+impl _open_file(path: str, pkg_dir: str) -> StubCatalog | None {
     try {
         found = open_catalog_file(path, pkg_dir);
         if found is not None {
@@ -128,7 +195,7 @@ def _open_file(path: str, pkg_dir: str) -> StubCatalog | None {
     }
 }
 
-def _open_region(
+impl _open_region(
     exe: str, offset: int, length: int, pkg_dir: str
 ) -> StubCatalog | None {
     try {
@@ -143,7 +210,7 @@ def _open_region(
     }
 }
 
-def _region_probe(exe: str, source: Source, pkg: str, check_key: bool) -> Probe {
+impl _region_probe(exe: str, source: Source, pkg: str, check_key: bool) -> Probe {
     region = stubcat_region(exe);
     if region is None {
         return Probe.missing();
@@ -160,7 +227,7 @@ def _region_probe(exe: str, source: Source, pkg: str, check_key: bool) -> Probe 
     );
 }
 
-def _file_probe(path: str, source: Source, pkg: str, check_key: bool) -> Probe {
+impl _file_probe(path: str, source: Source, pkg: str, check_key: bool) -> Probe {
     if not os.path.isfile(path) {
         return Probe.missing();
     }
@@ -176,93 +243,77 @@ def _file_probe(path: str, source: Source, pkg: str, check_key: bool) -> Probe {
     );
 }
 
-obj StubcatArtifact(Artifact) {
-    has name: str = "stubcat",
-        kind: ArtifactKind = ArtifactKind.ACCELERATOR,
-        release: ReleasePolicy = ReleasePolicy.REQUIRED,
-        summary: str = "the stub catalog (pre-resolved typeshed types)",
-        floor: str = "parsing the typeshed stubs",
-        requires: list[str] = ["typeshed"];
-
-    override def probe_sealed -> (Probe | None) {
-        if sealed._jaclang_image() is None {
-            return None;
-        }
-
-        pkg = jaclang_pkg_dir();
-        embedded = _region_probe(running_executable(), Source.SEALED, pkg, False);
-        if embedded.found is not None {
-            return embedded;
-        }
-        return _file_probe(bundled_catalog_path(pkg), Source.SEALED, pkg, False);
+impl StubcatArtifact.probe_sealed -> (Probe | None) {
+    if sealed._jaclang_image() is None {
+        return None;
     }
 
-    override def probe_checkout -> Probe {
-        pkg = jaclang_pkg_dir();
-        found = _file_probe(dev_catalog_path(pkg), Source.CHECKOUT, pkg, False);
-        if found.found is not None {
-            import from pathlib { Path }
-            import from jaclang.cache.registry { bucket }
-            bucket("jir-stubcat").note_hit(Path(found.found.path));
-        }
-        return found;
+    pkg = jaclang_pkg_dir();
+    embedded = _region_probe(running_executable(), Source.SEALED, pkg, False);
+    if embedded.found is not None {
+        return embedded;
     }
-
-    override def probe_kit -> Probe {
-        if kit_image() is None {
-            return Probe.missing("this process runs on no kit");
-        }
-
-        pkg = jaclang_pkg_dir();
-        embedded = _region_probe(running_executable(), Source.KIT, pkg, True);
-        if embedded.found is not None or not embedded.absent {
-            return embedded;
-        }
-        return _file_probe(
-            kit_path(os.path.join("_precompiled", "stubcat.bin")), Source.KIT, pkg, True
-        );
-    }
-
-    override def checkout_path -> str {
-        return dev_catalog_path(jaclang_pkg_dir());
-    }
-
-    override def build(log: Callable[[str], None], force: bool, exact: bool) {
-        pkg = jaclang_pkg_dir();
-        out = dev_catalog_path(pkg);
-        log(f"  building the stub catalog into {out}");
-        build_catalog(out, pkg_dir=pkg, quiet=True);
-        maybe_sweep("jir-stubcat");
-    }
+    return _file_probe(bundled_catalog_path(pkg), Source.SEALED, pkg, False);
 }
 
-obj TypeshedArtifact(Artifact) {
-    has name: str = "typeshed",
-        kind: ArtifactKind = ArtifactKind.CAPABILITY,
-        release: ReleasePolicy = ReleasePolicy.REQUIRED,
-        summary: str = "the vendored typeshed stdlib stubs";
-
-    override def probe_sealed -> (Probe | None) {
-        if sealed._jaclang_image() is None {
-            return None;
-        }
-        return _typeshed_probe(Source.SEALED, False);
+impl StubcatArtifact.probe_checkout -> Probe {
+    pkg = jaclang_pkg_dir();
+    found = _file_probe(dev_catalog_path(pkg), Source.CHECKOUT, pkg, False);
+    if found.found is not None {
+        import from pathlib { Path }
+        import from jaclang.cache.registry { bucket }
+        bucket("jir-stubcat").note_hit(Path(found.found.path));
     }
-
-    override def probe_checkout -> Probe {
-        return _typeshed_probe(Source.CHECKOUT, True);
-    }
-
-    override def checkout_path -> str {
-        return typeshed_stdlib_dir(jaclang_pkg_dir());
-    }
-
-    override def build(log: Callable[[str], None], force: bool, exact: bool) {
-        fetch_typeshed(os.path.dirname(jaclang_pkg_dir()));
-    }
+    return found;
 }
 
-def _typeshed_probe(source: Source, check_pin: bool) -> Probe {
+impl StubcatArtifact.probe_kit -> Probe {
+    if kit_image() is None {
+        return Probe.missing("this process runs on no kit");
+    }
+
+    pkg = jaclang_pkg_dir();
+    embedded = _region_probe(running_executable(), Source.KIT, pkg, True);
+    if embedded.found is not None or not embedded.absent {
+        return embedded;
+    }
+    return _file_probe(
+        kit_path(os.path.join("_precompiled", "stubcat.bin")), Source.KIT, pkg, True
+    );
+}
+
+impl StubcatArtifact.checkout_path -> str {
+    return dev_catalog_path(jaclang_pkg_dir());
+}
+
+impl StubcatArtifact.build(log: Callable[[str], None], force: bool, exact: bool) {
+    pkg = jaclang_pkg_dir();
+    out = dev_catalog_path(pkg);
+    log(f"  building the stub catalog into {out}");
+    build_catalog(out, pkg_dir=pkg, quiet=True);
+    maybe_sweep("jir-stubcat");
+}
+
+impl TypeshedArtifact.probe_sealed -> (Probe | None) {
+    if sealed._jaclang_image() is None {
+        return None;
+    }
+    return _typeshed_probe(Source.SEALED, False);
+}
+
+impl TypeshedArtifact.probe_checkout -> Probe {
+    return _typeshed_probe(Source.CHECKOUT, True);
+}
+
+impl TypeshedArtifact.checkout_path -> str {
+    return typeshed_stdlib_dir(jaclang_pkg_dir());
+}
+
+impl TypeshedArtifact.build(log: Callable[[str], None], force: bool, exact: bool) {
+    fetch_typeshed(os.path.dirname(jaclang_pkg_dir()));
+}
+
+impl _typeshed_probe(source: Source, check_pin: bool) -> Probe {
     stdlib = typeshed_stdlib_dir(jaclang_pkg_dir());
     if not os.path.isfile(os.path.join(stdlib, "builtins.pyi")) {
         return Probe.missing();
@@ -277,7 +328,7 @@ def _typeshed_probe(source: Source, check_pin: bool) -> Probe {
     return Probe.hit(source, stdlib, {});
 }
 
-def _read_trimmed(path: str) -> str {
+impl _read_trimmed(path: str) -> str {
     try {
         with open(path, encoding="utf-8") as f {
             return f.read().strip();
@@ -287,7 +338,7 @@ def _read_trimmed(path: str) -> str {
     }
 }
 
-def _publish(cat: StubCatalog | None) -> StubCatalog | None {
+impl _publish(cat: StubCatalog | None) -> StubCatalog | None {
     if cat is not None and not _CATALOG_CACHE {
         _CATALOG_CACHE.append(cat);
         set_active(cat);
@@ -297,7 +348,7 @@ def _publish(cat: StubCatalog | None) -> StubCatalog | None {
     return cat;
 }
 
-def open_catalog -> StubCatalog | None {
+impl open_catalog -> StubCatalog | None {
     if _CATALOG_CACHE {
         return _CATALOG_CACHE[0];
     }
@@ -318,7 +369,7 @@ def open_catalog -> StubCatalog | None {
     return _publish(found.record.get("catalog"));
 }
 
-def reset_catalog_cache {
+impl reset_catalog_cache {
     _CATALOG_CACHE.clear();
     _DIGEST_CACHE.clear();
     _ORIGIN.clear();

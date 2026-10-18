@@ -49,10 +49,7 @@ impl ProjectHost.check_settings(target_app: str) -> CheckSettings {
     return check_settings_of(cfg.check);
 }
 
-def package_name_of(name: str) -> str {
-    import from jaclang.project.modresolver { is_scoped_package_name }
-    return name if is_scoped_package_name(name) else "";
-}
+def package_name_of(name: str) -> str;
 
 impl ProjectHost.project_facts(path: str) -> (ProjectFacts | None) {
     import from pathlib { Path }
@@ -374,31 +371,7 @@ impl ProjectHost.native_fact(kind: str, key: str) -> str {
     return host_native_fact(kind, key);
 }
 
-def _git_ignored_under(root_dir: str) -> list[str] {
-    import os;
-    import from jaclang.project.textio { drop_git_ignored }
-    paths: list[str] = [];
-    for (directory, dirs, files) in os.walk(root_dir) {
-        dirs[:] = [
-            d
-            for d in dirs
-            if not d.startswith(".") and d not in ("node_modules", "__pycache__")
-        ];
-        for name in files {
-            if name.endswith(".jac") {
-                paths.append(os.path.realpath(os.path.join(directory, name)));
-            }
-        }
-    }
-    kept = set(drop_git_ignored(paths, cwd=root_dir));
-    return sorted(
-        [
-            p
-            for p in paths
-            if p not in kept
-        ]
-    );
-}
+def _git_ignored_under(root_dir: str) -> list[str];
 
 impl ProjectHost.native_units_for(program: JacProgram) -> NativeUnitRegistry {
     if program._natives is None {
@@ -479,20 +452,7 @@ impl ProjectHost.wiring_file(path: str) -> (str | None) {
     return arch_file_for(path);
 }
 
-def _wiring_records_path(digest: str) -> str {
-    import hashlib;
-    import os;
-    import from jaclang.compiler.driver.jir {
-        get_jir_cache_dir,
-        running_compiler_digest
-    }
-    name = hashlib.sha256(
-        (digest + "\x00" + running_compiler_digest()).encode()
-    ).hexdigest();
-    return os.path.join(
-        str(get_jir_cache_dir()), "wiring-spec", name[:2], name + ".txt"
-    );
-}
+def _wiring_records_path(digest: str) -> str;
 
 impl ProjectHost.wiring_records(digest: str) -> str {
     try {
@@ -810,7 +770,7 @@ impl ProjectHost.prepare_interface(
     return bool(self.iface_registry_for(program).prepare_interface(path, module));
 }
 
-impl ProjectHost.collect_released_memory{
+impl ProjectHost.collect_released_memory {
     if self._collect_budget.due() {
         import gc;
         gc.collect();
@@ -881,4 +841,50 @@ impl ProjectHost.default_target_triple -> str {
     } except Exception {
         return "";
     }
+}
+
+impl package_name_of(name: str) -> str {
+    import from jaclang.project.modresolver { is_scoped_package_name }
+    return name if is_scoped_package_name(name) else "";
+}
+
+impl _git_ignored_under(root_dir: str) -> list[str] {
+    import os;
+    import from jaclang.project.textio { drop_git_ignored }
+    paths: list[str] = [];
+    for (directory, dirs, files) in os.walk(root_dir) {
+        dirs[:] = [
+            d
+            for d in dirs
+            if not d.startswith(".") and d not in ("node_modules", "__pycache__")
+        ];
+        for name in files {
+            if name.endswith(".jac") {
+                paths.append(os.path.realpath(os.path.join(directory, name)));
+            }
+        }
+    }
+    kept = set(drop_git_ignored(paths, cwd=root_dir));
+    return sorted(
+        [
+            p
+            for p in paths
+            if p not in kept
+        ]
+    );
+}
+
+impl _wiring_records_path(digest: str) -> str {
+    import hashlib;
+    import os;
+    import from jaclang.compiler.driver.jir {
+        get_jir_cache_dir,
+        running_compiler_digest
+    }
+    name = hashlib.sha256(
+        (digest + "\x00" + running_compiler_digest()).encode()
+    ).hexdigest();
+    return os.path.join(
+        str(get_jir_cache_dir()), "wiring-spec", name[:2], name + ".txt"
+    );
 }

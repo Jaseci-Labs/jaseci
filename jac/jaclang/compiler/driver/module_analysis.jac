@@ -25,57 +25,14 @@ obj ModuleAnalysis {
         placement_only: bool = False,
         session: (SessionHooks | None) = None;
 
-    def postinit {
-        self.module = Module.make_stub();
-    }
-
-    def parse {
-        existing = self.program.mod.hub.get(os.path.realpath(self.path));
-        built = self.program.analysis.peek(existing) if existing is not None else None;
-        if self.source is None
-            and not self.program.internal
-            and existing is not None
-            and not existing.stub_only
-            and not existing.parse_failed
-            and self.program.is_hub_entry_fresh(os.path.realpath(self.path))
-            and built is not None
-            and built.done {
-            self.module = existing;
-            return;
-        }
-        keep_str = self.source
-            if self.source is not None
-            else active_host().read_source(self.path);
-        errors_before = len(self.program.errors_had);
-        self.module = self.program.parse_source(
-            keep_str, self.path, cancel_token=self.options.cancel_token
-        );
-        self.parse_failed = len(self.program.errors_had) > errors_before;
-        self.program.ingest_comptime_producers(self.module, self.path);
-    }
-
+    def postinit;
+    def parse;
     def require(
         product: CompilationProduct, request: (ProductRequest | None) = None
-    ) -> bool {
-        import from jaclang.compiler.driver.pipeline { require }
-        return require(
-            self.program,
-            self.module,
-            product,
-            cancel_token=self.options.cancel_token,
-            request=request
-        );
-    }
+    ) -> bool;
 
-    def ready(product: CompilationProduct) -> bool {
-        import from jaclang.compiler.driver.pipeline { product_ready }
-        return product_ready(self.program, self.module, product);
-    }
-
-    def has_full_ir -> bool {
-        return not self.options.symtab_ir_only
-            and self.program.analysis.provides(self.module, AnalysisFact.CFG_SUCC);
-    }
+    def ready(product: CompilationProduct) -> bool;
+    def has_full_ir -> bool;
 }
 
 obj PlanStep {
@@ -84,19 +41,103 @@ obj PlanStep {
         run: Callable[[ModuleAnalysis], None];
 }
 
-def cancelled(options: CompileOptions) -> bool {
+def cancelled(options: CompileOptions) -> bool;
+
+def always(task: ModuleAnalysis) -> bool;
+
+def run_parse(task: ModuleAnalysis);
+
+def run_head(task: ModuleAnalysis);
+
+def admits_placement(task: ModuleAnalysis) -> bool;
+
+def run_placement(task: ModuleAnalysis);
+
+def run_analysis(task: ModuleAnalysis);
+
+def admits_boundaries(task: ModuleAnalysis) -> bool;
+
+def run_boundaries(task: ModuleAnalysis);
+
+glob ANALYSIS_PLAN: tuple[PlanStep, ...] = (
+         PlanStep(name="PARSE", admit=always, run=run_parse),
+         PlanStep(name="IR", admit=always, run=run_head),
+         PlanStep(name="PLACEMENT", admit=admits_placement, run=run_placement),
+         PlanStep(name="ANALYSIS", admit=always, run=run_analysis),
+         PlanStep(name="BOUNDARIES", admit=admits_boundaries, run=run_boundaries)
+     );
+
+def run_plan(task: ModuleAnalysis, steps: tuple[PlanStep, ...]);
+
+def analyze_module(
+    program: JacProgram, path: str, options: CompileOptions, source: str | None = None
+) -> ModuleAnalysis;
+
+impl ModuleAnalysis.postinit {
+    self.module = Module.make_stub();
+}
+
+impl ModuleAnalysis.parse {
+    existing = self.program.mod.hub.get(os.path.realpath(self.path));
+    built = self.program.analysis.peek(existing) if existing is not None else None;
+    if self.source is None
+        and not self.program.internal
+        and existing is not None
+        and not existing.stub_only
+        and not existing.parse_failed
+        and self.program.is_hub_entry_fresh(os.path.realpath(self.path))
+        and built is not None
+        and built.done {
+        self.module = existing;
+        return;
+    }
+    keep_str = self.source
+        if self.source is not None
+        else active_host().read_source(self.path);
+    errors_before = len(self.program.errors_had);
+    self.module = self.program.parse_source(
+        keep_str, self.path, cancel_token=self.options.cancel_token
+    );
+    self.parse_failed = len(self.program.errors_had) > errors_before;
+    self.program.ingest_comptime_producers(self.module, self.path);
+}
+
+impl ModuleAnalysis.require(
+    product: CompilationProduct, request: (ProductRequest | None) = None
+) -> bool {
+    import from jaclang.compiler.driver.pipeline { require }
+    return require(
+        self.program,
+        self.module,
+        product,
+        cancel_token=self.options.cancel_token,
+        request=request
+    );
+}
+
+impl ModuleAnalysis.ready(product: CompilationProduct) -> bool {
+    import from jaclang.compiler.driver.pipeline { product_ready }
+    return product_ready(self.program, self.module, product);
+}
+
+impl ModuleAnalysis.has_full_ir -> bool {
+    return not self.options.symtab_ir_only
+        and self.program.analysis.provides(self.module, AnalysisFact.CFG_SUCC);
+}
+
+impl cancelled(options: CompileOptions) -> bool {
     return options.cancel_token is not None and options.cancel_token.is_set();
 }
 
-def always(task: ModuleAnalysis) -> bool {
+impl always(task: ModuleAnalysis) -> bool {
     return True;
 }
 
-def run_parse(task: ModuleAnalysis) {
+impl run_parse(task: ModuleAnalysis) {
     task.parse();
 }
 
-def run_head(task: ModuleAnalysis) {
+impl run_head(task: ModuleAnalysis) {
     task.module_path = os.path.normpath(task.path);
     before = task.program.count_module_blocking_errors(task.module_path);
     if task.options.symtab_ir_only {
@@ -109,15 +150,15 @@ def run_head(task: ModuleAnalysis) {
     task.blocked = task.program.count_module_blocking_errors(task.module_path) > before;
 }
 
-def admits_placement(task: ModuleAnalysis) -> bool {
+impl admits_placement(task: ModuleAnalysis) -> bool {
     return not task.options.symtab_ir_only and not task.blocked;
 }
 
-def run_placement(task: ModuleAnalysis) {
+impl run_placement(task: ModuleAnalysis) {
     task.require(CompilationProduct.PLACEMENT);
 }
 
-def run_analysis(task: ModuleAnalysis) {
+impl run_analysis(task: ModuleAnalysis) {
     import from jaclang.compiler.frontend.constant { CodeContext as _CodeCtx }
     program = task.program;
     module = task.module;
@@ -177,25 +218,17 @@ def run_analysis(task: ModuleAnalysis) {
         and module.declares_codespace(_CodeCtx.NATIVE, path_hint=task.path);
 }
 
-def admits_boundaries(task: ModuleAnalysis) -> bool {
+impl admits_boundaries(task: ModuleAnalysis) -> bool {
     return not task.parse_failed
         and not task.blocked
         and not task.options.symtab_ir_only;
 }
 
-def run_boundaries(task: ModuleAnalysis) {
+impl run_boundaries(task: ModuleAnalysis) {
     task.require(CompilationProduct.BOUNDARIES);
 }
 
-glob ANALYSIS_PLAN: tuple[PlanStep, ...] = (
-         PlanStep(name="PARSE", admit=always, run=run_parse),
-         PlanStep(name="IR", admit=always, run=run_head),
-         PlanStep(name="PLACEMENT", admit=admits_placement, run=run_placement),
-         PlanStep(name="ANALYSIS", admit=always, run=run_analysis),
-         PlanStep(name="BOUNDARIES", admit=admits_boundaries, run=run_boundaries)
-     );
-
-def run_plan(task: ModuleAnalysis, steps: tuple[PlanStep, ...]) {
+impl run_plan(task: ModuleAnalysis, steps: tuple[PlanStep, ...]) {
     times = task.program.analysis.phase_time;
     for step in steps {
         if cancelled(task.options) {
@@ -213,7 +246,7 @@ def run_plan(task: ModuleAnalysis, steps: tuple[PlanStep, ...]) {
     }
 }
 
-def analyze_module(
+impl analyze_module(
     program: JacProgram, path: str, options: CompileOptions, source: str | None = None
 ) -> ModuleAnalysis {
     program.analysis.capability_notes.pop(os.path.realpath(path), None);

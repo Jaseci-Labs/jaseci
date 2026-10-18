@@ -180,7 +180,27 @@ glob NATIVE_SCOPE: tuple[NativeScopeEntry, ...] = (
      _SCOPE_SUFFIX_CACHE: list[str] = [],
      _SCOPE_SUFFIX_GEN: list[int] = [-1];
 
-def package_host_edge(mod_path: str) -> bool {
+def package_host_edge(mod_path: str) -> bool;
+
+def scope_allows_inferred_path(mod_path: str) -> bool;
+
+def binds_bare_arch_names(mod_path: str) -> bool;
+
+def scope_modules -> list[str];
+
+def kernel_root_module -> str;
+
+def native_scope_path_suffixes -> list[str];
+
+def in_native_scope_path(mod_path: str) -> bool;
+
+def scope_module_path(module: str) -> str;
+
+def native_scope_paths -> list[str];
+
+def kernel_root_path -> str;
+
+impl package_host_edge(mod_path: str) -> bool {
     import from jaclang.compiler.frontend.codeinfo { native_unit_identity }
     identity = native_unit_identity(mod_path);
     if not identity.startswith("jaclang/") or identity.startswith("jaclang/runtime/") {
@@ -194,12 +214,12 @@ def package_host_edge(mod_path: str) -> bool {
         and not native_unit(mod_path, native_unit_compile=True);
 }
 
-def scope_allows_inferred_path(mod_path: str) -> bool {
+impl scope_allows_inferred_path(mod_path: str) -> bool {
     import from jaclang.compiler.frontend.codeinfo { native_unit_compile_active }
     return not native_unit_compile_active() or not package_host_edge(mod_path);
 }
 
-def binds_bare_arch_names(mod_path: str) -> bool {
+impl binds_bare_arch_names(mod_path: str) -> bool {
     import from jaclang.compiler.kernel_target { target_package_rel }
     import from jaclang.compiler.frontend.codeinfo { kernel_unit_rels }
     rel = target_package_rel(mod_path) if mod_path else None;
@@ -221,7 +241,7 @@ def binds_bare_arch_names(mod_path: str) -> bool {
     return host.is_native_only_source(rel) or host.is_native_lowered_source(rel);
 }
 
-def scope_modules -> list[str] {
+impl scope_modules -> list[str] {
     import from jaclang.compiler.kernel_target { active_kernel_target }
     spec = active_kernel_target();
     if spec is not None {
@@ -230,13 +250,13 @@ def scope_modules -> list[str] {
     return [e.module for e in NATIVE_SCOPE];
 }
 
-def kernel_root_module -> str {
+impl kernel_root_module -> str {
     import from jaclang.compiler.kernel_target { active_kernel_target }
     spec = active_kernel_target();
     return spec.root_module if spec is not None else KERNEL_ROOT_MODULE;
 }
 
-def native_scope_path_suffixes -> list[str] {
+impl native_scope_path_suffixes -> list[str] {
     import from jaclang.compiler.kernel_target { kernel_target_generation }
     gen = kernel_target_generation();
     if _SCOPE_SUFFIX_GEN[0] != gen {
@@ -250,7 +270,7 @@ def native_scope_path_suffixes -> list[str] {
     return _SCOPE_SUFFIX_CACHE;
 }
 
-def in_native_scope_path(mod_path: str) -> bool {
+impl in_native_scope_path(mod_path: str) -> bool {
     if not mod_path {
         return False;
     }
@@ -263,16 +283,16 @@ def in_native_scope_path(mod_path: str) -> bool {
     return False;
 }
 
-def scope_module_path(module: str) -> str {
+impl scope_module_path(module: str) -> str {
     import from jaclang.compiler.kernel_target { target_pkg_root }
     rel = module.replace("jaclang.", "", 1).replace(".", os.sep) + ".jac";
     return os.path.join(target_pkg_root(), rel);
 }
 
-def native_scope_paths -> list[str] {
+impl native_scope_paths -> list[str] {
     return [scope_module_path(m) for m in scope_modules()];
 }
 
-def kernel_root_path -> str {
+impl kernel_root_path -> str {
     return scope_module_path(kernel_root_module());
 }

@@ -1,4 +1,58 @@
-def _zeros(n: int) -> list[int] {
+def _zeros(n: int) -> list[int];
+
+
+def _str_gt(a: str, b: str) -> bool;
+
+
+def _popular_flags(b: str, autojunk: bool) -> list[int];
+
+
+def _find_longest_match(
+    a: str, b: str, alo: int, ahi: int, blo: int, bhi: int, popular: list[int]
+) -> list[int];
+
+
+def _matching_blocks(a: str, b: str, autojunk: bool) -> list[list[int]];
+
+
+def _block_lt(x: list[int], y: list[int]) -> bool;
+
+
+def _sort_blocks(blocks: list[list[int]]);
+
+
+def _ratio(a: str, b: str, autojunk: bool) -> float;
+
+
+obj:pub Match {
+    has a: int = 0,
+        b: int = 0,
+        size: int = 0;
+}
+
+
+obj:pub SequenceMatcher {
+    has a: str = "",
+        b: str = "",
+        _isjunk: any = None,
+        _autojunk: bool = True;
+
+    def init(isjunk: any = None, a: str = "", b: str = "", autojunk: bool = True);
+    def set_seq1(a: str);
+    def set_seq2(b: str);
+    def get_matching_blocks -> list[Match];
+    def ratio -> float;
+}
+
+
+def _before(ra: float, wa: str, rb: float, wb: str) -> bool;
+
+
+def:pub get_close_matches(
+    word: str, possibilities: list[str], n: int = 3, cutoff: float = 0.6
+) -> list[str];
+
+impl _zeros(n: int) -> list[int] {
     out: list[int] = [];
     i: int = 0;
     while i < n {
@@ -9,7 +63,7 @@ def _zeros(n: int) -> list[int] {
 }
 
 
-def _str_gt(a: str, b: str) -> bool {
+impl _str_gt(a: str, b: str) -> bool {
     m: int = len(a);
     if len(b) < m {
         m = len(b);
@@ -27,7 +81,7 @@ def _str_gt(a: str, b: str) -> bool {
 }
 
 
-def _popular_flags(b: str, autojunk: bool) -> list[int] {
+impl _popular_flags(b: str, autojunk: bool) -> list[int] {
     n: int = len(b);
     flags: list[int] = _zeros(n);
     if not autojunk or n < 200 {
@@ -52,7 +106,7 @@ def _popular_flags(b: str, autojunk: bool) -> list[int] {
 }
 
 
-def _find_longest_match(
+impl _find_longest_match(
     a: str, b: str, alo: int, ahi: int, blo: int, bhi: int, popular: list[int]
 ) -> list[int] {
     besti: int = alo;
@@ -98,7 +152,7 @@ def _find_longest_match(
 }
 
 
-def _matching_blocks(a: str, b: str, autojunk: bool) -> list[list[int]] {
+impl _matching_blocks(a: str, b: str, autojunk: bool) -> list[list[int]] {
     la: int = len(a);
     lb: int = len(b);
     popular: list[int] = _popular_flags(b, autojunk);
@@ -154,7 +208,7 @@ def _matching_blocks(a: str, b: str, autojunk: bool) -> list[list[int]] {
 }
 
 
-def _block_lt(x: list[int], y: list[int]) -> bool {
+impl _block_lt(x: list[int], y: list[int]) -> bool {
     if x[0] != y[0] {
         return x[0] < y[0];
     }
@@ -165,7 +219,7 @@ def _block_lt(x: list[int], y: list[int]) -> bool {
 }
 
 
-def _sort_blocks(blocks: list[list[int]]) {
+impl _sort_blocks(blocks: list[list[int]]) {
     a: int = 1;
     n: int = len(blocks);
     while a < n {
@@ -181,7 +235,7 @@ def _sort_blocks(blocks: list[list[int]]) {
 }
 
 
-def _ratio(a: str, b: str, autojunk: bool) -> float {
+impl _ratio(a: str, b: str, autojunk: bool) -> float {
     blocks: list[list[int]] = _matching_blocks(a, b, autojunk);
     m: int = 0;
     idx: int = 0;
@@ -197,52 +251,40 @@ def _ratio(a: str, b: str, autojunk: bool) -> float {
 }
 
 
-obj:pub Match {
-    has a: int = 0,
-        b: int = 0,
-        size: int = 0;
+impl SequenceMatcher.init(
+    isjunk: any = None, a: str = "", b: str = "", autojunk: bool = True
+) {
+    self._isjunk = isjunk;
+    self.a = a;
+    self.b = b;
+    self._autojunk = autojunk;
+}
+
+impl SequenceMatcher.set_seq1(a: str) {
+    self.a = a;
+}
+
+impl SequenceMatcher.set_seq2(b: str) {
+    self.b = b;
+}
+
+impl SequenceMatcher.get_matching_blocks -> list[Match] {
+    raw: list[list[int]] = _matching_blocks(self.a, self.b, self._autojunk);
+    out: list[Match] = [];
+    idx: int = 0;
+    while idx < len(raw) {
+        out.append(Match(a=raw[idx][0], b=raw[idx][1], size=raw[idx][2]));
+        idx += 1;
+    }
+    return out;
+}
+
+impl SequenceMatcher.ratio -> float {
+    return _ratio(self.a, self.b, self._autojunk);
 }
 
 
-obj:pub SequenceMatcher {
-    has a: str = "",
-        b: str = "",
-        _isjunk: any = None,
-        _autojunk: bool = True;
-
-    def init(isjunk: any = None, a: str = "", b: str = "", autojunk: bool = True) {
-        self._isjunk = isjunk;
-        self.a = a;
-        self.b = b;
-        self._autojunk = autojunk;
-    }
-
-    def set_seq1(a: str) {
-        self.a = a;
-    }
-
-    def set_seq2(b: str) {
-        self.b = b;
-    }
-
-    def get_matching_blocks -> list[Match] {
-        raw: list[list[int]] = _matching_blocks(self.a, self.b, self._autojunk);
-        out: list[Match] = [];
-        idx: int = 0;
-        while idx < len(raw) {
-            out.append(Match(a=raw[idx][0], b=raw[idx][1], size=raw[idx][2]));
-            idx += 1;
-        }
-        return out;
-    }
-
-    def ratio -> float {
-        return _ratio(self.a, self.b, self._autojunk);
-    }
-}
-
-
-def _before(ra: float, wa: str, rb: float, wb: str) -> bool {
+impl _before(ra: float, wa: str, rb: float, wb: str) -> bool {
     if ra > rb {
         return True;
     }
@@ -253,7 +295,7 @@ def _before(ra: float, wa: str, rb: float, wb: str) -> bool {
 }
 
 
-def:pub get_close_matches(
+impl get_close_matches(
     word: str, possibilities: list[str], n: int = 3, cutoff: float = 0.6
 ) -> list[str] {
     if n <= 0 {

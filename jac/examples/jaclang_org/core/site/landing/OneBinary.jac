@@ -37,7 +37,9 @@ glob _REPLACED: list[str] = [
 
      ];
 
-def:pub OneBinary -> JsxElement {
+def:pub OneBinary -> JsxElement;
+
+impl OneBinary -> JsxElement {
     return
         <section
             className="border-y border-border/60 bg-card/30 pt-16 pb-16 sm:pt-24 sm:pb-24"

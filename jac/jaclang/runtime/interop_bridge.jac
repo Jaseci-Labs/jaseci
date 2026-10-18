@@ -22,41 +22,10 @@ obj NativeLibrary {
         callbacks: list[object] = [],
         functions: dict[str, Callable] = {};
 
-    def handle -> ctypes.CDLL {
-        if self.library is None {
-            self.library = ctypes.CDLL(self.path);
-        }
-        return self.library;
-    }
-
-    def get_function_address(name: str) -> int {
-        address = ctypes.cast(getattr(self.handle(), name), ctypes.c_void_p).value;
-        if address is None {
-            raise RuntimeError(f'Native symbol {name!r} has no address in {self.path}');
-        }
-        return address;
-    }
-
-    def register_symbol(name: str, address: int) {
-        bind_function = getattr(self.handle(), '__jac_bind_' + name);
-        bind_function.argtypes = [ctypes.c_void_p];
-        bind_function.restype = None;
-        bind_function(address);
-    }
-
-    def initialize -> None {
-        if self.initialized {
-            return;
-        }
-        register_py_callbacks(
-            self.bindings, self.functions, self.callbacks, self.register_symbol
-        );
-        initializer = getattr(self.handle(), '__jac_shared_init');
-        initializer.argtypes = [];
-        initializer.restype = None;
-        initializer();
-        self.initialized = True;
-    }
+    def handle -> ctypes.CDLL;
+    def get_function_address(name: str) -> int;
+    def register_symbol(name: str, address: int);
+    def initialize -> None;
 }
 
 glob logger = logging.getLogger(__name__),
@@ -70,7 +39,77 @@ glob logger = logging.getLogger(__name__),
      _pyb_class_memo: dict[(tuple[any, ...], type)] = {},
      _pyb_module_memo: dict[(str, object)] = {};
 
-def _pyb_import_module(mod_path: str) -> object {
+def _pyb_import_module(mod_path: str) -> object;
+
+def _pyb_class_for(
+    mod_path: str, base_name: str, cls_name: str, suppress_postinit: bool
+) -> type;
+
+def _pyb_instantiate(
+    mod_path: str,
+    base_name: str,
+    cls_name: str,
+    kwargs: dict[str, any],
+    suppress_postinit: bool,
+    owner_addr: int
+) -> object;
+
+def _pyb_shadow_of(owner_addr: int) -> object;
+
+def _pyb_drop_owner(owner_addr: int);
+
+def _pyb_super_call(
+    shadow: object,
+    anchor_name: str,
+    meth_names: tuple[str, ...],
+    args: tuple[any, ...],
+    kwargs: dict[str, any]
+) -> object;
+
+def register_py_callbacks(
+    bindings: Iterable[CallbackSignature],
+    py_func_table: dict[(str, Callable[(..., object)])],
+    callbacks_list: list[object],
+    register_symbol: Callable[[str, int], None]
+);
+
+impl NativeLibrary.handle -> ctypes.CDLL {
+    if self.library is None {
+        self.library = ctypes.CDLL(self.path);
+    }
+    return self.library;
+}
+
+impl NativeLibrary.get_function_address(name: str) -> int {
+    address = ctypes.cast(getattr(self.handle(), name), ctypes.c_void_p).value;
+    if address is None {
+        raise RuntimeError(f'Native symbol {name!r} has no address in {self.path}');
+    }
+    return address;
+}
+
+impl NativeLibrary.register_symbol(name: str, address: int) {
+    bind_function = getattr(self.handle(), '__jac_bind_' + name);
+    bind_function.argtypes = [ctypes.c_void_p];
+    bind_function.restype = None;
+    bind_function(address);
+}
+
+impl NativeLibrary.initialize -> None {
+    if self.initialized {
+        return;
+    }
+    register_py_callbacks(
+        self.bindings, self.functions, self.callbacks, self.register_symbol
+    );
+    initializer = getattr(self.handle(), '__jac_shared_init');
+    initializer.argtypes = [];
+    initializer.restype = None;
+    initializer();
+    self.initialized = True;
+}
+
+impl _pyb_import_module(mod_path: str) -> object {
     import os;
     key = os.path.abspath(mod_path);
     cached = _pyb_module_memo.get(key);
@@ -94,7 +133,7 @@ def _pyb_import_module(mod_path: str) -> object {
     return mod;
 }
 
-def _pyb_class_for(
+impl _pyb_class_for(
     mod_path: str, base_name: str, cls_name: str, suppress_postinit: bool
 ) -> type {
     key = (mod_path, base_name, cls_name, suppress_postinit, );
@@ -120,7 +159,7 @@ def _pyb_class_for(
     return cls;
 }
 
-def _pyb_instantiate(
+impl _pyb_instantiate(
     mod_path: str,
     base_name: str,
     cls_name: str,
@@ -134,7 +173,7 @@ def _pyb_instantiate(
     return shadow;
 }
 
-def _pyb_shadow_of(owner_addr: int) -> object {
+impl _pyb_shadow_of(owner_addr: int) -> object {
     shadow = _pyb_shadows.get(owner_addr);
     if shadow is None {
         raise RuntimeError(
@@ -144,11 +183,11 @@ def _pyb_shadow_of(owner_addr: int) -> object {
     return shadow;
 }
 
-def _pyb_drop_owner(owner_addr: int) {
+impl _pyb_drop_owner(owner_addr: int) {
     _pyb_shadows.pop(owner_addr, None);
 }
 
-def _pyb_super_call(
+impl _pyb_super_call(
     shadow: object,
     anchor_name: str,
     meth_names: tuple[str, ...],
@@ -176,7 +215,7 @@ def _pyb_super_call(
     raise AttributeError(f"{anchor_name} defines none of {meth_names}");
 }
 
-def register_py_callbacks(
+impl register_py_callbacks(
     bindings: Iterable[CallbackSignature],
     py_func_table: dict[(str, Callable[(..., object)])],
     callbacks_list: list[object],

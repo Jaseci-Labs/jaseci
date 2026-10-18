@@ -21,7 +21,69 @@ class KernelLoadError(SystemExit) {
     static has stops_command: bool = True;
 }
 
-def kernel_lib_name -> str {
+def kernel_lib_name -> str;
+
+def source_tree_kernel_path -> str;
+
+def read_sidecar(lib_path: str) -> (dict[str, any] | None);
+
+def sealed_link_refusal(record: dict[str, any], sidecar: dict[str, any]) -> str;
+
+def _from_sealed_image -> (ResolvedKernel | None);
+
+def kernel_options -> CompileOptions;
+
+def kernel_plan(
+    prog: (JacProgram | None) = None,
+    mode: str = "",
+    target: (KernelTarget | None) = None
+) -> LinkPlan;
+
+def _sha256_file(path: str) -> str;
+
+def _unit_label(path: str) -> str;
+
+def unit_drift(
+    sidecar: dict[str, any], recorded: dict[str, any], units: list[str]
+) -> list[str];
+
+def _inspect(
+    lib_path: str, expected_sha: str = ""
+) -> tuple[(dict[str, any] | None), list[str]];
+
+
+def _bundled_kernel -> tuple[str, dict[str, any]] | None;
+
+def _probe(lib_path: str, source: Source, expected_sha: str = "") -> Probe;
+
+obj KernelArtifact(Artifact) {
+    has name: str = "kernel",
+        kind: ArtifactKind = ArtifactKind.ACCELERATOR,
+        release: ReleasePolicy = ReleasePolicy.REQUIRED,
+        summary: str = "the native compiler kernel",
+        floor: str = "the bytecode compiler",
+        requires: list[str] = ["llvm-shim", "stubcat"],
+        consumes: list[str] = ["stubcat"];
+
+    override def unavailable_reason -> str;
+    override def probe_sealed -> (Probe | None);
+    override def probe_checkout -> Probe;
+    override def probe_kit -> Probe;
+    override def checkout_path -> str;
+    override def build(log: Callable[[str], None], force: bool, exact: bool);
+}
+
+def refuse_unloadable;
+
+def resolve_kernel -> (ResolvedKernel | None);
+
+def build_kernel(
+    dst: str = "",
+    log: (Callable[[str], None] | None) = None,
+    link_mode: str = KERNEL_DEV_LINK_MODE
+) -> LinkResult;
+
+impl kernel_lib_name -> str {
     if sys.platform == "darwin" {
         return "libjac_compiler.dylib";
     }
@@ -31,11 +93,11 @@ def kernel_lib_name -> str {
     return "libjac_compiler.so";
 }
 
-def source_tree_kernel_path -> str {
+impl source_tree_kernel_path -> str {
     return os.path.join(jaclang_pkg_root(), "compiler", kernel_lib_name());
 }
 
-def read_sidecar(lib_path: str) -> (dict[str, any] | None) {
+impl read_sidecar(lib_path: str) -> (dict[str, any] | None) {
     data: any = None;
     try {
         with open(lib_path + LAYOUT_SIDECAR_SUFFIX, "r", encoding="utf-8") as f {
@@ -50,7 +112,7 @@ def read_sidecar(lib_path: str) -> (dict[str, any] | None) {
     return data;
 }
 
-def sealed_link_refusal(record: dict[str, any], sidecar: dict[str, any]) -> str {
+impl sealed_link_refusal(record: dict[str, any], sidecar: dict[str, any]) -> str {
     mode = str(record.get("mode", SEALED_LINK_MODE));
     linked = str(sidecar.get("link_mode", SEALED_LINK_MODE));
     if linked != mode {
@@ -62,7 +124,7 @@ def sealed_link_refusal(record: dict[str, any], sidecar: dict[str, any]) -> str 
     return f"a sealed image carries a {SEALED_LINK_MODE} link, not a {mode} link";
 }
 
-def _from_sealed_image -> (ResolvedKernel | None) {
+impl _from_sealed_image -> (ResolvedKernel | None) {
     image = sealed._jaclang_image();
     if image is None {
         return None;
@@ -104,7 +166,7 @@ def _from_sealed_image -> (ResolvedKernel | None) {
     );
 }
 
-def kernel_options -> CompileOptions {
+impl kernel_options -> CompileOptions {
     return CompileOptions(
         aot_mode=True,
         native_require=[],
@@ -131,7 +193,7 @@ def kernel_options -> CompileOptions {
     );
 }
 
-def kernel_plan(
+impl kernel_plan(
     prog: (JacProgram | None) = None,
     mode: str = "",
     target: (KernelTarget | None) = None
@@ -142,7 +204,7 @@ def kernel_plan(
     return build_link_plan(program, [root_path], options, mode=mode, native_unit=True);
 }
 
-def _sha256_file(path: str) -> str {
+impl _sha256_file(path: str) -> str {
     h = hashlib.sha256();
     with open(path, "rb") as f {
         while True {
@@ -156,7 +218,7 @@ def _sha256_file(path: str) -> str {
     return h.hexdigest();
 }
 
-def _unit_label(path: str) -> str {
+impl _unit_label(path: str) -> str {
     try {
         return os.path.relpath(path, os.path.dirname(jaclang_pkg_root()));
     } except ValueError {
@@ -164,7 +226,7 @@ def _unit_label(path: str) -> str {
     }
 }
 
-def unit_drift(
+impl unit_drift(
     sidecar: dict[str, any], recorded: dict[str, any], units: list[str]
 ) -> list[str] {
     options = kernel_options();
@@ -212,7 +274,7 @@ def unit_drift(
     return drift;
 }
 
-def _inspect(
+impl _inspect(
     lib_path: str, expected_sha: str = ""
 ) -> tuple[(dict[str, any] | None), list[str]] {
     sidecar = read_sidecar(lib_path);
@@ -238,7 +300,7 @@ def _inspect(
 }
 
 
-def _bundled_kernel -> tuple[str, dict[str, any]] | None {
+impl _bundled_kernel -> tuple[str, dict[str, any]] | None {
     found = kit_image();
     if found is None {
         return None;
@@ -251,7 +313,7 @@ def _bundled_kernel -> tuple[str, dict[str, any]] | None {
     return (os.path.join(site_pkg, str(record.get("path", ""))), dict(record));
 }
 
-def _probe(lib_path: str, source: Source, expected_sha: str = "") -> Probe {
+impl _probe(lib_path: str, source: Source, expected_sha: str = "") -> Probe {
     (sidecar, drift) = _inspect(lib_path, expected_sha=expected_sha);
     if sidecar is not None {
         return Probe.hit(source, lib_path, sidecar);
@@ -259,62 +321,52 @@ def _probe(lib_path: str, source: Source, expected_sha: str = "") -> Probe {
     return Probe.missing() if drift == [NOT_BUILT] else Probe.stale(drift);
 }
 
-obj KernelArtifact(Artifact) {
-    has name: str = "kernel",
-        kind: ArtifactKind = ArtifactKind.ACCELERATOR,
-        release: ReleasePolicy = ReleasePolicy.REQUIRED,
-        summary: str = "the native compiler kernel",
-        floor: str = "the bytecode compiler",
-        requires: list[str] = ["llvm-shim", "stubcat"],
-        consumes: list[str] = ["stubcat"];
-
-    override def unavailable_reason -> str {
-        try {
-            import from jaclang.compiler.driver.toolchain { native_pipeline_available }
-            (ok, why) = native_pipeline_available();
-        } except Exception as e {
-            return f"the native toolchain is unavailable ({e})";
-        }
-        return "" if ok else (why or "the native toolchain is unavailable");
+impl KernelArtifact.unavailable_reason -> str {
+    try {
+        import from jaclang.compiler.driver.toolchain { native_pipeline_available }
+        (ok, why) = native_pipeline_available();
+    } except Exception as e {
+        return f"the native toolchain is unavailable ({e})";
     }
-
-    override def probe_sealed -> (Probe | None) {
-        sealed = _from_sealed_image();
-        if sealed is None {
-            return None;
-        }
-        record = dict(read_sidecar(sealed.lib_path) or {});
-        record["plan_digest"] = sealed.plan_digest;
-        return Probe.hit(Source.SEALED, sealed.lib_path, record);
-    }
-
-    override def probe_checkout -> Probe {
-        return _probe(source_tree_kernel_path(), Source.CHECKOUT);
-    }
-
-    override def probe_kit -> Probe {
-        found = _bundled_kernel();
-        if found is None {
-            return Probe.missing("this process runs on no kit that carries one");
-        }
-        (lib_path, record) = found;
-        return _probe(lib_path, Source.KIT, expected_sha=str(record.get("sha256", "")));
-    }
-
-    override def checkout_path -> str {
-        return source_tree_kernel_path();
-    }
-
-    override def build(log: Callable[[str], None], force: bool, exact: bool) {
-        if exact {
-            import from jaclang.compiler.driver.jir { require_exact_compiler_products }
-            require_exact_compiler_products();
-        }
-        build_kernel(source_tree_kernel_path(), log=log);
-    }
+    return "" if ok else (why or "the native toolchain is unavailable");
 }
 
-def refuse_unloadable {
+impl KernelArtifact.probe_sealed -> (Probe | None) {
+    sealed = _from_sealed_image();
+    if sealed is None {
+        return None;
+    }
+    record = dict(read_sidecar(sealed.lib_path) or {});
+    record["plan_digest"] = sealed.plan_digest;
+    return Probe.hit(Source.SEALED, sealed.lib_path, record);
+}
+
+impl KernelArtifact.probe_checkout -> Probe {
+    return _probe(source_tree_kernel_path(), Source.CHECKOUT);
+}
+
+impl KernelArtifact.probe_kit -> Probe {
+    found = _bundled_kernel();
+    if found is None {
+        return Probe.missing("this process runs on no kit that carries one");
+    }
+    (lib_path, record) = found;
+    return _probe(lib_path, Source.KIT, expected_sha=str(record.get("sha256", "")));
+}
+
+impl KernelArtifact.checkout_path -> str {
+    return source_tree_kernel_path();
+}
+
+impl KernelArtifact.build(log: Callable[[str], None], force: bool, exact: bool) {
+    if exact {
+        import from jaclang.compiler.driver.jir { require_exact_compiler_products }
+        require_exact_compiler_products();
+    }
+    build_kernel(source_tree_kernel_path(), log=log);
+}
+
+impl refuse_unloadable {
     failed = load_failure();
     if failed is None {
         return;
@@ -337,7 +389,7 @@ def refuse_unloadable {
     );
 }
 
-def resolve_kernel -> (ResolvedKernel | None) {
+impl resolve_kernel -> (ResolvedKernel | None) {
     found = resolve("kernel").found;
     if found is None {
         return None;
@@ -350,7 +402,7 @@ def resolve_kernel -> (ResolvedKernel | None) {
     );
 }
 
-def build_kernel(
+impl build_kernel(
     dst: str = "",
     log: (Callable[[str], None] | None) = None,
     link_mode: str = KERNEL_DEV_LINK_MODE

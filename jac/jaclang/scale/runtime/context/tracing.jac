@@ -29,7 +29,52 @@ glob _pending_trace_id: ContextVar[int] = ContextVar(
      );
 
 
-def uuid_to_trace_id(uuid_str: str | None) -> int {
+def uuid_to_trace_id(uuid_str: str | None) -> int;
+
+def trace_id_hex(trace_id_int: int) -> str;
+
+def new_span_id -> int;
+
+def build_traceparent(
+    trace_id_int: int, span_id_int: int, sampled: bool = True
+) -> str;
+
+def parse_traceparent(header: str | None) -> dict[str, int] | None;
+
+
+def tracing_active -> bool;
+
+def tracing_installed -> bool;
+
+
+def install_tracing(
+    enabled: bool = True,
+    service_name: str | None = None,
+    endpoint: str | None = None,
+    sample_ratio: float = 1.0
+) -> bool;
+
+
+def start_server_span(
+    name: str,
+    trace_uuid: str | None,
+    parent_traceparent: str | None = None,
+    attributes: dict[str, AttributeValue] | None = None
+) -> Span | None;
+
+def end_span(span: Span | None);
+
+def start_memory_span(
+    name: str, attributes: dict[str, AttributeValue] | None = None
+) -> Span | None;
+
+def end_memory_span(span: Span | None);
+
+def _span_traceparent(span: Span) -> str | None;
+
+def current_traceparent(trace_uuid: str | None = None) -> str | None;
+
+impl uuid_to_trace_id(uuid_str: str | None) -> int {
     if not uuid_str {
         return 0;
     }
@@ -41,11 +86,11 @@ def uuid_to_trace_id(uuid_str: str | None) -> int {
     }
 }
 
-def trace_id_hex(trace_id_int: int) -> str {
+impl trace_id_hex(trace_id_int: int) -> str {
     return format(trace_id_int & _MASK_128, "032x");
 }
 
-def new_span_id -> int {
+impl new_span_id -> int {
     val = int.from_bytes(os.urandom(8), "big");
     if val == 0 {
         return 1;
@@ -53,7 +98,7 @@ def new_span_id -> int {
     return val;
 }
 
-def build_traceparent(
+impl build_traceparent(
     trace_id_int: int, span_id_int: int, sampled: bool = True
 ) -> str {
     flags = _FLAG_SAMPLED if sampled else 0;
@@ -63,7 +108,7 @@ def build_traceparent(
     return f"{_TP_VERSION}-{tid}-{sid}-{flg}";
 }
 
-def parse_traceparent(header: str | None) -> dict[str, int] | None {
+impl parse_traceparent(header: str | None) -> dict[str, int] | None {
     if not header {
         return None;
     }
@@ -95,16 +140,16 @@ def parse_traceparent(header: str | None) -> dict[str, int] | None {
 }
 
 
-def tracing_active -> bool {
+impl tracing_active -> bool {
     return _tracing_active;
 }
 
-def tracing_installed -> bool {
+impl tracing_installed -> bool {
     return _tracing_installed;
 }
 
 
-def install_tracing(
+impl install_tracing(
     enabled: bool = True,
     service_name: str | None = None,
     endpoint: str | None = None,
@@ -195,7 +240,7 @@ def install_tracing(
 }
 
 
-def start_server_span(
+impl start_server_span(
     name: str,
     trace_uuid: str | None,
     parent_traceparent: str | None = None,
@@ -247,7 +292,7 @@ def start_server_span(
     return span;
 }
 
-def end_span(span: Span | None) {
+impl end_span(span: Span | None) {
     if span is not None {
         try {
             span.end();
@@ -259,7 +304,7 @@ def end_span(span: Span | None) {
     _current_span.set(None);
 }
 
-def start_memory_span(
+impl start_memory_span(
     name: str, attributes: dict[str, AttributeValue] | None = None
 ) -> Span | None {
     if not _tracing_active or _tracer is None or not HAS_OTEL {
@@ -285,7 +330,7 @@ def start_memory_span(
     }
 }
 
-def end_memory_span(span: Span | None) {
+impl end_memory_span(span: Span | None) {
     if span is not None {
         try {
             span.end();
@@ -295,7 +340,7 @@ def end_memory_span(span: Span | None) {
     }
 }
 
-def _span_traceparent(span: Span) -> str | None {
+impl _span_traceparent(span: Span) -> str | None {
     sc = span.get_span_context();
     if sc is not None and sc.trace_id != 0 and sc.span_id != 0 {
         return build_traceparent(
@@ -305,7 +350,7 @@ def _span_traceparent(span: Span) -> str | None {
     return None;
 }
 
-def current_traceparent(trace_uuid: str | None = None) -> str | None {
+impl current_traceparent(trace_uuid: str | None = None) -> str | None {
     cur = _current_tp.get("");
     if cur {
         return cur;

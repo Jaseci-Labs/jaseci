@@ -24,12 +24,47 @@ glob DEFAULT_ASSET_EXTENSIONS: set[str] = {
      };
 
 
-def asset_extensions -> set[str] {
+def asset_extensions -> set[str];
+
+def resolve_static_base(base_path: str) -> Path;
+
+def client_dist_index(client_dist: str) -> (Path | None);
+
+def static_roots(
+    base_path: str, client_dist: str = ''
+) -> tuple[list[Path], list[Path], list[Path]];
+
+def _within_assets(rel: str) -> str;
+
+def find_static_candidate(
+    base_path: str, relative_path: str, client_dist: str = ''
+) -> (Path | None);
+
+glob ROOT_ASSET_EXTENSIONS: set[str] = DEFAULT_ASSET_EXTENSIONS
+         | {'.pdf', '.txt', '.xml'};
+
+
+def find_root_asset(
+    base_path: str, relative_path: str, client_dist: str = ''
+) -> (Path | None);
+
+def is_asset_request(
+    path: str, cl_route_path: str, reserved_prefixes: (list[str] | None) = None
+) -> bool;
+
+
+def sibling_app_dist(config: any, name: str, base_path: str) -> (Path | None);
+
+def sibling_app_file(dist: Path, rel: str) -> Path;
+
+def sibling_app_names(config: any, base_path: str) -> list[str];
+
+impl asset_extensions -> set[str] {
     return set(client_assets_config(get_config()).get('custom_extensions', []))
         or DEFAULT_ASSET_EXTENSIONS;
 }
 
-def resolve_static_base(base_path: str) -> Path {
+impl resolve_static_base(base_path: str) -> Path {
     base_path_dir = Path(base_path) if base_path else Path.cwd();
     project_root_result = find_project_root(base_path_dir);
     if project_root_result {
@@ -39,7 +74,7 @@ def resolve_static_base(base_path: str) -> Path {
     return base_path_dir;
 }
 
-def client_dist_index(client_dist: str) -> (Path | None) {
+impl client_dist_index(client_dist: str) -> (Path | None) {
     if not client_dist {
         return None;
     }
@@ -47,7 +82,7 @@ def client_dist_index(client_dist: str) -> (Path | None) {
     return index if index.is_file() else None;
 }
 
-def static_roots(
+impl static_roots(
     base_path: str, client_dist: str = ''
 ) -> tuple[list[Path], list[Path], list[Path]] {
     base = resolve_static_base(base_path);
@@ -79,11 +114,11 @@ def static_roots(
     return (roots, dists, asset_dirs);
 }
 
-def _within_assets(rel: str) -> str {
+impl _within_assets(rel: str) -> str {
     return rel[len('assets/'):] if rel.startswith('assets/') else rel;
 }
 
-def find_static_candidate(
+impl find_static_candidate(
     base_path: str, relative_path: str, client_dist: str = ''
 ) -> (Path | None) {
     (roots, dists, asset_dirs) = static_roots(base_path, client_dist);
@@ -114,11 +149,8 @@ def find_static_candidate(
     return None;
 }
 
-glob ROOT_ASSET_EXTENSIONS: set[str] = DEFAULT_ASSET_EXTENSIONS
-         | {'.pdf', '.txt', '.xml'};
 
-
-def find_root_asset(
+impl find_root_asset(
     base_path: str, relative_path: str, client_dist: str = ''
 ) -> (Path | None) {
     rel = relative_path.lstrip('/');
@@ -148,7 +180,7 @@ def find_root_asset(
     return None;
 }
 
-def is_asset_request(
+impl is_asset_request(
     path: str, cl_route_path: str, reserved_prefixes: (list[str] | None) = None
 ) -> bool {
     if path == '/' or path.startswith('/static/') {
@@ -176,7 +208,7 @@ def is_asset_request(
 }
 
 
-def sibling_app_dist(config: any, name: str, base_path: str) -> (Path | None) {
+impl sibling_app_dist(config: any, name: str, base_path: str) -> (Path | None) {
     if config is None or not config.is_workspace {
         return None;
     }
@@ -199,7 +231,7 @@ def sibling_app_dist(config: any, name: str, base_path: str) -> (Path | None) {
     return dist if (dist / 'index.html').is_file() else None;
 }
 
-def sibling_app_file(dist: Path, rel: str) -> Path {
+impl sibling_app_file(dist: Path, rel: str) -> Path {
     candidate = (dist / rel) if rel else (dist / 'index.html');
     try {
         resolved = candidate.resolve();
@@ -213,7 +245,7 @@ def sibling_app_file(dist: Path, rel: str) -> Path {
     return dist / 'index.html';
 }
 
-def sibling_app_names(config: any, base_path: str) -> list[str] {
+impl sibling_app_names(config: any, base_path: str) -> list[str] {
     if config is None or not config.is_workspace {
         return [];
     }

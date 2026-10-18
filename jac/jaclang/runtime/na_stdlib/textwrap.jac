@@ -1,9 +1,53 @@
-def _is_space_ch(c: int) -> bool {
+def _is_space_ch(c: int) -> bool;
+
+
+def _spaces(n: int) -> str;
+
+
+def _cat(parts: list[str]) -> str;
+
+
+def _sumlen(parts: list[str]) -> int;
+
+
+def _expandtabs(s: str) -> str;
+
+
+def _munge(text: str) -> str;
+
+
+def _split_chunks(s: str) -> list[str];
+
+
+def _wrap_chunks(chunks: list[str], width: int) -> list[str];
+
+
+def:pub wrap(text: str, width: int = 70) -> list[str];
+
+
+def:pub fill(text: str, width: int = 70) -> str;
+
+
+def _leading_ws(s: str) -> str;
+
+
+def _common_prefix(a: str, b: str) -> str;
+
+
+def:pub dedent(text: str) -> str;
+
+
+def _splitlines_keepends(text: str) -> list[str];
+
+
+def:pub indent(text: str, prefix: str) -> str;
+
+impl _is_space_ch(c: int) -> bool {
     return c == 9 or c == 10 or c == 11 or c == 12 or c == 13 or c == 32;
 }
 
 
-def _spaces(n: int) -> str {
+impl _spaces(n: int) -> str {
     out: str = "";
     i: int = 0;
     while i < n {
@@ -14,7 +58,7 @@ def _spaces(n: int) -> str {
 }
 
 
-def _cat(parts: list[str]) -> str {
+impl _cat(parts: list[str]) -> str {
     out: str = "";
     i: int = 0;
     n: int = len(parts);
@@ -26,7 +70,7 @@ def _cat(parts: list[str]) -> str {
 }
 
 
-def _sumlen(parts: list[str]) -> int {
+impl _sumlen(parts: list[str]) -> int {
     total: int = 0;
     i: int = 0;
     n: int = len(parts);
@@ -38,7 +82,7 @@ def _sumlen(parts: list[str]) -> int {
 }
 
 
-def _expandtabs(s: str) -> str {
+impl _expandtabs(s: str) -> str {
     out: str = "";
     col: int = 0;
     i: int = 0;
@@ -63,7 +107,7 @@ def _expandtabs(s: str) -> str {
 }
 
 
-def _munge(text: str) -> str {
+impl _munge(text: str) -> str {
     expanded: str = _expandtabs(text);
     out: str = "";
     i: int = 0;
@@ -81,7 +125,7 @@ def _munge(text: str) -> str {
 }
 
 
-def _split_chunks(s: str) -> list[str] {
+impl _split_chunks(s: str) -> list[str] {
     chunks: list[str] = [];
     i: int = 0;
     n: int = len(s);
@@ -98,7 +142,7 @@ def _split_chunks(s: str) -> list[str] {
 }
 
 
-def _wrap_chunks(chunks: list[str], width: int) -> list[str] {
+impl _wrap_chunks(chunks: list[str], width: int) -> list[str] {
     lines: list[str] = [];
     if width <= 0 {
         raise ValueError("invalid width " + str(width) + " (must be > 0)");
@@ -149,12 +193,12 @@ def _wrap_chunks(chunks: list[str], width: int) -> list[str] {
 }
 
 
-def:pub wrap(text: str, width: int = 70) -> list[str] {
+impl wrap(text: str, width: int = 70) -> list[str] {
     return _wrap_chunks(_split_chunks(_munge(text)), width);
 }
 
 
-def:pub fill(text: str, width: int = 70) -> str {
+impl fill(text: str, width: int = 70) -> str {
     lines: list[str] = wrap(text, width);
     out: str = "";
     i: int = 0;
@@ -170,7 +214,7 @@ def:pub fill(text: str, width: int = 70) -> str {
 }
 
 
-def _leading_ws(s: str) -> str {
+impl _leading_ws(s: str) -> str {
     i: int = 0;
     n: int = len(s);
     while i < n {
@@ -185,7 +229,7 @@ def _leading_ws(s: str) -> str {
 }
 
 
-def _common_prefix(a: str, b: str) -> str {
+impl _common_prefix(a: str, b: str) -> str {
     i: int = 0;
     m: int = len(a);
     if len(b) < m {
@@ -198,7 +242,7 @@ def _common_prefix(a: str, b: str) -> str {
 }
 
 
-def:pub dedent(text: str) -> str {
+impl dedent(text: str) -> str {
     lines: list[str] = text.split("\n");
     common: str = "";
     first: bool = True;
@@ -236,7 +280,7 @@ def:pub dedent(text: str) -> str {
 }
 
 
-def _splitlines_keepends(text: str) -> list[str] {
+impl _splitlines_keepends(text: str) -> list[str] {
     parts: list[str] = [];
     start: int = 0;
     i: int = 0;
@@ -255,7 +299,7 @@ def _splitlines_keepends(text: str) -> list[str] {
 }
 
 
-def:pub indent(text: str, prefix: str) -> str {
+impl indent(text: str, prefix: str) -> str {
     out: str = "";
     parts: list[str] = _splitlines_keepends(text);
     i: int = 0;

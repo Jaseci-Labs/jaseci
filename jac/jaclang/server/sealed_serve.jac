@@ -9,7 +9,27 @@ glob SERVE_MANIFEST_REL: str = os.path.join(".jac", "serve_manifest.json"),
      _MODULE_KEYS_CACHE: dict[str, tuple[float, set]] = {};
 
 
-def _image_module_keys(img_root: str) -> set {
+def _image_module_keys(img_root: str) -> set;
+
+
+def _image_key(abs_path: str, img_root: str) -> str;
+
+
+def _image_roots(abs_path: str) -> Iterator[tuple[str, bool]];
+
+
+def sealed_root_for(path: str) -> (str | None);
+
+
+def unlisted_image_root(path: str) -> (str | None);
+
+
+def serve_manifest_for(path: str) -> (dict[str, any] | None);
+
+
+def client_dist_for(path: str) -> (Path | None);
+
+impl _image_module_keys(img_root: str) -> set {
     mf = os.path.join(img_root, "_precompiled", MANIFEST_NAME);
     try {
         mtime = os.path.getmtime(mf);
@@ -41,13 +61,13 @@ def _image_module_keys(img_root: str) -> set {
 }
 
 
-def _image_key(abs_path: str, img_root: str) -> str {
+impl _image_key(abs_path: str, img_root: str) -> str {
     rel = os.path.relpath(abs_path, img_root).replace(os.sep, "/");
     return rel[:-3] + ".jac" if rel.endswith(".py") else rel;
 }
 
 
-def _image_roots(abs_path: str) -> Iterator[tuple[str, bool]] {
+impl _image_roots(abs_path: str) -> Iterator[tuple[str, bool]] {
     nested = False;
     d = os.path.dirname(abs_path);
     while True {
@@ -66,7 +86,7 @@ def _image_roots(abs_path: str) -> Iterator[tuple[str, bool]] {
 }
 
 
-def sealed_root_for(path: str) -> (str | None) {
+impl sealed_root_for(path: str) -> (str | None) {
     abs_path = os.path.normpath(os.path.abspath(path));
     for (img_root, _) in _image_roots(abs_path) {
         if _image_key(abs_path, img_root) in _image_module_keys(img_root) {
@@ -77,7 +97,7 @@ def sealed_root_for(path: str) -> (str | None) {
 }
 
 
-def unlisted_image_root(path: str) -> (str | None) {
+impl unlisted_image_root(path: str) -> (str | None) {
     abs_path = os.path.normpath(os.path.abspath(path));
     nearest = next(_image_roots(abs_path), None);
     if nearest is None {
@@ -91,7 +111,7 @@ def unlisted_image_root(path: str) -> (str | None) {
 }
 
 
-def serve_manifest_for(path: str) -> (dict[str, any] | None) {
+impl serve_manifest_for(path: str) -> (dict[str, any] | None) {
     prepared = prepared_manifest(path);
     if prepared is not None {
         return prepared;
@@ -117,7 +137,7 @@ def serve_manifest_for(path: str) -> (dict[str, any] | None) {
 }
 
 
-def client_dist_for(path: str) -> (Path | None) {
+impl client_dist_for(path: str) -> (Path | None) {
     prepared = application_for(path);
     if prepared is not None and prepared.client_dist and not prepared.dev {
         return Path(prepared.client_dist);

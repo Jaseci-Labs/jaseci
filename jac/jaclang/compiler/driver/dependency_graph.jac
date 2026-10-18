@@ -1,5 +1,9 @@
 def dependency_groups(
     edges: dict[str, list[str]], roots: list[str]
+) -> list[list[str]];
+
+impl dependency_groups(
+    edges: dict[str, list[str]], roots: list[str]
 ) -> list[list[str]] {
     visited: set[str] = set();
     finished: list[str] = [];

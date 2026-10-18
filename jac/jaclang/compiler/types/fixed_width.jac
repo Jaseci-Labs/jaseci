@@ -6,14 +6,104 @@ obj AssignVerdict {
 glob I64_TOP: int = 9223372036854775807,
      I64_BOTTOM: int = -9223372036854775807 - 1;
 
-def value_in_range(value: int, t_lo: int, t_hi: int, wide: bool) -> bool {
+def value_in_range(value: int, t_lo: int, t_hi: int, wide: bool) -> bool;
+
+def unbounded_interval_in_range(
+    op: str,
+    left: tuple[int, int],
+    right: tuple[int, int],
+    t_lo: int,
+    t_hi: int,
+    wide: bool
+) -> bool;
+
+def corner_in_range(op: str, x: int, y: int, t_lo: int, t_hi: int, wide: bool) -> bool;
+
+def unsigned_top_in_range(
+    op: str, top_left: bool, o_lo: int, o_hi: int, wide: bool, signed_wide: bool
+) -> bool;
+
+def interval_of_op(
+    op: str,
+    left: (tuple[int, int] | None),
+    right: (tuple[int, int] | None),
+    target: str
+) -> bool;
+
+def interval_of_expr(expr: (Expr | None)) -> (tuple[int, int] | None);
+
+def numeric_name_of(t: TypeBase | None) -> str | None;
+
+def folded_number(expr: UniNode | None) -> int | float | None;
+
+def _numeric_dest(evaluator: TypeEvaluator, dest: TypeBase) -> ClassType | None;
+
+def annotate_coercion(expr: Expr | None, target: ClassType);
+
+def adopt_literal(
+    evaluator: TypeEvaluator,
+    expr: Expr,
+    value: int | float,
+    target: ClassType,
+    probe: bool = False
+) -> AssignVerdict;
+
+def is_brand(t: TypeBase | None) -> bool;
+
+def assign_numeric_expr(
+    evaluator: TypeEvaluator,
+    expr: Expr | None,
+    src: TypeBase,
+    dest: TypeBase,
+    probe: bool = False
+) -> AssignVerdict | None;
+
+def unify_numeric_operands(
+    evaluator: TypeEvaluator,
+    left_type: TypeBase,
+    right_type: TypeBase,
+    left_node: Expr | None,
+    right_node: Expr | None,
+    diag_node: UniNode | None,
+    op: str
+) -> TypeBase | None;
+
+def arithmetic_result_type(evaluator: TypeEvaluator, t: TypeBase) -> TypeBase;
+
+def both_numeric(left_type: TypeBase, right_type: TypeBase) -> bool;
+
+def is_unsigned_type(t: TypeBase | None) -> bool;
+
+glob WRAPPING_BINARY_BUILTINS: list[str] = [
+         "wrapping_add",
+         "wrapping_sub",
+         "wrapping_mul",
+         "wrapping_shl"
+     ],
+     WRAPPING_UNARY_BUILTINS: list[str] = ["wrapping_neg"];
+
+def _is_jac_builtin_fn(evaluator: TypeEvaluator, callee: Expr, name: str) -> bool;
+
+def fixed_width_call_type(
+    evaluator: TypeEvaluator, call: FuncCall, callee_type: TypeBase
+) -> TypeBase | None;
+
+def shift_result_type(
+    evaluator: TypeEvaluator,
+    left_type: TypeBase,
+    right_type: TypeBase,
+    left_node: Expr | None,
+    right_node: Expr | None
+) -> TypeBase | None;
+
+impl value_in_range(value: int, t_lo: int, t_hi: int, wide: bool) -> bool {
     if wide {
         return value >= 0;
     }
     return t_lo <= value and value <= t_hi;
 }
 
-def unbounded_interval_in_range(
+impl unbounded_interval_in_range(
     op: str,
     left: tuple[int, int],
     right: tuple[int, int],
@@ -48,7 +138,9 @@ def unbounded_interval_in_range(
     return t_lo <= lo and hi <= t_hi;
 }
 
-def corner_in_range(op: str, x: int, y: int, t_lo: int, t_hi: int, wide: bool) -> bool {
+impl corner_in_range(
+    op: str, x: int, y: int, t_lo: int, t_hi: int, wide: bool
+) -> bool {
     if op == "neg" {
         if x == I64_BOTTOM {
             return wide;
@@ -103,7 +195,7 @@ def corner_in_range(op: str, x: int, y: int, t_lo: int, t_hi: int, wide: bool) -
     return wide and ax <= reach;
 }
 
-def unsigned_top_in_range(
+impl unsigned_top_in_range(
     op: str, top_left: bool, o_lo: int, o_hi: int, wide: bool, signed_wide: bool
 ) -> bool {
     zero = o_lo == 0 and o_hi == 0;
@@ -125,7 +217,7 @@ def unsigned_top_in_range(
     return False;
 }
 
-def interval_of_op(
+impl interval_of_op(
     op: str,
     left: (tuple[int, int] | None),
     right: (tuple[int, int] | None),
@@ -178,7 +270,7 @@ def interval_of_op(
     return True;
 }
 
-def interval_of_expr(expr: (Expr | None)) -> (tuple[int, int] | None) {
+impl interval_of_expr(expr: (Expr | None)) -> (tuple[int, int] | None) {
     if expr is None {
         return None;
     }
@@ -200,7 +292,7 @@ def interval_of_expr(expr: (Expr | None)) -> (tuple[int, int] | None) {
     return JAC_TYPE_REGISTRY.range_of(name);
 }
 
-def numeric_name_of(t: TypeBase | None) -> str | None {
+impl numeric_name_of(t: TypeBase | None) -> str | None {
     if isinstance(t, AnyType) {
         return t.foreign_scalar;
     }
@@ -211,7 +303,7 @@ def numeric_name_of(t: TypeBase | None) -> str | None {
     return name if JAC_TYPE_REGISTRY.is_numeric(name) else None;
 }
 
-def folded_number(expr: UniNode | None) -> int | float | None {
+impl folded_number(expr: UniNode | None) -> int | float | None {
     cur = expr;
     while isinstance(cur, AtomUnit) {
         cur = cur.value;
@@ -240,7 +332,7 @@ def folded_number(expr: UniNode | None) -> int | float | None {
     return None;
 }
 
-def _numeric_dest(evaluator: TypeEvaluator, dest: TypeBase) -> ClassType | None {
+impl _numeric_dest(evaluator: TypeEvaluator, dest: TypeBase) -> ClassType | None {
     if isinstance(dest, UnionType) {
         members = [
             m
@@ -259,13 +351,13 @@ def _numeric_dest(evaluator: TypeEvaluator, dest: TypeBase) -> ClassType | None 
     return None;
 }
 
-def annotate_coercion(expr: Expr | None, target: ClassType) {
+impl annotate_coercion(expr: Expr | None, target: ClassType) {
     if expr is not None {
         expr.coerce_to = target.shared.class_name;
     }
 }
 
-def adopt_literal(
+impl adopt_literal(
     evaluator: TypeEvaluator,
     expr: Expr,
     value: int | float,
@@ -295,11 +387,11 @@ def adopt_literal(
     return AssignVerdict(ok=False, diagnosed=True);
 }
 
-def is_brand(t: TypeBase | None) -> bool {
+impl is_brand(t: TypeBase | None) -> bool {
     return isinstance(t, ClassType) and t.private.distinct_key is not None;
 }
 
-def assign_numeric_expr(
+impl assign_numeric_expr(
     evaluator: TypeEvaluator,
     expr: Expr | None,
     src: TypeBase,
@@ -348,7 +440,7 @@ def assign_numeric_expr(
     return AssignVerdict(ok=False);
 }
 
-def unify_numeric_operands(
+impl unify_numeric_operands(
     evaluator: TypeEvaluator,
     left_type: TypeBase,
     right_type: TypeBase,
@@ -421,7 +513,7 @@ def unify_numeric_operands(
     return right_inst;
 }
 
-def arithmetic_result_type(evaluator: TypeEvaluator, t: TypeBase) -> TypeBase {
+impl arithmetic_result_type(evaluator: TypeEvaluator, t: TypeBase) -> TypeBase {
     int_class = evaluator.prefetch.int_class if evaluator.prefetch else None;
     if numeric_name_of(t) == "bool" and int_class is not None {
         return evaluator._convert_to_instance(int_class);
@@ -429,12 +521,12 @@ def arithmetic_result_type(evaluator: TypeEvaluator, t: TypeBase) -> TypeBase {
     return t;
 }
 
-def both_numeric(left_type: TypeBase, right_type: TypeBase) -> bool {
+impl both_numeric(left_type: TypeBase, right_type: TypeBase) -> bool {
     return numeric_name_of(left_type) is not None
         and numeric_name_of(right_type) is not None;
 }
 
-def is_unsigned_type(t: TypeBase | None) -> bool {
+impl is_unsigned_type(t: TypeBase | None) -> bool {
     name = numeric_name_of(t);
     if name is None {
         return False;
@@ -446,15 +538,7 @@ def is_unsigned_type(t: TypeBase | None) -> bool {
         and not `entry.signed;
 }
 
-glob WRAPPING_BINARY_BUILTINS: list[str] = [
-         "wrapping_add",
-         "wrapping_sub",
-         "wrapping_mul",
-         "wrapping_shl"
-     ],
-     WRAPPING_UNARY_BUILTINS: list[str] = ["wrapping_neg"];
-
-def _is_jac_builtin_fn(evaluator: TypeEvaluator, callee: Expr, name: str) -> bool {
+impl _is_jac_builtin_fn(evaluator: TypeEvaluator, callee: Expr, name: str) -> bool {
     if not isinstance(callee, Name) or callee.sym_name != name {
         return False;
     }
@@ -462,7 +546,7 @@ def _is_jac_builtin_fn(evaluator: TypeEvaluator, callee: Expr, name: str) -> boo
     return stub_sym is not None and callee.sym is stub_sym;
 }
 
-def fixed_width_call_type(
+impl fixed_width_call_type(
     evaluator: TypeEvaluator, call: FuncCall, callee_type: TypeBase
 ) -> TypeBase | None {
     args = [
@@ -526,7 +610,7 @@ def fixed_width_call_type(
     return None;
 }
 
-def shift_result_type(
+impl shift_result_type(
     evaluator: TypeEvaluator,
     left_type: TypeBase,
     right_type: TypeBase,

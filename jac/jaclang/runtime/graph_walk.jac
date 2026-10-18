@@ -14,7 +14,58 @@ glob __all__ = [
      ];
 
 
-def access_gated -> bool {
+def access_gated -> bool;
+
+
+def acl_read_ok(anchor: Anchor) -> bool;
+
+
+def has_persistent_origin(origins: list[Anchor]) -> bool;
+
+
+def needs_store(mem: any, origins: list[Anchor]) -> bool;
+
+
+def origin_anchors(q: GraphQuery) -> list[Anchor];
+
+
+def pred_subject(arch: any, p: QPred) -> any;
+
+
+def hop_matches_node(anchor: Anchor, hop: QHop) -> bool;
+
+
+def edge_pair_for(e: EdgeAnchor, cur: Anchor, hop: QHop) -> (Anchor | None);
+
+
+def _walk_light(
+    cur: NodeAnchor,
+    hop: QHop,
+    outgoing: bool,
+    want_edges: bool,
+    gated: bool,
+    seen: set,
+    nxt: list[tuple[Anchor, (EdgeAnchor | None)]]
+) -> None;
+
+
+def walk(
+    origins: list[Anchor], q: GraphQuery, upto: int, gated: bool
+) -> list[tuple[Anchor, (EdgeAnchor | None)]];
+
+
+def unique_anchors(pairs: list[tuple[Anchor, (EdgeAnchor | None)]]) -> list[Anchor];
+
+
+def bounded(out: list[Anchor], q: GraphQuery) -> list[Anchor];
+
+
+def walk_nodes(origins: list[Anchor], q: GraphQuery, gated: bool) -> list[Anchor];
+
+
+def walk_edges(origins: list[Anchor], q: GraphQuery, gated: bool) -> list[Anchor];
+
+impl access_gated -> bool {
     jctx = JacRuntimeInterface.peek_context();
 
     while jctx is not None and jctx._system_root is None {
@@ -28,13 +79,13 @@ def access_gated -> bool {
 }
 
 
-def acl_read_ok(anchor: Anchor) -> bool {
+impl acl_read_ok(anchor: Anchor) -> bool {
     level = JacRuntimeInterface.check_access_level(anchor);
     return level.value > AccessLevel.NO_ACCESS.value;
 }
 
 
-def has_persistent_origin(origins: list[Anchor]) -> bool {
+impl has_persistent_origin(origins: list[Anchor]) -> bool {
     for a in origins {
         if a.persistent {
             return True;
@@ -44,7 +95,7 @@ def has_persistent_origin(origins: list[Anchor]) -> bool {
 }
 
 
-def needs_store(mem: any, origins: list[Anchor]) -> bool {
+impl needs_store(mem: any, origins: list[Anchor]) -> bool {
     if not origins or mem?.store is None {
         return False;
     }
@@ -52,7 +103,7 @@ def needs_store(mem: any, origins: list[Anchor]) -> bool {
 }
 
 
-def origin_anchors(q: GraphQuery) -> list[Anchor] {
+impl origin_anchors(q: GraphQuery) -> list[Anchor] {
     seen: set = set();
     out: list[Anchor] = [];
     for arch in q.origin {
@@ -69,7 +120,7 @@ def origin_anchors(q: GraphQuery) -> list[Anchor] {
 }
 
 
-def pred_subject(arch: any, p: QPred) -> any {
+impl pred_subject(arch: any, p: QPred) -> any {
     if isinstance(p.field, tuple) {
         return tuple(getattr(arch, name, None) for name in p.field);
     }
@@ -77,7 +128,7 @@ def pred_subject(arch: any, p: QPred) -> any {
 }
 
 
-def hop_matches_node(anchor: Anchor, hop: QHop) -> bool {
+impl hop_matches_node(anchor: Anchor, hop: QHop) -> bool {
     if not anchor.is_populated() or anchor.archetype is None {
         return False;
     }
@@ -100,7 +151,7 @@ def hop_matches_node(anchor: Anchor, hop: QHop) -> bool {
 }
 
 
-def edge_pair_for(e: EdgeAnchor, cur: Anchor, hop: QHop) -> (Anchor | None) {
+impl edge_pair_for(e: EdgeAnchor, cur: Anchor, hop: QHop) -> (Anchor | None) {
     src = e.source;
     tgt = e.target;
     if src is None or tgt is None or e.archetype is None {
@@ -143,7 +194,7 @@ def edge_pair_for(e: EdgeAnchor, cur: Anchor, hop: QHop) -> (Anchor | None) {
 }
 
 
-def _walk_light(
+impl _walk_light(
     cur: NodeAnchor,
     hop: QHop,
     outgoing: bool,
@@ -191,7 +242,7 @@ def _walk_light(
 }
 
 
-def walk(
+impl walk(
     origins: list[Anchor], q: GraphQuery, upto: int, gated: bool
 ) -> list[tuple[Anchor, (EdgeAnchor | None)]] {
     frontier: list[Anchor] = list(origins);
@@ -243,7 +294,7 @@ def walk(
 }
 
 
-def unique_anchors(pairs: list[tuple[Anchor, (EdgeAnchor | None)]]) -> list[Anchor] {
+impl unique_anchors(pairs: list[tuple[Anchor, (EdgeAnchor | None)]]) -> list[Anchor] {
     seen: set = set();
     out: list[Anchor] = [];
     for (a, _) in pairs {
@@ -257,7 +308,7 @@ def unique_anchors(pairs: list[tuple[Anchor, (EdgeAnchor | None)]]) -> list[Anch
 }
 
 
-def bounded(out: list[Anchor], q: GraphQuery) -> list[Anchor] {
+impl bounded(out: list[Anchor], q: GraphQuery) -> list[Anchor] {
     if q.limit is not None {
         return out[q.offset:q.offset + q.limit];
     }
@@ -268,12 +319,12 @@ def bounded(out: list[Anchor], q: GraphQuery) -> list[Anchor] {
 }
 
 
-def walk_nodes(origins: list[Anchor], q: GraphQuery, gated: bool) -> list[Anchor] {
+impl walk_nodes(origins: list[Anchor], q: GraphQuery, gated: bool) -> list[Anchor] {
     return bounded(unique_anchors(walk(origins, q, len(q.hops), gated)), q);
 }
 
 
-def walk_edges(origins: list[Anchor], q: GraphQuery, gated: bool) -> list[Anchor] {
+impl walk_edges(origins: list[Anchor], q: GraphQuery, gated: bool) -> list[Anchor] {
     if not q.hops {
         return [];
     }

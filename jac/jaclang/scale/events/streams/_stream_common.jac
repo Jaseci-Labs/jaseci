@@ -8,6 +8,18 @@ def consumer_loop(
     handler: Callable[[Event], any],
     retry: RetryPolicy,
     start_from: str = StreamPosition.LATEST.value
+) -> None;
+
+
+def wait_or_stop(broker: any, seconds: float) -> bool;
+
+impl consumer_loop(
+    broker: any,
+    topic: str,
+    group: str,
+    handler: Callable[[Event], any],
+    retry: RetryPolicy,
+    start_from: str = StreamPosition.LATEST.value
 ) -> None {
     while not broker._stop_event.is_set() {
         events = broker.consume(
@@ -27,7 +39,7 @@ def consumer_loop(
 }
 
 
-def wait_or_stop(broker: any, seconds: float) -> bool {
+impl wait_or_stop(broker: any, seconds: float) -> bool {
     deadline = time.time() + seconds;
     while time.time() < deadline {
         chunk = min(deadline - time.time(), 1.0);

@@ -10,6 +10,34 @@ def wasm_ld_args(
     export_funcs: list[str],
     allow_file: str = "",
     memory_pages: int = WASM_MEMORY_PAGES
+) -> list[str];
+
+def wasm_object_functions(obj_bytes: bytes) -> list[str];
+
+def _symbol_table_functions(b: bytes, p: int) -> list[str];
+
+def write_allowed_imports(path: str, names: list[str]);
+
+def read_uleb128(b: bytes, o: int) -> tuple[int, int];
+
+def encode_uleb128(v: int) -> bytes;
+
+def read_leb_name(b: bytes, o: int) -> tuple[str, int];
+
+def _name_bytes(name: str) -> bytes;
+
+def rename_wasm_imports(wasm_bytes: bytes, names: set[str], module: str) -> bytes;
+
+def wasm_import_map(wasm_bytes: bytes) -> dict[str, list[str]];
+
+def wasm_assets(stem: str, content: bytes) -> dict[str, bytes];
+
+impl wasm_ld_args(
+    output_path: str,
+    inputs: list[str],
+    export_funcs: list[str],
+    allow_file: str = "",
+    memory_pages: int = WASM_MEMORY_PAGES
 ) -> list[str] {
     """wasm-ld's arguments for a Jac wasm module: memory and the stack pointer
     stay inside the module (256 pages, a 256 KiB stack above the data, which
@@ -35,7 +63,7 @@ def wasm_ld_args(
     return args + inputs;
 }
 
-def wasm_object_functions(obj_bytes: bytes) -> list[str] {
+impl wasm_object_functions(obj_bytes: bytes) -> list[str] {
     """The functions a wasm relocatable object defines and does not keep
     local, read from its `linking` section's symbol table: what a module
     exports when its caller names no exports. (The wasm target hides
@@ -66,7 +94,7 @@ def wasm_object_functions(obj_bytes: bytes) -> list[str] {
     return names;
 }
 
-def _symbol_table_functions(b: bytes, p: int) -> list[str] {
+impl _symbol_table_functions(b: bytes, p: int) -> list[str] {
     names: list[str] = [];
     (count, p) = read_uleb128(b, p);
     i = 0;
@@ -99,13 +127,13 @@ def _symbol_table_functions(b: bytes, p: int) -> list[str] {
     return names;
 }
 
-def write_allowed_imports(path: str, names: list[str]) {
+impl write_allowed_imports(path: str, names: list[str]) {
     with open(path, "w") as f {
         f.write("".join(f"{name}\n" for name in sorted(set(names))));
     }
 }
 
-def read_uleb128(b: bytes, o: int) -> tuple[int, int] {
+impl read_uleb128(b: bytes, o: int) -> tuple[int, int] {
     r = 0;
     s = 0;
     while True {
@@ -119,7 +147,7 @@ def read_uleb128(b: bytes, o: int) -> tuple[int, int] {
     }
 }
 
-def encode_uleb128(v: int) -> bytes {
+impl encode_uleb128(v: int) -> bytes {
     out = bytearray();
     while True {
         x = v & 0x7f;
@@ -133,17 +161,17 @@ def encode_uleb128(v: int) -> bytes {
     }
 }
 
-def read_leb_name(b: bytes, o: int) -> tuple[str, int] {
+impl read_leb_name(b: bytes, o: int) -> tuple[str, int] {
     (n, o) = read_uleb128(b, o);
     return (b[o:o + n].decode("utf-8"), o + n);
 }
 
-def _name_bytes(name: str) -> bytes {
+impl _name_bytes(name: str) -> bytes {
     raw = name.encode("utf-8");
     return encode_uleb128(len(raw)) + raw;
 }
 
-def rename_wasm_imports(wasm_bytes: bytes, names: set[str], module: str) -> bytes {
+impl rename_wasm_imports(wasm_bytes: bytes, names: set[str], module: str) -> bytes {
     """Move the function imports named in `names` into import module
     `module`. wasm-ld imports every undefined function from `env`; the host
     ABI lives in its own module, so the host can tell its syscalls from the
@@ -204,7 +232,7 @@ def rename_wasm_imports(wasm_bytes: bytes, names: set[str], module: str) -> byte
     return bytes(out);
 }
 
-def wasm_import_map(wasm_bytes: bytes) -> dict[str, list[str]] {
+impl wasm_import_map(wasm_bytes: bytes) -> dict[str, list[str]] {
     out: dict[str, list[str]] = {};
     o = 8;
     while o < len(wasm_bytes) {
@@ -238,7 +266,7 @@ def wasm_import_map(wasm_bytes: bytes) -> dict[str, list[str]] {
     return out;
 }
 
-def wasm_assets(stem: str, content: bytes) -> dict[str, bytes] {
+impl wasm_assets(stem: str, content: bytes) -> dict[str, bytes] {
     manifest = {'abi': WASM_HOST_MODULE, 'imports': wasm_import_map(content)};
     return {
         f'{stem}.wasm': content,

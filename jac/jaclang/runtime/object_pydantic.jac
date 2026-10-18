@@ -9,6 +9,14 @@ glob _schema_refs: ContextVar[dict[object, str] | None] = ContextVar(
 
 def object_schema(
     cls: type, source: object, handler: GetCoreSchemaHandler
+) -> core_schema.CoreSchema;
+
+def _build_object_schema(
+    cls: type, handler: GetCoreSchemaHandler
+) -> core_schema.CoreSchema;
+
+impl object_schema(
+    cls: type, source: object, handler: GetCoreSchemaHandler
 ) -> core_schema.CoreSchema {
     refs = _schema_refs.get() or {};
     if source in refs {
@@ -25,7 +33,7 @@ def object_schema(
     }
 }
 
-def _build_object_schema(
+impl _build_object_schema(
     cls: type, handler: GetCoreSchemaHandler
 ) -> core_schema.CoreSchema {
     hints = get_type_hints(cls);

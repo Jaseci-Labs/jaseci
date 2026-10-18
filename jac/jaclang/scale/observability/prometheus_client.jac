@@ -6,14 +6,28 @@ glob logger = logging.getLogger(__name__),
      _warned_once: set = set();
 
 
-def _warn_once(key: str, msg: str) {
+def _warn_once(key: str, msg: str);
+
+def resolve_prometheus_url -> str | None;
+
+def query(promql: str, timeout: float = 3.0) -> list[dict[str, any]] | None;
+
+def _extract_result(body: any) -> list[dict[str, any]];
+
+def query_range(
+    promql: str, start: float, end: float, step: str = "15s", timeout: float = 5.0
+) -> list[dict[str, any]] | None;
+
+def scalar(result: any, fallback: float = 0.0) -> float;
+
+impl _warn_once(key: str, msg: str) {
     if key not in _warned_once {
         _warned_once.add(key);
         logger.warning(msg);
     }
 }
 
-def resolve_prometheus_url -> str | None {
+impl resolve_prometheus_url -> str | None {
     override_url: str | None = os.environ.get("PROMETHEUS_URL");
     if override_url {
         return override_url.rstrip("/");
@@ -25,7 +39,7 @@ def resolve_prometheus_url -> str | None {
     return f"http://{app_name}-prometheus-service:9090";
 }
 
-def query(promql: str, timeout: float = 3.0) -> list[dict[str, any]] | None {
+impl query(promql: str, timeout: float = 3.0) -> list[dict[str, any]] | None {
     base = resolve_prometheus_url();
     if not base {
         return None;
@@ -62,7 +76,7 @@ def query(promql: str, timeout: float = 3.0) -> list[dict[str, any]] | None {
     }
 }
 
-def _extract_result(body: any) -> list[dict[str, any]] {
+impl _extract_result(body: any) -> list[dict[str, any]] {
     try {
         data = body["data"];
         raw = data["result"];
@@ -78,7 +92,7 @@ def _extract_result(body: any) -> list[dict[str, any]] {
     }
 }
 
-def query_range(
+impl query_range(
     promql: str, start: float, end: float, step: str = "15s", timeout: float = 5.0
 ) -> list[dict[str, any]] | None {
     base = resolve_prometheus_url();
@@ -122,7 +136,7 @@ def query_range(
     }
 }
 
-def scalar(result: any, fallback: float = 0.0) -> float {
+impl scalar(result: any, fallback: float = 0.0) -> float {
     if not result {
         return fallback;
     }

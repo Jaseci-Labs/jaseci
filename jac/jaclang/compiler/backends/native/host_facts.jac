@@ -2,7 +2,19 @@ import json;
 
 glob _HELD: dict[str, str] = {};
 
-def host_native_fact(kind: str, key: str) -> str {
+def host_native_fact(kind: str, key: str) -> str;
+
+def compute_fact(kind: str, key: str) -> str;
+
+def target_fact(target: str) -> str;
+
+def struct_layouts_fact(key: str) -> str;
+
+def codec_tables_fact -> str;
+
+def primitive_methods_fact(type_name: str) -> str;
+
+impl host_native_fact(kind: str, key: str) -> str {
     if kind == FACT_STRUCT_LAYOUTS {
         return struct_layouts_fact(key);
     }
@@ -28,7 +40,7 @@ def host_native_fact(kind: str, key: str) -> str {
     return held;
 }
 
-def compute_fact(kind: str, key: str) -> str {
+impl compute_fact(kind: str, key: str) -> str {
     if kind == FACT_TARGET {
         return target_fact(key);
     }
@@ -61,7 +73,7 @@ def compute_fact(kind: str, key: str) -> str {
     raise ValueError(f"unknown native host fact {kind!r}");
 }
 
-def target_fact(target: str) -> str {
+impl target_fact(target: str) -> str {
     if target {
         llvm.initialize_all_targets();
         llvm.initialize_all_asmprinters();
@@ -74,7 +86,7 @@ def target_fact(target: str) -> str {
     return str(machine.target_data) + FACT_SEP + str(machine.triple);
 }
 
-def struct_layouts_fact(key: str) -> str {
+impl struct_layouts_fact(key: str) -> str {
     (data_layout, _, probe) = key.partition(FACT_SEP);
     (counts_text, _, probe_ir) = probe.partition(FACT_SEP);
     counts: dict[str, int] = json.loads(counts_text);
@@ -94,7 +106,7 @@ def struct_layouts_fact(key: str) -> str {
     return "\n".join(rows);
 }
 
-def codec_tables_fact -> str {
+impl codec_tables_fact -> str {
     import encodings;
     import encodings.aliases;
     import pkgutil;
@@ -113,7 +125,7 @@ def codec_tables_fact -> str {
     return bytes(alias_rows).hex() + FACT_SEP + bytes(module_rows).hex();
 }
 
-def primitive_methods_fact(type_name: str) -> str {
+impl primitive_methods_fact(type_name: str) -> str {
     import inspect;
 
     found: any = None;

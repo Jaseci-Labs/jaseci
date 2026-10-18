@@ -5,9 +5,7 @@ glob logger = logging.getLogger(__name__),
      _backend_holder: dict[str, StateBackend] = {};
 
 
-def _after_fork_in_child {
-    _backend_holder.clear();
-}
+def _after_fork_in_child;
 
 
 with entry {
@@ -17,13 +15,23 @@ with entry {
 }
 
 
-def in_fleet -> bool {
+def in_fleet -> bool;
+
+
+def get_state_backend(shared: bool = False) -> StateBackend;
+
+impl _after_fork_in_child {
+    _backend_holder.clear();
+}
+
+
+impl in_fleet -> bool {
     return bool(os.environ.get('KUBERNETES_SERVICE_HOST', '').strip())
         or os.environ.get('JAC_SV_SIBLING') == '1';
 }
 
 
-def get_state_backend(shared: bool = False) -> StateBackend {
+impl get_state_backend(shared: bool = False) -> StateBackend {
     backend = _backend_holder.get("default");
     if backend is not None {
         return backend;

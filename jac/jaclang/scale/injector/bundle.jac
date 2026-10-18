@@ -60,7 +60,211 @@ glob _EXCLUDE_SUFFIXES: tuple[str, ...] = (
 glob _EXCLUDE_ENV: set[str] = {"PYTHONPATH", "PYTHONHOME", "JAC_HANDOFF"};
 
 
-def _is_bundle_required(rel: Path) -> bool {
+def _is_bundle_required(rel: Path) -> bool;
+
+
+obj BundleSourceFilter {
+    has ignore_patterns: list[str];
+
+    def parks(rel: Path) -> bool;
+    def is_build_tree(rel: Path) -> bool;
+    def excludes_tree(rel: Path) -> bool;
+    def excludes(rel: Path) -> bool;
+    def matching_ignore_pattern(rel: Path) -> str;
+    def exclusion_reason(rel: Path) -> str;
+}
+
+
+def source_filter_for(base: Path) -> BundleSourceFilter;
+
+
+def _project_config(project_dir: str) -> any;
+
+
+def _entry_module_spec(project_dir: str) -> (tuple[Path, Path] | None);
+
+
+def entry_module_rel(project_dir: str) -> (Path | None);
+
+
+def assert_entry_module_ships(base: Path, excluded: BundleSourceFilter);
+
+
+def _exclude_dir_root(rel: Path) -> (str | None);
+
+
+def partition_bundle_sources(base: Path) -> tuple[list[Path], list[str]];
+
+
+def bundle_source_files(base: Path) -> list[Path];
+
+
+def resolve_fleet_entries(project_dir: str, fleet: any) -> dict[str, str];
+
+
+def _fleet_entry_rel(base: Path, app: str, file: str) -> str;
+
+
+def check_fleet_entries(
+    base: Path,
+    members: list[str],
+    excluded: BundleSourceFilter,
+    fleet: (FleetSpec | None)
+) -> dict[str, str];
+
+
+def unresolved_toml_references(text: str, environ: dict[str, str]) -> list[str];
+
+
+def _is_shell_script_ref(ref: any) -> bool;
+
+
+def add_source_members(
+    tar: tarfile.TarFile, base: Path, sources: (list[Path] | None) = None
+);
+
+
+def nested_sanitized_tomls(base: Path) -> dict[str, str];
+
+
+def stage_roots_in_use -> list[str];
+
+
+def _stage_root_prefix -> str;
+
+
+def _stage_root_pid(name: str) -> int;
+
+
+def _pid_alive(pid: int) -> bool;
+
+
+def _stage_root_expired(stage_root: Path) -> bool;
+
+
+def reap_stale_stage_roots -> int;
+
+
+def remove_stage_root(stage_root: Path);
+
+
+def _remove_stage_roots;
+
+
+def seal_step_env -> dict[str, str];
+
+
+def _stage_app(
+    base: Path,
+    sanitized_toml: (str | None),
+    sources: (list[Path] | None) = None,
+    tomls: (dict[str, str] | None) = None
+) -> Path;
+
+
+def release_binary_env -> dict[str, str];
+
+
+def _child_tree_script(
+    jac_path: Path,
+    work_dir: Path,
+    timeout_s: int,
+    rel_candidates: tuple[str, ...],
+    fallback: Path
+) -> Path;
+
+
+def _legacy_sealer_script_for(
+    jac_path: Path, stage_root: Path, timeout_s: int
+) -> Path;
+
+
+def sealed_app_name(project_dir: str, fleet: (FleetSpec | None)) -> str;
+
+
+def _precompile_app(
+    base: Path,
+    seal_binary: bytes,
+    sanitized_toml: (str | None),
+    timeout_s: int,
+    app: str = "",
+    sources: (list[Path] | None) = None,
+    tomls: (dict[str, str] | None) = None,
+    seed: (Path | None) = None
+) -> Path;
+
+
+def fat_bundle_setting(project_dir: str) -> tuple[bool, bool];
+
+
+def fat_bundle_enabled(project_dir: str) -> bool;
+
+
+def seal_timeout_setting(project_dir: str) -> int;
+
+
+def _vendor_stage(stage: Path, seal_binary: bytes, pod_arch: str = "");
+
+
+def _resolved_python_specs(stage: Path) -> list[str];
+
+
+def _strip_external_record_lines(site: Path);
+
+
+def staged_venv_files(stage: Path) -> list[Path];
+
+
+def _prune_seed_pip(site: Path, specs: list[str]);
+
+
+def _venv_stage(stage: Path, seal_binary: bytes, timeout_s: int);
+
+
+def seal_input_digest(
+    base: Path,
+    sources: list[Path],
+    seal_binary: bytes,
+    pod_arch: str,
+    app_name: str,
+    sanitized: (str | None),
+    fat: bool,
+    tomls: dict[str, str]
+) -> str;
+
+
+def _seal_cache_dir(base: Path) -> Path;
+
+
+def _mtime(path: Path) -> float;
+
+
+def _latest_seal(base: Path) -> (Path | None);
+
+
+def _seed_precompiled(stage: Path, seed: (Path | None)) -> int;
+
+
+def _cached_seal(base: Path, key: str) -> (bytes | None);
+
+
+def _remember_seal(base: Path, key: str, raw: bytes);
+
+
+def pack_jab(
+    project_dir: str, seal_binary: bytes, pod_arch: str = "", fleet: any = None
+) -> bytes;
+
+
+def content_address(raw: bytes) -> str;
+
+
+def bundle_object_key(app_name: str, digest: str) -> str;
+
+
+def ensure_jac_toml_cmd -> str;
+
+impl _is_bundle_required(rel: Path) -> bool {
     parts = rel.parts;
     if (
         len(parts) >= 3
@@ -78,87 +282,83 @@ def _is_bundle_required(rel: Path) -> bool {
 }
 
 
-obj BundleSourceFilter {
-    has ignore_patterns: list[str];
+impl BundleSourceFilter.parks(rel: Path) -> bool {
+    return path_matches_exclude(rel.as_posix(), self.ignore_patterns);
+}
 
-    def parks(rel: Path) -> bool {
-        return path_matches_exclude(rel.as_posix(), self.ignore_patterns);
-    }
+impl BundleSourceFilter.is_build_tree(rel: Path) -> bool {
+    return _exclude_dir_root(rel) is not None;
+}
 
-    def is_build_tree(rel: Path) -> bool {
-        return _exclude_dir_root(rel) is not None;
+impl BundleSourceFilter.excludes_tree(rel: Path) -> bool {
+    if self.is_build_tree(rel) {
+        return True;
     }
+    return self.parks(rel);
+}
 
-    def excludes_tree(rel: Path) -> bool {
-        if self.is_build_tree(rel) {
-            return True;
-        }
-        return self.parks(rel);
+impl BundleSourceFilter.excludes(rel: Path) -> bool {
+    if _is_bundle_required(rel) {
+        return False;
     }
+    if self.excludes_tree(rel) {
+        return True;
+    }
+    name = rel.name;
+    if name in _EXCLUDE_FILES {
+        return True;
+    }
+    if name == ".env" or name.startswith(".env.") {
+        return True;
+    }
+    return name.endswith(_EXCLUDE_SUFFIXES);
+}
 
-    def excludes(rel: Path) -> bool {
-        if _is_bundle_required(rel) {
-            return False;
+impl BundleSourceFilter.matching_ignore_pattern(rel: Path) -> str {
+    for pattern in self.ignore_patterns {
+        if path_matches_exclude(rel.as_posix(), [pattern]) {
+            return pattern;
         }
-        if self.excludes_tree(rel) {
-            return True;
-        }
-        name = rel.name;
-        if name in _EXCLUDE_FILES {
-            return True;
-        }
-        if name == ".env" or name.startswith(".env.") {
-            return True;
-        }
-        return name.endswith(_EXCLUDE_SUFFIXES);
     }
+    return "";
+}
 
-    def matching_ignore_pattern(rel: Path) -> str {
-        for pattern in self.ignore_patterns {
-            if path_matches_exclude(rel.as_posix(), [pattern]) {
-                return pattern;
-            }
+impl BundleSourceFilter.exclusion_reason(rel: Path) -> str {
+    for part in rel.parts {
+        if part in _EXCLUDE_DIRS {
+            return f"'{part}/' is a build or cache tree the deploy never ships";
         }
-        return "";
     }
-
-    def exclusion_reason(rel: Path) -> str {
-        for part in rel.parts {
-            if part in _EXCLUDE_DIRS {
-                return f"'{part}/' is a build or cache tree the deploy never ships";
-            }
-        }
-        pattern = self.matching_ignore_pattern(rel);
-        if pattern {
-            return f"parked by the .jacignore pattern '{pattern}'";
-        }
-        name = rel.name;
-        if name == "jac.toml" {
-            return (
-                "the deploy ships a sanitized jac.toml with [scale.secrets] "
-                "and [dev] stripped"
-            );
-        }
-        if name == ".env" or name.startswith(".env.") {
-            return (
-                "'.env' files never ship; move deploy values to "
-                "[scale.secrets] or pod env"
-            );
-        }
-        if name in _EXCLUDE_FILES or name.endswith(_EXCLUDE_SUFFIXES) {
-            return f"'{name}' is key material the deploy never ships";
-        }
-        return "excluded from the bundle";
+    pattern = self.matching_ignore_pattern(rel);
+    if pattern {
+        return f"parked by the .jacignore pattern '{pattern}'";
     }
+    name = rel.name;
+    if name == "jac.toml" {
+        return (
+            "the deploy ships a sanitized jac.toml with [scale.secrets] "
+            "and [dev] stripped"
+        );
+    }
+    if name == ".env" or name.startswith(".env.") {
+        return (
+            "'.env' files never ship; move deploy values to "
+            "[scale.secrets] or pod env"
+        );
+    }
+    if name in _EXCLUDE_FILES or name.endswith(_EXCLUDE_SUFFIXES) {
+        return f"'{name}' is key material the deploy never ships";
+    }
+    return "excluded from the bundle";
 }
 
 
-def source_filter_for(base: Path) -> BundleSourceFilter {
+impl source_filter_for(base: Path) -> BundleSourceFilter {
     return BundleSourceFilter(ignore_patterns=read_jacignore_patterns(str(base)));
 }
 
 
-def _project_config(project_dir: str) -> any {
+impl _project_config(project_dir: str) -> any {
     try {
         return get_config_for_path(Path(project_dir));
     } except Exception as exc {
@@ -172,7 +372,7 @@ def _project_config(project_dir: str) -> any {
 }
 
 
-def _entry_module_spec(project_dir: str) -> (tuple[Path, Path] | None) {
+impl _entry_module_spec(project_dir: str) -> (tuple[Path, Path] | None) {
     config = _project_config(project_dir);
     if config is None {
         return None;
@@ -197,7 +397,7 @@ def _entry_module_spec(project_dir: str) -> (tuple[Path, Path] | None) {
 }
 
 
-def entry_module_rel(project_dir: str) -> (Path | None) {
+impl entry_module_rel(project_dir: str) -> (Path | None) {
     spec = _entry_module_spec(project_dir);
     if spec is None {
         return None;
@@ -213,7 +413,7 @@ def entry_module_rel(project_dir: str) -> (Path | None) {
 }
 
 
-def assert_entry_module_ships(base: Path, excluded: BundleSourceFilter) {
+impl assert_entry_module_ships(base: Path, excluded: BundleSourceFilter) {
     rel = entry_module_rel(str(base));
     if rel is None or not (base / rel).is_file() or not excluded.excludes(rel) {
         return;
@@ -228,7 +428,7 @@ def assert_entry_module_ships(base: Path, excluded: BundleSourceFilter) {
 }
 
 
-def _exclude_dir_root(rel: Path) -> (str | None) {
+impl _exclude_dir_root(rel: Path) -> (str | None) {
     parts = rel.parts;
     depth = 0;
     for part in parts {
@@ -241,7 +441,7 @@ def _exclude_dir_root(rel: Path) -> (str | None) {
 }
 
 
-def partition_bundle_sources(base: Path) -> tuple[list[Path], list[str]] {
+impl partition_bundle_sources(base: Path) -> tuple[list[Path], list[str]] {
     excluded = source_filter_for(base);
     kept: list[Path] = [];
     pruned: set[str] = set();
@@ -279,7 +479,7 @@ def partition_bundle_sources(base: Path) -> tuple[list[Path], list[str]] {
 }
 
 
-def bundle_source_files(base: Path) -> list[Path] {
+impl bundle_source_files(base: Path) -> list[Path] {
     (kept, pruned) = partition_bundle_sources(base);
     for pruned_tree in pruned {
         key = f"{base}::{pruned_tree}";
@@ -297,7 +497,7 @@ def bundle_source_files(base: Path) -> list[Path] {
 }
 
 
-def resolve_fleet_entries(project_dir: str, fleet: any) -> dict[str, str] {
+impl resolve_fleet_entries(project_dir: str, fleet: any) -> dict[str, str] {
     base = Path(project_dir).resolve();
     excluded = source_filter_for(base);
     members = [path.relative_to(base).as_posix() for path in bundle_source_files(base)];
@@ -305,7 +505,7 @@ def resolve_fleet_entries(project_dir: str, fleet: any) -> dict[str, str] {
 }
 
 
-def _fleet_entry_rel(base: Path, app: str, file: str) -> str {
+impl _fleet_entry_rel(base: Path, app: str, file: str) -> str {
     raw = Path(file);
     if raw.is_absolute() {
         try {
@@ -332,7 +532,7 @@ def _fleet_entry_rel(base: Path, app: str, file: str) -> str {
 }
 
 
-def check_fleet_entries(
+impl check_fleet_entries(
     base: Path,
     members: list[str],
     excluded: BundleSourceFilter,
@@ -373,7 +573,7 @@ def check_fleet_entries(
 }
 
 
-def unresolved_toml_references(text: str, environ: dict[str, str]) -> list[str] {
+impl unresolved_toml_references(text: str, environ: dict[str, str]) -> list[str] {
     (_, refs) = resolve_env_refs(tomllib.loads(text), environ);
     return [
         f"{ref.path}: {ref.describe()}"
@@ -383,7 +583,7 @@ def unresolved_toml_references(text: str, environ: dict[str, str]) -> list[str] 
 }
 
 
-def _is_shell_script_ref(ref: any) -> bool {
+impl _is_shell_script_ref(ref: any) -> bool {
     parts = ref.path.split(".");
     in_scripts = parts[0] == "scripts"
         or (parts[0] == "environments" and parts[2:3] == ["scripts"]);
@@ -391,7 +591,7 @@ def _is_shell_script_ref(ref: any) -> bool {
 }
 
 
-def add_source_members(
+impl add_source_members(
     tar: tarfile.TarFile, base: Path, sources: (list[Path] | None) = None
 ) {
     for path in (sources if sources is not None else bundle_source_files(base)) {
@@ -400,7 +600,7 @@ def add_source_members(
 }
 
 
-def nested_sanitized_tomls(base: Path) -> dict[str, str] {
+impl nested_sanitized_tomls(base: Path) -> dict[str, str] {
     excluded = source_filter_for(base);
     out: dict[str, str] = {};
     for toml_path in sorted(base.rglob("jac.toml")) {
@@ -417,17 +617,17 @@ def nested_sanitized_tomls(base: Path) -> dict[str, str] {
 }
 
 
-def stage_roots_in_use -> list[str] {
+impl stage_roots_in_use -> list[str] {
     return list(_stage_roots);
 }
 
 
-def _stage_root_prefix -> str {
+impl _stage_root_prefix -> str {
     return f"{STAGE_PREFIX}{os.getpid()}-";
 }
 
 
-def _stage_root_pid(name: str) -> int {
+impl _stage_root_pid(name: str) -> int {
     if not name.startswith(STAGE_PREFIX) {
         return 0;
     }
@@ -439,7 +639,7 @@ def _stage_root_pid(name: str) -> int {
 }
 
 
-def _pid_alive(pid: int) -> bool {
+impl _pid_alive(pid: int) -> bool {
     try {
         os.kill(pid, 0);
         return True;
@@ -451,7 +651,7 @@ def _pid_alive(pid: int) -> bool {
 }
 
 
-def _stage_root_expired(stage_root: Path) -> bool {
+impl _stage_root_expired(stage_root: Path) -> bool {
     try {
         return (time.time() - stage_root.stat().st_mtime) > STAGE_REAP_AGE_S;
     } except OSError {
@@ -460,7 +660,7 @@ def _stage_root_expired(stage_root: Path) -> bool {
 }
 
 
-def reap_stale_stage_roots -> int {
+impl reap_stale_stage_roots -> int {
     removed = 0;
     holder = Path(tempfile.gettempdir());
     try {
@@ -494,7 +694,7 @@ def reap_stale_stage_roots -> int {
 }
 
 
-def remove_stage_root(stage_root: Path) {
+impl remove_stage_root(stage_root: Path) {
     shutil.rmtree(str(stage_root), ignore_errors=True);
     if str(stage_root) in _stage_roots {
         _stage_roots.remove(str(stage_root));
@@ -502,7 +702,7 @@ def remove_stage_root(stage_root: Path) {
 }
 
 
-def _remove_stage_roots {
+impl _remove_stage_roots {
     for path in list(_stage_roots) {
         shutil.rmtree(path, ignore_errors=True);
     }
@@ -510,14 +710,14 @@ def _remove_stage_roots {
 }
 
 
-def seal_step_env -> dict[str, str] {
+impl seal_step_env -> dict[str, str] {
     env = release_binary_env();
     env[SCRATCH_ENV] = "1";
     return env;
 }
 
 
-def _stage_app(
+impl _stage_app(
     base: Path,
     sanitized_toml: (str | None),
     sources: (list[Path] | None) = None,
@@ -562,7 +762,7 @@ def _stage_app(
 }
 
 
-def release_binary_env -> dict[str, str] {
+impl release_binary_env -> dict[str, str] {
     return {
         k: v
         for (k, v) in os.environ.items()
@@ -571,7 +771,7 @@ def release_binary_env -> dict[str, str] {
 }
 
 
-def _child_tree_script(
+impl _child_tree_script(
     jac_path: Path,
     work_dir: Path,
     timeout_s: int,
@@ -614,7 +814,7 @@ def _child_tree_script(
 }
 
 
-def _legacy_sealer_script_for(
+impl _legacy_sealer_script_for(
     jac_path: Path, stage_root: Path, timeout_s: int
 ) -> Path {
     return _child_tree_script(
@@ -627,7 +827,7 @@ def _legacy_sealer_script_for(
 }
 
 
-def sealed_app_name(project_dir: str, fleet: (FleetSpec | None)) -> str {
+impl sealed_app_name(project_dir: str, fleet: (FleetSpec | None)) -> str {
     if fleet is None or not fleet.root_app {
         return "";
     }
@@ -639,7 +839,7 @@ def sealed_app_name(project_dir: str, fleet: (FleetSpec | None)) -> str {
 }
 
 
-def _precompile_app(
+impl _precompile_app(
     base: Path,
     seal_binary: bytes,
     sanitized_toml: (str | None),
@@ -750,7 +950,7 @@ def _precompile_app(
 }
 
 
-def fat_bundle_setting(project_dir: str) -> tuple[bool, bool] {
+impl fat_bundle_setting(project_dir: str) -> tuple[bool, bool] {
     try {
         config = get_config_for_path(Path(project_dir));
     } except Exception as exc {
@@ -768,13 +968,13 @@ def fat_bundle_setting(project_dir: str) -> tuple[bool, bool] {
 }
 
 
-def fat_bundle_enabled(project_dir: str) -> bool {
+impl fat_bundle_enabled(project_dir: str) -> bool {
     (enabled, _) = fat_bundle_setting(project_dir);
     return enabled;
 }
 
 
-def seal_timeout_setting(project_dir: str) -> int {
+impl seal_timeout_setting(project_dir: str) -> int {
     try {
         config = get_config_for_path(Path(project_dir));
     } except Exception as exc {
@@ -798,7 +998,7 @@ def seal_timeout_setting(project_dir: str) -> int {
 }
 
 
-def _vendor_stage(stage: Path, seal_binary: bytes, pod_arch: str = "") {
+impl _vendor_stage(stage: Path, seal_binary: bytes, pod_arch: str = "") {
     jac_path = stage.parent / ".seal-jac";
     jac_path.write_bytes(seal_binary);
     jac_path.chmod(0o755);
@@ -844,14 +1044,14 @@ def _vendor_stage(stage: Path, seal_binary: bytes, pod_arch: str = "") {
 }
 
 
-def _resolved_python_specs(stage: Path) -> list[str] {
+impl _resolved_python_specs(stage: Path) -> list[str] {
     config = JacConfig.load(stage / "jac.toml");
     deps = resolve_plan(config).for_ecosystem("python");
     return get_python_provider().specs_for(deps);
 }
 
 
-def _strip_external_record_lines(site: Path) {
+impl _strip_external_record_lines(site: Path) {
     for record in sorted(site.`glob("*.dist-info/RECORD")) {
         lines = record.read_text(encoding="utf-8").splitlines(keepends=True);
         kept = [
@@ -866,7 +1066,7 @@ def _strip_external_record_lines(site: Path) {
 }
 
 
-def staged_venv_files(stage: Path) -> list[Path] {
+impl staged_venv_files(stage: Path) -> list[Path] {
     venv = stage / ".jac" / "venv";
     marker = venv / VENV_DEPS_MARKER;
     if not marker.is_file() {
@@ -888,7 +1088,7 @@ def staged_venv_files(stage: Path) -> list[Path] {
 }
 
 
-def _prune_seed_pip(site: Path, specs: list[str]) {
+impl _prune_seed_pip(site: Path, specs: list[str]) {
     import re;
     for spec in specs {
         if re.split(r"[<>=!~\[ ;@]", spec.strip())[0].lower() == "pip" {
@@ -904,7 +1104,7 @@ def _prune_seed_pip(site: Path, specs: list[str]) {
 }
 
 
-def _venv_stage(stage: Path, seal_binary: bytes, timeout_s: int) {
+impl _venv_stage(stage: Path, seal_binary: bytes, timeout_s: int) {
     jac_path = stage.parent / ".seal-jac";
     jac_path.write_bytes(seal_binary);
     jac_path.chmod(0o755);
@@ -946,7 +1146,7 @@ def _venv_stage(stage: Path, seal_binary: bytes, timeout_s: int) {
 }
 
 
-def seal_input_digest(
+impl seal_input_digest(
     base: Path,
     sources: list[Path],
     seal_binary: bytes,
@@ -985,17 +1185,17 @@ def seal_input_digest(
 }
 
 
-def _seal_cache_dir(base: Path) -> Path {
+impl _seal_cache_dir(base: Path) -> Path {
     return base / ".jac" / "seal-cache";
 }
 
 
-def _mtime(path: Path) -> float {
+impl _mtime(path: Path) -> float {
     return path.stat().st_mtime;
 }
 
 
-def _latest_seal(base: Path) -> (Path | None) {
+impl _latest_seal(base: Path) -> (Path | None) {
     try {
         bundles = sorted(
             _seal_cache_dir(base).`glob("*.jab"), key=_mtime, reverse=True
@@ -1007,7 +1207,7 @@ def _latest_seal(base: Path) -> (Path | None) {
 }
 
 
-def _seed_precompiled(stage: Path, seed: (Path | None)) -> int {
+impl _seed_precompiled(stage: Path, seed: (Path | None)) -> int {
     if seed is None {
         return 0;
     }
@@ -1044,7 +1244,7 @@ def _seed_precompiled(stage: Path, seed: (Path | None)) -> int {
 }
 
 
-def _cached_seal(base: Path, key: str) -> (bytes | None) {
+impl _cached_seal(base: Path, key: str) -> (bytes | None) {
     cached = _seal_cache_dir(base) / f"{key}.jab";
     try {
         raw = cached.read_bytes();
@@ -1060,7 +1260,7 @@ def _cached_seal(base: Path, key: str) -> (bytes | None) {
 }
 
 
-def _remember_seal(base: Path, key: str, raw: bytes) {
+impl _remember_seal(base: Path, key: str, raw: bytes) {
     cache = _seal_cache_dir(base);
     partial = "";
     try {
@@ -1086,7 +1286,7 @@ def _remember_seal(base: Path, key: str, raw: bytes) {
 }
 
 
-def pack_jab(
+impl pack_jab(
     project_dir: str, seal_binary: bytes, pod_arch: str = "", fleet: any = None
 ) -> bytes {
     if not seal_binary {
@@ -1277,17 +1477,17 @@ def pack_jab(
 }
 
 
-def content_address(raw: bytes) -> str {
+impl content_address(raw: bytes) -> str {
     return hashlib.sha256(raw).hexdigest();
 }
 
 
-def bundle_object_key(app_name: str, digest: str) -> str {
+impl bundle_object_key(app_name: str, digest: str) -> str {
     return f"bundles/{app_name}/{digest}.jab";
 }
 
 
-def ensure_jac_toml_cmd -> str {
+impl ensure_jac_toml_cmd -> str {
     return (
         f"[ -f {APP_MOUNT_PATH}/jac.toml ] || "
         f"printf '[project]\\nname = \"app\"\\n' > {APP_MOUNT_PATH}/jac.toml"

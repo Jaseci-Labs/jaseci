@@ -14,7 +14,34 @@ glob _active_options: ContextVar[CompileOptions | None] = ContextVar(
      );
 
 @contextmanager
-def cache_scope(options: CompileOptions | None = None) -> Iterator[None] {
+def cache_scope(options: CompileOptions | None = None) -> Iterator[None];
+
+@contextmanager
+def compilation_scope(options: CompileOptions | None = None) -> Iterator[None];
+
+def active_options -> CompileOptions | None;
+
+def owned_module_options(path: str, options: CompileOptions) -> CompileOptions;
+
+def owner_scope_options(
+    program: JacProgram, options: (CompileOptions | None) = None
+) -> (CompileOptions | None);
+
+def package_owned(path: str, program: JacProgram, options: CompileOptions) -> bool;
+
+def bind_options(
+    path: str, program: JacProgram, options: CompileOptions
+) -> CompileOptions;
+
+def context_identity(options: CompileOptions) -> str;
+
+def context_program(program: JacProgram, options: CompileOptions) -> JacProgram;
+
+def program_for(path: str, program: JacProgram) -> JacProgram;
+
+def context_app(path: str) -> AppSpec | None;
+
+impl cache_scope(options: CompileOptions | None = None) -> Iterator[None] {
     token = _active_options.set(options);
     try {
         yield ;
@@ -23,19 +50,18 @@ def cache_scope(options: CompileOptions | None = None) -> Iterator[None] {
     }
 }
 
-@contextmanager
-def compilation_scope(options: CompileOptions | None = None) -> Iterator[None] {
+impl compilation_scope(options: CompileOptions | None = None) -> Iterator[None] {
     import from jaclang.compiler.frontend.host { active_host }
     with cache_scope(options), active_host().session() {
         yield ;
     }
 }
 
-def active_options -> CompileOptions | None {
+impl active_options -> CompileOptions | None {
     return _active_options.get();
 }
 
-def owned_module_options(path: str, options: CompileOptions) -> CompileOptions {
+impl owned_module_options(path: str, options: CompileOptions) -> CompileOptions {
     """A module the running compiler package owns is analyzed the way the
     package analyzes itself, whoever imports it. The consumer's application,
     codespace and entry are dropped: its placement default would otherwise
@@ -60,7 +86,7 @@ def owned_module_options(path: str, options: CompileOptions) -> CompileOptions {
     return bound;
 }
 
-def owner_scope_options(
+impl owner_scope_options(
     program: JacProgram, options: (CompileOptions | None) = None
 ) -> (CompileOptions | None) {
     """The options a cache scope projects: none for the compiler's own program
@@ -74,7 +100,7 @@ def owner_scope_options(
     return chosen;
 }
 
-def package_owned(path: str, program: JacProgram, options: CompileOptions) -> bool {
+impl package_owned(path: str, program: JacProgram, options: CompileOptions) -> bool {
     return is_package_keyed_path(path)
         and not (
             options.native_unit
@@ -84,7 +110,7 @@ def package_owned(path: str, program: JacProgram, options: CompileOptions) -> bo
         );
 }
 
-def bind_options(
+impl bind_options(
     path: str, program: JacProgram, options: CompileOptions
 ) -> CompileOptions {
     import from jaclang.compiler.frontend.host { active_host }
@@ -147,11 +173,11 @@ def bind_options(
     return bound;
 }
 
-def context_identity(options: CompileOptions) -> str {
+impl context_identity(options: CompileOptions) -> str {
     return hashlib.sha256(options.module_projection().encode()).hexdigest()[:20];
 }
 
-def context_program(program: JacProgram, options: CompileOptions) -> JacProgram {
+impl context_program(program: JacProgram, options: CompileOptions) -> JacProgram {
     import from jaclang.compiler.driver.program { JacProgram }
     context_root = program.context_root
         if program.context_root is not None
@@ -179,14 +205,14 @@ def context_program(program: JacProgram, options: CompileOptions) -> JacProgram 
     return selected;
 }
 
-def program_for(path: str, program: JacProgram) -> JacProgram {
+impl program_for(path: str, program: JacProgram) -> JacProgram {
     if program.internal {
         return program;
     }
     return context_program(program, bind_options(path, program, program.options));
 }
 
-def context_app(path: str) -> AppSpec | None {
+impl context_app(path: str) -> AppSpec | None {
     import from jaclang.compiler.frontend.host { active_host }
     workspace = active_host().workspace(path);
     if workspace is None {

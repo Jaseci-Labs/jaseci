@@ -41,11 +41,56 @@ glob PYTHON_NATIVE_WIRE: tuple[str, ...] = ('int', 'float', 'bool', 'str'),
          'ModuleType'
      );
 
-def python_native_wire -> set[str] {
+def python_native_wire -> set[str];
+
+def crossing_refusal(
+    type_name: str, src: str, dst: str, is_return: bool = False, placing: bool = False
+) -> (str | None);
+
+def signature_crossings(
+    param_names: list[str],
+    param_types: list[str],
+    ret_type: str,
+    src: str,
+    dst: str,
+    placing: bool = False
+) -> list[tuple[str, str, str]];
+
+def annotation_shape(tag: (UniNode | None)) -> tuple[str, list[UniNode]];
+
+def declared_type(scope: (Module | None), name: str) -> (Archetype | Enum | None);
+
+def alias_value(scope: (Module | None), name: str) -> (UniNode | None);
+
+def non_string_key(
+    tag: (UniNode | None), scope: (Module | None), depth: int
+) -> (str | None);
+
+def json_refusal(
+    tag: (UniNode | None),
+    scope: (Module | None),
+    is_return: bool,
+    to_server: bool,
+    seen: set[str]
+) -> (tuple[str, str] | None);
+
+def signature_refusals(
+    decl: Ability, src: str, dst: str, placing: bool = False
+) -> list[tuple[str, str, str]];
+
+def archetype_refusals(
+    decl: Archetype, src: str, dst: str
+) -> list[tuple[str, str, str]];
+
+def archetype_fields(decl: Archetype) -> list[tuple[HasVar, (Module | None)]];
+
+def ability_crossing(decl: Ability, src: str, dst: str) -> (str | None);
+
+impl python_native_wire -> set[str] {
     return set(PYTHON_NATIVE_WIRE) | set(sized_scalar_names());
 }
 
-def crossing_refusal(
+impl crossing_refusal(
     type_name: str, src: str, dst: str, is_return: bool = False, placing: bool = False
 ) -> (str | None) {
     if src == dst or TARGET_NATIVE not in (src, dst) {
@@ -66,7 +111,7 @@ def crossing_refusal(
     f"and {dst if src == TARGET_NATIVE else src} code";
 }
 
-def signature_crossings(
+impl signature_crossings(
     param_names: list[str],
     param_types: list[str],
     ret_type: str,
@@ -89,7 +134,7 @@ def signature_crossings(
     return out;
 }
 
-def annotation_shape(tag: (UniNode | None)) -> tuple[str, list[UniNode]] {
+impl annotation_shape(tag: (UniNode | None)) -> tuple[str, list[UniNode]] {
     if tag is None {
         return ('any', []);
     }
@@ -136,7 +181,7 @@ def annotation_shape(tag: (UniNode | None)) -> tuple[str, list[UniNode]] {
     return ('', []);
 }
 
-def declared_type(scope: (Module | None), name: str) -> (Archetype | Enum | None) {
+impl declared_type(scope: (Module | None), name: str) -> (Archetype | Enum | None) {
     if scope is None or scope.sym_tab is None {
         return None;
     }
@@ -156,7 +201,7 @@ def declared_type(scope: (Module | None), name: str) -> (Archetype | Enum | None
     return target if isinstance(target, (Archetype, Enum)) else None;
 }
 
-def alias_value(scope: (Module | None), name: str) -> (UniNode | None) {
+impl alias_value(scope: (Module | None), name: str) -> (UniNode | None) {
     if scope is None or scope.sym_tab is None {
         return None;
     }
@@ -180,7 +225,7 @@ def alias_value(scope: (Module | None), name: str) -> (UniNode | None) {
     return None;
 }
 
-def non_string_key(
+impl non_string_key(
     tag: (UniNode | None), scope: (Module | None), depth: int
 ) -> (str | None) {
     (key, key_args) = annotation_shape(tag);
@@ -222,7 +267,7 @@ def non_string_key(
     return None;
 }
 
-def json_refusal(
+impl json_refusal(
     tag: (UniNode | None),
     scope: (Module | None),
     is_return: bool,
@@ -333,7 +378,7 @@ def json_refusal(
     return None;
 }
 
-def signature_refusals(
+impl signature_refusals(
     decl: Ability, src: str, dst: str, placing: bool = False
 ) -> list[tuple[str, str, str]] {
     out: list[tuple[str, str, str]] = [];
@@ -377,7 +422,7 @@ def signature_refusals(
     return out;
 }
 
-def archetype_refusals(
+impl archetype_refusals(
     decl: Archetype, src: str, dst: str
 ) -> list[tuple[str, str, str]] {
     out: list[tuple[str, str, str]] = [];
@@ -394,7 +439,7 @@ def archetype_refusals(
     return out;
 }
 
-def archetype_fields(decl: Archetype) -> list[tuple[HasVar, (Module | None)]] {
+impl archetype_fields(decl: Archetype) -> list[tuple[HasVar, (Module | None)]] {
     out: list[tuple[HasVar, (Module | None)]] = [];
     seen: set[int] = set();
     pending: list[Archetype] = [decl];
@@ -418,7 +463,7 @@ def archetype_fields(decl: Archetype) -> list[tuple[HasVar, (Module | None)]] {
     return out;
 }
 
-def ability_crossing(decl: Ability, src: str, dst: str) -> (str | None) {
+impl ability_crossing(decl: Ability, src: str, dst: str) -> (str | None) {
     sig = decl.signature;
     if not isinstance(sig, FuncSignature) or decl.method_owner is not None {
         return "only a module-level function can be called across codespaces";

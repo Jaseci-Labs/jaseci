@@ -1,4 +1,6 @@
-def unparse_node(nd: uni.UniNode) -> str {
+def unparse_node(nd: uni.UniNode) -> str;
+
+impl unparse_node(nd: uni.UniNode) -> str {
     if nd.gen.jac {
         return nd.gen.jac;
     }

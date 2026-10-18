@@ -54,65 +54,10 @@ impl AuthSettings.resolve_secret(base_path: str) -> str {
 }
 
 
-def table_value(current: any, raw: any, label: str) -> any {
-    if isinstance(current, bool) {
-        if not isinstance(raw, bool) {
-            raise ServeConfigError(f"{label} must be true or false, got {raw!r}");
-        }
-        return raw;
-    }
-    if isinstance(current, int) {
-        if isinstance(raw, bool) or not isinstance(raw, int) {
-            raise ServeConfigError(f"{label} must be an integer, got {raw!r}");
-        }
-        return raw;
-    }
-    if isinstance(current, float) {
-        if isinstance(raw, bool) or not isinstance(raw, (int, float)) {
-            raise ServeConfigError(f"{label} must be a number, got {raw!r}");
-        }
-        return float(raw);
-    }
-    if isinstance(current, list) {
-        if not isinstance(raw, list)
-            or not all(isinstance(item, str) for item in raw) {
-            raise ServeConfigError(f"{label} must be a list of strings, got {raw!r}");
-        }
-        return list(raw);
-    }
-    if not isinstance(raw, str) {
-        raise ServeConfigError(f"{label} must be a string, got {raw!r}");
-    }
-    return raw;
-}
+def table_value(current: any, raw: any, label: str) -> any;
 
 
-def env_typed(current: any, name: str, environ: (dict[str, str] | None)) -> any {
-    raw = str(env_value(name, environ));
-    if isinstance(current, bool) {
-        if raw.lower() not in ENV_TRUE + ENV_FALSE {
-            raise ServeConfigError(
-                f"{ENV_PREFIX}{name} must be true or false, got {raw!r}"
-            );
-        }
-        return raw.lower() in ENV_TRUE;
-    }
-    if isinstance(current, (int, float)) {
-        try {
-            return int(raw) if isinstance(current, int) else float(raw);
-        } except ValueError {
-            raise ServeConfigError(f"{ENV_PREFIX}{name} must be a number, got {raw!r}");
-        }
-    }
-    if isinstance(current, list) {
-        return [
-            part.strip()
-            for part in raw.split(',')
-            if part.strip()
-        ];
-    }
-    return raw;
-}
+def env_typed(current: any, name: str, environ: (dict[str, str] | None)) -> any;
 
 
 impl overlay_table(
@@ -588,4 +533,64 @@ impl ServeSettings.require_valid -> None {
     if problems {
         raise ServeConfigError('\n'.join(f"- {p}" for p in problems));
     }
+}
+
+impl table_value(current: any, raw: any, label: str) -> any {
+    if isinstance(current, bool) {
+        if not isinstance(raw, bool) {
+            raise ServeConfigError(f"{label} must be true or false, got {raw!r}");
+        }
+        return raw;
+    }
+    if isinstance(current, int) {
+        if isinstance(raw, bool) or not isinstance(raw, int) {
+            raise ServeConfigError(f"{label} must be an integer, got {raw!r}");
+        }
+        return raw;
+    }
+    if isinstance(current, float) {
+        if isinstance(raw, bool) or not isinstance(raw, (int, float)) {
+            raise ServeConfigError(f"{label} must be a number, got {raw!r}");
+        }
+        return float(raw);
+    }
+    if isinstance(current, list) {
+        if not isinstance(raw, list)
+            or not all(isinstance(item, str) for item in raw) {
+            raise ServeConfigError(f"{label} must be a list of strings, got {raw!r}");
+        }
+        return list(raw);
+    }
+    if not isinstance(raw, str) {
+        raise ServeConfigError(f"{label} must be a string, got {raw!r}");
+    }
+    return raw;
+}
+
+
+impl env_typed(current: any, name: str, environ: (dict[str, str] | None)) -> any {
+    raw = str(env_value(name, environ));
+    if isinstance(current, bool) {
+        if raw.lower() not in ENV_TRUE + ENV_FALSE {
+            raise ServeConfigError(
+                f"{ENV_PREFIX}{name} must be true or false, got {raw!r}"
+            );
+        }
+        return raw.lower() in ENV_TRUE;
+    }
+    if isinstance(current, (int, float)) {
+        try {
+            return int(raw) if isinstance(current, int) else float(raw);
+        } except ValueError {
+            raise ServeConfigError(f"{ENV_PREFIX}{name} must be a number, got {raw!r}");
+        }
+    }
+    if isinstance(current, list) {
+        return [
+            part.strip()
+            for part in raw.split(',')
+            if part.strip()
+        ];
+    }
+    return raw;
 }

@@ -18,6 +18,14 @@ def collect_client_graph(
     variant_of: Callable[[Path], Path],
     virtual_modules: set[str],
     visited: set[Path]
+) -> ClientGraph;
+
+impl collect_client_graph(
+    roots: list[Path],
+    artifact_of: Callable[[Path], ClientArtifact],
+    variant_of: Callable[[Path], Path],
+    virtual_modules: set[str],
+    visited: set[Path]
 ) -> ClientGraph {
     import from jaclang.client.client_bundle { ClientBundleError }
     result = ClientGraph();

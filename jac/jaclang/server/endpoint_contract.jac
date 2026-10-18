@@ -4,6 +4,10 @@ import sys;
 
 def check_endpoint_contract(
     request: any, target: any, kind: str, name: str, app: str
+) -> any;
+
+impl check_endpoint_contract(
+    request: any, target: any, kind: str, name: str, app: str
 ) -> any {
     identity = request.headers.get("X-Jac-Endpoint");
     if not identity {

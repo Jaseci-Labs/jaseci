@@ -50,7 +50,15 @@ glob WIN_CRT_DLL: str = "ucrtbase.dll",
          "msvcrt.dll"
      ];
 
-def win_import_dll(name: str, declared: (str | None), crt: str = "") -> str {
+def win_import_dll(name: str, declared: (str | None), crt: str = "") -> str;
+
+def win_import_name(name: str) -> str;
+
+def _win_jmp_ir -> str;
+
+def win_floor_ir -> str;
+
+impl win_import_dll(name: str, declared: (str | None), crt: str = "") -> str {
     """The DLL a PE image imports `name` from. `declared` is the library the
     program named for it, if it named one; `crt` is the C runtime the link
     asked for, the UCRT if it asked for none.""";
@@ -68,7 +76,7 @@ def win_import_dll(name: str, declared: (str | None), crt: str = "") -> str {
     return crt or WIN_CRT_DLL;
 }
 
-def win_import_name(name: str) -> str {
+impl win_import_name(name: str) -> str {
     """The spelling `name` is imported under.""";
     if name.startswith(WIN_UCRT_PREFIX) {
         return name[len(WIN_UCRT_PREFIX):];
@@ -76,7 +84,7 @@ def win_import_name(name: str) -> str {
     return WIN_CRT_ALIAS.get(name, name);
 }
 
-def _win_jmp_ir -> str {
+impl _win_jmp_ir -> str {
     """`__jac_setjmp` and `__jac_longjmp`: the pair native exception frames arm
     and raise through. The UCRT's `longjmp` unwinds through the image's
     exception tables, which a Jac image does not carry, so the floor keeps its
@@ -143,7 +151,7 @@ def _win_jmp_ir -> str {
     return "".join([f'module asm "{line}"\n' for line in lines]) + "\n";
 }
 
-def win_floor_ir -> str {
+impl win_floor_ir -> str {
     """The Windows floor's IR, for the link glue of a PE artifact.
 
     A Windows image imports the Universal C Runtime, which is a C library

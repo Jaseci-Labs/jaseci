@@ -35,7 +35,11 @@ glob _buttonVariants: any = cva(
          "children"
      ];
 
-def:pub Button(props: any) -> JsxElement {
+def:pub Button(props: any) -> JsxElement;
+
+def:pub buttonVariants -> any;
+
+impl Button(props: any) -> JsxElement {
     variant = props["variant"] or "default";
     size = props["size"] or "default";
     asChild = props["asChild"] or False;
@@ -78,6 +82,6 @@ def:pub Button(props: any) -> JsxElement {
         </button>;
 }
 
-def:pub buttonVariants -> any {
+impl buttonVariants -> any {
     return _buttonVariants;
 }

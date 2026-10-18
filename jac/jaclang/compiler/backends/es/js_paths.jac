@@ -1,6 +1,10 @@
 import os;
 
-def relative_js_specifier(target_path: str, importer_path: str) -> str {
+def relative_js_specifier(target_path: str, importer_path: str) -> str;
+
+def convert_to_js_import_path(path: str) -> str;
+
+impl relative_js_specifier(target_path: str, importer_path: str) -> str {
     target = target_path;
     if target.endswith('.jac') {
         target = target[:-4];
@@ -16,7 +20,7 @@ def relative_js_specifier(target_path: str, importer_path: str) -> str {
     return rel + '.js';
 }
 
-def convert_to_js_import_path(path: str) -> str {
+impl convert_to_js_import_path(path: str) -> str {
     if not path {
         return path;
     }

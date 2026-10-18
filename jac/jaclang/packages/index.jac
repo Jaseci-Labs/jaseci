@@ -37,75 +37,124 @@ obj IndexEntry {
         source: str = "",
         upload: str = "";
 
-    static def from_json(row: dict[str, any]) -> IndexEntry {
-        for key in ("name", "version", "sha256") {
-            if not isinstance(row.get(key), str) or not row.get(key) {
-                raise RegistryError(f"index entry is missing '{key}': {row}");
-            }
-        }
-        return IndexEntry(
-            name=row["name"],
-            version=row["version"],
-            sha256=row["sha256"],
-            role=str(row.get("role", "lib")),
-            description=str(row.get("description", "")),
-            deps=_str_map(row.get("deps")),
-            pypi=_str_map(row.get("pypi")),
-            npm=_str_map(row.get("npm")),
-            jac_version=str(row.get("jac_version", "")),
-            api_digest=str(row.get("api_digest", "")),
-            exports=[str(x) for x in row.get("exports", [])],
-            pinned=[str(x) for x in row.get("pinned", [])],
-            yanked=bool(row.get("yanked", False)),
-            published=str(row.get("published", "")),
-            source=str(row.get("source", "")),
-            upload=str(row.get("upload", ""))
-        );
-    }
-
-    def to_json -> dict[str, any] {
-        row: dict[str, any] = {
-            "name": self.name,
-            "version": self.version,
-            "sha256": self.sha256,
-            "role": self.role,
-            "deps": self.deps,
-            "jac_version": self.jac_version,
-            "api_digest": self.api_digest,
-            "exports": self.exports,
-            "pinned": self.pinned,
-            "yanked": self.yanked,
-            "published": self.published,
-            "source": self.source
-        };
-        if self.description {
-            row["description"] = self.description;
-        }
-        if self.pypi {
-            row["pypi"] = self.pypi;
-        }
-        if self.npm {
-            row["npm"] = self.npm;
-        }
-        if self.upload {
-            row["upload"] = self.upload;
-        }
-        return row;
-    }
-
-    def to_line -> str {
-        return json.dumps(self.to_json(), sort_keys=True, separators=(",", ":"));
-    }
+    static def from_json(row: dict[str, any]) -> IndexEntry;
+    def to_json -> dict[str, any];
+    def to_line -> str;
 }
 
-def _str_map(raw: any) -> dict[str, str] {
+def _str_map(raw: any) -> dict[str, str];
+
+def parse_index_lines(text: str) -> list[IndexEntry];
+
+def index_rel_path(name: str) -> str;
+
+def api_rel_path(name: str, version: str) -> str;
+
+def name_of_index_path(rel: str) -> str | None;
+
+def _github_tree(repo: str, branch: str) -> list[str];
+
+def _is_local(url: str) -> bool;
+
+def _local_path(url: str) -> Path;
+
+obj Registry {
+    has name: str,
+        url: str,
+        _settings: dict[str, any] | None = None,
+        _entries: dict[str, list[IndexEntry]] = {};
+
+    def base -> str;
+    def key -> str;
+    def _cache_file(rel: str) -> Path;
+    def _read(rel: str) -> str | None;
+    def settings -> dict[str, any];
+    def entries(name: str) -> list[IndexEntry];
+    def list_names -> list[str];
+    def api(name: str, version: str) -> dict[str, any] | None;
+    def find(name: str, version: str) -> IndexEntry | None;
+    def blob_url(sha256: str) -> str;
+    def fetch_blob(item: IndexEntry) -> bytes;
+}
+
+def fetch_verified(url: str, sha256: str, label: str) -> bytes;
+
+def registry_urls(configured: dict[str, str] | None = None) -> dict[str, str];
+
+glob _open_registries: dict[str, Registry] = {};
+
+def registry_named(name: str, configured: dict[str, str] | None = None) -> Registry;
+
+def forget_registries;
+
+impl IndexEntry.from_json(row: dict[str, any]) -> IndexEntry {
+    for key in ("name", "version", "sha256") {
+        if not isinstance(row.get(key), str) or not row.get(key) {
+            raise RegistryError(f"index entry is missing '{key}': {row}");
+        }
+    }
+    return IndexEntry(
+        name=row["name"],
+        version=row["version"],
+        sha256=row["sha256"],
+        role=str(row.get("role", "lib")),
+        description=str(row.get("description", "")),
+        deps=_str_map(row.get("deps")),
+        pypi=_str_map(row.get("pypi")),
+        npm=_str_map(row.get("npm")),
+        jac_version=str(row.get("jac_version", "")),
+        api_digest=str(row.get("api_digest", "")),
+        exports=[str(x) for x in row.get("exports", [])],
+        pinned=[str(x) for x in row.get("pinned", [])],
+        yanked=bool(row.get("yanked", False)),
+        published=str(row.get("published", "")),
+        source=str(row.get("source", "")),
+        upload=str(row.get("upload", ""))
+    );
+}
+
+impl IndexEntry.to_json -> dict[str, any] {
+    row: dict[str, any] = {
+        "name": self.name,
+        "version": self.version,
+        "sha256": self.sha256,
+        "role": self.role,
+        "deps": self.deps,
+        "jac_version": self.jac_version,
+        "api_digest": self.api_digest,
+        "exports": self.exports,
+        "pinned": self.pinned,
+        "yanked": self.yanked,
+        "published": self.published,
+        "source": self.source
+    };
+    if self.description {
+        row["description"] = self.description;
+    }
+    if self.pypi {
+        row["pypi"] = self.pypi;
+    }
+    if self.npm {
+        row["npm"] = self.npm;
+    }
+    if self.upload {
+        row["upload"] = self.upload;
+    }
+    return row;
+}
+
+impl IndexEntry.to_line -> str {
+    return json.dumps(self.to_json(), sort_keys=True, separators=(",", ":"));
+}
+
+impl _str_map(raw: any) -> dict[str, str] {
     if not isinstance(raw, dict) {
         return {};
     }
     return {str(k): str(v) for (k, v) in raw.items()};
 }
 
-def parse_index_lines(text: str) -> list[IndexEntry] {
+impl parse_index_lines(text: str) -> list[IndexEntry] {
     entries: list[IndexEntry] = [];
     for line in text.splitlines() {
         if line.strip() {
@@ -115,21 +164,21 @@ def parse_index_lines(text: str) -> list[IndexEntry] {
     return entries;
 }
 
-def index_rel_path(name: str) -> str {
+impl index_rel_path(name: str) -> str {
     if not is_package_name(name) {
         raise RegistryError(f"'{name}' is not a package name (org/name)");
     }
     return f"{INDEX_DIR}/{name}.json";
 }
 
-def api_rel_path(name: str, version: str) -> str {
+impl api_rel_path(name: str, version: str) -> str {
     if not is_package_name(name) {
         raise RegistryError(f"'{name}' is not a package name (org/name)");
     }
     return f"{API_DIR}/{name}/{version}.json";
 }
 
-def name_of_index_path(rel: str) -> str | None {
+impl name_of_index_path(rel: str) -> str | None {
     if not rel.startswith(f"{INDEX_DIR}/") or not rel.endswith(".json") {
         return None;
     }
@@ -137,7 +186,7 @@ def name_of_index_path(rel: str) -> str | None {
     return name if is_package_name(name) else None;
 }
 
-def _github_tree(repo: str, branch: str) -> list[str] {
+impl _github_tree(repo: str, branch: str) -> list[str] {
     headers = {"User-Agent": USER_AGENT, "Accept": "application/vnd.github+json"};
     token = find_token();
     if token {
@@ -160,193 +209,184 @@ def _github_tree(repo: str, branch: str) -> list[str] {
     ];
 }
 
-def _is_local(url: str) -> bool {
+impl _is_local(url: str) -> bool {
     scheme = urlsplit(url).scheme;
     return scheme in ("", "file");
 }
 
-def _local_path(url: str) -> Path {
+impl _local_path(url: str) -> Path {
     parts = urlsplit(url);
     return Path(parts.path if parts.scheme == "file" else url);
 }
 
-obj Registry {
-    has name: str,
-        url: str,
-        _settings: dict[str, any] | None = None,
-        _entries: dict[str, list[IndexEntry]] = {};
-
-    def base -> str {
-        if _is_local(self.url) {
-            return str(_local_path(self.url).resolve()) + os.sep;
-        }
-        return self.url if self.url.endswith("/") else self.url + "/";
+impl Registry.base -> str {
+    if _is_local(self.url) {
+        return str(_local_path(self.url).resolve()) + os.sep;
     }
-
-    def key -> str {
-        return hashlib.sha256(self.base().encode()).hexdigest()[:16];
-    }
-
-    def _cache_file(rel: str) -> Path {
-        return bucket("pkg-index").path() / self.key() / rel;
-    }
-
-    def _read(rel: str) -> str | None {
-        if _is_local(self.url) {
-            target = Path(self.base()) / rel;
-            return target.read_text(encoding="utf-8") if target.is_file() else None;
-        }
-
-        cache = self._cache_file(rel);
-        cached: dict[str, any] = {};
-        if cache.is_file() {
-            try {
-                cached = json.loads(cache.read_text(encoding="utf-8"));
-            } except (OSError, ValueError) {
-                cached = {};
-            }
-        }
-        if offline() {
-            if not cached {
-                raise RegistryError(
-                    f"{self.name}: {rel} is not cached and jac.toml sets `[network] offline`"
-                );
-            }
-            return cached.get("body");
-        }
-        url = urljoin(self.base(), rel);
-        if not allowed_url(url) {
-            raise RegistryError(
-                f"registry '{self.name}' must be served over HTTPS: {url}"
-            );
-        }
-        headers = {"User-Agent": USER_AGENT};
-        if cached.get("etag") {
-            headers["If-None-Match"] = str(cached["etag"]);
-        }
-        request = urllib.request.Request(url, headers=headers);
-        try {
-            with urllib.request.urlopen(request, timeout=30) as response {
-                body = response.read().decode("utf-8");
-                etag = response.headers.get("ETag", "");
-            }
-        } except urllib.error.HTTPError as e {
-            if e.code == 304 and cached {
-                return cached.get("body");
-            }
-            if e.code == 404 {
-                return None;
-            }
-            raise RegistryError(f"{self.name}: GET {url} failed with HTTP {e.code}");
-        } except urllib.error.URLError as e {
-            if cached {
-                return cached.get("body");
-            }
-            raise RegistryError(f"{self.name}: cannot reach {url} ({e.reason})");
-        }
-        cache.parent.mkdir(parents=True, exist_ok=True);
-        cache.write_text(
-            json.dumps({"etag": etag, "fetched": time.time(), "body": body}),
-            encoding="utf-8"
-        );
-        return body;
-    }
-
-    def settings -> dict[str, any] {
-        if self._settings is None {
-            text = self._read(SETTINGS_NAME);
-            if text is None {
-                raise RegistryError(
-                    f"registry '{self.name}' at {self.url} has no {SETTINGS_NAME}"
-                );
-            }
-            data = json.loads(text);
-            if int(data.get("protocol", 0)) != PROTOCOL_VERSION {
-                raise RegistryError(
-                    f"registry '{self.name}' speaks protocol {data.get('protocol')}; "
-                    f"this jac speaks {PROTOCOL_VERSION}"
-                );
-            }
-            self._settings = data;
-        }
-        return self._settings;
-    }
-
-    def entries(name: str) -> list[IndexEntry] {
-        if name not in self._entries {
-            text = self._read(index_rel_path(name));
-            self._entries[name] = parse_index_lines(text) if text else [];
-        }
-        return self._entries[name];
-    }
-
-    def list_names -> list[str] {
-        if _is_local(self.url) {
-            base_dir = Path(self.base());
-            rels = [
-                str(p.relative_to(base_dir)).replace(os.sep, "/")
-                for p in (base_dir / INDEX_DIR).glob("*/*.json")
-            ];
-        } else {
-            repo = str(self.settings().get("repo", ""));
-            if "/" not in repo {
-                raise RegistryError(
-                    f"registry '{self.name}' does not name its GitHub repository in "
-                    f"{SETTINGS_NAME}, so its packages cannot be listed"
-                );
-            }
-            rels = _github_tree(repo, str(self.settings().get("branch", "main")));
-        }
-        names: set[str] = set();
-        for rel in rels {
-            name = name_of_index_path(rel);
-            if name is not None {
-                names.add(name);
-            }
-        }
-        return sorted(names);
-    }
-
-    def api(name: str, version: str) -> dict[str, any] | None {
-        text = self._read(api_rel_path(name, version));
-        if not text {
-            return None;
-        }
-        data = json.loads(text);
-        return data if isinstance(data, dict) else None;
-    }
-
-    def find(name: str, version: str) -> IndexEntry | None {
-        for e in self.entries(name) {
-            if e.version == version {
-                return e;
-            }
-        }
-        return None;
-    }
-
-    def blob_url(sha256: str) -> str {
-        blob_base = str(self.settings().get("blob_base", "blobs/"));
-        if not blob_base.endswith("/") {
-            blob_base += "/";
-        }
-        if urlsplit(blob_base).scheme in ("http", "https", "file") {
-            return blob_base + f"{sha256}.jab";
-        }
-        if _is_local(self.url) {
-            return str(Path(self.base()) / blob_base / f"{sha256}.jab");
-        }
-        return urljoin(self.base(), blob_base) + f"{sha256}.jab";
-    }
-
-    def fetch_blob(item: IndexEntry) -> bytes {
-        return fetch_verified(
-            self.blob_url(item.sha256), item.sha256, f"{item.name} {item.version}"
-        );
-    }
+    return self.url if self.url.endswith("/") else self.url + "/";
 }
 
-def fetch_verified(url: str, sha256: str, label: str) -> bytes {
+impl Registry.key -> str {
+    return hashlib.sha256(self.base().encode()).hexdigest()[:16];
+}
+
+impl Registry._cache_file(rel: str) -> Path {
+    return bucket("pkg-index").path() / self.key() / rel;
+}
+
+impl Registry._read(rel: str) -> str | None {
+    if _is_local(self.url) {
+        target = Path(self.base()) / rel;
+        return target.read_text(encoding="utf-8") if target.is_file() else None;
+    }
+
+    cache = self._cache_file(rel);
+    cached: dict[str, any] = {};
+    if cache.is_file() {
+        try {
+            cached = json.loads(cache.read_text(encoding="utf-8"));
+        } except (OSError, ValueError) {
+            cached = {};
+        }
+    }
+    if offline() {
+        if not cached {
+            raise RegistryError(
+                f"{self.name}: {rel} is not cached and jac.toml sets `[network] offline`"
+            );
+        }
+        return cached.get("body");
+    }
+    url = urljoin(self.base(), rel);
+    if not allowed_url(url) {
+        raise RegistryError(f"registry '{self.name}' must be served over HTTPS: {url}");
+    }
+    headers = {"User-Agent": USER_AGENT};
+    if cached.get("etag") {
+        headers["If-None-Match"] = str(cached["etag"]);
+    }
+    request = urllib.request.Request(url, headers=headers);
+    try {
+        with urllib.request.urlopen(request, timeout=30) as response {
+            body = response.read().decode("utf-8");
+            etag = response.headers.get("ETag", "");
+        }
+    } except urllib.error.HTTPError as e {
+        if e.code == 304 and cached {
+            return cached.get("body");
+        }
+        if e.code == 404 {
+            return None;
+        }
+        raise RegistryError(f"{self.name}: GET {url} failed with HTTP {e.code}");
+    } except urllib.error.URLError as e {
+        if cached {
+            return cached.get("body");
+        }
+        raise RegistryError(f"{self.name}: cannot reach {url} ({e.reason})");
+    }
+    cache.parent.mkdir(parents=True, exist_ok=True);
+    cache.write_text(
+        json.dumps({"etag": etag, "fetched": time.time(), "body": body}),
+        encoding="utf-8"
+    );
+    return body;
+}
+
+impl Registry.settings -> dict[str, any] {
+    if self._settings is None {
+        text = self._read(SETTINGS_NAME);
+        if text is None {
+            raise RegistryError(
+                f"registry '{self.name}' at {self.url} has no {SETTINGS_NAME}"
+            );
+        }
+        data = json.loads(text);
+        if int(data.get("protocol", 0)) != PROTOCOL_VERSION {
+            raise RegistryError(
+                f"registry '{self.name}' speaks protocol {data.get('protocol')}; "
+                f"this jac speaks {PROTOCOL_VERSION}"
+            );
+        }
+        self._settings = data;
+    }
+    return self._settings;
+}
+
+impl Registry.entries(name: str) -> list[IndexEntry] {
+    if name not in self._entries {
+        text = self._read(index_rel_path(name));
+        self._entries[name] = parse_index_lines(text) if text else [];
+    }
+    return self._entries[name];
+}
+
+impl Registry.list_names -> list[str] {
+    if _is_local(self.url) {
+        base_dir = Path(self.base());
+        rels = [
+            str(p.relative_to(base_dir)).replace(os.sep, "/")
+            for p in (base_dir / INDEX_DIR).glob("*/*.json")
+        ];
+    } else {
+        repo = str(self.settings().get("repo", ""));
+        if "/" not in repo {
+            raise RegistryError(
+                f"registry '{self.name}' does not name its GitHub repository in "
+                f"{SETTINGS_NAME}, so its packages cannot be listed"
+            );
+        }
+        rels = _github_tree(repo, str(self.settings().get("branch", "main")));
+    }
+    names: set[str] = set();
+    for rel in rels {
+        name = name_of_index_path(rel);
+        if name is not None {
+            names.add(name);
+        }
+    }
+    return sorted(names);
+}
+
+impl Registry.api(name: str, version: str) -> dict[str, any] | None {
+    text = self._read(api_rel_path(name, version));
+    if not text {
+        return None;
+    }
+    data = json.loads(text);
+    return data if isinstance(data, dict) else None;
+}
+
+impl Registry.find(name: str, version: str) -> IndexEntry | None {
+    for e in self.entries(name) {
+        if e.version == version {
+            return e;
+        }
+    }
+    return None;
+}
+
+impl Registry.blob_url(sha256: str) -> str {
+    blob_base = str(self.settings().get("blob_base", "blobs/"));
+    if not blob_base.endswith("/") {
+        blob_base += "/";
+    }
+    if urlsplit(blob_base).scheme in ("http", "https", "file") {
+        return blob_base + f"{sha256}.jab";
+    }
+    if _is_local(self.url) {
+        return str(Path(self.base()) / blob_base / f"{sha256}.jab");
+    }
+    return urljoin(self.base(), blob_base) + f"{sha256}.jab";
+}
+
+impl Registry.fetch_blob(item: IndexEntry) -> bytes {
+    return fetch_verified(
+        self.blob_url(item.sha256), item.sha256, f"{item.name} {item.version}"
+    );
+}
+
+impl fetch_verified(url: str, sha256: str, label: str) -> bytes {
     if urlsplit(url).scheme not in ("http", "https") {
         path = _local_path(url);
         if not path.is_file() {
@@ -378,7 +418,7 @@ def fetch_verified(url: str, sha256: str, label: str) -> bytes {
     }
 }
 
-def registry_urls(configured: dict[str, str] | None = None) -> dict[str, str] {
+impl registry_urls(configured: dict[str, str] | None = None) -> dict[str, str] {
     urls: dict[str, str] = {
         DEFAULT_REGISTRY_NAME: os.environ.get(REGISTRY_ENV, "") or DEFAULT_REGISTRY_URL
     };
@@ -388,9 +428,7 @@ def registry_urls(configured: dict[str, str] | None = None) -> dict[str, str] {
     return urls;
 }
 
-glob _open_registries: dict[str, Registry] = {};
-
-def registry_named(name: str, configured: dict[str, str] | None = None) -> Registry {
+impl registry_named(name: str, configured: dict[str, str] | None = None) -> Registry {
     urls = registry_urls(configured);
     key = name or DEFAULT_REGISTRY_NAME;
     if key not in urls {
@@ -406,6 +444,6 @@ def registry_named(name: str, configured: dict[str, str] | None = None) -> Regis
     return _open_registries[cache_key];
 }
 
-def forget_registries {
+impl forget_registries {
     _open_registries.clear();
 }

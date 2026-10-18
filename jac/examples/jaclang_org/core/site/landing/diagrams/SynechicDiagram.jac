@@ -7,7 +7,21 @@ glob MPath: any = motion.path,
      C_PROGRAM: str = "#ff6b35",
      C_ECO: str = "#56d364";
 
-def:pub StackBox(x: int, y: int, label: str, sub: str) -> JsxElement {
+def:pub StackBox(x: int, y: int, label: str, sub: str) -> JsxElement;
+
+def:pub GhostChip(x: int, y: int, w: int, label: str) -> JsxElement;
+
+def:pub ToolChip(x: int, y: int, w: int, label: str, tone: str = "") -> JsxElement;
+
+def:pub RoleDot(color: str, label: str) -> JsxElement;
+
+def:pub CallPill(cx: int, label: str) -> JsxElement;
+
+def:pub Boundary(y: int, label: str) -> JsxElement;
+
+def:pub SynechicDiagram -> JsxElement;
+
+impl StackBox(x: int, y: int, label: str, sub: str) -> JsxElement {
     return
         <g>
             <rect
@@ -44,7 +58,7 @@ def:pub StackBox(x: int, y: int, label: str, sub: str) -> JsxElement {
         </g>;
 }
 
-def:pub GhostChip(x: int, y: int, w: int, label: str) -> JsxElement {
+impl GhostChip(x: int, y: int, w: int, label: str) -> JsxElement {
     return
         <g opacity="0.65">
             <rect
@@ -70,7 +84,7 @@ def:pub GhostChip(x: int, y: int, w: int, label: str) -> JsxElement {
         </g>;
 }
 
-def:pub ToolChip(x: int, y: int, w: int, label: str, tone: str = "") -> JsxElement {
+impl ToolChip(x: int, y: int, w: int, label: str, tone: str = "") -> JsxElement {
     return
         <g>
             <rect
@@ -96,7 +110,7 @@ def:pub ToolChip(x: int, y: int, w: int, label: str, tone: str = "") -> JsxEleme
         </g>;
 }
 
-def:pub RoleDot(color: str, label: str) -> JsxElement {
+impl RoleDot(color: str, label: str) -> JsxElement {
     return
         <span className="flex items-center gap-2 text-muted-foreground">
             <span className="size-2 rounded-full" style={{"background": color}}></span>
@@ -104,7 +118,7 @@ def:pub RoleDot(color: str, label: str) -> JsxElement {
         </span>;
 }
 
-def:pub CallPill(cx: int, label: str) -> JsxElement {
+impl CallPill(cx: int, label: str) -> JsxElement {
     return
         <g>
             <rect
@@ -130,7 +144,7 @@ def:pub CallPill(cx: int, label: str) -> JsxElement {
         </g>;
 }
 
-def:pub Boundary(y: int, label: str) -> JsxElement {
+impl Boundary(y: int, label: str) -> JsxElement {
     return
         <g>
             <line
@@ -179,7 +193,7 @@ def:pub Boundary(y: int, label: str) -> JsxElement {
         </g>;
 }
 
-def:pub SynechicDiagram -> JsxElement {
+impl SynechicDiagram -> JsxElement {
     return
         <div>
             <div

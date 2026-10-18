@@ -14,19 +14,122 @@ import from jaclang.compiler.frontend.host { active_host }
 import type from jaclang.compiler.frontend.codeinfo { InteropManifest }
 import from jaclang.project.workspace_model { AppSpec }
 
-def _coerce_module(module: uni.Module, context: CodeContext) {
+def _coerce_module(module: uni.Module, context: CodeContext);
+
+def _coerce_client_module(module: uni.Module);
+
+def _coerce_native_module(module: uni.Module);
+
+def _stamp_context_element(elem: uni.UniNode, context: CodeContext);
+
+def hub_module_for_path(path: str, prog: JacProgram) -> (uni.Module | None);
+
+def module_has_client_top(module: (uni.Module | None)) -> bool;
+
+def ability_delegates_to_model(ab: uni.Ability) -> bool;
+
+def is_server_anchored_module(module: (uni.Module | None)) -> bool;
+
+def classify_import(imp: uni.Import) -> BareImportVerdict;
+
+def module_own_native_anchor(module: (uni.Module | None)) -> bool;
+
+
+def plain_native_import_target(nd: uni.Import, prog: JacProgram) -> (str | None);
+
+def import_declares_native_target(
+    nd: uni.Import, prog: (JacProgram | None) = None
+) -> bool;
+
+def native_only_import_target(nd: uni.Import, prog: JacProgram) -> (str | None);
+
+def _python_side_emits(stmt: uni.UniNode, native_module: bool) -> bool;
+
+def python_side_name_refs(mod: uni.Module) -> set[str];
+
+def import_bound_names(nd: uni.Import) -> list[str];
+
+def clib_decl_type_names(nd: uni.Import) -> set[str];
+
+def is_client_native_edge_import(
+    nd: uni.Import, prog: JacProgram, client_tops: (dict[str, bool] | None) = None
+) -> bool;
+
+def _has_client_top(
+    module: (uni.Module | None), client_tops: (dict[str, bool] | None)
+) -> bool;
+
+enum ClientImportVerdict {
+    CLIENT = "client",
+    BRIDGED = "bridged",
+    DEAD = "dead",
+    UNKNOWN = "unknown"
+}
+
+enum CrossAppKind {
+    LOCAL = "local",
+    CLIENT_BRIDGE = "client_bridge",
+    SERVICE_BRIDGE = "service_bridge",
+    NATIVE_BIND = "native_bind"
+}
+
+def bridgeable_import_target(nd: uni.Import) -> (str | None);
+
+def is_service_app_entry(path: str) -> bool;
+
+def module_app(module: (uni.Module | None)) -> (str | None);
+
+def import_consumer_app(nd: uni.Import) -> (str | None);
+
+def same_workspace(consumer_path: str, provider_path: str) -> bool;
+
+def import_provider_spec(nd: uni.Import) -> (AppSpec | None);
+
+def import_provider_app(nd: uni.Import) -> (str | None);
+
+def import_provider_route(nd: uni.Import) -> str;
+
+def import_crosses_apps(nd: uni.Import) -> bool;
+
+def is_service_bridge_import(nd: uni.Import) -> bool;
+
+def classify_cross_app_import(
+    nd: uni.Import, manifest: (InteropManifest | None)
+) -> CrossAppKind;
+
+def is_client_boundary_import(nd: uni.Import) -> bool;
+
+def symbol_linked_source_module(nd: uni.Import) -> (uni.Module | None);
+
+def _declared_name(stmt: uni.ContextAwareNode) -> (str | None);
+
+def _import_item_declaration(
+    source_mod: uni.Module, item: uni.ModuleItem
+) -> (uni.ContextAwareNode | None);
+
+def classify_client_import_item(
+    source_mod: uni.Module, item: uni.UniNode
+) -> ClientImportVerdict;
+
+def import_binds_client_native(
+    nd: uni.Import, manifest: (InteropManifest | None)
+) -> bool;
+
+def _default_codespace_for(target_program: JacProgram) -> str;
+
+impl _coerce_module(module: uni.Module, context: CodeContext) {
     module.set_code_context(context);
 }
 
-def _coerce_client_module(module: uni.Module) {
+impl _coerce_client_module(module: uni.Module) {
     _coerce_module(module, context=CodeContext.CLIENT);
 }
 
-def _coerce_native_module(module: uni.Module) {
+impl _coerce_native_module(module: uni.Module) {
     _coerce_module(module, context=CodeContext.NATIVE);
 }
 
-def _stamp_context_element(elem: uni.UniNode, context: CodeContext) {
+impl _stamp_context_element(elem: uni.UniNode, context: CodeContext) {
     if not isinstance(elem, uni.ContextAwareNode) {
         return;
     }
@@ -40,7 +143,7 @@ def _stamp_context_element(elem: uni.UniNode, context: CodeContext) {
     }
 }
 
-def hub_module_for_path(path: str, prog: JacProgram) -> (uni.Module | None) {
+impl hub_module_for_path(path: str, prog: JacProgram) -> (uni.Module | None) {
     hub = prog.mod.hub;
     if not hub {
         return None;
@@ -62,7 +165,7 @@ def hub_module_for_path(path: str, prog: JacProgram) -> (uni.Module | None) {
     return None;
 }
 
-def module_has_client_top(module: (uni.Module | None)) -> bool {
+impl module_has_client_top(module: (uni.Module | None)) -> bool {
     if module is None {
         return False;
     }
@@ -77,7 +180,7 @@ def module_has_client_top(module: (uni.Module | None)) -> bool {
     return False;
 }
 
-def ability_delegates_to_model(ab: uni.Ability) -> bool {
+impl ability_delegates_to_model(ab: uni.Ability) -> bool {
     if isinstance(ab.body, uni.Expr) {
         return True;
     }
@@ -94,7 +197,7 @@ def ability_delegates_to_model(ab: uni.Ability) -> bool {
     );
 }
 
-def is_server_anchored_module(module: (uni.Module | None)) -> bool {
+impl is_server_anchored_module(module: (uni.Module | None)) -> bool {
     if module is None {
         return True;
     }
@@ -131,7 +234,7 @@ def is_server_anchored_module(module: (uni.Module | None)) -> bool {
     return False;
 }
 
-def classify_import(imp: uni.Import) -> BareImportVerdict {
+impl classify_import(imp: uni.Import) -> BareImportVerdict {
     if imp.from_loc is None {
         return BareImportVerdict();
     }
@@ -143,7 +246,7 @@ def classify_import(imp: uni.Import) -> BareImportVerdict {
     return classify_bare_import(imp.from_loc.dot_path_str, imp.loc.mod_path or '');
 }
 
-def module_own_native_anchor(module: (uni.Module | None)) -> bool {
+impl module_own_native_anchor(module: (uni.Module | None)) -> bool {
     import from jaclang.compiler.frontend.constant { OwnershipKind }
     if module is None {
         return False;
@@ -162,7 +265,7 @@ def module_own_native_anchor(module: (uni.Module | None)) -> bool {
 }
 
 
-def plain_native_import_target(nd: uni.Import, prog: JacProgram) -> (str | None) {
+impl plain_native_import_target(nd: uni.Import, prog: JacProgram) -> (str | None) {
     import from jaclang.compiler.placement.placement_pins { effective_module_pin }
     if (
         nd.is_service_import
@@ -207,7 +310,7 @@ def plain_native_import_target(nd: uni.Import, prog: JacProgram) -> (str | None)
     return None;
 }
 
-def import_declares_native_target(
+impl import_declares_native_target(
     nd: uni.Import, prog: (JacProgram | None) = None
 ) -> bool {
     import from jaclang.compiler.placement.placement_pins { effective_module_pin }
@@ -225,7 +328,7 @@ def import_declares_native_target(
     return effective_module_pin(resolved, prog) == 'native';
 }
 
-def native_only_import_target(nd: uni.Import, prog: JacProgram) -> (str | None) {
+impl native_only_import_target(nd: uni.Import, prog: JacProgram) -> (str | None) {
     import from jaclang.compiler.placement.placement_pins { effective_module_pin }
     resolved = plain_native_import_target(nd, prog);
     if resolved is None {
@@ -241,7 +344,7 @@ def native_only_import_target(nd: uni.Import, prog: JacProgram) -> (str | None) 
     return None;
 }
 
-def _python_side_emits(stmt: uni.UniNode, native_module: bool) -> bool {
+impl _python_side_emits(stmt: uni.UniNode, native_module: bool) -> bool {
     owner = stmt;
     if isinstance(stmt, uni.ImplDef) and stmt.decl_link is not None {
         owner = stmt.decl_link;
@@ -264,7 +367,7 @@ def _python_side_emits(stmt: uni.UniNode, native_module: bool) -> bool {
     return native_module;
 }
 
-def python_side_name_refs(mod: uni.Module) -> set[str] {
+impl python_side_name_refs(mod: uni.Module) -> set[str] {
     import from jaclang.compiler.frontend.module_facts { ModuleFacts }
     native_module = mod.decided_codespace == 'native';
     emitted: list[uni.UniNode] = [];
@@ -291,7 +394,7 @@ def python_side_name_refs(mod: uni.Module) -> set[str] {
     return names;
 }
 
-def import_bound_names(nd: uni.Import) -> list[str] {
+impl import_bound_names(nd: uni.Import) -> list[str] {
     bound: list[str] = [];
     for item in nd.items {
         if isinstance(item, uni.ModuleItem) {
@@ -310,7 +413,7 @@ def import_bound_names(nd: uni.Import) -> list[str] {
     return bound;
 }
 
-def clib_decl_type_names(nd: uni.Import) -> set[str] {
+impl clib_decl_type_names(nd: uni.Import) -> set[str] {
     names: set[str] = set();
     for decl in nd.clib_decls or [] {
         for nm in decl.get_all_sub_nodes(uni.Name) {
@@ -320,7 +423,7 @@ def clib_decl_type_names(nd: uni.Import) -> set[str] {
     return names;
 }
 
-def is_client_native_edge_import(
+impl is_client_native_edge_import(
     nd: uni.Import, prog: JacProgram, client_tops: (dict[str, bool] | None) = None
 ) -> bool {
     if nd.code_context == CodeContext.CLIENT {} elif nd.code_context
@@ -331,7 +434,7 @@ def is_client_native_edge_import(
     return plain_native_import_target(nd, prog) is not None;
 }
 
-def _has_client_top(
+impl _has_client_top(
     module: (uni.Module | None), client_tops: (dict[str, bool] | None)
 ) -> bool {
     if client_tops is None or module is None {
@@ -344,21 +447,7 @@ def _has_client_top(
     return client_tops[key];
 }
 
-enum ClientImportVerdict {
-    CLIENT = "client",
-    BRIDGED = "bridged",
-    DEAD = "dead",
-    UNKNOWN = "unknown"
-}
-
-enum CrossAppKind {
-    LOCAL = "local",
-    CLIENT_BRIDGE = "client_bridge",
-    SERVICE_BRIDGE = "service_bridge",
-    NATIVE_BIND = "native_bind"
-}
-
-def bridgeable_import_target(nd: uni.Import) -> (str | None) {
+impl bridgeable_import_target(nd: uni.Import) -> (str | None) {
     if (
         nd.from_loc is None
         or not nd.items
@@ -383,7 +472,7 @@ def bridgeable_import_target(nd: uni.Import) -> (str | None) {
     return resolved;
 }
 
-def is_service_app_entry(path: str) -> bool {
+impl is_service_app_entry(path: str) -> bool {
     if not path {
         return False;
     }
@@ -391,18 +480,18 @@ def is_service_app_entry(path: str) -> bool {
     return app is not None and app.has_server;
 }
 
-def module_app(module: (uni.Module | None)) -> (str | None) {
+impl module_app(module: (uni.Module | None)) -> (str | None) {
     if module is None {
         return None;
     }
     return module.app;
 }
 
-def import_consumer_app(nd: uni.Import) -> (str | None) {
+impl import_consumer_app(nd: uni.Import) -> (str | None) {
     return module_app(nd.find_parent_of_type(uni.Module));
 }
 
-def same_workspace(consumer_path: str, provider_path: str) -> bool {
+impl same_workspace(consumer_path: str, provider_path: str) -> bool {
     host = active_host();
     cws = host.workspace(consumer_path);
     pws = host.workspace(provider_path);
@@ -415,7 +504,7 @@ def same_workspace(consumer_path: str, provider_path: str) -> bool {
     return os.path.realpath(cws.toml_path) == os.path.realpath(pws.toml_path);
 }
 
-def import_provider_spec(nd: uni.Import) -> (AppSpec | None) {
+impl import_provider_spec(nd: uni.Import) -> (AppSpec | None) {
     resolved = bridgeable_import_target(nd);
     if resolved is None {
         return None;
@@ -435,22 +524,22 @@ def import_provider_spec(nd: uni.Import) -> (AppSpec | None) {
     return provider_app;
 }
 
-def import_provider_app(nd: uni.Import) -> (str | None) {
+impl import_provider_app(nd: uni.Import) -> (str | None) {
     spec = import_provider_spec(nd);
     return spec.name if spec is not None else None;
 }
 
-def import_provider_route(nd: uni.Import) -> str {
+impl import_provider_route(nd: uni.Import) -> str {
     spec = import_provider_spec(nd);
     return spec.effective_route() if spec is not None else '';
 }
 
-def import_crosses_apps(nd: uni.Import) -> bool {
+impl import_crosses_apps(nd: uni.Import) -> bool {
     provider = import_provider_app(nd);
     return provider is not None and provider != import_consumer_app(nd);
 }
 
-def is_service_bridge_import(nd: uni.Import) -> bool {
+impl is_service_bridge_import(nd: uni.Import) -> bool {
     if bridgeable_import_target(nd) is None {
         return False;
     }
@@ -460,7 +549,7 @@ def is_service_bridge_import(nd: uni.Import) -> bool {
     return import_crosses_apps(nd);
 }
 
-def classify_cross_app_import(
+impl classify_cross_app_import(
     nd: uni.Import, manifest: (InteropManifest | None)
 ) -> CrossAppKind {
     kind = CrossAppKind.LOCAL;
@@ -483,11 +572,11 @@ def classify_cross_app_import(
     return kind;
 }
 
-def is_client_boundary_import(nd: uni.Import) -> bool {
+impl is_client_boundary_import(nd: uni.Import) -> bool {
     return classify_cross_app_import(nd, None) == CrossAppKind.CLIENT_BRIDGE;
 }
 
-def symbol_linked_source_module(nd: uni.Import) -> (uni.Module | None) {
+impl symbol_linked_source_module(nd: uni.Import) -> (uni.Module | None) {
     importer = nd.find_parent_of_type(uni.Module);
     for item in nd.items {
         if not (isinstance(item, uni.ModuleItem) and isinstance(item.name, uni.Name)) {
@@ -508,7 +597,7 @@ def symbol_linked_source_module(nd: uni.Import) -> (uni.Module | None) {
     return None;
 }
 
-def _declared_name(stmt: uni.ContextAwareNode) -> (str | None) {
+impl _declared_name(stmt: uni.ContextAwareNode) -> (str | None) {
     if isinstance(stmt, uni.Ability) {
         return stmt.name_ref.sym_name if stmt.name_ref is not None else None;
     }
@@ -521,7 +610,7 @@ def _declared_name(stmt: uni.ContextAwareNode) -> (str | None) {
     return None;
 }
 
-def _import_item_declaration(
+impl _import_item_declaration(
     source_mod: uni.Module, item: uni.ModuleItem
 ) -> (uni.ContextAwareNode | None) {
     if not isinstance(item.name, uni.Name) {
@@ -547,7 +636,7 @@ def _import_item_declaration(
     return None;
 }
 
-def classify_client_import_item(
+impl classify_client_import_item(
     source_mod: uni.Module, item: uni.UniNode
 ) -> ClientImportVerdict {
     if not isinstance(item, uni.ModuleItem) {
@@ -574,7 +663,7 @@ def classify_client_import_item(
     return ClientImportVerdict.DEAD;
 }
 
-def import_binds_client_native(
+impl import_binds_client_native(
     nd: uni.Import, manifest: (InteropManifest | None)
 ) -> bool {
     import from jaclang.compiler.frontend.codeinfo { InteropContext }
@@ -610,7 +699,7 @@ def import_binds_client_native(
     return False;
 }
 
-def _default_codespace_for(target_program: JacProgram) -> str {
+impl _default_codespace_for(target_program: JacProgram) -> str {
     import from jaclang.compiler.frontend.codeinfo { effective_default_codespace }
     opts = target_program.options;
     if opts is not None and opts.default_codespace {

@@ -6,30 +6,36 @@ obj AndroidEnvironment {
     has java_home: Path,
         sdk_home: Path;
 
-    def env -> dict[str, str] {
-        result: dict[str, str] = dict(os.environ);
-        result["JAVA_HOME"] = str(self.java_home);
-        result["ANDROID_HOME"] = str(self.sdk_home);
-        result["ANDROID_SDK_ROOT"] = str(self.sdk_home);
-        result["GRADLE_USER_HOME"] = os.environ.get(
-            "GRADLE_USER_HOME", str(bucket("toolchains-gradle").path())
-        );
-        result["PATH"] = os.pathsep.join(
-            [
-                str(self.java_home / "bin"),
-                str(self.sdk_home / "platform-tools"),
-                result.get("PATH", "")
-            ]
-        );
-        return result;
-    }
+    def env -> dict[str, str];
 }
 
-def ensure_jdk -> Path {
+def ensure_jdk -> Path;
+
+def ensure_android -> AndroidEnvironment;
+
+impl AndroidEnvironment.env -> dict[str, str] {
+    result: dict[str, str] = dict(os.environ);
+    result["JAVA_HOME"] = str(self.java_home);
+    result["ANDROID_HOME"] = str(self.sdk_home);
+    result["ANDROID_SDK_ROOT"] = str(self.sdk_home);
+    result["GRADLE_USER_HOME"] = os.environ.get(
+        "GRADLE_USER_HOME", str(bucket("toolchains-gradle").path())
+    );
+    result["PATH"] = os.pathsep.join(
+        [
+            str(self.java_home / "bin"),
+            str(self.sdk_home / "platform-tools"),
+            result.get("PATH", "")
+        ]
+    );
+    return result;
+}
+
+impl ensure_jdk -> Path {
     return tool_path("jdk");
 }
 
-def ensure_android -> AndroidEnvironment {
+impl ensure_android -> AndroidEnvironment {
     host = host_platform();
     artifact = ANDROID_ARTIFACTS.get(host);
     if artifact is None {

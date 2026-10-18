@@ -3,7 +3,43 @@ import from fnmatch { fnmatchcase }
 import from ._directory_native { try_directory_names }
 import from ._glob_native { glob_lexists }
 
-def:pub has_magic(s: str) -> bool {
+def:pub has_magic(s: str) -> bool;
+
+def:pub escape(pathname: str) -> str;
+
+def _ishidden(p: str) -> bool;
+
+def _isrecursive(pattern: str) -> bool;
+
+def _list_names(dirname: str, dironly: bool) -> list[str];
+
+def _glob1(
+    dirname: str, pattern: str, dironly: bool, include_hidden: bool
+) -> list[str];
+
+def _glob0(dirname: str, basename: str) -> list[str];
+
+def _rlistdir(
+    dirname: str, dironly: bool, include_hidden: bool, prefix: str, out: list[str]
+);
+
+def _glob2(dirname: str, dironly: bool, include_hidden: bool) -> list[str];
+
+def _iglob(
+    pathname: str, recursive: bool, dironly: bool, include_hidden: bool
+) -> list[str];
+
+def _glob_all(pathname: str, recursive: bool, include_hidden: bool) -> list[str];
+
+def:pub `glob(
+    pathname: str, recursive: bool = False, include_hidden: bool = False
+) -> list[str];
+
+def:pub iglob(
+    pathname: str, recursive: bool = False, include_hidden: bool = False
+) -> list[str];
+
+impl has_magic(s: str) -> bool {
     n: int = len(s);
     i: int = 0;
     while i < n {
@@ -16,7 +52,7 @@ def:pub has_magic(s: str) -> bool {
     return False;
 }
 
-def:pub escape(pathname: str) -> str {
+impl escape(pathname: str) -> str {
     out: str = "";
     n: int = len(pathname);
     i: int = 0;
@@ -34,15 +70,15 @@ def:pub escape(pathname: str) -> str {
     return out;
 }
 
-def _ishidden(p: str) -> bool {
+impl _ishidden(p: str) -> bool {
     return len(p) > 0 and p[0] == ".";
 }
 
-def _isrecursive(pattern: str) -> bool {
+impl _isrecursive(pattern: str) -> bool {
     return pattern == "**";
 }
 
-def _list_names(dirname: str, dironly: bool) -> list[str] {
+impl _list_names(dirname: str, dironly: bool) -> list[str] {
     dir: str = dirname;
     if dir == "" {
         dir = ".";
@@ -60,7 +96,7 @@ def _list_names(dirname: str, dironly: bool) -> list[str] {
     return sorted(out);
 }
 
-def _glob1(
+impl _glob1(
     dirname: str, pattern: str, dironly: bool, include_hidden: bool
 ) -> list[str] {
     out: list[str] = [];
@@ -76,7 +112,7 @@ def _glob1(
     return out;
 }
 
-def _glob0(dirname: str, basename: str) -> list[str] {
+impl _glob0(dirname: str, basename: str) -> list[str] {
     if basename != "" {
         if glob_lexists(join(dirname, basename)) {
             return [basename];
@@ -89,7 +125,7 @@ def _glob0(dirname: str, basename: str) -> list[str] {
     return [];
 }
 
-def _rlistdir(
+impl _rlistdir(
     dirname: str, dironly: bool, include_hidden: bool, prefix: str, out: list[str]
 ) {
     for x in _list_names(dirname, dironly) {
@@ -109,7 +145,7 @@ def _rlistdir(
     }
 }
 
-def _glob2(dirname: str, dironly: bool, include_hidden: bool) -> list[str] {
+impl _glob2(dirname: str, dironly: bool, include_hidden: bool) -> list[str] {
     out: list[str] = [];
     if dirname == "" or isdir(dirname) {
         out.append("");
@@ -118,7 +154,7 @@ def _glob2(dirname: str, dironly: bool, include_hidden: bool) -> list[str] {
     return out;
 }
 
-def _iglob(
+impl _iglob(
     pathname: str, recursive: bool, dironly: bool, include_hidden: bool
 ) -> list[str] {
     out: list[str] = [];
@@ -165,7 +201,7 @@ def _iglob(
     return out;
 }
 
-def _glob_all(pathname: str, recursive: bool, include_hidden: bool) -> list[str] {
+impl _glob_all(pathname: str, recursive: bool, include_hidden: bool) -> list[str] {
     out = _iglob(pathname, recursive, False, include_hidden);
     if pathname == "" or (recursive and _isrecursive(pathname[0:2])) {
         if len(out) > 0 and out[0] == "" {
@@ -181,13 +217,13 @@ def _glob_all(pathname: str, recursive: bool, include_hidden: bool) -> list[str]
     return out;
 }
 
-def:pub `glob(
+impl `glob(
     pathname: str, recursive: bool = False, include_hidden: bool = False
 ) -> list[str] {
     return _glob_all(pathname, recursive, include_hidden);
 }
 
-def:pub iglob(
+impl iglob(
     pathname: str, recursive: bool = False, include_hidden: bool = False
 ) -> list[str] {
     return _glob_all(pathname, recursive, include_hidden);

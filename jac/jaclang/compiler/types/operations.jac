@@ -59,7 +59,56 @@ glob BINARY_OPERATOR_MAP: dict[str, tuple[str, str]] = {
          Tok.MATMUL_EQ: Tok.DECOR_OP
      };
 
-def _is_runtime_archetype_instance(t: TypeBase, base_name: str) -> bool {
+def _is_runtime_archetype_instance(t: TypeBase, base_name: str) -> bool;
+
+def _has_gradual_type_args(t: TypeBase) -> bool;
+
+glob COMPLEX_ARITH_OPS: set[str] = {
+         Tok.PLUS,
+         Tok.MINUS,
+         Tok.STAR_MUL,
+         Tok.DIV,
+         Tok.STAR_POW
+     },
+     BITWISE_OPERATORS: set[str] = {Tok.BW_AND, Tok.BW_OR, Tok.BW_XOR},
+     SHIFT_OPERATORS: set[str] = {Tok.LSHIFT, Tok.RSHIFT};
+
+def get_numeric_promotion_type(
+    evaluator: TypeEvaluator,
+    left_type: TypeBase,
+    right_type: TypeBase,
+    op: str,
+    left_node: Expr | None = None,
+    right_node: Expr | None = None,
+    diag_node: UniNode | None = None
+) -> TypeBase | None;
+
+def is_int_kind_type(t: TypeBase) -> bool;
+
+def _is_builtin_instance_named(t: TypeBase, name: str) -> bool;
+
+def get_complex_arith_result_type(
+    left_type: TypeBase, right_type: TypeBase
+) -> TypeBase | None;
+
+def get_pow_result_type(
+    evaluator: TypeEvaluator,
+    left_type: TypeBase,
+    right_type: TypeBase,
+    right_node: (Expr | None),
+    left_node: Expr | None = None,
+    diag_node: UniNode | None = None
+) -> (TypeBase | None);
+
+def is_annotation_type(evaluator: TypeEvaluator, ty: TypeBase) -> bool;
+
+def _is_literal_form(operand: Expr) -> bool;
+
+def get_type_of_binary_operation(
+    evaluator: TypeEvaluator, expr: BinaryExpr
+) -> TypeBase;
+
+impl _is_runtime_archetype_instance(t: TypeBase, base_name: str) -> bool {
     if not (isinstance(t, ClassType) and t.is_instance()) {
         return False;
     }
@@ -71,7 +120,7 @@ def _is_runtime_archetype_instance(t: TypeBase, base_name: str) -> bool {
     return False;
 }
 
-def _has_gradual_type_args(t: TypeBase) -> bool {
+impl _has_gradual_type_args(t: TypeBase) -> bool {
     if not isinstance(t, ClassType) {
         return False;
     }
@@ -86,17 +135,7 @@ def _has_gradual_type_args(t: TypeBase) -> bool {
     return False;
 }
 
-glob COMPLEX_ARITH_OPS: set[str] = {
-         Tok.PLUS,
-         Tok.MINUS,
-         Tok.STAR_MUL,
-         Tok.DIV,
-         Tok.STAR_POW
-     },
-     BITWISE_OPERATORS: set[str] = {Tok.BW_AND, Tok.BW_OR, Tok.BW_XOR},
-     SHIFT_OPERATORS: set[str] = {Tok.LSHIFT, Tok.RSHIFT};
-
-def get_numeric_promotion_type(
+impl get_numeric_promotion_type(
     evaluator: TypeEvaluator,
     left_type: TypeBase,
     right_type: TypeBase,
@@ -146,20 +185,20 @@ def get_numeric_promotion_type(
     return arithmetic_result_type(evaluator, unified);
 }
 
-def is_int_kind_type(t: TypeBase) -> bool {
+impl is_int_kind_type(t: TypeBase) -> bool {
     name = numeric_name_of(t);
     return name is not None
         and JAC_TYPE_REGISTRY.numeric_kind_of(name) == NumericKind.IntKind;
 }
 
-def _is_builtin_instance_named(t: TypeBase, name: str) -> bool {
+impl _is_builtin_instance_named(t: TypeBase, name: str) -> bool {
     return isinstance(t, ClassType)
         and t.is_builtin()
         and t.is_instance()
         and t.shared.class_name == name;
 }
 
-def get_complex_arith_result_type(
+impl get_complex_arith_result_type(
     left_type: TypeBase, right_type: TypeBase
 ) -> TypeBase | None {
     l_complex = _is_builtin_instance_named(left_type, "complex");
@@ -175,7 +214,7 @@ def get_complex_arith_result_type(
     return None;
 }
 
-def get_pow_result_type(
+impl get_pow_result_type(
     evaluator: TypeEvaluator,
     left_type: TypeBase,
     right_type: TypeBase,
@@ -210,7 +249,7 @@ def get_pow_result_type(
     return evaluator._convert_to_instance(float_class);
 }
 
-def is_annotation_type(evaluator: TypeEvaluator, ty: TypeBase) -> bool {
+impl is_annotation_type(evaluator: TypeEvaluator, ty: TypeBase) -> bool {
     if ty.is_instantiable() or isinstance(ty, UnionType) {
         return True;
     }
@@ -234,7 +273,7 @@ def is_annotation_type(evaluator: TypeEvaluator, ty: TypeBase) -> bool {
     return False;
 }
 
-def _is_literal_form(operand: Expr) -> bool {
+impl _is_literal_form(operand: Expr) -> bool {
     if not isinstance(operand, AtomTrailer) or operand.is_attr {
         return False;
     }
@@ -245,7 +284,7 @@ def _is_literal_form(operand: Expr) -> bool {
     return isinstance(head, Name) and head.value == "Literal";
 }
 
-def get_type_of_binary_operation(
+impl get_type_of_binary_operation(
     evaluator: TypeEvaluator, expr: BinaryExpr
 ) -> TypeBase {
     left_type = evaluator.get_type_of_expression(expr.left);

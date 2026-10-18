@@ -9,7 +9,85 @@ enum CallKind {
     INTRINSIC = "intrinsic"
 }
 
-def resolve_expr_symbol(expr: Expr, module: (Module | None) = None) -> (Symbol | None) {
+def resolve_expr_symbol(expr: Expr, module: (Module | None) = None) -> (Symbol | None);
+
+def imported_module_name(expr: Expr) -> str | None;
+
+def _is_user_symbol(sym: Symbol) -> bool;
+
+def intrinsic_registry_if_ready -> (IntrinsicRegistry | None);
+
+def resolved_callee(nd: FuncCall) -> (Ability | None);
+
+def classify_call(nd: FuncCall) -> CallKind;
+
+def symbol_owner_archetype(sym: Symbol) -> (Archetype | None);
+
+def collect_field_names(
+    sym: (Symbol | None), arch_type_filter: (str | None) = None
+) -> list[str];
+
+def collect_method_names(arch: Archetype) -> set[str];
+
+def resolve_importer_path_from_node(nd: UniNode) -> (str | None);
+
+def resolve_import_source_module(prog: JacProgram, nd: Import) -> (Module | None);
+
+def _already_reported(
+    program: JacProgram, reporter: CompilerPass, diag: DiagnosticInfo, nd: UniNode
+) -> bool;
+
+def report_dead_client_import(
+    reporter: CompilerPass,
+    nd: Import,
+    item: ModuleItem,
+    unbound: (set[str] | None) = None
+) -> None;
+
+def report_client_bare_import_uses(
+    reporter: CompilerPass, mod: Module, unbound: (set[str] | None) = None
+);
+
+def _bare_py_import_bindings(mod: Module) -> dict[str, tuple[ModuleItem, Import]];
+
+def _shadows_bare_import(nm: Name) -> bool;
+
+def _report_client_bare_import_uses(
+    reporter: CompilerPass,
+    mod: Module,
+    stmt: UniNode,
+    unbound: (set[str] | None) = None
+);
+
+def report_placement_warnings(reporter: CompilerPass, mod: Module);
+
+def element_display_name(top: UniNode) -> str;
+
+def _client_emitted_top(stmt: UniNode, extra_bound: set[str]) -> bool;
+
+def _module_top_element(mod: Module, nd: UniNode) -> (UniNode | None);
+
+def client_bridged_endpoint(mod: Module, top: UniNode) -> bool;
+
+def client_value_ref_targets(
+    mod: Module, extra_bound: (set[str] | None) = None
+) -> list[tuple[Name, UniNode]];
+
+def _import_bound_names(imp: Import) -> set[str];
+
+def _import_used_as_value(mod: Module, imp: Import) -> bool;
+
+def serverless_server_evidence(
+    mod: Module, prog: JacProgram
+) -> list[tuple[str, str, UniNode]];
+
+def report_serverless_kind_errors(reporter: CompilerPass, mod: Module);
+
+def return_type_is_jsx(rt: (Expr | None)) -> bool;
+
+impl resolve_expr_symbol(
+    expr: Expr, module: (Module | None) = None
+) -> (Symbol | None) {
     if isinstance(expr, AstSymbolNode) and expr.sym {
         return expr.sym;
     }
@@ -30,7 +108,7 @@ def resolve_expr_symbol(expr: Expr, module: (Module | None) = None) -> (Symbol |
     return None;
 }
 
-def imported_module_name(expr: Expr) -> str | None {
+impl imported_module_name(expr: Expr) -> str | None {
     if not isinstance(expr.type, ModuleType) {
         return None;
     }
@@ -64,7 +142,7 @@ def imported_module_name(expr: Expr) -> str | None {
     return None;
 }
 
-def _is_user_symbol(sym: Symbol) -> bool {
+impl _is_user_symbol(sym: Symbol) -> bool {
     scope: (UniScopeNode | None) = sym.parent_tab;
     while scope is not None {
         if isinstance(scope, Module) {
@@ -78,7 +156,7 @@ def _is_user_symbol(sym: Symbol) -> bool {
     return False;
 }
 
-def intrinsic_registry_if_ready -> (IntrinsicRegistry | None) {
+impl intrinsic_registry_if_ready -> (IntrinsicRegistry | None) {
     if active_host().module_in_flight(["jaclang.compiler.intrinsic_registry"]) {
         return None;
     }
@@ -86,11 +164,11 @@ def intrinsic_registry_if_ready -> (IntrinsicRegistry | None) {
     return INTRINSIC_REGISTRY;
 }
 
-def resolved_callee(nd: FuncCall) -> (Ability | None) {
+impl resolved_callee(nd: FuncCall) -> (Ability | None) {
     return nd.callee_decl or ability_of_symbol(resolve_expr_symbol(nd.target));
 }
 
-def classify_call(nd: FuncCall) -> CallKind {
+impl classify_call(nd: FuncCall) -> CallKind {
     if isinstance(nd.target, AtomTrailer) and nd.target.is_attr {
         return CallKind.METHOD;
     }
@@ -140,7 +218,7 @@ def classify_call(nd: FuncCall) -> CallKind {
     return CallKind.FUNCTION;
 }
 
-def symbol_owner_archetype(sym: Symbol) -> (Archetype | None) {
+impl symbol_owner_archetype(sym: Symbol) -> (Archetype | None) {
     decl = sym.decl;
     if decl is None {
         return None;
@@ -152,7 +230,7 @@ def symbol_owner_archetype(sym: Symbol) -> (Archetype | None) {
     return None;
 }
 
-def collect_field_names(
+impl collect_field_names(
     sym: (Symbol | None), arch_type_filter: (str | None) = None
 ) -> list[str] {
     if not sym {
@@ -168,7 +246,7 @@ def collect_field_names(
     return [field.sym_name for field in arch.get_has_vars()];
 }
 
-def collect_method_names(arch: Archetype) -> set[str] {
+impl collect_method_names(arch: Archetype) -> set[str] {
     names: set[str] = set();
     if arch.body is not None and isinstance(arch.body, Sequence) {
         for stmt in arch.body {
@@ -187,7 +265,7 @@ def collect_method_names(arch: Archetype) -> set[str] {
     return names;
 }
 
-def resolve_importer_path_from_node(nd: UniNode) -> (str | None) {
+impl resolve_importer_path_from_node(nd: UniNode) -> (str | None) {
     importer_mod = nd.find_parent_of_type(Module);
     if (
         importer_mod is None
@@ -203,7 +281,7 @@ def resolve_importer_path_from_node(nd: UniNode) -> (str | None) {
     }
 }
 
-def resolve_import_source_module(prog: JacProgram, nd: Import) -> (Module | None) {
+impl resolve_import_source_module(prog: JacProgram, nd: Import) -> (Module | None) {
     if not nd.from_loc {
         return None;
     }
@@ -220,7 +298,7 @@ def resolve_import_source_module(prog: JacProgram, nd: Import) -> (Module | None
     }
 }
 
-def _already_reported(
+impl _already_reported(
     program: JacProgram, reporter: CompilerPass, diag: DiagnosticInfo, nd: UniNode
 ) -> bool {
     for pool in (
@@ -243,7 +321,7 @@ def _already_reported(
     return False;
 }
 
-def report_dead_client_import(
+impl report_dead_client_import(
     reporter: CompilerPass,
     nd: Import,
     item: ModuleItem,
@@ -260,7 +338,7 @@ def report_dead_client_import(
     reporter.ctx.emit(E5082, node_override=item, name=name, module=module_name);
 }
 
-def report_client_bare_import_uses(
+impl report_client_bare_import_uses(
     reporter: CompilerPass, mod: Module, unbound: (set[str] | None) = None
 ) {
     for stmt in mod.body {
@@ -274,7 +352,7 @@ def report_client_bare_import_uses(
     }
 }
 
-def _bare_py_import_bindings(mod: Module) -> dict[str, tuple[ModuleItem, Import]] {
+impl _bare_py_import_bindings(mod: Module) -> dict[str, tuple[ModuleItem, Import]] {
     out: dict[str, tuple[ModuleItem, Import]] = {};
     for imp in mod.get_all_sub_nodes(Import) {
         if imp.is_service_import or imp.is_typed {
@@ -306,7 +384,7 @@ def _bare_py_import_bindings(mod: Module) -> dict[str, tuple[ModuleItem, Import]
     return out;
 }
 
-def _shadows_bare_import(nm: Name) -> bool {
+impl _shadows_bare_import(nm: Name) -> bool {
     sym = nm.sym;
     if sym is None or sym.decl is None {
         return False;
@@ -332,7 +410,7 @@ def _shadows_bare_import(nm: Name) -> bool {
     return False;
 }
 
-def _report_client_bare_import_uses(
+impl _report_client_bare_import_uses(
     reporter: CompilerPass,
     mod: Module,
     stmt: UniNode,
@@ -375,7 +453,7 @@ def _report_client_bare_import_uses(
     }
 }
 
-def report_placement_warnings(reporter: CompilerPass, mod: Module) {
+impl report_placement_warnings(reporter: CompilerPass, mod: Module) {
     ps = get_module_summary(mod, reporter.prog);
     written_glob_idxs: set[int] = set();
     for es in ps.elements {
@@ -412,7 +490,7 @@ def report_placement_warnings(reporter: CompilerPass, mod: Module) {
     }
 }
 
-def element_display_name(top: UniNode) -> str {
+impl element_display_name(top: UniNode) -> str {
     if isinstance(top, Ability) and isinstance(top.name_ref, Name) {
         return top.name_ref.sym_name;
     }
@@ -431,7 +509,7 @@ def element_display_name(top: UniNode) -> str {
     return 'element';
 }
 
-def _client_emitted_top(stmt: UniNode, extra_bound: set[str]) -> bool {
+impl _client_emitted_top(stmt: UniNode, extra_bound: set[str]) -> bool {
     if not isinstance(stmt, ContextAwareNode) {
         return False;
     }
@@ -445,7 +523,7 @@ def _client_emitted_top(stmt: UniNode, extra_bound: set[str]) -> bool {
     );
 }
 
-def _module_top_element(mod: Module, nd: UniNode) -> (UniNode | None) {
+impl _module_top_element(mod: Module, nd: UniNode) -> (UniNode | None) {
     cur: (UniNode | None) = nd;
     while (cur is not None and cur.parent is not mod) {
         cur = cur.parent;
@@ -453,7 +531,7 @@ def _module_top_element(mod: Module, nd: UniNode) -> (UniNode | None) {
     return cur;
 }
 
-def client_bridged_endpoint(mod: Module, top: UniNode) -> bool {
+impl client_bridged_endpoint(mod: Module, top: UniNode) -> bool {
     return (
         isinstance(top, Ability)
         and isinstance(top, ContextAwareNode)
@@ -464,7 +542,7 @@ def client_bridged_endpoint(mod: Module, top: UniNode) -> bool {
     );
 }
 
-def client_value_ref_targets(
+impl client_value_ref_targets(
     mod: Module, extra_bound: (set[str] | None) = None
 ) -> list[tuple[Name, UniNode]] {
     bound = extra_bound if extra_bound is not None else set();
@@ -520,7 +598,7 @@ def client_value_ref_targets(
     return out;
 }
 
-def _import_bound_names(imp: Import) -> set[str] {
+impl _import_bound_names(imp: Import) -> set[str] {
     names: set[str] = set();
     for item in imp.items {
         if isinstance(item, ModuleItem) {
@@ -540,7 +618,7 @@ def _import_bound_names(imp: Import) -> set[str] {
     return names;
 }
 
-def _import_used_as_value(mod: Module, imp: Import) -> bool {
+impl _import_used_as_value(mod: Module, imp: Import) -> bool {
     names = _import_bound_names(imp);
     if not names {
         return False;
@@ -566,7 +644,7 @@ def _import_used_as_value(mod: Module, imp: Import) -> bool {
     return False;
 }
 
-def serverless_server_evidence(
+impl serverless_server_evidence(
     mod: Module, prog: JacProgram
 ) -> list[tuple[str, str, UniNode]] {
     if project_has_server(mod) {
@@ -597,7 +675,7 @@ def serverless_server_evidence(
     return out;
 }
 
-def report_serverless_kind_errors(reporter: CompilerPass, mod: Module) {
+impl report_serverless_kind_errors(reporter: CompilerPass, mod: Module) {
     evidence = serverless_server_evidence(mod, reporter.prog);
     if not evidence {
         return;
@@ -613,7 +691,7 @@ def report_serverless_kind_errors(reporter: CompilerPass, mod: Module) {
     }
 }
 
-def return_type_is_jsx(rt: (Expr | None)) -> bool {
+impl return_type_is_jsx(rt: (Expr | None)) -> bool {
     if rt is None {
         return False;
     }

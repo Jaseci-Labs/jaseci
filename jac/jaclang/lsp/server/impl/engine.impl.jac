@@ -457,19 +457,7 @@ impl JacLangServer.get_references(
     return [];
 }
 
-def _definition_symbol(sym: any) -> any {
-    cur = sym;
-    seen: set[int] = set();
-    while cur is not None and cur.provider is not None and id(cur) not in seen {
-        seen.add(id(cur));
-        target = cur.provider.definition();
-        if target is None or target is cur {
-            break;
-        }
-        cur = target;
-    }
-    return cur;
-}
+def _definition_symbol(sym: any) -> any;
 
 impl JacLangServer.get_definition(
     file_path: str, position: lspt.Position
@@ -1214,4 +1202,18 @@ impl JacLangServer.diagnostics.getter -> dict[str, list[lspt.Diagnostic]] {
         }
         return result;
     }
+}
+
+impl _definition_symbol(sym: any) -> any {
+    cur = sym;
+    seen: set[int] = set();
+    while cur is not None and cur.provider is not None and id(cur) not in seen {
+        seen.add(id(cur));
+        target = cur.provider.definition();
+        if target is None or target is cur {
+            break;
+        }
+        cur = target;
+    }
+    return cur;
 }

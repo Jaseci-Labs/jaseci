@@ -8,7 +8,26 @@ obj ServiceRoute {
 }
 
 
-def resolve_interceptor_service_address(kubernetes_cfg: dict[str, any]) -> str {
+def resolve_interceptor_service_address(kubernetes_cfg: dict[str, any]) -> str;
+
+
+def resolve_http_activation_config(
+    top_level_http_activation: dict[str, any], app_scale_cfg: dict[str, any]
+) -> dict[str, any] | None;
+
+
+def resolve_service_route(
+    svc_name: str,
+    namespace: str,
+    port: int,
+    kubernetes_cfg: dict[str, any],
+    app_scale_cfg: dict[str, any]
+) -> ServiceRoute;
+
+
+def is_http_activated(app_name: str) -> bool;
+
+impl resolve_interceptor_service_address(kubernetes_cfg: dict[str, any]) -> str {
     """The one place that decides which interceptor address a deployment
     uses: [scale.kubernetes.http_activation].interceptor_service_address when
     set, KEDA_INTERCEPTOR_SERVICE_ADDRESS otherwise. Every KEDAAutoscaler
@@ -21,7 +40,7 @@ def resolve_interceptor_service_address(kubernetes_cfg: dict[str, any]) -> str {
 }
 
 
-def resolve_http_activation_config(
+impl resolve_http_activation_config(
     top_level_http_activation: dict[str, any], app_scale_cfg: dict[str, any]
 ) -> dict[str, any] | None {
     """Merge [apps.<svc_name>.scale.http_activation] over
@@ -38,7 +57,7 @@ def resolve_http_activation_config(
 }
 
 
-def resolve_service_route(
+impl resolve_service_route(
     svc_name: str,
     namespace: str,
     port: int,
@@ -59,7 +78,7 @@ def resolve_service_route(
 }
 
 
-def is_http_activated(app_name: str) -> bool {
+impl is_http_activated(app_name: str) -> bool {
     if not app_name {
         return False;
     }

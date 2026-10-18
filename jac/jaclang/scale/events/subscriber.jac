@@ -13,6 +13,15 @@ def subscribe(
     group: str | None = None,
     retry: RetryPolicy | None = None,
     start_from: str = StreamPosition.LATEST.value
+) -> Callable[..., any];
+
+def get_subscriptions -> list[_SubscriptionEntry];
+
+impl subscribe(
+    topic: str,
+    group: str | None = None,
+    retry: RetryPolicy | None = None,
+    start_from: str = StreamPosition.LATEST.value
 ) -> Callable[..., any] {
     def _decorator(handler: Callable[[Event], any]) -> Callable[..., any] {
         _registry.append(
@@ -29,6 +38,6 @@ def subscribe(
     return _decorator;
 }
 
-def get_subscriptions -> list[_SubscriptionEntry] {
+impl get_subscriptions -> list[_SubscriptionEntry] {
     return _registry;
 }

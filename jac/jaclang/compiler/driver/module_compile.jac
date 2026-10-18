@@ -19,7 +19,64 @@ import from jaclang.compiler.driver.module_analysis {
     run_plan
 }
 
-def session_of(task: ModuleAnalysis) -> SessionHooks {
+def session_of(task: ModuleAnalysis) -> SessionHooks;
+
+def admits_native_checks(task: ModuleAnalysis) -> bool;
+
+def run_native_checks(task: ModuleAnalysis);
+
+def admits_client_dependencies(task: ModuleAnalysis) -> bool;
+
+def run_client_dependencies(task: ModuleAnalysis);
+
+def admits_interface(task: ModuleAnalysis) -> bool;
+
+def run_interface(task: ModuleAnalysis);
+
+def admits_codegen(task: ModuleAnalysis) -> bool;
+
+def run_codegen(task: ModuleAnalysis);
+
+def client_import_paths(module: uni.Module) -> list[str];
+
+def scrub_native_artifacts_on_error(program: JacProgram, mod: uni.Module) -> bool;
+
+def report_missing_native_ir(program: JacProgram, mod: uni.Module) -> None;
+
+glob CODEGEN_PLAN: tuple[PlanStep, ...] = (
+         PlanStep(
+             name="NATIVE_CHECKS", admit=admits_native_checks, run=run_native_checks
+         ),
+         PlanStep(
+             name="CLIENT_DEPENDENCIES",
+             admit=admits_client_dependencies,
+             run=run_client_dependencies
+         ),
+         PlanStep(name="INTERFACE", admit=admits_interface, run=run_interface),
+         PlanStep(name="CODEGEN", admit=admits_codegen, run=run_codegen)
+     );
+
+def analyze_for_compile(
+    program: JacProgram, path: str, options: CompileOptions, source: str | None
+) -> ModuleAnalysis;
+
+def compile_task(
+    session: SessionHooks,
+    program: JacProgram,
+    path: str,
+    options: CompileOptions,
+    source: str | None = None
+) -> ModuleAnalysis;
+
+def compile_module(
+    session: SessionHooks,
+    program: JacProgram,
+    path: str,
+    options: CompileOptions,
+    source: str | None = None
+) -> uni.Module;
+
+impl session_of(task: ModuleAnalysis) -> SessionHooks {
     session = task.session;
     if session is None {
         raise RuntimeError(f"codegen steps for {task.path} ran without a session");
@@ -27,7 +84,7 @@ def session_of(task: ModuleAnalysis) -> SessionHooks {
     return session;
 }
 
-def admits_native_checks(task: ModuleAnalysis) -> bool {
+impl admits_native_checks(task: ModuleAnalysis) -> bool {
     import from jaclang.compiler.placement.placement_facts { variant_selected }
     options = task.options;
     return variant_selected(task.path) is not False
@@ -41,21 +98,21 @@ def admits_native_checks(task: ModuleAnalysis) -> bool {
         and not unavailable(CompilationProduct.NATIVE_LOWER);
 }
 
-def run_native_checks(task: ModuleAnalysis) {
+impl run_native_checks(task: ModuleAnalysis) {
     lowered = task.require(CompilationProduct.NATIVE_IR);
     if lowered and task.options.native_required_for(task.path) {
         session_of(task).assemble_native(task.program, task.module, True);
     }
 }
 
-def admits_client_dependencies(task: ModuleAnalysis) -> bool {
+impl admits_client_dependencies(task: ModuleAnalysis) -> bool {
     options = task.options;
     return not (
         task.parse_failed or task.blocked or options.symtab_ir_only or options.no_cgen
     );
 }
 
-def run_client_dependencies(task: ModuleAnalysis) {
+impl run_client_dependencies(task: ModuleAnalysis) {
     options = task.options;
     program = task.program;
     host = active_host();
@@ -94,7 +151,7 @@ def run_client_dependencies(task: ModuleAnalysis) {
     program.options = options;
 }
 
-def admits_interface(task: ModuleAnalysis) -> bool {
+impl admits_interface(task: ModuleAnalysis) -> bool {
     options = task.options;
     closure = session_of(task).closure_options() or options;
     if task.parse_failed or task.blocked or task.source is not None {
@@ -110,18 +167,18 @@ def admits_interface(task: ModuleAnalysis) -> bool {
         );
 }
 
-def run_interface(task: ModuleAnalysis) {
+impl run_interface(task: ModuleAnalysis) {
     task.require(CompilationProduct.INTERFACE);
 }
 
-def admits_codegen(task: ModuleAnalysis) -> bool {
+impl admits_codegen(task: ModuleAnalysis) -> bool {
     options = task.options;
     return not (
         task.parse_failed or task.blocked or options.no_cgen or options.symtab_ir_only
     );
 }
 
-def run_codegen(task: ModuleAnalysis) {
+impl run_codegen(task: ModuleAnalysis) {
     options = task.options;
     program = task.program;
     module = task.module;
@@ -153,7 +210,7 @@ def run_codegen(task: ModuleAnalysis) {
     }
 }
 
-def client_import_paths(module: uni.Module) -> list[str] {
+impl client_import_paths(module: uni.Module) -> list[str] {
     out: list[str] = [];
     for imp in module.get_all_sub_nodes(uni.Import) {
         if not imp.from_loc or imp.is_virtual_jac {
@@ -173,7 +230,7 @@ def client_import_paths(module: uni.Module) -> list[str] {
     return out;
 }
 
-def scrub_native_artifacts_on_error(program: JacProgram, mod: uni.Module) -> bool {
+impl scrub_native_artifacts_on_error(program: JacProgram, mod: uni.Module) -> bool {
     mod_path = mod.loc.mod_path if mod?.loc else '';
     if not mod_path or not program.module_scoped_errors(mod_path) {
         return False;
@@ -189,7 +246,7 @@ def scrub_native_artifacts_on_error(program: JacProgram, mod: uni.Module) -> boo
     return True;
 }
 
-def report_missing_native_ir(program: JacProgram, mod: uni.Module) -> None {
+impl report_missing_native_ir(program: JacProgram, mod: uni.Module) -> None {
     import from jaclang.compiler.driver.pass_driver { deliver_alerts }
     import from jaclang.compiler.frontend.diagnostics { E5092 }
     import from jaclang.compiler.passes.context { Alert }
@@ -237,20 +294,7 @@ def report_missing_native_ir(program: JacProgram, mod: uni.Module) -> None {
     );
 }
 
-glob CODEGEN_PLAN: tuple[PlanStep, ...] = (
-         PlanStep(
-             name="NATIVE_CHECKS", admit=admits_native_checks, run=run_native_checks
-         ),
-         PlanStep(
-             name="CLIENT_DEPENDENCIES",
-             admit=admits_client_dependencies,
-             run=run_client_dependencies
-         ),
-         PlanStep(name="INTERFACE", admit=admits_interface, run=run_interface),
-         PlanStep(name="CODEGEN", admit=admits_codegen, run=run_codegen)
-     );
-
-def analyze_for_compile(
+impl analyze_for_compile(
     program: JacProgram, path: str, options: CompileOptions, source: str | None
 ) -> ModuleAnalysis {
     analysis = active_host().native_analyze(program, path, options, source);
@@ -260,7 +304,7 @@ def analyze_for_compile(
     return analysis;
 }
 
-def compile_task(
+impl compile_task(
     session: SessionHooks,
     program: JacProgram,
     path: str,
@@ -273,7 +317,7 @@ def compile_task(
     return analysis;
 }
 
-def compile_module(
+impl compile_module(
     session: SessionHooks,
     program: JacProgram,
     path: str,

@@ -160,7 +160,6 @@ walker JacAutoLintPass(TreePass) {
     ) -> (uni.ImplDef | None);
 
     def _move_body_to_impl(ab: uni.Ability, impl_node: uni.ImplDef) -> None;
-
     def _strip_docstrings(start: uni.UniNode) -> None;
     def _collect_doc_nodes(start: uni.UniNode) -> list[tuple[uni.UniNode, uni.String]];
     def _check_stale_has_read(ability_node: uni.Ability) -> None;

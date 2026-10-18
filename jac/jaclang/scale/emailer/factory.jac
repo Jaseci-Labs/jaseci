@@ -4,7 +4,19 @@ import logging;
 glob _registry: dict[str, type] = {},
      logger = logging.getLogger(__name__);
 
-def register(name: str, cls: type) {
+def register(name: str, cls: type);
+
+def _import_dotted(path: str) -> type;
+
+def _instantiate(
+    cls: type, provider: str, config: dict[str, any], from_address: str, enabled: bool
+) -> Emailer | None;
+
+def create(config: dict[str, any]) -> Emailer | None;
+
+def configured -> Emailer | None;
+
+impl register(name: str, cls: type) {
     if not isinstance(cls, type) or not issubclass(cls, Emailer) {
         raise TypeError(
             f"Emailer class for '{name}' must subclass Emailer, got {cls!r}"
@@ -13,7 +25,7 @@ def register(name: str, cls: type) {
     _registry[name] = cls;
 }
 
-def _import_dotted(path: str) -> type {
+impl _import_dotted(path: str) -> type {
     if ':' in path {
         (mod_path, cls_name) = path.split(':', 1);
     } else {
@@ -33,7 +45,7 @@ def _import_dotted(path: str) -> type {
     return cls;
 }
 
-def _instantiate(
+impl _instantiate(
     cls: type, provider: str, config: dict[str, any], from_address: str, enabled: bool
 ) -> Emailer | None {
     try {
@@ -50,7 +62,7 @@ def _instantiate(
     }
 }
 
-def create(config: dict[str, any]) -> Emailer | None {
+impl create(config: dict[str, any]) -> Emailer | None {
     provider = str(config.get('provider') or '').strip();
     if not provider {
         logger.info(
@@ -85,6 +97,6 @@ def create(config: dict[str, any]) -> Emailer | None {
     return _instantiate(cls, provider, config, from_address, enabled);
 }
 
-def configured -> Emailer | None {
+impl configured -> Emailer | None {
     return create(get_scale_config().get_emailer_config());
 }

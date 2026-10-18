@@ -31,25 +31,7 @@ glob _light_edge_types: dict[type, bool] = {},
 
 enum AccessLevel { NO_ACCESS = -1, READ = 0, CONNECT = 1, WRITE = 2 }
 
-def access_level_cast(val: int | str | AccessLevel) -> AccessLevel {
-    if isinstance(val, AccessLevel) {
-        return val;
-    }
-    if isinstance(val, str) {
-        val = val.upper();
-    }
-    _map: dict[int | str, AccessLevel] = {
-        -1: AccessLevel.NO_ACCESS,
-        0: AccessLevel.READ,
-        1: AccessLevel.CONNECT,
-        2: AccessLevel.WRITE,
-        "NO_ACCESS": AccessLevel.NO_ACCESS,
-        "READ": AccessLevel.READ,
-        "CONNECT": AccessLevel.CONNECT,
-        "WRITE": AccessLevel.WRITE
-    };
-    return _map[val];
-}
+def access_level_cast(val: int | str | AccessLevel) -> AccessLevel;
 
 obj Access {
     has anchors: dict[(str, AccessLevel)] = {};
@@ -71,28 +53,7 @@ obj PermissionDenied {
         required: AccessLevel,
         actual: AccessLevel;
 
-    def __eq__(other: object) -> bool {
-        if not isinstance(other, PermissionDenied) or type(other) is not type(self) {
-            return False;
-        }
-        return (
-            self.operation,
-            self.target_id,
-            self.target_type,
-            self.target_owner,
-            self.required,
-            self.actual
-        )
-            == (
-                other.operation,
-                other.target_id,
-                other.target_type,
-                other.target_owner,
-                other.required,
-                other.actual
-            );
-    }
-
+    def __eq__(other: object) -> bool;
     def to_dict -> dict[(str, any)];
     def message -> str;
 }
@@ -175,21 +136,9 @@ obj ObjectAnchor(Anchor) {
     has archetype: ObjectArchetype;
 }
 
-def same_anchor(a: (Anchor | None), b: (Anchor | None)) -> bool {
-    if a is b {
-        return True;
-    }
-    if a is None or b is None {
-        return False;
-    }
-    aid = a.id;
-    return aid is not None and aid == b.id;
-}
+def same_anchor(a: (Anchor | None), b: (Anchor | None)) -> bool;
 
-def anchor_key(anchor: Anchor) -> any {
-    aid = anchor.id;
-    return aid if aid is not None else id(anchor);
-}
+def anchor_key(anchor: Anchor) -> any;
 
 obj Archetype {
     with entry {
@@ -216,9 +165,7 @@ class NodeArchetype(Archetype) {
     }
 
     @cached_property
-    def __jac__(self: NodeArchetype) -> NodeAnchor {
-        return NodeAnchor(archetype=self, edges=[]);
-    }
+    def __jac__(self: NodeArchetype) -> NodeAnchor;
 }
 
 class EdgeArchetype(Archetype) {
@@ -227,31 +174,8 @@ class EdgeArchetype(Archetype) {
         __jac__: EdgeAnchor;
     }
 
-    def __eq__(other: object) -> bool {
-        if self is other {
-            return True;
-        }
-        mine = self.__dict__.get('__jac__');
-        theirs = other.__dict__.get('__jac__')
-            if isinstance(other, EdgeArchetype)
-            else None;
-        if mine is None or theirs is None or not (mine.light and theirs.light) {
-            return False;
-        }
-        return (
-            `type(self) is `type(other)
-            and mine.source is theirs.source
-            and mine.target is theirs.target
-        );
-    }
-
-    def __hash__ -> int {
-        mine = self.__dict__.get('__jac__');
-        if mine is not None and mine.light {
-            return hash((`type(self), id(mine.source), id(mine.target)));
-        }
-        return id(self);
-    }
+    def __eq__(other: object) -> bool;
+    def __hash__ -> int;
 }
 
 @make_object
@@ -266,9 +190,7 @@ class WalkerArchetype(Archetype) {
     }
 
     @cached_property
-    def __jac__(self: WalkerArchetype) -> WalkerAnchor {
-        return WalkerAnchor(archetype=self);
-    }
+    def __jac__(self: WalkerArchetype) -> WalkerAnchor;
 }
 
 class ObjectArchetype(Archetype) {
@@ -277,9 +199,7 @@ class ObjectArchetype(Archetype) {
     }
 
     @cached_property
-    def __jac__(self: ObjectArchetype) -> ObjectAnchor {
-        return ObjectAnchor(archetype=self);
-    }
+    def __jac__(self: ObjectArchetype) -> ObjectAnchor;
 }
 
 obj GenericEdge(EdgeArchetype) {
@@ -318,7 +238,189 @@ obj JsxElement {
 }
 
 
-def is_light_edge_type(cls: type) -> bool {
+def is_light_edge_type(cls: type) -> bool;
+
+def edge_ctor_args(cls: type) -> tuple[str, ...];
+
+def new_connect_edge(
+    ct: (type[EdgeArchetype] | EdgeArchetype),
+    conn_assign: (tuple[(tuple[any, ...], tuple[any, ...])] | None)
+) -> tuple[EdgeArchetype, tuple[str, ...]];
+
+def edge_subtypes(cls: type) -> tuple[type, ...];
+
+def _deref(lst: list[any]) -> list[any];
+
+glob _VACANT = weakref.ref(`type('_Vacated', (), {})()),
+     _INDEX_AT: int = 64;
+
+class _InLinks(list) {
+    static has __slots__: tuple[str, ...] = ("at", "live", "limit");
+    has at: dict[int, list[int]],
+        live: int,
+        limit: int;
+
+    def init(self: _InLinks, refs: list[any]);
+    def _rebuild(self: _InLinks, refs: list[any]);
+    def add(self: _InLinks, src: NodeArchetype);
+    def drop(self: _InLinks, src: NodeArchetype) -> bool;
+}
+
+def _connect_back(inn: dict[type, list[any]], cls: type, src: NodeArchetype);
+
+def _drop_back(
+    d: (dict[type, list[any]] | None), cls: type, src: NodeArchetype
+) -> bool;
+
+def light_connect(src: NodeAnchor, cls: type, tgt: NodeAnchor);
+
+def _drop_entry(d: (dict[type, list[any]] | None), cls: type, key: any) -> bool;
+
+def light_disconnect(src: NodeAnchor, cls: type, tgt: NodeAnchor) -> bool;
+
+def light_clear(anchor: NodeAnchor, cls: type, outgoing: bool = True) -> bool;
+
+def light_clear_matching(
+    anchor: NodeAnchor, cls: (type | None), outgoing: bool
+) -> bool;
+
+def _collect_light(d: dict[type, list[any]], cls: (type | None)) -> list[any];
+
+def light_out(anchor: NodeAnchor, cls: (type | None)) -> list[any];
+
+def light_in(anchor: NodeAnchor, cls: (type | None)) -> list[any];
+
+def light_hop(
+    anchor: NodeAnchor, dir: int, cls: (type | None), edges_only: bool
+) -> list[any];
+
+def light_hop_answers(anchor: NodeAnchor, cls: (type | None)) -> bool;
+
+def light_clear_hop(anchor: NodeAnchor, dir: int, cls: (type | None)) -> bool;
+
+def light_edge_view(
+    cls: type[EdgeArchetype], src: NodeAnchor, tgt: NodeAnchor
+) -> EdgeArchetype;
+
+def light_edge_views(
+    anchor: NodeAnchor, cls: (type | None), outgoing: bool
+) -> list[EdgeAnchor];
+
+def _note_write(an: any);
+
+def _dirty_setattr(self: any, name: str, value: any) -> None;
+
+def _dirty_delattr(self: any, name: str) -> None;
+
+def untracked_class(cls: type[Archetype]) -> type[Archetype];
+
+def _untracked_new(cls: type[Archetype]) -> Archetype;
+
+def _tracked_reduce_ex(
+    self: any, protocol: int
+) -> tuple[Callable, tuple[type], dict[str, any]];
+
+def track_writes(arch: Archetype) -> None;
+
+impl access_level_cast(val: int | str | AccessLevel) -> AccessLevel {
+    if isinstance(val, AccessLevel) {
+        return val;
+    }
+    if isinstance(val, str) {
+        val = val.upper();
+    }
+    _map: dict[int | str, AccessLevel] = {
+        -1: AccessLevel.NO_ACCESS,
+        0: AccessLevel.READ,
+        1: AccessLevel.CONNECT,
+        2: AccessLevel.WRITE,
+        "NO_ACCESS": AccessLevel.NO_ACCESS,
+        "READ": AccessLevel.READ,
+        "CONNECT": AccessLevel.CONNECT,
+        "WRITE": AccessLevel.WRITE
+    };
+    return _map[val];
+}
+
+impl PermissionDenied.__eq__(other: object) -> bool {
+    if not isinstance(other, PermissionDenied) or type(other) is not type(self) {
+        return False;
+    }
+    return (
+        self.operation,
+        self.target_id,
+        self.target_type,
+        self.target_owner,
+        self.required,
+        self.actual
+    )
+        == (
+            other.operation,
+            other.target_id,
+            other.target_type,
+            other.target_owner,
+            other.required,
+            other.actual
+        );
+}
+
+
+impl same_anchor(a: (Anchor | None), b: (Anchor | None)) -> bool {
+    if a is b {
+        return True;
+    }
+    if a is None or b is None {
+        return False;
+    }
+    aid = a.id;
+    return aid is not None and aid == b.id;
+}
+
+impl anchor_key(anchor: Anchor) -> any {
+    aid = anchor.id;
+    return aid if aid is not None else id(anchor);
+}
+
+impl NodeArchetype.__jac__(self: NodeArchetype) -> NodeAnchor {
+    return NodeAnchor(archetype=self, edges=[]);
+}
+
+impl EdgeArchetype.__eq__(other: object) -> bool {
+    if self is other {
+        return True;
+    }
+    mine = self.__dict__.get('__jac__');
+    theirs = other.__dict__.get('__jac__')
+        if isinstance(other, EdgeArchetype)
+        else None;
+    if mine is None or theirs is None or not (mine.light and theirs.light) {
+        return False;
+    }
+    return (
+        `type(self) is `type(other)
+        and mine.source is theirs.source
+        and mine.target is theirs.target
+    );
+}
+
+impl EdgeArchetype.__hash__ -> int {
+    mine = self.__dict__.get('__jac__');
+    if mine is not None and mine.light {
+        return hash((`type(self), id(mine.source), id(mine.target)));
+    }
+    return id(self);
+}
+
+impl WalkerArchetype.__jac__(self: WalkerArchetype) -> WalkerAnchor {
+    return WalkerAnchor(archetype=self);
+}
+
+impl ObjectArchetype.__jac__(self: ObjectArchetype) -> ObjectAnchor {
+    return ObjectAnchor(archetype=self);
+}
+
+
+impl is_light_edge_type(cls: type) -> bool {
     known = _light_edge_types.get(cls);
     if known is not None {
         return known;
@@ -334,7 +436,7 @@ def is_light_edge_type(cls: type) -> bool {
     return light;
 }
 
-def edge_ctor_args(cls: type) -> tuple[str, ...] {
+impl edge_ctor_args(cls: type) -> tuple[str, ...] {
     known = _edge_ctor_args.get(cls);
     if known is not None {
         return known;
@@ -356,7 +458,7 @@ def edge_ctor_args(cls: type) -> tuple[str, ...] {
     return result;
 }
 
-def new_connect_edge(
+impl new_connect_edge(
     ct: (type[EdgeArchetype] | EdgeArchetype),
     conn_assign: (tuple[(tuple[any, ...], tuple[any, ...])] | None)
 ) -> tuple[EdgeArchetype, tuple[str, ...]] {
@@ -375,7 +477,7 @@ def new_connect_edge(
     return (ct(), ());
 }
 
-def edge_subtypes(cls: type) -> tuple[type, ...] {
+impl edge_subtypes(cls: type) -> tuple[type, ...] {
     known = _edge_subtypes.get(cls);
     if known is not None {
         return known;
@@ -395,7 +497,7 @@ def edge_subtypes(cls: type) -> tuple[type, ...] {
     return result;
 }
 
-def _deref(lst: list[any]) -> list[any] {
+impl _deref(lst: list[any]) -> list[any] {
     out: list[any] = [];
     for r in lst {
         a = r();
@@ -406,68 +508,58 @@ def _deref(lst: list[any]) -> list[any] {
     return out;
 }
 
-glob _VACANT = weakref.ref(`type('_Vacated', (), {})()),
-     _INDEX_AT: int = 64;
+impl _InLinks.init(self: _InLinks, refs: list[any]) {
+    super.init();
+    self._rebuild(refs);
+}
 
-class _InLinks(list) {
-    static has __slots__: tuple[str, ...] = ("at", "live", "limit");
-    has at: dict[int, list[int]],
-        live: int,
-        limit: int;
-
-    def init(self: _InLinks, refs: list[any]) {
-        super.init();
-        self._rebuild(refs);
-    }
-
-    def _rebuild(self: _InLinks, refs: list[any]) {
-        list.clear(self);
-        self.at = {};
-        for r in refs {
-            src = r();
-            if src is not None {
-                self.at.setdefault(id(src), []).append(len(self));
-            }
-            list.append(self, r);
+impl _InLinks._rebuild(self: _InLinks, refs: list[any]) {
+    list.clear(self);
+    self.at = {};
+    for r in refs {
+        src = r();
+        if src is not None {
+            self.at.setdefault(id(src), []).append(len(self));
         }
-        self.live = len(self);
-        self.limit = max(_INDEX_AT, 2 * len(self));
+        list.append(self, r);
     }
+    self.live = len(self);
+    self.limit = max(_INDEX_AT, 2 * len(self));
+}
 
-    def add(self: _InLinks, src: NodeArchetype) {
-        self.at.setdefault(id(src), []).append(len(self));
-        list.append(self, weakref.ref(src));
-        self.live += 1;
-        if len(self) >= self.limit {
-            self._rebuild(
-                [
-                    r
-                    for r in self
-                    if r() is not None
-                ]
-            );
-        }
-    }
-
-    def drop(self: _InLinks, src: NodeArchetype) -> bool {
-        slots = self.at.get(id(src));
-        while slots {
-            i = slots.pop(0);
-            if self[i]() is src {
-                self[i] = _VACANT;
-                self.live -= 1;
-                if not slots {
-                    self.at.pop(id(src), None);
-                }
-                return True;
-            }
-        }
-        self.at.pop(id(src), None);
-        return False;
+impl _InLinks.add(self: _InLinks, src: NodeArchetype) {
+    self.at.setdefault(id(src), []).append(len(self));
+    list.append(self, weakref.ref(src));
+    self.live += 1;
+    if len(self) >= self.limit {
+        self._rebuild(
+            [
+                r
+                for r in self
+                if r() is not None
+            ]
+        );
     }
 }
 
-def _connect_back(inn: dict[type, list[any]], cls: type, src: NodeArchetype) {
+impl _InLinks.drop(self: _InLinks, src: NodeArchetype) -> bool {
+    slots = self.at.get(id(src));
+    while slots {
+        i = slots.pop(0);
+        if self[i]() is src {
+            self[i] = _VACANT;
+            self.live -= 1;
+            if not slots {
+                self.at.pop(id(src), None);
+            }
+            return True;
+        }
+    }
+    self.at.pop(id(src), None);
+    return False;
+}
+
+impl _connect_back(inn: dict[type, list[any]], cls: type, src: NodeArchetype) {
     lst = inn.get(cls);
     if lst is None {
         inn[cls] = [weakref.ref(src)];
@@ -482,7 +574,7 @@ def _connect_back(inn: dict[type, list[any]], cls: type, src: NodeArchetype) {
     }
 }
 
-def _drop_back(
+impl _drop_back(
     d: (dict[type, list[any]] | None), cls: type, src: NodeArchetype
 ) -> bool {
     if d is None {
@@ -513,7 +605,7 @@ def _drop_back(
     return False;
 }
 
-def light_connect(src: NodeAnchor, cls: type, tgt: NodeAnchor) {
+impl light_connect(src: NodeAnchor, cls: type, tgt: NodeAnchor) {
     out = src.out_light;
     if out is None {
         out = {};
@@ -533,7 +625,7 @@ def light_connect(src: NodeAnchor, cls: type, tgt: NodeAnchor) {
     _connect_back(inn, cls, src.archetype);
 }
 
-def _drop_entry(d: (dict[type, list[any]] | None), cls: type, key: any) -> bool {
+impl _drop_entry(d: (dict[type, list[any]] | None), cls: type, key: any) -> bool {
     if d is None {
         return False;
     }
@@ -552,13 +644,13 @@ def _drop_entry(d: (dict[type, list[any]] | None), cls: type, key: any) -> bool 
     return True;
 }
 
-def light_disconnect(src: NodeAnchor, cls: type, tgt: NodeAnchor) -> bool {
+impl light_disconnect(src: NodeAnchor, cls: type, tgt: NodeAnchor) -> bool {
     held = _drop_entry(src.out_light, cls, tgt.archetype);
     _drop_back(tgt.in_light, cls, src.archetype);
     return held;
 }
 
-def light_clear(anchor: NodeAnchor, cls: type, outgoing: bool = True) -> bool {
+impl light_clear(anchor: NodeAnchor, cls: type, outgoing: bool = True) -> bool {
     d = anchor.out_light if outgoing else anchor.in_light;
     if d is None {
         return False;
@@ -580,7 +672,7 @@ def light_clear(anchor: NodeAnchor, cls: type, outgoing: bool = True) -> bool {
     return True;
 }
 
-def light_clear_matching(
+impl light_clear_matching(
     anchor: NodeAnchor, cls: (type | None), outgoing: bool
 ) -> bool {
     d = anchor.out_light if outgoing else anchor.in_light;
@@ -601,7 +693,7 @@ def light_clear_matching(
     return hit;
 }
 
-def _collect_light(d: dict[type, list[any]], cls: (type | None)) -> list[any] {
+impl _collect_light(d: dict[type, list[any]], cls: (type | None)) -> list[any] {
     if cls is None {
         out: list[any] = [];
         for lst in d.values() {
@@ -632,17 +724,17 @@ def _collect_light(d: dict[type, list[any]], cls: (type | None)) -> list[any] {
     return found;
 }
 
-def light_out(anchor: NodeAnchor, cls: (type | None)) -> list[any] {
+impl light_out(anchor: NodeAnchor, cls: (type | None)) -> list[any] {
     d = anchor.out_light;
     return _collect_light(d, cls) if d else [];
 }
 
-def light_in(anchor: NodeAnchor, cls: (type | None)) -> list[any] {
+impl light_in(anchor: NodeAnchor, cls: (type | None)) -> list[any] {
     d = anchor.in_light;
     return _deref(_collect_light(d, cls)) if d else [];
 }
 
-def light_hop(
+impl light_hop(
     anchor: NodeAnchor, dir: int, cls: (type | None), edges_only: bool
 ) -> list[any] {
     if edges_only {
@@ -694,7 +786,7 @@ def light_hop(
     return `list(`dict.fromkeys(found));
 }
 
-def light_hop_answers(anchor: NodeAnchor, cls: (type | None)) -> bool {
+impl light_hop_answers(anchor: NodeAnchor, cls: (type | None)) -> bool {
     if anchor.persistent {
         return False;
     }
@@ -704,7 +796,7 @@ def light_hop_answers(anchor: NodeAnchor, cls: (type | None)) -> bool {
     return cls is not None and not anchor.mixed and is_light_edge_type(cls);
 }
 
-def light_clear_hop(anchor: NodeAnchor, dir: int, cls: (type | None)) -> bool {
+impl light_clear_hop(anchor: NodeAnchor, dir: int, cls: (type | None)) -> bool {
     hit = False;
     if dir != 1 and light_clear_matching(anchor, cls, True) {
         hit = True;
@@ -715,7 +807,7 @@ def light_clear_hop(anchor: NodeAnchor, dir: int, cls: (type | None)) -> bool {
     return hit;
 }
 
-def light_edge_view(
+impl light_edge_view(
     cls: type[EdgeArchetype], src: NodeAnchor, tgt: NodeAnchor
 ) -> EdgeArchetype {
     e = cls.__new__(cls);
@@ -725,7 +817,7 @@ def light_edge_view(
     return e;
 }
 
-def light_edge_views(
+impl light_edge_views(
     anchor: NodeAnchor, cls: (type | None), outgoing: bool
 ) -> list[EdgeAnchor] {
     d = anchor.out_light if outgoing else anchor.in_light;
@@ -748,11 +840,11 @@ def light_edge_views(
     return out;
 }
 
-def _note_write(an: any) {
+impl _note_write(an: any) {
     an.__dict__['_field_written'] = an.__dict__.get('_field_written', 0) + 1;
 }
 
-def _dirty_setattr(self: any, name: str, value: any) -> None {
+impl _dirty_setattr(self: any, name: str, value: any) -> None {
     an = self.__dict__.get('__jac__');
     if an is None or not an.persistent {
         object.__setattr__(self, name, value);
@@ -777,7 +869,7 @@ def _dirty_setattr(self: any, name: str, value: any) -> None {
     }
 }
 
-def _dirty_delattr(self: any, name: str) -> None {
+impl _dirty_delattr(self: any, name: str) -> None {
     an = self.__dict__.get('__jac__');
     if an is None or not an.persistent {
         object.__delattr__(self, name);
@@ -802,21 +894,21 @@ def _dirty_delattr(self: any, name: str) -> None {
     }
 }
 
-def untracked_class(cls: type[Archetype]) -> type[Archetype] {
+impl untracked_class(cls: type[Archetype]) -> type[Archetype] {
     return cls.__dict__.get('__jac_untracked__', cls);
 }
 
-def _untracked_new(cls: type[Archetype]) -> Archetype {
+impl _untracked_new(cls: type[Archetype]) -> Archetype {
     return object.__new__(cls);
 }
 
-def _tracked_reduce_ex(
+impl _tracked_reduce_ex(
     self: any, protocol: int
 ) -> tuple[Callable, tuple[type], dict[str, any]] {
     return (_untracked_new, (untracked_class(`type(self)), ), self.__dict__);
 }
 
-def track_writes(arch: Archetype) -> None {
+impl track_writes(arch: Archetype) -> None {
     cls = `type(arch);
     if cls.__dict__.get('__jac_tracked__', False) {
         return;

@@ -3,7 +3,11 @@ import shutil;
 import tempfile;
 import from pathlib { Path }
 
-def cef_artifact(sums: Path) -> Artifact {
+def cef_artifact(sums: Path) -> Artifact;
+
+def ensure_cef(directory: Path, headers_only: bool = False) -> Path;
+
+impl cef_artifact(sums: Path) -> Artifact {
     version = "";
     for line in sums.read_text().splitlines() {
         if line.startswith("# version:") {
@@ -34,7 +38,7 @@ def cef_artifact(sums: Path) -> Artifact {
     raise RuntimeError(f"No pinned checksum for {archive}");
 }
 
-def ensure_cef(directory: Path, headers_only: bool = False) -> Path {
+impl ensure_cef(directory: Path, headers_only: bool = False) -> Path {
     artifact = cef_artifact(directory / "cef_sums.lock");
     top = artifact.url.rsplit("/", 1)[1].removesuffix(".tar.bz2");
     installed = install(artifact, top + "/Release/libcef.so") / top;

@@ -17,7 +17,15 @@ obj FieldInitialization {
         keyword_only: bool = False;
 }
 
-def is_field_marker(nd: FuncCall) -> bool {
+def is_field_marker(nd: FuncCall) -> bool;
+
+def field_marker_argument(nd: FuncCall, name: str) -> (Expr | None);
+
+def field_initialization(var: HasVar) -> FieldInitialization;
+
+def positional_field_names(fields: list[HasVar]) -> list[str];
+
+impl is_field_marker(nd: FuncCall) -> bool {
     import from jaclang.compiler.erased_imports { erased_import_binds }
     owner = nd.parent;
     if not isinstance(owner, HasVar) or owner.value is not nd {
@@ -44,7 +52,7 @@ def is_field_marker(nd: FuncCall) -> bool {
     return erased_import_binds(nd, tgt.sym_name, 'ObjectField');
 }
 
-def field_marker_argument(nd: FuncCall, name: str) -> (Expr | None) {
+impl field_marker_argument(nd: FuncCall, name: str) -> (Expr | None) {
     for arg in (nd.params or []) {
         if not isinstance(arg, KWPair) or not isinstance(arg.key, Name) {
             continue;
@@ -56,7 +64,7 @@ def field_marker_argument(nd: FuncCall, name: str) -> (Expr | None) {
     return None;
 }
 
-def field_initialization(var: HasVar) -> FieldInitialization {
+impl field_initialization(var: HasVar) -> FieldInitialization {
     value = var.value;
     if not isinstance(value, FuncCall) or not is_field_marker(value) {
         return FieldInitialization(default_expr=value);
@@ -73,7 +81,7 @@ def field_initialization(var: HasVar) -> FieldInitialization {
     );
 }
 
-def positional_field_names(fields: list[HasVar]) -> list[str] {
+impl positional_field_names(fields: list[HasVar]) -> list[str] {
     names: list[str] = [];
     seen_default = False;
     for var in fields {

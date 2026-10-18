@@ -6,7 +6,84 @@ import from typing { AsyncGenerator, get_type_hints }
 glob logger: logging.Logger = logging.getLogger('jaclang.serve');
 
 
-def _unauthorized -> TransportResponse {
+def _unauthorized -> TransportResponse;
+
+
+def _unavailable(kind: str, name: str) -> TransportResponse;
+
+
+def request_caller(server: JacAPIServer, request: Request) -> (str | None);
+
+
+def idempotency_key(request: Request, username: str, app: str, target: str) -> str;
+
+
+def _stream(result: any) -> StreamingResponse;
+
+
+def _failure(result: dict[str, any], fallback: str) -> TransportResponse;
+
+
+def _single_line(text: str) -> bool;
+
+
+def _raw_response(
+    request: Request, payload: any, declared_media_type: str
+) -> (Response | TransportResponse);
+
+
+def _param_kind(
+    field_name: str,
+    field_type: str,
+    path_names: list[str],
+    method: HTTPMethod,
+    type_obj: any = None
+) -> ParameterType;
+
+
+def walker_parameters(
+    server: JacAPIServer,
+    walker_name: str,
+    walker_cls: type,
+    invoke_on_root: bool,
+    method: HTTPMethod = HTTPMethod.POST
+) -> list[APIParameter];
+
+
+def walker_callback(
+    server: JacAPIServer, walker_name: str
+) -> Callable[..., (TransportResponse | StreamingResponse | Response)];
+
+
+def register_walker_endpoints(server: JacAPIServer);
+
+
+def _walker_parameter_source(
+    server: JacAPIServer, walker_name: str, invoke_on_root: bool, method: HTTPMethod
+) -> Callable[[], list[APIParameter]];
+
+
+def function_parameters(
+    server: JacAPIServer,
+    func_name: str,
+    func_obj: Callable,
+    method: HTTPMethod = HTTPMethod.POST
+) -> list[APIParameter];
+
+
+def function_callback(
+    server: JacAPIServer, func_name: str, restspec: any
+) -> Callable[..., (TransportResponse | StreamingResponse | Response)];
+
+
+def register_function_endpoints(server: JacAPIServer);
+
+
+def _function_parameter_source(
+    server: JacAPIServer, func_name: str, method: HTTPMethod
+) -> Callable[[], list[APIParameter]];
+
+impl _unauthorized -> TransportResponse {
     return TransportResponse.fail(
         code='UNAUTHORIZED',
         message='Unauthorized',
@@ -15,7 +92,7 @@ def _unauthorized -> TransportResponse {
 }
 
 
-def _unavailable(kind: str, name: str) -> TransportResponse {
+impl _unavailable(kind: str, name: str) -> TransportResponse {
     return TransportResponse.fail(
         code='TARGET_UNAVAILABLE',
         message=f"{kind} '{name}' could not be loaded; see the server log",
@@ -24,7 +101,7 @@ def _unavailable(kind: str, name: str) -> TransportResponse {
 }
 
 
-def request_caller(server: JacAPIServer, request: Request) -> (str | None) {
+impl request_caller(server: JacAPIServer, request: Request) -> (str | None) {
     username: (str | None) = request.state?.username;
     if username {
         return username;
@@ -40,14 +117,14 @@ def request_caller(server: JacAPIServer, request: Request) -> (str | None) {
 }
 
 
-def idempotency_key(request: Request, username: str, app: str, target: str) -> str {
+impl idempotency_key(request: Request, username: str, app: str, target: str) -> str {
     return scoped_idempotency_key(
         str(request.headers.get(IDEMPOTENCY_HEADER) or ''), username, app, target
     );
 }
 
 
-def _stream(result: any) -> StreamingResponse {
+impl _stream(result: any) -> StreamingResponse {
     return StreamingResponse(
         sse_frame_stream(result),
         media_type='text/event-stream',
@@ -60,7 +137,7 @@ def _stream(result: any) -> StreamingResponse {
 }
 
 
-def _failure(result: dict[str, any], fallback: str) -> TransportResponse {
+impl _failure(result: dict[str, any], fallback: str) -> TransportResponse {
     if result.get('error') == 'User not found' {
         return TransportResponse.fail(
             code='UNAUTHORIZED',
@@ -80,12 +157,12 @@ def _failure(result: dict[str, any], fallback: str) -> TransportResponse {
 }
 
 
-def _single_line(text: str) -> bool {
+impl _single_line(text: str) -> bool {
     return '\r' not in text and '\n' not in text and '\x00' not in text;
 }
 
 
-def _raw_response(
+impl _raw_response(
     request: Request, payload: any, declared_media_type: str
 ) -> (Response | TransportResponse) {
     media_type = declared_media_type;
@@ -152,7 +229,7 @@ def _raw_response(
 }
 
 
-def _param_kind(
+impl _param_kind(
     field_name: str,
     field_type: str,
     path_names: list[str],
@@ -176,7 +253,7 @@ def _param_kind(
 }
 
 
-def walker_parameters(
+impl walker_parameters(
     server: JacAPIServer,
     walker_name: str,
     walker_cls: type,
@@ -222,7 +299,7 @@ def walker_parameters(
 }
 
 
-def walker_callback(
+impl walker_callback(
     server: JacAPIServer, walker_name: str
 ) -> Callable[..., (TransportResponse | StreamingResponse | Response)] {
     requires_auth = server.introspector.is_auth_required_for_walker(walker_name);
@@ -277,7 +354,7 @@ def walker_callback(
 }
 
 
-def register_walker_endpoints(server: JacAPIServer) {
+impl register_walker_endpoints(server: JacAPIServer) {
     introspector = server.introspector;
     for rec in introspector.served('walker') {
         walker_name = rec.name;
@@ -331,7 +408,7 @@ def register_walker_endpoints(server: JacAPIServer) {
 }
 
 
-def _walker_parameter_source(
+impl _walker_parameter_source(
     server: JacAPIServer, walker_name: str, invoke_on_root: bool, method: HTTPMethod
 ) -> Callable[[], list[APIParameter]] {
     def source -> list[APIParameter] {
@@ -351,7 +428,7 @@ def _walker_parameter_source(
 }
 
 
-def function_parameters(
+impl function_parameters(
     server: JacAPIServer,
     func_name: str,
     func_obj: Callable,
@@ -390,7 +467,7 @@ def function_parameters(
 }
 
 
-def function_callback(
+impl function_callback(
     server: JacAPIServer, func_name: str, restspec: any
 ) -> Callable[..., (TransportResponse | StreamingResponse | Response)] {
     requires_auth = server.introspector.is_auth_required_for_function(func_name);
@@ -451,7 +528,7 @@ def function_callback(
 }
 
 
-def register_function_endpoints(server: JacAPIServer) {
+impl register_function_endpoints(server: JacAPIServer) {
     introspector = server.introspector;
     for rec in introspector.served('function') {
         func_name = rec.name;
@@ -489,7 +566,7 @@ def register_function_endpoints(server: JacAPIServer) {
 }
 
 
-def _function_parameter_source(
+impl _function_parameter_source(
     server: JacAPIServer, func_name: str, method: HTTPMethod
 ) -> Callable[[], list[APIParameter]] {
     def source -> list[APIParameter] {

@@ -329,12 +329,7 @@ node UniScopeNode(UniNode) {
     has names_in_scope_overload: dict[(str, list[Symbol])] { getter; }
 
     def _init_scope(name: str, parent_scope: (UniScopeNode | None) = None) -> None;
-    static def is_python_scoping(nd: (UniNode | None)) -> bool {
-        return isinstance(
-            nd, (Module, Enum, Archetype, Ability, ImplDef, Test, LambdaExpr)
-        );
-    }
-
+    static def is_python_scoping(nd: (UniNode | None)) -> bool;
     def lookup(
         name: str, deep: bool = True, incl_inner_scope: bool = False
     ) -> (Symbol | None);
@@ -709,17 +704,7 @@ node Module(AstDocNode, UniScopeNode) {
     def record_comptime_definition(path: str, qualname: str) -> None;
     static def make_stub(
         inject_name: (str | None) = None, inject_src: (Source | None) = None
-    ) -> Module {
-        return Module(
-            name=(inject_name or ''),
-            source=(inject_src or Source('', '')),
-            doc=None,
-            body=[],
-            terminals=[],
-            stub_only=True,
-            kid=[EmptyToken()]
-        );
-    }
+    ) -> Module;
 
     def __repr__ -> str;
 }
@@ -2482,24 +2467,7 @@ node Name(Token, NameAtom) {
 
     static def gen_stub_from_node(
         nd: AstSymbolNode, name_str: str, set_name_of: (AstSymbolNode | None) = None
-    ) -> Name {
-        ret = Name(
-            orig_src=nd.loc.orig_src,
-            name=Tok.NAME.value,
-            value=name_str,
-            col_start=nd.loc.col_start,
-            col_end=nd.loc.col_end,
-            line=nd.loc.first_line,
-            end_line=nd.loc.last_line,
-            pos_start=nd.loc.pos_start,
-            pos_end=nd.loc.pos_end
-        );
-        if nd.parent is not None {
-            ret.set_parent(nd.parent);
-        }
-        ret.name_of = set_name_of or ret;
-        return ret;
-    }
+    ) -> Name;
 
     def __repr__ -> str;
 }
@@ -2695,7 +2663,113 @@ glob _HEX_DIGITS: str = '0123456789abcdefABCDEF',
          'v': '\x0b'
      };
 
-def _lit_prefix_len(text: str) -> int {
+def _lit_prefix_len(text: str) -> int;
+
+def _lit_quote_len(text: str, start: int) -> int;
+
+def radix_int(digits: str, base: int) -> int;
+
+def int_literal_value(text: str) -> int;
+
+def _hex_escape_value(text: str, at: int, width: int, kind: str) -> int;
+
+def _decode_str_escapes(text: str) -> str;
+
+def _decode_bytes_escapes(text: str, is_raw: bool) -> bytes;
+
+def literal_string_value(expr: UniNode) -> str | None;
+
+def decode_string_literal(text: str) -> str | bytes;
+
+def is_identifier_slot(nd: UniNode) -> bool;
+
+def find_python_scope_node_of(nd: UniNode) -> (UniScopeNode | None);
+
+def same_lexical_scope(left: UniNode | None, right: UniNode | None) -> bool;
+
+def find_typed_decl_scope_of(nd: AstSymbolNode) -> UniScopeNode;
+
+def def_insert_unpacking(
+    nd: Expr, sym_tab: UniScopeNode, rebind_in_python_scope: bool = False
+) -> None;
+
+def bind_assignment_targets(nd: Assignment) -> None;
+def definition_qualname(decl: UniNode) -> str;
+
+def lookup_enclosing_binding(from_scope: UniScopeNode, name: str) -> (Symbol | None);
+
+def rebind_or_def_insert(
+    target: AstSymbolNode, py_scope: UniScopeNode, single_decl: str
+) -> None;
+
+def record_cross_scope_rebind(py_scope: UniScopeNode, name: str, sym: Symbol) -> None;
+
+def _ability_of_defn(defn_node: UniNode) -> (Ability | None);
+
+def ability_of_symbol(sym: (Symbol | None)) -> (Ability | None);
+
+def binding_kind_of_decl(decl: NameAtom) -> BindingKind;
+
+def import_chain_of(sym: Symbol) -> list[Symbol];
+
+def resolved_decl_of(sym: Symbol) -> (NameAtom | None);
+
+def kind_has_runtime_binding(
+    kind: BindingKind, decl: (NameAtom | None), space: CodeContext
+) -> bool;
+
+def has_runtime_binding(sym: Symbol, space: CodeContext) -> bool;
+
+def is_client_destined(nd: UniNode) -> bool;
+
+def is_comptime_stmt(nd: UniNode) -> bool;
+
+def type_only_import_of(nd: NameAtom) -> (ModuleItem | None);
+
+def in_type_position(nd: UniNode, include_subscripts: bool = True) -> bool;
+
+impl UniScopeNode.is_python_scoping(nd: (UniNode | None)) -> bool {
+    return isinstance(
+        nd, (Module, Enum, Archetype, Ability, ImplDef, Test, LambdaExpr)
+    );
+}
+
+impl Module.make_stub(
+    inject_name: (str | None) = None, inject_src: (Source | None) = None
+) -> Module {
+    return Module(
+        name=(inject_name or ''),
+        source=(inject_src or Source('', '')),
+        doc=None,
+        body=[],
+        terminals=[],
+        stub_only=True,
+        kid=[EmptyToken()]
+    );
+}
+
+impl Name.gen_stub_from_node(
+    nd: AstSymbolNode, name_str: str, set_name_of: (AstSymbolNode | None) = None
+) -> Name {
+    ret = Name(
+        orig_src=nd.loc.orig_src,
+        name=Tok.NAME.value,
+        value=name_str,
+        col_start=nd.loc.col_start,
+        col_end=nd.loc.col_end,
+        line=nd.loc.first_line,
+        end_line=nd.loc.last_line,
+        pos_start=nd.loc.pos_start,
+        pos_end=nd.loc.pos_end
+    );
+    if nd.parent is not None {
+        ret.set_parent(nd.parent);
+    }
+    ret.name_of = set_name_of or ret;
+    return ret;
+}
+
+impl _lit_prefix_len(text: str) -> int {
     n = len(text);
     i = 0;
     while (i < n and i < 2) {
@@ -2714,7 +2788,7 @@ def _lit_prefix_len(text: str) -> int {
     return -1;
 }
 
-def _lit_quote_len(text: str, start: int) -> int {
+impl _lit_quote_len(text: str, start: int) -> int {
     if ((len(text) - start) >= 6) {
         opener = text[start:start + 3];
         if (opener == '"""' or opener == "'''") {
@@ -2724,7 +2798,7 @@ def _lit_quote_len(text: str, start: int) -> int {
     return 1;
 }
 
-def radix_int(digits: str, base: int) -> int {
+impl radix_int(digits: str, base: int) -> int {
     value = 0;
     seen = False;
     for c in digits.lower() {
@@ -2744,7 +2818,7 @@ def radix_int(digits: str, base: int) -> int {
     return value;
 }
 
-def int_literal_value(text: str) -> int {
+impl int_literal_value(text: str) -> int {
     lowered = text.lower();
     for (prefix, base) in (("0x", 16), ("0o", 8), ("0b", 2)) {
         if lowered.startswith(prefix) {
@@ -2762,7 +2836,7 @@ def int_literal_value(text: str) -> int {
     return radix_int(text, 10);
 }
 
-def _hex_escape_value(text: str, at: int, width: int, kind: str) -> int {
+impl _hex_escape_value(text: str, at: int, width: int, kind: str) -> int {
     digits = text[at + 2:at + 2 + width];
     bad = len(digits) != width;
     if not bad {
@@ -2785,7 +2859,7 @@ def _hex_escape_value(text: str, at: int, width: int, kind: str) -> int {
     return code;
 }
 
-def _decode_str_escapes(text: str) -> str {
+impl _decode_str_escapes(text: str) -> str {
     if ('\\' not in text) {
         return text;
     }
@@ -2843,7 +2917,7 @@ def _decode_str_escapes(text: str) -> str {
     return ''.join(out);
 }
 
-def _decode_bytes_escapes(text: str, is_raw: bool) -> bytes {
+impl _decode_bytes_escapes(text: str, is_raw: bool) -> bytes {
     out: list[int] = [];
     i = 0;
     n = len(text);
@@ -2897,7 +2971,7 @@ def _decode_bytes_escapes(text: str, is_raw: bool) -> bytes {
     return bytes(out);
 }
 
-def literal_string_value(expr: UniNode) -> str | None {
+impl literal_string_value(expr: UniNode) -> str | None {
     if isinstance(expr, (String, MultiString)) {
         value = expr.lit_value;
         if isinstance(value, str) {
@@ -2907,7 +2981,7 @@ def literal_string_value(expr: UniNode) -> str | None {
     return None;
 }
 
-def decode_string_literal(text: str) -> str | bytes {
+impl decode_string_literal(text: str) -> str | bytes {
     start = _lit_prefix_len(text);
     if (start < 0) {
         return text;
@@ -2924,50 +2998,3 @@ def decode_string_literal(text: str) -> str | bytes {
     }
     return _decode_str_escapes(body);
 }
-
-def is_identifier_slot(nd: UniNode) -> bool;
-
-def find_python_scope_node_of(nd: UniNode) -> (UniScopeNode | None);
-
-def same_lexical_scope(left: UniNode | None, right: UniNode | None) -> bool;
-
-def find_typed_decl_scope_of(nd: AstSymbolNode) -> UniScopeNode;
-
-def def_insert_unpacking(
-    nd: Expr, sym_tab: UniScopeNode, rebind_in_python_scope: bool = False
-) -> None;
-
-def bind_assignment_targets(nd: Assignment) -> None;
-def definition_qualname(decl: UniNode) -> str;
-
-def lookup_enclosing_binding(from_scope: UniScopeNode, name: str) -> (Symbol | None);
-
-def rebind_or_def_insert(
-    target: AstSymbolNode, py_scope: UniScopeNode, single_decl: str
-) -> None;
-
-def record_cross_scope_rebind(py_scope: UniScopeNode, name: str, sym: Symbol) -> None;
-
-def _ability_of_defn(defn_node: UniNode) -> (Ability | None);
-
-def ability_of_symbol(sym: (Symbol | None)) -> (Ability | None);
-
-def binding_kind_of_decl(decl: NameAtom) -> BindingKind;
-
-def import_chain_of(sym: Symbol) -> list[Symbol];
-
-def resolved_decl_of(sym: Symbol) -> (NameAtom | None);
-
-def kind_has_runtime_binding(
-    kind: BindingKind, decl: (NameAtom | None), space: CodeContext
-) -> bool;
-
-def has_runtime_binding(sym: Symbol, space: CodeContext) -> bool;
-
-def is_client_destined(nd: UniNode) -> bool;
-
-def is_comptime_stmt(nd: UniNode) -> bool;
-
-def type_only_import_of(nd: NameAtom) -> (ModuleItem | None);
-
-def in_type_position(nd: UniNode, include_subscripts: bool = True) -> bool;

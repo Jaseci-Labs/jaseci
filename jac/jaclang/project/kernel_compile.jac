@@ -8,7 +8,57 @@ glob KERNEL_TIMING_ENV: str = "JAC_KERNEL_TIMING",
 
 class KernelCompileError(RuntimeError) {}
 
-def run_kernel_in_process(on: bool = True) -> bool {
+def run_kernel_in_process(on: bool = True) -> bool;
+
+def kernel_compile_in_process -> bool;
+
+def kernel_compile(
+    host: HostServices,
+    program: JacProgram,
+    path: str,
+    options: CompileOptions,
+    source: (str | None) = None,
+    in_process: bool = False,
+    isolated: bool = True,
+    emit_closure: bool = False,
+    emit_cached: bool = True,
+    seeds: (list[PythonInterface] | None) = None
+) -> CompileReport;
+
+def kernel_route(program: JacProgram, path: str) -> tuple[bool, bool];
+
+def kernel_compile_reported(
+    host: HostServices,
+    program: JacProgram,
+    path: str,
+    options: CompileOptions,
+    in_process: bool,
+    emit_closure: bool,
+    emit_cached: bool = True,
+    seeds: (list[PythonInterface] | None) = None
+) -> CompileReport;
+
+def kernel_generates_native(program: JacProgram, path: str) -> bool;
+
+def host_kernel_compile(
+    host: HostServices, program: JacProgram, path: str, options: CompileOptions
+) -> (CompileReport | None);
+
+def kernel_compile_application(
+    host: HostServices,
+    program: JacProgram,
+    path: str,
+    options: CompileOptions,
+    seeds: (list[PythonInterface] | None) = None
+) -> (CompileReport | None);
+
+def forget_application_units;
+
+def host_preparing(entry_path: str);
+
+def host_prepared;
+
+impl run_kernel_in_process(on: bool = True) -> bool {
     previous = kernel_compile_in_process();
     _IN_PROCESS.clear();
     if on {
@@ -17,11 +67,11 @@ def run_kernel_in_process(on: bool = True) -> bool {
     return previous;
 }
 
-def kernel_compile_in_process -> bool {
+impl kernel_compile_in_process -> bool {
     return bool(_IN_PROCESS);
 }
 
-def kernel_compile(
+impl kernel_compile(
     host: HostServices,
     program: JacProgram,
     path: str,
@@ -96,7 +146,7 @@ def kernel_compile(
     return outcome;
 }
 
-def kernel_route(program: JacProgram, path: str) -> tuple[bool, bool] {
+impl kernel_route(program: JacProgram, path: str) -> tuple[bool, bool] {
     if program.internal or is_compiler_source_path(path) or _HOST_PREPARING {
         return (False, False);
     }
@@ -114,7 +164,7 @@ def kernel_route(program: JacProgram, path: str) -> tuple[bool, bool] {
     return (True, False);
 }
 
-def kernel_compile_reported(
+impl kernel_compile_reported(
     host: HostServices,
     program: JacProgram,
     path: str,
@@ -156,11 +206,11 @@ def kernel_compile_reported(
     return compiled;
 }
 
-def kernel_generates_native(program: JacProgram, path: str) -> bool {
+impl kernel_generates_native(program: JacProgram, path: str) -> bool {
     return kernel_route(program, path)[0];
 }
 
-def host_kernel_compile(
+impl host_kernel_compile(
     host: HostServices, program: JacProgram, path: str, options: CompileOptions
 ) -> (CompileReport | None) {
     (routed, in_process) = kernel_route(program, path);
@@ -176,7 +226,7 @@ def host_kernel_compile(
     );
 }
 
-def kernel_compile_application(
+impl kernel_compile_application(
     host: HostServices,
     program: JacProgram,
     path: str,
@@ -196,14 +246,14 @@ def kernel_compile_application(
     return compiled;
 }
 
-def forget_application_units {
+impl forget_application_units {
     _APPLICATION_UNITS.clear();
 }
 
-def host_preparing(entry_path: str) {
+impl host_preparing(entry_path: str) {
     _HOST_PREPARING.append(entry_path);
 }
 
-def host_prepared {
+impl host_prepared {
     _HOST_PREPARING.clear();
 }

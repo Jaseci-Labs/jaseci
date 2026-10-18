@@ -20,12 +20,53 @@ glob logger = logging.getLogger(__name__),
          '/opt/homebrew/opt'
      );
 
-def _database_config -> (DatabaseConfig | None) {
+def _database_config -> (DatabaseConfig | None);
+
+def _configured_dist -> str;
+
+def pinned_major -> int;
+
+def dist_cache_dir -> str;
+
+def platform_slug -> (str | None);
+
+def _bin_of(dist: str) -> (str | None);
+
+def pg_major_of(bin_dir: str) -> (int | None);
+
+def _version_key(version: str) -> tuple[int, ...];
+
+def _cached(major: int) -> (str | None);
+
+def _system(major: int) -> (str | None);
+
+def _published(slug: str) -> list[str];
+
+def _unpack(slug: str, version: str, dist_dir: str);
+
+def download_dist -> str;
+
+obj PostgresArtifact(Artifact) {
+    has name: str = "postgres",
+        kind: ArtifactKind = ArtifactKind.CAPABILITY,
+        release: ReleasePolicy = ReleasePolicy.ON_DEMAND,
+        summary: str = "the embedded Postgres distribution",
+        hosts: list[str] = ["linux", "darwin"],
+        provision: bool = True;
+
+    override def probe_checkout -> Probe;
+    override def checkout_path -> str;
+    override def build(log: Callable[[str], None], force: bool, exact: bool);
+}
+
+def postgres_bin_dir -> str;
+
+impl _database_config -> (DatabaseConfig | None) {
     config = get_config();
     return config.database if config is not None else None;
 }
 
-def _configured_dist -> str {
+impl _configured_dist -> str {
     config = get_config();
     if config is None or not config.database.postgres_dist {
         return "";
@@ -37,7 +78,7 @@ def _configured_dist -> str {
     return dist;
 }
 
-def pinned_major -> int {
+impl pinned_major -> int {
     database = _database_config();
     wanted = database.postgres_version if database is not None else '';
     if wanted {
@@ -52,11 +93,11 @@ def pinned_major -> int {
     return PG_MAJOR;
 }
 
-def dist_cache_dir -> str {
+impl dist_cache_dir -> str {
     return str(bucket("pg").path() / 'dist');
 }
 
-def platform_slug -> (str | None) {
+impl platform_slug -> (str | None) {
     arch = {
         'x86_64': 'amd64',
         'amd64': 'amd64',
@@ -69,7 +110,7 @@ def platform_slug -> (str | None) {
     return f"{system}-{arch}" if arch and system else None;
 }
 
-def _bin_of(dist: str) -> (str | None) {
+impl _bin_of(dist: str) -> (str | None) {
     for candidate in [os.path.join(dist, 'bin'), dist] {
         if os.path.isfile(os.path.join(candidate, 'postgres')) {
             return candidate;
@@ -78,7 +119,7 @@ def _bin_of(dist: str) -> (str | None) {
     return None;
 }
 
-def pg_major_of(bin_dir: str) -> (int | None) {
+impl pg_major_of(bin_dir: str) -> (int | None) {
     postgres = os.path.join(bin_dir, 'postgres');
     if not os.path.isfile(postgres) {
         return None;
@@ -100,11 +141,11 @@ def pg_major_of(bin_dir: str) -> (int | None) {
     return None;
 }
 
-def _version_key(version: str) -> tuple[int, ...] {
+impl _version_key(version: str) -> tuple[int, ...] {
     return tuple(int(p) if p.isdigit() else 0 for p in version.split('.'));
 }
 
-def _cached(major: int) -> (str | None) {
+impl _cached(major: int) -> (str | None) {
     slug = platform_slug();
     cache = dist_cache_dir();
     if slug is None or not os.path.isdir(cache) {
@@ -129,7 +170,7 @@ def _cached(major: int) -> (str | None) {
     return os.path.join(cache, f"{slug}-{best}", 'bin');
 }
 
-def _system(major: int) -> (str | None) {
+impl _system(major: int) -> (str | None) {
     candidates: list[str] = [];
     exe = shutil.which('postgres');
     if exe {
@@ -166,7 +207,7 @@ def _system(major: int) -> (str | None) {
     return best;
 }
 
-def _published(slug: str) -> list[str] {
+impl _published(slug: str) -> list[str] {
     url = f"{ZONKY_BASE}{slug}/maven-metadata.xml";
     try {
         with urllib.request.urlopen(url, timeout=30) as response {
@@ -181,7 +222,7 @@ def _published(slug: str) -> list[str] {
     ];
 }
 
-def _unpack(slug: str, version: str, dist_dir: str) {
+impl _unpack(slug: str, version: str, dist_dir: str) {
     name = f"embedded-postgres-binaries-{slug}";
     jar_url = f"{ZONKY_BASE}{slug}/{version}/{name}-{version}.jar";
     with urllib.request.urlopen(jar_url + '.sha1', timeout=30) as response {
@@ -211,7 +252,7 @@ def _unpack(slug: str, version: str, dist_dir: str) {
     }
 }
 
-def download_dist -> str {
+impl download_dist -> str {
     slug = platform_slug();
     if slug is None {
         raise ArtifactUnavailable(
@@ -260,46 +301,37 @@ def download_dist -> str {
     return bin_dir;
 }
 
-obj PostgresArtifact(Artifact) {
-    has name: str = "postgres",
-        kind: ArtifactKind = ArtifactKind.CAPABILITY,
-        release: ReleasePolicy = ReleasePolicy.ON_DEMAND,
-        summary: str = "the embedded Postgres distribution",
-        hosts: list[str] = ["linux", "darwin"],
-        provision: bool = True;
-
-    override def probe_checkout -> Probe {
-        configured = _configured_dist();
-        if configured {
-            found = _bin_of(configured);
-            return Probe.hit(Source.CONFIGURED, found, {})
-                if found
-                else Probe.missing(
-                    f"[database] postgres_dist {configured!r} has no bin/postgres"
-                );
-        }
-        major = pinned_major();
-        found = _cached(major);
-        if found is not None {
-            return Probe.hit(Source.CACHE, found, {});
-        }
-        found = _system(major);
-        if found is not None {
-            return Probe.hit(Source.SYSTEM, found, {});
-        }
-        return Probe.missing(f"postgres {major} is not provisioned");
+impl PostgresArtifact.probe_checkout -> Probe {
+    configured = _configured_dist();
+    if configured {
+        found = _bin_of(configured);
+        return Probe.hit(Source.CONFIGURED, found, {})
+            if found
+            else Probe.missing(
+                f"[database] postgres_dist {configured!r} has no bin/postgres"
+            );
     }
-
-    override def checkout_path -> str {
-        return dist_cache_dir();
+    major = pinned_major();
+    found = _cached(major);
+    if found is not None {
+        return Probe.hit(Source.CACHE, found, {});
     }
-
-    override def build(log: Callable[[str], None], force: bool, exact: bool) {
-        log(f"  postgres {pinned_major()} -> {download_dist()}");
+    found = _system(major);
+    if found is not None {
+        return Probe.hit(Source.SYSTEM, found, {});
     }
+    return Probe.missing(f"postgres {major} is not provisioned");
 }
 
-def postgres_bin_dir -> str {
+impl PostgresArtifact.checkout_path -> str {
+    return dist_cache_dir();
+}
+
+impl PostgresArtifact.build(log: Callable[[str], None], force: bool, exact: bool) {
+    log(f"  postgres {pinned_major()} -> {download_dist()}");
+}
+
+impl postgres_bin_dir -> str {
     found = require("postgres").found;
     assert found is not None;
     return found.path;

@@ -342,47 +342,9 @@ glob TOKEN_KIND_TO_TOK: dict[TokenKind, str] = {
          TokenKind.EOF: "EOF"
      };
 
-def _string_lit_text(raw: str) -> str {
-    v = raw;
-    while v and v[0] in "rbfRBF" {
-        v = v[1:];
-    }
-    if len(v) >= 6 and v.startswith('"""') and v.endswith('"""') {
-        return v[3:-3];
-    }
-    if len(v) >= 6 and v.startswith("'''") and v.endswith("'''") {
-        return v[3:-3];
-    }
-    if len(v) >= 2 and (v[0] == "'" or v[0] == '"') and v[-1] == v[0] {
-        return v[1:-1];
-    }
-    return v;
-}
+def _string_lit_text(raw: str) -> str;
 
-def _test_ident_from_desc(desc_text: str) -> str {
-    ident_chars: list[str] = [];
-    prev_sep = False;
-    for ch in desc_text {
-        is_word = ("a" <= ch and ch <= "z")
-            or ("A" <= ch and ch <= "Z")
-            or ("0" <= ch and ch <= "9");
-        if is_word {
-            ident_chars.append(ch);
-            prev_sep = False;
-        } elif not prev_sep {
-            ident_chars.append("_");
-            prev_sep = True;
-        }
-    }
-    ident: str = str("".join(ident_chars));
-    if ident.startswith("_") {
-        ident = ident[1:];
-    }
-    if ident.endswith("_") {
-        ident = ident[:-1];
-    }
-    return ident.lower();
-}
+def _test_ident_from_desc(desc_text: str) -> str;
 
 obj Parser {
     has tokens: list[LexToken],
@@ -619,6 +581,57 @@ obj Parser {
 
 def parse_program(
     source: str, file_path: str
+) -> tuple[(Module, int, list[SrcDiag], list[CommentData], list[SrcDiag], int)];
+
+
+def parse_expression(
+    source: str, file_path: str = "<input>"
+) -> tuple[Expr, bool, list[SrcDiag], list[SrcDiag]];
+
+impl _string_lit_text(raw: str) -> str {
+    v = raw;
+    while v and v[0] in "rbfRBF" {
+        v = v[1:];
+    }
+    if len(v) >= 6 and v.startswith('"""') and v.endswith('"""') {
+        return v[3:-3];
+    }
+    if len(v) >= 6 and v.startswith("'''") and v.endswith("'''") {
+        return v[3:-3];
+    }
+    if len(v) >= 2 and (v[0] == "'" or v[0] == '"') and v[-1] == v[0] {
+        return v[1:-1];
+    }
+    return v;
+}
+
+impl _test_ident_from_desc(desc_text: str) -> str {
+    ident_chars: list[str] = [];
+    prev_sep = False;
+    for ch in desc_text {
+        is_word = ("a" <= ch and ch <= "z")
+            or ("A" <= ch and ch <= "Z")
+            or ("0" <= ch and ch <= "9");
+        if is_word {
+            ident_chars.append(ch);
+            prev_sep = False;
+        } elif not prev_sep {
+            ident_chars.append("_");
+            prev_sep = True;
+        }
+    }
+    ident: str = str("".join(ident_chars));
+    if ident.startswith("_") {
+        ident = ident[1:];
+    }
+    if ident.endswith("_") {
+        ident = ident[:-1];
+    }
+    return ident.lower();
+}
+
+impl parse_program(
+    source: str, file_path: str
 ) -> tuple[(Module, int, list[SrcDiag], list[CommentData], list[SrcDiag], int)] {
     (tokens, comments, lex_diags, lex_error_count) = tokenize_full(source, file_path);
     parser = Parser(tokens=tokens, file_path=file_path, source_code=source);
@@ -634,7 +647,7 @@ def parse_program(
 }
 
 
-def parse_expression(
+impl parse_expression(
     source: str, file_path: str = "<input>"
 ) -> tuple[Expr, bool, list[SrcDiag], list[SrcDiag]] {
     (tokens, _comments, lex_diags, lex_errors) = tokenize_full(source, file_path);

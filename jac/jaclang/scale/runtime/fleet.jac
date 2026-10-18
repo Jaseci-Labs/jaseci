@@ -18,25 +18,8 @@ obj FleetMember {
         is_root: bool = False,
         client: bool = False;
 
-    def to_dict -> dict[str, any] {
-        return {
-            "app": self.app,
-            "route": self.route,
-            "file": self.file,
-            "root": self.is_root,
-            "client": self.client
-        };
-    }
-
-    static def from_dict(raw: dict[str, any]) -> FleetMember {
-        return FleetMember(
-            app=str(raw.get("app", "")),
-            route=str(raw.get("route", "")),
-            file=str(raw.get("file", "")),
-            is_root=bool(raw.get("root", False)),
-            client=bool(raw.get("client", False))
-        );
-    }
+    def to_dict -> dict[str, any];
+    static def from_dict(raw: dict[str, any]) -> FleetMember;
 }
 
 
@@ -45,111 +28,220 @@ obj FleetSpec {
         members: dict[str, FleetMember] = {},
         overrides: dict[str, dict[str, any]] = {};
 
-    def add(member: FleetMember) {
-        self.members[member.app] = member;
-        if member.is_root {
-            self.root_app = member.app;
-        }
-    }
-
-    def member(app: str) -> FleetMember | None {
-        return self.members.get(app);
-    }
-
-    def root_member -> FleetMember | None {
-        return self.members.get(self.root_app) if self.root_app else None;
-    }
-
-    def names -> list[str] {
-        return list(self.members.keys());
-    }
-
-    def service_names -> list[str] {
-        return [
-            name
-            for (name, member) in self.members.items()
-            if not member.is_root
-        ];
-    }
-
-    def routes -> dict[str, str] {
-        return {
-            name: member.route
-            for (name, member) in self.members.items()
-            if not member.is_root
-        };
-    }
-
-    def files -> dict[str, str] {
-        return {
-            name: member.file
-            for (name, member) in self.members.items()
-            if member.file
-        };
-    }
-
-    def app_config(app: str) -> dict[str, any] {
-        return dict(self.overrides.get(app, {}));
-    }
-
-    def is_empty -> bool {
-        return not self.members;
-    }
-
-    def to_dict -> dict[str, any] {
-        return {
-            "root": self.root_app,
-            "members": [m.to_dict() for m in self.members.values()]
-        };
-    }
-
-    def to_env -> str {
-        return json.dumps(self.to_dict(), sort_keys=True);
-    }
-
-    static def from_dict(raw: dict[str, any]) -> FleetSpec {
-        fleet = FleetSpec();
-        members = raw.get("members", []);
-        if isinstance(members, list) {
-            for item in members {
-                if isinstance(item, dict) and item.get("app") {
-                    fleet.add(FleetMember.from_dict(item));
-                }
-            }
-        }
-        root_name = str(raw.get("root", "") or "");
-        if root_name and root_name in fleet.members {
-            fleet.root_app = root_name;
-            fleet.members[root_name].is_root = True;
-        }
-        return fleet;
-    }
-
-    static def from_env_value(raw: str) -> FleetSpec | None {
-        text = (raw or "").strip();
-        if not text {
-            return None;
-        }
-        try {
-            parsed = json.loads(text);
-        } except Exception as e {
-            logger.warning(f"Ignoring malformed {FLEET_ENV} ({e})");
-            return None;
-        }
-        if not isinstance(parsed, dict) {
-            return None;
-        }
-        return FleetSpec.from_dict(parsed);
-    }
+    def add(member: FleetMember);
+    def member(app: str) -> FleetMember | None;
+    def root_member -> FleetMember | None;
+    def names -> list[str];
+    def service_names -> list[str];
+    def routes -> dict[str, str];
+    def files -> dict[str, str];
+    def app_config(app: str) -> dict[str, any];
+    def is_empty -> bool;
+    def to_dict -> dict[str, any];
+    def to_env -> str;
+    static def from_dict(raw: dict[str, any]) -> FleetSpec;
+    static def from_env_value(raw: str) -> FleetSpec | None;
 }
 
 
-def fleet_from_env -> FleetSpec | None {
+def fleet_from_env -> FleetSpec | None;
+
+
+def fleet_of(
+    routes: dict[str, str],
+    root_app: str = "",
+    overrides: dict[str, dict[str, any]] | None = None,
+    files: dict[str, str] | None = None,
+    root_file: str = "main.jac",
+    root_route: str = "",
+    root_client: bool = False
+) -> FleetSpec;
+
+
+def solo_fleet(app_name: str, entry_file: str, client: bool = False) -> FleetSpec;
+
+
+def guard_fleet_routes(fleet: FleetSpec);
+
+
+def format_fleet_lines(fleet: FleetSpec) -> list[str];
+
+
+def order_by_edges(names: list[str], edges: list[tuple[str, str]]) -> list[str];
+
+
+def _dedup_edges(edges: list[tuple[str, str]]) -> list[tuple[str, str]];
+
+
+def _compiled_app_edges(
+    entry_path: str, app_name: str, app_kind: str, project_root: str
+) -> list[tuple[str, str]];
+
+
+def consumer_provider_edges(
+    config: any,
+    project_root: str,
+    apps: list[AppConfig],
+    entries: dict[str, str] | None = None
+) -> list[tuple[str, str]];
+
+
+def _member_file(entry_path: str, relative_to: str) -> str;
+
+
+def _has_client(config: any, app: any) -> bool;
+
+
+def _build_fleet(
+    config: any,
+    project_root: str,
+    served: any,
+    services: list[AppConfig],
+    entries: dict[str, str],
+    relative_to: str
+) -> FleetSpec;
+
+
+def service_apps_of(config: any, served: any) -> list[AppConfig];
+
+
+def fleet_from_config(
+    config: any, served_app: str = "", project_root: str = "", relative_to: str = ""
+) -> FleetSpec;
+
+
+def fleet_from_plans(
+    config: any, project_root: str, served: any, members: list[any]
+) -> FleetSpec;
+
+
+def fleet_member_names(project_dir: str = "") -> list[str];
+
+impl FleetMember.to_dict -> dict[str, any] {
+    return {
+        "app": self.app,
+        "route": self.route,
+        "file": self.file,
+        "root": self.is_root,
+        "client": self.client
+    };
+}
+
+impl FleetMember.from_dict(raw: dict[str, any]) -> FleetMember {
+    return FleetMember(
+        app=str(raw.get("app", "")),
+        route=str(raw.get("route", "")),
+        file=str(raw.get("file", "")),
+        is_root=bool(raw.get("root", False)),
+        client=bool(raw.get("client", False))
+    );
+}
+
+
+impl FleetSpec.add(member: FleetMember) {
+    self.members[member.app] = member;
+    if member.is_root {
+        self.root_app = member.app;
+    }
+}
+
+impl FleetSpec.member(app: str) -> FleetMember | None {
+    return self.members.get(app);
+}
+
+impl FleetSpec.root_member -> FleetMember | None {
+    return self.members.get(self.root_app) if self.root_app else None;
+}
+
+impl FleetSpec.names -> list[str] {
+    return list(self.members.keys());
+}
+
+impl FleetSpec.service_names -> list[str] {
+    return [
+        name
+        for (name, member) in self.members.items()
+        if not member.is_root
+    ];
+}
+
+impl FleetSpec.routes -> dict[str, str] {
+    return {
+        name: member.route
+        for (name, member) in self.members.items()
+        if not member.is_root
+    };
+}
+
+impl FleetSpec.files -> dict[str, str] {
+    return {
+        name: member.file
+        for (name, member) in self.members.items()
+        if member.file
+    };
+}
+
+impl FleetSpec.app_config(app: str) -> dict[str, any] {
+    return dict(self.overrides.get(app, {}));
+}
+
+impl FleetSpec.is_empty -> bool {
+    return not self.members;
+}
+
+impl FleetSpec.to_dict -> dict[str, any] {
+    return {
+        "root": self.root_app,
+        "members": [m.to_dict() for m in self.members.values()]
+    };
+}
+
+impl FleetSpec.to_env -> str {
+    return json.dumps(self.to_dict(), sort_keys=True);
+}
+
+impl FleetSpec.from_dict(raw: dict[str, any]) -> FleetSpec {
+    fleet = FleetSpec();
+    members = raw.get("members", []);
+    if isinstance(members, list) {
+        for item in members {
+            if isinstance(item, dict) and item.get("app") {
+                fleet.add(FleetMember.from_dict(item));
+            }
+        }
+    }
+    root_name = str(raw.get("root", "") or "");
+    if root_name and root_name in fleet.members {
+        fleet.root_app = root_name;
+        fleet.members[root_name].is_root = True;
+    }
+    return fleet;
+}
+
+impl FleetSpec.from_env_value(raw: str) -> FleetSpec | None {
+    text = (raw or "").strip();
+    if not text {
+        return None;
+    }
+    try {
+        parsed = json.loads(text);
+    } except Exception as e {
+        logger.warning(f"Ignoring malformed {FLEET_ENV} ({e})");
+        return None;
+    }
+    if not isinstance(parsed, dict) {
+        return None;
+    }
+    return FleetSpec.from_dict(parsed);
+}
+
+
+impl fleet_from_env -> FleetSpec | None {
     return FleetSpec.from_env_value(os.environ.get(FLEET_ENV, ""));
 }
 
 
-def fleet_of(
+impl fleet_of(
     routes: dict[str, str],
     root_app: str = "",
     overrides: dict[str, dict[str, any]] | None = None,
@@ -188,7 +280,7 @@ def fleet_of(
 }
 
 
-def solo_fleet(app_name: str, entry_file: str, client: bool = False) -> FleetSpec {
+impl solo_fleet(app_name: str, entry_file: str, client: bool = False) -> FleetSpec {
     fleet = FleetSpec();
     fleet.add(
         FleetMember(
@@ -199,7 +291,7 @@ def solo_fleet(app_name: str, entry_file: str, client: bool = False) -> FleetSpe
 }
 
 
-def guard_fleet_routes(fleet: FleetSpec) {
+impl guard_fleet_routes(fleet: FleetSpec) {
     owners: dict[str, str] = {};
     for (name, member) in fleet.members.items() {
         if member.is_root {
@@ -223,7 +315,7 @@ def guard_fleet_routes(fleet: FleetSpec) {
 }
 
 
-def format_fleet_lines(fleet: FleetSpec) -> list[str] {
+impl format_fleet_lines(fleet: FleetSpec) -> list[str] {
     lines: list[str] = [];
     root_member = fleet.root_member();
     if root_member is not None {
@@ -236,7 +328,7 @@ def format_fleet_lines(fleet: FleetSpec) -> list[str] {
 }
 
 
-def order_by_edges(names: list[str], edges: list[tuple[str, str]]) -> list[str] {
+impl order_by_edges(names: list[str], edges: list[tuple[str, str]]) -> list[str] {
     providers_of: dict[str, set[str]] = {name: set() for name in names};
     for (consumer, provider) in edges {
         if consumer in providers_of
@@ -272,7 +364,7 @@ def order_by_edges(names: list[str], edges: list[tuple[str, str]]) -> list[str] 
 }
 
 
-def _dedup_edges(edges: list[tuple[str, str]]) -> list[tuple[str, str]] {
+impl _dedup_edges(edges: list[tuple[str, str]]) -> list[tuple[str, str]] {
     seen: set[tuple[str, str]] = set();
     out: list[tuple[str, str]] = [];
     for app_edge in edges {
@@ -285,7 +377,7 @@ def _dedup_edges(edges: list[tuple[str, str]]) -> list[tuple[str, str]] {
 }
 
 
-def _compiled_app_edges(
+impl _compiled_app_edges(
     entry_path: str, app_name: str, app_kind: str, project_root: str
 ) -> list[tuple[str, str]] {
     return build_services().application_edges(
@@ -294,7 +386,7 @@ def _compiled_app_edges(
 }
 
 
-def consumer_provider_edges(
+impl consumer_provider_edges(
     config: any,
     project_root: str,
     apps: list[AppConfig],
@@ -340,7 +432,7 @@ def consumer_provider_edges(
 }
 
 
-def _member_file(entry_path: str, relative_to: str) -> str {
+impl _member_file(entry_path: str, relative_to: str) -> str {
     if not relative_to {
         return os.path.abspath(entry_path);
     }
@@ -356,13 +448,13 @@ def _member_file(entry_path: str, relative_to: str) -> str {
 }
 
 
-def _has_client(config: any, app: any) -> bool {
+impl _has_client(config: any, app: any) -> bool {
     kind = config.resolved_kind(app) if config is not None else app.kind;
     return kind_has_client(kind);
 }
 
 
-def _build_fleet(
+impl _build_fleet(
     config: any,
     project_root: str,
     served: any,
@@ -405,7 +497,7 @@ def _build_fleet(
 }
 
 
-def service_apps_of(config: any, served: any) -> list[AppConfig] {
+impl service_apps_of(config: any, served: any) -> list[AppConfig] {
     return [
         a
         for a in config.serving_apps()
@@ -414,7 +506,7 @@ def service_apps_of(config: any, served: any) -> list[AppConfig] {
 }
 
 
-def fleet_from_config(
+impl fleet_from_config(
     config: any, served_app: str = "", project_root: str = "", relative_to: str = ""
 ) -> FleetSpec {
     root_dir = project_root
@@ -426,7 +518,7 @@ def fleet_from_config(
 }
 
 
-def fleet_from_plans(
+impl fleet_from_plans(
     config: any, project_root: str, served: any, members: list[any]
 ) -> FleetSpec {
     served_app = config.resolve_app(served.app);
@@ -449,7 +541,7 @@ def fleet_from_plans(
 }
 
 
-def fleet_member_names(project_dir: str = "") -> list[str] {
+impl fleet_member_names(project_dir: str = "") -> list[str] {
     from_env = fleet_from_env();
     if from_env is not None {
         return from_env.names();

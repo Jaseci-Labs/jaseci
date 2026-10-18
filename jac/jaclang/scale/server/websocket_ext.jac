@@ -21,6 +21,40 @@ async def serve_ws_connection(
     msgs_per_sec: float,
     make_awaitable: any,
     open_scope: Callable[[], RequestScope]
+);
+
+
+obj WebSocketExtension(ServerExtension) {
+    has manager: (WebSocketConnectionManager | None) = None;
+
+    def validate(server: JacAPIServer) -> list[str];
+    def ws_manager(server: JacAPIServer) -> WebSocketConnectionManager;
+    def target_handler(
+        server: JacAPIServer,
+        target_kind: str,
+        target_name: str,
+        requires_auth: bool,
+        execute: Callable
+    ) -> Callable;
+
+    def websocket_targets(server: JacAPIServer) -> list[tuple[str, str]];
+    def register(server: JacAPIServer);
+}
+
+impl serve_ws_connection(
+    websocket: WebSocket,
+    ws_manager: WebSocketConnectionManager,
+    user_manager: any,
+    requires_auth: bool,
+    target_kind: str,
+    target_name: str,
+    is_broadcast: bool,
+    label: str,
+    max_bytes: int,
+    target_timeout: float,
+    msgs_per_sec: float,
+    make_awaitable: any,
+    open_scope: Callable[[], RequestScope]
 ) {
     rate_capacity = max(msgs_per_sec, 1.0);
     user_id: (str | None) = None;
@@ -163,132 +197,130 @@ async def serve_ws_connection(
 }
 
 
-obj WebSocketExtension(ServerExtension) {
-    has manager: (WebSocketConnectionManager | None) = None;
-
-    def validate(server: JacAPIServer) -> list[str] {
-        settings = server.resolved_settings();
-        if not settings.workers.multi_process() {
-            return [];
-        }
-        has_ws = bool(self.websocket_targets(server));
-        if not has_ws {
-            return [];
-        }
-        try {
-            backplane = build_backplane(get_scale_config().get_websocket_config());
-        } except ValueError as e {
-            return [str(e)];
-        }
-        if isinstance(backplane, MemoryBackplane) {
-            return [
-                f"[scale.websocket] backplane resolves to 'memory', which keeps "
-                f"broadcasts inside one process; with {settings.workers.count} workers "
-                "a client only sees what its own worker publishes. Set backplane = "
-                "'pg' (and a database URL), or run with workers = 1."
-            ];
-        }
+impl WebSocketExtension.validate(server: JacAPIServer) -> list[str] {
+    settings = server.resolved_settings();
+    if not settings.workers.multi_process() {
         return [];
     }
-
-    def ws_manager(server: JacAPIServer) -> WebSocketConnectionManager {
-        if self.manager is None {
-            ws_cfg = get_scale_config().get_websocket_config();
-            manager = WebSocketConnectionManager(
-                max_per_target=int(ws_cfg['max_connections_per_target']),
-                max_per_user=int(ws_cfg['max_connections_per_user']),
-                max_anonymous_per_target=int(ws_cfg['max_anonymous_per_target']),
-                send_timeout=SEND_TIMEOUT_SECONDS,
-                backplane=build_backplane(ws_cfg),
-                metrics=server.metrics
-            );
-            self.manager = manager;
-            async def _shutdown {
-                await manager.shutdown();
-            }
-            server.add_shutdown_hook(_shutdown);
-        }
-        return self.manager;
+    has_ws = bool(self.websocket_targets(server));
+    if not has_ws {
+        return [];
     }
+    try {
+        backplane = build_backplane(get_scale_config().get_websocket_config());
+    } except ValueError as e {
+        return [str(e)];
+    }
+    if isinstance(backplane, MemoryBackplane) {
+        return [
+            f"[scale.websocket] backplane resolves to 'memory', which keeps "
+            f"broadcasts inside one process; with {settings.workers.count} workers "
+            "a client only sees what its own worker publishes. Set backplane = "
+            "'pg' (and a database URL), or run with workers = 1."
+        ];
+    }
+    return [];
+}
 
-    def target_handler(
-        server: JacAPIServer,
-        target_kind: str,
-        target_name: str,
-        requires_auth: bool,
-        execute: Callable
-    ) -> Callable {
-        ws_manager = self.ws_manager(server);
+impl WebSocketExtension.ws_manager(server: JacAPIServer) -> WebSocketConnectionManager {
+    if self.manager is None {
         ws_cfg = get_scale_config().get_websocket_config();
-        restspec: any = server.introspector.route_spec(target_name);
-        is_broadcast: bool = bool(restspec.broadcast) if restspec?.broadcast else False;
-        user_manager = server.user_manager;
-        settings = server.resolved_settings();
-        max_bytes = settings.websocket.max_message_bytes
-            or int(ws_cfg['max_message_bytes']);
+        manager = WebSocketConnectionManager(
+            max_per_target=int(ws_cfg['max_connections_per_target']),
+            max_per_user=int(ws_cfg['max_connections_per_user']),
+            max_anonymous_per_target=int(ws_cfg['max_anonymous_per_target']),
+            send_timeout=SEND_TIMEOUT_SECONDS,
+            backplane=build_backplane(ws_cfg),
+            metrics=server.metrics
+        );
+        self.manager = manager;
+        async def _shutdown {
+            await manager.shutdown();
+        }
+        server.add_shutdown_hook(_shutdown);
+    }
+    return self.manager;
+}
 
-        async def websocket_handler(websocket: WebSocket) {
-            def make_awaitable(data: dict[str, any], user: str) -> any {
-                return execute(server.introspector.target(target_name), data, user);
+impl WebSocketExtension.target_handler(
+    server: JacAPIServer,
+    target_kind: str,
+    target_name: str,
+    requires_auth: bool,
+    execute: Callable
+) -> Callable {
+    ws_manager = self.ws_manager(server);
+    ws_cfg = get_scale_config().get_websocket_config();
+    restspec: any = server.introspector.route_spec(target_name);
+    is_broadcast: bool = bool(restspec.broadcast) if restspec?.broadcast else False;
+    user_manager = server.user_manager;
+    settings = server.resolved_settings();
+    max_bytes = settings.websocket.max_message_bytes
+        or int(ws_cfg['max_message_bytes']);
+
+    async def websocket_handler(websocket: WebSocket) {
+        def make_awaitable(data: dict[str, any], user: str) -> any {
+            return execute(server.introspector.target(target_name), data, user);
+        }
+        await serve_ws_connection(
+            websocket,
+            ws_manager,
+            user_manager,
+            requires_auth,
+            target_kind,
+            target_name,
+            is_broadcast,
+            target_kind.capitalize(),
+            max_bytes,
+            float(ws_cfg['target_timeout_seconds']),
+            float(ws_cfg['messages_per_second']),
+            make_awaitable,
+            server.request_scope
+        );
+    }
+    return websocket_handler;
+}
+
+impl WebSocketExtension.websocket_targets(
+    server: JacAPIServer
+) -> list[tuple[str, str]] {
+    intro = server.introspector;
+    found: list[tuple[str, str]] = [];
+    for kind in ('walker', 'function') {
+        for rec in intro.served(kind) {
+            spec = intro.route_spec(rec.name);
+            if not intro.is_scheduled(rec.name)
+                and spec?.protocol
+                and APIProtocol(spec.protocol) == APIProtocol.WEBSOCKET {
+                found.append((kind, rec.name));
             }
-            await serve_ws_connection(
-                websocket,
-                ws_manager,
-                user_manager,
-                requires_auth,
-                target_kind,
-                target_name,
-                is_broadcast,
-                target_kind.capitalize(),
-                max_bytes,
-                float(ws_cfg['target_timeout_seconds']),
-                float(ws_cfg['messages_per_second']),
-                make_awaitable,
-                server.request_scope
+        }
+    }
+    return found;
+}
+
+impl WebSocketExtension.register(server: JacAPIServer) {
+    intro = server.introspector;
+    for (kind, name) in self.websocket_targets(server) {
+        if kind == 'walker' {
+            handler = self.target_handler(
+                server,
+                'walker',
+                name,
+                intro.is_auth_required_for_walker(name),
+                server.execution_manager.spawn_walker
             );
-        }
-        return websocket_handler;
-    }
-
-    def websocket_targets(server: JacAPIServer) -> list[tuple[str, str]] {
-        intro = server.introspector;
-        found: list[tuple[str, str]] = [];
-        for kind in ('walker', 'function') {
-            for rec in intro.served(kind) {
-                spec = intro.route_spec(rec.name);
-                if not intro.is_scheduled(rec.name)
-                    and spec?.protocol
-                    and APIProtocol(spec.protocol) == APIProtocol.WEBSOCKET {
-                    found.append((kind, rec.name));
-                }
-            }
-        }
-        return found;
-    }
-
-    def register(server: JacAPIServer) {
-        intro = server.introspector;
-        for (kind, name) in self.websocket_targets(server) {
-            if kind == 'walker' {
-                handler = self.target_handler(
-                    server,
-                    'walker',
-                    name,
-                    intro.is_auth_required_for_walker(name),
-                    server.execution_manager.spawn_walker
-                );
-                server.add_ws_endpoint(f"/ws/walker/{name}", handler);
-                server.add_ws_endpoint(f"/ws/{name}", handler);
-            } else {
-                handler = self.target_handler(
-                    server,
-                    'function',
-                    name,
-                    intro.is_auth_required_for_function(name),
-                    server.execution_manager.execute_function
-                );
-                server.add_ws_endpoint(f"/ws/function/{name}", handler);
-            }
+            server.add_ws_endpoint(f"/ws/walker/{name}", handler);
+            server.add_ws_endpoint(f"/ws/{name}", handler);
+        } else {
+            handler = self.target_handler(
+                server,
+                'function',
+                name,
+                intro.is_auth_required_for_function(name),
+                server.execution_manager.execute_function
+            );
+            server.add_ws_endpoint(f"/ws/function/{name}", handler);
         }
     }
 }

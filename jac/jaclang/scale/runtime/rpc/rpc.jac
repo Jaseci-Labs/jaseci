@@ -1,7 +1,43 @@
 glob _RPC_MAX_ATTEMPTS: int = 3,
      _RPC_INITIAL_BACKOFF_SECONDS: float = 0.1;
 
-def _rpc_with_retries(module_name: str, label: str, send: any) -> any {
+def _rpc_with_retries(module_name: str, label: str, send: any) -> any;
+
+
+def _rpc_headers(extra: dict[str, str] | None = None) -> dict[str, str];
+
+
+def _provider_url(app_name: str) -> str;
+
+
+def _resolve_call_target(module_name: str) -> tuple[str, str | None];
+
+
+def service_call(
+    module_name: str,
+    func_name: str,
+    args: dict[str, any],
+    headers: dict[str, str] | None = None
+) -> any;
+
+
+def walker_call(
+    module_name: str,
+    walker_name: str,
+    args: dict[str, any],
+    stub_cls: any = None,
+    headers: dict[str, str] | None = None
+) -> any;
+
+
+def _iter_sse_text(text: str, func_label: str) -> any;
+
+glob _SV_DEFAULT_RPC_TIMEOUT: float = 10.0;
+
+
+def _sv_rpc_timeout(app_name: str) -> float;
+
+impl _rpc_with_retries(module_name: str, label: str, send: any) -> any {
     import time;
 
     backoff: float = _RPC_INITIAL_BACKOFF_SECONDS;
@@ -42,7 +78,7 @@ def _rpc_with_retries(module_name: str, label: str, send: any) -> any {
 }
 
 
-def _rpc_headers(extra: dict[str, str] | None = None) -> dict[str, str] {
+impl _rpc_headers(extra: dict[str, str] | None = None) -> dict[str, str] {
     import from jaclang.server { sv_client }
 
     headers: dict[str, str] = dict(sv_client.auth_headers());
@@ -65,7 +101,7 @@ def _rpc_headers(extra: dict[str, str] | None = None) -> dict[str, str] {
 }
 
 
-def _provider_url(app_name: str) -> str {
+impl _provider_url(app_name: str) -> str {
     import jaclang;
     import from jaclang.server { sv_client }
     registry: dict[str, str] = jaclang.JacRuntime.get_sv_registry();
@@ -81,7 +117,7 @@ def _provider_url(app_name: str) -> str {
 }
 
 
-def _resolve_call_target(module_name: str) -> tuple[str, str | None] {
+impl _resolve_call_target(module_name: str) -> tuple[str, str | None] {
     """One bundled lookup for (url, interceptor Host-header override), so
     the two are never resolved independently and can't disagree.
     Primary source: the live K8s dynamic registry (JacScaleRuntime's
@@ -100,7 +136,7 @@ def _resolve_call_target(module_name: str) -> tuple[str, str | None] {
 }
 
 
-def service_call(
+impl service_call(
     module_name: str,
     func_name: str,
     args: dict[str, any],
@@ -158,7 +194,7 @@ def service_call(
 }
 
 
-def walker_call(
+impl walker_call(
     module_name: str,
     walker_name: str,
     args: dict[str, any],
@@ -213,16 +249,14 @@ def walker_call(
 }
 
 
-def _iter_sse_text(text: str, func_label: str) -> any {
+impl _iter_sse_text(text: str, func_label: str) -> any {
     for ev in consume_sse_events(text.splitlines(), func_label) {
         yield ev;
     }
 }
 
-glob _SV_DEFAULT_RPC_TIMEOUT: float = 10.0;
 
-
-def _sv_rpc_timeout(app_name: str) -> float {
+impl _sv_rpc_timeout(app_name: str) -> float {
     try {
         import from jaclang.scale.config.config_loader { get_scale_config }
         app_cfg = get_scale_config().get_app_scale_config(app_name);

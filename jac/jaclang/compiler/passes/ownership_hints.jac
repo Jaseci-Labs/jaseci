@@ -5,7 +5,17 @@ obj InferredHint {
         kind: str;
 }
 
-def ownership_label(kind: OwnershipKind, linear: bool = False) -> (str | None) {
+def ownership_label(kind: OwnershipKind, linear: bool = False) -> (str | None);
+
+def receiver_label(kind: OwnershipKind) -> (str | None);
+
+def _explicit_self(ab: Ability) -> bool;
+
+def _end_of(nd: Name) -> tuple[int, int];
+
+def inferred_hints(mod: Module) -> list[InferredHint];
+
+impl ownership_label(kind: OwnershipKind, linear: bool = False) -> (str | None) {
     if linear {
         return "lin";
     }
@@ -24,7 +34,7 @@ def ownership_label(kind: OwnershipKind, linear: bool = False) -> (str | None) {
     return None;
 }
 
-def receiver_label(kind: OwnershipKind) -> (str | None) {
+impl receiver_label(kind: OwnershipKind) -> (str | None) {
     if kind == OwnershipKind.OWN {
         return "own self";
     }
@@ -37,7 +47,7 @@ def receiver_label(kind: OwnershipKind) -> (str | None) {
     return None;
 }
 
-def _explicit_self(ab: Ability) -> bool {
+impl _explicit_self(ab: Ability) -> bool {
     sig = ab.signature;
     if not isinstance(sig, FuncSignature) {
         return False;
@@ -48,12 +58,12 @@ def _explicit_self(ab: Ability) -> bool {
         and params[0].name.sym_name == "self";
 }
 
-def _end_of(nd: Name) -> tuple[int, int] {
+impl _end_of(nd: Name) -> tuple[int, int] {
     loc = nd.loc;
     return (loc.last_line or loc.first_line, loc.col_end or loc.col_start);
 }
 
-def inferred_hints(mod: Module) -> list[InferredHint] {
+impl inferred_hints(mod: Module) -> list[InferredHint] {
     hints: list[InferredHint] = [];
     for asg in mod.get_all_sub_nodes(Assignment) {
         if len(asg.target) != 1 or not isinstance(asg.target[0], Name) {

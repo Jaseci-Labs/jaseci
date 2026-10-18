@@ -126,7 +126,57 @@ glob id_bag: dict[int, any] = {},
          'Semi': '#f1cfc4'
      };
 
-def node_to_dict(nd: UniNode) -> dict[(str, str)] {
+def node_to_dict(nd: UniNode) -> dict[(str, str)];
+
+def printgraph_ast_tree(
+    root_node: UniNode, dot_lines: (list[str] | None) = None
+) -> str;
+
+def print_ast_tree(
+    root_node: (UniNode | ast3.AST),
+    marker: str = '+-- ',
+    level_markers: (list[bool] | None) = None,
+    output_file: (str | None) = None,
+    max_depth: (int | None) = None
+) -> str;
+
+class SymbolTree {
+    def init(
+        self: SymbolTree,
+        node_name: str,
+        parent: (SymbolTree | None) = None,
+        children: (list[SymbolTree] | None) = None
+    ) -> None;
+
+    has parent: (SymbolTree | None) {
+        getter;
+        setter(self: SymbolTree, parent_node: (SymbolTree | None));
+    }
+}
+
+def _build_symbol_tree_common(
+    nd: UniScopeNode, parent_node: (SymbolTree | None) = None
+) -> SymbolTree;
+
+def print_symtab_tree(
+    root_node: UniScopeNode,
+    marker: str = '+-- ',
+    level_markers: (list[bool] | None) = None,
+    output_file: (str | None) = None,
+    depth: (int | None) = None
+) -> str;
+
+def get_symtab_tree_str(
+    root_node: SymbolTree,
+    marker: str = '+-- ',
+    level_markers: (list[bool] | None) = None,
+    output_file: (str | None) = None,
+    depth: (int | None) = None
+) -> str;
+
+def printgraph_symtab_tree(nd: UniScopeNode) -> str;
+
+impl node_to_dict(nd: UniNode) -> dict[(str, str)] {
     ret = {
         'node': str(`type(nd).__name__),
         'kid': str(
@@ -146,7 +196,7 @@ def node_to_dict(nd: UniNode) -> dict[(str, str)] {
     return ret;
 }
 
-def printgraph_ast_tree(
+impl printgraph_ast_tree(
     root_node: UniNode, dot_lines: (list[str] | None) = None
 ) -> str {
     starting_call = False;
@@ -202,7 +252,7 @@ def printgraph_ast_tree(
     return ' ';
 }
 
-def print_ast_tree(
+impl print_ast_tree(
     root_node: (UniNode | ast3.AST),
     marker: str = '+-- ',
     level_markers: (list[bool] | None) = None,
@@ -383,21 +433,7 @@ def print_ast_tree(
     return tree_str;
 }
 
-class SymbolTree {
-    def init(
-        self: SymbolTree,
-        node_name: str,
-        parent: (SymbolTree | None) = None,
-        children: (list[SymbolTree] | None) = None
-    ) -> None;
-
-    has parent: (SymbolTree | None) {
-        getter;
-        setter(self: SymbolTree, parent_node: (SymbolTree | None));
-    }
-}
-
-def _build_symbol_tree_common(
+impl _build_symbol_tree_common(
     nd: UniScopeNode, parent_node: (SymbolTree | None) = None
 ) -> SymbolTree {
     root_node = SymbolTree(
@@ -440,7 +476,7 @@ def _build_symbol_tree_common(
     return root_node;
 }
 
-def print_symtab_tree(
+impl print_symtab_tree(
     root_node: UniScopeNode,
     marker: str = '+-- ',
     level_markers: (list[bool] | None) = None,
@@ -452,7 +488,7 @@ def print_symtab_tree(
     );
 }
 
-def get_symtab_tree_str(
+impl get_symtab_tree_str(
     root_node: SymbolTree,
     marker: str = '+-- ',
     level_markers: (list[bool] | None) = None,
@@ -494,7 +530,7 @@ def get_symtab_tree_str(
     );
 }
 
-def printgraph_symtab_tree(nd: UniScopeNode) -> str {
+impl printgraph_symtab_tree(nd: UniScopeNode) -> str {
     dot_lines = [];
     id_map: dict[int, int] = {};
     last_id_state: dict[str, int] = {"used": 0};

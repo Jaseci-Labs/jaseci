@@ -14,64 +14,81 @@ obj BinaryInjector(PvcInjector) {
         _seal_binary_bytes: bytes = b"",
         _pod_arch: str = "";
 
-    def prepare(app_name: str, namespace: str, project_dir: str) {
-        version = resolve_deploy_version(project_dir, self.channel.value);
-        stage_admin_dist(
-            project_dir,
-            self.channel.value,
-            resolve_console_version(project_dir, self.channel.value, version)
-        );
-
-        pod_arch = node_arch();
-        payload = read_local_binary(project_dir)
-            if self.channel == Channel.LOCAL
-            else download_release_binary(self.channel.value, pod_arch, version);
-        self._pod_binary_bytes = payload;
-        self._pod_binary_sha256 = hashlib.sha256(payload).hexdigest();
-        self._pod_arch = pod_arch;
-        self._seal_binary_bytes = self._resolve_seal_binary(payload, pod_arch, version);
-        super.prepare(app_name, namespace, project_dir);
-        raw = pack_binary_bytes(payload);
-        self._toolchain_object_key = toolchain_object_key(
-            app_name, content_address(raw)
-        );
-        self._toolchain_bytes = raw;
-    }
-
-    def _resolve_seal_binary(pod_payload: bytes, pod_arch: str, version: str) -> bytes {
-        if self.channel == Channel.LOCAL {
-            return pod_payload;
-        }
-        plat = host_seal_platform();
-        arch = host_arch();
-        if plat == "linux" and arch == pod_arch {
-            return pod_payload;
-        }
-        return download_release_binary(self.channel.value, arch, version, plat);
-    }
-
-    def _seed_artifacts -> list[tuple[str, bytes]] {
-        artifacts = super._seed_artifacts();
-        artifacts.append((self._toolchain_object_key, self._toolchain_bytes));
-        return artifacts;
-    }
-
-    def _unpack_bundle_paths -> list[str] {
-        paths = super._unpack_bundle_paths();
-        paths.append(bundle_pvc_path(self._toolchain_object_key));
-        return paths;
-    }
-
-    def _skip_when_image_binary -> dict[str, str] {
-        if not self._pod_binary_sha256 or not self._toolchain_object_key {
-            return {};
-        }
-        return {bundle_pvc_path(self._toolchain_object_key): self._pod_binary_sha256};
-    }
+    def prepare(app_name: str, namespace: str, project_dir: str);
+    def _resolve_seal_binary(pod_payload: bytes, pod_arch: str, version: str) -> bytes;
+    def _seed_artifacts -> list[tuple[str, bytes]];
+    def _unpack_bundle_paths -> list[str];
+    def _skip_when_image_binary -> dict[str, str];
 }
 
 
 def select_injector(
+    storage_class: str,
+    app_name: str,
+    namespace: str,
+    project_dir: str,
+    dry_run: bool = False,
+    access_mode: str = "ReadWriteMany",
+    fleet: any = None
+) -> tuple[PvcInjector, str];
+
+impl BinaryInjector.prepare(app_name: str, namespace: str, project_dir: str) {
+    version = resolve_deploy_version(project_dir, self.channel.value);
+    stage_admin_dist(
+        project_dir,
+        self.channel.value,
+        resolve_console_version(project_dir, self.channel.value, version)
+    );
+
+    pod_arch = node_arch();
+    payload = read_local_binary(project_dir)
+        if self.channel == Channel.LOCAL
+        else download_release_binary(self.channel.value, pod_arch, version);
+    self._pod_binary_bytes = payload;
+    self._pod_binary_sha256 = hashlib.sha256(payload).hexdigest();
+    self._pod_arch = pod_arch;
+    self._seal_binary_bytes = self._resolve_seal_binary(payload, pod_arch, version);
+    super.prepare(app_name, namespace, project_dir);
+    raw = pack_binary_bytes(payload);
+    self._toolchain_object_key = toolchain_object_key(app_name, content_address(raw));
+    self._toolchain_bytes = raw;
+}
+
+impl BinaryInjector._resolve_seal_binary(
+    pod_payload: bytes, pod_arch: str, version: str
+) -> bytes {
+    if self.channel == Channel.LOCAL {
+        return pod_payload;
+    }
+    plat = host_seal_platform();
+    arch = host_arch();
+    if plat == "linux" and arch == pod_arch {
+        return pod_payload;
+    }
+    return download_release_binary(self.channel.value, arch, version, plat);
+}
+
+impl BinaryInjector._seed_artifacts -> list[tuple[str, bytes]] {
+    artifacts = super._seed_artifacts();
+    artifacts.append((self._toolchain_object_key, self._toolchain_bytes));
+    return artifacts;
+}
+
+impl BinaryInjector._unpack_bundle_paths -> list[str] {
+    paths = super._unpack_bundle_paths();
+    paths.append(bundle_pvc_path(self._toolchain_object_key));
+    return paths;
+}
+
+impl BinaryInjector._skip_when_image_binary -> dict[str, str] {
+    if not self._pod_binary_sha256 or not self._toolchain_object_key {
+        return {};
+    }
+    return {bundle_pvc_path(self._toolchain_object_key): self._pod_binary_sha256};
+}
+
+
+impl select_injector(
     storage_class: str,
     app_name: str,
     namespace: str,

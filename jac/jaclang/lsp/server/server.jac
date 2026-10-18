@@ -7,18 +7,11 @@ import from typing { Optional }
 
 def debug(msg: str) -> None;
 
-async def did_open(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) {
-    ls.type_check(params.text_document.uri);
-}
+async def did_open(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams);
 
-async def did_save(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) {
-    ls.type_check(params.text_document.uri);
-}
+async def did_save(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams);
 
-async def did_change(ls: JacLangServer, params: lspt.DidChangeTextDocumentParams) {
-    debug(f"Did change: Type checking started.");
-    ls.type_check(params.text_document.uri);
-}
+async def did_change(ls: JacLangServer, params: lspt.DidChangeTextDocumentParams);
 
 def formatting(
     ls: JacLangServer, params: lspt.DocumentFormattingParams
@@ -28,7 +21,7 @@ def lintfix_formatting(
     ls: JacLangServer, params: lspt.DocumentFormattingParams
 ) -> list[lspt.TextEdit];
 
-def did_create_files(ls: JacLangServer, params: lspt.CreateFilesParams) {}
+def did_create_files(ls: JacLangServer, params: lspt.CreateFilesParams);
 
 def did_rename_files(ls: JacLangServer, params: lspt.RenameFilesParams) -> None;
 
@@ -38,15 +31,7 @@ def did_delete_files(ls: JacLangServer, params: lspt.DeleteFilesParams) -> None;
 
 async def completion(
     ls: JacLangServer, params: lspt.CompletionParams
-) -> lspt.CompletionList {
-    file_path = params.text_document.uri;
-    debug("Completion requested");
-    return await ls.get_completion(
-        params.text_document.uri,
-        params.position,
-        (params.context.trigger_character if params.context else None)
-    );
-}
+) -> lspt.CompletionList;
 
 def inlay_hint(
     ls: JacLangServer, params: lspt.InlayHintParams
@@ -78,4 +63,31 @@ def run_lang_server -> None;
 
 with entry:__main__ {
     run_lang_server();
+}
+
+impl did_open(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) {
+    ls.type_check(params.text_document.uri);
+}
+
+impl did_save(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) {
+    ls.type_check(params.text_document.uri);
+}
+
+impl did_change(ls: JacLangServer, params: lspt.DidChangeTextDocumentParams) {
+    debug(f"Did change: Type checking started.");
+    ls.type_check(params.text_document.uri);
+}
+
+impl did_create_files(ls: JacLangServer, params: lspt.CreateFilesParams) {}
+
+impl completion(
+    ls: JacLangServer, params: lspt.CompletionParams
+) -> lspt.CompletionList {
+    file_path = params.text_document.uri;
+    debug("Completion requested");
+    return await ls.get_completion(
+        params.text_document.uri,
+        params.position,
+        (params.context.trigger_character if params.context else None)
+    );
 }

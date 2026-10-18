@@ -13,18 +13,53 @@ glob TOOLCHAIN_INPUTS: tuple[str, ...] = (
      LLVM_PINS: str = "bootstrap/pins.json",
      LLVM_CACHE_DIR: str = ".llvm-build";
 
-def shim_name -> str {
+def shim_name -> str;
+
+def placed_shim_path -> str;
+
+def llvm_host -> str;
+
+def pinned_llvm_blocker(repo_root: str) -> str;
+
+def _repo_root -> str;
+
+def shim_inputs_digest(repo_root: str) -> str;
+
+def write_shim_record(shim_path: str, repo_root: str);
+
+def _recorded_inputs(shim_path: str) -> str;
+
+def _probe(shim_path: str, source: Source) -> Probe;
+
+obj ShimArtifact(Artifact) {
+    has name: str = "llvm-shim",
+        kind: ArtifactKind = ArtifactKind.ACCELERATOR,
+        release: ReleasePolicy = ReleasePolicy.REQUIRED,
+        summary: str = "the LLVM shim (native code generation)",
+        floor: str = "Python placement for native-default code";
+
+    override def probe_sealed -> (Probe | None);
+    override def probe_checkout -> Probe;
+    override def probe_kit -> Probe;
+    override def checkout_path -> str;
+    override def build_blocker -> str;
+    override def build(log: Callable[[str], None], force: bool, exact: bool);
+}
+
+def shim_path -> str;
+
+impl shim_name -> str {
     if os.name == "posix" {
         return "libjacllvm.dylib" if sys.platform == "darwin" else "libjacllvm.so";
     }
     return "jacllvm.dll";
 }
 
-def placed_shim_path -> str {
+impl placed_shim_path -> str {
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), shim_name());
 }
 
-def llvm_host -> str {
+impl llvm_host -> str {
     import platform;
     system = {"linux": "linux", "darwin": "macos"}.get(sys.platform, sys.platform);
     machine = platform.machine().lower();
@@ -32,7 +67,7 @@ def llvm_host -> str {
     return f"{system}-{machine}";
 }
 
-def pinned_llvm_blocker(repo_root: str) -> str {
+impl pinned_llvm_blocker(repo_root: str) -> str {
     pins = os.path.join(repo_root, *LLVM_PINS.split("/"));
     try {
         with open(pins, encoding="utf-8") as f {
@@ -50,11 +85,11 @@ def pinned_llvm_blocker(repo_root: str) -> str {
     )}";
 }
 
-def _repo_root -> str {
+impl _repo_root -> str {
     return os.path.dirname(jaclang_pkg_root());
 }
 
-def shim_inputs_digest(repo_root: str) -> str {
+impl shim_inputs_digest(repo_root: str) -> str {
     h = hashlib.sha256();
     for rel in TOOLCHAIN_INPUTS {
         h.update(rel.encode());
@@ -90,14 +125,14 @@ def shim_inputs_digest(repo_root: str) -> str {
     return h.hexdigest();
 }
 
-def write_shim_record(shim_path: str, repo_root: str) {
+impl write_shim_record(shim_path: str, repo_root: str) {
     atomic_write(
         shim_path + RECORD_SUFFIX,
         json.dumps({"inputs": shim_inputs_digest(repo_root)}).encode("utf-8")
     );
 }
 
-def _recorded_inputs(shim_path: str) -> str {
+impl _recorded_inputs(shim_path: str) -> str {
     try {
         with open(shim_path + RECORD_SUFFIX, encoding="utf-8") as f {
             return str(json.load(f).get("inputs", ""));
@@ -107,7 +142,7 @@ def _recorded_inputs(shim_path: str) -> str {
     }
 }
 
-def _probe(shim_path: str, source: Source) -> Probe {
+impl _probe(shim_path: str, source: Source) -> Probe {
     if not os.path.isfile(shim_path) {
         return Probe.missing();
     }
@@ -129,69 +164,57 @@ def _probe(shim_path: str, source: Source) -> Probe {
     return Probe.hit(source, shim_path, {"inputs": recorded});
 }
 
-obj ShimArtifact(Artifact) {
-    has name: str = "llvm-shim",
-        kind: ArtifactKind = ArtifactKind.ACCELERATOR,
-        release: ReleasePolicy = ReleasePolicy.REQUIRED,
-        summary: str = "the LLVM shim (native code generation)",
-        floor: str = "Python placement for native-default code";
-
-    override def probe_sealed -> (Probe | None) {
-        if sealed._jaclang_image() is None {
-            return None;
-        }
-        path = placed_shim_path();
-        return Probe.hit(Source.SEALED, path, {})
-            if os.path.isfile(path)
-            else Probe.missing("this image carries no LLVM shim");
+impl ShimArtifact.probe_sealed -> (Probe | None) {
+    if sealed._jaclang_image() is None {
+        return None;
     }
-
-    override def probe_checkout -> Probe {
-        return _probe(placed_shim_path(), Source.CHECKOUT);
-    }
-
-    override def probe_kit -> Probe {
-        if kit_image() is None {
-            return Probe.missing("this process runs on no kit");
-        }
-        return _probe(
-            kit_path(
-                os.path.join("compiler", "backends", "native", "llvm", shim_name())
-            ),
-            Source.KIT
-        );
-    }
-
-    override def checkout_path -> str {
-        return placed_shim_path();
-    }
-
-    override def build_blocker -> str {
-        import shutil;
-        if not shutil.which("zig") {
-            return "zig is not on PATH";
-        }
-        return pinned_llvm_blocker(_repo_root());
-    }
-
-    override def build(log: Callable[[str], None], force: bool, exact: bool) {
-        import subprocess;
-        record = self.checkout_path() + RECORD_SUFFIX;
-        if force and os.path.isfile(record) {
-            os.remove(record);
-        }
-        log(
-            f"  zig build fetch-llvm (the pinned LLVM into {LLVM_CACHE_DIR}/, about 84 MB once)"
-        );
-        subprocess.run(["zig", "build", "fetch-llvm"], cwd=_repo_root(), check=True);
-        log(
-            "  zig build jacllvm (links the pinned LLVM; places the shim and its record)"
-        );
-        subprocess.run(["zig", "build", "jacllvm"], cwd=_repo_root(), check=True);
-    }
+    path = placed_shim_path();
+    return Probe.hit(Source.SEALED, path, {})
+        if os.path.isfile(path)
+        else Probe.missing("this image carries no LLVM shim");
 }
 
-def shim_path -> str {
+impl ShimArtifact.probe_checkout -> Probe {
+    return _probe(placed_shim_path(), Source.CHECKOUT);
+}
+
+impl ShimArtifact.probe_kit -> Probe {
+    if kit_image() is None {
+        return Probe.missing("this process runs on no kit");
+    }
+    return _probe(
+        kit_path(os.path.join("compiler", "backends", "native", "llvm", shim_name())),
+        Source.KIT
+    );
+}
+
+impl ShimArtifact.checkout_path -> str {
+    return placed_shim_path();
+}
+
+impl ShimArtifact.build_blocker -> str {
+    import shutil;
+    if not shutil.which("zig") {
+        return "zig is not on PATH";
+    }
+    return pinned_llvm_blocker(_repo_root());
+}
+
+impl ShimArtifact.build(log: Callable[[str], None], force: bool, exact: bool) {
+    import subprocess;
+    record = self.checkout_path() + RECORD_SUFFIX;
+    if force and os.path.isfile(record) {
+        os.remove(record);
+    }
+    log(
+        f"  zig build fetch-llvm (the pinned LLVM into {LLVM_CACHE_DIR}/, about 84 MB once)"
+    );
+    subprocess.run(["zig", "build", "fetch-llvm"], cwd=_repo_root(), check=True);
+    log("  zig build jacllvm (links the pinned LLVM; places the shim and its record)");
+    subprocess.run(["zig", "build", "jacllvm"], cwd=_repo_root(), check=True);
+}
+
+impl shim_path -> str {
     found = require("llvm-shim").found;
     assert found is not None;
     return found.path;

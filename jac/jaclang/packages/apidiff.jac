@@ -11,13 +11,39 @@ obj ApiChange {
         reason: str,
         schema: bool = False;
 
-    def describe -> str {
-        tag = " [persistence schema]" if self.schema else "";
-        return f"{LEVEL_NAMES[self.level]}: {self.path}: {self.reason}{tag}";
-    }
+    def describe -> str;
 }
 
-def _positional(sig: dict[str, any]) -> list[str] {
+def _positional(sig: dict[str, any]) -> list[str];
+
+def diff_signature(
+    path: str, old: dict[str, any], new: dict[str, any]
+) -> list[ApiChange];
+
+def _diff_members(
+    path: str, kind: str, old: dict[str, any], new: dict[str, any]
+) -> list[ApiChange];
+
+def _diff_symbol(
+    path: str, old: dict[str, any], new: dict[str, any]
+) -> list[ApiChange];
+
+def diff_surfaces(old: dict[str, any], new: dict[str, any]) -> list[ApiChange];
+
+def required_level(changes: list[ApiChange]) -> int;
+
+def bump_level(old: Version, new: Version) -> int;
+
+def check_bump(old: Version, new: Version, changes: list[ApiChange]) -> str;
+
+def minimum_next(old: Version, changes: list[ApiChange]) -> Version;
+
+impl ApiChange.describe -> str {
+    tag = " [persistence schema]" if self.schema else "";
+    return f"{LEVEL_NAMES[self.level]}: {self.path}: {self.reason}{tag}";
+}
+
+impl _positional(sig: dict[str, any]) -> list[str] {
     return [
         p["name"]
         for p in sig.get("params", [])
@@ -25,7 +51,7 @@ def _positional(sig: dict[str, any]) -> list[str] {
     ];
 }
 
-def diff_signature(
+impl diff_signature(
     path: str, old: dict[str, any], new: dict[str, any]
 ) -> list[ApiChange] {
     out: list[ApiChange] = [];
@@ -121,7 +147,7 @@ def diff_signature(
     return out;
 }
 
-def _diff_members(
+impl _diff_members(
     path: str, kind: str, old: dict[str, any], new: dict[str, any]
 ) -> list[ApiChange] {
     out: list[ApiChange] = [];
@@ -200,7 +226,7 @@ def _diff_members(
     return out;
 }
 
-def _diff_symbol(
+impl _diff_symbol(
     path: str, old: dict[str, any], new: dict[str, any]
 ) -> list[ApiChange] {
     if old.get("kind") != new.get("kind") {
@@ -246,7 +272,7 @@ def _diff_symbol(
     return out;
 }
 
-def diff_surfaces(old: dict[str, any], new: dict[str, any]) -> list[ApiChange] {
+impl diff_surfaces(old: dict[str, any], new: dict[str, any]) -> list[ApiChange] {
     out: list[ApiChange] = [];
     old_mods: dict[str, any] = old.get("modules", {});
     new_mods: dict[str, any] = new.get("modules", {});
@@ -295,7 +321,7 @@ def diff_surfaces(old: dict[str, any], new: dict[str, any]) -> list[ApiChange] {
     return out;
 }
 
-def required_level(changes: list[ApiChange]) -> int {
+impl required_level(changes: list[ApiChange]) -> int {
     level = PATCH;
     for change in changes {
         level = max(level, change.level);
@@ -303,7 +329,7 @@ def required_level(changes: list[ApiChange]) -> int {
     return level;
 }
 
-def bump_level(old: Version, new: Version) -> int {
+impl bump_level(old: Version, new: Version) -> int {
     if new <= old {
         return NONE;
     }
@@ -325,7 +351,7 @@ def bump_level(old: Version, new: Version) -> int {
     return PATCH;
 }
 
-def check_bump(old: Version, new: Version, changes: list[ApiChange]) -> str {
+impl check_bump(old: Version, new: Version, changes: list[ApiChange]) -> str {
     actual = bump_level(old, new);
     if actual == NONE {
         return f"version {new} must be greater than the previous release {old}";
@@ -340,7 +366,7 @@ def check_bump(old: Version, new: Version, changes: list[ApiChange]) -> str {
     return "";
 }
 
-def minimum_next(old: Version, changes: list[ApiChange]) -> Version {
+impl minimum_next(old: Version, changes: list[ApiChange]) -> Version {
     needed = required_level(changes);
     if old.major == 0 {
         if needed == MAJOR {

@@ -3,30 +3,51 @@ import from pathlib { Path }
 
 glob STORE_BUCKET: str = "pkgs";
 
-def is_package_name(name: str) -> bool {
+def is_package_name(name: str) -> bool;
+
+def import_prefix(name: str) -> str;
+
+def store_root -> Path;
+
+def in_store(path: str) -> bool;
+
+def declared_package_name(project_root: str) -> str;
+
+def package_root_of(path: str) -> (str | None);
+
+def is_dependency_module(path: str, owner_root: (str | None)) -> bool;
+
+def mounts_dir(build_dir: Path) -> Path;
+
+
+def package_exports(project_root: str) -> list[str];
+
+def is_exported(module: str, exports: list[str]) -> bool;
+
+impl is_package_name(name: str) -> bool {
     return is_scoped_package_name(name);
 }
 
-def import_prefix(name: str) -> str {
+impl import_prefix(name: str) -> str {
     return name.replace("/", ".");
 }
 
-def store_root -> Path {
+impl store_root -> Path {
     return bucket(STORE_BUCKET).path();
 }
 
-def in_store(path: str) -> bool {
+impl in_store(path: str) -> bool {
     real = os.path.realpath(path);
     store_dir = os.path.realpath(str(store_root()));
     return real.startswith(store_dir + os.sep);
 }
 
-def declared_package_name(project_root: str) -> str {
+impl declared_package_name(project_root: str) -> str {
     cfg = get_config_for_dir(project_root);
     return cfg.project.name if cfg is not None else "";
 }
 
-def package_root_of(path: str) -> (str | None) {
+impl package_root_of(path: str) -> (str | None) {
     pkg_dir = find_jac_project_root(path);
     if pkg_dir is None or not is_package_name(declared_package_name(pkg_dir)) {
         return None;
@@ -34,7 +55,7 @@ def package_root_of(path: str) -> (str | None) {
     return pkg_dir;
 }
 
-def is_dependency_module(path: str, owner_root: (str | None)) -> bool {
+impl is_dependency_module(path: str, owner_root: (str | None)) -> bool {
     if in_store(path) {
         return True;
     }
@@ -48,17 +69,17 @@ def is_dependency_module(path: str, owner_root: (str | None)) -> bool {
     return os.path.realpath(pkg_dir) != os.path.realpath(owner_root);
 }
 
-def mounts_dir(build_dir: Path) -> Path {
+impl mounts_dir(build_dir: Path) -> Path {
     return build_dir / MOUNTS_DIR_NAME;
 }
 
 
-def package_exports(project_root: str) -> list[str] {
+impl package_exports(project_root: str) -> list[str] {
     cfg = get_config_for_dir(project_root);
     return list(cfg.project.exports) if cfg is not None else [];
 }
 
-def is_exported(module: str, exports: list[str]) -> bool {
+impl is_exported(module: str, exports: list[str]) -> bool {
     import fnmatch;
     for pattern in exports {
         if module == pattern or fnmatch.fnmatchcase(module, pattern) {

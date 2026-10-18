@@ -1,4 +1,6 @@
-def:pub to_hex(data: bytes) -> str {
+def:pub to_hex(data: bytes) -> str;
+
+impl to_hex(data: bytes) -> str {
     digits: bytes = b"0123456789abcdef";
     out: list[int] = [];
     n: int = len(data);

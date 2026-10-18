@@ -13,7 +13,46 @@ obj KernelCheck {
 
 class KernelCheckError(RuntimeError) {}
 
-def analysis_kernel -> any {
+def analysis_kernel -> any;
+
+def loaded_pass_type(name: str) -> (type | None);
+
+def pass_type_named(name: str) -> type;
+
+def span_of(record: DiagSpan) -> Span;
+
+def alert_of(diag: AnalysisDiag) -> Alert;
+
+def alert_row(alert: Alert) -> tuple[str, str, int, int];
+
+def diag_row(diag: AnalysisDiag) -> tuple[str, str, int, int];
+
+def kernel_check(
+    program: JacProgram, path: str, options: CompileOptions, parity: bool = False
+) -> KernelCheck;
+
+def shown(
+    diags: list[AnalysisDiag], keep: (Callable[[Alert], bool] | None)
+) -> list[AnalysisDiag];
+
+def parity_mismatches(
+    check: KernelCheck,
+    errors: list[Alert],
+    warnings: list[Alert],
+    keep: (Callable[[Alert], bool] | None) = None
+) -> list[str];
+
+def report_parity(
+    check: KernelCheck,
+    path: str,
+    errors: list[Alert],
+    warnings: list[Alert],
+    keep: (Callable[[Alert], bool] | None) = None
+) -> list[str];
+
+def reached_modules(outcome: AnalysisReport) -> list[str];
+
+impl analysis_kernel -> any {
     kernel = ensure_loaded();
     if kernel is not None and not hasattr(kernel.lib, "jc_analyze") {
         import from jaclang.compiler.backends.native.kernel_resolve { KernelLoadError }
@@ -27,7 +66,7 @@ def analysis_kernel -> any {
     return kernel;
 }
 
-def loaded_pass_type(name: str) -> (type | None) {
+impl loaded_pass_type(name: str) -> (type | None) {
     for (mod_name, mod) in list(sys.modules.items()) {
         if mod is None or not mod_name.startswith("jaclang.compiler.") {
             continue;
@@ -40,7 +79,7 @@ def loaded_pass_type(name: str) -> (type | None) {
     return None;
 }
 
-def pass_type_named(name: str) -> type {
+impl pass_type_named(name: str) -> type {
     found = _PASS_TYPES.get(name);
     if found is not None {
         return found;
@@ -59,7 +98,7 @@ def pass_type_named(name: str) -> type {
     return stand_in;
 }
 
-def span_of(record: DiagSpan) -> Span {
+impl span_of(record: DiagSpan) -> Span {
     return Span(
         mod_path=record.mod_path,
         first_line=record.first_line,
@@ -74,7 +113,7 @@ def span_of(record: DiagSpan) -> Span {
     );
 }
 
-def alert_of(diag: AnalysisDiag) -> Alert {
+impl alert_of(diag: AnalysisDiag) -> Alert {
     return Alert(
         msg=diag.msg or diag.message,
         loc=span_of(diag.span),
@@ -86,19 +125,19 @@ def alert_of(diag: AnalysisDiag) -> Alert {
     );
 }
 
-def alert_row(alert: Alert) -> tuple[str, str, int, int] {
+impl alert_row(alert: Alert) -> tuple[str, str, int, int] {
     loc = alert.loc;
     code = alert.code.code if alert.code is not None else "";
     path = os.path.realpath(loc.mod_path) if loc.mod_path else "";
     return (code, path, loc.first_line, loc.col_start);
 }
 
-def diag_row(diag: AnalysisDiag) -> tuple[str, str, int, int] {
+impl diag_row(diag: AnalysisDiag) -> tuple[str, str, int, int] {
     path = os.path.realpath(diag.path) if diag.path else "";
     return (diag.code, path, diag.line, diag.col);
 }
 
-def kernel_check(
+impl kernel_check(
     program: JacProgram, path: str, options: CompileOptions, parity: bool = False
 ) -> KernelCheck {
     if is_compiler_source_path(path) {
@@ -156,7 +195,7 @@ def kernel_check(
     return KernelCheck(outcome=outcome, adopted=True);
 }
 
-def shown(
+impl shown(
     diags: list[AnalysisDiag], keep: (Callable[[Alert], bool] | None)
 ) -> list[AnalysisDiag] {
     if keep is None {
@@ -169,7 +208,7 @@ def shown(
     ];
 }
 
-def parity_mismatches(
+impl parity_mismatches(
     check: KernelCheck,
     errors: list[Alert],
     warnings: list[Alert],
@@ -210,7 +249,7 @@ def parity_mismatches(
     return out;
 }
 
-def report_parity(
+impl report_parity(
     check: KernelCheck,
     path: str,
     errors: list[Alert],
@@ -228,6 +267,6 @@ def report_parity(
     return mismatches;
 }
 
-def reached_modules(outcome: AnalysisReport) -> list[str] {
+impl reached_modules(outcome: AnalysisReport) -> list[str] {
     return [m.path for m in outcome.modules];
 }

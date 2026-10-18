@@ -14,106 +14,28 @@ glob _HEXV: str = "0123456789abcdef";
 glob _HEXB: bytes = b"0123456789abcdef";
 
 
-def _hexval(c: str) -> int {
-    i: int = 0;
-    while i < 16 {
-        if _HEXV[i] == c {
-            return i;
-        }
-        i += 1;
-    }
-    if c == "A" {
-        return 10;
-    }
-    if c == "B" {
-        return 11;
-    }
-    if c == "C" {
-        return 12;
-    }
-    if c == "D" {
-        return 13;
-    }
-    if c == "E" {
-        return 14;
-    }
-    if c == "F" {
-        return 15;
-    }
-    return -1;
-}
+def _hexval(c: str) -> int;
 
 
-def _byte_hexval(c: int) -> int {
-    if c >= 48 and c <= 57 {
-        return c - 48;
-    }
-    if c >= 97 and c <= 102 {
-        return c - 87;
-    }
-    if c >= 65 and c <= 70 {
-        return c - 55;
-    }
-    return -1;
-}
+def _byte_hexval(c: int) -> int;
 
 
-def _be(b: bytes, off: int, width: int) -> int {
-    v: int = 0;
-    i: int = 0;
-    while i < width {
-        v = (v << 8) | b[off + i];
-        i += 1;
-    }
-    return v;
-}
+def _be(b: bytes, off: int, width: int) -> int;
 
 
-def _frozen(buf: bytearray, n: int) -> bytes {
-    return bytes(buf[0:n]);
-}
+def _frozen(buf: bytearray, n: int) -> bytes;
 
 
-def hex_concat(b: bytes) -> str {
-    out: str = "";
-    n: int = len(b);
-    i: int = 0;
-    while i < n {
-        v: int = b[i];
-        out += _HEXV[(v >> 4) & 15];
-        out += _HEXV[v & 15];
-        i += 1;
-    }
-    return out;
-}
+def hex_concat(b: bytes) -> str;
 
 
-def hex_buffer(b: bytes) -> str {
-    return _hex_str(b);
-}
+def hex_buffer(b: bytes) -> str;
 
 
-def _hex_str(b: bytes) -> str {
-    n: int = len(b);
-    out: bytearray = bytearray(n * 2);
-    i: int = 0;
-    while i < n {
-        v: int = b[i];
-        out[i * 2] = _HEXB[(v >> 4) & 15];
-        out[i * 2 + 1] = _HEXB[v & 15];
-        i += 1;
-    }
-    return _frozen(out, n * 2).decode();
-}
+def _hex_str(b: bytes) -> str;
 
 
-def _put(buf: bytearray, off: int, width: int, value: int) {
-    i: int = 0;
-    while i < width {
-        buf[off + i] = (value >> ((width - 1 - i) * 8)) & 255;
-        i += 1;
-    }
-}
+def _put(buf: bytearray, off: int, width: int, value: int);
 
 
 obj:pub UUID {
@@ -139,193 +61,18 @@ obj:pub UUID {
         bytes_le: bytes = b"",
         fields: (list[int] | None) = None,
         version: int = 0
-    ) {
-        given: int = 0;
-        if hex != "" {
-            given += 1;
-        }
-        if len(bytes) > 0 {
-            given += 1;
-        }
-        if len(bytes_le) > 0 {
-            given += 1;
-        }
-        if fields is not None {
-            given += 1;
-        }
-        if given != 1 {
-            raise TypeError(
-                "one of the hex, bytes, bytes_le, fields, or int arguments"
-                " must be given"
-            );
-        }
-        raw: bytearray = bytearray(16);
-        if hex != "" {
-            h: str = hex;
-            if h.startswith("urn:") {
-                h = h[4:];
-            }
-            if h.startswith("uuid:") {
-                h = h[5:];
-            }
-            while h.startswith("{") {
-                h = h[1:];
-            }
-            while h.endswith("}") {
-                h = h[0:len(h) - 1];
-            }
-            h = "".join(h.split("-"));
-            if len(h) != 32 {
-                raise ValueError("badly formed hexadecimal UUID string");
-            }
-            i: int = 0;
-            while i < 16 {
-                hi: int = _hexval(h[i * 2]);
-                lo: int = _hexval(h[i * 2 + 1]);
-                if hi < 0 or lo < 0 {
-                    raise ValueError("badly formed hexadecimal UUID string");
-                }
-                raw[i] = hi * 16 + lo;
-                i += 1;
-            }
-        } elif len(bytes) > 0 {
-            if len(bytes) != 16 {
-                raise ValueError("bytes is not a 16-char string");
-            }
-            i = 0;
-            while i < 16 {
-                raw[i] = bytes[i];
-                i += 1;
-            }
-        } elif len(bytes_le) > 0 {
-            if len(bytes_le) != 16 {
-                raise ValueError("bytes_le is not a 16-char string");
-            }
-            order: list[int] = [3, 2, 1, 0, 5, 4, 7, 6, 8, 9, 10, 11, 12, 13, 14, 15];
-            i = 0;
-            while i < 16 {
-                raw[i] = bytes_le[order[i]];
-                i += 1;
-            }
-        } else {
-            fl: list[int] = [];
-            if fields is not None {
-                fl = fields;
-            }
-            if len(fl) != 6 {
-                raise ValueError("fields is not a 6-tuple");
-            }
-            if fl[0] < 0 or fl[0] > 4294967295 {
-                raise ValueError("field 1 out of range (need a 32-bit value)");
-            }
-            if fl[1] < 0 or fl[1] > 65535 {
-                raise ValueError("field 2 out of range (need a 16-bit value)");
-            }
-            if fl[2] < 0 or fl[2] > 65535 {
-                raise ValueError("field 3 out of range (need a 16-bit value)");
-            }
-            if fl[3] < 0 or fl[3] > 255 {
-                raise ValueError("field 4 out of range (need an 8-bit value)");
-            }
-            if fl[4] < 0 or fl[4] > 255 {
-                raise ValueError("field 5 out of range (need an 8-bit value)");
-            }
-            if fl[5] < 0 or fl[5] > 281474976710655 {
-                raise ValueError("field 6 out of range (need a 48-bit value)");
-            }
-            _put(raw, 0, 4, fl[0]);
-            _put(raw, 4, 2, fl[1]);
-            _put(raw, 6, 2, fl[2]);
-            raw[8] = fl[3];
-            raw[9] = fl[4];
-            _put(raw, 10, 6, fl[5]);
-        }
-        if version != 0 {
-            if version < 1 or version > 8 {
-                raise ValueError("illegal version number");
-            }
-            raw[8] = (raw[8] & 63) | 128;
-            raw[6] = (raw[6] & 15) | (version << 4);
-        }
-        self._b = _frozen(raw, 16);
-    }
+    );
 
-    def __str__ -> str {
-        raw: bytes = self._b;
-        out: bytearray = bytearray(36);
-        pos: int = 0;
-        i: int = 0;
-        while i < 16 {
-            if i == 4 or i == 6 or i == 8 or i == 10 {
-                out[pos] = 45;
-                pos += 1;
-            }
-            v: int = raw[i];
-            out[pos] = _HEXB[(v >> 4) & 15];
-            out[pos + 1] = _HEXB[v & 15];
-            pos += 2;
-            i += 1;
-        }
-        return _frozen(out, 36).decode();
-    }
-
-    def __repr__ -> str {
-        return "UUID('" + self.__str__() + "')";
-    }
-
-    def __eq__(other: UUID) -> bool {
-        i: int = 0;
-        while i < 16 {
-            if self._b[i] != other._b[i] {
-                return False;
-            }
-            i += 1;
-        }
-        return True;
-    }
-
-    def __ne__(other: UUID) -> bool {
-        return not self.__eq__(other);
-    }
-
-    def __lt__(other: UUID) -> bool {
-        i: int = 0;
-        while i < 16 {
-            a: int = self._b[i];
-            b: int = other._b[i];
-            if a != b {
-                return a < b;
-            }
-            i += 1;
-        }
-        return False;
-    }
-
-    def __gt__(other: UUID) -> bool {
-        return other.__lt__(self);
-    }
-
-    def __le__(other: UUID) -> bool {
-        return not other.__lt__(self);
-    }
-
-    def __ge__(other: UUID) -> bool {
-        return not self.__lt__(other);
-    }
-
-    def __hash__ -> int {
-        acc: int = 0;
-        i: int = 0;
-        while i < 16 {
-            acc = (acc * 131 + self._b[i]) % 2147483647;
-            i += 1;
-        }
-        return acc;
-    }
-
-    def _to_bytes -> bytes {
-        return self._b;
-    }
+    def __str__ -> str;
+    def __repr__ -> str;
+    def __eq__(other: UUID) -> bool;
+    def __ne__(other: UUID) -> bool;
+    def __lt__(other: UUID) -> bool;
+    def __gt__(other: UUID) -> bool;
+    def __le__(other: UUID) -> bool;
+    def __ge__(other: UUID) -> bool;
+    def __hash__ -> int;
+    def _to_bytes -> bytes;
 }
 
 
@@ -441,7 +188,355 @@ impl UUID.urn.getter -> str {
 }
 
 
-def _from_bytes(raw: bytes, version: int) -> UUID {
+def _from_bytes(raw: bytes, version: int) -> UUID;
+
+
+def:pub getnode -> int;
+
+
+obj _Cell {
+    has value: int = 0;
+}
+
+glob _NODE: _Cell = _Cell(),
+     _LAST_V1: _Cell = _Cell(),
+     _LAST_V6: _Cell = _Cell(),
+     _LAST_V7: _Cell = _Cell(),
+     _CNT_V7: _Cell = _Cell(),
+     _UUID_EPOCH: int = 122192928000000000;
+
+
+def _rand_bits(nbits: int) -> int;
+
+
+def:pub uuid1(`node: int = -1, clock_seq: int = -1) -> UUID;
+
+
+def:pub uuid3(namespace: UUID, name: str) -> UUID;
+
+
+def:pub uuid4 -> UUID;
+
+
+def uuid4_fresh_buffer -> UUID;
+
+
+def:pub uuid5(namespace: UUID, name: str) -> UUID;
+
+
+def:pub uuid6(`node: int = -1, clock_seq: int = -1) -> UUID;
+
+
+def:pub uuid7 -> UUID;
+
+
+def:pub uuid8(a: int = -1, b: int = -1, c: int = -1) -> UUID;
+
+
+glob:pub NAMESPACE_DNS: UUID = UUID(hex="6ba7b810-9dad-11d1-80b4-00c04fd430c8"),
+     NAMESPACE_URL: UUID = UUID(hex="6ba7b811-9dad-11d1-80b4-00c04fd430c8"),
+     NAMESPACE_OID: UUID = UUID(hex="6ba7b812-9dad-11d1-80b4-00c04fd430c8"),
+     NAMESPACE_X500: UUID = UUID(hex="6ba7b814-9dad-11d1-80b4-00c04fd430c8"),
+     NIL: UUID = UUID(hex="00000000-0000-0000-0000-000000000000"),
+     MAX: UUID = UUID(hex="ffffffff-ffff-ffff-ffff-ffffffffffff");
+
+impl _hexval(c: str) -> int {
+    i: int = 0;
+    while i < 16 {
+        if _HEXV[i] == c {
+            return i;
+        }
+        i += 1;
+    }
+    if c == "A" {
+        return 10;
+    }
+    if c == "B" {
+        return 11;
+    }
+    if c == "C" {
+        return 12;
+    }
+    if c == "D" {
+        return 13;
+    }
+    if c == "E" {
+        return 14;
+    }
+    if c == "F" {
+        return 15;
+    }
+    return -1;
+}
+
+
+impl _byte_hexval(c: int) -> int {
+    if c >= 48 and c <= 57 {
+        return c - 48;
+    }
+    if c >= 97 and c <= 102 {
+        return c - 87;
+    }
+    if c >= 65 and c <= 70 {
+        return c - 55;
+    }
+    return -1;
+}
+
+
+impl _be(b: bytes, off: int, width: int) -> int {
+    v: int = 0;
+    i: int = 0;
+    while i < width {
+        v = (v << 8) | b[off + i];
+        i += 1;
+    }
+    return v;
+}
+
+
+impl _frozen(buf: bytearray, n: int) -> bytes {
+    return bytes(buf[0:n]);
+}
+
+
+impl hex_concat(b: bytes) -> str {
+    out: str = "";
+    n: int = len(b);
+    i: int = 0;
+    while i < n {
+        v: int = b[i];
+        out += _HEXV[(v >> 4) & 15];
+        out += _HEXV[v & 15];
+        i += 1;
+    }
+    return out;
+}
+
+
+impl hex_buffer(b: bytes) -> str {
+    return _hex_str(b);
+}
+
+
+impl _hex_str(b: bytes) -> str {
+    n: int = len(b);
+    out: bytearray = bytearray(n * 2);
+    i: int = 0;
+    while i < n {
+        v: int = b[i];
+        out[i * 2] = _HEXB[(v >> 4) & 15];
+        out[i * 2 + 1] = _HEXB[v & 15];
+        i += 1;
+    }
+    return _frozen(out, n * 2).decode();
+}
+
+
+impl _put(buf: bytearray, off: int, width: int, value: int) {
+    i: int = 0;
+    while i < width {
+        buf[off + i] = (value >> ((width - 1 - i) * 8)) & 255;
+        i += 1;
+    }
+}
+
+
+impl UUID.init(
+    hex: str = "",
+    bytes: bytes = b"",
+    bytes_le: bytes = b"",
+    fields: (list[int] | None) = None,
+    version: int = 0
+) {
+    given: int = 0;
+    if hex != "" {
+        given += 1;
+    }
+    if len(bytes) > 0 {
+        given += 1;
+    }
+    if len(bytes_le) > 0 {
+        given += 1;
+    }
+    if fields is not None {
+        given += 1;
+    }
+    if given != 1 {
+        raise TypeError(
+            "one of the hex, bytes, bytes_le, fields, or int arguments" " must be given"
+        );
+    }
+    raw: bytearray = bytearray(16);
+    if hex != "" {
+        h: str = hex;
+        if h.startswith("urn:") {
+            h = h[4:];
+        }
+        if h.startswith("uuid:") {
+            h = h[5:];
+        }
+        while h.startswith("{") {
+            h = h[1:];
+        }
+        while h.endswith("}") {
+            h = h[0:len(h) - 1];
+        }
+        h = "".join(h.split("-"));
+        if len(h) != 32 {
+            raise ValueError("badly formed hexadecimal UUID string");
+        }
+        i: int = 0;
+        while i < 16 {
+            hi: int = _hexval(h[i * 2]);
+            lo: int = _hexval(h[i * 2 + 1]);
+            if hi < 0 or lo < 0 {
+                raise ValueError("badly formed hexadecimal UUID string");
+            }
+            raw[i] = hi * 16 + lo;
+            i += 1;
+        }
+    } elif len(bytes) > 0 {
+        if len(bytes) != 16 {
+            raise ValueError("bytes is not a 16-char string");
+        }
+        i = 0;
+        while i < 16 {
+            raw[i] = bytes[i];
+            i += 1;
+        }
+    } elif len(bytes_le) > 0 {
+        if len(bytes_le) != 16 {
+            raise ValueError("bytes_le is not a 16-char string");
+        }
+        order: list[int] = [3, 2, 1, 0, 5, 4, 7, 6, 8, 9, 10, 11, 12, 13, 14, 15];
+        i = 0;
+        while i < 16 {
+            raw[i] = bytes_le[order[i]];
+            i += 1;
+        }
+    } else {
+        fl: list[int] = [];
+        if fields is not None {
+            fl = fields;
+        }
+        if len(fl) != 6 {
+            raise ValueError("fields is not a 6-tuple");
+        }
+        if fl[0] < 0 or fl[0] > 4294967295 {
+            raise ValueError("field 1 out of range (need a 32-bit value)");
+        }
+        if fl[1] < 0 or fl[1] > 65535 {
+            raise ValueError("field 2 out of range (need a 16-bit value)");
+        }
+        if fl[2] < 0 or fl[2] > 65535 {
+            raise ValueError("field 3 out of range (need a 16-bit value)");
+        }
+        if fl[3] < 0 or fl[3] > 255 {
+            raise ValueError("field 4 out of range (need an 8-bit value)");
+        }
+        if fl[4] < 0 or fl[4] > 255 {
+            raise ValueError("field 5 out of range (need an 8-bit value)");
+        }
+        if fl[5] < 0 or fl[5] > 281474976710655 {
+            raise ValueError("field 6 out of range (need a 48-bit value)");
+        }
+        _put(raw, 0, 4, fl[0]);
+        _put(raw, 4, 2, fl[1]);
+        _put(raw, 6, 2, fl[2]);
+        raw[8] = fl[3];
+        raw[9] = fl[4];
+        _put(raw, 10, 6, fl[5]);
+    }
+    if version != 0 {
+        if version < 1 or version > 8 {
+            raise ValueError("illegal version number");
+        }
+        raw[8] = (raw[8] & 63) | 128;
+        raw[6] = (raw[6] & 15) | (version << 4);
+    }
+    self._b = _frozen(raw, 16);
+}
+
+impl UUID.__str__ -> str {
+    raw: bytes = self._b;
+    out: bytearray = bytearray(36);
+    pos: int = 0;
+    i: int = 0;
+    while i < 16 {
+        if i == 4 or i == 6 or i == 8 or i == 10 {
+            out[pos] = 45;
+            pos += 1;
+        }
+        v: int = raw[i];
+        out[pos] = _HEXB[(v >> 4) & 15];
+        out[pos + 1] = _HEXB[v & 15];
+        pos += 2;
+        i += 1;
+    }
+    return _frozen(out, 36).decode();
+}
+
+impl UUID.__repr__ -> str {
+    return "UUID('" + self.__str__() + "')";
+}
+
+impl UUID.__eq__(other: UUID) -> bool {
+    i: int = 0;
+    while i < 16 {
+        if self._b[i] != other._b[i] {
+            return False;
+        }
+        i += 1;
+    }
+    return True;
+}
+
+impl UUID.__ne__(other: UUID) -> bool {
+    return not self.__eq__(other);
+}
+
+impl UUID.__lt__(other: UUID) -> bool {
+    i: int = 0;
+    while i < 16 {
+        a: int = self._b[i];
+        b: int = other._b[i];
+        if a != b {
+            return a < b;
+        }
+        i += 1;
+    }
+    return False;
+}
+
+impl UUID.__gt__(other: UUID) -> bool {
+    return other.__lt__(self);
+}
+
+impl UUID.__le__(other: UUID) -> bool {
+    return not other.__lt__(self);
+}
+
+impl UUID.__ge__(other: UUID) -> bool {
+    return not self.__lt__(other);
+}
+
+impl UUID.__hash__ -> int {
+    acc: int = 0;
+    i: int = 0;
+    while i < 16 {
+        acc = (acc * 131 + self._b[i]) % 2147483647;
+        i += 1;
+    }
+    return acc;
+}
+
+impl UUID._to_bytes -> bytes {
+    return self._b;
+}
+
+
+impl _from_bytes(raw: bytes, version: int) -> UUID {
     buf: bytearray = bytearray(16);
     i: int = 0;
     while i < 16 {
@@ -454,7 +549,7 @@ def _from_bytes(raw: bytes, version: int) -> UUID {
 }
 
 
-def:pub getnode -> int {
+impl getnode -> int {
     cached: int = _NODE.value;
     if cached != 0 {
         return cached;
@@ -499,19 +594,7 @@ def:pub getnode -> int {
 }
 
 
-obj _Cell {
-    has value: int = 0;
-}
-
-glob _NODE: _Cell = _Cell(),
-     _LAST_V1: _Cell = _Cell(),
-     _LAST_V6: _Cell = _Cell(),
-     _LAST_V7: _Cell = _Cell(),
-     _CNT_V7: _Cell = _Cell(),
-     _UUID_EPOCH: int = 122192928000000000;
-
-
-def _rand_bits(nbits: int) -> int {
+impl _rand_bits(nbits: int) -> int {
     nbytes: int = (nbits + 7) // 8;
     rb: bytes = csprng_bytes(nbytes);
     acc: int = 0;
@@ -524,7 +607,7 @@ def _rand_bits(nbits: int) -> int {
 }
 
 
-def:pub uuid1(`node: int = -1, clock_seq: int = -1) -> UUID {
+impl uuid1(`node: int = -1, clock_seq: int = -1) -> UUID {
     timestamp: int = time.time_ns() // 100 + _UUID_EPOCH;
     if _LAST_V1.value != 0 and timestamp <= _LAST_V1.value {
         timestamp = _LAST_V1.value + 1;
@@ -550,18 +633,18 @@ def:pub uuid1(`node: int = -1, clock_seq: int = -1) -> UUID {
 }
 
 
-def:pub uuid3(namespace: UUID, name: str) -> UUID {
+impl uuid3(namespace: UUID, name: str) -> UUID {
     h = md5(namespace._to_bytes() + name.encode());
     return _from_bytes(h.digest(), 3);
 }
 
 
-def:pub uuid4 -> UUID {
+impl uuid4 -> UUID {
     return _from_bytes(csprng_bytes(16), 4);
 }
 
 
-def uuid4_fresh_buffer -> UUID {
+impl uuid4_fresh_buffer -> UUID {
     buf: bytearray = bytearray(16);
     i: int = 0;
     while i < 16 {
@@ -575,13 +658,13 @@ def uuid4_fresh_buffer -> UUID {
 }
 
 
-def:pub uuid5(namespace: UUID, name: str) -> UUID {
+impl uuid5(namespace: UUID, name: str) -> UUID {
     h = sha1(namespace._to_bytes() + name.encode());
     return _from_bytes(h.digest()[0:16], 5);
 }
 
 
-def:pub uuid6(`node: int = -1, clock_seq: int = -1) -> UUID {
+impl uuid6(`node: int = -1, clock_seq: int = -1) -> UUID {
     timestamp: int = time.time_ns() // 100 + _UUID_EPOCH;
     if _LAST_V6.value != 0 and timestamp <= _LAST_V6.value {
         timestamp = _LAST_V6.value + 1;
@@ -607,7 +690,7 @@ def:pub uuid6(`node: int = -1, clock_seq: int = -1) -> UUID {
 }
 
 
-def:pub uuid7 -> UUID {
+impl uuid7 -> UUID {
     ts_ms: int = time.time_ns() // 1000000;
     counter: int = 0;
     tail: int = 0;
@@ -641,7 +724,7 @@ def:pub uuid7 -> UUID {
 }
 
 
-def:pub uuid8(a: int = -1, b: int = -1, c: int = -1) -> UUID {
+impl uuid8(a: int = -1, b: int = -1, c: int = -1) -> UUID {
     av: int = a;
     bv: int = b;
     cv: int = c;
@@ -660,11 +743,3 @@ def:pub uuid8(a: int = -1, b: int = -1, c: int = -1) -> UUID {
     _put(buf, 8, 8, cv & 4611686018427387903);
     return _from_bytes(_frozen(buf, 16), 8);
 }
-
-
-glob:pub NAMESPACE_DNS: UUID = UUID(hex="6ba7b810-9dad-11d1-80b4-00c04fd430c8"),
-     NAMESPACE_URL: UUID = UUID(hex="6ba7b811-9dad-11d1-80b4-00c04fd430c8"),
-     NAMESPACE_OID: UUID = UUID(hex="6ba7b812-9dad-11d1-80b4-00c04fd430c8"),
-     NAMESPACE_X500: UUID = UUID(hex="6ba7b814-9dad-11d1-80b4-00c04fd430c8"),
-     NIL: UUID = UUID(hex="00000000-0000-0000-0000-000000000000"),
-     MAX: UUID = UUID(hex="ffffffff-ffff-ffff-ffff-ffffffffffff");

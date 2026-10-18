@@ -5,6 +5,19 @@ def cors_middleware(
     allow_headers: (list[str] | None) = None,
     expose_headers: (list[str] | None) = None,
     max_age: int = 600
+) -> Callable[..., any];
+
+def custom_headers_middleware(
+    header_pairs: list[tuple[str, str]]
+) -> Callable[..., any];
+
+impl cors_middleware(
+    allow_origins: (list[str] | None) = None,
+    allow_credentials: bool = True,
+    allow_methods: (list[str] | None) = None,
+    allow_headers: (list[str] | None) = None,
+    expose_headers: (list[str] | None) = None,
+    max_age: int = 600
 ) -> Callable[..., any] {
     origins = allow_origins if allow_origins is not None else ['*'];
     methods = allow_methods
@@ -57,7 +70,7 @@ def cors_middleware(
     return _middleware;
 }
 
-def custom_headers_middleware(
+impl custom_headers_middleware(
     header_pairs: list[tuple[str, str]]
 ) -> Callable[..., any] {
     async def _middleware(request: Request, call_next: any) -> Response {

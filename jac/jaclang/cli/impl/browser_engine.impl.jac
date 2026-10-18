@@ -127,7 +127,7 @@ impl WebSocket.recv -> (str | bytes) {
     }
 }
 
-impl WebSocket.close{
+impl WebSocket.close {
     try {
         self.send(bytes(), opcode=OP_CLOSE);
     } except OSError {}
@@ -178,7 +178,7 @@ impl CDP.drain_events(idle: float = 0.25) -> list[dict[str, any]] {
     return out;
 }
 
-impl CDP.close{
+impl CDP.close {
     self.ws.close();
 }
 
@@ -981,11 +981,7 @@ impl cmd_close(session: str) -> str {
 }
 
 
-def _need(rest: list[str], n: int, usage: str) {
-    if len(rest) < n {
-        raise ValueError(f"usage: {usage}");
-    }
-}
+def _need(rest: list[str], n: int, usage: str);
 
 impl main(argv: list[str]) -> int {
     session = os.environ.get("JACBROWSER_SESSION", "default");
@@ -1054,4 +1050,10 @@ impl main(argv: list[str]) -> int {
     }
     sys.stdout.write((out if isinstance(out, str) else json.dumps(out)) + "\n");
     return 0;
+}
+
+impl _need(rest: list[str], n: int, usage: str) {
+    if len(rest) < n {
+        raise ValueError(f"usage: {usage}");
+    }
 }

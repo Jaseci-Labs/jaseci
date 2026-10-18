@@ -9,12 +9,46 @@ glob STAGE0_UNKNOWN_FORMAT: int = 3,
 
 class KernelEntryError(RuntimeError) {}
 
-def declared_entry_points(source: str) -> list[str] {
+def declared_entry_points(source: str) -> list[str];
+
+def unit_issue_details(plan: LinkPlan) -> Callable[[str], dict[str, str]];
+
+def demotion_chain(
+    plan: LinkPlan,
+    path: str,
+    name: str,
+    details: Callable[[str], dict[str, str]],
+    pkg_root: str
+) -> list[str];
+
+def missing_kernel_entries(
+    plan: LinkPlan,
+    pkg_root: str,
+    details: (Callable[[str], dict[str, str]] | None) = None
+) -> list[str];
+
+def refuse_missing_entries(plan: LinkPlan, pkg_root: str);
+
+def running_kernel_target(pkg_root: str = "") -> KernelTarget;
+
+def link_kernel(
+    dst: str,
+    target: (KernelTarget | None) = None,
+    prog: (JacProgram | None) = None,
+    log: (Callable[[str], None] | None) = None,
+    link_mode: str = ""
+) -> LinkResult;
+
+def build_target_kernel(
+    spec_path: str, dst: str, log: (Callable[[str], None] | None) = None
+) -> int;
+
+impl declared_entry_points(source: str) -> list[str] {
     import re;
     return re.findall(r"^def:pub\s+([A-Za-z_][A-Za-z0-9_]*)", source, re.MULTILINE);
 }
 
-def unit_issue_details(plan: LinkPlan) -> Callable[[str], dict[str, str]] {
+impl unit_issue_details(plan: LinkPlan) -> Callable[[str], dict[str, str]] {
     registry = plan.prog.native_units();
     cache: dict[str, dict[str, str]] = {};
 
@@ -36,7 +70,7 @@ def unit_issue_details(plan: LinkPlan) -> Callable[[str], dict[str, str]] {
     return details;
 }
 
-def demotion_chain(
+impl demotion_chain(
     plan: LinkPlan,
     path: str,
     name: str,
@@ -82,7 +116,7 @@ def demotion_chain(
     return chain;
 }
 
-def missing_kernel_entries(
+impl missing_kernel_entries(
     plan: LinkPlan,
     pkg_root: str,
     details: (Callable[[str], dict[str, str]] | None) = None
@@ -119,7 +153,7 @@ def missing_kernel_entries(
     return problems;
 }
 
-def refuse_missing_entries(plan: LinkPlan, pkg_root: str) {
+impl refuse_missing_entries(plan: LinkPlan, pkg_root: str) {
     problems = missing_kernel_entries(plan, pkg_root);
     if problems {
         raise KernelEntryError(
@@ -130,7 +164,7 @@ def refuse_missing_entries(plan: LinkPlan, pkg_root: str) {
     }
 }
 
-def running_kernel_target(pkg_root: str = "") -> KernelTarget {
+impl running_kernel_target(pkg_root: str = "") -> KernelTarget {
     return KernelTarget(
         format=KERNEL_TARGET_FORMAT,
         `root=os.path.abspath(pkg_root or jaclang_pkg_root()),
@@ -142,7 +176,7 @@ def running_kernel_target(pkg_root: str = "") -> KernelTarget {
     );
 }
 
-def link_kernel(
+impl link_kernel(
     dst: str,
     target: (KernelTarget | None) = None,
     prog: (JacProgram | None) = None,
@@ -195,7 +229,7 @@ def link_kernel(
     }
 }
 
-def build_target_kernel(
+impl build_target_kernel(
     spec_path: str, dst: str, log: (Callable[[str], None] | None) = None
 ) -> int {
     spec = read_kernel_target(spec_path);

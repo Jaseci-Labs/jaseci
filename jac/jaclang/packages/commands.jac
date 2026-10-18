@@ -6,13 +6,54 @@ obj PackageSpec {
     has name: str,
         version: str = "";
 
-    static def parse(text: str) -> PackageSpec {
-        (name, sep, version) = text.strip().partition("@");
-        return PackageSpec(name=name.strip(), version=version.strip() if sep else "");
-    }
+    static def parse(text: str) -> PackageSpec;
 }
 
-def split_package_specs(texts: list[str]) -> tuple[list[PackageSpec], list[str]] {
+def split_package_specs(texts: list[str]) -> tuple[list[PackageSpec], list[str]];
+
+def _install_python(
+    config: JacConfig,
+    lock: Lockfile,
+    specs: list[str],
+    ctx: InstallContext,
+    refresh: bool
+) -> bool;
+
+def install_project(
+    config: JacConfig,
+    include_dev: bool = False,
+    extras: list[str] | None = None,
+    scale: bool = False,
+    frozen: bool = False,
+    skip_npm: bool = False,
+    update: list[str] | None = None,
+    ctx: InstallContext | None = None
+) -> int;
+
+def _org_collisions(config: JacConfig, lock: Lockfile) -> list[str];
+
+def _bun_lock_digest(config: JacConfig) -> str;
+
+def _dep_from_source(git: str, path: str, rev: str, base: Path) -> PackageDep;
+
+def add_packages(
+    config: JacConfig,
+    texts: list[str],
+    dev: bool = False,
+    git: str = "",
+    path: str = "",
+    rev: str = "",
+    ctx: InstallContext | None = None
+) -> int;
+
+def remove_packages(config: JacConfig, texts: list[str], dev: bool = False) -> int;
+
+impl PackageSpec.parse(text: str) -> PackageSpec {
+    (name, sep, version) = text.strip().partition("@");
+    return PackageSpec(name=name.strip(), version=version.strip() if sep else "");
+}
+
+impl split_package_specs(texts: list[str]) -> tuple[list[PackageSpec], list[str]] {
     specs: list[PackageSpec] = [];
     stray: list[str] = [];
     for text in texts {
@@ -26,7 +67,7 @@ def split_package_specs(texts: list[str]) -> tuple[list[PackageSpec], list[str]]
     return (specs, stray);
 }
 
-def _install_python(
+impl _install_python(
     config: JacConfig,
     lock: Lockfile,
     specs: list[str],
@@ -68,7 +109,7 @@ def _install_python(
     return True;
 }
 
-def install_project(
+impl install_project(
     config: JacConfig,
     include_dev: bool = False,
     extras: list[str] | None = None,
@@ -167,7 +208,7 @@ def install_project(
     return 0;
 }
 
-def _org_collisions(config: JacConfig, lock: Lockfile) -> list[str] {
+impl _org_collisions(config: JacConfig, lock: Lockfile) -> list[str] {
     orgs = {p.name.split("/", 1)[0] for p in lock.packages};
     venv = config.get_venv_dir();
     if not orgs or not venv.is_dir() {
@@ -187,7 +228,7 @@ def _org_collisions(config: JacConfig, lock: Lockfile) -> list[str] {
     );
 }
 
-def _bun_lock_digest(config: JacConfig) -> str {
+impl _bun_lock_digest(config: JacConfig) -> str {
     import hashlib;
     client_dir = config.get_client_dir();
     for candidate in sorted(client_dir.glob("**/bun.lock*")) {
@@ -198,7 +239,7 @@ def _bun_lock_digest(config: JacConfig) -> str {
     return "";
 }
 
-def _dep_from_source(git: str, path: str, rev: str, base: Path) -> PackageDep {
+impl _dep_from_source(git: str, path: str, rev: str, base: Path) -> PackageDep {
     if path {
         tree = resolve_path(base, path);
         name = read_identity(tree).name;
@@ -208,7 +249,7 @@ def _dep_from_source(git: str, path: str, rev: str, base: Path) -> PackageDep {
     return PackageDep(name=read_identity(co.tree).name, git=git, rev=rev or co.commit);
 }
 
-def add_packages(
+impl add_packages(
     config: JacConfig,
     texts: list[str],
     dev: bool = False,
@@ -300,7 +341,7 @@ def add_packages(
     return 0;
 }
 
-def remove_packages(config: JacConfig, texts: list[str], dev: bool = False) -> int {
+impl remove_packages(config: JacConfig, texts: list[str], dev: bool = False) -> int {
     (specs, stray) = split_package_specs(texts);
     if stray {
         console.error(f"Not Jac package names: {', '.join(stray)}", hint=PYPI_HINT);

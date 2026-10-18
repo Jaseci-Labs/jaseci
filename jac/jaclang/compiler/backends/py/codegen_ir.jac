@@ -30,9 +30,7 @@ class CodegenIrVersionError(CodegenIrError) {}
 
 class CodegenIrFormatError(CodegenIrError) {}
 
-def cir_python_version -> int {
-    return jcir_python_version();
-}
+def cir_python_version -> int;
 
 obj CirDiag {
     has message: str,
@@ -61,7 +59,71 @@ obj CirContainer {
         diags: list[CirDiag] = [];
 }
 
-def _w_varint(buf: bytearray, v: int) -> None {
+def _w_varint(buf: bytearray, v: int) -> None;
+
+def int_literal_magnitude(text: str) -> bytes;
+
+def _w_svarint(buf: bytearray, v: int);
+
+def _r_varint(data: bytes, pos: int, what: str) -> tuple[int, int];
+
+def _r_svarint(data: bytes, pos: int, what: str) -> tuple[int, int];
+
+def _w_str_entry(buf: bytearray, s: str);
+
+def _r_str_entry(data: bytes, pos: int, what: str) -> tuple[str, int];
+
+obj CodegenIrWriter {
+    has class_names: list[str] = [],
+        class_idx: dict[str, int] = {},
+        key_names: list[str] = [],
+        key_idx: dict[str, int] = {},
+        strings: list[str] = [],
+        string_idx: dict[str, int] = {},
+        modules: list[CirModule] = [],
+        diags: list[CirDiag] = [],
+        _code: bytearray = bytearray(),
+        _open: bool = False,
+        _mod_path: str = "",
+        _depth: int = 0,
+        _loc_set: bool = False,
+        _loc_l1: int = 0,
+        _loc_c1: int = 0,
+        _loc_l2: int = 0,
+        _loc_c2: int = 0;
+
+    def class_ref(name: str) -> int;
+    def key_ref(name: str) -> int;
+    def str_ref(s: str) -> int;
+    def _require_open;
+    def begin_module(mod_path: str);
+    def emit_none;
+    def emit_true;
+    def emit_false;
+    def emit_ellipsis;
+    def emit_int(v: int);
+    def emit_int_wide(negative: bool, magnitude: bytes);
+    def emit_float(v: float);
+    def emit_str(s: str);
+    def emit_bytes(b: bytes);
+    def emit_list(n: int);
+    def emit_tuple(n: int);
+    def emit_loc(first_line: int, col_start: int, last_line: int, col_end: int);
+    def emit_loc_needed(first_line: int, col_start: int, last_line: int, col_end: int);
+    def emit_node(class_name: str, field_names: list[str]);
+    def emit_parse_splice(src: str, line_offset: int = 0);
+    def end_module;
+    def add_diag(diag: CirDiag);
+    def to_bytes -> bytes;
+}
+
+def read_container(data: bytes) -> CirContainer;
+
+impl cir_python_version -> int {
+    return jcir_python_version();
+}
+
+impl _w_varint(buf: bytearray, v: int) -> None {
     if v < 0 {
         raise CodegenIrFormatError(f"varint cannot encode negative value {v}");
     }
@@ -77,7 +139,7 @@ def _w_varint(buf: bytearray, v: int) -> None {
     }
 }
 
-def int_literal_magnitude(text: str) -> bytes {
+impl int_literal_magnitude(text: str) -> bytes {
     body = text.replace("_", "").lower();
     base = 10;
     if body.startswith("0x") {
@@ -116,7 +178,7 @@ def int_literal_magnitude(text: str) -> bytes {
     return bytes(out);
 }
 
-def _w_svarint(buf: bytearray, v: int) {
+impl _w_svarint(buf: bytearray, v: int) {
     sign = 0 if v >= 0 else 1;
     half = v if v >= 0 else -(v + 1);
     first = ((half & 63) << 1) | sign;
@@ -129,7 +191,7 @@ def _w_svarint(buf: bytearray, v: int) {
     }
 }
 
-def _r_varint(data: bytes, pos: int, what: str) -> tuple[int, int] {
+impl _r_varint(data: bytes, pos: int, what: str) -> tuple[int, int] {
     value = 0;
     shift = 0;
     while True {
@@ -148,19 +210,19 @@ def _r_varint(data: bytes, pos: int, what: str) -> tuple[int, int] {
     }
 }
 
-def _r_svarint(data: bytes, pos: int, what: str) -> tuple[int, int] {
+impl _r_svarint(data: bytes, pos: int, what: str) -> tuple[int, int] {
     (u, pos) = _r_varint(data, pos, what);
     v = (u >> 1) if not (u & 1) else -((u + 1) >> 1);
     return (v, pos);
 }
 
-def _w_str_entry(buf: bytearray, s: str) {
+impl _w_str_entry(buf: bytearray, s: str) {
     raw = s.encode("utf-8");
     _w_varint(buf, len(raw));
     buf.extend(raw);
 }
 
-def _r_str_entry(data: bytes, pos: int, what: str) -> tuple[str, int] {
+impl _r_str_entry(data: bytes, pos: int, what: str) -> tuple[str, int] {
     (n, pos) = _r_varint(data, pos, what);
     if pos + n > len(data) {
         raise CodegenIrFormatError(
@@ -171,308 +233,292 @@ def _r_str_entry(data: bytes, pos: int, what: str) -> tuple[str, int] {
     return (s, pos + n);
 }
 
-obj CodegenIrWriter {
-    has class_names: list[str] = [],
-        class_idx: dict[str, int] = {},
-        key_names: list[str] = [],
-        key_idx: dict[str, int] = {},
-        strings: list[str] = [],
-        string_idx: dict[str, int] = {},
-        modules: list[CirModule] = [],
-        diags: list[CirDiag] = [],
-        _code: bytearray = bytearray(),
-        _open: bool = False,
-        _mod_path: str = "",
-        _depth: int = 0,
-        _loc_set: bool = False,
-        _loc_l1: int = 0,
-        _loc_c1: int = 0,
-        _loc_l2: int = 0,
-        _loc_c2: int = 0;
-
-    def class_ref(name: str) -> int {
-        if name in self.class_idx {
-            return self.class_idx[name];
-        }
-        idx = len(self.class_names);
-        self.class_names.append(name);
-        self.class_idx[name] = idx;
-        return idx;
+impl CodegenIrWriter.class_ref(name: str) -> int {
+    if name in self.class_idx {
+        return self.class_idx[name];
     }
+    idx = len(self.class_names);
+    self.class_names.append(name);
+    self.class_idx[name] = idx;
+    return idx;
+}
 
-    def key_ref(name: str) -> int {
-        if name in self.key_idx {
-            return self.key_idx[name];
-        }
-        idx = len(self.key_names);
-        self.key_names.append(name);
-        self.key_idx[name] = idx;
-        return idx;
+impl CodegenIrWriter.key_ref(name: str) -> int {
+    if name in self.key_idx {
+        return self.key_idx[name];
     }
+    idx = len(self.key_names);
+    self.key_names.append(name);
+    self.key_idx[name] = idx;
+    return idx;
+}
 
-    def str_ref(s: str) -> int {
-        if s in self.string_idx {
-            return self.string_idx[s];
-        }
-        idx = len(self.strings);
-        self.strings.append(s);
-        self.string_idx[s] = idx;
-        return idx;
+impl CodegenIrWriter.str_ref(s: str) -> int {
+    if s in self.string_idx {
+        return self.string_idx[s];
     }
+    idx = len(self.strings);
+    self.strings.append(s);
+    self.string_idx[s] = idx;
+    return idx;
+}
 
-    def _require_open {
-        if not self._open {
-            raise CodegenIrFormatError(
-                "no module is open: call begin_module before emitting"
-            );
-        }
-    }
-
-    def begin_module(mod_path: str) {
-        if self._open {
-            raise CodegenIrFormatError(
-                f"module {self._mod_path} is still open; call end_module first"
-            );
-        }
-        self._code = bytearray();
-        self._open = True;
-        self._mod_path = mod_path;
-        self._depth = 0;
-        self._loc_set = False;
-        self._loc_l1 = 0;
-        self._loc_c1 = 0;
-        self._loc_l2 = 0;
-        self._loc_c2 = 0;
-    }
-
-    def emit_none {
-        self._require_open();
-        self._code.append(OP_NONE);
-        self._depth += 1;
-    }
-
-    def emit_true {
-        self._require_open();
-        self._code.append(OP_TRUE);
-        self._depth += 1;
-    }
-
-    def emit_false {
-        self._require_open();
-        self._code.append(OP_FALSE);
-        self._depth += 1;
-    }
-
-    def emit_ellipsis {
-        self._require_open();
-        self._code.append(OP_ELLIPSIS);
-        self._depth += 1;
-    }
-
-    def emit_int(v: int) {
-        self._require_open();
-        if v >= _I64_MIN and v <= _I64_MAX {
-            self._code.append(OP_INT);
-            _w_svarint(self._code, v);
-        } else {
-            self._code.append(OP_INT_BIG);
-            mag = -v if v < 0 else v;
-            nbytes = (mag.bit_length() + 7) // 8;
-            self._code.append(1 if v < 0 else 0);
-            _w_varint(self._code, nbytes);
-            self._code.extend(mag.to_bytes(nbytes, "little"));
-        }
-        self._depth += 1;
-    }
-
-    def emit_int_wide(negative: bool, magnitude: bytes) {
-        self._require_open();
-        self._code.append(OP_INT_BIG);
-        self._code.append(1 if negative else 0);
-        _w_varint(self._code, len(magnitude));
-        self._code.extend(magnitude);
-        self._depth += 1;
-    }
-
-    def emit_float(v: float) {
-        self._require_open();
-        self._code.append(OP_FLOAT);
-        self._code.extend(struct.pack("<d", v));
-        self._depth += 1;
-    }
-
-    def emit_str(s: str) {
-        self._require_open();
-        self._code.append(OP_STR);
-        _w_varint(self._code, self.str_ref(s));
-        self._depth += 1;
-    }
-
-    def emit_bytes(b: bytes) {
-        self._require_open();
-        self._code.append(OP_BYTES);
-        _w_varint(self._code, len(b));
-        self._code.extend(b);
-        self._depth += 1;
-    }
-
-    def emit_list(n: int) {
-        self._require_open();
-        if n > self._depth {
-            raise CodegenIrFormatError(
-                f"emit_list({n}) with only {self._depth} values on the stack"
-            );
-        }
-        self._code.append(OP_LIST);
-        _w_varint(self._code, n);
-        self._depth -= n - 1;
-    }
-
-    def emit_tuple(n: int) {
-        self._require_open();
-        if n > self._depth {
-            raise CodegenIrFormatError(
-                f"emit_tuple({n}) with only {self._depth} values on the stack"
-            );
-        }
-        self._code.append(OP_TUPLE);
-        _w_varint(self._code, n);
-        self._depth -= n - 1;
-    }
-
-    def emit_loc(first_line: int, col_start: int, last_line: int, col_end: int) {
-        self._require_open();
-        self._code.append(OP_LOC);
-        _w_svarint(self._code, first_line - self._loc_l1);
-        _w_svarint(self._code, col_start - self._loc_c1);
-        _w_svarint(self._code, last_line - self._loc_l2);
-        _w_svarint(self._code, col_end - self._loc_c2);
-        self._loc_l1 = first_line;
-        self._loc_c1 = col_start;
-        self._loc_l2 = last_line;
-        self._loc_c2 = col_end;
-        self._loc_set = True;
-    }
-
-    def emit_loc_needed(first_line: int, col_start: int, last_line: int, col_end: int) {
-        self._require_open();
-        if (
-            self._loc_set
-            and self._loc_l1 == first_line
-            and self._loc_c1 == col_start
-            and self._loc_l2 == last_line
-            and self._loc_c2 == col_end
-        ) {
-            return;
-        }
-        self.emit_loc(first_line, col_start, last_line, col_end);
-    }
-
-    def emit_node(class_name: str, field_names: list[str]) {
-        self._require_open();
-        if not self._loc_set {
-            raise CodegenIrFormatError(
-                f"emit_node({class_name}) before any emit_loc in {self._mod_path}: "
-                "every module stream must set the location register first"
-            );
-        }
-        n = len(field_names);
-        if n > self._depth {
-            raise CodegenIrFormatError(
-                f"emit_node({class_name}) pops {n} values but only {self._depth} are on the stack"
-            );
-        }
-        self._code.append(OP_NODE);
-        _w_varint(self._code, self.class_ref(class_name));
-        _w_varint(self._code, n);
-        for fname in field_names {
-            _w_varint(self._code, self.key_ref(fname));
-        }
-        self._depth -= n - 1;
-    }
-
-    def emit_parse_splice(src: str, line_offset: int = 0) {
-        self._require_open();
-        self._code.append(OP_PARSE_SPLICE);
-        _w_varint(self._code, self.str_ref(src));
-        _w_varint(self._code, line_offset);
-        self._depth += 1;
-    }
-
-    def end_module {
-        self._require_open();
-        if self._depth != 1 {
-            raise CodegenIrFormatError(
-                f"end_module on {self._mod_path} with stack depth {self._depth}; "
-                "a module stream must leave exactly one root value"
-            );
-        }
-        self._code.append(OP_END);
-        self.modules.append(CirModule(mod_path=self._mod_path, code=bytes(self._code)));
-        self._code = bytearray();
-        self._open = False;
-        self._mod_path = "";
-    }
-
-    def add_diag(diag: CirDiag) {
-        self.diags.append(diag);
-    }
-
-    def to_bytes -> bytes {
-        if self._open {
-            raise CodegenIrFormatError(
-                f"module {self._mod_path} is still open; call end_module before to_bytes"
-            );
-        }
-        for m in self.modules {
-            self.str_ref(m.mod_path);
-        }
-        for d in self.diags {
-            self.str_ref(d.code_str);
-            self.str_ref(d.message);
-            self.str_ref(d.help);
-            self.str_ref(d.mod_path);
-        }
-        buf = bytearray();
-        buf.extend(CIR_MAGIC);
-        buf.extend(struct.pack("<H", CIR_FORMAT_VERSION));
-        buf.extend(struct.pack("<H", cir_python_version()));
-        _w_varint(buf, len(self.class_names));
-        for cn in self.class_names {
-            _w_str_entry(buf, cn);
-        }
-        _w_varint(buf, len(self.key_names));
-        for kn in self.key_names {
-            _w_str_entry(buf, kn);
-        }
-        _w_varint(buf, len(self.strings));
-        for s in self.strings {
-            _w_str_entry(buf, s);
-        }
-        _w_varint(buf, len(self.modules));
-        for m in self.modules {
-            _w_varint(buf, self.str_ref(m.mod_path));
-            _w_varint(buf, len(m.code));
-            buf.extend(m.code);
-        }
-        _w_varint(buf, len(self.diags));
-        for d in self.diags {
-            buf.append(int(d.severity) & 255);
-            _w_varint(buf, self.str_ref(d.code_str));
-            _w_varint(buf, self.str_ref(d.message));
-            _w_varint(buf, self.str_ref(d.help));
-            _w_varint(buf, self.str_ref(d.mod_path));
-            _w_varint(buf, d.first_line);
-            _w_varint(buf, d.col_start);
-            _w_varint(buf, d.last_line);
-            _w_varint(buf, d.col_end);
-        }
-        buf.append(CIR_TERMINATOR);
-        return bytes(buf);
+impl CodegenIrWriter._require_open {
+    if not self._open {
+        raise CodegenIrFormatError(
+            "no module is open: call begin_module before emitting"
+        );
     }
 }
 
-def read_container(data: bytes) -> CirContainer {
+impl CodegenIrWriter.begin_module(mod_path: str) {
+    if self._open {
+        raise CodegenIrFormatError(
+            f"module {self._mod_path} is still open; call end_module first"
+        );
+    }
+    self._code = bytearray();
+    self._open = True;
+    self._mod_path = mod_path;
+    self._depth = 0;
+    self._loc_set = False;
+    self._loc_l1 = 0;
+    self._loc_c1 = 0;
+    self._loc_l2 = 0;
+    self._loc_c2 = 0;
+}
+
+impl CodegenIrWriter.emit_none {
+    self._require_open();
+    self._code.append(OP_NONE);
+    self._depth += 1;
+}
+
+impl CodegenIrWriter.emit_true {
+    self._require_open();
+    self._code.append(OP_TRUE);
+    self._depth += 1;
+}
+
+impl CodegenIrWriter.emit_false {
+    self._require_open();
+    self._code.append(OP_FALSE);
+    self._depth += 1;
+}
+
+impl CodegenIrWriter.emit_ellipsis {
+    self._require_open();
+    self._code.append(OP_ELLIPSIS);
+    self._depth += 1;
+}
+
+impl CodegenIrWriter.emit_int(v: int) {
+    self._require_open();
+    if v >= _I64_MIN and v <= _I64_MAX {
+        self._code.append(OP_INT);
+        _w_svarint(self._code, v);
+    } else {
+        self._code.append(OP_INT_BIG);
+        mag = -v if v < 0 else v;
+        nbytes = (mag.bit_length() + 7) // 8;
+        self._code.append(1 if v < 0 else 0);
+        _w_varint(self._code, nbytes);
+        self._code.extend(mag.to_bytes(nbytes, "little"));
+    }
+    self._depth += 1;
+}
+
+impl CodegenIrWriter.emit_int_wide(negative: bool, magnitude: bytes) {
+    self._require_open();
+    self._code.append(OP_INT_BIG);
+    self._code.append(1 if negative else 0);
+    _w_varint(self._code, len(magnitude));
+    self._code.extend(magnitude);
+    self._depth += 1;
+}
+
+impl CodegenIrWriter.emit_float(v: float) {
+    self._require_open();
+    self._code.append(OP_FLOAT);
+    self._code.extend(struct.pack("<d", v));
+    self._depth += 1;
+}
+
+impl CodegenIrWriter.emit_str(s: str) {
+    self._require_open();
+    self._code.append(OP_STR);
+    _w_varint(self._code, self.str_ref(s));
+    self._depth += 1;
+}
+
+impl CodegenIrWriter.emit_bytes(b: bytes) {
+    self._require_open();
+    self._code.append(OP_BYTES);
+    _w_varint(self._code, len(b));
+    self._code.extend(b);
+    self._depth += 1;
+}
+
+impl CodegenIrWriter.emit_list(n: int) {
+    self._require_open();
+    if n > self._depth {
+        raise CodegenIrFormatError(
+            f"emit_list({n}) with only {self._depth} values on the stack"
+        );
+    }
+    self._code.append(OP_LIST);
+    _w_varint(self._code, n);
+    self._depth -= n - 1;
+}
+
+impl CodegenIrWriter.emit_tuple(n: int) {
+    self._require_open();
+    if n > self._depth {
+        raise CodegenIrFormatError(
+            f"emit_tuple({n}) with only {self._depth} values on the stack"
+        );
+    }
+    self._code.append(OP_TUPLE);
+    _w_varint(self._code, n);
+    self._depth -= n - 1;
+}
+
+impl CodegenIrWriter.emit_loc(
+    first_line: int, col_start: int, last_line: int, col_end: int
+) {
+    self._require_open();
+    self._code.append(OP_LOC);
+    _w_svarint(self._code, first_line - self._loc_l1);
+    _w_svarint(self._code, col_start - self._loc_c1);
+    _w_svarint(self._code, last_line - self._loc_l2);
+    _w_svarint(self._code, col_end - self._loc_c2);
+    self._loc_l1 = first_line;
+    self._loc_c1 = col_start;
+    self._loc_l2 = last_line;
+    self._loc_c2 = col_end;
+    self._loc_set = True;
+}
+
+impl CodegenIrWriter.emit_loc_needed(
+    first_line: int, col_start: int, last_line: int, col_end: int
+) {
+    self._require_open();
+    if (
+        self._loc_set
+        and self._loc_l1 == first_line
+        and self._loc_c1 == col_start
+        and self._loc_l2 == last_line
+        and self._loc_c2 == col_end
+    ) {
+        return;
+    }
+    self.emit_loc(first_line, col_start, last_line, col_end);
+}
+
+impl CodegenIrWriter.emit_node(class_name: str, field_names: list[str]) {
+    self._require_open();
+    if not self._loc_set {
+        raise CodegenIrFormatError(
+            f"emit_node({class_name}) before any emit_loc in {self._mod_path}: "
+            "every module stream must set the location register first"
+        );
+    }
+    n = len(field_names);
+    if n > self._depth {
+        raise CodegenIrFormatError(
+            f"emit_node({class_name}) pops {n} values but only {self._depth} are on the stack"
+        );
+    }
+    self._code.append(OP_NODE);
+    _w_varint(self._code, self.class_ref(class_name));
+    _w_varint(self._code, n);
+    for fname in field_names {
+        _w_varint(self._code, self.key_ref(fname));
+    }
+    self._depth -= n - 1;
+}
+
+impl CodegenIrWriter.emit_parse_splice(src: str, line_offset: int = 0) {
+    self._require_open();
+    self._code.append(OP_PARSE_SPLICE);
+    _w_varint(self._code, self.str_ref(src));
+    _w_varint(self._code, line_offset);
+    self._depth += 1;
+}
+
+impl CodegenIrWriter.end_module {
+    self._require_open();
+    if self._depth != 1 {
+        raise CodegenIrFormatError(
+            f"end_module on {self._mod_path} with stack depth {self._depth}; "
+            "a module stream must leave exactly one root value"
+        );
+    }
+    self._code.append(OP_END);
+    self.modules.append(CirModule(mod_path=self._mod_path, code=bytes(self._code)));
+    self._code = bytearray();
+    self._open = False;
+    self._mod_path = "";
+}
+
+impl CodegenIrWriter.add_diag(diag: CirDiag) {
+    self.diags.append(diag);
+}
+
+impl CodegenIrWriter.to_bytes -> bytes {
+    if self._open {
+        raise CodegenIrFormatError(
+            f"module {self._mod_path} is still open; call end_module before to_bytes"
+        );
+    }
+    for m in self.modules {
+        self.str_ref(m.mod_path);
+    }
+    for d in self.diags {
+        self.str_ref(d.code_str);
+        self.str_ref(d.message);
+        self.str_ref(d.help);
+        self.str_ref(d.mod_path);
+    }
+    buf = bytearray();
+    buf.extend(CIR_MAGIC);
+    buf.extend(struct.pack("<H", CIR_FORMAT_VERSION));
+    buf.extend(struct.pack("<H", cir_python_version()));
+    _w_varint(buf, len(self.class_names));
+    for cn in self.class_names {
+        _w_str_entry(buf, cn);
+    }
+    _w_varint(buf, len(self.key_names));
+    for kn in self.key_names {
+        _w_str_entry(buf, kn);
+    }
+    _w_varint(buf, len(self.strings));
+    for s in self.strings {
+        _w_str_entry(buf, s);
+    }
+    _w_varint(buf, len(self.modules));
+    for m in self.modules {
+        _w_varint(buf, self.str_ref(m.mod_path));
+        _w_varint(buf, len(m.code));
+        buf.extend(m.code);
+    }
+    _w_varint(buf, len(self.diags));
+    for d in self.diags {
+        buf.append(int(d.severity) & 255);
+        _w_varint(buf, self.str_ref(d.code_str));
+        _w_varint(buf, self.str_ref(d.message));
+        _w_varint(buf, self.str_ref(d.help));
+        _w_varint(buf, self.str_ref(d.mod_path));
+        _w_varint(buf, d.first_line);
+        _w_varint(buf, d.col_start);
+        _w_varint(buf, d.last_line);
+        _w_varint(buf, d.col_end);
+    }
+    buf.append(CIR_TERMINATOR);
+    return bytes(buf);
+}
+
+impl read_container(data: bytes) -> CirContainer {
     if len(data) < 8 {
         raise CodegenIrFormatError(
             f"container is {len(data)} bytes; a JCIR header needs 8"

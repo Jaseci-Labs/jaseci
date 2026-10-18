@@ -16,6 +16,47 @@ import from jaclang.compiler.passes.annex_weave {
 
 def _replay_diags(
     diags: list[SrcDiag], from_pass: type, prog: JacProgram, diag_src: Source
+);
+
+def parse_diags(
+    source: str, file_path: str = "<input>"
+) -> tuple[bool, list[SrcDiag], list[SrcDiag]];
+
+def parse(
+    source: str, file_path: str = "<input>", prog: (JacProgram | None) = None
+) -> tuple[Module, bool];
+
+def parse_expression(
+    source: str, file_path: str = "<input>", prog: JacProgram | None = None
+) -> tuple[Expr, bool];
+
+def finish_parse(
+    module: Module,
+    p_errs: int,
+    p_diags: list[SrcDiag],
+    comments: list[CommentData],
+    lex_diags: list[SrcDiag],
+    lex_errs: int,
+    prog: (JacProgram | None)
+) -> bool;
+
+def ignore_directive(text: str) -> (str | None);
+
+def parse_woven(
+    source_str: str,
+    file_path: str,
+    prog: (JacProgram | None),
+    annexes: list[WovenAnnex],
+    early_context: str = "",
+    load_kernel: bool = True
+) -> tuple[Module, bool];
+
+def annex_paths(file_path: str) -> list[str];
+
+def annex_sources(file_path: str) -> list[WovenAnnex];
+
+impl _replay_diags(
+    diags: list[SrcDiag], from_pass: type, prog: JacProgram, diag_src: Source
 ) {
     for d in diags {
         loc = d.loc;
@@ -37,7 +78,7 @@ def _replay_diags(
     }
 }
 
-def parse_diags(
+impl parse_diags(
     source: str, file_path: str = "<input>"
 ) -> tuple[bool, list[SrcDiag], list[SrcDiag]] {
     (tokens, _comments, lex_diags, lex_errs) = na_lexer.tokenize_full(
@@ -48,7 +89,7 @@ def parse_diags(
     return (parser.error_count > 0 or lex_errs > 0, parser.diags, lex_diags, );
 }
 
-def parse(
+impl parse(
     source: str, file_path: str = "<input>", prog: (JacProgram | None) = None
 ) -> tuple[Module, bool] {
     (tokens, comments, lex_diags, lex_errs) = na_lexer.tokenize_full(source, file_path);
@@ -60,7 +101,7 @@ def parse(
     return (module, had_error);
 }
 
-def parse_expression(
+impl parse_expression(
     source: str, file_path: str = "<input>", prog: JacProgram | None = None
 ) -> tuple[Expr, bool] {
     (expression, had_error, parser_diags, lex_diags) = _parse_expression(
@@ -73,7 +114,7 @@ def parse_expression(
     return (expression, had_error);
 }
 
-def finish_parse(
+impl finish_parse(
     module: Module,
     p_errs: int,
     p_diags: list[SrcDiag],
@@ -128,7 +169,7 @@ def finish_parse(
     return p_errs > 0 or lex_errs > 0;
 }
 
-def ignore_directive(text: str) -> (str | None) {
+impl ignore_directive(text: str) -> (str | None) {
     marker = "jac:ignore[";
     start = text.find("#");
     while start >= 0 {
@@ -148,7 +189,7 @@ def ignore_directive(text: str) -> (str | None) {
     return None;
 }
 
-def parse_woven(
+impl parse_woven(
     source_str: str,
     file_path: str,
     prog: (JacProgram | None),
@@ -179,7 +220,7 @@ def parse_woven(
     return (module, had_error);
 }
 
-def annex_paths(file_path: str) -> list[str] {
+impl annex_paths(file_path: str) -> list[str] {
     if not file_path.endswith(".jac") {
         return [];
     }
@@ -203,7 +244,7 @@ def annex_paths(file_path: str) -> list[str] {
     return unique;
 }
 
-def annex_sources(file_path: str) -> list[WovenAnnex] {
+impl annex_sources(file_path: str) -> list[WovenAnnex] {
     import from jaclang.compiler.frontend.host { active_host }
     host = active_host();
     out: list[WovenAnnex] = [];

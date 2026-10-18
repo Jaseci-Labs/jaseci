@@ -291,13 +291,13 @@ impl Lexer.is_whitespace(ch: str) -> bool {
     return ch == " " or ch == "\t" or ch == "\r" or ch == "\n";
 }
 
-impl Lexer.skip_whitespace{
+impl Lexer.skip_whitespace {
     while not self.at_end() and self.is_whitespace(self.current()) {
         self.advance();
     }
 }
 
-impl Lexer.skip_line_comment{
+impl Lexer.skip_line_comment {
     start_line = self.line;
     start_col = self.col;
     start_pos = self.pos;
@@ -353,7 +353,7 @@ impl Lexer.skip_block_comment -> bool {
     return False;
 }
 
-impl Lexer.skip_whitespace_and_comments{
+impl Lexer.skip_whitespace_and_comments {
     while not self.at_end() {
         ch = self.current();
 

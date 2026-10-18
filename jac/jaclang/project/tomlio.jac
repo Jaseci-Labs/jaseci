@@ -7,22 +7,31 @@ class MalformedJacTomlError(tomllib.TOMLDecodeError) {
 
     def init(
         self: MalformedJacTomlError, file_path: str, original: tomllib.TOMLDecodeError
-    ) {
-        msg = f"jac.toml is malformed at {file_path}: {original}";
-        if hasattr(original, "doc") and hasattr(original, "pos") {
-            tomllib.TOMLDecodeError.__init__(
-                self, msg, getattr(original, "doc"), getattr(original, "pos")
-            );
-        } else {
-            tomllib.TOMLDecodeError.__init__(self, msg);
-        }
-        self.file_path = file_path;
-        self.original = original;
-    }
+    );
 }
 
 
-def read_toml_with_encoding(file_path: str) -> dict[str, any] {
+def read_toml_with_encoding(file_path: str) -> dict[str, any];
+
+def _warn_malformed_jac_toml(exc: MalformedJacTomlError);
+
+impl MalformedJacTomlError.init(
+    self: MalformedJacTomlError, file_path: str, original: tomllib.TOMLDecodeError
+) {
+    msg = f"jac.toml is malformed at {file_path}: {original}";
+    if hasattr(original, "doc") and hasattr(original, "pos") {
+        tomllib.TOMLDecodeError.__init__(
+            self, msg, getattr(original, "doc"), getattr(original, "pos")
+        );
+    } else {
+        tomllib.TOMLDecodeError.__init__(self, msg);
+    }
+    self.file_path = file_path;
+    self.original = original;
+}
+
+
+impl read_toml_with_encoding(file_path: str) -> dict[str, any] {
     try {
         return tomllib.loads(read_file_with_encoding(file_path));
     } except tomllib.TOMLDecodeError as exc {
@@ -30,7 +39,7 @@ def read_toml_with_encoding(file_path: str) -> dict[str, any] {
     }
 }
 
-def _warn_malformed_jac_toml(exc: MalformedJacTomlError) {
+impl _warn_malformed_jac_toml(exc: MalformedJacTomlError) {
     import sys;
     sys.stderr.write(
         f"warning: jac.toml is malformed ({exc.file_path}): {exc.original}; "

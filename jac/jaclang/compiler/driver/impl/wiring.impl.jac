@@ -126,13 +126,7 @@ impl WiringSpec._local_name(name: str) -> (str | None) {
     return name[len(self.package_prefix):];
 }
 
-def _package_prefix(root_dir: str) -> str {
-    facts = active_host().project_facts(root_dir);
-    if facts is None or not facts.package_name {
-        return "";
-    }
-    return facts.package_name.replace("/", ".") + ".";
-}
+def _package_prefix(root_dir: str) -> str;
 
 impl WiringSpec.module_file(name: str) -> (str | None) {
     local = self._local_name(name) if name else None;
@@ -1073,4 +1067,12 @@ impl wiring_digest_for(file_path: str) -> str {
         return "";
     }
     return spec.digest_for(consumer);
+}
+
+impl _package_prefix(root_dir: str) -> str {
+    facts = active_host().project_facts(root_dir);
+    if facts is None or not facts.package_name {
+        return "";
+    }
+    return facts.package_name.replace("/", ".") + ".";
 }

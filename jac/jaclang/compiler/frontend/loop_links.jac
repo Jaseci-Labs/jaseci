@@ -42,126 +42,161 @@ obj LoopLinks {
         _local: dict[UniNode, dict[Symbol, bool]] = {},
         _made: int = 0;
 
-    static def of(tree: UniNode) -> LoopLinks {
-        links = LoopLinks();
-        closures: list[UniNode] = [];
-        closures.extend(tree.get_all_sub_nodes(LambdaExpr));
-        closures.extend(tree.get_all_sub_nodes(Ability));
-        for closure in closures {
-            links._link_closure(closure);
+    static def of(tree: UniNode) -> LoopLinks;
+    def of_loop(loop: UniNode) -> list[PassLink];
+    def of_closure(closure: UniNode) -> list[PassLink];
+    def of_name(name: UniNode) -> (PassLink | None);
+    def of_symbol(sym: Symbol) -> list[PassLink];
+    def rebinds_of(closure: UniNode) -> list[Symbol];
+    def linked_within(scope: UniNode) -> set[Symbol];
+    def _link_closure(closure: UniNode) -> None;
+    def _link(loop: LoopStmt, sym: Symbol, closure: UniNode) -> PassLink;
+    def _is_local(sym: Symbol, loop: LoopStmt) -> bool;
+}
+
+def is_frame(nd: UniNode) -> bool;
+
+def enclosing_pass_loops(closure: UniNode) -> list[LoopStmt];
+
+def made_in_comprehension(closure: UniNode) -> bool;
+
+def made_per_element(sym: Symbol, closure: UniNode) -> bool;
+
+def enclosing_loop(ctrl: CtrlStmt) -> (LoopStmt | None);
+
+def confined_to(sym: Symbol, loop: LoopStmt) -> bool;
+
+def binds_target(sym: Symbol, loop: LoopStmt) -> bool;
+
+def assigned_on_entry(sym: Symbol, loop: LoopStmt) -> bool;
+
+def frame_owns(frame: UniNode, sym: Symbol) -> bool;
+
+def is_plain_variable(sym: Symbol) -> bool;
+
+def owned_within(sym: Symbol, scope: UniNode) -> bool;
+
+def binding_sites(sym: Symbol) -> list[UniNode];
+
+def is_within(nd: UniNode, outer: UniNode) -> bool;
+
+impl LoopLinks.of(tree: UniNode) -> LoopLinks {
+    links = LoopLinks();
+    closures: list[UniNode] = [];
+    closures.extend(tree.get_all_sub_nodes(LambdaExpr));
+    closures.extend(tree.get_all_sub_nodes(Ability));
+    for closure in closures {
+        links._link_closure(closure);
+    }
+    return links;
+}
+
+impl LoopLinks.of_loop(loop: UniNode) -> list[PassLink] {
+    return self.by_loop.get(loop, []);
+}
+
+impl LoopLinks.of_closure(closure: UniNode) -> list[PassLink] {
+    return self.by_closure.get(closure, []);
+}
+
+impl LoopLinks.of_name(name: UniNode) -> (PassLink | None) {
+    return self.by_name.get(name);
+}
+
+impl LoopLinks.of_symbol(sym: Symbol) -> list[PassLink] {
+    return self.by_symbol.get(sym, []);
+}
+
+impl LoopLinks.rebinds_of(closure: UniNode) -> list[Symbol] {
+    return self.by_rebind.get(closure, []);
+}
+
+impl LoopLinks.linked_within(scope: UniNode) -> set[Symbol] {
+    linked: set[Symbol] = set();
+    cur: (UniNode | None) = scope;
+    while cur is not None {
+        for link in self.by_closure.get(cur, []) {
+            linked.add(link.sym);
         }
-        return links;
+        cur = cur.parent;
     }
+    return linked;
+}
 
-    def of_loop(loop: UniNode) -> list[PassLink] {
-        return self.by_loop.get(loop, []);
+impl LoopLinks._link_closure(closure: UniNode) -> None {
+    if isinstance(closure, Ability) and closure.is_method {
+        return;
     }
-
-    def of_closure(closure: UniNode) -> list[PassLink] {
-        return self.by_closure.get(closure, []);
+    loops = enclosing_pass_loops(closure);
+    if not loops and not made_in_comprehension(closure) {
+        return;
     }
-
-    def of_name(name: UniNode) -> (PassLink | None) {
-        return self.by_name.get(name);
-    }
-
-    def of_symbol(sym: Symbol) -> list[PassLink] {
-        return self.by_symbol.get(sym, []);
-    }
-
-    def rebinds_of(closure: UniNode) -> list[Symbol] {
-        return self.by_rebind.get(closure, []);
-    }
-
-    def linked_within(scope: UniNode) -> set[Symbol] {
-        linked: set[Symbol] = set();
-        cur: (UniNode | None) = scope;
-        while cur is not None {
-            for link in self.by_closure.get(cur, []) {
-                linked.add(link.sym);
-            }
-            cur = cur.parent;
+    for nm in closure.get_all_sub_nodes(Name) {
+        if is_identifier_slot(nm) or nm in self.by_name {
+            continue;
         }
-        return linked;
-    }
-
-    def _link_closure(closure: UniNode) -> None {
-        if isinstance(closure, Ability) and closure.is_method {
-            return;
+        sym = nm.sym;
+        if sym is None or not is_plain_variable(sym) or owned_within(sym, closure) {
+            continue;
         }
-        loops = enclosing_pass_loops(closure);
-        if not loops and not made_in_comprehension(closure) {
-            return;
+        if made_per_element(sym, closure) {
+            rebinds = self.by_rebind.setdefault(closure, []);
+            if sym not in rebinds {
+                rebinds.append(sym);
+            }
+            continue;
         }
-        for nm in closure.get_all_sub_nodes(Name) {
-            if is_identifier_slot(nm) or nm in self.by_name {
-                continue;
-            }
-            sym = nm.sym;
-            if sym is None
-                or not is_plain_variable(sym)
-                or owned_within(sym, closure) {
-                continue;
-            }
-            if made_per_element(sym, closure) {
-                rebinds = self.by_rebind.setdefault(closure, []);
-                if sym not in rebinds {
-                    rebinds.append(sym);
-                }
-                continue;
-            }
-            for loop in loops {
-                if self._is_local(sym, loop) {
-                    self.by_name[nm] = self._link(loop, sym, closure);
-                    break;
-                }
-            }
-        }
-    }
-
-    def _link(loop: LoopStmt, sym: Symbol, closure: UniNode) -> PassLink {
-        made = self.by_loop.setdefault(loop, []);
-        link: (PassLink | None) = None;
-        for existing in made {
-            if existing.sym is sym {
-                link = existing;
+        for loop in loops {
+            if self._is_local(sym, loop) {
+                self.by_name[nm] = self._link(loop, sym, closure);
                 break;
             }
         }
-        if link is None {
-            link = PassLink(loop=loop, sym=sym, index=self._made);
-            self._made += 1;
-            made.append(link);
-            self.by_symbol.setdefault(sym, []).append(link);
-        }
-        received = self.by_closure.setdefault(closure, []);
-        if link not in received {
-            received.append(link);
-        }
-        return link;
-    }
-
-    def _is_local(sym: Symbol, loop: LoopStmt) -> bool {
-        known = self._local.setdefault(loop, {});
-        if sym not in known {
-            local = True;
-            for site in binding_sites(sym) {
-                if not is_within(site, loop) {
-                    local = False;
-                    break;
-                }
-            }
-            known[sym] = local;
-        }
-        return known[sym];
     }
 }
 
-def is_frame(nd: UniNode) -> bool {
+impl LoopLinks._link(loop: LoopStmt, sym: Symbol, closure: UniNode) -> PassLink {
+    made = self.by_loop.setdefault(loop, []);
+    link: (PassLink | None) = None;
+    for existing in made {
+        if existing.sym is sym {
+            link = existing;
+            break;
+        }
+    }
+    if link is None {
+        link = PassLink(loop=loop, sym=sym, index=self._made);
+        self._made += 1;
+        made.append(link);
+        self.by_symbol.setdefault(sym, []).append(link);
+    }
+    received = self.by_closure.setdefault(closure, []);
+    if link not in received {
+        received.append(link);
+    }
+    return link;
+}
+
+impl LoopLinks._is_local(sym: Symbol, loop: LoopStmt) -> bool {
+    known = self._local.setdefault(loop, {});
+    if sym not in known {
+        local = True;
+        for site in binding_sites(sym) {
+            if not is_within(site, loop) {
+                local = False;
+                break;
+            }
+        }
+        known[sym] = local;
+    }
+    return known[sym];
+}
+
+impl is_frame(nd: UniNode) -> bool {
     return isinstance(nd, (Ability, ImplDef, LambdaExpr, Test, Module, ModuleCode));
 }
 
-def enclosing_pass_loops(closure: UniNode) -> list[LoopStmt] {
+impl enclosing_pass_loops(closure: UniNode) -> list[LoopStmt] {
     loops: list[LoopStmt] = [];
     child = closure;
     cur = closure.parent;
@@ -179,7 +214,7 @@ def enclosing_pass_loops(closure: UniNode) -> list[LoopStmt] {
     return loops;
 }
 
-def made_in_comprehension(closure: UniNode) -> bool {
+impl made_in_comprehension(closure: UniNode) -> bool {
     cur = closure.parent;
     while cur is not None and not is_frame(cur) {
         if isinstance(cur, (ListCompr, DictCompr, InnerCompr)) {
@@ -190,7 +225,7 @@ def made_in_comprehension(closure: UniNode) -> bool {
     return False;
 }
 
-def made_per_element(sym: Symbol, closure: UniNode) -> bool {
+impl made_per_element(sym: Symbol, closure: UniNode) -> bool {
     owner = sym.parent_tab;
     if not isinstance(owner, (ListCompr, DictCompr, InnerCompr)) {
         return False;
@@ -205,7 +240,7 @@ def made_per_element(sym: Symbol, closure: UniNode) -> bool {
     return cur is owner;
 }
 
-def enclosing_loop(ctrl: CtrlStmt) -> (LoopStmt | None) {
+impl enclosing_loop(ctrl: CtrlStmt) -> (LoopStmt | None) {
     cur = ctrl.parent;
     while cur is not None and not is_frame(cur) {
         if isinstance(cur, (InForStmt, IterForStmt, WhileStmt, ForeverStmt)) {
@@ -216,7 +251,7 @@ def enclosing_loop(ctrl: CtrlStmt) -> (LoopStmt | None) {
     return None;
 }
 
-def confined_to(sym: Symbol, loop: LoopStmt) -> bool {
+impl confined_to(sym: Symbol, loop: LoopStmt) -> bool {
     for site in list(sym.defn) + list(sym.uses) {
         if not is_within(site, loop) {
             return False;
@@ -225,7 +260,7 @@ def confined_to(sym: Symbol, loop: LoopStmt) -> bool {
     return True;
 }
 
-def binds_target(sym: Symbol, loop: LoopStmt) -> bool {
+impl binds_target(sym: Symbol, loop: LoopStmt) -> bool {
     if not isinstance(loop, InForStmt) {
         return False;
     }
@@ -237,7 +272,7 @@ def binds_target(sym: Symbol, loop: LoopStmt) -> bool {
     return False;
 }
 
-def assigned_on_entry(sym: Symbol, loop: LoopStmt) -> bool {
+impl assigned_on_entry(sym: Symbol, loop: LoopStmt) -> bool {
     for stmt in loop.body {
         mentions = [
             nm
@@ -260,7 +295,7 @@ def assigned_on_entry(sym: Symbol, loop: LoopStmt) -> bool {
     return False;
 }
 
-def frame_owns(frame: UniNode, sym: Symbol) -> bool {
+impl frame_owns(frame: UniNode, sym: Symbol) -> bool {
     owner = sym.parent_tab;
     while owner is not None and not UniScopeNode.is_python_scoping(owner) {
         if isinstance(owner, (ListCompr, DictCompr, InnerCompr)) {
@@ -271,16 +306,16 @@ def frame_owns(frame: UniNode, sym: Symbol) -> bool {
     return same_lexical_scope(owner, frame);
 }
 
-def is_plain_variable(sym: Symbol) -> bool {
+impl is_plain_variable(sym: Symbol) -> bool {
     return sym.sym_type in (SymbolType.VAR, SymbolType.MOD_VAR, SymbolType.IMM_VAR);
 }
 
-def owned_within(sym: Symbol, scope: UniNode) -> bool {
+impl owned_within(sym: Symbol, scope: UniNode) -> bool {
     owner = sym.parent_tab;
     return owner is not None and is_within(owner, scope);
 }
 
-def binding_sites(sym: Symbol) -> list[UniNode] {
+impl binding_sites(sym: Symbol) -> list[UniNode] {
     sites: list[UniNode] = list(sym.defn);
     for use in sym.uses {
         if use.expr_ctx != ExprCtx.LOAD {
@@ -290,7 +325,7 @@ def binding_sites(sym: Symbol) -> list[UniNode] {
     return sites;
 }
 
-def is_within(nd: UniNode, outer: UniNode) -> bool {
+impl is_within(nd: UniNode, outer: UniNode) -> bool {
     cur: (UniNode | None) = nd;
     while cur is not None {
         if cur is outer {

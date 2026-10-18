@@ -4,11 +4,23 @@ import from pathlib { Path }
 
 obj TemplateError(Exception) {}
 
-def is_template_spec(spec: str) -> bool {
+def is_template_spec(spec: str) -> bool;
+
+def pick_template(
+    entries: list[IndexEntry], requirement: Requirement, jac: Version
+) -> IndexEntry | None;
+
+def unpack_template(data: bytes, label: str) -> Path;
+
+def fetch_template(spec: str, registries: dict[str, str] | None = None) -> Path;
+
+def load_template_jab(path: Path) -> Path;
+
+impl is_template_spec(spec: str) -> bool {
     return is_package_name(spec.partition("@")[0].strip());
 }
 
-def pick_template(
+impl pick_template(
     entries: list[IndexEntry], requirement: Requirement, jac: Version
 ) -> IndexEntry | None {
     best: IndexEntry | None = None;
@@ -36,7 +48,7 @@ def pick_template(
     return best;
 }
 
-def unpack_template(data: bytes, label: str) -> Path {
+impl unpack_template(data: bytes, label: str) -> Path {
     stage = Path(tempfile.mkdtemp(prefix="jac-template-"));
     extract_tar_gz(data, stage);
     manifest = read_package_manifest(stage);
@@ -48,7 +60,7 @@ def unpack_template(data: bytes, label: str) -> Path {
     return stage;
 }
 
-def fetch_template(spec: str, registries: dict[str, str] | None = None) -> Path {
+impl fetch_template(spec: str, registries: dict[str, str] | None = None) -> Path {
     (name, sep, text) = spec.strip().partition("@");
     try {
         requirement = Requirement.parse(text if sep else "*");
@@ -74,6 +86,6 @@ def fetch_template(spec: str, registries: dict[str, str] | None = None) -> Path 
     return unpack_template(data, label);
 }
 
-def load_template_jab(path: Path) -> Path {
+impl load_template_jab(path: Path) -> Path {
     return unpack_template(path.read_bytes(), str(path));
 }

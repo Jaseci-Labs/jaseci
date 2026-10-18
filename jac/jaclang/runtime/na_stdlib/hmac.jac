@@ -19,40 +19,55 @@ obj:pub HMAC {
         block_size: int,
         name: str;
 
-    def update(data: bytes) {
-        ctx_require(self._ctx, "hmac");
-        hmac_ctx_update(self._ctx, data);
-    }
+    def update(data: bytes);
+    def digest -> bytes;
+    def hexdigest -> str;
+    def copy -> HMAC;
+    def drop;
+}
 
-    def digest -> bytes {
-        ctx_require(self._ctx, "hmac");
-        return hmac_ctx_digest(self._ctx);
-    }
 
-    def hexdigest -> str {
-        return to_hex(self.digest());
-    }
+def:pub new(key: any, msg: any = None, digestmod: str = "") -> HMAC;
 
-    def copy -> HMAC {
-        ctx_require(self._ctx, "hmac");
-        return HMAC(
-            _ctx=hmac_ctx_clone(self._ctx),
-            digest_size=self.digest_size,
-            block_size=self.block_size,
-            name=self.name
-        );
-    }
 
-    def drop {
-        if self._ctx != 0 {
-            hmac_ctx_free(self._ctx);
-            self._ctx = 0;
-        }
+def:pub digest(key: any, msg: any, digest: str) -> bytes;
+
+
+def:pub compare_digest(a: bytes, b: bytes) -> bool;
+
+impl HMAC.update(data: bytes) {
+    ctx_require(self._ctx, "hmac");
+    hmac_ctx_update(self._ctx, data);
+}
+
+impl HMAC.digest -> bytes {
+    ctx_require(self._ctx, "hmac");
+    return hmac_ctx_digest(self._ctx);
+}
+
+impl HMAC.hexdigest -> str {
+    return to_hex(self.digest());
+}
+
+impl HMAC.copy -> HMAC {
+    ctx_require(self._ctx, "hmac");
+    return HMAC(
+        _ctx=hmac_ctx_clone(self._ctx),
+        digest_size=self.digest_size,
+        block_size=self.block_size,
+        name=self.name
+    );
+}
+
+impl HMAC.drop {
+    if self._ctx != 0 {
+        hmac_ctx_free(self._ctx);
+        self._ctx = 0;
     }
 }
 
 
-def:pub new(key: any, msg: any = None, digestmod: str = "") -> HMAC {
+impl new(key: any, msg: any = None, digestmod: str = "") -> HMAC {
     k: bytes = b"";
     if isinstance(key, bytearray) {
         k = bytes(key);
@@ -91,12 +106,12 @@ def:pub new(key: any, msg: any = None, digestmod: str = "") -> HMAC {
 }
 
 
-def:pub digest(key: any, msg: any, digest: str) -> bytes {
+impl digest(key: any, msg: any, digest: str) -> bytes {
     return new(key, msg, digest).digest();
 }
 
 
-def:pub compare_digest(a: bytes, b: bytes) -> bool {
+impl compare_digest(a: bytes, b: bytes) -> bool {
     same: bool = len(a) == len(b);
     left: bytes = b;
     diff: int = 1;

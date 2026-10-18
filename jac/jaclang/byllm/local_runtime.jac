@@ -25,18 +25,34 @@ glob LOCAL_MODELS: dict[str, dict[str, any]] = {
      },
      LOCAL_PREFIX: str = "local:";
 
-def parse_alias(model_name: str) -> str | None {
+def parse_alias(model_name: str) -> str | None;
+
+def list_local_aliases -> list[str];
+
+def wrap_tool_call(tc: dict[str, any]) -> object;
+
+def _flatten_message_content(msg: dict[str, any]) -> dict[str, any];
+
+def _coerce_tool_calls(msg: dict[str, any]) -> dict[str, any];
+
+def normalize_messages(messages: list[dict[str, any]]) -> list[dict[str, any]];
+
+def normalize_response_format(rf: dict[str, any] | None) -> dict[str, any] | None;
+
+def filter_params(params: dict[str, any]) -> dict[str, any];
+
+impl parse_alias(model_name: str) -> str | None {
     if not model_name.startswith(LOCAL_PREFIX) {
         return None;
     }
     return model_name[len(LOCAL_PREFIX):].strip().lower();
 }
 
-def list_local_aliases -> list[str] {
+impl list_local_aliases -> list[str] {
     return sorted(list(LOCAL_MODELS.keys()));
 }
 
-def wrap_tool_call(tc: dict[str, any]) -> object {
+impl wrap_tool_call(tc: dict[str, any]) -> object {
     import from types { SimpleNamespace }
     fn = tc.get("function", {});
     return SimpleNamespace(
@@ -48,7 +64,7 @@ def wrap_tool_call(tc: dict[str, any]) -> object {
     );
 }
 
-def _flatten_message_content(msg: dict[str, any]) -> dict[str, any] {
+impl _flatten_message_content(msg: dict[str, any]) -> dict[str, any] {
     content = msg.get("content");
     if not isinstance(content, list) {
         return msg;
@@ -70,7 +86,7 @@ def _flatten_message_content(msg: dict[str, any]) -> dict[str, any] {
     return new_msg;
 }
 
-def _coerce_tool_calls(msg: dict[str, any]) -> dict[str, any] {
+impl _coerce_tool_calls(msg: dict[str, any]) -> dict[str, any] {
     tcs = msg.get("tool_calls");
     if not isinstance(tcs, list) or not tcs {
         return msg;
@@ -107,7 +123,7 @@ def _coerce_tool_calls(msg: dict[str, any]) -> dict[str, any] {
     return new_msg;
 }
 
-def normalize_messages(messages: list[dict[str, any]]) -> list[dict[str, any]] {
+impl normalize_messages(messages: list[dict[str, any]]) -> list[dict[str, any]] {
     out: list[dict[str, any]] = [];
     for m in messages {
         if isinstance(m, dict) {
@@ -119,7 +135,7 @@ def normalize_messages(messages: list[dict[str, any]]) -> list[dict[str, any]] {
     return out;
 }
 
-def normalize_response_format(rf: dict[str, any] | None) -> dict[str, any] | None {
+impl normalize_response_format(rf: dict[str, any] | None) -> dict[str, any] | None {
     if not isinstance(rf, dict) {
         return rf;
     }
@@ -135,7 +151,7 @@ def normalize_response_format(rf: dict[str, any] | None) -> dict[str, any] | Non
     return rf;
 }
 
-def filter_params(params: dict[str, any]) -> dict[str, any] {
+impl filter_params(params: dict[str, any]) -> dict[str, any] {
     accepted: set[str] = {
         "messages",
         "tools",

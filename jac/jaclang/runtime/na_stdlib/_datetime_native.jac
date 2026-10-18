@@ -17,17 +17,70 @@ glob _DT_TV: int = _DT_S,
      _DT_ISO_CAP: int = 1024;
 
 
-def:pub dt_out_buf -> int {
+def:pub dt_out_buf -> int;
+
+
+def:pub dt_fmt_buf -> int;
+
+
+def:pub dt_out_str(n: int) -> str;
+
+
+def:pub dt_epoch_us -> int;
+
+
+def:pub dt_localtime(t: int) -> int;
+
+
+def:pub dt_gmtime(t: int) -> int;
+
+
+def:pub dt_tm(field: int) -> int;
+
+
+def:pub dt_tm_gmtoff -> int;
+
+
+def:pub dt_tm_zone -> str;
+
+
+def _tmw_store(
+    sec: int,
+    min: int,
+    hour: int,
+    mday: int,
+    mon: int,
+    year: int,
+    wday: int,
+    yday: int,
+    isdst: int
+);
+
+
+def:pub dt_strftime(
+    format: str,
+    sec: int,
+    min: int,
+    hour: int,
+    mday: int,
+    mon: int,
+    year: int,
+    wday: int,
+    yday: int,
+    isdst: int
+) -> str;
+
+impl dt_out_buf -> int {
     return _DT_ISO;
 }
 
 
-def:pub dt_fmt_buf -> int {
+impl dt_fmt_buf -> int {
     return _DT_FMT;
 }
 
 
-def:pub dt_out_str(n: int) -> str {
+impl dt_out_str(n: int) -> str {
     if n < 0 or n >= _DT_ISO_CAP {
         raise ValueError("formatted output exceeds scratch capacity");
     }
@@ -36,12 +89,12 @@ def:pub dt_out_str(n: int) -> str {
 }
 
 
-def:pub dt_epoch_us -> int {
+impl dt_epoch_us -> int {
     return time_clock_ns(CLK_REALTIME) // 1000;
 }
 
 
-def:pub dt_localtime(t: int) -> int {
+impl dt_localtime(t: int) -> int {
     __mem_store_i64(_DT_TV, t);
     if localtime_r(_DT_TV, _DT_TM) == 0 {
         raise_os_error("localtime", "", last_errno());
@@ -50,7 +103,7 @@ def:pub dt_localtime(t: int) -> int {
 }
 
 
-def:pub dt_gmtime(t: int) -> int {
+impl dt_gmtime(t: int) -> int {
     __mem_store_i64(_DT_TV, t);
     if gmtime_r(_DT_TV, _DT_TM) == 0 {
         raise_os_error("gmtime", "", last_errno());
@@ -59,7 +112,7 @@ def:pub dt_gmtime(t: int) -> int {
 }
 
 
-def:pub dt_tm(field: int) -> int {
+impl dt_tm(field: int) -> int {
     if field < 9 {
         return int(__mem_load_i32(_DT_TM + field * 4));
     }
@@ -67,12 +120,12 @@ def:pub dt_tm(field: int) -> int {
 }
 
 
-def:pub dt_tm_gmtoff -> int {
+impl dt_tm_gmtoff -> int {
     return __mem_load_i64(_DT_TM + 40);
 }
 
 
-def:pub dt_tm_zone -> str {
+impl dt_tm_zone -> str {
     zp: int = __mem_load_i64(_DT_TM + 48);
     if zp == 0 {
         return "";
@@ -81,7 +134,7 @@ def:pub dt_tm_zone -> str {
 }
 
 
-def _tmw_store(
+impl _tmw_store(
     sec: int,
     min: int,
     hour: int,
@@ -106,7 +159,7 @@ def _tmw_store(
 }
 
 
-def:pub dt_strftime(
+impl dt_strftime(
     format: str,
     sec: int,
     min: int,

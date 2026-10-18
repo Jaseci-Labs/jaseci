@@ -29,11 +29,55 @@ obj GlueSpec {
         needs_region_hook: bool = True;
 }
 
-def _decl_void_fn(name: str) -> str {
+def _decl_void_fn(name: str) -> str;
+
+def entry_preamble_ir(spec: GlueSpec) -> str;
+
+def rc_wrapper_ir(spec: GlueSpec) -> tuple[str, list[str]];
+
+def atexit_shim_ir -> str;
+
+def region_hook_ir -> str;
+
+def argv_globals_ir -> str;
+
+def _main_body -> str;
+
+def init_array_runner_ir -> str;
+
+def entry_elf_ir -> str;
+
+def entry_elf_static_ir -> str;
+
+def entry_macho_ir -> str;
+
+def entry_pe_ir -> str;
+
+def shared_entry_symbol(spec: GlueSpec) -> str;
+
+def shared_main_ir(spec: GlueSpec) -> str;
+
+def platform_entry_ir(spec: GlueSpec) -> str;
+
+def shared_init_registration_ir(spec: GlueSpec) -> str;
+
+def link_glue_ir(spec: GlueSpec) -> tuple[str, list[str]];
+
+def init_object_codegen;
+
+def bind_shared_callbacks(
+    llvm_ir: str, bindings: list[InteropBinding]
+) -> tuple[str, list[InteropBinding]];
+
+def inject_heap_accounting(
+    llvm_ir_str: str, managed: bool = False
+) -> tuple[str, list[str]];
+
+impl _decl_void_fn(name: str) -> str {
     return f'declare void @"{name}"()\n';
 }
 
-def entry_preamble_ir(spec: GlueSpec) -> str {
+impl entry_preamble_ir(spec: GlueSpec) -> str {
     decls: list[str] = [];
     calls: list[str] = [];
     root_unit = spec.units[spec.root_index] if spec.root_index >= 0 else None;
@@ -87,7 +131,7 @@ def entry_preamble_ir(spec: GlueSpec) -> str {
     return text;
 }
 
-def rc_wrapper_ir(spec: GlueSpec) -> tuple[str, list[str]] {
+impl rc_wrapper_ir(spec: GlueSpec) -> tuple[str, list[str]] {
     parts: list[str] = [];
     exports: list[str] = [];
     if not spec.shared or spec.root_index < 0 {
@@ -122,7 +166,7 @@ def rc_wrapper_ir(spec: GlueSpec) -> tuple[str, list[str]] {
     return ("\n".join(parts), exports);
 }
 
-def atexit_shim_ir -> str {
+impl atexit_shim_ir -> str {
     return (
         "declare i32 @__cxa_atexit(ptr, ptr, ptr)\n"
         "@__dso_handle = weak global i8 0\n"
@@ -132,17 +176,17 @@ def atexit_shim_ir -> str {
     );
 }
 
-def region_hook_ir -> str {
+impl region_hook_ir -> str {
     return (
         f"define void @{REGION_DIED_HOOK}(i64 %rgn) {{\n" "entry:\n  ret void\n}\n\n"
     );
 }
 
-def argv_globals_ir -> str {
+impl argv_globals_ir -> str {
     return "@__jac_argc = weak global i32 0\n@__jac_argv = weak global ptr null\n\n";
 }
 
-def _main_body -> str {
+impl _main_body -> str {
     return (
         "define i32 @main(i32 %argc, ptr %argv) {\n"
         "entry:\n"
@@ -154,7 +198,7 @@ def _main_body -> str {
     );
 }
 
-def init_array_runner_ir -> str {
+impl init_array_runner_ir -> str {
     """`__jac_libc_init`, the `init` argument `_start` hands
     `__libc_start_main`: it runs the executable's `.init_array` (bounded by
     the linker's `__init_array_start` / `__init_array_end`). glibc runs a
@@ -181,7 +225,7 @@ def init_array_runner_ir -> str {
     );
 }
 
-def entry_elf_ir -> str {
+impl entry_elf_ir -> str {
     return (
         "; --- ELF entry point ---\n"
         + argv_globals_ir()
@@ -206,7 +250,7 @@ def entry_elf_ir -> str {
     );
 }
 
-def entry_elf_static_ir -> str {
+impl entry_elf_static_ir -> str {
     """musl's crt1.o enters `__libc_start_main`, which runs `.init_array`
     itself before `main`.""";
     return "; --- ELF entry point (musl static) ---\n"
@@ -214,7 +258,7 @@ def entry_elf_static_ir -> str {
         + _main_body();
 }
 
-def entry_macho_ir -> str {
+impl entry_macho_ir -> str {
     return (
         "; --- Mach-O entry point ---\n"
         + argv_globals_ir()
@@ -228,7 +272,7 @@ def entry_macho_ir -> str {
     );
 }
 
-def entry_pe_ir -> str {
+impl entry_pe_ir -> str {
     return (
         "; --- PE entry point ---\n"
         + argv_globals_ir()
@@ -261,14 +305,14 @@ def entry_pe_ir -> str {
     );
 }
 
-def shared_entry_symbol(spec: GlueSpec) -> str {
+impl shared_entry_symbol(spec: GlueSpec) -> str {
     if not spec.shared or spec.root_index < 0 {
         return "";
     }
     return spec.units[spec.root_index].entry_symbol;
 }
 
-def shared_main_ir(spec: GlueSpec) -> str {
+impl shared_main_ir(spec: GlueSpec) -> str {
     """A shared library whose root module has an entry exports it as
     `jac_main(argc, argv)`: a host that loads the library (its initializers
     already ran) hands the process to the program, which reads that argv as
@@ -292,7 +336,7 @@ def shared_main_ir(spec: GlueSpec) -> str {
     );
 }
 
-def platform_entry_ir(spec: GlueSpec) -> str {
+impl platform_entry_ir(spec: GlueSpec) -> str {
     if spec.shared {
         return shared_main_ir(spec);
     }
@@ -314,7 +358,7 @@ def platform_entry_ir(spec: GlueSpec) -> str {
     return entry_elf_ir();
 }
 
-def shared_init_registration_ir(spec: GlueSpec) -> str {
+impl shared_init_registration_ir(spec: GlueSpec) -> str {
     """How the loader runs `__jac_shared_init` when it loads the library.
     ELF lists it in `.init_array` directly: LLVM, left to `llvm.global_ctors`,
     emits ELF constructors into `.ctors`, which only a crtbegin.o runs. The
@@ -353,7 +397,7 @@ def shared_init_registration_ir(spec: GlueSpec) -> str {
     return "";
 }
 
-def link_glue_ir(spec: GlueSpec) -> tuple[str, list[str]] {
+impl link_glue_ir(spec: GlueSpec) -> tuple[str, list[str]] {
     parts: list[str] = [];
     if spec.data_layout {
         parts.append(f'target datalayout = "{spec.data_layout}"\n');
@@ -387,13 +431,13 @@ def link_glue_ir(spec: GlueSpec) -> tuple[str, list[str]] {
     return ("".join(parts), exports);
 }
 
-def init_object_codegen {
+impl init_object_codegen {
     llvm.initialize_all_targets();
     llvm.initialize_all_asmprinters();
     llvm.initialize_all_asmparsers();
 }
 
-def bind_shared_callbacks(
+impl bind_shared_callbacks(
     llvm_ir: str, bindings: list[InteropBinding]
 ) -> tuple[str, list[InteropBinding]] {
     module = llvm.parse_assembly(llvm_ir);
@@ -439,7 +483,7 @@ def bind_shared_callbacks(
     return (str(module), callbacks);
 }
 
-def inject_heap_accounting(
+impl inject_heap_accounting(
     llvm_ir_str: str, managed: bool = False
 ) -> tuple[str, list[str]] {
     import re;

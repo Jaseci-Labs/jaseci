@@ -71,6 +71,16 @@ def retheme(
     radius: str | None = None,
     menuAccent: str | None = None,
     menuColor: str | None = None
+) -> int;
+
+impl retheme(
+    style: str | None = None,
+    baseColor: str | None = None,
+    theme: str | None = None,
+    font: str | None = None,
+    radius: str | None = None,
+    menuAccent: str | None = None,
+    menuColor: str | None = None
 ) -> int {
     config = get_config();
     overrides: dict[str, str | None] = {

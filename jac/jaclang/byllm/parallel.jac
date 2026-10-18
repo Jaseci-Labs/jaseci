@@ -28,18 +28,44 @@ glob _PARALLEL_TOOL_HINT: str = (
      );
 
 
-def mark_serialize(func: any) -> any {
+def mark_serialize(func: any) -> any;
+
+
+def _is_async(func: any) -> bool;
+
+
+def _index_by_identity(seq: list[any], item: any) -> int;
+
+
+def _call_sync(tc: any, timeout: any) -> any;
+
+
+def _call_async(tc: any, timeout: any) -> any;
+
+
+def _run_one(tc: any) -> tuple[any, ...];
+
+
+def _tool_names(tool_calls: list[any]) -> list[str];
+
+
+def _any_serialize(tool_calls: list[any]) -> bool;
+
+
+def dispatch_batch(tool_calls: list[any]) -> any;
+
+impl mark_serialize(func: any) -> any {
     setattr(func, '_serialize', True);
     return func;
 }
 
 
-def _is_async(func: any) -> bool {
+impl _is_async(func: any) -> bool {
     return bool(inspect.iscoroutinefunction(func));
 }
 
 
-def _index_by_identity(seq: list[any], item: any) -> int {
+impl _index_by_identity(seq: list[any], item: any) -> int {
     target_id = id(item);
     for (i, elem) in enumerate(seq) {
         if id(elem) == target_id {
@@ -50,7 +76,7 @@ def _index_by_identity(seq: list[any], item: any) -> int {
 }
 
 
-def _call_sync(tc: any, timeout: any) -> any {
+impl _call_sync(tc: any, timeout: any) -> any {
     if timeout is None {
         return tc();
     }
@@ -79,7 +105,7 @@ def _call_sync(tc: any, timeout: any) -> any {
 }
 
 
-def _call_async(tc: any, timeout: any) -> any {
+impl _call_async(tc: any, timeout: any) -> any {
     async def _run -> any {
         coro = tc.tool.func(**tc.args);
         if timeout is not None {
@@ -96,7 +122,7 @@ def _call_async(tc: any, timeout: any) -> any {
 }
 
 
-def _run_one(tc: any) -> tuple[any, ...] {
+impl _run_one(tc: any) -> tuple[any, ...] {
     t0 = time.time();
     timeout = tc.tool.timeout_sec;
     try {
@@ -121,7 +147,7 @@ def _run_one(tc: any) -> tuple[any, ...] {
 }
 
 
-def _tool_names(tool_calls: list[any]) -> list[str] {
+impl _tool_names(tool_calls: list[any]) -> list[str] {
     names: list[str] = [];
     for tc in tool_calls {
         try {
@@ -134,7 +160,7 @@ def _tool_names(tool_calls: list[any]) -> list[str] {
 }
 
 
-def _any_serialize(tool_calls: list[any]) -> bool {
+impl _any_serialize(tool_calls: list[any]) -> bool {
     for tc in tool_calls {
         if tc.tool.serialize {
             return True;
@@ -144,7 +170,7 @@ def _any_serialize(tool_calls: list[any]) -> bool {
 }
 
 
-def dispatch_batch(tool_calls: list[any]) -> any {
+impl dispatch_batch(tool_calls: list[any]) -> any {
     n = len(tool_calls);
     if n == 0 {
         return;

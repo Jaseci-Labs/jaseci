@@ -46,7 +46,42 @@ glob VIOLATION_TEXT: dict[Violation, str] = {
      };
 
 
-def refusal(violations: list[Violation]) -> dict[str, any] {
+def refusal(violations: list[Violation]) -> dict[str, any];
+
+
+def breached(password: str) -> bool;
+
+
+def check_username(value: str) -> list[Violation];
+
+
+def check_email(value: str) -> list[Violation];
+
+
+def check_identity(kind: str, value: str) -> list[Violation];
+
+
+def check_identifiers(identities: list[dict[str, any]]) -> list[Violation];
+
+
+def character_classes(password: str) -> set[str];
+
+
+def minted_password(rules: (PasswordSettings | None) = None) -> str;
+
+
+def check_password(password: str, identifiers: list[str]) -> list[Violation];
+
+
+def verify_before_login -> bool;
+
+
+def awaiting_verification(user: dict[str, any]) -> (dict[str, any] | None);
+
+
+def public_policy -> dict[str, any];
+
+impl refusal(violations: list[Violation]) -> dict[str, any] {
     ordered: list[Violation] = [];
     for violation in violations {
         if violation not in ordered {
@@ -62,7 +97,7 @@ def refusal(violations: list[Violation]) -> dict[str, any] {
 }
 
 
-def breached(password: str) -> bool {
+impl breached(password: str) -> bool {
     digest = hashlib.sha1(password.encode('utf-8')).hexdigest().upper();
     try {
         response = request_sync(
@@ -82,7 +117,7 @@ def breached(password: str) -> bool {
 }
 
 
-def check_username(value: str) -> list[Violation] {
+impl check_username(value: str) -> list[Violation] {
     rules = auth_settings().username;
     text = value.strip();
     valid = '@' not in text
@@ -92,7 +127,7 @@ def check_username(value: str) -> list[Violation] {
 }
 
 
-def check_email(value: str) -> list[Violation] {
+impl check_email(value: str) -> list[Violation] {
     allowed = [
         domain.lower().strip().lstrip('@')
         for domain in auth_settings().email.allowed_domains
@@ -104,7 +139,7 @@ def check_email(value: str) -> list[Violation] {
 }
 
 
-def check_identity(kind: str, value: str) -> list[Violation] {
+impl check_identity(kind: str, value: str) -> list[Violation] {
     if kind not in IDENTIFIER_KINDS
         or getattr(auth_settings().identifiers, kind) == 'off' {
         return [Violation.IDENTIFIER_NOT_ALLOWED];
@@ -113,7 +148,7 @@ def check_identity(kind: str, value: str) -> list[Violation] {
 }
 
 
-def check_identifiers(identities: list[dict[str, any]]) -> list[Violation] {
+impl check_identifiers(identities: list[dict[str, any]]) -> list[Violation] {
     modes = auth_settings().identifiers;
     held = {str(identity.get('type') or '') for identity in identities};
     out: list[Violation] = [
@@ -132,7 +167,7 @@ def check_identifiers(identities: list[dict[str, any]]) -> list[Violation] {
 }
 
 
-def character_classes(password: str) -> set[str] {
+impl character_classes(password: str) -> set[str] {
     found: set[str] = set();
     for ch in password {
         if ch.islower() {
@@ -149,7 +184,7 @@ def character_classes(password: str) -> set[str] {
 }
 
 
-def minted_password(rules: (PasswordSettings | None) = None) -> str {
+impl minted_password(rules: (PasswordSettings | None) = None) -> str {
     bounds = rules or auth_settings().password;
     length = min(bounds.max_length, max(bounds.min_length, MINTED_LENGTH));
     classes = [
@@ -172,7 +207,7 @@ def minted_password(rules: (PasswordSettings | None) = None) -> str {
 }
 
 
-def check_password(password: str, identifiers: list[str]) -> list[Violation] {
+impl check_password(password: str, identifiers: list[str]) -> list[Violation] {
     rules = auth_settings().password;
     out: list[Violation] = [];
     if len(password) < rules.min_length {
@@ -204,12 +239,12 @@ def check_password(password: str, identifiers: list[str]) -> list[Violation] {
 }
 
 
-def verify_before_login -> bool {
+impl verify_before_login -> bool {
     return auth_settings().email.verification == 'required';
 }
 
 
-def awaiting_verification(user: dict[str, any]) -> (dict[str, any] | None) {
+impl awaiting_verification(user: dict[str, any]) -> (dict[str, any] | None) {
     for identity in (user.get('identities') or []) {
         if identity.get(VERIFY_BEFORE_LOGIN) and not identity.get('verified') {
             return identity;
@@ -219,7 +254,7 @@ def awaiting_verification(user: dict[str, any]) -> (dict[str, any] | None) {
 }
 
 
-def public_policy -> dict[str, any] {
+impl public_policy -> dict[str, any] {
     settings = auth_settings();
     return {
         'identifiers': {

@@ -1,4 +1,6 @@
-def:pub typename(v: any) -> str {
+def:pub typename(v: any) -> str;
+
+impl typename(v: any) -> str {
     if v is None {
         return "NoneType";
     } elif isinstance(v, bytearray) {

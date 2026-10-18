@@ -60,6 +60,66 @@ def transition_from(
     scale_target_name: str,
     namespace: str,
     previous_state: (ResourceStatus | None)
+) -> AutoscalerTransition;
+
+
+def normalize_conditions(raw: any) -> list[dict[str, any]];
+
+
+def condition(conditions: list[dict[str, any]], kind: str) -> (dict[str, any] | None);
+
+
+def tristate(conditions: list[dict[str, any]], kind: str) -> (bool | None);
+
+
+class Autoscaler {
+    static def _managed_labels -> dict[str, str];
+    static def _build_behavior(spec: AutoscalerSpec) -> dict[str, any];
+    def _build_manifests(
+        self: Autoscaler, spec: AutoscalerSpec
+    ) -> list[dict[str, any]];
+
+    def apply(self: Autoscaler, spec: AutoscalerSpec) -> bool;
+    def destroy(self: Autoscaler, app_name: str, namespace: str);
+    def destroy_collection(self: Autoscaler, namespace: str, label_selector: str);
+    def preflight(self: Autoscaler) -> list[str];
+    def read_workload(
+        self: Autoscaler,
+        scale_target_name: str,
+        namespace: str,
+        apps_api: (any | None) = None
+    ) -> (any | None);
+
+    def get_runtime_status(
+        self: Autoscaler,
+        scale_target_name: str,
+        namespace: str,
+        autoscaler_name: (str | None) = None
+    ) -> AutoscalerRuntimeStatus;
+
+    def watch_scale_targets(
+        self: Autoscaler,
+        namespace: str,
+        label_selector: (str | None) = None,
+        timeout_seconds: (int | None) = None
+    ) -> any;
+
+    def workload_runtime_status(
+        self: Autoscaler,
+        scale_target_name: str,
+        namespace: str,
+        replica_floor: (int | None) = None,
+        apps_api: (any | None) = None
+    ) -> AutoscalerRuntimeStatus;
+
+    def resource_name_for(self: Autoscaler, target: str) -> str;
+}
+
+impl transition_from(
+    status: AutoscalerRuntimeStatus,
+    scale_target_name: str,
+    namespace: str,
+    previous_state: (ResourceStatus | None)
 ) -> AutoscalerTransition {
     """A transition built from the same status the point-in-time API returns.
 
@@ -86,7 +146,7 @@ def transition_from(
 }
 
 
-def normalize_conditions(raw: any) -> list[dict[str, any]] {
+impl normalize_conditions(raw: any) -> list[dict[str, any]] {
     """Kubernetes conditions as plain dicts, whichever client produced them.
 
     A ScaledObject read through CustomObjectsApi is dicts, an HPA read through
@@ -106,7 +166,7 @@ def normalize_conditions(raw: any) -> list[dict[str, any]] {
 }
 
 
-def condition(conditions: list[dict[str, any]], kind: str) -> (dict[str, any] | None) {
+impl condition(conditions: list[dict[str, any]], kind: str) -> (dict[str, any] | None) {
     for cond in conditions {
         if cond.get("type") == kind {
             return cond;
@@ -116,7 +176,7 @@ def condition(conditions: list[dict[str, any]], kind: str) -> (dict[str, any] | 
 }
 
 
-def tristate(conditions: list[dict[str, any]], kind: str) -> (bool | None) {
+impl tristate(conditions: list[dict[str, any]], kind: str) -> (bool | None) {
     """A Kubernetes condition as True, False, or None when it is absent.
 
     Kubernetes conditions are tri-state on purpose: "Unknown" and "not reported
@@ -141,93 +201,94 @@ def tristate(conditions: list[dict[str, any]], kind: str) -> (bool | None) {
 }
 
 
-class Autoscaler {
-    static def _managed_labels -> dict[str, str] {
-        return {"managed": "jac-scale"};
-    }
+impl Autoscaler._managed_labels -> dict[str, str] {
+    return {"managed": "jac-scale"};
+}
 
-    static def _build_behavior(spec: AutoscalerSpec) -> dict[str, any] {
-        `default: dict[str, any] = {
-            "scaleUp": {
-                "stabilizationWindowSeconds": min(
-                    3600, max(0, spec.scale_up_stabilization)
-                ),
-                "policies": [
-                    {
-                        "type": "Pods",
-                        "value": max(1, spec.scale_up_max_pods),
-                        "periodSeconds": 60
-                    }
-                ]
-            },
-            "scaleDown": {
-                "stabilizationWindowSeconds": min(3600, max(0, spec.cooldown_period)),
-                "policies": [{"type": "Percent", "value": 50, "periodSeconds": 60}]
-            }
-        };
-        if not spec.behavior_overlay {
-            return `default;
+impl Autoscaler._build_behavior(spec: AutoscalerSpec) -> dict[str, any] {
+    `default: dict[str, any] = {
+        "scaleUp": {
+            "stabilizationWindowSeconds": min(
+                3600, max(0, spec.scale_up_stabilization)
+            ),
+            "policies": [
+                {
+                    "type": "Pods",
+                    "value": max(1, spec.scale_up_max_pods),
+                    "periodSeconds": 60
+                }
+            ]
+        },
+        "scaleDown": {
+            "stabilizationWindowSeconds": min(3600, max(0, spec.cooldown_period)),
+            "policies": [{"type": "Percent", "value": 50, "periodSeconds": 60}]
         }
-
-        return merge_manifest_overlay(`default, spec.behavior_overlay);
+    };
+    if not spec.behavior_overlay {
+        return `default;
     }
 
-    def _build_manifests(
-        self: Autoscaler, spec: AutoscalerSpec
-    ) -> list[dict[str, any]] {
-        raise NotImplementedError(
-            "_build_manifests() must be implemented by a concrete Autoscaler subclass"
+    return merge_manifest_overlay(`default, spec.behavior_overlay);
+}
+
+impl Autoscaler._build_manifests(
+    self: Autoscaler, spec: AutoscalerSpec
+) -> list[dict[str, any]] {
+    raise NotImplementedError(
+        "_build_manifests() must be implemented by a concrete Autoscaler subclass"
+    );
+}
+
+impl Autoscaler.apply(self: Autoscaler, spec: AutoscalerSpec) -> bool {
+    raise NotImplementedError(
+        "apply() must be implemented by a concrete Autoscaler subclass"
+    );
+}
+
+impl Autoscaler.destroy(self: Autoscaler, app_name: str, namespace: str) {
+    raise NotImplementedError(
+        "destroy() must be implemented by a concrete Autoscaler subclass"
+    );
+}
+
+impl Autoscaler.destroy_collection(
+    self: Autoscaler, namespace: str, label_selector: str
+) {
+    raise NotImplementedError(
+        "destroy_collection() must be implemented by a concrete Autoscaler subclass"
+    );
+}
+
+impl Autoscaler.preflight(self: Autoscaler) -> list[str] {
+    return [];
+}
+
+impl Autoscaler.read_workload(
+    self: Autoscaler,
+    scale_target_name: str,
+    namespace: str,
+    apps_api: (any | None) = None
+) -> (any | None) {
+    api = apps_api or client.AppsV1Api();
+    try {
+        return api.read_namespaced_deployment(
+            name=scale_target_name, namespace=namespace
         );
-    }
-
-    def apply(self: Autoscaler, spec: AutoscalerSpec) -> bool {
-        raise NotImplementedError(
-            "apply() must be implemented by a concrete Autoscaler subclass"
-        );
-    }
-
-    def destroy(self: Autoscaler, app_name: str, namespace: str) {
-        raise NotImplementedError(
-            "destroy() must be implemented by a concrete Autoscaler subclass"
-        );
-    }
-
-    def destroy_collection(self: Autoscaler, namespace: str, label_selector: str) {
-        raise NotImplementedError(
-            "destroy_collection() must be implemented by a concrete Autoscaler subclass"
-        );
-    }
-
-    def preflight(self: Autoscaler) -> list[str] {
-        return [];
-    }
-
-    def read_workload(
-        self: Autoscaler,
-        scale_target_name: str,
-        namespace: str,
-        apps_api: (any | None) = None
-    ) -> (any | None) {
-        api = apps_api or client.AppsV1Api();
-        try {
-            return api.read_namespaced_deployment(
-                name=scale_target_name, namespace=namespace
-            );
-        } except ApiException as e {
-            if e.status == 404 {
-                return None;
-            }
-            raise;
+    } except ApiException as e {
+        if e.status == 404 {
+            return None;
         }
+        raise;
     }
+}
 
-    def get_runtime_status(
-        self: Autoscaler,
-        scale_target_name: str,
-        namespace: str,
-        autoscaler_name: (str | None) = None
-    ) -> AutoscalerRuntimeStatus {
-        """The scale target's normalized state, point in time.
+impl Autoscaler.get_runtime_status(
+    self: Autoscaler,
+    scale_target_name: str,
+    namespace: str,
+    autoscaler_name: (str | None) = None
+) -> AutoscalerRuntimeStatus {
+    """The scale target's normalized state, point in time.
 
         The engine-neutral answer is the workload's own, so an engine that
         cannot be read, or a third-party engine that never implements this,
@@ -240,16 +301,16 @@ class Autoscaler {
         exists for this target, which is the derivation this method is here to
         do for them.
         """;
-        return self.workload_runtime_status(scale_target_name, namespace);
-    }
+    return self.workload_runtime_status(scale_target_name, namespace);
+}
 
-    def watch_scale_targets(
-        self: Autoscaler,
-        namespace: str,
-        label_selector: (str | None) = None,
-        timeout_seconds: (int | None) = None
-    ) -> any {
-        """Stream deduplicated state transitions for a namespace's targets.
+impl Autoscaler.watch_scale_targets(
+    self: Autoscaler,
+    namespace: str,
+    label_selector: (str | None) = None,
+    timeout_seconds: (int | None) = None
+) -> any {
+    """Stream deduplicated state transitions for a namespace's targets.
 
         Cardinality is the caller's: one call opens a bounded number of watches
         for that namespace and nothing here shares them between callers, so a
@@ -258,39 +319,38 @@ class Autoscaler {
         scaling intent has nothing to watch and says so rather than silently
         yielding nothing.
         """;
-        raise NotImplementedError(
-            "watch_scale_targets() is implemented by engines whose scaling "
-            "intent is a watchable resource; this engine has none."
-        );
-    }
+    raise NotImplementedError(
+        "watch_scale_targets() is implemented by engines whose scaling "
+        "intent is a watchable resource; this engine has none."
+    );
+}
 
-    def workload_runtime_status(
-        self: Autoscaler,
-        scale_target_name: str,
-        namespace: str,
-        replica_floor: (int | None) = None,
-        apps_api: (any | None) = None
-    ) -> AutoscalerRuntimeStatus {
-        """The workload half, shared by every engine.
+impl Autoscaler.workload_runtime_status(
+    self: Autoscaler,
+    scale_target_name: str,
+    namespace: str,
+    replica_floor: (int | None) = None,
+    apps_api: (any | None) = None
+) -> AutoscalerRuntimeStatus {
+    """The workload half, shared by every engine.
 
         Delegates to assess_workload so an autoscaler's view of a Deployment
         and `jac scale status`' view can never drift apart.
         """;
-        deployment = self.read_workload(scale_target_name, namespace, apps_api);
-        health = assess_workload(deployment, replica_floor=replica_floor);
-        version = field_of(field_of(deployment, "metadata"), "resource_version");
-        return AutoscalerRuntimeStatus(
-            **health.__dict__,
-            conditions=normalize_conditions(
-                field_of(field_of(deployment, "status"), "conditions")
-            ),
-            resource_version=str(version) if version is not None else None
-        );
-    }
+    deployment = self.read_workload(scale_target_name, namespace, apps_api);
+    health = assess_workload(deployment, replica_floor=replica_floor);
+    version = field_of(field_of(deployment, "metadata"), "resource_version");
+    return AutoscalerRuntimeStatus(
+        **health.__dict__,
+        conditions=normalize_conditions(
+            field_of(field_of(deployment, "status"), "conditions")
+        ),
+        resource_version=str(version) if version is not None else None
+    );
+}
 
-    def resource_name_for(self: Autoscaler, target: str) -> str {
-        raise NotImplementedError(
-            "resource_name_for() must be implemented by a concrete Autoscaler subclass."
-        );
-    }
+impl Autoscaler.resource_name_for(self: Autoscaler, target: str) -> str {
+    raise NotImplementedError(
+        "resource_name_for() must be implemented by a concrete Autoscaler subclass."
+    );
 }

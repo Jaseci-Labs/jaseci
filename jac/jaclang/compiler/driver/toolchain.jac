@@ -3,7 +3,9 @@ import from jaclang.compiler.driver.source_failures { fail_loud_on_compiler_sour
 
 glob _native_env_memo: dict[str, tuple[bool, str]] = {};
 
-def native_pipeline_available -> tuple[bool, str] {
+def native_pipeline_available -> tuple[bool, str];
+
+impl native_pipeline_available -> tuple[bool, str] {
     cached = _native_env_memo.get('verdict');
     if cached is not None {
         return cached;

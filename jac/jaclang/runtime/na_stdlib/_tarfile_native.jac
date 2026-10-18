@@ -8,7 +8,30 @@ import from c { def write(fd: i32, buf: bytes, n: u64) -> i64;  }
 import from c { def close(fd: i32) -> i32;  }
 
 
-def:pub tar_read_file(path: str) -> bytes {
+def:pub tar_read_file(path: str) -> bytes;
+
+
+def:pub tar_create(path: str) -> int;
+
+
+def:pub tar_write(fd: int, data: bytes) -> int;
+
+
+def:pub tar_close(fd: int) -> int;
+
+
+def:pub tar_chmod(path: str, mode: int) -> int;
+
+
+def:pub tar_symlink(target: str, linkpath: str) -> int;
+
+
+def:pub tar_link(src: str, dst: str) -> int;
+
+
+def:pub tar_utime(path: str, mtime: int) -> int;
+
+impl tar_read_file(path: str) -> bytes {
     f = open(path, "rb");
     data = f.read();
     f.close();
@@ -16,12 +39,12 @@ def:pub tar_read_file(path: str) -> bytes {
 }
 
 
-def:pub tar_create(path: str) -> int {
+impl tar_create(path: str) -> int {
     return creat(path, 0o666);
 }
 
 
-def:pub tar_write(fd: int, data: bytes) -> int {
+impl tar_write(fd: int, data: bytes) -> int {
     total: int = len(data);
     off: int = 0;
     while off < total {
@@ -36,29 +59,29 @@ def:pub tar_write(fd: int, data: bytes) -> int {
 }
 
 
-def:pub tar_close(fd: int) -> int {
+impl tar_close(fd: int) -> int {
     return close(i32(fd));
 }
 
 
-def:pub tar_chmod(path: str, mode: int) -> int {
+impl tar_chmod(path: str, mode: int) -> int {
     return chmod(path, i32(mode));
 }
 
 
-def:pub tar_symlink(target: str, linkpath: str) -> int {
+impl tar_symlink(target: str, linkpath: str) -> int {
     unlink(linkpath);
     return symlink(target, linkpath);
 }
 
 
-def:pub tar_link(src: str, dst: str) -> int {
+impl tar_link(src: str, dst: str) -> int {
     unlink(dst);
     return link(src, dst);
 }
 
 
-def:pub tar_utime(path: str, mtime: int) -> int {
+impl tar_utime(path: str, mtime: int) -> int {
     t: int = mtime;
     if t < 0 {
         t = 0;
