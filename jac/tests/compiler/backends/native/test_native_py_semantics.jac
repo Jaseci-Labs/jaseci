@@ -155,20 +155,13 @@ test "range honors a positive and negative step in for headers" {
     assert result == 369531 , f"Expected 369531, got {result}";
 }
 
-test "str.find honors the start argument" {
-    (eng, _) = compile_native("py_dropped_args.jac");
-    get_func(eng, "jac_entry", None)();
-    fn = get_func(eng, "find_with_start", ctypes.c_int64);
-    result = fn();
-    # find('b', 2)=4, find('b')=1, find('z', 1)=-1
-    assert result == 411 , f"Expected 411, got {result}";
-}
-
-test "str search methods honor start and end like CPython" {
+test "str search methods honor start and end" {
     (eng, _) = compile_native("py_dropped_args.jac");
     get_func(eng, "jac_entry", None)();
     s = "ab/> cd <img x />";
     cases = [
+        # find('b', 2)=4, find('b')=1, find('z', 1)=-1
+        ("find_with_start", 411),
         ("find_bounds_index_from", s.index("/>", 5)),
         ("find_bounds_find_end", s.find("/>", 0, 3)),
         ("find_bounds_rfind_window", s.rfind("/>", 0, 6)),
