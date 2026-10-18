@@ -1,6 +1,6 @@
 ---
 name: jac-arch-wiring
-description: Declare a directory's module graph in archwire.jac with graph import wires and edge rules. Use when adopting archwire.jac, adding or removing an import under one, fixing E1144/E1146/E1147/E2090/E2091/E2094/E2097/E2098, or running jac arch init, sync and graph.
+description: Declare a directory's module graph in archwire.jac with graph import wires and edge rules. Use when adopting archwire.jac, adding or removing an import under one, fixing E1144/E1146/E1147/E2090/E2091/E2094/E2097/E2098/E2099/E2100, or running jac arch init, sync and graph.
 ---
 
 An `archwire.jac` is the only place an import between the modules below it exists. It holds `graph import [scope] { ... }` blocks of **wires** and **rules**:
@@ -34,8 +34,8 @@ The rules every module under the file follows:
 - A written import that runs where it is written needs a `-->` wire, and a `-->` wire needs that import (`E1147`).
 - A wired name the consumer never reads is `E1146` at the wire. Names are not re-exported; list public names in `__all__`.
 - Wiring that names no module is `E2097`; a rule pattern matching nothing is `E2098`.
-- Rules are optional. A provider a rule names flows only where a rule admits (`E2090`), and a payload rule admits only the names it lists (`E2091`). `any` is not a pattern (`E0098`).
-- `E1144`, `E1146`, `E2090`, `E2091` and `E2094` ignore inline `# jac:ignore`; changing a boundary is an edit to archwire.jac.
+- Rules are mandatory between top-level packages: a wire from `core` into `web` needs a rule such as `edge Core: core.* --> web.*;` (`E2099` names the rule to add). Inside one top-level package rules are optional. A provider a rule names flows only where a rule admits (`E2090`), and a payload rule admits only the names it lists (`E2091`). A rule on the bare `*` pattern is `E2100`; `any` is not a pattern (`E0098`).
+- `E1144`, `E1146`, `E2090`, `E2091`, `E2094` and `E2099` ignore inline `# jac:ignore`; changing a boundary is an edit to archwire.jac.
 - `graph import` is legal only in `archwire.jac` (`E2088`), and archwire.jac holds nothing else: no statements, docstrings or comments (`E2089`).
 
 Consequences worth knowing:
@@ -45,4 +45,4 @@ Consequences worth knowing:
 - Wires connect modules under the archwire.jac only; stdlib, pip, npm and asset imports stay in the module file. A rule may still funnel an external provider: `edge LlmFunnel: jaclang.byllm.* --> core.ai;`.
 - `.test.jac` annexes import freely.
 
-Adopt with `jac arch init [dir] --strip`; `jac arch sync [--prune]` is a one-time catch-up, not a workflow; inspect with `jac arch graph`. Full reference: `jac guide reference/wiring`.
+Adopt with `jac arch init [dir] --strip`, which also writes a rule per top-level package that feeds another; `jac arch sync [--prune]` is a one-time catch-up, not a workflow (it widens the rule named after a source package for new edges and deletes the written import of a pruned `-->` wire); inspect with `jac arch graph`. Full reference: `jac guide reference/wiring`.

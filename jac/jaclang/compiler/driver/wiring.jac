@@ -102,7 +102,6 @@ obj WiringSpec {
     def _scan_modules(directory: str, found: list[str], seen: set[str]) -> None;
     def consumer_wires(consumer: str) -> list[WireRec];
     def is_covered(consumer: str) -> bool;
-    def is_project_module(module: str) -> bool;
     def _wire_pieces(wire: WireRec) -> list[tuple[int, int, str]];
     def annex_source(consumer: str) -> (str | None);
     def digest_for(consumer: str) -> str;
@@ -113,8 +112,12 @@ obj WiringSpec {
     def import_provider(path_node: ModulePath) -> (str | None);
     def import_bindings(imp: Import) -> list[tuple[WireBinding, UniNode]];
     def wire_suggestion(binding: WireBinding, consumer: str) -> str;
-    def rules_for_provider(provider: str) -> list[RuleRec];
-    def rules_admitting(provider: str, consumer: str) -> list[RuleRec];
+    def rules_governing(provider: str, consumer: str, local: bool) -> list[RuleRec];
+    def rules_admitting(provider: str, consumer: str, local: bool) -> list[RuleRec];
+    def top_package(module: str) -> str;
+    def top_pattern(top: str) -> PatternRec;
+    def needs_rule(provider: str, consumer: str, local: bool) -> bool;
+    def edge_rule(source: str, targets: list[str]) -> RuleRec;
     static def admitted_names(rules: list[RuleRec]) -> (set[str] | None);
 }
 
@@ -164,7 +167,12 @@ def render_wiring(
 ) -> str;
 
 def wiring_facts(wires: list[WireRec]) -> list[tuple[str, WireBinding]];
-def _rule_text(rule: RuleRec) -> str;
+def rule_text(rule: RuleRec) -> str;
+def rule_name_for(top: str) -> str;
+def propose_rules(
+    spec: WiringSpec, facts: list[tuple[str, WireBinding]], rules: list[RuleRec]
+) -> list[RuleRec];
+
 def _wire_name(name: str) -> str;
 def _target_text(consumers: list[str], items: (list[tuple[str, str]] | None)) -> str;
 def _entry_order(
