@@ -2720,9 +2720,13 @@ impl JacAutoLintPass._separate_impls(
     found: list[tuple[uni.Ability, list[uni.Name]]] = [];
     self._collect_inline_abilities(body, [], found);
     for (ab, path) in found {
+        name_ref = ab.name_ref;
+        if not isinstance(name_ref, uni.Name) {
+            continue;
+        }
         line = module.loc.last_line + 2;
         if floated {
-            line = ab.name_ref.loc.first_line;
+            line = name_ref.loc.first_line;
             if line == ab.loc.last_line {
                 line -= 1;
             }
@@ -2731,7 +2735,7 @@ impl JacAutoLintPass._separate_impls(
         if impl_node is None {
             continue;
         }
-        name = ab.name_ref.value if isinstance(ab.name_ref, uni.Name) else "";
+        name = name_ref.value;
         if not self.ctx.emit(W3054, node_override=ab, name=name) or self.report_only {
             continue;
         }
@@ -2846,7 +2850,11 @@ impl JacAutoLintPass._impl_header(
     } elif type(spec) is not type(sig) {
         return None;
     }
-    name_pos = ab.name_ref.loc.pos_start;
+    name_ref = ab.name_ref;
+    if name_ref is None {
+        return None;
+    }
+    name_pos = name_ref.loc.pos_start;
     head_len = len(head.encode("utf-8"));
     offset = sig_start - head_len;
     stack: list[uni.UniNode] = [impl_node];
@@ -2880,14 +2888,18 @@ impl JacAutoLintPass._move_body_to_impl(
 ) -> None {
     kids = [ab->:Kid:->];
     lb_idx = 0;
+    lbrace: (uni.Token | None) = None;
     for (i, k) in enumerate(kids) {
         if isinstance(k, uni.Token) and k.name == Tok.LBRACE {
             lb_idx = i;
+            lbrace = k;
             break;
         }
     }
-    lbrace = kids[lb_idx];
-    body = list(ab.body);
+    body = ab.body;
+    if lbrace is None or not isinstance(body, list) {
+        return;
+    }
     semi = ab.gen_token(Tok.SEMI);
     semi.line_no = lbrace.line_no;
     semi.end_line = lbrace.line_no;
