@@ -132,7 +132,7 @@ walker JacAutoLintPass(TreePass) {
         stmt: uni.Import,
         spec: WiringSpec,
         provided: dict[tuple[str, str, str, str], WireRec],
-        reads: Callable[[], ScopeReads],
+        reads: Callable[[], list[ScopeReads]],
         scope: str
     ) -> set[int];
 

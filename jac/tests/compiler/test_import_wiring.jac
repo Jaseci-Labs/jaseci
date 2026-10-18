@@ -1448,3 +1448,21 @@ test "a scoped project still needs rules between its top-level packages" {
         shutil.rmtree(base, ignore_errors=True);
     }
 }
+
+
+"""The lint judges the text it formats, not only the file on disk: an editor
+formats unsaved text, and a use it adds keeps the import alive."""
+test "jac fmt --lintfix keeps an unwired import the unsaved text reads" {
+    unused = "import from core.other { helper }\n\ndef serve -> str {\n    return now();\n}\n";
+    base = _standard(svc=unused);
+    try {
+        edited = unused.replace("return now();", "return now() + str(helper());");
+        prog = JacProgram.jac_str_formatter(
+            edited, os.path.join(base, "core", "svc.jac"), auto_lint=True
+        );
+        assert "W3054" not in _warnings(prog) , _warnings(prog);
+        assert "import from core.other { helper }" in prog.mod.main.gen.jac;
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
