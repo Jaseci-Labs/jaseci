@@ -3088,6 +3088,7 @@ graph import compiler.backends.native.llvm {
     binding as llvm --> compiler.backends.native.link_glue.init_object_codegen;
     binding as llvm --> compiler.backends.native.link_plan;
     binding as llvm --> compiler.backends.native.na_ir_gen_pass;
+    ir --> compiler.backends.native.na_ir_gen_pass { ir }
     binding as llvm --> compiler.backends.native.kernel_stage0.unit_issue_details;
     type binding --> compiler.backends.native.link_plan {
         ExecutionEngine,
