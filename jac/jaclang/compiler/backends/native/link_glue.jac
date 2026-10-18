@@ -407,7 +407,9 @@ def link_glue_ir(spec: GlueSpec) -> tuple[str, list[str]] {
         parts.append(win_floor_ir());
     }
     if spec.shared {
-        parts.append(shared_init_registration_ir(spec));
+        if not spec.entry_lib {
+            parts.append(shared_init_registration_ir(spec));
+        }
         exports.append(SHARED_INIT_SYMBOL);
     }
     if shared_entry_symbol(spec) and not spec.entry_lib {
