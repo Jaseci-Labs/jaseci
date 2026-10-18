@@ -121,7 +121,8 @@ impl native(
     force: bool = False,
     exact: bool = False,
     release: bool = False,
-    require: str = ""
+    require: str = "",
+    stop_after: int = 0
 ) -> int {
     names = list(names or []);
     unknown = [
@@ -139,6 +140,16 @@ impl native(
     }
     if action == "status" {
         return _require(require) if require else _status(names);
+    }
+    if stop_after {
+        if action != "build" or names != ["kernel"] or stop_after < 0 {
+            console.error(
+                "--stop-after takes a positive count and only `jac native build kernel`"
+            );
+            return 1;
+        }
+        plan_kernel_prefix(stop_after, _log);
+        return 0;
     }
     if action == "build" {
         return _build(names, force, exact, release);

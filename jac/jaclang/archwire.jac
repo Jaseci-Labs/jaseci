@@ -517,6 +517,9 @@ graph import {
             refuse_unloadable
         },
     ]
+    compiler.backends.native.kernel_stage0 ++> cli.commands.native {
+        plan_kernel_prefix
+    }
     compiler.backends.native.kernel_stage0 --> dist.precompile_bytecode.seal_native {
         refuse_missing_entries
     }
@@ -5258,21 +5261,28 @@ graph import compiler {
     type backends.native.llvm.binding ++> driver.compiler.JacCompiler._load_native_from_cache
         | frontend.codeinfo { ExecutionEngine }
     type backends.native.llvm.ir ++> frontend.codeinfo { Module as IRModule }
-    backends.native.lowering ++> tests.test_prim_equivalence { native_lowering_issues }
+    backends.native.lowering ++> [
+        driver.nativecache.NativeUnitRegistry.adopt_lowered { native_fallbacks_in_ir },
+        tests.test_prim_equivalence { native_lowering_issues },
+    ]
+    type backends.native.lowering ++> frontend.codeinfo { NativeFallbacks }
     backends.native.na_compile_pass ++> [
+        driver.nativecache.NativeBuildSession._optimize_in_parallel {
+            optimize_unit_bitcodes,
+            unit_bitcode,
+            unit_fallbacks
+        },
         driver.nativecache.NativeUnitRegistry.adopt_lowered {
             emit_unit_object,
-            optimize_unit_texts,
-            require_native_ir
+            optimize_unit_ir
         },
         driver.pipeline.native_object_passes { NativeCompilePass },
     ]
     backends.native.na_compile_pass --> [
-        driver.nativecache.NativeBuildSession._optimize_in_parallel {
-            optimize_unit_texts,
-            require_native_ir
+        driver.nativecache.NativeBuildSession.lower {
+            settle_unit_ir,
+            unit_function_counts
         },
-        driver.nativecache.NativeBuildSession.lower { settle_unit_ir },
         driver.nativecache.NativeUnitRegistry.emit_objects { emit_unit_objects },
         driver.nativecache.NativeUnitRegistry.object_for { emit_unit_object },
     ]
@@ -5499,10 +5509,12 @@ graph import compiler {
     ]
     type capability_notes ++> driver.progstate { CapabilityNote }
     driver.bccache ++> [
+        backends.native.kernel_stage0.unit_line_count | tools.code_intel {
+            discover_annex_files
+        },
         tests.test_batch_decl_identity | tests.test_global_narrowing {
             discover_base_file
         },
-        tools.code_intel { discover_annex_files },
     ]
     driver.boundary_classify ++> [
         backends.es.esast_gen_pass.EsastGenPass._is_client_native_import {
@@ -5685,12 +5697,12 @@ graph import compiler {
     ]
     driver.compile_options --> [
         backends.native.na_ir_gen_pass.NaIRGenPass._full_ast_of { env_na_debug },
-        backends.native.na_ir_gen_pass.NaIRGenPass._opaque_field_if_unlowerable {
-            env_na_debug as _er_dbg
-        },
-        backends.native.na_ir_gen_pass.NaIRGenPass._register_imported_struct_types {
+        backends.native.na_ir_gen_pass.NaIRGenPass._native_imports {
             env_na_debug,
             env_na_debug as _ti_dbg
+        },
+        backends.native.na_ir_gen_pass.NaIRGenPass._opaque_field_if_unlowerable {
+            env_na_debug as _er_dbg
         },
         tests.test_graph_fragment_equivalence
             | tests.test_stubcat_roundtrip
@@ -5763,6 +5775,7 @@ graph import compiler {
     ]
     type driver.native_iface ++> frontend.codeinfo | frontend.host { NativeIface }
     driver.nativecache ++> [
+        backends.native.kernel_stage0.plan_kernel_prefix { NativeBuildStopped },
         backends.native.link_plan.build_link_plan { NativeBuildSession },
         tests.test_native_kernel_cache { NativeUnitEntry },
     ]
@@ -5892,7 +5905,8 @@ graph import compiler {
             | tools.jac_formatter_pass.format_module
             | tools.lang_tools
             | types.stubcat.build.build_catalog { JacProgram },
-        tools.jac_formatter_pass.unparse_module { JacProgram },
+        backends.native.kernel_stage0.plan_kernel_prefix
+            | tools.jac_formatter_pass.unparse_module { JacProgram },
     ]
     driver.program --> tests.test_graph_fragment_equivalence
         | tests.test_stubcat_roundtrip
@@ -6063,6 +6077,7 @@ graph import compiler {
         backends.es.esast_gen_pass.EsastGenPass.prepare { ClientManifest },
         backends.native.kernel_resolve.source_tree_kernel_path { jaclang_pkg_root },
         backends.native.kernel_resolve.unit_drift
+            | backends.native.kernel_stage0.plan_kernel_prefix
             | backends.native.link_plan.LinkPlan.plan_digest
             | native_scope.package_host_edge { native_unit_identity },
         backends.native.kernel_stage0.missing_kernel_entries
@@ -6149,11 +6164,19 @@ graph import compiler {
         },
         backends.native.na_ir_gen_pass.NaIRGenPass._find_source_ability
             | native_bindings.import_gaps { resolve_native_module },
+        backends.native.na_ir_gen_pass.NaIRGenPass._forward_declare_imported_ability {
+            NativeModuleLayout
+        },
         backends.native.na_ir_gen_pass.NaIRGenPass._from_imported_intercept
             | passes.layout_pass.record_interface_twins
             | types.types.ClassDetailsShared.same_class { bundled_stdlib_module_of },
         backends.native.na_ir_gen_pass.NaIRGenPass._maybe_declare_ability {
             NativeModuleLayout
+        },
+        backends.native.na_ir_gen_pass.NaIRGenPass._native_imports
+            | driver.program.JacProgram.stamp_boundary_facts {
+            is_bundled_native_module,
+            resolve_native_module
         },
         backends.native.na_ir_gen_pass.NaIRGenPass._native_variant_decl {
             native_variant_of
@@ -6164,11 +6187,6 @@ graph import compiler {
         backends.native.na_ir_gen_pass.NaIRGenPass._pyb_base_of
             | passes.capability_check_pass.base_expr_is_erased
             | passes.layout_pass.is_erased_base_name { NATIVE_ERASED_BASES },
-        backends.native.na_ir_gen_pass.NaIRGenPass._register_imported_struct_types
-            | driver.program.JacProgram.stamp_boundary_facts {
-            is_bundled_native_module,
-            resolve_native_module
-        },
         backends.native.na_ir_gen_pass.NaIRGenPass._register_osp_kernel_module {
             OSP_GRAPH_REL,
             OSP_KERNEL_REL,
@@ -6331,8 +6349,8 @@ graph import compiler {
         backends.native.na_ir_gen_pass.NaIRGenPass._codegen_call {
             resolve_native_module
         },
-        backends.native.na_ir_gen_pass.NaIRGenPass._forward_declare_imported_ability {
-            NativeModuleLayout
+        backends.native.na_ir_gen_pass.NaIRGenPass._native_imports {
+            native_unit_compile_active as _typed_nuc
         },
         backends.native.na_ir_gen_pass.NaIRGenPass._native_module_call_target {
             NATIVE_STDLIB_EXTENSIONS
@@ -6349,9 +6367,6 @@ graph import compiler {
         backends.native.na_ir_gen_pass.NaIRGenPass._process_clib_imports {
             is_bundled_native_module,
             resolve_native_module
-        },
-        backends.native.na_ir_gen_pass.NaIRGenPass._register_imported_struct_types {
-            native_unit_compile_active as _typed_nuc
         },
         backends.native.na_ir_gen_pass.NaIRGenPass._skip_is_other_module {
             resolve_native_module
@@ -6393,6 +6408,7 @@ graph import compiler {
             set_native_unit_compile
         },
         driver.nativecache.NativeUnitRegistry.note_step { native_unit_identity },
+        driver.program.JacProgram.compile { native_unit_compile_active },
         driver.selfhost.SelfHostCache.resolve {
             is_native_by_location,
             is_shared_runtime_module,
@@ -6429,7 +6445,10 @@ graph import compiler {
     ]
     type frontend.codeinfo ++> [
         backends.native.link_glue | backends.native.link_plan { InteropBinding },
-        backends.py.codegen_shim | driver.nativecache { CodeGenTarget },
+        backends.native.na_compile_pass
+            | backends.py.codegen_shim
+            | driver.nativecache { CodeGenTarget },
+        backends.native.na_ir_gen_pass { NativeModuleLayout },
         driver.boundary_classify { InteropManifest },
         driver.client_graph { ClientArtifact },
         driver.compiler { CodeGenTarget, NativeModuleLayout },
@@ -9834,7 +9853,7 @@ graph import compiler {
         passes.placement_pass.settle_native_module { settle_server },
     ]
     placement.placement_facts --> [
-        backends.native.na_ir_gen_pass.NaIRGenPass._register_imported_struct_types {
+        backends.native.na_ir_gen_pass.NaIRGenPass._native_imports {
             native_unit as _typed_native_unit
         },
         driver.module_analysis.run_analysis { settle_server },
@@ -10782,6 +10801,7 @@ graph import compiler.backends.native {
     foreign --> na_ir_gen_pass.NaIRGenPass._codegen_call { declared_type_name }
     kernel_resolve ++> kernel_stage0 { KERNEL_DEV_LINK_MODE, kernel_plan }
     kernel_stage0 ++> kernel_resolve.build_kernel { link_kernel }
+    lexical_scope ++> na_ir_gen_pass { FunctionSource, LexicalScope }
     link_glue ++> [
         link_plan {
             GlueSpec,
@@ -10830,23 +10850,27 @@ graph import compiler.backends.native {
     ]
     llvm.binding.value ++> link_plan.internalize_native_implementation { Visibility }
     type llvm.binding.value ++> link_plan { ValueRef }
-    llvm.ir as ir ++> abi | lowering | na_ir_gen_pass | primitives_native;
+    llvm.ir as ir ++> abi
+        | lexical_scope
+        | lowering
+        | na_ir_gen_pass
+        | primitives_native;
     llvm.ir.types ++> link_glue.bind_shared_callbacks { _wrapname }
     lowering ++> [
-        entry_points.validate_native_application
-            | kernel_stage0.unit_issue_details
-            | na_compile_pass.require_native_ir { native_lowering_issues },
-        na_compile_pass.native_demoted_ir_symbols {
+        entry_points.validate_native_application | na_compile_pass.unit_fallbacks {
+            native_fallbacks_in_ir
+        },
+        kernel_stage0.unit_issue_details { native_lowering_issues },
+        na_ir_gen_pass {
+            DEMOTED_SUFFIX,
+            NativeLoweringIssue,
             NativeLoweringKind,
-            native_lowering_issues
+            native_fallbacks
         },
-        na_ir_gen_pass { NativeLoweringIssue, NativeLoweringKind },
     ]
+    type lowering ++> na_compile_pass { NativeFallbacks }
     na_compile_pass ++> [
-        entry_points.validate_native_application {
-            native_demoted_ir_symbols,
-            native_linked_ir_text
-        },
+        entry_points.validate_native_application { native_linked_ir_text },
         link_plan { NATIVE_CODE_MODEL, NATIVE_RELOC_MODEL },
         wasm_build.prepare_wasm_module { optimize_unit },
     ]
@@ -11515,6 +11539,7 @@ graph import compiler.driver {
     type compile_options ++> pipeline | program { CancelToken }
     compiler ++> build_services.CompilerBuildServices.compiler
         | program.JacProgram._get_compiler { JacCompiler }
+    compiler --> nativecache.SessionHeap.take { COMPILE_GC_THRESHOLDS }
     type compiler ++> build_services | program { JacCompiler }
     context_passes ++> pipeline {
         AbsorbImportsPass,

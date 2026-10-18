@@ -222,6 +222,23 @@ class Module {
         self.globals[globalvalue.name] = globalvalue;
     }
 
+    """
+        Drop every instruction, block and global of a module nothing will read
+        again. What remains links only upward, from an instruction to its
+        block and a block to its function, so reference counting frees the
+        module without waiting for the cyclic collector.
+        """
+    def release(self: Module) {
+        for func in self.functions {
+            func.release();
+        }
+        self.globals = {};
+        self.metadata = [];
+        self.namedmetadata = {};
+        self._metadatacache = {};
+        self._debuginfocache = {};
+    }
+
     def get_identified_types(self: Module) -> dict[str, types.IdentifiedStructType] {
         return self.context.identified_types;
     }

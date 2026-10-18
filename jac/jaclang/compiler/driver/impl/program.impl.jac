@@ -428,8 +428,14 @@ impl JacProgram.compile(
     options: (CompileOptions | None) = None
 ) -> uni.Module {
     if (options is None) {
+        """A compile inside a native unit build parses for that build: whether
+        a native-scope module is a native unit is fixed when it is parsed.""";
+        import from jaclang.compiler.frontend.codeinfo { native_unit_compile_active }
         options = CompileOptions(
-            symtab_ir_only=symtab_ir_only, no_cgen=no_cgen, cancel_token=cancel_token
+            symtab_ir_only=symtab_ir_only,
+            no_cgen=no_cgen,
+            cancel_token=cancel_token,
+            native_unit=native_unit_compile_active()
         );
     }
     import from jaclang.compiler.frontend.host { active_host }
