@@ -313,10 +313,6 @@ impl WiringSpec.is_covered(consumer: str) -> bool {
     return bool(self.consumer_wires(consumer));
 }
 
-impl WiringSpec.is_project_module(module: str) -> bool {
-    return module in self.project_modules();
-}
-
 impl WiringSpec._wire_pieces(wire: WireRec) -> list[tuple[int, int, str]] {
     line0 = wire.line - 1;
     col = wire.col;
@@ -494,7 +490,7 @@ impl WiringSpec.rules_governing(provider: str, consumer: str) -> list[RuleRec] {
         for rule in self.rules
         if any([p.matches(provider) for p in rule.sources])
     ];
-    if not self.is_project_module(provider) {
+    if self.module_file(provider) is None {
         return named;
     }
     top = WiringSpec.top_package(consumer);
@@ -530,7 +526,7 @@ impl WiringSpec.top_pattern(top: str) -> PatternRec {
 
 impl WiringSpec.needs_rule(provider: str, consumer: str) -> bool {
     return WiringSpec.top_package(provider) != WiringSpec.top_package(consumer)
-        and self.is_project_module(provider)
+        and self.module_file(provider) is not None
         and not self.rules_governing(provider, consumer);
 }
 
@@ -1243,7 +1239,13 @@ impl wiring_facts(wires: list[WireRec]) -> list[tuple[str, WireBinding]] {
 }
 
 impl rule_name_for(top: str) -> str {
-    return "".join([part[:1].upper() + part[1:] for part in top.split("_") if part]);
+    return "".join(
+        [
+            part[:1].upper() + part[1:]
+            for part in top.split("_")
+            if part
+        ]
+    );
 }
 
 impl propose_rules(
@@ -1253,7 +1255,7 @@ impl propose_rules(
     wanted: dict[str, set[str]] = {};
     for (consumer, binding) in facts {
         provider = binding.provider;
-        if not spec.is_project_module(provider) {
+        if spec.module_file(provider) is None {
             continue;
         }
         constrained = probe.rules_governing(provider, consumer);
@@ -1273,7 +1275,14 @@ impl propose_rules(
     taken = {r.name for r in out};
     for source in sorted(wanted) {
         proposal = spec.edge_rule(source, sorted(wanted[source]));
-        held = next((r for r in out if r.name == proposal.name), None);
+        held = next(
+            (
+                r
+                for r in out
+                if r.name == proposal.name
+            ),
+            None
+        );
         if held is not None
             and held.is_open
             and [p.text for p in held.sources] == [proposal.sources[0].text] {
@@ -1282,7 +1291,11 @@ impl propose_rules(
                 name=held.name,
                 sources=held.sources,
                 targets=held.targets
-                    + [p for p in proposal.targets if p.text not in texts],
+                    + [
+                        p
+                        for p in proposal.targets
+                        if p.text not in texts
+                    ],
                 is_open=True
             );
             continue;
@@ -1418,9 +1431,7 @@ impl render_wiring(
             ((block_relative(block, provider), prefix, alias, arrow), text)
         );
     }
-    policy = [
-        rule_text(r) for r in sorted(rules, key=lambda (r: RuleRec) { r.name; })
-    ];
+    policy = [rule_text(r) for r in sorted(rules, key=lambda (r: RuleRec) { r.name; })];
     top_wires = [text for (_key, text) in sorted(wires.get("", []))];
     if policy and top_wires {
         policy.append("");

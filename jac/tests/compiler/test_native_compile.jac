@@ -335,7 +335,9 @@ def write_application(base: Path) {
     );
     (base / 'deep.jac').write_text('def:pub twice(x: int) -> int { return x * 2; }\n');
     (base / 'archwire.jac').write_text(
-        'graph import {\n    edge SideInternal: side.* --> side.*;\n'
+        'graph import {\n    edge Deep: deep --> main;\n'
+            + '    edge SideInternal: side.* --> side.*;\n'
+            + '    edge Util: util --> main;\n\n'
             + '    util ++> main { helper }\n    include deep ++> main;\n}\n\n'
             + 'graph import side {\n    tool ++> user { Wrench }\n}\n'
     );

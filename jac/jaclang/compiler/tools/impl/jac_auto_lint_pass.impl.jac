@@ -2541,7 +2541,9 @@ impl JacAutoLintPass._wired_items(
             or binding.bound_name() in reads.names(scope) {
             continue;
         }
-        if self.ctx.emit(W3054, node_override=item, name=name, module=binding.provider) {
+        if self.ctx.emit(
+            W3054, node_override=item, name=name, module=binding.provider
+        ) {
             doomed.add(id(item));
         }
     }

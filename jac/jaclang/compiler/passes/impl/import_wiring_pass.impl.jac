@@ -174,7 +174,9 @@ impl ImportWiringPass._check_rule_patterns(spec: WiringSpec, rule: ImportRule) -
             if side == "source"
                 and (
                     pattern.is_string
-                    or (pattern.dotted and pattern.dotted.split(".")[0] not in top_level)
+                    or (
+                        pattern.dotted and pattern.dotted.split(".")[0] not in top_level
+                    )
                 ) {
                 continue;
             }

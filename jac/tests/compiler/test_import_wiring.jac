@@ -1269,8 +1269,12 @@ test "jac arch sync --prune removes the written import of a pruned declared wire
     );
     try {
         assert _arch_sync(False, base, True) == 0;
-        assert "helper" not in _read(base, "archwire.jac") , _read(base, "archwire.jac");
-        assert "core.other" not in _read(base, "core/svc.jac") , _read(base, "core/svc.jac");
+        assert "helper" not in _read(base, "archwire.jac") , _read(
+            base, "archwire.jac"
+        );
+        assert "core.other" not in _read(base, "core/svc.jac") , _read(
+            base, "core/svc.jac"
+        );
         assert _errors(_compile(base, "core/svc.jac")) == [];
     } finally {
         shutil.rmtree(base, ignore_errors=True);
@@ -1308,6 +1312,27 @@ test "jac fmt --lintfix removes an unwired written import nothing reads" {
         assert "W3054" in _warnings(prog) , _warnings(prog);
         assert out.count("import from core.other { helper }") == 1 , out;
         assert "return helper();" in out , out;
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+"""A package's own `__init__` is a module under the boundary like any other,
+so a rule targeting other packages says nothing about what it feeds inside
+its own package."""
+test "a package provider feeds its own package freely under a rule aimed elsewhere" {
+    base = _standard(
+        arch=_ARCH.replace("    edge CoreInternal: core.* --> core.*;\n", "").replace(
+            "    core.svc ++> app.main { serve }\n",
+            "    core ++> core.svc { LEVEL }\n    core.svc ++> app.main { serve }\n"
+        ),
+        svc="def serve -> str {\n    return now() + str(LEVEL);\n}\n"
+    );
+    try {
+        _write(base, "core/__init__.jac", "glob LEVEL: int = 1;\n");
+        errors = _errors(_compile(base, "archwire.jac"));
+        assert "E2090" not in errors and "E2099" not in errors , errors;
     } finally {
         shutil.rmtree(base, ignore_errors=True);
     }

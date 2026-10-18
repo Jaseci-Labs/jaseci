@@ -102,7 +102,6 @@ obj WiringSpec {
     def _scan_modules(directory: str, found: list[str], seen: set[str]) -> None;
     def consumer_wires(consumer: str) -> list[WireRec];
     def is_covered(consumer: str) -> bool;
-    def is_project_module(module: str) -> bool;
     def _wire_pieces(wire: WireRec) -> list[tuple[int, int, str]];
     def annex_source(consumer: str) -> (str | None);
     def digest_for(consumer: str) -> str;
@@ -173,6 +172,7 @@ def rule_name_for(top: str) -> str;
 def propose_rules(
     spec: WiringSpec, facts: list[tuple[str, WireBinding]], rules: list[RuleRec]
 ) -> list[RuleRec];
+
 def _wire_name(name: str) -> str;
 def _target_text(consumers: list[str], items: (list[tuple[str, str]] | None)) -> str;
 def _entry_order(
