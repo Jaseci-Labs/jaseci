@@ -479,9 +479,11 @@ def _build_link_plan(
                 why.append(crashed);
             }
             detail = ("; ".join(why)) if why else "no diagnostic was recorded";
+            reached = " -> ".join(os.path.basename(p) for p in stack);
             raise LinkPlanError(
                 f"{path} is not a native unit for this codegen identity, or "
                 f"failed to lower ({detail})"
+                    + (f"; reached through {reached}" if reached else "")
             );
         }
 

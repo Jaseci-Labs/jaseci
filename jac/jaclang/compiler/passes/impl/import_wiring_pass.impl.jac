@@ -513,7 +513,10 @@ impl ScopeReads.names(scope: str) -> set[str] {
         }
         bodies = list(self.owners.get(scope, [self.mod]));
     }
-    held = set().union(*[names_read_in(b, self.mod) for b in bodies]);
+    held = set();
+    for body in bodies {
+        held.update(names_read_in(body, self.mod));
+    }
     self.read[scope] = held;
     return held;
 }
