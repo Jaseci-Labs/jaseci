@@ -5326,6 +5326,9 @@ graph import compiler {
     backends.py.jcir_bc_gen_pass ++> driver.pipeline.bytecode_passes {
         JcirBytecodeGenPass
     }
+    backends.py.jcir_bc_gen_pass --> driver.compiler.assemble_jcir {
+        JcirBytecodeGenPass
+    }
     backends.py.jcir_gen_pass ++> driver.module_compile | driver.pipeline.py_ir_passes {
         JcirGenPass
     }
@@ -7080,6 +7083,7 @@ graph import compiler {
         backends.es.esast_gen_pass.EsastGenPass._edge_tag_literal { E5097 },
         backends.es.esast_gen_pass.EsastGenPass._ensure_backend { E5081 },
         backends.es.esast_gen_pass.EsastGenPass._get_ast_or_default { E5097 },
+        driver.compiler.assemble_jcir { E5043 },
         passes.boundary_analysis_pass.BoundaryAnalysisPass._register_na_client_import {
             E5083,
             E5100
@@ -7827,6 +7831,7 @@ graph import compiler {
         driver.ifacecache._span_from_record { Span },
         passes.context { CodeLocInfo, Span },
     ]
+    frontend.srcloc --> driver.compiler.assemble_jcir { Span }
     frontend.unitree ++> [
         backends.native.na_ir_gen_pass.NaIRGenPass._binds_variable
             | driver.program.JacProgram.stamp_boundary_facts { ability_of_symbol },
@@ -9483,7 +9488,9 @@ graph import compiler {
             PassResult as CompletedPassResult
         },
     ]
+    passes.context --> driver.compiler.assemble_jcir { Alert }
     type passes.context ++> [
+        driver.compiler { Alert },
         native_compiler { Alert, PassResult },
         symbol_utils { CompilerPass },
     ]
