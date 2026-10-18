@@ -153,7 +153,7 @@ impl ImportWiringPass._check_target(
             continue;
         }
         if provider_ok {
-            self._check_edge(spec, provider, consumer, names, consumer_node);
+            self._check_edge(spec, provider, consumer, names, consumer_node, True);
         }
     }
 }
@@ -197,11 +197,12 @@ impl ImportWiringPass._check_edge(
     provider: str,
     consumer: str,
     names: (list[tuple[str, UniNode]] | None),
-    at: UniNode
+    at: UniNode,
+    local: bool
 ) -> None {
-    constrained = spec.rules_governing(provider, consumer);
+    constrained = spec.rules_governing(provider, consumer, local);
     if not constrained {
-        if spec.needs_rule(provider, consumer) {
+        if spec.needs_rule(provider, consumer, local) {
             source = WiringSpec.top_package(provider);
             target = WiringSpec.top_package(consumer);
             self.ctx.emit(
@@ -216,7 +217,7 @@ impl ImportWiringPass._check_edge(
         }
         return;
     }
-    admitting = spec.rules_admitting(provider, consumer);
+    admitting = spec.rules_admitting(provider, consumer, local);
     if not admitting {
         self.ctx.emit(
             E2090,
@@ -371,22 +372,24 @@ impl ImportWiringPass._check_import(
     }
     from_loc = imp.from_loc;
     if from_loc is not None {
-        provider = spec.import_provider(from_loc) or from_loc.dot_path_str;
+        local = spec.import_provider(from_loc);
+        provider = local or from_loc.dot_path_str;
         if provider != consumer {
             names = [
                 (item.name.value, item)
                 for item in imp.items
                 if isinstance(item, ModuleItem)
             ];
-            self._check_edge(spec, provider, consumer, names, imp);
+            self._check_edge(spec, provider, consumer, names, imp, local is not None);
         }
         return;
     }
     for item in imp.items {
         if isinstance(item, ModulePath) {
-            provider = spec.import_provider(item) or item.dot_path_str;
+            local = spec.import_provider(item);
+            provider = local or item.dot_path_str;
             if provider != consumer {
-                self._check_edge(spec, provider, consumer, None, item);
+                self._check_edge(spec, provider, consumer, None, item, local is not None);
             }
         }
     }

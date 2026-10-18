@@ -1337,3 +1337,23 @@ test "a package provider feeds its own package freely under a rule aimed elsewhe
         shutil.rmtree(base, ignore_errors=True);
     }
 }
+
+
+"""A bare sibling import inside a package boundary is not an import of a module
+under it: the boundary names that module by its package-qualified import name.
+No rule governs it, so it never needs one."""
+test "a bare sibling import in a package boundary needs no rule" {
+    base = _project(
+        {
+            "suite/__init__.jac": "",
+            "suite/archwire.jac": "",
+            "suite/support.jac": "def make -> int {\n    return 1;\n}\n",
+            "suite/test_make.jac": "import from support { make }\n\ndef check -> int {\n    return make();\n}\n"
+        }
+    );
+    try {
+        assert "E2099" not in _errors(_compile(base, "suite/test_make.jac"));
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}

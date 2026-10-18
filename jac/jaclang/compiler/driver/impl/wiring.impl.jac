@@ -484,13 +484,15 @@ impl WiringSpec.import_provider(path_node: ModulePath) -> (str | None) {
     return None;
 }
 
-impl WiringSpec.rules_governing(provider: str, consumer: str) -> list[RuleRec] {
+impl WiringSpec.rules_governing(
+    provider: str, consumer: str, local: bool
+) -> list[RuleRec] {
     named = [
         rule
         for rule in self.rules
         if any([p.matches(provider) for p in rule.sources])
     ];
-    if self.module_file(provider) is None {
+    if not local {
         return named;
     }
     top = WiringSpec.top_package(consumer);
@@ -507,10 +509,12 @@ impl WiringSpec.rules_governing(provider: str, consumer: str) -> list[RuleRec] {
     ];
 }
 
-impl WiringSpec.rules_admitting(provider: str, consumer: str) -> list[RuleRec] {
+impl WiringSpec.rules_admitting(
+    provider: str, consumer: str, local: bool
+) -> list[RuleRec] {
     return [
         rule
-        for rule in self.rules_governing(provider, consumer)
+        for rule in self.rules_governing(provider, consumer, local)
         if any([t.matches(consumer) for t in rule.targets])
     ];
 }
@@ -524,10 +528,10 @@ impl WiringSpec.top_pattern(top: str) -> PatternRec {
     return PatternRec(dotted=top, is_glob=is_glob, text=top + ".*" if is_glob else top);
 }
 
-impl WiringSpec.needs_rule(provider: str, consumer: str) -> bool {
-    return WiringSpec.top_package(provider) != WiringSpec.top_package(consumer)
-        and self.module_file(provider) is not None
-        and not self.rules_governing(provider, consumer);
+impl WiringSpec.needs_rule(provider: str, consumer: str, local: bool) -> bool {
+    return local
+        and WiringSpec.top_package(provider) != WiringSpec.top_package(consumer)
+        and not self.rules_governing(provider, consumer, local);
 }
 
 impl WiringSpec.edge_rule(source: str, targets: list[str]) -> RuleRec {
@@ -1258,10 +1262,10 @@ impl propose_rules(
         if spec.module_file(provider) is None {
             continue;
         }
-        constrained = probe.rules_governing(provider, consumer);
+        constrained = probe.rules_governing(provider, consumer, True);
         crossing = WiringSpec.top_package(provider) != WiringSpec.top_package(consumer);
         if constrained {
-            if probe.rules_admitting(provider, consumer) {
+            if probe.rules_admitting(provider, consumer, True) {
                 continue;
             }
         } elif not crossing {

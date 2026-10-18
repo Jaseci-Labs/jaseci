@@ -283,7 +283,13 @@ def _sync_one(arch_path: str, strip: bool, prune: bool) -> int {
     ];
     rules = propose_rules(spec, facts, spec.rules);
     before = {rule_text(r) for r in spec.rules};
-    admitted = len([r for r in rules if rule_text(r) not in before]);
+    admitted = len(
+        [
+            r
+            for r in rules
+            if rule_text(r) not in before
+        ]
+    );
     if not _write_arch(arch_path, render_wiring(spec, facts, rules)) {
         return 1;
     }
@@ -291,7 +297,11 @@ def _sync_one(arch_path: str, strip: bool, prune: bool) -> int {
         f"{arch_path}: added {len(added)} wired names, removed {len(dropped)} unused,"
         f" {admitted} rules added or widened"
     );
-    pruned = [path for (name, path) in modules if any([_feeds(spec, c, name) for (c, _key) in dropped])];
+    pruned = [
+        path
+        for (name, path) in modules
+        if any([_feeds(spec, c, name) for (c, _key) in dropped])
+    ];
     if strip or pruned {
         changed = _strip_modules(
             [path for (_name, path) in modules] if strip else pruned

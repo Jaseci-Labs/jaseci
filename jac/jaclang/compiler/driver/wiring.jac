@@ -112,11 +112,11 @@ obj WiringSpec {
     def import_provider(path_node: ModulePath) -> (str | None);
     def import_bindings(imp: Import) -> list[tuple[WireBinding, UniNode]];
     def wire_suggestion(binding: WireBinding, consumer: str) -> str;
-    def rules_governing(provider: str, consumer: str) -> list[RuleRec];
-    def rules_admitting(provider: str, consumer: str) -> list[RuleRec];
+    def rules_governing(provider: str, consumer: str, local: bool) -> list[RuleRec];
+    def rules_admitting(provider: str, consumer: str, local: bool) -> list[RuleRec];
     static def top_package(module: str) -> str;
     def top_pattern(top: str) -> PatternRec;
-    def needs_rule(provider: str, consumer: str) -> bool;
+    def needs_rule(provider: str, consumer: str, local: bool) -> bool;
     def edge_rule(source: str, targets: list[str]) -> RuleRec;
     static def admitted_names(rules: list[RuleRec]) -> (set[str] | None);
 }

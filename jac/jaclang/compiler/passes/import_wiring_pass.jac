@@ -17,7 +17,8 @@ walker ImportWiringPass(CompilerPass) {
         provider: str,
         consumer: str,
         names: (list[tuple[str, UniNode]] | None),
-        at: UniNode
+        at: UniNode,
+        local: bool
     ) -> None;
 
     def _check_module(mod: Module, spec: WiringSpec) -> None;
