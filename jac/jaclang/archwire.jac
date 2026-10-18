@@ -7970,6 +7970,7 @@ graph import compiler.frontend {
     codeinfo --> compiler.driver.program.JacProgram.declared_codespace {
         is_client_by_location
     }
+    codeinfo --> compiler.driver.program.JacProgram.compile { native_unit_compile_active }
     codeinfo --> compiler.driver.program.JacProgram.stamp_boundary_facts {
         is_bundled_native_module,
         resolve_native_module
