@@ -173,28 +173,3 @@ def is_positional_import(imp: Import) -> bool;
 def scope_owners(mod: Module) -> dict[str, list[(Ability | ImplDef)]];
 def inject_into_scope(owner: (Ability | ImplDef), stmt: UniNode) -> None;
 def local_module_name(root_dir: str, path: str) -> (str | None);
-
-impl WireBinding.key -> tuple[str, str, str, str] {
-    return (self.provider, self.form, self.name, self.alias);
-}
-
-impl WireBinding.is_module_form -> bool {
-    return "from" not in self.form.split(" ");
-}
-
-impl WireBinding.bound_name -> str {
-    return self.alias or self.name;
-}
-
-impl wiring_scope -> Iterator[None] {
-    if _resolution.get() is not None {
-        yield ;
-        return;
-    }
-    token = _resolution.set({});
-    try {
-        yield ;
-    } finally {
-        _resolution.reset(token);
-    }
-}

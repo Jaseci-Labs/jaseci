@@ -1409,3 +1409,28 @@ impl _package_prefix(root_dir: str) -> str {
     }
     return facts.package_name.replace("/", ".") + ".";
 }
+
+impl WireBinding.key -> tuple[str, str, str, str] {
+    return (self.provider, self.form, self.name, self.alias);
+}
+
+impl WireBinding.is_module_form -> bool {
+    return "from" not in self.form.split(" ");
+}
+
+impl WireBinding.bound_name -> str {
+    return self.alias or self.name;
+}
+
+impl wiring_scope -> Iterator[None] {
+    if _resolution.get() is not None {
+        yield ;
+        return;
+    }
+    token = _resolution.set({});
+    try {
+        yield ;
+    } finally {
+        _resolution.reset(token);
+    }
+}

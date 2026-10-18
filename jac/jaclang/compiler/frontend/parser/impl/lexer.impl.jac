@@ -1814,3 +1814,17 @@ impl Lexer.tokenize -> list[LexToken] {
     }
     return tokens;
 }
+
+impl tokenize(source: str, file_path: str = "<input>") -> tuple[list[LexToken], int] {
+    lexer = Lexer(source=source, file_path=file_path);
+    tokens = lexer.tokenize();
+    return (tokens, lexer.error_count);
+}
+
+impl tokenize_full(
+    source: str, file_path: str = "<input>"
+) -> tuple[list[LexToken], list[CommentData], list[SrcDiag], int] {
+    lexer = Lexer(source=source, file_path=file_path);
+    tokens = lexer.tokenize();
+    return (tokens, lexer.comments, lexer.diags, lexer.error_count);
+}

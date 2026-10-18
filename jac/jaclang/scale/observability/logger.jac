@@ -5,7 +5,3 @@ class Logger {
     def debug(self: Logger, message: str, context: dict[str, any] = {}) -> None abst;
     def warning(self: Logger, message: str, context: dict[str, any] = {});
 }
-
-impl Logger.warning(self: Logger, message: str, context: dict[str, any] = {}) {
-    self.warn(message, context);
-}

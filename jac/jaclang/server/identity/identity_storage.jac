@@ -90,14 +90,3 @@ obj PgIdentityStorage(IdentityStorage) {
     def list_all_users(limit: int = 100, offset: int = 0) -> list[dict[str, any]];
     def get_user_by_sso(platform: str, external_id: str) -> dict[str, any] | None;
 }
-
-impl primary_username(user: dict[str, any]) -> str {
-    for identity in (user.get('identities') or []) {
-        if isinstance(identity, dict) and identity.get('type') == 'username' {
-            return str(
-                identity.get('value_raw') or identity.get('value_normalized') or ''
-            );
-        }
-    }
-    return '';
-}

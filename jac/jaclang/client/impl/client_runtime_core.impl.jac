@@ -750,3 +750,7 @@ impl __unwrapFormSchema(schema: any) -> any {
     }
     return actualSchema;
 }
+
+impl BridgeError.postinit {
+    self.message = self.detail;
+}

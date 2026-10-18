@@ -1391,3 +1391,34 @@ impl _class_scope_category(scope: any) -> any {
     }
     return None;
 }
+
+impl create_callable_type(
+    param_types: list[TypeBase], return_type: TypeBase, is_gradual: bool = False
+) -> FunctionType {
+    parameters: list[Parameter] = [];
+
+    for (idx, param_type) in enumerate(param_types) {
+        parameters.append(
+            Parameter(
+                name=f"__p{idx}",
+                category=ParameterCategory.Positional,
+                param_type=param_type,
+                default_value=None,
+                is_self=False,
+                is_cls=False,
+                param_kind=ParamKind.POSONLY
+            )
+        );
+    }
+
+    flags: int = FunctionTypeFlags.GradualCallableForm
+        if is_gradual
+        else FunctionTypeFlags.Null;
+
+    return FunctionType(
+        func_name="",
+        return_type=return_type,
+        parameters=parameters,
+        function_flags=flags
+    );
+}

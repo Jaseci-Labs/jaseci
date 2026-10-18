@@ -87,17 +87,3 @@ walker TreePass(CompilerPass, TreeWalker) {
     can enter_walk with UniNode entry;
     can exit_walk with UniNode exit;
 }
-
-impl CompileContext.is_canceled -> bool {
-    return self.cancel_requested;
-}
-
-impl CompilerPass.release {}
-
-impl TreePass.enter_walk with UniNode entry {
-    self.ctx.enter_node(here);
-}
-
-impl TreePass.exit_walk with UniNode exit {
-    self.ctx.exit_node(here);
-}

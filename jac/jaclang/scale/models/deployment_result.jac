@@ -7,7 +7,3 @@ obj DeploymentResult {
 
     def is_successful -> bool;
 }
-
-impl DeploymentResult.is_successful -> bool {
-    return self.success;
-}

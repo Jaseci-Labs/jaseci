@@ -1760,3 +1760,12 @@ impl _conn_dead(e: Exception) -> bool {
     }
     return False;
 }
+
+impl PgStore.new_session -> PgStore {
+    return PgStore(
+        conninfo=self.conninfo,
+        ensure_cb=self.ensure_cb,
+        promotions=dict(self.promotions),
+        auto_schema=self.auto_schema
+    );
+}

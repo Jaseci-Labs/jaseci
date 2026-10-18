@@ -41,11 +41,3 @@ glob kwlist: list[str] = [
 def:pub iskeyword(s: str) -> bool;
 
 def:pub issoftkeyword(s: str) -> bool;
-
-impl iskeyword(s: str) -> bool {
-    return s in kwlist;
-}
-
-impl issoftkeyword(s: str) -> bool {
-    return s in softkwlist;
-}

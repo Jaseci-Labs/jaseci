@@ -3,9 +3,3 @@ def:pub replace(
 );
 
 import os.path;
-
-impl replace(
-    src: str, dst: str, *, src_dir_fd: int | None = None, dst_dir_fd: int | None = None
-) {
-    replace_file(src, dst, src_dir_fd, dst_dir_fd);
-}

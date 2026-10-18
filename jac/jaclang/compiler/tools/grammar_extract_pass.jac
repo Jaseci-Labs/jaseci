@@ -222,16 +222,3 @@ walker GrammarExtractPass(TreePass) {
 
     def emit_ebnf -> str;
 }
-
-impl is_nil_expr(nd: object) -> bool {
-    if isinstance(nd, uni.CfgExpr) {
-        return is_nil_expr(nd.expr);
-    }
-    if isinstance(nd, uni.Null) {
-        return True;
-    }
-    if isinstance(nd, uni.Name) {
-        return nd.value == "NIL";
-    }
-    return False;
-}

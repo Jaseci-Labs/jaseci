@@ -198,25 +198,3 @@ walker StaticAnalysisPass(CompilerPass) {
     def _check_client_imports(mod: Module) -> None;
     def _check_placement_warnings(mod: Module) -> None;
 }
-
-impl is_bootstrap_compiled_module(mod_path: str) -> bool {
-    norm = mod_path.replace("\\", "/");
-    if norm.startswith("jaclang/") {
-        return active_host().is_seed_source(norm[len("jaclang/"):]);
-    }
-    marker = "/jaclang/";
-    idx = norm.rfind(marker);
-    if idx < 0 {
-        return False;
-    }
-    return active_host().is_seed_source(norm[idx + len(marker):]);
-}
-
-impl is_ambient_provider_module(mod_path: str) -> bool {
-    return (mod_path.endswith("builtin.jac") or mod_path.endswith("builtin.py"))
-        and "runtime" in mod_path;
-}
-
-impl UnusedSymbolWalker.check_scope with UniScopeNode entry {
-    self.analysis._check_unused_symbols(here);
-}

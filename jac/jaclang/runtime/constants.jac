@@ -47,7 +47,3 @@ glob colors: list[str] = [
          'bool': 'ctypes.c_bool',
          'str': 'ctypes.c_char_p'
      };
-
-impl Constants.__str__(self: Constants) -> str {
-    return self.value;
-}

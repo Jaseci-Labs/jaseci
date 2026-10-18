@@ -220,12 +220,3 @@ obj PgStore(Store) {
     def _reap_dead_sessions -> int;
     def _live_blockers -> list[dict[str, any]];
 }
-
-impl PgStore.new_session -> PgStore {
-    return PgStore(
-        conninfo=self.conninfo,
-        ensure_cb=self.ensure_cb,
-        promotions=dict(self.promotions),
-        auto_schema=self.auto_schema
-    );
-}

@@ -705,3 +705,14 @@ impl _lower_record(
     }
     return out;
 }
+
+impl Decision.__class_getitem__(cls: type, elem: any) -> type {
+    key = id(elem);
+    cached = Decision._views.get(key);
+    if cached is None {
+        name = getattr(elem, "__name__", str(elem));
+        cached = `type(f"Decision[{name}]", (Decision, ), {"_jac_inner": elem});
+        Decision._views[key] = cached;
+    }
+    return cached;
+}

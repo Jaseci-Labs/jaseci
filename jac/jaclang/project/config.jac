@@ -438,17 +438,3 @@ def offline_mode -> bool;
 def use_system_toolchains -> bool;
 
 def active_profile_name(config: JacConfig | None) -> str;
-
-impl MemoryConfig.gc_mode -> str {
-    return {"managed": "cycles", "rc": "rc", "nogc": "none"}[self.profile];
-}
-
-impl offline_mode -> bool {
-    config = get_config();
-    return config is not None and config.network.offline;
-}
-
-impl use_system_toolchains -> bool {
-    config = get_config();
-    return config is None or config.toolchains.system;
-}

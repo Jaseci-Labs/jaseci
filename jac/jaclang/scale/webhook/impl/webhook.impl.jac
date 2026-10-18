@@ -260,3 +260,12 @@ impl _key_summary(api_key_id: str, doc: dict[str, any]) -> dict[str, any] {
         'active': True
     };
 }
+
+impl _create_api_key_db -> any | None {
+    try {
+        return shared_store();
+    } except Exception as e {
+        logger.warning(f"webhook api-key store unavailable: {e}");
+        return None;
+    }
+}

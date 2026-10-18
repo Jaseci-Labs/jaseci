@@ -1831,3 +1831,17 @@ impl _apply_memory_native_placement(cfg: JacConfig, data: dict[str, any]) {
         }
     }
 }
+
+impl MemoryConfig.gc_mode -> str {
+    return {"managed": "cycles", "rc": "rc", "nogc": "none"}[self.profile];
+}
+
+impl offline_mode -> bool {
+    config = get_config();
+    return config is not None and config.network.offline;
+}
+
+impl use_system_toolchains -> bool {
+    config = get_config();
+    return config is None or config.toolchains.system;
+}

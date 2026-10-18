@@ -19,9 +19,3 @@ obj CallbackSink(EventSink) {
 
     def emit(event: ProgressEvent);
 }
-
-impl NoopSink.emit(event: ProgressEvent) {}
-
-impl CallbackSink.emit(event: ProgressEvent) {
-    self.callback(event);
-}

@@ -47,12 +47,3 @@ obj ApiKeyManager {
     def resolve_key(api_key: str) -> dict[str, any] | None;
     def check_rate_limit(api_key_id: str, limit_per_minute: int) -> bool;
 }
-
-impl _create_api_key_db -> any | None {
-    try {
-        return shared_store();
-    } except Exception as e {
-        logger.warning(f"webhook api-key store unavailable: {e}");
-        return None;
-    }
-}

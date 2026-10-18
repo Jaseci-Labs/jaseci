@@ -196,24 +196,3 @@ def main(argv: list[str]) -> int;
 with entry:__main__ {
     sys.`exit(main(sys.argv[1:]));
 }
-
-impl WebSocket.postinit {
-    if not self.url.startswith("ws://") {
-        raise ValueError(f"only ws:// supported, got {self.url}");
-    }
-    rest = self.url[len("ws://"):];
-    (host_port, _, tail) = rest.partition("/");
-    (host, _, port) = host_port.partition(":");
-    self.path = "/" + tail;
-    port_num = int(port) if port else 80;
-    self.sock = socket.create_connection((host, port_num), timeout=self.timeout);
-    self.sock.settimeout(self.timeout);
-    self._buf = bytearray();
-    self._handshake(host, port_num);
-}
-
-
-impl CDP.postinit {
-    self.ws = WebSocket(url=self.ws_url);
-    self.events = [];
-}

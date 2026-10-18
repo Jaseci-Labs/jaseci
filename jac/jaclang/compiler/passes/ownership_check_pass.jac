@@ -259,8 +259,3 @@ walker OwnershipCheckPass(CompilerPass) {
     def _target_owner_sym(nd: Expr) -> (SymId | None);
     def _call_params(call: FuncCall) -> Sequence[Expr | KWPair];
 }
-
-impl BorrowMeta.postinit {
-    self.extra_owners = [];
-    self.path_fields = set();
-}
