@@ -480,12 +480,13 @@ impl NaIRGenPass._stamp_mono_fn(
     self._mono_fns[memo_key] = fn;
     self._record_ret_facts(spec_name, sig);
 
-    saved_symtab = dict(self.func_symtab);
-    self.func_symtab[name] = fn;
+    saved_scope = self.scope;
+    self.scope = saved_scope.child();
+    self.scope.bind_function(name, fn);
     try {
         self._codegen_ability(ability);
     } finally {
-        self.func_symtab = saved_symtab;
+        self.scope = saved_scope;
     }
     return fn;
 }

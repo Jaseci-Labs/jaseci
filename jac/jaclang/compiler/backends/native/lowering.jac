@@ -1,6 +1,7 @@
 import json;
 
 glob LOWERING_METADATA: str = "jac.native.lowering.v1",
+     DEMOTED_SUFFIX: str = ".__jac_demoted",
      _HEX_DIGITS: str = "0123456789abcdef",
      _DEC_DIGITS: str = "0123456789",
      _BLANKS: str = " \t\r\f\v";
@@ -189,4 +190,70 @@ impl native_lowering_issues(llvm_ir_text: str) -> list[NativeLoweringIssue] {
         }
     }
     return issues;
+}
+
+obj NativeFallbacks {
+    has symbols: list[str] = [],
+        issues: list[NativeLoweringIssue] = [];
+
+    def require;
+}
+
+def native_fallbacks(
+    issues: list[NativeLoweringIssue], demoted_definitions: list[str]
+) -> NativeFallbacks;
+
+def _defined_symbol(line: str) -> str;
+
+def native_fallbacks_in_ir(llvm_ir_text: str) -> NativeFallbacks;
+
+impl NativeFallbacks.require {
+    if not self.symbols {
+        return;
+    }
+    details = "\n".join(issue.detail for issue in self.issues);
+    raise ValueError(
+        "Native-only compilation cannot use Python fallback or erased fields: "
+            + ", ".join(self.symbols)
+            + ("\n" + details if details else "")
+    );
+}
+
+impl native_fallbacks(
+    issues: list[NativeLoweringIssue], demoted_definitions: list[str]
+) -> NativeFallbacks {
+    return NativeFallbacks(
+        symbols=sorted(set(demoted_definitions) | {issue.symbol for issue in issues}),
+        issues=list(issues)
+    );
+}
+
+impl _defined_symbol(line: str) -> str {
+    if not line.startswith("define") {
+        return "";
+    }
+    at = line.find("@");
+    if at < 0 {
+        return "";
+    }
+    if line[at + 1:at + 2] == '"' {
+        close = line.find('"', at + 2);
+        if close < 0 or line[close + 1:close + 2] != "(" {
+            return "";
+        }
+        return line[at + 2:close];
+    }
+    stop = line.find("(", at + 1);
+    return line[at + 1:stop] if stop > at + 1 else "";
+}
+
+impl native_fallbacks_in_ir(llvm_ir_text: str) -> NativeFallbacks {
+    demoted: list[str] = [];
+    for line in llvm_ir_text.split("\n") {
+        symbol = _defined_symbol(line);
+        if symbol.endswith(DEMOTED_SUFFIX) {
+            demoted.append(symbol.removesuffix(DEMOTED_SUFFIX));
+        }
+    }
+    return native_fallbacks(native_lowering_issues(llvm_ir_text), demoted);
 }

@@ -39,6 +39,21 @@ def link_kernel(
     link_mode: str = ""
 ) -> LinkResult;
 
+obj GcPauses {
+    has collections: int = 0,
+        total_seconds: float = 0.0,
+        longest_seconds: float = 0.0,
+        _started: float = 0.0;
+
+    def observe(phase: str, info: dict[str, int]);
+}
+
+def unit_line_count(path: str) -> int;
+
+def peak_rss_gb -> float;
+
+def plan_kernel_prefix(stop_after: int, log: Callable[[str], None]) -> int;
+
 def build_target_kernel(
     spec_path: str, dst: str, log: (Callable[[str], None] | None) = None
 ) -> int;
@@ -227,6 +242,93 @@ impl link_kernel(
     } finally {
         registry.progress = None;
     }
+}
+
+impl GcPauses.observe(phase: str, info: dict[str, int]) {
+    if info.get("generation") != 2 {
+        return;
+    }
+    if phase == "start" {
+        self._started = time.perf_counter();
+        return;
+    }
+    pause = time.perf_counter() - self._started;
+    self.collections += 1;
+    self.total_seconds += pause;
+    self.longest_seconds = max(self.longest_seconds, pause);
+}
+
+impl unit_line_count(path: str) -> int {
+    total = 0;
+    for source in [path] + discover_annex_files(path, ".impl.jac") {
+        try {
+            with open(source, "rb") as f {
+                total += f.read().count(b"\n");
+            }
+        } except OSError {}
+    }
+    return total;
+}
+
+impl peak_rss_gb -> float {
+    import resource;
+    import sys;
+    peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss;
+    return peak / (1 << 30) if sys.platform == "darwin" else peak / (1 << 20);
+}
+
+impl plan_kernel_prefix(stop_after: int, log: Callable[[str], None]) -> int {
+    import gc;
+    import from operator { itemgetter }
+    program = JacProgram();
+    registry = program.native_units();
+    started = time.perf_counter();
+
+    def stamped(line: str) {
+        log(f"[{time.perf_counter() - started:7.1f}s {peak_rss_gb():5.1f}G] {line}");
+    }
+
+    registry.progress = stamped;
+    registry.cold = True;
+    program.iface_registry().cold = True;
+    registry.stop_after = stop_after;
+    pauses = GcPauses();
+    gc.callbacks.append(pauses.observe);
+    log(f"  Planning the kernel uncached until {stop_after} units are lowered");
+    try {
+        kernel_plan(program, mode=KERNEL_DEV_LINK_MODE);
+        log("  The whole kernel was planned before the stop");
+    } except NativeBuildStopped {} finally {
+        registry.progress = None;
+        gc.callbacks.remove(pauses.observe);
+    }
+    log(
+        f"  Kernel prefix: {registry.lowered_units} units lowered in "
+        f"{time.perf_counter() - started:.1f}s (nothing linked), "
+        f"peak RSS {peak_rss_gb():.1f} GB"
+    );
+    log(registry.phase_summary());
+    log(
+        f"  GC: {pauses.collections} gen-2 collections, "
+        f"{pauses.total_seconds:.1f}s paused, longest {pauses.longest_seconds:.2f}s"
+    );
+    for (path, why) in sorted(registry.failures.items()) {
+        reason = why.strip().splitlines()[-1] if why.strip() else "no reason recorded";
+        log(f"  Failed to lower {native_unit_identity(path)}: {reason}");
+    }
+    log(
+        "  Lowering time per unit (lines include annexes; functions declared/defined):"
+    );
+    for (path, seconds) in sorted(
+        registry.unit_lower_seconds.items(), key=itemgetter(1), reverse=True
+    ) {
+        (declared, defined) = registry.unit_functions.get(path, (0, 0));
+        log(
+            f"    {seconds:7.2f}s {unit_line_count(path):7d} lines "
+            f"{declared:6d}/{defined:<6d} {native_unit_identity(path)}"
+        );
+    }
+    return registry.lowered_units;
 }
 
 impl build_target_kernel(

@@ -419,6 +419,7 @@ obj CodeGenTarget {
         native_deps: list[str] = [],
         native_codespace: bool = False,
         native_refusal: str = "",
+        native_fallbacks: (NativeFallbacks | None) = None,
         native_refusal_code: str = "",
         placement_mode: str = "",
         native_undecided: bool = False,
@@ -1364,6 +1365,7 @@ impl CodeGenTarget.has_native_ir -> bool {
 impl CodeGenTarget.drop_native_ir {
     self.ir_module = None;
     self.llvm_ir = None;
+    self.native_fallbacks = None;
 }
 
 impl endpoint_descriptor(module: Module, kind: str, name: str) -> dict[str, str] {

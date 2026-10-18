@@ -2042,10 +2042,10 @@ impl NaIRGenPass._drop_hook_for(type_name: str) -> (ir.Function | None) {
         if member is not None and (not member.is_def or member.is_static) {
             return None;
         }
-        hook = self.func_symtab.get(f"{owner}.drop");
+        hook = self.scope.function(f"{owner}.drop");
         if hook is None and member is not None {
             self._forward_declare_method(owner, member);
-            hook = self.func_symtab.get(f"{owner}.drop");
+            hook = self.scope.function(f"{owner}.drop");
         }
         if hook is not None {
             if len(hook.args) != 1 {
