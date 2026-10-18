@@ -389,7 +389,9 @@ impl ImportWiringPass._check_import(
             local = spec.import_provider(item);
             provider = local or item.dot_path_str;
             if provider != consumer {
-                self._check_edge(spec, provider, consumer, None, item, local is not None);
+                self._check_edge(
+                    spec, provider, consumer, None, item, local is not None
+                );
             }
         }
     }
