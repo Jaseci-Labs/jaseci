@@ -25,7 +25,9 @@ glob PROG = (
      );
 
 
-def _run_no_llvm(argv: list[str], work: str) -> tuple[int, str] {
+def _run_no_llvm(
+    argv: list[str], work: str, probe: str = "Probe.missing()"
+) -> tuple[int, str] {
     argv_repr = repr(["jac"] + argv);
     script = f"""
 import sys, runpy
@@ -34,7 +36,7 @@ from unittest.mock import patch
 from jaclang.artifacts.model import Probe
 from jaclang.compiler.backends.native.llvm.shim_path import ShimArtifact
 for probe in ('probe_sealed', 'probe_checkout', 'probe_kit'):
-    patch.object(ShimArtifact, probe, return_value=Probe.missing()).start()
+    patch.object(ShimArtifact, probe, return_value={probe}).start()
 sys.argv = {argv_repr}
 try:
     runpy.run_module('jaclang', run_name='__main__', alter_sys=True)
@@ -97,4 +99,41 @@ for probe, expected in [(Probe.missing(), False), (Probe.hit(Source.CHECKOUT, '/
         [sys.executable, "-c", script], capture_output=True, text=True, timeout=600
     );
     assert proc.returncode == 0 , proc.stdout + proc.stderr;
+}
+
+
+glob STALE = "Probe.stale(['the shim predates its sources'])";
+
+
+test "the LLVM binding imports with a stale shim and only its calls raise" {
+    script = f"""
+import sys
+sys.path.insert(0, {JAC_ROOT!r})
+from unittest.mock import patch
+from jaclang.artifacts.model import ArtifactUnavailable, Probe
+from jaclang.compiler.backends.native.llvm.shim_path import ShimArtifact
+for probe in ('probe_sealed', 'probe_checkout', 'probe_kit'):
+    patch.object(ShimArtifact, probe, return_value={STALE}).start()
+from jaclang.compiler.backends.native.llvm.binding import initfini, targets, executionengine
+try:
+    targets.get_default_triple()
+except ArtifactUnavailable:
+    pass
+else:
+    raise AssertionError('a binding call succeeded with no usable shim')
+""";
+    proc = subprocess.run(
+        [sys.executable, "-c", script], capture_output=True, text=True, timeout=600
+    );
+    assert proc.returncode == 0 , proc.stdout + proc.stderr;
+}
+
+
+test "jac native status reports a stale shim instead of crashing" {
+    with tempfile.TemporaryDirectory() as work {
+        (rc, out) = _run_no_llvm(["native", "status", "llvm-shim"], work, STALE);
+        assert rc == 0 , out;
+        assert "Traceback" not in out , out;
+        assert "the shim predates its sources" in out , out;
+    }
 }
