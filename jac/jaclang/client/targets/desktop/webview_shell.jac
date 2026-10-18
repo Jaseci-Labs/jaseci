@@ -5,7 +5,11 @@ import from pathlib { Path }
 import from typing { Optional }
 
 def _assemble_native_host(
-    entry_file: Path, project_dir: Path, output_dir: Path, dist_dir: Optional[Path]
+    entry_file: Path,
+    project_dir: Path,
+    output_dir: Path,
+    dist_dir: Optional[Path],
+    vendor: bool = True
 ) -> Path {
     cfg = get_desktop_config(project_dir);
     cfg.validate();
@@ -36,6 +40,9 @@ def _assemble_native_host(
     program = stage_program(
         entry_file, project_dir, layout.resources, backend, dist_dir
     );
+    # A dev session resolves the distribution from the local cache, so it need
+    # not pay to copy the whole tree into the (per-launch) build directory.
+    pg_dist = stage_postgres(layout.resources, backend) if vendor else "";
 
     _stage_fused_runtime(output_dir);
     host_src = _generate_host_source(
@@ -49,7 +56,8 @@ def _assemble_native_host(
         dispatch.max_queue,
         dispatch.debug,
         plugin_configs,
-        identifier=ident.identifier
+        identifier=ident.identifier,
+        pg_dist=pg_dist
     );
     (output_dir / "host.jac").write_text(host_src);
 
@@ -163,7 +171,9 @@ def webview_dev(
     try {
         console.print("  Building native host (once for dev session)…", style="muted");
 
-        binary = _assemble_native_host(entry_file, project_dir, out_dir, None);
+        binary = _assemble_native_host(
+            entry_file, project_dir, out_dir, None, vendor=False
+        );
 
         env = desktop_app_runtime_env();
         env["JAC_DESKTOP_DEV_PORT"] = str(vite_port);

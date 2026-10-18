@@ -24,6 +24,7 @@ obj HostContext {
         host: any = None,
         runtime: any = None,
         library_dir: str = "",
+        pg_home: str = "",
         _stop: any = None;
 
     def setup_webview(wv_handle: int) {
@@ -49,6 +50,7 @@ obj HostContext {
                 sys.stderr.write("host_boot: runtime close failed: " + str(e) + "\n");
             }
         }
+        _stop_embedded_store(self.pg_home);
     }
 }
 
@@ -63,13 +65,68 @@ def host_executable -> str {
 }
 
 
-def default_data_dir(system: str, identifier: str, app_name: str, app_dir: str) -> str {
+def default_data_dir(system: str, identifier: str, app_name: str) -> str {
+    """The per-user, per-app data directory on this platform.
+
+    Scoped by the app `identifier` (falling back to its name), so two desktop
+    apps never share state, and placed under the OS per-user data location, so
+    the state survives cache clears and never lands in a read-only bundle.
+    """;
+    scope = identifier or app_name;
     if system == "Darwin" {
-        return os.path.join(
-            os.path.expanduser("~/Library/Application Support"), identifier or app_name
-        );
+        return os.path.join(os.path.expanduser("~/Library/Application Support"), scope);
     }
-    return app_dir;
+    if system == "Windows" {
+        base = os.environ.get("LOCALAPPDATA")
+            or os.path.join(os.path.expanduser("~"), "AppData", "Local");
+        return os.path.join(base, scope);
+    }
+    base = os.environ.get("XDG_DATA_HOME")
+        or os.path.join(os.path.expanduser("~"), ".local", "share");
+    return os.path.join(base, scope);
+}
+
+
+def embedded_store_env(app_dir: str, data_dir: str, pg_dist: str) -> dict[str, str] {
+    """The environment that gives the embedded store a per-app cluster and the
+    distribution baked beside the app image.
+
+    `JAC_PG_HOME` relocates the whole `pg` cache bucket (cluster and dist cache)
+    under the app's per-user data dir, so two apps never share a cluster and the
+    state is not the machine-wide `<cache>/pg/main`. `JAC_PG_DIST` is set only
+    when the build vendored a distribution, which lets a sealed app start with
+    no network and no system Postgres.
+    """;
+    env = {"JAC_PG_HOME": data_dir};
+    if pg_dist {
+        env["JAC_PG_DIST"] = os.path.join(app_dir, pg_dist);
+    }
+    return env;
+}
+
+
+def _embedded_cluster_dir(home: str) -> str {
+    """The per-app embedded cluster dir under an app's `JAC_PG_HOME` data dir.
+
+    Mirrors the `pg` cache bucket layout (`<root>/pg`) and the cluster name
+    (`main`) that `shared_pg_data_dir` resolves, so the path this app stops is
+    the cluster it started. A test pins the two together.
+    """;
+    return os.path.join(home, "pg", "main");
+}
+
+
+def _stop_embedded_store(home: str) -> None {
+    """Stop this app's embedded cluster, if any. Safe to call more than once.""";
+    if not home {
+        return;
+    }
+    try {
+        import from jaclang.data.pgembed { stop_cluster }
+        stop_cluster(_embedded_cluster_dir(home));
+    } except Exception as e {
+        sys.stderr.write("host_boot: embedded postgres stop failed: " + str(e) + "\n");
+    }
 }
 
 
@@ -216,7 +273,17 @@ def boot(config_json: str) -> HostContext {
     layout = AppLayout.from_executable(Path(host_executable()));
     app_dir = str(cfg.get("app_dir") or "") or str(layout.resources);
     data_dir = str(os.environ.get("JAC_DATA_PATH", ""))
-        or default_data_dir(platform.system(), identifier, app_name, app_dir);
+        or default_data_dir(platform.system(), identifier, app_name);
+
+    if backend == EMBEDDED {
+        for (key, value) in embedded_store_env(
+            app_dir, data_dir, str(cfg.get("pg_dist") or "")
+        ).items() {
+            os.environ[key] = value;
+        }
+        import atexit;
+        atexit.register(_stop_embedded_store, data_dir);
+    }
 
     _apply_extra_deps();
 
@@ -242,6 +309,7 @@ def boot(config_json: str) -> HostContext {
         runtime=runtime,
         port=port,
         library_dir=str(layout.library_dir()),
+        pg_home=(data_dir if backend == EMBEDDED else ""),
         _stop=stop
     );
     try {

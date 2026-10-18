@@ -491,14 +491,59 @@ test "the macOS bundle metadata names the app for Finder and the Dock" {
 }
 
 
-test "macOS app state lives under Application Support" {
+test "desktop app state lives under a per-user, per-app data dir" {
+    import os;
+    import from unittest.mock { patch }
     import from jaclang.client.targets.desktop.native.host_boot { default_data_dir }
-    mac = default_data_dir(
-        "Darwin", "org.example.notes", "Notes", "/apps/Notes.app/Contents/Resources"
-    );
+
+    mac = default_data_dir("Darwin", "org.example.notes", "Notes");
     assert mac.endswith("/Library/Application Support/org.example.notes");
-    unnamed = default_data_dir("Darwin", "", "Notes", "/x");
+    unnamed = default_data_dir("Darwin", "", "Notes");
     assert unnamed.endswith("/Library/Application Support/Notes");
-    assert default_data_dir("Linux", "org.example.notes", "Notes", "/apps/notes")
-        == "/apps/notes";
+
+    with patch.dict(os.environ, {"XDG_DATA_HOME": "/xdg"}) {
+        assert default_data_dir("Linux", "org.example.notes", "Notes")
+            == "/xdg/org.example.notes";
+        assert default_data_dir("Linux", "", "Notes") == "/xdg/Notes";
+        assert default_data_dir("Linux", "org.example.other", "Notes")
+            != default_data_dir("Linux", "org.example.notes", "Notes");
+    }
+    with patch.dict(os.environ, {"LOCALAPPDATA": "/win/Local"}) {
+        assert default_data_dir("Windows", "org.example.notes", "Notes")
+            == os.path.join("/win/Local", "org.example.notes");
+    }
+}
+
+
+test "the embedded store env scopes the cluster and points at the bundle" {
+    import os;
+    import from jaclang.client.targets.desktop.native.host_boot { embedded_store_env }
+    env = embedded_store_env(
+        "/apps/Notes.app/Contents/Resources", "/xdg/org.example.notes", "pgdist"
+    );
+    assert env["JAC_PG_HOME"] == "/xdg/org.example.notes";
+    assert env["JAC_PG_DIST"]
+        == os.path.join("/apps/Notes.app/Contents/Resources", "pgdist");
+    remote = embedded_store_env("/apps/x", "/xdg/org.example.notes", "");
+    assert "JAC_PG_DIST" not in remote;
+}
+
+
+test "the embedded stop path is the shared Postgres cluster dir" {
+    import os;
+    import from unittest.mock { patch }
+    import from jaclang.client.targets.desktop.native.host_boot {
+        _embedded_cluster_dir
+    }
+    import from jaclang.server.session { shared_pg_data_dir }
+    with patch.dict(os.environ, {"JAC_PG_HOME": "/xdg/org.example.notes"}) {
+        assert _embedded_cluster_dir("/xdg/org.example.notes") == shared_pg_data_dir();
+    }
+}
+
+
+test "a remote-backend app vendors no postgres distribution" {
+    import from pathlib { Path }
+    import from jaclang.client.targets.desktop.desktop_build { stage_postgres }
+    assert stage_postgres(Path("/tmp/nowhere"), "https://api.example.com") == "";
 }

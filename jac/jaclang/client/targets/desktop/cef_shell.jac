@@ -55,6 +55,8 @@ def _generate_host_source(
     dispatch_timeout_s: float = 30.0,
     dispatch_max_queue: int = 128,
     dispatch_debug: bool = False,
+    identifier: str = "",
+    pg_dist: str = "",
 ) -> str {
     boot_py = _host_boot_py(
         app_name,
@@ -64,7 +66,9 @@ def _generate_host_source(
         dispatch_timeout_s,
         dispatch_max_queue,
         dispatch_debug,
-        plugin_configs
+        plugin_configs,
+        identifier,
+        pg_dist
     );
     return (
         '"""Generated CEF desktop host - do not edit (jac-desktop)."""\n'
@@ -109,6 +113,7 @@ def _generate_host_source(
         "    ts = api.PyEval_SaveThread();\n"
         "    cef_run_loop();\n"
         "    api.PyEval_RestoreThread(ts);\n"
+        '    api.PyRun_SimpleString("_ctx.shutdown()");\n'
         "    api.Py_Finalize();\n"
         "    cef_cleanup();\n"
         "}\n"
@@ -199,6 +204,7 @@ def cef_build(
 
     backend = cfg.get_backend();
     program = stage_program(entry_file, project_dir, out_dir, backend, dist_dir);
+    pg_dist = stage_postgres(out_dir, backend);
     _stage_fused_runtime(out_dir);
     cache_path = str(project_dir / ".jac" / "desktop" / "cef-cache" / str(app_name));
     host_src = _generate_host_source(
@@ -213,6 +219,8 @@ def cef_build(
         dispatch.timeout_s,
         dispatch.max_queue,
         dispatch.debug,
+        ident.identifier,
+        pg_dist,
     );
     (out_dir / "host.jac").write_text(host_src);
 
