@@ -13,7 +13,8 @@ walker JacAutoLintPass(TreePass) {
         _did_convert_usestate: bool = False,
         _pending_setters: list[dict[str, str]] = [],
         _base_decl_cache: list[uni.Archetype] = [],
-        _base_decls_loaded: bool = False;
+        _base_decls_loaded: bool = False,
+        _floated_ids: set[int] = set();
 
     def postinit -> None;
     def _is_file_excluded(file_path: str) -> bool;
@@ -84,9 +85,13 @@ walker JacAutoLintPass(TreePass) {
     def _stmt_body_list(nd: uni.UniNode) -> (Sequence[uni.UniNode] | None);
     def _strip_redundant_semis(nd: uni.Module) -> None;
     def _remove_empty_parens_from_sig(
-        target_node: uni.UniNode, sig: uni.FuncSignature, sig_attr: str
+        target_node: uni.UniNode,
+        sig: uni.FuncSignature,
+        sig_attr: str,
+        quiet: bool = False
     ) -> None;
 
+    def _in_floated_spec(nd: uni.UniNode) -> bool;
     def _extract_string_literal_value(expr: uni.Expr) -> (str | None);
     def _check_no_print(nd: uni.FuncCall) -> None;
     def _check_unnecessary_pass(body: list[uni.UniNode]) -> None;
@@ -160,6 +165,7 @@ walker JacAutoLintPass(TreePass) {
     ) -> (uni.ImplDef | None);
 
     def _move_body_to_impl(ab: uni.Ability, impl_node: uni.ImplDef) -> None;
+    def _drop_impl_return(impl_node: uni.ImplDef) -> None;
     def _strip_docstrings(start: uni.UniNode) -> None;
     def _collect_doc_nodes(start: uni.UniNode) -> list[tuple[uni.UniNode, uni.String]];
     def _check_stale_has_read(ability_node: uni.Ability) -> None;

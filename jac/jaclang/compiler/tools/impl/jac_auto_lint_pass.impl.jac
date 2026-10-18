@@ -195,7 +195,9 @@ impl JacAutoLintPass.exit_impl_def with uni.ImplDef exit {
     if not isinstance(spec, uni.FuncSignature) {
         return;
     }
-    self._remove_empty_parens_from_sig(here, spec, "spec");
+    self._remove_empty_parens_from_sig(
+        here, spec, "spec", quiet=id(here) in self._floated_ids
+    );
 }
 
 impl JacAutoLintPass.enter_enum with uni.Enum entry {
@@ -1508,7 +1510,7 @@ impl JacAutoLintPass._strip_redundant_semis(nd: uni.Module) -> None {
 }
 
 impl JacAutoLintPass._remove_empty_parens_from_sig(
-    target_node: uni.UniNode, sig: uni.FuncSignature, sig_attr: str
+    target_node: uni.UniNode, sig: uni.FuncSignature, sig_attr: str, quiet: bool = False
 ) -> None {
     has_params = bool(
         sig.posonly_params or sig.params or sig.varargs or sig.kwonlyargs or sig.kwargs
@@ -1524,7 +1526,7 @@ impl JacAutoLintPass._remove_empty_parens_from_sig(
         return;
     }
     if sig.return_type is None {
-        if not self.ctx.emit(W3005, node_override=target_node) {
+        if not quiet and not self.ctx.emit(W3005, node_override=target_node) {
             return;
         }
         if self.report_only {
@@ -1542,7 +1544,7 @@ impl JacAutoLintPass._remove_empty_parens_from_sig(
         target_node.set_kids(new_kid);
         target_node._invalidate_sub_node_tab();
     } else {
-        if not self.ctx.emit(W3005, node_override=target_node) {
+        if not quiet and not self.ctx.emit(W3005, node_override=target_node) {
             return;
         }
         if self.report_only {
@@ -1964,14 +1966,14 @@ impl JacAutoLintPass.exit_compare_expr with uni.CompareExpr exit {
 }
 
 impl JacAutoLintPass.exit_func_signature with uni.FuncSignature exit {
-    if not self.lint_enabled {
+    if not self.lint_enabled or self._in_floated_spec(here) {
         return;
     }
     self._check_too_many_params(here);
 }
 
 impl JacAutoLintPass.enter_param_var with uni.ParamVar entry {
-    if not self.lint_enabled {
+    if not self.lint_enabled or self._in_floated_spec(here) {
         return;
     }
     self._check_mutable_default(here);
@@ -2739,10 +2741,37 @@ impl JacAutoLintPass._separate_impls(
         if not self.ctx.emit(W3054, node_override=ab, name=name) or self.report_only {
             continue;
         }
+        sig = ab.signature;
+        had_return = isinstance(sig, uni.FuncSignature) and sig.return_type is not None;
+        if isinstance(ab.body, list) {
+            self._check_unnecessary_pass(list(ab.body));
+        }
+        self._check_unnecessary_none_return(ab, ab.body, sig, name);
+        self._check_stale_has_read(ab);
         self._move_body_to_impl(ab, impl_node);
+        new_sig = ab.signature;
+        if had_return
+            and not (
+                isinstance(new_sig, uni.FuncSignature)
+                and new_sig.return_type is not None
+            ) {
+            self._drop_impl_return(impl_node);
+        }
+        self._floated_ids.add(id(impl_node));
         floated.append(impl_node);
     }
     return floated;
+}
+
+impl JacAutoLintPass._in_floated_spec(nd: uni.UniNode) -> bool {
+    cur = nd.parent;
+    while cur is not None and not isinstance(cur, uni.ImplDef) {
+        if isinstance(cur, uni.CodeBlockStmt) {
+            return False;
+        }
+        cur = cur.parent;
+    }
+    return cur is not None and id(cur) in self._floated_ids;
 }
 
 impl JacAutoLintPass._collect_inline_abilities(
@@ -2788,6 +2817,10 @@ impl JacAutoLintPass._can_separate(ab: uni.Ability) -> bool {
         return False;
     }
     if self._property_role_of_ability(ab) and not self.ctx._is_suppressed(W3043) {
+        return False;
+    }
+    if not self.ctx._is_suppressed(W3038)
+        and any(self._is_usestate_assignment(stmt) is not None for stmt in ab.body) {
         return False;
     }
     kids = [ab->:Kid:->];
@@ -2847,7 +2880,12 @@ impl JacAutoLintPass._impl_header(
         if spec is not None {
             return None;
         }
-    } elif type(spec) is not type(sig) {
+    } elif not (
+        (isinstance(sig, uni.FuncSignature) and isinstance(spec, uni.FuncSignature))
+        or (
+            isinstance(sig, uni.EventSignature) and isinstance(spec, uni.EventSignature)
+        )
+    ) {
         return None;
     }
     name_ref = ab.name_ref;
@@ -2912,6 +2950,40 @@ impl JacAutoLintPass._move_body_to_impl(
     head_kids = [impl_node->:Kid:->][:-2];
     impl_node._role_set(BodyRole, body);
     impl_node.set_kids(head_kids + kids[lb_idx:]);
+}
+
+impl JacAutoLintPass._drop_impl_return(impl_node: uni.ImplDef) -> None {
+    spec = impl_node.spec;
+    if not isinstance(spec, uni.FuncSignature) or spec.return_type is None {
+        return;
+    }
+    spec._role_set(ReturnTypeRole, None);
+    new_kid: list[uni.UniNode] = [];
+    skip_next = False;
+    for kid in [spec->:Kid:->] {
+        if isinstance(kid, uni.Token) and kid.name == Tok.RETURN_HINT {
+            skip_next = True;
+            continue;
+        }
+        if skip_next {
+            skip_next = False;
+            continue;
+        }
+        new_kid.append(kid);
+    }
+    if new_kid {
+        spec.set_kids(nodes=new_kid);
+        return;
+    }
+    impl_node._role_set(SpecRole, None);
+    impl_node.set_kids(
+        [
+            k
+            for k in [impl_node->:Kid:->]
+            if k is not spec
+        ]
+    );
+    impl_node._invalidate_sub_node_tab();
 }
 
 impl JacAutoLintPass._strip_docstrings(start: uni.UniNode) -> None {

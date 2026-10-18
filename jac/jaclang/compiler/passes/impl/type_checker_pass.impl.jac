@@ -2140,18 +2140,54 @@ impl TypeCheckPass.exit_impl_def with ImplDef exit {
         return;
     }
 
+    methods: dict[str, Ability] = {};
+    for method in arch.get_methods() {
+        if method.name_ref is not None {
+            methods[method.name_ref.sym_name] = method;
+        }
+    }
     assigned: set[str] = set();
-    for trailer in here.get_all_sub_nodes(AtomTrailer) {
-        atom_trailer: AtomTrailer = trailer;
-        if not (atom_trailer.parent and isinstance(atom_trailer.parent, Assignment)) {
-            continue;
+    pending: list[UniNode] = [here];
+    visited: set[str] = set();
+    while pending {
+        scope = pending.pop();
+        for trailer in scope.get_all_sub_nodes(AtomTrailer) {
+            atom_trailer: AtomTrailer = trailer;
+            if not (
+                atom_trailer.parent and isinstance(atom_trailer.parent, Assignment)
+            ) {
+                continue;
+            }
+            if atom_trailer != atom_trailer.parent.target[0] {
+                continue;
+            }
+            chain: list[AstSymbolNode] = atom_trailer.as_attr_list;
+            if len(chain) >= 2 and chain[0].sym_name == 'self' {
+                assigned.add(chain[1].sym_name);
+            }
         }
-        if atom_trailer != atom_trailer.parent.target[0] {
-            continue;
-        }
-        chain: list[AstSymbolNode] = atom_trailer.as_attr_list;
-        if len(chain) >= 2 and chain[0].sym_name == 'self' {
-            assigned.add(chain[1].sym_name);
+        for call in scope.get_all_sub_nodes(FuncCall) {
+            func_call: FuncCall = call;
+            callee_ref = func_call.target;
+            if not isinstance(callee_ref, AtomTrailer) {
+                continue;
+            }
+            callee_chain: list[AstSymbolNode] = callee_ref.as_attr_list;
+            if len(callee_chain) != 2 or callee_chain[0].sym_name != 'self' {
+                continue;
+            }
+            callee_name = callee_chain[1].sym_name;
+            if callee_name in visited or callee_name not in methods {
+                continue;
+            }
+            visited.add(callee_name);
+            callee = methods[callee_name];
+            callee_body = callee.body;
+            if isinstance(callee_body, ImplDef) {
+                pending.append(callee_body);
+            } else {
+                pending.append(callee);
+            }
         }
     }
 
