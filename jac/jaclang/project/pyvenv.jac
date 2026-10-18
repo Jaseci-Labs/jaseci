@@ -1,5 +1,25 @@
+import os;
 import re;
 import from pathlib { Path }
+
+glob DEFAULT_PIP_TIMEOUT_S: float = 300.0;
+
+
+def pip_timeout -> float | None {
+    raw = os.environ.get("JAC_PIP_TIMEOUT", "").strip();
+    if not raw {
+        return DEFAULT_PIP_TIMEOUT_S;
+    }
+    try {
+        seconds = float(raw);
+    } except ValueError {
+        return DEFAULT_PIP_TIMEOUT_S;
+    }
+    if seconds == 0 {
+        return None;
+    }
+    return seconds if 0 < seconds < float("inf") else DEFAULT_PIP_TIMEOUT_S;
+}
 
 
 def pip_command(python: str, args: list[str]) -> list[str] {
@@ -72,7 +92,7 @@ def _raise_venv_subprocess_failure(result: any, fallback: str) {
 
 def _run_venv_subprocess(cmd: list[str], fallback: str) {
     import subprocess;
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=300);
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=pip_timeout());
     if result.returncode != 0 {
         _raise_venv_subprocess_failure(result, fallback);
     }
@@ -234,7 +254,9 @@ def run_pip(
         console.print(f"Running: {' '.join(cmd)}");
     }
     try {
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300);
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, timeout=pip_timeout()
+        );
         return (result.returncode, result.stdout, result.stderr);
     } except Exception as e {
         return (1, "", str(e));

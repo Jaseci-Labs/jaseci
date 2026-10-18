@@ -12175,7 +12175,8 @@ graph import project {
     pyvenv --> project.providers.PythonProvider._install_global {
         pip_command,
         pip_env,
-        pip_python
+        pip_python,
+        pip_timeout
     }
     pyvenv --> project.tool_paths { get_venv_site_packages }
     pyvenv --> scale.injector.bundle._venv_stage { get_venv_site_packages }

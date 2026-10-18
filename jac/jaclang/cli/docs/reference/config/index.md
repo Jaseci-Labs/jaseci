@@ -1213,6 +1213,7 @@ A `jac scale deploy` reads the same file when it stages the app bundle, so a par
 | `JACPATH` | Colon-separated extra search path for Jac module resolution (like `PYTHONPATH`) |
 | `JAC_SCHEMA_REPAIR` | Schema-drift handling on load: `repair` (default) or `strict` |
 | `JAC_STRICT_PERMISSIONS` | Enable strict permission checking for security-sensitive operations (`1`/`true`) |
+| `JAC_PIP_TIMEOUT` | Seconds a single pip or virtual-environment step of `jac install` may run before it is stopped (default `300`; `0` for no limit) |
 
 ### Storage
 

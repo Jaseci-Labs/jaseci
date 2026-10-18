@@ -399,9 +399,20 @@ obj PythonProvider(EcosystemProvider) {
         if ctx.verbose {
             console.print(f"  Running: {' '.join(cmd)}", style="muted");
         }
-        result = subprocess.run(
-            cmd, capture_output=not ctx.verbose, text=True, env=pip_env()
-        );
+        try {
+            result = subprocess.run(
+                cmd,
+                capture_output=not ctx.verbose,
+                text=True,
+                env=pip_env(),
+                timeout=pip_timeout()
+            );
+        } except subprocess.TimeoutExpired {
+            console.error(
+                "Install timed out; set JAC_PIP_TIMEOUT to allow more time (0 for no limit)"
+            );
+            return False;
+        }
         if result.returncode != 0 {
             console.error(
                 f"Install failed:\n{result.stderr

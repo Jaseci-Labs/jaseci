@@ -23,7 +23,9 @@ import from jaclang.project.pyvenv {
     make_pip_spec,
     pip_command,
     pip_python,
+    pip_timeout,
     remove_venv_from_path,
+    run_pip,
     summarize_pip_failure,
     _bundled_runtime_python,
     _is_fused_venv
@@ -447,6 +449,46 @@ test "PythonProvider install_flags passed to pip" {
     } finally {
         shutil.rmtree(tmp, ignore_errors=True);
         reset_config();
+    }
+}
+
+test "JAC_PIP_TIMEOUT sets the pip timeout, 0 meaning no limit" {
+    with patch.dict(os.environ, {"JAC_PIP_TIMEOUT": ""}) {
+        assert pip_timeout() == 300.0;
+    }
+    with patch.dict(os.environ, {"JAC_PIP_TIMEOUT": "900"}) {
+        assert pip_timeout() == 900.0;
+    }
+    with patch.dict(os.environ, {"JAC_PIP_TIMEOUT": "0"}) {
+        assert pip_timeout() is None;
+    }
+    with patch.dict(os.environ, {"JAC_PIP_TIMEOUT": "soon"}) {
+        assert pip_timeout() == 300.0;
+    }
+    for bad in ("-1", "nan", "inf") {
+        with patch.dict(os.environ, {"JAC_PIP_TIMEOUT": bad}) {
+            assert pip_timeout() == 300.0 , bad;
+        }
+    }
+}
+
+test "a global install uses the configured pip timeout" {
+    with patch.dict(os.environ, {"JAC_PIP_TIMEOUT": "900"}), patch(
+        "subprocess.run"
+    ) as mock_run {
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="");
+        assert PythonProvider()._install_global(["requests"], InstallContext());
+        assert mock_run.call_args.kwargs["timeout"] == 900.0;
+    }
+}
+
+test "run_pip hands the configured timeout to pip" {
+    with patch.dict(os.environ, {"JAC_PIP_TIMEOUT": "900"}), patch(
+        "subprocess.run"
+    ) as mock_run {
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="");
+        run_pip(Path(tempfile.gettempdir()), ["--version"]);
+        assert mock_run.call_args.kwargs["timeout"] == 900.0;
     }
 }
 
