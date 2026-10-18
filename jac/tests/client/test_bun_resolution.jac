@@ -1,6 +1,7 @@
 """Bun is an artifact the router resolves: the sealed image's, the checkout's
-(fetched by `jac native build bun`) or the kit's, each accepted only when its
-record names the pinned version. Nothing scans PATH."""
+(fetched by `jac native build bun`) or the kit's, each accepted only when it is
+the pinned version, read from its record or, with no record, asked of the
+binary. Nothing scans PATH."""
 
 import json;
 import os;
@@ -13,10 +14,10 @@ import from jaclang.client.js_runtime {
     write_bun_record
 }
 
-def _fake_bun(directory: str) -> str {
+def _fake_bun(directory: str, reports: str = "") -> str {
     path = os.path.join(directory, "bun");
     with open(path, "w") as f {
-        f.write("#!/bin/sh\nexit 0\n");
+        f.write(f"#!/bin/sh\necho {reports}\n" if reports else "#!/bin/sh\nexit 0\n");
     }
     return path;
 }
@@ -47,5 +48,24 @@ test "a bun of another or unknown version is stale" {
 test "a missing bun is missing" {
     with TemporaryDirectory() as td {
         assert _probe_bun(os.path.join(td, "bun"), Source.CHECKOUT).absent;
+    }
+}
+
+
+test "a bun with no record is current when the binary reports the pinned version" {
+    with TemporaryDirectory() as td {
+        bun = _fake_bun(td, reports=BUN_VERSION);
+        found = _probe_bun(bun, Source.KIT);
+        assert found.found is not None and found.found.path == bun;
+        assert not os.path.exists(bun + RECORD_SUFFIX);
+    }
+}
+
+
+test "a bun with no record that reports another version is stale and names it" {
+    with TemporaryDirectory() as td {
+        bun = _fake_bun(td, reports="1.2.0");
+        stale = _probe_bun(bun, Source.KIT);
+        assert stale.found is None and "bun 1.2.0 is not the pinned" in stale.drift[0];
     }
 }

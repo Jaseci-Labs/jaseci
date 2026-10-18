@@ -15,6 +15,8 @@ def write_bun_record(path: str);
 
 def _recorded_version(path: str) -> str;
 
+def _reported_version(path: str) -> str;
+
 def _probe_bun(path: str, source: Source) -> Probe;
 
 def _pkg_dir -> str;
@@ -97,20 +99,32 @@ impl _recorded_version(path: str) -> str {
     }
 }
 
+impl _reported_version(path: str) -> str {
+    import subprocess;
+    try {
+        done = subprocess.run(
+            [path, "--version"], capture_output=True, text=True, timeout=10
+        );
+    } except (OSError, subprocess.SubprocessError) {
+        return "";
+    }
+    return done.stdout.strip() if done.returncode == 0 else "";
+}
+
 impl _probe_bun(path: str, source: Source) -> Probe {
     if not os.path.isfile(path) {
         return Probe.missing();
     }
-    recorded = _recorded_version(path);
-    if recorded != BUN_VERSION {
-        return Probe.stale(
-            [f"bun {recorded or 'of unknown version'} is not the pinned {BUN_VERSION}"]
-        );
-    }
     if platform.system() != "Windows" and not os.access(path, os.X_OK) {
         os.chmod(path, 0o755);
     }
-    return Probe.hit(source, path, {"version": recorded});
+    version = _recorded_version(path) or _reported_version(path);
+    if version != BUN_VERSION {
+        return Probe.stale(
+            [f"bun {version or 'of unknown version'} is not the pinned {BUN_VERSION}"]
+        );
+    }
+    return Probe.hit(source, path, {"version": version});
 }
 
 impl _pkg_dir -> str {
