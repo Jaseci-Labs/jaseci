@@ -2834,7 +2834,8 @@ graph import compiler.backends.native {
     link_plan --> cli.commands.native_build.native_build_sealed_pair {
         ArtifactKind,
         LinkPlanError,
-        link_artifact
+        link_artifact,
+        resolved_callback_bindings
     }
     link_plan --> cli.commands.native_build.native_build {
         ArtifactKind,
