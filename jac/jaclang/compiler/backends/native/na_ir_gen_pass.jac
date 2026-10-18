@@ -1216,6 +1216,7 @@ walker NaIRGenPass(CompilerPass) {
     def _publish_lowering_failure(here: uni.Module) -> None;
     def _register_imported_struct_types -> None;
     def _native_imports(transitive: bool = True) -> list[tuple[str, uni.Module]];
+    def _settle_dep_ifaces -> None;
     def _has_own_code(mod: (uni.Module | None)) -> bool;
     def _declares_native_visible(mod: uni.Module) -> bool;
     def _defer_missing_deps -> bool;

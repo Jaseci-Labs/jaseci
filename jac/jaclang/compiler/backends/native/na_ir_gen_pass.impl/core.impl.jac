@@ -247,6 +247,7 @@ impl NaIRGenPass._lower_module -> None {
         self._deps_deferred = True;
         return;
     }
+    self._settle_dep_ifaces();
 
     self._emit_rc_helpers();
 
@@ -632,6 +633,16 @@ impl NaIRGenPass._defer_missing_deps -> bool {
     }
     self._discover_kernel_deps(imported_mods);
     return active_host().native_deps_deferred(self.prog);
+}
+
+impl NaIRGenPass._settle_dep_ifaces -> None {
+    """Read the interface of every unit the imports reach before this unit
+    builds any IR. A unit an import cycle kept from being discovered is lowered
+    now, while this pass holds nothing but its import walk, instead of halfway
+    through registering the imported types.""";
+    for (_, imported_mod) in self._native_imports() {
+        self._dep_iface(imported_mod);
+    }
 }
 
 impl NaIRGenPass._discover_kernel_deps(
@@ -2036,10 +2047,10 @@ impl NaIRGenPass._forward_declare_imported_ability(
     }
 }
 
-"""Whether an imported function is declared on first reference: one whose
-declaration only binds its symbol. Generic, compile-time, decorated and
-generator functions register state the moment they are declared."""
 impl NaIRGenPass._declares_lazily(nd: uni.Ability) -> bool {
+    """Whether an imported function is declared on first reference: one whose
+    declaration only binds its symbol. Generic, compile-time, decorated and
+    generator functions register state the moment they are declared.""";
     return isinstance(nd.signature, uni.FuncSignature)
         and not nd.type_params
         and not nd.is_comptime
@@ -2064,10 +2075,10 @@ impl NaIRGenPass._defer_import(pending: PendingImport, owner_name: str) -> None 
     imports.by_key[pending.module_key] = pending;
 }
 
-"""Declare an imported function into the module's outermost scope, whatever
-scope is lowering when it is first named: under its module-qualified name, and
-under its bare name only where this module binds that name to it."""
 impl NaIRGenPass._declare_import(pending: PendingImport) -> (ir.Function | None) {
+    """Declare an imported function into the module's outermost scope, whatever
+    scope is lowering when it is first named: under its module-qualified name, and
+    under its bare name only where this module binds that name to it.""";
     nd = pending.decl;
     name = pending.module_key[1];
     _owner = nd.find_parent_of_type(uni.Module);
