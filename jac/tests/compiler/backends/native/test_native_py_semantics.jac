@@ -164,6 +164,32 @@ test "str.find honors the start argument" {
     assert result == 411 , f"Expected 411, got {result}";
 }
 
+test "str search methods honor start and end like CPython" {
+    (eng, _) = compile_native("py_dropped_args.jac");
+    get_func(eng, "jac_entry", None)();
+    s = "ab/> cd <img x />";
+    cases = [
+        ("find_bounds_index_from", s.index("/>", 5)),
+        ("find_bounds_find_end", s.find("/>", 0, 3)),
+        ("find_bounds_rfind_window", s.rfind("/>", 0, 6)),
+        ("find_bounds_rindex_window", s.rindex("/>", 0, 6)),
+        ("find_bounds_rfind_from", s.rfind("/>", 5)),
+        ("find_bounds_count_from", s.count("/>", 5)),
+        ("find_bounds_count_window", s.count("/>", 0, 6)),
+        ("find_bounds_negative", s.find("img", -9, -2)),
+        ("find_bounds_empty_past_end", s.find("", 50)),
+        ("find_bounds_empty_start_after_end", s.find("", 6, 2)),
+        ("find_bounds_rfind_empty_window", s.rfind("", 0, 4)),
+        ("find_bounds_count_empty_window", s.count("", 0, 4)),
+        # s.index("/>", 0, 3) raises ValueError; the fixture maps that to -7
+        ("find_bounds_index_miss", -7)
+    ];
+    for (name, expected) in cases {
+        got = get_func(eng, name, ctypes.c_int64)();
+        assert got == expected , f"{name}: native {got}, CPython {expected}";
+    }
+}
+
 test "pow honors the modulus argument" {
     (eng, _) = compile_native("py_dropped_args.jac");
     get_func(eng, "jac_entry", None)();
