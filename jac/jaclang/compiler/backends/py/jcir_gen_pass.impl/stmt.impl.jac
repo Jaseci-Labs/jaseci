@@ -474,9 +474,7 @@ impl JcirGenPass.exit_concurrent_expr with ConcurrentExpr exit {
         target = self.val(here.target);
         args: list[CgItem] = [target];
         keywords: list[CgItem] = [];
-        # `flow f(a, k=b)` hands the callee and its arguments to the pool, so they are evaluated
-        # at launch. A deferred `lambda: f(a)` would read `a` when the task starts, which in a
-        # loop or comprehension can be a later iteration's value.
+
         if func == 'thread_run' and target.cls == 'Call' {
             args = [target.get('func')] + list(target.get('args'));
             keywords = list(target.get('keywords'));
