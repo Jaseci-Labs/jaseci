@@ -700,6 +700,13 @@ test "python parse_spec with tilde" {
     assert version == "~=4.0";
 }
 
+test "python parse_spec keeps extras on the name and splits off the version" {
+    python = PythonProvider();
+    assert python.parse_spec("psycopg[binary]>=3.2") == ("psycopg[binary]", ">=3.2");
+    assert python.parse_spec("uvicorn[standard, dev]")
+        == ("uvicorn[standard, dev]", "");
+}
+
 test "python resolve manifest dependencies" {
     reset_config();
     (tmp, project_dir) = make_temp_project();
