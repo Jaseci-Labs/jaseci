@@ -100,6 +100,11 @@ def _unused_facts(
     return unused;
 }
 
+def _feeds(spec: WiringSpec, consumer: str, module: str) -> bool {
+    split = spec.split_consumer(consumer);
+    return (split[0] if split is not None else consumer) == module;
+}
+
 def _write_arch(arch_path: str, text: str) -> bool {
     import tempfile;
     prog = JacProgram.jac_str_formatter(text, arch_path);
@@ -142,7 +147,7 @@ def _strip_modules(paths: list[str]) -> int {
             );
             stripped = any(
                 [
-                    w.code is not None and w.code.code == "W3053"
+                    w.code is not None and w.code.code in ("W3053", "W3054")
                     for w in prog.warnings_had
                 ]
             );
@@ -221,13 +226,14 @@ def _arch_init(force: bool, strip: bool, directory: str) -> int {
         }
     }
     facts = _collect_facts(spec, modules);
-    if not _write_arch(arch_path, render_wiring(spec, facts, [])) {
+    rules = propose_rules(spec, facts, []);
+    if not _write_arch(arch_path, render_wiring(spec, facts, rules)) {
         return 1;
     }
     console.success(
-        f"wrote {ARCH_FILE_NAME}: {len(facts)} wired names sealing {len(
-            modules
-        )} modules"
+        f"wrote {ARCH_FILE_NAME}: {len(facts)} wired names and {len(
+            rules
+        )} rules sealing {len(modules)} modules"
     );
     if strip {
         changed = _strip_modules([path for (_name, path) in modules]);
@@ -275,15 +281,32 @@ def _sync_one(arch_path: str, strip: bool, prune: bool) -> int {
         for (consumer, binding) in wiring_facts(spec.wires) + added
         if (consumer, binding.key()) not in dropped
     ];
-    if not _write_arch(arch_path, render_wiring(spec, facts, spec.rules)) {
+    rules = propose_rules(spec, facts, spec.rules);
+    before = {rule_text(r) for r in spec.rules};
+    admitted = len(
+        [
+            r
+            for r in rules
+            if rule_text(r) not in before
+        ]
+    );
+    if not _write_arch(arch_path, render_wiring(spec, facts, rules)) {
         return 1;
     }
     console.success(
-        f"{arch_path}: added {len(added)} wired names, removed {len(dropped)} unused"
+        f"{arch_path}: added {len(added)} wired names, removed {len(dropped)} unused,"
+        f" {admitted} rules added or widened"
     );
-    if strip {
-        changed = _strip_modules([path for (_name, path) in modules]);
-        console.print(f"stripped wired imports from {changed} files");
+    pruned = [
+        path
+        for (name, path) in modules
+        if any([_feeds(spec, c, name) for (c, _key) in dropped])
+    ];
+    if strip or pruned {
+        changed = _strip_modules(
+            [path for (_name, path) in modules] if strip else pruned
+        );
+        console.print(f"stripped wired and dead imports from {changed} files");
     }
     return 0;
 }
