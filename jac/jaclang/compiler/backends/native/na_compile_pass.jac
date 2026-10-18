@@ -10,6 +10,7 @@ def unit_module_copy(unit_ir: any, context: any) -> ModuleRef;
 def optimized_bitcode(
     mod: ModuleRef, options: CompileOptions, opt_level: int
 ) -> bytes;
+
 def optimize_unit_ir(unit_ir: any, options: CompileOptions, opt_level: int) -> bytes;
 def optimize_unit_bitcodes(
     bitcodes: list[bytes], options: CompileOptions, opt_level: int
