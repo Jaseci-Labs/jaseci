@@ -1038,6 +1038,11 @@ obj NativeBuildSession {
                 or mod.gen.native_iface is None {
                 if mod.gen.native_refusal {
                     self.registry.failures[resolved] = mod.gen.native_refusal;
+                } elif mod.gen.native_iface is None {
+                    self.registry.failures[resolved] = (
+                        "lowering produced no native interface: the module has "
+                        "no native code of its own, so it is not a link unit"
+                    );
                 }
                 return None;
             }
