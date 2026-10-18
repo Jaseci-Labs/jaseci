@@ -5811,10 +5811,8 @@ graph import compiler {
     ]
     driver.pipeline --> [
         frontend.kernel_host.KernelHost.lower_dependency { product_ready, require },
+        placement.placement_solver._invalidate_client_codegen { invalidate },
         placement.placement_solver.invalidate_importers_es { invalidate },
-        placement.placement_solver.solve_module_placement._invalidate_stale_codegen {
-            invalidate
-        },
         tools.jac_formatter_pass.unparse_module { run_utility },
     ]
     driver.pipeline_runner ++> backends.native.wasm_build.compile_to_wasm { build_wasm }
@@ -5873,11 +5871,9 @@ graph import compiler {
     ]
     driver.pipeline_types --> [
         frontend.kernel_host.KernelHost.lower_dependency
-            | placement.placement_solver.invalidate_importers_es
+            | placement.placement_solver._invalidate_client_codegen
             | tools.jac_formatter_pass.unparse_module { CompilationProduct },
-        placement.placement_solver.solve_module_placement._invalidate_stale_codegen {
-            CompilationProduct
-        },
+        placement.placement_solver.invalidate_importers_es { CompilationProduct },
     ]
     driver.program ++> [
         backends.es.client_kernel_cache._lower
