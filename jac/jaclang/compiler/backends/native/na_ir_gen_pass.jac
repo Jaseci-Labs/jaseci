@@ -2907,6 +2907,7 @@ walker NaIRGenPass(CompilerPass) {
         tuple_node: (uni.UniNode | None),
         replaced: list[tuple[str, ir.Value]]
     ) -> bool;
+
     def _value_kind(ty: ir.Type) -> str;
     def _rebinds_slot(
         slot_type: ir.Type, target_type: (ir.Type | None), value_type: ir.Type

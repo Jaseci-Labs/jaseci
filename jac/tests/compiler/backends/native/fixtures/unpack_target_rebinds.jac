@@ -65,6 +65,8 @@ with entry {
     print(rebound());
     print(kept());
     print(swapped());
-    print(assigned_after_tuple_loop([(1, 2)], "x_12"), assigned_after_loop([1, 2], "abc"));
+    print(
+        assigned_after_tuple_loop([(1, 2)], "x_12"), assigned_after_loop([1, 2], "abc")
+    );
     print(narrowed_optional(True), narrowed_optional(False));
 }
