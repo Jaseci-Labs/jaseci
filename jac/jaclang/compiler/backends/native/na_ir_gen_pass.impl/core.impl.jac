@@ -1485,7 +1485,9 @@ impl NaIRGenPass._native_imports(
         unit. A module made only of imports and includes is a re-export
         surface, whether this module imports it for types or at run time: the
         units behind it are what this module links to.""";
-        if not self._has_own_code(walked.get(_direct) or self.prog.mod.hub.get(_direct)) {
+        if not self._has_own_code(
+            walked.get(_direct) or self.prog.mod.hub.get(_direct)
+        ) {
             _dep_todo.extend(dep_edges.get(_direct, []));
             continue;
         }
