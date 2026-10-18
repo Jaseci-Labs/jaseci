@@ -171,7 +171,7 @@ def archetype_native_name(arch: Archetype) -> str {
         import from jaclang.compiler.frontend.codeinfo { bundled_stdlib_module_of }
         twin = _NATIVE_NAME_BY_DECL.get(
             (
-                os.path.realpath(arch.loc.mod_path),
+                real_path(arch.loc.mod_path),
                 arch.loc.first_line,
                 arch.loc.col_start,
                 name
@@ -187,7 +187,7 @@ def archetype_native_name(arch: Archetype) -> str {
     if arch.loc is not None and arch.loc.mod_path {
         import os;
         key = (
-            os.path.realpath(arch.loc.mod_path),
+            real_path(arch.loc.mod_path),
             arch.loc.first_line,
             arch.loc.col_start,
             name
@@ -241,7 +241,7 @@ def record_interface_twins(native_mod: Module, prog: JacProgram) {
         if key is None or not key[0].endswith(".pyi") {
             continue;
         }
-        _NATIVE_NAME_BY_DECL[(os.path.realpath(key[0]), key[1], key[2], key[3])] = (
+        _NATIVE_NAME_BY_DECL[(real_path(key[0]), key[1], key[2], key[3])] = (
             archetype_native_name(stmt)
         );
         _NATIVE_NAMED_CLASSES.add(key[3]);
@@ -268,7 +268,7 @@ def _recorded_native_name(shared: ClassDetailsShared) -> (str | None) {
     }
     import os;
     found = _NATIVE_NAME_BY_DECL.get(
-        (os.path.realpath(key[0]), key[1], key[2], key[3])
+        (real_path(key[0]), key[1], key[2], key[3])
     );
     if found is None {
         import from jaclang.compiler.frontend.codeinfo { bundled_stdlib_module_of }
@@ -399,7 +399,7 @@ def declaring_module_path(base_expr: Expr) -> str {
     if isinstance(base_type, ClassType) and base_type._shared is not None {
         scope = base_type.shared.symbol_table;
         if isinstance(scope, Archetype) and scope.loc.mod_path {
-            return os.path.realpath(scope.loc.mod_path);
+            return real_path(scope.loc.mod_path);
         }
     }
     if not isinstance(base_expr, AstSymbolNode) {
@@ -419,7 +419,7 @@ def declaring_module_path(base_expr: Expr) -> str {
         return "";
     }
     path = decl_mod.loc.mod_path;
-    return os.path.realpath(path) if path else "";
+    return real_path(path) if path else "";
 }
 
 def headers_agree(child: ArchetypeLayout, base: ArchetypeLayout) -> bool {

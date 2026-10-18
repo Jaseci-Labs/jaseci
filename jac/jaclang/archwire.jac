@@ -4918,6 +4918,7 @@ graph import compiler.frontend {
         RC_SENTINEL,
         STR_LEN_TAG_BIT,
         STR_LEN_TAG_SHIFT,
+        real_path,
         str_len_tag
     }
     codeinfo --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass.__post_init__ {
@@ -7956,6 +7957,9 @@ graph import compiler.frontend {
         jaclang_pkg_root
     }
     codeinfo --> compiler.driver.compilation_context { is_package_keyed_path }
+    codeinfo --> compiler.frontend.source_layout | compiler.passes.layout_pass | compiler.types.stubcat.writer {
+        real_path
+    }
     codeinfo --> compiler.driver.compiler.JacCompiler._wants_native_engine | compiler.driver.selfhost.SelfHostCache.owns | project.kernel_check.kernel_check | project.kernel_snapshot {
         is_compiler_source_path
     }

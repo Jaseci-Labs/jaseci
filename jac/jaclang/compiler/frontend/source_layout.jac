@@ -1,6 +1,7 @@
 import os;
 import from collections.abc { Callable }
 import from jaclang.compiler.frontend.host { PathFacts }
+import from jaclang.compiler.frontend.codeinfo { real_path }
 
 obj LayoutTables {
     has jac_suffix: str = ".jac",
@@ -64,7 +65,7 @@ def list_directory(directory: str) -> (list[str] | None) {
 }
 
 def style_annex_of(source_path: str) -> (str | None) {
-    src = os.path.realpath(source_path);
+    src = real_path(source_path);
     if not src.endswith(".jac") {
         return None;
     }
@@ -78,7 +79,7 @@ def annex_files_of(
     suffix: str,
     listing: Callable[[str], (list[str] | None)]
 ) -> list[str] {
-    src = os.path.realpath(source_path);
+    src = real_path(source_path);
     name = os.path.basename(src);
     if not name.endswith(tables.jac_suffix) or name.endswith(suffix) {
         return [];
@@ -110,7 +111,7 @@ def annex_files_of(
 }
 
 def base_file_of(tables: LayoutTables, annex_path: str) -> (str | None) {
-    src = os.path.realpath(annex_path);
+    src = real_path(annex_path);
     name = os.path.basename(src);
     folder = os.path.dirname(src);
     parent = os.path.basename(folder);

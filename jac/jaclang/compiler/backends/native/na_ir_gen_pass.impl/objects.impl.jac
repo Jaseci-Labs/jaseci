@@ -2722,8 +2722,8 @@ impl NaIRGenPass._unregistered_class_target(target: uni.UniNode) -> (str | None)
     if not path or not path.endswith(".jac") {
         return None;
     }
-    own_path = os.path.realpath(self.module.loc.mod_path) if self.module?.loc else "";
-    if os.path.realpath(path) == own_path {
+    own_path = real_path(self.module.loc.mod_path) if self.module?.loc else "";
+    if real_path(path) == own_path {
         return None;
     }
     return name;
@@ -5269,13 +5269,13 @@ impl NaIRGenPass._build_jc_layout -> dict[str, any] {
     classes: dict[str, any] = {};
     _model = self.module.gen.native_osp_model;
     _tags = _model.tags if _model is not None else {};
-    _own_path = os.path.realpath(self.module.loc.mod_path) if self.module?.loc else "";
+    _own_path = real_path(self.module.loc.mod_path) if self.module?.loc else "";
     for arch_name in self.struct_field_indices {
         if arch_name in self._helper_structs {
             continue;
         }
         _src = self._struct_source_mod.get(arch_name, "");
-        if _src and _own_path and os.path.realpath(_src) != _own_path {
+        if _src and _own_path and real_path(_src) != _own_path {
             continue;
         }
         st = self.struct_types.get(arch_name);
@@ -5424,13 +5424,13 @@ impl NaIRGenPass._report_unreachable_overrides -> None {
     if self.module is None or self.module.loc is None {
         return;
     }
-    home = os.path.realpath(self.module.loc.mod_path);
+    home = real_path(self.module.loc.mod_path);
     reg = get_layout_registry(self.module, self.prog);
     for arch in self._native_archetypes(self.module) {
         if arch.loc is None {
             continue;
         }
-        if os.path.realpath(arch.loc.mod_path) != home {
+        if real_path(arch.loc.mod_path) != home {
             continue;
         }
         overrides: dict[str, uni.Ability] = {};

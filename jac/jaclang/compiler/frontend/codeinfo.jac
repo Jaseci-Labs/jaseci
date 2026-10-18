@@ -269,7 +269,7 @@ def native_arch_scope(mod_path: str) -> str {
         return memo;
     }
     import from jaclang.compiler.native_scope { binds_bare_arch_names }
-    source = os.path.realpath(mod_path);
+    source = real_path(mod_path);
     out = "";
     if source.endswith(".jac") and not binds_bare_arch_names(source) {
         stem = os.path.basename(source);
@@ -420,7 +420,7 @@ def native_unit_identity(path: str) -> str {
         return memo;
     }
     import os;
-    rp = os.path.realpath(path);
+    rp = real_path(path);
     unit_root = native_unit_root(os.path.dirname(rp));
     identity = rp;
     if unit_root is not None {
@@ -437,7 +437,7 @@ def native_module_key(path: str) -> str {
     keyed by its path within that root, so the symbols a sealed unit
     defines at build time are the ones consumers reference at run time.""";
     import os;
-    rp = os.path.realpath(path);
+    rp = real_path(path);
     base = os.path.basename(rp);
     dot = base.rfind(".");
     stem = base[0:dot] if dot > 0 else base;
@@ -494,10 +494,10 @@ def jaclang_pkg_root -> str {
 def is_compiler_source_path(source_path: str) -> bool {
     import os;
     if not _PKG_REAL {
-        _PKG_REAL.append(os.path.realpath(jaclang_pkg_root()) + os.sep);
+        _PKG_REAL.append(real_path(jaclang_pkg_root()) + os.sep);
     }
     try {
-        return os.path.realpath(source_path).startswith(_PKG_REAL[0]);
+        return real_path(source_path).startswith(_PKG_REAL[0]);
     } except (OSError, ValueError) {
         return False;
     }
@@ -524,14 +524,28 @@ def kernel_unit_paths -> list[str] {
     return [kernel_unit_path(rel) for rel in kernel_unit_rels()];
 }
 
+glob _REAL_PATHS: dict[str, str] = {};
+
+"""A path with every symlink resolved, remembered for the life of the
+process: one compile canonicalizes the same source paths millions of times."""
+def real_path(path: str) -> str {
+    found = _REAL_PATHS.get(path);
+    if found is None {
+        import os;
+        found = os.path.realpath(path);
+        _REAL_PATHS[path] = found;
+    }
+    return found;
+}
+
 def is_kernel_unit_path(path: str) -> bool {
     import os;
     if not path {
         return False;
     }
-    rp = os.path.realpath(path);
+    rp = real_path(path);
     for rel in kernel_unit_rels() {
-        if rp == os.path.realpath(kernel_unit_path(rel)) {
+        if rp == real_path(kernel_unit_path(rel)) {
             return True;
         }
     }
@@ -655,12 +669,12 @@ def is_toolchain_unit(file_path: str) -> bool {
     if not file_path {
         return False;
     }
-    unit_root = native_unit_root(os.path.dirname(os.path.realpath(file_path)));
+    unit_root = native_unit_root(os.path.dirname(real_path(file_path)));
     if unit_root is None {
         return False;
     }
-    keyed = os.path.realpath(unit_root);
-    return any(keyed == os.path.realpath(pkg) for pkg in bundled_pkg_roots());
+    keyed = real_path(unit_root);
+    return any(keyed == real_path(pkg) for pkg in bundled_pkg_roots());
 }
 
 def bundled_native_module_names -> list[str] {
@@ -776,9 +790,9 @@ def is_shared_runtime_module(file_path: str) -> bool {
     if not named {
         return False;
     }
-    path = os.path.realpath(file_path);
+    path = real_path(file_path);
     for pkg in bundled_pkg_roots() {
-        package = os.path.realpath(pkg);
+        package = real_path(pkg);
         for module in SHARED_RUNTIME_MODULES {
             rel = module.split('.', 1)[1].replace('.', os.sep) + '.jac';
             if path == os.path.join(package, rel) {
@@ -899,8 +913,8 @@ def is_selected_native_variant(path: str) -> bool {
     for cut in (2, 1) {
         portable = os.path.join(os.path.dirname(path), ".".join(parts[:-cut]) + ".jac");
         if len(parts) > cut and os.path.exists(portable) {
-            return os.path.realpath(native_variant_of(portable))
-                == os.path.realpath(path);
+            return real_path(native_variant_of(portable))
+                == real_path(path);
         }
     }
     return False;
@@ -1005,7 +1019,7 @@ def resolve_native_module(
             return (None, None);
         }
 
-        candidate = os.path.realpath(
+        candidate = real_path(
             _native_variant_path(candidate[:-len('.jac')]) or candidate
         );
         if (native_unit_compile_active() and in_native_scope_path(candidate))
