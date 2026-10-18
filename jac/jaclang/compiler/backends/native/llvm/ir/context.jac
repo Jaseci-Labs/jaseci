@@ -120,7 +120,9 @@ class _TypeReader {
             self.at += 1;
         }
         if start == self.at {
-            raise ValueError(f"expected a struct name at {start} in type {self.text!r}");
+            raise ValueError(
+                f"expected a struct name at {start} in type {self.text!r}"
+            );
         }
         return self.text[start:self.at];
     }

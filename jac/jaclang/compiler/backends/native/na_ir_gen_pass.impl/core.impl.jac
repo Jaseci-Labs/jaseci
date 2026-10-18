@@ -1239,7 +1239,9 @@ impl NaIRGenPass._declares_native_visible(mod: uni.Module) -> bool {
     return False;
 }
 
-impl NaIRGenPass._native_imports(transitive: bool = True) -> list[tuple[str, uni.Module]] {
+impl NaIRGenPass._native_imports(
+    transitive: bool = True
+) -> list[tuple[str, uni.Module]] {
     import os;
 
     if transitive and self._native_imports_walked {
@@ -1982,14 +1984,15 @@ impl NaIRGenPass._register_imported_globals(
 impl NaIRGenPass._forward_declare_imported_ability(
     nd: uni.Ability, unavailable: (set | None) = None, imp_layout: any = None
 ) -> None {
-    import from jaclang.compiler.frontend.codeinfo { NativeModuleLayout }
     name = nd.name_ref.sym_name if nd.name_ref else None;
     if name is None {
         return;
     }
     _owner = nd.find_parent_of_type(uni.Module);
     _owner_name = _owner.name if _owner is not None else "";
-    _owner_path = os.path.realpath(_owner.source.file_path) if _owner is not None else "";
+    _owner_path = os.path.realpath(_owner.source.file_path)
+        if _owner is not None
+        else "";
     if _owner is not None and self._module_function_known((_owner_path, name)) {
         return;
     }
@@ -2032,7 +2035,9 @@ impl NaIRGenPass._forward_declare_imported_ability(
                 self._native_skipped_methods.add(name);
             }
             if _owner is not None {
-                self._native_skipped_import_origin.setdefault(name, set()).add(_owner_path);
+                self._native_skipped_import_origin.setdefault(name, set()).add(
+                    _owner_path
+                );
             }
             return;
         }
@@ -2090,7 +2095,9 @@ impl NaIRGenPass._declare_import(pending: PendingImport) -> (ir.Function | None)
     self.scope = scope.outermost();
     try {
         _is_pub = bool(nd.access and nd.access.tag.name == Tok.KW_PUB);
-        _already = self.llvm_module.globals.get(self._symbol_for(name, _owner, _is_pub));
+        _already = self.llvm_module.globals.get(
+            self._symbol_for(name, _owner, _is_pub)
+        );
         if isinstance(_already, ir.Function) {
             """The module already declares this symbol (a kernel walk bound it
             under its bare name without recording the owner): bind it, never

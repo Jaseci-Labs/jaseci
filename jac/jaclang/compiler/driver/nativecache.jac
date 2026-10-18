@@ -210,7 +210,8 @@ obj NativeUnitRegistry {
     def _timed_unit(name: str, path: str, started: float) {
         elapsed = time.perf_counter() - started;
         self._add_time(name, elapsed);
-        self.unit_lower_seconds[path] = self.unit_lower_seconds.get(path, 0.0) + elapsed;
+        self.unit_lower_seconds[path] = self.unit_lower_seconds.get(path, 0.0)
+            + elapsed;
     }
 
     def phase_summary -> str {
@@ -725,9 +726,7 @@ obj NativeUnitRegistry {
             emit_unit_object,
             optimize_unit_ir
         }
-        import from jaclang.compiler.backends.native.lowering {
-            native_fallbacks_in_ir
-        }
+        import from jaclang.compiler.backends.native.lowering { native_fallbacks_in_ir }
         import from jaclang.compiler.driver.native_iface { native_layout_from_dict }
         import from jaclang.compiler.frontend.codeinfo { CodeGenTarget }
         opts = options if options is not None else self._options();
@@ -749,7 +748,9 @@ obj NativeUnitRegistry {
             active_host().save_native_debug_ir(resolved, ir_text);
         }
         debug = bool(opts.native_debug);
-        bitcode = optimize_unit_ir(ir_text, opts, 0 if debug else int(opts.opt_level or 0));
+        bitcode = optimize_unit_ir(
+            ir_text, opts, 0 if debug else int(opts.opt_level or 0)
+        );
         carrier = self.prog.hub.artifacts.get(resolved);
         if carrier is None {
             carrier = CodeGenTarget();

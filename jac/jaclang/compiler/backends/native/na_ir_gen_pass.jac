@@ -124,9 +124,6 @@ obj PendingImport {
         binds_bare: bool;
 }
 
-"""The functions this unit's imports define, declared the first time this unit
-names one: by its bare name where this module binds it to that function, and
-by its module-qualified name."""
 obj ImportedFunctions(FunctionSource) {
     has lowering: NaIRGenPass,
         by_name: dict[str, PendingImport] = {},

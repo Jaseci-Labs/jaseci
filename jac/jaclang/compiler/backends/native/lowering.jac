@@ -199,9 +199,7 @@ def native_fallbacks(
     issues: list[NativeLoweringIssue], demoted_definitions: list[str]
 ) -> NativeFallbacks {
     return NativeFallbacks(
-        symbols=sorted(
-            set(demoted_definitions) | {issue.symbol for issue in issues}
-        ),
+        symbols=sorted(set(demoted_definitions) | {issue.symbol for issue in issues}),
         issues=list(issues)
     );
 }

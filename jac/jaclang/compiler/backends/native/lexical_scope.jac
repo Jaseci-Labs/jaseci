@@ -1,10 +1,3 @@
-"""The names a function body sees while it lowers: the functions it can call,
-the nested functions whose captures it binds, and the lambdas whose captures it
-loads. A scope reads through to the scope around it and binds into itself, and
-leaving it drops everything it bound, so a function body or a generic
-instantiation sees the names of the scopes around it without copying them. The
-outermost scope may draw its functions from a source, which produces a
-function the first time it is named."""
 obj FunctionSource {
     def provides(name: str) -> bool abst;
     def resolve(name: str) -> (ir.Function | None) abst;

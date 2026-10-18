@@ -228,7 +228,6 @@ def unit_line_count(path: str) -> int {
     return total;
 }
 
-"""The process's peak resident set so far, in GB."""
 def peak_rss_gb -> float {
     import resource;
     import sys;
@@ -257,15 +256,14 @@ def plan_kernel_prefix(stop_after: int, log: Callable[[str], None]) -> int {
     try {
         kernel_plan(program, mode=KERNEL_DEV_LINK_MODE);
         log("  The whole kernel was planned before the stop");
-    } except NativeBuildStopped {
-    } finally {
+    } except NativeBuildStopped {} finally {
         registry.progress = None;
         gc.callbacks.remove(pauses.observe);
     }
     log(
         f"  Kernel prefix: {registry.lowered_units} units lowered in "
         f"{time.perf_counter() - started:.1f}s (nothing linked), "
-            f"peak RSS {peak_rss_gb():.1f} GB"
+        f"peak RSS {peak_rss_gb():.1f} GB"
     );
     log(registry.phase_summary());
     log(

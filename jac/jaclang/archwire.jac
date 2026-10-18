@@ -2861,7 +2861,10 @@ graph import compiler.backends.native {
         native_fallbacks_in_ir
     }
     type lowering --> compiler.backends.native.na_compile_pass { NativeFallbacks }
-    lexical_scope --> compiler.backends.native.na_ir_gen_pass { FunctionSource, LexicalScope }
+    lexical_scope --> compiler.backends.native.na_ir_gen_pass {
+        FunctionSource,
+        LexicalScope
+    }
     lowering --> compiler.backends.native.na_ir_gen_pass {
         DEMOTED_SUFFIX,
         NativeLoweringIssue,
@@ -4824,9 +4827,7 @@ graph import compiler.driver {
         CompilationProduct
     }
     program --> compiler.backends.native.kernel_stage0.link_kernel { JacProgram }
-    program --> compiler.backends.native.kernel_stage0.plan_kernel_prefix {
-        JacProgram
-    }
+    program --> compiler.backends.native.kernel_stage0.plan_kernel_prefix { JacProgram }
     type program --> compiler.capability_notes { JacProgram }
     type program --> compiler.native_bindings { JacProgram }
     type program --> compiler.passes.placement_pass { JacProgram }
@@ -7970,7 +7971,9 @@ graph import compiler.frontend {
     codeinfo --> compiler.driver.program.JacProgram.declared_codespace {
         is_client_by_location
     }
-    codeinfo --> compiler.driver.program.JacProgram.compile { native_unit_compile_active }
+    codeinfo --> compiler.driver.program.JacProgram.compile {
+        native_unit_compile_active
+    }
     codeinfo --> compiler.driver.program.JacProgram.stamp_boundary_facts {
         is_bundled_native_module,
         resolve_native_module

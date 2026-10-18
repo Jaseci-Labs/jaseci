@@ -52,7 +52,8 @@ test "lowering records retain details through bitcode and linking" {
     assert len(fields) == 1;
     assert fields[0].source == "quoted\"/source.jac";
     assert fields[0].detail == "field\n☃";
-    assert native_fallbacks_in_ir(str(restored)).symbols == ["Model.run", "Model.value"];
+    assert native_fallbacks_in_ir(str(restored)).symbols
+        == ["Model.run", "Model.value"];
 }
 
 test "invalid lowering metadata cannot silently pass coverage" {

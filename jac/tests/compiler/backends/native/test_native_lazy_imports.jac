@@ -8,7 +8,9 @@ import re;
 import from tests.support { compile_native, compile_native_ir, get_func }
 
 def _declared_wide(ir_text: str) -> set[str] {
-    return set(re.findall(r"^declare[^@\n]*@\"?[^\"(\n]*\b(wide_\d+)\"?\(", ir_text, re.M));
+    return set(
+        re.findall(r"^declare[^@\n]*@\"?[^\"(\n]*\b(wide_\d+)\"?\(", ir_text, re.M)
+    );
 }
 
 test "a unit declares only the imported functions it calls" {
