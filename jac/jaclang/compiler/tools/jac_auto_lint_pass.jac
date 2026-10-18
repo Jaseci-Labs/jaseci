@@ -130,7 +130,9 @@ walker JacAutoLintPass(TreePass) {
     def _wired_items(
         stmt: uni.Import,
         spec: WiringSpec,
-        provided: dict[tuple[str, str, str, str], WireRec]
+        provided: dict[tuple[str, str, str, str], WireRec],
+        reads: Callable[[], list[ScopeReads]],
+        scope: str
     ) -> set[int];
 
     can exit_expr_stmt with uni.ExprStmt exit;

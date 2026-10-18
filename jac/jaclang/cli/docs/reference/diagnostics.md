@@ -570,6 +570,8 @@ An app's walkers and `def:pub` functions form its public boundary. Other declara
 | `E2096` | '{module}' is not exported by the package '{package}' |
 | `E2097` | '{name}' is not a module under this archwire.jac, so {what} names nothing |
 | `E2098` | Edge rule '{name}': {what} matches no module |
+| `E2099` | '{provider} --> {consumer}' crosses from top-level package '{source}' into '{target}', and no rule admits it; add `{rule}` |
+| `E2100` | Edge rule '{name}': the bare '*' {side} states no architecture |
 
 ### JSX Slot Body Rules
 
@@ -628,6 +630,7 @@ Emitted by `jac check --lint`. Rules can be configured in [`jac.toml`](config/in
 | `W3050` | `strip-comments` | Comment can be removed | opt-in |
 | `W3051` | `strip-docstrings` | Docstring can be removed | opt-in |
 | `W3053` | `remove-wired-import` | Import of '{name}' from '{module}' is already provided by archwire.jac (fix only: `jac check` reports it as `E1144`) | default |
+| `W3054` | `remove-dead-import` | Import of '{name}' from '{module}' is neither wired nor read | default |
 
 > **opt-in group**: `strip-comments` and `strip-docstrings` are destructive "deslop" rules. They are **never** activated by `select = ["all"]` or `["default"]`; they fire only when named explicitly in [`[check.lint]`](config/index.md#checklint). See the config reference for details.
 

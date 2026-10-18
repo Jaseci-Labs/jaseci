@@ -851,6 +851,17 @@ obj KernelHost(HostServices) {
         return answer;
     }
 
+    def stub_interface(program: JacProgram, file_path: str) -> (Module | None) {
+        if not self.in_kernel() {
+            return None;
+        }
+        served = self.python_module(program, file_path);
+        if served is None and self.ask("parse_python", file_path) {
+            served = self.python_module(program, file_path);
+        }
+        return served;
+    }
+
     def ct_environment -> CtEnvironment {
         self.census.count("ct_environment");
         return self.inputs.ct_environment;
