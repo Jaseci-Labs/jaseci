@@ -14,7 +14,7 @@ obj Alert {
     def pretty_print(*, colors: bool = False) -> str;
 }
 
-glob INLINE_LOCKED_CODES: set[str] = {"E1144", "E1146", "E2090", "E2091", "E2094"};
+glob INLINE_LOCKED_CODES: set[str] = {"E1144", "E1146", "E2090", "E2091", "E2094", "E2099"};
 
 obj DiagnosticPolicy {
     has suppress_codes: list[str] = [],

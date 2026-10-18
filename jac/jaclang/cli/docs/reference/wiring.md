@@ -88,7 +88,7 @@ A new module under the directory is governed from the moment it exists, so a fre
 
 Modules compiled by the bootstrap compiler (the jac0 seed set of the jaclang package itself) follow the same rule: jac0 reads `archwire.jac` and weaves the same imports the full compiler does.
 
-`E1144`, `E1146`, `E2090`, `E2091` and `E2094` ignore inline `# jac:ignore` comments. Changing a boundary is an edit to archwire.jac, so it is visible in review; `[check] suppress` in jac.toml still applies.
+`E1144`, `E1146`, `E2090`, `E2091`, `E2094` and `E2099` ignore inline `# jac:ignore` comments. Changing a boundary is an edit to archwire.jac, so it is visible in review; `[check] suppress` in jac.toml still applies.
 
 ## Rules
 
@@ -101,14 +101,18 @@ graph import {
 }
 ```
 
-A provider that no rule names flows anywhere inside the boundary. A provider a rule names as a source flows only where some rule admits it, so `edge CoreInternal: core.* --> core.*;` alone means `core` modules may be imported by `core` modules and by nobody else under this archwire.jac. Rules apply to every wire and every written import.
+Rules are mandatory between top-level packages. A wire or written import from one top-level package into another (`core` into `web`, say) must be admitted by a rule, or it is `E2099`, and the message carries the rule to add. Every dependency between packages is then a stated decision, reviewed as an edit to archwire.jac. Plumbing inside one top-level package needs no rule.
 
-- A flow no rule admits is `E2090`.
+A rule speaks about the top-level packages its targets name. Once a rule names a provider as its source and targets a package, the provider flows into that package only where some rule admits it. So `edge CoreInternal: core.* --> core.*;` governs the imports inside `core`, and `edge Docs: core.docs.* --> core.sync;` would then confine `core.docs` to `core.sync` within `core`, while `edge Core: core.* --> web.*;` says nothing about `core`'s own modules. A rule naming a provider outside the boundary governs every flow from it. Rules apply to every wire and every written import.
+
+- A wire between top-level packages that no rule governs is `E2099`.
+- A flow that rules govern but none admits is `E2090`.
 - A rule with a payload admits only the names it lists, and a payload always narrows: if any admitting rule carries a payload, every crossing name must appear in one of those payloads, or it is `E2091`. A module-form import (`import P;`) cannot be admitted by a payload rule, since the names it carries are not visible.
 - A rule may name an external provider. `edge LlmFunnel: jaclang.byllm.* --> core.ai;` declares that all model-client access goes through one module, without a single wire.
 - A pattern that matches no module is `E2098`; external source patterns are exempt, since they are meant to match modules outside the boundary.
+- A rule on the bare `*` pattern, as a source or a target, is `E2100`: it admits everything and states no architecture.
 
-Patterns are a dotted module (`core.docs.graph`), a package glob (`core.*`, which also matches the package's own `__init__`), `*` for every module under the block's scope, or a quoted npm name. A rule's targets are always modules under its archwire.jac, so `any` is not a pattern (`E0098`). Every rule is named, because the name carries the diagnostics that cite it.
+Patterns are a dotted module (`core.docs.graph`), a package glob (`core.*`, which also matches the package's own `__init__`), or a quoted npm name. A rule's targets are always modules under its archwire.jac, so `any` is not a pattern (`E0098`). Every rule is named, because the name carries the diagnostics that cite it.
 
 ## Scoped blocks
 
@@ -149,6 +153,7 @@ So the root block holds exactly the edges between top-level packages, and each d
 | `E2093` | `archwire.jac` has syntax errors, so a module's wiring may be incomplete |
 | `E2097` | a scope header or a wire's consumer names no module under the archwire.jac |
 | `E2098` | a rule pattern matches no module |
+| `E2100` | a rule's source or target is the bare `*` pattern |
 
 Syntax has its own codes, `E0086` through `E0099`, each naming the shape that was expected: a directed `++>` or `-->`, one provider per wire, consumers named in full, `as` only on the module form, no duplicate payload names, `include` without a payload, named rules, a dotted scope, `*` standing alone, no `any` in a rule, and the `graph import` header.
 
@@ -166,8 +171,10 @@ You change import relationships by editing `archwire.jac`. The `jac arch` comman
 
 | Command | Effect |
 |---|---|
-| `jac arch init [dir]` | Seal `dir` (or the project root): write its `archwire.jac` from every import between the modules below it. `--strip` then removes the written imports the file now injects. `--force` overwrites an existing file. |
-| `jac arch sync [dir]` | For the `archwire.jac` in `dir`, or every `archwire.jac` in the project: add a wire for every import a module writes that `archwire.jac` does not declare. `--prune` also removes the wired names no consumer uses. `--strip` removes the now-injected written imports. |
+| `jac arch init [dir]` | Seal `dir` (or the project root): write its `archwire.jac` from every import between the modules below it, with one rule per top-level package that feeds another (`edge Core: core.* --> cli.* \| web.*;`). `--strip` then removes the written imports the file now injects. `--force` overwrites an existing file. |
+| `jac arch sync [dir]` | For the `archwire.jac` in `dir`, or every `archwire.jac` in the project: add a wire for every import a module writes that `archwire.jac` does not declare, and admit each new edge between top-level packages in the rule named after its source package, creating that rule if needed. Hand-written rules are never edited. `--prune` also removes the wired names no consumer uses, and the written import of a pruned `-->` wire. `--strip` removes the now-injected written imports. |
 | `jac arch graph [dir]` | Render the wiring as mermaid (default) or `--format json`; `-o <file>` writes it. |
 
-`jac arch init --strip` is the adoption path: run it once, read the file it wrote as a catalog of packages, then add the rules that state how the project is layered.
+`jac arch init --strip` is the adoption path: run it once, then read the file it wrote. Its rules describe the layering the project has today; tighten them into the layering it should have.
+
+`jac fmt --lintfix` removes a written import under a boundary that no wire provides and nothing reads (`W3054`); it is dead however it got there. A written import that is read stays, since it needs a wire, not a deletion.

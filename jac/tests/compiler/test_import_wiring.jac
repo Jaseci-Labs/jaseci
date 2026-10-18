@@ -223,7 +223,7 @@ test "a module archwire.jac never names is still sealed and still ruled" {
             "import from app.main { greet }\n\ndef x -> str {\n    return greet();\n}\n"
         );
         prog = _compile(base, "extra/rogue.jac");
-        assert sorted(_errors(prog)) == ["E1144", "E2090"] , _errors(prog);
+        assert sorted(_errors(prog)) == ["E1144", "E2099"] , _errors(prog);
     } finally {
         shutil.rmtree(base, ignore_errors=True);
     }
@@ -393,6 +393,7 @@ test "lint autofix removes wired imports" {
     base = _standard(
         svc="import from core.util { now }\nimport from core.other { helper }\n\n"
             + _SVC
+            + "\ndef aid -> int {\n    return helper();\n}\n"
     );
     try {
         fixed = JacProgram.jac_file_formatter(
@@ -694,22 +695,11 @@ test "jac arch sync adds missing wires and --prune drops unused ones" {
 }
 
 
-test "rules are optional: a provider no rule names flows anywhere under archwire.jac" {
-    base = _standard(
-        arch=(
-            "graph import {\n"
-            "    core.svc ++> app.main { serve }\n"
-            "    core.util ++> app.main { now as when }\n"
-            "}\n"
-            "\n"
-            "graph import core {\n"
-            "    util ++> svc { now }\n"
-            "}\n"
-        )
-    );
+test "inside one top-level package rules are optional" {
+    base = _standard(arch="graph import core {\n    util ++> svc { now }\n}\n");
     try {
         assert _errors(_compile(base, "archwire.jac")) == [];
-        assert _errors(_compile(base, "app/main.jac")) == [];
+        assert _errors(_compile(base, "core/svc.jac")) == [];
     } finally {
         shutil.rmtree(base, ignore_errors=True);
     }
@@ -738,7 +728,7 @@ test "a rule restricts only the providers it names" {
             "import from core.util { now }\n\ndef t -> str {\n    return now();\n}\n"
         );
         free = _compile(base, "extra/free.jac");
-        assert sorted(_errors(free)) == ["E1144", "E2090"] , _errors(free);
+        assert sorted(_errors(free)) == ["E1144", "E2099"] , _errors(free);
     } finally {
         shutil.rmtree(base, ignore_errors=True);
     }
@@ -758,7 +748,7 @@ test "a rule's targets are relative to its block, like a wire's consumers" {
     );
     try {
         assert _errors(_compile(base, "archwire.jac")) == [];
-        assert "E2090" in _errors(_compile(base, "app/main.jac"));
+        assert "E2099" in _errors(_compile(base, "app/main.jac"));
     } finally {
         shutil.rmtree(base, ignore_errors=True);
     }
@@ -1193,16 +1183,15 @@ test "a wire between top-level packages that no rule admits is an error naming t
         )
     );
     try {
-        prog = _compile(base, "app/main.jac");
+        prog = _compile(base, "archwire.jac");
         unruled = [
             str(e)
             for e in prog.errors_had
             if e.code is not None and e.code.code == "E2099"
         ];
-        assert unruled , _errors(prog);
-        assert "edge Core: core.* --> app.*;" in unruled[0] , unruled[0];
-        svc = _compile(base, "core/svc.jac");
-        assert "E2099" not in _errors(svc) , _errors(svc);
+        assert len(unruled) == 2 , [str(e) for e in prog.errors_had];
+        assert all(["edge Core: core.* --> app.*;" in u for u in unruled]) , unruled;
+        assert not any(["core.util --> core.svc" in u for u in unruled]) , unruled;
     } finally {
         shutil.rmtree(base, ignore_errors=True);
     }

@@ -60,7 +60,7 @@ impl ImportWiringPass._check_arch_module(mod: Module) -> None {
                 } else {
                     rule_names[stmt.name.value] = stmt;
                 }
-                self._check_rule_liveness(spec, stmt);
+                self._check_rule_patterns(spec, stmt);
             } elif isinstance(stmt, ImportWire) {
                 self._check_wire(spec, stmt);
             }
@@ -158,32 +158,34 @@ impl ImportWiringPass._check_target(
     }
 }
 
-impl ImportWiringPass._check_rule_liveness(spec: WiringSpec, rule: ImportRule) -> None {
+impl ImportWiringPass._check_rule_patterns(spec: WiringSpec, rule: ImportRule) -> None {
     modules = spec.project_modules();
     top_level = {m.split(".")[0] for m in modules};
     record = rule_record(rule);
-    for (pattern, node) in zip(record.sources, rule.sources) {
-        if pattern.is_string
-            or (pattern.dotted and pattern.dotted.split(".")[0] not in top_level) {
-            continue;
-        }
-        if not any([pattern.matches(m) for m in modules]) {
-            self.ctx.emit(
-                E2098,
-                node_override=node,
-                name=record.name,
-                what=f"source pattern '{pattern.text}'"
-            );
-        }
-    }
-    for (pattern, node) in zip(record.targets, rule.targets) {
-        if not any([pattern.matches(m) for m in modules]) {
-            self.ctx.emit(
-                E2098,
-                node_override=node,
-                name=record.name,
-                what=f"target pattern '{pattern.text}'"
-            );
+    for (side, patterns, nodes) in [
+        ("source", record.sources, rule.sources),
+        ("target", record.targets, rule.targets)
+    ] {
+        for (pattern, node) in zip(patterns, nodes) {
+            if pattern.is_glob and not pattern.dotted {
+                self.ctx.emit(E2100, node_override=node, name=record.name, side=side);
+                continue;
+            }
+            if side == "source"
+                and (
+                    pattern.is_string
+                    or (pattern.dotted and pattern.dotted.split(".")[0] not in top_level)
+                ) {
+                continue;
+            }
+            if not any([pattern.matches(m) for m in modules]) {
+                self.ctx.emit(
+                    E2098,
+                    node_override=node,
+                    name=record.name,
+                    what=f"{side} pattern '{pattern.text}'"
+                );
+            }
         }
     }
 }
@@ -195,8 +197,21 @@ impl ImportWiringPass._check_edge(
     names: (list[tuple[str, UniNode]] | None),
     at: UniNode
 ) -> None {
-    constrained = spec.rules_for_provider(provider);
+    constrained = spec.rules_governing(provider, consumer);
     if not constrained {
+        if spec.needs_rule(provider, consumer) {
+            source = WiringSpec.top_package(provider);
+            target = WiringSpec.top_package(consumer);
+            self.ctx.emit(
+                E2099,
+                node_override=at,
+                provider=provider,
+                consumer=consumer,
+                source=source,
+                target=target,
+                rule=rule_text(spec.edge_rule(source, [target]))
+            );
+        }
         return;
     }
     admitting = spec.rules_admitting(provider, consumer);
@@ -453,30 +468,18 @@ impl unused_wire_bindings(mod: Module) -> list[UnusedBinding] {
         }
     }
     exports = ModuleFacts.literal_exports(mod) or set();
-    owners: (dict[str, list[(Ability | ImplDef)]] | None) = None;
-    read: dict[str, set[str]] = {};
+    reads = ScopeReads(mod=mod);
     for wire in wires {
         scope = ".".join(spec.consumer_scope(consumer, wire));
         for binding in wire.bindings() {
             name = binding.bound_name();
             at = bound.get((scope, binding.key()));
             if at is None
-                or "include" in binding.form.split(" ")
-                or (binding.is_module_form() and not binding.alias)
+                or is_effect_binding(binding)
                 or (not scope and name in exports) {
                 continue;
             }
-            if scope not in read {
-                bodies: list[UniNode] = [mod];
-                if scope {
-                    if owners is None {
-                        owners = scope_owners(mod);
-                    }
-                    bodies = list(owners.get(scope, [mod]));
-                }
-                read[scope] = set().union(*[names_read_in(b, mod) for b in bodies]);
-            }
-            if name not in read[scope] {
+            if name not in reads.names(scope) {
                 found.append(
                     UnusedBinding(
                         consumer=consumer + "." + scope if scope else consumer,
@@ -489,6 +492,28 @@ impl unused_wire_bindings(mod: Module) -> list[UnusedBinding] {
         }
     }
     return found;
+}
+
+impl ScopeReads.names(scope: str) -> set[str] {
+    held = self.read.get(scope);
+    if held is not None {
+        return held;
+    }
+    bodies: list[UniNode] = [self.mod];
+    if scope {
+        if self.owners is None {
+            self.owners = scope_owners(self.mod);
+        }
+        bodies = list(self.owners.get(scope, [self.mod]));
+    }
+    held = set().union(*[names_read_in(b, self.mod) for b in bodies]);
+    self.read[scope] = held;
+    return held;
+}
+
+impl is_effect_binding(binding: WireBinding) -> bool {
+    return "include" in binding.form.split(" ")
+        or (binding.is_module_form() and not binding.alias);
 }
 
 impl names_read_in(body: UniNode, mod: Module) -> set[str] {

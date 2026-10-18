@@ -11,7 +11,7 @@ walker ImportWiringPass(CompilerPass) {
         spec: WiringSpec, provider: str, provider_ok: bool, target: WireTarget
     ) -> None;
 
-    def _check_rule_liveness(spec: WiringSpec, rule: ImportRule) -> None;
+    def _check_rule_patterns(spec: WiringSpec, rule: ImportRule) -> None;
     def _check_edge(
         spec: WiringSpec,
         provider: str,
@@ -47,6 +47,15 @@ obj UnusedBinding {
         at: UniNode;
 }
 
+obj ScopeReads {
+    has mod: Module,
+        owners: (dict[str, list[(Ability | ImplDef)]] | None) = None,
+        read: dict[str, set[str]] = {};
+
+    def names(scope: str) -> set[str];
+}
+
+def is_effect_binding(binding: WireBinding) -> bool;
 def report_unused_wires(reporter: CompilerPass, mod: Module) -> None;
 def unused_wire_bindings(mod: Module) -> list[UnusedBinding];
 def names_read_in(body: UniNode, mod: Module) -> set[str];

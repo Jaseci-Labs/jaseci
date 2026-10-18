@@ -488,20 +488,59 @@ impl WiringSpec.import_provider(path_node: ModulePath) -> (str | None) {
     return None;
 }
 
-impl WiringSpec.rules_for_provider(provider: str) -> list[RuleRec] {
-    return [
+impl WiringSpec.rules_governing(provider: str, consumer: str) -> list[RuleRec] {
+    named = [
         rule
         for rule in self.rules
         if any([p.matches(provider) for p in rule.sources])
+    ];
+    if not self.is_project_module(provider) {
+        return named;
+    }
+    top = WiringSpec.top_package(consumer);
+    return [
+        rule
+        for rule in named
+        if any(
+            [
+                not t.is_string
+                    and (not t.dotted or WiringSpec.top_package(t.dotted) == top)
+                for t in rule.targets
+            ]
+        )
     ];
 }
 
 impl WiringSpec.rules_admitting(provider: str, consumer: str) -> list[RuleRec] {
     return [
         rule
-        for rule in self.rules_for_provider(provider)
+        for rule in self.rules_governing(provider, consumer)
         if any([t.matches(consumer) for t in rule.targets])
     ];
+}
+
+impl WiringSpec.top_package(module: str) -> str {
+    return module.split(".")[0];
+}
+
+impl WiringSpec.top_pattern(top: str) -> PatternRec {
+    is_glob = self.is_package_dir(top);
+    return PatternRec(dotted=top, is_glob=is_glob, text=top + ".*" if is_glob else top);
+}
+
+impl WiringSpec.needs_rule(provider: str, consumer: str) -> bool {
+    return WiringSpec.top_package(provider) != WiringSpec.top_package(consumer)
+        and self.is_project_module(provider)
+        and not self.rules_governing(provider, consumer);
+}
+
+impl WiringSpec.edge_rule(source: str, targets: list[str]) -> RuleRec {
+    return RuleRec(
+        name=rule_name_for(source),
+        sources=[self.top_pattern(source)],
+        targets=[self.top_pattern(t) for t in sorted(set(targets))],
+        is_open=True
+    );
 }
 
 impl WiringSpec.admitted_names(rules: list[RuleRec]) -> (set[str] | None) {
@@ -1203,7 +1242,64 @@ impl wiring_facts(wires: list[WireRec]) -> list[tuple[str, WireBinding]] {
     return facts;
 }
 
-impl _rule_text(rule: RuleRec) -> str {
+impl rule_name_for(top: str) -> str {
+    return "".join([part[:1].upper() + part[1:] for part in top.split("_") if part]);
+}
+
+impl propose_rules(
+    spec: WiringSpec, facts: list[tuple[str, WireBinding]], rules: list[RuleRec]
+) -> list[RuleRec] {
+    probe = WiringSpec(root_dir=spec.root_dir, path=spec.path, wires=[], rules=rules);
+    wanted: dict[str, set[str]] = {};
+    for (consumer, binding) in facts {
+        provider = binding.provider;
+        if not spec.is_project_module(provider) {
+            continue;
+        }
+        constrained = probe.rules_governing(provider, consumer);
+        crossing = WiringSpec.top_package(provider) != WiringSpec.top_package(consumer);
+        if constrained {
+            if probe.rules_admitting(provider, consumer) {
+                continue;
+            }
+        } elif not crossing {
+            continue;
+        }
+        wanted.setdefault(WiringSpec.top_package(provider), set()).add(
+            WiringSpec.top_package(consumer)
+        );
+    }
+    out = list(rules);
+    taken = {r.name for r in out};
+    for source in sorted(wanted) {
+        proposal = spec.edge_rule(source, sorted(wanted[source]));
+        held = next((r for r in out if r.name == proposal.name), None);
+        if held is not None
+            and held.is_open
+            and [p.text for p in held.sources] == [proposal.sources[0].text] {
+            texts = {p.text for p in held.targets};
+            out[out.index(held)] = RuleRec(
+                name=held.name,
+                sources=held.sources,
+                targets=held.targets
+                    + [p for p in proposal.targets if p.text not in texts],
+                is_open=True
+            );
+            continue;
+        }
+        base = proposal.name;
+        n = 1;
+        while proposal.name in taken {
+            n += 1;
+            proposal.name = f"{base}{n}";
+        }
+        taken.add(proposal.name);
+        out.append(proposal);
+    }
+    return out;
+}
+
+impl rule_text(rule: RuleRec) -> str {
     sources = " | ".join(sorted([p.text for p in rule.sources]));
     targets = " | ".join(sorted([p.text for p in rule.targets]));
     tail = ";"
@@ -1323,7 +1419,7 @@ impl render_wiring(
         );
     }
     policy = [
-        _rule_text(r) for r in sorted(rules, key=lambda (r: RuleRec) { r.name; })
+        rule_text(r) for r in sorted(rules, key=lambda (r: RuleRec) { r.name; })
     ];
     top_wires = [text for (_key, text) in sorted(wires.get("", []))];
     if policy and top_wires {
