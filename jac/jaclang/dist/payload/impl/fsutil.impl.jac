@@ -260,7 +260,12 @@ impl run_child(argv: list[str], env: dict[str, str] | None, allow_fail: bool) ->
     }
     if rc < 0 {
         import signal;
-        log(f"   {argv[0]} killed by {signal.Signals(-rc).name} after {took:.1f}s");
+        try {
+            how = signal.Signals(-rc).name;
+        } except ValueError {
+            how = f"signal {-rc}";
+        }
+        log(f"   {argv[0]} killed by {how} after {took:.1f}s");
     } elif not ok {
         log(f"   {argv[0]} exited {rc} after {took:.1f}s");
     }
