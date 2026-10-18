@@ -990,7 +990,7 @@ impl NaIRGenPass._c_const_init(
         return self._c_const_struct(expr, sname);
     }
     if isinstance(llt, ir.PointerType) and isinstance(llt.pointee, ir.FunctionType) {
-        target = self.func_symtab.get(expr.sym_name)
+        target = self.scope.function(expr.sym_name)
             if isinstance(expr, uni.Name)
             else None;
         if not isinstance(target, ir.Function) {
@@ -1165,7 +1165,7 @@ impl NaIRGenPass._c_function_address(
     if exported is not None {
         return (True, exported.ptrtoint(i64) as ir.Constant);
     }
-    target = self.func_symtab.get(name);
+    target = self.scope.function(name);
     c_callable = False;
     if isinstance(target, ir.Function) and not target.function_type.var_arg {
         ftype = target.function_type;
