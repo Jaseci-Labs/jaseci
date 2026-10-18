@@ -320,6 +320,27 @@ test "dev banner headlines vite port not api port" {
     }
 }
 
+test "a vite dev server that fails to start reports why instead of a port" {
+    import from jaclang.client.artifact { ClientBundleError }
+    with TemporaryDirectory() as tmpdir {
+        with patch("jaclang.client.vite_bundler.ViteBundler") as bundler_cls {
+            bundler_cls.return_value.start_dev_server.side_effect = ClientBundleError(
+                "Vite exited with code 3 before it was ready: vite: bad config"
+            );
+            with redirect_stdout(io.StringIO()) {
+                with redirect_stderr(io.StringIO()) {
+                    (process, port, reason) = execution._start_vite_dev_server(
+                        tmpdir, 8000, 8001
+                    );
+                }
+            }
+        }
+        assert process is None;
+        assert port == 8000;
+        assert "exited with code 3" in reason , reason;
+    }
+}
+
 test "dev banner with no vite dev server shows the api and why, not an app url" {
     with TemporaryDirectory() as tmpdir {
         captured_output = io.StringIO();
