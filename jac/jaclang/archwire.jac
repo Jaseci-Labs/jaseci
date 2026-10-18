@@ -9885,7 +9885,10 @@ graph import compiler {
             config_kind_space,
             effective_module_pin
         },
-        driver.program.JacProgram.stamp_boundary_facts { config_module_pin },
+        driver.program.JacProgram.stamp_boundary_facts
+            | passes.boundary_analysis_pass.BoundaryAnalysisPass._bind_server_callee {
+            config_module_pin
+        },
         passes.placement_pass.element_requirements {
             config_element_pin,
             config_pin_for
@@ -15099,7 +15102,7 @@ graph import runtime {
         runtime.JacRuntime.get_selfhost { build_services },
     ]
     builtin --> archetype.Archetype.__init_subclass__ { _jac_region_instrument }
-    cinterop ++> interop_bridge { shape_ctype }
+    cinterop ++> interop_bridge.callback_ctype { shape_ctype }
     cinterop as _cinterop_mod --> builtin.__getattr__;
     constants ++> [
         context { Constants as Con },

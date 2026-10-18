@@ -159,9 +159,11 @@ impl BoundaryAnalysisPass._bind_server_callee(call: FuncCall, local_name: str) -
     }
     owner = decl.find_parent_of_type(Module);
     if owner is None
+        or owner is self.module
         or owner.loc is None
+        or decl.is_comptime
         or not owner.loc.mod_path.endswith('.jac')
-        or self._get_context(decl) != InteropContext.SERVER {
+        or config_module_pin(owner.loc.mod_path) != 'server' {
         return;
     }
     (ret_type, param_types, param_names) = self._signature_of_decl(decl);
@@ -173,7 +175,7 @@ impl BoundaryAnalysisPass._bind_server_callee(call: FuncCall, local_name: str) -
         param_types=param_types,
         param_names=param_names,
         ast_node=decl,
-        source_module=None if owner is self.module else owner.name,
+        source_module=owner.name,
         kind='function',
         symbol=self._interop_symbol(decl, owner, '', decl.sym_name)
     );
