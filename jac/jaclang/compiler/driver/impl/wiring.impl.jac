@@ -1379,23 +1379,30 @@ impl prune_wiring_source(
         root_dir=os.path.dirname(os.path.abspath(path)), path=path, wires=[], rules=[]
     );
     text = list(source);
+    def blank(span: UniNode) {
+        for at in range(span.loc.pos_start, span.loc.pos_end) {
+            if text[at] != "\n" {
+                text[at] = " ";
+            }
+        }
+    }
     for stmt in mod.body {
         if not isinstance(stmt, GraphImport) {
             continue;
         }
+        kept = 0;
         for item in stmt.body {
-            if not isinstance(item, ImportWire) {
-                continue;
+            found = spec.module_file(item.provider_path)
+                if isinstance(item, ImportWire)
+                else None;
+            if found is not None and dropped(found) {
+                blank(item);
+            } else {
+                kept += 1;
             }
-            found = spec.module_file(item.provider_path);
-            if found is None or not dropped(found) {
-                continue;
-            }
-            for at in range(item.loc.pos_start, item.loc.pos_end) {
-                if text[at] != "\n" {
-                    text[at] = " ";
-                }
-            }
+        }
+        if stmt.body and not kept {
+            blank(stmt);
         }
     }
     return "".join(text);

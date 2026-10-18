@@ -91,6 +91,17 @@ test "the payload ships archwire.jac with the wires from modules it drops blanke
         }
         assert not stray , stray[:5];
         assert not moved , moved[:5];
+        headers = [
+            line.split()[2]
+            for line in shipped.split("\n")
+            if line.startswith("graph import ") and len(line.split()) == 4
+        ];
+        emptied = [
+            scope
+            for scope in headers
+            if _dropped(os.path.join(_PKG, *scope.split(".")))
+        ];
+        assert not emptied , emptied[:5];
         assert kept < everything;
         assert not os.path.exists(
             os.path.join(site, "runtime", "python", ARCH_FILE_NAME)
