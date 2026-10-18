@@ -137,3 +137,31 @@ test "jac native status reports a stale shim instead of crashing" {
         assert "the shim predates its sources" in out , out;
     }
 }
+
+
+test "native lowering products take the native toolchain verdict from the host" {
+    script = f"""
+import sys
+sys.path.insert(0, {JAC_ROOT!r})
+from jaclang.compiler.frontend.host import NeutralHost, active_host, install_host
+from jaclang.compiler.driver.pipeline import resolve, unavailable
+from jaclang.compiler.driver.pipeline_types import CompilationProduct
+
+class StaleShimHost(NeutralHost):
+    def native_pipeline_available(self):
+        return (False, 'native pipeline unavailable: the LLVM shim is stale')
+
+previous = active_host()
+install_host(StaleShimHost())
+try:
+    for product in (CompilationProduct.NATIVE_LOWER, CompilationProduct.NATIVE_IR):
+        assert unavailable(product) == 'native pipeline unavailable: the LLVM shim is stale', product
+        assert resolve(product)[0] is None, product
+finally:
+    install_host(previous)
+""";
+    proc = subprocess.run(
+        [sys.executable, "-c", script], capture_output=True, text=True, timeout=600
+    );
+    assert proc.returncode == 0 , proc.stdout + proc.stderr;
+}

@@ -11814,7 +11814,7 @@ graph import compiler.driver {
             | ifacecache.IfaceRegistry._ensure_in_context { require },
         compiler.JacCompiler.jac_file_linter { require },
         ifacecache.IfaceRegistry._prepare { product_facts },
-        nativecache.NativeBuildSession.lower { invalidate, require },
+        nativecache.NativeBuildSession.lower { invalidate, require, unavailable },
     ]
     pipeline_runner --> [
         application._prepare_revision { compile_application },
