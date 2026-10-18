@@ -402,7 +402,6 @@ def _callback_source_path(binding: any, proj_dir: str) -> str {
 
 impl native_build_sealed_pair(filename: str, exe_output: str, lib_output: str) -> int {
     import json;
-    import from jaclang.compiler.backends.native.link_plan { resolved_callback_bindings }
 
     built = _sealed_native_plan(filename);
     if built is None {
