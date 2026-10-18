@@ -997,8 +997,11 @@ test "every owner of a scoped wire gets its own import, parsed from the wire" {
         place_wired_imports(mod);
         owners = mod.get_all_sub_nodes(typ=ImplDef);
         placed = [
-            [s for s in owner.body if isinstance(s, Import)]
-            for owner in owners
+            [
+                s
+                for s in owner.body
+                if isinstance(s, Import)
+            ] for owner in owners
         ];
         assert [len(p) for p in placed] == [1, 1] , placed;
         (first, second) = (placed[0][0], placed[1][0]);
