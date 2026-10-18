@@ -820,6 +820,11 @@ class NamedValue(Value) {
         self._set_name(name);
     }
 
+    """
+        Drop the values this one holds on to, once nothing reads it again.
+        """
+    def release(self: NamedValue) {}
+
     def _to_string(self: NamedValue) -> str {
         buf: list[str] = [];
         if not isinstance(self.type, types.VoidType) {
@@ -1533,6 +1538,18 @@ class Function(GlobalValue) {
         }
     }
 
+    def release(self: Function) {
+        for block in self.blocks {
+            block.release();
+        }
+        self.blocks = [];
+        for arg in self.args {
+            arg.parent = None;
+        }
+        self.args = [];
+        self.return_value.parent = None;
+    }
+
     def descr(self: Function, buf: list[str]) {
         self.descr_prototype(buf);
         if self.blocks {
@@ -1633,7 +1650,7 @@ class ArgumentAttributes(AttributeSet) {
 }
 
 class _BaseArgument(NamedValue) {
-    has parent: Function,
+    has parent: (Function | None),
         attributes: ArgumentAttributes;
 
     def init(self: _BaseArgument, parent: Function, typ: types.Type, name: str = '') {
@@ -1699,6 +1716,14 @@ class Block(NamedValue) {
         self.parent = parent;
         super.init(parent.scope, types.LabelType(), name);
         self.scope = parent.scope;
+        self.instructions = [];
+        self.terminator = None;
+    }
+
+    def release(self: Block) {
+        for instr in self.instructions {
+            instr.release();
+        }
         self.instructions = [];
         self.terminator = None;
     }

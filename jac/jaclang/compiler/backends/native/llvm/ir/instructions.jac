@@ -159,6 +159,10 @@ class Instruction(NamedValue) {
         }
     }
 
+    def release(self: Instruction) {
+        self.operands = [];
+    }
+
     def descr(self: Instruction, buf: list[str]) {
         opname = self.opname;
         if self.flags {
