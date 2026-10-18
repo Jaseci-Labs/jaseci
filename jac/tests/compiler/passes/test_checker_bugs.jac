@@ -2390,3 +2390,14 @@ test "bug_ctor_init_args_dict_call_misuse_is_reported" {
         f"Line 24 reported: {by_line.get(24)}"
     );
 }
+
+test "bug_qualified_overload_not_duplicate_method" {
+    # `@typing.overload` and an aliased `@t.overload` (common in third-party
+    # packages, e.g. `import typing as t`) mark stubs exactly like a bare
+    # `@overload`; the stubs and their implementation are not duplicates.
+    errs = _e0076_errors_of("checker_bug_qualified_overload.jac");
+    assert len(errs) == 0 , (
+        "Overload stubs spelled through a module must not be flagged as "
+        f"duplicate methods. Got E0076 errors: {[str(e) for e in errs]}"
+    );
+}

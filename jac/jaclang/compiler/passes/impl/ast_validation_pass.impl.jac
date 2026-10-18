@@ -439,7 +439,12 @@ impl ASTValidationPass.enter_archetype with Archetype entry {
         accessor_target: (str | None) = None;
         if item.decorators is not None {
             for dec in item.decorators {
-                if isinstance(dec, Name) and dec.value == "overload" {
+                if (isinstance(dec, Name) and dec.value == "overload")
+                    or (
+                        isinstance(dec, AtomTrailer)
+                        and isinstance(dec.right, Name)
+                        and dec.right.value == "overload"
+                    ) {
                     has_overload = True;
                 } elif (
                     isinstance(dec, AtomTrailer)
