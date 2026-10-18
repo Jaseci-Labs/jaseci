@@ -10,7 +10,7 @@ impl _encode_param(v: any) -> (bytes | None) {
         return b'true' if v else b'false';
     }
     if isinstance(v, bytes) {
-        return v;
+        return ('\\x' + v.hex()).encode('ascii');
     }
     if isinstance(v, (list, tuple, set)) {
         return _array_literal(v).encode('utf-8');
@@ -29,6 +29,10 @@ impl _encode_param(v: any) -> (bytes | None) {
 impl _array_literal(vals: any) -> str {
     parts: list[str] = [];
     for v in vals {
+        if v is None {
+            parts.append('NULL');
+            continue;
+        }
         s = str(v);
         escaped = s.replace('\\', '\\\\').replace('"', '\\"');
         parts.append(f'"{escaped}"');
@@ -64,10 +68,17 @@ impl _rewrite_named(sql: str, names: frozenset[str]) -> tuple[str, tuple[str, ..
     n = len(sql);
     in_squote = False;
     in_dquote = False;
+    escape_squote = False;
+    continuation = False;
     while i < n {
         ch = sql[i];
         if in_squote {
             out.append(ch);
+            if escape_squote and ch == '\\' and i + 1 < n {
+                out.append(sql[i + 1]);
+                i += 2;
+                continue;
+            }
             if ch == "'" {
                 if i + 1 < n and sql[i + 1] == "'" {
                     out.append("'");
@@ -87,11 +98,89 @@ impl _rewrite_named(sql: str, names: frozenset[str]) -> tuple[str, tuple[str, ..
             i += 1;
             continue;
         }
+        if sql.startswith('--', i) {
+            j = i + 2;
+            while j < n and sql[j] not in ('\n', '\r') {
+                j += 1;
+            }
+            out.append(sql[i:j]);
+            i = j;
+            continue;
+        }
+        if sql.startswith('/*', i) {
+            j = i + 2;
+            depth = 1;
+            while j < n and depth {
+                if sql.startswith('/*', j) {
+                    depth += 1;
+                    j += 2;
+                } elif sql.startswith('*/', j) {
+                    depth -= 1;
+                    j += 2;
+                } else {
+                    if sql[j] in ('\n', '\r') {
+                        continuation = True;
+                    }
+                    j += 1;
+                }
+            }
+            out.append(sql[i:j]);
+            i = j;
+            continue;
+        }
         if ch == "'" {
             in_squote = True;
+            escape_squote = (escape_squote and continuation)
+                or (
+                    i > 0
+                    and sql[i - 1] in ('E', 'e')
+                    and (
+                        i < 2
+                        or not (
+                            sql[i - 2].isalnum()
+                            or sql[i - 2] in ('_', '$')
+                            or ord(sql[i - 2]) >= 128
+                        )
+                    )
+                );
+            continuation = False;
             out.append(ch);
             i += 1;
             continue;
+        }
+        if ch.isspace() {
+            if ch in ('\n', '\r') {
+                continuation = True;
+            }
+        } else {
+            escape_squote = False;
+            continuation = False;
+        }
+        if ch == '$'
+            and (
+                i == 0
+                or not (
+                    sql[i - 1].isalnum()
+                    or sql[i - 1] in ('_', '$')
+                    or ord(sql[i - 1]) >= 128
+                )
+            ) {
+            j = i + 1;
+            if j < n and (sql[j].isalpha() or sql[j] == '_' or ord(sql[j]) >= 128) {
+                j += 1;
+                while j < n
+                    and (sql[j].isalnum() or sql[j] == '_' or ord(sql[j]) >= 128) {
+                    j += 1;
+                }
+            }
+            if j < n and sql[j] == '$' {
+                delimiter = sql[i:j + 1];
+                end = sql.find(delimiter, j + 1);
+                end = n if end < 0 else end + len(delimiter);
+                out.append(sql[i:end]);
+                i = end;
+                continue;
+            }
         }
         if ch == '"' {
             in_dquote = True;
@@ -185,6 +274,9 @@ impl PgWireConnection.postinit -> None {
     self._closed = False;
     self._rbuf = bytearray();
     self._rpos = 0;
+    self._stmts = OrderedDict();
+    self._stmt_seq = 0;
+    self._evicted = [];
     self._connect_socket();
     self._startup();
 }
@@ -401,7 +493,27 @@ impl PgWireConnection._handle_async(msg_type: str, payload: bytes) -> bool {
 impl PgWireConnection.run(sql: str, **params: any) -> list[any] {
     assert not self._closed , 'connection is closed';
     (pos_sql, args) = _named_to_positional(sql, params);
-    bind = b'\x00\x00' + struct.pack(_INT16, 0) + struct.pack(_INT16, len(args));
+    bare = _SQL_COMMENT.sub(' ', pos_sql);
+    verb = ' '.join(bare.split()[:3]).upper();
+    drops_all = verb.startswith(
+        ('DISCARD ALL', 'DEALLOCATE ALL', 'DEALLOCATE PREPARE ALL')
+    );
+    resets = drops_all or verb.startswith('DEALLOCATE');
+    name: str = '';
+    fresh = False;
+    if not resets {
+        cached: (str | None) = self._stmts.get(pos_sql);
+        if cached is None {
+            fresh = True;
+            self._stmt_seq += 1;
+            name = f"j{self._stmt_seq}";
+        } else {
+            name = cached;
+            self._stmts.move_to_end(pos_sql);
+        }
+    }
+    stmt = name.encode('ascii') + b'\x00';
+    bind = b'\x00' + stmt + struct.pack(_INT16, 0) + struct.pack(_INT16, len(args));
     for a in args {
         enc = _encode_param(a);
         if enc is None {
@@ -411,16 +523,24 @@ impl PgWireConnection.run(sql: str, **params: any) -> list[any] {
         }
     }
     bind += struct.pack(_INT16, 0);
+    out = b''.join(
+        _frame('C', b'S' + old.encode('ascii') + b'\x00') for old in self._evicted
+    );
+    self._evicted = [];
+    if fresh or resets {
+        out += _frame(
+            'P', stmt + pos_sql.encode('utf-8') + b'\x00' + struct.pack(_INT16, 0)
+        );
+    }
     sock: any = self._sock;
     sock.sendall(
-        _frame(
-            'P', b'\x00' + pos_sql.encode('utf-8') + b'\x00' + struct.pack(_INT16, 0)
-        )
+        out
             + _frame('B', bind)
             + _frame('D', b'P\x00')
             + _frame('E', b'\x00' + struct.pack(_INT32, 0))
             + _frame('S', b'')
     );
+    parsed = False;
 
     rows: list[tuple[any, ...]] = [];
     oids: list[int] = [];
@@ -430,7 +550,11 @@ impl PgWireConnection.run(sql: str, **params: any) -> list[any] {
         if self._handle_async(mtype, payload) {
             continue;
         }
-        if mtype in ('1', '2', '3', 'C', 'n', 's') {
+        if mtype == '1' {
+            parsed = True;
+            continue;
+        }
+        if mtype in ('2', '3', 'C', 'n', 's') {
             continue;
         }
         if mtype == 'T' {
@@ -470,7 +594,54 @@ impl PgWireConnection.run(sql: str, **params: any) -> list[any] {
         }
         if mtype == 'Z' {
             self._drain_async();
+            if resets and err is None {
+                if drops_all {
+                    self._stmts.clear();
+                    self._evicted = [];
+                } else {
+                    one = _DEALLOCATE_ONE.match(bare);
+                    if one is None {
+                        self._evicted = list(self._stmts.values());
+                        self._stmts.clear();
+                    }
+                    gone = '';
+                    if one is not None {
+                        quoted = one.group(1);
+                        if quoted {
+                            gone = quoted.replace('""', '"');
+                        } else {
+                            gone = (one.group(2) or '').lower();
+                        }
+                    }
+                    for (text, held) in list(self._stmts.items()) {
+                        if held == gone {
+                            del self._stmts[text];
+                        }
+                    }
+                    self._evicted = [
+                        old
+                        for old in self._evicted
+                        if old != gone
+                    ];
+                }
+            }
+            if fresh and parsed {
+                self._stmts[pos_sql] = name;
+                if len(self._stmts) > STATEMENT_CACHE_SIZE {
+                    self._evicted.append(self._stmts.popitem(last=False)[1]);
+                }
+            }
             if err is not None {
+                code = err.get('C', '');
+                if code == '26000' and not fresh {
+                    self._stmts.pop(pos_sql, None);
+                    if payload[:1] == b'I' {
+                        return self.run(sql, **params);
+                    }
+                } elif code == '0A000' and not fresh {
+                    self._stmts.pop(pos_sql, None);
+                    self._evicted.append(name);
+                }
                 raise PgWireError(err);
             }
             return rows;

@@ -2,59 +2,6 @@ import json;
 import os;
 import sys;
 import from contextlib { contextmanager }
-import from jaclang.compiler.frontend.host {
-    active_host,
-    install_host,
-    CheckSettings,
-    HostPlatform,
-    HostServices,
-    LintSettings,
-    PathFacts,
-    ProjectDefaults,
-    ProjectFacts
-}
-import from jaclang.compiler.frontend.kernel_inputs {
-    DeclaredDependencies,
-    ImportResolution,
-    KernelInputs,
-    LocalResolution,
-    KEY_SEP,
-    NpmAnswer,
-    PythonInterface,
-    json_map,
-    local_key,
-    merge_answers,
-    pair_key,
-    resolution_key
-}
-import from jaclang.compiler.frontend.source_layout {
-    annex_files_of,
-    base_file_of,
-    is_annex_path_of,
-    list_directory,
-    package_init_of,
-    path_facts_of
-}
-import from jaclang.compiler.driver.compile_options { CompileOptions }
-import from jaclang.compiler.driver.compilation_context { package_owned }
-import from jaclang.compiler.driver.session_compile { SessionHooks, compile_in_session }
-import from jaclang.compiler.driver.module_analysis { ModuleAnalysis, analyze_module }
-import from jaclang.compiler.driver.module_compile { compile_task }
-import from jaclang.compiler.driver.unit_products { UnitProducts, unit_products }
-import from jaclang.compiler.driver.program { JacProgram }
-import from jaclang.compiler.types.stubcat.reader { StubCatalog, open_catalog_region }
-import from jaclang.compiler.types.stubcat.resolver { CatalogResolver }
-import from jaclang.compiler.types.stubcat.modiface { iface_module, open_module_iface }
-import from jaclang.compiler.types.types { ClassDetailsShared, ClassType, TypeBase }
-import from jaclang.compiler.frontend.unitree { Module, UniScopeNode }
-import from jaclang.project.workspace_model { AppSpec, WorkspaceSpec }
-import type from jaclang.compiler.types.ct_value { CtEnvironment }
-import type from jaclang.compiler.passes.annex_weave { WovenAnnex }
-import type from jaclang.compiler.driver.compiler { JacCompiler }
-import type from jaclang.compiler.driver.ifacecache { IfaceRegistry }
-import type from jaclang.compiler.driver.nativecache { NativeUnitRegistry }
-import from jaclang.compiler.driver.native_iface { NativeIface }
-import type from jaclang.compiler.frontend.kernel_analyze { CompileReport }
 
 glob _CATALOGS: dict[str, StubCatalog] = {};
 
@@ -67,6 +14,9 @@ class HostOnlyError(RuntimeError) {}
 
 obj HostAsker {
     def ask(method: str, key: str) -> str abst;
+    def record_interface(
+        program: JacProgram, module: Module, products: UnitProducts
+    ) {}
 }
 
 enum HostEventKind { NOTE, COVERAGE, COLLECT }
@@ -309,6 +259,7 @@ obj KernelHost(HostServices) {
         native_failures: dict[str, str] = {},
         _native_ifaces: dict[str, NativeIface] = {},
         _lowering: set[str] = set(),
+        _lowered: dict[str, Module] = {},
         _indexed: list[int] = [0, 0, 0, 0, 0],
         _session: (KernelSession | None) = None;
 
@@ -465,6 +416,19 @@ obj KernelHost(HostServices) {
         }
         self._served[resolved] = ServedInterface(catalog=catalog, module=mod);
         program.stamp_app_facts(mod);
+        if iface.effects {
+            mod.gen.callable_effects = json.loads(iface.effects);
+        }
+        if iface.placement {
+            import from jaclang.compiler.placement.placement { summary_store }
+            import from jaclang.compiler.placement.placement_export {
+                summary_from_dict
+            }
+            restored = summary_from_dict(json.loads(iface.placement));
+            if restored is not None {
+                summary_store(program)[os.path.abspath(resolved)] = restored;
+            }
+        }
         return mod;
     }
 
@@ -484,6 +448,20 @@ obj KernelHost(HostServices) {
         products = unit_products(module, task.program);
         if not products.path {
             products.path = real;
+        }
+        """A dependency lowered for an importer (`lower_dependency`) was
+        compiled under native-import options, which select a context program
+        of their own, so the module recorded here is not the one that was
+        lowered. The unit carries that lowering's products: without them the
+        host registers no interface for the dependency, and the importer
+        records the dependency's digest as empty.""";
+        lowered = self._lowered.get(real);
+        if lowered is not None and lowered is not module and not products.native_ir {
+            native_products(lowered, products);
+        }
+        asker = self.asker;
+        if real.endswith(".jac") and asker is not None {
+            asker.record_interface(task.program, module, products);
         }
         self.units[real] = products;
     }
@@ -873,6 +851,17 @@ obj KernelHost(HostServices) {
         return answer;
     }
 
+    def stub_interface(program: JacProgram, file_path: str) -> (Module | None) {
+        if not self.in_kernel() {
+            return None;
+        }
+        served = self.python_module(program, file_path);
+        if served is None and self.ask("parse_python", file_path) {
+            served = self.python_module(program, file_path);
+        }
+        return served;
+    }
+
     def ct_environment -> CtEnvironment {
         self.census.count("ct_environment");
         return self.inputs.ct_environment;
@@ -921,7 +910,6 @@ obj KernelHost(HostServices) {
     }
 
     def wiring_file(path: str) -> (str | None) {
-        import from jaclang.compiler.driver.wiring { arch_file_for, is_arch_file }
         self.census.count("wiring_file");
         if is_arch_file(path) {
             return None;
@@ -934,22 +922,60 @@ obj KernelHost(HostServices) {
         return self.inputs.manifest.is_seed(rel_path);
     }
 
+    def wiring_records(digest: str) -> str {
+        if self.kernel_only("wiring_records") {
+            return "";
+        }
+        with self.delegating("wiring_records") as host {
+            answer = host.wiring_records(digest);
+        }
+        return answer;
+    }
+
+    def keep_wiring_records(digest: str, text: str) {
+        self.census.count("keep_wiring_records");
+        if self.fallback is not None {
+            self.fallback.keep_wiring_records(digest, text);
+        }
+    }
+
     def native_parse(
         source_str: str,
         file_path: str,
         program: (JacProgram | None),
         annexes: list[WovenAnnex],
-        early_context: str = ""
+        early_context: str = "",
+        load_kernel: bool = True
     ) -> (tuple[Module, bool] | None) {
         if self.kernel_only("native_parse") {
             return None;
         }
         with self.delegating("native_parse") as host {
             answer = host.native_parse(
-                source_str, file_path, program, annexes, early_context
+                source_str, file_path, program, annexes, early_context, load_kernel
             );
         }
         return answer;
+    }
+
+    def woven_module(path: str, program: (JacProgram | None)) -> (Module | None) {
+        if self.kernel_only("woven_module") {
+            return None;
+        }
+        with self.delegating("woven_module") as host {
+            answer = host.woven_module(path, program);
+        }
+        return answer;
+    }
+
+    def place_wired_imports(module: Module) {
+        if self.kernel_only("place_wired_imports") {
+            place_wired_imports(module);
+            return;
+        }
+        with self.delegating("place_wired_imports") as host {
+            host.place_wired_imports(module);
+        }
     }
 
     def drop_python_lane_products(path: str, program: JacProgram) {
@@ -1024,13 +1050,29 @@ obj KernelHost(HostServices) {
         return found;
     }
 
+    def native_dep_discovery_open(program: JacProgram) -> bool {
+        if self.fallback is not None {
+            with self.delegating("native_dep_discovery_open") as host {
+                answer = host.native_dep_discovery_open(program);
+            }
+            return answer;
+        }
+        return False;
+    }
+
+    def native_deps_deferred(program: JacProgram) -> bool {
+        if self.fallback is not None {
+            with self.delegating("native_deps_deferred") as host {
+                answer = host.native_deps_deferred(program);
+            }
+            return answer;
+        }
+        return False;
+    }
+
     def lower_dependency(
         program: JacProgram, real: str, options: CompileOptions
     ) -> (NativeIface | None) {
-        import from jaclang.compiler.frontend.codeinfo {
-            get_effective_default_codespace_override,
-            set_effective_default_codespace
-        }
         self._lowering.add(real);
         previous = program.options;
         codespace = get_effective_default_codespace_override();
@@ -1057,6 +1099,7 @@ obj KernelHost(HostServices) {
             }
             if module.gen.native_iface is not None {
                 self.grown.add(real);
+                self._lowered[real] = module;
             }
             return module.gen.native_iface;
         } finally {

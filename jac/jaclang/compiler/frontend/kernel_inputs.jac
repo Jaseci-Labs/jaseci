@@ -1,16 +1,5 @@
 import base64;
 import json;
-import from jaclang.compiler.driver.compile_options { CompileOptions }
-import from jaclang.compiler.frontend.host {
-    CheckSettings,
-    HostPlatform,
-    LintSettings,
-    ProjectDefaults,
-    ProjectFacts
-}
-import from jaclang.compiler.frontend.source_layout { LayoutTables }
-import from jaclang.compiler.types.ct_value { CtEnvironment }
-import from jaclang.project.workspace_model { AppSpec, WorkspaceSpec }
 
 glob KERNEL_INPUTS_VERSION: int = 2,
      KEY_SEP: str = "\x1f";
@@ -98,7 +87,9 @@ obj RequestOptions {
 obj PythonInterface {
     has path: str,
         pkg_dir: str,
-        data: bytes = b"";
+        data: bytes = b"",
+        placement: str = "",
+        effects: str = "";
 }
 
 obj ImportResolution {
@@ -455,7 +446,6 @@ def facts_to_dict(facts: ProjectFacts) -> dict[str, any] {
     return {
         "project_root": facts.project_root,
         "check": check_to_dict(facts.check),
-        "arch_closed": list(facts.arch_closed),
         "client_framework": facts.client_framework,
         "package_name": facts.package_name,
         "package_exports": list(facts.package_exports),
@@ -467,7 +457,6 @@ def facts_from_dict(raw: dict[str, any]) -> ProjectFacts {
     return ProjectFacts(
         project_root=str(raw.get("project_root", "")),
         check=check_from_dict(json_map(raw.get("check"))),
-        arch_closed=json_str_list(raw.get("arch_closed")),
         client_framework=str(raw.get("client_framework", "react")),
         package_name=str(raw.get("package_name", "")),
         package_exports=json_str_list(raw.get("package_exports")),
@@ -808,7 +797,9 @@ def answers_to_dict(inputs: KernelInputs) -> dict[str, any] {
             {
                 "path": r.path,
                 "pkg_dir": r.pkg_dir,
-                "data": base64.b64encode(r.data).decode("ascii")
+                "data": base64.b64encode(r.data).decode("ascii"),
+                "placement": r.placement,
+                "effects": r.effects
             } for r in inputs.python_ifaces
         ]
     };
@@ -915,7 +906,9 @@ def merge_answers(inputs: KernelInputs, raw: dict[str, any]) {
             PythonInterface(
                 path=str(r.get("path", "")),
                 pkg_dir=str(r.get("pkg_dir", "")),
-                data=base64.b64decode(str(r.get("data", "")).encode("ascii"))
+                data=base64.b64decode(str(r.get("data", "")).encode("ascii")),
+                placement=str(r.get("placement", "")),
+                effects=str(r.get("effects", ""))
             )
         );
     }

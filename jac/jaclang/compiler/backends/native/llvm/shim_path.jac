@@ -2,13 +2,6 @@ import hashlib;
 import json;
 import os;
 import sys;
-import from jaclang.artifacts.model {
-    Artifact,
-    ArtifactKind,
-    Probe,
-    ReleasePolicy,
-    Source
-}
 
 glob TOOLCHAIN_INPUTS: tuple[str, ...] = (
          "build.zig",
@@ -58,7 +51,6 @@ def pinned_llvm_blocker(repo_root: str) -> str {
 }
 
 def _repo_root -> str {
-    import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
     return os.path.dirname(jaclang_pkg_root());
 }
 
@@ -99,7 +91,6 @@ def shim_inputs_digest(repo_root: str) -> str {
 }
 
 def write_shim_record(shim_path: str, repo_root: str) {
-    import from jaclang.jac0core.cache_paths { atomic_write }
     atomic_write(
         shim_path + RECORD_SUFFIX,
         json.dumps({"inputs": shim_inputs_digest(repo_root)}).encode("utf-8")
@@ -146,7 +137,6 @@ obj ShimArtifact(Artifact) {
         floor: str = "Python placement for native-default code";
 
     override def probe_sealed -> (Probe | None) {
-        import from jaclang.jac0core { sealed }
         if sealed._jaclang_image() is None {
             return None;
         }
@@ -161,7 +151,6 @@ obj ShimArtifact(Artifact) {
     }
 
     override def probe_kit -> Probe {
-        import from jaclang.artifacts.kit { kit_image, kit_path }
         if kit_image() is None {
             return Probe.missing("this process runs on no kit");
         }
@@ -203,7 +192,6 @@ obj ShimArtifact(Artifact) {
 }
 
 def shim_path -> str {
-    import from jaclang.artifacts.router { require }
     found = require("llvm-shim").found;
     assert found is not None;
     return found.path;

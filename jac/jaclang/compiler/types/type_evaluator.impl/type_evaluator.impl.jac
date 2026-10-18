@@ -190,7 +190,9 @@ impl TypeEvaluator._get_type_of_expression_core(
                         );
 
                         if expected_elem is None {
-                            elem_type = self._container_value_type(elem_type, expr);
+                            elem_type = self._container_value_type(
+                                elem_type, expr, widen=True
+                            );
                         }
                         if not isinstance(elem_type, UnknownType)
                             and not self._type_in_list(elem_type, elem_types) {
@@ -228,6 +230,9 @@ impl TypeEvaluator._get_type_of_expression_core(
             }
 
         case DictVal():
+            if td_type := self._typeddict_for_dict_literal(expr, expected_type) {
+                return td_type;
+            }
             if self.prefetch and self.prefetch.dict_class {
                 dict_inst = self._convert_to_instance(self.prefetch.dict_class);
                 if isinstance(dict_inst, ClassType) and not expr.kv_pairs {
@@ -241,17 +246,29 @@ impl TypeEvaluator._get_type_of_expression_core(
                 if isinstance(dict_inst, ClassType) and expr.kv_pairs {
                     key_types: list[TypeBase] = [];
                     val_types: list[TypeBase] = [];
+                    expected_kv = self._get_expected_kv_types(
+                        expected_type, self.prefetch.dict_class
+                    );
                     for _kv in expr.kv_pairs {
                         if _kv.key {
                             kt = self._container_value_type(
-                                self.get_type_of_expression(_kv.key), expr
+                                self.get_type_of_expression(_kv.key),
+                                expr,
+                                widen=expected_kv is None
                             );
                             if not isinstance(kt, UnknownType)
                                 and not self._type_in_list(kt, key_types) {
                                 key_types.append(kt);
                             }
                             vt = self._container_value_type(
-                                self.get_type_of_expression(_kv.value), expr
+                                self.get_type_of_expression(
+                                    _kv.value,
+                                    expected_type=expected_kv[1]
+                                        if expected_kv
+                                        else None
+                                ),
+                                expr,
+                                widen=expected_kv is None
                             );
                             if not isinstance(vt, UnknownType)
                                 and not self._type_in_list(vt, val_types) {
@@ -279,9 +296,6 @@ impl TypeEvaluator._get_type_of_expression_core(
                         }
                     }
 
-                    expected_kv = self._get_expected_kv_types(
-                        expected_type, self.prefetch.dict_class
-                    );
                     if expected_kv is not None and (key_types or val_types) {
                         all_ok = True;
                         for kt in key_types {
@@ -394,9 +408,14 @@ impl TypeEvaluator._get_type_of_expression_core(
                 }
                 if isinstance(set_inst, ClassType) and expr.values {
                     set_elem_types: list[TypeBase] = [];
+                    expected_elem_sv = self._get_expected_element_type(
+                        expected_type, self.prefetch.set_class
+                    );
                     for _val in expr.values {
                         et = self._container_value_type(
-                            self.get_type_of_expression(_val), expr
+                            self.get_type_of_expression(_val),
+                            expr,
+                            widen=expected_elem_sv is None
                         );
                         if not isinstance(et, UnknownType)
                             and not self._type_in_list(et, set_elem_types) {
@@ -726,6 +745,10 @@ impl TypeEvaluator._get_type_of_expression_core(
                 full_narrowed: TypeBase | None = None;
 
                 assert isinstance(expr.right, Name);
+                if isinstance(base_type, NeverType) {
+                    expr.right.type = base_type;
+                    return base_type;
+                }
                 if isinstance(base_type, AnyType) {
                     expr.right.type = AnyType(is_foreign=base_type.is_foreign);
                     return expr.right.type;
@@ -1435,6 +1458,10 @@ impl TypeEvaluator._get_type_of_expression_core(
                     ) {
                         target_name = expr.target.right.value;
                     }
+                    if target_name == "Protocol" {
+                        return base_type;
+                    }
+
                     if target_name == "Union" or target_name == "Optional" {
                         union_args: list[TypeBase] = [];
                         if isinstance(expr.right, IndexSlice) and expr.right.slices {
@@ -1630,6 +1657,17 @@ impl TypeEvaluator._get_type_of_expression_core(
                             return self._convert_to_instance(self.prefetch.int_class);
                         }
                     }
+                    if result is None
+                        and base_type.is_class_instance()
+                        and (
+                            getitem
+                            := self._lookup_class_member(base_type, "__getitem__")
+                        ) {
+                        self._report_rejected_method_call(
+                            base_type, getitem, [subscript_arg], expr
+                        );
+                        return UnknownType(is_diagnosed=True);
+                    }
                 }
                 return result or UnknownType();
             }
@@ -1735,6 +1773,8 @@ impl TypeEvaluator._get_type_of_expression_core(
                     or right_type.is_any_type()
                     or left_type.is_any_instance()
                     or right_type.is_any_instance()
+                    or isinstance(left_type, NeverType)
+                    or isinstance(right_type, NeverType)
                 ) {
                     continue;
                 }
@@ -3149,6 +3189,10 @@ impl TypeEvaluator._assign_class(
         }
     }
 
+    if dest_type.is_typeddict() {
+        return self._assign_typeddict(src_type, dest_type, strict);
+    }
+
     if self._is_protocol_class(dest_type) {
         if class_implements_protocol(src_type, dest_type, self) {
             return True;
@@ -3168,7 +3212,6 @@ impl TypeEvaluator._assign_class(
 impl TypeEvaluator._assign_c_interop_args(
     src_type: ClassType, dest_type: ClassType, strict: bool = False
 ) -> bool {
-    import from jaclang.compiler.c_interop { c_type_arg }
     dest_arg = c_type_arg(dest_type);
     src_arg = c_type_arg(src_type);
     if isinstance(dest_arg, TypeVarType) or isinstance(src_arg, TypeVarType) {
@@ -3213,17 +3256,10 @@ impl TypeEvaluator._is_protocol_class(cls_type: ClassType) -> bool {
         and (class_name.startswith('Supports') or class_name.startswith('_Supports')) {
         return True;
     }
-
-    for mro_cls in cls_type.shared.mro {
-        if isinstance(mro_cls, ClassType) {
-            if (mro_cls.shared.is_builtin_class or mro_cls.shared.is_from_stdlib_stub)
-                and mro_cls.shared.class_name in ('Protocol', '_SpecialForm') {
-                return True;
-            }
-        }
-    }
     return False;
 }
+
+glob _PROTOCOL_SOLVES_IN_PROGRESS: set[tuple[int, int]] = set();
 
 impl TypeEvaluator._solve_protocol_type_args(
     src_type: ClassType, proto_type: ClassType, bindings: dict[str, TypeBase]
@@ -3232,7 +3268,26 @@ impl TypeEvaluator._solve_protocol_type_args(
     if not isinstance(proto_symtab, UniScopeNode) {
         return False;
     }
+    key = (id(src_type.shared), id(proto_type.shared));
+    if key in _PROTOCOL_SOLVES_IN_PROGRESS {
+        return False;
+    }
+    _PROTOCOL_SOLVES_IN_PROGRESS.add(key);
+    try {
+        return self._solve_protocol_members(
+            src_type, proto_type, proto_symtab, bindings
+        );
+    } finally {
+        _PROTOCOL_SOLVES_IN_PROGRESS.discard(key);
+    }
+}
 
+impl TypeEvaluator._solve_protocol_members(
+    src_type: ClassType,
+    proto_type: ClassType,
+    proto_symtab: UniScopeNode,
+    bindings: dict[str, TypeBase]
+) -> bool {
     solved = False;
     for (name, sym) in proto_symtab.names_in_scope.items() {
         proto_func: TypeBase | None = None;
@@ -3352,7 +3407,6 @@ impl TypeEvaluator._protocol_signature_fits(
 }
 
 impl TypeEvaluator.is_sub_class(super_cls: ClassType, sub_cls: ClassType) -> bool {
-    import from jaclang.compiler.types.type_utils { ensure_mro_fresh }
     self._heal_ancestry(sub_cls);
     ensure_mro_fresh(sub_cls);
     for cls in sub_cls.shared.mro {
@@ -3364,7 +3418,6 @@ impl TypeEvaluator.is_sub_class(super_cls: ClassType, sub_cls: ClassType) -> boo
 }
 
 impl TypeEvaluator._heal_ancestry(cls: ClassType) -> None {
-    import from jaclang.compiler.types.type_utils { ensure_mro_fresh }
     attempted: set[int] = set();
     while True {
         healed = False;
@@ -3388,8 +3441,6 @@ impl TypeEvaluator._heal_ancestry(cls: ClassType) -> None {
 }
 
 impl TypeEvaluator._heal_class_bases(cls: ClassType) -> None {
-    import from jaclang.compiler.frontend.unitree { Archetype }
-    import from jaclang.compiler.types.type_utils { linearize_mro, mro_signature }
     shared = cls.shared;
     node_ = shared.symbol_table;
     if not isinstance(node_, Archetype) {
@@ -3644,7 +3695,6 @@ impl TypeEvaluator._is_strict_site(nd: UniNode) -> bool {
 }
 
 impl TypeEvaluator.neutral_site(nd: UniNode) -> bool {
-    import from jaclang.compiler.capability_notes { placement_neutral }
     return placement_neutral(nd);
 }
 
@@ -3658,7 +3708,7 @@ impl TypeEvaluator.note_native(
         self._trial_notes.append((nd, code, text, requires));
         return;
     }
-    import from jaclang.compiler.capability_notes { TARGET_NATIVE, note_capability }
+
     note_capability(self.program, nd, TARGET_NATIVE, code, text, requires);
 }
 
@@ -4210,7 +4260,7 @@ impl TypeEvaluator.get_type_of_expression(
     if isinstance(result, UnknownType) and result.is_incomplete {
         return result;
     }
-    if isinstance(result, UnknownType) {
+    if isinstance(result, UnknownType) and not result.is_diagnosed {
         mod = node_.find_parent_of_type(Module);
         is_pattern_wildcard = (
             isinstance(node_, Name)
@@ -4390,11 +4440,11 @@ impl TypeEvaluator._is_sv_async_call(expr: FuncCall) -> bool {
             classify_cross_app_import,
             is_client_native_edge_import
         }
-        import from jaclang.compiler.symbol_utils {
+        import from jaclang.compiler.driver.boundary_classify {
             ClientImportVerdict,
-            classify_client_import_item,
-            resolve_import_source_module
+            classify_client_import_item
         }
+        import from jaclang.compiler.symbol_utils { resolve_import_source_module }
         client_tops: dict[str, bool] = {};
         for imp in mod.get_all_sub_nodes(Import) {
             kind = classify_cross_app_import(imp, None);
@@ -4560,9 +4610,8 @@ impl TypeEvaluator._load_stub_module(path: str) -> Module {
 }
 
 impl TypeEvaluator.postinit -> None {
-    import from jaclang.compiler.frontend.host { active_host }
     self.ct_eval = CtEvaluator(evaluator=self, env=active_host().ct_environment());
-    import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
+
     package = jaclang_pkg_root();
     stdlib_stubs = os.path.join(package, "vendor", "typeshed", "stdlib");
     jac_stubs = os.path.join(package, "compiler", "types");
@@ -4634,7 +4683,6 @@ impl TypeEvaluator._init_prelude_from_catalog(catalog: StubCatalog) -> list[Modu
 }
 
 impl TypeEvaluator._init_prelude_from_sources -> list[Module] {
-    import from jaclang.compiler.frontend.module_facts { ModuleFacts }
     typing_mod = self._load_stub_module(self._TYPING_STUB_FILE_PATH);
     types_mod = self._load_stub_module(self._TYPES_STUB_FILE_PATH);
     enum_mod = self._load_stub_module(self._ENUM_STUB_FILE_PATH);
@@ -4733,7 +4781,7 @@ impl TypeEvaluator.flow_pred_never_returns(pred: UniCFGNode) -> bool {
     if not isinstance(call, FuncCall) {
         return False;
     }
-    import from jaclang.compiler.symbol_utils { resolve_expr_symbol }
+
     sym = resolve_expr_symbol(call.target);
     if sym is None {
         return False;
@@ -4816,7 +4864,7 @@ impl TypeEvaluator._narrowed_type_for_expr(
     expr: Expr, declared_type: TypeBase, at_node: UniNode
 ) -> TypeBase | None {
     import from jaclang.compiler.types.type_evaluator { NarrowingTarget }
-    import from jaclang.compiler.symbol_utils { reference_key_deps }
+
     key = self.create_key_for_reference(expr);
     if key is None {
         return None;
@@ -5010,7 +5058,7 @@ impl TypeEvaluator._get_type_from_flow_node(
         if isinstance(pred, Assignment)
             and pred.value
             and not self._node_encloses(pred, flow_node) {
-            import from jaclang.compiler.symbol_utils {
+            import from jaclang.compiler.expr_keys {
                 collect_assignment_target_keys,
                 find_destructure_index_path,
             }
@@ -5235,7 +5283,6 @@ impl TypeEvaluator._if_exit_type(
 impl TypeEvaluator._loop_body_writes_target(
     loop_node: UniCFGNode, target: NarrowingTarget
 ) -> bool {
-    import from jaclang.compiler.symbol_utils { collect_assignment_target_keys }
     cache_key = id(loop_node);
     written = self._loop_written_keys_cache.get(cache_key);
     if written is None {
@@ -5323,7 +5370,7 @@ impl TypeEvaluator.create_key_for_reference(expr: Expr) -> str | None {
         }
     }
     if isinstance(expr, AtomTrailer) and not expr.is_attr {
-        import from jaclang.compiler.symbol_utils { int_subscript_suffix }
+        import from jaclang.compiler.expr_keys { int_subscript_suffix }
         base_key = self.create_key_for_reference(expr.target);
         if base_key and isinstance(expr.right, IndexSlice) {
             suffix = int_subscript_suffix(expr.right);
@@ -5355,7 +5402,6 @@ impl TypeEvaluator._find_symbol_by_key(key: str, condition: Expr) -> Symbol | No
 }
 
 impl TypeEvaluator.classify_condition(condition: Expr) -> ConditionInfo | None {
-    import from jaclang.compiler.frontend.constant { Tokens as Tok }
     import from jaclang.compiler.types.type_evaluator { ConditionInfo, NarrowingKind }
 
     if isinstance_info := self._extract_isinstance_info(condition) {
@@ -5458,6 +5504,13 @@ impl TypeEvaluator.classify_condition(condition: Expr) -> ConditionInfo | None {
                 );
             }
         }
+        if left_key is not None
+            and op_name == Tok.KW_IN
+            and not isinstance(container, (TupleVal, ListVal)) {
+            return ConditionInfo(
+                kind=NarrowingKind.MEMBERSHIP_KEY, key=left_key, narrows_on_false=False
+            );
+        }
     }
 
     if isinstance(condition, (Name, AtomTrailer)) {
@@ -5481,7 +5534,6 @@ impl TypeEvaluator.classify_condition(condition: Expr) -> ConditionInfo | None {
 impl TypeEvaluator._find_predicate_for(
     target: NarrowingTarget, condition: Expr
 ) -> NarrowingPredicate | None {
-    import from jaclang.compiler.frontend.constant { Tokens as Tok }
     import from jaclang.compiler.types.type_evaluator {
         NarrowingKind,
         NarrowingPredicate,
@@ -5633,6 +5685,31 @@ impl TypeEvaluator._find_predicate_for(
     info = self.classify_condition(condition);
     if info is not None and info.key == key {
         match info.kind {
+            case NarrowingKind.MEMBERSHIP_KEY:
+                if not isinstance(condition, CompareExpr) {
+                    return None;
+                }
+                container_type = self.get_type_of_expression(condition.rights[0]);
+                if not isinstance(container_type, ClassType)
+                    or not container_type.is_class_instance()
+                    or not container_type.is_builtin(
+                        ["dict", "set", "frozenset", "list"]
+                    )
+                    or not container_type.private.type_args {
+                    return None;
+                }
+                key_type = container_type.private.type_args[0];
+                if isinstance(key_type, UnknownType) or self.is_any_type(key_type) {
+                    return None;
+                }
+                return NarrowingPredicate(
+                    key=key,
+                    narrow_type=key_type,
+                    is_inverted=False,
+                    narrows_on_false=False,
+                    by_equality=True
+                );
+
             case NarrowingKind.ISINSTANCE
                 | NarrowingKind.TYPE_IS
                 | NarrowingKind.TYPE_GUARD:
@@ -5828,6 +5905,10 @@ impl TypeEvaluator._apply_narrowing(
         if narrowed is not None {
             return narrowed;
         }
+        if self.is_none_type(predicate.narrow_type)
+            and self._never_holds_none(base_type) {
+            return NeverType();
+        }
 
         return self._specialize_narrow_from_base(base_type, predicate.narrow_type);
     } else {
@@ -5843,6 +5924,23 @@ impl TypeEvaluator._apply_narrowing(
         }
         return result;
     }
+}
+
+impl TypeEvaluator._never_holds_none(base_type: TypeBase) -> bool {
+    members = (
+        base_type.types
+            if isinstance(base_type, UnionType) and base_type.types
+            else [base_type]
+    );
+    for m in members {
+        if not isinstance(m, ClassType)
+            or not m.is_class_instance()
+            or m.is_builtin("object")
+            or self._is_protocol_class(m) {
+            return False;
+        }
+    }
+    return True;
 }
 
 impl TypeEvaluator._specialize_narrow_from_base(
@@ -6541,7 +6639,6 @@ impl TypeEvaluator._type_alias_tag_ident(tag_expr: Expr) -> (str | None) {
 impl TypeEvaluator._brand_distinct_alias(
     node_: TypeAlias, resolved: TypeBase
 ) -> TypeBase {
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
     if not isinstance(resolved, ClassType)
         or not JAC_TYPE_REGISTRY.is_primitive(resolved.shared.class_name) {
         return resolved;
@@ -6610,8 +6707,6 @@ impl TypeEvaluator._resolve_type_alias_rhs(value: Expr) -> TypeBase {
 impl TypeEvaluator._resolve_string_type_expr(
     type_str: str, scope: UniScopeNode
 ) -> TypeBase | None {
-    import from jaclang.compiler.frontend.parser.parser { parse_expression }
-    import from jaclang.compiler.frontend.unitree { SubTag }
     (expression, had_error, _parser_diags, _lex_diags) = parse_expression(
         type_str, scope.loc.mod_path
     );

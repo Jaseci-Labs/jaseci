@@ -1,20 +1,5 @@
 import os;
 import from pathlib { Path }
-import from jaclang.packages.index {
-    IndexEntry,
-    Registry,
-    RegistryError,
-    registry_named,
-    registry_urls
-}
-import from jaclang.packages.lock { LockedPackage, Lockfile, digest_of }
-import from jaclang.packages.pubgrub { PackageSource, SolveFailure, solve }
-import from jaclang.packages.semver { Requirement, SemverError, Version }
-import from jaclang.packages.sources { GitError, checkout, pack_checkout, resolve_path }
-import from jaclang.project.config { JacConfig }
-import from jaclang.project.dependencies { PackageDep }
-import from jaclang.project.jac_version { satisfies as jac_satisfies }
-import from jaclang.project.package_scope { is_package_name }
 
 obj ResolveError(Exception) {}
 
@@ -28,7 +13,6 @@ obj LocalPackage {
 }
 
 def running_jac_version -> Version {
-    import from jaclang.compiler.driver.jir { jaclang_version }
     try {
         return Version.parse(jaclang_version()).release();
     } except SemverError {
@@ -80,16 +64,15 @@ obj GraphSource(PackageSource) {
         unlock_all: bool = False,
         jac_version: Version = Version.parse("0.0.0"),
         locals: dict[str, LocalPackage] = {},
-        origin_registry: dict[str, str] = {};
+        local_requesters: dict[str, Path] = {},
+        origin_registry: dict[str, str] = {},
+        prerelease: set[str] = set();
 
     def registry_for(name: str) -> Registry {
         return registry_named(self.origin_registry.get(name, ""), self.registries);
     }
 
     def add_local(dep: PackageDep, base: Path) -> LocalPackage {
-        if dep.name in self.locals {
-            return self.locals[dep.name];
-        }
         if dep.kind() == "path" {
             tree = resolve_path(base, dep.path);
             if not (tree / "jac.toml").is_file() {
@@ -106,9 +89,23 @@ obj GraphSource(PackageSource) {
             } except GitError as e {
                 raise ResolveError(f"{dep.name}: {e}");
             }
-            (_, sha256) = pack_checkout(co);
+            sha256 = "";
             tree = co.tree;
             source = f"git+{dep.git}#{co.commit}";
+        }
+        if dep.name in self.locals {
+            existing = self.locals[dep.name];
+            if existing.source != source {
+                raise ResolveError(
+                    f"{dep.name}: conflicting sources {existing.source} requested by "
+                    f"{self.local_requesters[dep.name]} and {source} requested by {base
+                        / 'jac.toml'}"
+                );
+            }
+            return existing;
+        }
+        if dep.kind() == "git" {
+            (_, sha256) = pack_checkout(co);
         }
         cfg = JacConfig.load(tree / "jac.toml");
         if cfg.project.name != dep.name {
@@ -130,6 +127,7 @@ obj GraphSource(PackageSource) {
             sha256=sha256
         );
         self.locals[dep.name] = pkg;
+        self.local_requesters[dep.name] = base / "jac.toml";
         for nested in cfg.dependencies.values() {
             if nested.kind() != "registry" {
                 self.add_local(nested, tree);
@@ -284,7 +282,6 @@ def _mark_dev(
 def resolve_graph(
     config: JacConfig, previous: Lockfile | None = None, update: list[str] | None = None
 ) -> Lockfile {
-    import from jaclang.compiler.driver.jir { jaclang_version }
     if config.project_root is None {
         raise ResolveError("resolving packages needs a project (jac.toml)");
     }

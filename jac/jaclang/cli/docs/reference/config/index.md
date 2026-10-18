@@ -429,6 +429,8 @@ lockout_seconds = 900
 challenge_ttl_seconds = 300
 ```
 
+Access logs replace the values of `token`, `access_token`, and `api_key` query parameters with `[REDACTED]` in both text and JSON, including WebSocket upgrades. Matching is case-insensitive and recognizes percent-encoded names; other query components keep their original encoding.
+
 Every `[serve.auth]` key can be overridden by an environment variable named
 `JAC_SERVE_AUTH_<TABLE>_<KEY>`, for example `JAC_SERVE_AUTH_PASSWORD_MIN_LENGTH`
 or `JAC_SERVE_AUTH_SECOND_FACTOR_ISSUER`. An unknown key under `[serve.auth]`
@@ -554,19 +556,6 @@ without executing it. The policy is included in analysis and code-generation
 cache identities.
 
 A built binary reads two environment variables at run time and no others: `JAC_GC=off` disables collection for leak debugging (collection is on by default under `managed`), and `JAC_THREADS` overrides the `flow for` width. Nothing at compile time reads the environment; `jac explain memory|placement|ir` replaces the old diagnostic variables.
-
----
-
-### [arch]
-
-The default for modules that `arch.jac` does not name. See [Project Wiring](../wiring.md).
-
-```toml
-[arch]
-closed = []               # Module-name patterns sealed even when arch.jac never names them
-```
-
-A module `arch.jac` names is sealed in both directions: its project-module imports must be wires, and it flows only where a rule admits. `closed` extends that to modules the file never mentions, including packages not yet written, and applies even before `arch.jac` exists. `["*"]` closes the whole project; a pattern list such as `["core.*"]` closes it one package at a time. The policy is part of every module's cache identity, so changing it rebuilds the affected modules.
 
 ---
 

@@ -1,12 +1,6 @@
 import os;
 
 import from pathlib { Path }
-import from jaclang.cli.console { console }
-import from jaclang.toolchains.host { host_platform, executable, run_step }
-import from jaclang.toolchains.pins { ANDROID_ARTIFACTS }
-import from jaclang.jac0core.cache_paths { FileLock }
-import from jaclang.cache.registry { bucket }
-import from jaclang.toolchains.store { install, offline }
 
 obj AndroidEnvironment {
     has java_home: Path,
@@ -32,7 +26,6 @@ obj AndroidEnvironment {
 }
 
 def ensure_jdk -> Path {
-    import from jaclang.toolchains.tools { tool_path }
     return tool_path("jdk");
 }
 

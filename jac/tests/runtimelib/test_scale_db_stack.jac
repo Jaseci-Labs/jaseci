@@ -211,6 +211,61 @@ test "pool: a parked connection comes back with session settings reset" {
 }
 
 
+test "pool: a parked connection keeps its prepared statements" {
+    with TemporaryDirectory() as td {
+        drain_all();
+        s = _mk_session(td);
+        st = _store(s);
+        st.rows("SELECT :x::int AS park_marker", {'x': 1});
+        first = getattr(st, '_conn');
+        info = getattr(st, 'conninfo');
+        st.close();
+        st2 = PgStore(conninfo=info);
+        held = st2.rows(
+            "SELECT count(*) FROM pg_prepared_statements WHERE statement LIKE :m",
+            {'m': '%park_marker%'}
+        );
+        assert getattr(st2, '_conn') is first;
+        assert int(held[0][0]) == 1 , (
+            'parking the connection threw away its prepared statements, so the '
+            'next borrower parses and plans every statement again'
+        );
+        st2.close();
+        s.close();
+        drain_all();
+    }
+}
+
+
+test "pool: a parked connection comes back with advisory locks and temp tables gone" {
+    with TemporaryDirectory() as td {
+        drain_all();
+        s = _mk_session(td);
+        st = _store(s);
+        st.rows('SELECT pg_advisory_lock(424242)', {});
+        st.rows('CREATE TEMP TABLE park_probe (k int)', {});
+        first = getattr(st, '_conn');
+        info = getattr(st, 'conninfo');
+        st.close();
+        st2 = PgStore(conninfo=info);
+        locks = st2.rows(
+            "SELECT count(*) FROM pg_locks WHERE locktype = 'advisory' AND pid = pg_backend_pid()",
+            {}
+        );
+        temps = st2.rows(
+            "SELECT count(*) FROM pg_class WHERE relname = 'park_probe' AND relpersistence = 't'",
+            {}
+        );
+        assert getattr(st2, '_conn') is first;
+        assert int(locks[0][0]) == 0 , 'an advisory lock survived parking';
+        assert int(temps[0][0]) == 0 , 'a temp table survived parking';
+        st2.close();
+        s.close();
+        drain_all();
+    }
+}
+
+
 test "pool: JAC_DB_POOL=0 disables parking" {
     with TemporaryDirectory() as td {
         drain_all();

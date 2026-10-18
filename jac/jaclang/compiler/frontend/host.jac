@@ -1,18 +1,5 @@
 import from collections.abc { Iterator }
 import from contextlib { contextmanager }
-import from jaclang.project.workspace_model { AppSpec, WorkspaceSpec }
-import type from jaclang.compiler.driver.program { JacProgram }
-import type from jaclang.compiler.types.stubcat.reader { StubCatalog }
-import type from jaclang.compiler.types.ct_value { CtEnvironment }
-import type from jaclang.compiler.frontend.unitree { Module }
-import type from jaclang.compiler.passes.annex_weave { WovenAnnex }
-import type from jaclang.compiler.driver.compiler { JacCompiler }
-import type from jaclang.compiler.driver.ifacecache { IfaceRegistry }
-import type from jaclang.compiler.driver.nativecache { NativeUnitRegistry }
-import type from jaclang.compiler.driver.native_iface { NativeIface }
-import type from jaclang.compiler.driver.compile_options { CompileOptions }
-import type from jaclang.compiler.driver.module_analysis { ModuleAnalysis }
-import type from jaclang.compiler.frontend.kernel_analyze { CompileReport }
 
 obj CheckSettings {
     has suppress: list[str] = [],
@@ -63,7 +50,6 @@ obj LintSettings {
 obj ProjectFacts {
     has project_root: str,
         check: CheckSettings,
-        arch_closed: list[str] = [],
         client_framework: str = "react",
         package_name: str = "",
         package_exports: list[str] = [],
@@ -74,6 +60,10 @@ obj HostServices {
     @contextmanager
     def session -> Iterator[None] {
         yield ;
+    }
+
+    def in_kernel -> bool {
+        return False;
     }
 
     def project_defaults -> (ProjectDefaults | None) {
@@ -168,8 +158,11 @@ obj HostServices {
         raise RuntimeError("no compiler host is installed");
     }
 
+    def stub_interface(program: JacProgram, file_path: str) -> (Module | None) {
+        return None;
+    }
+
     def ct_environment -> CtEnvironment {
-        import from jaclang.compiler.types.ct_value { CtEnvironment }
         return CtEnvironment();
     }
 
@@ -211,16 +204,27 @@ obj HostServices {
         return False;
     }
 
+    def wiring_records(digest: str) -> str {
+        return "";
+    }
+
+    def keep_wiring_records(digest: str, text: str) {}
     def native_parse(
         source_str: str,
         file_path: str,
         program: (JacProgram | None),
         annexes: list[WovenAnnex],
-        early_context: str = ""
+        early_context: str = "",
+        load_kernel: bool = True
     ) -> (tuple[Module, bool] | None) {
         return None;
     }
 
+    def woven_module(path: str, program: (JacProgram | None)) -> (Module | None) {
+        return None;
+    }
+
+    def place_wired_imports(module: Module) {}
     def drop_python_lane_products(path: str, program: JacProgram) {}
     def compiler_for(program: JacProgram) -> JacCompiler {
         raise RuntimeError("no compiler host is installed");
@@ -234,6 +238,14 @@ obj HostServices {
         program: JacProgram, path: str, options: CompileOptions
     ) -> (NativeIface | None) {
         return None;
+    }
+
+    def native_dep_discovery_open(program: JacProgram) -> bool {
+        return False;
+    }
+
+    def native_deps_deferred(program: JacProgram) -> bool {
+        return False;
     }
 
     def held_native_iface(
@@ -365,7 +377,6 @@ obj HostServices {
 
     def typeshed_unavailable_reason -> str {
         import os;
-        import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
         stdlib = os.path.join(jaclang_pkg_root(), "vendor", "typeshed", "stdlib");
         if os.path.isfile(os.path.join(stdlib, "builtins.pyi")) {
             return "";
@@ -391,6 +402,10 @@ obj HostServices {
 }
 
 obj NeutralHost(HostServices) {}
+
+glob HOST_FACT_SEP: str = "\x1e",
+     HOST_FACT_STDLIB_MODULES: str = "stdlib_modules",
+     HOST_FACT_GIT_IGNORED: str = "git_ignored";
 
 glob _HOSTS: list[HostServices] = [],
      _KERNEL_HOST_MODE: list[str] = [],

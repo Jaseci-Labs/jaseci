@@ -1,170 +1,18 @@
 import os;
 import type from collections.abc { Sequence }
-import type from jaclang.compiler.frontend.codeinfo { CodeGenTarget }
-import from jaclang.compiler.frontend.srcloc { CodeLocInfo }
-import from jaclang.runtime.constants { EdgeDir }
-import from jaclang.compiler.frontend.constant {
-    BUILTIN_CALLABLE_NAMES,
-    DELIM_MAP,
-    BindingKind,
-    CodeContext,
-    DeleteTargetError,
-    ExprCtx,
-    ImmutabilityKind,
-    OwnershipKind,
-    SymbolAccess,
-    SymbolStorage,
-    SymbolType
-}
-import from jaclang.runtime.constants { Constants as Con }
-import from jaclang.compiler.frontend.constant { JacSemTokenModifier as SemTokMod }
-import from jaclang.compiler.frontend.constant { JacSemTokenType as SemTokType }
-import from jaclang.compiler.frontend.constant { Tokens as Tok }
-import from jaclang.compiler.frontend.constant { ParamKind }
-import type from jaclang.compiler.types.types { TypeBase }
-import type from jaclang.compiler.types.ct_value { CtValue }
-import from jaclang.compiler.frontend.roles {
-    Role,
-    Kid,
-    ImplOf,
-    AccessRole,
-    AccessorsRole,
-    AliasRole,
-    ArchTagInfoRole,
-    ArchTypeRole,
-    ArgPatternsRole,
-    AssignmentsRole,
-    AssignsRole,
-    AttributesRole,
-    AugOpRole,
-    AwaitingBodyRole,
-    BaseClassesRole,
-    BodyRole,
-    BoundRole,
-    CasesRole,
-    CastTypeRole,
-    CauseRole,
-    ChainRole,
-    ChildrenRole,
-    ClibDeclsRole,
-    CodeRole,
-    CollectionRole,
-    ComparesRole,
-    ComprRole,
-    ConditionRole,
-    ConditionalRole,
-    ConnAssignRole,
-    ConnTypeRole,
-    CountByRole,
-    CtrlRole,
-    DecoratorsRole,
-    DefaultValRole,
-    DescriptionRole,
-    DocRole,
-    DynamicTagRole,
-    EdgeSpecRole,
-    ElseBodyRole,
-    ElseValueRole,
-    EndRole,
-    ErrorMsgRole,
-    EventRole,
-    ExTypeRole,
-    ExceptsRole,
-    ExprRole,
-    ExprsRole,
-    FTypeRole,
-    FilterCondRole,
-    FinallyBodyRole,
-    FormatPartRole,
-    FormatSpecRole,
-    FromLocRole,
-    FromTargetRole,
-    GuardRole,
-    HintRole,
-    InsertLocRole,
-    ItemsRole,
-    IterRole,
-    KeyRole,
-    KeywordsRole,
-    KvPairRole,
-    KvPairsRole,
-    KwPatternsRole,
-    KwargsRole,
-    KwonlyargsRole,
-    LeftRole,
-    MainRole,
-    NameRole,
-    NameRefRole,
-    OpRole,
-    OperandRole,
-    OpsRole,
-    OutExprRole,
-    ParamsRole,
-    PartsRole,
-    PathRole,
-    PatternRole,
-    PatternsRole,
-    PosonlyParamsRole,
-    ReturnTypeRole,
-    RightRole,
-    RightsRole,
-    SignatureRole,
-    SlicesRole,
-    SpecRole,
-    SrcEndpointRole,
-    StartRole,
-    StepRole,
-    StopRole,
-    StringsRole,
-    TargetRole,
-    TgtEndpointRole,
-    TokRole,
-    TypeCtxRole,
-    TypeParamsRole,
-    TypeTagRole,
-    UnpackRole,
-    ValueRole,
-    ValueTypeRole,
-    ValuesRole,
-    VarargsRole,
-    VarsRole
-}
-import from jaclang.compiler.frontend.relations {
-    Absorbs,
-    CalleeDecl,
-    CalleeSignature,
-    EventTriggerOf,
-    NarrowedTypeOf,
-    TypeOf,
-    CfgFalse,
-    CfgSucc,
-    CfgTrue,
-    DecidedCodespace,
-    Codespace,
-    Defines,
-    InScope,
-    PlacedIn,
-    ScopeChild,
-    ScopeParent,
-    ScopeOverload,
-    ScopePrimary,
-    SymOf,
-    Uses,
-    codespace_node
-}
 
 
 walker TreeWalker {}
 
 node UniNode {
-    has _ctx_parent: (UniNode | None) postinit,
-        _struct_frozen: bool postinit,
-        _in_mod_nodes: list[UniNode] postinit,
-        _gen: (CodeGenTarget | None) postinit,
+    has _ctx_parent: (UniNode | None) = None,
+        _struct_frozen: bool = False,
+        _in_mod_nodes: (list[UniNode] | None) = None,
+        _gen: (CodeGenTarget | None) = None,
         loc: CodeLocInfo postinit,
-        _role_shapes: (dict[type, str] | None) postinit,
-        __sub_node_tab: (dict[(type, list[UniNode])] | None) postinit,
-        ct_pruned: bool postinit;
+        _role_shapes: (dict[type, str] | None) = None,
+        __sub_node_tab: (dict[(type, list[UniNode])] | None) = None,
+        ct_pruned: bool = False;
 
     def postinit -> None;
     can walk_kids with TreeWalker entry;
@@ -510,14 +358,14 @@ node Expr(UniNode) {
         setter(narrowed_type: (TypeBase | None));
     }
 
-    has _type_sym_tab: (UniScopeNode | None) postinit,
-        _type_cache: (TypeBase | None) postinit,
-        _type_cache_ok: bool postinit,
-        ct_value: CtValue | None postinit,
-        coerce_to: (str | None) postinit,
-        fw: (str | None) postinit,
-        fw_safe: bool postinit,
-        attached_tokens: (list[Token] | None) postinit;
+    has _type_sym_tab: (UniScopeNode | None) = None,
+        _type_cache: (TypeBase | None) = None,
+        _type_cache_ok: bool = False,
+        ct_value: CtValue | None = None,
+        coerce_to: (str | None) = None,
+        fw: (str | None) = None,
+        fw_safe: bool = False,
+        attached_tokens: (list[Token] | None) = None;
 
     def init(*, kid: Sequence[UniNode] = []) -> None;
     def postinit -> None;
@@ -958,7 +806,7 @@ node ModuleItem(UniNode) {
     def __repr__ -> str;
 }
 
-node ImplImport(ElementStmt) {
+node GraphImport(ElementStmt) {
     has scope: (ModulePath | None) { getter; }
     has body: Sequence[ImportWire | ImportRule] { getter; }
 
@@ -981,17 +829,18 @@ node ImportWire(UniNode) {
     has is_absorb: bool = False,
         is_typed: bool = False,
         is_comptime: bool = False,
-        is_module_form: bool = False;
+        is_grouped: bool = False,
+        is_injected: bool = False;
 
     has provider: ModulePath { getter; }
-    has consumers: Sequence[ModulePath] { getter; }
-    has items: Sequence[WireItem] { getter; }
+    has targets: Sequence[WireTarget] { getter; }
 
     def init(
         *,
         provider: ModulePath,
-        consumers: Sequence[ModulePath],
-        items: (Sequence[WireItem] | None),
+        targets: Sequence[WireTarget],
+        is_grouped: bool = False,
+        is_injected: bool = False,
         is_absorb: bool = False,
         is_typed: bool = False,
         is_comptime: bool = False,
@@ -1000,8 +849,27 @@ node ImportWire(UniNode) {
 
     def postinit -> None;
 
-    has block: ImplImport { getter; }
+    has block: GraphImport { getter; }
     has provider_path: str { getter; }
+
+    def __repr__ -> str;
+}
+
+node WireTarget(UniNode) {
+    has is_module_form: bool = False;
+    has consumers: Sequence[ModulePath] { getter; }
+    has items: Sequence[WireItem] { getter; }
+
+    def init(
+        *,
+        consumers: Sequence[ModulePath],
+        items: (Sequence[WireItem] | None),
+        kid: Sequence[UniNode] = []
+    ) -> None;
+
+    def postinit -> None;
+
+    has wire: ImportWire { getter; }
     has consumer_paths: list[str] { getter; }
 
     def __repr__ -> str;
@@ -1025,24 +893,18 @@ node ImportRule(UniNode) {
 
     def postinit -> None;
 
-    has block: ImplImport { getter; }
+    has block: GraphImport { getter; }
     has item_names: set[str] { getter; }
 
     def __repr__ -> str;
 }
 
 node ModulePattern(UniNode) {
-    has is_glob: bool = False,
-        is_any: bool = False;
-
+    has is_glob: bool = False;
     has path: (ModulePath | None) { getter; }
 
     def init(
-        *,
-        path: (ModulePath | None),
-        is_glob: bool = False,
-        is_any: bool = False,
-        kid: Sequence[UniNode] = []
+        *, path: (ModulePath | None), is_glob: bool = False, kid: Sequence[UniNode] = []
     ) -> None;
 
     def postinit -> None;
@@ -1050,7 +912,6 @@ node ModulePattern(UniNode) {
     has dotted: str { getter; }
 
     static def join_scope(prefix: str, name: str) -> str;
-    def matches(module: str, prefix: str = "") -> bool;
     def __repr__ -> str;
 }
 

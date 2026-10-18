@@ -1,7 +1,4 @@
 import time;
-import from jaclang.cli.console { console }
-import from jaclang.artifacts.model { ArtifactUnavailable, Probe }
-import jaclang.artifacts.router as router;
 
 
 def _log(message: str) {
@@ -90,6 +87,12 @@ def _require(spec: str) -> int {
 }
 
 
+def _names_artifact(name: str) -> bool {
+    (base, at, variant) = name.partition("@");
+    return base in router.names() and (not at or bool(variant));
+}
+
+
 def _build(names: list[str], force: bool, exact: bool, release: bool) -> int {
     started = time.monotonic();
     if release {
@@ -118,13 +121,14 @@ impl native(
     force: bool = False,
     exact: bool = False,
     release: bool = False,
-    require: str = ""
+    require: str = "",
+    stop_after: int = 0
 ) -> int {
     names = list(names or []);
     unknown = [
         n
         for n in names
-        if n not in router.names()
+        if not _names_artifact(n)
     ];
     if unknown {
         console.error(
@@ -136,6 +140,16 @@ impl native(
     }
     if action == "status" {
         return _require(require) if require else _status(names);
+    }
+    if stop_after {
+        if action != "build" or names != ["kernel"] or stop_after < 0 {
+            console.error(
+                "--stop-after takes a positive count and only `jac native build kernel`"
+            );
+            return 1;
+        }
+        plan_kernel_prefix(stop_after, _log);
+        return 0;
     }
     if action == "build" {
         return _build(names, force, exact, release);
