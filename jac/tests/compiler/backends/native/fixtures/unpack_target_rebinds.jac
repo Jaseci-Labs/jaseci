@@ -61,6 +61,17 @@ def narrowed_optional(flag: bool) -> int {
     return held if held is not None else -1;
 }
 
+def trimmed(name: str) -> str {
+    stem = name.lower().split("/")[-1];
+    for prefix in ["ttl_", "m_"] {
+        if stem.startswith(prefix) {
+            stem = stem[len(prefix):];
+            break;
+        }
+    }
+    return stem.upper();
+}
+
 with entry {
     print(rebound());
     print(kept());
@@ -69,4 +80,5 @@ with entry {
         assigned_after_tuple_loop([(1, 2)], "x_12"), assigned_after_loop([1, 2], "abc")
     );
     print(narrowed_optional(True), narrowed_optional(False));
+    print(trimmed("gfx/ttl_main"), trimmed("gfx/inter"));
 }

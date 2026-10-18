@@ -258,11 +258,10 @@ impl NaIRGenPass._value_kind(ty: ir.Type) -> str {
     if isinstance(ty, (ir.DoubleType, ir.FloatType)) {
         return "float";
     }
-    if isinstance(ty, ir.PointerType) {
-        return "pointer";
-    }
-    if isinstance(ty, (ir.IdentifiedStructType, ir.LiteralStructType)) {
-        return "struct";
+    if isinstance(
+        ty, (ir.PointerType, ir.IdentifiedStructType, ir.LiteralStructType)
+    ) {
+        return "reference";
     }
     return "other";
 }

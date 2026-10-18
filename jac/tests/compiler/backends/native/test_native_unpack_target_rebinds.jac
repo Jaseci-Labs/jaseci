@@ -20,4 +20,7 @@ test "names rebound to another type by a loop or an assignment agree with Python
     assert lines[2] == "18.5" , out;
     assert lines[3] == "6 6" , out;
     assert lines[4] == "5 -1" , out;
+    # A string reassigned on one path keeps its one slot: only a change of
+    # kind (int, float, reference) rebinds.
+    assert lines[5] == "MAIN INTER" , out;
 }
