@@ -1344,6 +1344,7 @@ impl NaIRGenPass._native_imports(
     );
 
     _canon_src: dict[str, any] = {};
+    walked: dict[str, uni.Module] = {};
     dep_edges: dict[str, list[str]] = {};
     typed_only: dict[str, bool] = {};
     runtime_edges: dict[str, list[str]] = {};
@@ -1405,6 +1406,7 @@ impl NaIRGenPass._native_imports(
             continue;
         }
         processed_modules.add(abs_key);
+        walked[abs_key] = imported_mod;
         _canon_src[abs_key] = src_mod_str;
         imported_mods.append((src_mod_str, imported_mod));
         import from jaclang.compiler.driver.compile_options { env_na_debug as _ti_dbg }
@@ -1478,6 +1480,15 @@ impl NaIRGenPass._native_imports(
         if _direct not in runtime_reached {
             continue;
         }
+        """The walk loaded each module as a full tree; the hub may hold an
+        interface-hydrated stand-in that cannot tell a re-export surface from a
+        unit. A module made only of imports and includes is a re-export
+        surface, whether this module imports it for types or at run time: the
+        units behind it are what this module links to.""";
+        if not self._has_own_code(walked.get(_direct) or self.prog.mod.hub.get(_direct)) {
+            _dep_todo.extend(dep_edges.get(_direct, []));
+            continue;
+        }
         if typed_only.get(_direct, False) {
             import from jaclang.compiler.placement.placement_facts {
                 native_unit as _typed_native_unit
@@ -1490,13 +1501,7 @@ impl NaIRGenPass._native_imports(
             }
             continue;
         }
-        if self._has_own_code(self.prog.mod.hub.get(_direct)) {
-            self._note_native_dep(_direct);
-        } else {
-            """A module made only of imports and includes is a re-export
-            surface: the units behind it are what this module links to.""";
-            _dep_todo.extend(dep_edges.get(_direct, []));
-        }
+        self._note_native_dep(_direct);
     }
 
     walk = self._permuted_walk_order(imported_mods);
