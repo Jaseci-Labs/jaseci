@@ -3314,6 +3314,7 @@ graph import compiler.backends.py {
     }
     codegen_ir --> compiler.backends.py.jcir_gen_pass { int_literal_magnitude }
     codegen_shim --> compiler.driver.compiler.assemble_jcir { compile_ir }
+    jcir_bc_gen_pass --> compiler.driver.compiler.assemble_jcir { JcirBytecodeGenPass }
     jcir_gen_pass --> compiler.driver.module_compile { JcirGenPass }
     artifact_imports --> compiler.driver.application._prepare_revision {
         import_specs,
@@ -5618,6 +5619,7 @@ graph import compiler.frontend {
         E5102,
         W5096
     }
+    diagnostics --> compiler.driver.compiler.assemble_jcir { E5043 }
     diagnostics --> compiler.driver.ifacecache._alert_from_record { DIAGNOSTICS }
     diagnostics --> compiler.frontend.diagnostic_utils.resolve_diagnostic_tokens {
         DIAGNOSTICS,
@@ -6247,6 +6249,7 @@ graph import compiler.frontend {
     roles --> compiler.types.operations { Kid }
     roles --> compiler.types.stubcat.writer { Kid }
     roles --> compiler.types.type_evaluator { Kid }
+    srcloc --> compiler.driver.compiler.assemble_jcir { Span }
     srcloc --> compiler.driver.ifacecache._span_from_record { Span }
     srcloc --> compiler.frontend.codeinfo { CodeLocInfo }
     srcloc --> compiler.frontend.parser.frontend { Span }
@@ -8897,6 +8900,8 @@ graph import compiler.passes {
     context --> compiler.backends.native.na_compile_pass { CompileContext }
     context --> compiler.backends.native.na_ir_gen_pass { CompileContext }
     context --> compiler.backends.py.jcir_bc_gen_pass { CompileContext }
+    type context --> compiler.driver.compiler { Alert }
+    context --> compiler.driver.compiler.assemble_jcir { Alert }
     context --> compiler.driver.context_passes { CompileContext }
     context --> compiler.driver.ifacecache._alert_from_record { Alert }
     context --> compiler.driver.pass_driver { Alert, DiagnosticPolicy }
