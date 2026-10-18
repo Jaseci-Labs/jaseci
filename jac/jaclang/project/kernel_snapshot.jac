@@ -77,7 +77,7 @@ def interface_wanted(path: str) -> bool {
     if is_compiler_source_path(path) {
         return path.endswith(".py") or path.endswith(".jac");
     }
-    return path.endswith(".py");
+    return path.endswith(".py") or path.endswith(".pyi");
 }
 
 def forget_interface_memo {

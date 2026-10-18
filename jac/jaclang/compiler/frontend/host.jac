@@ -158,6 +158,10 @@ obj HostServices {
         raise RuntimeError("no compiler host is installed");
     }
 
+    def stub_interface(program: JacProgram, file_path: str) -> (Module | None) {
+        return None;
+    }
+
     def ct_environment -> CtEnvironment {
         return CtEnvironment();
     }
