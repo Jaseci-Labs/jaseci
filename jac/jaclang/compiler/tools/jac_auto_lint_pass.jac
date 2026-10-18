@@ -1,6 +1,5 @@
 import keyword;
 import os;
-import from collections.abc { Callable }
 
 walker JacAutoLintPass(TreePass) {
     static has contract: PassContract = PassContract();
