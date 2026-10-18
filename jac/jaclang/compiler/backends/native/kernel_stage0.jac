@@ -199,6 +199,8 @@ obj GcPauses {
     has collections: int = 0,
         total_seconds: float = 0.0,
         longest_seconds: float = 0.0,
+        origin: float = 0.0,
+        long_pauses: list[tuple[float, float, int]] = [],
         _started: float = 0.0;
 
     def observe(phase: str, info: dict[str, int]) {
@@ -213,6 +215,11 @@ obj GcPauses {
         self.collections += 1;
         self.total_seconds += pause;
         self.longest_seconds = max(self.longest_seconds, pause);
+        if pause > 1.0 {
+            self.long_pauses.append(
+                (self._started - self.origin, pause, info.get("collected", 0))
+            );
+        }
     }
 }
 
@@ -250,7 +257,7 @@ def plan_kernel_prefix(stop_after: int, log: Callable[[str], None]) -> int {
     registry.cold = True;
     program.iface_registry().cold = True;
     registry.stop_after = stop_after;
-    pauses = GcPauses();
+    pauses = GcPauses(origin=started);
     gc.callbacks.append(pauses.observe);
     log(f"  Planning the kernel uncached until {stop_after} units are lowered");
     try {
@@ -270,6 +277,9 @@ def plan_kernel_prefix(stop_after: int, log: Callable[[str], None]) -> int {
         f"  GC: {pauses.collections} gen-2 collections, "
         f"{pauses.total_seconds:.1f}s paused, longest {pauses.longest_seconds:.2f}s"
     );
+    for (at, seconds, collected) in pauses.long_pauses {
+        log(f"    gen-2 pause of {seconds:.2f}s at {at:.1f}s, {collected} collected");
+    }
     for (path, why) in sorted(registry.failures.items()) {
         reason = why.strip().splitlines()[-1] if why.strip() else "no reason recorded";
         log(f"  Failed to lower {native_unit_identity(path)}: {reason}");

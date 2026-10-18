@@ -45,6 +45,16 @@ obj NativeUnitRegistry {
         self.checking = set();
     }
 
+    def begin_parse(path: str) {
+        """A module's parse starts a stretch of allocation. A session settles
+        its heap first, so no collection scans more than one module's new
+        tree.""";
+        if self.session is not None {
+            self.session.settle_heap();
+        }
+        self.note_step("parse", path);
+    }
+
     def note_step(verb: str, path: str = "", detail: str = "") -> float {
         if self.progress is not None {
             self.progress_steps += 1;
