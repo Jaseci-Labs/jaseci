@@ -96,9 +96,7 @@ obj NodeAnchor(Anchor) {
         out_light: (dict[type, list[any]] | None) = ObjectField(
             `init=False, `default=None
         ),
-        in_light: (dict[type, list[any]] | None) = ObjectField(
-            `init=False, `default=None
-        ),
+        in_light: (dict[type, any] | None) = ObjectField(`init=False, `default=None),
         mixed: bool = ObjectField(`init=False, `default=False);
 
     def __getstate__ -> dict[(str, object)];
@@ -249,7 +247,9 @@ def new_connect_edge(
 
 def edge_subtypes(cls: type) -> tuple[type, ...];
 
-def _deref(lst: list[any]) -> list[any];
+def _as_refs(held: any) -> any;
+
+def _deref(lst: any) -> list[any];
 
 glob _VACANT = weakref.ref(`type('_Vacated', (), {})()),
      _INDEX_AT: int = 64;
@@ -266,11 +266,9 @@ class _InLinks(list) {
     def drop(self: _InLinks, src: NodeArchetype) -> bool;
 }
 
-def _connect_back(inn: dict[type, list[any]], cls: type, src: NodeArchetype);
+def _connect_back(inn: dict[type, any], cls: type, src: NodeArchetype);
 
-def _drop_back(
-    d: (dict[type, list[any]] | None), cls: type, src: NodeArchetype
-) -> bool;
+def _drop_back(d: (dict[type, any] | None), cls: type, src: NodeArchetype) -> bool;
 
 def light_connect(src: NodeAnchor, cls: type, tgt: NodeAnchor);
 
@@ -497,7 +495,17 @@ impl edge_subtypes(cls: type) -> tuple[type, ...] {
     return result;
 }
 
-impl _deref(lst: list[any]) -> list[any] {
+impl _as_refs(held: any) -> any {
+    """An incoming light entry with one source holds the weak reference
+    itself rather than a one-element list: a tree node's parent.""";
+    return [held] if isinstance(held, weakref.ref) else held;
+}
+
+impl _deref(lst: any) -> list[any] {
+    if isinstance(lst, weakref.ref) {
+        one = lst();
+        return [one] if one is not None else [];
+    }
     out: list[any] = [];
     for r in lst {
         a = r();
@@ -559,10 +567,12 @@ impl _InLinks.drop(self: _InLinks, src: NodeArchetype) -> bool {
     return False;
 }
 
-impl _connect_back(inn: dict[type, list[any]], cls: type, src: NodeArchetype) {
+impl _connect_back(inn: dict[type, any], cls: type, src: NodeArchetype) {
     lst = inn.get(cls);
     if lst is None {
-        inn[cls] = [weakref.ref(src)];
+        inn[cls] = weakref.ref(src);
+    } elif isinstance(lst, weakref.ref) {
+        inn[cls] = [lst, weakref.ref(src)];
     } elif isinstance(lst, _InLinks) {
         lst.add(src);
     } elif len(lst) + 1 < _INDEX_AT {
@@ -574,15 +584,20 @@ impl _connect_back(inn: dict[type, list[any]], cls: type, src: NodeArchetype) {
     }
 }
 
-impl _drop_back(
-    d: (dict[type, list[any]] | None), cls: type, src: NodeArchetype
-) -> bool {
+impl _drop_back(d: (dict[type, any] | None), cls: type, src: NodeArchetype) -> bool {
     if d is None {
         return False;
     }
     lst = d.get(cls);
     if lst is None {
         return False;
+    }
+    if isinstance(lst, weakref.ref) {
+        if lst() is not src {
+            return False;
+        }
+        d.pop(cls, None);
+        return True;
     }
     if isinstance(lst, _InLinks) {
         if not lst.drop(src) {
@@ -697,27 +712,27 @@ impl _collect_light(d: dict[type, list[any]], cls: (type | None)) -> list[any] {
     if cls is None {
         out: list[any] = [];
         for lst in d.values() {
-            out.extend(lst);
+            out.extend(_as_refs(lst));
         }
         return out;
     }
     subs = edge_subtypes(cls);
     if len(subs) == 1 {
         lst = d.get(cls);
-        return lst if lst is not None else [];
+        return _as_refs(lst) if lst is not None else [];
     }
     found: list[any] = [];
     if len(subs) <= len(d) {
         for sub in subs {
             lst = d.get(sub);
             if lst {
-                found.extend(lst);
+                found.extend(_as_refs(lst));
             }
         }
     } else {
         for (k, lst) in d.items() {
             if lst and issubclass(k, cls) {
-                found.extend(lst);
+                found.extend(_as_refs(lst));
             }
         }
     }

@@ -12542,6 +12542,7 @@ graph import runtime {
         Anchor,
         EdgeAnchor,
         NodeAnchor,
+        _as_refs,
         anchor_key,
         light_edge_view,
         same_anchor
