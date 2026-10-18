@@ -203,6 +203,7 @@ obj IfaceRegistry(CatalogResolver) {
         _iface_bytes: dict[str, EncodedInterface] = {},
         _incoherent: set[str] = set(),
         verifying: bool = False,
+        cold: bool = False,
         closure_token: int = 0,
         _pkg_dir_memo: str = "";
 
@@ -546,7 +547,7 @@ obj IfaceRegistry(CatalogResolver) {
             return self._register_from_disk(resolved, check_deps=False);
         }
         (rebuild, _) = cache_mode();
-        if not rebuild {
+        if not rebuild and not self.cold {
             self.checking.add(resolved);
             try {
                 found = self._register_from_disk(resolved, check_deps=True);

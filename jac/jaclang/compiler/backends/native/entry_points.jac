@@ -8,10 +8,7 @@ def validate_native_application(module: Module, shared: bool, memory: str) -> st
         );
     }
     llvm_ir = native_linked_ir_text(module);
-    demoted = sorted(
-        set(native_demoted_ir_symbols(llvm_ir))
-            | {issue.symbol for issue in native_lowering_issues(llvm_ir)}
-    );
+    demoted = native_fallbacks_in_ir(llvm_ir).symbols;
     if demoted and not shared {
         raise ValueError(
             'Declarations in the native closure could not lower: ' + ', '.join(demoted)
