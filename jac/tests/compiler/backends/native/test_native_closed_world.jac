@@ -210,6 +210,38 @@ test "one name imported from two modules dispatches to each module's function" {
 }
 
 
+test "a native function calls a server function declared after it" {
+    tmp = _write_mods(
+        {
+            "jac.toml": (
+                '[placement.pins]\n"main.run" = "native"\n"main.later" = "server"\n'
+            ),
+            "main.jac": (
+                "def:pub run -> int {\n"
+                + "    return later() + 1;\n"
+                + "}\n\n"
+                + "def later -> int {\n"
+                + "    return 41;\n"
+                + "}\n"
+            )
+        }
+    );
+    (prog, mod) = _compile_main(tmp, aot=False);
+    binding = mod.gen.interop_manifest.bindings.get("later");
+    assert binding is not None and binding.native_callable , (
+        f"a later server function must still get a provider: {binding}"
+    );
+    py_src = generated_python(mod.gen);
+    assert f"__jac_interop_py_funcs__['{binding.symbol}'] = later" in py_src , py_src;
+    def later -> int {
+        return 41;
+    }
+    mod.gen.interop_py_funcs[binding.symbol] = later;
+    run = get_func(mod.gen.native_engine, "run", ctypes.c_int64);
+    assert run() == 42;
+}
+
+
 test "a native element of a mixed module calls a server function it imports" {
     # `pickle` keeps `pack` on the server, so the module is mixed: the import
     # of `f` is placed in Python and only `both` is pinned native. The call
