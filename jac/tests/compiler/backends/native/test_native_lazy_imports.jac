@@ -25,3 +25,11 @@ test "imported functions declared on first reference still call correctly" {
     assert get_func(engine, "used_qualified", ctypes.c_int64, ctypes.c_int64)(1) == 40;
     assert get_func(engine, "nested_use", ctypes.c_int64, ctypes.c_int64)(1) == 17;
 }
+
+test "an import declared after a local function of its name leaves the local's return facts" {
+    module = compile_native_ir("lazy_ret_user.jac");
+    layout = module.gen.native_layout;
+    assert layout is not None;
+    local = layout.functions.get("items");
+    assert local is not None and local.ret_elem_keys == ["int"] , local;
+}

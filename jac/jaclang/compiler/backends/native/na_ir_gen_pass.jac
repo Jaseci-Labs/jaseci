@@ -21,6 +21,14 @@ def _jc_optional_payload(semantic: (TypeBase | None)) -> (TypeBase | None) {
     return present[0] if len(present) == 1 else None;
 }
 
+def _restore_entry[V](table: dict[str, V], key: str, prior: (V | None)) {
+    if prior is None {
+        table.pop(key, None);
+    } else {
+        table[key] = prior;
+    }
+}
+
 obj NativeFinalizer {
     has body: uni.FinallyStmt | None,
         function: ir.Function,

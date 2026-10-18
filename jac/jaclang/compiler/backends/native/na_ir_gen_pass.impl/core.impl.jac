@@ -2141,8 +2141,13 @@ impl NaIRGenPass._declare_import(pending: PendingImport) -> (ir.Function | None)
             self._record_linked_decl(_already, nd);
             return _already;
         }
+        """Declaring records the function under its bare name: its binding, its
+        defining module and its return facts. An import that does not own the
+        bare name hands all of them back to whatever held the name.""";
         _prev = self.scope.functions.get(name);
         _prev_def_mod = self._func_def_mod.get(name);
+        _prev_ret_type = self.func_ret_type_key.get(name);
+        _prev_ret_elems = self.func_ret_elem_keys.get(name);
         self._maybe_declare_ability(nd, pending.layout);
         func = self._module_functions.get(pending.module_key);
         self._record_linked_decl(func, nd);
@@ -2152,9 +2157,9 @@ impl NaIRGenPass._declare_import(pending: PendingImport) -> (ir.Function | None)
             } else {
                 self.scope.unbind_function(name);
             }
-            if _prev_def_mod is not None {
-                self._func_def_mod[name] = _prev_def_mod;
-            }
+            _restore_entry(self._func_def_mod, name, _prev_def_mod);
+            _restore_entry(self.func_ret_type_key, name, _prev_ret_type);
+            _restore_entry(self.func_ret_elem_keys, name, _prev_ret_elems);
         }
         return func;
     } finally {

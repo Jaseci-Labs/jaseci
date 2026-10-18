@@ -1543,6 +1543,11 @@ class Function(GlobalValue) {
             block.release();
         }
         self.blocks = [];
+        for arg in self.args {
+            arg.parent = None;
+        }
+        self.args = [];
+        self.return_value.parent = None;
     }
 
     def descr(self: Function, buf: list[str]) {
@@ -1645,7 +1650,7 @@ class ArgumentAttributes(AttributeSet) {
 }
 
 class _BaseArgument(NamedValue) {
-    has parent: Function,
+    has parent: (Function | None),
         attributes: ArgumentAttributes;
 
     def init(self: _BaseArgument, parent: Function, typ: types.Type, name: str = '') {

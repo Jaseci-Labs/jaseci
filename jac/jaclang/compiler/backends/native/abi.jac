@@ -21,7 +21,10 @@ def layout_identity(llt: ir.Type, memo: dict[str, str]) -> str {
         members = ",".join(layout_identity(m, memo) for m in llt.members());
         return f"{'<' if llt.packed else ''}{{{members}}}";
     }
-    if isinstance(llt, (ir.ArrayType, ir.VectorType)) {
+    if isinstance(llt, ir.VectorType) {
+        return f"<{llt.count}x{layout_identity(llt.element, memo)}>";
+    }
+    if isinstance(llt, ir.ArrayType) {
         return f"[{llt.count}x{layout_identity(llt.element, memo)}]";
     }
     return str(llt);
