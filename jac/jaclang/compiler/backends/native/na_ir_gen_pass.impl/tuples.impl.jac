@@ -205,10 +205,7 @@ impl NaIRGenPass._unpack_into(
             _target_ty = self._lower_type(target.type)
                 if isinstance(target, uni.Expr)
                 else None;
-            fresh = slot_type != self.jacval_type
-                and _target_ty is not None
-                and _target_ty != slot_type
-                and elem_val.type != slot_type;
+            fresh = self._rebinds_slot(slot_type, _target_ty, elem_val.type);
             if not fresh {
                 stored = self._coerce_container_element(elem_val, slot_type)
                     if slot_type == self.jacval_type
@@ -252,6 +249,40 @@ impl NaIRGenPass._unpack_into(
         self._emit_rc_release_simple(_orig_tv, op="unpack_box", loc="");
     }
     return True;
+}
+
+impl NaIRGenPass._value_kind(ty: ir.Type) -> str {
+    if isinstance(ty, ir.IntType) {
+        return "int";
+    }
+    if isinstance(ty, (ir.DoubleType, ir.FloatType)) {
+        return "float";
+    }
+    if isinstance(ty, ir.PointerType) {
+        return "pointer";
+    }
+    if isinstance(ty, (ir.IdentifiedStructType, ir.LiteralStructType)) {
+        return "struct";
+    }
+    return "other";
+}
+
+impl NaIRGenPass._rebinds_slot(
+    slot_type: ir.Type, target_type: (ir.Type | None), value_type: ir.Type
+) -> bool {
+    if target_type is None
+        or slot_type == self.jacval_type
+        or target_type == slot_type
+        or value_type == slot_type
+        or self._opt_payload_of(slot_type) is not None {
+        return False;
+    }
+    slot_kind = self._value_kind(slot_type);
+    if slot_kind == "other" {
+        return False;
+    }
+    return slot_kind != self._value_kind(target_type)
+        and self._value_kind(target_type) != "other";
 }
 
 impl NaIRGenPass._unpack_store_global(

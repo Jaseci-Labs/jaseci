@@ -7,7 +7,7 @@ native path was taken."""
 import from pathlib { Path }
 import from tests.support { assert_native_identity }
 
-test "tuple loop targets that rebind a name to another type agree with Python" {
+test "names rebound to another type by a loop or an assignment agree with Python" {
     source = str(
         Path(__file__).resolve().parent / "fixtures" / "unpack_target_rebinds.jac"
     );
@@ -18,4 +18,6 @@ test "tuple loop targets that rebind a name to another type agree with Python" {
     assert lines[0] == "[-2.5, 3.0]" , out;
     assert lines[1] == "25" , out;
     assert lines[2] == "18.5" , out;
+    assert lines[3] == "6 6" , out;
+    assert lines[4] == "5 -1" , out;
 }

@@ -35,8 +35,36 @@ def swapped -> float {
     return total;
 }
 
+def assigned_after_tuple_loop(groups: list[tuple[int, int]], text: str) -> int {
+    total = 0;
+    for (first, number) in groups {
+        total += first + number;
+    }
+    number = text.rsplit("_", 1)[-1] if "_" in text else "0";
+    return total + (1 if number.isdigit() else 0) + len(number);
+}
+
+def assigned_after_loop(values: list[int], text: str) -> int {
+    total = 0;
+    for number in values {
+        total += number;
+    }
+    number = text;
+    return total + len(number);
+}
+
+def narrowed_optional(flag: bool) -> int {
+    held: int | None = None;
+    if flag {
+        held = 5;
+    }
+    return held if held is not None else -1;
+}
+
 with entry {
     print(rebound());
     print(kept());
     print(swapped());
+    print(assigned_after_tuple_loop([(1, 2)], "x_12"), assigned_after_loop([1, 2], "abc"));
+    print(narrowed_optional(True), narrowed_optional(False));
 }
