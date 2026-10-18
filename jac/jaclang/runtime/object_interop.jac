@@ -1,10 +1,3 @@
-import from jaclang.runtime.object_model {
-    ObjectField,
-    MISSING,
-    fields as jac_fields,
-    is_jac_object
-}
-
 def is_record(value: object) -> bool;
 
 def fields(value: object) -> tuple[ObjectField, ...];

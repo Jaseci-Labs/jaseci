@@ -1,6 +1,5 @@
 import os;
 import sys;
-import from jaclang.compiler.driver.program { JacProgram }
 
 class CompilerSourceError(RuntimeError) {}
 
@@ -44,8 +43,6 @@ impl module_scoped_failure_details(path: str, program: JacProgram) -> str {
 }
 
 impl bootstrap_tier_failure_details(path: str) -> str {
-    import from jaclang.compiler.driver.pipeline { tier_reason }
-    import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
     reason = tier_reason(CompilationProduct.IR);
     if not reason {
         return '';
@@ -61,7 +58,6 @@ impl bootstrap_tier_failure_details(path: str) -> str {
 }
 
 impl _compiler_source_root -> str {
-    import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
     return os.path.realpath(jaclang_pkg_root());
 }
 

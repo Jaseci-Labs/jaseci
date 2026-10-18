@@ -26,16 +26,6 @@ def verify_region_layout(source: str);
 def verify_region_unit(path: str);
 
 impl _region_layout_facts -> dict[str, int] {
-    import from jaclang.compiler.frontend.codeinfo {
-        HDR_ALLOC_ID_OFF,
-        HDR_DTOR_OFF,
-        HDR_MAGIC,
-        HDR_MAGIC_SHIFT_BASE,
-        HDR_RC_OFF,
-        HDR_TAG_OFF,
-        HDR_TOTAL,
-        RC_SENTINEL
-    }
     return {
         "HDR_ALLOC_ID_OFF": HDR_ALLOC_ID_OFF,
         "HDR_TAG_OFF": HDR_TAG_OFF,

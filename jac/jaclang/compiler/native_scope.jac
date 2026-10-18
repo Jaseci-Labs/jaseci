@@ -202,7 +202,6 @@ def native_scope_paths -> list[str];
 def kernel_root_path -> str;
 
 impl package_host_edge(mod_path: str) -> bool {
-    import from jaclang.compiler.frontend.codeinfo { native_unit_identity }
     identity = native_unit_identity(mod_path);
     if not identity.startswith("jaclang/") or identity.startswith("jaclang/runtime/") {
         return False;
@@ -216,13 +215,10 @@ impl package_host_edge(mod_path: str) -> bool {
 }
 
 impl scope_allows_inferred_path(mod_path: str) -> bool {
-    import from jaclang.compiler.frontend.codeinfo { native_unit_compile_active }
     return not native_unit_compile_active() or not package_host_edge(mod_path);
 }
 
 impl binds_bare_arch_names(mod_path: str) -> bool {
-    import from jaclang.compiler.kernel_target { target_package_rel }
-    import from jaclang.compiler.frontend.codeinfo { kernel_unit_rels }
     rel = target_package_rel(mod_path) if mod_path else None;
     if rel is None {
         return False;
@@ -243,7 +239,6 @@ impl binds_bare_arch_names(mod_path: str) -> bool {
 }
 
 impl scope_modules -> list[str] {
-    import from jaclang.compiler.kernel_target { active_kernel_target }
     spec = active_kernel_target();
     if spec is not None {
         return list(spec.scope_modules);
@@ -252,13 +247,11 @@ impl scope_modules -> list[str] {
 }
 
 impl kernel_root_module -> str {
-    import from jaclang.compiler.kernel_target { active_kernel_target }
     spec = active_kernel_target();
     return spec.root_module if spec is not None else KERNEL_ROOT_MODULE;
 }
 
 impl native_scope_path_suffixes -> list[str] {
-    import from jaclang.compiler.kernel_target { kernel_target_generation }
     gen = kernel_target_generation();
     if _SCOPE_SUFFIX_GEN[0] != gen {
         _SCOPE_SUFFIX_CACHE.clear();
@@ -285,7 +278,6 @@ impl in_native_scope_path(mod_path: str) -> bool {
 }
 
 impl scope_module_path(module: str) -> str {
-    import from jaclang.compiler.kernel_target { target_pkg_root }
     rel = module.replace("jaclang.", "", 1).replace(".", os.sep) + ".jac";
     return os.path.join(target_pkg_root(), rel);
 }

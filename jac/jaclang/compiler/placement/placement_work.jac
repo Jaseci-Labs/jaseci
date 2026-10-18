@@ -1,6 +1,4 @@
 import os;
-import jaclang.compiler.frontend.unitree as uni;
-import type from jaclang.compiler.driver.program { JacProgram }
 
 
 obj PlacementWork {
@@ -140,7 +138,6 @@ impl PlacementWork.unwatch(eid: int) {
 }
 
 impl PlacementWork.refs(module: uni.Module) -> dict[int, set[int]] {
-    import from jaclang.compiler.placement.placement_solver { _ref_top_ids }
     self.observe(module);
     mid = id(module);
     cached = self.references.get(mid);
@@ -152,7 +149,6 @@ impl PlacementWork.refs(module: uni.Module) -> dict[int, set[int]] {
 }
 
 impl PlacementWork.drain(prog: JacProgram) {
-    import from jaclang.compiler.placement.placement_solver { _pull_boundary_import }
     if self.solving {
         return;
     }

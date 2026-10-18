@@ -1,9 +1,6 @@
 import hashlib;
 import os;
 import types;
-import from jaclang.jac0core.ext_registry { base_stem }
-import type from jaclang.runtime.semantic { Info }
-import type from jaclang.client.compiler { ViteCompiler }
 
 obj ModuleIndex {
     has size: tuple[int, int],
@@ -112,7 +109,6 @@ impl _realpath(path: str) -> str {
 
 impl publish(application: PreparedApplication) {
     import sys;
-    import from jaclang.runtime.prepared_loader { PreparedFinder }
     if not any(isinstance(finder, PreparedFinder) for finder in sys.meta_path) {
         sys.meta_path.insert(0, PreparedFinder());
     }
@@ -208,7 +204,6 @@ impl containing_application(
 impl load_prepared_module(
     path: str, application: PreparedApplication | None = None, as_main: bool = False
 ) -> types.ModuleType {
-    import from jaclang.runtime.runtime { JacRuntime as Jac }
     import sys;
     path = os.path.realpath(path);
     if (prepared_code(path) is None) {
@@ -469,7 +464,6 @@ impl execute_module(module: types.ModuleType, application: PreparedApplication) 
 
 impl semantic_for_scope(scope: str) -> Info | None {
     import sys;
-    import from jaclang.jac0core.ext_registry { base_stem }
     parts = scope.split('.');
     for end in range(len(parts) - 1, 0, -1) {
         name = '.'.join(parts[:end]);

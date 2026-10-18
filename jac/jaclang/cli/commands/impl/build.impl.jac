@@ -238,7 +238,7 @@ impl _build_app(
     }
 
     if client_artifact {
-        import from jaclang.project.kinds { kind_has_client }
+        import from jaclang.project.app_kinds { kind_has_client }
         if app is None {
             console.error(
                 "A client build needs an app: no jac.toml app claims this file.",

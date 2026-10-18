@@ -1,37 +1,3 @@
-import from jaclang.compiler.frontend.roles { Kid }
-import from jaclang.compiler.driver.pipeline_types { PassContract }
-import from jaclang.compiler.frontend.unitree {
-    Module,
-    TreeWalker,
-    UniNode,
-    Ability,
-    Archetype,
-    Assignment,
-    AstSymbolNode,
-    AtomTrailer,
-    BinaryExpr,
-    BoolExpr,
-    ConnectOp,
-    DeleteStmt,
-    DisconnectOp,
-    EventSignature,
-    Expr,
-    FuncCall,
-    KWPair,
-    ListVal,
-    MultiString,
-    ability_of_symbol,
-    ImplDef,
-    Name,
-    SpecialVarRef,
-    String,
-    Symbol,
-    Token,
-    UniScopeNode
-}
-import from jaclang.compiler.passes.context { CompileContext, TreePass }
-import from jaclang.compiler.frontend.constant { SymbolType, Tokens as Tok }
-
 def _literal_names(value: (Expr | None)) -> (list[str] | None);
 
 obj CallableKey {
@@ -101,7 +67,6 @@ impl _literal_names(value: (Expr | None)) -> (list[str] | None) {
 }
 
 impl callable_key(sym: Symbol) -> CallableKey {
-    import from jaclang.compiler.native_bindings { is_owning_scope }
     parts: list[str] = [sym.sym_name];
     cur: (UniScopeNode | None) = sym.parent_tab;
     while cur is not None and not isinstance(cur, Module) {
@@ -138,7 +103,6 @@ impl EndpointEffectPass.prepare with entry {
 }
 
 impl EndpointEffectPass.enter_ability with Ability entry {
-    import from jaclang.compiler.frontend.codeinfo { endpoint_key }
     if (
         not here.is_method
         and not here.in_client_context()
@@ -155,7 +119,6 @@ impl EndpointEffectPass.enter_ability with Ability entry {
 }
 
 impl EndpointEffectPass.enter_archetype with Archetype entry {
-    import from jaclang.compiler.frontend.codeinfo { endpoint_key }
     if here.arch_kind != "walker" {
         return;
     }
@@ -168,7 +131,6 @@ impl EndpointEffectPass.enter_archetype with Archetype entry {
 }
 
 impl EndpointEffectPass.record_callables with Module exit {
-    import from jaclang.compiler.frontend.codeinfo { is_compiler_source_path }
     if self.ctx.nested_depth
         or not here.loc.mod_path.endswith(".jac")
         or is_compiler_source_path(here.loc.mod_path) {
@@ -255,7 +217,6 @@ impl EndpointEffectPass._summary(ability: Ability) -> (dict[str, any] | None) {
 }
 
 impl EndpointEffectPass._served_effects(call: FuncCall) -> (dict[str, any] | None) {
-    import from jaclang.compiler.types.stubcat.reader { CatModule }
     sym = self._call_target_symbol(call);
     if sym is None {
         return None;
@@ -296,7 +257,6 @@ impl EndpointEffectPass._apply(summary: dict[str, any], call: FuncCall) {
 impl EndpointEffectPass._classify(
     body_nodes: list[UniNode], kind: str, name: str, declaration: Ability | None = None
 ) -> dict[str, any] {
-    import from jaclang.compiler.frontend.codeinfo { endpoint_descriptor }
     self._is_writer = False;
     self._unknown = False;
     self._declared_reads.clear();

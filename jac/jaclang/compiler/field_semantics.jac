@@ -1,15 +1,3 @@
-import from jaclang.compiler.frontend.unitree {
-    AstSymbolNode,
-    Bool,
-    Expr,
-    FuncCall,
-    HasVar,
-    KWPair,
-    Module,
-    ModuleItem,
-    Name
-}
-
 obj FieldInitialization {
     has default_expr: Expr | None,
         factory_expr: Expr | None = None,
@@ -26,7 +14,6 @@ def field_initialization(var: HasVar) -> FieldInitialization;
 def positional_field_names(fields: list[HasVar]) -> list[str];
 
 impl is_field_marker(nd: FuncCall) -> bool {
-    import from jaclang.compiler.erased_imports { erased_import_binds }
     owner = nd.parent;
     if not isinstance(owner, HasVar) or owner.value is not nd {
         return False;

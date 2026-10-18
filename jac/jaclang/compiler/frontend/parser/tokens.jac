@@ -437,3 +437,12 @@ impl reserved_words -> list[str] {
 impl is_special_var_kind(kind: TokenKind) -> bool {
     return kind in SPECIAL_VAR_KINDS;
 }
+
+def is_name_usable_kind(kind: TokenKind) -> bool;
+
+impl is_name_usable_kind(kind: TokenKind) -> bool {
+    if kind == TokenKind.KW_ROOT or kind == TokenKind.KW_SUPER {
+        return False;
+    }
+    return is_special_var_kind(kind) or is_builtin_type_kind(kind);
+}

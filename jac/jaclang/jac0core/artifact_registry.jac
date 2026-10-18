@@ -37,7 +37,6 @@ def end(names: list[str]);
 def resolution_in_flight -> bool;
 
 impl _marks -> set[str] {
-    import from jaclang.jac0core.handoff { handoff }
     marked = handoff().get("building");
     if isinstance(marked, list) {
         return {str(name) for name in marked};
@@ -46,7 +45,6 @@ impl _marks -> set[str] {
 }
 
 impl _record(marked: set[str]) {
-    import from jaclang.jac0core.handoff { update_handoff }
     update_handoff(building=sorted(marked) or None);
 }
 

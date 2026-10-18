@@ -3,10 +3,6 @@ import json;
 import os;
 import sys;
 import from ctypes { c_char_p, c_double, c_int64, c_void_p, cast, py_object }
-import from jaclang.runtime.osp_tag { stable_osp_tag }
-import type from jaclang.compiler.passes.context { Alert, PassResult }
-import type from jaclang.compiler.frontend.parser.tokens { CommentData, SrcDiag }
-import type from jaclang.compiler.passes.annex_weave { WovenAnnex }
 
 glob CODE_INT: int = 1,
      CODE_BOOL: int = 2,
@@ -80,6 +76,8 @@ glob _KERNEL_CELL: list[any] = [],
      _LOADED: dict[str, NativeCompiler] = {},
      _FAILED: list[tuple[str, str, str]] = [];
 
+def runtime_builtin_initializing -> bool;
+
 def ensure_loaded -> (NativeCompiler | None);
 
 def load_failure -> (tuple[str, str, str] | None);
@@ -150,7 +148,7 @@ impl NativeCompiler._bind(self: NativeCompiler) {
     L.jac_release.restype = None;
     L.jc_run.argtypes = [c_void_p, c_void_p, c_int64] * 2;
     L.jc_run.restype = c_int64;
-    L.jc_annex.argtypes = [c_void_p, c_void_p, c_int64] * 3;
+    L.jc_annex.argtypes = [c_void_p, c_void_p, c_int64] * 2;
     L.jc_annex.restype = c_int64;
     for name in (
         "jc_probe",
@@ -210,7 +208,6 @@ impl NativeCompiler._intern(self: NativeCompiler, s: str) -> int {
 
 impl NativeCompiler._resolve_classes(self: NativeCompiler) {
     import importlib;
-    import from jaclang.compiler.frontend.codeinfo { NATIVE_ARCH_SCOPE_SEP }
     by_stem: dict[str, dict[str, type]] = {};
     for modname in CLASS_MODULES {
         mod = importlib.import_module(modname);
@@ -252,8 +249,6 @@ impl NativeCompiler._class_tag(self: NativeCompiler, name: str) -> int {
 impl NativeCompiler._field_annotations(
     self: NativeCompiler, cls: any
 ) -> dict[str, str] {
-    import from jaclang.runtime.object_interop { fields }
-    import from jaclang.runtime.object_model { MISSING }
     out = {};
     try {
         for f in fields(cls) {
@@ -423,8 +418,6 @@ impl NativeCompiler._shapes_layout(self: NativeCompiler, aux: str) -> int {
 }
 
 impl NativeCompiler._register_defaults(self: NativeCompiler, cls: any, tag: int) {
-    import from jaclang.runtime.object_interop { fields }
-    import from jaclang.runtime.object_model { MISSING }
     try {
         dc_fields = fields(cls);
     } except TypeError {
@@ -490,8 +483,6 @@ impl NativeCompiler._register_edges(self: NativeCompiler) {
 }
 
 impl NativeCompiler._register(self: NativeCompiler) {
-    import from jaclang.runtime.archetype { NodeArchetype }
-    import from jaclang.compiler.frontend.roles { AccessorsRole, BodyRole, SpecRole }
     self._resolve_classes();
     self.lib.jc_reg_consts(
         self._hold(None),
@@ -551,7 +542,7 @@ impl NativeCompiler._call_strs(self: NativeCompiler, name: str, *texts: str) -> 
 
 impl NativeCompiler.annex(self: NativeCompiler, annex: WovenAnnex) -> int {
     self._ensure_registered();
-    return self._call_strs("jc_annex", annex.source, annex.path, annex.consumer);
+    return self._call_strs("jc_annex", annex.source, annex.path);
 }
 
 impl NativeCompiler.run(self: NativeCompiler, source: str, path: str) -> int {
@@ -565,8 +556,6 @@ impl NativeCompiler.prepare_early(self: NativeCompiler, context: str) {
 }
 
 impl NativeCompiler.take_pass_results(self: NativeCompiler) -> dict[str, PassResult] {
-    import from jaclang.compiler.passes.context { PassResult as CompletedPassResult }
-    import from jaclang.compiler.frontend.diagnostics { DIAGNOSTICS }
     out: dict[str, PassResult] = {};
     for index in range(self.lib.jc_completed()) {
         name: str = self._take(self.lib.jc_take_pass_name(index));
@@ -630,11 +619,17 @@ impl NativeCompiler.skipped(self: NativeCompiler) -> int {
 }
 
 
+impl runtime_builtin_initializing -> bool {
+    held = sys.modules.get("jaclang.runtime.builtin");
+    spec = held.__spec__ if held is not None else None;
+    return spec is not None and bool(getattr(spec, "_initializing", False));
+}
+
 impl ensure_loaded -> (NativeCompiler | None) {
     if _KERNEL_CELL {
         return _KERNEL_CELL[0];
     }
-    if _RESOLVED or _RESOLVING {
+    if _RESOLVED or _RESOLVING or runtime_builtin_initializing() {
         return None;
     }
     import from jaclang.jac0core.artifact_registry { resolution_in_flight }

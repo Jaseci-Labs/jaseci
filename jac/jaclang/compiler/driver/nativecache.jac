@@ -2,37 +2,6 @@ import gc;
 import os;
 import sys;
 import time;
-import type from jaclang.compiler.driver.program { JacProgram }
-import type from jaclang.compiler.frontend.codeinfo { CodeGenTarget }
-import type from jaclang.compiler.frontend.unitree { Module }
-import from jaclang.compiler.driver.jir {
-    PRECOMPILE_SENTINEL,
-    compute_content_sha256,
-    NativeStamp,
-    SEC_NCTDEPS,
-    module_ct_deps_section,
-    ct_dep_text_fresh,
-    stale_ct_dep_rows,
-    SEC_NBITCODE,
-    SEC_NIFACE,
-    SEC_NOBJ,
-    SEC_PLACEMENT,
-    cache_mode,
-    carried_native_sections,
-    current_native_stamp,
-    native_producer_digest,
-    write_module_cache,
-    get_module_cache_path,
-    is_module_cache_valid,
-    module_cache_invalid_reason,
-    jir_cacheable_source_path,
-    module_cache_key,
-    native_section_payload,
-    read_native_dep_hashes,
-    read_section_bytes
-}
-import from jaclang.compiler.driver.compile_options { CompileOptions }
-import from jaclang.compiler.driver.native_iface { NativeIface }
 
 glob SLOW_STEP_SECONDS: float = 2.0,
      DEMOTED_SYMBOL_SUFFIX: str = ".__jac_demoted",
@@ -328,16 +297,6 @@ impl NativeUnitRegistry.adopt_dep_digests(path: str, digests: dict[str, str]) ->
 }
 
 impl NativeUnitRegistry._source_key(path: str) -> (str | None) {
-    import from jaclang.compiler.driver.compilation_context { cache_scope }
-    import from jaclang.compiler.frontend.codeinfo {
-        get_effective_default_codespace_override,
-        set_effective_default_codespace
-    }
-    import from jaclang.compiler.driver.compile_options {
-        push_native_target,
-        pop_native_target
-    }
-
     prior_codespace = get_effective_default_codespace_override();
     target_token = push_native_target('');
     try {
@@ -354,7 +313,6 @@ impl NativeUnitRegistry._source_key(path: str) -> (str | None) {
 }
 
 impl NativeUnitRegistry._miss(path: str, why: str) {
-    import from jaclang.compiler.driver.compile_options { env_na_debug }
     if env_na_debug() {
         sys.stderr.write(f"[native cache] miss {path}: {why}\n");
     }
@@ -877,13 +835,6 @@ impl NativeUnitRegistry.adopt_lowered(
     options: (CompileOptions | None) = None
 ) -> (NativeUnitEntry | None) {
     import json;
-    import from jaclang.compiler.backends.native.na_compile_pass {
-        emit_unit_object,
-        optimize_unit_ir
-    }
-    import from jaclang.compiler.backends.native.lowering { native_fallbacks_in_ir }
-    import from jaclang.compiler.driver.native_iface { native_layout_from_dict }
-    import from jaclang.compiler.frontend.codeinfo { CodeGenTarget }
     opts = options if options is not None else self._options();
     resolved = os.path.realpath(path);
     iface = NativeIface.from_bytes(iface_text.encode("utf-8"));
@@ -1119,7 +1070,6 @@ impl NativeBuildSession.close_discovery -> bool {
 }
 
 impl NativeBuildSession.postinit {
-    import from jaclang.compiler.driver.program { JacProgram }
     self.prog = JacProgram();
     self.prog.options = self.options.clone_for_native_import();
     self.prog._natives = self.registry;
@@ -1306,10 +1256,6 @@ impl NativeBuildSession.unbound_symbols(
 }
 
 impl NativeBuildSession.finish(paths: list[str]) {
-    import from jaclang.compiler.driver.compile_options {
-        push_native_target,
-        pop_native_target
-    }
     token = push_native_target(self.options.native_target or "");
     try {
         self._finish(paths);
@@ -1321,11 +1267,6 @@ impl NativeBuildSession.finish(paths: list[str]) {
 impl NativeBuildSession._optimize_in_parallel(paths: list[str]) -> set[str] {
     """Ahead-of-time units with no cached bitcode are optimized together
         on a thread pool; each worker parses into its own LLVM context.""";
-    import from jaclang.compiler.backends.native.na_compile_pass {
-        optimize_unit_bitcodes,
-        unit_bitcode,
-        unit_fallbacks
-    }
     opts = self.prog.options;
     if opts.native_debug
         or opts.dump_ir_path
@@ -1479,7 +1420,6 @@ impl _stat_key(path: str) -> (tuple[int, int] | None) {
 }
 
 impl _module_files_and_imports(path: str) -> tuple[list[str], list[str]] {
-    import from jaclang.compiler.driver.bccache { discover_annex_files }
     files = [path]
         + discover_annex_files(path, '.impl.jac')
         + discover_annex_files(path, '.test.jac');

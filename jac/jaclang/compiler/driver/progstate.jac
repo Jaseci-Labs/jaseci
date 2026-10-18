@@ -1,18 +1,4 @@
-import from jaclang.compiler.frontend.roles { Kid }
 import os;
-import jaclang.compiler.frontend.unitree as uni;
-import from jaclang.compiler.frontend.relations { ScopeChild }
-import from jaclang.compiler.passes.context { Alert, CompileContext, PassResult }
-import type from jaclang.runtime.semantic { Info }
-import type from jaclang.compiler.frontend.codeinfo { ClientArtifact, CodeGenTarget }
-import type from jaclang.compiler.placement.placement { PlacementSummary }
-import type from jaclang.compiler.placement.placement_work { PlacementWork }
-import type from jaclang.compiler.capability_notes { CapabilityNote }
-import from jaclang.compiler.driver.pipeline_types {
-    AnalysisFact,
-    CompilationProduct,
-    ProductTask
-}
 
 obj ModuleHub {
     has mod: uni.ProgramModule,
@@ -99,7 +85,6 @@ class AnalysisCaches {
 
 impl ModuleHub.stamp(resolved_path: str) {
     import time;
-    import from jaclang.compiler.frontend.host { active_host }
     seen = time.time();
     try {
         seen = max(seen, os.path.getmtime(resolved_path));
@@ -116,7 +101,6 @@ impl ModuleHub.stamp(resolved_path: str) {
 
 impl ModuleHub.is_fresh(resolved_path: str) -> bool {
     import os;
-    import from jaclang.compiler.frontend.host { active_host }
     cached_at = self.stamps.get(resolved_path);
     if cached_at is None {
         return True;
@@ -305,7 +289,6 @@ impl DiagLedger.drop_module(resolved_path: str) {
 
 impl DiagLedger._owned(alert: Alert, path: str) -> bool {
     import os;
-    import from jaclang.compiler.frontend.host { active_host }
     try {
         norm = os.path.realpath(path);
     } except OSError {

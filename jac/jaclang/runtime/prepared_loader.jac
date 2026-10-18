@@ -4,7 +4,6 @@ import os;
 import from importlib.abc { Loader, MetaPathFinder }
 import from importlib.machinery { ModuleSpec }
 import from types { ModuleType }
-import type from jaclang.runtime.prepared { PreparedApplication }
 
 obj PreparedAliasLoader(Loader) {
     has target: str;
@@ -37,19 +36,12 @@ impl PreparedLoader.create_module(spec: ModuleSpec) -> ModuleType | None {
 }
 
 impl PreparedLoader.exec_module(module: ModuleType) {
-    import from jaclang.runtime.prepared { execute_module }
     execute_module(module, self.application);
 }
 
 impl PreparedFinder.find_spec(
     fullname: str, path: list[str] | None = None, target: ModuleType | None = None
 ) -> ModuleSpec | None {
-    import from jaclang.runtime.prepared {
-        _applications,
-        application_namespace,
-        entry_alias,
-        module_index
-    }
     if not any(
         fullname == application_namespace(application)
             or fullname.startswith(application_namespace(application) + '.')

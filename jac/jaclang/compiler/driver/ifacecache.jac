@@ -1,36 +1,8 @@
 import from contextlib { contextmanager }
 import from pathlib { Path }
 import from collections.abc { Callable, Iterator }
-import from jaclang.compiler.driver.pipeline_types { AnalysisFact }
 import os;
 import time;
-import type from jaclang.compiler.driver.program { JacProgram }
-import type from jaclang.compiler.frontend.unitree { Module }
-import type from jaclang.compiler.types.types { ClassDetailsShared }
-import from jaclang.compiler.types.stubcat.resolver { CatalogResolver }
-import from jaclang.compiler.driver.jir {
-    DepRow,
-    SEC_CTDEPS,
-    SEC_DEPS,
-    SEC_DIAG,
-    SEC_IFACE,
-    SEC_PLACEMENT,
-    SEC_PATH_ROOT,
-    JirPaths,
-    cache_mode,
-    module_ct_deps_section,
-    deps_section,
-    get_module_cache_path,
-    is_compiler_tree_path,
-    is_module_cache_valid,
-    is_stub_like_path,
-    jir_cacheable_source_path,
-    module_cache_key,
-    read_dep_hashes,
-    read_jir_paths,
-    read_section_bytes,
-    write_module_cache
-}
 
 glob DIAG_SCHEMA: int = 1,
      IFACE_RETAIN_CAP: int = 1024,
@@ -229,10 +201,6 @@ impl _interface_source_path(path: str) -> bool {
 }
 
 impl native_lowering_reads(path: str) -> bool {
-    import from jaclang.compiler.frontend.codeinfo {
-        is_compiler_source_path,
-        is_native_by_location
-    }
     return not is_compiler_source_path(path) or is_native_by_location(path);
 }
 
@@ -253,7 +221,6 @@ impl _span_record(span: any) -> list[str | int | None] {
 }
 
 impl _span_from_record(rec: list[any]) -> any {
-    import from jaclang.compiler.frontend.srcloc { Span }
     return Span(
         mod_path=rec[0],
         first_line=rec[1],
@@ -283,9 +250,6 @@ impl _alert_record(alert: any) -> dict[str, any] {
 }
 
 impl _alert_from_record(rec: dict[str, any]) -> any {
-    import from jaclang.compiler.frontend.diagnostics { DIAGNOSTICS }
-    import from jaclang.compiler.passes.context { Alert }
-
     code_str: str = str(rec.get("code") or "");
     code = DIAGNOSTICS.get(code_str) if code_str else None;
     related: list[any] = [];
@@ -417,8 +381,6 @@ impl IfaceRegistry.note_dep(dep_path: str) {
 }
 
 impl IfaceRegistry._client_edges(mod: any) -> set[str] {
-    import jaclang.compiler.frontend.unitree as uni;
-    import from jaclang.compiler.frontend.constant { CodeContext }
     out: set[str] = set();
     try {
         for imp in mod.get_all_sub_nodes(uni.Import) {
@@ -454,8 +416,6 @@ impl IfaceRegistry.dep_rows(resolved_path: str, mod: any) -> list[DepRow] {
 }
 
 impl IfaceRegistry._entry_fresh(ent: IfaceEntry) -> bool {
-    import from jaclang.compiler.driver.bccache { discover_annex_files }
-    import from jaclang.compiler.frontend.host { active_host }
     try {
         if os.path.getmtime(ent.path) > ent.stamp {
             return False;
@@ -513,10 +473,6 @@ impl IfaceRegistry._register(
 }
 
 impl IfaceRegistry._compilation_scope -> Iterator[None] {
-    import from jaclang.compiler.driver.compilation_context {
-        compilation_scope,
-        owner_scope_options
-    }
     with compilation_scope(owner_scope_options(self.prog)) {
         yield ;
     }
@@ -531,7 +487,6 @@ impl IfaceRegistry._module_jir(resolved: str) -> tuple[bytes, str] | None {
 impl IfaceRegistry.ensure(
     path: str, compile_on_miss: bool = True
 ) -> IfaceEntry | None {
-    import from jaclang.compiler.driver.compilation_context { program_for }
     actual = program_for(path, self.prog);
     if actual is not self.prog {
         return actual.iface_registry().ensure(path, compile_on_miss);
@@ -604,7 +559,6 @@ impl IfaceRegistry._register_from_disk(
 }
 
 impl IfaceRegistry._deps_match(data: bytes, base_dir: str = "") -> bool {
-    import from jaclang.compiler.driver.jir { read_dep_rows }
     for row in read_dep_rows(data, base_dir) {
         (dep, recorded) = (row.path, row.digest);
         if not recorded {
@@ -667,7 +621,6 @@ impl IfaceRegistry._ensure_in_context(
     self.building.add(resolved);
     try {
         self._event("dep_miss_compile");
-        import from jaclang.compiler.driver.compile_options { CompileOptions }
         before_errors = len(self.prog.errors_had);
         before_warnings = len(self.prog.warnings_had);
         options = self.prog.options.for_symbols();
@@ -955,8 +908,6 @@ impl IfaceRegistry._serve_analysis(compiler: any, resolved: str, options: any) -
 impl IfaceRegistry.analysis_profile(options: any) -> str {
     import hashlib;
     import json;
-    import from jaclang.compiler.driver.pass_driver { diagnostic_policy_for }
-    import from jaclang.compiler.frontend.host { active_host }
     pol = diagnostic_policy_for(
         active_host().check_settings(getattr(options, 'target_app', '') or ''),
         list(options.suppress_codes or [])
@@ -998,7 +949,6 @@ impl IfaceRegistry._ensure_flow_graph(mod: any) -> None {
 impl IfaceRegistry._encode_iface(
     codec: IfaceCodec, mod: any, paths: JirPaths
 ) -> (bytes | None) {
-    import from jaclang.compiler.types.stubcat.writer { IncoherentInterface }
     self._event("iface_encode");
     self._ensure_flow_graph(mod);
     try {
@@ -1280,7 +1230,6 @@ impl IfaceRegistry.resolve_shared(
 }
 
 impl IfaceRegistry._fresh_verify_program -> JacProgram {
-    import from jaclang.compiler.driver.program { JacProgram }
     import copy;
     prog = JacProgram();
     prog.options = copy.copy(self.prog.options);
@@ -1345,7 +1294,6 @@ impl IfaceRegistry._verify_analysis(resolved: str, options: any, prof: dict[str,
     prog2 = self._fresh_verify_program();
     self.verifying = True;
     try {
-        import from jaclang.compiler.driver.compile_options { CompileOptions }
         try {
             import copy;
             verified_options = copy.copy(options);
@@ -1386,8 +1334,6 @@ impl IfaceRegistry._verify_analysis(resolved: str, options: any, prof: dict[str,
 }
 
 impl artifact_cache_path(path: str, program: JacProgram) -> Path {
-    import from jaclang.compiler.driver.jir { get_module_cache_path }
-    import from jaclang.compiler.driver.compilation_context { cache_scope, program_for }
     selected = program_for(path, program);
     owner_options = None if selected.internal else selected.options;
     with cache_scope(owner_options) {
