@@ -1,14 +1,4 @@
 import time;
-import from jaclang.compiler.frontend.unitree { Module, UniNode }
-import from jaclang.compiler.passes.context {
-    Alert,
-    CompileContext,
-    CompilerPass,
-    DiagnosticPolicy,
-    PassResult
-}
-import from jaclang.compiler.driver.compile_options { CancelToken }
-import type from jaclang.compiler.driver.program { JacProgram }
 
 def new_context(
     pass_type: type[CompilerPass],
@@ -67,6 +57,11 @@ def run_walker[W: CompilerPass](
         errors_had=errors_had,
         warnings_had=warnings_had
     );
+    ledger = prog.analysis if prog is not None else None;
+    outer = ledger.running if ledger is not None else None;
+    if ledger is not None {
+        ledger.running = ctx;
+    }
     walk = walker_type(module=module, ctx=ctx);
     if completed is not None {
         ctx.errors_had.extend(completed.errors_had);
@@ -75,5 +70,8 @@ def run_walker[W: CompilerPass](
         return walk;
     }
     walk_pass(walk);
+    if ledger is not None {
+        ledger.running = outer;
+    }
     return walk;
 }

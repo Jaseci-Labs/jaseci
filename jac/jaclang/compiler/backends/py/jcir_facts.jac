@@ -1,6 +1,4 @@
-import from jaclang.runtime.scalars { sized_scalar_names }
-
-glob JCIR_BUILTIN_NAMES: frozenset = frozenset(
+glob JCIR_BUILTIN_NAMES: frozenset[str] = frozenset(
          {
              "APIProtocol",
              "AccessLevel",
@@ -12,9 +10,14 @@ glob JCIR_BUILTIN_NAMES: frozenset = frozenset(
              "PtrView",
              "Pinned",
              "pin",
+             "addressof",
+             "VaList",
              "_jac_clib_bind",
              "_jac_c_copy",
              "_jac_c_cell",
+             "_jac_c_lend",
+             "_jac_c_function_ptr",
+             "_jac_c_vararg",
              "ScheduleTrigger",
              "_jac_chunks",
              "_jac_take_attr",
@@ -59,7 +62,7 @@ glob JCIR_BUILTIN_NAMES: frozenset = frozenset(
          }
              | set(sized_scalar_names())
      ),
-     JCIR_AMBIENT_TYPING_NAMES: frozenset = frozenset(
+     JCIR_AMBIENT_TYPING_NAMES: frozenset[str] = frozenset(
          {
              "Annotated",
              "AsyncIterable",

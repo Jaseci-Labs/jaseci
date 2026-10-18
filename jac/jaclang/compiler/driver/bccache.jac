@@ -2,11 +2,6 @@ import os;
 import stat;
 import time;
 import from pathlib { Path }
-import from jaclang.compiler.frontend.source_layout {
-    LayoutTables,
-    annex_files_of,
-    base_file_of
-}
 
 glob _DIR_LISTINGS: dict[str, tuple[int, list[str]]] = {},
      LISTING_SETTLE_NS: int = 2_000_000_000,
@@ -75,16 +70,6 @@ def _dir_entries(directory: str) -> (list[str] | None) {
 
 def discover_annex_files(source_path: str, suffix: str = '.impl.jac') -> list[str] {
     return annex_files_of(host_layout_tables(), source_path, suffix, _dir_entries);
-}
-
-def discover_style_annex(source_path: str) -> (str | None) {
-    src = Path(source_path).resolve();
-    if not src.name.endswith('.jac') {
-        return None;
-    }
-    base = src.stem;
-    candidate = src.parent / (base + '.style.css');
-    return str(candidate) if candidate.is_file() else None;
 }
 
 def discover_base_file(annex_path: str) -> (str | None) {

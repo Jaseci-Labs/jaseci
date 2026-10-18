@@ -1,39 +1,3 @@
-import from _sqlite3_native {
-    sq3_open_v2,
-    sq3_open_err,
-    sq3_close,
-    sq3_busy_timeout,
-    sq3_prepare,
-    sq3_prep_stmt,
-    sq3_prep_sqlp,
-    sq3_tail_nonws,
-    sq3_free,
-    sq3_step,
-    sq3_reset,
-    sq3_finalize,
-    sq3_clear_bindings,
-    sq3_column_count,
-    sq3_column_name,
-    sq3_row,
-    sq3_bind_seq,
-    sq3_errmsg,
-    sq3_exec,
-    sq3_exec_err,
-    sq3_changes,
-    sq3_total_changes,
-    sq3_last_insert_rowid,
-    sq3_get_autocommit,
-    sq3_complete,
-    sq3_bind_parameter_count,
-    sq3_bind_parameter_name,
-    sq3_bind_null,
-    sq3_bind_int,
-    sq3_bind_double,
-    sq3_bind_text,
-    sq3_bind_blob,
-    sq3_libversion
-}
-
 glob apilevel: str = "2.0",
      paramstyle: str = "qmark",
      threadsafety: int = 3,
@@ -1220,25 +1184,25 @@ def:pub connect(
 }
 
 
-def:pub complete_statement(sql: any) -> bool {
-    if not isinstance(sql, str) {
+def:pub complete_statement(statement: any) -> bool {
+    if not isinstance(statement, str) {
         raise TypeError(
             "complete_statement() argument 'statement' must be str, not "
-                + _type_name(sql)
+                + _type_name(statement)
         );
     }
-    return sq3_complete(sql) != 0;
+    return sq3_complete(statement) != 0;
 }
 
 
-def:pub Binary(b: any) -> bytes {
-    if isinstance(b, bytes) {
-        return b;
+def:pub Binary(`obj: any) -> bytes {
+    if isinstance(`obj, bytes) {
+        return `obj;
     }
-    if isinstance(b, bytearray) {
-        return bytes(b);
+    if isinstance(`obj, bytearray) {
+        return bytes(`obj);
     }
     raise TypeError(
-        "memoryview: a bytes-like object is required, not '" + _type_name(b) + "'"
+        "memoryview: a bytes-like object is required, not '" + _type_name(`obj) + "'"
     );
 }

@@ -4,17 +4,8 @@ import threading;
 import from inspect { isgenerator }
 import from pathlib { Path }
 import from typing { AsyncGenerator, Generator, TypeAlias }
-import from jaclang.runtime.builtin { APIProtocol }
-import from jaclang.runtime.context { CallState, ExecutionContext }
-import from jaclang.server.identity.user_manager { UserManager }
-import from jaclang.server.serving.app { ServingApp }
-import from jaclang.server.serving.drain { DrainState }
-import from jaclang.server.serving.endpoint { JEndPoint, WSEndPoint }
-import from jaclang.server.serving.supervisor { WorkerHandle }
-import from jaclang.server.settings { ServeSettings }
-import from jaclang.server.task_scheduler { Scheduler }
+
 import from jaclang { JacRuntime as Jac }
-import type from jaclang.runtime.constructs { WalkerArchetype }
 
 glob JsonValue: TypeAlias = None
          | str
@@ -31,6 +22,10 @@ obj ServerExtension {
         return [];
     }
 
+    def mail_transport -> any {
+        return None;
+    }
+
     def register(server: JacAPIServer) -> None abst;
     def on_worker_start(server: JacAPIServer) {}
     def on_worker_exit(server: JacAPIServer, pid: int) {}
@@ -40,6 +35,9 @@ obj ServerExtension {
 obj EndpointHost {
     def add_endpoint(ep: JEndPoint) -> None abst;
     def identity -> UserManager abst;
+    def mailer -> IdentityMailer {
+        return IdentityMailer(emailer=self?.emailer);
+    }
 }
 
 
@@ -73,6 +71,47 @@ def target_protocol(target: any) -> APIProtocol {
 
 def target_schedule_spec(target: any) -> any {
     return target.schedule_spec if target?.schedule_spec else None;
+}
+
+def restspec_fields(specs: dict[str, any]) -> dict[str, any] {
+    specs = dict(specs);
+    protocol = specs.get('protocol');
+    if protocol is not None and not isinstance(protocol, APIProtocol) {
+        raw_p = str(protocol).strip().lower();
+        try {
+            specs['protocol'] = APIProtocol('websocket' if raw_p == 'ws' else raw_p);
+        } except ValueError {
+            raise ValueError(
+                f"@restspec protocol={protocol!r} is not recognized. Expected "
+                "APIProtocol.HTTP / WEBHOOK / WEBSOCKET (or the strings "
+                "'http', 'webhook', 'websocket'/'ws')."
+            );
+        }
+    }
+    method = specs.get('method');
+    if method is not None and not isinstance(method, HTTPMethod) {
+        try {
+            specs['method'] = HTTPMethod(str(method).strip().upper());
+        } except ValueError {
+            raise ValueError(
+                f"@restspec method={method!r} is not routable. Expected one "
+                f"of: {', '.join([m.value for m in HTTPMethod])}."
+            );
+        }
+    }
+    scheme = specs.get('scheme');
+    if scheme is not None {
+        raw_s = str(scheme).strip().lower();
+        if raw_s not in ('', 'jac', 'github') {
+            raise ValueError(
+                f"@restspec scheme={scheme!r} is not recognized. Expected "
+                "'jac' (api key plus timestamped HMAC, the default) or "
+                "'github' (X-Hub-Signature-256 over the raw body)."
+            );
+        }
+        specs['scheme'] = '' if raw_s == 'jac' else raw_s;
+    }
+    return specs;
 }
 
 
@@ -138,7 +177,7 @@ obj ModuleIntrospector {
         _bundle_builder: any = None,
         _bundle_lock: threading.Lock postinit,
         _surface: dict[(str, any)] = {},
-        _served_walkers: int = 0,
+        _complete: bool = False,
         _manifest_root: str = "",
         _spa_routes_loaded: bool = False,
         discover_endpoints: bool = True,
@@ -149,13 +188,18 @@ obj ModuleIntrospector {
     def load(force_reload: bool = False) -> None;
     def _load_manifest -> None;
     def _load_surface -> None;
-    def _collect_functions -> dict[str, Callable[(..., any)]];
-    def _collect_walkers -> dict[str, type[WalkerArchetype]];
+    def _reset_targets -> None;
+    def _collect_client_functions -> None;
     def _resolve_declared(rel: str, name: str) -> any;
+    def served(kind: str) -> list[any];
+    def target(name: str) -> any;
+    def route_spec(name: str) -> any;
+    def is_scheduled(name: str) -> bool;
     def scheduled_members -> list[tuple[str, any, bool]];
     def _check_module_freshness -> None;
     def get_functions -> dict[str, Callable[(..., any)]];
     def get_walkers -> dict[str, type[WalkerArchetype]];
+    def _resolve_all -> None;
     def find_target(name: str) -> any;
     def get_client_functions -> dict[str, Callable[(..., any)]];
     def resolve_root_app(configured: str = "") -> str;
@@ -201,7 +245,9 @@ obj JacAPIServer(EndpointHost) {
         emailer: any = None,
         _endpoints: list[JEndPoint] = [],
         _hmr_pending: bool = False,
-        _hot_reloader: any = None;
+        _hot_reloader: any = None,
+        _context_base_path: (str | None) = None,
+        _context_target_path: (str | None) = None;
 
     obj RestSpecs {
         has method: str = "",
@@ -221,6 +267,7 @@ obj JacAPIServer(EndpointHost) {
     def add_ws_endpoint(path: str, handler: Callable[..., any]) -> None;
     def add_middleware(fn: Callable[..., any]) -> None;
     def add_shutdown_hook(fn: Callable[..., any]) -> None;
+    def request_scope -> RequestScope;
     def build_app -> ServingApp;
     def register_endpoints -> None;
     def _install_middleware -> None;
@@ -240,6 +287,7 @@ obj JacAPIServer(EndpointHost) {
     def _ensure_internal_users -> None;
     def _register_scheduled_tasks -> None;
     def _scheduled_targets -> list[tuple[str, any, bool]];
+    def _start_problems -> list[str];
     def _validate_or_raise -> None;
     def _prepare_to_serve(dev: bool, no_client: bool) -> ServeSettings;
     def start(

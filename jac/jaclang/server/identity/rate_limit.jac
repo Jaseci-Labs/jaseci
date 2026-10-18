@@ -1,7 +1,10 @@
 import hashlib;
 import math;
 import logging;
-import from jaclang.server.shared_store { shared_store }
+
+obj AttemptsExhausted(Exception) {
+    has retry_after: int = 1;
+}
 
 def limit_key(scope: str, actor: str) -> str {
     return "ratelimit:" + hashlib.sha256((scope + ":" + actor).encode()).hexdigest();

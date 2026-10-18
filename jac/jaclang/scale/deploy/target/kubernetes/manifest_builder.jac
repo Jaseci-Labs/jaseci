@@ -1,25 +1,5 @@
-import from jaclang.scale.runtime.context.util { GATEWAY_NAME, k8s_safe_name }
 import from jaclang.server { sv_client }
-import from jaclang.project.config { JacConfig, ServeConfig }
-import from jaclang.server.settings { resolve_count }
-import from jaclang.scale.config.app_config { AppConfig }
-import from jaclang.scale.config.config_loader {
-    GATEWAY_POD_KEYS,
-    get_scale_config,
-    normalize_gateway_config
-}
-import from jaclang.scale.runtime.fleet { FleetSpec, fleet_from_config, solo_fleet }
-import from jaclang.scale.models.deploy_context { DATABASE_URL_ENV, DeployContext }
-import from jaclang.scale.models.resource_status { REPLICA_FLOOR_ANNOTATION }
-import from jaclang.scale.deploy.target.kubernetes.kubernetes_config {
-    KubernetesConfig
-}
-import from jaclang.scale.deploy.autoscale.http_activation_config {
-    build_http_activation_spec
-}
-import from jaclang.scale.runtime.context.service_routing {
-    resolve_http_activation_config
-}
+
 import from enum { StrEnum }
 
 
@@ -259,6 +239,7 @@ obj ManifestBuilder {
         project_dir: str = "",
         _bundle_object_key: str = "",
         _toolchain_object_key: str = "",
+        _pod_binary_sha256: str = "",
         fleet: (FleetSpec | None) = None,
         gateway_config: (dict[str, any] | None) = None,
         app_overrides: dict[str, dict[str, any]] = {},
@@ -279,7 +260,7 @@ obj ManifestBuilder {
         if not self.project_dir or not os.path.isdir(self.project_dir) {
             return None;
         }
-        import from jaclang.scale.injector.bundle { _project_config }
+
         return _project_config(self.project_dir);
     }
 
@@ -325,8 +306,6 @@ obj ManifestBuilder {
     }
 
     def _prepare_injector(app_config: AppConfig) -> PvcInjector {
-        import from jaclang.scale.injector.binary_injector { select_injector }
-        import from jaclang.scale.injector.pvc_injector { PvcInjector }
         proj = self.project_dir or app_config.code_folder;
         self.project_dir = proj;
         fleet = self._fleet(app_config);
@@ -342,6 +321,7 @@ obj ManifestBuilder {
         );
         injector: PvcInjector = selection[0];
         self._toolchain_object_key = str(selection[1]);
+        self._pod_binary_sha256 = str(getattr(injector, "_pod_binary_sha256", ""));
         return injector;
     }
 
@@ -349,7 +329,7 @@ obj ManifestBuilder {
         project_dir: str, jac_bin: str, env: (dict[str, str] | None)
     ) -> str {
         import subprocess;
-        import from jaclang.cli.console { console }
+
         console.print("Installing the app's dependencies on the build host.");
         try {
             result = subprocess.run(
@@ -376,16 +356,7 @@ obj ManifestBuilder {
         import shutil;
         import subprocess;
         import from pathlib { Path }
-        import from jaclang.cli.console { console }
-        import from jaclang.scale.injector.binary { host_toolchain_path }
-        import from jaclang.scale.injector.bundle {
-            _stage_app,
-            release_binary_env,
-            remove_stage_root,
-            source_filter_for
-        }
-        import from jaclang.dist.sanitize { sanitized_jac_toml }
-        import from jaclang.scale.runtime.context.util { jac_executable }
+
         client_entry = self._client_entry();
         if client_entry
             and not self._declared_client_entry()
@@ -670,6 +641,9 @@ obj ManifestBuilder {
         user_secret = self._build_user_secret_manifest();
         if user_secret is not None {
             bundle["user_secret"] = user_secret;
+            bundle["admin_password_rules"] = AuthSettings.from_table(
+                self._serve_config().auth, dict(user_secret["stringData"])
+            ).password;
         }
         ingress_cfg: dict[str, any] = self._gateway_cfg().get("ingress", {});
         ingress = self._build_ingress_manifest(ingress_cfg);
@@ -714,7 +688,7 @@ obj ManifestBuilder {
 
     def _check_deploy_settings_resolve {
         import from pathlib { Path }
-        import from jaclang.project.config { get_config_for_path, report_env_findings }
+
         config = get_config_for_path(Path(self.project_dir));
         if config is None {
             return;
@@ -747,12 +721,7 @@ obj ManifestBuilder {
         deployments: dict[str, dict[str, any]], user_secret: dict[str, any] | None
     ) {
         import from pathlib { Path }
-        import from jaclang.scale.injector.bundle {
-            nested_sanitized_tomls,
-            source_filter_for,
-            unresolved_toml_references
-        }
-        import from jaclang.dist.sanitize { sanitized_jac_toml }
+
         base = Path(self.project_dir);
         self._check_deploy_settings_resolve();
         base_toml = sanitized_jac_toml(base);
@@ -917,12 +886,11 @@ obj ManifestBuilder {
     }
 
     def _signing_secret -> str {
-        import from jaclang.server.serving.authcrypt { PLACEHOLDER_JWT_SECRET }
-        configured = str(self.secrets.get("JAC_SERVE_AUTH_SECRET") or "").strip();
+        configured = str(self.secrets.get(SIGNING_SECRET_ENV) or "").strip();
         if configured {
             return configured;
         }
-        from_project = self._serve_config().auth.secret.strip();
+        from_project = str(self._serve_config().auth.get('secret') or '').strip();
         if from_project {
             return from_project;
         }
@@ -931,6 +899,9 @@ obj ManifestBuilder {
 
     def _worker_count_env(svc_cfg: dict[str, any]) -> str {
         raw = str(svc_cfg.get("workers") or self._serve_config().workers.count).strip();
+        if not raw {
+            return "1";
+        }
         resolve_count(raw, 1, '[serve.workers] count');
         return raw;
     }
@@ -1166,7 +1137,17 @@ obj ManifestBuilder {
 
     def _build_user_secret_manifest -> dict[str, any] | None {
         data: dict[str, str] = {k: str(v) for (k, v) in self.secrets.items()};
-        data["JAC_SERVE_AUTH_SECRET"] = self._signing_secret();
+        data[SIGNING_SECRET_ENV] = self._signing_secret();
+        import os;
+        admin = get_scale_config().get_admin_config();
+        if admin.get('enabled', True) and ADMIN_PASSWORD_ENV not in data {
+            from_shell = os.environ.get(ADMIN_PASSWORD_ENV) or '';
+            if from_shell.strip() {
+                data[ADMIN_PASSWORD_ENV] = from_shell;
+            } elif not admin.get('default_password') {
+                data[ADMIN_PASSWORD_ENV] = PLACEHOLDER_JWT_SECRET;
+            }
+        }
         return {
             "apiVersion": "v1",
             "kind": "Secret",
@@ -1200,7 +1181,6 @@ obj ManifestBuilder {
     }
 
     def _peer_dns_url(peer_name: str) -> str {
-        import from jaclang.scale.runtime.context.util { k8s_service_dns_url }
         return k8s_service_dns_url(
             k8s_safe_name(peer_name),
             self.k8s_config.namespace,
@@ -1234,7 +1214,6 @@ obj ManifestBuilder {
             );
         }
 
-        import from jaclang.scale.runtime.fleet { FLEET_ENV }
         peers: list[str] = [];
         if self.fleet is not None and not self.fleet.is_empty() {
             env.append({"name": FLEET_ENV, "value": self.fleet.to_env()});
@@ -1275,11 +1254,13 @@ obj ManifestBuilder {
         return env;
     }
 
-    def _resolved_memory_request(svc_cfg: dict[str, any], is_gateway: bool) -> str {
+    def _configured_memory_request(svc_cfg: dict[str, any]) -> str | None {
         val = svc_cfg.get("memory_request");
-        if val is None {
-            val = self.k8s_config.memory_request;
-        }
+        return self.k8s_config.memory_request if val is None else val;
+    }
+
+    def _resolved_memory_request(svc_cfg: dict[str, any], is_gateway: bool) -> str {
+        val = self._configured_memory_request(svc_cfg);
         if val is None {
             val = "2Gi" if is_gateway else "1Gi";
         }
@@ -1361,9 +1342,9 @@ obj ManifestBuilder {
         cfg = self.k8s_config;
         return {
             "httpGet": {"path": "/healthz/live", "port": cfg.container_port},
-            "periodSeconds": 10,
+            "periodSeconds": 1,
             "timeoutSeconds": 3,
-            "failureThreshold": 90
+            "failureThreshold": 900
         };
     }
 
@@ -1591,7 +1572,7 @@ obj ManifestBuilder {
                     f"KEDA HTTP Add-on interceptor can't tell which target a "
                     f"matching request belongs to when two InterceptorRoutes "
                     f"share the same match criteria. Set a distinct "
-                    f"[services.NAME.http_activation.rules] for at least all "
+                    f"[apps.NAME.scale.http_activation.rules] for at least all "
                     f"but one of these services."
                 );
             }
@@ -1632,6 +1613,7 @@ obj ManifestBuilder {
             "has_memory_request": bool(
                 self._resolved_memory_request(svc, svc_name == GATEWAY_NAME)
             ),
+            "memory_request_configured": bool(self._configured_memory_request(svc)),
             "triggers": raw_triggers,
             "behavior": dict(behavior)
         };
@@ -1786,10 +1768,6 @@ obj ManifestBuilder {
     }
 
     def _pod_entrypoint -> dict[str, any] {
-        import from jaclang.scale.injector.bundle { APP_MOUNT_PATH }
-        import from jaclang.scale.deploy.target.kubernetes.runtime_bootstrap {
-            build_service_apt_prefix
-        }
         apt_prefix = build_service_apt_prefix(self.k8s_config);
         return {
             "command": ["bash", "-c"],
@@ -1834,9 +1812,7 @@ obj ManifestBuilder {
             "livenessProbe": self._build_liveness_probe(),
             "lifecycle": {"preStop": self._build_prestop_hook()}
         };
-        import from jaclang.scale.deploy.target.kubernetes.runtime_bootstrap {
-            image_pull_policy
-        }
+
         pull_policy = image_pull_policy(resolved_image);
         if pull_policy {
             container["imagePullPolicy"] = pull_policy;
@@ -1849,10 +1825,6 @@ obj ManifestBuilder {
         }
         (shared_vols, shared_mounts) = self._shared_volumes_for_service(svc_name);
 
-        import from jaclang.scale.injector.bundle { APP_MOUNT_PATH }
-        import from jaclang.scale.deploy.target.kubernetes.runtime_bootstrap {
-            runtime_container_env
-        }
         container["workingDir"] = APP_MOUNT_PATH;
         env_list.extend(runtime_container_env());
         if shared_mounts {
@@ -1887,25 +1859,26 @@ obj ManifestBuilder {
             spec["securityContext"] = runtime_pod_security_context();
         }
 
-        import from jaclang.scale.injector.binary_injector { BinaryInjector }
         injector: BinaryInjector = BinaryInjector(
             storage_class=self.k8s_config.bundle_storage_class
         );
         injector._toolchain_object_key = self._toolchain_object_key;
+        injector._pod_binary_sha256 = self._pod_binary_sha256;
         injector._object_key = self._injector_object_key();
         spec["_jac_meta"] = {
             "app_name": k8s_safe_name(self.k8s_config.app_name),
             "namespace": self.k8s_config.namespace
         };
-        spec = injector.mutate_pod_spec(spec, self.k8s_config.python_image);
+        spec = injector.mutate_pod_spec(
+            spec, self.k8s_config.python_image, unpack_container=False
+        );
         spec.pop("_jac_meta", None);
 
-        import from jaclang.scale.deploy.target.kubernetes.runtime_bootstrap {
-            build_bootstrap_init_container
-        }
         spec["initContainers"].append(
             build_bootstrap_init_container(
-                self.k8s_config, self.k8s_config.python_image
+                self.k8s_config,
+                self.k8s_config.python_image,
+                unpack_script=injector.unpack_script()
             )
         );
         return spec;

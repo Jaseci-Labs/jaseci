@@ -23,13 +23,11 @@ import from jaclang.project.kinds {
     plan_workspace,
     resolve_app_kind,
     resolve_entry,
-    is_valid_kind,
-    kind_entry,
-    kind_spec,
     RunPlan,
     KIND_SPECS,
     VALID_KINDS
 }
+import from jaclang.project.app_kinds { is_valid_kind, kind_entry, kind_spec }
 
 glob _tmp_dirs: list[str] = [];
 
@@ -722,6 +720,78 @@ test "backend override rejects unsupported execution modes" {
     assert execution.run(target=source, backend="python", entry_name="f") == 1;
     assert execution.run(target="bundle.jab", backend="python") == 1;
     _cleanup();
+}
+
+test "a served bundle takes --port after it and refuses other program arguments" {
+    import socket;
+    import subprocess;
+    import time;
+    import from urllib.request { urlopen }
+    import from jaclang.dist.seal { build_jab }
+    def free_port -> int {
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock {
+            sock.bind(("127.0.0.1", 0));
+            return sock.getsockname()[1];
+        }
+    }
+    configured = free_port();
+    d = _mk_project(
+        f"kind = \"service\"\nentry-point = \"main\"\n\n[serve]\nport = {configured}\n",
+        "main.jac",
+        "def:pub ping -> str { return \"pong\"; }\nwith entry { print(\"up\"); }\n"
+    );
+    server: any = None;
+    try {
+        bundle = Path(d) / "out" / "p.jab";
+        try {
+            build_jab(JacConfig.load(Path(d) / "jac.toml"), bundle, bake_client=False);
+        } finally {
+            set_config(None);
+        }
+        for extra in (["--verbose"], ["--port=\u00b2"]) {
+            refused = subprocess.run(
+                jac_command("run", str(bundle), *extra),
+                cwd=d,
+                capture_output=True,
+                text=True,
+                timeout=300
+            );
+            assert refused.returncode != 0 , refused.stdout;
+            assert "the only argument it takes is --port"
+                in refused.stdout + refused.stderr , refused.stdout + refused.stderr;
+        }
+        port = free_port();
+        server = subprocess.Popen(
+            jac_command("run", str(bundle), "--port", str(port)),
+            cwd=d,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        );
+        served = False;
+        deadline = time.time() + 120;
+        while not served and time.time() < deadline {
+            try {
+                with urlopen(f"http://127.0.0.1:{port}/healthz", timeout=2) as reply {
+                    served = reply.status == 200;
+                }
+            } except OSError {
+                time.sleep(0.5);
+            }
+        }
+        assert served , (
+            f"the bundle did not serve on --port {port} (configured port {configured})"
+        );
+    } finally {
+        if server is not None {
+            server.terminate();
+            try {
+                server.wait(timeout=30);
+            } except subprocess.TimeoutExpired {
+                server.kill();
+            }
+        }
+        _cleanup();
+    }
 }
 
 test "python backend restores compiler context when compilation fails" {

@@ -637,7 +637,7 @@ glob JAC_RUNTIME_JS_OBJECT: str = r"""{
       for (const item of arr) { if (item === val) c++; }
       return c;
     },
-    sort(arr, key) {
+    sort(arr, key, reverse) {
       if (key) {
         arr.sort((a, b) => {
           const ka = key(a), kb = key(b);
@@ -646,6 +646,7 @@ glob JAC_RUNTIME_JS_OBJECT: str = r"""{
       } else {
         arr.sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
       }
+      if (reverse) arr.reverse();
     },
     repeat(arr, n) {
       const result = [];
@@ -1188,6 +1189,7 @@ glob JAC_RUNTIME_JS_OBJECT: str = r"""{
   types: __JAC_TYPES_RUNTIME__,
 
   builtin: {
+    // Helpers keep the Python builtin's parameter order; keyword args are slotted by it.
     bindFields(args, keywords, names) {
       if (args.length > names.length) {
         throw new _jac.exc.TypeError(`Expected at most ${names.length} positional arguments, got ${args.length}`);
@@ -1581,6 +1583,21 @@ glob JAC_RUNTIME_JS_OBJECT: str = r"""{
     }
   },
 
+  // A closure created in a loop body reaches the loop's own names through a
+  // link made once per pass: it shares the function's binding until the pass
+  // ends, then keeps the value the binding held as its own.
+  passLink(get, set) {
+    return {
+      get v() { return get(); },
+      set v(value) { set(value); },
+      detach() {
+        let own = get();
+        get = () => own;
+        set = (value) => { own = value; };
+      }
+    };
+  },
+
   fw: __JAC_FW_RUNTIME__,
 
   exc: __JAC_EXC_RUNTIME__
@@ -1591,7 +1608,6 @@ glob JAC_RUNTIME_JS_OBJECT: str = r"""{
      JAC_RUNTIME_GLOBAL: str = "__jacRuntime";
 
 def _build_exc_runtime_js -> str {
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
     lines: list[str] = ["(() => {"];
     exports: list[str] = [];
     for (name, parent) in JAC_TYPE_REGISTRY.exception_entries() {
@@ -1630,32 +1646,25 @@ def _build_exc_runtime_js -> str {
 }
 
 def _build_types_runtime_js -> str {
-    import from jaclang.compiler.frontend.constant { TOKEN_MAP }
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
-    import from jaclang.compiler.backends.es.es_unparse { JSCodeGenerator }
-    import from jaclang.compiler.backends.es.primitives_es {
-        ESBuiltinEmitter,
-        ESEmitCtx
-    }
-    emitter = ESBuiltinEmitter();
+    emitter: PrimitiveEmitter[(str, ESEmitCtx)] = ESBuiltinEmitter();
     ctx = ESEmitCtx(unparser=JSCodeGenerator());
     entries: list[str] = [];
     for (tok, name) in sorted(TOKEN_MAP.items()) {
         if not tok.startswith("TYP_") {
             continue;
         }
-        emit_fn = getattr(emitter, "emit_" + name, None);
-        if emit_fn is None and not JAC_TYPE_REGISTRY.is_sized(name) {
+        has_emitter = name in emitter.static_names();
+        if not has_emitter and not JAC_TYPE_REGISTRY.is_sized(name) {
             continue;
         }
 
         bodies: list[(str | None)] = [];
         for argv in ([], ["a[0]"], ["a[0]", "a[1]"]) {
             try {
-                if emit_fn is None {
-                    bodies.append(emitter.emit_sized_cast(name, argv));
+                if has_emitter {
+                    bodies.append(emitter.dispatch_static(name, ctx, argv));
                 } else {
-                    bodies.append(emit_fn(ctx, argv));
+                    bodies.append(es_sized_cast(name, argv));
                 }
             } except Exception {
                 bodies.append(None);
@@ -1693,7 +1702,7 @@ def _build_types_runtime_js -> str {
     }
     entries.append('    object: _t("object", (...a) => ({}))');
     entries.append('    NoneType: _t("NoneType", (...a) => null)');
-    import from jaclang.runtime.scalars { numeric_shapes }
+
     sized_lines: list[str] = [];
     for shape in numeric_shapes() {
         if not shape.sized {
@@ -1737,7 +1746,6 @@ def _build_types_runtime_js -> str {
 }
 
 def _build_fw_runtime_js -> str {
-    import from jaclang.runtime.scalars { numeric_shapes, range_of }
     rows: list[str] = [];
     for shape in numeric_shapes() {
         if not shape.sized {
@@ -1969,8 +1977,7 @@ def point_jac_prelude_at(js: str, target: str = "") -> str {
 }
 
 def build_osp_core_js -> str {
-    import from jaclang.compiler.backends.es.client_kernel_cache { osp_core_js }
-    return osp_core_js();
+    return active_host().client_osp_core_js();
 }
 
 def build_osp_driver_js -> str {

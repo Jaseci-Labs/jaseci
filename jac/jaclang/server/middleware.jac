@@ -1,22 +1,5 @@
 import logging;
 import time;
-import from jaclang.runtime.exceptions { MissingAnchorError }
-import from jaclang.runtime.runtime { JacRuntime }
-import from jaclang.server.exchange { close_exchange, open_exchange }
-import from jaclang.server.identity.assurance {
-    bind_caller_assurance,
-    release_caller_assurance,
-    token_assurance
-}
-import from jaclang.server.identity.session_cookie {
-    apply_session_change,
-    cookie_session_token,
-    keep_out_of_shared_caches
-}
-import from jaclang.server.identity.user_manager { UserManager }
-import from jaclang.server.serving.datatypes { JSONResponse, Request, Response }
-import from jaclang.server.serving.drain { LIVENESS_PATHS }
-import from jaclang.server.transport { Meta, TransportResponse }
 
 glob logger: logging.Logger = logging.getLogger('jaclang.serve');
 
@@ -85,9 +68,7 @@ def _service_unavailable(detail: str) -> JSONResponse {
 
 
 def request_context_middleware(
-    base_path_dir: (str | None) = None,
-    full_target_path: (str | None) = None,
-    public_origin: str = ''
+    open_scope: Callable[[], RequestScope], public_origin: str = ''
 ) -> Callable[..., any] {
     async def _middleware(request: Request, call_next: any) -> Response {
         next_fn: any = call_next;
@@ -95,11 +76,7 @@ def request_context_middleware(
             return await next_fn(request);
         }
         try {
-            ctx = JacRuntime.create_j_context(
-                user_root=None,
-                base_path_dir=base_path_dir,
-                full_target_path=full_target_path
-            );
+            scope = open_scope();
         } except Exception as ctx_err {
             logger.error(
                 f"request context unavailable for {request.url.path}: "
@@ -108,7 +85,7 @@ def request_context_middleware(
             );
             return _service_unavailable('unable to reach the database');
         }
-        req_token = JacRuntime.push_request_context(ctx);
+        ctx = scope.context;
         exchange_token = open_exchange(request, public_origin);
         user_id = request.state?.user_root_id;
         bind_error: any = None;
@@ -150,12 +127,9 @@ def request_context_middleware(
             return await next_fn(request);
         } finally {
             try {
-                ctx.close();
-            } except Exception as e {
-                logger.warning(f"Failed to close request context: {e}", exc_info=True);
+                scope.close();
             } finally {
                 close_exchange(exchange_token);
-                JacRuntime.reset_request_context(req_token);
             }
         }
     }

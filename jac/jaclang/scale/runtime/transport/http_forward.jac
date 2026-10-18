@@ -1,6 +1,4 @@
 import logging;
-import from jaclang.server.serving.client { ClientConnectionError, arequest }
-import from jaclang.server.serving.datatypes { Response, StreamingResponse }
 
 glob _logger = logging.getLogger(__name__),
      _HOP_BY_HOP: set[str] = {
@@ -78,6 +76,8 @@ async def stream_forward(
         resp = await arequest(
             method, url, headers=headers, data=body, timeout=float(timeout), stream=True
         );
+    } except ClientReadTimeout {
+        raise;
     } except (ClientConnectionError, OSError) as e {
         _logger.error(f"HTTP stream-forward error: {e}");
         return None;

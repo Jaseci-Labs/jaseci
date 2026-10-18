@@ -1,11 +1,4 @@
-import type from jaclang.compiler.frontend.unitree { Module }
-
 def validate_native_application(module: Module, shared: bool, memory: str) -> str {
-    import from jaclang.compiler.backends.native.na_compile_pass {
-        native_linked_ir_text,
-        native_demoted_ir_symbols
-    }
-    import from jaclang.compiler.backends.native.lowering { native_lowering_issues }
     manifest = module.gen.interop_manifest;
     if not shared and manifest.native_imports {
         names = ', '.join(binding.name for binding in manifest.native_imports);
@@ -15,10 +8,7 @@ def validate_native_application(module: Module, shared: bool, memory: str) -> st
         );
     }
     llvm_ir = native_linked_ir_text(module);
-    demoted = sorted(
-        set(native_demoted_ir_symbols(llvm_ir))
-            | {issue.symbol for issue in native_lowering_issues(llvm_ir)}
-    );
+    demoted = native_fallbacks_in_ir(llvm_ir).symbols;
     if demoted and not shared {
         raise ValueError(
             'Declarations in the native closure could not lower: ' + ', '.join(demoted)

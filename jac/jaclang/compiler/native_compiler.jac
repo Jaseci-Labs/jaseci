@@ -3,10 +3,6 @@ import json;
 import os;
 import sys;
 import from ctypes { c_char_p, c_double, c_int64, c_void_p, cast, py_object }
-import from jaclang.runtime.osp_tag { stable_osp_tag }
-import type from jaclang.compiler.passes.context { Alert, PassResult }
-import type from jaclang.compiler.frontend.parser.tokens { CommentData, SrcDiag }
-import type from jaclang.compiler.passes.annex_weave { WovenAnnex }
 
 glob CODE_INT: int = 1,
      CODE_BOOL: int = 2,
@@ -84,8 +80,15 @@ class NativeCompiler {
         self._keep = [];
         self.classes = {};
         self._value_rows: dict[str, int] = {};
+        self._registered = False;
         self._bind();
-        self._register();
+    }
+
+    def _ensure_registered(self: NativeCompiler) {
+        if not self._registered {
+            self._registered = True;
+            self._register();
+        }
     }
 
     def _bind(self: NativeCompiler) {
@@ -96,7 +99,7 @@ class NativeCompiler {
         L.jac_release.restype = None;
         L.jc_run.argtypes = [c_void_p, c_void_p, c_int64] * 2;
         L.jc_run.restype = c_int64;
-        L.jc_annex.argtypes = [c_void_p, c_void_p, c_int64] * 3;
+        L.jc_annex.argtypes = [c_void_p, c_void_p, c_int64] * 2;
         L.jc_annex.restype = c_int64;
         for name in (
             "jc_probe",
@@ -156,15 +159,32 @@ class NativeCompiler {
 
     def _resolve_classes(self: NativeCompiler) {
         import importlib;
+        by_stem: dict[str, dict[str, type]] = {};
         for modname in CLASS_MODULES {
             mod = importlib.import_module(modname);
             for name in `list(vars(mod)) {
-                if name in self.layout and name not in self.classes {
-                    cls = getattr(mod, name);
-                    if isinstance(cls, `type) {
-                        self.classes[name] = cls;
-                    }
+                cls = getattr(mod, name);
+                if not isinstance(cls, `type) {
+                    continue;
                 }
+                if name in self.layout and name not in self.classes {
+                    self.classes[name] = cls;
+                }
+                owner = sys.modules.get(cls.__module__);
+                owner_file = str(getattr(owner, "__file__", "") or "");
+                stem = os.path.basename(owner_file).split(".")[0];
+                by_stem.setdefault(stem, {})[cls.__name__] = cls;
+            }
+        }
+        for key in self.layout {
+            if key in self.classes or NATIVE_ARCH_SCOPE_SEP not in key {
+                continue;
+            }
+            (bare, _, scope) = key.partition(NATIVE_ARCH_SCOPE_SEP);
+            stem = scope.rsplit("_", 1)[0];
+            cls = by_stem.get(stem, {}).get(bare);
+            if cls is not None {
+                self.classes[key] = cls;
             }
         }
     }
@@ -178,8 +198,6 @@ class NativeCompiler {
     }
 
     def _field_annotations(self: NativeCompiler, cls: any) -> dict[str, str] {
-        import from jaclang.runtime.object_interop { fields }
-        import from jaclang.runtime.object_model { MISSING }
         out = {};
         try {
             for f in fields(cls) {
@@ -345,8 +363,6 @@ class NativeCompiler {
     }
 
     def _register_defaults(self: NativeCompiler, cls: any, tag: int) {
-        import from jaclang.runtime.object_interop { fields }
-        import from jaclang.runtime.object_model { MISSING }
         try {
             dc_fields = fields(cls);
         } except TypeError {
@@ -405,19 +421,13 @@ class NativeCompiler {
                     and name not in seen
                 ) {
                     seen.add(name);
-                    self.lib.jc_reg_edge(stable_osp_tag(name), self._hold(cls));
+                    self.lib.jc_reg_edge(self._class_tag(name), self._hold(cls));
                 }
             }
         }
     }
 
     def _register(self: NativeCompiler) {
-        import from jaclang.runtime.archetype { NodeArchetype }
-        import from jaclang.compiler.frontend.roles {
-            AccessorsRole,
-            BodyRole,
-            SpecRole
-        }
         self._resolve_classes();
         self.lib.jc_reg_consts(
             self._hold(None),
@@ -478,22 +488,21 @@ class NativeCompiler {
     }
 
     def annex(self: NativeCompiler, annex: WovenAnnex) -> int {
-        return self._call_strs("jc_annex", annex.source, annex.path, annex.consumer);
+        self._ensure_registered();
+        return self._call_strs("jc_annex", annex.source, annex.path);
     }
 
     def run(self: NativeCompiler, source: str, path: str) -> int {
+        self._ensure_registered();
         return self._call_strs("jc_run", source, path);
     }
 
     def prepare_early(self: NativeCompiler, context: str) {
+        self._ensure_registered();
         self.lib.jc_set_early({"server": 1, "client": 2, "native": 3}.get(context, 0));
     }
 
     def take_pass_results(self: NativeCompiler) -> dict[str, PassResult] {
-        import from jaclang.compiler.passes.context {
-            PassResult as CompletedPassResult
-        }
-        import from jaclang.compiler.frontend.diagnostics { DIAGNOSTICS }
         out: dict[str, PassResult] = {};
         for index in range(self.lib.jc_completed()) {
             name: str = self._take(self.lib.jc_take_pass_name(index));
@@ -562,21 +571,24 @@ class NativeCompiler {
 glob _KERNEL_CELL: list[any] = [],
      _RESOLVED: list[any] = [],
      _RESOLVING: list[any] = [],
-     _LOADED: dict[str, NativeCompiler] = {};
+     _LOADED: dict[str, NativeCompiler] = {},
+     _FAILED: list[tuple[str, str, str]] = [];
+
+def runtime_builtin_initializing -> bool {
+    held = sys.modules.get("jaclang.runtime.builtin");
+    spec = held.__spec__ if held is not None else None;
+    return spec is not None and bool(getattr(spec, "_initializing", False));
+}
 
 def ensure_loaded -> (NativeCompiler | None) {
     if _KERNEL_CELL {
         return _KERNEL_CELL[0];
     }
-    if _RESOLVED or _RESOLVING {
+    if _RESOLVED or _RESOLVING or runtime_builtin_initializing() {
         return None;
     }
-    import sys;
-    resolver = sys.modules.get("jaclang.compiler.backends.native.kernel_resolve");
-    if resolver is not None and not hasattr(resolver, "resolve_kernel") {
-        """The resolver itself is being compiled (a kernel build child imports
-        it first): the store parser serves this compile, and a later call
-        resolves the kernel once the module has finished loading.""";
+    import from jaclang.jac0core.artifact_registry { resolution_in_flight }
+    if resolution_in_flight() {
         return None;
     }
     _RESOLVING.append(1);
@@ -593,14 +605,26 @@ def ensure_loaded -> (NativeCompiler | None) {
     lib_path = os.path.realpath(found.lib_path);
     k = _LOADED.get(lib_path);
     if k is None {
-        k = NativeCompiler(lib_path, found.layout);
-        _LOADED[lib_path] = k;
+        try {
+            loaded = NativeCompiler(lib_path, found.layout);
+        } except (OSError, AttributeError) as e {
+            _FAILED.append((found.lib_path, found.source, str(e)));
+            _RESOLVED.append(None);
+            return None;
+        }
+        _LOADED[lib_path] = loaded;
+        k = loaded;
     }
     _KERNEL_CELL.append(k);
     return k;
 }
 
+def load_failure -> (tuple[str, str, str] | None) {
+    return _FAILED[-1] if _FAILED else None;
+}
+
 def reset_loaded {
+    _FAILED.clear();
     _KERNEL_CELL.clear();
     _RESOLVED.clear();
     _RESOLVING.clear();

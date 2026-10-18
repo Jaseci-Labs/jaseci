@@ -1,27 +1,4 @@
-import from collections.abc { Iterator }
 import from contextlib { contextmanager }
-import from jaclang.compiler.frontend.host {
-    CheckSettings,
-    HostPlatform,
-    HostServices,
-    LintSettings,
-    NativeVerdict,
-    PathFacts,
-    ProjectDefaults,
-    ProjectFacts
-}
-import type from jaclang.project.workspace_model { AppSpec, WorkspaceSpec }
-import type from jaclang.compiler.driver.program { JacProgram }
-import type from jaclang.compiler.types.stubcat.reader { StubCatalog }
-import type from jaclang.compiler.types.ct_value { CtEnvironment }
-import type from jaclang.compiler.frontend.unitree { Module }
-import type from jaclang.compiler.passes.annex_weave { WovenAnnex }
-import type from jaclang.compiler.driver.compiler { JacCompiler }
-import type from jaclang.compiler.driver.ifacecache { IfaceRegistry }
-import type from jaclang.compiler.driver.nativecache { NativeUnitRegistry }
-import type from jaclang.compiler.driver.compile_options { CompileOptions }
-import type from jaclang.compiler.driver.module_analysis { ModuleAnalysis }
-import type from jaclang.compiler.frontend.kernel_inputs { KernelInputs }
 
 glob UNIT_COLLECT_EVERY: int = 16,
      UNIT_COLLECT_GROWTH_MB: int = 512;
@@ -37,6 +14,7 @@ obj ProjectHost(HostServices) {
     has _defaults_active: bool = False,
         _last_defaults: (ProjectDefaults | None) = None,
         _facts: dict[str, tuple[any, ProjectFacts]] = {},
+        _stub_globals: list[str] = [],
         _collect_budget: UnitCollectBudget = UnitCollectBudget(),
         _platform: (HostPlatform | None) = None;
 
@@ -60,6 +38,20 @@ obj ProjectHost(HostServices) {
     def is_untyped_third_party(path: str) -> bool;
     def in_typeshed_tree(path: str) -> bool;
     def sibling_declaration(js_path: str) -> (str | None);
+    def client_pulls(path: str) -> str;
+    def native_dep_iface(
+        program: JacProgram, path: str, options: CompileOptions
+    ) -> (NativeIface | None);
+
+    def native_dep_discovery_open(program: JacProgram) -> bool;
+    def native_deps_deferred(program: JacProgram) -> bool;
+    def held_native_iface(
+        program: JacProgram, path: str, options: CompileOptions
+    ) -> str;
+
+    def native_lowering_failed(program: JacProgram, path: str, detail: str);
+    def native_fact(kind: str, key: str) -> str;
+    def save_native_debug_ir(path: str, text: str);
     def has_npm_package(spec: str, base_path: str) -> bool;
     def resolve_npm_package(spec: str, base_path: str) -> (str | None);
     def npm_declarations(spec: str, base_path: str) -> (str | None);
@@ -84,31 +76,40 @@ obj ProjectHost(HostServices) {
     def package_init(directory: str) -> (str | None);
     def wiring_file(path: str) -> (str | None);
     def is_seed_source(rel_path: str) -> bool;
+    def wiring_records(digest: str) -> str;
+    def keep_wiring_records(digest: str, text: str);
     def native_parse(
         source_str: str,
         file_path: str,
         program: (JacProgram | None),
         annexes: list[WovenAnnex],
-        early_context: str = ""
+        early_context: str = "",
+        load_kernel: bool = True
     ) -> (tuple[Module, bool] | None);
 
+    def woven_module(path: str, program: (JacProgram | None)) -> (Module | None);
+    def place_wired_imports(module: Module);
     def drop_python_lane_products(path: str, program: JacProgram);
     def compiler_for(program: JacProgram) -> JacCompiler;
     def iface_registry_for(program: JacProgram) -> IfaceRegistry;
     def native_units_for(program: JacProgram) -> NativeUnitRegistry;
+    def client_boundary_facts(program: JacProgram, path: str) -> (list[str] | None);
+    def kernel_compile(
+        program: JacProgram, path: str, options: CompileOptions
+    ) -> (CompileReport | None);
+
+    def in_compiler_tree(path: str) -> bool;
+    def schedule_import_failed(err: ImportError);
+    def client_osp_core_js -> str;
+    def client_stub_globals -> list[str];
     def native_session_declares(
         program: JacProgram, source: str, element: str
     ) -> (bool | None);
-
-    def native_verdict(
-        path: str, program: (JacProgram | None) = None
-    ) -> (NativeVerdict | None);
 
     def record_native_coverage(
         path: str, outcome: str, code: str = "", detail: str = ""
     );
 
-    def record_native_verdict(program: JacProgram, path: str, code: str, detail: str);
     def native_analyze(
         program: JacProgram, path: str, options: CompileOptions, source: (str | None)
     ) -> (ModuleAnalysis | None);
@@ -156,6 +157,7 @@ obj ProjectHost(HostServices) {
     def module_in_flight(names: list[str]) -> str;
     def import_in_flight(path: str) -> bool;
     def has_active_stub_catalog -> bool;
+    def typeshed_unavailable_reason -> str;
     def is_native_only_source(rel: str) -> bool;
     def is_native_lowered_source(rel: str) -> bool;
     def default_target_triple -> str;
@@ -183,7 +185,6 @@ def project_defaults_of(cfg: any) -> ProjectDefaults {
     memory = cfg.memory;
     return ProjectDefaults(
         default_codespace=cfg.placement.default_codespace,
-        native_closure_cap=cfg.build.native_closure_cap,
         native_require=list(native.require),
         native_target=native.target,
         native_debug=native.debug,
@@ -196,4 +197,40 @@ def project_defaults_of(cfg: any) -> ProjectDefaults {
         check=check_settings_of(cfg.check),
         client_framework=cfg.client.framework if cfg.client else "react"
     );
+}
+
+def client_stub_names(path: str) -> set[str] {
+    import ast;
+    out: set[str] = set();
+    try {
+        with open(path, encoding="utf-8") as handle {
+            tree = ast.parse(handle.read());
+        }
+    } except Exception {
+        return out;
+    }
+    for node in tree.body {
+        if isinstance(node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)) {
+            out.add(node.name);
+        } elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) {
+            out.add(node.target.id);
+        } elif isinstance(node, ast.Assign) {
+            for tgt in node.targets {
+                if not isinstance(tgt, ast.Name) {
+                    continue;
+                }
+                out.add(tgt.id);
+                if tgt.id != "__all__"
+                    or not isinstance(node.value, (ast.List, ast.Tuple)) {
+                    continue;
+                }
+                for elt in node.value.elts {
+                    if isinstance(elt, ast.Constant) and isinstance(elt.value, str) {
+                        out.add(elt.value);
+                    }
+                }
+            }
+        }
+    }
+    return out;
 }

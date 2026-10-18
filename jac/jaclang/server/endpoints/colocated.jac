@@ -1,21 +1,5 @@
-import from jaclang.server.endpoint_contract { check_endpoint_contract }
 import logging;
 import os;
-import from jaclang.runtime.constants { Constants as Con }
-import from jaclang.project.config { get_config }
-import from jaclang.server.endpoints.walkers { idempotency_key, request_caller }
-import from jaclang.server.exchange { refusal_status, settle_envelope }
-import from jaclang.server.outbox { remember_response, replay_cached }
-import from jaclang.server.serving.datatypes { Request, Response }
-import from jaclang.server.serving.endpoint {
-    APIParameter,
-    HTTPMethod,
-    JEndPoint,
-    ParameterType
-}
-import from jaclang.server.server { JacAPIServer, JsonValue, ModuleIntrospector }
-import from jaclang.server.sv_client { _local_providers }
-import from jaclang.server.transport { Meta, TransportResponse }
 
 glob logger: logging.Logger = logging.getLogger('jaclang.serve');
 
@@ -86,7 +70,7 @@ def _walker_callback(
     server: JacAPIServer,
     provider_app: str,
     walker_name: str,
-    walker_cls: any,
+    intro: ModuleIntrospector,
     requires_auth: bool
 ) -> Callable[..., (TransportResponse | Response)] {
     async def callback(
@@ -103,6 +87,7 @@ def _walker_callback(
         if nd {
             fields['_jac_spawn_node'] = nd;
         }
+        walker_cls = intro.target(walker_name);
         mismatch = check_endpoint_contract(
             request, walker_cls, "walker", walker_name, provider_app
         );
@@ -132,7 +117,7 @@ def _function_callback(
     server: JacAPIServer,
     provider_app: str,
     func_name: str,
-    func_obj: any,
+    intro: ModuleIntrospector,
     requires_auth: bool
 ) -> Callable[..., (TransportResponse | Response)] {
     async def callback(
@@ -146,6 +131,7 @@ def _function_callback(
         if args is None {
             return _fail('INVALID_JSON', 'Invalid JSON', 400);
         }
+        func_obj = intro.target(func_name);
         mismatch = check_endpoint_contract(
             request, func_obj, "func", func_name, provider_app
         );
@@ -184,13 +170,21 @@ def _listing(names: list[str], key: str) -> Callable[..., TransportResponse] {
 def _mount_provider(
     server: JacAPIServer, provider_app: str, route: str, intro: ModuleIntrospector
 ) {
-    walkers = intro.get_walkers();
-    functions = intro.get_functions();
+    walkers = [
+        rec.name
+        for rec in intro.served('walker')
+        if not intro.is_scheduled(rec.name)
+    ];
+    functions = [
+        rec.name
+        for rec in intro.served('function')
+        if not intro.is_scheduled(rec.name)
+    ];
     server.add_endpoint(
         JEndPoint(
             method=HTTPMethod.GET,
             path=f"{route}/walkers",
-            callback=_listing(list(walkers.keys()), 'walkers'),
+            callback=_listing(walkers, 'walkers'),
             parameters=[],
             tags=['Colocated'],
             summary=f"Walkers of {provider_app}",
@@ -202,7 +196,7 @@ def _mount_provider(
         JEndPoint(
             method=HTTPMethod.GET,
             path=f"{route}/functions",
-            callback=_listing(list(functions.keys()), 'functions'),
+            callback=_listing(functions, 'functions'),
             parameters=[],
             tags=['Colocated'],
             summary=f"Functions of {provider_app}",
@@ -210,11 +204,9 @@ def _mount_provider(
             forward_undeclared_query_params=False
         )
     );
-    for (walker_name, walker_cls) in walkers.items() {
+    for walker_name in walkers {
         walker_auth = intro.is_auth_required_for_walker(walker_name);
-        cb = _walker_callback(
-            server, provider_app, walker_name, walker_cls, walker_auth
-        );
+        cb = _walker_callback(server, provider_app, walker_name, intro, walker_auth);
         server.add_endpoint(
             JEndPoint(
                 method=HTTPMethod.POST,
@@ -243,14 +235,14 @@ def _mount_provider(
             )
         );
     }
-    for (func_name, func_obj) in functions.items() {
+    for func_name in functions {
         func_auth = intro.is_auth_required_for_function(func_name);
         server.add_endpoint(
             JEndPoint(
                 method=HTTPMethod.POST,
                 path=f"{route}/function/{func_name}",
                 callback=_function_callback(
-                    server, provider_app, func_name, func_obj, func_auth
+                    server, provider_app, func_name, intro, func_auth
                 ),
                 parameters=[],
                 tags=['Colocated'],
@@ -265,8 +257,6 @@ def _mount_provider(
 
 
 def served_app_route(server: JacAPIServer) -> tuple[str, str, any] {
-    import from jaclang.project.config { get_config_for_dir }
-    import from jaclang.server.sv_client { consumer_app }
     served = consumer_app();
     if not served {
         return ('', '', None);

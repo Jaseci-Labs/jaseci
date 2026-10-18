@@ -1,40 +1,11 @@
 import from contextlib { contextmanager }
 import from pathlib { Path }
 import from collections.abc { Callable, Iterator }
-import from jaclang.compiler.driver.pipeline_types { AnalysisFact }
 import os;
 import time;
-import type from jaclang.compiler.driver.program { JacProgram }
-import type from jaclang.compiler.frontend.unitree { Module }
-import type from jaclang.compiler.types.types { ClassDetailsShared }
-import from jaclang.compiler.types.stubcat.resolver { CatalogResolver }
-import from jaclang.compiler.driver.jir {
-    DepRow,
-    SEC_CTDEPS,
-    SEC_DEPS,
-    SEC_DIAG,
-    SEC_IFACE,
-    SEC_PLACEMENT,
-    SEC_PATH_ROOT,
-    JirPaths,
-    cache_mode,
-    module_ct_deps_section,
-    deps_section,
-    get_module_cache_path,
-    is_compiler_tree_path,
-    is_module_cache_valid,
-    is_stub_like_path,
-    jir_cacheable_source_path,
-    module_cache_key,
-    read_dep_hashes,
-    read_jir_paths,
-    read_section_bytes,
-    write_module_cache
-}
 
 glob DIAG_SCHEMA: int = 1,
      IFACE_RETAIN_CAP: int = 1024,
-     _SYMTAB_PROVIDES_MEMO: list[set[AnalysisFact]] = [],
      _CODEC_MODULES: tuple[str, ...] = (
          "jaclang.compiler.types.type_evaluator",
          "jaclang.compiler.types.stubcat.reader",
@@ -81,6 +52,14 @@ def iface_codec -> (IfaceCodec | None) {
     return codec;
 }
 
+def prime_iface_codec -> (IfaceCodec | None) {
+    import importlib;
+    for name in _CODEC_MODULES {
+        importlib.import_module(name);
+    }
+    return iface_codec();
+}
+
 def iface_verify_enabled -> bool {
     truthy: set = {'1', 'true', 'True', 'TRUE', 'yes', 'YES', 'on', 'ON'};
     return os.environ.get('JAC_IFACE_VERIFY', '') in truthy;
@@ -90,16 +69,10 @@ def _interface_source_path(path: str) -> bool {
     return jir_cacheable_source_path(path) and not is_stub_like_path(path);
 }
 
-def _symtab_provides -> set[AnalysisFact] {
-    if not _SYMTAB_PROVIDES_MEMO {
-        import from jaclang.compiler.driver.pipeline {
-            get_symtab_ir_sched,
-            providers_of
-        }
-        _SYMTAB_PROVIDES_MEMO.append(set(providers_of(get_symtab_ir_sched())));
-    }
-    return set(_SYMTAB_PROVIDES_MEMO[0]);
+def native_lowering_reads(path: str) -> bool {
+    return not is_compiler_source_path(path) or is_native_by_location(path);
 }
+
 
 def _span_record(span: any) -> list[str | int | None] {
     return [
@@ -117,7 +90,6 @@ def _span_record(span: any) -> list[str | int | None] {
 }
 
 def _span_from_record(rec: list[any]) -> any {
-    import from jaclang.compiler.frontend.srcloc { Span }
     return Span(
         mod_path=rec[0],
         first_line=rec[1],
@@ -147,9 +119,6 @@ def _alert_record(alert: any) -> dict[str, any] {
 }
 
 def _alert_from_record(rec: dict[str, any]) -> any {
-    import from jaclang.compiler.frontend.diagnostics { DIAGNOSTICS }
-    import from jaclang.compiler.passes.context { Alert }
-
     code_str: str = str(rec.get("code") or "");
     code = DIAGNOSTICS.get(code_str) if code_str else None;
     related: list[any] = [];
@@ -198,6 +167,7 @@ obj IfaceRegistry(CatalogResolver) {
         _iface_bytes: dict[str, EncodedInterface] = {},
         _incoherent: set[str] = set(),
         verifying: bool = False,
+        cold: bool = False,
         closure_token: int = 0,
         _pkg_dir_memo: str = "";
 
@@ -314,8 +284,6 @@ obj IfaceRegistry(CatalogResolver) {
     }
 
     def _client_edges(mod: any) -> set[str] {
-        import jaclang.compiler.frontend.unitree as uni;
-        import from jaclang.compiler.frontend.constant { CodeContext }
         out: set[str] = set();
         try {
             for imp in mod.get_all_sub_nodes(uni.Import) {
@@ -351,8 +319,6 @@ obj IfaceRegistry(CatalogResolver) {
     }
 
     def _entry_fresh(ent: IfaceEntry) -> bool {
-        import from jaclang.compiler.driver.bccache { discover_annex_files }
-        import from jaclang.compiler.frontend.host { active_host }
         try {
             if os.path.getmtime(ent.path) > ent.stamp {
                 return False;
@@ -411,10 +377,6 @@ obj IfaceRegistry(CatalogResolver) {
 
     @contextmanager
     def _compilation_scope -> Iterator[None] {
-        import from jaclang.compiler.driver.compilation_context {
-            compilation_scope,
-            owner_scope_options
-        }
         with compilation_scope(owner_scope_options(self.prog)) {
             yield ;
         }
@@ -427,7 +389,6 @@ obj IfaceRegistry(CatalogResolver) {
     }
 
     def ensure(path: str, compile_on_miss: bool = True) -> IfaceEntry | None {
-        import from jaclang.compiler.driver.compilation_context { program_for }
         actual = program_for(path, self.prog);
         if actual is not self.prog {
             return actual.iface_registry().ensure(path, compile_on_miss);
@@ -498,7 +459,6 @@ obj IfaceRegistry(CatalogResolver) {
     }
 
     def _deps_match(data: bytes, base_dir: str = "") -> bool {
-        import from jaclang.compiler.driver.jir { read_dep_rows }
         for row in read_dep_rows(data, base_dir) {
             (dep, recorded) = (row.path, row.digest);
             if not recorded {
@@ -541,7 +501,7 @@ obj IfaceRegistry(CatalogResolver) {
             return self._register_from_disk(resolved, check_deps=False);
         }
         (rebuild, _) = cache_mode();
-        if not rebuild {
+        if not rebuild and not self.cold {
             self.checking.add(resolved);
             try {
                 found = self._register_from_disk(resolved, check_deps=True);
@@ -561,16 +521,13 @@ obj IfaceRegistry(CatalogResolver) {
         self.building.add(resolved);
         try {
             self._event("dep_miss_compile");
-            import from jaclang.compiler.driver.compile_options { CompileOptions }
             before_errors = len(self.prog.errors_had);
             before_warnings = len(self.prog.warnings_had);
             options = self.prog.options.for_symbols();
             module = self.prog.compile(resolved, options=options);
-            import from jaclang.compiler.driver.pipeline {
-                require_product,
-                CompilationProduct
-            }
-            if require_product(self.prog, module, CompilationProduct.INTERFACE) {
+            import from jaclang.compiler.driver.pipeline { require }
+            import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
+            if require(self.prog, module, CompilationProduct.INTERFACE) {
                 self.persist_after_compile(
                     resolved, module, options, before_errors, before_warnings
                 );
@@ -632,7 +589,9 @@ obj IfaceRegistry(CatalogResolver) {
     def _prepare(ent: IfaceEntry, mod: any) {
         self.prog.stamp_app_facts(mod);
         self._restore_placement(ent);
-        self.prog.analysis.analyses_run.mark(mod, _symtab_provides());
+        import from jaclang.compiler.driver.pipeline { product_facts }
+        import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
+        self.prog.analysis.mark_facts(mod, product_facts(CompilationProduct.SYMBOLS));
     }
 
     static def _profiles_of(
@@ -724,6 +683,9 @@ obj IfaceRegistry(CatalogResolver) {
 
     def _serve_in_context(compiler: any, resolved: str, options: any) -> any {
         if not options.iface_ok or options.need_full_ast or not self.ready() {
+            return None;
+        }
+        if options.native_tree_demand and native_lowering_reads(resolved) {
             return None;
         }
         if resolved in self.building {
@@ -848,8 +810,6 @@ obj IfaceRegistry(CatalogResolver) {
     def analysis_profile(options: any) -> str {
         import hashlib;
         import json;
-        import from jaclang.compiler.driver.pass_driver { diagnostic_policy_for }
-        import from jaclang.compiler.frontend.host { active_host }
         pol = diagnostic_policy_for(
             active_host().check_settings(getattr(options, 'target_app', '') or ''),
             list(options.suppress_codes or [])
@@ -878,22 +838,18 @@ obj IfaceRegistry(CatalogResolver) {
             or getattr(mod, "is_raised_from_py", False) {
             return;
         }
-        ledger = self.prog.analysis.analyses_run;
-        if ledger.provides(mod, AnalysisFact.CFG_SUCC) {
+        if self.prog.analysis.provides(mod, AnalysisFact.CFG_SUCC) {
             return;
         }
-        import from jaclang.compiler.driver.pipeline {
-            require_product,
-            CompilationProduct
-        }
-        if not require_product(self.prog, mod, CompilationProduct.FLOW) {
+        import from jaclang.compiler.driver.pipeline { require }
+        import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
+        if not require(self.prog, mod, CompilationProduct.FLOW) {
             raise RuntimeError(f"Interface flow analysis failed: {mod.loc.mod_path}");
         }
         self._event("iface_cfg");
     }
 
     def _encode_iface(codec: IfaceCodec, mod: any, paths: JirPaths) -> (bytes | None) {
-        import from jaclang.compiler.types.stubcat.writer { IncoherentInterface }
         self._event("iface_encode");
         self._ensure_flow_graph(mod);
         try {
@@ -998,7 +954,8 @@ obj IfaceRegistry(CatalogResolver) {
         if not options.symtab_ir_only {
             try {
                 import from jaclang.compiler.driver.jir { SEC_INTEROP }
-                interop_dict = self.prog._get_compiler()._build_interop_dict(mod);
+                import from jaclang.compiler.driver.unit_products { interop_record }
+                interop_dict = interop_record(mod);
                 sections[SEC_INTEROP] = json.dumps(interop_dict).encode("utf-8");
             } except Exception {}
         }
@@ -1097,9 +1054,10 @@ obj IfaceRegistry(CatalogResolver) {
         }
         if interop.get("bindings") {
             try {
-                manifest = self.prog._get_compiler()._deserialize_interop_table(
-                    interop
-                );
+                import from jaclang.compiler.driver.unit_products {
+                    interop_manifest_of
+                }
+                manifest = interop_manifest_of(interop);
             } except Exception {
                 return None;
             }
@@ -1178,7 +1136,6 @@ obj IfaceRegistry(CatalogResolver) {
     }
 
     def _fresh_verify_program -> JacProgram {
-        import from jaclang.compiler.driver.program { JacProgram }
         import copy;
         prog = JacProgram();
         prog.options = copy.copy(self.prog.options);
@@ -1243,7 +1200,6 @@ obj IfaceRegistry(CatalogResolver) {
         prog2 = self._fresh_verify_program();
         self.verifying = True;
         try {
-            import from jaclang.compiler.driver.compile_options { CompileOptions }
             try {
                 import copy;
                 verified_options = copy.copy(options);
@@ -1287,8 +1243,6 @@ obj IfaceRegistry(CatalogResolver) {
 }
 
 def artifact_cache_path(path: str, program: JacProgram) -> Path {
-    import from jaclang.compiler.driver.jir { get_module_cache_path }
-    import from jaclang.compiler.driver.compilation_context { cache_scope, program_for }
     selected = program_for(path, program);
     owner_options = None if selected.internal else selected.options;
     with cache_scope(owner_options) {

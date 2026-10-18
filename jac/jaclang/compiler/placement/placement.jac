@@ -1,13 +1,6 @@
 import os;
-import jaclang.compiler.frontend.unitree as uni;
-import from jaclang.compiler.frontend.constant {
-    CodeContext,
-    SymbolAccess,
-    Tokens as Tok
-}
-import type from jaclang.compiler.driver.program { JacProgram }
 
-glob PLACEMENT_SCHEMA: int = 2,
+glob PLACEMENT_SCHEMA: int = 3,
      PLACEMENT_SV_SIGNAL_NODES: list[tuple[str, type[uni.UniNode]]] = [
          ("TypedCtxBlock", uni.TypedCtxBlock),
          ("PyInlineCode", uni.PyInlineCode),
@@ -29,6 +22,20 @@ glob PLACEMENT_SCHEMA: int = 2,
          "/jaclang/lib/",
          "/jaclang/jac0core/"
      );
+
+obj NativeBlockerScan {
+    has module: str = '',
+        sites: list[tuple[uni.UniNode, str]] = [],
+        deps: list[str] = [],
+        dep_imports: list[tuple[uni.Import, str]] = [];
+
+    def first -> str {
+        if self.module {
+            return self.module;
+        }
+        return self.sites[0][1] if self.sites else '';
+    }
+}
 
 obj ElementSummary {
     has index: int = -1,
@@ -53,9 +60,6 @@ obj PlacementSummary {
         decided: str = '',
         anchors: list[str] = [],
         native_blocker: str = '',
-        native_verdict: str = '',
-        native_verdict_code: str = '',
-        native_verdict_deps: list[list[str]] = [],
         jac_deps: list[str] = [],
         has_refs: bool = False,
         elements: list[ElementSummary] = [];
@@ -125,7 +129,6 @@ def project_kind_name(module: (uni.Module | None)) -> str {
 }
 
 def project_has_server(module: (uni.Module | None)) -> bool {
-    import from jaclang.project.app_kinds { kind_codespace }
     return kind_codespace(project_kind_name(module)) != 'client';
 }
 
@@ -420,7 +423,6 @@ def _names_a_member(nm: uni.Name) -> bool {
 }
 
 def _references_browser_seed_global(elem: uni.UniNode) -> str {
-    import from jaclang.compiler.frontend.constant { BROWSER_SEED_GLOBALS }
     for nm in elem.get_all_sub_nodes(uni.Name) {
         if nm.value not in BROWSER_SEED_GLOBALS {
             continue;
@@ -440,7 +442,6 @@ def _references_browser_seed_global(elem: uni.UniNode) -> str {
 }
 
 def module_anchor_reasons(module: uni.Module) -> list[str] {
-    import from jaclang.compiler.placement.placement_pins { config_module_pin }
     reasons: list[str] = [];
     mod_path = module.loc.mod_path or '';
     if config_module_pin(mod_path) == 'server' {
@@ -491,7 +492,6 @@ def module_anchor_reasons(module: uni.Module) -> list[str] {
 }
 
 def _erased_only_import(imp: uni.Import) -> bool {
-    import from jaclang.compiler.frontend.codeinfo { native_erased_import_names }
     if imp.from_loc is None or imp.is_absorb {
         return False;
     }
@@ -505,61 +505,61 @@ def _erased_only_import(imp: uni.Import) -> bool {
     return native_erased_import_names(imp.from_loc.dot_path_str, names);
 }
 
-def scan_native_blockers(
+def native_blocker_scan(
     module: uni.Module,
     base_dir: str,
     allow_pub: bool = False,
     hold_exempt: bool = False
-) -> tuple[str, list[str]] {
-    import from jaclang.compiler.frontend.codeinfo {
-        NATIVE_SUPPORTED_STDLIB,
-        is_bundled_native_module,
-        resolve_native_module
-    }
-    deps: list[str] = [];
+) -> NativeBlockerScan {
+    scan = NativeBlockerScan();
+    deps = scan.deps;
     _held_path = (module.loc.mod_path if module.loc is not None else '') or '';
     if not hold_exempt {
         for (_held_rel, _held_why) in PLACEMENT_INFERENCE_HELD.items() {
             if _held_path.replace(os.sep, "/").endswith("/jaclang/" + _held_rel) {
-                return (f"inference held: {_held_why}", deps);
+                scan.module = f"inference held: {_held_why}";
+                return scan;
             }
         }
     }
     for (nd_name, typ) in PLACEMENT_SV_SIGNAL_NODES {
-        if module.get_all_sub_nodes(typ) {
-            return (f"contains {nd_name}", deps);
+        for found in module.get_all_sub_nodes(typ) {
+            scan.sites.append((found, f"contains {nd_name}"));
         }
     }
 
     for (nd_name, typ) in PLACEMENT_NATIVE_REJECT_NODES {
-        if module.get_all_sub_nodes(typ) {
-            return (f"native-unsupported {nd_name}", deps);
+        for found in module.get_all_sub_nodes(typ) {
+            scan.sites.append((found, f"native-unsupported {nd_name}"));
         }
     }
     for svr in module.get_all_sub_nodes(uni.SpecialVarRef) {
-        if svr.orig.name == Tok.KW_ROOT {
-            return ("root access (persistent graph)", deps);
+        if svr.orig.name == Tok.KW_ROOT and not scan.module {
+            scan.module = "root access (persistent graph)";
         }
     }
     import from jaclang.compiler.driver.boundary_classify { ability_delegates_to_model }
     for ab in module.get_all_sub_nodes(uni.Ability) {
         if ability_delegates_to_model(ab) {
-            return ("by llm ability (needs the byLLM runtime)", deps);
+            scan.sites.append((ab, "by llm ability (needs the byLLM runtime)"));
+            continue;
         }
         if ab.is_async {
-            return ("async ability", deps);
+            scan.sites.append((ab, "async ability"));
+            continue;
         }
         if isinstance(ab.signature, uni.EventSignature) {
             if ab.find_parent_of_type(uni.Archetype) is None {
-                return ("event ability outside an archetype", deps);
+                scan.sites.append((ab, "event ability outside an archetype"));
+                continue;
             }
             _ti = ab.signature.arch_tag_info;
             _ti_names = [_ti]
                 if isinstance(_ti, uni.Name)
                 else (_ti.get_all_sub_nodes(uni.Name) if _ti is not None else []);
             for _tn in _ti_names {
-                if _tn.value in ("Root", "root") {
-                    return ("root access (persistent graph)", deps);
+                if _tn.value in ("Root", "root") and not scan.module {
+                    scan.module = "root access (persistent graph)";
                 }
             }
         }
@@ -570,13 +570,14 @@ def scan_native_blockers(
             import from jaclang.compiler.placement.placement_pins { config_pin_for }
             pin = config_pin_for(scan_mod_path, element_display_name(stmt));
             if pin in ('server', 'client') {
-                return ("explicit sv/cl pin", deps);
+                scan.sites.append((stmt, "explicit sv/cl pin"));
+                continue;
             }
         }
 
         endpoint = _endpoint_evidence(stmt);
         if not allow_pub and endpoint {
-            return (endpoint, deps);
+            scan.sites.append((stmt, endpoint));
         }
     }
     for imp in module.get_all_sub_nodes(uni.Import) {
@@ -591,7 +592,8 @@ def scan_native_blockers(
             continue;
         }
         if imp.is_virtual_jac or imp.has_string_path {
-            return ("virtual/string-path import", deps);
+            scan.sites.append((imp, "virtual/string-path import"));
+            continue;
         }
         if _erased_only_import(imp) {
             continue;
@@ -640,7 +642,8 @@ def scan_native_blockers(
                 if not (
                     is_module_import and path is not None and path.endswith('.jac')
                 ) {
-                    return (f"non-native import '{clean}'", deps);
+                    scan.sites.append((imp, f"non-native import '{clean}'"));
+                    break;
                 }
             }
             if path is not None {
@@ -648,11 +651,13 @@ def scan_native_blockers(
                     config_module_pin as _cmp
                 }
                 if _cmp(path) == 'client' {
-                    return ("client module import", deps);
+                    scan.sites.append((imp, "client module import"));
+                    break;
                 }
             }
             if path is not None and path.endswith('.jac') {
                 deps.append(os.path.abspath(path));
+                scan.dep_imports.append((imp, os.path.abspath(path)));
                 continue;
             }
             if clean and clean in NATIVE_SUPPORTED_STDLIB {
@@ -666,10 +671,21 @@ def scan_native_blockers(
                     is not None {
                 continue;
             }
-            return (f"unresolved import '{clean}'", deps);
+            scan.sites.append((imp, f"unresolved import '{clean}'"));
+            break;
         }
     }
-    return ('', deps);
+    return scan;
+}
+
+def scan_native_blockers(
+    module: uni.Module,
+    base_dir: str,
+    allow_pub: bool = False,
+    hold_exempt: bool = False
+) -> tuple[str, list[str]] {
+    scan = native_blocker_scan(module, base_dir, allow_pub, hold_exempt);
+    return (scan.first(), scan.deps);
 }
 
 def summarize_module(
@@ -681,16 +697,8 @@ def summarize_module(
     ps.decided = module.decided_codespace or '';
     ps.anchors = module_anchor_reasons(module);
     base_dir = os.path.dirname(os.path.abspath(ps.mod_path)) if ps.mod_path else '';
-    (blocker, deps) = scan_native_blockers(module, base_dir);
+    (blocker, deps) = scan_native_blockers(module, base_dir, allow_pub=True);
     ps.native_blocker = blocker;
-    if prog is not None and ps.mod_path {
-        pending = prog.analysis.native_verdict_notes.get(os.path.realpath(ps.mod_path));
-        if pending is not None {
-            ps.native_verdict_code = pending[0];
-            ps.native_verdict = pending[1];
-            ps.native_verdict_deps = [list(row) for row in pending[2]];
-        }
-    }
     ps.jac_deps = deps;
     ps.has_refs = with_refs;
     index_by_id: dict[int, int] = {};
@@ -705,8 +713,18 @@ def summarize_module(
         es.name = element_display_name(stmt);
         es.pinned = '';
         if ps.mod_path {
-            import from jaclang.compiler.placement.placement_pins { effective_pin_for }
+            import from jaclang.compiler.placement.placement_pins {
+                config_element_pin,
+                config_module_pin,
+                effective_pin_for
+            }
             es.pinned = effective_pin_for(ps.mod_path, es.name, prog);
+            if es.pinned == 'native'
+                and prog is not None
+                and config_module_pin(ps.mod_path) == 'native'
+                and prog.prefers_native_codespace(ps.mod_path) {
+                es.pinned = config_element_pin(ps.mod_path, es.name);
+            }
         }
         es.is_pub = _endpoint_evidence(stmt) == 'pub access';
         es.reqs = _element_reqs(stmt);
@@ -754,20 +772,13 @@ def summary_store(prog: JacProgram) -> dict[str, PlacementSummary] {
     return prog.analysis.placement_summaries;
 }
 
-def note_native_verdict(
-    prog: JacProgram,
-    resolved: str,
-    code: str,
-    detail: str,
-    deps: (list[list[str]] | None) = None
-) {
-    rows = [list(row) for row in (deps or [])];
-    prog.analysis.native_verdict_notes[resolved] = (code, detail, rows);
-    cached = prog.analysis.placement_summaries.get(os.path.abspath(resolved));
-    if cached is not None {
-        cached.native_verdict_code = code;
-        cached.native_verdict = detail;
-        cached.native_verdict_deps = rows;
+def record_decided(prog: JacProgram, module: uni.Module) {
+    if module.loc is None or not module.loc.mod_path {
+        return;
+    }
+    held = summary_store(prog).get(os.path.abspath(module.loc.mod_path));
+    if held is not None {
+        held.decided = module.decided_codespace or '';
     }
 }
 

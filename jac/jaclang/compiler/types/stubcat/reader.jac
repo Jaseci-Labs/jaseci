@@ -2,93 +2,6 @@ import io;
 import os;
 import json;
 import from pathlib { Path }
-import from jaclang.compiler.frontend.unitree {
-    Ability,
-    HasVar,
-    Module,
-    Name,
-    Source,
-    Symbol,
-    SymbolProvider,
-    Token,
-    UniNode,
-    UniScopeNode
-}
-import from jaclang.compiler.frontend.constant {
-    ParamKind,
-    BindingKind,
-    ImmutabilityKind,
-    OwnershipKind,
-    SymbolAccess,
-    SymbolType,
-    Tokens as Tok
-}
-import from jaclang.compiler.types.types {
-    AnyType,
-    ClassDetailsPrivate,
-    ClassDetailsShared,
-    ClassType,
-    EnumMemberInfo,
-    EnumMemberType,
-    FunctionType,
-    ModuleType,
-    NeverType,
-    OverloadedType,
-    Parameter,
-    ParameterCategory,
-    TypeBase,
-    TypeFlags,
-    TypeVarType,
-    UnionType,
-    UnknownType
-}
-import from jaclang.compiler.types.stubcat.resolver { CatalogResolver }
-import from jaclang.compiler.types.stubcat.format {
-    ACCESS_PRIVATE,
-    ACCESS_PROTECTED,
-    Cursor,
-    Header,
-    LIT_BOOL,
-    LIT_INT,
-    LIT_STR,
-    MOD_EXTERNAL,
-    PM_CLS,
-    PM_COMPTIME,
-    PM_HAS_DEFAULT,
-    PM_SELF,
-    SC_MODULE,
-    SH_BUILTIN,
-    SH_DATACLASS,
-    SH_ENUM,
-    SH_NAMEDTUPLE,
-    SH_ROOT,
-    SH_STDLIB,
-    SH_TYPEDDICT,
-    SH_XREF,
-    SYMF_FINAL,
-    SYMF_NA_ESCAPES,
-    SYMF_NA_REGION_HANDLE,
-    SYMF_NA_STACK_OK,
-    SYMF_PARAM_REBOUND,
-    SYMF_READONLY,
-    TV_CLASS_PARAM,
-    TV_CONTRAVARIANT,
-    TV_COVARIANT,
-    TV_PARAM_SPEC,
-    TV_SELF,
-    TY_ANY,
-    TY_CLASS,
-    TY_ENUM_MEMBER,
-    TY_FUNCTION,
-    TY_MODULE,
-    TY_NEVER,
-    TY_OVERLOAD,
-    TY_TYPEVAR,
-    TY_UNION,
-    TY_UNKNOWN,
-    u32_at,
-    unpack_header
-}
 
 def keep_path(rel: str) -> str {
     return rel;
@@ -415,10 +328,18 @@ obj StubCatalog {
             return None;
         }
         prefix = self._base_dir + os.sep;
-        if not real.startswith(prefix) {
-            return None;
+        if real.startswith(prefix) {
+            return real[len(prefix):].replace(os.sep, "/");
         }
-        return real[len(prefix):].replace(os.sep, "/");
+        normalized = real.replace(os.sep, "/");
+        at = normalized.rfind("/vendor/typeshed/");
+        if at >= 0 {
+            foreign = normalized[at + 1:];
+            if foreign in self._mod_rel {
+                return foreign;
+            }
+        }
+        return None;
     }
 
     def module_path(parts: list[str]) -> (str | None) {
@@ -1076,6 +997,7 @@ obj StubCatalog {
             typeddict_fields=None,
             is_root_class=(bits & SH_ROOT) != 0,
             is_enum_class=(bits & SH_ENUM) != 0,
+            is_extern_struct=(bits & SH_EXTERN) != 0,
             enum_value_type=None,
             enum_members=None,
             _identity_key=identity,

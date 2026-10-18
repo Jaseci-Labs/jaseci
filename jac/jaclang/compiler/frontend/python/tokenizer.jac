@@ -4,52 +4,6 @@ Source decoding stays outside the scanner. An optional refill callback supplies
 decoded lines for streaming tokenization; parsing uses an existing source string.
 """
 
-import from jaclang.runtime.python.cpython_api { _PyToken_ThreeChars }
-import from jaclang.compiler.frontend.python.token_model {
-    ENDMARKER,
-    NAME,
-    NUMBER,
-    STRING,
-    NEWLINE,
-    INDENT,
-    DEDENT,
-    COMMENT,
-    NL,
-    ERRORTOKEN,
-    TYPE_COMMENT,
-    TYPE_IGNORE,
-    LPAR,
-    RPAR,
-    LSQB,
-    RSQB,
-    LBRACE,
-    RBRACE,
-    COMMA,
-    COLON,
-    FSTRING_START,
-    FSTRING_MIDDLE,
-    FSTRING_END,
-    TSTRING_START,
-    TSTRING_MIDDLE,
-    TSTRING_END,
-    TOK_NO_COLUMN,
-    EXACT_TOKEN_TYPES,
-    exact_token_type,
-    tok_token,
-    tok_diag,
-    mk_diag,
-    tok_loc_span,
-    tok_no_loc,
-}
-
-import from jaclang.runtime.python.characters {
-    point_width,
-    point_at,
-    unicode_start,
-    unicode_continue,
-    unicode_printable
-}
-
 glob TABSIZE: int = 8,
      MAXINDENT: int = 100,
      # The scanner reads code points, as CPython's tok_nextc reads ints. This
@@ -649,6 +603,27 @@ def _read_number(st: tok_state) -> tok_token | tok_diag {
         }
     }
     spell = st.data[start:st.pos].decode("utf-8");
+    # lexer.c: a decimal integer with a leading zero and a nonzero digit is
+    # an old-style octal, refused outside the tokenize module (gh-105549).
+    if not based
+        and not st.extra_tokens
+        and spell[0] == "0"
+        and spell.replace("_", "").isdigit()
+        and spell.replace("_", "").strip("0") {
+        nonzero = 1;
+        while nonzero < len(spell) and spell[nonzero] in "0_" {
+            nonzero += 1;
+        }
+        bad = mk_diag(
+            "SyntaxError",
+            "leading zeros in decimal integer literals are not permitted; use an 0o prefix for octal integers",
+            tok_loc_span(st.lineno, st.lineno, start_col, start_col + nonzero + 1),
+            st.filename
+        );
+        st.error = bad;
+        st.done = True;
+        return bad;
+    }
     if _is_id_start(_peek(st)) and not st.extra_tokens {
         kind = "decimal";
         if spell.lower().startswith("0x") {

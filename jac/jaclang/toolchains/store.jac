@@ -11,9 +11,6 @@ import from pathlib { Path }
 import from http.client { HTTPResponse }
 import from urllib.request { Request, urlopen }
 import from urllib.parse { urlsplit }
-import from jaclang.cli.console { console }
-import from jaclang.cache.registry { bucket, maybe_sweep }
-import from jaclang.jac0core.cache_paths { FileLock }
 
 obj Artifact {
     has name: str,
@@ -42,7 +39,7 @@ obj Artifact {
 }
 
 def offline -> bool {
-    return os.environ.get("JAC_OFFLINE", "").lower() in ["1", "true", "yes"];
+    return offline_mode();
 }
 
 def file_digest(path: Path, algorithm: str = "sha256") -> str {
@@ -77,7 +74,7 @@ def fetch(
         }
         if offline() {
             raise RuntimeError(
-                f"{artifact.name} {artifact.version} is not cached. Disable JAC_OFFLINE and run setup first."
+                f"{artifact.name} {artifact.version} is not cached. Unset `[network] offline` in jac.toml and run setup first."
             );
         }
         if not allowed_url(artifact.url) {
@@ -189,14 +186,20 @@ def extract(archive: Path, destination: Path) {
     }
 }
 
-def install(artifact: Artifact, required: str) -> Path {
-    key = artifact.key();
-    destination = bucket("toolchains-installed").path() / key;
+def installed(artifact: Artifact, required: str) -> (Path | None) {
     if Path(required).is_absolute() or ".." in Path(required).parts {
         raise ValueError("Installation marker must be a relative path");
     }
+    destination = bucket("toolchains-installed").path() / artifact.key();
+    return destination
+        if (destination / required).exists() and slot_installed(destination)
+        else None;
+}
+
+def install(artifact: Artifact, required: str) -> Path {
+    destination = bucket("toolchains-installed").path() / artifact.key();
     with FileLock(destination.with_suffix(".lock")) {
-        if (destination / required).exists() and slot_installed(destination) {
+        if installed(artifact, required) is not None {
             console.print(
                 f"Using {artifact.name} {artifact.version} at {destination}",
                 style="muted"

@@ -1,6 +1,3 @@
-import from jaclang.compiler.symbol_utils { return_type_is_jsx }
-import from jaclang.compiler.frontend.diagnostics { E5097 }
-
 impl EsastGenPass.exit_has_var with uni.HasVar exit {
     here.gen.es_ast = None;
 }
@@ -536,10 +533,7 @@ impl EsastGenPass.exit_archetype with uni.Archetype exit {
     );
     has_postinit = False;
     for _stmt in (ModuleFacts.unwrap_body(here) or []) {
-        if (
-            isinstance(_stmt, uni.Ability)
-            and getattr(_stmt, 'sym_name', '') == '__post_init__'
-        ) {
+        if isinstance(_stmt, uni.Ability) and _stmt.sym_name == '__post_init__' {
             has_postinit = True;
         }
     }
@@ -772,7 +766,7 @@ impl EsastGenPass.exit_archetype with uni.Archetype exit {
     );
     class_body = self.sync_loc(es.ClassBody(body=body_stmts), jac_node=here);
     super_class: (es.Expression | None) = None;
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
+
     if here.base_classes {
         base = here.base_classes[0];
         if base.gen.es_ast {

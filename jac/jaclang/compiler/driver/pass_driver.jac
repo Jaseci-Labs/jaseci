@@ -1,18 +1,11 @@
-import from jaclang.compiler.passes.execution { run_walker }
 import os;
 import sys;
 import from collections.abc { Callable, Iterator, Sequence }
 import from contextlib { contextmanager }
-import from jaclang.compiler.passes.context { Alert, CompilerPass, DiagnosticPolicy }
-import from jaclang.compiler.driver.compile_options { CancelToken }
-import from jaclang.compiler.frontend.unitree { Module, Source }
-import from jaclang.compiler.frontend.host { CheckSettings, active_host }
-import from jaclang.compiler.driver.program { JacProgram }
 
 def diagnostic_policy_for(
     check: CheckSettings, extra_suppress_tokens: (list[str] | None) = None
 ) -> DiagnosticPolicy {
-    import from jaclang.compiler.frontend.diagnostic_utils { resolve_diagnostic_tokens }
     tokens: list[str] = list(check.suppress);
     if extra_suppress_tokens {
         tokens.extend(extra_suppress_tokens);
@@ -40,7 +33,6 @@ def build_diagnostic_policy(prog: JacProgram) -> DiagnosticPolicy {
 }
 
 def _alert_in_internal_stub(loc_path: str) -> bool {
-    import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
     if not loc_path.endswith('.pyi') {
         return False;
     }
@@ -56,9 +48,11 @@ def deliver_alerts(
     errors: Sequence[Alert],
     warnings: Sequence[Alert],
     prog: JacProgram,
-    policy: (DiagnosticPolicy | None) = None
+    policy: (DiagnosticPolicy | None) = None,
+    module_path: str = ""
 ) {
     pol = policy if policy is not None else build_diagnostic_policy(prog);
+    drop_toolchain = not prog.toolchain_dependency(module_path);
     for alrt in errors {
         if alrt.code is not None and pol.is_suppressed(alrt.code, alrt.loc) {
             continue;
@@ -76,6 +70,9 @@ def deliver_alerts(
         }
         if alrt.code is not None
             and _alert_in_internal_stub(str(alrt.loc.mod_path or "")) {
+            continue;
+        }
+        if drop_toolchain and prog.toolchain_dependency(str(alrt.loc.mod_path or "")) {
             continue;
         }
         prog.warnings_had.append(alrt);
@@ -100,7 +97,7 @@ def run_pass[W: CompilerPass](
         }
         if completed.errors_had or completed.warnings_had {
             sources: dict[str, Source] = {ir_in.source.file_path: ir_in.source};
-            for nd in ir_in._in_mod_nodes {
+            for nd in ir_in._in_mod_nodes or [] {
                 sources[nd.loc.mod_path] = nd.loc.orig_src;
             }
             completed.errors_had = [
@@ -138,7 +135,7 @@ def run_pass[W: CompilerPass](
         eff = inst.ctx.policy
             if (inst is not None and inst.ctx.policy is not None)
             else pol;
-        deliver_alerts(errors, warnings, prog, eff);
+        deliver_alerts(errors, warnings, prog, eff, module_path=ir_in.loc.mod_path);
         try {
             ledger = prog.analysis;
             pass_name = pass_cls.__name__;

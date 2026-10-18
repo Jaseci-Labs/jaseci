@@ -1,6 +1,3 @@
-import from jaclang.comptime { fields, get_field }
-import from jaclang.scale.config.base_config { BaseConfig }
-
 glob DATABASE_MODES = ('auto', 'provision', 'external', 'none');
 
 def k8s_safe_slug(name: str, fallback: str = 'jaseci') -> str {
@@ -40,7 +37,7 @@ obj KubernetesConfig(BaseConfig) {
         cpu_limit: (str | None) = None,
         memory_request: (str | None) = None,
         memory_limit: (str | None) = None,
-        readiness_initial_delay: int = 10,
+        readiness_initial_delay: int = 0,
         readiness_period: int = 20,
         liveness_initial_delay: int = 10,
         liveness_period: int = 20,
@@ -61,7 +58,7 @@ obj KubernetesConfig(BaseConfig) {
         http_activation: dict[str, any] = {},
         health_check_path: str = '/docs',
         python_image: str = '',
-        wait_image: str = 'busybox',
+        wait_image: str = 'busybox:1.36',
         bundle_storage_class: str = '',
         bundle_access_mode: str = 'ReadWriteMany',
         resource_deletion_wait: int = 5,

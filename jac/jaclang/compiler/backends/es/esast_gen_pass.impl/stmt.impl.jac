@@ -1,11 +1,3 @@
-import from jaclang.compiler.backends.es.reactive_intent {
-    StateField,
-    RefField,
-    StateUpdate,
-    Effect,
-    AsyncBoundary
-}
-
 impl EsastGenPass.exit_delete_stmt with uni.DeleteStmt exit {
     stmts: list[es.Statement] = [];
     ordinal = 0;
@@ -301,6 +293,15 @@ impl EsastGenPass.exit_ctrl_stmt with uni.CtrlStmt exit {
     } else {
         stmt = self.sync_loc(es.ContinueStatement(), jac_node=here);
     }
+    if here.ctrl.name in (Tok.KW_BREAK, Tok.KW_CONTINUE) {
+        detaches = self._pass_link_detaches(enclosing_loop(here));
+        if detaches {
+            here.gen.es_ast = self.sync_loc(
+                es.BlockStatement(body=[*detaches, stmt]), jac_node=here
+            );
+            return;
+        }
+    }
     here.gen.es_ast = stmt;
 }
 
@@ -422,7 +423,7 @@ def _raised_exc_identity(cause: (uni.Expr | None)) -> tuple[bool, (str | None)] 
     if not shared.is_builtin_class {
         return (True, None);
     }
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
+
     name = shared.class_name;
     return (True, name if JAC_TYPE_REGISTRY.is_exception(name) else None);
 }
@@ -441,7 +442,7 @@ impl EsastGenPass.exit_raise_stmt with uni.RaiseStmt exit {
         callee = argument.callee;
         call_args = argument.arguments;
     }
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
+
     if callee is not None and isinstance(callee, es.Identifier) {
         (ty_known, exc_name) = _raised_exc_identity(here.cause);
         if not ty_known and JAC_TYPE_REGISTRY.is_exception(callee.name) {
@@ -821,18 +822,30 @@ impl EsastGenPass.exit_in_for_stmt with uni.InForStmt exit {
             ["_jac", "builtin", "iter"], [right], here.collection
         );
     }
-    body = self._build_block_statement(here, here.body);
+    body = self._build_pass_block(here);
+    decl: es.VariableDeclaration | es.Pattern;
     if isinstance(left, es.VariableDeclaration) {
         decl = left;
-    } else {
+    } elif self._target_confined(here) {
         pattern = self._target_to_pattern(left, here.target);
         declarator = self.sync_loc(
             es.VariableDeclarator(id=pattern, `init=None), jac_node=here.target
         );
         decl = self.sync_loc(
-            es.VariableDeclaration(declarations=[declarator], kind='const'),
+            es.VariableDeclaration(
+                declarations=[declarator],
+                kind='let' if self._target_rebound(here) else 'const'
+            ),
             jac_node=here.target
         );
+    } else {
+        frame = self._frame_scope_of(here);
+        for nm in here.target.get_all_sub_nodes(uni.Name) {
+            if frame is not None and nm.sym is not None {
+                self._hoist_into(frame, nm.sym_name, nm);
+            }
+        }
+        decl = self._target_to_pattern(left, here.target);
     }
     for_stmt = self.sync_loc(
         es.ForOfStatement(left=decl, right=right, body=body, await_=here.is_async),
@@ -863,7 +876,7 @@ impl EsastGenPass.exit_iter_for_stmt with uni.IterForStmt exit {
     ) {
         update = cast(es.AssignmentExpression, here.count_by.gen.es_ast.expression);
     }
-    body = self._build_block_statement(here, here.body);
+    body = self._build_pass_block(here);
     here.gen.es_ast = self._finish_loop(
         here,
         self.sync_loc(
@@ -885,7 +898,7 @@ impl EsastGenPass.exit_while_stmt with uni.WhileStmt exit {
         ),
         here
     );
-    body = self._build_block_statement(here, here.body);
+    body = self._build_pass_block(here);
     while_stmt = self.sync_loc(
         es.WhileStatement(`test=`test, body=body), jac_node=here
     );
@@ -893,7 +906,7 @@ impl EsastGenPass.exit_while_stmt with uni.WhileStmt exit {
 }
 
 impl EsastGenPass.exit_forever_stmt with uni.ForeverStmt exit {
-    body = self._build_block_statement(here, here.body);
+    body = self._build_pass_block(here);
     forever_stmt = self.sync_loc(
         es.WhileStatement(
             `test=self.sync_loc(es.Literal(value=True), jac_node=here), body=body

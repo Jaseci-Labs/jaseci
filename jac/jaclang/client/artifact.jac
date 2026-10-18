@@ -3,8 +3,6 @@ import from types { ModuleType }
 
 class ClientBundleError(RuntimeError) {}
 
-class MissingBunError(ClientBundleError) {}
-
 obj ClientBundle {
     has module_name: str,
         code: str,
@@ -14,9 +12,6 @@ obj ClientBundle {
 }
 
 def client_output_dir(source_path: Path) -> Path {
-    import from jaclang.server.sealed_serve { client_dist_for }
-    import from jaclang.project.config { get_config_for_path }
-    import from jaclang.project.client_paths { client_app_dir_for }
     prepared = client_dist_for(str(source_path));
     if prepared is not None {
         return prepared;
@@ -28,7 +23,6 @@ def client_output_dir(source_path: Path) -> Path {
 }
 
 def prebuilt_bundle(module: ModuleType, source_path: Path) -> ClientBundle | None {
-    import from jaclang.server.sealed_serve { client_dist_for, serve_manifest_for }
     dist = client_dist_for(str(source_path));
     if dist is None {
         return None;

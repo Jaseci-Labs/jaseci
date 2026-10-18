@@ -1,16 +1,3 @@
-import from _datetime_native {
-    dt_epoch_us,
-    dt_localtime,
-    dt_gmtime,
-    dt_tm,
-    dt_tm_gmtoff,
-    dt_tm_zone,
-    dt_strftime,
-    dt_out_buf,
-    dt_fmt_buf,
-    dt_out_str
-}
-
 glob:pub MINYEAR: int = 1,
      MAXYEAR: int = 9999;
 
@@ -128,7 +115,7 @@ def _ymd2ord(year: int, month: int, day: int) -> int {
 }
 
 
-def:pub _ord2ymd(n_in: int) -> tuple[(int, int, int)] {
+def _ord2ymd(n_in: int) -> tuple[(int, int, int)] {
     n: int = n_in - 1;
     n400: int = n // 146097;
     n = n - n400 * 146097;
@@ -1761,7 +1748,7 @@ obj:pub struct_time {
 }
 
 
-obj:pub IsoCalendarDate {
+obj IsoCalendarDate {
     has year: int = 0,
         week: int = 0,
         weekday: int = 0;

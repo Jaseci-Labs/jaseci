@@ -1,5 +1,3 @@
-import type from jaclang.compiler.frontend.unitree { Source, Token }
-
 obj Span {
     has mod_path: str = '',
         first_line: int = 0,
@@ -106,6 +104,7 @@ obj CodeLocInfo {
     has first_tok: Token,
         last_tok: Token;
 
+    static has __slots__: tuple[str, ...] = ("first_tok", "last_tok");
     has orig_src: Source { getter; }
     has mod_path: str { getter; }
     has first_line: int { getter; }

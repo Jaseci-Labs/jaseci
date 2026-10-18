@@ -1,18 +1,4 @@
 import os;
-import jaclang.compiler.frontend.unitree as uni;
-import from jaclang.compiler.frontend.constant {
-    CodeContext,
-    Tokens as Tok,
-    SymbolAccess
-}
-import from jaclang.compiler.driver.program { JacProgram }
-import from jaclang.compiler.placement.placement_pins {
-    BareImportVerdict,
-    classify_bare_import
-}
-import from jaclang.compiler.frontend.host { active_host }
-import type from jaclang.compiler.frontend.codeinfo { InteropManifest }
-import from jaclang.project.workspace_model { AppSpec }
 
 def _coerce_module(module: uni.Module, context: CodeContext) {
     module.set_code_context(context);
@@ -144,7 +130,6 @@ def classify_import(imp: uni.Import) -> BareImportVerdict {
 }
 
 def module_own_native_anchor(module: (uni.Module | None)) -> bool {
-    import from jaclang.compiler.frontend.constant { OwnershipKind }
     if module is None {
         return False;
     }
@@ -161,17 +146,8 @@ def module_own_native_anchor(module: (uni.Module | None)) -> bool {
     return False;
 }
 
-def module_demoted_native(path: str, prog: (JacProgram | None) = None) -> bool {
-    import from jaclang.compiler.placement.placement_pins { module_native_demoted }
-    return module_native_demoted(os.path.realpath(path), prog);
-}
-
 
 def plain_native_import_target(nd: uni.Import, prog: JacProgram) -> (str | None) {
-    import from jaclang.compiler.placement.placement_pins {
-        module_native_demoted,
-        effective_module_pin
-    }
     if (
         nd.is_service_import
         or nd.is_typed
@@ -192,9 +168,6 @@ def plain_native_import_target(nd: uni.Import, prog: JacProgram) -> (str | None)
         real_resolved.startswith(jaclang_root + os.sep)
         and (os.sep + 'na_stdlib' + os.sep) not in real_resolved
     ) {
-        return None;
-    }
-    if module_native_demoted(real_resolved, prog) {
         return None;
     }
     if effective_module_pin(resolved, prog) == 'native' {
@@ -221,7 +194,6 @@ def plain_native_import_target(nd: uni.Import, prog: JacProgram) -> (str | None)
 def import_declares_native_target(
     nd: uni.Import, prog: (JacProgram | None) = None
 ) -> bool {
-    import from jaclang.compiler.placement.placement_pins { effective_module_pin }
     if nd.from_loc is None {
         return False;
     }
@@ -237,7 +209,6 @@ def import_declares_native_target(
 }
 
 def native_only_import_target(nd: uni.Import, prog: JacProgram) -> (str | None) {
-    import from jaclang.compiler.placement.placement_pins { effective_module_pin }
     resolved = plain_native_import_target(nd, prog);
     if resolved is None {
         return None;
@@ -276,7 +247,6 @@ def _python_side_emits(stmt: uni.UniNode, native_module: bool) -> bool {
 }
 
 def python_side_name_refs(mod: uni.Module) -> set[str] {
-    import from jaclang.compiler.frontend.module_facts { ModuleFacts }
     native_module = mod.decided_codespace == 'native';
     emitted: list[uni.UniNode] = [];
     for (body, _strip) in ModuleFacts.iter_woven_segments(mod) {
@@ -321,13 +291,38 @@ def import_bound_names(nd: uni.Import) -> list[str] {
     return bound;
 }
 
-def is_client_native_edge_import(nd: uni.Import, prog: JacProgram) -> bool {
+def clib_decl_type_names(nd: uni.Import) -> set[str] {
+    names: set[str] = set();
+    for decl in nd.clib_decls or [] {
+        for nm in decl.get_all_sub_nodes(uni.Name) {
+            names.add(nm.value);
+        }
+    }
+    return names;
+}
+
+def is_client_native_edge_import(
+    nd: uni.Import, prog: JacProgram, client_tops: (dict[str, bool] | None) = None
+) -> bool {
     if nd.code_context == CodeContext.CLIENT {} elif nd.code_context
         == CodeContext.SERVER
-        and module_has_client_top(nd.find_parent_of_type(uni.Module)) {} else {
+        and _has_client_top(nd.find_parent_of_type(uni.Module), client_tops) {} else {
         return False;
     }
     return plain_native_import_target(nd, prog) is not None;
+}
+
+def _has_client_top(
+    module: (uni.Module | None), client_tops: (dict[str, bool] | None)
+) -> bool {
+    if client_tops is None or module is None {
+        return module_has_client_top(module);
+    }
+    key = module.loc.mod_path;
+    if key not in client_tops {
+        client_tops[key] = module_has_client_top(module);
+    }
+    return client_tops[key];
 }
 
 enum ClientImportVerdict {
@@ -394,6 +389,9 @@ def same_workspace(consumer_path: str, provider_path: str) -> bool {
     pws = host.workspace(provider_path);
     if cws is None or pws is None {
         return False;
+    }
+    if cws.toml_path == pws.toml_path {
+        return True;
     }
     return os.path.realpath(cws.toml_path) == os.path.realpath(pws.toml_path);
 }
@@ -560,7 +558,6 @@ def classify_client_import_item(
 def import_binds_client_native(
     nd: uni.Import, manifest: (InteropManifest | None)
 ) -> bool {
-    import from jaclang.compiler.frontend.codeinfo { InteropContext }
     if nd.from_loc is None or not nd.items {
         return False;
     }
@@ -594,7 +591,6 @@ def import_binds_client_native(
 }
 
 def _default_codespace_for(target_program: JacProgram) -> str {
-    import from jaclang.compiler.frontend.codeinfo { effective_default_codespace }
     opts = target_program.options;
     if opts is not None and opts.default_codespace {
         return opts.default_codespace;

@@ -4,22 +4,8 @@ import os;
 import struct;
 import sys;
 import zlib;
+import from contextvars { ContextVar }
 import from pathlib { Path }
-import from jaclang.jac0core.cache_paths { FileLock, atomic_write }
-import from jaclang.compiler.frontend.codeinfo {
-    is_compiler_source_path,
-    is_package_keyed_path,
-    native_unit_identity
-}
-import from jaclang.bootstrap_manifest {
-    COMPILER_DIGEST_ROOTS,
-    COMPILER_DIGEST_ROSTER,
-    COMPILER_IDENTITY_NAME,
-    NATIVE_LOWERED_PATHS,
-    is_native_lowered,
-    is_roster_input,
-    read_input_rules
-}
 
 glob MAGIC = b"JIR\x00",
      FORMAT_VERSION: int = 30,
@@ -330,7 +316,6 @@ def parse_header(data: (bytes | memoryview)) -> (JirHeader | None) {
 }
 
 def get_jir_cache_dir -> Path {
-    import from jaclang.jac0core.cache_paths { get_jir_cache_dir as _root }
     return _root();
 }
 
@@ -349,16 +334,12 @@ def compute_content_sha256(file_path: str) -> str {
 }
 
 def _related_files(source_path: str) -> list[tuple[str, str]] {
-    import from jaclang.compiler.driver.bccache {
-        discover_annex_files,
-        discover_style_annex
-    }
     src = Path(source_path).resolve();
     base_dir = src.parent;
     paths: set = set();
     paths |= set(discover_annex_files(str(src), '.impl.jac'));
     paths |= set(discover_annex_files(str(src), '.test.jac'));
-    style = discover_style_annex(str(src));
+    style = style_annex_of(str(src));
     if style is not None {
         paths.add(style);
     }
@@ -563,7 +544,6 @@ glob _COMPILER_DIGEST_CACHE: list[str] = [],
 
 glob PY_EMITTER_ROOTS: tuple[str, ...] = ("compiler/backends/py", ),
      PY_EMITTER_EXCLUDED: tuple[str, ...] = ("compiler/backends/py/jacpython", ),
-     DEV_EXACT_ENV: str = "JAC_DEV_EXACT",
      DEV_NATIVE_PRODUCER: str = "abi:";
 
 def _digest_manifest_path(pkg_dir: str) -> Path {
@@ -679,14 +659,23 @@ def py_emitter_digest -> str {
 }
 
 def require_exact_compiler_products {
-    os.environ[DEV_EXACT_ENV] = "1";
+    update_handoff(exact=True);
+}
+
+def _handoff -> dict[str, object] {
+    return handoff();
+}
+
+def dev_source -> str {
+    return str(_handoff().get("compiler_source") or "");
 }
 
 def dev_carry_enabled -> bool {
-    if os.environ.get(DEV_EXACT_ENV, "") in ENV_TRUTHY or precompile_required() {
+    record = _handoff();
+    if record.get("exact") {
         return False;
     }
-    dev = os.environ.get("JAC_DEV_SOURCE", "").strip();
+    dev = str(record.get("compiler_source") or "");
     if not dev {
         return False;
     }
@@ -698,6 +687,20 @@ def dev_carry_enabled -> bool {
     }
 }
 
+def abi_contract_digest(pkg_root: str) -> str {
+    h = hashlib.sha256();
+    for rel in KERNEL_ABI_CONTRACT_REL {
+        h.update(rel.encode("utf-8"));
+        path = os.path.join(pkg_root, *rel.split("/"));
+        h.update(
+            (unit_source_digest(path) if os.path.isfile(path) else "missing").encode(
+                "utf-8"
+            )
+        );
+    }
+    return h.hexdigest();
+}
+
 def native_producer_digest(kernel_build: bool = False) -> str {
     current = running_compiler_digest();
     if not kernel_build or not dev_carry_enabled() {
@@ -707,7 +710,6 @@ def native_producer_digest(kernel_build: bool = False) -> str {
     if known is None {
         import from jaclang.compiler.frontend.codeinfo { NATIVE_ABI_VERSION }
         import from jaclang.compiler.kernel_target { target_pkg_root }
-        import from jaclang.compiler.backends.native.stage0_pin { abi_contract_digest }
         known = DEV_NATIVE_PRODUCER
             + str(NATIVE_ABI_VERSION)
             + ":"
@@ -760,7 +762,6 @@ def _config_for_module(resolved: Path) -> any {
 }
 
 def _analysis_fingerprint_for(source_path: str) -> str {
-    import from jaclang.compiler.driver.compile_options { CompileOptions }
     cfg: any = None;
     try {
         cfg = _config_for_module(Path(source_path).resolve());
@@ -804,7 +805,7 @@ def _check_policy_digest(source_path: str) -> str {
     return hashlib.sha256(json.dumps(policy, sort_keys=True).encode()).hexdigest();
 }
 
-def _project_env_fingerprint(source_path: str) -> str {
+def _project_env_fingerprint_uncached(source_path: str) -> str {
     h = hashlib.sha256();
     h.update(_module_codespace_mode(source_path).encode());
     h.update(_check_policy_digest(source_path).encode());
@@ -845,7 +846,6 @@ def module_env_fingerprint(source_path: str) -> str {
 }
 
 def _module_projection(source_path: str) -> str {
-    import from jaclang.compiler.driver.compilation_context { active_options }
     options = active_options();
     if options is None {
         return '';
@@ -855,6 +855,136 @@ def _module_projection(source_path: str) -> str {
         return options.dependency_projection(source_path);
     }
     return options.module_projection();
+}
+
+glob _PREPARE_MEMO: ContextVar[dict[str, str] | None] = ContextVar(
+         'jac_prepare_memo', `default=None
+     );
+
+def begin_prepare_memo -> any {
+    return _PREPARE_MEMO.set({});
+}
+
+def end_prepare_memo(token: any) {
+    _PREPARE_MEMO.reset(token);
+}
+
+def _memoized(kind: str, source_path: str, compute: any) -> str {
+    memo = _PREPARE_MEMO.get();
+    if memo is None {
+        return compute(source_path);
+    }
+    import from jaclang.compiler.driver.compilation_context { active_options }
+    import from jaclang.compiler.frontend.host { active_host }
+    import from jaclang.compiler.frontend.codeinfo {
+        _native_target_ctx,
+        get_effective_default_codespace_override
+    }
+    key = "\x1f".join(
+        [
+            kind,
+            source_path,
+            str(id(active_options())),
+            str(id(active_host())),
+            get_effective_default_codespace_override(),
+            repr(_native_target_ctx.get(None))
+        ]
+    );
+    found = memo.get(key);
+    if found is None {
+        found = compute(source_path);
+        memo[key] = found;
+    }
+    return found;
+}
+
+def _project_env_fingerprint(source_path: str) -> str {
+    return _memoized("env", source_path, _project_env_fingerprint_uncached);
+}
+
+def compute_module_key(source_path: str) -> str {
+    return _memoized("module", source_path, _compute_module_key_uncached);
+}
+
+glob _WIRING_DIGESTS: dict[str, dict[str, str]] = {},
+     _ARCH_STAMPS: dict[str, tuple[tuple[int, int, str], str]] = {};
+
+def _arch_stamp(arch: str, package_name: str) -> (str | None) {
+    try {
+        st = os.stat(arch);
+    } except OSError {
+        return None;
+    }
+    probe = (st.st_mtime_ns, st.st_size, package_name);
+    held = _ARCH_STAMPS.get(arch);
+    if held is not None and held[0] == probe {
+        return held[1];
+    }
+    h = hashlib.sha256();
+    try {
+        with open(arch, "rb") as f {
+            h.update(f.read());
+        }
+    } except OSError {
+        return None;
+    }
+    h.update(b"\0");
+    h.update(package_name.encode());
+    stamp = h.hexdigest();
+    _ARCH_STAMPS[arch] = (probe, stamp);
+    return stamp;
+}
+
+def stored_wiring_digest(source_path: str) -> str {
+    import json;
+    if is_arch_file(source_path) {
+        return "";
+    }
+    arch = arch_file_for(source_path);
+    if arch is None {
+        return wiring_digest_for(source_path);
+    }
+    root_dir = os.path.dirname(arch);
+    facts = active_host().project_facts(root_dir);
+    package_name = (facts.package_name or "") if facts is not None else "";
+    stamp = _arch_stamp(arch, package_name + "\x00" + import_prefix_for(root_dir));
+    if stamp is None {
+        return wiring_digest_for(source_path);
+    }
+    relative = os.path.relpath(
+        os.path.realpath(source_path), os.path.realpath(root_dir)
+    );
+    table = _WIRING_DIGESTS.get(stamp);
+    store = os.path.join(
+        str(get_jir_cache_dir()), "wiring-v2", stamp[:2], stamp + ".json"
+    );
+    if table is None {
+        table = {};
+        try {
+            with open(store, "r", encoding="utf-8") as f {
+                held = json.load(f);
+            }
+            if isinstance(held, dict) {
+                table = {str(k): str(v) for (k, v) in held.items()};
+            }
+        } except (OSError, ValueError) {}
+        _WIRING_DIGESTS[stamp] = table;
+    }
+    known = table.get(relative);
+    if known is not None {
+        return known;
+    }
+    digest = wiring_digest_for(source_path);
+    table[relative] = digest;
+    try {
+        os.makedirs(os.path.dirname(store), exist_ok=True);
+        scratch_file = store + f".{os.getpid()}.tmp";
+        with open(scratch_file, "w", encoding="utf-8") as f {
+            json.dump(table, f);
+        }
+        os.replace(scratch_file, store);
+    } except OSError {}
+    return digest;
 }
 
 def unit_source_digest(path: str) -> str {
@@ -896,7 +1026,7 @@ def sidecar_unit_paths(sidecar: dict[str, any]) -> list[str] {
     return out;
 }
 
-def compute_module_key(source_path: str) -> str {
+def _compute_module_key_uncached(source_path: str) -> str {
     """A module the running compiler package owns is keyed canonically,
     whatever compilation scope is active: the package's precompile, the
     compiler's bootstrap, a consumer's analysis and a native build session
@@ -912,8 +1042,7 @@ def compute_module_key(source_path: str) -> str {
         h.update(rel.encode());
         h.update(digest.encode());
     }
-    import from jaclang.compiler.driver.wiring { wiring_digest_for }
-    h.update(wiring_digest_for(source_path).encode());
+    h.update(stored_wiring_digest(source_path).encode());
     return h.hexdigest();
 }
 
@@ -1067,52 +1196,69 @@ def module_ct_deps_section(mod: any) -> (bytes | None) {
 
 glob _DEFINITION_TEXTS: dict[str, tuple[str, dict[str, list[str]]]] = {};
 
-def _definition_texts(path: str) -> dict[str, list[str]] {
-    import from jaclang.compiler.driver.program { JacProgram }
-    import jaclang.compiler.frontend.unitree as uni;
-    import from jaclang.compiler.frontend.unitree { definition_qualname }
+def _texts_of_spans(real: str, text: str, rows: list[str]) -> dict[str, list[str]] {
+    texts: dict[str, list[str]] = {};
+    for row in rows {
+        parts = row.split(DEF_DEP_SEP);
+        if len(parts) != 3 or parts[0] != real or not parts[1] {
+            continue;
+        }
+        (start, _, stop) = parts[2].partition(",");
+        texts.setdefault(parts[1], []).append(text[int(start):int(stop)]);
+    }
+    return texts;
+}
+
+def _source_and_digest(path: str) -> (tuple[str, str] | None) {
     try {
         content_digest = compute_content_sha256(path);
         with open(path, encoding="utf-8") as handle {
-            text = handle.read();
+            return (content_digest, handle.read());
         }
     } except OSError {
+        return None;
+    }
+}
+
+def seed_definition_texts(rows: list[str]) {
+    files: set[str] = {row.split(DEF_DEP_SEP)[0] for row in rows};
+    for real in files {
+        held = _source_and_digest(real);
+        if held is None {
+            continue;
+        }
+        cached = _DEFINITION_TEXTS.get(real);
+        if cached is None or cached[0] != held[0] {
+            _DEFINITION_TEXTS[real] = (held[0], _texts_of_spans(real, held[1], rows));
+        }
+    }
+}
+
+def _definition_texts(path: str) -> dict[str, list[str]] {
+    real = os.path.realpath(path);
+    held = _source_and_digest(real);
+    if held is None {
         return {};
     }
-    cached = _DEFINITION_TEXTS.get(path);
+    (content_digest, text) = held;
+    cached = _DEFINITION_TEXTS.get(real);
     if cached is not None and cached[0] == content_digest {
         return cached[1];
     }
     texts: dict[str, list[str]] = {};
-    tree: (uni.Module | None) = None;
     try {
-        tree = JacProgram().parse_source(text, path);
+        texts = _texts_of_spans(
+            real, text, definition_span_rows(JacProgram().parse_source(text, real))
+        );
     } except Exception {}
-    if tree is not None {
-        definitions: list[uni.UniNode] = [
-            *tree.get_all_sub_nodes(uni.Ability),
-            *tree.get_all_sub_nodes(uni.Archetype),
-            *tree.get_all_sub_nodes(uni.Enum)
-        ];
-        for definition in definitions {
-            qualname = definition_qualname(definition);
-            if qualname and definition.loc {
-                texts.setdefault(qualname, []).append(
-                    text[definition.loc.pos_start:definition.loc.pos_end]
-                );
-            }
-        }
-        for impl_def in tree.get_all_sub_nodes(uni.ImplDef) {
-            qualname = ".".join(part.sym_name for part in impl_def.target);
-            if qualname and impl_def.loc {
-                texts.setdefault(qualname, []).append(
-                    text[impl_def.loc.pos_start:impl_def.loc.pos_end]
-                );
-            }
-        }
-    }
-    _DEFINITION_TEXTS[path] = (content_digest, texts);
+    _DEFINITION_TEXTS[real] = (content_digest, texts);
     return texts;
+}
+
+glob _DEFINITION_DIGESTS: dict[str, str] = {};
+
+def _definition_digest_file(key: str) -> Path {
+    return get_jir_cache_dir() / "defdigest" / compiler_generation() / key[:2] / key;
 }
 
 def definition_digest(path: str, qualname: str) -> str {
@@ -1125,6 +1271,41 @@ def definition_digest(path: str, qualname: str) -> str {
             }
         }
     }
+    key_h = hashlib.sha256();
+    key_h.update(qualname.encode());
+    try {
+        for source in files {
+            key_h.update(os.path.realpath(source).encode());
+            key_h.update(b"\0");
+            key_h.update(compute_content_sha256(source).encode());
+            key_h.update(b"\0");
+        }
+    } except OSError {
+        return _compute_definition_digest(files, qualname);
+    }
+    key = key_h.hexdigest();
+    hit = _DEFINITION_DIGESTS.get(key);
+    if hit is not None {
+        return hit;
+    }
+    store = _definition_digest_file(key);
+    try {
+        hit = store.read_text(encoding="utf-8");
+        _DEFINITION_DIGESTS[key] = hit;
+        return hit;
+    } except OSError {}
+    digest = _compute_definition_digest(files, qualname);
+    _DEFINITION_DIGESTS[key] = digest;
+    try {
+        store.parent.mkdir(parents=True, exist_ok=True);
+        tmp = store.with_name(f"{key}.{os.getpid()}.tmp");
+        tmp.write_text(digest, encoding="utf-8");
+        os.replace(tmp, store);
+    } except OSError {}
+    return digest;
+}
+
+def _compute_definition_digest(files: list[str], qualname: str) -> str {
     h = hashlib.sha256();
     h.update(qualname.encode());
     found = False;
@@ -1281,7 +1462,6 @@ def read_dep_hashes(data: bytes, base_dir: str = "") -> list[tuple[str, str]] {
 }
 
 def native_deps_section(dep_digests: dict[str, str]) -> bytes {
-    import from jaclang.compiler.driver.native_iface { native_unit_ref }
     lines: list[str] = [];
     for path in sorted(dep_digests) {
         lines.append(f"{native_unit_ref(path)}\t{dep_digests[path]}");
@@ -1290,7 +1470,6 @@ def native_deps_section(dep_digests: dict[str, str]) -> bytes {
 }
 
 def parse_native_dep_rows(raw: bytes, anchor: str = "") -> list[tuple[str, str]] {
-    import from jaclang.compiler.driver.native_iface { resolve_native_unit_ref }
     out: list[tuple[str, str]] = [];
     for line in raw.decode("utf-8").split("\n") {
         if "\t" not in line {
@@ -1376,7 +1555,6 @@ def jir_matches_source(jir_data: bytes, source_path: str) -> bool {
 }
 
 def compute_precompile_module_key(source_path: str, compiler_digest: str = "") -> str {
-    import from jaclang.compiler.driver.compilation_context { cache_scope }
     h = hashlib.sha256();
 
     with cache_scope() {
@@ -1403,29 +1581,17 @@ def jir_cacheable_source_path(source_path: str) -> bool {
         or (source_path.endswith('.jac') and not source_path.endswith('.na.jac'));
 }
 
-glob ENV_TRUTHY: set[str] = {
-         '1',
-         'true',
-         'True',
-         'TRUE',
-         'yes',
-         'YES',
-         'on',
-         'ON'
-     };
-
 def cache_mode -> tuple[bool, bool] {
-    rebuild = os.environ.get('JAC_REBUILD', '') in ENV_TRUTHY;
-    no_precompile = os.environ.get('JAC_NO_PRECOMPILE', '') in ENV_TRUTHY;
-    return (rebuild, no_precompile);
+    record = _handoff();
+    return (bool(record.get("rebuild")), bool(record.get("no_precompile")));
 }
 
-def precompile_required -> bool {
-    return os.environ.get('JAC_PRECOMPILE_REQUIRED', '') in ENV_TRUTHY;
+def set_cache_mode(rebuild: (bool | None) = None, no_precompile: (bool | None) = None) {
+    update_handoff(rebuild=rebuild or None, no_precompile=no_precompile or None);
 }
 
 def bundle_dir_allowed(bundle_dir: str) -> bool {
-    dev = os.environ.get('JAC_DEV_SOURCE', '').strip();
+    dev = dev_source();
     if not dev {
         return True;
     }
@@ -1513,8 +1679,6 @@ def _touch_generation(cache_dir: Path) {
 }
 
 def sweep_stale_generations(cache_root: Path, keep: str) -> int {
-    import from jaclang.cache.policy { sweep_dir }
-    import from jaclang.cache.registry { bucket }
     result = sweep_dir(
         cache_root, bucket("jir-modules").policy, keep={keep}, bucket="jir-modules"
     );

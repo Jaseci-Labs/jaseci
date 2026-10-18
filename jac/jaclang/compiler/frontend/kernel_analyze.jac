@@ -1,25 +1,6 @@
 import json;
 import os;
 import sys;
-import from jaclang.compiler.driver.module_analysis { ModuleAnalysis }
-import from jaclang.compiler.driver.program { JacProgram }
-import from jaclang.compiler.frontend.host {
-    active_host,
-    install_host,
-    set_package_root
-}
-import from jaclang.compiler.frontend.kernel_host { KernelHost }
-import from jaclang.compiler.frontend.kernel_inputs {
-    KernelInputs,
-    json_int,
-    json_map,
-    json_maps,
-    json_opt_str,
-    json_str_list
-}
-import from jaclang.compiler.frontend.module_facts { ModuleFacts }
-import from jaclang.compiler.frontend.srcloc { Span }
-import from jaclang.compiler.passes.context { Alert }
 
 glob ANALYSIS_OK: int = 0,
      ANALYSIS_BLOCKED: int = 1,
@@ -115,7 +96,8 @@ obj AnalysisReport {
         modules: list[ModuleReport] = [],
         errors: list[AnalysisDiag] = [],
         warnings: list[AnalysisDiag] = [],
-        misses: list[str] = [];
+        misses: list[str] = [],
+        events: list[list[str]] = [];
 
     def module(path: str) -> (ModuleReport | None) {
         resolved = os.path.realpath(path);
@@ -127,23 +109,28 @@ obj AnalysisReport {
         return None;
     }
 
+    def to_dict -> dict[str, any] {
+        return {
+            "status": self.status,
+            "message": self.message,
+            "entry": self.entry_path,
+            "modules": [m.to_dict() for m in self.modules],
+            "errors": [d.to_dict() for d in self.errors],
+            "warnings": [d.to_dict() for d in self.warnings],
+            "misses": list(self.misses),
+            "events": [list(row) for row in self.events]
+        };
+    }
+
     def to_json -> str {
-        return json.dumps(
-            {
-                "status": self.status,
-                "message": self.message,
-                "entry": self.entry_path,
-                "modules": [m.to_dict() for m in self.modules],
-                "errors": [d.to_dict() for d in self.errors],
-                "warnings": [d.to_dict() for d in self.warnings],
-                "misses": list(self.misses)
-            },
-            sort_keys=True
-        );
+        return json.dumps(self.to_dict(), sort_keys=True);
     }
 
     static def from_json(text: str) -> AnalysisReport {
-        raw = json_map(json.loads(text));
+        return AnalysisReport.from_dict(json_map(json.loads(text)));
+    }
+
+    static def from_dict(raw: dict[str, any]) -> AnalysisReport {
         return AnalysisReport(
             status=json_int(raw.get("status"), ANALYSIS_CRASHED),
             message=str(raw.get("message", "")),
@@ -151,9 +138,20 @@ obj AnalysisReport {
             modules=[module_from_dict(m) for m in json_maps(raw.get("modules"))],
             errors=[diag_from_dict(d) for d in json_maps(raw.get("errors"))],
             warnings=[diag_from_dict(d) for d in json_maps(raw.get("warnings"))],
-            misses=json_str_list(raw.get("misses"))
+            misses=json_str_list(raw.get("misses")),
+            events=json_str_pairs_of(raw.get("events"))
         );
     }
+}
+
+def json_str_pairs_of(value: object) -> list[list[str]] {
+    rows: list[list[str]] = [];
+    if isinstance(value, list) {
+        for item in value {
+            rows.append(json_str_list(item));
+        }
+    }
+    return rows;
 }
 
 def module_from_dict(raw: dict[str, any]) -> ModuleReport {
@@ -241,7 +239,8 @@ def diag_of(alert: Alert) -> AnalysisDiag {
 }
 
 def module_report(task: ModuleAnalysis) -> ModuleReport {
-    done = task.program.analysis.completed_passes.get(id(task.module));
+    build = task.program.analysis.peek(task.module);
+    done = build.done if build is not None else None;
     native = task.native
         or (
             not task.parse_failed and ModuleFacts.has_native_context_stmts(task.module)
@@ -290,43 +289,172 @@ def kernel_trace(message: str) {
     }
 }
 
-def run_kernel_analysis(
-    inputs_json: str, path: str, source: (str | None)
-) -> AnalysisReport {
-    kernel_trace("decode inputs");
-    try {
-        inputs = KernelInputs.from_json(inputs_json);
-    } except Exception as err {
-        return AnalysisReport(
-            status=ANALYSIS_CRASHED,
-            message=f"undecodable kernel inputs: {err}",
-            entry_path=path
+obj KernelRun {
+    has host: KernelHost,
+        program: JacProgram,
+        status: int = ANALYSIS_OK,
+        message: str = "";
+
+    def outcome(entry_path: str) -> AnalysisReport {
+        outcome = analysis_report(
+            self.program,
+            entry_path,
+            list(self.host.analyses.values()),
+            self.status,
+            self.message
         );
+        outcome.misses.extend(self.host.census.miss_keys);
+        outcome.events = self.host.event_rows();
+        return outcome;
     }
+}
+
+def run_kernel_session(
+    inputs: KernelInputs,
+    path: str,
+    source: (str | None),
+    with_codegen: bool,
+    asker: (HostAsker | None) = None,
+    kernel_asker: bool = False
+) -> KernelRun {
     if inputs.package_root {
         set_package_root(inputs.package_root);
     }
-    host = KernelHost(inputs=inputs);
+    host = KernelHost(inputs=inputs, asker=asker, kernel_asker=kernel_asker);
     host.census.trace = bool(os.environ.get("JAC_KERNEL_TRACE"));
+    run = KernelRun(host=host, program=JacProgram());
     previous = active_host();
+    host.loader = previous;
     install_host(host);
-    program = JacProgram();
-    status = ANALYSIS_OK;
-    message = "";
-    kernel_trace(f"analyze {path}");
+    kernel_trace(f"{'compile' if with_codegen else 'analyze'} {path}");
     try {
         options = inputs.request.to_options();
-        host.compile_module(program, path, source, options);
+        if with_codegen {
+            host.close_over(options);
+        }
+        host.compile_module(run.program, path, source, options);
+        if with_codegen {
+            listed: set[str] = set();
+            for emit_path in inputs.emit_paths {
+                listed.add(os.path.realpath(emit_path));
+            }
+            tried: set[str] = set();
+            tried.add(os.path.realpath(path));
+            emitted = True;
+            while emitted {
+                emitted = False;
+                reached: list[str] = [];
+                for analysed in host.analyses {
+                    reached.append(analysed);
+                }
+                for real in reached {
+                    if real in tried or real in host.units {
+                        continue;
+                    }
+                    tried.add(real);
+                    if real not in listed and not host.wants_unit(real) {
+                        continue;
+                    }
+                    host.compile_module(run.program, real, None, options);
+                    emitted = True;
+                }
+            }
+        }
     } except Exception as err {
-        status = ANALYSIS_CRASHED;
-        message = f"{type(err).__name__}: {err}";
+        run.status = ANALYSIS_CRASHED;
+        run.message = f"{type(err).__name__}: {err}";
+        running = run.program.analysis.running;
+        if running is not None {
+            where = running.pass_name;
+            visiting = running.current_node;
+            if visiting is not None and visiting.loc {
+                loc = visiting.loc;
+                where += f" at {loc.mod_path}:{loc.first_line}:{loc.col_start}";
+            }
+            run.message += f" (in {where})";
+        }
     } finally {
         install_host(previous);
     }
-    kernel_trace(f"report status {status}");
-    outcome = analysis_report(
-        program, path, list(host.analyses.values()), status, message
+    kernel_trace(f"report status {run.status}");
+    return run;
+}
+
+def decode_inputs(inputs_json: str) -> (KernelInputs | str) {
+    kernel_trace("decode inputs");
+    try {
+        return KernelInputs.from_json(inputs_json);
+    } except Exception as err {
+        return f"undecodable kernel inputs: {err}";
+    }
+}
+
+def run_kernel_analysis(
+    inputs_json: str,
+    path: str,
+    source: (str | None),
+    asker: (HostAsker | None) = None,
+    kernel_asker: bool = False
+) -> AnalysisReport {
+    inputs = decode_inputs(inputs_json);
+    if isinstance(inputs, str) {
+        return AnalysisReport(status=ANALYSIS_CRASHED, message=inputs, entry_path=path);
+    }
+    return run_kernel_session(inputs, path, source, False, asker, kernel_asker).outcome(
+        path
     );
-    outcome.misses.extend(host.census.miss_keys);
-    return outcome;
+}
+
+obj CompileReport {
+    has analysis: AnalysisReport,
+        units: list[UnitProducts] = [];
+
+    def unit(path: str) -> (UnitProducts | None) {
+        resolved = os.path.realpath(path);
+        for candidate in self.units {
+            if os.path.realpath(candidate.path) == resolved {
+                return candidate;
+            }
+        }
+        return None;
+    }
+
+    def to_json -> str {
+        return json.dumps(
+            {
+                "analysis": self.analysis.to_dict(),
+                "units": [products_record(u) for u in self.units]
+            },
+            sort_keys=True
+        );
+    }
+
+    static def from_json(text: str) -> CompileReport {
+        raw = json_map(json.loads(text));
+        return CompileReport(
+            analysis=AnalysisReport.from_dict(json_map(raw.get("analysis"))),
+            units=[products_from_record(u) for u in json_maps(raw.get("units"))]
+        );
+    }
+}
+
+def run_kernel_compile(
+    inputs_json: str,
+    path: str,
+    source: (str | None),
+    asker: (HostAsker | None) = None,
+    kernel_asker: bool = False
+) -> CompileReport {
+    inputs = decode_inputs(inputs_json);
+    if isinstance(inputs, str) {
+        return CompileReport(
+            analysis=AnalysisReport(
+                status=ANALYSIS_CRASHED, message=inputs, entry_path=path
+            )
+        );
+    }
+    run = run_kernel_session(inputs, path, source, True, asker, kernel_asker);
+    return CompileReport(
+        analysis=run.outcome(path), units=list(run.host.units.values())
+    );
 }

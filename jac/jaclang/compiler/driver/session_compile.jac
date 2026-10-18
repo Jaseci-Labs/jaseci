@@ -1,8 +1,4 @@
 import os;
-import from jaclang.compiler.driver.compile_options { CompileOptions }
-import from jaclang.compiler.driver.program { JacProgram }
-import jaclang.compiler.frontend.unitree as uni;
-import from jaclang.compiler.frontend.host { active_host }
 
 obj SessionContext {
     has caller: JacProgram,
@@ -22,17 +18,6 @@ obj SessionContext {
 
 obj CompileFrame {
     has nested: bool = False;
-}
-
-obj AttemptCrash {
-    has kind: str,
-        text: str;
-}
-
-obj AttemptMark {
-    has program: JacProgram,
-        errors: int = 0,
-        warnings: int = 0;
 }
 
 obj SessionHooks {
@@ -65,6 +50,8 @@ obj SessionHooks {
         return compile_once(self, file_path, target_program, use_str, options);
     }
 
+    def assemble_python(program: JacProgram, module: uni.Module) {}
+    def assemble_native(program: JacProgram, module: uni.Module, checking: bool) {}
     def run_module(
         file_path: str,
         target_program: JacProgram,
@@ -76,10 +63,6 @@ obj SessionHooks {
 def select_context(
     file_path: str, program: JacProgram, options: CompileOptions
 ) -> SessionContext {
-    import from jaclang.compiler.driver.compilation_context {
-        bind_options,
-        context_program
-    }
     target = program;
     if not program.internal {
         options = bind_options(file_path, program, options);
@@ -129,6 +112,9 @@ def inherit_session_options(
     if closure is not None and closure is not options and closure.need_full_ast {
         options.need_full_ast = True;
     }
+    if closure is not None and closure is not options and closure.native_tree_demand {
+        options.native_tree_demand = True;
+    }
     program.options = options;
     if options.default_codespace {
         import from jaclang.compiler.frontend.codeinfo {
@@ -139,78 +125,6 @@ def inherit_session_options(
     return options;
 }
 
-def mark_attempt(program: JacProgram) -> AttemptMark {
-    return AttemptMark(
-        program=program,
-        errors=len(program.errors_had),
-        warnings=len(program.warnings_had)
-    );
-}
-
-def demotes_native_failure(
-    mark: AttemptMark,
-    file_path: str,
-    options: CompileOptions,
-    mod: (uni.Module | None),
-    crashed: bool
-) -> bool {
-    program = mark.program;
-    probe = mod
-        if mod is not None
-        else program.mod.hub.get(os.path.realpath(file_path));
-    inferred_native = not options.aot_mode
-        and not options.force_codespace
-        and probe is not None
-        and probe.decided_codespace == 'native';
-    return inferred_native and (crashed or len(program.errors_had) > mark.errors);
-}
-
-def ice_raise_requested(mark: AttemptMark) -> bool {
-    return len(mark.program.errors_had) == mark.errors
-        and bool(os.environ.get('JAC_NATIVE_ICE_RAISE'));
-}
-
-def demote_native_failure(
-    mark: AttemptMark, file_path: str, crash: (AttemptCrash | None)
-) {
-    program = mark.program;
-    resolved = os.path.realpath(file_path);
-    is_ice = crash is not None and len(program.errors_had) == mark.errors;
-    alerts = program.errors_had[mark.errors:];
-    crash_text = crash.text if crash is not None else "";
-    crash_kind = crash.kind if crash is not None else "";
-    first_err = alerts[0].pretty_print().split('\n')[0] if alerts else crash_text;
-    code = alerts[0].code.code
-        if (alerts and alerts[0].code is not None)
-        else crash_kind;
-    host = active_host();
-    host.record_native_coverage(
-        resolved, 'ice' if is_ice else 'demoted', code, first_err
-    );
-    host.record_native_verdict(program, resolved, code, first_err);
-    del program.errors_had[mark.errors:];
-    del program.warnings_had[mark.warnings:];
-    try {
-        program.invalidate_module(resolved);
-    } except Exception {}
-    try {
-        import from jaclang.compiler.placement.placement_solver {
-            invalidate_importers_es
-        }
-        for stale in invalidate_importers_es(program, resolved) {
-            drop_demoted_native_bindings(stale, resolved);
-        }
-    } except Exception as reset_exc {
-        import logging;
-        logging.getLogger(__name__).warning(
-            f"native demotion of {resolved} could not reset its importers "
-            f"({reset_exc}); stale client bindings may persist until a rebuild."
-        );
-    }
-    (note, style) = na_demotion_note(file_path, first_err, is_ice);
-    host.note(note, style);
-}
-
 def compile_in_session(
     hooks: SessionHooks,
     file_path: str,
@@ -218,17 +132,6 @@ def compile_in_session(
     use_str: (str | None),
     options: CompileOptions
 ) -> uni.Module {
-    import from jaclang.compiler.driver.compilation_context {
-        compilation_scope,
-        owner_scope_options
-    }
-    import from jaclang.compiler.driver.pass_driver { compile_progress }
-    import from jaclang.compiler.frontend.codeinfo {
-        get_effective_default_codespace_override,
-        reset_native_unit_compile,
-        set_effective_default_codespace,
-        set_native_unit_compile
-    }
     ctx = select_context(file_path, program, options);
     target = ctx.target;
     with compilation_scope(owner_scope_options(target, ctx.options)) {
@@ -275,28 +178,12 @@ def compile_attempts(
     use_str: (str | None),
     options: CompileOptions
 ) -> uni.Module {
-    mark = mark_attempt(program);
-    mod: (uni.Module | None) = None;
-    crash: (AttemptCrash | None) = None;
     try {
-        mod = hooks.compile_attempt(file_path, program, use_str, options);
+        return hooks.compile_attempt(file_path, program, use_str, options);
     } except Exception as err {
         hooks.check_crash(err, file_path);
-        if not demotes_native_failure(mark, file_path, options, None, True)
-            or ice_raise_requested(mark) {
-            raise;
-        }
-        crash = AttemptCrash(
-            kind=type(err).__name__, text=f"{type(err).__name__}: {err}"
-        );
+        raise;
     }
-    if crash is None and mod is not None {
-        if not demotes_native_failure(mark, file_path, options, mod, False) {
-            return mod;
-        }
-    }
-    demote_native_failure(mark, file_path, crash);
-    return hooks.compile_attempt(file_path, program, use_str, options);
 }
 
 def compile_once(
@@ -319,27 +206,7 @@ def compile_once(
     return hooks.run_module(file_path, program, use_str, options);
 }
 
-def na_demotion_note(
-    file_path: str, first_err: str, is_ice: bool
-) -> tuple[(str, str)] {
-    if is_ice {
-        msg = (
-            f"warning: {file_path} hit an internal compiler error during "
-            + "native lowering and fell back to the server codespace "
-            + f"({first_err}); this is a compiler bug -- please report it. "
-            + "Set JAC_NATIVE_ICE_RAISE=1 to surface the full traceback."
-        );
-        return (msg, "yellow");
-    }
-    msg = (
-        f"note: {file_path} preferred native but did not lower; "
-        + f"compiled in the server codespace ({first_err})"
-    );
-    return (msg, "dim");
-}
-
-def drop_demoted_native_bindings(mod: uni.Module, resolved: str) {
-    import from jaclang.compiler.frontend.codeinfo { InteropContext, InteropManifest }
+def drop_native_bindings(mod: uni.Module, resolved: str) {
     key = os.path.realpath(resolved);
     manifest = mod.gen.interop_manifest;
     if not isinstance(manifest, InteropManifest) or not manifest.bindings {

@@ -1,11 +1,9 @@
 import inspect;
 import typing;
-import from jaclang.runtime.object_interop { is_record }
+
 import from enum { EnumMeta }
 import from types { UnionType }
 import from typing { Union, get_args, get_origin, get_type_hints }
-import from jaclang.server.serving.datatypes { Request, UploadFile }
-import from jaclang.server.serving.endpoint { APIParameter, JEndPoint, ParameterType }
 
 
 obj RequestValidationError(Exception) {
@@ -359,7 +357,7 @@ def bind_parameters(ep: JEndPoint, request: Request, body_json: any) -> dict[str
     kwargs: dict[str, any] = {};
     errors: list[dict[str, any]] = [];
     declared: set[str] = set();
-    for param in (ep.parameters or []) {
+    for param in ep.declared_parameters() {
         declared.add(param.name);
         loc = str(param.kind.value)
             if isinstance(param.kind, ParameterType)

@@ -1,84 +1,5 @@
 """The zlib module: its three stream types, the error type and the constants."""
 
-import from jaclang.runtime.python.cpython_api {
-    NULL,
-    PyArg_ParseTupleAndKeywords,
-    PyBool_FromLong,
-    PyModule_AddIntConstant,
-    PyModule_AddObjectRef,
-    PyObject,
-    PyUnicode_FromString,
-    Py_NewRef,
-    jacpy_release
-}
-import from jaclang.runtime.python.bindings.module {
-    ModuleDefinition,
-    ModuleHooks,
-    add_owned,
-    add_state_owned,
-    jacpy_binding_exception,
-    jacpy_binding_state_set
-}
-import from jaclang.runtime.python.bindings.type {
-    TypeDefinition,
-    TypeHooks,
-    TypeFlags,
-    PropertyDefinition,
-    PropertyCallbacks
-}
-import from jaclang.runtime.python.bindings.payload {
-    dispose_payload,
-    traverse_payload,
-    jacpy_binding_native_get,
-    jacpy_binding_native_present
-}
-import from jaclang.runtime.python.bindings.arguments {
-    BoundArguments,
-    CallSignature,
-    invoke
-}
-import from jaclang.runtime.python.bindings.converters { convert_int }
-import from jaclang.runtime.python.bindings.clinic.zlib {
-    module_methods,
-    Compress_methods,
-    Decompress_methods,
-    ZlibDecompressor_methods
-}
-import from jaclang.runtime.python.modules.zlib {
-    ZlibStream,
-    ZlibDecompressorState,
-    Compress_token,
-    Decompress_token,
-    ZlibDecompressor_token,
-    COMPRESS_TYPE,
-    DECOMPRESS_TYPE,
-    DECOMPRESSOR_TYPE,
-    ZLIB_ERROR,
-    ZLIB_VERSION,
-    MAX_WBITS,
-    DEFLATED,
-    DEF_MEM_LEVEL,
-    DEF_BUF_SIZE,
-    Z_NO_COMPRESSION,
-    Z_BEST_SPEED,
-    Z_BEST_COMPRESSION,
-    Z_DEFAULT_COMPRESSION,
-    Z_FILTERED,
-    Z_HUFFMAN_ONLY,
-    Z_RLE,
-    Z_FIXED,
-    Z_DEFAULT_STRATEGY,
-    Z_NO_FLUSH,
-    Z_PARTIAL_FLUSH,
-    Z_SYNC_FLUSH,
-    Z_FULL_FLUSH,
-    Z_FINISH,
-    Z_BLOCK,
-    Z_TREES,
-    runtime_version,
-    zlib_decompressor_new
-}
-
 def:priv compress_dealloc(instance: ptr[PyObject]) {
     dispose_payload(instance, Compress_token.handle);
 }
@@ -161,6 +82,7 @@ def:priv decompressor(instance: ptr[PyObject]) -> ZlibDecompressorState | None {
 }
 
 def:priv decompressor_dealloc(instance: ptr[PyObject]) {
+    record_clear(jacpy_binding_record(instance, ZlibDecompressor_token.handle), 16);
     dispose_payload(instance, ZlibDecompressor_token.handle);
 }
 
@@ -170,35 +92,18 @@ def:priv decompressor_traverse(
     return traverse_payload(instance, ZlibDecompressor_token.handle, visitor, context);
 }
 
-def:priv decompressor_eof(instance: ptr[PyObject], context: u64) -> ptr[PyObject] {
-    state = decompressor(instance);
-    return PyBool_FromLong(i64(state.eof)) if state is not None else NULL;
-}
-
-def:priv decompressor_unused_data(
-    instance: ptr[PyObject], context: u64
-) -> ptr[PyObject] {
-    state = decompressor(instance);
-    return Py_NewRef(state.unused_data) if state is not None else NULL;
-}
-
-def:priv decompressor_needs_input(
-    instance: ptr[PyObject], context: u64
-) -> ptr[PyObject] {
-    state = decompressor(instance);
-    return PyBool_FromLong(i64(state.needs_input)) if state is not None else NULL;
-}
-
 # PyArg_ParseTupleAndKeywords(args, kwargs, "|iO:_ZlibDecompressor", ...).
 glob:priv decompressor_signature = CallSignature(
-         "_ZlibDecompressor", ["wbits", "zdict"], 0, 2
+         "_ZlibDecompressor", ["wbits", "zdict"], 0, 2, parser=PARSE_FORMAT_KEYWORDS
      );
 
 def:priv decompressor_bound(args: BoundArguments) -> ptr[PyObject] {
     wbits = MAX_WBITS;
+    args.reach(0);
     if args.values[0] != NULL {
         wbits = convert_int(args.values[0]);
     }
+    args.reach(2);
     return zlib_decompressor_new(args.context, wbits, args.values[1]);
 }
 
@@ -210,7 +115,7 @@ def:priv decompressor_create(
 
 glob:priv decompressor_type = TypeDefinition(
          "zlib._ZlibDecompressor",
-         "_ZlibDecompressor(wbits=15, zdict=b'')\n--\n\nCreate a decompressor object for decompressing data incrementally.\n\n  wbits = 15\n  zdict\n     The predefined compression dictionary. This is a sequence of bytes\n     (such as a bytes object) containing subsequences that are expected\n     to occur frequently in the data that is to be compressed. Those\n     subsequences that are expected to be most common should come at the\n     end of the dictionary. This must be the same dictionary as used by the\n     compressor that produced the input data.\n\n",
+         ZlibDecompressor__new____doc__,
          ZlibDecompressor_methods,
          u64(TypeFlags.IMMUTABLE.value | TypeFlags.GC.value),
          TypeHooks(
@@ -218,26 +123,30 @@ glob:priv decompressor_type = TypeDefinition(
              dealloc=decompressor_dealloc,
              traverse=decompressor_traverse
          ),
-         [
-             PropertyDefinition(
+         members=[
+             MemberField(
                  "eof",
-                 PropertyCallbacks(read=decompressor_eof),
+                 MemberType.BOOL.value,
                  0,
-                 "True if the end-of-stream marker has been reached."
+                 readonly=True,
+                 doc=ZlibDecompressor_eof__doc__
              ),
-             PropertyDefinition(
+             MemberField(
                  "unused_data",
-                 PropertyCallbacks(read=decompressor_unused_data),
-                 0,
-                 "Data found after the end of the compressed stream."
+                 MemberType.OBJECT_EX.value,
+                 8,
+                 readonly=True,
+                 doc=ZlibDecompressor_unused_data__doc__
              ),
-             PropertyDefinition(
+             MemberField(
                  "needs_input",
-                 PropertyCallbacks(read=decompressor_needs_input),
-                 0,
-                 "True if more input is needed before more decompressed data can be produced."
+                 MemberType.BOOL.value,
+                 1,
+                 readonly=True,
+                 doc=ZlibDecompressor_needs_input_doc
              )
-         ]
+         ],
+         record_size=16
      );
 
 def:priv store(module: ptr[PyObject], slot: int, value: ptr[PyObject]) -> bool {
@@ -262,7 +171,7 @@ def:priv execute(module: ptr[PyObject]) -> i32 {
             decompressor_type.create(module)
         )
         or not add_state_owned(
-            module, ZLIB_ERROR, "error", jacpy_binding_exception("zlib.error", "", "")
+            module, ZLIB_ERROR, "error", jacpy_binding_exception("zlib.error", NULL, "")
         ) {
         return i32(-1);
     }

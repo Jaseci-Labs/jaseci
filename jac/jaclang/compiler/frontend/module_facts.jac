@@ -1,34 +1,3 @@
-import from jaclang.compiler.frontend.roles { Kid }
-import from jaclang.compiler.frontend.unitree {
-    Ability,
-    Archetype,
-    Assignment,
-    AtomTrailer,
-    ConcurrentExpr,
-    ContextAwareNode,
-    ElementStmt,
-    Enum,
-    FuncCall,
-    GlobalVars,
-    ImplDef,
-    Import,
-    Module,
-    ModuleCode,
-    ModuleItem,
-    ListVal,
-    LambdaExpr,
-    Name,
-    literal_string_value,
-    TupleVal,
-    UniNode,
-    YieldExpr
-}
-import from jaclang.compiler.frontend.constant {
-    CodeContext,
-    NATIVE_ERASED_TYPE_MARKERS,
-    TYPE_PARAM_CONSTRUCTORS
-}
-
 obj ModuleFacts {
     static def ability_is_generator(ability: Ability) -> bool {
         pending: list[UniNode] = list(ModuleFacts.unwrap_body(ability) or []);
@@ -127,6 +96,18 @@ obj ModuleFacts {
             return body;
         }
         return None;
+    }
+
+    static def merged_body(module: Module) -> list[UniNode] {
+        merged: list[UniNode] = [];
+        for (body, strip_impl_defs) in ModuleFacts.iter_woven_segments(module) {
+            for item in body {
+                if not (strip_impl_defs and isinstance(item, ImplDef)) {
+                    merged.append(item);
+                }
+            }
+        }
+        return merged;
     }
 
     static def iter_woven_segments(module: Module) -> list[tuple[list[UniNode], bool]] {
