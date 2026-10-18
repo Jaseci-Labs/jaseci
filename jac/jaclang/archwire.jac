@@ -14160,9 +14160,6 @@ graph import scale.deploy.target.kubernetes.utils {
         get_cluster_provider,
         resize_pvc_if_needed
     }
-    kubernetes_utils --> scale.deploy.target.kubernetes.manifest_builder._default_request_within_limit {
-        parse_storage_quantity
-    }
     kubernetes_utils --> scale.deploy.target.kubernetes.monitoring {
         delete_if_exists,
         delete_k8s_secret

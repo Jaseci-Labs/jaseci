@@ -636,6 +636,10 @@ test "a default memory request never exceeds a lower memory_limit" {
         assert gateway["limits"]["memory"] == "1Gi" , gateway;
         assert resources(False, memory_limit="512Mi")["requests"]["memory"] == "512Mi";
         assert resources(True, memory_limit="4Gi")["requests"]["memory"] == "2Gi";
+        assert resources(True, memory_limit="1.5Gi")["requests"]["memory"] == "1.5Gi";
+        assert resources(False, memory_limit="0.5Gi")["requests"]["memory"] == "0.5Gi";
+        assert resources(True, memory_limit="1500M")["requests"]["memory"] == "1500M";
+        assert resources(True, memory_limit="3e9")["requests"]["memory"] == "2Gi";
         explicit = resources(True, memory_request="2Gi", memory_limit="1Gi");
         assert explicit["requests"]["memory"] == "2Gi" , explicit;
     } finally {

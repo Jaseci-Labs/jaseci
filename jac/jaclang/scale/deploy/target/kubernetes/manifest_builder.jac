@@ -231,12 +231,50 @@ def with_config_revision(manifest: dict[str, any], revision: str) -> dict[str, a
 }
 
 
-def _default_request_within_limit(request: str, limit: str) -> str {
-    try {
-        if parse_storage_quantity(request) > parse_storage_quantity(limit) {
-            return limit;
+glob _QUANTITY_SUFFIXES: dict[str, float] = {
+         "Ki": 1024.0,
+         "Mi": 1024.0 ** 2,
+         "Gi": 1024.0 ** 3,
+         "Ti": 1024.0 ** 4,
+         "Pi": 1024.0 ** 5,
+         "Ei": 1024.0 ** 6,
+         "m": 1e-3,
+         "k": 1e3,
+         "M": 1e6,
+         "G": 1e9,
+         "T": 1e12,
+         "P": 1e15,
+         "E": 1e18
+     };
+
+
+def _quantity_value(quantity: str) -> float | None {
+    q = quantity.strip();
+    scale = 1.0;
+    for (suffix, factor) in _QUANTITY_SUFFIXES.items() {
+        if q.endswith(suffix) and len(q) > len(suffix) {
+            q = q[:-len(suffix)];
+            scale = factor;
+            break;
         }
-    } except ValueError {}
+    }
+    try {
+        value = float(q);
+    } except ValueError {
+        return None;
+    }
+    return value * scale if value == value and value >= 0 else None;
+}
+
+
+def _default_request_within_limit(request: str, limit: str) -> str {
+    request_value = _quantity_value(request);
+    limit_value = _quantity_value(limit);
+    if request_value is not None
+        and limit_value is not None
+        and request_value > limit_value {
+        return limit;
+    }
     return request;
 }
 
