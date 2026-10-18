@@ -1,3 +1,4 @@
+import gc;
 import os;
 import sys;
 import time;
@@ -34,7 +35,10 @@ import from jaclang.compiler.driver.compile_options { CompileOptions }
 import from jaclang.compiler.driver.native_iface { NativeIface }
 
 glob SLOW_STEP_SECONDS: float = 2.0,
-     DEMOTED_SYMBOL_SUFFIX: str = ".__jac_demoted";
+     DEMOTED_SYMBOL_SUFFIX: str = ".__jac_demoted",
+     _HEAP_HELD: list[bool] = [False];
+
+class NativeBuildStopped(BaseException) {}
 
 obj NativeUnitEntry {
     has path: str,
@@ -60,7 +64,12 @@ obj NativeUnitRegistry {
         failures: dict[str, str] = {},
         compiled_paths: list[str] = [],
         progress: (Callable[[str], None] | None) = None,
-        progress_steps: int = 0;
+        progress_steps: int = 0,
+        cold: bool = False,
+        stop_after: int = 0,
+        lowered_units: int = 0,
+        unit_lower_seconds: dict[str, float] = {},
+        unit_functions: dict[str, tuple[int, int]] = {};
 
     def postinit {
         self.building = set();
@@ -198,6 +207,13 @@ obj NativeUnitRegistry {
         self._add_time(name, time.perf_counter() - started);
     }
 
+    def _timed_unit(name: str, path: str, started: float) {
+        elapsed = time.perf_counter() - started;
+        self._add_time(name, elapsed);
+        self.unit_lower_seconds[path] = self.unit_lower_seconds.get(path, 0.0)
+            + elapsed;
+    }
+
     def phase_summary -> str {
         times = self.prog.analysis.phase_time;
         events = self.prog.analysis.cache_events;
@@ -209,14 +225,16 @@ obj NativeUnitRegistry {
             f"  Kernel phases: analysis {times.get('NATIVE_ANALYSIS', 0.0):.1f}s "
             f"({frontend}), lowering {times.get('NATIVE_LOWER', 0.0):.1f}s, "
             f"optimize {times.get('NATIVE_OPTIMIZE', 0.0):.1f}s, "
-            f"emit {times.get('NATIVE_EMIT', 0.0):.1f}s; "
+            f"emit {times.get('NATIVE_EMIT', 0.0):.1f}s, "
+            f"gc settle {times.get('NATIVE_GC_SETTLE', 0.0):.1f}s; "
             f"units analysed/lowered/optimized/emitted "
             f"{events.get('native_unit_analysis', 0)}/"
             f"{events.get('native_unit_lower', 0)}/"
             f"{events.get('native_unit_codegen', 0)}/"
             f"{events.get('native_object_emit', 0)}; "
             f"interface hits {events.get('native_iface_hit', 0)}, "
-            f"dependency misses {events.get('native_dep_miss', 0)}"
+            f"dependency misses {events.get('native_dep_miss', 0)}, "
+            f"lowered inside a consumer {events.get('native_nested_lower', 0)}"
         );
     }
 
@@ -515,7 +533,7 @@ obj NativeUnitRegistry {
             );
         }
         (rebuild, _) = cache_mode();
-        if not rebuild and not options.no_ir_cache {
+        if not rebuild and not options.no_ir_cache and not self.cold {
             self.checking.add(resolved);
             try {
                 found = self._read_from_disk(
@@ -663,6 +681,9 @@ obj NativeUnitRegistry {
         layouts that lowering records; a build that later needs the products
         compiles the unit again through `bitcode_for` or `object_for`.""";
         if self.session is not None {
+            if self.session.discovery_open {
+                self._event("native_nested_lower");
+            }
             return self.session.lower(path, use_str);
         }
         import from jaclang.compiler.backends.native.link_plan { build_link_plan }
@@ -703,9 +724,9 @@ obj NativeUnitRegistry {
         import json;
         import from jaclang.compiler.backends.native.na_compile_pass {
             emit_unit_object,
-            optimize_unit_texts,
-            require_native_ir
+            optimize_unit_ir
         }
+        import from jaclang.compiler.backends.native.lowering { native_fallbacks_in_ir }
         import from jaclang.compiler.driver.native_iface { native_layout_from_dict }
         import from jaclang.compiler.frontend.codeinfo { CodeGenTarget }
         opts = options if options is not None else self._options();
@@ -718,23 +739,25 @@ obj NativeUnitRegistry {
             return None;
         }
         iface.resolve_deps(resolved);
+        fallbacks = native_fallbacks_in_ir(ir_text);
         if opts.native_required_for(resolved) {
-            require_native_ir(ir_text);
+            fallbacks.require();
         }
         if opts.debug_ir {
             import from jaclang.compiler.frontend.host { active_host }
             active_host().save_native_debug_ir(resolved, ir_text);
         }
         debug = bool(opts.native_debug);
-        bitcode = optimize_unit_texts(
-            [ir_text], opts, 0 if debug else int(opts.opt_level or 0)
-        )[0];
+        bitcode = optimize_unit_ir(
+            ir_text, opts, 0 if debug else int(opts.opt_level or 0)
+        );
         carrier = self.prog.hub.artifacts.get(resolved);
         if carrier is None {
             carrier = CodeGenTarget();
             self.prog.hub.artifacts[resolved] = carrier;
         }
         carrier.llvm_ir = ir_text;
+        carrier.native_fallbacks = fallbacks;
         carrier.native_iface = iface;
         carrier.native_bitcode = bitcode;
         carrier.native_object = emit_unit_object(bitcode, opts) if debug else None;
@@ -887,6 +910,56 @@ obj NativeUnitRegistry {
     }
 }
 
+obj SessionHeap {
+    has held: bool = False,
+        declined: bool = False,
+        thresholds: tuple[int, int, int] = (0, 0, 0);
+
+    def take -> bool {
+        if self.held {
+            return True;
+        }
+        if self.declined {
+            return False;
+        }
+        if _HEAP_HELD[0]
+            or not gc.isenabled()
+            or os.environ.get("JAC_GC_NO_COMPILE_BOOST")
+            or gc.get_freeze_count() > 0 {
+            self.declined = True;
+            return False;
+        }
+        _HEAP_HELD[0] = True;
+        self.held = True;
+        import from jaclang.compiler.driver.compiler { COMPILE_GC_THRESHOLDS }
+        self.thresholds = gc.get_threshold();
+        if self.thresholds[0] < COMPILE_GC_THRESHOLDS[0] {
+            gc.set_threshold(*COMPILE_GC_THRESHOLDS);
+        }
+        return True;
+    }
+
+    def settle -> float {
+        if not self.held {
+            return 0.0;
+        }
+        started = time.perf_counter();
+        gc.collect();
+        gc.freeze();
+        return time.perf_counter() - started;
+    }
+
+    def release {
+        if not self.held {
+            return;
+        }
+        self.held = False;
+        _HEAP_HELD[0] = False;
+        gc.unfreeze();
+        gc.set_threshold(*self.thresholds);
+    }
+}
+
 obj NativeBuildSession {
     has registry: NativeUnitRegistry,
         options: CompileOptions,
@@ -895,7 +968,8 @@ obj NativeBuildSession {
         source_keys: dict[str, str | None] = {},
         deferred: list[set[str]] = [],
         discovery_open: list[bool] = [],
-        unlowerable: set[str] = set();
+        unlowerable: set[str] = set(),
+        heap: SessionHeap = SessionHeap();
 
     def discovering -> bool {
         return bool(self.discovery_open) and self.discovery_open[-1];
@@ -918,6 +992,15 @@ obj NativeBuildSession {
         self.prog = JacProgram();
         self.prog.options = self.options.clone_for_native_import();
         self.prog._natives = self.registry;
+        if self.registry.cold {
+            self.prog.iface_registry().cold = True;
+        }
+    }
+
+    def settle_heap {
+        if self.heap.held and not self.discovery_open {
+            self.registry._add_time("NATIVE_GC_SETTLE", self.heap.settle());
+        }
     }
 
     def lower(path: str, use_str: (str | None) = None) -> (NativeUnitEntry | None) {
@@ -925,6 +1008,7 @@ obj NativeBuildSession {
         if resolved in self.registry.building {
             return None;
         }
+        self.heap.take();
         self.registry.building.add(resolved);
         import from jaclang.compiler.frontend.codeinfo {
             set_native_unit_compile,
@@ -952,6 +1036,7 @@ obj NativeBuildSession {
                 self.registry._timed("NATIVE_ANALYSIS", started);
                 self.registry._event("native_unit_analysis");
                 self.registry.note_slow_step("analyzing", resolved, started);
+                self.settle_heap();
             }
             if len(self.prog.errors_had) > errors_before {
                 return None;
@@ -975,7 +1060,7 @@ obj NativeBuildSession {
                     pending = self.deferred.pop();
                     self.discovery_open.pop();
                 }
-                self.registry._timed("NATIVE_LOWER", started);
+                self.registry._timed_unit("NATIVE_LOWER", resolved, started);
                 if not pending {
                     break;
                 }
@@ -1007,12 +1092,21 @@ obj NativeBuildSession {
                 return None;
             }
             import from jaclang.compiler.backends.native.na_compile_pass {
-                settle_unit_ir
+                settle_unit_ir,
+                unit_function_counts
             }
             settle_unit_ir(mod);
+            self.registry.unit_functions[resolved] = unit_function_counts(
+                mod.gen.llvm_ir
+            );
             self.lowered[resolved] = mod;
             ent = self.registry.record_module(mod, opts);
             self.registry._stash_products(resolved, mod.gen);
+            self.settle_heap();
+            self.registry.lowered_units += 1;
+            if 0 < self.registry.stop_after <= self.registry.lowered_units {
+                raise NativeBuildStopped();
+            }
             return ent;
         } except Exception {
             import traceback;
@@ -1099,8 +1193,9 @@ obj NativeBuildSession {
         """Ahead-of-time units with no cached bitcode are optimized together
         on a thread pool; each worker parses into its own LLVM context.""";
         import from jaclang.compiler.backends.native.na_compile_pass {
-            optimize_unit_texts,
-            require_native_ir
+            optimize_unit_bitcodes,
+            unit_bitcode,
+            unit_fallbacks
         }
         opts = self.prog.options;
         if opts.native_debug
@@ -1119,7 +1214,7 @@ obj NativeBuildSession {
                 continue;
             }
             if opts.native_required_for(path) {
-                require_native_ir(str(mod.gen.llvm_ir));
+                unit_fallbacks(mod.gen).require();
             }
             todo.append((path, mod));
         }
@@ -1129,8 +1224,10 @@ obj NativeBuildSession {
         started = self.registry.note_step(
             "optimize", detail=f"{len(todo)} units in parallel"
         );
-        bitcodes = optimize_unit_texts(
-            [str(mod.gen.llvm_ir) for (_, mod) in todo], opts, int(opts.opt_level or 0)
+        bitcodes = optimize_unit_bitcodes(
+            [unit_bitcode(mod.gen.llvm_ir) for (_, mod) in todo],
+            opts,
+            int(opts.opt_level or 0)
         );
         self.registry._timed("NATIVE_OPTIMIZE", started);
         self.registry.note_slow_step("optimizing", "", started);
@@ -1196,13 +1293,17 @@ obj NativeBuildSession {
     }
 
     def close {
-        for (phase, seconds) in self.prog.analysis.phase_time.items() {
-            self.registry._add_time("NATIVE_FRONTEND_" + phase, seconds);
+        try {
+            for (phase, seconds) in self.prog.analysis.phase_time.items() {
+                self.registry._add_time("NATIVE_FRONTEND_" + phase, seconds);
+            }
+            self.lowered.clear();
+            self.source_keys.clear();
+            self.prog._natives = None;
+            self.prog.release_compile_closure();
+        } finally {
+            self.heap.release();
         }
-        self.lowered.clear();
-        self.source_keys.clear();
-        self.prog._natives = None;
-        self.prog.release_compile_closure();
     }
 }
 

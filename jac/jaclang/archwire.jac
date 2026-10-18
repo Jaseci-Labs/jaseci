@@ -2855,26 +2855,32 @@ graph import compiler.backends.native {
         link_artifact
     }
     lowering --> compiler.backends.native.entry_points.validate_native_application {
-        native_lowering_issues
+        native_fallbacks_in_ir
     }
-    lowering --> compiler.backends.native.na_compile_pass.native_demoted_ir_symbols {
-        NativeLoweringKind,
-        native_lowering_issues
+    lowering --> compiler.backends.native.na_compile_pass.unit_fallbacks {
+        native_fallbacks_in_ir
     }
-    lowering --> compiler.backends.native.na_compile_pass.require_native_ir {
-        native_lowering_issues
+    type lowering --> compiler.backends.native.na_compile_pass { NativeFallbacks }
+    lexical_scope --> compiler.backends.native.na_ir_gen_pass {
+        FunctionSource,
+        LexicalScope
     }
     lowering --> compiler.backends.native.na_ir_gen_pass {
+        DEMOTED_SUFFIX,
         NativeLoweringIssue,
-        NativeLoweringKind
+        NativeLoweringKind,
+        native_fallbacks
     }
+    lowering --> compiler.driver.nativecache.NativeUnitRegistry.adopt_lowered {
+        native_fallbacks_in_ir
+    }
+    type lowering --> compiler.frontend.codeinfo { NativeFallbacks }
     lowering --> compiler.tests.test_prim_equivalence { native_lowering_issues }
     lowering --> compiler.backends.native.kernel_stage0.unit_issue_details {
         native_lowering_issues
     }
     na_compile_pass --> cli.commands.analysis.explain { native_linked_ir_text }
     na_compile_pass --> compiler.backends.native.entry_points.validate_native_application {
-        native_demoted_ir_symbols,
         native_linked_ir_text
     }
     na_compile_pass --> compiler.backends.native.link_plan {
@@ -2973,6 +2979,7 @@ graph import compiler.backends.native {
         kernel_plan
     }
     kernel_resolve --> dist.precompile_bytecode.seal_native { SEALED_LINK_MODE }
+    kernel_stage0 --> cli.commands.native { plan_kernel_prefix }
     kernel_stage0 --> compiler.backends.native.kernel_resolve.build_kernel {
         link_kernel
     }
@@ -2985,7 +2992,8 @@ graph import compiler.backends.native {
     type link_plan --> compiler.backends.native.kernel_resolve { LinkPlan }
     type link_plan --> compiler.backends.native.kernel_stage0 { LinkPlan, LinkResult }
     na_compile_pass --> compiler.driver.nativecache.NativeBuildSession.lower {
-        settle_unit_ir
+        settle_unit_ir,
+        unit_function_counts
     }
     na_constants --> compiler.backends.native.na_ir_gen_pass {
         JACVAL_ELLIPSIS_TAG,
@@ -3006,8 +3014,9 @@ graph import compiler.backends.native {
     }
     link_glue --> compiler.backends.native.link_plan { RC_THREADED_SYMBOL }
     na_compile_pass --> compiler.driver.nativecache.NativeBuildSession._optimize_in_parallel {
-        optimize_unit_texts,
-        require_native_ir
+        optimize_unit_bitcodes,
+        unit_bitcode,
+        unit_fallbacks
     }
     floors --> dist.payload.vendor { WASM_FLOOR_MANIFEST }
     host_facts --> project.compiler_host.ProjectHost.native_fact { host_native_fact }
@@ -3018,8 +3027,7 @@ graph import compiler.backends.native {
     type link_plan --> compiler.backends.native.kernel_resolve { LinkResult }
     na_compile_pass --> compiler.driver.nativecache.NativeUnitRegistry.adopt_lowered {
         emit_unit_object,
-        optimize_unit_texts,
-        require_native_ir
+        optimize_unit_ir
     }
     na_compile_pass --> compiler.driver.pipeline.native_object_passes {
         NativeCompilePass
@@ -3136,6 +3144,7 @@ graph import compiler.backends.native.llvm {
     binding as llvm --> compiler.backends.native.host_facts.struct_layouts_fact;
     binding as llvm --> compiler.backends.native.host_facts.target_fact;
     ir as ir --> compiler.backends.native.abi;
+    ir as ir --> compiler.backends.native.lexical_scope;
     ir as ir --> compiler.backends.native.lowering;
     ir as ir --> compiler.backends.native.na_ir_gen_pass;
     ir as ir --> compiler.backends.native.primitives_native;
@@ -3610,7 +3619,7 @@ graph import compiler.driver {
     compile_options --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._opaque_field_if_unlowerable {
         env_na_debug as _er_dbg
     }
-    compile_options --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._register_imported_struct_types {
+    compile_options --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._native_imports {
         env_na_debug,
         env_na_debug as _ti_dbg
     }
@@ -3972,6 +3981,10 @@ graph import compiler.driver {
     type native_iface --> compiler.frontend.codeinfo { NativeIface }
     native_iface --> compiler.tests.test_native_kernel_cache { NativeIface }
     native_iface --> dist.precompile_bytecode.seal_native { NativeIface }
+    compiler --> compiler.driver.nativecache.SessionHeap.take { COMPILE_GC_THRESHOLDS }
+    nativecache --> compiler.backends.native.kernel_stage0.plan_kernel_prefix {
+        NativeBuildStopped
+    }
     nativecache --> compiler.backends.native.link_plan.build_link_plan {
         NativeBuildSession
     }
@@ -4576,6 +4589,9 @@ graph import compiler.driver {
         wiring_digest_for
     }
     bccache --> cli.commands.analysis._unit_weight { discover_annex_files }
+    bccache --> compiler.backends.native.kernel_stage0.unit_line_count {
+        discover_annex_files
+    }
     boundary_classify --> compiler.driver.program.JacProgram.stamp_native_import_facts {
         clib_decl_type_names
     }
@@ -4811,6 +4827,7 @@ graph import compiler.driver {
         CompilationProduct
     }
     program --> compiler.backends.native.kernel_stage0.link_kernel { JacProgram }
+    program --> compiler.backends.native.kernel_stage0.plan_kernel_prefix { JacProgram }
     type program --> compiler.capability_notes { JacProgram }
     type program --> compiler.native_bindings { JacProgram }
     type program --> compiler.passes.placement_pass { JacProgram }
@@ -4880,6 +4897,8 @@ graph import compiler.frontend {
     codeinfo --> compiler.backends.native.link_glue.inject_heap_accounting { HDR_TOTAL }
     codeinfo --> compiler.backends.native.link_plan { kernel_unit_path }
     type codeinfo --> compiler.backends.native.link_plan { InteropBinding }
+    type codeinfo --> compiler.backends.native.na_compile_pass { CodeGenTarget }
+    type codeinfo --> compiler.backends.native.na_ir_gen_pass { NativeModuleLayout }
     codeinfo --> compiler.backends.native.link_plan._build_link_plan {
         is_kernel_unit_path
     }
@@ -4983,7 +5002,7 @@ graph import compiler.frontend {
     codeinfo --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._register_entry_globals {
         native_def_symbol
     }
-    codeinfo --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._register_imported_struct_types {
+    codeinfo --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._native_imports {
         is_bundled_native_module,
         native_unit_compile_active as _typed_nuc,
         resolve_native_module
@@ -7952,6 +7971,9 @@ graph import compiler.frontend {
     codeinfo --> compiler.driver.program.JacProgram.declared_codespace {
         is_client_by_location
     }
+    codeinfo --> compiler.driver.program.JacProgram.compile {
+        native_unit_compile_active
+    }
     codeinfo --> compiler.driver.program.JacProgram.stamp_boundary_facts {
         is_bundled_native_module,
         resolve_native_module
@@ -8395,6 +8417,9 @@ graph import compiler.frontend {
     codeinfo --> cli.commands.native_build._application_ir { is_toolchain_unit }
     codeinfo --> client.js_runtime._pkg_dir { jaclang_pkg_root }
     codeinfo --> compiler.backends.native.floors._repo_root { jaclang_pkg_root }
+    codeinfo --> compiler.backends.native.kernel_stage0.plan_kernel_prefix {
+        native_unit_identity
+    }
     codeinfo --> compiler.backends.native.kernel_resolve._unit_label {
         jaclang_pkg_root
     }
@@ -9398,7 +9423,7 @@ graph import compiler.placement {
     placement_facts --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._dep_is_native_unit {
         native_unit
     }
-    placement_facts --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._register_imported_struct_types {
+    placement_facts --> compiler.backends.native.na_ir_gen_pass.NaIRGenPass._native_imports {
         native_unit as _typed_native_unit
     }
     placement_facts --> compiler.driver.nativecache.NativeUnitRegistry.known_native_deps {
