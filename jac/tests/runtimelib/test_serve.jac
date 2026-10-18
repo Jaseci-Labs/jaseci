@@ -320,6 +320,35 @@ test "dev banner headlines vite port not api port" {
     }
 }
 
+test "dev banner with no vite dev server shows the api and why, not an app url" {
+    with TemporaryDirectory() as tmpdir {
+        captured_output = io.StringIO();
+        with patch(
+            "jaclang.cli.commands.execution._get_network_ips", return_value=[]
+        ) {
+            with redirect_stdout(captured_output) {
+                with redirect_stderr(captured_output) {
+                    execution._print_startup_message(
+                        dev=True,
+                        no_client=False,
+                        primary_port=8001,
+                        api_port=8001,
+                        base_path=tmpdir,
+                        client_error="bun is unavailable"
+                    );
+                }
+            }
+        }
+        output = captured_output.getvalue();
+        assert "Local:     http://localhost:8001/" in output , output;
+        assert "Server ready (API only)" in output , output;
+        assert "The client dev server is not running: bun is unavailable"
+            in output , output;
+        assert "with HMR" not in output , output;
+        assert "App:" not in output , output;
+    }
+}
+
 # --- Server construction ---
 """Constructing the API server must not bind a socket; the serving core binds
 lazily at start() so test-mode servers (port=0) stay socket-free and the app
