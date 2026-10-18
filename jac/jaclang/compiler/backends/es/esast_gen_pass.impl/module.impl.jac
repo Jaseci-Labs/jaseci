@@ -29,8 +29,7 @@ impl EsastGenPass.exit_module_code with uni.ModuleCode exit {
 impl EsastGenPass.exit_global_vars with uni.GlobalVars exit {
     if here.code_context == CodeContext.CLIENT {
         self.client_manifest.has_client = True;
-        is_pub = here.access and (here.access.tag.name == Tok.KW_PUB);
-        if is_pub or here.codespace_dual {
+        if self._exports_to_client(here) {
             for assignment in here.assignments {
                 for target in assignment.target {
                     if isinstance(target, (uni.NameAtom, uni.AstSymbolNode))

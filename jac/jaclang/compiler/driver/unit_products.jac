@@ -425,7 +425,8 @@ def client_artifact_from_json(text: str) -> (ClientArtifact | None) {
 def client_pulled_indexes(module: uni.Module) -> list[int] {
     pulled: list[int] = [];
     for (index, stmt) in enumerate(module.body) {
-        if isinstance(stmt, uni.ContextAwareNode) and stmt.codespace_dual {
+        if isinstance(stmt, uni.ContextAwareNode)
+            and (stmt.codespace_dual or stmt.client_imported) {
             pulled.append(index);
         }
     }

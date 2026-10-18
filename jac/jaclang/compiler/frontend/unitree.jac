@@ -260,7 +260,9 @@ node AstAccessNode(UniNode) {
 }
 
 node ContextAwareNode(UniNode) {
-    has codespace_dual: bool = False;
+    has codespace_dual: bool = False,
+        client_imported: bool = False;
+
     has code_context: CodeContext { getter; setter(code_context: CodeContext); }
     has placement_name: str { getter; }
 

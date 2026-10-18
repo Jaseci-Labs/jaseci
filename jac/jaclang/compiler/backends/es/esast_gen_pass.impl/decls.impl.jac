@@ -66,7 +66,6 @@ impl EsastGenPass.exit_ability with uni.Ability exit {
     }
     if (here.code_context == CodeContext.CLIENT and not here.is_method) {
         self.client_manifest.has_client = True;
-        is_pub = here.access and (here.access.tag.name == Tok.KW_PUB);
         route_role: (str | None) = None;
         if (
             isinstance(here.signature, uni.FuncSignature)
@@ -75,7 +74,7 @@ impl EsastGenPass.exit_ability with uni.Ability exit {
             route_role = self._return_type_route_role(here.signature.return_type);
         }
 
-        if is_pub or route_role or here.codespace_dual {
+        if route_role or self._exports_to_client(here) {
             name = here.name_ref.sym_name;
             self.client_manifest.exports.append(name);
             if (
@@ -336,8 +335,7 @@ impl EsastGenPass.enter_ability with uni.Ability entry {
 impl EsastGenPass.exit_enum with uni.Enum exit {
     if here.code_context == CodeContext.CLIENT {
         self.client_manifest.has_client = True;
-        is_pub = here.access and (here.access.tag.name == Tok.KW_PUB);
-        if is_pub or here.codespace_dual {
+        if self._exports_to_client(here) {
             self.client_manifest.exports.append(here.name.sym_name);
         }
     }
@@ -404,8 +402,7 @@ impl EsastGenPass.exit_type_alias with uni.TypeAlias exit {
     }
     if here.code_context == CodeContext.CLIENT {
         self.client_manifest.has_client = True;
-        is_pub = here.access and (here.access.tag.name == Tok.KW_PUB);
-        if is_pub or here.codespace_dual {
+        if self._exports_to_client(here) {
             self.client_manifest.exports.append(here.name.sym_name);
         }
     }
@@ -431,8 +428,7 @@ impl EsastGenPass.exit_type_param with uni.TypeParam exit {
 impl EsastGenPass.exit_archetype with uni.Archetype exit {
     if here.code_context == CodeContext.CLIENT {
         self.client_manifest.has_client = True;
-        is_pub = here.access and (here.access.tag.name == Tok.KW_PUB);
-        if is_pub or here.codespace_dual {
+        if self._exports_to_client(here) {
             self.client_manifest.exports.append(here.name.sym_name);
         }
     }

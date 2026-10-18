@@ -523,6 +523,36 @@ def _seed_from_summary(module: uni.Module, prog: JacProgram) -> int {
     return seeded;
 }
 
+def _invalidate_client_codegen(module: uni.Module, prog: JacProgram) {
+    if module.gen.js or module.gen.es_ast is not None {
+        import from jaclang.compiler.driver.pipeline { invalidate }
+        import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
+        invalidate(prog, module, CompilationProduct.CLIENT);
+    }
+}
+
+def _mark_client_imported(
+    target: uni.Module, top_ids: set[int], prog: JacProgram
+) -> int {
+    marked = 0;
+    for stmt in target.body {
+        if (
+            id(stmt) in top_ids
+            and isinstance(stmt, uni.ContextAwareNode)
+            and not isinstance(stmt, uni.Import)
+            and stmt.code_context == CodeContext.CLIENT
+            and not stmt.client_imported
+        ) {
+            stmt.client_imported = True;
+            marked += 1;
+        }
+    }
+    if marked {
+        _invalidate_client_codegen(target, prog);
+    }
+    return marked;
+}
+
 def solve_module_placement(
     module: uni.Module,
     prog: JacProgram,
@@ -563,10 +593,8 @@ def solve_module_placement(
     }
 
     def _invalidate_stale_codegen {
-        if stamp_count[0] and (module.gen.js or module.gen.es_ast is not None) {
-            import from jaclang.compiler.driver.pipeline { invalidate }
-            import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
-            invalidate(prog, module, CompilationProduct.CLIENT);
+        if stamp_count[0] {
+            _invalidate_client_codegen(module, prog);
         }
     }
 
@@ -805,7 +833,11 @@ def _held_pull_ids(target: uni.Module, target_path: str) -> set[int] {
 }
 
 def _pull_into_target(
-    imp: uni.Import, target: uni.Module, module: uni.Module, prog: JacProgram
+    imp: uni.Import,
+    target: uni.Module,
+    module: uni.Module,
+    prog: JacProgram,
+    pinned: bool = False
 ) -> int {
     seed_ids: set[int] = set();
     for item in imp.items {
@@ -813,7 +845,13 @@ def _pull_into_target(
             continue;
         }
         top = _named_top_element(target, item.name.value);
-        if top is not None and _closure_pullable(top, target, prog, set()) {
+        if top is None {
+            continue;
+        }
+        if pinned and not _is_client_top(top) {
+            continue;
+        }
+        if _closure_pullable(top, target, prog, set()) {
             seed_ids.add(id(top));
         }
     }
@@ -823,41 +861,48 @@ def _pull_into_target(
     import from jaclang.compiler.frontend.host { active_host }
     work = placement_work(prog);
     target_path = os.path.realpath(target.loc.mod_path or '');
+    held_ids: set[int] = set();
     if id(target) not in work.seeded {
         work.seeded.add(id(target));
         held_ids = _held_pull_ids(target, target_path);
         if held_ids
+            and not pinned
             and solve_module_placement(
                 target, prog, seed_ref_ids=held_ids, dual=True, pull_dependents=False
             ) {
             work.changed(target);
         }
     }
-    new_stamps = solve_module_placement(
-        target, prog, seed_ref_ids=seed_ids, dual=True, pull_dependents=False
-    );
+    new_stamps = 0;
+    if not pinned {
+        new_stamps = solve_module_placement(
+            target, prog, seed_ref_ids=seed_ids, dual=True, pull_dependents=False
+        );
+    }
+    newly_imported = _mark_client_imported(target, seed_ids | held_ids, prog);
     if new_stamps {
-        active_host().client_pull_grew(target_path);
         work.changed(target);
         _warn_state_forks(target, prog);
+    }
+    if new_stamps or newly_imported {
+        active_host().client_pull_grew(target_path);
         importer = os.path.basename(module.loc.mod_path or '');
-        tidx_by_id: dict[int, int] = {};
         for (tidx, tstmt) in enumerate(target.body) {
-            tidx_by_id[id(tstmt)] = tidx;
-        }
-        for sid in seed_ids {
-            sidx = tidx_by_id.get(sid);
-            if sidx is not None {
-                record_placement_evidence(
-                    prog,
-                    target.loc.mod_path or '',
-                    sidx,
-                    f"dual client: pulled through plain import from {importer}"
-                );
+            if id(tstmt) not in seed_ids
+                or not isinstance(tstmt, uni.ContextAwareNode) {
+                continue;
             }
+            if tstmt.codespace_dual {
+                note = f"dual client: pulled through plain import from {importer}";
+            } elif tstmt.client_imported {
+                note = f"client export: imported by {importer}";
+            } else {
+                continue;
+            }
+            record_placement_evidence(prog, target.loc.mod_path or '', tidx, note);
         }
     }
-    return new_stamps;
+    return new_stamps + newly_imported;
 }
 
 def _pull_boundary_import(
@@ -885,9 +930,7 @@ def _pull_boundary_import(
         return 0;
     }
     work.observe_path(resolved);
-    if _module_externally_pinned(resolved) {
-        return 0;
-    }
+    pinned = _module_externally_pinned(resolved);
     targets: list[uni.Module] = [];
     hub_target = _materialize_module(os.path.abspath(resolved), prog);
     if hub_target is not None and hub_target is not module {
@@ -909,7 +952,7 @@ def _pull_boundary_import(
     new_stamps = 0;
     for target in targets {
         work.observe(target);
-        new_stamps += _pull_into_target(imp, target, module, prog);
+        new_stamps += _pull_into_target(imp, target, module, prog, pinned);
     }
     return new_stamps;
 }
