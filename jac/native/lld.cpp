@@ -7,6 +7,8 @@
 #include "llvm/BinaryFormat/COFF.h"
 #include "llvm/Object/COFFImportFile.h"
 #include "llvm/Object/ObjectFile.h"
+#include "llvm/Config/llvm-config.h"
+#include "llvm/Plugins/PassPlugin.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/raw_ostream.h"
@@ -18,6 +20,20 @@ LLD_HAS_DRIVER(elf)
 LLD_HAS_DRIVER(macho)
 LLD_HAS_DRIVER(coff)
 LLD_HAS_DRIVER(wasm)
+
+// LLD's LTO backend (llvm::lto::opt) registers every pass plugin the LLVM
+// build linked statically, calling get<Ext>PluginInfo() for each extension in
+// llvm/Support/Extension.def. The official upstream releases (the
+// macos-aarch64 slice) are built with Polly linked in, so their libLLVMLTO
+// references getPollyPluginInfo(), which lives in libPolly.a; the shim links
+// no Polly. Define each listed extension as a plugin that registers nothing.
+// The from-source slices list no extensions, so this expands to nothing there.
+#define HANDLE_EXTENSION(Ext)                                                  \
+    llvm::PassPluginLibraryInfo get##Ext##PluginInfo() {                       \
+        return {LLVM_PLUGIN_API_VERSION, #Ext, LLVM_VERSION_STRING,            \
+                [](llvm::PassBuilder &) {}};                                   \
+    }
+#include "llvm/Support/Extension.def"
 
 extern "C" {
 

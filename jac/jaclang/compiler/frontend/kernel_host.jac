@@ -259,6 +259,7 @@ obj KernelHost(HostServices) {
         native_failures: dict[str, str] = {},
         _native_ifaces: dict[str, NativeIface] = {},
         _lowering: set[str] = set(),
+        _lowered: dict[str, Module] = {},
         _indexed: list[int] = [0, 0, 0, 0, 0],
         _session: (KernelSession | None) = None;
 
@@ -447,6 +448,16 @@ obj KernelHost(HostServices) {
         products = unit_products(module, task.program);
         if not products.path {
             products.path = real;
+        }
+        """A dependency lowered for an importer (`lower_dependency`) was
+        compiled under native-import options, which select a context program
+        of their own, so the module recorded here is not the one that was
+        lowered. The unit carries that lowering's products: without them the
+        host registers no interface for the dependency, and the importer
+        records the dependency's digest as empty.""";
+        lowered = self._lowered.get(real);
+        if lowered is not None and lowered is not module and not products.native_ir {
+            native_products(lowered, products);
         }
         asker = self.asker;
         if real.endswith(".jac") and asker is not None {
@@ -1077,6 +1088,7 @@ obj KernelHost(HostServices) {
             }
             if module.gen.native_iface is not None {
                 self.grown.add(real);
+                self._lowered[real] = module;
             }
             return module.gen.native_iface;
         } finally {

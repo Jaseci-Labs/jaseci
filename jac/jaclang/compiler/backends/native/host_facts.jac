@@ -15,6 +15,10 @@ def host_native_fact(kind: str, key: str) -> str {
             if p and os.path.isabs(p)
         );
     }
+    if kind == FACT_PACKAGE_STORE {
+        import from jaclang.project.package_scope { store_root }
+        return str(store_root());
+    }
     tag = kind + FACT_SEP + key;
     held = _HELD.get(tag);
     if held is None {
