@@ -1,5 +1,3 @@
-import from jaclang.compiler.backends.native.llvm { ir }
-
 impl NaIRGenPass._emit_utf8_helpers -> None {
     if self.utf8_cplen_fn is not None {
         return;
