@@ -326,7 +326,7 @@ impl NaIRGenPass._emit_file_like_helpers(
     };
     for (_mname, _mfn) in _methods.items() {
         self.method_funcs[_mname] = _mfn;
-        self.func_symtab[_mname] = _mfn;
+        self.scope.bind_function(_mname, _mfn);
     }
 }
 

@@ -21,6 +21,14 @@ def _jc_optional_payload(semantic: (TypeBase | None)) -> (TypeBase | None) {
     return present[0] if len(present) == 1 else None;
 }
 
+def _restore_entry[V](table: dict[str, V], key: str, prior: (V | None)) {
+    if prior is None {
+        table.pop(key, None);
+    } else {
+        table[key] = prior;
+    }
+}
+
 obj NativeFinalizer {
     has body: uni.FinallyStmt | None,
         function: ir.Function,
@@ -103,9 +111,7 @@ obj NativeBindingState {
 obj NativeFunctionState {
     has bindings: NativeBindingState,
         _builder: ir.IRBuilder | None,
-        func_symtab: dict[str, ir.Function],
-        nested_captures: dict[str, tuple[ir.Function, list[tuple[str, str]]]],
-        lambda_captures: dict[str, list[tuple[str, ir.Value]]],
+        scope: LexicalScope,
         region_open_stack: list[int],
         loop_stack: list[tuple[ir.Block, ir.Block]],
         _self_owned: bool,
@@ -117,6 +123,41 @@ obj NativeFunctionState {
         _finally_stack: list[NativeFinalizer],
         _caught_error_stack:
             list[tuple[ir.Function, tuple[ir.Value, ir.Value, ir.Value]]];
+}
+
+obj PendingImport {
+    has decl: uni.Ability,
+        layout: (NativeModuleLayout | None),
+        module_key: tuple[str, str],
+        binds_bare: bool;
+}
+
+obj ImportedFunctions(FunctionSource) {
+    has lowering: NaIRGenPass,
+        by_name: dict[str, PendingImport] = {},
+        by_key: dict[tuple[str, str], PendingImport] = {};
+
+    override def provides(name: str) -> bool {
+        return name in self.by_name;
+    }
+
+    override def resolve(name: str) -> (ir.Function | None) {
+        pending = self.by_name.get(name);
+        if pending is None {
+            return None;
+        }
+        return self.lowering._declare_import(pending);
+    }
+
+    def forget(pending: PendingImport, owner_name: str) {
+        name = pending.module_key[1];
+        for key in [name, f"{owner_name}.{name}"] {
+            if self.by_name.get(key) is pending {
+                del self.by_name[key];
+            }
+        }
+        self.by_key.pop(pending.module_key, None);
+    }
 }
 
 walker NaIRGenPass(CompilerPass) {
@@ -139,7 +180,7 @@ walker NaIRGenPass(CompilerPass) {
         _slice_struct_type: (ir.IdentifiedStructType | None) = None,
         _jacval_type: (ir.IdentifiedStructType | None) = None,
         _builder: (ir.IRBuilder | None) = None,
-        func_symtab: dict[str, ir.Function] = {},
+        scope: LexicalScope = LexicalScope(),
         borrow_param_args: dict[str, set[int]] = {},
         local_vars: dict[str, ir.Value] = {},
         param_vars: set[str] = set(),
@@ -247,6 +288,8 @@ walker NaIRGenPass(CompilerPass) {
         _claimed_units: set[int] = set(),
         _internal_errors: list[Alert] = [],
         _deps_deferred: bool = False,
+        _native_import_walk: list[tuple[str, uni.Module]] = [],
+        _native_imports_walked: bool = False,
         _sig_decl_kind: (str | None) = None,
         _class_name_consts: dict[str, ir.Constant] = {},
         _isa_fn: (ir.Function | None) = None,
@@ -434,12 +477,11 @@ walker NaIRGenPass(CompilerPass) {
         _func_loc: dict[str, int] = {},
         _func_def_mod: dict[str, str] = {},
         _module_functions: dict[tuple[str, str], ir.Function] = {},
+        _imports: (ImportedFunctions | None) = None,
         _linked_fn_decls: dict[int, tuple[ir.Function | None, uni.Ability]] = {},
         _pyb_base_memo: dict[str, tuple[str, str] | None] = {},
         _pyb_helper_fns: dict[str, ir.Function] = {},
-        lambda_captures: dict[str, list[tuple[str, ir.Value]]] = {},
         _pending_lambda_captures: (list[tuple[str, ir.Value]] | None) = None,
-        nested_captures: dict[str, tuple[ir.Function, list[tuple[str, str]]]] = {},
         _nested_predecl:
             dict[
                 uni.Ability,
@@ -1184,6 +1226,11 @@ walker NaIRGenPass(CompilerPass) {
     can run_walk with uni.Module entry;
     def _publish_lowering_failure(here: uni.Module) -> None;
     def _register_imported_struct_types -> None;
+    def _native_imports(transitive: bool = True) -> list[tuple[str, uni.Module]];
+    def _settle_dep_ifaces -> None;
+    def _has_own_code(mod: (uni.Module | None)) -> bool;
+    def _declares_native_visible(mod: uni.Module) -> bool;
+    def _defer_missing_deps -> bool;
     def _permuted_walk_order(
         mods: list[tuple[str, uni.Module]]
     ) -> list[tuple[str, uni.Module]];
@@ -1213,7 +1260,7 @@ walker NaIRGenPass(CompilerPass) {
     def _is_catalog_module(mod: uni.Module) -> bool;
     def _full_ast_of(full_path: str) -> (uni.Module | None);
     def _dep_iface(imported_mod: uni.Module) -> (NativeIface | None);
-    def _discover_kernel_deps -> None;
+    def _discover_kernel_deps(imported_mods: list[tuple[str, uni.Module]]) -> None;
     def _dep_is_native_unit(imported_mod: uni.Module, path: str) -> bool;
     def _load_native_unit_module(path: str) -> (uni.Module | None);
     def _is_kernel_unit -> bool;
@@ -1237,6 +1284,11 @@ walker NaIRGenPass(CompilerPass) {
         nd: uni.Ability, unavailable: (set | None) = None, imp_layout: any = None
     ) -> None;
 
+    def _declares_lazily(nd: uni.Ability) -> bool;
+    def _defer_import(pending: PendingImport, owner_name: str) -> None;
+    def _declare_import(pending: PendingImport) -> (ir.Function | None);
+    def _module_function(key: tuple[str, str]) -> (ir.Function | None);
+    def _module_function_known(key: tuple[str, str]) -> bool;
     def _record_linked_decl(func: (ir.Function | None), decl: uni.Ability) -> None;
     def _ensure_dep_inference(dep_mod: uni.Module) -> None;
     def _imported_function_demotions(imported_mod: uni.Module) -> (set | None);

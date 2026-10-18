@@ -1749,7 +1749,7 @@ impl NaIRGenPass._emit_err_propagate(loc: str = "") -> None {
         }
     }
     func = self.builder.function;
-    if func is self.func_symtab.get("jac_entry") {
+    if func is self.scope.function("jac_entry") {
         (_tg, _og, mglob) = self._nogc_err_slot();
         msg = self.builder.load(mglob, name="err.msg");
         fmt = self._make_global_string(

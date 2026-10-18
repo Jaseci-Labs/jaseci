@@ -57,6 +57,7 @@ import from jaclang.compiler.frontend.constant { CodeContext }
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.compiler.driver.selfhost { SelfHostCache }
 import type from jaclang.compiler.frontend.host { HostServices }
+import type from jaclang.compiler.passes.context { Alert }
 import from jaclang.compiler.driver.session_compile {
     CompileFrame,
     SessionContext,
@@ -173,16 +174,36 @@ def native_first(units: list[UnitProducts]) -> list[UnitProducts] {
     return ordered;
 }
 
-def assemble_jcir(jcir: bytes) -> (bytes | None) {
+def assemble_jcir(jcir: bytes, path: str) -> tuple[(bytes | None), list[Alert]] {
     if not jcir {
-        return None;
+        return (None, []);
     }
     import from jaclang.compiler.backends.py.codegen_shim { compile_ir }
     result = compile_ir(jcir);
-    if result.diags or not result.modules {
-        return None;
+    if result.modules and not result.diags {
+        return (result.modules[0].bytecode, []);
     }
-    return result.modules[0].bytecode;
+    import from jaclang.compiler.backends.py.jcir_bc_gen_pass { JcirBytecodeGenPass }
+    import from jaclang.compiler.frontend.diagnostics { E5043 }
+    import from jaclang.compiler.frontend.srcloc { Span }
+    import from jaclang.compiler.passes.context { Alert }
+    return (
+        None,
+        [
+            Alert(
+                msg=E5043.format_message(error=d.message),
+                loc=Span(
+                    mod_path=d.mod_path or path,
+                    first_line=d.first_line,
+                    last_line=d.last_line,
+                    col_start=d.col_start,
+                    col_end=d.col_end
+                ),
+                from_pass=JcirBytecodeGenPass,
+                code=E5043
+            ) for d in result.diags
+        ]
+    );
 }
 
 def unit_sections(
