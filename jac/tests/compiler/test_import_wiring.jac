@@ -1210,6 +1210,17 @@ test "a rule whose source or target is the bare * pattern is an error" {
     } finally {
         shutil.rmtree(base, ignore_errors=True);
     }
+    base = _standard(
+        arch=_ARCH.replace(
+            "    edge AppInternal: app.* --> app.*;\n",
+            "    edge AppInternal: app.* --> app.*;\n    edge Everywhere: core.* --> *;\n"
+        )
+    );
+    try {
+        assert "E2100" in _errors(_compile(base, "archwire.jac"));
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
 }
 
 
@@ -1297,8 +1308,8 @@ test "jac fmt --lintfix removes an unwired written import nothing reads" {
             "\n"
             "def used -> int {\n"
             "    if now() {\n"
-            "        import from core.other { helper }\n"
-            "        return helper();\n"
+            "        import from core.other { helper as kept }\n"
+            "        return kept();\n"
             "    }\n"
             "    return 0;\n"
             "}\n"
@@ -1310,8 +1321,8 @@ test "jac fmt --lintfix removes an unwired written import nothing reads" {
         );
         out = prog.mod.main.gen.jac;
         assert "W3054" in _warnings(prog) , _warnings(prog);
-        assert out.count("import from core.other { helper }") == 1 , out;
-        assert "return helper();" in out , out;
+        assert "import from core.other { helper }" not in out , out;
+        assert "import from core.other { helper as kept }" in out , out;
     } finally {
         shutil.rmtree(base, ignore_errors=True);
     }
@@ -1353,6 +1364,86 @@ test "a bare sibling import in a package boundary needs no rule" {
     );
     try {
         assert "E2099" not in _errors(_compile(base, "suite/test_make.jac"));
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+"""An implementation annex is part of its module, so a module-level import that
+only the annex reads is read, and the lint keeps it."""
+test "jac fmt --lintfix keeps an unwired import that only an impl annex reads" {
+    base = _standard(svc="import from core.other { helper }\n\ndef serve -> str;\n");
+    try {
+        _write(
+            base,
+            "core/impl/svc.impl.jac",
+            "impl serve -> str {\n    return str(helper());\n}\n"
+        );
+        prog = JacProgram.jac_file_formatter(
+            os.path.join(base, "core", "svc.jac"), auto_lint=True
+        );
+        assert "W3054" not in _warnings(prog) , _warnings(prog);
+        assert "import from core.other { helper }" in prog.mod.main.gen.jac;
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+test "jac arch sync --prune removes a pruned declared import inside a module-level block" {
+    base = _standard(
+        arch=_ARCH.replace(
+            "    util ++> svc { now }\n",
+            "    other --> svc { helper }\n    util ++> svc { now }\n"
+        ),
+        svc=(
+            _SVC
+            + "\nwith entry {\n"
+            "    import from core.other { helper }\n"
+            "    print(now());\n"
+            "}\n"
+        )
+    );
+    try {
+        assert _arch_sync(False, base, True) == 0;
+        assert "helper" not in _read(base, "archwire.jac") , _read(
+            base, "archwire.jac"
+        );
+        assert "core.other" not in _read(base, "core/svc.jac") , _read(
+            base, "core/svc.jac"
+        );
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+"""In a scoped project every module name carries the package prefix, so the
+top-level package is the first segment after it."""
+test "a scoped project still needs rules between its top-level packages" {
+    base = _project(
+        {
+            "archwire.jac": (
+                "graph import {\n"
+                "    acme.widgets.core.util ++> acme.widgets.app.main { now }\n"
+                "}\n"
+            ),
+            "core/util.jac": _UTIL,
+            "app/main.jac": "def greet -> str {\n    return now();\n}\n"
+        }
+    );
+    try {
+        _write(base, "jac.toml", "[project]\nname = \"acme/widgets\"\n");
+        unruled = [
+            str(e)
+            for e in _compile(base, "archwire.jac").errors_had
+            if e.code is not None and e.code.code == "E2099"
+        ];
+        assert unruled , "a crossing between top-level packages passed without a rule";
+        assert "edge Core: acme.widgets.core.* --> acme.widgets.app.*;" in unruled[0] , unruled[
+            0
+        ];
     } finally {
         shutil.rmtree(base, ignore_errors=True);
     }

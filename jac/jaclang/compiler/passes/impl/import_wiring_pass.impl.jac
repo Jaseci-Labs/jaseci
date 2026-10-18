@@ -203,8 +203,8 @@ impl ImportWiringPass._check_edge(
     constrained = spec.rules_governing(provider, consumer, local);
     if not constrained {
         if spec.needs_rule(provider, consumer, local) {
-            source = WiringSpec.top_package(provider);
-            target = WiringSpec.top_package(consumer);
+            source = spec.top_package(provider);
+            target = spec.top_package(consumer);
             self.ctx.emit(
                 E2099,
                 node_override=at,

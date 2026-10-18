@@ -495,14 +495,13 @@ impl WiringSpec.rules_governing(
     if not local {
         return named;
     }
-    top = WiringSpec.top_package(consumer);
+    top = self.top_package(consumer);
     return [
         rule
         for rule in named
         if any(
             [
-                not t.is_string
-                    and (not t.dotted or WiringSpec.top_package(t.dotted) == top)
+                not t.is_string and (not t.dotted or self.top_package(t.dotted) == top)
                 for t in rule.targets
             ]
         )
@@ -520,7 +519,11 @@ impl WiringSpec.rules_admitting(
 }
 
 impl WiringSpec.top_package(module: str) -> str {
-    return module.split(".")[0];
+    local = self._local_name(module);
+    if not local {
+        return module.split(".")[0];
+    }
+    return self.package_prefix + local.split(".")[0];
 }
 
 impl WiringSpec.top_pattern(top: str) -> PatternRec {
@@ -530,13 +533,13 @@ impl WiringSpec.top_pattern(top: str) -> PatternRec {
 
 impl WiringSpec.needs_rule(provider: str, consumer: str, local: bool) -> bool {
     return local
-        and WiringSpec.top_package(provider) != WiringSpec.top_package(consumer)
+        and self.top_package(provider) != self.top_package(consumer)
         and not self.rules_governing(provider, consumer, local);
 }
 
 impl WiringSpec.edge_rule(source: str, targets: list[str]) -> RuleRec {
     return RuleRec(
-        name=rule_name_for(source),
+        name=rule_name_for(self._local_name(source) or source),
         sources=[self.top_pattern(source)],
         targets=[self.top_pattern(t) for t in sorted(set(targets))],
         is_open=True
@@ -1263,7 +1266,7 @@ impl propose_rules(
             continue;
         }
         constrained = probe.rules_governing(provider, consumer, True);
-        crossing = WiringSpec.top_package(provider) != WiringSpec.top_package(consumer);
+        crossing = spec.top_package(provider) != spec.top_package(consumer);
         if constrained {
             if probe.rules_admitting(provider, consumer, True) {
                 continue;
@@ -1271,8 +1274,8 @@ impl propose_rules(
         } elif not crossing {
             continue;
         }
-        wanted.setdefault(WiringSpec.top_package(provider), set()).add(
-            WiringSpec.top_package(consumer)
+        wanted.setdefault(spec.top_package(provider), set()).add(
+            spec.top_package(consumer)
         );
     }
     out = list(rules);

@@ -2421,17 +2421,25 @@ impl JacAutoLintPass._strip_wired_imports(nd: uni.Module) -> None {
     if spec is None {
         return;
     }
+    head_path = own_path;
     consumer = spec.module_name(own_path);
     if consumer is None {
         head = active_host().base_file(own_path);
         consumer = spec.module_name(head) if head else None;
+        head_path = head or own_path;
     }
     if consumer is None {
         return;
     }
     provided = spec.consumer_bindings(consumer);
-    reads = ScopeReads(mod=nd);
-    exports = ModuleFacts.literal_exports(nd) or set();
+    held: list[ScopeReads] = [];
+    def reads -> ScopeReads {
+        if not held {
+            woven = active_host().woven_module(head_path, None);
+            held.append(ScopeReads(mod=woven if woven is not None else nd));
+        }
+        return held[0];
+    }
     removed: set[int] = set();
     new_body: list[uni.UniNode] = [];
     changed = False;
@@ -2446,7 +2454,7 @@ impl JacAutoLintPass._strip_wired_imports(nd: uni.Module) -> None {
             new_body.append(stmt);
             continue;
         }
-        doomed = self._wired_items(stmt, spec, provided, reads, "", exports);
+        doomed = self._wired_items(stmt, spec, provided, reads, "");
         if not doomed {
             new_body.append(stmt);
             continue;
@@ -2464,16 +2472,11 @@ impl JacAutoLintPass._strip_wired_imports(nd: uni.Module) -> None {
         }
         scope = scope_path_of(imp);
         owner = imp.parent;
-        if not scope or owner is None or imp not in [owner->:BodyRole:->] {
+        if scope is None or owner is None or imp not in [owner->:BodyRole:->] {
             continue;
         }
         doomed = self._wired_items(
-            imp,
-            spec,
-            spec.consumer_bindings(consumer, scope),
-            reads,
-            ".".join(scope),
-            exports
+            imp, spec, spec.consumer_bindings(consumer, scope), reads, ".".join(scope)
         );
         if not doomed or not imp.prune_items(doomed) {
             continue;
@@ -2517,9 +2520,8 @@ impl JacAutoLintPass._wired_items(
     stmt: uni.Import,
     spec: WiringSpec,
     provided: dict[tuple[str, str, str, str], WireRec],
-    reads: ScopeReads,
-    scope: str,
-    exports: set[str]
+    reads: Callable[[], ScopeReads],
+    scope: str
 ) -> set[int] {
     doomed: set[int] = set();
     positional = is_positional_import(stmt);
@@ -2536,9 +2538,13 @@ impl JacAutoLintPass._wired_items(
             }
             continue;
         }
-        if is_effect_binding(binding)
-            or (not scope and binding.bound_name() in exports)
-            or binding.bound_name() in reads.names(scope) {
+        if is_effect_binding(binding) {
+            continue;
+        }
+        woven = reads();
+        exported = ModuleFacts.literal_exports(woven.mod) or set();
+        if (not scope and binding.bound_name() in exported)
+            or binding.bound_name() in woven.names(scope) {
             continue;
         }
         if self.ctx.emit(

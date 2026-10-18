@@ -1,5 +1,6 @@
 import keyword;
 import os;
+import from collections.abc { Callable }
 
 walker JacAutoLintPass(TreePass) {
     static has contract: PassContract = PassContract();
@@ -131,9 +132,8 @@ walker JacAutoLintPass(TreePass) {
         stmt: uni.Import,
         spec: WiringSpec,
         provided: dict[tuple[str, str, str, str], WireRec],
-        reads: ScopeReads,
-        scope: str,
-        exports: set[str]
+        reads: Callable[[], ScopeReads],
+        scope: str
     ) -> set[int];
 
     can exit_expr_stmt with uni.ExprStmt exit;
