@@ -184,7 +184,11 @@ def admits_boundaries(task: ModuleAnalysis) -> bool {
 }
 
 def run_boundaries(task: ModuleAnalysis) {
-    task.require(CompilationProduct.BOUNDARIES);
+    options = task.options;
+    native = options.aot_mode and options.default_codespace == "native";
+    task.require(
+        CompilationProduct.BOUNDARIES, ProductRequest(endpoint_effects=not native)
+    );
 }
 
 glob ANALYSIS_PLAN: tuple[PlanStep, ...] = (
