@@ -144,6 +144,9 @@ def analysis_passes(request: ProductRequest) -> PassSchedule {
 }
 
 def boundary_passes(request: ProductRequest) -> PassSchedule {
+    if not request.endpoint_effects {
+        return [BoundaryFactsPass, BoundaryAnalysisPass];
+    }
     return [BoundaryFactsPass, BoundaryAnalysisPass, EndpointEffectPass];
 }
 
