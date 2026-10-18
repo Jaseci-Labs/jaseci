@@ -492,10 +492,11 @@ impl NaIRGenPass._declare_clib_ability(nd: uni.Ability) -> None {
         sysv_fnty = ir.FunctionType(
             sysv_ret_type, sysv_param_types, var_arg=is_variadic
         );
+        bound_func = self.scope.function(name);
         if name in self.extern_funcs {
             sysv_func = self.extern_funcs[name];
-        } elif self.scope.binds_function(name) {
-            sysv_func = self.scope.function(name);
+        } elif bound_func is not None {
+            sysv_func = bound_func;
         } else {
             sysv_func = ir.Function(self.llvm_module, sysv_fnty, name=name);
         }
