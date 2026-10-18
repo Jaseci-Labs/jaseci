@@ -513,9 +513,12 @@ impl ScopeReads.names(scope: str) -> set[str] {
         }
         bodies = list(self.owners.get(scope, [self.mod]));
     }
-    held = set().union(*[names_read_in(b, self.mod) for b in bodies]);
-    self.read[scope] = held;
-    return held;
+    names: set[str] = set();
+    for b in bodies {
+        names.update(names_read_in(b, self.mod));
+    }
+    self.read[scope] = names;
+    return names;
 }
 
 impl is_effect_binding(binding: WireBinding) -> bool {
