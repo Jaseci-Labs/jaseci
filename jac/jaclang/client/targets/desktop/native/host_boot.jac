@@ -99,6 +99,15 @@ def _migrate_legacy_data_dir(data_dir: str, app_dir: str) -> None {
     upgrade keeps its state instead of starting empty. macOS and Windows were
     already per-user, so their old and new dirs are equal and this is a no-op.
     A missing legacy dir, or a new dir that already has state, is left alone.
+
+    The copy lands in a staging directory beside `current` and is published
+    with a rename only once it is complete, so a failed or interrupted
+    migration leaves no partial state behind: the next launch retries. A
+    failure stops the boot instead of starting the app on an empty database
+    while readable legacy state still exists. The staging name carries this
+    process's id, so two instances migrating at once cannot clobber each
+    other; the loser of the publish rename finds `current` in place and
+    succeeds.
     """;
     if not app_dir or os.path.realpath(data_dir) == os.path.realpath(app_dir) {
         return;
@@ -108,13 +117,24 @@ def _migrate_legacy_data_dir(data_dir: str, app_dir: str) -> None {
     if not os.path.isdir(legacy) or os.path.exists(current) {
         return;
     }
+    staging = current + ".migrating." + str(os.getpid());
+    import shutil;
     try {
-        import shutil;
         os.makedirs(os.path.dirname(current), exist_ok=True);
-        shutil.copytree(legacy, current);
+        shutil.copytree(legacy, staging);
+        os.rename(staging, current);
     } except Exception as e {
-        sys.stderr.write(
-            "host_boot: could not migrate desktop state: " + str(e) + "\n"
+        shutil.rmtree(staging, ignore_errors=True);
+        if os.path.exists(current) {
+            return;
+        }
+        raise RuntimeError(
+            "host_boot: could not migrate desktop state from "
+                + legacy
+                + " to "
+                + current
+                + ": "
+                + str(e)
         );
     }
 }

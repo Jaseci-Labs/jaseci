@@ -670,3 +670,38 @@ test "booting an embedded host restores the process env" {
         os.environ.pop("JAC_PG_DIST", None);
     }
 }
+
+test "a failed migration leaves nothing behind and stops the boot" {
+    import from pathlib { Path }
+    import from tempfile { TemporaryDirectory }
+    import from unittest.mock { patch }
+    import from jaclang.client.targets.desktop.native.host_boot {
+        _migrate_legacy_data_dir
+    }
+    with TemporaryDirectory() as tmp {
+        app_dir = Path(tmp) / "app";
+        legacy = app_dir / ".jac" / "desktop";
+        legacy.mkdir(parents=True);
+        (legacy / "session.json").write_text("{}");
+        data_dir = str(Path(tmp) / "xdg" / "org.example.notes");
+        current = Path(data_dir) / ".jac" / "desktop";
+        def out_of_space(src: str, dst: str, **kwargs: any) {
+            raise OSError("no space left on device");
+        }
+        failed: (RuntimeError | None) = None;
+        with patch("shutil.copytree", out_of_space) {
+            try {
+                _migrate_legacy_data_dir(data_dir, str(app_dir));
+            } except RuntimeError as e {
+                failed = e;
+            }
+        }
+        assert failed is not None , "a failed migration must stop the boot";
+        assert not current.exists() , "no partial state may be published";
+        leftovers = list((Path(data_dir) / ".jac").glob("desktop.migrating*"));
+        assert not leftovers , f"staging must be cleaned, found {leftovers}";
+        assert (legacy / "session.json").is_file() , "legacy stays readable";
+        _migrate_legacy_data_dir(data_dir, str(app_dir));
+        assert (current / "session.json").is_file() , "the next boot retries";
+    }
+}
