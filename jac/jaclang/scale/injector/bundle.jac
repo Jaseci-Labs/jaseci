@@ -63,6 +63,9 @@ glob _EXCLUDE_ENV: set[str] = {"PYTHONPATH", "PYTHONHOME", "JAC_HANDOFF"};
 def _is_bundle_required(rel: Path) -> bool;
 
 
+def _is_client_dist(rel: Path) -> bool;
+
+
 obj BundleSourceFilter {
     has ignore_patterns: list[str];
 
@@ -252,7 +255,11 @@ def _remember_seal(base: Path, key: str, raw: bytes);
 
 
 def pack_jab(
-    project_dir: str, seal_binary: bytes, pod_arch: str = "", fleet: any = None
+    project_dir: str,
+    seal_binary: bytes,
+    pod_arch: str = "",
+    fleet: any = None,
+    client_ready: any = None
 ) -> bytes;
 
 

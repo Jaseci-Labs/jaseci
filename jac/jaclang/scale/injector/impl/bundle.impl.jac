@@ -1,13 +1,16 @@
-impl _is_bundle_required(rel: Path) -> bool {
+impl _is_client_dist(rel: Path) -> bool {
     parts = rel.parts;
-    if (
-        len(parts) >= 3
+    return len(parts) >= 3
         and parts[0] == ".jac"
         and parts[1] == "client"
-        and parts[2] == "dist"
-    ) {
+        and parts[2] == "dist";
+}
+
+impl _is_bundle_required(rel: Path) -> bool {
+    if _is_client_dist(rel) {
         return True;
     }
+    parts = rel.parts;
 
     if len(parts) >= 2 and parts[0] == ".jac" and parts[1] == "admin" {
         return True;
@@ -973,7 +976,11 @@ impl _remember_seal(base: Path, key: str, raw: bytes) {
 }
 
 impl pack_jab(
-    project_dir: str, seal_binary: bytes, pod_arch: str = "", fleet: any = None
+    project_dir: str,
+    seal_binary: bytes,
+    pod_arch: str = "",
+    fleet: any = None,
+    client_ready: any = None
 ) -> bytes {
     if not seal_binary {
         raise ValueError(
@@ -1017,11 +1024,28 @@ impl pack_jab(
     }
     key = input_key(base, sources);
     cached = _cached_seal(base, key);
+    if cached is not None and client_ready is not None {
+        client_ready();
+        sources = bundle_source_files(base);
+        if input_key(base, sources) != key {
+            cached = None;
+        }
+    }
     if cached is not None {
         logger.info(
             f"Reusing the sealed bundle for unchanged inputs ({key[:12]}); skipping the seal."
         );
         return cached;
+    }
+    seal_sources = sources;
+    seal_key = key;
+    if client_ready is not None {
+        seal_sources = [
+            path
+            for path in sources
+            if not _is_client_dist(path.relative_to(base))
+        ];
+        seal_key = input_key(base, seal_sources);
     }
     staged = _precompile_app(
         base,
@@ -1029,7 +1053,7 @@ impl pack_jab(
         sanitized,
         seal_timeout_setting(project_dir),
         app_name,
-        sources,
+        seal_sources,
         tomls,
         _latest_seal(base)
     );
@@ -1065,6 +1089,21 @@ impl pack_jab(
                     f"at boot instead. {exc}"
                 );
             }
+        }
+        sources = seal_sources;
+        if client_ready is not None {
+            client_ready();
+            dist = [
+                path
+                for path in bundle_source_files(base)
+                if _is_client_dist(path.relative_to(base))
+            ];
+            for path in dist {
+                dest = staged / path.relative_to(base);
+                dest.parent.mkdir(parents=True, exist_ok=True);
+                shutil.copy2(str(path), str(dest));
+            }
+            sources = seal_sources + dist;
         }
         buf = io.BytesIO();
         (tar, gz) = open_det_tar(buf);
@@ -1143,14 +1182,23 @@ impl pack_jab(
             gz.close();
         }
         raw = buf.getvalue();
+        remembered = key;
         try {
-            unchanged = len(snapshot) == len(sources)
-                and input_key(staged, snapshot) == key;
+            sealed = [
+                staged / path.relative_to(base)
+                for path in seal_sources
+                if (staged / path.relative_to(base)).is_file()
+            ];
+            unchanged = len(sealed) == len(seal_sources)
+                and input_key(staged, sealed) == seal_key;
+            if unchanged and client_ready is not None {
+                remembered = input_key(staged, snapshot);
+            }
         } except OSError {
             unchanged = False;
         }
         if unchanged {
-            _remember_seal(base, key, raw);
+            _remember_seal(base, remembered, raw);
         } else {
             logger.info(
                 "The project changed while it was sealed; not keeping this bundle for reuse."

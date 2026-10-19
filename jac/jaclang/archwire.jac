@@ -266,7 +266,9 @@ graph import {
             | project.config._apply_memory_native_placement
             | scale.deploy.target.kubernetes.manifest_builder.ManifestBuilder._install_app_deps
             | server.server.JacAPIServer.start { console },
-        client.cli.run_client_setup | server.server.print_endpoint_docs { console },
+        client.cli.run_client_setup
+            | scale.deploy.target.kubernetes.manifest_builder.ManifestBuilder._start_client_build
+            | server.server.print_endpoint_docs { console },
         client.cli.run_client_start { console },
         client.cli.run_npm_add { console },
         client.cli.run_npm_add_global { console },
