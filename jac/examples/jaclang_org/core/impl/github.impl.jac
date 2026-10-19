@@ -1,9 +1,15 @@
 import re;
+
 import io;
+
 import os;
+
 import tarfile;
+
 import time;
+
 import urllib.error;
+
 import urllib.request;
 
 impl headers(agent: str, accept_json: bool = True) -> dict[str, str] {

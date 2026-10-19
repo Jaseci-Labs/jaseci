@@ -1,11 +1,19 @@
 import base64;
+
 import json;
+
 import re;
+
 import time;
+
 import from functools { partial }
+
 import from urllib.parse { urlsplit }
+
 import from jaclang.packages.index { DEFAULT_REGISTRY_NAME, registry_urls }
+
 import from jaclang.packages.semver { SemverError, Version }
+
 import from jaclang.project.package_scope { is_package_name }
 
 glob HTML_LINE: re.Pattern = re.compile(r"^[\s>]*<[A-Za-z!/]"),
