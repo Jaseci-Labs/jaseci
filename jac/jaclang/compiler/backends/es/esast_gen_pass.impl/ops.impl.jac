@@ -78,6 +78,9 @@ impl EsastGenPass._expr_type_name(expr_node: uni.UniNode) -> str {
 }
 
 impl EsastGenPass._is_collection_expr(expr_node: uni.UniNode) -> bool {
+    if isinstance(expr_node, uni.CfgExpr) {
+        return self._is_collection_expr(expr_node.expr);
+    }
     if isinstance(expr_node, uni.BoolExpr) {
         for val in expr_node.values {
             if self._is_collection_expr(val) {
