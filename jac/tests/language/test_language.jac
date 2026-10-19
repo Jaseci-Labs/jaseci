@@ -686,6 +686,22 @@ test "concurrency" {
     assert "13" in output;
 }
 
+test "flow passes a keyword argument named func through to the callee" {
+    output = run_jac(os.path.join(FIXTURES, "flow_func_keyword.jac"));
+    assert "keyword=7 unpacked=3" in output , output;
+}
+
+test "flow defers a spawn expression to the task" {
+    output = run_jac(os.path.join(FIXTURES, "flow_spawn_deferred.jac"));
+    assert "walker built on: " in output , output;
+    assert "walker built on: MainThread" not in output , output;
+}
+
+test "flow binds its call's arguments at launch" {
+    output = run_jac(os.path.join(FIXTURES, "flow_arg_binding.jac"));
+    assert "['a', 'b', 'c', 'a!', 'b!', 'c!']" in output;
+}
+
 test "async ability" {
     output = run_jac(os.path.join(FIXTURES, "async_ability.jac"));
     lines = output.split("\n");
