@@ -147,21 +147,9 @@ impl TypeCheckPass.exit_filter_compr with FilterCompr exit {
     self.evaluator.get_type_of_expression(here);
 }
 
-def _lambda_value_body(nd: LambdaExpr) -> bool {
-    if isinstance(nd.body, Expr) or nd.tail_return_expr() is not None {
-        return True;
-    }
-    return isinstance(nd.body, list)
-        and len(nd.body) == 1
-        and isinstance(nd.body[0], ReturnStmt)
-        and nd.body[0].expr is not None;
-}
+def _lambda_value_body(nd: LambdaExpr) -> bool;
 
-def _lambda_needs_context(nd: LambdaExpr) -> bool {
-    return nd.signature is not None
-        and any(param.type_tag is None for param in nd.signature.get_parameters())
-        and _lambda_value_body(nd);
-}
+def _lambda_needs_context(nd: LambdaExpr) -> bool;
 
 impl TypeCheckPass.enter_lambda_expr with LambdaExpr entry {
     if _lambda_needs_context(here) {
@@ -175,27 +163,7 @@ impl TypeCheckPass.exit_lambda_expr with LambdaExpr exit {
     }
 }
 
-def _chunks_receiver_type(nd: FuncCall) -> (str | None) {
-    if not (
-        isinstance(nd.target, AtomTrailer)
-        and nd.target.is_attr
-        and isinstance(nd.target.right, Name)
-        and nd.target.right.sym_name == "chunks"
-        and nd.params is not None
-        and len(nd.params) == 1
-    ) {
-        return None;
-    }
-    try {
-        recv = nd.target.target.type;
-        if recv is None {
-            return None;
-        }
-        return recv.mangle();
-    } except Exception {
-        return None;
-    }
-}
+def _chunks_receiver_type(nd: FuncCall) -> (str | None);
 
 impl TypeCheckPass.exit_gen_compr with GenCompr exit {
     if self._lambda_depth == 0 {
@@ -2172,18 +2140,54 @@ impl TypeCheckPass.exit_impl_def with ImplDef exit {
         return;
     }
 
+    methods: dict[str, Ability] = {};
+    for method in arch.get_methods() {
+        if method.name_ref is not None {
+            methods[method.name_ref.sym_name] = method;
+        }
+    }
     assigned: set[str] = set();
-    for trailer in here.get_all_sub_nodes(AtomTrailer) {
-        atom_trailer: AtomTrailer = trailer;
-        if not (atom_trailer.parent and isinstance(atom_trailer.parent, Assignment)) {
-            continue;
+    pending: list[UniNode] = [here];
+    visited: set[str] = set();
+    while pending {
+        scope = pending.pop();
+        for trailer in scope.get_all_sub_nodes(AtomTrailer) {
+            atom_trailer: AtomTrailer = trailer;
+            if not (
+                atom_trailer.parent and isinstance(atom_trailer.parent, Assignment)
+            ) {
+                continue;
+            }
+            if atom_trailer != atom_trailer.parent.target[0] {
+                continue;
+            }
+            chain: list[AstSymbolNode] = atom_trailer.as_attr_list;
+            if len(chain) >= 2 and chain[0].sym_name == 'self' {
+                assigned.add(chain[1].sym_name);
+            }
         }
-        if atom_trailer != atom_trailer.parent.target[0] {
-            continue;
-        }
-        chain: list[AstSymbolNode] = atom_trailer.as_attr_list;
-        if len(chain) >= 2 and chain[0].sym_name == 'self' {
-            assigned.add(chain[1].sym_name);
+        for call in scope.get_all_sub_nodes(FuncCall) {
+            func_call: FuncCall = call;
+            callee_ref = func_call.target;
+            if not isinstance(callee_ref, AtomTrailer) {
+                continue;
+            }
+            callee_chain: list[AstSymbolNode] = callee_ref.as_attr_list;
+            if len(callee_chain) != 2 or callee_chain[0].sym_name != 'self' {
+                continue;
+            }
+            callee_name = callee_chain[1].sym_name;
+            if callee_name in visited or callee_name not in methods {
+                continue;
+            }
+            visited.add(callee_name);
+            callee = methods[callee_name];
+            callee_body = callee.body;
+            if isinstance(callee_body, ImplDef) {
+                pending.append(callee_body);
+            } else {
+                pending.append(callee);
+            }
         }
     }
 
@@ -2905,5 +2909,43 @@ impl TypeCheckPass._check_borrowed_scalar_forward(nd: FuncCall) -> None {
                 what="passing it where the callee writes through it writes only the function's copy"
             );
         }
+    }
+}
+
+impl _lambda_value_body(nd: LambdaExpr) -> bool {
+    if isinstance(nd.body, Expr) or nd.tail_return_expr() is not None {
+        return True;
+    }
+    return isinstance(nd.body, list)
+        and len(nd.body) == 1
+        and isinstance(nd.body[0], ReturnStmt)
+        and nd.body[0].expr is not None;
+}
+
+impl _lambda_needs_context(nd: LambdaExpr) -> bool {
+    return nd.signature is not None
+        and any(param.type_tag is None for param in nd.signature.get_parameters())
+        and _lambda_value_body(nd);
+}
+
+impl _chunks_receiver_type(nd: FuncCall) -> (str | None) {
+    if not (
+        isinstance(nd.target, AtomTrailer)
+        and nd.target.is_attr
+        and isinstance(nd.target.right, Name)
+        and nd.target.right.sym_name == "chunks"
+        and nd.params is not None
+        and len(nd.params) == 1
+    ) {
+        return None;
+    }
+    try {
+        recv = nd.target.target.type;
+        if recv is None {
+            return None;
+        }
+        return recv.mangle();
+    } except Exception {
+        return None;
     }
 }

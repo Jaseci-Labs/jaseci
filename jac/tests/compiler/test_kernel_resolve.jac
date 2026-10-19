@@ -111,41 +111,25 @@ test "a sealed image runs its own kernel and never consults the checkout" {
     assert said == "";
 }
 
-"""Write a GitHub Actions pull-request event carrying `labels`."""
-def _pr_event(path: str, labels: list[str]) {
-    import json;
-    with open(path, "w", encoding="utf-8") as f {
-        json.dump({"pull_request": {"labels": [{"name": n} for n in labels]}}, f);
-    }
-}
-
-test "only a pull request's CI kit leaves the kernel out, and its label keeps it" {
-    import tempfile;
+test "only a build that asks through JAC_KIT_OMIT leaves the kernel out" {
     import from jaclang.artifacts.kit { pr_kit_omits }
-    with tempfile.TemporaryDirectory() as tmp {
-        event = os.path.join(tmp, "event.json");
-        ci = {
-            "GITHUB_ACTIONS": "true",
-            "GITHUB_EVENT_NAME": "pull_request",
-            "GITHUB_EVENT_PATH": event
-        };
-        _pr_event(event, ["docs"]);
-        with patch.dict(os.environ, ci) {
-            assert pr_kit_omits("kernel");
-        }
-        _pr_event(event, ["docs", "native:kernel"]);
-        with patch.dict(os.environ, ci) {
-            assert not pr_kit_omits("kernel") , "the native:kernel label keeps it";
-        }
-        for name in ("push", "release", "workflow_dispatch", "schedule") {
-            with patch.dict(os.environ, dict(ci, GITHUB_EVENT_NAME=name)) {
-                assert not pr_kit_omits("kernel") , f"a {name} kit carries its kernel";
-            }
-        }
-        with patch.dict(os.environ, {"GITHUB_EVENT_NAME": "pull_request"}) {
-            os.environ.pop("GITHUB_ACTIONS", None);
-            assert not pr_kit_omits("kernel") , "a local seal carries its kernel";
-        }
+    with patch.dict(os.environ, {"JAC_KIT_OMIT": "kernel"}) {
+        assert pr_kit_omits("kernel");
+        assert not pr_kit_omits("llvm-shim");
+    }
+    with patch.dict(os.environ, {"JAC_KIT_OMIT": ""}) {
+        assert not pr_kit_omits("kernel") , "an empty request omits nothing";
+    }
+    pr_event = {
+        "GITHUB_ACTIONS": "true",
+        "GITHUB_EVENT_NAME": "pull_request",
+        "GITHUB_EVENT_PATH": "/nonexistent/event.json"
+    };
+    with patch.dict(os.environ, pr_event) {
+        os.environ.pop("JAC_KIT_OMIT", None);
+        assert not pr_kit_omits("kernel") , (
+            "a release run on a merged pull request's event still carries its kernel"
+        );
     }
 }
 

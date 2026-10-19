@@ -20,66 +20,13 @@ obj DiagnosticInfo {
         url_slug: str | None = None,
         blocks_codegen: bool = False;
 
-    def format_message(**kwargs: object) -> str {
-        filled = _fill_template(self.message_template, kwargs);
-        if filled is None {
-            return f"{self.message_template} (missing key)";
-        }
-        return filled;
-    }
-
-    def format_help(**kwargs: object) -> (str | None) {
-        if self.help_text is None {
-            return None;
-        }
-        filled = _fill_template(self.help_text, kwargs);
-        if filled is None {
-            return self.help_text;
-        }
-        return filled;
-    }
+    def format_message(**kwargs: object) -> str;
+    def format_help(**kwargs: object) -> (str | None);
 }
 
-def _placeholder_name(text: str) -> bool {
-    if not text {
-        return False;
-    }
-    for ch in text {
-        if not (ch.isalnum() or ch == "_") {
-            return False;
-        }
-    }
-    return True;
-}
+def _placeholder_name(text: str) -> bool;
 
-def _fill_template(template: str, kwargs: dict[str, object]) -> (str | None) {
-    out: list[str] = [];
-    i = 0;
-    n = len(template);
-    while i < n {
-        ch = template[i];
-        if (ch == "{" or ch == "}") and i + 1 < n and template[i + 1] == ch {
-            out.append(ch);
-            i += 2;
-            continue;
-        }
-        if ch == "{" {
-            close = template.find("}", i + 1);
-            if close > i and _placeholder_name(template[i + 1:close]) {
-                key = template[i + 1:close];
-                if key not in kwargs {
-                    return None;
-                }
-                out.append(str(kwargs[key]));
-                i = close + 1;
-                continue;
-            }
-        }
-        out.append(ch);
-        i += 1;
-    }
-    return "".join(out);
-}
+def _fill_template(template: str, kwargs: dict[str, object]) -> (str | None);
 
 glob DIAGNOSTICS: dict[str, DiagnosticInfo] = {};
 
@@ -90,32 +37,7 @@ def _reg(
     template: str,
     help_text: str | None = None,
     blocks_codegen: bool = False
-) -> DiagnosticInfo {
-    sitting = DIAGNOSTICS.get(code);
-    if sitting is not None {
-        raise ValueError(
-            f"diagnostic code {code} is claimed twice. It is already "
-            f"registered as {sitting.severity.value}/{sitting.category.value} "
-            f"'{sitting.message_template}' and is registered again as "
-            f"{severity.value}/{category.value} '{template}'. A code names "
-            "exactly one diagnostic: the second registration would shadow "
-            "the first everywhere it is referenced, and the native link "
-            "refuses this module on the duplicate symbol. Give the later "
-            "claimant a code of its own and move its pins."
-        );
-    }
-    info = DiagnosticInfo(
-        code=code,
-        severity=severity,
-        category=category,
-        message_template=template,
-        help_text=help_text,
-        url_slug=code.lower(),
-        blocks_codegen=blocks_codegen
-    );
-    DIAGNOSTICS[code] = info;
-    return info;
-}
+) -> DiagnosticInfo;
 
 def _err(
     code: str,
@@ -123,15 +45,11 @@ def _err(
     tmpl: str,
     help: str | None = None,
     blocks_codegen: bool = False
-) -> DiagnosticInfo {
-    return _reg(code, Severity.ERROR, cat, tmpl, help, blocks_codegen);
-}
+) -> DiagnosticInfo;
 
 def _warn(
     code: str, cat: Category, tmpl: str, help: str | None = None
-) -> DiagnosticInfo {
-    return _reg(code, Severity.WARNING, cat, tmpl, help);
-}
+) -> DiagnosticInfo;
 
 glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"),
      E0002 = _err("E0002", Category.SYNTAX, "Missing '{token}'"),
@@ -2178,17 +2096,17 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
          "W3050",
          Category.LINT,
          "Comment can be removed [strip-comments]",
-         help="Opt-in 'deslop' rule. Enable by adding \"strip-comments\" to "
-         "[check.lint] select in jac.toml. `jac fmt --lintfix` then removes "
-         "all comments; it never fires under select = [\"all\"] or [\"default\"]."
+         help="'Deslop' rule, on under select = [\"all\"] (not [\"default\"]) or "
+         "when \"strip-comments\" is named in [check.lint] select. "
+         "`jac fmt --lintfix` then removes all comments."
      ),
      W3051 = _warn(
          "W3051",
          Category.LINT,
          "Docstring can be removed [strip-docstrings]",
-         help="Opt-in 'deslop' rule. Enable by adding \"strip-docstrings\" to "
-         "[check.lint] select in jac.toml. `jac fmt --lintfix` then removes "
-         "all docstrings; it never fires under select = [\"all\"] or [\"default\"]."
+         help="'Deslop' rule, on under select = [\"all\"] (not [\"default\"]) or "
+         "when \"strip-docstrings\" is named in [check.lint] select. "
+         "`jac fmt --lintfix` then removes all docstrings."
      ),
      W3053 = _warn(
          "W3053",
@@ -2207,6 +2125,15 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
          help="Under archwire.jac a written import of a module below it is a wire;"
          " this one has no wire and nothing reads it, so it is dead."
          " `jac fmt --lintfix` removes it, and so does `jac arch sync --prune`."
+     ),
+     W3055 = _warn(
+         "W3055",
+         Category.LINT,
+         "Body of '{name}' belongs in a separate impl [separate-impls]",
+         help="On under select = [\"all\"] (not [\"default\"]) or when "
+         "\"separate-impls\" is named in [check.lint] select. "
+         "`jac fmt --lintfix` leaves the declaration in place and moves its body"
+         " into an `impl` at the bottom of the module."
      ),
      LINT_ALIASES: dict[str, str] = {
          "staticmethod-to-static": "W3001",
@@ -2240,7 +2167,8 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
          "strip-comments": "W3050",
          "strip-docstrings": "W3051",
          "remove-wired-import": "W3053",
-         "remove-dead-import": "W3054"
+         "remove-dead-import": "W3054",
+         "separate-impls": "W3055"
      },
      E5001 = _err(
          "E5001",
