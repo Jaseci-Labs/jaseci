@@ -96,6 +96,35 @@ node UniNode {
         raise ValueError(f"Parent of type {typ} not found from{type(self)}.");
     }
 
+    has decl_parent: (UniNode | None) { getter; }
+    has top_element: (UniNode | None) { getter; }
+    has enclosing_frame: (UniNode | None) { getter; }
+    has in_impl_spec: bool { getter; }
+
+    def is_within(outer: UniNode) -> bool;
+    def element_in(mod: Module) -> (UniNode | None);
+
+    def enclosing_decl[T](typ: type[T]) -> (T | None) {
+        nd: (UniNode | None) = self.decl_parent;
+        while nd is not None {
+            if isinstance(nd, typ) {
+                return nd;
+            }
+            nd = nd.decl_parent;
+        }
+        return None;
+    }
+
+    def linked_impls -> list[ImplDef];
+
+    def element_sub_nodes[T](typ: type[T]) -> list[T] {
+        found: list[T] = self.get_all_sub_nodes(typ);
+        for impl_def in self.linked_impls() {
+            found.extend(impl_def.element_sub_nodes(typ));
+        }
+        return found;
+    }
+
     def codespace -> CodeContext;
     def in_client_context -> bool;
     def in_native_context -> bool;
@@ -192,6 +221,10 @@ node UniScopeNode(UniNode) {
     ) -> (UniNode | None);
 
     def find_scope(name: str) -> (UniScopeNode | None);
+    has folded: bool { getter; }
+    has owning_scope: UniScopeNode { getter; }
+
+    def fold_scope(impl_scope: UniScopeNode) -> None;
     def set_primary_names(syms: dict[(str, Symbol)]) -> None;
     def adopt_primary(sym: Symbol, alias: str = "") -> None;
     def _drop_primary(sym: Symbol) -> None;
@@ -519,6 +552,7 @@ node Module(AstDocNode, UniScopeNode) {
         managed_borrow_binds: set[int] postinit;
 
     has body: Sequence[ElementStmt | String | EmptyToken] { getter; }
+    has elements: list[UniNode] { getter; }
 
     def init(
         *,
@@ -2552,7 +2586,7 @@ def is_identifier_slot(nd: UniNode) -> bool;
 
 def find_python_scope_node_of(nd: UniNode) -> (UniScopeNode | None);
 
-def same_lexical_scope(left: UniNode | None, right: UniNode | None) -> bool;
+def is_frame(nd: UniNode) -> bool;
 
 def find_typed_decl_scope_of(nd: AstSymbolNode) -> UniScopeNode;
 

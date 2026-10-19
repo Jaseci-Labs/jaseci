@@ -3374,7 +3374,7 @@ impl NaIRGenPass._ct_type_param_owner(nd: uni.Name) -> (str | None) {
     if not (isinstance(owner, uni.TypeParam) and owner.is_comptime) {
         return None;
     }
-    arch = owner.find_parent_of_type(uni.Archetype);
+    arch = owner.enclosing_decl(uni.Archetype);
     return self._arch_key(arch) if arch is not None else None;
 }
 

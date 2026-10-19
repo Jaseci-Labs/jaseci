@@ -340,7 +340,7 @@ impl SymTabBuildPass.exit_atom_trailer with AtomTrailer exit {
     }
     chain = here.as_attr_list;
 
-    ability = here.find_parent_of_type(Ability);
+    ability = here.enclosing_decl(Ability);
     if (ability and ability.method_owner) {
         archetype = ability.method_owner;
         if isinstance(archetype, Archetype) {
@@ -386,7 +386,7 @@ impl SymTabBuildPass._is_self_member_assignment(nd: AtomTrailer) -> bool {
         return False;
     }
 
-    ability = nd.find_parent_of_type(Ability);
+    ability = nd.enclosing_decl(Ability);
     if ability is not None {
         return (
             ability.is_method and not ability.is_static and not ability.is_cls_method

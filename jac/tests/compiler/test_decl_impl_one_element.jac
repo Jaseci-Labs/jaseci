@@ -113,7 +113,7 @@ test "a linked impl has no placement or scope of its own" {
     assert impls;
     for impl_def in impls {
         decl = impl_def.decl_link;
-        assert decl is not None;
+        assert isinstance(decl, uni.Ability);
         assert impl_def.top_element is decl.top_element;
         assert impl_def.code_context == decl.code_context;
         assert impl_def.folded;
@@ -167,9 +167,24 @@ def write_variant(workdir: str, files: dict[str, str]) -> None {
     }
 }
 
+"""Generated Python with the annex marker removed: a cross-file impl is
+tagged with the file its body came from, which is the one intended difference."""
 def py_artifact(mod: uni.Module) -> str {
-    lines = generated_python(mod.gen).splitlines();
-    return "\n".join([ln for ln in lines if "impl_patch_filename" not in ln]);
+    kept: list[str] = [];
+    for ln in generated_python(mod.gen).splitlines() {
+        if "impl_patch_filename" not in ln {
+            kept.append(ln);
+            continue;
+        }
+        if ln.lstrip().startswith("@") {
+            continue;
+        }
+        trimmed = re.sub(r",?\s*impl_patch_filename( as \w+)?", "", ln);
+        if not trimmed.rstrip().endswith("import") {
+            kept.append(trimmed.replace("import , ", "import "));
+        }
+    }
+    return "\n".join(kept);
 }
 
 def diag_artifact(prog: JacProgram) -> list[str] {

@@ -177,7 +177,7 @@ impl collect_placement_rows(prog: JacProgram) -> dict[str, dict[str, any]] {
         ps = get_module_summary(mod, prog);
         mod_rows: list[dict[str, any]] = [];
         for (idx, stmt) in enumerate(mod.body) {
-            if not isinstance(stmt, uni.ContextAwareNode) {
+            if not isinstance(stmt, uni.ContextAwareNode) or stmt.top_element is not stmt {
                 continue;
             }
             es = ps.elements[idx] if idx < len(ps.elements) else None;
@@ -212,7 +212,7 @@ impl collect_placement_rows(prog: JacProgram) -> dict[str, dict[str, any]] {
             );
         }
         crossings = 0;
-        for stmt in mod.body {
+        for stmt in mod.elements {
             if not (
                 isinstance(stmt, uni.Import) and stmt.code_context == CodeContext.CLIENT
             ) {

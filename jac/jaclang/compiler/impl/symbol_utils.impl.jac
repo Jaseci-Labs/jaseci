@@ -436,14 +436,6 @@ impl _client_emitted_top(stmt: UniNode, extra_bound: set[str]) -> bool {
     );
 }
 
-impl _module_top_element(mod: Module, nd: UniNode) -> (UniNode | None) {
-    cur: (UniNode | None) = nd;
-    while (cur is not None and cur.parent is not mod) {
-        cur = cur.parent;
-    }
-    return cur;
-}
-
 impl client_bridged_endpoint(mod: Module, top: UniNode) -> bool {
     return (
         isinstance(top, Ability)
@@ -484,7 +476,7 @@ impl client_value_ref_targets(
             if decl is None {
                 continue;
             }
-            top = _module_top_element(mod, decl);
+            top = decl.element_in(mod);
             if (top is None or top is stmt or isinstance(top, Import)) {
                 continue;
             }

@@ -1,6 +1,6 @@
 import os;
 
-glob PLACEMENT_SCHEMA: int = 3,
+glob PLACEMENT_SCHEMA: int = 4,
      PLACEMENT_SV_SIGNAL_NODES: list[tuple[str, type[uni.UniNode]]] = [
          ("TypedCtxBlock", uni.TypedCtxBlock),
          ("PyInlineCode", uni.PyInlineCode),
@@ -76,7 +76,6 @@ def module_has_root_access(stmt: uni.UniNode) -> bool;
 
 def _element_reqs(stmt: uni.UniNode) -> list[list[str]];
 
-def _summary_top_element(module: uni.Module, nd: uni.UniNode) -> (uni.UniNode | None);
 
 def _element_ref_ids(module: uni.Module, elem: uni.UniNode) -> set[int];
 

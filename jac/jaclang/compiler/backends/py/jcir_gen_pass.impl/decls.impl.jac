@@ -61,9 +61,7 @@ impl JcirGenPass._get_sem_decorator(nd: UniNode) -> (CgNode | None) {
 }
 
 impl JcirGenPass.enter_archetype with Archetype entry {
-    if isinstance(here.body, ImplDef) {
-        self.ctx.walk_subtree(here.body, self);
-    }
+    self.walk_decl_body(here);
 }
 
 impl JcirGenPass.exit_archetype with Archetype exit {
@@ -149,9 +147,7 @@ impl JcirGenPass.exit_archetype with Archetype exit {
 }
 
 impl JcirGenPass.enter_enum with Enum entry {
-    if isinstance(here.body, ImplDef) {
-        self.ctx.walk_subtree(here.body, self);
-    }
+    self.walk_decl_body(here);
 }
 
 impl JcirGenPass.exit_enum with Enum exit {
@@ -185,9 +181,7 @@ impl JcirGenPass.exit_enum with Enum exit {
 
 impl JcirGenPass.enter_ability with Ability entry {
     self._push_hoist_frame();
-    if isinstance(here.body, ImplDef) {
-        self.ctx.walk_subtree(here.body, self);
-    }
+    self.walk_decl_body(here);
 }
 
 impl JcirGenPass.exit_ability with Ability exit {
@@ -379,9 +373,7 @@ impl JcirGenPass.exit_ability with Ability exit {
         ];
     }
     body = self._scope_cleanup_body(here, body);
-    directive_stmts = self.scope_directive_stmts(
-        [here, here.body if isinstance(here.body, ImplDef) else None]
-    );
+    directive_stmts = self.scope_directive_stmts(here);
     if directive_stmts {
         insert_at = self._docstring_offset(body);
         body = [*body[:insert_at], *directive_stmts, *body[insert_at:]];
@@ -611,7 +603,7 @@ impl JcirGenPass.exit_event_signature with EventSignature exit {
                     [],
                     [self.nod('arg', ['arg', 'annotation'], ['self', None]), arch_arg]
                         if (
-                            (abl := here.find_parent_of_type(Ability)) and abl.is_method
+                            (abl := here.enclosing_decl(Ability)) and abl.is_method
                         )
                         else [arch_arg],
                     [],
@@ -698,7 +690,7 @@ impl JcirGenPass.exit_has_var with HasVar exit {
         (haspar := here.find_parent_of_type(ArchHas)) and haspar and haspar.is_static
     );
     is_in_class = (
-        (archpar := here.find_parent_of_type(Archetype))
+        (archpar := here.enclosing_decl(Archetype))
         and archpar
         and (archpar.arch_type.name == Tok.KW_CLASS)
     );

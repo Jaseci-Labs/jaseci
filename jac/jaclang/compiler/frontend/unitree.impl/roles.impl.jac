@@ -117,6 +117,10 @@ impl SubTag.__repr__ -> str {
     return f"{type(self).__name__}";
 }
 
+impl Module.elements.getter -> list[UniNode] {
+    return [stmt for stmt in self.body if stmt.top_element is stmt];
+}
+
 impl Module.body.getter -> Sequence[ElementStmt | String | EmptyToken] {
     return ([self->:BodyRole:->]) as Sequence[ElementStmt | String | EmptyToken];
 }

@@ -1148,10 +1148,7 @@ impl NaIRGenPass._codegen_method(
 
         _scan_body = ModuleFacts.unwrap_body(method);
         if _scan_body is not None {
-            _scan_owner = method.body
-                if isinstance(method.body, uni.ImplDef)
-                else method;
-            self._scan_closure_escapes(_scan_owner, _scan_body);
+            self._scan_closure_escapes(method, _scan_body);
         }
 
         _is_static = method.is_static or method.is_classmethod;
@@ -1517,10 +1514,7 @@ impl NaIRGenPass._codegen_no_sig_method(arch_name: str, method: uni.Ability) -> 
 
         _scan_body = ModuleFacts.unwrap_body(method);
         if _scan_body is not None {
-            _scan_owner = method.body
-                if isinstance(method.body, uni.ImplDef)
-                else method;
-            self._scan_closure_escapes(_scan_owner, _scan_body);
+            self._scan_closure_escapes(method, _scan_body);
         }
 
         self._bind_function_parameter("self", func.args[0]);
@@ -1772,7 +1766,7 @@ impl NaIRGenPass._union_layout_conflict(members: list[str]) -> (str | None) {
 }
 
 impl NaIRGenPass._event_from_walker(method: uni.Ability) -> bool {
-    owner = method.find_parent_of_type(uni.Archetype);
+    owner = method.enclosing_decl(uni.Archetype);
     if owner is not None {
         return owner.arch_kind == "walker";
     }
@@ -1842,10 +1836,7 @@ impl NaIRGenPass._codegen_event_method(arch_name: str, method: uni.Ability) -> N
         );
         _scan_body = ModuleFacts.unwrap_body(method);
         if _scan_body is not None {
-            _scan_owner = method.body
-                if isinstance(method.body, uni.ImplDef)
-                else method;
-            self._scan_closure_escapes(_scan_owner, _scan_body);
+            self._scan_closure_escapes(method, _scan_body);
         }
         self._bind_function_parameter("self", func.args[0]);
 
@@ -2706,7 +2697,7 @@ impl NaIRGenPass._unregistered_class_target(target: uni.UniNode) -> (str | None)
     if decl is None {
         return None;
     }
-    arch = decl.find_parent_of_type(uni.Archetype);
+    arch = decl.enclosing_decl(uni.Archetype);
     if arch is None or arch.name is None or arch.name.value != name {
         return None;
     }
@@ -5474,7 +5465,7 @@ impl NaIRGenPass._report_unreachable_overrides -> None {
             seen.add(bname);
             sym = base_expr.sym if isinstance(base_expr, uni.NameAtom) else None;
             decl = sym.decl if sym is not None else None;
-            found_arch = decl.find_parent_of_type(uni.Archetype)
+            found_arch = decl.enclosing_decl(uni.Archetype)
                 if decl is not None
                 else None;
             if found_arch is None {
@@ -5531,37 +5522,31 @@ impl NaIRGenPass._report_unreachable_overrides -> None {
                 if calling in overrides {
                     continue;
                 }
-                scopes: list[uni.UniNode] = [caller];
-                if isinstance(caller.body, uni.ImplDef) {
-                    scopes.append(caller.body);
-                }
-                for scope in scopes {
-                    for call in scope.get_all_sub_nodes(uni.FuncCall) {
-                        target = call.target;
-                        if not isinstance(target, uni.AtomTrailer)
-                            or not target.is_attr {
-                            continue;
-                        }
-                        if self._get_name(target.target) != "self" {
-                            continue;
-                        }
-                        dispatched = self._get_name(target.right);
-                        if dispatched is None
-                            or dispatched not in overrides
-                            or dispatched in reported {
-                            continue;
-                        }
-                        reported.add(dispatched);
-                        self.emit(
-                            E5113,
-                            node_override=overrides[dispatched],
-                            cls=self._arch_display(self._arch_key(arch)),
-                            meth=dispatched,
-                            base=bname,
-                            caller=calling,
-                            module=os.path.basename(base_lay.decl_mod)
-                        );
+                for call in caller.element_sub_nodes(uni.FuncCall) {
+                    target = call.target;
+                    if not isinstance(target, uni.AtomTrailer)
+                        or not target.is_attr {
+                        continue;
                     }
+                    if self._get_name(target.target) != "self" {
+                        continue;
+                    }
+                    dispatched = self._get_name(target.right);
+                    if dispatched is None
+                        or dispatched not in overrides
+                        or dispatched in reported {
+                        continue;
+                    }
+                    reported.add(dispatched);
+                    self.emit(
+                        E5113,
+                        node_override=overrides[dispatched],
+                        cls=self._arch_display(self._arch_key(arch)),
+                        meth=dispatched,
+                        base=bname,
+                        caller=calling,
+                        module=os.path.basename(base_lay.decl_mod)
+                    );
                 }
             }
         }

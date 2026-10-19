@@ -779,7 +779,7 @@ impl BoundaryAnalysisPass.enter_ability with Ability entry {
     if (
         here.sym_name
         and isinstance(here.signature, FuncSignature)
-        and here.find_parent_of_type(Ability) is None
+        and here.enclosing_decl(Ability) is None
         and here.find_parent_of_type(LambdaExpr) is None
     ) {
         nd_cc = here.code_context;
@@ -810,10 +810,10 @@ impl BoundaryAnalysisPass.enter_func_call with FuncCall entry {
         target_sym = target.sym;
         target_decl = target_sym.decl if target_sym is not None else None;
         if target_decl is not None {
-            _decl_ab = target_decl.find_parent_of_type(Ability);
+            _decl_ab = target_decl.enclosing_decl(Ability);
             if (
                 _decl_ab is not None
-                and _decl_ab.find_parent_of_type(Ability) is not None
+                and _decl_ab.enclosing_decl(Ability) is not None
             ) {
                 return;
             }

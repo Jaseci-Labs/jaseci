@@ -7279,8 +7279,7 @@ graph import compiler {
             binding_sites,
             binds_target,
             confined_to,
-            enclosing_loop,
-            is_within
+            enclosing_loop
         },
         backends.native.na_ir_gen_pass {
             LoopLinks,
@@ -7305,6 +7304,7 @@ graph import compiler {
             | passes.osp_analysis
             | passes.package_boundary_pass
             | passes.placement_pass
+            | passes.rc_facts_pass
             | passes.type_checker_pass.TypeCheckPass.exit_return_stmt
             | tests.test_module_exports
             | tools.jac_auto_lint_pass
@@ -7828,6 +7828,7 @@ graph import compiler {
             SpecRole
         },
         passes.annex_weave | passes.static_analysis_pass { BodyRole },
+        passes.context { ImplOf },
         passes.pyast_load_pass {
             Kid,
             NameRefRole,
@@ -7883,6 +7884,7 @@ graph import compiler {
         backends.py.jcir_gen_pass {
             Ability,
             ArchHas,
+            ArchSpec,
             Archetype,
             AssertStmt,
             AssignCompr,
@@ -8357,7 +8359,7 @@ graph import compiler {
             TypeParam,
             UniNode
         },
-        passes.context { Module, Source, TreeWalker, UniNode },
+        passes.context { ImplDef, Module, Source, TreeWalker, UniNode },
         passes.dataflow { UniCFGNode },
         passes.decl_impl_match_pass {
             Ability,
@@ -8698,7 +8700,7 @@ graph import compiler {
             UniCFGNode,
             UniNode,
             WhileStmt,
-            same_lexical_scope
+            is_frame
         },
         passes.region_infer_pass {
             Ability,
@@ -9156,6 +9158,7 @@ graph import compiler {
         },
         types.type_evaluator {
             Ability,
+            ArchSpec,
             Archetype,
             AssertStmt,
             AssignCompr,
@@ -12216,8 +12219,8 @@ graph import compiler.frontend {
             UniNode,
             UniScopeNode,
             WhileStmt,
-            is_identifier_slot,
-            same_lexical_scope
+            is_frame,
+            is_identifier_slot
         },
         module_facts {
             Ability,

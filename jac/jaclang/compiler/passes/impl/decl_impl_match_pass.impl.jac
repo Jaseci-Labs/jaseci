@@ -64,7 +64,7 @@ impl DeclImplMatchPass._impl_optional(
             return True;
         }
     }
-    holder = ability.find_parent_of_type(AstImplNeedingNode);
+    holder = ability.enclosing_decl(AstImplNeedingNode);
     if holder is not None and holder.sym_name in supplied {
         return ability.sym_name in supplied[holder.sym_name];
     }
@@ -212,6 +212,7 @@ impl DeclImplMatchPass._connect_one_impl(
     }
     self.validate_params_match(impl_node, sym_name, decl_node.name_of);
     valid_decl.link_impl(impl_node);
+    valid_decl.fold_scope(impl_node);
     for (idx, a) in enumerate(impl_node.target) {
         if ((idx < len(name_of_links)) and (link := name_of_links[idx])) {
             a.name_spec.name_of = link.name_of;
@@ -220,7 +221,6 @@ impl DeclImplMatchPass._connect_one_impl(
             }
         }
     }
-    self._share_scope_names(impl_node, valid_decl);
 
     for assignment in impl_node.get_all_sub_nodes(Assignment) {
         if assignment.type_tag is not None {
@@ -245,17 +245,6 @@ impl DeclImplMatchPass._connect_one_impl(
     ) {
         self._populate_self_member_symbols(impl_node, name_of_links[0].name_of);
     }
-
-    self._share_scope_names(impl_node, valid_decl);
-}
-
-impl DeclImplMatchPass._share_scope_names(
-    impl_node: ImplDef, valid_decl: AstImplNeedingNode
-) -> None {
-    merged = dict(impl_node.sym_tab.names_in_scope);
-    merged.update(valid_decl.sym_tab.names_in_scope);
-    impl_node.sym_tab.set_primary_names(merged);
-    valid_decl.sym_tab.set_primary_names(merged);
 }
 
 impl DeclImplMatchPass._report_bare_redecls(sym_tab: UniScopeNode) -> None {

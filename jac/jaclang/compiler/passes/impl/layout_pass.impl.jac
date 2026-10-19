@@ -1305,7 +1305,7 @@ impl declaring_module_path(base_expr: Expr) -> str {
         return "";
     }
     decl = sym.decl;
-    base_arch = decl.find_parent_of_type(Archetype);
+    base_arch = decl.enclosing_decl(Archetype);
     if base_arch is None {
         return "";
     }

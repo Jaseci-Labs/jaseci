@@ -462,7 +462,7 @@ impl TypeCheckPass._is_initializer_write(target: Expr, decl_sym: Symbol) -> bool
         and method.is_method
         and not method.is_static
         and method.sym_name in ("init", "__init__", "postinit", "__post_init__")
-        and method.method_owner is field.find_parent_of_type(Archetype)
+        and method.method_owner is field.enclosing_decl(Archetype)
         and self._is_self_ref(target.target, method);
 }
 
@@ -935,7 +935,6 @@ impl TypeCheckPass.exit_ability with Ability exit {
     if (
         isinstance(here.signature, FuncSignature)
         and here.signature.return_type is not None
-        and here.find_parent_of_type(ImplDef) is None
     ) {
         ret_ann_type = self.evaluator.get_type_of_expression(
             here.signature.return_type
@@ -1032,7 +1031,6 @@ impl TypeCheckPass.exit_ability with Ability exit {
 impl TypeCheckPass._jsx_component_params(nd: Ability) -> (list[ParamVar] | None) {
     if (
         not isinstance(nd.signature, FuncSignature)
-        or nd.find_parent_of_type(ImplDef) is not None
         or not return_type_is_jsx(nd.signature.return_type)
         or nd.name_spec.sym_name.startswith("__jac")
     ) {
@@ -1393,7 +1391,7 @@ impl TypeCheckPass._client_state_field_owner(nd: HasVar) -> (Ability | None) {
     }
     owner: (UniNode | None) = nd.parent;
     while (owner is not None and not isinstance(owner, (Ability, Archetype))) {
-        owner = owner.parent;
+        owner = owner.decl_parent;
     }
     if not isinstance(owner, Ability) {
         return None;
@@ -1495,7 +1493,7 @@ impl TypeCheckPass.exit_param_var with ParamVar exit {
         if (
             here.type_tag
             and here.type_tag.tag
-            and here.find_parent_of_type(ImplDef) is None
+            and not here.in_impl_spec
         ) {
             self._check_bare_generic(here.type_tag.tag, declared_type);
             self._check_explicit_any(here.type_tag.tag);
@@ -1515,16 +1513,10 @@ impl TypeCheckPass.exit_has_var with HasVar exit {
     postinit_nd = kids[-1] if kids else None;
     if here.defer and isinstance(postinit_nd, Name) {
         if postinit_nd.sym is None {
-            arch = here.parent.parent if isinstance(here.parent, ArchHas) else None;
+            arch = here.parent.decl_parent if isinstance(here.parent, ArchHas) else None;
             if isinstance(arch, Archetype) {
                 postinit_sym = arch.names_in_scope.get("__post_init__");
                 if postinit_sym is not None {
-                    postinit_nd.sym = postinit_sym;
-                }
-            } elif isinstance(arch, ImplDef)
-                and isinstance(arch.decl_link, Archetype) {
-                if (postinit_sym := arch.decl_link.names_in_scope.get("__post_init__"))
-                    is not None {
                     postinit_nd.sym = postinit_sym;
                 }
             }
@@ -1604,10 +1596,7 @@ impl TypeCheckPass._check_walker_reports_shape(
     if nd.name.value != "reports" {
         return;
     }
-    arch = nd.parent.parent if isinstance(nd.parent, ArchHas) else None;
-    if isinstance(arch, ImplDef) and isinstance(arch.decl_link, Archetype) {
-        arch = arch.decl_link;
-    }
+    arch = nd.parent.decl_parent if isinstance(nd.parent, ArchHas) else None;
     if not isinstance(arch, Archetype) {
         return;
     }
@@ -1629,14 +1618,8 @@ impl TypeCheckPass._check_walker_reports_shape(
 impl TypeCheckPass._enclosing_walker_report_elem_type(
     nd: UniNode
 ) -> (TypeBase | None) {
-    arch = nd.find_parent_of_type(Archetype);
-    if arch is None {
-        impl_def = nd.find_parent_of_type(ImplDef);
-        if impl_def is not None and isinstance(impl_def.decl_link, Archetype) {
-            arch = impl_def.decl_link;
-        }
-    }
-    if not isinstance(arch, Archetype) or arch.arch_kind != "walker" {
+    arch = nd.enclosing_decl(Archetype);
+    if arch is None or arch.arch_kind != "walker" {
         return None;
     }
     for has_var in arch.get_has_vars() {
@@ -2123,7 +2106,7 @@ impl TypeCheckPass.exit_impl_def with ImplDef exit {
         return;
     }
 
-    archetype = here.decl_link.find_parent_of_type(Archetype);
+    archetype = here.decl_link.enclosing_decl(Archetype);
     if not archetype {
         return;
     }
@@ -2824,7 +2807,7 @@ impl TypeCheckPass._borrowed_scalar_param(name: Name) -> bool {
         or param.type_tag.ownership != OwnershipKind.MUT_BORROW {
         return False;
     }
-    ability = param.find_parent_of_type(Ability);
+    ability = param.enclosing_decl(Ability);
     if ability is None or clib_import_of(ability) is not None {
         return False;
     }

@@ -162,10 +162,10 @@ impl _element_reqs(stmt: uni.UniNode) -> list[list[str]] {
         reqs.append(['PY', 'inline ::py:: block']);
         return reqs;
     }
-    if stmt.get_all_sub_nodes(uni.JsxElement) {
+    if stmt.element_sub_nodes(uni.JsxElement) {
         reqs.append(['DOM', 'jsx construction']);
     }
-    for svr in stmt.get_all_sub_nodes(uni.SpecialVarRef) {
+    for svr in stmt.element_sub_nodes(uni.SpecialVarRef) {
         if svr.orig.name == Tok.KW_ROOT {
             reqs.append(['PERSIST', 'root access']);
             break;
@@ -176,7 +176,7 @@ impl _element_reqs(stmt: uni.UniNode) -> list[list[str]] {
             reqs.append(['PERSIST', f"{stmt.arch_kind} archetype"]);
         }
     }
-    for ab in stmt.get_all_sub_nodes(uni.Ability) {
+    for ab in stmt.element_sub_nodes(uni.Ability) {
         if ab.is_async {
             reqs.append(['SERVER', 'async ability']);
             break;
@@ -193,17 +193,9 @@ impl _element_reqs(stmt: uni.UniNode) -> list[list[str]] {
     return reqs;
 }
 
-impl _summary_top_element(module: uni.Module, nd: uni.UniNode) -> (uni.UniNode | None) {
-    cur: (uni.UniNode | None) = nd;
-    while (cur is not None and cur.parent is not module) {
-        cur = cur.parent;
-    }
-    return cur;
-}
-
 impl _element_ref_ids(module: uni.Module, elem: uni.UniNode) -> set[int] {
     refs: set[int] = set();
-    for nm in elem.get_all_sub_nodes(uni.Name) {
+    for nm in elem.element_sub_nodes(uni.Name) {
         par = nm.parent;
         if (isinstance(par, uni.AtomTrailer) and par.is_attr and par.right is nm) {
             continue;
@@ -220,7 +212,7 @@ impl _element_ref_ids(module: uni.Module, elem: uni.UniNode) -> set[int] {
         if decl is None {
             continue;
         }
-        top = _summary_top_element(module, decl);
+        top = decl.element_in(module);
         if (top is None or top is elem) {
             continue;
         }
@@ -262,7 +254,7 @@ impl _element_escape_edges(
 ) -> list[tuple[int, str]] {
     edges: list[tuple[int, str]] = [];
     seen: set[tuple[int, str]] = set();
-    for nm in elem.get_all_sub_nodes(uni.Name) {
+    for nm in elem.element_sub_nodes(uni.Name) {
         par = nm.parent;
         if (isinstance(par, uni.AtomTrailer) and par.is_attr and par.right is nm) {
             continue;
@@ -275,7 +267,7 @@ impl _element_escape_edges(
         if sym is None or sym.decl is None {
             continue;
         }
-        top = _summary_top_element(module, sym.decl);
+        top = sym.decl.element_in(module);
         if (
             top is None
             or top is elem
@@ -300,7 +292,7 @@ impl _element_escape_edges(
 
 impl _element_glob_write_ids(module: uni.Module, elem: uni.UniNode) -> set[int] {
     writes: set[int] = set();
-    for assign in elem.get_all_sub_nodes(uni.Assignment) {
+    for assign in elem.element_sub_nodes(uni.Assignment) {
         for tgt in assign.target {
             if not isinstance(tgt, uni.Name) {
                 continue;
@@ -313,7 +305,7 @@ impl _element_glob_write_ids(module: uni.Module, elem: uni.UniNode) -> set[int] 
             if sym is None or sym.decl is None {
                 continue;
             }
-            top = _summary_top_element(module, sym.decl);
+            top = sym.decl.element_in(module);
             if (
                 top is not None and top is not elem and isinstance(top, uni.GlobalVars)
             ) {
@@ -363,7 +355,7 @@ impl _names_a_member(nm: uni.Name) -> bool {
 }
 
 impl _references_browser_seed_global(elem: uni.UniNode) -> str {
-    for nm in elem.get_all_sub_nodes(uni.Name) {
+    for nm in elem.element_sub_nodes(uni.Name) {
         if nm.value not in BROWSER_SEED_GLOBALS {
             continue;
         }
@@ -409,7 +401,7 @@ impl module_anchor_reasons(module: uni.Module) -> list[str] {
     if module.get_all_sub_nodes(uni.PyInlineCode) {
         reasons.append('inline ::py:: block');
     }
-    for stmt in module.body {
+    for stmt in module.elements {
         if isinstance(stmt, uni.TypedCtxBlock) {
             reasons.append('typed context block');
             break;
@@ -489,7 +481,7 @@ impl native_blocker_scan(
             continue;
         }
         if isinstance(ab.signature, uni.EventSignature) {
-            if ab.find_parent_of_type(uni.Archetype) is None {
+            if ab.enclosing_decl(uni.Archetype) is None {
                 scan.sites.append((ab, "event ability outside an archetype"));
                 continue;
             }
@@ -505,7 +497,7 @@ impl native_blocker_scan(
         }
     }
     scan_mod_path = module.loc.mod_path or '';
-    for stmt in module.body {
+    for stmt in module.elements {
         if isinstance(stmt, uni.ContextAwareNode) and scan_mod_path {
             import from jaclang.compiler.placement.placement_pins { config_pin_for }
             pin = config_pin_for(scan_mod_path, element_display_name(stmt));
@@ -527,7 +519,7 @@ impl native_blocker_scan(
         if imp.is_typed or imp.is_comptime {
             continue;
         }
-        if imp.find_parent_of_type(uni.Ability) is not None
+        if imp.enclosing_decl(uni.Ability) is not None
             or imp.find_parent_of_type(uni.ImplDef) is not None {
             continue;
         }
@@ -647,6 +639,9 @@ impl summarize_module(
     }
     server_anchored = bool(ps.anchors);
     for (idx, stmt) in enumerate(module.body) {
+        if stmt.top_element is not stmt {
+            continue;
+        }
         es = ElementSummary();
         es.index = idx;
         es.kind = type(stmt).__name__;

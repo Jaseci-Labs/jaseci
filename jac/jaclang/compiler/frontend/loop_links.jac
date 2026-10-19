@@ -27,7 +27,6 @@ obj LoopLinks {
     def _is_local(sym: Symbol, loop: LoopStmt) -> bool;
 }
 
-def is_frame(nd: UniNode) -> bool;
 
 def enclosing_pass_loops(closure: UniNode) -> list[LoopStmt];
 
@@ -51,4 +50,3 @@ def owned_within(sym: Symbol, scope: UniNode) -> bool;
 
 def binding_sites(sym: Symbol) -> list[UniNode];
 
-def is_within(nd: UniNode, outer: UniNode) -> bool;
