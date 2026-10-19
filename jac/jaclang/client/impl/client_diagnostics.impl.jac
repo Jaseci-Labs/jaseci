@@ -1,5 +1,7 @@
 import os;
+
 import re;
+
 import from pathlib { Path }
 
 glob _EXPORT_MISS_RE = re.compile(
@@ -549,32 +551,6 @@ impl _payload_position(payload: dict[str, any]) -> tuple[int, int] {
         column = column or _number(loc.get("column"));
     }
     return (line, column);
-}
-
-impl _pin_location(
-    diag: ClientDiagnostic,
-    locator: JacLocator,
-    loc: (SourceLocation | None),
-    raw_location: str,
-    reason: str
-) -> None {
-    if loc is not None and loc.line > 0 {
-        diag.file = _relative(diag.base_path, loc.file);
-        diag.line = loc.line;
-        diag.column = loc.column;
-        return;
-    }
-    owner = loc.file if loc is not None else "";
-    if not owner {
-        owner = locator.owner_for(raw_location);
-    }
-    if not owner {
-        owner = locator.fallback_owner();
-    }
-    diag.file = _relative(diag.base_path, owner);
-    diag.line = 0;
-    diag.column = 0;
-    diag.unmapped_reason = reason;
 }
 
 impl _requested_module(message: str) -> str {

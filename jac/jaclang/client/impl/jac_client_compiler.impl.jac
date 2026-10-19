@@ -2,7 +2,6 @@ def _jac_client_plugin_dir -> Path;
 
 def _atomic_write_text(path: Path, text: str);
 
-
 impl JacClientCompiler._get_client_dir(self: JacClientCompiler) -> Path {
     try {
         import from jaclang.project.config { get_config }
@@ -665,7 +664,6 @@ impl _atomic_write_text(path: Path, text: str) {
     tmp.write_text(text, encoding='utf-8');
     os.replace(str(tmp), str(path));
 }
-
 
 impl _extract_import_lines(js_code: str) -> list[str] {
     imports: list[str] = [];

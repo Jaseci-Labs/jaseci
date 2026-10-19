@@ -24,8 +24,28 @@ impl _es_backend_fingerprint -> str {
 impl _unit_source_path -> tuple[str, str] {
     texts: list[str] = [];
     for rel in OSP_CORE_PARTS {
-        with open(kernel_unit_path(rel), "r", encoding="utf-8") as f {
-            texts.append(f.read());
+        head = kernel_unit_path(rel);
+        (folder, name) = os.path.split(head);
+        stem = name[:-len(".jac")];
+        parts = [
+            head,
+            os.path.join(folder, stem + ".impl.jac"),
+            os.path.join(folder, "impl", stem + ".impl.jac")
+        ];
+        annex_dir = os.path.join(folder, stem + ".impl");
+        if os.path.isdir(annex_dir) {
+            for listed in sorted(os.listdir(annex_dir)) {
+                if listed.endswith(".impl.jac") {
+                    parts.append(os.path.join(annex_dir, listed));
+                }
+            }
+        }
+        for part in parts {
+            if part == head or os.path.isfile(part) {
+                with open(part, "r", encoding="utf-8") as f {
+                    texts.append(f.read());
+                }
+            }
         }
     }
     source = "\n\n".join(texts);

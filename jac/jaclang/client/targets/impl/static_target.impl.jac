@@ -1,8 +1,13 @@
 import re;
+
 import os;
+
 import functools;
+
 import from http.server { SimpleHTTPRequestHandler }
+
 import from pathlib { Path }
+
 import from typing { Optional }
 
 glob _MODULE_SCRIPT_RE = re.compile(
@@ -145,18 +150,4 @@ impl _warn_if_split(dist_dir: Path) {
             "dynamically-imported chunks."
         );
     }
-}
-
-impl _DistRequestHandler.translate_path(self: _DistRequestHandler, path: str) -> str {
-    if path.startswith("/static/") {
-        path = path[len("/static"):];
-    }
-    return super.translate_path(path);
-}
-
-impl _DistRequestHandler.guess_type(self: _DistRequestHandler, path: str) -> str {
-    if str(path).endswith(".wasm") {
-        return "application/wasm";
-    }
-    return super.guess_type(path);
 }

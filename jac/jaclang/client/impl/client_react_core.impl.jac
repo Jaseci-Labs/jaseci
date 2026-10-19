@@ -505,7 +505,3 @@ impl _awaitPlatformReady {
         await ready;
     }
 }
-
-impl BridgeError.postinit {
-    self.message = self.detail;
-}

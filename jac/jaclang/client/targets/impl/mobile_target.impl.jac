@@ -1,7 +1,11 @@
 import os;
+
 import shutil;
+
 import subprocess;
+
 import platform as platform_mod;
+
 import from typing { Optional }
 
 impl MobileTarget.ensure_ready(
@@ -514,24 +518,4 @@ impl _start_ios(artifact_path: Path, project_dir: Path) {
         _simctl_install_and_launch(xcrun, booted_udid, install_target, bundle_id);
     }
     console.success("iOS app installed and launched on simulator.");
-}
-
-impl _simctl_install_and_launch(
-    xcrun: str, udid: str, app_path: Path, bundle_id: str | None
-) {
-    console.print(
-        f"  Installing .app on simulator {udid}: {app_path.name}", style="muted"
-    );
-    subprocess.run(
-        [xcrun, "simctl", "install", udid, str(app_path)],
-        check=True,
-        capture_output=True
-    );
-    if bundle_id {
-        bid: str = str(bundle_id);
-        console.print(f"  Launching: {bid}", style="muted");
-        subprocess.run(
-            [xcrun, "simctl", "launch", udid, bid], check=False, capture_output=True
-        );
-    }
 }

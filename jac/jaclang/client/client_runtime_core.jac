@@ -128,3 +128,7 @@ def:pub errorOverlay(filePath: str, errors: str) -> JsxElement;
 def:pub __jacReactErrorHandler(error: any, info: any) -> None;
 
 def:pub __unwrapFormSchema(schema: any) -> any;
+
+impl BridgeError.postinit {
+    self.message = self.detail;
+}

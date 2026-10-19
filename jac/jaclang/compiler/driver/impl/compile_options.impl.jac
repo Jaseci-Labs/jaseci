@@ -1,5 +1,3 @@
-
-
 impl CancelToken.set {
     self.requested = True;
 }

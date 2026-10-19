@@ -1,4 +1,5 @@
 import shutil;
+
 import os;
 
 import from pathlib { Path }
@@ -10,7 +11,6 @@ def _migrate_legacy_meta_packages(
 ) -> tuple[dict[str, any], dict[str, any], bool];
 
 def _clear_node_modules(client_dir: Path | None);
-
 
 impl JacClientConfig.get_plugin_name(self: JacClientConfig) -> str {
     return "client";
@@ -232,51 +232,6 @@ impl _inject_missing(deps: dict[str, any], required: dict[str, str]) -> dict[str
     return merged;
 }
 
-impl _migrate_legacy_meta_packages(
-    jac_config: any, npm_deps: dict[str, any], npm_dev_deps: dict[str, any]
-) -> tuple[dict[str, any], dict[str, any], bool] {
-    migrated = False;
-
-    if 'jac-client-node' in npm_deps {
-        console.warning(
-            "Migrating from jac-client-node meta-package to individual dependencies..."
-        );
-        jac_config.remove_dependency('jac-client-node', dev=False, dep_type='npm');
-        del npm_deps['jac-client-node'];
-
-        all_runtime = {** CORE_RUNTIME_DEPS, ** OPTIONAL_RUNTIME_DEPS};
-        for (name, version) in all_runtime.items() {
-            if name not in npm_deps {
-                jac_config.add_dependency(name, version, dev=False, dep_type='npm');
-                npm_deps[name] = version;
-            }
-        }
-        console.success("Replaced jac-client-node with individual packages");
-        migrated = True;
-    }
-
-    if '@jac-client/dev-deps' in npm_dev_deps {
-        console.warning(
-            "Migrating from @jac-client/dev-deps meta-package to individual dependencies..."
-        );
-        jac_config.remove_dependency('@jac-client/dev-deps', dev=True, dep_type='npm');
-        del npm_dev_deps['@jac-client/dev-deps'];
-        for (name, version) in CORE_DEV_DEPS.items() {
-            if name not in npm_dev_deps {
-                jac_config.add_dependency(name, version, dev=True, dep_type='npm');
-                npm_dev_deps[name] = version;
-            }
-        }
-        console.success("Replaced @jac-client/dev-deps with individual packages");
-        migrated = True;
-    }
-
-    if migrated {
-        jac_config.save();
-    }
-    return (npm_deps, npm_dev_deps, migrated);
-}
-
 impl _clear_node_modules(client_dir: Path | None) {
     if client_dir is not None {
         node_modules: Path = client_dir / 'node_modules';
@@ -286,7 +241,6 @@ impl _clear_node_modules(client_dir: Path | None) {
         }
     }
 }
-
 
 impl _package_npm_deps(jac_config: any) -> dict[str, str] {
     if jac_config.project_root is None {

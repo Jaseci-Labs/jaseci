@@ -1,8 +1,6 @@
 import threading;
 
-
 def _require_bun -> str;
-
 
 def _build_vite_command(build_dir: Path, args: list[str]) -> list[str];
 
@@ -191,7 +189,6 @@ impl client_deps_stale(build_dir: Path) -> bool {
     return marker.read_text(encoding='utf-8').strip() != current;
 }
 
-
 impl ViteBundler.install_packages(
     self: ViteBundler,
     install_dir: Optional[Path] = None,
@@ -341,7 +338,6 @@ impl ViteBundler._resolve_api_base_url(
     return toml_base_url or api_base_url_override or env_override;
 }
 
-
 def _to_js_expr(value: any) -> str;
 
 impl ViteBundler._format_define_entries(
@@ -360,9 +356,7 @@ impl ViteBundler._format_define_entries(
 
 def _proxy_entry(key: str, api_port: int) -> str;
 
-
 def _exact_proxy_key(path: str) -> str;
-
 
 impl ViteBundler._generate_vite_config_content(
     self: ViteBundler,
@@ -1550,7 +1544,6 @@ impl _require_bun -> str {
     return js_runtime_path();
 }
 
-
 impl _build_vite_command(build_dir: Path, args: list[str]) -> list[str] {
     bun = _require_bun();
     `entry = resolve_node_tool_entry(build_dir, 'vite');
@@ -1563,7 +1556,6 @@ impl _build_vite_command(build_dir: Path, args: list[str]) -> list[str] {
     }
     return [bun, str(`entry)] + args;
 }
-
 
 impl _to_js_expr(value: any) -> str {
     if value is None {
@@ -1602,12 +1594,10 @@ impl _proxy_entry(key: str, api_port: int) -> str {
     );
 }
 
-
 impl _exact_proxy_key(path: str) -> str {
     import re;
     return '^' + re.escape(path).replace('\\', '\\\\') + '$';
 }
-
 
 impl _toml_config_to_js(config_data: dict[str, any]) -> str {
     return f"module.exports = {json.dumps(
@@ -1623,21 +1613,6 @@ impl _toml_config_to_js(config_data: dict[str, any]) -> str {
 impl _toml_config_from_raw(config_data: dict[str, any]) -> str {
     content = str(config_data.get('raw', '')).strip();
     return content + '\n' if content else '';
-}
-
-impl _build_vite_dev_command(
-    build_dir: Path, config_rel: Path, port: int, host: str = ""
-) -> list[str] {
-    cmd = _build_vite_command(
-        build_dir, ['--config', str(config_rel), '--port', str(port)]
-    );
-    if host {
-        cmd.append('--host');
-        cmd.append(host);
-    } else {
-        cmd.append('--host');
-    }
-    return cmd;
 }
 
 impl _is_vite_ready_line(line: str) -> bool {
