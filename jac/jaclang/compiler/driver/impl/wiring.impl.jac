@@ -206,6 +206,32 @@ impl WiringSpec.wire_for_import(
     return None;
 }
 
+impl WiringSpec.wire_import(wire: WireRec) -> (Import | None) {
+    """The import one wire generates, parsed on its own at the place the annex
+    puts it. A scope with several owners needs one import each, and a node
+    cannot be copied in native code, so the copies come from the wire.""";
+    lines: list[str] = [];
+    for (line0, col, text) in self._wire_pieces(wire) {
+        while len(lines) <= line0 {
+            lines.append("");
+        }
+        lines[line0] = (" " * col) + text;
+    }
+    (mod, had_error) = parse_woven("\n".join(lines), self.path, None, []);
+    if had_error {
+        return None;
+    }
+    for stmt in mod.body {
+        if isinstance(stmt, Import) {
+            mod._role_set(BodyRole, []);
+            mod.set_kids(nodes=[EmptyToken()], pos_update=False);
+            mod._invalidate_sub_node_tab();
+            return stmt;
+        }
+    }
+    return None;
+}
+
 impl WiringSpec.is_package_dir(name: str) -> bool {
     local = self._local_name(name) if name else None;
     if not local {
@@ -1038,7 +1064,7 @@ impl place_wired_imports(mod: Module) -> None {
         }
         wire = spec.wire_for_import(stmt, consumer, taken);
         scope = spec.consumer_scope(consumer, wire) if wire is not None else [];
-        if not scope {
+        if wire is None or not scope {
             generated.append(stmt);
             continue;
         }
@@ -1047,7 +1073,11 @@ impl place_wired_imports(mod: Module) -> None {
             owners = scope_owners(mod);
         }
         for (n, owner) in enumerate(owners.get(".".join(scope), [])) {
-            inject_into_scope(owner, stmt if n == 0 else copy.deepcopy(stmt));
+            placed = stmt if n == 0 else spec.wire_import(wire);
+            if placed is not None {
+                placed.code_context = stmt.code_context;
+                inject_into_scope(owner, placed);
+            }
         }
     }
     if not generated and not scoped {

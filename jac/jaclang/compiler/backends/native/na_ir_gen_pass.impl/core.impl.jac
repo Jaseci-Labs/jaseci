@@ -560,9 +560,7 @@ impl NaIRGenPass._record_export(
 impl NaIRGenPass._note_native_dep(path: str) -> None {
     import os as _nd_os;
     real = real_path(path);
-    own_path = real_path(self.module.loc.mod_path)
-        if self.module?.loc
-        else "";
+    own_path = real_path(self.module.loc.mod_path) if self.module?.loc else "";
     if real == own_path or real in self._native_dep_paths {
         return;
     }
@@ -1339,9 +1337,7 @@ impl NaIRGenPass._native_imports(
         }
     }
 
-    _self_key = (
-        real_path(self.module.loc.mod_path) if (self.module?.loc) else None
-    );
+    _self_key = real_path(self.module.loc.mod_path) if (self.module?.loc) else None;
 
     _canon_src: dict[str, any] = {};
     walked: dict[str, uni.Module] = {};
@@ -1480,11 +1476,12 @@ impl NaIRGenPass._native_imports(
         if _direct not in runtime_reached {
             continue;
         }
-        """The walk loaded each module as a full tree; the hub may hold an
-        interface-hydrated stand-in that cannot tell a re-export surface from a
-        unit. A module made only of imports and includes is a re-export
-        surface, whether this module imports it for types or at run time: the
-        units behind it are what this module links to.""";
+        """A module made only of imports and includes is a re-export surface,
+        typed or not: the units behind it are what this module links to. An
+        empty package (its names wired by archwire) has nothing behind it and
+        nothing to link. The question reads the tree the walk loaded; the hub
+        may hold an interface-hydrated stand-in that cannot tell the two
+        apart.""";
         if not self._has_own_code(
             walked.get(_direct) or self.prog.mod.hub.get(_direct)
         ) {
@@ -1708,11 +1705,7 @@ impl NaIRGenPass._walk_imported_module_abilities(
     if _imp_layout is None and imported_mod?.loc and imported_mod.loc.mod_path {
         import os as _wl_os;
         _wl_raw = imported_mod.loc.mod_path;
-        for _wl_key in (
-            _wl_raw,
-            _wl_os.path.abspath(_wl_raw),
-            real_path(_wl_raw)
-        ) {
+        for _wl_key in (_wl_raw, _wl_os.path.abspath(_wl_raw), real_path(_wl_raw)) {
             _wl_slim = self.prog.hub.artifacts.get(_wl_key);
             if _wl_slim is not None and _wl_slim.native_layout is not None {
                 _imp_layout = _wl_slim.native_layout;
@@ -2018,9 +2011,7 @@ impl NaIRGenPass._forward_declare_imported_ability(
     }
     _owner = nd.find_parent_of_type(uni.Module);
     _owner_name = _owner.name if _owner is not None else "";
-    _owner_path = real_path(_owner.source.file_path)
-        if _owner is not None
-        else "";
+    _owner_path = real_path(_owner.source.file_path) if _owner is not None else "";
     if _owner is not None and self._module_function_known((_owner_path, name)) {
         return;
     }

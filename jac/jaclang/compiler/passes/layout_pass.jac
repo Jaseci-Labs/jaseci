@@ -267,9 +267,7 @@ def _recorded_native_name(shared: ClassDetailsShared) -> (str | None) {
         return None;
     }
     import os;
-    found = _NATIVE_NAME_BY_DECL.get(
-        (real_path(key[0]), key[1], key[2], key[3])
-    );
+    found = _NATIVE_NAME_BY_DECL.get((real_path(key[0]), key[1], key[2], key[3]));
     if found is None {
         import from jaclang.compiler.frontend.codeinfo { bundled_stdlib_module_of }
         stdlib_module = bundled_stdlib_module_of(key[0]);

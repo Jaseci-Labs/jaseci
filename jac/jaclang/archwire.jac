@@ -7322,6 +7322,7 @@ graph import compiler {
         parse as rd_parse
     }
     frontend.parser.frontend ++> [
+        driver.wiring.WiringSpec.wire_import { parse_woven },
         driver.wiring.canonical_wiring_source { parse_woven },
         driver.wiring.parse_records { parse_woven },
         driver.wiring.prune_wiring_source { parse_woven },

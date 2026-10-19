@@ -965,6 +965,56 @@ test "a nested function takes its own wire, not its parent's" {
 }
 
 
+test "every owner of a scoped wire gets its own import, parsed from the wire" {
+    import from jaclang.compiler.driver.wiring { place_wired_imports, wiring_annex_for }
+    import from jaclang.compiler.frontend.parser.frontend { parse_woven }
+    import from jaclang.compiler.frontend.unitree { ImplDef, Import }
+    base = _standard(
+        arch="graph import {\n    core.util ++> app.main.Greeter.greet { now as when }\n}\n",
+        main=(
+            "obj Greeter {\n"
+            "    def greet -> str;\n"
+            "}\n"
+            "\n"
+            "impl Greeter.greet -> str {\n"
+            "    return when();\n"
+            "}\n"
+            "\n"
+            "impl Greeter.greet -> str {\n"
+            "    return when() + \"!\";\n"
+            "}\n"
+        )
+    );
+    try {
+        path = os.path.join(base, "app", "main.jac");
+        with open(path) as f {
+            src = f.read();
+        }
+        annex = wiring_annex_for(path);
+        assert annex is not None;
+        (mod, had_error) = parse_woven(src, path, None, [annex]);
+        assert not had_error;
+        place_wired_imports(mod);
+        owners = mod.get_all_sub_nodes(typ=ImplDef);
+        placed = [
+            [
+                s
+                for s in owner.body
+                if isinstance(s, Import)
+            ] for owner in owners
+        ];
+        assert [len(p) for p in placed] == [1, 1] , placed;
+        (first, second) = (placed[0][0], placed[1][0]);
+        assert first is not second;
+        assert first.parent is owners[0] and second.parent is owners[1];
+        assert first.loc.first_line == second.loc.first_line;
+        assert first.loc.mod_path == second.loc.mod_path;
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
 test "the strip removes a function's wired import that a nested function repeats" {
     base = _standard(
         arch="graph import {\n    core.util ++> app.main.greet { now as when }\n}\n",

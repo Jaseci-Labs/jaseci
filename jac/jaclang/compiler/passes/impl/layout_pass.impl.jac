@@ -807,7 +807,11 @@ impl LayoutRegistry.descendants_of(names: list[str]) -> list[str] {
     for name in names {
         found.update(index.get(name, []));
     }
-    return [cls for cls in self.mro_order if cls in found];
+    return [
+        cls
+        for cls in self.mro_order
+        if cls in found
+    ];
 }
 
 impl LayoutRegistry.get_mro(name: str) -> list[str] {
