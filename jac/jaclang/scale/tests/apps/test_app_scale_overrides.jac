@@ -597,3 +597,32 @@ test "an unknown project-level [scale] key still fails strict mode while serving
         shutil.rmtree(d, ignore_errors=True);
     }
 }
+
+test "a default memory request never exceeds a lower memory_limit" {
+    directory = tempfile.mkdtemp();
+    try {
+        def resources(is_gateway: bool, **settings: str) -> dict[str, any] {
+            builder = ManifestBuilder(
+                k8s_config=KubernetesConfig(
+                    app_name="shop", namespace="shop", **settings
+                ),
+                project_dir=directory,
+                dry_run=True
+            );
+            return builder._build_resources({}, is_gateway=is_gateway);
+        }
+        gateway = resources(True, memory_limit="1Gi");
+        assert gateway["requests"]["memory"] == "1Gi" , gateway;
+        assert gateway["limits"]["memory"] == "1Gi" , gateway;
+        assert resources(False, memory_limit="512Mi")["requests"]["memory"] == "512Mi";
+        assert resources(True, memory_limit="4Gi")["requests"]["memory"] == "2Gi";
+        assert resources(True, memory_limit="1.5Gi")["requests"]["memory"] == "1.5Gi";
+        assert resources(False, memory_limit="0.5Gi")["requests"]["memory"] == "0.5Gi";
+        assert resources(True, memory_limit="1500M")["requests"]["memory"] == "1500M";
+        assert resources(True, memory_limit="3e9")["requests"]["memory"] == "2Gi";
+        explicit = resources(True, memory_request="2Gi", memory_limit="1Gi");
+        assert explicit["requests"]["memory"] == "2Gi" , explicit;
+    } finally {
+        shutil.rmtree(directory, ignore_errors=True);
+    }
+}
