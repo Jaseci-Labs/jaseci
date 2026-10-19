@@ -1,6 +1,7 @@
 impl JacProgram.init(
     self: JacProgram, main_mod: (uni.ProgramModule | None) = None
 ) -> None {
+    forget_real_paths();
     self.hub: ModuleHub = ModuleHub(mod=main_mod or uni.ProgramModule());
     self.deps: DepGraph = DepGraph();
     self.diags: DiagLedger = DiagLedger();

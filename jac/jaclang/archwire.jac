@@ -6316,6 +6316,7 @@ graph import compiler {
             set_effective_default_codespace
         },
         driver.program.JacProgram.declared_codespace { is_client_by_location },
+        driver.program.JacProgram.init { forget_real_paths },
         driver.session_compile.compile_in_session {
             get_effective_default_codespace_override,
             reset_native_unit_compile,
@@ -6353,7 +6354,7 @@ graph import compiler {
         passes.endpoint_effect_pass.EndpointEffectPass._classify {
             endpoint_descriptor
         },
-        passes.layout_pass | types.stubcat.writer { real_path },
+        passes.layout_pass { real_path },
         passes.layout_pass._archetype_native_name { native_arch_name },
         passes.layout_pass.interface_class_native_name { native_arch_name },
         placement.placement.native_blocker_scan {

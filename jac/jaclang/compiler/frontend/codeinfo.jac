@@ -511,6 +511,10 @@ def real_path(path: str) -> str {
     return found;
 }
 
+def forget_real_paths {
+    _REAL_PATHS.clear();
+}
+
 def is_kernel_unit_path(path: str) -> bool {
     import os;
     if not path {
