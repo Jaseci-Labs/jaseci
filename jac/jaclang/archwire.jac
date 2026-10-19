@@ -15317,8 +15317,21 @@ graph import runtime.na_stdlib {
         _directory_native { clear_errno, last_errno, raise_os_error },
         _socket_native | shutil | socket { errno_message },
         _time_common { last_errno, raise_errno },
+        fcntl | select | termios { errno_message, last_errno },
     ]
     _errno_platform ++> _errno_native { errno_address }
+    _fcntl_native ++> fcntl {
+        _F_GETFD,
+        _F_GETFL,
+        _F_SETFD,
+        _F_SETFL,
+        _F_SETOWN,
+        _O_APPEND,
+        _O_ASYNC,
+        _O_NONBLOCK,
+        do_fcntl,
+        do_ioctl
+    }
     _file_native ++> [
         gettext | mimetypes | pathlib | uuid | zoneinfo { read_file_bytes },
         io { close_stream, open_stream, read_stream, read_stream_all, seek_stream },
@@ -15423,6 +15436,15 @@ graph import runtime.na_stdlib {
     }
     _passwd_layout ++> _user_home { PASSWD_DIR, PASSWD_SIZE }
     _replace_native ++> _os_native { replace_file }
+    _select_native ++> select {
+        _FD_SETSIZE,
+        _POLLERR,
+        _POLLHUP,
+        _POLLIN,
+        _POLLNVAL,
+        _POLLOUT,
+        do_poll
+    }
     _socket_abi ++> [
         _socket_native {
             ADDRINFO_ADDRLEN_OFFSET,
@@ -15500,6 +15522,73 @@ graph import runtime.na_stdlib {
         tar_utime,
         tar_write
     }
+    _termios_native ++> termios {
+        _BRKINT,
+        _CREAD,
+        _CS7,
+        _CS8,
+        _CSIZE,
+        _CSTOPB,
+        _ECHO,
+        _ECHOE,
+        _ECHOK,
+        _ECHONL,
+        _HUPCL,
+        _ICANON,
+        _ICRNL,
+        _IEXTEN,
+        _IGNBRK,
+        _IGNCR,
+        _IGNPAR,
+        _INLCR,
+        _INPCK,
+        _ISIG,
+        _ISTRIP,
+        _IXANY,
+        _IXOFF,
+        _IXON,
+        _NCCS,
+        _NOFLSH,
+        _OFF_CC,
+        _OFF_CFLAG,
+        _OFF_IFLAG,
+        _OFF_LFLAG,
+        _OFF_OFLAG,
+        _ONLCR,
+        _OPOST,
+        _PARENB,
+        _PARMRK,
+        _PARODD,
+        _TCSADRAIN,
+        _TCSAFLUSH,
+        _TCSANOW,
+        _TIOCGWINSZ,
+        _TOSTOP,
+        _VDISCARD,
+        _VEOF,
+        _VEOL,
+        _VEOL2,
+        _VERASE,
+        _VINTR,
+        _VKILL,
+        _VLNEXT,
+        _VMIN,
+        _VQUIT,
+        _VREPRINT,
+        _VSTART,
+        _VSTOP,
+        _VSUSP,
+        _VTIME,
+        _VWERASE,
+        get_attrs,
+        in_speed,
+        new_buf,
+        out_speed,
+        put_word,
+        set_attrs,
+        set_speeds,
+        word_at
+    }
     _time_common ++> [
         _datetime_native { time_clock_ns },
         time { time_clock_ns, time_clock_seconds, time_clock_set_ns },
@@ -15559,6 +15648,37 @@ graph import runtime.na_stdlib {
     }
     datetime ++> zoneinfo { _MAXORDINAL, _ord2ymd }
     http.client ++> urllib.request { HTTPResponse }
+    termios ++> tty {
+        BRKINT,
+        CS8,
+        CSIZE,
+        ECHO,
+        ECHOE,
+        ECHOK,
+        ECHONL,
+        ICANON,
+        ICRNL,
+        IEXTEN,
+        IGNBRK,
+        IGNCR,
+        IGNPAR,
+        INLCR,
+        INPCK,
+        ISIG,
+        ISTRIP,
+        IXANY,
+        IXOFF,
+        IXON,
+        OPOST,
+        PARENB,
+        PARMRK,
+        TCSAFLUSH,
+        TCSANOW,
+        VMIN,
+        VTIME,
+        tcgetattr,
+        tcsetattr
+    }
 }
 
 graph import runtime.python {

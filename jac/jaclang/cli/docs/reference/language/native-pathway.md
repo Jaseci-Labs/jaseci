@@ -66,7 +66,7 @@ programmatically:
 | **C interop (in)** | `import from libname` (logical) or `import from "path"` (explicit) |
 | **C structs and pointers** | C-layout structs, `&`/`&mut` borrows to C, `ptr[T]`, `p.view(n)`, `Pinned[T]` |
 | **C interop (out)** | `jac build --native --lib` exports `:pub` symbols as a `.so`/`.dylib`/`.dll` |
-| **Std library** | `import math` / `time` / `sys` / `os` / `random` / `signal` / `subprocess` (Python-congruent subset) |
+| **Std library** | `import math` / `time` / `sys` / `os` / `random` / `signal` / `subprocess` / `fcntl` / `termios` / `tty` / `select` (Python-congruent subset) |
 | **Memory model** | `[memory] profile`: `managed` (RC + cycle collector, default), `rc`, `nogc` (borrow-checked, no runtime); one-off override with `--memory` |
 | **Testing** | `test "description" { }` blocks compile native and run via `jac test` |
 
@@ -594,6 +594,10 @@ to libc/libm. Where behavior can still diverge, it is noted per module below.
 | `random` | seed-sequence faithful | CPython MT19937 |
 | `signal` | subset, Linux only | libc (`bsd_signal` / `sigprocmask`) |
 | `subprocess` | subset, Linux only | `posix_spawnp` + `poll` |
+| `fcntl` | subset, POSIX hosts | libc (`fcntl(2)` / `ioctl(2)`) |
+| `termios` | subset, POSIX hosts | libc (`tcgetattr(3)` / `tcsetattr(3)`, per-OS struct layout) |
+| `tty` | subset, POSIX hosts | over the bundled `termios` |
+| `select` | subset, POSIX hosts | libc (`poll(2)`); `-1.0` is the block sentinel, not `None` |
 
 Anything not yet lowered is **rejected at compile time** (rather than silently
 producing a wrong binary), so an unsupported `import` or member fails loudly.
@@ -756,6 +760,26 @@ concurrently (a child filling one pipe while the parent drains the other
 does not deadlock). Scoped to `args`/`stdin`/`stdout`/`stderr`/`text`/`cwd`/
 `env`/`shell`/`pid`/`returncode`; there is no file-object stream API --
 `Popen.stdout` is an int sentinel, not a reader.
+
+#### `fcntl` / `termios` / `tty` / `select` -- POSIX Terminal Floors
+
+`import fcntl` provides `fcntl(fd, cmd, arg=0)` (the `F_GETFL`/`F_SETFL`
+family) and `ioctl(fd, request, arg)` answering the mutated buffer (the
+packed `winsize` for `TIOCGWINSZ`). `import termios` provides
+`tcgetattr`/`tcsetattr` over the CPython `[iflag, oflag, cflag, lflag,
+ispeed, ospeed, cc]` shape (cc as NCCS ints: 32 on glibc, 20 on darwin)
+and the V*/I*/O*/C*/L* constant groups with their per-OS values. `import
+tty` provides `setraw`/`setcbreak`, CPython's `tty.py` ported over the
+bundled `termios`. `import select` provides `select(rlist, wlist, xlist,
+timeout=-1.0)` over `poll(2)` plus the `POLL*` constants.
+
+Divergences from CPython on these floors: errors raise `ValueError`
+carrying CPython's `[Errno N] <strerror>` text (CPython raises `OSError` /
+`termios.error` / `select.error`); `ioctl` answers the bytes buffer back
+where CPython answers a fresh copy of the mutated bytes; `select`'s
+block-forever sentinel is `-1.0` rather than `None`, `POLLERR`/`POLLHUP`
+report readable AND writable, and the exceptional list is always empty.
+`fcntl` lacks `flock`/`lockf` and the `struct flock` commands.
 
 ---
 

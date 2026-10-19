@@ -481,6 +481,31 @@ glob STR_NA_GAPS: list[any] = [
              "errno_na",
              ["na"]
          ),
+         (
+             "fcntl bundled",
+             "prim_fcntl.jac",
+             "fcntl_py",
+             "fcntl_cl",
+             "fcntl_na",
+             ["na"]
+         ),
+         (
+             "termios bundled",
+             "prim_termios.jac",
+             "termios_py",
+             "termios_cl",
+             "termios_na",
+             ["na"]
+         ),
+         ("tty bundled", "prim_tty.jac", "tty_py", "tty_cl", "tty_na", ["na"]),
+         (
+             "select bundled",
+             "prim_select.jac",
+             "select_py",
+             "select_cl",
+             "select_na",
+             ["na"]
+         ),
          ("glob bundled", "prim_glob.jac", "glob_py", "glob_cl", "glob_na", ["na"]),
          ("stat bundled", "prim_stat.jac", "stat_py", "stat_cl", "stat_na", ["na"]),
          (

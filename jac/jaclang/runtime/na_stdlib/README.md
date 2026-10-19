@@ -822,6 +822,67 @@ native layout records the emitted name separately from its source-level key.
   `sigwait`/`sigwaitinfo`/`setitimer`/`getitimer` are not provided.
   Pinned sv<->na congruent by `test_native_signal_subprocess.jac`.
 
+- **`fcntl.jac`** (Mechanism F) + **`_fcntl_native.linux.jac`** /
+  **`_fcntl_native.darwin.jac`** (libc FFI floor: `fcntl(2)` and
+  `ioctl(2)`; per-OS `F_*`/`O_*` flag values) -- `fcntl(fd, cmd, arg=0)`
+  for the `F_GETFL`/`F_SETFL`/`F_GETFD`/`F_SETFD`/`F_SETOWN` family and
+  `ioctl(fd, request, arg)` over a writable buffer (the packed `winsize`
+  for `termios`'s `TIOCGWINSZ`), answering the mutated buffer. The
+  `fcntl(2)` extern is declared at fixed arity (the flag word as `i64`),
+  the ABI shape the calls here make. DIVERGENCES: a `bytes` arg is
+  answered back as the same buffer object where CPython answers a fresh
+  copy of the mutated bytes; errors
+  raise `ValueError` carrying CPython's `[Errno N] <strerror>` text where
+  CPython raises `OSError`; `flock`/`lockf` and the `struct flock`
+  commands are not provided. Pinned sv<->na congruent by
+  `prim_fcntl.jac`.
+- **`termios.jac`** (Mechanism F) + **`_termios_native.linux.jac`** /
+  **`_termios_native.darwin.jac`** (libc FFI floor: `tcgetattr(3)` /
+  `tcsetattr(3)` / `cfgetispeed(3)` / `cfgetospeed(3)` over an opaque
+  `struct termios` image; per-OS layout and constants) --
+  CPython-shaped `tcgetattr(fd)` / `tcsetattr(fd, when, attrs)` over the
+  `[iflag, oflag, cflag, lflag, ispeed, ospeed, cc]` form with `cc` as
+  `NCCS` ints (32 on glibc, 20 on darwin), plus the V*/I*/O*/C*/L*
+  constant groups, `TCSANOW`/`TCSADRAIN`/`TCSAFLUSH`, and `TIOCGWINSZ`.
+  The raw struct bytes travel opaquely through the floor, so a
+  save/restore pair is byte-exact for every byte the CPython shape
+  carries; speeds are read the way CPython reads them (`cfget*`). The
+  floor split is structural: glibc lays the struct out as four `u32` flag
+  words + `c_cc[32]` (60 bytes), Libsystem as four `u64` words +
+  `c_cc[20]` (72 bytes), and the surface parameterizes on the floor's
+  `_FLAG_BYTES`/offsets, so only the floor files differ. Constant values
+  are per-OS; `VSWTC` exists only where the OS header defines it
+  (Linux), the same per-OS-header rule `errno.<os>.jac` follows.
+  DIVERGENCES: errors raise `ValueError` carrying CPython's
+  `[Errno N] <strerror>` text where CPython raises `termios.error` (an
+  `OSError` subclass), so `except ValueError` on na matches
+  `except OSError` on sv; `cc` entries are ints (one-item `bytes` entries
+  are still accepted by `tcsetattr`, as there). Pinned sv<->na congruent
+  by `prim_termios.jac`.
+- **`tty.jac`** (Mechanism B over the bundled `termios`) -- `setraw(fd,
+  when=TCSAFLUSH)` / `setcbreak(fd, when=TCSANOW)`, a direct port of
+  CPython's `tty.py` formulas over the bundled `termios` surface, sharing
+  its constants and error model. As in CPython, `list(mode)` copies the
+  outer list only, so the `cc` sublist stays shared and the VMIN=1/
+  VTIME=0 writes are visible through the returned original-mode list
+  (pinned by `prim_tty.jac`). Terminals are the host's, so raw mode
+  behaves identically to CPython's by construction; the module is
+  per-OS only through what `termios` resolves to.
+- **`select.jac`** (Mechanism F) + **`_select_native.jac`** (libc FFI
+  floor: `poll(2)` -- one file, no per-OS split, since the `pollfd`
+  layout, `POLL*` values and timeout shape are identical on every POSIX
+  host) -- `select(rlist, wlist, xlist, timeout=-1.0)` merging the three
+  lists into one pollfd array and splitting `revents` back out, plus the
+  `POLLIN`/`POLLOUT`/`POLLERR`/`POLLHUP`/`POLLNVAL` constants.
+  DIVERGENCES: `-1.0` is the block-forever sentinel where CPython spells
+  `None` (any negative timeout other than the sentinel raises `ValueError`);
+  `POLLERR`/`POLLHUP` report the fd readable AND writable where CPython
+  reports the event that fired; the exceptional list is always empty (no
+  `xlist` events are polled); errors raise `ValueError` carrying
+  CPython's `[Errno N] <strerror>` text where CPython raises
+  `OSError`/`select.error`. Timeout is truncated to milliseconds.
+  Pinned sv<->na congruent by `prim_select.jac`.
+
 - **`subprocess.linux.jac`** (Mechanism F) +
   **`_subprocess_native.linux.jac`** (libc FFI floor: `posix_spawnp` and its
   file-actions API, `pipe`, `waitpid`, `poll`, `kill`) -- `Popen`, `run`,
