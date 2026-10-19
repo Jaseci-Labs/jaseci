@@ -21,7 +21,17 @@ obj ScoreResult {
         sha: str = "";
 }
 
-def parse_repo_ref(text: str) -> tuple[str, str] | None {
+def parse_repo_ref(text: str) -> tuple[str, str] | None;
+
+def score_repo(owner: str, name: str, quiet: bool = False) -> ScoreResult;
+
+def as_dict(res: ScoreResult) -> dict[str, object];
+
+def render(res: ScoreResult) -> str;
+
+def run_score(repo: str, as_json: bool) -> int;
+
+impl parse_repo_ref(text: str) -> tuple[str, str] | None {
     u = text.strip().rstrip("/");
     m = re.`match(
         r"^(?:https?://)?(?:www\.)?github\.com/([\w.\-]+)/([\w.\-]+?)(?:\.git)?$", u
@@ -35,7 +45,7 @@ def parse_repo_ref(text: str) -> tuple[str, str] | None {
     return (m.group(1) as str, m.group(2) as str);
 }
 
-def score_repo(owner: str, name: str, quiet: bool = False) -> ScoreResult {
+impl score_repo(owner: str, name: str, quiet: bool = False) -> ScoreResult {
     def say(note: str) {
         if not quiet {
             warn(note);
@@ -77,7 +87,7 @@ def score_repo(owner: str, name: str, quiet: bool = False) -> ScoreResult {
     return ScoreResult(ok=True, meta=meta, an=an, breakdown=breakdown, sha=sha);
 }
 
-def as_dict(res: ScoreResult) -> dict[str, object] {
+impl as_dict(res: ScoreResult) -> dict[str, object] {
     sc = res.breakdown;
     an = res.an;
     meta = res.meta;
@@ -136,7 +146,7 @@ def as_dict(res: ScoreResult) -> dict[str, object] {
     };
 }
 
-def render(res: ScoreResult) -> str {
+impl render(res: ScoreResult) -> str {
     sc = res.breakdown;
     an = res.an;
     meta = res.meta;
@@ -183,7 +193,7 @@ def render(res: ScoreResult) -> str {
     return "\n".join(lines);
 }
 
-def run_score(repo: str, as_json: bool) -> int {
+impl run_score(repo: str, as_json: bool) -> int {
     parsed = parse_repo_ref(repo);
     if parsed is None {
         warn("jacorg score: " + ERROR_TEXT["bad_ref"] + ": " + repo);

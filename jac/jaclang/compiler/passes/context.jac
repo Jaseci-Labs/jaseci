@@ -14,7 +14,14 @@ obj Alert {
     def pretty_print(*, colors: bool = False) -> str;
 }
 
-glob INLINE_LOCKED_CODES: set[str] = {"E1144", "E1146", "E2090", "E2091", "E2094"};
+glob INLINE_LOCKED_CODES: set[str] = {
+         "E1144",
+         "E1146",
+         "E2090",
+         "E2091",
+         "E2094",
+         "E2099"
+     };
 
 obj DiagnosticPolicy {
     has suppress_codes: list[str] = [],
@@ -68,9 +75,7 @@ obj CompileContext {
     def walk_subtree(nd: UniNode, walk: Walker) -> None;
     def enter_node(nd: UniNode) -> None;
     def exit_node(nd: UniNode) -> None;
-    def is_canceled -> bool {
-        return self.cancel_requested;
-    }
+    def is_canceled -> bool;
 }
 
 walker CompilerPass {
@@ -80,17 +85,12 @@ walker CompilerPass {
 
     has prog: JacProgram { getter; }
 
-    def release {}
+    def release;
 }
 
 type PassSchedule = list[type[CompilerPass]];
 
 walker TreePass(CompilerPass, TreeWalker) {
-    can enter_walk with UniNode entry {
-        self.ctx.enter_node(here);
-    }
-
-    can exit_walk with UniNode exit {
-        self.ctx.exit_node(here);
-    }
+    can enter_walk with UniNode entry;
+    can exit_walk with UniNode exit;
 }

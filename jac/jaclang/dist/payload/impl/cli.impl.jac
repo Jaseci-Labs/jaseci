@@ -12,11 +12,7 @@ impl main(argv: list[str]) -> int {
     return 0;
 }
 
-def _need(argv: list[str], count: int, usage: str) {
-    if len(argv) < count {
-        die(usage);
-    }
-}
+def _need(argv: list[str], count: int, usage: str);
 
 impl dispatch(argv: list[str]) {
     if len(argv) < 1 {
@@ -101,12 +97,18 @@ impl parse_mkpayload_flags(flags: list[str]) -> MkPayloadOpts {
     return opts;
 }
 
-impl check_host_python{
+impl check_host_python {
     want = py_ver();
     have = host_py_minor();
     if want != have {
         die(
             f"mkpayload: must run on the bundled CPython {want} (this interpreter is {have}); invoke it with the source-built python"
         );
+    }
+}
+
+impl _need(argv: list[str], count: int, usage: str) {
+    if len(argv) < count {
+        die(usage);
     }
 }

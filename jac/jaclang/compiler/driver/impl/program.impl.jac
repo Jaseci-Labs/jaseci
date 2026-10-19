@@ -179,13 +179,18 @@ impl JacProgram.load_dependency_module(
         and not (need_tree and isinstance(target_hub[resolved_path], CatModule)) {
         mod = target_hub[resolved_path];
     } else {
-        if resolved_path.endswith('.pyi') {
+        served: (uni.Module | None) = None;
+        if resolved_path.endswith('.pyi') and not need_tree {
+            served = active_host().stub_interface(self, resolved_path);
+        }
+        if served is not None {
+            mod = served;
+        } elif resolved_path.endswith('.pyi') {
             import from jaclang.compiler.driver.pass_driver { run_pass }
             import from jaclang.compiler.passes.sym_tab_build_pass { SymTabBuildPass }
             src = use_str or active_host().read_source(source_path);
             (mod, _stub_errors) = active_host().parse_python(src, source_path, self);
             mod.stub_only = True;
-
             self.install_module(resolved_path, mod);
             self.note_stub_tree_served(resolved_path);
             self.resolve_absorb_imports(mod);
@@ -1119,4 +1124,20 @@ impl JacProgram.note_stub_tree_served(self: JacProgram, path: str) -> None {
     if host.in_typeshed_tree(path) {
         self._stub_trees_served = True;
     }
+}
+
+impl JacProgram.jac_file_formatter(
+    file_path: str, auto_lint: bool = False
+) -> JacProgram {
+    return active_host().format_file(file_path, auto_lint);
+}
+
+impl JacProgram.jac_str_formatter(
+    source_str: str, file_path: str, auto_lint: bool = False
+) -> JacProgram {
+    return active_host().format_source(source_str, file_path, auto_lint);
+}
+
+impl JacProgram.jac_file_linter(file_path: str) -> JacProgram {
+    return active_host().lint_file(file_path);
 }

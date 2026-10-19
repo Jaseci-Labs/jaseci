@@ -570,6 +570,8 @@ An app's walkers and `def:pub` functions form its public boundary. Other declara
 | `E2096` | '{module}' is not exported by the package '{package}' |
 | `E2097` | '{name}' is not a module under this archwire.jac, so {what} names nothing |
 | `E2098` | Edge rule '{name}': {what} matches no module |
+| `E2099` | '{provider} --> {consumer}' crosses from top-level package '{source}' into '{target}', and no rule admits it; add `{rule}` |
+| `E2100` | Edge rule '{name}': the bare '*' {side} states no architecture |
 
 ### JSX Slot Body Rules
 
@@ -625,11 +627,13 @@ Emitted by `jac check --lint`. Rules can be configured in [`jac.toml`](config/in
 | `W3040` | `filter-compare-tautology` | Filter comparison '{name} == {name}' is always true | default |
 | `W3041` | `stale-has-read` | Reactive `has` field '{name}' is read after being assigned in the same `can with entry` block | default |
 | `W3042` | `map-lambda-to-comprehension` | `.map(lambda x -> any { return <jsx>; })` can be replaced with comprehension syntax | default |
-| `W3050` | `strip-comments` | Comment can be removed | opt-in |
-| `W3051` | `strip-docstrings` | Docstring can be removed | opt-in |
+| `W3050` | `strip-comments` | Comment can be removed | all |
+| `W3051` | `strip-docstrings` | Docstring can be removed | all |
 | `W3053` | `remove-wired-import` | Import of '{name}' from '{module}' is already provided by archwire.jac (fix only: `jac check` reports it as `E1144`) | default |
+| `W3054` | `remove-dead-import` | Import of '{name}' from '{module}' is neither wired nor read | default |
+| `W3055` | `separate-impls` | Body of '{name}' belongs in a separate impl | all |
 
-> **opt-in group**: `strip-comments` and `strip-docstrings` are destructive "deslop" rules. They are **never** activated by `select = ["all"]` or `["default"]`; they fire only when named explicitly in [`[check.lint]`](config/index.md#checklint). See the config reference for details.
+> **all group**: `strip-comments`, `strip-docstrings` and `separate-impls` are on under `select = ["all"]` and off under `["default"]`. The first two delete comments and docstrings; `separate-impls` moves bodies into `impl` blocks. Each can be named explicitly or listed in `ignore`; see the [config reference](config/index.md#checklint).
 
 ---
 

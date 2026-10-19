@@ -1,18 +1,6 @@
 import from "@jac/runtime" { Link }
 
-def matches(p: PackageSummary, q: str) -> bool {
-    needle = q.strip().lower();
-    if needle == "" {
-        return True;
-    }
-    hay = [p.name, p.description, *p.exports, *p.symbols];
-    for text in hay {
-        if needle in text.lower() {
-            return True;
-        }
-    }
-    return False;
-}
+def matches(p: PackageSummary, q: str) -> bool;
 
 def:pub PackageCard(pkg: PackageSummary) -> JsxElement {
     return
@@ -81,4 +69,18 @@ def:pub PackagesIndex(
                 </ul>
             }   }
         </div>;
+}
+
+impl matches(p: PackageSummary, q: str) -> bool {
+    needle = q.strip().lower();
+    if needle == "" {
+        return True;
+    }
+    hay = [p.name, p.description, *p.exports, *p.symbols];
+    for text in hay {
+        if needle in text.lower() {
+            return True;
+        }
+    }
+    return False;
 }
