@@ -4870,15 +4870,11 @@ impl NaIRGenPass._codegen_for_indexed(
             self.builder.store(val_val, allocas[1]);
         } elif kind == "str" {
             _str_next_slot = self._entry_alloca(i64, "for.str.next");
+            _ch_w = self._call_utf8_cp_len_at(
+                self.builder, collection_val, len_val, body_idx, name="for.ch.w"
+            );
             self.builder.store(
-                self.builder.add(
-                    body_idx,
-                    self._call_utf8_cp_len_at(
-                        self.builder, collection_val, len_val, body_idx, name="for.ch.w"
-                    ),
-                    name="for.ch.next"
-                ),
-                _str_next_slot
+                self.builder.add(body_idx, _ch_w, name="for.ch.next"), _str_next_slot
             );
             _ch_byte = self.builder.zext(
                 self.builder.load(
@@ -4902,8 +4898,14 @@ impl NaIRGenPass._codegen_for_indexed(
             _ch_wide_bb = func.append_basic_block(name="for.ch.wide");
             _ch_done_bb = func.append_basic_block(name="for.ch.done");
             self.builder.cbranch(
-                self.builder.icmp_unsigned(
-                    "<", _ch_byte, ir.Constant(i64, 0x80), name="for.ch.isasc"
+                self.builder.and_(
+                    self.builder.icmp_unsigned(
+                        "<", _ch_byte, ir.Constant(i64, 0x80), name="for.ch.low"
+                    ),
+                    self.builder.icmp_signed(
+                        "==", _ch_w, ir.Constant(i64, 1), name="for.ch.one"
+                    ),
+                    name="for.ch.isasc"
                 ),
                 _ch_done_bb,
                 _ch_wide_bb

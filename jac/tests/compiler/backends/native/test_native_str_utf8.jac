@@ -25,7 +25,10 @@ glob SAMPLES: list[str] = [
          b"\xff\xfez",
          b"\xed\xa0\x80z",
          b"\xc0\xaf",
-         b"\xf4\x90\x80\x80"
+         b"\xf4\x90\x80\x80",
+         b"a\x80b",
+         b"ab\x80",
+         b"\xc3\xa9\x80x"
      ],
      _ENGINE: list[any] = [];
 

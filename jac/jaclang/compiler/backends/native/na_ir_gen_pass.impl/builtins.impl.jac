@@ -1037,7 +1037,9 @@ impl NaIRGenPass._codegen_string_index(
         name="char.cached"
     );
     b.cbranch(
-        b.icmp_unsigned("<", _byte_idx, ir.Constant(i64, 0x80), name="char.isasc"),
+        self._emit_u8_lone_ascii(
+            b, target_val, len_val, off, _byte_idx, name="char.isasc"
+        ),
         done_bb,
         wide_bb
     );

@@ -337,7 +337,7 @@ impl NaIRGenPass._emit_utf8_helpers -> None {
     b = ir.IRBuilder(_d_lead);
     d_lb = b.zext(b.load(d_s, name="u8d.b0"), i64, name="u8d.lead");
     b.cbranch(
-        b.icmp_unsigned("<", d_lb, ir.Constant(i64, 0x80), name="u8d.isasc"),
+        self._emit_u8_lone_ascii(b, d_s, d_n, zero, d_lb, name="u8d.isasc"),
         _d_ascii,
         _d_wide
     );
@@ -512,7 +512,7 @@ impl NaIRGenPass._emit_utf8_helpers -> None {
     a_p = b.gep(a_s, [a_off], name="u8at.p");
     a_bv = b.zext(b.load(a_p, name="u8at.b"), i64, name="u8at.bv");
     b.cbranch(
-        b.icmp_unsigned("<", a_bv, ir.Constant(i64, 0x80), name="u8at.isasc"),
+        self._emit_u8_lone_ascii(b, a_s, a_n, a_off, a_bv, name="u8at.isasc"),
         _a_ascii,
         _a_wide
     );
@@ -784,6 +784,33 @@ impl _u8_is_start(b: ir.IRBuilder, s: ir.Value, i: ir.Value, name: str) -> ir.Va
     return b.or_(
         b.icmp_unsigned("==", i, ir.Constant(i64, 0), name=f"{name}.first"),
         b.not_(_u8_is_cont(b, byte, f"{name}.cont"), name=f"{name}.lead"),
+        name=name
+    );
+}
+
+impl NaIRGenPass._emit_u8_lone_ascii(
+    b: ir.IRBuilder,
+    s: ir.Value,
+    n: ir.Value,
+    off: ir.Value,
+    byte: ir.Value,
+    name: str = "u8.lone"
+) -> ir.Value {
+    i64 = ir.IntType(64);
+    n = self._coerce_type(n, i64);
+    off = self._coerce_type(off, i64);
+    nxt = b.add(off, ir.Constant(i64, 1), name=f"{name}.nxt");
+    inside = b.icmp_signed("<", nxt, n, name=f"{name}.has");
+    follow = b.load(
+        b.gep(s, [b.select(inside, nxt, off, name=f"{name}.at")], name=f"{name}.p"),
+        name=f"{name}.b"
+    );
+    return b.and_(
+        b.icmp_unsigned("<", byte, ir.Constant(i64, 0x80), name=f"{name}.low"),
+        b.not_(
+            b.and_(inside, _u8_is_cont(b, follow, f"{name}.cont"), name=f"{name}.tail"),
+            name=f"{name}.alone"
+        ),
         name=name
     );
 }

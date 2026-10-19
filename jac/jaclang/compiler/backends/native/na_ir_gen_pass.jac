@@ -2649,6 +2649,15 @@ walker NaIRGenPass(CompilerPass) {
         name: str = "u8.unitin"
     ) -> ir.Value;
 
+    def _emit_u8_lone_ascii(
+        b: ir.IRBuilder,
+        s: ir.Value,
+        n: ir.Value,
+        off: ir.Value,
+        byte: ir.Value,
+        name: str = "u8.lone"
+    ) -> ir.Value;
+
     def _emit_wrap_clamp(
         b: ir.IRBuilder,
         value: ir.Value,

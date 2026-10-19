@@ -7330,8 +7330,37 @@ impl NativeBuiltinEmitter.code_point_fn(
     lead = head.zext(head.load(text, name="lead.byte"), i64, name="lead");
     ascii_bb = fn.append_basic_block("ascii");
     wide_bb = fn.append_basic_block("wide");
+    zero_lead = head.icmp_unsigned("==", lead, ir.Constant(i64, 0), name="lead.nul");
+    follow = head.zext(
+        head.load(
+            head.gep(
+                text,
+                [
+                    head.select(
+                        zero_lead,
+                        ir.Constant(i64, 0),
+                        ir.Constant(i64, 1),
+                        name="follow.at"
+                    )
+                ],
+                name="follow.p"
+            ),
+            name="follow.byte"
+        ),
+        i64,
+        name="follow"
+    );
     head.cbranch(
-        head.icmp_unsigned("<", lead, ir.Constant(i64, 128), name="is.ascii"),
+        head.and_(
+            head.icmp_unsigned("<", lead, ir.Constant(i64, 128), name="is.low"),
+            head.icmp_unsigned(
+                "!=",
+                head.and_(follow, ir.Constant(i64, 0xC0), name="follow.top"),
+                ir.Constant(i64, 0x80),
+                name="follow.lead"
+            ),
+            name="is.ascii"
+        ),
         ascii_bb,
         wide_bb
     );
