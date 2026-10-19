@@ -14,11 +14,9 @@ slow path with the flag and the slot's state fixed.
 import re;
 import from tests.support { compile_native_ir }
 
-glob FIXTURE: str = "na_exception_context.jac";
-
-glob MAIN_CTX: str = '@"__jac_exception_main_ctx"';
-
-glob FUNCS: dict[str, str] = {
+glob FIXTURE: str = "na_exception_context.jac",
+     MAIN_CTX: str = '@"__jac_exception_main_ctx"',
+     FUNCS: dict[str, str] = {
          "context": "__jac_exception_context",
          "slow": "__jac_exception_context_slow"
      };
@@ -37,7 +35,7 @@ def lookup_blocks -> dict[str, list[str]] {
         }
         label = "";
         for line in found.group(1).splitlines() {
-            head = re.match(r'^"?([\w.]+)"?:$', line);
+            head = re.`match(r'^"?([\w.]+)"?:$', line);
             if head is not None {
                 label = f"{fn}:{head.group(1)}";
                 blocks[label] = [];
@@ -98,10 +96,10 @@ def reachable(blocks: dict[str, list[str]], known: dict[str, bool]) -> list[str]
             todo.append("slow:entry");
         }
         last = blocks[at][-1];
-        cond = re.match(
+        cond = re.`match(
             r'\s*br i1 %"?([\w.]+)"?, label %"?([\w.]+)"?, label %"?([\w.]+)"?', last
         );
-        jump = re.match(r'\s*br label %"?([\w.]+)"?', last);
+        jump = re.`match(r'\s*br label %"?([\w.]+)"?', last);
         if cond is not None {
             (c, yes, no) = cond.groups();
             key = f"{fn}:{c}";
@@ -147,7 +145,7 @@ test "while single-threaded, the context the thread-local slot holds or gets is 
     for slot_empty in [True, False] {
         labels = reachable(blocks, conditions(blocks, False, slot_empty));
         assert any(
-            re.match(r'\s*store .*' + re.escape(MAIN_CTX) + r'\s*$', line)
+            re.`match(r'\s*store .*' + re.escape(MAIN_CTX) + r'\s*$', line)
             for line in main_ctx_uses(blocks, labels)
         ) , f"single-threaded lookup (slot empty: {slot_empty}) never publishes its context";
     }
