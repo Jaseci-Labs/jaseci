@@ -547,3 +547,72 @@ test "a remote-backend app vendors no postgres distribution" {
     import from jaclang.client.targets.desktop.desktop_build { stage_postgres }
     assert stage_postgres(Path("/tmp/nowhere"), "https://api.example.com") == "";
 }
+
+
+test "a dev build points the host at the shared cached distribution" {
+    import from pathlib { Path }
+    import from unittest.mock { patch }
+    import from jaclang.client.targets.desktop.desktop_build { stage_postgres }
+    cached = "/home/jac/.cache/jac/pg/dist/linux-amd64-19";
+    with patch("jaclang.data.pg_dist.cached_dist_dir", return_value=cached) {
+        assert stage_postgres(Path("/tmp/nowhere"), "embedded", vendor=False) == cached;
+    }
+    with patch("jaclang.data.pg_dist.cached_dist_dir", return_value="") {
+        assert stage_postgres(Path("/tmp/nowhere"), "embedded", vendor=False) == "";
+    }
+}
+
+
+test "the embedded store stops only when the last instance leaves" {
+    import from tempfile { TemporaryDirectory }
+    import from unittest.mock { patch }
+    import from jaclang.client.targets.desktop.native.host_boot {
+        _EMBEDDED_LOCKS,
+        _EMBEDDED_STOPPED,
+        _embedded_cluster_dir,
+        _join_embedded_store,
+        _stop_embedded_store
+    }
+    with TemporaryDirectory() as tmp {
+        calls: list[str] = [];
+        def _record(home: str) {
+            calls.append(home);
+        }
+        with patch("jaclang.data.pgembed.stop_cluster", side_effect=_record) {
+            _EMBEDDED_STOPPED.discard(tmp);
+            _join_embedded_store(tmp);
+            # Leaving once stops the cluster; a second leave (the shutdown hook
+            # and the atexit backstop) is a no-op, not a second stop.
+            _stop_embedded_store(tmp);
+            _stop_embedded_store(tmp);
+            assert calls == [_embedded_cluster_dir(tmp)] , calls;
+            assert tmp not in _EMBEDDED_LOCKS;
+        }
+    }
+}
+
+
+test "a peer instance keeps the cluster alive on leave" {
+    import fcntl;
+    import os;
+    import from tempfile { TemporaryDirectory }
+    import from jaclang.client.targets.desktop.native.host_boot {
+        _embedded_user_lock_path,
+        _holds_last_embedded_user
+    }
+    with TemporaryDirectory() as tmp {
+        path = _embedded_user_lock_path(tmp);
+        os.makedirs(os.path.dirname(path), exist_ok=True);
+        mine = open(path, "a");
+        peer = open(path, "a");
+        fcntl.flock(mine.fileno(), fcntl.LOCK_SH);
+        fcntl.flock(peer.fileno(), fcntl.LOCK_SH);
+        # Two instances hold the lock, so neither is the last user and neither
+        # may stop the shared cluster.
+        assert not _holds_last_embedded_user(mine);
+        peer.close();
+        # The peer is gone; the survivor is now the last user.
+        assert _holds_last_embedded_user(mine);
+        mine.close();
+    }
+}

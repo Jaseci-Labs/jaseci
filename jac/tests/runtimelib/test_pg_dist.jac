@@ -217,6 +217,29 @@ test "bundled_dist_dir vendors only a relocatable distribution" {
 }
 
 
+test "an invalid JAC_PG_DIST refuses before any fetch" {
+    with TemporaryDirectory() as tmp {
+        broken = Path(tmp) / "missing";
+        with patch.dict(
+            os.environ,
+            {"JAC_CACHE_HOME": str(Path(tmp) / "cache"), "JAC_PG_DIST": str(broken)}
+        ), patch("jaclang.data.pg_dist._system", return_value=None), patch(
+            "jaclang.data.pg_dist.download_dist",
+            side_effect=AssertionError("an invalid override must not fetch")
+        ) {
+            forget("postgres");
+            try {
+                require("postgres");
+                assert False , "an invalid override must not resolve";
+            } except ArtifactUnavailable as e {
+                assert "JAC_PG_DIST" in str(e) , str(e);
+            }
+        }
+        forget("postgres");
+    }
+}
+
+
 test "JAC_PG_HOME relocates the pg bucket" {
     import from jaclang.cache.registry { bucket }
     with TemporaryDirectory() as tmp {

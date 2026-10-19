@@ -135,7 +135,7 @@ def _stage_fused_runtime(out_dir: Path) {
 }
 
 
-def stage_postgres(resources: Path, backend: str) -> str {
+def stage_postgres(resources: Path, backend: str, vendor: bool = True) -> str {
     """Vendor the self-contained Postgres distribution for an embedded app.
 
     Returns the app-relative path of the vendored tree, which the host config
@@ -143,11 +143,18 @@ def stage_postgres(resources: Path, backend: str) -> str {
     network. A remote-backend app needs no local database and vendors nothing.
     Only a relocatable distribution is accepted (`bundled_dist_dir` refuses a
     bare system bin directory), so the bundled tree runs from any machine.
+
+    With `vendor` off (a dev session) nothing is copied: the returned path
+    points at the shared machine cache, which the compiler already populated,
+    so the host finds that distribution instead of a fresh per-app cache.
     """;
     if backend != "embedded" {
         return "";
     }
-    import from jaclang.data.pg_dist { bundled_dist_dir }
+    import from jaclang.data.pg_dist { bundled_dist_dir, cached_dist_dir }
+    if not vendor {
+        return cached_dist_dir();
+    }
     src = Path(bundled_dist_dir());
     dst = resources / "pgdist";
     console.print("  Bundling the embedded postgres distribution…", style="muted");

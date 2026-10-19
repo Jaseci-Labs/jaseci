@@ -335,6 +335,17 @@ def bundled_dist_dir -> str {
     return vendored;
 }
 
+def cached_dist_dir -> str {
+    """The cached, self-contained distribution root, or '' when none is cached.
+
+    A dev desktop session passes this path to the host without copying the
+    tree, so the host finds the distribution the compiler already fetched in
+    the shared machine cache instead of re-fetching it into a per-app cache.
+    """;
+    found = _cached(pinned_major());
+    return (_dist_root(found) or '') if found is not None else '';
+}
+
 obj PostgresArtifact(Artifact) {
     has name: str = "postgres",
         kind: ArtifactKind = ArtifactKind.CAPABILITY,
@@ -370,6 +381,26 @@ obj PostgresArtifact(Artifact) {
             return Probe.hit(Source.SYSTEM, found, {});
         }
         return Probe.missing(f"postgres {major} is not provisioned");
+    }
+
+    override def build_blocker -> str {
+        # An explicit override that is set but invalid cannot be fixed by
+        # fetching: provisioning would download a distribution the later check
+        # then ignores. Refuse before any network work.
+        env = _env_dist();
+        if env {
+            # `probe_checkout` never falls through to the config when the
+            # environment override is set, so neither does this.
+            if _bin_of(env) is None {
+                return f"JAC_PG_DIST {env!r} has no bin/{postgres_exe()}";
+            }
+            return "";
+        }
+        configured = _configured_dist();
+        if configured and _bin_of(configured) is None {
+            return f"[database] postgres_dist {configured!r} has no bin/{postgres_exe()}";
+        }
+        return "";
     }
 
     override def checkout_path -> str {

@@ -40,9 +40,9 @@ def _assemble_native_host(
     program = stage_program(
         entry_file, project_dir, layout.resources, backend, dist_dir
     );
-    # A dev session resolves the distribution from the local cache, so it need
-    # not pay to copy the whole tree into the (per-launch) build directory.
-    pg_dist = stage_postgres(layout.resources, backend) if vendor else "";
+    # A dev session does not copy the distribution; the host points at the
+    # shared machine cache so it finds what the compiler already fetched.
+    pg_dist = stage_postgres(layout.resources, backend, vendor);
 
     _stage_fused_runtime(output_dir);
     host_src = _generate_host_source(

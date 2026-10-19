@@ -17,6 +17,9 @@ glob PLUGIN_BOOTSTRAP_MODULES: list[str] = [
      EMBEDDED: str = "embedded",
      PORT_RETRIES: int = 64;
 
+glob _EMBEDDED_LOCKS: dict[str, any] = {},
+     _EMBEDDED_STOPPED: set[str] = set();
+
 
 obj HostContext {
     has port: int = 0,
@@ -93,9 +96,9 @@ def embedded_store_env(app_dir: str, data_dir: str, pg_dist: str) -> dict[str, s
 
     `JAC_PG_HOME` relocates the whole `pg` cache bucket (cluster and dist cache)
     under the app's per-user data dir, so two apps never share a cluster and the
-    state is not the machine-wide `<cache>/pg/main`. `JAC_PG_DIST` is set only
-    when the build vendored a distribution, which lets a sealed app start with
-    no network and no system Postgres.
+    state is not the machine-wide `<cache>/pg/main`. `JAC_PG_DIST` points at the
+    tree the build vendored, or at the cached tree a dev session passes instead,
+    so the app starts with no network and no system Postgres.
     """;
     env = {"JAC_PG_HOME": data_dir};
     if pg_dist {
@@ -116,10 +119,72 @@ def _embedded_cluster_dir(home: str) -> str {
 }
 
 
-def _stop_embedded_store(home: str) -> None {
-    """Stop this app's embedded cluster, if any. Safe to call more than once.""";
-    if not home {
+def _embedded_user_lock_path(home: str) -> str {
+    """The advisory lock file whose shared holders are the app's running instances.""";
+    return os.path.join(home, "pg", ".desktop-users.lock");
+}
+
+
+def _join_embedded_store(home: str) -> None {
+    """Hold a shared lock for as long as this process uses the app's cluster.
+
+    Two instances of one app share one cluster, so only the last may stop it.
+    The OS drops the lock when the process exits, even on a crash, so the lock
+    is the shared count of live instances.
+    """;
+    if not home or home in _EMBEDDED_LOCKS {
         return;
+    }
+    try {
+        import fcntl;
+        path = _embedded_user_lock_path(home);
+        os.makedirs(os.path.dirname(path), exist_ok=True);
+        handle = open(path, "a");
+        fcntl.flock(handle.fileno(), fcntl.LOCK_SH);
+        _EMBEDDED_LOCKS[home] = handle;
+    } except Exception as e {
+        sys.stderr.write("host_boot: embedded postgres lock failed: " + str(e) + "\n");
+    }
+}
+
+
+def _holds_last_embedded_user(handle: any) -> bool {
+    """True when no other process holds a shared lock on `handle`.
+
+    Converting the shared lock to an exclusive one succeeds only for the sole
+    holder; a peer still using the cluster keeps the lock shared and this
+    fails.
+    """;
+    try {
+        import fcntl;
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB);
+    } except Exception {
+        return False;
+    }
+    return True;
+}
+
+
+def _stop_embedded_store(home: str) -> None {
+    """Stop this app's embedded cluster once the last instance exits.
+
+    The shutdown hook and the atexit backstop both call this, so a second call
+    is a no-op. When this process holds no lock (a platform without `fcntl`),
+    stop directly, as before.
+    """;
+    if not home or home in _EMBEDDED_STOPPED {
+        return;
+    }
+    _EMBEDDED_STOPPED.add(home);
+    handle = _EMBEDDED_LOCKS.pop(home, None);
+    if handle is not None {
+        last = _holds_last_embedded_user(handle);
+        handle.close();
+        if not last {
+            # A peer instance still uses the cluster; it stops the cluster on
+            # its own exit.
+            return;
+        }
     }
     try {
         import from jaclang.data.pgembed { stop_cluster }
@@ -281,6 +346,7 @@ def boot(config_json: str) -> HostContext {
         ).items() {
             os.environ[key] = value;
         }
+        _join_embedded_store(data_dir);
         import atexit;
         atexit.register(_stop_embedded_store, data_dir);
     }

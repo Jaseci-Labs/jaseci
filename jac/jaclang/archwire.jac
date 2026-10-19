@@ -1411,7 +1411,8 @@ graph import {
     ]
     data.pg_dist ++> cli.commands.db._db_fetch { download_dist }
     data.pg_dist --> client.targets.desktop.desktop_build.stage_postgres {
-        bundled_dist_dir
+        bundled_dist_dir,
+        cached_dist_dir
     }
     data.pgembed ++> [
         cli.commands.db._catalog_runtime
