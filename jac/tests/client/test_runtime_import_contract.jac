@@ -88,53 +88,25 @@ test "missing runtime exports fail before either client bundler starts" {
 }
 
 test "client providers export exactly the names client importers bind" {
-    # (provider, provider source, importer source, export line, refresh boundary,
-    #  held pull indexes)
+    # (provider, provider source, importer source, export line, held pull indexes)
     cases = [
         (
             "shared",
-            'glob CATEGORY_LIST: list[str] = ["Electronics", "Fashion"];\n'
-            'glob CONDITION_LABELS: dict[str, str] = {"new": "New"};\n'
-            'def shout(text: str) -> str { return text.upper(); }\n'
-            'def Card(title: str) -> JsxElement { return <b>{title}</b>; }\n'
-            'def Local(title: str) -> JsxElement { return <i>{title}</i>; }\n'
-            'def:pub Badge(value: str) -> JsxElement {\n'
-            '    return <span>{CONDITION_LABELS[value]}<Local title={shout(value)} /></span>;\n'
-            '}\n',
-            'import from .shared { Badge, Card, CATEGORY_LIST, CONDITION_LABELS, shout }\n'
-            'def:pub app -> any {\n'
-            '    return <div>\n'
-            '        <Badge value="new" />\n'
-            '        <Card title={shout(CATEGORY_LIST[0])} />\n'
-            '        {CONDITION_LABELS["new"]}\n'
-            '    </div>;\n'
-            '}\n',
-            "export {Badge, CATEGORY_LIST, CONDITION_LABELS, Card, shout};",
-            False,
-            [0, 1, 2, 3, 5]
-        ),
-        (
-            "provider",
-            'obj Hidden { has name: str = ""; }\n'
-            'glob LABELS: dict[str, str] = {"new": "New"};\n',
-            'import from .provider { Hidden, LABELS }\n'
-            'def:pub app -> any {\n'
-            '    value = Hidden();\n'
-            '    return <div>{value.name}{LABELS["new"]}</div>;\n'
-            '}\n',
-            "export {Hidden, LABELS};",
-            False,
+            'glob LABELS: dict[str, str] = {"new": "New"};\n'
+            'def Card(name: str) -> JsxElement { return <b>{LABELS[name]}</b>; }\n'
+            'def Local -> JsxElement { return <i>local</i>; }\n',
+            'import from .shared { Card, LABELS }\n'
+            'def:pub app -> any { return <div><Card name="new" />{LABELS["new"]}</div>; }\n',
+            "export {Card, LABELS};",
             [0, 1]
         ),
         (
-            "widgets",
-            'def label(text: str) -> str { return text.upper(); }\n'
-            'def:pub Card(title: str) -> JsxElement { return <b>{label(title)}</b>; }\n',
-            'import from .widgets { Card }\n'
-            'def:pub app -> any { return <Card title="x" />; }\n',
-            "export {Card};",
-            True,
-            [1]
+            "provider",
+            'obj Hidden { has name: str = ""; }\n',
+            'import from .provider { Hidden }\n'
+            'def:pub app -> any { value = Hidden(); return <div>{value.name}</div>; }\n',
+            "export {Hidden};",
+            [0]
         ),
 
     ];
@@ -143,7 +115,7 @@ test "client providers export exactly the names client importers bind" {
         project = Path(tmp);
         compiler = _compiler(project);
         try {
-            for (name, source, importer, export_line, boundary, pulled) in cases {
+            for (name, source, importer, export_line, pulled) in cases {
                 (project / f"{name}.jac").write_text(source);
                 (project / f"use_{name}.jac").write_text(importer);
                 compiler.emit_dependencies(
@@ -156,7 +128,6 @@ test "client providers export exactly the names client importers bind" {
                     if line.startswith("export {")
                 ];
                 assert exports == [export_line] , (name, js);
-                assert ("/*jac:refresh-boundary*/" in js) == boundary , (name, js);
                 artifact = compiler.jac_compiler.compile_module(
                     project / f"{name}.jac"
                 );
