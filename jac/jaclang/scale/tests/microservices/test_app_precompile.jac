@@ -164,14 +164,16 @@ class _SealLog(logging.Handler) {
 }
 
 
-def _pack_logged(base: Path, binary: bytes) -> tuple[bytes, list[str]] {
+def _pack_logged(
+    base: Path, binary: bytes, client_ready: any = None
+) -> tuple[bytes, list[str]] {
     log = logging.getLogger("jaclang.scale.injector.bundle");
     seen = _SealLog();
     previous = log.level;
     log.setLevel(logging.INFO);
     log.addHandler(seen);
     try {
-        raw = pack_jab(str(base), binary);
+        raw = pack_jab(str(base), binary, client_ready=client_ready);
     } finally {
         log.removeHandler(seen);
         log.setLevel(previous);
@@ -201,6 +203,49 @@ test "an unchanged project reuses its sealed bundle instead of sealing again" {
     assert not any("Reusing the sealed bundle" in m for m in mode_log) , (
         "a file mode change reused the previous seal"
     );
+}
+
+
+def _bundle_member(raw: bytes, name: str) -> bytes {
+    with tarfile.open(fileobj=io.BytesIO(raw), mode="r:gz") as archive {
+        data = archive.extractfile(name);
+        return data.read() if data is not None else b"";
+    }
+}
+
+
+test "a seal built alongside the client build ships the bundle the build finished" {
+    binary = require_pod_binary().read_bytes();
+    base = Path(_mini_app());
+    page = base / ".jac" / "client" / "dist" / "index.html";
+    page.parent.mkdir(parents=True);
+    page.write_text("stale");
+    waits: list[str] = [];
+    def built {
+        waits.append("built");
+        page.write_text("fresh");
+    }
+    (raw, log) = _pack_logged(base, binary, built);
+    assert waits , "the seal never waited for the client build";
+    assert _bundle_member(raw, ".jac/client/dist/index.html") == b"fresh" , (
+        "the bundle shipped the client build that was on disk when the seal began"
+    );
+    def unchanged {
+        waits.append("unchanged");
+    }
+    (again, again_log) = _pack_logged(base, binary, unchanged);
+    assert any("Reusing the sealed bundle" in m for m in again_log) , (
+        f"an unchanged project and client build sealed the app again: {again_log}"
+    );
+    assert again == raw;
+    def rebuilt {
+        page.write_text("newer");
+    }
+    (third, third_log) = _pack_logged(base, binary, rebuilt);
+    assert not any("Reusing the sealed bundle" in m for m in third_log) , (
+        "a new client build reused the bundle that ships the old one"
+    );
+    assert _bundle_member(third, ".jac/client/dist/index.html") == b"newer";
 }
 
 
