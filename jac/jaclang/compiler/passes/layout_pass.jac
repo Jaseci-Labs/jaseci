@@ -868,8 +868,7 @@ obj LayoutRegistry {
         topo_order: list[str] = [],
         local_names: list[str] = [],
         enums: dict[str, EnumLayout] = {},
-        _descendants: (dict[str, list[str]] | None) = None,
-        _order: (dict[str, int] | None) = None;
+        _descendants: (dict[str, list[str]] | None) = None;
 
     def get_layout(name: str) -> (ArchetypeLayout | None);
     def set_mro(name: str, mro: list[str]) -> None;

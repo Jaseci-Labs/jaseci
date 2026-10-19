@@ -784,7 +784,6 @@ impl LayoutRegistry.resolve_method_owner(
 impl LayoutRegistry.set_mro(name: str, mro: list[str]) -> None {
     self.mro_order[name] = mro;
     self._descendants = None;
-    self._order = None;
 }
 
 impl LayoutRegistry.descendants_of(names: list[str]) -> list[str] {
@@ -792,18 +791,14 @@ impl LayoutRegistry.descendants_of(names: list[str]) -> list[str] {
     named classes included, in registry order. The index is built once per
     set of resolution orders.""";
     index = self._descendants;
-    order = self._order;
-    if index is None or order is None {
+    if index is None {
         index = {};
-        order = {};
         for cls in self.mro_order {
-            order[cls] = len(order);
             for anc in self.get_mro(cls) {
                 index.setdefault(anc, []).append(cls);
             }
         }
         self._descendants = index;
-        self._order = order;
     }
     if len(names) == 1 {
         return index.get(names[0], []);
@@ -812,7 +807,7 @@ impl LayoutRegistry.descendants_of(names: list[str]) -> list[str] {
     for name in names {
         found.update(index.get(name, []));
     }
-    return sorted(found, key=order.__getitem__);
+    return [cls for cls in self.mro_order if cls in found];
 }
 
 impl LayoutRegistry.get_mro(name: str) -> list[str] {
