@@ -1,10 +1,4 @@
-def _is_bar_expr(nd: uni.UniNode) -> bool {
-    if not isinstance(nd, uni.BinaryExpr) {
-        return False;
-    }
-    _op = nd.op;
-    return isinstance(_op, uni.Token) and _op.value == "|";
-}
+def _is_bar_expr(nd: uni.UniNode) -> bool;
 
 impl NaIRGenPass._devirt_closed_world(arch_name: str) -> bool {
     arch = self.arch_ast_map.get(arch_name);
@@ -5572,4 +5566,12 @@ impl NaIRGenPass._report_unreachable_overrides -> None {
             }
         }
     }
+}
+
+impl _is_bar_expr(nd: uni.UniNode) -> bool {
+    if not isinstance(nd, uni.BinaryExpr) {
+        return False;
+    }
+    _op = nd.op;
+    return isinstance(_op, uni.Token) and _op.value == "|";
 }

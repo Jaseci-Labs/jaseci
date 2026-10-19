@@ -15,17 +15,9 @@ obj WireBinding {
         alias: str = "",
         injected: bool = True;
 
-    def key -> tuple[str, str, str, str] {
-        return (self.provider, self.form, self.name, self.alias);
-    }
-
-    def is_module_form -> bool {
-        return "from" not in self.form.split(" ");
-    }
-
-    def bound_name -> str {
-        return self.alias or self.name;
-    }
+    def key -> tuple[str, str, str, str];
+    def is_module_form -> bool;
+    def bound_name -> str;
 }
 
 obj PatternRec {
@@ -129,18 +121,7 @@ glob _spec_cache: dict[str, tuple[tuple[float, int], WiringSpec]] = {},
      _STDLIB_NAMES: list[set[str]] = [];
 
 @contextmanager
-def wiring_scope -> Iterator[None] {
-    if _resolution.get() is not None {
-        yield ;
-        return;
-    }
-    token = _resolution.set({});
-    try {
-        yield ;
-    } finally {
-        _resolution.reset(token);
-    }
-}
+def wiring_scope -> Iterator[None];
 
 def is_arch_file(path: str) -> bool;
 def arch_file_for(path: str) -> (str | None);

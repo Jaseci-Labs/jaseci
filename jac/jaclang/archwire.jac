@@ -7022,7 +7022,8 @@ graph import compiler {
             W3050,
             W3051,
             W3053,
-            W3054
+            W3054,
+            W3055
         },
         tools.jac_auto_lint_pass.JacAutoLintPass._check_filter_compare_tautology {
             W3040
@@ -7339,11 +7340,13 @@ graph import compiler {
         driver.nativecache._module_files_and_imports { parse as rd_parse },
         driver.program.JacProgram.parse_source { annex_sources, parse_woven },
     ]
-    frontend.parser.lexer ++> tools.jac_auto_lint_pass.JacAutoLintPass._reparse_signature {
-        tokenize_full
-    }
+    frontend.parser.lexer ++> [
+        tools.jac_auto_lint_pass.JacAutoLintPass._impl_header { tokenize_full },
+        tools.jac_auto_lint_pass.JacAutoLintPass._reparse_signature { tokenize_full },
+    ]
     frontend.parser.parser ++> [
         jc_unit { parse_program },
+        tools.jac_auto_lint_pass.JacAutoLintPass._impl_header { Parser },
         tools.jac_auto_lint_pass.JacAutoLintPass._reparse_signature { Parser },
         types.type_evaluator.TypeEvaluator._resolve_string_type_expr {
             parse_expression

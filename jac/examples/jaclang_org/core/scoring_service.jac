@@ -14,7 +14,9 @@ obj ScoredPayload {
         service_pid: int = 0;
 }
 
-def:pub fetch_and_score(owner: str, name: str) -> ScoredPayload {
+def:pub fetch_and_score(owner: str, name: str) -> ScoredPayload;
+
+impl fetch_and_score(owner: str, name: str) -> ScoredPayload {
     pid = os.getpid();
     meta = repo_meta(owner + "/" + name, USER_AGENT);
     if meta is None {

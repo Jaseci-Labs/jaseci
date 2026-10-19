@@ -9,10 +9,7 @@ glob SYSTEM_PERSONA = """\
     output. Only use tools.
     """;
 
-def _media_entries(value: any, semstr: str) -> list[any] {
-    media = as_media_list(value);
-    return [] if media is None else [(media[0], semstr), *media[1:]];
-}
+def _media_entries(value: any, semstr: str) -> list[any];
 
 
 impl MTRuntime.factory(mtir: MTIR) -> MTRuntime {
@@ -279,21 +276,10 @@ impl MTRuntime.write_back_conversation -> None {
 }
 
 
-def _is_system_message(msg: any) -> bool {
-    role = msg.get("role") if isinstance(msg, dict) else msg?.role;
-    return role == MessageRole.SYSTEM;
-}
+def _is_system_message(msg: any) -> bool;
 
 
-def _is_finish_tool_call(tc: any) -> bool {
-    if tc?.function and hasattr(tc.function, "name") {
-        return tc.function.name == "finish_tool";
-    }
-    if isinstance(tc, dict) {
-        return (tc.get("function") or {}).get("name", "") == "finish_tool";
-    }
-    return False;
-}
+def _is_finish_tool_call(tc: any) -> bool;
 
 
 impl MTRuntime.get_history_for_persist -> list[MessageType] {
@@ -386,4 +372,25 @@ impl MTRuntime.get_typed_output_schema -> dict[str, any] | None {
 
 impl MTIR.runtime.getter -> MTRuntime {
     return MTRuntime.factory(self);
+}
+
+impl _is_system_message(msg: any) -> bool {
+    role = msg.get("role") if isinstance(msg, dict) else msg?.role;
+    return role == MessageRole.SYSTEM;
+}
+
+
+impl _is_finish_tool_call(tc: any) -> bool {
+    if tc?.function and hasattr(tc.function, "name") {
+        return tc.function.name == "finish_tool";
+    }
+    if isinstance(tc, dict) {
+        return (tc.get("function") or {}).get("name", "") == "finish_tool";
+    }
+    return False;
+}
+
+impl _media_entries(value: any, semstr: str) -> list[any] {
+    media = as_media_list(value);
+    return [] if media is None else [(media[0], semstr), *media[1:]];
 }
