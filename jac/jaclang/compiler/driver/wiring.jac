@@ -1,4 +1,3 @@
-import copy;
 import hashlib;
 import os;
 import from collections.abc { Iterator }
@@ -97,6 +96,7 @@ obj WiringSpec {
         stmt: Import, consumer: str, taken: set[int]
     ) -> (WireRec | None);
 
+    def wire_import(wire: WireRec) -> (Import | None);
     def is_package_dir(name: str) -> bool;
     def project_modules -> list[str];
     def _scan_modules(directory: str, found: list[str], seen: set[str]) -> None;

@@ -3885,7 +3885,7 @@ impl NativeDictEmitter.emit_get(
         if wrap_optional
         else result;
     p._emit_elem_retain(b, val_type, retained);
-    p._release_owned_args(args, op="dict_get_arg");
+    p._release_owned_args([key, *args[1:]], op="dict_get_arg");
     p._release_owned_args([target], op="dict_get_receiver");
     restored = p._restore_dict_read(result, ctx.receiver_node);
     if p._elem_kind(val_type) != "raw" {
@@ -4252,7 +4252,9 @@ impl NativeDictEmitter.emit_setdefault(
     result.add_incoming(existing, found_bb);
     result.add_incoming(default_val, notfound_bb);
     p._emit_take_ref(result, op="dict_setdefault_result");
-    p._release_owned_args(args, op="dict_setdefault_arg");
+    p._release_owned_args(
+        [key, default_val] if len(args) >= 2 else [key], op="dict_setdefault_arg"
+    );
     return p._restore_dict_read(result, ctx.receiver_node);
 }
 
