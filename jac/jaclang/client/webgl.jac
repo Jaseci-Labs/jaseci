@@ -76,7 +76,37 @@ def _m_mul(a: list[float], b: list[float]) -> list[float];
 
 def _m_translate(x: float, y: float, z: float) -> list[float];
 
-def _m_rotate(ang: float, x: float, y: float, z: float) -> list[float];
+def _m_rotate(ang: float, x: float, y: float, z: float) -> list[float] {  # jac:ignore[separate-impls]
+    a = ang * 3.141592653589793 / 180.0;
+    c = Math.cos(a);
+    s = Math.sin(a);
+    ln = Math.hypot(x, y, z);
+    if ln == 0.0 {
+        ln = 1.0;
+    }
+    x = x / ln;
+    y = y / ln;
+    z = z / ln;
+    t = 1.0 - c;
+    return [
+        x * x * t + c,
+        y * x * t + z * s,
+        x * z * t - y * s,
+        0.0,
+        x * y * t - z * s,
+        y * y * t + c,
+        y * z * t + x * s,
+        0.0,
+        x * z * t + y * s,
+        y * z * t - x * s,
+        z * z * t + c,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+    ];
+}
 
 def _m_frustum(
     l: float, r: float, b: float, t: float, n: float, f: float
@@ -100,11 +130,70 @@ def:pub _init_gl(sh: WebGLHost);
 
 def _keymap(code: str) -> int;
 
-def _engaged(sh: WebGLHost) -> bool;
+def _engaged(sh: WebGLHost) -> bool {  # jac:ignore[separate-impls]
+    return sh.locked or document.activeElement == sh.canvas;
+}
 
-def:pub _install_input(sh: WebGLHost);
+def:pub _install_input(sh: WebGLHost) {  # jac:ignore[separate-impls]
+    sh.on_key_down = lambda (e: KeyboardEvent) {
+        if not _engaged(sh) {
+            return;
+        }
+        kc = _keymap(e.code);
+        if kc != 0 {
+            e.preventDefault();
+            if not sh.keys.get(kc, 0) {
+                sh.pressed[kc] = 1;
+            }
+            sh.keys[kc] = 1;
+        }
+    };
+    sh.on_key_up = lambda (e: KeyboardEvent) {
+        kc = _keymap(e.code);
+        if kc != 0 {
+            sh.keys[kc] = 0;
+        }
+    };
+    sh.on_mouse_down = lambda (e: MouseEvent) { if e.button == 0 {
+        sh.mpressed[0] = 1;
+    }};
+    sh.on_mouse_move = lambda (e: MouseEvent) { if sh.locked {
+        sh.mouseX = sh.mouseX + e.movementX;
+        sh.mouseY = sh.mouseY + e.movementY;
+    } else {
+        sh.mouseX = e.offsetX;
+        sh.mouseY = e.offsetY;
+    } };
+    sh.on_lock_change = lambda (e: Event) {
+        was = sh.locked;
+        sh.locked = document.pointerLockElement == sh.canvas;
+        if was and not sh.locked {
+            sh.keys = {};
+            sh.pressed = {};
+            sh.pressed[258] = 1;
+        }
+    };
+    sh.on_blur = lambda (e: Event) {
+        sh.keys = {};
+        sh.pressed = {};
+        sh.mpressed = {};
+    };
+    window.addEventListener("blur", sh.on_blur);
+    window.addEventListener("keydown", sh.on_key_down);
+    window.addEventListener("keyup", sh.on_key_up);
+    sh.canvas.addEventListener("mousedown", sh.on_mouse_down);
+    document.addEventListener("mousemove", sh.on_mouse_move);
+    document.addEventListener("pointerlockchange", sh.on_lock_change);
+}
 
-def:pub _remove_input(sh: WebGLHost);
+def:pub _remove_input(sh: WebGLHost) {  # jac:ignore[separate-impls]
+    window.removeEventListener("blur", sh.on_blur);
+    window.removeEventListener("keydown", sh.on_key_down);
+    window.removeEventListener("keyup", sh.on_key_up);
+    sh.canvas.removeEventListener("mousedown", sh.on_mouse_down);
+    document.removeEventListener("mousemove", sh.on_mouse_move);
+    document.removeEventListener("pointerlockchange", sh.on_lock_change);
+}
 
 impl WebGLHost.InitWindow(w: int, h: int, title: str) {}
 
@@ -313,38 +402,6 @@ impl _m_translate(x: float, y: float, z: float) -> list[float] {
     return m;
 }
 
-impl _m_rotate(ang: float, x: float, y: float, z: float) -> list[float] {
-    a = ang * 3.141592653589793 / 180.0;
-    c = Math.cos(a);
-    s = Math.sin(a);
-    ln = Math.hypot(x, y, z);
-    if ln == 0.0 {
-        ln = 1.0;
-    }
-    x = x / ln;
-    y = y / ln;
-    z = z / ln;
-    t = 1.0 - c;
-    return [
-        x * x * t + c,
-        y * x * t + z * s,
-        x * z * t - y * s,
-        0.0,
-        x * y * t - z * s,
-        y * y * t + c,
-        y * z * t + x * s,
-        0.0,
-        x * z * t + y * s,
-        y * z * t - x * s,
-        z * z * t + c,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        1.0
-    ];
-}
-
 impl _m_frustum(
     l: float, r: float, b: float, t: float, n: float, f: float
 ) -> list[float] {
@@ -403,6 +460,7 @@ impl _setcur(sh: WebGLHost, m: list[float]) {
     }
 }
 
+
 impl _flush(sh: WebGLHost) -> None {
     if len(sh.verts) == 0 {
         return;
@@ -421,6 +479,7 @@ impl _flush(sh: WebGLHost) -> None {
     sh.draws = sh.draws + 1;
     sh.verts = [];
 }
+
 
 impl _compile_shader(gl: any, kind: int, source: str) -> any {
     shader = gl.createShader(kind);
@@ -479,69 +538,4 @@ impl _keymap(code: str) -> int {
         "ArrowUp": 265
     };
     return m.get(code, 0);
-}
-
-impl _engaged(sh: WebGLHost) -> bool {
-    return sh.locked or document.activeElement == sh.canvas;
-}
-
-impl _install_input(sh: WebGLHost) {
-    sh.on_key_down = lambda (e: KeyboardEvent) {
-        if not _engaged(sh) {
-            return;
-        }
-        kc = _keymap(e.code);
-        if kc != 0 {
-            e.preventDefault();
-            if not sh.keys.get(kc, 0) {
-                sh.pressed[kc] = 1;
-            }
-            sh.keys[kc] = 1;
-        }
-    };
-    sh.on_key_up = lambda (e: KeyboardEvent) {
-        kc = _keymap(e.code);
-        if kc != 0 {
-            sh.keys[kc] = 0;
-        }
-    };
-    sh.on_mouse_down = lambda (e: MouseEvent) { if e.button == 0 {
-        sh.mpressed[0] = 1;
-    }};
-    sh.on_mouse_move = lambda (e: MouseEvent) { if sh.locked {
-        sh.mouseX = sh.mouseX + e.movementX;
-        sh.mouseY = sh.mouseY + e.movementY;
-    } else {
-        sh.mouseX = e.offsetX;
-        sh.mouseY = e.offsetY;
-    } };
-    sh.on_lock_change = lambda (e: Event) {
-        was = sh.locked;
-        sh.locked = document.pointerLockElement == sh.canvas;
-        if was and not sh.locked {
-            sh.keys = {};
-            sh.pressed = {};
-            sh.pressed[258] = 1;
-        }
-    };
-    sh.on_blur = lambda (e: Event) {
-        sh.keys = {};
-        sh.pressed = {};
-        sh.mpressed = {};
-    };
-    window.addEventListener("blur", sh.on_blur);
-    window.addEventListener("keydown", sh.on_key_down);
-    window.addEventListener("keyup", sh.on_key_up);
-    sh.canvas.addEventListener("mousedown", sh.on_mouse_down);
-    document.addEventListener("mousemove", sh.on_mouse_move);
-    document.addEventListener("pointerlockchange", sh.on_lock_change);
-}
-
-impl _remove_input(sh: WebGLHost) {
-    window.removeEventListener("blur", sh.on_blur);
-    window.removeEventListener("keydown", sh.on_key_down);
-    window.removeEventListener("keyup", sh.on_key_up);
-    sh.canvas.removeEventListener("mousedown", sh.on_mouse_down);
-    document.removeEventListener("mousemove", sh.on_mouse_move);
-    document.removeEventListener("pointerlockchange", sh.on_lock_change);
 }
