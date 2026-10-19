@@ -29,7 +29,3 @@ impl WorkspaceSpec.serving_apps -> list[AppSpec] {
         if a.has_server
     ];
 }
-
-impl normalized_path(path: str) -> str {
-    return os.path.normcase(os.path.realpath(os.path.abspath(path)));
-}

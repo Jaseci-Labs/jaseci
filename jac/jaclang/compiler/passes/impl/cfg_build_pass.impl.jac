@@ -764,19 +764,3 @@ impl CFGBuildPass.exit_test with Test exit {
         }
     }
 }
-
-impl _unwrap_parens(expr: Expr) -> Expr {
-    while isinstance(expr, AtomUnit) and isinstance(expr.value, Expr) {
-        expr = expr.value;
-    }
-    return expr;
-}
-
-impl unwrap_to_bool(cfg: CfgExpr) -> BoolExpr | None {
-    inner = _unwrap_parens(cfg.expr);
-    return inner if isinstance(inner, BoolExpr) else None;
-}
-
-impl _bool_is_and(expr: BoolExpr) -> bool {
-    return isinstance(expr.op, Token) and expr.op.name == Tok.KW_AND;
-}

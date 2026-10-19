@@ -136,18 +136,38 @@ glob KIND_SPECS: dict[str, KindSpec] = {
      UI_MOBUI: str = "mobui",
      MOBILE_PLATFORMS: list[str] = ["android", "ios", "web"];
 
-def kind_spec(kind: str) -> KindSpec | None;
+def kind_spec(kind: str) -> KindSpec | None {
+    return KIND_SPECS.get(kind);
+}
 
-def kind_entry(kind: str) -> str;
+def kind_entry(kind: str) -> str {
+    spec = KIND_SPECS.get(kind);
+    return spec.`entry if spec else "main";
+}
 
-def is_valid_kind(kind: str) -> bool;
+def is_valid_kind(kind: str) -> bool {
+    return kind in KIND_SPECS;
+}
 
-def kind_ui(kind: str) -> str;
+def kind_ui(kind: str) -> str {
+    spec = KIND_SPECS.get(kind);
+    return spec.ui if spec else "";
+}
 
-def kind_has_client(kind: str) -> bool;
+def kind_has_client(kind: str) -> bool {
+    return bool(kind_ui(kind));
+}
 
-def kind_is_mobui(kind: str) -> bool;
+def kind_is_mobui(kind: str) -> bool {
+    return kind_ui(kind) == UI_MOBUI;
+}
 
-def kind_codespace(kind: str) -> str;
+def kind_codespace(kind: str) -> str {
+    spec = KIND_SPECS.get(kind);
+    return spec.codespace if spec else '';
+}
 
-def kind_has_server(kind: str) -> bool;
+def kind_has_server(kind: str) -> bool {
+    spec = KIND_SPECS.get(kind);
+    return spec.has_server if spec else kind == '';
+}

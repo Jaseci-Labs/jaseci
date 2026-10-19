@@ -109,7 +109,7 @@ glob FORBIDDEN: dict[str, str] = {
              "exact declaration-IS-the-fact category; tags derive from "
              "stable_osp_tag(name), no analysis re-run"
          ),
-         ("native/impl/foreign.impl.jac", "type_tag.tag"): (
+         ("native/foreign.jac", "type_tag.tag"): (
              4,
              "declared-annotation name reads for the foreign (clib) ABI "
              "surface: declared_type_name over field and param annotations "

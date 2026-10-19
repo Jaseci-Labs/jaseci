@@ -28,11 +28,7 @@ glob RN_HTML_VIEW_TAGS = [
      ],
      RN_HTML_SPECIAL_TAGS = ["button", "input", "textarea", "img", "a"];
 
-def supported_rn_html_tags -> frozenset;
-
-def rn_tag_suggestions -> dict[str, str];
-
-impl supported_rn_html_tags -> frozenset {
+def supported_rn_html_tags -> frozenset {
     tags: set[str] = set();
     for tag in RN_HTML_VIEW_TAGS {
         tags.add(tag);
@@ -46,7 +42,7 @@ impl supported_rn_html_tags -> frozenset {
     return frozenset(tags);
 }
 
-impl rn_tag_suggestions -> dict[str, str] {
+def rn_tag_suggestions -> dict[str, str] {
     suggestions: dict[str, str] = {};
     for tag in RN_HTML_VIEW_TAGS {
         suggestions[tag] = "View";

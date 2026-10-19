@@ -17,16 +17,29 @@ obj IntrinsicEntry {
         dispatch: IntrinsicDispatch,
         gc_mode_gate: str | None = None;
 
-    def arity -> int;
+    def arity -> int {
+        return len(self.param_specs);
+    }
 }
 
 obj IntrinsicRegistry {
     has _entries: dict[str, IntrinsicEntry];
 
-    def get(name: str) -> IntrinsicEntry | None;
-    def is_intrinsic(name: str) -> bool;
-    def names -> list[str];
-    def entries -> list[IntrinsicEntry];
+    def get(name: str) -> IntrinsicEntry | None {
+        return self._entries.get(name, None);
+    }
+
+    def is_intrinsic(name: str) -> bool {
+        return name in self._entries;
+    }
+
+    def names -> list[str] {
+        return list(self._entries.keys());
+    }
+
+    def entries -> list[IntrinsicEntry] {
+        return list(self._entries.values());
+    }
 }
 
 glob INTRINSIC_REGISTRY = IntrinsicRegistry(

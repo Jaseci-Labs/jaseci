@@ -133,9 +133,7 @@ test "placement_pins imports stay within the documented allowlist" {
         "jaclang/compiler/passes/placement_pass.jac",
         "jaclang/lsp/server/impl/engine.impl.jac",
         "jaclang/compiler/placement/placement.jac",
-        "jaclang/compiler/placement/impl/placement.impl.jac",
         "jaclang/compiler/placement/placement_facts.jac",
-        "jaclang/compiler/placement/impl/placement_facts.impl.jac",
         "jaclang/compiler/placement/placement_pins.jac",
         "jaclang/compiler/placement/placement_solver.jac"
     };

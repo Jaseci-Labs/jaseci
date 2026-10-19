@@ -13,10 +13,29 @@ glob PY_STDLIB_BY_KIND: dict[str, (set[str] | None)] = {
          "js-package"
      );
 
-def py_root_module(name: str) -> str;
+def py_root_module(name: str) -> str {
+    return name.split('.')[0] if name else name;
+}
 
-def supports(module: str, space: str, kind: str) -> bool;
+def supports(module: str, space: str, kind: str) -> bool {
+    if space == 'server' {
+        return True;
+    }
+    if space == 'native' {
+        return native_supports_py_module(module);
+    }
+    allowed = PY_STDLIB_BY_KIND.get(kind, set());
+    if allowed is None {
+        return True;
+    }
+    return py_root_module(module) in allowed;
+}
 
-def client_supports_py_module(name: str, kind: str = "web-app") -> bool;
+def client_supports_py_module(name: str, kind: str = "web-app") -> bool {
+    return supports(name, 'client', kind);
+}
 
-def native_supports_py_module(name: str) -> bool;
+def native_supports_py_module(name: str) -> bool {
+    mod_root = py_root_module(name);
+    return mod_root in NATIVE_SUPPORTED_STDLIB or is_bundled_native_module(mod_root);
+}

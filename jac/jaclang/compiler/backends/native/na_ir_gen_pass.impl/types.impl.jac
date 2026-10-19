@@ -1,6 +1,16 @@
-def _ir_struct_name(t: (ir.Type | None)) -> str;
+def _ir_struct_name(t: (ir.Type | None)) -> str {
+    return t.name if isinstance(t, ir.IdentifiedStructType) else "";
+}
 
-def _node_sem_type(nd: (uni.UniNode | None)) -> (TypeBase | None);
+def _node_sem_type(nd: (uni.UniNode | None)) -> (TypeBase | None) {
+    if isinstance(nd, uni.Expr) {
+        return nd.type;
+    }
+    if isinstance(nd, uni.AstTypedVarNode) {
+        return nd.type;
+    }
+    return None;
+}
 
 impl NaIRGenPass._lower_type(t: any) -> (ir.Type | None) {
     if t is None {
@@ -6385,18 +6395,4 @@ impl NaIRGenPass._lower_list_for_elem(elem_llvm: ir.Type) -> ir.Type {
     }
     self._emit_list_helpers(spec, _elem);
     return self.list_types[spec].as_pointer();
-}
-
-impl _ir_struct_name(t: (ir.Type | None)) -> str {
-    return t.name if isinstance(t, ir.IdentifiedStructType) else "";
-}
-
-impl _node_sem_type(nd: (uni.UniNode | None)) -> (TypeBase | None) {
-    if isinstance(nd, uni.Expr) {
-        return nd.type;
-    }
-    if isinstance(nd, uni.AstTypedVarNode) {
-        return nd.type;
-    }
-    return None;
 }
