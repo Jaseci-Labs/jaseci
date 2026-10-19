@@ -9,6 +9,9 @@ glob SYSTEM_PERSONA = """\
     output. Only use tools.
     """;
 
+def _media_entries(value: any, semstr: str) -> list[any];
+
+
 impl MTRuntime.factory(mtir: MTIR) -> MTRuntime {
     caller = mtir.caller;
     args = mtir.args;
@@ -55,8 +58,9 @@ impl MTRuntime.factory(mtir: MTIR) -> MTRuntime {
         params = [param for param in fn_info.params];
         for (key, value) in args.items() {
             idx = list(args.keys()).index(key);
-            if isinstance(value, Media) {
-                media_inputs.append((value, params[idx].semstr or ""));
+            media = _media_entries(value, params[idx].semstr or "");
+            if media {
+                media_inputs.extend(media);
                 continue;
             }
 
@@ -75,8 +79,9 @@ impl MTRuntime.factory(mtir: MTIR) -> MTRuntime {
     } else {
         param_names = list(inspect.signature(caller).parameters.keys());
         for (key, value) in args.items() {
-            if isinstance(value, Media) {
-                media_inputs.append((value, ""));
+            media = _media_entries(value, "");
+            if media {
+                media_inputs.extend(media);
                 continue;
             }
 
@@ -94,8 +99,9 @@ impl MTRuntime.factory(mtir: MTIR) -> MTRuntime {
     incl_info = call_params.get("incl_info");
     if incl_info and isinstance(incl_info, dict) {
         for (key, value) in incl_info.items() {
-            if isinstance(value, Media) {
-                media_inputs.append((value, ""));
+            media = _media_entries(value, "");
+            if media {
+                media_inputs.extend(media);
             } else {
                 if has_mtir {
                     inputs_detail.append(f"{key} = {(value, "")}");
@@ -382,4 +388,9 @@ impl _is_finish_tool_call(tc: any) -> bool {
         return (tc.get("function") or {}).get("name", "") == "finish_tool";
     }
     return False;
+}
+
+impl _media_entries(value: any, semstr: str) -> list[any] {
+    media = as_media_list(value);
+    return [] if media is None else [(media[0], semstr), *media[1:]];
 }

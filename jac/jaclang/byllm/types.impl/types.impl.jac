@@ -28,10 +28,7 @@ impl serialize_media_content(content: list[any]) -> list[dict[str, any]] {
     return blocks;
 }
 
-impl normalize_tool_result(value: any) -> str | list[Media] {
-    if isinstance(value, str) {
-        return value;
-    }
+impl as_media_list(value: any) -> list[Media] | None {
     if isinstance(value, Media) {
         return [value];
     }
@@ -42,7 +39,13 @@ impl normalize_tool_result(value: any) -> str | list[Media] {
     ) {
         return value;
     }
-    return str(value);
+    return None;
+}
+
+
+impl normalize_tool_result(value: any) -> str | list[Media] {
+    media = as_media_list(value);
+    return str(value) if media is None else media;
 }
 
 impl content_preview(content: any, max_len: int) -> str {

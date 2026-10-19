@@ -4414,6 +4414,7 @@ graph import byllm {
             MockRawResponse,
             MockToolCall,
             StreamEvent,
+            Text,
             Tool,
             ToolCallResultMsg,
             Video
@@ -4438,17 +4439,17 @@ graph import byllm {
         },
         mtir {
             LiteLLMMessage,
-            Media,
             Message,
             MessageRole,
             MessageType,
             Text,
             Tool,
             ToolCallResultMsg,
+            as_media_list,
             image_resp_kind
         },
         parallel { ToolCallResultMsg, normalize_tool_result },
-        systemone.build_state { Media },
+        systemone.build_state { as_media_list },
         systemone.lower { image_resp_kind },
         visit_routing.route_visit { Message, MessageRole },
     ]
