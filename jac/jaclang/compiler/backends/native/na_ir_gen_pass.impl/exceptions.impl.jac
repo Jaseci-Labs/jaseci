@@ -1326,10 +1326,42 @@ impl NaIRGenPass._get_exception_context_fn -> ir.Function {
     );
     func.linkage = "weak";
     self._exc_context_fn = func;
+    # Until the program starts a thread (`__jac_rc_threaded`, the refcount
+    # helpers' flag, set before every pthread_create the compiler emits),
+    # one context serves the one thread: a process-wide weak global holds it
+    # and the lookup is a load and a compare. A program with threads takes
+    # the thread-local slot, as before; the first context is published in
+    # both places, so the main thread finds its own context there too.
+    main_gv = ir.GlobalVariable(self.llvm_module, i8p, name="__jac_exception_main_ctx");
+    main_gv.linkage = "weak";
+    main_gv.initializer = ir.Constant(i8p, None);
     entry_bb = func.append_basic_block("entry");
+    fast_bb = func.append_basic_block("fast");
+    fast_ret = func.append_basic_block("fast.ret");
+    slow_bb = func.append_basic_block("slow");
     create = func.append_basic_block("create");
     ready = func.append_basic_block("ready");
     b = ir.IRBuilder(entry_bb);
+    if self.rc_threaded_gv is not None {
+        mt_flag = b.load_atomic(self.rc_threaded_gv, "monotonic", 1, name="exc.mt");
+        b.cbranch(
+            b.icmp_unsigned("!=", mt_flag, ir.Constant(ir.IntType(8), 0), name="exc.mt.on"),
+            slow_bb,
+            fast_bb
+        );
+    } else {
+        b.branch(slow_bb);
+    }
+    b = ir.IRBuilder(fast_bb);
+    main_ctx = b.load(main_gv, name="exc.main");
+    b.cbranch(
+        b.icmp_unsigned("==", main_ctx, ir.Constant(i8p, None), name="exc.main.none"),
+        slow_bb,
+        fast_ret
+    );
+    b = ir.IRBuilder(fast_ret);
+    b.ret(b.bitcast(main_ctx, context_ptr));
+    b = ir.IRBuilder(slow_bb);
     value = b.call(get_fn, []);
     b.cbranch(b.icmp_unsigned("==", value, ir.Constant(i64, 0)), create, ready);
     b = ir.IRBuilder(ready);
@@ -1341,6 +1373,19 @@ impl NaIRGenPass._get_exception_context_fn -> ir.Function {
     calloc_fn = self._get_or_declare_extern("calloc", i8p, [i64, i64]);
     allocated = b.call(calloc_fn, [ir.Constant(i64, 1), size]);
     b.call(set_fn, [b.ptrtoint(allocated, i64)]);
+    # The first context created in the process is the single thread's.
+    publish = func.append_basic_block("publish");
+    created = func.append_basic_block("created");
+    had_main = b.load(main_gv, name="exc.main.had");
+    b.cbranch(
+        b.icmp_unsigned("==", had_main, ir.Constant(i8p, None), name="exc.main.free"),
+        publish,
+        created
+    );
+    b = ir.IRBuilder(publish);
+    b.store(allocated, main_gv);
+    b.branch(created);
+    b = ir.IRBuilder(created);
     b.ret(b.bitcast(allocated, context_ptr));
     return func;
 }
