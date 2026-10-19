@@ -42,6 +42,7 @@ graph import {
     core.site.docs.DocsShell ++> desktop.pages.docs.index | web.pages.docs.index {
         DocsShell
     }
+    core.site.home.Home ++> desktop.pages.index | web.pages.index { Home }
     core.site.jacyac.GithubCallback ++> desktop.pages.jacyac.github.callback
         | web.pages.jacyac.github.callback { GithubCallback }
     core.site.jacyac.JacYac ++> desktop.pages.jacyac
@@ -50,7 +51,6 @@ graph import {
         | web.pages.jacyac
         | web.pages.jacyac.scores
         | web.pages.socialize { JacYac }
-    core.site.landing.Home ++> desktop.pages.index | web.pages.index { Home }
     core.site.leaderboard.Methodology ++> desktop.pages.methodology
         | web.pages.methodology { Methodology }
     core.site.packages.PackagesShell ++> desktop.pages.packages.index
@@ -255,6 +255,8 @@ graph import core {
     ]
     utils ++> site.docs.DocsSidebar
         | site.docs.DocsTocRail
+        | site.home.NoGlue
+        | site.home.kit
         | site.jacyac.components.ExploreTab
         | site.jacyac.components.MobileNav
         | site.jacyac.components.ProjectCard
@@ -405,9 +407,17 @@ graph import core.leaderboard {
 graph import core.site {
     docs.Markdown ++> packages.PackagePage { Markdown }
     game.webgl_host ++> landing.WasmGame { run_game }
-    landing.CopyCommand ++> packages.PackagePage | packages.PackagesIndex {
-        CopyCommand
-    }
+    landing.CopyCommand ++> home.HomeClose
+        | home.HomeHero
+        | packages.PackagePage
+        | packages.PackagesIndex { CopyCommand }
+    landing.Reveal ++> home.AgentNative
+        | home.EveryPlatform
+        | home.HomeClose
+        | home.NoGlue
+        | home.OneLanguage
+        | home.ReadableTiers
+        | home.kit { Reveal }
     leaderboard.Methodology ++> jacyac.components.NinjaScores { Methodology }
     source.CodeSpotlight ++> landing.MobileShowcase | landing.WaitWuuut {
         CodeSpotlight
@@ -417,6 +427,7 @@ graph import core.site {
     ui.CodeBlock ++> [
         docs.Markdown
             | docs.MermaidDiagram
+            | home.kit
             | source.CodeSpotlight
             | source.SourceBrowser { CodeLines },
         landing.Showcase { CodeBlock },
@@ -424,7 +435,7 @@ graph import core.site {
     ui.GraphBackdrop ++> docs.DocsShell | landing.Hero | leaderboard.Methodology {
         GraphBackdrop
     }
-    ui.SectionRail ++> landing.Home | landing.WaitWuuut { SectionRail }
+    ui.SectionRail ++> home.Home | landing.TechDemo | landing.WaitWuuut { SectionRail }
     ui.alert_dialog ++> jacyac.components.ProjectCard | jacyac.components.TweetCard {
         AlertDialog,
         AlertDialogAction,
@@ -461,6 +472,9 @@ graph import core.site {
         | packages.PackagePage
         | packages.PackagesIndex { Badge }
     ui.button ++> [
+        home.HomeHero | landing.BookSection | landing.ExplorerFinale | landing.Hero {
+            buttonVariants
+        },
         jacyac.JacYac
             | jacyac.components.AuthForm
             | jacyac.components.ChannelsTab
@@ -476,7 +490,6 @@ graph import core.site {
             | jacyac.components.TweetCard
             | jacyac.components.WelcomeBanner
             | landing.WasmGame { Button },
-        landing.BookSection | landing.ExplorerFinale | landing.Hero { buttonVariants },
     ]
     ui.card ++> [
         jacyac.components.AuthForm {
@@ -644,6 +657,31 @@ graph import core.site.game {
     type sim ++> webgl_host { Game }
 }
 
+graph import core.site.home {
+    AgentNative ++> Home { AgentNative }
+    EveryPlatform ++> Home { EveryPlatform }
+    HomeClose ++> Home { HomeClose }
+    HomeHero ++> Home { HomeHero }
+    NoGlue ++> Home { NoGlue }
+    OneLanguage ++> Home { OneLanguage }
+    ReadableTiers ++> Home { ReadableTiers }
+    kit ++> [
+        AgentNative { CodeWindow, Figure, HomeSection, Prose, SectionHead },
+        EveryPlatform { CodeWindow, Fact, Figure, HomeSection, SectionHead },
+        HomeClose { HomeSection, Prose },
+        HomeHero { Prose },
+        NoGlue | ReadableTiers {
+            CodeWindow,
+            Fact,
+            Figure,
+            HomeSection,
+            Prose,
+            SectionHead
+        },
+        OneLanguage { Fact, Figure, HomeSection, SectionHead },
+    ]
+}
+
 graph import core.site.jacyac {
     components.AuthForm ++> JacYac { AuthForm }
     components.ChannelsTab ++> JacYac { ChannelsTab }
@@ -667,17 +705,17 @@ graph import core.site.jacyac.components {
 }
 
 graph import core.site.landing {
-    Agents ++> Home { Agents }
-    BookSection ++> Home { BookSection }
-    Capabilities ++> Home { Capabilities }
+    Agents ++> TechDemo { Agents }
+    BookSection ++> TechDemo { BookSection }
+    Capabilities ++> TechDemo { Capabilities }
     CopyCommand ++> [
         Agents | Hero { CopyCommand },
         ExplorerFinale { CopyCommandBlock },
     ]
-    ExplorerFinale ++> Home { ExplorerFinale }
-    Hero ++> Home { Hero }
-    MobileShowcase ++> Home { MobileShowcase }
-    OneBinary ++> Home { OneBinary }
+    ExplorerFinale ++> TechDemo { ExplorerFinale }
+    Hero ++> TechDemo { Hero }
+    MobileShowcase ++> TechDemo { MobileShowcase }
+    OneBinary ++> TechDemo { OneBinary }
     Reveal ++> Agents
         | BookSection
         | Capabilities
@@ -689,12 +727,12 @@ graph import core.site.landing {
         | WaitWuuut
         | WasmGame
         | WhyJac { Reveal }
-    Showcase ++> Home { Showcase }
-    StatsBand ++> Home { StatsBand }
-    WasmGame ++> Home { WasmGame }
+    Showcase ++> TechDemo { Showcase }
+    StatsBand ++> TechDemo { StatsBand }
+    WasmGame ++> TechDemo { WasmGame }
     WhyJac ++> [
         Capabilities { WhySlide },
-        Home { WhyJac },
+        TechDemo { WhyJac },
     ]
     diagrams.GradualBorrowDiagram ++> WaitWuuut | WhyJac { GradualBorrowDiagram }
     diagrams.PolypilerDiagram ++> OneBinary | WaitWuuut { PolypilerDiagram }
