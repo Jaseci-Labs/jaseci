@@ -501,8 +501,6 @@ def kernel_unit_paths -> list[str] {
 
 glob _REAL_PATHS: dict[str, str] = {};
 
-"""A path with every symlink resolved, remembered for the life of the
-process: one compile canonicalizes the same source paths millions of times."""
 def real_path(path: str) -> str {
     found = _REAL_PATHS.get(path);
     if found is None {
@@ -888,8 +886,7 @@ def is_selected_native_variant(path: str) -> bool {
     for cut in (2, 1) {
         portable = os.path.join(os.path.dirname(path), ".".join(parts[:-cut]) + ".jac");
         if len(parts) > cut and os.path.exists(portable) {
-            return real_path(native_variant_of(portable))
-                == real_path(path);
+            return real_path(native_variant_of(portable)) == real_path(path);
         }
     }
     return False;
