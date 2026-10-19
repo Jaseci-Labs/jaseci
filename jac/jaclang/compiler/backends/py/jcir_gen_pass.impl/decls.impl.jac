@@ -297,7 +297,7 @@ impl JcirGenPass.exit_ability with Ability exit {
             self.call_node(self.jaclib_obj('set_trigger'), [trigger_thunk], [])
         );
     }
-    if isinstance(here.body, ImplDef) {
+    if isinstance(here.body, ImplDef) and here.body.loc.mod_path != here.loc.mod_path {
         decorator_list.append(
             self.call_node(
                 self.jaclib_obj('impl_patch_filename'),

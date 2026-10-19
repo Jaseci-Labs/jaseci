@@ -100,12 +100,13 @@ exclude = [
 ]
 
 [check.lint]
-# "all" enables every autolint rule; the two strip-* entries are the opt-in
-# "deslop" rules (W3050/W3051) that remove all comments and docstrings. They
-# only activate when named explicitly here, so `jac format --lintfix`,
-# `jac precommit`, and CI's `jac format --check --lintfix` will strip comments
-# and docstrings from every non-excluded .jac file.
-select = ["all", "strip-comments", "strip-docstrings"]
+# "all" enables every autolint rule, including the ones "default" leaves off:
+# the "deslop" rules (W3050/W3051) that remove all comments and docstrings, and
+# separate-impls (W3055), which moves every function, method and ability body
+# into an impl at the bottom of its module. `jac fmt --lintfix`,
+# `jac precommit`, and CI's `jac fmt --check --lintfix` apply them to every
+# non-excluded .jac file.
+select = ["all"]
 exclude = [
     "docs/*",
     "*/examples/*",
@@ -134,6 +135,11 @@ exclude = [
     # docstring/property style so diffs against llvmlite stay reviewable.
     "*/llvm/ir/*",
     "*/llvm/binding/*",
+    # separate-impls would move webgl's helper bodies into module-level impls,
+    # and client placement then stops inferring the module as client (its
+    # browser globals such as Math go Unknown). Kept inline until placement
+    # places an archetype's or function's impl with its declaration.
+    "jac/jaclang/client/webgl.jac",
 ]
 
 [byllm.model]
