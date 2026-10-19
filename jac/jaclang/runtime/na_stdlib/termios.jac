@@ -56,13 +56,25 @@ glob ECHO: int = _ECHO,
      NOFLSH: int = _NOFLSH,
      TOSTOP: int = _TOSTOP;
 
-def _fail(op: str) {
+def _fail(op: str);
+
+def:pub tcgetattr(fd: int) -> list[any];
+
+def _cc_byte(e: any) -> int;
+
+def _pack_attrs(attrs: list[any]) -> bytes;
+
+def:pub tcsetattr(fd: int, when: int, attrs: list[any]);
+
+def _put_byte(buf: bytes, off: int, value: int) -> bytes;
+
+impl _fail(op: str) {
     raise ValueError(
         op + " failed: [Errno " + str(last_errno()) + "] " + errno_message()
     );
 }
 
-def:pub tcgetattr(fd: int) -> list[any] {
+impl tcgetattr(fd: int) -> list[any] {
     (blob, rc) = get_attrs(fd);
     if rc != 0 {
         _fail("tcgetattr");
@@ -84,7 +96,7 @@ def:pub tcgetattr(fd: int) -> list[any] {
     return out;
 }
 
-def _cc_byte(e: any) -> int {
+impl _cc_byte(e: any) -> int {
     if isinstance(e, int) {
         return e & 0xFF;
     }
@@ -94,7 +106,7 @@ def _cc_byte(e: any) -> int {
     raise ValueError("tcsetattr: cc entries must be int or one-byte bytes");
 }
 
-def _pack_attrs(attrs: list[any]) -> bytes {
+impl _pack_attrs(attrs: list[any]) -> bytes {
     blob: bytes = new_buf();
     k: int = 0;
     while k < 6 {
@@ -132,7 +144,7 @@ def _pack_attrs(attrs: list[any]) -> bytes {
     return blob;
 }
 
-def:pub tcsetattr(fd: int, when: int, attrs: list[any]) {
+impl tcsetattr(fd: int, when: int, attrs: list[any]) {
     if when != TCSANOW and when != TCSADRAIN and when != TCSAFLUSH {
         raise ValueError("invalid 'when' argument");
     }
@@ -145,6 +157,6 @@ def:pub tcsetattr(fd: int, when: int, attrs: list[any]) {
     }
 }
 
-def _put_byte(buf: bytes, off: int, value: int) -> bytes {
+impl _put_byte(buf: bytes, off: int, value: int) -> bytes {
     return buf[:off] + value.to_bytes(1, "little") + buf[off + 1:];
 }

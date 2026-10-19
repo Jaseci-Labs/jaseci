@@ -9,7 +9,9 @@ glob _FD_SETSIZE: int = 1024,
      _POLLHUP: int = 16,
      _POLLNVAL: int = 32;
 
-def:pub do_poll(fds: list[int], masks: list[int], timeout: int) -> list[int] {
+def:pub do_poll(fds: list[int], masks: list[int], timeout: int) -> list[int];
+
+impl do_poll(fds: list[int], masks: list[int], timeout: int) -> list[int] {
     n: int = len(fds);
     if n == 0 {
         return [int(poll(0, u64(0), i32(timeout)))];

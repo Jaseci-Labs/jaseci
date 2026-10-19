@@ -8,7 +8,11 @@ glob O_NONBLOCK: int = _O_NONBLOCK,
      O_APPEND: int = _O_APPEND,
      O_ASYNC: int = _O_ASYNC;
 
-def:pub fcntl(fd: int, cmd: int, arg: int = 0) -> int {
+def:pub fcntl(fd: int, cmd: int, arg: int = 0) -> int;
+
+def:pub ioctl(fd: int, request: int, arg: bytes) -> bytes;
+
+impl fcntl(fd: int, cmd: int, arg: int = 0) -> int {
     rc: int = do_fcntl(fd, cmd, arg);
     if rc < 0 {
         raise ValueError(
@@ -18,7 +22,7 @@ def:pub fcntl(fd: int, cmd: int, arg: int = 0) -> int {
     return rc;
 }
 
-def:pub ioctl(fd: int, request: int, arg: bytes) -> bytes {
+impl ioctl(fd: int, request: int, arg: bytes) -> bytes {
     rc: int = do_ioctl(fd, request, arg);
     if rc < 0 {
         raise ValueError(

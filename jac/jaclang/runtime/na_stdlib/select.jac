@@ -4,13 +4,21 @@ glob POLLIN: int = _POLLIN,
      POLLHUP: int = _POLLHUP,
      POLLNVAL: int = _POLLNVAL;
 
-def _check_fd(fd: int) {
+def _check_fd(fd: int);
+
+def _add_fds(lst: list[int], events: int, fds: list[int], masks: list[int]);
+
+def:pub select(
+    rlist: list[int], wlist: list[int], xlist: list[int], timeout: (float | None) = -1.0
+) -> tuple[(list[int], list[int], list[int])];
+
+impl _check_fd(fd: int) {
     if fd < 0 or fd >= _FD_SETSIZE {
         raise ValueError("filedescriptor out of range in select()");
     }
 }
 
-def _add_fds(lst: list[int], events: int, fds: list[int], masks: list[int]) {
+impl _add_fds(lst: list[int], events: int, fds: list[int], masks: list[int]) {
     for fd in lst {
         _check_fd(fd);
         found: bool = False;
@@ -30,7 +38,7 @@ def _add_fds(lst: list[int], events: int, fds: list[int], masks: list[int]) {
     }
 }
 
-def:pub select(
+impl select(
     rlist: list[int], wlist: list[int], xlist: list[int], timeout: (float | None) = -1.0
 ) -> tuple[(list[int], list[int], list[int])] {
     fds: list[int] = [];

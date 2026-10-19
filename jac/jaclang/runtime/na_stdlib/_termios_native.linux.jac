@@ -14,43 +14,21 @@ glob _T_SIZE: int = 60,
      _NCCS: int = 32,
      _FLAG_BYTES: int = 4;
 
-def:pub new_buf -> bytes {
-    return b"\x00" * _T_SIZE;
-}
+def:pub new_buf -> bytes;
 
-def:pub word_at(buf: bytes, off: int) -> int {
-    return int.from_bytes(buf[off:off + _FLAG_BYTES], "little");
-}
+def:pub word_at(buf: bytes, off: int) -> int;
 
-def:pub put_word(buf: bytes, off: int, v: int) -> bytes {
-    return buf[:off] + v.to_bytes(_FLAG_BYTES, "little") + buf[off + _FLAG_BYTES:];
-}
+def:pub put_word(buf: bytes, off: int, v: int) -> bytes;
 
-def:pub get_attrs(fd: int) -> tuple[(bytes, int)] {
-    buf: bytes = new_buf();
-    rc: int = int(tcgetattr(i32(fd), buf));
-    return (buf, rc);
-}
+def:pub get_attrs(fd: int) -> tuple[(bytes, int)];
 
-def:pub set_attrs(fd: int, when: int, blob: bytes) -> int {
-    return int(tcsetattr(i32(fd), i32(when), blob));
-}
+def:pub set_attrs(fd: int, when: int, blob: bytes) -> int;
 
-def:pub in_speed(buf: bytes) -> int {
-    return int(cfgetispeed(buf));
-}
+def:pub in_speed(buf: bytes) -> int;
 
-def:pub out_speed(buf: bytes) -> int {
-    return int(cfgetospeed(buf));
-}
+def:pub out_speed(buf: bytes) -> int;
 
-def:pub set_speeds(buf: bytes, ispeed: int, ospeed: int) -> int {
-    rc: int = int(cfsetispeed(buf, u32(ispeed)));
-    if rc != 0 {
-        return rc;
-    }
-    return int(cfsetospeed(buf, u32(ospeed)));
-}
+def:pub set_speeds(buf: bytes, ispeed: int, ospeed: int) -> int;
 
 glob _TCSANOW: int = 0,
      _TCSADRAIN: int = 1,
@@ -110,3 +88,41 @@ glob _ECHO: int = 8,
      _ISIG: int = 1,
      _NOFLSH: int = 128,
      _TOSTOP: int = 256;
+
+impl new_buf -> bytes {
+    return b"\x00" * _T_SIZE;
+}
+
+impl word_at(buf: bytes, off: int) -> int {
+    return int.from_bytes(buf[off:off + _FLAG_BYTES], "little");
+}
+
+impl put_word(buf: bytes, off: int, v: int) -> bytes {
+    return buf[:off] + v.to_bytes(_FLAG_BYTES, "little") + buf[off + _FLAG_BYTES:];
+}
+
+impl get_attrs(fd: int) -> tuple[(bytes, int)] {
+    buf: bytes = new_buf();
+    rc: int = int(tcgetattr(i32(fd), buf));
+    return (buf, rc);
+}
+
+impl set_attrs(fd: int, when: int, blob: bytes) -> int {
+    return int(tcsetattr(i32(fd), i32(when), blob));
+}
+
+impl in_speed(buf: bytes) -> int {
+    return int(cfgetispeed(buf));
+}
+
+impl out_speed(buf: bytes) -> int {
+    return int(cfgetospeed(buf));
+}
+
+impl set_speeds(buf: bytes, ispeed: int, ospeed: int) -> int {
+    rc: int = int(cfsetispeed(buf, u32(ispeed)));
+    if rc != 0 {
+        return rc;
+    }
+    return int(cfsetospeed(buf, u32(ospeed)));
+}

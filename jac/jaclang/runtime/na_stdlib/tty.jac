@@ -4,7 +4,15 @@ glob IFLAG: int = 0,
      LFLAG: int = 3,
      CC: int = 6;
 
-def _mi(mode: list[any], i: int) -> int {
+def _mi(mode: list[any], i: int) -> int;
+
+def _set_cc(value: any) -> list[any];
+
+def:pub setraw(fd: int, when: int = TCSAFLUSH) -> list[any];
+
+def:pub setcbreak(fd: int, when: int = TCSANOW) -> list[any];
+
+impl _mi(mode: list[any], i: int) -> int {
     v = mode[i];
     if isinstance(v, int) {
         r: int = v;
@@ -13,7 +21,7 @@ def _mi(mode: list[any], i: int) -> int {
     return 0;
 }
 
-def _set_cc(value: any) -> list[any] {
+impl _set_cc(value: any) -> list[any] {
     out: list[any] = [];
     if isinstance(value, list) {
         i: int = 0;
@@ -31,7 +39,7 @@ def _set_cc(value: any) -> list[any] {
     return out;
 }
 
-def:pub setraw(fd: int, when: int = TCSAFLUSH) -> list[any] {
+impl setraw(fd: int, when: int = TCSAFLUSH) -> list[any] {
     original: list[any] = tcgetattr(fd);
     cc: list[any] = _set_cc(original[CC]);
     new: list[any] = [
@@ -64,7 +72,7 @@ def:pub setraw(fd: int, when: int = TCSAFLUSH) -> list[any] {
     return original;
 }
 
-def:pub setcbreak(fd: int, when: int = TCSANOW) -> list[any] {
+impl setcbreak(fd: int, when: int = TCSANOW) -> list[any] {
     original: list[any] = tcgetattr(fd);
     cc: list[any] = _set_cc(original[CC]);
     new: list[any] = [
