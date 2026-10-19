@@ -1,5 +1,3 @@
-import from jaclang.compiler.frontend.diagnostics { E5092 }
-
 glob SORT_KEY_MSG: str = "comparison requires orderable key values (int, float, bool, str, bytes, tuple, list, set, or frozenset)";
 
 impl NativeIntEmitter.emit_to_bytes(
@@ -3887,7 +3885,7 @@ impl NativeDictEmitter.emit_get(
         if wrap_optional
         else result;
     p._emit_elem_retain(b, val_type, retained);
-    p._release_owned_args(args, op="dict_get_arg");
+    p._release_owned_args([key, *args[1:]], op="dict_get_arg");
     p._release_owned_args([target], op="dict_get_receiver");
     restored = p._restore_dict_read(result, ctx.receiver_node);
     if p._elem_kind(val_type) != "raw" {
@@ -4254,7 +4252,9 @@ impl NativeDictEmitter.emit_setdefault(
     result.add_incoming(existing, found_bb);
     result.add_incoming(default_val, notfound_bb);
     p._emit_take_ref(result, op="dict_setdefault_result");
-    p._release_owned_args(args, op="dict_setdefault_arg");
+    p._release_owned_args(
+        [key, default_val] if len(args) >= 2 else [key], op="dict_setdefault_arg"
+    );
     return p._restore_dict_read(result, ctx.receiver_node);
 }
 
@@ -6014,7 +6014,11 @@ impl NativeBuiltinEmitter.emit_str(
     }
 
     if isinstance(arg_val.type, ir.IntType) and arg_val.type.width == 1 {
-        return p._bool_text(b, arg_val, "str.bool");
+        _str_flag = p._bool_text(b, arg_val, "str.bool");
+        if p._nogc_headerless() {
+            return p._mark_owned(p._call_str_dup(b, _str_flag, name="str.bool.own"));
+        }
+        return _str_flag;
     }
 
     if isinstance(arg_val.type, ir.PointerType) {
@@ -6037,6 +6041,12 @@ impl NativeBuiltinEmitter.emit_str(
             "==", arg_val, ir.Constant(i8p, None), name="str.isnone"
         );
         result = b.select(is_null, none_s, arg_val, name="str.ornone");
+        if p._nogc_headerless() {
+            if p._is_owned(arg_val) {
+                return p._mark_owned(result);
+            }
+            return p._rc_strdup(result, name="str.copy");
+        }
         p._emit_rc_retain(result, op="builtin_str_id");
         return result;
     }

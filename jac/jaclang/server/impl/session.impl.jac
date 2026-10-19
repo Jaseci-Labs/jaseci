@@ -1,5 +1,4 @@
 def _database_config(base_path: (str | None)) -> DatabaseConfig {
-    import from jaclang.project.config { DatabaseConfig, get_config_for_dir }
     config = get_config_for_dir(base_path) if base_path else None;
     return config.database if config is not None else DatabaseConfig();
 }
@@ -24,15 +23,13 @@ impl conninfo_from_url(url: str) -> ConnInfo {
 
 
 impl shared_pg_data_dir -> str {
-    import from jaclang.cache.registry { bucket }
     return str(bucket("pg").path() / 'main');
 }
 
 
 impl project_database(base_path: str, target_path: (str | None)) -> ProjectDatabase {
     import hashlib;
-    import from jaclang.runtime.graph_utils { get_name }
-    import from jaclang.project.workspace { workspace_for_path }
+
     workspace = workspace_for_path(target_path or base_path);
     database_root = os.path.realpath(base_path);
     in_project = False;
@@ -151,7 +148,6 @@ def _drop_owned_at_exit -> None {
 
 
 impl own_child_databases -> None {
-    import from jaclang.data.dbcatalog { process_alive, this_host }
     outer = scratch_owner_pid();
     if outer == os.getpid() {
         return;
@@ -166,7 +162,6 @@ impl own_child_databases -> None {
 
 
 impl drop_owned_databases(data_dir: str = '') -> int {
-    import from jaclang.data.dbcatalog { connect_admin, drop_database, owned_databases }
     rt = PgRuntime(data_dir=data_dir or shared_pg_data_dir(), database=MAINTENANCE_DB);
     if not rt.is_running() {
         return 0;
@@ -248,12 +243,6 @@ impl takeover_project(base_path: str, target_path: (str | None) = None) -> int {
 
 
 def _ancestry_of(arch: (object | None)) -> list[str] {
-    import from jaclang.runtime.constructs {
-        Archetype,
-        NodeArchetype,
-        EdgeArchetype,
-        WalkerArchetype
-    }
     if arch is None {
         return [];
     }
@@ -270,65 +259,27 @@ def _ancestry_of(arch: (object | None)) -> list[str] {
 }
 
 
-def _frozen_value(value: any) -> bool {
-    import datetime;
-    import decimal;
-    import enum;
-    import uuid;
-    if value is None
-        or isinstance(
-            value,
-            (
-                bool,
-                int,
-                float,
-                complex,
-                str,
-                bytes,
-                decimal.Decimal,
-                uuid.UUID,
-                datetime.date,
-                datetime.time,
-                datetime.timedelta
-            )
-        ) {
-        return True;
-    }
-    if isinstance(value, enum.Enum) {
-        return _frozen_value(value.value);
-    }
-    if isinstance(value, (tuple, frozenset)) {
-        return all(_frozen_value(item) for item in value);
-    }
-    return False;
-}
+glob _GETTER_CLASSES: dict[type, bool] = {};
 
+def _runs_getters(arch: object) -> bool {
+    cls = type(arch);
+    found = _GETTER_CLASSES.get(cls);
+    if found is None {
+        found = any(
+            isinstance(member, property)
+            for klass in cls.__mro__
+            if klass is not object and not klass.__module__.startswith('jaclang.')
+            for member in vars(klass).values()
+        );
+        _GETTER_CLASSES[cls] = found;
+    }
+    return found;
+}
 
 def _settle_written(anchor: Anchor, seen: int) {
     if seen and anchor.__dict__.get('_field_written', 0) == seen {
         anchor.__dict__.pop('_field_written', None);
     }
-}
-
-
-def _frozen_fields(anchor: Anchor) -> bool {
-    if anchor.__dict__.get('_field_written') {
-        return False;
-    }
-    arch = anchor.archetype;
-    if not type(arch).__dict__.get('__jac_tracked__', False) {
-        return False;
-    }
-    fields = arch?.__dict__;
-    if not isinstance(fields, dict) {
-        return False;
-    }
-    for (name, value) in fields.items() {
-        if name != '__jac__' and not _frozen_value(value) {
-            return False;
-        }
-    }
-    return True;
 }
 
 
@@ -483,8 +434,15 @@ impl Session.postinit -> None {
     self._snapshot_reads = set();
     self._foreign_refs = set();
     self._contended = set();
+    self._hop_writes = 0;
+    self._hop_cache = {};
+    self._hop_siblings = {};
+    self._hop_groups_token = None;
     self._queued = [];
     self._last_conflict = set();
+    self._scan_clean = False;
+    self._scan_sealed = False;
+    self._scan_safe = True;
 }
 
 
@@ -722,12 +680,13 @@ impl Session.abort -> None {
         self._snapshot_reads.clear();
         self._on_commit = [];
         self._lost = False;
+        self.unseal_scan();
     }
 }
 
 
 impl Session._forget_loaded -> None {
-    import from jaclang.runtime.osp_graph_sv { sv_forget_edge }
+    self._drop_hop_state();
     for (id, anchor) in list(self.__mem__.items()) {
         if not anchor.is_populated() or not anchor.persistent {
             continue;
@@ -742,7 +701,6 @@ impl Session._forget_loaded -> None {
 
 
 impl Session.quarantine_ref(referrer: (Anchor | None), stub: Anchor) -> None {
-    import from jaclang.runtime.osp_graph_sv { sv_forget_by_id }
     sid = stub.ensure_id();
     sv_forget_by_id(sid, self);
     if self._store is not None {
@@ -795,7 +753,6 @@ impl Session._raise_ro_retry -> None {
 
 
 impl Session._drop_snapshot_reads -> None {
-    import from jaclang.runtime.osp_graph_sv { sv_forget_edge }
     for id in self._snapshot_reads {
         if id in self._dirty or id in self._deleted {
             continue;
@@ -828,6 +785,7 @@ impl Session._ensure_txn -> None {
 
 impl Session.unit_enter(key: (str | None) = None) -> None {
     with self._lock {
+        self.unseal_scan();
         ro = key is not None and ro_units_enabled() and not unit_writes_recorded(key);
         self._active_units += 1;
         if ro {
@@ -1018,10 +976,34 @@ impl Session.flush(full: bool = False) -> None {
 }
 
 
+impl Session.seal_scan -> None {
+    with self._lock {
+        self._scan_sealed = self._scan_clean;
+    }
+}
+
+
+impl Session.unseal_scan -> None {
+    with self._lock {
+        self._scan_clean = False;
+        self._scan_sealed = False;
+    }
+}
+
+
 impl Session._flush_locked(full: bool) -> None {
     store = self._store;
     if store is None {
         return;
+    }
+    if full and self._scan_sealed {
+        full = any(
+            anchor is not None and _runs_getters(anchor.archetype)
+            for anchor in (self.__mem__.get(id) for id in self._dirty)
+        );
+        if full {
+            self._scan_sealed = False;
+        }
     }
     self._reclaim_dead_txn();
     unflushed: list[UnflushedAnchor] = [];
@@ -1035,10 +1017,20 @@ impl Session._flush_locked(full: bool) -> None {
             break;
         }
     }
+    wrote = bool(unflushed or self._deleted);
     if unflushed {
         rows = [self._serialize(u.anchor, u.stored) for u in unflushed];
+        retyped = [
+            row.id
+            for row in rows
+            if row.kind == 'NodeAnchor'
+                and row.arch_type
+                and (was := self._rows.current(row.id)) is not None
+                and was.arch_type not in ('', row.arch_type)
+        ];
         try {
             store.upsert(rows);
+            store.retype_edges(retyped);
         } except WriteConflict as wc {
             self._last_conflict = {wc.anchor_id};
             raise;
@@ -1050,7 +1042,10 @@ impl Session._flush_locked(full: bool) -> None {
             raise WriteConflict(anchor_id=rows[0].id) from e;
         }
         for (row, u) in zip(rows, unflushed) {
-            self._rows.upserted(row.id, RowState(hash=u.hash, version=row.version));
+            self._rows.upserted(
+                row.id,
+                RowState(hash=u.hash, version=row.version, arch_type=row.arch_type)
+            );
             u.anchor.hash = u.hash;
             _settle_written(u.anchor, u.written);
         }
@@ -1071,14 +1066,21 @@ impl Session._flush_locked(full: bool) -> None {
         self._deleted.clear();
     }
     self._dirty.clear();
+    if wrote {
+        self._hop_writes += 1;
+    }
+    if full {
+        self._scan_clean = self._scan_safe;
+    }
 }
 
 
 impl Session._unflushed(full: bool) -> list[UnflushedAnchor] {
     import from jaclang { JacRuntimeInterface as JacRI }
-    import from jaclang.data.serializer { Serializer }
+
     candidates = list(self.__mem__.keys()) if full else list(self._dirty.keys());
     out: list[UnflushedAnchor] = [];
+    safe = True;
     for id in candidates {
         anchor = self.__mem__.get(id);
         if anchor is None or not anchor.persistent or not anchor.is_populated() {
@@ -1089,10 +1091,13 @@ impl Session._unflushed(full: bool) -> list[UnflushedAnchor] {
             and id not in self._dirty
             and known is not None
             and known.hash != 0
-            and _frozen_fields(anchor) {
+            and frozen_fields(anchor) {
             continue;
         }
         written = anchor.__dict__.get('_field_written', 0);
+        if safe and _runs_getters(anchor.archetype) {
+            safe = False;
+        }
         stored: (dict[str, object] | None) = None;
         try {
             stored = Serializer.stored_form(anchor);
@@ -1109,6 +1114,7 @@ impl Session._unflushed(full: bool) -> list[UnflushedAnchor] {
             UnflushedAnchor(anchor=anchor, stored=stored, hash=h, written=written)
         );
     }
+    self._scan_safe = safe;
     return out;
 }
 
@@ -1116,8 +1122,6 @@ impl Session._unflushed(full: bool) -> list[UnflushedAnchor] {
 impl Session._serialize(
     anchor: Anchor, stored: (dict[str, object] | None) = None
 ) -> AnchorRow {
-    import from jaclang.data.serializer { Serializer }
-    import from jaclang.data.type_identity { storage_type, type_module }
     if stored is None {
         stored = Serializer.stored_form(anchor);
     }
@@ -1134,10 +1138,20 @@ impl Session._serialize(
     src: (UUID | None) = None;
     dst: (UUID | None) = None;
     undirected = False;
+    src_type = '';
+    dst_type = '';
     if isinstance(anchor, EdgeAnchor) {
         src = anchor.source.ensure_id() if anchor.source is not None else None;
         dst = anchor.target.ensure_id() if anchor.target is not None else None;
         undirected = anchor.is_undirected;
+        src_arch = anchor.source.__dict__.get('archetype')
+            if anchor.source is not None
+            else None;
+        dst_arch = anchor.target.__dict__.get('archetype')
+            if anchor.target is not None
+            else None;
+        src_type = storage_type(type(src_arch)) if src_arch is not None else '';
+        dst_type = storage_type(type(dst_arch)) if dst_arch is not None else '';
     }
     row_id = anchor.ensure_id();
     return AnchorRow(
@@ -1152,6 +1166,8 @@ impl Session._serialize(
         src=src,
         dst=dst,
         undirected=undirected,
+        src_type=src_type,
+        dst_type=dst_type,
         ancestry=_ancestry_of(arch)
     );
 }
@@ -1159,14 +1175,13 @@ impl Session._serialize(
 
 impl Session._materialize(row: AnchorRow) -> (Anchor | None) {
     import from functools { partial }
-    import from jaclang.data.serializer { Serializer }
+
     self._foreign_refs.discard(row.id);
     existing = self.__mem__.get(row.id);
     if existing is not None and existing.is_populated() {
         return existing;
     }
-    import from jaclang.data.type_identity { resolution_scope, ForeignType }
-    import from jaclang.runtime.prepared { application_for }
+
     application = application_for(self.target_path) if self.target_path else None;
     try {
         with resolution_scope(application) {
@@ -1198,7 +1213,9 @@ impl Session._materialize(row: AnchorRow) -> (Anchor | None) {
         anchor.version = row.version;
     }
     self.__mem__[row.id] = anchor;
-    self._rows.loaded(row.id, RowState(hash=anchor.hash, version=row.version));
+    self._rows.loaded(
+        row.id, RowState(hash=anchor.hash, version=row.version, arch_type=row.arch_type)
+    );
     if self._store is not None
         and self._store.txn_isolation() is TxnIsolation.SNAPSHOT_READ_ONLY {
         self._snapshot_reads.add(row.id);
@@ -1208,7 +1225,6 @@ impl Session._materialize(row: AnchorRow) -> (Anchor | None) {
 
 
 impl Session._load_edges(nd: NodeAnchor) -> list[EdgeAnchor] {
-    import from jaclang.data.serializer { Serializer }
     loaded = nd.__dict__.get('edges');
     if loaded is not None {
         return loaded;
@@ -1421,6 +1437,88 @@ impl Session.close -> None {
     self._deleted.clear();
     self._rows.clear();
     self._lost = False;
-    import from jaclang.runtime.osp_graph_sv { sv_store_closed }
+    self._drop_hop_state();
+
     sv_store_closed(self);
+}
+
+
+impl Session._hop_token -> (tuple[int, int] | None) {
+    store = self._store;
+    if store is None or not store.in_txn() {
+        return None;
+    }
+    if store.txn_isolation() is TxnIsolation.READ_COMMITTED {
+        return None;
+    }
+    serial = store.txn_serial();
+    if serial < 0 {
+        return None;
+    }
+    return (serial, self._hop_writes);
+}
+
+
+impl Session.batching -> bool {
+    return self._hop_token() is not None;
+}
+
+
+impl Session._drop_hop_state -> None {
+    self._hop_siblings = {};
+    self._hop_cache = {};
+    self._hop_groups_token = None;
+}
+
+
+impl Session.note_siblings(ids: list[UUID]) -> None {
+    if len(ids) < 2 {
+        return;
+    }
+    token = self._hop_token();
+    if token is None {
+        return;
+    }
+    if token != self._hop_groups_token {
+        self._hop_siblings = {};
+        self._hop_groups_token = token;
+    }
+    group = tuple(ids[:HOP_BATCH_LIMIT]);
+    for i in group {
+        self._hop_siblings[i] = group;
+    }
+}
+
+
+impl Session.hop_siblings(origin: UUID) -> tuple[UUID, ...] {
+    if self._hop_groups_token is None or self._hop_groups_token != self._hop_token() {
+        return ();
+    }
+    return self._hop_siblings.get(origin, ());
+}
+
+
+impl Session.hop_cached(key: any, origin: UUID) -> (list[tuple[any, any]] | None) {
+    held = self._hop_cache.get(key);
+    if held is None or held[0] != self._hop_token() {
+        return None;
+    }
+    return held[1].get(origin);
+}
+
+
+impl Session.hop_store(key: any, by_origin: dict[UUID, list[tuple[any, any]]]) -> None {
+    token = self._hop_token();
+    if token is None {
+        return;
+    }
+    stale = [
+        k
+        for (k, held) in self._hop_cache.items()
+        if held[0] != token
+    ];
+    for k in stale {
+        del self._hop_cache[k];
+    }
+    self._hop_cache[key] = (token, by_origin);
 }

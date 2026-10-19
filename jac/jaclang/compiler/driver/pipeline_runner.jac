@@ -1,28 +1,6 @@
 import os;
-import from jaclang.compiler.passes.context { PassSchedule }
-import from jaclang.compiler.driver.pipeline_types { UtilityProduct }
-import type from jaclang.compiler.driver.compile_options { CancelToken }
-import from jaclang.compiler.passes.sym_tab_build_pass { SymTabBuildPass }
-import from jaclang.compiler.driver.pipeline { validate_schedule }
-import from jaclang.compiler.driver.compile_options { CompileOptions }
-import from jaclang.compiler.driver.program { JacProgram }
-import jaclang.compiler.frontend.unitree as uni;
 
 def wasm_ir(program: JacProgram, file_path: str) -> tuple[str, set[str]] {
-    import from jaclang.compiler.backends.native.wasm_build {
-        _project_gc_settings,
-        _assert_ir_rc_free,
-        app_declared_imports
-    }
-    import from jaclang.compiler.driver.compile_options {
-        CompileOptions,
-        push_native_target,
-        pop_native_target
-    }
-    import from jaclang.compiler.driver.na_coverage {
-        na_coverage_begin,
-        na_coverage_end
-    }
     (gc_mode, enf_mods, enf_grand) = _project_gc_settings();
     prev = push_native_target("wasm32-unknown-unknown");
     try {
@@ -79,7 +57,6 @@ def wasm_ir(program: JacProgram, file_path: str) -> tuple[str, set[str]] {
 }
 
 def wasm_artifact(program: JacProgram, file_path: str, exports: list[str]) -> bytes {
-    import from jaclang.compiler.backends.native.wasm_build { emit_wasm_from_ir }
     (llvm_ir, app_imports) = wasm_ir(program, file_path);
     return emit_wasm_from_ir(llvm_ir, exports, app_imports=app_imports);
 }
@@ -93,11 +70,6 @@ def native_application(
     debug: bool = False,
     no_ir_cache: bool = False
 ) -> tuple[uni.Module, CompileOptions] {
-    import from jaclang.compiler.driver.compile_options {
-        CompileOptions,
-        push_native_target,
-        pop_native_target
-    }
     previous = push_native_target(target) if target else None;
     try {
         options = CompileOptions(
@@ -140,14 +112,6 @@ def compile_application(
 ) -> uni.Module {
     import copy;
     import from pathlib { Path }
-    import from jaclang.compiler.driver.compilation_context {
-        bind_options,
-        context_program
-    }
-    import from jaclang.compiler.frontend.unitree { Import, ModulePath }
-    import from jaclang.compiler.backends.py.artifact_imports { package_sources }
-    import from jaclang.jac0core.ext_registry { is_annex }
-    import from jaclang.project.app_kinds { kind_has_client }
     entry_path = os.path.realpath(entry_path);
     project_root = os.path.realpath(
         options.project_root or os.path.dirname(entry_path)
@@ -225,10 +189,7 @@ def compile_application(
                     program._get_compiler().selfhost.resolve(dependency, context)
                 )
                 and os.path.isfile(dependency)
-                and not any(
-                    part in ('.jac', 'node_modules', 'venv')
-                    for part in os.path.relpath(dependency, project_root).split(os.sep)
-                )
+                and holds_application_code(os.path.relpath(dependency, project_root))
         );
     }
     if entry_module is None {
@@ -237,63 +198,4 @@ def compile_application(
         );
     }
     return entry_module;
-}
-
-
-def get_format_sched(auto_lint: bool = False) -> PassSchedule {
-    import from jaclang.compiler.tools.comment_attach_pass { CommentAttachPass }
-    import from jaclang.compiler.tools.doc_ir_gen_pass { DocIRGenPass }
-    import from jaclang.compiler.tools.jac_auto_lint_pass { JacAutoLintPass }
-    import from jaclang.compiler.tools.jac_formatter_pass { JacFormatPass }
-    if auto_lint {
-        return validate_schedule(
-            [CommentAttachPass, JacAutoLintPass, DocIRGenPass, JacFormatPass],
-            origin='format schedule'
-        );
-    }
-    return validate_schedule(
-        [CommentAttachPass, DocIRGenPass, JacFormatPass], origin='format schedule'
-    );
-}
-
-def get_lint_sched -> PassSchedule {
-    import from jaclang.compiler.tools.jac_auto_lint_pass { JacLintCheckPass }
-    return validate_schedule([JacLintCheckPass], origin='lint schedule');
-}
-
-def run_utility(
-    product: UtilityProduct,
-    ir: any,
-    program: JacProgram,
-    cancel_token: (CancelToken | None) = None
-) -> any {
-    import from jaclang.compiler.driver.pass_driver { run_pass }
-    step: type;
-    if product == UtilityProduct.PYTHON_AST {
-        import from jaclang.compiler.passes.pyast_load_pass { PyastBuildPass }
-        step = PyastBuildPass;
-    } elif product == UtilityProduct.PYTHON_SYMBOLS {
-        step = SymTabBuildPass;
-    } elif product == UtilityProduct.GRAMMAR {
-        import from jaclang.compiler.tools.grammar_extract_pass { GrammarExtractPass }
-        step = GrammarExtractPass;
-    } elif product == UtilityProduct.CFG_DOT {
-        import from jaclang.compiler.tools.cfg_dot { CoalesceBBPass }
-        step = CoalesceBBPass;
-    } elif product == UtilityProduct.NORMALIZE {
-        import from jaclang.compiler.tools.normalize_pass { NormalizePass }
-        step = NormalizePass;
-    } elif product == UtilityProduct.UNPARSE {
-        import from jaclang.compiler.tools.unparse_pass { UnparsePass }
-        step = UnparsePass;
-    } elif product == UtilityProduct.DOC {
-        import from jaclang.compiler.tools.doc_ir_gen_pass { DocIRGenPass }
-        step = DocIRGenPass;
-    } elif product == UtilityProduct.FORMAT {
-        import from jaclang.compiler.tools.jac_formatter_pass { JacFormatPass }
-        step = JacFormatPass;
-    } else {
-        raise ValueError(f"Unknown utility product: {product}");
-    }
-    return run_pass(step, ir, program, cancel_token=cancel_token);
 }

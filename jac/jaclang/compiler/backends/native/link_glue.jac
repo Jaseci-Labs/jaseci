@@ -1,6 +1,6 @@
-import type from jaclang.compiler.frontend.codeinfo { InteropBinding }
 glob SHARED_INIT_SYMBOL: str = "__jac_shared_init",
      ENTRY_SYMBOL: str = "jac_entry",
+     SHARED_MAIN_SYMBOL: str = "jac_main",
      WASM_INIT_SYMBOL: str = "__jac_glob_init",
      REGION_DIED_HOOK: str = "__jac_region_died_hook",
      STR_NEW_SYMBOL: str = "__jac_str_new",
@@ -142,32 +142,41 @@ def argv_globals_ir -> str {
     return "@__jac_argc = weak global i32 0\n@__jac_argv = weak global ptr null\n\n";
 }
 
-def init_array_globals_ir -> str {
-    return "@__jac_init_array = weak global ptr null\n@__jac_init_count = weak global i64 0\n\n";
-}
-
-def _main_body_with_init_array -> str {
+def _main_body -> str {
     return (
         "define i32 @main(i32 %argc, ptr %argv) {\n"
         "entry:\n"
         "    store i32 %argc, ptr @__jac_argc\n"
         "    store ptr %argv, ptr @__jac_argv\n"
-        "    %ia = load ptr, ptr @__jac_init_array\n"
-        "    %ic = load i64, ptr @__jac_init_count\n"
-        "    br label %ia.cond\n"
-        "ia.cond:\n"
-        "    %i = phi i64 [ 0, %entry ], [ %inext, %ia.body ]\n"
-        "    %more = icmp ult i64 %i, %ic\n"
-        "    br i1 %more, label %ia.body, label %ia.done\n"
-        "ia.body:\n"
-        "    %slot = getelementptr ptr, ptr %ia, i64 %i\n"
-        "    %fn = load ptr, ptr %slot\n"
-        "    call void %fn()\n"
-        "    %inext = add i64 %i, 1\n"
-        "    br label %ia.cond\n"
-        "ia.done:\n"
         "    call void @jac_entry()\n"
         "    ret i32 0\n"
+        "}\n\n"
+    );
+}
+
+def init_array_runner_ir -> str {
+    """`__jac_libc_init`, the `init` argument `_start` hands
+    `__libc_start_main`: it runs the executable's `.init_array` (bounded by
+    the linker's `__init_array_start` / `__init_array_end`). glibc runs a
+    non-null `init` instead of walking the array itself, so constructors run
+    exactly once on every glibc, old or new.""";
+    return (
+        "@__init_array_start = external hidden global ptr\n"
+        "@__init_array_end = external hidden global ptr\n\n"
+        "define internal void @__jac_libc_init(i32 %argc, ptr %argv, ptr %envp) {\n"
+        "entry:\n"
+        "    br label %ia.cond\n"
+        "ia.cond:\n"
+        "    %slot = phi ptr [ @__init_array_start, %entry ], [ %next, %ia.body ]\n"
+        "    %more = icmp ult ptr %slot, @__init_array_end\n"
+        "    br i1 %more, label %ia.body, label %ia.done\n"
+        "ia.body:\n"
+        "    %fn = load ptr, ptr %slot\n"
+        "    call void %fn(i32 %argc, ptr %argv, ptr %envp)\n"
+        "    %next = getelementptr ptr, ptr %slot, i64 1\n"
+        "    br label %ia.cond\n"
+        "ia.done:\n"
+        "    ret void\n"
         "}\n\n"
     );
 }
@@ -176,11 +185,11 @@ def entry_elf_ir -> str {
     return (
         "; --- ELF entry point ---\n"
         + argv_globals_ir()
-        + init_array_globals_ir()
+        + init_array_runner_ir()
         + "declare void @exit(i32) noreturn\n\n"
         + "declare i32 @__libc_start_main(ptr, i32, ptr, ptr, ptr, ptr, ptr)\n\n"
         + "declare ptr @llvm.stacksave()\n\n"
-        + _main_body_with_init_array()
+        + _main_body()
         + "define void @_start() naked noreturn {\n"
         + "entry:\n"
         + "    %sp = call ptr @llvm.stacksave()\n"
@@ -191,19 +200,18 @@ def entry_elf_ir -> str {
         + "}\n\n"
         + "define internal void @_jac_boot(i32 %bargc, ptr %bargv, ptr %bstack) noreturn {\n"
         + "entry:\n"
-        + "    %r = call i32 @__libc_start_main(ptr @main, i32 %bargc, ptr %bargv, ptr null, ptr null, ptr null, ptr %bstack)\n"
+        + "    %r = call i32 @__libc_start_main(ptr @main, i32 %bargc, ptr %bargv, ptr @__jac_libc_init, ptr null, ptr null, ptr %bstack)\n"
         + "    unreachable\n"
         + "}\n"
     );
 }
 
 def entry_elf_static_ir -> str {
-    return (
-        "; --- ELF entry point (musl static) ---\n"
+    """musl's crt1.o enters `__libc_start_main`, which runs `.init_array`
+    itself before `main`.""";
+    return "; --- ELF entry point (musl static) ---\n"
         + argv_globals_ir()
-        + init_array_globals_ir()
-        + _main_body_with_init_array()
-    );
+        + _main_body();
 }
 
 def entry_macho_ir -> str {
@@ -253,14 +261,46 @@ def entry_pe_ir -> str {
     );
 }
 
+def shared_entry_symbol(spec: GlueSpec) -> str {
+    if not spec.shared or spec.root_index < 0 {
+        return "";
+    }
+    return spec.units[spec.root_index].entry_symbol;
+}
+
+def shared_main_ir(spec: GlueSpec) -> str {
+    """A shared library whose root module has an entry exports it as
+    `jac_main(argc, argv)`: a host that loads the library (its initializers
+    already ran) hands the process to the program, which reads that argv as
+    `sys.argv` and starts single-threaded like an executable, with plain
+    reference counts until it spawns a thread.""";
+    root_entry = shared_entry_symbol(spec);
+    if not root_entry {
+        return "";
+    }
+    return (
+        argv_globals_ir()
+        + _decl_void_fn(root_entry)
+        + f"define i32 @{SHARED_MAIN_SYMBOL}(i32 %argc, ptr %argv) {{\n"
+        + "entry:\n"
+        + f"    store atomic i8 0, ptr @{RC_THREADED_SYMBOL} monotonic, align 1\n"
+        + "    store i32 %argc, ptr @__jac_argc\n"
+        + "    store ptr %argv, ptr @__jac_argv\n"
+        + f'    call void @"{root_entry}"()\n'
+        + "    ret i32 0\n"
+        + "}\n\n"
+    );
+}
+
 def platform_entry_ir(spec: GlueSpec) -> str {
-    if spec.shared or spec.platform in ("jit", "wasm") {
+    if spec.shared {
+        return shared_main_ir(spec);
+    }
+    if spec.platform in ("jit", "wasm") {
         return "";
     }
     if spec.platform == "c" {
-        return argv_globals_ir()
-            + init_array_globals_ir()
-            + _main_body_with_init_array();
+        return argv_globals_ir() + _main_body();
     }
     if spec.platform == "pe" {
         return entry_pe_ir();
@@ -272,6 +312,45 @@ def platform_entry_ir(spec: GlueSpec) -> str {
         return entry_elf_static_ir();
     }
     return entry_elf_ir();
+}
+
+def shared_init_registration_ir(spec: GlueSpec) -> str {
+    """How the loader runs `__jac_shared_init` when it loads the library.
+    ELF lists it in `.init_array` directly: LLVM, left to `llvm.global_ctors`,
+    emits ELF constructors into `.ctors`, which only a crtbegin.o runs. The
+    glue is the last input, so it runs after every constructor the inputs
+    carry. Mach-O lists it as a module initializer. A PE DLL has no C runtime
+    to run constructors, so its entry point calls it on
+    DLL_PROCESS_ATTACH.""";
+    if spec.platform == "pe" {
+        return (
+            f"define i32 @__jac_dll_main(ptr %module, i32 %reason, ptr %reserved) {{\n"
+            "entry:\n"
+            "    %attach = icmp eq i32 %reason, 1\n"
+            "    br i1 %attach, label %init, label %done\n"
+            "init:\n"
+            f"    call void @{SHARED_INIT_SYMBOL}()\n"
+            "    br label %done\n"
+            "done:\n"
+            "    ret i32 1\n"
+            "}\n\n"
+        );
+    }
+    if spec.platform == "elf" {
+        return (
+            f"@__jac_shared_init_entry = internal constant ptr @{SHARED_INIT_SYMBOL}, "
+            "section \".init_array\", align 8\n"
+            "@llvm.used = appending global [1 x ptr] [ptr @__jac_shared_init_entry], "
+            "section \"llvm.metadata\"\n\n"
+        );
+    }
+    if spec.platform == "macho" {
+        return (
+            "@llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] "
+            f"[{{ i32, ptr, ptr }} {{ i32 65535, ptr @{SHARED_INIT_SYMBOL}, ptr null }}]\n\n"
+        );
+    }
+    return "";
 }
 
 def link_glue_ir(spec: GlueSpec) -> tuple[str, list[str]] {
@@ -299,13 +378,16 @@ def link_glue_ir(spec: GlueSpec) -> tuple[str, list[str]] {
         parts.append(win_floor_ir());
     }
     if spec.shared {
+        parts.append(shared_init_registration_ir(spec));
         exports.append(SHARED_INIT_SYMBOL);
+    }
+    if shared_entry_symbol(spec) {
+        exports.append(SHARED_MAIN_SYMBOL);
     }
     return ("".join(parts), exports);
 }
 
 def init_object_codegen {
-    import jaclang.compiler.backends.native.llvm.binding as llvm;
     llvm.initialize_all_targets();
     llvm.initialize_all_asmprinters();
     llvm.initialize_all_asmparsers();
@@ -314,8 +396,6 @@ def init_object_codegen {
 def bind_shared_callbacks(
     llvm_ir: str, bindings: list[InteropBinding]
 ) -> tuple[str, list[InteropBinding]] {
-    import jaclang.compiler.backends.native.llvm.binding as llvm;
-    import from jaclang.compiler.backends.native.llvm.ir.types { _wrapname }
     module = llvm.parse_assembly(llvm_ir);
     assert isinstance(module, llvm.ModuleRef);
     definitions: list[str] = [];
@@ -363,7 +443,7 @@ def inject_heap_accounting(
     llvm_ir_str: str, managed: bool = False
 ) -> tuple[str, list[str]] {
     import re;
-    import from jaclang.compiler.frontend.codeinfo { HDR_TOTAL }
+
     requested = [
         name
         for name in ("jac_heap_size", "jac_list_heap_size")

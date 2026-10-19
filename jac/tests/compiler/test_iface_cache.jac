@@ -617,6 +617,50 @@ test "an interface is identical however many twins of its module are reachable" 
     assert names[0] == names[1] , f"the interface's name count changed between compiles: {names}";
 }
 
+test "an interface written from a hydrated module keeps its instance-method bits" {
+    # The native kernel reads interfaces the host writes from modules it has
+    # itself hydrated. The instance-method bit lives only on the catalog
+    # provider of a hydrated symbol, so the second encoding dropped it and the
+    # kernel bound `Cls.method(obj, ...)` as if `obj` were the first argument.
+    import from jaclang.compiler.types.stubcat.format { SYMF_INSTANCE_METHOD }
+    import from jaclang.compiler.types.stubcat.reader { CatProvider }
+    import from jaclang.compiler.types.types { ClassType }
+    import from jaclang.compiler.types.stubcat.writer { build_module_iface }
+    import from jaclang.compiler.frontend.kernel_host { ProgramResolver }
+    import from jaclang.compiler.types.stubcat.modiface {
+        open_module_iface,
+        iface_module
+    }
+    tmp = os.path.realpath(tempfile.mkdtemp());
+    src = os.path.join(tmp, "methmod.jac");
+    with open(src, "w") as fh {
+        fh.write("obj Box {\n    def get(x: int) -> int { return x; }\n}\n");
+    }
+    prog = JacProgram();
+    mod = prog.compile(
+        src,
+        options=CompileOptions(no_cgen=True, symtab_ir_only=True, need_full_ast=True)
+    );
+    payload = build_module_iface(mod, prog.get_type_evaluator(), tmp);
+    for hop in range(2) {
+        cat = open_module_iface(payload, tmp, resolver=ProgramResolver(program=prog));
+        assert cat is not None;
+        served = iface_module(cat);
+        assert served is not None;
+        box = served.lookup("Box");
+        assert box is not None and box.provider is not None;
+        box_type = box.provider.resolve_type(box);
+        assert isinstance(box_type, ClassType);
+        get = box_type.shared.symbol_table.lookup("get");
+        assert get is not None;
+        prov = get.provider;
+        assert isinstance(prov, CatProvider)
+            and (prov.symbits & SYMF_INSTANCE_METHOD) != 0 , f"encoding {hop
+            + 1} lost the instance-method bit of Box.get";
+        payload = build_module_iface(served, prog.get_type_evaluator(), tmp);
+    }
+}
+
 test "a comptime import takes the dependency's tree and rides its edits" {
     # A comptime import needs the dependency's values, which an interface
     # does not carry: served from the cache, the initializer was "not known
@@ -1106,4 +1150,62 @@ test "equivalent external class references have one interface identity" {
         _shared=cached.shared, private=copy(original.private), flags=original.flags
     );
     assert build_module_iface(mod, evaluator, pkg) == before;
+}
+
+test "an empty dependency persists an interface its importer can replay against" {
+    import from jaclang.compiler.driver.jir { read_dep_rows }
+    tmp = tempfile.mkdtemp();
+    dep = os.path.realpath(os.path.join(tmp, "emptydep.jac"));
+    with open(dep, "w") as fh {
+        fh.write("");
+    }
+    main = os.path.realpath(os.path.join(tmp, "usesempty.jac"));
+    with open(main, "w") as fh {
+        fh.write("import emptydep;\n\nwith entry { print(emptydep); }\n");
+    }
+    (cold_prog, cold_diags) = _check(main);
+    dep_jir = _cache_path(dep, main);
+    assert dep_jir.exists() , "the empty dependency wrote no cache JIR";
+    assert read_section_bytes(dep_jir.read_bytes(), SEC_IFACE) is not None , (
+        "the empty dependency persisted no interface"
+    );
+    rows = {
+        row.path: row.digest
+        for row in read_dep_rows(_cache_path(main).read_bytes(), tmp)
+    };
+    assert rows.get(dep) , f"the importer recorded no digest for the empty module: {rows}";
+    (warm_prog, warm_diags) = _check(main);
+    events = warm_prog.analysis.cache_events;
+    assert events.get("analysis_replay", 0) == 1 , (
+        f"the importer of an empty module was not replayed (events: {events})"
+    );
+    assert warm_diags == cold_diags , "warm diagnostics diverge from cold";
+}
+
+test "a fresh check process can serve its first unit from the cache" {
+    import subprocess;
+    import from tests.support { compiler_python_command }
+    tmp = tempfile.mkdtemp();
+    with open(os.path.join(tmp, "alpha.jac"), "w") as fh {
+        fh.write("def alpha_value(x: int) -> int { return x + 1; }\n");
+    }
+    probe = (
+        "import sys\n"
+        + "import jaclang.cli.commands.analysis as A\n"
+        + "import jaclang.compiler.driver.ifacecache as IC\n"
+        + "seen = []\n"
+        + "inner = A._check_file_job\n"
+        + "def job(req):\n"
+        + "    seen.append(IC.iface_codec() is not None)\n"
+        + "    return inner(req)\n"
+        + "A._check_file_job = job\n"
+        + "A.check([sys.argv[1]], nowarn=True, jobs='0')\n"
+        + "print('FIRST_UNIT_CODEC_READY', seen[:1])\n"
+    );
+    done = subprocess.run(
+        compiler_python_command(probe, tmp), capture_output=True, text=True, timeout=600
+    );
+    assert "FIRST_UNIT_CODEC_READY [True]" in done.stdout , (
+        f"the first unit ran before the interface codec was ready:\n{done.stdout}\n{done.stderr}"
+    );
 }

@@ -1,9 +1,6 @@
 import hashlib;
 import os;
 import types;
-import from jaclang.jac0core.ext_registry { base_stem }
-import type from jaclang.runtime.semantic { Info }
-import type from jaclang.client.compiler { ViteCompiler }
 
 obj ModuleIndex {
     has size: tuple[int, int],
@@ -31,7 +28,8 @@ obj PreparedApplication {
         dev: bool = True,
         client_dist: str = "",
         applications: list[PreparedApplication] = [],
-        index: ModuleIndex | None = None;
+        index: ModuleIndex | None = None,
+        sources: list[str] = [];
 }
 
 glob _applications: dict[str, PreparedApplication] = {},
@@ -48,7 +46,6 @@ def _realpath(path: str) -> str {
 
 def publish(application: PreparedApplication) {
     import sys;
-    import from jaclang.runtime.prepared_loader { PreparedFinder }
     if not any(isinstance(finder, PreparedFinder) for finder in sys.meta_path) {
         sys.meta_path.insert(0, PreparedFinder());
     }
@@ -111,6 +108,20 @@ def forget(`entry: str) {
     }
 }
 
+glob NON_APPLICATION_DIRS: tuple[str, ...] = (
+         'node_modules',
+         'venv',
+         '__pycache__',
+         'site-packages'
+     );
+
+def holds_application_code(relative_path: str) -> bool {
+    return not any(
+        part.startswith('.') or part in NON_APPLICATION_DIRS
+        for part in relative_path.split(os.sep)
+    );
+}
+
 def containing_application(
     path: str, module_name: str = ""
 ) -> (PreparedApplication | None) {
@@ -129,10 +140,7 @@ def containing_application(
         a
         for a in _applications.values()
         if resolved.startswith((a.root + os.sep))
-            and not any(
-                part.startswith('.') or part in ('node_modules', 'venv', '__pycache__')
-                for part in os.path.relpath(resolved, a.root).split(os.sep)
-            )
+            and holds_application_code(os.path.relpath(resolved, a.root))
     ];
     return max(candidates, key=lambda (a: any) { len(a.root); }, `default=None);
 }
@@ -140,7 +148,6 @@ def containing_application(
 def load_prepared_module(
     path: str, application: PreparedApplication | None = None, as_main: bool = False
 ) -> types.ModuleType {
-    import from jaclang.runtime.runtime { JacRuntime as Jac }
     import sys;
     path = os.path.realpath(path);
     if (prepared_code(path) is None) {
@@ -401,7 +408,6 @@ def execute_module(module: types.ModuleType, application: PreparedApplication) {
 
 def semantic_for_scope(scope: str) -> Info | None {
     import sys;
-    import from jaclang.jac0core.ext_registry { base_stem }
     parts = scope.split('.');
     for end in range(len(parts) - 1, 0, -1) {
         name = '.'.join(parts[:end]);

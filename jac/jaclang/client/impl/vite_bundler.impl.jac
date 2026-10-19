@@ -1,7 +1,4 @@
 import threading;
-import from jaclang.cli.console { console }
-import from jaclang.client.client_bundle { ClientBundleError }
-import from jaclang.client.js_runtime { js_runtime_path }
 
 
 def _require_bun -> str {
@@ -10,8 +7,6 @@ def _require_bun -> str {
 
 
 def _build_vite_command(build_dir: Path, args: list[str]) -> list[str] {
-    import from jaclang.client.targets.node_tooling_common { resolve_node_tool_entry }
-
     bun = _require_bun();
     `entry = resolve_node_tool_entry(build_dir, 'vite');
     if `entry is None {
@@ -219,8 +214,7 @@ impl ViteBundler.install_packages(
 ) -> None {
     import time;
     import shutil;
-    import subprocess;
-    bun = _require_bun();
+    _require_bun();
     build_dir = install_dir if install_dir is not None else self._get_client_dir();
     node_modules = build_dir / 'node_modules';
 
@@ -253,22 +247,17 @@ impl ViteBundler.install_packages(
     try {
         console.print("\n  ⏳ Installing dependencies...\n");
         start_time = time.time();
-        result = subprocess.run(
-            [bun, 'install'],
-            cwd=build_dir,
-            check=False,
-            text=True,
-            capture_output=capture_output
+        (returncode, error_output) = run_pm(
+            ['install'], str(build_dir), capture=capture_output
         );
         elapsed = time.time() - start_time;
-        if result.returncode != 0 {
+        if returncode != 0 {
             if capture_output {
-                error_output = result.stderr or result.stdout;
                 raise ClientBundleError(
-                    f"Dependency installation failed after {elapsed:.1f}s\n\n{error_output}\nCommand: bun install"
+                    f"Dependency installation failed after {elapsed:.1f}s\n\n{error_output}"
                 ) from None;
             }
-            console.error(f"\n  ✖ bun install failed after {elapsed:.1f}s");
+            console.error(f"\n  ✖ Dependency installation failed after {elapsed:.1f}s");
             raise ClientBundleError("Failed to install dependencies") from None;
         }
         console.print(f"\n  ✔ Dependencies installed ({elapsed:.1f}s)");
@@ -319,13 +308,13 @@ impl ViteBundler.add_packages(
         console.print("  ✔ Created package.json");
     }
 
-    cmd = [js_runtime_path(), 'add'];
-    if dev {
-        cmd.append('--dev');
-    }
-    cmd.extend(packages);
     console.print(f"  Installing: {' '.join(packages)}");
-    subprocess.run(cmd, cwd=target_dir, check=True, capture_output=False);
+    (returncode, _) = run_pm(
+        ['add'] + (['--dev'] if dev else []) + packages, str(target_dir)
+    );
+    if returncode != 0 {
+        raise RuntimeError(f"installing {', '.join(packages)} failed ({returncode})");
+    }
 }
 
 impl ViteBundler._format_config_object(
@@ -460,7 +449,7 @@ impl ViteBundler._generate_vite_config_content(
     } else {
         compiled_base = 'compiled';
     }
-    import from jaclang.compiler.backends.es.jac_runtime_js { JAC_PRELUDE_BASENAME }
+
     compiled_utils_relative = f"{compiled_base}/client_runtime.js";
     compiled_prelude_relative = f"{compiled_base}/{JAC_PRELUDE_BASENAME}";
     compiled_pwa_relative = f"{compiled_base}/pwa_runtime.js";
@@ -508,7 +497,6 @@ impl ViteBundler._generate_vite_config_content(
         desktop_alias_str = f'\n      "@jac/desktop": path.resolve(buildDir, "{compiled_desktop_relative}"),';
     }
 
-    import from jaclang.client.runtime_source { JAC_VIRTUAL_MODULE_SOURCES }
     virtual_alias_str = '';
     for (module_name, source_name) in JAC_VIRTUAL_MODULE_SOURCES.items() {
         if module_name in ('mobui', 'pwa') {
@@ -1071,7 +1059,6 @@ impl ViteBundler.find_bundle(self: ViteBundler) -> Optional[Path] {
 
 impl ViteBundler.build(self: ViteBundler, entry_file: Optional[Path] = None) -> None {
     import time;
-    import from jaclang.client { ensure_client_deps }
 
     bun = _require_bun();
 
@@ -1128,7 +1115,6 @@ impl ViteBundler.init(
     config_path: Optional[Path] = None,
     entry_path: str = ""
 ) {
-    import from jaclang.project.config { find_project_root }
     project_root = find_project_root(project_dir);
     self.project_dir = project_root[0] if project_root else project_dir;
     self.minify = minify;
@@ -1355,9 +1341,6 @@ impl ViteBundler.start_dev_server(
 }
 
 def _dev_head_scripts -> str {
-    import from jaclang.project.config { get_config }
-    import from jaclang.client.serving { HeaderBuilder }
-
     config = get_config();
     client_cfg = config.get_plugin_config('client') if config else None;
     meta_data = client_cfg.get('app_meta_data', {}) if client_cfg else {};

@@ -1,18 +1,6 @@
 import hashlib;
 import json;
 import os;
-import from jaclang.compiler.frontend.codeinfo {
-    NATIVE_ABI_VERSION,
-    NativeFieldInfo,
-    NativeEnumLayout,
-    NativeFuncLayout,
-    NativeModuleLayout,
-    NativeStructLayout,
-    NativeTupleLayout,
-    native_unit_identity,
-    native_unit_root
-}
-import from jaclang.compiler.kernel_target { target_pkg_root }
 
 def native_unit_ref(path: str) -> str {
     """How one unit names another in what it writes to disk: by package
@@ -55,6 +43,7 @@ def resolve_native_unit_ref(ref: str, anchor: str = "") -> str {
     import from jaclang.compiler.frontend.host { active_host }
     import from jaclang.compiler.backends.native.na_constants {
         FACT_IMPORT_PATHS,
+        FACT_PACKAGE_STORE,
         FACT_SEP
     }
     for search_dir in active_host().native_fact(FACT_IMPORT_PATHS, "").split(
@@ -64,6 +53,24 @@ def resolve_native_unit_ref(ref: str, anchor: str = "") -> str {
             candidate = os.path.join(search_dir, ref);
             if os.path.isfile(candidate) {
                 return candidate;
+            }
+        }
+    }
+    """A package from the store is rooted at its `<version>-<sha>` directory
+    under `<store>/<org>/<name>/`, a place no consumer's root or import path
+    leads to.""";
+    store = active_host().native_fact(FACT_PACKAGE_STORE, "");
+    if store and os.path.isdir(store) {
+        for org in sorted(os.listdir(store)) {
+            org_dir = os.path.join(store, org);
+            if not os.path.isdir(org_dir) {
+                continue;
+            }
+            for name in sorted(os.listdir(org_dir)) {
+                candidate = os.path.join(org_dir, name, ref);
+                if os.path.isfile(candidate) {
+                    return candidate;
+                }
             }
         }
     }
@@ -490,7 +497,9 @@ obj NativeIface {
         layout: (NativeModuleLayout | None) = None,
         deps: list[str] = [],
         coverage: dict[str, any] = {},
-        headerless: bool = False;
+        headerless: bool = False,
+        runtime_globals: list[str] = [],
+        init_reads: list[str] = [];
 
     def digest_fields -> dict[str, any] {
         return {
@@ -530,6 +539,8 @@ obj NativeIface {
     def _with_references(fields: dict[str, any]) -> dict[str, any] {
         fields["deps"] = [native_unit_ref(x) for x in self.deps];
         fields["coverage"] = dict(self.coverage);
+        fields["runtime_globals"] = list(self.runtime_globals);
+        fields["init_reads"] = list(self.init_reads);
         return fields;
     }
 
@@ -592,7 +603,9 @@ obj NativeIface {
             ),
             deps=_json_str_list(d.get("deps")),
             coverage=coverage,
-            headerless=bool(d.get("headerless", False))
+            headerless=bool(d.get("headerless", False)),
+            runtime_globals=_json_str_list(d.get("runtime_globals")),
+            init_reads=_json_str_list(d.get("init_reads"))
         );
     }
 

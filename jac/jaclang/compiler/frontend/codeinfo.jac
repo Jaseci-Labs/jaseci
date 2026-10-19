@@ -1,31 +1,6 @@
-import type from jaclang.runtime.native_library { SharedNativeEngine }
 import hashlib;
-import from jaclang.runtime.surface { SurfaceEntry }
 import from collections.abc { Sequence }
 import from contextvars { ContextVar }
-import from jaclang.compiler.frontend.constant {
-    NATIVE_ERASED_ANNOTATIONS,
-    NATIVE_ERASED_TYPE_MARKERS,
-    TYPE_PARAM_CONSTRUCTORS
-}
-import from jaclang.compiler.frontend.srcloc { CodeLocInfo }
-import from jaclang.compiler.kernel_target {
-    active_kernel_target,
-    is_target_package_path,
-    target_package_rel,
-    kernel_target_active,
-    kernel_target_generation,
-    target_pkg_root
-}
-import type from jaclang.compiler.backends.es.estree { IndexInfo, SliceInfo }
-import type from jaclang.compiler.backends.es.estree { Node as EsNode }
-import type from jaclang.compiler.tools.doc_ir { Doc }
-import type from jaclang.compiler.frontend.unitree { CommentToken, Module, UniNode }
-import type from jaclang.compiler.passes.layout_pass { LayoutRegistry }
-import type from jaclang.compiler.passes.osp_analysis { OspModel }
-import type from jaclang.compiler.backends.native.llvm.ir { Module as IRModule }
-import type from jaclang.compiler.backends.native.llvm.binding { ExecutionEngine }
-import type from jaclang.compiler.driver.native_iface { NativeIface }
 
 obj ClientManifest {
     has exports: list[str] = [],
@@ -269,9 +244,10 @@ def native_arch_scope(mod_path: str) -> str {
     if memo is not None {
         return memo;
     }
+    import from jaclang.compiler.native_scope { binds_bare_arch_names }
     source = os.path.realpath(mod_path);
     out = "";
-    if source.endswith(".jac") and not toolchain_runtime_unit(source) {
+    if source.endswith(".jac") and not binds_bare_arch_names(source) {
         stem = os.path.basename(source);
         dot = stem.find(".");
         if dot > 0 {
@@ -286,19 +262,6 @@ def native_arch_scope(mod_path: str) -> str {
     }
     _native_arch_scope_memo[mod_path] = out;
     return out;
-}
-
-def toolchain_runtime_unit(source: str) -> bool {
-    rel = target_package_rel(source) if is_target_package_path(source) else None;
-    if rel is None {
-        return False;
-    }
-    if rel in kernel_unit_rels() {
-        return True;
-    }
-    import from jaclang.compiler.frontend.host { active_host }
-    host = active_host();
-    return host.is_native_only_source(rel) or host.is_native_lowered_source(rel);
 }
 
 def native_arch_name(mod_path: str, name: str) -> str {
@@ -500,7 +463,6 @@ glob KERNEL_UNIT_REL: tuple[str, ...] = (
 glob _PKG_REAL: list[str] = [];
 
 def jaclang_pkg_root -> str {
-    import from jaclang.compiler.frontend.host { package_root }
     return package_root();
 }
 
@@ -572,7 +534,6 @@ glob NATIVE_SUPPORTED_STDLIB: set[str] = {
      _effective_codespace_ctx: ContextVar[str] = ContextVar(
          "jac_effective_default_codespace"
      ),
-     _closure_cap_ctx: ContextVar[int] = ContextVar("jac_native_closure_cap"),
      _native_unit_ctx: ContextVar[bool] = ContextVar("jac_native_unit_compile"),
      _native_target_ctx: ContextVar[str | None] = ContextVar("jac_native_target");
 
@@ -639,24 +600,6 @@ def native_unit_compile_active -> bool {
     return _native_unit_ctx.get(False);
 }
 
-def set_native_closure_cap(value: int) {
-    _closure_cap_ctx.set(value);
-}
-
-def get_native_closure_cap_override -> int {
-    return _closure_cap_ctx.get(0);
-}
-
-def effective_native_closure_cap -> int {
-    cur = _closure_cap_ctx.get(0);
-    if cur > 0 {
-        return cur;
-    }
-    import from jaclang.compiler.frontend.host { active_host }
-    project = active_host().project_defaults();
-    return project.native_closure_cap if project is not None else 256;
-}
-
 def native_stdlib_root -> (str | None) {
     import os;
     pkg = target_pkg_root();
@@ -682,18 +625,17 @@ def bundled_pkg_roots -> list[str] {
     return roots;
 }
 
-def is_in_jaclang_package(file_path: str) -> bool {
+def is_toolchain_unit(file_path: str) -> bool {
     import os;
     if not file_path {
         return False;
     }
-    ap = os.path.abspath(file_path);
-    for pkg in bundled_pkg_roots() {
-        if ap.startswith(pkg + os.sep) {
-            return True;
-        }
+    unit_root = native_unit_root(os.path.dirname(os.path.realpath(file_path)));
+    if unit_root is None {
+        return False;
     }
-    return False;
+    keyed = os.path.realpath(unit_root);
+    return any(keyed == os.path.realpath(pkg) for pkg in bundled_pkg_roots());
 }
 
 def bundled_native_module_names -> list[str] {
@@ -890,6 +832,10 @@ def native_target_arch -> str {
 
 def _native_variant_path(base_no_ext: str) -> (str | None) {
     import os;
+    _osarchv = f"{base_no_ext}.{native_target_os()}.{native_target_arch()}.jac";
+    if os.path.exists(_osarchv) {
+        return _osarchv;
+    }
     _archv = f"{base_no_ext}.{native_target_arch()}.jac";
     if os.path.exists(_archv) {
         return _archv;
@@ -910,6 +856,69 @@ def _native_variant_path(base_no_ext: str) -> (str | None) {
         return _plain;
     }
     return None;
+}
+
+glob NATIVE_VARIANT_OSES: frozenset[str] = frozenset(
+         {"darwin", "linux", "windows"}
+     ),
+     NATIVE_VARIANT_ARCHES: frozenset[str] = frozenset(
+         {"x86_64", "aarch64", "arm64", "i686", "riscv64", "wasm32"}
+     );
+
+def is_selected_native_variant(path: str) -> bool {
+    import os;
+    if not is_native_variant_path(path) {
+        return False;
+    }
+    parts = os.path.basename(path)[:-len(".jac")].split(".");
+    for cut in (2, 1) {
+        portable = os.path.join(os.path.dirname(path), ".".join(parts[:-cut]) + ".jac");
+        if len(parts) > cut and os.path.exists(portable) {
+            return os.path.realpath(native_variant_of(portable))
+                == os.path.realpath(path);
+        }
+    }
+    return False;
+}
+
+def is_native_variant_path(path: str) -> bool {
+    """Is `path` a platform variant of a portable module beside it?
+
+    `<name>.<os>.<arch>.jac`, `<name>.<arch>.jac` and `<name>.<os>.jac` are the
+    spellings `_native_variant_path` chooses between, and each exists only to
+    be lowered natively in place of `<name>.jac`. A variant is reached through
+    native module resolution alone, never by an import the checker reads, so
+    no import edge carries the portable module's placement to it: the variant
+    is a native unit by what it is.
+    """;
+    import os;
+    name = os.path.basename(path);
+    if not name.endswith(".jac") {
+        return False;
+    }
+    parts = name[:-len(".jac")].split(".");
+    if len(parts) < 2 {
+        return False;
+    }
+    tail = parts[-2:] if len(parts) >= 3 else parts[-1:];
+    if len(tail) == 2
+        and not (tail[0] in NATIVE_VARIANT_OSES and tail[1] in NATIVE_VARIANT_ARCHES) {
+        tail = tail[-1:];
+    }
+    for part in tail {
+        if part not in NATIVE_VARIANT_OSES and part not in NATIVE_VARIANT_ARCHES {
+            return False;
+        }
+    }
+    stem = ".".join(parts[:len(parts) - len(tail)]);
+    return os.path.isfile(os.path.join(os.path.dirname(path), stem + ".jac"));
+}
+
+def native_variant_of(module_path: str) -> str {
+    if not module_path.endswith('.jac') {
+        return module_path;
+    }
+    return _native_variant_path(module_path[:-len('.jac')]) or module_path;
 }
 
 def _inferred_native_path(candidate: (str | None)) -> (str | None) {
@@ -1173,6 +1182,12 @@ obj CodeGenTarget {
         native_iface: (NativeIface | None) = None,
         native_deps: list[str] = [],
         native_codespace: bool = False,
+        native_refusal: str = "",
+        native_fallbacks: (NativeFallbacks | None) = None,
+        native_refusal_code: str = "",
+        placement_mode: str = "",
+        native_undecided: bool = False,
+        native_closed_why: str = "",
         _interop_manifest: (InteropManifest | None) = None,
         interop_py_funcs: dict[(str, any)] = {},
         _interop_callbacks: list[any] = [],
@@ -1188,6 +1203,7 @@ obj CodeGenTarget {
         _clib_paths: list[str] = [],
         _clib_symbol_lib: dict[(str, str)] = {},
         _exported_symbols: list[str] = [],
+        callable_effects: dict[str, dict[str, any]] = {},
         doc_comments: (NodeComments | None) = None;
 
     has doc_ir: Doc { getter; setter(value: Doc); }
@@ -1201,12 +1217,12 @@ obj CodeGenTarget {
     def drop_native_ir {
         self.ir_module = None;
         self.llvm_ir = None;
+        self.native_fallbacks = None;
     }
 }
 
 def endpoint_descriptor(module: Module, kind: str, name: str) -> dict[str, str] {
     import os;
-    import from jaclang.compiler.frontend.host { active_host }
     path = module.loc.mod_path;
     host = active_host();
     workspace = host.workspace(path);

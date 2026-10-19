@@ -1,59 +1,55 @@
-import from jaclang.compiler.passes.context { CompileContext, CompilerPass }
-import from jaclang.compiler.frontend.unitree {
-    Ability,
-    Assignment,
-    AtomTrailer,
-    BinaryExpr,
-    BoolExpr,
-    CompareExpr,
-    ConnectOp,
-    DictCompr,
-    DictVal,
-    Expr,
-    FString,
-    FuncCall,
-    FuncSignature,
-    ImplDef,
-    IfElseExpr,
-    IfStmt,
-    InForStmt,
-    IterForStmt,
-    KWPair,
-    LambdaExpr,
-    ListCompr,
-    ListVal,
-    Module,
-    ModuleCode,
-    MultiString,
-    Name,
-    NameAtom,
-    ParamVar,
-    ReturnStmt,
-    SetVal,
-    same_lexical_scope,
-    String,
-    Symbol,
-    Test,
-    Token,
-    UnaryExpr,
-    UniCFGNode,
-    UniNode,
-    WhileStmt
-}
-import from jaclang.compiler.passes.dataflow { SymId, solve_backward_gen_kill }
-import from jaclang.compiler.frontend.constant {
-    ExprCtx,
-    OwnershipKind,
-    SymbolStorage,
-    Tokens as Tok,
-    is_borrow_kind
-}
-
 enum Ownership {
     OWNED = "owned",
     BORROWED = "borrowed",
     STATIC = "static",
     UNKNOWN = "unknown"
+}
+
+def method_returns_borrow(callee: (Ability | None)) -> bool {
+    if not isinstance(callee, Ability)
+        or not callee.is_method
+        or callee.is_static
+        or not isinstance(callee.signature, FuncSignature) {
+        return False;
+    }
+    if type_tag_borrows(callee.signature.return_type) {
+        return True;
+    }
+    _bodies: list[UniNode] = [callee];
+    if isinstance(callee.body, ImplDef) {
+        _bodies.append(callee.body);
+    }
+    _found = False;
+    for _body in _bodies {
+        for _ret in _body.get_all_sub_nodes(ReturnStmt) {
+            _owner = _ret.find_parent_of_type(Ability);
+            if _owner is not callee and _owner is not None {
+                continue;
+            }
+            if _ret.find_parent_of_type(LambdaExpr) is not None {
+                continue;
+            }
+            if not (isinstance(_ret.expr, Name) and _ret.expr.value == "self") {
+                return False;
+            }
+            _found = True;
+        }
+    }
+    return _found;
+}
+
+def call_borrows_receiver(call: FuncCall) -> bool {
+    if not isinstance(call.target, AtomTrailer) or not call.target.is_attr {
+        return False;
+    }
+    _recv: (UniNode | None) = call.target.target;
+    while isinstance(_recv, AtomTrailer) {
+        _recv = _recv.target;
+    }
+    if not isinstance(_recv, Name) {
+        return False;
+    }
+    return method_returns_borrow(call.callee_decl);
 }
 
 def result_ownership(expr: (Expr | None)) -> Ownership {
@@ -129,6 +125,10 @@ def loop_body_locals(body: (Sequence[UniNode] | None)) -> list[str] {
 }
 
 walker RcFactsPass(CompilerPass) {
+    static has contract: PassContract = PassContract(
+        requires=(AnalysisFact.CFG_SUCC, ), provides=(AnalysisFact.RC_FACTS, )
+    );
+
     has _node_use: dict[int, set[SymId]] = {},
         _node_def: dict[int, set[SymId]] = {};
 

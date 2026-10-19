@@ -356,6 +356,28 @@ impl JcirGenPass.exit_ability with Ability exit {
     if body_hoists {
         body = [*body_hoists, *body];
     }
+    va_param = c_variadic_param(here.signature);
+    if va_param is not None {
+        va_name = va_param.name.value;
+        body = [
+            self.nod(
+                'Assign',
+                ['targets', 'value'],
+                [
+                    [
+                        self.nod(
+                            'Name', ['id', 'ctx'], [va_name, self.nod('Store', [], [])]
+                        )
+                    ],
+                    self.call_node(
+                        self.builtin_name('VaList'), [self.name_load(va_name)], []
+                    )
+                ],
+                jac_node=va_param
+            ),
+            *body
+        ];
+    }
     body = self._scope_cleanup_body(here, body);
     directive_stmts = self.scope_directive_stmts(
         [here, here.body if isinstance(here.body, ImplDef) else None]
@@ -661,7 +683,6 @@ impl JcirGenPass.exit_arch_has with ArchHas exit {
 }
 
 impl JcirGenPass.exit_has_var with HasVar exit {
-    import from jaclang.compiler.field_semantics { is_field_marker }
     annotation = self.val(here.type_tag) if here.type_tag else None;
     if ((here.accessors is not None) and (len(here.accessors) > 0)) {
         result_stmts: list[CgItem] = [];

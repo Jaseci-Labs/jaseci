@@ -6,7 +6,6 @@ import json;
 import logging;
 import time;
 import from pathlib { Path }
-import from jaclang.cache.locking { FileLock }
 
 glob _logger: logging.Logger = logging.getLogger("byllm.model_cache"),
      _STAGING_DIR: str = ".jac_partial",
@@ -22,12 +21,10 @@ def _is_interactive -> bool {
 }
 
 def _emit(msg: str) {
-    import from jaclang.cli.console { console }
     console.print(msg, end="");
 }
 
 def get_cache_dir -> Path {
-    import from jaclang.cache.registry { bucket }
     return bucket("models").ensure();
 }
 

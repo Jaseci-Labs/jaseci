@@ -1,6 +1,5 @@
 import os;
 import from os.path { join, exists, abspath }
-import from _file_native { read_file_bytes }
 import from locale { normalize }
 
 glob _OP_CONST: int = 0,
@@ -336,7 +335,7 @@ def _peval(nd: _PNode, n: int) -> int {
 }
 
 
-def:pub c2py_ast(plural: str) -> _PNode {
+def c2py_ast(plural: str) -> _PNode {
     if len(plural) > 1000 {
         raise ValueError("plural form expression is too long");
     }
@@ -349,12 +348,18 @@ def:pub c2py_ast(plural: str) -> _PNode {
 }
 
 
-def:pub plural_index(tree: _PNode, n: int) -> int {
+def plural_index(tree: _PNode, n: int) -> int {
     return _peval(tree, n);
 }
 
 
-def:pub _expand_lang(loc: str) -> list[str] {
+def:pub c2py(plural: str) -> Callable[[int], int] {
+    tree: _PNode = c2py_ast(plural);
+    return lambda (n: int) -> int { return _peval(tree, n); };
+}
+
+
+def _expand_lang(loc: str) -> list[str] {
     base: str = normalize(loc);
     mask: int = 0;
     modifier: str = "";
@@ -747,7 +752,7 @@ def _nelangs(languages: (list[str] | None)) -> list[str] {
 }
 
 
-def:pub find_all(
+def find_all(
     domain: str, localedir: str = "", languages: (list[str] | None) = None
 ) -> list[str] {
     base: str = localedir;

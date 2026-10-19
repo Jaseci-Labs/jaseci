@@ -3,28 +3,6 @@
 Derived from CPython 3.14.6; see ../LICENSE.cpython.
 """
 
-import from jaclang.runtime.python.cpython_api {
-    NULL,
-    PyObject,
-    PySequence_Tuple,
-    PyTuple_New,
-    PyTuple_Size,
-    Py_NewRef,
-    jacpy_release,
-    jacpy_tuple_exchange,
-    jacpy_tuple_item,
-    jacpy_tuple_set_owned
-}
-import from jaclang.runtime.python.modules.iterators { reusable_tuple }
-import from jaclang.runtime.python.capi {
-    jac_heap_size,
-    jac_list_heap_size,
-    required,
-    checked,
-    boundary_failure,
-    object_error
-}
-
 enum combination_kind {
     PRODUCT = 14,
     COMBINATIONS = 15,
@@ -80,7 +58,7 @@ def:pub jacpy_combinatorial_init(
         if kind == combination_kind.PRODUCT.value {
             count = PyTuple_Size(source);
             if count > 0 and width > i64(9223372036854775807) // count {
-                object_error("OverflowError", "repeat argument too large");
+                object_error(PyExc_OverflowError, "repeat argument too large");
                 return -1;
             }
             state.width = count * width;
@@ -114,7 +92,7 @@ def:pub jacpy_combinatorial_init(
             state.population = PyTuple_Size(state.pools);
             state.width = state.population if width < 0 else width;
             if state.width > i64(9223372036854775807) // 8 {
-                object_error("MemoryError", "");
+                object_error(PyExc_MemoryError, "");
                 return -1;
             }
             if kind == combination_kind.WITH_REPLACEMENT.value {

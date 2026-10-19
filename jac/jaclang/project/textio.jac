@@ -1,6 +1,4 @@
 import os;
-import type from jaclang.compiler.frontend.srcloc { Span }
-import from jaclang.project.source { JACIGNORE_FILENAME, normalize_exclude_patterns }
 
 glob _JAC_TEXT_ENCODINGS: list[str] = [
          'utf-8-sig',
@@ -42,7 +40,6 @@ def read_jacignore_patterns(project_root: str) -> list[str] {
 def span_for_file(
     mod_path: str, line: int, col: int, end_col: int = 0, source: str = ''
 ) -> Span {
-    import from jaclang.compiler.frontend.srcloc { Span as SrcSpan }
     bare = SrcSpan(
         mod_path=mod_path,
         first_line=line,
@@ -88,4 +85,39 @@ def span_for_file(
         (col, end_col if (end_col > col) else col),
         (start, stop)
     );
+}
+
+def drop_git_ignored(paths: list[str], cwd: str = "") -> list[str] {
+    import subprocess;
+    if not paths {
+        return paths;
+    }
+    try {
+        proc = subprocess.run(
+            ['git', 'check-ignore', '--stdin'],
+            input="\n".join(paths),
+            capture_output=True,
+            text=True,
+            check=False,
+            cwd=cwd or None
+        );
+    } except (OSError, ValueError) {
+        return paths;
+    }
+    if proc.returncode not in (0, 1) {
+        return paths;
+    }
+    ignored = {
+        line
+        for line in proc.stdout.splitlines()
+        if line
+    };
+    if not ignored {
+        return paths;
+    }
+    return [
+        p
+        for p in paths
+        if p not in ignored
+    ];
 }

@@ -11,21 +11,13 @@ glob REGION_KERNEL_ABI: dict[str, tuple[bool, int]] = {
          "__jac_region_unwind": (False, 1),
          "__jac_region_current": (True, 0),
          "__jac_region_depth": (True, 0),
+         "__jac_region_escape": (True, 0),
+         "__jac_region_restore": (False, 1),
          "__jac_region_of": (True, 1),
          "__jac_region_owns": (True, 1)
      };
 
 def _region_layout_facts -> dict[str, int] {
-    import from jaclang.compiler.frontend.codeinfo {
-        HDR_ALLOC_ID_OFF,
-        HDR_DTOR_OFF,
-        HDR_MAGIC,
-        HDR_MAGIC_SHIFT_BASE,
-        HDR_RC_OFF,
-        HDR_TAG_OFF,
-        HDR_TOTAL,
-        RC_SENTINEL
-    }
     return {
         "HDR_ALLOC_ID_OFF": HDR_ALLOC_ID_OFF,
         "HDR_TAG_OFF": HDR_TAG_OFF,

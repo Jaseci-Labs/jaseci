@@ -5,38 +5,6 @@ framing and cursor progression are Jac policies. Derived from CPython 3.14.6;
 see ../LICENSE.cpython.
 """
 
-import from jaclang.runtime.python.cpython_api {
-    NULL,
-    PyByteArray_Resize,
-    PyErr_GetRaisedException,
-    PyErr_SetRaisedException,
-    PyLong_FromLongLong,
-    PyObject,
-    PyObject_Call,
-    PyObject_CallOneArg,
-    Py_NewRef,
-    jacpy_bytearray_new,
-    jacpy_bytes_address,
-    jacpy_bytes_from_memory,
-    jacpy_bytes_length,
-    jacpy_exception_context,
-    jacpy_is_bytes,
-    jacpy_memory_byte,
-    jacpy_memory_copy,
-    jacpy_memory_set,
-    jacpy_offset,
-    jacpy_release,
-    jacpy_set_exception
-}
-import from jaclang.runtime.python.capi {
-    required,
-    checked,
-    boundary_failure,
-    object_error,
-    object_tuple
-}
-import from jaclang.runtime.python.modules.binary_scalars { read_bits, write_bits }
-
 def stream_error(kind: ptr[PyObject], message: str) {
     cause = PyErr_GetRaisedException();
     try {
@@ -56,7 +24,7 @@ def stream_error(kind: ptr[PyObject], message: str) {
     raise boundary_failure();
 }
 
-def builtin_stream_error(kind: str, message: str) {
+def builtin_stream_error(kind: ptr[PyObject], message: str) {
     cause = PyErr_GetRaisedException();
     try {
         object_error(kind, message);
@@ -97,12 +65,14 @@ obj pickle_writer {
     def append(address: ptr, count: i64) {
         current = jacpy_bytes_length(self.buffer);
         if count < 0 or count > 9223372036854775807 - current {
-            builtin_stream_error("OverflowError", "pickle byte stream is too large");
+            builtin_stream_error(
+                PyExc_OverflowError, "pickle byte stream is too large"
+            );
         }
         checked(PyByteArray_Resize(self.buffer, current + count));
         if count != 0 {
             jacpy_memory_copy(
-                jacpy_offset(jacpy_bytes_address(self.buffer), current), address, count
+                jacpy_bytes_address(self.buffer) + current, address, count
             );
         }
     }
@@ -110,10 +80,12 @@ obj pickle_writer {
     def byte(value: int) {
         current = jacpy_bytes_length(self.buffer);
         if current == 9223372036854775807 {
-            builtin_stream_error("OverflowError", "pickle byte stream is too large");
+            builtin_stream_error(
+                PyExc_OverflowError, "pickle byte stream is too large"
+            );
         }
         checked(PyByteArray_Resize(self.buffer, current + 1));
-        jacpy_memory_set(jacpy_bytes_address(self.buffer), current, i64(value));
+        memory_set(jacpy_bytes_address(self.buffer), current, i64(value));
     }
 
     def integer(value: u64, width: int) {
@@ -147,8 +119,8 @@ obj pickle_writer {
                 header = required(jacpy_bytearray_new(9));
                 try {
                     address = jacpy_bytes_address(header);
-                    jacpy_memory_set(address, 0, 149);
-                    write_bits(jacpy_offset(address, 1), 8, True, u64(count));
+                    memory_set(address, 0, 149);
+                    write_bits(address + 1, 8, True, u64(count));
                     immutable = required(jacpy_bytes_from_memory(address, 9));
                     try {
                         self.send(immutable);
@@ -206,7 +178,7 @@ obj pickle_reader {
         }
         if jacpy_is_bytes(result) == 0 {
             jacpy_release(result);
-            builtin_stream_error("TypeError", "file.read() must return bytes");
+            builtin_stream_error(PyExc_TypeError, "file.read() must return bytes");
         }
         return result;
     }
@@ -227,8 +199,7 @@ obj pickle_reader {
             } else {
                 result = required(
                     jacpy_bytes_from_memory(
-                        jacpy_offset(jacpy_bytes_address(self.frame), self.position),
-                        count
+                        jacpy_bytes_address(self.frame) + self.position, count
                     )
                 );
                 self.position += count;
@@ -254,9 +225,7 @@ obj pickle_reader {
 
     def opcode -> int {
         if self.frame != 0 and self.position < jacpy_bytes_length(self.frame) {
-            result = int(
-                jacpy_memory_byte(jacpy_bytes_address(self.frame), self.position)
-            );
+            result = int(memory_byte(jacpy_bytes_address(self.frame), self.position));
             self.position += 1;
             return result;
         }
@@ -267,12 +236,12 @@ obj pickle_reader {
         value = self.file_read(1);
         try {
             if jacpy_bytes_length(value) == 0 {
-                builtin_stream_error("EOFError", "Ran out of input");
+                builtin_stream_error(PyExc_EOFError, "Ran out of input");
             }
             if jacpy_bytes_length(value) != 1 {
                 stream_error(self.error, "file.read() returned too many bytes");
             }
-            return int(jacpy_memory_byte(jacpy_bytes_address(value), 0));
+            return int(memory_byte(jacpy_bytes_address(value), 0));
         } finally {
             jacpy_release(value);
         }
@@ -285,11 +254,11 @@ obj pickle_reader {
             if start < length {
                 address = jacpy_bytes_address(self.frame);
                 for index in range(int(start), int(length)) {
-                    if jacpy_memory_byte(address, i64(index)) == 10 {
+                    if memory_byte(address, i64(index)) == 10 {
                         self.position = i64(index) + 1;
                         return required(
                             jacpy_bytes_from_memory(
-                                jacpy_offset(address, start), self.position - start
+                                address + start, self.position - start
                             )
                         );
                     }
@@ -310,11 +279,10 @@ obj pickle_reader {
         }
         if jacpy_is_bytes(value) == 0 {
             jacpy_release(value);
-            builtin_stream_error("TypeError", "file.readline() must return bytes");
+            builtin_stream_error(PyExc_TypeError, "file.readline() must return bytes");
         }
         length = jacpy_bytes_length(value);
-        if length == 0
-            or jacpy_memory_byte(jacpy_bytes_address(value), length - 1) != 10 {
+        if length == 0 or memory_byte(jacpy_bytes_address(value), length - 1) != 10 {
             jacpy_release(value);
             stream_error(self.error, "pickle data was truncated");
         }
@@ -324,7 +292,7 @@ obj pickle_reader {
     def begin_frame(count: u64) {
         if count > 9223372036854775807 {
             builtin_stream_error(
-                "OverflowError", "FRAME length exceeds system's maximum"
+                PyExc_OverflowError, "FRAME length exceeds system's maximum"
             );
         }
         if self.frame != 0 and self.position != jacpy_bytes_length(self.frame) {

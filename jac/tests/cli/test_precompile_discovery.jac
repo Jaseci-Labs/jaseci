@@ -1,7 +1,8 @@
 import from pathlib { Path }
 import from tempfile { TemporaryDirectory }
 import from unittest.mock { patch }
-import jaclang.compiler.driver.module_compile as pipeline;
+import from jaclang.compiler.driver.pipeline { PRODUCTS }
+import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
 import jaclang.server.assembly;
 import from jaclang.dist.precompile_bytecode {
     placement_facts_map,
@@ -23,8 +24,8 @@ test "application source discovery does not generate artifacts" {
         (base / 'helper.jac').write_text('def:pub value -> int { return 7; }');
         (base / 'cli.jac').write_text('this is deliberately invalid Jac');
         with patch.object(
-            pipeline,
-            'get_py_code_gen',
+            PRODUCTS[CompilationProduct.PY_IR],
+            'passes',
             side_effect=AssertionError('source discovery must not generate artifacts')
         ) {
             sources = {Path(p).name for p in sealable_sources(td)};

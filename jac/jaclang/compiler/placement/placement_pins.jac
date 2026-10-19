@@ -1,9 +1,5 @@
-import from jaclang.compiler.driver.compilation_context { context_app }
 import fnmatch;
 import os;
-import from jaclang.compiler.frontend.host { NativeVerdict, active_host }
-import type from jaclang.compiler.driver.program { JacProgram }
-import from jaclang.project.app_kinds { kind_codespace }
 
 glob PIN_SPACES: tuple[str, ...] = ('server', 'client', 'native');
 
@@ -77,36 +73,34 @@ def config_pin_for(source_path: str, element_name: str) -> str {
 }
 
 
+def config_element_pin(source_path: str, element_name: str) -> str {
+    if not source_path or not element_name {
+        return '';
+    }
+    ws = active_host().workspace(source_path);
+    if ws is None {
+        return '';
+    }
+    module = module_dot_path(source_path, ws.project_root);
+    for (pattern, space) in config_pins_for(source_path).items() {
+        if fnmatch.fnmatchcase(f'{module}.{element_name}', pattern)
+            and not fnmatch.fnmatchcase(module, pattern) {
+            return space;
+        }
+    }
+    return '';
+}
+
+
 def config_module_pin(source_path: str) -> str {
     return config_pin_for(source_path, '');
-}
-
-
-def module_native_demoted(source_path: str, prog: (JacProgram | None) = None) -> bool {
-    verdict = _native_verdict(source_path, prog);
-    return verdict is not None and verdict.demoted;
-}
-
-def native_demotion_code(source_path: str, prog: (JacProgram | None) = None) -> str {
-    verdict = _native_verdict(source_path, prog);
-    return verdict.code if verdict is not None else "";
-}
-
-def _native_verdict(
-    source_path: str, prog: (JacProgram | None)
-) -> (NativeVerdict | None) {
-    return active_host().native_verdict(source_path, prog);
 }
 
 
 def effective_pin_for(
     source_path: str, element_name: str, prog: (JacProgram | None) = None
 ) -> str {
-    pin = config_pin_for(source_path, element_name);
-    if pin == 'native' and module_native_demoted(os.path.realpath(source_path), prog) {
-        return '';
-    }
-    return pin;
+    return config_pin_for(source_path, element_name);
 }
 
 

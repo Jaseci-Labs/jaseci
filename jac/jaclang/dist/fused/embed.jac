@@ -1,7 +1,6 @@
 import os;
-import from .report { die }
+
 import from _dl_native { dlopen, dlsym, dl_error, RTLD_NOW, RTLD_GLOBAL, SHLIB_EXT }
-import from ._libc { peek, poke, c_string, c_alloc_string }
 
 glob PY_VER: str = "3.14",
      PY_VER_COMPACT: str = "314",
@@ -229,6 +228,18 @@ obj CStrArray {
     }
 }
 
+def:pub export_ca_bundle(rt: str) {
+    """Point OpenSSL at the runtime's CA bundle unless the user chose one: the
+    bundled OpenSSL (CPython's, and the JavaScript engine's) has no system
+    certificate directory of its own.""";
+    ca_bundle = rt + "/python/floor/cacert.pem";
+    if not os.environ.get("SSL_CERT_FILE", "")
+        and not os.environ.get("SSL_CERT_DIR", "")
+        and os.path.isfile(ca_bundle) {
+        os.environ["SSL_CERT_FILE"] = ca_bundle;
+    }
+}
+
 def:pub open_tree(rt: str, exe_path: str) -> Embed {
     os.environ["JAC_STANDALONE"] = "1";
 
@@ -236,12 +247,7 @@ def:pub open_tree(rt: str, exe_path: str) -> Embed {
         os.environ["MIMALLOC_PURGE_DELAY"] = "0";
     }
 
-    ca_bundle = rt + "/python/floor/cacert.pem";
-    if not os.environ.get("SSL_CERT_FILE", "")
-        and not os.environ.get("SSL_CERT_DIR", "")
-        and os.path.isfile(ca_bundle) {
-        os.environ["SSL_CERT_FILE"] = ca_bundle;
-    }
+    export_ca_bundle(rt);
     libpath = f"{rt}/python/lib/libpython{PY_VER}{SHLIB_EXT}";
     handle = dlopen(libpath, i32(RTLD_NOW | RTLD_GLOBAL));
     if handle == 0 {

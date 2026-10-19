@@ -3,11 +3,6 @@ import os;
 import sys;
 import tomllib;
 import from pathlib { Path }
-import from jaclang.jac0core.ext_registry {
-    MODULE_SUFFIXES,
-    is_jac_namespace_package,
-    language_of
-}
 
 glob _project_root_cache: dict[str, str | None] = {},
      _import_base_stack: list[str] = [],
@@ -579,7 +574,7 @@ def resolve_module(
         }
         actual_parts = parts[level:];
 
-        if not in_typeshed_tree(base_path) {
+        if not in_typeshed_tree(base_path) and not in_native_library(base_path) {
             res = resolve_local_module(base_dir, actual_parts);
             if res {
                 return res;
@@ -1089,8 +1084,11 @@ def in_typeshed_tree(path: str) -> bool {
     return "/vendor/typeshed/" in path.replace("\\", "/");
 }
 
+def in_native_library(path: str) -> bool {
+    return "/runtime/na_stdlib/" in path.replace("\\", "/");
+}
+
 def _stub_catalog_active -> bool {
-    import from jaclang.jac0core.stubcat_hook { active }
     return active() is not None;
 }
 

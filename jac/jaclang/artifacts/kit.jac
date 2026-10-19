@@ -1,6 +1,5 @@
 import os;
 import sys;
-import type from jaclang.jac0core.sealed { SealedImage }
 
 glob _KIT: list[tuple[str, (SealedImage | None)]] = [],
      PR_KIT_EVENT: str = "pull_request",
@@ -63,10 +62,22 @@ def _find_kit -> tuple[str, (SealedImage | None)] {
     }
 }
 
+def _unsealed_runtime_site -> str {
+    """The running jaclang when it sits in a runtime tree that is not sealed
+    yet. mkpayload stages the C floor under `<root>/python/floor` before it
+    seals `<root>/site/jaclang`, so the seal links the kernel against the
+    floor the image will ship.""";
+    import jaclang;
+    site_pkg = os.path.dirname(str(jaclang.__file__));
+    floor = os.path.join(os.path.dirname(os.path.dirname(site_pkg)), "python", "floor");
+    return site_pkg if os.path.isdir(floor) else "";
+}
+
 def runtime_floor_root(sealed: bool) -> str {
     """The `python/floor` directory of the runtime this process runs on: the
     sealed image's own for a sealed process, the kit's for a rerouted
-    checkout. Empty when there is neither.""";
+    checkout, the tree's own for a runtime being sealed. Empty when there is
+    none.""";
     site_pkg = "";
     if sealed {
         import from jaclang.jac0core { sealed as sealed_mod }
@@ -74,7 +85,7 @@ def runtime_floor_root(sealed: bool) -> str {
         site_pkg = str(image.pkg_dir) if image is not None else "";
     } else {
         found = kit_image();
-        site_pkg = found[0] if found is not None else "";
+        site_pkg = found[0] if found is not None else _unsealed_runtime_site();
     }
     if not site_pkg {
         return "";

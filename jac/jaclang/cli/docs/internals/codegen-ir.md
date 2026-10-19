@@ -646,8 +646,8 @@ assumed away.
 
 ### 11.1 The codegen tail, after the cutover
 
-`get_py_code_gen` (compiler/driver/compiler.jac) returns one Python codegen
-tail and there is nothing to select between:
+The `PY_IR` and `BYTECODE` products (compiler/driver/pipeline.jac) are one
+Python codegen tail and there is nothing to select between:
 
 - `JcirGenPass`, `JcirBytecodeGenPass`
 

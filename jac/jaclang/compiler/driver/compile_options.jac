@@ -22,6 +22,7 @@ obj CompileOptions {
         native_require: (list[str] | None) = None,
         iface_ok: bool = False,
         need_full_ast: bool = False,
+        native_tree_demand: bool = False,
         skip_analysis: bool = False,
         skip_native_engine: bool = False,
         no_ir_cache: bool = False,
@@ -59,7 +60,6 @@ obj CompileOptions {
         cancel_token: (CancelToken | None) = None;
 
     def postinit {
-        import from jaclang.compiler.frontend.host { active_host }
         project = active_host().project_defaults();
         if self.native_require is None {
             self.native_require = list(project.native_require) if project else [];
@@ -369,11 +369,9 @@ def env_typed_pointers_enabled -> bool {
 }
 
 def push_native_target(triple: str) -> (str | None) {
-    import from jaclang.compiler.frontend.codeinfo { set_native_target_override }
     return set_native_target_override(triple);
 }
 
 def pop_native_target(prev: (str | None)) {
-    import from jaclang.compiler.frontend.codeinfo { _native_target_ctx }
     _native_target_ctx.set(prev);
 }

@@ -1,40 +1,13 @@
+import gc;
 import os;
 import sys;
 import time;
-import type from jaclang.compiler.driver.program { JacProgram }
-import from jaclang.compiler.frontend.host { NativeVerdict }
-import type from jaclang.compiler.frontend.codeinfo { CodeGenTarget }
-import type from jaclang.compiler.frontend.unitree { Module }
-import from jaclang.compiler.driver.jir {
-    PRECOMPILE_SENTINEL,
-    compute_content_sha256,
-    NativeStamp,
-    SEC_NCTDEPS,
-    module_ct_deps_section,
-    ct_dep_text_fresh,
-    stale_ct_dep_rows,
-    SEC_NBITCODE,
-    SEC_NIFACE,
-    SEC_NOBJ,
-    SEC_PLACEMENT,
-    cache_mode,
-    carried_native_sections,
-    current_native_stamp,
-    native_producer_digest,
-    write_module_cache,
-    get_module_cache_path,
-    is_module_cache_valid,
-    module_cache_invalid_reason,
-    jir_cacheable_source_path,
-    module_cache_key,
-    native_section_payload,
-    read_native_dep_hashes,
-    read_section_bytes
-}
-import from jaclang.compiler.driver.compile_options { CompileOptions }
-import from jaclang.compiler.driver.native_iface { NativeIface }
 
-glob SLOW_STEP_SECONDS: float = 2.0;
+glob SLOW_STEP_SECONDS: float = 2.0,
+     DEMOTED_SYMBOL_SUFFIX: str = ".__jac_demoted",
+     _HEAP_HELD: list[bool] = [False];
+
+class NativeBuildStopped(BaseException) {}
 
 obj NativeUnitEntry {
     has path: str,
@@ -59,9 +32,13 @@ obj NativeUnitRegistry {
         not_native: dict[str, str] = {},
         failures: dict[str, str] = {},
         compiled_paths: list[str] = [],
-        verdicts: dict[str, tuple[str, NativeVerdict]] = {},
         progress: (Callable[[str], None] | None) = None,
-        progress_steps: int = 0;
+        progress_steps: int = 0,
+        cold: bool = False,
+        stop_after: int = 0,
+        lowered_units: int = 0,
+        unit_lower_seconds: dict[str, float] = {},
+        unit_functions: dict[str, tuple[int, int]] = {};
 
     def postinit {
         self.building = set();
@@ -97,7 +74,6 @@ obj NativeUnitRegistry {
     def clear {
         self.entries.clear();
         self.not_native.clear();
-        self.verdicts.clear();
         self.compiled_paths.clear();
         self.failures.clear();
     }
@@ -131,6 +107,21 @@ obj NativeUnitRegistry {
         if ent is None {
             return False;
         }
+        unbound = session.unbound_symbols(real, list(digests.keys()));
+        if unbound is None or unbound {
+            self._event("native_dep_adopt_refused");
+            self._miss(
+                real,
+                "lowered while a dependency was still being built, and binds "
+                    + (
+                        ", ".join(unbound[:8])
+                            if unbound
+                            else "symbols this build cannot check"
+                    )
+                    + " that the dependency does not define natively"
+            );
+            return False;
+        }
         for (dep, digest) in digests.items() {
             ent.dep_digests[os.path.realpath(dep)] = digest;
         }
@@ -139,16 +130,6 @@ obj NativeUnitRegistry {
     }
 
     static def _source_key(path: str) -> (str | None) {
-        import from jaclang.compiler.driver.compilation_context { cache_scope }
-        import from jaclang.compiler.frontend.codeinfo {
-            get_effective_default_codespace_override,
-            set_effective_default_codespace
-        }
-        import from jaclang.compiler.driver.compile_options {
-            push_native_target,
-            pop_native_target
-        }
-
         prior_codespace = get_effective_default_codespace_override();
         target_token = push_native_target('');
         try {
@@ -165,7 +146,6 @@ obj NativeUnitRegistry {
     }
 
     def _miss(path: str, why: str) {
-        import from jaclang.compiler.driver.compile_options { env_na_debug }
         if env_na_debug() {
             sys.stderr.write(f"[native cache] miss {path}: {why}\n");
         }
@@ -185,6 +165,13 @@ obj NativeUnitRegistry {
         self._add_time(name, time.perf_counter() - started);
     }
 
+    def _timed_unit(name: str, path: str, started: float) {
+        elapsed = time.perf_counter() - started;
+        self._add_time(name, elapsed);
+        self.unit_lower_seconds[path] = self.unit_lower_seconds.get(path, 0.0)
+            + elapsed;
+    }
+
     def phase_summary -> str {
         times = self.prog.analysis.phase_time;
         events = self.prog.analysis.cache_events;
@@ -196,14 +183,16 @@ obj NativeUnitRegistry {
             f"  Kernel phases: analysis {times.get('NATIVE_ANALYSIS', 0.0):.1f}s "
             f"({frontend}), lowering {times.get('NATIVE_LOWER', 0.0):.1f}s, "
             f"optimize {times.get('NATIVE_OPTIMIZE', 0.0):.1f}s, "
-            f"emit {times.get('NATIVE_EMIT', 0.0):.1f}s; "
+            f"emit {times.get('NATIVE_EMIT', 0.0):.1f}s, "
+            f"gc settle {times.get('NATIVE_GC_SETTLE', 0.0):.1f}s; "
             f"units analysed/lowered/optimized/emitted "
             f"{events.get('native_unit_analysis', 0)}/"
             f"{events.get('native_unit_lower', 0)}/"
             f"{events.get('native_unit_codegen', 0)}/"
             f"{events.get('native_object_emit', 0)}; "
             f"interface hits {events.get('native_iface_hit', 0)}, "
-            f"dependency misses {events.get('native_dep_miss', 0)}"
+            f"dependency misses {events.get('native_dep_miss', 0)}, "
+            f"lowered inside a consumer {events.get('native_nested_lower', 0)}"
         );
     }
 
@@ -502,7 +491,7 @@ obj NativeUnitRegistry {
             );
         }
         (rebuild, _) = cache_mode();
-        if not rebuild and not options.no_ir_cache {
+        if not rebuild and not options.no_ir_cache and not self.cold {
             self.checking.add(resolved);
             try {
                 found = self._read_from_disk(
@@ -523,6 +512,58 @@ obj NativeUnitRegistry {
             return None;
         }
         return self.compile_unit(resolved, options, products=products);
+    }
+
+    def dep_iface(
+        path: str, options: CompileOptions, products: bool = True
+    ) -> (NativeIface | None) {
+        """The interface a unit being lowered consumes from a dependency.
+        While a session discovers a unit's dependencies, a dependency with no
+        entry yet is recorded for the session to lower first instead of being
+        lowered inside the consumer's pass: a nested lowering keeps every
+        consumer's partial IR alive down the whole import chain.""";
+        resolved = os.path.realpath(path);
+        session = self.session;
+        if session is not None and resolved in session.unlowerable {
+            return None;
+        }
+        if session is not None and session.discovering() {
+            ent = self.ensure(
+                resolved,
+                compile_on_miss=False,
+                options=options,
+                check_deps=False,
+                products=products
+            );
+            if ent is not None {
+                return ent.iface;
+            }
+            if resolved not in self.building
+                and os.path.isfile(resolved)
+                and self.not_native.get(resolved)
+                    != NativeUnitRegistry._source_key(resolved) {
+                session.defer(resolved);
+            }
+            return None;
+        }
+        ent = self.ensure(
+            resolved,
+            compile_on_miss=True,
+            options=options,
+            check_deps=False,
+            products=products
+        );
+        return ent.iface if ent is not None else None;
+    }
+
+    def dep_discovery_open -> bool {
+        return self.session is not None and self.session.discovering();
+    }
+
+    def close_dep_deferral -> bool {
+        """End dependency discovery for the unit being lowered; True when it
+        deferred a dependency, so its lowering stops before emitting code.""";
+        return self.session.close_discovery() if self.session is not None else False;
     }
 
     def known_native_deps(path: str, options: CompileOptions) -> list[str] {
@@ -598,6 +639,9 @@ obj NativeUnitRegistry {
         layouts that lowering records; a build that later needs the products
         compiles the unit again through `bitcode_for` or `object_for`.""";
         if self.session is not None {
+            if self.session.discovery_open {
+                self._event("native_nested_lower");
+            }
             return self.session.lower(path, use_str);
         }
         import from jaclang.compiler.backends.native.link_plan { build_link_plan }
@@ -636,13 +680,6 @@ obj NativeUnitRegistry {
         options: (CompileOptions | None) = None
     ) -> (NativeUnitEntry | None) {
         import json;
-        import from jaclang.compiler.backends.native.na_compile_pass {
-            emit_unit_object,
-            optimize_unit_texts,
-            require_native_ir
-        }
-        import from jaclang.compiler.driver.native_iface { native_layout_from_dict }
-        import from jaclang.compiler.frontend.codeinfo { CodeGenTarget }
         opts = options if options is not None else self._options();
         resolved = os.path.realpath(path);
         iface = NativeIface.from_bytes(iface_text.encode("utf-8"));
@@ -653,23 +690,25 @@ obj NativeUnitRegistry {
             return None;
         }
         iface.resolve_deps(resolved);
+        fallbacks = native_fallbacks_in_ir(ir_text);
         if opts.native_required_for(resolved) {
-            require_native_ir(ir_text);
+            fallbacks.require();
         }
         if opts.debug_ir {
             import from jaclang.compiler.frontend.host { active_host }
             active_host().save_native_debug_ir(resolved, ir_text);
         }
         debug = bool(opts.native_debug);
-        bitcode = optimize_unit_texts(
-            [ir_text], opts, 0 if debug else int(opts.opt_level or 0)
-        )[0];
+        bitcode = optimize_unit_ir(
+            ir_text, opts, 0 if debug else int(opts.opt_level or 0)
+        );
         carrier = self.prog.hub.artifacts.get(resolved);
         if carrier is None {
             carrier = CodeGenTarget();
             self.prog.hub.artifacts[resolved] = carrier;
         }
         carrier.llvm_ir = ir_text;
+        carrier.native_fallbacks = fallbacks;
         carrier.native_iface = iface;
         carrier.native_bitcode = bitcode;
         carrier.native_object = emit_unit_object(bitcode, opts) if debug else None;
@@ -820,55 +859,55 @@ obj NativeUnitRegistry {
         }
         return self.prog.hub.artifacts.get(resolved);
     }
+}
 
-    def verdict_for(path: str) -> (NativeVerdict | None) {
-        resolved = os.path.realpath(path);
-        key = NativeUnitRegistry._source_key(resolved);
-        cached = self.verdicts.get(resolved);
-        if cached is not None {
-            if cached[0] == key and verdict_deps_fresh(cached[1].deps) {
-                return cached[1];
-            }
-            del self.verdicts[resolved];
-            if cached[0] == key {
-                return None;
-            }
+obj SessionHeap {
+    has held: bool = False,
+        declined: bool = False,
+        thresholds: tuple[int, int, int] = (0, 0, 0);
+
+    def take -> bool {
+        if self.held {
+            return True;
         }
-        found = self._module_jir(resolved);
-        if found is None {
-            return None;
+        if self.declined {
+            return False;
         }
-        verdict = verdict_from_jir(found[0], found[1]);
-        if verdict is not None and key is not None {
-            self.verdicts[resolved] = (key, verdict, );
+        if _HEAP_HELD[0]
+            or not gc.isenabled()
+            or os.environ.get("JAC_GC_NO_COMPILE_BOOST")
+            or gc.get_freeze_count() > 0 {
+            self.declined = True;
+            return False;
         }
-        return verdict;
+        _HEAP_HELD[0] = True;
+        self.held = True;
+        import from jaclang.compiler.driver.compiler { COMPILE_GC_THRESHOLDS }
+        self.thresholds = gc.get_threshold();
+        if self.thresholds[0] < COMPILE_GC_THRESHOLDS[0] {
+            gc.set_threshold(*COMPILE_GC_THRESHOLDS);
+        }
+        return True;
     }
 
-    def is_demoted(path: str) -> bool {
-        v = self.verdict_for(path);
-        return v is not None and v.demoted;
-    }
-
-    def demoted_code(path: str) -> str {
-        v = self.verdict_for(path);
-        return v.code if v is not None else "";
-    }
-
-    def record_verdict(path: str, code: str, detail: str) {
-        resolved = os.path.realpath(path);
-        key = NativeUnitRegistry._source_key(resolved);
-        deps = native_verdict_dep_rows(resolved);
-        if key is not None {
-            self.verdicts[resolved] = (
-                key,
-                NativeVerdict(demoted=True, code=code, detail=detail, deps=deps),
-
-            );
+    def settle -> float {
+        if not self.held {
+            return 0.0;
         }
-        import from jaclang.compiler.placement.placement { note_native_verdict }
-        note_native_verdict(self.prog, resolved, code, detail, deps);
-        self.entries.pop(resolved, None);
+        started = time.perf_counter();
+        gc.collect();
+        gc.freeze();
+        return time.perf_counter() - started;
+    }
+
+    def release {
+        if not self.held {
+            return;
+        }
+        self.held = False;
+        _HEAP_HELD[0] = False;
+        gc.unfreeze();
+        gc.set_threshold(*self.thresholds);
     }
 }
 
@@ -877,13 +916,41 @@ obj NativeBuildSession {
         options: CompileOptions,
         prog: JacProgram postinit,
         lowered: dict[str, Module] = {},
-        source_keys: dict[str, str | None] = {};
+        source_keys: dict[str, str | None] = {},
+        deferred: list[set[str]] = [],
+        discovery_open: list[bool] = [],
+        unlowerable: set[str] = set(),
+        heap: SessionHeap = SessionHeap();
+
+    def discovering -> bool {
+        return bool(self.discovery_open) and self.discovery_open[-1];
+    }
+
+    def defer(path: str) {
+        self.deferred[-1].add(path);
+    }
+
+    def close_discovery -> bool {
+        if not self.discovering() {
+            return False;
+        }
+        self.discovery_open[-1] = False;
+        return bool(self.deferred[-1]);
+    }
 
     def postinit {
-        import from jaclang.compiler.driver.program { JacProgram }
         self.prog = JacProgram();
         self.prog.options = self.options.clone_for_native_import();
         self.prog._natives = self.registry;
+        if self.registry.cold {
+            self.prog.iface_registry().cold = True;
+        }
+    }
+
+    def settle_heap {
+        if self.heap.held and not self.discovery_open {
+            self.registry._add_time("NATIVE_GC_SETTLE", self.heap.settle());
+        }
     }
 
     def lower(path: str, use_str: (str | None) = None) -> (NativeUnitEntry | None) {
@@ -891,6 +958,7 @@ obj NativeBuildSession {
         if resolved in self.registry.building {
             return None;
         }
+        self.heap.take();
         self.registry.building.add(resolved);
         import from jaclang.compiler.frontend.codeinfo {
             set_native_unit_compile,
@@ -918,6 +986,7 @@ obj NativeBuildSession {
                 self.registry._timed("NATIVE_ANALYSIS", started);
                 self.registry._event("native_unit_analysis");
                 self.registry.note_slow_step("analyzing", resolved, started);
+                self.settle_heap();
             }
             if len(self.prog.errors_had) > errors_before {
                 return None;
@@ -925,38 +994,74 @@ obj NativeBuildSession {
             opts.no_cgen = False;
             self.prog.options = opts;
             set_effective_default_codespace("native");
-            import from jaclang.compiler.passes.rc_facts_pass { RcFactsPass }
-            import from jaclang.compiler.backends.native.na_ir_gen_pass { NaIRGenPass }
-            completed = self.prog.analysis.completed_passes.get(id(mod));
-            if completed is not None {
-                completed.discard("NaIRGenPass");
-                completed.discard("NativeCompilePass");
-            }
+            import from jaclang.compiler.driver.pipeline { invalidate, require }
             import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
-            tasks = self.prog.analysis.product_tasks.get(id(mod));
-            if tasks is not None {
-                tasks.pop(CompilationProduct.NATIVE_IR, None);
+            discover = True;
+            attempted: set[str] = set();
+            while True {
+                invalidate(self.prog, mod, CompilationProduct.NATIVE_LOWER);
+                warnings_before = len(self.prog.warnings_had);
+                started = self.registry.note_step("lower", resolved);
+                self.deferred.append(set());
+                self.discovery_open.append(discover);
+                try {
+                    require(self.prog, mod, CompilationProduct.NATIVE_LOWER);
+                } finally {
+                    pending = self.deferred.pop();
+                    self.discovery_open.pop();
+                }
+                self.registry._timed_unit("NATIVE_LOWER", resolved, started);
+                if not pending {
+                    break;
+                }
+                del self.prog.errors_had[errors_before:];
+                del self.prog.warnings_had[warnings_before:];
+                invalidate(self.prog, mod, CompilationProduct.NATIVE_LOWER);
+                lowered_any = False;
+                for dep in sorted(pending - attempted) {
+                    attempted.add(dep);
+                    if self.registry.ensure(
+                        dep, compile_on_miss=False, options=opts, check_deps=False
+                    )
+                        is not None
+                        or self.lower(dep) is not None {
+                        lowered_any = True;
+                    } else {
+                        self.unlowerable.add(dep);
+                    }
+                }
+                discover = lowered_any;
             }
-            mod.gen.drop_native_ir();
-            mod.gen.native_iface = None;
-            mod.gen.native_bitcode = None;
-            mod.gen.native_object = None;
-            started = self.registry.note_step("lower", resolved);
-            self.prog.run_schedule(mod, [RcFactsPass, NaIRGenPass]);
-            self.registry._timed("NATIVE_LOWER", started);
             self.registry._event("native_unit_lower");
             self.registry.note_slow_step("lowering", resolved, started);
             if len(self.prog.errors_had) > errors_before
                 or mod.gen.native_iface is None {
+                if mod.gen.native_refusal {
+                    self.registry.failures[resolved] = mod.gen.native_refusal;
+                } elif mod.gen.native_iface is None {
+                    self.registry.failures[resolved] = (
+                        "lowering produced no native interface: the module has "
+                        "no native code of its own, so it is not a link unit"
+                    );
+                }
                 return None;
             }
             import from jaclang.compiler.backends.native.na_compile_pass {
-                settle_unit_ir
+                settle_unit_ir,
+                unit_function_counts
             }
             settle_unit_ir(mod);
+            self.registry.unit_functions[resolved] = unit_function_counts(
+                mod.gen.llvm_ir
+            );
             self.lowered[resolved] = mod;
             ent = self.registry.record_module(mod, opts);
             self.registry._stash_products(resolved, mod.gen);
+            self.settle_heap();
+            self.registry.lowered_units += 1;
+            if 0 < self.registry.stop_after <= self.registry.lowered_units {
+                raise NativeBuildStopped();
+            }
             return ent;
         } except Exception {
             import traceback;
@@ -982,11 +1087,51 @@ obj NativeBuildSession {
         }
     }
 
-    def finish(paths: list[str]) {
-        import from jaclang.compiler.driver.compile_options {
-            push_native_target,
-            pop_native_target
+    def unbound_symbols(path: str, deps: list[str]) -> (list[str] | None) {
+        consumer = self.lowered.get(os.path.realpath(path));
+        if consumer is None {
+            return None;
         }
+        bound = _ir_symbols(consumer.gen.llvm_ir);
+        if bound is None {
+            return None;
+        }
+        declared = bound[1];
+        unbound: set[str] = set();
+        for dep in deps {
+            real = os.path.realpath(dep);
+            provider = self.lowered.get(real);
+            ent = self.registry.entries.get(real);
+            provided = _ir_symbols(
+                provider.gen.llvm_ir if provider is not None else None
+            );
+            if provided is None or ent is None {
+                return None;
+            }
+            defined = provided[0];
+            prefix = f"{ent.iface.prefix}." if ent.iface.prefix else "";
+            for symbol in declared {
+                if symbol not in defined
+                    and (
+                        (prefix and symbol.startswith(prefix))
+                        or (symbol + DEMOTED_SYMBOL_SUFFIX) in defined
+                    ) {
+                    unbound.add(symbol);
+                }
+            }
+        }
+        if unbound {
+            used = _ir_referenced_symbols(consumer.gen.llvm_ir);
+            unbound = {
+                symbol
+                for symbol in unbound
+                if symbol in used
+            };
+        }
+        return sorted(unbound);
+    }
+
+    def finish(paths: list[str]) {
         token = push_native_target(self.options.native_target or "");
         try {
             self._finish(paths);
@@ -998,10 +1143,6 @@ obj NativeBuildSession {
     def _optimize_in_parallel(paths: list[str]) -> set[str] {
         """Ahead-of-time units with no cached bitcode are optimized together
         on a thread pool; each worker parses into its own LLVM context.""";
-        import from jaclang.compiler.backends.native.na_compile_pass {
-            optimize_unit_texts,
-            require_native_ir
-        }
         opts = self.prog.options;
         if opts.native_debug
             or opts.dump_ir_path
@@ -1019,7 +1160,7 @@ obj NativeBuildSession {
                 continue;
             }
             if opts.native_required_for(path) {
-                require_native_ir(str(mod.gen.llvm_ir));
+                unit_fallbacks(mod.gen).require();
             }
             todo.append((path, mod));
         }
@@ -1029,8 +1170,10 @@ obj NativeBuildSession {
         started = self.registry.note_step(
             "optimize", detail=f"{len(todo)} units in parallel"
         );
-        bitcodes = optimize_unit_texts(
-            [str(mod.gen.llvm_ir) for (_, mod) in todo], opts, int(opts.opt_level or 0)
+        bitcodes = optimize_unit_bitcodes(
+            [unit_bitcode(mod.gen.llvm_ir) for (_, mod) in todo],
+            opts,
+            int(opts.opt_level or 0)
         );
         self.registry._timed("NATIVE_OPTIMIZE", started);
         self.registry.note_slow_step("optimizing", "", started);
@@ -1045,9 +1188,8 @@ obj NativeBuildSession {
         """Optimize and persist only after every consumed interface agrees.
         Cyclic interface settlement reuses the analyzed trees and never emits
         optimized products for an intermediate state.""";
-        import from jaclang.compiler.backends.native.na_compile_pass {
-            NativeCompilePass
-        }
+        import from jaclang.compiler.driver.pipeline { require }
+        import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
         self.prog.options = self.options.clone_for_native_import();
         for path in paths {
             if path in self.source_keys
@@ -1076,7 +1218,7 @@ obj NativeBuildSession {
             errors_before = len(self.prog.errors_had);
             if path not in optimized {
                 started = self.registry.note_step("optimize", path);
-                self.prog.run_schedule(mod, [NativeCompilePass]);
+                require(self.prog, mod, CompilationProduct.NATIVE_OBJECT);
                 self.registry._timed("NATIVE_OPTIMIZE", started);
                 self.registry.note_slow_step("optimizing", path, started);
             }
@@ -1097,13 +1239,17 @@ obj NativeBuildSession {
     }
 
     def close {
-        for (phase, seconds) in self.prog.analysis.phase_time.items() {
-            self.registry._add_time("NATIVE_FRONTEND_" + phase, seconds);
+        try {
+            for (phase, seconds) in self.prog.analysis.phase_time.items() {
+                self.registry._add_time("NATIVE_FRONTEND_" + phase, seconds);
+            }
+            self.lowered.clear();
+            self.source_keys.clear();
+            self.prog._natives = None;
+            self.prog.release_compile_closure();
+        } finally {
+            self.heap.release();
         }
-        self.lowered.clear();
-        self.source_keys.clear();
-        self.prog._natives = None;
-        self.prog.release_compile_closure();
     }
 }
 
@@ -1111,6 +1257,40 @@ glob _closure_memo:
          dict[str, tuple[tuple[(tuple[int, int] | None), ...], list[str], list[str]]] = {},
      _dep_digest_memo: dict[str, tuple[tuple[int, int], str]] = {},
      VERDICT_CLOSURE_LIMIT: int = 4096;
+
+def _ir_symbols(unit_ir: any) -> (tuple[set[str], set[str]] | None) {
+    if unit_ir is None
+        or not hasattr(unit_ir, "functions")
+        or not hasattr(unit_ir, "global_variables") {
+        return None;
+    }
+    defined: set[str] = set();
+    declared: set[str] = set();
+    for value in list(unit_ir.functions) + list(unit_ir.global_variables) {
+        if value.is_declaration {
+            declared.add(str(value.name));
+        } else {
+            defined.add(str(value.name));
+        }
+    }
+    return (defined, declared);
+}
+
+def _ir_referenced_symbols(unit_ir: any) -> set[str] {
+    import re;
+    used: set[str] = set();
+    for line in str(unit_ir).splitlines() {
+        if line.startswith("declare ") {
+            continue;
+        }
+        for (quoted, bare) in re.findall(
+            r'@(?:"([^"]+)"|([-a-zA-Z$._][-a-zA-Z$._0-9]*))', line
+        ) {
+            used.add(quoted or bare);
+        }
+    }
+    return used;
+}
 
 def _stat_key(path: str) -> (tuple[int, int] | None) {
     try {
@@ -1122,7 +1302,6 @@ def _stat_key(path: str) -> (tuple[int, int] | None) {
 }
 
 def _module_files_and_imports(path: str) -> tuple[list[str], list[str]] {
-    import from jaclang.compiler.driver.bccache { discover_annex_files }
     files = [path]
         + discover_annex_files(path, '.impl.jac')
         + discover_annex_files(path, '.test.jac');
@@ -1154,28 +1333,6 @@ def _module_files_and_imports(path: str) -> tuple[list[str], list[str]] {
     return (files, imports);
 }
 
-def native_verdict_closure(path: str) -> list[str] {
-    start = os.path.realpath(path);
-    seen: set[str] = {start};
-    queue: list[str] = list(_module_files_and_imports(start)[1]);
-    out: list[str] = [];
-    while queue and len(seen) < VERDICT_CLOSURE_LIMIT {
-        dep = queue.pop(0);
-        if dep in seen {
-            continue;
-        }
-        seen.add(dep);
-        (files, imports) = _module_files_and_imports(dep);
-        out.extend(files);
-        queue.extend(
-            i
-            for i in imports
-            if i not in seen
-        );
-    }
-    return sorted(set(out));
-}
-
 def _file_digest(path: str) -> str {
     key = _stat_key(path);
     if key is None {
@@ -1192,14 +1349,6 @@ def _file_digest(path: str) -> str {
     }
     _dep_digest_memo[path] = (key, digest);
     return digest;
-}
-
-def native_verdict_dep_rows(path: str) -> list[list[str]] {
-    try {
-        return [[f, _file_digest(f)] for f in native_verdict_closure(path)];
-    } except Exception {
-        return [];
-    }
 }
 
 def _interface_changes(before: any, after: any, path: str, out: list[str]) {
@@ -1228,55 +1377,4 @@ def _interface_changes(before: any, after: any, path: str, out: list[str]) {
         return;
     }
     out.append(f"{path}: {str(before)[:60]} -> {str(after)[:60]}");
-}
-
-def verdict_deps_fresh(rows: list[list[str]], base_dir: str = "") -> bool {
-    prefix = PRECOMPILE_SENTINEL + "/";
-    for row in rows {
-        path = row[0];
-        if path.startswith(prefix) {
-            if not base_dir {
-                continue;
-            }
-            path = os.path.normpath(os.path.join(base_dir, path[len(prefix):]));
-        }
-        if _file_digest(path) != row[1] {
-            return False;
-        }
-    }
-    return True;
-}
-
-def verdict_from_jir(data: bytes, base_dir: str = "") -> (NativeVerdict | None) {
-    raw = read_section_bytes(data, SEC_PLACEMENT);
-    if raw is None {
-        return None;
-    }
-    import from jaclang.compiler.placement.placement_export { summary_from_bytes }
-    summary = summary_from_bytes(raw);
-    if summary is None or not summary.native_verdict {
-        return None;
-    }
-    if not verdict_deps_fresh(summary.native_verdict_deps, base_dir) {
-        return None;
-    }
-    return NativeVerdict(
-        demoted=True,
-        code=summary.native_verdict_code,
-        detail=summary.native_verdict,
-        deps=summary.native_verdict_deps
-    );
-}
-
-def read_native_verdict(path: str) -> (NativeVerdict | None) {
-    resolved = os.path.realpath(path);
-    try {
-        cache_path = get_module_cache_path(resolved);
-        if not is_module_cache_valid(resolved, cache_path) {
-            return None;
-        }
-        return verdict_from_jir(cache_path.read_bytes());
-    } except Exception {
-        return None;
-    }
 }

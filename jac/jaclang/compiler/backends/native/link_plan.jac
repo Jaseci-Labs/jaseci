@@ -1,55 +1,9 @@
-import type from jaclang.compiler.backends.native.llvm.binding.value { ValueRef }
-import type from jaclang.compiler.frontend.codeinfo { InteropBinding }
-import from jaclang.jac0core.cache_paths { atomic_write }
 import ctypes;
 import hashlib;
 import json;
 import os;
 import sys;
 import time;
-import jaclang.compiler.backends.native.llvm.binding as llvm;
-import type from jaclang.compiler.backends.native.llvm.binding {
-    ExecutionEngine,
-    ModuleRef,
-    TargetMachine
-}
-import from jaclang.compiler.driver.compile_options {
-    CompileOptions,
-    NATIVE_LINK_MODE_BITCODE,
-    NATIVE_LINK_MODE_OBJECTS,
-    env_na_debug
-}
-import from jaclang.compiler.driver.native_iface {
-    NativeIface,
-    layout_digest as layout_digest_of,
-    merge_class_layouts
-}
-import from jaclang.compiler.backends.native.link_glue {
-    ENTRY_SYMBOL,
-    GlueSpec,
-    GlueUnit,
-    RC_THREADED_SYMBOL,
-    REGION_DIED_HOOK,
-    SHARED_INIT_SYMBOL,
-    STR_NEW_SYMBOL,
-    init_object_codegen,
-    link_glue_ir
-}
-import from jaclang.compiler.backends.native.na_compile_pass {
-    NATIVE_CODE_MODEL,
-    NATIVE_RELOC_MODEL,
-    optimize_unit
-}
-import from jaclang.compiler.backends.native.static_link {
-    clib_needed_libs,
-    clib_symbol_lib_map,
-    collect_floor_archives,
-    load_musl_static,
-    load_outline_atomics
-}
-import from jaclang.compiler.frontend.codeinfo { JAC_ENTRY_SYMBOL, kernel_unit_path }
-import type from jaclang.compiler.driver.program { JacProgram }
-import from jaclang.compiler.driver.jir { sidecar_unit_paths, unit_source_digest }
 
 glob PLAN_DIGEST_FORMAT: int = 3;
 
@@ -60,7 +14,8 @@ enum ArtifactKind {
     JIT = "jit"
 }
 
-glob LIBC_SHARED_NAMES: tuple[str, ...] = ("libc.so.6", "libm.so.6");
+glob LIBC_SHARED_NAMES: tuple[str, ...] = ("libc.so.6", "libm.so.6"),
+     EXECUTABLE_ENTRY_SYMBOLS: list[str] = ["main", "_start", "_jac_win_start"];
 
 class LinkPlanError(RuntimeError) {}
 
@@ -114,12 +69,11 @@ obj LinkUnit {
 
 obj LinkInputs {
     has objects: list[bytes] = [],
-        archive_members: list[bytes] = [],
-        crt_objects: list[bytes] = [],
+        archives: list[str] = [],
+        crt_objects: list[str] = [],
         needed_libs: list[str] = [],
         symbol_lib_map: dict[str, str] = {},
         export_symbols: list[str] = [],
-        init_funcs: list[str] = [],
         static_musl: bool = False;
 
     def digest(plan_digest: str, kind: str, soname: str) -> str {
@@ -130,15 +84,22 @@ obj LinkInputs {
             "kind": kind,
             "soname": soname,
             "objects": [hashlib.sha256(b).hexdigest() for b in self.objects],
-            "archives": [hashlib.sha256(b).hexdigest() for b in self.archive_members],
-            "crt": [hashlib.sha256(b).hexdigest() for b in self.crt_objects],
+            "archives": [_file_digest(p) for p in self.archives],
+            "crt": [_file_digest(p) for p in self.crt_objects],
             "libraries": self.needed_libs,
             "symbols": self.symbol_lib_map,
             "exports": self.export_symbols,
-            "initializers": self.init_funcs,
             "static_musl": self.static_musl
         };
         return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest();
+    }
+}
+
+def _file_digest(path: str) -> str {
+    try {
+        return f"{os.path.basename(path)}:{_sha256_of(path)}";
+    } except OSError {
+        return f"{path}:missing";
     }
 }
 
@@ -159,7 +120,8 @@ obj LinkPlan {
         units: list[LinkUnit],
         mode: str,
         triple: str,
-        callback_bindings: list[InteropBinding] = [];
+        callback_bindings: list[InteropBinding] = [],
+        library_api: bool = False;
 
     def unit(path: str) -> (LinkUnit | None) {
         real = os.path.realpath(path);
@@ -189,10 +151,14 @@ obj LinkPlan {
         return -1;
     }
 
+    def init_units -> list[LinkUnit] {
+        return initialization_order(self.units, self.roots);
+    }
+
     def init_symbols -> list[str] {
         return [
             u.iface.init_symbol
-            for u in self.units
+            for u in self.init_units()
             if u.iface.init_symbol
         ];
     }
@@ -203,9 +169,12 @@ obj LinkPlan {
         h.update(self.mode.encode());
         h.update(self.triple.encode());
         h.update(self.options.codegen_identity().encode());
-        import from jaclang.compiler.driver.jir { native_producer_digest }
+
         h.update(native_producer_digest(self.options.kernel_build).encode());
-        import from jaclang.compiler.frontend.codeinfo { native_unit_identity }
+        if self.library_api {
+            h.update(b"library-api");
+        }
+
         for u in self.units {
             h.update(native_unit_identity(u.path).encode());
             h.update(u.modkey.encode());
@@ -255,8 +224,12 @@ obj LinkPlan {
     }
 
     def pub_exports -> list[str] {
+        """The C ABI of a shared artifact. A library's is its root module's
+        `:pub` surface: in the modules it imports `:pub` is how Jac modules see
+        each other, and keeping those internal lets the whole-program optimizer
+        specialize and drop them as it does for an executable.""";
         out: list[str] = [];
-        for u in self.units {
+        for u in ([self.root_unit()] if self.library_api else self.units) {
             for sym in u.iface.pub_symbols() {
                 if sym not in out {
                     out.append(sym);
@@ -282,7 +255,11 @@ obj LinkPlan {
             }
         }
         hook_supplied = any(REGION_DIED_HOOK in u.iface.exports for u in self.units);
-        for u in self.units {
+        root_index = -1;
+        for u in self.init_units() {
+            if u.is_root and root_index < 0 {
+                root_index = len(units);
+            }
             exports = u.iface.exports;
             probe = exports.get("__jac_rt_probe");
             units.append(
@@ -300,7 +277,7 @@ obj LinkPlan {
         is_elf = platform == "elf";
         return GlueSpec(
             units=units,
-            root_index=self.root_index(),
+            root_index=root_index,
             shared=(kind == ArtifactKind.SHARED),
             platform=platform if kind != ArtifactKind.JIT else "jit",
             static_musl=static_musl,
@@ -312,6 +289,100 @@ obj LinkPlan {
             needs_region_hook=not hook_supplied
         );
     }
+}
+
+def initialization_order(units: list[LinkUnit], roots: list[str]) -> list[LinkUnit] {
+    by_path: dict[str, LinkUnit] = {u.path: u for u in units};
+    imports: dict[str, list[str]] = {
+        u.path: [os.path.realpath(d) for d in u.iface.deps] for u in units
+    };
+    walked: list[LinkUnit] = [];
+    started: set[str] = set();
+    starts = [os.path.realpath(r) for r in roots] + [u.path for u in units];
+    for start in starts {
+        if start in started or start not in by_path {
+            continue;
+        }
+        started.add(start);
+        stack: list[tuple[str, int]] = [(start, 0)];
+        while stack {
+            (path, next_dep) = stack[-1];
+            deps = imports[path];
+            if next_dep < len(deps) {
+                stack[-1] = (path, next_dep + 1);
+                dep = deps[next_dep];
+                if dep in by_path and dep not in started {
+                    started.add(dep);
+                    stack.append((dep, 0));
+                }
+                continue;
+            }
+            stack.pop();
+            walked.append(by_path[path]);
+        }
+    }
+    producer: dict[str, str] = {};
+    for u in walked {
+        for symbol in u.iface.runtime_globals {
+            producer.setdefault(symbol, u.path);
+        }
+    }
+    reads: dict[str, list[tuple[str, str]]] = {};
+    for u in walked {
+        reads[u.path] = [
+            (producer[symbol], symbol)
+            for symbol in u.iface.init_reads
+            if symbol in producer and producer[symbol] != u.path
+        ];
+    }
+    ordered: list[LinkUnit] = [];
+    placed: set[str] = set();
+    pending = list(walked);
+    while pending {
+        ready = -1;
+        for (i, u) in enumerate(pending) {
+            if all(source in placed for (source, _) in reads[u.path]) {
+                ready = i;
+                break;
+            }
+        }
+        if ready < 0 {
+            raise LinkPlanError(_init_cycle_message(pending[0].path, reads, placed));
+        }
+        u = pending.pop(ready);
+        ordered.append(u);
+        placed.add(u.path);
+    }
+    return ordered;
+}
+
+def _init_cycle_message(
+    start: str, reads: dict[str, list[tuple[str, str]]], placed: set[str]
+) -> str {
+    chain: list[str] = [];
+    seen: list[str] = [];
+    path = start;
+    while path not in seen {
+        seen.append(path);
+        (source, symbol) = [
+            r
+            for r in reads[path]
+            if r[0] not in placed
+        ][0];
+        chain.append(
+            f"{os.path.basename(path)} reads {symbol.rsplit('.', 1)[-1]} of "
+            f"{os.path.basename(source)}"
+        );
+        path = source;
+    }
+    cycle = chain[seen.index(path):];
+    return (
+        "module initializers read each other's globals, so none of them can "
+        "run first: "
+        + "; ".join(cycle)
+        + ". Compute one of these globals in a function, or move it to a module "
+        "outside the import cycle."
+    );
 }
 
 def _platform_of(triple: str) -> str {
@@ -335,7 +406,6 @@ def build_link_plan(
     mode: str = "",
     native_unit: bool = False
 ) -> LinkPlan {
-    import from jaclang.compiler.driver.nativecache { NativeBuildSession }
     opts = options if options is not None else CompileOptions();
     if native_unit and not opts.native_unit {
         opts = opts.clone_for_native_import();
@@ -347,10 +417,7 @@ def build_link_plan(
     }
     session = NativeBuildSession(registry=registry, options=opts);
     registry.session = session;
-    import from jaclang.compiler.driver.compile_options {
-        push_native_target,
-        pop_native_target
-    }
+
     target_token = push_native_target(opts.native_target or "");
     try {
         plan = _build_link_plan(prog, roots, opts, mode, native_unit);
@@ -417,7 +484,7 @@ def _build_link_plan(
                 f"failed to lower ({detail})"
             );
         }
-        import from jaclang.compiler.driver.jir { module_cache_key }
+
         try {
             modkey = module_cache_key(path);
         } except OSError {
@@ -444,8 +511,6 @@ def _build_link_plan(
         walk_unit(root_u, []);
     }
 
-    import from jaclang.compiler.driver.dependency_graph { dependency_groups }
-    import from jaclang.compiler.frontend.codeinfo { is_kernel_unit_path }
     seen: set[str] = set();
     ordered: list[LinkUnit] = [];
     while True {
@@ -571,7 +636,8 @@ def _build_link_plan(
 
     check_prefix_collisions(ordered);
     check_pub_collisions(ordered);
-    import from jaclang.compiler.driver.na_coverage { na_coverage_replay }
+    initialization_order(ordered, real_roots);
+
     for unit in ordered {
         na_coverage_replay(unit.path, unit.iface.coverage or {"outcome": "native"});
     }
@@ -610,7 +676,7 @@ def callback_glue_ir(plan: LinkPlan) -> str {
     if not plan.callback_bindings {
         return "";
     }
-    import from jaclang.compiler.backends.native.link_glue { bind_shared_callbacks }
+
     wanted = {binding.name for binding in plan.callback_bindings};
     declarations: dict[str, str] = {};
     defined: set[str] = set();
@@ -649,7 +715,6 @@ def callback_glue_ir(plan: LinkPlan) -> str {
 }
 
 def heap_glue_ir(plan: LinkPlan) -> tuple[str, list[str]] {
-    import from jaclang.compiler.backends.native.link_glue { inject_heap_accounting }
     declarations: dict[str, str] = {};
     defined: set[str] = set();
 
@@ -803,6 +868,8 @@ def optimize_whole_program(
         exports = plan.pub_exports()
             + [
                 SHARED_INIT_SYMBOL,
+                SHARED_MAIN_SYMBOL,
+                PE_DLL_ENTRY,
                 "jac_retain",
                 "jac_release",
                 "jac_str_new",
@@ -813,7 +880,9 @@ def optimize_whole_program(
         internalize_native_implementation(merged, exports);
     }
     if kind == ArtifactKind.EXECUTABLE {
-        mpm.add_internalize_pass();
+        """The entry points stay external: the linker resolves the C runtime's
+        `main` and the image's entry symbol by name across objects.""";
+        internalize_native_implementation(merged, EXECUTABLE_ENTRY_SYMBOLS);
     }
     mpm.run(merged, pb);
 }
@@ -878,7 +947,7 @@ def plan_objects(
             df.write(str(merged));
         }
     }
-    import from jaclang.compiler.driver.compile_options { env_symmap_requested }
+
     if env_symmap_requested() {
         name_private_functions(merged);
     }
@@ -897,8 +966,7 @@ def _write_sidecar(
 ) -> tuple[dict[str, any], str] {
     classes = plan.merged_layout();
     ldigest = layout_digest_of(classes);
-    import from jaclang.compiler.frontend.codeinfo { native_unit_identity }
-    import from jaclang.compiler.driver.jir { native_producer_digest }
+
     unit_paths = [u.path for u in plan.units];
     sidecar = {
         "classes": classes,
@@ -939,7 +1007,6 @@ def _sha256_of(path: str) -> str {
 def _reuse_artifact(
     plan: LinkPlan, output_path: str, action_digest: str
 ) -> (LinkResult | None) {
-    import from jaclang.compiler.driver.jir { cache_mode }
     (rebuild, _) = cache_mode();
     if rebuild
         or plan.options.no_ir_cache
@@ -977,6 +1044,17 @@ def _reuse_artifact(
     }
 }
 
+def _links_for_host(triple: str) -> bool {
+    if not sys.platform.startswith("linux") {
+        return False;
+    }
+    target = triple.lower().split("-");
+    host = str(llvm.get_default_triple()).lower().split("-");
+    return target[0] == host[0]
+        and "linux" in target
+        and ("musl" in target[-1]) == ("musl" in host[-1]);
+}
+
 def link_artifact(
     plan: LinkPlan,
     output_path: str,
@@ -1005,20 +1083,23 @@ def link_artifact(
 
     clib_paths = plan.clib_paths();
     clib_symbol_lib = plan.clib_symbol_lib();
-    (archive_members, floor_handled) = collect_floor_archives(
-        clib_paths, clib_symbol_lib, plan.triple, is_macos
-    );
-    if log is not None and archive_members {
-        log(f"  Static-linking {len(archive_members)} floor archive member(s).");
+    (archives, floor_handled) = floor_archives(clib_paths, plan.triple);
+    if log is not None and archives {
+        log(f"  Static-linking {len(archives)} floor archive(s).");
     }
     needed_libs: list[str] = [];
     if is_windows {
         import from jaclang.compiler.backends.native.win_floor { WIN_CRT_DLL }
         needed_libs = [WIN_CRT_DLL];
     } elif is_macos {
-        needed_libs = ["/usr/lib/libSystem.B.dylib"];
+        needed_libs = [MACHO_SYSTEM_DYLIB];
     }
-    lib_norm = clib_needed_libs(needed_libs, clib_paths, floor_handled);
+    lib_norm = clib_needed_libs(
+        needed_libs,
+        clib_paths,
+        floor_handled,
+        host_elf=platform == "elf" and _links_for_host(plan.triple)
+    );
     is_linux_exec = (not shared) and platform == "elf";
     """The runtime units declare their libc calls as C imports, and musl's
     libc.a satisfies every one of them: only a library beyond libc and libm
@@ -1063,9 +1144,8 @@ def link_artifact(
     glue_ir += heap_ir;
     glue_exports.extend(heap_exports);
     code_inputs.append(glue_ir.encode("utf-8"));
-    inputs = LinkInputs(objects=code_inputs, archive_members=archive_members);
+    inputs = LinkInputs(objects=code_inputs, archives=archives);
     if shared {
-        inputs.init_funcs = [SHARED_INIT_SYMBOL];
         for sym in plan.pub_exports() + glue_exports {
             if sym not in inputs.export_symbols {
                 inputs.export_symbols.append(sym);
@@ -1091,8 +1171,8 @@ def link_artifact(
     );
     inputs.static_musl = static_musl;
 
-    runtime = load_musl_static(plan.triple) if static_musl else None;
     if static_musl {
+        runtime = musl_runtime(plan.triple);
         if runtime is None {
             import from jaclang.artifacts.kit { osarch }
             raise LinkPlanError(
@@ -1100,32 +1180,13 @@ def link_artifact(
                 f"`jac native build musl@{osarch(plan.triple)}`"
             );
         }
-        inputs.archive_members = inputs.archive_members + runtime.archives;
-        inputs.crt_objects = runtime.crt_objects;
+        (crt_objects, musl_archives) = runtime;
+        inputs.crt_objects = crt_objects;
+        inputs.archives = inputs.archives + musl_archives;
     }
-    atomics = load_outline_atomics(plan.triple);
-    if atomics is None and archive_members {
-        import from jaclang.compiler.backends.native.linker_common {
-            object_undefined_symbols
-        }
-        missing_atomics = sorted(
-            {
-                symbol for member in archive_members
-                for symbol in object_undefined_symbols(member)
-                if symbol.startswith("__aarch64_")
-            }
-        );
-        if missing_atomics {
-            import from jaclang.artifacts.kit { osarch }
-            raise LinkPlanError(
-                "AArch64 compiler runtime archive not found for floor symbols: "
-                    + ", ".join(missing_atomics)
-                    + f". Run `jac native build musl@{osarch(plan.triple)}`."
-            );
-        }
-    }
+    atomics = outline_atomics_archive(plan.triple);
     if atomics is not None {
-        inputs.archive_members = inputs.archive_members + atomics.archives;
+        inputs.archives = inputs.archives + [atomics];
     }
     soname = os.path.basename(output_path);
     action_digest = inputs.digest(plan.plan_digest(), kind.value, soname);
@@ -1136,66 +1197,58 @@ def link_artifact(
     }
     plan.prog.native_units().note_link(False);
     (objects, _) = plan_objects(plan, spec, kind, tm, log=log);
-    link_started = time.perf_counter();
-    inputs.objects = objects;
-    inputs.archive_members = archive_members;
-    if atomics is not None {
-        inputs.archive_members = inputs.archive_members
-            + atomics.select(objects + archive_members);
+    unresolved = unresolved_unit_symbols(plan, objects);
+    if unresolved {
+        raise LinkPlanError(
+            "native units reference symbols no unit of the plan defines: "
+                + "; ".join(unresolved[:8])
+                + (f" (+{len(unresolved) - 8} more)" if len(unresolved) > 8 else "")
+        );
     }
-    if runtime is not None {
-        inputs.archive_members = inputs.archive_members
-            + runtime.select(objects + inputs.archive_members);
-        if log is not None {
-            log(
-                f"  Static-linking musl: {len(inputs.archive_members)
-                    - len(archive_members)} libc member(s) + "
-                f"{len(inputs.crt_objects)} crt object(s)."
+    link_started = time.perf_counter();
+    job = NativeLinkJob(
+        platform=platform,
+        triple=plan.triple or str(tm.triple),
+        output_path=output_path,
+        shared=shared,
+        soname=soname,
+        objects=objects,
+        archives=inputs.archives,
+        crt_objects=inputs.crt_objects,
+        needed_libs=inputs.needed_libs,
+        symbol_lib_map=inputs.symbol_lib_map,
+        export_symbols=inputs.export_symbols,
+        archive_symbols={
+            sym
+            for (sym, raw) in clib_symbol_lib.items()
+            if raw in floor_handled
+        },
+        static_musl=static_musl
+    );
+    try {
+        warnings = link_native(job);
+    } except NativeLinkError as e {
+        message = str(e);
+        if "__aarch64_" in message and atomics is None {
+            import from jaclang.artifacts.kit { osarch }
+            message += (
+                "\nThe AArch64 outline atomics (libclang_rt.atomics.a) are not "
+                f"built for this target: run `jac native build musl@{osarch(
+                    plan.triple
+                )}`."
             );
         }
+        raise LinkPlanError(message) from None;
     }
-    if is_windows {
-        import from jaclang.compiler.backends.native.pe_linker { PeLinker }
-        ok = PeLinker.link(
-            objects=inputs.objects,
-            output_path=output_path,
-            needed_libs=inputs.needed_libs,
-            symbol_lib_map=inputs.symbol_lib_map,
-            shared=shared,
-            export_symbols=inputs.export_symbols,
-            init_funcs=inputs.init_funcs,
-            soname=soname
-        );
-    } elif is_macos {
-        import from jaclang.compiler.backends.native.macho_linker { MachOLinker }
-        ok = MachOLinker.link(
-            objects=inputs.objects,
-            output_path=output_path,
-            needed_libs=inputs.needed_libs,
-            symbol_lib_map=inputs.symbol_lib_map,
-            shared=shared,
-            export_symbols=inputs.export_symbols,
-            init_funcs=inputs.init_funcs,
-            soname=soname,
-            archive_members=inputs.archive_members
-        );
-    } else {
-        import from jaclang.compiler.backends.native.elf_linker { ElfLinker }
-        ok = ElfLinker.link(
-            objects=inputs.objects,
-            output_path=output_path,
-            needed_libs=inputs.needed_libs,
-            crt_objects=inputs.crt_objects,
-            shared=shared,
-            export_symbols=inputs.export_symbols,
-            init_funcs=inputs.init_funcs,
-            soname=soname,
-            archive_members=inputs.archive_members,
-            static_link=static_musl
-        );
+    for warning in warnings {
+        if log is not None {
+            log(f"  {warning}");
+        } else {
+            sys.stderr.write(warning + "\n");
+        }
     }
-    if not ok {
-        raise LinkPlanError(f"{platform} link failed: could not parse an object");
+    if env_symmap_requested() {
+        write_symbol_map(output_path);
     }
     _log_phase(log, f"{platform} link", link_started);
     digest = plan.plan_digest();
@@ -1211,6 +1264,56 @@ def link_artifact(
         classes=classes,
         units=[u.path for u in plan.units]
     );
+}
+
+def _unmangled(symbol: str, mangled: bool) -> str {
+    return symbol[1:] if mangled and symbol.startswith("_") else symbol;
+}
+
+def unresolved_unit_symbols(plan: LinkPlan, objects: list[bytes]) -> list[str] {
+    labels = (
+        [os.path.basename(u.path) for u in plan.units] + ["the link glue"]
+            if len(objects) == len(plan.units) + 1
+            else ["the linked program"] * len(objects)
+    );
+    defined: set[str] = set();
+    wanted: dict[str, list[str]] = {};
+    for (label, blob) in zip(labels, objects) {
+        mangled = blob[:4] == b"\xcf\xfa\xed\xfe";
+        (blob_defined, blob_undefined) = llvm.object_symbols(blob);
+        for symbol in blob_defined {
+            defined.add(_unmangled(symbol, mangled));
+        }
+        for symbol in blob_undefined {
+            wanted.setdefault(_unmangled(symbol, mangled), []).append(label);
+        }
+    }
+    owners = {
+        f"{u.prefix}.": os.path.basename(u.path)
+        for u in plan.units
+        if u.prefix
+    };
+    out: list[str] = [];
+    for symbol in sorted(wanted) {
+        if symbol in defined {
+            continue;
+        }
+        owner = next(
+            (
+                unit
+                for (prefix, unit) in owners.items()
+                if symbol.startswith(prefix)
+            ),
+            None
+        );
+        demoted = (symbol + ".__jac_demoted") in defined;
+        if owner is None and not demoted {
+            continue;
+        }
+        why = "demoted to Python" if demoted else f"not defined by {owner}";
+        out.append(f"{symbol} ({why}; used by {', '.join(wanted[symbol])})");
+    }
+    return out;
 }
 
 def expose_root_exports(plan: LinkPlan, merged: ModuleRef) -> list[str] {
@@ -1266,7 +1369,6 @@ def wasm_program_ir(plan: LinkPlan) -> str {
 def link_wasm(
     plan: LinkPlan, output_path: str, app_imports: (set | None) = None
 ) -> LinkResult {
-    import from jaclang.compiler.backends.native.wasm_build { emit_wasm_from_ir }
     merged_ir = wasm_program_ir(plan);
     imports: set[str] = set(app_imports or set());
     imports.update(plan.clib_symbol_lib().keys());
@@ -1357,7 +1459,7 @@ def _jit_image_path(plan: LinkPlan) -> (str | None) {
     the codegen identity and the compiler, which is everything the merged
     and optimized module depends on. Debug builds, IR dumps and cache
     bypasses never reuse an image.""";
-    import from jaclang.compiler.driver.jir { cache_mode, get_jir_cache_dir }
+
     (rebuild, _) = cache_mode();
     if rebuild
         or plan.options.no_ir_cache
@@ -1490,7 +1592,6 @@ def jit_engine_for_cached(
 }
 
 def internalize_native_implementation(module: ModuleRef, exports: list[str]) {
-    import from jaclang.compiler.backends.native.llvm.binding.value { Visibility }
     public = set(exports);
     values: list[ValueRef] = list(module.functions);
     values.extend(module.global_variables);

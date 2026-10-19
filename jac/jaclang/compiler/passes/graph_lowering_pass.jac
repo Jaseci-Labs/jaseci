@@ -1,11 +1,5 @@
-import from jaclang.compiler.frontend.unitree { TreeWalker }
-import from jaclang.compiler.passes.context { CompileContext, TreePass }
-import jaclang.compiler.frontend.unitree as uni;
-import from jaclang.runtime.constants { EdgeDir }
-import from jaclang.compiler.frontend.constant { Tokens as Tok }
-import from jaclang.compiler.frontend.diagnostics { E0084, E0085 }
-
 walker GraphLoweringPass(TreePass) {
+    static has contract: PassContract = PassContract(kernel_safe=True);
     has _serial: int = 0,
         _names: set[str] = set(),
         _builder_type: str = "",

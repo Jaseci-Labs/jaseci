@@ -8,23 +8,6 @@ import time;
 import uuid;
 import from email.utils { formatdate }
 import from urllib.parse { unquote, urlsplit }
-import from jaclang.server.net { PORT_RETRY_LIMIT, bind_listener }
-import from jaclang.server.serving.accesslog { AccessRecord, emit as emit_access }
-import from jaclang.server.serving.app { ServingApp }
-import from jaclang.server.serving.compression { CompressionPolicy }
-import from jaclang.server.serving.datatypes {
-    Headers,
-    QueryParams,
-    Request,
-    Response,
-    URL,
-    parse_query_string
-}
-import from jaclang.server.serving.drain { DrainState, HEALTH_PATHS }
-import from jaclang.server.serving.executor { SyncExecutor }
-import from jaclang.server.serving.proxy { ProxyResolver }
-import from jaclang.server.serving.ws { WebSocket, compute_accept_key }
-import from jaclang.server.settings { ServeSettings }
 
 
 glob _logger: logging.Logger = logging.getLogger("jaclang.server.serving.server"),
@@ -539,7 +522,11 @@ obj ServingServer {
             await writer.drain();
         }
         (body, spool) = await self._read_body(reader, headers);
-        split = urlsplit(target);
+        try {
+            split = urlsplit(target);
+        } except ValueError {
+            raise ProtocolError();
+        }
         peer = writer.get_extra_info('peername');
         peer_host = peer[0] if peer else '';
         forwarded = self._proxy.resolve(peer_host, headers);
@@ -575,10 +562,14 @@ obj ServingServer {
             raise ProtocolError();
         }
         text = distinct.pop();
-        if not text.isdigit() {
+        if not text.isascii() or not text.isdigit() {
             raise ProtocolError();
         }
-        return int(text);
+        try {
+            return int(text);
+        } except ValueError {
+            raise ProtocolError();
+        }
     }
 
     def _spool_sink(headers: Headers) -> any {
@@ -614,7 +605,14 @@ obj ServingServer {
             total = 0;
             while True {
                 size_line: bytes = await self._read_line(reader, body_timeout);
-                size_text = size_line.decode('latin-1').strip().split(';')[0];
+                size_text = size_line.decode('latin-1').strip().split(';')[0].strip();
+                if (
+                    not size_text
+                    or not size_text.isascii()
+                    or not all(ch in '0123456789abcdefABCDEF' for ch in size_text)
+                ) {
+                    raise ProtocolError();
+                }
                 int_fn: any = int;
                 try {
                     size = int_fn(size_text, 16);
@@ -848,7 +846,7 @@ obj ServingServer {
                     continue;
                 }
             } else {
-                for _chunk in stream {
+                async for _chunk in iterate_sync(stream) {
                     continue;
                 }
             }
@@ -865,7 +863,7 @@ obj ServingServer {
                 await writer.drain();
             }
         } else {
-            for chunk in stream {
+            async for chunk in iterate_sync(stream) {
                 sent += self._write_chunk(writer, chunk, chunked);
                 await writer.drain();
             }
