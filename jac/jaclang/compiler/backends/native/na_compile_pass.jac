@@ -1,7 +1,7 @@
 glob NATIVE_RELOC_MODEL: str = "pic",
      NATIVE_CODE_MODEL: str = "small",
-     CODEGEN_BASE_BYTES: int = 512 * 1024 * 1024,
-     CODEGEN_BYTES_PER_BITCODE_BYTE: int = 24;
+     CODEGEN_BASE_BYTES: int = 32 * 1024 * 1024,
+     CODEGEN_BYTES_PER_BITCODE_BYTE: int = 16;
 
 def module_bitcode(mod: ModuleRef) -> bytes;
 def emit_unit_object(bitcode: bytes, options: CompileOptions) -> bytes;

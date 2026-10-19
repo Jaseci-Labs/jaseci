@@ -52,8 +52,9 @@ impl codegen_footprint(blob: bytes) -> int {
 impl codegen_map(work: Callable[..., bytes], blobs: list[bytes]) -> list[bytes] {
     """Run `work` on every module's bitcode on one thread per emit job. A
     module starts only while the modules in flight fit available memory at
-    their footprints (a worker holds about twenty times its module's
-    bitcode), largest first, so small modules fill in around a large one.""";
+    their footprints (code generation for a kernel partition held about
+    thirteen times its bitcode), largest first, so small modules fill in
+    around a large one.""";
     import threading;
     import from concurrent.futures { ThreadPoolExecutor }
     workers = min(len(blobs), object_emit_jobs());
