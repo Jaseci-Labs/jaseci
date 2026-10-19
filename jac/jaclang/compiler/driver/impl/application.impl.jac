@@ -1304,11 +1304,16 @@ impl prepare_dynamic_module(
     import from jaclang.runtime.preparation_lock { PREPARATION_LOCK }
     with PREPARATION_LOCK {
         actual = program_for(application.entry, program);
+        entries = `list(
+            `dict.fromkeys(
+                [application.entry, *application.services, os.path.realpath(path)]
+            )
+        );
         revision = _prepare(
             application.entry,
             actual,
             application.root,
-            [application.entry, path],
+            entries,
             application.client_enabled,
             application.dev,
             console
