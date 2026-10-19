@@ -642,3 +642,31 @@ test "an upgrade migrates state stored beside the app image" {
         assert migrated.is_file();
     }
 }
+
+
+test "booting an embedded host restores the process env" {
+    import os;
+    import from jaclang.client.targets.desktop.native.host_boot {
+        _enter_embedded_env,
+        _leave_embedded_env
+    }
+    os.environ.pop("JAC_PG_HOME", None);
+    os.environ.pop("JAC_PG_DIST", None);
+    try {
+        _enter_embedded_env(
+            {"JAC_PG_HOME": "/tmp/app-data", "JAC_PG_DIST": "/tmp/app-pg"}
+        );
+        assert os.environ["JAC_PG_HOME"] == "/tmp/app-data";
+        _leave_embedded_env();
+        assert "JAC_PG_HOME" not in os.environ;
+        assert "JAC_PG_DIST" not in os.environ;
+        os.environ["JAC_PG_HOME"] = "/tmp/prior";
+        _enter_embedded_env({"JAC_PG_HOME": "/tmp/next"});
+        assert os.environ["JAC_PG_HOME"] == "/tmp/next";
+        _leave_embedded_env();
+        assert os.environ["JAC_PG_HOME"] == "/tmp/prior";
+    } finally {
+        os.environ.pop("JAC_PG_HOME", None);
+        os.environ.pop("JAC_PG_DIST", None);
+    }
+}

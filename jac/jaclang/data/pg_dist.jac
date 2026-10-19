@@ -295,7 +295,8 @@ def bundled_dist_dir -> str {
     Prefers an explicit `JAC_PG_DIST` or `[database] postgres_dist`, else the
     cached zonky build, else a fresh download. Only a relocatable distribution
     can be vendored, so a bare system bin directory is refused rather than
-    copied without the libraries its executables need.
+    copied without the libraries its executables need. A fetch is the last
+    resort and is refused when the project is offline.
     """;
     env = _env_dist();
     if env {
@@ -326,8 +327,6 @@ def bundled_dist_dir -> str {
             return vendored;
         }
     }
-    # A fetch is the only remaining source; refuse it in an offline project
-    # rather than reaching Maven for metadata the build cannot use.
     if offline_mode() {
         raise ArtifactUnavailable(
             f"no cached postgres {pinned_major()} distribution to bundle, and "
@@ -392,13 +391,15 @@ obj PostgresArtifact(Artifact) {
     }
 
     override def build_blocker -> str {
-        # An explicit override that is set but invalid cannot be fixed by
-        # fetching: provisioning would download a distribution the later check
-        # then ignores. Refuse before any network work.
+        """The reason a set distribution override blocks a fetch.
+
+        An override that is set but invalid cannot be fixed by fetching: the
+        provisioner would download a distribution the later check then ignores.
+        Refuse before any network work, with `probe_checkout`'s precedence (a
+        set `JAC_PG_DIST` hides a configured path).
+        """;
         env = _env_dist();
         if env {
-            # `probe_checkout` never falls through to the config when the
-            # environment override is set, so neither does this.
             if _bin_of(env) is None {
                 return f"JAC_PG_DIST {env!r} has no bin/{postgres_exe()}";
             }

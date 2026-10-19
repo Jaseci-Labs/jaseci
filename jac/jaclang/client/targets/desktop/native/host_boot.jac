@@ -18,7 +18,8 @@ glob PLUGIN_BOOTSTRAP_MODULES: list[str] = [
      PORT_RETRIES: int = 64;
 
 glob _EMBEDDED_LOCKS: dict[str, any] = {},
-     _EMBEDDED_STOPPED: set[str] = set();
+     _EMBEDDED_STOPPED: set[str] = set(),
+     _EMBEDDED_ENV_PRIOR: dict[str, any] = {};
 
 
 obj HostContext {
@@ -194,12 +195,44 @@ def _holds_last_embedded_user(handle: any) -> bool {
 }
 
 
+def _enter_embedded_env(env: dict[str, str]) {
+    """Point the process at this app's embedded store.
+
+    The cluster and the vendored distribution are found through the
+    environment, so the values are set process-wide. Remember what was there
+    first: the host restores it on shutdown -- and `boot` does too when it
+    fails after this point -- so an embedding process that boots and stops a
+    host (as the tests do several times) is not left with a stale `JAC_PG_HOME`
+    pointing at a cluster it no longer owns.
+    """;
+    for (key, value) in env.items() {
+        if key not in _EMBEDDED_ENV_PRIOR {
+            _EMBEDDED_ENV_PRIOR[key] = os.environ.get(key);
+        }
+        os.environ[key] = value;
+    }
+}
+
+
+def _leave_embedded_env {
+    for (key, prior) in _EMBEDDED_ENV_PRIOR.items() {
+        if prior is None {
+            os.environ.pop(key, None);
+        } else {
+            os.environ[key] = prior;
+        }
+    }
+    _EMBEDDED_ENV_PRIOR.clear();
+}
+
+
 def _stop_embedded_store(home: str) -> None {
     """Stop this app's embedded cluster once the last instance exits.
 
     The shutdown hook and the atexit backstop both call this, so a second call
-    is a no-op. When this process holds no lock (a platform without `fcntl`),
-    stop directly, as before.
+    is a no-op. A peer instance that still holds the shared lock keeps the
+    cluster alive -- it stops the cluster on its own exit. When this process
+    holds no lock (a platform without `fcntl`), stop directly, as before.
     """;
     if not home or home in _EMBEDDED_STOPPED {
         return;
@@ -210,8 +243,6 @@ def _stop_embedded_store(home: str) -> None {
         last = _holds_last_embedded_user(handle);
         handle.close();
         if not last {
-            # A peer instance still uses the cluster; it stops the cluster on
-            # its own exit.
             return;
         }
     }
@@ -221,6 +252,7 @@ def _stop_embedded_store(home: str) -> None {
     } except Exception as e {
         sys.stderr.write("host_boot: embedded postgres stop failed: " + str(e) + "\n");
     }
+    _leave_embedded_env();
 }
 
 
@@ -370,55 +402,56 @@ def boot(config_json: str) -> HostContext {
     data_dir = chosen_data_dir
         or default_data_dir(platform.system(), identifier, app_name);
     if not chosen_data_dir {
-        # Only the default path changed; a user-chosen JAC_DATA_PATH is already
-        # the user's own location and keeps its state.
         _migrate_legacy_data_dir(data_dir, app_dir);
     }
 
     if backend == EMBEDDED {
-        for (key, value) in embedded_store_env(
-            app_dir, data_dir, str(cfg.get("pg_dist") or "")
-        ).items() {
-            os.environ[key] = value;
-        }
+        _enter_embedded_env(
+            embedded_store_env(app_dir, data_dir, str(cfg.get("pg_dist") or ""))
+        );
         _join_embedded_store(data_dir);
         import atexit;
         atexit.register(_stop_embedded_store, data_dir);
     }
 
-    _apply_extra_deps();
-
-    host = _bootstrap_plugin_host(plugin_configs);
-    if mode == "cef" {
-        host.setup_cef(str(layout.library_dir()));
-    }
-
-    entry_file = resolve_program(program, app_dir) if backend == EMBEDDED else "";
-    store = SessionStore(os.path.join(data_dir, ".jac", "desktop", "session.json"));
-    (runtime, port, stop) = serve_program(
-        entry_file,
-        data_dir,
-        os.path.join(app_dir, "dist"),
-        app_name,
-        backend,
-        host,
-        store
-    );
-
-    ctx = HostContext(
-        host=host,
-        runtime=runtime,
-        port=port,
-        library_dir=str(layout.library_dir()),
-        pg_home=(data_dir if backend == EMBEDDED else ""),
-        _stop=stop
-    );
     try {
-        ctx.dev_port = int(os.environ.get("JAC_DESKTOP_DEV_PORT", "0") or "0");
-    } except (TypeError, ValueError) {
-        ctx.dev_port = 0;
+        _apply_extra_deps();
+
+        host = _bootstrap_plugin_host(plugin_configs);
+        if mode == "cef" {
+            host.setup_cef(str(layout.library_dir()));
+        }
+
+        entry_file = resolve_program(program, app_dir) if backend == EMBEDDED else "";
+        store = SessionStore(os.path.join(data_dir, ".jac", "desktop", "session.json"));
+        (runtime, port, stop) = serve_program(
+            entry_file,
+            data_dir,
+            os.path.join(app_dir, "dist"),
+            app_name,
+            backend,
+            host,
+            store
+        );
+
+        ctx = HostContext(
+            host=host,
+            runtime=runtime,
+            port=port,
+            library_dir=str(layout.library_dir()),
+            pg_home=(data_dir if backend == EMBEDDED else ""),
+            _stop=stop
+        );
+        try {
+            ctx.dev_port = int(os.environ.get("JAC_DESKTOP_DEV_PORT", "0") or "0");
+        } except (TypeError, ValueError) {
+            ctx.dev_port = 0;
+        }
+        sys.stdout.write("JAC_DESKTOP_SERVING http://127.0.0.1:" + str(port) + "/\n");
+        sys.stdout.flush();
+        return ctx;
+    } except Exception {
+        _leave_embedded_env();
+        raise;
     }
-    sys.stdout.write("JAC_DESKTOP_SERVING http://127.0.0.1:" + str(port) + "/\n");
-    sys.stdout.flush();
-    return ctx;
 }
