@@ -1126,16 +1126,19 @@ test "a dynamic import of the application's own entry restores the prepared appl
     import jaclang.compiler.driver.application as application;
     tmp = tempfile.mkdtemp(prefix='jac-prepare-entry-reimport-');
     path = Path(tmp) / 'main.jac';
+    service = Path(tmp) / 'worker.jac';
     try {
         path.write_text("def:pub hello -> int { return 1; }\n");
+        service.write_text("def:pub other -> int { return 2; }\n");
         program = JacProgram();
-        first = prepare_application(str(path), program, tmp);
+        first = prepare_application(str(path), program, tmp, services=[str(service)]);
         err = io.StringIO();
         with contextlib.redirect_stderr(err) {
             second = application.prepare_dynamic_module(str(path), program, first);
         }
-        assert 'Restoring prepared application' in err.getvalue() , err.getvalue();
+        assert err.getvalue().count('Restoring prepared application') == 2 , err.getvalue();
         assert sorted(second.code) == sorted(first.code);
+        assert second.services == first.services;
     } finally {
         forget(str(path));
         shutil.rmtree(tmp, ignore_errors=True);
