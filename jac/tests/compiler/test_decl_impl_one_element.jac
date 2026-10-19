@@ -28,7 +28,9 @@ import from jaclang.compiler.driver.compile_options {
 import from jaclang.compiler.backends.py.codegen_shim { generated_python }
 import from jaclang.project.config { JacConfig, CheckConfig, LintConfig, set_config }
 
-glob FIXTURES = os.path.join(JAC_ROOT, "tests", "compiler", "fixtures", "decl_impl"),
+glob FIXTURES = os.path.join(
+         JAC_ROOT, "tests", "compiler", "fixtures", "decl_impl"
+     ),
      PARITY = os.path.join(FIXTURES, "parity"),
      COMPILER_ROOT = os.path.join(JAC_ROOT, "jaclang");
 
@@ -62,7 +64,9 @@ def run_and_capture(path: str) -> str {
     sys.stdout = buf;
     try {
         Jac.jac_import(
-            target=Path(path).stem, base_path=str(Path(path).parent), override_name="__main__"
+            target=Path(path).stem,
+            base_path=str(Path(path).parent),
+            override_name="__main__"
         );
     } finally {
         sys.stdout = old_stdout;
@@ -109,7 +113,11 @@ test "an archetype with an impl'd method is pulled to the client like its inline
 
 test "a linked impl has no placement or scope of its own" {
     (prog, mod) = compile_fixture(os.path.join(FIXTURES, "client_archetype.jac"));
-    impls = [stmt for stmt in mod.body if isinstance(stmt, uni.ImplDef)];
+    impls = [
+        stmt
+        for stmt in mod.body
+        if isinstance(stmt, uni.ImplDef)
+    ];
     assert impls;
     for impl_def in impls {
         decl = impl_def.decl_link;
@@ -154,7 +162,7 @@ def corpus_variants(name: str) -> dict[str, dict[str, str]] {
 
 """Write one variant into the project directory, replacing the last one, so
 every variant compiles from the same path."""
-def write_variant(workdir: str, files: dict[str, str]) -> None {
+def write_variant(workdir: str, files: dict[str, str]) {
     if os.path.isdir(workdir) {
         shutil.rmtree(workdir);
     }
@@ -207,7 +215,9 @@ def ir_artifact(path: str) -> str {
     }
     kept: list[str] = [];
     for ln in text.splitlines() {
-        if ln.startswith("!") or ln.startswith("source_filename") or ln.startswith("; ModuleID") {
+        if ln.startswith("!")
+            or ln.startswith("source_filename")
+            or ln.startswith("; ModuleID") {
             continue;
         }
         kept.append(re.sub(r", !dbg ![0-9]+", "", ln));
@@ -223,15 +233,35 @@ test "a corpus compiles to the same artifacts inline, impl'd, and annexed" {
             for (variant, files) in corpus_variants(name).items() {
                 write_variant(workdir, files);
                 (prog, mod) = compile_fixture(os.path.join(workdir, name));
-                arts[variant] = (py_artifact(mod), mod.gen.js or "", diag_artifact(prog));
+                arts[variant] = (
+                    py_artifact(mod),
+                    mod.gen.js or "",
+                    diag_artifact(prog)
+                );
             }
             inline = arts["inline"];
-            assert not [d for d in inline[2] if d.startswith("E")] , (name, inline[2]);
+            assert not [
+                d
+                for d in inline[2]
+                if d.startswith("E")
+            ] , (name, inline[2]);
             for variant in ["same", "annex"] {
                 got = arts[variant];
-                assert got[0] == inline[0] , (name, variant, "python", got[0], inline[0]);
+                assert got[0] == inline[0] , (
+                    name,
+                    variant,
+                    "python",
+                    got[0],
+                    inline[0]
+                );
                 assert got[1] == inline[1] , (name, variant, "js", got[1], inline[1]);
-                assert got[2] == inline[2] , (name, variant, "diagnostics", got[2], inline[2]);
+                assert got[2] == inline[2] , (
+                    name,
+                    variant,
+                    "diagnostics",
+                    got[2],
+                    inline[2]
+                );
             }
         }
         irs: dict[str, str] = {};

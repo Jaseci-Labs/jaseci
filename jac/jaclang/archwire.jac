@@ -7797,8 +7797,7 @@ graph import compiler {
         },
     ]
     frontend.roles ++> [
-        backends.es.esast_gen_pass
-            | backends.native.na_ir_gen_pass
+        backends.native.na_ir_gen_pass
             | backends.py.jcir_gen_pass
             | driver.program
             | driver.progstate
@@ -8519,7 +8518,6 @@ graph import compiler {
             GlobalVars,
             HasVar,
             IfElseExpr,
-            ImplDef,
             Import,
             InForStmt,
             IndexSlice,
@@ -8558,7 +8556,6 @@ graph import compiler {
             Archetype,
             AtomTrailer,
             ContextAwareNode,
-            ImplDef,
             Import,
             Module,
             ModuleCode,
@@ -8677,11 +8674,9 @@ graph import compiler {
             FuncSignature,
             IfElseExpr,
             IfStmt,
-            ImplDef,
             InForStmt,
             IterForStmt,
             KWPair,
-            LambdaExpr,
             ListCompr,
             ListVal,
             Module,
@@ -8694,7 +8689,6 @@ graph import compiler {
             SetVal,
             String,
             Symbol,
-            Test,
             Token,
             UnaryExpr,
             UniCFGNode,
@@ -12205,17 +12199,13 @@ graph import compiler.frontend {
             DictCompr,
             Enum,
             ForeverStmt,
-            ImplDef,
             InForStmt,
             InnerCompr,
             IterForStmt,
             LambdaExpr,
             ListCompr,
-            Module,
-            ModuleCode,
             Name,
             Symbol,
-            Test,
             UniNode,
             UniScopeNode,
             WhileStmt,

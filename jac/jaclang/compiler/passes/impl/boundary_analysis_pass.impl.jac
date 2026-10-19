@@ -812,8 +812,7 @@ impl BoundaryAnalysisPass.enter_func_call with FuncCall entry {
         if target_decl is not None {
             _decl_ab = target_decl.enclosing_decl(Ability);
             if (
-                _decl_ab is not None
-                and _decl_ab.enclosing_decl(Ability) is not None
+                _decl_ab is not None and _decl_ab.enclosing_decl(Ability) is not None
             ) {
                 return;
             }

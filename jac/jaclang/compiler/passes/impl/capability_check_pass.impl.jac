@@ -181,10 +181,7 @@ impl name_erased_natively(name_nd: UniNode) -> bool {
     if in_type_position(name_nd, include_subscripts=False) {
         return True;
     }
-    for _decl in [
-        name_nd.enclosing_decl(Archetype),
-        name_nd.enclosing_decl(Enum)
-    ] {
+    for _decl in [name_nd.enclosing_decl(Archetype), name_nd.enclosing_decl(Enum)] {
         if _decl is None {
             continue;
         }

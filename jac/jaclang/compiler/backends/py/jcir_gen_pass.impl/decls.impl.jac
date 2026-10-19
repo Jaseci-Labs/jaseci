@@ -602,9 +602,7 @@ impl JcirGenPass.exit_event_signature with EventSignature exit {
                 [
                     [],
                     [self.nod('arg', ['arg', 'annotation'], ['self', None]), arch_arg]
-                        if (
-                            (abl := here.enclosing_decl(Ability)) and abl.is_method
-                        )
+                        if ((abl := here.enclosing_decl(Ability)) and abl.is_method)
                         else [arch_arg],
                     [],
                     None,

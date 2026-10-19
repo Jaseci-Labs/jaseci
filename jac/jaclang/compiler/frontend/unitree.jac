@@ -103,7 +103,6 @@ node UniNode {
 
     def is_within(outer: UniNode) -> bool;
     def element_in(mod: Module) -> (UniNode | None);
-
     def enclosing_decl[T](typ: type[T]) -> (T | None) {
         nd: (UniNode | None) = self.decl_parent;
         while nd is not None {
@@ -116,7 +115,6 @@ node UniNode {
     }
 
     def linked_impls -> list[ImplDef];
-
     def element_sub_nodes[T](typ: type[T]) -> list[T] {
         found: list[T] = self.get_all_sub_nodes(typ);
         for impl_def in self.linked_impls() {
@@ -221,6 +219,7 @@ node UniScopeNode(UniNode) {
     ) -> (UniNode | None);
 
     def find_scope(name: str) -> (UniScopeNode | None);
+
     has folded: bool { getter; }
     has owning_scope: UniScopeNode { getter; }
 

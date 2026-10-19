@@ -7,6 +7,10 @@ def tally(n: int) -> int {
     return total;
 }
 
+def scaled(n: int, unused: int) -> int {
+    return n * 2;
+}
+
 def outer(n: int) -> int {
     def inner(m: int) -> int {
         return m * 2;
@@ -32,5 +36,5 @@ obj Point {
 }
 
 with entry {
-    print(tally(4), outer(3), Point(x=1, y=-2).shifted(2).norm1(), Point.origin().x);
+    print(tally(4), scaled(2, 0), outer(3), Point(x=1, y=-2).shifted(2).norm1(), Point.origin().x);
 }

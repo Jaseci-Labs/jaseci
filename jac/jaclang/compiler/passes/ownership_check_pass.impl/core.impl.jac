@@ -227,7 +227,9 @@ impl OwnershipCheckPass._build_index(tree: UniNode) -> None {
     self.idx_assignments = tree.get_all_sub_nodes(Assignment);
     self.idx_names = tree.get_all_sub_nodes(Name);
     self.idx_params = [
-        p for p in tree.get_all_sub_nodes(ParamVar) if not p.in_impl_spec
+        p
+        for p in tree.get_all_sub_nodes(ParamVar)
+        if not p.in_impl_spec
     ];
     self.idx_returns = tree.get_all_sub_nodes(ReturnStmt);
     self.idx_concurrent = tree.get_all_sub_nodes(ConcurrentExpr);
@@ -715,9 +717,7 @@ impl OwnershipCheckPass._emit_linear_diagnostics(cfg_nodes: list[UniCFGNode]) ->
             continue;
         }
         for n in cfg_nodes {
-            if n is scope
-                or not n.is_within(scope)
-                or not self._is_scope_exit(n) {
+            if n is scope or not n.is_within(scope) or not self._is_scope_exit(n) {
                 continue;
             }
             if sid not in self._transfer(n, must_in.get(id(n), set())) {
@@ -883,9 +883,7 @@ impl OwnershipCheckPass._local_raises(ab: UniNode) -> set[str] {
         if isinstance(ab, Ability) and owner is not ab {
             continue;
         }
-        if not isinstance(ab, Ability)
-            and owner is not None
-            and owner.is_within(ab) {
+        if not isinstance(ab, Ability) and owner is not None and owner.is_within(ab) {
             continue;
         }
         callee = self._callee_ability(call);
@@ -2005,8 +2003,7 @@ impl OwnershipCheckPass._emit_borrow_diagnostics -> None {
                 borrow_site = self.borrow_created_at.get(borrow_id);
                 borrow_name = self._borrow_display_name(borrow_id, "");
                 for use in self.name_uses_by_sym.get(borrow_id, []) {
-                    if self._is_read_name(use)
-                        and not use.is_within(owner_scope) {
+                    if self._is_read_name(use) and not use.is_within(owner_scope) {
                         e1304_related = [
                             (f"borrow of '{borrow_name}' created here", borrow_site)
                         ]

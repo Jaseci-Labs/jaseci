@@ -49,4 +49,3 @@ def is_plain_variable(sym: Symbol) -> bool;
 def owned_within(sym: Symbol, scope: UniNode) -> bool;
 
 def binding_sites(sym: Symbol) -> list[UniNode];
-

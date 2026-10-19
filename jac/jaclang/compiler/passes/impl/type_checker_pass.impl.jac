@@ -1490,11 +1490,7 @@ impl TypeCheckPass.exit_param_var with ParamVar exit {
         declared_type = self.evaluator.get_type_of_symbol(sym);
         here.type = declared_type;
 
-        if (
-            here.type_tag
-            and here.type_tag.tag
-            and not here.in_impl_spec
-        ) {
+        if (here.type_tag and here.type_tag.tag and not here.in_impl_spec) {
             self._check_bare_generic(here.type_tag.tag, declared_type);
             self._check_explicit_any(here.type_tag.tag);
             self._check_c_type_use(here.type_tag.tag);
@@ -1513,7 +1509,9 @@ impl TypeCheckPass.exit_has_var with HasVar exit {
     postinit_nd = kids[-1] if kids else None;
     if here.defer and isinstance(postinit_nd, Name) {
         if postinit_nd.sym is None {
-            arch = here.parent.decl_parent if isinstance(here.parent, ArchHas) else None;
+            arch = here.parent.decl_parent
+                if isinstance(here.parent, ArchHas)
+                else None;
             if isinstance(arch, Archetype) {
                 postinit_sym = arch.names_in_scope.get("__post_init__");
                 if postinit_sym is not None {

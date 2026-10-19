@@ -118,7 +118,11 @@ impl SubTag.__repr__ -> str {
 }
 
 impl Module.elements.getter -> list[UniNode] {
-    return [stmt for stmt in self.body if stmt.top_element is stmt];
+    return [
+        stmt
+        for stmt in self.body
+        if stmt.top_element is stmt
+    ];
 }
 
 impl Module.body.getter -> Sequence[ElementStmt | String | EmptyToken] {

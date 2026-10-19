@@ -3897,7 +3897,9 @@ impl is_comptime_stmt(nd: UniNode) -> bool {
 }
 
 impl is_client_destined(nd: UniNode) -> bool {
-    holder = nd if isinstance(nd, ContextAwareNode) else nd.enclosing_decl(ContextAwareNode);
+    holder = nd
+        if isinstance(nd, ContextAwareNode)
+        else nd.enclosing_decl(ContextAwareNode);
     if holder is None {
         return False;
     }

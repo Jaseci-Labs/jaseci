@@ -21,6 +21,9 @@ impl StaticAnalysisPass._check_placement_warnings(mod: Module) -> None {
 }
 
 impl StaticAnalysisPass._check_unused_symbols(scope: UniScopeNode) -> None {
+    if scope.folded {
+        return;
+    }
     for (name, sym) in scope.names_in_scope.items() {
         if sym.imported {
             continue;

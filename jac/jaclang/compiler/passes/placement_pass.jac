@@ -397,8 +397,7 @@ impl build_native_legality(
                 text=f"error[{note.code}]: {note.text}"
             );
             if note.requires {
-                unit = native_enclosing_unit(note.site)
-                    or note.site.element_in(mod);
+                unit = native_enclosing_unit(note.site) or note.site.element_in(mod);
                 if unit is None {
                     legality.module_requires.append(noted);
                 } else {

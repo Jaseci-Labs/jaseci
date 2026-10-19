@@ -125,9 +125,7 @@ impl NaIRGenPass._pyb_shadow_postinit_owner(arch_name: str) -> (str | None) {
         }
         sym = base_expr.sym if isinstance(base_expr, uni.NameAtom) else None;
         decl = sym.decl if sym is not None else None;
-        base_arch = decl.enclosing_decl(uni.Archetype)
-            if decl is not None
-            else None;
+        base_arch = decl.enclosing_decl(uni.Archetype) if decl is not None else None;
         if base_arch is None {
             continue;
         }
@@ -205,9 +203,7 @@ impl NaIRGenPass._pyb_shadowed_dispatch(
         }
         sym = base_expr.sym if isinstance(base_expr, uni.NameAtom) else None;
         decl = sym.decl if sym is not None else None;
-        base_arch = decl.enclosing_decl(uni.Archetype)
-            if decl is not None
-            else None;
+        base_arch = decl.enclosing_decl(uni.Archetype) if decl is not None else None;
         if base_arch is None {
             continue;
         }

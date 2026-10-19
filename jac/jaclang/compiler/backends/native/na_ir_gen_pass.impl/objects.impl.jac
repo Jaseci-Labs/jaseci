@@ -5524,8 +5524,7 @@ impl NaIRGenPass._report_unreachable_overrides -> None {
                 }
                 for call in caller.element_sub_nodes(uni.FuncCall) {
                     target = call.target;
-                    if not isinstance(target, uni.AtomTrailer)
-                        or not target.is_attr {
+                    if not isinstance(target, uni.AtomTrailer) or not target.is_attr {
                         continue;
                     }
                     if self._get_name(target.target) != "self" {

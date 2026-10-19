@@ -668,7 +668,7 @@ Diagnostic codes can be suppressed inline with `# jac:ignore[CODE]` comments. Se
 
 **Rules only `all` turns on:**
 
-`strip-comments` and `strip-docstrings` are destructive "deslop" rules: they delete content rather than restructure it. `separate-impls` restructures every module: `jac fmt --lintfix` keeps each declaration in place (`def f(x: int) -> int;`) and moves its body into `impl f(x: int) -> int { ... }` at the bottom of the module, in declaration order. Bodies an `impl` cannot name stay inline: nested functions, nameless abilities (`can with Root entry`), generic functions, accessors and `@property` methods, names a field or another member of the same scope also uses, and client component bodies (JSX, body-level `has` state, a `JsxElement` return type).
+`strip-comments` and `strip-docstrings` are destructive "deslop" rules: they delete content rather than restructure it. `separate-impls` restructures every module: `jac fmt --lintfix` keeps each declaration in place (`def f(x: int) -> int;`) and moves its body into `impl f(x: int) -> int { ... }` at the bottom of the module, in declaration order. Bodies an `impl` cannot name stay inline: nested functions, nameless abilities (`can with Root entry`), generic functions, accessors and `@property` methods, and names a field or another member of the same scope also uses. Client component bodies are separated like any other: a body behaves the same inline and in an `impl`, so JSX, body-level `has` state and a `JsxElement` return type all move with it.
 
 `select = ["all"]` turns all three on; `select = ["default"]` leaves them off. Each can also be named on its own, or turned off under `all` with `ignore`:
 

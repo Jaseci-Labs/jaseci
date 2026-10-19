@@ -256,7 +256,7 @@ impl RcFactsPass._collect_last_use(
             decl = sym.decl;
             if decl is None
                 or self._enclosing_fn_scope(decl, stop_at_comprehension=True)
-                is not owner {
+                    is not owner {
                 continue;
             }
             sym_last[id(sym)] = (idx, nm.sym_name);

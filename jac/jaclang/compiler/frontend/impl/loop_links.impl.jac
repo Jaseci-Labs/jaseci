@@ -238,4 +238,3 @@ impl binding_sites(sym: Symbol) -> list[UniNode] {
     }
     return sites;
 }
-

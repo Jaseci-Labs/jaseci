@@ -519,8 +519,7 @@ impl native_blocker_scan(
         if imp.is_typed or imp.is_comptime {
             continue;
         }
-        if imp.enclosing_decl(uni.Ability) is not None
-            or imp.find_parent_of_type(uni.ImplDef) is not None {
+        if imp.enclosing_decl(uni.Ability) is not None {
             continue;
         }
         if imp.is_virtual_jac or imp.has_string_path {

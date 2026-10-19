@@ -1012,8 +1012,7 @@ impl NaIRGenPass._predeclare_nested_siblings(nd: uni.Ability) -> None {
             if _sym.sym_type in (SymbolType.ABILITY, SymbolType.TEST) {
                 continue;
             }
-            if _sym.sym_name in self.local_vars
-                or _sym.parent_tab is _frame {
+            if _sym.sym_name in self.local_vars or _sym.parent_tab is _frame {
                 _ord.append(_sym.sym_name);
                 _md[_sym.sym_name] = "ptr" if _sym.sym_name in _reb else "val";
                 if _sym.sym_name not in _cap_syms {
