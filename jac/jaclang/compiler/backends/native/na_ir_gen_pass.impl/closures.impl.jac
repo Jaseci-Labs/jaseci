@@ -377,7 +377,7 @@ impl NaIRGenPass._emit_closure_pair(
 impl NaIRGenPass._emit_closure_value(
     var_name: str, nd: uni.UniNode
 ) -> (ir.Value | None) {
-    cap_entry = self.nested_captures.get(var_name);
+    cap_entry = self.scope.closure(var_name);
     if cap_entry is None {
         return None;
     }

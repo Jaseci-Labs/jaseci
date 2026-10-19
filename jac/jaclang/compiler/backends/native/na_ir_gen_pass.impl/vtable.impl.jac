@@ -769,83 +769,7 @@ impl NaIRGenPass._codegen_runtime_class_name(obj_val: ir.Value) -> (ir.Value | N
 
 def _caught_exception_class_name(
     pass_ref: NaIRGenPass, var_name: str
-) -> (ir.Value | None) {
-    func = pass_ref.builder.function;
-    code: (ir.Value | None) = None;
-    raised: (ir.Value | None) = None;
-    message: (ir.Value | None) = None;
-    for (owner, name, slot, bound, values) in reversed(pass_ref._exc_bindings) {
-        if owner is func and name == var_name {
-            if pass_ref.local_vars.get(name) is not slot {
-                return None;
-            }
-            code = values[0];
-            raised = values[1];
-            message = values[2];
-            break;
-        }
-    }
-    if code is None or raised is None or message is None {
-        return None;
-    }
-    class_name_fn = pass_ref._emit_runtime_class_name_fn();
-    if class_name_fn is None {
-        return None;
-    }
-    b = pass_ref.builder;
-    i8p = ir.IntType(8).as_pointer();
-    named: ir.Value = ir.Constant(i8p, None);
-    for (builtin, _parent) in JAC_TYPE_REGISTRY.exception_entries() {
-        type_id = JAC_TYPE_REGISTRY.exception_type_id(builtin);
-        named = b.select(
-            b.icmp_unsigned("==", code, ir.Constant(code.type, type_id)),
-            pass_ref._make_global_string(builtin),
-            named,
-            name="exc.name"
-        );
-    }
-    base_named = b.select(
-        b.icmp_unsigned("==", code, ir.Constant(code.type, 0)),
-        pass_ref._make_global_string("Exception"),
-        named,
-        name="exc.name"
-    );
-    raised_p = b.bitcast(raised, i8p, name="exc.name.obj");
-    message_p = b.bitcast(message, i8p, name="exc.name.msg");
-    is_object = b.and_(
-        b.icmp_unsigned(
-            "==", base_named, ir.Constant(i8p, None), name="exc.name.unknown"
-        ),
-        b.and_(
-            b.icmp_unsigned("!=", raised_p, ir.Constant(i8p, None)),
-            b.icmp_unsigned("!=", raised_p, message_p)
-        ),
-        name="exc.name.isobj"
-    );
-    object_bb = func.append_basic_block(name="exc.name.object");
-    done_bb = func.append_basic_block(name="exc.name.done");
-    fallback = b.select(
-        b.icmp_unsigned("==", base_named, ir.Constant(i8p, None)),
-        pass_ref._make_global_string("Exception"),
-        base_named,
-        name="exc.name.or"
-    );
-    from_bb = b.basic_block;
-    b.cbranch(is_object, object_bb, done_bb);
-    b.position_at_end(object_bb);
-    shown = b.call(
-        pass_ref._emit_class_display_fn(),
-        [b.call(class_name_fn, [raised_p], name="exc.name.cls")],
-        name="exc.name.display"
-    );
-    object_end = b.basic_block;
-    b.branch(done_bb);
-    b.position_at_end(done_bb);
-    result = b.phi(i8p, name="exc.class.name");
-    result.add_incoming(fallback, from_bb);
-    result.add_incoming(shown, object_end);
-    return result;
-}
+) -> (ir.Value | None);
 
 impl NaIRGenPass._codegen_class_name(nd: uni.AtomTrailer) -> (ir.Value | None) {
     if not (nd.is_attr and self._get_name(nd.right) == "__name__") {
@@ -2091,7 +2015,7 @@ impl NaIRGenPass._generate_inherited_method_wrappers -> None {
                 );
                 if not _has_self {
                     self.method_funcs[child_full] = impl_func;
-                    self.func_symtab[child_full] = impl_func;
+                    self.scope.bind_function(child_full, impl_func);
                     continue;
                 }
 
@@ -2149,8 +2073,88 @@ impl NaIRGenPass._generate_inherited_method_wrappers -> None {
                 }
 
                 self.method_funcs[child_full] = wrapper_fn;
-                self.func_symtab[child_full] = wrapper_fn;
+                self.scope.bind_function(child_full, wrapper_fn);
             }
         }
     }
+}
+
+impl _caught_exception_class_name(
+    pass_ref: NaIRGenPass, var_name: str
+) -> (ir.Value | None) {
+    func = pass_ref.builder.function;
+    code: (ir.Value | None) = None;
+    raised: (ir.Value | None) = None;
+    message: (ir.Value | None) = None;
+    for (owner, name, slot, bound, values) in reversed(pass_ref._exc_bindings) {
+        if owner is func and name == var_name {
+            if pass_ref.local_vars.get(name) is not slot {
+                return None;
+            }
+            code = values[0];
+            raised = values[1];
+            message = values[2];
+            break;
+        }
+    }
+    if code is None or raised is None or message is None {
+        return None;
+    }
+    class_name_fn = pass_ref._emit_runtime_class_name_fn();
+    if class_name_fn is None {
+        return None;
+    }
+    b = pass_ref.builder;
+    i8p = ir.IntType(8).as_pointer();
+    named: ir.Value = ir.Constant(i8p, None);
+    for (builtin, _parent) in JAC_TYPE_REGISTRY.exception_entries() {
+        type_id = JAC_TYPE_REGISTRY.exception_type_id(builtin);
+        named = b.select(
+            b.icmp_unsigned("==", code, ir.Constant(code.type, type_id)),
+            pass_ref._make_global_string(builtin),
+            named,
+            name="exc.name"
+        );
+    }
+    base_named = b.select(
+        b.icmp_unsigned("==", code, ir.Constant(code.type, 0)),
+        pass_ref._make_global_string("Exception"),
+        named,
+        name="exc.name"
+    );
+    raised_p = b.bitcast(raised, i8p, name="exc.name.obj");
+    message_p = b.bitcast(message, i8p, name="exc.name.msg");
+    is_object = b.and_(
+        b.icmp_unsigned(
+            "==", base_named, ir.Constant(i8p, None), name="exc.name.unknown"
+        ),
+        b.and_(
+            b.icmp_unsigned("!=", raised_p, ir.Constant(i8p, None)),
+            b.icmp_unsigned("!=", raised_p, message_p)
+        ),
+        name="exc.name.isobj"
+    );
+    object_bb = func.append_basic_block(name="exc.name.object");
+    done_bb = func.append_basic_block(name="exc.name.done");
+    fallback = b.select(
+        b.icmp_unsigned("==", base_named, ir.Constant(i8p, None)),
+        pass_ref._make_global_string("Exception"),
+        base_named,
+        name="exc.name.or"
+    );
+    from_bb = b.basic_block;
+    b.cbranch(is_object, object_bb, done_bb);
+    b.position_at_end(object_bb);
+    shown = b.call(
+        pass_ref._emit_class_display_fn(),
+        [b.call(class_name_fn, [raised_p], name="exc.name.cls")],
+        name="exc.name.display"
+    );
+    object_end = b.basic_block;
+    b.branch(done_bb);
+    b.position_at_end(done_bb);
+    result = b.phi(i8p, name="exc.class.name");
+    result.add_incoming(fallback, from_bb);
+    result.add_incoming(shown, object_end);
+    return result;
 }

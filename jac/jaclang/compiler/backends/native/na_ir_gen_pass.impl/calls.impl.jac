@@ -709,7 +709,7 @@ impl NaIRGenPass._codegen_bound_args(
     }
 
     _nc_name = nd.target.sym_name if isinstance(nd.target, uni.Name) else None;
-    _nc_entry = self.nested_captures.get(_nc_name) if _nc_name is not None else None;
+    _nc_entry = self.scope.closure(_nc_name) if _nc_name is not None else None;
     if _nc_entry is not None and _nc_entry[0] is func {
         for (_cname, _cmode) in _nc_entry[1] {
             _c_slot = self.local_vars.get(_cname);
@@ -2427,11 +2427,11 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
     if func_name in self.decorated_fns and not _var_callee {
         return self._codegen_decorated_call(nd, func_name);
     }
-    func: ir.Function | None = None if _var_callee else self.func_symtab.get(func_name);
+    func: ir.Function | None = None if _var_callee else self.scope.function(func_name);
     if declaration is not None and declaration.name_ref is not None {
         declaring_module = declaration.parent_scope;
         if isinstance(declaring_module, uni.Module) {
-            declared_function = self._module_functions.get(
+            declared_function = self._module_function(
                 (
                     os.path.realpath(declaring_module.source.file_path),
                     declaration.name_ref.sym_name
@@ -2454,7 +2454,7 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
         (_, source) = resolve_native_module(
             _mod_qual, os.path.dirname(nd.loc.mod_path)
         );
-        func = self._module_functions.get((os.path.realpath(source), func_name))
+        func = self._module_function((os.path.realpath(source), func_name))
             if source is not None
             else None;
     }
@@ -2539,7 +2539,7 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
             _alloca = self.local_vars[func_name];
             _loaded = self.builder.load(_alloca, name=f"fptr.{func_name}");
             return self._codegen_callable_value(
-                nd, _loaded, self.lambda_captures.get(func_name) or []
+                nd, _loaded, self.scope.lambda_captures(func_name) or []
             );
         }
 
@@ -3729,7 +3729,7 @@ impl NaIRGenPass._try_flow_future(nd: uni.ConcurrentExpr) -> (ir.Value | None) {
         return None;
     }
     fname = call.target.sym_name;
-    callee = self.func_symtab.get(fname);
+    callee = self.scope.function(fname);
     if callee is None
         or not isinstance(callee, ir.Function)
         or fname in self.clib_fn_abi

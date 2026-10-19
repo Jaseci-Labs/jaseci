@@ -45,6 +45,8 @@ def:pub Badge(props: any) -> JsxElement {
         />;
 }
 
-def:pub badgeVariants -> any {
+def:pub badgeVariants -> any;
+
+impl badgeVariants -> any {
     return _badgeVariants;
 }
