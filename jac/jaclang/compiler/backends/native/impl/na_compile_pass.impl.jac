@@ -45,49 +45,50 @@ impl object_emit_jobs -> int {
     return min(os.cpu_count() or 1, 8);
 }
 
-impl codegen_jobs(blobs: list[bytes]) -> int {
-    """How many modules generate code at once: no more than the emit jobs,
-    and no more than available memory holds at the largest module's
-    footprint. A worker for a kernel partition holds about twenty times the
-    partition's bitcode.""";
-    if not blobs {
-        return 0;
-    }
-    footprint = CODEGEN_BASE_BYTES
-        + CODEGEN_BYTES_PER_BITCODE_BYTE * max(len(blob) for blob in blobs);
-    fits = int(memory_headroom_bytes() * MEM_HEADROOM) // footprint;
-    return max(1, min(len(blobs), object_emit_jobs(), fits));
+impl codegen_footprint(blob: bytes) -> int {
+    return CODEGEN_BASE_BYTES + CODEGEN_BYTES_PER_BITCODE_BYTE * len(blob);
 }
 
 impl codegen_map(work: Callable[..., bytes], blobs: list[bytes]) -> list[bytes] {
-    """Run `work` on every module's bitcode, one emit job per module at a
-    time, each job in a forked process. Code generation allocates heavily,
-    and threads of one process contend on its address space: eight threads
-    emitting a split kernel each ran 3.4 times slower than one alone, where
-    eight processes ran near that speed. Workers skip the garbage collector,
-    which would touch every object the fork shares with the parent. A host
-    without fork runs the jobs in threads.""";
-    import os;
-    workers = codegen_jobs(blobs);
+    """Run `work` on every module's bitcode on one thread per emit job. A
+    module starts only while the modules in flight fit available memory at
+    their footprints (a worker holds about twenty times its module's
+    bitcode), largest first, so small modules fill in around a large one.""";
+    import threading;
+    import from concurrent.futures { ThreadPoolExecutor }
+    workers = min(len(blobs), object_emit_jobs());
     if workers < 2 {
         return [work(blob) for blob in blobs];
     }
-    if hasattr(os, "fork") {
-        import gc;
-        import multiprocessing;
-        import from concurrent.futures { ProcessPoolExecutor }
-        with ProcessPoolExecutor(
-            max_workers=workers,
-            mp_context=multiprocessing.get_context("fork"),
-            initializer=gc.disable
-        ) as pool {
-            return list(pool.map(work, blobs));
+    budget = int(memory_headroom_bytes() * MEM_HEADROOM);
+    room = threading.Condition();
+    held: list[int] = [0];
+    def run(blob: bytes) -> bytes {
+        need = codegen_footprint(blob);
+        with room {
+            while held[0] > 0 and held[0] + need > budget {
+                room.wait();
+            }
+            held[0] += need;
+        }
+        try {
+            return work(blob);
+        } finally {
+            with room {
+                held[0] -= need;
+                room.notify_all();
+            }
         }
     }
-    import from concurrent.futures { ThreadPoolExecutor }
+    order = sorted(range(len(blobs)), key=lambda (index: int) { -len(blobs[index]); });
+    results: list[bytes] = [b""] * len(blobs);
     with ThreadPoolExecutor(max_workers=workers) as pool {
-        return list(pool.map(work, blobs));
+        pending = [(index, pool.submit(run, blobs[index])) for index in order];
+        for (index, future) in pending {
+            results[index] = future.result();
+        }
     }
+    return results;
 }
 
 impl emit_unit_objects(bitcodes: list[bytes], options: CompileOptions) -> list[bytes] {

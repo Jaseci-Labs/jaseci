@@ -848,14 +848,11 @@ obj NativeUnitRegistry {
             return;
         }
         import from jaclang.compiler.backends.native.na_compile_pass {
-            codegen_jobs,
             emit_unit_objects
         }
         import from jaclang.compiler.driver.jir { write_module_cache }
         opts = options if options is not None else self._options();
-        started = self.note_step(
-            "emit", detail=f"{len(pending)} objects, {codegen_jobs(bitcodes)} at a time"
-        );
+        started = self.note_step("emit", detail=f"{len(pending)} objects in parallel");
         objects = emit_unit_objects(bitcodes, opts);
         self._timed("NATIVE_EMIT", started);
         self.note_slow_step("emitting", "", started);
@@ -1219,12 +1216,14 @@ obj NativeBuildSession {
         if len(todo) < 2 {
             return set();
         }
-        unoptimized = [unit_bitcode(mod.gen.llvm_ir) for (_, mod) in todo];
         started = self.registry.note_step(
-            "optimize",
-            detail=f"{len(todo)} units, {codegen_jobs(unoptimized)} at a time"
+            "optimize", detail=f"{len(todo)} units in parallel"
         );
-        bitcodes = optimize_unit_bitcodes(unoptimized, opts, int(opts.opt_level or 0));
+        bitcodes = optimize_unit_bitcodes(
+            [unit_bitcode(mod.gen.llvm_ir) for (_, mod) in todo],
+            opts,
+            int(opts.opt_level or 0)
+        );
         self.registry._timed("NATIVE_OPTIMIZE", started);
         self.registry.note_slow_step("optimizing", "", started);
         for ((path, mod), bitcode) in zip(todo, bitcodes) {

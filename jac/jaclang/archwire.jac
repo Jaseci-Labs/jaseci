@@ -297,7 +297,7 @@ graph import {
         register_project_template
     }
     cli.workpool ++> [
-        compiler.backends.native.na_compile_pass.codegen_jobs {
+        compiler.backends.native.na_compile_pass.codegen_map {
             MEM_HEADROOM,
             memory_headroom_bytes
         },
@@ -5295,7 +5295,6 @@ graph import compiler {
     type backends.native.lowering ++> frontend.codeinfo { NativeFallbacks }
     backends.native.na_compile_pass ++> [
         driver.nativecache.NativeBuildSession._optimize_in_parallel {
-            codegen_jobs,
             optimize_unit_bitcodes,
             unit_bitcode,
             unit_fallbacks
@@ -5311,10 +5310,7 @@ graph import compiler {
             settle_unit_ir,
             unit_function_counts
         },
-        driver.nativecache.NativeUnitRegistry.emit_objects {
-            codegen_jobs,
-            emit_unit_objects
-        },
+        driver.nativecache.NativeUnitRegistry.emit_objects { emit_unit_objects },
         driver.nativecache.NativeUnitRegistry.object_for { emit_unit_object },
     ]
     backends.native.na_constants --> driver.native_iface.resolve_native_unit_ref {
@@ -10917,9 +10913,9 @@ graph import compiler.backends.native {
         link_plan {
             NATIVE_CODE_MODEL,
             NATIVE_RELOC_MODEL,
-            codegen_jobs,
             emit_unit_objects,
-            object_emit_jobs
+            object_emit_jobs,
+            unit_function_counts
         },
         wasm_build.prepare_wasm_module { optimize_unit },
     ]

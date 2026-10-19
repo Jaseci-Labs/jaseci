@@ -5,7 +5,8 @@ import os;
 import sys;
 import time;
 
-glob PLAN_DIGEST_FORMAT: int = 3;
+glob PLAN_DIGEST_FORMAT: int = 3,
+     PARTITION_FUNCTIONS: int = 4096;
 
 enum ArtifactKind {
     EXECUTABLE = "executable",
@@ -957,10 +958,11 @@ def plan_objects(
     if env_symmap_requested() {
         name_private_functions(merged);
     }
-    """Code generation works function by function, so the program is split
-    into one partition per emit job and the partitions are emitted the way
-    units are.""";
-    jobs = object_emit_jobs();
+    """Code generation works function by function, so a large program is
+    split into up to one partition per emit job and the partitions are
+    emitted the way units are.""";
+    (_, defined) = unit_function_counts(merged);
+    jobs = min(object_emit_jobs(), defined // PARTITION_FUNCTIONS);
     if jobs < 2 {
         object_bytes = tm.emit_object(merged);
         assert isinstance(object_bytes, bytes);
@@ -971,7 +973,7 @@ def plan_objects(
     merged.close();
     started = _log_phase(log, f"split_module ({jobs} parts)", started);
     objects = emit_unit_objects(parts, plan.options);
-    _log_phase(log, f"emit_objects ({codegen_jobs(parts)} at a time)", started);
+    _log_phase(log, "emit_objects", started);
     return (objects, exports);
 }
 
