@@ -14,7 +14,7 @@ import from jaclang.byllm.telemetry {
     _agent_callbacks
 }
 import from jaclang.byllm.lib { MockLLM }
-import from support { call, say }
+import from support { call, finish, say }
 
 def make_mt_run(
     invocation_id: str = "inv-test-001",
@@ -535,7 +535,11 @@ def _lookup_city(city: str) -> str {
 
 test "an llm call hook gets each model call once, with its full reply, and cannot break it" {
     thought = {"reasoning_content": "WHY"};
-    for (path, stream) in [("whole replies", False), ("stream with events", True)] {
+    for (path, mode) in [
+        ("whole replies", "whole"),
+        ("stream with events", "events"),
+        ("answer restreamed after finish_tool", "restream")
+    ] {
         records: list[dict[str, any]] = [];
         def bad_hook(record: dict[str, any]) {
             raise RuntimeError("hook broke");
@@ -543,24 +547,29 @@ test "an llm call hook gets each model call once, with its full reply, and canno
         def good_hook(record: dict[str, any]) {
             records.append(record);
         }
+        answers = [say("Kandy found.", fields=thought)];
+        if mode == "restream" {
+            answers = [finish("Kandy found.", fields=thought)] + answers;
+        }
         llm = MockLLM(
-            outputs=[
-                call("_lookup_city", {"city": "Kandy"}, fields=thought),
-                say("Kandy found.", fields=thought),
-                say("again")
-            ]
+            outputs=[call("_lookup_city", {"city": "Kandy"}, fields=thought)]
+                + answers
+                + [say("again")]
         );
 
         def ask(q: str) -> str by llm(tools=[_lookup_city]);
         def ask_events(q: str) -> str by llm(
             tools=[_lookup_city], stream=True, logging=True
         );
+        def ask_stream(q: str) -> str by llm(tools=[_lookup_city], stream=True);
 
         register_llm_call_hook(bad_hook);
         register_llm_call_hook(good_hook);
         try {
-            if stream {
+            if mode == "events" {
                 for _ in ask_events("Find Kandy") {}
+            } elif mode == "restream" {
+                for _ in ask_stream("Find Kandy") {}
             } else {
                 assert ask("Find Kandy") == "Kandy found." , f"{path}: a failing hook broke the call";
             }
@@ -568,9 +577,10 @@ test "an llm call hook gets each model call once, with its full reply, and canno
             unregister_llm_call_hook(bad_hook);
             unregister_llm_call_hook(good_hook);
         }
-        assert len(records) == 2 , f"{path}: one record per model call, got {len(
-            records
-        )}";
+        calls = len(answers) + 1;
+        assert len(records) == calls , (
+            f"{path}: one record per model call, {calls} expected, got {len(records)}"
+        );
         first_roles = [m.get("role") for m in records[0]["new_messages"]];
         assert first_roles[:2] == ["system", "user"] , (
             f"{path}: the first call reports what it was sent, prompt included: {first_roles}"
@@ -588,9 +598,55 @@ test "an llm call hook gets each model call once, with its full reply, and canno
         }
         assert records[0]["reply"].get("tool_calls") , f"{path}: the tool call is in the reply";
 
-        if not stream {
+        if mode == "whole" {
             assert ask("Find Kandy") == "again" , f"{path}: the call after unregistering";
-            assert len(records) == 2 , f"{path}: an unregistered hook must not fire";
+            assert len(records) == calls , f"{path}: an unregistered hook must not fire";
         }
     }
+}
+
+
+test "after a compaction the hook reports the rebuilt request once" {
+    records: list[dict[str, any]] = [];
+    def keep(record: dict[str, any]) {
+        records.append(record);
+    }
+    def summarise(msgs: list[any], keep_recent: int) -> list[any] {
+        return msgs[:2] + [{"role": "user", "content": "SUMMARY_OF_GALLE"}];
+    }
+    llm = MockLLM(
+        ctx_window=1000,
+        outputs=[
+            call("_lookup_city", {"city": "Galle"}, usage={"prompt_tokens": 900}),
+            say("done")
+        ]
+    );
+
+    def ask(q: str) -> str by llm(
+        tools=[_lookup_city], threshold_ratio=0.80, on_compaction=summarise
+    );
+
+    register_llm_call_hook(keep);
+    try {
+        assert ask("Find Galle") == "done";
+    } finally {
+        unregister_llm_call_hook(keep);
+    }
+    after = [
+        r
+        for r in records
+        if r["after_compaction"]
+    ];
+    assert len(after) == 1 , f"one call follows the compaction: {[
+        r['call_kind'] for r in records
+    ]}";
+    sent = after[0]["new_messages"];
+    assert sent and sent[0].get("role") == "system" , (
+        f"the whole rebuilt request is reported, prompt first: {[
+            m.get('role') for m in sent
+        ]}"
+    );
+    assert any("SUMMARY_OF_GALLE" in str(m.get("content")) for m in sent) , (
+        f"the summary the model now sees must be in it: {sent}"
+    );
 }

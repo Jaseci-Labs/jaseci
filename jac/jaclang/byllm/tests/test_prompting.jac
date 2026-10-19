@@ -4,7 +4,9 @@ sem strings, incl_info, temperature and receiver state on the way out; typed
 returns, enums and scalars on the way back. Assert on both directions.
 """
 
+import from pathlib { Path }
 import from jaclang { JacRuntimeInterface as Jac }
+import from jaclang.byllm.config_loader { get_byllm_config, reset_byllm_config }
 import from jaclang.byllm.lib { MockLLM }
 import from support { call, fixture_path, prompt_text, roles, say, tool_names }
 
@@ -94,6 +96,21 @@ test "reasoning params reach the model only when set" {
                 assert sent.get(key) == want , f"{label}: {key} must reach the model: {sent}";
             }
         }
+    }
+}
+
+
+test "reasoning params can also be set in jac.toml" {
+    reset_byllm_config();
+    try {
+        params = get_byllm_config(
+            Path(fixture_path("reasoning_config"))
+        ).get_call_params_config();
+        assert params.get("reasoning_effort") == "low" , f"got {params}";
+        assert params.get("thinking") == {"type": "enabled"} , f"got {params}";
+        assert "extra_body" not in params , f"unset keys stay unset: {params}";
+    } finally {
+        reset_byllm_config();
     }
 }
 

@@ -4,6 +4,8 @@ byLLM appends to the caller's list in place. The system prompt and finish_tool
 plumbing are filtered out on the way; a real tool result is not.
 """
 
+import jaclang.byllm.llm as _byllm_llm_mod;
+import from unittest { mock }
 import from jaclang.byllm.types { Message, MessageRole }
 import from jaclang.byllm.lib { MockLLM }
 import from support { call, finish, say }
@@ -205,7 +207,14 @@ def reply_field_rows -> list[tuple[str, dict[str, any], bool]] {
             {"reasoning_content": "THINK_SIGNED", "thinking_blocks": [signed]},
             True
         ),
-        ("encrypted only", {"thinking_blocks": [sealed]}, True),
+        # litellm's stream builder keeps a thinking block only when it has text.
+        ("encrypted only", {"thinking_blocks": [sealed]}, False),
+        # Fields litellm parks under provider_specific_fields, such as OpenRouter's.
+        (
+            "provider specific",
+            {"provider_specific_fields": {"reasoning_details": [{"text": "THINK_PS"}]}},
+            False
+        ),
         ("nothing", {}, True)
     ];
 }
@@ -216,6 +225,10 @@ def loop_path_rows -> list[tuple[str, dict[str, any]]] {
     return [
         ("whole replies", {}),
         ("stream", {"stream": True}),
+        (
+            "stream, answer restreamed after finish_tool",
+            {"stream": True, "finish": True}
+        ),
         ("stream with events", {"stream": True, "logging": True})
     ];
 }
@@ -250,23 +263,43 @@ test "the provider's own fields on a reply are kept and sent back, on every loop
             }
             label = f"{path}, {kind}";
             history: list[any] = [];
+            answers = [
+                say("Paris is sunny.", fields=fields),
+                say("Still sunny.", fields=fields)
+            ];
+            if kwargs.get("finish", False) {
+                answers = [
+                    finish("Paris is sunny.", fields=fields),
+                    answers[0],
+                    finish("Still sunny.", fields=fields),
+                    answers[1]
+                ];
+            }
             llm = MockLLM(
-                outputs=[
-                    call("get_weather", {"city": "Paris"}, fields=fields),
-                    say("Paris is sunny.", fields=fields),
-                    say("Still sunny.", fields=fields)
-                ]
+                outputs=[call("get_weather", {"city": "Paris"}, fields=fields)]
+                    + answers
             );
             run_turn(llm, history, kwargs, "How is Paris?");
             turn1 = [dict(m) for m in history];
             replies = by_role(turn1, "assistant");
             assert len(replies) == 2 , f"{label}: expected the call and the answer: {turn1}";
             for reply in replies {
-                for (key, value) in fields.items() {
+                lifted = dict(fields.get("provider_specific_fields") or {});
+                for (key, value) in (
+                    {
+                        k: v
+                        for (k, v) in fields.items()
+                        if k != "provider_specific_fields"
+                    }
+                    | lifted
+                ).items() {
                     assert reply.get(key) == value , (
                         f"{label}: {key} was not kept on {reply}"
                     );
                 }
+                assert "provider_specific_fields" not in reply , (
+                    f"{label}: litellm's own wrapper must not be sent back: {reply}"
+                );
                 for key in ("reasoning_content", "thinking_blocks") {
                     if key not in fields {
                         assert not reply.get(key) , (
@@ -283,4 +316,25 @@ test "the provider's own fields on a reply are kept and sent back, on every loop
             );
         }
     }
+}
+
+
+test "a stream litellm cannot rebuild still keeps the reasoning it carried" {
+    history: list[any] = [];
+    thought = {"reasoning_content": "THINK_RAW"};
+    llm = MockLLM(outputs=[say("Paris is sunny.", fields=thought)]);
+    with mock.patch.object(
+        _byllm_llm_mod.litellm,
+        "stream_chunk_builder",
+        side_effect=RuntimeError("no builder")
+    ) {
+        run_turn(llm, history, {"stream": True, "logging": True}, "How is Paris?");
+    }
+    replies = by_role(history, "assistant");
+    assert [r.get("content") for r in replies] == ["Paris is sunny."] , (
+        f"the streamed text is the reply: {replies}"
+    );
+    assert replies[0].get("reasoning_content") == "THINK_RAW" , (
+        f"the streamed reasoning must be kept too: {replies[0]}"
+    );
 }

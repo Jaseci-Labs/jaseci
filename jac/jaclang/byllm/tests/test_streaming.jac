@@ -167,23 +167,33 @@ test "a str answer that skips finish_tool still arrives on the chunk channel" {
 
 test "reasoning streams on its own channel, merged, and never in the answer" {
     thought = "REASONING " + ("step by step " * 50);
-    for (label, fields) in [
-        ("reasoning", {"reasoning_content": thought}),
-        ("none", {})
+    for (label, fields, cap, tools) in [
+        ("reasoning", {"reasoning_content": thought}, 0, True),
+        (
+            "reasoning, answer restreamed at the iteration cap",
+            {"reasoning_content": thought},
+            1,
+            True
+        ),
+        ("reasoning, no tools", {"reasoning_content": thought}, 0, False),
+        ("none", {}, 0, True)
     ] {
-        llm = MockLLM(
-            outputs=[
-                call("get_weather", {"city": "London"}, fields=fields),
-                say("It is sunny in London.", fields=fields)
-            ],
-            chunk_size=12
-        );
+        replies = [say("It is sunny in London.", fields=fields)];
+        if tools {
+            replies = [call("get_weather", {"city": "London"}, fields=fields)]
+                + replies;
+        }
+        calls = len(replies);
+        llm = MockLLM(outputs=replies, chunk_size=12);
 
         def answer(question: str) -> str by llm(
-            tools=[get_weather], stream=True, logging=True
+            tools=[get_weather], stream=True, logging=True, max_react_iterations=cap
         );
+        def answer_plain(question: str) -> str by llm(stream=True, logging=True);
 
-        events = stream_events(answer("What is the weather in London?"));
+        events = stream_events(
+            (answer if tools else answer_plain)("What is the weather in London?")
+        );
         reasoning = events_of(events, "reasoning");
         texts = [str(e.data.get("content", "")) for e in reasoning];
         visible = chunk_text(events)
@@ -195,8 +205,8 @@ test "reasoning streams on its own channel, merged, and never in the answer" {
             assert not reasoning , f"{label}: no reasoning was sent, got {texts}";
             continue;
         }
-        assert "".join(texts) == thought + thought , (
-            f"{label}: both calls' reasoning must arrive whole, got {texts}"
+        assert "".join(texts) == thought * calls , (
+            f"{label}: every call's reasoning must arrive whole, got {texts}"
         );
         assert len(reasoning) < len(thought) // 12 , (
             f"{label}: {len(reasoning)} events for {len(thought) // 12

@@ -1617,7 +1617,8 @@ delta from a stream that replaced an abandoned one.
 | `tool_call_delta` | A tool's arguments are still being generated (opt in, see below) | `tool` (str), `call_id` (str), `arg_fragment` (str), `index` (int), `iteration` (int) |
 | `tool_call` | LLM decided to call a tool | `tool` (str), `args` (dict), `call_id` (str), `iteration` (int) |
 | `tool_result` | Tool finished executing | `tool` (str), `result` (str, truncated), `call_id` (str), `iteration` (int) |
-| `thought` | LLM produced reasoning text before a tool call | `content` (str), `iteration` (int) |
+| `thought` | Visible text the model wrote before a tool call | `content` (str), `iteration` (int) |
+| `reasoning` | Reasoning text from a model that returns it, merged into pieces of about 200 characters (see [Reasoning](#reasoning)) | `content` (str), `iteration` (int) |
 | `steps_done` | ReAct loop finished, final answer next | `iterations` (int), `reason` (str): `"max_iterations"`, `"aborted"`, or `"aborted_with_summary"` |
 | `chunk` | One token of the final streamed answer | `content` (str) |
 | `compaction` | Auto-compaction replaced the message history (tool-calling invocations only) | See [Observing compactions](#observing-compactions) |
@@ -1715,9 +1716,67 @@ with entry {
 
 Cached input tokens are billed at a fraction of the normal rate, so a high hit rate on a long, static system prompt or tool schema is a direct cost saving. See [`[byllm.prompt_caching]`](#project-configuration) to toggle caching.
 
+#### Reasoning tokens
+
+`reasoning_tokens` is on every `per_call` entry too: the provider's `completion_tokens_details.reasoning_tokens`, or `0` when it reports none. Reasoning is billed as output, so it is already inside `completion_tokens`; this field says how much of it was thinking.
+
 ### Streaming Limitations
 
 - Only supports `str` return type
+
+---
+
+## Reasoning
+
+Some models think before they answer. byLLM passes through whatever the provider returns and changes nothing for models that keep their reasoning hidden.
+
+| Model returns | What byLLM does |
+|---|---|
+| Full reasoning text (DeepSeek, GLM, Kimi, Qwen) | Keeps `reasoning_content` on the reply, sends it back on the next call, streams it as `reasoning` events |
+| A summary with signed thinking blocks (Claude with summarized display) | Keeps `reasoning_content` and `thinking_blocks`, sends them back unchanged |
+| An encrypted copy only (Claude default, OpenAI) | Keeps what arrives and sends it back; there is no text to stream |
+| Nothing | Nothing changes |
+
+Turn thinking on with the provider's own parameter, per call or in `jac.toml`. `reasoning_effort`, `thinking` and `extra_body` are sent only when set:
+
+```jac
+def plan(goal: str) -> str by llm(reasoning_effort="low");
+def build(spec: str) -> str by llm(extra_body={"thinking": {"type": "enabled"}});
+```
+
+```toml
+[byllm.call_params]
+reasoning_effort = "low"
+```
+
+The reply is stored whole in `conversation=`, so the next turn resends the history exactly as it was and the provider's prompt cache still matches. Compaction drops reasoning from the part it summarises.
+
+### Recording every call
+
+`register_llm_call_hook(hook)` calls `hook(record)` after each model call, including the summarisation and final-answer calls byLLM makes on its own. It is off until a hook is registered, and a hook that raises is logged, never raised. `unregister_llm_call_hook(hook)` removes it.
+
+| Field | Contents |
+|---|---|
+| `invocation_id`, `parent_invocation_id`, `caller` | Which `by llm()` call this was, as in agent telemetry |
+| `call_kind` | `react_iteration`, `final_answer_restream`, `recovery` or `compaction` |
+| `new_messages` | What this call sent that earlier calls of the invocation did not; the first call includes the system prompt and any `conversation=` history |
+| `reply` | The full reply as a dict, reasoning included |
+| `usage` | This call's `per_call` usage entry |
+| `after_compaction` | `True` when the history was just compacted; `new_messages` is then the whole rebuilt request |
+
+```jac
+import from jaclang.byllm.lib { register_llm_call_hook }
+
+def save(record: dict[str, any]) {
+    trace_queue.put(record);
+}
+
+with entry {
+    register_llm_call_hook(save);
+}
+```
+
+The hook runs on the call's thread, so hand the record to a queue rather than doing slow work in it. Messages are shallow copies taken at call time.
 
 ---
 
