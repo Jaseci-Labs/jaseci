@@ -7,14 +7,42 @@ glob EPERM: int = 1,
      ENOTDIR: int = 20,
      EISDIR: int = 21;
 
-def:pub last_errno -> int;
+def:pub last_errno -> int {
+    return int(__mem_load_i32(errno_address()));
+}
 
-def:pub clear_errno;
+def:pub clear_errno {
+    __mem_store_i32(errno_address(), 0);
+}
 
-def:pub errno_message -> str;
+def:pub errno_message -> str {
+    return strerror(i32(last_errno()));
+}
 
-def _raise_for_errno(code: int, message: imm str);
+def _raise_for_errno(code: int, message: imm str) {
+    if code == ENOENT {
+        raise FileNotFoundError(message);
+    }
+    if code == EISDIR {
+        raise IsADirectoryError(message);
+    }
+    if code == ENOTDIR {
+        raise NotADirectoryError(message);
+    }
+    if code == EACCES or code == EPERM {
+        raise PermissionError(message);
+    }
+    raise OSError(message);
+}
 
-def:pub raise_errno(code: int, operation: imm str = "");
+def:pub raise_errno(code: int, operation: imm str = "") {
+    message = "[Errno " + str(code) + "] ";
+    if operation != "" {
+        message = message + operation + ": ";
+    }
+    _raise_for_errno(code, message + strerror(i32(code)));
+}
 
-def:pub raise_os_error(operation: imm str, path: imm str, code: int);
+def:pub raise_os_error(operation: imm str, path: imm str, code: int) {
+    _raise_for_errno(code, operation + ": " + strerror(i32(code)) + ": " + path);
+}

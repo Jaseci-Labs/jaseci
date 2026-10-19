@@ -38,6 +38,10 @@ glob kwlist: list[str] = [
      ],
      softkwlist: list[str] = ["_", "case", "match", "type"];
 
-def:pub iskeyword(s: str) -> bool;
+def:pub iskeyword(s: str) -> bool {
+    return s in kwlist;
+}
 
-def:pub issoftkeyword(s: str) -> bool;
+def:pub issoftkeyword(s: str) -> bool {
+    return s in softkwlist;
+}

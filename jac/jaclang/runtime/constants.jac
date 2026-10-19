@@ -9,7 +9,9 @@ class Constants(StrEnum) {
         SUPER_ROOT_UUID = '00000000-0000-0000-0000-000000000000';
     }
 
-    def __str__(self: Constants) -> str;
+    def __str__(self: Constants) -> str {
+        return self.value;
+    }
 }
 
 enum EdgeDir: int { IN = 1, OUT = 2, ANY = 3 }

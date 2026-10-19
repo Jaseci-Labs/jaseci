@@ -3,9 +3,19 @@ glob _NOGC_SCALARS: frozenset[str] = frozenset(
              + JAC_TYPE_REGISTRY.sized_scalar_names()
      );
 
-def _is_class_object(t: object) -> bool;
+def _is_class_object(t: object) -> bool {
+    return isinstance(t, ClassType) and t.is_instantiable_class();
+}
 
-def _nogc_name_candidates(mod_name: str) -> list[str];
+def _nogc_name_candidates(mod_name: str) -> list[str] {
+    _cands = [mod_name];
+    for _suf in (".na", ".cl") {
+        if mod_name.endswith(_suf) {
+            _cands.append(mod_name[:-len(_suf)]);
+        }
+    }
+    return _cands;
+}
 
 glob _NOGC_ALIASING_BUILTINS: dict[str, str] = {
          "iter": "iter() retains a raw reference to its collection",
@@ -1751,18 +1761,4 @@ impl OwnershipCheckPass._emit_view_diagnostics -> None {
             }
         }
     }
-}
-
-impl _is_class_object(t: object) -> bool {
-    return isinstance(t, ClassType) and t.is_instantiable_class();
-}
-
-impl _nogc_name_candidates(mod_name: str) -> list[str] {
-    _cands = [mod_name];
-    for _suf in (".na", ".cl") {
-        if mod_name.endswith(_suf) {
-            _cands.append(mod_name[:-len(_suf)]);
-        }
-    }
-    return _cands;
 }
