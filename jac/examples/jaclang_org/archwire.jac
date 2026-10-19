@@ -256,6 +256,7 @@ graph import core {
     utils ++> site.docs.DocsSidebar
         | site.docs.DocsTocRail
         | site.home.NoGlue
+        | site.home.OneLanguage
         | site.home.kit
         | site.jacyac.components.ExploreTab
         | site.jacyac.components.MobileNav

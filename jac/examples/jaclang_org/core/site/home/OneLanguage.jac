@@ -25,10 +25,374 @@ glob ConvPath: any = motion.path,
          },
 
      ],
-     _TARGETS: list[dict[str, str]] = [
-         {"name": "Python bytecode", "sub": "server · every PyPI package"},
-         {"name": "JavaScript", "sub": "browser + React Native · npm"},
-         {"name": "Native code · wasm", "sub": "LLVM · any C-ABI library"},
+     _PLATFORMS_OUT: list[dict[str, str]] = [
+         {"name": "Web", "sub1": "React app", "sub2": "in the browser"},
+         {"name": "Mobile", "sub1": "React Native", "sub2": "iOS and Android"},
+         {"name": "Desktop", "sub1": "native window", "sub2": "over the OS webview"},
+         {"name": "Cloud", "sub1": "API server +", "sub2": "Kubernetes deploy"},
+         {"name": "Microservices", "sub1": "each service", "sub2": "its own process"},
+         {
+             "name": "Databases",
+             "sub1": "graph persistence",
+             "sub2": "no schema to write"
+         },
+         {"name": "Native", "sub1": "LLVM binaries", "sub2": "and WebAssembly"},
+
+     ];
+
+def:pub TierLabel(y: int, text: str, hot: bool = False) -> JsxElement {
+    return
+        <text
+            x="500"
+            y={y}
+            textAnchor="middle"
+            fontSize="11"
+            fontWeight="700"
+            fontFamily="monospace"
+            letterSpacing="2.5"
+            fill={"#ff6b35" if hot else "var(--muted-foreground)"}
+        >
+            {text}
+        </text>;
+}
+
+def:pub ConvergeDiagram -> JsxElement {
+    return
+        <div className="overflow-x-auto">
+            <svg
+                viewBox="0 0 1000 590"
+                className="w-full min-w-[760px]"
+                role="img"
+                aria-label="Multiple languages and frameworks (Python, TypeScript, C, C++ and Rust, React and React Native) flow into one universal language, Jac, which targets web, mobile, desktop, cloud, microservices, databases and native platforms"
+            >
+                <TierLabel y={16} text="MULTIPLE LANGUAGES AND FRAMEWORKS"/>
+                {for (i, s) in enumerate(_STACKS) {
+                    <g key={"s" + str(i)}>
+                        <rect
+                            x={i * 204}
+                            y="32"
+                            width="184"
+                            height="78"
+                            rx="10"
+                            fill="var(--card)"
+                            fillOpacity="0.6"
+                            stroke="var(--border)"
+                            strokeDasharray="4 3"
+                        />
+                        <text
+                            x={i * 204 + 16}
+                            y="58"
+                            fontSize="15"
+                            fontWeight="600"
+                            fill="var(--foreground)"
+                        >
+                            {s["name"]}
+                        </text>
+                        <text
+                            x={i * 204 + 16}
+                            y="77"
+                            fontSize="11"
+                            fill="var(--muted-foreground)"
+                        >
+                            {s["eco"]}
+                        </text>
+                        <text
+                            x={i * 204 + 16}
+                            y="96"
+                            fontSize="10"
+                            fontFamily="monospace"
+                            fill="var(--muted-foreground)"
+                            fillOpacity="0.85"
+                        >
+                            {s["tools"]}
+                        </text>
+                        <ConvPath
+                            d={"M"
+                                + str(i * 204 + 92)
+                                + ",110 C"
+                                + str(i * 204 + 92)
+                                + ",175 500,170 500,228"}
+                            fill="none"
+                            stroke="var(--muted-foreground)"
+                            strokeOpacity="0.5"
+                            strokeWidth="1.3"
+                            strokeDasharray="4 4"
+                            initial={{"pathLength": 0}}
+                            whileInView={{"pathLength": 1}}
+                            viewport={{"once": True, "amount": 0.3}}
+                            transition={{"duration": 0.8, "delay": 0.1 + i * 0.08}}
+                        />
+                    </g>
+                }}
+                <circle
+                    cx="500"
+                    cy="290"
+                    r="84"
+                    fill="#ff6b35"
+                    fillOpacity="0.06"
+                    className="pulse-ring"
+                />
+                <polygon
+                    points="500,228 554,259 554,321 500,352 446,321 446,259"
+                    fill="#ff6b35"
+                    stroke="#ff6b35"
+                />
+                <text
+                    x="500"
+                    y="292"
+                    textAnchor="middle"
+                    fontSize="26"
+                    fontWeight="700"
+                    fontFamily="monospace"
+                    fill="#ffffff"
+                >
+                    jac
+                </text>
+                <text
+                    x="500"
+                    y="311"
+                    textAnchor="middle"
+                    fontSize="9.5"
+                    fontFamily="monospace"
+                    fill="#ffffff"
+                    fillOpacity="0.9"
+                >
+                    one language
+                </text>
+                <text
+                    x="0"
+                    y="282"
+                    fontSize="11"
+                    fontWeight="700"
+                    fontFamily="monospace"
+                    letterSpacing="2.5"
+                    fill="#ff6b35"
+                >
+                    ONE UNIVERSAL LANGUAGE
+                </text>
+                <text x="0" y="304" fontSize="13" fill="var(--foreground)">
+                    one syntax · one type checker
+                </text>
+                <text x="0" y="322" fontSize="12" fill="var(--muted-foreground)">
+                    every ecosystem still in reach
+                </text>
+                <text
+                    x="1000"
+                    y="304"
+                    textAnchor="end"
+                    fontSize="13"
+                    fill="var(--foreground)"
+                >
+                    one binary
+                </text>
+                <text
+                    x="1000"
+                    y="322"
+                    textAnchor="end"
+                    fontSize="12"
+                    fill="var(--muted-foreground)"
+                >
+                    compiler, runtime and package manager
+                </text>
+                {for (j, t) in enumerate(_PLATFORMS_OUT) {
+                    <g key={"t" + str(j)}>
+                        <ConvPath
+                            d={"M500,352 C500,410 "
+                                + str(j * 144 + 68)
+                                + ",405 "
+                                + str(j * 144 + 68)
+                                + ",470"}
+                            fill="none"
+                            stroke="#ff6b35"
+                            strokeOpacity="0.6"
+                            strokeWidth="1.4"
+                            initial={{"pathLength": 0}}
+                            whileInView={{"pathLength": 1}}
+                            viewport={{"once": True, "amount": 0.3}}
+                            transition={{"duration": 0.7, "delay": 0.6 + j * 0.07}}
+                        />
+                        <rect
+                            x={j * 144 + 2}
+                            y="470"
+                            width="132"
+                            height="80"
+                            rx="10"
+                            fill="var(--card)"
+                            stroke="#ff6b35"
+                            strokeOpacity="0.55"
+                        />
+                        <text
+                            x={j * 144 + 14}
+                            y="496"
+                            fontSize="14"
+                            fontWeight="600"
+                            fill="var(--foreground)"
+                        >
+                            {t["name"]}
+                        </text>
+                        <text
+                            x={j * 144 + 14}
+                            y="516"
+                            fontSize="10.5"
+                            fill="var(--muted-foreground)"
+                        >
+                            {t["sub1"]}
+                        </text>
+                        <text
+                            x={j * 144 + 14}
+                            y="532"
+                            fontSize="10.5"
+                            fill="var(--muted-foreground)"
+                        >
+                            {t["sub2"]}
+                        </text>
+                    </g>
+                }}
+                <TierLabel y={582} text="TARGETS MANY PLATFORMS"/>
+            </svg>
+        </div>;
+}
+
+glob _LAYERS: list[dict[str, any]] = [
+         {"name": "Web", "tools": ["JavaScript", "TypeScript", "React", "CSS", "npm"]},
+         {
+             "name": "Mobile",
+             "tools": [
+                 "Swift",
+                 "Kotlin",
+                 "Xcode",
+                 "Android Studio",
+                 "App Store",
+                 "Google Play"
+             ]
+         },
+         {
+             "name": "Backend",
+             "tools": ["Python", "FastAPI", "PyPI", "pytest", "Celery"]
+         },
+         {
+             "name": "Database",
+             "tools": ["PostgreSQL", "SQLAlchemy", "Alembic", "MongoDB"]
+         },
+         {"name": "Deployment", "tools": ["Docker", "Kubernetes", "Terraform", "AWS"]},
+
+     ],
+     _GLUE_KINDS: list[dict[str, str]] = [
+         {"key": "api", "label": "API clients", "color": "#ef4444"},
+         {"key": "rest", "label": "REST endpoints", "color": "#a855f7"},
+         {"key": "ser", "label": "serializers", "color": "#14b8a6"},
+         {"key": "orm", "label": "ORM mapping", "color": "#22c55e"},
+         {"key": "schema", "label": "schemas & migrations", "color": "#6366f1"},
+         {"key": "deploy", "label": "deployment manifests", "color": "#ec4899"},
+         {"key": "config", "label": "config & env variables", "color": "#0ea5e9"},
+
+     ],
+     _ROLES: list[dict[str, any]] = [
+         {
+             "role": "Frontend engineer",
+             "lang": "TypeScript · React",
+             "kinds": ["ser", "api"],
+             "files": [
+                 {
+                     "name": "App.tsx",
+                     "segs": [
+                         {"kind": "", "lines": [62, 48]},
+                         {"kind": "ser", "lines": [40, 56, 34]},
+                         {"kind": "", "lines": [70, 52]},
+                         {"kind": "api", "lines": [66, 82, 54, 72, 60, 76, 48]},
+                         {"kind": "", "lines": [44, 62, 70, 56, 38, 64]},
+
+                     ]
+                 },
+
+             ]
+         },
+         {
+             "role": "Backend engineer",
+             "lang": "Python · FastAPI",
+             "kinds": ["ser", "rest"],
+             "files": [
+                 {
+                     "name": "main.py",
+                     "segs": [
+                         {"kind": "", "lines": [72, 58]},
+                         {"kind": "ser", "lines": [46, 56, 40, 52, 36]},
+                         {
+                             "kind": "rest",
+                             "lines": [40, 66, 54, 72, 46, 60, 76, 50, 64, 42]
+                         },
+                         {"kind": "", "lines": [30]},
+
+                     ]
+                 },
+
+             ]
+         },
+         {
+             "role": "Data engineer",
+             "lang": "Python · SQLAlchemy",
+             "kinds": ["schema", "orm"],
+             "files": [
+                 {
+                     "name": "db.py",
+                     "segs": [
+                         {"kind": "schema", "lines": [56, 70, 46, 62, 50, 66]},
+                         {
+                             "kind": "orm",
+                             "lines": [50, 66, 44, 60, 54, 72, 48, 64, 58, 40, 62]
+                         },
+                         {"kind": "", "lines": [42, 30]},
+
+                     ]
+                 },
+
+             ]
+         },
+         {
+             "role": "DevOps engineer",
+             "lang": "Docker · Kubernetes",
+             "kinds": ["deploy", "config"],
+             "files": [
+                 {
+                     "name": "Dockerfile",
+                     "segs": [{"kind": "deploy", "lines": [50, 40, 62, 46, 70]}]
+                 },
+                 {
+                     "name": "deployment.yaml",
+                     "segs": [
+                         {"kind": "deploy", "lines": [46, 56, 40, 62, 50, 66, 36]},
+                         {"kind": "config", "lines": [52, 66, 42]},
+
+                     ]
+                 },
+
+             ]
+         },
+
+     ],
+     _JAC_FILE: list[dict[str, any]] = [
+         {
+             "kind": "",
+             "lines": [
+                 34,
+                 52,
+                 20,
+                 62,
+                 48,
+                 40,
+                 20,
+                 58,
+                 44,
+                 20,
+                 60,
+                 50,
+                 70,
+                 40,
+                 20,
+                 66,
+                 30
+             ]
+         },
 
      ],
      _IMPORTS: list[dict[str, str]] = [
@@ -50,192 +414,268 @@ glob ConvPath: any = motion.path,
 
      ];
 
-def:pub ConvergeDiagram -> JsxElement {
+def glue_color(kind: str) -> str;
+
+def glue_label(kind: str) -> str;
+
+def:pub FileGlyph(name: str, segs: list[dict[str, any]]) -> JsxElement {
     return
-        <div className="overflow-x-auto">
-            <svg
-                viewBox="0 0 1000 470"
-                className="w-full min-w-[760px]"
-                role="img"
-                aria-label="Python, TypeScript, C, C++ and Rust, React and React Native, each with its own toolchain, converge into Jac, one language that compiles to Python bytecode, JavaScript and native code"
+        <div className="code-window overflow-hidden rounded-lg">
+            <div
+                className="code-titlebar px-3 py-1.5 font-mono text-[10px] text-white/60"
             >
-                <text
-                    x="0"
-                    y="16"
-                    fontSize="11"
-                    fontFamily="monospace"
-                    letterSpacing="2"
-                    fill="var(--muted-foreground)"
-                >
-                    TODAY · FIVE STACKS, FIVE TOOLCHAINS
-                </text>
-                <text
-                    x="1000"
-                    y="16"
-                    textAnchor="end"
-                    fontSize="11"
-                    fontFamily="monospace"
-                    letterSpacing="2"
-                    fill="var(--muted-foreground)"
-                >
-                    JAC · ONE PROGRAM, THREE TARGETS
-                </text>
-                {for (i, s) in enumerate(_STACKS) {
-                    <g key={"s" + str(i)}>
-                        <rect
-                            x="0"
-                            y={40 + i * 80}
-                            width="300"
-                            height="64"
-                            rx="10"
-                            fill="var(--card)"
-                            stroke="var(--border)"
-                        />
-                        <text
-                            x="18"
-                            y={40 + i * 80 + 25}
-                            fontSize="15"
-                            fontWeight="600"
-                            fill="var(--foreground)"
-                        >
-                            {s["name"]}
-                        </text>
-                        <text
-                            x="282"
-                            y={40 + i * 80 + 25}
-                            textAnchor="end"
-                            fontSize="11"
-                            fill="var(--muted-foreground)"
-                        >
-                            {s["eco"]}
-                        </text>
-                        <text
-                            x="18"
-                            y={40 + i * 80 + 47}
-                            fontSize="11"
-                            fontFamily="monospace"
-                            fill="var(--muted-foreground)"
-                        >
-                            {s["tools"]}
-                        </text>
-                        <ConvPath
-                            d={"M300,"
-                                + str(72 + i * 80)
-                                + " C410,"
-                                + str(72 + i * 80)
-                                + " 420,232 499,232"}
-                            fill="none"
-                            stroke="#ff6b35"
-                            strokeOpacity="0.45"
-                            strokeWidth="1.4"
-                            initial={{"pathLength": 0}}
-                            whileInView={{"pathLength": 1}}
-                            viewport={{"once": True, "amount": 0.4}}
-                            transition={{"duration": 0.9, "delay": 0.1 + i * 0.1}}
-                        />
-                    </g>
+                {name}
+            </div>
+            <div className="flex flex-col gap-1 p-2.5">
+                {for (si, seg) in enumerate(segs) {
+                    <div
+                        key={str(si)}
+                        className="flex flex-col gap-[5px] rounded-sm border px-1.5 py-1"
+                        style={{
+                            "borderColor": (glue_color(seg["kind"]) + "b3")
+                                if seg["kind"] != ""
+                                else "transparent",
+                            "backgroundColor": (glue_color(seg["kind"]) + "29")
+                                if seg["kind"] != ""
+                                else "transparent"
+                        }}
+                    >
+                        {for (li, w) in enumerate(seg["lines"]) {
+                            <span
+                                key={str(li)}
+                                className="block h-[3px] rounded-full"
+                                style={{
+                                    "width": str(w) + "%",
+                                    "backgroundColor": (glue_color(seg["kind"]) + "cc")
+                                        if seg["kind"] != ""
+                                        else "rgb(255 255 255 / 0.16)"
+                                }}
+                            ></span>
+                        }}
+                    </div>
                 }}
-                <polygon
-                    points="560,162 621,197 621,267 560,302 499,267 499,197"
-                    fill="#ff6b35"
-                    stroke="#ff6b35"
-                />
-                <text
-                    x="560"
-                    y="232"
-                    textAnchor="middle"
-                    fontSize="26"
-                    fontWeight="700"
-                    fontFamily="monospace"
-                    fill="#ffffff"
+            </div>
+        </div>;
+}
+
+def:pub GlueChip(kind: str, struck: bool = False) -> JsxElement {
+    return
+        <span
+            className={cn(
+                "inline-flex items-center gap-1.5 rounded-md border border-border/80 bg-background/60 px-2 py-1 font-mono text-[11px] text-foreground",
+                "strike-chip text-muted-foreground" if struck else ""
+            )}
+        >
+            <span
+                className="size-2 shrink-0 rounded-sm"
+                style={{"backgroundColor": glue_color(kind)}}
+            ></span>
+            {glue_label(kind)}
+        </span>;
+}
+
+def:pub CompareRow(
+    label: str,
+    hint: str,
+    delta_from: str,
+    delta_to: str,
+    delta_unit: str,
+    left: any = None,
+    right: any = None,
+    first: bool = False
+) -> JsxElement {
+    return
+        <>
+            <div
+                className={cn(
+                    "lg:col-span-3",
+                    "pt-2" if first else "mt-10 border-t border-border/70 pt-6 lg:mt-0"
+                )}
+            >
+                <p
+                    className="font-mono text-[11px] uppercase tracking-widest text-foreground"
                 >
-                    jac
-                </text>
-                <text
-                    x="560"
-                    y="252"
-                    textAnchor="middle"
-                    fontSize="10"
-                    fontFamily="monospace"
-                    fill="#ffffff"
-                    fillOpacity="0.9"
+                    {label}
+                </p>
+                <p
+                    className="mt-1 max-w-xl text-xs leading-relaxed text-muted-foreground"
                 >
-                    one language
-                </text>
-                <text
-                    x="560"
-                    y="334"
-                    textAnchor="middle"
-                    fontSize="12"
-                    fill="var(--foreground)"
+                    {hint}
+                </p>
+            </div>
+            <div className="min-w-0 pt-4 lg:pb-8">
+                <p
+                    className="mb-3 font-mono text-[10px] uppercase tracking-widest text-muted-foreground lg:hidden"
                 >
-                    one syntax · one type checker
-                </text>
-                <text
-                    x="560"
-                    y="352"
-                    textAnchor="middle"
-                    fontSize="12"
-                    fill="var(--muted-foreground)"
+                    Conventional stack
+                </p>
+                {left}
+            </div>
+            <div className="flex items-center justify-center py-4 lg:py-0">
+                <div className="flex flex-row items-center gap-2 lg:flex-col lg:gap-1">
+                    <span
+                        className="font-mono text-lg font-semibold tabular-nums text-muted-foreground"
+                    >
+                        {delta_from}
+                    </span>
+                    <span className="text-primary">→</span>
+                    <span
+                        className="font-mono text-lg font-semibold tabular-nums text-primary"
+                    >
+                        {delta_to}
+                    </span>
+                    <span
+                        className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground"
+                    >
+                        {delta_unit}
+                    </span>
+                </div>
+            </div>
+            <div
+                className="min-w-0 rounded-xl border border-primary/40 bg-primary/[0.05] p-4 lg:mt-4 lg:mb-8 lg:p-5"
+            >
+                <p
+                    className="mb-3 font-mono text-[10px] uppercase tracking-widest text-primary lg:hidden"
                 >
-                    one binary that is the compiler,
-                </text>
-                <text
-                    x="560"
-                    y="368"
-                    textAnchor="middle"
-                    fontSize="12"
-                    fill="var(--muted-foreground)"
-                >
-                    runtime and package manager
-                </text>
-                {for (i, t) in enumerate(_TARGETS) {
-                    <g key={"t" + str(i)}>
-                        <ConvPath
-                            d={"M621,232 C700,232 690,"
-                                + str(144 + i * 88)
-                                + " 760,"
-                                + str(144 + i * 88)}
-                            fill="none"
-                            stroke="#ff6b35"
-                            strokeOpacity="0.45"
-                            strokeWidth="1.4"
-                            initial={{"pathLength": 0}}
-                            whileInView={{"pathLength": 1}}
-                            viewport={{"once": True, "amount": 0.4}}
-                            transition={{"duration": 0.7, "delay": 0.7 + i * 0.12}}
-                        />
-                        <rect
-                            x="760"
-                            y={112 + i * 88}
-                            width="240"
-                            height="64"
-                            rx="10"
-                            fill="var(--card)"
-                            stroke="#ff6b35"
-                            strokeOpacity="0.5"
-                        />
-                        <text
-                            x="778"
-                            y={112 + i * 88 + 27}
-                            fontSize="15"
-                            fontWeight="600"
-                            fill="var(--foreground)"
+                    With Jac
+                </p>
+                {right}
+            </div>
+        </>;
+}
+
+def:pub StackCompare -> JsxElement {
+    stack_left = <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
+        {for layer in _LAYERS {
+            <div
+                key={layer["name"]}
+                className="rounded-lg border border-dashed border-border bg-background/40 p-2.5"
+            >
+                <p className="text-xs font-semibold tracking-tight">{layer["name"]}</p>
+                <div className="mt-1.5 flex flex-wrap gap-1">
+                    {for t in layer["tools"] {
+                        <span
+                            key={t}
+                            className="whitespace-nowrap rounded border border-border/60 px-1 py-px font-mono text-[10px] text-muted-foreground"
                         >
-                            {t["name"]}
-                        </text>
-                        <text
-                            x="778"
-                            y={112 + i * 88 + 47}
-                            fontSize="11"
-                            fontFamily="monospace"
-                            fill="var(--muted-foreground)"
-                        >
-                            {t["sub"]}
-                        </text>
-                    </g>
+                            {t}
+                        </span>
+                    }}
+                </div>
+            </div>
+        }}
+    </div>;
+    stack_right = <div className="flex items-start gap-3">
+        <img src="/static/assets/jac-logo.svg" alt="" className="size-8 shrink-0"/>
+        <div>
+            <p className="text-sm font-semibold tracking-tight">
+                The Jac compiler and runtime
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                One binary that is also the package manager, test runner, formatter and deploy tool, with PyPI, npm and C libraries still in reach.
+            </p>
+        </div>
+    </div>;
+    people_left = <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        {for r in _ROLES {
+            <div key={r["role"]} className="flex min-w-0 flex-col gap-2">
+                <div>
+                    <p className="text-xs font-semibold tracking-tight">{r["role"]}</p>
+                    <p className="font-mono text-[10px] text-muted-foreground">
+                        {r["lang"]}
+                    </p>
+                </div>
+                {for f in r["files"] {
+                    <FileGlyph key={f["name"]} name={f["name"]} segs={f["segs"]}/>
                 }}
-            </svg>
+                <div className="flex flex-wrap gap-1">
+                    {for k in r["kinds"] {
+                        <GlueChip key={k} kind={k}/>
+                    }}
+                </div>
+            </div>
+        }}
+    </div>;
+    people_right = <div className="flex flex-col gap-2">
+        <div>
+            <p className="text-xs font-semibold tracking-tight">
+                One engineer, or one agent
+            </p>
+            <p className="font-mono text-[10px] text-muted-foreground">Jac</p>
+        </div>
+        <FileGlyph name="main.jac" segs={_JAC_FILE}/>
+        <p className="text-xs leading-relaxed text-muted-foreground">
+            Frontend, backend, data model and deployment in one file, with no glue blocks. Section 02 walks through its code.
+        </p>
+    </div>;
+    glue_left = <div className="flex flex-wrap gap-1.5">
+        {for g in _GLUE_KINDS {
+            <GlueChip key={g["key"]} kind={g["key"]}/>
+        }}
+    </div>;
+    glue_right = <div>
+        <div className="flex flex-wrap gap-1.5">
+            {for g in _GLUE_KINDS {
+                <GlueChip key={g["key"]} kind={g["key"]} struck={True}/>
+            }}
+        </div>
+        <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+            None. The compiler and runtime generate all seven from the program itself.
+        </p>
+    </div>;
+    return
+        <div
+            className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_72px_minmax(0,1fr)] lg:gap-x-5"
+        >
+            <div className="hidden pb-4 lg:block">
+                <p
+                    className="font-mono text-xs uppercase tracking-[0.2em] text-foreground"
+                >
+                    A conventional stack
+                </p>
+                <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+                    24 tools · 4 specialists · 7 kinds of glue
+                </p>
+            </div>
+            <div className="hidden lg:block"></div>
+            <div className="hidden pb-4 lg:block">
+                <p
+                    className="font-mono text-xs uppercase tracking-[0.2em] text-primary"
+                >
+                    The same app in Jac
+                </p>
+                <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+                    1 binary · 1 author · 0 glue
+                </p>
+            </div>
+            <CompareRow
+                label="Stack to manage"
+                hint="Languages, frameworks, package managers and platforms to install, version and keep compatible."
+                delta_from="24"
+                delta_to="1"
+                delta_unit="tools"
+                left={stack_left}
+                right={stack_right}
+                first={True}
+            />
+            <CompareRow
+                label="Who writes it"
+                hint="Each specialist's files, with coloured blocks where glue between the layers lands."
+                delta_from="4"
+                delta_to="1"
+                delta_unit="authors"
+                left={people_left}
+                right={people_right}
+            />
+            <CompareRow
+                label="Glue to write"
+                hint="Code that only connects one layer to another, and must be kept in sync by hand."
+                delta_from="7"
+                delta_to="0"
+                delta_unit="kinds"
+                left={glue_left}
+                right={glue_right}
+            />
         </div>;
 }
 
@@ -267,19 +707,54 @@ def:pub ImportTable -> JsxElement {
 }
 
 def:pub OneLanguage -> JsxElement {
+    has detailed: bool = False;
+
     return
         <HomeSection id="one-language">
             <SectionHead
                 num="01"
                 kicker="One language"
                 title="Many stacks, one language."
-                lede="A modern app is five languages, five package managers, and the code that holds them together. Jac puts the whole polyglot behind one syntax and one type checker, so an agent learns one language and can still reach every ecosystem."
+                lede="A modern app is five stacks, four specialists, and seven kinds of glue code holding them together. Jac puts the whole polyglot behind one syntax and one type checker, so a single agent can write all of it in one language and still reach every ecosystem."
             />
             <Figure
                 label="fig. 1"
-                caption="Each stack on the left brings its own language, config files and toolchain. In Jac they become one program, which the compiler splits into the three targets those ecosystems actually run on."
+                caption="Multiple languages and frameworks, each with its own config files and toolchain, become one universal language, and the compiler targets every platform the app runs on from that one program. Open the detailed view to see who writes what on a conventional stack, and where the glue between them lands."
             >
                 <ConvergeDiagram/>
+                <div className="mt-8 border-t border-border/70 pt-6">
+                    <button
+                        onClick={lambda { detailed = not detailed; }}
+                        aria-expanded={detailed}
+                        className="group flex w-full items-center justify-between gap-4 text-left"
+                    >
+                        <span>
+                            <span
+                                className="block text-sm font-semibold tracking-tight"
+                            >
+                                {"Hide the detailed view"
+                                    if detailed
+                                    else "Show the detailed view"}
+                            </span>
+                            <span className="mt-1 block text-sm text-muted-foreground">
+                                The tools, the specialists and the seven kinds of glue on a conventional stack, against the same app in Jac.
+                            </span>
+                        </span>
+                        <span
+                            className={cn(
+                                "flex size-9 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground transition-transform group-hover:border-primary group-hover:text-primary",
+                                "rotate-180" if detailed else ""
+                            )}
+                        >
+                            ↓
+                        </span>
+                    </button>
+                    {if detailed {
+                        <div className="anim-fade-in mt-8">
+                            <StackCompare/>
+                        </div>
+                    }}
+                </div>
             </Figure>
             <Figure
                 label="fig. 2"
@@ -304,4 +779,22 @@ def:pub OneLanguage -> JsxElement {
                 </div>
             </Reveal>
         </HomeSection>;
+}
+
+impl glue_color(kind: str) -> str {
+    for g in _GLUE_KINDS {
+        if g["key"] == kind {
+            return g["color"];
+        }
+    }
+    return "";
+}
+
+impl glue_label(kind: str) -> str {
+    for g in _GLUE_KINDS {
+        if g["key"] == kind {
+            return g["label"];
+        }
+    }
+    return "";
 }
