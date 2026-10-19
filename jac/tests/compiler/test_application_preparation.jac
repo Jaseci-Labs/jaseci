@@ -1116,6 +1116,32 @@ def _join_all(threads: list[any]) -> list[str] {
     ];
 }
 
+"""The dev reloader imports a module it re-executes through
+`prepare_dynamic_module`. For a module the application already prepares, like
+its entry, that is the same preparation, so the prepared revision is restored
+rather than compiled again."""
+test "a dynamic import of the application's own entry restores the prepared application" {
+    import contextlib;
+    import io;
+    import jaclang.compiler.driver.application as application;
+    tmp = tempfile.mkdtemp(prefix='jac-prepare-entry-reimport-');
+    path = Path(tmp) / 'main.jac';
+    try {
+        path.write_text("def:pub hello -> int { return 1; }\n");
+        program = JacProgram();
+        first = prepare_application(str(path), program, tmp);
+        err = io.StringIO();
+        with contextlib.redirect_stderr(err) {
+            second = application.prepare_dynamic_module(str(path), program, first);
+        }
+        assert 'Restoring prepared application' in err.getvalue() , err.getvalue();
+        assert sorted(second.code) == sorted(first.code);
+    } finally {
+        forget(str(path));
+        shutil.rmtree(tmp, ignore_errors=True);
+    }
+}
+
 test "a preparation on another thread neither breaks nor wedges an in-process prepare" {
     import threading;
     import jaclang.compiler.driver.application as application;
