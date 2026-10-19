@@ -661,7 +661,7 @@ obj NativeUnitRegistry {
         """Lower a unit and, when `products` is set, optimize, emit and persist
         its products. An analysis-only consumer needs the interface and
         layouts that lowering records; a build that later needs the products
-        compiles the unit again through `bitcode_for` or `object_for`.""";
+        gets them through `bitcode_for` or `object_for`.""";
         if self.session is not None {
             if self.session.discovery_open {
                 self._event("native_nested_lower");
@@ -801,14 +801,42 @@ obj NativeUnitRegistry {
         return NativeIface.verified_digest(payload) or "";
     }
 
+    def _with_products(
+        path: str, options: (CompileOptions | None) = None
+    ) -> (NativeUnitEntry | None) {
+        """The unit's entry with its products. Products a closure release
+        dropped come back from the module cache while it holds the entry's
+        interface; a unit with none there is compiled again.""";
+        ent = self.ensure(path, options=options, check_deps=False);
+        if ent is None or ent.bitcode is not None or ent.object_bytes is not None {
+            return ent;
+        }
+        found = self._module_jir(ent.path, ent.stamp);
+        if found is not None {
+            data = found[0];
+            cached = native_section_payload(
+                read_section_bytes(data, SEC_NIFACE), ent.stamp
+            );
+            if NativeIface.verified_digest(cached) == ent.digest {
+                ent.bitcode = native_section_payload(
+                    read_section_bytes(data, SEC_NBITCODE), ent.stamp
+                );
+                ent.object_bytes = native_section_payload(
+                    read_section_bytes(data, SEC_NOBJ), ent.stamp
+                );
+            }
+        }
+        if ent.bitcode is None and ent.object_bytes is None {
+            return self.compile_unit(path, options);
+        }
+        return ent;
+    }
+
     def emit_objects(paths: list[str], options: (CompileOptions | None) = None) {
         pending: list[NativeUnitEntry] = [];
         bitcodes: list[bytes] = [];
         for path in paths {
-            ent = self.ensure(path, options=options, check_deps=False);
-            if ent is not None and ent.object_bytes is None and ent.bitcode is None {
-                ent = self.compile_unit(path, options);
-            }
+            ent = self._with_products(path, options);
             if ent is not None
                 and ent.object_bytes is None
                 and ent.bitcode is not None {
@@ -840,11 +868,8 @@ obj NativeUnitRegistry {
     def object_for(
         path: str, options: (CompileOptions | None) = None
     ) -> (bytes | None) {
-        ent = self.ensure(path, options=options, check_deps=False);
+        ent = self._with_products(path, options);
         if ent is not None and ent.object_bytes is None {
-            if ent.bitcode is None {
-                ent = self.compile_unit(path, options);
-            }
             if ent is not None and ent.bitcode is not None {
                 import from jaclang.compiler.backends.native.na_compile_pass {
                     emit_unit_object
@@ -867,7 +892,7 @@ obj NativeUnitRegistry {
     def bitcode_for(
         path: str, options: (CompileOptions | None) = None
     ) -> (bytes | None) {
-        ent = self.ensure(path, options=options, check_deps=False);
+        ent = self._with_products(path, options);
         if ent is not None and ent.bitcode is None {
             ent = self.compile_unit(path, options);
         }

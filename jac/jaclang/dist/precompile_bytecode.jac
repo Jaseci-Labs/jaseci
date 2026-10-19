@@ -1266,6 +1266,10 @@ def seal_native(
         }
         refuse_missing_entries(plan, str(pkg_path));
     }
+    """The plan holds every unit's interface and the link needs only their
+    products, which the module cache holds, so the analyzed trees go before
+    the link's code generation needs the memory.""";
+    prog.release_compile_closure();
     result = link_artifact(
         plan, str(artifact_path), ArtifactKind.SHARED, log=console.print
     );

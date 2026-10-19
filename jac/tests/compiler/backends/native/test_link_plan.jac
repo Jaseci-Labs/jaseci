@@ -206,6 +206,21 @@ test "a closure release keeps native interfaces and drops their products" {
     assert not registry.entries , "a full release drops the interfaces too";
 }
 
+test "a link after a closure release reads unit products back without lowering" {
+    if _can_link_host() {
+        root_dir = _diamond_copy();
+        (prog, plan) = _plan_for(root_dir, NATIVE_LINK_MODE_BITCODE);
+        lowered = prog.analysis.cache_events.get("native_unit_lower", 0);
+        prog.release_compile_closure();
+        out = os.path.join(root_dir, "top_released");
+        link_artifact(plan, out, ArtifactKind.EXECUTABLE);
+        assert prog.analysis.cache_events.get("native_unit_lower", 0) == lowered;
+        run = subprocess.run([out], capture_output=True, text=True);
+        assert run.returncode == 0 , run.stderr;
+        assert run.stdout.strip() == "34" , run.stdout;
+    }
+}
+
 test "changing a default argument updates an unchanged caller's executable" {
     if _can_link_host() {
         root_dir = tempfile.mkdtemp(prefix="jac-default-link-");
