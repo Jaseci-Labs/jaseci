@@ -957,10 +957,21 @@ def plan_objects(
     if env_symmap_requested() {
         name_private_functions(merged);
     }
-    object_bytes = tm.emit_object(merged);
-    assert isinstance(object_bytes, bytes);
-    _log_phase(log, "emit_object", started);
-    return ([object_bytes], exports);
+    """Code generation works function by function, so the program is split
+    into one partition per emit job and the partitions are emitted the way
+    units are.""";
+    jobs = object_emit_jobs();
+    if jobs < 2 {
+        object_bytes = tm.emit_object(merged);
+        assert isinstance(object_bytes, bytes);
+        _log_phase(log, "emit_object", started);
+        return ([object_bytes], exports);
+    }
+    parts = merged.split_bitcode(jobs);
+    started = _log_phase(log, f"split_module ({jobs} parts)", started);
+    objects = emit_unit_objects(parts, plan.options);
+    _log_phase(log, "emit_objects", started);
+    return (objects, exports);
 }
 
 def _write_sidecar(

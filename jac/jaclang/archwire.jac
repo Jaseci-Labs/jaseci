@@ -10911,7 +10911,12 @@ graph import compiler.backends.native {
     type lowering ++> na_compile_pass { NativeFallbacks }
     na_compile_pass ++> [
         entry_points.validate_native_application { native_linked_ir_text },
-        link_plan { NATIVE_CODE_MODEL, NATIVE_RELOC_MODEL },
+        link_plan {
+            NATIVE_CODE_MODEL,
+            NATIVE_RELOC_MODEL,
+            emit_unit_objects,
+            object_emit_jobs
+        },
         wasm_build.prepare_wasm_module { optimize_unit },
     ]
     na_constants ++> [

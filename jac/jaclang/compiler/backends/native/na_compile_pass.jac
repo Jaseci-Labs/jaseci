@@ -4,6 +4,7 @@ glob NATIVE_RELOC_MODEL: str = "pic",
 def module_bitcode(mod: ModuleRef) -> bytes;
 def emit_unit_object(bitcode: bytes, options: CompileOptions) -> bytes;
 def object_emit_jobs -> int;
+def codegen_map(work: Callable[..., bytes], blobs: list[bytes]) -> list[bytes];
 def emit_unit_objects(bitcodes: list[bytes], options: CompileOptions) -> list[bytes];
 def unit_bitcode(unit_ir: any) -> bytes;
 def unit_module_copy(unit_ir: any, context: any) -> ModuleRef;
@@ -12,6 +13,10 @@ def optimized_bitcode(
 ) -> bytes;
 
 def optimize_unit_ir(unit_ir: any, options: CompileOptions, opt_level: int) -> bytes;
+def optimize_unit_bitcode(
+    bitcode: bytes, options: CompileOptions, opt_level: int
+) -> bytes;
+
 def optimize_unit_bitcodes(
     bitcodes: list[bytes], options: CompileOptions, opt_level: int
 ) -> list[bytes];

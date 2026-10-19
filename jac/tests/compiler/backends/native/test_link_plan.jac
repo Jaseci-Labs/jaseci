@@ -438,6 +438,52 @@ test "objects mode and bitcode mode agree on the program" {
     }
 }
 
+test "a whole program splits into partitions that link as one" {
+    import from jaclang.compiler.backends.native.llvm { binding as llvm }
+    import from jaclang.compiler.backends.native.na_compile_pass { emit_unit_objects }
+    llvm.initialize_native_target();
+    llvm.initialize_native_asmprinter();
+    ir = """
+@msg = private constant [3 x i8] c"hi\\00"
+define internal i64 @helper(i64 %x) {
+  %r = add i64 %x, 1
+  ret i64 %r
+}
+define i64 @alpha(i64 %x) {
+  %r = call i64 @helper(i64 %x)
+  ret i64 %r
+}
+define i64 @beta(i64 %x) {
+  %r = call i64 @helper(i64 %x)
+  %p = ptrtoint ptr @msg to i64
+  %s = add i64 %r, %p
+  ret i64 %s
+}
+define i64 @gamma(i64 %x) {
+  %r = mul i64 %x, 3
+  ret i64 %r
+}
+""";
+    parts = llvm.parse_assembly(ir, llvm.create_context()).split_bitcode(3);
+    objects = emit_unit_objects(parts, _opts());
+    assert len(objects) == 3;
+    defined: list[str] = [];
+    wanted: set[str] = set();
+    for blob in objects {
+        (blob_defined, blob_undefined) = llvm.object_symbols(blob);
+        defined.extend(s.lstrip("_") for s in blob_defined);
+        wanted.update(s.lstrip("_") for s in blob_undefined);
+    }
+    assert sorted(defined) == sorted(set(defined)) , defined;
+    assert {"alpha", "beta", "gamma"} <= set(defined);
+    assert wanted <= set(defined) , wanted - set(defined);
+    assert all(
+        s.startswith("jac_part.")
+        for s in defined
+        if s not in ("alpha", "beta", "gamma")
+    ) , defined;
+}
+
 test "a shared link exports only the C ABI" {
     if not _can_link_host() {
         import pytest;
