@@ -69,3 +69,34 @@ test "a bun with no record that reports another version is stale and names it" {
         assert stale.found is None and "bun 1.2.0 is not the pinned" in stale.drift[0];
     }
 }
+
+
+test "a bun recorded at another version is rejected without touching its permissions" {
+    with TemporaryDirectory() as td {
+        bun = _fake_bun(td);
+        os.chmod(bun, 0o644);
+        with open(bun + RECORD_SUFFIX, "w") as f {
+            json.dump({"version": "0.0.1"}, f);
+        }
+        stale = _probe_bun(bun, Source.CHECKOUT);
+        assert stale.found is None and "bun 0.0.1 is not the pinned" in stale.drift[0];
+        assert not os.access(bun, os.X_OK);
+    }
+}
+
+
+test "a bun whose permissions cannot be repaired is unusable, not an error" {
+    import from unittest.mock { patch }
+    with TemporaryDirectory() as td {
+        bun = _fake_bun(td);
+        os.chmod(bun, 0o644);
+        write_bun_record(bun);
+        with patch(
+            "jaclang.client.js_runtime.os.chmod",
+            side_effect=PermissionError("not owner")
+        ) {
+            stale = _probe_bun(bun, Source.CHECKOUT);
+        }
+        assert stale.found is None and "not executable" in stale.drift[0];
+    }
+}

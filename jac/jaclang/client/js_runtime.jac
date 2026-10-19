@@ -115,10 +115,18 @@ impl _probe_bun(path: str, source: Source) -> Probe {
     if not os.path.isfile(path) {
         return Probe.missing();
     }
-    if platform.system() != "Windows" and not os.access(path, os.X_OK) {
-        os.chmod(path, 0o755);
+    version = _recorded_version(path);
+    if version and version != BUN_VERSION {
+        return Probe.stale([f"bun {version} is not the pinned {BUN_VERSION}"]);
     }
-    version = _recorded_version(path) or _reported_version(path);
+    if platform.system() != "Windows" and not os.access(path, os.X_OK) {
+        try {
+            os.chmod(path, 0o755);
+        } except OSError as e {
+            return Probe.stale([f"bun at {path} is not executable: {e}"]);
+        }
+    }
+    version = version or _reported_version(path);
     if version != BUN_VERSION {
         return Probe.stale(
             [f"bun {version or 'of unknown version'} is not the pinned {BUN_VERSION}"]
