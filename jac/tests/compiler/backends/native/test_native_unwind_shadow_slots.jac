@@ -43,7 +43,7 @@ def stores_into(lines: list[str], slot: str) -> list[tuple[int, str]] {
     return [
         (i, line)
         for (i, line) in enumerate(lines)
-        if pat.match(line)
+        if pat.`match(line)
     ];
 }
 
@@ -94,7 +94,7 @@ test "every store into a registered slot is followed by the same store into its 
         assert len(stores) >= min_stores , f"{name}: {len(stores)} stores into {slot}, want at least {min_stores}";
         for (i, line) in stores {
             nxt = lines[i + 1] if i + 1 < len(lines) else "";
-            assert re.match(
+            assert re.`match(
                 r'^\s*store .*, .*%"' + re.escape(slot) + r'\.unwind"\s*$', nxt
             ) , f"{name}: store into {slot} not mirrored:\n{line}\n{nxt}";
             # the same value goes into both
@@ -134,8 +134,8 @@ test "a slot whose address is used other than by load and store is registered it
     b.load(plain, name="plain.v");
     b.ret_void();
     # (it reads nothing of the pass, so no pass instance is needed)
-    make_shadows: any = getattr(NaIRGenPass, "_unwind_shadow_slots");
-    shadows: dict[int, any] = make_shadows(
+    make_shadows = getattr(NaIRGenPass, "_unwind_shadow_slots");
+    shadows: dict[int, ir.Value] = make_shadows(
         None, func, [("plain", plain), ("taken", taken)]
     );
     assert id(plain) in shadows , "the load/store-only slot got no shadow";
@@ -147,6 +147,6 @@ test "a slot whose address is used other than by load and store is registered it
     lines = text.splitlines();
     for (i, line) in stores_into(lines, "plain") {
         nxt = lines[i + 1];
-        assert re.match(r'^\s*store .*%"plain\.unwind"\s*$', nxt) , f"store into plain not mirrored:\n{line}\n{nxt}";
+        assert re.`match(r'^\s*store .*%"plain\.unwind"\s*$', nxt) , f"store into plain not mirrored:\n{line}\n{nxt}";
     }
 }
