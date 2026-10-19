@@ -40,7 +40,62 @@ glob _providers: dict[int, int] = {};
 
 glob _HASH_LENGTH: bytes = b"H\x00a\x00s\x00h\x00D\x00i\x00g\x00e\x00s\x00t\x00L\x00e\x00n\x00g\x00t\x00h\x00\x00\x00";
 
-def _digest_index(name: str) -> int {
+def _digest_index(name: str) -> int;
+
+def _algorithm_id(index: int) -> bytes;
+
+def _provider(index: int, keyed: bool) -> int;
+
+def:pub evp_md_for(name: str) -> int;
+
+
+def:pub digest_size_for(name: str) -> int;
+
+
+def:pub block_size_for(name: str) -> int;
+
+
+def:pub ctx_require(ctx: int, what: str);
+
+
+def _hash_new(index: int, key: bytes, keyed: bool) -> int;
+
+def _hash_update(ctx: int, data: bytes);
+
+def _hash_clone(ctx: int) -> int;
+
+def _hash_digest(ctx: int) -> bytes;
+
+def:pub evp_ctx_new(md: int) -> int;
+
+
+def:pub evp_ctx_update(ctx: int, data: bytes);
+
+
+def:pub evp_ctx_clone(ctx: int) -> int;
+
+
+def:pub evp_ctx_digest(ctx: int) -> bytes;
+
+
+def:pub evp_ctx_free(ctx: int);
+
+
+def:pub hmac_ctx_new(md: int, key: bytes) -> int;
+
+
+def:pub hmac_ctx_update(ctx: int, data: bytes);
+
+
+def:pub hmac_ctx_clone(ctx: int) -> int;
+
+
+def:pub hmac_ctx_digest(ctx: int) -> bytes;
+
+
+def:pub hmac_ctx_free(ctx: int);
+
+impl _digest_index(name: str) -> int {
     if name == "md5" {
         return 1;
     } elif name == "sha1" {
@@ -61,7 +116,7 @@ def _digest_index(name: str) -> int {
     return 0;
 }
 
-def _algorithm_id(index: int) -> bytes {
+impl _algorithm_id(index: int) -> bytes {
     if index == 1 {
         return b"M\x00D\x005\x00\x00\x00";
     } elif index == 2 {
@@ -82,7 +137,7 @@ def _algorithm_id(index: int) -> bytes {
     return b"";
 }
 
-def _provider(index: int, keyed: bool) -> int {
+impl _provider(index: int, keyed: bool) -> int {
     slot: int = index * 2 + (1 if keyed else 0);
     if slot in _providers {
         return _providers[slot];
@@ -97,7 +152,7 @@ def _provider(index: int, keyed: bool) -> int {
     return opened;
 }
 
-def:pub evp_md_for(name: str) -> int {
+impl evp_md_for(name: str) -> int {
     index: int = _digest_index(name);
     if index == 0 or _provider(index, False) == 0 {
         return 0;
@@ -106,7 +161,7 @@ def:pub evp_md_for(name: str) -> int {
 }
 
 
-def:pub digest_size_for(name: str) -> int {
+impl digest_size_for(name: str) -> int {
     if name == "md5" {
         return 16;
     } elif name == "sha1" {
@@ -136,7 +191,7 @@ def:pub digest_size_for(name: str) -> int {
 }
 
 
-def:pub block_size_for(name: str) -> int {
+impl block_size_for(name: str) -> int {
     if name == "md5" {
         return 64;
     } elif name == "sha1" {
@@ -166,14 +221,14 @@ def:pub block_size_for(name: str) -> int {
 }
 
 
-def:pub ctx_require(ctx: int, what: str) {
+impl ctx_require(ctx: int, what: str) {
     if ctx == 0 {
         raise ValueError(what + " object is finalized");
     }
 }
 
 
-def _hash_new(index: int, key: bytes, keyed: bool) -> int {
+impl _hash_new(index: int, key: bytes, keyed: bool) -> int {
     provider: int = _provider(index, keyed);
     if provider == 0 {
         raise ValueError("the system has no provider for this digest");
@@ -190,7 +245,7 @@ def _hash_new(index: int, key: bytes, keyed: bool) -> int {
     return int.from_bytes(handle, "little");
 }
 
-def _hash_update(ctx: int, data: bytes) {
+impl _hash_update(ctx: int, data: bytes) {
     total: int = len(data);
     if total <= _HASH_CHUNK {
         if BCryptHashData(ctx, data, u32(total), u32(0)) != 0 {
@@ -211,7 +266,7 @@ def _hash_update(ctx: int, data: bytes) {
     }
 }
 
-def _hash_clone(ctx: int) -> int {
+impl _hash_clone(ctx: int) -> int {
     handle = b"\x00" * 8;
     if BCryptDuplicateHash(ctx, handle, 0, u32(0), u32(0)) != 0 {
         raise ValueError("BCryptDuplicateHash failed");
@@ -219,7 +274,7 @@ def _hash_clone(ctx: int) -> int {
     return int.from_bytes(handle, "little");
 }
 
-def _hash_digest(ctx: int) -> bytes {
+impl _hash_digest(ctx: int) -> bytes {
     size = b"\x00" * 4;
     written = b"\x00" * 4;
     if BCryptGetProperty(ctx, _HASH_LENGTH, size, u32(4), written, u32(0)) != 0 {
@@ -236,51 +291,51 @@ def _hash_digest(ctx: int) -> bytes {
     return out;
 }
 
-def:pub evp_ctx_new(md: int) -> int {
+impl evp_ctx_new(md: int) -> int {
     return _hash_new(md, b"", False);
 }
 
 
-def:pub evp_ctx_update(ctx: int, data: bytes) {
+impl evp_ctx_update(ctx: int, data: bytes) {
     _hash_update(ctx, data);
 }
 
 
-def:pub evp_ctx_clone(ctx: int) -> int {
+impl evp_ctx_clone(ctx: int) -> int {
     return _hash_clone(ctx);
 }
 
 
-def:pub evp_ctx_digest(ctx: int) -> bytes {
+impl evp_ctx_digest(ctx: int) -> bytes {
     return _hash_digest(ctx);
 }
 
 
-def:pub evp_ctx_free(ctx: int) {
+impl evp_ctx_free(ctx: int) {
     BCryptDestroyHash(ctx);
 }
 
 
-def:pub hmac_ctx_new(md: int, key: bytes) -> int {
+impl hmac_ctx_new(md: int, key: bytes) -> int {
     return _hash_new(md, key, True);
 }
 
 
-def:pub hmac_ctx_update(ctx: int, data: bytes) {
+impl hmac_ctx_update(ctx: int, data: bytes) {
     _hash_update(ctx, data);
 }
 
 
-def:pub hmac_ctx_clone(ctx: int) -> int {
+impl hmac_ctx_clone(ctx: int) -> int {
     return _hash_clone(ctx);
 }
 
 
-def:pub hmac_ctx_digest(ctx: int) -> bytes {
+impl hmac_ctx_digest(ctx: int) -> bytes {
     return _hash_digest(ctx);
 }
 
 
-def:pub hmac_ctx_free(ctx: int) {
+impl hmac_ctx_free(ctx: int) {
     BCryptDestroyHash(ctx);
 }

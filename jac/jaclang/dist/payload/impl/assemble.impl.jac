@@ -654,18 +654,7 @@ impl collect_stage_entries(stage: str) -> list[TarEntry] {
     return entries;
 }
 
-def _tar_info(path: str, is_dir: bool, mode: int, size: int) -> tarfile.TarInfo {
-    ti = tarfile.TarInfo(path);
-    ti.type = TAR_DIRTYPE if is_dir else TAR_REGTYPE;
-    ti.mode = mode;
-    ti.size = size;
-    ti.mtime = 0;
-    ti.uid = 0;
-    ti.gid = 0;
-    ti.uname = "";
-    ti.gname = "";
-    return ti;
-}
+def _tar_info(path: str, is_dir: bool, mode: int, size: int) -> tarfile.TarInfo;
 
 impl tar_stage(stage: str) -> tuple[bytes, bytes] {
     deps_buf = io.BytesIO();
@@ -824,4 +813,17 @@ impl strip_kernel_best_effort(site: str) {
     with open(manifest_path, "w", encoding="utf-8") as f {
         f.write(json.dumps(manifest, sort_keys=True, indent=1) + "\n");
     }
+}
+
+impl _tar_info(path: str, is_dir: bool, mode: int, size: int) -> tarfile.TarInfo {
+    ti = tarfile.TarInfo(path);
+    ti.type = TAR_DIRTYPE if is_dir else TAR_REGTYPE;
+    ti.mode = mode;
+    ti.size = size;
+    ti.mtime = 0;
+    ti.uid = 0;
+    ti.gid = 0;
+    ti.uname = "";
+    ti.gname = "";
+    return ti;
 }

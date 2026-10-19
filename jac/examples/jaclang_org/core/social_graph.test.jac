@@ -53,37 +53,17 @@ test "Genius skips failed AI without creating a profile or post" {
     }
 }
 
-def make_client -> JacTestClient {
-    return JacTestClient.from_file(SERVER, base_path=mkdtemp());
-}
+def make_client -> JacTestClient;
 
-def close_client(client: JacTestClient) {
-    client.close();
-    JacRuntime.set_shared_root_resolver(None);
-}
+def close_client(client: JacTestClient);
 
-def login_as(client: JacTestClient, username: str, password: str) {
-    client.register_user(username, password);
-    client.login(username, password);
-}
+def login_as(client: JacTestClient, username: str, password: str);
 
-def reports_of(response: TestResponse) -> list[any] {
-    data = response.data;
-    if data and "reports" in data {
-        return list(data["reports"]);
-    }
-    return [];
-}
+def reports_of(response: TestResponse) -> list[any];
 
-def first_report(response: TestResponse) -> any {
-    reports = reports_of(response);
-    return reports[0] if reports else None;
-}
+def first_report(response: TestResponse) -> any;
 
-def jid_of(reported: any) -> str {
-    assert "_jac_id" in reported , f"expected a reported node, got {reported}";
-    return str(reported["_jac_id"]);
-}
+def jid_of(reported: any) -> str;
 
 test "register and login issues a token" {
     client = make_client();
@@ -361,10 +341,7 @@ test "users only see their own profile via get_profile" {
 
 glob PNG_1PX: str = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
 
-def make_offline_client -> JacTestClient {
-    os.environ["JAC_SV_SCORING_SERVICE_URL"] = "http://127.0.0.1:9";
-    return make_client();
-}
+def make_offline_client -> JacTestClient;
 
 test "update_profile validates and stores standard fields" {
     client = make_client();
@@ -657,4 +634,41 @@ test "daily quota denies after burst check and database failures deny posting" {
     with patch(posting_limit.__module__ + '.consume_limit', return_value=-1) {
         assert posting_limit('account') is not None;
     }
+}
+
+impl make_client -> JacTestClient {
+    return JacTestClient.from_file(SERVER, base_path=mkdtemp());
+}
+
+impl close_client(client: JacTestClient) {
+    client.close();
+    JacRuntime.set_shared_root_resolver(None);
+}
+
+impl login_as(client: JacTestClient, username: str, password: str) {
+    client.register_user(username, password);
+    client.login(username, password);
+}
+
+impl reports_of(response: TestResponse) -> list[any] {
+    data = response.data;
+    if data and "reports" in data {
+        return list(data["reports"]);
+    }
+    return [];
+}
+
+impl first_report(response: TestResponse) -> any {
+    reports = reports_of(response);
+    return reports[0] if reports else None;
+}
+
+impl jid_of(reported: any) -> str {
+    assert "_jac_id" in reported , f"expected a reported node, got {reported}";
+    return str(reported["_jac_id"]);
+}
+
+impl make_offline_client -> JacTestClient {
+    os.environ["JAC_SV_SCORING_SERVICE_URL"] = "http://127.0.0.1:9";
+    return make_client();
 }

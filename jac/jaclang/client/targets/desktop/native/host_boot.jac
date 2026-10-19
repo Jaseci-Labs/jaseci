@@ -31,45 +31,110 @@ obj HostContext {
         pg_home: str = "",
         _stop: any = None;
 
-    def setup_webview(wv_handle: int) {
-        self.host.setup(wv_handle, self.library_dir);
-    }
-
-    def shutdown {
-        stop = self._stop;
-        self._stop = None;
-        if stop is not None {
-            try {
-                stop();
-            } except Exception as e {
-                sys.stderr.write("host_boot: server stop failed: " + str(e) + "\n");
-            }
-        }
-        runtime = self.runtime;
-        self.runtime = None;
-        if runtime is not None {
-            try {
-                runtime.close();
-            } except Exception as e {
-                sys.stderr.write("host_boot: runtime close failed: " + str(e) + "\n");
-            }
-        }
-        _stop_embedded_store(self.pg_home);
-    }
+    def setup_webview(wv_handle: int);
+    def shutdown;
 }
 
 
-def preferred_port(app_name: str) -> int {
+def preferred_port(app_name: str) -> int;
+
+
+def host_executable -> str;
+
+
+def default_data_dir(system: str, identifier: str, app_name: str) -> str;
+
+
+def _migrate_legacy_data_dir(data_dir: str, app_dir: str) -> None;
+
+
+def embedded_store_env(app_dir: str, data_dir: str, pg_dist: str) -> dict[str, str];
+
+
+def _embedded_cluster_dir(home: str) -> str;
+
+
+def _embedded_user_lock_path(home: str) -> str;
+
+
+def _join_embedded_store(home: str) -> None;
+
+
+def _holds_last_embedded_user(handle: any) -> bool;
+
+
+def _enter_embedded_env(env: dict[str, str]);
+
+
+def _leave_embedded_env;
+
+
+def _stop_embedded_store(home: str) -> None;
+
+
+def _apply_extra_deps;
+
+
+def _bootstrap_plugin_host(plugin_configs: dict[str, any]) -> any;
+
+
+def _ensure_jac_meta_importer;
+
+
+def resolve_program(program: dict[str, any], app_dir: str) -> str;
+
+
+def _pinned_port -> int;
+
+
+def serve_program(
+    entry_file: str,
+    data_dir: str,
+    dist_dir: str,
+    app_name: str,
+    backend: str,
+    host: any,
+    store: any
+) -> tuple[any, int, any];
+
+
+def boot(config_json: str) -> HostContext;
+
+impl HostContext.setup_webview(wv_handle: int) {
+    self.host.setup(wv_handle, self.library_dir);
+}
+
+impl HostContext.shutdown {
+    stop = self._stop;
+    self._stop = None;
+    if stop is not None {
+        try {
+            stop();
+        } except Exception as e {
+            sys.stderr.write("host_boot: server stop failed: " + str(e) + "\n");
+        }
+    }
+    runtime = self.runtime;
+    self.runtime = None;
+    if runtime is not None {
+        try {
+            runtime.close();
+        } except Exception as e {
+            sys.stderr.write("host_boot: runtime close failed: " + str(e) + "\n");
+        }
+    }
+    _stop_embedded_store(self.pg_home);
+}
+
+impl preferred_port(app_name: str) -> int {
     return 49152 + (int(hashlib.sha1(app_name.encode()).hexdigest(), 16) % 16000);
 }
 
-
-def host_executable -> str {
+impl host_executable -> str {
     return process_executable();
 }
 
-
-def default_data_dir(system: str, identifier: str, app_name: str) -> str {
+impl default_data_dir(system: str, identifier: str, app_name: str) -> str {
     """The per-user, per-app data directory on this platform.
 
     Scoped by the app `identifier` (falling back to its name), so two desktop
@@ -90,8 +155,7 @@ def default_data_dir(system: str, identifier: str, app_name: str) -> str {
     return os.path.join(base, scope);
 }
 
-
-def _migrate_legacy_data_dir(data_dir: str, app_dir: str) -> None {
+impl _migrate_legacy_data_dir(data_dir: str, app_dir: str) -> None {
     """Carry pre-existing app state into the per-user data dir, on upgrade.
 
     Before this, a Linux app kept its graph and session beside the app image
@@ -139,8 +203,7 @@ def _migrate_legacy_data_dir(data_dir: str, app_dir: str) -> None {
     }
 }
 
-
-def embedded_store_env(app_dir: str, data_dir: str, pg_dist: str) -> dict[str, str] {
+impl embedded_store_env(app_dir: str, data_dir: str, pg_dist: str) -> dict[str, str] {
     """The environment that gives the embedded store a per-app cluster and the
     distribution baked beside the app image.
 
@@ -157,8 +220,7 @@ def embedded_store_env(app_dir: str, data_dir: str, pg_dist: str) -> dict[str, s
     return env;
 }
 
-
-def _embedded_cluster_dir(home: str) -> str {
+impl _embedded_cluster_dir(home: str) -> str {
     """The per-app embedded cluster dir under an app's `JAC_PG_HOME` data dir.
 
     Mirrors the `pg` cache bucket layout (`<root>/pg`) and the cluster name
@@ -168,14 +230,12 @@ def _embedded_cluster_dir(home: str) -> str {
     return os.path.join(home, "pg", "main");
 }
 
-
-def _embedded_user_lock_path(home: str) -> str {
+impl _embedded_user_lock_path(home: str) -> str {
     """The advisory lock file whose shared holders are the app's running instances.""";
     return os.path.join(home, "pg", ".desktop-users.lock");
 }
 
-
-def _join_embedded_store(home: str) -> None {
+impl _join_embedded_store(home: str) -> None {
     """Hold a shared lock for as long as this process uses the app's cluster.
 
     Two instances of one app share one cluster, so only the last may stop it.
@@ -197,8 +257,7 @@ def _join_embedded_store(home: str) -> None {
     }
 }
 
-
-def _holds_last_embedded_user(handle: any) -> bool {
+impl _holds_last_embedded_user(handle: any) -> bool {
     """True when no other process holds a shared lock on `handle`.
 
     Converting the shared lock to an exclusive one succeeds only for the sole
@@ -214,8 +273,7 @@ def _holds_last_embedded_user(handle: any) -> bool {
     return True;
 }
 
-
-def _enter_embedded_env(env: dict[str, str]) {
+impl _enter_embedded_env(env: dict[str, str]) {
     """Point the process at this app's embedded store.
 
     The cluster and the vendored distribution are found through the
@@ -233,8 +291,7 @@ def _enter_embedded_env(env: dict[str, str]) {
     }
 }
 
-
-def _leave_embedded_env {
+impl _leave_embedded_env {
     for (key, prior) in _EMBEDDED_ENV_PRIOR.items() {
         if prior is None {
             os.environ.pop(key, None);
@@ -245,8 +302,7 @@ def _leave_embedded_env {
     _EMBEDDED_ENV_PRIOR.clear();
 }
 
-
-def _stop_embedded_store(home: str) -> None {
+impl _stop_embedded_store(home: str) -> None {
     """Stop this app's embedded cluster once the last instance exits.
 
     The shutdown hook and the atexit backstop both call this, so a second call
@@ -275,8 +331,7 @@ def _stop_embedded_store(home: str) -> None {
     _leave_embedded_env();
 }
 
-
-def _apply_extra_deps {
+impl _apply_extra_deps {
     extra = os.environ.get("JAC_DESKTOP_DEPS", "");
     if not extra {
         return;
@@ -288,8 +343,7 @@ def _apply_extra_deps {
     }
 }
 
-
-def _bootstrap_plugin_host(plugin_configs: dict[str, any]) -> any {
+impl _bootstrap_plugin_host(plugin_configs: dict[str, any]) -> any {
     import jaclang;
     pdir = os.path.join(
         os.path.dirname(str(jaclang.__file__)), "client", "targets", "desktop", "plugin"
@@ -303,15 +357,13 @@ def _bootstrap_plugin_host(plugin_configs: dict[str, any]) -> any {
     return sys.modules["registry"].bootstrap_plugins(plugin_configs, sys.modules);
 }
 
-
-def _ensure_jac_meta_importer {
+impl _ensure_jac_meta_importer {
     if not any(isinstance(f, JacMetaImporter) for f in sys.meta_path) {
         sys.meta_path.insert(0, JacMetaImporter());
     }
 }
 
-
-def resolve_program(program: dict[str, any], app_dir: str) -> str {
+impl resolve_program(program: dict[str, any], app_dir: str) -> str {
     jab = str(program.get("jab") or "");
     if jab {
         import from jaclang.dist.jab { jab_app_meta, materialize_jab }
@@ -332,8 +384,7 @@ def resolve_program(program: dict[str, any], app_dir: str) -> str {
         else os.path.join(app_dir, entry_path);
 }
 
-
-def _pinned_port -> int {
+impl _pinned_port -> int {
     raw = os.environ.get("JAC_DESKTOP_BROKER_PORT", "");
     if not raw {
         return 0;
@@ -347,8 +398,7 @@ def _pinned_port -> int {
     }
 }
 
-
-def serve_program(
+impl serve_program(
     entry_file: str,
     data_dir: str,
     dist_dir: str,
@@ -406,8 +456,7 @@ def serve_program(
     );
 }
 
-
-def boot(config_json: str) -> HostContext {
+impl boot(config_json: str) -> HostContext {
     cfg = json.loads(config_json);
     app_name = str(cfg.get("app_name") or "app");
     mode = str(cfg.get("mode") or "webview");

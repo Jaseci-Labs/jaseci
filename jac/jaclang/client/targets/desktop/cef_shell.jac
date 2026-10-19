@@ -6,7 +6,39 @@ import stat;
 
 import from pathlib { Path }
 
-def _is_stale(output: Path, inputs: list[Path]) -> bool {
+def _is_stale(output: Path, inputs: list[Path]) -> bool;
+
+def _ensure_libcef_dispatch(cef_dir: Path) -> Path;
+
+def _ensure_cef_subprocess(cef_dir: Path) -> Path;
+
+def _generate_host_source(
+    title: str,
+    width: int,
+    height: int,
+    app_name: str,
+    cache_path: str,
+    plugin_configs: (dict[str, any] | None) = None,
+    program: (dict[str, any] | None) = None,
+    backend: str = "embedded",
+    dispatch_timeout_s: float = 30.0,
+    dispatch_max_queue: int = 128,
+    dispatch_debug: bool = False,
+    identifier: str = "",
+    pg_dist: str = ""
+) -> str;
+
+def _stage_cef_runtime(cef_dist: Path, out_dir: Path);
+
+def cef_build(
+    entry_file: Path, project_dir: Path, out_dir: Path, web_bundle: Path
+) -> Path;
+
+def cef_start(binary: Path);
+
+def cef_dev_unsupported;
+
+impl _is_stale(output: Path, inputs: list[Path]) -> bool {
     if not output.exists() {
         return True;
     }
@@ -19,7 +51,7 @@ def _is_stale(output: Path, inputs: list[Path]) -> bool {
     return False;
 }
 
-def _ensure_libcef_dispatch(cef_dir: Path) -> Path {
+impl _ensure_libcef_dispatch(cef_dir: Path) -> Path {
     lib = cef_dir / "libcef_dispatch.so";
     src = cef_dir / "cef_dispatch.jac";
     stale = _is_stale(lib, [src, cef_dir / "cef_platform.jac"]);
@@ -32,7 +64,7 @@ def _ensure_libcef_dispatch(cef_dir: Path) -> Path {
     return build_cef_dispatch(cef_dir);
 }
 
-def _ensure_cef_subprocess(cef_dir: Path) -> Path {
+impl _ensure_cef_subprocess(cef_dir: Path) -> Path {
     helper = cef_dir / "cef-subprocess";
     src = cef_dir / "cef_subprocess.jac";
     stale = _is_stale(helper, [src, cef_dir / "cef_platform.jac"]);
@@ -43,7 +75,7 @@ def _ensure_cef_subprocess(cef_dir: Path) -> Path {
     return build_cef_subprocess(cef_dir);
 }
 
-def _generate_host_source(
+impl _generate_host_source(
     title: str,
     width: int,
     height: int,
@@ -120,7 +152,7 @@ def _generate_host_source(
     );
 }
 
-def _stage_cef_runtime(cef_dist: Path, out_dir: Path) {
+impl _stage_cef_runtime(cef_dist: Path, out_dir: Path) {
     shutil.copy2(cef_dist / "libcef.so", out_dir / "libcef.so");
     for name in [
         "libEGL.so",
@@ -164,7 +196,7 @@ def _stage_cef_runtime(cef_dist: Path, out_dir: Path) {
     }
 }
 
-def cef_build(
+impl cef_build(
     entry_file: Path, project_dir: Path, out_dir: Path, web_bundle: Path
 ) -> Path {
     ensure_dev_build_env();
@@ -242,7 +274,7 @@ def cef_build(
     return binary;
 }
 
-def cef_start(binary: Path) {
+impl cef_start(binary: Path) {
     env = desktop_app_runtime_env();
     env.setdefault("LIBGL_ALWAYS_SOFTWARE", "1");
     env.setdefault("GALLIUM_DRIVER", "llvmpipe");
@@ -258,7 +290,7 @@ def cef_start(binary: Path) {
     }
 }
 
-def cef_dev_unsupported {
+impl cef_dev_unsupported {
     raise RuntimeError(
         "CEF desktop HMR is not supported yet. CEF routes RPC through the "
         "loopback broker, so a Vite dev origin breaks the app. Set "
