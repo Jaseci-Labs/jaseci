@@ -1,15 +1,11 @@
 import os;
 import sys;
 
-glob _KIT: list[tuple[str, (SealedImage | None)]] = [],
-     PR_KIT_EVENT: str = "pull_request",
-     PR_KIT_LABEL_PREFIX: str = "native:";
+glob _KIT: list[tuple[str, (SealedImage | None)]] = [];
 
 def kit_image -> (tuple[str, SealedImage] | None);
 
 def pr_kit_omits(name: str) -> bool;
-
-def _pr_labels -> set[str];
 
 def kit_path(rel: str) -> str;
 
