@@ -20,7 +20,8 @@ obj NativeUnitEntry {
         bitcode: (bytes | None) = None,
         compile_deps: bytes = b"",
         compile_deps_base: str = "",
-        dep_digests: dict[str, str] = {};
+        dep_digests: dict[str, str] = {},
+        deps_checked: bool = True;
 }
 
 obj NativeUnitRegistry {
@@ -28,7 +29,6 @@ obj NativeUnitRegistry {
         session: (NativeBuildSession | None) = None,
         entries: dict[str, NativeUnitEntry] = {},
         building: set[str] postinit,
-        checking: set[str] postinit,
         not_native: dict[str, str] = {},
         failures: dict[str, str] = {},
         compiled_paths: list[str] = [],
@@ -42,7 +42,6 @@ obj NativeUnitRegistry {
 
     def postinit {
         self.building = set();
-        self.checking = set();
     }
 
     def begin_parse(path: str) {
@@ -392,14 +391,19 @@ obj NativeUnitRegistry {
     }
 
     def _deps_match(
-        data: bytes,
-        stamp: NativeStamp,
-        base_dir: str,
-        anchor: str = "",
-        options: (CompileOptions | None) = None
+        dep_digests: list[tuple[str, str]], options: (CompileOptions | None) = None
     ) -> bool {
-        for (dep, recorded) in read_native_dep_hashes(data, stamp, base_dir, anchor) {
-            ent = self.ensure(dep, compile_on_miss=False, options=options);
+        """Whether each direct dependency still has the interface the unit was
+        lowered against. A dependency counts as it stands, its own
+        dependencies unchecked: a dependency that is stale may lower to the
+        same interface, so judging its consumers by its staleness would
+        rebuild everything above it. The link plan lowers dependencies before
+        their consumers and settles cycle peers once their interfaces are
+        final.""";
+        for (dep, recorded) in dep_digests {
+            ent = self.ensure(
+                dep, compile_on_miss=False, options=options, check_deps=False
+            );
             if ent is None or ent.digest != recorded {
                 return False;
             }
@@ -414,6 +418,11 @@ obj NativeUnitRegistry {
             out[real] = self.known_digest(real);
         }
         return out;
+    }
+
+    def _dep_miss(resolved: str) {
+        self._event("native_dep_miss");
+        self._miss(resolved, "a dependency's native interface changed");
     }
 
     def _read_from_disk(
@@ -453,16 +462,16 @@ obj NativeUnitRegistry {
             return None;
         }
         iface.resolve_deps(resolved);
-        if check_deps
-            and not self._deps_match(data, stamp, base_dir, resolved, options) {
-            self._event("native_dep_miss");
-            self._miss(resolved, "a dependency's native interface changed");
+        dep_digests = read_native_dep_hashes(data, stamp, base_dir, resolved);
+        if check_deps and not self._deps_match(dep_digests, options) {
+            self._dep_miss(resolved);
             return None;
         }
         ent = self._register(resolved, iface, stamp, "disk");
         ent.compile_deps = compile_deps;
         ent.compile_deps_base = base_dir;
-        ent.dep_digests = dict(read_native_dep_hashes(data, stamp, base_dir, resolved));
+        ent.dep_digests = dict(dep_digests);
+        ent.deps_checked = check_deps;
         ent.object_bytes = native_section_payload(
             read_section_bytes(data, SEC_NOBJ), stamp
         );
@@ -486,8 +495,20 @@ obj NativeUnitRegistry {
         }
         stamp = self.stamp_for(options, resolved);
         ent = self.entries.get(resolved);
+        stale_deps = False;
         if ent is not None and ent.stamp.matches(stamp) and self._entry_fresh(ent) {
-            return ent;
+            """An entry read for a consumer's check is unchecked itself; a
+            caller that asks for checked dependencies checks them before
+            relying on it.""";
+            if not check_deps or ent.deps_checked {
+                return ent;
+            }
+            if self._deps_match(sorted(ent.dep_digests.items()), options) {
+                ent.deps_checked = True;
+                return ent;
+            }
+            self._dep_miss(resolved);
+            stale_deps = True;
         }
         if ent is not None {
             del self.entries[resolved];
@@ -495,21 +516,14 @@ obj NativeUnitRegistry {
         if resolved in self.building {
             return None;
         }
-        if resolved in self.checking and not options.no_ir_cache {
-            return self._read_from_disk(
-                resolved, stamp, check_deps=False, options=options
-            );
-        }
         (rebuild, _) = cache_mode();
-        if not rebuild and not options.no_ir_cache and not self.cold {
-            self.checking.add(resolved);
-            try {
-                found = self._read_from_disk(
-                    resolved, stamp, check_deps=check_deps, options=options
-                );
-            } finally {
-                self.checking.discard(resolved);
-            }
+        if not stale_deps
+            and not rebuild
+            and not options.no_ir_cache
+            and not self.cold {
+            found = self._read_from_disk(
+                resolved, stamp, check_deps=check_deps, options=options
+            );
             if found is not None {
                 self._event("native_iface_hit");
                 return found;

@@ -464,8 +464,12 @@ def _build_link_plan(
             walk_unit(dep, stack + [path]);
         }
         errs_before = len(prog.errors_had);
+        """The unit's dependencies are walked first, so a cached unit is
+        checked against the interfaces they have now: one a compiler change
+        left stale lowers here, before any consumer reads it, instead of being
+        adopted and rebuilt by settlement after its consumers.""";
         ent = registry.ensure(
-            path, compile_on_miss=False, options=opts, check_deps=False
+            path, compile_on_miss=False, options=opts, check_deps=True
         );
         if ent is None and os.path.isfile(path) {
             ent = registry.compile_unit(path, opts);
