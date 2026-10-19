@@ -1387,6 +1387,9 @@ impl NaIRGenPass._codegen_intrinsic(
     if _dispatch == IntrinsicDispatch.ALLOCA {
         return self._emit_intrinsic_alloca(nd, intr, positional);
     }
+    if _dispatch == IntrinsicDispatch.LIST_DATA {
+        return self._emit_intrinsic_list_data(nd, intr, positional);
+    }
     self.emit(
         E9001,
         node_override=nd,
@@ -1547,6 +1550,54 @@ impl NaIRGenPass._emit_intrinsic_region_tls(
     }
     result = self.builder.call(self.extern_funcs[intr.name], operands);
     return None if intr.result_spec == "none" else result;
+}
+
+impl NaIRGenPass._emit_intrinsic_list_data(
+    nd: uni.FuncCall, intr: IntrinsicEntry, args: list[uni.Expr]
+) -> (ir.Value | None) {
+    """`__list_data_ptr(lst)` is the address of `lst`'s element buffer, as an
+    integer for the `__mem_*` accessors. It holds until the list next grows
+    past its capacity (an append then moves the buffer) and only while the
+    list is alive; nothing here checks an index, so the caller owns the
+    bounds. The list itself stays the owner of the elements: a store through
+    the pointer is a plain word write, so it is for scalar element types.
+    """;
+    # The pointer outlives the statement only if the list does: a name, a
+    # field or an element is backed by its owner; a call's or a literal's
+    # result is released at the end of the statement, and the buffer with it.
+    if not isinstance(args[0], (uni.Name, uni.AtomTrailer)) {
+        self._emit_intrinsic_misuse(
+            nd,
+            intr,
+            "operand must be a variable, a field or an element (a temporary list is freed with the statement)"
+        );
+        return None;
+    }
+    lst = self._codegen_expr(args[0]);
+    if lst is None {
+        self._emit_intrinsic_misuse(nd, intr, "operand did not lower to a value");
+        return None;
+    }
+    _ld_pointee = getattr(lst.type, "pointee", None);
+    _ld_name = str(getattr(_ld_pointee, "name", "") or "");
+    if not isinstance(lst.type, ir.PointerType) or not _ld_name.startswith("List.") {
+        self._emit_intrinsic_misuse(
+            nd, intr, f"operand of type {lst.type} is not a list"
+        );
+        return None;
+    }
+    if _ld_name not in ("List.i64", "List.f64") {
+        self._emit_intrinsic_misuse(
+            nd, intr, f"{_ld_name} holds managed elements; only scalar lists expose their buffer"
+        );
+        return None;
+    }
+    i32 = ir.IntType(32);
+    _ld_pp = self.builder.gep(
+        lst, [ir.Constant(i32, 0), ir.Constant(i32, 2)], name="list.data.pp"
+    );
+    _ld_p = self.builder.load(_ld_pp, name="list.data.p");
+    return self.builder.ptrtoint(_ld_p, ir.IntType(64), name="list.data.i64");
 }
 
 impl NaIRGenPass._emit_intrinsic_alloca(

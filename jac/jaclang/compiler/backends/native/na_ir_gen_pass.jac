@@ -752,6 +752,9 @@ walker NaIRGenPass(CompilerPass) {
     def _emit_intrinsic_alloca(
         nd: uni.FuncCall, intr: IntrinsicEntry, args: list[uni.Expr]
     ) -> (ir.Value | None);
+    def _emit_intrinsic_list_data(
+        nd: uni.FuncCall, intr: IntrinsicEntry, args: list[uni.Expr]
+    ) -> (ir.Value | None);
 
     def _native_module_call_target(nd: uni.FuncCall) -> tuple[str, str] | None;
     def _stdlib_intercept_covers(module_name: str, func_name: str) -> bool;
