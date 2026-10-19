@@ -95,7 +95,6 @@ impl TriggerSpec.apscheduler_kwargs -> dict[str, any] {
 }
 
 impl new_engine(pool_size: int, misfire_grace: int) -> any {
-    import from jaclang.scale.scheduler.fire_executor { FireTimeExecutor }
     return BackgroundScheduler(
         executors={'default': FireTimeExecutor(pool_size)},
         job_defaults={

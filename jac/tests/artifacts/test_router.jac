@@ -391,3 +391,30 @@ test "the build command named for a missing per-target artifact is one `jac nati
     assert native(action="status", names=["musl@"]) == 1;
     assert native(action="status", names=[f"no-such-artifact@{target}"]) == 1;
 }
+
+test "a C floor for another target is refused rather than built for the host" {
+    import from jaclang.artifacts.kit { osarch }
+    import jaclang.compiler.backends.native.floors as floors;
+    target = "linux-aarch64" if osarch() == "linux-x86_64" else "linux-x86_64";
+    router.forget();
+    try {
+        with patch.object(
+            floors.CFloorArtifact, "probe_checkout", return_value=Probe.missing()
+        ), patch.object(floors, "_zig_build") as zig_build {
+            try {
+                router.build([f"c-floor@{target}"], lambda (line: str) {}, strict=True);
+                assert False , "a cross-target C floor build must be refused";
+            } except ArtifactUnavailable as e {
+                message = str(e);
+            }
+            zig_build.assert_not_called();
+        }
+    } finally {
+        router._ENTRIES.pop(f"c-floor@{target}", None);
+        router.forget();
+    }
+    assert f"c-floor@{target}:" in message , message;
+    assert f"only for this host ({osarch()})" in message , message;
+    assert router.artifact_named(f"c-floor@{osarch()}").build_blocker()
+        in ("", "zig is not on PATH");
+}

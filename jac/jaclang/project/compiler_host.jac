@@ -1,27 +1,4 @@
 import from contextlib { contextmanager }
-import from jaclang.compiler.frontend.host {
-    CheckSettings,
-    HostPlatform,
-    HostServices,
-    LintSettings,
-    PathFacts,
-    ProjectDefaults,
-    ProjectFacts
-}
-import type from jaclang.project.workspace_model { AppSpec, WorkspaceSpec }
-import type from jaclang.compiler.driver.program { JacProgram }
-import type from jaclang.compiler.types.stubcat.reader { StubCatalog }
-import type from jaclang.compiler.types.ct_value { CtEnvironment }
-import type from jaclang.compiler.frontend.unitree { Module }
-import type from jaclang.compiler.passes.annex_weave { WovenAnnex }
-import type from jaclang.compiler.driver.compiler { JacCompiler }
-import type from jaclang.compiler.driver.ifacecache { IfaceRegistry }
-import type from jaclang.compiler.driver.nativecache { NativeUnitRegistry }
-import type from jaclang.compiler.driver.native_iface { NativeIface }
-import type from jaclang.compiler.driver.compile_options { CompileOptions }
-import type from jaclang.compiler.driver.module_analysis { ModuleAnalysis }
-import type from jaclang.compiler.frontend.kernel_inputs { KernelInputs }
-import type from jaclang.compiler.frontend.kernel_analyze { CompileReport }
 
 glob UNIT_COLLECT_EVERY: int = 16,
      UNIT_COLLECT_GROWTH_MB: int = 512;
@@ -66,6 +43,8 @@ obj ProjectHost(HostServices) {
         program: JacProgram, path: str, options: CompileOptions
     ) -> (NativeIface | None);
 
+    def native_dep_discovery_open(program: JacProgram) -> bool;
+    def native_deps_deferred(program: JacProgram) -> bool;
     def held_native_iface(
         program: JacProgram, path: str, options: CompileOptions
     ) -> str;
@@ -97,14 +76,19 @@ obj ProjectHost(HostServices) {
     def package_init(directory: str) -> (str | None);
     def wiring_file(path: str) -> (str | None);
     def is_seed_source(rel_path: str) -> bool;
+    def wiring_records(digest: str) -> str;
+    def keep_wiring_records(digest: str, text: str);
     def native_parse(
         source_str: str,
         file_path: str,
         program: (JacProgram | None),
         annexes: list[WovenAnnex],
-        early_context: str = ""
+        early_context: str = "",
+        load_kernel: bool = True
     ) -> (tuple[Module, bool] | None);
 
+    def woven_module(path: str, program: (JacProgram | None)) -> (Module | None);
+    def place_wired_imports(module: Module);
     def drop_python_lane_products(path: str, program: JacProgram);
     def compiler_for(program: JacProgram) -> JacCompiler;
     def iface_registry_for(program: JacProgram) -> IfaceRegistry;

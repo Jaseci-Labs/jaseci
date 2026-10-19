@@ -1,13 +1,6 @@
 import os;
-import type from jaclang.compiler.backends.native.llvm.binding {
-    ModuleRef,
-    ValueRef,
-    TargetMachine
-}
-import type from jaclang.compiler.frontend.unitree { Module as UniModule }
 
 def _wasm_libc_dir -> (str | None) {
-    import from jaclang.artifacts.router { resolve }
     found = resolve("wasm-libc").found;
     return found.path if found is not None else None;
 }
@@ -25,7 +18,6 @@ def _mod_globals(mod: ModuleRef) -> list[ValueRef] {
 }
 
 def _load_libc_module(libc_dir: str, triple: str) -> (ModuleRef | None) {
-    import jaclang.compiler.backends.native.llvm.binding as llvm;
     parts = sorted(
         [
             f
@@ -154,7 +146,6 @@ def _assert_abi64_adapters(
 }
 
 def _link_wasm_libc(mod: ModuleRef) -> bool {
-    import from jaclang.artifacts.router { require }
     found = require("wasm-libc").found;
     assert found is not None;
     libc_dir = found.path;
@@ -162,7 +153,6 @@ def _link_wasm_libc(mod: ModuleRef) -> bool {
     if libc is None {
         return False;
     }
-    import from jaclang.compiler.backends.native.wasm_host_abi { WASM_HOST_ABI }
 
     for fn in _mod_functions(libc) {
         if not fn.is_declaration and fn.name in WASM_HOST_ABI {
@@ -230,7 +220,6 @@ def _internalize_late_bound(mod: ModuleRef) {
 }
 
 def prepare_wasm_module(llvm_ir_str: str) -> tuple[ModuleRef, TargetMachine, bool] {
-    import jaclang.compiler.backends.native.llvm.binding as llvm;
     llvm.initialize_all_targets();
     llvm.initialize_all_asmprinters();
     mod = llvm.parse_assembly(llvm_ir_str);
@@ -240,7 +229,7 @@ def prepare_wasm_module(llvm_ir_str: str) -> tuple[ModuleRef, TargetMachine, boo
     assert isinstance(target, llvm.Target);
     tm = target.create_target_machine(opt=2);
     assert isinstance(tm, llvm.TargetMachine);
-    import from jaclang.compiler.backends.native.na_compile_pass { optimize_unit }
+
     optimize_unit(mod, tm, 2);
     if libc_linked {
         _internalize_late_bound(mod);
@@ -252,63 +241,102 @@ def prepare_wasm_module(llvm_ir_str: str) -> tuple[ModuleRef, TargetMachine, boo
 def emit_wasm_from_ir(
     llvm_ir_str: str, export_funcs: list[str] = [], app_imports: (set | None) = None
 ) -> bytes {
-    import from jaclang.compiler.backends.native.wasm_linker { WasmLinker }
-    import from jaclang.compiler.backends.native.wasm_host_abi {
-        WASM_HOST_ABI,
-        WASM_HOST_MODULE
-    }
     (mod, tm, libc_linked) = prepare_wasm_module(llvm_ir_str);
+    exports = list(export_funcs) or _exported_functions(mod);
     obj_bytes = tm.emit_object(mod);
     assert isinstance(obj_bytes, bytes);
     if not libc_linked {
-        return WasmLinker.link([obj_bytes], export_funcs, 256);
+        return link_wasm_object(obj_bytes, exports);
     }
-    return WasmLinker.link(
-        [obj_bytes],
-        export_funcs,
-        256,
+    return link_wasm_object(
+        obj_bytes,
+        exports,
         host_abi=WASM_HOST_ABI,
         host_module=WASM_HOST_MODULE,
-        app_imports=app_imports,
+        app_imports=app_imports
     );
 }
 
-def wasm_import_map(wasm_bytes: bytes) -> dict[str, any] {
-    import from jaclang.compiler.backends.native.linker_common {
-        read_leb_name,
-        read_uleb128
-    }
-    out = {};
-    o = 8;
-    while o < len(wasm_bytes) {
-        sid = wasm_bytes[o];
-        o += 1;
-        (size, o) = read_uleb128(wasm_bytes, o);
-        end = o + size;
-        if sid == 2 {
-            (cnt, o) = read_uleb128(wasm_bytes, o);
-            ci = 0;
-            while ci < cnt and o < end {
-                (mod_nm, o) = read_leb_name(wasm_bytes, o);
-                (fld, o) = read_leb_name(wasm_bytes, o);
-                kind = wasm_bytes[o];
-                o += 1;
-                if kind == 0 {
-                    (_t, o) = read_uleb128(wasm_bytes, o);
-                    out.setdefault(mod_nm, []).append(fld);
-                } else {
-                    break;
-                }
-                ci += 1;
-            }
-            break;
+def _exported_functions(mod: ModuleRef) -> list[str] {
+    """Every function the module defines with external linkage and default
+    visibility: a wasm module's host calls its functions by these names.""";
+    names: list[str] = [];
+    for fn in _mod_functions(mod) {
+        if not fn.is_declaration
+            and fn.linkage == llvm.Linkage.external
+            and fn.visibility == llvm.Visibility.default
+            and not str(fn.name).startswith("llvm.") {
+            names.append(str(fn.name));
         }
-        o = end;
     }
-    for k in out {
-        out[k].sort();
+    return names;
+}
+
+def link_wasm_object(
+    obj_bytes: bytes,
+    export_funcs: list[str],
+    host_abi: (set | None) = None,
+    host_module: str = "",
+    app_imports: (set | None) = None
+) -> bytes {
+    """Link one wasm object into a module with wasm-ld. Its undefined
+    functions become imports: the host ABI's are imported from
+    `host_module`, and once the app's imports are known, any other import
+    is an error.""";
+    import tempfile;
+    allowed: (list[str] | None) = None;
+    if app_imports is not None {
+        allowed = sorted(set(host_abi or set()) | set(app_imports));
     }
-    return out;
+    (fd, out_path) = tempfile.mkstemp(suffix=".wasm");
+    os.close(fd);
+    try {
+        link_wasm_module(
+            WasmLinkJob(
+                objects=[obj_bytes],
+                output_path=out_path,
+                export_funcs=export_funcs,
+                allowed_imports=allowed
+            )
+        );
+        with open(out_path, "rb") as f {
+            content = f.read();
+        }
+    } except NativeLinkError as e {
+        raise RuntimeError(_unexpected_import_message(str(e), host_module)) from None;
+    } finally {
+        os.unlink(out_path);
+    }
+    if host_abi is not None and host_module {
+        content = rename_wasm_imports(content, set(host_abi), host_module);
+    }
+    return content;
+}
+
+def _unexpected_import_message(link_error: str, host_module: str) -> str {
+    import re;
+    matched = re.search(r"undefined symbol: (\S+)", link_error);
+    if matched is None {
+        return link_error;
+    }
+    name = matched.group(1);
+    if name.startswith("__jac64_") {
+        return (
+            f"wasm import '{name}' is a wasm_rt floor adapter, not "
+            + "an app symbol: the vendored libc bitcode is stale and does "
+            + "not define it. Rebuild the floor (`zig build "
+            + "vendor-wasm-libc`) rather than adding it to "
+            + "wasm_host_abi.jac -- the host ABI is syscalls only, and a "
+            + "host-side allocator cannot return a linear-memory pointer."
+        );
+    }
+    return (
+        f"wasm import '{name}' is neither part of the "
+        + f"{host_module or 'host'} ABI nor declared by the app; "
+        + "the native floor references a symbol missing from the "
+        + "vendored wasm_rt libc (compiler drift) -- add it to "
+        + "wasm_rt or to wasm_host_abi.jac"
+    );
 }
 
 def app_declared_imports(ir_module: UniModule, plan: any = None) -> set[str] {
@@ -374,7 +402,5 @@ def _assert_ir_rc_free(llvm_ir_str: str, file_path: str) {
 }
 
 def compile_to_wasm(file_path: str, export_funcs: list[str] = []) -> bytes {
-    import from jaclang.compiler.driver.program { JacProgram }
-    import from jaclang.compiler.driver.pipeline_runner { build_wasm }
     return build_wasm(JacProgram(), file_path, export_funcs);
 }

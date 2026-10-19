@@ -1,36 +1,6 @@
-import from jaclang.compiler.passes.context { CompilerPass, PassSchedule }
 import os;
 import time;
-import type from jaclang.compiler.driver.compile_options { CancelToken }
 import from contextvars { ContextVar }
-import type from jaclang.compiler.driver.program { JacProgram }
-import type from jaclang.compiler.frontend.unitree { Module }
-import from jaclang.compiler.driver.context_passes {
-    AppContextPass,
-    AbsorbImportsPass,
-    BoundaryFactsPass,
-    NativeImportFactsPass
-}
-import from jaclang.compiler.passes.ast_validation_pass { ASTValidationPass }
-import from jaclang.compiler.passes.graph_lowering_pass { GraphLoweringPass }
-import from jaclang.compiler.passes.boundary_analysis_pass { BoundaryAnalysisPass }
-import from jaclang.compiler.passes.decl_impl_match_pass { DeclImplMatchPass }
-import from jaclang.compiler.passes.endpoint_effect_pass { EndpointEffectPass }
-import from jaclang.compiler.passes.semantic_analysis_pass { SemanticAnalysisPass }
-import from jaclang.compiler.passes.sym_tab_build_pass { SymTabBuildPass }
-import from jaclang.compiler.passes.import_wiring_pass { ImportWiringPass }
-import from jaclang.compiler.passes.package_boundary_pass { PackageBoundaryPass }
-import from jaclang.compiler.placement.placement_solver { PlacementApplyPass }
-import from jaclang.compiler.frontend.host { active_host }
-import from jaclang.compiler.driver.pipeline_types {
-    AnalysisFact,
-    CompilationProduct,
-    ImportFallback,
-    PassContract,
-    ProductRequest,
-    ProductTask,
-    TaskState
-}
 
 class TypeshedUnavailableError(RuntimeError) {}
 
@@ -55,15 +25,15 @@ def no_drop(program: JacProgram, module: Module) {}
 def no_precheck {}
 
 obj ProductSpec {
-    has needs: tuple[CompilationProduct, ...] = (),
+    has needs: list[CompilationProduct] = [],
         passes: Callable[[ProductRequest], PassSchedule] = no_passes,
         bootstrap:
             Callable[[ProductRequest], (PassSchedule | None)] = unavailable_schedule,
         action: Callable[[JacProgram, Module], bool] = no_action,
         drop: Callable[[JacProgram, Module], None] = no_drop,
         precheck: Callable[[], None] = no_precheck,
-        loads: tuple[str, ...] = (),
-        tier_with: tuple[CompilationProduct, ...] = (),
+        loads: list[str] = [],
+        tier_with: list[CompilationProduct] = [],
         tiered: bool = False,
         acts: bool = False,
         cached: bool = False,
@@ -90,11 +60,6 @@ def bootstrap_ir_passes(request: ProductRequest) -> (PassSchedule | None) {
 }
 
 def ir_passes(request: ProductRequest) -> PassSchedule {
-    import from jaclang.compiler.passes.cfg_build_pass { CFGBuildPass }
-    import from jaclang.compiler.passes.sem_def_match_pass { SemDefMatchPass }
-    import from jaclang.compiler.passes.jsx_intrinsic_guard_pass {
-        JsxIntrinsicGuardPass
-    }
     passes = front_passes()
         + [
             ImportWiringPass,
@@ -116,20 +81,10 @@ def ir_passes(request: ProductRequest) -> PassSchedule {
 }
 
 def flow_passes(request: ProductRequest) -> PassSchedule {
-    import from jaclang.compiler.passes.cfg_build_pass { CFGBuildPass }
     return [CFGBuildPass];
 }
 
 def analysis_passes(request: ProductRequest) -> PassSchedule {
-    import from jaclang.compiler.passes.type_checker_pass { TypeCheckPass }
-    import from jaclang.compiler.passes.static_analysis_pass { StaticAnalysisPass }
-    import from jaclang.compiler.passes.access_check_pass { AccessCheckPass }
-    import from jaclang.compiler.passes.variant_agreement_pass { VariantAgreementPass }
-    import from jaclang.compiler.passes.capability_check_pass { PortabilityWarnPass }
-    import from jaclang.compiler.passes.placement_pass { PlacementPass }
-    import from jaclang.compiler.passes.ownership_check_pass { OwnershipCheckPass }
-    import from jaclang.compiler.passes.region_infer_pass { RegionInferPass }
-    import from jaclang.compiler.tools.jac_auto_lint_pass { JacLintCheckPass }
     return [
         RegionInferPass,
         VariantAgreementPass,
@@ -148,18 +103,14 @@ def boundary_passes(request: ProductRequest) -> PassSchedule {
 }
 
 def client_passes(request: ProductRequest) -> PassSchedule {
-    import from jaclang.compiler.backends.es.esast_gen_pass { EsastGenPass }
     return [EsastGenPass];
 }
 
 def layout_passes(request: ProductRequest) -> PassSchedule {
-    import from jaclang.compiler.passes.layout_pass { LayoutPass }
     return [LayoutPass];
 }
 
 def codegen_passes(request: ProductRequest) -> PassSchedule {
-    import from jaclang.compiler.backends.es.esast_gen_pass { EsastGenPass }
-    import from jaclang.compiler.passes.rc_facts_pass { RcFactsPass }
     passes: PassSchedule = [RcFactsPass, EsastGenPass];
     if request.native and not unavailable(CompilationProduct.NATIVE_LOWER) {
         import from jaclang.compiler.backends.native.na_ir_gen_pass { NaIRGenPass }
@@ -169,59 +120,42 @@ def codegen_passes(request: ProductRequest) -> PassSchedule {
 }
 
 def py_ir_passes(request: ProductRequest) -> PassSchedule {
-    import from jaclang.compiler.backends.py.jcir_gen_pass { JcirGenPass }
     return [NativeImportFactsPass, JcirGenPass];
 }
 
 def frozen_passes(request: ProductRequest) -> PassSchedule {
-    import from jaclang.compiler.passes.freeze_structure_pass { FreezeStructurePass }
     return [FreezeStructurePass];
 }
 
 def bytecode_passes(request: ProductRequest) -> PassSchedule {
-    import from jaclang.compiler.backends.py.jcir_bc_gen_pass { JcirBytecodeGenPass }
     return [JcirBytecodeGenPass];
 }
 
 def native_ir_passes(request: ProductRequest) -> PassSchedule {
-    import from jaclang.compiler.passes.rc_facts_pass { RcFactsPass }
-    import from jaclang.compiler.backends.native.na_ir_gen_pass { NaIRGenPass }
     return [NativeImportFactsPass, RcFactsPass, NaIRGenPass];
 }
 
 def native_lower_passes(request: ProductRequest) -> PassSchedule {
-    import from jaclang.compiler.passes.rc_facts_pass { RcFactsPass }
-    import from jaclang.compiler.backends.native.na_ir_gen_pass { NaIRGenPass }
     return [RcFactsPass, NaIRGenPass];
 }
 
 def native_object_passes(request: ProductRequest) -> PassSchedule {
-    import from jaclang.compiler.backends.native.na_compile_pass { NativeCompilePass }
     return [NativeCompilePass];
 }
 
 def format_passes(request: ProductRequest) -> PassSchedule {
-    import from jaclang.compiler.tools.comment_attach_pass { CommentAttachPass }
-    import from jaclang.compiler.tools.doc_ir_gen_pass { DocIRGenPass }
-    import from jaclang.compiler.tools.jac_formatter_pass { JacFormatPass }
     return [CommentAttachPass, DocIRGenPass, JacFormatPass];
 }
 
 def format_lintfix_passes(request: ProductRequest) -> PassSchedule {
-    import from jaclang.compiler.tools.comment_attach_pass { CommentAttachPass }
-    import from jaclang.compiler.tools.doc_ir_gen_pass { DocIRGenPass }
-    import from jaclang.compiler.tools.jac_auto_lint_pass { JacAutoLintPass }
-    import from jaclang.compiler.tools.jac_formatter_pass { JacFormatPass }
     return [CommentAttachPass, JacAutoLintPass, DocIRGenPass, JacFormatPass];
 }
 
 def lint_passes(request: ProductRequest) -> PassSchedule {
-    import from jaclang.compiler.tools.jac_auto_lint_pass { JacLintCheckPass }
     return [JacLintCheckPass];
 }
 
 def python_ast_passes(request: ProductRequest) -> PassSchedule {
-    import from jaclang.compiler.passes.pyast_load_pass { PyastBuildPass }
     return [PyastBuildPass];
 }
 
@@ -230,40 +164,30 @@ def python_symbols_passes(request: ProductRequest) -> PassSchedule {
 }
 
 def grammar_passes(request: ProductRequest) -> PassSchedule {
-    import from jaclang.compiler.tools.grammar_extract_pass { GrammarExtractPass }
     return [GrammarExtractPass];
 }
 
 def cfg_dot_passes(request: ProductRequest) -> PassSchedule {
-    import from jaclang.compiler.tools.cfg_dot { CoalesceBBPass }
     return [CoalesceBBPass];
 }
 
 def normalize_passes(request: ProductRequest) -> PassSchedule {
-    import from jaclang.compiler.tools.normalize_pass { NormalizePass }
     return [NormalizePass];
 }
 
 def unparse_passes(request: ProductRequest) -> PassSchedule {
-    import from jaclang.compiler.tools.unparse_pass { UnparsePass }
     return [UnparsePass];
 }
 
 def doc_passes(request: ProductRequest) -> PassSchedule {
-    import from jaclang.compiler.tools.doc_ir_gen_pass { DocIRGenPass }
     return [DocIRGenPass];
 }
 
 def format_text_passes(request: ProductRequest) -> PassSchedule {
-    import from jaclang.compiler.tools.jac_formatter_pass { JacFormatPass }
     return [JacFormatPass];
 }
 
 def place_module(program: JacProgram, module: Module) -> bool {
-    import from jaclang.compiler.placement.placement_solver {
-        solve_program_placement,
-        refresh_placement_module
-    }
     refresh_placement_module(module, program);
     solve_program_placement(module, program);
     return True;
@@ -308,7 +232,7 @@ def require_typeshed_stubs -> None {
     }
 }
 
-glob IR_LOADS: tuple[str, ...] = (
+glob IR_LOADS: list[str] = [
          'jaclang.compiler.symbol_utils',
          'jaclang.compiler.expr_keys',
          'jaclang.compiler.type_registry',
@@ -325,8 +249,8 @@ glob IR_LOADS: tuple[str, ...] = (
          'jaclang.compiler.passes.mtir_gen_pass',
          'jaclang.compiler.passes.comptime_resolve_pass',
          'jaclang.project.mobui_scope'
-     ),
-     ANALYSIS_LOADS: tuple[str, ...] = (
+     ],
+     ANALYSIS_LOADS: list[str] = [
          'jaclang.compiler.field_semantics',
          'jaclang.compiler.passes.type_checker_pass',
          'jaclang.compiler.types.type_evaluator',
@@ -355,23 +279,20 @@ glob IR_LOADS: tuple[str, ...] = (
          'jaclang.compiler.passes.ownership_check_pass',
          'jaclang.compiler.passes.region_infer_pass',
          'jaclang.compiler.tools.jac_auto_lint_pass'
-     ),
-     CODEGEN_LOADS: tuple[str, ...] = (
+     ],
+     CODEGEN_LOADS: list[str] = [
          'jaclang.compiler.passes.rc_facts_pass',
          'jaclang.compiler.backends.es',
          'jaclang.compiler.passes.freeze_structure_pass'
-     ),
-     NATIVE_LOADS: tuple[str, ...] = (
-         'jaclang.compiler.backends.native.na_ir_gen_pass',
-
-     );
+     ],
+     NATIVE_LOADS: list[str] = ['jaclang.compiler.backends.native.na_ir_gen_pass', ];
 
 glob PRODUCTS: dict[CompilationProduct, ProductSpec] = {
          CompilationProduct.SYMBOLS: ProductSpec(
              passes=symbols_passes,
              bootstrap=symbols_passes,
-             loads=('jaclang.compiler.symbol_utils', ),
-             tier_with=(CompilationProduct.IR, ),
+             loads=['jaclang.compiler.symbol_utils'],
+             tier_with=[CompilationProduct.IR],
              tiered=True,
              on_import_error=ImportFallback.BOOTSTRAP
          ),
@@ -385,7 +306,7 @@ glob PRODUCTS: dict[CompilationProduct, ProductSpec] = {
          CompilationProduct.FLOW: ProductSpec(passes=flow_passes, cached=True),
          CompilationProduct.PLACEMENT: ProductSpec(action=place_module, acts=True),
          CompilationProduct.ANALYSIS: ProductSpec(
-             needs=(CompilationProduct.FLOW, ),
+             needs=[CompilationProduct.FLOW],
              passes=analysis_passes,
              precheck=require_typeshed_stubs,
              loads=ANALYSIS_LOADS,
@@ -397,7 +318,7 @@ glob PRODUCTS: dict[CompilationProduct, ProductSpec] = {
              action=prepare_interface, acts=True, cached=True
          ),
          CompilationProduct.CLIENT: ProductSpec(
-             needs=(CompilationProduct.ANALYSIS, ),
+             needs=[CompilationProduct.ANALYSIS],
              passes=client_passes,
              drop=drop_client,
              cached=True
@@ -407,7 +328,7 @@ glob PRODUCTS: dict[CompilationProduct, ProductSpec] = {
              passes=codegen_passes,
              bootstrap=empty_schedule,
              loads=CODEGEN_LOADS,
-             tier_with=(CompilationProduct.IR, CompilationProduct.NATIVE_LOWER, ),
+             tier_with=[CompilationProduct.IR, CompilationProduct.NATIVE_LOWER],
              tiered=True,
              on_import_error=ImportFallback.REPORT
          ),
@@ -415,27 +336,27 @@ glob PRODUCTS: dict[CompilationProduct, ProductSpec] = {
          CompilationProduct.FROZEN: ProductSpec(
              passes=frozen_passes,
              bootstrap=empty_schedule,
-             tier_with=(CompilationProduct.CODEGEN, ),
+             tier_with=[CompilationProduct.CODEGEN],
              tiered=True,
              on_import_error=ImportFallback.REPORT
          ),
          CompilationProduct.BYTECODE: ProductSpec(
-             needs=(CompilationProduct.PY_IR, ), passes=bytecode_passes
+             needs=[CompilationProduct.PY_IR], passes=bytecode_passes
          ),
          CompilationProduct.NATIVE_IR: ProductSpec(
-             needs=(CompilationProduct.FLOW, CompilationProduct.ANALYSIS, ),
+             needs=[CompilationProduct.FLOW, CompilationProduct.ANALYSIS],
              passes=native_ir_passes,
              loads=NATIVE_LOADS,
              cached=True
          ),
          CompilationProduct.NATIVE_LOWER: ProductSpec(
-             needs=(CompilationProduct.ANALYSIS, ),
+             needs=[CompilationProduct.ANALYSIS],
              passes=native_lower_passes,
              drop=drop_native_ir,
              loads=NATIVE_LOADS
          ),
          CompilationProduct.NATIVE_OBJECT: ProductSpec(
-             needs=(CompilationProduct.NATIVE_LOWER, ),
+             needs=[CompilationProduct.NATIVE_LOWER],
              passes=native_object_passes,
              drop=drop_native_object
          ),
@@ -788,10 +709,6 @@ def execute_passes(
     passes: PassSchedule,
     cancel_token: (CancelToken | None) = None
 ) -> Module {
-    import from jaclang.compiler.driver.pass_driver {
-        run_pass,
-        build_diagnostic_policy
-    }
     build = program.analysis.build(module);
     validate_schedule(
         passes,
@@ -824,7 +741,6 @@ def run_utility(
     program: JacProgram,
     cancel_token: (CancelToken | None) = None
 ) -> any {
-    import from jaclang.compiler.driver.pass_driver { run_pass }
     if not PRODUCTS[product].tool {
         raise ValueError(f"{product.value} is not a utility product");
     }

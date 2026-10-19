@@ -465,7 +465,40 @@ impl NaIRGenPass._emit_ospath_call(name: str, nd: uni.FuncCall) -> (ir.Value | N
 
         hit_i = self.builder.ptrtoint(hit, i64, name="dn.hiti");
         p_i = self.builder.ptrtoint(p, i64, name="dn.pi");
-        dlen = self.builder.sub(hit_i, p_i, name="dn.len");
+        head_len = self.builder.add(
+            self.builder.sub(hit_i, p_i, name="dn.slash"),
+            ir.Constant(i64, 1),
+            name="dn.headlen"
+        );
+        scan_bb = func.append_basic_block(name="dn.scan");
+        peek_bb = func.append_basic_block(name="dn.peek");
+        back_bb = func.append_basic_block(name="dn.back");
+        trim_bb = func.append_basic_block(name="dn.trim");
+        self.builder.branch(scan_bb);
+        self.builder.position_at_end(scan_bb);
+        keep = self.builder.phi(i64, name="dn.keep");
+        keep.add_incoming(head_len, cut_bb);
+        at_start = self.builder.icmp_signed(
+            "==", keep, ir.Constant(i64, 0), name="dn.atstart"
+        );
+        self.builder.cbranch(at_start, trim_bb, peek_bb);
+        self.builder.position_at_end(peek_bb);
+        prev_idx = self.builder.sub(keep, ir.Constant(i64, 1), name="dn.previdx");
+        prev_ch = self.builder.load(
+            self.builder.gep(p, [prev_idx], name="dn.prevptr"), name="dn.prevch"
+        );
+        prev_slash = self.builder.icmp_signed(
+            "==", prev_ch, ir.Constant(i8, 47), name="dn.prevslash"
+        );
+        self.builder.cbranch(prev_slash, back_bb, trim_bb);
+        self.builder.position_at_end(back_bb);
+        keep.add_incoming(prev_idx, back_bb);
+        self.builder.branch(scan_bb);
+        self.builder.position_at_end(trim_bb);
+        all_slashes = self.builder.icmp_signed(
+            "==", keep, ir.Constant(i64, 0), name="dn.allslash"
+        );
+        dlen = self.builder.select(all_slashes, head_len, keep, name="dn.len");
         bufsz = self.builder.add(dlen, ir.Constant(i64, 1), name="dn.bufsz");
         self._set_rc_ctx("dirname", "");
         raw = self._str_alloc(self.builder, bufsz, name="dn.raw");
