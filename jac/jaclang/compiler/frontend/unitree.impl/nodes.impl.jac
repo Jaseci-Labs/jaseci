@@ -455,8 +455,23 @@ impl UniNode.codespace -> CodeContext {
             return CodeContext.NATIVE;
         }
     }
-    nd: (UniNode | None) = self.parent;
+    nd: (UniNode | None) = self;
     while (nd is not None) {
+        if isinstance(nd, ImplDef) {
+            decl = nd.decl_link;
+            if isinstance(decl, ContextAwareNode) {
+                if (decl.code_context == CodeContext.CLIENT) {
+                    return CodeContext.CLIENT;
+                }
+                if (decl.code_context == CodeContext.NATIVE) {
+                    return CodeContext.NATIVE;
+                }
+            }
+        }
+        if nd is self {
+            nd = nd.parent;
+            continue;
+        }
         if isinstance(nd, ContextAwareNode) {
             context = nd.code_context;
             if (context == CodeContext.CLIENT) {
