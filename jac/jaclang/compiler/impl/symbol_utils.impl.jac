@@ -383,7 +383,7 @@ impl report_placement_warnings(reporter: CompilerPass, mod: Module) {
             and stmt.codespace_dual
             and idx in written_glob_idxs
         ) {
-            es = ps.elements[idx] if idx < len(ps.elements) else None;
+            es = ps.element_at(idx);
             gname = es.name if es is not None else 'glob';
             if not _already_reported(reporter.prog, reporter, W6006, stmt) {
                 reporter.ctx.emit(W6006, node_override=stmt, name=gname);

@@ -181,7 +181,7 @@ impl collect_placement_rows(prog: JacProgram) -> dict[str, dict[str, any]] {
                 or stmt.top_element is not stmt {
                 continue;
             }
-            es = ps.elements[idx] if idx < len(ps.elements) else None;
+            es = ps.element_at(idx);
             notes: list[str] = [];
             if es is not None {
                 if es.pinned {
@@ -198,10 +198,7 @@ impl collect_placement_rows(prog: JacProgram) -> dict[str, dict[str, any]] {
                     notes.append(extra);
                 }
             }
-            rname = element_display_name(stmt);
-            if idx < len(ps.elements) {
-                rname = ps.elements[idx].name;
-            }
+            rname = es.name if es is not None else element_display_name(stmt);
             mod_rows.append(
                 {
                     'name': rname,

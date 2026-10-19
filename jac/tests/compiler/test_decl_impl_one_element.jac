@@ -27,6 +27,7 @@ import from jaclang.compiler.driver.compile_options {
 }
 import from jaclang.compiler.backends.py.codegen_shim { generated_python }
 import from jaclang.project.config { JacConfig, CheckConfig, LintConfig, set_config }
+import from jaclang.compiler.placement.placement_export { collect_placement_rows }
 
 glob FIXTURES = os.path.join(
          JAC_ROOT, "tests", "compiler", "fixtures", "decl_impl"
@@ -131,6 +132,17 @@ test "a linked impl has no placement or scope of its own" {
             assert stmt.sym_tab is decl;
         }
     }
+}
+
+test "placement report rows keep their own element after a linked impl" {
+    path = os.path.join(FIXTURES, "placement_rows.jac");
+    prog = JacProgram();
+    prog.compile(path, options=CompileOptions(skip_native_engine=True));
+    rows = collect_placement_rows(prog)[os.path.abspath(path)]["rows"];
+    assert [row["name"] for row in rows] == ["alpha", "beta", "gamma"] , rows;
+    beta = rows[1];
+    assert "DOM: jsx construction" in beta["evidence"] , beta;
+    assert "DOM: jsx construction" not in rows[2]["evidence"] , rows[2];
 }
 
 """The corpus file written three ways: inline, impls at the bottom of the

@@ -1,3 +1,12 @@
+impl PlacementSummary.element_at(index: int) -> (ElementSummary | None) {
+    for es in self.elements {
+        if es.index == index {
+            return es;
+        }
+    }
+    return None;
+}
+
 impl NativeBlockerScan.first -> str {
     if self.module {
         return self.module;

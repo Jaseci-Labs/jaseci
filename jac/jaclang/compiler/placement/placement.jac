@@ -58,6 +58,8 @@ obj PlacementSummary {
         jac_deps: list[str] = [],
         has_refs: bool = False,
         elements: list[ElementSummary] = [];
+
+    def element_at(index: int) -> (ElementSummary | None);
 }
 
 def element_display_name(stmt: uni.UniNode) -> str;
