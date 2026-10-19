@@ -2,14 +2,10 @@
 # Shared by JIR, the JacPython bootstrap, and CI. Directories include only
 # .jac/.py sources, excluding hidden directories, tests/, test/, __pycache__,
 # and *.test.* files. Keep producing-compiler identity in every artifact key.
-# The wiring manifest is listed by file: an edit that only moves a wire shifts
-# the line numbers recorded in every served interface, so compiled artifacts
-# and the precompile cache must treat it as an identity input.
 __init__.py
 jac0.py
 bootstrap_manifest.py
 meta_importer.py
-archwire.jac
 jac0core
 compiler
 runtime
