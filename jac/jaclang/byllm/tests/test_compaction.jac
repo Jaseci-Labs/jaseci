@@ -313,31 +313,49 @@ test "ContextWindowExceededError triggers emergency compaction and retries" {
 }
 
 
-test "a proactive compaction that does not reduce the history lets the call continue" {
-    llm = MockLLM(
-        ctx_window=1000,
-        outputs=[
-            (MockToolCall(tool=step_a, args={}), {"prompt_tokens": 100}),
-            (MockToolCall(tool=step_a, args={}), {"prompt_tokens": 900}),
-            (MockToolCall(tool=finish_tool, args={"final_output": "ok"}), {})
-        ]
-    );
-
-    hook_calls = [0];
+test "a proactive compaction is applied only when it reduces the history, reasoning included" {
+    thought = {"reasoning_content": "WHY " * 1000};
     def noop_hook(msgs: list[any], keep_recent: int) -> list[any] {
-        hook_calls[0] += 1;
         return msgs;
     }
-
-    def my_task(q: str) -> str by llm(
-        tools=[step_a], threshold_ratio=0.80, on_compaction=noop_hook
-    );
-
-    with capture_loguru() as logs {
-        assert my_task("test") == "ok";
+    def drop_reasoning(msgs: list[any], keep_recent: int) -> list[any] {
+        return [
+            {
+                k: v
+                for (k, v) in m.items()
+                if k != "reasoning_content"
+            }
+                if isinstance(m, dict)
+                else m for m in msgs
+        ];
     }
-    assert hook_calls[0] == 1;
-    assert "could not reduce the message history" in logs.text();
+    for (label, hook, fields, reduces) in [
+        ("returns the same history", noop_hook, {}, False),
+        ("drops only reasoning", drop_reasoning, thought, True)
+    ] {
+        llm = MockLLM(
+            ctx_window=1000,
+            outputs=[
+                call("step_a", {}, usage={"prompt_tokens": 100}, fields=fields),
+                call("step_a", {}, usage={"prompt_tokens": 900}, fields=fields),
+                (MockToolCall(tool=finish_tool, args={"final_output": "ok"}), {})
+            ]
+        );
+
+        def my_task(q: str) -> str by llm(
+            tools=[step_a], threshold_ratio=0.80, on_compaction=hook
+        );
+
+        with capture_loguru() as logs {
+            assert my_task("test") == "ok" , f"{label}: the call must continue";
+        }
+        applied = "reduced message list" in logs.text();
+        refused = "could not reduce the message history" in logs.text();
+        assert applied != refused , f"{label}: expected one verdict in:\n{logs.text()}";
+        assert applied == reduces , (
+            f"{label}: expected applied={reduces}, log says applied={applied}"
+        );
+    }
 }
 
 

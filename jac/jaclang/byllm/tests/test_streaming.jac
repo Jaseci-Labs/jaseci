@@ -165,6 +165,52 @@ test "a str answer that skips finish_tool still arrives on the chunk channel" {
 }
 
 
+test "reasoning streams on its own channel, merged, and never in the answer" {
+    thought = "REASONING " + ("step by step " * 50);
+    for (label, fields) in [
+        ("reasoning", {"reasoning_content": thought}),
+        ("none", {})
+    ] {
+        llm = MockLLM(
+            outputs=[
+                call("get_weather", {"city": "London"}, fields=fields),
+                say("It is sunny in London.", fields=fields)
+            ],
+            chunk_size=12
+        );
+
+        def answer(question: str) -> str by llm(
+            tools=[get_weather], stream=True, logging=True
+        );
+
+        events = stream_events(answer("What is the weather in London?"));
+        reasoning = events_of(events, "reasoning");
+        texts = [str(e.data.get("content", "")) for e in reasoning];
+        visible = chunk_text(events)
+            + "".join(
+                str(e.data.get("content", "")) for e in events_of(events, "thought")
+            );
+        assert "REASONING" not in visible , f"{label}: reasoning leaked into the answer";
+        if not fields {
+            assert not reasoning , f"{label}: no reasoning was sent, got {texts}";
+            continue;
+        }
+        assert "".join(texts) == thought + thought , (
+            f"{label}: both calls' reasoning must arrive whole, got {texts}"
+        );
+        assert len(reasoning) < len(thought) // 12 , (
+            f"{label}: {len(reasoning)} events for {len(thought) // 12
+                * 2} chunks, not merged"
+        );
+        assert all(isinstance(e.data.get("iteration"), int) for e in reasoning) , (
+            f"{label}: each reasoning event names its iteration: {[
+                e.data for e in reasoning
+            ]}"
+        );
+    }
+}
+
+
 test "a structured return cannot stream without a handler to consume it" {
     # Streaming a non-str return has no well-defined result unless something
     # consumes the events, so it is rejected up front rather than half-working.

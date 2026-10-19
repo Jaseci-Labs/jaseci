@@ -67,6 +67,37 @@ test "incl_info examples and temperature reach the model" {
 }
 
 
+test "reasoning params reach the model only when set" {
+    enabled = {"type": "enabled"};
+    for (label, effort, thinking, extra) in [
+        ("effort", "low", None, None),
+        ("thinking", None, enabled, None),
+        ("extra_body", None, None, {"thinking": enabled}),
+        ("none set", None, None, None)
+    ] {
+        llm = MockLLM(outputs=[say("ok")]);
+
+        def answer(q: str) -> str by llm(
+            reasoning_effort=effort, thinking=thinking, extra_body=extra
+        );
+
+        assert answer("hi") == "ok" , f"{label}: the call must still answer";
+        sent = llm.seen[0];
+        for (key, want) in [
+            ("reasoning_effort", effort),
+            ("thinking", thinking),
+            ("extra_body", extra)
+        ] {
+            if want is None {
+                assert key not in sent , f"{label}: unset {key} must not be sent: {sent}";
+            } else {
+                assert sent.get(key) == want , f"{label}: {key} must reach the model: {sent}";
+            }
+        }
+    }
+}
+
+
 test "a method's own object reaches the prompt as context" {
     llm = MockLLM(outputs=[86.75]);
 

@@ -191,3 +191,96 @@ test "a second streamed turn grows the same history and keeps the first answer" 
         f"expected two user messages, got {len(by_role(history, 'user'))}"
     );
 }
+
+
+"""Provider fields a reply can carry, per kind of model. `stream` is False where
+litellm's stream builder does not carry the field, so only whole replies are checked."""
+def reply_field_rows -> list[tuple[str, dict[str, any], bool]] {
+    signed = {"type": "thinking", "thinking": "THINK_SIGNED", "signature": "SIG_A"};
+    sealed = {"type": "thinking", "thinking": "", "signature": "SIG_SEALED"};
+    return [
+        ("reasoning text", {"reasoning_content": "THINK_TEXT"}, True),
+        (
+            "signed thinking",
+            {"reasoning_content": "THINK_SIGNED", "thinking_blocks": [signed]},
+            True
+        ),
+        ("encrypted only", {"thinking_blocks": [sealed]}, True),
+        ("nothing", {}, True)
+    ];
+}
+
+
+"""The ways a caller drives a tool loop, as `by llm()` kwargs."""
+def loop_path_rows -> list[tuple[str, dict[str, any]]] {
+    return [
+        ("whole replies", {}),
+        ("stream", {"stream": True}),
+        ("stream with events", {"stream": True, "logging": True})
+    ];
+}
+
+
+"""One turn of a tool loop over `history`, whatever the path returns."""
+def run_turn(llm: MockLLM, history: list[any], kwargs: dict[str, any], message: str) {
+    stream = kwargs.get("stream", False);
+    logging = kwargs.get("logging", False);
+    if stream and logging {
+        def ask_events(msg: str) -> str by llm(
+            tools=[get_weather], conversation=history, stream=True, logging=True
+        );
+        for _ in ask_events(message) {}
+    } elif stream {
+        def ask_stream(msg: str) -> str by llm(
+            tools=[get_weather], conversation=history, stream=True
+        );
+        for _ in ask_stream(message) {}
+    } else {
+        def ask(msg: str) -> str by llm(tools=[get_weather], conversation=history);
+        ask(message);
+    }
+}
+
+
+test "the provider's own fields on a reply are kept and sent back, on every loop path" {
+    for (path, kwargs) in loop_path_rows() {
+        for (kind, fields, streams) in reply_field_rows() {
+            if kwargs.get("stream", False) and not streams {
+                continue;
+            }
+            label = f"{path}, {kind}";
+            history: list[any] = [];
+            llm = MockLLM(
+                outputs=[
+                    call("get_weather", {"city": "Paris"}, fields=fields),
+                    say("Paris is sunny.", fields=fields),
+                    say("Still sunny.", fields=fields)
+                ]
+            );
+            run_turn(llm, history, kwargs, "How is Paris?");
+            turn1 = [dict(m) for m in history];
+            replies = by_role(turn1, "assistant");
+            assert len(replies) == 2 , f"{label}: expected the call and the answer: {turn1}";
+            for reply in replies {
+                for (key, value) in fields.items() {
+                    assert reply.get(key) == value , (
+                        f"{label}: {key} was not kept on {reply}"
+                    );
+                }
+                for key in ("reasoning_content", "thinking_blocks") {
+                    if key not in fields {
+                        assert not reply.get(key) , (
+                            f"{label}: {key} appeared from nowhere on {reply}"
+                        );
+                    }
+                }
+            }
+            run_turn(llm, history, kwargs, "Still sunny?");
+            sent = list(llm.sent("messages")[-1]);
+            assert sent[1:1 + len(turn1)] == turn1 , (
+                f"{label}: turn 2 must resend turn 1 unchanged, for prompt caching:\n"
+                f"sent {sent[1:1 + len(turn1)]}\nheld {turn1}"
+            );
+        }
+    }
+}

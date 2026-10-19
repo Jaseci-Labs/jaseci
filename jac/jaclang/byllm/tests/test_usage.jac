@@ -17,7 +17,11 @@ import jaclang.byllm.llm as _byllm_llm_mod;
 import from jaclang.byllm.lib { Model, MockLLM, OutputTruncatedError }
 import from jaclang.byllm.mtir { MTRuntime }
 import from jaclang.byllm.types { MockToolCall, IterationContext }
-import from jaclang.byllm.telemetry { register_agent_callback, _agent_callbacks }
+import from jaclang.byllm.telemetry {
+    register_agent_callback,
+    _agent_callbacks,
+    _aggregate_usage
+}
 import from support { TOKENS, call, events_of, finish, mk_run, say, scripted }
 
 glob MODEL = "gpt-4o-mini",
@@ -614,7 +618,7 @@ test "usage StreamEvent always terminates a logging=True stream, even with no us
 }
 
 
-test "cache token fields are normalized onto every recorded call, regardless of provider shape" {
+test "cache and reasoning token fields are normalized onto every recorded call, regardless of provider shape" {
     mt = mk_run();
 
     # Anthropic-shaped: cache fields already top-level.
@@ -638,7 +642,8 @@ test "cache token fields are normalized onto every recorded call, regardless of 
             "prompt_tokens": 200,
             "completion_tokens": 20,
             "total_tokens": 220,
-            "prompt_tokens_details": {"cached_tokens": 60}
+            "prompt_tokens_details": {"cached_tokens": 60},
+            "completion_tokens_details": {"reasoning_tokens": 12}
         },
         "gpt-4o-mini"
     );
@@ -666,9 +671,18 @@ test "cache token fields are normalized onto every recorded call, regardless of 
         "missing the key entirely"
     );
 
+    assert openai_rec["reasoning_tokens"] == 12 , (
+        "reasoning_tokens must be lifted from completion_tokens_details"
+    );
+
     bare_rec = mt._usage_history[2];
     assert bare_rec["cache_read_input_tokens"] == 0;
     assert bare_rec["cache_creation_input_tokens"] == 0;
+    assert bare_rec["reasoning_tokens"] == 0 , "no reasoning reported must read as 0";
+    assert anthropic_rec["reasoning_tokens"] == 0;
+    assert _aggregate_usage(mt._usage_history)["total"]["reasoning_tokens"] == 12 , (
+        "the totals must add up reasoning tokens like any other count"
+    );
 }
 
 

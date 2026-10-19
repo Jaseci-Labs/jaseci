@@ -8,9 +8,13 @@ import from jaclang.byllm._optdeps.litellm { LiteLLMMessage }
 import jaclang.byllm.llm as _byllm_llm_mod;
 import from jaclang.byllm.telemetry {
     register_agent_callback,
+    register_llm_call_hook,
+    unregister_llm_call_hook,
     _emit_agent_telemetry,
     _agent_callbacks
 }
+import from jaclang.byllm.lib { MockLLM }
+import from support { call, say }
 
 def make_mt_run(
     invocation_id: str = "inv-test-001",
@@ -520,4 +524,73 @@ test "_astream_with_telemetry does not leak the invocation id into the consumer"
     assert _current_invocation_id.get(None) is None , (
         "the invocation id must not leak past the generator's own driver either"
     );
+}
+
+
+"""Look a city up."""
+def _lookup_city(city: str) -> str {
+    return f"{city} found";
+}
+
+
+test "an llm call hook gets each model call once, with its full reply, and cannot break it" {
+    thought = {"reasoning_content": "WHY"};
+    for (path, stream) in [("whole replies", False), ("stream with events", True)] {
+        records: list[dict[str, any]] = [];
+        def bad_hook(record: dict[str, any]) {
+            raise RuntimeError("hook broke");
+        }
+        def good_hook(record: dict[str, any]) {
+            records.append(record);
+        }
+        llm = MockLLM(
+            outputs=[
+                call("_lookup_city", {"city": "Kandy"}, fields=thought),
+                say("Kandy found.", fields=thought),
+                say("again")
+            ]
+        );
+
+        def ask(q: str) -> str by llm(tools=[_lookup_city]);
+        def ask_events(q: str) -> str by llm(
+            tools=[_lookup_city], stream=True, logging=True
+        );
+
+        register_llm_call_hook(bad_hook);
+        register_llm_call_hook(good_hook);
+        try {
+            if stream {
+                for _ in ask_events("Find Kandy") {}
+            } else {
+                assert ask("Find Kandy") == "Kandy found." , f"{path}: a failing hook broke the call";
+            }
+        } finally {
+            unregister_llm_call_hook(bad_hook);
+            unregister_llm_call_hook(good_hook);
+        }
+        assert len(records) == 2 , f"{path}: one record per model call, got {len(
+            records
+        )}";
+        first_roles = [m.get("role") for m in records[0]["new_messages"]];
+        assert first_roles[:2] == ["system", "user"] , (
+            f"{path}: the first call reports what it was sent, prompt included: {first_roles}"
+        );
+        assert [m.get("role") for m in records[1]["new_messages"]] == ["tool"] , (
+            f"{path}: a later call reports only what is new: {records[1][
+                'new_messages'
+            ]}"
+        );
+        for (i, rec) in enumerate(records) {
+            assert rec["reply"].get("reasoning_content") == "WHY" , (
+                f"{path}: call {i} must carry the full reply: {rec['reply']}"
+            );
+            assert rec["usage"].get("model") , f"{path}: call {i} needs its usage: {rec}";
+        }
+        assert records[0]["reply"].get("tool_calls") , f"{path}: the tool call is in the reply";
+
+        if not stream {
+            assert ask("Find Kandy") == "again" , f"{path}: the call after unregistering";
+            assert len(records) == 2 , f"{path}: an unregistered hook must not fire";
+        }
+    }
 }
