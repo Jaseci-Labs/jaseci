@@ -42,12 +42,7 @@ glob _NOGC_OSP_ENGINE_STRUCTS: tuple[str, ...] = (
          "ctor_leftover"
      );
 
-def _named_struct_name(t: (ir.Type | None)) -> str {
-    if isinstance(t, ir.IdentifiedStructType) {
-        return t.name;
-    }
-    return "";
-}
+def _named_struct_name(t: (ir.Type | None)) -> str;
 
 impl NaIRGenPass._gc_mode -> str {
     _mode = self.prog.options.na_gc_mode;
@@ -3367,4 +3362,11 @@ impl NaIRGenPass._nogc_str_free_owned(val: ir.Value) -> None {
     i8p = ir.IntType(8).as_pointer();
     _free_fn = self._get_or_declare_extern("free", ir.VoidType(), [i8p]);
     self.builder.call(_free_fn, [self.builder.bitcast(_d, i8p, name="osf.cast")]);
+}
+
+impl _named_struct_name(t: (ir.Type | None)) -> str {
+    if isinstance(t, ir.IdentifiedStructType) {
+        return t.name;
+    }
+    return "";
 }

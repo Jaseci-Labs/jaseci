@@ -1441,6 +1441,32 @@ def my_agent(query: str) -> str by llm(
 );
 ```
 
+### Observing compactions
+
+Only an **applied** compaction is reported: byLLM keeps the old history when the result is not smaller, and that discarded compaction only logs a warning. A `logging=True` stream or a `stream_handler` gets a `compaction` event as soon as one is applied; an emergency one is reported before the retry, so it shows even when the retry fails:
+
+```jac
+with entry {
+    for event in my_agent("...") {
+        if event.event_type == "compaction" {
+            print(event.data["reason"]);           # "threshold" or "overflow"
+            print(event.data["by"]);               # "hook" or "builtin"
+            print(event.data["tokens_before"], event.data["tokens_after"]);
+        }
+    }
+}
+```
+
+| Field | Description |
+|---|---|
+| `reason` | `"threshold"` when `prompt_tokens / ctx_window` crossed `threshold_ratio`, `"overflow"` when the provider rejected the request as too long |
+| `by` | `"hook"` when your `on_compaction` produced the new history, `"builtin"` for byLLM's own compactor (which may summarise, or only clip long tool results when there is too little to summarise) |
+| `messages_before`, `messages_after` | Message count before and after, system prompt included |
+| `tokens_before`, `tokens_after` | byLLM's own size estimate (about four characters per token), the figure the applied-or-discarded decision compares. These are not provider token counts |
+| `iteration` | The ReAct iteration whose reply triggered the compaction |
+
+A compaction on the reply that ends the turn arrives just before `steps_done`. The built-in summariser's own call is billed as a `compaction` call in `usage_step` and `usage`. Calls that do not stream list their applied compactions in the `compactions` field of the [telemetry record](#telemetry-record-fields), as the same dicts without `iteration`.
+
 ### `CompactionNotEffectiveError`
 
 If the provider rejects a request as too long and compaction cannot reduce the history, or the request is rejected again after a compaction, byLLM raises `CompactionNotEffectiveError` rather than retrying forever. Crossing the threshold without being able to compact only logs a warning. See [Error Handling](#error-handling) for how to catch it.
@@ -1594,6 +1620,7 @@ delta from a stream that replaced an abandoned one.
 | `thought` | LLM produced reasoning text before a tool call | `content` (str), `iteration` (int) |
 | `steps_done` | ReAct loop finished, final answer next | `iterations` (int), `reason` (str): `"max_iterations"`, `"aborted"`, or `"aborted_with_summary"` |
 | `chunk` | One token of the final streamed answer | `content` (str) |
+| `compaction` | Auto-compaction replaced the message history (tool-calling invocations only) | See [Observing compactions](#observing-compactions) |
 | `usage_step` | A single LLM call finished (tool-calling invocations only; see [Per-Call Usage](#per-call-usage)) | Same shape as `usage`, scoped to that one call |
 | `usage` | All LLM calls complete (always the last event) | `total` (dict), `by_kind` (dict), `per_call` (list[dict]), `requests` (int) |
 
@@ -1752,6 +1779,23 @@ with entry {
     img_from_pil = Image(pil_img);
 }
 ```
+
+### Several Images
+
+Pass a `list` of media to send every item, in order. A list counts as media only when every element is; an empty list, or one that mixes in plain values, is described in the prompt as text instead.
+
+```jac
+import from jaclang.byllm.lib { Image }
+
+"""Name the main colour of each image."""
+def name_colours(images: list[Image]) -> str by llm();
+
+with entry {
+    print(name_colours([Image("red.png"), Image("blue.png")]));
+}
+```
+
+Lists given through `incl_info` are sent the same way. `Text` is exported next to `Image` for a text block of its own, so a list can mix both: `list[Image | Text]`.
 
 ### Structured Output from Images
 
@@ -2447,6 +2491,7 @@ Each callback receives a dict with these fields:
 | `status` | `str` | `"success"` or `"error"` |
 | `error` | `str \| None` | Error message if status is `"error"` (truncated to 1000 chars) |
 | `tokens` | `dict` | Same shape as the `usage` `StreamEvent` (see [Usage Tracking](#usage-tracking)); covers every invocation shape, streaming or not |
+| `compactions` | `list[dict]` | Compactions applied during the invocation, in order; see [Observing compactions](#observing-compactions). Empty when none |
 
 ### Combining with LiteLLM Per-Call Logging
 

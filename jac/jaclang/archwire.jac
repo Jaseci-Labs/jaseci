@@ -4417,6 +4417,7 @@ graph import byllm {
             MockRawResponse,
             MockToolCall,
             StreamEvent,
+            Text,
             Tool,
             ToolCallResultMsg,
             Video
@@ -4441,17 +4442,17 @@ graph import byllm {
         },
         mtir {
             LiteLLMMessage,
-            Media,
             Message,
             MessageRole,
             MessageType,
             Text,
             Tool,
             ToolCallResultMsg,
+            as_media_list,
             image_resp_kind
         },
         parallel { ToolCallResultMsg, normalize_tool_result },
-        systemone.build_state { Media },
+        systemone.build_state { as_media_list },
         systemone.lower { image_resp_kind },
         visit_routing.route_visit { Message, MessageRole },
     ]
@@ -7023,7 +7024,8 @@ graph import compiler {
             W3050,
             W3051,
             W3053,
-            W3054
+            W3054,
+            W3055
         },
         tools.jac_auto_lint_pass.JacAutoLintPass._check_filter_compare_tautology {
             W3040
@@ -7337,11 +7339,13 @@ graph import compiler {
         driver.nativecache._module_files_and_imports { parse as rd_parse },
         driver.program.JacProgram.parse_source { annex_sources, parse_woven },
     ]
-    frontend.parser.lexer ++> tools.jac_auto_lint_pass.JacAutoLintPass._reparse_signature {
-        tokenize_full
-    }
+    frontend.parser.lexer ++> [
+        tools.jac_auto_lint_pass.JacAutoLintPass._impl_header { tokenize_full },
+        tools.jac_auto_lint_pass.JacAutoLintPass._reparse_signature { tokenize_full },
+    ]
     frontend.parser.parser ++> [
         jc_unit { parse_program },
+        tools.jac_auto_lint_pass.JacAutoLintPass._impl_header { Parser },
         tools.jac_auto_lint_pass.JacAutoLintPass._reparse_signature { Parser },
         types.type_evaluator.TypeEvaluator._resolve_string_type_expr {
             parse_expression

@@ -65,7 +65,7 @@ directories = ["."]
 directories = ["core/jacyac"]
 
 [check.lint]
-select = ["all", "strip-comments", "strip-docstrings"]
+select = ["all"]
 exclude = [
     ".jac/*",
     "core/site/examples/*",

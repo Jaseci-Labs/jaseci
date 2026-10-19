@@ -386,11 +386,7 @@ glob RETURNS_TWICE_EXTERNS: frozenset[str] = frozenset(
          }
      );
 
-def _mark_returns_twice(name: str, func: ir.Function) {
-    if name in RETURNS_TWICE_EXTERNS {
-        func.attributes.add("returns_twice");
-    }
-}
+def _mark_returns_twice(name: str, func: ir.Function);
 
 impl NaIRGenPass._declare_clib_ability(nd: uni.Ability) -> None {
     if not isinstance(nd, uni.Ability) {
@@ -1801,4 +1797,10 @@ impl NaIRGenPass._emit_rc_gc_env_off_fn -> ir.Function {
     );
     b_chk.ret(_is_off);
     return fn;
+}
+
+impl _mark_returns_twice(name: str, func: ir.Function) {
+    if name in RETURNS_TWICE_EXTERNS {
+        func.attributes.add("returns_twice");
+    }
 }
