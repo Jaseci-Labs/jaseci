@@ -311,7 +311,7 @@ impl NaIRGenPass._lower_module -> None {
     self._finalize_trace_lookup();
     self._finish_osp_reclaim_hook();
 
-    if self.has_native_code {
+    if self.has_native_code or not self._has_own_code(self.module) {
         if self.ctx.errors_had or self._internal_errors {
             return;
         }
