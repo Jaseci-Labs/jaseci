@@ -1875,7 +1875,9 @@ graph import {
         compiler.driver.application._prepare_revision { client_input_dirs },
     ]
     project.config ++> [
-        artifacts.router._provision | toolchains.store.offline { offline_mode },
+        artifacts.router._provision
+            | data.pg_dist.bundled_dist_dir
+            | toolchains.store.offline { offline_mode },
         cache.registry.project_bucket
             | cli.commands.analysis._configured_check_excludes
             | cli.commands.architecture

@@ -240,6 +240,28 @@ test "an invalid JAC_PG_DIST refuses before any fetch" {
 }
 
 
+test "an offline build refuses to fetch a missing distribution" {
+    import from jaclang.data.pg_dist { bundled_dist_dir }
+    with TemporaryDirectory() as tmp {
+        config = JacConfig();
+        config.network.offline = True;
+        with patch.dict(
+            os.environ, {"JAC_CACHE_HOME": str(Path(tmp) / "cache"), "JAC_PG_DIST": ""}
+        ), patch("jaclang.project.config.get_config", return_value=config), patch(
+            "jaclang.data.pg_dist.download_dist",
+            side_effect=AssertionError("must not reach Maven when offline")
+        ) {
+            try {
+                bundled_dist_dir();
+                assert False , "an offline miss must not fetch";
+            } except ArtifactUnavailable as e {
+                assert "offline" in str(e) , str(e);
+            }
+        }
+    }
+}
+
+
 test "JAC_PG_HOME relocates the pg bucket" {
     import from jaclang.cache.registry { bucket }
     with TemporaryDirectory() as tmp {

@@ -90,6 +90,35 @@ def default_data_dir(system: str, identifier: str, app_name: str) -> str {
 }
 
 
+def _migrate_legacy_data_dir(data_dir: str, app_dir: str) -> None {
+    """Carry pre-existing app state into the per-user data dir, on upgrade.
+
+    Before this, a Linux app kept its graph and session beside the app image
+    (`<app_dir>/.jac/desktop`). Copy that once into the new per-user dir so an
+    upgrade keeps its state instead of starting empty. macOS and Windows were
+    already per-user, so their old and new dirs are equal and this is a no-op.
+    A missing legacy dir, or a new dir that already has state, is left alone.
+    """;
+    if not app_dir or os.path.realpath(data_dir) == os.path.realpath(app_dir) {
+        return;
+    }
+    legacy = os.path.join(app_dir, ".jac", "desktop");
+    current = os.path.join(data_dir, ".jac", "desktop");
+    if not os.path.isdir(legacy) or os.path.exists(current) {
+        return;
+    }
+    try {
+        import shutil;
+        os.makedirs(os.path.dirname(current), exist_ok=True);
+        shutil.copytree(legacy, current);
+    } except Exception as e {
+        sys.stderr.write(
+            "host_boot: could not migrate desktop state: " + str(e) + "\n"
+        );
+    }
+}
+
+
 def embedded_store_env(app_dir: str, data_dir: str, pg_dist: str) -> dict[str, str] {
     """The environment that gives the embedded store a per-app cluster and the
     distribution baked beside the app image.
@@ -337,8 +366,14 @@ def boot(config_json: str) -> HostContext {
 
     layout = AppLayout.from_executable(Path(host_executable()));
     app_dir = str(cfg.get("app_dir") or "") or str(layout.resources);
-    data_dir = str(os.environ.get("JAC_DATA_PATH", ""))
+    chosen_data_dir = os.environ.get("JAC_DATA_PATH", "");
+    data_dir = chosen_data_dir
         or default_data_dir(platform.system(), identifier, app_name);
+    if not chosen_data_dir {
+        # Only the default path changed; a user-chosen JAC_DATA_PATH is already
+        # the user's own location and keeps its state.
+        _migrate_legacy_data_dir(data_dir, app_dir);
+    }
 
     if backend == EMBEDDED {
         for (key, value) in embedded_store_env(

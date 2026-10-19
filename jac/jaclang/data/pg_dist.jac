@@ -326,6 +326,14 @@ def bundled_dist_dir -> str {
             return vendored;
         }
     }
+    # A fetch is the only remaining source; refuse it in an offline project
+    # rather than reaching Maven for metadata the build cannot use.
+    if offline_mode() {
+        raise ArtifactUnavailable(
+            f"no cached postgres {pinned_major()} distribution to bundle, and "
+            "this project is offline ([network] offline)"
+        );
+    }
     vendored = _dist_root(download_dist());
     if vendored is None {
         raise ArtifactUnavailable(

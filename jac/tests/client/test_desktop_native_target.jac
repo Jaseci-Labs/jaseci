@@ -616,3 +616,29 @@ test "a peer instance keeps the cluster alive on leave" {
         mine.close();
     }
 }
+
+
+test "an upgrade migrates state stored beside the app image" {
+    import from pathlib { Path }
+    import from tempfile { TemporaryDirectory }
+    import from jaclang.client.targets.desktop.native.host_boot {
+        _migrate_legacy_data_dir
+    }
+    with TemporaryDirectory() as tmp {
+        app_dir = Path(tmp) / "app";
+        legacy = app_dir / ".jac" / "desktop";
+        legacy.mkdir(parents=True);
+        (legacy / "session.json").write_text("{}");
+        data_dir = str(Path(tmp) / "xdg" / "org.example.notes");
+        _migrate_legacy_data_dir(data_dir, str(app_dir));
+        migrated = Path(data_dir) / ".jac" / "desktop" / "session.json";
+        assert migrated.is_file() , "legacy state must carry forward";
+        # A populated new dir is never clobbered by a second migration.
+        migrated.write_text('{"kept": true}');
+        _migrate_legacy_data_dir(data_dir, str(app_dir));
+        assert migrated.read_text() == '{"kept": true}';
+        # Same old and new dir (macOS, Windows): nothing to do.
+        _migrate_legacy_data_dir(str(app_dir), str(app_dir));
+        assert migrated.is_file();
+    }
+}
