@@ -1,18 +1,6 @@
 import base64;
 import json;
 import os;
-import jaclang.compiler.frontend.unitree as uni;
-import from jaclang.compiler.driver.program { JacProgram }
-import from jaclang.compiler.frontend.codeinfo {
-    ClientArtifact,
-    ClientManifest,
-    InteropBinding,
-    InteropContext,
-    InteropManifest
-}
-import from jaclang.compiler.frontend.constant { CodeContext }
-import from jaclang.runtime.semantic { Info, info_graph_to_json }
-import from jaclang.runtime.surface { SurfaceEntry }
 
 glob CLIENT_RECORD_VERSION: int = 4,
      DEF_DEP_SEP: str = "\x1f";
@@ -77,9 +65,6 @@ def note_definition_span(rows: list[str], definition: uni.UniNode, qualname: str
 }
 
 def dependency_span_rows(module: uni.Module, program: JacProgram) -> list[str] {
-    import from jaclang.compiler.driver.compilation_context { program_for }
-    import from jaclang.compiler.frontend.host { active_host }
-    import from jaclang.compiler.types.stubcat.reader { CatModule }
     rows: list[str] = [];
     seen: set[str] = set();
     for (path, _) in module.ct_def_deps {
@@ -109,16 +94,32 @@ def jac_dependencies(module: uni.Module) -> list[str] {
         if not item.is_jac {
             continue;
         }
-        targets: list[any] = list(item.items);
+        paths: list[uni.ModulePath] = [
+            target
+            for target in item.items
+            if isinstance(target, uni.ModulePath)
+        ];
         if item.from_loc is not None {
-            targets.append(item.from_loc);
+            paths.append(item.from_loc);
         }
-        for target in targets {
+        sources: list[str] = [];
+        for path in paths {
             try {
-                source = target.resolve_relative_path();
+                sources.append(path.resolve_relative_path());
             } except Exception {
                 continue;
             }
+        }
+        for target in item.items {
+            if isinstance(target, uni.ModuleItem) {
+                try {
+                    sources.append(target.resolve_relative_path());
+                } except Exception {
+                    continue;
+                }
+            }
+        }
+        for source in sources {
             if source and source.endswith(".jac") and os.path.isfile(source) {
                 found.add(os.path.realpath(source));
             }
@@ -273,7 +274,6 @@ def literal_to_json(value: any) -> dict[str, any] {
 }
 
 def literal_from_json(raw: any) -> any {
-    import from jaclang.compiler.frontend.kernel_inputs { json_map }
     record = json_map(raw);
     if "b" in record {
         return base64.b64decode(str(record["b"]).encode("ascii"));
@@ -295,7 +295,6 @@ def literal_from_json(raw: any) -> any {
 }
 
 def str_list_map(value: any) -> dict[str, list[str]] {
-    import from jaclang.compiler.frontend.kernel_inputs { json_map, json_str_list }
     return {key: json_str_list(item) for (key, item) in json_map(value).items()};
 }
 
@@ -322,13 +321,6 @@ def manifest_record(manifest: ClientManifest) -> dict[str, any] {
 }
 
 def manifest_from_record(raw: dict[str, any]) -> ClientManifest {
-    import from jaclang.compiler.frontend.kernel_inputs {
-        json_map,
-        json_maps,
-        json_opt_str,
-        json_str_list,
-        json_str_map
-    }
     return ClientManifest(
         exports=json_str_list(raw.get("exports")),
         globals=json_str_list(raw.get("globals")),
@@ -389,11 +381,6 @@ def source_segment(raw: any) -> (tuple[int, int, int, int, str] | None) {
 }
 
 def client_artifact_from_json(text: str) -> (ClientArtifact | None) {
-    import from jaclang.compiler.frontend.kernel_inputs {
-        json_map,
-        json_str_list,
-        json_str_map
-    }
     try {
         raw = json_map(json.loads(text));
     } except ValueError {
@@ -485,8 +472,6 @@ def client_artifact_of(module: uni.Module) -> (ClientArtifact | None) {
 }
 
 def placement_record(module: uni.Module, program: JacProgram) -> str {
-    import from jaclang.compiler.placement.placement { get_module_summary }
-    import from jaclang.compiler.placement.placement_export { summary_to_dict }
     try {
         return json.dumps(summary_to_dict(get_module_summary(module, program)));
     } except Exception {
@@ -542,25 +527,7 @@ def unit_products(module: uni.Module, program: JacProgram) -> UnitProducts {
     return products;
 }
 
-def unit_interface(module: uni.Module, program: JacProgram, products: UnitProducts) {
-    import from jaclang.compiler.types.stubcat.writer {
-        IncoherentInterface,
-        build_module_iface
-    }
-    evaluator = program.get_type_evaluator();
-    pkg_dir = os.path.dirname(os.path.realpath(module.loc.mod_path));
-    try {
-        data = build_module_iface(module, evaluator, pkg_dir);
-        shape = build_module_iface(module, evaluator, pkg_dir, spans=False);
-    } except IncoherentInterface {
-        return;
-    }
-    products.iface = base64.b64encode(data).decode("ascii");
-    products.iface_shape = shape[:64].decode("ascii");
-}
-
 def native_products(module: uni.Module, products: UnitProducts) {
-    import from jaclang.compiler.driver.native_iface { native_layout_to_dict }
     gen = module.gen;
     built = gen.ir_module;
     iface = gen.native_iface;
@@ -604,7 +571,6 @@ def products_record(products: UnitProducts) -> dict[str, any] {
 }
 
 def products_from_record(raw: dict[str, any]) -> UnitProducts {
-    import from jaclang.compiler.frontend.kernel_inputs { json_str_list }
     return UnitProducts(
         path=str(raw.get("path", "")),
         jcir=base64.b64decode(str(raw.get("jcir", "")).encode("ascii")),
