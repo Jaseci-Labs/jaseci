@@ -534,7 +534,6 @@ graph import {
         host_native_fact
     }
     compiler.backends.native.kernel_resolve ++> dist.precompile_bytecode.seal_native {
-        SEALED_LINK_MODE,
         kernel_lib_name
     }
     compiler.backends.native.kernel_resolve --> [
@@ -5699,11 +5698,7 @@ graph import compiler {
             | tests.test_unknown_cascade
             | tests.test_zstd_equivalence
             | tools.lang_tools { CompileOptions },
-        backends.native.kernel_resolve {
-            CompileOptions,
-            NATIVE_LINK_MODE_BITCODE,
-            NATIVE_LINK_MODE_OBJECTS
-        },
+        backends.native.kernel_resolve { CompileOptions, NATIVE_LINK_MODE_OBJECTS },
         backends.native.link_plan {
             CompileOptions,
             NATIVE_LINK_MODE_BITCODE,
@@ -10843,7 +10838,7 @@ graph import compiler.backends.native {
         na_ir_gen_pass.NaIRGenPass._foreign_model { collect_foreign_structs },
     ]
     foreign --> na_ir_gen_pass.NaIRGenPass._codegen_call { declared_type_name }
-    kernel_resolve ++> kernel_stage0 { KERNEL_DEV_LINK_MODE, kernel_plan }
+    kernel_resolve ++> kernel_stage0 { KERNEL_LINK_MODE, kernel_plan }
     kernel_stage0 ++> kernel_resolve.build_kernel { link_kernel }
     lexical_scope ++> na_ir_gen_pass { FunctionSource, LexicalScope }
     link_glue ++> [

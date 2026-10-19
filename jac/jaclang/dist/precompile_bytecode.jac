@@ -1257,9 +1257,7 @@ def seal_native(
     native_start = time.monotonic();
     artifact_path = pkg_path / artifact_rel;
     artifact_path.parent.mkdir(parents=True, exist_ok=True);
-    plan = build_link_plan(
-        prog, roots, options, mode=SEALED_LINK_MODE, native_unit=True
-    );
+    plan = build_link_plan(prog, roots, options, native_unit=True);
     if pkg_name == "jaclang" {
         import from jaclang.compiler.backends.native.kernel_stage0 {
             refuse_missing_entries

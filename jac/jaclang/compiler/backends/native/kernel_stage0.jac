@@ -151,7 +151,7 @@ def link_kernel(
 ) -> LinkResult {
     mode = link_mode
         or (target.link_mode if target is not None else "")
-        or KERNEL_DEV_LINK_MODE;
+        or KERNEL_LINK_MODE;
 
     program = prog if prog is not None else JacProgram();
     registry = program.native_units();
@@ -265,7 +265,7 @@ def plan_kernel_prefix(stop_after: int, log: Callable[[str], None]) -> int {
     gc.callbacks.append(pauses.observe);
     log(f"  Planning the kernel uncached until {stop_after} units are lowered");
     try {
-        kernel_plan(program, mode=KERNEL_DEV_LINK_MODE);
+        kernel_plan(program, mode=KERNEL_LINK_MODE);
         log("  The whole kernel was planned before the stop");
     } except NativeBuildStopped {} finally {
         registry.progress = None;

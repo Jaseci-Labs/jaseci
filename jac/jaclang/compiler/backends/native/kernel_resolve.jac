@@ -5,8 +5,7 @@ import sys;
 
 glob NOT_BUILT: str = "not built",
      LAYOUT_SIDECAR_SUFFIX: str = ".layout.json",
-     KERNEL_DEV_LINK_MODE: str = NATIVE_LINK_MODE_OBJECTS,
-     SEALED_LINK_MODE: str = NATIVE_LINK_MODE_BITCODE;
+     KERNEL_LINK_MODE: str = NATIVE_LINK_MODE_OBJECTS;
 
 obj ResolvedKernel {
     has lib_path: str,
@@ -51,15 +50,15 @@ def read_sidecar(lib_path: str) -> (dict[str, any] | None) {
 }
 
 def sealed_link_refusal(record: dict[str, any], sidecar: dict[str, any]) -> str {
-    mode = str(record.get("mode", SEALED_LINK_MODE));
-    linked = str(sidecar.get("link_mode", SEALED_LINK_MODE));
+    mode = str(record.get("mode", KERNEL_LINK_MODE));
+    linked = str(sidecar.get("link_mode", KERNEL_LINK_MODE));
     if linked != mode {
         return f"the manifest records a {mode} link but the sidecar a {linked} link";
     }
-    if mode == SEALED_LINK_MODE {
+    if mode == KERNEL_LINK_MODE {
         return "";
     }
-    return f"a sealed image carries a {SEALED_LINK_MODE} link, not a {mode} link";
+    return f"a sealed image carries a {KERNEL_LINK_MODE} link, not a {mode} link";
 }
 
 def _from_sealed_image -> (ResolvedKernel | None) {
@@ -108,7 +107,7 @@ def kernel_options -> CompileOptions {
     return CompileOptions(
         aot_mode=True,
         native_require=[],
-        native_link_mode=KERNEL_DEV_LINK_MODE,
+        native_link_mode=KERNEL_LINK_MODE,
         na_debug=False,
         default_codespace="native",
         native_unit=True,
@@ -353,7 +352,7 @@ def resolve_kernel -> (ResolvedKernel | None) {
 def build_kernel(
     dst: str = "",
     log: (Callable[[str], None] | None) = None,
-    link_mode: str = KERNEL_DEV_LINK_MODE
+    link_mode: str = KERNEL_LINK_MODE
 ) -> LinkResult {
     destination = dst or source_tree_kernel_path();
     tmp = f"{destination}.{os.getpid()}.tmp";
