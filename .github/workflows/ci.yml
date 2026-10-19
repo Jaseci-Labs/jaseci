@@ -60,6 +60,7 @@ jobs:
           filters: |
             core:
               - 'jac/**'
+              - 'jac.toml'
               - 'scripts/run_cpython_compiler_tests.jac'
               - '.github/workflows/build-binaries.yml'
               - '.github/workflows/ci.yml'
