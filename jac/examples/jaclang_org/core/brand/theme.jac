@@ -8,9 +8,7 @@ obj Theme {
         toggle: Callable[[], None];
 }
 
-def:pub useTheme -> Theme;
-
-impl useTheme -> Theme {
+def:pub useTheme -> Theme {
     has dark: bool = __getLocalStorage("jac-theme") != "light";
     def changed(value: bool) {
         dark = value;

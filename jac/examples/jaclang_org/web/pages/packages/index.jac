@@ -1,5 +1,3 @@
-def:pub page -> JsxPage;
-
-impl page -> JsxPage {
+def:pub page -> JsxPage {
     return <PackagesShell/>;
 }

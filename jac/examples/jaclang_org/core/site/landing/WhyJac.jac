@@ -1,11 +1,5 @@
 def:pub WhySlide(
     title: str = "", accent: str = "", sub: str = "", children: any = None
-) -> JsxElement;
-
-def:pub WhyJac -> JsxElement;
-
-impl WhySlide(
-    title: str = "", accent: str = "", sub: str = "", children: any = None
 ) -> JsxElement {
     return
         <div
@@ -38,7 +32,7 @@ impl WhySlide(
         </div>;
 }
 
-impl WhyJac -> JsxElement {
+def:pub WhyJac -> JsxElement {
     return
         <section id="why" className="pt-16 pb-16 sm:pt-24 sm:pb-24">
             <div

@@ -9,19 +9,6 @@ def:pub Composer(
     rows: int = 3,
     buttonLabel: str = "Post",
     showCharRing: bool = False,
-) -> JsxElement;
-
-impl Composer(
-    avatar: str,
-    avatarAlt: str,
-    placeholder: str,
-    value: str,
-    onChange: Callable[[str], None],
-    onPost: Callable[[], None],
-    busy: bool = False,
-    rows: int = 3,
-    buttonLabel: str = "Post",
-    showCharRing: bool = False,
 ) -> JsxElement {
     charsLeft = chars_left(value);
     ring_progress = min(1.0, (post_limit() - charsLeft) / float(post_limit()));

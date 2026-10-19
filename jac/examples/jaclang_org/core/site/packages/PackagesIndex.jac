@@ -2,27 +2,7 @@ import from "@jac/runtime" { Link }
 
 def matches(p: PackageSummary, q: str) -> bool;
 
-def:pub PackageCard(pkg: PackageSummary) -> JsxElement;
-
-def:pub PackagesIndex(
-    catalog: PackageCatalog | None, loading: bool, q: str, onFilter: any
-) -> JsxElement;
-
-impl matches(p: PackageSummary, q: str) -> bool {
-    needle = q.strip().lower();
-    if needle == "" {
-        return True;
-    }
-    hay = [p.name, p.description, *p.exports, *p.symbols];
-    for text in hay {
-        if needle in text.lower() {
-            return True;
-        }
-    }
-    return False;
-}
-
-impl PackageCard(pkg: PackageSummary) -> JsxElement {
+def:pub PackageCard(pkg: PackageSummary) -> JsxElement {
     return
         <li
             className="flex flex-col gap-3 rounded-xl border border-border/60 bg-card/60 p-5 transition-colors hover:border-primary/40"
@@ -44,7 +24,7 @@ impl PackageCard(pkg: PackageSummary) -> JsxElement {
         </li>;
 }
 
-impl PackagesIndex(
+def:pub PackagesIndex(
     catalog: PackageCatalog | None, loading: bool, q: str, onFilter: any
 ) -> JsxElement {
     shown = [
@@ -89,4 +69,18 @@ impl PackagesIndex(
                 </ul>
             }   }
         </div>;
+}
+
+impl matches(p: PackageSummary, q: str) -> bool {
+    needle = q.strip().lower();
+    if needle == "" {
+        return True;
+    }
+    hay = [p.name, p.description, *p.exports, *p.symbols];
+    for text in hay {
+        if needle in text.lower() {
+            return True;
+        }
+    }
+    return False;
 }

@@ -2719,6 +2719,16 @@ impl JacAutoLintPass._can_separate(ab: uni.Ability) -> bool {
         and any(self._is_usestate_assignment(stmt) is not None for stmt in ab.body) {
         return False;
     }
+    if any(isinstance(stmt, uni.ArchHas) for stmt in ab.body)
+        or ab.get_all_sub_nodes(uni.JsxElement) {
+        return False;
+    }
+    sig = ab.signature;
+    if isinstance(sig, uni.FuncSignature)
+        and isinstance(sig.return_type, uni.Name)
+        and sig.return_type.value == "JsxElement" {
+        return False;
+    }
     kids = [ab->:Kid:->];
     return (
         any(k is ab.name_ref for k in kids)

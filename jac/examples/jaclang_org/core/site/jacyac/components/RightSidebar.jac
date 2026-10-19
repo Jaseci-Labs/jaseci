@@ -12,20 +12,6 @@ def:pub RightSidebar(
     onFollow: Callable[[str], None],
     onShowMore: Callable[[], None],
     onViewProfile: Callable[[str], None],
-) -> JsxElement;
-
-impl RightSidebar(
-    searchQuery: str,
-    onSearchChange: Callable[[str], None],
-    onSearch: Callable[[str], None],
-    onClearSearch: Callable[[], None],
-    trendingTags: list[TrendingTag],
-    onTrendClick: Callable[[str], None],
-    toFollow: list[Profile],
-    avatars: dict[str, str],
-    onFollow: Callable[[str], None],
-    onShowMore: Callable[[], None],
-    onViewProfile: Callable[[str], None],
 ) -> JsxElement {
     <aside
         className="sticky top-16 hidden h-[calc(100vh-4rem)] w-80 shrink-0 flex-col gap-4 overflow-y-auto border-l border-border px-4 py-4 lg:flex"

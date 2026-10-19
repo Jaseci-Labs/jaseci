@@ -5,9 +5,7 @@ import from "@hugeicons/core-free-icons" { StarIcon, BookOpen01Icon }
 
 glob INSTALL_CMD: str = "curl -fsSL https://jaclang.org/install.sh | bash";
 
-def:pub Hero -> JsxElement;
-
-impl Hero -> JsxElement {
+def:pub Hero -> JsxElement {
     return
         <section
             id="top"

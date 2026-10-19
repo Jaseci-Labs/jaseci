@@ -26,9 +26,7 @@ glob MPath: any = motion.path,
 
      ];
 
-def:pub PolypilerDiagram -> JsxElement;
-
-impl PolypilerDiagram -> JsxElement {
+def:pub PolypilerDiagram -> JsxElement {
     return
         <div className="overflow-x-auto">
             <svg

@@ -26,11 +26,7 @@ glob MLine: any = motion.line,
 
      ];
 
-def:pub TopokineticDiagram -> JsxElement;
-
-def:pub GhostNote(x: int, y: int, label: str) -> JsxElement;
-
-impl TopokineticDiagram -> JsxElement {
+def:pub TopokineticDiagram -> JsxElement {
     return
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <div
@@ -277,7 +273,7 @@ impl TopokineticDiagram -> JsxElement {
         </div>;
 }
 
-impl GhostNote(x: int, y: int, label: str) -> JsxElement {
+def:pub GhostNote(x: int, y: int, label: str) -> JsxElement {
     return
         <g opacity="0.6">
             <rect

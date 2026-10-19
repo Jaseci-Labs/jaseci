@@ -13,17 +13,6 @@ def:pub CodeSpotlight(
     className: str = "",
     on_pop: any = None,
     compact: bool = False
-) -> JsxElement;
-
-impl CodeSpotlight(
-    path: str,
-    needle: str,
-    hl_lines: int = 1,
-    before: int = 3,
-    after: int = 12,
-    className: str = "",
-    on_pop: any = None,
-    compact: bool = False
 ) -> JsxElement {
     has span: SourceSpan | None = None,
         failed: bool = False,

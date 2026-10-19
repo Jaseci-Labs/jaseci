@@ -56,6 +56,15 @@ def wide(
     return beta_parameter;
 }
 
+def badge(label: str) -> JsxElement {
+    return <span>{label}</span>;
+}
+
+def counter {
+    has clicks: int = 0;
+    clicks += 1;
+}
+
 def top(a: int) -> int {
     def helper(b: int) -> int {
         return b * 2;

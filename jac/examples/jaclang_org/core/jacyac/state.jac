@@ -82,11 +82,7 @@ obj JacYacState {
         reportError: Callable[[str], None];
 }
 
-def:pub useJacYac -> JacYacState;
-
-def bridge_error(error: BridgeError) -> str;
-
-impl useJacYac -> JacYacState {
+def:pub useJacYac -> JacYacState {
     session = useSession();
     has activeTab: str = "feed",
         myProfile: ProfileBundle | None = None,
@@ -268,6 +264,8 @@ impl useJacYac -> JacYacState {
         reportError=lambda (message: str) { bridgeMessage = message; }
     );
 }
+
+def bridge_error(error: BridgeError) -> str;
 
 impl bridge_error(error: BridgeError) -> str {
     if isinstance(error, BridgeUnavailable) {

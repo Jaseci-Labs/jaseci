@@ -18,11 +18,7 @@ glob _badgeVariants: any = cva(
          }
      );
 
-def:pub Badge(props: any) -> JsxElement;
-
-def:pub badgeVariants -> any;
-
-impl Badge(props: any) -> JsxElement {
+def:pub Badge(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     variant = props["variant"] or "default";
     asChild = props["asChild"] or False;
@@ -48,6 +44,8 @@ impl Badge(props: any) -> JsxElement {
             className={computedClass}
         />;
 }
+
+def:pub badgeVariants -> any;
 
 impl badgeVariants -> any {
     return _badgeVariants;

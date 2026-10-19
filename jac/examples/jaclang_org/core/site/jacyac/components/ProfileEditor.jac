@@ -6,14 +6,6 @@ def:pub ProfileEditor(
     error: str,
     onSave: Callable[[dict[str, str]], None],
     onCancel: Callable[[], None],
-) -> JsxElement;
-
-impl ProfileEditor(
-    profile: Profile,
-    saving: bool,
-    error: str,
-    onSave: Callable[[dict[str, str]], None],
-    onCancel: Callable[[], None],
 ) -> JsxElement {
     has displayName: str = "",
         bio: str = "",

@@ -1,6 +1,4 @@
-def:pub Textarea(props: any) -> JsxElement;
-
-impl Textarea(props: any) -> JsxElement {
+def:pub Textarea(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     <textarea
         {**attrs}

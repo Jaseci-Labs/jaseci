@@ -1,8 +1,6 @@
 import from "radix-ui" { Separator as SeparatorPrimitive }
 
-def:pub Separator(props: any) -> JsxElement;
-
-impl Separator(props: any) -> JsxElement {
+def:pub Separator(props: any) -> JsxElement {
     orientation = props["orientation"] or "horizontal";
     decorative = props["decorative"];
     if decorative is None {

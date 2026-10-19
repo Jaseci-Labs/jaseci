@@ -1585,6 +1585,12 @@ test "W3055 leaves bodies that an impl cannot name in place" {
     # A field sharing the method's name would capture the impl's target.
     assert "    def init(self: Field, flag: bool) {" in formatted;
     assert "impl Field.init" not in formatted;
+    # Component bodies (JSX, reactive `has` state) stay where the client
+    # compiler reads them.
+    assert "def badge(label: str) -> JsxElement {" in formatted;
+    assert "impl badge" not in formatted;
+    assert "def counter {" in formatted;
+    assert "impl counter" not in formatted;
 }
 
 test "W3055 separate-impls is idempotent" {

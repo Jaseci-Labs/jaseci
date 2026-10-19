@@ -15,9 +15,7 @@ glob _STATS: list[dict[str, any]] = [
 
      ];
 
-def:pub StatsBand -> JsxElement;
-
-impl StatsBand -> JsxElement {
+def:pub StatsBand -> JsxElement {
     return
         <section className="border-y border-border/60 bg-card/40">
             <div

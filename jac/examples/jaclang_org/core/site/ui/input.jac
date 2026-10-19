@@ -1,6 +1,4 @@
-def:pub Input(props: any) -> JsxElement;
-
-impl Input(props: any) -> JsxElement {
+def:pub Input(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     return
         <input

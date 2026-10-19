@@ -12,20 +12,6 @@ def:pub AuthForm(
     onToggleMode: Callable[[], None],
     githubEnabled: bool = False,
     onGithub: Callable[[], None] = lambda {},
-) -> JsxElement;
-
-impl AuthForm(
-    isSignup: bool,
-    username: str,
-    password: str,
-    error: str,
-    loading: bool,
-    onUsernameChange: Callable[[ChangeEvent], None],
-    onPasswordChange: Callable[[ChangeEvent], None],
-    onSubmit: Callable[[FormEvent], None],
-    onToggleMode: Callable[[], None],
-    githubEnabled: bool = False,
-    onGithub: Callable[[], None] = lambda {},
 ) -> JsxElement {
     <div className="flex min-h-[calc(100vh-4rem)] w-full bg-background text-foreground">
         <div

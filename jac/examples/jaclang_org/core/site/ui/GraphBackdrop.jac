@@ -32,9 +32,7 @@ glob _NODES: list[dict[str, any]] = [
 
      ];
 
-def:pub GraphBackdrop(className: str = "") -> JsxElement;
-
-impl GraphBackdrop(className: str = "") -> JsxElement {
+def:pub GraphBackdrop(className: str = "") -> JsxElement {
     return
         <div
             className={"pointer-events-none absolute inset-0 overflow-hidden "

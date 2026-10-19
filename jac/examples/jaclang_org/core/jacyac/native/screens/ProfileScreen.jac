@@ -15,23 +15,6 @@ def:pub ProfileScreen(
     onLike: Callable[[str], None],
     onComment: Callable[[str, str], bool],
     onDelete: Callable[[str], None],
-) -> JsxElement;
-
-impl ProfileScreen(
-    avatars: dict[str, str],
-    profile: ProfileBundle | None,
-    editing: bool,
-    saving: bool,
-    error: str,
-    bioText: str,
-    onBioChange: Callable[[str], None],
-    onSaveBio: Callable[[], None],
-    onStartEdit: Callable[[], None],
-    onCancelEdit: Callable[[], None],
-    onLogout: Callable[[], None],
-    onLike: Callable[[str], None],
-    onComment: Callable[[str, str], bool],
-    onDelete: Callable[[str], None],
 ) -> JsxElement {
     theme = useTheme();
     C = theme.colors;

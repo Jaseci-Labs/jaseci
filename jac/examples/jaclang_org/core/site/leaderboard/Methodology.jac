@@ -56,13 +56,7 @@ glob SUBSTANCE_ROWS: list[list[str]] = [
          ["black", "80"]
      ];
 
-def:pub RubricTable(cols: list[str], rows: list[list[str]]) -> JsxElement;
-
-def:pub Section(title: str, total: str, blurb: str) -> JsxElement;
-
-def:pub Methodology -> JsxElement;
-
-impl RubricTable(cols: list[str], rows: list[list[str]]) -> JsxElement {
+def:pub RubricTable(cols: list[str], rows: list[list[str]]) -> JsxElement {
     return
         <table className="mt-3 w-full border-collapse text-sm">
             <thead>
@@ -106,7 +100,7 @@ impl RubricTable(cols: list[str], rows: list[list[str]]) -> JsxElement {
         </table>;
 }
 
-impl Section(title: str, total: str, blurb: str) -> JsxElement {
+def:pub Section(title: str, total: str, blurb: str) -> JsxElement {
     return
         <div className="mt-10 flex items-baseline gap-3">
             <h2 className="text-xl font-semibold">{title}</h2>
@@ -117,7 +111,7 @@ impl Section(title: str, total: str, blurb: str) -> JsxElement {
         </div>;
 }
 
-impl Methodology -> JsxElement {
+def:pub Methodology -> JsxElement {
     return
         <section className="relative overflow-hidden py-8">
             <div className="hero-glow absolute inset-0"></div>

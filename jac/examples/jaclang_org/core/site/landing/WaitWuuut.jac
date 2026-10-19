@@ -444,22 +444,6 @@ glob GROUPS: list[dict[str, any]] = [
 
 def Definition(
     term: str, pos: str, body: str, ipa: str = "", ety: str = "", num: int = 0
-) -> JsxElement;
-
-def DefCard(k: str) -> JsxElement;
-
-def LexiconSection -> JsxElement;
-
-def AbsentSection -> JsxElement;
-
-def GroupHeader(gkey: str, pre: str, hot: str, post: str, blurb: str) -> JsxElement;
-
-def FeatureSection(idx: int, data: dict[str, any], on_pop: any) -> JsxElement;
-
-def:pub WaitWuuut -> JsxElement;
-
-impl Definition(
-    term: str, pos: str, body: str, ipa: str = "", ety: str = "", num: int = 0
 ) -> JsxElement {
     return
         <div
@@ -493,7 +477,7 @@ impl Definition(
         </div>;
 }
 
-impl DefCard(k: str) -> JsxElement {
+def DefCard(k: str) -> JsxElement {
     d = DEFS[k] as dict[str, any];
     return
         <Definition
@@ -506,7 +490,7 @@ impl DefCard(k: str) -> JsxElement {
         />;
 }
 
-impl LexiconSection -> JsxElement {
+def LexiconSection -> JsxElement {
     return
         <div id="g-lexicon" className="scroll-mt-24">
             <div className="mx-auto max-w-5xl pl-4 pr-4 pt-24 pb-8 sm:pl-6 sm:pr-6">
@@ -539,7 +523,7 @@ impl LexiconSection -> JsxElement {
         </div>;
 }
 
-impl AbsentSection -> JsxElement {
+def AbsentSection -> JsxElement {
     return
         <div id="g-absent" className="scroll-mt-24">
             <div className="mx-auto max-w-5xl pl-4 pr-4 pt-20 pb-6 sm:pl-6 sm:pr-6">
@@ -579,7 +563,7 @@ impl AbsentSection -> JsxElement {
         </div>;
 }
 
-impl GroupHeader(gkey: str, pre: str, hot: str, post: str, blurb: str) -> JsxElement {
+def GroupHeader(gkey: str, pre: str, hot: str, post: str, blurb: str) -> JsxElement {
     return
         <div className="mx-auto max-w-5xl pl-4 pr-4 pt-24 pb-2 sm:pl-6 sm:pr-6">
             <Reveal>
@@ -608,7 +592,7 @@ impl GroupHeader(gkey: str, pre: str, hot: str, post: str, blurb: str) -> JsxEle
         </div>;
 }
 
-impl FeatureSection(idx: int, data: dict[str, any], on_pop: any) -> JsxElement {
+def FeatureSection(idx: int, data: dict[str, any], on_pop: any) -> JsxElement {
     flipped = idx % 2 == 1;
     return
         <section className="border-t border-border/40 pt-14 pb-14">
@@ -676,7 +660,7 @@ impl FeatureSection(idx: int, data: dict[str, any], on_pop: any) -> JsxElement {
         </section>;
 }
 
-impl WaitWuuut -> JsxElement {
+def:pub WaitWuuut -> JsxElement {
     has popped: str = "",
         pop_seq: int = 0;
 

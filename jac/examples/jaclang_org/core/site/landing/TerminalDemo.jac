@@ -9,9 +9,7 @@ glob _SCRIPT: list[dict[str, any]] = [
 
      ];
 
-def:pub TerminalDemo(className: str = "") -> JsxElement;
-
-impl TerminalDemo(className: str = "") -> JsxElement {
+def:pub TerminalDemo(className: str = "") -> JsxElement {
     has shown: list[dict[str, any]] = [];
 
     can with entry {

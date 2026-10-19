@@ -5,9 +5,7 @@ glob _mm: Mermaid = mermaid as Mermaid,
      _mm_ready: bool = False,
      _mm_seq: int = 0;
 
-def:pub MermaidDiagram(code: str) -> JsxElement;
-
-impl MermaidDiagram(code: str) -> JsxElement {
+def:pub MermaidDiagram(code: str) -> JsxElement {
     has svg_html: str = "",
         failed: bool = False;
 

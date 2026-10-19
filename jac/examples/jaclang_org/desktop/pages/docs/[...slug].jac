@@ -1,7 +1,5 @@
 import from core.site.docs.DocsShell { DocsShell }
 
-def:pub page -> JsxPage;
-
-impl page -> JsxPage {
+def:pub page -> JsxPage {
     return <DocsShell/>;
 }

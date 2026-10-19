@@ -1,6 +1,4 @@
-def:pub Skeleton(props: any) -> JsxElement;
-
-impl Skeleton(props: any) -> JsxElement {
+def:pub Skeleton(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     return
         <div

@@ -1,42 +1,18 @@
 import from "radix-ui" { AlertDialog as AlertDialogPrimitive }
 
-def:pub AlertDialog(props: any) -> JsxElement;
-
-def:pub AlertDialogTrigger(props: any) -> JsxElement;
-
-def:pub AlertDialogPortal(props: any) -> JsxElement;
-
-def:pub AlertDialogOverlay(props: any) -> JsxElement;
-
-def:pub AlertDialogContent(props: any) -> JsxElement;
-
-def:pub AlertDialogHeader(props: any) -> JsxElement;
-
-def:pub AlertDialogFooter(props: any) -> JsxElement;
-
-def:pub AlertDialogMedia(props: any) -> JsxElement;
-
-def:pub AlertDialogTitle(props: any) -> JsxElement;
-
-def:pub AlertDialogDescription(props: any) -> JsxElement;
-
-def:pub AlertDialogAction(props: any) -> JsxElement;
-
-def:pub AlertDialogCancel(props: any) -> JsxElement;
-
-impl AlertDialog(props: any) -> JsxElement {
+def:pub AlertDialog(props: any) -> JsxElement {
     <AlertDialogPrimitive.Root data-slot="alert-dialog" {**props}/>
 }
 
-impl AlertDialogTrigger(props: any) -> JsxElement {
+def:pub AlertDialogTrigger(props: any) -> JsxElement {
     <AlertDialogPrimitive.Trigger data-slot="alert-dialog-trigger" {**props}/>
 }
 
-impl AlertDialogPortal(props: any) -> JsxElement {
+def:pub AlertDialogPortal(props: any) -> JsxElement {
     <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" {**props}/>
 }
 
-impl AlertDialogOverlay(props: any) -> JsxElement {
+def:pub AlertDialogOverlay(props: any) -> JsxElement {
     <AlertDialogPrimitive.Overlay
         {**props}
         data-slot="alert-dialog-overlay"
@@ -47,7 +23,7 @@ impl AlertDialogOverlay(props: any) -> JsxElement {
     />
 }
 
-impl AlertDialogContent(props: any) -> JsxElement {
+def:pub AlertDialogContent(props: any) -> JsxElement {
     size = props["size"] or "default";
     <AlertDialogPortal>
         <AlertDialogOverlay/>
@@ -63,7 +39,7 @@ impl AlertDialogContent(props: any) -> JsxElement {
     </AlertDialogPortal>
 }
 
-impl AlertDialogHeader(props: any) -> JsxElement {
+def:pub AlertDialogHeader(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     <div
         {**attrs}
@@ -75,7 +51,7 @@ impl AlertDialogHeader(props: any) -> JsxElement {
     />
 }
 
-impl AlertDialogFooter(props: any) -> JsxElement {
+def:pub AlertDialogFooter(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     <div
         {**attrs}
@@ -87,7 +63,7 @@ impl AlertDialogFooter(props: any) -> JsxElement {
     />
 }
 
-impl AlertDialogMedia(props: any) -> JsxElement {
+def:pub AlertDialogMedia(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     <div
         {**attrs}
@@ -99,7 +75,7 @@ impl AlertDialogMedia(props: any) -> JsxElement {
     />
 }
 
-impl AlertDialogTitle(props: any) -> JsxElement {
+def:pub AlertDialogTitle(props: any) -> JsxElement {
     <AlertDialogPrimitive.Title
         {**props}
         data-slot="alert-dialog-title"
@@ -110,7 +86,7 @@ impl AlertDialogTitle(props: any) -> JsxElement {
     />
 }
 
-impl AlertDialogDescription(props: any) -> JsxElement {
+def:pub AlertDialogDescription(props: any) -> JsxElement {
     <AlertDialogPrimitive.Description
         {**props}
         data-slot="alert-dialog-description"
@@ -121,7 +97,7 @@ impl AlertDialogDescription(props: any) -> JsxElement {
     />
 }
 
-impl AlertDialogAction(props: any) -> JsxElement {
+def:pub AlertDialogAction(props: any) -> JsxElement {
     variant = props["variant"] or "default";
     size = props["size"] or "default";
     <Button variant={variant} size={size} asChild={True}>
@@ -136,7 +112,7 @@ impl AlertDialogAction(props: any) -> JsxElement {
     </Button>
 }
 
-impl AlertDialogCancel(props: any) -> JsxElement {
+def:pub AlertDialogCancel(props: any) -> JsxElement {
     variant = props["variant"] or "outline";
     size = props["size"] or "default";
     <Button variant={variant} size={size} asChild={True}>

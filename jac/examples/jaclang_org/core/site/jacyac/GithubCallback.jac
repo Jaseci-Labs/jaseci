@@ -1,8 +1,6 @@
 import from "@jac/runtime" { Link }
 
-def:pub GithubCallback -> JsxElement;
-
-impl GithubCallback -> JsxElement {
+def:pub GithubCallback -> JsxElement {
     has message: str = "Completing GitHub sign-in…";
     async def complete -> None {
         win: any = window;

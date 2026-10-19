@@ -14,9 +14,7 @@ glob TABS: list[Tab] = [
          Tab(key="profile", icon="user", label="Profile")
      ];
 
-def:pub TabBar(activeTab: str, onNavigate: Callable[[str], None]) -> JsxElement;
-
-impl TabBar(activeTab: str, onNavigate: Callable[[str], None]) -> JsxElement {
+def:pub TabBar(activeTab: str, onNavigate: Callable[[str], None]) -> JsxElement {
     theme = useTheme();
     C = theme.colors;
     styles = makeStyles(C);

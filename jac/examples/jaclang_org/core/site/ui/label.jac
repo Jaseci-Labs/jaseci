@@ -1,8 +1,6 @@
 import from "radix-ui" { Label as LabelPrimitive }
 
-def:pub Label(props: any) -> JsxElement;
-
-impl Label(props: any) -> JsxElement {
+def:pub Label(props: any) -> JsxElement {
     <LabelPrimitive.Root
         {**props}
         data-slot="label"

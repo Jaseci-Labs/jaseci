@@ -16,11 +16,7 @@ import from "@hugeicons/core-free-icons" {
 glob BOOK_URL: str = "https://doi.org/10.5281/zenodo.21464040",
      RUN_LINES: list[str] = ["jac create mysite --awesome", "cd mysite", "jac run"];
 
-def:pub WorkspaceAppCard(icon: any, tag: str, title: str, body: str) -> JsxElement;
-
-def:pub ExplorerFinale -> JsxElement;
-
-impl WorkspaceAppCard(icon: any, tag: str, title: str, body: str) -> JsxElement {
+def:pub WorkspaceAppCard(icon: any, tag: str, title: str, body: str) -> JsxElement {
     return
         <div
             className="flex items-start gap-4 rounded-xl border border-border/70 bg-card/40 pt-5 pb-5 pl-5 pr-5"
@@ -46,7 +42,7 @@ impl WorkspaceAppCard(icon: any, tag: str, title: str, body: str) -> JsxElement 
         </div>;
 }
 
-impl ExplorerFinale -> JsxElement {
+def:pub ExplorerFinale -> JsxElement {
     return
         <section
             id="explorer"

@@ -5,21 +5,7 @@ import from "@hugeicons/core-free-icons" { ArrowLeft01Icon, ArrowRight01Icon }
 
 glob CarouselContext: any = createContext(None);
 
-def:pub Carousel(props: any) -> JsxElement;
-
-def:pub CarouselContent(props: any) -> JsxElement;
-
-def:pub CarouselItem(props: any) -> JsxElement;
-
-def:pub CarouselDot(index: int, selected: int) -> JsxElement;
-
-def:pub CarouselDots(props: any) -> JsxElement;
-
-def:pub CarouselPrevious(props: any) -> JsxElement;
-
-def:pub CarouselNext(props: any) -> JsxElement;
-
-impl Carousel(props: any) -> JsxElement {
+def:pub Carousel(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     orientation = props["orientation"] or "horizontal";
     axisOpt = "x" if orientation == "horizontal" else "y";
@@ -50,7 +36,7 @@ impl Carousel(props: any) -> JsxElement {
         </CarouselContext.Provider>;
 }
 
-impl CarouselContent(props: any) -> JsxElement {
+def:pub CarouselContent(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     ctx: any = useContext(CarouselContext);
     carouselRef = ctx.carouselRef if ctx else None;
@@ -62,7 +48,7 @@ impl CarouselContent(props: any) -> JsxElement {
         </div>;
 }
 
-impl CarouselItem(props: any) -> JsxElement {
+def:pub CarouselItem(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     ctx: any = useContext(CarouselContext);
     ori = ctx.orientation if ctx else "horizontal";
@@ -79,7 +65,7 @@ impl CarouselItem(props: any) -> JsxElement {
         />;
 }
 
-impl CarouselDot(index: int, selected: int) -> JsxElement {
+def:pub CarouselDot(index: int, selected: int) -> JsxElement {
     ctx: any = useContext(CarouselContext);
 
     def go(_e: any) {
@@ -102,7 +88,7 @@ impl CarouselDot(index: int, selected: int) -> JsxElement {
         />;
 }
 
-impl CarouselDots(props: any) -> JsxElement {
+def:pub CarouselDots(props: any) -> JsxElement {
     has selected: int = 0,
         count: int = 0;
 
@@ -140,7 +126,7 @@ impl CarouselDots(props: any) -> JsxElement {
         </div>;
 }
 
-impl CarouselPrevious(props: any) -> JsxElement {
+def:pub CarouselPrevious(props: any) -> JsxElement {
     ctx: any = useContext(CarouselContext);
     ori = ctx.orientation if ctx else "horizontal";
     scrollPrev = ctx.scrollPrev if ctx else None;
@@ -165,7 +151,7 @@ impl CarouselPrevious(props: any) -> JsxElement {
         </Button>;
 }
 
-impl CarouselNext(props: any) -> JsxElement {
+def:pub CarouselNext(props: any) -> JsxElement {
     ctx: any = useContext(CarouselContext);
     ori = ctx.orientation if ctx else "horizontal";
     scrollNext = ctx.scrollNext if ctx else None;

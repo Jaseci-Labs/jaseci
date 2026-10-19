@@ -3,15 +3,7 @@ import from "radix-ui" { Accordion as AccordionPrimitive }
 import from "@hugeicons/react" { HugeiconsIcon }
 import from "@hugeicons/core-free-icons" { ArrowDownIcon, ArrowUpIcon }
 
-def:pub Accordion(props: any) -> JsxElement;
-
-def:pub AccordionItem(props: any) -> JsxElement;
-
-def:pub AccordionTrigger(props: any) -> JsxElement;
-
-def:pub AccordionContent(props: any) -> JsxElement;
-
-impl Accordion(props: any) -> JsxElement {
+def:pub Accordion(props: any) -> JsxElement {
     return
         <AccordionPrimitive.Root
             {**props}
@@ -20,7 +12,7 @@ impl Accordion(props: any) -> JsxElement {
         />;
 }
 
-impl AccordionItem(props: any) -> JsxElement {
+def:pub AccordionItem(props: any) -> JsxElement {
     return
         <AccordionPrimitive.Item
             {**props}
@@ -29,7 +21,7 @@ impl AccordionItem(props: any) -> JsxElement {
         />;
 }
 
-impl AccordionTrigger(props: any) -> JsxElement {
+def:pub AccordionTrigger(props: any) -> JsxElement {
     return
         <AccordionPrimitive.Header className="flex">
             <AccordionPrimitive.Trigger
@@ -57,7 +49,7 @@ impl AccordionTrigger(props: any) -> JsxElement {
         </AccordionPrimitive.Header>;
 }
 
-impl AccordionContent(props: any) -> JsxElement {
+def:pub AccordionContent(props: any) -> JsxElement {
     return
         <AccordionPrimitive.Content
             {**props}

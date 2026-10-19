@@ -10,18 +10,6 @@ def:pub ExploreScreen(
     onFollow: Callable[[str], None],
     onUnfollow: Callable[[str], None],
     onTrendPress: Callable[[str], None],
-) -> JsxElement;
-
-impl ExploreScreen(
-    avatars: dict[str, str],
-    profiles: list[Profile],
-    followingIds: list[str],
-    myProfileId: str,
-    trending: list[TrendingTag],
-    loading: bool,
-    onFollow: Callable[[str], None],
-    onUnfollow: Callable[[str], None],
-    onTrendPress: Callable[[str], None],
 ) -> JsxElement {
     theme = useTheme();
     C = theme.colors;

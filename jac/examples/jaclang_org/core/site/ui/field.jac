@@ -15,27 +15,7 @@ glob _fieldVariants: any = cva(
          }
      );
 
-def:pub FieldSet(props: any) -> JsxElement;
-
-def:pub FieldLegend(props: any) -> JsxElement;
-
-def:pub FieldGroup(props: any) -> JsxElement;
-
-def:pub Field(props: any) -> JsxElement;
-
-def:pub FieldContent(props: any) -> JsxElement;
-
-def:pub FieldLabel(props: any) -> JsxElement;
-
-def:pub FieldTitle(props: any) -> JsxElement;
-
-def:pub FieldDescription(props: any) -> JsxElement;
-
-def:pub FieldSeparator(props: any) -> JsxElement;
-
-def:pub FieldError(props: any) -> any;
-
-impl FieldSet(props: any) -> JsxElement {
+def:pub FieldSet(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     <fieldset
         {**attrs}
@@ -47,7 +27,7 @@ impl FieldSet(props: any) -> JsxElement {
     />
 }
 
-impl FieldLegend(props: any) -> JsxElement {
+def:pub FieldLegend(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     variant = props["variant"] or "legend";
     <legend
@@ -61,7 +41,7 @@ impl FieldLegend(props: any) -> JsxElement {
     />
 }
 
-impl FieldGroup(props: any) -> JsxElement {
+def:pub FieldGroup(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     <div
         {**attrs}
@@ -73,7 +53,7 @@ impl FieldGroup(props: any) -> JsxElement {
     />
 }
 
-impl Field(props: any) -> JsxElement {
+def:pub Field(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     orientation = props["orientation"] or "vertical";
     variantsFn = _fieldVariants;
@@ -88,7 +68,7 @@ impl Field(props: any) -> JsxElement {
     />
 }
 
-impl FieldContent(props: any) -> JsxElement {
+def:pub FieldContent(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     <div
         {**attrs}
@@ -100,7 +80,7 @@ impl FieldContent(props: any) -> JsxElement {
     />
 }
 
-impl FieldLabel(props: any) -> JsxElement {
+def:pub FieldLabel(props: any) -> JsxElement {
     <Label
         {**props}
         data-slot="field-label"
@@ -112,7 +92,7 @@ impl FieldLabel(props: any) -> JsxElement {
     />
 }
 
-impl FieldTitle(props: any) -> JsxElement {
+def:pub FieldTitle(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     <div
         {**attrs}
@@ -124,7 +104,7 @@ impl FieldTitle(props: any) -> JsxElement {
     />
 }
 
-impl FieldDescription(props: any) -> JsxElement {
+def:pub FieldDescription(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     <p
         {**attrs}
@@ -138,7 +118,7 @@ impl FieldDescription(props: any) -> JsxElement {
     />
 }
 
-impl FieldSeparator(props: any) -> JsxElement {
+def:pub FieldSeparator(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     <div
         {**attrs}
@@ -162,7 +142,7 @@ impl FieldSeparator(props: any) -> JsxElement {
     </div>
 }
 
-impl FieldError(props: any) -> any {
+def:pub FieldError(props: any) -> any {
     attrs: dict[str, any] = {** props};
     children = props["children"];
     errors = props["errors"];
