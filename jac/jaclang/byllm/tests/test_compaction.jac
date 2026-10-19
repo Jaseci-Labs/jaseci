@@ -5,7 +5,7 @@ import litellm;
 import jaclang.byllm.llm as _byllm_llm_mod;
 import from jaclang.byllm.lib { Model, ModelPool, MockLLM }
 import from jaclang.byllm.llm { BaseLLM, LocalLLM }
-import from jaclang.byllm.types { MockToolCall, StreamEvent }
+import from jaclang.byllm.types { MockToolCall }
 import from jaclang.byllm.exceptions { CompactionNotEffectiveError, ConfigurationError }
 import from jaclang.byllm.config_loader { reset_byllm_config, get_byllm_config }
 import from pathlib { Path }
@@ -457,7 +457,7 @@ test "streaming reports each applied compaction once and respects compaction_ena
     };
     overflowed = {"reason": "overflow", "by": "hook"};
     # (label, model script, hook, compaction_enabled, event fields (None = no event), raises)
-    rows: list[tuple[str, list, any, bool, dict[str, any] | None, bool]] = [
+    rows: list[tuple[str, list[any], any, bool, dict[str, any] | None, bool]] = [
         ("applied compaction", over, shrink, True, applied, False),
         ("compaction disabled", over, shrink, False, None, False),
         ("discarded compaction", over, unchanged, True, None, False),
@@ -481,7 +481,7 @@ test "streaming reports each applied compaction once and respects compaction_ena
             on_compaction=counted
         );
 
-        seen: list[StreamEvent] = [];
+        seen: list[any] = [];
         raised = False;
         try {
             for event in task("go") {

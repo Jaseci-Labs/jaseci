@@ -779,7 +779,7 @@ test "usage_step correctly attributes an interleaved compaction call" {
         keep_recent_iterations=1
     );
 
-    events = list(task("go"));
+    events: list[any] = list(task("go"));
     steps = [e.data for e in events_of(events, "usage_step")];
     assert llm.exhausted() , f"the summary was never requested: {llm.outputs}";
     reported = [
