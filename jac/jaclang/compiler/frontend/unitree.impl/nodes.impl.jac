@@ -304,11 +304,15 @@ impl UniNode.element_in(mod: Module) -> (UniNode | None) {
     return None;
 }
 
+impl UniNode.own_impls.getter -> list[ImplDef] {
+    return [self->:ImplOf:->];
+}
+
 impl UniNode.linked_impls -> list[ImplDef] {
-    found: list[ImplDef] = [self->:ImplOf:->];
+    found: list[ImplDef] = self.own_impls;
     for kind in (Ability, Archetype, Enum) {
         for decl in self.get_all_sub_nodes(kind) {
-            found.extend([decl->:ImplOf:->]);
+            found.extend(decl.own_impls);
         }
     }
     return found;
@@ -799,6 +803,9 @@ impl UniScopeNode._init_scope(
 }
 
 impl UniScopeNode.parent_scope.getter -> (UniScopeNode | None) {
+    if self.folded {
+        return self.owning_scope.parent_scope;
+    }
     found = [self<-:ScopeChild:<-];
     if found {
         return found[-1];
@@ -816,6 +823,9 @@ impl UniScopeNode.parent_scope.setter(parent_scope: (UniScopeNode | None)) {
 }
 
 impl UniScopeNode.kid_scope.getter -> list[UniScopeNode] {
+    if self.folded {
+        return self.owning_scope.kid_scope;
+    }
     return [self->:ScopeChild:->];
 }
 
@@ -1017,8 +1027,11 @@ impl UniScopeNode.fold_scope(impl_scope: UniScopeNode) -> None {
     for sym in homed {
         self +>:InScope:+> sym;
     }
-    for kid in impl_scope.kid_scope {
+    for kid in [impl_scope->:ScopeChild:->] {
         self.link_kid_scope(kid);
+    }
+    for kid in [impl_scope<-:ScopeParent:<-] {
+        kid.parent_scope = self;
     }
 }
 
@@ -3963,6 +3976,68 @@ impl definition_qualname(decl: UniNode) -> str {
         owner = owner.enclosing_decl(ArchSpec);
     }
     return ".".join(parts);
+}
+
+impl bind_walrus_target(nd: BinaryExpr) -> None {
+    if not isinstance(nd.left, Name) {
+        return;
+    }
+    target_scope = nd.left.sym_tab;
+    owner: (UniNode | None) = nd.decl_parent;
+    while owner is not None and not isinstance(owner, (Ability, LambdaExpr)) {
+        owner = owner.decl_parent;
+    }
+    if owner is not None {
+        target_scope = owner.sym_tab;
+    }
+    sym = target_scope.lookup(nd.left.sym_name, deep=False);
+    if sym is None {
+        rebind_or_def_insert(nd.left, target_scope, single_decl='walrus var');
+    } else {
+        sym.add_use(nd.left.name_spec);
+        record_cross_scope_rebind(target_scope, nd.left.sym_name, sym);
+    }
+}
+
+impl is_walrus(nd: UniNode) -> bool {
+    return isinstance(nd, BinaryExpr)
+        and isinstance(nd.op, Token)
+        and nd.op.name == Tok.WALRUS_EQ;
+}
+
+impl binding_sites_in(scope_root: UniNode) -> list[UniNode] {
+    sites: list[UniNode] = [];
+    sites.extend(scope_root.get_all_sub_nodes(Assignment));
+    for expr in scope_root.get_all_sub_nodes(BinaryExpr) {
+        if is_walrus(expr) {
+            sites.append(expr);
+        }
+    }
+    sites.sort(
+        key=lambda (nd: UniNode) -> tuple[int, int, int, int] { return (
+            nd.loc.last_line,
+            nd.loc.col_end,
+            -nd.loc.first_line,
+            -nd.loc.col_start
+        ); }
+    );
+    return sites;
+}
+
+impl typed_rebind_names(nd: Assignment) -> list[Name] {
+    found: list[Name] = [];
+    if nd.type_tag is None {
+        return found;
+    }
+    for target in nd.target {
+        if isinstance(target, Name) {
+            scope = find_python_scope_node_of(target);
+            if scope is not None and target.sym_name in scope.implicit_rebinds {
+                found.append(target);
+            }
+        }
+    }
+    return found;
 }
 
 impl bind_assignment_targets(nd: Assignment) -> None {

@@ -1134,6 +1134,10 @@ impl TypeEvaluator._stored_in_same_function(symbol: Symbol, nd: UniNode) -> bool
         return False;
     }
     for use in symbol.uses {
+        owner = use.parent;
+        if isinstance(owner, AtomTrailer) and owner.is_attr and owner.right is use {
+            continue;
+        }
         if isinstance(use, Name)
             and use.expr_ctx == ExprCtx.STORE
             and enclosing_fn(use) is fn {

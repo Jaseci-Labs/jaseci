@@ -17,11 +17,34 @@ walker Tour {
     }
 }
 
+obj Stamp {
+    has hash: int = 0;
+
+    def stamp(text: str) -> int {
+        self.hash = hash(text) % 7;
+        return self.hash;
+    }
+}
+
+def last_key(scores: dict[str, int]) -> str {
+    for (key, score) in scores.items() {
+        if score {
+            break;
+        }
+    }
+    return key;
+}
+
 def env_flag(name: str) -> bool {
     return os.environ.get(name, "") == "1";
 }
 
 with entry {
     root ++> Room(name="a") ++> Room(name="b");
-    print((root spawn Tour()).seen, env_flag("PARITY_UNSET"));
+    print(
+        (root spawn Tour()).seen,
+        env_flag("PARITY_UNSET"),
+        last_key({"a": 0, "b": 1}),
+        Stamp().stamp("x") >= 0
+    );
 }

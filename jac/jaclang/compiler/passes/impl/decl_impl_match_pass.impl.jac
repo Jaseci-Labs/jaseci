@@ -224,19 +224,16 @@ impl DeclImplMatchPass._connect_one_impl(
         }
     }
 
-    for assignment in impl_node.get_all_sub_nodes(Assignment) {
-        if assignment.type_tag is not None {
+    for site in binding_sites_in(impl_node) {
+        if isinstance(site, Assignment) {
             import from jaclang.compiler.frontend.diagnostics { E0064 }
-            for i in assignment.target {
-                if isinstance(i, Name) {
-                    scope = find_python_scope_node_of(i);
-                    if scope is not None and i.sym_name in scope.implicit_rebinds {
-                        self.ctx.emit(E0064, node_override=i, name=i.sym_name);
-                    }
-                }
+            for name in typed_rebind_names(site) {
+                self.ctx.emit(E0064, node_override=name, name=name.sym_name);
             }
+            bind_assignment_targets(site);
+        } elif isinstance(site, BinaryExpr) {
+            bind_walrus_target(site);
         }
-        bind_assignment_targets(assignment);
     }
     self._resolve_symbols_in_subtree(impl_node);
 

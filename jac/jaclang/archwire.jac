@@ -8367,6 +8367,7 @@ graph import compiler {
             AstImplNeedingNode,
             AstSymbolNode,
             AtomTrailer,
+            BinaryExpr,
             FuncSignature,
             HasVar,
             ImplDef,
@@ -8380,8 +8381,11 @@ graph import compiler {
             UniNode,
             UniScopeNode,
             bind_assignment_targets,
+            bind_walrus_target,
+            binding_sites_in,
             find_python_scope_node_of,
-            is_identifier_slot
+            is_identifier_slot,
+            typed_rebind_names
         },
         passes.endpoint_effect_pass {
             Ability,
@@ -8852,10 +8856,13 @@ graph import compiler {
             WhileStmt,
             WithStmt,
             bind_assignment_targets,
+            bind_walrus_target,
             def_insert_unpacking,
             find_python_scope_node_of,
+            is_walrus,
             rebind_or_def_insert,
-            record_cross_scope_rebind
+            record_cross_scope_rebind,
+            typed_rebind_names
         },
         passes.type_checker_pass {
             Ability,
