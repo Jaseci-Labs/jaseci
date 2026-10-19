@@ -1454,7 +1454,11 @@ impl NaIRGenPass._register_unwind_cleanup -> None {
                 }
             }
         }
-        slots = [(name, slot) for (name, slot) in slots if id(slot) in read];
+        slots = [
+            (name, slot)
+            for (name, slot) in slots
+            if id(slot) in read
+        ];
     } finally {
         func.blocks.remove(probe);
         self._builder = saved_builder;
