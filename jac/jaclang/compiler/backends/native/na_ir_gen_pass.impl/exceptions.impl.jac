@@ -1345,7 +1345,9 @@ impl NaIRGenPass._get_exception_context_fn -> ir.Function {
     if self.rc_threaded_gv is not None {
         mt_flag = b.load_atomic(self.rc_threaded_gv, "monotonic", 1, name="exc.mt");
         b.cbranch(
-            b.icmp_unsigned("!=", mt_flag, ir.Constant(ir.IntType(8), 0), name="exc.mt.on"),
+            b.icmp_unsigned(
+                "!=", mt_flag, ir.Constant(ir.IntType(8), 0), name="exc.mt.on"
+            ),
             slow_bb,
             fast_bb
         );
