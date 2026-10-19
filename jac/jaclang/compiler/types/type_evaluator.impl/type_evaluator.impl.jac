@@ -4762,16 +4762,7 @@ impl TypeEvaluator._init_prelude_from_sources -> list[Module] {
 
 glob FLOW_QUERY_DEPTH: int = 48;
 
-def _find_cfg_node_for(at_node: UniNode) -> UniCFGNode | None {
-    cur: UniNode | None = at_node;
-    while cur is not None {
-        if isinstance(cur, UniCFGNode) and not isinstance(cur, InnerCompr) {
-            return cur;
-        }
-        cur = cur.parent;
-    }
-    return None;
-}
+def _find_cfg_node_for(at_node: UniNode) -> UniCFGNode | None;
 
 impl TypeEvaluator.flow_pred_never_returns(pred: UniCFGNode) -> bool {
     if not isinstance(pred, ExprStmt) {
@@ -6804,4 +6795,15 @@ impl TypeEvaluator._scope_is_current(scope: UniScopeNode) -> bool {
         return False;
     }
     return self.program.find_module(self.program.hub_key(mod.loc.mod_path)) is mod;
+}
+
+impl _find_cfg_node_for(at_node: UniNode) -> UniCFGNode | None {
+    cur: UniNode | None = at_node;
+    while cur is not None {
+        if isinstance(cur, UniCFGNode) and not isinstance(cur, InnerCompr) {
+            return cur;
+        }
+        cur = cur.parent;
+    }
+    return None;
 }

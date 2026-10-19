@@ -105,13 +105,7 @@ impl WiringSpec._local_name(name: str) -> (str | None) {
     return name[len(self.package_prefix):];
 }
 
-def _package_prefix(root_dir: str) -> str {
-    facts = active_host().project_facts(root_dir);
-    if facts is None or not facts.package_name {
-        return "";
-    }
-    return facts.package_name.replace("/", ".") + ".";
-}
+def _package_prefix(root_dir: str) -> str;
 
 impl WiringSpec.module_file(name: str) -> (str | None) {
     local = self._local_name(name) if name else None;
@@ -1550,4 +1544,37 @@ impl prune_wiring_source(
         }
     }
     return "".join(text);
+}
+
+impl _package_prefix(root_dir: str) -> str {
+    facts = active_host().project_facts(root_dir);
+    if facts is None or not facts.package_name {
+        return "";
+    }
+    return facts.package_name.replace("/", ".") + ".";
+}
+
+impl WireBinding.key -> tuple[str, str, str, str] {
+    return (self.provider, self.form, self.name, self.alias);
+}
+
+impl WireBinding.is_module_form -> bool {
+    return "from" not in self.form.split(" ");
+}
+
+impl WireBinding.bound_name -> str {
+    return self.alias or self.name;
+}
+
+impl wiring_scope -> Iterator[None] {
+    if _resolution.get() is not None {
+        yield ;
+        return;
+    }
+    token = _resolution.set({});
+    try {
+        yield ;
+    } finally {
+        _resolution.reset(token);
+    }
 }
