@@ -297,6 +297,10 @@ graph import {
         register_project_template
     }
     cli.workpool ++> [
+        compiler.backends.native.na_compile_pass.codegen_jobs {
+            MEM_HEADROOM,
+            memory_headroom_bytes
+        },
         dist.precompile_bytecode._precompile_retire {
             WORKER_MEM_BYTES,
             env_int,
@@ -10914,6 +10918,7 @@ graph import compiler.backends.native {
         link_plan {
             NATIVE_CODE_MODEL,
             NATIVE_RELOC_MODEL,
+            codegen_jobs,
             emit_unit_objects,
             object_emit_jobs
         },

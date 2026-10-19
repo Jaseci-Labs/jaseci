@@ -45,6 +45,20 @@ impl object_emit_jobs -> int {
     return min(os.cpu_count() or 1, 8);
 }
 
+impl codegen_jobs(blobs: list[bytes]) -> int {
+    """How many modules generate code at once: no more than the emit jobs,
+    and no more than available memory holds at the largest module's
+    footprint. A worker for a kernel partition holds about twenty times the
+    partition's bitcode.""";
+    if not blobs {
+        return 0;
+    }
+    footprint = CODEGEN_BASE_BYTES
+        + CODEGEN_BYTES_PER_BITCODE_BYTE * max(len(blob) for blob in blobs);
+    fits = int(memory_headroom_bytes() * MEM_HEADROOM) // footprint;
+    return max(1, min(len(blobs), object_emit_jobs(), fits));
+}
+
 impl codegen_map(work: Callable[..., bytes], blobs: list[bytes]) -> list[bytes] {
     """Run `work` on every module's bitcode, one emit job per module at a
     time, each job in a forked process. Code generation allocates heavily,
@@ -54,7 +68,7 @@ impl codegen_map(work: Callable[..., bytes], blobs: list[bytes]) -> list[bytes] 
     which would touch every object the fork shares with the parent. A host
     without fork runs the jobs in threads.""";
     import os;
-    workers = min(len(blobs), object_emit_jobs());
+    workers = codegen_jobs(blobs);
     if workers < 2 {
         return [work(blob) for blob in blobs];
     }

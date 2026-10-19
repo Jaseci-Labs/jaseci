@@ -1,9 +1,12 @@
 glob NATIVE_RELOC_MODEL: str = "pic",
-     NATIVE_CODE_MODEL: str = "small";
+     NATIVE_CODE_MODEL: str = "small",
+     CODEGEN_BASE_BYTES: int = 512 * 1024 * 1024,
+     CODEGEN_BYTES_PER_BITCODE_BYTE: int = 24;
 
 def module_bitcode(mod: ModuleRef) -> bytes;
 def emit_unit_object(bitcode: bytes, options: CompileOptions) -> bytes;
 def object_emit_jobs -> int;
+def codegen_jobs(blobs: list[bytes]) -> int;
 def codegen_map(work: Callable[..., bytes], blobs: list[bytes]) -> list[bytes];
 def emit_unit_objects(bitcodes: list[bytes], options: CompileOptions) -> list[bytes];
 def unit_bitcode(unit_ir: any) -> bytes;

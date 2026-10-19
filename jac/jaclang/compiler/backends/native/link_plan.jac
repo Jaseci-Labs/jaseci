@@ -968,9 +968,10 @@ def plan_objects(
         return ([object_bytes], exports);
     }
     parts = merged.split_bitcode(jobs);
+    merged.close();
     started = _log_phase(log, f"split_module ({jobs} parts)", started);
     objects = emit_unit_objects(parts, plan.options);
-    _log_phase(log, "emit_objects", started);
+    _log_phase(log, f"emit_objects ({codegen_jobs(parts)} at a time)", started);
     return (objects, exports);
 }
 
