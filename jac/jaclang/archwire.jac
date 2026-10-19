@@ -954,9 +954,7 @@ graph import {
         | project.compiler_host.ProjectHost.native_pipeline_available {
         native_pipeline_available
     }
-    compiler.driver.unit_products ++> project.kernel_compile | project.kernel_snapshot {
-        UnitProducts
-    }
+    compiler.driver.unit_products ++> project.kernel_compile { UnitProducts }
     compiler.driver.wiring ++> [
         cli.commands.architecture {
             ARCH_FILE_NAME,
@@ -1334,11 +1332,6 @@ graph import {
     type compiler.types.stubcat.reader ++> project.compiler_host { StubCatalog }
     compiler.types.stubcat.writer ++> [
         dist.precompile_bytecode.precompile_unit_context,
-        project.kernel_snapshot.KernelSnapshot.record_interface {
-            IncoherentInterface,
-            build_module_iface,
-            module_iface_shape
-        },
         project.kernel_snapshot.python_interface {
             IncoherentInterface,
             build_module_iface
@@ -10286,9 +10279,14 @@ graph import compiler {
     types.stubcat.resolver ++> driver.ifacecache | frontend.kernel_host {
         CatalogResolver
     }
-    types.stubcat.writer ++> driver.ifacecache.IfaceRegistry._encode_iface {
-        IncoherentInterface
-    }
+    types.stubcat.writer ++> [
+        driver.ifacecache.IfaceRegistry._encode_iface { IncoherentInterface },
+        frontend.kernel_host.record_interface {
+            IncoherentInterface,
+            build_module_iface,
+            module_iface_shape
+        },
+    ]
     types.ts_decl_parser --> tests.test_jac_mobui_typing { parse_dts }
     types.type_evaluator ++> [
         driver.program.JacProgram.get_type_evaluator { TypeEvaluator },
@@ -14458,6 +14456,7 @@ graph import compiler.types.stubcat {
             put_ref,
             put_refs,
             put_svar,
+            put_u32,
             put_uvar
         },
     ]
