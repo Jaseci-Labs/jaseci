@@ -402,6 +402,10 @@ impl ImplDef.decorators.getter -> (Sequence[Expr] | None) {
     return [self->:DecoratorsRole:->];
 }
 
+impl ImplDef.type_params.getter -> list[TypeParam] {
+    return [self->:TypeParamsRole:->][?:TypeParam];
+}
+
 impl ImplDef.target.getter -> Sequence[NameAtom] {
     return ([self->:TargetRole:->]) as Sequence[NameAtom];
 }
@@ -2011,6 +2015,7 @@ impl ImplDef.init(
     codespace_dual: bool = False,
     decorators: (Sequence[Expr] | None),
     target: Sequence[NameAtom],
+    type_params: (Sequence[TypeParam] | None) = None,
     spec: (Sequence[Expr] | FuncSignature | EventSignature | None),
     body: Sequence[CodeBlockStmt] | Sequence[EnumBlockStmt] | Expr,
     kid: Sequence[UniNode] = []
@@ -2022,6 +2027,7 @@ impl ImplDef.init(
             DocRole: doc,
             DecoratorsRole: decorators,
             TargetRole: target,
+            TypeParamsRole: type_params,
             SpecRole: spec,
             BodyRole: body
         }

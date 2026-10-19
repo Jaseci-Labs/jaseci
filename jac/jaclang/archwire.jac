@@ -6839,6 +6839,7 @@ graph import compiler {
             E2016,
             E2017,
             E2026,
+            E2030,
             E2087,
             W2080
         },

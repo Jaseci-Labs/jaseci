@@ -35,6 +35,10 @@ def last_key(scores: dict[str, int]) -> str {
     return key;
 }
 
+def pick_first[T](items: list[T]) -> T {
+    return items[0];
+}
+
 def env_flag(name: str) -> bool {
     return os.environ.get(name, "") == "1";
 }
@@ -45,6 +49,7 @@ with entry {
         (root spawn Tour()).seen,
         env_flag("PARITY_UNSET"),
         last_key({"a": 0, "b": 1}),
+        pick_first(["p", "q"]),
         Stamp().stamp("x") >= 0
     );
 }

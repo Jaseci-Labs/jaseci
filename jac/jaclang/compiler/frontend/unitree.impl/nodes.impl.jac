@@ -305,7 +305,7 @@ impl UniNode.element_in(mod: Module) -> (UniNode | None) {
 }
 
 impl UniNode.own_impls.getter -> list[ImplDef] {
-    return [self->:ImplOf:->];
+    return [self->:ImplOf:->][?:ImplDef];
 }
 
 impl UniNode.linked_impls -> list[ImplDef] {

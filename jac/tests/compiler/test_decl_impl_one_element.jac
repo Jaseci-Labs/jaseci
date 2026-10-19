@@ -134,6 +134,23 @@ test "a linked impl has no placement or scope of its own" {
     }
 }
 
+test "a generic function's impl restates its type parameters" {
+    path = os.path.join(FIXTURES, "generic_impl.jac");
+    (prog, mod) = compile_fixture(path);
+    assert not prog.errors_had , error_texts(prog);
+    assert run_and_capture(path).strip() == "a 11";
+}
+
+test "an impl whose type parameters differ from its declaration's is an error" {
+    (prog, mod) = compile_fixture(os.path.join(FIXTURES, "generic_impl_mismatch.jac"));
+    codes = [
+        e.code.code
+        for e in prog.errors_had
+        if e.code is not None
+    ];
+    assert codes == ["E2030"] , error_texts(prog);
+}
+
 test "placement report rows keep their own element after a linked impl" {
     path = os.path.join(FIXTURES, "placement_rows.jac");
     prog = JacProgram();

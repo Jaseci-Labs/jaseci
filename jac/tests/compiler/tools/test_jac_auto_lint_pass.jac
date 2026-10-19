@@ -1576,15 +1576,19 @@ test "W3055 separate-impls moves bodies into impls at the bottom of the module" 
 
 test "W3055 leaves bodies that an impl cannot name in place" {
     formatted = format_separate_impls(["separate-impls"]);
-    # Generic methods, nameless abilities and nested functions stay inline.
-    assert "    def generic[T](x: T) -> T {\n        return x;" in formatted;
+    # Nameless abilities and nested functions stay inline.
     assert "    can with Root entry {\n        disengage;" in formatted;
-    assert "impl Foo.generic" not in formatted;
     assert "impl helper" not in formatted;
     assert formatted.count("impl Foo.declared") == 1;
     # A field sharing the method's name would capture the impl's target.
     assert "    def init(self: Field, flag: bool) {" in formatted;
     assert "impl Field.init" not in formatted;
+}
+
+test "W3055 separates generic bodies and restates their type parameters" {
+    formatted = format_separate_impls(["separate-impls"]);
+    assert "    def generic[T](x: T) -> T;\n" in formatted;
+    assert "impl Foo.generic[T](x: T) -> T {\n    return x;" in formatted;
 }
 
 test "W3055 separates client component bodies like any other" {

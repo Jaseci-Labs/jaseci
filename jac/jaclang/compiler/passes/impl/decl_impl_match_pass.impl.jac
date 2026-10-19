@@ -108,10 +108,18 @@ impl DeclImplMatchPass._find_archetype_defn(lookup: Symbol) -> (NameAtom | None)
 impl DeclImplMatchPass.connect_impls(
     source_sym_tab: UniScopeNode, target_sym_tab: UniScopeNode
 ) -> None {
+    pending: list[tuple[ImplDef, str]] = [];
     for sym in source_sym_tab.names_in_scope.values() {
         for defn in sym.defn {
             if isinstance(defn.name_of, ImplDef) {
-                self._connect_one_impl(defn.name_of, sym.sym_name, target_sym_tab);
+                pending.append((defn.name_of, sym.sym_name));
+            }
+        }
+    }
+    for depth in sorted({len(impl_node.target) for (impl_node, _) in pending}) {
+        for (impl_node, sym_name) in pending {
+            if len(impl_node.target) == depth {
+                self._connect_one_impl(impl_node, sym_name, target_sym_tab);
             }
         }
     }
@@ -281,6 +289,18 @@ impl DeclImplMatchPass._report_bare_redecls(sym_tab: UniScopeNode) -> None {
 impl DeclImplMatchPass.validate_params_match(
     impl_node: ImplDef, sym_name: str, valid_decl: AstSymbolNode
 ) -> None {
+    if impl_node.type_params and isinstance(valid_decl, (Ability, Archetype)) {
+        decl_tps = [tp.name.value for tp in valid_decl.type_params];
+        impl_tps = [tp.name.value for tp in impl_node.type_params];
+        if decl_tps != impl_tps {
+            self.ctx.emit(
+                E2030,
+                node_override=impl_node.type_params[0],
+                decl_params=", ".join(decl_tps),
+                impl_params=", ".join(impl_tps)
+            );
+        }
+    }
     if (
         isinstance(valid_decl, Ability)
         and isinstance(valid_decl.signature, FuncSignature)

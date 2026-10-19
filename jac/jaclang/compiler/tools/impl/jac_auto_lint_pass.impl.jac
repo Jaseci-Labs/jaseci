@@ -2703,7 +2703,7 @@ impl JacAutoLintPass._collect_inline_abilities(
 }
 
 impl JacAutoLintPass._can_separate(ab: uni.Ability) -> bool {
-    if ab.accessor_kind or ab.is_abstract or ab.is_comptime or ab.type_params {
+    if ab.accessor_kind or ab.is_abstract or ab.is_comptime {
         return False;
     }
     if not isinstance(ab.name_ref, uni.Name) or not isinstance(ab.body, list) {
@@ -2760,7 +2760,19 @@ impl JacAutoLintPass._impl_header(
         sig_start = sig.loc.pos_start;
         sig_text = src.code.encode("utf-8")[sig_start:sig.loc.pos_end].decode("utf-8");
     }
-    head = "impl " + target + (" " if isinstance(sig, uni.EventSignature) else "");
+    tp_text = "";
+    if ab.type_params {
+        kids = [ab->:Kid:->];
+        opener = kids[kids.index(ab.type_params[0]) - 1];
+        closer = kids[kids.index(ab.type_params[-1]) + 1];
+        tp_text = src.code.encode("utf-8")[opener.loc.pos_start:closer.loc.pos_end].decode(
+            "utf-8"
+        );
+    }
+    head = "impl "
+        + target
+        + tp_text
+        + (" " if isinstance(sig, uni.EventSignature) else "");
     text = head + sig_text + " {}";
     (tokens, _comments, _diags, lex_errors) = tokenize_full(text, ab.loc.mod_path);
     parser = Parser(tokens=tokens, file_path=ab.loc.mod_path, source_code=text);
