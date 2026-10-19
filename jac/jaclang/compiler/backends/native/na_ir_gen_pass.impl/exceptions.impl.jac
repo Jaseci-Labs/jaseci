@@ -1329,18 +1329,22 @@ impl NaIRGenPass._get_exception_context_fn -> ir.Function {
     # Until the program starts a thread (`__jac_rc_threaded`, the refcount
     # helpers' flag, set before every pthread_create the compiler emits),
     # one context serves the one thread: a process-wide weak global holds it
-    # and the lookup is a load and a compare. A program with threads takes
-    # the thread-local slot, as before; the first context is published in
-    # both places, so the main thread finds its own context there too.
+    # and the lookup is a load and a compare. Everything else is out of line
+    # in `__jac_exception_context_slow`, so the fast path saves no registers.
     main_gv = ir.GlobalVariable(self.llvm_module, i8p, name="__jac_exception_main_ctx");
     main_gv.linkage = "weak";
     main_gv.initializer = ir.Constant(i8p, None);
+    slow_fn = ir.Function(
+        self.llvm_module,
+        ir.FunctionType(context_ptr, []),
+        name="__jac_exception_context_slow"
+    );
+    slow_fn.linkage = "weak";
+    slow_fn.attributes.add("noinline");
     entry_bb = func.append_basic_block("entry");
     fast_bb = func.append_basic_block("fast");
     fast_ret = func.append_basic_block("fast.ret");
-    slow_bb = func.append_basic_block("slow");
-    create = func.append_basic_block("create");
-    ready = func.append_basic_block("ready");
+    miss_bb = func.append_basic_block("miss");
     b = ir.IRBuilder(entry_bb);
     if self.rc_threaded_gv is not None {
         mt_flag = b.load_atomic(self.rc_threaded_gv, "monotonic", 1, name="exc.mt");
@@ -1348,47 +1352,67 @@ impl NaIRGenPass._get_exception_context_fn -> ir.Function {
             b.icmp_unsigned(
                 "!=", mt_flag, ir.Constant(ir.IntType(8), 0), name="exc.mt.on"
             ),
-            slow_bb,
+            miss_bb,
             fast_bb
         );
     } else {
-        b.branch(slow_bb);
+        b.branch(miss_bb);
     }
     b = ir.IRBuilder(fast_bb);
     main_ctx = b.load(main_gv, name="exc.main");
     b.cbranch(
         b.icmp_unsigned("==", main_ctx, ir.Constant(i8p, None), name="exc.main.none"),
-        slow_bb,
+        miss_bb,
         fast_ret
     );
     b = ir.IRBuilder(fast_ret);
     b.ret(b.bitcast(main_ctx, context_ptr));
-    b = ir.IRBuilder(slow_bb);
+    b = ir.IRBuilder(miss_bb);
+    b.ret(b.call(slow_fn, [], name="exc.slow"));
+    # The thread-local slot, created on first use. Only the single thread
+    # touches the global: while the flag is 0 the slow path publishes the
+    # context it finds in or adds to the slot (a library's initializers run
+    # with the flag set, so `jac_main` finds its thread's context there), and
+    # once a thread exists it leaves the global alone.
+    slow_entry = slow_fn.append_basic_block("entry");
+    create = slow_fn.append_basic_block("create");
+    ready = slow_fn.append_basic_block("ready");
+    b = ir.IRBuilder(slow_entry);
     value = b.call(get_fn, []);
     b.cbranch(b.icmp_unsigned("==", value, ir.Constant(i64, 0)), create, ready);
-    b = ir.IRBuilder(ready);
-    b.ret(b.inttoptr(value, context_ptr));
     b = ir.IRBuilder(create);
     size = b.ptrtoint(
         b.gep(ir.Constant(context_ptr, None), [ir.Constant(i32, 1)]), i64
     );
     calloc_fn = self._get_or_declare_extern("calloc", i8p, [i64, i64]);
     allocated = b.call(calloc_fn, [ir.Constant(i64, 1), size]);
-    b.call(set_fn, [b.ptrtoint(allocated, i64)]);
-    # The first context created in the process is the single thread's.
-    publish = func.append_basic_block("publish");
-    created = func.append_basic_block("created");
-    had_main = b.load(main_gv, name="exc.main.had");
+    created = b.ptrtoint(allocated, i64);
+    b.call(set_fn, [created]);
+    b.branch(ready);
+    b = ir.IRBuilder(ready);
+    found = b.phi(i64, name="exc.ctx");
+    found.add_incoming(value, slow_entry);
+    found.add_incoming(created, create);
+    context = b.inttoptr(found, context_ptr);
+    if self.rc_threaded_gv is None {
+        b.ret(context);
+        return func;
+    }
+    # Single-threaded here means the global was empty (the fast path checked):
+    # the context is this thread's, the only one.
+    publish = slow_fn.append_basic_block("publish");
+    done = slow_fn.append_basic_block("done");
+    mt_now = b.load_atomic(self.rc_threaded_gv, "monotonic", 1, name="exc.mt.now");
     b.cbranch(
-        b.icmp_unsigned("==", had_main, ir.Constant(i8p, None), name="exc.main.free"),
+        b.icmp_unsigned("==", mt_now, ir.Constant(ir.IntType(8), 0), name="exc.mt.off"),
         publish,
-        created
+        done
     );
     b = ir.IRBuilder(publish);
-    b.store(allocated, main_gv);
-    b.branch(created);
-    b = ir.IRBuilder(created);
-    b.ret(b.bitcast(allocated, context_ptr));
+    b.store(b.bitcast(context, i8p), main_gv);
+    b.branch(done);
+    b = ir.IRBuilder(done);
+    b.ret(context);
     return func;
 }
 
