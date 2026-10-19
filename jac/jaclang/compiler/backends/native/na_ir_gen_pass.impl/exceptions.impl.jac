@@ -1429,6 +1429,7 @@ impl NaIRGenPass._register_unwind_cleanup -> None {
     saved_locals = self.local_vars;
     saved_regions = self.region_open_stack;
     saved_cells = self.closure_cell_handles;
+    probe_at = len(func.blocks);
     probe = func.append_basic_block(name="unwind.probe");
     try {
         self._builder = ir.IRBuilder(probe);
@@ -1441,6 +1442,19 @@ impl NaIRGenPass._register_unwind_cleanup -> None {
         self.closure_cell_handles = {};
         self._emit_scope_cleanup(skip_var=None, loc="unwind");
         pending = len(probe.instructions) > 0;
+        # Only the slots the cleanup reads go in the record: a registered
+        # slot's address escapes into the chain, so it can never live in a
+        # register and is reloaded after every call. Scalars, borrowed
+        # values and the rest the cleanup leaves alone stay out of it.
+        read: set[int] = set();
+        for blk in func.blocks[probe_at:] {
+            for inst_value in blk.instructions {
+                for operand in getattr(inst_value, "operands", []) {
+                    read.add(id(operand));
+                }
+            }
+        }
+        slots = [(name, slot) for (name, slot) in slots if id(slot) in read];
     } finally {
         func.blocks.remove(probe);
         self._builder = saved_builder;
@@ -1448,7 +1462,7 @@ impl NaIRGenPass._register_unwind_cleanup -> None {
         self.region_open_stack = saved_regions;
         self.closure_cell_handles = saved_cells;
     }
-    if not pending {
+    if not pending or not slots {
         return;
     }
     cleanup_ty = ir.FunctionType(ir.VoidType(), [i8p]);
@@ -1486,6 +1500,7 @@ impl NaIRGenPass._register_unwind_cleanup -> None {
         entry_blk.instructions.remove(cached);
     }
     self._hoist_entry_allocas(entry_blk);
+    shadows = self._unwind_shadow_slots(func, slots);
     anchor: any = None;
     for inst in entry_blk.instructions {
         if isinstance(inst, ir.AllocaInstr) {
@@ -1512,7 +1527,7 @@ impl NaIRGenPass._register_unwind_cleanup -> None {
     env_slot = b.alloca(env_ty, name="unwind.env");
     for (k, (_name, slot)) in enumerate(slots) {
         b.store(
-            b.bitcast(slot, i8p),
+            b.bitcast(shadows.get(id(slot), slot), i8p),
             b.gep(env_slot, [ir.Constant(i32, 0), ir.Constant(i32, k)])
         );
     }
@@ -1544,6 +1559,106 @@ impl NaIRGenPass._register_unwind_cleanup -> None {
         b.position_before(at);
         b.store(prev, top_slot);
     }
+}
+
+impl NaIRGenPass._unwind_shadow_slots(
+    func: ir.Function, slots: list[tuple[str, ir.Value]]
+) -> dict[int, ir.Value] {
+    """Shadow each registered local the function only loads and stores directly.
+
+    The unwind node needs, for every owned local, a word that holds the
+    local's current value when a raise crosses the frame. Handing the chain
+    the local's own slot publishes its address, and an escaped slot can never
+    be promoted to a register: every call may then read or write it, so the
+    local is reloaded after each one. A slot whose only uses are loads from it
+    and stores into it gets a shadow instead -- its own entry alloca, written
+    right after every store into the slot -- and the chain is handed the
+    shadow. The shadow holds the slot's value at every call, which is the only
+    place a raise can start, and the slot itself stays promotable. A slot used
+    any other way (its address taken, stored, cast or passed on) is handed over
+    as before. Returns the shadow of each shadowed slot, by the slot's id.
+    """;
+    plain: dict[int, ir.Value] = {};
+    for (_name, slot) in slots {
+        plain[id(slot)] = slot;
+    }
+    writes: list[tuple[ir.Block, int, int]] = [];
+    for blk in func.blocks {
+        for (pos, inst_value) in enumerate(blk.instructions) {
+            inst: any = inst_value;
+            if isinstance(inst, ir.StoreInstr) {
+                plain.pop(id(inst.operands[0]), None);
+                if id(inst.operands[1]) in plain {
+                    writes.append((blk, pos, id(inst.operands[1])));
+                }
+                continue;
+            }
+            if isinstance(inst, ir.LoadInstr) {
+                continue;
+            }
+            if isinstance(inst, ir.PhiInstr) {
+                for (incoming, _from) in inst.incomings {
+                    plain.pop(id(incoming), None);
+                }
+                continue;
+            }
+            if isinstance(inst, ir.GEPInstr) {
+                # (a field or element address derived from the slot: the
+                # slot's own stores would no longer be the only writes)
+                plain.pop(id(inst.pointer), None);
+                for index in inst.indices {
+                    plain.pop(id(index), None);
+                }
+            }
+            for operand in getattr(inst, "operands", []) {
+                plain.pop(id(operand), None);
+            }
+        }
+    }
+    if not plain {
+        return {};
+    }
+    entry_blk = func.entry_basic_block;
+    b = ir.IRBuilder(entry_blk);
+    b.position_at_start(entry_blk);
+    shadows: dict[int, ir.Value] = {};
+    for (name, slot) in slots {
+        if id(slot) in plain {
+            shadows[id(slot)] = b.alloca(slot.allocated_type, name=f"{name}.unwind");
+        }
+    }
+    # (the slot id was recorded by the scan: the entry block's instruction
+    # positions have moved by the shadow allocas since)
+    mirrors: dict[int, list[int]] = {};
+    for (blk, pos, slot_id) in writes {
+        if slot_id in shadows {
+            mirrors.setdefault(id(blk), []).append(pos);
+        }
+    }
+    for blk in func.blocks {
+        positions = mirrors.get(id(blk));
+        if not positions {
+            continue;
+        }
+        # The shadow allocas went in at the entry block's start, so the
+        # recorded positions there moved by that many.
+        shift = len(shadows) if blk is entry_blk else 0;
+        marked = set([pos + shift for pos in positions]);
+        rebuilt: list[any] = [];
+        for (pos, inst_value) in enumerate(blk.instructions) {
+            rebuilt.append(inst_value);
+            if pos in marked {
+                store: any = inst_value;
+                rebuilt.append(
+                    ir.StoreInstr(
+                        blk, store.operands[0], shadows[id(store.operands[1])]
+                    )
+                );
+            }
+        }
+        blk.instructions = rebuilt;
+    }
+    return shadows;
 }
 
 impl NaIRGenPass._hoist_entry_allocas(entry_blk: ir.Block) -> None {
