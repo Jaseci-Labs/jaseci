@@ -223,7 +223,7 @@ test "a module archwire.jac never names is still sealed and still ruled" {
             "import from app.main { greet }\n\ndef x -> str {\n    return greet();\n}\n"
         );
         prog = _compile(base, "extra/rogue.jac");
-        assert sorted(_errors(prog)) == ["E1144", "E2090"] , _errors(prog);
+        assert sorted(_errors(prog)) == ["E1144", "E2099"] , _errors(prog);
     } finally {
         shutil.rmtree(base, ignore_errors=True);
     }
@@ -393,6 +393,7 @@ test "lint autofix removes wired imports" {
     base = _standard(
         svc="import from core.util { now }\nimport from core.other { helper }\n\n"
             + _SVC
+            + "\ndef aid -> int {\n    return helper();\n}\n"
     );
     try {
         fixed = JacProgram.jac_file_formatter(
@@ -647,6 +648,8 @@ test "jac arch init derives the canonical wiring that covers the project" {
         assert _read(base, "archwire.jac")
             == (
                 "graph import {\n"
+                "    edge Core: core.* --> app.*;\n"
+                "\n"
                 "    core.svc ++> app.main { serve }\n"
                 "    core.util ++> app.main { now as when }\n"
                 "}\n"
@@ -692,22 +695,11 @@ test "jac arch sync adds missing wires and --prune drops unused ones" {
 }
 
 
-test "rules are optional: a provider no rule names flows anywhere under archwire.jac" {
-    base = _standard(
-        arch=(
-            "graph import {\n"
-            "    core.svc ++> app.main { serve }\n"
-            "    core.util ++> app.main { now as when }\n"
-            "}\n"
-            "\n"
-            "graph import core {\n"
-            "    util ++> svc { now }\n"
-            "}\n"
-        )
-    );
+test "inside one top-level package rules are optional" {
+    base = _standard(arch="graph import core {\n    util ++> svc { now }\n}\n");
     try {
         assert _errors(_compile(base, "archwire.jac")) == [];
-        assert _errors(_compile(base, "app/main.jac")) == [];
+        assert _errors(_compile(base, "core/svc.jac")) == [];
     } finally {
         shutil.rmtree(base, ignore_errors=True);
     }
@@ -736,7 +728,7 @@ test "a rule restricts only the providers it names" {
             "import from core.util { now }\n\ndef t -> str {\n    return now();\n}\n"
         );
         free = _compile(base, "extra/free.jac");
-        assert sorted(_errors(free)) == ["E1144", "E2090"] , _errors(free);
+        assert sorted(_errors(free)) == ["E1144", "E2099"] , _errors(free);
     } finally {
         shutil.rmtree(base, ignore_errors=True);
     }
@@ -756,7 +748,7 @@ test "a rule's targets are relative to its block, like a wire's consumers" {
     );
     try {
         assert _errors(_compile(base, "archwire.jac")) == [];
-        assert "E2090" in _errors(_compile(base, "app/main.jac"));
+        assert "E2099" in _errors(_compile(base, "app/main.jac"));
     } finally {
         shutil.rmtree(base, ignore_errors=True);
     }
@@ -973,6 +965,56 @@ test "a nested function takes its own wire, not its parent's" {
 }
 
 
+test "every owner of a scoped wire gets its own import, parsed from the wire" {
+    import from jaclang.compiler.driver.wiring { place_wired_imports, wiring_annex_for }
+    import from jaclang.compiler.frontend.parser.frontend { parse_woven }
+    import from jaclang.compiler.frontend.unitree { ImplDef, Import }
+    base = _standard(
+        arch="graph import {\n    core.util ++> app.main.Greeter.greet { now as when }\n}\n",
+        main=(
+            "obj Greeter {\n"
+            "    def greet -> str;\n"
+            "}\n"
+            "\n"
+            "impl Greeter.greet -> str {\n"
+            "    return when();\n"
+            "}\n"
+            "\n"
+            "impl Greeter.greet -> str {\n"
+            "    return when() + \"!\";\n"
+            "}\n"
+        )
+    );
+    try {
+        path = os.path.join(base, "app", "main.jac");
+        with open(path) as f {
+            src = f.read();
+        }
+        annex = wiring_annex_for(path);
+        assert annex is not None;
+        (mod, had_error) = parse_woven(src, path, None, [annex]);
+        assert not had_error;
+        place_wired_imports(mod);
+        owners = mod.get_all_sub_nodes(typ=ImplDef);
+        placed = [
+            [
+                s
+                for s in owner.body
+                if isinstance(s, Import)
+            ] for owner in owners
+        ];
+        assert [len(p) for p in placed] == [1, 1] , placed;
+        (first, second) = (placed[0][0], placed[1][0]);
+        assert first is not second;
+        assert first.parent is owners[0] and second.parent is owners[1];
+        assert first.loc.first_line == second.loc.first_line;
+        assert first.loc.mod_path == second.loc.mod_path;
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
 test "the strip removes a function's wired import that a nested function repeats" {
     base = _standard(
         arch="graph import {\n    core.util ++> app.main.greet { now as when }\n}\n",
@@ -1168,6 +1210,308 @@ test "a wired include an annex writes stays written and is declared" {
         assert "include core.common" in annex.mod.main.gen.jac , annex.mod.main.gen.jac;
         errors = _errors(_compile(base, "core/svc.jac"));
         assert "E1144" not in errors and "E1147" not in errors , errors;
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+"""Rules are mandatory between top-level packages: a wire from one top-level
+package into another is an error until a rule admits that edge, and the error
+names the rule to add. Plumbing inside one top-level package needs no rule."""
+test "a wire between top-level packages that no rule admits is an error naming the rule" {
+    base = _standard(
+        arch=(
+            "graph import {\n"
+            "    core.svc ++> app.main { serve }\n"
+            "    core.util ++> app.main { now as when }\n"
+            "}\n"
+            "\n"
+            "graph import core {\n"
+            "    util ++> svc { now }\n"
+            "}\n"
+        )
+    );
+    try {
+        prog = _compile(base, "archwire.jac");
+        unruled = [
+            str(e)
+            for e in prog.errors_had
+            if e.code is not None and e.code.code == "E2099"
+        ];
+        assert len(unruled) == 2 , [str(e) for e in prog.errors_had];
+        assert all(["edge Core: core.* --> app.*;" in u for u in unruled]) , unruled;
+        assert not any(["core.util --> core.svc" in u for u in unruled]) , unruled;
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+test "a rule whose source or target is the bare * pattern is an error" {
+    base = _standard(
+        arch=_ARCH.replace(
+            "    edge AppInternal: app.* --> app.*;\n",
+            "    edge AppInternal: app.* --> app.*;\n    edge Anything: * --> app.*;\n"
+        )
+    );
+    try {
+        assert "E2100" in _errors(_compile(base, "archwire.jac"));
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+    base = _standard(
+        arch=_ARCH.replace(
+            "    edge AppInternal: app.* --> app.*;\n",
+            "    edge AppInternal: app.* --> app.*;\n    edge Everywhere: core.* --> *;\n"
+        )
+    );
+    try {
+        assert "E2100" in _errors(_compile(base, "archwire.jac"));
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+test "jac arch sync admits a new edge in the proposed rule and leaves hand rules alone" {
+    base = _standard(
+        arch=(
+            "graph import {\n"
+            "    edge AppInternal: app.* --> app.*;\n"
+            "    edge Core: core.* --> app.*;\n"
+            "\n"
+            "    core.svc ++> app.main { serve }\n"
+            "    core.util ++> app.main { now as when }\n"
+            "}\n"
+            "\n"
+            "graph import core {\n"
+            "    util ++> svc { now }\n"
+            "}\n"
+        )
+    );
+    try {
+        _write(
+            base,
+            "tools/clock.jac",
+            "import from core.util { now }\n\ndef tick -> str {\n    return now();\n}\n"
+        );
+        assert _arch_sync(False, base, False) == 0;
+        arch = _read(base, "archwire.jac");
+        assert "    edge Core: core.* --> app.* | tools.*;\n" in arch , arch;
+        assert "    edge AppInternal: app.* --> app.*;\n" in arch , arch;
+        prog = _compile(base, "tools/clock.jac");
+        assert "E2099" not in _errors(prog) and "E2090" not in _errors(prog) , _errors(
+            prog
+        );
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+"""A declared wire is the written import itself, so pruning an unused one
+removes the written import too; otherwise the next compile reports the
+written import as unwired and sync adds the wire back."""
+test "jac arch sync --prune removes the written import of a pruned declared wire" {
+    base = _standard(
+        arch=_ARCH.replace(
+            "    util ++> svc { now }\n",
+            "    other --> svc.serve { helper }\n    util ++> svc { now }\n"
+        ),
+        svc=(
+            "def serve -> str {\n"
+            "    if now() {\n"
+            "        import from core.other { helper }\n"
+            "    }\n"
+            "    return now();\n"
+            "}\n"
+        )
+    );
+    try {
+        assert _arch_sync(False, base, True) == 0;
+        assert "helper" not in _read(base, "archwire.jac") , _read(
+            base, "archwire.jac"
+        );
+        assert "core.other" not in _read(base, "core/svc.jac") , _read(
+            base, "core/svc.jac"
+        );
+        assert _errors(_compile(base, "core/svc.jac")) == [];
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+"""Under an archwire.jac a written import nothing wires and nothing reads is
+dead, however it got there; `jac fmt --lintfix` removes it. One that is read
+stays, since it needs a wire, not a deletion."""
+test "jac fmt --lintfix removes an unwired written import nothing reads" {
+    base = _standard(
+        svc=(
+            "def serve -> str {\n"
+            "    if now() {\n"
+            "        import from core.other { helper }\n"
+            "    }\n"
+            "    return now();\n"
+            "}\n"
+            "\n"
+            "def used -> int {\n"
+            "    if now() {\n"
+            "        import from core.other { helper as kept }\n"
+            "        return kept();\n"
+            "    }\n"
+            "    return 0;\n"
+            "}\n"
+        )
+    );
+    try {
+        prog = JacProgram.jac_file_formatter(
+            os.path.join(base, "core", "svc.jac"), auto_lint=True
+        );
+        out = prog.mod.main.gen.jac;
+        assert "W3054" in _warnings(prog) , _warnings(prog);
+        assert "import from core.other { helper }" not in out , out;
+        assert "import from core.other { helper as kept }" in out , out;
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+"""A package's own `__init__` is a module under the boundary like any other,
+so a rule targeting other packages says nothing about what it feeds inside
+its own package."""
+test "a package provider feeds its own package freely under a rule aimed elsewhere" {
+    base = _standard(
+        arch=_ARCH.replace("    edge CoreInternal: core.* --> core.*;\n", "").replace(
+            "    core.svc ++> app.main { serve }\n",
+            "    core ++> core.svc { LEVEL }\n    core.svc ++> app.main { serve }\n"
+        ),
+        svc="def serve -> str {\n    return now() + str(LEVEL);\n}\n"
+    );
+    try {
+        _write(base, "core/__init__.jac", "glob LEVEL: int = 1;\n");
+        errors = _errors(_compile(base, "archwire.jac"));
+        assert "E2090" not in errors and "E2099" not in errors , errors;
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+"""A bare sibling import inside a package boundary is not an import of a module
+under it: the boundary names that module by its package-qualified import name.
+No rule governs it, so it never needs one."""
+test "a bare sibling import in a package boundary needs no rule" {
+    base = _project(
+        {
+            "suite/__init__.jac": "",
+            "suite/archwire.jac": "",
+            "suite/support.jac": "def make -> int {\n    return 1;\n}\n",
+            "suite/test_make.jac": "import from support { make }\n\ndef check -> int {\n    return make();\n}\n"
+        }
+    );
+    try {
+        assert "E2099" not in _errors(_compile(base, "suite/test_make.jac"));
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+"""An implementation annex is part of its module, so a module-level import that
+only the annex reads is read, and the lint keeps it."""
+test "jac fmt --lintfix keeps an unwired import that only an impl annex reads" {
+    base = _standard(svc="import from core.other { helper }\n\ndef serve -> str;\n");
+    try {
+        _write(
+            base,
+            "core/impl/svc.impl.jac",
+            "impl serve -> str {\n    return str(helper());\n}\n"
+        );
+        prog = JacProgram.jac_file_formatter(
+            os.path.join(base, "core", "svc.jac"), auto_lint=True
+        );
+        assert "W3054" not in _warnings(prog) , _warnings(prog);
+        assert "import from core.other { helper }" in prog.mod.main.gen.jac;
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+test "jac arch sync --prune removes a pruned declared import inside a module-level block" {
+    base = _standard(
+        arch=_ARCH.replace(
+            "    util ++> svc { now }\n",
+            "    other --> svc { helper }\n    util ++> svc { now }\n"
+        ),
+        svc=(
+            _SVC
+            + "\nwith entry {\n"
+            "    import from core.other { helper }\n"
+            "    print(now());\n"
+            "}\n"
+        )
+    );
+    try {
+        assert _arch_sync(False, base, True) == 0;
+        assert "helper" not in _read(base, "archwire.jac") , _read(
+            base, "archwire.jac"
+        );
+        assert "core.other" not in _read(base, "core/svc.jac") , _read(
+            base, "core/svc.jac"
+        );
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+"""In a scoped project every module name carries the package prefix, so the
+top-level package is the first segment after it."""
+test "a scoped project still needs rules between its top-level packages" {
+    base = _project(
+        {
+            "archwire.jac": (
+                "graph import {\n"
+                "    acme.widgets.core.util ++> acme.widgets.app.main { now }\n"
+                "}\n"
+            ),
+            "core/util.jac": _UTIL,
+            "app/main.jac": "def greet -> str {\n    return now();\n}\n"
+        }
+    );
+    try {
+        _write(base, "jac.toml", "[project]\nname = \"acme/widgets\"\n");
+        unruled = [
+            str(e)
+            for e in _compile(base, "archwire.jac").errors_had
+            if e.code is not None and e.code.code == "E2099"
+        ];
+        assert unruled , "a crossing between top-level packages passed without a rule";
+        assert "edge Core: acme.widgets.core.* --> acme.widgets.app.*;" in unruled[0] , unruled[
+            0
+        ];
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
+"""The lint judges the text it formats, not only the file on disk: an editor
+formats unsaved text, and a use it adds keeps the import alive."""
+test "jac fmt --lintfix keeps an unwired import the unsaved text reads" {
+    unused = "import from core.other { helper }\n\ndef serve -> str {\n    return now();\n}\n";
+    base = _standard(svc=unused);
+    try {
+        edited = unused.replace("return now();", "return now() + str(helper());");
+        prog = JacProgram.jac_str_formatter(
+            edited, os.path.join(base, "core", "svc.jac"), auto_lint=True
+        );
+        assert "W3054" not in _warnings(prog) , _warnings(prog);
+        assert "import from core.other { helper }" in prog.mod.main.gen.jac;
     } finally {
         shutil.rmtree(base, ignore_errors=True);
     }

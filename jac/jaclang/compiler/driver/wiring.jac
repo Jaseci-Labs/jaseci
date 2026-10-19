@@ -1,4 +1,3 @@
-import copy;
 import hashlib;
 import os;
 import from collections.abc { Iterator }
@@ -16,17 +15,9 @@ obj WireBinding {
         alias: str = "",
         injected: bool = True;
 
-    def key -> tuple[str, str, str, str] {
-        return (self.provider, self.form, self.name, self.alias);
-    }
-
-    def is_module_form -> bool {
-        return "from" not in self.form.split(" ");
-    }
-
-    def bound_name -> str {
-        return self.alias or self.name;
-    }
+    def key -> tuple[str, str, str, str];
+    def is_module_form -> bool;
+    def bound_name -> str;
 }
 
 obj PatternRec {
@@ -97,12 +88,12 @@ obj WiringSpec {
         stmt: Import, consumer: str, taken: set[int]
     ) -> (WireRec | None);
 
+    def wire_import(wire: WireRec) -> (Import | None);
     def is_package_dir(name: str) -> bool;
     def project_modules -> list[str];
     def _scan_modules(directory: str, found: list[str], seen: set[str]) -> None;
     def consumer_wires(consumer: str) -> list[WireRec];
     def is_covered(consumer: str) -> bool;
-    def is_project_module(module: str) -> bool;
     def _wire_pieces(wire: WireRec) -> list[tuple[int, int, str]];
     def annex_source(consumer: str) -> (str | None);
     def digest_for(consumer: str) -> str;
@@ -113,8 +104,12 @@ obj WiringSpec {
     def import_provider(path_node: ModulePath) -> (str | None);
     def import_bindings(imp: Import) -> list[tuple[WireBinding, UniNode]];
     def wire_suggestion(binding: WireBinding, consumer: str) -> str;
-    def rules_for_provider(provider: str) -> list[RuleRec];
-    def rules_admitting(provider: str, consumer: str) -> list[RuleRec];
+    def rules_governing(provider: str, consumer: str, local: bool) -> list[RuleRec];
+    def rules_admitting(provider: str, consumer: str, local: bool) -> list[RuleRec];
+    def top_package(module: str) -> str;
+    def top_pattern(top: str) -> PatternRec;
+    def needs_rule(provider: str, consumer: str, local: bool) -> bool;
+    def edge_rule(source: str, targets: list[str]) -> RuleRec;
     static def admitted_names(rules: list[RuleRec]) -> (set[str] | None);
 }
 
@@ -126,18 +121,7 @@ glob _spec_cache: dict[str, tuple[tuple[float, int], WiringSpec]] = {},
      _STDLIB_NAMES: list[set[str]] = [];
 
 @contextmanager
-def wiring_scope -> Iterator[None] {
-    if _resolution.get() is not None {
-        yield ;
-        return;
-    }
-    token = _resolution.set({});
-    try {
-        yield ;
-    } finally {
-        _resolution.reset(token);
-    }
-}
+def wiring_scope -> Iterator[None];
 
 def is_arch_file(path: str) -> bool;
 def arch_file_for(path: str) -> (str | None);
@@ -164,7 +148,12 @@ def render_wiring(
 ) -> str;
 
 def wiring_facts(wires: list[WireRec]) -> list[tuple[str, WireBinding]];
-def _rule_text(rule: RuleRec) -> str;
+def rule_text(rule: RuleRec) -> str;
+def rule_name_for(top: str) -> str;
+def propose_rules(
+    spec: WiringSpec, facts: list[tuple[str, WireBinding]], rules: list[RuleRec]
+) -> list[RuleRec];
+
 def _wire_name(name: str) -> str;
 def _target_text(consumers: list[str], items: (list[tuple[str, str]] | None)) -> str;
 def _entry_order(

@@ -233,3 +233,25 @@ impl ExecutionContext.bind_stream(value: any) -> any {
     }
     return value;
 }
+
+impl ExecutionContext.for_target(
+    target: object, parent: ExecutionContext, user_root_id: str
+) -> ExecutionContext {
+    application = application_of(target);
+    caller = application_for(parent.full_target_path or '');
+    if application is None or caller is None or application is caller {
+        context = ExecutionContext(_parent=parent);
+    } else {
+        context = ExecutionContext(
+            _parent=parent, _own_session=True, full_target_path=application.entry
+        );
+    }
+    try {
+        await context.aset_user_root(user_root_id);
+    } except BaseException {
+        context.mem.abort();
+        context.close();
+        raise;
+    }
+    return context;
+}

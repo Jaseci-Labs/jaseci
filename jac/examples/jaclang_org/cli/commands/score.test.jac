@@ -25,24 +25,7 @@ glob SAMPLE: dict[str, str] = {
          "license": "MIT\n"
      };
 
-def sample_result -> ScoreResult {
-    meta = RepoMeta(
-        full_name="acme/dojo",
-        owner="acme",
-        name="dojo",
-        html_url="https://github.com/acme/dojo",
-        stars=12,
-        forks=3,
-        topics=["jac"],
-        pushed_at=now_iso()
-    );
-    an = analyze(SAMPLE);
-    an.jac_bytes = 4000;
-    an.other_code_bytes = 1000;
-    return ScoreResult(
-        ok=True, meta=meta, an=an, breakdown=score(meta, an), sha="abc123def456789"
-    );
-}
+def sample_result -> ScoreResult;
 
 test "parse repo ref accepts slugs and github urls" {
     assert parse_repo_ref("jaseci-labs/jac") == ("jaseci-labs", "jac");
@@ -95,4 +78,23 @@ test "every scorer failure has a human hint" {
     for key in ["bad_ref", "not_found", "fetch_failed", "not_jac"] {
         assert len(ERROR_TEXT[key]) > 20;
     }
+}
+
+impl sample_result -> ScoreResult {
+    meta = RepoMeta(
+        full_name="acme/dojo",
+        owner="acme",
+        name="dojo",
+        html_url="https://github.com/acme/dojo",
+        stars=12,
+        forks=3,
+        topics=["jac"],
+        pushed_at=now_iso()
+    );
+    an = analyze(SAMPLE);
+    an.jac_bytes = 4000;
+    an.other_code_bytes = 1000;
+    return ScoreResult(
+        ok=True, meta=meta, an=an, breakdown=score(meta, an), sha="abc123def456789"
+    );
 }

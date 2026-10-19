@@ -1,18 +1,7 @@
 import io;
 import from contextlib { redirect_stderr }
 
-def usage_error(argv: list[str]) -> bool {
-    buf = io.StringIO();
-    exited = False;
-    with redirect_stderr(buf) {
-        try {
-            parse_args(argv);
-        } except SystemExit {
-            exited = True;
-        }
-    }
-    return exited and "usage:" in buf.getvalue();
-}
+def usage_error(argv: list[str]) -> bool;
 
 test "score takes a repo and an optional json flag" {
     inv = parse_args(["score", "jaseci-labs/jac"]);
@@ -64,4 +53,17 @@ test "the parser names itself jacorg and lists every command" {
     for name in ["score", "docs", "feed", "post"] {
         assert name in text;
     }
+}
+
+impl usage_error(argv: list[str]) -> bool {
+    buf = io.StringIO();
+    exited = False;
+    with redirect_stderr(buf) {
+        try {
+            parse_args(argv);
+        } except SystemExit {
+            exited = True;
+        }
+    }
+    return exited and "usage:" in buf.getvalue();
 }

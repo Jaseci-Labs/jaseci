@@ -1,4 +1,26 @@
 graph import {
+    edge Artifacts: artifacts.* --> cli.* | client.* | compiler.* | data.* | dist.* | project.* | server.* | toolchains.*;
+    edge BootstrapManifest: bootstrap_manifest --> compiler.* | dist.* | project.*;
+    edge Byllm: byllm.* --> cli.* | runtime.* | scale.*;
+    edge Cache: cache.* --> byllm.* | cli.* | client.* | compiler.* | data.* | dist.* | packages.* | project.* | scale.* | server.* | toolchains.*;
+    edge Cli: cli.* --> byllm.* | client.* | compiler.* | dist.* | jac0core.* | lsp.* | packages.* | project.* | runtime.* | scale.* | server.* | testing.* | toolchains.*;
+    edge Client: client.* --> cli.* | compiler.* | dist.* | project.* | runtime.* | scale.* | server.* | testing.* | toolchains.*;
+    edge Compiler: compiler.* --> cli.* | client.* | dist.* | lsp.* | packages.* | project.* | runtime.* | scale.* | server.* | testing.*;
+    edge Comptime: comptime --> byllm.* | cli.* | client.* | scale.* | server.*;
+    edge Data: data.* --> cli.* | compiler.* | runtime.* | scale.* | server.*;
+    edge Dist: dist.* --> cli.* | client.* | compiler.* | packages.* | scale.*;
+    edge Jac0: jac0 --> dist.*;
+    edge Jac0core: jac0core.* --> artifacts.* | cache.* | cli.* | client.* | compiler.* | data.* | dist.* | packages.* | project.* | runtime.* | scale.* | server.* | testing.* | toolchains.*;
+    edge Lsp: lsp.* --> cli.*;
+    edge MetaImporter: meta_importer --> client.*;
+    edge Packages: packages.* --> cli.* | client.* | dist.* | project.*;
+    edge Project: project.* --> artifacts.* | byllm.* | cache.* | cli.* | client.* | compiler.* | data.* | dist.* | lsp.* | packages.* | runtime.* | scale.* | server.* | testing.* | toolchains.*;
+    edge Runtime: runtime.* --> byllm.* | cli.* | client.* | compiler.* | comptime | data.* | dist.* | lib.* | project.* | scale.* | server.* | testing.*;
+    edge Scale: scale.* --> cli.* | client.* | runtime.* | server.*;
+    edge Server: server.* --> cli.* | client.* | compiler.* | data.* | dist.* | runtime.* | scale.* | testing.*;
+    edge Testing: testing.* --> cli.* | compiler.* | runtime.* | scale.*;
+    edge Toolchains: toolchains.* --> client.* | compiler.* | data.* | dist.* | packages.* | scale.*;
+
     artifacts.kit ++> [
         client.js_runtime.BunArtifact.build
             | compiler.backends.native.native_link.floor_lib_dir { osarch },
@@ -943,7 +965,9 @@ graph import {
             WiringSpec,
             arch_file_for,
             is_positional_import,
+            propose_rules,
             render_wiring,
+            rule_text,
             scope_path_of,
             wiring_facts,
             wiring_for_path
@@ -5960,6 +5984,7 @@ graph import compiler {
             is_arch_file,
             is_positional_import,
             rule_record,
+            rule_text,
             scope_owners,
             scope_path_of,
             wiring_for_path
@@ -6843,7 +6868,9 @@ graph import compiler {
             E2093,
             E2094,
             E2097,
-            E2098
+            E2098,
+            E2099,
+            E2100
         },
         passes.jsx_intrinsic_guard_pass { E1105 },
         passes.layout_pass { E5030, W5031, W5032 },
@@ -6997,7 +7024,9 @@ graph import compiler {
             W3043,
             W3050,
             W3051,
-            W3053
+            W3053,
+            W3054,
+            W3055
         },
         tools.jac_auto_lint_pass.JacAutoLintPass._check_filter_compare_tautology {
             W3040
@@ -7281,6 +7310,7 @@ graph import compiler {
             | passes.placement_pass
             | passes.type_checker_pass.TypeCheckPass.exit_return_stmt
             | tests.test_module_exports
+            | tools.jac_auto_lint_pass
             | types.type_evaluator.TypeEvaluator._init_prelude_from_sources {
             ModuleFacts
         },
@@ -7298,6 +7328,7 @@ graph import compiler {
         parse as rd_parse
     }
     frontend.parser.frontend ++> [
+        driver.wiring.WiringSpec.wire_import { parse_woven },
         driver.wiring.canonical_wiring_source { parse_woven },
         driver.wiring.parse_records { parse_woven },
         driver.wiring.prune_wiring_source { parse_woven },
@@ -7312,11 +7343,13 @@ graph import compiler {
         driver.nativecache._module_files_and_imports { parse as rd_parse },
         driver.program.JacProgram.parse_source { annex_sources, parse_woven },
     ]
-    frontend.parser.lexer ++> tools.jac_auto_lint_pass.JacAutoLintPass._reparse_signature {
-        tokenize_full
-    }
+    frontend.parser.lexer ++> [
+        tools.jac_auto_lint_pass.JacAutoLintPass._impl_header { tokenize_full },
+        tools.jac_auto_lint_pass.JacAutoLintPass._reparse_signature { tokenize_full },
+    ]
     frontend.parser.parser ++> [
         jc_unit { parse_program },
+        tools.jac_auto_lint_pass.JacAutoLintPass._impl_header { Parser },
         tools.jac_auto_lint_pass.JacAutoLintPass._reparse_signature { Parser },
         types.type_evaluator.TypeEvaluator._resolve_string_type_expr {
             parse_expression
@@ -9506,7 +9539,10 @@ graph import compiler {
         FreezeStructurePass
     }
     passes.graph_lowering_pass ++> driver.pipeline { GraphLoweringPass }
-    passes.import_wiring_pass ++> driver.pipeline { ImportWiringPass }
+    passes.import_wiring_pass ++> [
+        driver.pipeline { ImportWiringPass },
+        tools.jac_auto_lint_pass { ScopeReads, is_effect_binding },
+    ]
     passes.jsx_intrinsic_guard_pass ++> driver.pipeline.ir_passes {
         JsxIntrinsicGuardPass
     }
