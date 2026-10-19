@@ -6558,7 +6558,6 @@ graph import compiler {
             | passes.graph_lowering_pass
             | passes.mtir_gen_pass
             | passes.ownership_check_pass.OwnershipCheckPass._emit_flow_for_diagnostics
-            | passes.sym_tab_build_pass.SymTabBuildPass.exit_binary_expr
             | passes.type_checker_pass.TypeCheckPass.exit_impl_def
             | tools.cfg_dot.CoalesceBBPass._node_label
             | tools.comment_attach_pass
@@ -8383,7 +8382,6 @@ graph import compiler {
             bind_assignment_targets,
             bind_walrus_target,
             binding_sites_in,
-            find_python_scope_node_of,
             is_identifier_slot,
             typed_rebind_names
         },
@@ -8851,7 +8849,6 @@ graph import compiler {
             TypeAlias,
             TypeParam,
             TypedCtxBlock,
-            UniNode,
             UniScopeNode,
             WhileStmt,
             WithStmt,
@@ -8860,8 +8857,6 @@ graph import compiler {
             def_insert_unpacking,
             find_python_scope_node_of,
             is_walrus,
-            rebind_or_def_insert,
-            record_cross_scope_rebind,
             typed_rebind_names
         },
         passes.type_checker_pass {
