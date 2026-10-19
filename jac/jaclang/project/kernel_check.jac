@@ -15,8 +15,14 @@ class KernelCheckError(RuntimeError) {}
 
 def analysis_kernel -> any {
     kernel = ensure_loaded();
-    if kernel is None or not hasattr(kernel.lib, "jc_analyze") {
-        return None;
+    if kernel is not None and not hasattr(kernel.lib, "jc_analyze") {
+        import from jaclang.compiler.backends.native.kernel_resolve { KernelLoadError }
+        raise KernelLoadError(
+            "jac: the native compiler kernel cannot analyze\n"
+            f"  kernel: {kernel.lib_path}\n"
+            "  error:  the loaded kernel has no jc_analyze\n"
+            "  fix:    rebuild it with `jac native build kernel --force`"
+        );
     }
     return kernel;
 }

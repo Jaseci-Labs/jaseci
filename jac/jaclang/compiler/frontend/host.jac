@@ -1,18 +1,5 @@
 import from collections.abc { Iterator }
 import from contextlib { contextmanager }
-import from jaclang.project.workspace_model { AppSpec, WorkspaceSpec }
-import type from jaclang.compiler.driver.program { JacProgram }
-import type from jaclang.compiler.types.stubcat.reader { StubCatalog }
-import type from jaclang.compiler.types.ct_value { CtEnvironment }
-import type from jaclang.compiler.frontend.unitree { Module }
-import type from jaclang.compiler.passes.annex_weave { WovenAnnex }
-import type from jaclang.compiler.driver.compiler { JacCompiler }
-import type from jaclang.compiler.driver.ifacecache { IfaceRegistry }
-import type from jaclang.compiler.driver.nativecache { NativeUnitRegistry }
-import type from jaclang.compiler.driver.native_iface { NativeIface }
-import type from jaclang.compiler.driver.compile_options { CompileOptions }
-import type from jaclang.compiler.driver.module_analysis { ModuleAnalysis }
-import type from jaclang.compiler.frontend.kernel_analyze { CompileReport }
 
 obj CheckSettings {
     has suppress: list[str] = [],
@@ -171,8 +158,11 @@ obj HostServices {
         raise RuntimeError("no compiler host is installed");
     }
 
+    def stub_interface(program: JacProgram, file_path: str) -> (Module | None) {
+        return None;
+    }
+
     def ct_environment -> CtEnvironment {
-        import from jaclang.compiler.types.ct_value { CtEnvironment }
         return CtEnvironment();
     }
 
@@ -248,6 +238,14 @@ obj HostServices {
         program: JacProgram, path: str, options: CompileOptions
     ) -> (NativeIface | None) {
         return None;
+    }
+
+    def native_dep_discovery_open(program: JacProgram) -> bool {
+        return False;
+    }
+
+    def native_deps_deferred(program: JacProgram) -> bool {
+        return False;
     }
 
     def held_native_iface(
@@ -379,7 +377,6 @@ obj HostServices {
 
     def typeshed_unavailable_reason -> str {
         import os;
-        import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
         stdlib = os.path.join(jaclang_pkg_root(), "vendor", "typeshed", "stdlib");
         if os.path.isfile(os.path.join(stdlib, "builtins.pyi")) {
             return "";

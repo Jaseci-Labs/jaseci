@@ -322,6 +322,10 @@ impl TypeEvaluator._evaluate_call_args(expr: FuncCall) -> None {
 impl TypeEvaluator._validate_call_type(
     expr: FuncCall, caller_type: TypeBase
 ) -> TypeBase {
+    if isinstance(caller_type, NeverType) {
+        self._evaluate_call_args(expr);
+        return caller_type;
+    }
     if isinstance(caller_type, UnionType) {
         return self._union_narrowed_types(
             [self._validate_call_type(expr, member) for member in caller_type.types]

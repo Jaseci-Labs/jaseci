@@ -1,18 +1,11 @@
-import from jaclang.compiler.passes.execution { run_walker }
 import os;
 import sys;
 import from collections.abc { Callable, Iterator, Sequence }
 import from contextlib { contextmanager }
-import from jaclang.compiler.passes.context { Alert, CompilerPass, DiagnosticPolicy }
-import from jaclang.compiler.driver.compile_options { CancelToken }
-import from jaclang.compiler.frontend.unitree { Module, Source }
-import from jaclang.compiler.frontend.host { CheckSettings, active_host }
-import from jaclang.compiler.driver.program { JacProgram }
 
 def diagnostic_policy_for(
     check: CheckSettings, extra_suppress_tokens: (list[str] | None) = None
 ) -> DiagnosticPolicy {
-    import from jaclang.compiler.frontend.diagnostic_utils { resolve_diagnostic_tokens }
     tokens: list[str] = list(check.suppress);
     if extra_suppress_tokens {
         tokens.extend(extra_suppress_tokens);
@@ -40,7 +33,6 @@ def build_diagnostic_policy(prog: JacProgram) -> DiagnosticPolicy {
 }
 
 def _alert_in_internal_stub(loc_path: str) -> bool {
-    import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
     if not loc_path.endswith('.pyi') {
         return False;
     }
@@ -105,7 +97,7 @@ def run_pass[W: CompilerPass](
         }
         if completed.errors_had or completed.warnings_had {
             sources: dict[str, Source] = {ir_in.source.file_path: ir_in.source};
-            for nd in ir_in._in_mod_nodes {
+            for nd in ir_in._in_mod_nodes or [] {
                 sources[nd.loc.mod_path] = nd.loc.orig_src;
             }
             completed.errors_had = [

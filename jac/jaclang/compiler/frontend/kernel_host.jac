@@ -14,6 +14,9 @@ class HostOnlyError(RuntimeError) {}
 
 obj HostAsker {
     def ask(method: str, key: str) -> str abst;
+    def record_interface(
+        program: JacProgram, module: Module, products: UnitProducts
+    ) {}
 }
 
 enum HostEventKind { NOTE, COVERAGE, COLLECT }
@@ -256,6 +259,7 @@ obj KernelHost(HostServices) {
         native_failures: dict[str, str] = {},
         _native_ifaces: dict[str, NativeIface] = {},
         _lowering: set[str] = set(),
+        _lowered: dict[str, Module] = {},
         _indexed: list[int] = [0, 0, 0, 0, 0],
         _session: (KernelSession | None) = None;
 
@@ -412,6 +416,19 @@ obj KernelHost(HostServices) {
         }
         self._served[resolved] = ServedInterface(catalog=catalog, module=mod);
         program.stamp_app_facts(mod);
+        if iface.effects {
+            mod.gen.callable_effects = json.loads(iface.effects);
+        }
+        if iface.placement {
+            import from jaclang.compiler.placement.placement { summary_store }
+            import from jaclang.compiler.placement.placement_export {
+                summary_from_dict
+            }
+            restored = summary_from_dict(json.loads(iface.placement));
+            if restored is not None {
+                summary_store(program)[os.path.abspath(resolved)] = restored;
+            }
+        }
         return mod;
     }
 
@@ -431,6 +448,20 @@ obj KernelHost(HostServices) {
         products = unit_products(module, task.program);
         if not products.path {
             products.path = real;
+        }
+        """A dependency lowered for an importer (`lower_dependency`) was
+        compiled under native-import options, which select a context program
+        of their own, so the module recorded here is not the one that was
+        lowered. The unit carries that lowering's products: without them the
+        host registers no interface for the dependency, and the importer
+        records the dependency's digest as empty.""";
+        lowered = self._lowered.get(real);
+        if lowered is not None and lowered is not module and not products.native_ir {
+            native_products(lowered, products);
+        }
+        asker = self.asker;
+        if real.endswith(".jac") and asker is not None {
+            asker.record_interface(task.program, module, products);
         }
         self.units[real] = products;
     }
@@ -820,6 +851,17 @@ obj KernelHost(HostServices) {
         return answer;
     }
 
+    def stub_interface(program: JacProgram, file_path: str) -> (Module | None) {
+        if not self.in_kernel() {
+            return None;
+        }
+        served = self.python_module(program, file_path);
+        if served is None and self.ask("parse_python", file_path) {
+            served = self.python_module(program, file_path);
+        }
+        return served;
+    }
+
     def ct_environment -> CtEnvironment {
         self.census.count("ct_environment");
         return self.inputs.ct_environment;
@@ -928,7 +970,7 @@ obj KernelHost(HostServices) {
 
     def place_wired_imports(module: Module) {
         if self.kernel_only("place_wired_imports") {
-            dedupe_generated_imports(module);
+            place_wired_imports(module);
             return;
         }
         with self.delegating("place_wired_imports") as host {
@@ -1008,6 +1050,26 @@ obj KernelHost(HostServices) {
         return found;
     }
 
+    def native_dep_discovery_open(program: JacProgram) -> bool {
+        if self.fallback is not None {
+            with self.delegating("native_dep_discovery_open") as host {
+                answer = host.native_dep_discovery_open(program);
+            }
+            return answer;
+        }
+        return False;
+    }
+
+    def native_deps_deferred(program: JacProgram) -> bool {
+        if self.fallback is not None {
+            with self.delegating("native_deps_deferred") as host {
+                answer = host.native_deps_deferred(program);
+            }
+            return answer;
+        }
+        return False;
+    }
+
     def lower_dependency(
         program: JacProgram, real: str, options: CompileOptions
     ) -> (NativeIface | None) {
@@ -1037,6 +1099,7 @@ obj KernelHost(HostServices) {
             }
             if module.gen.native_iface is not None {
                 self.grown.add(real);
+                self._lowered[real] = module;
             }
             return module.gen.native_iface;
         } finally {

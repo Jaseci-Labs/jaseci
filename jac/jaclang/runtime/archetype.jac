@@ -1,11 +1,4 @@
 import from collections.abc { Callable }
-import from jaclang.runtime.object_model {
-    asdict,
-    ObjectField,
-    fields,
-    is_jac_object,
-    make_object
-}
 import from functools { cached_property }
 import from inspect { Parameter, _empty, signature }
 import from logging { getLogger }
@@ -15,7 +8,6 @@ import from types { UnionType }
 import from typing { ClassVar, TypeVar }
 import from uuid { UUID, uuid4 }
 import weakref;
-import from jaclang.runtime.constants { EdgeDir }
 glob logger = getLogger(__name__),
      TARCH = TypeVar('TARCH', bound='Archetype'),
      TANCH = TypeVar('TANCH', bound='Anchor'),
@@ -135,9 +127,7 @@ obj NodeAnchor(Anchor) {
         out_light: (dict[type, list[any]] | None) = ObjectField(
             `init=False, `default=None
         ),
-        in_light: (dict[type, list[any]] | None) = ObjectField(
-            `init=False, `default=None
-        ),
+        in_light: (dict[type, any] | None) = ObjectField(`init=False, `default=None),
         mixed: bool = ObjectField(`init=False, `default=False);
 
     def __getstate__ -> dict[(str, object)];
@@ -395,7 +385,17 @@ def edge_subtypes(cls: type) -> tuple[type, ...] {
     return result;
 }
 
-def _deref(lst: list[any]) -> list[any] {
+def _as_refs(held: any) -> any {
+    """An incoming light entry with one source holds the weak reference
+    itself rather than a one-element list: a tree node's parent.""";
+    return [held] if isinstance(held, weakref.ref) else held;
+}
+
+def _deref(lst: any) -> list[any] {
+    if isinstance(lst, weakref.ref) {
+        one = lst();
+        return [one] if one is not None else [];
+    }
     out: list[any] = [];
     for r in lst {
         a = r();
@@ -467,10 +467,12 @@ class _InLinks(list) {
     }
 }
 
-def _connect_back(inn: dict[type, list[any]], cls: type, src: NodeArchetype) {
+def _connect_back(inn: dict[type, any], cls: type, src: NodeArchetype) {
     lst = inn.get(cls);
     if lst is None {
-        inn[cls] = [weakref.ref(src)];
+        inn[cls] = weakref.ref(src);
+    } elif isinstance(lst, weakref.ref) {
+        inn[cls] = [lst, weakref.ref(src)];
     } elif isinstance(lst, _InLinks) {
         lst.add(src);
     } elif len(lst) + 1 < _INDEX_AT {
@@ -482,15 +484,20 @@ def _connect_back(inn: dict[type, list[any]], cls: type, src: NodeArchetype) {
     }
 }
 
-def _drop_back(
-    d: (dict[type, list[any]] | None), cls: type, src: NodeArchetype
-) -> bool {
+def _drop_back(d: (dict[type, any] | None), cls: type, src: NodeArchetype) -> bool {
     if d is None {
         return False;
     }
     lst = d.get(cls);
     if lst is None {
         return False;
+    }
+    if isinstance(lst, weakref.ref) {
+        if lst() is not src {
+            return False;
+        }
+        d.pop(cls, None);
+        return True;
     }
     if isinstance(lst, _InLinks) {
         if not lst.drop(src) {
@@ -605,27 +612,27 @@ def _collect_light(d: dict[type, list[any]], cls: (type | None)) -> list[any] {
     if cls is None {
         out: list[any] = [];
         for lst in d.values() {
-            out.extend(lst);
+            out.extend(_as_refs(lst));
         }
         return out;
     }
     subs = edge_subtypes(cls);
     if len(subs) == 1 {
         lst = d.get(cls);
-        return lst if lst is not None else [];
+        return _as_refs(lst) if lst is not None else [];
     }
     found: list[any] = [];
     if len(subs) <= len(d) {
         for sub in subs {
             lst = d.get(sub);
             if lst {
-                found.extend(lst);
+                found.extend(_as_refs(lst));
             }
         }
     } else {
         for (k, lst) in d.items() {
             if lst and issubclass(k, cls) {
-                found.extend(lst);
+                found.extend(_as_refs(lst));
             }
         }
     }
@@ -750,12 +757,16 @@ def light_edge_views(
 
 def _note_write(an: any) {
     an.__dict__['_field_written'] = an.__dict__.get('_field_written', 0) + 1;
+    an.__dict__.pop('_frozen', None);
 }
 
 def _dirty_setattr(self: any, name: str, value: any) -> None {
     an = self.__dict__.get('__jac__');
     if an is None or not an.persistent {
         object.__setattr__(self, name, value);
+        if an is not None {
+            an.__dict__.pop('_frozen', None);
+        }
         return;
     }
     import from jaclang.runtime.runtime { JacRuntime }
@@ -781,6 +792,9 @@ def _dirty_delattr(self: any, name: str) -> None {
     an = self.__dict__.get('__jac__');
     if an is None or not an.persistent {
         object.__delattr__(self, name);
+        if an is not None {
+            an.__dict__.pop('_frozen', None);
+        }
         return;
     }
     import from jaclang.runtime.runtime { JacRuntime }

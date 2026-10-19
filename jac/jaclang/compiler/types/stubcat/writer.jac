@@ -215,6 +215,7 @@ obj CatalogWriter {
         external_modules: set[any] postinit,
         boundary: (Module | None) = None,
         path_mapper: Callable[[str], str] | None = None,
+        spans: bool = True,
         failures: int = 0,
         evaluated: int = 0,
         failure_log: list[str] = [],
@@ -941,7 +942,7 @@ obj CatalogWriter {
         put_ref(out, parent);
         put_ref(out, self.ref_module(module_of(scope)));
         put_ref(out, self.ref_symbol(owner));
-        loc = scope.loc;
+        loc = scope.loc if self.spans else None;
         put_uvar(out, max(loc.first_line, 0) if loc else 0);
         put_uvar(out, max(loc.col_start, 0) if loc else 0);
         put_uvar(out, max(loc.last_line, 0) if loc else 0);
@@ -1026,7 +1027,7 @@ obj CatalogWriter {
         }
         put_uvar(out, access);
         put_uvar(out, 1 if sym.imported else 0);
-        loc = sym.decl.loc if sym.decl else None;
+        loc = sym.decl.loc if sym.decl and self.spans else None;
         put_uvar(out, max(loc.first_line, 0) if loc else 0);
         put_uvar(out, max(loc.col_start, 0) if loc else 0);
         put_uvar(out, max(loc.last_line, 0) if loc else 0);
@@ -1110,7 +1111,8 @@ obj CatalogWriter {
 
         catalog_origin = sym.provider;
         if isinstance(catalog_origin, CatProvider) {
-            symbits |= catalog_origin.symbits & (SYMF_HAS_DEFAULT | SYMF_DEFER);
+            symbits |= catalog_origin.symbits
+                & (SYMF_HAS_DEFAULT | SYMF_DEFER | SYMF_INSTANCE_METHOD);
         }
         put_uvar(out, symbits);
         return bytes(out);
@@ -1528,10 +1530,33 @@ def build_module_iface(
     mod: Module,
     evaluator: any,
     pkg_dir: str,
-    path_mapper: Callable[[str], str] | None = None
+    path_mapper: Callable[[str], str] | None = None,
+    spans: bool = True
+) -> bytes {
+    body = module_iface_body(mod, evaluator, pkg_dir, path_mapper, spans);
+    digest = hashlib.sha256(body).hexdigest();
+    return digest.encode("utf-8") + body;
+}
+
+def module_iface_shape(mod: Module, evaluator: any, pkg_dir: str) -> str {
+    return hashlib.sha256(
+        module_iface_body(mod, evaluator, pkg_dir, None, False)
+    ).hexdigest();
+}
+
+def module_iface_body(
+    mod: Module,
+    evaluator: any,
+    pkg_dir: str,
+    path_mapper: Callable[[str], str] | None,
+    spans: bool
 ) -> bytes {
     writer = CatalogWriter(
-        evaluator=evaluator, pkg_dir=pkg_dir, boundary=mod, path_mapper=path_mapper
+        evaluator=evaluator,
+        pkg_dir=pkg_dir,
+        boundary=mod,
+        path_mapper=path_mapper,
+        spans=spans
     );
     dotted = mod.name or "";
     writer.add_module(mod, dotted);
@@ -1541,6 +1566,5 @@ def build_module_iface(
     if writer.orphans or writer.failures {
         raise IncoherentInterface(key, writer.orphans, writer.failure_log);
     }
-    digest = hashlib.sha256(body).hexdigest();
-    return digest.encode("utf-8") + body;
+    return body;
 }

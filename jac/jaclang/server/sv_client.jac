@@ -498,7 +498,9 @@ async def call(
             _active_writes[app] -= 1;
         }
     }
-    if cacheable and epoch == _cache_epoch[0] and _active_writes.get(app, 0) == 0 {
+    if key is not None
+        and epoch == _cache_epoch[0]
+        and _active_writes.get(app, 0) == 0 {
         _read_cache[key] = result;
     }
     return result;

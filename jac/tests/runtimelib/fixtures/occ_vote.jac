@@ -26,6 +26,9 @@ open for `hold` seconds, the shape of a real update handler; many of them
 at once on the same counter is the contention case. With `busy` the hold
 is CPU work instead of a sleep, so the requests compete for the process as
 well as for the row, the way a saturated server does.
+
+`Deliver` reports a status dict that its own `on_commit` callback marks as
+sent, the shape of a send-then-confirm handler.
 """
 
 import from jaclang.data.pgwire { PgWireError }
@@ -203,5 +206,16 @@ walker:pub Bump {
 walker:pub ReadCounter {
     can read with Root entry {
         report [here-->[?:Counter]][0].n;
+    }
+}
+
+walker:pub Deliver {
+    can go with Root entry {
+        status = {"sent": False};
+        def mark_sent {
+            status["sent"] = True;
+        }
+        Jac.on_commit(mark_sent);
+        report status;
     }
 }

@@ -77,7 +77,7 @@ def interface_wanted(path: str) -> bool {
     if is_compiler_source_path(path) {
         return path.endswith(".py") or path.endswith(".jac");
     }
-    return path.endswith(".py");
+    return path.endswith(".py") or path.endswith(".pyi");
 }
 
 def forget_interface_memo {
@@ -359,6 +359,23 @@ obj KernelSnapshot(HostAsker) {
         return self.seed;
     }
 
+    override def record_interface(
+        program: JacProgram, module: uni.Module, products: UnitProducts
+    ) {
+        import base64;
+
+        evaluator = program.get_type_evaluator();
+        pkg_dir = os.path.dirname(os.path.realpath(module.loc.mod_path));
+        try {
+            data = build_module_iface(module, evaluator, pkg_dir);
+            shape = module_iface_shape(module, evaluator, pkg_dir);
+        } except IncoherentInterface {
+            return;
+        }
+        products.iface = base64.b64encode(data).decode("ascii");
+        products.iface_shape = shape;
+    }
+
     def text -> str {
         return self.seed.to_json();
     }
@@ -536,13 +553,17 @@ def kernel_snapshot(
     path: str,
     options: CompileOptions,
     emit_closure: bool = False,
-    emit_cached: bool = True
+    emit_cached: bool = True,
+    seeds: (list[PythonInterface] | None) = None
 ) -> KernelSnapshot {
     seed = session_inputs(host, program, path, options);
     seed.emit_closure = emit_closure;
+    seeds = seeds or [];
+    seed.python_ifaces.extend(seeds);
     snapshot = KernelSnapshot(
         host=host, program=program, options=options, seed=seed, emit_cached=emit_cached
     );
+    snapshot.shipped.update(iface.path for iface in seeds);
     if in_other_compiler_tree(path) {
         snapshot.other_compiler = path;
     }

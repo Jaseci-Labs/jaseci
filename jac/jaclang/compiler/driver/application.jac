@@ -5,15 +5,12 @@ import sys;
 import tempfile;
 import time;
 import from pathlib { Path }
-import type from jaclang.runtime.prepared { PreparedApplication }
 import type from jaclang.compiler.frontend { unitree as uni }
 glob _FORMAT: int = 9,
      SLOW_PREPARE_SECONDS: int = 45,
      _SKIP: set[str] = {'.jac', '.git', '.venv', 'venv', 'node_modules', '__pycache__'};
 
 def _stamp(path: str, previous: any = None) -> tuple[int, int, str] {
-    import from jaclang.compiler.driver.jir { compute_content_sha256 }
-    import from jaclang.compiler.driver.bccache { LISTING_SETTLE_NS }
     st = os.stat(path);
     if (
         isinstance(previous, (list, tuple))
@@ -103,7 +100,6 @@ def _digests(inventory: dict[str, tuple[int, int, str]]) -> dict[str, str] {
 }
 
 def _identity -> tuple[str, str | None, str] {
-    import from jaclang.compiler.driver.jir { compiler_generation }
     return (
         compiler_generation(),
         sys.implementation.cache_tag,
@@ -128,7 +124,6 @@ def _write(path: any, value: any) {
 }
 
 def _sections(path: any, program: any) -> dict[int, bytes] {
-    import from jaclang.compiler.driver.compilation_context { cache_scope, program_for }
     actual = program_for(path, program);
     with cache_scope(actual.options) {
         return _context_sections(path);
@@ -136,12 +131,6 @@ def _sections(path: any, program: any) -> dict[int, bytes] {
 }
 
 def _context_sections(path: any) -> dict[int, bytes] {
-    import from jaclang.compiler.driver.jir {
-        get_module_cache_path,
-        HEADER_SIZE,
-        SECTIONS_MAGIC,
-        read_sections
-    }
     cache = get_module_cache_path(path);
     if not cache.exists() {
         return {};
@@ -167,8 +156,6 @@ def _project_modules(program: any, `root: any) -> dict[str, uni.Module] {
 }
 
 def _semantic_metadata(revision: PreparedApplication, program: any) {
-    import from jaclang.compiler.driver.compilation_context { program_for }
-    import from jaclang.jac0core.ext_registry { base_stem }
     for path in revision.code {
         actual = program_for(path, program);
         prefix = base_stem(path) + '.';
@@ -190,7 +177,6 @@ obj ManifestSource {
 }
 
 def _import_edges_of(rows: list[str]) -> list[tuple[bool, str, list[str]]] {
-    import from jaclang.compiler.driver.unit_products { DEF_DEP_SEP as EDGE_SEP }
     edges: list[tuple[bool, str, list[str]]] = [];
     for row in rows {
         parts = row.split(EDGE_SEP);
@@ -207,7 +193,6 @@ def _import_edges_of(rows: list[str]) -> list[tuple[bool, str, list[str]]] {
 def _tree_source(
     program: any, mod: uni.Module, imported: bool = True
 ) -> ManifestSource {
-    import from jaclang.compiler.driver.unit_products { import_edge_rows }
     if imported {
         import from jaclang.compiler.driver.pipeline { require, CompilationProduct }
         manifest = mod.gen.interop_manifest;
@@ -227,10 +212,6 @@ def _tree_source(
 
 def _unit_source(unit: any) -> ManifestSource {
     import json;
-    import from jaclang.compiler.driver.unit_products {
-        interop_manifest_of,
-        manifest_from_record
-    }
     return ManifestSource(
         path=unit.path,
         app=unit.app,
@@ -367,7 +348,6 @@ def build_manifest(
 }
 
 def _warn_private_declarations(application: PreparedApplication, console: any) {
-    import from jaclang.project.workspace { app_for_path }
     app = app_for_path(application.entry);
     if app is None or not app.has_server {
         return;
@@ -398,21 +378,6 @@ def _prepare_sealed(
     `entry: str, program: any, image_root: str, entries: list[str]
 ) -> PreparedApplication {
     import json;
-    import from jaclang.runtime.prepared { PreparedApplication, publish }
-    import from jaclang.server.sealed_serve { SERVE_MANIFEST_REL, CLIENT_DIST_REL }
-    import from jaclang.compiler.driver.jir {
-        HEADER_SIZE,
-        SECTIONS_MAGIC,
-        PRECOMPILE_SENTINEL,
-        read_sections,
-        read_bytecode_only,
-        patch_co_filenames_bytes
-    }
-    import from jaclang.compiler.backends.py.artifact_imports {
-        runtime_sources,
-        package_sources
-    }
-    import from jaclang.jac0core.sealed { image_for_bundle_dir, register_image }
     bundle_dir = Path(image_root) / '_precompiled';
     image = image_for_bundle_dir(bundle_dir) or register_image(bundle_dir);
     if image is None {
@@ -550,7 +515,6 @@ def prepare_application(
     dev: bool = True,
     force_codespace: str = ''
 ) -> PreparedApplication {
-    import from jaclang.cli.console { console }
     `entry = os.path.realpath(`entry);
     `root = os.path.realpath((`root or os.path.dirname(`entry)));
     entries = `list(`dict.fromkeys([`entry, *(os.path.realpath(p) for p in services)]));
@@ -673,15 +637,12 @@ def prepare_application(
 }
 
 def _release_compile_state(program: any) {
-    import from jaclang.project.kernel_compile { forget_application_units }
-    import from jaclang.project.kernel_snapshot { forget_interface_memo }
     program._get_compiler().release_compile_state(program);
     forget_application_units();
     forget_interface_memo();
 }
 
 def _capture_input(path: str, inputs: dict[str, str]) {
-    import from jaclang.compiler.driver.jir { ct_dep_digest }
     path = os.path.realpath(path);
     if path not in inputs {
         inputs[path] = ct_dep_digest(path, with_annexes=True);
@@ -697,7 +658,6 @@ def _prepare(
     dev: any,
     console: any
 ) -> PreparedApplication {
-    import from jaclang.compiler.driver.pass_driver { compile_progress }
     inputs: dict[str, str] = {};
     selfhost = program._get_compiler().selfhost;
     def capture(path: str) {
@@ -736,40 +696,223 @@ def _unit_lookup(
     return lookup;
 }
 
+def _unit_row(unit: any) -> dict[str, any] {
+    return {
+        'key': compute_module_key(unit.path),
+        'iface': unit.iface,
+        'shape': unit.iface_shape,
+        'effects': unit.effects,
+        'placement': unit.placement,
+        'app': unit.app,
+        'persistence': list(unit.persistence),
+        'import_edges': list(unit.import_edges),
+        'jac_deps': list(unit.jac_deps),
+        'interop': unit.interop,
+        'client_manifest': unit.client_manifest
+    };
+}
+
+def _row_unit(path: str, row: dict[str, any]) -> any {
+    return UnitProducts(
+        path=path,
+        app=row['app'],
+        persistence=list(row['persistence']),
+        import_edges=list(row['import_edges']),
+        interop=row['interop'],
+        client_manifest=row['client_manifest']
+    );
+}
+
+def _file_digest(path: str) -> str {
+    try {
+        return hashlib.sha256(Path(path).read_bytes()).hexdigest();
+    } except OSError {
+        return '';
+    }
+}
+
+def _reusable_interfaces(
+    previous: dict[str, dict[str, any]],
+    entries: list[str],
+    specs: dict[str, list[tuple[int, str, (tuple[str, ...] | None)]]],
+    `root: str
+) -> dict[str, any] {
+    import base64;
+    held = {os.path.realpath(path) for path in entries};
+    by_real = {os.path.realpath(source): found for (source, found) in specs.items()};
+    seeds: dict[str, any] = {};
+    for (path, row) in previous.items() {
+        if path in held or not row.get('iface') or not os.path.isfile(path) {
+            continue;
+        }
+        if compute_module_key(path) != row.get('key') {
+            continue;
+        }
+        known = by_real.get(path);
+        if known is None or 'imports' not in row {
+            continue;
+        }
+        if sorted(resolve_imports(known, path, `root)) != row['imports'] {
+            continue;
+        }
+        digests = row.get('py_digests');
+        if digests is None {
+            continue;
+        }
+        if any(_file_digest(dep) != digest for (dep, digest) in digests.items()) {
+            continue;
+        }
+        seeds[path] = PythonInterface(
+            path=path,
+            pkg_dir=os.path.dirname(path),
+            data=base64.b64decode(row['iface']),
+            placement=row.get('placement') or '',
+            effects=row.get('effects') or ''
+        );
+    }
+    return seeds;
+}
+
+def _importers_of(
+    changed: set[str], rows: dict[str, dict[str, any]], among: set[str]
+) -> set[str] {
+    found: set[str] = set();
+    for path in among {
+        row = rows.get(path) or {};
+        for dep in row.get('jac_deps') or [] {
+            if dep in changed {
+                found.add(path);
+                break;
+            }
+        }
+    }
+    return found;
+}
+
+def _unreached_changes(
+    units: dict[str, ManifestSource],
+    rows: dict[str, dict[str, any]],
+    previous: dict[str, dict[str, any]],
+    seeds: dict[str, any]
+) -> list[str] {
+    seen = `set(units);
+    frontier = list(units);
+    missing: list[str] = [];
+    while frontier {
+        path = frontier.pop();
+        row = rows.get(path) or previous.get(path) or {};
+        for dep in row.get('jac_deps') or [] {
+            if dep in seen or dep not in previous {
+                continue;
+            }
+            seen.add(dep);
+            frontier.append(dep);
+            if dep not in seeds and dep not in units and os.path.isfile(dep) {
+                missing.append(dep);
+            }
+        }
+    }
+    return missing;
+}
+
 def _kernel_units(
-    program: any, entries: list[str], `root: str, before: int, inputs: dict[str, str]
+    program: any,
+    entries: list[str],
+    `root: str,
+    before: int,
+    inputs: dict[str, str],
+    previous: dict[str, dict[str, any]],
+    rows: dict[str, dict[str, any]],
+    specs: dict[str, list[tuple[int, str, (tuple[str, ...] | None)]]]
 ) -> (dict[str, ManifestSource] | None) {
     import copy;
-    import from jaclang.compiler.frontend.host { active_host }
-    import from jaclang.project.kernel_compile {
-        forget_application_units,
-        kernel_compile_application
-    }
-    forget_application_units();
     selfhost = program._get_compiler().selfhost;
+    seeds = _reusable_interfaces(previous, entries, specs, `root);
+    warned = len(program.warnings_had);
     units: dict[str, ManifestSource] = {};
-    for path in entries {
+    def compile_target(path: str) -> bool {
         options = copy.copy(program.options);
         options.project_root = `root;
         options.no_cgen = False;
         options.skip_native_engine = True;
-        compiled = kernel_compile_application(active_host(), program, path, options);
+        compiled = kernel_compile_application(
+            active_host(), program, path, options, seeds=list(seeds.values())
+        );
         if compiled is None {
-            forget_application_units();
-            return None;
+            return False;
         }
-        _check(program, before);
         for reached in compiled.analysis.modules {
             if not selfhost.is_selfhost(selfhost.resolve(reached.path, program)) {
                 _capture_input(reached.path, inputs);
             }
         }
         for unit in compiled.units {
-            units.setdefault(os.path.realpath(unit.path), _unit_source(unit));
+            real = os.path.realpath(unit.path);
+            if real not in units {
+                units[real] = _unit_source(unit);
+                rows[real] = _unit_row(unit);
+            }
         }
-        if os.path.realpath(path) not in units {
-            forget_application_units();
-            return None;
+        return os.path.realpath(path) in units;
+    }
+    while True {
+        forget_application_units();
+        rows.clear();
+        units.clear();
+        del program.errors_had[before:];
+        del program.warnings_had[warned:];
+        targets = list(entries);
+        failed = False;
+        while targets and not failed {
+            for path in targets {
+                if not compile_target(path) {
+                    failed = True;
+                    break;
+                }
+            }
+            if not failed {
+                targets = _unreached_changes(units, rows, previous, seeds);
+            }
+        }
+        if failed or (seeds and len(program.errors_had) > before) {
+            if not seeds {
+                forget_application_units();
+                if failed {
+                    return None;
+                }
+                break;
+            }
+            seeds.clear();
+            continue;
+        }
+        changed = {
+            path
+            for (path, row) in rows.items()
+            if path in previous
+                and (
+                    previous[path].get('shape') != row['shape']
+                    or previous[path].get('effects') != row['effects']
+                )
+        };
+        stale = _importers_of(changed, previous, `set(seeds) - `set(units));
+        if not stale {
+            break;
+        }
+        for path in stale {
+            seeds.pop(path, None);
+        }
+    }
+    _check(program, before);
+    frontier = list(units);
+    while frontier {
+        row = rows.get(frontier.pop()) or {};
+        for dep in row.get('jac_deps') or [] {
+            if dep in seeds and dep not in units {
+                _capture_input(dep, inputs);
+                units[dep] = _unit_source(_row_unit(dep, previous[dep]));
+                rows[dep] = previous[dep];
+                frontier.append(dep);
+            }
         }
     }
     return units;
@@ -785,8 +928,6 @@ def _prepare_revision(
     console: any,
     inputs: dict[str, str]
 ) -> PreparedApplication {
-    import from jaclang.runtime.prepared { PreparedApplication, publish }
-    import from jaclang.compiler.driver.jir { ct_dep_digest }
     inventory_root = `root
         if client
         else os.path.join(os.path.dirname(`entry), 'pages');
@@ -885,10 +1026,7 @@ def _prepare_revision(
         revision.sources = sorted(record['dependencies']);
         revision.manifests = record['manifests'];
         for (path, sections) in record['sections'].items() {
-            import from jaclang.compiler.driver.compilation_context {
-                program_for,
-                cache_scope
-            }
+            import from jaclang.compiler.driver.compilation_context { program_for }
             actual = program_for(path, program);
             compiler._restore_sections(path, actual, sections);
         }
@@ -904,8 +1042,25 @@ def _prepare_revision(
     before = len(program.errors_had);
     import copy;
     modules: dict[str, uni.Module] = {};
+    previous_rows: dict[str, dict[str, any]] = candidate.get('unit_rows') or {}
+        if isinstance(candidate, dict)
+        else {};
+    unit_rows: dict[str, dict[str, any]] = {};
+    recorded_specs: dict[str, list[tuple[int, str, (tuple[str, ...] | None)]]] = candidate.get(
+        'import_specs'
+    )
+        or {}
+        if isinstance(candidate, dict)
+        else {};
     units: (dict[str, ManifestSource] | None) = _kernel_units(
-        program, entries, `root, before, inputs
+        program,
+        entries,
+        `root,
+        before,
+        inputs,
+        previous_rows,
+        unit_rows,
+        recorded_specs
     );
     if units is None {
         import from jaclang.compiler.driver.pipeline_runner { compile_application }
@@ -1020,7 +1175,19 @@ def _prepare_revision(
             if known is not None and previous_code.get(path) == code
             else import_specs(code, path);
         specs_of[path] = specs;
-        pending.update(resolve_imports(specs, path, `root) - revision.code.keys());
+        resolved = resolve_imports(specs, path, `root);
+        real = os.path.realpath(path);
+        if real in unit_rows {
+            row = dict(unit_rows[real]);
+            row['imports'] = sorted(resolved);
+            row['py_digests'] = {
+                dep: _file_digest(dep)
+                for dep in resolved
+                if dep.endswith('.py')
+            };
+            unit_rows[real] = row;
+        }
+        pending.update(resolved - revision.code.keys());
     }
 
     project_facts: dict[str, tuple[str, any]] = {
@@ -1105,6 +1272,7 @@ def _prepare_revision(
                 else False,
             code=revision.code,
             import_specs=specs_of,
+            unit_rows=unit_rows,
             manifests=revision.manifests,
             sections=sections,
             outputs=outputs,
@@ -1152,7 +1320,6 @@ def reprepare_application(
 def prepare_dynamic_module(
     path: str, program: any, application: PreparedApplication
 ) -> PreparedApplication {
-    import from jaclang.cli.console { console }
     console.print(f'Preparing dynamically imported module: {path}', file=sys.stderr);
     import from jaclang.compiler.driver.compilation_context { program_for }
     import from jaclang.runtime.prepared { publish }
