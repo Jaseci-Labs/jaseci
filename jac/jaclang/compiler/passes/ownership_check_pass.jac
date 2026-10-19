@@ -24,10 +24,7 @@ obj BorrowMeta {
         managed: bool = False,
         path_fields: set[str] postinit;
 
-    def postinit {
-        self.extra_owners = [];
-        self.path_fields = set();
-    }
+    def postinit;
 }
 
 walker OwnershipCheckPass(CompilerPass) {

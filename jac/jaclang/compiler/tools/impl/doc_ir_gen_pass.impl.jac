@@ -418,6 +418,9 @@ impl DocIRGenPass.exit_impl_def with uni.ImplDef exit {
             parts.append(self.hard_line());
         } elif self.is_within(i, here.target) {
             parts.append(i.gen.doc_ir);
+            if here.spec is None and here.target and i is here.target[-1] {
+                parts.append(self.space());
+            }
         } elif (
             isinstance(i, uni.Token)
             and (i.name == Tok.DOT)

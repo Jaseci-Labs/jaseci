@@ -105,13 +105,7 @@ impl WiringSpec._local_name(name: str) -> (str | None) {
     return name[len(self.package_prefix):];
 }
 
-def _package_prefix(root_dir: str) -> str {
-    facts = active_host().project_facts(root_dir);
-    if facts is None or not facts.package_name {
-        return "";
-    }
-    return facts.package_name.replace("/", ".") + ".";
-}
+def _package_prefix(root_dir: str) -> str;
 
 impl WiringSpec.module_file(name: str) -> (str | None) {
     local = self._local_name(name) if name else None;
@@ -202,6 +196,32 @@ impl WiringSpec.wire_for_import(
         }
         taken.add(wire.index);
         return wire;
+    }
+    return None;
+}
+
+impl WiringSpec.wire_import(wire: WireRec) -> (Import | None) {
+    """The import one wire generates, parsed on its own at the place the annex
+    puts it. A scope with several owners needs one import each, and a node
+    cannot be copied in native code, so the copies come from the wire.""";
+    lines: list[str] = [];
+    for (line0, col, text) in self._wire_pieces(wire) {
+        while len(lines) <= line0 {
+            lines.append("");
+        }
+        lines[line0] = (" " * col) + text;
+    }
+    (mod, had_error) = parse_woven("\n".join(lines), self.path, None, []);
+    if had_error {
+        return None;
+    }
+    for stmt in mod.body {
+        if isinstance(stmt, Import) {
+            mod._role_set(BodyRole, []);
+            mod.set_kids(nodes=[EmptyToken()], pos_update=False);
+            mod._invalidate_sub_node_tab();
+            return stmt;
+        }
     }
     return None;
 }
@@ -311,10 +331,6 @@ impl WiringSpec.consumer_wires(consumer: str) -> list[WireRec] {
 
 impl WiringSpec.is_covered(consumer: str) -> bool {
     return bool(self.consumer_wires(consumer));
-}
-
-impl WiringSpec.is_project_module(module: str) -> bool {
-    return module in self.project_modules();
 }
 
 impl WiringSpec._wire_pieces(wire: WireRec) -> list[tuple[int, int, str]] {
@@ -488,20 +504,66 @@ impl WiringSpec.import_provider(path_node: ModulePath) -> (str | None) {
     return None;
 }
 
-impl WiringSpec.rules_for_provider(provider: str) -> list[RuleRec] {
-    return [
+impl WiringSpec.rules_governing(
+    provider: str, consumer: str, local: bool
+) -> list[RuleRec] {
+    named = [
         rule
         for rule in self.rules
         if any([p.matches(provider) for p in rule.sources])
     ];
-}
-
-impl WiringSpec.rules_admitting(provider: str, consumer: str) -> list[RuleRec] {
+    if not local {
+        return named;
+    }
+    top = self.top_package(consumer);
     return [
         rule
-        for rule in self.rules_for_provider(provider)
+        for rule in named
+        if any(
+            [
+                not t.is_string and (not t.dotted or self.top_package(t.dotted) == top)
+                for t in rule.targets
+            ]
+        )
+    ];
+}
+
+impl WiringSpec.rules_admitting(
+    provider: str, consumer: str, local: bool
+) -> list[RuleRec] {
+    return [
+        rule
+        for rule in self.rules_governing(provider, consumer, local)
         if any([t.matches(consumer) for t in rule.targets])
     ];
+}
+
+impl WiringSpec.top_package(module: str) -> str {
+    local = self._local_name(module);
+    if not local {
+        return module.split(".")[0];
+    }
+    return self.package_prefix + local.split(".")[0];
+}
+
+impl WiringSpec.top_pattern(top: str) -> PatternRec {
+    is_glob = self.is_package_dir(top);
+    return PatternRec(dotted=top, is_glob=is_glob, text=top + ".*" if is_glob else top);
+}
+
+impl WiringSpec.needs_rule(provider: str, consumer: str, local: bool) -> bool {
+    return local
+        and self.top_package(provider) != self.top_package(consumer)
+        and not self.rules_governing(provider, consumer, local);
+}
+
+impl WiringSpec.edge_rule(source: str, targets: list[str]) -> RuleRec {
+    return RuleRec(
+        name=rule_name_for(self._local_name(source) or source),
+        sources=[self.top_pattern(source)],
+        targets=[self.top_pattern(t) for t in sorted(set(targets))],
+        is_open=True
+    );
 }
 
 impl WiringSpec.admitted_names(rules: list[RuleRec]) -> (set[str] | None) {
@@ -996,7 +1058,7 @@ impl place_wired_imports(mod: Module) -> None {
         }
         wire = spec.wire_for_import(stmt, consumer, taken);
         scope = spec.consumer_scope(consumer, wire) if wire is not None else [];
-        if not scope {
+        if wire is None or not scope {
             generated.append(stmt);
             continue;
         }
@@ -1005,7 +1067,11 @@ impl place_wired_imports(mod: Module) -> None {
             owners = scope_owners(mod);
         }
         for (n, owner) in enumerate(owners.get(".".join(scope), [])) {
-            inject_into_scope(owner, stmt if n == 0 else copy.deepcopy(stmt));
+            placed = stmt if n == 0 else spec.wire_import(wire);
+            if placed is not None {
+                placed.code_context = stmt.code_context;
+                inject_into_scope(owner, placed);
+            }
         }
     }
     if not generated and not scoped {
@@ -1203,7 +1269,81 @@ impl wiring_facts(wires: list[WireRec]) -> list[tuple[str, WireBinding]] {
     return facts;
 }
 
-impl _rule_text(rule: RuleRec) -> str {
+impl rule_name_for(top: str) -> str {
+    return "".join(
+        [
+            part[:1].upper() + part[1:]
+            for part in top.split("_")
+            if part
+        ]
+    );
+}
+
+impl propose_rules(
+    spec: WiringSpec, facts: list[tuple[str, WireBinding]], rules: list[RuleRec]
+) -> list[RuleRec] {
+    probe = WiringSpec(root_dir=spec.root_dir, path=spec.path, wires=[], rules=rules);
+    wanted: dict[str, set[str]] = {};
+    for (consumer, binding) in facts {
+        provider = binding.provider;
+        if spec.module_file(provider) is None {
+            continue;
+        }
+        constrained = probe.rules_governing(provider, consumer, True);
+        crossing = spec.top_package(provider) != spec.top_package(consumer);
+        if constrained {
+            if probe.rules_admitting(provider, consumer, True) {
+                continue;
+            }
+        } elif not crossing {
+            continue;
+        }
+        wanted.setdefault(spec.top_package(provider), set()).add(
+            spec.top_package(consumer)
+        );
+    }
+    out = list(rules);
+    taken = {r.name for r in out};
+    for source in sorted(wanted) {
+        proposal = spec.edge_rule(source, sorted(wanted[source]));
+        held = next(
+            (
+                r
+                for r in out
+                if r.name == proposal.name
+            ),
+            None
+        );
+        if held is not None
+            and held.is_open
+            and [p.text for p in held.sources] == [proposal.sources[0].text] {
+            texts = {p.text for p in held.targets};
+            out[out.index(held)] = RuleRec(
+                name=held.name,
+                sources=held.sources,
+                targets=held.targets
+                    + [
+                        p
+                        for p in proposal.targets
+                        if p.text not in texts
+                    ],
+                is_open=True
+            );
+            continue;
+        }
+        base = proposal.name;
+        n = 1;
+        while proposal.name in taken {
+            n += 1;
+            proposal.name = f"{base}{n}";
+        }
+        taken.add(proposal.name);
+        out.append(proposal);
+    }
+    return out;
+}
+
+impl rule_text(rule: RuleRec) -> str {
     sources = " | ".join(sorted([p.text for p in rule.sources]));
     targets = " | ".join(sorted([p.text for p in rule.targets]));
     tail = ";"
@@ -1322,9 +1462,7 @@ impl render_wiring(
             ((block_relative(block, provider), prefix, alias, arrow), text)
         );
     }
-    policy = [
-        _rule_text(r) for r in sorted(rules, key=lambda (r: RuleRec) { r.name; })
-    ];
+    policy = [rule_text(r) for r in sorted(rules, key=lambda (r: RuleRec) { r.name; })];
     top_wires = [text for (_key, text) in sorted(wires.get("", []))];
     if policy and top_wires {
         policy.append("");
@@ -1406,4 +1544,37 @@ impl prune_wiring_source(
         }
     }
     return "".join(text);
+}
+
+impl _package_prefix(root_dir: str) -> str {
+    facts = active_host().project_facts(root_dir);
+    if facts is None or not facts.package_name {
+        return "";
+    }
+    return facts.package_name.replace("/", ".") + ".";
+}
+
+impl WireBinding.key -> tuple[str, str, str, str] {
+    return (self.provider, self.form, self.name, self.alias);
+}
+
+impl WireBinding.is_module_form -> bool {
+    return "from" not in self.form.split(" ");
+}
+
+impl WireBinding.bound_name -> str {
+    return self.alias or self.name;
+}
+
+impl wiring_scope -> Iterator[None] {
+    if _resolution.get() is not None {
+        yield ;
+        return;
+    }
+    token = _resolution.set({});
+    try {
+        yield ;
+    } finally {
+        _resolution.reset(token);
+    }
 }

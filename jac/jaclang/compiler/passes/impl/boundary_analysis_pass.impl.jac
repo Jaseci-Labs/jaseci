@@ -1549,26 +1549,7 @@ impl BoundaryAnalysisPass._route_facts(
     return (route, scheduled, reflect);
 }
 
-def route_literal(expr: any) -> tuple[bool, any] {
-    if isinstance(expr, (String, MultiString)) {
-        value = expr.lit_value;
-        return (True, value) if isinstance(value, str) else (False, None);
-    }
-    if isinstance(expr, Bool) {
-        return (True, expr.lit_value);
-    }
-    if isinstance(expr, Null) {
-        return (True, None);
-    }
-    if isinstance(expr, AtomTrailer)
-        and expr.is_attr
-        and isinstance(expr.target, Name)
-        and expr.target.value in ('HTTPMethod', 'APIProtocol')
-        and isinstance(expr.right, Name) {
-        return (True, expr.right.value);
-    }
-    return (False, None);
-}
+def route_literal(expr: any) -> tuple[bool, any];
 
 impl BoundaryAnalysisPass.enter_atom_trailer with AtomTrailer entry {
     if not here.is_attr or self._get_context(here) != InteropContext.CLIENT {
@@ -1627,4 +1608,25 @@ impl BoundaryAnalysisPass._export_mixed_native(manifest: InteropManifest) -> Non
             ast_node=stmt
         );
     }
+}
+
+impl route_literal(expr: any) -> tuple[bool, any] {
+    if isinstance(expr, (String, MultiString)) {
+        value = expr.lit_value;
+        return (True, value) if isinstance(value, str) else (False, None);
+    }
+    if isinstance(expr, Bool) {
+        return (True, expr.lit_value);
+    }
+    if isinstance(expr, Null) {
+        return (True, None);
+    }
+    if isinstance(expr, AtomTrailer)
+        and expr.is_attr
+        and isinstance(expr.target, Name)
+        and expr.target.value in ('HTTPMethod', 'APIProtocol')
+        and isinstance(expr.right, Name) {
+        return (True, expr.right.value);
+    }
+    return (False, None);
 }

@@ -9,7 +9,9 @@ glob CLK_REALTIME: int = 0,
      CLK_THREAD_CPUTIME: int = 16,
      CLK_PY_MONOTONIC: int = 8;
 
-def:pub time_sleep_ns(ns: int) {
+def:pub time_sleep_ns(ns: int);
+
+impl time_sleep_ns(ns: int) {
     sec: int = ns // NS_PER_SEC;
     nsec: int = ns % NS_PER_SEC;
     req: int = __alloca(16);

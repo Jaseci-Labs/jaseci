@@ -1,26 +1,6 @@
-def _u8_is_cont(b: ir.IRBuilder, byte: ir.Value, name: str) -> ir.Value {
-    i64 = ir.IntType(64);
-    return b.icmp_unsigned(
-        "==",
-        b.and_(
-            b.zext(byte, i64, name=f"{name}.z"),
-            ir.Constant(i64, 0xC0),
-            name=f"{name}.m"
-        ),
-        ir.Constant(i64, 0x80),
-        name=name
-    );
-}
+def _u8_is_cont(b: ir.IRBuilder, byte: ir.Value, name: str) -> ir.Value;
 
-def _u8_is_start(b: ir.IRBuilder, s: ir.Value, i: ir.Value, name: str) -> ir.Value {
-    i64 = ir.IntType(64);
-    byte = b.load(b.gep(s, [i], name=f"{name}.p"), name=f"{name}.b");
-    return b.or_(
-        b.icmp_unsigned("==", i, ir.Constant(i64, 0), name=f"{name}.first"),
-        b.not_(_u8_is_cont(b, byte, f"{name}.cont"), name=f"{name}.lead"),
-        name=name
-    );
-}
+def _u8_is_start(b: ir.IRBuilder, s: ir.Value, i: ir.Value, name: str) -> ir.Value;
 
 impl NaIRGenPass._emit_utf8_helpers -> None {
     if self.utf8_cplen_fn is not None {
@@ -781,5 +761,29 @@ impl NaIRGenPass._emit_wrap_clamp(
     );
     return b.select(
         b.icmp_signed(">", value, hi, name=f"{name}.hi"), hi, value, name=f"{name}.ch"
+    );
+}
+
+impl _u8_is_cont(b: ir.IRBuilder, byte: ir.Value, name: str) -> ir.Value {
+    i64 = ir.IntType(64);
+    return b.icmp_unsigned(
+        "==",
+        b.and_(
+            b.zext(byte, i64, name=f"{name}.z"),
+            ir.Constant(i64, 0xC0),
+            name=f"{name}.m"
+        ),
+        ir.Constant(i64, 0x80),
+        name=name
+    );
+}
+
+impl _u8_is_start(b: ir.IRBuilder, s: ir.Value, i: ir.Value, name: str) -> ir.Value {
+    i64 = ir.IntType(64);
+    byte = b.load(b.gep(s, [i], name=f"{name}.p"), name=f"{name}.b");
+    return b.or_(
+        b.icmp_unsigned("==", i, ir.Constant(i64, 0), name=f"{name}.first"),
+        b.not_(_u8_is_cont(b, byte, f"{name}.cont"), name=f"{name}.lead"),
+        name=name
     );
 }

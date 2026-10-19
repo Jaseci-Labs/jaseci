@@ -4,7 +4,78 @@ import from enum { StrEnum }
 
 enum ArchAction(StrEnum) { INIT = "init", SYNC = "sync", GRAPH = "graph" }
 
-def _parse_action(action: str) -> (ArchAction | None) {
+def _parse_action(action: str) -> (ArchAction | None);
+
+def _project_root -> (str | None);
+
+def _empty_spec(root_dir: str) -> WiringSpec;
+
+def _module_files(spec: WiringSpec) -> list[tuple[str, str]];
+
+def _parse_imports(path: str) -> list[tuple[Import, (list[str] | None)]];
+
+def _collect_facts(
+    spec: WiringSpec, modules: list[tuple[str, str]]
+) -> list[tuple[str, WireBinding]];
+
+def _unused_facts(
+    spec: WiringSpec, modules: list[tuple[str, str]]
+) -> set[tuple[str, tuple[str, str, str, str]]];
+
+def _feeds(spec: WiringSpec, consumer: str, module: str) -> bool;
+
+def _write_arch(arch_path: str, text: str) -> bool;
+
+def _strip_modules(paths: list[str]) -> int;
+
+def _arch_target(directory: str) -> (str | None);
+
+def _arch_files(root_dir: str) -> list[str];
+
+def _arch_init(force: bool, strip: bool, directory: str) -> int;
+
+def _arch_sync(strip: bool, directory: str, prune: bool = False) -> int;
+
+def _sync_one(arch_path: str, strip: bool, prune: bool) -> int;
+
+def _node_id(name: str) -> str;
+
+def _render_mermaid(spec: WiringSpec) -> str;
+
+def _render_json(spec: WiringSpec) -> str;
+
+def _arch_graph(fmt: str, output: str, directory: str) -> int;
+
+impl arch(
+    action: str = "graph",
+    scope: str = "",
+    strip: bool = False,
+    prune: bool = False,
+    force: bool = False,
+    format: str = "mermaid",
+    output: str = ""
+) -> int {
+    verb = _parse_action(action);
+    if verb is None {
+        console.error(f"unknown action: {action} (expected init, sync or graph)");
+        return 2;
+    }
+    if scope and not os.path.isdir(scope) {
+        console.error(
+            f"'{scope}' is not a directory; `jac arch` takes the directory an archwire.jac governs"
+        );
+        return 2;
+    }
+    if verb == ArchAction.INIT {
+        return _arch_init(force, strip, scope);
+    }
+    if verb == ArchAction.SYNC {
+        return _arch_sync(strip, scope, prune);
+    }
+    return _arch_graph(format, output, scope);
+}
+
+impl _parse_action(action: str) -> (ArchAction | None) {
     try {
         return ArchAction(action);
     } except ValueError {
@@ -12,7 +83,7 @@ def _parse_action(action: str) -> (ArchAction | None) {
     }
 }
 
-def _project_root -> (str | None) {
+impl _project_root -> (str | None) {
     cfg = get_config();
     if cfg is None or cfg.project_root is None {
         console.error(
@@ -24,11 +95,11 @@ def _project_root -> (str | None) {
     return str(cfg.project_root);
 }
 
-def _empty_spec(root_dir: str) -> WiringSpec {
+impl _empty_spec(root_dir: str) -> WiringSpec {
     return WiringSpec(root_dir=root_dir, path=os.path.join(root_dir, ARCH_FILE_NAME));
 }
 
-def _module_files(spec: WiringSpec) -> list[tuple[str, str]] {
+impl _module_files(spec: WiringSpec) -> list[tuple[str, str]] {
     out: list[tuple[str, str]] = [];
     for name in spec.project_modules() {
         path = spec.module_file(name);
@@ -39,7 +110,7 @@ def _module_files(spec: WiringSpec) -> list[tuple[str, str]] {
     return out;
 }
 
-def _parse_imports(path: str) -> list[tuple[Import, (list[str] | None)]] {
+impl _parse_imports(path: str) -> list[tuple[Import, (list[str] | None)]] {
     try {
         (mod, _err) = parse_woven(read_file_with_encoding(path), path, None, []);
     } except Exception {
@@ -52,7 +123,7 @@ def _parse_imports(path: str) -> list[tuple[Import, (list[str] | None)]] {
     return out;
 }
 
-def _collect_facts(
+impl _collect_facts(
     spec: WiringSpec, modules: list[tuple[str, str]]
 ) -> list[tuple[str, WireBinding]] {
     facts: list[tuple[str, WireBinding]] = [];
@@ -83,7 +154,7 @@ def _collect_facts(
     return facts;
 }
 
-def _unused_facts(
+impl _unused_facts(
     spec: WiringSpec, modules: list[tuple[str, str]]
 ) -> set[tuple[str, tuple[str, str, str, str]]] {
     unused: set[tuple[str, tuple[str, str, str, str]]] = set();
@@ -100,7 +171,12 @@ def _unused_facts(
     return unused;
 }
 
-def _write_arch(arch_path: str, text: str) -> bool {
+impl _feeds(spec: WiringSpec, consumer: str, module: str) -> bool {
+    split = spec.split_consumer(consumer);
+    return (split[0] if split is not None else consumer) == module;
+}
+
+impl _write_arch(arch_path: str, text: str) -> bool {
     import tempfile;
     prog = JacProgram.jac_str_formatter(text, arch_path);
     if prog.errors_had or prog.mod.main is None {
@@ -128,7 +204,7 @@ def _write_arch(arch_path: str, text: str) -> bool {
     return True;
 }
 
-def _strip_modules(paths: list[str]) -> int {
+impl _strip_modules(paths: list[str]) -> int {
     changed = 0;
     for path in paths {
         annexes = [
@@ -142,7 +218,7 @@ def _strip_modules(paths: list[str]) -> int {
             );
             stripped = any(
                 [
-                    w.code is not None and w.code.code == "W3053"
+                    w.code is not None and w.code.code in ("W3053", "W3054")
                     for w in prog.warnings_had
                 ]
             );
@@ -161,14 +237,14 @@ def _strip_modules(paths: list[str]) -> int {
     return changed;
 }
 
-def _arch_target(directory: str) -> (str | None) {
+impl _arch_target(directory: str) -> (str | None) {
     if directory {
         return os.path.abspath(directory);
     }
     return _project_root();
 }
 
-def _arch_files(root_dir: str) -> list[str] {
+impl _arch_files(root_dir: str) -> list[str] {
     found: list[str] = [];
     for (dirpath, dirnames, filenames) in os.walk(root_dir) {
         dirnames[:] = sorted(
@@ -187,7 +263,7 @@ def _arch_files(root_dir: str) -> list[str] {
     return drop_git_ignored(found, cwd=root_dir);
 }
 
-def _arch_init(force: bool, strip: bool, directory: str) -> int {
+impl _arch_init(force: bool, strip: bool, directory: str) -> int {
     root_dir = _arch_target(directory);
     if root_dir is None {
         return 1;
@@ -221,13 +297,14 @@ def _arch_init(force: bool, strip: bool, directory: str) -> int {
         }
     }
     facts = _collect_facts(spec, modules);
-    if not _write_arch(arch_path, render_wiring(spec, facts, [])) {
+    rules = propose_rules(spec, facts, []);
+    if not _write_arch(arch_path, render_wiring(spec, facts, rules)) {
         return 1;
     }
     console.success(
-        f"wrote {ARCH_FILE_NAME}: {len(facts)} wired names sealing {len(
-            modules
-        )} modules"
+        f"wrote {ARCH_FILE_NAME}: {len(facts)} wired names and {len(
+            rules
+        )} rules sealing {len(modules)} modules"
     );
     if strip {
         changed = _strip_modules([path for (_name, path) in modules]);
@@ -236,7 +313,7 @@ def _arch_init(force: bool, strip: bool, directory: str) -> int {
     return 0;
 }
 
-def _arch_sync(strip: bool, directory: str, prune: bool = False) -> int {
+impl _arch_sync(strip: bool, directory: str, prune: bool = False) -> int {
     root_dir = _arch_target(directory);
     if root_dir is None {
         return 1;
@@ -257,7 +334,7 @@ def _arch_sync(strip: bool, directory: str, prune: bool = False) -> int {
     return status;
 }
 
-def _sync_one(arch_path: str, strip: bool, prune: bool) -> int {
+impl _sync_one(arch_path: str, strip: bool, prune: bool) -> int {
     spec = wiring_for_path(arch_path) if os.path.isfile(arch_path) else None;
     if spec is None {
         console.error(f"{arch_path} does not exist", hint="run `jac arch init` first");
@@ -275,24 +352,41 @@ def _sync_one(arch_path: str, strip: bool, prune: bool) -> int {
         for (consumer, binding) in wiring_facts(spec.wires) + added
         if (consumer, binding.key()) not in dropped
     ];
-    if not _write_arch(arch_path, render_wiring(spec, facts, spec.rules)) {
+    rules = propose_rules(spec, facts, spec.rules);
+    before = {rule_text(r) for r in spec.rules};
+    admitted = len(
+        [
+            r
+            for r in rules
+            if rule_text(r) not in before
+        ]
+    );
+    if not _write_arch(arch_path, render_wiring(spec, facts, rules)) {
         return 1;
     }
     console.success(
-        f"{arch_path}: added {len(added)} wired names, removed {len(dropped)} unused"
+        f"{arch_path}: added {len(added)} wired names, removed {len(dropped)} unused,"
+        f" {admitted} rules added or widened"
     );
-    if strip {
-        changed = _strip_modules([path for (_name, path) in modules]);
-        console.print(f"stripped wired imports from {changed} files");
+    pruned = [
+        path
+        for (name, path) in modules
+        if any([_feeds(spec, c, name) for (c, _key) in dropped])
+    ];
+    if strip or pruned {
+        changed = _strip_modules(
+            [path for (_name, path) in modules] if strip else pruned
+        );
+        console.print(f"stripped wired and dead imports from {changed} files");
     }
     return 0;
 }
 
-def _node_id(name: str) -> str {
+impl _node_id(name: str) -> str {
     return name.replace(".", "_").replace("-", "_");
 }
 
-def _render_mermaid(spec: WiringSpec) -> str {
+impl _render_mermaid(spec: WiringSpec) -> str {
     lines: list[str] = ["graph LR"];
     for rule in spec.rules {
         srcs = " | ".join([p.text for p in rule.sources]);
@@ -333,7 +427,7 @@ def _render_mermaid(spec: WiringSpec) -> str {
     return "\n".join(lines) + "\n";
 }
 
-def _render_json(spec: WiringSpec) -> str {
+impl _render_json(spec: WiringSpec) -> str {
     wires = [
         {
             "provider": wire.provider,
@@ -362,7 +456,7 @@ def _render_json(spec: WiringSpec) -> str {
     return json.dumps({"wires": wires, "rules": rules}, indent=2) + "\n";
 }
 
-def _arch_graph(fmt: str, output: str, directory: str) -> int {
+impl _arch_graph(fmt: str, output: str, directory: str) -> int {
     root_dir = _arch_target(directory);
     if root_dir is None {
         return 1;
@@ -383,33 +477,4 @@ def _arch_graph(fmt: str, output: str, directory: str) -> int {
     }
     console.print(text, end="");
     return 0;
-}
-
-impl arch(
-    action: str = "graph",
-    scope: str = "",
-    strip: bool = False,
-    prune: bool = False,
-    force: bool = False,
-    format: str = "mermaid",
-    output: str = ""
-) -> int {
-    verb = _parse_action(action);
-    if verb is None {
-        console.error(f"unknown action: {action} (expected init, sync or graph)");
-        return 2;
-    }
-    if scope and not os.path.isdir(scope) {
-        console.error(
-            f"'{scope}' is not a directory; `jac arch` takes the directory an archwire.jac governs"
-        );
-        return 2;
-    }
-    if verb == ArchAction.INIT {
-        return _arch_init(force, strip, scope);
-    }
-    if verb == ArchAction.SYNC {
-        return _arch_sync(strip, scope, prune);
-    }
-    return _arch_graph(format, output, scope);
 }
