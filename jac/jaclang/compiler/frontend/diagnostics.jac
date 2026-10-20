@@ -1606,6 +1606,12 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
          "Parameter name mismatch: declaration has '{decl_name}' but implementation has '{impl_name}'.",
          help="An `impl` must use the same parameter names as its declaration: callers bind keyword arguments by the declared names, and the server, bridge stubs and tool schemas are generated from the declaration."
      ),
+     E2030 = _err(
+         "E2030",
+         Category.SEMANTIC,
+         "Type parameter mismatch: declaration has [{decl_params}] but implementation has [{impl_params}].",
+         help="An `impl` that restates type parameters must restate the declaration's, in order: `def first[T](items: list[T]) -> T;` is implemented by `impl first[T](items: list[T]) -> T { ... }`. Leave the brackets off to inherit them."
+     ),
      W2014 = _warn(
          "W2014",
          Category.SEMANTIC,
