@@ -886,7 +886,7 @@ impl _pull_into_target(
             record_placement_evidence(prog, target.loc.mod_path or '', tidx, note);
         }
     }
-    return new_stamps + newly_imported;
+    return new_stamps;
 }
 
 impl _pull_boundary_import(

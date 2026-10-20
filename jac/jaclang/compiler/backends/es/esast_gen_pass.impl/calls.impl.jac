@@ -178,15 +178,6 @@ impl EsastGenPass._return_type_route_role(rt: uni.Expr) -> (str | None) {
     return None;
 }
 
-impl EsastGenPass._exports_to_client(nd: uni.ContextAwareNode) -> bool {
-    if nd.codespace_dual or nd.client_imported {
-        return True;
-    }
-    return isinstance(nd, uni.AstAccessNode)
-        and nd.access is not None
-        and nd.access.tag.name == Tok.KW_PUB;
-}
-
 impl EsastGenPass._component_pascal_name(nd: uni.Ability) -> (str | None) {
     if nd.code_context != CodeContext.CLIENT or nd.is_method {
         return None;

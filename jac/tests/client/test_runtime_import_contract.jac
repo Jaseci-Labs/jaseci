@@ -88,7 +88,8 @@ test "missing runtime exports fail before either client bundler starts" {
 }
 
 test "client providers export exactly the names client importers bind" {
-    # (provider, provider source, importer source, export line, held pull indexes)
+    # (provider, provider source, importer source, export line or None when the
+    #  build must fail, held pull indexes)
     cases = [
         (
             "shared",
@@ -108,6 +109,15 @@ test "client providers export exactly the names client importers bind" {
             "export {Hidden};",
             [0]
         ),
+        (
+            "secret",
+            'glob:priv SECRET: str = "s";\n'
+            'def Card -> JsxElement { return <b>{SECRET}</b>; }\n',
+            'import from .secret { Card, SECRET }\n'
+            'def:pub app -> any { return <div><Card />{SECRET}</div>; }\n',
+            None,
+            []
+        ),
 
     ];
     with TemporaryDirectory() as tmp {
@@ -118,6 +128,18 @@ test "client providers export exactly the names client importers bind" {
             for (name, source, importer, export_line, pulled) in cases {
                 (project / f"{name}.jac").write_text(source);
                 (project / f"use_{name}.jac").write_text(importer);
+                if export_line is None {
+                    raised = "";
+                    try {
+                        compiler.emit_dependencies(
+                            project / f"use_{name}.jac", source_root=project
+                        );
+                    } except ClientBundleError as error {
+                        raised = str(error);
+                    }
+                    assert "runtime import(s) SECRET" in raised , (name, raised);
+                    continue;
+                }
                 compiler.emit_dependencies(
                     project / f"use_{name}.jac", source_root=project
                 );

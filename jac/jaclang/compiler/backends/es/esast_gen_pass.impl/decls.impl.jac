@@ -27,6 +27,15 @@ impl EsastGenPass.exit_func_signature with uni.FuncSignature exit {
     here.gen.es_ast = None;
 }
 
+impl EsastGenPass._exports_to_client(nd: uni.ContextAwareNode) -> bool {
+    access = nd.access if isinstance(nd, uni.AstAccessNode) else None;
+    tag = access.tag.name if access is not None else None;
+    if tag == Tok.KW_PUB or nd.codespace_dual {
+        return True;
+    }
+    return nd.client_imported and tag != Tok.KW_PRIV;
+}
+
 impl EsastGenPass.exit_ability with uni.Ability exit {
     if self._loop_label_savepoints {
         self._loop_label_stack = self._loop_label_savepoints.pop();
