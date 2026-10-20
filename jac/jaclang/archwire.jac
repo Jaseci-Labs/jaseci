@@ -287,9 +287,9 @@ graph import {
     cli.manifest_route ++> [
         scale.injector.binary.deploy_generation_refusal
             | scale.tests.deploy.test_client_build_fail_fast
-            | scale.tests.deploy.test_version_pin { resolve_cli_version },
-        scale.injector.binary.host_toolchain_path
+            | scale.tests.deploy.test_version_pin
             | server.sealed_serve.serve_manifest_stamp { resolve_cli_version },
+        scale.injector.binary.host_toolchain_path { resolve_cli_version },
     ]
     cli.manifest_route --> scale.observability.prometheus_metrics.PrometheusMetricsCollector.__post_init__
         | scale.tests.deploy.test_memory_trigger_guard
