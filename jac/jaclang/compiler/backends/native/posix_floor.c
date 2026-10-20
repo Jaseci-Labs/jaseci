@@ -25,7 +25,12 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
+#include <netdb.h>
+#include <stddef.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #if defined(__APPLE__)
+#include <mach-o/dyld.h>
 #include <malloc/malloc.h>
 #else
 #include <malloc.h>
@@ -102,6 +107,40 @@ JAC_FLOOR int64_t __jac_home_dir(const char *name, char *buf, int64_t cap) {
     if ((int64_t)n >= cap) return -1;
     memcpy(buf, pw.pw_dir, n + 1);
     return (int64_t)n;
+}
+
+/* The running executable's path copied into buf: its length, or -1. */
+JAC_FLOOR int64_t __jac_executable_path(char *buf, int64_t cap) {
+#if defined(__APPLE__)
+    uint32_t size = (uint32_t)cap;
+    if (_NSGetExecutablePath(buf, &size) != 0) return -1;
+    return (int64_t)strlen(buf);
+#else
+    ssize_t n = readlink("/proc/self/exe", buf, (size_t)(cap - 1));
+    if (n <= 0) return -1;
+    buf[n] = 0;
+    return (int64_t)n;
+#endif
+}
+
+/* ---- sockets ---- */
+
+/* struct addrinfo's layout and the IPv6 family: 0 the ai_addrlen offset,
+ * 1 the ai_addr offset, 2 the ai_next offset, 3 sizeof(struct addrinfo),
+ * 4 AF_INET6. */
+JAC_FLOOR int64_t __jac_addrinfo_layout(int which) {
+    switch (which) {
+    case 0: return (int64_t)offsetof(struct addrinfo, ai_addrlen);
+    case 1: return (int64_t)offsetof(struct addrinfo, ai_addr);
+    case 2: return (int64_t)offsetof(struct addrinfo, ai_next);
+    case 3: return (int64_t)sizeof(struct addrinfo);
+    case 4: return (int64_t)AF_INET6;
+    default: return -1;
+    }
+}
+
+JAC_FLOOR int __jac_sockaddr_family(const void *address) {
+    return ((const struct sockaddr *)address)->sa_family;
 }
 
 /* ---- clocks ---- */

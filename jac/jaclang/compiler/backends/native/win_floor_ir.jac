@@ -56,6 +56,7 @@ $"??_C@_0M@DPNKMMOG@USERPROFILE?$AA@" = comdat any
 @stderr = dso_local local_unnamed_addr global ptr null, align 8
 @"??_C@_06PFLEPMKG@?4UTF?98?$AA@" = linkonce_odr dso_local unnamed_addr constant [7 x i8] c".UTF-8\00", comdat, align 1
 @"??_C@_0M@DPNKMMOG@USERPROFILE?$AA@" = linkonce_odr dso_local unnamed_addr constant [12 x i8] c"USERPROFILE\00", comdat, align 1
+@switch.table.__jac_addrinfo_layout = private unnamed_addr constant [5 x i64] [i64 16, i64 32, i64 40, i64 48, i64 23], align 8
 @switch.table.__jac_clock_id = private unnamed_addr constant [6 x i64] [i64 0, i64 1, i64 2, i64 3, i64 4, i64 1], align 8
 
 define dso_local ptr @__errno_location() local_unnamed_addr #0 {
@@ -1854,6 +1855,70 @@ define dso_local nonnull ptr @__jac_dirent_name(ptr noundef readnone captures(re
 
 define dso_local noundef i32 @__jac_at_fdcwd() local_unnamed_addr #4 {
   ret i32 -100
+}
+
+define dso_local range(i64 -1, 2147483648) i64 @__jac_executable_path(ptr noundef %0, i64 noundef %1) local_unnamed_addr #0 {
+  %3 = alloca [1024 x i16], align 16
+  call void @llvm.lifetime.start.p0(i64 2048, ptr nonnull %3) #11
+  %4 = call i32 @GetModuleFileNameW(ptr noundef null, ptr noundef nonnull %3, i32 noundef 1024) #10
+  %5 = add i32 %4, -1024
+  %6 = icmp ult i32 %5, -1023
+  br i1 %6, label %21, label %7
+
+7:                                                ; preds = %2
+  %8 = trunc i64 %1 to i32
+  %9 = add nsw i32 %8, -1
+  %10 = call i32 @WideCharToMultiByte(i32 noundef 65001, i32 noundef 0, ptr noundef nonnull %3, i32 noundef %4, ptr noundef %0, i32 noundef %9, ptr noundef null, ptr noundef null) #10
+  %11 = icmp slt i32 %10, 1
+  br i1 %11, label %21, label %12
+
+12:                                               ; preds = %7
+  %13 = zext nneg i32 %10 to i64
+  %14 = getelementptr inbounds nuw i8, ptr %0, i64 %13
+  store i8 0, ptr %14, align 1
+  br label %15
+
+15:                                               ; preds = %19, %12
+  %16 = phi ptr [ %0, %12 ], [ %20, %19 ]
+  %17 = load i8, ptr %16, align 1
+  switch i8 %17, label %19 [
+    i8 0, label %21
+    i8 92, label %18
+  ]
+
+18:                                               ; preds = %15
+  store i8 47, ptr %16, align 1
+  br label %19
+
+19:                                               ; preds = %18, %15
+  %20 = getelementptr inbounds nuw i8, ptr %16, i64 1
+  br label %15
+
+21:                                               ; preds = %15, %7, %2
+  %22 = phi i64 [ -1, %2 ], [ -1, %7 ], [ %13, %15 ]
+  call void @llvm.lifetime.end.p0(i64 2048, ptr nonnull %3) #11
+  ret i64 %22
+}
+
+define dso_local range(i64 -1, 49) i64 @__jac_addrinfo_layout(i32 noundef %0) local_unnamed_addr #4 {
+  %2 = icmp ult i32 %0, 5
+  br i1 %2, label %3, label %7
+
+3:                                                ; preds = %1
+  %4 = zext nneg i32 %0 to i64
+  %5 = getelementptr inbounds nuw [5 x i64], ptr @switch.table.__jac_addrinfo_layout, i64 0, i64 %4
+  %6 = load i64, ptr %5, align 8
+  br label %7
+
+7:                                                ; preds = %1, %3
+  %8 = phi i64 [ %6, %3 ], [ -1, %1 ]
+  ret i64 %8
+}
+
+define dso_local range(i32 0, 65536) i32 @__jac_sockaddr_family(ptr noundef readonly captures(none) %0) local_unnamed_addr #7 {
+  %2 = load i16, ptr %0, align 1
+  %3 = zext i16 %2 to i32
+  ret i32 %3
 }
 
 define dso_local range(i64 -9223372036854775808, 9223372036854775807) i64 @__jac_home_dir(ptr noundef %0, ptr noundef %1, i64 noundef %2) local_unnamed_addr #0 {

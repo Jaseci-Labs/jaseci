@@ -787,6 +787,29 @@ const char *__jac_dirent_name(void *entry) { return ((struct linux_dirent *)entr
 
 int __jac_at_fdcwd(void) { return -100; }
 
+i64 __jac_executable_path(char *buf, i64 cap) {
+    i64 n = (i64)__jac_win_executable_path(buf, (size_t)cap);
+    return n > 0 ? n : -1;
+}
+
+/* struct addrinfo of ws2_32: four ints, then ai_addrlen as a size_t at 16,
+   ai_canonname at 24, ai_addr at 32 and ai_next at 40; AF_INET6 is 23. */
+i64 __jac_addrinfo_layout(int which) {
+    switch (which) {
+    case 0: return 16;
+    case 1: return 32;
+    case 2: return 40;
+    case 3: return 48;
+    case 4: return 23;
+    default: return -1;
+    }
+}
+
+int __jac_sockaddr_family(const void *address) {
+    const u8 *raw = (const u8 *)address;
+    return raw[0] | (raw[1] << 8);
+}
+
 i64 __jac_home_dir(const char *name, char *buf, i64 cap) {
     struct linux_passwd pw;
     struct linux_passwd *found = NULL;
