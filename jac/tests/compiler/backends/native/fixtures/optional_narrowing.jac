@@ -292,7 +292,8 @@ def loop_unpack_rebind(n: int) -> int {
     total = 0;
     i = 0;
     while i < 2 {
-        total = total + v;
+        # The tuple rebind rewidens `v` like the back edge above; the cast says so.
+        total = total + (v as int);
         (v, i) = (pick(n - 5), i + 1);
     }
     return total;
