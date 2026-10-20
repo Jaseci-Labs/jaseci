@@ -384,3 +384,39 @@ test "a client sv import keeps its placement when another import shares its line
         );
     }
 }
+
+
+test "an sv import is matched to its statement when its marker spans lines" {
+    import from pathlib { Path }
+    rows = [
+        ("block marker", "sv\n{\nimport from .store { list_notes }\n}\n"),
+        ("prefix marker on its own line", "sv\nimport from .store { list_notes }\n")
+    ];
+    for (label, header) in rows {
+        res = _strip_markers(header, "NotesShell.jac");
+        lines = res.text.splitlines();
+        assert [i.target for i in res.sv_imports] == [".store"] , f"{label}: {res.sv_imports}";
+        for imp in res.sv_imports {
+            at_line = lines[imp.line - 1];
+            assert at_line.strip().startswith("import from .store") , f"{label}: line {imp.line} of the stripped text is {at_line!r}";
+        }
+        with tempfile.TemporaryDirectory() as tmpdir {
+            root_path = Path(tmpdir);
+            toml_text = (
+                '[project]\nname = "notes"\nkind = "web-app"\nentry-point = "main"\n'
+            );
+            (root_path / "jac.toml").write_text(toml_text);
+            (root_path / "main.jac").write_text(
+                "def:pub app -> JsxElement {\n    return <div>notes</div>;\n}\n"
+            );
+            (root_path / "notes").mkdir();
+            (root_path / "notes" / "store.jac").write_text(NOTES_STORE);
+            (root_path / "notes" / "NotesShell.jac").write_text(
+                NOTES_SHELL.replace("sv import from .store { list_notes }\n", header)
+            );
+            assert fix("placement", [str(root_path)]) == 0 , label;
+            written = (root_path / "jac.toml").read_text();
+            assert written == toml_text , f"{label}: a client import declared a service app: {written}";
+        }
+    }
+}

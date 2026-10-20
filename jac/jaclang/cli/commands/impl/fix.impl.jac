@@ -592,7 +592,7 @@ impl _strip_markers(src: str, file_path: str) -> StripResult {
                         tgt = _dotted_target(tokens, i + 3);
                         if tgt {
                             res.sv_imports.append(
-                                SvImport(target=tgt, line=tok.loc.line)
+                                SvImport(target=tgt, line=nxt.loc.line)
                             );
                         }
                     }
@@ -623,6 +623,7 @@ impl _strip_markers(src: str, file_path: str) -> StripResult {
     for (start, end, repl) in edits {
         out.append(src_bytes[cursor:start]);
         out.append(repl.encode('utf-8'));
+        out.append(b'\n' * src_bytes[start:end].count(b'\n'));
         cursor = end;
     }
     out.append(src_bytes[cursor:]);
