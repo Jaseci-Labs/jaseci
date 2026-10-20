@@ -1956,6 +1956,10 @@ impl ESBuiltinEmitter.emit___import__(
     return code;
 }
 
+impl ESBuiltinEmitter.static_names(self: ESBuiltinEmitter) -> list[str] {
+    return super.static_names() + ["__import__"];
+}
+
 impl ESBuiltinEmitter.emit_unsafe_html(
     self: ESBuiltinEmitter, ctx: ESEmitCtx, args: list[str]
 ) -> (str | None) {

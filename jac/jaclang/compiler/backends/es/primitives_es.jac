@@ -1397,6 +1397,8 @@ class ESBuiltinEmitter(BuiltinEmitter[(str, ESEmitCtx)]) {
     def emit_unsafe_html(
         self: ESBuiltinEmitter, ctx: ESEmitCtx, args: list[str]
     ) -> (str | None);
+
+    override def static_names(self: ESBuiltinEmitter) -> list[str];
 }
 
 def es_primitive_emitter(suffix: str) -> (PrimitiveEmitter[(str, ESEmitCtx)] | None);
