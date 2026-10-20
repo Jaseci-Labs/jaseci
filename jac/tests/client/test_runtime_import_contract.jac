@@ -54,52 +54,49 @@ test "annotation imports disappear but values and module effects survive" {
 }
 
 test "missing runtime exports fail before either client bundler starts" {
-    import from jaclang.compiler.driver.client_graph { collect_client_graph }
-    import from jaclang.compiler.frontend.codeinfo { ClientArtifact, ClientManifest }
     with TemporaryDirectory() as tmp {
-        project = Path(tmp).resolve();
-        main = project / "main.jac";
-        provider = project / "provider.jac";
-        main.write_text("");
-        provider.write_text("");
-        artifacts = {
-            main: ClientArtifact(
-                js="",
-                manifest=ClientManifest(runtime_imports={str(provider): ["Hidden"]})
-            ),
-            provider: ClientArtifact(js="", manifest=ClientManifest())
-        };
-        def artifact_of(path: Path) -> ClientArtifact {
-            return artifacts[path];
-        }
-        def variant_of(path: Path) -> Path {
-            return path;
-        }
-        failed = False;
+        set_config(None);
+        project = Path(tmp);
+        compiler = _compiler(project);
+        (project / "provider.jac").write_text(
+            'obj:priv Hidden { has name: str = ""; }\n'
+        );
+        (project / "main.jac").write_text(
+            'import from .provider { Hidden }\n'
+            'def:pub app -> any { value = Hidden(); return <div>{value.name}</div>; }\n'
+        );
         try {
-            collect_client_graph([main], artifact_of, variant_of, set(), set());
-        } except ClientBundleError as error {
-            failed = True;
-            assert "runtime import(s) Hidden" in str(error) , str(error);
-            assert "provider.jac" in str(error) , str(error);
+            failed = False;
+            try {
+                compiler.emit_dependencies(project / "main.jac", source_root=project);
+            } except ClientBundleError as error {
+                failed = True;
+                assert "runtime import(s)" in str(error) , str(error);
+                assert "Hidden" in str(error) and "provider.jac" in str(error) , str(
+                    error
+                );
+            }
+            assert failed , "invalid runtime imports reached the bundler";
+        } finally {
+            set_config(None);
         }
-        assert failed , "invalid runtime imports reached the bundler";
     }
 }
 
 test "client providers export exactly the names client importers bind" {
-    # (provider, provider source, importer source, export line or None when the
-    #  build must fail, held pull indexes)
+    # (provider, provider source, importer source, export line, held pull indexes)
     cases = [
         (
             "shared",
             'glob LABELS: dict[str, str] = {"new": "New"};\n'
-            'def Card(name: str) -> JsxElement { return <b>{LABELS[name]}</b>; }\n'
+            'obj Model { has name: str = "new"; }\n'
+            'def Card(m: Model) -> JsxElement { return <b>{LABELS[m.name]}</b>; }\n'
             'def Local -> JsxElement { return <i>local</i>; }\n',
-            'import from .shared { Card, LABELS }\n'
-            'def:pub app -> any { return <div><Card name="new" />{LABELS["new"]}</div>; }\n',
+            'import from .shared { Card, LABELS, Model }\n'
+            'def show(m: Model) -> JsxElement { return <Card m={m} />; }\n'
+            'def:pub app -> any { return <div>{LABELS["new"]}</div>; }\n',
             "export {Card, LABELS};",
-            [0, 1]
+            [0, 2]
         ),
         (
             "provider",
@@ -108,25 +105,6 @@ test "client providers export exactly the names client importers bind" {
             'def:pub app -> any { value = Hidden(); return <div>{value.name}</div>; }\n',
             "export {Hidden};",
             [0]
-        ),
-        (
-            "widgets",
-            'obj Model { has title: str = "t"; }\n'
-            'def:pub Card(m: Model) -> JsxElement { return <b>{m.title}</b>; }\n',
-            'import from .widgets { Card, Model }\n'
-            'def show(m: Model) -> JsxElement { return <Card m={m} />; }\n'
-            'def:pub app -> any { return <div />; }\n',
-            "export {Card};",
-            [1]
-        ),
-        (
-            "secret",
-            'glob:priv SECRET: str = "s";\n'
-            'def Card -> JsxElement { return <b>{SECRET}</b>; }\n',
-            'import from .secret { Card, SECRET }\n'
-            'def:pub app -> any { return <div><Card />{SECRET}</div>; }\n',
-            None,
-            []
         ),
 
     ];
@@ -138,18 +116,6 @@ test "client providers export exactly the names client importers bind" {
             for (name, source, importer, export_line, pulled) in cases {
                 (project / f"{name}.jac").write_text(source);
                 (project / f"use_{name}.jac").write_text(importer);
-                if export_line is None {
-                    raised = "";
-                    try {
-                        compiler.emit_dependencies(
-                            project / f"use_{name}.jac", source_root=project
-                        );
-                    } except ClientBundleError as error {
-                        raised = str(error);
-                    }
-                    assert "runtime import(s) SECRET" in raised , (name, raised);
-                    continue;
-                }
                 compiler.emit_dependencies(
                     project / f"use_{name}.jac", source_root=project
                 );

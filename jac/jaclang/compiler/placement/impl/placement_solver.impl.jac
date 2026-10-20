@@ -841,13 +841,7 @@ impl _pull_into_target(
             continue;
         }
         top = _named_top_element(target, item.name.value);
-        if top is None {
-            continue;
-        }
-        if pinned and not _is_client_top(top) {
-            continue;
-        }
-        if _closure_pullable(top, target, prog, set()) {
+        if top is not None and _closure_pullable(top, target, prog, set()) {
             seed_ids.add(id(top));
             if _imported_at_runtime(item) {
                 runtime_ids.add(id(top));
@@ -872,33 +866,33 @@ impl _pull_into_target(
             work.changed(target);
         }
     }
-    new_stamps = 0;
-    if not pinned {
-        new_stamps = solve_module_placement(
+    new_stamps = 0
+        if pinned
+        else solve_module_placement(
             target, prog, seed_ref_ids=seed_ids, dual=True, pull_dependents=False
         );
+    if _mark_client_imported(target, runtime_ids | held_ids, prog) and not new_stamps {
+        active_host().client_pull_grew(target_path);
     }
-    newly_imported = _mark_client_imported(target, runtime_ids | held_ids, prog);
     if new_stamps {
+        active_host().client_pull_grew(target_path);
         work.changed(target);
         _warn_state_forks(target, prog);
-    }
-    if new_stamps or newly_imported {
-        active_host().client_pull_grew(target_path);
         importer = os.path.basename(module.loc.mod_path or '');
+        tidx_by_id: dict[int, int] = {};
         for (tidx, tstmt) in enumerate(target.body) {
-            if id(tstmt) not in seed_ids
-                or not isinstance(tstmt, uni.ContextAwareNode) {
-                continue;
+            tidx_by_id[id(tstmt)] = tidx;
+        }
+        for sid in seed_ids {
+            sidx = tidx_by_id.get(sid);
+            if sidx is not None {
+                record_placement_evidence(
+                    prog,
+                    target.loc.mod_path or '',
+                    sidx,
+                    f"dual client: pulled through plain import from {importer}"
+                );
             }
-            if tstmt.codespace_dual {
-                note = f"dual client: pulled through plain import from {importer}";
-            } elif tstmt.client_imported {
-                note = f"client export: imported by {importer}";
-            } else {
-                continue;
-            }
-            record_placement_evidence(prog, target.loc.mod_path or '', tidx, note);
         }
     }
     return new_stamps;
