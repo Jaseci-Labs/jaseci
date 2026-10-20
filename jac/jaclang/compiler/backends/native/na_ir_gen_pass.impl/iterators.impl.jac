@@ -733,14 +733,14 @@ impl NaIRGenPass._adapter_clos_parts(clos: ir.Value) -> (NativeIterCallback | No
 
 impl NaIRGenPass._adapter_callee(fn_expr: uni.UniNode) -> (NativeIterCallback | None) {
     fname = self._get_name(fn_expr);
-    if fname is not None and fname in self.nested_captures {
+    if fname is not None and self.scope.closure(fname) is not None {
         clos = self._emit_closure_value(fname, fn_expr);
         if clos is not None {
             return self._adapter_clos_parts(clos);
         }
         return None;
     }
-    named = self.func_symtab.get(fname) if fname is not None else None;
+    named = self.scope.function(fname) if fname is not None else None;
     if named is not None and isinstance(named, ir.Function) {
         return NativeIterCallback(function=named, function_type=named.function_type);
     }
@@ -1102,7 +1102,6 @@ impl NaIRGenPass._make_zip_iter(
 impl NaIRGenPass._resolve_method_owner(
     arch_name: str, method_name: str
 ) -> (str | None) {
-    import from jaclang.compiler.passes.layout_pass { get_layout_registry }
     owner = get_layout_registry(self.module, self.prog).resolve_method_owner(
         arch_name, method_name
     );
@@ -1124,7 +1123,6 @@ impl NaIRGenPass._resolve_method_owner(
 impl NaIRGenPass._resolve_method(
     arch_name: str, method_name: str
 ) -> (ir.Function | None) {
-    import from jaclang.compiler.passes.layout_pass { get_layout_registry }
     _reg = get_layout_registry(self.module, self.prog);
     cur: (str | None) = arch_name;
     _guard = 0;
@@ -1547,7 +1545,7 @@ impl NaIRGenPass._try_iter_protocol_for(nd: uni.InForStmt) -> bool {
             return False;
         }
     }
-    import from jaclang.compiler.passes.rc_facts_pass { loop_body_locals }
+
     _saved = loop_body_locals(nd.body if isinstance(nd.body, (list, tuple)) else None);
 
     _iter_prebody = set(self.local_vars.keys());

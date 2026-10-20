@@ -1,18 +1,3 @@
-import from jaclang.client.auth_contract { SignupResult }
-import from jaclang.client.endpoint_cache {
-    __jacClearCache,
-    __endpointKey,
-    __getEndpointEffects as cache___getEndpointEffects,
-    __getCacheState as cache___getCacheState,
-    __isFresh as cache___isFresh,
-    __cacheGet as cache___cacheGet,
-    __cacheSet as cache___cacheSet,
-    __evictOldest as cache___evictOldest,
-    __overlaps as cache___overlaps,
-    __invalidateEndpoint as cache___invalidateEndpoint,
-    __cachedEndpointCall as cache___cachedEndpointCall
-}
-
 import from 'react' { * as React }
 import from 'react-hook-form' { useForm }
 import from '@hookform/resolvers/zod' { zodResolver }
@@ -31,9 +16,7 @@ obj:pub BridgeError(Exception) {
         status: int = 0,
         message: str = "";
 
-    def postinit {
-        self.message = self.detail;
-    }
+    def postinit;
 }
 
 obj:pub BridgeUnavailable(BridgeError) {}
@@ -122,3 +105,7 @@ def:pub __jacReportError(
 ) -> None;
 
 def:pub __jacReactErrorHandler(error: any, info: any) -> None;
+
+impl BridgeError.postinit {
+    self.message = self.detail;
+}

@@ -1,4 +1,3 @@
-import from jaclang.compiler.c_interop { c_variadic_param }
 impl JcirGenPass._get_sem_decorator(nd: UniNode) -> (CgNode | None) {
     semstr: str = '';
     inner_semstr: dict[(str, str)] = {};
@@ -298,7 +297,7 @@ impl JcirGenPass.exit_ability with Ability exit {
             self.call_node(self.jaclib_obj('set_trigger'), [trigger_thunk], [])
         );
     }
-    if isinstance(here.body, ImplDef) {
+    if isinstance(here.body, ImplDef) and here.body.loc.mod_path != here.loc.mod_path {
         decorator_list.append(
             self.call_node(
                 self.jaclib_obj('impl_patch_filename'),
@@ -684,7 +683,6 @@ impl JcirGenPass.exit_arch_has with ArchHas exit {
 }
 
 impl JcirGenPass.exit_has_var with HasVar exit {
-    import from jaclang.compiler.field_semantics { is_field_marker }
     annotation = self.val(here.type_tag) if here.type_tag else None;
     if ((here.accessors is not None) and (len(here.accessors) > 0)) {
         result_stmts: list[CgItem] = [];

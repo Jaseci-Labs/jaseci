@@ -5,7 +5,6 @@ import hashlib;
 import importlib;
 import platform;
 import from pathlib { Path }
-import from jaclang.client.targets.desktop.app_layout { AppLayout }
 
 
 glob PLUGIN_BOOTSTRAP_MODULES: list[str] = [
@@ -27,45 +26,84 @@ obj HostContext {
         library_dir: str = "",
         _stop: any = None;
 
-    def setup_webview(wv_handle: int) {
-        self.host.setup(wv_handle, self.library_dir);
-    }
+    def setup_webview(wv_handle: int);
+    def shutdown;
+}
 
-    def shutdown {
-        stop = self._stop;
-        self._stop = None;
-        if stop is not None {
-            try {
-                stop();
-            } except Exception as e {
-                sys.stderr.write("host_boot: server stop failed: " + str(e) + "\n");
-            }
+
+def preferred_port(app_name: str) -> int;
+
+
+def host_executable -> str;
+
+
+def default_data_dir(system: str, identifier: str, app_name: str, app_dir: str) -> str;
+
+
+def _apply_extra_deps;
+
+
+def _bootstrap_plugin_host(plugin_configs: dict[str, any]) -> any;
+
+
+def _ensure_jac_meta_importer;
+
+
+def resolve_program(program: dict[str, any], app_dir: str) -> str;
+
+
+def _pinned_port -> int;
+
+
+def serve_program(
+    entry_file: str,
+    data_dir: str,
+    dist_dir: str,
+    app_name: str,
+    backend: str,
+    host: any,
+    store: any
+) -> tuple[any, int, any];
+
+
+def boot(config_json: str) -> HostContext;
+
+impl HostContext.setup_webview(wv_handle: int) {
+    self.host.setup(wv_handle, self.library_dir);
+}
+
+impl HostContext.shutdown {
+    stop = self._stop;
+    self._stop = None;
+    if stop is not None {
+        try {
+            stop();
+        } except Exception as e {
+            sys.stderr.write("host_boot: server stop failed: " + str(e) + "\n");
         }
-        runtime = self.runtime;
-        self.runtime = None;
-        if runtime is not None {
-            try {
-                runtime.close();
-            } except Exception as e {
-                sys.stderr.write("host_boot: runtime close failed: " + str(e) + "\n");
-            }
+    }
+    runtime = self.runtime;
+    self.runtime = None;
+    if runtime is not None {
+        try {
+            runtime.close();
+        } except Exception as e {
+            sys.stderr.write("host_boot: runtime close failed: " + str(e) + "\n");
         }
     }
 }
 
-
-def preferred_port(app_name: str) -> int {
+impl preferred_port(app_name: str) -> int {
     return 49152 + (int(hashlib.sha1(app_name.encode()).hexdigest(), 16) % 16000);
 }
 
-
-def host_executable -> str {
-    import from jaclang.jac0core.handoff { process_executable }
+impl host_executable -> str {
     return process_executable();
 }
 
-
-def default_data_dir(system: str, identifier: str, app_name: str, app_dir: str) -> str {
+impl default_data_dir(
+    system: str, identifier: str, app_name: str, app_dir: str
+) -> str {
     if system == "Darwin" {
         return os.path.join(
             os.path.expanduser("~/Library/Application Support"), identifier or app_name
@@ -74,8 +112,7 @@ def default_data_dir(system: str, identifier: str, app_name: str, app_dir: str) 
     return app_dir;
 }
 
-
-def _apply_extra_deps {
+impl _apply_extra_deps {
     extra = os.environ.get("JAC_DESKTOP_DEPS", "");
     if not extra {
         return;
@@ -87,8 +124,7 @@ def _apply_extra_deps {
     }
 }
 
-
-def _bootstrap_plugin_host(plugin_configs: dict[str, any]) -> any {
+impl _bootstrap_plugin_host(plugin_configs: dict[str, any]) -> any {
     import jaclang;
     pdir = os.path.join(
         os.path.dirname(str(jaclang.__file__)), "client", "targets", "desktop", "plugin"
@@ -102,16 +138,13 @@ def _bootstrap_plugin_host(plugin_configs: dict[str, any]) -> any {
     return sys.modules["registry"].bootstrap_plugins(plugin_configs, sys.modules);
 }
 
-
-def _ensure_jac_meta_importer {
-    import from jaclang.meta_importer { JacMetaImporter }
+impl _ensure_jac_meta_importer {
     if not any(isinstance(f, JacMetaImporter) for f in sys.meta_path) {
         sys.meta_path.insert(0, JacMetaImporter());
     }
 }
 
-
-def resolve_program(program: dict[str, any], app_dir: str) -> str {
+impl resolve_program(program: dict[str, any], app_dir: str) -> str {
     jab = str(program.get("jab") or "");
     if jab {
         import from jaclang.dist.jab { jab_app_meta, materialize_jab }
@@ -132,8 +165,7 @@ def resolve_program(program: dict[str, any], app_dir: str) -> str {
         else os.path.join(app_dir, entry_path);
 }
 
-
-def _pinned_port -> int {
+impl _pinned_port -> int {
     raw = os.environ.get("JAC_DESKTOP_BROKER_PORT", "");
     if not raw {
         return 0;
@@ -147,8 +179,7 @@ def _pinned_port -> int {
     }
 }
 
-
-def serve_program(
+impl serve_program(
     entry_file: str,
     data_dir: str,
     dist_dir: str,
@@ -157,10 +188,6 @@ def serve_program(
     host: any,
     store: any
 ) -> tuple[any, int, any] {
-    import from jaclang.client.targets.desktop.native.broker_extension {
-        DesktopBrokerExtension
-    }
-    import from jaclang.scale.server.inprocess { prepare_inprocess_runtime }
     _ensure_jac_meta_importer();
     broker = DesktopBrokerExtension(store=store, host=host);
     remote = backend != EMBEDDED;
@@ -210,9 +237,7 @@ def serve_program(
     );
 }
 
-
-def boot(config_json: str) -> HostContext {
-    import from jaclang.client.targets.desktop.native.oauth_broker { SessionStore }
+impl boot(config_json: str) -> HostContext {
     cfg = json.loads(config_json);
     app_name = str(cfg.get("app_name") or "app");
     mode = str(cfg.get("mode") or "webview");

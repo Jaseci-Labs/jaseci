@@ -1,23 +1,8 @@
 import inspect;
 import json;
-import from jaclang.runtime.semantic { Info, MethodInfo, FunctionInfo }
+
 import from types { MethodType }
 import from typing { get_type_hints }
-import from jaclang.byllm.schema { json_to_instance, type_display_name, type_to_schema }
-import from jaclang.byllm.exceptions { ConfigurationError, OutputConversionError }
-import from jaclang.byllm.config_loader { get_byllm_config }
-import from jaclang.byllm.types {
-    image_resp_kind,
-    LiteLLMMessage,
-    Media,
-    Message,
-    MessageRole,
-    MessageType,
-    Text,
-    Tool,
-    ToolCallResultMsg
-}
-import from jaclang.byllm.mcp { McpTool }
 
 obj MTIR {
     has caller: Callable,
@@ -42,6 +27,7 @@ obj MTRuntime {
         _stream_reset_count: int = 0,
         _tool_arg_deltas: list[dict[str, any]] = [],
         _usage_history: list[dict[str, any]] = [],
+        _compactions: list[dict[str, any]] = [],
         _call_kind: str = "react_iteration",
         _invocation_id: str = "",
         _parent_invocation_id: str | None = None;
