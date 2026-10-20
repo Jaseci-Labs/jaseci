@@ -440,8 +440,6 @@ impl NaIRGenPass._emit_rc_helpers -> None {
     b = ir.IRBuilder(done_bb);
     b.ret_void();
     if not self._rc_debug_codegen {
-        # (a few loads, compares and an add: inlined at every retain, as
-        # LLVM does on its own except in very large functions)
         retain_fn.attributes.add("alwaysinline");
     }
     self.rc_retain_fn = retain_fn;
@@ -702,14 +700,6 @@ impl NaIRGenPass._emit_rc_helpers -> None {
         _pub_b.call(release_fn, [_pub_fn.args[0], ir.Constant(ir.IntType(1), 1)]);
         _pub_b.ret_void();
     } else {
-        # The common release only decrements: a count above one, no thread
-        # started. That part is inlined at every release; the rest (the last
-        # reference's destructor and free, a double free's log, the atomic
-        # update once threads run) stays in __rc_release_impl, which checks
-        # everything again. Left whole, the helper inlines the destructor
-        # call and the free with it, too big for LLVM to inline into a large
-        # function such as an interpreter loop: every release there became a
-        # call.
         _fp_arg = _pub_fn.args[0];
         _fp_done = _pub_fn.append_basic_block("done");
         _fp_chk = _pub_fn.append_basic_block("gc_dis_check");
@@ -762,15 +752,15 @@ impl NaIRGenPass._emit_rc_helpers -> None {
             );
             _fp_last = _pub_b.or_(
                 _fp_last,
-                _pub_b.icmp_unsigned(
-                    "!=", _fp_mt, ir.Constant(i8, 0), name="rc.mt.on"
-                ),
+                _pub_b.icmp_unsigned("!=", _fp_mt, ir.Constant(i8, 0), name="rc.mt.on"),
                 name="needs.impl"
             );
         }
         _pub_b.cbranch(_fp_last, _fp_slow, _fp_dec);
         _pub_b = ir.IRBuilder(_fp_dec);
-        _pub_b.store(_pub_b.sub(_fp_old, ir.Constant(i64, 1), name="new.rc"), _fp_rc_ptr);
+        _pub_b.store(
+            _pub_b.sub(_fp_old, ir.Constant(i64, 1), name="new.rc"), _fp_rc_ptr
+        );
         _pub_b.branch(_fp_done);
         _pub_b = ir.IRBuilder(_fp_slow);
         _pub_b.call(release_fn, [_fp_arg, ir.Constant(ir.IntType(1), 1)]);
@@ -1870,8 +1860,7 @@ impl NaIRGenPass._emit_rc_release_typed(
         return;
     }
     _tn = self._struct_ptr_pointee_name(val);
-    # (`may_cycle` only matters to the cycle collector: without it the
-    # release goes through the inlined fast path like any other)
+
     if (
         _tn is not None
         and self._gc_mode() == "cycles"
