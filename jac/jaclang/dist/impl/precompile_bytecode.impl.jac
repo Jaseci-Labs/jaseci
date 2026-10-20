@@ -1215,11 +1215,13 @@ impl seal_native(
     }
 
     prog.native_units().progress = progress;
+    import from jaclang.compiler.target_spec { host_target_spec }
     options = CompileOptions(
         aot_mode=True,
         default_codespace="native",
         native_unit=True,
-        skip_native_engine=True
+        skip_native_engine=True,
+        native_target=host_target_spec().triple
     );
     roots = native_roots(pkg_name, units);
     artifact_rel = os.path.join("compiler", kernel_lib_name())
@@ -1368,13 +1370,7 @@ impl _drop_native_twin(twin: Path) -> bool {
 }
 
 impl _shared_suffix -> str {
-    if sys.platform == "darwin" {
-        return ".dylib";
-    }
-    if sys.platform.startswith("win") {
-        return ".dll";
-    }
-    return ".so";
+    return host_target_spec().shared_suffix;
 }
 
 impl write_manifest(

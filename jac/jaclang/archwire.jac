@@ -1307,6 +1307,10 @@ graph import {
     compiler.placement.placement_solver ++> dist.seal.bake_native_payloads {
         native_default_path_ok
     }
+    compiler.target_spec ++> dist.precompile_bytecode._shared_suffix {
+        host_target_spec
+    }
+    compiler.target_spec --> dist.precompile_bytecode.seal_native { host_target_spec }
     compiler.tools.code_intel ++> cli.commands.code { CodeIntelligence }
     compiler.tools.grammar_extract_pass ++> cli.commands.analysis.grammar {
         GrammarExtractPass
@@ -10061,6 +10065,9 @@ graph import compiler {
             report_serverless_kind_errors
         },
     ]
+    target_spec ++> backends.native.kernel_resolve { host_target_spec, target_spec }
+    type target_spec ++> backends.native.kernel_resolve
+        | backends.native.kernel_stage0 { TargetSpec }
     tools.cfg_dot ++> driver.pipeline.cfg_dot_passes { CoalesceBBPass }
     tools.code_intel ++> tests.test_code_intel { CodeIntelligence }
     tools.comment_attach_pass ++> [
