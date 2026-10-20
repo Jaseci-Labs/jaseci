@@ -1122,29 +1122,10 @@ impl IfaceRegistry._verify_iface(resolved: str, ent: IfaceEntry) -> None {
         }
         fresh_digest = codec.read_iface_hash(fresh_bytes) or "";
         if fresh_digest != ent.digest {
-            diffs: list[str] = [];
-            for name in sorted(want) {
-                s_sym = served.names_in_scope.get(name);
-                f_sym = fresh.names_in_scope.get(name);
-                try {
-                    s_t = str(
-                        s_sym.provider.resolve_type(s_sym)
-                            if s_sym.provider is not None
-                            else self.prog.get_type_evaluator().get_type_of_symbol(s_sym)
-                    );
-                    f_t = str(prog2.get_type_evaluator().get_type_of_symbol(f_sym));
-                } except Exception as e {
-                    s_t = f"<error {e}>";
-                    f_t = "";
-                }
-                if s_t != f_t {
-                    diffs.append(f"{name}: served={s_t} fresh={f_t}");
-                }
-            }
             raise RuntimeError(
                 f"analysis-cache verify failed for {resolved}: the served "
                 f"interface digest {ent.digest[:12]} differs from a fresh "
-                f"source compile's {fresh_digest[:12]} DEBUG-DIFFS={diffs[:30]}"
+                f"source compile's {fresh_digest[:12]}"
             );
         }
     } finally {
