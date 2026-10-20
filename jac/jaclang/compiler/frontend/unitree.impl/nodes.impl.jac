@@ -274,7 +274,17 @@ impl UniNode.in_impl_spec.getter -> bool {
     while cur is not None {
         if isinstance(cur, ImplDef) {
             spec = cur.spec;
-            return child is spec or (isinstance(spec, list) and child in spec);
+            if child is spec {
+                return True;
+            }
+            if isinstance(spec, list) {
+                for item in spec {
+                    if item is child {
+                        return True;
+                    }
+                }
+            }
+            return False;
         }
         if isinstance(cur, CodeBlockStmt) {
             return False;
@@ -310,10 +320,14 @@ impl UniNode.own_impls.getter -> list[ImplDef] {
 
 impl UniNode.linked_impls -> list[ImplDef] {
     found: list[ImplDef] = self.own_impls;
-    for kind in (Ability, Archetype, Enum) {
-        for decl in self.get_all_sub_nodes(kind) {
-            found.extend(decl.own_impls);
-        }
+    for ability in self.get_all_sub_nodes(Ability) {
+        found.extend(ability.own_impls);
+    }
+    for arch in self.get_all_sub_nodes(Archetype) {
+        found.extend(arch.own_impls);
+    }
+    for enum_decl in self.get_all_sub_nodes(Enum) {
+        found.extend(enum_decl.own_impls);
     }
     return found;
 }
@@ -830,10 +844,13 @@ impl UniScopeNode.kid_scope.getter -> list[UniScopeNode] {
 }
 
 impl UniScopeNode.owning_scope.getter -> UniScopeNode {
+    me: UniNode = self;
     if isinstance(self, ImplDef) {
-        decl = self.decl_link;
-        if isinstance(decl, UniScopeNode) {
-            return decl;
+        for decl in [me<-:ImplOf:<-] {
+            if isinstance(decl, UniScopeNode) {
+                return decl;
+            }
+            break;
         }
     }
     return self;
@@ -999,7 +1016,11 @@ impl UniScopeNode.get_enclosing_captures -> list[Symbol] {
 }
 
 impl UniScopeNode.folded.getter -> bool {
-    return isinstance(self, ImplDef) and self.decl_link is not None;
+    me: UniNode = self;
+    if not isinstance(self, ImplDef) {
+        return False;
+    }
+    return len([me<-:ImplOf:<-]) > 0;
 }
 
 impl UniScopeNode.fold_scope(impl_scope: UniScopeNode) -> None {
