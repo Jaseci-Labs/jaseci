@@ -17,7 +17,7 @@ def:pub HomeHero -> JsxElement {
     }
 
     return
-        <section className="pt-36 pb-20 sm:pt-44 sm:pb-28">
+        <section id="top" className="pt-36 pb-20 sm:pt-44 sm:pb-28">
             <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
                 <p
                     className="anim-fade-up font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground"
