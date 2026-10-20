@@ -96,6 +96,26 @@ def pick(m: dict[str, any]) -> dict[str, any] {
 }
 
 
+"""Each message as (role, content)."""
+def wire(msgs: list[any]) -> list[tuple[str, str]] {
+    return [(str(m.get("role")), str(m.get("content"))) for m in msgs];
+}
+
+
+"""Each record of one invocation has what its request sent past the previous call's
+reply; the first call records the whole request."""
+def assert_records_match(label: str, records: list[any], sent: list[any]) {
+    for (i, rec) in enumerate(records) {
+        start = 0 if i == 0 else len(sent[i - 1]) + 1;
+        assert wire(rec["new_messages"]) == wire(sent[i][start:]) , (
+            f"{label}: record {i} has {wire(rec['new_messages'])}, the request sent {wire(
+                sent[i][start:]
+            )}"
+        );
+    }
+}
+
+
 test "a reply's own fields are kept, sent back, streamed, counted and reported on every path" {
     def broken(record: dict[str, any]) {
         raise RuntimeError("a hook that raises must not break the call");
@@ -132,6 +152,7 @@ test "a reply's own fields are kept, sent back, streamed, counted and reported o
             history: list[any] = [];
             try {
                 first = turn(llm, history, path, "How is Paris?");
+                split = (len(records), len(llm.sent("messages")));
                 held = [dict(m) for m in history];
                 second = turn(llm, history, path, "Still sunny?");
             } finally {
@@ -153,6 +174,9 @@ test "a reply's own fields are kept, sent back, streamed, counted and reported o
             assert len(records) == (calls if tools else 0) , f"{label}: {len(
                 records
             )} records";
+            sent_all = llm.sent("messages");
+            assert_records_match(label, records[:split[0]], sent_all[:split[1]]);
+            assert_records_match(label, records[split[0]:], sent_all[split[1]:]);
             assert not tools
                 or [m["role"] for m in records[0]["new_messages"][:2]]
                     == ["system", "user"] , (
@@ -340,8 +364,41 @@ test "hook records show the request as sent: the parallel hint, and a typed-outp
     system = records[0]["new_messages"][0];
     assert "scheduling rules" in str(system["content"]) , f"system prompt recorded as {system}";
     retry = records[-1];
+    assert wire(retry["new_messages"]) == wire(retried.sent("messages")[-1]) , (
+        "after a typed-output retry the record carries the whole request as sent"
+    );
     assert retry["after_compaction"]
         and "output parser reported" in str(retry["new_messages"]) , (
         f"the retry record misses its feedback: {retry}"
+    );
+}
+
+
+test "a streamed reply that fails to parse is still counted and reported" {
+    records: list[dict[str, any]] = [];
+    think = {"reasoning_content": THINK};
+    # Only the unparsable reply carries reasoning, so a later call cannot stand in for it.
+    llm = MockLLM(
+        outputs=[say('{"city": ', fields=think)]
+            + [say('{"schema_object_wrapper": {"city": "Galle"}}') for _ in range(3)]
+    );
+    def on_event(event: any) {}
+    # A typed answer streams only through a stream_handler.
+    def place(q: str) -> Place by llm(
+        tools=[get_weather], stream=True, stream_handler=on_event
+    );
+    register_llm_call_hook(records.append);
+    try {
+        place("Where?");
+    } except Exception {} finally {
+        unregister_llm_call_hook(records.append);
+    }
+    unparsable = [
+        r
+        for r in records
+        if r["reply"].get("content") == '{"city": '
+    ];
+    assert unparsable and unparsable[0]["reply"].get("reasoning_content") == THINK , (
+        f"the unparsable reply is missing from the records: {records}"
     );
 }
