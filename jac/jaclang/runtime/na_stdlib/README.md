@@ -848,24 +848,26 @@ native layout records the emitted name separately from its source-level key.
   the child was already reaped (CPython's `ChildProcessError` path).
   Pinned sv<->na congruent by `test_native_signal_subprocess.jac`.
 
-- **`hashlib.jac`** + **`hmac.jac`** (Mechanism F) + **`_hashlib_native.jac`**
-  (FFI floor over the bundled `libcrypto`) -- CPython's hash-object model over
-  OpenSSL EVP: `Hash` keeps a live `EVP_MD_CTX` (update feeds
-  `EVP_DigestUpdate` directly, `digest()` clones the ctx and finalizes the
-  clone, `copy()` clones it, a `drop` hook frees it -- the same
-  clone-finalize-free pattern CPython's `_hashopenssl` uses), so repeated
-  `digest()` is O(ctx) rather than re-hashing every retained chunk. Surface:
-  the named constructors (`md5`/`sha1`/`sha224`/`sha256`/`sha384`/`sha512`/
-  `sha3_224`/`sha3_256`/`sha3_384`/`sha3_512`/`blake2b`/`blake2s`), `new(name,
-  data)`, `update`/`digest`/`hexdigest`/`copy`, and the `digest_size`/
-  `block_size`/`name` attributes. `hmac.jac` mirrors it over `HMAC_CTX`
-  (`new(key, msg=None, digestmod)` -- `digestmod` is required and its absence
-  raises `TypeError` like CPython, as does a non-bytes `msg`; `key`/`msg`
-  also accept `bytearray`; `digest(key, msg, digest)`;
-  `compare_digest(a, b)`). Pinned sv<->na congruent by
-  `test_prim_equivalence.jac`. SCOPE: `shake_128`/`shake_256` (XOF digests need
-  `EVP_DigestFinalXOF` and a caller-supplied length) and `pbkdf2_hmac` are not
-  provided; the `usedforsecurity` kwarg and callable `digestmod` are not
+- **`hashlib.jac`** + **`hmac.jac`** + **`_digest.jac`** (pure Jac, no C
+  library) -- CPython's hash-object model over Jac digest cores: `Hash` keeps a
+  live `DigestCore` (update buffers bytes into blocks and compresses each full
+  block, `digest()` pads and finalizes a copy, `copy()` clones the core), so
+  repeated `digest()` is O(block) rather than re-hashing every retained chunk.
+  MD5, SHA-1, SHA-224/256, SHA-384/512, SHA3-224/256/384/512, BLAKE2b and
+  BLAKE2s are implemented in Jac with fixed-width wrapping arithmetic, so a
+  native program, and the compiler kernel, links no `libcrypto` for hashing.
+  Surface: the named constructors (`md5`/`sha1`/`sha224`/`sha256`/`sha384`/
+  `sha512`/`sha3_224`/`sha3_256`/`sha3_384`/`sha3_512`/`blake2b`/`blake2s`),
+  `new(name, data)`, `update`/`digest`/`hexdigest`/`copy`, and the
+  `digest_size`/`block_size`/`name` attributes. `hmac.jac` builds RFC 2104
+  HMAC over the same cores (`new(key, msg=None, digestmod)` -- `digestmod` is
+  required and its absence raises `TypeError` like CPython, as does a
+  non-bytes `msg`; `key`/`msg` also accept `bytearray`; `digest(key, msg,
+  digest)`; `compare_digest(a, b)`). Pinned against CPython at every block
+  boundary by `test_native_hashlib.jac` and sv<->na congruent by
+  `test_prim_equivalence.jac`. SCOPE: `shake_128`/`shake_256` (XOF digests
+  take a caller-supplied length), keyed or sized BLAKE2 and `pbkdf2_hmac` are
+  not provided; the `usedforsecurity` kwarg and callable `digestmod` are not
   accepted; algorithm lookup is the exact lowercase name (no case or alias
   normalization); `update`/`new` `data`/`compare_digest` take `bytes` only
   (no buffer protocol); `algorithms_*`
@@ -993,7 +995,7 @@ Mechanism B exists to avoid writing twice. Reaching for one through the flat
 - **F**: thin FFI wrappers over a system C library; native-host only. Examples:
   `_ssl_native.jac` -- the floor the verifying TLS client `ssl` is built on,
   over OpenSSL `libssl`/`libcrypto` (issue #6978 Phase 1); `_socket_native.jac`
-  over libc BSD sockets; `_hashlib_native.jac` over the bundled `libcrypto`.
+  over libc BSD sockets.
   An F module declares its C entry points with `import from <lib> { def ...; }`.
   `urllib/request.jac` (`urlopen`) is a pure-Jac surface over the `socket` +
   `ssl` floors -- it links no foreign C beyond libc/libssl/libcrypto (no

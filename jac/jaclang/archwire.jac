@@ -15319,6 +15319,8 @@ graph import runtime.na_stdlib {
         dt_tm_gmtoff,
         dt_tm_zone
     }
+    _digest ++> hashlib | hmac { new_core }
+    type _digest ++> hashlib | hmac { DigestCore }
     _directory_native ++> [
         glob | shutil | uuid | zoneinfo { try_directory_names },
         pathlib { directory_names },
@@ -15339,30 +15341,6 @@ graph import runtime.na_stdlib {
         io { close_stream, open_stream, read_stream, read_stream_all, seek_stream },
     ]
     _glob_native ++> glob { glob_lexists }
-    _hashlib_native ++> [
-        hashlib {
-            block_size_for,
-            ctx_require,
-            digest_size_for,
-            evp_ctx_clone,
-            evp_ctx_digest,
-            evp_ctx_free,
-            evp_ctx_new,
-            evp_ctx_update,
-            evp_md_for
-        },
-        hmac {
-            block_size_for,
-            ctx_require,
-            digest_size_for,
-            evp_md_for,
-            hmac_ctx_clone,
-            hmac_ctx_digest,
-            hmac_ctx_free,
-            hmac_ctx_new,
-            hmac_ctx_update
-        },
-    ]
     _hex ++> hashlib | hmac | secrets { to_hex }
     _locale_tables ++> locale { _load_alias, _load_encalias }
     _logging_native ++> logging {
