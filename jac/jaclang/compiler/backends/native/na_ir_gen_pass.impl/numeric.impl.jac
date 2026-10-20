@@ -107,6 +107,28 @@ impl NaIRGenPass._target_fuses_fp -> bool {
     return triple.startswith("aarch64") or triple.startswith("arm64");
 }
 
+impl NaIRGenPass._target_is_darwin -> bool {
+    triple = str(self.llvm_module.triple or "").lower();
+    return "darwin" in triple or "apple" in triple or "macos" in triple;
+}
+
+impl NaIRGenPass._target_cpython_platform -> str {
+    triple = str(self.llvm_module.triple or "").lower();
+    if self._target_is_darwin() {
+        return "darwin";
+    }
+    if "windows" in triple or "msvc" in triple or "mingw" in triple {
+        return "win32";
+    }
+    if "emscripten" in triple {
+        return "emscripten";
+    }
+    if "wasi" in triple or "wasm" in triple {
+        return "wasi";
+    }
+    return "linux";
+}
+
 impl NaIRGenPass._emit_fmadd(a: ir.Value, b: ir.Value, c: ir.Value) -> ir.Value {
     if self._target_fuses_fp() {
         f64 = ir.DoubleType();

@@ -290,7 +290,7 @@ impl NaIRGenPass._emit_print_call(
     i32 = ir.IntType(32);
     i8p = ir.IntType(8).as_pointer();
     libc_name = "stderr";
-    if active_host().native_fact(FACT_OS, "") == "Darwin" {
+    if self._target_is_darwin() {
         libc_name = "__stderrp";
     }
     if libc_name not in self.llvm_module.globals {
@@ -1559,7 +1559,7 @@ impl NaIRGenPass._emit_sys_stream(stream: str) -> (ir.Value | None) {
     self._emit_file_helpers();
 
     libc_name = stream;
-    if active_host().native_fact(FACT_OS, "") == "Darwin" {
+    if self._target_is_darwin() {
         libc_name = "__stdoutp" if stream == "stdout" else "__stderrp";
     }
 

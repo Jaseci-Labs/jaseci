@@ -1954,6 +1954,8 @@ walker NaIRGenPass(CompilerPass) {
     ) -> bool;
 
     def _target_fuses_fp -> bool;
+    def _target_is_darwin -> bool;
+    def _target_cpython_platform -> str;
     def _emit_fmadd(a: ir.Value, b: ir.Value, c: ir.Value) -> ir.Value;
     def _fp_fabs(v: ir.Value) -> ir.Value;
     def _fp_copysign(mag: ir.Value, sgn: ir.Value) -> ir.Value;
