@@ -452,8 +452,8 @@ impl ProjectHost.native_parse(
     load_kernel: bool = True
 ) -> (tuple[Module, bool] | None) {
     natives = program._natives if program is not None else None;
-    if natives is not None and natives.progress is not None {
-        natives.note_step("parse", file_path);
+    if natives is not None {
+        natives.begin_parse(file_path);
     }
     kernel = _jc.ensure_loaded()
         if load_kernel
