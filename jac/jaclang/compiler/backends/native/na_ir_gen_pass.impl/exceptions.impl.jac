@@ -1622,8 +1622,6 @@ impl NaIRGenPass._unwind_shadow_slots(
     b.position_at_start(entry_blk);
     shadows: dict[int, ir.Value] = {};
     for (name, slot) in slots {
-        # (only an entry alloca can be shadowed: any other slot, such as a
-        # global, is handed over itself)
         if id(slot) in plain and isinstance(slot, ir.AllocaInstr) {
             shadows[id(slot)] = b.alloca(slot.allocated_type, name=f"{name}.unwind");
         }
