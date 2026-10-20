@@ -560,8 +560,23 @@ impl ProjectHost.host_platform -> HostPlatform {
 }
 
 impl ProjectHost.ct_environment -> CtEnvironment {
+    """The comptime `target`: the native target this compile builds for, else
+    the host. Analysis identities carry the target, so each target's comptime
+    answers are cached apart.""";
     import sys;
     import platform;
+    import from jaclang.compiler.frontend.codeinfo { effective_native_target }
+    import from jaclang.compiler.target_spec { UnknownTarget, target_spec }
+    triple = effective_native_target();
+    if triple {
+        try {
+            spec = target_spec(triple);
+            machine = {"macos-aarch64": "arm64", "windows-x86_64": "AMD64"}.get(
+                spec.osarch, spec.arch
+            );
+            return CtEnvironment(os=spec.os_family, arch=machine);
+        } except UnknownTarget {}
+    }
     host_os = "linux";
     if sys.platform.startswith("win") {
         host_os = "windows";

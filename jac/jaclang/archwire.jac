@@ -1021,6 +1021,7 @@ graph import {
     compiler.frontend.codeinfo --> [
         cli.check_report.print_native_coverage { native_display_text },
         project.compiler_host.ProjectHost.client_stub_globals { jaclang_pkg_root },
+        project.compiler_host.ProjectHost.ct_environment { effective_native_target },
     ]
     type compiler.frontend.codeinfo ++> client.client_bundle
         | client.compiler
@@ -1318,7 +1319,10 @@ graph import {
         dist.precompile_bytecode._shared_suffix { host_target_spec },
         dist.precompile_bytecode.adopt_kernel { host_target_spec },
     ]
-    compiler.target_spec --> dist.precompile_bytecode.seal_native { host_target_spec }
+    compiler.target_spec --> [
+        dist.precompile_bytecode.seal_native { host_target_spec },
+        project.compiler_host.ProjectHost.ct_environment { UnknownTarget, target_spec },
+    ]
     compiler.tools.code_intel ++> cli.commands.code { CodeIntelligence }
     compiler.tools.grammar_extract_pass ++> cli.commands.analysis.grammar {
         GrammarExtractPass
