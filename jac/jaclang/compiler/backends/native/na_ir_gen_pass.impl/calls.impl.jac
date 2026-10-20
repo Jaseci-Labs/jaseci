@@ -2272,17 +2272,7 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
             buf = self._stack_entry_alloca(buf_type, "input.buf");
             buf_ptr = self.builder.bitcast(buf, i8p, name="input.ptr");
 
-            stdin_name = "__stdinp" if self._target_is_darwin() else "stdin";
-            if stdin_name not in self.llvm_module.globals {
-                stdin_type = i8p;
-                stdin_global = ir.GlobalVariable(
-                    self.llvm_module, stdin_type, name=stdin_name
-                );
-                stdin_global.linkage = "external";
-            }
-            stdin_var = self.llvm_module.globals[stdin_name];
-            assert isinstance(stdin_var, ir.GlobalVariable);
-            stdin_val = self.builder.load(stdin_var, name="stdin.val");
+            stdin_val = self._emit_stdio_handle(0, "stdin.val");
             fgets = self._get_or_declare_extern(
                 "fgets", i8p, [i8p, ir.IntType(32), i8p]
             );

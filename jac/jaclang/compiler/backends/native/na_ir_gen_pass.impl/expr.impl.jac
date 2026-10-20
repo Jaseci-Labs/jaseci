@@ -2799,7 +2799,7 @@ impl NaIRGenPass._codegen_plain_trailer(nd: uni.AtomTrailer) -> (ir.Value | None
                     return self._emit_sys_argv();
                 }
                 if right_name == "platform" {
-                    return self._make_global_string(self._target_cpython_platform());
+                    return self._emit_platform_name();
                 }
                 if right_name == "maxsize" {
                     return ir.Constant(ir.IntType(64), 0x7FFFFFFFFFFFFFFF);

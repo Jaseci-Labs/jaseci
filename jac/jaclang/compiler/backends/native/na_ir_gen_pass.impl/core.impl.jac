@@ -2305,7 +2305,7 @@ impl NaIRGenPass._process_clib_imports(module: uni.Module) -> None {
 
         for decl in stmt.clib_decls {
             if isinstance(decl, uni.Ability) {
-                fn_name = decl.name_ref.sym_name if decl.name_ref else None;
+                fn_name: str = decl.name_ref.sym_name if decl.name_ref else "";
                 if fn_name and module is not self.module {
                     self._foreign_clib_abilities.setdefault(fn_name, decl);
                 }

@@ -10073,11 +10073,10 @@ graph import compiler {
             report_serverless_kind_errors
         },
     ]
-    target_spec ++> backends.native.kernel_resolve {
-        host_target_spec,
-        target_spec,
-        triple_osarch
-    }
+    target_spec ++> [
+        backends.native.kernel_resolve { host_target_spec, target_spec, triple_osarch },
+        backends.native.link_glue.link_glue_ir { triple_osarch },
+    ]
     type target_spec ++> backends.native.kernel_resolve
         | backends.native.kernel_stage0 { TargetSpec }
     tools.cfg_dot ++> driver.pipeline.cfg_dot_passes { CoalesceBBPass }
@@ -11019,6 +11018,13 @@ graph import compiler.backends.native {
         },
         wasm_build { NativeLinkError, WasmLinkJob, link_wasm_module },
     ]
+    posix_floor --> link_glue.link_glue_ir { posix_floor_ir }
+    posix_floor_ir ++> posix_floor {
+        POSIX_FLOOR_IR_LINUX_AARCH64,
+        POSIX_FLOOR_IR_LINUX_X86_64,
+        POSIX_FLOOR_IR_MACOS_AARCH64,
+        POSIX_FLOOR_IR_MACOS_X86_64
+    }
     primitives_native ++> na_ir_gen_pass {
         NativeDictEmitter,
         NativeEmitCtx,
@@ -15346,8 +15352,10 @@ graph import runtime.na_stdlib {
         _directory_native { clear_errno, last_errno, raise_os_error },
         _socket_native | shutil | socket { errno_message },
         _time_common { last_errno, raise_errno },
+        _time_native { raise_errno },
     ]
     _errno_platform ++> _errno_native { errno_address }
+    _fd_native ++> _replace_native { AT_FDCWD }
     _file_native ++> [
         gettext | mimetypes | pathlib | uuid | zoneinfo { read_file_bytes },
         io { close_stream, open_stream, read_stream, read_stream_all, seek_stream },
@@ -15426,7 +15434,6 @@ graph import runtime.na_stdlib {
         _default_types_ext,
         _default_types_val
     }
-    _passwd_layout ++> _user_home { PASSWD_DIR, PASSWD_SIZE }
     _replace_native ++> _os_native { replace_file }
     _socket_abi ++> [
         _socket_native {
@@ -15508,6 +15515,18 @@ graph import runtime.na_stdlib {
     _time_common ++> [
         _datetime_native { time_clock_ns },
         time { time_clock_ns, time_clock_seconds, time_clock_set_ns },
+    ]
+    _time_native ++> [
+        _datetime_native { CLK_REALTIME },
+        time {
+            CLK_MONOTONIC,
+            CLK_MONOTONIC_RAW,
+            CLK_PROCESS_CPUTIME,
+            CLK_PY_MONOTONIC,
+            CLK_REALTIME,
+            CLK_THREAD_CPUTIME,
+            time_sleep_ns
+        },
     ]
     _typename ++> hmac | secrets { typename }
     _user_home ++> os.path { user_home }
