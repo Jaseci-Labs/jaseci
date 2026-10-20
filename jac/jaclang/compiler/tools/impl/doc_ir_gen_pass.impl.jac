@@ -418,7 +418,10 @@ impl DocIRGenPass.exit_impl_def with uni.ImplDef exit {
             parts.append(self.hard_line());
         } elif self.is_within(i, here.target) {
             parts.append(i.gen.doc_ir);
-            if here.spec is None and here.target and i is here.target[-1] {
+            if here.spec is None
+                and not here.type_params
+                and here.target
+                and i is here.target[-1] {
                 parts.append(self.space());
             }
         } elif (
@@ -428,6 +431,18 @@ impl DocIRGenPass.exit_impl_def with uni.ImplDef exit {
             and len(here.target) > 1
         ) {
             parts.append(i.gen.doc_ir);
+        } elif isinstance(i, uni.TypeParam) and i in here.type_params {
+            parts.append(i.gen.doc_ir);
+        } elif (
+            isinstance(i, uni.Token)
+            and i.name in (Tok.LSQUARE, Tok.RSQUARE)
+            and here.type_params
+            and not in_body
+        ) {
+            parts.append(i.gen.doc_ir);
+            if i.name == Tok.RSQUARE and here.spec is None {
+                parts.append(self.space());
+            }
         } elif (
             in_body
             or (isinstance(here.body, Sequence) and here.body and (i == here.body[0]))

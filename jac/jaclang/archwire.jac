@@ -4401,8 +4401,17 @@ graph import byllm {
         visit_routing { ROUTE_SELECT_ATTR },
     ]
     telemetry ++> [
-        lib { register_agent_callback },
-        llm { _aggregate_usage, _current_invocation_id, _emit_agent_telemetry },
+        lib {
+            register_agent_callback,
+            register_llm_call_hook,
+            unregister_llm_call_hook
+        },
+        llm {
+            _aggregate_usage,
+            _current_invocation_id,
+            _emit_agent_telemetry,
+            _notify_llm_call
+        },
     ]
     tool_protocol ++> llm {
         coerce_message_dict,
@@ -6565,7 +6574,6 @@ graph import compiler {
             | passes.graph_lowering_pass
             | passes.mtir_gen_pass
             | passes.ownership_check_pass.OwnershipCheckPass._emit_flow_for_diagnostics
-            | passes.sym_tab_build_pass.SymTabBuildPass.exit_binary_expr
             | passes.type_checker_pass.TypeCheckPass.exit_impl_def
             | tools.cfg_dot.CoalesceBBPass._node_label
             | tools.comment_attach_pass
@@ -6847,6 +6855,7 @@ graph import compiler {
             E2016,
             E2017,
             E2026,
+            E2030,
             E2087,
             W2080
         },
@@ -7286,8 +7295,7 @@ graph import compiler {
             binding_sites,
             binds_target,
             confined_to,
-            enclosing_loop,
-            is_within
+            enclosing_loop
         },
         backends.native.na_ir_gen_pass {
             LoopLinks,
@@ -7312,6 +7320,7 @@ graph import compiler {
             | passes.osp_analysis
             | passes.package_boundary_pass
             | passes.placement_pass
+            | passes.rc_facts_pass
             | passes.type_checker_pass.TypeCheckPass._is_generator
             | tests.test_module_exports
             | tools.jac_auto_lint_pass
@@ -7801,8 +7810,7 @@ graph import compiler {
         },
     ]
     frontend.roles ++> [
-        backends.es.esast_gen_pass
-            | backends.native.na_ir_gen_pass
+        backends.native.na_ir_gen_pass
             | backends.py.jcir_gen_pass
             | driver.program
             | driver.progstate
@@ -7832,6 +7840,7 @@ graph import compiler {
             SpecRole
         },
         passes.annex_weave | passes.static_analysis_pass { BodyRole },
+        passes.context { ImplOf },
         passes.pyast_load_pass {
             Kid,
             NameRefRole,
@@ -7887,6 +7896,7 @@ graph import compiler {
         backends.py.jcir_gen_pass {
             Ability,
             ArchHas,
+            ArchSpec,
             Archetype,
             AssertStmt,
             AssignCompr,
@@ -8361,7 +8371,7 @@ graph import compiler {
             TypeParam,
             UniNode
         },
-        passes.context { Module, Source, TreeWalker, UniNode },
+        passes.context { ImplDef, Module, Source, TreeWalker, UniNode },
         passes.dataflow { UniCFGNode },
         passes.decl_impl_match_pass {
             Ability,
@@ -8370,6 +8380,7 @@ graph import compiler {
             AstImplNeedingNode,
             AstSymbolNode,
             AtomTrailer,
+            BinaryExpr,
             FuncSignature,
             HasVar,
             ImplDef,
@@ -8383,8 +8394,10 @@ graph import compiler {
             UniNode,
             UniScopeNode,
             bind_assignment_targets,
-            find_python_scope_node_of,
-            is_identifier_slot
+            bind_walrus_target,
+            binding_sites_in,
+            is_identifier_slot,
+            typed_rebind_names
         },
         passes.endpoint_effect_pass {
             Ability,
@@ -8521,7 +8534,6 @@ graph import compiler {
             GlobalVars,
             HasVar,
             IfElseExpr,
-            ImplDef,
             Import,
             InForStmt,
             IndexSlice,
@@ -8560,7 +8572,6 @@ graph import compiler {
             Archetype,
             AtomTrailer,
             ContextAwareNode,
-            ImplDef,
             Import,
             Module,
             ModuleCode,
@@ -8679,11 +8690,9 @@ graph import compiler {
             FuncSignature,
             IfElseExpr,
             IfStmt,
-            ImplDef,
             InForStmt,
             IterForStmt,
             KWPair,
-            LambdaExpr,
             ListCompr,
             ListVal,
             Module,
@@ -8696,13 +8705,12 @@ graph import compiler {
             SetVal,
             String,
             Symbol,
-            Test,
             Token,
             UnaryExpr,
             UniCFGNode,
             UniNode,
             WhileStmt,
-            same_lexical_scope
+            is_frame
         },
         passes.region_infer_pass {
             Ability,
@@ -8855,15 +8863,15 @@ graph import compiler {
             TypeAlias,
             TypeParam,
             TypedCtxBlock,
-            UniNode,
             UniScopeNode,
             WhileStmt,
             WithStmt,
             bind_assignment_targets,
+            bind_walrus_target,
             def_insert_unpacking,
             find_python_scope_node_of,
-            rebind_or_def_insert,
-            record_cross_scope_rebind
+            is_walrus,
+            typed_rebind_names
         },
         passes.type_checker_pass {
             Ability,
@@ -9160,6 +9168,7 @@ graph import compiler {
         },
         types.type_evaluator {
             Ability,
+            ArchSpec,
             Archetype,
             AssertStmt,
             AssignCompr,
@@ -12213,22 +12222,18 @@ graph import compiler.frontend {
             DictCompr,
             Enum,
             ForeverStmt,
-            ImplDef,
             InForStmt,
             InnerCompr,
             IterForStmt,
             LambdaExpr,
             ListCompr,
-            Module,
-            ModuleCode,
             Name,
             Symbol,
-            Test,
             UniNode,
             UniScopeNode,
             WhileStmt,
-            is_identifier_slot,
-            same_lexical_scope
+            is_frame,
+            is_identifier_slot
         },
         module_facts {
             Ability,

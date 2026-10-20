@@ -3614,7 +3614,7 @@ impl NaIRGenPass._flow_future_licensed(nd: uni.ConcurrentExpr) -> (uni.Name | No
     if h.sym is None {
         return None;
     }
-    _fn = asgn.find_parent_of_type(uni.Ability);
+    _fn = asgn.enclosing_decl(uni.Ability);
     _scope = _fn if _fn is not None else asgn.find_parent_of_type(uni.ModuleCode);
     if _scope is None {
         return None;
@@ -3625,7 +3625,7 @@ impl NaIRGenPass._flow_future_licensed(nd: uni.ConcurrentExpr) -> (uni.Name | No
         or asgn.find_parent_of_type(uni.IterForStmt)
     );
     _waits = 0;
-    for use in _scope.get_all_sub_nodes(uni.Name) {
+    for use in _scope.element_sub_nodes(uni.Name) {
         if use.sym is not h.sym or use is h {
             continue;
         }
