@@ -342,44 +342,7 @@ def _to_js_expr(value: any) -> str;
 
 def _split_build_overrides(
     build_config: dict[str, any]
-) -> tuple[dict[str, any], dict[str, any], dict[str, any]] {
-    build = dict(build_config);
-    rollup = build.pop('rollupOptions', {});
-    if not isinstance(rollup, dict) {
-        raise ClientBundleError(
-            '[client.vite.build] rollupOptions must be a table'
-        ) from None;
-    }
-    rollup = dict(rollup);
-    output = rollup.pop('output', {});
-    if not isinstance(output, dict) {
-        raise ClientBundleError(
-            '[client.vite.build.rollupOptions] output must be a single table'
-        ) from None;
-    }
-    output = dict(output);
-    ignored: list[str] = [];
-    for key in ('outDir', 'emptyOutDir') {
-        if build.pop(key, None) is not None {
-            ignored.append(key);
-        }
-    }
-    if rollup.pop('input', None) is not None {
-        ignored.append('rollupOptions.input');
-    }
-    for key in ('entryFileNames', 'assetFileNames', 'sourcemapPathTransform') {
-        if output.pop(key, None) is not None {
-            ignored.append(f'rollupOptions.output.{key}');
-        }
-    }
-    if ignored {
-        names = ', '.join(ignored);
-        console.warning(
-            f"[client.vite.build] ignoring {names}: Jac sets these to find and serve the client bundle"
-        );
-    }
-    return (build, rollup, output);
-}
+) -> tuple[dict[str, any], dict[str, any], dict[str, any]];
 
 impl ViteBundler._format_define_entries(
     self: ViteBundler, api_base_url: str, custom_defines: dict[str, any]
@@ -1633,6 +1596,47 @@ impl _to_js_expr(value: any) -> str {
     } except (TypeError, ValueError) {
         return json.dumps(json.dumps(str(value)));
     }
+}
+
+impl _split_build_overrides(
+    build_config: dict[str, any]
+) -> tuple[dict[str, any], dict[str, any], dict[str, any]] {
+    build = dict(build_config);
+    rollup = build.pop('rollupOptions', {});
+    if not isinstance(rollup, dict) {
+        raise ClientBundleError(
+            '[client.vite.build] rollupOptions must be a table'
+        ) from None;
+    }
+    rollup = dict(rollup);
+    output = rollup.pop('output', {});
+    if not isinstance(output, dict) {
+        raise ClientBundleError(
+            '[client.vite.build.rollupOptions] output must be a single table'
+        ) from None;
+    }
+    output = dict(output);
+    ignored: list[str] = [];
+    for key in ('outDir', 'emptyOutDir') {
+        if build.pop(key, None) is not None {
+            ignored.append(key);
+        }
+    }
+    if rollup.pop('input', None) is not None {
+        ignored.append('rollupOptions.input');
+    }
+    for key in ('entryFileNames', 'assetFileNames', 'sourcemapPathTransform') {
+        if output.pop(key, None) is not None {
+            ignored.append(f'rollupOptions.output.{key}');
+        }
+    }
+    if ignored {
+        names = ', '.join(ignored);
+        console.warning(
+            f"[client.vite.build] ignoring {names}: Jac sets these to find and serve the client bundle"
+        );
+    }
+    return (build, rollup, output);
 }
 
 impl _proxy_entry(key: str, api_port: int) -> str {
