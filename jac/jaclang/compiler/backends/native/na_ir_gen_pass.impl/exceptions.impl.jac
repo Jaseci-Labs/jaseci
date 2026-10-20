@@ -1326,11 +1326,7 @@ impl NaIRGenPass._get_exception_context_fn -> ir.Function {
     );
     func.linkage = "weak";
     self._exc_context_fn = func;
-    # Until the program starts a thread (`__jac_rc_threaded`, the refcount
-    # helpers' flag, set before every pthread_create the compiler emits),
-    # one context serves the one thread: a process-wide weak global holds it
-    # and the lookup is a load and a compare. Everything else is out of line
-    # in `__jac_exception_context_slow`, so the fast path saves no registers.
+
     main_gv = ir.GlobalVariable(self.llvm_module, i8p, name="__jac_exception_main_ctx");
     main_gv.linkage = "weak";
     main_gv.initializer = ir.Constant(i8p, None);
@@ -1369,11 +1365,7 @@ impl NaIRGenPass._get_exception_context_fn -> ir.Function {
     b.ret(b.bitcast(main_ctx, context_ptr));
     b = ir.IRBuilder(miss_bb);
     b.ret(b.call(slow_fn, [], name="exc.slow"));
-    # The thread-local slot, created on first use. Only the single thread
-    # touches the global: while the flag is 0 the slow path publishes the
-    # context it finds in or adds to the slot (a library's initializers run
-    # with the flag set, so `jac_main` finds its thread's context there), and
-    # once a thread exists it leaves the global alone.
+
     slow_entry = slow_fn.append_basic_block("entry");
     create = slow_fn.append_basic_block("create");
     ready = slow_fn.append_basic_block("ready");
@@ -1398,8 +1390,7 @@ impl NaIRGenPass._get_exception_context_fn -> ir.Function {
         b.ret(context);
         return func;
     }
-    # Single-threaded here means the global was empty (the fast path checked):
-    # the context is this thread's, the only one.
+
     publish = slow_fn.append_basic_block("publish");
     done = slow_fn.append_basic_block("done");
     mt_now = b.load_atomic(self.rc_threaded_gv, "monotonic", 1, name="exc.mt.now");
