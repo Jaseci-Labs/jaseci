@@ -156,13 +156,12 @@ jobs:
           # exists to build it goes red when it fails. Delete the flag when
           # #8805 is fixed and the leg should carry a release again; that
           # restores it as a blocking leg and a required asset in one edit.
-          # linux-aarch64 runs on the 16-vCPU ARM runner for its memory: the
-          # kernel seal is one process that peaks near 20 GB, the 8-vCPU ARM
-          # runner has 24 GB (the 8-vCPU x64 one has 32), and the seal there
-          # died near its end with no Python error.
+          # No leg builds its own compiler kernel: the `kernel` job builds every
+          # leg's kernel on x86 Linux and each leg's seal adopts it (#10219), so
+          # an ARM leg no longer needs the 16-vCPU runner's memory.
           LEGS='[
             {"os": "blacksmith-8vcpu-ubuntu-2404", "platform": "linux-x86_64", "zig_target": "x86_64-linux-gnu.2.17"},
-            {"os": "blacksmith-16vcpu-ubuntu-2404-arm", "platform": "linux-aarch64", "zig_target": "aarch64-linux-gnu.2.17"},
+            {"os": "blacksmith-8vcpu-ubuntu-2404-arm", "platform": "linux-aarch64", "zig_target": "aarch64-linux-gnu.2.17"},
             {"os": "macos-14",         "platform": "macos-aarch64"},
             {"os": "macos-15-intel",   "platform": "macos-x86_64",  "zig_target": "x86_64-macos.12.0", "manual": true}
           ]'
@@ -212,9 +211,152 @@ jobs:
           echo "Building: $(jq -r 'map(.platform) | join(" ")' <<<"$LEGS")"
           echo "Required to publish: ${REQUIRED:-(none)}"
 
+  # The compiler kernel for every leg, built on x86 Linux (#10219). A kernel
+  # is target-specific but the build is not host-specific: the kernel build
+  # takes the target's canonical triple, the in-process linkers write ELF and
+  # Mach-O for any target, and the kernel links no C archive of its target.
+  # Building here keeps the ~2 h of single-threaded lowering and code
+  # generation off the ARM runners, which are 2.5-3x slower per thread. Each
+  # leg's seal adopts its kernel and refuses one whose unit sources, codegen,
+  # target or Python do not match the tree it seals.
+  kernel:
+    name: kernel ${{ matrix.platform }}
+    needs: plan
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.include) }}
+    runs-on: blacksmith-8vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: ${{ inputs.channel == 'dev' && github.sha || inputs.commit || inputs.tag || github.event.release.tag_name }}
+
+      - name: Fingerprint immutable build inputs
+        id: inputs
+        shell: bash
+        run: bash scripts/ci_cache_keys.sh >> "$GITHUB_OUTPUT"
+
+      # The kernel is a pure function of the compiler tree, the native shim's
+      # inputs and the target, so a rerun of the same commit (or a dev-channel
+      # build of an unchanged tree) reuses it. The leg's seal re-verifies the
+      # kernel against the tree, so a restored kernel can only be refused,
+      # never shipped stale.
+      - name: Restore a kernel built from this tree
+        id: kernel-cache
+        uses: actions/cache@v4
+        with:
+          path: .kernel
+          key: kernel-v1-${{ matrix.platform }}-${{ steps.inputs.outputs.kernel }}
+
+      - name: Fetch the prebuilt host shim from the deps release
+        if: steps.kernel-cache.outputs.cache-hit != 'true'
+        id: shim-fetch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SHIM_KEY: ${{ hashFiles('jac/native/**', 'jac/build.zig', 'jac/bootstrap/pins.json') }}
+        run: |
+          set -euo pipefail
+          ASSET="libjacllvm-linux-x86_64-${SHIM_KEY}.so"
+          mkdir -p .shim-fetch
+          if gh release download deps --repo "$GITHUB_REPOSITORY" \
+               --pattern "$ASSET" --pattern "$ASSET.sha256" \
+               --dir .shim-fetch --clobber 2>/dev/null \
+             && ( cd .shim-fetch && shasum -a 256 -c "$ASSET.sha256" ); then
+            echo "hit=true" >> "$GITHUB_OUTPUT"
+            echo "file=$GITHUB_WORKSPACE/.shim-fetch/$ASSET" >> "$GITHUB_OUTPUT"
+          else
+            echo "No prebuilt shim $ASSET; building it from source."
+            echo "hit=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # The driver's Python is never shipped (it only runs the checkout's
+      # compiler), so the cache main seeds is safe on both channels here.
+      - name: Restore cached source-built Python (driver only)
+        if: steps.kernel-cache.outputs.cache-hit != 'true'
+        uses: actions/cache@v4
+        with:
+          path: jac/.python-build/cpython
+          key: python-build-v4-cpython-${{ runner.os }}-${{ runner.arch }}-zig0.16.0-sdkzig-libc-${{ steps.inputs.outputs.python_cpython }}
+          restore-keys: |
+            python-build-v4-cpython-${{ runner.os }}-${{ runner.arch }}-zig0.16.0-sdkzig-libc-
+
+      - name: Cache the Zig package store
+        if: steps.kernel-cache.outputs.cache-hit != 'true'
+        uses: actions/cache@v4
+        with:
+          path: .zig-cache/p
+          key: zig-pkgs-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('jac/build.zig.zon') }}
+          restore-keys: |
+            zig-pkgs-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: Install host tools (zstd)
+        if: steps.kernel-cache.outputs.cache-hit != 'true'
+        run: sudo apt-get update && sudo apt-get install -y zstd
+
+      - name: Set up Zig 0.16.0
+        if: steps.kernel-cache.outputs.cache-hit != 'true'
+        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
+        with:
+          version: 0.16.0
+          use-cache: false
+
+      - name: Fetch LLVM for the jacllvm shim
+        if: steps.kernel-cache.outputs.cache-hit != 'true' && steps.shim-fetch.outputs.hit != 'true'
+        working-directory: jac
+        run: zig build fetch-llvm --summary all
+
+      # A link-source driver: the payload carries no compiler of its own and
+      # runs this checkout's, which is the compiler that builds the kernel.
+      - name: Build the driver
+        if: steps.kernel-cache.outputs.cache-hit != 'true'
+        working-directory: jac
+        env:
+          PYTHONUNBUFFERED: "1"
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.shim-fetch.outputs.hit }}" = "true" ]; then
+            cp "${{ steps.shim-fetch.outputs.file }}" jaclang/compiler/backends/native/llvm/libjacllvm.so
+            zig build adopt-shim --summary all
+          fi
+          zig build -Ddev --summary all
+          zig build fetch-typeshed --summary all
+          if [ "${{ matrix.platform }}" = "linux-aarch64" ]; then
+            zig build vendor-musl-linux-aarch64 --summary all
+          fi
+
+      - name: Build the kernel for ${{ matrix.platform }}
+        if: steps.kernel-cache.outputs.cache-hit != 'true'
+        working-directory: jac
+        env:
+          PYTHONUNBUFFERED: "1"
+          PYTHONFAULTHANDLER: "1"
+        run: |
+          set -euo pipefail
+          BIN="$PWD/zig-out/bin/jac"
+          "$BIN" native build "kernel@${{ matrix.platform }}"
+          "$BIN" native status "kernel@${{ matrix.platform }}"
+          if [ "${{ matrix.platform }}" = "linux-x86_64" ]; then
+            SRC=jaclang/compiler
+          else
+            SRC="jaclang/compiler/kernels/${{ matrix.platform }}"
+          fi
+          mkdir -p "$GITHUB_WORKSPACE/.kernel"
+          cp "$SRC"/*jac_compiler.* "$GITHUB_WORKSPACE/.kernel/"
+          rm -f "$GITHUB_WORKSPACE/.kernel/"*.lock
+          ls -la "$GITHUB_WORKSPACE/.kernel"
+
+      - name: Upload the kernel
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-${{ matrix.platform }}
+          path: .kernel/
+          if-no-files-found: error
+          retention-days: 7
+
   build:
     name: ${{ matrix.platform }}
-    needs: plan
+    needs: [plan, kernel]
     strategy:
       fail-fast: false
       matrix:
@@ -452,6 +594,13 @@ jobs:
           launchctl list | grep -i reportcrash
           exit 0
 
+      # The kernel job built this leg's compiler kernel; the seal adopts it.
+      - name: Download the compiler kernel
+        uses: actions/download-artifact@v4
+        with:
+          name: kernel-${{ matrix.platform }}
+          path: .kernel
+
       - name: Build the jac binary (one command)
         working-directory: jac
         # A dev-channel shim-cache hit restored the shim, record included, to
@@ -470,7 +619,7 @@ jobs:
             cp "${{ steps.shim-fetch.outputs.file }}" "$PLACED"
             zig build adopt-shim $DTARGET --summary all
           fi
-          zig build $DTARGET --summary all
+          zig build $DTARGET -Dkernel="$GITHUB_WORKSPACE/.kernel" --summary all
 
       # Launcher unit tests (`zig build test`) live in ci.yml's `test-launcher`
       # job so they gate every PR on Linux + macOS, not just release time. The

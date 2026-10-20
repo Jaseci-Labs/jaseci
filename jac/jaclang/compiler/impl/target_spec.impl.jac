@@ -4,14 +4,21 @@ impl TargetSpec.kernel_file_name -> str {
 
 impl triple_osarch(triple: str) -> str {
     text = triple.lower();
-    arch = "aarch64" if ("aarch64" in text or "arm64" in text) else "x86_64";
+    arch = "";
+    if "aarch64" in text or "arm64" in text {
+        arch = "aarch64";
+    } elif "x86_64" in text or "amd64" in text {
+        arch = "x86_64";
+    }
+    os_name = "";
     if "darwin" in text or "apple" in text or "macos" in text {
-        return f"macos-{arch}";
+        os_name = "macos";
+    } elif "windows" in text or "win32" in text or "msvc" in text or "mingw" in text {
+        os_name = "windows";
+    } elif "linux" in text {
+        os_name = "linux";
     }
-    if "windows" in text or "win32" in text or "msvc" in text or "mingw" in text {
-        return f"windows-{arch}";
-    }
-    return f"linux-{arch}";
+    return f"{os_name}-{arch}" if os_name and arch else "";
 }
 
 impl target_spec(name: str) -> TargetSpec {

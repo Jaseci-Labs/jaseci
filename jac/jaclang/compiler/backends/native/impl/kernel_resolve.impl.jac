@@ -79,6 +79,22 @@ impl _from_sealed_image -> (ResolvedKernel | None) {
             f"sealed kernel {lib_path}: sidecar plan digest disagrees with the manifest"
         );
     }
+    built_for = triple_osarch(
+        str(record.get("triple", "") or sidecar.get("triple", ""))
+    );
+    host = host_target_spec().osarch;
+    if built_for != host {
+        raise KernelUnavailable(
+            f"sealed kernel {lib_path} was built for {built_for}, not this {host} host"
+        );
+    }
+    python = f"{sys.version_info.major}.{sys.version_info.minor}";
+    if str(sidecar.get("python", python)) != python {
+        raise KernelUnavailable(
+            f"sealed kernel {lib_path} was built for Python {sidecar.get('python')}, "
+            f"not {python}"
+        );
+    }
     return ResolvedKernel(
         lib_path=lib_path,
         layout=sidecar["classes"],

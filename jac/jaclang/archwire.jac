@@ -533,9 +533,15 @@ graph import {
     compiler.backends.native.host_facts --> project.compiler_host.ProjectHost.native_fact {
         host_native_fact
     }
-    compiler.backends.native.kernel_resolve ++> dist.precompile_bytecode.seal_native {
-        kernel_lib_name
-    }
+    compiler.backends.native.kernel_resolve ++> [
+        dist.precompile_bytecode.adopt_kernel {
+            LAYOUT_SIDECAR_SUFFIX,
+            kernel_lib_name,
+            read_sidecar,
+            unit_drift
+        },
+        dist.precompile_bytecode.seal_native { kernel_lib_name },
+    ]
     compiler.backends.native.kernel_resolve --> [
         project.kernel_check.analysis_kernel { KernelLoadError },
         project.kernel_check.kernel_check | project.kernel_compile.kernel_route {
@@ -1250,6 +1256,7 @@ graph import {
             kernel_root_path,
             native_scope_paths
         },
+        dist.precompile_bytecode.adopt_kernel { in_native_scope_path },
         dist.precompile_bytecode.seal_native { in_native_scope_path },
     ]
     compiler.native_scope --> dist.precompile_bytecode.native_roots { kernel_root_path }
@@ -1307,9 +1314,10 @@ graph import {
     compiler.placement.placement_solver ++> dist.seal.bake_native_payloads {
         native_default_path_ok
     }
-    compiler.target_spec ++> dist.precompile_bytecode._shared_suffix {
-        host_target_spec
-    }
+    compiler.target_spec ++> [
+        dist.precompile_bytecode._shared_suffix { host_target_spec },
+        dist.precompile_bytecode.adopt_kernel { host_target_spec },
+    ]
     compiler.target_spec --> dist.precompile_bytecode.seal_native { host_target_spec }
     compiler.tools.code_intel ++> cli.commands.code { CodeIntelligence }
     compiler.tools.grammar_extract_pass ++> cli.commands.analysis.grammar {
@@ -10065,7 +10073,11 @@ graph import compiler {
             report_serverless_kind_errors
         },
     ]
-    target_spec ++> backends.native.kernel_resolve { host_target_spec, target_spec }
+    target_spec ++> backends.native.kernel_resolve {
+        host_target_spec,
+        target_spec,
+        triple_osarch
+    }
     type target_spec ++> backends.native.kernel_resolve
         | backends.native.kernel_stage0 { TargetSpec }
     tools.cfg_dot ++> driver.pipeline.cfg_dot_passes { CoalesceBBPass }
