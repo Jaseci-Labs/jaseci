@@ -407,6 +407,7 @@ impl lint(
         }
     }
     def lint_fix_file(file_path: str, covered: set[str]) -> tuple[bool, int, int] {
+        import os;
         path_obj = Path(file_path);
         if not path_obj.exists() {
             console.error(f"File '{file_path}' does not exist.");
@@ -453,24 +454,24 @@ impl lint(
                 (formatted_code, float_target, float_text) = _float_impls_to_annex(
                     prog, str(path_obj), str(path_obj), formatted_code
                 );
+                if float_target {
+                    float_prog = JacProgram.jac_str_formatter(
+                        float_text, float_target, auto_lint=True
+                    );
+                    os.makedirs(os.path.dirname(float_target), exist_ok=True);
+                    with open(float_target, 'w', encoding='utf-8') as f {
+                        f.write(float_prog.mod.main.gen.jac or float_text);
+                    }
+                }
                 changed = formatted_code != original_code;
                 if changed {
                     with open(str(path_obj), 'w', encoding='utf-8') as f {
                         f.write(formatted_code);
                     }
                 }
-                if float_target {
-                    float_prog = JacProgram.jac_str_formatter(
-                        float_text, float_target, auto_lint=True
-                    );
-                    with open(float_target, 'w', encoding='utf-8') as f {
-                        f.write(float_prog.mod.main.gen.jac or float_text);
-                    }
-                }
             }
 
             import from jaclang.compiler.driver.bccache { discover_annex_files }
-            import os;
             annex_paths = (
                 discover_annex_files(str(path_obj), '.impl.jac')
                 + discover_annex_files(str(path_obj), '.test.jac')
@@ -613,14 +614,20 @@ impl _float_impls_to_annex(
     }
     base = "".join(lines[:start]).rstrip() + "\n";
     moved = "".join(lines[start:end]).strip() + "\n";
-    sibling = file_path[:-len(".jac")] + ".impl.jac";
-    annexes = discover_annex_files(file_path, ".impl.jac");
-    target = sibling;
-    if annexes
-        and not any(
-            os.path.realpath(a) == os.path.realpath(sibling) for a in annexes
-        ) {
-        target = annexes[0];
+    stem = os.path.basename(file_path)[:-len(".jac")];
+    folder = os.path.join(os.path.dirname(file_path), stem + ".impl");
+    owned = [
+        a
+        for a in discover_annex_files(file_path, ".impl.jac")
+        if os.path.basename(a) == stem + ".impl.jac"
+            or os.path.realpath(os.path.dirname(a)) == os.path.realpath(folder)
+    ];
+    if owned {
+        target = owned[0];
+    } elif "." in stem {
+        target = os.path.join(folder, stem + ".impl.jac");
+    } else {
+        target = file_path[:-len(".jac")] + ".impl.jac";
     }
     existing = read_file_with_encoding(target) if os.path.exists(target) else "";
     annex_text = (existing.rstrip() + "\n\n" + moved) if existing.strip() else moved;
@@ -808,30 +815,46 @@ impl format(
                 changed_files += 1;
                 unformatted_files.append(res['path']);
             } else {
-                outputs: list[tuple[str, str]] = [];
-                if res['formatted_code'] is not None {
-                    outputs.append((res['path'], res['formatted_code']));
-                }
-                outputs.extend(res['impl_results']);
                 owned = {os.path.realpath(fp) for fp in res.get('floated_annexes', [])};
-                outputs = [
+                outputs: list[tuple[str, str]] = [
                     (out_path, code)
-                    for (out_path, code) in outputs
+                    for (out_path, code) in res['impl_results']
                     if os.path.realpath(out_path) not in floated_annexes
                         or os.path.realpath(out_path) in owned
                 ];
+                if res['formatted_code'] is not None
+                    and (
+                        os.path.realpath(res['path']) not in floated_annexes
+                        or os.path.realpath(res['path']) in owned
+                    ) {
+                    outputs.append((res['path'], res['formatted_code']));
+                }
                 write_errors: list[str] = [];
+                floated_failed = False;
                 for (out_path, code) in outputs {
+                    if floated_failed and out_path == res['path'] {
+                        write_errors.append(
+                            f"Left '{out_path}' unchanged: its moved bodies could not "
+                            "be written to its impl annex"
+                        );
+                        continue;
+                    }
                     try {
                         if to_screen {
                             console.print(code, markup=False, highlight=False);
                         } else {
+                            if os.path.realpath(out_path) in owned {
+                                os.makedirs(os.path.dirname(out_path), exist_ok=True);
+                            }
                             with open(out_path, 'w', encoding='utf-8') as f {
                                 f.write(code);
                             }
                         }
                     } except Exception as e {
                         write_errors.append(f"Error writing to '{out_path}': {e}");
+                        if os.path.realpath(out_path) in owned {
+                            floated_failed = True;
+                        }
                     }
                 }
                 if write_errors {

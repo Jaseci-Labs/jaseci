@@ -296,21 +296,37 @@ test "lintfix moves separate-impls bodies into the module's impl annex" {
                 MOD_SRC + "\ndef g(x: int) -> int {\n    return x * 2;\n}\n"
             );
             annex.write_text(ANNEX_SRC);
+            variant = Path(repo) / "fresh.native.jac";
+            variant.write_text(CLEAN);
+            blocked = Path(repo) / "blocked.jac";
+            blocked.write_text(CLEAN);
+            files = [str(fresh), str(mod), str(annex), str(variant), str(blocked)];
             reset_state();
-            ret = fmt_cmd([str(fresh), str(mod), str(annex)], lintfix=True, jobs=jobs);
+            with deny_writes([str(Path(repo) / "blocked.impl.jac")]) {
+                ret = fmt_cmd(files, lintfix=True, jobs=jobs);
+            }
             fresh_text = fresh.read_text();
             fresh_annex = (Path(repo) / "fresh.impl.jac").read_text();
             mod_text = mod.read_text();
             annex_text = annex.read_text();
+            variant_annex = (
+                Path(repo) / "fresh.native.impl" / "fresh.native.impl.jac"
+            ).read_text();
+            blocked_text = blocked.read_text();
+            files.remove(str(blocked));
             reset_state();
-            again = fmt_cmd(
-                [str(fresh), str(mod), str(annex)], lintfix=True, check=True, jobs=jobs
-            );
+            again = fmt_cmd(files, lintfix=True, check=True, jobs=jobs);
         } finally {
             os.chdir(old);
             shutil.rmtree(repo, ignore_errors=True);
         }
-        assert ret == 0 , f"[jobs={jobs}] lintfix must succeed, got {ret}";
+        assert ret == 1 , f"[jobs={jobs}] the unwritable annex must fail the run";
+        assert blocked_text == CLEAN , f"[jobs={jobs}] a module whose annex cannot be "
+        f"written keeps its bodies, got:\n{blocked_text!r}";
+        assert "return x + 1" in variant_annex , (
+            f"[jobs={jobs}] a platform variant gets its own annex folder, so the "
+            "portable module does not claim its bodies"
+        );
         assert fresh_text == "def f(x: int) -> int;\n" , f"[jobs={jobs}] the module "
         f"keeps only the declaration, got:\n{fresh_text!r}";
         assert fresh_annex == "impl f(x: int) -> int {\n    return x + 1;\n}\n" , (

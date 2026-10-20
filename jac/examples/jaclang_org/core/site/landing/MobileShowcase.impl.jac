@@ -63,7 +63,7 @@ impl MobileShowcase -> JsxElement {
                     <Reveal delay={200} className="min-w-0">
                         <div className="pt-2">
                             <CodeSpotlight
-                                path="core/site/landing/MobileShowcase.jac"
+                                path="core/site/landing/MobileShowcase.impl.jac"
                                 needle="<JacYacMobile embedded={True}/>"
                                 before={2}
                                 after={4}
