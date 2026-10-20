@@ -37,10 +37,12 @@ searches **nearest-wins**:
    walked up to the filesystem root), then
 2. this bundled root (`native_stdlib_root()`), which is native **by
    location** -- its modules are plain `.jac` files. At either step a
-   per-architecture variant `<name>.<arch>.jac` (e.g.
-   `_math_fused.aarch64.jac`) is probed first, then a per-OS variant
-   `<name>.<os>.jac` (e.g. `_dirent_native.darwin.jac`), then the plain
-   `<name>.jac`.
+   per-architecture variant `<name>.<arch>.jac` is probed first, then a
+   per-OS variant `<name>.<os>.jac` (e.g. `errno.darwin.jac`), then the plain
+   `<name>.jac`. A module the compiler kernel imports has no variants: what
+   it needs from a C library per target comes from the runtime floor's
+   `__jac_*` functions (`compiler/backends/native/posix_floor.c`), so the
+   kernel is the same program on every target.
 
 So `import from os.path { normpath }` binds CPython's `posixpath` on the sv
 (Python) pathway and `na_stdlib/os/path.jac` on the na (native) pathway (the
@@ -607,7 +609,8 @@ native layout records the emitted name separately from its source-level key.
   `hypot`/`dist` port its `vector_norm` and `sumprod` its triple-length
   accumulator. Where CPython's C build fuses a multiply-add (clang contracts
   `a*b + c` into one rounding on aarch64, never on baseline x86-64),
-  `_math_fused.<arch>.jac` supplies the same fused or unfused `fmadd`. A
+  `_math_fused.jac`'s `fmadd` calls the runtime floor's `__jac_fmadd`, which
+  is fused or unfused the same way on each target. A
   randomized sv/na differential sweep over every real function is
   bit-identical on macOS arm64. `floor`/`ceil`/`trunc` return an `int`
   argument unchanged (no float round trip), `gcd`/`lcm`/`hypot` are truly
@@ -713,8 +716,9 @@ native layout records the emitted name separately from its source-level key.
 
 - **`time.jac`** (Mechanism F surface) + **`_time_common.jac`** (shared
   `clock_gettime` / `clock_settime` FFI and timespec loads) +
-  **`_time_native.linux.jac`** / **`_time_native.darwin.jac`** (per-OS clock
-  ids and the sleep floor: `clock_nanosleep` on Linux, `nanosleep` on Darwin) -- the clock half of CPython's
+  **`_time_native.jac`** (the target libc's clock ids and sleep, from the
+  runtime floor's `__jac_clock_id` and `__jac_sleep_ns`: an absolute
+  `clock_nanosleep` on Linux, a `nanosleep` loop on Darwin) -- the clock half of CPython's
   `time` module, replacing the former Mechanism-A intercept: `time`,
   `time_ns`, `monotonic`, `monotonic_ns`, `perf_counter`, `perf_counter_ns`,
   `process_time`, `process_time_ns`, `thread_time`, `thread_time_ns`,
@@ -963,8 +967,12 @@ Mechanism B exists to avoid writing twice. Reaching for one through the flat
 
 1. Drop `<name>.jac` (or `<pkg>/<name>.jac` for a dotted import) here,
    exporting its API with `def:pub`. If a module needs platform-specific
-   code, add a `<name>.<os>.jac` variant (e.g. `_dirent_native.darwin.jac`);
-   it wins over the plain file on that OS.
+   code, prefer a `__jac_*` function in the runtime floor
+   (`compiler/backends/native/posix_floor.c` and `win_floor.c`, regenerated
+   with `scripts/gen_posix_floor.jac` and `scripts/gen_win_floor.jac`): a
+   module the compiler kernel imports must not have variants. Otherwise add a
+   `<name>.<os>.jac` variant (e.g. `errno.darwin.jac`); it wins over the plain
+   file on that OS.
 2. Use only the native-supported subset; prefer typed containers
    (`list[str]`, `dict[str, any]`). A bare `list = []` defaults to `i64`
    elements. An empty `list[any] = []` then grown with `.append(x)` lowers and
