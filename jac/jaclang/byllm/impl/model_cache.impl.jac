@@ -29,7 +29,12 @@ impl _consent_marker(alias: str) -> Path {
 
 impl is_downloaded(alias: str, spec: dict[str, any]) -> bool {
     p = gguf_path(alias, spec);
-    return p.exists() and p.stat().st_size > 0;
+    if not p.is_file() {
+        return False;
+    }
+    with open(p, "rb") as f {
+        return f.read(4) == b"GGUF";
+    }
 }
 
 impl _fmt_size(mb: int) -> str {
@@ -118,10 +123,11 @@ impl ensure_model(
             f"in this context (no TTY). Run: jac model pull {alias}"
         );
     }
+    gguf_path(alias, spec).unlink(missing_ok=True);
     _download(alias, spec);
     if not is_downloaded(alias, spec) {
         raise RuntimeError(
-            f"Download for '{alias}' completed but file is missing or empty: "
+            f"Download for '{alias}' completed but file is missing or not a GGUF file: "
             f"{gguf_path(alias, spec)}"
         );
     }
