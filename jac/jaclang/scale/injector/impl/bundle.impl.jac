@@ -224,6 +224,14 @@ impl bundle_source_files(base: Path) -> list[Path] {
     return kept;
 }
 
+impl client_build_sources(base: Path) -> list[Path] {
+    return [
+        path
+        for path in bundle_source_files(base)
+        if not _is_bundle_required(path.relative_to(base))
+    ];
+}
+
 impl resolve_fleet_entries(project_dir: str, fleet: any) -> dict[str, str] {
     base = Path(project_dir).resolve();
     excluded = source_filter_for(base);

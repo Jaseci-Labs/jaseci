@@ -30736,6 +30736,7 @@ graph import scale {
     injector.bundle ++> [
         deploy.target.kubernetes.manifest_builder.ManifestBuilder._build_client_bundle {
             _stage_app,
+            client_build_sources,
             release_binary_env,
             remove_stage_root,
             source_filter_for

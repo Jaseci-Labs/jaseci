@@ -436,7 +436,7 @@ impl ManifestBuilder._build_client_bundle(project_dir: str) {
             f"running this deploy ({pinned})."
         );
     }
-    stage_root = _stage_app(base, sanitized_jac_toml(base));
+    stage_root = _stage_app(base, sanitized_jac_toml(base), client_build_sources(base));
     stage = str(stage_root / "app");
     dist_candidates = self._client_dist_candidates(stage, entry_rel);
     try {

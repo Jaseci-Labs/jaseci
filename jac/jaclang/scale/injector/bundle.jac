@@ -102,6 +102,9 @@ def partition_bundle_sources(base: Path) -> tuple[list[Path], list[str]];
 def bundle_source_files(base: Path) -> list[Path];
 
 
+def client_build_sources(base: Path) -> list[Path];
+
+
 def resolve_fleet_entries(project_dir: str, fleet: any) -> dict[str, str];
 
 
