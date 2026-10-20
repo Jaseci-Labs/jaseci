@@ -26,7 +26,7 @@ impl NaIRGenPass._pyb_base_of(arch_name: str) -> (tuple[str, str] | None) {
     stayed the same. Resolving one is not the same as inheriting one.
     """;
     import os;
-    import from jaclang.compiler.frontend.codeinfo { NATIVE_ERASED_BASES }
+
     if arch_name in self._pyb_base_memo {
         cached = self._pyb_base_memo[arch_name];
         return cached;
@@ -39,7 +39,7 @@ impl NaIRGenPass._pyb_base_of(arch_name: str) -> (tuple[str, str] | None) {
     if arch.arch_kind is not None or self._arch_is_osp_name(arch_name) {
         return None;
     }
-    _own_path = os.path.realpath(self.module.loc.mod_path) if self.module?.loc else "";
+    _own_path = real_path(self.module.loc.mod_path) if self.module?.loc else "";
     for base_expr in (arch.base_classes or []) {
         if isinstance(base_expr, uni.AtomTrailer)
             and isinstance(base_expr.right, uni.IndexSlice) {
@@ -78,7 +78,7 @@ impl NaIRGenPass._pyb_base_of(arch_name: str) -> (tuple[str, str] | None) {
         if not path or not path.endswith(".jac") {
             continue;
         }
-        if os.path.realpath(path) == _own_path {
+        if real_path(path) == _own_path {
             continue;
         }
         found = (bname, os.path.abspath(path), );

@@ -9,16 +9,13 @@ impl StaticAnalysisPass._run_impl(ir_in: Module) -> Module {
     self._check_semantic_patterns(self.module);
     self._check_typing_import_refusals(self.module);
     self._check_redundant_imports(self.module);
+    report_unused_wires(self, self.module);
     self._check_client_imports(self.module);
     self._check_placement_warnings(self.module);
     return ir_in;
 }
 
 impl StaticAnalysisPass._check_placement_warnings(mod: Module) -> None {
-    import from jaclang.compiler.symbol_utils {
-        report_placement_warnings,
-        report_serverless_kind_errors
-    }
     report_placement_warnings(self, mod);
     report_serverless_kind_errors(self, mod);
 }
@@ -90,7 +87,6 @@ impl StaticAnalysisPass._check_unused_symbols(scope: UniScopeNode) -> None {
 }
 
 impl StaticAnalysisPass._check_undefined_names(mod: Module) -> None {
-    import from jaclang.compiler.frontend.unitree { JsxElementName }
     all_names = mod.get_all_sub_nodes(typ=Name);
     for name_nd in all_names {
         if name_nd.sym {
@@ -180,7 +176,7 @@ impl StaticAnalysisPass._check_undefined_names(mod: Module) -> None {
             continue;
         }
 
-        if name_nd.find_parent_of_type(ImplImport) is not None {
+        if name_nd.find_parent_of_type(GraphImport) is not None {
             continue;
         }
 
@@ -500,17 +496,6 @@ impl StaticAnalysisPass._check_semantic_patterns(mod: Module) -> None {
 }
 
 impl StaticAnalysisPass._check_client_imports(mod: Module) -> None {
-    import from jaclang.compiler.driver.boundary_classify {
-        is_client_native_edge_import
-    }
-    import from jaclang.compiler.frontend.constant { CodeContext }
-    import from jaclang.compiler.symbol_utils {
-        ClientImportVerdict,
-        classify_client_import_item,
-        is_client_boundary_import,
-        report_dead_client_import,
-        resolve_import_source_module
-    }
     client_tops: dict[str, bool] = {};
     for nd in mod.get_all_sub_nodes(typ=Import) {
         if is_client_native_edge_import(nd, self.prog, client_tops) {
@@ -675,4 +660,26 @@ impl StaticAnalysisPass._check_redundant_imports(mod: Module) -> None {
 
 impl StaticAnalysisPass.run_walk with Module entry {
     self.module = self._run_impl(here);
+}
+
+impl is_bootstrap_compiled_module(mod_path: str) -> bool {
+    norm = mod_path.replace("\\", "/");
+    if norm.startswith("jaclang/") {
+        return active_host().is_seed_source(norm[len("jaclang/"):]);
+    }
+    marker = "/jaclang/";
+    idx = norm.rfind(marker);
+    if idx < 0 {
+        return False;
+    }
+    return active_host().is_seed_source(norm[idx + len(marker):]);
+}
+
+impl is_ambient_provider_module(mod_path: str) -> bool {
+    return (mod_path.endswith("builtin.jac") or mod_path.endswith("builtin.py"))
+        and "runtime" in mod_path;
+}
+
+impl UnusedSymbolWalker.check_scope with UniScopeNode entry {
+    self.analysis._check_unused_symbols(here);
 }

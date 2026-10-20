@@ -6,10 +6,14 @@ glob ADDRINFO_ADDRLEN_OFFSET: int = 16,
      ADDRINFO_SIZE: int = 48,
      IPV6_FAMILY: int = 30;
 
-def:pub errno_pointer -> int {
+def:pub errno_pointer -> int;
+
+def:pub address_family(address: bytes) -> int;
+
+impl errno_pointer -> int {
     return __error();
 }
 
-def:pub address_family(address: bytes) -> int {
+impl address_family(address: bytes) -> int {
     return address[1];
 }
