@@ -31,6 +31,14 @@ inputs:
       prepare_native.py with a missing libjacllvm.so.
     required: false
     default: "false"
+  kernel-dir:
+    description: >
+      A directory holding a compiler kernel built elsewhere for this runner's
+      platform (build-kernel.yml's `kernel-<platform>` artifact). The seal
+      adopts it instead of building the kernel, and refuses it unless it was
+      built from this tree (#10219). Empty builds the kernel as usual.
+    required: false
+    default: ""
 runs:
   using: composite
   steps:
@@ -293,10 +301,13 @@ runs:
       env:
         PYTHON: ${{ steps.py.outputs.variant }}
         PR_BUILD: ${{ github.event_name == 'pull_request' }}
+        KERNEL_DIR: ${{ inputs.kernel-dir }}
         JAC_KIT_OMIT: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'native:kernel') && 'kernel' || '' }}
       run: |
         PY=(-Dpython="$PYTHON")
         if [ "$PYTHON" = jacpython ]; then PY+=(-Dreuse-python="$PR_BUILD"); fi
+        KERNEL_ARG=()
+        if [ -n "$KERNEL_DIR" ]; then KERNEL_ARG=(-Dkernel="$KERNEL_DIR"); fi
         TARGET_ARG=()
         case "$RUNNER_OS/$RUNNER_ARCH" in
           Linux/X64) TARGET_ARG=(-Dtarget=x86_64-linux-gnu.2.17) ;;
@@ -309,7 +320,7 @@ runs:
         set -o pipefail
         LOG="$(mktemp)"
         for attempt in 1 2 3; do
-          if zig build "${PY[@]}" "${TARGET_ARG[@]}" --summary all 2>&1 | tee "$LOG"; then
+          if zig build "${PY[@]}" "${TARGET_ARG[@]}" "${KERNEL_ARG[@]}" --summary all 2>&1 | tee "$LOG"; then
             exit 0
           fi
           if grep -qE 'Seal aborted|Seal incomplete|seal-finalize failed' "$LOG"; then
