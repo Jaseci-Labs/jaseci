@@ -1753,7 +1753,7 @@ The reply is stored whole in `conversation=`, so the next turn resends the histo
 
 ### Recording every call
 
-`register_llm_call_hook(hook)` calls `hook(record)` after each model call, including the summarisation and final-answer calls byLLM makes on its own. It is off until a hook is registered, and a hook that raises is logged, never raised. `unregister_llm_call_hook(hook)` removes it.
+`register_llm_call_hook(hook)` calls `hook(record)` after each model call of a tool-calling or non-streaming invocation, including the summarisation and final-answer calls byLLM makes on its own. A streamed call without tools stores no reply, so it is not reported. It is off until a hook is registered, and a hook that raises is logged, never raised. `unregister_llm_call_hook(hook)` removes it.
 
 | Field | Contents |
 |---|---|

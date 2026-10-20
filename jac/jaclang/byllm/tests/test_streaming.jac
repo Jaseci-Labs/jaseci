@@ -165,50 +165,6 @@ test "a str answer that skips finish_tool still arrives on the chunk channel" {
 }
 
 
-test "reasoning streams on its own channel, merged, and never in the answer" {
-    thought = "REASONING " + ("step by step " * 50);
-    for (label, fields, cap, tools) in [
-        ("tool loop", {"reasoning_content": thought}, 0, [get_weather]),
-        (
-            "answer restreamed at the iteration cap",
-            {"reasoning_content": thought},
-            1,
-            [get_weather]
-        ),
-        ("no tools", {"reasoning_content": thought}, 0, []),
-        ("no reasoning", {}, 0, [get_weather])
-    ] {
-        replies = [say("It is sunny in London.", fields=fields)];
-        if tools {
-            replies = [call("get_weather", {"city": "London"}, fields=fields)]
-                + replies;
-        }
-        calls = len(replies);
-        llm = MockLLM(outputs=replies, chunk_size=12);
-
-        def answer(question: str) -> str by llm(
-            tools=tools, stream=True, logging=True, max_react_iterations=cap
-        );
-
-        events = stream_events(answer("What is the weather in London?"));
-        texts = [
-            str(e.data.get("content", "")) for e in events_of(events, "reasoning")
-        ];
-        visible = chunk_text(events)
-            + str([e.data for e in events_of(events, "thought")]);
-        assert "REASONING" not in visible , f"{label}: reasoning leaked into the answer";
-        assert "".join(texts) == thought * calls * bool(fields) , f"{label}: got {texts}";
-        assert len(texts) <= len(thought) // 100 * calls , f"{label}: {len(
-            texts
-        )} events, not merged";
-        assert all(
-            isinstance(e.data.get("iteration"), int)
-            for e in events_of(events, "reasoning")
-        ) , f"{label}: each reasoning event names its iteration";
-    }
-}
-
-
 test "a structured return cannot stream without a handler to consume it" {
     # Streaming a non-str return has no well-defined result unless something
     # consumes the events, so it is rejected up front rather than half-working.

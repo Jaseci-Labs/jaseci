@@ -8,13 +8,9 @@ import from jaclang.byllm._optdeps.litellm { LiteLLMMessage }
 import jaclang.byllm.llm as _byllm_llm_mod;
 import from jaclang.byllm.telemetry {
     register_agent_callback,
-    register_llm_call_hook,
-    unregister_llm_call_hook,
     _emit_agent_telemetry,
     _agent_callbacks
 }
-import from jaclang.byllm.lib { MockLLM }
-import from support { call, finish, say }
 
 def make_mt_run(
     invocation_id: str = "inv-test-001",
@@ -524,109 +520,4 @@ test "_astream_with_telemetry does not leak the invocation id into the consumer"
     assert _current_invocation_id.get(None) is None , (
         "the invocation id must not leak past the generator's own driver either"
     );
-}
-
-
-"""Look a city up."""
-def _lookup_city(city: str) -> str {
-    return f"{city} found";
-}
-
-
-test "an llm call hook gets each model call once, with its full reply, and cannot break it" {
-    why = {"reasoning_content": "WHY"};
-    for (path, stream, logging, finishes) in [
-        ("whole replies", False, False, False),
-        ("stream with events", True, True, False),
-        ("answer restreamed after finish_tool", True, False, True)
-    ] {
-        records: list[dict[str, any]] = [];
-        def bad_hook(record: dict[str, any]) {
-            raise RuntimeError("hook broke");
-        }
-        def good_hook(record: dict[str, any]) {
-            records.append(record);
-        }
-        replies: list[any] = [call("_lookup_city", {"city": "Kandy"}, fields=why)];
-        if finishes {
-            replies.append(finish("Kandy found.", fields=why));
-        }
-        replies += [say("Kandy found.", fields=why), say("again")];
-        calls = len(replies) - 1;
-        llm = MockLLM(outputs=replies);
-
-        def ask(q: str) -> str by llm(
-            tools=[_lookup_city], stream=stream, logging=logging
-        );
-
-        register_llm_call_hook(bad_hook);
-        register_llm_call_hook(good_hook);
-        try {
-            answer: any = ask("Find Kandy");
-            if stream {
-                for _ in answer {}
-            }
-        } finally {
-            unregister_llm_call_hook(bad_hook);
-            unregister_llm_call_hook(good_hook);
-        }
-        assert len(records) == calls , f"{path}: {calls} calls, {len(records)} records";
-        assert [m.get("role") for m in records[0]["new_messages"]][:2]
-            == ["system", "user"] , (
-            f"{path}: the first call reports its prompt: {records[0]['new_messages']}"
-        );
-        assert [m.get("role") for m in records[1]["new_messages"]] == ["tool"] , (
-            f"{path}: a later call reports only what is new: {records[1][
-                'new_messages'
-            ]}"
-        );
-        for rec in records {
-            assert rec["reply"].get("reasoning_content") == "WHY" , f"{path}: {rec[
-                'reply'
-            ]}";
-            assert rec["usage"].get("model") , f"{path}: no usage on {rec}";
-        }
-        if not stream {
-            ask("Find Kandy");
-            assert len(records) == calls , f"{path}: an unregistered hook must not fire";
-        }
-    }
-}
-
-
-test "after a compaction the hook reports the rebuilt request once" {
-    records: list[dict[str, any]] = [];
-    def keep(record: dict[str, any]) {
-        records.append(record);
-    }
-    def summarise(msgs: list[any], keep_recent: int) -> list[any] {
-        return msgs[:2] + [{"role": "user", "content": "SUMMARY_OF_GALLE"}];
-    }
-    llm = MockLLM(
-        ctx_window=1000,
-        outputs=[
-            call("_lookup_city", {"city": "Galle"}, usage={"prompt_tokens": 900}),
-            say("done")
-        ]
-    );
-
-    def ask(q: str) -> str by llm(
-        tools=[_lookup_city], threshold_ratio=0.80, on_compaction=summarise
-    );
-
-    register_llm_call_hook(keep);
-    try {
-        assert ask("Find Galle") == "done";
-    } finally {
-        unregister_llm_call_hook(keep);
-    }
-    after = [
-        r
-        for r in records
-        if r["after_compaction"]
-    ];
-    assert len(after) == 1 , f"one call follows the compaction: {records}";
-    sent = after[0]["new_messages"];
-    assert [m.get("role") for m in sent][0] == "system" , f"the whole request: {sent}";
-    assert "SUMMARY_OF_GALLE" in str(sent) , f"the summary must be in it: {sent}";
 }

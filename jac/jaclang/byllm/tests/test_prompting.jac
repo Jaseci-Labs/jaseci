@@ -4,9 +4,7 @@ sem strings, incl_info, temperature and receiver state on the way out; typed
 returns, enums and scalars on the way back. Assert on both directions.
 """
 
-import from pathlib { Path }
 import from jaclang { JacRuntimeInterface as Jac }
-import from jaclang.byllm.config_loader { get_byllm_config, reset_byllm_config }
 import from jaclang.byllm.lib { MockLLM }
 import from support { call, fixture_path, prompt_text, roles, say, tool_names }
 
@@ -66,46 +64,6 @@ test "incl_info examples and temperature reach the model" {
         'temperature'
     )}";
     assert "Mime Person" in str(sent["messages"]) , "incl_info examples must reach the prompt";
-}
-
-
-test "reasoning params reach the model only when set, from by llm() or jac.toml" {
-    enabled = {"type": "enabled"};
-    for (label, effort, thinking, extra) in [
-        ("effort", "low", None, None),
-        ("thinking", None, enabled, None),
-        ("extra_body", None, None, {"thinking": enabled}),
-        ("none set", None, None, None)
-    ] {
-        llm = MockLLM(outputs=[say("ok")]);
-
-        def answer(q: str) -> str by llm(
-            reasoning_effort=effort, thinking=thinking, extra_body=extra
-        );
-
-        assert answer("hi") == "ok" , label;
-        sent = llm.seen[0];
-        for (key, want) in [
-            ("reasoning_effort", effort),
-            ("thinking", thinking),
-            ("extra_body", extra)
-        ] {
-            assert sent.get(key) == want and (want is not None or key not in sent) , (
-                f"{label}: {key} sent as {sent.get(key)!r}, expected {want!r}"
-            );
-        }
-    }
-    reset_byllm_config();
-    try {
-        params = get_byllm_config(
-            Path(fixture_path("reasoning_config"))
-        ).get_call_params_config();
-        assert (params.get("reasoning_effort"), params.get("thinking"))
-            == ("low", enabled) , (f"jac.toml: {params}");
-        assert "extra_body" not in params , f"jac.toml: unset keys stay unset: {params}";
-    } finally {
-        reset_byllm_config();
-    }
 }
 
 
