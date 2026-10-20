@@ -110,6 +110,16 @@ test "client providers export exactly the names client importers bind" {
             [0]
         ),
         (
+            "widgets",
+            'obj Model { has title: str = "t"; }\n'
+            'def:pub Card(m: Model) -> JsxElement { return <b>{m.title}</b>; }\n',
+            'import from .widgets { Card, Model }\n'
+            'def show(m: Model) -> JsxElement { return <Card m={m} />; }\n'
+            'def:pub app -> any { return <div />; }\n',
+            "export {Card};",
+            [1]
+        ),
+        (
             "secret",
             'glob:priv SECRET: str = "s";\n'
             'def Card -> JsxElement { return <b>{SECRET}</b>; }\n',

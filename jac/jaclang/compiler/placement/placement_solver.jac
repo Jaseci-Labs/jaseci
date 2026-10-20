@@ -94,6 +94,8 @@ def _warn_state_forks(target: uni.Module, prog: JacProgram);
 
 def _held_pull_ids(target: uni.Module, target_path: str) -> set[int];
 
+def _imported_at_runtime(item: uni.ModuleItem) -> bool;
+
 def _pull_into_target(
     imp: uni.Import,
     target: uni.Module,

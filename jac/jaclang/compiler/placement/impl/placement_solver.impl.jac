@@ -816,6 +816,17 @@ impl _held_pull_ids(target: uni.Module, target_path: str) -> set[int] {
     return held;
 }
 
+impl _imported_at_runtime(item: uni.ModuleItem) -> bool {
+    local = item.alias if item.alias is not None else item.name;
+    sym = local.sym if isinstance(local, uni.Name) else None;
+    if sym is None {
+        return True;
+    }
+    return any(
+        not uni.in_type_position(use, include_subscripts=False) for use in sym.uses
+    );
+}
+
 impl _pull_into_target(
     imp: uni.Import,
     target: uni.Module,
@@ -824,6 +835,7 @@ impl _pull_into_target(
     pinned: bool = False
 ) -> int {
     seed_ids: set[int] = set();
+    runtime_ids: set[int] = set();
     for item in imp.items {
         if not (isinstance(item, uni.ModuleItem) and isinstance(item.name, uni.Name)) {
             continue;
@@ -837,6 +849,9 @@ impl _pull_into_target(
         }
         if _closure_pullable(top, target, prog, set()) {
             seed_ids.add(id(top));
+            if _imported_at_runtime(item) {
+                runtime_ids.add(id(top));
+            }
         }
     }
     if not seed_ids {
@@ -863,7 +878,7 @@ impl _pull_into_target(
             target, prog, seed_ref_ids=seed_ids, dual=True, pull_dependents=False
         );
     }
-    newly_imported = _mark_client_imported(target, seed_ids | held_ids, prog);
+    newly_imported = _mark_client_imported(target, runtime_ids | held_ids, prog);
     if new_stamps {
         work.changed(target);
         _warn_state_forks(target, prog);
