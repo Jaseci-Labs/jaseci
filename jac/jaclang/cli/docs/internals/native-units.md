@@ -241,10 +241,10 @@ Two rules keep the glue honest about what the units define:
   definition before the plan ever sees it.
 
 Weak cells every unit carries (the region TLS slot, the GC switches,
-`__jac_str_new`) become one cell per artifact: the Mach-O linker keeps the
+`__jac_str_new`) become one cell per artifact: the linker (LLD) keeps the
 first definition of an external name and binds later references to it,
 letting a strong definition replace a weak one, exactly as a fused module
-or a system linker would have it.
+would have it.
 
 ### Names across units
 
@@ -408,14 +408,16 @@ frontend analysis, lowering visits and final code generation.
 Linux AArch64 floor libraries call outline-atomic helpers supplied by compiler-rt.
 The payload vendor builds the pinned upstream LLVM implementations into
 `libclang_rt.atomics.a`, with one helper per archive member and a separate CPU
-detection member. The ordinary archive selection code follows undefined
-symbols to select the helpers and their feature flag, without bringing in
+detection member. The link passes the archive whole and LLD loads only the
+helpers the program reaches and their feature flag, without bringing in
 unrelated libc definitions. The upstream helpers use LSE where available and
 fall back to LL/SC. No handwritten atomic ABI implementation is emitted in glue.
 
-The ELF linker preserves input constructors and their priority order for shared
-and executable artifacts, so the runtime's CPU detection runs before application
-initializers. Runtime archive bytes participate in artifact invalidation.
+Input constructors keep their priority order in shared and executable
+artifacts, so the runtime's CPU detection runs before application initializers:
+a shared library lists `__jac_shared_init` in `.init_array` after every input
+constructor, and an executable hands `__libc_start_main` an init hook that runs
+the whole array. Runtime archive bytes participate in artifact invalidation.
 
 ## Sealed applications
 

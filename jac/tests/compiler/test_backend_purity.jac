@@ -43,7 +43,7 @@ glob FORBIDDEN: dict[str, str] = {
      SANCTIONED: dict[tuple[str, str], tuple[int, str]] = {
          ("es/esast_gen_pass.jac", "symbol_utils"): (
              1,
-             "return_type_is_jsx (#8314), wired module-wide by arch.jac for "
+             "return_type_is_jsx (#8314), wired module-wide by archwire.jac for "
              "the call and declaration impls: reads the declared return "
              "annotation to pick a component's call ABI and to record a "
              "component export; the declaration is the fact, and the type "
@@ -109,7 +109,7 @@ glob FORBIDDEN: dict[str, str] = {
              "exact declaration-IS-the-fact category; tags derive from "
              "stable_osp_tag(name), no analysis re-run"
          ),
-         ("native/foreign.jac", "type_tag.tag"): (
+         ("native/impl/foreign.impl.jac", "type_tag.tag"): (
              4,
              "declared-annotation name reads for the foreign (clib) ABI "
              "surface: declared_type_name over field and param annotations "
@@ -261,7 +261,7 @@ glob FORBIDDEN: dict[str, str] = {
              "which needs the declared Callable annotation itself (the "
              "template is uninstantiated, so no resolved type exists)"
          ),
-         ("native/host_facts.jac", ".lookup("): (
+         ("native/impl/host_facts.impl.jac", ".lookup("): (
              1,
              "codecs.lookup on a literal bytes.decode encoding name, asked "
              "of the host because the generator runs in the kernel: it "
@@ -273,7 +273,7 @@ glob FORBIDDEN: dict[str, str] = {
      };
 
 """Count matching lines per (file, pattern) across both backends. A module
-sealed by arch.jac declares its imports there instead of in its sources, so
+sealed by archwire.jac declares its imports there instead of in its sources, so
 each wire whose provider matches counts as one line of the file its import
 lands in: the file defining the wire's scope, or the head module."""
 def scan_backends -> dict[tuple[str, str], int] {

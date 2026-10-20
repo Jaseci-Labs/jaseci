@@ -42,12 +42,7 @@ glob _NOGC_OSP_ENGINE_STRUCTS: tuple[str, ...] = (
          "ctor_leftover"
      );
 
-def _named_struct_name(t: (ir.Type | None)) -> str {
-    if isinstance(t, ir.IdentifiedStructType) {
-        return t.name;
-    }
-    return "";
-}
+def _named_struct_name(t: (ir.Type | None)) -> str;
 
 impl NaIRGenPass._gc_mode -> str {
     _mode = self.prog.options.na_gc_mode;
@@ -1946,12 +1941,7 @@ impl NaIRGenPass._drop_dispatches(type_name: str) -> bool {
     }
 
     reg = get_layout_registry(self.module, self.prog);
-    for cand in reg.mro_order {
-        if cand != type_name and type_name in self._mro_of(cand) {
-            return True;
-        }
-    }
-    return False;
+    return any(cand != type_name for cand in reg.descendants_of([type_name]));
 }
 
 impl NaIRGenPass._emit_nogc_field_drops(
@@ -2047,10 +2037,10 @@ impl NaIRGenPass._drop_hook_for(type_name: str) -> (ir.Function | None) {
         if member is not None and (not member.is_def or member.is_static) {
             return None;
         }
-        hook = self.func_symtab.get(f"{owner}.drop");
+        hook = self.scope.function(f"{owner}.drop");
         if hook is None and member is not None {
             self._forward_declare_method(owner, member);
-            hook = self.func_symtab.get(f"{owner}.drop");
+            hook = self.scope.function(f"{owner}.drop");
         }
         if hook is not None {
             if len(hook.args) != 1 {
@@ -2577,7 +2567,11 @@ impl NaIRGenPass._nogc_elem_prep(
     if isinstance(expr, uni.FString) or self._is_owned(val) {
         return val;
     }
-    if isinstance(expr, uni.AtomTrailer) and isinstance(expr.right, uni.IndexSlice) {
+    """A slice of a string is fresh text; an index is a character from the
+    static per-byte cache, which an owner must copy.""";
+    if isinstance(expr, uni.AtomTrailer)
+        and isinstance(expr.right, uni.IndexSlice)
+        and expr.right.is_range {
         _bm = "";
         try {
             _bm = expr.target.type.mangle() if expr.target.type is not None else "";
@@ -3348,8 +3342,13 @@ impl NaIRGenPass._emit_str_parts_cmp(
     sign = bld.phi(i32, name="sord");
     sign.add_incoming(s_ge, ge_end_bb);
     sign.add_incoming(s_lt, lt_end_bb);
-    _sym = {Tok.LT: "<", Tok.GT: ">", Tok.LTE: "<=", Tok.GTE: ">="}[op];
-    return bld.icmp_signed(_sym, sign, zero32, name="scmp3");
+    comparisons: dict[str, str] = {
+        Tok.LT: "<",
+        Tok.GT: ">",
+        Tok.LTE: "<=",
+        Tok.GTE: ">="
+    };
+    return bld.icmp_signed(comparisons[op], sign, zero32, name="scmp3");
 }
 
 impl NaIRGenPass._nogc_str_free_owned(val: ir.Value) -> None {
@@ -3363,4 +3362,11 @@ impl NaIRGenPass._nogc_str_free_owned(val: ir.Value) -> None {
     i8p = ir.IntType(8).as_pointer();
     _free_fn = self._get_or_declare_extern("free", ir.VoidType(), [i8p]);
     self.builder.call(_free_fn, [self.builder.bitcast(_d, i8p, name="osf.cast")]);
+}
+
+impl _named_struct_name(t: (ir.Type | None)) -> str {
+    if isinstance(t, ir.IdentifiedStructType) {
+        return t.name;
+    }
+    return "";
 }

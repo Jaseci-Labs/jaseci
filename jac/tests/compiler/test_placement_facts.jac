@@ -124,6 +124,7 @@ test "placement_pins imports stay within the documented allowlist" {
         "jaclang/compiler/driver/boundary_classify.jac",
         "jaclang/compiler/driver/impl/program.impl.jac",
         "jaclang/compiler/driver/jir.jac",
+        "jaclang/compiler/driver/impl/jir.impl.jac",
         "jaclang/compiler/driver/na_coverage.jac",
         "jaclang/compiler/native_scope.jac",
         "jaclang/project/modresolver.jac",
@@ -132,7 +133,9 @@ test "placement_pins imports stay within the documented allowlist" {
         "jaclang/compiler/passes/placement_pass.jac",
         "jaclang/lsp/server/impl/engine.impl.jac",
         "jaclang/compiler/placement/placement.jac",
+        "jaclang/compiler/placement/impl/placement.impl.jac",
         "jaclang/compiler/placement/placement_facts.jac",
+        "jaclang/compiler/placement/impl/placement_facts.impl.jac",
         "jaclang/compiler/placement/placement_pins.jac",
         "jaclang/compiler/placement/placement_solver.jac"
     };
@@ -142,7 +145,7 @@ test "placement_pins imports stay within the documented allowlist" {
     pkg = os.path.join(JAC_ROOT, "jaclang");
     offenders: list[str] = [];
     for p in sorted(Path(pkg).rglob("*.jac")) {
-        if not p.is_file() or p.name == "arch.jac" {
+        if not p.is_file() or p.name == "archwire.jac" {
             continue;
         }
         rel = p.relative_to(JAC_ROOT).as_posix();
@@ -154,7 +157,7 @@ test "placement_pins imports stay within the documented allowlist" {
             offenders.append(rel);
         }
     }
-    # Imports that arch.jac wires in are checked through the wiring itself.
+    # Imports that archwire.jac wires in are checked through the wiring itself.
     allowed_bases = {
         os.path.realpath(
             discover_base_file(os.path.join(JAC_ROOT, a)) or os.path.join(JAC_ROOT, a)

@@ -9,6 +9,7 @@ impl StaticAnalysisPass._run_impl(ir_in: Module) -> Module {
     self._check_semantic_patterns(self.module);
     self._check_typing_import_refusals(self.module);
     self._check_redundant_imports(self.module);
+    report_unused_wires(self, self.module);
     self._check_client_imports(self.module);
     self._check_placement_warnings(self.module);
     return ir_in;
@@ -659,4 +660,26 @@ impl StaticAnalysisPass._check_redundant_imports(mod: Module) -> None {
 
 impl StaticAnalysisPass.run_walk with Module entry {
     self.module = self._run_impl(here);
+}
+
+impl is_bootstrap_compiled_module(mod_path: str) -> bool {
+    norm = mod_path.replace("\\", "/");
+    if norm.startswith("jaclang/") {
+        return active_host().is_seed_source(norm[len("jaclang/"):]);
+    }
+    marker = "/jaclang/";
+    idx = norm.rfind(marker);
+    if idx < 0 {
+        return False;
+    }
+    return active_host().is_seed_source(norm[idx + len(marker):]);
+}
+
+impl is_ambient_provider_module(mod_path: str) -> bool {
+    return (mod_path.endswith("builtin.jac") or mod_path.endswith("builtin.py"))
+        and "runtime" in mod_path;
+}
+
+impl UnusedSymbolWalker.check_scope with UniScopeNode entry {
+    self.analysis._check_unused_symbols(here);
 }

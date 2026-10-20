@@ -48,7 +48,7 @@ A task-first index into the commands below. The full alphabetical list follows i
 | `jac test` | Run tests (`jac test <app>` uses that app's `[test]` config) |
 | `jac fmt` | Format code |
 | `jac precommit` | Run format + check using `jac.toml` lint settings (installable as a git hook) |
-| `jac arch` | Declare the project's module wiring in `arch.jac` (`init`, `sync`, `graph`) |
+| `jac arch` | Declare the project's module wiring in `archwire.jac` (`init`, `sync`, `graph`) |
 | `jac clean` | Clean project build artifacts |
 | `jac dot` | Generate graph visualization |
 | `jac browse` | Automate a headless browser over CDP (navigate, click, snapshot, screenshot) |
@@ -651,32 +651,36 @@ jac precommit --install
 
 ### jac arch
 
-Seal a directory with an `arch.jac` and keep it in sync with the modules below it. Having the file closes the directory: every import between its modules comes from a wire `provider --> consumer { names }`, generated into the consumer at compile time, and optional `edge Name: pattern --> pattern` rules restrict what may flow where. See [Project Wiring](../wiring.md).
+Seal a directory with an `archwire.jac`, or catch an existing one up with the modules below it. Having the file closes the directory: every import between its modules comes from a wire `provider ++> consumer { names }`, generated into the consumer at compile time, and optional `edge Name: pattern --> pattern` rules restrict what may flow where. Day to day you edit `archwire.jac` itself; this command is for adoption and one-time cleanups. See [Project Wiring](../wiring.md).
 
 ```bash
-jac arch [-h] [action] [scope] [-s] [-f] [--format {mermaid,json}] [-o OUTPUT]
+jac arch [-h] [action] [scope] [-s] [--prune] [-f] [--format {mermaid,json}] [-o OUTPUT]
 ```
 
 | Argument / Option | Description | Default |
 |--------|-------------|---------|
-| `action` | `init` (write `arch.jac` from the current imports, sealing the directory), `sync` (add the wires its modules are missing) or `graph` (render the wiring) | `graph` |
-| `scope` | The directory an `arch.jac` governs; without it, `sync` visits every `arch.jac` in the project | project root |
-| `-s, --strip` | With `init` or `sync`: remove the imports `arch.jac` now provides from its modules (the same fix `jac fmt --lintfix` applies) | `False` |
-| `-f, --force` | With `init`: overwrite an existing `arch.jac` | `False` |
+| `action` | `init` (write `archwire.jac` from the current imports, sealing the directory), `sync` (add the wires its modules are missing, and with `--prune` drop the ones they never use) or `graph` (render the wiring) | `graph` |
+| `scope` | The directory an `archwire.jac` governs; without it, `sync` visits every `archwire.jac` in the project | project root |
+| `-s, --strip` | With `init` or `sync`: remove the written imports `archwire.jac` now injects from its modules (the same fix `jac fmt --lintfix` applies) | `False` |
+| `--prune` | With `sync`: also remove the wired names their consumers never use | `False` |
+| `-f, --force` | With `init`: overwrite an existing `archwire.jac` | `False` |
 | `--format` | With `graph`: `mermaid` or `json` | `mermaid` |
 | `-o, --output` | With `graph`: write to this file instead of stdout | stdout |
 
 **Examples:**
 
 ```bash
-# Seal the project: write arch.jac from every import between its modules and strip them
+# Seal the project: write archwire.jac from every import between its modules and strip them
 jac arch init --strip
 
-# Seal one directory with its own arch.jac
+# Seal one directory with its own archwire.jac
 jac arch init core --strip
 
-# Add the wires the modules are missing, in every arch.jac
+# Add the wires the modules are missing, in every archwire.jac
 jac arch sync
+
+# Also remove the wired names no consumer uses
+jac arch sync --prune
 
 # Print the wiring as a mermaid diagram, or dump wires and rules as JSON
 jac arch graph

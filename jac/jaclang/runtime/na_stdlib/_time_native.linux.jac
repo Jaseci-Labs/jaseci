@@ -11,7 +11,9 @@ glob CLK_REALTIME: int = 0,
      CLK_PY_MONOTONIC: int = 1,
      _TIMER_ABSTIME: int = 1;
 
-def:pub time_sleep_ns(ns: int) {
+def:pub time_sleep_ns(ns: int);
+
+impl time_sleep_ns(ns: int) {
     ts: int = __alloca(16);
     if clock_gettime(i32(CLK_MONOTONIC), ts) != 0 {
         raise_errno(last_errno());
