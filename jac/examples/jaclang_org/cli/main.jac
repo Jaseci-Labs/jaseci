@@ -15,7 +15,19 @@ obj Invocation {
         text: str = "";
 }
 
-def build_parser -> argparse.ArgumentParser {
+def build_parser -> argparse.ArgumentParser;
+
+def parse_args(argv: list[str]) -> Invocation;
+
+async def dispatch(inv: Invocation) -> int;
+
+async def main(argv: list[str]) -> int;
+
+with entry:__main__ {
+    sys.`exit(asyncio.run(main(sys.argv[1:])));
+}
+
+impl build_parser -> argparse.ArgumentParser {
     parser = argparse.ArgumentParser(
         prog=PROG,
         description="The command-line face of jaclang.org. "
@@ -57,7 +69,7 @@ def build_parser -> argparse.ArgumentParser {
     return parser;
 }
 
-def parse_args(argv: list[str]) -> Invocation {
+impl parse_args(argv: list[str]) -> Invocation {
     parser = build_parser();
     ns = parser.parse_args(argv);
     inv = Invocation(
@@ -75,7 +87,7 @@ def parse_args(argv: list[str]) -> Invocation {
     return inv;
 }
 
-async def dispatch(inv: Invocation) -> int {
+impl dispatch(inv: Invocation) -> int {
     if inv.command == "score" {
         return run_score(inv.repo, inv.as_json);
     }
@@ -92,10 +104,6 @@ async def dispatch(inv: Invocation) -> int {
     return EXIT_USAGE;
 }
 
-async def main(argv: list[str]) -> int {
+impl main(argv: list[str]) -> int {
     return await dispatch(parse_args(argv));
-}
-
-with entry:__main__ {
-    sys.`exit(asyncio.run(main(sys.argv[1:])));
 }

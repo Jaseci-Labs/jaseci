@@ -1,6 +1,10 @@
 import from jaclang.server.bridge { BridgeError }
 
-def render_status(st: DocsStatus) -> str {
+def render_status(st: DocsStatus) -> str;
+
+async def run_docs(action: str) -> int;
+
+impl render_status(st: DocsStatus) -> str {
     if not st.ready {
         return "docs: the graph is empty, the web app has not ingested a corpus yet";
     }
@@ -22,7 +26,7 @@ def render_status(st: DocsStatus) -> str {
     return "\n".join(lines);
 }
 
-async def run_docs(action: str) -> int {
+impl run_docs(action: str) -> int {
     try {
         if action == "sync" {
             await docs_sync_tick();

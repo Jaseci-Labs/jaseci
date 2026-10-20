@@ -286,9 +286,14 @@ runs:
       # when the sources it was lowered from are unchanged (build_python.zig
       # sourcesKey); main keeps the full key, so the runtime is at most one main
       # build behind.
+      # A pull request's kit leaves the native compiler kernel out unless the
+      # PR carries the `native:kernel` label. The seal omits only what
+      # JAC_KIT_OMIT names (artifacts/kit.jac pr_kit_omits), so a build that
+      # does not come through here, such as build-binaries.yml, ships it all.
       env:
         PYTHON: ${{ steps.py.outputs.variant }}
         PR_BUILD: ${{ github.event_name == 'pull_request' }}
+        JAC_KIT_OMIT: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'native:kernel') && 'kernel' || '' }}
       run: |
         PY=(-Dpython="$PYTHON")
         if [ "$PYTHON" = jacpython ]; then PY+=(-Dreuse-python="$PR_BUILD"); fi

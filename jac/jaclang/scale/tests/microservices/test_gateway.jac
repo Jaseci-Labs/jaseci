@@ -1,14 +1,6 @@
 import os;
 import tempfile;
 import from pathlib { Path }
-import from jaclang.scale.runtime.gateway.service_registry {
-    ServiceRegistry,
-    ServiceEntry,
-    ServiceStatus
-}
-import from jaclang.scale.runtime.gateway.microservice_gateway { MicroserviceGateway }
-import from jaclang.server.serving.datatypes { Headers, Request, URL }
-import from jaclang.scale.tests.support { get_free_port }
 
 test "resolve strips prefix and preserves walker path" {
     reg = ServiceRegistry();
@@ -1388,7 +1380,6 @@ obj _FakeScaleConfig {
 
 
 def _with_cors_config(cfg: dict[str, any], fn: any) -> any {
-    import jaclang.scale.config.config_loader as config_loader;
     orig = config_loader.get_scale_config;
     fake = _FakeScaleConfig(_cors=cfg);
     def fake_factory(project_dir: object = None) -> object {
@@ -2144,7 +2135,6 @@ test "learn skips bare builtin API roots so one service cannot capture them" {
 
 
 def gw_route_table_for_poison_test -> any {
-    import from jaclang.scale.runtime.gateway.route_table { ServiceRouteTable }
     table = ServiceRouteTable();
     table.learn(
         "core_app",
@@ -2223,9 +2213,13 @@ test "forward headers append the peer to the forwarded chain" {
     h = Headers();
     h.append("x-forwarded-for", "203.0.113.7");
     h.append("X-Forwarded-For", "198.51.100.9");
+    h.append("Expect", "100-continue");
+    h.append("X-Ordinary", "kept");
     req = Request(url=URL(path="/api/x"), headers=h, client_host="10.0.0.1");
     fwd = gw.build_forward_headers(req);
     assert fwd["X-Forwarded-For"] == "203.0.113.7, 198.51.100.9, 10.0.0.1";
+    assert all(k.lower() != "expect" for k in fwd.keys());
+    assert fwd["X-Ordinary"] == "kept";
     xff_keys = [
         k
         for k in fwd.keys()
