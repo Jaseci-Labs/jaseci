@@ -536,6 +536,10 @@ impl effective_default_codespace -> str {
     if cur {
         return cur;
     }
+    return project_default_codespace();
+}
+
+impl project_default_codespace -> str {
     import from jaclang.compiler.frontend.host { active_host }
     project = active_host().project_defaults();
     return project.default_codespace if project is not None else "server";

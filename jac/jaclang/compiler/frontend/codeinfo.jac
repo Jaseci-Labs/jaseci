@@ -228,6 +228,8 @@ def get_effective_default_codespace_override -> str;
 
 def effective_default_codespace -> str;
 
+def project_default_codespace -> str;
+
 def set_native_unit_compile(value: bool) -> bool;
 
 def reset_native_unit_compile(prev: bool);

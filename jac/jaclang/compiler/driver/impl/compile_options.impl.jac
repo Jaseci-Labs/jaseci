@@ -171,10 +171,14 @@ impl CompileOptions.dependency_projection(path: str) -> str {
             f"app_kind={self.app_kind}",
             f"aot={int(bool(self.aot_mode))}",
             f"force_cs={self.force_codespace}",
-            f"default_cs={self.default_codespace}",
+            f"default_cs={self.codespace_key()}",
             f"ui={self.ui}"
         ]
     );
+}
+
+impl CompileOptions.codespace_key -> str {
+    return self.default_codespace or effective_default_codespace();
 }
 
 impl CompileOptions.module_projection -> str {
@@ -184,7 +188,7 @@ impl CompileOptions.module_projection -> str {
             self.codegen_identity(),
             f"aot={int(bool(self.aot_mode))}",
             f"force_cs={self.force_codespace}",
-            f"default_cs={self.default_codespace}",
+            f"default_cs={self.codespace_key()}",
             f"ui={self.ui}",
             f"root={self.project_root or ''}"
         ]

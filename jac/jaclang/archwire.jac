@@ -6265,6 +6265,8 @@ graph import compiler {
             native_unit_prefix
         },
         driver.boundary_classify._default_codespace_for { effective_default_codespace },
+        driver.compile_options.CompileOptions.codespace_key { effective_default_codespace },
+        driver.ifacecache.IfaceRegistry.eligible { project_default_codespace },
         driver.boundary_classify.import_binds_client_native
             | driver.session_compile.drop_native_bindings {
             InteropContext,
@@ -11993,7 +11995,7 @@ graph import compiler.frontend {
         source_layout { PathFacts },
     ]
     host --> [
-        codeinfo.effective_default_codespace
+        codeinfo.project_default_codespace
             | parser.frontend.annex_paths
             | unitree.Module.annexable_by.getter { active_host },
         codeinfo.effective_native_target { active_host },
