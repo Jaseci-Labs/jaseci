@@ -58,7 +58,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .kernel
-          key: kernel-v1-${{ matrix.platform }}-${{ steps.inputs.outputs.kernel }}
+          key: kernel-v2-${{ matrix.platform }}-${{ steps.inputs.outputs.kernel }}
 
       - name: Fetch the prebuilt host shim from the deps release
         if: steps.kernel-cache.outputs.cache-hit != 'true'
@@ -145,7 +145,10 @@ jobs:
         run: |
           set -euo pipefail
           BIN="$PWD/zig-out/bin/jac"
-          "$BIN" native build "kernel@${{ matrix.platform }}"
+          # --exact records the compiler's full digest, which the seal's
+          # payload tree reproduces; a dev build records only the ABI
+          # contract's, and the seal refuses to adopt that.
+          "$BIN" native build "kernel@${{ matrix.platform }}" --exact
           "$BIN" native status "kernel@${{ matrix.platform }}"
           if [ "${{ matrix.platform }}" = "linux-x86_64" ]; then
             SRC=jaclang/compiler
