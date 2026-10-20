@@ -124,6 +124,26 @@ def drive(
 }
 
 
+"""Each message as (role, content), from a dict or a litellm object."""
+def wire(msgs: list[any]) -> list[tuple[str, str]] {
+    return [(str(m.get("role")), str(m.get("content"))) for m in msgs];
+}
+
+
+"""Each record's new_messages is what its request sent past the previous call's reply."""
+def assert_records_match(label: str, records: list[any], sent: list[any]) {
+    for (i, rec) in enumerate(records) {
+        start = 0 if i == 0 else len(sent[i - 1]["messages"]) + 1;
+        want = sent[i]["messages"][start:];
+        assert wire(rec["new_messages"]) == wire(want) , (
+            f"{label}: record {i} has {wire(rec['new_messages'])}, the request sent {wire(
+                want
+            )}"
+        );
+    }
+}
+
+
 test "reasoning is kept, sent back and reported on every tool-loop path" {
     llm = Model(model_name="gpt-4o");
     for (label, stream, logging, replies) in [
@@ -171,6 +191,7 @@ test "reasoning is kept, sent back and reported on every tool-loop path" {
             assert len(records) == calls , f"{label}: {calls} calls, {len(
                 records
             )} records";
+            assert_records_match(label, records, sent);
             for rec in records {
                 assert rec["reply"].get("reasoning_content") == THINK , f"{label}: {rec[
                     'reply'
@@ -234,8 +255,11 @@ test "hook records show the request as sent: the parallel hint, and a typed-outp
     assert "scheduling rules" in str(system.get("content")) , f"system prompt recorded as {system}";
     def place -> Place by llm();
     retry = [whole('{"city": '), whole('{"schema_object_wrapper": {"city": "Galle"}}')];
-    (_, records) = drive(place, None, retry);
+    (sent, records) = drive(place, None, retry);
     last = records[-1];
+    assert wire(last["new_messages"]) == wire(sent[-1]["messages"]) , (
+        "after a typed-output retry the record carries the whole request, schema hint included"
+    );
     assert last["after_compaction"]
     and "output parser reported" in str(last["new_messages"]) , (
         f"the retry record misses its feedback: {last}"
@@ -313,4 +337,30 @@ test "after compaction the hook reports the whole rebuilt request" {
     assert flags.count(True) == 1 , f"after_compaction flags {flags}";
     rebuilt = records[flags.index(True)]["new_messages"];
     assert rebuilt[0].get("role") == "system" , f"the rebuilt request is reported whole: {rebuilt}";
+}
+
+
+test "a streamed reply that fails to parse is still counted and reported" {
+    llm = Model(model_name="gpt-4o");
+    def on_event(event: any) { }
+    # A typed answer streams only through a stream_handler.
+    def place(q: str) -> Place by llm(
+        tools=[get_weather], stream=True, stream_handler=on_event
+    );
+    records: list[any] = [];
+    replies = [streamed('{"city": '), streamed('{"city": ')];
+    def answer(params: dict) -> any {
+        return iter(replies.pop(0));
+    }
+    register_llm_call_hook(records.append);
+    try {
+        with mock.patch.object(Model, "model_call_with_stream", side_effect=answer) {
+            place("Where?");
+        }
+    } except Exception { } finally {
+        unregister_llm_call_hook(records.append);
+    }
+    assert records and records[0]["reply"].get("reasoning_content") == THINK , (
+        f"the unparsable reply is missing from the records: {records}"
+    );
 }

@@ -1613,7 +1613,7 @@ def plan(goal: str) -> str by llm(reasoning_effort="low");
 |---|---|
 | `invocation_id`, `parent_invocation_id`, `caller` | Which `by llm()` call this was, as in agent telemetry |
 | `call_kind` | `react_iteration`, `final_answer_restream`, `recovery` or `compaction` |
-| `new_messages` | What this call sent that earlier calls did not; the first call includes the system prompt as sent and `conversation=` history |
+| `new_messages` | What this call's request sent past the previous call's reply, taken from the request as sent (schema, tool and parallel hints included); the first call's is the whole request |
 | `reply` | The full reply as a dict, reasoning included |
 | `usage` | This call's `per_call` usage entry |
 | `after_compaction` | `True` when compaction or a typed-output retry just rebuilt the history; `new_messages` is then the whole rebuilt request |
