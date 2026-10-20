@@ -11,6 +11,7 @@ import from support {
     call,
     capture_loguru,
     chunk_text,
+    event_types,
     events_of,
     finish,
     fixture_path,
@@ -31,29 +32,21 @@ glob THINK: str = "REASONING " + ("step by step " * 20),
          "total_tokens": 19,
          "completion_tokens_details": {"reasoning_tokens": 7}
      },
+     SIGNED: dict[str, any] = {
+         "type": "thinking",
+         "thinking": THINK,
+         "signature": "SIG"
+     },
      # (label, fields, kept when streamed). litellm's stream builder drops a thinking
      # block with no text, and provider_specific_fields.
      KINDS: list[tuple[str, dict[str, any], bool]] = [
          ("reasoning text", {"reasoning_content": THINK}, True),
          (
              "signed thinking",
-             {
-                 "reasoning_content": THINK,
-                 "thinking_blocks": [
-                     {"type": "thinking", "thinking": THINK, "signature": "SIG"}
-                 ]
-             },
+             {"reasoning_content": THINK, "thinking_blocks": [SIGNED]},
              True
          ),
-         (
-             "encrypted only",
-             {
-                 "thinking_blocks": [
-                     {"type": "thinking", "thinking": "", "signature": "SIG"}
-                 ]
-             },
-             False
-         ),
+         ("encrypted only", {"thinking_blocks": [SIGNED | {"thinking": ""}]}, False),
          (
              "provider specific",
              {"provider_specific_fields": {"reasoning_details": [{"text": THINK}]}},
@@ -68,6 +61,12 @@ glob THINK: str = "REASONING " + ("step by step " * 20),
          ("stream, finish_tool restream", True, False, True, True),
          ("stream with events", True, True, True, False),
          ("stream with events, no tools", True, True, False, False)
+     ],
+     FIELDS: list[str] = [
+         "reasoning_content",
+         "thinking_blocks",
+         "reasoning_details",
+         "provider_specific_fields"
      ];
 
 
@@ -85,6 +84,12 @@ def turn(llm: MockLLM, history: list[any], path: tuple, message: str) -> list[an
 }
 
 
+"""The provider fields of `m`, missing ones as None."""
+def pick(m: dict[str, any]) -> dict[str, any] {
+    return {k: m.get(k) for k in FIELDS};
+}
+
+
 test "a reply's own fields are kept, sent back, streamed, counted and reported on every path" {
     def broken(record: dict[str, any]) {
         raise RuntimeError("a hook that raises must not break the call");
@@ -96,12 +101,9 @@ test "a reply's own fields are kept, sent back, streamed, counted and reported o
                 continue;
             }
             label = f"{path_name}, {kind}";
-            want = {
-                k: v
-                for (k, v) in fields.items()
-                if k != "provider_specific_fields"
-            }
-                | (fields.get("provider_specific_fields") or {});
+            # provider_specific_fields arrive lifted onto the reply itself.
+            want = dict(fields);
+            want.update(want.pop("provider_specific_fields", None) or {});
             replies: list[any] = [];
             for answer in ["Paris is sunny.", "Still sunny."] {
                 if tools {
@@ -130,94 +132,58 @@ test "a reply's own fields are kept, sent back, streamed, counted and reported o
                 unregister_llm_call_hook(broken);
                 unregister_llm_call_hook(records.append);
             }
-            # A streamed call without tools stores no reply and reports no call.
-            if not tools {
-                assert not records , f"{label}: unexpected records";
-            }
             # Kept, and nothing invented.
-            for reply in [
-                m
-                for m in held
-                if m.get("role") == "assistant"
-            ] {
-                got = {
-                    k: reply.get(k)
-                    for k in set(want)
-                        | {
-                            "reasoning_content",
-                            "thinking_blocks",
-                            "provider_specific_fields"
-                        }
-                };
-                assert got
-                    == want
-                        | {
-                            k: None
-                            for k in got
-                            if k not in want
-                        } , (f"{label}: kept {got}, sent {want}");
+            for m in held {
+                assert m.get("role") != "assistant" or pick(m) == pick(want) , (
+                    f"{label}: kept {pick(m)}, sent {want}"
+                );
             }
             # Turn 2 resends turn 1 unchanged, so the provider's prompt cache matches.
             assert list(llm.sent("messages")[-1])[1:1 + len(held)] == held , (
                 f"{label}: turn 2 changed what turn 1 left in the history"
             );
-            # One hook record per model call, with the full reply and its usage.
-            assert len(records) == (calls if tools else 0) , (
-                f"{label}: {calls} calls, {len(records)} records"
-            );
+            # One hook record per model call, with the full reply and its usage. A
+            # streamed call without tools stores no reply and reports no call.
+            assert len(records) == (calls if tools else 0) , f"{label}: {len(
+                records
+            )} records";
             assert not tools
-                or [m.get("role") for m in records[0]["new_messages"]][:2]
+                or [m["role"] for m in records[0]["new_messages"][:2]]
                     == ["system", "user"] , (
                 f"{label}: the first record carries the prompt"
             );
             for rec in records {
-                assert rec["reply"].get("reasoning_content")
-                    == want.get("reasoning_content") , (
-                    f"{label}: hook reply {rec['reply']}"
+                usage = rec["usage"];
+                got = (
+                    rec["reply"].get("reasoning_content"),
+                    rec["call_kind"],
+                    usage.get("reasoning_tokens")
                 );
-                assert rec["call_kind"] == rec["usage"].get("call_kind") , (
-                    f"{label}: hook says {rec['call_kind']}, usage says {rec[
-                        'usage'
-                    ].get(
-                        'call_kind'
-                    )}"
+                assert got
+                    == (want.get("reasoning_content"), usage.get("call_kind"), 7) , (
+                    f"{label}: hook record {rec}"
                 );
-                assert rec["usage"].get("reasoning_tokens") == 7 , f"{label}: usage {rec[
-                    'usage'
-                ]}";
             }
-            # Reasoning streams on its own channel, merged, never in the answer.
-            if logging {
-                for evs in (first, second) {
-                    kinds = [e.event_type for e in evs];
-                    shown = [
-                        i
-                        for (i, k) in enumerate(kinds)
-                        if k in ("thought", "chunk")
-                    ];
-                    thought_at = [
-                        i
-                        for (i, k) in enumerate(kinds)
-                        if k == "reasoning"
-                    ];
-                    assert not shown or not thought_at or max(thought_at) < shown[0] , (
-                        f"{label}: reasoning arrived after the answer began: {kinds}"
+            if not logging {
+                continue;
+            }
+            # Reasoning streams on its own channel, merged, before the answer.
+            for evs in (first, second) {
+                answering = False;
+                for kind_ in event_types(evs) {
+                    answering = answering or kind_ in ("thought", "chunk");
+                    assert not (answering and kind_ == "reasoning") , (
+                        f"{label}: reasoning after the answer began: {event_types(evs)}"
                     );
                 }
-                events = first + second;
-                texts = [
-                    str(e.data["content"]) for e in events_of(events, "reasoning")
-                ];
-                visible = chunk_text(events)
-                    + str([e.data for e in events_of(events, "thought")]);
-                assert "REASONING" not in visible , f"{label}: reasoning leaked into the answer";
-                assert "".join(texts) == want.get("reasoning_content", "") * calls , (
-                    f"{label}: reasoning events {texts}"
-                );
-                assert len(texts) <= 2 * calls , f"{label}: {len(
-                    texts
-                )} events, not merged";
             }
+            events = first + second;
+            texts = [str(e.data["content"]) for e in events_of(events, "reasoning")];
+            visible = chunk_text(events)
+                + str([e.data for e in events_of(events, "thought")]);
+            assert "REASONING" not in visible , f"{label}: reasoning leaked into the answer";
+            assert "".join(texts) == want.get("reasoning_content", "") * calls
+                and len(texts) <= 2 * calls , f"{label}: reasoning events {texts}";
         }
     }
     before = len(records);
@@ -228,25 +194,22 @@ test "a reply's own fields are kept, sent back, streamed, counted and reported o
 
 test "reasoning params reach the model only when set, from by llm() or jac.toml" {
     enabled = {"type": "enabled"};
-    for (label, effort, thinking, extra) in [
-        ("effort", "low", None, None),
-        ("thinking", None, enabled, None),
-        ("extra_body", None, None, {"thinking": enabled}),
-        ("none set", None, None, None)
+    keys = ("reasoning_effort", "thinking", "extra_body");
+    for given in [
+        ("low", None, None),
+        (None, enabled, None),
+        (None, None, {"thinking": enabled}),
+        (None, None, None)
     ] {
         llm = MockLLM(outputs=[say("ok")]);
         def answer(q: str) -> str by llm(
-            reasoning_effort=effort, thinking=thinking, extra_body=extra
+            reasoning_effort=given[0], thinking=given[1], extra_body=given[2]
         );
         answer("hi");
         sent = llm.seen[0];
-        for (key, want) in [
-            ("reasoning_effort", effort),
-            ("thinking", thinking),
-            ("extra_body", extra)
-        ] {
+        for (key, want) in zip(keys, given) {
             assert sent.get(key) == want and (want is not None or key not in sent) , (
-                f"{label}: {key} sent as {sent.get(key)!r}"
+                f"{given}: {key} sent as {sent.get(key)!r}"
             );
         }
     }
@@ -255,12 +218,7 @@ test "reasoning params reach the model only when set, from by llm() or jac.toml"
         params = get_byllm_config(
             Path(fixture_path("reasoning_config"))
         ).get_call_params_config();
-        assert (
-            params.get("reasoning_effort"),
-            params.get("thinking"),
-            params.get("extra_body")
-        )
-            == ("low", enabled, None) , f"jac.toml: {params}";
+        assert tuple(params.get(k) for k in keys) == ("low", enabled, None) , f"jac.toml: {params}";
     } finally {
         reset_byllm_config();
     }
@@ -271,22 +229,17 @@ test "compaction counts reasoning, and the hook then reports the rebuilt request
     records: list[dict[str, any]] = [];
     def drop_reasoning(msgs: list[any], keep_recent: int) -> list[any] {
         return [
-            {
-                k: v
-                for (k, v) in m.items()
-                if k != "reasoning_content"
-            }
-                if isinstance(m, dict)
-                else m for m in msgs
+            m | {"reasoning_content": None} if isinstance(m, dict) else m for m in msgs
         ];
     }
+    big = {"reasoning_content": THINK * 10};
     llm = MockLLM(
         ctx_window=1000,
         outputs=[
             call(
                 "get_weather",
                 {"city": "Galle"},
-                fields={"reasoning_content": THINK * 10},
+                fields=big,
                 usage={"prompt_tokens": 900}
             ),
             say("done")
@@ -304,14 +257,10 @@ test "compaction counts reasoning, and the hook then reports the rebuilt request
         unregister_llm_call_hook(records.append);
     }
     assert "reduced message list" in logs.text() , f"dropping only reasoning is a reduction:\n{logs.text()}";
-    after = [
-        r
-        for r in records
-        if r["after_compaction"]
-    ];
-    assert len(after) == 1 and after[0]["new_messages"][0].get("role") == "system" , (
-        f"the call after compaction reports the whole rebuilt request: {after}"
-    );
+    flags = [r["after_compaction"] for r in records];
+    assert flags.count(True) == 1 , f"after_compaction flags {flags}";
+    rebuilt = records[flags.index(True)]["new_messages"];
+    assert rebuilt[0]["role"] == "system" , f"the call after compaction reports the whole rebuilt request: {rebuilt}";
 }
 
 
@@ -320,18 +269,13 @@ test "a stream litellm cannot rebuild still keeps the reasoning it carried" {
     llm = MockLLM(
         outputs=[say("Paris is sunny.", fields={"reasoning_content": THINK})]
     );
+    no_builder = RuntimeError("no builder");
     with mock.patch.object(
-        _byllm_llm_mod.litellm,
-        "stream_chunk_builder",
-        side_effect=RuntimeError("no builder")
+        _byllm_llm_mod.litellm, "stream_chunk_builder", side_effect=no_builder
     ) {
         turn(llm, history, PATHS[3], "How is Paris?");
     }
-    reply = [
-        m
-        for m in history
-        if m.get("role") == "assistant"
-    ][-1];
+    reply = history[-1];
     assert (reply.get("content"), reply.get("reasoning_content"))
         == ("Paris is sunny.", THINK) , (
         f"the streamed text and reasoning are both the reply: {reply}"
