@@ -274,7 +274,17 @@ impl UniNode.in_impl_spec.getter -> bool {
     while cur is not None {
         if isinstance(cur, ImplDef) {
             spec = cur.spec;
-            return child is spec or (isinstance(spec, list) and child in spec);
+            if child is spec {
+                return True;
+            }
+            if isinstance(spec, list) {
+                for item in spec {
+                    if item is child {
+                        return True;
+                    }
+                }
+            }
+            return False;
         }
         if isinstance(cur, CodeBlockStmt) {
             return False;
@@ -309,11 +319,16 @@ impl UniNode.own_impls.getter -> list[ImplDef] {
 }
 
 impl UniNode.linked_impls -> list[ImplDef] {
-    found: list[ImplDef] = self.own_impls;
-    for kind in (Ability, Archetype, Enum) {
-        for decl in self.get_all_sub_nodes(kind) {
-            found.extend(decl.own_impls);
-        }
+    found: list[ImplDef] = [];
+    found.extend(self.own_impls);
+    for ability in self.get_all_sub_nodes(Ability) {
+        found.extend(ability.own_impls);
+    }
+    for arch in self.get_all_sub_nodes(Archetype) {
+        found.extend(arch.own_impls);
+    }
+    for enm in self.get_all_sub_nodes(Enum) {
+        found.extend(enm.own_impls);
     }
     return found;
 }
@@ -808,10 +823,19 @@ impl UniScopeNode.parent_scope.getter -> (UniScopeNode | None) {
     }
     found = [self<-:ScopeChild:<-];
     if found {
-        return found[-1];
+        last = found[-1];
+        if isinstance(last, UniScopeNode) {
+            return last;
+        }
     }
     owners = [self->:ScopeParent:->];
-    return owners[-1] if owners else None;
+    if owners {
+        owner = owners[-1];
+        if isinstance(owner, UniScopeNode) {
+            return owner;
+        }
+    }
+    return None;
 }
 
 impl UniScopeNode.parent_scope.setter(parent_scope: (UniScopeNode | None)) {
@@ -826,12 +850,19 @@ impl UniScopeNode.kid_scope.getter -> list[UniScopeNode] {
     if self.folded {
         return self.owning_scope.kid_scope;
     }
-    return [self->:ScopeChild:->];
+    kids: list[UniScopeNode] = [];
+    for kid in [self->:ScopeChild:->] {
+        if isinstance(kid, UniScopeNode) {
+            kids.append(kid);
+        }
+    }
+    return kids;
 }
 
 impl UniScopeNode.owning_scope.getter -> UniScopeNode {
-    if isinstance(self, ImplDef) {
-        decl = self.decl_link;
+    nd: UniNode = self;
+    if isinstance(nd, ImplDef) {
+        decl = nd.decl_link;
         if isinstance(decl, UniScopeNode) {
             return decl;
         }
@@ -999,7 +1030,11 @@ impl UniScopeNode.get_enclosing_captures -> list[Symbol] {
 }
 
 impl UniScopeNode.folded.getter -> bool {
-    return isinstance(self, ImplDef) and self.decl_link is not None;
+    nd: UniNode = self;
+    if isinstance(nd, ImplDef) {
+        return nd.decl_link is not None;
+    }
+    return False;
 }
 
 impl UniScopeNode.fold_scope(impl_scope: UniScopeNode) -> None {

@@ -229,6 +229,9 @@ impl TreePass.exit_walk with UniNode exit {
 
 impl TreePass.walk_decl_body(decl: UniNode) -> None {
     for impl_def in [decl->:ImplOf:->] {
+        if not isinstance(impl_def, ImplDef) {
+            continue;
+        }
         self._decl_bodies.append(impl_def);
         try {
             self.ctx.walk_subtree(impl_def, self);
