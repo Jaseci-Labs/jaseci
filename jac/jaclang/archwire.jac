@@ -867,7 +867,7 @@ graph import {
         cli.commands.analysis._check_file_job
             | cli.commands.architecture
             | cli.commands.execution.debug
-            | cli.commands.fix._format_source
+            | cli.commands.fix._client_imports
             | cli.commands.native_build.native_build
             | cli.commands.transform.jac2js
             | cli.mcp.compiler_bridge.CompilerBridge.get_ast_snippet._do_ast
@@ -888,12 +888,13 @@ graph import {
             | testing.cl_test_runner.compile_cl_module
             | testing.test_runner._fresh_jac_state { JacProgram },
         cli.commands.analysis._format_single_file_worker
-            | cli.commands.fix._verify_claims
+            | cli.commands.fix._format_source
             | cli.commands.transform.jac2py
             | cli.mcp.compiler_bridge.CompilerBridge.jac_to_js._do_jac2js
             | dist.precompile_bytecode.prebuild_native_closure
             | testing.cl_test_runner.module_is_client { JacProgram },
         cli.commands.analysis.explain
+            | cli.commands.fix._verify_claims
             | cli.commands.transform.py2jac
             | cli.mcp.compiler_bridge.CompilerBridge.jac_to_py._do_jac2py
             | dist.precompile_bytecode.precompile_native_unit { JacProgram },
@@ -909,7 +910,6 @@ graph import {
         dist.publish.builder._backend_source { JacProgram as JacProgramRt },
         dist.publish.builder._module_is_client_source { JacProgram as JacProgramRt },
     ]
-    compiler.driver.program ++> cli.commands.fix._client_imports { JacProgram }
     compiler.driver.program --> [
         dist.precompile_bytecode.sealable_sources
             | scale.tests.apps.test_fleet_from_apps { JacProgram },
@@ -1221,7 +1221,6 @@ graph import {
     ]
     compiler.frontend.unitree --> cli.commands.analysis._check_file_job
         | lsp.server.engine.JacLangServer.type_check_file { Source as _Src }
-    compiler.frontend.unitree as uni ++> cli.commands.fix._client_imports;
     compiler.frontend.unitree as uni ++> [
         cli.commands.fix._access_plan
             | cli.commands.transform.py2jac
@@ -1231,6 +1230,7 @@ graph import {
             | lsp.server.utils
             | project.compiler_host.ProjectHost.parse_python
             | project.kernel_snapshot,
+        cli.commands.fix._client_imports,
         cli.commands.fix._imported_names,
         cli.commands.fix._module_has_jsx,
         cli.commands.fix._plain_top_decls,
