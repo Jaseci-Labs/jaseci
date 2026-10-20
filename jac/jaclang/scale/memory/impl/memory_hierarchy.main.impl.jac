@@ -101,7 +101,7 @@ impl ScaleTieredMemory._mark_committed(anchor: (Anchor | None)) -> None {
 
 impl ScaleTieredMemory.put(anchor: Anchor) -> None {
     self._committed = False;
-    super.put(anchor);
+    self.__mem__[anchor.id] = anchor;
 }
 
 impl ScaleTieredMemory.commit(anchor: (Anchor | None) = None) -> None {
@@ -197,13 +197,24 @@ impl ScaleTieredMemory.batch_get(ids: list[UUID]) -> dict[UUID, Anchor] {
     if l2_misses and self.l3 {
         leases = cast(RedisBackend, self.l2).lease(l2_misses) if self.l2 else {};
         l3_results: dict[UUID, Anchor] = {};
-        if hasattr(self.l3, 'batch_get') {
-            l3_results = self.l3.batch_get(l2_misses);
-        } else {
-            for mid in l2_misses {
-                if (a := self.l3.get(mid)) {
-                    l3_results[mid] = a;
+        try {
+            if hasattr(self.l3, 'batch_get') {
+                l3_results = self.l3.batch_get(l2_misses);
+            } else {
+                for mid in l2_misses {
+                    if (a := self.l3.get(mid)) {
+                        l3_results[mid] = a;
+                    }
                 }
+            }
+        } finally {
+            if self.l2 {
+                unfilled = {
+                    id: token
+                    for (id, token) in leases.items()
+                    if id not in l3_results
+                };
+                cast(RedisBackend, self.l2).release(unfilled);
             }
         }
         for (id, anchor) in l3_results.items() {
@@ -262,20 +273,38 @@ impl ScaleTieredMemory._refresh_if_stale(id: UUID) -> None {
 
 impl ScaleTieredMemory.get(id: UUID) -> (Anchor | None) {
     self._refresh_if_stale(id);
-    if not self.l2 or id in self.__mem__ {
+    if not self.l2 or not self.l3 or id in self.__mem__ {
         return super.get(id);
     }
     if (anchor := self.l2.get(id)) {
         self.__mem__[anchor.id] = anchor;
         return anchor;
     }
-    leases = cast(RedisBackend, self.l2).lease([id]);
-    if self.l3 and (anchor := self.l3.get(id)) {
-        self.__mem__[anchor.id] = anchor;
-        cast(RedisBackend, self.l2).fill(anchor, leases.get(id));
-        return anchor;
+    cache = cast(RedisBackend, self.l2);
+    leases = cache.lease([id]);
+    loaded: (Anchor | None) = None;
+    try {
+        loaded = self.l3.get(id);
+    } finally {
+        if loaded is None {
+            cache.release(leases);
+        }
     }
-    return None;
+    if loaded is None {
+        return None;
+    }
+    self.__mem__[loaded.id] = loaded;
+    cache.fill(loaded, leases.get(id));
+    return loaded;
+}
+
+impl ScaleTieredMemory.execute_plan(plan: QueryPlan) -> Generator[Anchor, None, None] {
+    if self.l3 is None {
+        return;
+    }
+    for anchor in self.l3.execute_plan(plan) {
+        yield self.__mem__.setdefault(anchor.id, anchor);
+    }
 }
 
 impl ScaleTieredMemory.query(

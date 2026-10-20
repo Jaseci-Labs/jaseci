@@ -1482,6 +1482,17 @@ def _field_update_race(witness_id: UUID) -> None {
     second.mem.commit();
 }
 
+def _stale_save_race(witness_id: UUID) -> None {
+    stale = _cache_pod();
+    stale_witness = stale.mem.get(witness_id).archetype;
+    writer = _cache_pod();
+    writer.mem.get(witness_id).archetype.pointer = "sandbox-three";
+    writer.mem.commit();
+    JacRuntime.set_context(stale);
+    JacRuntime.save(stale_witness);
+    stale.mem.commit();
+}
+
 def _delayed_refill_race(witness_id: UUID, read: str) -> None {
     writer = _cache_pod();
     writer_witness = writer.mem.get(witness_id).archetype;
@@ -1504,6 +1515,7 @@ def _delayed_refill_race(witness_id: UUID, read: str) -> None {
 
 test "L2 Redis never serves an anchor older than Mongo (issues 6295, 9840)" {
     import json;
+    import asyncio;
     import from uuid { uuid4, UUID }
     import from jaclang.jac0core.archetype { EdgeAnchor, NodeAnchor }
     import from jaclang.runtimelib.utils { to_uuid }
@@ -1614,10 +1626,13 @@ test "L2 Redis never serves an anchor older than Mongo (issues 6295, 9840)" {
         for (row, read, expected) in [
             ("field update", None, ("sandbox-one", "second-request")),
             ("delayed get refill", "get", ("sandbox-two", "seed")),
-            ("delayed batch_get refill", "batch_get", ("sandbox-two", "seed"))
+            ("delayed batch_get refill", "batch_get", ("sandbox-two", "seed")),
+            ("unchanged save after a newer commit", "save", ("sandbox-three", "seed"))
         ] {
             witness_id = _seed_witness();
-            if read {
+            if read == "save" {
+                _stale_save_race(witness_id);
+            } elif read {
                 _delayed_refill_race(witness_id, read);
             } else {
                 _field_update_race(witness_id);
@@ -1635,6 +1650,30 @@ test "L2 Redis never serves an anchor older than Mongo (issues 6295, 9840)" {
         assert cache.lease([witness_id]) == {} , "a concurrent miss must not take over the refill";
         cache.fill(_cache_pod().mem.l3.get(witness_id), first.get(witness_id));
         assert cache.get(witness_id) is not None , "the first reader's refill must land";
+
+        missing = uuid4();
+        assert _cache_pod().mem.get(missing) is None;
+        assert cache.lease([missing]) , "a Mongo miss must release its refill lease";
+
+        assert cache.redis_url , "aput must take the async Redis path";
+        for write in ["put", "aput"] {
+            witness_id = _seed_witness();
+            cache.invalidate(witness_id);
+            token = cache.lease([witness_id]).get(witness_id);
+            stale = _cache_pod().mem.l3.get(witness_id);
+            newer = _cache_pod().mem.l3.get(witness_id);
+            newer.archetype.pointer = "sandbox-four";
+            if write == "put" {
+                cache.put(newer);
+            } else {
+                asyncio.run(cache.aput(newer));
+            }
+            cache.fill(stale, token);
+            cached = cache.get(witness_id).archetype.pointer;
+            assert cached == "sandbox-four" , (
+                f"{write}: a refill leased before {write} overwrote it with {cached!r}"
+            );
+        }
     } finally {
         JacRuntime.set_context(prior);
         os.environ.pop("MONGODB_URI", None);
