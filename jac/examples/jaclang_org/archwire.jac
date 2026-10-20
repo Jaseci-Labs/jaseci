@@ -472,7 +472,6 @@ graph import core.site {
         | packages.PackagePage
         | packages.PackagesIndex { Badge }
     ui.button ++> [
-        home.HomeHero | landing.BookSection | landing.ExplorerFinale { buttonVariants },
         jacyac.JacYac
             | jacyac.components.AuthForm
             | jacyac.components.ChannelsTab
@@ -488,6 +487,7 @@ graph import core.site {
             | jacyac.components.TweetCard
             | jacyac.components.WelcomeBanner
             | landing.WasmGame { Button },
+        landing.BookSection | landing.ExplorerFinale { buttonVariants },
     ]
     ui.card ++> [
         jacyac.components.AuthForm {
@@ -669,7 +669,6 @@ graph import core.site.home {
         AgentNative { CodeWindow, Figure, HomeSection, Prose, SectionHead },
         EveryPlatform { CodeWindow, Fact, Figure, HomeSection, SectionHead },
         HomeClose { HomeSection, Prose },
-        HomeHero { Prose },
         InProduction | NativeBench | OneLanguage {
             Fact,
             Figure,

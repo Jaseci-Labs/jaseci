@@ -137,7 +137,7 @@ def:pub InProduction -> JsxElement {
                 num=""
                 kicker="In production"
                 title="A production platform, rewritten in Jac."
-                lede="A startup's production web platform, built in Next.js and TypeScript and scaled on Supabase, was rewritten in pure Jac with pixel-perfect equivalent functionality. The entire TypeScript codebase came out, and Jac plus a single `jac.toml` went in."
+                lede="A startup's production web platform, built in Next.js and TypeScript and scaled on Supabase, was rewritten in pure Jac with pixel-perfect equivalent functionality. The entire TypeScript codebase was replaced with Jac plus a single `jac.toml`."
             />
             <Figure
                 label="fig. 3"

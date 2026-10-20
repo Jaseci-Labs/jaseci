@@ -1,37 +1,11 @@
-import from "@jac/runtime" { Link }
-
 glob HOME_INSTALL: str = "curl -fsSL https://jaclang.org/install.sh | bash",
+     HOME_PROMPT: str = "Build [your idea] with the jac binary",
      _PILLARS: list[dict[str, str]] = [
-         {
-             "num": "01",
-             "id": "one-language",
-             "title": "One language",
-             "body": "Python, TypeScript, C, React and React Native behind one minimal syntax."
-         },
-         {
-             "num": "02",
-             "id": "no-glue",
-             "title": "No glue",
-             "body": "The compiler and runtime generate the APIs, storage and deployment."
-         },
-         {
-             "num": "03",
-             "id": "every-platform",
-             "title": "Every platform",
-             "body": "One codebase projects to web, desktop, mobile, CLI and cloud."
-         },
-         {
-             "num": "04",
-             "id": "agents",
-             "title": "Agents built in",
-             "body": "Objects become agents through walkers and `by llm()`."
-         },
-         {
-             "num": "05",
-             "id": "readable",
-             "title": "Readable in tiers",
-             "body": "Wiring, then contracts, then bodies. Read only as deep as you need."
-         },
+         {"num": "01", "id": "one-language", "title": "One universal language"},
+         {"num": "02", "id": "no-glue", "title": "Abstractions beyond “high level”"},
+         {"num": "03", "id": "every-platform", "title": "Every platform"},
+         {"num": "04", "id": "agents", "title": "Agents built in"},
+         {"num": "05", "id": "readable", "title": "Slop resistance"},
 
      ];
 
@@ -58,32 +32,21 @@ def:pub HomeHero -> JsxElement {
                     <span className="text-primary">everything</span>
                     .
                 </h1>
-                <p
-                    className="anim-fade-up anim-d2 mt-8 max-w-2xl text-pretty text-lg leading-8 text-muted-foreground sm:text-xl sm:leading-9"
-                >
-                    Jac lets agents write frontend, backend, mobile and native applications in one Pythonic syntax that compiles to Rust-level performance, so a single codebase ships to every platform with ten times less code.
-                </p>
-                <div
-                    className="anim-fade-up anim-d3 mt-10 flex flex-col gap-3 sm:flex-row sm:items-center"
-                >
+                <div className="anim-fade-up anim-d2 mt-10 max-w-xl">
+                    <p className="text-lg leading-8 text-muted-foreground sm:text-xl">
+                        The quickest way to experience Jac is to install it with this command:
+                    </p>
+                    <CopyCommand command={HOME_INSTALL} className="mt-4 w-full"/>
+                    <p
+                        className="mt-8 text-lg leading-8 text-muted-foreground sm:text-xl"
+                    >
+                        Then give your agent this prompt:
+                    </p>
                     <CopyCommand
-                        command={HOME_INSTALL}
-                        className="w-full sm:w-auto sm:max-w-md"
+                        command={HOME_PROMPT}
+                        prefix="›"
+                        className="mt-4 w-full"
                     />
-                    <Link
-                        to="/docs/latest"
-                        className={buttonVariants().call(None, {"size": "lg"})}
-                    >
-                        Get started
-                    </Link>
-                    <Link
-                        to="/tech-demo"
-                        className={buttonVariants().call(
-                            None, {"variant": "ghost", "size": "lg"}
-                        )}
-                    >
-                        Tech demo →
-                    </Link>
                 </div>
                 <ol
                     className="anim-fade-up anim-d4 mt-20 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2 lg:mt-28 lg:grid-cols-5"
@@ -98,14 +61,9 @@ def:pub HomeHero -> JsxElement {
                                     {p["num"]}
                                 </span>
                                 <span
-                                    className="mt-2 block text-base font-semibold tracking-tight"
+                                    className="mt-2 block text-base font-semibold tracking-tight transition-colors group-hover:text-primary"
                                 >
                                     {p["title"]}
-                                </span>
-                                <span
-                                    className="mt-2 block text-sm leading-relaxed text-muted-foreground"
-                                >
-                                    <Prose text={p["body"]}/>
                                 </span>
                             </button>
                         </li>

@@ -173,8 +173,17 @@ def:pub ConvergeDiagram -> JsxElement {
                 <text x="0" y="304" fontSize="13" fill="var(--foreground)">
                     one syntax · one type checker
                 </text>
-                <text x="0" y="322" fontSize="12" fill="var(--muted-foreground)">
-                    every ecosystem still in reach
+                <text
+                    x="1000"
+                    y="282"
+                    textAnchor="end"
+                    fontSize="11"
+                    fontWeight="700"
+                    fontFamily="monospace"
+                    letterSpacing="2.5"
+                    fill="#ff6b35"
+                >
+                    ONE BINARY
                 </text>
                 <text
                     x="1000"
@@ -183,16 +192,7 @@ def:pub ConvergeDiagram -> JsxElement {
                     fontSize="13"
                     fill="var(--foreground)"
                 >
-                    one binary
-                </text>
-                <text
-                    x="1000"
-                    y="322"
-                    textAnchor="end"
-                    fontSize="12"
-                    fill="var(--muted-foreground)"
-                >
-                    compiler, runtime and package manager
+                    build anything with nothing else
                 </text>
                 {for (j, t) in enumerate(_PLATFORMS_OUT) {
                     <g key={"t" + str(j)}>
@@ -714,8 +714,7 @@ def:pub OneLanguage -> JsxElement {
             <SectionHead
                 num="01"
                 kicker="One language"
-                title="Many stacks, one language."
-                lede="A modern app is five stacks, four specialists, and seven kinds of glue code holding them together. Jac puts the whole polyglot behind one syntax and one type checker, so a single agent can write all of it in one language and still reach every ecosystem."
+                title="One universal language for everything."
             />
             <Figure
                 label="fig. 1"
@@ -735,9 +734,6 @@ def:pub OneLanguage -> JsxElement {
                                 {"Hide the detailed view"
                                     if detailed
                                     else "Show the detailed view"}
-                            </span>
-                            <span className="mt-1 block text-sm text-muted-foreground">
-                                The tools, the specialists and the seven kinds of glue on a conventional stack, against the same app in Jac.
                             </span>
                         </span>
                         <span
@@ -765,7 +761,7 @@ def:pub OneLanguage -> JsxElement {
             <Reveal delay={150}>
                 <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-3">
                     <Fact
-                        title="One grammar to hold"
+                        title="One syntax"
                         body="An agent keeps one syntax and one set of idioms in context instead of five, and spends its tokens on the problem."
                     />
                     <Fact
