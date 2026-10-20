@@ -13,12 +13,7 @@ impl JacAwaiting(props: dict[str, any]) -> JsxElement {
     );
 }
 
-async def _awaitPlatformReady {
-    ready: any = globalThis.__jacPlatformReady__;
-    if ready {
-        await ready;
-    }
-}
+async def _awaitPlatformReady;
 
 impl __createJacSchema(zodLib: any) -> any {
     handler = {
@@ -502,4 +497,11 @@ impl __jacReactErrorHandler(error: any, info: any) -> None {
         componentStack = info.componentStack if info else "";
         __jacReportError(message, stack, "", "ErrorBoundary", componentStack);
     } except Exception {}
+}
+
+impl _awaitPlatformReady {
+    ready: any = globalThis.__jacPlatformReady__;
+    if ready {
+        await ready;
+    }
 }

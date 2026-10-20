@@ -1,54 +1,3 @@
-import from jaclang.compiler.passes.context { CompileContext, CompilerPass }
-import from jaclang.compiler.frontend.unitree {
-    Ability,
-    Assignment,
-    AtomTrailer,
-    BinaryExpr,
-    BoolExpr,
-    CompareExpr,
-    ConnectOp,
-    DictCompr,
-    DictVal,
-    Expr,
-    FString,
-    FuncCall,
-    FuncSignature,
-    ImplDef,
-    IfElseExpr,
-    IfStmt,
-    InForStmt,
-    IterForStmt,
-    KWPair,
-    LambdaExpr,
-    ListCompr,
-    ListVal,
-    Module,
-    ModuleCode,
-    MultiString,
-    Name,
-    NameAtom,
-    ParamVar,
-    ReturnStmt,
-    SetVal,
-    same_lexical_scope,
-    String,
-    Symbol,
-    Test,
-    Token,
-    UnaryExpr,
-    UniCFGNode,
-    UniNode,
-    WhileStmt
-}
-import from jaclang.compiler.passes.dataflow { SymId, solve_backward_gen_kill }
-import from jaclang.compiler.frontend.constant {
-    ExprCtx,
-    OwnershipKind,
-    SymbolStorage,
-    Tokens as Tok,
-    is_borrow_kind
-}
-
 enum Ownership {
     OWNED = "owned",
     BORROWED = "borrowed",
@@ -56,79 +5,19 @@ enum Ownership {
     UNKNOWN = "unknown"
 }
 
-def result_ownership(expr: (Expr | None)) -> Ownership {
-    if expr is None {
-        return Ownership.UNKNOWN;
-    }
-    if isinstance(expr, FuncCall) {
-        import from jaclang.compiler.erased_imports { erased_identity_call_arg }
-        erased_to = erased_identity_call_arg(expr);
-        if erased_to is not None {
-            return result_ownership(erased_to);
-        }
-        return Ownership.OWNED;
-    }
-    if isinstance(expr, BinaryExpr)
-        and isinstance(expr.op, ConnectOp)
-        and expr.op.capture_edges {
-        return Ownership.OWNED;
-    }
-    if isinstance(expr, (ListVal, SetVal, DictVal, ListCompr, DictCompr)) {
-        return Ownership.OWNED;
-    }
-    if isinstance(expr, FString) {
-        return Ownership.OWNED;
-    }
-    if isinstance(expr, MultiString) {
-        if len(expr.strings) == 1 and not isinstance(expr.strings[0], FString) {
-            return Ownership.STATIC;
-        }
-        return Ownership.OWNED;
-    }
-    if isinstance(expr, String) {
-        return Ownership.STATIC;
-    }
-    if isinstance(expr, AtomTrailer) {
-        import from jaclang.compiler.c_interop { foreign_read_copies }
-        if foreign_read_copies(expr) {
-            return Ownership.OWNED;
-        }
-    }
-    if isinstance(expr, (Name, AtomTrailer)) {
-        return Ownership.BORROWED;
-    }
-    return Ownership.UNKNOWN;
-}
+def method_returns_borrow(callee: (Ability | None)) -> bool;
 
-def loop_body_locals(body: (Sequence[UniNode] | None)) -> list[str] {
-    out: list[str] = [];
-    seen: set[str] = set();
-    if not body {
-        return out;
-    }
-    body_names: list[Name] = [];
-    for stmt in body {
-        body_names.extend(stmt.get_all_sub_nodes(typ=Name));
-    }
-    body_ids = {id(nm) for nm in body_names};
-    for nm in body_names {
-        sym = nm.sym;
-        if sym is None or not sym.defn {
-            continue;
-        }
-        if sym.defn[0] is nm and nm.sym_name not in seen {
-            seen.add(nm.sym_name);
+def call_borrows_receiver(call: FuncCall) -> bool;
 
-            if any(id(use) not in body_ids for use in sym.uses) {
-                continue;
-            }
-            out.append(nm.sym_name);
-        }
-    }
-    return out;
-}
+def result_ownership(expr: (Expr | None)) -> Ownership;
+
+def loop_body_locals(body: (Sequence[UniNode] | None)) -> list[str];
 
 walker RcFactsPass(CompilerPass) {
+    static has contract: PassContract = PassContract(
+        requires=(AnalysisFact.CFG_SUCC, ), provides=(AnalysisFact.RC_FACTS, )
+    );
+
     has _node_use: dict[int, set[SymId]] = {},
         _node_def: dict[int, set[SymId]] = {};
 

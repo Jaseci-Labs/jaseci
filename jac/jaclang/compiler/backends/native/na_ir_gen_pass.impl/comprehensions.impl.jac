@@ -110,7 +110,6 @@ impl NaIRGenPass._codegen_list_compr(nd: uni.ListCompr) -> (ir.Value | None) {
 }
 
 impl NaIRGenPass._is_boolean_result_expr(nd: (uni.UniNode | None)) -> bool {
-    import from jaclang.compiler.types.type_utils { primitive_type_name_of }
     while isinstance(nd, (uni.CfgExpr, uni.AtomUnit)) {
         nd = nd.expr if isinstance(nd, uni.CfgExpr) else nd.value;
     }
@@ -368,6 +367,7 @@ impl NaIRGenPass._emit_compr_element(compr: NativeComprehension) -> None {
                 _boxed_val_compr = value_val;
                 value_val = self._coerce_type(value_val, expected_val_type);
                 self.builder.call(helpers["set"], [acc, key_val, value_val]);
+                self._nogc_release_dict_key(key_val);
 
                 if isinstance(_boxed_key.type, ir.PointerType)
                     and self._is_owned(_boxed_key) {
