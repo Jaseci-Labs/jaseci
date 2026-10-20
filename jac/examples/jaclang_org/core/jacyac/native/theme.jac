@@ -1,6 +1,8 @@
 import from "@jac/mobui" { StyleSheet }
 
-def:pub makeStyles(C: Colors) -> any {
+def:pub makeStyles(C: Colors) -> any;
+
+impl makeStyles(C: Colors) -> any {
     S = spacing();
     R = radii();
     F = fonts();

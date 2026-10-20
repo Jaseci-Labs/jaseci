@@ -15,22 +15,7 @@ obj Scores {
         loadRepos: Callable[[int], None];
 }
 
-def sorted_projects(projects: list[Project], query: str, sort: str) -> list[Project] {
-    q = query.strip().lower();
-    result = [
-        p
-        for p in projects
-        if not q or q in (p.full + " " + p.description + " " + p.owner_username).lower()
-    ];
-    if sort == "stars" {
-        result.sort(key=lambda (p: Project) { -p.stars; });
-    } elif sort == "newest" {
-        result.sort(key=lambda (p: Project) { p.added_at; }, reverse=True);
-    } else {
-        result.sort(key=lambda (p: Project) { (-p.score, p.full); });
-    }
-    return result;
-}
+def sorted_projects(projects: list[Project], query: str, sort: str) -> list[Project];
 
 def:pub useScores(model: JacYacState) -> Scores {
     has query: str = "",
@@ -87,4 +72,21 @@ def:pub useScores(model: JacYacState) -> Scores {
         setSort=lambda (v: str) { sort = v; },
         loadRepos=loadRepos
     );
+}
+
+impl sorted_projects(projects: list[Project], query: str, sort: str) -> list[Project] {
+    q = query.strip().lower();
+    result = [
+        p
+        for p in projects
+        if not q or q in (p.full + " " + p.description + " " + p.owner_username).lower()
+    ];
+    if sort == "stars" {
+        result.sort(key=lambda (p: Project) { -p.stars; });
+    } elif sort == "newest" {
+        result.sort(key=lambda (p: Project) { p.added_at; }, reverse=True);
+    } else {
+        result.sort(key=lambda (p: Project) { (-p.score, p.full); });
+    }
+    return result;
 }

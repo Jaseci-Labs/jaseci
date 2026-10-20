@@ -1197,7 +1197,40 @@ impl JacAPIServerAdmin.admin_get_metrics(
     }
 }
 
-def _parse_prometheus_text(raw_metrics: str) -> list[dict[str, any]] {
+def _parse_prometheus_text(raw_metrics: str) -> list[dict[str, any]];
+
+glob _LATENCY_CUTS: list[float] = [0.025, 0.1, 0.5, 2.5];
+
+
+def _classify_path(path: str) -> str;
+
+
+def _sorted_buckets(acc: dict[float, float]) -> list[dict[str, float]];
+
+
+def _percentile_from_buckets(
+    buckets: list[dict[str, float]], q: float
+) -> dict[str, float | bool];
+
+
+def _format_seconds(secs: float) -> str;
+
+
+def _range_label(lo: float, hi: float) -> str;
+
+
+def _band_edges(edges: list[float]) -> list[float];
+
+
+def _latency_groups(buckets: list[dict[str, float]]) -> list[dict[str, str | int]];
+
+
+def _endpoint_sort_key(row: dict[str, any]) -> tuple[float, int];
+
+
+def _calculate_metrics_summary(metrics_data: list[dict[str, any]]) -> dict[str, any];
+
+impl _parse_prometheus_text(raw_metrics: str) -> list[dict[str, any]] {
     import re;
 
     metrics_data: list[dict[str, any]] = [];
@@ -1282,10 +1315,8 @@ def _parse_prometheus_text(raw_metrics: str) -> list[dict[str, any]] {
     return metrics_data;
 }
 
-glob _LATENCY_CUTS: list[float] = [0.025, 0.1, 0.5, 2.5];
 
-
-def _classify_path(path: str) -> str {
+impl _classify_path(path: str) -> str {
     head: str = path.strip('/').split('/')[0];
     if head == 'health' or head == 'healthz' {
         return 'health';
@@ -1300,12 +1331,12 @@ def _classify_path(path: str) -> str {
 }
 
 
-def _sorted_buckets(acc: dict[float, float]) -> list[dict[str, float]] {
+impl _sorted_buckets(acc: dict[float, float]) -> list[dict[str, float]] {
     return [{'le': le, 'count': acc[le]} for le in sorted(acc.keys())];
 }
 
 
-def _percentile_from_buckets(
+impl _percentile_from_buckets(
     buckets: list[dict[str, float]], q: float
 ) -> dict[str, float | bool] {
     total: float = buckets[-1]['count'] if buckets else 0.0;
@@ -1337,7 +1368,7 @@ def _percentile_from_buckets(
 }
 
 
-def _format_seconds(secs: float) -> str {
+impl _format_seconds(secs: float) -> str {
     unit: str = 'ms' if secs < 1.0 else 's';
     value: float = round(secs * 1000.0, 6) if unit == 'ms' else round(secs, 6);
     text: str = str(int(value)) if value == int(value) else str(value);
@@ -1345,7 +1376,7 @@ def _format_seconds(secs: float) -> str {
 }
 
 
-def _range_label(lo: float, hi: float) -> str {
+impl _range_label(lo: float, hi: float) -> str {
     lo_text: str = _format_seconds(lo);
     hi_text: str = _format_seconds(hi);
     lo_unit: str = 'ms' if lo_text.endswith('ms') else 's';
@@ -1357,7 +1388,7 @@ def _range_label(lo: float, hi: float) -> str {
 }
 
 
-def _band_edges(edges: list[float]) -> list[float] {
+impl _band_edges(edges: list[float]) -> list[float] {
     chosen: list[float] = [];
     for cut in _LATENCY_CUTS {
         nearest: float = edges[0];
@@ -1374,7 +1405,7 @@ def _band_edges(edges: list[float]) -> list[float] {
 }
 
 
-def _latency_groups(buckets: list[dict[str, float]]) -> list[dict[str, str | int]] {
+impl _latency_groups(buckets: list[dict[str, float]]) -> list[dict[str, str | int]] {
     edges: list[float] = [
         b['le']
         for b in buckets
@@ -1402,12 +1433,12 @@ def _latency_groups(buckets: list[dict[str, float]]) -> list[dict[str, str | int
 }
 
 
-def _endpoint_sort_key(row: dict[str, any]) -> tuple[float, int] {
+impl _endpoint_sort_key(row: dict[str, any]) -> tuple[float, int] {
     return (-row['p95']['value'], -row['count']);
 }
 
 
-def _calculate_metrics_summary(metrics_data: list[dict[str, any]]) -> dict[str, any] {
+impl _calculate_metrics_summary(metrics_data: list[dict[str, any]]) -> dict[str, any] {
     active: int = 0;
     rows: dict[str, dict[str, any]] = {};
     hist: dict[str, dict[float, float]] = {};

@@ -1,7 +1,4 @@
-def _database_config(base_path: (str | None)) -> DatabaseConfig {
-    config = get_config_for_dir(base_path) if base_path else None;
-    return config.database if config is not None else DatabaseConfig();
-}
+def _database_config(base_path: (str | None)) -> DatabaseConfig;
 
 
 impl promotions_for(base_path: (str | None)) -> dict[str, list[str]] {
@@ -135,16 +132,7 @@ impl scratch_owner_pid -> int {
 }
 
 
-def _drop_owned_at_exit -> None {
-    if scratch_owner_pid() != os.getpid() {
-        return;
-    }
-    try {
-        drop_owned_databases();
-    } except Exception as e {
-        logger.debug(f"could not drop the databases this process owns: {e}");
-    }
-}
+def _drop_owned_at_exit -> None;
 
 
 impl own_child_databases -> None {
@@ -242,66 +230,17 @@ impl takeover_project(base_path: str, target_path: (str | None) = None) -> int {
 }
 
 
-def _ancestry_of(arch: (object | None)) -> list[str] {
-    if arch is None {
-        return [];
-    }
-    stops = (NodeArchetype, EdgeArchetype, WalkerArchetype, Archetype, object);
-    out: list[str] = [];
-    for c in type(arch).__mro__ {
-        if c in stops {
-            break;
-        }
-        import from jaclang.data.type_identity { storage_type }
-        out.append(storage_type(c));
-    }
-    return out;
-}
+def _ancestry_of(arch: (object | None)) -> list[str];
 
 
 glob _GETTER_CLASSES: dict[type, bool] = {};
 
-def _runs_getters(arch: object) -> bool {
-    cls = type(arch);
-    found = _GETTER_CLASSES.get(cls);
-    if found is None {
-        found = any(
-            isinstance(member, property)
-            for klass in cls.__mro__
-            if klass is not object and not klass.__module__.startswith('jaclang.')
-            for member in vars(klass).values()
-        );
-        _GETTER_CLASSES[cls] = found;
-    }
-    return found;
-}
+def _runs_getters(arch: object) -> bool;
 
-def _settle_written(anchor: Anchor, seen: int) {
-    if seen and anchor.__dict__.get('_field_written', 0) == seen {
-        anchor.__dict__.pop('_field_written', None);
-    }
-}
+def _settle_written(anchor: Anchor, seen: int);
 
 
-def _is_serialization_conflict(e: Exception) -> bool {
-    if isinstance(e, WriteConflict) {
-        return False;
-    }
-    seen = 0;
-    cur: (BaseException | None) = e;
-    while cur is not None and seen < 8 {
-        c: BaseException = cur;
-        for arg in getattr(c, 'args', ()) {
-            if isinstance(arg, dict)
-                and arg.get('C') in ('40001', '40P01', '53200', '55P03', '08006') {
-                return True;
-            }
-        }
-        cur = c.__cause__ or c.__context__;
-        seen += 1;
-    }
-    return False;
-}
+def _is_serialization_conflict(e: Exception) -> bool;
 
 
 impl transient_db_error(e: Exception) -> bool {
@@ -309,21 +248,7 @@ impl transient_db_error(e: Exception) -> bool {
 }
 
 
-def _is_lock_timeout(e: Exception) -> bool {
-    seen = 0;
-    cur: (BaseException | None) = e;
-    while cur is not None and seen < 8 {
-        c: BaseException = cur;
-        for arg in getattr(c, 'args', ()) {
-            if isinstance(arg, dict) and arg.get('C') == '55P03' {
-                return True;
-            }
-        }
-        cur = c.__cause__ or c.__context__;
-        seen += 1;
-    }
-    return False;
-}
+def _is_lock_timeout(e: Exception) -> bool;
 
 
 impl RowLedger.postinit -> None {
@@ -434,6 +359,10 @@ impl Session.postinit -> None {
     self._snapshot_reads = set();
     self._foreign_refs = set();
     self._contended = set();
+    self._hop_writes = 0;
+    self._hop_cache = {};
+    self._hop_siblings = {};
+    self._hop_groups_token = None;
     self._queued = [];
     self._last_conflict = set();
     self._scan_clean = False;
@@ -682,6 +611,7 @@ impl Session.abort -> None {
 
 
 impl Session._forget_loaded -> None {
+    self._drop_hop_state();
     for (id, anchor) in list(self.__mem__.items()) {
         if not anchor.is_populated() or not anchor.persistent {
             continue;
@@ -1012,10 +942,20 @@ impl Session._flush_locked(full: bool) -> None {
             break;
         }
     }
+    wrote = bool(unflushed or self._deleted);
     if unflushed {
         rows = [self._serialize(u.anchor, u.stored) for u in unflushed];
+        retyped = [
+            row.id
+            for row in rows
+            if row.kind == 'NodeAnchor'
+                and row.arch_type
+                and (was := self._rows.current(row.id)) is not None
+                and was.arch_type not in ('', row.arch_type)
+        ];
         try {
             store.upsert(rows);
+            store.retype_edges(retyped);
         } except WriteConflict as wc {
             self._last_conflict = {wc.anchor_id};
             raise;
@@ -1027,7 +967,10 @@ impl Session._flush_locked(full: bool) -> None {
             raise WriteConflict(anchor_id=rows[0].id) from e;
         }
         for (row, u) in zip(rows, unflushed) {
-            self._rows.upserted(row.id, RowState(hash=u.hash, version=row.version));
+            self._rows.upserted(
+                row.id,
+                RowState(hash=u.hash, version=row.version, arch_type=row.arch_type)
+            );
             u.anchor.hash = u.hash;
             _settle_written(u.anchor, u.written);
         }
@@ -1048,6 +991,9 @@ impl Session._flush_locked(full: bool) -> None {
         self._deleted.clear();
     }
     self._dirty.clear();
+    if wrote {
+        self._hop_writes += 1;
+    }
     if full {
         self._scan_clean = self._scan_safe;
     }
@@ -1117,10 +1063,20 @@ impl Session._serialize(
     src: (UUID | None) = None;
     dst: (UUID | None) = None;
     undirected = False;
+    src_type = '';
+    dst_type = '';
     if isinstance(anchor, EdgeAnchor) {
         src = anchor.source.ensure_id() if anchor.source is not None else None;
         dst = anchor.target.ensure_id() if anchor.target is not None else None;
         undirected = anchor.is_undirected;
+        src_arch = anchor.source.__dict__.get('archetype')
+            if anchor.source is not None
+            else None;
+        dst_arch = anchor.target.__dict__.get('archetype')
+            if anchor.target is not None
+            else None;
+        src_type = storage_type(type(src_arch)) if src_arch is not None else '';
+        dst_type = storage_type(type(dst_arch)) if dst_arch is not None else '';
     }
     row_id = anchor.ensure_id();
     return AnchorRow(
@@ -1135,6 +1091,8 @@ impl Session._serialize(
         src=src,
         dst=dst,
         undirected=undirected,
+        src_type=src_type,
+        dst_type=dst_type,
         ancestry=_ancestry_of(arch)
     );
 }
@@ -1180,7 +1138,9 @@ impl Session._materialize(row: AnchorRow) -> (Anchor | None) {
         anchor.version = row.version;
     }
     self.__mem__[row.id] = anchor;
-    self._rows.loaded(row.id, RowState(hash=anchor.hash, version=row.version));
+    self._rows.loaded(
+        row.id, RowState(hash=anchor.hash, version=row.version, arch_type=row.arch_type)
+    );
     if self._store is not None
         and self._store.txn_isolation() is TxnIsolation.SNAPSHOT_READ_ONLY {
         self._snapshot_reads.add(row.id);
@@ -1310,30 +1270,10 @@ impl Session.wait_turn -> None {
 glob _SESSION_POOL: list[any] = [];
 
 
-def _session_pool -> any {
-    if not _SESSION_POOL {
-        import from concurrent.futures { ThreadPoolExecutor }
-        _SESSION_POOL.append(
-            ThreadPoolExecutor(
-                max_workers=SESSION_THREADS, thread_name_prefix="jac-session-io"
-            )
-        );
-    }
-    return _SESSION_POOL[0];
-}
+def _session_pool -> any;
 
 
-async def _off_loop(work: Callable) -> any {
-    import asyncio;
-    import contextvars;
-    context = contextvars.copy_context();
-    def in_context -> any {
-        return context.run(work);
-    }
-    return await asyncio.get_running_loop().run_in_executor(
-        _session_pool(), in_context
-    );
-}
+async def _off_loop(work: Callable) -> any;
 
 
 impl Session.acommit(anchor: (Anchor | None) = None) -> None {
@@ -1402,6 +1342,254 @@ impl Session.close -> None {
     self._deleted.clear();
     self._rows.clear();
     self._lost = False;
+    self._drop_hop_state();
 
     sv_store_closed(self);
+}
+
+
+impl Session._hop_token -> (tuple[int, int] | None) {
+    store = self._store;
+    if store is None or not store.in_txn() {
+        return None;
+    }
+    if store.txn_isolation() is TxnIsolation.READ_COMMITTED {
+        return None;
+    }
+    serial = store.txn_serial();
+    if serial < 0 {
+        return None;
+    }
+    return (serial, self._hop_writes);
+}
+
+
+impl Session.batching -> bool {
+    return self._hop_token() is not None;
+}
+
+
+impl Session._drop_hop_state -> None {
+    self._hop_siblings = {};
+    self._hop_cache = {};
+    self._hop_groups_token = None;
+}
+
+
+impl Session.note_siblings(ids: list[UUID]) -> None {
+    if len(ids) < 2 {
+        return;
+    }
+    token = self._hop_token();
+    if token is None {
+        return;
+    }
+    if token != self._hop_groups_token {
+        self._hop_siblings = {};
+        self._hop_groups_token = token;
+    }
+    group = tuple(ids[:HOP_BATCH_LIMIT]);
+    for i in group {
+        self._hop_siblings[i] = group;
+    }
+}
+
+
+impl Session.hop_siblings(origin: UUID) -> tuple[UUID, ...] {
+    if self._hop_groups_token is None or self._hop_groups_token != self._hop_token() {
+        return ();
+    }
+    return self._hop_siblings.get(origin, ());
+}
+
+
+impl Session.hop_cached(key: any, origin: UUID) -> (list[tuple[any, any]] | None) {
+    held = self._hop_cache.get(key);
+    if held is None or held[0] != self._hop_token() {
+        return None;
+    }
+    return held[1].get(origin);
+}
+
+
+impl Session.hop_store(key: any, by_origin: dict[UUID, list[tuple[any, any]]]) -> None {
+    token = self._hop_token();
+    if token is None {
+        return;
+    }
+    stale = [
+        k
+        for (k, held) in self._hop_cache.items()
+        if held[0] != token
+    ];
+    for k in stale {
+        del self._hop_cache[k];
+    }
+    self._hop_cache[key] = (token, by_origin);
+}
+
+impl _database_config(base_path: (str | None)) -> DatabaseConfig {
+    config = get_config_for_dir(base_path) if base_path else None;
+    return config.database if config is not None else DatabaseConfig();
+}
+
+
+impl _drop_owned_at_exit -> None {
+    if scratch_owner_pid() != os.getpid() {
+        return;
+    }
+    try {
+        drop_owned_databases();
+    } except Exception as e {
+        logger.debug(f"could not drop the databases this process owns: {e}");
+    }
+}
+
+
+impl _ancestry_of(arch: (object | None)) -> list[str] {
+    if arch is None {
+        return [];
+    }
+    stops = (NodeArchetype, EdgeArchetype, WalkerArchetype, Archetype, object);
+    out: list[str] = [];
+    for c in type(arch).__mro__ {
+        if c in stops {
+            break;
+        }
+        import from jaclang.data.type_identity { storage_type }
+        out.append(storage_type(c));
+    }
+    return out;
+}
+
+
+impl _runs_getters(arch: object) -> bool {
+    cls = type(arch);
+    found = _GETTER_CLASSES.get(cls);
+    if found is None {
+        found = any(
+            isinstance(member, property)
+            for klass in cls.__mro__
+            if klass is not object and not klass.__module__.startswith('jaclang.')
+            for member in vars(klass).values()
+        );
+        _GETTER_CLASSES[cls] = found;
+    }
+    return found;
+}
+
+impl _settle_written(anchor: Anchor, seen: int) {
+    if seen and anchor.__dict__.get('_field_written', 0) == seen {
+        anchor.__dict__.pop('_field_written', None);
+    }
+}
+
+
+impl _is_serialization_conflict(e: Exception) -> bool {
+    if isinstance(e, WriteConflict) {
+        return False;
+    }
+    seen = 0;
+    cur: (BaseException | None) = e;
+    while cur is not None and seen < 8 {
+        c: BaseException = cur;
+        for arg in getattr(c, 'args', ()) {
+            if isinstance(arg, dict)
+                and arg.get('C') in ('40001', '40P01', '53200', '55P03', '08006') {
+                return True;
+            }
+        }
+        cur = c.__cause__ or c.__context__;
+        seen += 1;
+    }
+    return False;
+}
+
+
+impl _is_lock_timeout(e: Exception) -> bool {
+    seen = 0;
+    cur: (BaseException | None) = e;
+    while cur is not None and seen < 8 {
+        c: BaseException = cur;
+        for arg in getattr(c, 'args', ()) {
+            if isinstance(arg, dict) and arg.get('C') == '55P03' {
+                return True;
+            }
+        }
+        cur = c.__cause__ or c.__context__;
+        seen += 1;
+    }
+    return False;
+}
+
+
+impl _session_pool -> any {
+    if not _SESSION_POOL {
+        import from concurrent.futures { ThreadPoolExecutor }
+        _SESSION_POOL.append(
+            ThreadPoolExecutor(
+                max_workers=SESSION_THREADS, thread_name_prefix="jac-session-io"
+            )
+        );
+    }
+    return _SESSION_POOL[0];
+}
+
+
+impl _off_loop(work: Callable) -> any {
+    import asyncio;
+    import contextvars;
+    context = contextvars.copy_context();
+    def in_context -> any {
+        return context.run(work);
+    }
+    return await asyncio.get_running_loop().run_in_executor(
+        _session_pool(), in_context
+    );
+}
+
+impl ro_units_enabled -> bool {
+    return os.environ.get(RO_UNITS_ENV, '1').strip().lower()
+        not in ('0', 'false', 'no', 'off');
+}
+
+impl _writer_ttl -> float {
+    try {
+        return max(1.0, float(os.environ.get(RO_WRITER_TTL_ENV, '300') or 300));
+    } except ValueError {
+        return 300.0;
+    }
+}
+
+impl unit_writes_recorded(key: str) -> bool {
+    import time;
+    expiry = _unit_writers.get(key);
+    if expiry is None {
+        return False;
+    }
+    if time.monotonic() >= expiry {
+        _unit_writers.pop(key, None);
+        return False;
+    }
+    return True;
+}
+
+impl record_unit_writes(key: str) {
+    import time;
+    _unit_writers[key] = time.monotonic() + _writer_ttl();
+}
+
+impl Session.new_session(target_path: str) -> Session {
+    if self.store is None {
+        raise RuntimeError('Cannot create a provider session without a bound store');
+    }
+    return Session(
+        _store=self.store.new_session(),
+        base_path=self.base_path,
+        target_path=target_path
+    );
+}
+
+impl Session.preserve_unresolved_ref(id: UUID) -> bool {
+    return id in self._foreign_refs;
 }

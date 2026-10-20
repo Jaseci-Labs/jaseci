@@ -265,7 +265,9 @@ def:pub useJacYac -> JacYacState {
     );
 }
 
-def bridge_error(error: BridgeError) -> str {
+def bridge_error(error: BridgeError) -> str;
+
+impl bridge_error(error: BridgeError) -> str {
     if isinstance(error, BridgeUnavailable) {
         return "Can’t reach the server. Check your connection and try again.";
     }

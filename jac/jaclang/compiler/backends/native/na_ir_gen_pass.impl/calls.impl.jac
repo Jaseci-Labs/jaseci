@@ -181,15 +181,15 @@ impl NaIRGenPass._native_variant_decl(decl: uni.Ability) -> uni.Ability {
         or decl.name_ref is None {
         return decl;
     }
-    variant = os.path.realpath(native_variant_of(mod.loc.mod_path));
-    if variant == os.path.realpath(mod.loc.mod_path) {
+    variant = real_path(native_variant_of(mod.loc.mod_path));
+    if variant == real_path(mod.loc.mod_path) {
         return decl;
     }
     variant_mod = self.prog.mod.hub.get(variant);
     if variant_mod is None {
         for imported in self._foreign_modules {
             if imported.loc is not None
-                and os.path.realpath(imported.loc.mod_path) == variant {
+                and real_path(imported.loc.mod_path) == variant {
                 variant_mod = imported;
                 break;
             }
@@ -709,7 +709,7 @@ impl NaIRGenPass._codegen_bound_args(
     }
 
     _nc_name = nd.target.sym_name if isinstance(nd.target, uni.Name) else None;
-    _nc_entry = self.nested_captures.get(_nc_name) if _nc_name is not None else None;
+    _nc_entry = self.scope.closure(_nc_name) if _nc_name is not None else None;
     if _nc_entry is not None and _nc_entry[0] is func {
         for (_cname, _cmode) in _nc_entry[1] {
             _c_slot = self.local_vars.get(_cname);
@@ -1242,18 +1242,18 @@ impl NaIRGenPass._skip_is_other_module(
     callee_path: (str | None) = None;
     declaration = self._callee_ability_of(nd);
     if declaration is not None and isinstance(declaration.parent_scope, uni.Module) {
-        callee_path = os.path.realpath(declaration.parent_scope.source.file_path);
+        callee_path = real_path(declaration.parent_scope.source.file_path);
     } elif mod_qual is not None {
         import from jaclang.compiler.frontend.codeinfo { resolve_native_module }
         (_, source) = resolve_native_module(mod_qual, os.path.dirname(nd.loc.mod_path));
         if source is not None {
-            callee_path = os.path.realpath(source);
+            callee_path = real_path(source);
         }
     }
     if callee_path is None {
         return False;
     }
-    own_path = os.path.realpath(self.module.loc.mod_path) if self.module?.loc else None;
+    own_path = real_path(self.module.loc.mod_path) if self.module?.loc else None;
     return callee_path != own_path and callee_path not in origins;
 }
 
@@ -2427,13 +2427,13 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
     if func_name in self.decorated_fns and not _var_callee {
         return self._codegen_decorated_call(nd, func_name);
     }
-    func: ir.Function | None = None if _var_callee else self.func_symtab.get(func_name);
+    func: ir.Function | None = None if _var_callee else self.scope.function(func_name);
     if declaration is not None and declaration.name_ref is not None {
         declaring_module = declaration.parent_scope;
         if isinstance(declaring_module, uni.Module) {
-            declared_function = self._module_functions.get(
+            declared_function = self._module_function(
                 (
-                    os.path.realpath(declaring_module.source.file_path),
+                    real_path(declaring_module.source.file_path),
                     declaration.name_ref.sym_name
                 )
             );
@@ -2454,7 +2454,7 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
         (_, source) = resolve_native_module(
             _mod_qual, os.path.dirname(nd.loc.mod_path)
         );
-        func = self._module_functions.get((os.path.realpath(source), func_name))
+        func = self._module_function((real_path(source), func_name))
             if source is not None
             else None;
     }
@@ -2539,7 +2539,7 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
             _alloca = self.local_vars[func_name];
             _loaded = self.builder.load(_alloca, name=f"fptr.{func_name}");
             return self._codegen_callable_value(
-                nd, _loaded, self.lambda_captures.get(func_name) or []
+                nd, _loaded, self.scope.lambda_captures(func_name) or []
             );
         }
 
@@ -3614,7 +3614,7 @@ impl NaIRGenPass._flow_future_licensed(nd: uni.ConcurrentExpr) -> (uni.Name | No
     if h.sym is None {
         return None;
     }
-    _fn = asgn.find_parent_of_type(uni.Ability);
+    _fn = asgn.enclosing_decl(uni.Ability);
     _scope = _fn if _fn is not None else asgn.find_parent_of_type(uni.ModuleCode);
     if _scope is None {
         return None;
@@ -3625,7 +3625,7 @@ impl NaIRGenPass._flow_future_licensed(nd: uni.ConcurrentExpr) -> (uni.Name | No
         or asgn.find_parent_of_type(uni.IterForStmt)
     );
     _waits = 0;
-    for use in _scope.get_all_sub_nodes(uni.Name) {
+    for use in _scope.element_sub_nodes(uni.Name) {
         if use.sym is not h.sym or use is h {
             continue;
         }
@@ -3729,7 +3729,7 @@ impl NaIRGenPass._try_flow_future(nd: uni.ConcurrentExpr) -> (ir.Value | None) {
         return None;
     }
     fname = call.target.sym_name;
-    callee = self.func_symtab.get(fname);
+    callee = self.scope.function(fname);
     if callee is None
         or not isinstance(callee, ir.Function)
         or fname in self.clib_fn_abi

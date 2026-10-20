@@ -279,8 +279,8 @@ impl NaIRGenPass._copy_refusal(
 
 impl NaIRGenPass._copy_candidates(arch: str) -> list[str] {
     out: list[str] = [arch];
-    for cand in get_layout_registry(self.module, self.prog).mro_order {
-        if cand != arch and cand in self.struct_types and arch in self._mro_of(cand) {
+    for cand in get_layout_registry(self.module, self.prog).descendants_of([arch]) {
+        if cand != arch and cand in self.struct_types {
             out.append(cand);
         }
     }

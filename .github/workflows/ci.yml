@@ -60,6 +60,7 @@ jobs:
           filters: |
             core:
               - 'jac/**'
+              - 'jac.toml'
               - 'scripts/run_cpython_compiler_tests.jac'
               - '.github/workflows/build-binaries.yml'
               - '.github/workflows/ci.yml'
@@ -124,9 +125,10 @@ jobs:
     # kernel build itself compiles through. The kernel is most of a kit's build
     # time and a pull request rarely changes what it does. Main, nightly and
     # release kits build it, and so does a pull request carrying the
-    # `native:kernel` label (adding the label starts a new run). The seal reads
-    # that from the pull request's event (artifacts/kit.jac pr_kit_omits), and
-    # the kit's manifest records the omission for the runtime to read.
+    # `native:kernel` label (adding the label starts a new run). setup-jac turns
+    # that into JAC_KIT_OMIT, the only thing the seal reads (artifacts/kit.jac
+    # pr_kit_omits), and the kit's manifest records the omission for the
+    # runtime to read.
     steps:
       - uses: actions/checkout@v5
 
@@ -186,7 +188,7 @@ jobs:
           "$BIN" -c 'import ctypes; assert not hasattr(ctypes.pythonapi, "_PyJac_CompilerRequired")'
           # The kit carries every artifact a release does, less what its
           # manifest declares it leaves out -- only a pull request's kit may
-          # (the seal decides that, artifacts/kit.jac pr_kit_omits).
+          # (setup-jac asks through JAC_KIT_OMIT, artifacts/kit.jac pr_kit_omits).
           "$BIN" native status
           "$BIN" native status --require kit
           printf 'obj P { has x:int=0; def sq->int { return self.x*self.x; } }\nwith entry { print(P(x=7).sq()); }\n' > "$WORK/obj.jac"
@@ -709,6 +711,9 @@ jobs:
         run: |
           set -o pipefail
           cp -r jac/jaclang/byllm/tests "$RUNNER_TEMP/byllm-tests"
+          # The suite's archwire.jac fences it off from jaclang's graph inside
+          # the checkout; copied out, it is ordinary code beside the package.
+          rm "$RUNNER_TEMP/byllm-tests/archwire.jac"
           timeout --kill-after=30 300 jac test "$RUNNER_TEMP/byllm-tests/test_mtir_integration.jac"
       - name: HMR refresh (scale server)
         env:
@@ -1596,7 +1601,7 @@ jobs:
           cat >> site/archwire.jac <<'JAC'
 
           graph import core.site.game {
-              sim --> core.site.game.arena_replay { Game, world_new, sim_tick }
+              sim ++> arena_replay { sim_tick, world_new }
           }
           JAC
           cat >> site/jac.toml <<'TOML'
