@@ -56,6 +56,17 @@ impl TypeCheckPass.exit_formatted_value with FormattedValue exit {
     self.evaluator.get_type_of_expression(here.format_part);
 }
 
+impl TypeCheckPass._is_generator(scope: Ability) -> bool {
+    """Whether a function body yields, asked once per function per run: every
+    return statement of the body asks it.""";
+    known = self._generator_bodies.get(id(scope));
+    if known is None {
+        known = ModuleFacts.ability_is_generator(scope);
+        self._generator_bodies[id(scope)] = known;
+    }
+    return known;
+}
+
 impl TypeCheckPass.exit_return_stmt with ReturnStmt exit {
     scope = self.evaluator._get_enclosing_return_scope(here);
     if scope is None {
@@ -99,8 +110,7 @@ impl TypeCheckPass.exit_return_stmt with ReturnStmt exit {
         return;
     }
 
-    import from jaclang.compiler.frontend.module_facts { ModuleFacts }
-    if isinstance(scope, Ability) and ModuleFacts.ability_is_generator(scope) {
+    if isinstance(scope, Ability) and self._is_generator(scope) {
         gen_return = get_declared_generator_return_type(return_type);
         if gen_return is not None {
             return_type = self.evaluator._convert_to_instance(gen_return);
@@ -148,21 +158,9 @@ impl TypeCheckPass.exit_filter_compr with FilterCompr exit {
     self.evaluator.get_type_of_expression(here);
 }
 
-def _lambda_value_body(nd: LambdaExpr) -> bool {
-    if isinstance(nd.body, Expr) or nd.tail_return_expr() is not None {
-        return True;
-    }
-    return isinstance(nd.body, list)
-        and len(nd.body) == 1
-        and isinstance(nd.body[0], ReturnStmt)
-        and nd.body[0].expr is not None;
-}
+def _lambda_value_body(nd: LambdaExpr) -> bool;
 
-def _lambda_needs_context(nd: LambdaExpr) -> bool {
-    return nd.signature is not None
-        and any(param.type_tag is None for param in nd.signature.get_parameters())
-        and _lambda_value_body(nd);
-}
+def _lambda_needs_context(nd: LambdaExpr) -> bool;
 
 impl TypeCheckPass.enter_lambda_expr with LambdaExpr entry {
     if _lambda_needs_context(here) {
@@ -176,27 +174,7 @@ impl TypeCheckPass.exit_lambda_expr with LambdaExpr exit {
     }
 }
 
-def _chunks_receiver_type(nd: FuncCall) -> (str | None) {
-    if not (
-        isinstance(nd.target, AtomTrailer)
-        and nd.target.is_attr
-        and isinstance(nd.target.right, Name)
-        and nd.target.right.sym_name == "chunks"
-        and nd.params is not None
-        and len(nd.params) == 1
-    ) {
-        return None;
-    }
-    try {
-        recv = nd.target.target.type;
-        if recv is None {
-            return None;
-        }
-        return recv.mangle();
-    } except Exception {
-        return None;
-    }
-}
+def _chunks_receiver_type(nd: FuncCall) -> (str | None);
 
 impl TypeCheckPass.exit_gen_compr with GenCompr exit {
     if self._lambda_depth == 0 {
@@ -205,12 +183,6 @@ impl TypeCheckPass.exit_gen_compr with GenCompr exit {
 }
 
 impl TypeCheckPass.exit_func_call with FuncCall exit {
-    import from jaclang.compiler.symbol_utils {
-        classify_call,
-        ability_of_symbol,
-        resolve_expr_symbol
-    }
-
     if self._lambda_depth > 0 {
         here.call_kind = classify_call(here).value;
         here.chunks_recv_type = _chunks_receiver_type(here);
@@ -273,13 +245,10 @@ impl TypeCheckPass.exit_func_call with FuncCall exit {
 }
 
 impl TypeCheckPass._check_intrinsic_collision(nd: Ability) -> None {
-    import from jaclang.compiler.symbol_utils { intrinsic_registry_if_ready }
-
     intrinsics = intrinsic_registry_if_ready();
     if intrinsics is None {
         return;
     }
-    import from jaclang.compiler.intrinsic_registry { IntrinsicRegistry }
 
     if not isinstance(intrinsics, IntrinsicRegistry) {
         return;
@@ -341,8 +310,11 @@ impl TypeCheckPass.exit_compare_expr with CompareExpr exit {
 impl TypeCheckPass._diag_erased_membership(
     nd: CompareExpr, hay: Expr, op_text: str
 ) -> None {
-    if not self.evaluator._in_native_context()
-        or not self.evaluator._is_strict_site(nd) {
+    if not self.evaluator._is_strict_site(nd) {
+        return;
+    }
+    native = self.evaluator._in_native_context();
+    if not native and not self.evaluator.neutral_site(nd) {
         return;
     }
     hay_t = self.evaluator.get_type_of_expression(hay);
@@ -351,12 +323,14 @@ impl TypeCheckPass._diag_erased_membership(
         or isinstance(hay_t, UnknownType)
         or hay_t.is_any_type()
         or hay_t.is_any_instance() {
-        self.ctx.emit(
-            E1124,
-            node_override=hay,
-            op=op_text,
-            type=str(hay_t) if hay_t is not None else "<unknown>"
-        );
+        shown = str(hay_t) if hay_t is not None else "<unknown>";
+        if native {
+            self.ctx.emit(E1124, node_override=hay, op=op_text, type=shown);
+        } else {
+            self.evaluator.note_native(
+                hay, "E1124", E1124.format_message(op=op_text, type=shown)
+            );
+        }
     }
 }
 
@@ -927,7 +901,6 @@ impl TypeCheckPass.enter_ability with Ability entry {
 }
 
 impl TypeCheckPass.exit_ability with Ability exit {
-    import from jaclang.compiler.frontend.constant { OwnershipKind }
     self.evaluator.validate_typevar_variance(here);
     self._check_c_variadic_def(here);
 
@@ -999,8 +972,7 @@ impl TypeCheckPass.exit_ability with Ability exit {
             }
         }
 
-        import from jaclang.compiler.frontend.module_facts { ModuleFacts }
-        is_generator = ModuleFacts.ability_is_generator(here);
+        is_generator = self._is_generator(here);
 
         body_stmts: list[CodeBlockStmt] = [
             stmt
@@ -1360,7 +1332,6 @@ impl TypeCheckPass._check_explicit_any(ann_node: UniNode) -> None {
 }
 
 impl TypeCheckPass.exit_type_alias with TypeAlias exit {
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
     if not here.is_distinct {
         return;
     }
@@ -1374,7 +1345,6 @@ impl TypeCheckPass.exit_type_alias with TypeAlias exit {
 }
 
 impl TypeCheckPass.exit_archetype with Archetype exit {
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
     cls_type = self.evaluator.get_type_of_class(here);
     if isinstance(cls_type, ClassType)
         and here.arch_type.name == Tok.KW_OBJECT
@@ -1455,8 +1425,6 @@ impl TypeCheckPass._client_state_field_owner(nd: HasVar) -> (Ability | None) {
 }
 
 impl TypeCheckPass._install_client_state_setters -> None {
-    import from jaclang.compiler.frontend.constant { client_state_setter_name }
-    import from jaclang.compiler.types.types { create_callable_type }
     mod = self.module;
     if mod is None {
         return;
@@ -1553,7 +1521,6 @@ impl TypeCheckPass.exit_param_var with ParamVar exit {
 }
 
 impl TypeCheckPass.exit_has_var with HasVar exit {
-    import from jaclang.compiler.field_semantics { field_initialization }
     kids = [here->:Kid:->];
     postinit_nd = kids[-1] if kids else None;
     if here.defer and isinstance(postinit_nd, Name) {
@@ -2157,8 +2124,6 @@ impl TypeCheckPass.exit_report_stmt with ReportStmt exit {
 }
 
 impl TypeCheckPass.exit_impl_def with ImplDef exit {
-    import from jaclang.compiler.frontend.constant { Tokens as Tok }
-
     if not (
         here.decl_link
         and isinstance(here.decl_link, Ability)
@@ -2185,18 +2150,54 @@ impl TypeCheckPass.exit_impl_def with ImplDef exit {
         return;
     }
 
+    methods: dict[str, Ability] = {};
+    for method in arch.get_methods() {
+        if method.name_ref is not None {
+            methods[method.name_ref.sym_name] = method;
+        }
+    }
     assigned: set[str] = set();
-    for trailer in here.get_all_sub_nodes(AtomTrailer) {
-        atom_trailer: AtomTrailer = trailer;
-        if not (atom_trailer.parent and isinstance(atom_trailer.parent, Assignment)) {
-            continue;
+    pending: list[UniNode] = [here];
+    visited: set[str] = set();
+    while pending {
+        scope = pending.pop();
+        for trailer in scope.get_all_sub_nodes(AtomTrailer) {
+            atom_trailer: AtomTrailer = trailer;
+            if not (
+                atom_trailer.parent and isinstance(atom_trailer.parent, Assignment)
+            ) {
+                continue;
+            }
+            if atom_trailer != atom_trailer.parent.target[0] {
+                continue;
+            }
+            chain: list[AstSymbolNode] = atom_trailer.as_attr_list;
+            if len(chain) >= 2 and chain[0].sym_name == 'self' {
+                assigned.add(chain[1].sym_name);
+            }
         }
-        if atom_trailer != atom_trailer.parent.target[0] {
-            continue;
-        }
-        chain: list[AstSymbolNode] = atom_trailer.as_attr_list;
-        if len(chain) >= 2 and chain[0].sym_name == 'self' {
-            assigned.add(chain[1].sym_name);
+        for call in scope.get_all_sub_nodes(FuncCall) {
+            func_call: FuncCall = call;
+            callee_ref = func_call.target;
+            if not isinstance(callee_ref, AtomTrailer) {
+                continue;
+            }
+            callee_chain: list[AstSymbolNode] = callee_ref.as_attr_list;
+            if len(callee_chain) != 2 or callee_chain[0].sym_name != 'self' {
+                continue;
+            }
+            callee_name = callee_chain[1].sym_name;
+            if callee_name in visited or callee_name not in methods {
+                continue;
+            }
+            visited.add(callee_name);
+            callee = methods[callee_name];
+            callee_body = callee.body;
+            if isinstance(callee_body, ImplDef) {
+                pending.append(callee_body);
+            } else {
+                pending.append(callee);
+            }
         }
     }
 
@@ -2241,8 +2242,6 @@ impl TypeCheckPass._eval_unpacking_names(container: Expr) -> None {
 }
 
 impl TypeCheckPass._stamp_fixed_width -> None {
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
-    import from jaclang.compiler.types.fixed_width { numeric_name_of }
     stack: list[UniNode] = [self.module];
     while stack {
         nd = stack.pop();
@@ -2260,7 +2259,6 @@ impl TypeCheckPass._stamp_fixed_width -> None {
 }
 
 impl TypeCheckPass._provably_in_range(nd: Expr, name: str) -> bool {
-    import from jaclang.compiler.types.fixed_width { interval_of_expr, interval_of_op }
     if isinstance(nd, BinaryExpr) and isinstance(nd.op, Token) {
         op = FW_INTERVAL_OPS.get(nd.op.name);
         if op is None {
@@ -2293,8 +2291,6 @@ impl TypeCheckPass._c_instance_of(ann_node: (UniNode | None)) -> (TypeBase | Non
 impl TypeCheckPass._c_plain_data(
     t: (TypeBase | None), allow_callable: bool = False
 ) -> bool {
-    import from jaclang.compiler.c_interop { foreign_struct_of_type, is_ptr_type }
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
     if isinstance(t, FunctionType) {
         return allow_callable;
     }
@@ -2308,7 +2304,6 @@ impl TypeCheckPass._c_plain_data(
 }
 
 impl TypeCheckPass._opaque_member(t: (TypeBase | None)) -> (Archetype | None) {
-    import from jaclang.compiler.c_interop { opaque_c_of_type }
     if isinstance(t, UnionType) {
         for member in t.types {
             if (arch := opaque_c_of_type(member)) is not None {
@@ -2321,7 +2316,6 @@ impl TypeCheckPass._opaque_member(t: (TypeBase | None)) -> (Archetype | None) {
 }
 
 impl TypeCheckPass._check_c_type_use(ann_node: (UniNode | None)) -> None {
-    import from jaclang.compiler.c_interop { clib_import_of }
     if ann_node is None or clib_import_of(ann_node) is not None {
         return;
     }
@@ -2334,13 +2328,6 @@ impl TypeCheckPass._check_c_type_use(ann_node: (UniNode | None)) -> None {
 }
 
 impl TypeCheckPass._check_c_interop_import(imp: Import) -> None {
-    import from jaclang.compiler.c_interop {
-        foreign_struct_of_type,
-        is_foreign_struct_archetype,
-        is_pinned_type,
-        c_type_arg
-    }
-    import from jaclang.compiler.frontend.constant { is_borrow_kind }
     for decl in imp.clib_decls or [] {
         if isinstance(decl, GlobalVars) {
             for assign in decl.assignments {
@@ -2442,7 +2429,7 @@ impl TypeCheckPass._check_c_global_decl(assign: Assignment) -> None {
     if not isinstance(target, Name) {
         return;
     }
-    import from jaclang.compiler.c_interop { c_array_elem }
+
     tag = assign.type_tag.tag if assign.type_tag else None;
     ctype = self._c_instance_of(tag);
     opaque = self._opaque_member(ctype);
@@ -2490,17 +2477,6 @@ impl TypeCheckPass._check_c_global_decl(assign: Assignment) -> None {
 impl TypeCheckPass._c_const_problem(
     expr: Expr, ctype: (TypeBase | None)
 ) -> (str | None) {
-    import from jaclang.compiler.c_interop {
-        c_array_elem,
-        c_bytes_elem_shape,
-        c_bytes_literal,
-        c_scalar_constant,
-        c_string_literal,
-        foreign_struct_of_type,
-        is_builtin_addressof_call,
-        is_ptr_type,
-        named_function_of
-    }
     while isinstance(expr, AtomUnit) and isinstance(expr.value, Expr) {
         expr = expr.value;
     }
@@ -2611,11 +2587,6 @@ impl TypeCheckPass._c_const_problem(
 }
 
 impl TypeCheckPass._check_c_global_use(nd: Name) -> None {
-    import from jaclang.compiler.c_interop {
-        clib_global_of_name,
-        foreign_struct_of_type,
-        is_builtin_addressof_call
-    }
     assign = clib_global_of_name(nd);
     if assign is None
         or nd.find_parent_of_type(Import) is not None
@@ -2638,7 +2609,6 @@ impl TypeCheckPass._check_c_global_use(nd: Name) -> None {
 impl TypeCheckPass._foreign_struct_contains(
     t: (TypeBase | None), target: Archetype
 ) -> bool {
-    import from jaclang.compiler.c_interop { foreign_struct_of_type }
     seen: set[int] = set();
     work: list[TypeBase | None] = [t];
     while work {
@@ -2659,8 +2629,6 @@ impl TypeCheckPass._foreign_struct_contains(
 }
 
 impl TypeCheckPass._check_c_function_def(nd: Ability) -> None {
-    import from jaclang.compiler.c_interop { c_variadic_param, foreign_struct_of_type }
-    import from jaclang.compiler.frontend.constant { is_borrow_kind }
     sig = nd.signature;
     if not isinstance(sig, FuncSignature) {
         return;
@@ -2727,7 +2695,6 @@ impl TypeCheckPass._check_c_function_def(nd: Ability) -> None {
 }
 
 impl TypeCheckPass._check_c_variadic_def(nd: Ability) -> None {
-    import from jaclang.compiler.c_interop { c_variadic_param }
     sig = nd.signature;
     if c_variadic_param(sig) is None or not isinstance(sig, FuncSignature) {
         return;
@@ -2744,7 +2711,6 @@ impl TypeCheckPass._check_c_variadic_def(nd: Ability) -> None {
 }
 
 impl TypeCheckPass._check_c_variadic_args(nd: FuncCall) -> None {
-    import from jaclang.compiler.c_interop { c_variadic_param }
     callee = nd.callee_decl;
     sig = callee.signature if callee is not None else None;
     if not isinstance(sig, FuncSignature) or sig.varargs is None {
@@ -2774,15 +2740,6 @@ impl TypeCheckPass._check_c_variadic_args(nd: FuncCall) -> None {
 }
 
 impl TypeCheckPass._check_c_interop_call(nd: FuncCall) -> None {
-    import from jaclang.compiler.c_interop {
-        c_string_literal,
-        c_type_arg,
-        clib_global_of_name,
-        is_builtin_addressof_call,
-        is_builtin_pin_call,
-        is_ptr_type,
-        opaque_c_of_type
-    }
     callee = nd.target.type;
     if isinstance(callee, ClassType)
         and callee.is_instantiable_class()
@@ -2859,7 +2816,6 @@ impl TypeCheckPass._check_c_interop_call(nd: FuncCall) -> None {
 }
 
 impl TypeCheckPass._c_arg_instance(t: (TypeBase | None)) -> (TypeBase | None) {
-    import from jaclang.compiler.c_interop { c_type_arg }
     arg = c_type_arg(t);
     if not isinstance(arg, TypeBase) {
         return None;
@@ -2868,9 +2824,6 @@ impl TypeCheckPass._c_arg_instance(t: (TypeBase | None)) -> (TypeBase | None) {
 }
 
 impl TypeCheckPass._borrowed_scalar_param(name: Name) -> bool {
-    import from jaclang.compiler.c_interop { clib_import_of, is_ptr_type }
-    import from jaclang.compiler.frontend.constant { OwnershipKind }
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
     sym = name.sym;
     if sym is None or sym.decl is None {
         return False;
@@ -2919,7 +2872,6 @@ impl TypeCheckPass._check_borrowed_scalar_write(leaf: Expr) -> None {
 }
 
 impl TypeCheckPass._check_borrowed_scalar_forward(nd: FuncCall) -> None {
-    import from jaclang.compiler.frontend.constant { OwnershipKind, is_borrow_kind }
     callee = nd.callee_decl;
     sig = callee.signature if callee is not None else None;
     params: list[ParamVar] = sig.get_parameters()
@@ -2967,5 +2919,43 @@ impl TypeCheckPass._check_borrowed_scalar_forward(nd: FuncCall) -> None {
                 what="passing it where the callee writes through it writes only the function's copy"
             );
         }
+    }
+}
+
+impl _lambda_value_body(nd: LambdaExpr) -> bool {
+    if isinstance(nd.body, Expr) or nd.tail_return_expr() is not None {
+        return True;
+    }
+    return isinstance(nd.body, list)
+        and len(nd.body) == 1
+        and isinstance(nd.body[0], ReturnStmt)
+        and nd.body[0].expr is not None;
+}
+
+impl _lambda_needs_context(nd: LambdaExpr) -> bool {
+    return nd.signature is not None
+        and any(param.type_tag is None for param in nd.signature.get_parameters())
+        and _lambda_value_body(nd);
+}
+
+impl _chunks_receiver_type(nd: FuncCall) -> (str | None) {
+    if not (
+        isinstance(nd.target, AtomTrailer)
+        and nd.target.is_attr
+        and isinstance(nd.target.right, Name)
+        and nd.target.right.sym_name == "chunks"
+        and nd.params is not None
+        and len(nd.params) == 1
+    ) {
+        return None;
+    }
+    try {
+        recv = nd.target.target.type;
+        if recv is None {
+            return None;
+        }
+        return recv.mangle();
+    } except Exception {
+        return None;
     }
 }

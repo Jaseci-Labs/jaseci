@@ -2,15 +2,6 @@ import os;
 import sys;
 import platform;
 
-import from jaclang.cli.command { CommandSpec }
-import from jaclang.cli.manifest {
-    GROUP_DISPLAY,
-    GROUP_ORDER,
-    TIER_ORDER,
-    TIER_SECTIONS,
-    iter_command_meta
-}
-
 glob _RESET: str = "\033[0m",
      _HEADER: str = "\033[1;34m",
      _CMD: str = "\033[32m",
@@ -20,7 +11,6 @@ glob _RESET: str = "\033[0m",
      _BOLD_CYAN: str = "\033[1;36m";
 
 impl _use_color -> bool {
-    import from jaclang.cli.console { console }
     try {
         return bool(console.use_color);
     } except Exception {
@@ -28,31 +18,13 @@ impl _use_color -> bool {
     }
 }
 
-def _color(text: str, code: str, use_color: bool | None = None) -> str {
-    if use_color is None {
-        use_color = _use_color();
-    }
-    if not use_color {
-        return text;
-    }
-    return f"{code}{text}{_RESET}";
-}
+def _color(text: str, code: str, use_color: bool | None = None) -> str;
 
-def _by_name(cmd: CommandSpec) -> str {
-    return cmd.name;
-}
+def _by_name(cmd: CommandSpec) -> str;
 
 def _render_command_block(
     cmds: list[CommandSpec], col: int, use_color: bool
-) -> list[str] {
-    cmds.sort(key=_by_name);
-    lines: list[str] = [];
-    for cmd in cmds {
-        pad = ' ' * (col - len(cmd.name));
-        lines.append(f"    {_color(cmd.name, _CMD, use_color)}{pad}{cmd.help}");
-    }
-    return lines;
-}
+) -> list[str];
 
 impl format_verbose_help(prog: str = "jac") -> str {
     use_color = _use_color();
@@ -189,4 +161,30 @@ impl format_logo(version: str) -> str {
         f"{_color(logo[5], _CYAN, use_color)}                Platform: {plat}"
     ];
     return '\n'.join(lines);
+}
+
+impl _color(text: str, code: str, use_color: bool | None = None) -> str {
+    if use_color is None {
+        use_color = _use_color();
+    }
+    if not use_color {
+        return text;
+    }
+    return f"{code}{text}{_RESET}";
+}
+
+impl _by_name(cmd: CommandSpec) -> str {
+    return cmd.name;
+}
+
+impl _render_command_block(
+    cmds: list[CommandSpec], col: int, use_color: bool
+) -> list[str] {
+    cmds.sort(key=_by_name);
+    lines: list[str] = [];
+    for cmd in cmds {
+        pad = ' ' * (col - len(cmd.name));
+        lines.append(f"    {_color(cmd.name, _CMD, use_color)}{pad}{cmd.help}");
+    }
+    return lines;
 }

@@ -1,6 +1,6 @@
 import from c { def nanosleep(req: int, rem: int) -> i32;  }
-import from _errno_native { EINTR, last_errno, raise_errno }
-import from _time_common { NS_PER_SEC }
+import from ._errno_native { EINTR, last_errno, raise_errno }
+import from ._time_common { NS_PER_SEC }
 
 glob CLK_REALTIME: int = 0,
      CLK_MONOTONIC: int = 6,
@@ -9,7 +9,9 @@ glob CLK_REALTIME: int = 0,
      CLK_THREAD_CPUTIME: int = 16,
      CLK_PY_MONOTONIC: int = 8;
 
-def:pub time_sleep_ns(ns: int) {
+def:pub time_sleep_ns(ns: int);
+
+impl time_sleep_ns(ns: int) {
     sec: int = ns // NS_PER_SEC;
     nsec: int = ns % NS_PER_SEC;
     req: int = __alloca(16);
