@@ -1562,9 +1562,7 @@ impl NaIRGenPass._emit_intrinsic_list_data(
     bounds. The list itself stays the owner of the elements: a store through
     the pointer is a plain word write, so it is for scalar element types.
     """;
-    # The pointer outlives the statement only if the list does: a name, a
-    # field or an element is backed by its owner; a call's or a literal's
-    # result is released at the end of the statement, and the buffer with it.
+
     if not isinstance(args[0], (uni.Name, uni.AtomTrailer)) {
         self._emit_intrinsic_misuse(
             nd,
@@ -1578,7 +1576,7 @@ impl NaIRGenPass._emit_intrinsic_list_data(
         self._emit_intrinsic_misuse(nd, intr, "operand did not lower to a value");
         return None;
     }
-    _ld_pointee = getattr(lst.type, "pointee", None);
+    _ld_pointee = lst.type?.pointee;
     _ld_name = str(getattr(_ld_pointee, "name", "") or "");
     if not isinstance(lst.type, ir.PointerType) or not _ld_name.startswith("List.") {
         self._emit_intrinsic_misuse(
@@ -1588,7 +1586,9 @@ impl NaIRGenPass._emit_intrinsic_list_data(
     }
     if _ld_name not in ("List.i64", "List.f64") {
         self._emit_intrinsic_misuse(
-            nd, intr, f"{_ld_name} holds managed elements; only scalar lists expose their buffer"
+            nd,
+            intr,
+            f"{_ld_name} holds managed elements; only scalar lists expose their buffer"
         );
         return None;
     }

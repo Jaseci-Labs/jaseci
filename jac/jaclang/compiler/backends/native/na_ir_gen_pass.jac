@@ -752,6 +752,7 @@ walker NaIRGenPass(CompilerPass) {
     def _emit_intrinsic_alloca(
         nd: uni.FuncCall, intr: IntrinsicEntry, args: list[uni.Expr]
     ) -> (ir.Value | None);
+
     def _emit_intrinsic_list_data(
         nd: uni.FuncCall, intr: IntrinsicEntry, args: list[uni.Expr]
     ) -> (ir.Value | None);
