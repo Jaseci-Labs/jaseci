@@ -1,33 +1,8 @@
 import threading;
-import from jaclang.cli.console { console }
-import from jaclang.client { get_bun }
-import from jaclang.client.bun_installer { bun_unavailable_message }
-import from jaclang.client.client_bundle { ClientBundleError, MissingBunError }
 
+def _require_bun -> str;
 
-def _require_bun -> str {
-    bun = get_bun();
-    if not bun {
-        raise MissingBunError(bun_unavailable_message()) from None;
-    }
-    return bun;
-}
-
-
-def _build_vite_command(build_dir: Path, args: list[str]) -> list[str] {
-    import from jaclang.client.targets.node_tooling_common { resolve_node_tool_entry }
-
-    bun = _require_bun();
-    `entry = resolve_node_tool_entry(build_dir, 'vite');
-    if `entry is None {
-        raise ClientBundleError(
-            f"Vite is not installed under {build_dir / 'node_modules'}. "
-            "Dependencies are installed before every build, so an absent "
-            "vite means that install did not complete."
-        ) from None;
-    }
-    return [bun, str(`entry)] + args;
-}
+def _build_vite_command(build_dir: Path, args: list[str]) -> list[str];
 
 impl ViteBundler._get_client_dir(self: ViteBundler) -> Path {
     if self.build_dir is not None {
@@ -214,7 +189,6 @@ impl client_deps_stale(build_dir: Path) -> bool {
     return marker.read_text(encoding='utf-8').strip() != current;
 }
 
-
 impl ViteBundler.install_packages(
     self: ViteBundler,
     install_dir: Optional[Path] = None,
@@ -224,8 +198,7 @@ impl ViteBundler.install_packages(
 ) -> None {
     import time;
     import shutil;
-    import subprocess;
-    bun = _require_bun();
+    _require_bun();
     build_dir = install_dir if install_dir is not None else self._get_client_dir();
     node_modules = build_dir / 'node_modules';
 
@@ -258,22 +231,17 @@ impl ViteBundler.install_packages(
     try {
         console.print("\n  ⏳ Installing dependencies...\n");
         start_time = time.time();
-        result = subprocess.run(
-            [bun, 'install'],
-            cwd=build_dir,
-            check=False,
-            text=True,
-            capture_output=capture_output
+        (returncode, error_output) = run_pm(
+            ['install'], str(build_dir), capture=capture_output
         );
         elapsed = time.time() - start_time;
-        if result.returncode != 0 {
+        if returncode != 0 {
             if capture_output {
-                error_output = result.stderr or result.stdout;
                 raise ClientBundleError(
-                    f"Dependency installation failed after {elapsed:.1f}s\n\n{error_output}\nCommand: bun install"
+                    f"Dependency installation failed after {elapsed:.1f}s\n\n{error_output}"
                 ) from None;
             }
-            console.error(f"\n  ✖ bun install failed after {elapsed:.1f}s");
+            console.error(f"\n  ✖ Dependency installation failed after {elapsed:.1f}s");
             raise ClientBundleError("Failed to install dependencies") from None;
         }
         console.print(f"\n  ✔ Dependencies installed ({elapsed:.1f}s)");
@@ -311,7 +279,6 @@ impl ViteBundler.add_packages(
 ) -> None {
     import json;
     import subprocess;
-    import from jaclang.client { get_bun }
     target_dir = install_dir if install_dir is not None else self.project_dir;
     pkg_json = target_dir / 'package.json';
     if not pkg_json.exists() {
@@ -325,17 +292,13 @@ impl ViteBundler.add_packages(
         console.print("  ✔ Created package.json");
     }
 
-    bun = get_bun();
-    if bun is None {
-        raise RuntimeError("bun unavailable: cannot install client dependencies");
-    }
-    cmd = [bun, 'add'];
-    if dev {
-        cmd.append('--dev');
-    }
-    cmd.extend(packages);
     console.print(f"  Installing: {' '.join(packages)}");
-    subprocess.run(cmd, cwd=target_dir, check=True, capture_output=False);
+    (returncode, _) = run_pm(
+        ['add'] + (['--dev'] if dev else []) + packages, str(target_dir)
+    );
+    if returncode != 0 {
+        raise RuntimeError(f"installing {', '.join(packages)} failed ({returncode})");
+    }
 }
 
 impl ViteBundler._format_config_object(
@@ -375,34 +338,7 @@ impl ViteBundler._resolve_api_base_url(
     return toml_base_url or api_base_url_override or env_override;
 }
 
-
-def _to_js_expr(value: any) -> str {
-    if value is None {
-        return "null";
-    }
-
-    if isinstance(value, bool) {
-        return "true" if value else "false";
-    }
-
-    if isinstance(value, (int, float)) {
-        return json.dumps(value);
-    }
-
-    if value?.isoformat {
-        return json.dumps(json.dumps(value.isoformat()));
-    }
-
-    if isinstance(value, str) {
-        return json.dumps(json.dumps(value));
-    }
-
-    try {
-        return json.dumps(value);
-    } except (TypeError, ValueError) {
-        return json.dumps(json.dumps(str(value)));
-    }
-}
+def _to_js_expr(value: any) -> str;
 
 impl ViteBundler._format_define_entries(
     self: ViteBundler, api_base_url: str, custom_defines: dict[str, any]
@@ -418,21 +354,9 @@ impl ViteBundler._format_define_entries(
     return ',\n'.join(entries);
 }
 
-def _proxy_entry(key: str, api_port: int) -> str {
-    return (
-        f'\n      "{key}": {{'
-        f'\n        target: "http://localhost:{api_port}",'
-        '\n        changeOrigin: true,'
-        '\n      },'
-    );
-}
+def _proxy_entry(key: str, api_port: int) -> str;
 
-
-def _exact_proxy_key(path: str) -> str {
-    import re;
-    return '^' + re.escape(path).replace('\\', '\\\\') + '$';
-}
-
+def _exact_proxy_key(path: str) -> str;
 
 impl ViteBundler._generate_vite_config_content(
     self: ViteBundler,
@@ -470,7 +394,7 @@ impl ViteBundler._generate_vite_config_content(
     } else {
         compiled_base = 'compiled';
     }
-    import from jaclang.compiler.backends.es.jac_runtime_js { JAC_PRELUDE_BASENAME }
+
     compiled_utils_relative = f"{compiled_base}/client_runtime.js";
     compiled_prelude_relative = f"{compiled_base}/{JAC_PRELUDE_BASENAME}";
     compiled_pwa_relative = f"{compiled_base}/pwa_runtime.js";
@@ -518,7 +442,6 @@ impl ViteBundler._generate_vite_config_content(
         desktop_alias_str = f'\n      "@jac/desktop": path.resolve(buildDir, "{compiled_desktop_relative}"),';
     }
 
-    import from jaclang.client.runtime_source { JAC_VIRTUAL_MODULE_SOURCES }
     virtual_alias_str = '';
     for (module_name, source_name) in JAC_VIRTUAL_MODULE_SOURCES.items() {
         if module_name in ('mobui', 'pwa') {
@@ -1081,7 +1004,6 @@ impl ViteBundler.find_bundle(self: ViteBundler) -> Optional[Path] {
 
 impl ViteBundler.build(self: ViteBundler, entry_file: Optional[Path] = None) -> None {
     import time;
-    import from jaclang.client { ensure_client_deps }
 
     bun = _require_bun();
 
@@ -1138,7 +1060,6 @@ impl ViteBundler.init(
     config_path: Optional[Path] = None,
     entry_path: str = ""
 ) {
-    import from jaclang.project.config { find_project_root }
     project_root = find_project_root(project_dir);
     self.project_dir = project_root[0] if project_root else project_dir;
     self.minify = minify;
@@ -1220,55 +1141,17 @@ impl ViteBundler.create_npmrc(self: ViteBundler) -> Optional[Path] {
     return npmrc_path;
 }
 
-def _toml_config_to_js(config_data: dict[str, any]) -> str {
-    return f"module.exports = {json.dumps(
-        {
-            k: v
-            for (k, v) in config_data.items()
-            if k not in CONFIG_META_KEYS
-        },
-        indent=2
-    )};\n";
-}
+def _toml_config_to_js(config_data: dict[str, any]) -> str;
 
-def _toml_config_from_raw(config_data: dict[str, any]) -> str {
-    content = str(config_data.get('raw', '')).strip();
-    return content + '\n' if content else '';
-}
+def _toml_config_from_raw(config_data: dict[str, any]) -> str;
 
 def _build_vite_dev_command(
     build_dir: Path, config_rel: Path, port: int, host: str = ""
-) -> list[str] {
-    cmd = _build_vite_command(
-        build_dir, ['--config', str(config_rel), '--port', str(port)]
-    );
-    if host {
-        cmd.append('--host');
-        cmd.append(host);
-    } else {
-        cmd.append('--host');
-    }
-    return cmd;
-}
+) -> list[str];
 
-def _is_vite_ready_line(line: str) -> bool {
-    line_lower = line.lower();
-    for pattern in VITE_READY_PATTERNS {
-        if pattern in line_lower {
-            return True;
-        }
-    }
-    return False;
-}
+def _is_vite_ready_line(line: str) -> bool;
 
-def _is_vite_url_line(line: str) -> bool {
-    for pattern in VITE_URL_PATTERNS {
-        if pattern in line {
-            return True;
-        }
-    }
-    return False;
-}
+def _is_vite_url_line(line: str) -> bool;
 
 impl _forward_vite_output(
     proc: any,
@@ -1336,13 +1219,7 @@ impl ViteBundler.start_dev_server(
     import sys;
     import time;
     import threading;
-    import from jaclang.client { get_bun }
-
-    if get_bun() is None {
-        raise ClientBundleError(
-            'Bun is required for dev server. Install manually: https://bun.sh'
-        ) from None;
-    }
+    js_runtime_path();
     build_dir = self._get_client_dir();
     self._ensure_dev_index_html(build_dir);
     self._ensure_dev_dependencies(build_dir);
@@ -1370,16 +1247,7 @@ impl ViteBundler.start_dev_server(
     return process;
 }
 
-def _dev_head_scripts -> str {
-    import from jaclang.project.config { get_config }
-    import from jaclang.client.serving { HeaderBuilder }
-
-    config = get_config();
-    client_cfg = config.get_plugin_config('client') if config else None;
-    meta_data = client_cfg.get('app_meta_data', {}) if client_cfg else {};
-    tags = HeaderBuilder(meta_data, 'dev').build_scripts();
-    return ''.join(f'    {tag}\n' for tag in tags);
-}
+def _dev_head_scripts -> str;
 
 impl ViteBundler._ensure_dev_index_html(self: ViteBundler, build_dir: Path) -> None {
     index_html = build_dir / 'index.html';
@@ -1608,6 +1476,7 @@ export default function jacClientEvents() {
 }
 
 impl ViteBundler._ensure_dev_dependencies(self: ViteBundler, build_dir: Path) -> None {
+    self.create_package_json();
     self.install_packages(install_dir=build_dir);
 }
 
@@ -1669,4 +1538,106 @@ impl ViteBundler._start_vite_with_output_capture(
         }
     }
     return process;
+}
+
+impl _require_bun -> str {
+    return js_runtime_path();
+}
+
+impl _build_vite_command(build_dir: Path, args: list[str]) -> list[str] {
+    bun = _require_bun();
+    `entry = resolve_node_tool_entry(build_dir, 'vite');
+    if `entry is None {
+        raise ClientBundleError(
+            f"Vite is not installed under {build_dir / 'node_modules'}. "
+            "Dependencies are installed before every build, so an absent "
+            "vite means that install did not complete."
+        ) from None;
+    }
+    return [bun, str(`entry)] + args;
+}
+
+impl _to_js_expr(value: any) -> str {
+    if value is None {
+        return "null";
+    }
+
+    if isinstance(value, bool) {
+        return "true" if value else "false";
+    }
+
+    if isinstance(value, (int, float)) {
+        return json.dumps(value);
+    }
+
+    if value?.isoformat {
+        return json.dumps(json.dumps(value.isoformat()));
+    }
+
+    if isinstance(value, str) {
+        return json.dumps(json.dumps(value));
+    }
+
+    try {
+        return json.dumps(value);
+    } except (TypeError, ValueError) {
+        return json.dumps(json.dumps(str(value)));
+    }
+}
+
+impl _proxy_entry(key: str, api_port: int) -> str {
+    return (
+        f'\n      "{key}": {{'
+        f'\n        target: "http://localhost:{api_port}",'
+        '\n        changeOrigin: true,'
+        '\n      },'
+    );
+}
+
+impl _exact_proxy_key(path: str) -> str {
+    import re;
+    return '^' + re.escape(path).replace('\\', '\\\\') + '$';
+}
+
+impl _toml_config_to_js(config_data: dict[str, any]) -> str {
+    return f"module.exports = {json.dumps(
+        {
+            k: v
+            for (k, v) in config_data.items()
+            if k not in CONFIG_META_KEYS
+        },
+        indent=2
+    )};\n";
+}
+
+impl _toml_config_from_raw(config_data: dict[str, any]) -> str {
+    content = str(config_data.get('raw', '')).strip();
+    return content + '\n' if content else '';
+}
+
+impl _is_vite_ready_line(line: str) -> bool {
+    line_lower = line.lower();
+    for pattern in VITE_READY_PATTERNS {
+        if pattern in line_lower {
+            return True;
+        }
+    }
+    return False;
+}
+
+impl _is_vite_url_line(line: str) -> bool {
+    for pattern in VITE_URL_PATTERNS {
+        if pattern in line {
+            return True;
+        }
+    }
+    return False;
+}
+
+impl _dev_head_scripts -> str {
+    config = get_config();
+    client_cfg = config.get_plugin_config('client') if config else None;
+    meta_data = client_cfg.get('app_meta_data', {}) if client_cfg else {};
+    tags = HeaderBuilder(meta_data, 'dev').build_scripts();
+    return ''.join(f'    {tag}\n' for tag in tags);
 }

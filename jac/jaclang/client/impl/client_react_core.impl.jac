@@ -13,12 +13,7 @@ impl JacAwaiting(props: dict[str, any]) -> JsxElement {
     );
 }
 
-async def _awaitPlatformReady {
-    ready: any = globalThis.__jacPlatformReady__;
-    if ready {
-        await ready;
-    }
-}
+async def _awaitPlatformReady;
 
 impl __createJacSchema(zodLib: any) -> any {
     handler = {
@@ -265,11 +260,35 @@ impl __jacCallFunction(
     );
 }
 
-impl __normalizeIdentity(x: any) -> dict[str, any] {
+impl __authPolicy -> any {
+    if globalThis.__jacAuthPolicy__ {
+        return globalThis.__jacAuthPolicy__;
+    }
+    try {
+        response = await fetch(f"{globalThis.__jacGetApiBaseUrl__()}/user/auth-policy");
+        if response.ok {
+            payload = JSON.parse(await response.text());
+            if payload and payload["data"] {
+                globalThis.__jacAuthPolicy__ = payload["data"];
+                return payload["data"];
+            }
+        }
+    } except Exception as e {
+        console.warn("[jac-client] auth policy unavailable:", e);
+    }
+    return None;
+}
+
+impl __normalizeIdentity(x: any, policy: any = None) -> dict[str, any] {
     if x != None and Object.prototype.toString.call(x) == "[object Object]" {
         return x;
     }
-    return {"type": "username", "value": x};
+    kinds = policy["identifiers"] if policy else None;
+    email_on = kinds == None or kinds["email"] != "off";
+    username_on = kinds == None or kinds["username"] != "off";
+    text: any = String(x);
+    as_email = email_on and (not username_on or text.indexOf("@") >= 0);
+    return {"type": "email" if as_email else "username", "value": x};
 }
 
 impl __normalizeCredential(x: any) -> dict[str, any] {
@@ -286,10 +305,11 @@ impl jacSignup(
 ) -> SignupResult {
     base_url = globalThis.__jacGetApiBaseUrl__();
     credential = __normalizeCredential(credential_or_password);
+    policy = await __authPolicy();
     identities = (
         identities_or_username
             if Array.isArray(identities_or_username)
-            else [__normalizeIdentity(identities_or_username)]
+            else [__normalizeIdentity(identities_or_username, policy)]
     );
     body = {"identities": identities, "credential": credential};
     if profile != None {
@@ -381,6 +401,17 @@ impl jacLogin(
 impl jacLogout -> None {
     __jacClearCache();
     globalThis.__jacRemoveLocalStorage__("jac_token");
+    try {
+        fetch(
+            f"{globalThis.__jacGetApiBaseUrl__()}/user/logout", {"method": "POST"}
+        ).catch(
+            lambda (e: any) { console.warn(
+                "[jac-client] session cookie clear failed:", e
+            ); }
+        );
+    } except Exception as e {
+        console.warn("[jac-client] session cookie clear failed:", e);
+    }
 }
 
 impl jacIsLoggedIn -> bool {
@@ -466,4 +497,11 @@ impl __jacReactErrorHandler(error: any, info: any) -> None {
         componentStack = info.componentStack if info else "";
         __jacReportError(message, stack, "", "ErrorBoundary", componentStack);
     } except Exception {}
+}
+
+impl _awaitPlatformReady {
+    ready: any = globalThis.__jacPlatformReady__;
+    if ready {
+        await ready;
+    }
 }

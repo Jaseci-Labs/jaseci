@@ -33,6 +33,16 @@ impl SymTabBuildPass._bind_import_path_symbols(module_path: ModulePath) -> None 
 
 impl SymTabBuildPass.enter_module with Module entry {
     self.push_scope_and_link(here);
+
+    for stmt in here.body {
+        if isinstance(stmt, Import) and stmt.clib_decls {
+            for decl in stmt.clib_decls {
+                if isinstance(decl, GlobalVars) {
+                    self._declare_global_vars(decl);
+                }
+            }
+        }
+    }
 }
 
 impl SymTabBuildPass.exit_module with Module exit {
@@ -56,12 +66,15 @@ impl SymTabBuildPass.enter_type_param with TypeParam entry {
 }
 
 impl SymTabBuildPass.exit_global_vars with GlobalVars exit {
-    import from jaclang.compiler.frontend.constant { SymbolType }
-    for i in here.assignments {
+    self._declare_global_vars(here);
+}
+
+impl SymTabBuildPass._declare_global_vars(nd: GlobalVars) -> None {
+    for i in nd.assignments {
         for j in i.target {
             if isinstance(j, AstSymbolNode) {
                 j.name_spec._sym_category = SymbolType.MOD_VAR;
-                j.sym_tab.def_insert(j, access_spec=here, single_decl='global var');
+                j.sym_tab.def_insert(j, access_spec=nd, single_decl='global var');
             } else {
                 self.ctx.ice('Expected name type for global vars');
             }
@@ -91,7 +104,6 @@ impl SymTabBuildPass.exit_assignment with Assignment exit {
 }
 
 impl SymTabBuildPass.exit_binary_expr with BinaryExpr exit {
-    import from jaclang.compiler.frontend.constant { Tokens as Tok }
     if not (isinstance(here.op, Token) and (here.op.name == Tok.WALRUS_EQ)) {
         return;
     }
@@ -235,9 +247,11 @@ impl SymTabBuildPass.exit_module_item with ModuleItem exit {
 }
 
 impl SymTabBuildPass.enter_archetype with Archetype entry {
+    absorbed = False;
     if self.cur_sym_tab {
         existing_sym = self.cur_scope.names_in_scope.get(here.sym_name, None);
-        if existing_sym {
+        absorbed = existing_sym is not None and existing_sym.imported;
+        if existing_sym and not absorbed {
             nd_native = here.in_native_context();
             nd_client = here.in_client_context();
             for d in existing_sym.defn {
@@ -259,7 +273,9 @@ impl SymTabBuildPass.enter_archetype with Archetype entry {
     }
     self.push_scope_and_link(here);
     assert (here.parent_scope is not None);
-    here.parent_scope.def_insert(here, access_spec=here, single_decl='archetype');
+    here.parent_scope.def_insert(
+        here, access_spec=here, single_decl='archetype', force_overwrite=absorbed
+    );
 }
 
 impl SymTabBuildPass.exit_archetype with Archetype exit {
