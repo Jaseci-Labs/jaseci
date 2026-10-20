@@ -327,6 +327,9 @@ graph import {
         server.server.JacAPIServer._validate_or_raise { cpu_quota },
         server.server.JacAPIServer.serve_background { cpu_quota },
         server.settings { cpu_quota, memory_headroom_bytes },
+        scale.deploy.target.kubernetes.manifest_builder.client_build_alongside_seal {
+            memory_headroom_bytes
+        },
         testing.test_runner { WorkPool, should_retire as _should_retire },
         testing.test_runner._test_retire { env_int },
         testing.test_runner._test_rss_cap_mb { env_int },

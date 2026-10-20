@@ -96,7 +96,7 @@ obj ManifestBuilder {
     ) -> str;
 
     def _build_client_bundle(project_dir: str);
-    def _start_client_build(project_dir: str) -> any;
+    def _start_client_build(project_dir: str) -> tuple[any, any];
     def _client_dist_candidates(stage: str, entry_rel: any) -> list[str];
     def generate_manifests(app_config: AppConfig, image: str) -> dict[str, any];
     def check_pod_config(app_config: AppConfig, image: str);

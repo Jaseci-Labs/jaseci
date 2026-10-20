@@ -1022,7 +1022,16 @@ impl pack_jab(
             tomls
         );
     }
-    key = input_key(base, sources);
+    try {
+        key = input_key(base, sources);
+    } except OSError {
+        if client_ready is None {
+            raise;
+        }
+        client_ready();
+        sources = bundle_source_files(base);
+        key = input_key(base, sources);
+    }
     cached = _cached_seal(base, key);
     if cached is not None and client_ready is not None {
         client_ready();

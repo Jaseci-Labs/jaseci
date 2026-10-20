@@ -244,7 +244,7 @@ impl ManifestBuilder._prepare_injector(app_config: AppConfig) -> PvcInjector {
     proj = self.project_dir or app_config.code_folder;
     self.project_dir = proj;
     fleet = self._fleet(app_config);
-    client_ready = self._start_client_build(proj);
+    (client_wait, client_ready) = self._start_client_build(proj);
     try {
         selection = select_injector(
             self.k8s_config.bundle_storage_class,
@@ -254,13 +254,11 @@ impl ManifestBuilder._prepare_injector(app_config: AppConfig) -> PvcInjector {
             dry_run=self.dry_run,
             access_mode=self.k8s_config.bundle_access_mode,
             fleet=fleet,
-            client_ready=client_ready
+            client_ready=client_wait
         );
     } except Exception {
-        if client_ready is not None {
-            try {
-                client_ready();
-            } except Exception {}
+        if client_wait is not None {
+            client_wait();
         }
         raise;
     }
@@ -300,24 +298,14 @@ impl ManifestBuilder._install_app_deps(
 }
 
 impl client_build_alongside_seal -> bool {
-    try {
-        with open("/proc/meminfo") as meminfo {
-            for line in meminfo {
-                if line.startswith("MemAvailable:") {
-                    available_kib = int(line.split()[1]);
-                    return available_kib
-                        >= _CLIENT_BUILD_ALONGSIDE_SEAL_GIB * 1024 * 1024;
-                }
-            }
-        }
-    } except (OSError, ValueError, IndexError) {}
-    return False;
+    return memory_headroom_bytes()
+        >= _CLIENT_BUILD_ALONGSIDE_SEAL_GIB * 1024 * 1024 * 1024;
 }
 
-impl ManifestBuilder._start_client_build(project_dir: str) -> any {
+impl ManifestBuilder._start_client_build(project_dir: str) -> tuple[any, any] {
     if self.dry_run or not self._client_entry() or not client_build_alongside_seal() {
         self._build_client_bundle(project_dir);
-        return None;
+        return (None, None);
     }
     import threading;
     failure: list[BaseException] = [];
@@ -331,13 +319,16 @@ impl ManifestBuilder._start_client_build(project_dir: str) -> any {
     worker = threading.Thread(target=build, name="client-bundle", daemon=True);
     worker.start();
     console.print("Building the client bundle while the app is sealed.");
+    def wait {
+        worker.join();
+    }
     def ready {
         worker.join();
         if failure {
             raise failure[0];
         }
     }
-    return ready;
+    return (wait, ready);
 }
 
 impl ManifestBuilder._build_client_bundle(project_dir: str) {
