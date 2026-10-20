@@ -300,11 +300,21 @@ test "lintfix moves separate-impls bodies into the module's impl annex" {
             variant.write_text(CLEAN);
             blocked = Path(repo) / "blocked.jac";
             blocked.write_text(CLEAN);
-            files = [str(fresh), str(mod), str(annex), str(variant), str(blocked)];
+            stuck = Path(repo) / "stuck.jac";
+            stuck.write_text(CLEAN);
+            files = [
+                "fresh.jac",
+                str(mod),
+                str(annex),
+                str(variant),
+                str(blocked),
+                str(stuck)
+            ];
             reset_state();
-            with deny_writes([str(Path(repo) / "blocked.impl.jac")]) {
+            with deny_writes([str(Path(repo) / "blocked.impl.jac"), str(stuck)]) {
                 ret = fmt_cmd(files, lintfix=True, jobs=jobs);
             }
+            stuck_annex_left = (Path(repo) / "stuck.impl.jac").exists();
             fresh_text = fresh.read_text();
             fresh_annex = (Path(repo) / "fresh.impl.jac").read_text();
             mod_text = mod.read_text();
@@ -314,6 +324,7 @@ test "lintfix moves separate-impls bodies into the module's impl annex" {
             ).read_text();
             blocked_text = blocked.read_text();
             files.remove(str(blocked));
+            files.remove(str(stuck));
             reset_state();
             again = fmt_cmd(files, lintfix=True, check=True, jobs=jobs);
         } finally {
@@ -323,6 +334,8 @@ test "lintfix moves separate-impls bodies into the module's impl annex" {
         assert ret == 1 , f"[jobs={jobs}] the unwritable annex must fail the run";
         assert blocked_text == CLEAN , f"[jobs={jobs}] a module whose annex cannot be "
         f"written keeps its bodies, got:\n{blocked_text!r}";
+        assert not stuck_annex_left , f"[jobs={jobs}] an annex written for a module "
+        "that then fails to save is rolled back";
         assert "return x + 1" in variant_annex , (
             f"[jobs={jobs}] a platform variant gets its own annex folder, so the "
             "portable module does not claim its bodies"

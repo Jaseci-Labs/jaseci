@@ -454,19 +454,30 @@ impl lint(
                 (formatted_code, float_target, float_text) = _float_impls_to_annex(
                     prog, str(path_obj), str(path_obj), formatted_code
                 );
+                annex_backups: dict[str, (str | None)] = {};
                 if float_target {
                     float_prog = JacProgram.jac_str_formatter(
                         float_text, float_target, auto_lint=True
                     );
-                    os.makedirs(os.path.dirname(float_target), exist_ok=True);
+                    annex_backups[float_target] = (
+                        Path(float_target).read_text(encoding='utf-8')
+                            if os.path.exists(float_target)
+                            else None
+                    );
+                    os.makedirs(os.path.dirname(float_target) or ".", exist_ok=True);
                     with open(float_target, 'w', encoding='utf-8') as f {
                         f.write(float_prog.mod.main.gen.jac or float_text);
                     }
                 }
                 changed = formatted_code != original_code;
                 if changed {
-                    with open(str(path_obj), 'w', encoding='utf-8') as f {
-                        f.write(formatted_code);
+                    try {
+                        with open(str(path_obj), 'w', encoding='utf-8') as f {
+                            f.write(formatted_code);
+                        }
+                    } except OSError {
+                        _restore_annexes(annex_backups);
+                        raise;
                     }
                 }
             }
@@ -566,6 +577,23 @@ def _format_single_file_worker(
 def _float_impls_to_annex(
     prog: JacProgram, file_path: str, logical: str, formatted: str
 ) -> tuple[str, str, str];
+
+def _restore_annexes(backups: dict[str, (str | None)]) -> None;
+
+impl _restore_annexes(backups: dict[str, (str | None)]) -> None {
+    import os;
+    for (path, text) in backups.items() {
+        try {
+            if text is None {
+                os.remove(path);
+            } else {
+                with open(path, 'w', encoding='utf-8') as f {
+                    f.write(text);
+                }
+            }
+        } except OSError {}
+    }
+}
 
 impl _float_impls_to_annex(
     prog: JacProgram, file_path: str, logical: str, formatted: str
@@ -831,20 +859,30 @@ impl format(
                 }
                 write_errors: list[str] = [];
                 floated_failed = False;
+                annex_backups: dict[str, (str | None)] = {};
                 for (out_path, code) in outputs {
-                    if floated_failed and out_path == res['path'] {
+                    is_module = out_path == res['path'];
+                    if floated_failed and is_module {
                         write_errors.append(
                             f"Left '{out_path}' unchanged: its moved bodies could not "
                             "be written to its impl annex"
                         );
                         continue;
                     }
+                    is_owned = os.path.realpath(out_path) in owned;
                     try {
                         if to_screen {
                             console.print(code, markup=False, highlight=False);
                         } else {
-                            if os.path.realpath(out_path) in owned {
-                                os.makedirs(os.path.dirname(out_path), exist_ok=True);
+                            if is_owned {
+                                annex_backups[out_path] = (
+                                    Path(out_path).read_text(encoding='utf-8')
+                                        if os.path.exists(out_path)
+                                        else None
+                                );
+                                os.makedirs(
+                                    os.path.dirname(out_path) or ".", exist_ok=True
+                                );
                             }
                             with open(out_path, 'w', encoding='utf-8') as f {
                                 f.write(code);
@@ -852,8 +890,10 @@ impl format(
                         }
                     } except Exception as e {
                         write_errors.append(f"Error writing to '{out_path}': {e}");
-                        if os.path.realpath(out_path) in owned {
+                        if is_owned {
                             floated_failed = True;
+                        } elif is_module {
+                            _restore_annexes(annex_backups);
                         }
                     }
                 }
