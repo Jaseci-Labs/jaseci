@@ -161,16 +161,10 @@ impl NaIRGenPass._vtable_global_for(arch_name: str) -> (ir.GlobalVariable | None
 impl NaIRGenPass._vtable_candidates(names: list[str]) -> list[ir.GlobalVariable] {
     reg = get_layout_registry(self.module, self.prog);
     out: list[ir.GlobalVariable] = [];
-    for cand in reg.mro_order {
-        cand_mro = self._mro_of(cand);
-        for name in names {
-            if name in cand_mro {
-                vt = self._vtable_global_for(cand);
-                if vt is not None {
-                    out.append(vt);
-                }
-                break;
-            }
+    for cand in reg.descendants_of(names) {
+        vt = self._vtable_global_for(cand);
+        if vt is not None {
+            out.append(vt);
         }
     }
     return out;
@@ -387,10 +381,7 @@ impl NaIRGenPass._codegen_virtual_call(
     _vd_uniform = True;
 
     _vd_reg = _vd_glr(self.module, self.prog);
-    for _vd_cls in _vd_reg.mro_order {
-        if obj_type_name not in self._mro_of(_vd_cls) {
-            continue;
-        }
+    for _vd_cls in _vd_reg.descendants_of([obj_type_name]) {
         _vd_lay = _vd_reg.get_layout(_vd_cls);
         if _vd_lay is None or not _vd_lay.has_vtable {
             continue;

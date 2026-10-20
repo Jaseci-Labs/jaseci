@@ -1299,6 +1299,9 @@ impl prepare_dynamic_module(
     path: str, program: any, application: PreparedApplication
 ) -> PreparedApplication {
     console.print(f'Preparing dynamically imported module: {path}', file=sys.stderr);
+    if os.path.realpath(path) in (application.entry, *application.services) {
+        return reprepare_application(application, program);
+    }
     import from jaclang.compiler.driver.compilation_context { program_for }
     import from jaclang.runtime.prepared { publish }
     import from jaclang.runtime.preparation_lock { PREPARATION_LOCK }

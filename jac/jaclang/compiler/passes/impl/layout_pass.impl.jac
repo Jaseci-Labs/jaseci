@@ -154,7 +154,7 @@ impl LayoutPass._build_hierarchy(archetypes: dict[str, Archetype]) -> None {
 
     for aname in archetypes {
         if aname not in reg.mro_order {
-            reg.mro_order[aname] = self._compute_c3_mro(aname);
+            reg.set_mro(aname, self._compute_c3_mro(aname));
         }
     }
 }
@@ -170,7 +170,7 @@ impl LayoutPass._compute_c3_mro(class_name: str) -> list[str] {
     parent_mros: list[list[str]] = [];
     for p in parents {
         if p not in reg.mro_order {
-            reg.mro_order[p] = self._compute_c3_mro(p);
+            reg.set_mro(p, self._compute_c3_mro(p));
         }
         parent_mros.append(list(reg.mro_order[p]));
     }
@@ -781,6 +781,39 @@ impl LayoutRegistry.resolve_method_owner(
     return None;
 }
 
+impl LayoutRegistry.set_mro(name: str, mro: list[str]) -> None {
+    self.mro_order[name] = mro;
+    self._descendants = None;
+}
+
+impl LayoutRegistry.descendants_of(names: list[str]) -> list[str] {
+    """Every class whose method resolution order holds one of `names`, the
+    named classes included, in registry order. The index is built once per
+    set of resolution orders.""";
+    index = self._descendants;
+    if index is None {
+        index = {};
+        for cls in self.mro_order {
+            for anc in self.get_mro(cls) {
+                index.setdefault(anc, []).append(cls);
+            }
+        }
+        self._descendants = index;
+    }
+    if len(names) == 1 {
+        return index.get(names[0], []);
+    }
+    found: set[str] = set();
+    for name in names {
+        found.update(index.get(name, []));
+    }
+    return [
+        cls
+        for cls in self.mro_order
+        if cls in found
+    ];
+}
+
 impl LayoutRegistry.get_mro(name: str) -> list[str] {
     return self.mro_order.get(name, [name]);
 }
@@ -1066,7 +1099,7 @@ impl archetype_native_name(arch: Archetype) -> str {
         import from jaclang.compiler.frontend.codeinfo { bundled_stdlib_module_of }
         twin = _NATIVE_NAME_BY_DECL.get(
             (
-                os.path.realpath(arch.loc.mod_path),
+                real_path(arch.loc.mod_path),
                 arch.loc.first_line,
                 arch.loc.col_start,
                 name
@@ -1082,7 +1115,7 @@ impl archetype_native_name(arch: Archetype) -> str {
     if arch.loc is not None and arch.loc.mod_path {
         import os;
         key = (
-            os.path.realpath(arch.loc.mod_path),
+            real_path(arch.loc.mod_path),
             arch.loc.first_line,
             arch.loc.col_start,
             name
@@ -1136,7 +1169,7 @@ impl record_interface_twins(native_mod: Module, prog: JacProgram) {
         if key is None or not key[0].endswith(".pyi") {
             continue;
         }
-        _NATIVE_NAME_BY_DECL[(os.path.realpath(key[0]), key[1], key[2], key[3])] = (
+        _NATIVE_NAME_BY_DECL[(real_path(key[0]), key[1], key[2], key[3])] = (
             archetype_native_name(stmt)
         );
         _NATIVE_NAMED_CLASSES.add(key[3]);
@@ -1162,9 +1195,7 @@ impl _recorded_native_name(shared: ClassDetailsShared) -> (str | None) {
         return None;
     }
     import os;
-    found = _NATIVE_NAME_BY_DECL.get(
-        (os.path.realpath(key[0]), key[1], key[2], key[3])
-    );
+    found = _NATIVE_NAME_BY_DECL.get((real_path(key[0]), key[1], key[2], key[3]));
     if found is None {
         import from jaclang.compiler.frontend.codeinfo { bundled_stdlib_module_of }
         stdlib_module = bundled_stdlib_module_of(key[0]);
@@ -1294,7 +1325,7 @@ impl declaring_module_path(base_expr: Expr) -> str {
     if isinstance(base_type, ClassType) and base_type._shared is not None {
         scope = base_type.shared.symbol_table;
         if isinstance(scope, Archetype) and scope.loc.mod_path {
-            return os.path.realpath(scope.loc.mod_path);
+            return real_path(scope.loc.mod_path);
         }
     }
     if not isinstance(base_expr, AstSymbolNode) {
@@ -1314,7 +1345,7 @@ impl declaring_module_path(base_expr: Expr) -> str {
         return "";
     }
     path = decl_mod.loc.mod_path;
-    return os.path.realpath(path) if path else "";
+    return real_path(path) if path else "";
 }
 
 impl headers_agree(child: ArchetypeLayout, base: ArchetypeLayout) -> bool {
@@ -1413,7 +1444,7 @@ impl adopt_imported_bases(module: Module, header_identity: bool = True) -> list[
             lay.mro = full;
         }
         if len(full) > len(reg.mro_order.get(name) or []) {
-            reg.mro_order[name] = list(full);
+            reg.set_mro(name, list(full));
         }
     }
     layouts = reg.layouts;

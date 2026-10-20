@@ -5,8 +5,7 @@ import sys;
 
 glob NOT_BUILT: str = "not built",
      LAYOUT_SIDECAR_SUFFIX: str = ".layout.json",
-     KERNEL_DEV_LINK_MODE: str = NATIVE_LINK_MODE_OBJECTS,
-     SEALED_LINK_MODE: str = NATIVE_LINK_MODE_BITCODE;
+     KERNEL_LINK_MODE: str = NATIVE_LINK_MODE_OBJECTS;
 
 obj ResolvedKernel {
     has lib_path: str,
@@ -80,5 +79,5 @@ def resolve_kernel -> (ResolvedKernel | None);
 def build_kernel(
     dst: str = "",
     log: (Callable[[str], None] | None) = None,
-    link_mode: str = KERNEL_DEV_LINK_MODE
+    link_mode: str = KERNEL_LINK_MODE
 ) -> LinkResult;

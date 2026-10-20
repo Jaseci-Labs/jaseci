@@ -4726,7 +4726,8 @@ impl TypeEvaluator._init_prelude_from_sources -> list[Module] {
 
     self.ambient_typing_names_by_module = raw_groups;
     self.ambient_typing_names_by_module["typing"] = typing_ambient_flat;
-    for typing_name in typing_ambient_flat {
+
+    for typing_name in sorted(typing_ambient_flat) {
         typing_sym = typing_mod.names_in_scope.get(typing_name);
         if typing_sym is None {
             continue;

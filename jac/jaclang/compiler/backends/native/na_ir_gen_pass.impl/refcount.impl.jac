@@ -1941,12 +1941,7 @@ impl NaIRGenPass._drop_dispatches(type_name: str) -> bool {
     }
 
     reg = get_layout_registry(self.module, self.prog);
-    for cand in reg.mro_order {
-        if cand != type_name and type_name in self._mro_of(cand) {
-            return True;
-        }
-    }
-    return False;
+    return any(cand != type_name for cand in reg.descendants_of([type_name]));
 }
 
 impl NaIRGenPass._emit_nogc_field_drops(

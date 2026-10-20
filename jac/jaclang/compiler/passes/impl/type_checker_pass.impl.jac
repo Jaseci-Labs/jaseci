@@ -56,6 +56,17 @@ impl TypeCheckPass.exit_formatted_value with FormattedValue exit {
     self.evaluator.get_type_of_expression(here.format_part);
 }
 
+impl TypeCheckPass._is_generator(scope: Ability) -> bool {
+    """Whether a function body yields, asked once per function per run: every
+    return statement of the body asks it.""";
+    known = self._generator_bodies.get(id(scope));
+    if known is None {
+        known = ModuleFacts.ability_is_generator(scope);
+        self._generator_bodies[id(scope)] = known;
+    }
+    return known;
+}
+
 impl TypeCheckPass.exit_return_stmt with ReturnStmt exit {
     scope = self.evaluator._get_enclosing_return_scope(here);
     if scope is None {
@@ -99,7 +110,7 @@ impl TypeCheckPass.exit_return_stmt with ReturnStmt exit {
         return;
     }
 
-    if isinstance(scope, Ability) and ModuleFacts.ability_is_generator(scope) {
+    if isinstance(scope, Ability) and self._is_generator(scope) {
         gen_return = get_declared_generator_return_type(return_type);
         if gen_return is not None {
             return_type = self.evaluator._convert_to_instance(gen_return);
@@ -960,8 +971,7 @@ impl TypeCheckPass.exit_ability with Ability exit {
             }
         }
 
-        import from jaclang.compiler.frontend.module_facts { ModuleFacts }
-        is_generator = ModuleFacts.ability_is_generator(here);
+        is_generator = self._is_generator(here);
 
         body_stmts: list[CodeBlockStmt] = [
             stmt
