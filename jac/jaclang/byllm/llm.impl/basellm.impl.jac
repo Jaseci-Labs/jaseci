@@ -1152,7 +1152,13 @@ impl BaseLLM.dispatch_streaming(mt_run: MTRuntime) -> Generator[str, None, None]
                 mt_run._last_stream_chunks.append(chunk);
                 if events {
                     reasoning_pending += _delta_reasoning(chunk);
-                    if len(reasoning_pending) >= _REASONING_MIN_CHARS {
+                    answering = bool(
+                        chunk?.choices and chunk?.choices?[0]?.delta?.content
+                    );
+                    if reasoning_pending
+                        and (
+                            len(reasoning_pending) >= _REASONING_MIN_CHARS or answering
+                        ) {
                         mt_run._reasoning_deltas.append(reasoning_pending);
                         reasoning_pending = "";
                     }
@@ -1257,7 +1263,12 @@ impl BaseLLM.dispatch_streaming_with_tools(
                     reasoning_buf += delta_reasoning;
                     reasoning_pending += delta_reasoning;
                 }
-                if len(reasoning_pending) >= _REASONING_MIN_CHARS {
+                if reasoning_pending
+                    and (
+                        len(reasoning_pending) >= _REASONING_MIN_CHARS
+                        or delta_content
+                        or _tool_call_fragments(chunk)
+                    ) {
                     mt_run._reasoning_deltas.append(reasoning_pending);
                     reasoning_pending = "";
                     yield "";

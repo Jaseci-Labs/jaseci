@@ -23,7 +23,8 @@ def get_weather(city: str) -> str {
 }
 
 
-glob THINK: str = "REASONING " + ("step by step " * 30),
+# Not a multiple of the 200-char merge size, so a short tail is left to flush.
+glob THINK: str = "REASONING " + ("step by step " * 20),
      USAGE: dict[str, any] = {
          "prompt_tokens": 10,
          "completion_tokens": 9,
@@ -122,9 +123,9 @@ test "a reply's own fields are kept, sent back, streamed, counted and reported o
             register_llm_call_hook(records.append);
             history: list[any] = [];
             try {
-                events = turn(llm, history, path, "How is Paris?");
+                first = turn(llm, history, path, "How is Paris?");
                 held = [dict(m) for m in history];
-                events += turn(llm, history, path, "Still sunny?");
+                second = turn(llm, history, path, "Still sunny?");
             } finally {
                 unregister_llm_call_hook(broken);
                 unregister_llm_call_hook(records.append);
@@ -180,6 +181,23 @@ test "a reply's own fields are kept, sent back, streamed, counted and reported o
             }
             # Reasoning streams on its own channel, merged, never in the answer.
             if logging {
+                for evs in (first, second) {
+                    kinds = [e.event_type for e in evs];
+                    shown = [
+                        i
+                        for (i, k) in enumerate(kinds)
+                        if k in ("thought", "chunk")
+                    ];
+                    thought_at = [
+                        i
+                        for (i, k) in enumerate(kinds)
+                        if k == "reasoning"
+                    ];
+                    assert not shown or not thought_at or max(thought_at) < shown[0] , (
+                        f"{label}: reasoning arrived after the answer began: {kinds}"
+                    );
+                }
+                events = first + second;
                 texts = [
                     str(e.data["content"]) for e in events_of(events, "reasoning")
                 ];
