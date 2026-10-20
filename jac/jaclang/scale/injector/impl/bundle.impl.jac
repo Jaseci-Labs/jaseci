@@ -1030,39 +1030,21 @@ impl pack_jab(
             tomls
         );
     }
-    try {
-        key = input_key(base, sources);
-    } except OSError {
-        if client_ready is None {
-            raise;
-        }
-        client_ready();
-        sources = bundle_source_files(base);
-        key = input_key(base, sources);
-    }
+    seal_sources = [
+        path
+        for path in sources
+        if not _is_client_dist(path.relative_to(base))
+    ];
+    key = input_key(base, seal_sources);
     cached = _cached_seal(base, key);
-    if cached is not None and client_ready is not None {
-        client_ready();
-        sources = bundle_source_files(base);
-        if input_key(base, sources) != key {
-            cached = None;
-        }
-    }
     if cached is not None {
         logger.info(
             f"Reusing the sealed bundle for unchanged inputs ({key[:12]}); skipping the seal."
         );
-        return cached;
-    }
-    seal_sources = sources;
-    seal_key = key;
-    if client_ready is not None {
-        seal_sources = [
-            path
-            for path in sources
-            if not _is_client_dist(path.relative_to(base))
-        ];
-        seal_key = input_key(base, seal_sources);
+        if client_ready is not None {
+            client_ready();
+        }
+        return _with_client_dist(cached, base);
     }
     staged = _precompile_app(
         base,
@@ -1107,28 +1089,13 @@ impl pack_jab(
                 );
             }
         }
-        sources = seal_sources;
-        if client_ready is not None {
-            client_ready();
-            dist = [
-                path
-                for path in bundle_source_files(base)
-                if _is_client_dist(path.relative_to(base))
-            ];
-            for path in dist {
-                dest = staged / path.relative_to(base);
-                dest.parent.mkdir(parents=True, exist_ok=True);
-                shutil.copy2(str(path), str(dest));
-            }
-            sources = seal_sources + dist;
-        }
         buf = io.BytesIO();
         (tar, gz) = open_det_tar(buf);
         try {
             with tar {
                 snapshot = [
                     staged / path.relative_to(base)
-                    for path in sources
+                    for path in seal_sources
                     if (staged / path.relative_to(base)).is_file()
                 ];
                 add_source_members(tar, staged, sources=snapshot);
@@ -1199,32 +1166,54 @@ impl pack_jab(
             gz.close();
         }
         raw = buf.getvalue();
-        remembered = key;
         try {
-            sealed = [
-                staged / path.relative_to(base)
-                for path in seal_sources
-                if (staged / path.relative_to(base)).is_file()
-            ];
-            unchanged = len(sealed) == len(seal_sources)
-                and input_key(staged, sealed) == seal_key;
-            if unchanged and client_ready is not None {
-                remembered = input_key(staged, snapshot);
-            }
+            unchanged = len(snapshot) == len(seal_sources)
+                and input_key(staged, snapshot) == key;
         } except OSError {
             unchanged = False;
         }
         if unchanged {
-            _remember_seal(base, remembered, raw);
+            _remember_seal(base, key, raw);
         } else {
             logger.info(
                 "The project changed while it was sealed; not keeping this bundle for reuse."
             );
         }
-        return raw;
     } finally {
         remove_stage_root(staged.parent);
     }
+    if client_ready is not None {
+        client_ready();
+    }
+    return _with_client_dist(raw, base);
+}
+
+impl _with_client_dist(raw: bytes, base: Path) -> bytes {
+    dist = [
+        path
+        for path in bundle_source_files(base)
+        if _is_client_dist(path.relative_to(base))
+    ];
+    buf = io.BytesIO();
+    (tar, gz) = open_det_tar(buf);
+    try {
+        with tar {
+            with tarfile.open(fileobj=io.BytesIO(raw), mode="r:gz") as sealed {
+                for member in sealed.getmembers() {
+                    if _is_client_dist(Path(member.name)) {
+                        continue;
+                    }
+                    tar.addfile(
+                        member, sealed.extractfile(member) if member.isfile() else None
+                    );
+                }
+            }
+            add_source_members(tar, base, sources=dist);
+        }
+    } finally {
+        gz.close();
+    }
+    return buf.getvalue();
 }
 
 impl content_address(raw: bytes) -> str {

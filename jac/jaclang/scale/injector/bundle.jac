@@ -105,6 +105,9 @@ def bundle_source_files(base: Path) -> list[Path];
 def client_build_sources(base: Path) -> list[Path];
 
 
+def _with_client_dist(raw: bytes, base: Path) -> bytes;
+
+
 def resolve_fleet_entries(project_dir: str, fleet: any) -> dict[str, str];
 
 

@@ -242,10 +242,12 @@ test "a seal built alongside the client build ships the bundle the build finishe
         page.write_text("newer");
     }
     (third, third_log) = _pack_logged(base, binary, rebuilt);
-    assert not any("Reusing the sealed bundle" in m for m in third_log) , (
-        "a new client build reused the bundle that ships the old one"
+    assert any("Reusing the sealed bundle" in m for m in third_log) , (
+        f"a client rebuild alone sealed the app again: {third_log}"
     );
-    assert _bundle_member(third, ".jac/client/dist/index.html") == b"newer";
+    assert _bundle_member(third, ".jac/client/dist/index.html") == b"newer" , (
+        "the reused seal shipped the client build it was sealed with"
+    );
 }
 
 
