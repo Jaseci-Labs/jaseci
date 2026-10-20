@@ -5161,6 +5161,7 @@ graph import client.targets.desktop {
             _stage_fused_runtime,
             build_cef_dispatch,
             build_cef_subprocess,
+            desktop_storage_identifier,
             stage_postgres,
             stage_program
         },
@@ -5171,6 +5172,7 @@ graph import client.targets.desktop {
             _jac_bin,
             _jac_subprocess_env,
             _stage_fused_runtime,
+            desktop_storage_identifier,
             stage_postgres,
             stage_program
         },
