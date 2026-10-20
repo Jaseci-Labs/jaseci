@@ -4396,8 +4396,17 @@ graph import byllm {
         visit_routing { ROUTE_SELECT_ATTR },
     ]
     telemetry ++> [
-        lib { register_agent_callback },
-        llm { _aggregate_usage, _current_invocation_id, _emit_agent_telemetry },
+        lib {
+            register_agent_callback,
+            register_llm_call_hook,
+            unregister_llm_call_hook
+        },
+        llm {
+            _aggregate_usage,
+            _current_invocation_id,
+            _emit_agent_telemetry,
+            _notify_llm_call
+        },
     ]
     tool_protocol ++> llm {
         coerce_message_dict,
