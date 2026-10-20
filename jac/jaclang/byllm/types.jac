@@ -178,6 +178,9 @@ def image_resp_kind(resp_type: type | None) -> str;
 def serialize_media_content(content: list[any]) -> list[dict[str, any]];
 
 
+def as_media_list(value: any) -> list[Media] | None;
+
+
 def normalize_tool_result(value: any) -> str | list[Media];
 
 

@@ -1230,15 +1230,17 @@ impl seal_native(
     native_start = time.monotonic();
     artifact_path = pkg_path / artifact_rel;
     artifact_path.parent.mkdir(parents=True, exist_ok=True);
-    plan = build_link_plan(
-        prog, roots, options, mode=SEALED_LINK_MODE, native_unit=True
-    );
+    plan = build_link_plan(prog, roots, options, native_unit=True);
     if pkg_name == "jaclang" {
         import from jaclang.compiler.backends.native.kernel_stage0 {
             refuse_missing_entries
         }
         refuse_missing_entries(plan, str(pkg_path));
     }
+    """The plan holds every unit's interface and the link needs only their
+    products, which the module cache holds, so the analyzed trees go before
+    the link's code generation needs the memory.""";
+    prog.release_compile_closure();
     result = link_artifact(
         plan, str(artifact_path), ArtifactKind.SHARED, log=console.print
     );

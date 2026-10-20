@@ -140,7 +140,7 @@ impl link_kernel(
 ) -> LinkResult {
     mode = link_mode
         or (target.link_mode if target is not None else "")
-        or KERNEL_DEV_LINK_MODE;
+        or KERNEL_LINK_MODE;
 
     program = prog if prog is not None else JacProgram();
     registry = program.native_units();
@@ -166,6 +166,10 @@ impl link_kernel(
             );
         }
         os.makedirs(os.path.dirname(os.path.abspath(dst)) or ".", exist_ok=True);
+        """The plan holds every unit's interface and the link needs only their
+        products, which the module cache holds, so the analyzed trees go
+        before the link's code generation needs the memory.""";
+        program.release_compile_closure();
         result = link_artifact(plan, dst, ArtifactKind.SHARED, log=log);
         if log is not None {
             events = plan.prog.analysis.cache_events;
@@ -196,6 +200,11 @@ impl GcPauses.observe(phase: str, info: dict[str, int]) {
     self.collections += 1;
     self.total_seconds += pause;
     self.longest_seconds = max(self.longest_seconds, pause);
+    if pause > 1.0 {
+        self.long_pauses.append(
+            (self._started - self.origin, pause, info.get("collected", 0))
+        );
+    }
 }
 
 impl unit_line_count(path: str) -> int {
@@ -232,11 +241,11 @@ impl plan_kernel_prefix(stop_after: int, log: Callable[[str], None]) -> int {
     registry.cold = True;
     program.iface_registry().cold = True;
     registry.stop_after = stop_after;
-    pauses = GcPauses();
+    pauses = GcPauses(origin=started);
     gc.callbacks.append(pauses.observe);
     log(f"  Planning the kernel uncached until {stop_after} units are lowered");
     try {
-        kernel_plan(program, mode=KERNEL_DEV_LINK_MODE);
+        kernel_plan(program, mode=KERNEL_LINK_MODE);
         log("  The whole kernel was planned before the stop");
     } except NativeBuildStopped {} finally {
         registry.progress = None;
@@ -252,6 +261,9 @@ impl plan_kernel_prefix(stop_after: int, log: Callable[[str], None]) -> int {
         f"  GC: {pauses.collections} gen-2 collections, "
         f"{pauses.total_seconds:.1f}s paused, longest {pauses.longest_seconds:.2f}s"
     );
+    for (at, seconds, collected) in pauses.long_pauses {
+        log(f"    gen-2 pause of {seconds:.2f}s at {at:.1f}s, {collected} collected");
+    }
     for (path, why) in sorted(registry.failures.items()) {
         reason = why.strip().splitlines()[-1] if why.strip() else "no reason recorded";
         log(f"  Failed to lower {native_unit_identity(path)}: {reason}");

@@ -43,6 +43,8 @@ obj GcPauses {
     has collections: int = 0,
         total_seconds: float = 0.0,
         longest_seconds: float = 0.0,
+        origin: float = 0.0,
+        long_pauses: list[tuple[float, float, int]] = [],
         _started: float = 0.0;
 
     def observe(phase: str, info: dict[str, int]);
