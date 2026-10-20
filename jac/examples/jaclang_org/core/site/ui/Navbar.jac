@@ -1,7 +1,31 @@
 import from "@jac/runtime" { Link }
 
 import from "@hugeicons/react" { HugeiconsIcon }
-import from "@hugeicons/core-free-icons" { GithubIcon, Moon01Icon, Sun01Icon }
+import from "@hugeicons/core-free-icons" {
+    ArrowDown01Icon,
+    GithubIcon,
+    Moon01Icon,
+    Sun01Icon
+}
+
+glob _EXPLORE: list[dict[str, str]] = [
+         {
+             "to": "/tech-demo",
+             "label": "Tech Demo",
+             "note": "The full tour, game included"
+         },
+         {
+             "to": "/wait-wuuut",
+             "label": "Wait, Wuuut?!",
+             "note": "How this site is built, line by line"
+         },
+         {
+             "to": "/packages",
+             "label": "Packages",
+             "note": "Libraries and templates for Jac"
+         },
+
+     ];
 
 def:pub Navbar -> JsxElement {
     theme = useTheme();
@@ -31,18 +55,37 @@ def:pub Navbar -> JsxElement {
                     <span className="text-lg font-bold tracking-tight">Jac</span>
                 </Link>
                 <div className="ml-auto flex items-center gap-2">
-                    <Link
-                        to="/tech-demo"
-                        className="hidden rounded-md pl-3 pr-3 pt-1.5 pb-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground md:inline-block"
-                    >
-                        Tech Demo
-                    </Link>
-                    <Link
-                        to="/wait-wuuut"
-                        className="rounded-md pl-3 pr-3 pt-1.5 pb-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                    >
-                        Wait, Wuuut?!
-                    </Link>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild={True}>
+                            <button
+                                className="inline-flex items-center gap-1 rounded-md pl-3 pr-2 pt-1.5 pb-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground"
+                            >
+                                Explore
+                                <HugeiconsIcon
+                                    icon={ArrowDown01Icon}
+                                    strokeWidth={2}
+                                    className="size-3.5"
+                                />
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-64">
+                            {for item in _EXPLORE {
+                                <DropdownMenuItem key={item["to"]} asChild={True}>
+                                    <Link
+                                        to={item["to"]}
+                                        className="flex flex-col items-start gap-0.5"
+                                    >
+                                        <span className="text-sm font-medium">
+                                            {item["label"]}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground">
+                                            {item["note"]}
+                                        </span>
+                                    </Link>
+                                </DropdownMenuItem>
+                            }}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                     <Link
                         to="/jacyac"
                         className="rounded-md pl-3 pr-3 pt-1.5 pb-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
@@ -54,12 +97,6 @@ def:pub Navbar -> JsxElement {
                         className="rounded-md pl-3 pr-3 pt-1.5 pb-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                     >
                         Docs
-                    </Link>
-                    <Link
-                        to="/packages"
-                        className="rounded-md pl-3 pr-3 pt-1.5 pb-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                    >
-                        Packages
                     </Link>
                     <button
                         onClick={lambda { theme.toggle(); }}

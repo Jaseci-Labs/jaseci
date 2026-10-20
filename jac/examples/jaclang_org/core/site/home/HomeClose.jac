@@ -5,17 +5,17 @@ glob _INSTALL: str = "curl -fsSL https://jaclang.org/install.sh | bash",
          {
              "to": "/tech-demo",
              "title": "Tech demo",
-             "body": "The full tour: a WebAssembly game, the live source of this site, the mobile app, the polypiler and gradual borrow checking."
+             "body": "A WebAssembly game, this site's live source, the mobile app and more."
          },
          {
              "to": "/docs/latest",
              "title": "Documentation",
-             "body": "Install the binary, build a first app, and read the language reference."
+             "body": "The install guide, a first app and the language reference."
          },
          {
              "to": "/wait-wuuut",
              "title": "Wait, Wuuut?!",
-             "body": "The ideas behind Jac, from synechic design to topokinetic computation."
+             "body": "The ideas behind Jac's design."
          },
 
      ];
@@ -34,7 +34,7 @@ def:pub HomeClose -> JsxElement {
                         className="mt-6 max-w-2xl text-pretty text-lg leading-8 text-muted-foreground"
                     >
                         <Prose
-                            text="One install, then point any coding agent at the binary. A first prompt that works: build me an app in Jac, the `jac` binary is installed and documents itself with `jac guide`."
+                            text="Install once, then point any coding agent at the binary, which documents itself with `jac guide`."
                         />
                     </p>
                     <div className="mt-8 flex flex-col gap-3 sm:flex-row">

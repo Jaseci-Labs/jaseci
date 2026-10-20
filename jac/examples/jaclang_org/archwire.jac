@@ -1,23 +1,19 @@
 graph import {
-    edge AppOverCore: core.* --> cli.* | desktop.* | mobile.* | web.*;
-    edge BridgeFunnel: jaclang.server.bridge --> cli.commands.*;
-    edge CliInternal: cli.* --> cli.*;
+    edge AppOverCore: core.* --> cli | desktop | mobile.* | pages.* | web;
+    edge BridgeFunnel: jaclang.server.bridge --> cli;
     edge CoreInternal: core.* --> core.*;
-    edge DesktopInternal: desktop.* --> desktop.*;
-    edge MobileInternal: mobile.* --> mobile.*;
     edge SsoFunnel: jaclang.scale.sso.* --> core.jacyac.github.auth;
-    edge WebInternal: web.* --> web.*;
 
-    core.ai ++> cli.commands.score { optional_review }
+    core.ai ++> cli { optional_review }
     core.docs.graph ++> [
-        cli.commands.docs { DocsStatus, docs_status },
-        web.main,
+        cli { DocsStatus, docs_status },
+        web,
     ]
     core.docs.sync ++> [
-        cli.commands.docs { docs_sync_tick },
-        web.main,
+        cli { docs_sync_tick },
+        web,
     ]
-    core.github ++> cli.commands.score {
+    core.github ++> cli {
         RepoMeta,
         code_breakdown,
         download_tarball,
@@ -27,52 +23,24 @@ graph import {
         text_of,
         untar
     }
-    core.install ++> web.main;
-    core.jacyac.github.auth ++> desktop.main | web.main;
-    core.jacyac.github.repos ++> desktop.main | web.main;
-    core.jacyac.limits ++> cli.commands.feed { PostingDenied }
+    core.install ++> web;
+    core.jacyac.github.auth ++> desktop | web;
+    core.jacyac.github.repos ++> desktop | web;
+    core.jacyac.limits ++> cli { PostingDenied }
     core.jacyac.native.JacYacMobile ++> mobile.main { JacYacMobile }
-    core.leaderboard.scoring ++> cli.commands.score {
-        RepoAnalysis,
-        ScoreBreakdown,
-        analyze,
-        score
+    core.leaderboard.scoring ++> cli { RepoAnalysis, ScoreBreakdown, analyze, score }
+    core.packages.catalog ++> web;
+    core.site.docs.DocsShell ++> pages.docs.index { DocsShell }
+    core.site.home.Home ++> pages.index { Home }
+    core.site.jacyac.GithubCallback ++> pages.jacyac.github.callback { GithubCallback }
+    core.site.jacyac.JacYac ++> pages.jacyac | pages.jacyac.scores | pages.socialize {
+        JacYac
     }
-    core.packages.catalog ++> web.main;
-    core.site.docs.DocsShell ++> desktop.pages.docs.index | web.pages.docs.index {
-        DocsShell
-    }
-    core.site.home.Home ++> desktop.pages.index | web.pages.index { Home }
-    core.site.jacyac.GithubCallback ++> desktop.pages.jacyac.github.callback
-        | web.pages.jacyac.github.callback { GithubCallback }
-    core.site.jacyac.JacYac ++> desktop.pages.jacyac
-        | desktop.pages.jacyac.scores
-        | desktop.pages.socialize
-        | web.pages.jacyac
-        | web.pages.jacyac.scores
-        | web.pages.socialize { JacYac }
-    core.site.leaderboard.Methodology ++> desktop.pages.methodology
-        | web.pages.methodology { Methodology }
-    core.site.packages.PackagesShell ++> desktop.pages.packages.index
-        | web.pages.packages.index { PackagesShell }
-    core.site.ui.SiteShell ++> desktop.pages.layout | web.pages.layout { SiteShell }
-    core.social_graph ++> cli.commands.feed { create_tweet, load_feed }
-    core.source.files ++> web.main;
-}
-
-graph import cli {
-    commands.common ++> main { EXIT_USAGE, warn }
-    commands.docs ++> main { run_docs }
-    commands.feed ++> main { run_feed, run_post }
-    commands.score ++> main { run_score }
-}
-
-graph import cli.commands {
-    common ++> [
-        docs { EXIT_OK, explain_bridge_error },
-        feed { EXIT_OK, EXIT_REJECTED, EXIT_USAGE, explain_bridge_error, warn },
-        score { EXIT_FAILURE, EXIT_OK, EXIT_USAGE, warn },
-    ]
+    core.site.leaderboard.Methodology ++> pages.methodology { Methodology }
+    core.site.packages.PackagesShell ++> pages.packages.index { PackagesShell }
+    core.site.ui.SiteShell ++> pages.layout { SiteShell }
+    core.social_graph ++> cli { create_tweet, load_feed }
+    core.source.files ++> web;
 }
 
 graph import core {
@@ -244,7 +212,6 @@ graph import core {
         site.jacyac.components.ProfileEditor { Profile },
     ]
     source.files ++> [
-        site.landing.Showcase { SourceView, example_sources },
         site.source.CodeSpotlight { SourceSpan, source_span },
         site.source.SourceBrowser { SourceFile, SourceView, source_file, source_tree },
     ]
@@ -413,7 +380,6 @@ graph import core.site {
         | packages.PackagePage
         | packages.PackagesIndex { CopyCommand }
     landing.Reveal ++> home.AgentNative
-        | home.EveryPlatform
         | home.HomeClose
         | home.InProduction
         | home.NativeBench
@@ -427,14 +393,11 @@ graph import core.site {
     }
     source.FloatingSource ++> landing.WaitWuuut { FloatingSource }
     source.SourceBrowser ++> landing.ExplorerFinale { SourceBrowser }
-    ui.CodeBlock ++> [
-        docs.Markdown
-            | docs.MermaidDiagram
-            | home.kit
-            | source.CodeSpotlight
-            | source.SourceBrowser { CodeLines },
-        landing.Showcase { CodeBlock },
-    ]
+    ui.CodeBlock ++> docs.Markdown
+        | docs.MermaidDiagram
+        | home.kit
+        | source.CodeSpotlight
+        | source.SourceBrowser { CodeLines }
     ui.GraphBackdrop ++> docs.DocsShell | leaderboard.Methodology { GraphBackdrop }
     ui.SectionRail ++> home.Home | landing.TechDemo | landing.WaitWuuut { SectionRail }
     ui.alert_dialog ++> jacyac.components.ProjectCard | jacyac.components.TweetCard {
@@ -463,11 +426,8 @@ graph import core.site {
         | landing.BookSection
         | landing.ExplorerFinale
         | landing.MobileShowcase
-        | landing.OneBinary
-        | landing.Showcase
         | landing.WaitWuuut
         | landing.WasmGame
-        | landing.WhyJac
         | leaderboard.Methodology
         | packages.PackagePage
         | packages.PackagesIndex { Badge }
@@ -497,21 +457,8 @@ graph import core.site {
             CardHeader,
             CardTitle
         },
-        jacyac.components.RightSidebar | landing.Capabilities {
-            Card,
-            CardContent,
-            CardHeader,
-            CardTitle
-        },
+        jacyac.components.RightSidebar { Card, CardContent, CardHeader, CardTitle },
     ]
-    ui.carousel ++> landing.Capabilities | landing.WhyJac {
-        Carousel,
-        CarouselContent,
-        CarouselDots,
-        CarouselItem,
-        CarouselNext,
-        CarouselPrevious
-    }
     ui.dialog ++> jacyac.components.ChannelsTab {
         Dialog,
         DialogContent,
@@ -566,12 +513,7 @@ graph import core.site {
         | jacyac.components.ChannelsTab
         | jacyac.components.ExploreTab
         | jacyac.components.FeedTab { Skeleton }
-    ui.tabs ++> docs.Markdown | landing.Showcase {
-        Tabs,
-        TabsContent,
-        TabsList,
-        TabsTrigger
-    }
+    ui.tabs ++> docs.Markdown { Tabs, TabsContent, TabsList, TabsTrigger }
     ui.textarea ++> jacyac.components.ChannelsTab
         | jacyac.components.Composer
         | jacyac.components.ProfileEditor { Textarea }
@@ -657,7 +599,6 @@ graph import core.site.game {
 
 graph import core.site.home {
     AgentNative ++> Home { AgentNative }
-    EveryPlatform ++> Home { EveryPlatform }
     HomeClose ++> Home { HomeClose }
     HomeHero ++> Home { HomeHero }
     InProduction ++> Home { InProduction }
@@ -667,7 +608,6 @@ graph import core.site.home {
     ReadableTiers ++> Home { ReadableTiers }
     kit ++> [
         AgentNative { CodeWindow, Figure, HomeSection, Prose, SectionHead },
-        EveryPlatform { CodeWindow, Fact, Figure, HomeSection, SectionHead },
         HomeClose { HomeSection, Prose },
         InProduction | NativeBench | OneLanguage {
             Fact,
@@ -711,41 +651,19 @@ graph import core.site.jacyac.components {
 graph import core.site.landing {
     Agents ++> TechDemo { Agents }
     BookSection ++> TechDemo { BookSection }
-    Capabilities ++> TechDemo { Capabilities }
     CopyCommand ++> [
         Agents { CopyCommand },
         ExplorerFinale { CopyCommandBlock },
     ]
     ExplorerFinale ++> TechDemo { ExplorerFinale }
     MobileShowcase ++> TechDemo { MobileShowcase }
-    OneBinary ++> TechDemo { OneBinary }
     Reveal ++> Agents
         | BookSection
-        | Capabilities
         | ExplorerFinale
         | MobileShowcase
-        | OneBinary
-        | Showcase
         | WaitWuuut
-        | WasmGame
-        | WhyJac { Reveal }
-    Showcase ++> TechDemo { Showcase }
+        | WasmGame { Reveal }
     WasmGame ++> TechDemo { WasmGame }
-    WhyJac ++> [
-        Capabilities { WhySlide },
-        TechDemo { WhyJac },
-    ]
-    diagrams.GradualBorrowDiagram ++> WaitWuuut | WhyJac { GradualBorrowDiagram }
-    diagrams.PolypilerDiagram ++> OneBinary | WaitWuuut { PolypilerDiagram }
-    diagrams.SynechicDiagram ++> WaitWuuut | WhyJac { SynechicDiagram }
-    diagrams.TopokineticDiagram ++> WaitWuuut | WhyJac { TopokineticDiagram }
-}
-
-graph import core.site.landing.diagrams {
-    motion ++> GradualBorrowDiagram
-        | PolypilerDiagram
-        | SynechicDiagram
-        | TopokineticDiagram { view_once }
 }
 
 graph import core.site.packages {
@@ -766,6 +684,12 @@ graph import core.site.ui {
         Navbar | NotFound | dialog { buttonVariants },
         alert_dialog | carousel { Button },
     ]
+    dropdown_menu ++> Navbar {
+        DropdownMenu,
+        DropdownMenuContent,
+        DropdownMenuItem,
+        DropdownMenuTrigger
+    }
     label ++> field { Label }
     separator ++> field { Separator }
 }

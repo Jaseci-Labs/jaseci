@@ -572,7 +572,7 @@ def:pub StackCompare -> JsxElement {
                 The Jac compiler and runtime
             </p>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                One binary that is also the package manager, test runner, formatter and deploy tool, with PyPI, npm and C libraries still in reach.
+                One binary that is also the package manager, test runner, formatter and deploy tool.
             </p>
         </div>
     </div>;
@@ -605,7 +605,7 @@ def:pub StackCompare -> JsxElement {
         </div>
         <FileGlyph name="main.jac" segs={_JAC_FILE}/>
         <p className="text-xs leading-relaxed text-muted-foreground">
-            Frontend, backend, data model and deployment in one file, with no glue blocks. Section 02 walks through its code.
+            Frontend, backend, data and deployment in one file, with no glue.
         </p>
     </div>;
     glue_left = <div className="flex flex-wrap gap-1.5">
@@ -620,7 +620,7 @@ def:pub StackCompare -> JsxElement {
             }}
         </div>
         <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-            None. The compiler and runtime generate all seven from the program itself.
+            The compiler and runtime generate all seven.
         </p>
     </div>;
     return
@@ -650,7 +650,7 @@ def:pub StackCompare -> JsxElement {
             </div>
             <CompareRow
                 label="Stack to manage"
-                hint="Languages, frameworks, package managers and platforms to install, version and keep compatible."
+                hint="Everything to install, version and keep compatible."
                 delta_from="24"
                 delta_to="1"
                 delta_unit="tools"
@@ -660,7 +660,7 @@ def:pub StackCompare -> JsxElement {
             />
             <CompareRow
                 label="Who writes it"
-                hint="Each specialist's files, with coloured blocks where glue between the layers lands."
+                hint="Each specialist's files, with the glue marked in colour."
                 delta_from="4"
                 delta_to="1"
                 delta_unit="authors"
@@ -669,7 +669,7 @@ def:pub StackCompare -> JsxElement {
             />
             <CompareRow
                 label="Glue to write"
-                hint="Code that only connects one layer to another, and must be kept in sync by hand."
+                hint="Code that only connects one layer to another."
                 delta_from="7"
                 delta_to="0"
                 delta_unit="kinds"
@@ -714,11 +714,11 @@ def:pub OneLanguage -> JsxElement {
             <SectionHead
                 num="01"
                 kicker="One language"
-                title="One universal language for everything."
+                title="One universal language."
             />
             <Figure
                 label="fig. 1"
-                caption="Multiple languages and frameworks, each with its own config files and toolchain, become one universal language, and the compiler targets every platform the app runs on from that one program. Open the detailed view to see who writes what on a conventional stack, and where the glue between them lands."
+                caption="Many languages and frameworks become one, and the compiler targets every platform from that single program."
             >
                 <ConvergeDiagram/>
                 <div className="mt-8 border-t border-border/70 pt-6">
@@ -754,7 +754,7 @@ def:pub OneLanguage -> JsxElement {
             </Figure>
             <Figure
                 label="fig. 2"
-                caption="There is one import statement. Where the code runs decides which ecosystem a name resolves against, so PyPI, npm and C libraries are all available without wrappers or bindings."
+                caption="One import statement reaches PyPI, npm and C libraries, resolved by where the code runs."
             >
                 <ImportTable/>
             </Figure>
@@ -762,15 +762,15 @@ def:pub OneLanguage -> JsxElement {
                 <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-3">
                     <Fact
                         title="One syntax"
-                        body="An agent keeps one syntax and one set of idioms in context instead of five, and spends its tokens on the problem."
+                        body="An agent holds one syntax in context instead of five and spends its tokens on the problem."
                     />
                     <Fact
                         title="One type checker"
-                        body="A mismatch between server, browser and native code is a compile error the agent sees immediately, not a bug at runtime."
+                        body="Mismatches between server, browser and native code are compile errors, not runtime bugs."
                     />
                     <Fact
                         title="A binary that explains itself"
-                        body="`jac guide` prints agent-loadable skills and `jac mcp` serves the full manual, offline, from the same binary."
+                        body="`jac guide` and `jac mcp` give an agent the full manual, offline."
                     />
                 </div>
             </Reveal>

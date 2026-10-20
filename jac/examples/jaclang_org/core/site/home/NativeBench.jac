@@ -1,3 +1,5 @@
+import from "@jac/runtime" { Link }
+
 glob _FPS_MAX: int = 3500,
      _FPS_TICKS: list[dict[str, any]] = [
          {"v": 0, "label": "0"},
@@ -38,30 +40,6 @@ glob _FPS_MAX: int = 3500,
              "shown": "1,588.4",
              "frames": "12,708",
              "hot": False
-         },
-
-     ],
-     _MODES: list[dict[str, str]] = [
-         {
-             "mode": "none",
-             "what": "enforced ownership, no collector, zero reference counting",
-             "fps": "149,894",
-             "ns": "6,671",
-             "digest": "502241830"
-         },
-         {
-             "mode": "rc",
-             "what": "reference counting",
-             "fps": "151,681",
-             "ns": "6,593",
-             "digest": "502241830"
-         },
-         {
-             "mode": "cycles",
-             "what": "reference counting + cycle collector",
-             "fps": "137,694",
-             "ns": "7,262",
-             "digest": "502241830"
          },
 
      ];
@@ -173,56 +151,6 @@ def:pub FpsBars -> JsxElement {
         </div>;
 }
 
-def:pub ModeTable -> JsxElement {
-    return
-        <div className="overflow-x-auto rounded-xl border border-border/70">
-            <table className="w-full min-w-[560px] text-left text-sm">
-                <thead
-                    className="border-b border-border/70 bg-muted/30 font-mono text-[11px] uppercase tracking-widest text-muted-foreground"
-                >
-                    <tr>
-                        <th className="px-5 py-3 font-normal">Memory mode</th>
-                        <th className="px-5 py-3 text-right font-normal">Sim FPS</th>
-                        <th className="px-5 py-3 text-right font-normal">ns / frame</th>
-                        <th className="px-5 py-3 text-right font-normal">
-                            Output digest
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {for m in _MODES {
-                        <tr
-                            key={m["mode"]}
-                            className="border-b border-border/70 last:border-b-0"
-                        >
-                            <td className="px-5 py-3">
-                                <span className="font-mono text-foreground">
-                                    {m["mode"]}
-                                </span>
-                                <span className="ml-2 text-xs text-muted-foreground">
-                                    {m["what"]}
-                                </span>
-                            </td>
-                            <td className="px-5 py-3 text-right tabular-nums">
-                                {m["fps"]}
-                            </td>
-                            <td
-                                className="px-5 py-3 text-right tabular-nums text-muted-foreground"
-                            >
-                                {m["ns"]}
-                            </td>
-                            <td
-                                className="px-5 py-3 text-right font-mono text-xs tabular-nums"
-                            >
-                                {m["digest"]}
-                            </td>
-                        </tr>
-                    }}
-                </tbody>
-            </table>
-        </div>;
-}
-
 def:pub NativeBench -> JsxElement {
     return
         <HomeSection id="benchmark">
@@ -230,11 +158,22 @@ def:pub NativeBench -> JsxElement {
                 num=""
                 kicker="Benchmark"
                 title="Rust-level performance, measured."
-                lede="The raylib cube shooter is written four times, line for line, in Jac, Zig, Rust and Python. All four call the same precompiled raylib and do identical work every frame. The Jac build, compiled by `jac build --native` with no C compiler or system linker, renders as fast as Zig and Rust and twice as fast as Python."
-            />
+            >
+                <p
+                    className="mt-6 max-w-2xl text-pretty text-lg leading-8 text-muted-foreground"
+                >
+                    The benchmark is a raylib cube shooter written line for line in Jac, Zig, Rust and Python. To play a Jac game compiled to WebAssembly in your browser,{" "}
+                    <Link
+                        to="/tech-demo"
+                        className="font-medium text-primary underline-offset-4 hover:underline"
+                    >
+                        try the arena in the tech demo →
+                    </Link>
+                </p>
+            </SectionHead>
             <Figure
-                label="fig. 4"
-                caption="Average frame rate of each build over an 8-second uncapped run on an Apple M5 Max (macOS 26.5), measured by the example's own `./demo.sh` protocol. Python is CPython 3.14.6 calling the same raylib through `ctypes`, averaged over three runs. A single run moves by a few percent; across repeated runs Jac, Zig and Rust stay within about 3% of each other and their order changes."
+                label="fig. 5"
+                caption="Average FPS over 8-second uncapped runs on an Apple M5 Max, where single runs vary by a few percent; Python is CPython 3.14.6 via `ctypes`."
             >
                 <div
                     className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,260px)_minmax(0,1fr)] lg:gap-14"
@@ -251,31 +190,25 @@ def:pub NativeBench -> JsxElement {
                         <p
                             className="mt-4 text-sm leading-relaxed text-muted-foreground"
                         >
-                            Jac averaged 3,225.9 FPS, between Zig at 3,235.7 and Rust at 3,223.1, and 2× the 1,588.4 of the same game in Python.
+                            Jac averaged 3,225.9 FPS, between Zig and Rust and twice Python's 1,588.4.
                         </p>
                     </div>
                     <FpsBars/>
                 </div>
             </Figure>
-            <Figure
-                label="fig. 5"
-                caption="The same game loop without a window, built from one unchanged source under each of Jac's memory modes and run for 100,000 frames. The fully borrow-checked build, with no collector and no reference counting, keeps pace with reference counting, and all three produce the identical output digest."
-            >
-                <ModeTable/>
-            </Figure>
             <Reveal delay={150}>
                 <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-3">
                     <Fact
                         title="No C toolchain"
-                        body="`jac build --native` emits the object code and writes the executable itself, so there is no `cc` or `ld` in the build."
+                        body="`jac build --native` writes the executable itself, with no `cc` or `ld`."
                     />
                     <Fact
                         title="Same library, same work"
-                        body="Each twin binds raylib's C API directly, with no headers or bindings crate, and draws through the same `rlgl` calls."
+                        body="Every twin binds raylib directly and draws through the same `rlgl` calls."
                     />
                     <Fact
                         title="Run it yourself"
-                        body="`./demo.sh` in `jac/examples/raylib_shooter` builds the Jac, Zig and Rust twins and prints this table, and `python3 shooter.py` runs the Python one."
+                        body="Run `./demo.sh` in `jac/examples/raylib_shooter` for the native twins and `python3 shooter.py` for Python."
                     />
                 </div>
             </Reveal>

@@ -1,11 +1,11 @@
 glob _ARCH_LINES: list[str] = [
          "graph import {",
-         "    edge AppOverCore: core.* --> cli.* | desktop.* | mobile.* | web.*;",
+         "    edge AppOverCore: core.* --> cli | desktop | mobile.* | pages.* | web;",
          "    edge CoreInternal: core.* --> core.*;",
          "",
-         "    core.install ++> web.main;",
-         "    core.site.home.Home ++> desktop.pages.index | web.pages.index { Home }",
-         "    core.social_graph ++> cli.commands.feed { create_tweet, load_feed }",
+         "    core.install ++> web;",
+         "    core.site.home.Home ++> pages.index { Home }",
+         "    core.social_graph ++> cli { create_tweet, load_feed }",
          "}",
 
      ],
@@ -41,20 +41,20 @@ glob _ARCH_LINES: list[str] = [
          {
              "tier": "1",
              "name": "Wiring",
-             "scope": "the whole project: every module and every edge",
-             "width": "100%"
+             "scope": "one file for the whole project",
+             "width": "14%"
          },
          {
              "tier": "2",
              "name": "Declarations",
-             "scope": "one module: its types and signatures",
-             "width": "62%"
+             "scope": "every module's types and signatures",
+             "width": "46%"
          },
          {
              "tier": "3",
              "name": "Implementations",
-             "scope": "one function: its body",
-             "width": "30%"
+             "scope": "every body",
+             "width": "100%"
          },
 
      ];
@@ -135,20 +135,19 @@ def:pub ReadableTiers -> JsxElement {
     return
         <HomeSection id="readable">
             <SectionHead
-                num="05"
+                num="04"
                 kicker="Readable in tiers"
                 title="Readable and verifiable, one tier at a time."
-                lede="Nobody should have to read everything to change anything. A Jac project reads top down in three tiers: `archwire.jac` is the whole architecture, declaration modules are each module's contract, and implementation files hold the bodies. An agent or a reviewer stops at the first tier that answers the question."
             />
             <Figure
-                label="fig. 9"
-                caption="Each tier describes less of the system in more detail. Most questions about a codebase are answered by the first two."
+                label="fig. 7"
+                caption="Each tier holds more code than the one above it, so most questions are answered before reaching the largest."
             >
                 <ScopeBars/>
             </Figure>
             <Figure
-                label="fig. 10"
-                caption="The three tiers, quoted from the repository that serves this page: its wiring, the GitHub client's declarations in `core/github.jac`, and one body from `core/impl/github.impl.jac`."
+                label="fig. 8"
+                caption="All three tiers, quoted from the repository serving this page."
             >
                 <div className="flex flex-col">
                     <TierRow
@@ -156,29 +155,29 @@ def:pub ReadableTiers -> JsxElement {
                         name="Wiring"
                         question="Which modules feed which?"
                         file="archwire.jac"
-                        when="Rules bound what may depend on what, and each wire is an import with its consumer attached. Modules never write imports of each other; the compiler weaves them in from here."
+                        when="Declares which modules may depend on which, and generates every import between them."
                         lines={_ARCH_LINES}
                     />
                     <CheckLink
-                        text="An import between modules that `archwire.jac` does not declare is a compile error, and so is a wired name that nobody reads. The map cannot drift from the code."
+                        text="An undeclared import or an unused wire is a compile error, so the map cannot drift from the code."
                     />
                     <TierRow
                         tier="2"
                         name="Declarations"
                         question="What does this module promise?"
                         file="core/github.jac"
-                        when="Types and signatures with no bodies. It reads like an API reference because it is one, and it is small enough to drop into an agent's context whole."
+                        when="Types and signatures without bodies, small enough to hand an agent whole."
                         lines={_DECL_LINES}
                     />
                     <CheckLink
-                        text="Every caller is type-checked against these signatures, so a body can change without anyone re-reading the code that calls it."
+                        text="Callers are type-checked against these signatures, so a body can change without re-reading them."
                     />
                     <TierRow
                         tier="3"
                         name="Implementations"
                         question="How does it actually work?"
                         file="core/impl/github.impl.jac"
-                        when="The bodies, at the lowest tier. Open one only to change behaviour; large modules split them by concern across several impl files."
+                        when="The bodies, which you open only to change behaviour."
                         lines={_IMPL_LINES}
                     />
                 </div>
@@ -187,15 +186,15 @@ def:pub ReadableTiers -> JsxElement {
                 <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-3">
                     <Fact
                         title="Agents read less"
-                        body="Finding where something lives takes tier 1. Using a module takes tier 2. Only a change to behaviour opens tier 3."
+                        body="Locating code takes tier 1, using it takes tier 2, and only changing behaviour opens tier 3."
                     />
                     <Fact
                         title="Architecture shows up in review"
-                        body="A new dependency is a one-line change to `archwire.jac`, visible in the diff instead of buried at the top of some file."
+                        body="A new dependency is a one-line diff to `archwire.jac`, not an import buried in some file."
                     />
                     <Fact
                         title="The diagram is the system"
-                        body="`jac arch graph` renders the wiring as a diagram, and because the wiring generates the imports, that diagram is always current."
+                        body="`jac arch graph` draws the wiring, which stays current because it generates the imports."
                     />
                 </div>
             </Reveal>

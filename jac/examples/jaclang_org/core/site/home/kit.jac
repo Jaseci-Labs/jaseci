@@ -11,7 +11,9 @@ def:pub HomeSection(id: str, children: any = None, className: str = "") -> JsxEl
         </section>;
 }
 
-def:pub SectionHead(num: str, kicker: str, title: str, lede: str = "") -> JsxElement {
+def:pub SectionHead(
+    num: str, kicker: str, title: str, lede: str = "", children: any = None
+) -> JsxElement {
     return
         <Reveal>
             <div className="max-w-3xl">
@@ -38,6 +40,7 @@ def:pub SectionHead(num: str, kicker: str, title: str, lede: str = "") -> JsxEle
                         <Prose text={lede}/>
                     </p>
                 }}
+                {children}
             </div>
         </Reveal>;
 }

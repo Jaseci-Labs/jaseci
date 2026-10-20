@@ -3,9 +3,8 @@ glob HOME_INSTALL: str = "curl -fsSL https://jaclang.org/install.sh | bash",
      _PILLARS: list[dict[str, str]] = [
          {"num": "01", "id": "one-language", "title": "One universal language"},
          {"num": "02", "id": "no-glue", "title": "Abstractions beyond “high level”"},
-         {"num": "03", "id": "every-platform", "title": "Every platform"},
-         {"num": "04", "id": "agents", "title": "Agents built in"},
-         {"num": "05", "id": "readable", "title": "Slop resistance"},
+         {"num": "03", "id": "agents", "title": "Agents built in"},
+         {"num": "04", "id": "readable", "title": "Slop resistance"},
 
      ];
 
@@ -49,7 +48,7 @@ def:pub HomeHero -> JsxElement {
                     />
                 </div>
                 <ol
-                    className="anim-fade-up anim-d4 mt-20 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2 lg:mt-28 lg:grid-cols-5"
+                    className="anim-fade-up anim-d4 mt-20 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2 lg:mt-28 lg:grid-cols-4"
                 >
                     {for p in _PILLARS {
                         <li key={p["id"]}>

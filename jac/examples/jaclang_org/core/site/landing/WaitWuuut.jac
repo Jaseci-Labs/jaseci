@@ -27,8 +27,8 @@ glob GROUPS: list[dict[str, any]] = [
                      "hl": 3,
                      "before": 2,
                      "after": 8,
-                     "path2": "core/jacyac/state.jac",
-                     "needle2": "    setup_profile,",
+                     "path2": "core/jacyac/impl/state.impl.jac",
+                     "needle2": "result = root spawn setup_profile(username=stored_username());",
                      "hl2": 1,
                      "before2": 1,
                      "after2": 12,
@@ -37,14 +37,14 @@ glob GROUPS: list[dict[str, any]] = [
                  {
                      "tag": "native codegen",
                      "title": "One import compiles to a game",
-                     "body": "The rocket arena on the landing page is native code, and nothing about this import says so. The compiler knows arena is a native module, so the edge itself decides: the build compiles the game and the three modules behind it to WebAssembly through Jac's own LLVM backend and wasm linker, serves the artifact from /static, and binds each name to a stub that instantiates it on first call. The second window is the payoff: the first call awaits instantiation, and after that init is just a function you call.",
-                     "path": "core/site/game/webgl_host.jac",
-                     "needle": "import from .arena { init }",
+                     "body": "The rocket arena on the tech demo page is native code, and nothing about the wire that imports it says so. The compiler knows arena is a native module, so the edge itself decides: the build compiles the game and the three modules behind it to WebAssembly through Jac's own LLVM backend and wasm linker, serves the artifact from /static, and binds each name to a stub that instantiates it on first call. The second window is the payoff: the first call awaits instantiation, and after that init is just a function you call.",
+                     "path": "archwire.jac",
+                     "needle": "arena ++> webgl_host {",
                      "hl": 1,
                      "before": 1,
-                     "after": 12,
+                     "after": 4,
                      "path2": "core/site/game/webgl_host.jac",
-                     "needle2": "game = (await init()) as int;",
+                     "needle2": "game = await init();",
                      "hl2": 1,
                      "before2": 4,
                      "after2": 4,
@@ -146,7 +146,7 @@ glob GROUPS: list[dict[str, any]] = [
                      "title": "The type switch that walked away",
                      "body": "Deriving a page's URL used to be a function with an isinstance ladder inside. Now it is a walker spawned on the node that climbs the Contains edges upward: the type of wherever it lands picks the ability that runs, and the version node's empty ability is the stop condition, because a walker that does not visit simply halts.",
                      "path": "core/docs/graph.jac",
-                     "needle": "walker trace_route {",
+                     "needle": "walker:protect trace_route {",
                      "hl": 1,
                      "before": 8,
                      "after": 10,
@@ -305,13 +305,13 @@ glob GROUPS: list[dict[str, any]] = [
                      "tag": "decl vs impl",
                      "title": "The what and the how, apart",
                      "body": "Any declaration can push its body into an impl file, and this site uses adjacent impl folders where separating the interface makes the code easier to read. The first window is the what: a one-line decl inside the component, ending in a semicolon. The second is the how, living in the impl folder next door. The compiler stitches them back together as one unit.",
-                     "path": "core/site/landing/Showcase.jac",
-                     "needle": "async def load_samples -> None;",
+                     "path": "core/site/landing/WasmGame.jac",
+                     "needle": "def launch(_e: MouseEvent);",
                      "hl": 1,
                      "before": 3,
-                     "after": 12,
-                     "path2": "core/site/landing/impl/Showcase.impl.jac",
-                     "needle2": "impl Showcase.load_samples",
+                     "after": 7,
+                     "path2": "core/site/landing/impl/WasmGame.impl.jac",
+                     "needle2": "impl WasmGame.launch",
                      "hl2": 1,
                      "before2": 0,
                      "after2": 8,
@@ -563,7 +563,7 @@ def AbsentSection -> JsxElement {
         </div>;
 }
 
-def GroupHeader(gkey: str, pre: str, hot: str, post: str, blurb: str) -> JsxElement {
+def GroupHeader(pre: str, hot: str, post: str, blurb: str) -> JsxElement {
     return
         <div className="mx-auto max-w-5xl pl-4 pr-4 pt-24 pb-2 sm:pl-6 sm:pr-6">
             <Reveal>
@@ -576,17 +576,6 @@ def GroupHeader(gkey: str, pre: str, hot: str, post: str, blurb: str) -> JsxElem
                         {post}
                     </h2>
                     <p className="mt-3 text-balance text-muted-foreground">{blurb}</p>
-                </div>
-                <div className="mx-auto mt-10 max-w-3xl">
-                    {if gkey == "synechic" {
-                        <SynechicDiagram/>
-                    } elif gkey == "topokinetic" {
-                        <TopokineticDiagram/>
-                    } elif gkey == "ownership" {
-                        <GradualBorrowDiagram/>
-                    } else {
-                        <PolypilerDiagram/>
-                    }   }
                 </div>
             </Reveal>
         </div>;
@@ -702,7 +691,6 @@ def:pub WaitWuuut -> JsxElement {
                     className="scroll-mt-24"
                 >
                     <GroupHeader
-                        gkey={grp["key"] as str}
                         pre={grp["pre"] as str}
                         hot={grp["hot"] as str}
                         post={grp["post"] as str}

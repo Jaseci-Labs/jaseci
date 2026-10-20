@@ -650,16 +650,15 @@ def:pub AgentNative -> JsxElement {
                 </defs>
             </svg>
             <SectionHead
-                num="04"
+                num="03"
                 kicker="Agents built in"
                 title="Agents are a language abstraction."
-                lede="There is no agent framework to bolt on. Object-spatial programming makes data a graph of objects that computation walks, and the `by` keyword lets a model implement any function, method or traversal decision. Put the two together and your objects become agents."
             />
             <div className="mt-14 flex flex-col gap-14 sm:mt-16">
                 <Rung
                     num="a"
                     title="A function becomes a model call"
-                    body="Write the signature and end it with `by llm()`. The compiler builds the prompt from the names, types and `sem` annotations, and the result comes back as a checked `Priority`, never loose text."
+                    body="End a signature with `by llm()` and the compiler writes the prompt, returning a checked `Priority` rather than loose text."
                     lines={_FN_LINES}
                     file="triage.jac"
                     diagram={<FnMini/>}
@@ -667,7 +666,7 @@ def:pub AgentNative -> JsxElement {
                 <Rung
                     num="b"
                     title="An object becomes an agent"
-                    body="Put `by llm` on a method and the object is the agent. Its fields are the context the model sees, its ordinary methods are the tools it may call, and the call runs the reasoning loop until the goal is met."
+                    body="Put `by llm` on a method and its fields become the model's context and its other methods the tools it can call."
                     lines={_OBJ_LINES}
                     file="concierge.jac"
                     diagram={<ObjMini/>}
@@ -675,15 +674,15 @@ def:pub AgentNative -> JsxElement {
                 <Rung
                     num="c"
                     title="A walker becomes an agent that moves"
-                    body="Walkers carry computation to the data. Add `by llm` to a `visit` and the model decides where the walker goes next, one hop at a time, while the graph keeps every step inspectable."
+                    body="Add `by llm` to a `visit` and the model picks the walker's next hop, one node at a time."
                     lines={_WALK_LINES}
                     file="researcher.jac"
                     diagram={<WalkMini/>}
                 />
             </div>
             <Figure
-                label="fig. 8"
-                caption="Rung c in motion. The walker never sees the whole graph at once: at each node the model chooses among that node's edges, so the agent's reasoning follows the structure of the data."
+                label="fig. 6"
+                caption="At each node the model picks among that node's edges, so the agent's reasoning follows the shape of the data."
             >
                 <WalkerDiagram/>
             </Figure>

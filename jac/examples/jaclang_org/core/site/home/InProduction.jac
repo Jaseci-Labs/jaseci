@@ -137,11 +137,11 @@ def:pub InProduction -> JsxElement {
                 num=""
                 kicker="In production"
                 title="A production platform, rewritten in Jac."
-                lede="A startup's production web platform, built in Next.js and TypeScript and scaled on Supabase, was rewritten in pure Jac with pixel-perfect equivalent functionality. The entire TypeScript codebase was replaced with Jac plus a single `jac.toml`."
+                lede="A startup's production Next.js and Supabase platform was rewritten in pure Jac with pixel-perfect parity. The entire TypeScript codebase was replaced with Jac plus a single `jac.toml`."
             />
             <Figure
-                label="fig. 3"
-                caption="Lines of code in the rewrite's diff. Removed: the Next.js TypeScript codebase. Added: every Jac file and the one `jac.toml`. Hover a bar for what it counts."
+                label="fig. 4"
+                caption="Lines in the rewrite's diff; hover a bar for what it counts."
             >
                 <div
                     className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,260px)_minmax(0,1fr)] lg:gap-14"
@@ -156,7 +156,7 @@ def:pub InProduction -> JsxElement {
                         <p
                             className="mt-4 text-sm leading-relaxed text-muted-foreground"
                         >
-                            95% fewer lines for the same product, down from 604,840 to 30,282.
+                            95% fewer lines for the same product.
                         </p>
                     </div>
                     <ReductionBars/>
@@ -171,7 +171,7 @@ def:pub InProduction -> JsxElement {
                             The receipt
                         </p>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            The rewrite's diff stat: lines added in green, lines removed in red.
+                            The rewrite's own diff stat.
                         </p>
                     </div>
                     <div
@@ -189,7 +189,7 @@ def:pub InProduction -> JsxElement {
                 <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-3">
                     <Fact
                         title="Same product"
-                        body="Pixel-perfect equivalent functionality, so the difference is the code it takes, not the features it has."
+                        body="Pixel-perfect parity, so the only difference is the code."
                     />
                     <Fact
                         title="One language, one config"
@@ -197,7 +197,7 @@ def:pub InProduction -> JsxElement {
                     />
                     <Fact
                         title="574,558 lines gone"
-                        body="Net lines that no longer have to be read, reviewed, tested or kept in sync, by people or by agents."
+                        body="Lines nobody has to read, review, test or keep in sync again."
                     />
                 </div>
             </Reveal>
