@@ -30,7 +30,29 @@ glob _ECOSYSTEMS: list[dict[str, str]] = [
 
 def matches(p: PackageSummary, q: str) -> bool;
 
-def:pub Ecosystems -> JsxElement {
+def:pub Ecosystems -> JsxElement;
+
+def:pub PackageCard(pkg: PackageSummary) -> JsxElement;
+
+def:pub PackagesIndex(
+    catalog: PackageCatalog | None, loading: bool, q: str, onFilter: any
+) -> JsxElement;
+
+impl matches(p: PackageSummary, q: str) -> bool {
+    needle = q.strip().lower();
+    if needle == "" {
+        return True;
+    }
+    hay = [p.name, p.description, *p.exports, *p.symbols];
+    for text in hay {
+        if needle in text.lower() {
+            return True;
+        }
+    }
+    return False;
+}
+
+impl Ecosystems -> JsxElement {
     return
         <section className="mb-10" aria-labelledby="ecosystems-heading">
             <h2
@@ -83,7 +105,7 @@ def:pub Ecosystems -> JsxElement {
         </section>;
 }
 
-def:pub PackageCard(pkg: PackageSummary) -> JsxElement {
+impl PackageCard(pkg: PackageSummary) -> JsxElement {
     return
         <li
             className="flex flex-col gap-3 rounded-xl border border-border/60 bg-card/60 p-5 transition-colors hover:border-primary/40"
@@ -105,7 +127,7 @@ def:pub PackageCard(pkg: PackageSummary) -> JsxElement {
         </li>;
 }
 
-def:pub PackagesIndex(
+impl PackagesIndex(
     catalog: PackageCatalog | None, loading: bool, q: str, onFilter: any
 ) -> JsxElement {
     shown = [
@@ -152,18 +174,4 @@ def:pub PackagesIndex(
                 </ul>
             }   }
         </div>;
-}
-
-impl matches(p: PackageSummary, q: str) -> bool {
-    needle = q.strip().lower();
-    if needle == "" {
-        return True;
-    }
-    hay = [p.name, p.description, *p.exports, *p.symbols];
-    for text in hay {
-        if needle in text.lower() {
-            return True;
-        }
-    }
-    return False;
 }

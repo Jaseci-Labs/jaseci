@@ -10,7 +10,11 @@ import from "@hugeicons/core-free-icons" {
 
 glob BOOK_URL: str = "https://doi.org/10.5281/zenodo.21464040";
 
-def:pub ConceptCard(icon: any, name: str, line: str) -> JsxElement {
+def:pub ConceptCard(icon: any, name: str, line: str) -> JsxElement;
+
+def:pub BookSection -> JsxElement;
+
+impl ConceptCard(icon: any, name: str, line: str) -> JsxElement {
     return
         <div
             className="flex items-start gap-3 rounded-xl border border-border/70 bg-card/40 pt-4 pb-4 pl-4 pr-4"
@@ -29,7 +33,7 @@ def:pub ConceptCard(icon: any, name: str, line: str) -> JsxElement {
         </div>;
 }
 
-def:pub BookSection -> JsxElement {
+impl BookSection -> JsxElement {
     return
         <section
             id="book"

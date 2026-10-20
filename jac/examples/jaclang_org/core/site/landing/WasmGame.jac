@@ -1,7 +1,9 @@
 import from "@hugeicons/react" { HugeiconsIcon }
 import from "@hugeicons/core-free-icons" { GameController01Icon, PlayIcon }
 
-def:pub WasmGame -> JsxElement {
+def:pub WasmGame -> JsxElement;
+
+impl WasmGame -> JsxElement {
     has launched: bool = False,
         canvasRef: Ref[HTMLCanvasElement] = Ref(),
         scoreRef: Ref[HTMLElement] = Ref(),

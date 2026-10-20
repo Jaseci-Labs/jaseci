@@ -27,7 +27,9 @@ glob _EXPLORE: list[dict[str, str]] = [
 
      ];
 
-def:pub Navbar -> JsxElement {
+def:pub Navbar -> JsxElement;
+
+impl Navbar -> JsxElement {
     theme = useTheme();
     dark = theme.dark;
 

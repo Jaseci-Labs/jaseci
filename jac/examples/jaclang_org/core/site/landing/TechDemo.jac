@@ -7,7 +7,9 @@ glob HOME_NAV: list[dict[str, any]] = [
 
      ];
 
-def:pub TechDemo -> JsxElement {
+def:pub TechDemo -> JsxElement;
+
+impl TechDemo -> JsxElement {
     return
         <>
             <SectionRail items={HOME_NAV}/>
