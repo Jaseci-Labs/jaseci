@@ -69,10 +69,6 @@ on:
         required: false
   release:
     types: [published]
-  # TEMPORARY (#10251): a release-channel dry run of this pull request's legs,
-  # with no tag, so nothing is uploaded. Remove before merge.
-  pull_request:
-    types: [opened, synchronize, reopened]
   workflow_dispatch:
     inputs:
       tag:
@@ -141,7 +137,6 @@ jobs:
   # here is one array: adding or dropping a platform is an edit to LEGS and
   # nowhere else.
   plan:
-    if: github.event_name != 'pull_request' || github.event.pull_request.number == 10251
     runs-on: ubuntu-latest
     outputs:
       include: ${{ steps.legs.outputs.include }}
@@ -707,7 +702,7 @@ jobs:
       # floor checks on purpose: a floor regression fails the job before
       # anything is published.
       - name: Seed the deps release with the built shim (release channel)
-        if: inputs.channel != 'dev' && steps.shim-fetch.outputs.hit != 'true' && github.event_name != 'pull_request'
+        if: inputs.channel != 'dev' && steps.shim-fetch.outputs.hit != 'true'
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
