@@ -1,14 +1,7 @@
 import from types { SimpleNamespace }
 import unittest.mock;
 import from jaclang.scale.deploy.target.kubernetes { cluster_provider as cp_module }
-import from jaclang.scale.deploy.target.kubernetes.cluster_provider {
-    AWSProvider,
-    LocalProvider
-}
 import from jaclang.scale.deploy.target.kubernetes.utils { kubernetes_utils as utils }
-import from jaclang.scale.deploy.target.kubernetes.utils.kubernetes_utils {
-    get_cluster_provider
-}
 
 test "AWSProvider and LocalProvider honour their per-provider contracts" {
     aws = AWSProvider();
@@ -33,7 +26,7 @@ test "AWSProvider and LocalProvider honour their per-provider contracts" {
 }
 
 test "validate_ports: AWS skips the API; Local raises on conflict and excludes own namespace" {
-    def make_svc(ns: str, name: str, node_ports: list) -> object {
+    def make_svc(ns: str, name: str, node_ports: list[any]) -> object {
         ports = [SimpleNamespace(node_port=p) for p in node_ports];
         return SimpleNamespace(
             metadata=SimpleNamespace(namespace=ns, name=name),

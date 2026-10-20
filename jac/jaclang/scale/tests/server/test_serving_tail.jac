@@ -11,24 +11,10 @@ import asyncio;
 import http.client;
 import struct;
 import time;
-import from jaclang.server.serving.app { ServingApp }
-import from jaclang.server.serving.datatypes { JSONResponse }
-import from jaclang.server.serving.endpoint { HTTPMethod, JEndPoint, WSEndPoint }
-import from jaclang.server.serving.openapi { build_openapi }
-import from jaclang.server.serving.server { ServingServer }
-import from jaclang.server.serving.ws {
-    OP_CONT,
-    OP_PING,
-    OP_PONG,
-    OP_TEXT,
-    OP_CLOSE,
-    encode_frame,
-    read_frame
-}
 
 
 def _make_app -> ServingApp {
-    def hello -> dict {
+    def hello -> dict[str, any] {
         return {"ok": True};
     }
 
@@ -49,8 +35,19 @@ def _make_app -> ServingApp {
 }
 
 
-def _spawn(**server_kwargs: any) -> tuple {
-    server = ServingServer(app=_make_app(), host="127.0.0.1", port=0, **server_kwargs);
+def _spawn(
+    ws_allowed_origins: (list[str] | None) = None, ws_max_message_bytes: int = 0
+) -> tuple[any, ...] {
+    settings = ServeSettings();
+    if ws_allowed_origins is not None {
+        settings.websocket.allowed_origins = list(ws_allowed_origins);
+    }
+    if ws_max_message_bytes {
+        settings.websocket.max_message_bytes = ws_max_message_bytes;
+    }
+    server = ServingServer(
+        app=_make_app(), settings=settings, host="127.0.0.1", port=0
+    );
     stop = server.serve_background();
     return (stop, server);
 }
@@ -66,7 +63,7 @@ def _run(coro: object) -> object {
 }
 
 
-async def _ws_handshake(port: int, path: str, origin: str = "") -> tuple {
+async def _ws_handshake(port: int, path: str, origin: str = "") -> tuple[any, ...] {
     (reader, writer) = await asyncio.open_connection("127.0.0.1", port);
     origin_line = f"Origin: {origin}\r\n" if origin else "";
     writer.write(
@@ -169,7 +166,7 @@ test "PING interleaved in a fragmented message is answered, message survives" {
     # and closed 1002.
     (stop, server) = _spawn();
     try {
-        async def scenario -> dict {
+        async def scenario -> dict[str, any] {
             (reader, writer, status) = await _ws_handshake(
                 server.bound_port, "/ws/echo"
             );

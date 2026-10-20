@@ -51,3 +51,86 @@ test "super init picks the next class that declares it" {
     errs = check_src(src);
     assert not errs , f"super init resolved to the wrong class: {errs}";
 }
+
+test "C3 compares class identity across independently hydrated type wrappers" {
+    import from jaclang.compiler.types.types { ClassDetailsShared, ClassType }
+    import from jaclang.compiler.types.type_utils { compute_mro_linearization }
+    scope = JacProgram().compile(
+        "hydrated_mro.jac",
+        use_str="with entry {}",
+        options=CompileOptions(no_cgen=True, symtab_ir_only=True)
+    );
+    ancestor = ClassType(
+        _shared=ClassDetailsShared(class_name="Root", symbol_table=scope)
+    );
+    left = ClassType(
+        _shared=ClassDetailsShared(
+            class_name="Left",
+            symbol_table=scope,
+            base_classes=[ClassType(_shared=ancestor.shared)]
+        )
+    );
+    right = ClassType(
+        _shared=ClassDetailsShared(
+            class_name="Right",
+            symbol_table=scope,
+            base_classes=[ClassType(_shared=ancestor.shared)]
+        )
+    );
+    value = ClassType(
+        _shared=ClassDetailsShared(
+            class_name="Value",
+            symbol_table=scope,
+            base_classes=[ClassType(_shared=ancestor.shared)]
+        )
+    );
+    named = ClassType(
+        _shared=ClassDetailsShared(
+            class_name="Named", symbol_table=scope, base_classes=[left, right, value]
+        )
+    );
+    child = ClassType(
+        _shared=ClassDetailsShared(
+            class_name="Child",
+            symbol_table=scope,
+            base_classes=[
+                ClassType(_shared=named.shared),
+                ClassType(_shared=ancestor.shared)
+            ]
+        )
+    );
+    compute_mro_linearization(child);
+    assert [t.shared.class_name for t in named.shared.mro]
+        == ["Named", "Left", "Right", "Value", "Root"];
+    assert [t.shared.class_name for t in child.shared.mro]
+        == ["Child", "Named", "Left", "Right", "Value", "Root"];
+}
+
+test "multiple inheritance merges cached copies of the same declaration" {
+    import from jaclang.compiler.frontend.unitree { Module }
+    import from jaclang.compiler.types.types { ClassDetailsShared, ClassType }
+    import from jaclang.compiler.types.type_utils { linearize_mro }
+
+    def make(name: str, bases: list[ClassType]) -> ClassType {
+        shared = ClassDetailsShared(
+            class_name=name,
+            symbol_table=Module.make_stub(inject_name=name),
+            base_classes=bases,
+            _identity_key=("/tmp/mro-diamond.jac", 1, 0, name)
+        );
+        result = ClassType(_shared=shared);
+        shared.mro = linearize_mro(result);
+        return result;
+    }
+
+    # Independent interface readers can hydrate the same ancestor separately.
+    first = make("Ancestor", []);
+    second = make("Ancestor", []);
+    assert first.shared is not second.shared;
+    assert first.shared.same_class(second.shared);
+    left = make("Left", [first]);
+    right = make("Right", [second]);
+    leaf = make("Leaf", [left, right]);
+    assert [cls.shared.class_name for cls in leaf.shared.mro]
+        == ["Leaf", "Left", "Right", "Ancestor"];
+}

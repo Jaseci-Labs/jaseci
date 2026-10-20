@@ -18,9 +18,16 @@ test that fails: "expected E5090, got no errors" — which is exactly the
 class of bug this guardrail exists to prevent.
 """
 
+import from jaclang.compiler.backends.py.codegen_shim { generated_python }
 import ctypes;
 import os;
-import from tests.support { TESTS_DIR, native_force_opts }
+import from tests.support {
+    TESTS_DIR,
+    by_source_name,
+    native_address,
+    native_force_opts,
+    source_spelled
+}
 import jaclang;
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.compiler.driver.compile_options { CompileOptions }
@@ -45,7 +52,7 @@ def compile_na_inline(label: str, code: str) -> JacProgram {
 layout assertions) and the JAC_NA_DEBUG stderr stream (for demotion-reason
 assertions -- granular demotion reports its cause there rather than as a
 program error)."""
-def compile_na_inline_demote(label: str, code: str) -> tuple {
+def compile_na_inline_demote(label: str, code: str) -> tuple[any, ...] {
     import contextlib;
     import io;
     path = os.path.join(FIXTURES_DIR, f"_guardrail_{label}.jac");
@@ -66,13 +73,13 @@ def compile_na_inline_demote(label: str, code: str) -> tuple {
             os.environ["JAC_NA_DEBUG"] = _prev;
         }
     }
-    return (prog, ir, buf.getvalue(), );
+    return (prog, ir, source_spelled(buf.getvalue()), );
 }
 
 """Compile a snippet through the FRONT-END check schedule (the `type_check`
 extras) with codegen OFF — the `jac check` path. This is the path that
 historically did NOT surface native codegen-time E5090s, so structural native
-gaps stayed invisible at check time and only failed at `jac nacompile` (issue
+gaps stayed invisible at check time and only failed at `jac build --native` (issue
 #6636 follow-up B). The native capability authority is now run here too."""
 def check_na_inline(label: str, code: str) -> JacProgram {
     path = os.path.join(FIXTURES_DIR, f"_check_{label}.jac");
@@ -81,10 +88,7 @@ def check_na_inline(label: str, code: str) -> JacProgram {
         file_path=path,
         use_str=code,
         options=CompileOptions(
-            no_cgen=True,
-            native_parity=True,
-            force_codespace="native",
-            force_target_program=True
+            no_cgen=True, native_parity=True, force_codespace="native",
         )
     );
     return prog;
@@ -95,7 +99,7 @@ engine. A guardrail that has become a lowering pin needs the native lane's
 answer, not just its layout membership."""
 def native_answer(eng: any, name: str) -> int {
     assert eng is not None , f"no native engine produced for {name}";
-    addr = eng.get_function_address(name);
+    addr = native_address(eng, name);
     assert addr != 0 , f"'{name}' not found in the JIT engine";
     return ctypes.CFUNCTYPE(ctypes.c_int64)(addr)();
 }
@@ -110,8 +114,8 @@ def server_answer(label: str, code: str, name: str) -> int {
         file_path=path, use_str=code, options=CompileOptions(default_codespace='server')
     );
     assert not prog.errors_had , f"server-lane compilation errors: {fmt_errors(prog)}";
-    ns: dict = {};
-    exec(compile(ir.gen.py, path, "exec"), ns);
+    ns: dict[str, any] = {};
+    exec(compile(generated_python(ir.gen), path, "exec"), ns);
     return ns[name]();
 }
 
@@ -211,11 +215,11 @@ test "guardrail: yield without a generator return type is rejected" {
 # neighbour over an edge with declared endpoints) IS supported and reads
 # correctly on native; see test_osp_equivalence.jac "osp field access" and
 # "osp typed edge endpoints".
-test "guardrail: field access on an untyped (any) node-ref element demotes the ability with a filter hint" {
+test "guardrail: field access on an untyped (any) node-ref element refuses the ability with a filter hint" {
     (prog, ir, log) = compile_na_inline_demote(
         "node_ref_any_field",
         "node N { has tag: int = 0; }\n"
-        "edge Portal {}\n"
+        "edge Portal: any --> any {}\n"
         "walker W {\n"
         "    has v: int = 0;\n"
         "    can go with N entry {\n"
@@ -225,13 +229,15 @@ test "guardrail: field access on an untyped (any) node-ref element demotes the a
         "}\n"
         "with entry { a = N(); b = N(tag=9); a +>: Portal() :+> b; a spawn W(); }\n"
     );
-    assert not has_error_code(prog, "E5090") , f"An ability-owned violation must demote, not fail the module: {fmt_errors(
+    assert not has_error_code(prog, "E5090") , f"An ability-owned violation is reported once, against the ability: {fmt_errors(
         prog
     )}";
-    layout = ir.gen.native_layout;
-    assert layout is not None , "whole-module native compile aborted";
-    assert "W.go" not in layout.methods , (
-        "the violating ability must be demoted out of the native layout"
+    # A demoted function refuses its native callers. An ability has none: the
+    # graph engine runs it, and would reach the stub. So the module is refused,
+    # naming the ability.
+    refused = [str(e) for e in prog.errors_had];
+    assert any("event ability" in r and "go" in r for r in refused) , (
+        f"a walker with an ability that cannot lower must refuse the module: {refused}"
     );
     assert "NA_DEBUG demote W.go" in log , f"no demotion recorded for W.go in:\n{log}";
     assert "[?:" in log , f"the demotion diagnostic should suggest a `[?:Type]` filter:\n{log}";
@@ -243,6 +249,21 @@ test "guardrail: field access on an untyped (any) node-ref element demotes the a
 # behavioral test in test_osp_equivalence.jac "osp typed edge endpoints", per
 # this file's convention of migrating a feature to a behavioral test once it
 # gains real support.)
+
+test "guardrail: starred tuple assignment is rejected" {
+    src = (
+        "with entry {\n" "    (first, *rest) = (1, 2, 3);\n" "    print(first);\n" "}\n"
+    );
+    prog = compile_na_inline("starred_tuple_assign", src);
+    assert has_error_code(prog, "E5090") , f"Expected E5090 for starred tuple assignment, got: {fmt_errors(
+        prog
+    )}";
+    checked = check_na_inline("starred_tuple_assign_check", src);
+    assert has_error_code(checked, "E5090") , (
+        "the front-end native capability gate must reject starred tuple "
+        f"assignment, got: {fmt_errors(checked)}"
+    );
+}
 
 # ─────────────────────────────────────────────────────────────────────
 # Import / builtin gaps (issue #6357)
@@ -342,67 +363,37 @@ test "for-loop over a set lowers, and both lanes answer the same sum" {
     );
 }
 
-# A container stored inside another container comes back as a bare pointer:
-# the outer dict keeps pointer-valued entries untyped, so the inner
-# `dict`/`list` arrives with no layout attached. Subscripting a bare pointer
-# used to fall straight through to the string-index emitter, which read the
-# inner container's header bytes as characters -- `b['items']` compiled to a
-# character load and raised IndexError at run time. Only an integer index can
-# mean "index this string", so a non-integer key is a seam, not a character.
-test "guardrail: subscripting an element-erased container is not a char read" {
-    (prog, ir, log) = compile_na_inline_demote(
-        "erased_subscript",
-        "def run(t: dict[int, dict[str, list[str]]]) -> int {\n"
-        "    for b in t.values() {\n"
-        "        if len(b['items']) > 0 { return 1; }\n"
-        "    }\n"
-        "    return 0;\n"
-        "}\n"
-    );
-    assert not prog.errors_had , f"A function-owned E5092 must demote, got: {fmt_errors(
-        prog
-    )}";
-    layout = ir.gen.native_layout;
-    assert layout is not None , "whole-module native compile aborted";
-    assert "run" not in layout.functions , (
-        "an erased-container subscript must demote, not compile to a char read"
-    );
-    assert "subscript of an element-erased collection" in log , (
-        f"the demotion must name the erased subscript, got:\n{log}"
-    );
+test "nested container subscripts preserve the inferred element layout" {
+    code = "def run(t: dict[int, dict[str, list[str]]]) -> int {\n"
+    "    for b in t.values() {\n"
+    "        if len(b['items']) > 0 { return 1; }\n"
+    "    }\n"
+    "    return 0;\n"
+    "}\n"
+    "def answer -> int { return run({0: {'items': ['yes']}}) * 10 + run({0: {'items': []}}); }\n";
+    (prog, ir, log) = compile_na_inline_demote("typed_subscript", code);
+    assert not prog.errors_had , fmt_errors(prog);
+    assert ir.gen.native_layout is not None;
+    assert "run" in ir.gen.native_layout.functions , log;
+    assert native_answer(ir.gen.native_engine, "answer") == 10;
+    assert server_answer("typed_subscript_server", code, "answer") == 10;
 }
 
-
-# The same erasure reaching a membership test: every registered container
-# answers `in` from its own layout, and the one pointer shape left over is the
-# substring test. It used to accept any two pointers, so an object needle
-# handed `strstr` a `%Tag*` and raised a raw llvmlite TypeError -- an ICE-shaped
-# demotion with no diagnostic of its own.
-test "guardrail: membership with a non-string needle names its seam" {
-    (prog, ir, log) = compile_na_inline_demote(
-        "erased_membership",
-        "obj Tag { has n: int = 0; }\n"
-        "def run(t: dict[str, list[Tag]], x: Tag) -> int {\n"
-        "    for v in t.values() {\n"
-        "        if x in v { return 1; }\n"
-        "    }\n"
-        "    return 0;\n"
-        "}\n"
-    );
-    assert not prog.errors_had , f"A function-owned E5092 must demote, got: {fmt_errors(
-        prog
-    )}";
-    layout = ir.gen.native_layout;
-    assert layout is not None , "whole-module native compile aborted";
-    assert "run" not in layout.functions , (
-        "an erased-container membership test must demote"
-    );
-    assert "membership over an element-erased collection" in log , (
-        f"the demotion must name the erased membership test, got:\n{log}"
-    );
-    assert "TypeError" not in log , (
-        f"the seam must be a diagnostic, not a raw emitter crash:\n{log}"
-    );
+test "nested container membership preserves object identity" {
+    code = "obj Tag { has n: int = 0; }\n"
+    "def run(t: dict[str, list[Tag]], x: Tag) -> int {\n"
+    "    for v in t.values() {\n"
+    "        if x in v { return 1; }\n"
+    "    }\n"
+    "    return 0;\n"
+    "}\n"
+    "def answer -> int { item = Tag(); return run({'items': [item]}, item) * 10 + run({'items': [item]}, Tag()); }\n";
+    (prog, ir, log) = compile_na_inline_demote("typed_membership", code);
+    assert not prog.errors_had , fmt_errors(prog);
+    assert ir.gen.native_layout is not None;
+    assert "run" in ir.gen.native_layout.functions , log;
+    assert native_answer(ir.gen.native_engine, "answer") == 10;
+    assert server_answer("typed_membership_server", code, "answer") == 10;
 }
 
 
@@ -648,7 +639,7 @@ test "guardrail: foreign-typed field lowers to an opaque slot, not E5090" {
         prog
     )}";
     # Same must hold at check time (codegen OFF), so `jac check` and
-    # `jac nacompile` agree.
+    # `jac build --native` agree.
     check_prog = check_na_inline(
         "opaque_foreign_field",
         "import ast as ast3;\n"
@@ -695,7 +686,7 @@ test "guardrail: foreign import used as a runtime value is still rejected" {
         "def f -> int { x = ast3.parse(\"1\"); return 0; }\n"
         "with entry { print(f()); }\n"
     );
-    assert has_error_code(prog, "E5090") , f"Expected E5090 for runtime use of a foreign import, got: {fmt_errors(
+    assert has_error_code(prog, "E5092") , f"Expected E5092 for runtime use of a foreign import, got: {fmt_errors(
         prog
     )}";
 }
@@ -724,7 +715,7 @@ test "guardrail: list-endpoint disconnect lowers; list plus predicate stays loud
     )}";
     prog2 = compile_na_inline(
         "disconnect_pred_list",
-        "edge E { has w: int = 0; }\n"
+        "edge E: N --> N { has w: int = 0; }\n"
         "node N {}\n"
         "walker W {\n"
         "    can go with N entry {\n"
@@ -784,7 +775,7 @@ test "osp gate: connect-only module (no walker) lowers without E5090" {
     prog = compile_na_inline(
         "connect_no_walker",
         "node Area { has tag: int = 0; }\n"
-        "edge In {}\n"
+        "edge In: Area --> Area {}\n"
         "with entry {\n"
         "    a = Area(tag=1);\n"
         "    b = Area(tag=2);\n"
@@ -814,7 +805,7 @@ test "osp gate: connect-only module (no walker) lowers without E5090" {
 # ─────────────────────────────────────────────────────────────────────
 # Diagnostic rendering + check/nacompile parity (issue #6636 follow-ups)
 # ─────────────────────────────────────────────────────────────────────
-# (A) `jac nacompile` rendered diagnostics with `str(_err)`, which drops
+# (A) `jac build --native` rendered diagnostics with `str(_err)`, which drops
 # `Alert.help_text` — so the cross-module-OSP / stdlib-import guidance that
 # the native E5090s carry never reached the user. nacompile must render like
 # `jac check` / `jac run` (Alert.pretty_print), which includes the help line.
@@ -823,7 +814,7 @@ test "nacompile surfaces native E5090 help text, not just the generic message" {
     import contextlib;
     import io;
     import tempfile;
-    import from jaclang.cli.commands.nacompile { nacompile }
+    import from jaclang.cli.commands.native_build { native_build }
     with tempfile.TemporaryDirectory() as td {
         src = os.path.join(td, "bad_import.jac");
         with open(src, "w") as f {
@@ -831,7 +822,7 @@ test "nacompile surfaces native E5090 help text, not just the generic message" {
         }
         buf = io.StringIO();
         with contextlib.redirect_stdout(buf) {
-            rc = nacompile(filename=src, output=os.path.join(td, "out"));
+            rc = native_build(filename=src, output=os.path.join(td, "out"));
         }
         out = buf.getvalue();
         assert rc != 0 , "nacompile should fail on an unsupported stdlib import";
@@ -846,7 +837,7 @@ test "nacompile surfaces native E5090 help text, not just the generic message" {
 # event ability. In a value-returning function it is unsupported: granular
 # demotion seams that function, and the module entry that natively calls it
 # then fails with a structured E5092. The check-parity schedule runs the same
-# codegen at check time, so `jac check` and `jac nacompile` still agree.
+# codegen at check time, so `jac check` and `jac build --native` still agree.
 test "check surfaces the demoted skip-in-value-fn through its native caller" {
     prog = check_na_inline(
         "skip_in_value_fn",
@@ -952,6 +943,32 @@ test "check rejects a native def with an unknown return type" {
         "native_unknown_ret", "def make_it(x: int) -> some_handle { return x; }\n"
     );
     assert has_error_code(prog, "E2018") , f"Expected E2018 for unknown native return type 'some_handle', got: {fmt_errors(
+        prog
+    )}";
+}
+
+# An unresolved type in an `as` cast is the same silent-i64 hazard as an
+# unresolved annotation: native lowering reads the cast type to pick a layout.
+test "check rejects a native cast to an unknown type" {
+    prog = check_na_inline(
+        "native_unknown_cast",
+        "def widen(n: int) -> int {\n    v = n as uint32_t;\n    return v;\n}\n"
+    );
+    assert has_error_code(prog, "E2018") , f"Expected E2018 for unknown native cast type 'uint32_t', got: {fmt_errors(
+        prog
+    )}";
+}
+
+# Nesting depth is not a boundary of the language: an unresolved annotation is
+# an error however deep the generic arguments go.
+test "check rejects an unknown type nested deep in a native annotation" {
+    prog = check_na_inline(
+        "native_unknown_deep",
+        "def take(xs: dict[str, dict[str, dict[str, list[uint32_t]]]]) -> int {\n"
+        "    return 0;\n"
+        "}\n"
+    );
+    assert has_error_code(prog, "E2018") , f"Expected E2018 for a deeply nested unknown native type 'uint32_t', got: {fmt_errors(
         prog
     )}";
 }
@@ -1254,4 +1271,15 @@ test "guardrail: nested event ability demotes its function, not an ICE" {
     assert "NA_DEBUG demote widget" in log , (
         f"no demotion recorded for widget in:\n{log}"
     );
+}
+
+test "C callbacks reject a boxed Callable parameter instead of bitcasting it" {
+    program = compile_na_inline(
+        "clib_boxed_callback",
+        "import from c { def register(callback: Callable[[i32], i32]); }\n"
+        "def sign(value: i32) -> i32 { return value; }\n"
+        "def install(callback: Callable[[i32], i32]) { register(callback); }\n"
+        "with entry { install(sign); }\n"
+    );
+    assert has_error_code(program, "E5092") , fmt_errors(program);
 }

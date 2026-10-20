@@ -6,7 +6,7 @@ join is a real barrier -- every line one region prints lands before the
 next region starts.
 
 The body is *not* sequential any more. `_try_flow_for_parallel` outlines
-it and fans element ranges over pthreads for `--gc rc` (and for `--gc
+it and fans element ranges over pthreads for `--memory rc` (and for `--gc
 none` under nogc enforcement), so the order of prints *within* one
 region is unspecified by design -- see the `flow for` contract in
 docs/reference/language/ownership-borrowing.md, which promises
@@ -19,9 +19,8 @@ escaped its region would show up as a region mismatch.
 
 import os;
 import subprocess;
-import sys;
 import tempfile;
-import from tests.support { TESTS_DIR }
+import from tests.support { jac_command, TESTS_DIR }
 
 glob FIXTURE = os.path.join(
          TESTS_DIR, "compiler", "backends", "native", "fixtures", "flow_for_run.jac"
@@ -29,9 +28,9 @@ glob FIXTURE = os.path.join(
      REGIONS: list[list[str]] = [["10", "20", "30"], ["12", "15"], ["end"]],
      REPEATS = 25,
      MODE_FLAGS = {
-         "none": ["--gc", "none"],
-         "rc": ["--gc", "rc"],
-         "cycles": ["--gc", "cycles"]
+         "none": ["--memory", "nogc"],
+         "rc": ["--memory", "rc"],
+         "cycles": ["--memory", "managed"]
      };
 
 def _regions(out: str) -> list[list[str]] {
@@ -58,7 +57,7 @@ test "flow for output agrees region by region across gc modes" {
         for mode in ("none", "rc", "cycles") {
             out_bin = os.path.join(tmp, f"ff_{mode}");
             res = subprocess.run(
-                [sys.executable, "-m", "jaclang", "nacompile", FIXTURE]
+                jac_command("build", "--native", FIXTURE)
                     + MODE_FLAGS[mode]
                     + ["-o", out_bin],
                 capture_output=True,

@@ -1,13 +1,14 @@
 import time;
 import asyncio;
-import from jaclang.server.serving.datatypes { Request, Headers, URL }
-import from jaclang.scale.runtime.middleware.rate_limit {
-    InProcessRateLimiter,
-    build_rate_limit_middleware,
-    _parse_trusted_proxies,
-    _resolve_client_ip,
-    _untrusted_xff_warned,
-    logger as _rl_logger
+
+
+def _reset_state {
+    _backend_holder.clear();
+}
+
+
+def _client(r: Request, trusted: list[str]) -> str {
+    return ProxyResolver(trusted=trusted).resolve(r.client_host, r.headers).client;
 }
 
 
@@ -68,12 +69,14 @@ def _req(
 
 
 test "middleware returns None when disabled" {
+    _reset_state();
     mw = build_rate_limit_middleware({"enabled": False});
     assert mw is None;
 }
 
 
 test "middleware 429s once the per-IP bucket is empty" {
+    _reset_state();
     mw = build_rate_limit_middleware(
         {
             "enabled": True,
@@ -86,11 +89,10 @@ test "middleware 429s once the per-IP bucket is empty" {
     assert mw is not None;
 
     async def next_handler(req: object) -> object {
-        import from jaclang.server.serving.datatypes { JSONResponse }
         return JSONResponse({"ok": True});
     }
     r = _req(path="/api/x", client_host="9.9.9.9");
-    async def run -> list {
+    async def run -> list[any] {
         results = [];
         for _ in range(4) {
             resp = await mw(r, next_handler);
@@ -106,6 +108,7 @@ test "middleware 429s once the per-IP bucket is empty" {
 
 
 test "middleware exempts configured paths" {
+    _reset_state();
     mw = build_rate_limit_middleware(
         {
             "enabled": True,
@@ -116,11 +119,10 @@ test "middleware exempts configured paths" {
         }
     );
     async def next_handler(req: object) -> object {
-        import from jaclang.server.serving.datatypes { JSONResponse }
         return JSONResponse({"ok": True});
     }
     health = _req(path="/health", client_host="9.9.9.9");
-    async def run -> list {
+    async def run -> list[any] {
         out = [];
         for _ in range(5) {
             r = await mw(health, next_handler);
@@ -134,6 +136,7 @@ test "middleware exempts configured paths" {
 
 
 test "per-user bucket applies on top of per-IP when Authorization is set" {
+    _reset_state();
     mw = build_rate_limit_middleware(
         {
             "enabled": True,
@@ -144,13 +147,12 @@ test "per-user bucket applies on top of per-IP when Authorization is set" {
         }
     );
     async def next_handler(req: object) -> object {
-        import from jaclang.server.serving.datatypes { JSONResponse }
         return JSONResponse({"ok": True});
     }
     r = _req(
         path="/api/x", headers={"Authorization": "Bearer abc"}, client_host="9.9.9.9"
     );
-    async def run -> list {
+    async def run -> list[any] {
         out = [];
         for _ in range(3) {
             resp = await mw(r, next_handler);
@@ -165,6 +167,7 @@ test "per-user bucket applies on top of per-IP when Authorization is set" {
 
 
 test "429 envelope carries RATE_LIMITED code + Retry-After header" {
+    _reset_state();
     mw = build_rate_limit_middleware(
         {
             "enabled": True,
@@ -176,7 +179,6 @@ test "429 envelope carries RATE_LIMITED code + Retry-After header" {
     );
     import json;
     async def next_handler(req: object) -> object {
-        import from jaclang.server.serving.datatypes { JSONResponse }
         return JSONResponse({"ok": True});
     }
     r = _req(path="/api/x", client_host="8.8.8.8");
@@ -188,24 +190,16 @@ test "429 envelope carries RATE_LIMITED code + Retry-After header" {
     assert getattr(resp, "status_code") == 429;
     headers = getattr(resp, "headers");
     assert headers.get("Retry-After") is not None;
-    body: dict = json.loads(bytes(getattr(resp, "body")).decode());
+    body: dict[str, any] = json.loads(bytes(getattr(resp, "body")).decode());
     assert body["ok"] == False;
     assert body["error"]["code"] == "RATE_LIMITED";
 }
 
 
-test "resolver called without trust config keys on the peer (audit path)" {
-    r = _req(
-        path="/", headers={"X-Forwarded-For": "6.6.6.6"}, client_host="203.0.113.9"
-    );
-    assert _resolve_client_ip(r) == "203.0.113.9";
-}
-
-
 test "resolver keys on the TCP peer when X-Forwarded-For is absent" {
     r = _req(path="/", client_host="9.9.9.9");
-    assert _resolve_client_ip(r, []) == "9.9.9.9";
-    assert (_resolve_client_ip(r, _parse_trusted_proxies(["10.0.0.0/8"])) == "9.9.9.9");
+    assert _client(r, []) == "9.9.9.9";
+    assert _client(r, ["10.0.0.0/8"]) == "9.9.9.9";
 }
 
 
@@ -213,89 +207,98 @@ test "resolver ignores X-Forwarded-For when no trusted proxies are set" {
     r = _req(
         path="/", headers={"X-Forwarded-For": "6.6.6.6"}, client_host="203.0.113.9"
     );
-    assert _resolve_client_ip(r, []) == "203.0.113.9";
+    assert _client(r, []) == "203.0.113.9";
 }
 
 
 test "resolver ignores X-Forwarded-For when the peer is not trusted" {
-    trusted = _parse_trusted_proxies(["10.0.0.0/8"]);
     r = _req(
         path="/", headers={"X-Forwarded-For": "6.6.6.6"}, client_host="203.0.113.9"
     );
-    assert _resolve_client_ip(r, trusted) == "203.0.113.9";
+    assert _client(r, ["10.0.0.0/8"]) == "203.0.113.9";
 }
 
 
 test "resolver takes the rightmost untrusted hop behind a trusted proxy" {
-    trusted = _parse_trusted_proxies(["10.0.0.0/8"]);
     r = _req(
         path="/",
         headers={"X-Forwarded-For": "6.6.6.6, 198.51.100.7, 10.0.0.2"},
         client_host="10.0.0.1"
     );
-    assert _resolve_client_ip(r, trusted) == "198.51.100.7";
+    assert _client(r, ["10.0.0.0/8"]) == "198.51.100.7";
 }
 
 
 test "resolver falls back to the peer when every hop is trusted" {
-    trusted = _parse_trusted_proxies(["10.0.0.0/8", "127.0.0.1"]);
     r = _req(
         path="/", headers={"X-Forwarded-For": "10.9.9.9"}, client_host="127.0.0.1"
     );
-    assert _resolve_client_ip(r, trusted) == "127.0.0.1";
+    assert _client(r, ["10.0.0.0/8", "127.0.0.1"]) == "127.0.0.1";
 }
 
 
 test "resolver ignores empty entries in the forwarded chain" {
-    trusted = _parse_trusted_proxies(["10.0.0.0/8"]);
+    trusted = ["10.0.0.0/8"];
     trailing = _req(
         path="/", headers={"X-Forwarded-For": "198.51.100.7,"}, client_host="10.0.0.1"
     );
-    assert _resolve_client_ip(trailing, trusted) == "198.51.100.7";
+    assert _client(trailing, trusted) == "198.51.100.7";
     leading = _req(
         path="/", headers={"X-Forwarded-For": ",198.51.100.7"}, client_host="10.0.0.1"
     );
-    assert _resolve_client_ip(leading, trusted) == "198.51.100.7";
+    assert _client(leading, trusted) == "198.51.100.7";
     interior = _req(
         path="/",
         headers={"X-Forwarded-For": "198.51.100.7, , 10.0.0.2"},
         client_host="10.0.0.1"
     );
-    assert _resolve_client_ip(interior, trusted) == "198.51.100.7";
+    assert _client(interior, trusted) == "198.51.100.7";
 }
 
 
 test "resolver falls back to the peer on an unparseable hop" {
-    trusted = _parse_trusted_proxies(["10.0.0.0/8"]);
     r = _req(path="/", headers={"X-Forwarded-For": "garbage"}, client_host="10.0.0.1");
-    assert _resolve_client_ip(r, trusted) == "10.0.0.1";
+    assert _client(r, ["10.0.0.0/8"]) == "10.0.0.1";
 }
 
 
 test "resolver normalizes port and bracket forms in forwarded entries" {
-    trusted = _parse_trusted_proxies(["10.0.0.0/8"]);
     r4 = _req(
         path="/",
         headers={"X-Forwarded-For": "198.51.100.7:4711"},
         client_host="10.0.0.1"
     );
-    assert _resolve_client_ip(r4, trusted) == "198.51.100.7";
+    assert _client(r4, ["10.0.0.0/8"]) == "198.51.100.7";
     r6 = _req(
         path="/",
         headers={"X-Forwarded-For": "[2001:db8::1]:443"},
         client_host="10.0.0.1"
     );
-    assert _resolve_client_ip(r6, trusted) == "2001:db8::1";
+    assert _client(r6, ["10.0.0.0/8"]) == "2001:db8::1";
 }
 
 
-test "invalid trusted_proxies entries are skipped without crashing" {
-    trusted = _parse_trusted_proxies(["not-an-ip", "10.0.0.0/8"]);
-    assert len(trusted) == 1;
+test "resolver reads RFC 7239 Forwarded when X-Forwarded-For is absent" {
+    r = _req(
+        path="/",
+        headers={"Forwarded": "for=198.51.100.7;proto=https;host=app.example"},
+        client_host="10.0.0.1"
+    );
+    info = ProxyResolver(trusted=["10.0.0.0/8"]).resolve(r.client_host, r.headers);
+    assert info.client == "198.51.100.7";
+    assert info.scheme == "https";
+    assert info.host == "app.example";
+}
+
+
+test "invalid trusted entries are skipped without crashing" {
+    resolver = ProxyResolver(trusted=["not-an-ip", "10.0.0.0/8"]);
+    assert len(resolver._networks) == 1;
 }
 
 
 test "forged X-Forwarded-For cannot mint fresh per-IP buckets" {
+    _reset_state();
     mw = build_rate_limit_middleware(
         {
             "enabled": True,
@@ -306,7 +309,6 @@ test "forged X-Forwarded-For cannot mint fresh per-IP buckets" {
         }
     );
     async def next_handler(req: object) -> object {
-        import from jaclang.server.serving.datatypes { JSONResponse }
         return JSONResponse({"ok": True});
     }
     req_a = _req(
@@ -315,7 +317,7 @@ test "forged X-Forwarded-For cannot mint fresh per-IP buckets" {
     req_b = _req(
         path="/api/x", headers={"X-Forwarded-For": "203.0.113.2"}, client_host="9.9.9.9"
     );
-    async def run -> list {
+    async def run -> list[any] {
         r1 = await mw(req_a, next_handler);
         r2 = await mw(req_b, next_handler);
         return [getattr(r1, "status_code"), getattr(r2, "status_code")];
@@ -326,32 +328,23 @@ test "forged X-Forwarded-For cannot mint fresh per-IP buckets" {
 }
 
 
-test "distinct clients behind a trusted proxy get distinct buckets" {
+test "distinct resolved clients get distinct buckets" {
+    _reset_state();
     mw = build_rate_limit_middleware(
         {
             "enabled": True,
             "per_ip_rpm": 60,
             "per_user_rpm": 0,
             "burst_multiplier": 1.0,
-            "exempt_paths": [],
-            "trusted_proxies": ["10.0.0.0/8"]
+            "exempt_paths": []
         }
     );
     async def next_handler(req: object) -> object {
-        import from jaclang.server.serving.datatypes { JSONResponse }
         return JSONResponse({"ok": True});
     }
-    req_a = _req(
-        path="/api/x",
-        headers={"X-Forwarded-For": "203.0.113.1, 10.0.0.2"},
-        client_host="10.0.0.1"
-    );
-    req_b = _req(
-        path="/api/x",
-        headers={"X-Forwarded-For": "203.0.113.2, 10.0.0.2"},
-        client_host="10.0.0.1"
-    );
-    async def run -> list {
+    req_a = _req(path="/api/x", client_host="203.0.113.1");
+    req_b = _req(path="/api/x", client_host="203.0.113.2");
+    async def run -> list[any] {
         r1 = await mw(req_a, next_handler);
         r2 = await mw(req_b, next_handler);
         r3 = await mw(req_a, next_handler);
@@ -368,44 +361,29 @@ test "distinct clients behind a trusted proxy get distinct buckets" {
 }
 
 
-test "dropped X-Forwarded-For without trusted_proxies warns exactly once" {
+test "dropped X-Forwarded-For without trusted proxies warns exactly once" {
     import from logging.handlers { MemoryHandler }
 
-    mw = build_rate_limit_middleware(
-        {
-            "enabled": True,
-            "per_ip_rpm": 600,
-            "per_user_rpm": 0,
-            "burst_multiplier": 1.0,
-            "exempt_paths": []
-        }
-    );
-    async def next_handler(req: object) -> object {
-        import from jaclang.server.serving.datatypes { JSONResponse }
-        return JSONResponse({"ok": True});
-    }
     handler = MemoryHandler(capacity=100);
-    _rl_logger.addHandler(handler);
-    _untrusted_xff_warned.clear();
+    _proxy_logger.addHandler(handler);
+    _untrusted_warned.clear();
     try {
+        resolver = ProxyResolver(trusted=[]);
         plain = _req(path="/api/x", client_host="9.9.9.9");
         forwarded = _req(
             path="/api/x", headers={"X-Forwarded-For": "6.6.6.6"}, client_host="9.9.9.9"
         );
-        async def run {
-            await mw(plain, next_handler);
-            await mw(forwarded, next_handler);
-            await mw(forwarded, next_handler);
-        }
-        _run(run());
+        resolver.resolve(plain.client_host, plain.headers);
+        resolver.resolve(forwarded.client_host, forwarded.headers);
+        resolver.resolve(forwarded.client_host, forwarded.headers);
         warned = [
             rec
             for rec in handler.buffer
-            if "trusted_proxies" in rec.getMessage()
+            if "trusted" in rec.getMessage()
         ];
         assert len(warned) == 1;
     } finally {
-        _rl_logger.removeHandler(handler);
-        _untrusted_xff_warned.clear();
+        _proxy_logger.removeHandler(handler);
+        _untrusted_warned.clear();
     }
 }

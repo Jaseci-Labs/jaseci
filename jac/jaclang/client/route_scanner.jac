@@ -1,52 +1,17 @@
 import re;
 import from pathlib { Path }
 
-glob _ROUTE_ROLE_SUFFIXES: list = ['.impl.', '.test.'],
+glob _ROUTE_ROLE_SUFFIXES: list[str] = ['.impl.', '.test.'],
      _JSX_ELEMENT_EXPORT_RE: str = (
          r'def(?::\w+)?\s+(\w+)\s*(?:\([^)]*\))?\s*->\s*JsxElement\b'
      ),
-     _ROUTE_TYPE_RE: str = r'->\s*(?:JsxPage|JsxLayout)\b';
+     _ROUTE_TYPE_MENTION_RE: str = r'\b(?:JsxPage|JsxLayout)\b';
 
-def describe_pages_without_routes(pages_dir: Path) -> list[str] {
-    candidates: list[Path] = [];
-    try {
-        for f in sorted(pages_dir.rglob('*.jac')) {
-            if any(suffix in f.name for suffix in _ROUTE_ROLE_SUFFIXES) {
-                continue;
-            }
-            candidates.append(f);
-        }
-    } except OSError {
-        return [];
-    }
-    if not candidates {
-        return [];
-    }
-    lines: list[str] = [
-        f"{pages_dir} contains {len(candidates)} module(s) but no recognized "
-            + "routes — the app will mount without a router and render a blank page.",
-        "A route is an export returning JsxPage (JsxLayout for layouts); "
-            + "the export name and filename are free."
-    ];
-    for f in candidates {
-        try {
-            source = f.read_text(encoding='utf-8');
-        } except OSError {
-            continue;
-        }
-        if re.search(_ROUTE_TYPE_RE, source) {
-            continue;
-        }
-        for hit in re.finditer(_JSX_ELEMENT_EXPORT_RE, source) {
-            kind = 'JsxLayout' if 'layout' in hit.group(1).lower() else 'JsxPage';
-            lines.append(
-                f"  {f}: '{hit.group(1)}' returns JsxElement — change the "
-                    + f"return type to {kind} to make it a route."
-            );
-        }
-    }
-    return lines;
-}
+def _describe_unrouted_page(f: Path) -> list[str];
+
+def describe_pages_without_routes(pages_dir: Path) -> list[str];
+
+def describe_unrouted_pages(files: list[Path]) -> list[str];
 
 obj RouteEntry {
     has path: str,
@@ -73,13 +38,15 @@ obj RouteScanner {
         pages_dir: Path postinit,
         _routes: list[RouteEntry] = [],
         _layouts: dict[(str, RouteEntry)] = {},
-        _page_files: list[Path] = [];
+        _page_files: list[Path] = [],
+        _unrouted_files: list[Path] = [];
 
     def postinit;
     def has_pages_dir -> bool;
     def scan -> list[RouteEntry];
     def get_layouts -> dict[(str, RouteEntry)];
     def get_page_files -> list[Path];
+    def get_unrouted_files -> list[Path];
     def _scan_directory(
         dir_path: Path, url_prefix: str = "", auth_required: bool = False
     ) -> list[RouteEntry];
@@ -90,5 +57,69 @@ obj RouteScanner {
 }
 
 def resolve_route_exports(module_path: Path) -> tuple[((str | None), (str | None))];
+def entry_drops_route_children(manifest: any) -> bool;
 
-def _route_exports_from_ast(mod: any) -> tuple[((str | None), (str | None))];
+impl _describe_unrouted_page(f: Path) -> list[str] {
+    try {
+        source = f.read_text(encoding='utf-8');
+    } except OSError {
+        return [];
+    }
+    lines: list[str] = [];
+    for hit in re.finditer(_JSX_ELEMENT_EXPORT_RE, source) {
+        kind = 'JsxLayout'
+            if f.stem == 'layout' or 'layout' in hit.group(1).lower()
+            else 'JsxPage';
+        lines.append(
+            f"  {f}: '{hit.group(1)}' returns JsxElement, so it is not a route. "
+                + f"Return {kind} to route it, or keep it if it is a "
+                + "co-located component."
+        );
+    }
+    if not lines and re.search(_ROUTE_TYPE_MENTION_RE, source) {
+        kind = 'JsxLayout' if f.stem == 'layout' else 'JsxPage';
+        lines.append(
+            f"  {f}: names {kind} but did not resolve to a route. The return "
+                + f"type has to be {kind} itself, not a wrapped or aliased form."
+        );
+    }
+    return lines;
+}
+
+impl describe_pages_without_routes(pages_dir: Path) -> list[str] {
+    candidates: list[Path] = [];
+    try {
+        for f in sorted(pages_dir.rglob('*.jac')) {
+            if any(suffix in f.name for suffix in _ROUTE_ROLE_SUFFIXES) {
+                continue;
+            }
+            candidates.append(f);
+        }
+    } except OSError {
+        return [];
+    }
+    if not candidates {
+        return [];
+    }
+    lines: list[str] = [
+        f"{pages_dir} contains {len(candidates)} module(s) but no recognized "
+            + "routes — the app will mount without a router and render a blank page.",
+        "A route is an export returning JsxPage (JsxLayout for layouts); "
+            + "the export name and filename are free."
+    ];
+    for f in candidates {
+        lines.extend(_describe_unrouted_page(f));
+    }
+    return lines;
+}
+
+impl describe_unrouted_pages(files: list[Path]) -> list[str] {
+    lines: list[str] = [];
+    for f in files {
+        lines.extend(_describe_unrouted_page(f));
+    }
+    if lines {
+        lines.insert(0, "Some pages/ modules are not routes:");
+    }
+    return lines;
+}

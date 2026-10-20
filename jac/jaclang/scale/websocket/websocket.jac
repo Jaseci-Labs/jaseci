@@ -3,10 +3,8 @@ import logging;
 import time;
 import uuid;
 import from asyncio { Lock }
-import from jaclang.server.serving.ws { WebSocket }
-import from jaclang.server.serving.datatypes { WebSocketDisconnect }
+
 import from inspect { isgenerator }
-import from jaclang.scale.websocket.backplane { BaseBackplane, MemoryBackplane }
 
 glob logger = logging.getLogger(__name__),
      _WS_STREAM_STOP: any = object();
@@ -47,16 +45,16 @@ obj WebSocketConnectionManager {
     async def shutdown -> None;
     async def ensure_subscribed(target_key: str) -> None;
     async def maybe_unsubscribe(target_key: str) -> None;
-    async def _on_backplane_message(channel: str, message: dict) -> None;
-    async def _local_fanout(target_key: str, message: dict) -> None;
+    async def _on_backplane_message(channel: str, message: dict[str, any]) -> None;
+    async def _local_fanout(target_key: str, message: dict[str, any]) -> None;
     async def _release_slot(ctx: ConnectionContext) -> None;
     async def register(ctx: ConnectionContext) -> (str | None);
     async def unregister(ctx: ConnectionContext) -> None;
     async def broadcast_target(
-        target_kind: str, target_name: str, message: dict
+        target_kind: str, target_name: str, message: dict[str, any]
     ) -> None;
 
-    async def send_to(ctx: ConnectionContext, message: dict) -> bool;
+    async def send_to(ctx: ConnectionContext, message: dict[str, any]) -> bool;
 }
 
 def consume_rate_token(
@@ -65,4 +63,8 @@ def consume_rate_token(
 
 def _ws_stream_next(gen: any) -> any;
 
-async def _ws_stream_result(send_result: any, result: any);
+async def _ws_close_stream(result: any, abandon: Callable[[], None]) -> None;
+
+async def _ws_stream_result(
+    send_result: any, result: any, abandon: Callable[[], None]
+);

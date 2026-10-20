@@ -2,7 +2,7 @@
 
 Resolving the runtime class of a receiver whose static type names no class
 reads the class-name stamp in the rc header (#8148). Headerless
-`--gc none --enforce-nogc` allocates with a bare `malloc`: there is no header
+`--memory nogc` allocates with a bare `malloc`: there is no header
 in front of the allocation and nothing stamps a class name anywhere, so the
 probe's first load (`HDR_RC_OFF`, sixteen bytes *before* the pointer) reads
 memory the allocation does not own.
@@ -28,7 +28,7 @@ answer out of it, which is what makes the refusal above mode-specific rather
 than a lowering defect.
 
 The refusal test is the regression guard: with the headerless gate removed,
-the open read compiles clean under `--gc none --enforce-nogc` and answers off
+the open read compiles clean under `--memory nogc` and answers off
 the probe, and that test is the one that catches it. The other two pin what
 must keep working around it.
 
@@ -37,7 +37,7 @@ Refs #8148
 
 import ctypes;
 import os;
-import from tests.support { TESTS_DIR, native_force_opts }
+import from tests.support { TESTS_DIR, native_address, native_force_opts }
 import from jaclang.compiler.driver.program { JacProgram }
 
 glob FIXTURES = os.path.join(
@@ -48,20 +48,15 @@ glob FIXTURES = os.path.join(
      PROBE_SYMBOL = "__jac_class_name";
 
 
-"""Headerless: `--gc none` with nogc enforced, the mode with no rc header."""
+"""Headerless: `--memory nogc` with nogc enforced, the mode with no rc header."""
 def _headerless_opts -> any {
     import from jaclang.compiler.driver.compile_options { CompileOptions }
-    return CompileOptions(
-        force_codespace='native',
-        force_target_program=True,
-        na_gc_mode="none",
-        nogc_enforce_all=True
-    );
+    return CompileOptions(force_codespace='native', memory_profile="nogc");
 }
 
 
 """Compile a fixture and hand back the program and its module, errors and all."""
-def _compile(fixture: str, options: any) -> tuple {
+def _compile(fixture: str, options: any) -> tuple[any, ...] {
     prog = JacProgram();
     ir = prog.compile(file_path=str(os.path.join(FIXTURES, fixture)), options=options);
     return (prog, ir);
@@ -70,7 +65,7 @@ def _compile(fixture: str, options: any) -> tuple {
 
 """ctypes handle for an (int) -> int function in the JIT engine."""
 def _get(eng: any, name: str) -> any {
-    addr = eng.get_function_address(name);
+    addr = native_address(eng, name);
     assert addr != 0 , f"Function '{name}' not found in JIT engine";
     return ctypes.CFUNCTYPE(ctypes.c_int64, ctypes.c_int64)(addr);
 }

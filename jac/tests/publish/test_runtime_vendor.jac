@@ -1,18 +1,6 @@
-"""Guards #8000 (1.1): `jac eject` must never emit a backend that imports
-modules deleted by the Postgres clean break (#7947).
+"""Explicit runtime dependencies must resolve before source is emitted."""
 
-Two layers: `build_runtime_closure` fails loudly when an explicitly requested
-`extra_seeds` entry does not resolve to a vendorable module (it used to skip
-it silently and report success), and `emit_backend` rejects the legacy
-sqlalchemy/sqlite `[eject.db]` drivers at eject time now that the runtime
-persists natively through Session/PgStore.
-"""
-
-import tempfile;
-import from pathlib { Path }
 import from jaclang.dist.publish.runtime_vendor { build_runtime_closure }
-import from jaclang.cli.commands.eject_targets.backend { emit_backend }
-
 
 test "unresolvable extra seed fails loudly" {
     # This exact module was deleted by #7947; the vendorer used to skip the
@@ -25,41 +13,54 @@ test "unresolvable extra seed fails loudly" {
     assert "sqlalchemy_memory" in str(exc.value);
 }
 
-
-test "denied extra seed fails loudly" {
-    # The compiler tree resolves on disk but is deny-listed; an explicit
-    # request for it is a configuration error, not something to skip.
-    with testraises(ValueError) as exc {
-        build_runtime_closure([], extra_seeds=["jaclang.compiler"]);
+test "vendored runtime modules compile in the server codespace unless native by policy" {
+    import from pathlib { Path }
+    import from unittest.mock { patch }
+    import jaclang.dist.publish.runtime_vendor as vendor;
+    import from jaclang.compiler.driver.program { JacProgram }
+    import from jaclang.compiler.frontend.codeinfo {
+        is_native_by_location,
+        is_shared_runtime_module
     }
-    assert "jaclang.compiler" in str(exc.value);
+    seen: dict[str, str] = {};
+    def record(
+        pkg_root: Path,
+        path: Path,
+        prog: JacProgram,
+        native: (dict[str, any] | None) = None,
+        native_sources: bool = True
+    ) -> str {
+        seen[str(path)] = prog.options.default_codespace;
+        return "";
+    }
+    with patch.object(vendor, "_compile_runtime_module", side_effect=record) {
+        vendor.build_runtime_closure([]);
+    }
+    assert seen , "the base runtime closure compiles at least one module";
+    for (path, space) in seen.items() {
+        policy_native = is_native_by_location(path) or is_shared_runtime_module(path);
+        expected = "" if policy_native else "server";
+        assert space == expected , f"{path}: {space}";
+    }
 }
 
-
-test "legacy eject db drivers are rejected with a diagnostic" {
-    compiled = [
-        {
-            "module": "app",
-            "orig": "app",
-            "py": "def foo():\n    return 1\n",
-            "server": True
-        }
-    ];
-    for driver in ["sqlite", "sql", "sqlalchemy", "mongo", "redis"] {
-        tmp = Path(tempfile.mkdtemp());
-        rc = emit_backend(
-            tmp / "backend",
-            "demo",
-            compiled,
-            [],
-            [],
-            {},
-            {"driver": driver},
-            [],
-            False,
-            ""
-        );
-        assert rc == 1 , f"driver {driver!r} must be rejected at eject time";
-        assert not (tmp / "backend" / "main.py").exists() , f"driver {driver!r} must fail before emitting a backend";
-    }
+test "source products of package-owned modules come from the compiler's own program" {
+    import os;
+    import jaclang;
+    import from jaclang.compiler.driver.program { JacProgram }
+    import from jaclang.compiler.driver.source_products { python_source }
+    path = os.path.join(
+        os.path.dirname(os.path.realpath(str(jaclang.__file__))),
+        "runtime",
+        "surface.jac"
+    );
+    program = JacProgram();
+    (source, module) = python_source(path, program);
+    assert source;
+    assert module is not None;
+    cache = program._get_compiler().selfhost;
+    assert cache.owns(path);
+    assert os.path.realpath(path) not in program.mod.hub , (
+        "the caller's program must not analyze the compiler's own module"
+    );
 }

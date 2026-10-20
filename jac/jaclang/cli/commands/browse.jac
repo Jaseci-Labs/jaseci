@@ -1,7 +1,3 @@
-import from jaclang.cli.command { Arg, ArgKind, CommandSpec }
-import from jaclang.comptime { name as ct_name }
-
-
 comptime SPEC_BROWSE: CommandSpec = CommandSpec(
          name="browse",
          hidden=True,
@@ -50,5 +46,8 @@ comptime SPEC_BROWSE: CommandSpec = CommandSpec(
      );
 
 def browse(
-    action: str, args: list = [], session: str = "default", viewport: str = "1280x720"
+    action: str,
+    args: list[str] = [],
+    session: str = "default",
+    viewport: str = "1280x720"
 ) -> int;

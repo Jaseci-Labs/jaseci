@@ -24,9 +24,9 @@ jac run
 | `--api_port` `-a` | Separate API port for HMR mode (0=same as port) | 0 |
 | `--no-client` `-n` | Skip client bundling/serving (API only) | false |
 | `--profile` | Configuration profile to load (e.g. prod, staging) | - |
-| `--client` | Client build target for dev server (web, pwa, mobile, desktop) | web |
-| `--host` | Mobile dev (`--client mobile --dev`): host/IP override for Capacitor live-reload (auto-selected when omitted) | - |
-| `--platform` | Mobile start/dev: `android` or `ios` (`auto` uses `[client.mobile]` default_platform, or android) | auto |
+| `--host` | Mobile dev: host/IP the device reaches this machine on (a LAN address is auto-selected when omitted) | - |
+| `--platform` | Mobile apps: `android` or `ios` runs on a device or simulator, `web` runs the same app in a browser via react-native-web (`auto` uses the app's `[apps.<name>] platform`, or android) | auto |
+| `--fleet` | Run the workspace's service apps as separate local processes instead of colocating them in this server | false |
 | `--target` | Deployment target (kubernetes, aws, gcp) | kubernetes |
 | `--enable-tls` | Enable HTTPS via Let's Encrypt (run after pointing your domain CNAME to the NLB) | false |
 | `--dry-run` | Print the manifests that would be applied; change nothing | false |
@@ -68,17 +68,19 @@ jac db recover-all --app app.jac
 
 ### Server Configuration
 
+The listener, worker fleet, limits, timeouts, TLS, proxy trust, access log
+and compression are all `[serve]` settings, shared by every server this
+runtime starts; see [Configuration -> [serve]](../config/index.md#serve).
+The only `[scale.server]` key left is logging shape:
+
 ```toml
 [scale.server]
-port = 8000
-host = "0.0.0.0"
-docs_enabled = true                  # Enable /docs, /redoc, /openapi.json (default: true)
-suppress_health_check_logs = false   # Suppress health-check access log entries (default: false)
+structured_logs = true               # JSON log handler on the root logger at boot
 ```
 
-Set `docs_enabled = false` to disable Swagger UI, ReDoc, and the OpenAPI JSON endpoint in production.
-
-Set `suppress_health_check_logs = true` to suppress access log entries for health-check and documentation endpoints (`/`, `/docs`, `/openapi.json`, `/health`, `/healthz`, `/healthz/ready`, `/healthz/live`) from CLI output and Kubernetes pod logs. Useful for reducing log noise in production.
+Set `[serve] docs_enabled = false` to turn off Swagger UI and the OpenAPI
+document in production, and `[serve.access_log] suppress_health_checks = true`
+to keep probe traffic out of the access log.
 
 ### CORS Configuration
 
@@ -87,11 +89,12 @@ CORS middleware (`allow_origins=['*']`, methods `GET`/`POST`/`PUT`/`OPTIONS`,
 headers `Content-Type`/`Authorization`); there is
 no `[scale.cors]` knob to tune it.
 
-In **microservice mode** (on whenever `[scale.microservices.routes]`
-declares services), the gateway exposes a configurable CORS section:
+When a workspace's service apps run as a **fleet** (`jac run <app> --fleet`,
+`[scale.gateway] colocate = false`, or any deploy), the gateway that fronts
+them exposes a configurable CORS section:
 
 ```toml
-[scale.microservices.cors]
+[scale.gateway.cors]
 allow_origins = ["https://example.com"]
 allow_methods = ["GET", "POST", "PUT", "DELETE"]
 allow_headers = ["*"]
@@ -288,12 +291,12 @@ Parameters are classified as: **path** (matches `{name}` in path) → **file** (
 
 ```jac
 @restspec(method=HTTPMethod.GET)
-def :pub health_check() -> dict {
+def :pub health_check() -> dict[str, any] {
     return {"status": "healthy"};
 }
 
 @restspec(method=HTTPMethod.GET, path="/custom/status")
-def :pub app_status() -> dict {
+def :pub app_status() -> dict[str, any] {
     return {"status": "running", "version": "1.0.0"};
 }
 ```
@@ -344,24 +347,35 @@ The HTTP concerns stay on the declaration, so the body remains an ordinary
 #### Limits
 
 - **Functions only.** A walker can `report` any number of times, so there is
-  no single value to project onto a raw body. `envelope=False` on a walker
-  has no effect.
-- **Text only.** A `bytes` return is stringified by `Serializer` before the
-  response layer sees it, so binary payloads are not yet expressible. Serve
-  those as static assets.
+  no single value to project onto a raw body. `envelope=False` and `produces`
+  on a walker have no effect, and the decorator logs a warning saying so at
+  import time. A route that needs a raw body has to be a `def`.
 - **Errors keep the envelope.** A failing call still returns the JSON error
   envelope with its usual status code, so a 500 is never mistaken for a valid
   payload of the declared content type. Callers should check the status, and
   `curl -f` does this for you.
 
-Omitting `produces` yields `text/plain; charset=utf-8`. A non-`str` return is
-JSON-encoded into the body, but still without the envelope around it -- useful
-when a third-party client expects a bare JSON document:
+A `bytes` return is written to the body unchanged, so a raw endpoint can hand
+the browser a file -- a spreadsheet, an image, a PDF -- without base64 in a JSON
+field:
+
+```jac
+@restspec(method=HTTPMethod.GET, path="/report.xlsx",
+          produces="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          envelope=False)
+def :pub report_xlsx() -> bytes {
+    return build_workbook();   # body is exactly these bytes
+}
+```
+
+Omitting `produces` yields `text/plain; charset=utf-8`. A non-`str`, non-`bytes`
+return is JSON-encoded into the body, but still without the envelope around it
+-- useful when a third-party client expects a bare JSON document:
 
 ```jac
 @restspec(method=HTTPMethod.GET, path="/.well-known/jac.json",
           produces="application/json", envelope=False)
-def :pub well_known() -> dict {
+def :pub well_known() -> dict[str, any] {
     return {"version": "1.0"};   # body is exactly {"version": "1.0"}
 }
 ```
@@ -454,6 +468,81 @@ A user can have at most **one** identity of each non-SSO type (one username, one
 
 Passwords are hashed with [scrypt](https://en.wikipedia.org/wiki/Scrypt) (random salt per password, stdlib `hashlib.scrypt`). Plain-text passwords never leave the request handler.
 
+### Auth Policy
+
+A project declares its auth policy under `[serve.auth]` in `jac.toml`. The server checks it at every place a value is written: registration, password change and reset, add-identity, rename and admin user creation. A policy change never locks out an account that already exists, because rules apply when a value is written, not when it is read.
+
+**Identifiers.** Each identifier is set on its own:
+
+```toml
+[serve.auth.identifiers]
+username = "optional"    # "required" | "optional" | "off"
+email = "optional"       # "required" | "optional" | "off"
+login_with = []          # kinds that may log in; [] = both
+```
+
+| Setup | `username` | `email` |
+|-------|-----------|---------|
+| Either one (the default): an account registers with a username, an email, or both | `"optional"` | `"optional"` |
+| The username is the email | `"off"` | `"required"` |
+| A username, plus a required email | `"required"` | `"required"` |
+| A username, no email needed | `"required"` | `"optional"` |
+
+An account always needs at least one identifier.
+
+`"off"` is a rule about new values: registration and add-identity refuse that kind. An account that already holds an identifier of that kind keeps logging in with it, so turning a kind off never locks anyone out. To stop a kind from logging in as well, leave it out of `login_with` (for example `login_with = ["email"]`); that is an explicit choice, and the server refuses a `login_with` that would leave a newly registered account with no way in.
+
+A new username may not contain `@`, so a username can never be mistaken for, or block, an email address. `[serve.auth.username]` adds `min_length`, `max_length` and an optional `pattern`.
+
+**Email verification.** `[serve.auth.email] verification` is `"none"` (the default: nothing is mailed unless the client asks), `"optional"` (registration and add-identity mail a verification link; login is not blocked) or `"required"` (the same mail is sent, `/user/register` answers `201` with `verification_required: true` and no token, and login answers `403 EMAIL_NOT_VERIFIED` and re-sends the link until it is used). `"required"` needs a configured [emailer](#emailer); the server refuses to start without one. `allowed_domains` limits which email domains may register, including the provider-verified email of an account created by SSO.
+
+**Passwords.** `[serve.auth.password]` sets the rules a new password must meet:
+
+| Key | Default | Rule |
+|-----|---------|------|
+| `min_length` / `max_length` | `8` / `128` | Length bounds |
+| `require` | `[]` | Character classes that must appear: any of `"lower"`, `"upper"`, `"digit"`, `"symbol"` |
+| `reject_common` | `true` | Not on the bundled common-password list |
+| `reject_identifiers` | `true` | Does not contain the account's username or email local part |
+| `breached_check` | `false` | Not in a known breach, checked by a k-anonymity range lookup (an outbound call; a failed lookup lets the password through) |
+| `history` | `0` | Not one of the last N passwords |
+| `max_age_days` | `0` | A password older than this sets `requires_password_reset` at login |
+
+Length and the common and breached lists do most of the work; `require`, `history` and `max_age_days` are off by default and exist for deployments whose compliance rules ask for them.
+
+**Registration and login limits.** `[serve.auth.registration] enabled = false` closes self-registration (`403 REGISTRATION_CLOSED`); accounts are then created by an admin. `[serve.auth.lockout]` limits failed logins to `max_attempts` (default `10`) per `window_seconds` (default `900`) for each source address and identity, answering `429 RATE_LIMITED`.
+
+The login limit depends on the server seeing each caller's own address. Behind an ingress or proxy that is not listed in `[serve.proxy] trusted`, every caller arrives from the proxy's address, so the limit becomes per identity: anyone can spend an account's attempts and lock its owner out for the window. A server in a cluster with the limit on and no trusted proxy logs a warning at startup saying so. `jac scale deploy` trusts the cluster's private ranges on the app services but sets none on the gateway, which is the pod an ingress talks to; list your ingress controller's address in `[serve.proxy] trusted`, or set `max_attempts = 0` to turn the limit off.
+
+**Refusals.** A value that breaks the policy is answered with `400 POLICY_VIOLATION`, and the error `details` list every rule it broke so a form can show them together:
+
+```json
+{
+  "ok": false,
+  "error": {
+    "code": "POLICY_VIOLATION",
+    "message": "Rejected by the auth policy: the password is too short; the password is too common",
+    "details": {"violations": ["PASSWORD_TOO_SHORT", "PASSWORD_COMMON"]}
+  }
+}
+```
+
+Violation codes: `IDENTIFIER_REQUIRED`, `IDENTIFIER_NOT_ALLOWED`, `USERNAME_INVALID`, `EMAIL_DOMAIN_NOT_ALLOWED`, `PASSWORD_TOO_SHORT`, `PASSWORD_TOO_LONG`, `PASSWORD_MISSING_CLASS`, `PASSWORD_COMMON`, `PASSWORD_CONTAINS_IDENTIFIER`, `PASSWORD_BREACHED`, `PASSWORD_REUSED`.
+
+**Reading the policy.** `GET /user/auth-policy` is public and returns what a sign-up or sign-in form needs:
+
+```json
+{
+  "identifiers": {"username": "optional", "email": "optional", "login_with": ["username", "email"]},
+  "username": {"min_length": 1, "max_length": 64, "pattern": ""},
+  "email": {"verification": "none"},
+  "password": {"min_length": 8, "max_length": 128, "require": [], "reject_common": true, "reject_identifiers": true},
+  "registration": {"enabled": true, "challenge": false}
+}
+```
+
+The full key list, with environment overrides, is in the [configuration reference](../config/index.md#serve).
+
 ### Storage
 
 Identity data lives in the same Postgres database as the graph -- the project's database in the machine's shared embedded cluster locally, or whatever `[scale.database].url` / `JAC_DB_URL` points at:
@@ -481,7 +570,7 @@ curl -X POST http://localhost:8000/user/register \
       {"type": "username", "value": "myuser"},
       {"type": "email", "value": "user@example.com"}
     ],
-    "credential": {"type": "password", "password": "secret"},
+    "credential": {"type": "password", "password": "correct horse battery"},
     "profile": {"firstname": "Alice", "lastname": "Doe"}
   }'
 ```
@@ -493,12 +582,14 @@ Returns on success (HTTP 201):
   "ok": true,
   "data": {
     "user_id": "550e8400-e29b-41d4-a716-446655440000",
-    "message": "User registered successfully"
+    "root_id": "7c1e9f2a-...",
+    "message": "User registered successfully",
+    "token": "eyJhbGciOiJIUzI1NiIs..."
   }
 }
 ```
 
-Registration does **not** return a token. Use `/user/login` after registration to authenticate.
+The `token` is a session, as from `/user/login`. With `[serve.auth.email] verification = "required"` and an email identity, the body carries `"verification_required": true` instead of a token, and the user signs in after following the emailed link (see [Email Verification](#email-verification)).
 
 **Validation rules:**
 
@@ -626,23 +717,24 @@ Returns HTTP 400 if the current password is incorrect or the new password is emp
 
 JWT tokens use `user_id` (UUID) as the primary claim, not the username. This means users can change their username or email without invalidating existing tokens.
 
-Configure JWT via `jac.toml` or environment variables:
+Configure signing via `jac.toml` or environment variables:
 
 ```toml
-[scale.jwt]
+[serve.auth]
 secret = "your-secret-key-here"
 algorithm = "HS256"
-exp_delta_days = 7
+token_ttl_days = 7
 ```
 
 | Variable | `jac.toml` key | Description | Default |
 |----------|---------------|-------------|---------|
-| `JWT_SECRET` | `secret` | Secret key for JWT signing | unset: a dev server mints one per project into `.jac/data/jwt_secret` |
-| `JWT_ALGORITHM` | `algorithm` | JWT signing algorithm | `HS256` |
-| `JWT_EXP_DELTA_DAYS` | `exp_delta_days` | Token expiration in days | `7` |
+| `JAC_SERVE_AUTH_SECRET` | `secret` | Secret key for JWT signing | unset: a dev server mints one per project into `.jac/data/jwt_secret` |
+| `JAC_SERVE_AUTH_ALGORITHM` | `algorithm` | JWT signing algorithm | `HS256` |
+| `JAC_SERVE_AUTH_TOKEN_TTL_DAYS` | `token_ttl_days` | Token expiration in days | `7` |
+| `JAC_SERVE_AUTH_SESSION_COOKIE` | `session_cookie` | Also set an `HttpOnly` `jac_session` cookie that authorizes `GET`/`HEAD` only, so `<img>`, `<video>` and download links reach protected endpoints | `false` |
 
 !!! warning "Production: set the JWT secret"
-    Left unset, the secret is minted per project into `.jac/data/jwt_secret` -- fine for a dev server, wrong for a cluster, where it would be per-replica. A deployment must set a long, random secret via environment variable or `jac.toml`; a cluster with none configured signs with the shipped placeholder and warns at boot, and anyone who knows that placeholder can forge valid tokens for any user.
+    Left unset, the secret is minted per project into `.jac/data/jwt_secret` -- fine for a dev server, wrong for a cluster, where it would be per-replica. A cluster with none configured refuses to start rather than signing with a placeholder; `jac scale deploy` mints a random secret into the app Secret as `JAC_SERVE_AUTH_SECRET` when neither `[serve.auth] secret` nor `[scale.secrets]` provides one.
 
 **JWT claims:**
 
@@ -697,8 +789,12 @@ jac-scale supports SSO with **Google**, **Apple**, and **GitHub**. SSO accounts 
 1. User is redirected to the provider's login page
 2. Provider calls back with an authorization code
 3. jac-scale exchanges the code for user info (email, external ID, plus optional `display_name`, `first_name`, `last_name`, `picture`)
-4. If a user with that email exists, the SSO identity is linked and a JWT is returned
-5. If no user exists, a new account is created with a verified email identity, the SSO identity is linked, and a JWT is returned
+4. If this provider account has signed in before, that account is used
+5. Otherwise, if the provider reports the email as verified and an existing account holds the same email as a **verified** identity, the SSO identity is linked to that account
+6. Otherwise a new account is created. It stores the provider-verified email as a verified email identity when `[serve.auth.identifiers] email` accepts one
+7. A JWT is returned, or the second-factor challenge when the account has a verified second factor
+
+An email the provider has not verified is never used to find an account. When the matching local email is itself unverified, nothing is linked and the login fails with `SSO_EMAIL_IN_USE`: sign in with the password and connect the provider from the account. Linking by email therefore only happens for accounts whose email was verified, so set `[serve.auth.email] verification` to `"optional"` or `"required"` if you want it to apply to password-registered accounts. With `email = "required"`, a provider that shares no verified email fails with `SSO_EMAIL_REQUIRED`; with `[serve.auth.registration] enabled = false`, SSO signs in existing accounts but creates none. GitHub sign-in asks for the public identity only and shares no email, so it never links by email; with `email = "required"` it requests the `user:email` scope and reads the verified primary address.
 
 **Profile population.** The optional fields the provider returns (`display_name`, `first_name`, `last_name`, `picture`) are written to `profile.sso.<platform>` on the user record. They are refreshed from the latest provider data on every SSO login, so display names and avatar URLs stay current. Developer-set fields outside the `sso` namespace (e.g. `profile.firstname` set during `/user/register`) are never overwritten by the SSO refresh.
 
@@ -838,18 +934,33 @@ In addition to the static identities supplied at registration, users can attach 
 Configure TTLs and the URLs the emails should point at:
 
 ```toml
-[scale.auth]
+[serve.auth.email]
 verify_token_ttl_seconds = 86400    # 24h
 reset_token_ttl_seconds  = 1800     # 30min
 verify_url_template      = "https://app.example.com/verify?token={token}"
 reset_url_template       = "https://app.example.com/reset?token={token}"
+send_verification_per_hour = 5      # per user
+forgot_password_per_hour   = 3      # per recovery address
 ```
 
 The `{token}` placeholder in each template is replaced with the raw token before the email is sent. Leave a template empty to receive the bare token in the email body (useful in tests/dev).
 
+#### Email Verification
+
+With `verification = "optional"` or `"required"`, the server mails a link to each unverified email when an account registers and when an email is added. The flow under `"required"`:
+
+1. `/user/register` creates the account and mails the link. It answers `201` with `verification_required: true` and no token.
+2. The link is `verify_url_template` with the token filled in. The server does not serve that page: it is a page in your app that reads `token` from its URL and sends it to `POST /user/verify-identity`.
+3. Until that succeeds, `/user/login` with the right password answers `403 EMAIL_NOT_VERIFIED` and mails a fresh link. Signing in again is the way to resend: `/user/send-verification` needs a session, which the account cannot get yet.
+4. After `/user/verify-identity` succeeds, `/user/login` returns a token.
+
+Each send revokes the earlier links for that address, so only the newest one works. Sends are limited to `send_verification_per_hour` per user (5 by default); a login over the limit still answers `403 EMAIL_NOT_VERIFIED` but mails nothing. Only an email given at registration under `"required"` blocks sign-in: an email added later with `/user/add-identity` gets a link but does not block it, and accounts created before the mode changed are never blocked.
+
+The message is plain text with the subject "Verify your email address"; only the link is configurable. For other wording or HTML, use a [custom emailer](#custom-emailer-python-or-jac) that rewrites what it is given.
+
 #### Add Identity
 
-Attach a new identity to the authenticated user. **This endpoint never sends mail** -- it just adds the identity (email identities are stored as `verified=false`). To dispatch a verification email afterwards, call `/user/send-verification`.
+Attach a new identity to the authenticated user. An email identity is stored as `verified=false`. With `[serve.auth.email] verification = "none"` (the default) no mail is sent, and `/user/send-verification` dispatches the verification email on request; with `"optional"` or `"required"` the verification link is mailed at once. The identity must be a kind `[serve.auth.identifiers]` accepts.
 
 ```bash
 curl -X POST http://localhost:8000/user/add-identity \
@@ -974,18 +1085,19 @@ Returns HTTP 200:
 }
 ```
 
-Errors: `400 INVALID_TOKEN`.
+Errors: `400 INVALID_TOKEN`, `400 POLICY_VIOLATION`. A password the policy rejects does not consume the token, so the user can retry with a stronger one.
 
 ### Auth Endpoint Summary
 
 | Method | Path | Auth Required | Description |
 |--------|------|--------------|-------------|
+| GET | `/user/auth-policy` | No | The identifier, password, verification and registration rules in force |
 | POST | `/user/register` | No | Create a new user |
 | POST | `/user/login` | No | Authenticate and get JWT |
 | POST | `/user/refresh-token` | No (token in body) | Refresh an existing JWT |
 | GET | `/user/me` | Yes (Bearer) | Get the authenticated user's profile |
 | PUT | `/user/password` | Yes (Bearer) | Update password |
-| POST | `/user/add-identity` | Yes (Bearer) | Attach an email/username identity to the current user (no email sent) |
+| POST | `/user/add-identity` | Yes (Bearer) | Attach an email/username identity to the current user |
 | POST | `/user/send-verification` | Yes (Bearer) | Dispatch a verification email for an unverified email identity |
 | POST | `/user/verify-identity` | No (token in body) | Confirm an email identity via the token sent by email |
 | POST | `/user/forgot-password` | No | Start the password-reset flow (always returns 200) |
@@ -1052,6 +1164,46 @@ timeout  = 10.0
 | `use_tls` | STARTTLS upgrade after connect | `true` |
 | `timeout` | Connection timeout in seconds | `10.0` |
 
+### Reply-To and Attachments
+
+`send_email` also takes an optional `reply_to` address and a list of `EmailAttachment`s. An attachment with a `content_id` is shown inside the HTML body, where `cid:<content_id>` refers to it (an inline image, such as a QR code); one without is attached as a separate file. With no HTML body, every attachment is attached.
+
+```jac
+import from jaclang.scale.emailer.emailer { Emailer, EmailAttachment }
+
+def send_tickets(emailer: Emailer, qr_png: bytes, receipt_pdf: bytes) -> bool {
+    return emailer.send_email(
+        to_addr="guest@example.com",
+        subject="Your tickets",
+        body_text="Your tickets are attached.",
+        body_html='<p>Show this at the door:</p><img src="cid:ticket-1">',
+        reply_to="Box Office <boxoffice@example.com>",
+        attachments=[
+            EmailAttachment(
+                filename="ticket-1.png",
+                content=qr_png,
+                mime_type="image/png",
+                content_id="ticket-1"
+            ),
+            EmailAttachment(
+                filename="receipt.pdf", content=receipt_pdf, mime_type="application/pdf"
+            )
+        ]
+    );
+}
+```
+
+| `EmailAttachment` field | Description | Default |
+|-------------------------|-------------|---------|
+| `filename` | The file's name as the recipient sees it | required |
+| `content` | The file's bytes | required |
+| `mime_type` | Its type, e.g. `image/png`. Parameters such as `; charset=utf-8` are dropped, and a value that isn't `type/subtype` is sent as `application/octet-stream` (`media_type()` gives the type sent). | `application/octet-stream` |
+| `content_id` | Shows the file inside the HTML body as `cid:<content_id>`. Given with or without angle brackets (`qr-1` or `<qr-1>`); `bare_content_id()` gives it without. | `None` (attached) |
+
+A header value with a line break (the recipient, subject, `reply_to` or an attachment's filename) is refused: the SMTP emailer's `send_email` returns `False`, as for any failed send.
+
+A custom emailer's `send_email` must accept both parameters.
+
 ### Custom Emailer (Python or Jac)
 
 Subclass `Emailer` and point `provider` at your class. The factory imports it dynamically at server startup and instantiates it with the full emailer config dict.
@@ -1065,7 +1217,8 @@ class SendGridEmailer(Emailer):
     def postinit(self):
         self._client = sendgrid.SendGridAPIClient(api_key=os.environ["SENDGRID_API_KEY"])
 
-    def send_email(self, to_addr, subject, body_text, body_html=None, from_addr=None):
+    def send_email(self, to_addr, subject, body_text, body_html=None, from_addr=None,
+                   reply_to=None, attachments=None):
         # ... use self._client to send ...
         return True
 
@@ -1099,7 +1252,7 @@ port     = 587
 username = "no-reply@example.com"
 use_tls  = true
 
-[scale.auth]
+[serve.auth.email]
 verify_token_ttl_seconds = 86400
 reset_token_ttl_seconds  = 1800
 verify_url_template      = "https://app.example.com/verify?token={token}"
@@ -1154,7 +1307,8 @@ class SendGridEmailer(Emailer):
         api_key = os.environ.get("SENDGRID_API_KEY", "")
         self._client = SendGridAPIClient(api_key=api_key) if api_key else None
 
-    def send_email(self, to_addr, subject, body_text, body_html=None, from_addr=None):
+    def send_email(self, to_addr, subject, body_text, body_html=None, from_addr=None,
+                   reply_to=None, attachments=None):
         if self._client is None:
             logger.warning("SendGrid client not configured; dropping email to %s", to_addr)
             return False
@@ -1182,7 +1336,7 @@ class SendGridEmailer(Emailer):
 provider     = "myapp.email:SendGridEmailer"
 from_address = "no-reply@example.com"
 
-[scale.auth]
+[serve.auth.email]
 verify_token_ttl_seconds = 86400
 reset_token_ttl_seconds  = 1800
 verify_url_template      = "https://app.example.com/verify?token={token}"
@@ -1206,7 +1360,7 @@ jac-scale includes a built-in admin portal for managing users, roles, and SSO co
 
 ### Accessing the Admin Portal
 
-Navigate to `http://localhost:8000/admin` to access the admin dashboard. On first server start, an admin user is automatically bootstrapped.
+Navigate to `http://localhost:8000/admin` to access the admin dashboard. On first server start, an admin user is automatically bootstrapped. There is no default password: with none configured, a dev server mints a one-time password and logs it once at startup, and a cluster does not create the admin until one is supplied (`jac scale deploy` mints one into the app Secret as `JAC_SCALE_ADMIN_PASSWORD`). The admin must change it at first login.
 
 ### Configuration
 
@@ -1221,6 +1375,7 @@ session_expiry_hours = 24
 |--------|------|---------|-------------|
 | `enabled` | bool | `true` | Enable/disable admin portal |
 | `username` | string | `"admin"` | Admin username |
+| `default_password` | string | unset | Initial admin password. Whether it comes from here or from `JAC_SCALE_ADMIN_PASSWORD`, it must meet `[serve.auth.password]`, or the server refuses to start |
 | `session_expiry_hours` | int | `24` | Admin session duration in hours |
 | `require_password_reset` | bool | `true` | Force admin to change the default password on first login |
 
@@ -1228,9 +1383,7 @@ session_expiry_hours = 24
 
 | Variable | Description |
 |----------|-------------|
-| `ADMIN_USERNAME` | Admin username (overrides jac.toml) |
-| `ADMIN_EMAIL` | Admin email (overrides jac.toml) |
-| `ADMIN_DEFAULT_PASSWORD` | Initial password (overrides jac.toml) |
+| `JAC_SCALE_ADMIN_PASSWORD` | Initial admin password (overrides `default_password`). Set in the shell that runs `jac scale deploy`, it is written into the app Secret so the pods receive it |
 
 ### User Roles
 
@@ -1321,35 +1474,36 @@ with entry {
 }
 ```
 
-### Secure-by-Default Endpoints
+### Private-by-Default Endpoints
 
-All walker and function endpoints are **protected by default** -- they require JWT authentication. You must explicitly opt-in to public access using the `:pub` modifier. This secure-by-default approach prevents accidentally exposing endpoints without authentication.
+A walker or function is an endpoint only when its declaration says so. Plain declarations are private: not served, not importable by client code, not bridgeable from another app. `:protect` opts in to an authenticated endpoint and `:pub` to an anonymous one.
 
 ```jac
-# Protected (default) -- requires JWT token, runs on the caller's own isolated root
-walker get_profile {
+# Private (default) -- an ordinary in-process symbol, never an endpoint
+walker internal_process {
+    can run with Root entry { }
+}
+
+# Protected -- served, requires JWT token, runs on the caller's own isolated root
+walker :protect get_profile {
     can fetch with Root entry { report [-->]; }
 }
 
-# Public -- no authentication required
+# Public -- served, no authentication required
 walker :pub health_check {
     can check with Root entry { report {"status": "ok"}; }
-}
-
-# Private -- identical to the default; `:priv` is the explicit spelling
-walker :priv internal_process {
-    can run with Root entry { }
 }
 ```
 
 ### Walker Access Levels
 
-Walkers have two access levels when served as API endpoints (`:priv` is the explicit spelling of the default):
+Walkers have three access levels, decided on the declaration (`:priv` is the explicit spelling of the default):
 
 | Access | Description |
 |--------|-------------|
-| Public (`:pub`) | Accessible without authentication. Anonymous callers run on the shared guest graph (`root.shared`); a caller presenting a valid token runs on their own root. |
-| Default, Protected (`:protect`), and Private (`:priv`) | Require JWT authentication; per-user isolated (each user operates on their own graph). For endpoint auth these behave identically -- **only `:pub` is exempt**. `:protect` is _not_ a middle auth tier; its three-way gradient applies to source-level [visibility](../language/access-modifiers.md), not to authentication. |
+| Public (`:pub`) | Served without authentication. Anonymous callers run on the shared guest graph (`root.shared`); a caller presenting a valid token runs on their own root. |
+| Protected (`:protect`) | Served; requires JWT authentication; per-user isolated (each user operates on their own graph). |
+| Default and Private (`:priv`) | Not served. A client import is `E5082` and a cross-app import is `E5106`. Run `jac fix access` to mark previously served plain walkers `:protect`. The three-way gradient also applies to source-level [visibility](../language/access-modifiers.md). |
 
 ### Permission Functions Reference
 
@@ -1389,6 +1543,8 @@ api_key_expiry_days = 365
 | `signature_header` | string | `"X-Webhook-Signature"` | HTTP header name containing the HMAC signature. |
 | `verify_signature` | boolean | `true` | Whether to verify HMAC signatures on incoming requests. |
 | `api_key_expiry_days` | integer | `365` | Default expiry period for API keys in days. Set to `0` for permanent keys. |
+| `github_secret` | string | `""` | Secret that `scheme="github"` walkers verify `X-Hub-Signature-256` against (the GitHub App's webhook secret). Boot fails if a github-scheme walker exists and this is empty. |
+| `github_signature_header` | string | `"X-Hub-Signature-256"` | Header carrying the GitHub-style signature for `scheme="github"` walkers. |
 
 **Environment Variables:**
 
@@ -1498,6 +1654,32 @@ curl -X POST "http://localhost:8000/webhook/PaymentReceived" \
     -d "$PAYLOAD"
 ```
 
+#### GitHub-Signed Webhooks (`scheme="github"`)
+
+Providers such as GitHub sign the raw body with a shared secret and cannot send an API key. Declare the scheme on the walker and the endpoint switches verification:
+
+```jac
+@restspec(protocol=APIProtocol.WEBHOOK, scheme="github")
+walker GithubEvent {
+    has event: str = "",      # copied from X-GitHub-Event
+        delivery: str = "",   # copied from X-GitHub-Delivery
+        action: str = "",
+        installation: dict[str, any] = {};
+
+    can handle with Root entry {
+        report {"event": self.event, "action": self.action};
+    }
+}
+```
+
+- No `X-API-Key`. The runtime verifies `X-Hub-Signature-256` (`sha256=` plus HMAC-SHA256 of the raw body, keyed by `[scale.webhook].github_secret`; the prefix is optional).
+- No timestamp window: GitHub sends none, and only the body is signed, so `X-GitHub-Event` and `X-GitHub-Delivery` are not authenticated. Deduping on `X-GitHub-Delivery` absorbs GitHub's own redeliveries, not a captured body replayed with a new delivery id.
+- Deliveries must be `application/json`. GitHub's default content type (`application/x-www-form-urlencoded`, the JSON inside a `payload=` field) is refused with 415, so a misconfigured webhook shows up in the delivery log instead of running the walker with every field at its default.
+- The walker runs as the system identity (the user the scheduler runs jobs as, created at boot) and resolves its own tenant from the payload. Boot fails when `[scale.webhook].github_secret` is empty or that identity is missing.
+- `X-GitHub-Event` and `X-GitHub-Delivery` are copied into `event` and `delivery` when the walker declares them, and win over same-named body keys.
+- The body size cap and the per-minute rate limit apply; the rate limit is keyed by walker name.
+- The default scheme (`scheme` omitted or `"jac"`) is unchanged, and both kinds of walker can coexist in one app.
+
 ### Webhook vs Regular Walkers
 
 | Feature | Regular Walker (`/walker/`) | Webhook Walker (`/webhook/`) |
@@ -1574,7 +1756,7 @@ This walker will be accessible at `ws://localhost:8000/ws/EchoMessage`.
 
 #### Authenticated WebSocket Walker
 
-To create a private walker that requires JWT authentication, simply remove `: pub` from the walker definition.
+To require JWT authentication, declare the walker `:protect` instead of `:pub`. A walker with no tag is private and is not served at all.
 
 #### Broadcasting WebSocket Walker
 
@@ -1615,84 +1797,123 @@ To create a private broadcasting walker, remove `: pub` from the walker definiti
 - WebSocket walkers are **only** accessible via `ws://host/ws/{walker_name}`
 - The connection stays open until the client disconnects
 
-## Microservice Interop (sv-to-sv)
+## Service Apps (cross-app bridging)
 
-Jac Scale lets you split a server-side codebase into multiple independently-deployed microservices without changing call sites. The service cut is declared in `[scale.microservices.routes]` in `jac.toml`: when a provider module is listed there, every import of it generates HTTP client stubs at compile time, so calls become RPCs over the wire instead of in-process imports.
+A Jac workspace splits one codebase into **apps** (`[apps.<name>]` tables in `jac.toml`; see [Workspaces & Apps](../apps.md)). Every app boundary compiles as a cut: when server-side code in one app imports an exposed (`:pub` or `:protect`) walker or function that **another app owns**, the import generates a typed-async bridge stub at compile time, so the call becomes an RPC you `await` -- with no import form, no routes table, and no change at the call site whether the provider runs in the same process or on another machine.
 
 ### Overview
 
 A plain import bridges the boundary in two flavors depending on where the importer lives:
 
-- **client-to-server**: client code calls server functions. Calls go over HTTP from browser to server.
-- **sv-to-sv (server-to-server)**: one server module calls another server module that runs as a separate microservice. Calls go over HTTP from one server process to another.
+- **client-to-server**: client code calls server functions or spawns server walkers. Calls go over HTTP from browser to server.
+- **app-to-app (server-to-server)**: server code in one app calls into another app of the workspace. Calls go to the provider app -- in-process when it is colocated, over HTTP when it runs as its own process.
 
-In the sv-to-sv flavor, `order_service.jac` doing `import from inventory_service { check_stock }` -- with `inventory_service` in the routes table -- does not load `inventory_service` into the consumer's process. Calling `check_stock(sku)` issues a `POST /function/check_stock` against the inventory service's URL and returns the result. The same source runs unchanged whether `inventory_service` is a separate microservice, a sibling process started by the same `jac run` command, or (when the routes entry is removed) a normal in-process import.
+In the app-to-app flavor, `orders/main.jac` (the `orders` app) doing `import from core.inventory { check_stock }` -- with `core/inventory.jac` the entry file of `[apps.inventory]` -- does not load the inventory code into its own process as an ordinary import would. Calling `await check_stock(sku)` issues `POST /function/check_stock` against the inventory app (or invokes it directly when colocated) and returns the typed result. The same source runs unchanged colocated (`jac run orders`), as a local fleet (`jac run orders --fleet`), or deployed (`jac scale deploy`).
 
-Both `def:pub` functions and `walker:pub` archetypes can cross the boundary. Function imports POST to `/function/<name>` and return the function's value. Walker imports POST to `/walker/<name>` and return the rehydrated walker instance with its `has` fields populated and `reports` attached, so call sites read the result the same way they would after a local spawn. See [Walker Imports](#walker-imports) for the wire shape and ergonomics.
+Exposed functions and walkers (`:pub` or `:protect`) can cross the boundary. Function imports POST to `/function/<name>` and return the function's value. Walker imports POST to `/walker/<name>` and return the rehydrated walker instance with its `has` fields populated and `reports` attached, so call sites read the result the same way they would after a local spawn. See [Walker Imports](#walker-imports) for the wire shape and ergonomics.
 
-For a step-by-step walkthrough that covers project setup, running both services, and watching the round-trip, see the [Microservices tutorial](../../tutorials/production/microservices.md). The rest of this section is a reference for the discovery rules, wire contract, and plugin override surface.
+For a step-by-step walkthrough that covers project setup, running both apps, and watching the round-trip, see the [Service Apps tutorial](../../tutorials/production/microservices.md). The rest of this section is a reference for the ownership and discovery rules, the wire contract, and the `sv_client` surface.
 
 ### Requirements
 
-A few preconditions for cross-service calls to work:
+A few preconditions for cross-app calls to work:
 
-- **Routes-table membership.** The provider module must be a key in `[scale.microservices.routes]` (`jac scale split <module>` writes the entry). Without it, the import is an ordinary in-process import.
-- **Public functions only.** Provider functions reached across the boundary must be declared `def:pub`; non-public functions are not exposed as endpoints, and calls into them return 404. Walkers similarly need `walker:pub`. `def:pub` / `walker:pub` is the cross-service contract.
-- **jac-scale on the consumer.** Explicit URLs and env vars work with any jaclang install. Automatic spawning of siblings is provided by jac-scale; a bare jaclang install can still call providers registered by URL.
-- **Project layout.** `jac run <relative-path>` requires a `jac.toml` in the current directory. Run `jac create` first, or pass an absolute path.
-- **Services in the same directory when auto-spawning.** If the consumer auto-spawns a provider, it loads the provider source from the directory you ran `jac run` in. Keep all services in the same project directory, or point the consumer at a provider URL explicitly so auto-spawning never runs.
+- **The provider is another app.** The imported element must be owned by a different `[apps.<name>]` entry than the importing module -- a file-rooted `service` app (`entry-point = "<file>"`), or a server-placed shared module whose single serving owner is another app. An import within one app, or of shared code with no server placement, is an ordinary in-process import.
+- **Exposure on the bridge surface.** An app's bridge surface is its `:pub` and `:protect` walkers and functions; a call to a plain or `:priv` element is `E5106` at compile time. Private elements are not endpoints on the provider either.
+- **`await` the call.** Bridge stubs are coroutines in every context; a missing `await` is `E1042` from `jac check`.
+- **No cycles.** The app graph (consumer → provider edges) must be a DAG; `E5104` names a cycle.
+- **jac-scale for a fleet.** Colocation, explicit URLs and env vars work with any jaclang install. Running service apps as separate local processes (`--fleet`) and deploying them is provided by the built-in `scale` subsystem.
 
 ### Boundary Types
 
-Types that cross the service boundary use the same wire contract as client-to-server interop. The compiler emits a matching wrapper on the consumer side for every type referenced in a service import, so values serialize transparently into JSON on the way out and deserialize back into the declared type on the way in.
+Types that cross the app boundary use the same wire contract as client-to-server interop. The compiler emits a matching wrapper on the consumer side for every type referenced in a bridged import, so values serialize transparently into JSON on the way out and deserialize back into the declared type on the way in.
 
 What works:
 
-- **`obj` types** -- fields hydrated recursively, including nested objects.
+- **`obj` types** -- fields hydrated recursively, including inherited fields, objects inside lists and dictionaries, optional fields, and recursive type declarations. Nested types are included even when the consumer imports only the function or the outer type. Import aliases on either side refer to the same consumer-side type.
 - **`enum` types** -- serialized by name.
 - **Primitives** -- `int`, `float`, `str`, `bool`, `None`, `list[T]`, `dict[K, V]`.
 - **Bidirectional** -- typed function arguments are wrapped on the way out and unwrapped on the way in.
-- **`walker:pub` archetypes** -- when imported by name. The consumer-side stub mirrors the provider's `has` fields, and the round-trip rehydrates the walker into a real instance with `reports` populated. See [Walker Imports](#walker-imports).
+- **walkers** -- when imported by name. The consumer-side stub mirrors the provider's `has` fields, and the round-trip rehydrates the walker into a real instance with `reports` populated. See [Walker Imports](#walker-imports).
+
+Reconstruction uses the `_jac_type_id` identity in API responses and the boundary
+types collected by the compiler. An identity names the declaring module, and the
+app as well when that module is an app's entry file, so unrelated types with the
+same name remain distinct while aliases of one declaration share a consumer-side
+type, whichever app compiled the module. It applies to function results, walker fields,
+and reports, including when services run in separate processes. Ordinary
+dictionaries stay dictionaries. Forwarding a reconstructed value preserves its
+nested type markers and inherited fields, including when passed to a typed
+service parameter. Reconstruction only uses the declared boundary types; it
+does not import or execute the provider module.
+
+Browser stubs resolve field and function-signature types in their declaring
+modules too. Imports and re-exported aliases retain the matching boundary class,
+even when several providers declare types with the same name.
 
 What doesn't:
 
 - **Anchors, closures** -- not wire-friendly. Pass identifiers (e.g. `jid`) and re-resolve on the other side.
-- **Live database handles, file handles** -- service-local resources only.
+- **Live database handles, file handles** -- app-local resources only.
 
-Failures (network errors, missing service, error envelope from the provider) raise `RuntimeError`. The message form depends on which kind of symbol was being called:
+### Failures: the `BridgeError` family
 
-- Function: `sv-to-sv RPC '{module}.{func}' failed: {msg}`
-- Walker: `sv-to-sv walker spawn '{module}.{walker}' failed: {msg}`
+An awaited cross-app call fails the way an in-process spawn fails -- with an exception at the call site -- and the exception says what went wrong on the wire. All four classes live in `jaclang.server.bridge` and carry `app`, `name`, `detail` and `status`:
+
+| Exception | When |
+|---|---|
+| `BridgeUnavailable` | No route to the provider app: not registered, not colocated, connection refused, no `JAC_APP_<APP>_URL` |
+| `BridgeTimeout` | The provider did not answer within the RPC timeout |
+| `BridgeRejected` | The provider answered 4xx: unknown or non-`pub` element, unauthorized, bad arguments |
+| `BridgeError` | Any other failure (5xx, malformed envelope); the base class of the three above |
+
+```jac
+import from jaclang.server.bridge { BridgeError, BridgeUnavailable }
+import from core.inventory { check_stock }
+
+async def:pub reserve(sku: str) -> str {
+    try {
+        stock = await check_stock(sku);
+    } except BridgeUnavailable {
+        return "inventory offline";
+    } except BridgeError as e {
+        return f"inventory error: {e.detail}";
+    }
+    return "ok" if stock.available else "sold out";
+}
+```
+
+Client code gets the same four classes from `@jac/runtime` (`import from "@jac/runtime" { BridgeError, BridgeUnavailable, BridgeTimeout, BridgeRejected }`); `__jacCallFunction` / `__jacSpawn` throw them for fetch failures, aborts, 401/403/404, and other non-2xx responses respectively.
 
 ### Walker Imports
 
-A consumer can import a `walker:pub` archetype from a routes-table service the same way it imports a function. The compiler generates a stub class on the consumer side whose name and `has` field shape mirror the provider's walker, so type identity is preserved and the call site reads like a local construction.
+A consumer can import a walker from another app the same way it imports a function. The compiler generates a stub class on the consumer side whose name and `has` field shape mirror the provider's walker, so type identity is preserved and the call site reads like a local construction -- awaited.
 
 ```jac
-# notify_service.jac (provider)
-walker:pub Greet {
+# core/notify.jac -- the entry file of [apps.notify] (provider)
+walker Greet {
     has name: str;
     can greet with Root entry {
         report f"hello, {self.name}";
     }
 }
 
-# dispatcher_service.jac (consumer)
-import from notify_service { Greet }     # notify_service is in [scale.microservices.routes]
+# dispatcher/main.jac -- the [apps.dispatcher] app (consumer)
+import from core.notify { Greet }        # owned by the notify app -> bridge stub
 
 walker:pub TriggerGreet {
     has who: str;
-    can run with Root entry {
-        rg = Greet(name=self.who);   # POST /walker/Greet on the provider
-        report rg.reports[0];        # "hello, <who>"
+    async can run with Root entry {
+        rg = await Greet(name=self.who);   # POST /walker/Greet on the notify app
+        report rg.reports[0];              # "hello, <who>"
     }
 }
 ```
 
-What happens when the consumer evaluates `Greet(name=self.who)`:
+What happens when the consumer evaluates `await Greet(name=self.who)`:
 
 1. The stub class collects the keyword arguments into a JSON dict (boundary-typed values are serialized via `_to_wire` first).
-2. The runtime POSTs that dict to `/walker/Greet` on the resolved provider URL using the same dispatch chain as function calls (test client → registry → `JAC_SV_<MOD>_URL` → automatic spawn).
+2. The runtime spawns the walker on the provider app through `sv_client.spawn_walker("notify", "Greet", kwargs, cls)`, using the dispatch chain below (local registration → test client → registered URL → `JAC_APP_NOTIFY_URL`).
 3. The provider spawns and runs the walker, then returns a `TransportResponse` envelope whose `data.result` is the executed walker as a dict and whose `data.reports` is the list of values it emitted via `report`.
 4. The consumer rehydrates `data.result` into an instance of the local stub class, attaches `data.reports` as the instance's `reports` attribute, and returns it.
 
@@ -1700,94 +1921,120 @@ The result is a normal walker instance on the consumer: `rg.name`, `rg.reports[0
 
 A few notes:
 
-- **Spawn semantics, not construction.** Locally, `Greet(name="x")` only constructs a walker; you still need `spawn` to run it. Across the boundary, instantiating a service-imported walker is **spawn-and-execute** -- there is no useful concept of an unexecuted remote walker. The consumer-side class accepts only the `has` fields as keyword arguments and always returns a post-execution instance.
-- **`walker:pub` only.** Private walkers are not exposed as endpoints, so calls into them return 404. Boundary types from a walker's signature (used in `has` fields or referenced in `report` arguments) need to be imported alongside the walker.
-- **Same retry, breaker, auth, and tracing as functions.** The plugin override surface is `sv_walker_call`, not `sv_service_call`, but they share the per-provider circuit breaker and `rpc_timeout` config -- a tripped breaker protects either RPC kind. See [Plugin Override: Custom Service Spawning](#plugin-override-custom-service-spawning).
+- **Spawn semantics, not construction.** Locally, `Greet(name="x")` only constructs a walker; you still need `spawn` to run it. Across the boundary, instantiating a bridged walker is **spawn-and-execute** -- there is no useful concept of an unexecuted remote walker. The consumer-side class accepts only the `has` fields as keyword arguments and, awaited, always yields a post-execution instance.
+- **Un-awaited = deferred.** A bridged walker spawn in statement position that is not awaited is not a bug the runtime ignores: it lowers to `Greet._deferred(**kwargs)`, an [outbox](#deferred-delivery-the-outbox) enqueue that never raises at the call site.
+- **Boundary types travel with the walker.** Types used in `has` fields or `report` arguments need to be imported alongside the walker.
+- **Same retry, breaker, auth, and tracing as functions.** Walker and function calls share the per-provider circuit breaker and `rpc_timeout`; the inbound `Authorization` header and `X-Trace-Id` are forwarded across the hop.
 
-This applies to **sv-to-sv** (server-to-server) imports. Walker imports across the **client-to-server** boundary (browser calling a server walker) are not currently generated; for that case use a `def:pub` wrapper that spawns the walker server-side.
+Walker spawns also cross the **client-to-server** boundary (`root spawn Greet(...)` from a page or a mobUI screen), through the same stub shape on the JS side.
 
-### Automatic Startup
+### Deferred delivery: the outbox
 
-When you run `jac run consumer.jac`, the consumer finds every routes-table service it imports and brings them all up **before** it starts accepting requests. Transitive dependencies are included: if A imports B and B imports C (all in the cut), starting A brings up all three.
+An un-awaited cross-app walker spawn is a message, not a call. It is written to the **outbox** inside the caller's request -- in the same transaction where the store allows it -- and delivered to the owner app by a background worker that the server (core or scale, colocated or a fleet member) starts as soon as a bridging consumer is loaded:
 
-Startup is **fail-fast**: if any service fails to come up (missing source file, syntax error, port in use), the consumer crashes at startup with the underlying error. You find out at deploy time, not at first request.
+- **Idempotency key.** Every entry carries one, sent on the wire as `X-Jac-Idempotency-Key` on every transport (in-process, plain HTTP and the scale RPC path alike); the receiving app remembers recent keys (an in-memory LRU plus the store) and answers a duplicate with the original result, so delivery is **at-least-once with idempotent receipt**. The default key is a hash of the app, walker and canonical arguments; `outbox.enqueue(app, walker, kwargs, idempotency_key=...)` sets an explicit one when the arguments alone are not identity (e.g. a retryable "charge card" whose amount could legitimately repeat).
+- **Dedupe window.** The key also dedupes the _sender_: within `DELIVERED_TTL_S` (24h) an identical un-awaited spawn -- same app, walker and arguments, hence the same default key -- is the same message and is dropped, whether the first copy is still pending or already delivered. To spawn twice on purpose, pass a distinct `idempotency_key=`. Delivered rows older than the TTL and expired receiver keys are pruned by every worker pass, after which the same spawn is a new message.
+- **Receiver scoping.** The receiving endpoint scopes a key by the authenticated caller, the provider app and the walker or function before it looks the key up or remembers it, so one client cannot replay another client's cached response by sending its key. The wire header is the raw key; scoping is internal.
+- **Retries and leases.** Exponential backoff per attempt, capped; after `DEFAULT_MAX_ATTEMPTS` (8) the entry is marked `dead`. A worker claims a row with a `LEASE_S` (60s) lease; if the process dies mid-delivery the lease expires and the row is retried, with `attempts` counting the lost try. `outbox.dead_letters()` lists dead rows, which are kept for inspection until `outbox.purge_dead(older_than_s=...)` removes them; `outbox.deliver_pending()` runs one delivery pass by hand (tests, cron) and `outbox.prune()` one pruning pass.
+- **Storage.** The project's Postgres store when one is configured (tables `jac_outbox` and `jac_outbox_seen`, part of the store's base schema and created with the rest of it), else `.jac/data/outbox.sqlite`. Enqueue rides the caller's request transaction; the worker and the receiver's key bookkeeping use their own connection, committed on their own, so a remember that happens after the walker's scope has closed never leaves a request transaction open.
 
-Automatic startup only applies to `jac run`. `jac run` is for one-shot scripts and does not bring up long-running sibling services; if it calls a service-stub function it will try to discover the provider lazily using the rules in [Service Discovery](#service-discovery) below.
+```jac
+import from jaclang.server { outbox }
+
+def ship_later(oid: str) -> str {
+    # explicit key: two requests for the same order must not double-ship
+    return outbox.enqueue(
+        "fulfillment", "Ship", {"order_id": oid}, idempotency_key=f"ship:{oid}"
+    );
+}
+```
+
+**Read policy.** Bridged reads always go to the owner app (owner-read); a consumer never reads another app's store. `[apps.<consumer>.scale] read_cache = true` opts a consumer into an in-process cache of bridged calls whose provider endpoint declares no effects, invalidated whenever an effectful call to that provider app goes through.
+
+### Colocation and the Fleet
+
+Serving an app (`jac run <app>`) also brings up every service app it bridges to, transitively, in provider-first order:
+
+- **Colocated** (default): each service app's entry module is loaded into the served app's process and registered with `sv_client.register_local(app, module)`. Bridged calls invoke the provider's function or spawn its walker in-process -- still awaited, no sockets. One process, the boundary still compiled as a cut.
+- **Fleet**: `jac run <app> --fleet`, or `[scale.gateway] colocate = false`, runs each service app as its own local process behind the served app's gateway (one public port, one `/docs`, one `/metrics`, `X-Trace-Id` threaded through every hop). Peers are wired with `JAC_APP_<APP>_URL`. `jac scale status` / `logs` / `restart` / `stop` manage the members.
+- **Peer URLs are used as given.** A fleet member (and a deployed pod) mounts its endpoints at its root -- `/walker/<name>`, `/function/<name>` -- and the gateway strips the app's public route (`/api/<app>`) before forwarding. A consumer therefore never appends the route it compiled against to a peer URL: `JAC_APP_<APP>_URL=http://127.0.0.1:8011` is called at `http://127.0.0.1:8011/walker/<name>`. Only a route registered _together with_ a URL is appended -- `JAC_APP_<APP>_ROUTE`, or `sv_client.register(app, url, route)` -- which is how a consumer is pointed at a public gateway instead of a member.
+- **HTTP forwarding.** The serving HTTP client skips provisional `1xx` response headers until the final response; `101 Switching Protocols` remains terminal for WebSocket upgrades. The gateway removes `Expect` when forwarding requests to a service.
+- **Service identity between members.** Set `JAC_BRIDGE_TOKEN` on every member: consumers send it as a bearer on bridged calls (when no end-user `Authorization` is being forwarded), and a provider whose own `JAC_BRIDGE_TOKEN` matches the presented bearer runs the walker or function as the fixed service user `__bridge__`, which satisfies `requires_auth` endpoints and owns its own root. A mismatching bearer is still a 401; a provider without the variable set never honors it.
+- **Deployed**: `jac scale deploy` is always a fleet; see [Service Apps in Kubernetes](jac-scale-kubernetes.md#service-apps-in-kubernetes).
+
+Startup is **fail-fast**: if any service app fails to come up (missing entry file, syntax error, port in use), the served app exits at startup with the underlying error.
 
 ### Service Discovery
 
-For each imported routes-table provider, the consumer resolves it in this order. The first match wins:
+For each provider app the consumer resolves it in this order. The first match wins:
 
-1. **Test client** -- if tests have wired up an in-process `JacTestClient` for the provider, calls go through it with no HTTP. See [Testing](#testing).
-2. **Explicit URL** -- a URL the consumer was handed programmatically (e.g. by a custom orchestrator). See the [sv_client API](#sv_client-api-reference).
-3. **`JAC_SV_<MODULE>_URL` environment variable** -- automatically consulted using the upper-cased module name. This is the knob to reach for when the provider lives on a different host.
-4. **Automatic spawn** -- jac-scale brings up the provider as a sibling inside the consumer process. This is the path that lets `jac run consumer.jac` run the whole cluster from one command.
+1. **Local registration** -- the app is colocated (`sv_client.register_local`). Calls go in-process.
+2. **Test client** -- tests have wired up an in-process `JacTestClient` for the app. See [Testing](#testing).
+3. **Registered URL** -- a URL the consumer was handed programmatically (`sv_client.register`), e.g. by the fleet orchestrator or a custom one.
+4. **`JAC_APP_<APP>_URL` environment variable** -- the app name upper-cased, non-alphanumerics as `_` (`social_graph` → `JAC_APP_SOCIAL_GRAPH_URL`). The URL is used as given (a member's root); add `JAC_APP_<APP>_ROUTE` only when the URL is a gateway that expects the app's public route prefix. This is the knob for a provider on another host.
 
-Automatically-spawned siblings are bound to `127.0.0.1` -- they are reachable from inside the consumer process but not from outside. This makes single-command mode a supported deployment for **single-host** setups, but you cannot reach a sibling from another machine. For multi-host deployments, wire the consumer with `JAC_SV_<MODULE>_URL` pointing at the provider running elsewhere.
-
-Siblings are assigned ports in the range `18000-18999`. Pick ports outside this range (e.g. in the 8000s) for your own `jac run --port` flags so a manual port does not collide with a future automatic spawn.
+Nothing found is `BridgeUnavailable` at the first awaited call.
 
 ### Production Patterns
 
 #### Kubernetes
 
-Each service is its own `Deployment` + `Service`. Wire the consumer with an env var pointing at the provider's cluster DNS name:
+`jac scale deploy` turns every serving app into its own `Deployment` + `Service` and injects each pod's peer URLs -- you write nothing by hand. For a provider that lives _outside_ the cluster, set the env var on the consumer's Deployment:
 
 ```yaml
-# order-service deployment
+# orders app: consumer, points at an inventory app hosted elsewhere
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: order-service
+  name: orders
 spec:
   template:
     spec:
       containers:
-      - name: order-service
-        image: my-registry/order-service:latest
+      - name: orders
         env:
-        - name: JAC_SV_INVENTORY_SERVICE_URL
-          value: "http://inventory-service.default.svc.cluster.local:8000"
+        - name: JAC_APP_INVENTORY_URL
+          value: "https://inventory.example.com"
 ```
-
-The convention is `JAC_SV_<UPPERCASED_MODULE_NAME>_URL`. Module name is the provider's key in `[scale.microservices.routes]`.
 
 #### Local Development
 
-For multi-service local dev, the simplest pattern is `JAC_SV_*_URL` env vars in a `.env` file or your shell:
+Colocation is the default and needs nothing. To run the apps apart on one machine, `--fleet`; to run them apart across machines, start each app on its own host and point consumers at providers:
 
 ```bash
-export JAC_SV_INVENTORY_SERVICE_URL=http://localhost:8001
-export JAC_SV_MATH_SERVICE_URL=http://localhost:8002
-jac run --port 8000 order_service.jac
-```
+# host A
+jac run inventory --port 8001
 
-Alternatively, omit the env vars entirely and run `jac run order_service.jac` on its own. The consumer will find every routes-table service it imports and bring them all up automatically (including transitive dependencies) before serving the first request. This is a supported deployment mode for **single-host** setups -- one process, many logical services. For **multi-host** deployments use the `JAC_SV_*_URL` path instead: automatically-started services bind `127.0.0.1` only and cannot serve traffic to other hosts.
+# host B
+JAC_APP_INVENTORY_URL=http://host-a:8001 jac run orders --port 8000
+```
 
 #### Troubleshooting
 
-- **`{"detail":"Invalid anchor id ..."}` 500s.** Stale anchors persisted from a previous run with a different schema. Stop the server, `rm -rf .jac/data/`, and restart. Not specific to sv-to-sv; any `def:pub` call can hit this after a schema change.
-- **Consumer crashes at startup with `ModuleNotFoundError: No module named '<provider>'`.** Automatic startup could not find the provider source in the directory you ran `jac run` from. Either move all services into the same project directory, or set `JAC_SV_<MODULE>_URL` to point the consumer at a provider running elsewhere.
-- **Cross-service call returns 404.** The provider function is not declared `def:pub`. Walkers similarly need `walker:pub`.
+If an endpoint reports an invalid anchor, check its ID, the selected app and store, and recent schema changes. Run `jac guide jac-debugging --section diagnose-state-and-cache-errors` for the diagnostic sequence. Preserve existing data until you have identified the cause and chosen a repair.
+
+- **`BridgeUnavailable: app 'x' is not registered`.** The provider app is neither colocated nor reachable: the served app has no `[apps.x]` table to colocate, or in a fleet/multi-host setup `JAC_APP_X_URL` is unset.
+- **`BridgeRejected` with status 404 / 401.** The element is not on the provider's bridge surface (`jac check` reports `E5106` for the compile-time half), or the hop carried no usable `Authorization` for a `:protect` endpoint.
+- **`E1042` at a call you did not think was remote.** The imported element is owned by another app; add `await` (and make the enclosing function `async`).
 
 ### Testing
 
-To test cross-service behavior without real network I/O, wire each provider up as an in-process test client before constructing the consumer. `sv_client.register_test_client(module_name, client)` routes the consumer's calls through the registered client directly; no sockets, no port allocation, no background threads.
+To test cross-app behavior without real network I/O, wire each provider app up as an in-process test client before constructing the consumer. `sv_client.register_test_client(app, client)` routes the consumer's bridged calls through the registered client directly; no sockets, no port allocation, no background threads.
 
-`JacTestClient.from_file` (see [Testing -> JacTestClient](../testing.md#jactestclient)) builds a whole service in-process from its `.jac` file:
+`JacTestClient.from_file` (see [Testing -> JacTestClient](../testing.md#jactestclient)) builds a whole app in-process from its entry file:
 
 ```jac
 import from jaclang.server { sv_client }
 import from jaclang.testing.testing { JacTestClient }
 
-test "consumer reaches provider" {
+test "orders reaches inventory" {
     sv_client.clear_test_clients();
 
-    prov_client = JacTestClient.from_file("inventory_service.jac");
-    cons_client = JacTestClient.from_file("order_service.jac");
-    sv_client.register_test_client("inventory_service", prov_client);
+    prov_client = JacTestClient.from_file("core/inventory.jac");
+    cons_client = JacTestClient.from_file("orders/main.jac");
+    sv_client.register_test_client("inventory", prov_client);
 
-    # Calls from the consumer into inventory_service now route through prov_client
+    # Bridged calls from orders into the inventory app now route through prov_client
     resp = cons_client.post(
         "/function/create_order",
         json={"items": [{"sku": "W", "quantity": 2}]}
@@ -1796,43 +2043,26 @@ test "consumer reaches provider" {
 }
 ```
 
-The sv-to-sv test suite in the scale source tree has a worked example that copies fixture files into a temp directory and brings both services up end-to-end; start there if you need a runnable harness.
-
-Always call `sv_client.clear_test_clients()` between tests to avoid bleed-over from a previous test's registrations.
+Always call `sv_client.clear_test_clients()` between tests to avoid bleed-over from a previous test's registrations. `sv_client.clear_local_providers()` does the same for colocated registrations.
 
 ### sv_client API Reference
 
-`jaclang.server.sv_client` exposes a small control surface for telling the runtime where to find providers. You rarely need it under normal use -- `JAC_SV_<MODULE>_URL` covers most production wiring, and automatic startup covers single-host setups. Reach for these functions when you are writing tests or a custom orchestrator.
+`jaclang.server.sv_client` is keyed by **app name** and exposes a small control surface for telling the runtime where each provider app is. You rarely need it under normal use -- colocation covers `jac run`, the fleet orchestrator and `jac scale deploy` register their members, and `JAC_APP_<APP>_URL` covers hand-wired hosts. Reach for these functions when you are writing tests or a custom orchestrator.
 
 | Function | Purpose |
 |---|---|
-| `register(module_name: str, url: str)` | Point a provider name at a URL programmatically. Takes precedence over the env var path. |
-| `unregister(module_name: str)` | Remove a registration made via `register`. |
-| `register_test_client(module_name, client)` | Route calls to a provider through an in-process `JacTestClient` (tests only). See [Testing](#testing). |
-| `unregister_test_client(module_name: str)` | Remove a test-client registration. |
-| `clear_test_clients()` | Drop all test-client registrations. Call between tests to avoid bleed-over. |
-| `resolve_url(module_name: str) -> str` | Look up the URL the consumer would use for a provider (either from `register` or from `JAC_SV_<MOD>_URL`). Returns a string or raises if nothing is registered. |
-
-### Plugin Override: Custom Service Spawning
-
-`JacAPIServer.ensure_sv_service(module_name: str, base_path: str) -> None` is the hook a plugin overrides to change **how** services come up. Default jac-scale behavior spawns a sibling inside the consumer process; a plugin override can launch the service anywhere it wants -- Docker containers, Kubernetes Jobs, systemd units, remote VMs -- as long as it ends by calling `sv_client.register(module_name, <url>)` so subsequent calls skip the hook.
-
-The hook is called during automatic startup, once per provider, in parallel up to 8 at a time. Overrides must be idempotent and safe to run concurrently. Both properties were already true of the pre-existing lazy contract (concurrent first-call requests could race into the same hook), so a plugin written against any prior version continues to work without modification.
-
-The default jac-scale implementation at a high level: pick a free loopback port in `18000-18999`, start an HTTP listener on a daemon thread serving the module's `def:pub` endpoints, wait until the listener responds to an HTTP probe, then register the URL. Consult the jac-scale source if you need the exact details; the contract plugin authors should rely on is the `ensure_sv_service` signature and the requirement to call `sv_client.register` before returning.
-
-### Plugin Override: RPC Transport
-
-Two parallel hooks let a plugin own the wire-level transport for sv-to-sv calls:
-
-| Hook | Used by | Default transport |
-|---|---|---|
-| `JacAPIServer.sv_service_call(module_name, func_name, args)` | service-imported `def:pub` functions | `POST /function/<name>` |
-| `JacAPIServer.sv_walker_call(module_name, walker_name, args, stub_cls)` | service-imported `walker:pub` archetypes | `POST /walker/<name>` + `stub_cls._from_wire` rehydration |
-
-Plugins typically override both with the same auth-forwarding, tracing, retry, and circuit-breaker policy. The jac-scale plugin does exactly that: walker calls share the per-provider circuit breaker with function calls (both express provider liveness, so a tripped breaker should protect either kind), forward the inbound `Authorization` header, propagate `X-Trace-Id` across the hop, retry transport-level failures with exponential backoff, and respect the per-service `rpc_timeout` config.
-
-Overrides for `sv_walker_call` must end by returning the rehydrated walker instance: call `stub_cls._from_wire(envelope.data.result)` and attach `envelope.data.reports` to the resulting instance's `reports` attribute. The default implementation is a useful reference and reusing `_unwrap_sv_envelope` / `_hydrate_walker_envelope` from the jac-scale source keeps error semantics consistent with the function path.
+| `register_local(app: str, module)` | Serve a provider app from an already-loaded module in this process (what colocation does). |
+| `unregister_local(app: str)` / `is_local(app) -> bool` / `clear_local_providers()` | Manage local registrations. |
+| `register(app: str, url: str, route: str = "")` | Point a provider app at a URL programmatically. Takes precedence over the env var path. `route` is appended to the URL only when given here (a gateway base); the route a compiled consumer declared is never appended to a peer URL. |
+| `unregister(app: str)` | Remove a registration made via `register`. |
+| `register_test_client(app, client)` / `clear_test_clients()` | Route calls to a provider through an in-process `JacTestClient` (tests only). See [Testing](#testing). |
+| `resolve_url(app: str) -> str` | The URL the consumer would use for a provider (from `register` or `JAC_APP_<APP>_URL`, plus a route registered with it). Raises `BridgeUnavailable` if nothing is registered. |
+| `provider_route(app: str) -> str` / `registered_route(app: str) -> str` | The route a compiled consumer declared for a provider (what the gateway and colocated mounts serve it under), and the route bound to an explicit registration (the only one `resolve_url` appends). |
+| `peer_url_env_key(app: str) -> str` | The `JAC_APP_<APP>_URL` name for an app. |
+| `async call(app, fn, kwargs)` / `async spawn_walker(app, walker, kwargs, cls)` | What the generated stubs call. |
+| `spawn_deferred(app, walker, kwargs, idempotency_key = "") -> str` | Enqueue a deferred spawn; returns the outbox entry id. |
+| `get_consumer_providers(consumer_app: str) -> list[str]` | The provider apps a consumer declared (the app DAG's edges out of it). |
+| `hydrate_walker_envelope(data, app, walker, cls)` / `function_result(data, app, fn)` | Decode a provider's response envelope: the executed walker rebuilt as an instance of `cls` from `data.result` with `data.reports` attached, or a function's `result`. Both raise `BridgeError` on a non-ok envelope; a custom transport ends with one of them. |
 
 ## CLI Commands
 
@@ -1875,3 +2105,46 @@ The visualizer uses a force-directed layout with color-coded node types, edge la
 | `GET /graph/data` | Returns graph nodes and edges as JSON (optional `Authorization` header) |
 
 ---
+
+### OAuth sessions for browser and native clients
+
+`jaclang.scale.sso.oauth_session.OAuthSession` is the shared authorization-code
+flow used by Scale and available to application callback facades. Construct it
+with a `UserManager`, an `OAuth2CodeProvider`, and the provider name. The
+provider supplies its registered `redirect_uri`; application facades must
+choose that URL from server configuration, never from arbitrary request input.
+
+`begin(challenge, mode="web", link_user="")` issues expiring random state and
+an S256 PKCE authorization URL. `finish(code, state, verifier)` validates the
+client/app binding and consumes state before exchanging the code. The verifier
+must be a cryptographically random 43–128-character value. Keep it on the
+originating client. A supplied `link_user` must already have been authenticated
+by the server; it is not an untrusted request parameter.
+
+Scale exposes `POST /sso/{platform}/begin`, `/finish`, and `/poll`. Begin accepts
+`challenge` and `mode`; an authenticated Bearer session requests account
+linking, while an anonymous request requests sign-in. Finish accepts `code`,
+`state`, and `verifier`. For client-managed web flows configure
+`[scale.sso] client_auth_callback_url`: the provider callback forwards the
+short-lived code and state there for the client to finish. It does not forward
+a session token in this flow.
+
+For native clients, `begin(..., mode="native")` also returns a random `poll`
+secret that must stay on the initiating device. Open the authorization URL in
+the system browser. The server callback calls `complete_native(code, state)`;
+`poll(poll_secret)` atomically redeems the result on the device. Results expire
+after two minutes and contain the application's session token, never the
+provider access token. Cancellation and timeout should return the user to the
+sign-in screen. The begin/session state expires after ten minutes.
+
+Existing `/sso/{platform}/login` and `/register` browser routes use the same
+session implementation with a per-attempt HttpOnly state cookie. Callback
+requests without that browser binding are rejected before token exchange.
+Loopback destinations are stored in server-side state, not trusted from the
+callback query string. HTTPS flows use Secure cookies.
+
+Users are resolved by `(provider, external_id)`. Matching email addresses no
+longer automatically merge accounts. Existing password users must sign in and
+explicitly connect the provider; existing linked SSO users keep their accounts
+when their email or provider username changes. GitHub sign-in requires only
+public identity and does not request email or repository access permissions.

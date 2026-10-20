@@ -12,10 +12,12 @@ import os;
 import shutil;
 import tempfile;
 import from jaclang.compiler.driver.program { JacProgram }
+import from jaclang.compiler.driver.compile_options { CompileOptions }
+import from jaclang.compiler.frontend.unitree { Ability, AstAccessNode }
 
-def _proj(files: dict, pins: str = "") -> str {
+def _proj(files: dict[str, any], pins: str = "") -> str {
     d = tempfile.mkdtemp(prefix="jacplace_");
-    toml = "[project]\nname = \"t\"\nentry-point = \"main.jac\"\n";
+    toml = "[project]\nname = \"t\"\nentry-point = \"main\"\n";
     if pins != "" {
         toml += "\n[placement.pins]\n" + pins + "\n";
     }
@@ -32,12 +34,101 @@ def _proj(files: dict, pins: str = "") -> str {
     return d;
 }
 
+test "authenticated endpoints bridge within their app without placement pins" {
+    for access in ["protect"] {
+        d = _proj(
+            {
+                "api.jac": "def:"
+                    + access
+                    + " read_value -> int { ::py::\nvalue = 1\n::py::\nreturn 1; }\n",
+                "main.jac": "import from .api { read_value }\n"
+                    + "def:pub app -> JsxElement { return <div>{read_value()}</div>; }\n"
+            }
+        );
+        try {
+            prog = JacProgram();
+            mod = prog.compile(
+                os.path.join(d, "main.jac"), options=CompileOptions(no_ir_cache=True)
+            );
+            assert not prog.errors_had , [str(e) for e in prog.errors_had];
+            assert '__jacCallFunction("read_value"' in mod.gen.js , mod.gen.js;
+            binding = mod.gen.interop_manifest.bindings["read_value"];
+            decl = binding.ast_node;
+            assert isinstance(decl, AstAccessNode) and decl.access is not None;
+            assert decl.access.tag.value == access;
+            provider = JacProgram().compile(
+                os.path.join(d, "api.jac"), options=CompileOptions(no_ir_cache=True)
+            );
+            assert provider.gen.interop_manifest.surface["read_value"].requires_auth();
+        } finally {
+            shutil.rmtree(d, ignore_errors=True);
+        }
+    }
+}
+
+test "a :priv function is private: client imports do not bridge it" {
+    d = _proj(
+        {
+            "api.jac": "def:priv read_value -> int { ::py::\nvalue = 1\n::py::\nreturn 1; }\n",
+            "main.jac": "import from .api { read_value }\n"
+                + "def:pub app -> JsxElement { return <div>{read_value()}</div>; }\n"
+        }
+    );
+    try {
+        prog = JacProgram();
+        prog.compile(
+            os.path.join(d, "main.jac"), options=CompileOptions(no_ir_cache=True)
+        );
+        found = [
+            e.code.code
+            for e in prog.errors_had
+            if e.code is not None
+        ];
+        assert "E5082" in found , [str(e) for e in prog.errors_had];
+        provider = JacProgram().compile(
+            os.path.join(d, "api.jac"), options=CompileOptions(no_ir_cache=True)
+        );
+        assert not provider.gen.interop_manifest.surface["read_value"].is_served();
+        assert provider.gen.interop_manifest.surface["read_value"].exposure
+            == "private";
+    } finally {
+        shutil.rmtree(d, ignore_errors=True);
+    }
+}
+
+test "private functions remain unavailable across app boundaries" {
+    d = _proj(
+        {
+            "api.jac": "def:priv read_value -> int { ::py::\nvalue = 1\n::py::\nreturn 1; }\n",
+            "main.jac": "import from .api { read_value }\n"
+                + "def:pub app -> JsxElement { return <div>{read_value()}</div>; }\n"
+        }
+    );
+    try {
+        with open(os.path.join(d, "jac.toml"), "w") as config {
+            config.write(
+                '[project]\nname = "private-boundary"\ndefault-app = "web"\n[apps.web]\nkind = "web-app"\nentry-point = "main"\n[apps.api]\nkind = "service"\nentry-point = "api"\n'
+            );
+        }
+        prog = JacProgram();
+        mod = prog.compile(
+            os.path.join(d, "main.jac"), options=CompileOptions(no_ir_cache=True)
+        );
+        assert any(
+            e.code is not None and e.code.code in ("E5082", "E5106")
+            for e in prog.errors_had
+        ) , ([str(e) for e in prog.errors_had], mod.gen.js);
+    } finally {
+        shutil.rmtree(d, ignore_errors=True);
+    }
+}
+
 test "rootless graph archetypes follow a client pin" {
     d = _proj(
         {
             "model.jac": (
                 "node Block {\n    has opcode: str = \"\";\n}\n"
-                + "edge NextOf {}\n"
+                + "edge NextOf: Block --> Block {}\n"
                 + "def make_pair() -> Block {\n"
                 + "    a = Block(opcode=\"a\");\n"
                 + "    b = Block(opcode=\"b\");\n"
@@ -129,7 +220,7 @@ test "unpinned rootless archetypes pull into client closures" {
             "main.jac": (
                 "import from .model { Block, make_block }\n"
                 + "def:pub app -> JsxElement {\n"
-                + "    has items: list = [];\n"
+                + "    has items: list[any] = [];\n"
                 + "    <button onClick={lambda { items = items + [make_block(\"x\")]; }}>\n"
                 + "        add\n"
                 + "    </button>;\n"
@@ -151,7 +242,6 @@ test "unpinned rootless archetypes pull into client closures" {
 # so it no longer blocks native placement; inline ::py:: remains the
 # statically-known native-incompatible construct.
 test "solver does not propose native for capability-violating modules" {
-    import from jaclang.compiler.placement.placement_solver { native_default_verdict }
     d = _proj(
         {
             "pymod.jac": (
@@ -164,12 +254,31 @@ test "solver does not propose native for capability-violating modules" {
             )
         }
     );
+    import from jaclang.compiler.frontend.codeinfo {
+        get_effective_default_codespace_override,
+        set_effective_default_codespace
+    }
+    previous = get_effective_default_codespace_override();
     try {
         prog = JacProgram();
-        mod = prog.compile(os.path.join(d, "pymod.jac"), no_cgen=True);
-        (ok, reason) = native_default_verdict(mod);
-        assert not ok , "capability-violating module must not prefer native";
+        path = os.path.join(d, "pymod.jac");
+        mod = prog.compile(
+            path,
+            options=CompileOptions(default_codespace="native", skip_native_engine=True)
+        );
+        assert mod.decided_codespace != 'native' , "capability-violating module must not be placed native";
+        f_elem = [
+            s
+            for s in mod.body
+            if isinstance(s, Ability)
+        ][0];
+        assert f_elem.code_context.value == 'server';
+        assert not mod.gen.native_undecided , (
+            "inline Python closes the module's native preference before typing"
+        );
+        assert "PyInlineCode" in mod.gen.native_closed_why , mod.gen.native_closed_why;
     } finally {
+        set_effective_default_codespace(previous);
         shutil.rmtree(d, ignore_errors=True);
     }
 }

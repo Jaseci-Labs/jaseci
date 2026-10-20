@@ -9,28 +9,8 @@ import from kubernetes.client.exceptions { ApiException }
 import unittest.mock;
 import from types { SimpleNamespace }
 
-import from jaclang.scale.config.app_config { AppConfig }
-import from jaclang.scale.models.deployment_result { DeploymentResult }
-import from jaclang.scale.models.resource_status { ResourceStatus }
-import from jaclang.scale.config.config_loader {
-    JacScaleConfig,
-    get_scale_config,
-    reset_scale_config
-}
 import from tempfile { mkdtemp }
 import shutil;
-import from jaclang.scale.deploy.target.factory { DeploymentTargetFactory }
-import from jaclang.scale.deploy.database.kubernetes_postgres {
-    KubernetesPostgresProvider
-}
-import from jaclang.scale.observability.factory { UtilityFactory }
-import from jaclang.scale.deploy.target.kubernetes.kubernetes_config {
-    KubernetesConfig
-}
-import from jaclang.scale.deploy.target.kubernetes.ingress { IngressDeployer }
-import from jaclang.scale.deploy.autoscale.factory { AutoscalerFactory }
-import from jaclang.scale.deploy.autoscale.autoscaler { AutoscalerSpec, Trigger }
-import from jaclang.testing.requires { require_flag }
 
 with entry {
     require_flag(
@@ -85,15 +65,11 @@ test "early exit" {
     details = result.details;
     failure_message = result.message;
     print(f"Deployment result: {details}");
-    # app_err.jac has compile errors, so it cannot be sealed into a .jab. The
-    # deploy now fails fast at binary prep rather than shipping a source bundle
-    # that would crash-loop in the cluster; it never reaches the health check.
     assert result.success is False;
     assert "health_check_of_deployment" not in details;
     assert failure_message is not None;
-    assert (
-        "jac runtime" in failure_message or "seal" in failure_message.lower()
-    ) , failure_message;
+    assert "client build failed" in failure_message , failure_message;
+    assert "app_err.jac" in failure_message , failure_message;
 }
 
 test "deployment target methods" {
@@ -219,7 +195,9 @@ test "fleet rollout ignores crash-looping pod from a stale replica set" {
     stale_pod.metadata.labels = {"app": "svc-a", "pod-template-hash": stale_hash};
     stale_pod.metadata.name = "svc-a-stale-crash";
     stale_pod.metadata.deletion_timestamp = None;
-    stale_pod.status.container_statuses = [unittest.mock.MagicMock(restart_count=5)];
+    stale_pod.status.container_statuses = [
+        unittest.mock.MagicMock(restart_count=5, ready=False)
+    ];
     stale_pod.status.phase = "Running";
 
     fake_core_v1 = unittest.mock.MagicMock();
@@ -252,7 +230,9 @@ test "fleet rollout still fails when a current replica set pod is crash-looping"
     crash_pod.metadata.labels = {"app": "svc-a", "pod-template-hash": current_hash};
     crash_pod.metadata.name = "svc-a-crash";
     crash_pod.metadata.deletion_timestamp = None;
-    crash_pod.status.container_statuses = [unittest.mock.MagicMock(restart_count=5)];
+    crash_pod.status.container_statuses = [
+        unittest.mock.MagicMock(restart_count=5, ready=False)
+    ];
     crash_pod.status.phase = "Running";
 
     fake_core_v1 = unittest.mock.MagicMock();
@@ -298,7 +278,7 @@ test "fleet rollout still fails when a companion Deployment pod outside the flee
     companion_pod.metadata.name = "svc-a-postgres-789";
     companion_pod.metadata.deletion_timestamp = None;
     companion_pod.status.container_statuses = [
-        unittest.mock.MagicMock(restart_count=5)
+        unittest.mock.MagicMock(restart_count=5, ready=False)
     ];
     companion_pod.status.phase = "Running";
 
@@ -327,7 +307,9 @@ test "fleet rollout falls back to broad pod scan when RS lookup fails" {
     crash_pod.metadata.labels = {"app": "svc-a", "pod-template-hash": "whatever-hash"};
     crash_pod.metadata.name = "svc-a-crash";
     crash_pod.metadata.deletion_timestamp = None;
-    crash_pod.status.container_statuses = [unittest.mock.MagicMock(restart_count=5)];
+    crash_pod.status.container_statuses = [
+        unittest.mock.MagicMock(restart_count=5, ready=False)
+    ];
     crash_pod.status.phase = "Running";
 
     fake_core_v1 = unittest.mock.MagicMock();
@@ -471,7 +453,7 @@ test "deploy with domain set renders host plus catch-all rules and stores domain
     assert mock_networking_v1.create_namespaced_ingress.called , "ingress should be created on first deploy";
     created_body = mock_networking_v1.create_namespaced_ingress.call_args[1]["body"];
 
-    rules: list = created_body["spec"]["rules"];
+    rules: list[any] = created_body["spec"]["rules"];
     assert len(rules) == 2 , "domain app must render a host rule plus a catch-all";
     assert rules[0].get("host") == "app.example.com" , "first rule must bind the domain host so redeploys keep the TLS cert served (#7707)";
     assert "host" not in rules[1] , "catch-all rule must keep the raw load-balancer hostname serving before DNS/TLS";
@@ -654,7 +636,7 @@ test "k8s safe slug normalizes names into valid k8s identifiers" {
 }
 
 """Resolve get_kubernetes_config() against a temp project with the given jac.toml."""
-def _k8s_config_for_toml(toml_content: str) -> dict {
+def _k8s_config_for_toml(toml_content: str) -> dict[str, any] {
     tmp_dir = Path(mkdtemp());
     (tmp_dir / "jac.toml").write_text(toml_content);
     # get_scale_config() caches a process-wide singleton; reset around the temp project.
@@ -669,7 +651,7 @@ def _k8s_config_for_toml(toml_content: str) -> dict {
 
 test "unconfigured app_name derives from [project].name; namespace stays default" {
     cfg = _k8s_config_for_toml(
-        "[project]\nname = \"My App\"\nentry-point = \"main.jac\"\n"
+        "[project]\nname = \"My App\"\nentry-point = \"main\"\n"
     );
     assert cfg["app_name"] == "my-app" , f"got {cfg['app_name']!r}";
     assert cfg["namespace"] == "default" , f"got {cfg['namespace']!r}";
@@ -684,7 +666,7 @@ test "explicit app_name wins over the derived default" {
 
 test "no usable project name falls back to legacy app_name 'jaseci'" {
     for toml in [
-        "[project]\nentry-point = \"main.jac\"\n",
+        "[project]\nentry-point = \"main\"\n",
         "[project]\nname = \"---\"\n",
         "[project]\nname = \"   \"\n"
     ] {

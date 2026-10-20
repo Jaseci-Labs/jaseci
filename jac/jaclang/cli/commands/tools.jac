@@ -1,7 +1,3 @@
-import from jaclang.cli.command { Arg, ArgKind, CommandSpec }
-import from jaclang.comptime { name as ct_name }
-
-
 comptime SPEC_TOOL: CommandSpec = CommandSpec(
          name="tool",
          help="Run AST tools",
@@ -26,7 +22,7 @@ comptime SPEC_TOOL: CommandSpec = CommandSpec(
          handler_name=ct_name(tool)
      );
 
-def tool(tool: str, args: list = []) -> int;
+def tool(tool: str, args: list[str] = []) -> int;
 
 comptime SPEC_DOT: CommandSpec = CommandSpec(
          name="dot",
@@ -93,7 +89,7 @@ def dot(
     initial: str = "",
     depth: int = -1,
     traverse: bool = False,
-    connection: list = [],
+    connection: list[str] = [],
     bfs: bool = False,
     edge_limit: int = 512,
     node_limit: int = 512,

@@ -1,12 +1,3 @@
-import from jaclang.cli.console { console }
-import from jaclang.compiler.tools.unparse_pass { unparse_module }
-import from jaclang.compiler.tools.treeprinter {
-    print_ast_tree,
-    print_symtab_tree,
-    printgraph_ast_tree,
-    printgraph_symtab_tree
-}
-
 impl AstTool.autodoc_uninode -> str {
     output = '';
     tick = chr(96);
@@ -49,7 +40,6 @@ impl AstTool.autodoc_uninode -> str {
 }
 
 impl AstTool.ir(args: list[str]) -> str {
-    import from jaclang.compiler.driver.pass_driver { run_pass }
     error = 'Usage: ir <choose one of (sym / sym. / ast / ast. / docir / pyast / py / unparse / esast / es)> <.py or .jac file_path>';
     if (len(args) != 2) {
         return error;
@@ -69,28 +59,26 @@ impl AstTool.ir(args: list[str]) -> str {
                 return f"{py_ast.dump(parsed_ast, indent=2)}";
             }
             try {
-                rep = run_pass(
-                    PyastBuildPass,
+                rep = run_utility(
+                    CompilationProduct.PYTHON_AST,
                     uni.PythonModuleAst(
                         parsed_ast, orig_src=uni.Source(file_source, file_name)
                     ),
                     prog
-                ).ir_out;
+                ).module;
+                assert isinstance(rep, uni.Module);
                 rep_src = unparse_module(rep);
                 console.print(rep_src);
                 ir_mod = prog.compile(
                     use_str=rep_src,
                     file_path=(file_name[:-3] + '.jac'),
-                    options=CompileOptions(no_cgen=True, force_target_program=True)
+                    options=CompileOptions(no_cgen=True)
                 );
             } except Exception as e {
                 return f"Error While Jac to Py AST conversion: {e}";
             }
         } else {
-            ir_mod = prog.compile(
-                file_name,
-                options=CompileOptions(no_cgen=True, force_target_program=True)
-            );
+            ir_mod = prog.compile(file_name, options=CompileOptions(no_cgen=True));
         }
         match output {
             case 'sym':
@@ -142,27 +130,26 @@ impl AstTool.ir(args: list[str]) -> str {
                 return unparse_module(ir_mod);
 
             case 'pyast':
-                ir_mod = prog.compile(
-                    file_name, options=CompileOptions(force_target_program=True)
-                );
+                ir_mod = prog.compile(file_name, options=CompileOptions());
                 return f"{py_ast.dump(ir_mod.gen.py_ast[0], indent=2)}"
                     if isinstance(ir_mod.gen.py_ast[0], py_ast.AST)
                     else 'Compile failed.';
 
             case 'docir':
-                return str(run_pass(DocIRGenPass, ir_mod, prog).ir_out.gen.doc_ir);
+                return str(
+                    run_utility(CompilationProduct.DOC, ir_mod, prog).module.gen.doc_ir
+                );
 
             case 'py':
-                ir_mod = prog.compile(
-                    file_name, options=CompileOptions(force_target_program=True)
-                );
-                return f"{ir_mod.gen.py}"
-                    if isinstance(ir_mod.gen.py[0], str)
-                    else 'Compile failed.';
+                import from jaclang.compiler.backends.py.codegen_shim {
+                    generated_python
+                }
+                ir_mod = prog.compile(file_name, options=CompileOptions());
+                return generated_python(ir_mod.gen) or 'Compile failed.';
 
             case 'esast':
-                esast_pass = run_pass(EsastGenPass, ir_mod, prog);
-                es_ir = esast_pass.ir_out;
+                require(prog, ir_mod, CompilationProduct.CLIENT);
+                es_ir = ir_mod;
                 es_ast = es_ir.gen.es_ast;
                 if isinstance(es_ast, EsNode) {
                     return f"{json.dumps(es_node_to_dict(es_ast), indent=2)}";
@@ -171,8 +158,8 @@ impl AstTool.ir(args: list[str]) -> str {
                 }
 
             case 'es':
-                esast_pass = run_pass(EsastGenPass, ir_mod, prog);
-                es_ir = esast_pass.ir_out;
+                require(prog, ir_mod, CompilationProduct.CLIENT);
+                es_ir = ir_mod;
                 es_ast = es_ir.gen.es_ast;
                 if isinstance(es_ast, EsNode) {
                     return f"{es_to_js(es_ast)}";
@@ -190,8 +177,6 @@ impl AstTool.ir(args: list[str]) -> str {
 }
 
 impl AstTool.py_uni_nodes -> str {
-    import from jaclang.compiler.passes.pyast_load_pass { PyastBuildPass }
-
     py_ast.unparse(py_ast.parse(""));
     visit_methods = [
         method

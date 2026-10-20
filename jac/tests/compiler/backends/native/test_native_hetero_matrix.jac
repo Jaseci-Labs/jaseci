@@ -14,9 +14,9 @@ Coverage:
     `jv.p2i` path, whose payload the container releases through the tag.
   - Full-reclamation churn under gc rc and cycles via the glibc
     `mallinfo2().uordblks` in-use probe (container death, slot overwrite,
-    and clear() all release), and under headerless `--gc none
-    --enforce-nogc` via the stamped jacval elem-drop slot.
-  - AOT runs of the self-checking fixture across --gc rc / cycles / none.
+    and clear() all release), and under headerless `--memory nogc
+    --memory nogc` via the stamped jacval elem-drop slot.
+  - AOT runs of the self-checking fixture across --memory rc / cycles / none.
 """
 
 import ctypes;
@@ -24,7 +24,13 @@ import os;
 import subprocess;
 import sys;
 import tempfile;
-import from tests.support { TESTS_DIR, native_force_opts, native_str_func }
+import from tests.support {
+    TESTS_DIR,
+    native_address,
+    native_force_opts,
+    native_str_func
+}
+import from tests.support { jac_command }
 import from jaclang.compiler.driver.program { JacProgram }
 
 glob FIXTURES = os.path.join(
@@ -39,15 +45,12 @@ def _opts(gc_mode: str | None = None, enforce: bool = False) -> any {
         return native_force_opts();
     }
     return CompileOptions(
-        force_codespace='native',
-        force_target_program=True,
-        na_gc_mode=gc_mode,
-        nogc_enforce_all=enforce
+        force_codespace='native', na_gc_mode=gc_mode, nogc_enforce_all=enforce
     );
 }
 
 
-def _compile(fixture: str, options: any | None = None) -> tuple {
+def _compile(fixture: str, options: any | None = None) -> tuple[object, any] {
     prog = JacProgram();
     ir = prog.compile(
         file_path=str(os.path.join(FIXTURES, fixture)),
@@ -62,7 +65,7 @@ def _compile(fixture: str, options: any | None = None) -> tuple {
 
 
 def _get(eng: any, name: str, restype: type | None, *argtypes: type) -> any {
-    addr = eng.get_function_address(name);
+    addr = native_address(eng, name);
     assert addr != 0 , f"Function '{name}' not found in JIT engine";
     return ctypes.CFUNCTYPE(restype, *argtypes)(addr);
 }
@@ -241,7 +244,7 @@ test "hetero death reclaims elements under headerless gc none (stamped drops)" {
 def _run_fixture_with_gc(extra_flags: list[str], tag: str) {
     src = os.path.join(FIXTURES, PROG);
     out_bin = os.path.join(tempfile.mkdtemp(), f"hetero_matrix_{tag}.bin");
-    cmd = [sys.executable, "-m", "jaclang", "nacompile", src];
+    cmd = jac_command("build", "--native", src);
     cmd += extra_flags;
     cmd += ["-o", out_bin];
     comp = subprocess.run(cmd, capture_output=True, text=True, timeout=300);
@@ -254,34 +257,23 @@ def _run_fixture_with_gc(extra_flags: list[str], tag: str) {
     assert proc.stdout.strip() == "OK hetero_matrix" , f"unexpected output under {tag}: {proc.stdout.strip()!r}";
 }
 
-test "hetero matrix passes under --gc rc (AOT)" {
-    _run_fixture_with_gc(["--gc", "rc"], "rc");
+test "hetero matrix passes under --memory rc (AOT)" {
+    _run_fixture_with_gc(["--memory", "rc"], "rc");
 }
 
-test "hetero matrix passes under --gc cycles (AOT)" {
-    _run_fixture_with_gc(["--gc", "cycles"], "cycles");
+test "hetero matrix passes under --memory managed (AOT)" {
+    _run_fixture_with_gc(["--memory", "managed"], "cycles");
 }
 
-test "hetero matrix passes under --gc none (AOT)" {
-    _run_fixture_with_gc(["--gc", "none"], "none");
+test "hetero matrix passes under --memory nogc (AOT)" {
+    _run_fixture_with_gc(["--memory", "nogc"], "none");
 }
 
-test "hetero nogc fixture passes under headerless --gc none --enforce-nogc (AOT)" {
+test "hetero nogc fixture passes under headerless --memory nogc (AOT)" {
     src = os.path.join(FIXTURES, "nogc", "hetero_nogc.jac");
     out_bin = os.path.join(tempfile.mkdtemp(), "hetero_nogc.bin");
     comp = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "jaclang",
-            "nacompile",
-            src,
-            "--gc",
-            "none",
-            "--enforce-nogc",
-            "-o",
-            out_bin
-        ],
+        jac_command("build", "--native", src, "--memory", "nogc", "-o", out_bin),
         capture_output=True,
         text=True,
         timeout=300
@@ -293,14 +285,14 @@ test "hetero nogc fixture passes under headerless --gc none --enforce-nogc (AOT)
         proc.stderr or proc.stdout or '(empty)'
     )[-600:]}";
     out = proc.stdout.strip().split("\n");
-    assert out == ["1200", "1200", "done"] , f"hetero nogc output mismatch: {out}";
+    assert out == ["600", "400", "done"] , f"hetero nogc output mismatch: {out}";
 }
 
 test "mixed dict keys and mixed set elements are stable diagnostics" {
     import tempfile as _tf;
     for (src_text, fn_name, label) in [
         (
-            "def bad_keys -> int { d: dict = {1: \"a\", \"b\": 2}; return len(d); }",
+            "def bad_keys -> int { d: dict[any, any] = {1: \"a\", \"b\": 2}; return len(d); }",
             "bad_keys",
             "dict-mixed-keys"
         ),

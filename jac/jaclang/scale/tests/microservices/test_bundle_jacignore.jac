@@ -2,18 +2,6 @@ import io;
 import tarfile;
 import tempfile;
 import from pathlib { Path }
-import from jaclang.scale.tests.support { pod_binary, require_pod_binary }
-import from jaclang.scale.injector.bundle {
-    _stage_app,
-    add_source_members,
-    bundle_source_files,
-    partition_bundle_sources,
-    content_address,
-    nested_sanitized_tomls,
-    open_det_tar,
-    pack_jab,
-    sanitized_jac_toml
-}
 
 
 glob _JAC_BIN: Path = pod_binary(),

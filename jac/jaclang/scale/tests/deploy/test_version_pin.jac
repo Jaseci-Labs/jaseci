@@ -2,23 +2,9 @@ import os;
 import json;
 import tempfile;
 import unittest.mock;
-import jaclang.scale.injector.binary as binary_mod;
-import from jaclang.scale.injector.binary { _exact_of, _resolve_target_version }
-import from jaclang.cli.manifest_route { resolve_cli_version }
-import from jaclang.scale.config.app_config { AppConfig }
-import from jaclang.scale.deploy.target.kubernetes.kubernetes_config {
-    KubernetesConfig
-}
-import from jaclang.scale.deploy.target.kubernetes.target { KubernetesTarget }
 import inspect;
 import io;
 import from contextlib { redirect_stderr }
-import from jaclang.scale.runtime.realizer.kubernetes_realizer {
-    DELEGATED_ENV,
-    KubernetesRealizer,
-    pinned_deploy_argv
-}
-import from jaclang.project.config { JacConfig }
 import from pathlib { Path }
 
 glob REPO: str = "jaseci-labs/jac";
@@ -40,14 +26,14 @@ def _release_meta(names: list[str]) -> bytes {
 
 
 test "exact pins (== or bare) are detected; ranges and junk are not" {
-    assert _exact_of("==0.34.3") == "0.34.3";
-    assert _exact_of("0.34.3") == "0.34.3";
-    assert _exact_of(">=0.34.3") == "";
-    assert _exact_of(">=0.34,<0.35") == "";
-    assert _exact_of("~=0.34.3") == "";
-    assert _exact_of("==0.34.*") == "";
-    assert _exact_of("") == "";
-    assert _exact_of("not-a-version") == "";
+    assert exact_pin("==0.34.3") == "0.34.3";
+    assert exact_pin("0.34.3") == "0.34.3";
+    assert exact_pin(">=0.34.3") == "";
+    assert exact_pin(">=0.34,<0.35") == "";
+    assert exact_pin("~=0.34.3") == "";
+    assert exact_pin("==0.34.*") == "";
+    assert exact_pin("") == "";
+    assert exact_pin("not-a-version") == "";
 }
 
 
@@ -386,7 +372,7 @@ test "the preflight needs the pod binary and the host sealing binary" {
 
 
 def _pin_offset(delta: int) -> str {
-    (major, minor, _) = binary_mod._ver_key(resolve_cli_version().strip());
+    (major, minor, _) = version_key(resolve_cli_version().strip());
     return _project(
         f'[project]\nname = "x"\njac-version = "=={major}.{minor + delta}.0"\n'
     );
@@ -435,7 +421,7 @@ test "a cross-generation deploy is refused before the cluster is contacted" {
     cfg = KubernetesConfig.from_dict(
         KubernetesConfig, {"app_name": "x", "namespace": "default"}
     );
-    result = KubernetesTarget(config=cfg, microservices_config={}).deploy(
+    result = KubernetesTarget(config=cfg).deploy(
         AppConfig(code_folder=_pin_offset(1), file_name="main.jac")
     );
     assert result.success is False , "a cross-generation deploy must not proceed";
@@ -451,7 +437,7 @@ test "the pinned jac is handed the same deploy, and cannot delegate again" {
     assert pinned_deploy_argv("/jac", "a.jac", "aws", True)[-1] == "--enable-tls";
 
     app = _project('[project]\nname = "x"\njac-version = "==0.1.0"\n') + "/main.jac";
-    r = KubernetesRealizer(ms_config={});
+    r = KubernetesRealizer();
     prior = os.environ.get(DELEGATED_ENV);
     os.environ[DELEGATED_ENV] = "1";
     try {
@@ -479,16 +465,16 @@ test "delegating runs the pinned binary with this deploy, and forwards its resul
         "#!/bin/sh\n" f'printf "%s\\n" "$@" > {d}/argv\n' f"env > {d}/env\n" "exit 7\n"
     );
     stub.chmod(0o755);
-    os.environ["JAC_DEV_SOURCE"] = d;
+    os.environ["JAC_HANDOFF"] = '{"compiler_source": "' + d + '"}';
     err = io.StringIO();
     with unittest.mock.patch.object(
         binary_mod, "host_toolchain_path", return_value=str(stub)
     ), redirect_stderr(err) {
-        rc = KubernetesRealizer(ms_config={})._deploy_on_pinned_jac(
+        rc = KubernetesRealizer()._deploy_on_pinned_jac(
             f"{d}/main.jac", "kubernetes", False, False
         );
     }
-    os.environ.pop("JAC_DEV_SOURCE", None);
+    os.environ.pop("JAC_HANDOFF", None);
 
     assert rc == 7 , f"the child exited 7; the deploy reported {rc}";
     # A child that fails quietly would otherwise leave a bare non-zero exit.
@@ -500,7 +486,7 @@ test "delegating runs the pinned binary with this deploy, and forwards its resul
         == ["scale", "deploy", f"{d}/main.jac", "--target", "kubernetes"] , argv;
     env = (Path(d) / "env").read_text();
     assert f"{DELEGATED_ENV}=1" in env , "the child can delegate again and fork forever";
-    assert "JAC_DEV_SOURCE" not in env , (
+    assert "JAC_HANDOFF" not in env , (
         "the child inherited the parent's dev source and would run its code, "
         "not the release it was fetched for"
     );

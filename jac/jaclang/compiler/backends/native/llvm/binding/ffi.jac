@@ -1,67 +1,6 @@
 import sys;
 import os;
 import ctypes;
-import from jaclang.compiler.backends.native.llvm.binding.common { _is_shutting_down }
-
-
-def _shim_name -> str {
-    if os.name == 'posix' {
-        if sys.platform == 'darwin' {
-            return 'libjacllvm.dylib';
-        }
-        return 'libjacllvm.so';
-    }
-    return 'jacllvm.dll';
-}
-
-
-def _find_shim -> str {
-    import from jaclang.compiler.driver.compile_options { env_llvm_shim_override }
-    `override = env_llvm_shim_override();
-    if `override and (`override.strip().lower() in ("none", "off", "disabled")) {
-        raise OSError(
-            "LLVM shim disabled by JAC_LLVM_SHIM="
-                + `override
-                + "; the native pipeline is unavailable in this process."
-        );
-    }
-    if `override and os.path.isfile(`override) {
-        return `override;
-    }
-    shim = _shim_name();
-
-    here = os.path.dirname(os.path.abspath(__file__));
-    cand = os.path.join(os.path.dirname(here), shim);
-    if os.path.isfile(cand) {
-        return cand;
-    }
-
-    for p in sys.path {
-        if not p {
-            continue;
-        }
-        alt = os.path.join(
-            p, 'jaclang', 'compiler', 'backends', 'native', 'llvm', shim
-        );
-        if os.path.isfile(alt) {
-            return alt;
-        }
-        # Pre-reorg site layout: a host binary built before #8681 bundles
-        # the shim under compiler/passes/native/, and the dev-source
-        # reroute must still find it there.
-        legacy = os.path.join(
-            p, 'jaclang', 'compiler', 'passes', 'native', 'llvm', shim
-        );
-        if os.path.isfile(legacy) {
-            return legacy;
-        }
-    }
-    raise OSError(
-        f"Could not locate the LLVM shim '{shim}'. Build it with "
-            + "`zig build jacllvm` (artifact in jac/zig-out/lib/) and copy it next to "
-            + "this package or set JAC_LLVM_SHIM; shipped binaries bundle it."
-    );
-}
 
 
 class _MissingShimFunc {
@@ -71,8 +10,8 @@ class _MissingShimFunc {
     shim those assignments land here and vanish, so the modules stay
     importable (the checker resolving an import must not demand LLVM).
     Only an actual call raises, with the original locate error."""
-    def init(self: _MissingShimFunc, err: OSError) {
-        self._err: OSError = err;
+    def init(self: _MissingShimFunc, err: Exception) {
+        self._err: Exception = err;
     }
 
     def __call__(self: _MissingShimFunc, *args: any, **kwargs: any) -> any {
@@ -89,7 +28,9 @@ class _LazyLib {
     def __getattr__(self: _LazyLib, name: str) -> any {
         if self._handle is None {
             try {
-                self._handle = ctypes.CDLL(_find_shim());
+                self._handle = ctypes.CDLL(shim_path());
+            } except ArtifactUnavailable as e {
+                return _MissingShimFunc(e);
             } except OSError as e {
                 return _MissingShimFunc(e);
             }
@@ -133,7 +74,6 @@ glob LLVMContextRef = _opaque("LLVMContext"),
      LLVMSectionIteratorRef = _opaque("LLVMSectionIterator"),
      LLVMOrcLLJITRef = _opaque("LLVMOrcLLJITRef"),
      LLVMOrcDylibTrackerRef = _opaque("LLVMOrcDylibTrackerRef"),
-     LLVMTimePassesHandlerRef = _opaque("LLVMTimePassesHandler"),
      LLVMPipelineTuningOptionsRef = _opaque("LLVMPipeLineTuningOptions"),
      LLVMModulePassManagerRef = _opaque("LLVMModulePassManager"),
      LLVMFunctionPassManagerRef = _opaque("LLVMFunctionPassManager"),

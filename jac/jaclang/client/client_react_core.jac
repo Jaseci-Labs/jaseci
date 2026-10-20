@@ -2,39 +2,93 @@ import from 'react' { * as React }
 import from 'react-hook-form' { useForm }
 import from '@hookform/resolvers/zod' { zodResolver }
 
-def:pub __jacJsx(tag: any, props: dict = {}, children: any = []) -> JsxElement;
+def:pub __jacJsx(
+    tag: any, props: dict[str, any] = {}, children: any = []
+) -> JsxElement;
+
 def:pub __jacRegisterRenderer(renderer: any) -> None;
-def:pub JacAwaiting(props: dict) -> JsxElement;
+def:pub JacAwaiting(props: dict[str, any]) -> JsxElement;
+
+obj:pub BridgeError(Exception) {
+    has app: str = "",
+        name: str = "",
+        detail: str = "",
+        status: int = 0,
+        message: str = "";
+
+    def postinit;
+}
+
+obj:pub BridgeUnavailable(BridgeError) {}
+
+obj:pub BridgeTimeout(BridgeError) {}
+
+obj:pub BridgeRejected(BridgeError) {}
+
+def:pub __bridgeErrorFor(
+    status: int, message: str, app: str = "", name: str = ""
+) -> BridgeError;
+
+def:pub __bridgeErrorFromFetch(err: any, app: str = "", name: str = "") -> BridgeError;
+def:pub __bridgeApiBase(opts: (dict[str, any] | None) = None) -> str;
 
 def:pub __createJacSchema(zodLib: any) -> any;
-async def:pub __jacSpawn(left: str, right: str = "", fields: dict = {}) -> any;
-def:pub jacSpawn(left: str, right: str = "", fields: dict = {}) -> any;
-async def:pub __jacCallFunction(function_name: str, args: dict = {}) -> any;
-def:pub __normalizeIdentity(x: any) -> dict;
-def:pub __normalizeCredential(x: any) -> dict;
+async def:pub __jacSpawn(
+    left: str,
+    right: str = "",
+    fields: dict[str, any] = {},
+    opts: (dict[str, any] | None) = None
+) -> any;
+
+def:pub jacSpawn(
+    left: str,
+    right: str = "",
+    fields: dict[str, any] = {},
+    opts: (dict[str, any] | None) = None
+) -> any;
+
+async def:pub __jacCallFunction(
+    function_name: str, args: dict[str, any] = {}, opts: (dict[str, any] | None) = None
+) -> any;
+
+async def:pub __authPolicy -> any;
+def:pub __normalizeIdentity(x: any, policy: any = None) -> dict[str, any];
+def:pub __normalizeCredential(x: any) -> dict[str, any];
 async def:pub jacSignup(
-    identities_or_username: (str | list),
-    credential_or_password: (str | dict),
-    profile: (dict | None) = None
-) -> dict;
+    identities_or_username: (str | list[str | dict[str, any]]),
+    credential_or_password: (str | dict[str, any]),
+    profile: (dict[str, any] | None) = None
+) -> SignupResult;
 
 async def:pub jacLogin(
-    identity_or_username: (str | dict), credential_or_password: (str | dict)
+    identity_or_username: (str | dict[str, any]),
+    credential_or_password: (str | dict[str, any])
 ) -> bool;
 
 def:pub jacLogout -> None;
 def:pub jacIsLoggedIn -> bool;
+def:pub jacSetToken(token: str) -> None;
+def:pub useJacState(initial: any) -> any;
 
 def:pub useJacForm(form_mode: str = "onTouched", schema: any) -> any;
 
-def:pub __getEndpointEffects -> dict;
-def:pub __getCacheState -> dict;
-def:pub __isFresh(`entry: dict) -> bool;
-def:pub __cacheGet(key: str) -> dict | None;
+def:pub __getEndpointEffects -> dict[str, any];
+def:pub __getCacheState -> dict[str, any];
+def:pub __isFresh(`entry: dict[str, any]) -> bool;
+def:pub __cacheGet(key: str) -> dict[str, any] | None;
 def:pub __cacheSet(key: str, data: any, ttl: int) -> None;
 def:pub __evictOldest -> None;
-async def:pub __doWalkerFetch(`walker: str, nodeId: str, fields: dict) -> any;
-async def:pub __doFuncFetch(function_name: str, args: dict) -> any;
+async def:pub __doWalkerFetch(
+    `walker: str,
+    nodeId: str,
+    fields: dict[str, any],
+    opts: (dict[str, any] | None) = None
+) -> any;
+
+async def:pub __doFuncFetch(
+    function_name: str, args: dict[str, any], opts: (dict[str, any] | None) = None
+) -> any;
+
 async def:pub __cachedEndpointCall(
     endpoint_key: str, args_key: str, fetch_fn: any
 ) -> any;
@@ -51,3 +105,7 @@ def:pub __jacReportError(
 ) -> None;
 
 def:pub __jacReactErrorHandler(error: any, info: any) -> None;
+
+impl BridgeError.postinit {
+    self.message = self.detail;
+}

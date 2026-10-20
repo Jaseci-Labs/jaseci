@@ -8,7 +8,6 @@ import from pathlib { Path }
 import from tempfile { TemporaryDirectory, NamedTemporaryFile }
 import from jaclang.project.config {
     JacConfig,
-    discover_config_files,
     find_project_root,
     get_config,
     get_config_for_path,
@@ -21,9 +20,9 @@ import from jaclang.project.config {
 import jaclang.project.config as config_mod;
 
 glob FIXTURE_BASE = str(Path(__file__).parent / "fixtures"),
-     JAC_TOML_CONTENT = "[project]\nname = \"test-project\"\nversion = \"0.1.0\"\ndescription = \"A test project\"\nentry-point = \"main.jac\"\n\n[dependencies]\nrequests = \">=2.28.0\"\n\n[dev-dependencies]\npytest = \">=8.0.0\"\n\n[run]\nmain = true\ncache = true\n\n[scripts]\ntest = \"jac test\"\n",
+     JAC_TOML_CONTENT = "[project]\nname = \"test-project\"\nversion = \"0.1.0\"\ndescription = \"A test project\"\nentry-point = \"main\"\n\n[dependencies.pypi]\nrequests = \">=2.28.0\"\n\n[dev-dependencies.pypi]\npytest = \">=8.0.0\"\n\n[run]\nmain = true\ncache = true\n\n[scripts]\ntest = \"jac test\"\n",
      MAIN_JAC_CONTENT = "\"\"\"Test main file.\"\"\"\n\nwith entry {\n    print(\"Hello, World!\");\n}\n",
-     BASE_TOML = "[project]\nname = \"jactastic\"\n\n[serve]\nport = 8090\nbase_route_app = \"app\"\n\n[client]\n\n[dependencies.npm]\njac-client-node = \"1.0.4\"\n\n[dev-dependencies]\nwatchdog = \">=3.0\"\n",
+     BASE_TOML = "[project]\nname = \"jactastic\"\n\n[serve]\nport = 8090\n\n[client]\n\n[dependencies.npm]\njac-client-node = \"1.0.4\"\n\n[dev-dependencies.pypi]\nwatchdog = \">=3.0\"\n",
      PROD_TOML = "[serve]\nport = 80\n\n[client]\nminify = true\n\n[byllm]\ndefault_model = \"gpt-4\"\n",
      LOCAL_TOML = "[serve]\nport = 9000\n\n[run]\ncache = false\n";
 
@@ -112,6 +111,106 @@ test "interpolate multiple env vars" {
     assert result == "http://localhost:8080/api";
     del os.environ["HOST"];
     del os.environ["PORT"];
+}
+
+test "interpolate against a given environment instead of the process one" {
+    os.environ["JAC_PROCESS_ONLY"] = "from-process";
+    environ = {"POD_VAR": "from-pod"};
+    cases = [
+        ("${POD_VAR}", "from-pod"),
+        ("${JAC_PROCESS_ONLY:-fallback}", "fallback"),
+        ("echo ${1}", "echo ${1}"),
+        ("${JAC_PROCESS_ONLY}", "Environment variable JAC_PROCESS_ONLY is not set"),
+        (
+            "${JAC_PROCESS_ONLY:?pods need it}",
+            "JAC_PROCESS_ONLY is required: pods need it"
+        ),
+        ("${POD_VAR:+on}", "Unsupported form ${POD_VAR:+on}"),
+        ("${POD_VAR:0:3}", "Unsupported form ${POD_VAR:0:3}"),
+        ("${POD_VAR-default}", "Unsupported form ${POD_VAR-default}"),
+        ("${POD_VAR?msg}", "Unsupported form ${POD_VAR?msg}"),
+        ("echo ${1:+on}", "echo ${1:+on}"),
+        ("echo ${#arr[@]}", "echo ${#arr[@]}")
+    ];
+    try {
+        for (value, expected) in cases {
+            try {
+                got = interpolate_env_vars(value, environ);
+            } except ValueError as e {
+                got = str(e);
+            }
+            assert expected in got , f"{value}: expected {expected!r}, got {got!r}";
+        }
+    } finally {
+        del os.environ["JAC_PROCESS_ONLY"];
+    }
+}
+
+test "config load records the references it could not resolve" {
+    config_mod._config = None;
+    var_name = "JAC_TEST_UNRESOLVED";
+    base = "[project]\nname = \"test-project\"\n\n";
+    cases = [
+        (
+            "a bare reference",
+            f"[scale.secrets]\nKEY = \"${{{var_name}}}\"\n",
+            [("scale.secrets.KEY", False, "", False)]
+        ),
+        (
+            "a required reference",
+            f"[scale.secrets]\nKEY = \"${{{var_name}:?export it}}\"\n",
+            [("scale.secrets.KEY", True, "export it", False)]
+        ),
+        ("a default", f"[scale.secrets]\nKEY = \"${{{var_name}:-x}}\"\n", []),
+        (
+            "a shell positional, which is not a variable name",
+            "[scripts]\ngreet = \"sh -c 'echo ${1}'\"\n",
+            []
+        ),
+        (
+            "a reference inside a list",
+            f"[serve]\ncors_origins = [\"${{{var_name}}}\"]\n",
+            [("serve.cors_origins[0]", False, "", False)]
+        ),
+        (
+            "a reference under an app",
+            "[apps.web]\nkind = \"web-app\"\nentry-point = \"main\"\n"
+                + f"[apps.web.dependencies.npm]\npkg = \"${{{var_name}}}\"\n",
+            [("apps.web.dependencies.npm.pkg", False, "", False)]
+        ),
+        (
+            "an alternate-value form, which jac does not read",
+            f"[scale.secrets]\nKEY = \"${{{var_name}:+on}}\"\n",
+            [("scale.secrets.KEY", False, "", True)]
+        ),
+        (
+            "a substring form, which jac does not read",
+            f"[scale.secrets]\nKEY = \"${{{var_name}:0:3}}\"\n",
+            [("scale.secrets.KEY", False, "", True)]
+        )
+    ];
+    previous = os.environ.pop(var_name, None);
+    try {
+        for (label, extra, expected) in cases {
+            with TemporaryDirectory() as tmpdir {
+                toml_path = Path(tmpdir) / "jac.toml";
+                toml_path.write_text(base + extra);
+                config = JacConfig.load(toml_path);
+                got = [
+                    (ref.path, ref.required, ref.message, ref.unsupported)
+                    for ref in config.unresolved
+                ];
+                assert got == expected , f"{label}: {got}";
+                for ref in config.unresolved {
+                    assert ref.var == var_name , label;
+                }
+            }
+        }
+    } finally {
+        if previous is not None {
+            os.environ[var_name] = previous;
+        }
+    }
 }
 
 test "interpolate non string passthrough" {
@@ -273,7 +372,7 @@ test "load basic config" {
         assert cfg.project.name == "test-project";
         assert cfg.project.version == "0.1.0";
         assert cfg.project.description == "A test project";
-        assert cfg.project.entry_point == "main.jac";
+        assert cfg.project.entry_point == "main";
     }
 }
 
@@ -282,8 +381,8 @@ test "load dependencies" {
     with TemporaryDirectory() as tmpdir {
         temp_project = make_temp_project(Path(tmpdir));
         cfg = JacConfig.load(temp_project / "jac.toml");
-        assert "requests" in cfg.dependencies;
-        assert cfg.dependencies["requests"] == ">=2.28.0";
+        assert "requests" in cfg.pypi_dependencies;
+        assert cfg.pypi_dependencies["requests"] == ">=2.28.0";
     }
 }
 
@@ -292,8 +391,8 @@ test "load dev dependencies" {
     with TemporaryDirectory() as tmpdir {
         temp_project = make_temp_project(Path(tmpdir));
         cfg = JacConfig.load(temp_project / "jac.toml");
-        assert "pytest" in cfg.dev_dependencies;
-        assert cfg.dev_dependencies["pytest"] == ">=8.0.0";
+        assert "pytest" in cfg.pypi_dev_dependencies;
+        assert cfg.pypi_dev_dependencies["pytest"] == ">=8.0.0";
     }
 }
 
@@ -477,37 +576,18 @@ test "dev section parsing" {
     assert as_int.dev.test_jobs == "0";
 }
 
-test "parse build native_closure_cap" {
+test "a retired [build] native_closure_cap leaves the rest of [build] read" {
     config_mod._config = None;
-    cfg = JacConfig.from_toml_str("\n[build]\nnative_closure_cap = 8\n");
-    assert cfg.build.native_closure_cap == 8;
-
-    config_mod._config = None;
-    base = JacConfig.from_toml_str("\n[build]\ndir = \".jac\"\n");
-    assert base.build.native_closure_cap == 256;
-
-    config_mod._config = None;
-    bad = JacConfig.from_toml_str("\n[build]\nnative_closure_cap = 0\n");
-    assert bad.build.native_closure_cap == 256 , "invalid cap falls back to default";
-}
-
-test "closure cap override resolves through effective_native_closure_cap" {
-    import from jaclang.compiler.frontend.codeinfo {
-        set_native_closure_cap,
-        effective_native_closure_cap
-    }
-    set_native_closure_cap(3);
-    try {
-        assert effective_native_closure_cap() == 3;
-    } finally {
-        set_native_closure_cap(0);
-    }
-    assert effective_native_closure_cap() == 256;
+    cfg = JacConfig.from_toml_str(
+        "\n[build]\ndir = \".out\"\nnative_closure_cap = 8\n"
+    );
+    assert cfg.build.dir == ".out";
+    assert not hasattr(cfg.build, "native_closure_cap");
 }
 
 test "parse full config" {
     config_mod._config = None;
-    toml_str = "\n[project]\nname = \"full-project\"\nversion = \"1.2.3\"\ndescription = \"A full project\"\nauthors = [\"Jane Doe <jane@example.com>\"]\nlicense = \"MIT\"\nentry-point = \"app.jac\"\n\n[dependencies]\nnumpy = \">=1.24.0\"\npandas = \">=2.0.0\"\n\n[run]\nsession = \"my_session\"\nmain = false\ncache = false\n\n[build]\ndir = \".jac\"\n\n[test]\ndirectory = \"tests\"\nverbose = true\nfail_fast = true\nmax_failures = 5\n\n[serve]\nport = 9000\n\n[cache]\nenabled = false\ndir = \".cache\"\n\n[scripts]\nstart = \"jac run app.jac\"\nlint = \"jac lint . --fix\"\n\n[byllm]\ndefault_model = \"gpt-4\"\ntemperature = 0.7\n\n[environments.development]\n[environments.development.serve]\nport = 3000\n\n[environments.production]\n[environments.production.serve]\nport = 8000\n";
+    toml_str = "\n[project]\nname = \"full-project\"\nversion = \"1.2.3\"\ndescription = \"A full project\"\nauthors = [\"Jane Doe <jane@example.com>\"]\nlicense = \"MIT\"\nentry-point = \"app\"\n\n[dependencies.pypi]\nnumpy = \">=1.24.0\"\npandas = \">=2.0.0\"\n\n[run]\nsession = \"my_session\"\nmain = false\ncache = false\n\n[build]\ndir = \".jac\"\n\n[test]\ndirectory = \"tests\"\nverbose = true\nfail_fast = true\nmax_failures = 5\n\n[serve]\nport = 9000\n\n[cache]\nenabled = false\ndir = \".cache\"\n\n[scripts]\nstart = \"jac run app.jac\"\nlint = \"jac lint . --fix\"\n\n[byllm]\ndefault_model = \"gpt-4\"\ntemperature = 0.7\n\n[environments.development]\n[environments.development.serve]\nport = 3000\n\n[environments.production]\n[environments.production.serve]\nport = 8000\n";
     cfg = JacConfig.from_toml_str(toml_str);
 
     # Project
@@ -515,11 +595,11 @@ test "parse full config" {
     assert cfg.project.version == "1.2.3";
     assert cfg.project.description == "A full project";
     assert cfg.project.license == "MIT";
-    assert cfg.project.entry_point == "app.jac";
+    assert cfg.project.entry_point == "app";
 
     # Dependencies
-    assert "numpy" in cfg.dependencies;
-    assert "pandas" in cfg.dependencies;
+    assert "numpy" in cfg.pypi_dependencies;
+    assert "pandas" in cfg.pypi_dependencies;
 
     # Run config
     assert cfg.run.session == "my_session";
@@ -591,26 +671,26 @@ test "add python dependency" {
     config_mod._config = None;
     cfg = JacConfig();
     cfg.add_dependency("requests", ">=2.28.0");
-    assert "requests" in cfg.dependencies;
-    assert cfg.dependencies["requests"] == ">=2.28.0";
+    assert "requests" in cfg.pypi_dependencies;
+    assert cfg.pypi_dependencies["requests"] == ">=2.28.0";
 }
 
 test "add dev dependency" {
     config_mod._config = None;
     cfg = JacConfig();
     cfg.add_dependency("pytest", ">=8.0.0", dev=True);
-    assert "pytest" in cfg.dev_dependencies;
-    assert cfg.dev_dependencies["pytest"] == ">=8.0.0";
+    assert "pytest" in cfg.pypi_dev_dependencies;
+    assert cfg.pypi_dev_dependencies["pytest"] == ">=8.0.0";
 }
 
 test "add git dependency" {
     config_mod._config = None;
     cfg = JacConfig();
     cfg.add_dependency(
-        "my-plugin", "https://github.com/user/plugin.git", dep_type="git"
+        "my-plugin", "https://github.com/user/plugin.git", dep_type="pypi-git"
     );
-    assert "my-plugin" in cfg.git_dependencies;
-    assert cfg.git_dependencies["my-plugin"]["git"]
+    assert "my-plugin" in cfg.pypi_git_dependencies;
+    assert cfg.pypi_git_dependencies["my-plugin"]["git"]
         == "https://github.com/user/plugin.git";
 }
 
@@ -625,10 +705,10 @@ test "add npm dependency" {
 test "remove python dependency" {
     config_mod._config = None;
     cfg = JacConfig();
-    cfg.dependencies["requests"] = ">=2.28.0";
+    cfg.pypi_dependencies["requests"] = ">=2.28.0";
     result = cfg.remove_dependency("requests");
     assert result is True;
-    assert "requests" not in cfg.dependencies;
+    assert "requests" not in cfg.pypi_dependencies;
 }
 
 test "remove nonexistent dependency" {
@@ -890,89 +970,6 @@ test "active profile default empty" {
 }
 
 # ===========================================================================
-# TestDiscoverConfigFiles
-# ===========================================================================
-test "only base exists" {
-    config_mod._config = None;
-    with TemporaryDirectory() as tmpdir {
-        temp_project = make_temp_project(Path(tmpdir));
-        files = discover_config_files(temp_project);
-        assert len(files) == 1;
-        assert files[0] == temp_project / "jac.toml";
-    }
-}
-
-test "with profile file" {
-    config_mod._config = None;
-    with TemporaryDirectory() as tmpdir {
-        temp_project = make_temp_project(Path(tmpdir));
-        prod_toml = temp_project / "jac.prod.toml";
-        prod_toml.write_text("[serve]\nport = 80\n");
-        files = discover_config_files(temp_project, profile="prod");
-        assert len(files) == 2;
-        assert files[0] == temp_project / "jac.toml";
-        assert files[1] == prod_toml;
-    }
-}
-
-test "with local file" {
-    config_mod._config = None;
-    with TemporaryDirectory() as tmpdir {
-        temp_project = make_temp_project(Path(tmpdir));
-        local_toml = temp_project / "jac.local.toml";
-        local_toml.write_text("[run]\ncache = false\n");
-        files = discover_config_files(temp_project);
-        assert len(files) == 2;
-        assert files[0] == temp_project / "jac.toml";
-        assert files[1] == local_toml;
-    }
-}
-
-test "all files present" {
-    config_mod._config = None;
-    with TemporaryDirectory() as tmpdir {
-        temp_project = make_temp_project(Path(tmpdir));
-        (temp_project / "jac.staging.toml").write_text("[serve]\nport = 9000\n");
-        (temp_project / "jac.local.toml").write_text("[run]\ncache = false\n");
-        files = discover_config_files(temp_project, profile="staging");
-        assert len(files) == 3;
-        assert files[0].name == "jac.toml";
-        assert files[1].name == "jac.staging.toml";
-        assert files[2].name == "jac.local.toml";
-    }
-}
-
-test "profile file missing" {
-    config_mod._config = None;
-    with TemporaryDirectory() as tmpdir {
-        temp_project = make_temp_project(Path(tmpdir));
-        files = discover_config_files(temp_project, profile="nonexistent");
-        assert len(files) == 1;
-        assert files[0].name == "jac.toml";
-    }
-}
-
-test "no profile skips profile file" {
-    config_mod._config = None;
-    with TemporaryDirectory() as tmpdir {
-        temp_project = make_temp_project(Path(tmpdir));
-        (temp_project / "jac.prod.toml").write_text("[serve]\nport = 80\n");
-        files = discover_config_files(temp_project, profile=None);
-        assert len(files) == 1;
-    }
-}
-
-test "empty directory" {
-    config_mod._config = None;
-    with TemporaryDirectory() as tmpdir {
-        empty_dir = Path(tmpdir) / "empty";
-        empty_dir.mkdir();
-        files = discover_config_files(empty_dir);
-        assert len(files) == 0;
-    }
-}
-
-# ===========================================================================
 # TestMergeFromTomlFile
 # ===========================================================================
 test "merge simple sections" {
@@ -1010,9 +1007,26 @@ test "merge project kebab case" {
         temp_project = make_temp_project(Path(tmpdir));
         cfg = JacConfig.load(temp_project / "jac.toml");
         overlay = temp_project / "overlay.toml";
-        overlay.write_text("[project]\nentry-point = \"app.jac\"\n");
+        overlay.write_text("[project]\nentry-point = \"app\"\n");
         cfg.merge_from_toml_file(overlay);
-        assert cfg.project.entry_point == "app.jac";
+        assert cfg.project.entry_point == "app";
+    }
+}
+
+test "check exclude parses and defaults empty" {
+    config_mod._config = None;
+    with TemporaryDirectory() as tmpdir {
+        temp_project = make_temp_project(Path(tmpdir));
+        cfg = JacConfig.load(temp_project / "jac.toml");
+        assert cfg.check.exclude == [];
+        overlay = temp_project / "overlay.toml";
+        overlay.write_text(
+            "[check]\nexclude = [\"tests\", \"*_err.jac\"]\n\n"
+            "[check.lint]\nselect = [\"all\"]\n"
+        );
+        cfg.merge_from_toml_file(overlay);
+        assert cfg.check.exclude == ["tests", "*_err.jac"];
+        assert cfg.check.lint.select == ["all"];
     }
 }
 
@@ -1046,13 +1060,13 @@ test "merge dependencies" {
     with TemporaryDirectory() as tmpdir {
         temp_project = make_temp_project(Path(tmpdir));
         cfg = JacConfig.load(temp_project / "jac.toml");
-        assert "requests" in cfg.dependencies;
+        assert "requests" in cfg.pypi_dependencies;
         overlay = temp_project / "overlay.toml";
-        overlay.write_text("[dependencies]\nnumpy = \">=1.24.0\"\n");
+        overlay.write_text("[dependencies.pypi]\nnumpy = \">=1.24.0\"\n");
         cfg.merge_from_toml_file(overlay);
-        assert "requests" in cfg.dependencies;
-        assert "numpy" in cfg.dependencies;
-        assert cfg.dependencies["numpy"] == ">=1.24.0";
+        assert "requests" in cfg.pypi_dependencies;
+        assert "numpy" in cfg.pypi_dependencies;
+        assert cfg.pypi_dependencies["numpy"] == ">=1.24.0";
     }
 }
 
@@ -1061,11 +1075,11 @@ test "merge dependencies override" {
     with TemporaryDirectory() as tmpdir {
         temp_project = make_temp_project(Path(tmpdir));
         cfg = JacConfig.load(temp_project / "jac.toml");
-        assert cfg.dependencies["requests"] == ">=2.28.0";
+        assert cfg.pypi_dependencies["requests"] == ">=2.28.0";
         overlay = temp_project / "overlay.toml";
-        overlay.write_text("[dependencies]\nrequests = \">=3.0.0\"\n");
+        overlay.write_text("[dependencies.pypi]\nrequests = \">=3.0.0\"\n");
         cfg.merge_from_toml_file(overlay);
-        assert cfg.dependencies["requests"] == ">=3.0.0";
+        assert cfg.pypi_dependencies["requests"] == ">=3.0.0";
     }
 }
 
@@ -1075,10 +1089,10 @@ test "merge dev dependencies" {
         temp_project = make_temp_project(Path(tmpdir));
         cfg = JacConfig.load(temp_project / "jac.toml");
         overlay = temp_project / "overlay.toml";
-        overlay.write_text("[dev-dependencies]\nruff = \">=0.1.0\"\n");
+        overlay.write_text("[dev-dependencies.pypi]\nruff = \">=0.1.0\"\n");
         cfg.merge_from_toml_file(overlay);
-        assert "ruff" in cfg.dev_dependencies;
-        assert "pytest" in cfg.dev_dependencies;
+        assert "ruff" in cfg.pypi_dev_dependencies;
+        assert "pytest" in cfg.pypi_dev_dependencies;
     }
 }
 
@@ -1459,20 +1473,20 @@ test "apply profile check with lint" {
 test "apply profile project kebab case" {
     config_mod._config = None;
     cfg = JacConfig.from_toml_str(
-        "[project]\nname = \"test\"\nentry-point = \"main.jac\"\n\n[environments.alt]\n[environments.alt.project]\nentry-point = \"app.jac\"\n"
+        "[project]\nname = \"test\"\nentry-point = \"main\"\n\n[environments.alt]\n[environments.alt.project]\nentry-point = \"app\"\n"
     );
     cfg.apply_profile("alt");
-    assert cfg.project.entry_point == "app.jac";
+    assert cfg.project.entry_point == "app";
 }
 
 test "apply profile dependencies and scripts" {
     config_mod._config = None;
     cfg = JacConfig.from_toml_str(
-        "[project]\nname = \"test\"\n\n[dependencies]\nrequests = \">=2.0\"\n\n[scripts]\ntest = \"jac test\"\n\n[environments.prod]\n[environments.prod.dependencies]\ngunicorn = \">=21.0\"\n\n[environments.prod.scripts]\nstart = \"jac run --port 80\"\n"
+        "[project]\nname = \"test\"\n\n[dependencies.pypi]\nrequests = \">=2.0\"\n\n[scripts]\ntest = \"jac test\"\n\n[environments.prod]\n[environments.prod.dependencies.pypi]\ngunicorn = \">=21.0\"\n\n[environments.prod.scripts]\nstart = \"jac run --port 80\"\n"
     );
     cfg.apply_profile("prod");
-    assert cfg.dependencies.get("gunicorn") == ">=21.0";
-    assert cfg.dependencies.get("requests") == ">=2.0";
+    assert cfg.pypi_dependencies.get("gunicorn") == ">=21.0";
+    assert cfg.pypi_dependencies.get("requests") == ">=2.0";
     assert cfg.scripts.get("start") == "jac run --port 80";
     assert cfg.scripts.get("test") == "jac test";
 }
@@ -1609,7 +1623,6 @@ test "load base only" {
         write_multi_profile(temp_project);
         cfg = JacConfig.load(temp_project / "jac.toml");
         assert cfg.project.name == "jactastic";
-        assert cfg.serve.base_route_app == "app";
         assert cfg.serve.port == 8090;
         assert cfg.active_profile == "";
         files = cfg.config_files;
@@ -1654,7 +1667,6 @@ test "prod without local override" {
         cfg = JacConfig.load(temp_project / "jac.toml");
         cfg.merge_from_toml_file(temp_project / "jac.prod.toml");
         assert cfg.serve.port == 80;
-        assert cfg.serve.base_route_app == "app";
         assert cfg.plugins["client"]["minify"] is True;
     }
 }
@@ -1695,32 +1707,7 @@ test "base dependencies preserved" {
         assert cfg is not None;
         assert "npm" in cfg.plugin_dependencies;
         assert cfg.plugin_dependencies["npm"]["jac-client-node"] == "1.0.4";
-        assert "watchdog" in cfg.dev_dependencies;
-    }
-}
-
-test "discover config files for prod" {
-    config_mod._config = None;
-    with TemporaryDirectory() as tmpdir {
-        temp_project = make_temp_project(Path(tmpdir));
-        write_multi_profile(temp_project);
-        files = discover_config_files(temp_project, profile="prod");
-        assert len(files) == 3;
-        assert files[0] == temp_project / "jac.toml";
-        assert files[1] == temp_project / "jac.prod.toml";
-        assert files[2] == temp_project / "jac.local.toml";
-    }
-}
-
-test "discover config files no profile multi" {
-    config_mod._config = None;
-    with TemporaryDirectory() as tmpdir {
-        temp_project = make_temp_project(Path(tmpdir));
-        write_multi_profile(temp_project);
-        files = discover_config_files(temp_project);
-        assert len(files) == 2;
-        assert files[0] == temp_project / "jac.toml";
-        assert files[1] == temp_project / "jac.local.toml";
+        assert "watchdog" in cfg.pypi_dev_dependencies;
     }
 }
 
@@ -1808,7 +1795,7 @@ version = "1.0.0"
 authors = [{ name = "Jason Mars", email = "jason@mars.ninja" }]
 maintainers = [{ name = "A", email = "a@b.c" }, { name = "D", email = "d@e.f" }]
 
-[dependencies]
+[dependencies.pypi]
 jaclang = ">=0.15.2"
 """;
     with TemporaryDirectory() as tmpdir {
@@ -1816,7 +1803,7 @@ jaclang = ">=0.15.2"
         toml_path.write_text(toml_with_persons);
         cfg = JacConfig.load(toml_path);
         # Any dependency change triggers a full re-serialize of the file.
-        cfg.add_dependency("rich", ">=13.0.0", dev=False, dep_type="python");
+        cfg.add_dependency("rich", ">=13.0.0", dev=False, dep_type="pypi");
         cfg.save();
         saved = toml_path.read_text();
         # Must remain a parseable array of inline tables, not a repr string.
@@ -1827,7 +1814,7 @@ jaclang = ">=0.15.2"
             == [{"name": "A", "email": "a@b.c"}, {"name": "D", "email": "d@e.f"}] , "maintainers must survive save() as inline tables";
         # save() must not leave behind a stray empty [plugins] table.
         assert "plugins" not in parsed , "empty [plugins] table must not be emitted";
-        assert parsed["dependencies"]["rich"] == ">=13.0.0";
+        assert parsed["dependencies"]["pypi"]["rich"] == ">=13.0.0";
     }
 }
 
@@ -1840,7 +1827,7 @@ test "save preserves comments when adding a dependency" {
 name = "repro"
 version = "0.1.0"  # keep in sync with git tags
 
-[dependencies]
+[dependencies.pypi]
 # Pinned <5.0.0 deliberately: bcrypt 5.x breaks our password hashes.
 # DO NOT BUMP without migrating the hash format first.
 bcrypt = ">=4.0.0,<5.0.0"
@@ -1865,8 +1852,8 @@ bcrypt = ">=4.0.0,<5.0.0"
             "untouched dependency lines must be preserved verbatim"
         );
         parsed = tomllib.loads(saved);
-        assert parsed["dependencies"]["httpx"] == "~=0.28";
-        assert parsed["dependencies"]["bcrypt"] == ">=4.0.0,<5.0.0";
+        assert parsed["dependencies"]["pypi"]["httpx"] == "~=0.28";
+        assert parsed["dependencies"]["pypi"]["bcrypt"] == ">=4.0.0,<5.0.0";
     }
 }
 
@@ -1878,13 +1865,13 @@ test "save preserves comments when removing a dependency" {
 name = "repro"
 version = "0.1.0"
 
-[dependencies]
+[dependencies.pypi]
 # httpx stays on 0.28 until the retry middleware is ported.
 httpx = "~=0.28"
 # bcrypt 5.x breaks our password hashes.
 bcrypt = ">=4.0.0,<5.0.0"
 
-[dev-dependencies]
+[dev-dependencies.pypi]
 # pytest 9 drops the plugin API we rely on.
 pytest = ">=8.0.0,<9.0.0"
 """;
@@ -1900,7 +1887,7 @@ pytest = ">=8.0.0,<9.0.0"
         assert 'bcrypt = ">=4.0.0,<5.0.0"' in saved;
         assert 'pytest = ">=8.0.0,<9.0.0"' in saved;
         parsed = tomllib.loads(saved);
-        assert "httpx" not in parsed["dependencies"];
+        assert "httpx" not in parsed["dependencies"]["pypi"];
     }
 }
 
@@ -1946,41 +1933,44 @@ test "discover flags configs found in an ancestor directory" {
 }
 
 # ===========================================================================
-# TestLegacyPluginsTable
+# Uniform ${VAR} interpolation and removed keys
 # ===========================================================================
-test "legacy plugins table warns on load" {
+test "interpolation applies to every parsed string" {
     config_mod._config = None;
-    import io;
-    import from contextlib { redirect_stderr }
-    with TemporaryDirectory() as tmpdir {
-        temp_project = make_temp_project(Path(tmpdir));
-        (temp_project / "jac.toml").write_text(
-            "[project]\nname = \"demo\"\n\n"
-            "[plugins.scale.websocket]\nmax_message_bytes = 1\n"
+    os.environ["JAC_TEST_SESSION"] = "sess-42";
+    try {
+        cfg = JacConfig.from_toml_str(
+            "[project]\nname = \"${JAC_TEST_SESSION}\"\n\n"
+            "[serve]\nsession = \"${JAC_TEST_SESSION}\"\n\n"
+            "[scripts]\nstart = \"jac run --session ${JAC_TEST_SESSION}\"\n\n"
+            "[byllm]\nmodel = \"${JAC_TEST_MISSING_VAR:-fallback}\"\n"
         );
-        buf = io.StringIO();
-        with redirect_stderr(buf) {
-            cfg = JacConfig.load(temp_project / "jac.toml");
-        }
-        err = buf.getvalue();
-        assert "[plugins]" in err , f"expected legacy-plugins warning, got: {err!r}";
-        assert "scale" in err , err;
-        assert cfg.get_plugin_config("scale") == {} , (
-            "legacy [plugins.scale] must not be treated as [scale]"
+        assert cfg.project.name == "sess-42";
+        assert cfg.serve.session == "sess-42";
+        assert cfg.scripts["start"] == "jac run --session sess-42";
+        assert cfg.plugins["byllm"]["model"] == "fallback";
+        raw = cfg.get_section("serve");
+        assert raw is not None and raw["session"] == "${JAC_TEST_SESSION}" , (
+            "the raw view keeps placeholders so saves never leak secrets"
         );
+    } finally {
+        del os.environ["JAC_TEST_SESSION"];
     }
 }
 
-test "no legacy warning without a plugins table" {
-    config_mod._config = None;
-    import io;
-    import from contextlib { redirect_stderr }
-    with TemporaryDirectory() as tmpdir {
-        temp_project = make_temp_project(Path(tmpdir));
-        buf = io.StringIO();
-        with redirect_stderr(buf) {
-            JacConfig.load(temp_project / "jac.toml");
-        }
-        assert "[plugins]" not in buf.getvalue() , buf.getvalue();
-    }
+test "serve config carries no routing keys" {
+    cfg = JacConfig.from_toml_str(
+        "[serve]\nport = 8080\nbase_route_app = \"app\"\ncl_route_prefix = \"x\"\n"
+    );
+    assert cfg.serve.port == 8080;
+    assert not hasattr(cfg.serve, "base_route_app");
+    assert not hasattr(cfg.serve, "cl_route_prefix");
+    assert not hasattr(cfg.project, "client_kind");
+}
+
+test "plugins table is not special-cased" {
+    cfg = JacConfig.from_toml_str(
+        "[project]\nname = \"demo\"\n\n[plugins.scale.websocket]\nmax_message_bytes = 1\n"
+    );
+    assert cfg.get_plugin_config("scale") == {};
 }

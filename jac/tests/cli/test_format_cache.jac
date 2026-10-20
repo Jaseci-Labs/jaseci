@@ -45,7 +45,6 @@ def backdate(path: Path, seconds_ago: float) {
 }
 
 
-"""Unwrap the cache's optional root; every caller here builds an enabled cache."""
 def cache_root_of(cache: FormatCache) -> Path {
     base = cache.cache_root;
     assert base is not None;

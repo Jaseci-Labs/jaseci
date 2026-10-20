@@ -7,7 +7,7 @@ impl TypeEvaluator._get_type_of_root(node_: SpecialVarRef) -> TypeBase {
     return UnknownType();
 }
 
-impl TypeEvaluator._get_type_of_self(node_: SpecialVarRef) -> TypeBase {
+impl TypeEvaluator._get_type_of_self(node_: Name) -> TypeBase {
     if method := self._get_enclosing_method(node_) {
         cls = method.method_owner;
 
@@ -26,7 +26,7 @@ impl TypeEvaluator._get_type_of_self(node_: SpecialVarRef) -> TypeBase {
     return UnknownType();
 }
 
-impl TypeEvaluator._get_type_of_super(node_: SpecialVarRef) -> TypeBase {
+impl TypeEvaluator._get_type_of_super(node_: Name) -> TypeBase {
     if method := self._get_enclosing_method(node_) {
         cls = method.method_owner;
         if isinstance(cls, Archetype) {
@@ -44,8 +44,6 @@ impl TypeEvaluator._get_type_of_super(node_: SpecialVarRef) -> TypeBase {
 }
 
 impl TypeEvaluator._get_type_of_lhs_assignment(expr: Name) -> TypeBase | None {
-    import from jaclang.compiler.symbol_utils { find_destructure_index_path }
-
     if expr.sym is not None and expr.sym.decl is expr {
         return None;
     }
@@ -56,10 +54,11 @@ impl TypeEvaluator._get_type_of_lhs_assignment(expr: Name) -> TypeBase | None {
         lhs_root = parent;
         parent = parent.parent;
     }
-    if not isinstance(parent, Assignment) or parent.value is None {
+    if not isinstance(parent, Assignment) or not isinstance(parent.value, Expr) {
         return None;
     }
     assignment = parent;
+    value = parent.value;
 
     if assignment.aug_op is not None {
         return None;
@@ -77,7 +76,7 @@ impl TypeEvaluator._get_type_of_lhs_assignment(expr: Name) -> TypeBase | None {
     }
 
     if lhs_root is expr {
-        return self.get_type_of_expression(assignment.value);
+        return self.get_type_of_expression(value);
     }
 
     path = find_destructure_index_path(lhs_root, expr.value);
@@ -85,7 +84,7 @@ impl TypeEvaluator._get_type_of_lhs_assignment(expr: Name) -> TypeBase | None {
         return None;
     }
     return self._extract_tuple_element_type_path(
-        self.get_type_of_expression(assignment.value), path
+        self.get_type_of_expression(value), path
     );
 }
 
@@ -107,12 +106,30 @@ impl TypeEvaluator._extract_tuple_element_type(
             is_diagnosed=tuple_type.is_diagnosed, is_incomplete=tuple_type.is_incomplete
         );
     }
+    if isinstance(tuple_type, UnionType) {
+        elements: list[TypeBase] = [];
+        for member in tuple_type.types {
+            element = self._extract_tuple_element_type(member, idx);
+            if element is None {
+                return None;
+            }
+            self._collect_unique_types(element, elements);
+        }
+        if not elements {
+            return None;
+        }
+        return elements[0] if len(elements) == 1 else UnionType(types=elements);
+    }
     if not isinstance(tuple_type, ClassType) {
         return None;
     }
     cls: ClassType = tuple_type;
     if cls.is_namedtuple() {
-        has_vars = cls.shared.symbol_table.get_has_vars();
+        scope = cls.shared.symbol_table;
+        if not isinstance(scope, Archetype) {
+            return None;
+        }
+        has_vars = scope.get_has_vars();
         if idx >= len(has_vars) {
             return None;
         }
@@ -184,9 +201,49 @@ impl TypeEvaluator._tuple_literal_index_type(
     return self._extract_tuple_element_type(cls, real_idx);
 }
 
+impl TypeEvaluator._container_value_type(
+    value_type: TypeBase, at: Expr, widen: bool = False
+) -> TypeBase {
+    if in_type_position(at, include_subscripts=False) {
+        return value_type;
+    }
+    if isinstance(value_type, UnionType) {
+        return self._union_narrowed_types(
+            [
+                self._container_value_type(member, at, widen)
+                for member in value_type.types
+            ]
+        );
+    }
+    if isinstance(value_type, ClassType)
+        and value_type.is_instantiable_class()
+        and not value_type.is_class_instance()
+        and not value_type.is_any_instance()
+        and not self.is_any_type(value_type)
+        and self.prefetch is not None
+        and self.prefetch.type_class is not None {
+        wrapped = self.prefetch.type_class.clone_as_instance();
+        wrapped.private.type_args = [self._convert_to_instance(value_type)];
+        return wrapped;
+    }
+    if widen {
+        if isinstance(value_type, EnumMemberType)
+            and value_type.enum_class is not None {
+            return self._convert_to_instance(value_type.enum_class);
+        }
+        return self._widen_literal_for_declaration(value_type);
+    }
+    return value_type;
+}
+
 impl TypeEvaluator._get_iterable_element_type(
-    iterable_type: TypeBase, node_for_error: Expr | None = None
+    iterable_type: TypeBase,
+    node_for_error: UniNode | None = None,
+    is_async: bool = False
 ) -> TypeBase | None {
+    if iterable_type.is_any_instance() {
+        return iterable_type;
+    }
     if isinstance(iterable_type, AnyType) {
         return AnyType(is_foreign=iterable_type.is_foreign);
     }
@@ -197,15 +254,47 @@ impl TypeEvaluator._get_iterable_element_type(
             is_incomplete=iterable_type.is_incomplete
         );
     }
+    if isinstance(iterable_type, ClassType) and not is_async {
+        members: list[TypeBase] = [];
+        if iterable_type.is_namedtuple() {
+            scope = iterable_type.shared.symbol_table;
+            if isinstance(scope, Archetype) {
+                for field in scope.get_has_vars() {
+                    if field.type_tag is not None {
+                        members.append(
+                            self._convert_to_instance(
+                                self.get_type_of_expression(field.type_tag.tag)
+                            )
+                        );
+                    }
+                }
+            }
+        } elif iterable_type.is_builtin("tuple") {
+            if iterable_type.private.type_args
+                and self._tuple_has_variadic_arg(iterable_type) {
+                return self._extract_tuple_element_type(iterable_type, 0);
+            }
+            members = [
+                self._convert_to_instance(arg)
+                for arg in iterable_type.private.type_args
+            ];
+        }
+        if members {
+            return members[0] if len(members) == 1 else UnionType(types=members);
+        }
+    }
     iter_type = self.get_type_of_magic_method_call(
-        iterable_type, "__iter__", [], node_for_error
+        iterable_type, "__aiter__" if is_async else "__iter__", [], node_for_error
     );
     if not isinstance(iter_type, ClassType) {
         return None;
     }
     next_type = self.get_type_of_magic_method_call(
-        iter_type, "__next__", [], node_for_error
+        iter_type, "__anext__" if is_async else "__next__", [], node_for_error
     );
+    if is_async and next_type is not None and node_for_error is not None {
+        next_type = self._unwrap_awaitable_type(next_type, node_for_error);
+    }
     if next_type and not isinstance(next_type, UnknownType) {
         return self._convert_to_instance(next_type);
     }
@@ -295,22 +384,22 @@ impl TypeEvaluator.get_type_of_ability(node_: Ability) -> TypeBase {
     func_type_params: list[TypeVarType] | None = None;
     if node_.type_params {
         func_type_params = [
-            TypeVarType(
-                name=tp.sym_name,
-                bound=self._convert_to_instance(self.get_type_of_expression(tp.bound))
-                    if tp.bound
-                    else None
-            ) for tp in node_.type_params
+            self._type_var_from_param(tp)
+            for tp in node_.type_params
+            if not tp.is_comptime
         ];
     }
     if not isinstance(node_.signature, FuncSignature) {
         flags = FunctionTypeFlags.Null;
+        if ModuleFacts.ability_is_generator(node_) {
+            flags = flags | FunctionTypeFlags.Generator;
+        }
         if node_.is_static {
             flags = flags | FunctionTypeFlags.StaticMethod;
         }
         func_type = FunctionType(
             func_name=node_.name_spec.sym_name,
-            return_type=self.get_none_type(),
+            return_type=self._convert_to_instance(self.get_none_type()),
             parameters=[],
             function_flags=flags,
             type_params=func_type_params,
@@ -319,7 +408,7 @@ impl TypeEvaluator.get_type_of_ability(node_: Ability) -> TypeBase {
         node_.name_spec.type = func_type;
         return node_.name_spec.type;
     }
-    return_type: TypeBase = self.get_none_type();
+    return_type: TypeBase = self._convert_to_instance(self.get_none_type());
     if isinstance(node_.signature.return_type, Expr) {
         return_type = self._convert_to_instance(
             self.get_type_of_expression(node_.signature.return_type)
@@ -336,26 +425,6 @@ impl TypeEvaluator.get_type_of_ability(node_: Ability) -> TypeBase {
         return ParameterCategory.Positional;
     }
 
-    def _convert_param_kind(kind: UniParamKind) -> ParamKind {
-        match kind {
-            case UniParamKind.POSONLY:
-                return ParamKind.POSONLY;
-
-            case UniParamKind.NORMAL:
-                return ParamKind.NORMAL;
-
-            case UniParamKind.VARARG:
-                return ParamKind.VARARG;
-
-            case UniParamKind.KWONLY:
-                return ParamKind.KWONLY;
-
-            case UniParamKind.KWARG:
-                return ParamKind.KWARG;
-
-        }
-    }
-
     if node_.find_parent_of_type(Import) is not None {
         extern_params: list[Parameter] = [];
         ret_type: TypeBase = AnyType(is_foreign=True);
@@ -365,11 +434,15 @@ impl TypeEvaluator.get_type_of_ability(node_: Ability) -> TypeBase {
                     Parameter(
                         name=extern_param.name.value,
                         category=_get_param_category(extern_param),
-                        param_type=self._extern_scalar_type(
-                            extern_param.type_tag.tag if extern_param.type_tag else None
-                        ),
+                        param_type=AnyType()
+                            if extern_param.is_vararg
+                            else self._extern_scalar_type(
+                                extern_param.type_tag.tag
+                                    if extern_param.type_tag
+                                    else None
+                            ),
                         default_value=extern_param.value,
-                        param_kind=_convert_param_kind(extern_param.param_kind),
+                        param_kind=extern_param.param_kind,
                     )
                 );
             }
@@ -390,6 +463,9 @@ impl TypeEvaluator.get_type_of_ability(node_: Ability) -> TypeBase {
         if param.type_tag {
             param_type_cls = self.get_type_of_expression(param.type_tag.tag);
             param_type = self._convert_to_instance(param_type_cls);
+            if param.is_vararg and is_va_list_type(param_type) {
+                param_type = AnyType();
+            }
         }
 
         is_cls_param = (
@@ -412,6 +488,7 @@ impl TypeEvaluator.get_type_of_ability(node_: Ability) -> TypeBase {
                 or (
                     isinstance(param.name, Name)
                     and param.name.value == "self"
+                    and (node_.is_method or node_.class_body_owner is not None)
                     and node_.signature is not None
                     and not node_.signature.is_static
                 )
@@ -419,7 +496,7 @@ impl TypeEvaluator.get_type_of_ability(node_: Ability) -> TypeBase {
                     node_.is_method
                     and node_.signature is not None
                     and node_.signature.is_in_py_class
-                    and param.param_kind in (UniParamKind.POSONLY, UniParamKind.NORMAL)
+                    and param.param_kind in (ParamKind.POSONLY, ParamKind.NORMAL)
                     and node_.name_spec.sym_name
                         not in ("__new__", "__init_subclass__", "__class_getitem__")
                     and not self._is_ability_staticmethod(node_)
@@ -434,13 +511,16 @@ impl TypeEvaluator.get_type_of_ability(node_: Ability) -> TypeBase {
                 default_value=param.value,
                 is_self=is_self_param,
                 is_cls=is_cls_param,
-                param_kind=_convert_param_kind(param.param_kind),
+                param_kind=param.param_kind,
                 is_comptime=param.is_comptime,
             )
         );
     }
 
     flags = FunctionTypeFlags.Null;
+    if ModuleFacts.ability_is_generator(node_) {
+        flags = flags | FunctionTypeFlags.Generator;
+    }
     if self._is_ability_staticmethod(node_) {
         flags = flags | FunctionTypeFlags.StaticMethod;
     }
@@ -452,7 +532,7 @@ impl TypeEvaluator.get_type_of_ability(node_: Ability) -> TypeBase {
     guard_form = self._type_guard_form_of(return_type);
     if guard_form is not None {
         assert isinstance(return_type, ClassType);
-        guard_args = return_type.private.type_args or [];
+        guard_args: list[TypeBase] = return_type.private.type_args or [];
         if guard_args {
             guarded_type = guard_args[0];
             guard_is_strict = guard_form == "TypeIs";
@@ -477,7 +557,6 @@ impl TypeEvaluator.get_type_of_ability(node_: Ability) -> TypeBase {
 impl TypeEvaluator._apply_function_decorators(
     node_: Ability, func_type: FunctionType
 ) -> FunctionType {
-    import from jaclang.compiler.types.type_utils { apply_solved_type_vars }
     if not node_.decorators {
         return func_type;
     }
@@ -486,7 +565,7 @@ impl TypeEvaluator._apply_function_decorators(
         if not isinstance(decorator_type, FunctionType) {
             continue;
         }
-        params = decorator_type.parameters or [];
+        params: list[Parameter] = decorator_type.parameters or [];
 
         if len(params) != 1
             or not isinstance(params[0].param_type, FunctionType)
@@ -509,11 +588,6 @@ impl TypeEvaluator.get_type_of_class(node_: Archetype) -> ClassType {
     }
 
     type_params = self._extract_type_params(node_);
-    base_classes: list[TypeBase] = [];
-    for base_class in node_.base_classes or [] {
-        base_class_type = self.get_type_of_expression(base_class);
-        base_classes.append(base_class_type);
-    }
 
     parent_module = node_.find_parent_of_type(Module);
     mod_flags = compute_module_source_flags(
@@ -521,6 +595,31 @@ impl TypeEvaluator.get_type_of_class(node_: Archetype) -> ClassType {
     );
     is_builtin_class = mod_flags.is_builtin_stub;
     is_from_stdlib_stub = mod_flags.is_stdlib_stub;
+    is_data_class = node_.sym_category != SymbolType.TYPE;
+
+    cls_type = ClassType(
+        _shared=self._intern_shared(
+            ClassDetailsShared(
+                class_name=node_.name_spec.sym_name,
+                symbol_table=node_,
+                type_params=type_params,
+                ct_params=self._extract_ct_params(node_),
+                base_classes=[],
+                is_builtin_class=is_builtin_class,
+                is_from_stdlib_stub=is_from_stdlib_stub,
+                is_data_class=is_data_class,
+                is_extern_struct=node_.find_parent_of_type(Import) is not None,
+            )
+        ),
+        flags=TypeFlags.Instantiable,
+    );
+    node_.name_spec.type = cls_type;
+
+    base_classes: list[TypeBase] = [];
+    for base_class in node_.base_classes or [] {
+        base_class_type = self.get_type_of_expression(base_class);
+        base_classes.append(base_class_type);
+    }
 
     if not base_classes and self.prefetch {
         if (
@@ -535,6 +634,12 @@ impl TypeEvaluator.get_type_of_class(node_: Archetype) -> ClassType {
             and not (is_builtin_class and node_.name_spec.sym_name == "Node")
         ) {
             base_classes.append(self.prefetch.node_class);
+        } elif (
+            node_.sym_category == SymbolType.EDGE_ARCH
+            and self.prefetch.edge_class
+            and not (is_builtin_class and node_.name_spec.sym_name == "Edge")
+        ) {
+            base_classes.append(self.prefetch.edge_class);
         }
     }
 
@@ -545,11 +650,20 @@ impl TypeEvaluator.get_type_of_class(node_: Archetype) -> ClassType {
         }
     }
 
-    is_data_class = node_.sym_category != SymbolType.TYPE;
+    cls_type.shared.base_classes = base_classes;
 
     is_enum_class = any(
-        isinstance(base, ClassType) and base.shared.is_enum_class
-        for base in base_classes
+        isinstance(base, ClassType)
+            and (
+                base.shared.is_enum_class
+                or (
+                    self.prefetch.enum_class is not None
+                    and any(
+                        ancestor.shared.same_class(self.prefetch.enum_class.shared)
+                        for ancestor in base.shared.mro
+                    )
+                )
+            ) for base in base_classes
     );
 
     is_namedtuple = any(
@@ -563,42 +677,30 @@ impl TypeEvaluator.get_type_of_class(node_: Archetype) -> ClassType {
         for base in base_classes
     )
         or self._has_typeddict_special_form_base(node_);
-    enum_members: dict[str, EnumMemberInfo] | None = None;
-    enum_value_type: TypeBase | None = None;
+
+    cls_type.shared.is_enum_class = is_enum_class;
+    cls_type.shared.is_namedtuple = is_namedtuple;
+    cls_type.shared.is_typeddict = is_typeddict;
+
     if is_enum_class {
         enum_value_type = get_special_enum_value_type_from_bases(
             base_classes, self.prefetch
         );
-        enum_members = build_enum_members(node_, self, enum_value_type);
+        cls_type.shared.enum_value_type = enum_value_type;
+        cls_type.shared.enum_members = build_enum_members(node_, self, enum_value_type);
     }
-    cls_type = ClassType(
-        _shared=self._intern_shared(
-            ClassDetailsShared(
-                class_name=node_.name_spec.sym_name,
-                symbol_table=node_,
-                type_params=type_params,
-                ct_params=self._extract_ct_params(node_),
-                base_classes=base_classes,
-                is_builtin_class=is_builtin_class,
-                is_from_stdlib_stub=is_from_stdlib_stub,
-                is_data_class=is_data_class,
-                is_namedtuple=is_namedtuple,
-                is_typeddict=is_typeddict,
-                is_enum_class=is_enum_class,
-                enum_value_type=enum_value_type,
-                enum_members=enum_members,
-            )
-        ),
-        flags=TypeFlags.Instantiable,
-    );
 
+    if any(
+        isinstance(base, UnknownType) and not base.is_diagnosed for base in base_classes
+    ) {
+        cls_type.shared._provisional = True;
+    }
     compute_mro_linearization(cls_type);
 
     if is_typeddict {
         cls_type.shared.typeddict_fields = self._build_typeddict_fields(cls_type);
     }
 
-    node_.name_spec.type = cls_type;
     return cls_type;
 }
 
@@ -669,10 +771,7 @@ impl TypeEvaluator.get_none_type -> TypeBase {
 }
 
 
-impl TypeEvaluator._super_owner_for(
-    node_: SpecialVarRef, rest: list[ClassType]
-) -> ClassType {
-    import from jaclang.compiler.types.type_utils { collect_member_syms }
+impl TypeEvaluator._super_owner_for(node_: Name, rest: list[ClassType]) -> ClassType {
     parent = node_.parent;
     member_name: str | None = None;
     if isinstance(parent, AtomTrailer) and isinstance(parent.right, Name) {
@@ -702,8 +801,45 @@ impl TypeEvaluator._super_owner_for(
     return rest[0];
 }
 
+impl TypeEvaluator._intrinsic_function_type(name: str) -> (FunctionType | None) {
+    registry = intrinsic_registry_if_ready();
+    if not isinstance(registry, IntrinsicRegistry) {
+        return None;
+    }
+    intr = registry.get(name);
+    if intr is None {
+        return None;
+    }
+    parameters: list[Parameter] = [];
+    for (idx, spec) in enumerate(intr.param_specs) {
+        parameters.append(
+            Parameter(
+                name=f"arg{idx}",
+                category=ParameterCategory.Positional,
+                param_type=self._intrinsic_spec_type(spec),
+                param_kind=ParamKind.POSONLY
+            )
+        );
+    }
+    return FunctionType(
+        func_name=name,
+        return_type=self._intrinsic_spec_type(intr.result_spec),
+        parameters=parameters
+    );
+}
+
+impl TypeEvaluator._intrinsic_spec_type(spec: str) -> TypeBase {
+    if spec == "none" {
+        return self._convert_to_instance(self.get_none_type());
+    }
+    scalar = self._get_type_from_module(self.jac_builtins_module, spec);
+    if isinstance(scalar, ClassType) {
+        return self._convert_to_instance(scalar);
+    }
+    return AnyType(is_foreign=True, foreign_scalar=spec);
+}
+
 impl TypeEvaluator._extern_scalar_type(type_expr: Expr | None) -> TypeBase {
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
     if isinstance(type_expr, Name) {
         name = type_expr.sym_name;
         if JAC_TYPE_REGISTRY.is_sized(name) {
@@ -716,7 +852,40 @@ impl TypeEvaluator._extern_scalar_type(type_expr: Expr | None) -> TypeBase {
             return AnyType(is_foreign=True, foreign_scalar=name);
         }
     }
+    if type_expr is not None {
+        declared = self.get_type_of_expression(type_expr);
+        if self._is_typed_c_declaration(declared) {
+            return self._convert_to_instance(declared);
+        }
+    }
     return AnyType(is_foreign=True);
+}
+
+impl TypeEvaluator._is_typed_c_declaration(declared: TypeBase) -> bool {
+    if isinstance(declared, UnionType) {
+        saw_typed = False;
+        for member in declared.types {
+            if isinstance(member, ClassType)
+                and member.shared.class_name in ("NoneType", "None") {
+                continue;
+            }
+            if not self._is_typed_c_declaration(member) {
+                return False;
+            }
+            saw_typed = True;
+        }
+        return saw_typed;
+    }
+    if not isinstance(declared, ClassType) {
+        return False;
+    }
+    if c_builtin_kind(declared) {
+        return True;
+    }
+    if declared.is_builtin() {
+        return JAC_TYPE_REGISTRY.is_sized(declared.shared.class_name);
+    }
+    return isinstance(declared.shared.symbol_table, Archetype);
 }
 
 impl TypeEvaluator._check_extern_ctor_args(expr: FuncCall, arch: Archetype) -> None {
@@ -728,7 +897,7 @@ impl TypeEvaluator._check_extern_ctor_args(expr: FuncCall, arch: Archetype) -> N
     pos = 0;
     for param in expr.params {
         field: HasVar | None = None;
-        arg: Expr = param;
+        arg: Expr;
         if isinstance(param, KWPair) {
             if param.key is None {
                 continue;
@@ -736,6 +905,7 @@ impl TypeEvaluator._check_extern_ctor_args(expr: FuncCall, arch: Archetype) -> N
             field = by_name.get(param.key.sym_name);
             arg = param.value;
         } else {
+            arg = param;
             field = fields[pos] if pos < len(fields) else None;
             pos += 1;
         }
@@ -770,27 +940,34 @@ impl TypeEvaluator._extern_member_type(arch: Archetype, name: str) -> TypeBase {
 }
 
 impl TypeEvaluator._extern_field_type(field: HasVar) -> TypeBase {
-    import from jaclang.compiler.types.types { create_callable_type }
-    import from jaclang.compiler.types.fixed_width { numeric_name_of }
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
-    tag = field.type_tag.tag;
+    annotation = field.type_tag;
+    if annotation is None {
+        return AnyType(is_foreign=True);
+    }
+    tag = annotation.tag;
     declared = self.get_type_of_expression(tag);
     if isinstance(declared, FunctionType) {
         param_types: list[TypeBase] = [];
         typed = False;
         for p in declared.parameters or [] {
-            pn = numeric_name_of(p.param_type);
-            if pn is not None and JAC_TYPE_REGISTRY.is_sized(pn) {
-                param_types.append(p.param_type);
+            parameter_type = p.param_type;
+            pn = numeric_name_of(parameter_type);
+            if parameter_type is not None
+                and pn is not None
+                and JAC_TYPE_REGISTRY.is_sized(pn) {
+                param_types.append(parameter_type);
                 typed = True;
             } else {
                 param_types.append(AnyType(is_foreign=True, foreign_scalar=pn));
             }
         }
-        rn = numeric_name_of(declared.return_type);
+        return_type = declared.return_type;
+        rn = numeric_name_of(return_type);
         ret_type: TypeBase = AnyType(is_foreign=True, foreign_scalar=rn);
-        if rn is not None and JAC_TYPE_REGISTRY.is_sized(rn) {
-            ret_type = declared.return_type;
+        if return_type is not None
+            and rn is not None
+            and JAC_TYPE_REGISTRY.is_sized(rn) {
+            ret_type = return_type;
             typed = True;
         }
         if typed {
@@ -799,4 +976,14 @@ impl TypeEvaluator._extern_field_type(field: HasVar) -> TypeBase {
         return AnyType(is_foreign=True);
     }
     return self._extern_scalar_type(tag);
+}
+
+impl TypeEvaluator._get_class_from_module(
+    module: Module | None, name: str
+) -> ClassType | None {
+    if module is None {
+        return None;
+    }
+    resolved = self._get_type_from_module(module, name);
+    return resolved if isinstance(resolved, ClassType) else None;
 }

@@ -1,0 +1,18 @@
+# Three-app workspace for the `jac check` / `jac test` workspace-mode tests.
+# Each app starts at its declared entry; ordinary imports inherit that app's
+# compilation context, including the shared helpers under core/.
+[project]
+name = "wscheck"
+default-app = "web"
+
+[apps.web]
+kind = "web-app"
+entry-point = "web.main"
+
+[apps.svc]
+kind = "service"
+entry-point = "core.svc"
+
+[apps.cli]
+kind = "cli"
+entry-point = "cli.main"

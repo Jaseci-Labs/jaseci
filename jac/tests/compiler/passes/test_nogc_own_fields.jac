@@ -12,10 +12,13 @@ table cannot express.
 """
 
 import os;
+import from jaclang.compiler.driver.compile_options {
+    push_native_target,
+    pop_native_target
+}
 import subprocess;
-import sys;
 import tempfile;
-import from tests.support { TESTS_DIR }
+import from tests.support { jac_command, TESTS_DIR }
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.compiler.driver.compile_options { CompileOptions }
 
@@ -23,21 +26,18 @@ glob FIXDIR = os.path.join(
          TESTS_DIR, "compiler", "passes", "fixtures", "nogc_ownfield"
      ),
      MODE_FLAGS = {
-         "none": ["--enforce-nogc", "--gc", "none", "--assert-no-rc"],
-         "rc": ["--gc", "rc"],
-         "cycles": ["--gc", "cycles"]
+         "none": ["--memory", "nogc"],
+         "rc": ["--memory", "rc"],
+         "cycles": ["--memory", "managed"]
      };
 
 def _enforced_codes(name: str) -> list[str] {
-    prev = os.environ.get("JAC_NATIVE_TARGET", None);
-    os.environ["JAC_NATIVE_TARGET"] = "wasm32-unknown-unknown";
+    prev = push_native_target("wasm32-unknown-unknown");
     try {
         prog = JacProgram();
         prog.compile(
             os.path.join(FIXDIR, name),
-            options=CompileOptions(
-                aot_mode=True, na_gc_mode="none", nogc_enforce_all=True
-            )
+            options=CompileOptions(aot_mode=True, memory_profile="nogc")
         );
         codes = [
             a.code.code
@@ -48,24 +48,16 @@ def _enforced_codes(name: str) -> list[str] {
         codes.sort();
         return codes;
     } finally {
-        if prev is None {
-            os.environ.pop("JAC_NATIVE_TARGET", None);
-        } else {
-            os.environ["JAC_NATIVE_TARGET"] = prev;
-        }
+        pop_native_target(prev);
     }
 }
 
 def _run_mode(tmp: str, mode: str) -> str {
     out_bin = os.path.join(tmp, f"ofd_{mode}");
     res = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "jaclang",
-            "nacompile",
-            os.path.join(FIXDIR, "own_field_drop_count.jac")
-        ]
+        jac_command(
+            "build", "--native", os.path.join(FIXDIR, "own_field_drop_count.jac")
+        )
             + MODE_FLAGS[mode]
             + ["-o", out_bin],
         capture_output=True,

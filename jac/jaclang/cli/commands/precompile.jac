@@ -1,7 +1,3 @@
-import from jaclang.comptime { name as ct_name }
-import from jaclang.cli.command { Arg, ArgKind, CommandSpec }
-
-
 comptime SPEC_PRECOMPILE: CommandSpec = CommandSpec(
          name="precompile",
          help="Precompile a package tree into _precompiled .jir units (the seal engine behind 'jac build --as jab|sealed')",
@@ -62,6 +58,13 @@ comptime SPEC_PRECOMPILE: CommandSpec = CommandSpec(
                      "serial; defaults to JAC_PRECOMPILE_JOBS / JAC_JOBS"
                  )
              ),
+             Arg.create(
+                 "app",
+                 kind=ArgKind.OPTION,
+                 `default="",
+                 short="",
+                 help="With --seal: the [apps.<name>] app whose entry the image carries (default: the default app)"
+             ),
 
          ],
          examples=[
@@ -82,5 +85,6 @@ def precompile(
     seal_compile: bool = False,
     seal_finalize: bool = False,
     debug_src: bool = False,
-    jobs: str = ""
+    jobs: str = "",
+    app: str = ""
 ) -> int;

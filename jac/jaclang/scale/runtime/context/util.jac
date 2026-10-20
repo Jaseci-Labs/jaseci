@@ -4,32 +4,9 @@ import shutil;
 
 def pick_free_port(
     name: str, base: int = 18000, retries: int = 100, avoid: set[int] | None = None
-) -> int {
-    blocked: set[int] = set(avoid) if avoid else set();
-    start: int = base + (hash(name) % 1000);
-    port: int = start;
-    for _ in range(retries) {
-        if port in blocked {
-            port = port + 1;
-            continue;
-        }
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1);
-        try {
-            s.bind(('127.0.0.1', port));
-            s.close();
-            return port;
-        } except OSError {
-            s.close();
-            port = port + 1;
-        }
-    }
-    raise RuntimeError(f"Could not find free port near {start}");
-}
+) -> int;
 
-def jac_executable -> str {
-    return os.environ.get("JAC_EXECUTABLE", "") or shutil.which("jac") or "jac";
-}
+def jac_executable -> str;
 
 glob _DEFAULT_HTTP_FORWARD_TIMEOUT: float = 30.0,
      _DEFAULT_ROUTE_REFRESH_SECONDS: float = 30.0,
@@ -38,71 +15,26 @@ glob _DEFAULT_HTTP_FORWARD_TIMEOUT: float = 30.0,
 glob DEFAULT_GATEWAY_PORT: int = 8000,
      DEFAULT_GATEWAY_HOST: str = "0.0.0.0",
      DEFAULT_CLIENT_DIST_DIR: str = ".jac/client/dist",
-     K8S_CLUSTER_DNS_SUFFIX: str = "svc.cluster.local";
+     K8S_CLUSTER_DNS_SUFFIX: str = "svc.cluster.local",
+     _RFC1123_MAX_LEN: int = 253;
 
 
-def k8s_service_dns_url(safe_name: str, namespace: str, port: int) -> str {
-    return f"http://{safe_name}-service.{namespace}.{K8S_CLUSTER_DNS_SUFFIX}:{port}";
-}
+def k8s_service_dns_host(service_name: str, namespace: str) -> str;
 
 
-def in_cluster_namespace -> str {
-    import os;
-    ns: str = os.environ.get("POD_NAMESPACE", "");
-    if ns {
-        return ns;
-    }
-    try {
-        ns_file = "/var/run/secrets/kubernetes.io/serviceaccount/namespace";
-        with open(ns_file) as f {
-            return f.read().strip() or "default";
-        }
-    } except Exception {
-        return "default";
-    }
-}
+def k8s_service_dns_url(safe_name: str, namespace: str, port: int) -> str;
 
 
-def http_forward_timeout(service_name: str | None = None) -> float {
-    try {
-        import from jaclang.scale.config.config_loader { get_scale_config }
-        ms_cfg = get_scale_config().get_microservices_config();
-        if service_name {
-            svc_cfg = ms_cfg.get("services", {}).get(service_name, {});
-            if "http_forward_timeout" in svc_cfg {
-                return float(svc_cfg["http_forward_timeout"]);
-            }
-        }
-        if "http_forward_timeout" in ms_cfg {
-            return float(ms_cfg["http_forward_timeout"]);
-        }
-    } except Exception {}
-    return _DEFAULT_HTTP_FORWARD_TIMEOUT;
-}
+def in_cluster_namespace -> str;
 
 
-def route_refresh_seconds -> float {
-    try {
-        import from jaclang.scale.config.config_loader { get_scale_config }
-        ms_cfg = get_scale_config().get_microservices_config();
-        if "route_refresh_seconds" in ms_cfg {
-            return float(ms_cfg["route_refresh_seconds"]);
-        }
-    } except Exception {}
-    return _DEFAULT_ROUTE_REFRESH_SECONDS;
-}
+def http_forward_timeout(app_name: str | None = None) -> float;
 
 
-def boot_health_timeout -> float {
-    try {
-        import from jaclang.scale.config.config_loader { get_scale_config }
-        ms_cfg = get_scale_config().get_microservices_config();
-        if "boot_health_timeout" in ms_cfg {
-            return float(ms_cfg["boot_health_timeout"]);
-        }
-    } except Exception {}
-    return _DEFAULT_BOOT_HEALTH_TIMEOUT;
-}
+def route_refresh_seconds -> float;
+
+
+def boot_health_timeout -> float;
 
 
 def wait_for_health(
@@ -111,36 +43,9 @@ def wait_for_health(
     timeout: float = 15.0,
     poll_interval: float = 0.1,
     progress: any = None
-) -> bool {
-    import time;
-    import urllib.request;
-    import from http.client { HTTPResponse }
+) -> bool;
 
-    last_marker: any = progress() if progress is not None else None;
-    deadline: float = time.time() + timeout;
-    while time.time() < deadline {
-        if not proc_alive() {
-            return False;
-        }
-        try {
-            opened: HTTPResponse = urllib.request.urlopen(
-                f"{base_url}/healthz", timeout=1
-            );
-            with opened as resp {
-                if resp.status < 500 {
-                    return True;
-                }
-            }
-        } except Exception {
-            time.sleep(poll_interval);
-        }
-        if progress is not None {
-            marker = progress();
-            if marker != last_marker {
-                last_marker = marker;
-                deadline = time.time() + timeout;
-            }
-        }
-    }
-    return False;
-}
+
+glob GATEWAY_NAME: str = "__gateway__";
+
+def k8s_safe_name(svc_name: str) -> str;

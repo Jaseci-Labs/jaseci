@@ -1,0 +1,107 @@
+import os;
+import sys;
+
+impl NaIRGenPass._na_debug_on -> bool {
+    _opts = self.prog.options;
+    return _opts is not None and bool(_opts.na_debug);
+}
+
+impl NaIRGenPass._attach_di_subprogram(
+    func: ir.Function, name: str, line: int
+) -> None {
+    self._di_current_sp = None;
+    if self.di_cu is None {
+        return;
+    }
+    try {
+        _di_sub_type = self.llvm_module.add_debug_info(
+            "DISubroutineType", {"types": self.llvm_module.add_metadata([])}
+        );
+        _di_sp = self.llvm_module.add_debug_info(
+            "DISubprogram",
+            {
+                "name": name,
+                "file": self.di_file,
+                "line": line,
+                "isDefinition": True,
+                "unit": self.di_cu,
+                "type": _di_sub_type
+            },
+            is_distinct=True
+        );
+        func.set_metadata("dbg", _di_sp);
+        self._di_current_sp = _di_sp;
+    } except Exception {}
+    func.attributes.add("noinline");
+}
+
+impl NaIRGenPass._finalize_di_locations(func: ir.Function, fallback_line: int) -> None {
+    if self._di_current_sp is None {
+        return;
+    }
+    try {
+        _fb_loc = self.llvm_module.add_debug_info(
+            "DILocation",
+            {"line": fallback_line, "column": 0, "scope": self._di_current_sp}
+        );
+        for _blk in func.blocks {
+            for _instr in _blk.instructions {
+                if isinstance(_instr, ir.Instruction)
+                    and "dbg" not in _instr.metadata {
+                    _instr.set_metadata("dbg", _fb_loc);
+                }
+            }
+        }
+    } except Exception {}
+}
+
+impl NaIRGenPass.finish with exit {
+    if not self.has_native_code {
+        return;
+    }
+
+    if self.di_cu is not None {
+        try {
+            self.llvm_module.add_named_metadata("llvm.dbg.cu").add(self.di_cu);
+            _nm_flags = self.llvm_module.add_named_metadata("llvm.module.flags");
+            _nm_flags.add(
+                self.llvm_module.add_metadata(
+                    [
+                        ir.Constant(ir.IntType(32), 7),
+                        "Dwarf Version",
+                        ir.Constant(ir.IntType(32), 5)
+                    ]
+                )
+            );
+            _nm_flags.add(
+                self.llvm_module.add_metadata(
+                    [
+                        ir.Constant(ir.IntType(32), 2),
+                        "Debug Info Version",
+                        ir.Constant(ir.IntType(32), 3)
+                    ]
+                )
+            );
+        } except Exception {}
+    }
+
+    for _fn in self.llvm_module.functions {
+        for _blk in _fn.blocks {
+            if not _blk.is_terminated {
+                _ob = ir.IRBuilder(_blk);
+                _ob.unreachable();
+            }
+        }
+    }
+
+    if self.prog.options.debug_ir {
+        self._save_debug_ir(str(self.llvm_module));
+    }
+}
+
+impl NaIRGenPass._save_debug_ir(ir_str: str) -> None {
+    src_path = self.module.loc.mod_path;
+    if src_path {
+        active_host().save_native_debug_ir(src_path, ir_str);
+    }
+}

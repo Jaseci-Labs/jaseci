@@ -22,12 +22,12 @@ In this tutorial, you'll set up byLLM, write your first AI-powered function, exp
 
 ## Setup
 
-### 1. Install byLLM
+### 1. Set up byLLM
 
-If you haven't already:
+byLLM ships inside `jac`. In a project that declares a `[byllm]` section, `jac install` pulls the model client it needs:
 
 ```bash
-jac install byllm
+jac install
 ```
 
 ### 2. Pick a Backend
@@ -346,12 +346,7 @@ Use MockLLM for deterministic tests:
 ```jac
 import from jaclang.byllm.lib { MockLLM }
 
-glob llm = MockLLM(
-    model_name="mockllm",
-    config={
-        "outputs": ["Mocked response 1", "Mocked response 2"]
-    }
-);
+glob llm = MockLLM(outputs=["Mocked response 1", "Mocked response 2"]);
 
 def translate(text: str) -> str by llm();
 
@@ -363,6 +358,8 @@ test "translate" {
 
 !!! tip "Running Tests"
     Run with: `jac test <filename>.jac`
+
+For typed outputs, tool calls, token usage and errors, see [Testing with MockLLM](../../reference/plugins/byllm.md#testing-with-mockllm).
 
 ---
 

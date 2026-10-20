@@ -9,6 +9,9 @@ glob SYSTEM_PERSONA = """\
     output. Only use tools.
     """;
 
+def _media_entries(value: any, semstr: str) -> list[any];
+
+
 impl MTRuntime.factory(mtir: MTIR) -> MTRuntime {
     caller = mtir.caller;
     args = mtir.args;
@@ -50,13 +53,14 @@ impl MTRuntime.factory(mtir: MTIR) -> MTRuntime {
     }
 
     inputs_detail: list[str] = [];
-    media_inputs: list = [];
+    media_inputs: list[any] = [];
     if fn_info is not None and fn_info.params is not None {
         params = [param for param in fn_info.params];
         for (key, value) in args.items() {
             idx = list(args.keys()).index(key);
-            if isinstance(value, Media) {
-                media_inputs.append((value, params[idx].semstr or ""));
+            media = _media_entries(value, params[idx].semstr or "");
+            if media {
+                media_inputs.extend(media);
                 continue;
             }
 
@@ -75,8 +79,9 @@ impl MTRuntime.factory(mtir: MTIR) -> MTRuntime {
     } else {
         param_names = list(inspect.signature(caller).parameters.keys());
         for (key, value) in args.items() {
-            if isinstance(value, Media) {
-                media_inputs.append((value, ""));
+            media = _media_entries(value, "");
+            if media {
+                media_inputs.extend(media);
                 continue;
             }
 
@@ -94,8 +99,9 @@ impl MTRuntime.factory(mtir: MTIR) -> MTRuntime {
     incl_info = call_params.get("incl_info");
     if incl_info and isinstance(incl_info, dict) {
         for (key, value) in incl_info.items() {
-            if isinstance(value, Media) {
-                media_inputs.append((value, ""));
+            media = _media_entries(value, "");
+            if media {
+                media_inputs.extend(media);
             } else {
                 if has_mtir {
                     inputs_detail.append(f"{key} = {(value, "")}");
@@ -118,7 +124,9 @@ impl MTRuntime.factory(mtir: MTIR) -> MTRuntime {
         }
     }
 
-    system_content = SYSTEM_PERSONA;
+    return_type = get_type_hints(caller).get("return");
+    image_kind = image_resp_kind(return_type);
+    system_content = "" if image_kind else SYSTEM_PERSONA;
     try {
         import from jaclang.project.config { find_project_root }
         import from pathlib { Path }
@@ -142,7 +150,9 @@ impl MTRuntime.factory(mtir: MTIR) -> MTRuntime {
         }
     }
     if call_system_prompt {
-        system_content += "\n\n" + str(call_system_prompt);
+        system_content = f"{system_content}\n\n{call_system_prompt}"
+            if system_content
+            else str(call_system_prompt);
     }
 
     conv_arg = call_params.get("conversation");
@@ -151,12 +161,17 @@ impl MTRuntime.factory(mtir: MTIR) -> MTRuntime {
     if isinstance(conv_arg, list) {
         conv_list_ref = conv_arg;
         for item in conv_arg {
+            if _is_system_message(item) {
+                continue;
+            }
             m: any = item;
             if isinstance(m, Message) {
                 conv_msgs.append(m);
             } elif isinstance(m, dict) {
                 reconstructed: any = Message.from_dict(m);
                 conv_msgs.append(reconstructed);
+            } elif hasattr(m, "model_dump") {
+                conv_msgs.append(Message.from_dict(m.model_dump(exclude_none=True)));
             } else {
                 conv_msgs.append(m);
             }
@@ -177,7 +192,6 @@ impl MTRuntime.factory(mtir: MTIR) -> MTRuntime {
     );
     messages: list[MessageType] = [sys_msg, *conv_msgs, user_msg];
 
-    return_type = get_type_hints(caller).get("return");
     is_streaming = bool(call_params.get("stream", False));
     if is_streaming
         and return_type is not str
@@ -187,6 +201,13 @@ impl MTRuntime.factory(mtir: MTIR) -> MTRuntime {
             "Pass a stream_handler to receive stream events for a structured "
             "return type (e.g. `visit [-->] by model(stream=True, "
             "stream_handler=fn)`)."
+        );
+    }
+    if image_kind and (is_streaming or len(tools) > 0) {
+        raise ConfigurationError(
+            "An Image return type is served by one image-generation call, which "
+            "takes no tools and does not stream. Drop tools= and stream= from "
+            "this `by` call, or return text and generate the image from a tool."
         );
     }
     if len(tools) > 0 {
@@ -206,7 +227,6 @@ impl MTRuntime.factory(mtir: MTIR) -> MTRuntime {
     );
 
     if conv_list_ref is not None {
-        mt_run._scaffolding_ids.append(id(sys_msg));
         mt_run._conversation_list = conv_list_ref;
     }
 
@@ -234,7 +254,7 @@ impl MTRuntime.write_back_conversation -> None {
     if self._conversation_list is None {
         return;
     }
-    out: list = [];
+    out: list[dict[str, any]] = [];
     for msg in self.get_history_for_persist() {
         m: any = msg;
         if hasattr(m, "to_dict") {
@@ -256,22 +276,17 @@ impl MTRuntime.write_back_conversation -> None {
 }
 
 
-def _is_finish_tool_call(tc: any) -> bool {
-    if tc?.function and hasattr(tc.function, "name") {
-        return tc.function.name == "finish_tool";
-    }
-    if isinstance(tc, dict) {
-        return (tc.get("function") or {}).get("name", "") == "finish_tool";
-    }
-    return False;
-}
+def _is_system_message(msg: any) -> bool;
+
+
+def _is_finish_tool_call(tc: any) -> bool;
 
 
 impl MTRuntime.get_history_for_persist -> list[MessageType] {
     scaff_ids = set(self._scaffolding_ids);
-    out: list = [];
+    out: list[any] = [];
     for msg in self.messages {
-        if id(msg) in scaff_ids {
+        if id(msg) in scaff_ids or _is_system_message(msg) {
             continue;
         }
 
@@ -286,7 +301,7 @@ impl MTRuntime.get_history_for_persist -> list[MessageType] {
         if isinstance(msg, ToolCallResultMsg) and msg.name == "finish_tool" {
             continue;
         }
-        tool_calls = msg?.tool_calls;
+        tool_calls: any = msg?.tool_calls;
         if tool_calls is None and isinstance(msg, dict) {
             tool_calls = msg.get("tool_calls");
         }
@@ -309,11 +324,12 @@ impl MTRuntime.parse_response(response: str) -> any {
         } except OutputConversionError {
             raise;
         } except Exception as e {
+            type_name = type_display_name(self.resp_type);
             err = OutputConversionError(
-                f"Failed to convert LLM output to '{self.resp_type.__name__}': {e}"
+                f"Failed to convert LLM output to '{type_name}': {e}"
             );
             setattr(err, "raw_output", response);
-            raise err;
+            raise err from e;
         }
     }
     return response;
@@ -328,11 +344,11 @@ impl MTRuntime.get_tool(tool_name: str) -> Tool | McpTool | None {
     return None;
 }
 
-impl MTRuntime.get_tool_list -> list[dict] {
+impl MTRuntime.get_tool_list -> list[dict[str, any]] {
     return [tool.get_json_schema() for tool in self.tools];
 }
 
-impl MTRuntime.get_output_schema -> dict | None {
+impl MTRuntime.get_output_schema -> dict[str, any] | None {
     assert (len(self.tools) == 0 or self.get_tool("finish_tool") is not None);
     if len(self.tools) == 0 {
         return self.get_typed_output_schema();
@@ -341,7 +357,7 @@ impl MTRuntime.get_output_schema -> dict | None {
     return None;
 }
 
-impl MTRuntime.get_typed_output_schema -> dict | None {
+impl MTRuntime.get_typed_output_schema -> dict[str, any] | None {
     if self.resp_type is None or self.resp_type is str {
         return None;
     }
@@ -356,4 +372,25 @@ impl MTRuntime.get_typed_output_schema -> dict | None {
 
 impl MTIR.runtime.getter -> MTRuntime {
     return MTRuntime.factory(self);
+}
+
+impl _is_system_message(msg: any) -> bool {
+    role = msg.get("role") if isinstance(msg, dict) else msg?.role;
+    return role == MessageRole.SYSTEM;
+}
+
+
+impl _is_finish_tool_call(tc: any) -> bool {
+    if tc?.function and hasattr(tc.function, "name") {
+        return tc.function.name == "finish_tool";
+    }
+    if isinstance(tc, dict) {
+        return (tc.get("function") or {}).get("name", "") == "finish_tool";
+    }
+    return False;
+}
+
+impl _media_entries(value: any, semstr: str) -> list[any] {
+    media = as_media_list(value);
+    return [] if media is None else [(media[0], semstr), *media[1:]];
 }

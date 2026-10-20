@@ -24,7 +24,7 @@ import from pathlib { Path }
 import from tempfile { TemporaryDirectory }
 
 import from jaclang.compiler.backends.es.backends.react { ReactBackend }
-import from jaclang.client.bun_installer { get_bun }
+import from tests.support { js_runtime_or_none }
 import from .react_jsdom_harness {
     bun_install,
     compile_page,
@@ -140,7 +140,7 @@ finish();
 
 """One fresh process per scenario, so each starts at its own URL and auth state
 with a clean module graph."""
-def _run_scenarios(bun: str, work: Path, scenarios: list, label: str) {
+def _run_scenarios(bun: str, work: Path, scenarios: list[any], label: str) {
     for sc in scenarios {
         run_harness(bun, work, [sc[0], sc[1]], f"{label} {sc}");
     }
@@ -148,7 +148,7 @@ def _run_scenarios(bun: str, work: Path, scenarios: list, label: str) {
 
 test "react AuthGuard renders children, child routes, and nothing -- in jsdom" {
     require_client_integration("React AuthGuard");
-    bun = get_bun();
+    bun = js_runtime_or_none();
     if bun is None {
         testskip("bun is required but could not be located/installed");
     }

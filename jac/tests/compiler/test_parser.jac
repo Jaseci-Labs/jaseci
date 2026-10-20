@@ -5,6 +5,7 @@ coverage, syntax error handling, JSX, client keyword, anonymous abilities,
 and micro suite.
 """
 
+import from jaclang.compiler.frontend.roles { Kid }
 import inspect;
 import from jaclang.compiler.tools.treeprinter { print_ast_tree }
 import io;
@@ -18,7 +19,7 @@ import jaclang.compiler.frontend.unitree as uni;
 import from jaclang.compiler.frontend.constant { CodeContext }
 import from jaclang.compiler.frontend.parser { parse as rd_parse }
 import from jaclang.compiler.driver.program { JacProgram }
-import from jaclang.compiler.frontend.helpers { read_file_with_encoding }
+import from jaclang.project.textio { read_file_with_encoding }
 import from jaclang.testing.test { parametrize }
 import from tests.fixtures_list { MICRO_JAC_FILES }
 
@@ -38,9 +39,47 @@ test "fstring escape brace" {
     assert not had_error;
 }
 
+test "graph object lookup remains distinct from ownership borrows" {
+    import from jaclang.compiler.frontend.constant { OwnershipKind }
+    (module, errors) = rd_parse(
+        "with entry { a = &(id); b = & id; c = &value; d = &mut value; }", ""
+    );
+    assert not errors;
+    expressions = module.get_all_sub_nodes(uni.UnaryExpr);
+    assert [expr.ownership for expr in expressions]
+        == [
+            OwnershipKind.NONE,
+            OwnershipKind.NONE,
+            OwnershipKind.BORROW,
+            OwnershipKind.MUT_BORROW
+        ];
+}
+
 test "parser fam" {
     (module, had_error) = rd_parse(load_fixture("fam.jac"), "");
     assert not had_error;
+}
+
+test "a comprehension iterable is any operator expression short of the ternary" {
+    # #8982 item 8: the iterable stopped at an atomic chain, so `[h] + rows`
+    # after `in` read as a stray `]`.
+    for src in [
+        "with entry { widths = [len(r) for r in [header] + rows]; }",
+        "with entry { errs = [e for e in prog.errors_had + prog.warnings_had]; }",
+        "with entry { s = ', '.join(str(e) for e in a + b); }",
+        "with entry { d = {k: v for k in d1 + d2}; }",
+        "with entry { st = {x for x in a or b}; }",
+        "with entry { ys = [x for x in xs |> f]; }",
+        "with entry { zs = [x for x in xs if x > 1 if x < 9]; }",
+        "with entry { ts = [x for x in (a if c else b)]; }"
+    ] {
+        (module, had_error) = rd_parse(src, "");
+        assert not had_error , src;
+    }
+    (module, _) = rd_parse("with entry { w = [len(r) for r in [h] + rows]; }", "");
+    compr = [n for n in module.get_all_sub_nodes(uni.InnerCompr)];
+    assert len(compr) == 1;
+    assert isinstance(compr[0].collection, uni.BinaryExpr) , type(compr[0].collection);
 }
 
 test "staticmethod checks out" {
@@ -62,7 +101,7 @@ test "parser mod doc test" {
 
 test "all ast has normalize" {
     import from jaclang.compiler.tools.normalize_pass { NormalizePass }
-    import from jaclang.compiler.frontend.helpers { pascal_to_snake }
+    import from jaclang.project.source { pascal_to_snake }
 
     exclude = [
         "UniNode",
@@ -587,8 +626,8 @@ test "bracket filter trailer produces FilterCompr AST" {
         if isinstance(nd, uni.FilterCompr) {
             return nd;
         }
-        if hasattr(nd, "kid") {
-            for k in nd.kid {
+        if isinstance(nd, uni.UniNode) {
+            for k in [nd->:Kid:->] {
                 if k is not None {
                     result = find_fc(k);
                     if result is not None {
@@ -685,8 +724,8 @@ test "typed edge ref produces FilterCompr with compares" {
         if isinstance(nd, uni.FilterCompr) and nd.compares {
             return nd;
         }
-        if hasattr(nd, "kid") {
-            for k in nd.kid {
+        if isinstance(nd, uni.UniNode) {
+            for k in [nd->:Kid:->] {
                 if k is not None {
                     result = find_filter_compr_with_compares(k);
                     if result is not None {
@@ -715,7 +754,7 @@ test "decorated class in code block parses as archetype" {
         if isinstance(nd, uni.Archetype) {
             results.append(nd);
         }
-        for k in (nd.kid) {
+        for k in ([nd->:Kid:->]) {
             results.extend(collect(k));
         }
         return results;
@@ -741,13 +780,13 @@ test "docstring attaches to all member types inside archetype body" {
     (mod, err) = rd_parse(load_fixture("docstring_with_entry.jac"), "");
     assert not err , "Parser reported errors for docstrings on archetype members";
 
-    def collect_doc_nodes(nd: uni.UniNode) -> list {
-        results: list = [];
+    def collect_doc_nodes(nd: uni.UniNode) -> list[any] {
+        results: list[any] = [];
         if isinstance(nd, (uni.ArchHas, uni.Ability, uni.ModuleCode, uni.Archetype))
             and nd.doc is not None {
             results.append(nd);
         }
-        for k in nd.kid {
+        for k in [nd->:Kid:->] {
             results.extend(collect_doc_nodes(k));
         }
         return results;
@@ -800,7 +839,7 @@ test "parser core sources are foreign-free" {
     core = (pkg / "parser.jac").read_text(encoding="utf-8")
         + (pkg / "impl" / "parser.impl.jac").read_text(encoding="utf-8");
     banned = [
-        "passes.transform",
+        "passes.context",
         "CodeLocInfo",
         "JacProgram",
         "compiler.frontend.diagnostics",

@@ -1,63 +1,11 @@
 import keyword;
-import jaclang.compiler.frontend.unitree as uni;
-import from jaclang.compiler.passes { UniPass }
-import from jaclang.compiler.frontend.constant { Tokens as Tok }
-import from jaclang.compiler.frontend.constant { TOKEN_MAP }
-import from jaclang.compiler.frontend.parser.tokens { KEYWORDS }
-import from jaclang.compiler.frontend.diagnostics {
-    W3001,
-    W3002,
-    W3003,
-    W3004,
-    W3005,
-    W3007,
-    W3008,
-    W3009,
-    W3010,
-    E3012,
-    W3013,
-    W3020,
-    W3021,
-    W3022,
-    W3023,
-    W3024,
-    W3025,
-    W3030,
-    W3035,
-    W3036,
-    W3037,
-    W3038,
-    W3039,
-    W3040,
-    W3041,
-    W3042,
-    W3043,
-    W3050,
-    W3051
-}
-import type from jaclang.compiler.driver.program { JacProgram }
-import from jaclang.compiler.frontend.roles {
-    AssignmentsRole,
-    BodyRole,
-    ConditionRole,
-    DecoratorsRole,
-    DocRole,
-    ElseValueRole,
-    ExprRole,
-    ItemsRole,
-    NameRefRole,
-    ReturnTypeRole,
-    SignatureRole,
-    SpecRole,
-    TargetRole,
-    ValueRole,
-    ValuesRole,
-    VarsRole
-}
+import os;
 
-walker JacAutoLintPass(UniPass) {
-    has prog: JacProgram,
-        lint_enabled: bool = True,
+glob _HEADER_COL = 10000;
+
+walker JacAutoLintPass(TreePass) {
+    static has contract: PassContract = PassContract();
+    has lint_enabled: bool = True,
         report_only: bool = False,
         main_module: (uni.Module | None) = None,
         _exclude_patterns: list[str] = [],
@@ -65,9 +13,8 @@ walker JacAutoLintPass(UniPass) {
         _did_convert_usestate: bool = False,
         _pending_setters: list[dict[str, str]] = [],
         _base_decl_cache: list[uni.Archetype] = [],
-        _base_decls_loaded: bool = False;
-
-    static has HOST_PASS: bool = True;
+        _base_decls_loaded: bool = False,
+        _floated_ids: set[int] = set();
 
     def postinit -> None;
     def _is_file_excluded(file_path: str) -> bool;
@@ -77,11 +24,14 @@ walker JacAutoLintPass(UniPass) {
     def entry_written_names(module: uni.Module) -> set[str];
     def is_module_level_construct(stmt: uni.UniNode) -> bool;
     def create_glob_from_assignment(assignment: uni.Assignment) -> uni.GlobalVars;
-    def create_entry_block(stmts: list) -> uni.ModuleCode;
+    def create_entry_block(stmts: list[uni.CodeBlockStmt]) -> uni.ModuleCode;
     def can_combine_has(has1: uni.ArchHas, has2: uni.ArchHas) -> bool;
     def can_combine_glob(glob1: uni.GlobalVars, glob2: uni.GlobalVars) -> bool;
-    def combine_consecutive_has(body: list) -> list;
-    def combine_consecutive_glob(body: list) -> list;
+    def combine_consecutive_has(body: list[uni.UniNode]) -> list[uni.UniNode];
+    def combine_consecutive_glob(
+        body: list[uni.ElementStmt | uni.String | uni.EmptyToken]
+    ) -> list[uni.ElementStmt | uni.String | uni.EmptyToken];
+
     def _combine_has_in_node(nd: uni.Archetype | uni.Enum | uni.Ability) -> None;
     can enter_archetype with uni.Archetype entry;
     can enter_enum with uni.Enum entry;
@@ -114,7 +64,10 @@ walker JacAutoLintPass(UniPass) {
         attr_name: str
     ) -> bool;
 
-    def _collect_atom_trailers(uni_node: uni.UniNode, results: list) -> None;
+    def _collect_atom_trailers(
+        uni_node: uni.UniNode, results: list[uni.AtomTrailer]
+    ) -> None;
+
     def _expr_to_key(expr: uni.Expr) -> (str | None);
     def _exprs_are_identical(expr1: uni.Expr, expr2: uni.Expr) -> bool;
     def _convert_ternary_to_or(if_else_node: uni.IfElseExpr) -> bool;
@@ -122,6 +75,7 @@ walker JacAutoLintPass(UniPass) {
     can exit_bool_expr with uni.BoolExpr exit;
     def _is_future_annotations_import(stmt: uni.UniNode) -> bool;
     def _fix_impl_signature_mismatch(impl_node: uni.ImplDef) -> None;
+    def _reparse_signature(sig: uni.FuncSignature) -> (uni.FuncSignature | None);
     def _impl_owner_archetype(impl_node: uni.ImplDef) -> (uni.Archetype | None);
     def _base_decl_archetypes(annex_path: str) -> list[uni.Archetype];
     def _signatures_match(
@@ -131,12 +85,16 @@ walker JacAutoLintPass(UniPass) {
     def _stmt_body_list(nd: uni.UniNode) -> (Sequence[uni.UniNode] | None);
     def _strip_redundant_semis(nd: uni.Module) -> None;
     def _remove_empty_parens_from_sig(
-        target_node: uni.UniNode, sig: uni.FuncSignature, sig_attr: str
+        target_node: uni.UniNode,
+        sig: uni.FuncSignature,
+        sig_attr: str,
+        quiet: bool = False
     ) -> None;
 
+    def _in_floated_spec(nd: uni.UniNode) -> bool;
     def _extract_string_literal_value(expr: uni.Expr) -> (str | None);
     def _check_no_print(nd: uni.FuncCall) -> None;
-    def _check_unnecessary_pass(body: list) -> None;
+    def _check_unnecessary_pass(body: list[uni.UniNode]) -> None;
     def _check_unnecessary_else_after_return(nd: uni.IfStmt) -> None;
     def _check_nested_if_to_elif(nd: uni.ElseStmt) -> None;
     def _check_return_bool_simplification(nd: uni.IfStmt) -> None;
@@ -153,7 +111,7 @@ walker JacAutoLintPass(UniPass) {
         name: str
     ) -> None;
 
-    def _body_has_return_stmt(body: list) -> bool;
+    def _body_has_return_stmt(body: list[uni.UniNode]) -> bool;
     can exit_if_stmt with uni.IfStmt exit;
     can enter_else_stmt with uni.ElseStmt entry;
     can exit_compare_expr with uni.CompareExpr exit;
@@ -175,20 +133,40 @@ walker JacAutoLintPass(UniPass) {
 
     def _convert_usestate_vars(ability_node: uni.Ability) -> None;
     def _strip_usestate_imports(nd: uni.Module) -> None;
+    def _strip_wired_imports(nd: uni.Module) -> None;
+    def _wired_items(
+        stmt: uni.Import,
+        spec: WiringSpec,
+        provided: dict[tuple[str, str, str, str], WireRec],
+        reads: Callable[[], list[ScopeReads]],
+        scope: str
+    ) -> set[int];
+
     can exit_expr_stmt with uni.ExprStmt exit;
     can exit_module with uni.Module exit;
     def _strip_noise(nd: uni.Module) -> None;
-    def _strip_docstrings(start: uni.UniNode) -> None;
-    def _collect_doc_nodes(`node: uni.UniNode, results: list[uni.AstDocNode]) -> None;
-    def _check_stale_has_read(ability_node: uni.Ability) -> None;
-    def _collect_reactive_has_names(ability_node: uni.Ability) -> set[str];
-    def _walk_for_has_uses(
-        nd: uni.UniNode,
-        reactive: set[str],
-        writes: list[tuple[int, int, str]],
-        reads: list[tuple[int, int, str, uni.Name]]
+    def _separate_impls(
+        module: uni.Module, body: Sequence[uni.UniNode]
+    ) -> list[uni.ImplDef];
+
+    def _collect_inline_abilities(
+        body: Sequence[uni.UniNode],
+        path: list[uni.Name],
+        found: list[tuple[uni.Ability, list[uni.Name]]]
     ) -> None;
 
+    def _can_separate(ab: uni.Ability) -> bool;
+    def _impl_target_text(ab: uni.Ability, path: list[uni.Name]) -> (str | None);
+    def _impl_header(
+        ab: uni.Ability, path: list[uni.Name], line: int
+    ) -> (uni.ImplDef | None);
+
+    def _move_body_to_impl(ab: uni.Ability, impl_node: uni.ImplDef) -> None;
+    def _drop_impl_return(impl_node: uni.ImplDef) -> None;
+    def _strip_docstrings(start: uni.UniNode) -> None;
+    def _collect_doc_nodes(start: uni.UniNode) -> list[tuple[uni.UniNode, uni.String]];
+    def _check_stale_has_read(ability_node: uni.Ability) -> None;
+    def _collect_reactive_has_names(ability_node: uni.Ability) -> set[str];
     def _make_name_node(ref_node: uni.UniNode, value: str) -> uni.Name;
     def _detect_map_lambda_jsx(
         nd: uni.FuncCall
@@ -203,7 +181,10 @@ walker JacAutoLintPass(UniPass) {
     def _property_role_of_ability(ab: uni.Ability) -> str;
     def _make_accessor_from_ability(src: uni.Ability, kind: str) -> uni.Ability;
     def _build_property_has(
-        ref_node: uni.UniNode, prop_name: str, type_expr: uni.Expr, accessors: list
+        ref_node: uni.UniNode,
+        prop_name: str,
+        type_expr: uni.Expr,
+        accessors: list[uni.Ability]
     ) -> uni.ArchHas;
 
     def _property_impl_roles(
@@ -215,5 +196,6 @@ walker JacAutoLintPass(UniPass) {
 }
 
 walker JacLintCheckPass(JacAutoLintPass) {
+    static has contract: PassContract = PassContract();
     has report_only: bool = True;
 }

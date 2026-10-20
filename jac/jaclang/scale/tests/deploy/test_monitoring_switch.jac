@@ -2,14 +2,8 @@
 The observability path force-set `monitoring_enabled = True` on the config it
 handed the deployer, so a configured `false` was overridden and a configured
 `true` alone never reached the deployer at all. Real config objects, no mocks:
-`microservices_config` is injected as a plain dict, which is the same seam
-`_ms_cfg` reads in production."""
-
-import from jaclang.scale.deploy.target.kubernetes.kubernetes_config {
-    KubernetesConfig
-}
-import from jaclang.scale.deploy.target.kubernetes.target { KubernetesTarget }
-
+`gateway_config` is injected as a plain dict, which is the same seam
+`_gateway_cfg` reads in production."""
 
 def _target(
     monitoring: bool, logs: bool = False, tracing: bool = False
@@ -18,10 +12,7 @@ def _target(
         config=KubernetesConfig(
             app_name="t", namespace="t-ns", monitoring_enabled=monitoring
         ),
-        microservices_config={
-            "logs": {"enabled": logs},
-            "tracing": {"enabled": tracing}
-        }
+        gateway_config={"logs": {"enabled": logs}, "tracing": {"enabled": tracing}}
     );
 }
 

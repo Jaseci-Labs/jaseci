@@ -1,182 +1,30 @@
 import asyncio;
 import logging;
-import from jaclang.server.serving.datatypes { Request }
-import from jaclang.server.serving.datatypes { JSONResponse }
-import from jaclang.server.serving.endpoint { HTTPMethod, JEndPoint }
-import from jaclang.scale.admin.k8s_ops {
-    apps_api,
-    core_api,
-    ops_namespace,
-    k8s_available,
-    api_error_detail,
-    unavailable_detail
-}
 
 glob logger = logging.getLogger(__name__);
 
 
-def _s(v: any) -> str {
-    if v is None {
-        return "";
-    }
-    return str(v);
-}
+def _s(v: any) -> str;
 
 
-def _rollout_status(dep: dict) -> dict {
-    spec = dep.get("spec", {}) or {};
-    status = dep.get("status", {}) or {};
-    desired = int(spec.get("replicas", 0) or 0);
-    updated = int(status.get("updated_replicas", 0) or 0);
-    available = int(status.get("available_replicas", 0) or 0);
-    conditions = status.get("conditions", []) or [];
-
-    for c in conditions {
-        if c.get("type") == "Progressing"
-            and str(c.get("reason", "")) == "ProgressDeadlineExceeded" {
-            return {
-                "status": "stuck",
-                "reason": "ProgressDeadlineExceeded",
-                "message": _s(c.get("message"))
-            };
-        }
-    }
-
-    if updated == desired and available == desired {
-        return {"status": "complete", "reason": "", "message": ""};
-    }
-    return {
-        "status": "progressing",
-        "reason": "",
-        "message": f"{available}/{desired} available, {updated} updated"
-    };
-}
+def _rollout_status(dep: dict[str, any]) -> dict[str, any];
 
 
-def summarize_deployment(dep: dict) -> dict {
-    meta = dep.get("metadata", {}) or {};
-    spec = dep.get("spec", {}) or {};
-    status = dep.get("status", {}) or {};
-    containers = ((spec.get("template", {}) or {}).get("spec", {}) or {}).get(
-        "containers", []
-    )
-        or [];
-    images: list = [];
-    for c in containers {
-        img = c.get("image");
-        if img {
-            images.append(str(img));
-        }
-    }
-    return {
-        "name": _s(meta.get("name")),
-        "desired": int(spec.get("replicas", 0) or 0),
-        "ready": int(status.get("ready_replicas", 0) or 0),
-        "available": int(status.get("available_replicas", 0) or 0),
-        "updated": int(status.get("updated_replicas", 0) or 0),
-        "images": images,
-        "rollout": _rollout_status(dep)
-    };
-}
+def summarize_deployment(dep: dict[str, any]) -> dict[str, any];
 
 
-def _container_state(cs: dict) -> dict {
-    state = cs.get("state", {}) or {};
-    if state.get("running") {
-        return {"state": "running", "reason": ""};
-    }
-    if state.get("waiting") {
-        w = state.get("waiting", {}) or {};
-        return {"state": "waiting", "reason": _s(w.get("reason"))};
-    }
-    if state.get("terminated") {
-        t = state.get("terminated", {}) or {};
-        return {"state": "terminated", "reason": _s(t.get("reason"))};
-    }
-    return {"state": "unknown", "reason": ""};
-}
+def _container_state(cs: dict[str, any]) -> dict[str, any];
 
 
-def summarize_pod(pod: dict[str, any]) -> dict[str, any] {
-    meta: dict[str, any] = pod.get("metadata", {}) or {};
-    spec: dict[str, any] = pod.get("spec", {}) or {};
-    status: dict[str, any] = pod.get("status", {}) or {};
-    labels: dict[str, any] = meta.get("labels", {}) or {};
-    cstatuses: list[any] = status.get("container_statuses", []) or [];
-
-    ready_count = 0;
-    restart_total = 0;
-    containers: list = [];
-    for cs in cstatuses {
-        is_ready = bool(cs.get("ready", False));
-        if is_ready {
-            ready_count += 1;
-        }
-        restarts = int(cs.get("restart_count", 0) or 0);
-        restart_total += restarts;
-        st = _container_state(cs);
-        containers.append(
-            {
-                "name": _s(cs.get("name")),
-                "image": _s(cs.get("image")),
-                "image_id": _s(cs.get("image_id")),
-                "ready": is_ready,
-                "restarts": restarts,
-                "state": st["state"],
-                "reason": st["reason"]
-            }
-        );
-    }
-
-    return {
-        "name": _s(meta.get("name")),
-        "app": _s(labels.get("app")),
-        "phase": _s(status.get("phase")),
-        "ready": ready_count,
-        "total": len(cstatuses),
-        "restarts": restart_total,
-        "node": _s(spec.get("node_name")),
-        "created": _s(meta.get("creation_timestamp")),
-        "containers": containers
-    };
-}
+def summarize_pod(pod: dict[str, any]) -> dict[str, any];
 
 
-def build_deploy_health(namespace: str, deployments: list, pods: list) -> dict {
-    deps = [summarize_deployment(d) for d in deployments];
-    pds = [summarize_pod(p) for p in pods];
-    deps.sort(key=lambda (d) { d.get("name", ""); });
-    pds.sort(key=lambda (p) { p.get("name", ""); });
-    return {
-        "available": True,
-        "namespace": namespace,
-        "deployments": deps,
-        "pods": pds
-    };
-}
+def build_deploy_health(
+    namespace: str, deployments: list[dict[str, any]], pods: list[dict[str, any]]
+) -> dict[str, any];
 
 
-def _collect_deploy_health -> dict {
-    if not k8s_available() {
-        return {"available": False, "detail": unavailable_detail()};
-    }
-    apps = apps_api();
-    core = core_api();
-    if apps is None or core is None {
-        return {"available": False, "detail": unavailable_detail()};
-    }
-    ns = ops_namespace();
-    try {
-        dep_objs = apps.list_namespaced_deployment(namespace=ns).items;
-        pod_objs = core.list_namespaced_pod(namespace=ns).items;
-    } except Exception as e {
-        logger.warning(f"deploy-health list failed: {e}");
-        return {"available": False, "detail": api_error_detail(e)};
-    }
-    deployments = [d.to_dict() for d in (dep_objs or [])];
-    pods = [p.to_dict() for p in (pod_objs or [])];
-    return build_deploy_health(ns, deployments, pods);
-}
+def _collect_deploy_health -> dict[str, any];
 
 
 impl JacAPIServerDeployHealth.register_deploy_health_endpoints -> None {
@@ -216,4 +64,149 @@ impl JacAPIServerDeployHealth.register_deploy_health_endpoints -> None {
         )
     );
     logger.info("Deploy-health endpoint registered: /admin/ops/deploy");
+}
+
+impl _s(v: any) -> str {
+    if v is None {
+        return "";
+    }
+    return str(v);
+}
+
+
+impl _rollout_status(dep: dict[str, any]) -> dict[str, any] {
+    health = assess_workload(dep);
+    return {
+        "status": health.status.value,
+        "reason": health.reason,
+        "message": _s(health.message)
+    };
+}
+
+
+impl summarize_deployment(dep: dict[str, any]) -> dict[str, any] {
+    meta: any = dep.get("metadata", {}) or {};
+    spec: any = dep.get("spec", {}) or {};
+    status: any = dep.get("status", {}) or {};
+    containers = ((spec.get("template", {}) or {}).get("spec", {}) or {}).get(
+        "containers", []
+    )
+        or [];
+    images: list[str] = [];
+    for c in containers {
+        img = c.get("image");
+        if img {
+            images.append(str(img));
+        }
+    }
+    return {
+        "name": _s(meta.get("name")),
+        "desired": int(spec.get("replicas", 0) or 0),
+        "ready": int(status.get("ready_replicas", 0) or 0),
+        "available": int(status.get("available_replicas", 0) or 0),
+        "updated": int(status.get("updated_replicas", 0) or 0),
+        "images": images,
+        "rollout": _rollout_status(dep)
+    };
+}
+
+
+impl _container_state(cs: dict[str, any]) -> dict[str, any] {
+    state: any = cs.get("state", {}) or {};
+    if state.get("running") {
+        return {"state": "running", "reason": ""};
+    }
+    if state.get("waiting") {
+        w: any = state.get("waiting", {}) or {};
+        return {"state": "waiting", "reason": _s(w.get("reason"))};
+    }
+    if state.get("terminated") {
+        t: any = state.get("terminated", {}) or {};
+        return {"state": "terminated", "reason": _s(t.get("reason"))};
+    }
+    return {"state": "unknown", "reason": ""};
+}
+
+
+impl summarize_pod(pod: dict[str, any]) -> dict[str, any] {
+    meta: dict[str, any] = pod.get("metadata", {}) or {};
+    spec: dict[str, any] = pod.get("spec", {}) or {};
+    status: dict[str, any] = pod.get("status", {}) or {};
+    labels: dict[str, any] = meta.get("labels", {}) or {};
+    cstatuses: any = status.get("container_statuses", []) or [];
+
+    ready_count = 0;
+    restart_total = 0;
+    containers: list[dict[str, any]] = [];
+    for cs in cstatuses {
+        is_ready = bool(cs.get("ready", False));
+        if is_ready {
+            ready_count += 1;
+        }
+        restarts = int(cs.get("restart_count", 0) or 0);
+        restart_total += restarts;
+        st = _container_state(cs);
+        containers.append(
+            {
+                "name": _s(cs.get("name")),
+                "image": _s(cs.get("image")),
+                "image_id": _s(cs.get("image_id")),
+                "ready": is_ready,
+                "restarts": restarts,
+                "state": st["state"],
+                "reason": st["reason"]
+            }
+        );
+    }
+
+    return {
+        "name": _s(meta.get("name")),
+        "app": _s(labels.get("app")),
+        "phase": _s(status.get("phase")),
+        "ready": ready_count,
+        "total": len(cstatuses),
+        "restarts": restart_total,
+        "node": _s(spec.get("node_name")),
+        "created": _s(meta.get("creation_timestamp")),
+        "containers": containers
+    };
+}
+
+
+impl build_deploy_health(
+    namespace: str, deployments: list[dict[str, any]], pods: list[dict[str, any]]
+) -> dict[str, any] {
+    deps = [summarize_deployment(d) for d in deployments];
+    pds = [summarize_pod(p) for p in pods];
+    deps.sort(key=lambda (d) { d.get("name", ""); });
+    pds.sort(key=lambda (p) { p.get("name", ""); });
+    return {
+        "available": True,
+        "namespace": namespace,
+        "deployments": deps,
+        "pods": pds
+    };
+}
+
+
+impl _collect_deploy_health -> dict[str, any] {
+    if not k8s_available() {
+        return {"available": False, "detail": unavailable_detail()};
+    }
+    apps = apps_api();
+    core = core_api();
+    if apps is None or core is None {
+        return {"available": False, "detail": unavailable_detail()};
+    }
+    ns = ops_namespace();
+    try {
+        dep_objs = apps.list_namespaced_deployment(namespace=ns).items;
+        pod_objs = core.list_namespaced_pod(namespace=ns).items;
+    } except Exception as e {
+        logger.warning(f"deploy-health list failed: {e}");
+        return {"available": False, "detail": api_error_detail(e)};
+    }
+    deployments = [d.to_dict() for d in (dep_objs or [])];
+    pods = [p.to_dict() for p in (pod_objs or [])];
+    return build_deploy_health(ns, deployments, pods);
 }

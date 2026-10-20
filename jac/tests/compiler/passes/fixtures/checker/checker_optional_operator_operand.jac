@@ -1,4 +1,4 @@
-"""A `T | None` operand in an arithmetic/bitwise/shift operator is E1135.
+"""A `T | None` operand in an arithmetic/bitwise/shift operator is E1160.
 
 Attribute access on `T | None` already errors (E1099) because member lookup
 requires every union member to carry the attribute. Binary operators went
@@ -7,7 +7,7 @@ member answered, so `x + 1` on `int | None` type-checked and then crashed
 at runtime on the None case. The operator path now rejects an un-narrowed
 optional operand the same way, and augmented assignment does too.
 
-`fail_` functions each raise exactly one E1135. `ok_` functions stay clean:
+`fail_` functions each raise exactly one E1160. `ok_` functions stay clean:
 narrowing, equality against None, and `any` operands are all still fine.
 """
 

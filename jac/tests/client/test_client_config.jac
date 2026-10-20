@@ -38,12 +38,12 @@ def _append_toml(project_path: str, block: str) {
 }
 
 """Parse the endpointEffects map embedded in a served page's __jac_init__."""
-def _endpoint_effects(page_html: str) -> dict {
+def _endpoint_effects(page_html: str) -> dict[str, any] {
     init_hit = re.search(
         r'<script\s+id="__jac_init__"[^>]*>(.*?)</script>', page_html, re.DOTALL,
     );
     assert init_hit , "served page should embed a __jac_init__ script";
-    data: dict = json.loads(init_hit.group(1));
+    data: dict[str, any] = json.loads(init_hit.group(1));
     return data.get("endpointEffects", {});
 }
 
@@ -162,13 +162,13 @@ test "multi-segment route resolves assets" {
                 "utf-8", errors="ignore"
             );
             asset_hit = re.search(
-                r'src="(/static/client\.js\?hash=[a-f0-9]+)"', nested
+                r'src="(/static/client\.js\?hash=[A-Za-z0-9_-]+)"', nested
             );
             if not asset_hit {
                 asset_hit = re.search(r'src="(/client\.[A-Za-z0-9_-]+\.js)"', nested);
             }
             assert asset_hit , (
-                f"nested route should reference a root-absolute asset; got:\n{nested[:500]}"
+                f"nested route should reference a root-absolute asset; got:\n{nested[-1000:]}"
             );
             asset = request_endpoint(f"{base}{asset_hit.group(1)}");
             assert len(asset) > 0 , "referenced asset should be reachable + non-empty";
@@ -194,14 +194,22 @@ test "endpoint effects classify readers and writers" {
                 "utf-8", errors="ignore"
             );
             effects = _endpoint_effects(body);
+            import json;
+            for (identity, info) in effects.items() {
+                assert json.loads(identity)
+                    == [info["app"], info["module"], info["kind"], info["name"]];
+            }
+            effects = {
+                info["kind"] + ":" + info["name"]: info for info in effects.values()
+            };
             for reader in ["walker:ping_server", "walker:get_server_message"] {
                 assert reader in effects , f"{reader} should be classified";
-                assert not effects[reader]["is_writer"] , (
-                    f"{reader} should be a reader (is_writer=false)"
+                assert not effects[reader]["writes"] , (
+                    f"{reader} should be a reader (writes=[])"
                 );
             }
             assert "walker:create_item" in effects , "writer should be classified";
-            assert effects["walker:create_item"]["is_writer"] , (
+            assert effects["walker:create_item"]["writes"] , (
                 "create_item mutates Root and should be a writer"
             );
         } finally {

@@ -1,11 +1,11 @@
 name: Nightly
 
-# Cron canaries against the shipped artifacts. On workflow_dispatch every job
+# Scheduled checks of source builds and shipped artifacts. On workflow_dispatch every job
 # runs; on schedule each job matches its own cron.
 
 on:
   schedule:
-    - cron: '0 3 * * *'   # notes-app CEF smoke
+    - cron: '0 3 * * *'   # source-build and native runtime checks
     - cron: '17 8 * * *'  # installer against the LIVE latest release
     - cron: '41 9 * * 1'  # Intel-Mac probe (the manual release leg)
   workflow_dispatch:
@@ -14,6 +14,20 @@ permissions:
   contents: read
 
 jobs:
+  # The JacPython accelerator on every platform it supports. Releases ship
+  # CPython; this is where JacPython's gates run without a pull request asking.
+  jacpython:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '0 3 * * *' }}
+    uses: ./.github/workflows/_jacpython.yml
+    with:
+      runners: '["blacksmith-8vcpu-ubuntu-2404", "ubuntu-24.04-arm", "macos-14"]'
+
+  # The js_engine accelerator: releases ship bun, so this is where the engine
+  # is built and gated without a pull request asking.
+  js-engine:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '0 3 * * *' }}
+    uses: ./.github/workflows/_js_engine.yml
+
   notes-app-cef-smoke:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '0 3 * * *' }}
     runs-on: blacksmith-4vcpu-ubuntu-2404
@@ -30,26 +44,27 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y xvfb libnss3 libatk1.0-0 libatk-bridge2.0-0 \
           libcups2 libxcomposite1 libxdamage1 libxrandr2 libgbm1 libpango-1.0-0 \
-          libasound2t64
+          libasound2t64 patchelf
 
     - name: Build notes-app example
       run: |
         cd jac/examples/notes-app
-        jac build --client cef
+        jac build   # [project] kind = "desktop", [desktop] engine = "cef"
 
     - name: Bundle existence audit
       working-directory: jac/examples/notes-app
       run: |
-        BUNDLE=.jac/client/cef
+        BUNDLE=.jac/client/desktop
         test -f $BUNDLE/libcef.so
         test -f $BUNDLE/cef-subprocess
         test -f $BUNDLE/minimal-fonts.conf
         test -f $BUNDLE/icudtl.dat
         test -d $BUNDLE/locales
+        test -f $BUNDLE/app.jab
         ldd $BUNDLE/notes-app | grep 'not found' && exit 1 || true
 
     - name: Headless smoke with timeout (X11)
-      working-directory: jac/examples/notes-app/.jac/client/cef
+      working-directory: jac/examples/notes-app/.jac/client/desktop
       run: |
         Xvfb :99 -screen 0 1280x720x24 &
         XVFB_PID=$!
@@ -122,9 +137,9 @@ jobs:
       matrix:
         base: [slim, official-image]
     env:
-      JAC_NO_DEV_SOURCE: "1"
-      # Ship the jac built from this checkout to the pods via channel LOCAL.
-      JAC_SCALE_BINARY_PATH: ${{ github.workspace }}/jac/zig-out/bin/jac
+      # The jac built from this checkout: the deploy driver here, and the
+      # binary the e2e harness ships to the pods as [dev] pod_binary.
+      JAC_UNDER_TEST: ${{ github.workspace }}/jac/zig-out/bin/jac
     steps:
       - uses: actions/checkout@v5
         with:
@@ -132,12 +147,13 @@ jobs:
 
       - name: Set up jac (sealed binary)
         uses: ./.github/actions/setup-jac
+      - uses: ./.github/actions/seal-checkout
 
       - name: Install the jac binary as the deploy driver
         run: |
-          chmod +x "$JAC_SCALE_BINARY_PATH"
+          chmod +x "$JAC_UNDER_TEST"
           mkdir -p "$HOME/.local/bin"
-          cp "$JAC_SCALE_BINARY_PATH" "$HOME/.local/bin/jac"
+          cp "$JAC_UNDER_TEST" "$HOME/.local/bin/jac"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           "$HOME/.local/bin/jac" --version
 
@@ -227,7 +243,7 @@ jobs:
         if: matrix.base == 'official-image'
         run: |
           mkdir -p /tmp/imgctx/amd64
-          cp "$JAC_SCALE_BINARY_PATH" /tmp/imgctx/amd64/jac
+          cp "$JAC_UNDER_TEST" /tmp/imgctx/amd64/jac
           docker build --build-arg TARGETARCH=amd64 \
               -f docker/jaclang.Dockerfile -t jaclang-e2e:nightly /tmp/imgctx
           kind load docker-image jaclang-e2e:nightly --name jac

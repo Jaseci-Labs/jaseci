@@ -52,6 +52,7 @@ enum TokenKind {
     KW_SEM = "sem",
     KW_TEST = "test",
     KW_GLOBAL = "glob",
+    KW_GRAPH = "graph",
     KW_IMPORT = "import",
     KW_INCLUDE = "include",
     KW_FROM = "from",
@@ -102,6 +103,7 @@ enum TokenKind {
     KW_ISN = "is not",
     KW_LAMBDA = "lambda",
     KW_OWN = "own",
+    KW_LIN = "lin",
     KW_MUT = "mut",
     KW_IMM = "imm",
     KW_PUB = "pub",
@@ -294,6 +296,7 @@ glob KEYWORDS: dict[str, TokenKind] = {
          "sem": TokenKind.KW_SEM,
          "test": TokenKind.KW_TEST,
          "glob": TokenKind.KW_GLOBAL,
+         "graph": TokenKind.KW_GRAPH,
          "import": TokenKind.KW_IMPORT,
          "include": TokenKind.KW_INCLUDE,
          "from": TokenKind.KW_FROM,
@@ -342,6 +345,7 @@ glob KEYWORDS: dict[str, TokenKind] = {
          "is": TokenKind.KW_IS,
          "lambda": TokenKind.KW_LAMBDA,
          "own": TokenKind.KW_OWN,
+         "lin": TokenKind.KW_LIN,
          "mut": TokenKind.KW_MUT,
          "imm": TokenKind.KW_IMM,
          "pub": TokenKind.KW_PUB,
@@ -357,12 +361,42 @@ glob KEYWORDS: dict[str, TokenKind] = {
          "None": TokenKind.NULL
      };
 
-def lookup_keyword(text: str) -> TokenKind | None {
-    if text in KEYWORDS {
-        return KEYWORDS[text];
-    }
-    return None;
-}
+def lookup_keyword(text: str) -> TokenKind | None;
+
+glob RESERVED_KINDS: frozenset = frozenset(KEYWORDS.values())
+         - frozenset({TokenKind.BOOL, TokenKind.NULL});
+
+def is_reserved_kind(kind: TokenKind) -> bool;
+
+glob BUILTIN_TYPE_KINDS: frozenset = frozenset(
+         {
+             TokenKind.TYP_STRING,
+             TokenKind.TYP_INT,
+             TokenKind.TYP_FLOAT,
+             TokenKind.TYP_LIST,
+             TokenKind.TYP_TUPLE,
+             TokenKind.TYP_SET,
+             TokenKind.TYP_DICT,
+             TokenKind.TYP_BOOL,
+             TokenKind.TYP_BYTES,
+             TokenKind.TYP_ANY,
+             TokenKind.TYP_TYPE,
+             TokenKind.TYP_I8,
+             TokenKind.TYP_U8,
+             TokenKind.TYP_I16,
+             TokenKind.TYP_U16,
+             TokenKind.TYP_I32,
+             TokenKind.TYP_U32,
+             TokenKind.TYP_I64,
+             TokenKind.TYP_U64,
+             TokenKind.TYP_F32,
+             TokenKind.TYP_F64
+         }
+     );
+
+def is_builtin_type_kind(kind: TokenKind) -> bool;
+
+def reserved_words -> list[str];
 
 glob SPECIAL_VAR_KINDS: set[TokenKind] = {
          TokenKind.KW_SELF,
@@ -375,6 +409,6 @@ glob SPECIAL_VAR_KINDS: set[TokenKind] = {
          TokenKind.KW_POST_INIT
      };
 
-def is_special_var_kind(kind: TokenKind) -> bool {
-    return kind in SPECIAL_VAR_KINDS;
-}
+def is_special_var_kind(kind: TokenKind) -> bool;
+
+def is_name_usable_kind(kind: TokenKind) -> bool;

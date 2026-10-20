@@ -4,7 +4,7 @@ glob _NOTIFY_LIMIT = 7000,
      _SPILL_TTL_SECONDS = 60;
 
 
-impl MemoryBackplane.start{
+impl MemoryBackplane.start {
     if not self._warned {
         logger.warning(
             "WS MemoryBackplane in use: broadcasts are limited to this "
@@ -15,7 +15,7 @@ impl MemoryBackplane.start{
     }
 }
 
-impl MemoryBackplane.publish(channel: str, message: dict) -> None {
+impl MemoryBackplane.publish(channel: str, message: dict[str, any]) -> None {
     handlers = list(self._subs.get(channel, []));
     if not handlers {
         return;
@@ -46,7 +46,7 @@ impl MemoryBackplane.unsubscribe(channel: str, handler: any) {
     }
 }
 
-impl MemoryBackplane.close{
+impl MemoryBackplane.close {
     self._subs = {};
 }
 
@@ -60,7 +60,7 @@ impl PgBackplane.start -> None {
     if self._store is not None {
         return;
     }
-    import from jaclang.scale.persistence.pg { shared_store }
+
     store = await asyncio.to_thread(shared_store);
     if store is None {
         raise RuntimeError(
@@ -74,7 +74,7 @@ impl PgBackplane.start -> None {
 }
 
 
-impl PgBackplane.publish(channel: str, message: dict) -> None {
+impl PgBackplane.publish(channel: str, message: dict[str, any]) -> None {
     await self.start();
     payload = json.dumps(message);
     if len(payload.encode('utf-8')) > _NOTIFY_LIMIT {
@@ -121,7 +121,7 @@ impl PgBackplane._on_notify(channel: str, payload: str) -> None {
 }
 
 
-impl PgBackplane._dispatch(channel: str, message: dict) -> None {
+impl PgBackplane._dispatch(channel: str, message: dict[str, any]) -> None {
     handlers = list(self._handlers.get(channel, []));
     if handlers {
         tasks = [h(channel, message) for h in handlers];
@@ -161,13 +161,13 @@ impl PgBackplane.unsubscribe(channel: str, handler: any) {
 }
 
 
-impl PgBackplane.close{
+impl PgBackplane.close {
     self._closed = True;
     self._handlers = {};
 }
 
 
-impl build_backplane(cfg: dict) -> BaseBackplane {
+impl build_backplane(cfg: dict[str, any]) -> BaseBackplane {
     backplane = cfg.get('backplane');
     if backplane == 'memory' {
         return MemoryBackplane();
@@ -181,7 +181,7 @@ impl build_backplane(cfg: dict) -> BaseBackplane {
             "Expected 'memory' or 'pg'."
         );
     }
-    import from jaclang.scale.persistence.pg { scale_db_url }
+
     if scale_db_url() {
         return PgBackplane();
     }

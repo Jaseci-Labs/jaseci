@@ -1,5 +1,4 @@
-import jaclang.compiler.backends.es.estree as es;
-import jaclang.compiler.frontend.unitree as uni;
+glob _Located = TypeVar('_Located', bound=es.Node);
 
 obj HostTag {
     has name: str,
@@ -22,7 +21,7 @@ obj DynamicTag {
 
 obj StaticAttr {
     has name: str,
-        value: es.Expression,
+        value: es.Literal,
         jac_node: (uni.UniNode | None);
 }
 
@@ -71,27 +70,8 @@ obj SlotChild {
 
 obj IfChild {
     has `test: es.Expression,
-        consequent:
-            list[
-                TextChild
-                    | DynamicChild
-                    | ElementChild
-                    | SlotChild
-                    | IfChild
-                    | EachChild
-            ],
-        alternate:
-            (
-                list[
-                    TextChild
-                        | DynamicChild
-                        | ElementChild
-                        | SlotChild
-                        | IfChild
-                        | EachChild
-                ]
-                | None
-            ),
+        consequent: list[ViewChild],
+        alternate: (list[ViewChild] | None),
         js_fallback: es.Expression,
         jac_node: (uni.UniNode | None);
 }
@@ -100,37 +80,32 @@ obj EachChild {
     has items: es.Expression,
         item: str,
         key: (es.Expression | None),
-        body:
-            list[
-                TextChild
-                    | DynamicChild
-                    | ElementChild
-                    | SlotChild
-                    | IfChild
-                    | EachChild
-            ],
+        body: list[ViewChild],
         js_fallback: es.Expression,
         jac_node: (uni.UniNode | None);
 }
 
-glob ViewChild = TextChild
-         | DynamicChild
-         | ElementChild
-         | SlotChild
-         | IfChild
-         | EachChild;
+type ViewChild = TextChild
+    | DynamicChild
+    | ElementChild
+    | SlotChild
+    | IfChild
+    | EachChild;
 
 obj ViewElement {
     has tag: (HostTag | ComponentTag | FragmentTag | DynamicTag),
         attrs: list[StaticAttr | DynamicAttr | EventAttr | RefAttr | SpreadAttr],
-        children:
-            list[
-                TextChild
-                    | DynamicChild
-                    | ElementChild
-                    | SlotChild
-                    | IfChild
-                    | EachChild
-            ],
+        children: list[ViewChild],
         jac_node: (uni.UniNode | None);
+}
+
+def view_attr_node(
+    attr: (StaticAttr | DynamicAttr | EventAttr | RefAttr | SpreadAttr)
+) -> (uni.UniNode | None);
+
+obj ViewLocator {
+    has anchor: (uni.UniNode | None) = None,
+        locate: bool = True;
+
+    def at(es_node: _Located, jac_node: (uni.UniNode | None) = None) -> _Located;
 }

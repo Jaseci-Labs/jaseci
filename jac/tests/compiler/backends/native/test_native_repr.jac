@@ -117,8 +117,7 @@ test "obj element default repr" {
     (eng, _) = compile_native("container_repr.jac");
     f = get_func(eng, "obj_elem_default", ctypes.c_char_p);
     out = f();
-    assert out.startswith(b"[<Plain object at 0x") , f"got {out!r}";
-    assert out.endswith(b">]") , f"got {out!r}";
+    assert out == b"[Plain(n=1)]" , f"got {out!r}";
 }
 
 test "print(list) and print(tuple) to stdout" {
@@ -126,4 +125,10 @@ test "print(list) and print(tuple) to stdout" {
     `entry = get_func(eng, "jac_entry", None);
     out = capture_stdout(`entry);
     assert out == b"[1, 2, 3]\n(1, 2)\n" , f"got {out!r}";
+}
+
+test "str of sized integers preserves unsigned range and vararg width" {
+    (eng, _) = compile_native("container_repr.jac");
+    f = get_func(eng, "sized_integer_str", ctypes.c_bool);
+    assert f();
 }

@@ -27,6 +27,8 @@ Every import follows the same template. Square brackets mark optional parts:
 
 A plain whole-module import (`import os;`) takes a trailing semicolon. The `import from ... { ... }` brace form does not.
 
+A project can also declare its imports between its own modules once, in an `archwire.jac` beside `jac.toml`, where a wire such as `core.github --> core.scoring_service { RepoMeta }` generates the import into the consumer at compile time and checks the module against it. External imports stay in the module file. See [Project Wiring](wiring.md).
+
 ---
 
 ## Choosing the codespace
@@ -221,13 +223,13 @@ import from "libgeometry.so" {
 ```
 
 !!! info "Fixed-width types at the C boundary"
-    The `import from` declaration uses fixed-width types (`f64`, `i32`, `u8`, `c_void`, …) so the signature matches the C ABI exactly. Carry those same fixed-width types through any function that passes values into a C call, or cast at the boundary: a plain `int` into an `i32` parameter is the checked cast `i32(n)`, and the checker reports an uncast narrowing (`E1127`) rather than letting the backend truncate silently. Widening (`u8 -> i32`, `f32 -> f64`) stays implicit. Library paths are platform-specific -- `.so` on Linux, `.dylib` on macOS, and system libraries live in different locations per platform.
+    The `import from` declaration uses fixed-width types (`f64`, `i32`, `u8`, …, plus `ptr[T]` for addresses) so the signature matches the C ABI exactly. Carry those same fixed-width types through any function that passes values into a C call, or cast at the boundary: a plain `int` into an `i32` parameter is the checked cast `i32(n)`, and the checker reports an uncast narrowing (`E1127`) rather than letting the backend truncate silently. Widening (`u8 -> i32`, `f32 -> f64`) stays implicit. Library paths are platform-specific -- `.so` on Linux, `.dylib` on macOS, and system libraries live in different locations per platform.
 
 ---
 
 ## Crossing codespaces
 
-A single file can mix all three codespaces, and imports can reach *across* the boundary. Placement is inferred: importing a server walker or `def:pub` function into client code is just a plain import, and the compiler rewrites each call into an HTTP request automatically. A server-to-server microservice boundary is declared in config instead -- list the provider module in `[scale.microservices.routes]` and imports of it lower to service RPC stubs.
+A single file can mix all three codespaces, and imports can reach *across* the boundary. Placement is inferred: importing a server walker or `def:pub` function into client code is just a plain import, and the compiler rewrites each call into an HTTP request automatically. Between two server-side apps the same rule holds: import a walker or `def:pub` function that another app owns and the import lowers to a typed-async bridge stub -- `await` it -- with no import form and no routes table. Which app owns what is declared in `jac.toml` under `[apps]` (see [Workspaces & Apps](apps.md)).
 
 ```jac
 # Import a server walker into client code -- calls become HTTP requests.
@@ -299,7 +301,7 @@ jac check --parse_only myfile.jac   # syntax only -- works for sv, cl, and na
 jac check myfile.jac                # full type-check (server / client code)
 ```
 
-`--parse_only` is the universally safe check for all three codespaces. For **native (`na`) code that calls C libraries**, the most reliable verification is to compile it -- `jac run myfile.jac` or `jac nacompile myfile.jac` -- since the native backend, not the general type checker, owns C-ABI coercion.
+`--parse_only` is the universally safe check for all three codespaces. For **native (`na`) code that calls C libraries**, the most reliable verification is to compile it -- `jac run myfile.jac` or `jac build --native myfile.jac` -- since the native backend, not the general type checker, owns C-ABI coercion.
 
 If you have the [`jac mcp`](mcp.md) server connected, the `check_syntax` and `validate_jac` tools do the same thing from your AI assistant.
 

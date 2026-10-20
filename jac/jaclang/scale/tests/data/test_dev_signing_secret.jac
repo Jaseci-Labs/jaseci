@@ -10,14 +10,6 @@ and a deployment that configures its own secret keeps using it.
 import os;
 import from pathlib { Path }
 import from tempfile { TemporaryDirectory }
-import from jaclang.scale.config.config_loader { get_scale_config, reset_scale_config }
-import from jaclang.server.serving.authcrypt {
-    PLACEHOLDER_JWT_SECRET,
-    jwt_decode,
-    jwt_encode,
-    project_data_dir,
-    project_signing_secret
-}
 
 glob CLUSTER_ENV: str = "KUBERNETES_SERVICE_HOST",
      DATA_PATH_ENV: str = "JAC_DATA_PATH";
@@ -118,7 +110,7 @@ test "an unwritable project fails closed instead of signing per process" {
                 project_signing_secret(blocked);
             }
             message = str(exc.value);
-            assert "[scale.jwt] secret" in message;
+            assert "[serve.auth] secret" in message;
             assert "keep to" in message;
         } finally {
             _set_env(previous);
@@ -130,29 +122,27 @@ test "an unwritable project fails closed instead of signing per process" {
 test "an unconfigured project no longer signs with the shipped placeholder" {
     with TemporaryDirectory() as tmpdir {
         previous = _set_env({CLUSTER_ENV: None, DATA_PATH_ENV: None});
-        reset_scale_config();
         try {
-            secret = get_scale_config(Path(tmpdir)).get_jwt_config()["secret"];
+            secret = ServeSettings.load(tmpdir).auth.resolve_secret(tmpdir);
             assert secret != PLACEHOLDER_JWT_SECRET;
             assert secret == project_signing_secret(tmpdir);
         } finally {
-            reset_scale_config();
             _set_env(previous);
         }
     }
 }
 
 
-test "a cluster with no configured secret keeps the placeholder" {
+test "a cluster with no configured secret refuses to sign" {
     with TemporaryDirectory() as tmpdir {
         previous = _set_env({CLUSTER_ENV: "10.0.0.1", DATA_PATH_ENV: None});
-        reset_scale_config();
         try {
-            secret = get_scale_config(Path(tmpdir)).get_jwt_config()["secret"];
-            assert secret == PLACEHOLDER_JWT_SECRET;
+            with testraises(ServeConfigError) as exc {
+                ServeSettings.load(tmpdir).auth.resolve_secret(tmpdir);
+            }
+            assert "JAC_SERVE_AUTH_SECRET" in str(exc.value);
             assert not (Path(tmpdir) / ".jac" / "data" / "jwt_secret").exists();
         } finally {
-            reset_scale_config();
             _set_env(previous);
         }
     }
@@ -162,16 +152,36 @@ test "a cluster with no configured secret keeps the placeholder" {
 test "a configured secret wins, so a deployment keeps its own source" {
     with TemporaryDirectory() as tmpdir {
         (Path(tmpdir) / "jac.toml").write_text(
-            '[scale.jwt]\nsecret = "deployed-secret"\n', encoding="utf-8"
+            '[serve.auth]\nsecret = "deployed-secret"\n', encoding="utf-8"
         );
         previous = _set_env({CLUSTER_ENV: None, DATA_PATH_ENV: None});
-        reset_scale_config();
         try {
-            secret = get_scale_config(Path(tmpdir)).get_jwt_config()["secret"];
+            secret = ServeSettings.load(tmpdir).auth.resolve_secret(tmpdir);
             assert secret == "deployed-secret";
             assert not (Path(tmpdir) / ".jac" / "data" / "jwt_secret").exists();
         } finally {
-            reset_scale_config();
+            _set_env(previous);
+        }
+    }
+}
+
+
+test "the environment mirror overrides the project secret" {
+    with TemporaryDirectory() as tmpdir {
+        (Path(tmpdir) / "jac.toml").write_text(
+            '[serve.auth]\nsecret = "deployed-secret"\n', encoding="utf-8"
+        );
+        previous = _set_env(
+            {
+                CLUSTER_ENV: None,
+                DATA_PATH_ENV: None,
+                "JAC_SERVE_AUTH_SECRET": "env-secret"
+            }
+        );
+        try {
+            assert ServeSettings.load(tmpdir).auth.resolve_secret(tmpdir)
+                == "env-secret";
+        } finally {
             _set_env(previous);
         }
     }

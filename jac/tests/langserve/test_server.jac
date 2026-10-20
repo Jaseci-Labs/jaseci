@@ -1,4 +1,5 @@
 """Tests for Jac Language Server."""
+import from jaclang.compiler.driver.ifacecache { artifact_cache_path }
 
 import contextlib;
 import os;
@@ -22,7 +23,7 @@ glob FIXTURE_DIR = os.path.join(
      PASSES_FIXTURES = os.path.join(
          JAC_ROOT, "tests", "compiler", "passes", "fixtures"
      ),
-     _active_servers: list = [];
+     _active_servers: list[any] = [];
 
 """Clear jac-compiled modules from sys.modules."""
 def _clear_jac_modules {
@@ -278,13 +279,13 @@ test "test_go_to_definition_md_path" {
             (10, 34, "jaclang/__init__.py:"),
             (11, 40, "jaclang/compiler/frontend/constant.jac:0:0-0:0"),
             (11, 51, "jaclang/compiler/frontend/constant.jac:2:5-2:15"),
-            (13, 40, "jaclang/compiler/types/type_utils.jac:0:0-0:0"),
+            (13, 32, "jaclang/lsp/server/utils.jac:0:0-0:0"),
             (14, 34, "jaclang/compiler/types/__init__.py:0:0-0:0"),
-            (18, 5, "compiler/types/types.jac:59:5-59:13"),
+            (18, 5, "compiler/types/types.jac:34:5-34:13"),
             (20, 40, "jaclang/compiler/frontend/unitree.jac:0:0-0:0"),
             (22, 22, "tests/langserve/fixtures/circle.jac:7:5-7:8"),
             (23, 37, "jaclang/lsp/protocol/uris.jac:0:0-0:0"),
-            (24, 44, "jaclang/lsp/protocol/server.jac:93:4-93:18"),
+            (24, 44, "jaclang/lsp/protocol/server.jac:67:4-67:18"),
             (26, 31, "jaclang/lsp/protocol/types.jac:0:0-0:0"),
 
         ];
@@ -999,7 +1000,7 @@ test "test_hover_types" {
         assert narrowing_file is not None;
         lsp.type_check_file(narrowing_file);
 
-        hover_cases: list[tuple] = [
+        hover_cases: list[tuple[any, ...]] = [
             (4, 9, "str", None),
             (8, 9, "list", None),
             (12, 9, "bool", None),
@@ -1216,7 +1217,7 @@ test "test_hover_lhs_assignment" {
         lsp.type_check_file(lhs_file);
 
         # (line, col, desc, expected, should_not_contain)
-        cases: list[tuple] = [
+        cases: list[tuple[any, ...]] = [
             (13, 5, "flat_narrow LHS x", "int", "None"),
             (14, 12, "flat_narrow read x", "int", "None"),
             (19, 5, "flat_to_none LHS x", "None", "int"),
@@ -1400,7 +1401,6 @@ test "test_jir_cache_invalidated_on_version_mismatch" {
     import tempfile;
     import shutil;
     import from jaclang.compiler.driver.jir {
-        get_module_cache_path,
         is_module_cache_valid,
         HEADER_FMT,
         HEADER_SIZE
@@ -1413,12 +1413,16 @@ test "test_jir_cache_invalidated_on_version_mismatch" {
         import from jaclang.compiler.driver.compiler { JacCompiler }
         import from jaclang.compiler.driver.program { JacProgram }
         dep_src = fixture_path("cross_module_func.jac");
-        JacCompiler().get_bytecode(dep_src, JacProgram());
-        cache_path = get_module_cache_path(dep_src);
+        import from jaclang.compiler.driver.compilation_context { cache_scope }
+        program = JacProgram();
+        JacCompiler().get_bytecode(dep_src, program);
+        cache_path = artifact_cache_path(dep_src, program);
 
         # Sanity: cache should exist and be valid right now.
         assert cache_path.exists() , "module cache was not written";
-        assert is_module_cache_valid(dep_src, cache_path) , "Fresh cache should be valid";
+        with cache_scope(program.options) {
+            assert is_module_cache_valid(dep_src, cache_path) , "Fresh cache should be valid";
+        }
 
         # Tamper: overwrite jaclang_version_hash with a fake value.
         data = bytearray(cache_path.read_bytes());
@@ -1427,9 +1431,11 @@ test "test_jir_cache_invalidated_on_version_mismatch" {
         cache_path.write_bytes(bytes(data));
 
         # The cache should now be rejected.
-        assert not is_module_cache_valid(dep_src, cache_path) , (
-            "Cache with mismatched jaclang_version_hash should be invalid"
-        );
+        with cache_scope(program.options) {
+            assert not is_module_cache_valid(dep_src, cache_path) , (
+                "Cache with mismatched jaclang_version_hash should be invalid"
+            );
+        }
     } finally {
         teardown_test();
     }
@@ -1498,6 +1504,36 @@ test "an embedded server leaves the process's root logger level alone" {
             f"{root_logger.level}; quieting the process belongs to the stdio "
             "entry point, not the engine"
         );
+    } finally {
+        teardown_test();
+    }
+}
+
+test "inlay hints show inferred receiver modes and raises effects" {
+    setup_test();
+    try {
+        lsp = create_server();
+        hints_file = uris.from_fs_path(fixture_path("ownership_hints.jac"));
+        assert hints_file is not None;
+        lsp.type_check_file(hints_file);
+        hints = lsp.get_inlay_hints(
+            hints_file,
+            lspt.Range(
+                start=lspt.Position(line=0, character=0),
+                end=lspt.Position(line=200, character=0)
+            )
+        );
+        labels = sorted([h.label for h in hints]);
+        assert labels
+            == [
+                " raises ValueError",
+                " raises ValueError",
+                "(&mut self)",
+                "(&self)"
+            ] , labels;
+        by_line = {h.position.line: h.label for h in hints};
+        assert by_line.get(3) == "(&mut self)" , by_line;
+        assert by_line.get(7) == "(&self)" , by_line;
     } finally {
         teardown_test();
     }

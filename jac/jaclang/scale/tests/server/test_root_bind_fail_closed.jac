@@ -15,7 +15,6 @@ import time;
 import uuid;
 import requests;
 import from pathlib { Path }
-import from jaclang.scale.tests.support { get_free_port, register_user, start_server }
 
 glob FIXTURES_DIR: Path = Path(__file__).parent.parent / "fixtures" / "root_bind";
 
@@ -44,7 +43,6 @@ def _cleanup {
 """Boot the app once with a generous window so the one-time compile cost is
 paid outside start_server's health-poll contract."""
 def _prewarm {
-    import from jaclang.scale.runtime.context.util { jac_executable }
     port = get_free_port();
     proc = subprocess.Popen(
         [jac_executable(), "run", "--serve", "--port", str(port), "app.jac"],
@@ -85,7 +83,7 @@ def _whoami(base: str, token: str) -> requests.Response {
     return res;
 }
 
-def _corrupt(base: str, username: str, new_root_id: str) -> dict {
+def _corrupt(base: str, username: str, new_root_id: str) -> dict[str, any] {
     res = requests.post(
         f"{base}/function/corrupt_root",
         json={"username": username, "new_root_id": new_root_id},

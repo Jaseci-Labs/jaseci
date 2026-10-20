@@ -1,9 +1,9 @@
 ---
 name: jac-sv-persistence
-description: Modeling relationships and querying the graph from server endpoints - connecting entities, multi-step reads, filtering, find-by-id (jid loop, jobj lookup), view models / to_view projections - plus schema changes, field renames, migration, quarantine, and database backends. Load when server code stores or queries relational data, or when a schema edit breaks reads. Pair with `jac-sv-endpoints`.
+description: Store and query durable graph data and evolve schemas. Use for root attachment, identity lookup, migrations, or failed persisted reads.
 ---
 
-The server's graph IS the database. Create entities by attaching nodes to `root` (or to each other via typed edges); read them with list-comprehension traversals; filter and aggregate with bracket predicates and `len()`. Writes persist automatically - no save/commit call needed inside endpoints (`commit()` exists for scripts that exit abruptly).
+Use nodes and edges as the application data model. In a persistence-enabled context, attachment to persistent graph state promotes transient nodes into storage. Endpoint transactions manage successful writes; scripts and background work must follow the persistence lifecycle described by the runtime. Disconnecting an edge does not delete a previously persisted node: use explicit deletion when intended.
 
 ```jac
 node User { has name: str; }
@@ -13,7 +13,7 @@ node Post {
     has published: bool = False;
 }
 
-edge Wrote { has at: str = ""; }
+edge Wrote: User --> Post { has at: str = ""; }
 
 # CREATE - typed edge from user to the new post
 def:pub write_post(user_id: str, title: str) -> Post | None {
@@ -37,8 +37,8 @@ def:pub posts_by(user_id: str) -> list[Post] {
     return [];
 }
 
-# UPDATE - resolve the jid with jobj() and mutate in place; jobj is O(1) and the
-# ONLY way to reach a node granted from another user's root ([root -->] can't).
+# UPDATE - resolve a known jid with jobj() and mutate in place.
+# Identity lookup does not replace access checks; a grant need not add a root edge.
 def:pub publish(post_id: str) -> Post | None {
     target = jobj(post_id);
     if isinstance(target, Post) {
@@ -79,17 +79,52 @@ indexes = { Post = ["at", "published"], Msg = ["at", "seq"] }
 
 Without this a `[?:Post, -at]` still returns the right rows -- correctness never depends on the declaration -- it just sorts the whole set to do it.
 
+**Owning content as a group.** A minted `Root()` is created unowned - grant
+yourself `WRITE` on it in the same function that mints it, or nothing can ever
+reach it. Then create content under it with `save(obj, owner=...)`, and one
+grant on that root covers all of it:
+
+```jac
+node Item { has label: str; }
+
+import from jaclang { JacRuntime as Jac }
+import from uuid { UUID }
+
+def make_org_item(member_root_id: UUID) -> Item {
+    org = Root();
+    Jac.save(org);
+    Jac.allow_root(org, UUID(jid(root)), AccessLevel.WRITE);   # jac:ignore[E1053]
+
+    item = Item(label="x");
+    Jac.save(item, owner=UUID(jid(org)));   # owned by the org, not by the caller
+    Jac.allow_root(org, member_root_id, AccessLevel.READ);   # jac:ignore[E1053]
+    return item;
+}
+```
+
+`save(obj, owner=r)` requires `WRITE` on `r` (`PermissionError` otherwise) and
+raises `ValueError` when `r` is not an existing root or the object is already
+saved under another owner; it never silently falls back to the caller.
+`Jac.owner_of(obj)` reads which root owns an anchor.
+
+Why own it by the org rather than by its creator: the owning root always has
+`WRITE`, checked before any grant or `__jac_access__` hook. A record a member
+created under their own root stays writable by them after they leave the org.
+A record owned by the org root follows the grants on that root, so
+`Jac.disallow_root(org, member_id)` ends the member's access to all of it at
+once.
+
 **Sharing: name a group, not every grantee.** `allow_root(obj, root_id)` writes one entry per grantee into the object's own permission map, so sharing with an audience of N costs N entries on that object -- re-serialised on every write to it. `allow_group(obj, group_id, level)` is one entry, and membership is an edge:
 
 ```
 node Team { has name: str; }
-edge MemberOf {}
+edge MemberOf: Node --> Team {}
 
 user +>:MemberOf():+> team;                  # joining costs one edge
 allow_group(doc, jid(team), AccessLevel.READ);   # sharing costs one entry
 ```
 
-Both forms compose -- an existing per-root grant still applies, and a group grant only raises the level. The permission test compiles into the query for the standard model (owner, granted-to-all, granted-to-you, granted-to-your-group), so a gated read costs the rows you may see rather than every candidate. An archetype that overrides `__jac_access__` decides access with arbitrary Jac, which has no SQL form: those keep the object-space filter, correctly but at full cost.
+Both forms compose -- an existing per-root grant still applies, and a group grant only raises the level. The permission test compiles into the query for the standard model (owner, granted-to-all, granted-to-you, granted-to-your-group, granted on the owning root), so a gated read costs the rows you may see rather than every candidate. An archetype that overrides `__jac_access__` decides access with arbitrary Jac, which has no SQL form: those keep the object-space filter, correctly but at full cost.
 
 Edge-type filter / creation / deletion syntax, and the ordering-term rules: see `jac-node-edge-patterns`.
 
@@ -141,14 +176,14 @@ node Person {
     static def __jac_schema__ -> None;       # field-level history hook
 }
 
-def fix_tags(doc: dict) -> None {            # migration callback for the rule below
+def fix_tags(doc: dict[str, any]) -> None {  # migration callback for the rule below
     doc["tags"] = str(doc.get("tags", "")).split(",");
 }
 
 impl Person.__jac_schema__ -> None {
     schema_alias("name", stored="username"); # field rename: old value flows into new field
     schema_drop("legacy_bio");               # deleted field: preserve remains in the attic
-    schema_upgrade(fix_tags, when=(lambda (doc: dict) { isinstance(doc.get("tags"), str); }));
+    schema_upgrade(fix_tags, when=(lambda (doc: dict[str, any]) { isinstance(doc.get("tags"), str); }));
 }
 ```
 
@@ -165,7 +200,7 @@ jac db recover-all --app app.jac        # re-attempt every quarantined row
 
 ## Pitfalls
 
-- **THE dev-loop landmine: `{"detail": "Invalid anchor id ..."}` 500s** on previously-working endpoints = stale anchors persisted by a previous run under a different schema. Stop the server, `rm -rf .jac/data/`, restart. Fine in dev (it deletes local data); in production use the alias/quarantine machinery above instead.
+- **Invalid anchors after a change:** check the reference, selected app/store, and schema migration state. Follow `jac-debugging` and `jac-sv-persistence`; do not infer that an anchor error requires deleting project data.
 - A node is not persisted until it's reachable from `root`. `Post(title="x")` alone is a dangling node; `root ++> Post(...)` (or a typed edge from a reachable node) is what commits it.
 - **Find-by-id keys on `jid()`, two patterns**: the in-root loop (`for p in [root-->][?:Post] { if jid(p) == id ... }`) and `jobj(id)` + `isinstance` - O(1), and REQUIRED when the target lives under another user's root (granted foreign nodes are unreachable from `[root-->]`). NEVER Python `id()`: an in-memory address that changes every restart and differs across workers, so lookups silently return empty.
 - **`jobj` resolves regardless of grants** - it never authorizes. Police the subsequent read/mutation with grant levels (`jac-sv-multi-user`); don't treat a jid as a secret capability.

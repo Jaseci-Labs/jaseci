@@ -22,8 +22,7 @@ key from its spelling rather than from a lowered reference.
 import ast as ast3;
 import os;
 import subprocess;
-import sys;
-import from tests.support { TESTS_DIR, native_force_opts }
+import from tests.support { jac_command, TESTS_DIR, native_force_opts }
 import jaclang.compiler.frontend.unitree as uni;
 import from jaclang.compiler.driver.compile_options { CompileOptions }
 import from jaclang.compiler.driver.program { JacProgram }
@@ -35,7 +34,7 @@ def compile_server(fixture: str) -> uni.Module {
     prog = JacProgram();
     ir = prog.compile(
         file_path=os.path.join(FIXTURES, fixture),
-        options=CompileOptions(no_ir_cache=True, force_codespace='server')
+        options=CompileOptions(force_codespace='server')
     );
     assert ir is not None , f"no module for {fixture}";
     return ir;
@@ -111,9 +110,11 @@ test "a nested function does not capture through a keyword key" {
 
 test "the native nested function takes no phantom capture" {
     prog = JacProgram();
+    options = native_force_opts();
+    options.no_ir_cache = True;
+    options.skip_native_engine = True;
     ir = prog.compile(
-        file_path=os.path.join(FIXTURES, "kwarg_key_slot.jac"),
-        options=native_force_opts()
+        file_path=os.path.join(FIXTURES, "kwarg_key_slot.jac"), options=options
     );
     assert not prog.errors_had , f"{[str(e) for e in prog.errors_had]}";
     defs = [
@@ -134,10 +135,7 @@ test "the native nested function takes no phantom capture" {
 test "the annexed body computes the same value on both lanes" {
     src = os.path.join(FIXTURES, "kwarg_key_slot.jac");
     sv = subprocess.run(
-        [sys.executable, "-m", "jaclang", "run", src],
-        capture_output=True,
-        text=True,
-        timeout=900
+        jac_command("run", src), capture_output=True, text=True, timeout=900
     );
     assert sv.returncode == 0 , f"server run failed: {sv.stderr[-800:]}";
     assert sv.stdout.strip() == "34" , f"server lane printed {sv.stdout!r}";

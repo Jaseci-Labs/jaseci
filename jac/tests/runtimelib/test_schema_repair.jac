@@ -11,6 +11,7 @@ test_persistence_migration.jac (fingerprints).
 import os;
 import from jaclang.runtime.archetype { NodeAnchor, Root }
 import from jaclang.data.serializer { Serializer }
+import from jaclang.data.type_identity { type_module }
 import from jaclang.data.schema_rules {
     SchemaRules,
     merged_rules_for,
@@ -20,7 +21,7 @@ import from jaclang.data.schema_rules {
 
 
 """Upgrade callback: legacy comma-string tags become list[str]."""
-def _split_tags(doc: dict) -> dict {
+def _split_tags(doc: dict[str, any]) -> dict[str, any] {
     doc['tags'] = [
         t.strip()
         for t in doc['tags'].split(',')
@@ -43,7 +44,8 @@ impl _DriftUser.__jac_schema__ -> None {
     schema_alias("name", stored="username");
     schema_drop("legacy_bio");
     schema_upgrade(
-        _split_tags, when=(lambda (doc: dict) { isinstance(doc.get('tags'), str); })
+        _split_tags,
+        when=(lambda (doc: dict[str, any]) { isinstance(doc.get('tags'), str); })
     );
 }
 
@@ -66,10 +68,10 @@ obj _FactoryDefaults(Root) {
 
 
 """Build a raw stored dict shaped like a pre-rename _DriftUser document."""
-def _old_user_raw -> dict {
+def _old_user_raw -> dict[str, any] {
     return {
         '__type__': '_DriftUser',
-        '__module__': getattr(_DriftUser, '__module__'),
+        '__module__': type_module(_DriftUser),
         'username': 'ada',
         'tags': 'math, computing',
         'legacy_bio': 'wrote the first program',
@@ -91,7 +93,7 @@ test "rules are collected from __jac_schema__ at class registration" {
 
 
 test "schema_was registers a class alias to the defining class" {
-    mod = getattr(_DriftUser, '__module__');
+    mod = type_module(_DriftUser);
     assert Serializer._aliases.get("oldapp.models._DriftOldUser")
         == f"{mod}._DriftUser" , (f"was-alias not registered: {Serializer._aliases}");
 }
@@ -102,7 +104,7 @@ test "field rules are inherited by subclasses; was-rules are definer-only" {
     assert rules is not None , "subclass did not inherit field rules";
     assert any(a.new_name == 'name' for a in rules.aliases);
     # The was-alias must still point at the definer, not the subclass.
-    mod = getattr(_DriftUser, '__module__');
+    mod = type_module(_DriftUser);
     assert Serializer._aliases.get("oldapp.models._DriftOldUser")
         == f"{mod}._DriftUser";
 }
@@ -132,7 +134,7 @@ test "repair renames aliased field and runs upgrade callback on load" {
 test "repair is idempotent: already-repaired data is untouched" {
     current = {
         '__type__': '_DriftUser',
-        '__module__': getattr(_DriftUser, '__module__'),
+        '__module__': type_module(_DriftUser),
         'name': 'ada',
         'tags': ['math'],
         'email': 'a@b'
@@ -179,7 +181,7 @@ test "attic survives a serialize round-trip" {
 test "rules apply to subclass documents (inherited field history)" {
     raw = {
         '__type__': '_DriftAdmin',
-        '__module__': getattr(_DriftAdmin, '__module__'),
+        '__module__': type_module(_DriftAdmin),
         'username': 'grace',
         'tags': 'navy, compilers',
         'email': 'g@x',
@@ -198,7 +200,7 @@ test "rules apply to subclass documents (inherited field history)" {
 test "unknown stored fields are atticed instead of silently dropped" {
     raw = {
         '__type__': '_NoRules',
-        '__module__': getattr(_NoRules, '__module__'),
+        '__module__': type_module(_NoRules),
         'name': 'ok',
         'stray_field': 'still here'
     };
@@ -218,7 +220,7 @@ test "unknown stored fields are atticed instead of silently dropped" {
 test "stored attic from a prior repair is carried through deserialize" {
     raw = {
         '__type__': '_NoRules',
-        '__module__': getattr(_NoRules, '__module__'),
+        '__module__': type_module(_NoRules),
         'name': 'ok',
         '__jac_attic__': {'old_thing': {'value': 42, 'reason': 'dropped'}}
     };
@@ -234,7 +236,7 @@ test "stored attic from a prior repair is carried through deserialize" {
 test "missing default_factory fields are backfilled on load" {
     raw = {
         '__type__': '_FactoryDefaults',
-        '__module__': getattr(_FactoryDefaults, '__module__'),
+        '__module__': type_module(_FactoryDefaults),
         'name': 'x'
     };
     anchor = NodeAnchor.__new__(NodeAnchor);
@@ -252,7 +254,7 @@ test "missing default_factory fields are backfilled on load" {
 test "backfilled factory defaults are per-instance, not shared" {
     raw = {
         '__type__': '_FactoryDefaults',
-        '__module__': getattr(_FactoryDefaults, '__module__'),
+        '__module__': type_module(_FactoryDefaults),
         'name': 'x'
     };
     a1 = Serializer._deserialize_archetype(raw, NodeAnchor.__new__(NodeAnchor));
@@ -291,7 +293,7 @@ test "serialize_fields dual-writes aliased fields on partial updates" {
 test "loading a dual-written doc strips the shadow without repair churn" {
     raw = {
         '__type__': '_DriftUser',
-        '__module__': getattr(_DriftUser, '__module__'),
+        '__module__': type_module(_DriftUser),
         'name': 'ada',
         'username': 'ada',
         'tags': ['math'],
@@ -315,7 +317,7 @@ test "loading a dual-written doc strips the shadow without repair churn" {
 test "shadow conflict: new name wins, differing shadow is atticed" {
     raw = {
         '__type__': '_DriftUser',
-        '__module__': getattr(_DriftUser, '__module__'),
+        '__module__': type_module(_DriftUser),
         'name': 'ada',
         'username': 'ada-stale-write',
         'tags': ['math'],
@@ -363,7 +365,7 @@ test "stored attic round-trips even when JAC_SCHEMA_REPAIR=off" {
     try {
         raw = {
             '__type__': '_NoRules',
-            '__module__': getattr(_NoRules, '__module__'),
+            '__module__': type_module(_NoRules),
             'name': 'ok',
             '__jac_attic__': {'old_thing': {'value': 42, 'reason': 'dropped'}}
         };

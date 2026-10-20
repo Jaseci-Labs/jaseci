@@ -1,4 +1,5 @@
 import io;
+import logging;
 import os;
 import shutil;
 import subprocess;
@@ -6,15 +7,6 @@ import sys;
 import tarfile;
 import tempfile;
 import from pathlib { Path }
-import from jaclang.scale.tests.support { require_pod_binary }
-import from jaclang.scale.injector.bundle {
-    DEFAULT_SEAL_TIMEOUT_S,
-    _stage_app,
-    nested_sanitized_tomls,
-    pack_jab,
-    sanitized_jac_toml,
-    seal_timeout_setting
-}
 
 
 def _mini_app -> str {
@@ -160,6 +152,129 @@ def _names(raw: bytes) -> list[str] {
 }
 
 
+class _SealLog(logging.Handler) {
+    def init(self: _SealLog) {
+        super.__init__();
+        self.messages: list[str] = [];
+    }
+
+    def emit(self: _SealLog, record: logging.LogRecord) {
+        self.messages.append(record.getMessage());
+    }
+}
+
+
+def _pack_logged(base: Path, binary: bytes) -> tuple[bytes, list[str]] {
+    log = logging.getLogger("jaclang.scale.injector.bundle");
+    seen = _SealLog();
+    previous = log.level;
+    log.setLevel(logging.INFO);
+    log.addHandler(seen);
+    try {
+        raw = pack_jab(str(base), binary);
+    } finally {
+        log.removeHandler(seen);
+        log.setLevel(previous);
+    }
+    return (raw, seen.messages);
+}
+
+
+test "an unchanged project reuses its sealed bundle instead of sealing again" {
+    binary = require_pod_binary().read_bytes();
+    base = Path(_mini_app());
+    (first, first_log) = _pack_logged(base, binary);
+    assert not any("Reusing the sealed bundle" in m for m in first_log);
+    (again, again_log) = _pack_logged(base, binary);
+    assert any("Reusing the sealed bundle" in m for m in again_log) , (
+        f"a deploy of unchanged code sealed the app again: {again_log}"
+    );
+    assert again == first , "the reused bundle differs from the one sealed";
+    (base / "svc.jac").write_text("def:pub ping -> str { return \"pong!\"; }\n");
+    (edited, edited_log) = _pack_logged(base, binary);
+    assert not any("Reusing the sealed bundle" in m for m in edited_log) , (
+        "a source edit reused the previous seal"
+    );
+    assert edited != first;
+    (base / "svc.jac").chmod(0o755);
+    (_, mode_log) = _pack_logged(base, binary);
+    assert not any("Reusing the sealed bundle" in m for m in mode_log) , (
+        "a file mode change reused the previous seal"
+    );
+}
+
+
+"""Compiled and reused counts from the seal's `Done!` line in a pack log."""
+def _seal_counts(log: list[str]) -> tuple[int, int] {
+    import re;
+    for line in log {
+        found = re.search(r"Compiled (\d+)/\d+ modules \((\d+) reused", line);
+        if found {
+            return (int(found.group(1)), int(found.group(2)));
+        }
+    }
+    return (-1, -1);
+}
+
+
+"""The compiled `.jir` of `module` inside a packed bundle, or empty bytes."""
+def _bundle_jir(raw: bytes, module: str) -> bytes {
+    with tarfile.open(fileobj=io.BytesIO(raw), mode="r:gz") as archive {
+        for member in archive.getmembers() {
+            if member.name.startswith("_precompiled/")
+                and member.name.endswith("/" + module + ".jir") {
+                data = archive.extractfile(member);
+                return data.read() if data is not None else b"";
+            }
+        }
+    }
+    return b"";
+}
+
+
+test "a deploy after an edit recompiles only what the edit reaches" {
+    binary = require_pod_binary().read_bytes();
+    base = Path(_mini_app());
+    (base / "helper.jac").write_text("def label(text: str) -> str { return text; }\n");
+    (base / "svc.jac").write_text(
+        "import from helper { label }\n"
+            + "def:pub ping -> str { return label(\"pong\"); }\n"
+    );
+    (first, first_log) = _pack_logged(base, binary);
+    (compiled, reused) = _seal_counts(first_log);
+    assert compiled > 0 and reused == 0 , f"first seal: {first_log}";
+    assert _bundle_jir(first, "svc") and _bundle_jir(first, "helper");
+    (base / "svc.jac").write_text(
+        "import from helper { label }\n"
+            + "def:pub ping -> str { return label(\"pong!\"); }\n"
+    );
+    (edited, edited_log) = _pack_logged(base, binary);
+    assert any("Seeded" in m for m in edited_log) , (
+        f"the seal after an edit did not start from the previous one: {edited_log}"
+    );
+    (compiled, _) = _seal_counts(edited_log);
+    assert compiled == 1 , f"an edit to one module compiled {compiled}: {edited_log}";
+    assert _bundle_jir(edited, "svc") != _bundle_jir(first, "svc") , (
+        "the edited module shipped its old compiled code"
+    );
+    assert _bundle_jir(edited, "helper") == _bundle_jir(first, "helper") , (
+        "the unchanged module was not reused"
+    );
+    (base / "helper.jac").write_text(
+        "def label(text: str) -> str { return text + \"!\"; }\n"
+    );
+    (dep_edited, dep_log) = _pack_logged(base, binary);
+    (compiled, _) = _seal_counts(dep_log);
+    assert compiled == 1 , f"an edit to the imported module compiled {compiled}";
+    assert _bundle_jir(dep_edited, "helper") != _bundle_jir(edited, "helper") , (
+        "the edited imported module shipped its old compiled code"
+    );
+    assert _bundle_jir(dep_edited, "svc") == _bundle_jir(edited, "svc") , (
+        "the importer was recompiled although its own source did not change"
+    );
+}
+
+
 test "pack_jab on a nonexistent app directory is a hard error" {
     caught = "";
     try {
@@ -202,7 +317,7 @@ test "the seal and vendor subprocesses run without persistent storage (issue 809
         f"persistent store there is a permanent orphan; {SCRATCH_ENV} was "
         f"{env.get(SCRATCH_ENV)!r}"
     );
-    for banned in ["PYTHONPATH", "JAC_DEV_SOURCE"] {
+    for banned in ["PYTHONPATH", "JAC_HANDOFF"] {
         assert banned not in env , f"{banned} must stay out of the seal env";
     }
 }
@@ -261,19 +376,237 @@ test "staging a project cleans up after itself" {
 }
 
 
-test "a real pod binary seals the app into a .jab (source + _precompiled + manifest)" {
+test "a real pod binary seals the app each pod serves and boots it from the seal" {
     # The checkout's own binary stands in for the downloaded pod binary; the
     # mechanism (stage -> precompile_bytecode.jac --seal -> pack _precompiled/**)
     # is identical for release binaries.
     jac_bin = require_pod_binary();
-    names = _names(pack_jab(_mini_app(), jac_bin.read_bytes()));
-    assert "svc.jac" in names;
-    # The sealed manifest sits at the tar root, which is what makes this a .jab.
-    assert "_precompiled/MANIFEST.json" in names;
-    pre = [
-        n
-        for n in names
-        if n.startswith("_precompiled/")
+    import json;
+    import from jaclang.project.config { get_config_for_path }
+    import from jaclang.scale.runtime.fleet { fleet_from_config }
+    cases = [
+        (
+            "an entry named app",
+            '[project]\nname="mini"\nkind="service"\nentry-point="app"\n',
+            {
+                "app.jac": 'import from svc { ping }\n'
+                    + 'walker:pub echo { can run with Root entry { report "hello"; } }\n'
+            },
+            "",
+            "ping",
+            {"app.jac": "/walker/echo"}
+        ),
+        (
+            "a web-app that is not the default app",
+            '[project]\nname="mini"\ndefault-app="svc"\n'
+                + '[apps.web]\nkind="web-app"\nentry-point="web"\nroute="/"\n'
+                + '[apps.svc]\nkind="service"\nentry-point="svc"\nroute="/api/svc"\n',
+            {"web.jac": 'def:pub hello -> str { return "web"; }\n'},
+            "web",
+            "hello",
+            {"web.jac": "/function/hello", "svc.jac": "/function/ping"}
+        )
     ];
-    assert any([n.endswith("svc.jir") for n in pre]) , pre;
+    for (label, toml, files, served, func, boots) in cases {
+        base = Path(_mini_app());
+        (base / "jac.toml").write_text(toml);
+        for (name, text) in files.items() {
+            (base / name).write_text(text);
+        }
+        fleet = fleet_from_config(
+            get_config_for_path(base),
+            served,
+            project_root=str(base),
+            relative_to=str(base)
+        )
+            if served
+            else None;
+        raw = pack_jab(str(base), jac_bin.read_bytes(), fleet=fleet);
+        names = _names(raw);
+        assert "svc.jac" in names , label;
+        assert ".jac/serve_manifest.json" in names , label;
+        with tarfile.open(fileobj=io.BytesIO(raw), mode="r:gz") as archive {
+            serving = archive.extractfile(".jac/serve_manifest.json");
+            assert serving is not None;
+            serve_manifest = json.loads(serving.read());
+            assert serve_manifest["surface"][func]["exposure"] == "public" , label;
+            for boot_file in boots {
+                assert boot_file in serve_manifest["module_manifests"] , (
+                    label,
+                    boot_file,
+                    list(serve_manifest["module_manifests"])
+                );
+            }
+            manifest = archive.extractfile("_precompiled/MANIFEST.json");
+            assert manifest is not None;
+            assert ".jac/serve_manifest.json"
+                in json.loads(manifest.read())["payloads"];
+        }
+        # The sealed manifest sits at the tar root, which is what makes this a .jab.
+        assert "_precompiled/MANIFEST.json" in names , label;
+        pre = [
+            n
+            for n in names
+            if n.startswith("_precompiled/")
+        ];
+        for module in ["svc.jir"] + [f.replace(".jac", ".jir") for f in boots] {
+            assert any([n.endswith(module) for n in pre]) , (label, module, pre);
+        }
+        with tempfile.TemporaryDirectory(prefix="jac-sealed-entry-") as tmp {
+            with tarfile.open(fileobj=io.BytesIO(raw), mode="r:gz") as archive {
+                archive.extractall(tmp, filter="data");
+            }
+            env = dict(os.environ);
+            env["JAC_HANDOFF"] = '{"compiler_source": ""}';
+            for (boot_file, endpoint) in boots.items() {
+                result = subprocess.run(
+                    [
+                        str(jac_bin),
+                        "run",
+                        "--serve",
+                        "--no-client",
+                        "--faux",
+                        boot_file
+                    ],
+                    cwd=tmp,
+                    env=env,
+                    capture_output=True,
+                    text=True,
+                    timeout=90
+                );
+                assert result.returncode == 0 , result.stdout + result.stderr;
+                assert endpoint in result.stdout , (label, boot_file, result.stdout);
+                assert "Loading sealed application artifacts" in result.stderr , (
+                    label,
+                    boot_file,
+                    result.stderr
+                );
+                assert "Compiling server modules" not in result.stderr , (
+                    label,
+                    boot_file,
+                    result.stderr
+                );
+                assert "Preparing dynamically imported module" not in result.stderr;
+            }
+            (Path(tmp) / "unlisted.jac").write_text(
+                'def:pub other -> str { return "source"; }\n'
+            );
+            result = subprocess.run(
+                [
+                    str(jac_bin),
+                    "run",
+                    "--serve",
+                    "--no-client",
+                    "--faux",
+                    "unlisted.jac"
+                ],
+                cwd=tmp,
+                env=env,
+                capture_output=True,
+                text=True,
+                timeout=90
+            );
+            assert result.returncode == 0 , result.stdout + result.stderr;
+            real_tmp = os.path.realpath(tmp);
+            missed = f"Sealed image at {real_tmp} does not list unlisted.jac";
+            assert missed in result.stdout , (label, result.stdout);
+            assert "Loading sealed application artifacts" not in result.stdout , (
+                label,
+                result.stdout
+            );
+        }
+    }
+}
+
+test "sealing includes bytecode imports and serving exports despite client placement" {
+    import json;
+    import from unittest.mock { patch }
+    import jaclang.dist.precompile_bytecode as precompiler;
+    with tempfile.TemporaryDirectory(prefix="jac-seal-closure-") as tmp {
+        base = Path(tmp) / "app";
+        base.mkdir();
+        (base / "jac.toml").write_text(
+            '[project]\nname="closure"\nkind="service"\nentry-point="main"\n'
+        );
+        main = base / "main.jac";
+        shared = base / "shared.jac";
+        exported = base / "exported.jac";
+        unused = base / "unused.jac";
+        shared.write_text('def:pub value -> str { return "shared"; }\n');
+        exported.write_text('def:pub exposed -> str { return "exported"; }\n');
+        unused.write_text('def:pub page -> JsxElement { return <div>unused</div>; }\n');
+        main.write_text(
+            'import from shared { value }\ndef:pub ping -> str { return value(); }\n'
+        );
+        artifact = precompiler.precompile_unit(str(main), str(base));
+        assert artifact is not None;
+        out = base / "_precompiled" / "units";
+        out.mkdir(parents=True);
+        (out / "main.jir").write_bytes(artifact);
+        (base / ".jac").mkdir(exist_ok=True);
+        (base / ".jac" / "serve_manifest.json").write_text(
+            json.dumps(
+                {
+                    "surface": {
+                        "exposed": {
+                            "kind": "function",
+                            "exposure": "public",
+                            "placement": "server",
+                            "module": "",
+                            "src": "exported.jac"
+                        }
+                    }
+                }
+            )
+        );
+        with patch.object(
+            precompiler, "_sealable_cache", {(str(base), ""): [str(main)]}
+        ), patch.object(
+            precompiler,
+            "_placement_cache",
+            {
+                (str(base), ""): {
+                    str(main): {"server"},
+                    str(shared): {"client"},
+                    str(exported): {"client"},
+                    str(unused): {"client"}
+                }
+            }
+        ) {
+            assert precompiler.seal_runtime_closure(base, out, False);
+            assert (out / "shared.jir").is_file();
+            assert (out / "exported.jir").is_file();
+            assert not (out / "unused.jir").exists();
+            assert precompiler._placement_cache[(str(base), "")][str(shared)]
+                == {"client", "server"};
+        }
+    }
+}
+
+
+test "an explicit app seal follows its entry and excludes unrelated apps" {
+    import from jaclang.dist.precompile_bytecode { sealable_sources }
+    with tempfile.TemporaryDirectory() as td {
+        base = Path(td);
+        (base / 'jac.toml').write_text(
+            '[project]\nname = "selected"\ndefault-app = "web"\n'
+                + '[apps.web]\nkind = "service"\nentry-point = "web"\n'
+                + '[apps.scoring]\nkind = "service"\nentry-point = "scoring"\n'
+                + '[apps.cli]\nkind = "cli"\nentry-point = "cli"\n'
+                + '[apps.desktop]\nkind = "desktop"\nentry-point = "desktop"\n'
+        );
+        (base / 'web.jac').write_text(
+            'import from helper { value }\ndef:pub read -> int { return value(); }\n'
+        );
+        (base / 'helper.jac').write_text('def:pub value -> int { return 7; }\n');
+        (base / 'scoring.jac').write_text('def:pub score -> int { return 42; }\n');
+        (base / 'desktop.jac').write_text('def:pub app -> int { return 1; }\n');
+        (base / 'cli.jac').write_text('this is deliberately invalid Jac');
+        sources = {Path(p).name for p in sealable_sources(td)};
+        assert sources == {'web.jac', 'helper.jac', 'scoring.jac'} , sources;
+        (base / 'cli.jac').write_text('def:pub main -> int { return 3; }\n');
+        assert {Path(p).name for p in sealable_sources(td, 'cli')} == {'cli.jac'};
+        assert {Path(p).name for p in sealable_sources(td, 'desktop')}
+            == {'desktop.jac'};
+    }
 }

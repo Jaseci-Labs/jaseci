@@ -5,7 +5,9 @@ enum IntrinsicDispatch {
     MEM_LOAD = "mem_load",
     MEM_STORE = "mem_store",
     ATOMIC_XCHG = "atomic_xchg",
-    CALL_DTOR = "call_dtor"
+    CALL_DTOR = "call_dtor",
+    REGION_TLS = "region_tls",
+    ALLOCA = "alloca"
 }
 
 obj IntrinsicEntry {
@@ -15,29 +17,16 @@ obj IntrinsicEntry {
         dispatch: IntrinsicDispatch,
         gc_mode_gate: str | None = None;
 
-    def arity -> int {
-        return len(self.param_specs);
-    }
+    def arity -> int;
 }
 
 obj IntrinsicRegistry {
     has _entries: dict[str, IntrinsicEntry];
 
-    def get(name: str) -> IntrinsicEntry | None {
-        return self._entries.get(name, None);
-    }
-
-    def is_intrinsic(name: str) -> bool {
-        return name in self._entries;
-    }
-
-    def names -> list[str] {
-        return list(self._entries.keys());
-    }
-
-    def entries -> list[IntrinsicEntry] {
-        return list(self._entries.values());
-    }
+    def get(name: str) -> IntrinsicEntry | None;
+    def is_intrinsic(name: str) -> bool;
+    def names -> list[str];
+    def entries -> list[IntrinsicEntry];
 }
 
 glob INTRINSIC_REGISTRY = IntrinsicRegistry(
@@ -85,6 +74,42 @@ glob INTRINSIC_REGISTRY = IntrinsicRegistry(
                  result_spec="f64",
                  dispatch=IntrinsicDispatch.BITS_FLOAT
              ),
+             "__mem_load_i8": IntrinsicEntry(
+                 name="__mem_load_i8",
+                 param_specs=["i64"],
+                 result_spec="i8",
+                 dispatch=IntrinsicDispatch.MEM_LOAD
+             ),
+             "__mem_store_i8": IntrinsicEntry(
+                 name="__mem_store_i8",
+                 param_specs=["i64", "i8"],
+                 result_spec="none",
+                 dispatch=IntrinsicDispatch.MEM_STORE
+             ),
+             "__mem_load_i16": IntrinsicEntry(
+                 name="__mem_load_i16",
+                 param_specs=["i64"],
+                 result_spec="i16",
+                 dispatch=IntrinsicDispatch.MEM_LOAD
+             ),
+             "__mem_store_i16": IntrinsicEntry(
+                 name="__mem_store_i16",
+                 param_specs=["i64", "i16"],
+                 result_spec="none",
+                 dispatch=IntrinsicDispatch.MEM_STORE
+             ),
+             "__mem_load_i32": IntrinsicEntry(
+                 name="__mem_load_i32",
+                 param_specs=["i64"],
+                 result_spec="i32",
+                 dispatch=IntrinsicDispatch.MEM_LOAD
+             ),
+             "__mem_store_i32": IntrinsicEntry(
+                 name="__mem_store_i32",
+                 param_specs=["i64", "i32"],
+                 result_spec="none",
+                 dispatch=IntrinsicDispatch.MEM_STORE
+             ),
              "__mem_load_i64": IntrinsicEntry(
                  name="__mem_load_i64",
                  param_specs=["i64"],
@@ -108,6 +133,30 @@ glob INTRINSIC_REGISTRY = IntrinsicRegistry(
                  param_specs=["i64", "i64"],
                  result_spec="none",
                  dispatch=IntrinsicDispatch.CALL_DTOR
+             ),
+             "__jac_region_tls_get": IntrinsicEntry(
+                 name="__jac_region_tls_get",
+                 param_specs=[],
+                 result_spec="i64",
+                 dispatch=IntrinsicDispatch.REGION_TLS
+             ),
+             "__jac_region_tls_set": IntrinsicEntry(
+                 name="__jac_region_tls_set",
+                 param_specs=["i64"],
+                 result_spec="none",
+                 dispatch=IntrinsicDispatch.REGION_TLS
+             ),
+             "__jac_region_gbl_get": IntrinsicEntry(
+                 name="__jac_region_gbl_get",
+                 param_specs=[],
+                 result_spec="i64",
+                 dispatch=IntrinsicDispatch.REGION_TLS
+             ),
+             "__alloca": IntrinsicEntry(
+                 name="__alloca",
+                 param_specs=["i64"],
+                 result_spec="i64",
+                 dispatch=IntrinsicDispatch.ALLOCA
              )
          }
      );

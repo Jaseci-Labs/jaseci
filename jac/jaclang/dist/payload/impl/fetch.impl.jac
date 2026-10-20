@@ -7,29 +7,6 @@ import urllib.error;
 import urllib.request;
 import zlib;
 
-import from jaclang.dist.payload.fsutil {
-    PayloadDie,
-    copy_file,
-    copy_tree,
-    delete_tree,
-    die,
-    extract_tar,
-    file_exists,
-    find_sum_line,
-    host_os_arch,
-    log,
-    make_dirs,
-    rd_u16,
-    rd_u32,
-    read_trimmed,
-    sha256_hex,
-    skip_typeshed_tests,
-    write_bytes,
-    write_text
-}
-import from jaclang.dist.payload.pins { llvm_release, pins }
-import from compression.zstd { decompress as zstd_decompress }
-
 impl HttpSource.get(url: str) -> bytes {
     return http_get(url);
 }
@@ -38,11 +15,7 @@ impl HttpSource.get_range(url: str, start: int, end: int) -> bytes {
     return http_get_range(url, start, end);
 }
 
-def _open(url: str, headers: dict[str, str]) -> http.client.HTTPResponse {
-    hdrs = {"User-Agent": USER_AGENT};
-    hdrs.update(headers);
-    return urllib.request.urlopen(urllib.request.Request(url, headers=hdrs));
-}
+def _open(url: str, headers: dict[str, str]) -> http.client.HTTPResponse;
 
 impl http_get(url: str) -> bytes {
     status = 0;
@@ -87,17 +60,6 @@ impl http_get_range(url: str, start: int, end: int) -> bytes {
     return body;
 }
 
-impl pbs_platform(osarch: str) -> str | None {
-    return {
-        "macos-aarch64": "aarch64-apple-darwin",
-        "macos-x86_64": "x86_64-apple-darwin",
-        "linux-x86_64": "x86_64-unknown-linux-gnu",
-        "linux-aarch64": "aarch64-unknown-linux-gnu"
-    }.get(
-        osarch
-    );
-}
-
 impl bun_asset_name(osarch: str) -> str | None {
     return {
         "macos-aarch64": "bun-darwin-aarch64",
@@ -110,58 +72,7 @@ impl bun_asset_name(osarch: str) -> str | None {
     );
 }
 
-impl fetch_pbs(osarch: str, dest: str) {
-    marker = os.path.join(dest, "python", "PYTHON.json");
-    if file_exists(marker) {
-        log(f"fetch-pbs: already present at {dest}/python");
-        return;
-    }
-    pbs = pins().pbs;
-    plat = pbs_platform(osarch);
-    if plat is None {
-        die(f"fetch-pbs: unsupported platform '{osarch}'");
-    }
-    asset = f"cpython-{pbs.python}+{pbs.tag}-{plat}-{pbs.flavor}.tar.zst";
-    url = f"{pbs.base}/{pbs.tag}/{asset}";
-
-    log(f"fetch-pbs: downloading {asset}");
-    tarzst = http_get(url);
-
-    sums = http_get(f"{pbs.base}/{pbs.tag}/SHA256SUMS").decode(
-        "utf-8", errors="replace"
-    );
-    expected = find_sum_line(sums, asset);
-    if expected is None {
-        die(f"fetch-pbs: no checksum for {asset} in SHA256SUMS");
-    }
-    actual = sha256_hex(tarzst);
-    if actual != expected {
-        die(
-            f"fetch-pbs: checksum mismatch for {asset}\n  expected {expected}\n  actual   {actual}"
-        );
-    }
-
-    make_dirs(dest);
-    try {
-        tar = zstd_decompress(tarzst);
-        extract_tar(tar, dest, 0, True);
-    } except (OSError, ValueError, Exception) as e {
-        die(f"fetch-pbs: extract failed: {type(e).__name__}: {e}");
-    }
-
-    if not file_exists(marker) {
-        die("fetch-pbs: extract produced no PYTHON.json");
-    }
-    log(f"fetch-pbs: ready at {dest}/python");
-}
-
-def _gunzip(gz: bytes) -> bytes {
-    try {
-        return gzip.decompress(gz);
-    } except (OSError, EOFError, zlib.error) as e {
-        raise PayloadDie(f"gzip decompress failed: {type(e).__name__}: {e}");
-    }
-}
+def _gunzip(gz: bytes) -> bytes;
 
 impl fetch_typeshed(repo_root: str) {
     vendor = os.path.join(repo_root, TYPESHED_VENDOR);
@@ -242,7 +153,8 @@ impl fetch_llvm(dest: str) {
     }
     marker_lib = "libLTO.dylib" if macos and rel.upstream else "libLLVMCore.a";
     marker = os.path.join(dest, rel.dirname, "lib", marker_lib);
-    if file_exists(marker) {
+    lld_marker = os.path.join(dest, rel.dirname, "lib", "liblldCommon.a");
+    if file_exists(marker) and file_exists(lld_marker) {
         log(f"fetch-llvm: already present at {dest}/{rel.dirname}");
         return;
     }
@@ -253,11 +165,24 @@ impl fetch_llvm(dest: str) {
     if not file_exists(marker) {
         die(f"fetch-llvm: fetch produced no {marker_lib}");
     }
+    if not file_exists(lld_marker) {
+        die(
+            "fetch-llvm: the slice carries no LLD archives (liblldCommon.a); pin a slice built with LLD"
+        );
+    }
     log(f"fetch-llvm: ready at {dest}/{rel.dirname}");
 }
 
 impl slice_wanted(name: str, macos: bool) -> bool {
     if name.startswith("lib/libLLVM") and name.endswith(".a") {
+        return True;
+    }
+    if name.startswith("lib/liblld")
+        and not name.startswith("lib/liblldb")
+        and name.endswith(".a") {
+        return True;
+    }
+    if name.startswith("include/lld/") {
         return True;
     }
     if name.startswith("include/llvm/") or name.startswith("include/llvm-c/") {
@@ -319,48 +244,11 @@ impl member_data(run: bytes, run_start: int, m: ZipMember) -> bytes {
     return run[data_off:data_off + m.csize];
 }
 
-def _manifest_sha_map(manifest: bytes, rel: LlvmSlice) -> dict[str, str] {
-    ms = sha256_hex(manifest);
-    if ms != rel.manifest_sha256 {
-        die(
-            f"fetch-llvm: manifest checksum mismatch\n  expected {rel.manifest_sha256}\n  actual   {ms}"
-        );
-    }
-    try {
-        parsed = json.loads(manifest);
-    } except ValueError as e {
-        die(f"fetch-llvm: manifest parse failed: {e}");
-    }
-    sha_map: dict[str, str] = {};
-    libs = parsed.get("libs") if isinstance(parsed, dict) else None;
-    if isinstance(libs, dict) {
-        for o in libs.values() {
-            if not isinstance(o, dict) {
-                continue;
-            }
-            fv = o.get("file");
-            sv = o.get("sha256");
-            if isinstance(fv, str) and isinstance(sv, str) {
-                sha_map[fv] = sv;
-            }
-        }
-    }
-    return sha_map;
-}
+def _manifest_sha_map(manifest: bytes, rel: LlvmSlice) -> dict[str, str];
 
-def _run_end(members: list[ZipMember], i: int, cd_off: int) -> int {
-    return members[i + 1].lho if i + 1 < len(members) else cd_off;
-}
+def _run_end(members: list[ZipMember], i: int, cd_off: int) -> int;
 
-def _write_slice_member(slice_root: str, m: ZipMember, data: bytes) {
-    rel_path = os.path.join(slice_root, m.name);
-    if m.name.endswith("/") {
-        make_dirs(rel_path);
-        return;
-    }
-    make_dirs(os.path.dirname(rel_path));
-    write_bytes(rel_path, data);
-}
+def _write_slice_member(slice_root: str, m: ZipMember, data: bytes);
 
 impl fetch_llvm_slice(dest: str, rel: LlvmSlice, src: HttpSource, macos: bool) {
     llvm = pins().llvm;
@@ -472,8 +360,9 @@ impl fetch_bun(osarch: str, dest: str) {
     is_windows = osarch.startswith("windows");
     bun_name = "bun.exe" if is_windows else "bun";
     out_path = os.path.join(dest, bun_name);
-    if file_exists(out_path) {
-        log(f"fetch-bun: already present at {out_path}");
+
+    if _probe_bun(out_path, Source.CHECKOUT).found is not None {
+        log(f"fetch-bun: bun {BUN_VERSION} already present at {out_path}");
         return;
     }
 
@@ -508,5 +397,63 @@ impl fetch_bun(osarch: str, dest: str) {
     if not file_exists(out_path) {
         die(f"fetch-bun: extract produced no {bun_name}");
     }
+    write_bun_record(out_path);
     log(f"fetch-bun: ready at {out_path} ({len(bun_bytes) >> 20} MiB)");
+}
+
+impl _open(url: str, headers: dict[str, str]) -> http.client.HTTPResponse {
+    hdrs = {"User-Agent": USER_AGENT};
+    hdrs.update(headers);
+    return urllib.request.urlopen(urllib.request.Request(url, headers=hdrs));
+}
+
+impl _gunzip(gz: bytes) -> bytes {
+    try {
+        return gzip.decompress(gz);
+    } except (OSError, EOFError, zlib.error) as e {
+        raise PayloadDie(f"gzip decompress failed: {type(e).__name__}: {e}");
+    }
+}
+
+impl _manifest_sha_map(manifest: bytes, rel: LlvmSlice) -> dict[str, str] {
+    ms = sha256_hex(manifest);
+    if ms != rel.manifest_sha256 {
+        die(
+            f"fetch-llvm: manifest checksum mismatch\n  expected {rel.manifest_sha256}\n  actual   {ms}"
+        );
+    }
+    try {
+        parsed = json.loads(manifest);
+    } except ValueError as e {
+        die(f"fetch-llvm: manifest parse failed: {e}");
+    }
+    sha_map: dict[str, str] = {};
+    libs = parsed.get("libs") if isinstance(parsed, dict) else None;
+    if isinstance(libs, dict) {
+        for o in libs.values() {
+            if not isinstance(o, dict) {
+                continue;
+            }
+            fv = o.get("file");
+            sv = o.get("sha256");
+            if isinstance(fv, str) and isinstance(sv, str) {
+                sha_map[fv] = sv;
+            }
+        }
+    }
+    return sha_map;
+}
+
+impl _run_end(members: list[ZipMember], i: int, cd_off: int) -> int {
+    return members[i + 1].lho if i + 1 < len(members) else cd_off;
+}
+
+impl _write_slice_member(slice_root: str, m: ZipMember, data: bytes) {
+    rel_path = os.path.join(slice_root, m.name);
+    if m.name.endswith("/") {
+        make_dirs(rel_path);
+        return;
+    }
+    make_dirs(os.path.dirname(rel_path));
+    write_bytes(rel_path, data);
 }

@@ -13,7 +13,6 @@ import from ctypes {
     py_object,
     Structure
 }
-import from jaclang.compiler.backends.native.llvm.binding { ffi, targets, object_file }
 
 with entry {
     ffi.lib.LLVMPY_LinkInMCJIT;
@@ -49,28 +48,12 @@ def create_mcjit_compiler(
     Check the system allows execution of in-memory JITted functions.
     An exception is raised otherwise.
     """
-def check_jit_execution -> object {
-    errno = ffi.lib.LLVMPY_TryAllocateExecutableMemory();
-    if (errno != 0) {
-        raise OSError(
-            errno,
-            "cannot allocate executable memory. "
-            "This may be due to security restrictions on your "
-            "system, such as SELinux or similar mechanisms."
-        );
-    }
-}
-
-"""An ExecutionEngine owns all Modules associated with it.
-    Deleting the engine will remove all associated modules.
-    It is an error to delete the associated modules.
-    """
 # Engines whose code addresses have escaped to callers. A raw function
 # address (ctypes, interop thunks) stays callable only while the engine that
 # JIT'd it lives, and nothing on the Python side references the engine once
 # the compile closure that produced it is released, so the hand-out pins it
 # for the life of the process.
-glob _PINNED_ENGINES: list = [];
+glob _PINNED_ENGINES: list[ExecutionEngine] = [];
 
 class ExecutionEngine(ffi.ObjectRef) {
     with entry {
@@ -83,7 +66,7 @@ class ExecutionEngine(ffi.ObjectRef) {
     def init(self: ExecutionEngine, ptr: any, module: any) -> object {
         self._modules = `set([module]);
         self._td: (targets.TargetData | None) = None;
-        self.static_init_symbols = [];
+        self.static_init_symbols: list[str] = [];
         self.static_init_chained = `set();
         self._pinned = False;
         module._owned = True;
@@ -354,8 +337,6 @@ with entry {
     ffi.lib.LLVMPY_FinalizeObject.argtypes = [ffi.LLVMExecutionEngineRef];
     ffi.lib.LLVMPY_GetExecutionEngineTargetData.argtypes = [ffi.LLVMExecutionEngineRef];
     ffi.lib.LLVMPY_GetExecutionEngineTargetData.restype = ffi.LLVMTargetDataRef;
-    ffi.lib.LLVMPY_TryAllocateExecutableMemory.argtypes = [];
-    ffi.lib.LLVMPY_TryAllocateExecutableMemory.restype = c_int;
     ffi.lib.LLVMPY_GetFunctionAddress.argtypes = [ffi.LLVMExecutionEngineRef, c_char_p];
     ffi.lib.LLVMPY_GetFunctionAddress.restype = c_uint64;
     ffi.lib.LLVMPY_GetGlobalValueAddress.argtypes = [

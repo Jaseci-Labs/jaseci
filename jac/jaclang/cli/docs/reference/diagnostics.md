@@ -148,6 +148,25 @@ All three block code generation for the module that reports them.
 |------|---------|
 | `E0082` | Cannot assign to state field '{name}' during render (component body statements run on every render and state writes are immediately visible; move the assignment into a `can` ability, an event handler, or a method) |
 
+### Wiring (archwire.jac)
+
+| Code | Message |
+|------|---------|
+| `E0086` | A wire is directed: write 'provider --> consumer' |
+| `E0087` | A wire names one provider; patterns belong to an edge rule |
+| `E0088` | A wire's consumer is a project module named in full |
+| `E0089` | 'as' applies to the module form of a wire |
+| `E0090` | Duplicate '{name}' in a wire payload |
+| `E0091` | 'include' takes no payload |
+| `E0092` | An edge rule is named: 'edge Name: source --> target' |
+| `E0093` | A 'graph import' scope is a dotted package name |
+| `E0094` | Expected a wire ('provider --> consumer') or an edge rule here |
+| `E0095` | '*' must be the only item in a payload |
+| `E0096` | A rule payload lists names without aliases |
+| `E0097` | `return tail` needs a function call |
+| `E0098` | An edge rule's patterns name modules under this archwire.jac; 'any' is not a pattern |
+| `E0099` | Wiring blocks are written 'graph import'; 'impl import' was removed |
+
 ### Parser Warnings
 
 | Code | Message |
@@ -200,7 +219,7 @@ Emitted by the type checker and type evaluator.
 | `E1128` | Operands of '{op}' have no common fixed-width type ({left} and {right}) |
 | `E1129` | Unary minus on unsigned type {type} |
 | `E1130` | Float literal {value} overflows {type} (largest finite magnitude {max}) |
-| `E1135` | Operator "{op}" has a possibly-None operand of type "{type}" |
+| `E1160` | Operator "{op}" has a possibly-None operand of type "{type}" |
 
 !!! tip "Fixing `E1126`-`E1130` (fixed-width numerics)"
     The ten sized types (`i8`..`u64`, `f32`, `f64`) convert implicitly only along the value-preserving lattice (widening, unsigned into a strictly wider signed type, exactly-representable ints into `f32`, any int-kind into `f64`, `f32 -> f64`). `int` and `float` are in that lattice rather than beside it: `int` is the signed 64-bit machine integer and behaves as `i64`, `float` is binary64 and behaves as `f64`, so `u64 -> int` needs the same cast `u64 -> i64` does. `E1126`: the literal is out of range -- use a wider type or spell the modular result with `T.wrap(x)`. `E1127`: cast at the boundary with the checked `T(x)` (raises `OverflowError` out of range) or widen the destination; extern `i32`/`u64` parameters need the cast from a plain `int`. `E1128`: neither operand widens into the other -- cast one side so the operation's width and sign are explicit. `E1129`: negate in a signed type (`-i64(x)`) or use `wrapping_neg(x)`. `E1130`: the literal is past what the target float can represent and would arrive as `inf` -- widen the type or write a value it can hold; precision loss inside the range is accepted. See `jac guide jac-types` and [Fixed-width semantics](language/types-and-values.md#fixed-width-semantics).
@@ -208,8 +227,8 @@ Emitted by the type checker and type evaluator.
 !!! tip "Fixing `E1124` (membership over an untyped operand)"
     `E1124` fires on natively lowered code when the container operand of an `in` / `not in` comparison has no static type at all -- typed `any`, or left unannotated and never inferred. Every container answers `in` from its own layout, and native code has no dynamic-dispatch tier to fall back on, so the operand must carry a static type by the time the comparison is reached. Annotate the operand with the container it actually holds (`list[Tag]`, `dict[str, int]`, `set[str]`), or bind it to a directly-typed local first, so its layout reaches the comparison. The error blocks codegen.
 
-!!! tip "Fixing `E1135` (a possibly-None operand)"
-    `E1135` fires when an operand of an arithmetic, bitwise, or shift operator (`+`, `-`, `*`, `/`, `//`, `%`, `**`, `&`, `^`, `<<`, `>>`, `@`), in plain or augmented form, has type `T | None` and no guard has narrowed the `None` away. The None case has no such behavior and would raise `TypeError` at runtime, so the checker rejects it the same way it rejects attribute access on an un-narrowed optional (`E1099`). Guard the value first: `if x is not None { ... }`, an early `return` / `raise` on the None case, or a `x if x is not None else default` fallback. Equality (`==`, `!=`) and `is` / `is None` checks operate on the optional directly and are never flagged.
+!!! tip "Fixing `E1160` (a possibly-None operand)"
+    `E1160` fires when an operand of an arithmetic, bitwise, or shift operator (`+`, `-`, `*`, `/`, `//`, `%`, `**`, `&`, `^`, `<<`, `>>`, `@`), in plain or augmented form, has type `T | None` and no guard has narrowed the `None` away. The None case has no such behavior and would raise `TypeError` at runtime, so the checker rejects it the same way it rejects attribute access on an un-narrowed optional (`E1099`). Guard the value first: `if x is not None { ... }`, an early `return` / `raise` on the None case, or a `x if x is not None else default` fallback. Equality (`==`, `!=`) and `is` / `is None` checks operate on the optional directly and are never flagged.
 
 ### Iterability / Callable
 
@@ -230,6 +249,7 @@ Emitted by the type checker and type evaluator.
 | `E1033` | Member "{member}" not found on type "{type}" |
 | `E1034` | Cannot perform assignment comprehension on type "{type}" |
 | `E1035` | Type "{src}" is not assignable to type "{dest}" |
+| `E1036` | Generic type "{type}" requires explicit type arguments |
 
 ### Subscript / Await
 
@@ -279,6 +299,25 @@ Emitted by the type checker and type evaluator.
 | `E1080` | Contravariant type variable cannot be used in return type |
 | `E1081` | Covariant type variable cannot be used in parameter type |
 
+### C Interop Errors
+
+Emitted by the type checker for [C library](language/native-pathway.md#c-library-interop) declarations and their uses. They block native codegen.
+
+| Code | Message |
+|------|---------|
+| `E1150` | Field '{field}' of foreign struct '{name}' {reason} |
+| `E1151` | Opaque C type '{name}' has no known size, so it cannot be {use} |
+| `E1152` | {what} needs C plain data, not {type} |
+| `E1153` | C data symbol '{name}' {reason} |
+| `E1154` | addressof() takes a C data symbol, not {what} |
+| `E1155` | C data definition '{name}' {reason} |
+| `E1156` | A C string pointer is made from a string literal of bytes, not {what} |
+| `E1157` | C variadic {what} |
+| `E1158` | C function definition '{name}' {reason} |
+| `E1159` | '{name}' is a borrowed scalar parameter; {what} |
+
+A foreign struct field must be C plain data: a sized scalar, `int`, `float`, `bool`, another foreign struct (nested by value, never containing itself), `ptr[T]` / `ptr`, or a named-function callback (`E1150`). A bodiless `obj Name;` declares an opaque C type, usable only as `ptr[Name]` (`E1151`). `pin(value)`, `p.view(n)` and `&T` / `&mut T` clib parameters lay their payload out in C memory, so `T` needs a known size (`E1152`). `glob name: T;` in a C library import declares a C variable and `glob name: T = value;` defines one; a C object (foreign struct, opaque type or `list[T]` array) is used only by address (`E1153`), `addressof()` takes only such a symbol (`E1154`), a definition's initializer is a C constant, where `ptr(function)` is a named function's address for a `ptr` field such as a `PyMethodDef` entry and a sized integer array also takes a bytes literal, read as its little-endian elements (`E1155`), and `ptr[u8]("text")` takes a string literal (`E1156`). A C variadic function takes C scalars, pointers, `str` or `bytes` as extra arguments and no keyword parameters (`E1157`), and a `def` with a body in a C library import defines a C function whose parameters and result are C data, under a C symbol no other linked module declares with a different signature (`E1158`). Escaping a `PtrView` of C memory is `E1315`, and passing anything but a `Pinned[T]` to a `&mut Pinned[T]` parameter is an ordinary argument mismatch (`E1053`), as is `&mut x` for a `ptr[T]` parameter unless the callee is a C function and `x` is exactly `T` (then it lends x's address for the call). A Jac function's `&mut` parameter holding a scalar (a number, a bool or a pointer) is a value: assigning it, lending it on as `&mut p`, or passing it to a parameter the callee declares `&mut` would write only the function's copy, so each is `E1159`; return the new value or take a `ptr[T]` to storage the caller owns.
+
 ### Exception / Context Manager / Yield
 
 | Code | Message |
@@ -298,21 +337,42 @@ Emitted by the type checker and type evaluator.
 | `E1097` | Connection right operand must be a node instance |
 | `E1098` | Connection type must be an edge instance |
 | `E1099` | Cannot access attribute "{attr}" for type "{type}"; attribute is missing from {missing} |
+| `E1136` | Connection {side} operand is "{actual}", but edge "{edge_name}" declares its {side} endpoint as "{declared}" |
+| `E1137` | Traversal origin is "{actual}", but edge "{edge_name}" declares its {side} endpoint as "{declared}", so this traversal can never match |
+| `W2081` | Connection {side} operand is "{actual}", which cannot be checked against the {side} endpoint "{declared}" declared by edge "{edge_name}" |
+| `W2082` | Traversal origin is "{actual}", which cannot be checked against the {side} endpoint "{declared}" declared by edge "{edge_name}" |
 
 ### mobUI-Project JSX Host Tags
 
-Emitted by `JsxIntrinsicGuardPass` when a `mobui` project (see [React Native target](plugins/jac-client.md#react-native-target-beta)) uses a raw HTML host tag in JSX. The guard resolves every tag name in the enclosing scope; only **unresolved lowercase names** are treated as HTML host elements and rejected. Uppercase components and lowercase components that resolve to an in-scope symbol are allowed. `.jac` web-boundary files (but not `.native.jac` files, which target React Native) and modules outside the project root are exempt; the client kind is discovered from each module's own project `jac.toml`, never the process cwd.
+Emitted by `JsxIntrinsicGuardPass` when a module of a `mobile` app (see [Mobile](plugins/jac-client.md#mobile)) uses a raw HTML host tag in JSX. The guard resolves every tag name in the enclosing scope; only **unresolved lowercase names** are treated as HTML host elements and rejected. Uppercase components and lowercase components that resolve to an in-scope symbol are allowed. `.jac` web-boundary files (but not `.native.jac` files, which target React Native) and modules outside the project root are exempt; the app's UI is an app fact stamped from the `[apps.<name>]` table that claims each module, never the process cwd.
 
 | Code | Message |
 |------|---------|
 | `E1105` | JSX tag '<{tag}>' is not in scope in a mobUI project; use {suggestion} instead |
 
 !!! tip "Fixing `E1105`"
-    `E1105` fires only in `mobui` projects (`[project] client_kind = "mobui"` in `jac.toml`). Replace the HTML tag with the suggested `@jac/mobui` primitive: `div`/`section`/`main` -> `View`, `span`/`p`/`h1`-`h6` -> `Text`, `button` -> `Pressable`, `input`/`textarea` -> `TextInput`, `img` -> `Image`, `ul`/`ol` -> `ScrollView`. If the lowercase name is meant to be a component, import it so it resolves in scope. Web projects (`client_kind` unset) are unaffected -- HTML tags remain valid there.
+    `E1105` fires only in the modules of a `mobile` app (`kind = "mobile"` on its `[apps.<name>]` table in `jac.toml`, or `[project] kind` in a single-app project). Replace the HTML tag with the suggested `@jac/mobui` primitive: `div`/`section`/`main` -> `View`, `span`/`p`/`h1`-`h6` -> `Text`, `button` -> `Pressable`, `input`/`textarea` -> `TextInput`, `img` -> `Image`, `ul`/`ol` -> `ScrollView`. If the lowercase name is meant to be a component, import it so it resolves in scope. Apps of every other kind are unaffected -- HTML tags remain valid there.
+
+### JSX Children
+
+Both apply to every **component** -- any ability whose return annotation names `JsxElement`, `JsxPage` or `JsxLayout`, including a union with one of them (`JsxPage` and `JsxLayout` are what a `pages/` route or layout module returns). That is the same predicate the client codegen uses to pick a component's call ABI, so a declaration these reject is exactly a declaration it would mis-lower. The runtime's own `__jac`-prefixed helpers are called directly rather than through the props protocol, and are not components.
+
+A component receives JSX children only if it declares a parameter literally named `children`. The codegen destructures a component's declared parameter names out of `props` with no rest element, so children handed to a component that never declares them are discarded with no runtime signal -- the failure mode is a blank render with a clean `jac check`. A component whose single parameter is named `props` receives the object whole, so children arrive as `props.children` and are never dropped.
+
+| Code | Message |
+|------|---------|
+| `W1053` | Component '{component}' declares no 'children' parameter, so the children passed here are discarded |
+| `E1109` | Component '{name}' declares a 'props' bundle alongside other parameters; the bundle must be the only parameter |
+
+!!! tip "Fixing `W1053`"
+    Declare `children: any = None` on the component and render it (`<>{children}</>`, or nest it inside a wrapper element). If a component is not meant to take children, remove them from the call site instead. The one call site the checker cannot see is the generated `pages/` entry, which renders `app` with the route tree as its children (`createElement(app, null, <routes/>)`); the client build refuses an `app` that has no `children` parameter (a lone `props` also receives them) with the same explanation.
+
+!!! tip "Fixing `E1109`"
+    A parameter named `props` means the component is handed the whole call-site object, so it cannot coexist with another parameter. Written positionally the codegen emits `const {props, tone} = props`, which is not valid JavaScript and fails the bundle; written keyword-only it emits a positional signature the renderer never calls that way, so every other parameter silently keeps its default. Pick one convention: name the props you take (`def Card(title: str, tone: str)`), or take the bundle alone (`def Card(props: CardProps)`) and read the rest off it. Because `props` is now exclusive, a component that declares it always receives children as `props.children`, which is why `W1053` never fires on one.
 
 ### Ownership / Borrow Errors
 
-Emitted by `OwnershipCheckPass` for `own`/`imm`/`borrow`/`&`/`&mut` bindings and `in <handle> { }` region opens. See [Ownership & Borrowing](language/ownership-borrowing.md). On the native pathway the checker is one of the required analyses: it always runs there, and error-severity findings block native codegen -- a clean check is what makes the annotations trustworthy facts for lowering (see the [Ownership Fact Schema](../internals/ownership-checker-spec.md)). Whether diagnostics are *displayed* never changes generated code; builds with and without display are bit-identical.
+Emitted by `OwnershipCheckPass` for `own`/`lin`/`imm`/`&`/`&mut` bindings and derived views and `in <handle> { }` region opens. See [Ownership & Borrowing](language/ownership-borrowing.md). On the native pathway the checker is one of the required analyses: it always runs there, and error-severity findings block native codegen -- a clean check is what makes the annotations trustworthy facts for lowering (see the [Ownership Fact Schema](../internals/ownership-checker-spec.md)). Whether diagnostics are *displayed* never changes generated code; builds with and without display are bit-identical.
 
 | Code | Message |
 |------|---------|
@@ -320,7 +380,7 @@ Emitted by `OwnershipCheckPass` for `own`/`imm`/`borrow`/`&`/`&mut` bindings and
 | `E1302` | Conflicting mutable borrow of '{name}' while another borrow is live |
 | `E1303` | Cannot mutate '{name}' while a shared borrow of it is live |
 | `E1304` | '{name}' is destroyed while still borrowed |
-| `E1305` | *Reserved, not yet registered* -- will be "Linear resource '{name}' is never consumed" once the planned `linear` marker lands (a `linear` binding must be moved exactly once; plain `own` is affine and may be silently dropped) |
+| `E1305` | Linear binding '{name}' is never consumed |
 | `E1306` | Borrow of '{name}' escapes its scope |
 | `E1307` | Reference to '{name}' escapes its region |
 | `E1308` | '{name}' is not sendable across a concurrency boundary |
@@ -328,10 +388,19 @@ Emitted by `OwnershipCheckPass` for `own`/`imm`/`borrow`/`&`/`&mut` bindings and
 | `E1311` | Cannot freeze '{name}': the value may be aliased |
 | `E1313` | `flow for` does not allow {name} |
 | `E1314` | `partition(n)` does not allow {name} |
+| `E1315` | A view does not allow {name} |
+| `E1316` | Cannot move '{name}' out of '{place}' without take() |
+| `E1317` | Cannot move '{name}' out of the element '{place}' |
+| `E1318` | Cannot call mutating method '{method}' through a shared borrow of '{name}' |
+| `E1319` | Invalid {operation} place: {reason} |
+| `E1320` | Cannot assign '{field}' through a shared borrow of '{name}' |
+| `E1321` | Cannot write '{field}' while the borrow '{name}' reads through it |
+| `E1322` | Call to '{callee}' may write '{field}' while the borrow '{name}' reads through it |
+| `E1323` | Borrow '{name}' must start at a parameter, `self`, an `own` value or another borrow |
 
 ### Zero-RC Enforcement Errors
 
-Emitted by `OwnershipCheckPass` only in **nogc-enforced** native modules (`jac nacompile --enforce-nogc`, or a module matching a `jac.toml [gc.enforce]` pattern -- see [Zero-RC ownership compilation](language/native-pathway.md#zero-rc-ownership-compilation)). They make zero-RC ownership coverage a compile-time contract: every heap-typed contract position must be in the owned world, and each violation is a hard error that blocks native codegen. The `{provenance}` in every message states why the module is enforced (the CLI flag or the matching config pattern).
+Emitted by `OwnershipCheckPass` only in **nogc-enforced** native modules (`jac build --native --memory nogc`, or a module matching a `jac.toml [memory]` pattern -- see [Zero-RC ownership compilation](language/native-pathway.md#zero-rc-ownership-compilation)). They make zero-RC ownership coverage a compile-time contract: every heap-typed contract position must be in the owned world, and each violation is a hard error that blocks native codegen. The `{provenance}` in every message states why the module is enforced (the CLI flag or the matching config pattern).
 
 | Code | Message |
 |------|---------|
@@ -340,7 +409,9 @@ Emitted by `OwnershipCheckPass` only in **nogc-enforced** native modules (`jac n
 | `E1403` | Heap value '{name}' crosses implicitly out of a nogc-enforced module ({provenance}) |
 | `E1404` | '{name}' is `any`-typed and could be heap-allocated in a nogc-enforced module ({provenance}) |
 | `E1405` | Closure capture of '{name}' escapes its scope in a nogc-enforced module ({provenance}) |
-| `E1406` | '{name}' has retaining or aliasing semantics not supported in a nogc-enforced module ({provenance}) |
+| `E1406` | {name} ({provenance}) -- the message names the value, why it cannot enter the owned world (a borrow of `x`, an `imm` value, a place read, a retaining builtin) and the destination; the help names the idiom that fits (`own p` copy, `take(place)`, iterate by value, or a fresh value) |
+| `E1407` | '{name}' raises {exc}, and the entry block does not handle it |
+| `E1407` | '{name}' raises {exc}, and the entry block does not handle it |
 
 ### Type-Only Import Bindings
 
@@ -359,11 +430,12 @@ Emitted by `OwnershipCheckPass` only in **nogc-enforced** native modules (`jac n
 
 | Code | Message |
 |------|---------|
-| `W1036` | Generic type "{type}" used without type arguments, defaulting to "{type}[Any]"; consider adding explicit type arguments |
+| `W1036` | Generic type "{type}" used without type arguments, defaulting to "{type}[any]"; consider adding explicit type arguments |
 | `W1037` | Explicit 'any' type annotation disables type checking here; consider a more specific type |
 | `W1050` | Unknown intrinsic JSX element '<{tag}>' |
 | `W1051` | Expression type could not be resolved (Unknown) |
 | `W1052` | JSX component '{component}' uses an untyped props bag (`props: any`); its JSX props cannot be type-checked |
+| `W1053` | Component '{component}' declares no 'children' parameter, so the children passed here are discarded |
 | `W1310` | Region open on '{name}' has an empty body |
 | `W1312` | Owned value '{name}' silently seals into managed storage |
 
@@ -402,6 +474,27 @@ Emitted by `StaticAnalysisPass` for refused `import from` items. All three block
     Jac provides a curated set of typing constructs in every module's scope, so importing one is a second spelling of the same binding -- and when the source is `typing`, the import alone keeps the module off the native pathway. The ambient set (defined in `compiler/types/typing_ambient.pyi`) is: `Annotated`, `AsyncIterable`, `AsyncIterator`, `Awaitable`, `Callable`, `ClassVar`, `Coroutine`, `Generic`, `Iterable`, `Iterator`, `Literal`, `Mapping`, `MutableMapping`, `MutableSequence`, `Protocol`, `Sequence`, `TypeVar`. Each name is refused both from `typing` and from its real home module (`collections.abc` for the collection ABCs). Drop the name from the import list and keep writing it as before -- generated code re-imports ambient names automatically, so runtime annotation introspection still works. Binding a different local name on purpose stays legal: the `as`-alias form (`Callable as Cb`) is exempt. In the compiler's own bootstrap-compiled modules and the ambient-provider modules the finding downgrades to the advisory `W1103`.
 
 ---
+
+### Project Wiring (archwire.jac)
+
+See [Project Wiring](wiring.md).
+
+| Code | Message |
+|------|---------|
+| `E1141` | '{module}' is not a project module, so it cannot be a wire's provider |
+| `E1142` | '{module}' cannot be a wire's consumer: {detail} |
+| `E1143` | A wire cannot connect '{module}' to itself |
+| `E1144` | Import of '{module}' is written in '{consumer}'; under archwire.jac it is a wire |
+| `E1146` | '{name}' is wired into '{consumer}', which never uses it |
+| `E1147` | '{name}' is declared into '{consumer}' by a '-->' wire, but '{consumer}' does not write that import where it runs |
+
+### Unresolved Names
+
+| Code | Message |
+|------|---------|
+| `E1145` | Cannot import name '{name}' from Jac module '{module}': it defines no such name |
+
+Native lowering reports `E1145` when a module imports a name that the Jac module it binds to does not define. There is no symbol to bind the name to, and every use of it used to lower to a null value (a glob initializer received NULL and the binary crashed at load). The checker reports the same import as the `W1101` warning: its lazy resolution can miss a name that exists (an import cycle still being analyzed, or a sibling module shadowing a standard-library one), so only native lowering, which reads the bound module's complete symbol table, makes it an error.
 
 ## Semantic Errors (E2xxx / W2xxx)
 
@@ -445,6 +538,16 @@ obj Account {
 Python-compat `class` is exempt. A cross-object `@Base.x.setter` extends a parent's
 property and has no direct native form, so it is not reported.
 
+### App entry boundaries
+
+`AccessCheckPass` checks imports across declared app entries. As with `E2038`/`W2038`, `[check] enforce_access` selects errors or warnings.
+
+| Code | Message |
+|------|---------|
+| `E2039` / `W2039` | A consumer accesses a private declaration through another app's entry |
+
+An app's walkers and `def:pub` functions form its public boundary. Other declarations reached through that entry are private. Ordinary helper imports inherit the selected app's context; they do not belong to a global shared layer or acquire ownership from their directory. See [Workspaces & Apps](apps.md).
+
 ### Declaration-Implementation Matching
 
 | Code | Message |
@@ -453,6 +556,26 @@ property and has no direct native form, so it is not reported.
 | `W2010` | Abstract ability {name} should not have a definition |
 | `E2011` | Parameter count mismatch for ability {name} |
 | `E2012` | From the declaration of {name} |
+| `E2013` | Parameter name mismatch: declaration has {decl_name} but implementation has {impl_name} |
+| `E2087` | '{name}' is declared but never implemented |
+
+### Project Wiring (archwire.jac)
+
+| Code | Message |
+|------|---------|
+| `E2088` | 'graph import' is only valid in a file named archwire.jac |
+| `E2089` | archwire.jac declares wiring only; this {kind} does not belong here |
+| `E2090` | '{provider} --> {consumer}' is not permitted by any edge rule |
+| `E2091` | '{name}' is not admitted across '{provider} --> {consumer}' by {rules} |
+| `E2092` | Edge rule '{name}' is declared more than once |
+| `E2093` | archwire.jac has syntax errors, so the wiring for '{consumer}' may be incomplete |
+| `E2094` | Import of '{module}' inside '{scope}' is written in '{consumer}'; under archwire.jac it is a scoped wire |
+| `E2095` | Import '{module}' names a module of this package by a bare path; import it as '{qualified}' |
+| `E2096` | '{module}' is not exported by the package '{package}' |
+| `E2097` | '{name}' is not a module under this archwire.jac, so {what} names nothing |
+| `E2098` | Edge rule '{name}': {what} matches no module |
+| `E2099` | '{provider} --> {consumer}' crosses from top-level package '{source}' into '{target}', and no rule admits it; add `{rule}` |
+| `E2100` | Edge rule '{name}': the bare '*' {side} states no architecture |
 
 ### JSX Slot Body Rules
 
@@ -468,6 +591,7 @@ Emitted by `ViewLowerPass` when a `{...}` JSX slot's statement-template body vio
 | `E2024` | 'has' is not allowed inside a JSX slot body. A slot body is a statement template that re-runs on every render; declaring reactive state there would compile to a conditional 'useState' and violate React's rules of hooks. Declare 'has'-fields at the component scope (the enclosing 'def -> JsxElement' body). |
 | `E2025` | A 'has'-field of type 'Ref[...]' must be constructed with an initializer: write '= Ref()' for a DOM ref, or '= Ref(initial)' for a value ref. It lowers to React's 'useRef', so a bare declaration has no ref object to hold -- '.current' would never be defined. This mirrors how every other 'has'-field carries a value. |
 | `E2027` | Endpoint clause ': Src --> Tgt' is only valid on an 'edge' archetype, not on {arch_type} '{name}' |
+| `E2086` | Edge '{name}' declares no endpoints, so every traversal through it widens to 'any' |
 | `E2084` | An expression without a trailing ';' is only treated as an implicit return when it is the final statement of a function, ability, or lambda body. |
 | `W2019` | 'while' loop in a JSX slot renders JSX without a 'key' attribute -- add 'key=' so siblings keep their identity across re-renders. |
 | `W2020` | 'awaiting' is not yet implemented on the '{target}' target -- the 'awaiting' clause body will be ignored at runtime. Only the 'cl' (react/preact) target currently lowers 'awaiting' to a Suspense fallback. |
@@ -507,10 +631,13 @@ Emitted by `jac check --lint`. Rules can be configured in [`jac.toml`](config/in
 | `W3040` | `filter-compare-tautology` | Filter comparison '{name} == {name}' is always true | default |
 | `W3041` | `stale-has-read` | Reactive `has` field '{name}' is read after being assigned in the same `can with entry` block | default |
 | `W3042` | `map-lambda-to-comprehension` | `.map(lambda x -> any { return <jsx>; })` can be replaced with comprehension syntax | default |
-| `W3050` | `strip-comments` | Comment can be removed | opt-in |
-| `W3051` | `strip-docstrings` | Docstring can be removed | opt-in |
+| `W3050` | `strip-comments` | Comment can be removed | all |
+| `W3051` | `strip-docstrings` | Docstring can be removed | all |
+| `W3053` | `remove-wired-import` | Import of '{name}' from '{module}' is already provided by archwire.jac (fix only: `jac check` reports it as `E1144`) | default |
+| `W3054` | `remove-dead-import` | Import of '{name}' from '{module}' is neither wired nor read | default |
+| `W3055` | `separate-impls` | Body of '{name}' belongs in a separate impl | all |
 
-> **opt-in group**: `strip-comments` and `strip-docstrings` are destructive "deslop" rules. They are **never** activated by `select = ["all"]` or `["default"]`; they fire only when named explicitly in [`[check.lint]`](config/index.md#checklint). See the config reference for details.
+> **all group**: `strip-comments`, `strip-docstrings` and `separate-impls` are on under `select = ["all"]` and off under `["default"]`. The first two delete comments and docstrings; `separate-impls` moves bodies into `impl` blocks. Each can be named explicitly or listed in `ignore`; see the [config reference](config/index.md#checklint).
 
 ---
 
@@ -545,9 +672,7 @@ Emitted while lowering the unitree into the compact codegen IR container (`JcirG
 | `E5020` | Native compilation failed: {error} |
 | `W5021` | C library not found: {path} |
 | `W5022` | Failed to load C library '{path}': {error} |
-| `W5023` | Native module not found: {path} |
-| `W5024` | Failed to compile native module {path}: {error} |
-| `W5025` | Failed to link native module {path}: {error} |
+| `E5026` | Symbol collision during native link: '{symbol}' is defined in both '{existing_module}' and '{new_module}' |
 
 ### Layout Pass
 
@@ -576,7 +701,7 @@ Emitted while lowering the unitree into the compact codegen IR container (`JcirG
 
 | Code | Message |
 |------|---------|
-| `E5060` | C library import declaration '{name}' must not have a body |
+| `E5114` | `return tail` cannot be a guaranteed tail call: {reason} |
 
 ### Client Code Generation
 
@@ -587,18 +712,39 @@ Emitted while lowering the unitree into the compact codegen IR container (`JcirG
 | `E5082` | Client code imports '{name}' from '{module}', but '{name}' has no client-side presence |
 | `E5084` | Client code uses '{name}' from bare import '{module}', which resolves to no client-reachable module |
 | `E5086` | Client code emits '{name}', which has no binding in the client bundle |
-| `E5087` | Project kind '{kind}' has no server, but '{name}' needs one ({reason}) |
+| `E5087` | App kind '{kind}' has no server, but '{name}' needs one ({reason}) |
 | `E5101` | Client codegen emitted '{name}', which the module never binds |
 
-`E5082` fires when a plain client import references a server symbol that does not bridge: server `def:pub` endpoints bridge automatically over RPC, so the fix is to make the symbol a `def:pub` endpoint, pin it (or its module) `"client"` via `[placement.pins]`, or move it into client code.
+`E5082` fires when a plain client import references a server symbol that does not bridge: exposed endpoints (`def:pub` / `def:protect`, `walker:pub` / `walker:protect`) bridge automatically over RPC, while plain and `:priv` declarations are private. Mark the symbol `:protect` (authenticated) or `:pub` (anonymous), pin it (or its module) `"client"` via `[placement.pins]`, or move it into client code.
 
-`E5084` is the bare-import sibling. A bare name resolves across the module universe -- local Jac module first, then Python, then the client npm world (jac.toml `[dependencies.npm]`, the active framework's own packages, and whatever is installed under `.jac/client/node_modules`), so `import from react { useRef }` works unquoted. When the name resolves to none of those client-reachable worlds, placement pins the import server-side, the bundle never binds the symbol, and the page would fail at runtime with a ReferenceError -- so client use fails the build instead. Install or declare the package in `[dependencies.npm]` (or quote the module to pin the npm form), or keep the use server-side behind a `def:pub` endpoint. Annotation-only uses do not fire it, since ES output erases type annotations; imports whose uses are all server-side prune silently as before.
+`E5084` is the bare-import sibling. A bare name resolves across the module universe in a fixed order -- a local Jac module first, then a name declared in jac.toml `[dependencies.npm]` or owned by the active framework (`react`, `react-dom`, ...), then a Python module the importing file can import, and only then whatever is merely installed under `.jac/client/node_modules` -- so `import from react { useRef }` works unquoted, while a transitive npm package that shares a name with a Python module (`dotenv`, `argparse`) never captures that import. When the name resolves to none of the client-reachable worlds, placement pins the import server-side, the bundle never binds the symbol, and the page would fail at runtime with a ReferenceError -- so client use fails the build instead. Install or declare the package in `[dependencies.npm]` (or quote the module to pin the npm form), or keep the use server-side behind a `def:pub` endpoint. Annotation-only uses do not fire it, since ES output erases type annotations; imports whose uses are all server-side prune silently as before.
 
 `E5086` covers the same failure for a *module's own* declarations rather than its imports. The bundle carries what is placed in the client codespace, plus `def:pub` endpoints, which are bound to a generated client-side forwarder that calls them over RPC. Anything else named by client code -- a function pinned `"server"` via `[placement.pins]`, a glob kept server-side -- would emit as a bare identifier that resolves to nothing. That is a guaranteed `ReferenceError` at module load, so it fails the build at the seam that produces the artifact. Give the element client presence (drop the pin, or make it `def:pub`), or keep the use out of client code.
 
 `E5101` is the backstop under all of the above, and it checks the finished artifact rather than the reasoning that produced it. After the client module is emitted, every identifier it references is matched against the module's own declarations, its imports, its parameters, and the ambient surface a browser provides (the same `js_globals` / `dom_types` stubs `jac check` resolves client-tier names against). What is left over is then narrowed to names the compiler itself resolved in Jac: a name with a symbol, emitted with nothing to bind it, is a `ReferenceError` on first use with `jac check` green and the build exiting 0. Give the name client presence (declare it, import it, or make it a `def:pub` endpoint so it bridges); reach a host global the compiler does not know about through `globalThis` so the intent is explicit; and if neither applies, a lowering dropped a binding it owed, which is a compiler bug worth reporting with the source line. Declarations count wherever they appear in the module rather than per scope, so the check never fires on a name that is bound somewhere. A name that resolves to nothing in Jac either is still presumed to be an undeclared ambient global and is not reported here -- requiring those to be declared is tracked separately.
 
-`E5087` fires when a project kind with no server contains code that needs one: root access, an FFI extern, an inline `::py::` block, or a Python import whose bindings are used at value level. A `js-package` ships as an npm tarball with nothing serving `/function/<name>`, so server placement there could only fail at runtime inside a `fetch` that has no route to reach. Annotation-only and `import type` uses stay silent, on the same criterion `E5084` uses.
+`E5087` fires when an app whose kind has no server contains code that needs one: root access, an FFI extern, an inline `::py::` block, or a Python import whose bindings are used at value level. A `js-package` ships as an npm tarball with nothing serving `/function/<name>`, so server placement there could only fail at runtime inside a `fetch` that has no route to reach. Annotation-only and `import type` uses stay silent, on the same criterion `E5084` uses. Drop the server dependency, or give the app a `kind` that has a server.
+
+### Workspace Boundaries
+
+Emitted by the driver and the boundary passes from the app facts of a workspace (see [Workspaces & Apps](apps.md)). All but `E5105` block codegen.
+
+| Code | Message |
+|------|---------|
+| `E5104` | App dependency cycle: {cycle} |
+| `E5105` | Variant '{variant}' disagrees with '{base}' on '{name}': {detail} |
+| `E5106` | App '{consumer}' bridges to '{name}', which is private to app '{provider}' |
+| `E5108` | App '{consumer}' imports '{name}', a {kind} owned by app '{provider}'; nodes and edges never cross an app boundary |
+
+`E5104`: apps bridge to their providers over the wire and providers boot first, so the app graph has to be a DAG. It is reported on the import that closes the cycle. Break it by moving the code both apps need into a shared module, or by folding one of the apps into the other.
+
+`E5105`: a `.native.jac` variant stands in for its sibling module on a mobile app's native platforms (android / ios), so the two have to expose the same public surface -- the same names, the same kinds of declaration, the same parameters and annotations, the same `has` fields. Bring the variant's declaration in line with the base module, or remove it from both. Reported on the variant, once per disagreement.
+
+`E5106`: an app's bridge surface is its exposed declarations (`:pub` or `:protect` functions and walkers); plain and `:priv` declarations are private to the app's own server. Mark the element `:protect` or `:pub` in the provider app, or move it into shared code if both apps need it in-process.
+
+`E5108`: a node or edge lives in the graph of the app that owns it, so another app cannot construct or hold one. Spawn one of the provider's walkers and work with what it reports, or move the type into shared code as an obj. An `obj` or `enum` imported across the boundary mirrors locally as a boundary type instead.
+
+A bridged call is a coroutine in every context -- server-to-app as much as client-to-server -- so a missing `await` at a cross-app seam is the ordinary `E1042`.
 
 ---
 

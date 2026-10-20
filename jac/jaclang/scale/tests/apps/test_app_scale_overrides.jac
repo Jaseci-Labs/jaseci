@@ -1,0 +1,599 @@
+"""Per-app scale settings live under [apps.<name>.scale] and reach every reader
+through one helper; the gateway's own settings live under [scale.gateway]."""
+
+import io;
+import os;
+import shutil;
+import tempfile;
+import from contextlib { redirect_stderr }
+import from pathlib { Path }
+
+glob _TOML: str = '[project]\n'
+     'name = "shop"\n'
+     'default-app = "web"\n'
+     '\n'
+     '[apps.web]\n'
+     'kind = "web-app"\n'
+     'entry-point = "main"\n'
+     '\n'
+     '[apps.orders]\n'
+     'kind = "service"\n'
+     'entry-point = "orders"\n'
+     '\n'
+     '[apps.orders.scale]\n'
+     'rpc_timeout = 120.0\n'
+     'replicas = 2\n'
+     'cpu_limit = "2000m"\n'
+     'env = { LOG_LEVEL = "DEBUG" }\n'
+     '\n'
+     '[apps.orders.scale.hpa]\n'
+     'max = 20\n'
+     '\n'
+     '[apps.orders.scale.http_activation]\n'
+     'enabled = true\n'
+     'target_port = 8000\n'
+     'concurrency_target = 5\n'
+     '\n'
+     '[scale.gateway]\n'
+     'gateway_port = 9100\n'
+     'colocate = false\n'
+     'boot_health_timeout = 120\n'
+     '\n'
+     '[scale.gateway.rate_limit]\n'
+     'enabled = true\n'
+     'per_ip_rpm = 120\n';
+
+
+def _project -> str {
+    d = tempfile.mkdtemp(prefix="jac-app-scale-");
+    (Path(d) / "jac.toml").write_text(_TOML, encoding="utf-8");
+    (Path(d) / "main.jac").write_text("with entry {}\n", encoding="utf-8");
+    (Path(d) / "orders.jac").write_text("with entry {}\n", encoding="utf-8");
+    return d;
+}
+
+
+test "app_scale_overrides reads [apps.<name>.scale] and nothing else" {
+    d = _project();
+    try {
+        cfg = JacConfig.load(Path(d) / "jac.toml");
+        orders = app_scale_overrides(cfg, "orders");
+        assert orders["rpc_timeout"] == 120.0 , orders;
+        assert orders["replicas"] == 2 , orders;
+        assert orders["cpu_limit"] == "2000m" , orders;
+        assert orders["env"] == {"LOG_LEVEL": "DEBUG"} , orders;
+        assert orders["hpa"] == {"max": 20} , orders;
+        assert orders["http_activation"]["enabled"] is True , orders;
+        assert "gateway" not in orders , "base [scale] sections never leak in";
+        assert set(orders.keys()) <= set(APP_SCALE_KEYS) , orders.keys();
+        assert app_scale_overrides(cfg, "web") == {};
+        assert app_scale_overrides(cfg, "ghost") == {};
+    } finally {
+        shutil.rmtree(d, ignore_errors=True);
+    }
+}
+
+
+test "the fleet carries each member's overrides" {
+    d = _project();
+    try {
+        cfg = JacConfig.load(Path(d) / "jac.toml");
+        fleet = fleet_from_config(cfg, project_root=d);
+        assert fleet.app_config("orders")["replicas"] == 2;
+        assert fleet.app_config("web") == {};
+    } finally {
+        shutil.rmtree(d, ignore_errors=True);
+    }
+}
+
+
+test "JacScaleConfig answers per-app settings and the gateway block" {
+    d = _project();
+    reset_scale_config();
+    try {
+        scale_cfg = get_scale_config(project_dir=Path(d));
+        assert scale_cfg.get_app_scale_config("orders")["rpc_timeout"] == 120.0;
+        assert scale_cfg.get_app_scale_config("web") == {};
+        gw = scale_cfg.get_gateway_config();
+        assert gw["gateway_port"] == 9100 , gw;
+        assert gw["colocate"] is False , gw;
+        assert gw["boot_health_timeout"] == 120 , gw;
+        assert gw["rate_limit"]["per_ip_rpm"] == 120 , gw;
+        assert gw["identity"]["gateway_owned"] is True , gw;
+    } finally {
+        reset_scale_config();
+        shutil.rmtree(d, ignore_errors=True);
+    }
+}
+
+
+test "timeouts resolve per app, then the gateway, then the default" {
+    import from jaclang.scale.runtime.context.util {
+        boot_health_timeout,
+        http_forward_timeout
+    }
+    import from jaclang.scale.runtime.rpc.rpc { _sv_rpc_timeout }
+    d = _project();
+    reset_scale_config();
+    try {
+        get_scale_config(project_dir=Path(d));
+        assert _sv_rpc_timeout("orders") == 120.0;
+        assert _sv_rpc_timeout("web") == 10.0;
+        assert http_forward_timeout("orders") == 300.0;
+        assert http_forward_timeout("web") == 30.0;
+        assert boot_health_timeout() == 120.0;
+    } finally {
+        reset_scale_config();
+        shutil.rmtree(d, ignore_errors=True);
+    }
+}
+
+
+# A request to a scaled-to-zero app blocks on the pod's boot, so the default
+# deadlines of an HTTP-activated app have to outlast a cold wake instead of
+# timing out while the pod is still starting.
+test "an HTTP-activated app without explicit timeouts waits out a cold wake" {
+    import from jaclang.scale.runtime.context.util { http_forward_timeout }
+    import from jaclang.scale.runtime.rpc.rpc { _sv_rpc_timeout }
+    d = tempfile.mkdtemp(prefix="jac-app-scale-");
+    (Path(d) / "jac.toml").write_text(
+        _TOML.replace("rpc_timeout = 120.0\n", ""), encoding="utf-8"
+    );
+    (Path(d) / "main.jac").write_text("with entry {}\n", encoding="utf-8");
+    reset_scale_config();
+    try {
+        get_scale_config(project_dir=Path(d));
+        assert _sv_rpc_timeout("orders") == 300.0;
+        assert http_forward_timeout("orders") == 300.0;
+        assert _sv_rpc_timeout("web") == 10.0;
+    } finally {
+        reset_scale_config();
+        shutil.rmtree(d, ignore_errors=True);
+    }
+}
+
+test "an explicit plugin directory without jac.toml uses defaults rather than its parent" {
+    import from jaclang.project.config { get_explicit_config, set_config }
+    directory = Path(_project());
+    child = directory / "standalone";
+    child.mkdir();
+    saved = get_explicit_config();
+    set_config(None);
+    try {
+        config = JacScaleConfig(project_dir=child);
+        assert config.get_gateway_config()["gateway_port"] == 8000;
+        initial = config.load();
+        assert config.load() is initial;
+        (child / "jac.toml").write_text(
+            '[project]\nname="child"\n[scale.gateway]\ngateway_port=9300\n'
+        );
+        assert config.get_gateway_config()["gateway_port"] == 9300;
+        assert config.load() is not initial;
+    } finally {
+        set_config(saved);
+        shutil.rmtree(directory, ignore_errors=True);
+    }
+}
+
+
+test "normalize_gateway_config fills every section with defaults" {
+    gw = normalize_gateway_config({});
+    for key in [
+        "colocate",
+        "gateway_port",
+        "gateway_host",
+        "http_forward_timeout",
+        "rate_limit",
+        "cors",
+        "identity",
+        "ingress",
+        "shared_volumes",
+        "logs",
+        "tracing"
+    ] {
+        assert key in gw , f"missing {key}";
+    }
+    assert gw["colocate"] is True;
+    assert "boot_health_timeout" not in gw;
+    assert normalize_gateway_config({"identity": {"gateway_owned": False}})["identity"][
+        "gateway_owned"
+    ]
+        is False;
+    assert normalize_gateway_config({"replicas": 3})["replicas"] == 3;
+}
+
+
+test "an unknown per-app key is flagged with a suggestion" {
+    msgs = validate_app_scale_config({"cpu_limits": "2000m"}, "orders");
+    assert len(msgs) == 1 , msgs;
+    assert "apps.orders.scale" in msgs[0] , msgs[0];
+    assert "did you mean 'cpu_limit'" in msgs[0] , msgs[0];
+}
+
+
+test "the old [scale.microservices] table is unknown to the schema" {
+    msgs = validate_scale_config({"microservices": {"routes": {}}});
+    assert len(msgs) == 1 , msgs;
+    assert "microservices" in msgs[0] , msgs[0];
+    assert "gateway" in JacScaleConfig().get_config_schema()["options"];
+}
+
+
+test "strict mode refuses a misspelled per-app key from the on-disk toml" {
+    d = _project();
+    (Path(d) / "jac.toml").write_text(
+        _TOML.replace('cpu_limit = "2000m"', 'cpu_limits = "2000m"'), encoding="utf-8"
+    );
+    os.environ[STRICT_ENV] = "1";
+    try {
+        cfg = JacConfig.load(Path(d) / "jac.toml");
+        raised = "";
+        try {
+            app_scale_overrides(cfg, "orders");
+        } except ValueError as e {
+            raised = str(e);
+        }
+        assert "cpu_limits" in raised , raised;
+    } finally {
+        os.environ.pop(STRICT_ENV, None);
+        shutil.rmtree(d, ignore_errors=True);
+    }
+}
+
+
+glob _PROFILE_TOML: str = '[apps.orders.scale]\n'
+     'replicas = 1\n'
+     'cpu_limit = "500m"\n'
+     '\n'
+     '[apps.orders.scale.hpa]\n'
+     'enabled = false\n'
+     '\n'
+     '[[apps.orders.scale.deployment_overlay.spec.template.spec.initContainers]]\n'
+     'name = "install-tools"\n'
+     'image = "tools"\n'
+     '\n'
+     '[[apps.orders.scale.deployment_overlay.spec.template.spec.volumes]]\n'
+     'name = "key"\n'
+     'secret = { secretName = "github-app-key" }\n'
+     '\n'
+     '[scale.gateway]\n'
+     'gateway_port = 9200\n';
+
+
+def _project_with_profile -> str {
+    d = _project();
+    (Path(d) / "jac.e2e.toml").write_text(_PROFILE_TOML, encoding="utf-8");
+    return d;
+}
+
+
+test "a profile retunes [apps.<name>.scale], not only [scale.gateway]" {
+    d = _project_with_profile();
+    old = os.environ.get("JAC_PROFILE");
+    os.environ["JAC_PROFILE"] = "e2e";
+    reset_scale_config();
+    try {
+        scale_cfg = get_scale_config(project_dir=Path(d));
+        gw = scale_cfg.get_gateway_config();
+        orders = scale_cfg.get_app_scale_config("orders");
+        assert gw["gateway_port"] == 9200 , gw;
+        assert orders["replicas"] == 1 , orders;
+        assert orders["cpu_limit"] == "500m" , orders;
+        assert orders["hpa"]["enabled"] is False , orders;
+        assert orders["rpc_timeout"] == 120.0 , orders;
+        assert orders["hpa"]["max"] == 20 , orders;
+    } finally {
+        reset_scale_config();
+        if old is None {
+            os.environ.pop("JAC_PROFILE", None);
+        } else {
+            os.environ["JAC_PROFILE"] = old;
+        }
+        shutil.rmtree(d, ignore_errors=True);
+    }
+}
+
+test "the manifest fleet discovers the same active profile as the scale plugin (#8995)" {
+    import from jaclang.project.config { get_config, get_explicit_config, set_config }
+    import from unittest.mock { patch }
+
+    directory = _project_with_profile();
+    saved = get_explicit_config();
+    set_config(None);
+    reset_scale_config();
+    try {
+        with patch.dict(os.environ, {"JAC_PROFILE": "e2e"}) {
+            scale = get_scale_config(project_dir=Path(directory));
+            builder = ManifestBuilder(
+                k8s_config=KubernetesConfig(app_name="shop", namespace="shop"),
+                project_dir=directory,
+                dry_run=True
+            );
+            fleet = builder._derive_fleet(
+                AppConfig(code_folder=directory, file_name="main.jac", served_app="web")
+            );
+            assert scale.get_gateway_config()["gateway_port"] == 9200;
+            orders = fleet.app_config("orders");
+            assert orders["replicas"] == 1 , orders;
+            assert orders["cpu_limit"] == "500m" , orders;
+            assert orders["hpa"]["enabled"] is False , orders;
+            assert orders["hpa"]["max"] == 20 , orders;
+            pod = orders["deployment_overlay"]["spec"]["template"]["spec"];
+            assert pod["initContainers"][0]["name"] == "install-tools";
+            assert pod["volumes"][0]["secret"]["secretName"] == "github-app-key";
+            assert builder._project_config() is scale.get_jac_config();
+            # A CLI override replaces both the plugin's cached view and the fleet's source.
+            get_config(start_path=Path(directory), profile="");
+            assert scale.get_gateway_config()["gateway_port"] == 9100;
+            assert scale.get_app_scale_config("orders")["replicas"] == 2;
+            assert builder._project_config() is scale.get_jac_config();
+        }
+    } finally {
+        reset_scale_config();
+        set_config(saved);
+        shutil.rmtree(directory, ignore_errors=True);
+    }
+}
+
+test "new plugin readers refresh the shared config while preserving the explicit profile" {
+    import from jaclang.project.config { get_config, get_explicit_config, set_config }
+    import from unittest.mock { patch }
+    directory = Path(_project_with_profile());
+    saved = get_explicit_config();
+    set_config(None);
+    try {
+        with patch.dict(os.environ, {"JAC_PROFILE": ""}) {
+            get_config(start_path=directory, profile="e2e");
+            first = JacScaleConfig(project_dir=directory);
+            assert first.get_gateway_config()["gateway_port"] == 9200;
+            (directory / "jac.e2e.toml").write_text(
+                _PROFILE_TOML.replace("9200", "9400")
+            );
+            refreshed = JacScaleConfig(project_dir=directory);
+            assert refreshed.get_gateway_config()["gateway_port"] == 9400;
+            assert first.get_gateway_config()["gateway_port"] == 9400;
+            assert get_config() is refreshed.get_jac_config();
+            assert refreshed.get_jac_config().active_profile == "e2e";
+            assert len(refreshed.get_jac_config()._layers) == 1;
+        }
+    } finally {
+        set_config(saved);
+        shutil.rmtree(directory, ignore_errors=True);
+    }
+}
+
+
+test "the fleet a deploy builds carries the profile's [apps.<name>.scale]" {
+    d = _project_with_profile();
+    old = os.environ.get("JAC_PROFILE");
+    os.environ["JAC_PROFILE"] = "e2e";
+    try {
+        builder = ManifestBuilder(
+            k8s_config=KubernetesConfig(app_name="shop", namespace="shop"),
+            project_dir=d,
+            dry_run=True
+        );
+        builder._fleet(AppConfig(code_folder=d, app_name="shop"));
+        orders = builder._service_config("orders");
+        assert orders["replicas"] == 1 , orders;
+        assert orders["cpu_limit"] == "500m" , orders;
+        assert orders["hpa"]["enabled"] is False , orders;
+        assert orders["rpc_timeout"] == 120.0 , orders;
+    } finally {
+        if old is None {
+            os.environ.pop("JAC_PROFILE", None);
+        } else {
+            os.environ["JAC_PROFILE"] = old;
+        }
+        shutil.rmtree(d, ignore_errors=True);
+    }
+}
+
+
+glob _INTERP_TOML: str = '[project]\n'
+     'name = "shop"\n'
+     'default-app = "web"\n'
+     '\n'
+     '[apps.web]\n'
+     'kind = "web-app"\n'
+     'entry-point = "main"\n'
+     '\n'
+     '[apps.orders]\n'
+     'kind = "service"\n'
+     'entry-point = "orders"\n'
+     'route = "/${ORDERS_ROUTE_SEG}"\n';
+
+
+test "a base app's interpolated value survives a profile that retunes it" {
+    d = tempfile.mkdtemp(prefix="jac-apps-interp-");
+    (Path(d) / "jac.toml").write_text(_INTERP_TOML, encoding="utf-8");
+    (Path(d) / "jac.e2e.toml").write_text(
+        '[apps.orders.scale]\nreplicas = 1\n', encoding="utf-8"
+    );
+    old_seg = os.environ.get("ORDERS_ROUTE_SEG");
+    os.environ["ORDERS_ROUTE_SEG"] = "orders";
+    try {
+        cfg = JacConfig.load(Path(d) / "jac.toml");
+        assert cfg.apps["orders"].route == "/orders" , cfg.apps["orders"].route;
+        cfg.merge_from_toml_file(Path(d) / "jac.e2e.toml");
+        assert cfg.apps["orders"].route == "/orders" , cfg.apps["orders"].route;
+        assert cfg.apps["orders"].overlays["scale"]["replicas"] == 1 , (
+            cfg.apps["orders"].overlays
+        );
+    } finally {
+        if old_seg is None {
+            os.environ.pop("ORDERS_ROUTE_SEG", None);
+        } else {
+            os.environ["ORDERS_ROUTE_SEG"] = old_seg;
+        }
+        shutil.rmtree(d, ignore_errors=True);
+    }
+}
+
+
+test "profile and local app overlays preserve nested pod settings" {
+    d = _project();
+    try {
+        cfg = JacConfig.load(Path(d) / "jac.toml");
+        cfg.environments["preview"] = {
+            "apps": {
+                "orders": {
+                    "scale": {
+                        "replicas": 1,
+                        "deployment_overlay": {
+                            "spec": {
+                                "template": {
+                                    "spec": {
+                                        "initContainers": [
+                                            {
+                                                "name": "install-kubectl",
+                                                "image": "tools"
+                                            }
+                                        ],
+                                        "volumes": [
+                                            {
+                                                "name": "key",
+                                                "secret": {
+                                                    "secretName": "github-app-key"
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        cfg.apply_profile("preview");
+        Path(d, "jac.local.toml").write_text(
+            '[apps.orders.scale]\ncpu_limit = "250m"\n'
+        );
+        cfg.merge_from_toml_file(Path(d, "jac.local.toml"));
+        scale = cfg.apps["orders"].overlays["scale"];
+        assert scale["replicas"] == 1;
+        assert scale["cpu_limit"] == "250m";
+        pod = scale["deployment_overlay"]["spec"]["template"]["spec"];
+        assert pod["initContainers"][0]["name"] == "install-kubectl";
+        assert pod["volumes"][0]["secret"]["secretName"] == "github-app-key";
+        effective = cfg.effective_for_app("orders");
+        assert effective.plugins["scale"]["deployment_overlay"]["spec"]["template"][
+            "spec"
+        ]
+            == pod;
+    } finally {
+        shutil.rmtree(d, ignore_errors=True);
+    }
+}
+
+
+glob _OVERLAY_TOML: str = '[project]\n'
+     'name = "ukey"\n'
+     'default-app = "svc"\n'
+     '\n'
+     '[apps.svc]\n'
+     'kind = "service"\n'
+     'entry-point = "svc"\n'
+     'route = "/api/svc"\n'
+     '\n'
+     '[apps.other]\n'
+     'kind = "service"\n'
+     'entry-point = "other"\n'
+     'route = "/api/other"\n'
+     '\n'
+     '[apps.svc.scale]\n'
+     'rpc_timeout = 30.0\n'
+     'replicas = 2\n'
+     'memory_limit = "1Gi"\n';
+
+
+def _overlay_project(toml: str = _OVERLAY_TOML) -> Path {
+    d = Path(tempfile.mkdtemp(prefix="jac-app-overlay-"));
+    (d / "jac.toml").write_text(toml, encoding="utf-8");
+    for name in ("svc", "other") {
+        (d / f"{name}.jac").write_text("with entry {}\n", encoding="utf-8");
+    }
+    return d;
+}
+
+
+def _serving(d: Path, app_file: str) -> JacScaleConfig {
+    return JacScaleConfig(project_dir=d, entry_path=str(d / app_file));
+}
+
+
+"""Load the scale config as the process serving app_file does, with strict
+validation on; returns the strict error ('' when it loaded) and the config."""
+def _strict_load(d: Path, app_file: str) -> tuple[str, dict[str, any]] {
+    os.environ[STRICT_ENV] = "1";
+    try {
+        return ("", _serving(d, app_file).load());
+    } except ValueError as e {
+        return (str(e), {});
+    } finally {
+        os.environ.pop(STRICT_ENV, None);
+    }
+}
+
+
+test "the process serving an app accepts its own [apps.<name>.scale] keys (#9162)" {
+    d = _overlay_project();
+    reset_scale_config();
+    try {
+        (raised, loaded) = _strict_load(d, "svc.jac");
+        assert raised == "" , (
+            f"per-app keys are applied, so they are not unknown [scale] keys: {raised}"
+        );
+        assert loaded["rpc_timeout"] == 30.0 , loaded;
+        assert loaded["replicas"] == 2 , loaded;
+        assert loaded["memory_limit"] == "1Gi" , loaded;
+        assert _serving(d, "svc.jac").get_app_scale_config("svc")["memory_limit"]
+            == "1Gi";
+        err = io.StringIO();
+        with redirect_stderr(err) {
+            _serving(d, "svc.jac").load();
+        }
+        assert "unknown key" not in err.getvalue() , err.getvalue();
+        (raised, loaded) = _strict_load(d, "other.jac");
+        assert raised == "" , raised;
+        assert "replicas" not in loaded , "another app's overlay never leaks in";
+    } finally {
+        reset_scale_config();
+        shutil.rmtree(d, ignore_errors=True);
+    }
+}
+
+
+test "an unknown [apps.<name>.scale] key is reported under that table" {
+    d = _overlay_project(
+        _OVERLAY_TOML.replace('memory_limit = "1Gi"', 'memory_limits = "1Gi"')
+    );
+    reset_scale_config();
+    try {
+        (raised, _) = _strict_load(d, "svc.jac");
+        assert "[apps.svc.scale] has unknown key 'memory_limits'" in raised , raised;
+        assert "did you mean 'memory_limit'" in raised , raised;
+        assert "[scale]" not in raised , raised;
+        (raised, _) = _strict_load(d, "other.jac");
+        assert raised == "" , f"svc's overlay is not other's: {raised}";
+    } finally {
+        reset_scale_config();
+        shutil.rmtree(d, ignore_errors=True);
+    }
+}
+
+
+test "an unknown project-level [scale] key still fails strict mode while serving an app" {
+    d = _overlay_project(_OVERLAY_TOML + '\n[scale.gatway]\ncolocate = true\n');
+    reset_scale_config();
+    try {
+        (raised, _) = _strict_load(d, "svc.jac");
+        assert "[scale] has unknown key 'gatway'" in raised , raised;
+        assert "did you mean 'gateway'" in raised , raised;
+        assert "rpc_timeout" not in raised , raised;
+    } finally {
+        reset_scale_config();
+        shutil.rmtree(d, ignore_errors=True);
+    }
+}

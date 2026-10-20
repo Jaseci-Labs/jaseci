@@ -1,6 +1,4 @@
-def _isNil(x: any) -> bool {
-    return x is None or x is undefined;
-}
+def _isNil(x: any) -> bool;
 
 impl __jacWirePlatformAdapters -> None {
     globalThis.__jacGetRenderer__ = __jacGetRenderer;
@@ -10,7 +8,7 @@ impl __jacWirePlatformAdapters -> None {
     globalThis.__jacGetLocalStorage__ = __getLocalStorage;
     globalThis.__jacSetLocalStorage__ = __setLocalStorage;
     globalThis.__jacRemoveLocalStorage__ = __removeLocalStorage;
-    globalThis.__jacSeedEndpointEffects__ = lambda -> dict {
+    globalThis.__jacSeedEndpointEffects__ = lambda -> dict[str, any] {
         seed = globalThis.__JAC_INIT__;
         effects: any = seed.endpointEffects if seed else None;
         if effects {
@@ -35,7 +33,9 @@ impl __jacGetRenderer -> any {
     return globalThis.__jacRenderer__;
 }
 
-impl __jacNativeCreate(tag: any, props: dict = {}, children: any = []) -> JsxElement {
+impl __jacNativeCreate(
+    tag: any, props: dict[str, any] = {}, children: any = []
+) -> JsxElement {
     if tag is None {
         tag = React.Fragment;
     }
@@ -95,7 +95,11 @@ impl __jacNativeCreate(tag: any, props: dict = {}, children: any = []) -> JsxEle
     return React.createElement(RNView, debug_adapted, *flat);
 }
 
-impl _adaptProps(tag: str, props: dict) -> dict {
+impl _changeTextHandler(on_change: any) -> Callable[[any], None] {
+    return lambda (text: any) { on_change({"target": {"value": text}}); };
+}
+
+impl _adaptProps(tag: str, props: dict[str, any]) -> dict[str, any] {
     if not props {
         return {};
     }
@@ -109,10 +113,7 @@ impl _adaptProps(tag: str, props: dict) -> dict {
         } elif key == "onClick" {
             out["onPress"] = value;
         } elif key == "onChange" {
-            user_on_change = value;
-            out["onChangeText"] = lambda (text: any) { user_on_change(
-                {"target": {"value": text}}
-            ); };
+            out["onChangeText"] = _changeTextHandler(value);
         } elif key.startswith("data-") or key.startswith("aria-") {
             continue;
         } else {
@@ -122,7 +123,7 @@ impl _adaptProps(tag: str, props: dict) -> dict {
     return out;
 }
 
-impl _textStyleFrom(style: any) -> dict {
+impl _textStyleFrom(style: any) -> dict[str, any] {
     out = {};
     if _isNil(style) {
         return out;
@@ -166,13 +167,14 @@ impl _isAbsoluteImageUri(src: str) -> bool {
     );
 }
 
-impl _adaptImageProps(props: dict) -> dict {
-    out = {** (props or {})};
+impl _adaptImageProps(props: dict[str, any]) -> dict[str, any] {
+    out: dict[str, any] = {** (props or {})};
     src = out["src"] if out["src"] else None;
     if out["alt"] and not out["accessibilityLabel"] {
         out["accessibilityLabel"] = str(out["alt"]);
     }
-    if src is not None and out["source"] is None {
+    cur_source: any = out["source"];
+    if src is not None and cur_source is None {
         if typeof(src) == "number" {
             out["source"] = src;
         } else {
@@ -187,7 +189,7 @@ impl _adaptImageProps(props: dict) -> dict {
                     console.warn(
                         "[jac-native-runtime] Missing Metro asset mapping for token "
                             + str(uri)
-                            + ". Re-run jac build --client react-native."
+                            + ". Re-run jac build <app>."
                     );
                 }
                 out["source"] = {"uri": uri};
@@ -223,7 +225,7 @@ impl _adaptImageProps(props: dict) -> dict {
     return out;
 }
 
-impl _makeNativeLink(link_props: dict, children: list) -> JsxElement {
+impl _makeNativeLink(link_props: dict[str, any], children: list[any]) -> JsxElement {
     href = link_props["href"] if link_props["href"] else None;
     rest = {** link_props};
     if rest["href"] {
@@ -245,7 +247,7 @@ impl _makeNativeLink(link_props: dict, children: list) -> JsxElement {
     return React.createElement(RNText, rest, *children);
 }
 
-impl _toChildrenArray(children: any) -> list {
+impl _toChildrenArray(children: any) -> list[any] {
     if _isNil(children) {
         return [];
     }
@@ -311,7 +313,7 @@ impl _cacheNativeRoutes(route_defs: list[RouteDef]) {
     ];
 }
 
-impl _getNativeRoutes -> list {
+impl _getNativeRoutes -> list[any] {
     routes = globalThis.__jacNativeRouteDefs__;
     if routes and isinstance(routes, list) {
         return routes;
@@ -319,7 +321,9 @@ impl _getNativeRoutes -> list {
     return [];
 }
 
-impl _matchRoutePattern(pattern_path: str, actual_path: str) -> (dict | None) {
+impl _matchRoutePattern(
+    pattern_path: str, actual_path: str
+) -> (dict[str, any] | None) {
     pattern_parts = _splitRouteParts(pattern_path);
     actual_parts = _splitRouteParts(actual_path);
     if len(pattern_parts) != len(actual_parts) {
@@ -355,7 +359,7 @@ impl _lookupRouteByPath(path: str) -> (RouteMatch | None) {
     return None;
 }
 
-impl _lookupRouteByName(name: str) -> (dict | None) {
+impl _lookupRouteByName(name: str) -> (dict[str, any] | None) {
     for route in _getNativeRoutes() {
         if route["name"] == name {
             return route;
@@ -379,7 +383,7 @@ impl _hydratePath(pattern_path: str, params: any) -> str {
     return _normalizeRoutePath("/" + "/".join(hydrated));
 }
 
-impl _stripMetaParams(params: any) -> dict {
+impl _stripMetaParams(params: any) -> dict[str, any] {
     if not params {
         return {};
     }
@@ -390,7 +394,7 @@ impl _stripMetaParams(params: any) -> dict {
     };
 }
 
-impl _performNavigation(nav: any, target: any, options: dict = {}) -> None {
+impl _performNavigation(nav: any, target: any, options: dict[str, any] = {}) -> None {
     if nav is None {
         console.warn("[jac-native-runtime] navigation is unavailable.");
         return;
@@ -451,7 +455,7 @@ impl _performNavigation(nav: any, target: any, options: dict = {}) -> None {
 }
 
 impl _collectNativeRoutes(
-    children: any, parent_path: str, wrappers: list, out_routes: list[RouteDef]
+    children: any, parent_path: str, wrappers: list[any], out_routes: list[RouteDef]
 ) {
     for child in _toChildrenArray(children) {
         if not React.isValidElement(child) {
@@ -506,7 +510,7 @@ impl _makeNativeRouteScreen(route: RouteDef) -> any {
     };
 }
 
-impl __nativeRouter(props: dict = {}) -> JsxElement {
+impl __nativeRouter(props: dict[str, any] = {}) -> JsxElement {
     nav_ref = React.useRef(None);
     React.useEffect(lambda { globalThis.__jacNativeNavigationRef__ = nav_ref; }, []);
     def _flushPendingNavigation {
@@ -524,9 +528,9 @@ impl __nativeRouter(props: dict = {}) -> JsxElement {
     );
 }
 
-impl __nativeRoutes(props: dict = {}) -> JsxElement {
+impl __nativeRoutes(props: dict[str, any] = {}) -> JsxElement {
     routes = React.useMemo(
-        lambda -> list {
+        lambda -> list[RouteDef] {
             out: list[RouteDef] = [];
             _collectNativeRoutes(props["children"], "/", [], out);
             return out;
@@ -536,7 +540,7 @@ impl __nativeRoutes(props: dict = {}) -> JsxElement {
     React.useEffect(lambda { _cacheNativeRoutes(routes); }, [routes]);
 
     screens = React.useMemo(
-        lambda -> list { return [
+        lambda -> list[JsxElement] { return [
             React.createElement(
                 _JAC_NATIVE_STACK.Screen,
                 {
@@ -564,11 +568,11 @@ impl __nativeRoutes(props: dict = {}) -> JsxElement {
     );
 }
 
-impl __nativeRoute(props: dict = {}) -> (JsxElement | None) {
+impl __nativeRoute(props: dict[str, any] = {}) -> (JsxElement | None) {
     return None;
 }
 
-impl __nativeLink(props: dict = {}) -> JsxElement {
+impl __nativeLink(props: dict[str, any] = {}) -> JsxElement {
     to = props.get("to", None) or (props.get("href", None) or "/");
     rest = {** props};
     if rest["to"] {
@@ -596,8 +600,8 @@ impl __nativeLink(props: dict = {}) -> JsxElement {
     return React.createElement(RNPressable, rest, label);
 }
 
-impl __nativeNavigate(props: dict = {}) -> (JsxElement | None) {
-    opts = props or {};
+impl __nativeNavigate(props: dict[str, any] = {}) -> (JsxElement | None) {
+    opts: dict[str, any] = props or {};
     target = opts.get("to", None) or "/";
     should_replace = opts.get("replace", None) == True;
     nav_fn = useNavigate();
@@ -610,11 +614,11 @@ impl __nativeNavigate(props: dict = {}) -> (JsxElement | None) {
     return None;
 }
 
-impl __nativeOutlet(props: dict = {}) -> (JsxElement | None) {
+impl __nativeOutlet(props: dict[str, any] = {}) -> (JsxElement | None) {
     return React.useContext(_JAC_NATIVE_OUTLET_CONTEXT);
 }
 
-impl useRouter -> dict {
+impl useRouter -> dict[str, any] {
     nav_fn = useNavigate();
     location = useLocation();
     params = useParams();
@@ -630,13 +634,13 @@ impl useRouter -> dict {
 
 impl useNavigate -> any {
     nav = jacUseNavigation();
-    def _navigate(target: any, options: (dict | None) = None) {
+    def _navigate(target: any, options: (dict[str, any] | None) = None) {
         _performNavigation(nav, target, options or {});
     }
     return _navigate;
 }
 
-impl useLocation -> dict {
+impl useLocation -> dict[str, any] {
     route = jacUseRoute();
     pathname = "/";
     search = "";
@@ -660,7 +664,7 @@ impl useLocation -> dict {
     return {"pathname": pathname, "search": search, "hash": hash, "state": state};
 }
 
-impl useParams -> dict {
+impl useParams -> dict[str, any] {
     route = jacUseRoute();
     params = route.params if route and route.params else {};
     return _stripMetaParams(params);
@@ -691,20 +695,13 @@ impl __getApiBaseUrl -> str {
         globalThis.__jacWarnedMissingApiBaseUrl__ = True;
         console.warn(
             "[jac-native-runtime] Missing API base URL. Set expo.extra.apiBaseUrl "
-            "or run jac run --client react-native --dev so it is injected."
+            "or run jac run --dev <app> so it is injected."
         );
     }
     return "";
 }
 
-def _nativeStorageCache -> dict {
-    cache: any = globalThis.__jacNativeStorageCache__;
-    if not cache {
-        cache = {};
-        globalThis.__jacNativeStorageCache__ = cache;
-    }
-    return cache;
-}
+def _nativeStorageCache -> dict[str, any];
 
 impl __getLocalStorage(key: str) -> str {
     cache = _nativeStorageCache();
@@ -862,136 +859,39 @@ impl errorOverlay(filePath: str, errors: str) -> JsxElement {
     );
 }
 
-def _unwrapZodSchema(schema_obj: any, depth: int = 0) -> any {
-    max_depth = 10;
-    if not schema_obj or not schema_obj._def or depth >= max_depth {
-        return schema_obj;
-    }
-    type_value = schema_obj._def.type;
-    if type_value == "optional" and schema_obj._def.innerType {
-        return _unwrapZodSchema(schema_obj._def.innerType, depth + 1);
-    }
-    if type_value == "default" and schema_obj._def.innerType {
-        return _unwrapZodSchema(schema_obj._def.innerType, depth + 1);
-    }
-    if schema_obj._def.checks and schema_obj._def.schema {
-        return _unwrapZodSchema(schema_obj._def.schema, depth + 1);
-    }
-    return schema_obj;
+def _unwrapZodSchema(schema_obj: any, depth: int = 0) -> any;
+
+def _getEnumOptions(field_schema: any) -> list[str];
+
+def _setFormField(form: any, field_name: str, value: any);
+
+impl _fieldSetter(form: any, field_name: str, value: any) -> Callable[[], None] {
+    return lambda { _setFormField(form, field_name, value); };
 }
 
-def _getEnumOptions(field_schema: any) -> list {
-    unwrapped = _unwrapZodSchema(field_schema);
-    if unwrapped and unwrapped._def and unwrapped._def.entries {
-        return Object.keys(unwrapped._def.entries);
-    }
-    if unwrapped and unwrapped.`def and unwrapped.`def.entries {
-        return Object.keys(unwrapped.`def.entries);
-    }
-    return [];
+impl _passwordToggle(
+    field_name: str, is_visible: bool, visible: any, set_visible: any
+) -> Callable[[], None] {
+    return lambda {
+        next_visible = {** visible};
+        next_visible[field_name] = not is_visible;
+        set_visible(next_visible);
+    };
 }
 
-def _setFormField(form: any, field_name: str, value: any) {
-    form.setValue(
-        field_name,
-        value,
-        {"shouldDirty": True, "shouldTouch": True, "shouldValidate": True}
-    );
-}
-
-def _fieldErrorMessage(errors: any, field_name: str) -> str {
-    err = errors[field_name] if errors and errors[field_name] else None;
-    if not err {
-        return "";
-    }
-    if err.message {
-        return str(err.message);
-    }
-    return "Invalid value";
-}
+def _fieldErrorMessage(errors: any, field_name: str) -> str;
 
 def _renderSelectField(
-    form: any, field_name: str, selected_value: str, options: list, placeholder: str
-) -> JsxElement {
-    option_children = [];
-    if placeholder and selected_value == "" {
-        option_children.append(
-            React.createElement(
-                RNText,
-                {
-                    "key": "__placeholder__",
-                    "style": {
-                        "marginBottom": 8,
-                        "color": "#6b7280",
-                        "fontStyle": "italic"
-                    }
-                },
-                placeholder
-            )
-        );
-    }
-    for opt in options {
-        opt_value = str(opt);
-        is_selected = selected_value == opt_value;
-        option_children.append(
-            React.createElement(
-                RNPressable,
-                {
-                    "key": f"{field_name}:{opt_value}",
-                    "onPress": lambda { _setFormField(form, field_name, opt_value); },
-                    "style": {
-                        "borderWidth": 1,
-                        "borderColor": ("#2563eb" if is_selected else "#d1d5db"),
-                        "paddingVertical": 10,
-                        "paddingHorizontal": 12,
-                        "borderRadius": 6,
-                        "marginBottom": 6,
-                        "backgroundColor": ("#eff6ff" if is_selected else "#ffffff")
-                    }
-                },
-                React.createElement(RNText, {"style": {"color": "#111827"}}, opt_value)
-            )
-        );
-    }
-    return React.createElement(RNView, {"style": {"marginTop": 2}}, *option_children);
-}
+    form: any,
+    field_name: str,
+    selected_value: str,
+    options: list[str],
+    placeholder: str
+) -> JsxElement;
 
 def _renderRadioField(
-    form: any, field_name: str, selected_value: str, options: list
-) -> JsxElement {
-    option_children = [];
-    for opt in options {
-        opt_value = str(opt);
-        is_selected = selected_value == opt_value;
-        option_children.append(
-            React.createElement(
-                RNPressable,
-                {
-                    "key": f"{field_name}:{opt_value}",
-                    "onPress": lambda { _setFormField(form, field_name, opt_value); },
-                    "style": {
-                        "flexDirection": "row",
-                        "alignItems": "center",
-                        "paddingVertical": 8
-                    }
-                },
-                React.createElement(
-                    RNText,
-                    {
-                        "style": {
-                            "fontSize": 16,
-                            "color": "#2563eb" if is_selected else "#9ca3af",
-                            "marginRight": 8
-                        }
-                    },
-                    "◉" if is_selected else "○"
-                ),
-                React.createElement(RNText, {"style": {"color": "#111827"}}, opt_value)
-            )
-        );
-    }
-    return React.createElement(RNView, {"style": {"marginTop": 2}}, *option_children);
-}
+    form: any, field_name: str, selected_value: str, options: list[str]
+) -> JsxElement;
 
 def _renderTextField(
     field: any,
@@ -1000,88 +900,29 @@ def _renderTextField(
     on_change: any,
     secure: bool,
     has_error: bool
-) -> JsxElement {
-    return React.createElement(
-        RNTextInput,
-        {
-            "placeholder": placeholder,
-            "value": value,
-            "onChangeText": on_change,
-            "onBlur": field.onBlur,
-            "secureTextEntry": secure,
-            "style": {
-                "borderWidth": 1,
-                "borderColor": "#ef4444" if has_error else "#e5e7eb",
-                "padding": 10,
-                "borderRadius": 6,
-                "backgroundColor": "#ffffff",
-                "flex": 1
-            }
-        }
-    );
-}
+) -> JsxElement;
 
 def _renderPasswordRow(
     input_row: JsxElement, is_visible: bool, on_toggle: any
-) -> JsxElement {
-    toggle = React.createElement(
-        RNPressable,
-        {
-            "onPress": on_toggle,
-            "style": {"marginLeft": 8, "paddingVertical": 8, "paddingHorizontal": 10}
-        },
-        React.createElement(
-            RNText,
-            {"style": {"color": "#2563eb", "fontWeight": "600"}},
-            "Hide" if is_visible else "Show"
-        )
-    );
-    return React.createElement(
-        RNView,
-        {"style": {"flexDirection": "row", "alignItems": "center"}},
-        input_row,
-        toggle
-    );
-}
+) -> JsxElement;
 
 def _renderSubmitButton(
     is_submitting: bool, is_dirty: bool, submit_label: str, on_press: any
-) -> JsxElement {
-    return React.createElement(
-        RNPressable,
-        {
-            "onPress": on_press,
-            "disabled": is_submitting or not is_dirty,
-            "style": {
-                "backgroundColor": "#2563eb"
-                    if (is_dirty and not is_submitting)
-                    else "#9ca3af",
-                "padding": 12,
-                "borderRadius": 6,
-                "marginTop": 12
-            }
-        },
-        React.createElement(
-            RNText,
-            {"style": {"color": "white", "textAlign": "center", "fontWeight": "600"}},
-            "Submitting..." if is_submitting else submit_label
-        )
-    );
-}
+) -> JsxElement;
 
 impl JacForm(props: dict[str, any]) -> JsxElement {
     schema = props["schema"];
     onSubmit = props["onSubmit"];
     validate_mode = props.get("validateMode", None) or "onTouched";
     submitLabel = props.get("submitLabel", None) or "Submit";
-    field_config = props.get("field_config", None) or {};
+    field_config: any = props.get("field_config", None) or {};
     actualSchema = schema;
     try {
         if schema._def and schema._def.schema {
             actualSchema = schema._def.schema;
         }
     } except Exception {}
-    schemaShape = actualSchema.shape or {};
+    schemaShape: dict[str, any] = actualSchema.shape or {};
     fieldNames = Object.keys(schemaShape);
     form = useJacForm(validate_mode, schema);
     errors = form.formState.errors;
@@ -1090,7 +931,7 @@ impl JacForm(props: dict[str, any]) -> JsxElement {
     [passwordVisible, setPasswordVisible] = useState({});
     fields = [];
     for fieldName in fieldNames {
-        config = field_config.get(fieldName, None) or {};
+        config: any = field_config.get(fieldName, None) or {};
         label = config.get("label", None) or fieldName;
         placeholder = str(config.get("placeholder", None) or "");
         field_type = str(config.get("type", None) or config.get("key", None) or "text");
@@ -1128,11 +969,9 @@ impl JacForm(props: dict[str, any]) -> JsxElement {
             input_row = _renderPasswordRow(
                 input_row,
                 is_visible,
-                lambda {
-                    next_visible = {** passwordVisible};
-                    next_visible[fieldName] = not is_visible;
-                    setPasswordVisible(next_visible);
-                }
+                _passwordToggle(
+                    fieldName, is_visible, passwordVisible, setPasswordVisible
+                )
             );
         }
         error_view = None;
@@ -1187,4 +1026,65 @@ impl __jacInstallErrorHandlers -> None {
     } except Exception as e {
         console.warn("[jac-native-runtime] Failed to install ErrorUtils handler", e);
     }
+}
+
+impl _isNil(x: any) -> bool {
+    return x is None or x is undefined;
+}
+
+impl _nativeStorageCache -> dict[str, any] {
+    cache: any = globalThis.__jacNativeStorageCache__;
+    if not cache {
+        cache = {};
+        globalThis.__jacNativeStorageCache__ = cache;
+    }
+    return cache;
+}
+
+impl _unwrapZodSchema(schema_obj: any, depth: int = 0) -> any {
+    max_depth = 10;
+    if not schema_obj or not schema_obj._def or depth >= max_depth {
+        return schema_obj;
+    }
+    type_value = schema_obj._def.type;
+    if type_value == "optional" and schema_obj._def.innerType {
+        return _unwrapZodSchema(schema_obj._def.innerType, depth + 1);
+    }
+    if type_value == "default" and schema_obj._def.innerType {
+        return _unwrapZodSchema(schema_obj._def.innerType, depth + 1);
+    }
+    if schema_obj._def.checks and schema_obj._def.schema {
+        return _unwrapZodSchema(schema_obj._def.schema, depth + 1);
+    }
+    return schema_obj;
+}
+
+impl _getEnumOptions(field_schema: any) -> list[str] {
+    unwrapped = _unwrapZodSchema(field_schema);
+    if unwrapped and unwrapped._def and unwrapped._def.entries {
+        return Object.keys(unwrapped._def.entries);
+    }
+    if unwrapped and unwrapped.`def and unwrapped.`def.entries {
+        return Object.keys(unwrapped.`def.entries);
+    }
+    return [];
+}
+
+impl _setFormField(form: any, field_name: str, value: any) {
+    form.setValue(
+        field_name,
+        value,
+        {"shouldDirty": True, "shouldTouch": True, "shouldValidate": True}
+    );
+}
+
+impl _fieldErrorMessage(errors: any, field_name: str) -> str {
+    err = errors[field_name] if errors and errors[field_name] else None;
+    if not err {
+        return "";
+    }
+    if err.message {
+        return str(err.message);
+    }
+    return "Invalid value";
 }

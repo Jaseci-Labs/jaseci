@@ -24,6 +24,8 @@ cannot make: the binder retains no function pointer, so both sides of it
 are the source lane until #8288 M1 rung 3.
 """
 
+import from jaclang.compiler.passes.execution { run_walker }
+
 import ast as pyast;
 import marshal;
 import os;
@@ -33,19 +35,37 @@ import from tests.support { JAC_ROOT }
 import jaclang.compiler.frontend.unitree as uni;
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.compiler.driver.compile_options { CompileOptions }
-import from jaclang.compiler.driver.schedules { get_py_code_gen }
+import from jaclang.compiler.driver.pipeline { product_passes }
+import from jaclang.compiler.driver.pipeline_types {
+    CompilationProduct,
+    ProductRequest
+}
+
+"""The passes a module's codegen requests, in order: the shared lowering, the Python IR, the structure freeze."""
+def codegen_lane(native: bool) -> list[type] {
+    lane: list[type] = [];
+    for product in (
+        CompilationProduct.CODEGEN,
+        CompilationProduct.PY_IR,
+        CompilationProduct.FROZEN
+    ) {
+        lane.extend(product_passes(product, ProductRequest(native=native)));
+    }
+    return lane;
+}
+
 import from jaclang.compiler.backends.py.jcir_bc_gen_pass { JcirBytecodeGenPass }
 import from jaclang.compiler.backends.py.jcir_gen_pass { JcirGenPass }
 import from jaclang.compiler.backends.py.codegen_shim { compile_ir, transcribe }
 
 """Compile a source string, then re-emit it: (pipeline tree, fresh tree, bytes)."""
-def dual_compile(src: str, path: str) -> tuple {
+def dual_compile(src: str, path: str, *, codespace: str = "server") -> tuple[any, ...] {
     prog = JacProgram();
     mod = prog.compile(
         use_str=src,
         file_path=path,
         options=CompileOptions(
-            force_codespace="server",
+            force_codespace=codespace,
             skip_native_engine=True,
             no_ir_cache=True,
             suppress_codes=["E5092"]
@@ -53,7 +73,7 @@ def dual_compile(src: str, path: str) -> tuple {
     );
     assert len(prog.errors_had) == 0 , str([str(e) for e in prog.errors_had]);
     ref_tree = mod.gen.py_ast[0];
-    emitter = JcirGenPass(ir_in=mod);
+    emitter = run_walker(JcirGenPass, module=mod);
     blob = emitter.ir_bytes();
     (mods, diags) = transcribe(blob);
     assert diags == [];
@@ -63,12 +83,12 @@ def dual_compile(src: str, path: str) -> tuple {
 }
 
 """The same double emission, for a fixture that must be compiled from disk."""
-def dual_compile_file(path: str) -> tuple {
+def dual_compile_file(path: str) -> tuple[any, ...] {
     prog = JacProgram();
-    mod = prog.compile(path, options=CompileOptions(no_ir_cache=True));
+    mod = prog.compile(path, options=CompileOptions());
     assert len(prog.errors_had) == 0 , str([str(e) for e in prog.errors_had]);
     ref_tree = mod.gen.py_ast[0];
-    emitter = JcirGenPass(ir_in=mod);
+    emitter = run_walker(JcirGenPass, module=mod);
     blob = emitter.ir_bytes();
     (mods, diags) = transcribe(blob);
     assert diags == [];
@@ -97,7 +117,7 @@ def assert_dump_equal(ref_tree: any, got_tree: any) {
     }
 }
 
-def code_diffs(a: any, b: any, path: str, out: list) -> list {
+def code_diffs(a: any, b: any, path: str, out: list[any]) -> list[any] {
     for attr in [
         "co_name",
         "co_qualname",
@@ -144,9 +164,9 @@ def assert_bytecode_equal(ref_tree: any, mod_path: str, bytecode: bytes) {
     assert diffs == [] , "\n".join(diffs);
 }
 
-def exec_both(ref_tree: any, got_tree: any, path: str, names: list) {
-    ref_ns: dict = {};
-    got_ns: dict = {};
+def exec_both(ref_tree: any, got_tree: any, path: str, names: list[any]) {
+    ref_ns: dict[str, any] = {};
+    got_ns: dict[str, any] = {};
     pyexec(pycompile(ref_tree, path, "exec"), ref_ns);
     pyexec(pycompile(got_tree, path, "exec"), got_ns);
     for name in names {
@@ -388,7 +408,7 @@ with entry {
 
 test "expression forms match" {
     src = """
-def exprs(a: int, b: int) -> dict {
+def exprs(a: int, b: int) -> dict[any, any] {
     lst = [a, b, a + b];
     st = {a, b};
     tp = (a, b);
@@ -435,7 +455,7 @@ obj Box {
         label: str = "leaf";
 }
 
-def probe(b: (Box | None)) -> tuple {
+def probe(b: (Box | None)) -> tuple[any, ...] {
     lab = b?.label;
     deep = b.inner?.label if b else None;
     ms = "one "
@@ -467,7 +487,7 @@ def make_adder(n: int) -> any {
 def block_lambda_user -> int {
     fn = lambda (x: int) -> int {
         y = x * 2;
-        return y + 1;
+        return y + 1 + (_jac_lambda_1 - 123);
     };
     return apply(fn, 10) + apply(make_adder(5), 1);
 }
@@ -479,15 +499,42 @@ def defaulted(cb: any = lambda {
     return cb();
 }
 
+def nested -> int {
+    return (lambda {
+        outer = 7;
+        return (lambda { inner = outer + 1; return inner; })();
+    })();
+}
+
+def comprehension -> list[int] {
+    callbacks = [lambda { value = i + 1; return value; } for i in [1, 2]];
+    assert callbacks[0] is not callbacks[1];
+    return [callback() for callback in callbacks];
+}
+
+def iterable_scope -> list[int] {
+    outer = [1, 2];
+    return [value for value in (lambda { result = outer; return result; })()];
+}
+
+glob _jac_lambda_1 = 123;
+
 with entry {
     r1 = block_lambda_user();
     r2 = defaulted();
+    r3 = nested();
+    r4 = comprehension();
+    r5 = iterable_scope();
+    assert r3 == 8;
+    assert r4 == [2, 3];
+    assert r5 == [1, 2];
+    assert _jac_lambda_1 == 123;
 }
 """;
     (ref_tree, got_tree, _) = dual_compile(src, "lambda_fixture.jac");
     assert_dump_equal(ref_tree, got_tree);
-    exec_both(ref_tree, got_tree, "lambda_fixture.jac", ["r1", "r2"]);
-    missing: list = [];
+    exec_both(ref_tree, got_tree, "lambda_fixture.jac", ["r1", "r2", "r3", "r4", "r5"]);
+    missing: list[str] = [];
     for node in pyast.walk(got_tree) {
         if "lineno" in node._attributes {
             # `lineno` lives on concrete nodes, not the `AST` base the stub
@@ -640,7 +687,9 @@ test "doubles correctly" {
     assert double(2) == 4;
 }
 """;
-    (ref_tree, got_tree, blob) = dual_compile(src, "testblock_fixture.jac");
+    (ref_tree, got_tree, blob) = dual_compile(
+        src, "testblock_fixture.jac", codespace="native"
+    );
     assert_dump_equal(ref_tree, got_tree);
     result = compile_ir(blob);
     assert len(result.diags) == 0;
@@ -679,7 +728,7 @@ with entry {
 test "llm ability bodies lower to call_llm recipes" {
     src = """
 obj FakeModel {
-    has call_params: dict = {};
+    has call_params: dict[any, any] = {};
 }
 
 def make_model -> FakeModel {
@@ -720,7 +769,7 @@ node Spot {
     has name: str = "";
 }
 
-edge Road {}
+edge Road : Spot --> Spot {}
 
 walker Traveler {
     has seen: list[str] = [],
@@ -749,7 +798,7 @@ walker Traveler {
     }
 }
 
-def build_map -> list {
+def build_map -> list[any] {
     a = Spot(name="a");
     b = Spot(name="b");
     root ++> a;
@@ -857,7 +906,7 @@ with entry {
 
 test "real repo walker file social_graph lowers identically" {
     path = os.path.join(
-        JAC_ROOT, "examples", "jaclang_org", "socialize", "social_graph.jac"
+        JAC_ROOT, "examples", "jaclang_org", "core", "social_graph.jac"
     );
     (ref_tree, got_tree, blob) = dual_compile_file(path);
     assert_dump_equal(ref_tree, got_tree);
@@ -893,9 +942,9 @@ with entry {
     assert len(prog.errors_had) == 0 , str([str(e) for e in prog.errors_had]);
     assert mod.gen.jcir , "a compiled module must carry its codegen container";
     assert mod.gen.py_bytecode;
-    sched = get_py_code_gen(native=False);
+    sched = codegen_lane(False);
     assert JcirGenPass in sched , f"jcir is not in the codegen schedule: {sched}";
-    assert JcirBytecodeGenPass in sched;
+    assert JcirBytecodeGenPass not in sched;
     for `entry in sched {
         assert "Pyast" not in `entry.__name__ and "PyBytecode" not in `entry.__name__ , (
             f"a legacy emitter is back in the codegen schedule: {`entry.__name__}"
@@ -910,7 +959,7 @@ with entry {
 test "server-side jsx lowers to jaclib jsx calls" {
     import tempfile;
     src = """
-def page(title: str, items: list[str], extra: dict) -> JsxElement {
+def page(title: str, items: list[str], extra: dict[any, any]) -> JsxElement {
     rows = [<li key={it}>{it}</li> for it in items];
     return <div title="box" active data={len(items)}>
         <h1>Hello &amp; {title}</h1>
@@ -959,7 +1008,7 @@ def f -> int {
     calls[0].genai_call = calls[0].target;
     caught_jcir = "";
     try {
-        JcirGenPass(ir_in=mod);
+        run_walker(JcirGenPass, module=mod);
     } except NotImplementedError as e {
         caught_jcir = str(e);
     }

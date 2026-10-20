@@ -1,14 +1,4 @@
 import asyncio;
-import from jaclang.scale.runtime.middleware.ws_forward {
-    _to_ws_scheme,
-    _select_handshake_headers,
-    websocket_forward
-}
-import from jaclang.scale.runtime.transport.http_forward {
-    ForwardResult,
-    stream_forward,
-    raw_forward
-}
 
 
 test "ws scheme rewrite: http -> ws" {
@@ -84,11 +74,6 @@ test "handshake headers are case-insensitive on the filter" {
 The forwarders used to be exercised against an aiohttp server; the runtime no
 longer depends on aiohttp, so the upstream is the same server jac ships."""
 def _spawn_upstream -> tuple[object, object, str] {
-    import from jaclang.server.serving.app { ServingApp }
-    import from jaclang.server.serving.datatypes { Request, Response }
-    import from jaclang.server.serving.endpoint { HTTPMethod, JEndPoint }
-    import from jaclang.server.serving.server { ServingServer }
-
     def echo(request: Request) -> Response {
         return Response(content=request.body, media_type="application/octet-stream");
     }
@@ -139,7 +124,7 @@ def _run(coro: any) -> any {
 
 
 test "stream_forward streams SSE end-to-end with Content-Type preserved" {
-    async def body -> dict {
+    async def body -> dict[str, any] {
         (stop_upstream, server, base) = _spawn_upstream();
         try {
             fr = await stream_forward("GET", f"{base}/sse", {}, b"");
@@ -165,7 +150,7 @@ test "stream_forward streams SSE end-to-end with Content-Type preserved" {
 
 
 test "stream_forward streams chunked large body without buffering" {
-    async def body -> dict {
+    async def body -> dict[str, any] {
         (stop_upstream, server, base) = _spawn_upstream();
         try {
             fr = await stream_forward("GET", f"{base}/big", {}, b"");
@@ -192,7 +177,7 @@ test "stream_forward streams chunked large body without buffering" {
 
 
 test "stream_forward.cleanup closes session without streaming" {
-    async def body -> dict {
+    async def body -> dict[str, any] {
         (stop_upstream, server, base) = _spawn_upstream();
         try {
             fr = await stream_forward("GET", f"{base}/fourofour", {}, b"");
@@ -273,10 +258,8 @@ test "ws route rejects with 1012 during drain" {
     import from jaclang.scale.runtime.gateway.microservice_gateway {
         MicroserviceGateway
     }
-    import from jaclang.scale.runtime.lifecycle.drain { reset_drain, start_drain }
     import from jaclang.testing.testkit { ServingTestClient as TestClient }
 
-    reset_drain();
     reg = ServiceRegistry();
     reg.register(
         ServiceEntry(
@@ -292,7 +275,7 @@ test "ws route rejects with 1012 during drain" {
     gw.setup();
 
     client = TestClient(gw.app);
-    start_drain(10.0);
+    gw.drain.start("test");
     try {
         raised = False;
         try {
@@ -304,14 +287,14 @@ test "ws route rejects with 1012 during drain" {
         }
         assert raised;
     } finally {
-        reset_drain();
+        gw.drain.reset();
     }
 }
 
 
 obj FakeClientWS {
     has inbound: any,
-        sent: list,
+        sent: list[tuple[str, str | bytes]],
         closed: bool = False,
         close_code: int = 0,
         client_host: str = "",
@@ -321,7 +304,7 @@ obj FakeClientWS {
         self.accepts.append(subprotocol);
     }
 
-    async def receive -> dict {
+    async def receive -> dict[str, any] {
         return await self.inbound.get();
     }
 
@@ -342,12 +325,8 @@ obj FakeClientWS {
 
 """Upstream websocket echo, served by the native ws codec."""
 def _spawn_ws_upstream(
-    captured_headers: list | None = None
+    captured_headers: list[any] | None = None
 ) -> tuple[object, object, str] {
-    import from jaclang.server.serving.app { ServingApp }
-    import from jaclang.server.serving.endpoint { WSEndPoint }
-    import from jaclang.server.serving.server { ServingServer }
-
     async def ws_echo(ws: any) {
         if captured_headers is not None {
             captured_headers.append(dict(ws.headers.items()));
@@ -377,7 +356,7 @@ def _spawn_ws_upstream(
 }
 
 test "websocket_forward round-trips text and binary through a real upstream ws" {
-    async def body -> dict {
+    async def body -> dict[str, any] {
         upstream_headers: list[dict[str, str]] = [];
         (stop_upstream, server, base) = _spawn_ws_upstream(upstream_headers);
         try {
@@ -437,7 +416,7 @@ test "websocket_forward round-trips text and binary through a real upstream ws" 
 
 
 test "websocket_forward closes the client with 1011 when the upstream handshake fails" {
-    async def body -> dict {
+    async def body -> dict[str, any] {
         client = FakeClientWS(inbound=asyncio.Queue(), sent=[]);
         await websocket_forward(client, "http://127.0.0.1:1/ws", {});
         return {"closed": client.closed, "code": client.close_code};
@@ -450,10 +429,6 @@ test "websocket_forward closes the client with 1011 when the upstream handshake 
 
 """Upstream that selects a subprotocol, the way vite's HMR server does."""
 def _spawn_ws_upstream_with_protocol(protocol: str) -> tuple[any, any, str] {
-    import from jaclang.server.serving.app { ServingApp }
-    import from jaclang.server.serving.endpoint { WSEndPoint }
-    import from jaclang.server.serving.server { ServingServer }
-
     async def ws_echo(ws: any) {
         offered: str = str(ws.headers.get("sec-websocket-protocol") or "");
         await ws.accept(subprotocol=protocol if protocol in offered else "");
@@ -477,7 +452,7 @@ def _spawn_ws_upstream_with_protocol(protocol: str) -> tuple[any, any, str] {
 
 
 test "the client is accepted once, after the upstream chose the subprotocol" {
-    async def body -> dict {
+    async def body -> dict[str, any] {
         (stop_upstream, server, base) = _spawn_ws_upstream_with_protocol("vite-hmr");
         try {
             client = FakeClientWS(
@@ -516,7 +491,7 @@ test "the client is accepted once, after the upstream chose the subprotocol" {
 
 
 test "a failed upstream handshake never accepts the client" {
-    async def body -> dict {
+    async def body -> dict[str, any] {
         client = FakeClientWS(
             inbound=asyncio.Queue(), sent=[], accepts=[], client_host="127.0.0.1"
         );

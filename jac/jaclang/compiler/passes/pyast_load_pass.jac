@@ -1,112 +1,10 @@
 import ast as py_ast;
 import os;
 import re;
-import from threading { Event }
 import from typing { TypeAlias, cast }
-import from jaclang.compiler.frontend.unitree {
-    Ability,
-    ArchBlockStmt,
-    Archetype,
-    AssertStmt,
-    Assignment,
-    AtomExpr,
-    AtomTrailer,
-    AtomUnit,
-    AwaitExpr,
-    BinaryExpr,
-    Bool,
-    BoolExpr,
-    CfgExpr,
-    CodeBlockStmt,
-    CompareExpr,
-    CtrlStmt,
-    DeleteStmt,
-    DictCompr,
-    DictVal,
-    ElementStmt,
-    Ellipsis as UniEllipsis,
-    ElseIf,
-    ElseStmt,
-    EmptyToken,
-    Enum,
-    Except,
-    Expr,
-    ExprAsItem,
-    ExprStmt,
-    FString,
-    FinallyStmt,
-    Float,
-    FormattedValue,
-    FuncCall,
-    FuncSignature,
-    GenCompr,
-    IfElseExpr,
-    IfStmt,
-    Import,
-    InForStmt,
-    IndexSlice,
-    InnerCompr,
-    Int,
-    KVPair,
-    KWPair,
-    LambdaExpr,
-    ListCompr,
-    ListVal,
-    Literal,
-    MatchArch,
-    MatchAs,
-    MatchCase,
-    MatchKVPair,
-    MatchMapping,
-    MatchOr,
-    MatchPattern,
-    MatchSequence,
-    MatchSingleton,
-    MatchStar,
-    MatchStmt,
-    MatchValue,
-    MatchWild,
-    Module,
-    ModuleCode,
-    ModuleItem,
-    ModulePath,
-    MultiString,
-    Name,
-    NameAtom,
-    Null,
-    ParamKind,
-    ParamVar,
-    PythonModuleAst,
-    RaiseStmt,
-    ReturnStmt,
-    Semi,
-    SetCompr,
-    SetVal,
-    Slice,
-    Source,
-    SpecialVarRef,
-    String,
-    SubTag,
-    Token,
-    TryStmt,
-    TupleVal,
-    UnaryExpr,
-    UniNode,
-    WhileStmt,
-    WithStmt,
-    YieldExpr
-}
-import from jaclang.compiler.frontend.constant { Tokens as Tok, RESERVED_IDENT_NAMES }
-import from jaclang.compiler.frontend.diagnostics { E5041, E5042 }
-import from jaclang.compiler.passes.transform { Transform }
-import from jaclang.compiler.frontend.roles {
-    NameRefRole,
-    ReturnTypeRole,
-    UnpackRole,
-    ValueRole
-}
 
 glob T = TypeVar('T', bound=UniNode),
+     ComprT = TypeVar('ComprT', bound=ListCompr),
      _reserved_keywords = RESERVED_IDENT_NAMES;
 
 glob PyPositioned: TypeAlias = py_ast.stmt
@@ -120,9 +18,9 @@ glob PyPositioned: TypeAlias = py_ast.stmt
          | py_ast.SetComp
          | py_ast.GeneratorExp;
 
-walker PyastBuildPass(Transform) {
-    has ir_in: PythonModuleAst,
-        cancel_token: Event | None = None,
+walker PyastBuildPass(CompilerPass) {
+    static has contract: PassContract = PassContract();
+    has module: UniNode,
         mod_path: str postinit,
         orig_src: Source postinit,
         _source_lines: list[str] postinit,
@@ -146,7 +44,6 @@ walker PyastBuildPass(Transform) {
 
     def is_canceled -> bool;
     def convert(nd: py_ast.AST) -> UniNode;
-    def transform(ir_in: PythonModuleAst) -> Module;
     def _run_impl(ir_in: PythonModuleAst) -> Module;
     can run_walk with PythonModuleAst entry;
     def extract_with_entry(
@@ -185,12 +82,12 @@ walker PyastBuildPass(Transform) {
     def proc_continue(nd: py_ast.Continue) -> CtrlStmt;
     def proc_dict(nd: py_ast.Dict) -> DictVal;
     def proc_dict_comp(nd: py_ast.DictComp) -> DictCompr;
-    def proc_ellipsis(nd: py_ast.Constant) {}
+    def proc_ellipsis(nd: py_ast.Constant);
     def proc_except_handler(nd: py_ast.ExceptHandler) -> Except;
     def proc_expr(nd: py_ast.Expr) -> ExprStmt;
     def proc_formatted_value(nd: py_ast.FormattedValue) -> FormattedValue;
-    def proc_function_type(nd: py_ast.FunctionType) {}
-    def proc_interactive(nd: py_ast.Interactive) {}
+    def proc_function_type(nd: py_ast.FunctionType);
+    def proc_interactive(nd: py_ast.Interactive);
     def proc_template_str(nd: py_ast.AST) -> UniNode;
     def proc_interpolation(nd: py_ast.AST) -> UniNode;
     def proc_generator_exp(nd: py_ast.GeneratorExp) -> GenCompr;
@@ -216,7 +113,7 @@ walker PyastBuildPass(Transform) {
     def proc_nonlocal(nd: py_ast.Nonlocal) -> Semi;
     def proc_pass(nd: py_ast.Pass) -> Semi;
     def proc_set(nd: py_ast.Set) -> SetVal;
-    def _proc_compr(nd: PyComprehensionNode, compr_cls: type[T]) -> T;
+    def _proc_compr(nd: PyComprehensionNode, compr_cls: type[ComprT]) -> ComprT;
     def proc_set_comp(nd: py_ast.SetComp) -> ListCompr;
     def proc_slice(nd: py_ast.Slice) -> IndexSlice;
     def proc_starred(nd: py_ast.Starred) -> UnaryExpr;
@@ -263,10 +160,12 @@ walker PyastBuildPass(Transform) {
     def proc_keyword(nd: py_ast.keyword) -> KWPair;
     def proc_match_case(nd: py_ast.match_case) -> MatchCase;
     def proc_withitem(nd: py_ast.withitem) -> ExprAsItem;
-    def proc_param_spec(nd: py_ast.ParamSpec) {}
-    def proc_type_alias(nd: py_ast.TypeAlias) {}
-    def proc_type_var(nd: py_ast.TypeVar) {}
-    def proc_type_var_tuple(nd: py_ast.TypeVarTuple) {}
+    def proc_param_spec(nd: py_ast.ParamSpec);
+    def proc_type_alias(nd: py_ast.TypeAlias);
+    def proc_type_var(nd: py_ast.TypeVar);
+    def proc_type_var_tuple(nd: py_ast.TypeVarTuple);
     def convert_to_doc(string: String) -> None;
-    def aug_op_map(tok_dict: dict, op: Token) -> str;
+    def aug_op_map(tok_dict: dict[str, str], op: Token) -> str;
 }
+
+def build_python_module(py_mod: PythonModuleAst) -> Module;

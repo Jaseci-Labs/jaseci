@@ -18,10 +18,11 @@ obj ServiceEntry {
         env: dict[str, str] = {},
         url: str = "",
         page_url: str = "",
+        host_override: str = "",
         pid: int | None = None,
         status: ServiceStatus = ServiceStatus.REGISTERED,
         last_health_check: datetime | None = None,
-        is_app: bool = False,
+        is_root: bool = False,
         serves_client: bool = False;
 
     def is_routable -> bool;
@@ -30,13 +31,13 @@ obj ServiceEntry {
 
 obj ServiceRegistry {
     has entries: dict[str, ServiceEntry] = {},
+        root_app: str = "",
         _sorted_prefixes: list[tuple[str, str]] = [];
 
     def register(service_entry: ServiceEntry) -> None;
     def deregister(name: str) -> bool;
+    def root_entry -> ServiceEntry | None;
     def match_route(path: str) -> ServiceEntry | None;
-    def app_entry -> ServiceEntry | None;
-    def fleet_app_entry -> ServiceEntry | None;
-    def health_summary -> dict[str, dict];
+    def health_summary -> dict[str, dict[str, any]];
     def _rebuild_prefix_index -> None;
 }

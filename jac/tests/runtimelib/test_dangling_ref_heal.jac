@@ -10,8 +10,9 @@ a corrupted database must exit 0 and return the surviving neighbours; these
 tests corrupt the store out of band and drive the real read path end to end.
 """
 
+import from tests.support { jac_command }
+
 import subprocess;
-import sys;
 import from pathlib { Path }
 import from tempfile { TemporaryDirectory }
 import from uuid { UUID }
@@ -21,13 +22,9 @@ import from jaclang.data.store { PgStore, TxnIsolation }
 
 
 """Run `python -m jaclang <args>` in cwd; return (rc, stdout, stderr)."""
-def _jac(cwd: str, args: list) -> tuple[int, str, str] {
+def _jac(cwd: str, args: list[any]) -> tuple[int, str, str] {
     result = subprocess.run(
-        [sys.executable, "-m", "jaclang"] + args,
-        cwd=cwd,
-        capture_output=True,
-        text=True,
-        timeout=180
+        jac_command() + args, cwd=cwd, capture_output=True, text=True, timeout=180
     );
     return (int(result.returncode), str(result.stdout), str(result.stderr));
 }
@@ -132,9 +129,9 @@ test "traversal skips an edge whose target node was deleted (ghost endpoint)" {
             st.rows(
                 """
                 SELECT id FROM anchors
-                WHERE kind = 'NodeAnchor' AND arch_type = 'Thing' LIMIT 1
+                WHERE kind = 'NodeAnchor' AND arch_type = :type LIMIT 1
                 """,
-                {}
+                {'type': 'jac:["ghost_endpoint","app"].Thing'}
             )[0][0]
         );
         st.rows("DELETE FROM anchors WHERE id = CAST(:i AS uuid)", {'i': ghost});

@@ -8,6 +8,7 @@ is present, and compares the materialized tree against the store parser's
 tree for the same source.
 """
 
+import from jaclang.compiler.frontend.roles { Kid }
 import os;
 
 glob SHAPE_EXPORTED: set[str] = {"BodyRole", "SpecRole", "AccessorsRole"};
@@ -29,7 +30,7 @@ def _shape_consulted_roles -> (set[str] | None) {
     }
     pat = re.compile(r"_role_shaped\(\s*(\w+)");
     found: set[str] = set();
-    for rel in ("unitree.impl/roles.impl.jac", "impl/unitree.impl.jac") {
+    for rel in ("unitree.impl/roles.impl.jac", "unitree.impl/nodes.impl.jac") {
         path = os.path.join(base, rel);
         if not os.path.isfile(path) {
             continue;
@@ -78,8 +79,8 @@ with entry {
 }
 """;
 
-def _profile(nd: any) -> list {
-    out: list = [];
+def _profile(nd: any) -> list[any] {
+    out: list[any] = [];
     stack = [nd];
     while stack {
         cur = stack.pop();
@@ -89,7 +90,7 @@ def _profile(nd: any) -> list {
             row.append(v);
         }
         out.append(row);
-        kids = list(cur.kid);
+        kids = list([cur->:Kid:->]);
         kids.reverse();
         for k in kids {
             stack.append(k);
@@ -109,6 +110,9 @@ test "kernel parse materializes the store parser's tree" {
         (nat_mod, nat_err) = parse_woven(SNIPPET, "kernel_eq.jac", None, []);
         (py_mod, py_err) = parse(SNIPPET, "kernel_eq.jac");
         assert nat_err == py_err;
+        assert nat_mod._gen is None;
+        import from jaclang.compiler.frontend.codeinfo { CodeGenTarget }
+        assert isinstance(nat_mod.gen, CodeGenTarget);
         assert kernel.skipped() == 0 , (
             "kernel skipped objects during materialization"
         );
@@ -133,6 +137,45 @@ def _rss_kb -> (int | None) {
         return None;
     }
     return None;
+}
+
+test "kernel materialization releases every borrowed input reference" {
+    import ctypes;
+    import from jaclang.compiler.native_compiler { ensure_loaded }
+    import from jaclang.compiler.frontend.codeinfo { HDR_RC_OFF }
+    kernel = ensure_loaded();
+    if kernel is None {
+        return;
+    }
+    src = b'def f(x: int) -> int { return x + 1; }';
+    path = b'kernel_ownership.jac';
+    source_root = kernel.lib.jac_str_new(src, len(src));
+    path_root = kernel.lib.jac_str_new(path, len(path));
+    release = kernel.lib.jac_release;
+    release.argtypes = [ctypes.c_void_p];
+    release.restype = None;
+    try {
+        assert kernel.lib.jc_run(
+            source_root, source_root, len(src), path_root, path_root, len(path)
+        )
+            == 0;
+        mod = kernel.take_module();
+        assert mod is not None;
+        assert mod.persistence == [] , "persistence facts are stamped after parsing";
+        assert not kernel.take_diags();
+        assert not kernel.take_lexdiags();
+        kernel.take_comments();
+        for (name, buffer_ptr) in [("source", source_root), ("path", path_root)] {
+            refs = ctypes.c_int64.from_address(buffer_ptr + HDR_RC_OFF).value;
+            assert refs == 1 , (
+                f"{name} has {refs} native references after materialization; "
+                "only the caller's reference may survive the parse region"
+            );
+        }
+    } finally {
+        release(path_root);
+        release(source_root);
+    }
 }
 
 def _parse_and_drop(src: str, path: str) {
@@ -178,5 +221,42 @@ test "kernel parses retain no native memory once the tree is handed over" {
                 "the parse region is not being dropped at the end of jc_run"
             );
         }
+    }
+}
+
+
+test "a checkout without a current kernel parses with the store parser" {
+    # Resolving never builds a kernel (the artifact router): a checkout whose
+    # kernel and kit kernel are both stale runs the compiler from bytecode
+    # with the store parser until `jac native build kernel` publishes one.
+    import from unittest.mock { patch }
+    import jaclang.artifacts.router as router;
+    import from jaclang.artifacts.model { Probe }
+    import jaclang.compiler.backends.native.kernel_resolve as resolver;
+    import from jaclang.compiler.native_compiler { ensure_loaded, reset_loaded }
+    reset_loaded();
+    router.forget();
+    try {
+        with patch.object(router, "_omitted", return_value=frozenset()) {
+            with patch.object(resolver, "_from_sealed_image", return_value=None) {
+                with patch.object(
+                    resolver.KernelArtifact,
+                    "probe_checkout",
+                    return_value=Probe.stale(["a unit changed"])
+                ) {
+                    with patch.object(
+                        resolver.KernelArtifact,
+                        "probe_kit",
+                        return_value=Probe.missing()
+                    ) {
+                        assert resolver.resolve_kernel() is None , "a stale checkout must resolve no kernel";
+                        assert ensure_loaded() is None , "a stale checkout must parse with the store parser";
+                    }
+                }
+            }
+        }
+    } finally {
+        reset_loaded();
+        router.forget();
     }
 }

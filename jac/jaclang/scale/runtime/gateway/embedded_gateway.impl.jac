@@ -24,9 +24,9 @@ impl EmbeddedGateway._call_member(
     name: str = parts[1];
     try {
         if kind == "function" {
-            result = self.transport.call_function(service, name, payload);
+            data = {"result": self.transport.call_function(service, name, payload)};
         } elif kind == "walker" {
-            result = self.transport.call_walker(service, name, payload);
+            data = self.transport.call_walker(service, name, payload);
         } else {
             return None;
         }
@@ -52,9 +52,7 @@ impl EmbeddedGateway._call_member(
             }
         );
     }
-    return JSONResponse(
-        content={"ok": True, "type": "response", "data": {"result": result}}
-    );
+    return JSONResponse(content={"ok": True, "type": "response", "data": data});
 }
 
 
@@ -133,9 +131,7 @@ impl EmbeddedGateway.setup -> None {
 }
 
 
-def _log_embedded_ready(host: str, bound: int) {
-    _logger.info(f"Embedded gateway serving in-process on {host}:{bound}");
-}
+def _log_embedded_ready(host: str, bound: int);
 
 
 impl EmbeddedGateway.serve(on_ready: any = None) -> None {
@@ -143,15 +139,16 @@ impl EmbeddedGateway.serve(on_ready: any = None) -> None {
         self.setup();
     }
     import from functools { partial }
-    import from jaclang.server.serving.server { ServingServer, PORT_RETRY_LIMIT }
-    import from jaclang.scale.config.config_loader { get_scale_config }
-    pinned = bool(
-        get_scale_config().get_microservices_config().get("gateway_port_pinned", False)
-    );
+
+    pinned = self.port_pinned;
     serving = ServingServer(app=self.app, host=self.host, port=self.port);
     ready: any = on_ready;
     if ready is None {
         ready = partial(_log_embedded_ready, self.host);
     }
     serving.run(on_ready=ready, port_retries=0 if pinned else PORT_RETRY_LIMIT);
+}
+
+impl _log_embedded_ready(host: str, bound: int) {
+    _logger.info(f"Embedded gateway serving in-process on {host}:{bound}");
 }

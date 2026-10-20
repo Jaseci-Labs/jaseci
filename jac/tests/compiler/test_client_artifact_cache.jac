@@ -12,11 +12,7 @@ serves bytecode, and rejected once the module or any file it imports changes.
 import os;
 import tempfile;
 import time;
-import from jaclang.compiler.driver.jir {
-    SEC_CLIENT,
-    get_module_cache_path,
-    read_section_bytes
-}
+import from jaclang.compiler.driver.jir { SEC_CLIENT, read_section_bytes }
 import from jaclang.compiler.driver.pass_driver { compile_progress }
 import from jaclang.compiler.driver.program { JacProgram }
 
@@ -65,11 +61,16 @@ def _edit(path: str, text: str) {
 }
 
 
+def _client_artifact(prog: JacProgram, target: str) -> any {
+    return prog._get_compiler().get_client_artifact(target, prog);
+}
+
+
 """The modules that entered the compiler while `prog` built `target`."""
 def _compiled_for(prog: JacProgram, target: str) -> tuple[any, list[str]] {
     seen: list[str] = [];
     with compile_progress.listen(seen.append) {
-        artifact = prog.get_client_artifact(target);
+        artifact = prog._get_compiler().get_client_artifact(target, prog);
     }
     return (artifact, [os.path.basename(p) for p in seen]);
 }
@@ -77,19 +78,23 @@ def _compiled_for(prog: JacProgram, target: str) -> tuple[any, list[str]] {
 
 test "the first client build persists the artifact beside the bytecode" {
     (_, widget) = _project();
-    (artifact, compiled) = _compiled_for(JacProgram(), widget);
+    program = JacProgram();
+    (artifact, compiled) = _compiled_for(program, widget);
     assert artifact is not None and "label_of" in artifact.js , (
         "the cold build must produce the module's JS"
     );
     assert "widget.jac" in compiled , f"the cold build compiles the module, saw {compiled}";
-    cached = read_section_bytes(get_module_cache_path(widget).read_bytes(), SEC_CLIENT);
+    import from jaclang.compiler.driver.ifacecache { artifact_cache_path }
+    cached = read_section_bytes(
+        artifact_cache_path(widget, program).read_bytes(), SEC_CLIENT
+    );
     assert cached is not None , "the client artifact must land in the module cache";
 }
 
 
 test "a warm client build is served without compiling anything" {
     (_, widget) = _project();
-    cold = JacProgram().get_client_artifact(widget);
+    cold = _client_artifact(JacProgram(), widget);
     assert cold is not None;
     (warm, compiled) = _compiled_for(JacProgram(), widget);
     assert compiled == [] , f"a warm client build compiled {compiled}";
@@ -102,9 +107,9 @@ test "a warm client build is served without compiling anything" {
 
 test "the cache hit that serves bytecode also serves the client artifact" {
     (_, widget) = _project();
-    assert JacProgram().get_client_artifact(widget) is not None;
+    assert _client_artifact(JacProgram(), widget) is not None;
     prog = JacProgram();
-    assert prog.get_bytecode(widget) is not None , "the module's bytecode is cached too";
+    assert prog._get_compiler().get_bytecode(widget, prog) is not None , "the module's bytecode is cached too";
     (artifact, compiled) = _compiled_for(prog, widget);
     assert artifact is not None and compiled == [] , (
         f"the artifact restored with the bytecode must be served, compiled {compiled}"
@@ -114,7 +119,7 @@ test "the cache hit that serves bytecode also serves the client artifact" {
 
 test "editing the module invalidates its cached artifact" {
     (_, widget) = _project();
-    assert JacProgram().get_client_artifact(widget) is not None;
+    assert _client_artifact(JacProgram(), widget) is not None;
     _edit(widget, _WIDGET_SRC.replace("<div>{out}</div>", "<section>{out}</section>"));
     (artifact, compiled) = _compiled_for(JacProgram(), widget);
     assert "widget.jac" in compiled , f"an edited module must recompile, saw {compiled}";
@@ -124,7 +129,7 @@ test "editing the module invalidates its cached artifact" {
 
 test "editing a module it imports invalidates the cached artifact" {
     (helper, widget) = _project();
-    assert JacProgram().get_client_artifact(widget) is not None;
+    assert _client_artifact(JacProgram(), widget) is not None;
     _edit(helper, _HELPER_SRC.replace("row-", "line-"));
     (artifact, compiled) = _compiled_for(JacProgram(), widget);
     assert "widget.jac" in compiled , (
@@ -136,15 +141,18 @@ test "editing a module it imports invalidates the cached artifact" {
 
 test "an artifact built for another framework is not served" {
     (_, widget) = _project();
-    first = JacProgram().get_client_artifact(widget);
+    first = _client_artifact(JacProgram(), widget);
     assert first is not None and first.framework == "react" , (
         f"the artifact records the framework it was lowered for, got {first}"
     );
     other = JacProgram();
-    held = other.get_client_artifact(widget);
+    held = other._get_compiler().get_client_artifact(widget, other);
     assert held is not None;
     held.framework = "solid";
-    other._get_compiler()._persist_client_artifact(widget, held);
+    import from jaclang.compiler.driver.compilation_context { cache_scope }
+    with cache_scope(other.options) {
+        other._get_compiler()._persist_client_artifact(widget, held);
+    }
     (again, compiled) = _compiled_for(JacProgram(), widget);
     assert "widget.jac" in compiled , (
         f"an artifact lowered for another framework must recompile, saw {compiled}"

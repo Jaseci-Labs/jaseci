@@ -10,13 +10,6 @@ bulk/per-user flow that flags pre-scrypt accounts for password reset.
 import logging;
 import from unittest.mock { patch }
 import from logging.handlers { MemoryHandler }
-import from jaclang.server.serving.authcrypt {
-    SCRYPT_MAX_N,
-    SCRYPT_MAXMEM,
-    hash_password,
-    is_prescrypt_hash,
-    verify_password
-}
 
 # A real bcrypt vector: bcrypt.hashpw(b"correcthorse", gensalt(12)).
 glob BCRYPT_VECTOR = "$2b$12$R9h/cIPz0gi.URNNX3kh2OPST9/PgBkqquzi.Ss7KIUgO2t0jWMUW";
@@ -93,24 +86,12 @@ test "stored hash with oversized parameters refuses to verify, with a warning" {
 }
 
 
-test "resolve_password_hash_cost clamps to the capped range" {
-    import os;
-    import from jaclang.scale.config.config_loader { resolve_password_hash_cost }
-    with patch.dict(os.environ, {}, clear=False) {
-        os.environ.pop("JAC_SCALE_PASSWORD_HASH_COST", None);
-        assert resolve_password_hash_cost(17) == 15;
-        assert resolve_password_hash_cost(14) == 14;
-        assert resolve_password_hash_cost(5) == 10;
-    }
-}
-
-
 test "expire_legacy_credentials flags pre-scrypt accounts (bulk and per-user)" {
     import json;
     import from tempfile { mkdtemp }
     import from jaclang.data.pgembed { PgRuntime }
     import from jaclang.data.store { PgStore }
-    import from jaclang.scale.identity.identity_storage { PgIdentityStorage }
+    import from jaclang.server.identity.identity_storage { PgIdentityStorage }
 
     store = None;
     try {

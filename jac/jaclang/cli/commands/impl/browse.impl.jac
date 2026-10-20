@@ -1,34 +1,14 @@
 import os;
 import sys;
 import json;
-import from jaclang.cli.console { console }
-import from jaclang.cli.browser_engine {
-    cmd_open,
-    cmd_navigate,
-    cmd_eval,
-    cmd_click,
-    cmd_type,
-    cmd_fill,
-    cmd_press,
-    cmd_get,
-    cmd_wait,
-    cmd_scroll,
-    cmd_console,
-    cmd_snapshot,
-    cmd_screenshot,
-    cmd_state,
-    cmd_sessions,
-    cmd_close
-}
 
-def _need(args: list, n: int, usage: str) {
-    if len(args) < n {
-        raise ValueError(f"usage: jac browse {usage}");
-    }
-}
+def _need(args: list[str], n: int, usage: str);
 
 impl browse(
-    action: str, args: list = [], session: str = "default", viewport: str = "1280x720"
+    action: str,
+    args: list[str] = [],
+    session: str = "default",
+    viewport: str = "1280x720"
 ) -> int {
     sess = os.environ.get("JACBROWSER_SESSION", session);
     out: any = "";
@@ -88,4 +68,10 @@ impl browse(
     }
     sys.stdout.write((out if isinstance(out, str) else json.dumps(out)) + "\n");
     return 0;
+}
+
+impl _need(args: list[str], n: int, usage: str) {
+    if len(args) < n {
+        raise ValueError(f"usage: jac browse {usage}");
+    }
 }

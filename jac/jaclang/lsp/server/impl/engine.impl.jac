@@ -6,11 +6,66 @@ impl _path_of(uri: str) -> str {
     return uris.to_fs_path(uri) or "";
 }
 
-import from jaclang.compiler.tools.unparse_pass { unparse_node }
+impl _merge_app_alerts(
+    collected: list[tuple[str, list[Alert], list[Alert]]], app_count: int
+) -> tuple[list[Alert], list[Alert]] {
+    def key_of(alert: any) -> tuple[str, int, int, str, str] {
+        code = alert.code.code if alert.code else '';
+        return (
+            alert.loc.mod_path,
+            alert.loc.first_line,
+            alert.loc.col_start,
+            code,
+            alert.msg
+        );
+    }
+
+    def merge(index: int) -> list[Alert] {
+        seen_apps: dict[tuple[str, int, int, str, str], set[str]] = {};
+        first: dict[tuple[str, int, int, str, str], any] = {};
+        order: list[tuple[str, int, int, str, str]] = [];
+        tagged: list[tuple[str, any]] = [];
+        for entry_item in collected {
+            app_name = entry_item[0];
+            for alert in entry_item[index] {
+                key = key_of(alert);
+                if key not in seen_apps {
+                    seen_apps[key] = set();
+                    first[key] = alert;
+                    order.append(key);
+                }
+                seen_apps[key].add(app_name);
+                tagged.append((app_name, alert));
+            }
+        }
+        shared = {
+            key
+            for key in order
+            if len(seen_apps[key]) >= app_count
+        };
+        out: list[Alert] = [];
+        emitted: set[tuple[str, int, int, str, str]] = set();
+        for (app_name, alert) in tagged {
+            key = key_of(alert);
+            if key in shared {
+                if key not in emitted {
+                    emitted.add(key);
+                    out.append(first[key]);
+                }
+                continue;
+            }
+            alert.msg = f"[app:{app_name}] {alert.msg}";
+            out.append(alert);
+        }
+        return out;
+    }
+
+    return (merge(1), merge(2));
+}
 
 impl Task.postinit -> None {
     self.task_id = Task._task_id;
-    self.cancel_token = threading.Event();
+    self.cancel_token = CancelToken();
     Task._task_id += 1;
 }
 
@@ -130,7 +185,7 @@ impl JacLangServer._fanout_dependents(file_uri: str) -> None {
 }
 
 impl JacLangServer.type_check_file(
-    file_uri: str, cancel_token: threading.Event | None = None
+    file_uri: str, cancel_token: (CancelToken | None) = None
 ) -> bool {
     if cancel_token and cancel_token.is_set() {
         return False;
@@ -178,17 +233,66 @@ impl JacLangServer.type_check_file(
         if cancel_token and cancel_token.is_set() {
             return False;
         }
-        build = self.program.compile(
-            file_path=main_path,
-            use_str=main_doc.source,
-            options=CompileOptions(
-                no_cgen=True, force_target_program=True, cancel_token=cancel_token
-            )
-        );
-
-        if cancel_token and cancel_token.is_set() {
-            return False;
+        import from jaclang.project.workspace { workspace_for_path }
+        ws = workspace_for_path(main_path);
+        app = ws.app_for_path(main_path) if ws is not None else None;
+        proj_root = ws.project_root if ws is not None else None;
+        targets: list[tuple[str, str]] = [];
+        if ws is None or app is not None {
+            targets = [(app.name if app else '', app.kind if app else '')];
+        } else {
+            targets = [
+                (a.name, a.kind) for a in list(ws.apps.values())[:LSP_SHARED_APP_LIMIT]
+            ];
         }
+        multi = len(targets) > 1;
+        collected: list[tuple[str, list[Alert], list[Alert]]] = [];
+        build: (uni.Module | None) = None;
+        for (app_name, app_kind) in targets {
+            build = self.program.compile(
+                file_path=main_path,
+                use_str=main_doc.source,
+                options=CompileOptions(
+                    no_cgen=True,
+                    cancel_token=cancel_token,
+                    target_app=app_name,
+                    app_kind=app_kind,
+                    entry_point=ws.apps[app_name].`entry
+                        if ws is not None and app_name in ws.apps
+                        else main_path,
+                    project_root=proj_root
+                )
+            );
+            if cancel_token and cancel_token.is_set() {
+                return False;
+            }
+            if multi {
+                collected.append(
+                    (
+                        app_name,
+                        [
+                            e
+                            for e in self.program.errors_had
+                            if e.loc.mod_path in files_to_check
+                        ],
+                        [
+                            w
+                            for w in self.program.warnings_had
+                            if w.loc.mod_path in files_to_check
+                        ]
+                    )
+                );
+                for f in files_to_check {
+                    self._clear_alerts_for_file(f);
+                }
+            }
+        }
+        if multi {
+            (merged_errs, merged_warns) = _merge_app_alerts(collected, len(targets));
+            self.program.errors_had.extend(merged_errs);
+            self.program.warnings_had.extend(merged_warns);
+        }
+        assert build is not None;
         self.update_modules(main_path, build, files=files_to_check);
 
         all_errors = list(self.program.errors_had);
@@ -338,6 +442,10 @@ impl JacLangServer.get_references(
 ) -> list[lspt.Location] {
     node_selected = self.get_token_at_position(file_path, position);
     if node_selected and node_selected.sym {
+        occurrences: list[uni.NameAtom] = [
+            *node_selected.sym.defn,
+            *node_selected.sym.uses
+        ];
         list_of_references: list[lspt.Location] = [
             lspt.Location(
                 uri=_uri_of(cur_node.loc.mod_path),
@@ -349,19 +457,7 @@ impl JacLangServer.get_references(
     return [];
 }
 
-def _definition_symbol(sym: any) -> any {
-    cur = sym;
-    seen: set[int] = set();
-    while cur is not None and cur.provider is not None and id(cur) not in seen {
-        seen.add(id(cur));
-        target = cur.provider.definition();
-        if target is None or target is cur {
-            break;
-        }
-        cur = target;
-    }
-    return cur;
-}
+def _definition_symbol(sym: any) -> any;
 
 impl JacLangServer.get_definition(
     file_path: str, position: lspt.Position
@@ -553,11 +649,7 @@ impl JacLangServer._string_import_definition(
 
 impl JacLangServer._module_spec_target(mp: uni.ModulePath) -> Optional[str] {
     import os;
-    import from jaclang.compiler.driver.modresolver {
-        is_client_npm_import,
-        resolve_client_npm_declarations,
-        resolve_client_npm_package
-    }
+
     try {
         resolved = mp.resolve_relative_path();
         if os.path.isfile(resolved) {
@@ -572,7 +664,7 @@ impl JacLangServer._module_spec_target(mp: uni.ModulePath) -> Optional[str] {
         return None;
     }
     try {
-        if is_client_npm_import(spec, src_path) {
+        if in_client_npm_world(spec, src_path) {
             return (
                 resolve_client_npm_declarations(spec, src_path)
                 or resolve_client_npm_package(spec, src_path)
@@ -587,11 +679,6 @@ impl JacLangServer._module_spec_target(mp: uni.ModulePath) -> Optional[str] {
 impl JacLangServer._npm_item_location(
     from_loc: uni.ModulePath, item_name: str
 ) -> Optional[lspt.Location] {
-    import from jaclang.compiler.driver.modresolver {
-        is_client_npm_import,
-        resolve_client_npm_declarations,
-        resolve_client_npm_package
-    }
     def at_file(path_: str, rng: Optional[lspt.Range]) -> Optional[lspt.Location] {
         path_uri = uris.from_fs_path(path_);
         if path_uri is None {
@@ -608,7 +695,7 @@ impl JacLangServer._npm_item_location(
     }
     spec = from_loc.string_path_value or from_loc.dot_path_str;
     src_path = from_loc.loc.mod_path if from_loc.loc else None;
-    if not spec or not src_path or not is_client_npm_import(spec, src_path) {
+    if not spec or not src_path or not in_client_npm_world(spec, src_path) {
         return None;
     }
     dts = resolve_client_npm_declarations(spec, src_path);
@@ -686,6 +773,36 @@ impl JacLangServer.get_node_info(sym_node: uni.AstSymbolNode) -> Optional[str] {
         self.log_warning(f"Attribute error when accessing node attributes: {e}");
     }
     return node_info.strip() if node_info else None;
+}
+
+impl JacLangServer.get_inlay_hints(
+    file_path: str, range: lspt.Range
+) -> list[lspt.InlayHint] {
+    fs_path = _path_of(file_path);
+    mod = self.program.mod.hub.get(fs_path);
+    if mod is None {
+        return [];
+    }
+    out: list[lspt.InlayHint] = [];
+    for h in inferred_hints(mod) {
+        line = h.line - 1;
+        if line < range.start.line or line > range.end.line {
+            continue;
+        }
+        out.append(
+            lspt.InlayHint(
+                position=lspt.Position(line=line, character=h.col),
+                label=h.label,
+                kind=(
+                    lspt.InlayHintKind.Parameter
+                        if h.kind == "parameter"
+                        else lspt.InlayHintKind.Type
+                ),
+                padding_left=h.label.startswith("(") or h.label.startswith(" raises")
+            )
+        );
+    }
+    return out;
 }
 
 impl JacLangServer.get_hover_info(
@@ -768,28 +885,7 @@ impl JacLangServer.rename_module(old_path: str, new_path: str) -> None {
 impl JacLangServer.get_completion_items_of(
     ty: TypeBase | uni.UniScopeNode
 ) -> lspt.CompletionList {
-    items: list[lspt.CompletionItem] = [];
-    for item in get_completion_items(ty) {
-        detail: lspt.CompletionItemLabelDetails | None = None;
-        if item.detail {
-            detail = lspt.CompletionItemLabelDetails(detail=item.detail);
-        }
-        documentation: lspt.MarkupContent | None = None;
-        if item.documentation {
-            documentation = lspt.MarkupContent(
-                kind=lspt.MarkupKind.PlainText, value=item.documentation
-            );
-        }
-        items.append(
-            lspt.CompletionItem(
-                label=item.label,
-                kind=lspt.CompletionItemKind(item.kind.value),
-                label_details=detail,
-                documentation=documentation,
-            )
-        );
-    }
-    return lspt.CompletionList(is_incomplete=False, items=items,);
+    return lspt.CompletionList(is_incomplete=False, items=get_completion_items(ty));
 }
 
 impl JacLangServer.get_scope_completion(
@@ -869,7 +965,7 @@ impl JacLangServer.get_node_at_position(
         return None;
     }
     if (ast := self.get_ast_of_file(file_path)) {
-        for ast_node in ast._in_mod_nodes {
+        for ast_node in ast._in_mod_nodes or [] {
             if not isinstance(ast_node, uni.Token) {
                 continue;
             }
@@ -1095,7 +1191,7 @@ impl JacLangServer._clear_alerts_for_file(file_path: str) -> None {
     }
 }
 
-impl JacLangServer.diagnostics.getter -> dict[str, list] {
+impl JacLangServer.diagnostics.getter -> dict[str, list[lspt.Diagnostic]] {
     with self._state_lock.read_lock() {
         all_errors = list(self.program.errors_had);
         all_warnings = list(self.program.warnings_had);
@@ -1106,4 +1202,18 @@ impl JacLangServer.diagnostics.getter -> dict[str, list] {
         }
         return result;
     }
+}
+
+impl _definition_symbol(sym: any) -> any {
+    cur = sym;
+    seen: set[int] = set();
+    while cur is not None and cur.provider is not None and id(cur) not in seen {
+        seen.add(id(cur));
+        target = cur.provider.definition();
+        if target is None or target is cur {
+            break;
+        }
+        cur = target;
+    }
+    return cur;
 }

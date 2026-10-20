@@ -1,7 +1,3 @@
-import from jaclang.cli.command { Arg, ArgKind, CommandSpec }
-import from jaclang.comptime { name as ct_name }
-
-
 comptime SPEC_GUIDE: CommandSpec = CommandSpec(
          name="guide",
          help="Show bundled Jac guides and documentation",
@@ -22,6 +18,19 @@ comptime SPEC_GUIDE: CommandSpec = CommandSpec(
                  `default="",
                  help="Grep every bundled guide and doc (name:line: hits)",
                  short="s"
+             ),
+             Arg.create(
+                 "section",
+                 short="",
+                 `default="",
+                 help="Print one section by slug or exact heading; requires a topic"
+             ),
+             Arg(
+                 name="sections",
+                 kind=ArgKind.OPTION,
+                 typ=bool,
+                 `default=False,
+                 help="List section headings and slugs without loading their text"
              ),
              Arg.create(
                  "export",
@@ -51,6 +60,8 @@ comptime SPEC_GUIDE: CommandSpec = CommandSpec(
          examples=[
              ("jac guide", "List every bundled guide and doc set"),
              ("jac guide jac-types", "Print the jac-types guide"),
+             ("jac guide jac-types --sections", "List sections before reading"),
+             ("jac guide jac-types --section pitfalls", "Read one section"),
              (
                  "jac guide reference/diagnostics",
                  "Print the bundled diagnostics reference"
@@ -72,5 +83,7 @@ def guide(
     search: str = "",
     export: str = "",
     nav: bool = False,
-    as_json: bool = False
+    as_json: bool = False,
+    section: str = "",
+    sections: bool = False
 ) -> int;

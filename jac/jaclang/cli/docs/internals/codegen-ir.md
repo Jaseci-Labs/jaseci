@@ -18,14 +18,26 @@ remains ahead of it is the mega-arc's own work -- per-node dispatch, and
 retiring the Python shim seat for a generated native transcriber, which
 must conform to the bytes specified here.
 
-Status note (#8732): the native seal, the fused `libjac_compiler` build,
-the pass-serving binder, and the `mat_parse` materializer crossing that
-this document refers to were removed. The compiler modules served natively
-are now listed in `compiler/native_scope.jac`, empty until a native pass
-can share the tree with a bytecode pass. The sealed-lane paragraphs below
-(sections 2, 9 and 11) are the record of what was measured before the
-removal and the precedent the next crossing builds on; the tests and
-waiver tables they name no longer exist.
+Status note (#8732, #8943): the native seal, the fused `libjac_compiler`
+build, the pass-serving binder, and the `mat_parse` materializer crossing
+that this document refers to were removed. The compiler modules the kernel
+links are listed in `compiler/native_scope.jac`; each is an ordinary native
+unit whose interface and object live in its module JIR, and the kernel is
+one link plan over them (`compiler/backends/native/link_plan.jac`,
+resolved by `kernel_resolve.jac`). A one-body edit to a scope module
+relinks the kernel from cached objects instead of rebuilding a fused module
+from cold. The sealed-lane paragraphs below (sections 2, 9 and 11) are the
+record of what was measured before the removal and the precedent the next
+crossing builds on; the tests and waiver tables they name no longer exist.
+
+Status note (#9615): the code generators are kernel units. The kernel's
+`jc_compile` entry runs a module through the same session pipeline the host
+uses and returns its compile products (`compiler/driver/unit_products.jac`)
+as one record, and this IR is one of them: the bytes cross base64-encoded,
+the host assembles them with `codegen_shim.compile_ir` and writes the
+module JIR from the record. That is the production crossing section 1
+describes, IR bytes out and nothing tree-shaped in between; the
+parse-and-materialize crossing (`jc_materialize`) was deleted with it.
 
 Note on location: the task brief suggested `docs/community/internals/`; the
 corpus's actual home for internal design docs is `docs/internals/` (beside
@@ -351,7 +363,7 @@ performed by the shim because it intrinsically requires CPython.
 | Scope directives (`Global`/`Nonlocal`, sorted) | IR emission | |
 | Semstr decorators (`_get_sem_decorator`), `jac_test` decorators, `impl_patch_filename` decoration | IR emission | decorator `Call` nodes with `Constant` operands; the `is_test(mod_path)` predicate moves producer-side |
 | Enum lowering (`Enum`/`IntEnum`/`StrEnum` choice, `auto()` values) | IR emission | |
-| Has-var lowering (`field(init=False)`, `field(factory=lambda: ...)`, constant fast path) | IR emission | see fidelity note 2 |
+| Has-var lowering (`ObjectField(init=False)`, `ObjectField(default_factory=lambda: ...)`, constant fast path) | IR emission | see fidelity note 2 |
 | `PyInlineCode` (`::py::` blocks) | shim transcription | `OP_PARSE_SPLICE` with the jac first_line as offset; `textwrap.dedent` is a producer-side string op |
 | Native interop stubs, sv-to-sv stubs, boundary stub classes, native test shims, registration map | shim transcription | producer builds the Python source text from the interop manifest (sealed-side data); shim parses via `OP_PARSE_SPLICE` with offset 0 |
 | `compile()` + `marshal.dumps` (all of pybc_gen) | shim transcription | end of the same crossing |
@@ -372,7 +384,7 @@ assumed away.
    nodes with string constants: fully IR-encodable. The decision inputs
    (impl file paths, the `is_test` predicate from `ext_registry`) are
    producer-side facts.
-2. **Has-var `field()` wrapping.** Resolved in the phase 1 emitter, and
+2. **Has-var `ObjectField()` wrapping.** Resolved in the phase 1 emitter, and
    more directly than predicted: the emitter's recipe tree preserves the
    predicate exactly. The constant-vs-factory choice becomes "is the
    value's recipe a `Constant` node", which is the same decision
@@ -395,7 +407,7 @@ assumed away.
    emits nothing dirty-field-related; that tracking lives at runtime in
    the `track_writes` hook installed when an anchor becomes persistent.
    The adjacent codegen behaviors are the
-   `field()` wrappers (note 2) and `__jac_async__` class markers, both
+   `ObjectField()` wrappers (note 2) and `__jac_async__` class markers, both
    ordinary IR emission. Nothing crosses.
 6. **Module docstrings.** `nd.doc` becomes the first `Expr(Constant)`
    before the preamble; the ordering decision is the producer's and the
@@ -481,7 +493,7 @@ assumed away.
 - **Not every demoted name can be waived.** The seal's load canary
   resolves every name the layout advertises. A demoted *method* ships as
   an `abort()` stub and resolves, and so does a demoted module-level
-  function of the root module itself -- `module_codegen_pass`'s waived
+  function of the root module itself -- `module_facts`'s waived
   `client_capability_violations` is the standing example. Two kinds get
   no stub and so are advertised and absent, which fails `dlopen`: a
   nested function inside a demoted method, and a module-level function of
@@ -634,8 +646,8 @@ assumed away.
 
 ### 11.1 The codegen tail, after the cutover
 
-`get_py_code_gen` (compiler/driver/compiler.jac) returns one Python codegen
-tail and there is nothing to select between:
+The `PY_IR` and `BYTECODE` products (compiler/driver/pipeline.jac) are one
+Python codegen tail and there is nothing to select between:
 
 - `JcirGenPass`, `JcirBytecodeGenPass`
 

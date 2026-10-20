@@ -165,8 +165,9 @@ beats `[dev] jobs`, which falls back to one worker per core. Prefer the flag:
 it is the only form that cannot be overridden by something already in the
 environment. `JAC_TEST_JOBS=0` still works and is what CI sets.
 
-CI runs five groups under `jac/jaclang/scale/tests/`, and they map to
-surfaces: `microservices/` for the gateway, registry, routing and local fleet,
+CI runs six groups under `jac/jaclang/scale/tests/`, and they map to
+surfaces: `apps/` for the fleet read from `[apps]` and the per-app scale
+overrides, `microservices/` for the gateway, registry, routing and local fleet,
 `server/` for serving and the admin API, `data/` for identity and persistence,
 `deploy/` for manifests and targets, `misc/` for the rest. Every test file
 lives in one of those five directories. `deploy/test_deploy_k8s.jac` is the one
@@ -178,8 +179,10 @@ suites mutate process state.
 read what it prints. Most scale defects are visible here and nowhere else: a
 silent fallback, a message that reports success while nothing is reachable, a
 config key that never arrives. For serving changes this means a real
-`jac run` against a fixture app; for local fleet changes it means an app with a
-`[scale.microservices.routes]` table so the gateway and services really come up.
+`jac run` against a fixture app; for local fleet changes it means a workspace
+with `[apps.<name>] kind = "service"` entries run with `jac run <app> --fleet`
+(or `[scale.gateway] colocate = false`) so the gateway and service apps really
+come up.
 
 `jac start` and `jac dev` are tombstoned. `jac run` carries the serve surface,
 deploy moved to `jac scale deploy`, and the serve flags now precede the

@@ -10,7 +10,8 @@ import os;
 import tempfile;
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.compiler.driver.compiler { JacCompiler }
-import from jaclang.compiler.driver.schedules { get_lint_sched }
+import from jaclang.compiler.driver.pipeline { product_passes }
+import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
 import from jaclang.compiler.tools.jac_auto_lint_pass {
     JacAutoLintPass,
     JacLintCheckPass
@@ -34,7 +35,7 @@ def _full_pass_diags(source: str, path: str) -> list[str] {
     if m is None {
         return [];
     }
-    run_pass(JacAutoLintPass, m, p).ir_out;
+    run_pass(JacAutoLintPass, m, p).module;
     return _diag_keys(p);
 }
 
@@ -48,7 +49,7 @@ def _write_tmp(src: str) -> str {
 }
 
 test "lint report scheduler uses JacLintCheckPass" {
-    sched = get_lint_sched();
+    sched = product_passes(CompilationProduct.LINT);
     assert len(sched) == 1;
     assert sched[0] is JacLintCheckPass;
 }
@@ -60,7 +61,7 @@ test "lint report path preserves every diagnostic the mutation pass emits" {
         # W3021 unnecessary else after return
         "def bad(x: int) -> int {\n    if x > 0 {\n        return x;\n    } else {\n        return -x;\n    }\n}\n",
         # W3036 mutable default argument
-        "def bad_list(items: list = []) -> list {\n    items.append(1);\n    return items;\n}\n",
+        "def bad_list(items: list[any] = []) -> list[any] {\n    items.append(1);\n    return items;\n}\n",
         # W3035 `is` with literal
         "with entry {\n    x = 5;\n    if x is 5 {\n        print(\"five\");\n    }\n}\n",
         # W3024 repeated condition in if/elif chain
@@ -77,7 +78,7 @@ test "lint report path preserves every diagnostic the mutation pass emits" {
         "obj Box {\n    has value: int = 0;\n}\n"
         "with entry {\n    b = Box();\n    x = getattr(b, \"value\", None);\n}\n",
         # W3042 map(lambda → JSX) → list comprehension
-        "def render(items: list) -> JsxElement {\n"
+        "def render(items: list[any]) -> JsxElement {\n"
         "    rows = items.map(\n"
         "        lambda (item: any) -> any {\n"
         "            return <li>{item}</li>;\n"

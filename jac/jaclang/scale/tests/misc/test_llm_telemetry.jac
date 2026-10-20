@@ -4,7 +4,6 @@ All tests instantiate TelemetryStore directly
 """
 import time;
 import json;
-import from jaclang.scale.admin.llm_telemetry { TelemetryStore, LLMCallRecord, Trace }
 
 #  Helpers
 """Build a minimal LLM event dict for record_llm_event."""
@@ -17,9 +16,9 @@ def make_llm_event(
     total_tokens: int = 150,
     response_cost: float = 0.0001,
     response_time: float = 0.5,
-    messages: list | None = None,
-    response: dict | str | None = None
-) -> dict {
+    messages: list[any] | None = None,
+    response: dict[str, any] | str | None = None
+) -> dict[str, any] {
     return {
         "id": f"call-{inv_id}",
         "model": model,
@@ -50,9 +49,9 @@ def make_agent_record(
     agent_response: str = "Hi there",
     status: str = "success",
     latency_ms: float = 500.0,
-    conversation_history: list | None = None,
-    caller_args: dict | None = None
-) -> dict {
+    conversation_history: list[any] | None = None,
+    caller_args: dict[str, any] | None = None
+) -> dict[str, any] {
     return {
         "invocation_id": inv_id,
         "caller_name": caller_name,
@@ -531,13 +530,7 @@ test "get_available_filters returns unique models callers statuses" {
 
 #  8. REST Endpoint Tests — auth enforcement & response shape
 import uuid;
-import from jaclang.scale.tests.scale_test_client {
-    ScaleTestClient,
-    make_client,
-    extract_data
-}
-
-glob DEFAULT_ADMIN_PASSWORD: str = "changeme";
+import from jaclang.scale.tests.scale_test_client { make_client }
 
 # --- Auth enforcement: all telemetry endpoints require admin token ---
 test "REST summary endpoint returns 403 without auth token" {

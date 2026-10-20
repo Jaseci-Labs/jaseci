@@ -1,111 +1,10 @@
-import from jaclang.compiler.frontend.unitree {
-    Module,
-    Ability,
-    Archetype,
-    AstTypedVarNode,
-    FuncSignature,
-    GlobalVars,
-    UniNode
-}
-import from jaclang.compiler.tools.unparse_pass { unparse_node }
-import from jaclang.dist.publish.jsdoc { jac_type_to_ts }
+def _param_type_str(param: AstTypedVarNode) -> str;
 
-def _param_type_str(param: AstTypedVarNode) -> str {
-    tag = param.type_tag;
-    if tag is None {
-        return "any";
-    }
-    inner = tag.tag;
-    if not isinstance(inner, UniNode) {
-        return "any";
-    }
-    try {
-        return jac_type_to_ts(unparse_node(inner));
-    } except Exception {
-        return "any";
-    }
-}
+def _fn_decl(ability: Ability) -> str;
 
-def _fn_decl(ability: Ability) -> str {
-    name = ability?.sym_name;
-    if not name {
-        return "";
-    }
-    sig = ability?.signature;
-    parts: list[str] = [];
-    if isinstance(sig, FuncSignature) {
-        params = sig.params;
-        if params {
-            for p in params {
-                pname = p.sym_name;
-                if not pname {
-                    continue;
-                }
-                ptype = _param_type_str(p);
-                optional = "?" if p.value is not None else "";
-                parts.append(f"{pname}{optional}: {ptype}");
-            }
-        }
-    }
-    ret = "void";
-    rt = sig.return_type if isinstance(sig, FuncSignature) else None;
-    if isinstance(rt, UniNode) {
-        try {
-            rt_str = unparse_node(rt);
-        } except Exception {
-            rt_str = "";
-        }
-        if rt_str {
-            ret = jac_type_to_ts(rt_str, is_return=True);
-        }
-    }
-    return f"export declare function {name}({', '.join(parts)}): {ret};";
-}
+def _class_decl(arch: Archetype) -> str;
 
-def _class_decl(arch: Archetype) -> str {
-    name = arch?.sym_name;
-    if not name {
-        return "";
-    }
-    lines: list[str] = [f"export declare class {name} {{"];
-    body = arch?.body or [];
-    for member in body {
-        if type(member).__name__ != "ArchHas" {
-            continue;
-        }
-        for v in member?.vars or [] {
-            fname = v?.sym_name;
-            if not fname {
-                continue;
-            }
-            lines.append(f"  {fname}: {_param_type_str(v)};");
-        }
-    }
-    lines.append("}");
-    return "\n".join(lines);
-}
-
-def _global_decl(assign: any, wanted: any) -> str {
-    targets = assign?.target or [];
-    if not targets {
-        return "";
-    }
-    gname = targets[0]?.value;
-    if not gname or gname not in wanted {
-        return "";
-    }
-    gtype = "any";
-    tag = assign?.type_tag;
-    inner = tag?.tag if tag is not None else None;
-    if isinstance(inner, UniNode) {
-        try {
-            gtype = jac_type_to_ts(unparse_node(inner));
-        } except Exception {
-            gtype = "any";
-        }
-    }
-    return f"export declare const {gname}: {gtype};";
-}
+def _global_decl(assign: any, wanted: any) -> str;
 
 impl dts_for_module(mod: Module) -> str {
     manifest = mod.gen.client_manifest if (mod and mod.gen) else None;
@@ -145,4 +44,101 @@ impl dts_for_module(mod: Module) -> str {
         return "";
     }
     return "\n".join(blocks) + "\n";
+}
+
+impl _param_type_str(param: AstTypedVarNode) -> str {
+    tag = param.type_tag;
+    if tag is None {
+        return "any";
+    }
+    inner = tag.tag;
+    if not isinstance(inner, UniNode) {
+        return "any";
+    }
+    try {
+        return jac_type_to_ts(unparse_node(inner));
+    } except Exception {
+        return "any";
+    }
+}
+
+impl _fn_decl(ability: Ability) -> str {
+    name = ability?.sym_name;
+    if not name {
+        return "";
+    }
+    sig = ability?.signature;
+    parts: list[str] = [];
+    if isinstance(sig, FuncSignature) {
+        params = sig.params;
+        if params {
+            for p in params {
+                pname = p.sym_name;
+                if not pname {
+                    continue;
+                }
+                ptype = _param_type_str(p);
+                optional = "?" if p.value is not None else "";
+                parts.append(f"{pname}{optional}: {ptype}");
+            }
+        }
+    }
+    ret = "void";
+    rt = sig.return_type if isinstance(sig, FuncSignature) else None;
+    if isinstance(rt, UniNode) {
+        try {
+            rt_str = unparse_node(rt);
+        } except Exception {
+            rt_str = "";
+        }
+        if rt_str {
+            ret = jac_type_to_ts(rt_str, is_return=True);
+        }
+    }
+    return f"export declare function {name}({', '.join(parts)}): {ret};";
+}
+
+impl _class_decl(arch: Archetype) -> str {
+    name = arch?.sym_name;
+    if not name {
+        return "";
+    }
+    lines: list[str] = [f"export declare class {name} {{"];
+    body = arch?.body or [];
+    for member in body {
+        if type(member).__name__ != "ArchHas" {
+            continue;
+        }
+        for v in member?.vars or [] {
+            fname = v?.sym_name;
+            if not fname {
+                continue;
+            }
+            lines.append(f"  {fname}: {_param_type_str(v)};");
+        }
+    }
+    lines.append("}");
+    return "\n".join(lines);
+}
+
+impl _global_decl(assign: any, wanted: any) -> str {
+    targets = assign?.target or [];
+    if not targets {
+        return "";
+    }
+    gname = targets[0]?.value;
+    if not gname or gname not in wanted {
+        return "";
+    }
+    gtype = "any";
+    tag = assign?.type_tag;
+    inner = tag?.tag if tag is not None else None;
+    if isinstance(inner, UniNode) {
+        try {
+            gtype = jac_type_to_ts(unparse_node(inner));
+        } except Exception {
+            gtype = "any";
+        }
+    }
+    return f"export declare const {gname}: {gtype};";
 }

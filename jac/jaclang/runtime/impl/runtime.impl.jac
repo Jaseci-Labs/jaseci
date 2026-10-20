@@ -222,7 +222,6 @@ impl JacAccessValidation.check_access_level(
 
 
 impl JacAccessValidation._groups_of(jroot: NodeAnchor) -> list[str] {
-    import from jaclang.runtime.osp_graph_sv { sv_live_edges, sv_register_hydrated }
     sv_register_hydrated(jroot, fetch_stubs=True);
     out: list[str] = [];
     for grp in sv_live_edges(jroot, EdgeDir.OUT.value, None, False) {
@@ -247,7 +246,6 @@ impl JacWalker.`visit(
         ),
     insert_loc: int = -1
 ) -> bool {
-    import from jaclang.runtime.osp_kernel { osp_visit, scope_of }
     if isinstance(expr, GraphQuery) {
         expr.from_visit = True;
         expr = JacRuntimeInterface.refs(expr);
@@ -255,10 +253,10 @@ impl JacWalker.`visit(
     if not isinstance(`walker, WalkerArchetype) {
         raise TypeError('Invalid walker object');
     }
-    items: list = `list(expr)
+    items: list[any] = `list(expr)
         if isinstance(expr, `list)
         else ([expr] if isinstance(expr, (NodeArchetype, EdgeArchetype)) else []);
-    targets: list = [];
+    targets: list[any] = [];
     for arch in items {
         anchor = arch.__jac__;
         if not isinstance(anchor, (NodeAnchor, EdgeAnchor)) {
@@ -291,10 +289,8 @@ impl JacWalker.`visit(
 impl JacWalker.spawn_call(
     `walker: WalkerAnchor, nd: (NodeAnchor | EdgeAnchor)
 ) -> WalkerArchetype {
-    import from jaclang.runtime.osp_kernel { osp_spawn }
-    import from jaclang.runtime.osp_kernel_sv { desc_for, make_sv_runtime }
     warch = `walker.archetype;
-    starts: list = [a.archetype for a in `walker.next];
+    starts: list[any] = [a.archetype for a in `walker.next];
     osp_spawn(make_sv_runtime(), warch, desc_for(`type(warch)), starts);
     return warch;
 }
@@ -302,11 +298,6 @@ impl JacWalker.spawn_call(
 impl JacWalker.async_spawn_call(
     `walker: WalkerAnchor, nd: (NodeAnchor | EdgeAnchor)
 ) -> WalkerArchetype {
-    import from jaclang.runtime.osp_kernel_sv {
-        osp_spawn_async,
-        desc_for,
-        make_sv_runtime
-    }
     warch = `walker.archetype;
     await osp_spawn_async(
         make_sv_runtime(),
@@ -369,14 +360,23 @@ impl JacWalker.`spawn(
         }
     }
     if warch.__jac_async__ {
-        return JacRuntimeInterface.async_spawn_call(`walker=`walker, nd=loc);
+        import asyncio;
+        import from typing { cast }
+        task = cast(
+            Coroutine[any, any, WalkerArchetype],
+            JacRuntimeInterface.async_spawn_call(`walker=`walker, nd=loc)
+        );
+        try {
+            asyncio.get_running_loop();
+        } except RuntimeError {
+            return asyncio.run(task);
+        }
+        return task;
     }
     return JacRuntimeInterface.spawn_call(`walker=`walker, nd=loc);
 }
 
 impl JacWalker.`disengage(`walker: WalkerArchetype) -> bool {
-    import from jaclang.runtime.osp_kernel { osp_disengage }
-
     `walker.__jac__.disengaged = True;
     osp_disengage();
     return True;
@@ -393,8 +393,7 @@ impl JacBuiltin.printgraph(
     file: (str | None),
     format: str
 ) -> str {
-    import from jaclang.runtime.graph_utils { traverse_graph }
-    edge_type = edge_type or [];
+    edge_type: list[type] = edge_type or [];
     visited_nodes: list[NodeArchetype] = [];
     node_depths: dict[(NodeArchetype, int)] = {nd: 0};
     queue: list[tuple[NodeArchetype, int]] = [(nd, 0)];
@@ -529,7 +528,7 @@ impl JacContext.reset_graph(root_node: (Root | None) = None) -> int {
     ranchor = root_node.__jac__ if root_node else ctx.user_root;
     deleted_count = 0;
     deleted_ids: set[UUID] = `set();
-    cand_map: dict = {};
+    cand_map: dict[UUID, str | None] = {};
     store = mem?.store;
     if store is not None {
         mem.read_barrier();
@@ -624,77 +623,10 @@ impl JacArchetype.make_archetype(cls: type[Archetype]) -> type[Archetype] {
     }
     cls._jac_entry_funcs_ = [*entries.values()];
     cls._jac_exit_funcs_ = [*exits.values()];
-    if issubclass(cls, WalkerArchetype)
-        and 'reports' not in cls.__dict__.get('__annotations__', {}) {
-        if not hasattr(cls, '__annotations__') {
-            cls.__annotations__ = {};
-        }
-        cls.__annotations__['reports'] = list;
-        setattr(
-            cls,
-            'reports',
-            dataclasses.field(
-                default_factory=`list, init=False, repr=False, compare=False
-            )
-        );
+    if cls.__dict__.get('__annotations__') and not cls.__doc__ {
+        cls.__doc__ = cls.__name__;
     }
-    _own_anns: dict[str, object] = cls.__dict__.get('__annotations__', {});
-    if _own_anns {
-        if not cls.__doc__ {
-            cls.__doc__ = cls.__name__;
-        }
-        _pre_attrs = dict(cls.__dict__);
-        try {
-            dataclass(eq=False)(cls);
-        } except TypeError {
-            for _rname in _own_anns {
-                if _rname in _pre_attrs and _rname not in cls.__dict__ {
-                    setattr(cls, _rname, _pre_attrs[_rname]);
-                }
-            }
-
-            _seen_default = False;
-            for _base in reversed(cls.__mro__[1:]) {
-                _base_fields: dict[str, dataclasses.Field] = getattr(
-                    _base, '__dataclass_fields__', {}
-                );
-                for _bf in _base_fields.values() {
-                    if _bf.`default is not dataclasses.MISSING
-                        or _bf.default_factory is not dataclasses.MISSING {
-                        _seen_default = True;
-                    }
-                }
-            }
-            for (_fname, _fann) in _own_anns.items() {
-                if "ClassVar" in str(_fann) or "InitVar" in str(_fann) {
-                    continue;
-                }
-                _own_val = _pre_attrs.get(_fname, dataclasses.MISSING);
-                _has_default = _own_val is not dataclasses.MISSING;
-                if _has_default
-                    and isinstance(_own_val, dataclasses.Field)
-                    and _own_val.`default is dataclasses.MISSING
-                    and _own_val.default_factory is dataclasses.MISSING {
-                    _has_default = False;
-                }
-                if _has_default {
-                    _seen_default = True;
-                } elif _seen_default {
-                    if isinstance(_own_val, dataclasses.Field) {
-                        if _own_val.init {
-                            _own_val.kw_only = True;
-                        }
-                    } else {
-                        setattr(cls, _fname, dataclasses.field(kw_only=True));
-                    }
-                }
-            }
-            dataclass(eq=False)(cls);
-        }
-    } else {
-        dataclass(eq=False, init=False)(cls);
-    }
-    return cls;
+    return make_object(cls);
 }
 
 impl JacModule.impl_patch_filename(
@@ -703,6 +635,14 @@ impl JacModule.impl_patch_filename(
     def decorator(func: Callable[(P, T)]) -> Callable[(P, T)] {
         try {
             code = func.__code__;
+            import from jaclang.jac0core.ext_registry { is_jac }
+            import from jaclang.runtime.prepared { application_for }
+            application = application_for(code.co_filename, func.__module__ or '');
+
+            if application is not None
+                and is_jac(application.origins.get(code.co_filename, '')) {
+                return func;
+            }
             new_code = types.CodeType(
                 code.co_argcount,
                 code.co_posonlyargcount,
@@ -744,7 +684,6 @@ impl JacModule.jac_import(
     if (lng is None) {
         lng = infer_language(target, base_path);
     }
-    _ = JacRuntime.get_program();
     if target.startswith('.') {
         caller_dir = base_path
             if os.path.isdir(base_path)
@@ -786,9 +725,7 @@ impl JacModule.jac_import(
     }
     try {
         if (override_name == '__main__') {
-            import from jaclang.meta_importer { JacMetaImporter }
-            finder = JacMetaImporter();
-            spec = finder.find_spec(module_name, None);
+            spec = importlib.util.find_spec(module_name);
             if (
                 spec and spec.origin and spec.origin.endswith('.jac') and (lng == 'py')
             ) {
@@ -806,41 +743,33 @@ impl JacModule.jac_import(
             if (not spec or not spec.origin) {
                 raise ImportError(f"Cannot find module {module_name}");
             }
-            if (('__main__' in sys.modules) and not reload_module) {
-                module = sys.modules['__main__'];
-                to_keep = {
-                    k: v
-                    for (k, v) in module.__dict__.items()
-                    if k.startswith('__')
-                };
-                module.__dict__.update(to_keep);
-            } else {
-                module = types.ModuleType('__main__');
-                sys.modules['__main__'] = module;
-            }
+            module = types.ModuleType('__main__');
+            sys.modules['__main__'] = module;
             module.__file__ = spec.origin;
             module.__name__ = '__main__';
             module.__spec__ = spec;
             if spec.submodule_search_locations {
                 module.__path__ = spec.submodule_search_locations;
             }
-            JacRuntimeInterface.load_module('__main__', module);
+            JacRuntimeInterface.load_module('__main__', module, force=True);
 
-            if (spec.origin and spec.origin.endswith('.py')) {
-                codeobj = JacRuntime.get_compiler().get_bytecode(
-                    full_target=spec.origin, target_program=JacRuntime.get_program()
-                );
-                if codeobj {
-                    exec(codeobj, module.__dict__);
-                } elif spec.loader {
-                    spec.loader.exec_module(module);
+            if spec.origin and spec.origin.endswith('.py') {
+                with open(spec.origin, encoding='utf-8') as stream {
+                    codeobj = compile(stream.read(), spec.origin, 'exec');
                 }
+                exec(codeobj, module.__dict__);
             } elif spec.loader {
                 spec.loader.exec_module(module);
             }
         } elif (reload_module and (module_name in sys.modules)) {
-            module = importlib.reload(sys.modules[module_name]);
-            JacRuntimeInterface.load_module(module_name, module, force=True);
+            import from jaclang.runtime.preparation_lock { PREPARATION_LOCK }
+            with PREPARATION_LOCK {
+                loaded = sys.modules.get(module_name);
+                module = importlib.reload(loaded)
+                    if loaded is not None
+                    else importlib.import_module(module_name);
+                JacRuntimeInterface.load_module(module_name, module, force=True);
+            }
         } else {
             module = importlib.import_module(module_name);
             JacRuntimeInterface.load_module(
@@ -873,7 +802,6 @@ impl JacModule.jac_import(
 }
 
 impl JacTest.jac_test(description: str = "") -> Callable {
-    import from jaclang.testing.test { JacTestCheck }
     def decorator(test_fun: Callable) -> Callable {
         file_path = getfile(test_fun);
         func_name = test_fun.__name__;
@@ -908,131 +836,23 @@ impl JacTest.run_test(
     directory: (str | None) = None,
     verbose: bool = False
 ) -> int {
-    import from jaclang.testing.test { JacTestCheck }
-    import from jaclang.testing.cl_test_runner {
-        is_cl_test_file,
-        is_cl_test_file_for_discovery,
-        run_cl_test_file,
-        register_results_into_jactestcheck
-    }
-    import from jaclang.jac0core.ext_registry { base_stem, is_annex }
-    test_file = False;
-    ret_count = 0;
-    if filepath {
-        if is_cl_test_file(filepath) {
-            JacTestCheck.reset();
-            results = run_cl_test_file(filepath, test_name=func_name);
-            register_results_into_jactestcheck(os.path.abspath(filepath), results);
-            JacTestCheck.run_test(
-                xit, maxfail, verbose, os.path.abspath(filepath), func_name
-            );
-            ret_count = JacTestCheck.failcount;
-        } elif filepath.endswith('.jac') {
-            (base, mod_name) = os.path.split(filepath);
-            base = base or './';
-            mod_name = base_stem(mod_name);
-            JacTestCheck.reset();
-            JacRuntimeInterface.jac_import(target=mod_name, base_path=base);
-            JacTestCheck.run_test(
-                xit, maxfail, verbose, os.path.abspath(filepath), func_name
-            );
-            ret_count = JacTestCheck.failcount;
-        } else {
-            JacRuntimeInterface.get_console().error('Not a .jac file.');
-        }
-    } else {
-        directory = directory or os.getcwd();
-    }
-    if (filter or directory) {
-        current_dir = directory or os.getcwd();
-        for (root_dir, dirs, files) in os.walk(current_dir, topdown=True) {
-            dirs[:] = [
-                d
-                for d in dirs
-                if not (d.startswith('.') or d == '__pycache__')
-            ];
-            files = [
-                file
-                for file in files
-                if fnmatch.fnmatch(file, filter)
-            ]
-                if filter
-                else files;
-            files = [
-                file
-                for file in files
-                if not is_annex(file)
-            ];
-            for file in files {
-                if is_cl_test_file_for_discovery(os.path.join(root_dir, file)) {
-                    test_file = True;
-                    cl_path = os.path.join(root_dir, file);
-                    JacRuntimeInterface.get_console().info(
-                        f"\n\n\t\t* Inside {root_dir}/{file} *"
-                    );
-                    JacTestCheck.reset();
-                    register_results_into_jactestcheck(
-                        os.path.abspath(cl_path),
-                        run_cl_test_file(cl_path, test_name=func_name)
-                    );
-                    JacTestCheck.run_test(
-                        xit, maxfail, verbose, os.path.abspath(file), func_name
-                    );
-                } elif file.endswith('.jac') {
-                    test_file = True;
-                    JacRuntimeInterface.get_console().info(
-                        f"\n\n\t\t* Inside {root_dir}/{file} *"
-                    );
-                    JacTestCheck.reset();
-                    mod_target = base_stem(file);
-                    JacRuntimeInterface.jac_import(
-                        target=mod_target, base_path=root_dir
-                    );
-                    JacTestCheck.run_test(
-                        xit, maxfail, verbose, os.path.abspath(file), func_name
-                    );
-                }
-                if (JacTestCheck.breaker and (xit or maxfail)) {
-                    break;
-                }
-            }
-            if (JacTestCheck.breaker and (xit or maxfail)) {
-                break;
-            }
-        }
-        JacTestCheck.breaker = False;
-        ret_count += JacTestCheck.failcount;
-        JacTestCheck.failcount = 0;
-        if not test_file {
-            JacRuntimeInterface.get_console().warning('No test files found.');
-        }
-    }
-    return ret_count;
+    return build_services().run_test(
+        filepath, func_name, filter, xit, maxfail, directory, verbose
+    );
 }
-
-impl JacArchetype.field(
-    factory: (Callable[([], T)] | None) = None, `init: bool = True
-) -> T {
-    if factory {
-        return field(default_factory=factory);
-    }
-    return field(`init=`init);
-}
-
 
 impl JacBuiltin.log_report(expr: any, custom: bool = False) -> None {
-    import from jaclang.runtime.osp_kernel { osp_report, _current_scope }
     if custom {
         JacRuntimeInterface.get_context().custom = expr;
     } else {
-        JacRuntimeInterface.get_console().print(expr);
+        cs = JacRuntimeInterface.get_context().call_state.get(None);
+        if cs is None {
+            JacRuntimeInterface.get_console().print(expr);
+        }
         if _current_scope() is not None {
             osp_report(expr);
-        } else {
-            cs = JacRuntimeInterface.get_context().call_state.get(None);
-            if cs is not None {
-                cs.reports.put_nowait(expr);
-            }
+        } elif cs is not None {
+            cs.reports.put_nowait(expr);
         }
     }
 }
@@ -1042,6 +862,30 @@ impl JacGraph.refs(
     slc: (slice | None) = None,
     lazy: bool = False
 ) -> list[NodeArchetype] | list[EdgeArchetype] | list[(NodeArchetype | EdgeArchetype)] {
+    if not isinstance(path, GraphQuery) {
+        path = GraphQuery(path, hops=[QHop(dir=EdgeDir.OUT.value)]);
+    }
+    if slc is not None and path.slc is None {
+        path.slc = slc;
+    }
+    if len(path.origin) == 1
+        and len(path.hops) == 1
+        and not path.edges_only
+        and not path.order {
+        query_hop = path.hops[0];
+        anchor = path.origin[0]?.__jac__;
+        if isinstance(anchor, NodeAnchor)
+            and not query_hop.epreds
+            and query_hop.only is None
+            and light_hop_answers(anchor, query_hop.`edge) {
+            found = light_hop(anchor, query_hop.dir, query_hop.`edge, False);
+            found = filter_query_nodes(found, query_hop.nd, query_hop.preds);
+            if path.limit is not None {
+                return found[path.offset:path.offset + path.limit];
+            }
+            return found[path.slc] if path.slc is not None else found;
+        }
+    }
     import from jaclang.runtime.graph_walk {
         access_gated,
         has_persistent_origin,
@@ -1050,19 +894,13 @@ impl JacGraph.refs(
         walk_edges,
         walk_nodes
     }
-    if not isinstance(path, GraphQuery) {
-        path = GraphQuery(path, hops=[QHop(dir=EdgeDir.OUT.value)]);
-    }
-    if slc is not None and path.slc is None {
-        path.slc = slc;
-    }
     origins = origin_anchors(path);
     ctx = JacRuntimeInterface.peek_context();
     if ctx is None and has_persistent_origin(origins) {
         ctx = JacRuntimeInterface.get_context();
     }
 
-    def _archetypes(planned: list) -> list {
+    def _archetypes(planned: list[any]) -> list[(NodeArchetype | EdgeArchetype)] {
         out: list[(NodeArchetype | EdgeArchetype)] = [];
         for a in planned {
             arch = a.archetype;
@@ -1091,7 +929,7 @@ impl JacGraph.refs(
     ctx.note_traversal_reads([nd.__jac__ for nd in path.origin]);
     store_mem = cast(Session, ctx.mem);
 
-    def _run(q: GraphQuery) -> list {
+    def _run(q: GraphQuery) -> list[(NodeArchetype | EdgeArchetype)] {
         return _archetypes(
             resolve_query_edges(store_mem, q)
                 if q.edges_only
@@ -1122,7 +960,7 @@ impl JacGraph.connect(
     right: (NodeArchetype | list[NodeArchetype]),
     `edge: type[EdgeArchetype] | EdgeArchetype | None = None,
     undir: bool = False,
-    conn_assign: (tuple[(tuple, tuple)] | None) = None,
+    conn_assign: (tuple[(tuple[any, ...], tuple[any, ...])] | None) = None,
     edges_only: bool = False
 ) -> (NodeArchetype | list[NodeArchetype] | list[EdgeArchetype]) {
     if (
@@ -1153,6 +991,15 @@ impl JacGraph.connect(
     left = [left] if isinstance(left, NodeArchetype) else left;
     right_is_node = isinstance(right, NodeArchetype);
     right = [right] if isinstance(right, NodeArchetype) else right;
+    for operands in (left, right) {
+        for operand in operands {
+            if not isinstance(operand, NodeArchetype) {
+                raise TypeError(
+                    "connect operands must be nodes or flat collections of nodes"
+                );
+            }
+        }
+    }
     edges = [];
     for i in left {
         _left = i.__jac__;
@@ -1189,10 +1036,18 @@ impl JacGraph.connect(
 }
 
 impl JacGraph.hop(
-    origin: any, dir: int, edge_type: (type | None) = None, edges_only: bool = False
-) -> list {
-    if not isinstance(origin, `list) {
+    origin: any,
+    dir: int,
+    edge_type: (type | None) = None,
+    edges_only: bool = False,
+    nd: (type | tuple[type, ...] | None) = None,
+    preds: (list[QPred] | None) = None,
+    from_visit: bool = False
+) -> list[any] {
+    if not isinstance(origin, `list)
+        and (not edges_only or (nd is None and not preds and not from_visit)) {
         anchor = origin.__jac__;
+        found: (list[any] | None) = None;
         if (
             edge_type is not None
             and dir != 3
@@ -1207,25 +1062,33 @@ impl JacGraph.hop(
             if dir == 2 {
                 d = anchor.out_light;
                 lst = d.get(edge_type) if d else None;
-                return `list(lst) if lst else [];
+                found = `list(lst) if lst else [];
+            } else {
+                d = anchor.in_light;
+                lst = d.get(edge_type) if d else None;
+                found = _deref(lst) if lst else [];
             }
-            d = anchor.in_light;
-            lst = d.get(edge_type) if d else None;
-            return _deref(lst) if lst else [];
+        } elif light_hop_answers(anchor, edge_type) {
+            found = light_hop(anchor, dir, edge_type, edges_only);
         }
-        if light_hop_answers(anchor, edge_type) {
-            return light_hop(anchor, dir, edge_type, edges_only);
+        if found is not None {
+            return filter_query_nodes(found, nd, preds or [])
+                if nd is not None or preds
+                else found;
         }
     }
-    return JacRuntimeInterface.refs(
-        GraphQuery(origin, hops=[QHop(dir=dir, `edge=edge_type)], edges_only=edges_only)
+    query = GraphQuery(
+        origin,
+        hops=[QHop(dir=dir, `edge=edge_type, nd=nd, preds=preds or [])],
+        edges_only=edges_only
     );
+    query.from_visit = from_visit;
+    return JacRuntimeInterface.refs(query);
 }
 
 impl JacGraph.clear_edges(
     origin: any, dir: int, edge_type: (type | None) = None
 ) -> bool {
-    import from jaclang.runtime.osp_kernel { osp_forget }
     if edge_type is not None and not isinstance(origin, `list) {
         anchor = origin.__jac__;
         if (
@@ -1279,10 +1142,6 @@ impl JacGraph.disconnect(
     dir: EdgeDir = EdgeDir.OUT,
     filter: (Callable[([EdgeArchetype], bool)] | None) = None
 ) -> bool {
-    import from jaclang.runtime.osp_graph_sv {
-        sv_candidate_edges_between,
-        sv_register_hydrated
-    }
     disconnect_occurred = False;
     left = [left] if isinstance(left, NodeArchetype) else left;
     right = [right] if isinstance(right, NodeArchetype) else right;
@@ -1329,7 +1188,7 @@ impl JacGraph.disconnect(
 }
 
 impl JacGraph.assign_all(
-    target: list[T], attr_val: tuple[(tuple[str], tuple[any])]
+    target: list[T], attr_val: tuple[(tuple[str, ...], tuple[any, ...])]
 ) -> list[T] {
     for `obj in target {
         (attrs, values) = attr_val;
@@ -1360,7 +1219,7 @@ impl JacGraph.get_all_root -> list[Root] {
 impl JacGraph.build_edge(
     is_undirected: bool,
     conn_type: type[EdgeArchetype] | EdgeArchetype | None,
-    conn_assign: (tuple[(tuple, tuple)] | None)
+    conn_assign: (tuple[(tuple[any, ...], tuple[any, ...])] | None)
 ) -> Callable[([NodeAnchor, NodeAnchor], EdgeArchetype)] {
     ct = conn_type or GenericEdge;
     cls = ct if isinstance(ct, `type) else `type(ct);
@@ -1382,11 +1241,10 @@ impl JacGraph.heavy_edge(
     target: NodeAnchor,
     conn_type: type[EdgeArchetype] | EdgeArchetype | None,
     is_undirected: bool,
-    conn_assign: (tuple[(tuple, tuple)] | None)
+    conn_assign: (tuple[(tuple[any, ...], tuple[any, ...])] | None)
 ) -> EdgeArchetype {
-    import from jaclang.runtime.osp_graph_sv { sv_conn }
     ct = conn_type or GenericEdge;
-    `edge = ct() if isinstance(ct, `type) else ct;
+    (`edge, built_with) = new_connect_edge(ct, conn_assign);
     eanch = `edge.__jac__=EdgeAnchor(
         archetype=`edge, source=source, target=target, is_undirected=is_undirected
     );
@@ -1399,6 +1257,9 @@ impl JacGraph.heavy_edge(
     sv_conn(source, target, eanch, is_undirected);
     if conn_assign {
         for (fld, val) in zip(conn_assign[0], conn_assign[1], strict=False) {
+            if fld in built_with {
+                continue;
+            }
             if hasattr(`edge, fld) {
                 setattr(`edge, fld, val);
             } else {
@@ -1412,13 +1273,38 @@ impl JacGraph.heavy_edge(
     return `edge;
 }
 
-impl JacPersistence.save(`obj: (Archetype | Anchor)) -> None {
+impl JacPersistence.save(
+    `obj: (Archetype | Anchor), owner: (UUID | None) = None
+) -> None {
     anchor = `obj.__jac__ if isinstance(`obj, Archetype) else `obj;
     jctx = JacRuntimeInterface.get_context();
     anchor.ensure_id();
+    if (owner is not None and anchor.persistent and anchor.`root != owner) {
+        current_owner = anchor.`root;
+        raise ValueError(
+            f"anchor {anchor.id} is already owned by root {current_owner} and "
+            'cannot be re-owned'
+        );
+    }
     if (not anchor.persistent and not anchor.root) {
+        if (owner is not None and owner != jctx.user_root.id) {
+            target = jctx.mem.get(owner);
+            if not isinstance(target, NodeAnchor) or not target.is_populated() {
+                raise ValueError(f"owner root {owner} does not exist");
+            }
+            if not isinstance(target.archetype, Root) {
+                raise ValueError(f"owner {owner} is not a root");
+            }
+            if JacRuntimeInterface.check_access_level(target).value
+                < AccessLevel.WRITE.value {
+                raise PermissionError(
+                    f"caller root may not create content owned by root {owner}: "
+                    'requires WRITE on that root'
+                );
+            }
+        }
         anchor.persistent = True;
-        anchor.`root = jctx.user_root.id;
+        anchor.`root = owner if owner is not None else jctx.user_root.id;
     }
     jctx.mem.put(anchor);
     match anchor {
@@ -1441,6 +1327,11 @@ impl JacPersistence.save(`obj: (Archetype | Anchor)) -> None {
             ;
 
     }
+}
+
+impl JacPersistence.owner_of(`obj: (Archetype | Anchor)) -> (UUID | None) {
+    anchor = `obj.__jac__ if isinstance(`obj, Archetype) else `obj;
+    return anchor.root;
 }
 
 impl JacPersistence._destroy_anchors(objs: any, strict: bool) -> list[Anchor] {
@@ -1473,8 +1364,13 @@ impl JacPersistence._destroy_anchors(objs: any, strict: bool) -> list[Anchor] {
 }
 
 impl JacPersistence.destroy(objs: any, strict: bool = False) -> None {
+    anchors = JacPersistence._destroy_anchors(objs, strict);
+    if not anchors {
+        return;
+    }
     import from jaclang.runtime.osp_kernel { osp_forget }
-    for anchor in JacPersistence._destroy_anchors(objs, strict) {
+    import from jaclang.runtime.region { run_drop }
+    for anchor in anchors {
         if isinstance(anchor.archetype, Root) {
             raise RuntimeError("cannot destroy root");
         }
@@ -1490,6 +1386,7 @@ impl JacPersistence.destroy(objs: any, strict: bool = False) -> None {
                         `edge.detach();
                         `edge.destroyed = True;
                         _edge_handle: any = `edge.archetype;
+                        run_drop(_edge_handle);
                         osp_forget(_edge_handle);
                         if eid is not None {
                             JacRuntimeInterface.get_context().mem.delete(eid);
@@ -1509,6 +1406,7 @@ impl JacPersistence.destroy(objs: any, strict: bool = False) -> None {
             }
             anchor.destroyed = True;
             _handle: any = anchor.archetype;
+            run_drop(_handle);
             osp_forget(_handle);
         }
     }
@@ -1560,8 +1458,7 @@ impl JacArchetype.set_trigger(
 }
 
 impl JacServe.get_client_bundle_builder -> ClientBundleBuilder {
-    import from jaclang.client.vite_client_bundle { make_client_bundle_builder }
-    return make_client_bundle_builder();
+    return build_services().client_builder();
 }
 
 impl JacServe.build_client_bundle(
@@ -1572,191 +1469,20 @@ impl JacServe.build_client_bundle(
 }
 
 impl JacBuiltin.get_console -> ConsoleImpl {
-    import from jaclang.cli.console { JacConsole }
     return JacConsole();
 }
 
 impl JacServe.get_api_server_class -> type {
-    import from jaclang.server.identity_owner {
-        SCALE_IDENTITY,
-        identity_owner,
-        scale_stack_unavailable
-    }
-    _served = JacRuntime.get_full_target_path() or JacRuntime.get_base_path_dir();
-    if identity_owner(_served) != SCALE_IDENTITY {
-        import from jaclang.server.server { JacAPIServer }
-        return JacAPIServer;
-    }
+    return JacAPIServer;
+}
+
+impl JacServe.get_server_extensions -> list[ServerExtension] {
     _sp = _scale_provider();
     if _sp is None {
-        raise scale_stack_unavailable('jaclang.scale.plugin', scale_provider_error());
+        return [];
     }
-    _scaled = _sp.get_api_server_class();
-    if _scaled is None {
-        raise RuntimeError(
-            'the scale plugin returned no API server class while the scale '
-            'identity owns /user/* for this project. Nothing falls back to the '
-            'core store from here: the two stacks keep credentials in '
-            'different databases, so serving the other one would answer for '
-            'accounts this project does not have.'
-        );
-    }
-    return _scaled;
+    return list(_sp.get_server_extensions());
 }
-
-impl JacServe.ensure_sv_service(module_name: str, base_path: str) -> None {
-    import from jaclang.server.identity_owner {
-        scale_stack_installed,
-        scale_stack_unavailable
-    }
-    _sp = _scale_provider();
-    if _sp is not None {
-        _sp.ensure_sv_service(module_name, base_path);
-        return;
-    }
-    if scale_stack_installed() {
-        raise scale_stack_unavailable('jaclang.scale.plugin', scale_provider_error());
-    }
-    import os;
-    import time;
-    import urllib.request;
-    import from http.client { HTTPResponse }
-    import from jaclang.server { sv_client }
-    import from jaclang.server.server { JacAPIServer as CoreJacAPIServer }
-    import from jaclang.server.serving.server { ServingServer }
-    if module_name in sv_client._registry {
-        return;
-    }
-    if module_name in sv_client._test_clients {
-        return;
-    }
-    base_port = 18000 + (hash(module_name) % 1000);
-
-    srv = CoreJacAPIServer(
-        module_name=module_name, port=0, base_path=base_path, is_sv_sibling=True
-    );
-    srv.load_module();
-    serving = ServingServer(app=srv.build_app(), host='127.0.0.1', port=base_port);
-    serving.serve_background(port_retries=100);
-    port = serving.bound_port;
-    srv.port = port;
-    srv.server = serving;
-    base_url = f"http://127.0.0.1:{port}";
-    deadline = time.time() + 10.0;
-    healthy = False;
-    while time.time() < deadline {
-        try {
-            probe: HTTPResponse = urllib.request.urlopen(
-                f"{base_url}/functions", timeout=1
-            );
-            with probe as resp {
-                if resp.status < 500 {
-                    healthy = True;
-                    break;
-                }
-            }
-        } except Exception {
-            time.sleep(0.05);
-        }
-    }
-    if not healthy {
-        raise RuntimeError(
-            f"sv-to-sv service '{module_name}' did not become healthy at {base_url}"
-        );
-    }
-    sv_client.register(module_name, base_url);
-}
-
-impl JacServe.sv_service_call(module_name: str, func_name: str, args: dict) -> any {
-    _sp = _scale_provider();
-    if _sp is not None and _sp.sv_transport_available() {
-        return _sp.sv_service_call(module_name, func_name, args);
-    }
-    import from jaclang.server { sv_client }
-    import from jaclang.server.serving.client { post_stream_aware_sync }
-    import from jaclang.server.serving.sse { consume_sse_events }
-
-    func_label = f"{module_name}.{func_name}";
-
-    if module_name in sv_client._test_clients {
-        client = sv_client._test_clients[module_name];
-        resp = client.post(f"/function/{func_name}", json=args);
-        ct = str(resp.headers.get("Content-Type") or "");
-        if ct.startswith("text/event-stream") {
-            return consume_sse_events(str(resp.text).splitlines(), func_label);
-        }
-        data = resp.json();
-    } else {
-        url = sv_client.resolve_url(module_name);
-        (kind, payload) = post_stream_aware_sync(
-            f"{url}/function/{func_name}", json_body=args, label=func_label
-        );
-        if kind == 'sse' {
-            return payload;
-        }
-        data = payload;
-    }
-
-    if isinstance(data, dict) and data.get("ok") {
-        result_envelope = data.get("data");
-        if isinstance(result_envelope, dict) and ("result" in result_envelope) {
-            return result_envelope["result"];
-        }
-        return result_envelope;
-    }
-
-    err = (data.get("error") if isinstance(data, dict) else None) or {};
-    msg = err.get("message") if isinstance(err, dict) else str(err);
-    raise RuntimeError(
-        f"sv-to-sv RPC '{module_name}.{func_name}' failed: {msg or 'unknown error'}"
-    );
-}
-
-impl JacServe.sv_walker_call(
-    module_name: str, walker_name: str, args: dict, stub_cls: any
-) -> any {
-    _sp = _scale_provider();
-    if _sp is not None and _sp.sv_transport_available() {
-        return _sp.sv_walker_call(module_name, walker_name, args, stub_cls);
-    }
-    import from jaclang.server { sv_client }
-    import from jaclang.server.serving.client { request_sync }
-
-    label = f"{module_name}.{walker_name}";
-
-    if module_name in sv_client._test_clients {
-        client = sv_client._test_clients[module_name];
-        resp = client.post(f"/walker/{walker_name}", json=args);
-        data = resp.json();
-    } else {
-        url = sv_client.resolve_url(module_name);
-        data = request_sync(
-            'POST', f"{url}/walker/{walker_name}", json_body=args
-        ).json();
-    }
-
-    if isinstance(data, dict) and data.get("ok") {
-        envelope = data.get("data") or {};
-        result_dict = envelope.get("result") if isinstance(envelope, dict) else None;
-        reports = envelope.get("reports") if isinstance(envelope, dict) else None;
-        instance = stub_cls._from_wire(result_dict)
-            if (stub_cls is not None and result_dict is not None)
-            else result_dict;
-        if instance is not None and reports is not None {
-            try {
-                instance.reports = reports;
-            } except Exception {}
-        }
-        return instance;
-    }
-
-    err = (data.get("error") if isinstance(data, dict) else None) or {};
-    msg = err.get("message") if isinstance(err, dict) else str(err);
-    raise RuntimeError(
-        f"sv-to-sv walker spawn '{label}' failed: {msg or 'unknown error'}"
-    );
-}
-
 
 impl JacServe.get_sv_registry -> dict[str, str] {
     _sp = _scale_provider();
@@ -1789,12 +1515,10 @@ impl JacServe.render_page(
     args: dict[(str, any)],
     username: str
 ) -> dict[(str, any)] {
-    import from jaclang.client.serving { JacClient }
     return JacClient.render_page(introspector, function_name, args, username);
 }
 
 impl JacServe.get_client_js(introspector: ModuleIntrospector) -> str {
-    import from jaclang.client.serving { JacClient }
     return JacClient.get_client_js(introspector);
 }
 
@@ -1803,9 +1527,7 @@ impl JacLLM.get_mtir(
     args: dict[((int | str), object)],
     call_params: dict[(str, object)]
 ) -> MTRuntime {
-    import from jaclang.compiler.driver.mtp { fetch_mtir }
-    import from jaclang.byllm.mtir { MTIR }
-    return MTIR(caller, args, call_params, fetch_mtir(caller)).runtime;
+    return MTIR(caller, args, call_params, JacLLM.fetch_mtir(caller)).runtime;
 }
 
 impl JacLLM.`sem(semstr: str, inner_semstr: dict[(str, str)]) -> Callable {
@@ -1828,8 +1550,6 @@ impl JacLLM.acall_llm(model: LLMModel, mt_run: MTRuntime) -> any {
 impl JacLLM.`by(model: LLMModel) -> Callable {
     def _decorator(caller: Callable) -> Callable {
         def _wrapped_caller(*args: object, **kwargs: object) -> object {
-            import from jaclang.compiler.driver.mtp { fetch_mtir }
-            import from jaclang.byllm.mtir { MTIR }
             invoke_args: dict[((int | str), object)] = {};
             for (i, arg) in enumerate(args) {
                 invoke_args[i] = arg;
@@ -1838,7 +1558,7 @@ impl JacLLM.`by(model: LLMModel) -> Callable {
                 invoke_args[key] = value;
             }
             mt_run = MTIR(
-                caller, invoke_args, model.call_params, fetch_mtir(caller)
+                caller, invoke_args, model.call_params, JacLLM.fetch_mtir(caller)
             ).runtime;
             return model.invoke(mt_run=mt_run);
         }
@@ -1848,9 +1568,6 @@ impl JacLLM.`by(model: LLMModel) -> Callable {
 }
 
 impl JacLLM.by_operator(lhs: any, rhs: any) -> any {
-    import from jaclang.byllm.llm { BaseLLM }
-    import from jaclang.runtime.archetype { NodeArchetype, EdgeArchetype }
-
     lhs_list = lhs if isinstance(lhs, list) else [lhs];
     if all(isinstance(element, (NodeArchetype, EdgeArchetype)) for element in lhs_list)
         and isinstance(rhs, BaseLLM) {
@@ -1917,7 +1634,7 @@ impl JacLLM.default_llm -> LLMModel {
         }
     }
 
-    merged_config: dict = dict(model_config);
+    merged_config: dict[str, any] = dict(model_config);
     if chosen.startswith("local:") {
         for (k, v) in local_config.items() {
             merged_config[k] = v;
@@ -1931,21 +1648,67 @@ impl JacLLM.default_llm -> LLMModel {
     return instance;
 }
 
-impl JacLLM.add_mtir_to_map(scope: str, mtir: Info) -> None {
+impl JacLLM.get_mtir_from_map(scope: str) -> (Info | None) {
+    prepared = semantic_for_scope(scope);
+    if prepared is not None {
+        return prepared;
+    }
     if (JacRuntime.program is None) {
         raise AttributeError('JacRuntime.program is not initialized');
     }
-    JacRuntime.program.mtir_map[scope] = mtir;
+    owner = JacRuntime.program.context_root or JacRuntime.program;
+    programs = [owner, *owner.contexts.values()];
+    internal = JacRuntime.get_compiler().selfhost.peek_program();
+    if internal is not None {
+        programs.append(internal);
+    }
+    for program in programs {
+        found = program.mtir_map.get(scope);
+        if found is not None {
+            return found;
+        }
+    }
+    raise KeyError(f"MTIR not found for scope {scope}");
 }
 
-impl JacLLM.get_mtir_from_map(scope: str) -> (Info | None) {
-    if (JacRuntime.program is None) {
-        raise AttributeError('JacRuntime.program is not initialized');
+impl JacLLM.fetch_mtir(func: Callable) -> (Info | None) {
+    import sys;
+    import from pathlib { Path }
+    module_name = None;
+    try {
+        module_name = getattr(func, "__module__");
+    } except AttributeError {
+        module_name = None;
     }
-    if (scope not in JacRuntime.program.mtir_map) {
-        raise KeyError(f"MTIR not found for scope {scope}");
+
+    if module_name and module_name == "__main__" {
+        main_mod = sys.modules.get("__main__");
+        main_file = main_mod?.__file__ if main_mod else None;
+        if main_file {
+            stem = Path(main_file).stem;
+
+            if stem.endswith(".impl") {
+                stem = stem[:-5];
+            } elif stem.endswith(".cl") {
+                stem = stem[:-3];
+            }
+            module = stem;
+        } else {
+            module = Path(sys.argv[0]).stem if sys.argv and sys.argv[0] else "__main__";
+        }
+    } elif module_name {
+        module = module_name;
+    } else {
+        module = "__main__";
     }
-    return JacRuntime.program.mtir_map[scope];
+
+    try {
+        qualname = func.__qualname__;
+        current_scope = ".".join([module, qualname]);
+        return JacRuntime.get_mtir_from_map(current_scope);
+    } except (KeyError, AttributeError) {
+        return None;
+    }
 }
 
 impl JacContext.create_j_context(
@@ -2071,9 +1834,20 @@ impl JacModule.create_archetype_from_source(
 impl JacModule.update_walker(
     module_name: str, items: (dict[(str, str | str | None)] | None)
 ) -> tuple[(types.ModuleType, ...)] {
-    if (module_name in JacRuntime.loaded_modules) {
+    context = JacRuntime.get_context();
+    application = application_for(context.full_target_path or '');
+    old_module = JacRuntime.loaded_modules.get(module_name);
+    if application is not None {
+        imported = module_builtins(application, application.entry)['__import__'](
+            module_name, fromlist=('*', )
+        );
+        module_name = imported.__spec__.name
+            if imported.__spec__ is not None
+            else imported.__name__;
+        old_module = imported;
+    }
+    if old_module is not None {
         try {
-            old_module = JacRuntime.loaded_modules[module_name];
             result = JacRuntimeInterface.jac_import(
                 target=module_name,
                 base_path=(JacRuntime.get_base_path_dir() or os.getcwd()),
@@ -2103,7 +1877,9 @@ impl JacModule.update_walker(
 }
 
 impl JacIntrospection.spawn_node(
-    node_name: str, attributes: (dict | None) = None, module_name: str = '__main__'
+    node_name: str,
+    attributes: (dict[str, any] | None) = None,
+    module_name: str = '__main__'
 ) -> NodeArchetype {
     node_class = JacRuntimeInterface.get_archetype(module_name, node_name);
     if (isinstance(node_class, `type) and issubclass(node_class, NodeArchetype)) {
@@ -2118,7 +1894,9 @@ impl JacIntrospection.spawn_node(
 }
 
 impl JacIntrospection.spawn_walker(
-    walker_name: str, attributes: (dict | None) = None, module_name: str = '__main__'
+    walker_name: str,
+    attributes: (dict[str, any] | None) = None,
+    module_name: str = '__main__'
 ) -> WalkerArchetype {
     walker_class = JacRuntimeInterface.get_archetype(module_name, walker_name);
     if (
@@ -2160,14 +1938,6 @@ impl JacConfig.validate_config(config: dict[(str, any)]) -> list[str] {
 }
 
 impl JacPersistence.get_user_manager(base_path: str) -> UserManager {
-    _sp = _scale_provider();
-    if _sp is not None {
-        _scaled = _sp.get_user_manager(base_path);
-        if _scaled is not None {
-            return _scaled;
-        }
-    }
-    import from jaclang.server.server { UserManager }
     return UserManager(base_path=base_path);
 }
 
@@ -2182,7 +1952,7 @@ impl JacPersistence.store(
     return LocalStorage(base_path=base_path, create_dirs=create_dirs);
 }
 
-impl JacPersistence.get_persistent_memory(config: dict) -> any {
+impl JacPersistence.get_persistent_memory(config: dict[str, any]) -> any {
     provider = _persistent_memory_provider[0];
     if provider is not None {
         return provider(config);
@@ -2196,6 +1966,10 @@ impl JacPersistence.set_persistent_memory_provider(provider: Callable | None) ->
 
 impl JacRuntime.reset_process_state(cls: any, clear_modules: bool = True) -> None {
     import sys;
+    prepared = sys.modules.get('jaclang.runtime.prepared');
+    if prepared is not None {
+        prepared.clear();
+    }
     import from concurrent.futures { ThreadPoolExecutor }
     if cls.exec_ctx is not None {
         cls.exec_ctx.mem.close();
@@ -2225,8 +1999,8 @@ impl JacRuntime.reset_process_state(cls: any, clear_modules: bool = True) -> Non
 
 impl JacRuntime.get_compiler(cls: any) -> JacCompiler {
     if (cls.compiler is None) {
-        import from jaclang.compiler.driver.compiler { JacCompiler }
-        cls.compiler = JacCompiler();
+        import from jaclang.runtime.build_services { build_services }
+        cls.compiler = build_services().compiler();
         if cls.program is not None and cls.program._compiler is None {
             cls.program._compiler = cls.compiler;
         }
@@ -2236,8 +2010,8 @@ impl JacRuntime.get_compiler(cls: any) -> JacCompiler {
 
 impl JacRuntime.get_program(cls: any) -> JacProgram {
     if (cls.program is None) {
-        import from jaclang.compiler.driver.program { JacProgram }
-        prog = JacProgram();
+        import from jaclang.runtime.build_services { build_services }
+        prog = build_services().program();
 
         prog._compiler = cls.get_compiler();
         cls.program = prog;
@@ -2247,8 +2021,8 @@ impl JacRuntime.get_program(cls: any) -> JacProgram {
 
 impl JacRuntime.get_selfhost(cls: any) -> SelfHostCache {
     if (cls.selfhost is None) {
-        import from jaclang.compiler.driver.selfhost { SelfHostCache }
-        cls.selfhost = SelfHostCache();
+        import from jaclang.runtime.build_services { build_services }
+        cls.selfhost = build_services().selfhost();
     }
     return cls.selfhost;
 }
@@ -2325,10 +2099,121 @@ impl JacRuntime.set_context(context: ExecutionContext) -> None {
     JacRuntime.exec_ctx = context;
 }
 
+impl JacRuntime.request_context -> (ExecutionContext | None) {
+    return _request_context.get();
+}
+
 impl JacRuntime.push_request_context(context: ExecutionContext) -> any {
     return _request_context.set(context);
 }
 
 impl JacRuntime.reset_request_context(token: any) -> None {
     _request_context.reset(token);
+}
+
+impl JacRuntime.after_fork_in_child -> None {
+    import from concurrent.futures { ThreadPoolExecutor }
+    ctx = JacRuntime.exec_ctx;
+    JacRuntime.exec_ctx = None;
+    if ctx is not None {
+        store = ctx.mem?.store;
+        if store is not None {
+            for attr in ('_conn', '_side_conn') {
+                detach(getattr(store, attr, None));
+                try {
+                    setattr(store, attr, None);
+                } except Exception {}
+            }
+            try {
+                store._listen_thread = None;
+                store._listen_stop = None;
+                store._side_listened = False;
+            } except Exception {}
+        }
+    }
+    _shared_root_resolver[1] = None;
+    JacRuntime.pool = ThreadPoolExecutor();
+}
+
+impl _scale_provider -> any {
+    if _scale_provider_cache {
+        return _scale_provider_cache[0];
+    }
+    result: any = None;
+    try {
+        import from jaclang.scale.runtime.provider { JacScaleRuntime }
+        result = JacScaleRuntime;
+    } except ImportError as e {
+        _scale_provider_error[0] = e;
+    }
+    _scale_provider_cache.append(result);
+    return result;
+}
+
+impl scale_provider_error -> Exception | None {
+    return _scale_provider_error[0];
+}
+
+impl _all_grant(anchor: Anchor) -> AccessLevel {
+    perm = anchor.access;
+    return AccessLevel.NO_ACCESS if perm is None else perm.all;
+}
+
+impl _light_disconnect_between(
+    a: NodeAnchor, b: NodeAnchor, dirv: int, filter: (Callable | None)
+) -> bool {
+    occurred = False;
+    if dirv != 1 and a.out_light {
+        for cls in `list(a.out_light.keys()) {
+            if filter and not filter(light_edge_view(cls, a, b)) {
+                continue;
+            }
+            while light_disconnect(a, cls, b) {
+                occurred = True;
+            }
+        }
+    }
+    if dirv != 2 and a.in_light {
+        for cls in `list(a.in_light.keys()) {
+            if filter and not filter(light_edge_view(cls, b, a)) {
+                continue;
+            }
+            while light_disconnect(b, cls, a) {
+                occurred = True;
+            }
+        }
+    }
+    return occurred;
+}
+
+impl resolve_ref(
+    stub: (Anchor | None), referrer: (Anchor | None) = None
+) -> (Anchor | None) {
+    if stub is None {
+        return None;
+    }
+    if stub.is_populated() {
+        return stub;
+    }
+    stub.populate();
+    if stub.is_populated() {
+        return stub;
+    }
+    ctx = JacRuntimeInterface.get_context();
+
+    if ctx.mem.preserve_unresolved_ref(stub.ensure_id()) {
+        return None;
+    }
+
+    ref_repr = referrer.id if referrer is not None else '?';
+    logger.error(
+        f"dangling reference: {type(stub).__name__} [{stub.id}] cited by "
+        f"{ref_repr} does not resolve; quarantining and pruning"
+    );
+    try {
+        ctx.mem.quarantine_ref(referrer, stub);
+    } except Exception as e {
+        logger.debug(f"heal of dangling ref {stub.id} failed: {e}");
+    }
+    return None;
 }

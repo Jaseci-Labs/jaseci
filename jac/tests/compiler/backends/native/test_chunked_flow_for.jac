@@ -8,9 +8,8 @@ the `_jac_chunks` runtime)."""
 import os;
 import re;
 import subprocess;
-import sys;
 import tempfile;
-import from tests.support { TESTS_DIR }
+import from tests.support { jac_command, TESTS_DIR }
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.compiler.driver.compile_options { CompileOptions }
 
@@ -18,16 +17,15 @@ glob FIXTURE = os.path.join(
          TESTS_DIR, "compiler", "backends", "native", "fixtures", "chunked_flow_for.jac"
      ),
      MODE_FLAGS = {
-         "none": ["--enforce-nogc", "--gc", "none", "--assert-no-rc"],
-         "rc": ["--gc", "rc"],
-         "cycles": ["--gc", "cycles"]
+         "none": ["--memory", "nogc"],
+         "rc": ["--memory", "rc"],
+         "cycles": ["--memory", "managed"]
      };
 
 test "chunk bodies build view headers without allocating" {
     prog = JacProgram();
     ir = prog.compile(
-        file_path=FIXTURE,
-        options=CompileOptions(aot_mode=True, na_gc_mode="none", nogc_enforce_all=True)
+        file_path=FIXTURE, options=CompileOptions(aot_mode=True, memory_profile="nogc")
     );
     assert not prog.errors_had , [e.pretty_print() for e in prog.errors_had];
     text = str(ir.gen.llvm_ir);
@@ -47,7 +45,7 @@ test "chunked output is identical across modes, widths, and python" {
         for mode in ("none", "rc", "cycles") {
             out_bin = os.path.join(tmp, f"ck_{mode}");
             res = subprocess.run(
-                [sys.executable, "-m", "jaclang", "nacompile", FIXTURE]
+                jac_command("build", "--native", FIXTURE)
                     + MODE_FLAGS[mode]
                     + ["-o", out_bin],
                 capture_output=True,
@@ -59,7 +57,7 @@ test "chunked output is identical across modes, widths, and python" {
             outs[mode] = ran.stdout;
             if mode == "none" {
                 for w in ("1", "8") {
-                    _env = dict(os.environ);
+                    _env: dict[str, str] = dict(os.environ);
                     _env["JAC_FLOW_THREADS"] = w;
                     wran = subprocess.run(
                         [out_bin], capture_output=True, text=True, env=_env
@@ -82,9 +80,7 @@ test "chunked output is identical across modes, widths, and python" {
             );
         }
         pyr = subprocess.run(
-            [sys.executable, "-m", "jaclang", "run", py_src],
-            capture_output=True,
-            text=True
+            jac_command("run", py_src), capture_output=True, text=True
         );
         assert pyr.returncode == 0 , f"py: {pyr.stderr}";
         _py_lines = [

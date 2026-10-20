@@ -2,19 +2,16 @@ import contextlib;
 import from pathlib { Path }
 import from types { ModuleType }
 import from typing { TYPE_CHECKING }
-import from jaclang.client.client_bundle { ClientBundleError }
-import from jaclang.client.asset_processor { AssetProcessor }
-import from jaclang.client.import_processor { ImportProcessor }
-import from jaclang.client.jac_to_js { JacToJSCompiler }
-import from jaclang.client.route_scanner { RouteScanner, resolve_route_exports }
-import from jaclang.jac0core.ext_registry { ANNEX_SUFFIXES }
-import type from jaclang.compiler.frontend.codeinfo { ClientArtifact, ClientManifest }
 
 with entry {
     if TYPE_CHECKING {}
 }
 
 class JacClientCompiler {
+    has entry_path: str = "",
+        na_wasm_modules: set[str] = set(),
+        input_files: dict[str, str] = {};
+
     with entry {
         ROUTER_EXPORTS = [
             'Router',
@@ -32,7 +29,9 @@ class JacClientCompiler {
 
         COMPOUND_EXTENSIONS = ['.native.jac'] + list(ANNEX_SUFFIXES);
 
-        PLATFORM_RUNTIME_FILES = {"react-native": "client_runtime_native.jac"};
+        NATIVE_RUNTIME_FILE = "client_runtime_native.jac";
+
+        SELF_COMPILED_VIRTUAL_MODULES = {"@jac/mobui", "@jac/pwa"};
     }
 
     def init(
@@ -43,10 +42,13 @@ class JacClientCompiler {
         extract_exports_func: Callable[[ClientManifest | None], list[str]],
         extract_globals_func:
             Callable[[ClientManifest | None, ModuleType | None], dict[str, any]],
-        compiled_dir: (Path | None) = None
+        compiled_dir: (Path | None) = None,
+        entry_path: str = ""
     );
 
     def _get_client_dir(self: JacClientCompiler) -> Path;
+    def _client_app_dir(self: JacClientCompiler) -> Path;
+    def _app_root(self: JacClientCompiler) -> Path;
     def _collect_na_modules(self: JacClientCompiler, artifact: ClientArtifact) -> None;
     def _jac_path_to_js(self: JacClientCompiler, rel_str: str) -> str;
     def _native_variant(self: JacClientCompiler, path: Path) -> Path;
@@ -54,17 +56,17 @@ class JacClientCompiler {
         self: JacClientCompiler, runtime_filename: str
     ) -> tuple[str, list[str]];
 
+    def emit_prelude(self: JacClientCompiler) -> Path;
     def compile_pwa_runtime(self: JacClientCompiler) -> tuple[str, list[str]];
     def compile_mobui_utils(self: JacClientCompiler) -> tuple[str, list[str]];
-    def compile_dependencies_recursively(
+    def emit_dependencies(
         self: JacClientCompiler,
         module_path: Path,
         visited: (set[Path] | None) = None,
         collected_exports: (set[str] | None) = None,
         collected_globals: (dict[(str, any)] | None) = None,
         source_root: (Path | None) = None,
-        target_name: str = "web",
-        skip_existing: bool = False
+        native: bool = False
     ) -> None;
 
     def _output_path_for(
@@ -86,17 +88,23 @@ class JacClientCompiler {
     def copy_root_assets(self: JacClientCompiler) -> None;
     def _scan_and_compile_pages(
         self: JacClientCompiler,
+        entry_manifest: any = None,
         visited: (set[Path] | None) = None,
         collected_exports: (set[str] | None) = None,
         collected_globals: (dict[(str, any)] | None) = None,
-        target_name: str = "web"
+        native: bool = False
     ) -> bool;
 
     def rescan_pages(self: JacClientCompiler) -> bool;
+    def _check_entry_renders_routes(
+        self: JacClientCompiler, entry_manifest: any
+    ) -> None;
+
     def _warn_pages_without_routes(
         self: JacClientCompiler, scanner: RouteScanner
     ) -> None;
 
+    def _warn_unrouted_pages(self: JacClientCompiler, scanner: RouteScanner) -> None;
     def _generate_routes_manifest(self: JacClientCompiler) -> bool;
     def _write_source_map(
         self: JacClientCompiler,
@@ -110,6 +118,6 @@ class JacClientCompiler {
         self: JacClientCompiler,
         module: (ModuleType | None),
         module_path: Path,
-        target_name: str = "web"
+        native: bool = False
     ) -> tuple[list[str], list[str]];
 }

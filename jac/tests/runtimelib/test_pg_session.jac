@@ -26,7 +26,7 @@ node SItem {
     has tag: str = "";
 }
 
-edge SRel {
+edge SRel: any --> any {
     has w: int = 0;
 }
 
@@ -60,7 +60,7 @@ def _root(ctx: ExecutionContext) -> NodeAnchor {
 }
 
 
-def _out_items(ctx: ExecutionContext, ranch: NodeAnchor) -> list {
+def _out_items(ctx: ExecutionContext, ranch: NodeAnchor) -> list[any] {
     q = GraphQuery(ranch.archetype, hops=[QHop(dir=2, nd=SItem)]);
     return resolve_query(cast(Session, ctx.mem), q);
 }
@@ -228,16 +228,18 @@ test "field mutation lands in the dirty set without a full-session sweep" {
 
 
 test "read barrier hashes only dirty anchors, not the whole session" {
-    import jaclang.server.session as smod;
+    import from jaclang.data.serializer { Serializer }
     with TemporaryDirectory() as td {
         old = JacRuntime.exec_ctx;
         ctx = _make_ctx(td);
         JacRuntime.exec_ctx = ctx;
-        orig = smod._persist_hash;
-        calls: list = [];
-        def counting_hash(anchor: Anchor) -> int {
+        orig = Serializer.stored_hash;
+        calls: list[int] = [];
+        def counting_hash(
+            anchor: Anchor, stored: (dict[str, object] | None) = None
+        ) -> int {
             calls.append(1);
-            return orig(anchor);
+            return orig(anchor, stored);
         }
         try {
             ranch = _root(ctx);
@@ -251,7 +253,7 @@ test "read barrier hashes only dirty anchors, not the whole session" {
             _ = ctx.user_root;
             ctx.mem.commit();
 
-            smod._persist_hash = counting_hash;
+            _as_any(Serializer).stored_hash = staticmethod(counting_hash);
             ctx.mem.read_barrier();
             assert len(calls) == 0 , f"clean session: read barrier must hash nothing, hashed {len(
                 calls
@@ -265,7 +267,7 @@ test "read barrier hashes only dirty anchors, not the whole session" {
                 calls
             )}";
         } finally {
-            smod._persist_hash = orig;
+            _as_any(Serializer).stored_hash = staticmethod(orig);
             JacRuntime.exec_ctx = old;
             ctx.close();
         }
@@ -280,7 +282,7 @@ test "on_commit fires exactly once, after successful commit" {
         JacRuntime.exec_ctx = ctx;
         try {
             _root(ctx);
-            fired: list = [];
+            fired: list[int] = [];
             ctx.mem.on_commit(lambda { fired.append(1); });
             assert fired == [];
             ctx.mem.commit();

@@ -7,25 +7,19 @@ served over a real socket), so the gateway learns routes from the exact
 
 import tempfile;
 import from pathlib { Path }
-import from jaclang.scale.tests.scale_test_client { ScaleTestClient, make_client }
-import from jaclang.scale.runtime.gateway.service_registry {
-    ServiceRegistry,
-    ServiceEntry,
-    ServiceStatus
-}
-import from jaclang.scale.runtime.gateway.microservice_gateway { MicroserviceGateway }
-import from jaclang.scale.runtime.gateway.route_table {
-    ServiceRouteTable,
-    literal_prefix
-}
 
 
 """Serve the in-process jac app over a real socket; returns (server, port)."""
-def _expose_backend(client: ScaleTestClient) -> tuple {
-    import from jaclang.server.serving.server { ServingServer }
+def _expose_backend(client: ScaleTestClient) -> tuple[any, ...] {
     backend = client._server;
     assert backend is not None , "client has no in-process server";
-    server = ServingServer(app=backend.server.app, host="127.0.0.1", port=0);
+    # Build the real spec before advertising the backend as healthy. Route
+    # discovery has a one-second budget; cold schema generation is not part
+    # of the routing behavior these tests exercise.
+    spec = client.get("/openapi.json");
+    assert spec.status_code == 200;
+    assert "/custom/walker" in spec.json()["paths"];
+    server = ServingServer(app=backend.require_app(), host="127.0.0.1", port=0);
     server.serve_background();
     assert server.bound_port , "backend server did not start in time";
     return (server, server.bound_port);
@@ -44,7 +38,7 @@ def _gateway_for(port: int, dist_dir: str = "") -> MicroserviceGateway {
             status=ServiceStatus.HEALTHY
         )
     );
-    kwargs: dict = {"registry": reg};
+    kwargs: dict[str, any] = {"registry": reg};
     if dist_dir {
         kwargs["client_dist_dir"] = dist_dir;
     }

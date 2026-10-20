@@ -1,14 +1,12 @@
 import os;
 import sys;
 import from contextlib { contextmanager, AbstractContextManager }
-import from typing { cast }
+import from typing { TextIO, cast }
 
 obj Content {
     has text: str;
 
-    def __str__ -> str {
-        return self.text;
-    }
+    def __str__ -> str;
 }
 
 obj Span {
@@ -17,7 +15,7 @@ obj Span {
 }
 
 obj _Spinner {
-    has text: str,
+    has text: any,
         stream: any,
         frames: list[str],
         style_prefix: str,
@@ -26,71 +24,17 @@ obj _Spinner {
         _stop: any postinit,
         _thread: any = None;
 
-    def postinit {
-        import from threading { Event }
-        self._stop = Event();
-    }
-
-    def update(text: str = '') {
-        self.text = text;
-    }
-
-    def clear {
-        try {
-            self.stream.write("\r\033[K");
-            self.stream.flush();
-        } except (BrokenPipeError, OSError) {}
-    }
-
-    def _run {
-        idx = 0;
-        while not self._stop.is_set() {
-            frame = self.frames[idx % len(self.frames)];
-            text = self.text;
-            try {
-                width = os.get_terminal_size().columns;
-            } except OSError {
-                width = 0;
-            }
-            if width > 8 and len(text) > width - 3 {
-                text = text[:width - 6] + "...";
-            }
-            try {
-                self.stream.write(
-                    f"\r{self.style_prefix}{frame}{self.reset} {text}\033[K"
-                );
-                self.stream.flush();
-            } except (BrokenPipeError, OSError) {
-                return;
-            }
-            idx += 1;
-            self._stop.`wait(self.interval);
-        }
-    }
-
-    def start {
-        import from threading { Thread }
-        self._thread = Thread(target=self._run, daemon=True);
-        self._thread.start();
-    }
-
-    def stop {
-        self._stop.set();
-        if self._thread is not None {
-            self._thread.join(timeout=1.0);
-        }
-        self.clear();
-    }
+    def postinit;
+    def update(text: any = '');
+    def clear;
+    def _run;
+    def start;
+    def stop;
 }
 
 obj _NullStatus {
-    def update(text: str = '') -> None {
-        return;
-    }
-
-    def clear -> None {
-        return;
-    }
+    def update(text: any = '') -> None;
+    def clear -> None;
 }
 
 obj ConsoleRenderer {
@@ -101,16 +45,19 @@ obj ConsoleRenderer {
     def configure(use_emoji: bool, use_color: bool) -> None;
     def clear_status -> None;
     def emit(spans: list[Span], stream: any = None) -> None;
-    def emit_raw(args: list, stream: any, style: str | None, kwargs: dict) -> None;
+    def emit_raw(
+        args: list[object], stream: any, style: str | None, kwargs: dict[str, any]
+    ) -> None;
+
     def header(title: str, version: str | None = None) -> None;
-    def urls(items: list, symbol: str = '') -> None;
+    def urls(items: list[tuple[str, str]], symbol: str = '') -> None;
     def next_steps(steps: list[str], title: str = 'Next Steps') -> None;
     def table(
         headers: list[str], rows: list[list[str]], title: str | None = None
     ) -> None;
 
     @contextmanager
-    def status_ctx(args: list, kwargs: dict) -> object;
+    def status_ctx(args: list[object], kwargs: dict[str, any]) -> object;
 
     @contextmanager
     def spinner_ctx(text: str) -> object;
@@ -151,12 +98,10 @@ obj JacConsole {
 glob _console_instance: JacConsole | None = None;
 
 def _get_console -> JacConsole;
-def use_line_buffered_output(streams: (list[any] | None) = None) -> int;
+def use_line_buffered_output(streams: (list[TextIO] | None) = None) -> int;
 
 class _ConsoleProxy {
-    def __getattr__(self: _ConsoleProxy, name: str) -> any {
-        return getattr(_get_console(), name);
-    }
+    def __getattr__(self: _ConsoleProxy, name: str) -> any;
 }
 
 glob console: JacConsole = cast(JacConsole, _ConsoleProxy());

@@ -1,6 +1,6 @@
 ---
 name: jac-sv-deploy
-description: Running a Jac server in production - jac run flags, the Postgres database (embedded locally, JAC_DB_URL for external), secrets, Kubernetes deploys (jac scale deploy, TLS, autoscaling, jac scale status/destroy), webhooks, WebSockets, S3 storage, metrics. Load when moving a server beyond local dev or wiring external services in. Pair with `jac-sv-endpoints`, `jac-sv-microservices` (multi-service k8s), `jac-config`.
+description: Configure production serving, secrets, infrastructure, and operations. Use when preparing deployment or integrating production services.
 ---
 
 Production serving is the built-in `scale` subsystem's job. Scale ships inside `jaclang` -- there is no `jac-scale` package to install and no plugin to enable. Its optional heavier deps (kubernetes, docker, prometheus-client, opentelemetry-sdk, ...) are pulled per-project: declare the matching `[scale.*]` config in `jac.toml`, then run `jac install` to resolve them into `.jac/venv` (a `jac scale deploy` also resolves its deps on first run).
@@ -10,10 +10,19 @@ Production serving is the built-in `scale` subsystem's job. Scale ships inside `
 `jac run [app.jac]` (default entry `main.jac`; needs a `jac.toml` in the cwd). Boolean flags are **hyphenated**: `--no-client` (API only, skip client bundling), `--port/-p` (auto-falls back if taken), `--faux` (print the generated API surface without starting - cheap endpoint preview), `--profile prod` (config profile), `--dev` (HMR). `jac run` exits when stdin closes - any backgrounded/daemonized server must be launched with `< /dev/null` (systemd/containers do this for you; shell scripts and CI must do it explicitly). For prod, kill Swagger:
 
 ```toml
-[scale.server]
-docs_enabled = false          # disables /docs, /redoc, /openapi.json
-suppress_health_check_logs = true
+[serve]
+docs_enabled = false          # disables /docs, /openapi.json
+graph_enabled = false         # disables /graph, /graph/data
+
+[serve.workers]
+count = "auto"                # one worker per core of the CPU quota; "1" for I/O-bound apps
+
+[serve.access_log]
+format = "json"
+suppress_health_checks = true
 ```
+
+Every `[serve]` key has a `JAC_SERVE_*` mirror (`JAC_SERVE_WORKERS`, `JAC_SERVE_AUTH_SECRET`, `JAC_SERVE_PROXY_TRUSTED`, ...), and `jac scale deploy` sets them on every pod. `jac run --workers N` overrides the count for one run.
 
 **Backend:** Postgres, always. An embedded per-project server provisions automatically (zero setup); set `JAC_DB_URL` (or `[scale.database] url`) to use an external server - k8s deploys provision a Postgres StatefulSet and inject `JAC_DB_URL` into every pod. Config precedence everywhere: **env var > jac.toml > default**.
 
@@ -63,6 +72,13 @@ curl -X POST $HOST/webhook/PaymentReceived -H "X-API-Key: $API_KEY" \
 
 Keys live in the shared Postgres store, so they survive restarts; only if the store is unreachable do they fall back to in-memory (a restart then invalidates them all).
 
+**Provider-signed deliveries (GitHub).** `@restspec(protocol=APIProtocol.WEBHOOK, scheme="github")` drops the api key: the runtime verifies `X-Hub-Signature-256` (HMAC-SHA256 of the raw body keyed by `[scale.webhook].github_secret`, `sha256=` prefix optional), runs the walker as the system identity, and copies `X-GitHub-Event` and `X-GitHub-Delivery` into declared `event` and `delivery` fields (headers win over same-named body keys). The walker resolves its own tenant from the payload, typically `installation.id`. Boot fails when the secret is empty or the system identity is missing; `verify_signature` never applies to this scheme. Set the webhook's content type to `application/json` (the form-encoded default is refused with 415), and treat `X-GitHub-Event`/`X-GitHub-Delivery` as unsigned: a delivery-id dedupe absorbs GitHub's own redeliveries, not a captured body replayed under a new id.
+
+```toml
+[scale.webhook]
+github_secret = "${GITHUB_APP_WEBHOOK_SECRET}"   # the App's webhook secret, kept out of the file
+```
+
 ## WebSockets
 
 `@restspec(protocol=APIProtocol.WEBSOCKET)` on an **`async walker`** serves `ws://host/ws/<name>`; each JSON message maps onto `has` fields, `report` values stream back. `:pub` = anonymous; without it, JWT. `broadcast=True` sends each response to ALL connected clients of that walker (chat/live-update fan-out).
@@ -83,7 +99,7 @@ bucket = "my-app-uploads"      # region, prefix, endpoint_url (non-AWS), public_
 
 - `/health`, `/ready` - built-in probe endpoints; `/healthz` variants also exist.
 - **Prometheus**: `[scale.monitoring] enabled = true` registers `/metrics` - **admin-token-gated** (403 otherwise); `walker_metrics = true` adds per-walker timing. Visual dashboard in the admin portal.
-- **CORS**: single-process `jac run` hardwires `allow_origins=['*']` - no knob. Only the microservice gateway has configurable CORS (`[scale.microservices.cors]`). Don't ship a `:pub`-heavy API assuming you can lock origins down in single-process mode.
+- **CORS**: single-process `jac run` hardwires `allow_origins=['*']` - no knob. Only the fleet gateway (`--fleet` / deploy of a workspace with service apps) has configurable CORS (`[scale.gateway.cors]`). Don't ship a `:pub`-heavy API assuming you can lock origins down in single-process mode.
 
 ## Pitfalls
 
@@ -91,5 +107,5 @@ bucket = "my-app-uploads"      # region, prefix, endpoint_url (non-AWS), public_
 - `--dry-run` catches config errors (HPA min>max, bad resource units like `500MB` vs `500Mi`) in ~1s vs finding out after a 5-10 minute build-push-deploy.
 - HPA does nothing without `cpu_request` - Kubernetes can't compute a utilization %.
 - Multi-replica pods must share one database: the k8s deploy injects `JAC_DB_URL` for you; for other topologies point every replica at the same Postgres URL.
-- Schema edits in prod: never `rm -rf .jac/data/` - use the alias/quarantine machinery (`jac db ...`) in `jac-sv-persistence`.
+- **Invalid anchors after a change:** check the reference, selected app/store, and schema migration state. Follow `jac-debugging` and `jac-sv-persistence`; do not infer that an anchor error requires deleting project data.
 - Webhook walkers don't answer on `/walker/<name>`, and regular walkers don't answer on `/webhook/<name>` - a 404 there is routing, not registration.

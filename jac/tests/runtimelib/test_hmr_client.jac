@@ -25,7 +25,7 @@ test "walker code reloads after file change" {
         app_file = temp_project / "app.jac";
         # Version 1: walker returns value 1
         app_file.write_text(
-            "walker get_value {\n"
+            "walker:protect get_value {\n"
             "    can enter with Root entry {\n"
             '        report {"value": 1};\n'
             "    }\n"
@@ -34,7 +34,7 @@ test "walker code reloads after file change" {
         client = JacTestClient.from_file(str(app_file), base_path=str(temp_project));
         try {
             # Register user for authenticated requests
-            client.register_user("testuser", "password123");
+            client.register_user("testuser", "password123_Secure1");
 
             # Call walker - should return 1
             response1 = client.post("/walker/get_value", json={});
@@ -45,7 +45,7 @@ test "walker code reloads after file change" {
 
             # Version 2: update walker to return value 2
             app_file.write_text(
-                "walker get_value {\n"
+                "walker:protect get_value {\n"
                 "    can enter with Root entry {\n"
                 '        report {"value": 2};\n'
                 "    }\n"
@@ -78,7 +78,7 @@ test "global variable reloads" {
         app_file.write_text(
             "glob VERSION = 1;\n"
             "\n"
-            "walker get_version {\n"
+            "walker:protect get_version {\n"
             "    can enter with Root entry {\n"
             '        report {"version": VERSION};\n'
             "    }\n"
@@ -86,7 +86,7 @@ test "global variable reloads" {
         );
         client = JacTestClient.from_file(str(app_file), base_path=str(temp_project));
         try {
-            client.register_user("testuser", "password123");
+            client.register_user("testuser", "password123_Secure1");
 
             # Get version 1
             response1 = client.post("/walker/get_version", json={});
@@ -98,7 +98,7 @@ test "global variable reloads" {
             app_file.write_text(
                 "glob VERSION = 2;\n"
                 "\n"
-                "walker get_version {\n"
+                "walker:protect get_version {\n"
                 "    can enter with Root entry {\n"
                 '        report {"version": VERSION};\n'
                 "    }\n"
@@ -124,7 +124,7 @@ test "new walker available after reload" {
         app_file = temp_project / "walker.jac";
         # Version 1: only one walker
         app_file.write_text(
-            "walker walker_one {\n"
+            "walker:protect walker_one {\n"
             "    can enter with Root entry {\n"
             '        report {"name": "one"};\n'
             "    }\n"
@@ -132,7 +132,7 @@ test "new walker available after reload" {
         );
         client = JacTestClient.from_file(str(app_file), base_path=str(temp_project));
         try {
-            client.register_user("testuser", "password123");
+            client.register_user("testuser", "password123_Secure1");
 
             # walker_one should work
             response1 = client.post("/walker/walker_one", json={});
@@ -144,13 +144,13 @@ test "new walker available after reload" {
 
             # Version 2: add walker_two
             app_file.write_text(
-                "walker walker_one {\n"
+                "walker:protect walker_one {\n"
                 "    can enter with Root entry {\n"
                 '        report {"name": "one"};\n'
                 "    }\n"
                 "}\n"
                 "\n"
-                "walker walker_two {\n"
+                "walker:protect walker_two {\n"
                 "    can enter with Root entry {\n"
                 '        report {"name": "two"};\n'
                 "    }\n"
@@ -180,7 +180,7 @@ test "multiple rapid reloads" {
         app_file.write_text(
             "glob COUNTER = 0;\n"
             "\n"
-            "walker get_counter {\n"
+            "walker:protect get_counter {\n"
             "    can enter with Root entry {\n"
             '        report {"counter": COUNTER};\n'
             "    }\n"
@@ -188,14 +188,14 @@ test "multiple rapid reloads" {
         );
         client = JacTestClient.from_file(str(app_file), base_path=str(temp_project));
         try {
-            client.register_user("testuser", "password123");
+            client.register_user("testuser", "password123_Secure1");
 
             # Perform multiple reloads with different values
             for i in range(1, 6) {
                 app_file.write_text(
                     f"glob COUNTER = {i};\n"
                     "\n"
-                    "walker get_counter {\n"
+                    "walker:protect get_counter {\n"
                     "    can enter with Root entry {\n"
                     '        report {"counter": COUNTER};\n'
                     "    }\n"
@@ -222,11 +222,13 @@ test "function code reloads" {
         app_file = temp_project / "function.jac";
         # Version 1
         app_file.write_text(
-            "def get_message() -> str {\n" '    return "Hello Version 1";\n' "}\n"
+            "def:protect get_message() -> str {\n"
+            '    return "Hello Version 1";\n'
+            "}\n"
         );
         client = JacTestClient.from_file(str(app_file), base_path=str(temp_project));
         try {
-            client.register_user("testuser", "password123");
+            client.register_user("testuser", "password123_Secure1");
 
             # Call function
             response1 = client.post("/function/get_message", json={});
@@ -236,7 +238,9 @@ test "function code reloads" {
 
             # Version 2
             app_file.write_text(
-                "def get_message() -> str {\n" '    return "Hello Version 2";\n' "}\n"
+                "def:protect get_message() -> str {\n"
+                '    return "Hello Version 2";\n'
+                "}\n"
             );
 
             client.reload();
@@ -257,7 +261,7 @@ test "auth token preserved after reload" {
         temp_project = Path(tmpdir);
         app_file = temp_project / "auth.jac";
         app_file.write_text(
-            "walker get_status {\n"
+            "walker:protect get_status {\n"
             "    can check with Root entry {\n"
             '        report {"status": "v1"};\n'
             "    }\n"
@@ -265,7 +269,7 @@ test "auth token preserved after reload" {
         );
         client = JacTestClient.from_file(str(app_file), base_path=str(temp_project));
         try {
-            client.register_user("testuser", "password123");
+            client.register_user("testuser", "password123_Secure1");
 
             # Verify auth works
             resp1 = client.post("/walker/get_status", json={});
@@ -274,7 +278,7 @@ test "auth token preserved after reload" {
 
             # Reload module
             app_file.write_text(
-                "walker get_status {\n"
+                "walker:protect get_status {\n"
                 "    can check with Root entry {\n"
                 '        report {"status": "v2"};\n'
                 "    }\n"
@@ -301,7 +305,7 @@ test "user isolation without reload" {
             "    has data: str;\n"
             "}\n"
             "\n"
-            "walker store_secret {\n"
+            "walker:protect store_secret {\n"
             "    has data: str;\n"
             "    can store with Root entry {\n"
             "        here ++> Secret(data=self.data);\n"
@@ -309,7 +313,7 @@ test "user isolation without reload" {
             "    }\n"
             "}\n"
             "\n"
-            "walker get_secrets {\n"
+            "walker:protect get_secrets {\n"
             "    can collect with Root entry {\n"
             "        visit [-->];\n"
             "    }\n"
@@ -321,13 +325,13 @@ test "user isolation without reload" {
         client = JacTestClient.from_file(str(app_file), base_path=str(temp_project));
         try {
             # User A stores a secret
-            client.register_user("userA", "passA");
+            client.register_user("userA", "passA_Secure1");
             resp1 = client.post("/walker/store_secret", json={"data": "A's secret"});
             assert resp1.ok;
 
             # User B stores a different secret
             client.clear_auth();
-            client.register_user("userB", "passB");
+            client.register_user("userB", "passB_Secure1");
             resp2 = client.post("/walker/store_secret", json={"data": "B's secret"});
             assert resp2.ok;
 
@@ -339,7 +343,7 @@ test "user isolation without reload" {
             assert "A's secret" not in secrets_b , "User isolation broken: B can see A's data";
 
             # User A should only see their own secret
-            client.login("userA", "passA");
+            client.login("userA", "passA_Secure1");
             resp4 = client.post("/walker/get_secrets", json={});
             assert resp4.ok;
             secrets_a = [r.get("data") for r in _as_any(resp4.data).get("reports", [])];
@@ -357,7 +361,7 @@ test "recovery from syntax error" {
         temp_project = Path(tmpdir);
         app_file = temp_project / "syn_error.jac";
         app_file.write_text(
-            "walker get_value {\n"
+            "walker:protect get_value {\n"
             "    can check with Root entry {\n"
             '        report {"value": 1};\n'
             "    }\n"
@@ -365,7 +369,7 @@ test "recovery from syntax error" {
         );
         client = JacTestClient.from_file(str(app_file), base_path=str(temp_project));
         try {
-            client.register_user("testuser", "password123");
+            client.register_user("testuser", "password123_Secure1");
 
             # Verify initial code works
             resp1 = client.post("/walker/get_value", json={});
@@ -374,7 +378,7 @@ test "recovery from syntax error" {
 
             # Introduce syntax error
             app_file.write_text(
-                "walker get_value {\n"
+                "walker:protect get_value {\n"
                 "    can check with Root entry {\n"
                 "        # SYNTAX ERROR - missing closing brace\n"
                 '        report {"value": 2};\n'
@@ -394,7 +398,7 @@ test "recovery from syntax error" {
 
             # Fix the syntax error with new value
             app_file.write_text(
-                "walker get_value {\n"
+                "walker:protect get_value {\n"
                 "    can check with Root entry {\n"
                 '        report {"value": 3};\n'
                 "    }\n"
@@ -420,11 +424,11 @@ test "reload with code change preserves functionality" {
         app_file = temp_project / "rel_function.jac";
         # Version 1: multiply by 2
         app_file.write_text(
-            "def compute(x: int) -> int {\n" "    return x * 2;\n" "}\n"
+            "def:protect compute(x: int) -> int {\n" "    return x * 2;\n" "}\n"
         );
         client = JacTestClient.from_file(str(app_file), base_path=str(temp_project));
         try {
-            client.register_user("testuser", "password123");
+            client.register_user("testuser", "password123_Secure1");
 
             # Test v1 logic
             resp1 = client.post("/function/compute", json={"x": 5});
@@ -433,7 +437,7 @@ test "reload with code change preserves functionality" {
 
             # Version 2: multiply by 3
             app_file.write_text(
-                "def compute(x: int) -> int {\n" "    return x * 3;\n" "}\n"
+                "def:protect compute(x: int) -> int {\n" "    return x * 3;\n" "}\n"
             );
 
             client.reload();
@@ -676,7 +680,7 @@ test "server impl file reloads base jac file" {
             "    def add(a: int, b: int) -> int;\n"
             "}\n"
             "\n"
-            "walker calculate {\n"
+            "walker:protect calculate {\n"
             "    has x: int = 5, y: int = 3;\n"
             "    can compute with Root entry {\n"
             "        calc = Calculator();\n"
@@ -694,7 +698,7 @@ test "server impl file reloads base jac file" {
         );
         client = JacTestClient.from_file(str(base_file), base_path=str(temp_project));
         try {
-            client.register_user("testuser", "password123");
+            client.register_user("testuser", "password123_Secure1");
 
             # Call walker - should return 8 (5 + 3)
             response1 = client.post("/walker/calculate", json={});
@@ -797,7 +801,7 @@ test "dependency compiled when imported file recompiled" {
         app_file = unique_dir / "app.jac";
         app_file.write_text(
             "import from .Button { Button }\n"
-            "def App() -> any {\n"
+            "def:protect App() -> any {\n"
             "    return <div><Button /></div>;\n"
             "}\n"
         );
@@ -815,7 +819,7 @@ test "dependency compiled when imported file recompiled" {
 # --- TestUnifiedClientCompilerHMR ---
 # The unified path routes HMR through the boot ViteCompiler so file-based
 # routing artifacts (_routes.js, router _entry.js) stay live across changes.
-def _make_unified_reloader(unique_dir: Path) -> tuple {
+def _make_unified_reloader(unique_dir: Path) -> tuple[any, ...] {
     import from jaclang.client.vite_client_bundle { ViteClientBundleBuilder }
     configs_dir = unique_dir / ".jac" / "client" / "configs";
     configs_dir.mkdir(parents=True, exist_ok=True);
@@ -844,7 +848,9 @@ test "routing activates when pages are created after startup" {
         unique_dir.mkdir(parents=True, exist_ok=True);
         (reloader, compiler, compiled_dir) = _make_unified_reloader(unique_dir);
         main_file = unique_dir / "main.jac";
-        main_file.write_text("def app() -> any {\n    return <div>App</div>;\n}\n");
+        main_file.write_text(
+            "def:protect app() -> any {\n    return <div>App</div>;\n}\n"
+        );
         # No pages/ yet: a refresh must not fabricate routing artifacts
         reloader._refresh_routing(str(main_file));
         assert not (compiled_dir / "_routes.js").exists();
@@ -853,7 +859,7 @@ test "routing activates when pages are created after startup" {
         pages_dir.mkdir();
         index_file = pages_dir / "index.jac";
         index_file.write_text(
-            "def View() -> JsxPage {\n    return <div>Home</div>;\n}\n"
+            "def:protect View() -> JsxPage {\n    return <div>Home</div>;\n}\n"
         );
         reloader._recompile_client_code(str(index_file));
         index_js = compiled_dir / "pages" / "index.js";
@@ -865,7 +871,7 @@ test "routing activates when pages are created after startup" {
         # (e.g. the directory was moved into place)
         about_file = pages_dir / "about.jac";
         about_file.write_text(
-            "def View() -> JsxPage {\n    return <div>About</div>;\n}\n"
+            "def:protect View() -> JsxPage {\n    return <div>About</div>;\n}\n"
         );
         index_mtime = index_js.stat().st_mtime_ns;
         reloader._refresh_routing(str(index_file));
@@ -885,12 +891,12 @@ test "router entry survives an error then fix cycle" {
         unique_dir.mkdir(parents=True, exist_ok=True);
         (reloader, compiler, compiled_dir) = _make_unified_reloader(unique_dir);
         (unique_dir / "main.jac").write_text(
-            "def app() -> any {\n    return <div>App</div>;\n}\n"
+            "def:protect app() -> any {\n    return <div>App</div>;\n}\n"
         );
         pages_dir = unique_dir / "pages";
         pages_dir.mkdir();
         index_file = pages_dir / "index.jac";
-        good_source = "def View() -> JsxPage {\n    return <div>Home</div>;\n}\n";
+        good_source = "def:protect View() -> JsxPage {\n    return <div>Home</div>;\n}\n";
         index_file.write_text(good_source);
         reloader._recompile_client_code(str(index_file));
         reloader._refresh_routing(str(index_file));
@@ -900,7 +906,7 @@ test "router entry survives an error then fix cycle" {
         # Break the page: the app entry is untouched; the error goes out-of-band
         entry_mtime = entry_file.stat().st_mtime_ns;
         index_file.write_text(
-            "def View() -> JsxPage {\n    return <div UNCLOSED;\n}\n"
+            "def:protect View() -> JsxPage {\n    return <div UNCLOSED;\n}\n"
         );
         reloader._recompile_client_code(str(index_file));
         reloader._refresh_routing(str(index_file));
@@ -932,13 +938,13 @@ test "asset deletion removes the copy without touching the entry" {
         unique_dir.mkdir(parents=True, exist_ok=True);
         (reloader, compiler, compiled_dir) = _make_unified_reloader(unique_dir);
         (unique_dir / "main.jac").write_text(
-            "def app() -> any {\n    return <div>App</div>;\n}\n"
+            "def:protect app() -> any {\n    return <div>App</div>;\n}\n"
         );
         pages_dir = unique_dir / "pages";
         pages_dir.mkdir();
         index_file = pages_dir / "index.jac";
         index_file.write_text(
-            "def View() -> JsxPage {\n    return <div>Home</div>;\n}\n"
+            "def:protect View() -> JsxPage {\n    return <div>Home</div>;\n}\n"
         );
         reloader._recompile_client_code(str(index_file));
         reloader._refresh_routing(str(index_file));
@@ -966,13 +972,13 @@ test "no-op routing refresh does not rewrite entry or routes" {
         unique_dir.mkdir(parents=True, exist_ok=True);
         (reloader, compiler, compiled_dir) = _make_unified_reloader(unique_dir);
         (unique_dir / "main.jac").write_text(
-            "def app() -> any {\n    return <div>App</div>;\n}\n"
+            "def:protect app() -> any {\n    return <div>App</div>;\n}\n"
         );
         pages_dir = unique_dir / "pages";
         pages_dir.mkdir();
         index_file = pages_dir / "index.jac";
         index_file.write_text(
-            "def View() -> JsxPage {\n    return <div>Home</div>;\n}\n"
+            "def:protect View() -> JsxPage {\n    return <div>Home</div>;\n}\n"
         );
         reloader._recompile_client_code(str(index_file));
         reloader._refresh_routing(str(index_file));
@@ -1013,12 +1019,12 @@ test "deleted client module drops its stale compiled output" {
     }
 }
 
-def _routed_project(tmpdir: str, extra_pages: dict[str, str] = {}) -> tuple {
+def _routed_project(tmpdir: str, extra_pages: dict[str, str] = {}) -> tuple[any, ...] {
     unique_dir = Path(tmpdir) / f"project_{uuid.uuid4().hex[:8]}";
     unique_dir.mkdir(parents=True, exist_ok=True);
     (reloader, compiler, compiled_dir) = _make_unified_reloader(unique_dir);
     (unique_dir / "main.jac").write_text(
-        "def app() -> any {\n    return <div>App</div>;\n}\n"
+        "def:protect app() -> any {\n    return <div>App</div>;\n}\n"
     );
     pages_dir = unique_dir / "pages";
     pages_dir.mkdir();
@@ -1028,7 +1034,7 @@ def _routed_project(tmpdir: str, extra_pages: dict[str, str] = {}) -> tuple {
         page_file = pages_dir / rel;
         page_file.parent.mkdir(parents=True, exist_ok=True);
         page_file.write_text(
-            f"def View() -> JsxPage {{\n    return <div>{label}</div>;\n}}\n"
+            f"def:protect View() -> JsxPage {{\n    return <div>{label}</div>;\n}}\n"
         );
         reloader._recompile_client_code(str(page_file));
     }
@@ -1103,6 +1109,33 @@ test "hyphenated page filenames sanitize to valid JS identifiers in _routes.js" 
                 imported_name = line.split(" as ")[1].split(" ")[0];
                 assert "-" not in imported_name , f"invalid JS identifier: {imported_name}";
             }
+        }
+    }
+}
+
+
+test "failed preparation keeps the live module and recovers on the next edit" {
+    import sys;
+    with TemporaryDirectory() as tmpdir {
+        app_file = Path(tmpdir) / "prepared_recovery.jac";
+        app_file.write_text("def:pub message -> str { return 'working'; }\n");
+        client = JacTestClient.from_file(str(app_file), base_path=tmpdir);
+        try {
+            assert client.post('/function/message', json={}).ok;
+            previous = sys.modules['prepared_recovery'];
+            app_file.write_text("def:pub message -> str { return missing_symbol; }\n");
+            client.reload();
+            assert sys.modules['prepared_recovery'] is previous;
+            response = client.post('/function/message', json={});
+            assert response.ok;
+            assert _as_any(response.data).get('result') == 'working';
+            app_file.write_text("def:pub message -> str { return 'recovered'; }\n");
+            client.reload();
+            response = client.post('/function/message', json={});
+            assert response.ok;
+            assert _as_any(response.data).get('result') == 'recovered';
+        } finally {
+            client.close();
         }
     }
 }

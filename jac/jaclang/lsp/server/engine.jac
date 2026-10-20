@@ -1,4 +1,5 @@
 import asyncio;
+
 import logging;
 import os;
 import sys;
@@ -8,40 +9,23 @@ import from collections { deque }
 import from concurrent.futures { Future }
 import from typing { Optional }
 
-import jaclang.compiler.frontend.unitree as uni;
 import from jaclang { JacRuntimeInterface as Jac }
-import from jaclang.compiler.frontend.constant { SymbolType }
-import from jaclang.compiler.driver.program { JacProgram }
-import from jaclang.cli.console { console }
-import from jaclang.compiler.driver.bccache { discover_base_file, discover_annex_files }
-import from jaclang.compiler.types.type_utils { doc_of_sym, get_completion_items }
-import from jaclang.compiler.types.types {
-    ClassType,
-    FunctionType,
-    OverloadedType,
-    ModuleType,
-    TypeBase
-}
-import from jaclang.compiler.frontend.constant { TOKEN_MAP }
-import from jaclang.compiler.frontend.parser.lexer { tokenize_full }
-import from jaclang.compiler.frontend.parser.tokens { TokenKind }
-import from jaclang.compiler.frontend.unitree { UniScopeNode }
-import from .sem_manager { SemTokManager }
 import from jaclang.lsp.protocol { uris }
-import from jaclang.lsp.protocol.server { LanguageServer }
 
-import jaclang.lsp.protocol.types as lspt;
 import from . { utils }
-import from .module_manager { ModuleManager }
-import from .rwlock { ReadWriteLock }
+
+glob LSP_SHARED_APP_LIMIT: int = 4;
 
 def _uri_of(path: str) -> str;
 def _path_of(uri: str) -> str;
+def _merge_app_alerts(
+    collected: list[tuple[str, list[Alert], list[Alert]]], app_count: int
+) -> tuple[list[Alert], list[Alert]];
 
 obj Task {
     has file_uri: str,
         task_id: int postinit,
-        cancel_token: threading.Event postinit;
+        cancel_token: CancelToken postinit;
 
     static has _task_id: int = 0;
 
@@ -66,7 +50,7 @@ obj JacLangServer(LanguageServer) {
     def postinit -> None;
     def dispatcher -> None;
 
-    has diagnostics: dict[str, list] { getter; }
+    has diagnostics: dict[str, list[lspt.Diagnostic]] { getter; }
 
     def _clear_alerts_for_file(file_path: str) -> None;
     def update_modules(
@@ -77,7 +61,7 @@ obj JacLangServer(LanguageServer) {
     ) -> None;
 
     def type_check_file(
-        file_uri: str, cancel_token: threading.Event | None = None
+        file_uri: str, cancel_token: (CancelToken | None) = None
     ) -> bool;
 
     def type_check(file_uri: str) -> None;
@@ -118,6 +102,7 @@ obj JacLangServer(LanguageServer) {
         file_path: str, auto_lint: bool = False
     ) -> list[lspt.TextEdit];
 
+    def get_inlay_hints(file_path: str, range: lspt.Range) -> list[lspt.InlayHint];
     def get_hover_info(
         file_path: str, position: lspt.Position
     ) -> Optional[lspt.Hover];

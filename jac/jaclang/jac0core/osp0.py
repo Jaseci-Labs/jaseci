@@ -17,6 +17,7 @@ connect time) become EdgeAnchors in `edges`.
 
 from __future__ import annotations
 
+import weakref
 from typing import Any, Callable
 
 from jaclang.runtime.archetype import (
@@ -36,6 +37,7 @@ from jaclang.runtime.archetype import (
     light_hop_answers,
     light_in,
     light_out,
+    new_connect_edge,
 )
 
 __all__ = [
@@ -106,7 +108,7 @@ def connect0(
             if light and not (src.persistent or tgt.persistent):
                 light_connect(src, cls, tgt)
                 continue
-            e = ct() if isinstance(ct, type) else ct
+            e, built_with = new_connect_edge(ct, conn_assign)
             e.__jac__ = EdgeAnchor(archetype=e, source=src, target=tgt, is_undirected=False)
             src.edges.append(e.__jac__)
             tgt.edges.append(e.__jac__)
@@ -115,12 +117,13 @@ def connect0(
                 tgt.mixed = True
             if conn_assign:
                 for fld, val in zip(conn_assign[0], conn_assign[1], strict=False):
-                    setattr(e, fld, val)
+                    if fld not in built_with:
+                        setattr(e, fld, val)
     return right
 
 
 def disconnect0(left: Any, right: Any, dir: int = 2) -> bool:
-    from jaclang.compiler.frontend.constant import EdgeDir
+    from jaclang.runtime.constants import EdgeDir
 
     return _rt().disconnect(left=left, right=right, dir=EdgeDir(dir))
 
@@ -248,7 +251,7 @@ def hop0(origin: Any, dir: int, edge: Any = None, edges_only: bool = False) -> l
     """
     if edge is not None and dir != 3 and not edges_only and not isinstance(origin, list):
         me = origin.__jac__
-        if not me.persistent and (
+        if not me._persistent and (
             not me.edges or (not me.mixed and _light_edge_types.get(edge))
         ):
             subs = _edge_subtypes.get(edge)
@@ -258,11 +261,14 @@ def hop0(origin: Any, dir: int, edge: Any = None, edges_only: bool = False) -> l
                 if dir == 2:
                     d = me.out_light
                     lst = d.get(edge) if d else None
-                    return list(lst) if lst else []
+                    return lst.copy() if lst else []
                 d = me.in_light
                 lst = d.get(edge) if d else None
                 if not lst:
                     return []
+                if isinstance(lst, weakref.ref):
+                    one = lst()
+                    return [one] if one is not None else []
                 out: list = []
                 for ref in lst:
                     arch = ref()
@@ -326,8 +332,8 @@ _scope_of: Callable | None = None
 def visit0(walker: Any, expr: Any, insert_loc: int = -1) -> bool:
     """`visit expr;` from a walker or a node ability.
 
-    A list of node/edge archetypes (the compiler's `visit :0: [k for k in
-    self.kid ...]`) is written onto the walker's own queue: the kernel
+    A list of node/edge archetypes (the compiler's `visit :0:
+    [self->:Kid:->]`) is written onto the walker's own queue: the kernel
     registers the live scope per walker at spawn, so the common `visit` and
     `visit :0:` forms need neither the context lookup nor a kernel call.
     Anything else (a GraphQuery, a single archetype, a foreign object, a

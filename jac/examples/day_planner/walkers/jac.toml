@@ -2,7 +2,8 @@
 name = "day-planner-walkers"
 version = "1.0.0"
 description = "AI Day Planner - walker:priv variant with object-spatial programming"
-entry-point = "main.jac"
+entry-point = "main"
+kind = "web-app"
 
 [dependencies.npm]
 react = "^19.2.0"
@@ -18,17 +19,11 @@ typescript = "^5.3.3"
 "@types/react" = "^19.2.0"
 "@types/react-dom" = "^19.2.0"
 
-[dev-dependencies]
+[dev-dependencies.pypi]
 watchdog = ">=3.0.0"
 
-[serve]
-base_route_app = "app"
 
 [client]
 
 [byllm.model]
 default_model = "claude-sonnet-4-20250514"
-
-# The entry module is the server app; components call its priv helpers with auth.
-[placement.pins]
-main = "server"

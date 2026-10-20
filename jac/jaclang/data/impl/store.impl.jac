@@ -1,4 +1,31 @@
-glob _SCHEMA_SQL = [
+glob OUTBOX_SCHEMA_SQL: list[str] = [
+         """
+    CREATE TABLE IF NOT EXISTS jac_outbox (
+        id              TEXT PRIMARY KEY,
+        app             TEXT NOT NULL,
+        walker          TEXT NOT NULL,
+        kwargs          TEXT NOT NULL,
+        idempotency_key TEXT NOT NULL UNIQUE,
+        attempts        INTEGER NOT NULL DEFAULT 0,
+        created_at      DOUBLE PRECISION NOT NULL,
+        status          TEXT NOT NULL,
+        last_error      TEXT NOT NULL DEFAULT '',
+        next_attempt_at DOUBLE PRECISION NOT NULL DEFAULT 0
+    )
+    """,
+         """
+    CREATE INDEX IF NOT EXISTS idx_jac_outbox_due
+        ON jac_outbox (status, next_attempt_at)
+    """,
+         """
+    CREATE TABLE IF NOT EXISTS jac_outbox_seen (
+        idempotency_key TEXT PRIMARY KEY,
+        result          TEXT NOT NULL DEFAULT '',
+        expires_at      DOUBLE PRECISION NOT NULL
+    )
+    """
+     ],
+     _SCHEMA_SQL: list[str] = [
          """
     CREATE TABLE IF NOT EXISTS anchors (
         id             uuid PRIMARY KEY,
@@ -10,20 +37,14 @@ glob _SCHEMA_SQL = [
         src            uuid,
         dst            uuid,
         undirected     boolean NOT NULL DEFAULT false,
+        src_type       text NOT NULL DEFAULT '',
+        dst_type       text NOT NULL DEFAULT '',
         props          jsonb NOT NULL DEFAULT '{}'::jsonb,
         format_version integer NOT NULL DEFAULT 1,
         version        bigint NOT NULL DEFAULT 0,
         updated_at     timestamptz NOT NULL DEFAULT now(),
         seq            bigserial
     )
-    """,
-         """
-    CREATE INDEX IF NOT EXISTS idx_anchors_src
-        ON anchors (src, arch_type) WHERE src IS NOT NULL
-    """,
-         """
-    CREATE INDEX IF NOT EXISTS idx_anchors_dst
-        ON anchors (dst, arch_type) WHERE dst IS NOT NULL
     """,
          """
     CREATE INDEX IF NOT EXISTS idx_anchors_kind_type
@@ -56,7 +77,32 @@ glob _SCHEMA_SQL = [
         created_at  timestamptz NOT NULL DEFAULT now(),
         PRIMARY KEY (missing_id, kind)
     )
+    """,
+         """
+    CREATE TABLE IF NOT EXISTS jac_docs (
+        collection text NOT NULL,
+        id         text NOT NULL,
+        doc        jsonb NOT NULL,
+        PRIMARY KEY (collection, id)
+    )
+    """,
+         """
+    CREATE INDEX IF NOT EXISTS jac_docs_user_id_idx
+        ON jac_docs (collection, (doc->>'user_id'))
     """
+     ]
+         + OUTBOX_SCHEMA_SQL,
+     _TYPED_EDGE_SQL: list[str] = [
+         """
+    CREATE INDEX IF NOT EXISTS idx_anchors_src_typed
+        ON anchors (src, dst_type, arch_type) WHERE src IS NOT NULL
+    """,
+         """
+    CREATE INDEX IF NOT EXISTS idx_anchors_dst_typed
+        ON anchors (dst, src_type, arch_type) WHERE dst IS NOT NULL
+    """,
+         'DROP INDEX IF EXISTS idx_anchors_src',
+         'DROP INDEX IF EXISTS idx_anchors_dst'
      ];
 
 
@@ -72,23 +118,13 @@ impl ConnInfo.dsn -> str {
 }
 
 
-def _jsonable(o: object) -> str {
-    return str(o);
-}
+def _jsonable(o: object) -> str;
 
 
-def _sanitize_ident(name: str) -> str {
-    out = '';
-    for ch in name.lower() {
-        out += ch if (ch.isalnum() or ch == '_') else '_';
-    }
-    return out;
-}
+def _sanitize_ident(name: str) -> str;
 
 
-def _store_ns(info: ConnInfo) -> str {
-    return f"{info.unix_socket_dir or info.host}:{info.port}/{info.database}";
-}
+def _store_ns(info: ConnInfo) -> str;
 
 
 glob _PG_CHANNEL_LIMIT = 63,
@@ -99,60 +135,19 @@ glob _PG_CHANNEL_LIMIT = 63,
      _LISTEN_JOIN_SECONDS = 5.0;
 
 
-def _channel_travels_verbatim(channel: str) -> bool {
-    return (
-        bool(channel)
-        and '\x00' not in channel
-        and len(channel.encode('utf-8')) <= _PG_CHANNEL_LIMIT
-    );
-}
+def _channel_travels_verbatim(channel: str) -> bool;
 
 
-def _channel_ident(channel: str) -> str {
-    if _channel_travels_verbatim(channel) {
-        return channel;
-    }
-    import hashlib;
-    digest = hashlib.sha256(channel.encode('utf-8')).hexdigest()[:_CHANNEL_DIGEST_LEN];
-    stem = _sanitize_ident(channel)[:_PG_CHANNEL_LIMIT - _CHANNEL_DIGEST_LEN - 1];
-    return f"{stem}_{digest}";
-}
+def _channel_ident(channel: str) -> str;
 
 
-def _quote_channel(ident: str) -> str {
-    escaped = ident.replace('"', '""');
-    return f'"{escaped}"';
-}
+def _quote_channel(ident: str) -> str;
 
 
-def _channel_wire_payload(channel: str, ident: str, payload: str) -> str {
-    if ident == channel {
-        return payload;
-    }
-    return json.dumps(
-        {
-            _CHANNEL_ENVELOPE_KEY: _CHANNEL_ENVELOPE_VERSION,
-            'channel': channel,
-            'payload': payload
-        }
-    );
-}
+def _channel_wire_payload(channel: str, ident: str, payload: str) -> str;
 
 
-def _channel_envelope(payload: str) -> (ChannelMessage | None) {
-    try {
-        data = json.loads(payload);
-    } except Exception {
-        return None;
-    }
-    if not isinstance(data, dict)
-        or data.get(_CHANNEL_ENVELOPE_KEY) != _CHANNEL_ENVELOPE_VERSION {
-        return None;
-    }
-    return ChannelMessage(
-        channel=str(data.get('channel', '')), payload=str(data.get('payload', ''))
-    );
-}
+def _channel_envelope(payload: str) -> (ChannelMessage | None);
 
 
 impl PgStore.postinit -> None {
@@ -163,6 +158,9 @@ impl PgStore.postinit -> None {
     self._in_txn = False;
     self._isolation = None;
     self._known_types = set();
+    self._txn_types = set();
+    self._txn_serial = 0;
+    self._txn_subtypes = {};
     self._listeners = [];
     self._listen_thread = None;
     self._listen_stop = None;
@@ -203,7 +201,9 @@ impl PgStore._ensure_ready -> None {
 
 
 impl SessionConflictError.init(
-    self: SessionConflictError, database: str = '', blockers: (list[dict] | None) = None
+    self: SessionConflictError,
+    database: str = '',
+    blockers: (list[dict[str, any]] | None) = None
 ) -> None {
     self.database = database;
     self.blockers = list(blockers or []);
@@ -233,78 +233,32 @@ impl SessionConflictError.init(
 }
 
 
-def _app_identity -> str {
-    import sys;
-    cmd = 'embedded';
-    try {
-        argv = list(sys?.argv or []);
-        if argv {
-            cmd = os.path.basename(str(argv[0]) or '') or 'embedded';
-            if cmd.startswith('jac') and len(argv) > 1 {
-                sub = str(argv[1]);
-                if sub and not sub.startswith('-') {
-                    cmd = sub;
-                }
-            }
-        }
-    } except Exception {
-        cmd = 'unknown';
-    }
-    return f"jac:{os.getpid()}:{cmd}"[:63];
-}
+def _app_identity -> str;
 
 
 glob _SCHEMA_LOCK_TAG = 'jac:ensure_schema',
+     _BACKFILL_CHUNK = 5000,
+     _BACKFILL_YIELD_STATES = ('55P03', '40P01'),
      _SCHEMA_LOCK_WAIT_SECONDS = 30.0,
      _SCHEMA_LOCK_POLL_SECONDS = 0.05,
      _SCHEMA_LOCK_POLL_MAX_SECONDS = 0.5,
-     _CONCURRENT_CREATE_STATES = ('23505', '42P07', '42710');
+     _CONCURRENT_CREATE_STATES = ('23505', '42P07', '42710'),
+     _QUEUE_WAIT_SECONDS = 30;
 
 
-def _schema_lock_key -> int {
-    import hashlib;
-    digest = hashlib.sha256(_SCHEMA_LOCK_TAG.encode('utf-8')).digest()[:8];
-    return int.from_bytes(digest, 'big', signed=True);
-}
+def _schema_lock_key -> int;
 
 
-def _sqlstate(e: Exception) -> str {
-    for arg in getattr(e, 'args', ()) {
-        if isinstance(arg, dict) and 'C' in arg {
-            return str(arg.get('C') or '');
-        }
-    }
-    return '';
-}
+def _sqlstate(e: Exception) -> str;
 
 
-def _parse_pid(raw: str) -> (int | None) {
-    try {
-        return int(raw);
-    } except ValueError {
-        return None;
-    }
-}
+def _parse_pid(raw: str) -> (int | None);
 
 
-def _owner_alive(pid: (int | None)) -> bool {
-    if pid is None or pid <= 0 {
-        return True;
-    }
-    try {
-        os.kill(pid, 0);
-        return True;
-    } except ProcessLookupError {
-        return False;
-    } except Exception {
-        return True;
-    }
-}
+def _owner_alive(pid: (int | None)) -> bool;
 
 
 impl PgStore._connect -> any {
-    import from jaclang.data.pgload { connect as pg_connect }
-    import from jaclang.data.pgpool { checkout }
     info = self.conninfo;
     pooled = checkout(info);
     if pooled is not None {
@@ -322,33 +276,7 @@ impl PgStore._connect -> any {
 }
 
 
-def _park_conn(info: any, conn: any, in_txn: bool, listened: bool) -> None {
-    import from jaclang.data.pgpool { pool_enabled, release }
-    if conn is None {
-        return;
-    }
-    if not pool_enabled() or getattr(conn, '_closed', False) {
-        try {
-            conn.close();
-        } except Exception {}
-        return;
-    }
-    try {
-        if in_txn {
-            conn.run('ROLLBACK');
-        }
-        conn.run('DISCARD ALL');
-        if listened {
-            conn.notifications.clear();
-        }
-    } except Exception {
-        try {
-            conn.close();
-        } except Exception {}
-        return;
-    }
-    release(info, conn);
-}
+def _park_conn(info: any, conn: any, in_txn: bool, listened: bool) -> None;
 
 
 impl PgStore._main -> any {
@@ -361,28 +289,44 @@ impl PgStore._main -> any {
 
 impl PgStore._side -> any {
     self._ensure_ready();
-    if self._side_conn is None {
-        self._side_conn = self._connect();
+    cached: any = self._side_conn;
+    if cached is not None and not getattr(cached, '_closed', False) {
+        return cached;
     }
-    return self._side_conn;
-}
-
-
-def _conn_dead(e: Exception) -> bool {
-    if isinstance(e, (ConnectionError, BrokenPipeError, EOFError, OSError)) {
-        return True;
-    }
-    for arg in getattr(e, 'args', ()) {
-        if isinstance(arg, dict)
-            and arg.get('C') in ('08006', '08003', '57P01', '57P03', '25P03') {
-            return True;
+    fresh: any = self._connect();
+    self._side_conn = fresh;
+    if self._side_listened {
+        for lst in list(self._listeners) {
+            fresh.run(f"LISTEN {_quote_channel(lst.ident)}");
         }
     }
-    return False;
+    return fresh;
 }
 
 
-impl PgStore._run(sql: str, params: dict) -> list {
+impl PgStore._side_run(sql: str, params: dict[str, any]) -> list[any] {
+    with self._lock {
+        conn: any = self._side();
+        try {
+            return conn.run(sql, **params) or [];
+        } except Exception as e {
+            if not _conn_dead(e) {
+                raise;
+            }
+            try {
+                conn.close();
+            } except Exception {}
+            self._side_conn = None;
+            return self._side().run(sql, **params) or [];
+        }
+    }
+}
+
+
+def _conn_dead(e: Exception) -> bool;
+
+
+impl PgStore._run(sql: str, params: dict[str, any]) -> list[any] {
     self._ensure_ready();
     with self._lock {
         conn: any = None;
@@ -501,6 +445,7 @@ impl PgStore.ensure_schema(promotions: dict[str, list[str]]) -> None {
 
 
 impl PgStore.ensure_schema_once(promotions: dict[str, list[str]]) -> None {
+    self._ensure_ready();
     ns = _store_ns(self.conninfo);
     if ns in _schema_ready {
         return;
@@ -511,6 +456,30 @@ impl PgStore.ensure_schema_once(promotions: dict[str, list[str]]) -> None {
         }
         self.ensure_schema(promotions);
         _schema_ready.add(ns);
+        if self.ensure_cb is None {
+            self._warn_lock_headroom();
+        }
+    }
+}
+
+
+impl PgStore._warn_lock_headroom -> None {
+    try {
+        found = self._run(
+            "SELECT name, setting FROM pg_settings WHERE name IN "
+            "('max_pred_locks_per_transaction', 'max_connections', "
+            "'max_prepared_transactions')",
+            {}
+        );
+        problem = predicate_lock_shortfall({str(row[0]): int(row[1]) for row in found});
+    } except Exception as e {
+        logger.debug(f"predicate-lock headroom check skipped: {e}");
+        return;
+    }
+    if problem {
+        where = self.conninfo.unix_socket_dir
+            or f"{self.conninfo.host}:{self.conninfo.port}/{self.conninfo.database}";
+        logger.warning(f"Postgres at {where}: {problem}");
     }
 }
 
@@ -626,10 +595,64 @@ impl PgStore._apply_schema_ddl -> None {
                 {}
             );
         }
+        if self._promoted_column_type('dst_type') is None {
+            self._run(
+                "ALTER TABLE anchors "
+                "ADD COLUMN IF NOT EXISTS src_type text NOT NULL DEFAULT '', "
+                "ADD COLUMN IF NOT EXISTS dst_type text NOT NULL DEFAULT ''",
+                {}
+            );
+        }
+        for stmt in _TYPED_EDGE_SQL {
+            self._run(stmt, {});
+        }
         self._apply_promotions();
         self._property_graph_ddl();
+        self._backfill_endpoint_types();
     } finally {
         self._run('SET lock_timeout = DEFAULT', {});
+    }
+}
+
+
+impl PgStore._backfill_endpoint_types -> None {
+    after = str(UUID(int=0));
+    while True {
+        try {
+            got = self._run(
+                """
+                WITH b AS (
+                    SELECT id FROM anchors WHERE id > CAST(:a AS uuid)
+                    ORDER BY id LIMIT CAST(:n AS bigint)
+                ), typed AS (
+                    UPDATE anchors e SET
+                        src_type = COALESCE(
+                            (SELECT s.arch_type FROM anchors s WHERE s.id = e.src), ''),
+                        dst_type = COALESCE(
+                            (SELECT d.arch_type FROM anchors d WHERE d.id = e.dst), '')
+                    FROM b
+                    WHERE e.id = b.id AND e.kind = 'EdgeAnchor'
+                      AND (e.src_type = '' OR e.dst_type = '')
+                )
+                SELECT id FROM b ORDER BY id DESC LIMIT 1
+                """,
+                {'a': after, 'n': _BACKFILL_CHUNK}
+            );
+        } except PgWireError as e {
+            if _sqlstate(e) not in _BACKFILL_YIELD_STATES {
+                raise;
+            }
+            logger.info(f"endpoint-type backfill skipped a locked chunk after {after}");
+            got = self._run(
+                'SELECT id FROM anchors WHERE id > CAST(:a AS uuid) '
+                'ORDER BY id OFFSET CAST(:n AS bigint) - 1 LIMIT 1',
+                {'a': after, 'n': _BACKFILL_CHUNK}
+            );
+        }
+        if not got {
+            return;
+        }
+        after = str(got[0][0]);
     }
 }
 
@@ -668,7 +691,7 @@ impl PgStore._schema_stamp -> (str | None) {
 }
 
 
-impl PgStore._peer_sessions -> list[dict] {
+impl PgStore._peer_sessions -> list[dict[str, any]] {
     rows = self._run(
         """
         SELECT pid, application_name, state, backend_start::text
@@ -677,7 +700,7 @@ impl PgStore._peer_sessions -> list[dict] {
         """,
         {}
     );
-    out: list[dict] = [];
+    out: list[dict[str, any]] = [];
     for (pid, app, state, started) in rows {
         app_s = str(app or '');
         owner: (int | None) = None;
@@ -725,7 +748,7 @@ impl PgStore._reap_dead_sessions -> int {
 }
 
 
-impl PgStore._live_blockers -> list[dict] {
+impl PgStore._live_blockers -> list[dict[str, any]] {
     peers = [
         p
         for p in self._peer_sessions()
@@ -734,7 +757,7 @@ impl PgStore._live_blockers -> list[dict] {
     held = [
         p
         for p in peers
-        if 'idle in transaction' in p['state']
+        if 'idle in transaction' in str(p['state'])
     ];
     return held or peers;
 }
@@ -762,6 +785,9 @@ impl PgStore.begin(isolation: TxnIsolation = TxnIsolation.SERIALIZABLE) -> None 
         self._run(f"BEGIN {isolation.value}", {});
         self._in_txn = True;
         self._isolation = isolation;
+        self._txn_types = set();
+        self._txn_serial += 1;
+        self._txn_subtypes = {};
         try {
             self._run("SET LOCAL lock_timeout = '10s'", {});
         } except Exception {}
@@ -776,6 +802,7 @@ impl PgStore.commit -> None {
         }
         try {
             self._run('COMMIT', {});
+            self._known_types |= self._txn_types;
         } finally {
             self._in_txn = False;
             self._isolation = None;
@@ -804,6 +831,16 @@ impl PgStore.in_txn -> bool {
 }
 
 
+impl Store.txn_serial -> int {
+    return -1;
+}
+
+
+impl PgStore.txn_serial -> int {
+    return self._txn_serial;
+}
+
+
 impl PgStore.txn_isolation -> (TxnIsolation | None) {
     return self._isolation if self._in_txn else None;
 }
@@ -817,33 +854,16 @@ impl PgStore.load_full(ids: list[UUID]) -> dict[UUID, AnchorRow] {
     rows = self._run(
         """
         SELECT a.id, a.kind, a.arch_type, a.arch_module, a.fingerprint,
-               a.root_id, a.src, a.dst, a.undirected, a.props, a.version,
-               CASE WHEN a.kind = 'NodeAnchor' THEN
-                   (SELECT string_agg(e.id::text, ',' ORDER BY e.seq, e.id)
-                      FROM anchors e WHERE e.src = a.id OR e.dst = a.id)
-               END
+               a.root_id, a.src, a.dst, a.undirected, a.props, a.version
         FROM anchors a WHERE a.id = ANY(CAST(:ids AS uuid[]))
         """,
         {'ids': [str(i) for i in ids]}
     );
     for r in rows {
         raw_props = r[9];
-        props: dict = (
+        props: dict[str, any] = (
             raw_props if isinstance(raw_props, dict) else json.loads(str(raw_props))
         );
-        adjacency: (list[UUID] | None) = None;
-        if str(r[1]) == 'NodeAnchor' {
-            adjacency = [];
-            if r[11] {
-                seen_e: set[str] = set();
-                for tok in str(r[11]).split(',') {
-                    if tok and tok not in seen_e {
-                        seen_e.add(tok);
-                        adjacency.append(UUID(tok));
-                    }
-                }
-            }
-        }
         row = AnchorRow(
             id=UUID(str(r[0])),
             kind=str(r[1]),
@@ -855,12 +875,38 @@ impl PgStore.load_full(ids: list[UUID]) -> dict[UUID, AnchorRow] {
             src=UUID(str(r[6])) if r[6] else None,
             dst=UUID(str(r[7])) if r[7] else None,
             undirected=bool(r[8]),
-            version=int(str(r[10])),
-            adjacency=adjacency
+            version=int(str(r[10]))
         );
         out[row.id] = row;
     }
     return out;
+}
+
+
+impl PgStore.adjacency(
+    node_id: UUID, after: (tuple[int, UUID] | None), limit: int
+) -> list[tuple[int, UUID]] {
+    rows = self._run(
+        """
+        SELECT u.seq, u.id FROM (
+            SELECT e.seq, e.id FROM anchors e
+             WHERE e.kind = 'EdgeAnchor' AND e.src = CAST(:i AS uuid)
+            UNION ALL
+            SELECT e.seq, e.id FROM anchors e
+             WHERE e.kind = 'EdgeAnchor' AND e.dst = CAST(:i AS uuid)
+               AND e.src <> CAST(:i AS uuid)
+        ) u
+        WHERE (u.seq, u.id) > (CAST(:s AS bigint), CAST(:a AS uuid))
+        ORDER BY u.seq, u.id LIMIT CAST(:n AS bigint)
+        """,
+        {
+            'i': str(node_id),
+            's': int(after[0]) if after is not None else -1,
+            'a': str(after[1]) if after is not None else str(UUID(int=0)),
+            'n': int(limit)
+        }
+    );
+    return [(int(str(r[0])), UUID(str(r[1]))) for r in rows];
 }
 
 
@@ -875,13 +921,18 @@ impl PgStore.upsert(rows_in: list[AnchorRow]) -> None {
     for start in range(0, len(rows), chunk) {
         batch = rows[start:start + chunk];
         values: list[str] = [];
-        params: dict = {};
+        params: dict[str, any] = {};
         for (i, row) in enumerate(batch) {
             values.append(
                 f"(CAST(:id{i} AS uuid), :kind{i}, :arch_type{i}, "
                 f":arch_module{i}, :fp{i}, CAST(:root_id{i} AS uuid), "
                 f"CAST(:src{i} AS uuid), CAST(:dst{i} AS uuid), "
-                f":undirected{i}, CAST(:props{i} AS jsonb), :fv{i}, :ver{i}, now())"
+                f":undirected{i}, "
+                f"COALESCE((SELECT n.arch_type FROM anchors n "
+                f"WHERE n.id = CAST(:src{i} AS uuid)), :src_type{i}), "
+                f"COALESCE((SELECT n.arch_type FROM anchors n "
+                f"WHERE n.id = CAST(:dst{i} AS uuid)), :dst_type{i}), "
+                f"CAST(:props{i} AS jsonb), :fv{i}, :ver{i}, now())"
             );
             params[f"id{i}"] = str(row.id);
             params[f"kind{i}"] = row.kind;
@@ -892,6 +943,8 @@ impl PgStore.upsert(rows_in: list[AnchorRow]) -> None {
             params[f"src{i}"] = str(row.src) if row.src else None;
             params[f"dst{i}"] = str(row.dst) if row.dst else None;
             params[f"undirected{i}"] = row.undirected;
+            params[f"src_type{i}"] = row.src_type;
+            params[f"dst_type{i}"] = row.dst_type;
             params[f"props{i}"] = json.dumps(row.props, `default=_jsonable);
             params[f"fv{i}"] = SCHEMA_VERSION;
             params[f"ver{i}"] = int(row.version);
@@ -900,7 +953,8 @@ impl PgStore.upsert(rows_in: list[AnchorRow]) -> None {
             """
             INSERT INTO anchors
                 (id, kind, arch_type, arch_module, fingerprint, root_id,
-                 src, dst, undirected, props, format_version, version, updated_at)
+                 src, dst, undirected, src_type, dst_type, props, format_version,
+                 version, updated_at)
             VALUES
             """
                 + ',\n'.join(values)
@@ -914,6 +968,8 @@ impl PgStore.upsert(rows_in: list[AnchorRow]) -> None {
                 src = EXCLUDED.src,
                 dst = EXCLUDED.dst,
                 undirected = EXCLUDED.undirected,
+                src_type = EXCLUDED.src_type,
+                dst_type = EXCLUDED.dst_type,
                 props = EXCLUDED.props,
                 format_version = EXCLUDED.format_version,
                 version = EXCLUDED.version + 1,
@@ -945,10 +1001,13 @@ impl PgStore.upsert(rows_in: list[AnchorRow]) -> None {
             actual_version=int(found[0][0]) if found else -1
         );
     }
+    registered = self._txn_types if self._in_txn else self._known_types;
     pairs: list[tuple[str, str]] = [];
     seen_pairs: set[tuple[str, str]] = set();
     for row in rows {
-        if row.arch_type and row.arch_type not in self._known_types {
+        if row.arch_type
+            and row.arch_type not in self._known_types
+            and row.arch_type not in registered {
             for anc in (row.ancestry or [row.arch_type]) {
                 if (row.arch_type, anc) not in seen_pairs {
                     seen_pairs.add((row.arch_type, anc));
@@ -959,7 +1018,7 @@ impl PgStore.upsert(rows_in: list[AnchorRow]) -> None {
     }
     if pairs {
         tvals: list[str] = [];
-        tparams: dict = {};
+        tparams: dict[str, any] = {};
         for (i, pair) in enumerate(pairs) {
             tvals.append(f"(:t{i}, :a{i})");
             tparams[f"t{i}"] = pair[0];
@@ -972,9 +1031,34 @@ impl PgStore.upsert(rows_in: list[AnchorRow]) -> None {
             tparams
         );
         for pair in pairs {
-            self._known_types.add(pair[0]);
+            registered.add(pair[0]);
         }
+        self._txn_subtypes = {};
     }
+}
+
+
+impl PgStore.retype_edges(ids: list[UUID]) -> None {
+    if not ids {
+        return;
+    }
+    params = {'ids': [str(i) for i in ids]};
+    self._run(
+        """
+        UPDATE anchors e SET dst_type = n.arch_type FROM anchors n
+        WHERE n.id = ANY(CAST(:ids AS uuid[])) AND e.dst = n.id
+          AND e.kind = 'EdgeAnchor' AND e.dst_type <> n.arch_type
+        """,
+        params
+    );
+    self._run(
+        """
+        UPDATE anchors e SET src_type = n.arch_type FROM anchors n
+        WHERE n.id = ANY(CAST(:ids AS uuid[])) AND e.src = n.id
+          AND e.kind = 'EdgeAnchor' AND e.src_type <> n.arch_type
+        """,
+        params
+    );
 }
 
 
@@ -1014,19 +1098,83 @@ impl PgStore.root_ids -> list[UUID] {
 
 
 impl PgStore.subtype_names(type_name: str) -> list[str] {
-    rows = self._run(
-        'SELECT type_name FROM graph_types WHERE ancestor = :t', {'t': type_name}
-    );
-    names = [str(r[0]) for r in rows];
-    if type_name not in names {
-        names.append(type_name);
+    with self._lock {
+        snapshot = self._in_txn and self._isolation != TxnIsolation.READ_COMMITTED;
+        if snapshot and type_name in self._txn_subtypes {
+            return list(self._txn_subtypes[type_name]);
+        }
+        rows = self._run(
+            'SELECT type_name FROM graph_types WHERE ancestor = :t', {'t': type_name}
+        );
+        names = [str(r[0]) for r in rows];
+        if type_name not in names {
+            names.append(type_name);
+        }
+        if snapshot {
+            self._txn_subtypes[type_name] = names;
+        }
+        return list(names);
     }
-    return names;
 }
 
 
-impl PgStore.rows(sql: str, params: dict) -> list[tuple] {
+impl PgStore.rows(sql: str, params: dict[str, any]) -> list[tuple[any, ...]] {
     return [tuple(r) for r in self._run(sql, params)];
+}
+
+
+impl PgStore.queue_enter(ids: list[UUID]) -> bool {
+    with self._lock {
+        self._run('BEGIN', {});
+        try {
+            self._run(f"SET LOCAL lock_timeout = '{_QUEUE_WAIT_SECONDS}s'", {});
+            self._run(
+                """
+                SELECT pg_advisory_lock(k) FROM (
+                    SELECT hashtextextended(x, 0) AS k
+                    FROM unnest(CAST(:ids AS text[])) AS x
+                    ORDER BY 1
+                ) AS keys
+                """,
+                {'ids': sorted(str(i) for i in ids)}
+            );
+            self._run('COMMIT', {});
+            return True;
+        } except Exception as e {
+            try {
+                self._run('ROLLBACK', {});
+            } except Exception {}
+            try {
+                self.queue_exit(ids);
+            } except Exception {}
+            if _sqlstate(e) in ('55P03', '40P01') {
+                return False;
+            }
+            raise;
+        }
+    }
+}
+
+
+impl PgStore.queue_exit(ids: list[UUID]) -> None {
+    self._run(
+        """
+        SELECT pg_advisory_unlock(hashtextextended(x, 0))
+        FROM unnest(CAST(:ids AS text[])) AS x
+        """,
+        {'ids': [str(i) for i in ids]}
+    );
+}
+
+
+impl PgStore.lock_rows(ids: list[UUID]) -> None {
+    self._run(
+        """
+        SELECT id FROM anchors WHERE id = ANY(CAST(:ids AS uuid[]))
+        ORDER BY id FOR UPDATE
+        """,
+        {'ids': [str(i) for i in ids]}
+    );
 }
 
 
@@ -1054,29 +1202,72 @@ impl PgStore.kv_put(key: str, value: str) -> None {
 
 
 impl PgStore.kv_put_ttl(key: str, value: str, ttl_seconds: int) -> None {
-    with self._lock {
-        conn: any = self._side();
-        conn.run(
-            """
-            INSERT INTO kv_state (key, value, expires_at, updated_at)
-            VALUES (
-                :k, :v, now() + make_interval(secs => CAST(:ttl AS int)), now()
-            )
-            ON CONFLICT (key) DO UPDATE SET
-                value = EXCLUDED.value,
-                expires_at = EXCLUDED.expires_at,
-                updated_at = now()
-            """,
-            k=key,
-            v=value,
-            ttl=ttl_seconds
-        );
-    }
+    self._side_run(
+        """
+        INSERT INTO kv_state (key, value, expires_at, updated_at)
+        VALUES (:k, :v, now() + make_interval(secs => CAST(:ttl AS int)), now())
+        ON CONFLICT (key) DO UPDATE SET
+            value = EXCLUDED.value,
+            expires_at = EXCLUDED.expires_at,
+            updated_at = now()
+        """,
+        {'k': key, 'v': value, 'ttl': ttl_seconds}
+    );
 }
 
 
 impl PgStore.kv_delete(key: str) -> None {
     self._run('DELETE FROM kv_state WHERE key = :k', {'k': key});
+}
+
+
+impl PgStore.kv_acquire_lease(key: str, ttl_seconds: int, owner: str) -> bool {
+    rows = self._side_run(
+        """
+        INSERT INTO kv_state (key, value, expires_at, updated_at)
+        VALUES (:k, :o, now() + make_interval(secs => CAST(:ttl AS int)), now())
+        ON CONFLICT (key) DO UPDATE SET
+            value = EXCLUDED.value,
+            expires_at = EXCLUDED.expires_at,
+            updated_at = now()
+        WHERE kv_state.value = :o
+              OR kv_state.expires_at IS NULL
+              OR kv_state.expires_at <= now()
+        RETURNING key
+        """,
+        {'k': f"lease:{key}", 'o': owner, 'ttl': ttl_seconds}
+    );
+    return bool(rows);
+}
+
+
+impl PgStore.kv_release_lease(key: str, owner: str) -> bool {
+    rows = self._side_run(
+        'DELETE FROM kv_state WHERE key = :k AND value = :o RETURNING key',
+        {'k': f"lease:{key}", 'o': owner}
+    );
+    return bool(rows);
+}
+
+
+impl PgStore.kv_claim_tick(key: str, tick: int) -> bool {
+    rows = self._side_run(
+        """
+        INSERT INTO kv_state (key, value, expires_at, updated_at)
+        VALUES (:k, CAST(:t AS bigint)::text, NULL, now())
+        ON CONFLICT (key) DO UPDATE SET
+            value = EXCLUDED.value,
+            updated_at = now()
+        WHERE CASE
+            WHEN kv_state.value ~ '^[0-9]+$'
+            THEN kv_state.value::bigint < CAST(:t AS bigint)
+            ELSE true
+        END
+        RETURNING key
+        """,
+        {'k': f"tick:{key}", 't': int(tick)}
+    );
+    return bool(rows);
 }
 
 
@@ -1102,15 +1293,11 @@ impl PgStore.quarantine(
 
 
 impl PgStore.notify(channel: str, payload: str) -> None {
-    with self._lock {
-        ident = _channel_ident(channel);
-        conn: any = self._side();
-        conn.run(
-            'SELECT pg_notify(:c, :p)',
-            c=ident,
-            p=_channel_wire_payload(channel, ident, payload)
-        );
-    }
+    ident = _channel_ident(channel);
+    self._side_run(
+        'SELECT pg_notify(:c, :p)',
+        {'c': ident, 'p': _channel_wire_payload(channel, ident, payload)}
+    );
 }
 
 
@@ -1193,7 +1380,7 @@ impl PgStore._listen_loop -> None {
         return;
     }
     while not stop.is_set() {
-        pending: list = [];
+        pending: list[tuple[int, str, str]] = [];
         sock: any = None;
         try {
             with self._lock {
@@ -1382,4 +1569,203 @@ impl PgStore.close -> None {
     self._join_listen_thread(parked);
     _park_conn(self.conninfo, main_conn, was_txn, False);
     _park_conn(self.conninfo, side_conn, False, listened);
+}
+
+
+impl PgStore.lock_wait(timeout: str) -> None {
+    with self._lock {
+        if self._in_txn {
+            self._run(f"SET LOCAL lock_timeout = '{timeout}'", {});
+        }
+    }
+}
+
+impl _jsonable(o: object) -> str {
+    return str(o);
+}
+
+
+impl _sanitize_ident(name: str) -> str {
+    out = '';
+    for ch in name.lower() {
+        out += ch if (ch.isalnum() or ch == '_') else '_';
+    }
+    return out;
+}
+
+
+impl _store_ns(info: ConnInfo) -> str {
+    return f"{info.unix_socket_dir or info.host}:{info.port}/{info.database}";
+}
+
+
+impl _channel_travels_verbatim(channel: str) -> bool {
+    return (
+        bool(channel)
+        and '\x00' not in channel
+        and len(channel.encode('utf-8')) <= _PG_CHANNEL_LIMIT
+    );
+}
+
+
+impl _channel_ident(channel: str) -> str {
+    if _channel_travels_verbatim(channel) {
+        return channel;
+    }
+    import hashlib;
+    digest = hashlib.sha256(channel.encode('utf-8')).hexdigest()[:_CHANNEL_DIGEST_LEN];
+    stem = _sanitize_ident(channel)[:_PG_CHANNEL_LIMIT - _CHANNEL_DIGEST_LEN - 1];
+    return f"{stem}_{digest}";
+}
+
+
+impl _quote_channel(ident: str) -> str {
+    escaped = ident.replace('"', '""');
+    return f'"{escaped}"';
+}
+
+
+impl _channel_wire_payload(channel: str, ident: str, payload: str) -> str {
+    if ident == channel {
+        return payload;
+    }
+    return json.dumps(
+        {
+            _CHANNEL_ENVELOPE_KEY: _CHANNEL_ENVELOPE_VERSION,
+            'channel': channel,
+            'payload': payload
+        }
+    );
+}
+
+
+impl _channel_envelope(payload: str) -> (ChannelMessage | None) {
+    try {
+        data = json.loads(payload);
+    } except Exception {
+        return None;
+    }
+    if not isinstance(data, dict)
+        or data.get(_CHANNEL_ENVELOPE_KEY) != _CHANNEL_ENVELOPE_VERSION {
+        return None;
+    }
+    return ChannelMessage(
+        channel=str(data.get('channel', '')), payload=str(data.get('payload', ''))
+    );
+}
+
+
+impl _app_identity -> str {
+    import sys;
+    cmd = 'embedded';
+    try {
+        argv = list(sys?.argv or []);
+        if argv {
+            cmd = os.path.basename(str(argv[0]) or '') or 'embedded';
+            if cmd.startswith('jac') and len(argv) > 1 {
+                sub = str(argv[1]);
+                if sub and not sub.startswith('-') {
+                    cmd = sub;
+                }
+            }
+        }
+    } except Exception {
+        cmd = 'unknown';
+    }
+    return f"jac:{os.getpid()}:{cmd}"[:63];
+}
+
+
+impl _schema_lock_key -> int {
+    import hashlib;
+    digest = hashlib.sha256(_SCHEMA_LOCK_TAG.encode('utf-8')).digest()[:8];
+    return int.from_bytes(digest, 'big', signed=True);
+}
+
+
+impl _sqlstate(e: Exception) -> str {
+    for arg in getattr(e, 'args', ()) {
+        if isinstance(arg, dict) and 'C' in arg {
+            return str(arg.get('C') or '');
+        }
+    }
+    return '';
+}
+
+
+impl _parse_pid(raw: str) -> (int | None) {
+    try {
+        return int(raw);
+    } except ValueError {
+        return None;
+    }
+}
+
+
+impl _owner_alive(pid: (int | None)) -> bool {
+    if pid is None or pid <= 0 {
+        return True;
+    }
+    try {
+        os.kill(pid, 0);
+        return True;
+    } except ProcessLookupError {
+        return False;
+    } except Exception {
+        return True;
+    }
+}
+
+
+impl _park_conn(info: any, conn: any, in_txn: bool, listened: bool) -> None {
+    if conn is None {
+        return;
+    }
+    if not pool_enabled() or getattr(conn, '_closed', False) {
+        try {
+            conn.close();
+        } except Exception {}
+        return;
+    }
+    try {
+        if in_txn {
+            conn.run('ROLLBACK');
+        }
+        conn.run(
+            "DO $$ BEGIN PERFORM pg_advisory_unlock_all(); EXECUTE 'RESET ALL'; "
+                + "EXECUTE 'UNLISTEN *'; EXECUTE 'DISCARD TEMP'; EXECUTE 'DISCARD SEQUENCES'; END $$"
+        );
+        if listened {
+            conn.notifications.clear();
+        }
+    } except Exception {
+        try {
+            conn.close();
+        } except Exception {}
+        return;
+    }
+    release(info, conn);
+}
+
+
+impl _conn_dead(e: Exception) -> bool {
+    if isinstance(e, (ConnectionError, BrokenPipeError, EOFError, OSError)) {
+        return True;
+    }
+    for arg in getattr(e, 'args', ()) {
+        if isinstance(arg, dict)
+            and arg.get('C') in ('08006', '08003', '57P01', '57P03', '25P03') {
+            return True;
+        }
+    }
+    return False;
+}
+
+impl PgStore.new_session -> PgStore {
+    return PgStore(
+        conninfo=self.conninfo,
+        ensure_cb=self.ensure_cb,
+        promotions=dict(self.promotions),
+        auto_schema=self.auto_schema
+    );
 }

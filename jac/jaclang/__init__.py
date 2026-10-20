@@ -1,30 +1,59 @@
 """The Jac Programming Language."""
 
 import sys
+from importlib import import_module
+from pathlib import Path
 from typing import TYPE_CHECKING
 
-from jaclang.meta_importer import JacMetaImporter  # noqa: E402
 
-# Register JacMetaImporter BEFORE anything else, so .jac modules can be imported
-if not any(isinstance(f, JacMetaImporter) for f in sys.meta_path):
-    sys.meta_path.insert(0, JacMetaImporter())
+def _install_compiler_host(package_dir: Path) -> None:
+    # The compiler reaches the toolchain package and the project (jac.toml,
+    # workspaces, module resolution) only through what is registered here. A
+    # runtime-only export ships neither the compiler nor the project layer.
+    try:
+        host = import_module("jaclang.compiler.frontend.host")
+    except ModuleNotFoundError as exc:
+        if not (exc.name or "").startswith("jaclang.compiler"):
+            raise
+        return
+    host.set_package_root(str(package_dir.absolute()))
+    try:
+        project_host = import_module("jaclang.project.compiler_host")
+    except ModuleNotFoundError as exc:
+        if exc.name != "jaclang.project.compiler_host":
+            raise
+        return
+    host.install_host(project_host.ProjectHost())
 
-# Put the current project's .jac/venv on sys.path so per-project dependencies
-# (jac install [-e] <pkg>) and the on-demand feature capabilities (byllm, scale,
-# ...) are importable. In the single binary this already ran via sitecustomize
-# during interpreter startup; this call is the library-use fallback (plain
-# `import jaclang` with no sitecustomize). The helper is idempotent and uses
-# addsitedir, so editable .pth links are processed.
-with __import__("contextlib").suppress(Exception):
-    import _jac_finder as _jf
 
-    _jf.add_project_venv_to_path()
+def _install_importer() -> None:
+    package_dir = Path(__file__).parent
+    if (package_dir / "runtime.json").is_file():
+        from jaclang.runtime.source_app import load_runtime
+
+        load_runtime(package_dir)
+        _install_compiler_host(package_dir)
+        return
+
+    # Source loading is an optional build service. Exported packages install
+    # their prepared importer from the same initialization entry point.
+    importer = import_module("jaclang.meta_importer").JacMetaImporter
+    if not any(isinstance(f, importer) for f in sys.meta_path):
+        sys.meta_path.insert(0, importer())
+    _install_compiler_host(package_dir)
+
+    # The binary already adds the project environment through sitecustomize;
+    # ordinary Python library imports need the same idempotent setup.
+    with __import__("contextlib").suppress(Exception):
+        import _jac_finder as _jf
+
+        _jf.add_project_venv_to_path()
 
 
 # --- Lazy compiler/runtime bootstrap -------------------------------------
 # The compiler and runtime.runtime were previously imported eagerly here, which
 # pulled them (and the parser/codegen pipeline) in on every `import jaclang`
-# and defeated the lazy CLI fast paths -- `jac --version` / `--help` / `purge`
+# and defeated the lazy CLI fast paths -- `jac --version` / `--help`
 # must stay light. They now load on first attribute access (PEP 562) so plain
 # `import jaclang` stays cheap while `from jaclang import JacRuntime`,
 # `import jaclang.compiler`, etc. keep working unchanged.
@@ -41,8 +70,6 @@ def _load_jac_runtime() -> None:
             "JacRuntimeInterface": JacRuntimeInterface,
         }
     )
-
-
 
 
 # The names below are bound at runtime by `_load_jac_runtime()` / `__getattr__`
@@ -67,3 +94,5 @@ def __getattr__(name: str) -> object:
 
 
 __all__ = ["JacRuntimeInterface", "JacRuntime", "compiler"]
+
+_install_importer()

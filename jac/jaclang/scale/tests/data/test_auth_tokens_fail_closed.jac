@@ -6,13 +6,8 @@ dict makes a token consumable once per replica. These tests drive the real
 store object with a hand-rolled broken-database boundary stub at the API edge.
 """
 
-import from jaclang.scale.identity.auth_tokens {
-    AuthTokenStore,
-    reset_auth_token_store
-}
-
 obj BrokenDb {
-    def rows(sql: str, params: dict) -> list {
+    def rows(sql: str, params: dict[str, any]) -> list[any] {
         raise RuntimeError("db down");
     }
 
@@ -21,7 +16,7 @@ obj BrokenDb {
     }
 }
 
-def _store_with_memory_token -> tuple {
+def _store_with_memory_token -> tuple[any, ...] {
     reset_auth_token_store();
     store = AuthTokenStore();
     store._db = None;

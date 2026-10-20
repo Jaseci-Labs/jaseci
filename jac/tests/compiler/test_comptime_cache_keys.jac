@@ -17,25 +17,24 @@ import os;
 import sys;
 import tempfile;
 import time;
-import from jaclang.compiler.driver.compile_options { CompileOptions }
 import from jaclang.compiler.driver.compiler { JacCompiler }
+import from jaclang.compiler.driver.jir { native_section_payload, SEC_NBITCODE }
+import jaclang.compiler.backends.native.llvm.binding as llvm;
 import from jaclang.compiler.driver.jir {
     SEC_CTDEPS,
-    get_module_cache_path,
+    SEC_NOBJ,
+    precompiled_jir_matches_source,
     read_section_bytes
 }
 import from jaclang.compiler.driver.program { JacProgram }
+import from jaclang.compiler.driver.compilation_context { program_for }
+import from jaclang.compiler.driver.ifacecache { artifact_cache_path }
 import from jaclang.dist.precompile_bytecode { precompile_unit }
 import from types { CodeType }
 import from unittest.mock { patch }
+import from tests.support { cache_env }
 
-glob CACHE_HOME_VARS: tuple = (
-         "HOME",
-         "USERPROFILE",
-         "XDG_CACHE_HOME",
-         "LOCALAPPDATA"
-     ),
-     SPEC_SRC: str = "obj Spec {\n    has name: str,\n        help: str;\n}\n",
+glob SPEC_SRC: str = "obj Spec {\n    has name: str,\n        help: str;\n}\n",
      OTHER_SRC: str = "def helper -> int {\n    return 1;\n}\n",
      OTHER_SRC_EDIT: str = "def helper -> int {\n    return 2;\n}\n",
      CONSUMER_SRC: str = (
@@ -50,9 +49,8 @@ glob CACHE_HOME_VARS: tuple = (
      );
 
 def _isolated(tmp: str) -> any {
-    env: dict[str, str] = {var: tmp for var in CACHE_HOME_VARS};
-    env["JAC_REBUILD"] = "";
-    env["JAC_NO_PRECOMPILE"] = "";
+    env = cache_env(os.path.join(tmp, "cache"));
+    env["JAC_HANDOFF"] = "";
     return patch.dict(os.environ, env);
 }
 
@@ -163,7 +161,7 @@ test "the comptime producers are recorded on the consumer's cache" {
     paths = _project();
     with _isolated(paths["root"]) {
         _folded(paths["consmod"]);
-        data = get_module_cache_path(paths["consmod"]).read_bytes();
+        data = artifact_cache_path(paths["consmod"], JacProgram()).read_bytes();
         raw = read_section_bytes(data, SEC_CTDEPS);
         assert raw is not None , "the consumer recorded no comptime dependencies";
         text = raw.decode("utf-8");
@@ -176,11 +174,19 @@ test "the comptime producers are recorded on the consumer's cache" {
     }
 }
 
-test "an edit to a module no fold read leaves the consumer's cache alone" {
+test "an ordinary runtime import leaves a server consumer's fold cache alone" {
     paths = _project();
+    # Dynamic imports do not bake the dependency body into this artifact.
+    # Native consumers do, and must invalidate on an imported body edit.
+    _write(
+        os.path.join(paths["root"], "jac.toml"),
+        '[project]\nname = "fold-cache"\n[placement.pins]\nconsmod = "server"\n'
+    );
     with _isolated(paths["root"]) {
         _folded(paths["consmod"]);
-        cache = get_module_cache_path(paths["consmod"]);
+        cache = artifact_cache_path(paths["consmod"], JacProgram());
+        assert read_section_bytes(cache.read_bytes(), SEC_NOBJ) is None;
+        assert read_section_bytes(cache.read_bytes(), SEC_NBITCODE) is None;
         stamp = os.path.getmtime(cache);
         _write(paths["othermod"], OTHER_SRC_EDIT);
         _folded(paths["consmod"]);
@@ -195,7 +201,7 @@ test "a fold still resolves when the producer is served from its cache" {
     with _isolated(paths["root"]) {
         cold = _folded(paths["consmod"]);
         assert "base one help" in cold , f"cold compile did not fold: {cold}";
-        get_module_cache_path(paths["consmod"]).unlink();
+        artifact_cache_path(paths["consmod"], JacProgram()).unlink();
         again = _folded(paths["consmod"]);
         assert "base one help" in again , (
             f"the fold broke once the producer came back from cache: {again}"
@@ -225,6 +231,29 @@ test "an embedded file is re-read when its content changes" {
         assert "beta payload" in warm , (
             f"the embedder served the stale file content: {warm}"
         );
+    }
+}
+
+test "a comptime embed cannot read outside its package root" {
+    tmp = tempfile.mkdtemp();
+    with _isolated(tmp) {
+        proj = os.path.join(tmp, "pkg");
+        os.makedirs(proj);
+        _write(os.path.join(proj, "jac.toml"), "[project]\nname = \"pkg\"\n");
+        _write(os.path.join(tmp, "secret.txt"), "top secret");
+        src = os.path.realpath(os.path.join(proj, "leak.jac"));
+        _write(
+            src,
+            "import from jaclang.comptime { embed_file }\n\n"
+            "comptime BLOB: str = embed_file(\"../secret.txt\");\n\n"
+            "with entry {\n"
+            "    print(BLOB);\n"
+            "}\n"
+        );
+        prog = JacProgram();
+        JacCompiler().get_bytecode(src, prog);
+        msgs = [a.pretty_print() for a in prog.errors_had];
+        assert any("outside the package root" in m for m in msgs) , msgs;
     }
 }
 
@@ -334,12 +363,12 @@ test "a bundle promoted into the module cache carries its comptime deps" {
         cold = _folded(paths["consumer"]);
         assert "spec one" in cold , f"cold compile did not fold: {cold}";
         _bundle(paths);
-        get_module_cache_path(paths["consumer"]).unlink();
+        artifact_cache_path(paths["consumer"], JacProgram()).unlink();
         promoted = _folded(paths["consumer"]);
         assert "spec one" in promoted , (
             f"the bundle did not serve the consumer: {promoted}"
         );
-        data = get_module_cache_path(paths["consumer"]).read_bytes();
+        data = artifact_cache_path(paths["consumer"], JacProgram()).read_bytes();
         raw = read_section_bytes(data, SEC_CTDEPS);
         assert raw is not None , (
             "the promoted module cache recorded no comptime dependencies"
@@ -357,7 +386,7 @@ test "a bundle promoted into the module cache carries its comptime deps" {
 
 def _native_compile(path: str) {
     prog = JacProgram();
-    prog.compile(path, options=CompileOptions(force_target_program=True));
+    prog.compile(path);
     assert not prog.errors_had , (
         f"native compile of {path} failed: "
         f"{[a.pretty_print() for a in prog.errors_had]}"
@@ -365,23 +394,19 @@ def _native_compile(path: str) {
 }
 
 def _native_ir(path: str) -> str {
-    import from jaclang.compiler.driver.jir { get_native_cache_dir }
-    cache_dir = str(get_native_cache_dir(path));
-    stem = os.path.splitext(os.path.basename(path))[0];
-    text = "";
-    if os.path.isdir(cache_dir) {
-        for name in sorted(os.listdir(cache_dir)) {
-            if name.startswith(f"{stem}.") and name.endswith(".ir_cache") {
-                with open(os.path.join(cache_dir, name), "r") as fh {
-                    text += fh.read();
-                }
-            }
-        }
+    prog = program_for(path, JacProgram());
+    cache_path = artifact_cache_path(path, prog);
+    if not cache_path.is_file() {
+        return "";
     }
-    return text;
+    payload = native_section_payload(
+        read_section_bytes(cache_path.read_bytes(), SEC_NBITCODE),
+        prog.native_units().stamp_for(None, path)
+    );
+    return str(llvm.parse_bitcode(payload)) if payload is not None else "";
 }
 
-test "a native-placed fold is not served from a stale IR cache" {
+test "a native-placed fold is not served from stale JIR bitcode" {
     tmp = tempfile.mkdtemp();
     with _isolated(tmp) {
         _write(
@@ -409,14 +434,30 @@ test "a native-placed fold is not served from a stale IR cache" {
         );
         _native_compile(main_mod);
         cold = _native_ir(native);
-        assert cold , "the native lane wrote no IR cache for the pinned module";
+        assert cold , "the native lane wrote no JIR bitcode for the pinned module";
         assert "alpha" in cold , f"the cold native IR did not fold the producer";
         _write(producer, "comptime TAG: str = \"beta\";\n");
         _native_compile(main_mod);
         warm = _native_ir(native);
         assert "beta" in warm , (
-            "the native IR cache served a stale fold after its comptime "
-            "producer changed"
+            "the native JIR served a stale fold after its comptime " "producer changed"
         );
+    }
+}
+
+
+test "precompile reuse rejects changed producers before sealing" {
+    paths = _spec_pair("spec one");
+    with _isolated(paths["root"]) {
+        _folded(paths["consumer"]);
+        blob = precompile_unit(paths["consumer"], paths["root"]);
+        assert blob is not None;
+        assert precompiled_jir_matches_source(
+            blob, paths["consumer"], package_root=paths["root"]
+        );
+        _write(paths["producer"], "comptime SPEC: str = \"spec two\";\n");
+        assert not precompiled_jir_matches_source(
+            blob, paths["consumer"], package_root=paths["root"]
+        ) , "precompile would reuse and seal the old producer's value";
     }
 }

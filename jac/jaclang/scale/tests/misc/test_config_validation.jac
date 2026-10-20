@@ -2,22 +2,6 @@ import os;
 import shutil;
 import tempfile;
 import from pathlib { Path }
-import from jaclang.project.config_schema { report_schema_findings }
-import from jaclang.scale.config.validation {
-    STRICT_ENV,
-    known_deploy_targets,
-    validate_scale_config
-}
-import from jaclang.comptime { fields }
-import from jaclang.scale.config.plugin_config { JacScalePluginConfig }
-import from jaclang.scale.deploy.target.kubernetes.kubernetes_config {
-    KubernetesConfig
-}
-import from jaclang.scale.config.config_loader {
-    JacScaleConfig,
-    get_scale_config,
-    reset_scale_config
-}
 
 def _collect_default_mismatches(
     options: dict[str, any], defaults: dict[str, any], path: str, bad: list[str]
@@ -43,10 +27,10 @@ def _collect_default_mismatches(
 }
 
 test "unknown section is flagged with a suggestion" {
-    msgs = validate_scale_config({"microservice": {"routes": {}}});
+    msgs = validate_scale_config({"gatway": {"colocate": True}});
     assert len(msgs) == 1 , f"expected 1 finding, got {msgs}";
-    assert "microservice" in msgs[0] , msgs[0];
-    assert "did you mean 'microservices'" in msgs[0] , msgs[0];
+    assert "gatway" in msgs[0] , msgs[0];
+    assert "did you mean 'gateway'" in msgs[0] , msgs[0];
 }
 
 test "unknown nested key is flagged with a suggestion" {
@@ -56,30 +40,21 @@ test "unknown nested key is flagged with a suggestion" {
     assert "did you mean 'cpu_limit'" in msgs[0] , msgs[0];
 }
 
-test "per-service unknown key is flagged" {
-    msgs = validate_scale_config(
-        {"microservices": {"services": {"myapp": {"cpu_limits": "2000m"}}}}
-    );
+test "gateway nested unknown key is flagged" {
+    msgs = validate_scale_config({"gateway": {"gateway_prot": 8001}});
     assert len(msgs) == 1 , f"expected 1 finding, got {msgs}";
-    assert "scale.microservices.services.myapp" in msgs[0] , msgs[0];
-    assert "did you mean 'cpu_limit'" in msgs[0] , msgs[0];
+    assert "scale.gateway" in msgs[0] , msgs[0];
+    assert "did you mean 'gateway_port'" in msgs[0] , msgs[0];
 }
 
 test "open dict sections accept arbitrary keys" {
     cfg = {
         "secrets": {"MY_API_KEY": "${MY_API_KEY}"},
         "kubernetes": {"labels": {"team": "core"}},
-        "microservices": {
-            "routes": {"billing": "/billing"},
-            "services": {
-                "billing": {
-                    "env": {"LOG_LEVEL": "DEBUG"},
-                    "deployment_overlay": {"spec": {"replicas": 2}},
-                    "hpa": {
-                        "behavior": {"scaleDown": {"stabilizationWindowSeconds": 600}}
-                    }
-                }
-            }
+        "gateway": {
+            "env": {"LOG_LEVEL": "DEBUG"},
+            "deployment_overlay": {"spec": {"replicas": 2}},
+            "hpa": {"behavior": {"scaleDown": {"stabilizationWindowSeconds": 600}}}
         }
     };
     msgs = validate_scale_config(cfg);
@@ -88,8 +63,8 @@ test "open dict sections accept arbitrary keys" {
 
 test "valid config produces no findings" {
     cfg = {
-        "jwt": {"secret": "s", "algorithm": "HS256", "exp_delta_days": 7},
-        "server": {"port": 8080, "docs_enabled": False},
+        "sso": {"host": "http://localhost:8000"},
+        "server": {"structured_logs": False},
         "kubernetes": {"namespace": "prod", "cpu_limit": "1000m"},
         "fat_bundle": True,
         "seal_timeout": 120
@@ -98,7 +73,7 @@ test "valid config produces no findings" {
 }
 
 test "non-dict section values do not crash the validator" {
-    msgs = validate_scale_config({"jwt": "not-a-table", "bogus": 1});
+    msgs = validate_scale_config({"sso": "not-a-table", "bogus": 1});
     assert len(msgs) == 1 , f"expected only the bogus finding, got {msgs}";
     assert "bogus" in msgs[0] , msgs[0];
 }
@@ -197,9 +172,7 @@ test "the [scale.kubernetes] schema agrees with the declaration it documents" {
 
 test "reporting does not raise outside strict mode" {
     os.environ.pop(STRICT_ENV, None);
-    report_schema_findings(
-        validate_scale_config({"microservice": {}}), "scale", STRICT_ENV
-    );
+    report_schema_findings(validate_scale_config({"gatway": {}}), "scale", STRICT_ENV);
 }
 
 test "strict env raises on unknown keys" {
@@ -208,11 +181,11 @@ test "strict env raises on unknown keys" {
         raised = False;
         try {
             report_schema_findings(
-                validate_scale_config({"microservice": {}}), "scale", STRICT_ENV
+                validate_scale_config({"gatway": {}}), "scale", STRICT_ENV
             );
         } except ValueError as e {
             raised = True;
-            assert "microservice" in str(e) , str(e);
+            assert "gatway" in str(e) , str(e);
         }
         assert raised , "expected ValueError in strict mode";
     } finally {
@@ -224,7 +197,9 @@ test "strict env ignores a clean config" {
     os.environ[STRICT_ENV] = "1";
     try {
         report_schema_findings(
-            validate_scale_config({"server": {"port": 9000}}), "scale", STRICT_ENV
+            validate_scale_config({"server": {"structured_logs": False}}),
+            "scale",
+            STRICT_ENV
         );
     } finally {
         os.environ.pop(STRICT_ENV, None);
@@ -245,7 +220,7 @@ test "an empty strict-env name never escalates" {
 test "the shared loader validates the on-disk jac.toml" {
     d = tempfile.mkdtemp();
     (Path(d) / "jac.toml").write_text(
-        "[project]\nname = \"demo\"\n\n[scale.microservice]\nroutes = {}\n"
+        "[project]\nname = \"demo\"\n\n[scale.gatway]\ncolocate = true\n"
     );
     os.environ[STRICT_ENV] = "1";
     reset_scale_config();
@@ -255,7 +230,7 @@ test "the shared loader validates the on-disk jac.toml" {
             get_scale_config(Path(d)).load();
         } except ValueError as e {
             raised = True;
-            assert "microservice" in str(e) , str(e);
+            assert "gatway" in str(e) , str(e);
         }
         assert raised , "expected strict validation to fire from PluginConfigBase.load";
     } finally {
@@ -268,15 +243,66 @@ test "the shared loader validates the on-disk jac.toml" {
 test "a clean on-disk jac.toml loads without complaint under strict mode" {
     d = tempfile.mkdtemp();
     (Path(d) / "jac.toml").write_text(
-        "[project]\nname = \"demo\"\n\n[scale.server]\nport = 9100\n"
+        "[project]\nname = \"demo\"\n\n[scale.server]\nstructured_logs = false\n"
     );
     os.environ[STRICT_ENV] = "1";
     reset_scale_config();
     try {
         cfg = get_scale_config(Path(d)).load();
-        assert cfg["server"]["port"] == 9100 , cfg["server"];
+        assert cfg["server"]["structured_logs"] is False , cfg["server"];
     } finally {
         os.environ.pop(STRICT_ENV, None);
+        reset_scale_config();
+        shutil.rmtree(d, ignore_errors=True);
+    }
+}
+
+# A leftover [scale.microservices] table must stop every command at config
+# parse, not degrade into an "unknown key" warning and a single-pod deploy.
+# This guards what test_ms_config_failloud guarded before the table dissolved.
+test "a leftover [scale.microservices] table is a hard config error" {
+    import from jaclang.project.config { JacConfig }
+    for toml in [
+        "[project]\nname = \"demo\"\n\n[scale.microservices]\nenabled = true\n",
+        "[project]\nname = \"demo\"\n\n[scale.microservices.routes]\nadmin = \"\"\n",
+        "[project]\nname = \"demo\"\n\n[scale.microservices.logs]\nenabled = true\n",
+        "[project]\nname = \"demo\"\n\n[scale.microservices.services.billing]\n"
+        "replicas = 2\n"
+    ] {
+        caught = "";
+        try {
+            JacConfig.from_toml_str(toml);
+        } except ValueError as e {
+            caught = str(e);
+        }
+        assert caught , f"expected a ValueError for:\n{toml}";
+        assert "[scale.microservices]" in caught , caught;
+        assert "[apps.<name>]" in caught , caught;
+        assert "[scale.gateway]" in caught , caught;
+        assert "breaking-changes" in caught , caught;
+    }
+    d = tempfile.mkdtemp();
+    (Path(d) / "jac.toml").write_text(
+        "[project]\nname = \"demo\"\nentry-point = \"main\"\n\n"
+        "[scale.microservices.routes]\nadmin = \"\"\n"
+    );
+    (Path(d) / "main.jac").write_text("with entry {}\n");
+    reset_scale_config();
+    try {
+        raised = "";
+        try {
+            get_scale_config(Path(d)).load();
+        } except ValueError as e {
+            raised = str(e);
+        }
+        assert "[scale.microservices]" in raised , (
+            f"the scale loader must refuse the on-disk table: {raised!r}"
+        );
+        clean = JacConfig.from_toml_str(
+            "[project]\nname = \"demo\"\n\n[scale.gateway]\ncolocate = false\n"
+        );
+        assert clean.plugins["scale"]["gateway"]["colocate"] is False;
+    } finally {
         reset_scale_config();
         shutil.rmtree(d, ignore_errors=True);
     }
@@ -287,7 +313,7 @@ test "plugins without a declared schema opt out of validation" {
     assert cfg.get_config_strict_env() == STRICT_ENV;
     schema = cfg.get_config_schema();
     assert schema.get("section") == "scale" , schema.get("section");
-    assert "microservices" in schema.get("options", {}) , "schema options missing";
+    assert "gateway" in schema.get("options", {}) , "schema options missing";
 }
 
 test "shipped jac.toml files validate clean" {
@@ -327,16 +353,14 @@ test "platform-injected and capability-intent keys are recognized" {
     assert msgs == [] , f"expected no findings, got {msgs}";
 }
 
-test "documented microservices boot and client keys are recognized" {
+test "documented gateway boot keys are recognized" {
     cfg = {
-        "microservices": {
+        "gateway": {
+            "colocate": False,
             "boot_health_timeout": 60.0,
             "boot_max_wait": 120,
             "health_monitor_interval": 10.0,
-            "client": {
-                "entry": "client/main.jac",
-                "static_mounts": [{"url_prefix": "/assets", "local_path": "public"}]
-            }
+            "route_refresh_seconds": 5.0
         }
     };
     msgs = validate_scale_config(cfg);
@@ -358,7 +382,7 @@ test "a registered plugin target owns its section" {
     before = validate_scale_config({"fly": {"app_name": "demo"}});
     assert len(before) == 1 , f"expected 1 finding, got {before}";
 
-    def _factory(config: dict, logger: any = None) -> any {
+    def _factory(config: dict[str, any], logger: any = None) -> any {
         return None;
     }
     DeploymentTargetFactory.register("fly", _factory);
@@ -379,26 +403,78 @@ test "a misspelled deploy target is reported instead of silencing its section" {
 }
 
 test "known targets are exactly the ones the factory can build" {
-    import from jaclang.scale.deploy.target.factory { BUILTIN_TARGET_TYPES }
+    import from jaclang.scale.deploy.target.registry { BUILTIN_TARGET_TYPES }
     for name in BUILTIN_TARGET_TYPES {
         assert name in known_deploy_targets() , name;
     }
 }
 
-test "normalizer passes documented boot and static-mount keys through" {
-    import from jaclang.scale.config.config_loader { normalize_microservices_config }
-    normalized = normalize_microservices_config(
-        {
-            "boot_max_wait": 120,
-            "client": {
-                "entry": "client/main.jac",
-                "static_mounts": [{"url_prefix": "/assets", "local_path": "public"}]
-            }
-        },
-        env_routes_fallback=False
-    );
+test "normalizer passes documented boot keys through" {
+    import from jaclang.scale.config.config_loader { normalize_gateway_config }
+    normalized = normalize_gateway_config({"boot_max_wait": 120, "colocate": False});
     assert normalized.get("boot_max_wait") == 120 , normalized;
+    assert normalized["colocate"] is False , normalized;
     assert "boot_health_timeout" not in normalized , normalized;
-    mounts = normalized["client"]["static_mounts"];
-    assert mounts == [{"url_prefix": "/assets", "local_path": "public"}] , mounts;
+}
+
+
+test "a scheduler bound that would disable the control is flagged" {
+    # #9032: min_interval = -1 silently turns the interval floor off, and a
+    # negative cap silently means unlimited even though only 0 is documented
+    # that way. Both must be reported rather than quietly accepted.
+    msgs = validate_scale_config({"scheduler": {"min_interval": -1}});
+    assert len(msgs) == 1 , f"expected 1 finding, got {msgs}";
+    assert "min_interval" in msgs[0] , msgs[0];
+    assert "greater than 0" in msgs[0] , msgs[0];
+
+    msgs = validate_scale_config({"scheduler": {"max_jobs_per_user": -1}});
+    assert len(msgs) == 1 , f"expected 1 finding, got {msgs}";
+    assert "max_jobs_per_user" in msgs[0] , msgs[0];
+
+    msgs = validate_scale_config({"scheduler": {"min_interval": "soon"}});
+    assert len(msgs) == 1 , f"expected 1 finding, got {msgs}";
+}
+
+
+test "valid scheduler bounds are accepted quietly" {
+    msgs = validate_scale_config(
+        {"scheduler": {"min_interval": 0.5, "max_jobs_per_user": 0}}
+    );
+    assert len(msgs) == 0 , f"expected no findings, got {msgs}";
+
+    # A whole number spelled as a float loses nothing, so it is not a typo.
+    msgs = validate_scale_config({"scheduler": {"max_jobs_per_user": 25.0}});
+    assert len(msgs) == 0 , f"expected no findings, got {msgs}";
+}
+
+
+test "a fractional job cap is rejected, not truncated to unlimited" {
+    import from jaclang.scale.config.validation { scheduler_job_cap }
+
+    # int(0.5) is 0 and every store reads 0 as unlimited, so truncating a
+    # fractional cap would lift the limit its author was asking to tighten.
+    assert scheduler_job_cap(0.5) is None , scheduler_job_cap(0.5);
+    assert scheduler_job_cap(25.7) is None , scheduler_job_cap(25.7);
+    assert scheduler_job_cap(True) is None , scheduler_job_cap(True);
+    assert scheduler_job_cap(25) == 25 , scheduler_job_cap(25);
+    assert scheduler_job_cap(0) == 0 , scheduler_job_cap(0);
+
+    msgs = validate_scale_config({"scheduler": {"max_jobs_per_user": 0.5}});
+    assert len(msgs) == 1 , f"expected 1 finding, got {msgs}";
+    assert "whole number" in msgs[0] , msgs[0];
+}
+
+
+test "the loader falls back to the default a rejected bound describes" {
+    import from jaclang.scale.config.validation {
+        scheduler_job_cap,
+        scheduler_min_interval
+    }
+
+    # The loader reads both bounds through these, so the value it keeps and
+    # the value the boot finding reports cannot drift apart.
+    assert scheduler_min_interval(-1) is None , scheduler_min_interval(-1);
+    assert scheduler_min_interval("soon") is None , scheduler_min_interval("soon");
+    assert scheduler_min_interval(float("inf")) is None , "inf is not a floor";
+    assert scheduler_min_interval(0.5) == 0.5 , scheduler_min_interval(0.5);
 }

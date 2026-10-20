@@ -104,14 +104,22 @@ test "unknown command avoids heavy imports" {
 }
 
 test "hidden commands dispatch via manifest" {
-    for argv in (["nacompile", "--help"], ) {
+    for argv in (["build", "--native", "--help"], ) {
         (code, err) = _probe(argv, blocked=set());
         assert code == 0 , f"jac {' '.join(argv)} failed: {err}";
     }
 }
 
-test "purge avoids heavy imports" {
-    (code, err) = _probe(["purge", "--help"]);
+test "the purge tombstone avoids heavy imports and names jac cache purge" {
+    (code, err) = _probe(["purge"]);
+    assert code == 2 , err;
+    assert "jac cache purge" in err , err;
+}
+
+test "cache help loads only its own command module, no compiler or feature family" {
+    (code, err) = _probe(
+        ["cache", "--help"], blocked=_HEAVY_IMPORTS - {"jaclang.cli.commands"}
+    );
     assert code == 0 , err;
 }
 

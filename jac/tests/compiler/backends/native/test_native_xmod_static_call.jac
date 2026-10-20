@@ -23,7 +23,13 @@ import ctypes;
 import importlib;
 import os;
 import sys;
-import from tests.support { TESTS_DIR, native_force_opts }
+import from tests.support {
+    TESTS_DIR,
+    by_source_name,
+    native_address,
+    native_force_opts,
+    source_spelled
+}
 import from jaclang.compiler.driver.compile_options { CompileOptions }
 import from jaclang.compiler.driver.na_coverage { na_coverage_begin, na_coverage_end }
 import from jaclang.compiler.driver.program { JacProgram }
@@ -36,14 +42,12 @@ glob FIXTURES = os.path.join(
 
 """Forced-native options that skip the IR cache so the coverage always runs."""
 def _opts -> CompileOptions {
-    return CompileOptions(
-        force_codespace='native', force_target_program=True, no_ir_cache=True
-    );
+    return CompileOptions(force_codespace='native');
 }
 
 
 """Compile a fixture on the native pathway; return (program, module)."""
-def _compile_native(fixture: str) -> tuple {
+def _compile_native(fixture: str) -> tuple[any, ...] {
     prog = JacProgram();
     ir = prog.compile(file_path=os.path.join(FIXTURES, fixture), options=_opts());
     return (prog, ir);
@@ -51,7 +55,7 @@ def _compile_native(fixture: str) -> tuple {
 
 
 """Compile a fixture under the demotion coverage; return (program, module, coverage)."""
-def _compile_with_coverage(fixture: str) -> tuple {
+def _compile_with_coverage(fixture: str) -> tuple[any, ...] {
     prog = JacProgram();
     na_coverage_begin();
     try {
@@ -64,12 +68,12 @@ def _compile_with_coverage(fixture: str) -> tuple {
 
 
 """The coverage seam list recorded for a fixture path."""
-def _seams_of(coverage: dict, fixture: str) -> list[str] {
+def _seams_of(coverage: dict[str, any], fixture: str) -> list[str] {
     rec = coverage.get(os.path.realpath(os.path.join(FIXTURES, fixture)));
     if rec is None {
         return [];
     }
-    return [str(s) for s in (rec.get("seams") or [])];
+    return [source_spelled(str(s)) for s in (rec.get("seams") or [])];
 }
 
 
@@ -163,7 +167,7 @@ test "the same call with no Python base still lowers" {
     assert "run_merge" in layout.functions , (
         f"the caller was demoted: {sorted(layout.functions)}"
     );
-    assert "Merger.merge" in layout.methods , (
+    assert "Merger.merge" in by_source_name(layout.methods) , (
         f"the imported static method lost its native lowering: {sorted(layout.methods)}"
     );
 }
@@ -178,7 +182,7 @@ test "the control's two lanes agree on the merged value" {
     assert not prog.errors_had , f"{[str(e) for e in prog.errors_had]}";
     eng = ir.gen.native_engine;
     assert eng is not None , "no native engine for the control";
-    addr = eng.get_function_address("run_merge");
+    addr = native_address(eng, "run_merge");
     assert addr != 0 , "run_merge is absent from the JIT engine";
     native_val = ctypes.CFUNCTYPE(ctypes.c_int64)(addr)();
     py_val = _run_py_lane("xmod_static_native_main", "run_merge");

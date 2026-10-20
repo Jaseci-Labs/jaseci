@@ -11,10 +11,13 @@ either way.
 """
 
 import os;
+import from jaclang.compiler.driver.compile_options {
+    push_native_target,
+    pop_native_target
+}
 import subprocess;
-import sys;
 import tempfile;
-import from tests.support { TESTS_DIR }
+import from tests.support { jac_command, TESTS_DIR }
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.compiler.driver.compile_options { CompileOptions }
 import from jaclang.compiler.passes.rc_facts_pass { loop_body_locals }
@@ -24,28 +27,23 @@ glob FIXDIR = os.path.join(
          TESTS_DIR, "compiler", "backends", "native", "fixtures"
      ),
      MODE_FLAGS = {
-         "none": ["--gc", "none"],
-         "rc": ["--gc", "rc"],
-         "cycles": ["--gc", "cycles"]
+         "none": ["--memory", "nogc"],
+         "rc": ["--memory", "rc"],
+         "cycles": ["--memory", "managed"]
      };
 
 def _compile_mod(fixture: str) -> any {
-    prev = os.environ.get("JAC_NATIVE_TARGET", None);
-    os.environ["JAC_NATIVE_TARGET"] = "wasm32-unknown-unknown";
+    prev = push_native_target("wasm32-unknown-unknown");
     try {
         prog = JacProgram();
         ir = prog.compile(
             file_path=os.path.join(FIXDIR, fixture),
-            options=CompileOptions(aot_mode=True, na_gc_mode="rc")
+            options=CompileOptions(aot_mode=True, memory_profile="rc")
         );
         assert not prog.errors_had , [e.pretty_print() for e in prog.errors_had];
         return ir;
     } finally {
-        if prev is None {
-            os.environ.pop("JAC_NATIVE_TARGET", None);
-        } else {
-            os.environ["JAC_NATIVE_TARGET"] = prev;
-        }
+        pop_native_target(prev);
     }
 }
 
@@ -75,13 +73,9 @@ test "inferred region drops LIFO at close in every gc mode" {
         for mode in ("none", "rc", "cycles") {
             out_bin = os.path.join(tmp, f"ar_{mode}");
             res = subprocess.run(
-                [
-                    sys.executable,
-                    "-m",
-                    "jaclang",
-                    "nacompile",
-                    os.path.join(FIXDIR, "anon_region_spawn.jac")
-                ]
+                jac_command(
+                    "build", "--native", os.path.join(FIXDIR, "anon_region_spawn.jac")
+                )
                     + MODE_FLAGS[mode]
                     + ["-o", out_bin],
                 capture_output=True,
@@ -103,17 +97,15 @@ test "declined fixtures still run correctly" {
         for fixture in ("anon_region_rooted.jac", "anon_region_escape.jac") {
             out_bin = os.path.join(tmp, "ar_declined");
             res = subprocess.run(
-                [
-                    sys.executable,
-                    "-m",
-                    "jaclang",
-                    "nacompile",
+                jac_command(
+                    "build",
+                    "--native",
                     os.path.join(FIXDIR, fixture),
-                    "--gc",
+                    "--memory",
                     "rc",
                     "-o",
                     out_bin
-                ],
+                ),
                 capture_output=True,
                 text=True
             );

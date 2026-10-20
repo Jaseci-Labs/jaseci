@@ -2,38 +2,54 @@
 
 This tutorial walks you through building and running an existing Jac full-stack
 app as a native desktop app. The desktop targets turn your app into **one
-`jac nacompile`d binary plus a web engine** - no Rust toolchain, no PyInstaller,
+`jac build --native`d binary plus a web engine** - no Rust toolchain, no PyInstaller,
 and no separate backend process. They build the same `cl` frontend the web target
 produces, then compile a native host that embeds CPython to serve that bundle and
 renders it in either the OS-native webview (WebKitGTK on Linux, WKWebView on
 macOS, WebView2 on Windows) or Chromium Embedded Framework (CEF).
 
 !!! note "Status: beta 🧪"
-    `jac build --client desktop` produces a working, self-contained desktop
+    `jac build` on a `desktop` app produces a working, self-contained desktop
     binary that renders your `cl` UI and runs `sv` walkers/functions
     **in-process** on the embedded interpreter, with full HMR dev mode via
-    `jac run --client desktop --dev`. Only per-OS installers/code-signing
+    `jac run --dev`. Only per-OS installers/code-signing
     remain open - see [issue #6436](https://github.com/jaseci-labs/jaseci/issues/6436).
 
 > **Prerequisites**
 >
 > - Completed: [Project Setup](setup.md) - you have a working `jac run` web app
 > - The full-stack client and desktop framework ships with `jaclang` core -- nothing extra to install
-> - On Linux, the WebKitGTK system libraries: a bundled helper script offers to
->   install them on first build. To install them manually on Debian/Ubuntu:
+> - On Linux, the WebKitGTK system libraries: Jac offers to install them on the
+>   first build. To install them manually on Debian/Ubuntu:
 >   `sudo apt-get install -y build-essential pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev`
+> - On macOS, the Xcode Command Line Tools (`xcode-select --install`): the
+>   WebKit framework they ship is the webview.
 > - **No Rust toolchain required.**
 
 ---
 
-## 1. Configure the window
+## 1. Make it a desktop app
 
-Add a `[desktop]` section to your `jac.toml` (all fields optional):
+Give the app the `desktop` kind. In a single-app project that is `kind =
+"desktop"` under `[project]`; in a workspace it is an `[apps.<name>]` table
+(`jac create --app desktop --kind desktop` writes one). The kind decides the
+client, so every `jac run` / `jac build` of this app builds the native shell
+-- no flag:
+
+```toml
+[project]
+name = "my-app"
+kind = "desktop"
+entry-point = "main"
+```
+
+Then add a `[desktop]` section to your `jac.toml` (all fields optional):
 
 ```toml
 [desktop]
 name = "my-app"
 engine = "native"  # "native" or "cef"
+icon = "assets/icon.png"  # .icns or .png; the macOS bundle carries it
 
 [desktop.window]
 title = "My App"
@@ -48,7 +64,7 @@ There is no `jac setup desktop` step - the native host is generated at build tim
 ## 2. Build the desktop app
 
 ```bash
-jac build --client desktop
+jac build            # a desktop app builds its shell; `jac build <app>` in a workspace
 ```
 
 This:
@@ -56,22 +72,42 @@ This:
 1. builds your `cl` codespace with the standard Vite pipeline (`.jac/client/dist/`),
 2. generates a native host that embeds CPython to serve that bundle on a loopback
    port and renders it in the OS webview,
-3. compiles the host with `jac nacompile` into a single binary.
+3. compiles the host with `jac build --native` into a single binary.
 
-The output lands in `.jac/client/desktop/`:
+The output lands in `.jac/client/desktop/`. On Linux:
 
 ```
 .jac/client/desktop/
-  my-app          # the native binary
-  dist/           # the served cl bundle
-  libwebview.so   # the OS-webview wrapper (resolved via $ORIGIN)
+  my-app             # the native binary
+  my-app-launch.sh   # launcher that wires in the project venv
+  app.jab            # the sealed app image the host serves (embedded backend)
+  dist/              # the served cl bundle
+  libwebview.so      # the WebKitGTK wrapper (resolved via $ORIGIN)
 ```
 
-The directory is relocatable - the binary finds its sibling `dist/` and
-`libwebview.so` relative to itself.
+On macOS the same pieces form an application bundle, so Finder and the Dock
+treat it as an app:
+
+```
+.jac/client/desktop/
+  my-app-launch.sh
+  my-app.app/
+    Contents/
+      Info.plist              # from [desktop] name, identifier and version
+      MacOS/my-app            # the native binary
+      MacOS/libwebview.dylib  # the WKWebView wrapper (resolved via @loader_path)
+      Resources/app.jab       # embedded backend only
+      Resources/dist/
+      Resources/AppIcon.icns  # when [desktop] icon is set
+```
+
+The directory is relocatable: the binary finds `dist/`, the image and the
+webview library relative to itself. A macOS app keeps its graph and session
+under `~/Library/Application Support/<identifier>`, since a bundle stays
+read-only; Linux keeps them beside the binary. `JAC_DATA_PATH` overrides both.
 
 To build with Chromium Embedded Framework instead of the OS webview, set
-`engine = "cef"` and use the CEF target:
+`engine = "cef"`:
 
 ```toml
 [desktop]
@@ -79,12 +115,12 @@ engine = "cef"
 ```
 
 ```bash
-jac build --client cef
+jac build            # engine = "cef" selects the CEF shell
 ```
 
-The CEF output lands in `.jac/client/cef/` and includes the app binary,
-`dist/`, `libcef.so`, `libcef_dispatch.so`, `cef-subprocess`, Chromium `.pak`
-files, locales, and support files. The first CEF build fetches the pinned CEF
+The CEF output lands in the same `.jac/client/desktop/` and includes the app
+binary, `dist/`, `libcef.so`, `libcef_dispatch.so`, `cef-subprocess`, Chromium
+`.pak` files, locales, and support files. The first CEF build fetches the pinned CEF
 runtime, so it needs network access and roughly 1 GB of disk for the cached
 runtime and staged bundle.
 
@@ -93,19 +129,15 @@ runtime and staged bundle.
 ## 3. Run it
 
 ```bash
-jac run --client desktop        # builds (if needed) and launches the window
+jac run              # builds (if needed) and launches the window
 ```
 
-For the CEF renderer:
+With `engine = "cef"` the same command launches the CEF window (CEF has no
+HMR, so `jac run --dev` needs `engine = "native"`). Or run the built binary
+directly:
 
 ```bash
-jac run --client cef
-```
-
-Or run the built binary directly:
-
-```bash
-(cd .jac/client/desktop && ./my-app)
+(cd .jac/client/desktop && ./my-app-launch.sh)   # macOS: `open my-app.app` works too
 ```
 
 A native window opens showing your `cl` UI, served in-process - no localhost you
@@ -137,18 +169,18 @@ variables are useful when smoke-testing or debugging startup issues:
 Example Linux fallback launch:
 
 ```bash
-cd .jac/client/cef
+cd .jac/client/desktop
 JAC_CEF_DISABLE_GPU=1 OZONE_PLATFORM=x11 ./my-app
 ```
 
 ---
 
-## How it differs from the web target
+## How it differs from a web app
 
-| | web | desktop |
+| | web-app | desktop |
 |---|---|---|
 | output | bundle served by a host you run | one self-contained binary |
 | UI runtime | a browser you point at the server | OS-native webview or CEF Chromium |
 | backend transport | HTTP to a remote server | embedded CPython, in-process |
 
-The same `cl`/`sv` source builds for both - only the target changes.
+The same `cl`/`sv` source builds for both - only the kind changes.

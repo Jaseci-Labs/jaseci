@@ -1,30 +1,93 @@
 [project]
 name = "es-fixtures"
 
-# Service cut for the sv-to-sv / typed-interop fixture pairs (#7772):
-# consumers import these stems across the service boundary.
-[scale.microservices.routes]
-sv_relative_provider = "/sv-relative"
-typed_return_obj = "/t-obj"
-typed_return_nested = "/t-nested"
-typed_return_enum = "/t-enum"
-typed_optional_union = "/t-union"
-typed_collection_return = "/t-coll"
-typed_args_obj = "/t-args"
-typed_bidirectional = "/t-bidi"
-typed_dict_return = "/t-dict"
-typed_walker_spawn = "/t-wspawn"
-typed_walker_fields = "/t-wfields"
-typed_graph_return = "/t-graph"
-separated = "/separated"
-separated_defpub = "/separated-defpub"
+# App boundaries for the sv-to-sv / typed-interop fixture pairs (#7772):
+# each provider stem is a file-rooted service app; consumers compiled here
+# are shared modules that bridge to the app owning the stem they import.
+[apps.sv_relative_provider]
+kind = "service"
+entry-point = "sv_relative_provider"
+route = "/sv-relative"
+
+[apps.sv_relative_consumer]
+kind = "service"
+entry-point = "sv_relative_consumer"
+route = "/sv-relative-consumer"
+
+[apps.typed_return_obj]
+kind = "service"
+entry-point = "typed_return_obj"
+route = "/t-obj"
+
+[apps.typed_return_nested]
+kind = "service"
+entry-point = "typed_return_nested"
+route = "/t-nested"
+
+[apps.typed_return_enum]
+kind = "service"
+entry-point = "typed_return_enum"
+route = "/t-enum"
+
+[apps.typed_optional_union]
+kind = "service"
+entry-point = "typed_optional_union"
+route = "/t-union"
+
+[apps.typed_collection_return]
+kind = "service"
+entry-point = "typed_collection_return"
+route = "/t-coll"
+
+[apps.typed_args_obj]
+kind = "service"
+entry-point = "typed_args_obj"
+route = "/t-args"
+
+[apps.typed_bidirectional]
+kind = "service"
+entry-point = "typed_bidirectional"
+route = "/t-bidi"
+
+[apps.typed_dict_return]
+kind = "service"
+entry-point = "typed_dict_return"
+route = "/t-dict"
+
+[apps.typed_walker_spawn]
+kind = "service"
+entry-point = "typed_walker_spawn"
+route = "/t-wspawn"
+
+[apps.typed_walker_fields]
+kind = "service"
+entry-point = "typed_walker_fields"
+route = "/t-wfields"
+
+[apps.typed_graph_return]
+kind = "service"
+entry-point = "typed_graph_return"
+route = "/t-graph"
+
+[apps.separated]
+kind = "service"
+entry-point = "separated"
+route = "/separated"
+
+[apps.separated_defpub]
+kind = "service"
+entry-point = "separated_defpub"
+route = "/separated-defpub"
+
 [placement.pins]
+"ownership_places" = "client"
 "del_plain_name_es" = "client"
 "del_semantics_es" = "client"
 "advanced_language_features" = "client"
 "any_callee_not_new" = "client"
 "builtin_func_untyped" = "client"
 "builtin_type_as_value" = "client"
+"builtin_type_name_bindings" = "client"
 "category1_named_imports" = "client"
 "category2_default_imports" = "client"
 "category4_namespace_imports" = "client"
@@ -34,6 +97,8 @@ separated_defpub = "/separated-defpub"
 "comprehensions" = "client"
 "core_language_features" = "client"
 "dict_get_nullish_or_precedence" = "client"
+"distinct_brand_runtime" = "client"
+"distinct_brand_value" = "client"
 "dynamic_membership" = "client"
 "export_semantics" = "client"
 "hyphenated_imports" = "client"
@@ -49,6 +114,5 @@ separated_defpub = "/separated-defpub"
 "poly_get_dispatch" = "client"
 "scope_hoist_shapes" = "client"
 "prim_jac_runtime" = "client"
-"separated_client" = "client"
 "shadow_builtin" = "client"
 "vararg_params" = "client"

@@ -7,12 +7,15 @@ Both paths must yield RC-free IR for a gc-none multi-module program.
 """
 
 import os;
+import from jaclang.compiler.driver.compile_options {
+    push_native_target,
+    pop_native_target
+}
 import shutil;
 import subprocess;
-import sys;
 import tempfile;
 import jaclang;
-import from tests.support { TESTS_DIR, native_force_opts }
+import from tests.support { jac_command, TESTS_DIR, native_force_opts }
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.compiler.driver.compile_options { CompileOptions }
 
@@ -21,26 +24,21 @@ glob FIXTURES = os.path.join(
      ),
      ENFORCE = ["xmod_gc_entry*", "xmod_gc_lib*"];
 
-def _compile_ir(entry_path: str, gc_mode: str, enforce: list) -> str {
-    prev = os.environ.get("JAC_NATIVE_TARGET", None);
-    os.environ["JAC_NATIVE_TARGET"] = "wasm32-unknown-unknown";
+def _compile_ir(entry_path: str, gc_mode: str, enforce: list[any]) -> str {
+    prev = push_native_target("wasm32-unknown-unknown");
     try {
         prog = JacProgram();
         ir = prog.compile(
             file_path=entry_path,
             options=CompileOptions(
-                aot_mode=True, na_gc_mode=gc_mode, nogc_enforce_modules=enforce
+                aot_mode=True, na_gc_mode=gc_mode, memory_enforce=enforce
             )
         );
         assert not prog.errors_had , [e.pretty_print() for e in prog.errors_had];
         assert ir is not None and ir.gen.llvm_ir is not None;
         return str(ir.gen.llvm_ir);
     } finally {
-        if prev is None {
-            os.environ.pop("JAC_NATIVE_TARGET", None);
-        } else {
-            os.environ["JAC_NATIVE_TARGET"] = prev;
-        }
+        pop_native_target(prev);
     }
 }
 
@@ -63,27 +61,12 @@ test "host-path multi-module gc none build passes assert-no-rc" {
         `entry = _staged_entry(tmp);
         src_root = os.path.dirname(os.path.dirname(os.path.abspath(jaclang.__file__)));
         with open(os.path.join(tmp, "jac.toml"), "w") as f {
-            f.write(
-                "[project]\nname = \"xmodgc\"\n\n[gc]\ndefault = \"none\"\n\n[gc.enforce]\nmodules = [\"xmod_gc*\"]\n\n"
-            );
+            f.write("[project]\nname = \"xmodgc\"\n\n[memory]\nprofile = \"nogc\"\n\n");
             f.write(f"[dev]\njaclang_source = \"{src_root}\"\n");
         }
         out_bin = os.path.join(tmp, "xmod.bin");
         comp = subprocess.run(
-            [
-                sys.executable,
-                "-m",
-                "jaclang",
-                "nacompile",
-                `entry,
-                "--scrub",
-                "--gc",
-                "none",
-                "--enforce-nogc",
-                "--assert-no-rc",
-                "-o",
-                out_bin
-            ],
+            jac_command("build", "--native", `entry, "--memory", "nogc", "-o", out_bin),
             capture_output=True,
             text=True,
             timeout=300,

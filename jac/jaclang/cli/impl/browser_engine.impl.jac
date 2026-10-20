@@ -83,7 +83,7 @@ impl WebSocket.send(data: (str | bytes), opcode: int = OP_TEXT) {
     self.sock.sendall(bytes(header) + masked);
 }
 
-impl WebSocket._read_frame -> tuple {
+impl WebSocket._read_frame -> tuple[bool, int, bytes] {
     (b0, b1) = self._recv_exact(2);
     fin = (b0 & 0x80) != 0;
     opcode = b0 & 0x0F;
@@ -127,7 +127,7 @@ impl WebSocket.recv -> (str | bytes) {
     }
 }
 
-impl WebSocket.close{
+impl WebSocket.close {
     try {
         self.send(bytes(), opcode=OP_CLOSE);
     } except OSError {}
@@ -136,8 +136,8 @@ impl WebSocket.close{
 
 
 impl CDP.call(
-    method: str, params: (dict | None) = None, timeout: float = 30.0
-) -> dict {
+    method: str, params: (dict[str, any] | None) = None, timeout: float = 30.0
+) -> dict[str, any] {
     self._id += 1;
     msg_id = self._id;
     self.ws.send(json.dumps({"id": msg_id, "method": method, "params": params or {}}));
@@ -157,7 +157,7 @@ impl CDP.call(
     raise TimeoutError(f"CDP call timed out: {method}");
 }
 
-impl CDP.drain_events(idle: float = 0.25) -> list {
+impl CDP.drain_events(idle: float = 0.25) -> list[dict[str, any]] {
     self.ws.sock.settimeout(idle);
     try {
         while True {
@@ -178,7 +178,7 @@ impl CDP.drain_events(idle: float = 0.25) -> list {
     return out;
 }
 
-impl CDP.close{
+impl CDP.close {
     self.ws.close();
 }
 
@@ -219,19 +219,36 @@ impl _find_chrome -> str {
         }
     }
 
-    for pw in [
+    pw_dirs = [
         Path.home() / ".cache" / "ms-playwright",
         Path.home() / "Library" / "Caches" / "ms-playwright",
 
-    ] {
+    ];
+    pw_env = os.environ.get("PLAYWRIGHT_BROWSERS_PATH");
+    if pw_env and pw_env != "0" {
+        pw_dirs.insert(0, Path(pw_env));
+    }
+    for pw in pw_dirs {
         if not pw.exists() {
             continue;
         }
-        for d in sorted(pw.`glob("chromium-*"), reverse=True) {
+        for d in (
+            sorted(pw.`glob("chromium-*"), reverse=True)
+            + sorted(pw.`glob("chromium_headless_shell-*"), reverse=True)
+        ) {
             for rel in [
                 "chrome-linux64/chrome",
                 "chrome-linux/chrome",
-                "chrome-mac/Chromium.app/Contents/MacOS/Chromium"
+                "chrome-linux-arm64/chrome",
+                "chrome-mac/Chromium.app/Contents/MacOS/Chromium",
+                "chrome-mac-x64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing",
+                "chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing",
+                "chrome-linux/headless_shell",
+                "chrome-mac/headless_shell",
+                "chrome-headless-shell-linux64/chrome-headless-shell",
+                "chrome-headless-shell-linux-arm64/chrome-headless-shell",
+                "chrome-headless-shell-mac-x64/chrome-headless-shell",
+                "chrome-headless-shell-mac-arm64/chrome-headless-shell"
             ] {
                 exe = d / rel;
                 if exe.exists() {
@@ -240,7 +257,11 @@ impl _find_chrome -> str {
             }
         }
     }
-    raise FileNotFoundError("no Chrome/Chromium found; set JACBROWSER_CHROME");
+    searched = ", ".join(str(pw) for pw in pw_dirs);
+    raise FileNotFoundError(
+        f"no Chrome/Chromium found; searched Playwright directories: {searched}; "
+            + "set JACBROWSER_CHROME"
+    );
 }
 
 impl _state_path(session: str) -> Path {
@@ -287,7 +308,7 @@ impl _page_ws(port: int) -> str {
     raise RuntimeError("could not obtain a page target");
 }
 
-impl load_state(session: str) -> (dict | None) {
+impl load_state(session: str) -> (dict[str, any] | None) {
     p = _state_path(session);
     if p.exists() {
         return json.loads(p.read_text());
@@ -303,7 +324,7 @@ impl _parse_viewport(spec: str) -> tuple[int, int] {
     return (int(m.group(1)), int(m.group(2)));
 }
 
-impl _chrome_args(chrome: str, profile: Path, viewport: str) -> list {
+impl _chrome_args(chrome: str, profile: Path, viewport: str) -> list[str] {
     (w, h) = _parse_viewport(viewport);
     return [
         chrome,
@@ -312,6 +333,7 @@ impl _chrome_args(chrome: str, profile: Path, viewport: str) -> list {
         f"--user-data-dir={profile}",
         "--no-first-run",
         "--no-default-browser-check",
+        "--disable-dev-shm-usage",
         f"--window-size={w},{h}",
         "--use-angle=swiftshader",
         "--enable-unsafe-swiftshader",
@@ -358,7 +380,7 @@ impl _calibrate_viewport(port: int, w: int, h: int) {
     } except Exception {}
 }
 
-impl launch(session: str = "default", viewport: str = "1280x720") -> dict {
+impl launch(session: str = "default", viewport: str = "1280x720") -> dict[str, any] {
     st = load_state(session);
     if st and _pid_alive(st["pid"]) {
         try {
@@ -421,7 +443,7 @@ impl _eval(cdp: CDP, expr: str) -> any {
     return res.get("result", {}).get("value");
 }
 
-impl _load_refs(session: str) -> dict {
+impl _load_refs(session: str) -> dict[str, any] {
     p = _refs_path(session);
     if p.exists() {
         return json.loads(p.read_text());
@@ -449,7 +471,9 @@ impl _resolve_object_id(cdp: CDP, session: str, selector: str) -> (str | None) {
     return res.get("result", {}).get("objectId");
 }
 
-impl _locate(cdp: CDP, session: str, selector: str, timeout: float = 10.0) -> tuple {
+impl _locate(
+    cdp: CDP, session: str, selector: str, timeout: float = 10.0
+) -> tuple[float, float] {
     cdp.call("DOM.enable");
     deadline = time.time() + timeout;
     prev: (tuple[float, float] | None) = None;
@@ -478,7 +502,7 @@ impl _locate(cdp: CDP, session: str, selector: str, timeout: float = 10.0) -> tu
             time.sleep(0.1);
             continue;
         }
-        st = res.get("result", {}).get("value") or {};
+        st: dict[str, any] = res.get("result", {}).get("value") or {};
         if not st.get("ok") {
             last_err = str(st.get("reason", "not actionable"));
             prev = None;
@@ -533,12 +557,15 @@ impl _key_code(ch: str) -> str {
     return ch;
 }
 
-impl _press(cdp: CDP, key: str, modifiers: int = 0) {
+impl _key_down(key: str, modifiers: int = 0) -> dict[str, any] {
     vk = KEY_CODES.get(key, 0);
     code = key;
-    down = {"type": "keyDown", "key": key, "modifiers": modifiers};
+    down: dict[str, any] = {"type": "keyDown", "key": key, "modifiers": modifiers};
     if vk {
         down["windowsVirtualKeyCode"] = vk;
+        if key == "Enter" and modifiers in (0, 8) {
+            down["text"] = "\r";
+        }
     } elif len(key) == 1 {
         code = _key_code(key);
         down["windowsVirtualKeyCode"] = ord(key.upper());
@@ -547,10 +574,15 @@ impl _press(cdp: CDP, key: str, modifiers: int = 0) {
         }
     }
     down["code"] = code;
+    return down;
+}
+
+impl _press(cdp: CDP, key: str, modifiers: int = 0) {
+    down = _key_down(key, modifiers);
     cdp.call("Input.dispatchKeyEvent", down);
     cdp.call(
         "Input.dispatchKeyEvent",
-        {"type": "keyUp", "key": key, "code": code, "modifiers": modifiers}
+        {"type": "keyUp", "key": key, "code": down["code"], "modifiers": modifiers}
     );
 }
 
@@ -563,10 +595,22 @@ impl cmd_open(session: str, url: (str | None), viewport: str = "1280x720") -> st
     return "browser ready (about:blank)";
 }
 
-impl cmd_navigate(session: str, url: str) -> str {
-    if not re.`match(r"^[a-zA-Z][a-zA-Z0-9+.-]*:", url) {
-        url = "https://" + url;
+impl _normalize_url(url: str) -> str {
+    hierarchical = re.`match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", url);
+    opaque = re.`match(
+        r"^(about|blob|chrome|data|devtools|file|javascript|view-source):", url, re.I
+    );
+    if hierarchical or opaque {
+        return url;
     }
+    local = re.`match(
+        r"^(([\w-]+\.)*localhost|127(\.\d+){3}|0\.0\.0\.0|\[::1\])([:/?#]|$)", url, re.I
+    );
+    return ("http://" if local else "https://") + url;
+}
+
+impl cmd_navigate(session: str, url: str) -> str {
+    url = _normalize_url(url);
     cdp = connect(session);
     cdp.call("Page.enable");
     cdp.call("Page.navigate", {"url": url});
@@ -618,9 +662,39 @@ impl cmd_fill(session: str, selector: str, text: str) -> str {
     return f"filled {selector}";
 }
 
+impl _parse_key_combo(combo: str) -> tuple[str, int] {
+    names = {
+        "alt": 1,
+        "option": 1,
+        "control": 2,
+        "ctrl": 2,
+        "meta": 4,
+        "command": 4,
+        "cmd": 4,
+        "super": 4,
+        "shift": 8
+    };
+    if "+" not in combo or combo == "+" {
+        return (combo, 0);
+    }
+    key = "+" if combo.endswith("+") else combo.split("+")[-1];
+    head = combo[:-1] if combo.endswith("+") else combo[:len(combo) - len(key) - 1];
+    modifiers = 0;
+    for part in head.split("+") {
+        low = part.strip().lower();
+        if low in names {
+            modifiers |= names[low];
+        } elif low {
+            return (combo, 0);
+        }
+    }
+    return (key, modifiers);
+}
+
 impl cmd_press(session: str, key: str) -> str {
+    (plain, modifiers) = _parse_key_combo(key);
     cdp = connect(session);
-    _press(cdp, key);
+    _press(cdp, plain, modifiers);
     cdp.close();
     return f"pressed {key}";
 }
@@ -657,7 +731,7 @@ impl cmd_screenshot(session: str, path: (str | None)) -> str {
     return f"screenshot saved to {out_path} ({len(data)} bytes)";
 }
 
-impl _remote_obj_str(ro: dict) -> str {
+impl _remote_obj_str(ro: dict[str, any]) -> str {
     if "value" in ro {
         v = ro["value"];
         return v if isinstance(v, str) else json.dumps(v);
@@ -671,7 +745,7 @@ impl _remote_obj_str(ro: dict) -> str {
     return ro.get("type", "?");
 }
 
-impl _format_console_event(method: str, params: dict) -> (str | None) {
+impl _format_console_event(method: str, params: dict[str, any]) -> (str | None) {
     if method == "Runtime.consoleAPICalled" {
         kind = params.get("type", "log");
         parts = [_remote_obj_str(a) for a in params.get("args", [])];
@@ -761,7 +835,13 @@ impl cmd_scroll(session: str, target: str, amount: (int | None) = None) -> str {
     return f"scrolled to {pos}";
 }
 
-impl _walk_ax(ax: dict, by_id: dict, depth: int, lines: list, refs: dict) {
+impl _walk_ax(
+    ax: dict[str, any],
+    by_id: dict[str, any],
+    depth: int,
+    lines: list[str],
+    refs: dict[str, any]
+) {
     role = (ax.get("role") or {}).get("value", "");
     name = (ax.get("name") or {}).get("value", "");
     ignored = ax.get("ignored", False);
@@ -816,7 +896,7 @@ impl cmd_snapshot(session: str) -> str {
     return "\n".join(lines);
 }
 
-impl _cookie_param(ck: dict) -> dict {
+impl _cookie_param(ck: dict[str, any]) -> dict[str, any] {
     c = {
         "name": ck["name"],
         "value": ck["value"],
@@ -901,13 +981,9 @@ impl cmd_close(session: str) -> str {
 }
 
 
-def _need(rest: list, n: int, usage: str) {
-    if len(rest) < n {
-        raise ValueError(f"usage: {usage}");
-    }
-}
+def _need(rest: list[str], n: int, usage: str);
 
-impl main(argv: list) -> int {
+impl main(argv: list[str]) -> int {
     session = os.environ.get("JACBROWSER_SESSION", "default");
     if not argv {
         sys.stdout.write(
@@ -974,4 +1050,30 @@ impl main(argv: list) -> int {
     }
     sys.stdout.write((out if isinstance(out, str) else json.dumps(out)) + "\n");
     return 0;
+}
+
+impl _need(rest: list[str], n: int, usage: str) {
+    if len(rest) < n {
+        raise ValueError(f"usage: {usage}");
+    }
+}
+
+impl WebSocket.postinit {
+    if not self.url.startswith("ws://") {
+        raise ValueError(f"only ws:// supported, got {self.url}");
+    }
+    rest = self.url[len("ws://"):];
+    (host_port, _, tail) = rest.partition("/");
+    (host, _, port) = host_port.partition(":");
+    self.path = "/" + tail;
+    port_num = int(port) if port else 80;
+    self.sock = socket.create_connection((host, port_num), timeout=self.timeout);
+    self.sock.settimeout(self.timeout);
+    self._buf = bytearray();
+    self._handshake(host, port_num);
+}
+
+impl CDP.postinit {
+    self.ws = WebSocket(url=self.ws_url);
+    self.events = [];
 }

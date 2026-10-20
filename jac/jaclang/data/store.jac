@@ -5,9 +5,6 @@ import threading;
 import from enum { StrEnum }
 import from uuid { UUID }
 
-import from jaclang.data.pgwire { PgWireError }
-import from jaclang.runtime.exceptions { WriteConflict }
-
 glob logger = logging.getLogger(__name__),
      SCHEMA_VERSION = 1,
      SCHEMA_STAMP_KEY = 'schema_fingerprint',
@@ -21,7 +18,8 @@ glob logger = logging.getLogger(__name__),
          'TxnIsolation',
          'SCHEMA_VERSION',
          'SCHEMA_STAMP_KEY',
-         'SessionConflictError'
+         'SessionConflictError',
+         'OUTBOX_SCHEMA_SQL'
      ];
 
 
@@ -36,7 +34,7 @@ class SessionConflictError(Exception) {
     def init(
         self: SessionConflictError,
         database: str = '',
-        blockers: (list[dict] | None) = None
+        blockers: (list[dict[str, any]] | None) = None
     ) -> None;
 }
 
@@ -60,13 +58,14 @@ obj AnchorRow {
         arch_module: str = '',
         fingerprint: str = '',
         root_id: (UUID | None) = None,
-        `props: dict = {},
+        `props: dict[str, any] = {},
         src: (UUID | None) = None,
         dst: (UUID | None) = None,
         undirected: bool = False,
+        src_type: str = '',
+        dst_type: str = '',
         ancestry: list[str] = [],
-        version: int = 0,
-        adjacency: (list[UUID] | None) = None;
+        version: int = 0;
 }
 
 
@@ -84,6 +83,7 @@ obj ChannelMessage {
 
 
 obj Store {
+    def new_session -> Store abst;
     def is_available -> bool abst;
     def server_version -> int abst;
     def ensure_schema(promotions: dict[str, list[str]]) -> None abst;
@@ -93,17 +93,30 @@ obj Store {
     def rollback -> None abst;
     def in_txn -> bool abst;
     def txn_isolation -> (TxnIsolation | None) abst;
+    def txn_serial -> int;
     def load_full(ids: list[UUID]) -> dict[UUID, AnchorRow] abst;
+    def adjacency(
+        node_id: UUID, after: (tuple[int, UUID] | None), limit: int
+    ) -> list[tuple[int, UUID]] abst;
+
     def upsert(rows_in: list[AnchorRow]) -> None abst;
+    def retype_edges(ids: list[UUID]) -> None abst;
     def delete(ids: list[UUID]) -> None abst;
     def existing(ids: list[UUID]) -> set[UUID] abst;
     def root_ids -> list[UUID] abst;
     def subtype_names(type_name: str) -> list[str] abst;
-    def rows(sql: str, params: dict) -> list[tuple] abst;
+    def rows(sql: str, params: dict[str, any]) -> list[tuple[any, ...]] abst;
+    def queue_enter(ids: list[UUID]) -> bool abst;
+    def queue_exit(ids: list[UUID]) -> None abst;
+    def lock_rows(ids: list[UUID]) -> None abst;
+    def lock_wait(timeout: str) -> None abst;
     def kv_get(key: str) -> (str | None) abst;
     def kv_put(key: str, value: str) -> None abst;
     def kv_put_ttl(key: str, value: str, ttl_seconds: int) -> None abst;
     def kv_delete(key: str) -> None abst;
+    def kv_acquire_lease(key: str, ttl_seconds: int, owner: str) -> bool abst;
+    def kv_release_lease(key: str, owner: str) -> bool abst;
+    def kv_claim_tick(key: str, tick: int) -> bool abst;
     def quarantine(
         missing_id: UUID, referrer_id: (UUID | None), kind: str
     ) -> None abst;
@@ -114,6 +127,8 @@ obj Store {
 
 
 obj PgStore(Store) {
+    override def new_session -> PgStore;
+
     has conninfo: ConnInfo,
         ensure_cb: (any | None) = None,
         promotions: dict[str, list[str]] = {},
@@ -126,6 +141,9 @@ obj PgStore(Store) {
         _in_txn: bool postinit,
         _isolation: (TxnIsolation | None) postinit,
         _known_types: set[str] postinit,
+        _txn_types: set[str] postinit,
+        _txn_serial: int postinit,
+        _txn_subtypes: dict[str, list[str]] postinit,
         _listeners: list[ChannelListener] postinit,
         _listen_thread: (any | None) postinit,
         _listen_stop: (any | None) postinit,
@@ -139,6 +157,7 @@ obj PgStore(Store) {
     def server_version -> int;
     def ensure_schema(promotions: dict[str, list[str]]) -> None;
     def ensure_schema_once(promotions: dict[str, list[str]]) -> None;
+    def _warn_lock_headroom -> None;
     def reset_data -> None;
     def takeover -> int;
     def begin(isolation: TxnIsolation = TxnIsolation.SERIALIZABLE) -> None;
@@ -146,17 +165,30 @@ obj PgStore(Store) {
     def rollback -> None;
     def in_txn -> bool;
     def txn_isolation -> (TxnIsolation | None);
+    def txn_serial -> int;
     def load_full(ids: list[UUID]) -> dict[UUID, AnchorRow];
+    def adjacency(
+        node_id: UUID, after: (tuple[int, UUID] | None), limit: int
+    ) -> list[tuple[int, UUID]];
+
     def upsert(rows_in: list[AnchorRow]) -> None;
+    def retype_edges(ids: list[UUID]) -> None;
     def delete(ids: list[UUID]) -> None;
     def existing(ids: list[UUID]) -> set[UUID];
     def root_ids -> list[UUID];
     def subtype_names(type_name: str) -> list[str];
-    def rows(sql: str, params: dict) -> list[tuple];
+    def rows(sql: str, params: dict[str, any]) -> list[tuple[any, ...]];
+    def queue_enter(ids: list[UUID]) -> bool;
+    def queue_exit(ids: list[UUID]) -> None;
+    def lock_rows(ids: list[UUID]) -> None;
+    def lock_wait(timeout: str) -> None;
     def kv_get(key: str) -> (str | None);
     def kv_put(key: str, value: str) -> None;
     def kv_put_ttl(key: str, value: str, ttl_seconds: int) -> None;
     def kv_delete(key: str) -> None;
+    def kv_acquire_lease(key: str, ttl_seconds: int, owner: str) -> bool;
+    def kv_release_lease(key: str, owner: str) -> bool;
+    def kv_claim_tick(key: str, tick: int) -> bool;
     def quarantine(missing_id: UUID, referrer_id: (UUID | None), kind: str) -> None;
     def notify(channel: str, payload: str) -> None;
     def listen(channel: str, callback: any) -> None;
@@ -166,7 +198,8 @@ obj PgStore(Store) {
     def _connect -> any;
     def _main -> any;
     def _side -> any;
-    def _run(sql: str, params: dict) -> list;
+    def _run(sql: str, params: dict[str, any]) -> list[any];
+    def _side_run(sql: str, params: dict[str, any]) -> list[any];
     def _promotion_columns -> list[tuple[str, str, str]];
     def _promoted_column_type(col: str) -> (str | None);
     def _apply_promotions -> None;
@@ -180,9 +213,10 @@ obj PgStore(Store) {
     def _acquire_schema_lock(fingerprint: str) -> bool;
     def _release_schema_lock -> None;
     def _apply_schema_ddl -> None;
+    def _backfill_endpoint_types -> None;
     def _apply_schema_ddl_resilient -> None;
     def _load_known_types -> None;
-    def _peer_sessions -> list[dict];
+    def _peer_sessions -> list[dict[str, any]];
     def _reap_dead_sessions -> int;
-    def _live_blockers -> list[dict];
+    def _live_blockers -> list[dict[str, any]];
 }

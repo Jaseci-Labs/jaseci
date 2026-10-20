@@ -20,6 +20,10 @@ mirroring `test_urllib_equivalence`. ES/JS opts out (no socket floor).
 import os;
 import socket;
 
+def socket_ipv6_family_na -> int {
+    return socket.AF_INET6;
+}
+
 
 """The fixed request both clients send (HTTP/1.0 + close so the server drains
 and shuts the connection, ending the recv loop deterministically)."""
@@ -38,7 +42,7 @@ def _status_of(resp: bytes) -> int {
 }
 
 
-def socket_py -> dict {
+def socket_py -> dict[any, any] {
     port = int(os.getenv("JAC_SOCKET_TEST_PORT"));
     s = socket.create_connection(("127.0.0.1", port));
     s.sendall(_request().encode());
@@ -57,7 +61,7 @@ def socket_py -> dict {
 }
 
 
-def socket_cl -> dict {
+def socket_cl -> dict[any, any] {
     return {};
 }
 

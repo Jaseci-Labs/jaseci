@@ -1,13 +1,3 @@
-import from jaclang.testing.testkit { ServingTestClient as TestClient }
-import from jaclang.scale.runtime.gateway.embedded_gateway { EmbeddedGateway }
-import from jaclang.scale.runtime.gateway.service_registry {
-    ServiceRegistry,
-    ServiceEntry
-}
-import from jaclang.scale.runtime.transport.transport { InProcessTransport }
-import from jaclang.scale.runtime.middleware.middleware { Middleware }
-
-
 def _make_gateway(dist: str = "/nonexistent-dist") -> EmbeddedGateway {
     reg = ServiceRegistry();
     reg.register(ServiceEntry(name="orders", file="orders.jac", prefix="/orders"));
@@ -19,10 +9,15 @@ def _make_gateway(dist: str = "/nonexistent-dist") -> EmbeddedGateway {
     transport.register_function(
         "orders",
         "create",
-        lambda (payload: dict) { {"order_id": payload.get("n", 0) * 10}; }
+        lambda (payload: dict[str, any]) { {"order_id": payload.get("n", 0) * 10}; }
     );
     transport.register_walker(
-        "products", "List", lambda (payload: dict) { {"items": ["a", "b"]}; }
+        "products",
+        "List",
+        lambda (payload: dict[str, any]) { {
+            "result": {"limit": 2},
+            "reports": [{"items": ["a", "b"]}]
+        }; }
     );
 
     gw = EmbeddedGateway(registry=reg, transport=transport, client_dist_dir=dist);
@@ -47,7 +42,8 @@ test "a walker member subpath is served by an in-process transport call" {
     client = TestClient(getattr(gw, "app"));
     resp = client.post("/products/walker/List", json={});
     assert resp.status_code == 200;
-    assert resp.json()["data"]["result"] == {"items": ["a", "b"]};
+    assert resp.json()["data"]
+        == {"result": {"limit": 2}, "reports": [{"items": ["a", "b"]}]};
 }
 
 

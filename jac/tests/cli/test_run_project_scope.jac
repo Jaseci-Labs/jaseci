@@ -33,6 +33,57 @@ def reset_config {
     config_mod._config_by_root = {};
 }
 
+"""A utility inside a checkout's jaclang tree runs as part of that tree, even
+when the checkout's [dev] stanza is gone (a sealed CI lane runs the kit's
+compiler)."""
+test "compiler checkout utilities retain the active compiler runtime" {
+    import from unittest.mock { patch }
+    import from jaclang.runtime.runtime { JacRuntime }
+    import jaclang.compiler.driver.application as preparation;
+    with tempfile.TemporaryDirectory() as world {
+        base = Path(world);
+        (base / 'jac.toml').write_text('[project]\nname="checkout"\n');
+        source = base / 'compiler' / 'jaclang' / 'compiler_tool_fixture.jac';
+        (source.parent / 'jac0core').mkdir(parents=True);
+        source.write_text('import from jaclang.runtime.runtime { JacRuntime }\n');
+        try {
+            with patch.object(
+                preparation,
+                'prepare_application',
+                side_effect=AssertionError('compiler utility became an application')
+            ) {
+                module = execution_cmds._load_executable(
+                    str(source), str(source.parent), False
+                );
+            }
+            assert module.JacRuntime is JacRuntime;
+        } finally {
+            reset_config();
+        }
+    }
+}
+
+test "a nested application in a compiler checkout still owns its execution" {
+    import from jaclang.runtime.prepared { application_for }
+    with tempfile.TemporaryDirectory() as world {
+        base = Path(world);
+        (base / 'jac.toml').write_text('[dev]\njaclang_source="compiler"\n');
+        app = base / 'compiler' / 'jaclang' / 'example';
+        app.mkdir(parents=True);
+        (app / 'jac.toml').write_text('[project]\nname="example"\n');
+        source = app / 'main.jac';
+        source.write_text('def answer -> int { return 42; }\n');
+        try {
+            module = execution_cmds._load_executable(str(source), str(app), False);
+            assert module.answer() == 42;
+            prepared = application_for(str(source));
+            assert prepared is not None and prepared.root == str(app);
+        } finally {
+            reset_config();
+        }
+    }
+}
+
 
 """Write *body* to *path*, creating parent directories."""
 def write(path: str, body: str) {
@@ -50,7 +101,7 @@ def make_world -> tuple[str, str] {
     proj = os.path.join(world, "site");
     write(
         os.path.join(proj, "jac.toml"),
-        '[project]\nname = "site"\nkind = "web-app"\nentry-point = "main.jac"\n'
+        '[project]\nname = "site"\nkind = "web-app"\nentry-point = "main"\n'
     );
     write(
         os.path.join(proj, "main.jac"),
@@ -75,7 +126,7 @@ def show_from(cwd: str, filename: str, takeover: (bool | None) = None) -> str {
     reset_config();
     try {
         with redirect_stdout(buf), redirect_stderr(buf) {
-            execution_cmds.run(filename=filename, show=True, takeover=takeover);
+            execution_cmds.run(target=filename, show=True, takeover=takeover);
         }
     } finally {
         os.chdir(old);
@@ -95,7 +146,7 @@ test "a file outside the project does not inherit the project's serve plan" {
     }
     # The bug: the plan came back as the *project's* web-app serve plan, so
     # running the probe would have served it as the project's client entry.
-    assert "project kind : web-app" not in out , (
+    assert "kind         : web-app" not in out , (
         "a script outside the project must not resolve to the project's "
         f"web-app plan; got:\n{out}"
     );
@@ -133,7 +184,7 @@ test "--takeover runs an outside file as the surrounding project" {
     } finally {
         shutil.rmtree(world, ignore_errors=True);
     }
-    assert "project kind : web-app" in out , (
+    assert "kind         : web-app" in out , (
         f"--takeover must adopt the surrounding project's plan; got:\n{out}"
     );
 }
@@ -148,7 +199,7 @@ test "a file inside the project tree still runs as the project" {
     } finally {
         shutil.rmtree(world, ignore_errors=True);
     }
-    assert "project kind : web-app" in out , (
+    assert "kind         : web-app" in out , (
         f"a file inside the project must keep the project plan; got:\n{out}"
     );
 }
@@ -234,7 +285,7 @@ test "an in-tree file keeps its project when the shell is somewhere else" {
     } finally {
         shutil.rmtree(world, ignore_errors=True);
     }
-    assert "project kind : web-app" in out , (
+    assert "kind         : web-app" in out , (
         f"a file's own project follows it wherever the shell is; got:\n{out}"
     );
 }

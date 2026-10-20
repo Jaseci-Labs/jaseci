@@ -1,56 +1,27 @@
-import from jaclang.compiler.frontend.unitree {
-    Assignment,
-    AtomTrailer,
-    BinaryExpr,
-    ConnectOp,
-    CtrlStmt,
-    ExprStmt,
-    FuncSignature,
-    KWPair,
-    RaiseStmt,
-    ReturnStmt,
-    Symbol,
-    Token,
-    YieldExpr
-}
-import from jaclang.compiler.frontend.roles { BodyRole }
-import from jaclang.compiler.frontend.constant { SymbolStorage, Tokens as Tok }
-
-impl RegionInferPass.transform(ir_in: Module) -> Module {
-    self.ir_out = ir_in;
-    ir_in spawn self;
-    out = self.ir_out;
-    assert isinstance(out, Module);
-    return out;
-}
-
 impl RegionInferPass.run_walk with Module entry {
-    self.ir_out = self._run_impl(here);
+    self.module = self._run_impl(here);
 }
 
 impl RegionInferPass._run_impl(ir_in: Module) -> Module {
     self._use_index = None;
     owners: list[tuple[Ability | ModuleCode | ImplDef | Test, list[UniNode]]] = [];
     for ab in ir_in.get_all_sub_nodes(Ability) {
-        if isinstance(ab.signature, FuncSignature)
-            and isinstance(ab.body, (list, tuple)) {
-            owners.append((ab, list(ab.body)));
+        ab_body = ab.body;
+        if isinstance(ab.signature, FuncSignature) and isinstance(ab_body, Sequence) {
+            owners.append((ab, list(ab_body)));
         }
     }
     for im in ir_in.get_all_sub_nodes(ImplDef) {
-        if isinstance(im.body, (list, tuple)) {
-            owners.append((im, list(im.body)));
+        im_body = im.body;
+        if isinstance(im_body, Sequence) {
+            owners.append((im, list(im_body)));
         }
     }
     for ts in ir_in.get_all_sub_nodes(Test) {
-        if isinstance(ts.body, (list, tuple)) {
-            owners.append((ts, list(ts.body)));
-        }
+        owners.append((ts, list(ts.body)));
     }
     for mc in ir_in.get_all_sub_nodes(ModuleCode) {
-        if isinstance(mc.body, (list, tuple)) {
-            owners.append((mc, list(mc.body)));
-        }
+        owners.append((mc, list(mc.body)));
     }
     for (owner, body) in owners {
         groups = self._scan_block(body);
@@ -90,7 +61,7 @@ impl RegionInferPass._sym_of(nm: NameAtom) -> (Symbol | None) {
 impl RegionInferPass._uses_of(sym: Symbol) -> list[NameAtom] {
     if self._use_index is None {
         index: dict[int, list[NameAtom]] = {};
-        for nm in self.ir_in.get_all_sub_nodes(Name) {
+        for nm in self.module.get_all_sub_nodes(Name) {
             if self._is_def_name(nm) {
                 continue;
             }
@@ -389,7 +360,7 @@ impl RegionInferPass._wrap_in_open(
     }
     loc = first.loc;
     handle_name = Name(
-        orig_src=self.ir_in.loc.orig_src,
+        orig_src=self.module.loc.orig_src,
         name=Tok.NAME,
         value="Region",
         line=loc.first_line,
@@ -406,7 +377,7 @@ impl RegionInferPass._wrap_in_open(
         target=handle_name, params=[], genai_call=None, kid=[handle_name]
     );
     opened = OpenStmt(target=handle_call, body=stmts, kid=[handle_call, *stmts]);
-    kids = list(owner.kid);
+    kids = list([owner->:Kid:->]);
     first_pos = -1;
     last_pos = -1;
     for (i, k) in enumerate(kids) {

@@ -2,7 +2,7 @@
 name = "emailer-smtp-example"
 version = "1.0.0"
 description = "Built-in SMTP emailer example for jac-scale"
-entry-point = "app.jac"
+entry-point = "app"
 
 # Built-in SMTP provider. No custom emailer code required.
 [scale.emailer]
@@ -17,7 +17,7 @@ use_tls = true
 # password supplied via EMAILER_SMTP_PASSWORD env var (preferred over plain text here)
 
 # Token TTLs + frontend URLs the framework drops into the email body.
-[scale.auth]
+[serve.auth.email]
 verify_token_ttl_seconds = 86400
 reset_token_ttl_seconds = 1800
 verify_url_template = "https://app.example.com/verify?token={token}"

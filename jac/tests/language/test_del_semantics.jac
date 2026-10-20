@@ -12,7 +12,7 @@ import os;
 import subprocess;
 import sys;
 import tempfile;
-import from tests.support { JAC_ROOT, compile_native, get_func }
+import from tests.support { jac_command, JAC_ROOT, compile_native, get_func }
 
 glob FIXTURES = os.path.join(JAC_ROOT, "tests", "language", "fixtures"),
      DEL_SEMANTICS = os.path.join(FIXTURES, "del_semantics.jac");
@@ -20,10 +20,7 @@ glob FIXTURES = os.path.join(JAC_ROOT, "tests", "language", "fixtures"),
 """Run a .jac file in a subprocess and return (stdout, stderr, returncode)."""
 def run_jac_file(path: str) -> tuple[str, str, int] {
     result = subprocess.run(
-        [sys.executable, "-m", "jaclang", "run", path],
-        capture_output=True,
-        text=True,
-        cwd=JAC_ROOT
+        jac_command("run", path), capture_output=True, text=True, cwd=JAC_ROOT
     );
     return (result.stdout, result.stderr, result.returncode);
 }
@@ -167,10 +164,7 @@ glob BAD_TARGETS = os.path.join(FIXTURES, "del_bad_targets.jac");
 """Run `jac check` on a .jac file and return its combined output."""
 def run_jac_check(path: str) -> str {
     result = subprocess.run(
-        [sys.executable, "-m", "jaclang", "check", path],
-        capture_output=True,
-        text=True,
-        cwd=JAC_ROOT
+        jac_command("check", path), capture_output=True, text=True, cwd=JAC_ROOT
     );
     return result.stdout + result.stderr;
 }
@@ -249,17 +243,19 @@ glob SUBSCRIPT_IR = os.path.join(FIXTURES, "del_subscript_ir.jac");
 
 test "a subscript del peeks once and keeps the Python del verbatim" {
     result = subprocess.run(
-        [sys.executable, "-m", "jaclang", "tool", "ir", "py", SUBSCRIPT_IR],
+        jac_command("tool", "ir", "py", SUBSCRIPT_IR),
         capture_output=True,
         text=True,
         cwd=JAC_ROOT
     );
     assert result.returncode == 0 , result.stderr;
-    assert "destroy(peek_item(cache, key))" in result.stdout , result.stdout;
+    assert "_jac_runtime_destroy(_jac_runtime_peek_item(cache, key))"
+        in result.stdout , result.stdout;
     assert "del cache[key]" in result.stdout , result.stdout;
-    assert "destroy(peek_item(items, 0))" in result.stdout , result.stdout;
+    assert "_jac_runtime_destroy(_jac_runtime_peek_item(items, 0))" in result.stdout , result.stdout;
     assert "del items[0]" in result.stdout , result.stdout;
-    assert "destroy(peek_item(items, slice(1, 3, None)))" in result.stdout , result.stdout;
+    assert "_jac_runtime_destroy(_jac_runtime_peek_item(items, slice(1, 3, None)))"
+        in result.stdout , result.stdout;
     assert "del items[1:3]" in result.stdout , result.stdout;
     assert "strict" not in result.stdout , result.stdout;
 }

@@ -12,6 +12,25 @@ delegates to a real renderer.
 
 import from jaclang.cli.console { JacConsole, ConsoleRenderer, Span, console }
 
+test "live status text refreshes while the current module is still compiling" {
+    import io;
+    import from jaclang.cli.console { _Spinner }
+    stream = io.StringIO();
+    spinner = _Spinner("", stream, ["."], "", "", interval=0);
+    ticks: list[int] = [0];
+    def progress -> str {
+        ticks[0] += 1;
+        if ticks[0] == 2 {
+            spinner._stop.set();
+        }
+        return f"0 completed · 1 active · {ticks[0]}.0s";
+    }
+    spinner.update(progress);
+    spinner._run();
+    assert "0 completed · 1 active · 1.0s" in stream.getvalue();
+    assert "0 completed · 1 active · 2.0s" in stream.getvalue();
+}
+
 
 # Every public method of the console surface. Each must live on the facade.
 glob _FACADE_METHODS: list[str] = [

@@ -1,9 +1,6 @@
-import jaclang.compiler.frontend.unitree as uni;
-import from jaclang.compiler.passes { UniPass }
-import from jaclang.compiler.frontend.constant { OwnershipKind, is_mut_kind }
-import from jaclang.compiler.frontend.roles { BodyRole }
+walker UnparsePass(TreePass) {
+    static has contract: PassContract = PassContract();
 
-walker UnparsePass(UniPass) {
     def _comma_sep(nodes: Sequence[uni.UniNode]) -> str;
     can unparse_prepare_exit with uni.UniNode exit;
     can unparse_default_exit with uni.UniNode exit;
@@ -31,6 +28,12 @@ walker UnparsePass(UniPass) {
     can exit_module_item with uni.ModuleItem exit;
     can exit_archetype with uni.Archetype exit;
     can exit_impl_def with uni.ImplDef exit;
+    can exit_graph_import with uni.GraphImport exit;
+    can exit_import_wire with uni.ImportWire exit;
+    can exit_wire_target with uni.WireTarget exit;
+    can exit_import_rule with uni.ImportRule exit;
+    can exit_module_pattern with uni.ModulePattern exit;
+    can exit_wire_item with uni.WireItem exit;
     can exit_sem_def with uni.SemDef exit;
     can exit_enum with uni.Enum exit;
     can exit_ability with uni.Ability exit;
@@ -89,6 +92,7 @@ walker UnparsePass(UniPass) {
     can exit_dict_compr with uni.DictCompr exit;
     can exit_atom_trailer with uni.AtomTrailer exit;
     can exit_atom_unit with uni.AtomUnit exit;
+    can exit_graph_expr with uni.GraphExpr exit;
     can exit_yield_expr with uni.YieldExpr exit;
     can exit_func_call with uni.FuncCall exit;
     can exit_index_slice with uni.IndexSlice exit;
@@ -120,65 +124,4 @@ walker UnparsePass(UniPass) {
     can exit_match_k_v_pair with uni.MatchKVPair exit;
     can exit_match_star with uni.MatchStar exit;
     can exit_match_arch with uni.MatchArch exit;
-}
-
-def unparse_node(nd: uni.UniNode) -> str {
-    if nd.gen.jac {
-        return nd.gen.jac;
-    }
-    if isinstance(nd, uni.Token) {
-        return nd.value;
-    }
-    _kids = list(nd.kid);
-    if not _kids {
-        _v = nd?.value;
-        if isinstance(_v, str) {
-            return _v;
-        }
-    }
-    return ' '.join([unparse_node(i) for i in _kids]);
-}
-
-def unparse_module(mod: uni.Module, requires_format: bool = True) -> str {
-    import from jaclang.compiler.tools.jac_formatter_pass { format_module }
-    import from jaclang.compiler.tools.normalize_pass { NormalizePass }
-    import from jaclang.compiler.driver.program { JacProgram }
-
-    own_path = mod.loc.mod_path;
-    saved_body = mod.body;
-    saved_kid = mod.kid;
-    head_kid = [
-        k
-        for k in saved_kid
-        if (not k.loc.mod_path) or (k.loc.mod_path == own_path)
-    ];
-    filtered = len(head_kid) != len(saved_kid);
-
-    with mod.structure_thawed() {
-        if filtered {
-            mod._role_set(
-                BodyRole,
-                [
-                    st
-                    for st in saved_body
-                    if (not st.loc.mod_path) or (st.loc.mod_path == own_path)
-                ]
-            );
-            mod.set_kids(nodes=head_kid or [uni.EmptyToken()]);
-        }
-        try {
-            import from jaclang.compiler.driver.pass_driver { run_pass }
-            run_pass(NormalizePass, mod, JacProgram());
-            if requires_format {
-                return format_module(mod);
-            }
-            run_pass(UnparsePass, mod, JacProgram());
-            return mod.gen.jac;
-        } finally {
-            if filtered {
-                mod._role_set(BodyRole, saved_body);
-                mod.set_kids(nodes=saved_kid);
-            }
-        }
-    }
 }

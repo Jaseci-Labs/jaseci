@@ -35,7 +35,12 @@ glob SCAN_ROOTS: list[str] = [
          "scale",
          "byllm"
      ],
-     SANCTIONED: dict[str, tuple] = {
+     SANCTIONED: dict[str, tuple[any, ...]] = {
+         "runtime/graph_fragment.jac": (
+             1,
+             "adopts the recorded edge values of a construction fragment; "
+             "this is fragment membership, not NodeAnchor adjacency"
+         ),
          "runtime/impl/archetype.impl.jac": (
              6,
              "the field's own primitives: __getstate__ stubs the list for "
@@ -45,7 +50,10 @@ glob SCAN_ROOTS: list[str] = [
              "has_heavy_edges is the tier-routing predicate (does any "
              "EdgeAnchor exist at all) that hop, clear_edges and "
              "light_hop_answers consult before trusting the light tier, and "
-             "remove_edge is the mutation bookkeeping detach() rides on"
+             "remove_edge is the mutation bookkeeping detach() rides on. A "
+             "store-loaded node has no list until first read: __getattr__ "
+             "runs the Session loader the hydration left on the anchor, "
+             "which pages the src/dst edge rows in seq order"
          ),
          "runtime/impl/runtime.impl.jac": (
              7,
@@ -58,13 +66,13 @@ glob SCAN_ROOTS: list[str] = [
              "has_heavy_edges primitive and save's cascade reads through "
              "all_edges so light edges materialize first"
          ),
-         "runtime/osp_graph_sv.jac": (
+         "runtime/impl/osp_graph_sv.impl.jac": (
              1,
              "THE hydration mint: sv_register_hydrated loading the "
              "persistence record into the store is the one sanctioned live "
              "read"
          ),
-         "runtime/graph_walk.jac": (
+         "runtime/impl/graph_walk.impl.jac": (
              1,
              "the in-memory traversal primitive enumerates live anchor "
              "objects directly; detach keeps node.edges and the sv store in "
@@ -76,12 +84,6 @@ glob SCAN_ROOTS: list[str] = [
              3,
              "serialization proper: writing data.edges on save and "
              "rebuilding the stub list plus _initial_edge_ids on load"
-         ),
-         "server/impl/session.impl.jac": (
-             1,
-             "hydration: _materialize rebuilds the stub list from the "
-             "store's src/dst adjacency (ordered by seq) since node rows "
-             "no longer rewrite on edge changes (epic #7945)"
          ),
 
      };
@@ -143,12 +145,12 @@ node RoundTripNode {
     has label: str = "";
 }
 
-edge RoundTripEdge {
+edge RoundTripEdge: RoundTripNode --> RoundTripNode {
     has w: int = 0;
 }
 
-def _transcript(origin: any) -> list {
-    out: list = [];
+def _transcript(origin: any) -> list[str] {
+    out: list[str] = [];
     for n in [origin-->] {
         if isinstance(n, RoundTripNode) {
             out.append(n.label);

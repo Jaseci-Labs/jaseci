@@ -30,9 +30,10 @@ import from jaclang.compiler.backends.es { EsastGenPass }
 import jaclang.compiler.backends.es.estree as es;
 import from jaclang.compiler.backends.es.backends.react { ReactBackend }
 import from jaclang.compiler.backends.es.es_unparse { es_to_js }
+import from jaclang.compiler.backends.es.estree { Node as EsNode }
 import jaclang.compiler.frontend.unitree as uni;
 import from jaclang.compiler.driver.program { JacProgram }
-import from jaclang.compiler.driver.pass_driver { run_pass }
+import from tests.compiler.backends.es.codegen_helpers { run_es_pass }
 
 glob FIXTURES = os.path.join(
          JAC_ROOT, "tests", "compiler", "backends", "es", "fixtures"
@@ -45,11 +46,13 @@ def compile_fixture(fixture_name: str) -> tuple[EsastGenPass, JacProgram, str] {
     assert not prog.errors_had , (
         f"Compilation errors in {fixture_name}: {[str(e) for e in prog.errors_had]}"
     );
-    es_pass = run_pass(EsastGenPass, ir, prog, backend=ReactBackend());
+    es_pass = run_es_pass(ir, prog, ReactBackend());
     assert not prog.errors_had , (
         f"ES codegen errors in {fixture_name}: {[str(e) for e in prog.errors_had]}"
     );
-    return (es_pass, prog, es_to_js(es_pass.ir_out.gen.es_ast));
+    es_ast = es_pass.module.gen.es_ast;
+    assert isinstance(es_ast, EsNode) , "es_ast should be an EsNode";
+    return (es_pass, prog, es_to_js(es_ast));
 }
 
 """Slice out the body of the named emitted function for focused assertions."""
@@ -115,12 +118,12 @@ test "an unrecognized kwarg key shape is a hard error, not a silent spread" {
     (es_pass, prog, js) = compile_fixture("kwarg_key_state_call.jac");
     calls = [
         nd
-        for nd in es_pass.ir_out.get_all_sub_nodes(uni.FuncCall)
+        for nd in es_pass.module.get_all_sub_nodes(uni.FuncCall)
         if isinstance(nd.target, uni.Name) and nd.target.sym_name == "label"
     ];
     assert calls , "fixture must contain a call to `label`";
 
-    es_pass.errors_had.clear();
+    es_pass.ctx.errors_had.clear();
     bogus = es.Property(
         key=es.MemberExpression(
             object=es.Identifier(name="__jacS_theme"),
@@ -139,12 +142,12 @@ test "an unrecognized kwarg key shape is a hard error, not a silent spread" {
 
     codes = [
         alrt.code.code
-        for alrt in es_pass.errors_had
+        for alrt in es_pass.ctx.errors_had
         if alrt.code is not None
     ];
     assert "E5099" in codes , (
         "an unrecognized kwarg key must raise E5099, got "
-        + str([str(e) for e in es_pass.errors_had])
+        + str([str(e) for e in es_pass.ctx.errors_had])
     );
     assert not any(isinstance(slot.value, es.SpreadElement) for slot in slots) , (
         "the failing kwarg must not be laundered into a spread argument"

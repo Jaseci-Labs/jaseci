@@ -11,8 +11,8 @@ looked for later beside the file, and recompiled. The root now follows the
 import os;
 import tempfile;
 import from pathlib { Path }
-import jaclang.compiler.driver.compile_options as compile_options;
-import jaclang.compiler.placement.placement_pins as placement_pins;
+import from jaclang.compiler.frontend.host { active_host }
+import from jaclang.project.compiler_host { ProjectHost }
 import from jaclang.compiler.driver.jir {
     get_module_cache_path,
     module_env_fingerprint
@@ -66,7 +66,7 @@ test "a module's env key is the same inside and outside the config probe guards"
     # another on write, and recompiled on every run.
     base = Path(os.path.realpath(tempfile.mkdtemp(prefix="jac_key_purity_")));
     (base / "jac.toml").write_text(
-        '[project]\nname = "keyed"\n\n[gc]\ndefault = "none"\n'
+        '[project]\nname = "keyed"\n\n[memory]\nprofile = "nogc"\n'
     );
     mod = base / "util.jac";
     mod.write_text("def two -> int {\n    return 2;\n}\n");
@@ -80,13 +80,16 @@ test "a module's env key is the same inside and outside the config probe guards"
         pin_project_scope(get_config_for_path(base));
         for path in [str(mod), internal] {
             plain = module_env_fingerprint(path);
-            compile_options._config_probe["active"] = True;
-            placement_pins._kind_probe["active"] = True;
+            # The enclosing-project kind chain and its probe guard are gone
+            # (#8823): the host's project-defaults guard is the only
+            # re-entrancy guard left.
+            host = active_host();
+            assert isinstance(host, ProjectHost);
+            host._defaults_active = True;
             try {
                 guarded = module_env_fingerprint(path);
             } finally {
-                compile_options._config_probe["active"] = False;
-                placement_pins._kind_probe["active"] = False;
+                host._defaults_active = False;
             }
             assert plain == guarded , (
                 f"the env key of {os.path.basename(path)} must not depend on the "

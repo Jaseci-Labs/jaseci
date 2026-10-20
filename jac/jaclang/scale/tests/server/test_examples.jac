@@ -9,8 +9,6 @@ import time;
 import requests;
 import from pathlib { Path }
 
-import from jaclang.project.config { find_project_root }
-import from jaclang.scale.tests.support { get_free_port }
 
 glob JacScaleFixtures: Path = Path(__file__).parent.parent / "fixtures";
 
@@ -323,7 +321,7 @@ obj JacScaleTestRunner {
         }
 
         files = {file_field: (filename, io.BytesIO(content), content_type)};
-        data = extra_data or {};
+        data: dict[str, any] = extra_data or {};
 
         response = requests.post(
             url, headers=headers, files=files, data=data, timeout=timeout

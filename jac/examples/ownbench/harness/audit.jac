@@ -26,23 +26,23 @@ glob BENCH = Path(str(__file__)).resolve().parent.parent,
      ],
      MODES = ["none", "rc", "cycles"];
 
-"""nacompile flags for a memory mode."""
+"""Native build flags for a memory mode."""
 def mode_flags(mode: str) -> list[str] {
     if mode == "none" {
-        return ["--enforce-nogc", "--gc", "none", "--assert-no-rc"];
+        return ["--memory", "nogc"];
     }
     return ["--gc", mode];
 }
 
 """Compile one cell with IR dumping and count the RC machinery."""
-def audit(kernel: str, mode: str) -> dict {
+def audit(kernel: str, mode: str) -> dict[str, any] {
     src = BENCH / "kernels" / f"{kernel}.jac";
     out = BENCH / "bin" / f"audit_{kernel}_{mode}";
     out.parent.mkdir(exist_ok=True);
     ll = BENCH / "results" / f"{kernel}_{mode}.ll";
     ll.parent.mkdir(exist_ok=True);
     env = dict(os.environ, JAC_DUMP_IR=str(ll));
-    cmd = ["jac", "nacompile", str(src)] + mode_flags(mode) + ["-o", str(out)];
+    cmd = ["jac", "build", "--native", str(src)] + mode_flags(mode) + ["-o", str(out)];
     r = subprocess.run(cmd, capture_output=True, text=True, timeout=600, env=env);
     if r.returncode != 0 {
         sys.`exit(f"compile failed: {' '.join(cmd)}\n{r.stdout}\n{r.stderr}");
@@ -59,8 +59,8 @@ def audit(kernel: str, mode: str) -> dict {
 }
 
 """Parse --flag value CLI options into a dict, with defaults."""
-def parse_opts(argv: list[str]) -> dict {
-    opts: dict = {
+def parse_opts(argv: list[str]) -> dict[str, str] {
+    opts: dict[str, str] = {
         "kernels": ",".join(KERNELS),
         "modes": ",".join(MODES),
         "out": str(BENCH / "results" / "ir_audit.json"),
@@ -80,8 +80,8 @@ def parse_opts(argv: list[str]) -> dict {
 }
 
 """Audit every requested cell; fail if an enforced build has RC machinery."""
-def main(opts: dict) {
-    results: dict = {};
+def main(opts: dict[str, any]) {
+    results: dict[str, any] = {};
     bad = False;
     for kernel in [
         k

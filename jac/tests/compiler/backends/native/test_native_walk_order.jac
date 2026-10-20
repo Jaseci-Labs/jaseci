@@ -35,16 +35,22 @@ import from pathlib { Path }
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.compiler.driver.compile_options { CompileOptions }
 import from jaclang.compiler.driver.na_coverage { na_coverage_begin, na_coverage_end }
+import from tests.support { native_address, source_spelled }
 
 glob FIXTURES = str(Path(__file__).resolve().parent / "fixtures"),
-     WALK_ORDERS: list = [None, "reverse", "shuffle:1337", "shuffle:7", "shuffle:42"];
+     WALK_ORDERS: list[any] = [
+         None,
+         "reverse",
+         "shuffle:1337",
+         "shuffle:7",
+         "shuffle:42"
+     ];
 
 """Compile a fixture natively under a given module walk order; return IR text."""
 def compile_ir_text(fixture: str, walk_order: str | None) -> str {
     prog = JacProgram();
     opts = CompileOptions(
         force_codespace='native',
-        force_target_program=True,
         skip_native_engine=True,
         native_module_walk_order=walk_order
     );
@@ -86,7 +92,7 @@ def ir_hash(text: str) -> str {
 }
 
 test "cross-module enum chain IR is byte-identical under any walk order" {
-    hashes: dict = {};
+    hashes: dict[str, any] = {};
     for order in WALK_ORDERS {
         hashes[order or "forward"] = ir_hash(
             compile_ir_text("opcodes_entry.jac", order)
@@ -96,7 +102,7 @@ test "cross-module enum chain IR is byte-identical under any walk order" {
 }
 
 test "imported obj-field chain IR is walk-order independent" {
-    hashes: dict = {};
+    hashes: dict[str, any] = {};
     for order in WALK_ORDERS {
         hashes[order or "forward"] = ir_hash(
             toplevel_sorted(compile_ir_text("xmodfield_entry.jac", order))
@@ -107,7 +113,7 @@ test "imported obj-field chain IR is walk-order independent" {
 
 test "imported obj-field chain executes correctly" {
     prog = JacProgram();
-    opts = CompileOptions(force_codespace='native', force_target_program=True);
+    opts = CompileOptions(force_codespace='native');
     mod = prog.compile(
         file_path=os.path.join(FIXTURES, "xmodfield_entry.jac"), options=opts
     );
@@ -115,7 +121,7 @@ test "imported obj-field chain executes correctly" {
     assert not prog.errors_had , f"Compilation errors: {errors}";
     eng = mod.gen.native_engine;
     assert eng is not None , "No native engine produced";
-    addr = eng.get_function_address("imported_field_checksum");
+    addr = native_address(eng, "imported_field_checksum");
     assert addr != 0 , "imported_field_checksum not found";
     result = ctypes.CFUNCTYPE(ctypes.c_int64)(addr)();
     assert result == 1020 , f"Expected 1020, got {result}";
@@ -123,18 +129,16 @@ test "imported obj-field chain executes correctly" {
 
 test "an unlowerable field erases loudly: the declaration seams, every touch refuses" {
     prog = JacProgram();
-    opts = CompileOptions(
-        force_codespace='native', force_target_program=True, skip_native_engine=True
-    );
+    opts = CompileOptions(force_codespace='native', skip_native_engine=True);
     na_coverage_begin();
     mod = prog.compile(
         file_path=os.path.join(FIXTURES, "unlowerable_field.jac"), options=opts
     );
     snap = na_coverage_end();
-    seams: list = [];
+    seams: list[any] = [];
     for (path, rec) in snap.items() {
         if os.path.basename(path) == "unlowerable_field.jac" {
-            seams = list(rec['seams']);
+            seams = [source_spelled(str(s)) for s in rec['seams']];
         }
     }
     # The declaration owns its refusal: E5092 and the offending type name

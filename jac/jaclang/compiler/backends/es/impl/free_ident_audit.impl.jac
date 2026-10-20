@@ -1,12 +1,5 @@
-import re;
-import jaclang.compiler.backends.es.estree as es;
-import from jaclang.compiler.frontend.constant { BROWSER_SEED_GLOBALS }
-
 glob _AMBIENT_CACHE: set[str] = set(),
-     _IDENT_RE: re.Pattern = re.compile(r"[A-Za-z_$][A-Za-z0-9_$]*"),
-     _RAW_DECL_RE: re.Pattern = re.compile(
-         r"\b(?:function|class|const|let|var)\s+\*?\s*([A-Za-z_$][A-Za-z0-9_$]*)"
-     );
+     _RAW_DECL_KEYWORDS: set[str] = {"function", "class", "const", "let", "var"};
 
 glob _JS_LANGUAGE_GLOBALS: set[str] = {
          "globalThis",
@@ -135,129 +128,91 @@ glob _SYNTACTIC_IDENTIFIERS: set[str] = {
          'void'
      };
 
-def _stub_names(path: str) -> set[str] {
-    import ast;
-    out: set[str] = set();
-    try {
-        with open(path, encoding="utf-8") as handle {
-            tree = ast.parse(handle.read());
-        }
-    } except Exception {
-        return out;
-    }
-
-    for node in tree.body {
-        if isinstance(node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)) {
-            out.add(node.name);
-        } elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) {
-            out.add(node.target.id);
-        } elif isinstance(node, ast.Assign) {
-            for tgt in node.targets {
-                if not isinstance(tgt, ast.Name) {
-                    continue;
-                }
-                out.add(tgt.id);
-                if tgt.id != "__all__" {
-                    continue;
-                }
-                for elt in getattr(node.value, "elts", []) {
-                    if isinstance(elt, ast.Constant) and isinstance(elt.value, str) {
-                        out.add(elt.value);
-                    }
-                }
-            }
-        }
-    }
-    return out;
-}
-
 impl client_ambient_globals -> set[str] {
     if _AMBIENT_CACHE {
         return _AMBIENT_CACHE;
     }
-    import os;
+
     names: set[str] = set(_JS_LANGUAGE_GLOBALS);
     names.update(BROWSER_SEED_GLOBALS);
-
-    import jaclang;
-    stub_dir = os.path.join(
-        os.path.dirname(str(jaclang.__file__)), "compiler", "types"
-    );
-    for stub in ("js_globals.pyi", "dom_types.pyi") {
-        names.update(_stub_names(os.path.join(stub_dir, stub)));
-    }
+    names.update(active_host().client_stub_globals());
     _AMBIENT_CACHE.update(names);
     return _AMBIENT_CACHE;
 }
 
-def _loc_of(nd: es.Node) -> tuple[int, int] {
-    loc = nd.loc;
-    if loc is None or loc.start is None {
-        return (0, 0);
+def _loc_of(nd: es.Node) -> tuple[int, int];
+
+def _js_ident_start(ch: str) -> bool;
+
+def _js_ident_part(ch: str) -> bool;
+
+impl js_identifiers(text: str) -> list[str] {
+    out: list[str] = [];
+    n = len(text);
+    i = 0;
+    while i < n {
+        if not _js_ident_start(text[i]) {
+            i += 1;
+            continue;
+        }
+        start = i;
+        i += 1;
+        while i < n and _js_ident_part(text[i]) {
+            i += 1;
+        }
+        out.append(text[start:i]);
     }
-    return (loc.start.line, loc.start.column);
+    return out;
 }
 
-def _harvest_raw(source: str, decls: set[str]) {
-    for hit in _RAW_DECL_RE.finditer(source) {
-        decls.add(hit.group(1));
+glob _TOP_LEVEL_DECL_KEYWORDS: set[str] = {
+         "function",
+         "const",
+         "let",
+         "var",
+         "class"
+     };
+
+def _leading_word(line: str, start: int) -> tuple[str, int];
+
+def _skip_spaces(line: str, start: int) -> int;
+
+impl js_top_level_declarations(code: str) -> set[str] {
+    names: set[str] = set();
+    for line in code.split("\n") {
+        (word, at) = _leading_word(line, 0);
+        for prefix in ["export", "async"] {
+            if word == prefix and at < len(line) and line[at].isspace() {
+                (word, at) = _leading_word(line, _skip_spaces(line, at));
+            }
+        }
+        if word not in _TOP_LEVEL_DECL_KEYWORDS
+            or at >= len(line)
+            or not line[at].isspace() {
+            continue;
+        }
+        at = _skip_spaces(line, at);
+        if at < len(line) and _js_ident_start(line[at]) {
+            (name, _end) = _leading_word(line, at);
+            names.add(name);
+        }
     }
+    return names;
 }
+
+def _word_char(ch: str) -> bool;
+
+def _js_ident_char(ch: str) -> bool;
+
+def _harvest_raw(source: str, decls: set[str]);
 
 def _walk_value(
     value: any, binding: bool, decls: set[str], refs: list[FreeIdentifier]
-) {
-    if isinstance(value, es.Node) {
-        _walk(value, binding, decls, refs);
-    } elif isinstance(value, (list, tuple)) {
-        for item in value {
-            _walk_value(item, binding, decls, refs);
-        }
-    }
-}
+);
 
 def _walk(
     nd: es.Node, binding: bool, decls: set[str], refs: list[FreeIdentifier]
-) -> None {
-    if isinstance(nd, es.Identifier) {
-        if nd.name in _SYNTACTIC_IDENTIFIERS {
-            return;
-        }
-        if _IDENT_RE.fullmatch(nd.name) is None {
-            _harvest_raw(nd.name, decls);
-            return;
-        }
-        if binding {
-            decls.add(nd.name);
-        } else {
-            (line, column) = _loc_of(nd);
-            refs.append(FreeIdentifier(name=nd.name, line=line, column=column));
-        }
-        return;
-    }
-    kind = nd.__class__.__name__;
-    child_binding = binding and (kind not in _REFERENCE_ONLY_NODES);
-    bind_fields = _BIND_FIELDS.get(kind, set());
-    skip_fields = _SKIP_FIELDS.get(kind, set());
-    ref_fields = _REF_FIELDS.get(kind, set());
-    computed = bool(getattr(nd, 'computed', False));
-    for (field, value) in vars(nd).items() {
-        if field in ('loc', 'type') {
-            continue;
-        }
-        if (field in skip_fields) and not computed {
-            continue;
-        }
-        if field in ref_fields {
-            sub = False;
-        } elif field in bind_fields {
-            sub = True;
-        } else {
-            sub = child_binding;
-        }
-        _walk_value(value, sub, decls, refs);
-    }
-}
+) -> None;
 
 impl free_identifiers(program: es.Program, allowed: set[str]) -> list[FreeIdentifier] {
     decls: set[str] = set();
@@ -273,4 +228,136 @@ impl free_identifiers(program: es.Program, allowed: set[str]) -> list[FreeIdenti
         out.append(ref);
     }
     return out;
+}
+
+impl _loc_of(nd: es.Node) -> tuple[int, int] {
+    loc = nd.loc;
+    if loc is None or loc.start is None {
+        return (0, 0);
+    }
+    return (loc.start.line, loc.start.column);
+}
+
+impl _js_ident_start(ch: str) -> bool {
+    return (ch >= "a" and ch <= "z")
+        or (ch >= "A" and ch <= "Z")
+        or ch == "_"
+        or ch == "$";
+}
+
+impl _js_ident_part(ch: str) -> bool {
+    return _js_ident_start(ch) or (ch >= "0" and ch <= "9");
+}
+
+impl _leading_word(line: str, start: int) -> tuple[str, int] {
+    end = start;
+    while end < len(line) and _js_ident_part(line[end]) {
+        end += 1;
+    }
+    return (line[start:end], end);
+}
+
+impl _skip_spaces(line: str, start: int) -> int {
+    at = start;
+    while at < len(line) and line[at].isspace() {
+        at += 1;
+    }
+    return at;
+}
+
+impl _word_char(ch: str) -> bool {
+    return ch.isalnum() or ch == "_";
+}
+
+impl _js_ident_char(ch: str) -> bool {
+    return ch.isalnum() or ch == "_" or ch == "$";
+}
+
+impl _harvest_raw(source: str, decls: set[str]) {
+    n = len(source);
+    i = 0;
+    while i < n {
+        if not _word_char(source[i]) {
+            i += 1;
+            continue;
+        }
+        start = i;
+        while i < n and _word_char(source[i]) {
+            i += 1;
+        }
+        if source[start:i] not in _RAW_DECL_KEYWORDS
+            or i >= n
+            or not source[i].isspace() {
+            continue;
+        }
+        while i < n and source[i].isspace() {
+            i += 1;
+        }
+        if i < n and source[i] == "*" {
+            i += 1;
+            while i < n and source[i].isspace() {
+                i += 1;
+            }
+        }
+        if i < n and _js_ident_char(source[i]) and not source[i].isdigit() {
+            name_start = i;
+            while i < n and _js_ident_char(source[i]) {
+                i += 1;
+            }
+            decls.add(source[name_start:i]);
+        }
+    }
+}
+
+impl _walk_value(
+    value: any, binding: bool, decls: set[str], refs: list[FreeIdentifier]
+) {
+    if isinstance(value, es.Node) {
+        _walk(value, binding, decls, refs);
+    } elif isinstance(value, (list, tuple)) {
+        for item in value {
+            _walk_value(item, binding, decls, refs);
+        }
+    }
+}
+
+impl _walk(
+    nd: es.Node, binding: bool, decls: set[str], refs: list[FreeIdentifier]
+) -> None {
+    if isinstance(nd, es.RawCode) {
+        _harvest_raw(nd.code, decls);
+        return;
+    }
+    if isinstance(nd, es.Identifier) {
+        if nd.name in _SYNTACTIC_IDENTIFIERS {
+            return;
+        }
+        if binding {
+            decls.add(nd.name);
+        } else {
+            (line, column) = _loc_of(nd);
+            refs.append(FreeIdentifier(name=nd.name, line=line, column=column));
+        }
+        return;
+    }
+    kind = nd.__class__.__name__;
+    child_binding = binding and (kind not in _REFERENCE_ONLY_NODES);
+    bind_fields = _BIND_FIELDS.get(kind, set());
+    skip_fields = _SKIP_FIELDS.get(kind, set());
+    ref_fields = _REF_FIELDS.get(kind, set());
+    fields = es.es_children(nd);
+    computed = bool(fields.get('computed', False));
+    for (field, value) in fields.items() {
+        if (field in skip_fields) and not computed {
+            continue;
+        }
+        if field in ref_fields {
+            sub = False;
+        } elif field in bind_fields {
+            sub = True;
+        } else {
+            sub = child_binding;
+        }
+        _walk_value(value, sub, decls, refs);
+    }
 }

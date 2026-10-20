@@ -54,3 +54,42 @@ test "a listener only hears the compile it was attached for" {
     JacProgram().compile(main_path);
     assert seen == [] , f"a detached listener heard {seen}";
 }
+
+test "nested compilation completes dependencies before their importer" {
+    main_path = _project();
+    active: list[str] = [];
+    finished: list[str] = [];
+    def on_finished(path: str) {
+        assert active and active[-1] == path;
+        active.pop();
+        finished.append(path);
+    }
+    with compile_progress.listen(active.append, on_finished) {
+        JacProgram().compile(main_path);
+    }
+    assert not active;
+    assert finished[-1] == main_path;
+    assert "util.jac" in [os.path.basename(p) for p in finished];
+}
+
+test "exceptions finish active work and detach both listeners" {
+    import from unittest.mock { patch }
+    import from jaclang.compiler.driver.compiler { JacCompiler }
+    started: list[str] = [];
+    finished: list[str] = [];
+    main_path = _project();
+    with patch.object(
+        JacCompiler, "compile_attempt", side_effect=RuntimeError("failed")
+    ) {
+        try {
+            with compile_progress.listen(started.append, finished.append) {
+                JacProgram().compile(main_path);
+            }
+            assert False , "expected the compiler failure";
+        } except RuntimeError {}
+    }
+    assert started == [main_path];
+    assert finished == started;
+    JacProgram().compile(main_path);
+    assert started == [main_path] and finished == [main_path];
+}

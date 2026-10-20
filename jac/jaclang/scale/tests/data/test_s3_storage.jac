@@ -5,13 +5,9 @@ import boto3;
 import unittest;
 
 import from unittest.mock { patch, MagicMock }
-import from jaclang.data.storage { Storage }
-import from jaclang.data.storage.local_storage { LocalStorage }
-import from jaclang.scale.storage.s3_storage { S3Storage }
-import from jaclang.project.config { JacConfig }
 
 
-glob _LOCALSTACK: dict = {};
+glob _LOCALSTACK: dict[str, any] = {};
 
 
 def _require_localstack -> str {

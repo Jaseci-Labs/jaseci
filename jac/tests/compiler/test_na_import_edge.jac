@@ -11,7 +11,10 @@ edge is placement-inferred; these tests pin the host module client via
 [placement.pins] the way a migrated project would.
 """
 
+import from jaclang.compiler.backends.py.codegen_shim { generated_python }
 import os;
+import json;
+import re;
 import tempfile;
 import jaclang.compiler.frontend.unitree as uni;
 import from jaclang.compiler.driver.program { JacProgram }
@@ -65,7 +68,35 @@ test "native import binds generated wasm stubs in the client js" {
     js = mod.gen.js;
     assert '__na_bind' in js , "expected the @jac/wasm_host stub factory import";
     assert '"kernel"' in js , "expected the module stem in the bind call";
-    assert '"fib"' in js , "expected the export name in the bind call";
+    encoded = re.search(r'__jac_na_bind\("kernel",\s*("(?:\\.|[^"\\])*")\)', js);
+    assert encoded is not None , js;
+    contract = json.loads(json.loads(encoded.group(1)));
+    assert set(contract["exports"]) == {"fib"};
+    assert contract["exports"]["fib"]["params"]
+        == [
+            {
+                "name": "n",
+                "type": "int",
+                "kind": "scalar",
+                "mode": "value",
+                "bits": 64,
+                "signed": True,
+                "numeric": "int",
+                "minimum": "-9223372036854775808",
+                "maximum": "9223372036854775807"
+            }
+        ];
+    assert contract["exports"]["fib"]["result"]
+        == {
+            "type": "int",
+            "kind": "scalar",
+            "mode": "value",
+            "bits": 64,
+            "signed": True,
+            "numeric": "int",
+            "minimum": "-9223372036854775808",
+            "maximum": "9223372036854775807"
+        };
     assert "fast_fib" in js , "expected the alias as the local binding";
 }
 
@@ -100,7 +131,7 @@ test "native import records typed cl->na bindings in the interop manifest" {
 
 test "native import compiles to nothing on the python side" {
     mod = compile_host();
-    assert "kernel" not in mod.gen.py , (
+    assert "kernel" not in generated_python(mod.gen) , (
         "the client->native import must be inert under CPython; only a plain"
         " server import of a native module means the ctypes crossing"
     );
@@ -170,7 +201,7 @@ test "plain import of a native module from client code takes the na edge" {
     assert len(targets) == 1 and targets[0].endswith("kernel.jac") , (
         f"plain native import must drive wasm emission; got: {targets}"
     );
-    assert "kernel" not in mod.gen.py , (
+    assert "kernel" not in generated_python(mod.gen) , (
         "the inferred na edge must be inert under CPython, exactly like the"
         " server-pinned form"
     );
@@ -178,7 +209,7 @@ test "plain import of a native module from client code takes the na edge" {
 
 test "the injected wasm host import is registered for materialization" {
     mod = compile_host();
-    imports = dict(mod.gen.client_manifest.imports);
+    imports: dict[str, str] = dict(mod.gen.client_manifest.imports);
     assert "@jac/wasm_host" in imports , (
         "the compiler injects `import { __na_bind } from '@jac/wasm_host'`, so the"
         " specifier must join manifest.imports -- that list is what compiles"

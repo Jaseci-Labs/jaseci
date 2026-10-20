@@ -1,5 +1,4 @@
 impl JacToJSCompiler.add_runtime_imports(js_code: str) -> str {
-    import from jaclang.client.client_surface { prepend_active_runtime_globals }
     return prepend_active_runtime_globals(js_code);
 }
 
@@ -14,5 +13,7 @@ impl JacToJSCompiler.extract_exports(manifest: (ClientManifest | None)) -> list[
 }
 
 impl JacToJSCompiler.compile_module(module_path: Path) -> ClientArtifact {
-    return self._compile_to_js(module_path);
+    artifact = self._compile_to_js(module_path);
+    self.boundary_contracts[str(module_path)] = artifact.boundary_contracts;
+    return artifact;
 }

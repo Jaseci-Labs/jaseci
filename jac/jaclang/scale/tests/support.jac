@@ -20,7 +20,10 @@ import unittest;
 import requests;
 import from pathlib { Path }
 import from typing { cast }
-import from jaclang.testing.test_runner { STRICT_ENV, strict_mode }
+
+with entry {
+    apply_fixture_policy();
+}
 
 """A port nothing is listening on."""
 def get_free_port -> int {
@@ -141,12 +144,12 @@ compile the app before it can serve /healthz.
 def start_server(
     fixtures_dir: Path, jac_file: Path, port: int, env: dict[str, str] | None = None
 ) -> subprocess.Popen {
-    import from jaclang.scale.runtime.context.util { jac_executable }
     cmd = [jac_executable(), "run", "--serve", "--port", str(port), str(jac_file.name)];
     proc_env = os.environ.copy();
     if env {
         proc_env.update(env);
     }
+    apply_fixture_policy(proc_env);
     server = subprocess.Popen(
         cmd,
         stdout=subprocess.PIPE,
@@ -202,4 +205,36 @@ def stop_server(server: subprocess.Popen | None) {
     }
     time.sleep(0.2);
     gc.collect();
+}
+
+
+import from jaclang.server.identity.user_manager { UserManager }
+import from jaclang.server.server { EndpointHost }
+import from jaclang.server.serving.endpoint { JEndPoint }
+
+
+"""An endpoint host that only records what gets registered on it."""
+obj RecordingHost(EndpointHost) {
+    has _endpoints: list[JEndPoint] = [],
+        users: (UserManager | None) = None,
+        metrics: any = None,
+        emailer: any = None,
+        base_path: str = "";
+
+    has user_manager: UserManager { getter; }
+
+    def add_endpoint(ep: JEndPoint) {
+        self._endpoints.append(ep);
+    }
+
+    def identity -> UserManager {
+        if self.users is None {
+            raise RuntimeError("RecordingHost has no user manager attached");
+        }
+        return self.users;
+    }
+}
+
+impl RecordingHost.user_manager.getter -> UserManager {
+    return self.identity();
 }

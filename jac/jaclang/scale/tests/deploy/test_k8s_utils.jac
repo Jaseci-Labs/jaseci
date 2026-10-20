@@ -1,12 +1,7 @@
 import from types { SimpleNamespace }
 import unittest.mock;
 import from kubernetes.client.exceptions { ApiException }
-import from jaclang.testing.test { parametrize }
 import from jaclang.scale.deploy.target.kubernetes.utils { kubernetes_utils as utils }
-import from jaclang.scale.deploy.target.kubernetes.utils.kubernetes_utils {
-    parse_storage_quantity,
-    resize_pvc_if_needed
-}
 
 test "cluster type detects aws by provider" {
     class Node {
@@ -167,7 +162,7 @@ test "resize pvc if needed: increase patches, no-op skips, decrease raises" {
     core_v1_new.patch_namespaced_persistent_volume_claim.assert_not_called();
 }
 
-def _test_parse_storage_valid(pair: tuple) {
+def _test_parse_storage_valid(pair: tuple[any, ...]) {
     raw = pair[0];
     expected = pair[1];
     result = parse_storage_quantity(raw);

@@ -2,7 +2,8 @@
 name = "day-planner-auth"
 version = "1.0.0"
 description = "AI Day Planner - authenticated def:priv variant with multi-file frontend"
-entry-point = "main.jac"
+entry-point = "main"
+kind = "web-app"
 
 [dependencies.npm]
 react = "^19.2.0"
@@ -18,18 +19,12 @@ typescript = "^5.3.3"
 "@types/react" = "^19.2.0"
 "@types/react-dom" = "^19.2.0"
 
-[dev-dependencies]
+[dev-dependencies.pypi]
 watchdog = ">=3.0.0"
 
-[serve]
-base_route_app = "app"
 
 [client]
 
 [byllm.model]
 # default_model = "ollama/gemma4:e4b"
 default_model = "local:gemma-4-e2b"
-
-# The entry module is the server app; components call its priv helpers with auth.
-[placement.pins]
-main = "server"

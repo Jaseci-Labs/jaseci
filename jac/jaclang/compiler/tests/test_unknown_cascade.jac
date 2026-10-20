@@ -15,9 +15,6 @@ strict-Unknown discipline the checker_prod_unknown_* fixtures enforce:
 - Genuinely mistyped ops on resolved types keep reporting.
 """
 
-import from jaclang.compiler.driver.program { JacProgram }
-import from jaclang.compiler.driver.compile_options { CompileOptions }
-
 def check_src(src: str) -> list[str] {
     prog = JacProgram();
     prog.compile(
@@ -35,6 +32,51 @@ test "unpack of tuple[Any, ...] adds without per-op overload errors" {
     "    return sec_data;\n"
     "}\n";
     errors = check_src(src);
+    assert errors == [] , errors;
+}
+
+test "variadic tuple iteration preserves its declared element type" {
+    errors = check_src(
+        """
+obj Entry { has module: str; }
+def paths(entries: tuple[Entry, ...]) -> list[str] {
+    result: list[str] = [];
+    for item in entries {
+        result.append(item.module.replace(".", "/") + ".jac");
+    }
+    return result;
+}
+"""
+    );
+    assert errors == [] , errors;
+}
+
+test "variadic tuple iteration still rejects incompatible element uses" {
+    errors = check_src(
+        """
+def invalid(values: tuple[str, ...]) -> None {
+    for value in values {
+        number: int = value;
+    }
+}
+"""
+    );
+    assert errors;
+}
+
+test "tuple union destructuring preserves each element position" {
+    errors = check_src(
+        """
+obj Left { has name: str; }
+obj Right { has name: str; }
+def takes(name: str, count: int) -> None {}
+def inspect_pairs(left: Left, right: Right) -> None {
+    for (item, count) in ((left, 3), (right, 5)) {
+        takes(item.name, count);
+    }
+}
+"""
+    );
     assert errors == [] , errors;
 }
 
@@ -82,13 +124,13 @@ test "control: augmented assign rejects a result the target cannot hold" {
     assert any("E1001" in e or "float" in e for e in errors) , errors;
 }
 
-test "control: bare-container flows stay gradual at typed seams" {
-    # A bare `list` means list[any] (the 7961 semantics), so a value popped
-    # out of one flows through arithmetic and into a typed slot without a
-    # diagnostic -- the same as any other `any`. This control pins that the
-    # cascade-suppression tests above do not quietly re-tighten it.
+test "control: explicit-any containers flow gradual at typed seams" {
+    # An explicit list[any] still means any, so a value popped out of one
+    # flows through arithmetic and into a typed slot without a diagnostic.
+    # This control pins that the cascade-suppression tests above do not
+    # quietly re-tighten it; a bare list is now E1036 instead.
     src = "def probe -> int {\n"
-    "    items: list = [1, 2, 3];\n"
+    "    items: list[any] = [1, 2, 3];\n"
     "    u = items.pop();\n"
     "    v = u + 1;\n"
     "    bad: int = v;\n"

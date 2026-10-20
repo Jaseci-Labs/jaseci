@@ -1,9 +1,9 @@
 ---
 name: jac-node-edge-patterns
-description: Shaping the graph - the entities-and-relationships side of Object-Spatial Programming (OSP) in Jac. Defining nodes and edges, connecting, deleting, nested traversal filters by type/field/edge attributes, multi-hop reads, assign comprehensions for bulk updates. Load when modeling graph-persistent data or writing graph queries / OSP code. Pair with `jac-walker-patterns` (traversal logic over the graph).
+description: Model transient or persistent graphs with typed nodes, edges, queries, and deletion. Use when building graph relationships or filtering topology.
 ---
 
-Nodes are graph-persistent entities; edges are connections (plain or typed `edge` archetypes with `has` fields). Connect with arrow operators; read with list-comprehension references.
+Nodes represent graph entities, either transient or persistent; edges are connections (plain or typed `edge` archetypes with `has` fields). Connect with arrow operators; read with list-comprehension references.
 
 ```jac
 node Person {
@@ -65,17 +65,17 @@ with entry {
 - Use `node` / `edge` for graph-persistent archetypes. Use `obj` for plain in-memory data that doesn't live on the graph.
 - **`++>` mirrors its right-hand side.** `new = here ++> Todo(text=t);` makes `new` the Todo node (a single-node connect returns the node, not a list); `new.text` works directly. Connecting to a **list** (`here ++> [a, b]`) returns a list. The old `new[0]` unwrap is gone - drop it.
 - `<++>` creates edges in BOTH directions - easy to double-count traversals. `<++` is just `++>` written from the other end (same single edge).
-- Typed edge creation uses `+>:E(args):+>` - `+` on BOTH sides of the colons. **The colon-assign form `+>:E:field=val:+>` parses but silently drops the assignment** (the edge default-constructs; verified `since=2021` produced `since=0`). Always pass fields through the constructor parens.
+- Typed edge creation uses `+>:E(args):+>` - `+` on BOTH sides of the colons. The colon-assign form `+>:E:field=val:+>` also works: fields `E` requires (no default) are passed to its constructor, and every other named field is set on the built edge afterwards (so after `postinit`, unlike `E(field=val)`).
 - **Edge-field predicates need the edge type named.** The untyped-predicate form `[a ->::attr > 0:->]` parses but is duck-typed: it evaluates `attr` on EVERY out-edge, so a generic `++>` edge (or any edge type lacking the field) raises `'GenericEdge' object has no attribute ...` at run time. Write `[a ->:E:attr > 0:->]` - the type narrows before the predicate runs.
 - Edge-type filter uses **single** arrows: `[src ->:E:->]`. The double-arrow form `[src -->:E:-->]` is a parse error.
 - **Edge abilities fire only when the itinerary includes the edge itself.** A `can x with SomeWalker entry` inside an `edge` is a silent no-op under plain node visits (`visit [-->]` crosses edges without waking them) - but it DOES fire on `visit [edge -->]` or when spawning directly on an edge object, and the walker then continues to the edge's target node automatically (verified: toll edge decrements `visitor.budget` via `visit [edge -->]`, stays silent via `visit [-->]`). To put behavior on a relationship, visit the edges; to merely read edge data, `[edge ...]` in a node ability is enough.
-- **An *untyped* edge's traversal returns `Unknown`-typed nodes - declare the edge's endpoints, or add `[?:NodeType]` to recover the type.** Over a bare `edge E {}`, `[src ->:E:->]` doesn't tell the type checker which node type the edge points to. Direct attribute access then only *warns* (W1051) and `jac check` still passes - but passing such a node to a typed function parameter fails `E1053`, and the untyped access is a latent bug. Two fixes, prefer the first:
-  - **Declare endpoint types on the edge** - `edge E: Src --> Tgt {}` - so *every* `[src ->:E:->]` infers `Tgt` (and `[src <-:E:<-]` infers `Src`) with no per-read filter. A subtype edge inherits its base's endpoints; the clause is edge-only (`E2027` otherwise). This is the durable fix and it also makes the field read compile on the native backend.
+- **Every edge declares its endpoints; a bare `edge E {}` is `E2086`.** The endpoint clause is what tells the type checker which node types the edge links, so `[src ->:E:->]` can infer one. Widening is still available but has to be written down -- `edge E: any --> any {}` keeps the old gradual behaviour exactly -- and over such an edge the traversal returns `Unknown`-typed nodes: direct attribute access only *warns* (W1051) and `jac check` still passes, but passing such a node to a typed function parameter fails `E1053`, and the untyped access is a latent bug. Two fixes, prefer the first:
+  - **Declare endpoint types on the edge** - `edge E: Src --> Tgt {}` - so *every* `[src ->:E:->]` infers `Tgt` (and `[src <-:E:<-]` infers `Src`) with no per-read filter. A subtype edge inherits its base's endpoints, so it needs no clause of its own; the clause is edge-only (`E2027` otherwise). Connecting or traversing against the declaration is `E1136`/`E1137`, and a merely-more-general operand warns (`W2081`/`W2082`). This is the durable fix and it also makes the field read compile on the native backend.
   - **Nest `[?:NodeType]`** at the read site to narrow further (or for an intentionally-untyped edge). Chaining `[...][?:NodeType]` narrows identically.
 
 ```
-# UNTYPED edge - conn is Unknown; conn.username warns W1051, and `show(conn)` fails E1053
-edge Connected {}
+# WIDENED edge - conn is Unknown; conn.username warns W1051, and `show(conn)` fails E1053
+edge Connected: any --> any {}
 for conn in [p ->:Connected:->] { print(conn.username); }
 
 # FIX 1 (durable) - declare endpoints; every traversal over Connected now infers UserProfile
@@ -106,8 +106,8 @@ del index["alice"];
 index["alice"] = None;
 ```
 
-- A node needs `root` attachment (or a path from root) to be reachable later. A freshly constructed `Person(name="x")` with no incoming edge is unreachable from `[root -->]` reads - the node exists in memory but no walker or list-read can find it. Always attach: `root ++> person;`.
-- **`jac run` persists graph state** in the cwd's `.jac/` directory. Re-running a script duplicates its nodes, and changing archetype definitions between runs yields `NodeAnchor ... is not a valid reference!` errors. Reset with `jac clean --all` (requires a jac.toml; for a bare script directory, `rm -rf .jac/`).
+- `[root -->]` reads nodes connected from the current root; it cannot find an unconnected node merely because the node exists. Attach nodes where your query or traversal starts. A transient node can also be used directly as a query source or walker spawn location; root attachment is not required for in-memory graph work.
+- **Invalid anchors after a change:** check the reference, selected app/store, and schema migration state. Follow `jac-debugging` and `jac-sv-persistence`; do not infer that an anchor error requires deleting project data.
 - Per-user vs shared data on a server: the commons graph hangs off `root.shared` - see `jac-sv-multi-user`.
 
 Related guides: `jac-walker-patterns` (traversal), `jac-testing` (per-test root isolation), `jac-debugging` (NodeAnchor/stale-cache triage).

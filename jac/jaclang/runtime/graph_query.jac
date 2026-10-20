@@ -1,5 +1,4 @@
 import from uuid { UUID }
-import from jaclang.runtime.archetype { Anchor, anchor_key }
 
 glob QUERY_OPS: frozenset[str] = frozenset(
          {'==', '!=', '<', '<=', '>', '>=', 'in'}
@@ -30,7 +29,7 @@ obj QOrder {
 obj QHop {
     has dir: int,
         `edge: (type | None) = None,
-        nd: (type | tuple | None) = None,
+        nd: (type | tuple[type, ...] | None) = None,
         epreds: list[QPred] = [],
         preds: list[QPred] = [],
         only: any = None;
@@ -44,7 +43,7 @@ obj QHop {
 
 
 obj GraphQuery {
-    has origin: list,
+    has origin: list[any],
         hops: list[QHop] = [],
         edges_only: bool = False,
         from_visit: bool = False,
@@ -72,3 +71,8 @@ obj GraphQuery {
 
     def repr -> str;
 }
+
+
+def filter_query_nodes(
+    nodes: list[any], nd: (type | tuple[type, ...] | None), preds: list[QPred]
+) -> list[any];

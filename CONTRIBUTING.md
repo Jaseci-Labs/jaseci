@@ -26,7 +26,7 @@ git remote -v
 
 **1. Install Zig**
 
-The binary is built with [Zig](https://ziglang.org/) **0.16.0** (the version is pinned -- newer/older majors will fail to build). Zig plus a network connection are the only build-time deps: `launcher/payload.zig` does all the HTTP fetching, integrity checks, and (de)compression in Zig's std, so there's nothing else to install (the old `curl`/`git`/`zstd`/`tar` shellouts are gone).
+The binary is built with [Zig](https://ziglang.org/) **0.16.0** (the version is pinned -- newer/older majors will fail to build). Building the bundled Python from source also requires **make, Perl, a POSIX shell, and network access**; macOS needs the SDK from Xcode command line tools. No installed Python or Jac is required. The Zig bootstrap downloads and verifies pinned source archives, then uses Zig's C compiler with the retained upstream configure/make recipes. See [the launcher build guide](jac/launcher/README.md#build) for runtime caching and supported targets.
 
 ```bash
 # Zig: download the 0.16.0 tarball for your platform and put it on PATH
@@ -35,7 +35,7 @@ The binary is built with [Zig](https://ziglang.org/) **0.16.0** (the version is 
 zig version          # must print 0.16.0
 ```
 
-(One optional host tool: if `strip` is on PATH the build shrinks the bundled libpython from ~245 MiB to ~20 MiB; without it the build still succeeds, the binary is just larger.)
+(One optional host tool: if `strip` is on PATH the build removes debug symbols from the bundled libpython; without it the build still succeeds, the binary is larger.)
 
 (The vendored typeshed stdlib stubs are not committed -- `zig build` fetches them at the pinned commit on first build, so there is nothing to check out manually.)
 
@@ -64,9 +64,11 @@ jaclang_source = "jac"   # dir containing jaclang/, relative to this jac.toml
 
 With this enabled, `import jaclang` resolves to `jac/jaclang` (it's prepended to `sys.path` at startup), so edits to jaclang's `.py` and `.jac` source -- the compiler, passes, CLI, runtime -- run live. The per-module compile cache is content-keyed, so edits self-invalidate; the dev loop also skips the binary's shipped precompiled bundle automatically (no manual cache clearing needed). Comment the stanza out to fall back to the binary's bundled jaclang.
 
+An edit recompiles what it touched, not the whole compiler. Every edit under jaclang's compiler sources changes the compiler's identity, and the compiler's own modules (about 150 of them) used to be recompiled one by one before the next command could run. In the dev loop an unchanged module now keeps the bytecode it already had, so only the modules you edited recompile. Three things stay exact: your own programs and test fixtures are always compiled by the compiler as you edited it; a change to the Python emitter (`jaclang/compiler/backends/py`) recompiles every module; and kit builds and CI never reuse bytecode from an earlier compiler. The compiler's native kernel is never built behind your back. A checkout runs the kernel built from its current sources (its own, or the one in the kit it runs on); otherwise every command runs the compiler from bytecode and says so on stderr. Run `jac native build kernel` to build it and `jac native status kernel` to see which sources moved since the last build. A kernel unit is stamped with the kernel's ABI (`NATIVE_ABI_VERSION` and the ABI contract files) instead of the compiler that lowered it, so `jac native build kernel` after an edit rebuilds the units whose source or dependencies' interfaces changed and relinks. A change to how native code is generated does not reach units you did not touch; bump `NATIVE_ABI_VERSION` when such a change alters what units assume about each other. Set `exact = true` under `[dev]` in `jac.toml` to have every command rebuild the compiler's modules with the compiler as edited, and run `jac native build kernel --force --exact` to do the same for its kernel units.
+
 **Faster builds: `zig build -Ddev`.** `fresh_env.sh` builds with `zig build -Ddev`, which *bakes* this link into the binary: the compiler is not bundled at all (no ~100 MB tree copy, no JIR precompile -- a much smaller, faster build), and the binary reroutes `import jaclang` to the build-root source from any directory, so the loop holds with no `[dev]` stanza in scope. It's the fastest build and the right default for compiler work; the tradeoff is the binary hard-depends on that source dir, so it's dev-only and not distributable. Use `-Djaclang-dir=PATH` to bake an explicit compiler dir, or a plain `zig build` for the fully self-contained release binary. Because the compiler imports the native passes at startup, a `-Ddev` binary still needs the LLVMPY_* shim **placed in the linked tree** (the same `zig build fetch-llvm` prerequisite as a release build -- `-Ddev` then compiles and places it automatically; without it the build stops with a clear message). `fresh_env.sh` runs `fetch-llvm` for you.
 
-The stanza is read from the **nearest ancestor `jac.toml`** (like every other config setting), so the single root `jac.toml` covers every directory in the repo -- the loop is active whether you work from the repo root or `cd jac` to run the suite. Other subprojects (`jac-byllm/`, `jac-mcp/`, ...) opt in by adding their own `[dev]` stanza. To force the loop *off* for a single command -- e.g. to test the shipped binary's bundled + precompiled jaclang instead of your edits -- set `JAC_NO_DEV_SOURCE=1` (CI's binary self-test does this).
+The stanza is read from the **nearest ancestor `jac.toml`** (like every other config setting), so the single root `jac.toml` covers every directory in the repo -- the loop is active whether you work from the repo root or `cd jac` to run the suite. Other subprojects (`jac-byllm/`, `jac-mcp/`, ...) opt in by adding their own `[dev]` stanza. To run the shipped binary's bundled + precompiled jaclang instead of your edits, start it from outside the repo (`cd "$(mktemp -d)"`): a jac started where no `[dev]` stanza is in scope runs its bundled compiler, and every process it starts inherits that choice. CI's sealed lanes get the same effect by dropping the stanza from their checkout (`.github/actions/seal-checkout`).
 
 You still need to `zig build` again when you change the parts that live *inside* the binary rather than in jaclang source: the launcher (`jac/launcher/*.zig`, `jac/build.zig`), the payload bootstrap (`jac/sitecustomize.py`, `jac/_jac_finder.py`), or the bundled CPython version.
 
@@ -90,7 +92,7 @@ test_jobs = "auto"   # "auto" = one worker per core; "0" = serial; or a fixed co
 **Build something awesome, or fix something that's broken**
 
 See Rules below.
-Formatting and linting are enforced by `jac precommit` (configured via `[check.lint]` in [`jac.toml`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac.toml)); markdown lint and the em-dash ban run on every PR via pre-commit.ci ([`.pre-commit-config.yaml`](https://github.com/Jaseci-Labs/jaseci/blob/main/.pre-commit-config.yaml)).
+Formatting and linting are enforced by `jac precommit` (staged `.jac` files by default; use `jac precommit --all` for the whole project), configured via `[check.lint]` in [`jac.toml`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac.toml); markdown lint and the em-dash ban run on every PR via pre-commit.ci ([`.pre-commit-config.yaml`](https://github.com/Jaseci-Labs/jaseci/blob/main/.pre-commit-config.yaml)).
 
 **This is how the docs work.**
 
@@ -165,6 +167,42 @@ Every PR that changes package code must include a release note fragment file:
 To skip this check, add the `skip-release-notes-check` label to your PR.
 
 **Example PR with a release note fragment**: [#5573](https://github.com/jaseci-labs/jaseci/pull/5573)
+
+## Building JacPython
+
+Releases ship one configuration: stock CPython. JacPython (CPython with its C
+progressively replaced by native Jac, the Python compiler included) is an
+accelerator you build on request. From the repository, with Zig 0.16 and the
+LLVM shim in place (`zig build fetch-llvm` once):
+
+```bash
+jac native build jacpython
+```
+
+That builds a second jac, `jac/zig-out/jacpython/bin/jac`, whose bundled
+interpreter is JacPython; the jac you ran it with is unchanged. Use it like any
+jac. It reports the native compiler as active:
+
+```bash
+JACPYTHON_BIN="$PWD/jac/zig-out/jacpython/bin/jac"
+cd "$(mktemp -d)"   # outside the repo, so its [dev] stanza does not reroute the compiler
+"$JACPYTHON_BIN" -c '
+import ast, ctypes
+assert ctypes.pythonapi._PyJac_CompilerBridgeVersion() == 4
+print("Python compiler: native JacPython")
+exec(compile(ast.parse("print(6 * 7)"), "<jacpython-trial>", "exec"))
+'
+"$JACPYTHON_BIN" native status jacpython
+```
+
+`jac native build jacpython --exact` rebuilds the runtime instead of reusing one
+whose lowered sources are unchanged. Its native compiler object is linked at
+build time, so editing compiler source through the dev loop does not change an
+existing JacPython binary: rebuild it. CI builds and tests JacPython in its own
+lane (`.github/workflows/_jacpython.yml`), on a pull request carrying the
+`native:jacpython` label and nightly on every supported platform. See
+[the build guide](jac/launcher/README.md#build) for cache details and
+prerequisites.
 
 ## Code Rules and Guidelines
 
@@ -248,9 +286,13 @@ the MCP server, and the client/desktop runtimes are all bundled into the binary.
 
 1. Go to **GitHub Actions** -> **Release**
 2. Click **Run workflow**, set `action` to `create-pr`, and pick the `jaclang` bump type (`patch`, `minor`, or `major`)
-3. The workflow bumps the version in the root `jac.toml` (the single source of truth) and opens a PR from a `release/*` branch
+3. The workflow bumps the version in the root `jac.toml` (the single source of truth), updates `jac/examples/jaclang_org/jac.toml` to pin that exact Jac version, and opens a PR from a `release/*` branch
 4. **Close and reopen the PR** to make CI run. The PR is authored by `github-actions[bot]`, and GitHub does not run `pull_request` checks for PRs opened by the `GITHUB_TOKEN` actor (workflows triggered by `GITHUB_TOKEN` can't trigger further workflows, to prevent recursion). Closing and reopening makes the reopen event come from *you* (a real user), so the PR checks run and attach. *(Permanent fix: author the PR with a GitHub App / PAT token instead.)*
 5. Once the checks attach, enable **auto-merge** on the PR (or approve and merge manually when CI passes)
+
+PR preparation downloads the latest released Jac binary to run the version and
+release-note scripts. It runs them from outside the checkout so the bundled
+compiler serves, and this job does not build Jac from source.
 
 ### Step 2: Approve the Release
 

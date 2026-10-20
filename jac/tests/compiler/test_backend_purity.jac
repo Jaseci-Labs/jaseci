@@ -35,64 +35,81 @@ glob FORBIDDEN: dict[str, str] = {
      # EMPTY by design - the plan is complete. Adding an entry here means a
      # backend grew analysis that belongs in the central pipeline; that is
      # a regression to fix, not debt to record.
-     MIGRATION_DEBT: dict[tuple, int] = {},
+     MIGRATION_DEBT: dict[tuple[str, str], int] = {},
      # Reviewed permanent consumption: (relative-path, pattern) ->
      # (exact line count, rationale). These are NOT analysis duplication:
      # they are reads of central APIs or of the declaration surface itself,
      # at sites where the declaration IS the fact.
-     SANCTIONED: dict[tuple, tuple] = {
-         ("es/impl/esast_gen_pass.impl.jac", "symbol_utils"): (
-             6,
-             "collect_field_names/symbol_owner_archetype - symbol-FACT "
-             "readers over an already-resolved walker symbol. "
-             "The former classify_call fallback is deleted (#7418): "
-             "call_kind is stamped authoritatively by the required "
-             "inference schedule. Plus two client-boundary reads (#7632): "
-             "resolve_import_source_module (the delegated body of the "
-             "former local _resolve_source_module, now shared with "
-             "StaticAnalysisPass) and the classify/report helpers in "
-             "_partition_client_import_items - both consume the SOURCE "
-             "module's stamped code_context and declaration surface, "
-             "facts that exist on no local-tree node. The "
-             "symbol_linked_source_module read (#7740) left with the "
-             "esast-time pull hook (#7679): cross-module pulls now happen "
-             "in the placement solver before codegen, so ES generation "
-             "only consumes stamped facts, never the producer. The former "
-             "ability_of_symbol read at sv-import stub generation is "
-             "deleted (#7760): stubs now consume the InteropBinding "
-             "recorded by BoundaryAnalysisPass. Plus "
-             "report_client_bare_import_uses at exit_module: client use "
-             "of a bare import that resolves to no client-reachable "
-             "module is a guaranteed runtime ReferenceError - the "
-             "reporter consumes stamped code_context and symbol facts, "
-             "shared with StaticAnalysisPass so build-only and "
-             "check-only runs agree. Plus client_value_ref_targets / "
-             "client_bridged_endpoint at exit_module (#8072): the same "
-             "shape one level up - client code naming a module element "
-             "that the bundle never binds is a guaranteed runtime "
-             "ReferenceError, so the backend asks the central resolver "
-             "which references have no client binding and which are "
-             "endpoints it must bind a forwarder for. It consumes "
-             "stamped code_context, resolved `.sym`, and the declared "
-             "access tag; the same resolver drives W6007 in "
-             "StaticAnalysisPass, which is the point - the emit path and "
-             "the check path must not disagree about what is bound"
+     SANCTIONED: dict[tuple[str, str], tuple[int, str]] = {
+         ("es/esast_gen_pass.jac", "symbol_utils"): (
+             1,
+             "return_type_is_jsx (#8314), wired module-wide by archwire.jac for "
+             "the call and declaration impls: reads the declared return "
+             "annotation to pick a component's call ABI and to record a "
+             "component export; the declaration is the fact, and the type "
+             "checker keys component-hood off the same predicate so the two "
+             "cannot disagree"
          ),
-         ("es/impl/esast_gen_pass.impl.jac", ".lookup("): (
+         ("es/esast_gen_pass.impl/calls.impl.jac", "symbol_utils"): (
+             3,
+             "symbol-FACT readers over already-resolved symbols at call "
+             "lowering: resolve_import_source_module (#7632, the delegated "
+             "body of the former local _resolve_source_module, shared with "
+             "StaticAnalysisPass) consumes the SOURCE module's stamped "
+             "code_context; ability_of_symbol reads the declared ability "
+             "behind a resolved callee symbol; client_value_ref_targets / "
+             "client_bridged_endpoint (#8072) ask the central resolver "
+             "which client references have no bundle binding and which "
+             "are endpoints needing a forwarder - the same resolver "
+             "drives W6007 in StaticAnalysisPass, so the emit path and the "
+             "check path cannot disagree about what is bound. The former "
+             "classify_call fallback is deleted (#7418): call_kind is "
+             "stamped authoritatively by the required inference schedule"
+         ),
+         ("es/esast_gen_pass.impl/module.impl.jac", "symbol_utils"): (
+             1,
+             "report_client_bare_import_uses at exit_module: client use of "
+             "a bare import that resolves to no client-reachable module is "
+             "a guaranteed runtime ReferenceError - the reporter consumes "
+             "stamped code_context and symbol facts, shared with "
+             "StaticAnalysisPass so build-only and check-only runs agree"
+         ),
+         ("es/esast_gen_pass.impl/imports.impl.jac", "symbol_utils"): (
+             1,
+             "the classify/report helpers in _partition_client_import_items "
+             "(#7632) consume the SOURCE module's stamped code_context and "
+             "declaration surface, facts that exist on no local-tree node. "
+             "The former ability_of_symbol read at sv-import stub "
+             "generation is deleted (#7760): stubs consume the "
+             "InteropBinding recorded by BoundaryAnalysisPass"
+         ),
+         ("es/esast_gen_pass.impl/osp.impl.jac", "symbol_utils"): (
              2,
-             "declaration-surface reads: (1) cross-module archetype kind "
-             "for OSP lowering (#7948) - _arch_kind_by_name resolves an "
-             "imported archetype NAME to its declared node/edge/walker "
-             "kind via the module symbol, the exact declaration-IS-the-"
-             "fact category; tags derive from stable_osp_tag(name), no "
-             "analysis re-run. (2) component PascalCase rename "
-             "collision guard checks whether the capitalized name is "
-             "already declared in the module - the declared NAME is the "
-             "consumed fact, not a resolved type. The former sv-import "
-             "stub lookup is deleted (#7760): signatures come from the "
-             "recorded InteropBinding"
+             "collect_field_names/symbol_owner_archetype - symbol-FACT "
+             "readers over an already-resolved walker symbol when building "
+             "the spawn argument object and deriving the endpoint identity from "
+             "the resolved walker declaration. The symbol_linked_source_module "
+             "read (#7740) left with the esast-time pull hook (#7679): "
+             "cross-module pulls now happen in the placement solver before "
+             "codegen, so ES generation only consumes stamped facts"
          ),
-         ("native/foreign.jac", "type_tag.tag"): (
+         ("es/esast_gen_pass.impl/calls.impl.jac", ".lookup("): (
+             1,
+             "component PascalCase rename collision guard checks whether "
+             "the capitalized name is already declared in the module - the "
+             "declared NAME is the consumed fact, not a resolved type. The "
+             "former sv-import stub lookup is deleted (#7760): signatures "
+             "come from the recorded InteropBinding"
+         ),
+         ("es/esast_gen_pass.impl/osp.impl.jac", ".lookup("): (
+             1,
+             "cross-module archetype kind for OSP lowering (#7948) - "
+             "_arch_kind_by_name resolves an imported archetype NAME to its "
+             "declared node/edge/walker kind via the module symbol, the "
+             "exact declaration-IS-the-fact category; tags derive from "
+             "stable_osp_tag(name), no analysis re-run"
+         ),
+         ("native/impl/foreign.impl.jac", "type_tag.tag"): (
              4,
              "declared-annotation name reads for the foreign (clib) ABI "
              "surface: declared_type_name over field and param annotations "
@@ -100,14 +117,24 @@ glob FORBIDDEN: dict[str, str] = {
              "audit at compiler/targets/; absorbed into backends/native by "
              "the #8681 reorg with its consumption unchanged"
          ),
-         ("es/impl/esast_gen_pass.impl.jac", "type_tag.tag"): (
-             9,
-             "declaration-surface name reads: param/field type-name maps "
-             "for interop payloads, Ref[...] head detection, and the W6005 "
-             "Callable-over-RPC guard on endpoint params - the declared "
-             "annotation is the consumed fact, not a resolved type"
+         ("es/esast_gen_pass.impl/calls.impl.jac", "type_tag.tag"): (
+             3,
+             "declaration-surface name reads: the param type-name map for "
+             "interop payloads and the W6005 Callable-over-RPC guard on "
+             "endpoint params - the declared annotation is the consumed "
+             "fact, not a resolved type"
          ),
-         ("native/na_ir_gen/generics.impl.jac", "type_tag.tag"): (
+         ("es/esast_gen_pass.impl/view.impl.jac", "type_tag.tag"): (
+             2,
+             "Ref[...] head detection on has-var annotations for client "
+             "state lowering - the declared annotation is the consumed fact"
+         ),
+         ("es/esast_gen_pass.impl/osp.impl.jac", "type_tag.tag"): (
+             3,
+             "field type-name map for the spawn argument payload - the "
+             "declared annotation is the consumed fact, not a resolved type"
+         ),
+         ("native/na_ir_gen_pass.impl/generics.impl.jac", "type_tag.tag"): (
              5,
              "generic-template declared-annotation reads where the "
              "declaration IS the fact: (1) the _solve_generic_call fallback "
@@ -120,7 +147,7 @@ glob FORBIDDEN: dict[str, str] = {
              "monomorphization solution - the template is uninstantiated, "
              "so the declared annotations are the only TypeVar surface"
          ),
-         ("native/na_ir_gen/generics.impl.jac", "type_evaluator"): (
+         ("native/na_ir_gen_pass.impl/generics.impl.jac", "type_evaluator"): (
              1,
              "_ct_eval reads the program's CtEvaluator, the central "
              "compile-time evaluation service, to evaluate expressions that "
@@ -130,20 +157,21 @@ glob FORBIDDEN: dict[str, str] = {
              "every binding-free comptime value is consumed from the "
              "stamped Expr.ct_value"
          ),
-         ("native/na_ir_gen/calls.impl.jac", "symbol_utils"): (
-             2,
+         ("native/na_ir_gen_pass.impl/calls.impl.jac", "symbol_utils"): (
+             4,
+             "imported_module_name reads the stamped ModuleType and import "
+             "declaration to preserve aliased module identity. "
+             "resolved_callee consumes the resolved call declaration for "
+             "ownership transfer and raises-effect lowering. "
              "classify_call as the shadowing-aware builtin test for the "
              "`type(None)` isinstance argument form (#6957) - consuming the "
              "central classification instead of re-implementing name "
              "resolution. The former classify_call fallback is deleted "
              "(#7418): call_kind is stamped authoritatively by the required "
-             "inference schedule. Plus erased_identity_call_arg (#8223) "
-             "and the is_erased_field_marker pair (#8201), declaration-"
-             "surface reads on the same terms: whether `cast` or `field` "
-             "here is the erasable `typing.cast` / `dataclasses.field` is "
-             "answered by the module's own import list and by the call's "
-             "own position in a `has` declaration, facts that are "
-             "themselves the declaration and live on no analysis product. "
+             "inference schedule. The erased-import predicates "
+             "(erased_identity_call_arg, contextmanager_ability) are pure "
+             "declaration-surface reads of the module's own import list, so "
+             "they live in the leaf erased_imports.jac rather than here. "
              "The is_builtin_region_name read (#7491) is gone from here and "
              "from stmt.impl.jac, whose entry left this table entirely: the "
              "predicate is pure unitree syntax that was marooned in "
@@ -152,20 +180,35 @@ glob FORBIDDEN: dict[str, str] = {
              "backend stopped reaching into the analysis module for it rather "
              "than merely renaming the reach"
          ),
-         ("native/na_ir_gen/objects.impl.jac", "symbol_utils"): (
+         ("native/na_ir_gen_pass.impl/copy.impl.jac", "symbol_utils"): (
              1,
+             "imported_module_name reads the stamped ModuleType and the "
+             "import declaration so `copy.copy` is recognised through an "
+             "aliased `import copy as cp`, the same declaration-surface read "
+             "calls.impl.jac is sanctioned for"
+         ),
+         ("native/na_ir_gen_pass.impl/expr.impl.jac", "symbol_utils"): (
+             1,
+             "imported_module_name consumes the stamped ModuleType and "
+             "resolved import declaration for native module attributes"
+         ),
+         ("native/na_ir_gen_pass.impl/objects.impl.jac", "symbol_utils"): (
+             3,
+             "resolve_expr_symbol reads the expression attached symbol; "
+             "imported_module_name reads its stamped ModuleType and import "
+             "declaration. Neither asks the evaluator to resolve a type. "
              "collect_method_names as the central ancestor-method walk over "
              "an already-resolved archetype symbol - a symbol-FACT reader, "
              "not a re-run of member resolution"
          ),
-         ("native/na_ir_gen/core.impl.jac", "type_tag.tag"): (
+         ("native/na_ir_gen_pass.impl/core.impl.jac", "type_tag.tag"): (
              3,
              "declaration-surface reads at interop layout export, plus the "
              "quiet lowerability probe on imported globs (the py-side "
              "carve-out for dual-codespace modules) which reads the same "
              "declared annotation the adjacent _resolve_jac_type consumes"
          ),
-         ("native/na_ir_gen/calls.impl.jac", "type_tag.tag"): (
+         ("native/na_ir_gen_pass.impl/calls.impl.jac", "type_tag.tag"): (
              2,
              "declaration-surface read of foreign extern signatures: the "
              "clib membrane needs the DECLARED str params/returns of a "
@@ -176,20 +219,20 @@ glob FORBIDDEN: dict[str, str] = {
              "parameter names its concrete mangle through its own declared "
              "tag - the declaration is the binding surface"
          ),
-         ("native/na_ir_gen/types.impl.jac", "type_tag.tag"): (
+         ("native/na_ir_gen_pass.impl/types.impl.jac", "type_tag.tag"): (
              2,
              "declared-annotation resolution for has/param vars: "
              "_resolve_jac_type maps the declared tag to its IR type - the "
              "annotation is the input to layout resolution, not a re-run "
              "of analysis"
          ),
-         ("native/na_ir_gen/func.impl.jac", "type_tag.tag"): (
+         ("native/na_ir_gen_pass.impl/func.impl.jac", "type_tag.tag"): (
              4,
              "scalar LLVM materialization from declared clib annotations "
              "at the declaration site - the backend's lowering role "
              "(sysv sig planning + fixed-param lowering, #6707, #6708)"
          ),
-         ("native/na_ir_gen/objects.impl.jac", "type_tag.tag"): (
+         ("native/na_ir_gen_pass.impl/objects.impl.jac", "type_tag.tag"): (
              1,
              "declaration-surface read during archetype field lowering: "
              "the field's declared annotation node is read once into a "
@@ -198,14 +241,14 @@ glob FORBIDDEN: dict[str, str] = {
              "- consumers of the annotation are added to the local, never "
              "by reaching for type_tag.tag again"
          ),
-         ("native/na_ir_gen/lists.impl.jac", "type_tag.tag"): (
+         ("native/na_ir_gen_pass.impl/lists.impl.jac", "type_tag.tag"): (
              1,
              "declared-vs-inferred bare list is a declaration-surface "
              "distinction central facts do not carry (the checker stamps "
              "unannotated empties as bare list too); the empty-literal "
              "storage-family decision must key on the explicit annotation"
          ),
-         ("native/na_ir_gen/stmt.impl.jac", "type_tag.tag"): (
+         ("native/na_ir_gen_pass.impl/stmt.impl.jac", "type_tag.tag"): (
              7,
              "surface-shape dispatch on declared annotation forms "
              "(assessed train 4: legitimately kept); the "
@@ -218,14 +261,25 @@ glob FORBIDDEN: dict[str, str] = {
              "which needs the declared Callable annotation itself (the "
              "template is uninstantiated, so no resolved type exists)"
          ),
+         ("native/impl/host_facts.impl.jac", ".lookup("): (
+             1,
+             "codecs.lookup on a literal bytes.decode encoding name, asked "
+             "of the host because the generator runs in the kernel: it "
+             "asks CPython's codec registry for the canonical codec, the "
+             "same registry the run-time alias table is built from. No "
+             "scope table is read and no name is re-resolved"
+         ),
 
      };
 
-"""Count matching lines per (file, pattern) across both backends."""
-def scan_backends -> dict {
+"""Count matching lines per (file, pattern) across both backends. A module
+sealed by archwire.jac declares its imports there instead of in its sources, so
+each wire whose provider matches counts as one line of the file its import
+lands in: the file defining the wire's scope, or the head module."""
+def scan_backends -> dict[tuple[str, str], int] {
     passes_root = Path(jaclang.__file__).parent / "compiler" / "backends";
     compiled = {name: re.compile(pat) for (name, pat) in FORBIDDEN.items()};
-    counts: dict = {};
+    counts: dict[tuple[str, str], int] = {};
     for backend in ("es", "native") {
         for src in sorted((passes_root / backend).rglob("*.jac")) {
             if not src.is_file() {
@@ -243,9 +297,70 @@ def scan_backends -> dict {
                     counts[(rel, name)] = count;
                 }
             }
+            for ((w_rel, name), n) in wired_lines(src, passes_root, compiled).items() {
+                counts[(w_rel, name)] = counts.get((w_rel, name), 0) + n;
+            }
         }
     }
     return counts;
+}
+
+"""Wires into the module headed by `src`, attributed to the file whose code
+receives each generated import."""
+def wired_lines(
+    src: Path, passes_root: Path, compiled: dict[str, re.Pattern]
+) -> dict[tuple[str, str], int] {
+    import from jaclang.compiler.driver.wiring { wiring_for_path }
+    import from jaclang.compiler.driver.bccache { discover_annex_files }
+    out: dict[tuple[str, str], int] = {};
+    spec = wiring_for_path(str(src));
+    module = spec.module_name(str(src)) if spec is not None else None;
+    if spec is None or module is None {
+        return out;
+    }
+    head_rel = src.relative_to(passes_root).as_posix();
+    targets: dict[str, tuple[str, str]] = {};
+    module_text = "";
+    for f in [str(src), *discover_annex_files(str(src), ".impl.jac")] {
+        f_rel = Path(f).relative_to(passes_root).as_posix();
+        text = Path(f).read_text(encoding="utf-8", errors="replace");
+        module_text += "\n".join(
+            [
+                ln
+                for ln in text.splitlines()
+                if not ln.startswith((" ", "\t"))
+            ]
+        );
+        for m in re.finditer(
+            r"^(?:impl|def)\s+([\w.]+)[^\n]*\n(.*?)^\}", text, re.M | re.S
+        ) {
+            targets.setdefault(m.group(1), (f_rel, m.group(2)));
+        }
+    }
+    for wire in spec.consumer_wires(module) {
+        scope = ".".join(spec.consumer_scope(module, wire));
+        dest = head_rel;
+        body = module_text;
+        best = -1;
+        for (target, (t_rel, t_body)) in targets.items() {
+            if scope and (scope == target or scope.startswith(target + ".")) {
+                if len(target) > best {
+                    best = len(target);
+                    dest = t_rel;
+                    body = t_body;
+                }
+            }
+        }
+        if f"import from {spec.import_name(wire.provider)} " in body {
+            continue;
+        }
+        for (name, rx) in compiled.items() {
+            if rx.search(wire.provider) {
+                out[(dest, name)] = out.get((dest, name), 0) + 1;
+            }
+        }
+    }
+    return out;
 }
 
 test "backend passes do not re-run analysis" {

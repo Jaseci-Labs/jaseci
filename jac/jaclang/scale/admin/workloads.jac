@@ -1,10 +1,7 @@
-import from jaclang.server.transport { TransportResponse }
-import from jaclang.scale.server.native_server { NativeJServer }
-
 obj JacAPIServerWorkloads {
-    has server: (NativeJServer | None) = None;
+    has server: (EndpointHost | None) = None;
 
-    def require_admin(Authorization: str | None) -> (TransportResponse | None);
+    def require_admin(Authorization: str | None) -> (TransportResponse | None) abst;
     def register_workloads_endpoints -> None;
     def admin_workloads_summary(Authorization: str | None = None) -> TransportResponse;
     def admin_workloads_list(Authorization: str | None = None) -> TransportResponse;

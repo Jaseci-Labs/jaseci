@@ -1,5 +1,4 @@
 import from pathlib { Path }
-import from jaclang.cli.console { console }
 
 impl JacDesktopConfig.get_plugin_name(self: JacDesktopConfig) -> str {
     return "desktop";
@@ -67,6 +66,21 @@ impl JacDesktopConfig.get_engine(self: JacDesktopConfig) -> str {
     return engine;
 }
 
+impl JacDesktopConfig.get_backend(self: JacDesktopConfig) -> str {
+    config = self.load();
+    backend = str(config.get('backend', 'embedded') or 'embedded').strip();
+    if backend == 'embedded' {
+        return backend;
+    }
+    if backend.startswith('http://') or backend.startswith('https://') {
+        return backend.rstrip('/');
+    }
+    raise ValueError(
+        "Desktop configuration error: backend must be 'embedded' or an http(s) URL, "
+        f"got '{backend}'"
+    );
+}
+
 impl JacDesktopConfig.get_plugin_configs(self: JacDesktopConfig) -> dict[str, any] {
     config = self.load();
     plugins = config.get('plugins', {});
@@ -76,6 +90,16 @@ impl JacDesktopConfig.get_plugin_configs(self: JacDesktopConfig) -> dict[str, an
     return plugins;
 }
 
+impl JacDesktopConfig.get_icon(self: JacDesktopConfig) -> Path | None {
+    config = self.load();
+    icon = str(config.get('icon', '') or '').strip();
+    if not icon {
+        return None;
+    }
+    base = self.project_dir if self.project_dir is not None else Path.cwd();
+    return (base / icon).resolve();
+}
+
 impl JacDesktopConfig.validate(self: JacDesktopConfig) -> None {
     config = self.load();
     name = str(config.get('name', ''));
@@ -83,6 +107,19 @@ impl JacDesktopConfig.validate(self: JacDesktopConfig) -> None {
         raise ValueError(
             "Desktop configuration error: 'name' is required in [desktop]"
         );
+    }
+    icon = self.get_icon();
+    if icon is not None {
+        if icon.suffix not in ('.icns', '.png') {
+            raise ValueError(
+                f"Desktop configuration error: icon must be a .icns or .png file, got '{icon.name}'"
+            );
+        }
+        if not icon.is_file() {
+            raise ValueError(
+                f"Desktop configuration error: icon '{icon}' does not exist"
+            );
+        }
     }
     window = config.get('window', {});
     width = window.get('width', 1200);
@@ -124,8 +161,28 @@ impl JacDesktopConfig.validate(self: JacDesktopConfig) -> None {
     }
 }
 
-def _validate_plugin_keys(plugins: dict[str, any]) -> None {
-    import from jaclang.client.desktop_plugin_config { _desktop_config_schema }
+def _validate_plugin_keys(plugins: dict[str, any]) -> None;
+
+impl get_desktop_config(project_dir: Path | None = None) -> JacDesktopConfig {
+    if (
+        _desktop_config_instance is not None
+        and project_dir != _desktop_config_instance.project_dir
+    ) {
+        _desktop_config_instance = None;
+    }
+    if _desktop_config_instance is None {
+        _desktop_config_instance = JacDesktopConfig(project_dir=project_dir);
+    }
+    return _desktop_config_instance;
+}
+
+impl reset_desktop_config -> None {
+    _desktop_config_instance = None;
+}
+
+def _generate_identifier(name: str) -> str;
+
+impl _validate_plugin_keys(plugins: dict[str, any]) -> None {
     plugins_spec = _desktop_config_schema().options.get('plugins', None);
     if plugins_spec is None {
         return;
@@ -155,24 +212,7 @@ def _validate_plugin_keys(plugins: dict[str, any]) -> None {
     }
 }
 
-impl get_desktop_config(project_dir: Path | None = None) -> JacDesktopConfig {
-    if (
-        _desktop_config_instance is not None
-        and project_dir != _desktop_config_instance.project_dir
-    ) {
-        _desktop_config_instance = None;
-    }
-    if _desktop_config_instance is None {
-        _desktop_config_instance = JacDesktopConfig(project_dir=project_dir);
-    }
-    return _desktop_config_instance;
-}
-
-impl reset_desktop_config -> None {
-    _desktop_config_instance = None;
-}
-
-def _generate_identifier(name: str) -> str {
+impl _generate_identifier(name: str) -> str {
     import re;
     cleaned = re.sub(r'[^a-zA-Z0-9.\-]', '', name.lower());
     cleaned = re.sub(r'[.\-]+', '.', cleaned);

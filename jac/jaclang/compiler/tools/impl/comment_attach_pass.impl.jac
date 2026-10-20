@@ -1,6 +1,4 @@
 import from bisect { bisect_left }
-import jaclang.compiler.frontend.unitree as uni;
-import from jaclang.compiler.frontend.constant { Tokens as Tok }
 
 glob _CLOSING_DELIMS = [Tok.RBRACE, Tok.RPAREN, Tok.RSQUARE],
      _OPENING_DELIMS = [Tok.LBRACE, Tok.LPAREN, Tok.LSQUARE];
@@ -26,7 +24,7 @@ impl CommentAttachPass._run_impl(ir_in: uni.Module) -> uni.Module {
                 tree_tokens.append(nd);
             }
         } else {
-            for k in nd.kid {
+            for k in [nd->:Kid:->] {
                 if k is not None {
                     stack.append(k);
                 }
@@ -117,14 +115,6 @@ impl CommentAttachPass._largest_starting_at(tok: uni.Token) -> uni.UniNode {
     return target;
 }
 
-impl CommentAttachPass.transform(ir_in: uni.Module) -> uni.Module {
-    self.ir_out = ir_in;
-    ir_in spawn self;
-    out = self.ir_out;
-    assert isinstance(out, uni.Module);
-    return out;
-}
-
 impl CommentAttachPass.run_walk with uni.Module entry {
-    self.ir_out = self._run_impl(here);
+    self.module = self._run_impl(here);
 }

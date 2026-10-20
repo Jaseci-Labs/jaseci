@@ -1,62 +1,4 @@
-import from dataclasses { field }
-import from jaclang.compiler.frontend.unitree {
-    Ability,
-    ArchHas,
-    Archetype,
-    Assignment,
-    AstSymbolNode,
-    AtomTrailer,
-    BinaryExpr,
-    DictCompr,
-    ElseIf,
-    ElseStmt,
-    Enum,
-    Except,
-    ExprAsItem,
-    FinallyStmt,
-    ForeverStmt,
-    GenCompr,
-    GlobalVars,
-    HasVar,
-    IfStmt,
-    ImplDef,
-    Import,
-    InForStmt,
-    InnerCompr,
-    IterForStmt,
-    LambdaExpr,
-    ListCompr,
-    MatchCase,
-    Module,
-    ModuleItem,
-    ModulePath,
-    Name,
-    OpenStmt,
-    ParamVar,
-    SemDef,
-    SetCompr,
-    SwitchCase,
-    Test,
-    Token,
-    TryStmt,
-    TypeAlias,
-    TypeParam,
-    TypedCtxBlock,
-    UniNode,
-    UniScopeNode,
-    WhileStmt,
-    WithStmt,
-    bind_assignment_targets,
-    def_insert_unpacking,
-    find_python_scope_node_of,
-    record_cross_scope_rebind,
-    rebind_or_def_insert
-}
-import from jaclang.compiler.frontend.constant { SymbolAccess }
-import from jaclang.compiler.passes.uni_pass { UniPass }
-import from jaclang.compiler.frontend.diagnostics { E0064, E0077 }
-
-glob TEST_ASSERT_METHOD_NAMES = (
+glob TEST_ASSERT_METHOD_NAMES: tuple[str, ...] = (
          'assertAlmostEqual',
          'assertCountEqual',
          'assertDictEqual',
@@ -100,11 +42,21 @@ glob TEST_ASSERT_METHOD_NAMES = (
          'assertWarnsRegex'
      );
 
-walker SymTabBuildPass(UniPass) {
-    static has PROVIDES: tuple = ('SymOf', 'Defines', 'InScope', 'ScopeChild');
-    has cur_sym_tab: list[UniScopeNode] = field(default_factory=`list);
+walker SymTabBuildPass(TreePass) {
+    static has contract: PassContract = PassContract(
+        provides=(
+            AnalysisFact.SYM_OF,
+            AnalysisFact.DEFINES,
+            AnalysisFact.IN_SCOPE,
+            AnalysisFact.SCOPE_CHILD,
 
-    def before_pass -> None;
+        ),
+        kernel_safe=True
+    );
+
+    has cur_sym_tab: list[UniScopeNode] = [];
+
+    can prepare with entry;
     def push_scope_and_link(key_node: UniScopeNode) -> None;
     def pop_scope -> UniScopeNode;
 
@@ -117,10 +69,12 @@ walker SymTabBuildPass(UniPass) {
     can exit_type_alias with TypeAlias exit;
     can enter_type_param with TypeParam entry;
     can exit_global_vars with GlobalVars exit;
+    def _declare_global_vars(nd: GlobalVars) -> None;
     can exit_assignment with Assignment exit;
     can exit_binary_expr with BinaryExpr exit;
     can enter_test with Test entry;
     can exit_test with Test exit;
+    def _import_absorbed_symbol(scope: UniScopeNode, symbol: Symbol) -> None;
     def _exit_import_absorb(nd: Import) -> None;
     can exit_import with Import exit;
     def import_binding_scope(nd: AstSymbolNode) -> UniScopeNode;

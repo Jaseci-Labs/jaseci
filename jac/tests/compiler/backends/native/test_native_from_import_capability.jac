@@ -41,23 +41,21 @@ import from jaclang.compiler.driver.na_coverage { na_coverage_begin, na_coverage
 import from jaclang.compiler.frontend.parser { parse as rd_parse }
 import from jaclang.compiler.placement.placement { scan_native_blockers }
 import from jaclang.compiler.driver.program { JacProgram }
-import from tests.support { TESTS_DIR }
+import from tests.support { TESTS_DIR, by_source_name, native_address, source_spelled }
 
 glob FIXTURES = os.path.join(
          TESTS_DIR, "compiler", "backends", "native", "fixtures"
      );
 
 
-"""Forced-native options that skip the IR cache."""
+"""Forced-native compile options."""
 def _opts -> CompileOptions {
-    return CompileOptions(
-        force_codespace='native', force_target_program=True, no_ir_cache=True
-    );
+    return CompileOptions(force_codespace='native');
 }
 
 
 """Compile a fixture on the native pathway; return (program, module)."""
-def _compile_native(fixture: str) -> tuple {
+def _compile_native(fixture: str) -> tuple[any, ...] {
     prog = JacProgram();
     ir = prog.compile(file_path=os.path.join(FIXTURES, fixture), options=_opts());
     return (prog, ir, );
@@ -65,7 +63,7 @@ def _compile_native(fixture: str) -> tuple {
 
 
 """Compile a fixture under the demotion coverage; return (program, module, coverage)."""
-def _compile_with_coverage(fixture: str) -> tuple {
+def _compile_with_coverage(fixture: str) -> tuple[any, ...] {
     prog = JacProgram();
     na_coverage_begin();
     try {
@@ -120,19 +118,19 @@ def _codes(prog: any) -> list[str] {
 def _native_int_fn(ir: any, name: str) -> any {
     eng = ir.gen.native_engine;
     assert eng is not None , f"no native engine for '{name}'";
-    addr = eng.get_function_address(name);
+    addr = native_address(eng, name);
     assert addr != 0 , f"'{name}' is absent from the JIT engine";
     return ctypes.CFUNCTYPE(ctypes.c_int64)(addr);
 }
 
 
 """The coverage seam list recorded for a fixture path."""
-def _seams_of(coverage: dict, fixture: str) -> list[str] {
+def _seams_of(coverage: dict[str, any], fixture: str) -> list[str] {
     rec = coverage.get(os.path.realpath(os.path.join(FIXTURES, fixture)));
     if rec is None {
         return [];
     }
-    return [str(s) for s in (rec.get("seams") or [])];
+    return [source_spelled(str(s)) for s in (rec.get("seams") or [])];
 }
 
 
@@ -238,20 +236,22 @@ test "a mixed typing import is still judged per name" {
 
 
 test "a consumer links a ClassVar-importing dependency" {
-    (prog, ir, coverage) = _compile_with_coverage("classvar_marker_consumer.jac");
-    assert not prog.errors_had , f"{[str(e) for e in prog.errors_had]}";
-    assert ir is not None and ir.gen.llvm_ir , (
-        "no native IR for a module whose dependency's only compile-time "
-        "import is `ClassVar`"
-    );
-    members = sorted({os.path.basename(p) for p in coverage});
-    assert "classvar_marker_dep.jac" in members , (
-        f"the dependency has to be in the consumer's native closure, not "
-        f"refused at placement and left to Python: {members}"
-    );
-    assert _native_int_fn(ir, "run")() == 42 , (
-        "the linked dependency has to answer across the native edge"
-    );
+    for _ in range(2) {
+        (prog, ir, coverage) = _compile_with_coverage("classvar_marker_consumer.jac");
+        assert not prog.errors_had , f"{[str(e) for e in prog.errors_had]}";
+        assert ir is not None and ir.gen.llvm_ir , (
+            "no native IR for a module whose dependency's only compile-time "
+            "import is `ClassVar`"
+        );
+        members = sorted({os.path.basename(p) for p in coverage});
+        assert "classvar_marker_dep.jac" in members , (
+            f"the dependency has to be in the consumer's native closure, not "
+            f"refused at placement and left to Python: {members}"
+        );
+        assert _native_int_fn(ir, "run")() == 42 , (
+            "the linked dependency has to answer across the native edge"
+        );
+    }
 }
 
 
@@ -284,7 +284,7 @@ test "a property accessor is an owning callable, not a module-fatal site" {
     );
     layout = ir.gen.native_layout;
     assert layout is not None , "whole-module native compile aborted";
-    assert "Box.plain" in layout.methods , (
+    assert "Box.plain" in by_source_name(layout.methods) , (
         f"the archetype's ordinary method was lost: {sorted(layout.methods)}"
     );
     seams = [
@@ -333,34 +333,37 @@ test "a body-scoped from-import demotes only its owning function" {
 }
 
 
-test "a dataclasses field import is a compile-time declaration" {
-    assert _rejected_imports("dataclasses_field_default.jac") == [] , (
-        "`field` only ever appears as a has-field default, where the "
+test "a Jac field import is a compile-time declaration" {
+    assert _rejected_imports("object_field_default.jac") == [] , (
+        "`ObjectField` only ever appears as a has-field default, where the "
         "declaration site consumes it; the native lane never calls it, so "
         "the import belongs in the compile-time vocabulary"
     );
-    assert _scan_verdict(_module_with("import from dataclasses { field }")) == "OK" , (
+    assert _scan_verdict(
+        _module_with("import from jaclang.runtime.object_model { ObjectField }")
+    )
+        == "OK" , (
         "the inferred-placement scanner reads the same vocabulary, so a "
-        "`field` import must stop demoting the module there too"
+        "`ObjectField` import must stop demoting the module there too"
     );
 }
 
 
-test "a non-marker dataclasses name still refuses" {
+test "a Python dataclass decorator still refuses" {
     verdict = _scan_verdict(_module_with("import from dataclasses { dataclass }"));
     assert verdict != "OK" , (
-        "the vocabulary is per name: `field` erases at the declaration site "
+        "the vocabulary is per name: `ObjectField` erases at the declaration site "
         f"and `dataclass` does not, so listing it must still refuse: {verdict}"
     );
 }
 
 
 test "a field-defaulted archetype lowers and builds its defaults" {
-    (prog, ir) = _compile_native("dataclasses_field_default.jac");
+    (prog, ir) = _compile_native("object_field_default.jac");
     assert not prog.errors_had , f"{[str(e) for e in prog.errors_had]}";
     assert ir is not None and ir.gen.llvm_ir , (
         "no native IR for an archetype whose has-fields default through "
-        "`dataclasses.field`"
+        "`jaclang.runtime.object_model.ObjectField`"
     );
     layout = ir.gen.native_layout;
     assert layout is not None , "whole-module native compile aborted";

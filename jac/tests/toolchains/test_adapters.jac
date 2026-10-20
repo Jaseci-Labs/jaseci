@@ -1,0 +1,211 @@
+import os;
+import from pathlib { Path }
+import from tempfile { TemporaryDirectory }
+import from unittest.mock { patch }
+import from jaclang.toolchains.android { AndroidEnvironment }
+import from jaclang.toolchains.tools { compatible_jdk }
+import from jaclang.toolchains.desktop { source_workspace }
+import from jaclang.toolchains.cef { cef_artifact }
+import from jaclang.toolchains.pins {
+    JDK_ARTIFACTS,
+    ANDROID_ARTIFACTS,
+    PATCHELF_ARTIFACTS,
+    RUBY_ARTIFACTS
+}
+
+test "every pinned artifact has a valid immutable identity" {
+    for collection in [
+        JDK_ARTIFACTS,
+        ANDROID_ARTIFACTS,
+        PATCHELF_ARTIFACTS,
+        RUBY_ARTIFACTS
+    ] {
+        for artifact in collection.values() {
+            assert artifact.key();
+            assert artifact.url.startswith("https://");
+            assert artifact.algorithm == "sha256";
+        }
+    }
+}
+
+test "native build environments do not mutate the shell" {
+    with patch.dict(
+        os.environ,
+        {
+            "JAVA_HOME": "/original-java",
+            "ANDROID_HOME": "/original-sdk",
+            "PATH": "/original-bin"
+        }
+    ) {
+        env = AndroidEnvironment(Path("/managed-java"), Path("/managed-sdk")).env();
+        assert env["JAVA_HOME"] == str(Path("/managed-java"));
+        assert env["ANDROID_HOME"] == str(Path("/managed-sdk"));
+        assert env["ANDROID_SDK_ROOT"] == env["ANDROID_HOME"];
+        assert env["PATH"].endswith("/original-bin");
+        assert os.environ["JAVA_HOME"] == "/original-java";
+        assert os.environ["ANDROID_HOME"] == "/original-sdk";
+        assert os.environ["PATH"] == "/original-bin";
+    }
+}
+
+test "missing JDK is rejected without invoking subprocesses" {
+    with TemporaryDirectory() as tmp {
+        with patch("jaclang.toolchains.tools.subprocess.run") as process {
+            assert not compatible_jdk(Path(tmp));
+            process.assert_not_called();
+        }
+    }
+}
+
+test "native source workspaces never write into installed package assets" {
+    with TemporaryDirectory() as tmp {
+        base = Path(tmp);
+        source = base / "package";
+        source.mkdir();
+        (source / "binding.jac").write_text("glob value = 1;");
+        with patch.dict(os.environ, {"JAC_CACHE_HOME": str(base / "cache")}) {
+            first = source_workspace(source, "binding");
+            assert first != source;
+            (first / ".native-build.lock").touch();
+            assert source_workspace(source, "binding") == first;
+            assert source_workspace(first, "binding") == first;
+            assert (first / "binding.jac").read_text() == "glob value = 1;";
+            assert sorted(p.name for p in source.iterdir()) == ["binding.jac"];
+            (source / "binding.jac").write_text("glob value = 2;");
+            second = source_workspace(source, "binding");
+            assert second != first;
+            assert (first / "binding.jac").read_text() == "glob value = 1;";
+        }
+    }
+}
+
+test "CEF refuses unsupported hosts instead of selecting Linux archives" {
+    with TemporaryDirectory() as tmp {
+        sums = Path(tmp) / "cef_sums.lock";
+        sums.write_text("# version: 1.0\n");
+        with patch(
+            "jaclang.toolchains.cef.host_platform", return_value="mac-aarch64"
+        ) {
+            failed = False;
+            try {
+                cef_artifact(sums);
+            } except RuntimeError as error {
+                failed = "not supported" in str(error);
+            }
+            assert failed;
+        }
+    }
+}
+
+
+test "desktop package installation does not require system patchelf" {
+    import from jaclang.toolchains.system { ensure_linux_desktop }
+    with patch("jaclang.toolchains.host.host_platform", return_value="linux-x64") {
+        with patch(
+            "jaclang.toolchains.system.webkit_module",
+            side_effect=["", "webkit2gtk-4.1"]
+        ) {
+            with patch(
+                "jaclang.toolchains.system.shutil.which",
+                side_effect=lambda (name: str) { "/usr/bin/g++"
+                    if name == "g++"
+                    else None; }
+            ) {
+                with patch(
+                    "jaclang.toolchains.system.install_linux_packages"
+                ) as installer {
+                    ensure_linux_desktop();
+                    installer.assert_called_once();
+                }
+            }
+        }
+    }
+}
+
+
+test "shared libraries are named for the host" {
+    import from jaclang.toolchains.host { shared_library_name }
+    with patch("jaclang.toolchains.host.platform.system", return_value="Darwin") {
+        assert shared_library_name("webview") == "libwebview.dylib";
+    }
+    with patch("jaclang.toolchains.host.platform.system", return_value="Linux") {
+        assert shared_library_name("webview") == "libwebview.so";
+    }
+    with patch("jaclang.toolchains.host.platform.system", return_value="Windows") {
+        assert shared_library_name("webview") == "webview.dll";
+    }
+}
+
+
+test "the macOS webview build links WebKit from the Command Line Tools" {
+    import from jaclang.toolchains.desktop {
+        mac_webview_build,
+        MACOS_DESKTOP_MIN_VERSION,
+        WEBVIEW_HEADER
+    }
+    build = mac_webview_build("15.6", "arm64");
+    command = build.command(Path("/tmp/webview.cc"), Path("/tmp/libwebview.dylib"));
+    assert command[0] == "clang++";
+    assert build.library == "libwebview.dylib";
+    assert "-DWEBVIEW_BUILD_SHARED" in command;
+    assert "-mmacosx-version-min=" + MACOS_DESKTOP_MIN_VERSION in command;
+    assert command[command.index("-install_name") + 1]
+        == "@loader_path/libwebview.dylib";
+    assert command[-2:] == ["-framework", "WebKit"];
+    assert command.index("/tmp/webview.cc") < command.index("-o");
+    assert build.identity.startswith(WEBVIEW_HEADER.digest);
+    assert "15.6" in build.identity and "arm64" in build.identity;
+    assert build.webkit_module == "";
+}
+
+
+test "the Linux webview build keeps pkg-config libraries after the source" {
+    import from jaclang.toolchains.desktop { linux_webview_build }
+    build = linux_webview_build(
+        "webkit2gtk-4.1", "2.44.0", ["-lgtk-3", "-lwebkit2gtk-4.1"]
+    );
+    command = build.command(Path("/tmp/webview.cc"), Path("/tmp/libwebview.so"));
+    assert command[0] == "g++";
+    assert build.library == "libwebview.so";
+    assert command.index("-o") < command.index("-lgtk-3");
+    assert build.webkit_module == "webkit2gtk-4.1";
+    assert "webkit2gtk-4.1-2.44.0" in build.identity;
+}
+
+
+test "desktop hosts without a webview backend are refused by name" {
+    import from jaclang.toolchains.system { ensure_desktop_host }
+    with patch("jaclang.toolchains.host.host_platform", return_value="windows-x64") {
+        failed = "";
+        try {
+            ensure_desktop_host();
+        } except RuntimeError as error {
+            failed = str(error);
+        }
+        assert "windows-x64" in failed and "WKWebView" in failed;
+    }
+}
+
+
+test "macOS desktop provisioning needs only the Command Line Tools" {
+    import from jaclang.toolchains.system { ensure_desktop_host }
+    with patch("jaclang.toolchains.host.host_platform", return_value="mac-aarch64") {
+        with patch("jaclang.toolchains.system.mac_desktop_ready", return_value=False) {
+            failed = "";
+            try {
+                ensure_desktop_host();
+            } except RuntimeError as error {
+                failed = str(error);
+            }
+            assert "xcode-select --install" in failed;
+        }
+        with patch("jaclang.toolchains.system.mac_desktop_ready", return_value=True) {
+            with patch(
+                "jaclang.toolchains.system.install_linux_packages"
+            ) as installer {
+                assert ensure_desktop_host() == "mac-aarch64";
+                installer.assert_not_called();
+            }
+        }
+    }
+}

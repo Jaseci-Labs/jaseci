@@ -7,6 +7,7 @@ distinct form (E1106); a distinct alias over a non-primitive base is
 rejected (E1107).
 """
 
+import from jaclang.compiler.backends.py.codegen_shim { generated_python }
 import os;
 import from tests.support { JAC_ROOT }
 import from jaclang { JacRuntime as Jac }
@@ -20,7 +21,7 @@ glob FIXTURE_DIR = os.path.join(
      );
 
 
-def compile_fixture(name: str) -> list {
+def compile_fixture(name: str) -> list[any] {
     prog = JacProgram();
     prog.compile(os.path.join(FIXTURE_DIR, name), no_cgen=True);
     return prog.errors_had;
@@ -97,4 +98,86 @@ test "jac0 bootstrap erases distinct to a plain alias" {
     );
     assert "NodeId = int" in py_src , py_src;
     assert "distinct" not in py_src , py_src;
+}
+
+"""Compile a fixture and hand back its generated Python."""
+def compile_py(name: str) -> tuple[list[any], str] {
+    prog = JacProgram();
+    mod = prog.compile(os.path.join(FIXTURE_DIR, name));
+    return (prog.errors_had, generated_python(mod.gen), );
+}
+
+
+"""Import a fixture through the runtime and hand back the module."""
+def import_fixture(name: str) -> any {
+    Jac.set_base_path(FIXTURE_DIR);
+    JacRuntimeInterface.attach_program(JacProgram());
+    (m, ) = Jac.jac_import(name, base_path=FIXTURE_DIR);
+    return m;
+}
+
+
+test "a brand binds the primitive it resolved to, not the spelling of its base" {
+    (errs, py_src) = compile_py("brand_comptime_base.jac");
+    assert not errs , f"{[str(e) for e in errs]}";
+    assert "Brand = int" in py_src , (
+        f"the brand must bind the erased primitive; a base reached through a "
+        f"comptime import has no runtime binding to name:\n{py_src}"
+    );
+    assert "Brand = MyInt" not in py_src , (
+        f"binding the base's spelling leaves the module unloadable:\n{py_src}"
+    );
+}
+
+
+test "a brand over a comptime-imported base loads and brands" {
+    m = import_fixture("brand_comptime_base");
+    assert m.mk(5) == 5 , "the brand must erase to its primitive at runtime";
+    assert type(m.mk(5)) is int , "type(Brand(x)) must be the erased base";
+}
+
+
+test "a comptime-imported module is no link unit of its native consumer" {
+    import from jaclang.compiler.driver.compile_options { CompileOptions }
+    import from jaclang.compiler.backends.native.link_plan { build_link_plan }
+    opts = CompileOptions(
+        aot_mode=True, default_codespace='native', skip_native_engine=True
+    );
+    prog = JacProgram();
+    prog.options = opts;
+    plan = build_link_plan(
+        prog, [os.path.join(FIXTURE_DIR, "brand_comptime_base.jac")], opts
+    );
+    units = [os.path.basename(u.path) for u in plan.units];
+    assert "brand_comptime_base.jac" in units , units;
+    assert "base_alias.jac" not in units , (
+        f"a comptime import binds nothing at run time, so it links nothing: {units}"
+    );
+}
+
+
+test "a module also reached at run time stays a link unit whatever the import order" {
+    import from jaclang.compiler.driver.compile_options { CompileOptions }
+    import from jaclang.compiler.backends.native.link_plan { build_link_plan }
+    opts = CompileOptions(
+        aot_mode=True, default_codespace='native', skip_native_engine=True
+    );
+    prog = JacProgram();
+    prog.options = opts;
+    plan = build_link_plan(
+        prog, [os.path.join(FIXTURE_DIR, "ct_facade_consumer.jac")], opts
+    );
+    units = [os.path.basename(u.path) for u in plan.units];
+    assert "ct_leaf.jac" in units , (
+        f"ct_leaf is reached through a runtime import of the facade: {units}"
+    );
+}
+
+
+test "a brand over a type-only imported base loads and brands" {
+    (errs, py_src) = compile_py("brand_type_only_base.jac");
+    assert not errs , f"{[str(e) for e in errs]}";
+    assert "Brand = int" in py_src , f"{py_src}";
+    m = import_fixture("brand_type_only_base");
+    assert m.mk(7) == 7 , "the brand must erase to its primitive at runtime";
 }

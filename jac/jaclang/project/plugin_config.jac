@@ -1,22 +1,28 @@
 import from pathlib { Path }
-import from jaclang.project.config { JacConfig }
 
 def deep_merge(base: dict[str, any], override_dict: dict[str, any]) -> dict[str, any];
 
 obj PluginConfigBase {
     has project_dir: Path | None = None,
+        entry_path: str = "",
         config_file: Path postinit,
         _config: dict[str, any] | None postinit,
+        _config_app: str postinit,
         _jac_config: JacConfig | None postinit;
 
     def postinit -> None;
     def get_plugin_name -> str abst;
     def get_default_config -> dict[str, any] abst;
     def get_config_schema -> dict[str, any];
+    def get_app_config_schema -> dict[str, any];
     def get_config_strict_env -> str;
-    def _validate_declared_keys(raw: dict[str, any]) -> None;
+    def _validate_layer(
+        raw: dict[str, any] | None, schema: dict[str, any], section: str
+    ) -> None;
+
     def load -> dict[str, any];
     def get_jac_config -> JacConfig;
+    def effective_jac_config -> JacConfig;
     def get_section(
         section: str, defaults: dict[(str, any)] | None = None
     ) -> dict[str, any];

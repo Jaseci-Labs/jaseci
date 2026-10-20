@@ -1,10 +1,6 @@
 import from pathlib { Path }
 
-impl run_shadcn_add(packages: list) -> int {
-    import from jaclang.project.config { get_config }
-    import from jaclang.cli.console { console }
-    import from jaclang.cli.shadcn.shadcn_handler { add_shadcn_components }
-
+impl run_shadcn_add(packages: list[str]) -> int {
     config = get_config();
     if config is None {
         console.error(
@@ -30,11 +26,7 @@ impl run_shadcn_add(packages: list) -> int {
     }
 }
 
-impl run_shadcn_remove(packages: list) -> int {
-    import from jaclang.project.config { get_config }
-    import from jaclang.cli.console { console }
-    import from jaclang.cli.shadcn.shadcn_handler { remove_shadcn_components }
-
+impl run_shadcn_remove(packages: list[str]) -> int {
     config = get_config();
     if config is None {
         console.error(
@@ -59,18 +51,12 @@ impl run_shadcn_remove(packages: list) -> int {
     }
 }
 
-impl stash_create_theme(overrides: dict) -> None {
+impl stash_create_theme(overrides: dict[str, str | None]) -> None {
     _PENDING_THEME.clear();
     _PENDING_THEME.update(overrides);
 }
 
 impl _shadcn_post_create(project_path: any, project_name: str) -> None {
-    import from jaclang.cli.console { console }
-    import from jaclang.cli.shadcn.theme_handler {
-        normalize_shadcn_config,
-        materialize_themed_starter
-    }
-
     try {
         shadcn_config = normalize_shadcn_config(dict(_PENDING_THEME));
         materialize_themed_starter(project_path, project_name, shadcn_config);
@@ -82,9 +68,6 @@ impl _shadcn_post_create(project_path: any, project_name: str) -> None {
 }
 
 impl _build_shadcn_template_info -> dict[str, any] | None {
-    import from jaclang.project.template_loader { load_template_from_directory }
-    import from jaclang.cli.console { console }
-
     module_dir = Path(__file__).parent.parent;
     template_dir = module_dir / "templates" / "jac-shadcn";
 
@@ -120,4 +103,31 @@ impl _build_shadcn_template_info -> dict[str, any] | None {
 
 impl register_project_template -> dict[str, any] | None {
     return _build_shadcn_template_info();
+}
+
+impl retheme(
+    style: str | None = None,
+    baseColor: str | None = None,
+    theme: str | None = None,
+    font: str | None = None,
+    radius: str | None = None,
+    menuAccent: str | None = None,
+    menuColor: str | None = None
+) -> int {
+    config = get_config();
+    overrides: dict[str, str | None] = {
+        "style": style,
+        "baseColor": baseColor,
+        "theme": theme,
+        "font": font,
+        "radius": radius,
+        "menuAccent": menuAccent,
+        "menuColor": menuColor
+    };
+    try {
+        return 0 if retheme_project(config, overrides) else 1;
+    } except Exception as e {
+        console.error("Retheme failed: " + str(e));
+        return 1;
+    }
 }

@@ -28,17 +28,17 @@ Pods run a prebuilt `jac` binary that carries the jaclang runtime (including the
 | **stable** | no `[dev]` or `[experimental]` stanza in `jac.toml` (default) | Latest published release, or the release matching a `[project] jac-version` pin |
 | **experimental** | an `[experimental]` stanza (`pr = <N>`) in `jac.toml` | The `experimental-<PR#>` build; pods run the `jaseci/jaclang:experimental-<PR#>` image |
 | **dev** | a `[dev]` stanza in `jac.toml` | Rolling `dev` prerelease (main HEAD) |
-| **local** | `JAC_SCALE_BINARY_PATH` set | The exact binary at that path |
+| **local** | `pod_binary` in the `[dev]` stanza | The exact binary at that path |
 
-Channel precedence is local, then experimental, then dev, then stable -- an `[experimental]` stanza wins over `[dev]`, and `JAC_SCALE_BINARY_PATH` wins over both.
+Channel precedence is local, then experimental, then dev, then stable -- an `[experimental]` stanza wins over `[dev]`, and `[dev] pod_binary` wins over both.
 
 `stable` and `dev` download the binary from [GitHub Releases](https://github.com/jaseci-labs/jac/releases) and run it as-is - there is no source overlay. On the stable channel, a `[project] jac-version` version spec is resolved against the published releases and that exact version is shipped; the deploy errors if the spec matches no release.
 
-**Local binary (`JAC_SCALE_BINARY_PATH`).** Point this environment variable at a `jac` binary you built (or an air-gapped mirror) and the deploy ships that exact file to pods instead of downloading a release. It takes precedence over the `[dev]` stanza:
+**Local binary (`[dev] pod_binary`).** Point `pod_binary` at a `jac` binary you built (or an air-gapped mirror); a relative path resolves against the project root. The deploy ships that exact file to pods instead of downloading a release, and it takes precedence over every other channel:
 
-```bash
-export JAC_SCALE_BINARY_PATH=/path/to/jac
-jac scale deploy app.jac
+```toml
+[dev]
+pod_binary = "../jac/zig-out/bin/jac"
 ```
 
 Use this for air-gapped clusters, to pin an exact build, or to deploy a binary you compiled locally. The driver checksum-caches downloaded release binaries per channel and architecture, so an unchanged `stable`/`dev` deploy does not re-download on every run.
@@ -56,6 +56,10 @@ The seal stage is a valid, sanitized copy of the project: sanitized tomls are wr
 Sealing is **mandatory**: if the app cannot be sealed into a valid image, the deploy fails rather than shipping a bundle that cold-compiles on the pod's first boot. When a pod starts, the compiler auto-loads the sibling `_precompiled/` image, so services run from precompiled modules with no on-pod compile step - for both single-app and microservice deployments.
 
 If a module in your project cannot be sealed (for example, a file that fails to compile), the deploy aborts with the seal error. Fix the offending module, or park its tree in `.jacignore` if it is not part of the served app, and redeploy.
+
+**Fat bundles.** By default the `.jab` also carries the app's Python dependency closure as wheels under `_vendor/wheels/`, resolved by the seal binary (the same jac version pods run) so pods install their dependencies offline at boot with no PyPI access. The wheels are resolved for the **pod platform**, not the deploy host: CPython of the pod binary, the node architecture (`x86_64` or `aarch64`, see `JAC_NODE_ARCH`), and Linux with glibc 2.36 or newer, which is what the official pod images provide. pip is asked for every tag such a pod accepts, `manylinux2014_<arch>` and each `manylinux_2_17` through `manylinux_2_36` PEP 600 tag, so compiled wheels (`cryptography`, `grpcio`, `bcrypt`, `watchdog`) resolve the same way they would on the pod itself. A dependency that publishes no wheel at all is built on the deploy host with `pip wheel`; the result ships only when it fits the pod (a pure-Python `none-any` wheel always does, a bare Linux compiled wheel only when the host is Linux on the same architecture and its detected glibc is no newer than the pod floor; unknown libc versions and musl hosts are rejected).
+
+`[scale] fat_bundle` in `jac.toml` controls the outcome when a dependency still has no usable wheel: unset, the deploy logs a warning naming the packages and ships a thin bundle whose pods install from PyPI at boot; `fat_bundle = true` makes that a deploy failure; `fat_bundle = false` skips vendoring entirely.
 
 ---
 
@@ -345,7 +349,7 @@ Kubernetes uses readiness and liveness probes to decide when a pod is ready to s
 | TOML Key | Default | Description |
 |----------|---------|-------------|
 | `health_check_path` | `"/docs"` | Endpoint probed by both readiness and liveness checks |
-| `readiness_initial_delay` | `10` | Seconds to wait before first readiness check |
+| `readiness_initial_delay` | `0`  | Seconds to wait before first readiness check (the startup probe already gates readiness) |
 | `readiness_period` | `20` | Seconds between readiness checks |
 | `liveness_initial_delay`  | `10` | Seconds to wait before first liveness check |
 | `liveness_period`  | `20` | Seconds between liveness checks |
@@ -383,7 +387,7 @@ jac-scale supports two autoscaler engines selected via `autoscaler_engine`. Both
 | `autoscaler_scale_up_stabilization` | `60` | Scale-up stabilization window in seconds (HPA `behavior.scaleUp`), applied under both engines. |
 | `autoscaler_scale_up_max_pods` | `2` | Maximum pods added per scale-up step, applied under both engines. |
 
-> **Note:** CPU-based scaling requires `cpu_request` to be set. Without a CPU request, Kubernetes cannot compute a utilization percentage. Likewise, memory triggers require `memory_request`; a memory trigger whose resolved request is empty is skipped with a warning under both deploy paths. In microservice deployments the request defaults to `1Gi` (`2Gi` for the gateway), so the skip only occurs when `memory_request` is explicitly set to `""`.
+> **Note:** CPU-based scaling requires `cpu_request` to be set. Without a CPU request, Kubernetes cannot compute a utilization percentage. Likewise, memory triggers require `memory_request`; a memory trigger whose resolved request is empty is skipped with a warning under both deploy paths. The default memory trigger is added only when `memory_request` is set for the app or under `[scale.kubernetes]`; the `1Gi` (`2Gi` for the gateway) fallback request never adds one, because a jac server can idle above 80% of it and pin the HPA at `max_replicas`.
 
 #### HPA Engine (Default)
 
@@ -405,7 +409,7 @@ cpu_utilization_target = 70   # Scale out when average CPU exceeds 70%
 The `"keda"` engine creates a `ScaledObject` custom resource instead of an HPA. It supports the full [KEDA trigger catalogue](https://keda.sh/docs/latest/scalers/) (Prometheus, Redis, RabbitMQ, Kafka, HTTP, and more) and enables scale-to-zero.
 
 !!! note
-    KEDA must be installed on the cluster before using this engine. If KEDA CRDs are absent at deploy time, jac-scale emits an install warning with a link to the [KEDA installation docs](https://keda.sh/docs/latest/deploy/) and the deploy continues with the Deployment's static replica count -- 1 for single-app deploys, the configured per-service `replicas` for microservices (no autoscaler is created).
+    KEDA must be installed on the cluster before using this engine. If KEDA CRDs are absent at deploy time, jac-scale emits an install warning with a link to the [KEDA installation docs](https://keda.sh/docs/latest/deploy/) and the deploy continues with the Deployment's static replica count -- 1 for single-app deploys, each app's configured `[apps.<name>.scale] replicas` for a workspace fleet (no autoscaler is created).
 
 !!! note "HTTP-activated workloads also require the KEDA HTTP Add-on"
     Workloads scaled via `apply_http_activation` (HTTP request-driven scale-to-zero) require the [KEDA HTTP Add-on](https://keda.sh/docs/latest/deploy/#http-add-on) in addition to core KEDA. Call `KEDAAutoscaler.discover_capabilities()` to check both together: it returns a `KEDACapabilities` object that distinguishes a missing core install from a missing or outdated HTTP Add-on, an RBAC-denied check from a genuinely absent API, and a missing external-scaler or interceptor-proxy Service, each with its own diagnostic. Results are cached per cluster; pass `refresh=True` or call `invalidate_capabilities()` to force a recheck. `apply_http_activation` calls `discover_capabilities()` automatically and raises when the Add-on is installed but broken, instead of deploying a workload that will never receive traffic. If the Add-on is simply absent, it logs a warning and skips activation rather than failing the deploy.
@@ -510,7 +514,7 @@ The KEDA engine above scales on CPU, memory, or any KEDA trigger, but none of th
 - The target's Deployment or StatefulSet, and its Service, already exist. This feature manages the `InterceptorRoute` and `ScaledObject` around an existing workload; it does not create the workload or the Service.
 - Exactly one of `target_port` or `target_port_name` is set, and at least one of `concurrency_target` or `request_rate_target` is set. Both are validated up front with an error that names the offending `jac.toml` key.
 
-**Interaction with the base autoscaler:** a target with `http_activation.enabled = true` is scaled entirely by its `ScaledObject` (min/max replicas, scale-to-zero). `jac start --scale` skips creating the base HPA/KEDA autoscaler for that same target automatically -- KEDA's admission webhook rejects a `ScaledObject` for a workload already managed by an HPA (or another `ScaledObject`), so both can't coexist on one target. This also means the deploy's usual post-deploy HTTP reachability check is skipped for that target (it may legitimately be sitting at 0 replicas with nothing to reach); a crash-loop check on the pods runs instead.
+**Interaction with the base autoscaler:** a target with `http_activation.enabled = true` is scaled entirely by its `ScaledObject` (min/max replicas, scale-to-zero). `jac scale deploy` skips creating the base HPA/KEDA autoscaler for that same target automatically -- KEDA's admission webhook rejects a `ScaledObject` for a workload already managed by an HPA (or another `ScaledObject`), so both can't coexist on one target. This also means the deploy's usual post-deploy HTTP reachability check is skipped for that target (it may legitimately be sitting at 0 replicas with nothing to reach); a crash-loop check on the pods runs instead.
 
 **HTTP activation configuration (`[scale.kubernetes.http_activation]`):**
 
@@ -530,6 +534,7 @@ The KEDA engine above scales on CPU, memory, or any KEDA trigger, but none of th
 | `cold_start_fallback_service` / `cold_start_fallback_port` | `null` | Service to forward to while cold-starting, as an alternative to a static placeholder. |
 | `timeout_readiness` / `timeout_request` / `timeout_response_header` | `null` | Duration strings (e.g. `"30s"`) the interceptor waits at each stage. |
 | `scale_target_kind` / `scale_target_api_version` / `scale_target_plural` | `"Deployment"` / `"apps/v1"` / `null` | Only needed when activating a non-Deployment/StatefulSet target. |
+| `interceptor_service_address` | `"keda-add-ons-http-interceptor-proxy.keda:8080"` | `host:port` of the HTTP Add-on interceptor proxy Service that activated apps are routed through. Cluster-wide, so it is read from this block only, never from a per-app `[apps.<name>.scale.http_activation]` override. Change it when the Add-on is installed outside the default `keda` namespace. |
 
 **To configure in `jac.toml` (monolith deploy):**
 
@@ -546,17 +551,17 @@ cooldown_period = 300
 hosts = ["app.example.com"]
 ```
 
-**Per-service, in microservice mode:** the same keys apply under `[scale.microservices.services.<name>.http_activation]`. The target Service is always the service's own generated Service; it is never user-set. Any key left unset falls back to `[scale.kubernetes.http_activation]`'s value.
+**Per app, in a workspace fleet:** the same keys apply under `[apps.<name>.scale.http_activation]`. The target Service is always the app's own generated Service; it is never user-set. Any key left unset falls back to `[scale.kubernetes.http_activation]`'s value.
 
 ```toml
-[scale.microservices.services.jac_coder_sv.http_activation]
+[apps.coder.scale.http_activation]
 enabled = true
 target_port = 8000
 concurrency_target = 5
 min_replicas = 0
 
-[[scale.microservices.services.jac_coder_sv.http_activation.rules]]
-paths = ["/coder"]
+[[apps.coder.scale.http_activation.rules]]
+paths = ["/api/coder"]
 ```
 
 **Traffic topology**
@@ -574,8 +579,10 @@ graph TD
 
 jac-scale always reconciles the `InterceptorRoute` before the `ScaledObject`, because the external scaler resolves the target Service and scaling metric from the route when KEDA evaluates the trigger. Reconciling in the other order would leave the `ScaledObject` unable to find its metric source.
 
-!!! warning "Route inbound traffic through the interceptor yourself"
-    jac-scale creates the `InterceptorRoute` and `ScaledObject`, but does **not** rewire the gateway or Ingress to the interceptor proxy -- they still resolve the app's own Service directly. With `min_replicas = 0`, a request that reaches the Service instead of the interceptor is refused and never wakes the pod. Only enable `http_activation` on a service whose inbound traffic you have already pointed at the KEDA HTTP interceptor proxy. The gateway is exempt and never inherits a shared `enabled = true` default.
+!!! note "Interceptor routing is automatic"
+    Once `http_activation.enabled = true` for a service, jac-scale routes traffic to it through the interceptor automatically -- both gateway-forwarded requests (the Ingress path) and sv-to-sv RPC calls (walker/function invocations from another service) resolve the interceptor's proxy address instead of the app's own Service, with a `Host` header set to the service's own Service DNS name so the interceptor's `InterceptorRoute` can tell which target a request is for. No manual Ingress or gateway rewiring is required. The Ingress itself still points at the gateway's own Service, unchanged: the gateway is exempt from `http_activation` and always stays warm, so it never needs to be woken.
+
+    A cold wake holds the request until the pod is Ready, so set `rpc_timeout` and `http_forward_timeout` (under `[apps.<name>.scale]`, or `http_forward_timeout` under `[scale.gateway]`) above the service's cold boot time, and `timeout_readiness` if you set interceptor timeouts; with the 10s / 30s defaults the first call to a service sitting at zero replicas fails. WebSocket connections proxied through the gateway are not yet routed through the interceptor.
 
 !!! note "Programmatic API for dynamic activation"
     A control-plane process that creates and tears down workloads on demand (for example, an IDE-preview orchestrator spinning up a per-session preview) has no fixed target to put in `jac.toml`. For that case, `HTTPActivationSpec` (`jaclang.scale.deploy.autoscale.http_activation`) and `KEDAAutoscaler.apply_http_activation` / `destroy_http_activation` (`jaclang.scale.deploy.autoscale.keda_autoscaler`) remain available as a direct API, unchanged by the `jac.toml` surface above. Use whichever entry point matches your workload's lifecycle: `jac.toml` for a known, standing service; the programmatic API for one created and destroyed at runtime.
@@ -621,7 +628,7 @@ Controls the base images used for the application pod and init containers. Overr
 | TOML Key  | Default | Description |
 |----------|---------|-------------|
 | `python_image` | `""` (auto) | Base image for the application pod. When empty, the deploy resolves the official image matching the runtime channel -- `jaseci/jaclang:latest` (stable), `:dev`, `:experimental-<PR#>`, or `:<x.y.z>` for a `jac-version` pin -- and pins it to an immutable `@sha256:` digest when Docker Hub is reachable (experimental builds are deliberately not digest-pinned). Falls back to `python:3.12-slim` when the registry is unreachable and always on the local-binary channel |
-| `wait_image` | `busybox` | Init container image used for dependency wait checks (Postgres readiness) |
+| `wait_image` | `busybox:1.36` | Init container image used for dependency wait checks (Postgres readiness) |
 
 **To change in `jac.toml`:**
 
@@ -672,7 +679,7 @@ additional_packages = ["xz-utils", "zstd"]
 
 The runtime version in the pod is pinned through the same channels as everywhere else -- there is no separate cluster-side pinning config:
 
-- **Runtime**: pin `[project] jac-version` in `jac.toml` (stable channel), use the `[dev]` / `[experimental]` stanzas, or ship an exact binary via `JAC_SCALE_BINARY_PATH`. See [Runtime Binary](#runtime-binary).
+- **Runtime**: pin `[project] jac-version` in `jac.toml` (stable channel), use the `[dev]` / `[experimental]` stanzas, or ship an exact binary via `[dev] pod_binary`. See [Runtime Binary](#runtime-binary).
 - **Project dependencies** (PyPI/npm): pinned in `jac.toml` as usual; the bootstrap init container runs `jac install` against the shipped, sanitized `jac.toml`, so the pod resolves exactly what you pinned.
 
 Scale, the frontend/client framework, byLLM, and the MCP server are part of `jaclang` core and arrive with the `jac` binary, so there is no plugin package to pin: `jaclang` is not on PyPI, and nothing is pip-installed from GitHub during a deploy.
@@ -705,7 +712,7 @@ Scale can deploy a full observability stack (Prometheus + Grafana + kube-state-m
 
 | TOML Key | Default | Description |
 |----------|---------|-------------|
-| `loki_enabled` | `false` | Deploy Loki + Grafana Alloy and add a Pod Logs dashboard to Grafana. Only read from `[scale.kubernetes]` (setting it under `[scale.monitoring]` has no effect). For microservice deployments use `[scale.microservices.logs] enabled` instead |
+| `loki_enabled` | `false` | Deploy Loki + Grafana Alloy and add a Pod Logs dashboard to Grafana. Only read from `[scale.kubernetes]` (setting it under `[scale.monitoring]` has no effect). For workspace fleet deployments use `[scale.gateway.logs] enabled` instead |
 | `tracing_enabled` | `false` | Deploy Tempo and wire Alloy's OTLP receiver into it |
 
 **To enable in `jac.toml`:**
@@ -769,12 +776,81 @@ Status values:
 
 | Value | Meaning |
 |-------|---------|
-| `Running` | All pods ready |
-| `Degraded` | Some pods ready, others not |
-| `Pending` | Pods are starting up (no pods ready yet) |
-| `Restarting` | One or more pods are crash-looping |
+| `Active` | Every desired replica runs the current template and is available |
+| `Activating` | Replicas are starting, or a rollout is still in progress |
+| `Inactive` | Scaled to zero on purpose: the replica floor is 0 (`idle_replicas = 0` under KEDA, or `http_activation`), so this is the healthy resting state, not an error |
+| `Deactivating` | Scaling down; surplus replicas are still draining |
+| `Degraded` | Something is wrong: the rollout passed its progress deadline, pods are crash-looping, or the workload sits at zero replicas below its floor |
 | `Not Deployed` | Component was never provisioned |
 | `Unknown` | Component state could not be determined |
+
+The same verdict backs `ScaleClient.resource_status`, the fleet-ready gate at the end of `jac scale deploy`, and the Ops Console's `/admin/ops/deploy` endpoint, so all four agree about a workload. Scaling intent is read from the `jac-scale.replica-floor` annotation that `jac scale deploy` stamps on each Deployment; a Deployment applied before this annotation existed is treated as having a floor of 1 until it is redeployed.
+
+A Deployment whose replicas an autoscaler owns is redeployed with `spec.replicas` left out of the update, so the count the HPA, ScaledObject or HTTP interceptor set survives. Two consequences follow:
+
+- A service already idled to zero stays at zero through a redeploy, so `jac scale deploy` finishes without ever starting the new revision. The deploy log names those services: the image is unverified until the first request wakes one. Deploy a warm service, or set `idle_replicas` above zero, when a deploy has to prove the new build boots.
+- `idle_replicas` is a fleet-wide setting and the gateway is exempt from it, for the reason it is already exempt from `http_activation`: it is the ingress entry point, and nothing wakes it once it sleeps. Put `http_activation` on the services that should sleep instead.
+
+---
+
+### Autoscaler runtime status
+
+`resource_status` reads the Deployment, which reports how many replicas exist and never why. Those are different questions, and three situations produce the same Deployment:
+
+| Zero replicas because | Reality |
+|---|---|
+| No trigger is firing, KEDA idled it | healthy |
+| The scaler cannot reach its metric endpoint | broken, and silent |
+| Someone scaled it by hand | neither |
+
+`autoscaler_status` reads the autoscaler's own view to separate them:
+
+```jac
+import from jaclang.scale.sdk { ScaleClient }
+
+with entry {
+    s = ScaleClient().autoscaler_status("orders", "prod");
+    if s.scaler_ready == False {
+        print(f"scaler failing: {s.reason}: {s.message}");
+    }
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `status` | the same `ResourceStatus` vocabulary `resource_status` uses |
+| `engine` | `keda` or `hpa` |
+| `autoscaler_name` | the live resource, resolved from the target rather than supplied |
+| `trigger_active` | a trigger is firing. `None` when the engine cannot say |
+| `scaler_ready` | the scaler itself is healthy. `None` when the engine cannot say |
+| `conditions` | the ScaledObject's and HPA's conditions, normalized to dicts |
+| `resource_version` | the version the status was read at |
+
+`trigger_active` and `scaler_ready` are tri-state on purpose. A plain HPA has nothing corresponding to a trigger firing, and a ScaledObject that could not be read leaves both unknown, so `None` is not `False`: reporting `False` would assert a scaler failure nobody observed. A pod whose Role predates the `keda.sh` read rule gets a 403 here, and the result falls back to the workload's own state rather than raising.
+
+The caller passes a **scale target**, not an autoscaler resource name. Which resource is live depends on the scaling mode (`{target}-scaledobject`, `{target}-http-scaledobject`, `{target}-hpa`), and deriving that is the abstraction's job.
+
+### Observing transitions
+
+Polling `autoscaler_status` on a timer costs one request per target per interval and still reports a change an interval late. `watch_autoscaler_transitions` streams them instead:
+
+```jac
+import from jaclang.scale.sdk { ScaleClient }
+
+with entry {
+    for t in ScaleClient().watch_autoscaler_transitions("orders", "prod") {
+        print(f"{t.scale_target_name}: {t.previous_state} -> {t.state} ({t.reason})");
+    }
+}
+```
+
+**Watch cardinality is the caller's responsibility.** One call opens a bounded number of watches for one namespace, and nothing is shared between callers. A consumer tracking many targets makes **one** call and fans out in its own process; calling it once per target opens one watch per target, which is what the bound exists to avoid.
+
+Transitions are deduplicated: a target only yields when its state actually changes. The opening list seeds that cache and yields nothing, because an observer that has just started has witnessed no transition and reporting current state as one invents history on every restart. When Kubernetes answers `410 Gone`, meaning the stream fell too far behind to resume, the watch relists and keeps the cache, so targets whose state did not move stay silent.
+
+**`observed_at` is not durable history.** It records when *this observer* saw the change, not when the change happened. A transition that occurred while the observer was down surfaces as current state on the next relist, carrying that later timestamp. Nothing here persists transitions, so a caller that needs the real moment something happened keeps its own record.
+
+This watches the ScaledObject, so KEDA-side changes (a trigger firing, a scaler failing) are observed. A pod becoming ready without the ScaledObject changing is not, and needs a second watch.
 
 ---
 
@@ -891,7 +967,7 @@ histogram_buckets = [0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0,
 |--------|------|---------|-------------|
 | `enabled` | bool | `false` | Enable Prometheus metrics collection and `/metrics` endpoint |
 | `endpoint` | string | `"/metrics"` | Path for the Prometheus scrape endpoint |
-| `namespace` | string | `"jaclang_scale"` | Metrics namespace prefix |
+| `namespace` | string | `"jaclang_scale"` | Metrics namespace prefix. Anything outside `[a-zA-Z0-9_]` is rewritten to `_`, runs of `_` collapse, and a leading digit gets a `_` prefix; a rewrite logs a warning at startup |
 | `walker_metrics` | bool | `false` | Enable walker execution timing metrics |
 | `histogram_buckets` | list | `[0.005, ..., 10.0]` | Histogram bucket boundaries in seconds |
 
@@ -940,10 +1016,37 @@ Response format (standard transport envelope):
   "data": {
     "enabled": true,
     "summary": {
-      "total_requests": 156,
       "active_requests": 2,
-      "error_count": 1,
-      "avg_latency_ms": 45.2
+      "scopes": {
+        "app": {
+          "requests": 156,
+          "server_errors": 1,
+          "client_errors": 3,
+          "p50": {"value": 0.021, "over": false, "known": true},
+          "p95": {"value": 0.31, "over": false, "known": true},
+          "p99": {"value": 2.5, "over": true, "known": true},
+          "distribution": [
+            {"label": "under 25ms", "count": 90},
+            {"label": "25 - 100ms", "count": 40},
+            {"label": "100 - 500ms", "count": 20},
+            {"label": "500ms - 2.5s", "count": 4},
+            {"label": "over 2.5s", "count": 2}
+          ]
+        },
+        "other": {"...": "same shape, for admin, health and system paths"},
+        "all": {"...": "same shape, for every path"}
+      },
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/",
+          "kind": "app",
+          "count": 42,
+          "failed": 0,
+          "p50": {"value": 0.004, "over": false, "known": true},
+          "p95": {"value": 0.02, "over": false, "known": true}
+        }
+      ]
     },
     "metrics": [
       {
@@ -962,11 +1065,13 @@ Response format (standard transport envelope):
 }
 ```
 
+`summary` is computed from the exposition since the process started. Paths are classified by their first segment: `admin` and the well-known `health`, `healthz`, `metrics`, `docs` and `openapi.json` segments are `admin`, `health` and `system`; everything else is `app`. The `app` scope covers app paths, `other` covers the rest, and `all` covers both. Percentiles are interpolated inside the request-duration histogram bucket that holds them; `over` is true when the percentile falls in the `+Inf` bucket (the value is then the last finite edge), and `known` is false when nothing has been observed. `distribution` cuts the histogram at the configured `histogram_buckets` edges nearest 25ms, 100ms, 500ms and 2.5s, drops duplicates, and labels each band with the edge it actually uses, so the five bands in the example are the default layout; it is empty until something has been observed. `endpoints` has one row per method and path, sorted by p95 descending; `failed` counts 4xx and 5xx together.
+
 The admin dashboard monitoring page displays:
 
-- HTTP traffic breakdown by method and status code
-- Request latency statistics
-- Active requests gauge
+- Throughput over a selectable 60s, 5m or 15m window, with errors on their own lane, scoped to app or platform traffic
+- p50, p95 and p99 latency, the latency distribution, and the 4xx/5xx error rate for the selected scope
+- One row per endpoint with request count, error rate, p50 and p95, sorted by p95
 - System metrics (GC collections, memory usage, CPU time, file descriptors)
 
 Requests to the metrics endpoint itself are excluded from tracking.
@@ -1071,15 +1176,15 @@ Once set, every microservice pod and the gateway pod runs under that SA, and any
 
 ---
 
-## Cross-Service Shared Volumes
+## Cross-App Shared Volumes
 
-Microservice apps that share filesystem state across pods (an IDE backend that writes a project workspace and a build worker that reads it, a job queue that drops files for a worker pool) declare shared volumes in `jac.toml`:
+Apps of a fleet that share filesystem state across pods (an IDE backend that writes a project workspace and a build worker that reads it, a job queue that drops files for a worker pool) declare shared volumes in `jac.toml`:
 
 ```toml
-[[scale.microservices.shared_volumes]]
+[[scale.gateway.shared_volumes]]
 name = "workspace"
 mount_path = "/data/workspace"
-services = ["builder_sv", "build_worker"]
+apps = ["builder", "build_worker"]
 size = "10Gi"
 access_mode = "ReadWriteMany"
 storage_class = "efs-sc"
@@ -1091,7 +1196,7 @@ Each entry is an [array of tables](https://toml.io/en/v1.0.0#array-of-tables) (n
 |-------|----------|-------------|
 | `name` | yes | PVC name. Normalized to DNS-1123 automatically (lowercased, `_` becomes `-`). |
 | `mount_path` | yes | Where the volume mounts inside each pod. |
-| `services` | yes | Module names from `[scale.microservices.routes]` that get this mount. The gateway can also be listed (use `__gateway__`) but rarely needs to. |
+| `apps` | yes | App names from `[apps]` that get this mount. The gateway can also be listed (use `__gateway__`) but rarely needs to. |
 | `sub_path` | no | Mount only this subdirectory of the volume (`volumeMounts.subPath`). |
 | `size` | no (PVC mode) | Requested storage, e.g. `10Gi`. Default `1Gi`. |
 | `access_mode` | no (PVC mode) | One of `ReadWriteMany` (most common for cross-pod), `ReadWriteOnce` (default), `ReadOnlyMany`. ReadWriteMany requires an RWX-capable storage class. |
@@ -1106,59 +1211,60 @@ A freshly provisioned volume usually arrives root-owned, and the service contain
 
 ---
 
-## Microservice Mode in Kubernetes
+## Service Apps in Kubernetes
 
-When `[scale.microservices].enabled = true` and you run `jac scale deploy` against a Kubernetes cluster, every entry in `[scale.microservices.routes]` becomes its own Deployment + Service + HPA + PodDisruptionBudget. The gateway runs as a separate pod that fronts every microservice via its routes prefix.
+A workspace with **service apps** (`[apps.<name>] kind = "service"`; see [Workspaces & Apps](../apps.md)) always deploys as a **fleet**: `jac scale deploy` turns every serving app into its own Deployment + Service + HPA + PodDisruptionBudget, and the deployed app (usually the `web-app`) hosts the gateway pod that fronts each service app at its route (`[apps.<name>] route`, default `/api/<name>`). Whether the apps were colocated locally (`jac run <app>`) or split (`--fleet`) makes no difference here -- `[scale.gateway] colocate` is ignored on deploy. Providers boot before their consumers, in the order of the app dependency graph the compiler recorded.
 
 ### Auto-Injected Peer URLs
 
-Outside Kubernetes, sv-to-sv calls find peer providers via auto-spawn (single-process mode) or `JAC_SV_<MODULE>_URL` env vars (manual multi-host setup). Inside `jac scale deploy` Kubernetes mode, K-track auto-injects those env vars on every pod, derived from the routes table:
+Outside Kubernetes, bridged calls find their provider app in-process when it is colocated, or through `JAC_APP_<APP>_URL` env vars when it runs as its own process (`--fleet` sets them; a manual multi-host setup sets them by hand). Inside `jac scale deploy` Kubernetes mode, K-track auto-injects those env vars on every pod, derived from `[apps]`:
 
 ```text
-JAC_SV_<PEER_MODULE>_URL=http://<peer>-service.<namespace>.svc.cluster.local:<container_port>
+JAC_APP_<PEER_APP>_URL=http://<peer>-service.<namespace>.svc.cluster.local:<container_port>
 ```
 
-The env-var key uses the raw module name (the peer's key in `[scale.microservices.routes]`) upper-cased and joined with `JAC_SV_..._URL`. The URL host uses the Kubernetes Service name with DNS-1123 normalization (so `jac_coder_sv` becomes `jac-coder-sv-service`). Self is skipped (no service points env at itself).
+The env-var key uses the app name (the peer's key in `[apps]`) upper-cased, with any non-alphanumeric character as `_`, joined with `JAC_APP_..._URL`; `JAC_APP_<PEER_APP>_ROUTE` carries the peer's route prefix. The URL host uses the Kubernetes Service name with DNS-1123 normalization (so `social_graph` becomes `social-graph-service`). Self is skipped (no app points env at itself).
 
-Alongside the peer URLs, every pod (gateway included) also receives `JAC_SV_ROUTES` (the full routes map as JSON), `JAC_SV_SIBLING=1`, `K8S_APP_NAME`, and `K8S_NAMESPACE` as PodSpec `env:` entries. `JAC_SV_SIBLING` tells the runtime it is one pod of a fleet, so it serves its own module instead of entering local microservice mode; it is part of the pod's identity, not something the boot script sets. (Sibling-only scoping of that variable exists only in local multi-process mode.)
+Alongside the peer URLs, every pod (gateway included) also receives `JAC_SV_FLEET` (the fleet spec as JSON: every serving app, its route and its boot order), `JAC_SV_SIBLING=1`, `K8S_APP_NAME`, and `K8S_NAMESPACE` as PodSpec `env:` entries. `JAC_SV_SIBLING` tells the runtime it is one pod of a fleet, so it serves its own app instead of colocating the workspace's service apps; it is part of the pod's identity, not something the boot script sets. (Sibling-only scoping of that variable exists only in local fleet mode.)
 
-You do not write these env vars by hand in deployed K8s mode; K-track derives them from `[scale.microservices.routes]` and the configured namespace.
+You do not write these env vars by hand in deployed K8s mode; K-track derives them from `[apps]` and the configured namespace.
 
-Per-service env overrides under `[scale.microservices.services.<name>.env]` cannot shadow these keys. A stale override would silently route sv-to-sv calls to a wrong backend. To point a peer at a non-cluster URL (e.g. a vendor SaaS), use a per-service `deployment_overlay` (which merges raw manifest fields, including env) or edit the Deployment env spec after deploy.
+Per-app env overrides under `[apps.<name>.scale.env]` cannot shadow these keys. A stale override would silently route bridged calls to a wrong backend. To point a peer at a non-cluster URL (e.g. a vendor SaaS), use a per-app `deployment_overlay` (which merges raw manifest fields, including env) or edit the Deployment env spec after deploy.
 
-### Per-Service Configuration
+### Per-App Configuration
 
-Each microservice entry takes optional per-service overrides under `[scale.microservices.services.<name>]`:
+Each app takes optional scale overrides in its `[apps.<name>.scale]` overlay (the same keys a single-app project puts under `[scale.kubernetes]`, scoped to that app):
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `replicas` | int | Initial replica count (default 1; HPA can scale higher). |
-| `file` | str | Module the service pod boots. Without it the deploy resolves root `<name>.jac`, else the single shipped module with that basename anywhere in the tree; zero or several candidates fail the deploy. The implicit `main` service boots the `[project] entry-point` module, read relative to the `jac.toml` directory even when the deploy starts from a subdirectory. |
-| `rpc_timeout` | float (seconds) | Per-service sv-to-sv RPC timeout. Default 10s, fine for CRUD; bump to 120-300s for LLM workers. |
-| `http_forward_timeout` | float (seconds) | Gateway-to-service HTTP forward timeout. |
-| `env` | dict | Extra env vars merged into the pod spec. `JAC_SV_NAME`, `JAC_SV_FILE`, and `JAC_SV_*_URL` are protected (cannot be overridden). |
-| `cpu_request` / `cpu_limit` | str | Per-service CPU request/limit (e.g. `"250m"`). |
-| `memory_request` / `memory_limit` | str | Per-service memory request/limit (e.g. `"256Mi"`). |
+| `rpc_timeout` | float (seconds) | Per-app bridged-call timeout. Default 10s, fine for CRUD; bump to 120-300s for LLM workers. |
+| `http_forward_timeout` | float (seconds) | Gateway-to-app HTTP forward timeout. |
+| `env` | dict | Extra env vars merged into the pod spec. `JAC_SV_NAME`, `JAC_SV_FILE`, and `JAC_APP_*_URL` are protected (cannot be overridden). |
+| `cpu_request` / `cpu_limit` | str | Per-app CPU request/limit (e.g. `"250m"`). |
+| `memory_request` / `memory_limit` | str | Per-app memory request/limit (e.g. `"256Mi"`). |
 | `hpa.enabled` | bool | Set to `false` to fix replicas at the configured `replicas` count. Applies to both `"hpa"` and `"keda"` engines. |
 | `hpa.min` / `hpa.max` | int | Autoscaler replica bounds. Applies to both engines. |
 | `hpa.cpu_target` | int (percent) | Target CPU utilization percentage. Default 50%. Applies to both engines. |
-| `hpa.memory_target` | int (percent) | Target memory utilization percentage (default 80). A memory trigger is added alongside CPU whenever the service resolves a memory request -- always, unless `memory_request` is explicitly set to `""`. |
-| `pdb.enabled` / `pdb.max_unavailable` | bool / int | PodDisruptionBudget controls for this service. |
+| `hpa.memory_target` | int (percent) | Target memory utilization percentage (default 80). A memory trigger is added alongside CPU only when `memory_request` is set for the app or under `[scale.kubernetes]`. |
+| `pdb.enabled` / `pdb.max_unavailable` | bool / int | PodDisruptionBudget controls for this app. |
 | `deployment_overlay` | table | Raw manifest fragment deep-merged onto the generated Deployment (escape hatch for fields not exposed above). |
-| `[[services.NAME.triggers]]` | list | Per-service KEDA event-driven triggers. Each entry: `type` (str), `metadata` (dict), optional `name` (str), optional `auth.secret_refs` (dict). Requires `autoscaler_engine = "keda"` in `[scale.kubernetes]`. |
+| `[[apps.NAME.scale.triggers]]` | list | Per-app KEDA event-driven triggers. Each entry: `type` (str), `metadata` (dict), optional `name` (str), optional `auth.secret_refs` (dict). Requires `autoscaler_engine = "keda"` in `[scale.kubernetes]`. |
+
+The gateway itself is configured under `[scale.gateway]` (replicas, `hpa`, `pdb`, resources, `cors`, `rate_limit`, `logs`, `tracing`, `shared_volumes`, timeouts).
 
 ```toml
-# Example: scale jac_coder_sv hot during LLM workloads, fix the gateway at 2.
-[scale.microservices.services.jac_coder_sv]
+# Example: scale the coder app hot during LLM workloads, fix the gateway at 2.
+[apps.coder.scale]
 rpc_timeout = 300.0
 hpa = { enabled = true, min = 2, max = 10, cpu_target = 60 }
 
-[scale.microservices.services.__gateway__]
+[scale.gateway]
 replicas = 2
 hpa = { enabled = false }
 
-# KEDA per-service trigger (requires autoscaler_engine = "keda" in [scale.kubernetes])
-[[scale.microservices.services.orders_app.triggers]]
+# KEDA per-app trigger (requires autoscaler_engine = "keda" in [scale.kubernetes])
+[[apps.orders.scale.triggers]]
 type = "prometheus"
 name = "order-queue"
 metadata = { serverAddress = "http://prometheus:9090", metricName = "pending_orders", threshold = "20", query = "sum(pending_orders_total)" }
@@ -1167,18 +1273,18 @@ metadata = { serverAddress = "http://prometheus:9090", metricName = "pending_ord
 #### Gateway High Availability
 
 !!! warning "Gateway defaults to a single replica"
-    The gateway service (`__gateway__`) is configured like any other service under `[scale.microservices.services]` -- its HPA defaults to `min = 1`. Because the gateway is the single entry point for all external traffic, a pod restart (crash, rolling deploy, node drain) leaves no pod to serve requests until the replacement boots and passes its readiness probe (`readiness_initial_delay` of 10s plus app boot time) -- a window of 503s for every user, regardless of which backend service they are calling.
+    The gateway is configured under `[scale.gateway]` like any app under its `[apps.<name>.scale]` -- its HPA defaults to `min = 1`. Because the gateway is the single entry point for all external traffic, a pod restart (crash, rolling deploy, node drain) leaves no pod to serve requests until the replacement boots and passes its readiness probe (`readiness_initial_delay` of 10s plus app boot time) -- a window of 503s for every user, regardless of which backend service they are calling.
 
     Backend services don't have this exposure -- if one of several replicas restarts, the others keep serving. Give the gateway the same redundancy, either as a fixed count or as an autoscaler floor:
 
     ```toml
-    # Fixed count, no autoscaling (same effect as the __gateway__ example above)
-    [scale.microservices.services.__gateway__]
+    # Fixed count, no autoscaling (same effect as the [scale.gateway] example above)
+    [scale.gateway]
     replicas = 2
     hpa = { enabled = false }
 
     # Or, if you want the gateway to also scale up under load:
-    [scale.microservices.services.__gateway__.hpa]
+    [scale.gateway.hpa]
     min = 2
     ```
 
@@ -1186,10 +1292,10 @@ metadata = { serverAddress = "http://prometheus:9090", metricName = "pending_ord
 
 ### Centralised Logs
 
-Microservice mode can deploy a Loki + Grafana Alloy log aggregation pipeline alongside the existing Prometheus + Grafana monitoring stack. Off by default.
+A fleet deploy can add a Loki + Grafana Alloy log aggregation pipeline alongside the existing Prometheus + Grafana monitoring stack. Off by default.
 
 ```toml
-[scale.microservices.logs]
+[scale.gateway.logs]
 enabled = true
 ```
 
@@ -1205,13 +1311,13 @@ A **Pod Logs** dashboard is added to Grafana automatically, with two panels: log
 |-----------|----------|-------|
 | Loki | Deployment + ClusterIP Service `<app>-loki-service:3100` | Cluster-internal only |
 | Alloy | DaemonSet | Per node; reads host `/var/log/pods` (read-only) |
-| Grafana | Deployment + ClusterIP Service | Cluster-internal in microservice mode (the `/grafana` ingress path is wired by the monolith target only); reach it with `kubectl port-forward svc/<app>-grafana-service 3000:3000` |
+| Grafana | Deployment + ClusterIP Service | Cluster-internal in fleet mode (the `/grafana` ingress path is wired by the single-app target only); reach it with `kubectl port-forward svc/<app>-grafana-service 3000:3000` |
 
 > **Storage caveat.** Loki uses `emptyDir` in v0. A Loki pod restart drops in-flight chunks. Persistent storage modes (PVC, S3-compatible object storage) are planned.
 
 <!-- -->
 
-> **Trace correlation.** Microservice mode already propagates `X-Trace-Id`. Lines from every service touched by one request carry the same trace id; grep for it in Grafana with `{namespace="<ns>"} |~ "trace=<id>"`. Structured-JSON emission with `trace_id` as a first-class queryable field is planned.
+> **Trace correlation.** The gateway already propagates `X-Trace-Id`. Lines from every app touched by one request carry the same trace id; grep for it in Grafana with `{namespace="<ns>"} |~ "trace=<id>"`. Structured-JSON emission with `trace_id` as a first-class queryable field is planned.
 
 <!-- -->
 
@@ -1405,15 +1511,15 @@ with entry {
 | `secrets` | `[scale.secrets]` | shipped as the app Secret; no `.env` file needed |
 | `env` | new | plain (non-secret) env vars injected into every service pod |
 | `domain`, `replicas`, `resources`, `autoscaler` | `[scale.kubernetes]` | `resources` takes `cpu_request`/`cpu_limit`/`memory_request`/`memory_limit`; `autoscaler` entries are raw config keys (`max_replicas`, `autoscaler_engine`, ...) |
-| `client` | `[scale.microservices.client]` | web client build: `entry` (path), or `{"entry": False}` for a headless API app |
-| `microservices` | `[scale.microservices]` | `routes`, `services`, `ingress`, ... |
+| `apps` | `[apps]` | the workspace's app tables; every serving app becomes a fleet member, per-app scale keys come from `[apps.<name>.scale]` |
+| `gateway` | `[scale.gateway]` | `ingress`, `cors`, `rate_limit`, timeouts, `shared_volumes`, ... |
 | `kube_context` | new | kubeconfig context to deploy through; empty = current context, falling back to in-cluster |
 | `labels` | new | stamped on every generated Deployment and Service (platform-owned tags) |
 | `extra` | any `[scale.kubernetes]` key | escape hatch merged last, e.g. `{"bundle_storage_class": "efs-sc"}` |
 
 With `target = "auto"` the SDK resolves exactly like the CLI: the
-microservice target when `microservices` declares routes (or sets
-`enabled = true`), the single-app `kubernetes` target otherwise. Lifecycle
+fleet target when the workspace has service apps, the single-app
+`kubernetes` target otherwise. Lifecycle
 calls (`destroy`/`status`/`scale`/`service_url`) have no spec to inspect, so
 `"auto"` there probes the namespace instead: a `jac-scale.role=gateway`
 Deployment means the microservice target, anything else the plain one. Pass
@@ -1428,7 +1534,9 @@ reachable at call time).
 | `preview(spec)` | the manifest bundle, nothing applied (microservice target only, like `--dry-run`) |
 | `destroy(app_name, namespace, component="")` | removes the deployment; never prompts |
 | `status(app_name, namespace)` | full status dict (components, pod counts, URLs) |
-| `resource_status(app_name, namespace)` | `ResourceStatusInfo{status, replicas, ready_replicas}` |
+| `resource_status(app_name, namespace)` | `ResourceStatusInfo{status, replicas, ready_replicas, available_replicas, updated_replicas, replica_floor, reason, message}`; `status` is one of `active`, `activating`, `inactive`, `deactivating`, `degraded`, `unknown` (see [Deployment Status](#deployment-status)) |
+| `autoscaler_status(app_name, namespace, service="")` | `AutoscalerRuntimeStatus`: everything `ResourceStatusInfo` carries plus `engine`, `autoscaler_name`, `trigger_active`, `scaler_ready`, `conditions`, `resource_version` (see [Autoscaler runtime status](#autoscaler-runtime-status)) |
+| `watch_autoscaler_transitions(app_name, namespace, label_selector=None, timeout_seconds=None)` | iterator of `AutoscalerTransition` (see [Observing transitions](#observing-transitions)) |
 | `service_url(app_name, namespace)` | externally reachable URL or `None` |
 | `scale(app_name, namespace, replicas)` | resizes the app deployment |
 

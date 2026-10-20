@@ -2,22 +2,21 @@ import os;
 import shutil;
 import tempfile;
 import from pathlib { Path }
-import from jaclang.comptime { fields }
-import from jaclang.scale.config.config_loader {
-    JacScaleConfig,
-    get_scale_config,
-    reset_scale_config
-}
-import from jaclang.scale.deploy.target.kubernetes.kubernetes_config {
-    KubernetesConfig
+
+
+class InMemoryScaleConfig(JacScaleConfig) {
+    has settings: dict[str, any] = {};
+
+    override def load(self: InMemoryScaleConfig) -> dict[str, any] {
+        return self.settings;
+    }
 }
 
 
-test "get_microservices_config returns ingress block" {
-    cfg = JacScaleConfig();
-    cfg._config = {
-        "microservices": {
-            "enabled": True,
+test "get_gateway_config returns ingress block" {
+    cfg = InMemoryScaleConfig();
+    cfg.settings = {
+        "gateway": {
             "ingress": {
                 "enabled": True,
                 "host": "jac-shop.local",
@@ -26,7 +25,7 @@ test "get_microservices_config returns ingress block" {
             }
         }
     };
-    out = cfg.get_microservices_config();
+    out = cfg.get_gateway_config();
     assert "ingress" in out;
     ing = out["ingress"];
     assert ing["enabled"] is True;
@@ -36,130 +35,109 @@ test "get_microservices_config returns ingress block" {
 }
 
 
-test "get_microservices_config ingress defaults to {} when section absent" {
-    cfg = JacScaleConfig();
-    cfg._config = {"microservices": {"enabled": True}};
-    out = cfg.get_microservices_config();
+test "get_gateway_config ingress defaults to {} when section absent" {
+    cfg = InMemoryScaleConfig();
+    cfg.settings = {"gateway": {"colocate": False}};
+    out = cfg.get_gateway_config();
     assert out["ingress"] == {};
 }
 
 
-test "get_microservices_config preserves all sections (regression guard)" {
-    cfg = JacScaleConfig();
-    cfg._config = {
-        "microservices": {
-            "enabled": True,
+test "get_gateway_config preserves all sections (regression guard)" {
+    cfg = InMemoryScaleConfig();
+    cfg.settings = {
+        "gateway": {
+            "colocate": False,
             "gateway_port": 9000,
-            "drain_timeout_seconds": 15,
             "http_forward_timeout": 60,
-            "routes": {"orders_app": "/api/orders"},
-            "services": {"orders_app": {"replicas": 2}},
+            "replicas": 2,
             "ingress": {"enabled": False}
         }
     };
-    out = cfg.get_microservices_config();
+    out = cfg.get_gateway_config();
     expected_keys: set[str] = {
-        "enabled",
+        "colocate",
         "gateway_port",
         "gateway_host",
-        "drain_timeout_seconds",
         "http_forward_timeout",
-        "routes",
-        "services",
+        "replicas",
         "rate_limit",
         "cors",
-        "client",
+        "identity",
         "ingress",
-        "logs"
+        "logs",
+        "tracing",
+        "shared_volumes"
     };
     missing = expected_keys - set(out.keys());
     assert not missing , f"missing keys: {missing}";
+    assert out["gateway_port"] == 9000;
+    assert out["replicas"] == 2;
 }
 
 
-test "get_microservices_config logs block defaults to {} when absent" {
-    cfg = JacScaleConfig();
-    cfg._config = {"microservices": {"enabled": True}};
-    out = cfg.get_microservices_config();
+test "the gateway rate limiter asks for shared state by default" {
+    cfg = InMemoryScaleConfig();
+    cfg.settings = {"gateway": {"rate_limit": {"enabled": True, "per_ip_rpm": 10}}};
+    rl = cfg.get_gateway_config()["rate_limit"];
+    assert rl["shared"] is True , (
+        "a replica that keeps its own buckets multiplies the configured limit "
+        f"by the replica count: {rl!r}"
+    );
+    cfg.settings = {"gateway": {}};
+    assert cfg.get_gateway_config()["rate_limit"]["shared"] is True;
+}
+
+
+test "an explicit rate_limit shared = false round-trips" {
+    cfg = InMemoryScaleConfig();
+    cfg.settings = {"gateway": {"rate_limit": {"enabled": True, "shared": False}}};
+    assert cfg.get_gateway_config()["rate_limit"]["shared"] is False;
+}
+
+
+test "get_gateway_config logs block defaults to {} when absent" {
+    cfg = InMemoryScaleConfig();
+    cfg.settings = {"gateway": {}};
+    out = cfg.get_gateway_config();
     assert out["logs"] == {};
 }
 
 
-test "get_microservices_config logs block round-trips enabled flag" {
-    cfg = JacScaleConfig();
-    cfg._config = {"microservices": {"enabled": True, "logs": {"enabled": True}}};
-    out = cfg.get_microservices_config();
+test "get_gateway_config logs block round-trips enabled flag" {
+    cfg = InMemoryScaleConfig();
+    cfg.settings = {"gateway": {"logs": {"enabled": True}}};
+    out = cfg.get_gateway_config();
     assert out["logs"] == {"enabled": True};
 }
 
 
-test "get_microservices_config enabled is None when unset (auto-detect)" {
-    cfg = JacScaleConfig();
-    cfg._config = {"microservices": {"gateway_port": 8000}};
-    out = cfg.get_microservices_config();
-    assert out["enabled"] is None;
-}
-
-test "get_microservices_config enabled is None when section absent" {
-    cfg = JacScaleConfig();
-    cfg._config = {};
-    out = cfg.get_microservices_config();
-    assert out["enabled"] is None;
-}
-
-test "get_microservices_config preserves explicit enabled=False (opt-out)" {
-    cfg = JacScaleConfig();
-    cfg._config = {"microservices": {"enabled": False}};
-    out = cfg.get_microservices_config();
-    assert out["enabled"] is False;
-}
-
-test "get_microservices_config preserves explicit enabled=True" {
-    cfg = JacScaleConfig();
-    cfg._config = {"microservices": {"enabled": True}};
-    out = cfg.get_microservices_config();
-    assert out["enabled"] is True;
+test "get_gateway_config colocates by default" {
+    cfg = InMemoryScaleConfig();
+    cfg.settings = {"gateway": {"gateway_port": 8000}};
+    assert cfg.get_gateway_config()["colocate"] is True;
+    cfg.settings = {};
+    assert cfg.get_gateway_config()["colocate"] is True;
 }
 
 
-test "get_microservices_config reads routes from JAC_SV_ROUTES when config empty" {
-    cfg = JacScaleConfig();
-    cfg._config = {"microservices": {"enabled": True}};
-    os.environ["JAC_SV_ROUTES"] = "{\"orders_app\": \"/api/orders\", \"cart_app\": \"/api/cart\"}";
+test "get_gateway_config preserves an explicit colocate = false" {
+    cfg = InMemoryScaleConfig();
+    cfg.settings = {"gateway": {"colocate": False}};
+    assert cfg.get_gateway_config()["colocate"] is False;
+}
+
+
+test "get_gateway_config never reads the fleet from the environment" {
+    cfg = InMemoryScaleConfig();
+    cfg.settings = {"gateway": {}};
+    os.environ["JAC_SV_FLEET"] = '{"root": "web", "members": []}';
     try {
-        out = cfg.get_microservices_config();
-        assert out["routes"]
-            == {
-                "orders_app": "/api/orders",
-                "cart_app": "/api/cart",
-                "main": "/__main__"
-            };
+        out = cfg.get_gateway_config();
+        assert "routes" not in out;
+        assert "members" not in out;
     } finally {
-        del os.environ["JAC_SV_ROUTES"];
-    }
-}
-
-test "get_microservices_config: explicit config routes win over JAC_SV_ROUTES" {
-    cfg = JacScaleConfig();
-    cfg._config = {"microservices": {"routes": {"real_app": "/api/real"}}};
-    os.environ["JAC_SV_ROUTES"] = "{\"ghost_app\": \"/api/ghost\"}";
-    try {
-        out = cfg.get_microservices_config();
-        assert out["routes"] == {"real_app": "/api/real", "main": "/__main__"};
-    } finally {
-        del os.environ["JAC_SV_ROUTES"];
-    }
-}
-
-test "get_microservices_config: malformed JAC_SV_ROUTES falls back to empty" {
-    cfg = JacScaleConfig();
-    cfg._config = {"microservices": {}};
-    os.environ["JAC_SV_ROUTES"] = "not-json";
-    try {
-        out = cfg.get_microservices_config();
-        assert out["routes"] == {};
-    } finally {
-        del os.environ["JAC_SV_ROUTES"];
+        del os.environ["JAC_SV_FLEET"];
     }
 }
 
@@ -174,8 +152,8 @@ test "every get_websocket_config key has a schema entry (#8000 1.2)" {
     ws_schema = schema["options"].get("websocket");
     assert ws_schema is not None , "[scale.websocket] missing from plugin_config schema";
     declared = set(ws_schema["nested"].keys());
-    cfg = JacScaleConfig();
-    cfg._config = {"websocket": {}};
+    cfg = InMemoryScaleConfig();
+    cfg.settings = {"websocket": {}};
     read_keys = set(cfg.get_websocket_config().keys());
     assert read_keys == declared , f"schema/read drift: schema-only={declared
         - read_keys}, read-only={read_keys - declared}";
@@ -185,8 +163,8 @@ test "every get_websocket_config key has a schema entry (#8000 1.2)" {
 test "config sections read by config_loader are schema-declared (#8000 1.2)" {
     import from jaclang.scale.config.plugin_config { JacScalePluginConfig }
     schema_sections = set(JacScalePluginConfig.get_config_schema()["options"].keys());
-    cfg = JacScaleConfig();
-    cfg._config = {};
+    cfg = InMemoryScaleConfig();
+    cfg.settings = {};
     for section in [
         "websocket",
         "database",
@@ -204,13 +182,13 @@ test "get_kubernetes_config leaves the cached config dict unmutated" {
     # load() returns the cached dict by reference; deriving kubernetes keys
     # must not write them back, or later readers of the raw config see
     # derived values as if the user had configured them.
-    cfg = JacScaleConfig();
-    cfg._config = {
+    cfg = InMemoryScaleConfig();
+    cfg.settings = {
         "kubernetes": {"namespace": "demo"},
         "monitoring": {"namespace": "demo_metrics"}
     };
     cfg.get_kubernetes_config();
-    leaked = cfg._config["kubernetes"];
+    leaked = cfg.settings["kubernetes"];
     assert leaked == {"namespace": "demo"} , f"derived keys leaked into the cached config: {leaked}";
 }
 
@@ -218,8 +196,8 @@ test "get_kubernetes_config leaves the cached config dict unmutated" {
 test "repeated get_kubernetes_config calls return equal results" {
     # Pre-copy, every call stacked derived keys onto the cached dict, so the
     # result depended on how many times it had been called before.
-    cfg = JacScaleConfig();
-    cfg._config = {
+    cfg = InMemoryScaleConfig();
+    cfg.settings = {
         "kubernetes": {"namespace": "demo"},
         "monitoring": {"namespace": "demo_metrics"}
     };
@@ -248,6 +226,64 @@ test "get_scale_config raises on a different project_dir instead of silently reu
         reset_scale_config();
         shutil.rmtree(dir_a, ignore_errors=True);
         shutil.rmtree(dir_b, ignore_errors=True);
+    }
+}
+
+
+"""Load a jac.toml with the given [scale] body; return the monitoring namespace and what was logged."""
+def _load_monitoring_namespace(scale_body: str) -> tuple[str, str] {
+    import io;
+    import logging;
+    reset_scale_config();
+    stream = io.StringIO();
+    handler = logging.StreamHandler(stream);
+    root_logger = logging.getLogger();
+    previous_level = root_logger.level;
+    root_logger.addHandler(handler);
+    root_logger.setLevel(logging.WARNING);
+    project_dir = tempfile.mkdtemp(prefix="jac-cfg-ns-");
+    try {
+        (Path(project_dir) / "jac.toml").write_text(
+            f'[project]\nname = "repro"\n\n{scale_body}'
+        );
+        namespace = get_scale_config(
+            project_dir=Path(project_dir)
+        ).get_monitoring_config()["namespace"];
+    } finally {
+        root_logger.removeHandler(handler);
+        root_logger.setLevel(previous_level);
+        reset_scale_config();
+        shutil.rmtree(project_dir, ignore_errors=True);
+    }
+    return (namespace, stream.getvalue());
+}
+
+
+test "the monitoring namespace is sanitized on every path, and only a rewrite warns" {
+    # (scale body, expected namespace, rewritten value the warning must name)
+    cases = [
+        ('[scale.monitoring]\nnamespace = "jac--shop"\n', "jac_shop", "jac--shop"),
+        ('[scale.monitoring]\nnamespace = "myapp_prod"\n', "myapp_prod", ""),
+        ('[scale.monitoring]\nnamespace = "---"\n', "jaclang_scale", "---"),
+        ('[scale.monitoring]\nnamespace = 2024\n', "_2024", "2024"),
+        (
+            '[scale.kubernetes]\nnamespace = "jac-shop-prod"\n\n[scale.monitoring]\nnamespace = ""\n',
+            "jac_shop_prod",
+            ""
+        )
+    ];
+    for row in cases {
+        (body, expected, rewritten) = row;
+        (namespace, logged) = _load_monitoring_namespace(body);
+        assert namespace == expected , f"{body!r} -> {namespace!r}, expected {expected!r}";
+        if not rewritten {
+            assert logged == "" , f"a value that was not rewritten must not warn:\n{logged}";
+            continue;
+        }
+        # Every project loads fresh, so each rewritten value must warn about itself.
+        assert rewritten in logged and expected in logged and "dashboards" in logged , (
+            f"no usable rewrite warning for {rewritten!r}:\n{logged}"
+        );
     }
 }
 

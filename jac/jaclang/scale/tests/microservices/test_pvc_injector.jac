@@ -4,18 +4,6 @@ import tarfile;
 import tempfile;
 import tomllib;
 import from pathlib { Path }
-import from jaclang.scale.injector.bundle { sanitized_jac_toml, pack_jab }
-import from jaclang.scale.tests.support { pod_binary, require_pod_binary }
-import from jaclang.scale.injector.pvc_injector {
-    PvcInjector,
-    build_bundle_pvc,
-    build_loader_pod,
-    BUNDLE_MOUNT_PATH,
-    RUNTIME_UID,
-    RUNTIME_GID,
-    build_pvc_init_container,
-    bundle_keys_from_pod_spec
-}
 
 
 glob _JAC_BIN: Path = pod_binary();
@@ -31,7 +19,7 @@ def _make_project(project: str, toml: str) {
 }
 
 
-def _sanitized_toml(project: str) -> dict {
+def _sanitized_toml(project: str) -> dict[str, any] {
     # sanitized_jac_toml owns the strip logic pack_jab ships verbatim, so
     # assert it directly instead of running a full (binary-dependent) seal.
     return tomllib.loads(sanitized_jac_toml(Path(project)) or "");
@@ -219,6 +207,27 @@ test "bundle keys round-trip from the init container the injector builds" {
         ]
     };
 
+    assert bundle_keys_from_pod_spec(pod_spec) == keys;
+}
+
+
+test "bundle keys are read from the bootstrap container that unpacks them" {
+    import from jaclang.scale.injector.pvc_injector { pvc_unpack_script }
+    import from jaclang.scale.deploy.target.kubernetes.runtime_bootstrap {
+        build_bootstrap_init_container
+    }
+    import from jaclang.scale.deploy.target.kubernetes.kubernetes_config {
+        KubernetesConfig
+    }
+    keys = ["bundles/orders/aaa.jab", "toolchain/orders/bbb.tar.gz"];
+    script = pvc_unpack_script([f"{BUNDLE_MOUNT_PATH}/{k}" for k in keys]);
+    pod_spec = {
+        "initContainers": [
+            build_bootstrap_init_container(
+                KubernetesConfig(), "python:3.12-slim", unpack_script=script
+            )
+        ]
+    };
     assert bundle_keys_from_pod_spec(pod_spec) == keys;
 }
 

@@ -9,6 +9,7 @@ This replaces the previous client-only `Reflect.construct(...)` idiom and
 lets the same source compile cleanly in both backends.
 """
 
+import from jaclang.compiler.backends.py.codegen_shim { generated_python }
 import os;
 import tempfile;
 import from pathlib { Path }
@@ -24,8 +25,8 @@ glob _test_tmp_dir: str = tempfile.mkdtemp(prefix="jac_test_new_builtin_"),
 
 with entry {
     os.makedirs(_client_tmp_dir, exist_ok=True);
-    with open(os.path.join(_client_tmp_dir, "jac.toml"), "w") as _pins {
-        _pins.write('[placement.pins]\n"*" = "client"\n');
+    with open(os.path.join(_client_tmp_dir, "jac.toml"), "w") as config {
+        config.write('[project]\nkind = "js-package"\n');
     }
 }
 
@@ -171,7 +172,7 @@ test "cl: new with multiple args produces a JS array of args" {
 test "server: new is auto-imported from runtime.builtin" {
     code = "with entry { x = new(list, [1, 2, 3]); print(x); }\n";
     mod = compile_inline(code);
-    py = mod.gen.py;
+    py = generated_python(mod.gen);
     assert "from jaclang.runtime.builtin import" in py , (
         "Expected builtin import preamble; got:\n" + py
     );

@@ -5,17 +5,17 @@ import from pathlib { Path }
 import from tests.support { JAC_ROOT }
 import jaclang;
 import jaclang.compiler.frontend.unitree as uni;
-import from jaclang.compiler.passes.type_checker_pass { TypeCheckPass }
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.compiler.driver.compile_options { CompileOptions }
-import from jaclang.compiler.driver.pass_driver { run_pass }
 import from jaclang.testing.test { parametrize }
 
-glob FIXTURES = os.path.join(JAC_ROOT, "tests", "compiler", "passes", "fixtures"),
-     CHECKER_FIXTURES = os.path.join(
+glob FIXTURES: str = os.path.join(
+         JAC_ROOT, "tests", "compiler", "passes", "fixtures"
+     ),
+     CHECKER_FIXTURES: str = os.path.join(
          JAC_ROOT, "tests", "compiler", "passes", "fixtures", "checker"
      ),
-     LANG_FIXTURES = os.path.join(JAC_ROOT, "tests", "language", "fixtures"),
+     LANG_FIXTURES: str = os.path.join(JAC_ROOT, "tests", "language", "fixtures"),
      NO_TC = CompileOptions(default_codespace='server');
 
 def assert_error_pretty_found(needle: str, haystack: str) {
@@ -37,7 +37,7 @@ glob CHECKER_DIRS: dict[(str, str)] = {
          "main": FIXTURES,
          "lang": LANG_FIXTURES
      },
-     CHECKER_CASES: list[tuple] = [
+     CHECKER_CASES: list[tuple[any, ...]] = [
          (
              "explicit_type_annotation_in_assignment",
              "main",
@@ -398,10 +398,43 @@ glob CHECKER_DIRS: dict[(str, str)] = {
              ]
          ),
          (
+             "subscript_guard_assignment",
+             "checker",
+             "checker_subscript_guard_assignment.jac",
+             3,
+             True,
+             []
+         ),
+         (
+             "sum_element_type",
+             "checker",
+             "checker_sum_element_type.jac",
+             1,
+             True,
+             [(0, """
+    Cannot assign list[float] to Iterable[int]
+    """)]
+         ),
+         (
+             "kwargs_literal_overload",
+             "checker",
+             "checker_kwargs_literal_overload.jac",
+             2,
+             True,
+             [
+                 (0, """
+    Cannot assign bytes to str
+    """),
+                 (1, """
+    'timeoutt'
+    """)
+             ]
+         ),
+         (
              "unannotated_reassignment_frozen",
              "checker",
              "checker_none_sentinel_reassignment.jac",
-             3,
+             4,
              True,
              [
                  (
@@ -421,7 +454,10 @@ glob CHECKER_DIRS: dict[(str, str)] = {
         count = "bad";  # <-- Error
         ^^^^^^^^^^^^^^
     """
-                 )
+                 ),
+                 (3, """
+    Cannot assign int | Literal[""] to str
+    """)
              ]
          ),
          (
@@ -696,6 +732,133 @@ glob CHECKER_DIRS: dict[(str, str)] = {
              []
          ),
          ("expr_narrowing", "checker", "checker_expr_narrowing.jac", 0, True, []),
+         # A comprehension's `if` clauses run in order, so each narrows the
+         # element expression, the later clauses and any later `for` clause.
+         (
+             "comprehension_clause_narrowing",
+             "checker",
+             "checker_comprehension_clause_narrowing.jac",
+             0,
+             True,
+             []
+         ),
+         # `x == "literal"` narrows like the int, float and bool forms; `!=`
+         # rules out one value, never the whole class.
+         (
+             "literal_eq_narrowing",
+             "checker",
+             "checker_literal_eq_narrowing.jac",
+             1,
+             True,
+             [(0, "Cannot return Literal[\"a\"] | NoneType, expected NoneType")]
+         ),
+         (
+             "membership_narrowing",
+             "checker",
+             "checker_membership_narrowing.jac",
+             4,
+             True,
+             [
+                 (
+                     0,
+                     """
+Cannot return str | NoneType, expected str
+    return ak if ak in (other, "walker") else "obj";  # <-- Error: variable element
+    """
+                 ),
+                 (
+                     1,
+                     """
+Cannot return str | NoneType, expected str
+    return ak;  # <-- Error: only the literals are ruled out, ak is still str | None
+    """
+                 ),
+                 (
+                     2,
+                     """
+Cannot return str | NoneType, expected str
+        return ak;  # <-- Error: only the literals are ruled out, ak is still str | None
+    """
+                 ),
+                 (
+                     3,
+                     """
+Cannot assign Literal["a"] | Literal["b"] | Literal["c"] to Literal["c"]
+        c: Literal["c"] = k;  # <-- Error: not narrowed yet
+    """
+                 )
+             ]
+         ),
+         (
+             "equality_keeps_type",
+             "checker",
+             "checker_equality_keeps_type.jac",
+             6,
+             True,
+             [
+                 (
+                     0,
+                     """
+Cannot return str | NoneType, expected int
+        return v;  # <-- Error: neither str nor None equals 1, so v is not narrowed
+    """
+                 ),
+                 (
+                     1,
+                     """
+Cannot return int, expected bool
+        return n;  # <-- Error: 1 == True, so n is int, not bool
+    """
+                 ),
+                 (
+                     2,
+                     """
+Cannot return float, expected int
+    return f;  # <-- Error: 1.0 == 1, so f is float, not int
+    """
+                 ),
+                 (
+                     3,
+                     """
+Cannot return int, expected bool
+        return n;  # <-- Error: `and` keeps the equality rule
+    """
+                 ),
+                 (
+                     4,
+                     """
+Cannot return int, expected bool
+        return n;  # <-- Error: `not` keeps the equality rule
+    """
+                 ),
+                 (
+                     5,
+                     """
+Cannot return int, expected bool
+        return n;  # <-- Error: `in` compares with ==, so n is int, not bool
+    """
+                 )
+             ]
+         ),
+         (
+             "literal_ne_does_not_over_narrow",
+             "checker",
+             "checker_literal_ne_no_over_narrow.jac",
+             10,
+             True,
+             [
+                 (0, "Cannot assign str | NoneType to NoneType"),
+                 (1, "Cannot assign int | NoneType to NoneType"),
+                 (2, "Cannot assign float | NoneType to NoneType"),
+                 (3, "Cannot assign bool | NoneType to NoneType"),
+                 (4, "Cannot assign str | NoneType to NoneType"),
+                 (5, "Cannot assign int | NoneType to NoneType"),
+                 (6, "Cannot assign float | NoneType to NoneType"),
+                 (7, "Cannot assign bool | NoneType to NoneType"),
+                 (8, "Cannot assign Literal[\"a\"] | Literal[\"b\"] to NoneType"),
+                 (9, "Cannot assign str | NoneType to Literal[\"node\"]")
+             ]
+         ),
          (
              "reassign_in_branch",
              "checker",
@@ -744,6 +907,23 @@ glob CHECKER_DIRS: dict[(str, str)] = {
                      """Not all required parameters were provided in the function call: 'skill'"""
                  ),
                  (3, """Cannot assign int to parameter 'owner' of type str""")
+             ]
+         ),
+         (
+             "exception_obj_constructs_through_field_init",
+             "checker",
+             "checker_exception_fields_init.jac",
+             2,
+             True,
+             [
+                 (
+                     0,
+                     """Cannot assign Literal["not a code"] to parameter 'code' of type int"""
+                 ),
+                 (
+                     1,
+                     """Cannot assign Literal["not a code either"] to parameter 'code' of type int"""
+                 )
              ]
          ),
          (
@@ -1048,6 +1228,14 @@ glob CHECKER_DIRS: dict[(str, str)] = {
              []
          ),
          (
+             "assert_own_condition_narrowing",
+             "checker",
+             "checker_assert_own_condition_narrowing.jac",
+             0,
+             True,
+             []
+         ),
+         (
              "type_subscript_member_access",
              "checker",
              "checker_type_subscript_member.jac",
@@ -1165,14 +1353,6 @@ glob CHECKER_DIRS: dict[(str, str)] = {
              "scope_narrowing_isolation_between_impl_bodies",
              "checker",
              "checker_static_method_inherit.jac",
-             0,
-             True,
-             []
-         ),
-         (
-             "bare_generic_any_propagates_through_operations",
-             "checker",
-             "checker_bare_generic_any_propagation.jac",
              0,
              True,
              []
@@ -1340,7 +1520,7 @@ glob CHECKER_DIRS: dict[(str, str)] = {
          )
      ];
 
-def _checker_case(row: tuple) {
+def _checker_case(row: tuple[any, ...]) {
     (name, dirkey, fixture, count, no_tc, pretty) = row;
     program = JacProgram();
     program.compile(
@@ -1357,7 +1537,10 @@ def _checker_case(row: tuple) {
 
 with entry {
     parametrize(
-        "checker", CHECKER_CASES, _checker_case, id_fn=lambda (c: tuple) { c[0]; }
+        "checker",
+        CHECKER_CASES,
+        _checker_case,
+        id_fn=lambda (c: tuple[any, ...]) { c[0]; }
     );
 }
 
@@ -1556,7 +1739,7 @@ test "class_construct" {
     assert square_ty is not None;
     assert square_ty.shared is not None;
     square_shared: any = square_ty.shared;
-    square_mro: list = list(square_shared.mro);
+    square_mro: list[any] = list(square_shared.mro);
     mro_class_names = [
         cls.shared.class_name
         for cls in square_mro
@@ -1769,7 +1952,7 @@ test "return_type" {
     program = JacProgram();
     path = os.path.join(CHECKER_FIXTURES, "checker_return_type.jac");
     mod = program.compile(path, options=NO_TC);
-    assert len(program.errors_had) == 4;
+    assert len(program.errors_had) == 5;
 
     expected_errors = [
         """
@@ -1785,7 +1968,7 @@ test "return_type" {
         """
         Cannot return Literal[""], expected int
 
-        def bar()  -> int {
+        def bar -> int {
             return "";  # <-- Error
             ^^^^^^^^^^
         """,
@@ -1793,9 +1976,15 @@ test "return_type" {
         Cannot return float, expected int
             return 1.1;  # <-- Error
             ^^^^^^^^^^
+        """,
+        """
+        Return type annotation required when function returns a value
+            return 0;  # <-- Error (no return annotation, but returning a value)
+            ^^^^^^^^^
         """
     ];
 
+    # Regression (#9094): caller's `return bump();` must not also raise E1002.
     for i in range(len(expected_errors)) {
         assert_error_pretty_found(
             expected_errors[i], program.errors_had[i].pretty_print()
@@ -2046,6 +2235,73 @@ test "lambda_param_inferred_from_expected_callable" {
         + "\n---\n".join(w.pretty_print() for w in w1051);
 }
 
+test "overload_rejection_help" {
+    # Each E1054 must name why the overload was rejected, keyed by assigned name.
+    path = os.path.join(CHECKER_FIXTURES, "checker_overload_rejection_help.jac");
+    program = JacProgram();
+    program.compile(path);
+
+    with open(path) as fixture {
+        line_of = {
+            row.strip().split(" = ")[0]: no
+            for (no, row) in enumerate(fixture.read().splitlines(), start=1)
+            if " = " in row
+        };
+    }
+    by_line = {
+        e.loc.first_line: (e.help_text or "")
+        for e in program.errors_had
+        if e.code and e.code.code == "E1054"
+    };
+    assert len(by_line) == 14 , f"Expected 14 E1054s, got {len(by_line)}:\n{by_line}";
+    helps = {name: by_line.get(line, "") for (name, line) in line_of.items()};
+
+    expected = {
+        "a": ["returns 'dict[str, int]', but must return"],
+        "b": ["takes 2 parameter(s), but a callable taking 1 is expected"],
+        "g": ["returns 'dict[str, int]', but must return"],
+        "h": ["accepts 'int' for parameter 'n', but will be called with 'str'"],
+        "i": ["lambda parameter 'd' has no annotation", "`lambda (d: <type>) { ... }`"],
+        "c": ["The candidates expect:", "overload 2: 'Callable[[int]"],
+        "d": ["Every overload expects 'SupportsIndex'"],
+        "e": ["parameter 'iterable'"],
+        "j": ["parameter 'base'"],
+        "k": [
+            "The closest candidates expect:",
+            " | ...'",
+            "overloads 3, 6:",
+            "and 1 more"
+        ],
+        "m": ["parameter 'reverse'", "The closest match, overload 2, expects 'bool'"],
+        "n": [
+            "parameter 'repl'",
+            "The closest match, overload 1, expects 'str | Callable[[Match[str]], str]'"
+        ]
+    };
+    for (name, needles) in expected.items() {
+        for needle in needles {
+            assert needle in helps[name] , f"{name} help lacks {needle!r}:\n{helps[
+                name
+            ]}";
+        }
+    }
+    # Arity-compatible callbacks with optional params are blamed on the return type.
+    assert "parameter(s)" not in helps["g"] , helps["g"];
+    # Filtered overloads must not be described as every overload.
+    assert "Every overload" not in helps["m"] + helps["n"] , f"{helps['m']}\n{helps[
+        'n'
+    ]}";
+    assert "expects 'str'" in helps["p"] and "Literal" not in helps["p"] , helps["p"];
+    assert helps["f"] == "" and line_of["f"] in by_line , f"Unknown keyword should stay bare:\n{helps[
+        'f'
+    ]}";
+    for text in helps.values() {
+        for row in text.splitlines() {
+            assert len(row) <= 240 , f"Help line too long ({len(row)}):\n{row}";
+        }
+    }
+}
+
 test "lambda_param_unresolved_requires_annotation" {
     path = os.path.join(CHECKER_FIXTURES, "checker_lambda_unresolved_param.jac");
     program = JacProgram();
@@ -2057,6 +2313,25 @@ test "lambda_param_unresolved_requires_annotation" {
     ];
     assert len(e1119) == 3 , f"Expected 3 E1119, got {len(e1119)}:\n"
         + "\n---\n".join(e.pretty_print() for e in e1119);
+    # An unannotated lambda param is inferred from the call site, so the body
+    # cannot be checked until then: `_lambda_needs_context` raises the pass's
+    # lambda depth and the body is skipped, then seeding re-types it. Seeding
+    # only re-types the statement the value comes from, so `_lambda_value_body`
+    # limits that deferral to a body that IS one such statement. A larger body
+    # is checked in place instead; deferring it would drop the checks on its
+    # other statements entirely, which is what this assertion guards. (The
+    # rationale lives here because jaclang source is deslopped: jac.toml's
+    # `[check.lint]` selects `all`, which strips comments and docstrings, and
+    # `*/tests/*` is the exclusion that lets a note like this survive.)
+    e1053 = [
+        e
+        for e in program.errors_had
+        if e.code and e.code.code == "E1053"
+    ];
+    assert len(e1053) == 1 , f"Expected the inline len(1) to still report, got {len(
+        e1053
+    )}:\n"
+        + "\n---\n".join(e.pretty_print() for e in program.errors_had);
 }
 
 test "ability_trigger_archetype" {
@@ -3232,6 +3507,16 @@ test "generic_call_inference" {
     assert "Cannot assign Item to int" in errors_str;
 }
 
+test "tuple iterable inference includes every position" {
+    program = JacProgram();
+    path = os.path.join(CHECKER_FIXTURES, "checker_tuple_iterable_inference.jac");
+    program.compile(path, options=NO_TC);
+    errors = "\n".join(error.pretty_print() for error in program.errors_had);
+    assert len(program.errors_had) == 2 , errors;
+    assert "bad_forward" in errors , errors;
+    assert "bad_reverse" in errors , errors;
+}
+
 """Test bidirectional type inference for container literals and type[X] covariance."""
 test "bidirectional_container_inference" {
     program = JacProgram();
@@ -3849,20 +4134,9 @@ test "root_cause_9_any_in_union" {
         for e in program.errors_had
         if e.loc and 396 <= e.loc.first_line <= 415
     ];
-    # 1 error. The any-in-union attr-access bug is fixed (#7158): `any`
-    # absorbs, so no E1099 "missing from any" is emitted here.
-    #
-    # This was 2 while the fixture spelled the union member `Any` without
-    # importing it: an unbound name made the whole union Unknown, so
-    # `edge.__jac__` errored for a reason that had nothing to do with union
-    # handling. Spelling it `any` lets the absorb actually run, and that
-    # error is gone. What remains is one E1053 in fail_any_in_union_method:
-    # `(any | str).upper()` yields Unknown rather than `str | any`, so it
-    # cannot pass as Sized -- a real remaining gap, which is what this
-    # fixture exists to pin.
-    assert len(rc9_errors) == 1 , f"Expected 1 any-in-union error, got {len(
-        rc9_errors
-    )}:\n"
+    # Both member lookup and calls preserve the Any alternative. The known
+    # str branch returns str from upper(), so len(val.upper()) is valid.
+    assert not rc9_errors , "Unexpected any-in-union errors:\n"
         + "\n---\n".join(e.pretty_print() for e in rc9_errors);
 }
 
@@ -3951,97 +4225,146 @@ test "root_causes_total_error_count" {
         options=NO_TC
     );
 
-    # 24 errors located in the fixture itself (the count is scoped to the
-    # fixture file: stub-evaluation diagnostics such as typeshed E0075 are
-    # attributed to whichever program first evaluates the stub classes, so
-    # an unscoped count is process-order-dependent). Down from 25: Root
-    # Cause 9's union member is spelled `any` now instead of an `Any` the
-    # fixture never imported, so the union absorbs instead of collapsing to
-    # Unknown and one error there is gone (see root_cause_9_any_in_union).
-    # 25 was down from 29: dotted stdlib submodules (`importlib.util`)
-    # resolve through ModuleType attribute access, removing the
-    # `.util`-on-Unknown errors from the Root Cause 6 corpus. Before that,
-    # 29 was down from 35: partial union member access returning resolved
-    # types instead of Unknown eliminated 6 cascading errors.
+    # Scope the count to this fixture: diagnostics from lazy stub evaluation
+    # depend on which program first evaluates the imported classes.
     _fixture_errors = [
         e
         for e in program.errors_had
         if e.loc and str(e.loc.mod_path).endswith("checker_narrowing_root_causes.jac")
     ];
-    # Down from 24 to 14: Root Cause 6's spec_from_file_location chain
-    # types as `ModuleSpec | None` now that aliased stub re-exports are
-    # followed, so its ten Unknown cascades are gone; the member-miss fix
-    # (inherited object.__getattribute__ no longer resolves every miss to
-    # Any) restored the E1030s the dynamic-attr root causes always expected.
-    assert len(_fixture_errors) == 14 , f"Expected 14 fixture errors, got {len(
+    # Union member calls now preserve Any, removing Root Cause 9's last
+    # spurious error. The remaining negative cases still emit 13 errors.
+    assert len(_fixture_errors) == 13 , f"Expected 13 fixture errors, got {len(
         _fixture_errors
     )}:\n"
         + "\n---\n".join(e.pretty_print() for e in _fixture_errors);
 }
 
 """MRO resolves correctly when base class imported through Python __init__.py re-export."""
-test "bare_generic_iteration_yields_any" {
-    # Bare generic types like `list` (no type args) should be treated as
-    # list[Any] per PEP 484, so iterating yields Any (not Unknown).
-    # Only the typed list[int] assignment mismatch should error.
+test "bare_generic_iteration_is_a_hard_error" {
+    # Each bare annotation is an E1036; reads through the bare container still
+    # behave as any, so only the annotation is reported.
     program = JacProgram();
     mod = program.compile(
         os.path.join(CHECKER_FIXTURES, "checker_bare_generic_iteration.jac"),
         options=NO_TC
     );
 
-    assert len(program.errors_had) == 1 , f"Expected 1 error (int->str), got {len(
+    assert_error_pretty_found(
+        """
+        b: str = t;  # <-- Error (int not assignable to str)
+        ^^^^^^^^^^^
+    """,
+        "\n".join(e.pretty_print() for e in program.errors_had)
+    );
+
+    # Bare generics are a hard error; each site reports E1036
+    bare_generic_errors = [
+        e
+        for e in program.errors_had
+        if "E1036" in e.pretty_print()
+    ];
+    assert len(bare_generic_errors) == 3 , f"Expected 3 E1036 errors (list, dict, list), got {len(
+        bare_generic_errors
+    )}:\n"
+        + "\n---\n".join(e.pretty_print() for e in bare_generic_errors);
+    assert len(program.errors_had) == 4 , f"Expected 4 errors (3 E1036 and the int to str), got {len(
         program.errors_had
     )}:\n"
         + "\n---\n".join(e.pretty_print() for e in program.errors_had);
-    assert_error_pretty_found(
-        """
-        b: str = t;   # <-- Error (int not assignable to str)
-        ^^^^^^^^^^^
-    """,
-        program.errors_had[0].pretty_print()
-    );
-
-    # Bare generics should produce W1036 warnings nudging toward explicit type args
-    bare_generic_warnings = [
-        w
-        for w in program.warnings_had
-        if "W1036" in w.pretty_print()
-    ];
-    assert len(bare_generic_warnings) == 3 , f"Expected 3 W1036 warnings (list, dict, list), got {len(
-        bare_generic_warnings
-    )}:\n"
-        + "\n---\n".join(w.pretty_print() for w in bare_generic_warnings);
 }
 
-test "bare_generic_in_signatures_emits_w1036" {
+test "written_empty_tuple_arguments_are_not_bare" {
+    # `tuple[()]` is the only spelling of the empty tuple, so a written but
+    # empty argument list is explicit; a nested bare tuple still is not.
+    program = JacProgram();
+    mod = program.compile(
+        os.path.join(CHECKER_FIXTURES, "checker_empty_tuple_arg.jac"), options=NO_TC
+    );
+    bare_generic_errors = [
+        e
+        for e in program.errors_had
+        if "E1036" in e.pretty_print()
+    ];
+    assert len(bare_generic_errors) == 1 , f"Expected only the nested bare tuple to report, got {len(
+        bare_generic_errors
+    )}:\n"
+        + "\n---\n".join(e.pretty_print() for e in bare_generic_errors);
+}
+
+test "bare_generic_in_signatures_emits_e1036" {
     # Bare generics in function/method return types and parameter types should
-    # also produce W1036 — same as in `has` fields and assignments.
+    # also produce E1036 — same as in `has` fields and assignments.
     program = JacProgram();
     mod = program.compile(
         os.path.join(CHECKER_FIXTURES, "checker_bare_generic_signatures.jac"),
         options=NO_TC
     );
 
-    bare_generic_warnings = [
+    bare_generic_errors = [
+        e
+        for e in program.errors_had
+        if "E1036" in e.pretty_print()
+    ];
+    # Expected sites (6 total):
+    #   1. `-> list`              return type
+    #   2. `x: dict`               param type
+    #   3. `-> list | None`        union branch in return type
+    #   4. `x: list`, `y: dict`    two params on `both_bare`
+    #   5. `-> tuple`              decl method return type
+    # `-> set` and `items: frozenset` keep the W1036 advisory instead: only
+    # dict/list/tuple require explicit type arguments.
+    # Properly-parameterized signatures and impl-side annotations (deduped
+    # against the decl) should NOT warn.
+    assert len(bare_generic_errors) == 6 , f"Expected 6 E1036 errors (signatures), got {len(
+        bare_generic_errors
+    )}:\n"
+        + "\n---\n".join(e.pretty_print() for e in bare_generic_errors);
+    advisories = [
         w
         for w in program.warnings_had
         if "W1036" in w.pretty_print()
     ];
-    # Expected sites (8 total):
-    #   1. `-> list`              return type
-    #   2. `x: dict`               param type
-    #   3. `-> list | None`        union branch in return type
-    #   4. `x: list`, `y: dict`,   two params + return type on `both_bare`
-    #      `-> set`
-    #   5. `-> tuple`              decl method return type
-    #   6. `items: frozenset`      decl method param type
-    # Properly-parameterized signatures and impl-side annotations (deduped
-    # against the decl) should NOT warn.
-    assert len(bare_generic_warnings) == 8 , f"Expected 8 W1036 warnings (signatures), got {len(
-        bare_generic_warnings
+    assert len(advisories) == 2 , f"Expected 2 W1036 warnings (set, frozenset), got {len(
+        advisories
     )}:\n"
-        + "\n---\n".join(w.pretty_print() for w in bare_generic_warnings);
+        + "\n---\n".join(w.pretty_print() for w in advisories);
+}
+
+test "bare_generic_hard_error_at_every_site" {
+    # Every generic written without type arguments is an E1036, whether it
+    # appears in a return type, a param type, a local annotation, or nested
+    # inside an otherwise-parameterised generic (list[dict], dict[str, list]).
+    program = JacProgram();
+    mod = program.compile(
+        os.path.join(CHECKER_FIXTURES, "checker_bare_generic_hard_error.jac"),
+        options=NO_TC
+    );
+
+    bare_generic_errors = [
+        e
+        for e in program.errors_had
+        if "E1036" in e.pretty_print()
+    ];
+    assert len(bare_generic_errors) == 9 , f"Expected 9 E1036 errors, got {len(
+        bare_generic_errors
+    )}:\n"
+        + "\n---\n".join(e.pretty_print() for e in program.errors_had);
+}
+
+test "explicit_any_propagates_through_operations" {
+    # Explicitly parameterised generics propagate any through chained
+    # subscripts, attribute access and iteration into typed targets.
+    program = JacProgram();
+    mod = program.compile(
+        os.path.join(CHECKER_FIXTURES, "checker_explicit_any_propagation.jac"),
+        options=NO_TC
+    );
+
+    assert len(program.errors_had) == 0 , f"Expected 0 errors, got {len(
+        program.errors_had
+    )}:\n"
+        + "\n---\n".join(e.pretty_print() for e in program.errors_had);
 }
 
 test "explicit_any_annotations_emit_w1037" {
@@ -4133,23 +4456,70 @@ test "jsx_step2_handler_aliases" {
         + "\n---\n".join(err.pretty_print() for err in program.errors_had);
 }
 
+def _jsx_msgs(program: JacProgram, code: str) -> list[any] {
+    return sorted(
+        [
+            d.msg
+            for d in program.errors_had + program.warnings_had
+            if d.code and d.code.code == code
+        ]
+    );
+}
+
 test "jsx_step3_jsx_prop_check" {
     path = os.path.join(CHECKER_FIXTURES, "checker_jsx_step3_jsx_prop_check.jac");
     program = JacProgram();
     mod = program.compile(path, options=NO_TC);
+    all_diags = "\n---\n".join(
+        d.pretty_print() for d in program.errors_had + program.warnings_had
+    );
 
-    e1100_errors = [
-        e
-        for e in program.errors_had
-        if e.code and e.code.code == "E1100"
-    ];
-    assert len(e1100_errors) >= 1 , f"Expected E1100 for JSX prop type mismatch, got {len(
-        e1100_errors
-    )} E1100 errors. All errors:\n"
-        + "\n---\n".join(
-            f"{err.code.code if err.code else '?'}: {err.pretty_print()}"
-            for err in program.errors_had
-        );
+    assert len(_jsx_msgs(program, "E1100")) >= 1 , f"Expected E1100 for the onClick type mismatch:\n{all_diags}";
+
+    # A call site passing no attribute and a zero-parameter component are
+    # checked like any other; nested content counts as `children`, a comment
+    # does not.
+    e1102 = _jsx_msgs(program, "E1102");
+    assert len(e1102) == 3 , f"Expected 3 E1102 (Plain 'title', Card 'children' twice):\n{all_diags}";
+    assert len(
+        [
+            m
+            for m in e1102
+            if "prop 'title'" in m
+        ]
+    )
+        == 1 , f"Expected one E1102 naming 'title':\n{all_diags}";
+    assert len(
+        [
+            m
+            for m in e1102
+            if "prop 'children'" in m
+        ]
+    )
+        == 2 , f"Expected two E1102 naming 'children':\n{all_diags}";
+    e1101 = _jsx_msgs(program, "E1101");
+    assert len(e1101) == 1 and "bogus" in e1101[0] , f"Expected exactly 1 E1101 (Zero 'bogus'):\n{all_diags}";
+
+    # Children handed to a component that declares none are dropped by the
+    # codegen, so the call site is warned.
+    w1053 = _jsx_msgs(program, "W1053");
+    assert len(w1053) == 2 , f"Expected 2 W1053 (Plain, Zero):\n{all_diags}";
+    assert len(
+        [
+            m
+            for m in w1053
+            if "Component 'Plain'" in m
+        ]
+    )
+        == 1 , f"Expected W1053 on 'Plain':\n{all_diags}";
+    assert len(
+        [
+            m
+            for m in w1053
+            if "Component 'Zero'" in m
+        ]
+    )
+        == 1 , f"Expected W1053 on 'Zero':\n{all_diags}";
 }
 
 test "jsx_step4_lambda_inference" {
@@ -4290,6 +4660,16 @@ test "jsx_props_bag_untyped_and_typed" {
     assert "UntypedComp" in w1052[0].pretty_print() , f"Expected W1052 for 'UntypedComp', got: {w1052[
         0
     ].pretty_print()}";
+
+    # A `props` bundle beside another parameter has no valid lowering: E1109
+    # fires once, on MixedComp.
+    e1109 = [
+        e
+        for e in program.errors_had
+        if e.code and e.code.code == "E1109"
+    ];
+    assert len(e1109) == 1 and "MixedComp" in e1109[0].pretty_print() , f"Expected exactly 1 E1109 (MixedComp), got:\n"
+        + "\n---\n".join(e.pretty_print() for e in program.errors_had);
 }
 
 test "jsx_intrinsic_tag_names_do_not_emit_w1051" {
@@ -4311,6 +4691,29 @@ test "jsx_intrinsic_tag_names_do_not_emit_w1051" {
     )}:\n"
         + "\n---\n".join(w.pretty_print() for w in w1051_warnings);
     # And the module itself must still type-check without errors.
+    assert len(program.errors_had) == 0 , f"Unexpected errors: {[
+        e.pretty_print() for e in program.errors_had
+    ]}";
+}
+
+test "jsx_svg_and_less_common_html_tags_are_intrinsic" {
+    path = os.path.join(CHECKER_FIXTURES, "checker_jsx_svg_and_html_intrinsics.jac");
+    program = JacProgram();
+    program.compile(path);
+    lines = Path(path).read_text().splitlines();
+    def opening_tag(w: any) -> bool {
+        return lines[w.loc.first_line - 1][w.loc.col_start - 2] == "<";
+    }
+    flagged = [
+        w
+        for w in program.warnings_had
+        if w.code
+            and (w.code.code == "W1050" or (w.code.code == "W2001" and opening_tag(w)))
+    ];
+    assert len(flagged) == 0 , f"Expected SVG and HTML tags to resolve as intrinsic elements, got {len(
+        flagged
+    )}:\n"
+        + "\n---\n".join(w.pretty_print() for w in flagged);
     assert len(program.errors_had) == 0 , f"Unexpected errors: {[
         e.pretty_print() for e in program.errors_had
     ]}";
@@ -4660,6 +5063,43 @@ test "pipe_forward_typing_matches_call_form" {
         else 'no-code'}:\n{err.pretty_print()}";
 }
 
+test "pipe operands keep the pipe expression as their only parent" {
+    # A pipe is typed and emitted through a temporary call over its operands.
+    # A temporary left linked only goes away at a cycle collection, so
+    # collection stays off while the graph is read.
+    import gc;
+    import from jaclang.compiler.frontend.roles { Kid }
+    path = os.path.join(CHECKER_FIXTURES, "checker_pipe_operand_parents.jac");
+    collecting = gc.isenabled();
+    gc.disable();
+    try {
+        program = JacProgram();
+        mod = program.compile(path, options=NO_TC);
+        assert not program.errors_had;
+        assert mod.gen.py_ast;
+        pipes = [
+            expr
+            for expr in mod.get_all_sub_nodes(uni.BinaryExpr)
+            if isinstance(expr.op, uni.Token)
+                and expr.op.value in ("|>", ":>", "<|", "<:")
+        ];
+        assert len(pipes) == 8;
+        for expr in pipes {
+            for operand in (expr.left, expr.right) {
+                holders = [operand<-:Kid:<-];
+                assert len(holders) == 1 and holders[0] is expr , f"line {expr.loc.first_line}: a pipe operand is held by {[
+                    type(h).__name__ for h in holders
+                ]}";
+                assert operand.parent is expr;
+            }
+        }
+    } finally {
+        if collecting {
+            gc.enable();
+        }
+    }
+}
+
 test "as_cast_resolves_any_assignment" {
     # The `as` cast re-types an Any source so it lands in a declared concrete
     # type without tripping the strict-gradual rule (E1001).
@@ -4903,7 +5343,7 @@ test "edge_endpoint_typing_narrows_neighbour_traversals" {
         "follow_out": "list[Profile]",  # ->:Follow:-> narrows to target
         "post_in": "list[Profile]",  # <-:Post:<- narrows to source
         "post_out": "list[Tweet]",  # ->:Post:-> narrows to target
-        "untyped": "list[<any>]",  # bare edge stays gradual
+        "untyped": "list[<any>]",  # the `any --> any` opt-out stays gradual
         "inherited": "list[Profile]",  # subtype edge inherits endpoints
         "one": "Tweet",  # subscript element of a narrowed list
         "field_read": "str"  # field read off a narrowed element
@@ -4936,17 +5376,88 @@ test "edge_endpoint_clause_rejected_on_non_edge" {
         + "\\n---\\n".join(e.pretty_print() for e in program.errors_had);
 }
 
+def _endpoint_diags(program: JacProgram) -> list[tuple[str, int]] {
+    return sorted(
+        [
+            (d.code.code, d.loc.first_line)
+            for d in program.errors_had + program.warnings_had
+            if d.code and d.code.code in ("E1136", "E1137", "W2081", "W2082", "E2086")
+        ]
+    );
+}
+
+test "edge_endpoint_declaration_is_enforced_at_connect_and_traversal" {
+    # Step 1: `edge Post: Profile --> Tweet` is already trusted by inference to
+    # narrow a traversal, so a connect that violates it is a miscompile, not a
+    # style question -- field access resolves by slot index, so the wrong node
+    # silently reads the wrong field. Only an unrelated type is an error; a
+    # supertype operand may well be the declared type at runtime, so it warns.
+    program = JacProgram();
+    program.compile(os.path.join(CHECKER_FIXTURES, "edge_endpoint_violation.jac"));
+    got = _endpoint_diags(program);
+    assert ("E1136", 27) in got , f"backwards connect must be E1136 at 27, got {got}";
+    assert ("E1137", 28) in got , f"wrong-origin traversal must be E1137 at 28, got {got}";
+    assert ("W2081", 14) in got , f"a supertype source must warn W2081 at 14, got {got}";
+    assert ("W2082", 18) in got , f"a supertype origin must warn W2082 at 18, got {got}";
+    for clean in [24, 25, 26, 29, 30] {
+        assert not [
+            p
+            for p in got
+            if p[1] == clean
+        ] , f"line {clean} conforms and must stay silent, got {got}";
+    }
+}
+
+test "edge_endpoint_admits_a_union_like_every_other_type_position" {
+    # Step 2: endpoints parsed through `parse_atomic_chain`, which stops short of
+    # the union operator, so `A | B` was E0005 -- while `has v: A | B` parsed
+    # fine through `parse_pipe`. 27 of the compiler's own role getters return a
+    # union, so endpoints were inexpressible for them until this parses.
+    program = JacProgram();
+    mod = program.compile(os.path.join(CHECKER_FIXTURES, "edge_endpoint_union.jac"));
+    assert len(program.errors_had) == 0 , "Unexpected errors:\n"
+        + "\n---\n".join(e.pretty_print() for e in program.errors_had);
+    expected = {
+        "multi_out": "list[A | B]",
+        "narrow_out": "list[C]",
+        "narrow_in": "list[A | B]",
+        "shared_field": "str"
+    };
+    seen: dict[str, str] = {};
+    for nm in mod.get_all_sub_nodes(uni.Name) {
+        if nm.value in expected and nm.type is not None {
+            seen[nm.value] = str(nm.type);
+        }
+    }
+    for (target, want) in expected.items() {
+        assert seen.get(target) == want , f"{target}: expected {want}, got {seen.get(
+            target
+        )}";
+    }
+}
+
+test "edge_without_an_endpoint_clause_is_rejected" {
+    # Step 3: a bare `edge Foo {}` widens every traversal through it to `any`
+    # with nothing written down, which is the one place Jac let an annotation be
+    # implied by silence. The widening stays available -- `any --> any` keeps the
+    # gradual behaviour exactly, `Node --> Node` asks for node-ness -- but it has
+    # to be said.
+    program = JacProgram();
+    program.compile(os.path.join(CHECKER_FIXTURES, "edge_missing_endpoints.jac"));
+    got = _endpoint_diags(program);
+    assert got == [("E2086", 6)] , f"only the bare edge on line 6 may be flagged, got {got}";
+}
+
 test "mobui_project_forbids_html_intrinsic_tags" {
     # D17: in a mobui (React Native) project, raw HTML host tags are
     # forbidden — JsxIntrinsicGuardPass emits E1105 for each lowercase tag,
     # with a fix-it pointing at the @jac/mobui / RN component. Uppercase user
-    # components (<Card>) are allowed. The pass runs in get_ir_gen_sched, so
+    # components (<Card>) are allowed. The pass runs in the IR product, so
     # it fires even with type_check=False (the .jac / build path).
     path = os.path.join(CHECKER_FIXTURES, "checker_jsx_mobui_html_forbidden.jac");
     program = JacProgram();
     program.compile(
-        path,
-        options=CompileOptions(project_kind="mobui", project_root=CHECKER_FIXTURES)
+        path, options=CompileOptions(ui="mobui", project_root=CHECKER_FIXTURES)
     );
 
     e1105 = [
@@ -4993,8 +5504,7 @@ test "mobui_project_allows_lowercase_component_in_scope" {
     path = os.path.join(CHECKER_FIXTURES, "checker_jsx_mobui_html_forbidden.jac");
     program = JacProgram();
     program.compile(
-        path,
-        options=CompileOptions(project_kind="mobui", project_root=CHECKER_FIXTURES)
+        path, options=CompileOptions(ui="mobui", project_root=CHECKER_FIXTURES)
     );
     e1105 = [
         e
@@ -5017,8 +5527,7 @@ test "mobui_project_lowercase_component_no_w1050" {
     );
     program = JacProgram();
     program.compile(
-        path,
-        options=CompileOptions(project_kind="mobui", project_root=CHECKER_FIXTURES)
+        path, options=CompileOptions(ui="mobui", project_root=CHECKER_FIXTURES)
     );
     w1050 = [
         w
@@ -5030,7 +5539,7 @@ test "mobui_project_lowercase_component_no_w1050" {
 }
 
 test "mobui_kind_does_not_leak_outside_project_root" {
-    # Regression: a consumer's project_kind="mobui" must not reach files
+    # Regression: a consumer's ui="mobui" must not reach files
     # outside the project root. The real failure was client_runtime.jac
     # (from jac-client) being compiled into the user's JacProgram during
     # `jac build` and receiving E1105 for its HTML tags ("kind-leak").
@@ -5041,7 +5550,7 @@ test "mobui_kind_does_not_leak_outside_project_root" {
     with tempfile.TemporaryDirectory() as tmp_root {
         program = JacProgram();
         program.compile(
-            path, options=CompileOptions(project_kind="mobui", project_root=tmp_root)
+            path, options=CompileOptions(ui="mobui", project_root=tmp_root)
         );
         e1105 = [
             e
@@ -5057,25 +5566,28 @@ test "mobui_kind_does_not_leak_outside_project_root" {
 }
 
 test "jac_toml_kind_mobui_round_trip" {
-    # Verify the jac.toml → per-path discovery → compile() code path for
-    # `[project] client_kind = "mobui"`. All other mobui-project tests set
-    # project_kind via CompileOptions directly; this one writes a real
-    # project (jac.toml + module) and relies on the guard pass discovering
-    # the kind from the module's own path -- no cwd, no config singleton.
+    # Verify the jac.toml → workspace reader → compile() code path for
+    # `[apps.<name>] kind = "mobile"`: a mobile app is mobUI with no other
+    # key. All other mobui-project tests set ui via CompileOptions directly;
+    # this one writes a real project (jac.toml + module) and relies on the
+    # guard pass discovering the kind from the module's own path -- no cwd,
+    # no config singleton.
     import shutil;
     import tempfile;
     import from jaclang.project.config { JacConfig }
 
-    toml_content = '[project]\nname = "test-proj"\nclient_kind = "mobui"\n';
+    toml_content = '[project]\nname = "test-proj"\n\n[apps.main]\nkind = "mobile"\nentry-point = "main"\n';
 
     with tempfile.TemporaryDirectory() as tmp_dir {
         toml_path = Path(tmp_dir) / "jac.toml";
         toml_path.write_text(toml_content);
-        # Part 1: round-trip — JacConfig.load() must parse client_kind correctly.
+        # Part 1: round-trip — JacConfig.load() must derive mobUI from the kind.
         cfg = JacConfig.load(toml_path);
-        assert cfg.project.client_kind == "mobui" , f"Expected client_kind='mobui' from jac.toml, got '{cfg.project.client_kind}'";
+        assert cfg.apps["main"].ui() == "mobui" , f"Expected ui='mobui' for app main, got '{cfg.apps[
+            'main'
+        ].ui()}'";
         # Part 2: per-path discovery -- a module inside the project picks up
-        # "mobui" with a plain CompileOptions() (no explicit project_kind),
+        # "mobui" with a plain CompileOptions() (no explicit ui),
         # causing JsxIntrinsicGuardPass to emit E1105.
         fixture = os.path.join(tmp_dir, "main.jac");
         shutil.copyfile(
@@ -5089,42 +5601,11 @@ test "jac_toml_kind_mobui_round_trip" {
             for e in program.errors_had
             if e.code and e.code.code == "E1105"
         ];
-        assert len(e1105) == 4 , f"Expected 4 E1105 from jac.toml client_kind=mobui, got {len(
+        assert len(e1105) == 4 , f"Expected 4 E1105 from [apps.main] kind=mobile, got {len(
             e1105
         )}:\n"
             + "\n---\n".join(e.pretty_print() for e in e1105);
     }
-}
-
-test "mobui_hello_example_discovers_kind_and_stays_e1105_clean" {
-    # Integration over the shipped starter example: its jac.toml declares
-    # client_kind = "mobui", per-path discovery must switch the guard on for
-    # its modules, and the example itself must stay free of raw HTML tags.
-    import from jaclang.project.client_kind { resolve_client_kind_context }
-
-    example_dir = os.path.join(JAC_ROOT, "examples", "mobui", "hello");
-    `entry = os.path.join(example_dir, "main.jac");
-    assert os.path.isfile(`entry) , f"mobui hello example missing at {`entry}";
-
-    (kind, proj_root) = resolve_client_kind_context(`entry);
-    assert kind == "mobui" , (
-        f"per-path discovery must resolve mobui for the example, got '{kind}'"
-    );
-    assert proj_root and os.path.samefile(proj_root, example_dir) , (
-        f"project root must be the example dir, got '{proj_root}'"
-    );
-
-    program = JacProgram();
-    program.compile(`entry, options=CompileOptions());
-    e1105 = [
-        e
-        for e in program.errors_had
-        if e.code and e.code.code == "E1105"
-    ];
-    assert len(e1105) == 0 , (
-        "shipped mobUI example must be E1105-clean:\n"
-        + "\n---\n".join(e.pretty_print() for e in e1105)
-    );
 }
 
 test "builtin_inference_regressions" {
@@ -5195,6 +5676,19 @@ test "bare_list_flow_inference" {
     }
 }
 
+test "final_reassignment_errors" {
+    program = JacProgram();
+    program.compile(
+        os.path.join(CHECKER_FIXTURES, "checker_final_reassignment.jac"), options=NO_TC
+    );
+    errors = [e.pretty_print() for e in program.errors_had];
+    names = ["SHARED_RATE", "x", "x", "y", "y", "label", "LIMIT"];
+    assert len(errors) == len(names) , "\n---\n".join(errors);
+    for (err, name) in zip(errors, names) {
+        assert "E1135" in err and f"'{name}'" in err , err;
+    }
+}
+
 test "none_equality_not_flagged" {
     # `==` / `!=` never fail to resolve in Python (object.__eq__ is the
     # universal identity fallback), so None-equality must not raise E1110.
@@ -5230,4 +5724,75 @@ test "match_wildcard_no_warning_noise" {
     assert not noise , (
         "case _ must not draw warning noise; got: " + str([str(w) for w in noise])
     );
+}
+
+test "client cleanup returns only warn when ignored" {
+    program = JacProgram();
+    program.compile(
+        os.path.join(CHECKER_FIXTURES, "checker_client_effect_returns.jac"),
+        options=NO_TC
+    );
+    assert not program.errors_had , str(program.errors_had);
+    ignored = [
+        w
+        for w in program.warnings_had
+        if w.code and w.code.code == "W2014"
+    ];
+    assert len(ignored) == 2 , str(ignored);
+    assert [w.loc.first_line for w in ignored] == [7, 10];
+}
+
+test "a bare name in a method body skips the class scope" {
+    prog = JacProgram();
+    prog.compile(
+        os.path.join(CHECKER_FIXTURES, "checker_bare_name_skips_class_scope.jac")
+    );
+    errors = [str(e) for e in prog.errors_had];
+    assert not errors , f"Expected no errors, got: {errors}";
+    w2001 = [
+        w
+        for w in prog.warnings_had
+        if w.code is not None and w.code.code == "W2001"
+    ];
+    names = [w.msg for w in w2001];
+    for bound in ["'lookup'", "'Part'", "'T'", "'seed'"] {
+        assert not any(bound in m for m in names) , f"{bound} should resolve: {names}";
+    }
+    helper = [
+        w
+        for w in w2001
+        if "'helper'" in w.msg
+    ];
+    assert len(helper) == 1 , f"Expected one W2001 for 'helper', got: {names}";
+    hint = str(helper[0].help_text or "");
+    assert "self.helper" in hint and "Toolbox" in hint , f"Hint should name the class and `self.helper`: {hint!r}";
+    make_hints = sorted(
+        [
+            str(w.help_text or "")
+            for w in w2001
+            if "'make'" in w.msg
+        ]
+    );
+    assert len(make_hints) == 2 , f"Expected W2001 for 'make' in both methods, got: {names}";
+    assert any("`Toolbox.make`" in h for h in make_hints) , f"static method hint: {make_hints}";
+    assert any("`cls.make`" in h for h in make_hints) , f"class method hint: {make_hints}";
+}
+
+test "arguments of a call whose callee is Any are still type-evaluated" {
+    # `any(...)` resolves its callee to the `Any` keyword type, and calling an
+    # `any`-typed value has no signature to check arguments against. Both
+    # calls still evaluate their arguments, so a comprehension passed straight
+    # to them carries its element type to the backends.
+    program = JacProgram();
+    mod = program.compile(
+        os.path.join(CHECKER_FIXTURES, "checker_any_call_arguments.jac")
+    );
+    assert len(program.errors_had) == 0 , "Unexpected errors:\n"
+        + "\n---\n".join(e.pretty_print() for e in program.errors_had);
+    comprs = mod.get_all_sub_nodes(uni.ListCompr);
+    assert len(comprs) == 3 , f"expected three comprehensions, got {len(comprs)}";
+    for compr in comprs {
+        assert str(compr.type) == "list[bool]" , f"line {compr.loc.first_line}: {compr.type}";
+        assert str(compr.out_expr.type) == "bool" , f"line {compr.loc.first_line}: {compr.out_expr.type}";
+    }
 }

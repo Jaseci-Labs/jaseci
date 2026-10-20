@@ -9,63 +9,10 @@ import from collections { OrderedDict, deque }
 import from collections.abc { Callable, Coroutine, Iterable, Mapping, Sequence }
 import from concurrent.futures { Future, ThreadPoolExecutor }
 import from contextvars { ContextVar }
-import dataclasses;
-import from dataclasses { dataclass, field }
 import from inspect { getfile }
 import from logging { getLogger }
 import from typing { TYPE_CHECKING, Literal, ParamSpec, Protocol, TypeAlias, TypeVar }
 import from uuid { UUID }
-import from jaclang.runtime.archetype {
-    GenericEdge,
-    ObjectAnchor,
-    ObjectSpatialFunction,
-    Root,
-    anchor_key,
-    same_anchor,
-    _deref,
-    _edge_subtypes,
-    _light_edge_types,
-    edge_subtypes,
-    is_light_edge_type,
-    light_clear_hop,
-    light_connect,
-    light_disconnect,
-    light_edge_view,
-    light_hop,
-    light_hop_answers
-}
-import from jaclang.compiler.frontend.constant { EdgeDir, colors }
-import from jaclang.runtime.graph_query { GraphQuery, QHop }
-import from jaclang.runtime.constructs {
-    AccessLevel,
-    access_level_cast,
-    Anchor,
-    Archetype,
-    EdgeAnchor,
-    EdgeArchetype,
-    JsxElement,
-    NodeAnchor,
-    NodeArchetype,
-    PermissionDenied,
-    WalkerAnchor,
-    WalkerArchetype
-}
-import from jaclang.compiler.driver.modresolver {
-    infer_language,
-    find_jac_project_root,
-    push_import_base,
-    pop_import_base
-}
-import from jaclang.compiler.driver.mtp { Info }
-import type from jaclang.byllm.mtir { MTRuntime }
-import type from jaclang.cli.console { JacConsole as ConsoleImpl }
-import type from jaclang.compiler.driver.compiler { JacCompiler }
-import type from jaclang.compiler.driver.program { JacProgram }
-import type from jaclang.compiler.driver.selfhost { SelfHostCache }
-import type from jaclang.client.client_bundle { ClientBundle, ClientBundleBuilder }
-import type from jaclang.runtime.context { ExecutionContext }
-import type from jaclang.server.server { JacAPIServer as JacServer }
-import type from jaclang.server.server { ModuleIntrospector, UserManager }
 
 glob logger = getLogger(__name__),
      T = TypeVar('T'),
@@ -81,104 +28,28 @@ glob logger = getLogger(__name__),
      _request_context: ContextVar[ExecutionContext | None] = ContextVar(
          'request_context', `default=None
      ),
-     _default_base_path_dir: list = [os.getcwd()],
-     _default_full_target_path: list = [None],
-     _shared_root_resolver: list = [None, None];
+     _default_base_path_dir: list[str | None] = [os.getcwd()],
+     _default_full_target_path: list[str | None] = [None],
+     _shared_root_resolver: list[any] = [None, None];
 
-glob _scale_provider_cache: list = [],
-     _scale_provider_error: list = [None];
+glob _scale_provider_cache: list[type | None] = [],
+     _scale_provider_error: list[Exception | None] = [None];
 
-glob _persistent_memory_provider: list = [None];
+glob _persistent_memory_provider: list[Callable | None] = [None];
 
-def _scale_provider -> any {
-    if _scale_provider_cache {
-        return _scale_provider_cache[0];
-    }
-    result: any = None;
-    try {
-        import from jaclang.scale.plugin { JacScalePlugin }
-        result = JacScalePlugin;
-    } except ImportError as e {
-        _scale_provider_error[0] = e;
-    }
-    _scale_provider_cache.append(result);
-    return result;
-}
+def _scale_provider -> any;
 
-def scale_provider_error -> any {
-    return _scale_provider_error[0];
-}
+def scale_provider_error -> Exception | None;
 
-def _all_grant(anchor: Anchor) -> AccessLevel {
-    perm = anchor.access;
-    return AccessLevel.NO_ACCESS if perm is None else perm.all;
-}
+def _all_grant(anchor: Anchor) -> AccessLevel;
 
 def _light_disconnect_between(
     a: NodeAnchor, b: NodeAnchor, dirv: int, filter: (Callable | None)
-) -> bool {
-    occurred = False;
-    if dirv != 1 and a.out_light {
-        for cls in `list(a.out_light.keys()) {
-            if filter and not filter(light_edge_view(cls, a, b)) {
-                continue;
-            }
-            while light_disconnect(a, cls, b) {
-                occurred = True;
-            }
-        }
-    }
-    if dirv != 2 and a.in_light {
-        for cls in `list(a.in_light.keys()) {
-            if filter and not filter(light_edge_view(cls, b, a)) {
-                continue;
-            }
-            while light_disconnect(b, cls, a) {
-                occurred = True;
-            }
-        }
-    }
-    return occurred;
-}
+) -> bool;
 
 def resolve_ref(
     stub: (Anchor | None), referrer: (Anchor | None) = None
-) -> (Anchor | None) {
-    if stub is None {
-        return None;
-    }
-    if stub.is_populated() {
-        return stub;
-    }
-    stub.populate();
-    if stub.is_populated() {
-        return stub;
-    }
-    ctx = JacRuntimeInterface.get_context();
-
-    if ctx.mem.is_recoverable_quarantine(stub.ensure_id()) {
-        return None;
-    }
-
-    if os.environ.get("JAC_SV_SIBLING") == "1" {
-        logger.debug(
-            f"unresolvable ref {type(stub).__name__} [{stub.id}] in sibling "
-            "service; skipping without heal (peer-owned or owner will heal)"
-        );
-        return None;
-    }
-    ref_repr = referrer.id if referrer is not None else '?';
-    logger.error(
-        f"dangling reference: {type(stub).__name__} [{stub.id}] cited by "
-        f"{ref_repr} does not resolve; quarantining and pruning"
-    );
-    try {
-        ctx.mem.quarantine_ref(referrer, stub);
-    } except Exception as e {
-        logger.debug(f"heal of dangling ref {stub.id} failed: {e}");
-    }
-    return None;
-}
+) -> (Anchor | None);
 
 class JacClassReferences {
     with entry {
@@ -197,9 +68,9 @@ class JacClassReferences {
 obj LLMModel(Protocol) {
     has call_params: dict[(str, object)];
 
-    def __call__(**kwargs: object) -> LLMModel;
-    def invoke(mt_run: MTRuntime) -> object;
-    async def ainvoke(mt_run: MTRuntime) -> object;
+    def __call__(**kwargs: object) -> LLMModel abst;
+    def invoke(mt_run: MTRuntime) -> object abst;
+    async def ainvoke(mt_run: MTRuntime) -> object abst;
 }
 
 class JacContext {
@@ -224,14 +95,15 @@ class JacPersistence {
     static def get_object(id: str) -> (Archetype | None);
     static async def aget_object(id: str) -> (Archetype | None);
     static def object_ref(`obj: Archetype) -> str;
-    static def save(`obj: (Archetype | Anchor)) -> None;
+    static def save(`obj: (Archetype | Anchor), owner: (UUID | None) = None) -> None;
+    static def owner_of(`obj: (Archetype | Anchor)) -> (UUID | None);
     static def destroy(objs: any, strict: bool = False) -> None;
     static def _destroy_anchors(objs: any, strict: bool) -> list[Anchor];
     static def peek_attr(`obj: any, name: str) -> any;
     static def peek_item(container: any, key: any) -> any;
     static def get_user_manager(base_path: str) -> UserManager;
     static def store(base_path: str = './storage', create_dirs: bool = True) -> any;
-    static def get_persistent_memory(config: dict) -> any;
+    static def get_persistent_memory(config: dict[str, any]) -> any;
     static def set_persistent_memory_provider(provider: Callable | None) -> None;
 }
 
@@ -298,7 +170,7 @@ class JacGraph {
         right: (NodeArchetype | list[NodeArchetype]),
         `edge: type[EdgeArchetype] | EdgeArchetype | None = None,
         undir: bool = False,
-        conn_assign: (tuple[(tuple, tuple)] | None) = None,
+        conn_assign: (tuple[(tuple[str, ...], tuple[any, ...])] | None) = None,
         edges_only: bool = False
     ) -> (NodeArchetype | list[NodeArchetype] | list[EdgeArchetype]);
 
@@ -310,7 +182,7 @@ class JacGraph {
     ) -> bool;
 
     static def assign_all(
-        target: list[T], attr_val: tuple[(tuple[str], tuple[any])]
+        target: list[T], attr_val: tuple[(tuple[str, ...], tuple[any, ...])]
     ) -> list[T];
 
     static def root -> Root;
@@ -318,7 +190,7 @@ class JacGraph {
     static def build_edge(
         is_undirected: bool,
         conn_type: type[EdgeArchetype] | EdgeArchetype | None,
-        conn_assign: (tuple[(tuple, tuple)] | None)
+        conn_assign: (tuple[(tuple[str, ...], tuple[any, ...])] | None)
     ) -> Callable[([NodeAnchor, NodeAnchor], EdgeArchetype)];
 
     static def heavy_edge(
@@ -326,12 +198,18 @@ class JacGraph {
         target: NodeAnchor,
         conn_type: type[EdgeArchetype] | EdgeArchetype | None,
         is_undirected: bool,
-        conn_assign: (tuple[(tuple, tuple)] | None)
+        conn_assign: (tuple[(tuple[any, ...], tuple[any, ...])] | None)
     ) -> EdgeArchetype;
 
     static def hop(
-        origin: any, dir: int, edge_type: (type | None) = None, edges_only: bool = False
-    ) -> list;
+        origin: any,
+        dir: int,
+        edge_type: (type | None) = None,
+        edges_only: bool = False,
+        nd: (type | tuple[type, ...] | None) = None,
+        preds: (list[QPred] | None) = None,
+        from_visit: bool = False
+    ) -> list[any];
 
     static def clear_edges(
         origin: any, dir: int, edge_type: (type | None) = None
@@ -370,10 +248,6 @@ class JacWalker {
 
 class JacArchetype {
     static def make_archetype(cls: type[Archetype]) -> type[Archetype];
-    static def field(
-        factory: (Callable[([], T)] | None) = None, `init: bool = True
-    ) -> T;
-
     static def on_entry(func: Callable) -> Callable;
     static def on_exit(func: Callable) -> Callable;
     static def set_trigger(
@@ -420,12 +294,14 @@ class JacIntrospection {
     static def list_nodes(module_name: str) -> list[str];
     static def list_edges(module_name: str) -> list[str];
     static def spawn_node(
-        node_name: str, attributes: (dict | None) = None, module_name: str = '__main__'
+        node_name: str,
+        attributes: (dict[str, any] | None) = None,
+        module_name: str = '__main__'
     ) -> NodeArchetype;
 
     static def spawn_walker(
         walker_name: str,
-        attributes: (dict | None) = None,
+        attributes: (dict[str, any] | None) = None,
         module_name: str = '__main__'
     ) -> WalkerArchetype;
 
@@ -451,8 +327,8 @@ class JacLLM {
     static def `by(model: LLMModel) -> Callable;
     static def by_operator(lhs: any, rhs: any) -> any;
     static def default_llm -> LLMModel;
-    static def add_mtir_to_map(scope: str, mtir: Info) -> None;
     static def get_mtir_from_map(scope: str) -> (Info | None);
+    static def fetch_mtir(func: Callable) -> (Info | None);
 }
 
 class JacServe {
@@ -462,12 +338,7 @@ class JacServe {
     ) -> ClientBundle;
 
     static def get_api_server_class -> type;
-    static def ensure_sv_service(module_name: str, base_path: str) -> None;
-    static def sv_service_call(module_name: str, func_name: str, args: dict) -> any;
-    static def sv_walker_call(
-        module_name: str, walker_name: str, args: dict, stub_cls: any
-    ) -> any;
-
+    static def get_server_extensions -> list[ServerExtension];
     static def get_sv_registry -> dict[str, str];
     static def create_server(
         jac_server: JacServer, host: str, port: int, max_retries: int = 10
@@ -565,6 +436,8 @@ class JacRuntime(JacRuntimeInterface) {
     ) -> None;
 
     static def set_context(context: ExecutionContext) -> None;
+    static def request_context -> (ExecutionContext | None);
     static def push_request_context(context: ExecutionContext) -> any;
     static def reset_request_context(token: any) -> None;
+    static def after_fork_in_child -> None;
 }
