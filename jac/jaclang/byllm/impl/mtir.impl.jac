@@ -238,7 +238,13 @@ impl MTRuntime.write_back_conversation -> None {
         if hasattr(m, "to_dict") {
             out.append(m.to_dict());
         } elif isinstance(m, dict) {
-            out.append(dict(m));
+            d = dict(m);
+            if d.get("tool_calls") {
+                d["tool_calls"] = [
+                    tc.model_dump() if tc?.model_dump else tc for tc in d["tool_calls"]
+                ];
+            }
+            out.append(d);
         } elif hasattr(m, "model_dump") {
             try {
                 out.append(m.model_dump());

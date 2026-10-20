@@ -433,14 +433,31 @@ def _extract_first_tool_call(content: str, tool_names: list) -> dict | None {
 
 
 def coerce_message_dict(message: object) -> dict {
+    out: dict = {};
+    dump = message?.model_dump;
     if isinstance(message, dict) {
-        return message;
+        out = message;
+    } elif callable(dump) {
+        out = dict(dump(exclude_none=True));
+        tc = _field(message, "tool_calls");
+        if tc {
+            out["tool_calls"] = tc;
+        }
+    } else {
+        tc = _field(message, "tool_calls");
+        if tc {
+            out["tool_calls"] = tc;
+        }
     }
-    out: dict = {"role": _field(message, "role") or "assistant"};
-    out["content"] = _field(message, "content");
-    tc = _field(message, "tool_calls");
-    if tc {
-        out["tool_calls"] = tc;
+    out.setdefault("role", _field(message, "role") or "assistant");
+    out.setdefault("content", _field(message, "content"));
+    extra = out.pop("provider_specific_fields", None);
+    if isinstance(extra, dict) {
+        for (key, value) in extra.items() {
+            if value is not None and key not in out {
+                out[key] = value;
+            }
+        }
     }
     return out;
 }

@@ -41,7 +41,8 @@ import from jaclang.byllm.config_loader { get_byllm_config }
 import from jaclang.byllm.telemetry {
     _emit_agent_telemetry,
     _current_invocation_id,
-    _aggregate_usage
+    _aggregate_usage,
+    _notify_llm_call
 }
 import from jaclang.byllm.parallel {
     dispatch_batch,

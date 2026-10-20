@@ -41,7 +41,12 @@ obj MTRuntime {
         _stream_reset_count: int = 0,
         _tool_arg_deltas: list[dict] = [],
         _usage_history: list[dict] = [],
-        _call_kind: str = "react_iteration";
+        _call_kind: str = "react_iteration",
+        _reasoning_deltas: list[str] = [],
+        _last_stream_chunks: list = [],
+        _llm_hook_cursor: int = 0,
+        _llm_hook_compacted: bool = False,
+        _sent_system: dict | None = None;
 
     static def factory(mtir: MTIR) -> MTRuntime;
     def add_message(message: MessageType) -> None;
