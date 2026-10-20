@@ -715,26 +715,23 @@ test "a workspace app scopes its storage identity to the served app" {
     entry_file = Path("/ws/app/main.jac");
     # A workspace entry that resolves to a named app carries that app in the
     # storage identity, so two served apps never share one data dir.
-    with patch(
-        "jaclang.project.config.get_config_for_dir", return_value=None
-    ), patch(
+    with patch("jaclang.project.config.get_config_for_dir", return_value=None), patch(
         "jaclang.client.targets.desktop.desktop_build.serving_app_for",
         return_value="notes"
     ) {
         assert desktop_storage_identifier(
             "org.example.notes", Path("/ws"), entry_file, "embedded"
-        ) == "org.example.notes.notes";
+        )
+            == "org.example.notes.notes";
     }
     # A project without a distinct serving app keeps the plain identifier.
-    with patch(
-        "jaclang.project.config.get_config_for_dir", return_value=None
-    ), patch(
-        "jaclang.client.targets.desktop.desktop_build.serving_app_for",
-        return_value=""
+    with patch("jaclang.project.config.get_config_for_dir", return_value=None), patch(
+        "jaclang.client.targets.desktop.desktop_build.serving_app_for", return_value=""
     ) {
         assert desktop_storage_identifier(
             "org.example.notes", Path("/ws"), entry_file, "embedded"
-        ) == "org.example.notes";
+        )
+            == "org.example.notes";
     }
 }
 

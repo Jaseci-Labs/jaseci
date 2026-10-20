@@ -251,9 +251,7 @@ impl cef_build(
         dispatch.timeout_s,
         dispatch.max_queue,
         dispatch.debug,
-        desktop_storage_identifier(
-            ident.identifier, project_dir, entry_file, backend
-        ),
+        desktop_storage_identifier(ident.identifier, project_dir, entry_file, backend),
         pg_dist,
     );
     (out_dir / "host.jac").write_text(host_src);
