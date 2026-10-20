@@ -4,7 +4,7 @@ import asyncio;
 import from litellm.exceptions { InternalServerError }
 import from jaclang.byllm.types { IterationAction, IterationContext, StreamEvent }
 import from jaclang.byllm.lib { MockLLM }
-import from support { call, fail, finish, mk_run, say }
+import from support { call, event_types, fail, finish, mk_run, say }
 
 
 def save_data(name: str) -> str {
@@ -155,4 +155,23 @@ test "a plain stream never replays text it has already delivered" {
             }
         }
     }
+}
+
+
+test "a typed call with a stream_handler parses only the retried attempt" {
+    seen: list[StreamEvent] = [];
+    llm = MockLLM(
+        outputs=[fail(_dropped(), content="[9, 9, 9, 9, 9, 9", after=1), [1, 2]]
+    );
+
+    def pick(options: str) -> list[int] by llm(
+        stream=True, stream_handler=seen.append
+    );
+
+    assert pick("go") == [1, 2];
+    kinds = event_types(seen);
+    assert "stream_reset" in kinds , f"the handler was never told to discard: {kinds}";
+    assert kinds.index("stream_reset") > kinds.index("chunk") , (
+        f"the failed attempt must reach the handler before the reset: {kinds}"
+    );
 }

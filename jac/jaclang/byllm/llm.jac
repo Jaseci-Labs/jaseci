@@ -58,7 +58,11 @@ obj BaseLLM {
     def _resolve_stream_retries(mt_run: MTRuntime) -> int;
     def _resolve_timeout(mt_run: MTRuntime) -> float | None;
     def _should_retry_stream(
-        mt_run: MTRuntime, e: Exception, attempt: int, usage_base: int = -1
+        mt_run: MTRuntime,
+        e: Exception,
+        attempt: int,
+        usage_base: int = -1,
+        restartable: bool = True,
     ) -> bool;
 
     def _invoke_typed_retry(mt_run: MTRuntime) -> object;
@@ -98,7 +102,10 @@ obj BaseLLM {
     def format_prompt(params: dict[str, any]) -> str;
     def dispatch_image(mt_run: MTRuntime) -> object;
     def dispatch_no_streaming(mt_run: MTRuntime) -> CompletionResult;
-    def dispatch_streaming(mt_run: MTRuntime) -> Generator[str, None, None];
+    def dispatch_streaming(
+        mt_run: MTRuntime, retractable: bool = False
+    ) -> Generator[str, None, None];
+
     def dispatch_streaming_with_tools(
         mt_run: MTRuntime, out: list[CompletionResult]
     ) -> Generator[str, None, None];
@@ -114,7 +121,7 @@ obj BaseLLM {
     ) -> AsyncIterator[object];
 
     def _stream_final_answer(
-        mt_run: MTRuntime, fallback: str | None = None
+        mt_run: MTRuntime, fallback: str | None = None, retractable: bool = False
     ) -> Generator[str, None, None];
 
     def _force_final_answer(mt_run: MTRuntime) -> object;
