@@ -450,8 +450,8 @@ impl EsastGenPass._lower_state_assignment(
     for target in here.target {
         if isinstance(target, unpackable) {
             pattern = self._unpack_pattern(target, bound, leaves);
-            init = es.Identifier(name=bound) if shared else value;
-            declarators.append(es.VariableDeclarator(id=pattern, init=init));
+            source = es.Identifier(name=bound) if shared else value;
+            declarators.append(es.VariableDeclarator(id=pattern, init=source));
         } else {
             leaves.append((target, bound));
         }
@@ -473,19 +473,19 @@ impl EsastGenPass._lower_state_assignment(
 }
 
 impl EsastGenPass._unpack_pattern(
-    node: uni.Expr, prefix: str, leaves: list[tuple[uni.Expr, str]]
+    expr: uni.Expr, prefix: str, leaves: list[tuple[uni.Expr, str]]
 ) -> es.Pattern {
-    if isinstance(node, (uni.TupleVal, uni.ListVal)) {
+    if isinstance(expr, (uni.TupleVal, uni.ListVal)) {
         elements = [
             self._unpack_pattern(v, prefix, leaves) if isinstance(v, uni.Expr) else None
-            for v in node.values
+            for v in expr.values
         ];
-        return self.sync_loc(es.ArrayPattern(elements=elements), jac_node=node);
+        return self.sync_loc(es.ArrayPattern(elements=elements), jac_node=expr);
     }
-    if isinstance(node, uni.UnaryExpr) and node.op.name == Tok.STAR_MUL.value {
-        inner = self._unpack_pattern(node.operand, prefix, leaves);
-        return self.sync_loc(es.RestElement(argument=inner), jac_node=node);
+    if isinstance(expr, uni.UnaryExpr) and expr.op.name == Tok.STAR_MUL.value {
+        inner = self._unpack_pattern(expr.operand, prefix, leaves);
+        return self.sync_loc(es.RestElement(argument=inner), jac_node=expr);
     }
-    leaves.append((node, f"{prefix}_{len(leaves)}"));
-    return self.sync_loc(es.Identifier(name=leaves[-1][1]), jac_node=node);
+    leaves.append((expr, f"{prefix}_{len(leaves)}"));
+    return self.sync_loc(es.Identifier(name=leaves[-1][1]), jac_node=expr);
 }

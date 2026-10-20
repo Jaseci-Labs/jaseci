@@ -612,7 +612,7 @@ walker EsastGenPass(TreePass) {
     ) -> list[es.Statement];
 
     def _unpack_pattern(
-        node: uni.Expr, prefix: str, leaves: list[tuple[uni.Expr, str]]
+        expr: uni.Expr, prefix: str, leaves: list[tuple[uni.Expr, str]]
     ) -> es.Pattern;
     def _resolve_source_module(nd: uni.Import) -> (uni.Module | None);
     def _resolve_call_ability(nd: uni.FuncCall) -> (uni.Ability | None);
