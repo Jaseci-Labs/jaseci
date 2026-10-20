@@ -1960,6 +1960,15 @@ impl ESBuiltinEmitter.static_names(self: ESBuiltinEmitter) -> list[str] {
     return super.static_names() + ["__import__"];
 }
 
+impl ESBuiltinEmitter.dispatch_static(
+    self: ESBuiltinEmitter, name: str, ctx: ESEmitCtx, args: list[str]
+) -> (str | None) {
+    if name == "__import__" {
+        return self.emit___import__(ctx, args);
+    }
+    return super.dispatch_static(name, ctx, args);
+}
+
 impl ESBuiltinEmitter.emit_unsafe_html(
     self: ESBuiltinEmitter, ctx: ESEmitCtx, args: list[str]
 ) -> (str | None) {
