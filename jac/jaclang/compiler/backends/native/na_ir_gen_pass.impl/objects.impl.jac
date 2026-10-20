@@ -3367,6 +3367,9 @@ impl NaIRGenPass._codegen_method_call_inner(nd: uni.FuncCall) -> (ir.Value | Non
     }
     func = self._resolve_method(type_name, method_name);
     _is_mono_method = False;
+    if func is not None and func.name.startswith("__jac_mono_") {
+        func = None;
+    }
     if func is None {
         _gm_owner: (str | None) = None;
         for _gm_cur in self._mro_of(type_name) {
