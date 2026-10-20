@@ -400,8 +400,12 @@ impl _build_link_plan(
             walk_unit(dep, stack + [path]);
         }
         errs_before = len(prog.errors_had);
+        """The unit's dependencies are walked first, so a cached unit is
+        checked against the interfaces they have now: one a compiler change
+        left stale lowers here, before any consumer reads it, instead of being
+        adopted and rebuilt by settlement after its consumers.""";
         ent = registry.ensure(
-            path, compile_on_miss=False, options=opts, check_deps=False
+            path, compile_on_miss=False, options=opts, check_deps=True
         );
         if ent is None and os.path.isfile(path) {
             ent = registry.compile_unit(path, opts);
@@ -415,9 +419,11 @@ impl _build_link_plan(
                 why.append(crashed);
             }
             detail = ("; ".join(why)) if why else "no diagnostic was recorded";
+            reached = " -> ".join(os.path.basename(p) for p in stack);
             raise LinkPlanError(
                 f"{path} is not a native unit for this codegen identity, or "
                 f"failed to lower ({detail})"
+                    + (f"; reached through {reached}" if reached else "")
             );
         }
 
@@ -887,10 +893,23 @@ impl plan_objects(
     if env_symmap_requested() {
         name_private_functions(merged);
     }
-    object_bytes = tm.emit_object(merged);
-    assert isinstance(object_bytes, bytes);
-    _log_phase(log, "emit_object", started);
-    return ([object_bytes], exports);
+    """Code generation works function by function, so a large program is
+    split into up to one partition per emit job and the partitions are
+    emitted the way units are.""";
+    (_, defined) = unit_function_counts(merged);
+    jobs = min(object_emit_jobs(), defined // PARTITION_FUNCTIONS);
+    if jobs < 2 {
+        object_bytes = tm.emit_object(merged);
+        assert isinstance(object_bytes, bytes);
+        _log_phase(log, "emit_object", started);
+        return ([object_bytes], exports);
+    }
+    parts = merged.split_bitcode(jobs);
+    merged.close();
+    started = _log_phase(log, f"split_module ({jobs} parts)", started);
+    objects = emit_unit_objects(parts, plan.options);
+    _log_phase(log, "emit_objects", started);
+    return (objects, exports);
 }
 
 impl _write_sidecar(
