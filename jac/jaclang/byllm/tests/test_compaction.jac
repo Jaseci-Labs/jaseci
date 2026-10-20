@@ -1,7 +1,6 @@
 """Integration tests for the byLLM auto-compaction feature."""
 
 import litellm;
-import time;
 
 import jaclang.byllm.llm as _byllm_llm_mod;
 import from jaclang.byllm.lib { Model, ModelPool, MockLLM }
@@ -9,7 +8,6 @@ import from jaclang.byllm.llm { BaseLLM, LocalLLM }
 import from jaclang.byllm.types { MockToolCall }
 import from jaclang.byllm.exceptions { CompactionNotEffectiveError, ConfigurationError }
 import from jaclang.byllm.config_loader { reset_byllm_config, get_byllm_config }
-import from jaclang.byllm.deadline { CallDeadline, _active_deadline }
 import from pathlib { Path }
 import from support {
     call,
@@ -109,19 +107,8 @@ test "default compactor produces system user summary and kept-tail structure" {
     messages = [sys_msg, user_msg] + make_round(1) + make_round(2) + make_round(3);
     summary_text = "Steps 1, 2, and 3 searched for q1/q2/q3.";
     summariser = MockLLM(outputs=[summary_text]);
-    # The calling run has spent 20s of a 50s budget.
-    calling = _active_deadline.set(
-        CallDeadline(
-            budget=50.0, model="gpt-4o-mini", started_at=time.monotonic() - 20.0
-        )
-    );
-    try {
-        result: list[any] = list(
-            _byllm_llm_mod._default_compact(messages, 1, summariser)
-        );
-    } finally {
-        _active_deadline.reset(calling);
-    }
+
+    result: list[any] = list(_byllm_llm_mod._default_compact(messages, 1, summariser));
 
     assert len(result) == 5 , f"Expected 5 messages, got {len(result)}";
     assert result[0] is sys_msg;
@@ -132,10 +119,6 @@ test "default compactor produces system user summary and kept-tail structure" {
     assert result[3]["role"] == "assistant";
     assert result[3]["tool_calls"][0]["id"] == "call_3";
     assert result[4]["role"] == "tool" and result[4]["tool_call_id"] == "call_3";
-    # The summary request spends the calling run's time, not a fresh budget.
-    assert summariser.sent("timeout")[0] <= 30.0 , (
-        f"the summariser got its own budget: {summariser.sent('timeout')[0]}"
-    );
 }
 
 

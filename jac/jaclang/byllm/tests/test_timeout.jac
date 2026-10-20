@@ -8,7 +8,7 @@ import from jaclang.byllm.exceptions { LLMTimeout, RateLimitError }
 import from jaclang.byllm.lib { MockLLM, Model, ModelPool }
 import from jaclang.byllm.llm { _is_timeout_error, _is_transient_error }
 import from jaclang.testing.requires { require_module }
-import from support { call, mk_run, say, scripted, text_chunk }
+import from support { call, mk_run, say }
 
 
 """Run `work`, naming the error it raises in place of its result."""
@@ -202,85 +202,6 @@ test "one deadline covers everything a call does" {
         return (_outcome(read_slowly), len(llm.seen));
     }
 
-    def nested_call(budget: float) -> tuple[str, int] {
-        inner = Model(model_name="gpt-4o-mini");
-        outer = Model(model_name="gpt-4o-mini", timeout=budget);
-
-        """Answer."""
-        def ask_inner(question: str) -> str by inner();
-
-        def consult(question: str) -> str {
-            return ask_inner(question);
-        }
-
-        """Consult, then answer."""
-        def ask_outer(question: str) -> str by outer(tools=[consult]);
-
-        with scripted(inner, ["inner answer"]) as inner_llm {
-            with scripted(
-                outer, [call("consult", {"question": "x"}), say("done")]
-            ) as outer_llm {
-                got = _outcome(lambda { ask_outer("go"); });
-            }
-        }
-        sent = inner_llm.sent("timeout");
-        if not sent or sent[0] > budget {
-            got = "the inner call got its own budget";
-        }
-        return (got, len(outer_llm.seen));
-    }
-
-    def async_stream_closed(budget: float) -> tuple[str, int] {
-        held: list[any] = [];
-        closed: list[int] = [];
-
-        async def answer(**_kwargs: any) -> any {
-            async def chunks -> any {
-                try {
-                    for _ in range(100) {
-                        yield text_chunk("x");
-                    }
-                } finally {
-                    closed.append(1);
-                }
-            }
-            # The provider keeps its stream, so only an explicit close ends it.
-            held.append(chunks());
-            return held[0];
-        }
-        model = Model(model_name="gpt-4o-mini", api_key="sk-test", timeout=budget);
-
-        # Checked before asyncio.run ends, since its shutdown closes every
-        # async generator still open.
-        async def stop_early -> str {
-            stream = model.adispatch_streaming(mk_run(stream=True));
-            await stream.__anext__();
-            await stream.aclose();
-            return "closed" if closed else "left open";
-        }
-        with mock.patch("litellm.acompletion", answer) {
-            got = _outcome(lambda { asyncio.run(stop_early()); });
-        }
-        return (got, len(held));
-    }
-
-    def silent_provider(budget: float) -> tuple[str, int] {
-        asked: list[int] = [];
-
-        async def never_answers(**_kwargs: any) -> dict[str, any] {
-            asked.append(1);
-            await asyncio.sleep(5.0);
-            return {};
-        }
-        model = Model(model_name="gpt-4o-mini", api_key="sk-test", timeout=budget);
-        with mock.patch("litellm.acompletion", never_answers) {
-            got = _outcome(
-                lambda { asyncio.run(model.adispatch_no_streaming(mk_run())); }
-            );
-        }
-        return (got, len(asked));
-    }
-
     # (label, scenario, call budget, outcome, requests sent)
     for (label, scenario, budget, outcome, requests) in [
         (
@@ -307,27 +228,6 @@ test "one deadline covers everything a call does" {
         (
             "a stream read slower than the deadline is cut off",
             slow_reader,
-            0.5,
-            "LLMTimeout",
-            1
-        ),
-        (
-            "a by llm() call inside a tool gets only what its caller has left",
-            nested_call,
-            5.0,
-            "done",
-            2
-        ),
-        (
-            "an async stream the caller stops early is closed",
-            async_stream_closed,
-            30.0,
-            "closed",
-            1
-        ),
-        (
-            "an async call to a provider that never answers is cancelled",
-            silent_provider,
             0.5,
             "LLMTimeout",
             1

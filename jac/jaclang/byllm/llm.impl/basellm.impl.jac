@@ -427,16 +427,11 @@ impl BaseLLM._resolve_timeout(mt_run: MTRuntime) -> float | None {
 
 impl BaseLLM._call_deadline(mt_run: MTRuntime) -> CallDeadline {
     if mt_run._deadline is None {
-        mt_run._deadline = start_deadline(
-            self._resolve_timeout(mt_run), self.model_name
+        mt_run._deadline = CallDeadline(
+            budget=self._resolve_timeout(mt_run), model=self.model_name
         );
     }
     return mt_run._deadline;
-}
-
-
-impl BaseLLM._cancels_async_io -> bool {
-    return False;
 }
 
 
@@ -481,24 +476,6 @@ impl BaseLLM._may_retry(mt_run: MTRuntime, e: Exception, attempt: int) -> bool {
         f"retrying with {left:.1f}s left of the {deadline.budget:g}s timeout"
     );
     return False;
-}
-
-
-impl BaseLLM._await_within_deadline(mt_run: MTRuntime, pending: Awaitable) -> any {
-    import asyncio;
-    deadline = self._call_deadline(mt_run);
-    left = deadline.remaining();
-    if left is None or not self._cancels_async_io() {
-        return await pending;
-    }
-    try {
-        return await asyncio.wait_for(pending, timeout=left);
-    } except asyncio.TimeoutError {
-        if (deadline.remaining() or 0.0) > 0 {
-            raise;
-        }
-        raise deadline.expired() from None;
-    }
 }
 
 
@@ -1459,9 +1436,7 @@ impl BaseLLM.adispatch_no_streaming(mt_run: MTRuntime) -> CompletionResult {
     while True {
         self._arm_attempt(mt_run, params, False);
         try {
-            response = await self._await_within_deadline(
-                mt_run, self.model_call_no_stream_async(params)
-            );
+            response = await self.model_call_no_stream_async(params);
             break;
         } except Exception as e {
             if self._may_retry(mt_run, e, attempt) {
@@ -1528,20 +1503,9 @@ impl BaseLLM.adispatch_streaming(mt_run: MTRuntime) -> AsyncIterator[str] {
         finish_reason = "";
         produced = False;
         self._arm_attempt(mt_run, params, True);
-        response: any = None;
         try {
-            response = await self._await_within_deadline(
-                mt_run, self.model_call_with_stream_async(params)
-            );
-            chunks = response.__aiter__();
-            while True {
-                try {
-                    chunk = await self._await_within_deadline(
-                        mt_run, chunks.__anext__()
-                    );
-                } except StopAsyncIteration {
-                    break;
-                }
+            response = await self.model_call_with_stream_async(params);
+            async for chunk in response {
                 deadline.check();
                 stream_model = chunk?.model or stream_model;
                 if chunk?.choices and chunk?.choices?[0]?.finish_reason {
@@ -1569,8 +1533,6 @@ impl BaseLLM.adispatch_streaming(mt_run: MTRuntime) -> AsyncIterator[str] {
                 continue;
             }
             raise;
-        } finally {
-            await _aclose_stream(response);
         }
     }
 
@@ -1581,8 +1543,6 @@ impl BaseLLM.adispatch_streaming(mt_run: MTRuntime) -> AsyncIterator[str] {
         _raise_if_empty_truncation(finish_reason, "", None);
     }
 }
-
-async def _aclose_stream(stream: any);
 
 glob _IMAGE_CALL_PARAMS: tuple[str, ...] = (
          "n",
@@ -3015,18 +2975,4 @@ impl _images_from_response(response: dict[str, any]) -> list[Image] {
         raise OutputConversionError("The model returned no image for this call.");
     }
     return images;
-}
-
-impl _aclose_stream(stream: any) {
-    import inspect;
-    close = stream?.aclose or stream?.close;
-    if not callable(close) {
-        return;
-    }
-    try {
-        closing = close();
-        if inspect.isawaitable(closing) {
-            await closing;
-        }
-    } except Exception {}
 }

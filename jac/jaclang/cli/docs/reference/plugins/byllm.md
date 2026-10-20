@@ -897,17 +897,16 @@ The original rejected text remains available on `raw_output` (see [`OutputConver
 
 ## Request Timeout
 
-`[byllm.call_params] timeout` is a deadline for a whole `by llm()` call, in seconds. Override it with `Model(timeout=...)` or `by llm(timeout=...)`; `0` removes it. The clock starts when the call does and covers everything the call does: every request, every retry and its backoff, every turn of a tool loop including the time its tools take, typed-output retries, compaction summaries, and a streamed answer up to its last chunk. A `by llm()` call made inside a tool gets no more than what its caller has left. When the deadline runs out the call raises `LLMTimeout`.
+`[byllm.call_params] timeout` is a deadline for a whole `by llm()` call, in seconds. Override it with `Model(timeout=...)` or `by llm(timeout=...)`; `0` removes it. The clock starts when the call does and covers everything the call does: every request, every retry and its backoff, every turn of a tool loop including the time its tools take, typed-output retries, and a streamed answer up to its last chunk. When the deadline runs out the call raises `LLMTimeout`.
 
 | Where | What the deadline does |
 |-------|------------------------|
 | before each request | sends it with what is left as its timeout; with nothing left, raises `LLMTimeout` |
 | a transient failure | retries (`[byllm.streaming] num_retries`) only if the backoff fits in what is left |
 | a streamed answer | caps the `[byllm.streaming]` connect, read, write and pool timeouts at what is left, and checks the deadline on every chunk |
-| an async call through `Model` without tools | cancels the provider request when the deadline passes |
 | the provider client | LiteLLM and the OpenAI client (`proxy` mode) send one request per attempt; byLLM owns every retry |
 
-A tool that is already running is not interrupted: the call ends before its next request. byLLM never abandons work it cannot cancel, so any other request is bounded by silence: it times out once the provider sends nothing for the time that was left when it was sent, and an endpoint that keeps sending bytes slowly can hold it past the deadline.
+A tool that is already running is not interrupted: the call ends before its next request. A request in flight is bounded by silence: it times out once the provider sends nothing for the time that was left when it was sent, so an endpoint that keeps sending bytes slowly can hold it past the deadline. A compaction summary, or a `by llm()` call made inside a tool, runs with its own deadline; the time it takes still counts against the calling `by llm()` call.
 
 | Path | Setting | Default |
 |------|---------|---------|

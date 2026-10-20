@@ -67,7 +67,7 @@ impl Model.invoke(mt_run: MTRuntime) -> any {
     import time;
     import types as _types_mod;
 
-    _deadline_token = _active_deadline.set(self._call_deadline(mt_run));
+    self._call_deadline(mt_run);
     _parent = _current_invocation_id.get(None);
     _invocation_id = str(uuid.uuid4());
     setattr(mt_run, "_parent_invocation_id", _parent);
@@ -107,8 +107,6 @@ impl Model.invoke(mt_run: MTRuntime) -> any {
         );
         _current_invocation_id.reset(_ctx_token);
         raise;
-    } finally {
-        _active_deadline.reset(_deadline_token);
     }
 }
 
@@ -174,11 +172,6 @@ def _stream_with_telemetry(
 ) -> Generator[object, None, None];
 
 def _is_timeout_error(e: Exception) -> bool;
-
-
-impl Model._cancels_async_io -> bool {
-    return True;
-}
 
 
 impl Model._raise_mapped_provider_error(e: Exception) -> None {
@@ -477,7 +470,6 @@ impl _stream_with_telemetry(
     if invocation_id is not None {
         ctx.run(_current_invocation_id.set, invocation_id);
     }
-    ctx.run(_active_deadline.set, mt._deadline);
 
     _completed = False;
     try {

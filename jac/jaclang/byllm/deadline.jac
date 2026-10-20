@@ -1,9 +1,4 @@
 import time;
-import from contextvars { ContextVar }
-
-glob _active_deadline: ContextVar[CallDeadline | None] = ContextVar(
-         "byllm_call_deadline", `default=None
-     );
 
 obj CallDeadline {
     has budget: float | None = None,
@@ -16,8 +11,6 @@ obj CallDeadline {
     def check;
     def expired -> LLMTimeout;
 }
-
-def start_deadline(budget: float | None, model: str) -> CallDeadline;
 
 impl CallDeadline.postinit {
     if not self.started_at {
@@ -55,14 +48,4 @@ impl CallDeadline.expired -> LLMTimeout {
         ),
         model=self.model
     );
-}
-
-impl start_deadline(budget: float | None, model: str) -> CallDeadline {
-    outer = _active_deadline.get();
-    left = outer.remaining() if outer is not None else None;
-    if left is not None {
-        left = max(0.0, left);
-        budget = left if budget is None else min(budget, left);
-    }
-    return CallDeadline(budget=budget, model=model);
 }

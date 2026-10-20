@@ -4305,10 +4305,7 @@ graph import byllm {
     _optdeps.pillow ++> types { PILImageCls, open_image }
     _optdeps.pydantic ++> schema | types { TypeAdapter }
     config_loader ++> llm | mtir { get_byllm_config }
-    deadline ++> [
-        llm { CallDeadline, _active_deadline, start_deadline },
-        mtir { CallDeadline },
-    ]
+    deadline ++> llm | mtir { CallDeadline }
     exceptions ++> [
         deadline { LLMTimeout },
         lib {

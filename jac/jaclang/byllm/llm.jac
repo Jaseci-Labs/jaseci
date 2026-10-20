@@ -61,8 +61,6 @@ obj BaseLLM {
     def _call_deadline(mt_run: MTRuntime) -> CallDeadline;
     def _arm_attempt(mt_run: MTRuntime, params: dict[str, any], stream: bool) -> None;
     def _may_retry(mt_run: MTRuntime, e: Exception, attempt: int) -> bool;
-    async def _await_within_deadline(mt_run: MTRuntime, pending: Awaitable) -> any;
-    def _cancels_async_io -> bool;
     def _should_retry_stream(
         mt_run: MTRuntime, e: Exception, attempt: int, usage_base: int = -1
     ) -> bool;
@@ -209,7 +207,6 @@ obj Model(BaseLLM) {
     override def invoke(mt_run: MTRuntime) -> any;
     override async def ainvoke(mt_run: MTRuntime) -> object;
     def _raise_mapped_provider_error(e: Exception) -> None;
-    override def _cancels_async_io -> bool;
     override def model_call_image(params: dict[str, any]) -> dict[str, any];
     def model_call_no_stream(params: dict[str, any]) -> dict[str, any];
     async def model_call_no_stream_async(params: dict[str, any]) -> dict[str, any];
