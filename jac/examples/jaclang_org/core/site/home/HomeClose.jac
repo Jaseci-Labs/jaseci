@@ -20,7 +20,9 @@ glob _INSTALL: str = "curl -fsSL https://jaclang.org/install.sh | bash",
 
      ];
 
-def:pub HomeClose -> JsxElement {
+def:pub HomeClose -> JsxElement;
+
+impl HomeClose -> JsxElement {
     return
         <HomeSection id="start">
             <Reveal>

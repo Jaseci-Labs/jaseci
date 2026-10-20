@@ -1,4 +1,28 @@
-def:pub HomeSection(id: str, children: any = None, className: str = "") -> JsxElement {
+def:pub HomeSection(id: str, children: any = None, className: str = "") -> JsxElement;
+
+def:pub SectionHead(
+    num: str, kicker: str, title: str, lede: str = "", children: any = None
+) -> JsxElement;
+
+def:pub Figure(
+    label: str = "", caption: str = "", children: any = None, className: str = ""
+) -> JsxElement;
+
+def:pub CodeWindow(
+    lines: list[str],
+    title: str = "",
+    lang: str = "jac",
+    numbers: bool = False,
+    hl_from: int = 0,
+    hl_to: int = -1,
+    className: str = ""
+) -> JsxElement;
+
+def:pub Prose(text: str) -> JsxElement;
+
+def:pub Fact(title: str, body: str) -> JsxElement;
+
+impl HomeSection(id: str, children: any = None, className: str = "") -> JsxElement {
     return
         <section
             id={id}
@@ -11,7 +35,7 @@ def:pub HomeSection(id: str, children: any = None, className: str = "") -> JsxEl
         </section>;
 }
 
-def:pub SectionHead(
+impl SectionHead(
     num: str, kicker: str, title: str, lede: str = "", children: any = None
 ) -> JsxElement {
     return
@@ -45,7 +69,7 @@ def:pub SectionHead(
         </Reveal>;
 }
 
-def:pub Figure(
+impl Figure(
     label: str = "", caption: str = "", children: any = None, className: str = ""
 ) -> JsxElement {
     return
@@ -76,7 +100,7 @@ def:pub Figure(
         </Reveal>;
 }
 
-def:pub CodeWindow(
+impl CodeWindow(
     lines: list[str],
     title: str = "",
     lang: str = "jac",
@@ -113,7 +137,7 @@ def:pub CodeWindow(
         </div>;
 }
 
-def:pub Prose(text: str) -> JsxElement {
+impl Prose(text: str) -> JsxElement {
     parts = text.split("`");
     return
         <>
@@ -130,7 +154,7 @@ def:pub Prose(text: str) -> JsxElement {
         </>;
 }
 
-def:pub Fact(title: str, body: str) -> JsxElement {
+impl Fact(title: str, body: str) -> JsxElement {
     return
         <div className="border-t border-border pt-5">
             <h3 className="text-base font-semibold tracking-tight">{title}</h3>

@@ -70,7 +70,11 @@ glob _TODO_LINES: list[str] = [
 
      ];
 
-def:pub GlueMap -> JsxElement {
+def:pub GlueMap -> JsxElement;
+
+def:pub NoGlue -> JsxElement;
+
+impl GlueMap -> JsxElement {
     has active: int = 0;
 
     cur = _GLUE[active];
@@ -156,7 +160,7 @@ def:pub GlueMap -> JsxElement {
         </div>;
 }
 
-def:pub NoGlue -> JsxElement {
+impl NoGlue -> JsxElement {
     return
         <HomeSection id="no-glue">
             <SectionHead
