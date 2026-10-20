@@ -1,0 +1,1 @@
+- **`separate-impls` puts bodies in an impl file**: `jac fmt --lintfix` (and `jac lint --fix`) now moves each body it separates into the module's `.impl.jac` annex, creating `<module>.impl.jac` when there is none, instead of appending `impl` blocks to the bottom of the same file. The module keeps only its declarations; `impl` blocks already in the module stay where they are.

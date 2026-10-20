@@ -277,3 +277,52 @@ test "lintfix fails when a discovered annex cannot be written" {
     assert stats.get("changed") == 0 , f"a module whose annex failed to write must not "
     f"count as changed, got {stats!r}";
 }
+
+test "lintfix moves separate-impls bodies into the module's impl annex" {
+    for jobs in ("0", "2") {
+        repo = make_project();
+        (Path(repo) / "jac.toml").write_text(
+            '[project]\nname = "fx"\nversion = "0.0.1"\n\n'
+                + '[check.lint]\nselect = ["separate-impls"]\n'
+        );
+        old = os.getcwd();
+        os.chdir(repo);
+        try {
+            fresh = Path(repo) / "fresh.jac";
+            fresh.write_text(CLEAN);
+            mod = Path(repo) / "mod.jac";
+            annex = Path(repo) / "mod.impl.jac";
+            mod.write_text(
+                MOD_SRC + "\ndef g(x: int) -> int {\n    return x * 2;\n}\n"
+            );
+            annex.write_text(ANNEX_SRC);
+            reset_state();
+            ret = fmt_cmd([str(fresh), str(mod), str(annex)], lintfix=True, jobs=jobs);
+            fresh_text = fresh.read_text();
+            fresh_annex = (Path(repo) / "fresh.impl.jac").read_text();
+            mod_text = mod.read_text();
+            annex_text = annex.read_text();
+            reset_state();
+            again = fmt_cmd(
+                [str(fresh), str(mod), str(annex)], lintfix=True, check=True, jobs=jobs
+            );
+        } finally {
+            os.chdir(old);
+            shutil.rmtree(repo, ignore_errors=True);
+        }
+        assert ret == 0 , f"[jobs={jobs}] lintfix must succeed, got {ret}";
+        assert fresh_text == "def f(x: int) -> int;\n" , f"[jobs={jobs}] the module "
+        f"keeps only the declaration, got:\n{fresh_text!r}";
+        assert fresh_annex == "impl f(x: int) -> int {\n    return x + 1;\n}\n" , (
+            f"[jobs={jobs}] a module with no annex gets one, got:\n{fresh_annex!r}"
+        );
+        assert "def g(x: int) -> int;" in mod_text and "return x * 2" not in mod_text , (
+            f"[jobs={jobs}] the body leaves the module, got:\n{mod_text!r}"
+        );
+        assert annex_text.index("impl Foo.bar") < annex_text.index("impl g(") , (
+            f"[jobs={jobs}] an existing annex keeps its impls and gains the moved "
+            f"one, got:\n{annex_text!r}"
+        );
+        assert again == 0 , f"[jobs={jobs}] a second run must find nothing to move";
+    }
+}

@@ -450,10 +450,21 @@ impl lint(
             error_count = fixed_count + unfixable_count;
 
             if fixed_count > 0 {
+                (formatted_code, float_target, float_text) = _float_impls_to_annex(
+                    prog, str(path_obj), str(path_obj), formatted_code
+                );
                 changed = formatted_code != original_code;
                 if changed {
                     with open(str(path_obj), 'w', encoding='utf-8') as f {
                         f.write(formatted_code);
+                    }
+                }
+                if float_target {
+                    float_prog = JacProgram.jac_str_formatter(
+                        float_text, float_target, auto_lint=True
+                    );
+                    with open(float_target, 'w', encoding='utf-8') as f {
+                        f.write(float_prog.mod.main.gen.jac or float_text);
                     }
                 }
             }
@@ -550,6 +561,71 @@ def _format_single_file_worker(
     cache_anchor: str = "",
     logical_path: str = ""
 ) -> dict[str, any];
+
+def _float_impls_to_annex(
+    prog: JacProgram, file_path: str, logical: str, formatted: str
+) -> tuple[str, str, str];
+
+impl _float_impls_to_annex(
+    prog: JacProgram, file_path: str, logical: str, formatted: str
+) -> tuple[str, str, str] {
+    import os;
+
+    if file_path.endswith((".impl.jac", ".test.jac")) {
+        return (formatted, "", "");
+    }
+    own_path = os.path.realpath(logical);
+    floated = 0;
+    for warning in prog.warnings_had {
+        if warning.code is not None
+            and warning.code.code == "W3055"
+            and warning.loc.mod_path
+            and os.path.realpath(warning.loc.mod_path) == own_path {
+            floated += 1;
+        }
+    }
+    if floated == 0 {
+        return (formatted, "", "");
+    }
+    reparsed = JacProgram.jac_str_formatter(formatted, logical, auto_lint=False);
+    if reparsed.errors_had {
+        return (formatted, "", "");
+    }
+    body = [
+        st
+        for st in reparsed.mod.main.body
+        if st.loc.mod_path and os.path.realpath(st.loc.mod_path) == own_path
+    ];
+    if len(body) < floated {
+        return (formatted, "", "");
+    }
+    tail = body[-floated:];
+    lines = formatted.splitlines(keepends=True);
+    for st in tail {
+        if not lines[st.loc.first_line - 1].lstrip().startswith("impl ") {
+            return (formatted, "", "");
+        }
+    }
+    start = tail[0].loc.first_line - 1;
+    end = tail[-1].loc.last_line;
+    if "".join(lines[end:]).strip() {
+        return (formatted, "", "");
+    }
+    base = "".join(lines[:start]).rstrip() + "\n";
+    moved = "".join(lines[start:end]).strip() + "\n";
+    sibling = file_path[:-len(".jac")] + ".impl.jac";
+    annexes = discover_annex_files(file_path, ".impl.jac");
+    target = sibling;
+    if annexes
+        and not any(
+            os.path.realpath(a) == os.path.realpath(sibling) for a in annexes
+        ) {
+        target = annexes[0];
+    }
+    existing = read_file_with_encoding(target) if os.path.exists(target) else "";
+    annex_text = (existing.rstrip() + "\n\n" + moved) if existing.strip() else moved;
+    return (base, target, annex_text);
+}
 
 impl format(
     paths: list[str],
@@ -709,6 +785,9 @@ impl format(
     changed_files = 0;
     total_errors = 0;
 
+    floated_annexes: set[str] = {
+        os.path.realpath(fp) for res in results for fp in res.get('floated_annexes', [])
+    };
     for res in results {
         for w in res['warnings_strs'] {
             console.warning(w);
@@ -734,6 +813,13 @@ impl format(
                     outputs.append((res['path'], res['formatted_code']));
                 }
                 outputs.extend(res['impl_results']);
+                owned = {os.path.realpath(fp) for fp in res.get('floated_annexes', [])};
+                outputs = [
+                    (out_path, code)
+                    for (out_path, code) in outputs
+                    if os.path.realpath(out_path) not in floated_annexes
+                        or os.path.realpath(out_path) in owned
+                ];
                 write_errors: list[str] = [];
                 for (out_path, code) in outputs {
                     try {
@@ -1666,6 +1752,7 @@ impl _format_single_file_worker(
         'errors_strs': [],
         'formatted_code': None,
         'impl_results': [],
+        'floated_annexes': [],
         'cache_status': 'off'
     };
     if not path_obj.exists() {
@@ -1790,6 +1877,13 @@ impl _format_single_file_worker(
                     return result;
                 }
             }
+            float_target = "";
+            float_text = "";
+            if lintfix {
+                (formatted_code, float_target, float_text) = _float_impls_to_annex(
+                    prog, str(path_obj), effective_logical, formatted_code
+                );
+            }
             changed = formatted_code != original_code;
             result['changed'] = changed;
 
@@ -1798,14 +1892,24 @@ impl _format_single_file_worker(
             }
 
             if lintfix {
+                float_done = False;
                 for annex_path in annex_paths {
+                    is_float_target = bool(float_target)
+                        and os.path.realpath(annex_path)
+                            == os.path.realpath(float_target);
                     if covered is not None
+                        and not is_float_target
                         and (os.path.realpath(annex_path) in covered) {
                         continue;
                     }
                     annex_logical = annex_logical_map.get(annex_path, annex_path);
                     try {
-                        if logical_path {
+                        if is_float_target {
+                            annex_prog = JacProgram.jac_str_formatter(
+                                float_text, annex_logical, auto_lint=True
+                            );
+                            float_done = True;
+                        } elif logical_path {
                             annex_src = read_file_with_encoding(annex_path);
                             annex_prog = JacProgram.jac_str_formatter(
                                 annex_src, annex_logical, auto_lint=True
@@ -1816,7 +1920,9 @@ impl _format_single_file_worker(
                             );
                         }
                         annex_formatted = annex_prog.mod.main.gen.jac;
-                        annex_original = annex_prog.mod.main.source.code;
+                        annex_original = read_file_with_encoding(annex_path)
+                            if is_float_target
+                            else annex_prog.mod.main.source.code;
                     } except (OSError, ValueError, TypeError, AttributeError) as e {
                         annex_ok = False;
                         annex_error_count += 1;
@@ -1844,6 +1950,31 @@ impl _format_single_file_worker(
                             );
                         }
                     }
+                }
+                if float_target and not float_done {
+                    new_logical = float_target;
+                    if logical_path {
+                        new_logical = str(
+                            Path(effective_logical).parent / Path(float_target).name
+                        );
+                    }
+                    new_prog = JacProgram.jac_str_formatter(
+                        float_text, new_logical, auto_lint=True
+                    );
+                    for error in new_prog.errors_had {
+                        result['errors_strs'].append(str(error));
+                        annex_ok = False;
+                        annex_error_count += 1;
+                    }
+                    result['changed'] = True;
+                    if not check {
+                        result['impl_results'].append(
+                            (float_target, new_prog.mod.main.gen.jac or float_text)
+                        );
+                    }
+                }
+                if float_target {
+                    result['floated_annexes'] = [float_target];
                 }
             }
         } except (OSError, ValueError, TypeError, AttributeError) {

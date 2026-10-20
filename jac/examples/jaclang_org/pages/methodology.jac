@@ -1,3 +1,1 @@
-def:pub page -> JsxPage {
-    return <Methodology/>;
-}
+def:pub page -> JsxPage;

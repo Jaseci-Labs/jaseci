@@ -1,3 +1,1 @@
-def:pub layout -> JsxLayout {
-    return <SiteShell/>;
-}
+def:pub layout -> JsxLayout;

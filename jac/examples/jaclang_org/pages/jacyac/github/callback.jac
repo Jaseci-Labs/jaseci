@@ -1,3 +1,1 @@
-def:pub page -> JsxPage {
-    return <GithubCallback/>;
-}
+def:pub page -> JsxPage;
