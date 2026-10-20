@@ -62,9 +62,7 @@ impl NaIRGenPass.postinit -> None {
         self.type_map[_scalar.name] = scalar_llvm_type(_scalar);
     }
     self.type_map["str"] = (
-        _byte_ptr
-            if "wasm" in str(self.llvm_module.triple or "")
-            else self._str_desc_type()
+        _byte_ptr if self._target_is_wasm() else self._str_desc_type()
     );
     self.type_map["LiteralString"] = self.type_map["str"];
     self.type_map["Region"] = _byte_ptr;
@@ -2305,7 +2303,7 @@ impl NaIRGenPass._process_clib_imports(module: uni.Module) -> None {
 
         for decl in stmt.clib_decls {
             if isinstance(decl, uni.Ability) {
-                fn_name = decl.name_ref.sym_name if decl.name_ref else None;
+                fn_name: str = decl.name_ref.sym_name if decl.name_ref else "";
                 if fn_name and module is not self.module {
                     self._foreign_clib_abilities.setdefault(fn_name, decl);
                 }

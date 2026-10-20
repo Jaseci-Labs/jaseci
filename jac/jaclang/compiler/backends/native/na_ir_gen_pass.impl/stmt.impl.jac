@@ -4023,7 +4023,7 @@ impl NaIRGenPass._try_flow_for_parallel(nd: uni.InForStmt) -> bool {
     if not _par_ok {
         return False;
     }
-    if "wasm" in str(self.llvm_module.triple) {
+    if self._target_is_wasm() {
         return False;
     }
     if self._gen_ctx is not None {
