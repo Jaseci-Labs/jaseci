@@ -4440,11 +4440,11 @@ impl TypeEvaluator._is_sv_async_call(expr: FuncCall) -> bool {
             classify_cross_app_import,
             is_client_native_edge_import
         }
-        import from jaclang.compiler.symbol_utils {
+        import from jaclang.compiler.driver.boundary_classify {
             ClientImportVerdict,
-            classify_client_import_item,
-            resolve_import_source_module
+            classify_client_import_item
         }
+        import from jaclang.compiler.symbol_utils { resolve_import_source_module }
         client_tops: dict[str, bool] = {};
         for imp in mod.get_all_sub_nodes(Import) {
             kind = classify_cross_app_import(imp, None);
@@ -4507,7 +4507,7 @@ impl TypeEvaluator._is_sv_async_call(expr: FuncCall) -> bool {
     return id(tgt.sym) in syms;
 }
 
-impl TypeEvaluator._prefetch_types{
+impl TypeEvaluator._prefetch_types {
     def get_types_class(type_name: str) -> ClassType | None {
         return self._get_class_from_module(self.types_module, type_name);
     }
@@ -4739,7 +4739,8 @@ impl TypeEvaluator._init_prelude_from_sources -> list[Module] {
 
     self.ambient_typing_names_by_module = raw_groups;
     self.ambient_typing_names_by_module["typing"] = typing_ambient_flat;
-    for typing_name in typing_ambient_flat {
+
+    for typing_name in sorted(typing_ambient_flat) {
         typing_sym = typing_mod.names_in_scope.get(typing_name);
         if typing_sym is None {
             continue;
@@ -4762,16 +4763,7 @@ impl TypeEvaluator._init_prelude_from_sources -> list[Module] {
 
 glob FLOW_QUERY_DEPTH: int = 48;
 
-def _find_cfg_node_for(at_node: UniNode) -> UniCFGNode | None {
-    cur: UniNode | None = at_node;
-    while cur is not None {
-        if isinstance(cur, UniCFGNode) and not isinstance(cur, InnerCompr) {
-            return cur;
-        }
-        cur = cur.parent;
-    }
-    return None;
-}
+def _find_cfg_node_for(at_node: UniNode) -> UniCFGNode | None;
 
 impl TypeEvaluator.flow_pred_never_returns(pred: UniCFGNode) -> bool {
     if not isinstance(pred, ExprStmt) {
@@ -5058,7 +5050,7 @@ impl TypeEvaluator._get_type_from_flow_node(
         if isinstance(pred, Assignment)
             and pred.value
             and not self._node_encloses(pred, flow_node) {
-            import from jaclang.compiler.symbol_utils {
+            import from jaclang.compiler.expr_keys {
                 collect_assignment_target_keys,
                 find_destructure_index_path,
             }
@@ -5370,7 +5362,7 @@ impl TypeEvaluator.create_key_for_reference(expr: Expr) -> str | None {
         }
     }
     if isinstance(expr, AtomTrailer) and not expr.is_attr {
-        import from jaclang.compiler.symbol_utils { int_subscript_suffix }
+        import from jaclang.compiler.expr_keys { int_subscript_suffix }
         base_key = self.create_key_for_reference(expr.target);
         if base_key and isinstance(expr.right, IndexSlice) {
             suffix = int_subscript_suffix(expr.right);
@@ -6804,4 +6796,15 @@ impl TypeEvaluator._scope_is_current(scope: UniScopeNode) -> bool {
         return False;
     }
     return self.program.find_module(self.program.hub_key(mod.loc.mod_path)) is mod;
+}
+
+impl _find_cfg_node_for(at_node: UniNode) -> UniCFGNode | None {
+    cur: UniNode | None = at_node;
+    while cur is not None {
+        if isinstance(cur, UniCFGNode) and not isinstance(cur, InnerCompr) {
+            return cur;
+        }
+        cur = cur.parent;
+    }
+    return None;
 }

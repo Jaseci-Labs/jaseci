@@ -3,9 +3,7 @@ import from "@jac/runtime" { Link }
 import from "@hugeicons/react" { HugeiconsIcon }
 import from "@hugeicons/core-free-icons" { ArrowRight01Icon, BookOpen01Icon }
 
-def _title_matches(title: str, q: str) -> bool {
-    return q == "" or q.lower() in title.lower();
-}
+def _title_matches(title: str, q: str) -> bool;
 
 def:pub DocTreeLevel(
     items: list[TreeNode],
@@ -163,4 +161,8 @@ def:pub DocsSidebar(
                 </div>
             }}
         </aside>;
+}
+
+impl _title_matches(title: str, q: str) -> bool {
+    return q == "" or q.lower() in title.lower();
 }

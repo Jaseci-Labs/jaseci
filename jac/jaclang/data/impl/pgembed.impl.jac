@@ -1,7 +1,4 @@
-def _effective_uid -> int {
-    `getter = os?.geteuid;
-    return int(`getter()) if `getter is not None else -1;
-}
+def _effective_uid -> int;
 
 
 impl pg_run_candidates -> list[PgRunAs] {
@@ -618,4 +615,9 @@ impl PgRuntime.serve -> int {
     signal.signal(int(signal.SIGTERM), _forward);
     signal.signal(int(signal.SIGINT), _forward);
     return proc.`wait();
+}
+
+impl _effective_uid -> int {
+    `getter = os?.geteuid;
+    return int(`getter()) if `getter is not None else -1;
 }

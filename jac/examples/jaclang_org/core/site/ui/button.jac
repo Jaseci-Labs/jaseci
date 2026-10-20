@@ -78,6 +78,8 @@ def:pub Button(props: any) -> JsxElement {
         </button>;
 }
 
-def:pub buttonVariants -> any {
+def:pub buttonVariants -> any;
+
+impl buttonVariants -> any {
     return _buttonVariants;
 }

@@ -357,12 +357,15 @@ pub fn build(b: *std.Build) void {
         .{ .cwd_relative = p }
     else payload: {
         // Assemble the payload. Cacheable (output-file arg), so Zig CAPTURES
-        // its stdio and prints it only on failure -- the "==>" logs stay hidden.
+        // its stdio, drops its stdout, and prints its stderr only on failure.
         // `-Dpayload-progress` flips stdio to .inherit so the build streams live;
         // the tradeoff is .inherit marks the step as having side-effects, so it
-        // ALWAYS repacks (no caching) while the flag is on.
+        // ALWAYS repacks (no caching) while the flag is on. It defaults on under
+        // CI: no CI job restores .zig-cache/o, so a runner never hits the
+        // payload cache and streaming costs nothing there.
         const mk = tool.run("payload", &.{ "mkpayload", python_tree, root });
-        if (b.option(bool, "payload-progress", "Stream the payload build (mkpayload) live; disables its caching") orelse false) {
+        const in_ci = b.graph.environ_map.get("CI") != null;
+        if (b.option(bool, "payload-progress", "Stream the payload build (mkpayload) live; disables its caching (default: on under CI)") orelse in_ci) {
             mk.stdio = .inherit;
         }
         mk.step.dependOn(fetch_target);
