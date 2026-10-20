@@ -412,6 +412,8 @@ walker EsastGenPass(TreePass) {
     def _es_json_literal(value: any) -> any;
     can exit_type_alias with uni.TypeAlias exit;
     can exit_type_param with uni.TypeParam exit;
+    can enter_archetype with uni.Archetype entry;
+    can enter_enum with uni.Enum entry;
     can exit_archetype with uni.Archetype exit;
     can exit_enum with uni.Enum exit;
     can enter_ability with uni.Ability entry;

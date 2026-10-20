@@ -156,31 +156,13 @@ def:pub tanh(x: float) -> float;
 def _float_to_int(r: float) -> int;
 
 
-def:pub ceil[T](x: T) -> int {
-    if isinstance(x, int) {
-        xi: int = x;
-        return xi;
-    }
-    return _float_to_int(m_ceil(float(x)));
-}
+def:pub ceil[T](x: T) -> int;
 
 
-def:pub floor[T](x: T) -> int {
-    if isinstance(x, int) {
-        xi: int = x;
-        return xi;
-    }
-    return _float_to_int(m_floor(float(x)));
-}
+def:pub floor[T](x: T) -> int;
 
 
-def:pub trunc[T](x: T) -> int {
-    if isinstance(x, int) {
-        xi: int = x;
-        return xi;
-    }
-    return _float_to_int(m_trunc(float(x)));
-}
+def:pub trunc[T](x: T) -> int;
 
 def _binary_domain_error(x: float, y: float, r: float) -> bool;
 
@@ -253,7 +235,70 @@ def:pub nextafter(x: float, y: float, *, steps: int = 1) -> float;
 
 def:pub ulp(x: float) -> float;
 
-def:pub fsum[C: Iterable](data: C) -> float {
+def:pub fsum[C: Iterable](data: C) -> float;
+
+def _frexp_exponent(x: float) -> int;
+
+
+def _power_of_two(k: int) -> float;
+
+
+def _vector_norm(vec: list[float], largest: float, found_nan: bool) -> float;
+
+
+def:pub hypot(*coordinates: float) -> float;
+
+
+def:pub dist[P: Iterable, Q: Iterable](p: P, q: Q) -> float;
+
+
+def _imul_fits(a: int, b: int) -> bool;
+
+
+def _iadd_fits(a: int, b: int) -> bool;
+
+
+def:pub prod[C: Iterable](data: C, *, start: int | float = 1) -> (int | float);
+
+
+def _tl_to_double(hi: float, lo: float, tiny: float) -> float;
+
+
+def:pub sumprod[P: Iterable, Q: Iterable](p: P, q: Q) -> (int | float);
+
+
+def:pub isclose(
+    a: float, b: float, *, rel_tol: float = 1e-9, abs_tol: float = 0.0
+) -> bool;
+
+impl ceil[T](x: T) -> int {
+    if isinstance(x, int) {
+        xi: int = x;
+        return xi;
+    }
+    return _float_to_int(m_ceil(float(x)));
+}
+
+
+impl floor[T](x: T) -> int {
+    if isinstance(x, int) {
+        xi: int = x;
+        return xi;
+    }
+    return _float_to_int(m_floor(float(x)));
+}
+
+
+impl trunc[T](x: T) -> int {
+    if isinstance(x, int) {
+        xi: int = x;
+        return xi;
+    }
+    return _float_to_int(m_trunc(float(x)));
+}
+
+
+impl fsum[C: Iterable](data: C) -> float {
     partials: list[float] = [];
     special: float = 0.0;
     infinities: float = 0.0;
@@ -330,19 +375,8 @@ def:pub fsum[C: Iterable](data: C) -> float {
     return high;
 }
 
-def _frexp_exponent(x: float) -> int;
 
-
-def _power_of_two(k: int) -> float;
-
-
-def _vector_norm(vec: list[float], largest: float, found_nan: bool) -> float;
-
-
-def:pub hypot(*coordinates: float) -> float;
-
-
-def:pub dist[P: Iterable, Q: Iterable](p: P, q: Q) -> float {
+impl dist[P: Iterable, Q: Iterable](p: P, q: Q) -> float {
     diffs: list[float] = [];
     for v in p {
         diffs.append(float(v));
@@ -369,13 +403,7 @@ def:pub dist[P: Iterable, Q: Iterable](p: P, q: Q) -> float {
 }
 
 
-def _imul_fits(a: int, b: int) -> bool;
-
-
-def _iadd_fits(a: int, b: int) -> bool;
-
-
-def:pub prod[C: Iterable](data: C, *, start: int | float = 1) -> (int | float) {
+impl prod[C: Iterable](data: C, *, start: int | float = 1) -> (int | float) {
     ri: int = 1;
     rf: float = 1.0;
     isint = True;
@@ -411,10 +439,7 @@ def:pub prod[C: Iterable](data: C, *, start: int | float = 1) -> (int | float) {
 }
 
 
-def _tl_to_double(hi: float, lo: float, tiny: float) -> float;
-
-
-def:pub sumprod[P: Iterable, Q: Iterable](p: P, q: Q) -> (int | float) {
+impl sumprod[P: Iterable, Q: Iterable](p: P, q: Q) -> (int | float) {
     p_flts: list[float] = [];
     p_ints: list[int] = [];
     p_int = True;
@@ -498,8 +523,3 @@ def:pub sumprod[P: Iterable, Q: Iterable](p: P, q: Q) -> (int | float) {
     }
     return _tl_to_double(hi, lo, tiny);
 }
-
-
-def:pub isclose(
-    a: float, b: float, *, rel_tol: float = 1e-9, abs_tol: float = 0.0
-) -> bool;

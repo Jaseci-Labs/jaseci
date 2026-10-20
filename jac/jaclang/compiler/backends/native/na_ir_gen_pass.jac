@@ -9,13 +9,7 @@ glob GEN_PENDING_FLAG_OFF: int = 8,
 
 def _jc_optional_payload(semantic: (TypeBase | None)) -> (TypeBase | None);
 
-def _restore_entry[V](table: dict[str, V], key: str, prior: (V | None)) {
-    if prior is None {
-        table.pop(key, None);
-    } else {
-        table[key] = prior;
-    }
-}
+def _restore_entry[V](table: dict[str, V], key: str, prior: (V | None));
 
 obj NativeFinalizer {
     has body: uni.FinallyStmt | None,
@@ -3449,4 +3443,12 @@ walker NaIRGenPass(CompilerPass) {
     def _decl_field_llvm_types(arch_name: str) -> (dict[str, ir.Type] | None);
     def _lower_view_container(t: any) -> (ir.Type | None);
     def _program_has_subclasses(arch_name: str) -> bool;
+}
+
+impl _restore_entry[V](table: dict[str, V], key: str, prior: (V | None)) {
+    if prior is None {
+        table.pop(key, None);
+    } else {
+        table[key] = prior;
+    }
 }
