@@ -7,25 +7,10 @@ import os;
 import shutil;
 import time;
 import from tempfile { mkdtemp }
-import from jaclang.scale.config.config_loader { reset_scale_config }
-import from jaclang.scale.identity.user_manager { JacScaleUserManager }
-import from jaclang.scale.tests.scale_test_client { make_client }
-import from jaclang.scale.websocket.websocket {
-    WebSocketConnectionManager,
-    ConnectionContext
-}
-import from jaclang.scale.websocket.backplane {
-    BaseBackplane,
-    MemoryBackplane,
-    build_backplane
-}
-import from jaclang.scale.websocket.protocol { ws_handle_control, ws_heartbeat_loop }
 
 
 def _ws_client -> any {
-    client = make_client("test_api.jac");
-    client.server.register_websocket_endpoints();
-    return client;
+    return make_client("test_api.jac");
 }
 
 
@@ -45,10 +30,10 @@ def _ctx(target: str, user: (str | None) = None) -> ConnectionContext {
 
 """Records the frames and close codes a handler emits, without a real socket."""
 obj _FakeWebSocket {
-    has sent: list[dict] = [],
-        closed: list[tuple] = [];
+    has sent: list[dict[str, any]] = [],
+        closed: list[tuple[any, ...]] = [];
 
-    async def send_json(payload: dict) {
+    async def send_json(payload: dict[str, any]) {
         self.sent.append(payload);
     }
 
@@ -58,16 +43,16 @@ obj _FakeWebSocket {
 }
 
 
-"""Build a real JacScaleUserManager backed by a temp SQLite identity store.
+"""Build a real UserManager backed by a temp SQLite identity store.
 
 The control-frame tests drive the real `validate_jwt_token_detail` / `create_jwt_token`
 so the token-swap and expiry defenses are checked against production validation logic,
 not a canned return.
 """
-def _real_user_manager -> tuple[str, JacScaleUserManager] {
+def _real_user_manager -> tuple[str, UserManager] {
     test_dir = mkdtemp();
     reset_scale_config();
-    return (test_dir, JacScaleUserManager(base_path=test_dir));
+    return (test_dir, UserManager(base_path=test_dir));
 }
 
 
@@ -87,7 +72,7 @@ obj _FailingBackplane(BaseBackplane) {
     has delay: float = 0.0;
 
     async def start {}
-    async def publish(channel: str, message: dict) {}
+    async def publish(channel: str, message: dict[str, any]) {}
     async def subscribe(channel: str, handler: any) {
         if self.delay {
             await asyncio.sleep(self.delay);
@@ -368,7 +353,7 @@ test "a refresh frame on a public endpoint does not disconnect the client" {
 test "a refresh with the connection's own valid token is accepted" {
     (test_dir, um) = _real_user_manager();
     try {
-        owner = um.create_user("ws_owner", "Secret123!");
+        owner = um.create_internal_user("ws_owner", "Secret123!");
         owner_id = owner["user_id"];
         owner_token = um.create_jwt_token(owner_id);
         async def body -> str {
@@ -397,8 +382,8 @@ test "a refresh with the connection's own valid token is accepted" {
 test "a refresh carrying another user's real token is rejected as an identity mismatch" {
     (test_dir, um) = _real_user_manager();
     try {
-        user_a = um.create_user("ws_user_a", "Secret123!");
-        user_b = um.create_user("ws_user_b", "Secret123!");
+        user_a = um.create_internal_user("ws_user_a", "Secret123!");
+        user_b = um.create_internal_user("ws_user_b", "Secret123!");
         a_id = user_a["user_id"];
         b_id = user_b["user_id"];
         token_a = um.create_jwt_token(a_id);

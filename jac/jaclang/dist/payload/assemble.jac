@@ -43,23 +43,22 @@ glob PAYLOAD_ZSTD_LEVEL: int = 19,
      STUBCAT_BOOT_SRC: str = (
          "import sys\n"
          "import _jac_finder; _jac_finder.install()\n"
+         "from jaclang.jac0core.artifact_registry import begin; begin(['stubcat'])\n"
          "from jaclang.compiler.types.stubcat.build import main\n"
-         "sys.exit(main(sys.argv[1:]))\n"
+         "sys.exit(main(sys.argv[1:] + ['--cache']))\n"
      );
 
 obj MkPayloadOpts {
     has shim_so: str | None = None,
         bun_bin: str | None = None,
-        skip_precompile: bool = False,
         link_source: str | None = None,
-        musl_dir: str | None = None,
+        musl_dirs: list[str] = [],
         wasm_libc_dir: str | None = None,
         precompiled_cache: str | None = None,
         layer_cache: str | None = None,
         seal: bool = False,
         debug_src: bool = False,
-        stubcat_out: str | None = None,
-        skip_stubcat: bool = False;
+        stubcat_out: str | None = None;
 }
 
 obj FoundLib {
@@ -72,31 +71,35 @@ obj TarEntry {
         is_dir: bool;
 }
 
-def mk_payload(pbs_py_dir: str, repo_root: str, out: str, opts: MkPayloadOpts);
-def resolve_python(pbs_py_dir: str) -> str;
+def mk_payload(python_dir: str, repo_root: str, out: str, opts: MkPayloadOpts);
+def resolve_python(python_dir: str) -> str;
 def assemble_site(repo_root: str, site: str, opts: MkPayloadOpts);
+def ship_wiring(package_root: str, site_package: str);
 def _bundle_bun(site: str, opts: MkPayloadOpts);
+def strip_kernel_best_effort(site: str);
 def write_dist_info(repo_root: str, site: str);
-def run_precompile_stage(py: str, pbs_py_dir: str, site: str, opts: MkPayloadOpts);
-def run_stubcat_stage(py: str, pbs_py_dir: str, site: str, opts: MkPayloadOpts);
-def run_stubcat(py: str, pbs_py_dir: str, site: str, out: str) -> bool;
-def precompile(py: str, pbs_py_dir: str, site: str, seal: bool, debug_src: bool);
-def precompile_env(pbs_py_dir: str, site: str) -> dict[str, str];
-def stage_python_bin(pbs_py_dir: str, stage: str);
+def run_precompile_stage(py: str, python_dir: str, site: str, opts: MkPayloadOpts);
+def run_stubcat_stage(py: str, python_dir: str, site: str, opts: MkPayloadOpts);
+def run_stubcat(py: str, python_dir: str, site: str, out: str) -> bool;
+def cached_stubcat(pkg_dir: str) -> str;
+def precompile(py: str, python_dir: str, site: str, seal: bool, debug_src: bool);
+
+def precompile_env(python_dir: str, site: str) -> dict[str, str];
+def stage_python_bin(python_dir: str, stage: str);
 def stage_tree(
-    pbs_py_dir: str,
+    python_dir: str,
     site: str,
     stage: str,
-    musl_dir: str | None,
+    musl_dirs: list[str],
     wasm_libc_dir: str | None
 );
 
-def stage_stdlib(pbs_lib: str, lib_dst: str);
+def stage_stdlib(python_lib: str, lib_dst: str);
 def precompile_pyc(py: str, stage: str);
-def stage_floor(pbs_py_dir: str, stage: str);
+def stage_floor(python_dir: str, stage: str);
 def stage_musl(musl_dir: str, stage: str);
 def stage_wasm_libc(wasm_libc_dir: str, stage: str);
-def find_ca_bundle(pbs_py_dir: str) -> str | None;
+def find_ca_bundle(python_dir: str) -> str | None;
 def shim_file_name -> str;
 def site_shim_path(site: str) -> str;
 def find_libpython(lib_dir: str) -> FoundLib;

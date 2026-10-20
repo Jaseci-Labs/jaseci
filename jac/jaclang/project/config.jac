@@ -3,7 +3,14 @@ import re;
 import sys;
 import tomllib;
 import from pathlib { Path }
-glob VALID_CLIENT_KINDS: list[str] = ["web", "mobui"];
+
+glob CAPABILITY_SECTIONS: tuple[str, ...] = (
+         "byllm",
+         "scale",
+         "client",
+         "mcp",
+         "desktop"
+     );
 
 obj PersonConfig {
     has name: str = "",
@@ -18,7 +25,6 @@ obj PackageIncludeConfig {
 obj ProjectConfig {
     has name: str = "",
         version: str = "0.1.0",
-        client_kind: str = "web",
         description: str = "",
         authors: list[PersonConfig] = [],
         maintainers: list[PersonConfig] = [],
@@ -28,8 +34,10 @@ obj ProjectConfig {
         classifiers: list[str] = [],
         requires_python: str = "",
         jac_version: str = "",
-        entry_point: str = "main.jac",
+        entry_point: str = "main",
         kind: str = "",
+        default_app: str = "",
+        exports: list[str] = [],
         urls: dict[str, str] = {},
         `include: PackageIncludeConfig = PackageIncludeConfig();
 }
@@ -41,29 +49,29 @@ obj RunConfig {
         diagnostics: str = "error";
 }
 
-obj NativeBuildConfig {
-    has opt_level: int = 2,
-        dump_ir: str = "",
+obj NativeConfig {
+    has link_mode: str = "objects",
+        require: list[str] = [],
         target: str = "",
+        opt: int = 2,
         debug: bool = False,
-        rc_debug_codegen: bool = False;
+        threads: int = 4;
 }
 
-obj GcEnforceConfig {
-    has modules: list[str] = [],
-        grandfathered: list[str] = [];
+obj MemoryConfig {
+    has profile: str = "managed",
+        enforce: list[str] = [],
+        exempt: list[str] = [];
+
+    def gc_mode -> str;
 }
 
-obj GcConfig {
-    has `default: str = "cycles",
-        enforce: GcEnforceConfig = GcEnforceConfig();
+obj PlacementConfig {
+    has default_codespace: str = "native";
 }
 
 obj BuildConfig {
-    has dir: str = ".jac",
-        default_codespace: str = "native",
-        native_closure_cap: int = 256,
-        native: NativeBuildConfig = NativeBuildConfig();
+    has dir: str = ".jac";
 }
 
 obj TestConfig {
@@ -77,15 +85,85 @@ obj TestConfig {
         max_failures: int = 0;
 }
 
+obj ServeWorkersConfig {
+    has count: str = "",
+        threads: str = "auto",
+        max_requests: int = 0,
+        max_requests_jitter: int = 0,
+        request_timeout: float = 0.0,
+        boot_timeout: float = 120.0,
+        hang_timeout: float = 30.0;
+}
+
+obj ServeTlsConfig {
+    has certfile: str = "",
+        keyfile: str = "",
+        ca_certs: str = "",
+        min_version: str = "1.2";
+}
+
+obj ServeProxyConfig {
+    has trusted: list[str] = [];
+}
+
+obj ServeLimitsConfig {
+    has max_connections: int = 0,
+        backlog: int = 2048,
+        max_body_bytes: int = 104857600,
+        max_header_bytes: int = 65536,
+        max_header_count: int = 100,
+        max_request_line_bytes: int = 8192,
+        multipart_spool_bytes: int = 1048576;
+}
+
+obj ServeTimeoutsConfig {
+    has header: float = 30.0,
+        body: float = 60.0,
+        keepalive: float = 65.0,
+        drain: float = 10.0,
+        close: float = 5.0;
+}
+
+obj ServeAccessLogConfig {
+    has enabled: bool = True,
+        format: str = "text",
+        suppress_health_checks: bool = False;
+}
+
+obj ServeCompressionConfig {
+    has enabled: bool = True,
+        min_bytes: int = 1024,
+        level: int = 4;
+}
+
+obj ServeWebSocketConfig {
+    has allowed_origins: list[str] = [],
+        max_message_bytes: int = 0,
+        ping_interval: float = 20.0,
+        ping_timeout: float = 20.0;
+}
+
 obj ServeConfig {
-    has port: int = 8000,
+    has host: str = "0.0.0.0",
+        port: int = 8000,
         session: str = "",
         main: bool = True,
-        cl_route_prefix: str = "cl",
-        base_route_app: str = "",
+        docs_enabled: bool = True,
+        graph_enabled: bool = True,
+        cors_origins: list[str] = ["*"],
+        public_origin: str = "",
         on_conflict: str = "retry",
         conflict_max_attempts: int = 5,
-        conflict_backoff_ms: int = 0;
+        conflict_backoff_ms: int = 0,
+        workers: ServeWorkersConfig = ServeWorkersConfig(),
+        tls: ServeTlsConfig = ServeTlsConfig(),
+        proxy: ServeProxyConfig = ServeProxyConfig(),
+        limits: ServeLimitsConfig = ServeLimitsConfig(),
+        timeouts: ServeTimeoutsConfig = ServeTimeoutsConfig(),
+        access_log: ServeAccessLogConfig = ServeAccessLogConfig(),
+        compression: ServeCompressionConfig = ServeCompressionConfig(),
+        websocket: ServeWebSocketConfig = ServeWebSocketConfig(),
+        auth: dict[str, any] = {};
 }
 
 obj FormatConfig {
@@ -101,10 +179,12 @@ obj LintConfig {
 obj CheckConfig {
     has print_errs: bool = True,
         lint: LintConfig = LintConfig(),
+        exclude: list[str] = [],
         suppress: list[str] = [],
         suppress_categories: list[str] = [],
         enforce_access: bool = False,
-        warn_native_seams: bool = True;
+        warn_native_seams: bool = True,
+        untyped_external: str = "warning";
 }
 
 obj DotConfig {
@@ -145,15 +225,57 @@ obj ClientConfig {
     has framework: str = "react";
 }
 
+obj DatabaseConfig {
+    has indexes: dict[str, list[str]] = {},
+        retention_days: int = 0,
+        postgres_dist: str = "",
+        postgres_version: str = "";
+}
+
+obj NetworkConfig {
+    has offline: bool = False;
+}
+
+obj ToolchainsConfig {
+    has system: bool = True;
+}
+
 obj DevConfig {
     has jaclang_source: str = "",
+        exact: bool = False,
+        pod_binary: str = "",
         jobs: str = "",
         test_jobs: str = "",
         check_jobs: str = "",
         fmt_jobs: str = "";
 }
 
-def interpolate_env_vars(value: str) -> str;
+obj UnresolvedRef {
+    has path: str = "",
+        var: str = "",
+        raw: str = "",
+        required: bool = False,
+        message: str = "",
+        unsupported: bool = False,
+        form: str = "";
+
+    def describe -> str;
+    def reason -> str;
+}
+
+def interpolate_env_vars(
+    value: str,
+    environ: dict[str, str] | None = None,
+    sink: list[UnresolvedRef] | None = None
+) -> str;
+
+def resolve_env_refs(
+    data: any, environ: dict[str, str] | None = None, path: str = ""
+) -> tuple[any, list[UnresolvedRef]];
+
+def report_env_findings(
+    refs: list[UnresolvedRef], context: str, hint: str = ""
+) -> None;
 
 def find_project_root(start: Path | None = None) -> tuple[Path, Path] | None;
 
@@ -163,11 +285,18 @@ def serialize_toml(data: dict[str, any], prefix: str = "") -> str;
 
 def toml_value(value: any) -> str;
 
+def toml_minimal_update(
+    text: str, old_doc: dict[str, any], new_doc: dict[str, any], roots: list[str]
+) -> str | None;
+
 obj JacConfig {
-    has project: ProjectConfig = ProjectConfig(),
+    has persistence: PersistenceConfig = PersistenceConfig(),
+        project: ProjectConfig = ProjectConfig(),
         run: RunConfig = RunConfig(),
         build: BuildConfig = BuildConfig(),
-        gc: GcConfig = GcConfig(),
+        native: NativeConfig = NativeConfig(),
+        memory: MemoryConfig = MemoryConfig(),
+        placement: PlacementConfig = PlacementConfig(),
         `test: TestConfig = TestConfig(),
         serve: ServeConfig = ServeConfig(),
         format: FormatConfig = FormatConfig(),
@@ -179,10 +308,16 @@ obj JacConfig {
         client_errors: ClientErrorsConfig = ClientErrorsConfig(),
         client: ClientConfig = ClientConfig(),
         dev: DevConfig = DevConfig(),
-        dependencies: dict[str, str] = {},
-        dev_dependencies: dict[str, str] = {},
-        git_dependencies: dict[str, dict[str, str]] = {},
+        database: DatabaseConfig = DatabaseConfig(),
+        network: NetworkConfig = NetworkConfig(),
+        toolchains: ToolchainsConfig = ToolchainsConfig(),
+        dependencies: dict[str, PackageDep] = {},
+        dev_dependencies: dict[str, PackageDep] = {},
+        pypi_dependencies: dict[str, str] = {},
+        pypi_dev_dependencies: dict[str, str] = {},
+        pypi_git_dependencies: dict[str, dict[str, str]] = {},
         plugin_dependencies: dict[str, dict[str, any]] = {},
+        registries: dict[str, str] = {},
         scripts: dict[str, str] = {},
         plugins: dict[str, dict[str, any]] = {},
         environments: dict[str, dict[str, any]] = {},
@@ -190,12 +325,24 @@ obj JacConfig {
         toml_path: Path | None = None,
         config_files: list[Path] | None = None,
         active_profile: str = "",
+        profile_override: str | None = None,
         _raw_data: dict[str, any] = {},
         entrypoints: dict[str, dict[str, str]] = {},
         optional_dependencies: dict[str, dict[str, str]] = {},
-        discovered_from_ancestor: bool = False;
+        discovered_from_ancestor: bool = False,
+        apps: dict[str, AppConfig] = {},
+        is_workspace: bool = False,
+        _base_data: dict[str, any] = {},
+        _layers: list[tuple[str, str]] = [],
+        unresolved: list[UnresolvedRef] = [];
+
+    has default_app: str { getter; }
 
     static def discover(
+        start_path: Path | None = None, profile: str | None = None
+    ) -> JacConfig | None;
+
+    static def resolve(
         start_path: Path | None = None, profile: str | None = None
     ) -> JacConfig | None;
 
@@ -204,7 +351,6 @@ obj JacConfig {
         toml_str: str, toml_path: Path | None = None
     ) -> JacConfig;
 
-    def apply_env_interpolation -> None;
     def _section_map -> dict[
         str,
         RunConfig
@@ -233,25 +379,31 @@ obj JacConfig {
     def persist_doc(doc: dict[str, any]) -> None;
     def _write_toml_text(text: str) -> None;
     def add_dependency(
-        name: str, version: str, dev: bool = False, dep_type: str = "python"
+        name: str, version: str, dev: bool = False, dep_type: str = "pypi"
     ) -> None;
 
     def remove_dependency(
-        name: str, dev: bool = False, dep_type: str = "python"
+        name: str, dev: bool = False, dep_type: str = "pypi"
     ) -> bool;
 
-    def merge_from_toml_file(toml_path: Path) -> None;
-}
+    def merge_dependency_tables(
+        data: dict[str, any], section_prefix: str = ""
+    ) -> None;
 
-def discover_config_files(
-    project_root: Path, profile: str | None = None
-) -> list[Path];
+    def merge_from_toml_file(toml_path: Path) -> None;
+    def merge_apps_table(apps_table: dict[str, any]) -> None;
+    def app(name: str) -> AppConfig | None;
+    def resolve_app(name: str = "") -> AppConfig;
+    def resolved_kind(app: AppConfig) -> str;
+    def effective_for_app(name: str) -> JacConfig;
+    def app_for_path(abs_path: str) -> AppConfig | None;
+    def app_for_target(entry_path: str = "") -> AppConfig | None;
+    def serving_apps -> list[AppConfig];
+}
 
 def _parse_toml_data(data: dict[str, any], toml_path: Path | None = None) -> JacConfig;
 
-def _warn_legacy_plugins_table(data: dict[str, any]) -> None;
-
-def _parse_persons(raw: list[any]) -> list[PersonConfig];
+def _parse_persons(raw: list[object]) -> list[PersonConfig];
 
 def _parse_include(raw: dict[str, any]) -> PackageIncludeConfig;
 
@@ -262,13 +414,27 @@ glob _config: JacConfig | None = None,
      _config_by_root: dict[str, JacConfig | None] = {};
 
 def get_config(
-    start_path: Path | None = None, force_discover: bool = False
+    start_path: Path | None = None,
+    force_discover: bool = False,
+    profile: str | None = None
 ) -> JacConfig | None;
 
 def set_config(config: JacConfig | None) -> None;
 
+def pin_project_scope(config: JacConfig | None) -> None;
+
+def project_scope_is_pinned -> bool;
+
 def get_explicit_config -> JacConfig | None;
 
-def get_config_for_path(start_path: Path) -> JacConfig | None;
+def get_config_for_path(
+    start_path: Path, profile: str | None = None, force_discover: bool = False
+) -> JacConfig | None;
 
 def get_config_for_dir(start_dir: str) -> JacConfig | None;
+
+def offline_mode -> bool;
+
+def use_system_toolchains -> bool;
+
+def active_profile_name(config: JacConfig | None) -> str;

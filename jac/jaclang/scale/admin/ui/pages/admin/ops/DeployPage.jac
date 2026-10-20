@@ -1,8 +1,9 @@
 """Deploy Health page for the Ops Console.
 
 Reads GET /admin/ops/deploy and renders two tables, kubeconfig-free:
-  - Deployments: ready/desired replicas + rollout status (complete /
-    progressing / stuck) + the spec image(s).
+  - Deployments: ready/desired replicas + workload status (active /
+    activating / inactive / deactivating / degraded / unknown) + the spec
+    image(s).
   - Pods: phase, ready containers, restart count (highlighted when > 0),
     node, and per-container state (running / waiting:<reason> /
     terminated:<reason>).
@@ -24,8 +25,8 @@ def:pub DeployPage -> JsxElement {
         available: bool = True,
         detail: str = "",
         namespace: str = "",
-        deployments: list = [],
-        pods: list = [],
+        deployments: list[dict[str, any]] = [],
+        pods: list[dict[str, any]] = [],
         errorMsg: str = "",
         loadedOnce: bool = False;
 
@@ -40,8 +41,8 @@ def:pub DeployPage -> JsxElement {
                 available = data["available"] or False;
                 detail = data["detail"] or "";
                 namespace = data["namespace"] or "";
-                deployments = data["deployments"] or [];
-                pods = data["pods"] or [];
+                deployments: list[dict[str, any]] = data["deployments"] or [];
+                pods: list[dict[str, any]] = data["pods"] or [];
                 errorMsg = "";
             } elif result["error"] {
                 errorMsg = getErrorMessage(result, "Failed to load deploy health");
@@ -65,10 +66,10 @@ def:pub DeployPage -> JsxElement {
     # ---- helpers (return strings, never JSX) -------------------------
     def rolloutCls(status: str) -> str {
         base = "text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded ";
-        if status == "complete" {
+        if status == "active" or status == "inactive" {
             return base + "bg-success-weak text-success";
         }
-        if status == "stuck" {
+        if status == "degraded" {
             return base + "bg-danger-weak text-danger";
         }
         return base + "bg-warning-weak text-warning";
@@ -85,7 +86,7 @@ def:pub DeployPage -> JsxElement {
         return base + "bg-danger-weak text-danger";
     }
 
-    def containerSummary(containers: list) -> str {
+    def containerSummary(containers: list[dict[str, any]]) -> str {
         parts: list[str] = [];
         for c in containers {
             tag = c["state"];
@@ -97,7 +98,7 @@ def:pub DeployPage -> JsxElement {
         return ", ".join(parts);
     }
 
-    def joinLabels(values: list) -> str {
+    def joinLabels(values: list[str]) -> str {
         return ", ".join([String(v) for v in values]);
     }
 

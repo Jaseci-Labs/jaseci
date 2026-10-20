@@ -1,0 +1,522 @@
+impl IdentityStorage.hash_password(password: str) -> str {
+    return _scrypt_hash(password, n=1 << int(password_hash_cost()));
+}
+
+impl IdentityStorage.verify_password(password: str, password_hash: str) -> bool {
+    return _scrypt_verify(password, password_hash);
+}
+
+glob _decoy: list[str] = [];
+
+
+def decoy_hash -> str;
+
+impl IdentityStorage.create_user(
+    identities: list[dict[str, any]],
+    credential: dict[str, any],
+    profile: dict[str, any] | None = None
+) -> dict[str, any] {
+    import from jaclang { JacRuntime as Jac }
+    type_counts: dict[str, int] = {};
+    for identity in identities {
+        id_type = identity.get('type', '');
+        if id_type not in {'username', 'email'} {
+            return {
+                'error': f"Invalid identity type: {id_type}. Only 'username' and 'email' are allowed",
+                'code': 'VALIDATION_ERROR'
+            };
+        }
+        type_counts[id_type] = type_counts.get(id_type, 0) + 1;
+        if type_counts[id_type] > 1 {
+            return {
+                'error': f"Duplicate identity type: {id_type}. Only one {id_type} is allowed",
+                'code': 'VALIDATION_ERROR'
+            };
+        }
+    }
+
+    user_id = str(uuid.uuid4());
+    now = datetime.now(UTC).isoformat();
+
+    normalized_identities: list[dict[str, any]] = [];
+    for identity in identities {
+        id_type = identity.get('type', '');
+        raw_value = identity.get('value', '');
+        normalized = raw_value.lower().strip();
+
+        if self.identity_taken(normalized) {
+            return {
+                'error': f"{id_type.capitalize()} is already registered",
+                'code': 'IDENTITY_TAKEN'
+            };
+        }
+
+        is_verified = identity.get('verified', (id_type == 'username'));
+        record: dict[str, any] = {
+            'type': id_type,
+            'value_raw': raw_value,
+            'value_normalized': normalized,
+            'verified': is_verified,
+            'is_recovery': (id_type == 'email')
+        };
+        if id_type == 'email' and not is_verified and verify_before_login() {
+            record[VERIFY_BEFORE_LOGIN] = True;
+        }
+        normalized_identities.append(record);
+    }
+
+    credentials: list[dict[str, any]] = [];
+    if credential.get('type') == 'password' {
+        credentials.append(
+            {
+                'type': 'password',
+                'password_hash': IdentityStorage.hash_password(credential['password']),
+                'changed_at': now
+            }
+        );
+    }
+
+    user_root = Root();
+    Jac.save(user_root);
+    Jac.commit(user_root);
+    root_id = user_root.__jac__.ensure_id().hex;
+
+    user_doc = {
+        'user_id': user_id,
+        'status': 'active',
+        'identities': normalized_identities,
+        'credentials': credentials,
+        'root_id': root_id,
+        'role': 'user',
+        'profile': profile or {},
+        'created_at': now,
+        'updated_at': now
+    };
+    try {
+        self._store_user(user_doc);
+    } except IdentityTakenError {
+        return {'error': "Identity is already registered", 'code': 'IDENTITY_TAKEN'};
+    }
+
+    result: dict[str, any] = {
+        'user_id': user_id,
+        'root_id': root_id,
+        'message': 'User registered successfully'
+    };
+    username = primary_username(user_doc);
+    if username {
+        result['username'] = username;
+    }
+    return result;
+}
+
+impl IdentityStorage.user_exists_by_id(user_id: str) -> bool {
+    return self.get_user_by_id(user_id) is not None;
+}
+
+impl IdentityStorage.ensure_user_by_id(user_id: str) -> str | None {
+    import from jaclang { JacRuntime as Jac }
+    existing = self.get_user_by_id(user_id);
+    if existing {
+        return existing.get('root_id');
+    }
+
+    user_root = Root();
+    Jac.save(user_root);
+    Jac.commit(user_root);
+    root_id = user_root.__jac__.ensure_id().hex;
+    now = datetime.now(UTC).isoformat();
+    try {
+        self._store_user(
+            {
+                'user_id': user_id,
+                'status': 'active',
+                'identities': [],
+                'credentials': [],
+                'root_id': root_id,
+                'role': 'user',
+                'profile': {},
+                'created_at': now,
+                'updated_at': now
+            }
+        );
+    } except Exception {
+        winner = self.get_user_by_id(user_id);
+        if winner {
+            return winner.get('root_id');
+        }
+        raise;
+    }
+    return root_id;
+}
+
+impl IdentityStorage.reset_root(user_id: str) -> str | None {
+    import from jaclang { JacRuntime as Jac }
+    existing = self.get_user_by_id(user_id);
+    if not existing {
+        return None;
+    }
+    user_root = Root();
+    Jac.save(user_root);
+    Jac.commit(user_root);
+    root_id = user_root.__jac__.ensure_id().hex;
+    now = datetime.now(UTC).isoformat();
+    self._update_fields(user_id, {'root_id': root_id, 'updated_at': now});
+    return root_id;
+}
+
+impl IdentityStorage.authenticate(
+    identifier: str, password: str
+) -> dict[str, any] | None {
+    user = self.find_user_by_identity(identifier);
+    if user is None {
+        IdentityStorage.verify_password(password, decoy_hash());
+        return None;
+    }
+
+    user_id = user['user_id'];
+    credentials = self._get_credentials(user_id);
+    for cred in credentials {
+        if cred.get('type') != 'password' {
+            continue;
+        }
+        pw_hash = cred.get('password_hash', '');
+        if IdentityStorage.verify_password(password, pw_hash) {
+            if _needs_rehash(pw_hash) {
+                cred['password_hash'] = IdentityStorage.hash_password(password);
+                self._update_credentials(user_id, credentials);
+            }
+            result: dict[str, any] = {
+                'user_id': user_id,
+                'root_id': user['root_id'],
+                'role': user.get('role', 'user')
+            };
+            if self.password_expired(user, cred)
+                and not user.get('requires_password_reset') {
+                self.update_user_fields(user_id, {'requires_password_reset': True});
+                user['requires_password_reset'] = True;
+            }
+            if user.get('requires_password_reset') {
+                result['requires_password_reset'] = True;
+            }
+            normalized = identifier.lower().strip();
+            for identity in (user.get('identities') or []) {
+                if identity.get('value_normalized') == normalized {
+                    result['identity_type'] = str(identity.get('type') or '');
+                }
+            }
+            username = primary_username(user);
+            if username {
+                result['username'] = username;
+            }
+            return result;
+        }
+    }
+    return None;
+}
+
+impl IdentityStorage.set_user_role(user_id: str, role: str) -> bool {
+    return self._update_fields(
+        user_id, {'role': role, 'updated_at': datetime.now(UTC).isoformat()}
+    );
+}
+
+impl IdentityStorage.get_user_role(user_id: str) -> str | None {
+    user = self.get_user_by_id(user_id);
+    if not user {
+        return None;
+    }
+    return user.get('role', 'user') or 'user';
+}
+
+impl IdentityStorage.holds_password(user_id: str, password: str) -> bool {
+    if not isinstance(password, str) or not password {
+        return False;
+    }
+    return any(
+        [
+            IdentityStorage.verify_password(
+                password, str(credential.get('password_hash') or '')
+            )
+            for credential in self._get_credentials(user_id)
+            if credential.get('type') == 'password'
+        ]
+    );
+}
+
+impl IdentityStorage.password_reused(
+    credentials: list[dict[str, any]], new_password: str
+) -> bool {
+    kept = max(0, int(auth_settings().password.history));
+    if kept == 0 {
+        return False;
+    }
+    for cred in credentials {
+        if cred.get('type') != 'password' {
+            continue;
+        }
+        earlier = [str(h) for h in (cred.get('previous') or [])][-kept:];
+        for stored in [str(cred.get('password_hash') or '')] + earlier {
+            if stored and IdentityStorage.verify_password(new_password, stored) {
+                return True;
+            }
+        }
+    }
+    return False;
+}
+
+impl IdentityStorage.write_password(
+    user_id: str, credentials: list[dict[str, any]], new_password: str
+) -> None {
+    kept = max(0, int(auth_settings().password.history));
+    new_hash = IdentityStorage.hash_password(new_password);
+    now = datetime.now(UTC).isoformat();
+    written = False;
+    for cred in credentials {
+        if cred.get('type') != 'password' {
+            continue;
+        }
+        earlier = [str(h) for h in (cred.get('previous') or [])];
+        if cred.get('password_hash') {
+            earlier.append(str(cred['password_hash']));
+        }
+        cred['previous'] = earlier[-kept:] if kept else [];
+        cred['password_hash'] = new_hash;
+        cred['changed_at'] = now;
+        written = True;
+    }
+    if not written {
+        credentials.append(
+            {'type': 'password', 'password_hash': new_hash, 'changed_at': now}
+        );
+    }
+    self._update_credentials(user_id, credentials);
+    self._update_fields(user_id, {'requires_password_reset': False, 'updated_at': now});
+}
+
+impl IdentityStorage.update_password(
+    user_id: str, current_password: str, new_password: str
+) -> dict[str, any] {
+    credentials = self._get_credentials(user_id);
+    if not credentials {
+        return {'error': 'User not found'};
+    }
+    matched = any(
+        cred.get('type') == 'password'
+            and IdentityStorage.verify_password(
+                current_password, cred.get('password_hash', '')
+            ) for cred in credentials
+    );
+    if not matched {
+        return {'error': 'Current password is incorrect'};
+    }
+    self.write_password(user_id, credentials, new_password);
+    return {'user_id': user_id, 'message': 'Password updated successfully'};
+}
+
+impl IdentityStorage.reset_password(user_id: str, new_password: str) -> dict[str, any] {
+    if not self.user_exists_by_id(user_id) {
+        return {'error': 'User not found'};
+    }
+    self.write_password(user_id, self._get_credentials(user_id), new_password);
+    return {'user_id': user_id, 'message': 'Password updated successfully'};
+}
+
+impl IdentityStorage.password_expired(
+    user: dict[str, any], credential: dict[str, any]
+) -> bool {
+    limit = max(0, int(auth_settings().password.max_age_days));
+    stamp = str(credential.get('changed_at') or user.get('created_at') or '');
+    if limit == 0 or not stamp {
+        return False;
+    }
+    try {
+        changed = datetime.fromisoformat(stamp);
+    } except ValueError {
+        return False;
+    }
+    if changed.tzinfo is None {
+        changed = changed.replace(tzinfo=UTC);
+    }
+    return (datetime.now(UTC) - changed).days >= limit;
+}
+
+impl IdentityStorage.expire_legacy_credentials(
+    user_id: (str | None) = None
+) -> list[str] {
+    ids: list[str] = [];
+    if user_id is not None {
+        ids = [user_id];
+    } else {
+        offset = 0;
+        while True {
+            page = self.list_all_users(limit=500, offset=offset);
+            if not page {
+                break;
+            }
+            ids.extend([str(u['user_id']) for u in page]);
+            offset += 500;
+        }
+    }
+    expired: list[str] = [];
+    now = datetime.now(UTC).isoformat();
+    for uid in ids {
+        has_legacy = False;
+        for cred in self._get_credentials(uid) {
+            if cred.get('type') == 'password'
+                and _is_prescrypt(str(cred.get('password_hash', ''))) {
+                has_legacy = True;
+            }
+        }
+        if has_legacy
+            and self._update_fields(
+                uid, {'requires_password_reset': True, 'updated_at': now}
+            ) {
+            expired.append(uid);
+        }
+    }
+    return expired;
+}
+
+impl IdentityStorage.get_root_id(user_id: str) -> str | None {
+    user = self.get_user_by_id(user_id);
+    return (user.get('root_id') or None) if user else None;
+}
+
+impl IdentityStorage.get_username(user_id: str) -> str | None {
+    identities = self._get_identities(user_id);
+    for identity in identities {
+        if identity.get('type') == 'username' {
+            return identity.get('value_raw');
+        }
+    }
+    if identities {
+        return identities[0].get('value_raw');
+    }
+    return None;
+}
+
+impl IdentityStorage.rename_username(
+    user_id: str, new_username: str
+) -> dict[str, any] {
+    raw_value = str(new_username or '');
+    normalized = raw_value.lower().strip();
+    if not normalized {
+        return {'error': 'New username is required', 'code': 'VALIDATION_ERROR'};
+    }
+    user = self.get_user_by_id(user_id);
+    if user is None {
+        return {'error': 'User not found', 'code': 'NOT_FOUND'};
+    }
+    if primary_username(user).lower().strip() == normalized {
+        return {'user_id': user_id, 'username': raw_value, 'root_id': user['root_id']};
+    }
+    if self.identity_taken(normalized) {
+        return {'error': 'Username is already registered', 'code': 'IDENTITY_TAKEN'};
+    }
+    identity = {
+        'type': 'username',
+        'value_raw': raw_value,
+        'value_normalized': normalized,
+        'verified': True,
+        'is_recovery': False
+    };
+    try {
+        replaced = self._replace_username(user_id, identity);
+    } except IdentityTakenError {
+        return {'error': 'Username is already registered', 'code': 'IDENTITY_TAKEN'};
+    }
+    if not replaced {
+        return {'error': 'User not found', 'code': 'NOT_FOUND'};
+    }
+    return {'user_id': user_id, 'username': raw_value, 'root_id': user['root_id']};
+}
+
+impl IdentityStorage.update_user_fields(user_id: str, fields: dict[str, any]) -> bool {
+    fields['updated_at'] = datetime.now(UTC).isoformat();
+    return self._update_fields(user_id, fields);
+}
+
+impl IdentityStorage.link_sso_account(
+    user_id: str, platform: str, external_id: str
+) -> dict[str, str] {
+    existing = self._find_sso_link(platform, external_id);
+    if existing {
+        if existing.get('user_id') == user_id {
+            return {'message': 'SSO account already linked to this user'};
+        }
+        return {'error': 'This SSO account is already linked to another user'};
+    }
+
+    now = datetime.now(UTC).isoformat();
+    identity_doc = {
+        'type': 'sso',
+        'provider': platform,
+        'external_id': external_id,
+        'verified': True,
+        'linked_at': now
+    };
+
+    try {
+        added = self._add_identity(user_id, identity_doc);
+    } except IdentityTakenError {
+        return {'error': 'This SSO account is already linked to another user'};
+    }
+    if not added {
+        return {'error': 'User not found'};
+    }
+    return {
+        'message': 'SSO account linked successfully',
+        'user_id': user_id,
+        'platform': platform
+    };
+}
+
+impl IdentityStorage.unlink_sso_account(user_id: str, platform: str) -> dict[str, str] {
+    if not self.user_exists_by_id(user_id) {
+        return {'error': 'User not found'};
+    }
+    if not self._remove_sso_identity(user_id, platform) {
+        return {'error': 'SSO account not found for this provider'};
+    }
+    return {
+        'message': 'SSO account unlinked successfully',
+        'user_id': user_id,
+        'platform': platform
+    };
+}
+
+impl IdentityStorage.get_sso_accounts(user_id: str) -> list[dict[str, str]] {
+    identities = self._get_identities(user_id);
+    accounts: list[dict[str, str]] = [];
+    for identity in identities {
+        if identity.get('type') == 'sso' {
+            accounts.append(
+                {
+                    'platform': identity.get('provider', ''),
+                    'external_id': identity.get('external_id', ''),
+                    'linked_at': identity.get('linked_at', '')
+                }
+            );
+        }
+    }
+    return accounts;
+}
+
+impl decoy_hash -> str {
+    if not _decoy {
+        _decoy.append(IdentityStorage.hash_password(uuid.uuid4().hex));
+    }
+    return _decoy[0];
+}
+
+impl primary_username(user: dict[str, any]) -> str {
+    for identity in (user.get('identities') or []) {
+        if isinstance(identity, dict) and identity.get('type') == 'username' {
+            return str(
+                identity.get('value_raw') or identity.get('value_normalized') or ''
+            );
+        }
+    }
+    return '';
+}

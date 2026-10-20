@@ -1,6 +1,6 @@
 ---
 name: jac-types
-description: The Jac type system - annotations, unions, optionals, inference, `as` casts, any-boundary fixes, import type, ambient typing names, generics, and common type errors. Load before writing any non-trivial typed function or when debugging a type-check failure.
+description: Resolve Jac type annotations, inference, any boundaries, generics, and narrowing. Use for type errors or unfamiliar typing constructs.
 ---
 
 Jac is statically typed at **annotation boundaries** and inferred inside function bodies. Every `def` parameter and every `has` field needs an explicit type; a `def` that returns a value needs an explicit return type (a `def` with no `return` infers `None` - don't write `-> None`, it warns W3037). Local variables get their type from the right-hand side. Types are unified across client and server code.
@@ -57,7 +57,7 @@ An `any` value cannot silently flow into a declared non-`any` destination (annot
 
 The 3-step playbook for an untyped boundary (PyPI call, `json.loads`, walker report):
 
-1. **Type the source** - add a return annotation, a `.pyi` stub next to the Python file, install a third-party lib's stub package (`jac install types-requests` - only stdlib stubs ship in the binary, so third-party `types-*` are PEP 561-resolved from `.jac/venv`), or a typed `has reports: list[T] = [];` on the walker. Best: downstream code stays clean.
+1. **Type the source** - add a return annotation, a `.pyi` stub next to the Python file, install a third-party lib's stub package (`jac install --pypi types-requests` - only stdlib stubs ship in the binary, so third-party `types-*` are PEP 561-resolved from `.jac/venv`), or a typed `has reports: list[T] = [];` on the walker. Best: downstream code stays clean.
 2. **Accept-and-narrow** - take it into an inferred/`any` local, then `isinstance`-narrow before flowing into typed destinations.
 3. **Cast at the use site** - `value as Type` when you know the runtime shape (see above).
 
@@ -130,7 +130,7 @@ The width is a compile-time fact, not a runtime wrapper: a sized value is a plai
 - **Do NOT fall back to `any` to silence a type error.** It defers the error to the next typed boundary: `len(any)` → E1053, `any + any` → E1055, assigning/returning into a concrete type → E1001/E1002. Fix the actual type (typed field, `T | None` + `is None` guard, or `as` cast at the boundary).
 - **Every `def` parameter needs a type** (E0052); a value-returning `def` needs a return type (E1003); `has name;` without a type is a parse error.
 - **Don't annotate `-> None`** on a no-return `def` - W3037. Write `def save(x: int) { ... }`.
-- `list`, `dict`, `set` (and ambient `Iterable` etc.) without type args default to `[any]` (W1036) - add element types.
+- `list`, `dict`, `set` (and ambient `Iterable` etc.) without type args are an error (E1036) - add element types. For genuinely heterogeneous values say so explicitly, e.g. `dict[str, any]`.
 - Use **`T | None`**, not `Optional[T]`. Always check `is None` before dereferencing.
 - **Lowercase `any` is the gradual type** - Jac-native, no import. `import from typing { Any }` triggers W1104; bare `Any` warns W2001. Note: even legitimate explicit `any` annotations draw W1037 ("disables type checking here") - a nudge, not a failure.
 - **Event-handler params take the event type, not `any`** (`e: ChangeEvent`, `e: MouseEvent`) - see `jac-cl-components`.

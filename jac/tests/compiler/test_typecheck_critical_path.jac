@@ -23,7 +23,7 @@ glob _BAD_SRC: str = "def widen(a: int, b: int) -> int {\n    return a * b;\n}\n
      _GOOD_SRC: str = "def widen(a: int, b: int) -> int {\n    return a * b;\n}\n\nwith entry {\n    total: int = widen(6, 7);\n}\n";
 
 
-def _compile_src(src: str) -> tuple[any, list] {
+def _compile_src(src: str) -> tuple[any, list[any]] {
     proj = tempfile.mkdtemp(prefix="tc_path_");
     try {
         target = os.path.join(proj, "main.jac");
@@ -70,13 +70,13 @@ test "a clean module still reaches code generation" {
 
 
 test "type inference is a hard requirement of the environment" {
-    import from jaclang.compiler.driver.schedules {
+    import from jaclang.compiler.driver.pipeline {
         TypeshedUnavailableError,
-        require_typeshed_stubs,
-        typeshed_stubs_available
+        require_typeshed_stubs
     }
+    import from jaclang.artifacts.router { require }
 
-    assert typeshed_stubs_available() , "vendored typeshed stubs are missing, so no module can compile";
+    assert require("typeshed").found is not None , "vendored typeshed stubs are missing, so no module can compile";
     require_typeshed_stubs();
     assert issubclass(TypeshedUnavailableError, RuntimeError);
 }

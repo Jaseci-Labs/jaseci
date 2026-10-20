@@ -62,8 +62,8 @@ def:pub app() -> JsxElement {
 }
 ```
 
-!!! warning "`children` must have a default value"
-    The prop validator counts only JSX **attributes** toward matched parameters -- nested content does *not* count. A `children` parameter with no default is therefore treated as a *required* prop, and any call site that passes another attribute fails with `error[E1102]: Component 'Card' requires prop 'children'`. Always declare it as `children: any = None`.
+!!! tip "Give `children` a default value"
+    Nested content counts toward a `children` parameter, so `<Card title="Hi">…</Card>` satisfies it even with no default. A `children` parameter without one is still a *required* prop, though, so a call site that nests nothing -- `<Card title="Hi"/>` -- fails with `error[E1102]: Component 'Card' requires prop 'children'`. Declaring it as `children: any = None` makes the empty case legal too.
 
 There is no `ReactNode`-style union type in Jac, and a children value can be an element, a string, a number, or a list of those -- so `any` is the accurate type for a `children` parameter. The parameter type governs only how you use `children` inside the body; it is never checked against the nested content.
 
@@ -344,6 +344,23 @@ def:pub ItemList(items: list[str]) -> JsxElement {
 ```
 
 Loop slots that emit keyless JSX get a warning -- `W2019` for a `while` loop and `W2021` for a `for` loop. Siblings produced by a loop need a stable `key=` (as in the `<li key={i}>` above) so a re-render keeps their identity.
+
+#### Per-item handlers
+
+A handler built in a loop slot sees its own row. It may read the loop target and any local the slot body assigns; each handler keeps the values of the iteration that created it:
+
+```jac
+def:pub Picker(items: list[str], onPick: Callable[[str], None]) -> JsxElement {
+    <ul>
+        {for (i, item) in enumerate(items) {
+            label = item.upper();
+            <li key={i} onClick={lambda { onPick(label); }}>{label}</li>;
+        }}
+    </ul>
+}
+```
+
+A name the component also assigns outside the loop is shared instead: every handler reads its current value. See [Variables and Scope](../../reference/language/variables-and-scope.md#4-scope-rules) for the rule.
 
 ### `has`-fields and Handlers
 

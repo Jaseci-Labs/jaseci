@@ -1,7 +1,6 @@
 import logging;
 import os;
 import threading;
-import from dataclasses { fields, is_dataclass }
 
 glob logger = logging.getLogger(__name__),
      ATTIC_KEY: str = '__jac_attic__',
@@ -53,7 +52,9 @@ def validate_rules(rules: SchemaRules, cls: type) -> None;
 
 def repair_mode -> str;
 
-def apply_rules(data: dict, rules: SchemaRules) -> tuple;
+def apply_rules(
+    data: dict[str, any], rules: SchemaRules
+) -> tuple[dict[str, any], list[str]];
 
 def _require_collector -> SchemaRules;
 def _owner_key(cls: type) -> str;

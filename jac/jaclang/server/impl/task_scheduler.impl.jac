@@ -9,9 +9,19 @@ impl Scheduler.instance -> Scheduler {
 impl Scheduler.register(
     name: str, target: Callable, spec: ScheduleSpec, is_walker: bool
 ) -> None {
+    problems = schedule_problems(spec);
+    if problems {
+        raise ValueError(f"@schedule on '{name}': {'; '.join(problems)}");
+    }
     now = datetime.datetime.now(datetime.timezone.utc);
     next_run = self._compute_next_run(spec, now);
     if next_run is None {
+        if spec.date is not None {
+            logger.warning(
+                f"@schedule on '{name}': date {spec.date} has already passed, "
+                "so it is not registered and will not run"
+            );
+        }
         return;
     }
     self._tasks.append(
@@ -26,9 +36,207 @@ impl Scheduler.register(
     );
 }
 
+impl tick_of(when: datetime.datetime) -> int {
+    epoch = datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc);
+    moment = when
+        if when.tzinfo is not None
+        else when.replace(tzinfo=datetime.timezone.utc);
+    return (moment - epoch) // datetime.timedelta(microseconds=1);
+}
+
+impl schedule_namespace(module_name: str) -> str {
+    service = os.environ.get('JAC_SV_NAME', '').strip();
+    if service and service != '__gateway__' {
+        return service;
+    }
+    return module_name;
+}
+
+impl schedule_problems(spec: ScheduleSpec) -> list[str] {
+    timing = [
+        name
+        for (name, value) in [
+            ("interval", spec.interval),
+            ("cron", spec.cron),
+            ("date", spec.date)
+        ]
+        if value is not None
+    ];
+    if spec.trigger == ScheduleTrigger.DYNAMIC {
+        if timing {
+            return [
+                f"a DYNAMIC schedule takes no {' or '.join(timing)}; its timing "
+                "comes from each POST /jobs request"
+            ];
+        }
+        return [];
+    }
+    if not timing {
+        return ["needs one of interval, cron or date"];
+    }
+    if len(timing) > 1 {
+        return [f"takes one of interval, cron or date, not {' and '.join(timing)}"];
+    }
+    if spec.interval is not None {
+        raw: any = spec.interval;
+        seconds = 0.0;
+        if not isinstance(raw, bool) and isinstance(raw, (int, float)) {
+            try {
+                seconds = float(raw);
+            } except OverflowError {
+                return [f"interval {raw!r} seconds is too long to schedule"];
+            }
+        }
+        if not (math.isfinite(seconds) and seconds > 0.0) {
+            return [f"interval must be a positive number of seconds, got {raw!r}"];
+        }
+        try {
+            if datetime.timedelta(seconds=seconds) <= datetime.timedelta(0) {
+                return [
+                    f"interval must be at least a microsecond, got {raw!r} seconds"
+                ];
+            }
+            next_interval_run(seconds, datetime.datetime.now(datetime.timezone.utc));
+        } except OverflowError {
+            return [
+                f"interval {raw!r} seconds is too long to schedule: its next run "
+                "falls outside the dates the scheduler can represent"
+            ];
+        }
+    }
+    if spec.cron is not None {
+        try {
+            CronSchedule.parse(str(spec.cron));
+        } except ValueError as e {
+            return [str(e)];
+        }
+    }
+    if spec.date is not None {
+        try {
+            datetime.datetime.fromisoformat(str(spec.date));
+        } except (ValueError, TypeError) {
+            return [
+                f"date {spec.date!r} is not an ISO date-time such as "
+                "'2026-12-31 09:00:00+00:00'"
+            ];
+        }
+    }
+    return [];
+}
+
+impl next_interval_run(seconds: float, now: datetime.datetime) -> datetime.datetime {
+    step = datetime.timedelta(seconds=seconds);
+    if step <= datetime.timedelta(0) {
+        return now + step;
+    }
+    epoch = datetime.datetime(1970, 1, 1, tzinfo=now.tzinfo);
+    return epoch + step * ((now - epoch) // step + 1);
+}
+
+impl CronSchedule.parse(expr: str) -> CronSchedule {
+    fields = str(expr).strip().split();
+    if len(fields) != 5 {
+        raise ValueError(
+            f"cron {expr!r} needs 5 fields (minute hour day month weekday), "
+            f"got {len(fields)}"
+        );
+    }
+    found: list[set[int]] = [];
+    for (index, (label, lo, hi)) in enumerate(CRON_FIELDS) {
+        found.append(_cron_values(expr, fields[index], label, lo, hi));
+    }
+    schedule = CronSchedule(
+        minutes=found[0],
+        hours=found[1],
+        days=found[2],
+        months=found[3],
+        weekdays=found[4]
+    );
+    if not any(
+        day <= MONTH_DAYS[month] for month in schedule.months for day in schedule.days
+    ) {
+        raise ValueError(
+            f"cron {expr!r} never fires: none of its days exists in its months"
+        );
+    }
+    return schedule;
+}
+
+impl _cron_values(expr: str, text: str, label: str, lo: int, hi: int) -> set[int] {
+    values: set[int] = set();
+    for part in text.split(',') {
+        if part == '*' {
+            values.update(range(lo, hi + 1));
+        } elif part.startswith('*/') {
+            step = _cron_number(expr, part[2:], label, 1, hi - lo + 1);
+            values.update(range(lo, hi + 1, step));
+        } elif '-' in part {
+            (first_text, last_text) = part.split('-', 1);
+            first = _cron_number(expr, first_text, label, lo, hi);
+            last = _cron_number(expr, last_text, label, lo, hi);
+            if first > last {
+                raise ValueError(
+                    f"cron {expr!r}: {label} range {part!r} runs backwards"
+                );
+            }
+            values.update(range(first, last + 1));
+        } else {
+            values.add(_cron_number(expr, part, label, lo, hi));
+        }
+    }
+    return values;
+}
+
+impl _cron_number(expr: str, text: str, label: str, lo: int, hi: int) -> int {
+    if not text.isdigit() {
+        raise ValueError(
+            f"cron {expr!r}: {label} field has {text!r}; each entry must be *, "
+            "*/n, a-b or a number"
+        );
+    }
+    value = int(text);
+    if value < lo or value > hi {
+        raise ValueError(f"cron {expr!r}: {label} value {value} is outside {lo}-{hi}");
+    }
+    return value;
+}
+
+impl CronSchedule.next_after(now: datetime.datetime) -> datetime.datetime {
+    moment = now.replace(second=0, microsecond=0) + datetime.timedelta(minutes=1);
+    last_year = moment.year + 400;
+    while moment.year <= last_year {
+        if moment.month not in self.months {
+            if moment.month == 12 {
+                moment = moment.replace(
+                    year=moment.year + 1, month=1, day=1, hour=0, minute=0
+                );
+            } else {
+                moment = moment.replace(
+                    month=moment.month + 1, day=1, hour=0, minute=0
+                );
+            }
+        } elif moment.day not in self.days or moment.weekday() not in self.weekdays {
+            moment = (moment + datetime.timedelta(days=1)).replace(hour=0, minute=0);
+        } elif moment.hour not in self.hours {
+            moment = (moment + datetime.timedelta(hours=1)).replace(minute=0);
+        } elif moment.minute not in self.minutes {
+            moment = moment + datetime.timedelta(minutes=1);
+        } else {
+            return moment;
+        }
+    }
+    raise ValueError(f"no run within 400 years of {now.isoformat()}");
+}
+
 impl Scheduler.start -> None {
     if self._running {
         return;
+    }
+    now = datetime.datetime.now(datetime.timezone.utc);
+    for task in self._tasks {
+        if task.next_run is not None {
+            task.next_run = self._compute_next_run(task.spec, now);
+        }
     }
     self._running = True;
     self._stop_event = threading.Event();
@@ -37,8 +245,209 @@ impl Scheduler.start -> None {
     self._thread.start();
 }
 
-impl Scheduler.stop -> None {
-    self._running = False;
+impl Scheduler.start_if_pending -> None {
+    if self.has_pending() {
+        self.start();
+    }
+}
+
+impl Scheduler._may_fire(task: ScheduledTask, due: datetime.datetime) -> bool {
+    if self.claim is None {
+        return True;
+    }
+    claim_fn: any = self.claim;
+    key = f"sched:{self.namespace}:{task.name}";
+    try {
+        won = bool(claim_fn(key, tick_of(due)));
+    } except Exception as e {
+        if key not in self._failing_claims {
+            self._failing_claims.add(key);
+            logger.warning(
+                f"could not claim the {due.isoformat()} tick of '{task.name}': {e}; "
+                "skipping its ticks until a claim succeeds"
+            );
+        }
+        return False;
+    }
+    if key in self._failing_claims {
+        self._failing_claims.discard(key);
+        logger.info(f"tick claims for '{task.name}' are succeeding again");
+    }
+    return won;
+}
+
+impl Scheduler._run_key(task: ScheduledTask) -> str {
+    return f"sched-run:{self.namespace}:{task.name}";
+}
+
+impl Scheduler._hold_owner -> str {
+    if not self._owner {
+        self._owner = f"{socket.gethostname()}:{os.getpid()}:{uuid.uuid4().hex}";
+    }
+    return self._owner;
+}
+
+impl Scheduler._take_hold(task: ScheduledTask) -> bool {
+    hold_fn: any = self.hold;
+    return bool(hold_fn(self._run_key(task), self.hold_ttl, self._hold_owner()));
+}
+
+impl Scheduler._hold_run(task: ScheduledTask) -> bool {
+    if self.hold is None {
+        return True;
+    }
+    key = self._run_key(task);
+    try {
+        held = self._take_hold(task);
+    } except Exception as e {
+        if key not in self._failing_claims {
+            self._failing_claims.add(key);
+            logger.warning(
+                f"could not take the run hold of '{task.name}': {e}; "
+                "skipping its ticks until a hold succeeds"
+            );
+        }
+        return False;
+    }
+    if key in self._failing_claims {
+        self._failing_claims.discard(key);
+        logger.info(f"run holds for '{task.name}' are succeeding again");
+    }
+    return held;
+}
+
+impl Scheduler._keep_hold(task: ScheduledTask, beat: threading.Event) -> None {
+    lost = False;
+    while not beat.`wait(self.hold_ttl / 3) {
+        try {
+            held = self._take_hold(task);
+            reason = "";
+        } except Exception as e {
+            held = False;
+            reason = f" ({e})";
+        }
+        if held and lost {
+            lost = False;
+            logger.info(f"'{task.name}' has its run hold back while still running");
+        } elif not held and not lost {
+            lost = True;
+            logger.warning(
+                f"'{task.name}' lost its run hold while still running{reason}; "
+                "another replica may start it"
+            );
+        }
+    }
+}
+
+impl Scheduler._release_run(task: ScheduledTask) -> None {
+    if self.release is None {
+        return;
+    }
+    release_fn: any = self.release;
+    try {
+        release_fn(self._run_key(task), self._hold_owner());
+    } except Exception as e {
+        logger.warning(
+            f"could not release the run hold of '{task.name}': {e}; "
+            f"it expires within {self.hold_ttl}s"
+        );
+    }
+}
+
+impl Scheduler._still_running(task: ScheduledTask) -> bool {
+    with self._flight_lock {
+        flight = self._in_flight.get(id(task));
+    }
+    if flight is not None and flight[1].is_alive() {
+        if task.name not in self._overlapping {
+            self._overlapping.add(task.name);
+            logger.warning(
+                f"'{task.name}' is still running from an earlier tick; skipping its "
+                "ticks until that run finishes"
+            );
+        }
+        return True;
+    }
+    if task.name in self._overlapping {
+        self._overlapping.discard(task.name);
+        logger.info(f"'{task.name}' finished its long run; its ticks run again");
+    }
+    return False;
+}
+
+impl Scheduler._start(thread: threading.Thread, task: ScheduledTask) -> bool {
+    try {
+        thread.start();
+    } except RuntimeError as e {
+        logger.warning(
+            f"could not start a thread for '{task.name}': {e}; skipping this run"
+        );
+        return False;
+    }
+    return True;
+}
+
+impl Scheduler._launch(task: ScheduledTask) -> None {
+    thread = threading.Thread(
+        target=self._run_tracked,
+        args=(task, ),
+        daemon=True,
+        name=f"jac-schedule-{task.name}"
+    );
+    with self._flight_lock {
+        refused = not self._running;
+        if not refused {
+            self._in_flight[id(task)] = (task.name, thread);
+        }
+    }
+    if refused {
+        self._release_run(task);
+        return;
+    }
+    if not self._start(thread, task) {
+        with self._flight_lock {
+            del self._in_flight[id(task)];
+        }
+        self._release_run(task);
+    }
+}
+
+impl Scheduler._run_tracked(task: ScheduledTask) -> None {
+    beat = threading.Event();
+    keeper: (threading.Thread | None) = None;
+    if self.hold is not None {
+        keeper = threading.Thread(
+            target=self._keep_hold,
+            args=(task, beat),
+            daemon=True,
+            name=f"jac-schedule-hold-{task.name}"
+        );
+    }
+    try {
+        if keeper is None or self._start(keeper, task) {
+            self._execute(task);
+        }
+    } finally {
+        beat.set();
+        if keeper is not None and keeper.ident is not None {
+            keeper.join();
+        }
+        self._release_run(task);
+        with self._flight_lock {
+            flight = self._in_flight.get(id(task));
+            if flight is not None and flight[1] is threading.current_thread() {
+                del self._in_flight[id(task)];
+            }
+        }
+    }
+}
+
+impl Scheduler.stop(timeout: (float | None) = None) -> None {
+    budget = max(0.0, timeout) if timeout is not None else None;
+    deadline = time.monotonic() + (budget if budget is not None else 5.0);
+    with self._flight_lock {
+        self._running = False;
+    }
     if self._stop_event is not None {
         self._stop_event.set();
     }
@@ -46,7 +455,33 @@ impl Scheduler.stop -> None {
         self._done_event.set();
     }
     if self._thread is not None and self._thread.is_alive() {
-        self._thread.join(timeout=5);
+        self._thread.join(timeout=max(0.0, deadline - time.monotonic()));
+    }
+    with self._flight_lock {
+        running = [
+            flight
+            for flight in self._in_flight.values()
+            if flight[1].is_alive()
+        ];
+    }
+    if not running or budget is None {
+        return;
+    }
+    for (_name, thread) in running {
+        thread.join(timeout=max(0.0, deadline - time.monotonic()));
+    }
+    left = sorted(
+        [
+            name
+            for (name, thread) in running
+            if thread.is_alive()
+        ]
+    );
+    if left {
+        logger.warning(
+            f"scheduled task(s) {', '.join(left)} still running when the "
+            f"{budget:.1f}s drain budget ran out; the worker exits without them"
+        );
     }
 }
 
@@ -98,8 +533,19 @@ impl Scheduler._run_loop -> None {
         }
         heapq.heappop(heap);
         now = datetime.datetime.now(datetime.timezone.utc);
+        due = task.next_run;
         task.last_run = now;
-        threading.Thread(target=self._execute, args=(task, ), daemon=True).start();
+        draining = self.drain is not None and self.drain.draining;
+        if not draining and not self._still_running(task) {
+            if due is None or not self._hold_run(task) {
+                logger.debug(f"'{task.name}' is running elsewhere; skipping this tick");
+            } elif self._may_fire(task, due) {
+                self._launch(task);
+            } else {
+                self._release_run(task);
+                logger.debug(f"'{task.name}' fired elsewhere this tick; skipping");
+            }
+        }
         new_next = self._compute_next_run(task.spec, now);
         task.next_run = new_next;
         if new_next is not None {
@@ -134,10 +580,10 @@ impl Scheduler._compute_next_run(
         return self._compute_date(spec.date, now);
     }
     if spec.interval is not None {
-        return now + datetime.timedelta(seconds=spec.interval);
+        return next_interval_run(float(spec.interval), now);
     }
     if spec.cron is not None {
-        return self._parse_cron_next(str(spec.cron), now);
+        return CronSchedule.parse(str(spec.cron)).next_after(now);
     }
     return None;
 }
@@ -164,82 +610,22 @@ impl Scheduler._compute_date(
     return None;
 }
 
-impl Scheduler._parse_cron_next(
-    cron: str, now: datetime.datetime
-) -> datetime.datetime {
-    fields = cron.strip().split();
-    if len(fields) != 5 {
-        raise ValueError(f"Cron must have 5 fields, got: {cron}");
-    }
-    (f_min, f_hour, f_day, f_month, f_weekday) = fields;
-    candidate = now.replace(second=0, microsecond=0) + datetime.timedelta(minutes=1);
-    limit = now + datetime.timedelta(days=366);
-    while candidate <= limit {
-        if (
-            self._cron_field_matches(f_month, candidate.month, 1, 12)
-            and self._cron_field_matches(f_day, candidate.day, 1, 31)
-            and self._cron_field_matches(f_weekday, candidate.weekday(), 0, 6)
-            and self._cron_field_matches(f_hour, candidate.hour, 0, 23)
-            and self._cron_field_matches(f_min, candidate.minute, 0, 59)
-        ) {
-            return candidate;
-        }
-        candidate = candidate + datetime.timedelta(minutes=1);
-    }
-    raise ValueError(f"No matching time found for cron: {cron}");
-}
-
-impl Scheduler._cron_field_matches(
-    field: str, value: int, min_val: int, max_val: int
-) -> bool {
-    for part in field.split(',') {
-        part = part.strip();
-        if part == '*' {
-            return True;
-        } elif part.startswith('*/') {
-            try {
-                step = int(part[2:]);
-                if step > 0 and (value - min_val) % step == 0 {
-                    return True;
-                }
-            } except ValueError {}
-        } elif '-' in part {
-            try {
-                (lo, hi) = part.split('-', 1);
-                if int(lo) <= value <= int(hi) {
-                    return True;
-                }
-            } except ValueError {}
-        } else {
-            try {
-                if int(part) == value {
-                    return True;
-                }
-            } except ValueError {}
-        }
-    }
-    return False;
-}
-
 impl Scheduler._execute(task: ScheduledTask) -> None {
+    import from jaclang { JacRuntimeInterface as Jac }
+
+    ctx = Jac.get_context();
+    token = ctx.call_state.set(CallState());
     try {
-        if task.spec.trigger == ScheduleTrigger.DYNAMIC {
-            if self.dynamic_handler is None {
-                raise NotImplementedError(
-                    "Dynamic scheduling is not implemented in jaclang."
-                );
-            }
-            self.dynamic_handler(task);
-            return;
-        }
+        result = task.target();
         if task.is_walker {
-            import from jaclang { JacRuntimeInterface as Jac }
-            walker_instance = task.target();
-            Jac.`spawn(walker_instance, Jac.root());
-        } else {
-            task.target();
+            import from jaclang.runtime.constructs { WalkerArchetype }
+            if isinstance(result, WalkerArchetype) {
+                Jac.`spawn(result, Jac.root());
+            }
         }
     } except Exception as e {
         logger.error(f"Error executing task '{task.name}': {e}");
+    } finally {
+        ctx.call_state.reset(token);
     }
 }

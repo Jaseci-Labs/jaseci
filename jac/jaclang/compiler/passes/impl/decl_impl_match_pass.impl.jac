@@ -1,7 +1,7 @@
 impl DeclImplMatchPass._run_impl(ir_in: Module) -> Module {
     fresh_reported: set[int] = set();
     self._e2026_reported = fresh_reported;
-    self.cur_node = ir_in;
+    self.ctx.current_node = ir_in;
 
     self.connect_impls(ir_in.sym_tab, ir_in.sym_tab);
 
@@ -10,7 +10,65 @@ impl DeclImplMatchPass._run_impl(ir_in: Module) -> Module {
     for arch in ir_in.get_all_sub_nodes(Archetype) {
         self._populate_inline_init_symbols(arch);
     }
+    self._report_unimplemented(ir_in);
     return ir_in;
+}
+
+impl DeclImplMatchPass._report_unimplemented(ir_in: Module) -> None {
+    if str(ir_in.loc.mod_path).endswith(".pyi") or ir_in.stub_only {
+        return;
+    }
+    supplied = self._impl_block_members(ir_in);
+    for ability in ir_in.get_all_sub_nodes(Ability) {
+        if not ability.needs_impl or self._impl_optional(ability, supplied) {
+            continue;
+        }
+        self.ctx.emit(E2087, node_override=ability.name_spec, name=ability.sym_name);
+    }
+}
+
+impl DeclImplMatchPass._impl_block_members(ir_in: Module) -> dict[str, set[str]] {
+    supplied: dict[str, set[str]] = {};
+    for impl_node in ir_in.get_all_sub_nodes(ImplDef) {
+        if not impl_node.target {
+            continue;
+        }
+        owner = impl_node.target[-1].sym_name;
+        inner = impl_node.body;
+        if not isinstance(inner, list) {
+            continue;
+        }
+        for item in inner {
+            if isinstance(item, Ability) and not item.needs_impl {
+                if owner not in supplied {
+                    supplied[owner] = set();
+                }
+                supplied[owner].add(item.sym_name);
+            }
+        }
+    }
+    return supplied;
+}
+
+impl DeclImplMatchPass._impl_optional(
+    ability: Ability, supplied: dict[str, set[str]]
+) -> bool {
+    if ability.is_abstract
+        or ability.is_genai_ability
+        or ability.accessor_kind != ""
+        or ability.find_parent_of_type(Import) is not None {
+        return True;
+    }
+    for decor in (ability.decorators or []) {
+        if isinstance(decor, Name) and decor.value == "overload" {
+            return True;
+        }
+    }
+    holder = ability.find_parent_of_type(AstImplNeedingNode);
+    if holder is not None and holder.sym_name in supplied {
+        return ability.sym_name in supplied[holder.sym_name];
+    }
+    return False;
 }
 
 impl DeclImplMatchPass.defn_lookup(lookup: Symbol) -> (NameAtom | None) {
@@ -127,7 +185,7 @@ impl DeclImplMatchPass._connect_one_impl(
     }
     if not decl_node {
         if len(name_of_links) > 0 {
-            self.emit(E2009, node_override=impl_node);
+            self.ctx.emit(E2009, node_override=impl_node);
         }
         return;
     }
@@ -136,7 +194,7 @@ impl DeclImplMatchPass._connect_one_impl(
         or not (valid_decl.sym_tab and impl_node.sym_tab)
     ) {
         raise RuntimeError(
-            self.ice(
+            self.ctx.ice(
                 f"Expected AstImplNeedingNode, got {valid_decl.__class__.__name__}. Not possible."
             )
         );
@@ -146,9 +204,9 @@ impl DeclImplMatchPass._connect_one_impl(
             if valid_decl.body is impl_node {
                 return;
             }
-            self.emit(E2017, node_override=impl_node);
+            self.ctx.emit(E2017, node_override=impl_node);
         } else {
-            self.emit(E2016, node_override=impl_node);
+            self.ctx.emit(E2016, node_override=impl_node);
         }
         return;
     }
@@ -171,7 +229,7 @@ impl DeclImplMatchPass._connect_one_impl(
                 if isinstance(i, Name) {
                     scope = find_python_scope_node_of(i);
                     if scope is not None and i.sym_name in scope.implicit_rebinds {
-                        self.emit(E0064, node_override=i, name=i.sym_name);
+                        self.ctx.emit(E0064, node_override=i, name=i.sym_name);
                     }
                 }
             }
@@ -227,7 +285,7 @@ impl DeclImplMatchPass._report_bare_redecls(sym_tab: UniScopeNode) -> None {
                 continue;
             }
             self._e2026_reported.add(node_key);
-            self.emit(E2026, node_override=bare, name=sym.sym_name);
+            self.ctx.emit(E2026, node_override=bare, name=sym.sym_name);
         }
     }
 }
@@ -245,8 +303,8 @@ impl DeclImplMatchPass.validate_params_match(
         decl_count = len(params_decl) if params_decl else 0;
         defn_count = len(params_defn) if params_defn else 0;
         if (defn_count != decl_count) {
-            self.emit(E2011, node_override=impl_node.name_spec, name=sym_name);
-            self.emit(
+            self.ctx.emit(E2011, node_override=impl_node.name_spec, name=sym_name);
+            self.ctx.emit(
                 E2012,
                 node_override=valid_decl.name_spec,
                 name=valid_decl.name_spec.sym_name
@@ -264,8 +322,8 @@ impl DeclImplMatchPass.validate_params_match(
                 decl_name = decl_param.name.value;
                 impl_name = defn_param.name.value;
                 if decl_name != impl_name {
-                    self.emit(
-                        W2013,
+                    self.ctx.emit(
+                        E2013,
                         node_override=defn_param.name,
                         decl_name=decl_name,
                         impl_name=impl_name
@@ -287,28 +345,30 @@ impl DeclImplMatchPass._resolve_symbols_in_subtree(root_node: UniNode) -> None {
         if is_identifier_slot(name_node) {
             continue;
         }
-        if name_node.sym_tab {
+        scope = name_node.sym_tab;
+        if scope {
             try {
-                name_node.sym_tab.use_lookup(name_node);
+                scope.use_lookup(name_node);
             } except ValueError {}
         }
     }
     for trailer_node in root_node.get_all_sub_nodes(AtomTrailer) {
         chain = trailer_node.as_attr_list;
-        if chain and chain[0].sym is None and trailer_node.sym_tab {
+        if chain and chain[0].sym is None {
+            scope = trailer_node.sym_tab;
+            if scope is None {
+                continue;
+            }
             try {
-                trailer_node.sym_tab.chain_use_lookup(chain);
+                scope.chain_use_lookup(chain);
             } except ValueError {}
         }
     }
 }
 
-
 impl DeclImplMatchPass._populate_self_member_symbols(
     impl_def: ImplDef, archetype: Archetype
 ) -> None {
-    import from jaclang.compiler.frontend.diagnostics { W2080 }
-
     for trailer_node in impl_def.get_all_sub_nodes(AtomTrailer) {
         if not (trailer_node.parent and isinstance(trailer_node.parent, Assignment)) {
             continue;
@@ -340,7 +400,7 @@ impl DeclImplMatchPass._populate_self_member_symbols(
             } elif (impl_def.decl_link and isinstance(impl_def.decl_link, Ability)) {
                 method_name = impl_def.decl_link.name_spec.sym_name;
             }
-            self.emit(
+            self.ctx.emit(
                 W2080,
                 node_override=attr_name,
                 attr=attr_name.sym_name,
@@ -353,8 +413,6 @@ impl DeclImplMatchPass._populate_self_member_symbols(
 }
 
 impl DeclImplMatchPass._populate_inline_init_symbols(archetype: Archetype) -> None {
-    import from jaclang.compiler.frontend.diagnostics { W2080 }
-
     if archetype.arch_type.name == 'KW_CLASS' {
         return;
     }
@@ -396,7 +454,7 @@ impl DeclImplMatchPass._populate_inline_init_symbols(archetype: Archetype) -> No
             display_name = "postinit"
                 if method_name == "__post_init__"
                 else method_name;
-            self.emit(
+            self.ctx.emit(
                 W2080,
                 node_override=attr_name,
                 attr=attr_name.sym_name,
@@ -408,14 +466,6 @@ impl DeclImplMatchPass._populate_inline_init_symbols(archetype: Archetype) -> No
     }
 }
 
-impl DeclImplMatchPass.transform(ir_in: Module) -> Module {
-    self.ir_out = ir_in;
-    ir_in spawn self;
-    out = self.ir_out;
-    assert isinstance(out, Module);
-    return out;
-}
-
 impl DeclImplMatchPass.run_walk with Module entry {
-    self.ir_out = self._run_impl(here);
+    self.module = self._run_impl(here);
 }

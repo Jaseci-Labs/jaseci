@@ -59,8 +59,10 @@ This means your Jac type system functions as the LLM's output schema. Declaring 
 
 ## Installation
 
+byLLM ships inside `jac`; there is nothing to install by name. A project that declares a `[byllm]` section in `jac.toml` gets byLLM's Python dependencies (the model client) from a plain `jac install`:
+
 ```bash
-jac install byllm
+jac install
 ```
 
 For local inference without an API key, byLLM supports two paths -- pick the one that fits your environment (see [Built-in Local Models](#built-in-local-models) for the full discussion):
@@ -141,7 +143,7 @@ glob smart_model   = Model(model_name="gpt-4o");
 glob summarizer    = Model(model_name="claude-sonnet-4-6");
 
 def quick_label(text: str) -> str by fast_model();
-def deep_analyze(text: str) -> dict by smart_model();
+def deep_analyze(text: str) -> dict[str, any] by smart_model();
 def tldr(article: str) -> str by summarizer();
 ```
 
@@ -165,7 +167,7 @@ def tldr(article: str) -> str by summarizer();
 | `ca_bundle` | str/bool | SSL certificate path, `True` for default, `False` to skip verification |
 | `api_key` | str | API key (alternative to constructor parameter) |
 | `verbose` | bool | Enable verbose/debug logging |
-| `outputs` | list | Mock responses for `MockLLM` testing |
+| `outputs` | list | Replies for `Model(model_name="mockllm")`, see [Testing with MockLLM](#testing-with-mockllm) |
 
 **Example with config:**
 
@@ -471,6 +473,88 @@ Constructor arguments always take precedence over `jac.toml` values.
 
 ---
 
+## System One Models
+
+A System One model answers typed questions against a state and returns a calibrated probability distribution instead of generating text. TypeSafe's Jev was the first; open implementations (OpenJev, Laya) speak the same `/v1/systemone` wire format. For a call site whose return type is a closed set, byLLM can send the call to one of these instead of a chat model, with no change to the function. It is typically an order of magnitude faster and far cheaper per call, and it returns a confidence a chat model cannot.
+
+```jac
+glob llm = Model(model_name="systemone:typesafe/jev-latest");
+
+enum Category { WORK, PERSONAL, SHOPPING, HEALTH, FITNESS, OTHER }
+
+sem Category.OTHER = "Household chores and errands that fit no other category";
+
+def categorize(title: str) -> Category by llm();
+sem categorize = "Categorize a task based on its title";
+```
+
+The question is built from what the compiler recorded, not from a prompt: the function's `sem` is the instruction and each member's `sem` is that label's description. Annotating members matters more here than for a chat model, since a small decision model cannot infer what an undescribed label like `OTHER` means.
+
+### What can be answered
+
+| Return type | Asked as |
+|---|---|
+| `enum E` | one choice over its members |
+| `bool` | one yes/no |
+| `list[E]` | one yes/no per member; members above 0.5, most probable first |
+| `obj` whose fields are all enums or bools | one question per field, in a single request, rebuilt into the object |
+| `Decision[T]` for any of the above | as `T`, with the confidence attached (below) |
+
+Anything else (a `str` or number return, an object with an open-ended field, a call with `tools=` or `stream=True`, or media arguments) cannot be answered by a decision model. It goes to the `fallback`.
+
+### Model names and providers
+
+`systemone:<provider>/<model>`. With no provider, `typesafe` is assumed.
+
+| Provider | Endpoint | Key |
+|---|---|---|
+| `typesafe` | `https://api.typesafe.ai/v1/systemone` | `TYPESAFE_API_KEY` or `JEV_API_KEY` |
+| `litellm` | `http://localhost:4000/typesafe/v1/systemone` (a LiteLLM proxy) | `LITELLM_API_KEY` |
+| `openjev` | `http://localhost:8000/v1/systemone` | none |
+| `laya` | `http://localhost:8000/v1/systemone` | none |
+
+Each provider also carries capability limits. A call that exceeds them, such as an enum with more members than the model can reliably choose among, goes to the fallback rather than being truncated. `config={"max_choice_options": ..., "max_state_chars": ..., "api_base": ...}` overrides them.
+
+### Fallback and escalation
+
+```jac
+glob llm = Model(
+    model_name="systemone:typesafe/jev-latest",
+    config={"fallback": "claude-sonnet-4-6", "min_confidence": 0.7}
+);
+```
+
+- A call that cannot be answered is handed to `fallback` unchanged; the fallback sees the same prompt it would have without the System One model. Besides the return types above, this covers calls that pass `conversation=` or a per-call `system_prompt=`, which a System One state cannot express.
+- An answer whose confidence is below `min_confidence` is discarded and the call is re-asked of `fallback`.
+- If the endpoint is unreachable, overloaded or rejects the request, the call goes to `fallback`. A rejected API key (401) is raised instead, since it is a configuration error.
+- With no `fallback`, a call that cannot be answered raises `ConfigurationError`.
+
+The state sent to the endpoint holds the call's arguments, any `incl_info`, and, for a method, the receiver as `self`. The API key comes from the provider's environment variable or an `api_key=` passed to this `Model`; the project-wide `[byllm.model] api_key` belongs to your chat provider and is never sent.
+
+`SystemOneModel(fallback=..., min_confidence=...)` takes the same settings as constructor arguments.
+
+### Reading the confidence
+
+```jac
+def categorize(title: str) -> Decision[Category] by llm();
+
+with entry {
+    d = categorize("Water the plants");
+    # d.value: Category.OTHER, d.confidence: 0.0 to 1.0,
+    # d.probabilities: the distribution per question
+}
+```
+
+When the fallback answered, `d.answered_by` is `"fallback"`, `d.probabilities` is empty, and `d.confidence` is the System One confidence that caused the escalation (0 if the call was never answered by it).
+
+For a single choice, confidence is `(n * p_max - 1) / (n - 1)` over its `n` options; for a yes/no it is `|2p - 1|`; for a list or object it is that of the least certain question. Every call also records its tokens, confidence and distribution in telemetry under `call_kind: "systemone"`.
+
+### `visit ... by llm()`
+
+Routing asks over the live frontier of the current node. `select=1` is one choice; any other `select` is one yes/no per candidate. An exact `select=N` returns the `N` most probable candidates, or all of them if fewer exist; `select=(lo, hi)` returns those above 0.5 up to `hi`, filled by rank to at least `lo`. When a pick below 0.5 is used to fill the count, the confidence is 0, so `min_confidence` escalates it.
+
+---
+
 ## Project Configuration
 
 ### Default Model Configuration
@@ -489,11 +573,13 @@ verbose = false                   # Log LLM calls to stderr
 temperature = 0.7                 # Optional; omit to use the provider default (0.0-2.0)
 max_tokens = 0                    # Max response tokens (0 = no limit)
 max_output_retries = 3            # Retries for structured output (0 = disabled)
+timeout = 600.0                   # Non-streaming request timeout, seconds (0 = no limit)
 
 [byllm.litellm]
 local_cost_map = true             # Use local cost map
 drop_params = true                # Drop unsupported params per provider
 debug = false                     # Enable verbose LiteLLM logging
+include_cost_in_streaming_usage = true  # Let LiteLLM compute cost on streaming usage chunks
 
 [byllm.fallback]
 strategy = "fallback"             # Default ModelPool routing strategy
@@ -531,6 +617,7 @@ compaction_model       = ""       # Empty = copy of the active model; set to use
 | `temperature` | float | *unset* | Creativity/randomness (0.0-2.0, lower is more deterministic). Omitted from the request when unset, so the provider applies its own default |
 | `max_tokens` | int | `0` | Maximum response tokens (0 = no limit / model default) |
 | `max_output_retries` | int | `3` | Retries after the first attempt to regenerate a structured output that came back empty or unparseable (`0` disables). See [Typed-Output Retry](#typed-output-retry) |
+| `timeout` | float | `600.0` | Seconds one non-streaming request may take before raising `LLMTimeout` (`0` = no limit). See [Request Timeout](#request-timeout) |
 
 **`[byllm.litellm]` options:**
 
@@ -539,6 +626,7 @@ compaction_model       = ""       # Empty = copy of the active model; set to use
 | `local_cost_map` | bool | `true` | Use local cost map instead of fetching from remote |
 | `drop_params` | bool | `true` | Silently drop parameters unsupported by the chosen provider |
 | `debug` | bool | `false` | Enable verbose LiteLLM logging (HTTP requests, retries, headers). When `false`, LiteLLM's internal loggers are silenced. Exceptions are always logged via byLLM's own logger regardless of this setting |
+| `include_cost_in_streaming_usage` | bool | `true` | Let LiteLLM compute `cost` on a streamed usage chunk itself, from its own full response context, instead of byLLM recomputing it afterward from a bare `{model, usage}` shape. Has no effect below litellm 1.75.2, where the underlying flag doesn't exist |
 
 **`[byllm.parallel]` options:**
 
@@ -807,6 +895,18 @@ The original rejected text remains available on `raw_output` (see [`OutputConver
 
 ---
 
+## Request Timeout
+
+`[byllm.call_params] timeout` limits one non-streaming request, in seconds. Override it with `Model(timeout=...)` or `by llm(timeout=...)`; `0` removes the limit. When it expires the call raises `LLMTimeout`, which byLLM retries like other transient errors (`[byllm.streaming] num_retries`).
+
+| Path | Setting | Default |
+|------|---------|---------|
+| non-streaming | `[byllm.call_params] timeout` | `600.0` |
+| streaming | `[byllm.streaming] read_timeout` | `90.0` between chunks |
+| `ModelPool` | `[byllm.fallback] timeout` | `60.0` |
+
+---
+
 ## Invocation Parameters
 
 Parameters passed to `by llm()` at call time:
@@ -816,6 +916,7 @@ Parameters passed to `by llm()` at call time:
 | `temperature` | float | Controls randomness (0.0 = deterministic, 2.0 = creative). Omitted when unset, so the provider default applies |
 | `max_tokens` | int | Maximum tokens in response |
 | `max_output_retries` | int | Retries after the first attempt to regenerate a structured output that came back empty or unparseable (`0` disables). Default: 3. See [Typed-Output Retry](#typed-output-retry) |
+| `timeout` | float | Seconds one non-streaming request may take before raising `LLMTimeout` (`0` = no limit). Default: `600.0` |
 | `tools` | list | Tool functions for agentic behavior (automatically enables ReAct loop) |
 | `incl_info` | dict | Additional context key-value pairs injected into the prompt |
 | `stream` | bool | Enable streaming output (only supports `str` return type) |
@@ -881,7 +982,7 @@ After each call byLLM appends the turn to your list **in place** as plain dicts.
 {"role": "assistant", "content": "It's sunny in Paris."}
 ```
 
-The auto-generated SYSTEM prompt and `finish_tool` calls are excluded from the list - byLLM regenerates them each turn. The list is safe to JSON-serialise and replay across sessions.
+The SYSTEM prompt and `finish_tool` calls are excluded from the list - byLLM regenerates them each turn, so a `system` message found in the list (for example one stored by an earlier version) is dropped rather than replayed. The list is safe to JSON-serialise and replay across sessions.
 
 ---
 
@@ -919,7 +1020,7 @@ sem analyze_code.code = "The source code to analyze";
 sem analyze_code.language = "Programming language (python, javascript, etc.)";
 sem analyze_code.return = "A structured analysis with issues and suggestions";
 
-def analyze_code(code: str, language: str) -> dict by llm;
+def analyze_code(code: str, language: str) -> dict[str, any] by llm;
 ```
 
 ### Complex Semantic Types
@@ -1019,6 +1120,10 @@ def my_hook(ctx: IterationContext) -> IterationAction {
     if ctx.total_tokens > 10000 {
         return IterationAction.ABORT_WITH_SUMMARY;
     }
+    # Or gate on real cost directly, e.g. against a per-user credit balance
+    if ctx.total_cost > 0.50 {
+        return IterationAction.ABORT_WITH_SUMMARY;
+    }
     return IterationAction.CONTINUE;
 }
 
@@ -1036,6 +1141,7 @@ def agent_task(question: str) -> str by llm(
 | `last_tool` | str | Name of the last tool executed |
 | `last_result` | str | Truncated result of last tool (500 chars) |
 | `total_tokens` | int | Cumulative token usage across all iterations |
+| `total_cost` | float | Cumulative real cost (USD) across all iterations, summed from the same per-call cost `usage`/`usage_step` report |
 | `messages` | list | Full message history |
 
 **`IterationAction`** values:
@@ -1260,11 +1366,13 @@ After every LLM response byLLM compares `prompt_tokens / ctx_window` against a t
 1. The oldest tool-call rounds are serialised and sent to a summarisation LLM call.
 2. The summary replaces those rounds with a single user message tagged `[Compacted context summary]`.
 3. The system message and original user task (`messages[0]` and `messages[1]`) are always preserved verbatim.
-4. The most-recent `keep_recent_iterations` tool-call rounds are also kept verbatim for immediate context.
+4. The most-recent tool-call rounds are also kept verbatim for immediate context: at most `keep_recent_iterations` of them, and fewer when they would take more than a quarter of the context window. The newest round is always kept, and its tool results are truncated (with a marker) if it alone is over that quarter.
+
+A compaction whose summarised part would be no more than 5 % of the context window is skipped, since an extra model call would save almost nothing. If compaction cannot bring the history down, byLLM logs a warning and carries on; the provider's own limit decides.
 
 The summarisation call goes through the full byLLM stack - it inherits telemetry, prompt caching, and proxy configuration from the active model.
 
-A `ContextWindowExceededError` raised by the provider is also caught as an emergency fallback: byLLM compacts immediately and retries the failed call once before giving up.
+A `ContextWindowExceededError` raised by the provider is also caught as an emergency fallback: byLLM compacts immediately and retries the failed call once before giving up. If that compaction cannot reduce the history, byLLM raises `CompactionNotEffectiveError`.
 
 ### Context window resolution
 
@@ -1301,7 +1409,7 @@ glob llm = Model(model_name="gpt-4o", ctx_window=128000);
 Replace the built-in summarisation with your own logic by passing `on_compaction`. The hook receives the full serialised message list and `keep_recent`, and must return the compacted list:
 
 ```jac
-def my_compactor(messages: list, keep_recent: int) -> list {
+def my_compactor(messages: list[any], keep_recent: int) -> list[any] {
     # messages[0] = system, messages[1] = original user task - always preserve
     # messages[2:] = tool-call history to summarise
     summary = my_domain_summariser(messages[2:]);
@@ -1333,9 +1441,35 @@ def my_agent(query: str) -> str by llm(
 );
 ```
 
+### Observing compactions
+
+Only an **applied** compaction is reported: byLLM keeps the old history when the result is not smaller, and that discarded compaction only logs a warning. A `logging=True` stream or a `stream_handler` gets a `compaction` event as soon as one is applied; an emergency one is reported before the retry, so it shows even when the retry fails:
+
+```jac
+with entry {
+    for event in my_agent("...") {
+        if event.event_type == "compaction" {
+            print(event.data["reason"]);           # "threshold" or "overflow"
+            print(event.data["by"]);               # "hook" or "builtin"
+            print(event.data["tokens_before"], event.data["tokens_after"]);
+        }
+    }
+}
+```
+
+| Field | Description |
+|---|---|
+| `reason` | `"threshold"` when `prompt_tokens / ctx_window` crossed `threshold_ratio`, `"overflow"` when the provider rejected the request as too long |
+| `by` | `"hook"` when your `on_compaction` produced the new history, `"builtin"` for byLLM's own compactor (which may summarise, or only clip long tool results when there is too little to summarise) |
+| `messages_before`, `messages_after` | Message count before and after, system prompt included |
+| `tokens_before`, `tokens_after` | byLLM's own size estimate (about four characters per token), the figure the applied-or-discarded decision compares. These are not provider token counts |
+| `iteration` | The ReAct iteration whose reply triggered the compaction |
+
+A compaction on the reply that ends the turn arrives just before `steps_done`. The built-in summariser's own call is billed as a `compaction` call in `usage_step` and `usage`. Calls that do not stream list their applied compactions in the `compactions` field of the [telemetry record](#telemetry-record-fields), as the same dicts without `iteration`.
+
 ### `CompactionNotEffectiveError`
 
-If the threshold fires on two consecutive iterations with a compaction between them - meaning the summarisation produced no meaningful reduction - byLLM raises `CompactionNotEffectiveError` rather than looping forever. See [Error Handling](#error-handling) for how to catch it.
+If the provider rejects a request as too long and compaction cannot reduce the history, or the request is rejected again after a compaction, byLLM raises `CompactionNotEffectiveError` rather than retrying forever. Crossing the threshold without being able to compact only logs a warning. See [Error Handling](#error-handling) for how to catch it.
 
 ---
 
@@ -1486,7 +1620,9 @@ delta from a stream that replaced an abandoned one.
 | `thought` | LLM produced reasoning text before a tool call | `content` (str), `iteration` (int) |
 | `steps_done` | ReAct loop finished, final answer next | `iterations` (int), `reason` (str): `"max_iterations"`, `"aborted"`, or `"aborted_with_summary"` |
 | `chunk` | One token of the final streamed answer | `content` (str) |
-| `usage` | All LLM calls complete (always the last event) | `total` (dict), `per_call` (list[dict]) |
+| `compaction` | Auto-compaction replaced the message history (tool-calling invocations only) | See [Observing compactions](#observing-compactions) |
+| `usage_step` | A single LLM call finished (tool-calling invocations only; see [Per-Call Usage](#per-call-usage)) | Same shape as `usage`, scoped to that one call |
+| `usage` | All LLM calls complete (always the last event) | `total` (dict), `by_kind` (dict), `per_call` (list[dict]), `requests` (int) |
 
 **Importing `StreamEvent`:**
 
@@ -1521,25 +1657,54 @@ with entry {
 }
 ```
 
+`usage` fires exactly once per invocation, even with no measurable tokens (`total`/`per_call` are then empty). A single invocation with tools can make several calls, not just the ones you asked for - each `per_call` entry carries a `call_kind` to tell them apart, and `event.data["by_kind"]` gives the same totals pre-grouped:
+
+| `call_kind` | When it happens |
+|---|---|
+| `react_iteration` | A normal turn of the ReAct loop - the calls you actually asked for |
+| `final_answer_restream` | byLLM re-asking the model to reproduce its already-known answer as a stream, once tool calls are done |
+| `recovery` | byLLM re-prompting after the model skipped `finish_tool` on a structured/typed call |
+| `compaction` | The summarisation call that shrinks message history when auto-compaction fires |
+
+```jac
+with entry {
+    if event.event_type == "usage" {
+        print(event.data["requests"]);        # total LLM calls this invocation made
+        print(event.data["by_kind"]);         # e.g. {"react_iteration": {...}, "final_answer_restream": {...}}
+    }
+}
+```
+
+### Per-Call Usage
+
+`usage_step` fires once per individual LLM call instead of waiting for the whole invocation - same shape as `usage`, so the same parsing code handles both. Useful for tracking spend while a multi-call tool-using turn is still running:
+
+```jac
+with entry {
+    running_total = 0;
+    for event in my_agent("...") {
+        if event.event_type == "usage_step" {
+            running_total += event.data["total"].get("total_tokens", 0);
+            if running_total > budget {
+                break;
+            }
+        }
+    }
+}
+```
+
+Only fires for tool-calling invocations. A single-call invocation still emits one `usage_step` carrying the same numbers as the final `usage` event - don't sum both. See also `IterationContext.total_cost` (in [Interrupting the ReAct Loop](#interrupting-the-react-loop)) to gate the *next* call instead of reacting to a stream event.
+
 #### Cache tokens
 
-When [prompt caching](#project-configuration) is active (automatic for Claude models), each `per_call` dict also carries the provider's cache counters. Read them to measure your cache hit rate:
+`cache_read_input_tokens` and `cache_creation_input_tokens` are always present on every `per_call` entry, normalized to the same field names across providers - `0` when [prompt caching](#project-configuration) isn't active or unsupported, the real count otherwise:
 
 ```jac
 with entry {
     for event in my_agent("...") {
         if event.event_type == "usage" {
             input_tokens = int(event.data["total"].get("prompt_tokens", 0));
-            cached = 0;
-            for call in event.data["per_call"] {
-                # Anthropic reports `cache_read_input_tokens`; OpenAI nests the
-                # count under `prompt_tokens_details.cached_tokens`.
-                cached += int(
-                    call.get("cache_read_input_tokens", 0)
-                    or (call.get("prompt_tokens_details") or {}).get("cached_tokens", 0)
-                    or 0
-                );
-            }
+            cached = int(event.data["total"].get("cache_read_input_tokens", 0));
             if input_tokens > 0 {
                 print(f"Cache hit rate: {round(cached / input_tokens * 100, 1)}%");
             }
@@ -1558,7 +1723,7 @@ Cached input tokens are billed at a fraction of the normal rate, so a high hit r
 
 ## Multimodal Inputs
 
-byLLM supports image and video inputs through the `Image` and `Video` types. These can be used as parameters in any `by llm()` function or method.
+byLLM supports image, video and PDF document inputs through the `Image`, `Video` and `Document` types. These can be used as parameters in any `by llm()` function or method.
 
 ### Image Type
 
@@ -1614,6 +1779,23 @@ with entry {
     img_from_pil = Image(pil_img);
 }
 ```
+
+### Several Images
+
+Pass a `list` of media to send every item, in order. A list counts as media only when every element is; an empty list, or one that mixes in plain values, is described in the prompt as text instead.
+
+```jac
+import from jaclang.byllm.lib { Image }
+
+"""Name the main colour of each image."""
+def name_colours(images: list[Image]) -> str by llm();
+
+with entry {
+    print(name_colours([Image("red.png"), Image("blue.png")]));
+}
+```
+
+Lists given through `incl_info` are sent the same way. `Text` is exported next to `Image` for a text block of its own, so a list can mix both: `list[Image | Text]`.
 
 ### Structured Output from Images
 
@@ -1693,6 +1875,30 @@ obj VideoAnalysis {
 def analyze_video(video: Video) -> VideoAnalysis by llm();
 ```
 
+### Document Type
+
+The `Document` type sends a PDF to the model, from a path or from bytes:
+
+```jac
+import from jaclang.byllm.lib { Document }
+
+"""Summarise the document in two sentences."""
+def summarise(brief: Document) -> str by llm();
+
+with entry {
+    print(summarise(Document("brief.pdf")));
+}
+```
+
+#### Document Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `source` | str, os.PathLike, bytes | required | Path to a PDF, or the PDF's bytes |
+| `filename` | str | the path's file name | Name sent with the file |
+
+Only PDFs are accepted; anything else raises a `ValueError`. Use `Text` for text files such as `.md` or `.csv`. A `Document` returned by a tool reaches the model the way an image does. Page and file size limits are the provider's.
+
 ### Multimodal with Tools
 
 Image and video inputs work with tool calling:
@@ -1733,6 +1939,73 @@ print(describe(img))
 ```
 
 For a step-by-step walkthrough, see the [Multimodal AI Tutorial](../../tutorials/ai/multimodal.md).
+
+---
+
+## Generating Images
+
+An `Image` return type makes the call an image-generation call instead of a chat
+completion. The prompt is the same prompt byLLM builds for any other function -
+the docstring, the `sem` strings and the argument values - and the provider's
+image is handed back as an `Image`:
+
+```jac
+import from jaclang.byllm.lib { Image, Model }
+
+glob painter = Model(model_name="dall-e-3");
+
+"""A flat vector poster, bold shapes, no text."""
+def draw_poster(subject: str, mood: str) -> Image by painter();
+
+with entry {
+    poster = draw_poster("a hot air balloon over Kandy", "calm");
+    print(poster.url);
+}
+```
+
+The returned `Image` is an ordinary `Image`, so it can be passed straight into a
+vision call, saved, or served.
+
+Return `list[Image]` to keep every image the provider sent:
+
+```jac
+def draw_variants(subject: str) -> list[Image] by painter(n=3);
+```
+
+### Generation Parameters
+
+These `by` parameters are forwarded to the provider when set; anything left
+unset takes the provider's default:
+
+| Parameter | Description |
+|-----------|-------------|
+| `n` | How many images to generate |
+| `size` | Pixel size, e.g. `"1024x1024"` |
+| `quality` | Provider quality tier, e.g. `"hd"` |
+| `style` | Provider style, e.g. `"vivid"` |
+| `response_format` | `"b64_json"` (default) or `"url"` |
+| `user` | End-user identifier for provider-side abuse tracking |
+| `timeout` | Request timeout in seconds |
+
+byLLM asks for `b64_json` by default, so the returned `Image` carries the bytes
+as a data URL rather than a provider URL that expires. Pass
+`response_format="url"` to keep the provider's hosted URL instead.
+
+`system_prompt`, from `jac.toml` or from the call, is prepended to the prompt.
+byLLM's built-in chat persona is dropped for an image return, so it does not
+steer the image model. A custom `base_url` is honoured the same way it is on a
+completion.
+
+### Generation Limits
+
+- The model must be an image model. An image return on a chat model fails at the
+  provider, not in byLLM.
+- Image generation takes one call, so `tools=` and `stream=` are refused with a
+  `ConfigurationError`.
+- An `Image` or `Video` argument cannot be sent with an image return: the
+  generation endpoint takes text only, and byLLM has no image-editing path yet.
+- Generation goes through LiteLLM. The `proxy` and `http_client` transports do
+  not carry it.
 
 ---
 
@@ -1878,7 +2151,8 @@ ByLLMError (base)
 ├── OutputConversionError        - LLM response cannot be parsed / converted to the declared return type
 ├── FinishToolError              - finish_tool output failed validation against the declared return type
 ├── ConfigurationError           - Invalid byLLM usage (e.g. streaming with a non-str return type)
-└── CompactionNotEffectiveError  - Compaction triggered twice consecutively with no reduction in context size
+├── LLMTimeout                   - A non-streaming request outlived its timeout
+└── CompactionNotEffectiveError  - The provider rejected the request as too long and compaction could not reduce the context
 ```
 
 All exceptions are importable from `byllm.lib`.
@@ -1893,7 +2167,8 @@ All exceptions are importable from `byllm.lib`.
 | `OutputConversionError` | LLM returned a value that could not be converted to the declared return type; the raw string is on `e.raw_output` |
 | `FinishToolError` | The `finish_tool` output failed validation against the function's declared return type |
 | `ConfigurationError` | `by llm()` was used in an unsupported way, such as `stream=True` with a non-`str` return type |
-| `CompactionNotEffectiveError` | Auto-compaction triggered on two back-to-back iterations without reducing context size. Provide a custom `on_compaction` hook, increase `ctx_window`, or switch to a model with a larger context window |
+| `LLMTimeout` | A non-streaming request outlived its `timeout`. Also a `litellm.Timeout`. See [Request Timeout](#request-timeout) |
+| `CompactionNotEffectiveError` | The provider rejected a request as too long and auto-compaction could not reduce the context, or the request was rejected again after a compaction. Provide a custom `on_compaction` hook, increase `ctx_window`, or switch to a model with a larger context window |
 
 ### Importing Exceptions
 
@@ -1906,6 +2181,7 @@ All exceptions are importable from `byllm.lib`.
         ModelNotFoundError,
         OutputConversionError,
         ConfigurationError,
+        LLMTimeout,
         CompactionNotEffectiveError
     }
     ```
@@ -1919,6 +2195,7 @@ All exceptions are importable from `byllm.lib`.
         ModelNotFoundError,
         OutputConversionError,
         ConfigurationError,
+        LLMTimeout,
         CompactionNotEffectiveError,
     )
     ```
@@ -1990,7 +2267,7 @@ with entry {
 
 ### `CompactionNotEffectiveError`
 
-Raised when auto-compaction fires on two consecutive iterations without reducing the context size. This prevents an infinite compaction loop:
+Raised when the provider rejects a request as too long and auto-compaction cannot reduce the context, or rejects it again after a compaction. This prevents an infinite compaction loop:
 
 ```jac
 import from jaclang.byllm.lib { CompactionNotEffectiveError }
@@ -2025,69 +2302,65 @@ def get_product(prompt: str) -> Product by llm(stream=True);
 
 ## Testing with MockLLM
 
-Use `MockLLM` for deterministic testing without API calls. Mock responses are returned sequentially from the `outputs` list:
+`MockLLM` stands in for the model provider, so tests run without API keys. It replaces only the network call: byLLM still builds the real request and parses the reply, so a test catches a broken prompt, schema or parser as well as a changed answer.
 
 ```jac
 import from jaclang.byllm.lib { MockLLM }
 
-glob llm = MockLLM(
-    model_name="mockllm",
-    config={
-        "outputs": ["Mocked response 1", "Mocked response 2"]
-    }
-);
+enum Priority { LOW = "low", HIGH = "high" }
+
+glob llm = MockLLM(outputs=["Bonjour", Priority.HIGH]);
 
 def translate(text: str) -> str by llm();
-def summarize(text: str) -> str by llm();
+def triage(ticket: str) -> Priority by llm();
 
-test "translate returns first mock" {
-    result = translate("Hello");
-    assert result == "Mocked response 1";
-}
-
-test "summarize returns second mock" {
-    result = summarize("Long text...");
-    assert result == "Mocked response 2";
+test "outputs come back typed, and the request is recorded" {
+    assert translate("Hello") == "Bonjour";
+    assert triage("Login is down") == Priority.HIGH;
+    assert "Hello" in str(llm.sent("messages")[0]);
+    assert llm.exhausted();
 }
 ```
 
-`MockLLM` is useful for:
+Outputs are consumed in order, one per model call, so a tool loop takes one per step. `llm.seen` holds every request, `llm.sent(key)` one field across them (`"messages"`, `"tools"`, `"response_format"`), and `llm.seen_prompts` the prompt text of each call. `model_name` defaults to `mockllm`, and `config={"outputs": [...]}` still works in place of `outputs=`. A stream sends text, and each tool call's arguments, in pieces of `chunk_size` characters (12 by default). `logging_obj=` is attached to the stream `model_call_with_stream` returns, as litellm attaches its own.
 
-- Unit testing LLM-powered functions without API costs
-- Deterministic assertions on function behavior
-- CI/CD pipelines where API keys aren't available
+#### What each output becomes
 
-#### Injecting usage metadata (for compaction tests)
+| Entry in `outputs` | What the model sends |
+|---|---|
+| a string | that text; for a non-`str` return it is the answer when the return type allows a string (a union with `str`, an optional `str`, a string enum), otherwise it is parsed like real model text |
+| any other value: a number, an enum member, an object, a list | that value as the typed answer, encoded the way a model sends it (enums by value) |
+| `MockToolCall(tool=fn, args={...})` | a tool call; `tool` is the function or its name, resolved against the tools the call offers, as for a real model |
+| a list of `MockToolCall` | several tool calls in one turn |
+| `MockRawResponse(content=..., tool_calls=[...], usage=..., finish_reason=..., model=..., unnamed_fragments=False)` | one full turn as the provider sends it; `content` alone is delivered verbatim; `model` names the model that answered, as after a fallback; `unnamed_fragments=True` streams tool-call arguments with no id or name |
+| `MockError(error=..., content="", after=0, reply=None)` | the provider raising `error`; on a stream, the first `after` chunks of `content` arrive before it (`after=0` sends none), or else the whole `reply`, which is any other output in this table and does not combine with `content` or `after` |
+| `(entry, usage_dict)` | the entry, with token usage attached |
 
-Each entry in `outputs` may be a `(payload, usage_dict)` tuple to inject token-usage metadata. This lets you test threshold-based auto-compaction without a real model:
+#### Token usage (for compaction tests)
+
+A `(entry, usage)` tuple attaches token usage to any entry, which is enough to drive threshold-based compaction:
 
 ```jac
 import from jaclang.byllm.lib { MockLLM, MockToolCall }
 
 def step_a -> str { return "a"; }
-def finish_tool(final_output: str) -> str { return final_output; }
 
 glob llm = MockLLM(
-    model_name="mockllm",
     ctx_window=1000,
-    config={"outputs": [
+    outputs=[
         # (tool_call, usage) - triggers compaction at 85 % of 1000 tokens
         (MockToolCall(tool=step_a, args={}), {"prompt_tokens": 850, "total_tokens": 950}),
-        # plain entry - no usage injection, loop exits via finish_tool
-        MockToolCall(tool=finish_tool, args={"final_output": "done"})
-    ]}
+        # plain entry - the loop exits through byLLM's finish tool
+        MockToolCall(tool="finish_tool", args={"final_output": "done"})
+    ]
 );
+
+def task(goal: str) -> str by llm(tools=[step_a]);
 ```
 
-Non-tuple entries behave exactly as before - usage defaults to `{}`.
+#### Malformed output and errors
 
-#### Simulating raw model text and errors
-
-A plain string or a pre-built typed instance in `outputs` is returned verbatim, which is fine for happy-path tests but skips byLLM's parsing. To exercise the real parse and retry path (for example to test [typed-output retry](#typed-output-retry)), use these wrappers:
-
-- **`MockRawResponse(content=...)`** routes the text through `parse_response` exactly like a real model: valid JSON parses to the typed object, malformed JSON raises `OutputConversionError` (triggering a retry), and an empty string is returned as-is.
-- **`MockError(error=...)`** raises the wrapped exception when dispatched, to verify that errors which are not `OutputConversionError` propagate without retry.
-- **`MockLLM.seen_prompts`** records the prompt (joined message contents) seen on each dispatch, so a test can assert how many attempts ran and inspect the corrective feedback between them.
+`MockRawResponse` sends text verbatim, so malformed JSON goes through [typed-output retry](#typed-output-retry) exactly as a real model's reply would. `MockError` raises from the provider: timeouts, connection errors and 5xx responses are retried as in production, and anything else propagates.
 
 ```jac
 import from jaclang.byllm.lib { MockLLM, MockRawResponse }
@@ -2099,11 +2372,10 @@ obj Person {
 
 # First response is malformed JSON (triggers a retry); the second parses cleanly.
 glob llm = MockLLM(
-    model_name="mockllm",
-    config={"outputs": [
+    outputs=[
         MockRawResponse(content="{\"name\": \"Ada\", \"age\":"),
         MockRawResponse(content="{\"name\": \"Ada\", \"age\": 36}")
-    ]}
+    ]
 );
 
 def get_person -> Person by llm();
@@ -2116,7 +2388,7 @@ test "malformed output is retried and recovered" {
 }
 ```
 
-To cap or disable retries in a test, pass `max_output_retries` on the by-expression, e.g. `by llm(max_output_retries=1)` (a bare `by llm()` resets call params, so set it there rather than on the constructor).
+In a test, set the retry count on the call, `by llm(max_output_retries=1)`: a bare `by llm()` resets call params, so a value set on the constructor does not survive.
 
 ---
 
@@ -2218,10 +2490,12 @@ Each callback receives a dict with these fields:
 | `latency_ms` | `float` | Wall-clock time for the invocation in milliseconds |
 | `status` | `str` | `"success"` or `"error"` |
 | `error` | `str \| None` | Error message if status is `"error"` (truncated to 1000 chars) |
+| `tokens` | `dict` | Same shape as the `usage` `StreamEvent` (see [Usage Tracking](#usage-tracking)); covers every invocation shape, streaming or not |
+| `compactions` | `list[dict]` | Compactions applied during the invocation, in order; see [Observing compactions](#observing-compactions). Empty when none |
 
 ### Combining with LiteLLM Per-Call Logging
 
-For full observability (tokens, cost, per-call breakdowns), combine the byLLM agent callback with a [litellm CustomLogger](https://docs.litellm.ai/docs/observability/custom_callback#custom-callback-class). The agent callback fires once per `by llm()` invocation, while the litellm callback fires for each underlying LLM API call (including tool-use round-trips).
+The `tokens` field above covers per-invocation totals with no extra wiring. For raw per-underlying-API-call records instead, combine the byLLM agent callback with a [litellm CustomLogger](https://docs.litellm.ai/docs/observability/custom_callback#custom-callback-class): the agent callback fires once per `by llm()` invocation, the litellm callback fires for each underlying API call.
 
 ```jac
 import litellm;

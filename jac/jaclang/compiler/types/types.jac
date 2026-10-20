@@ -1,30 +1,5 @@
 import from enum { IntEnum, auto }
 import from pathlib { Path }
-import type from jaclang.compiler.frontend.unitree { Expr, Symbol }
-import type from jaclang.compiler.frontend.unitree { UniScopeNode as SymbolTable }
-import from jaclang.compiler.frontend.relations {
-    BaseOf,
-    BoundOf,
-    ConstraintOf,
-    DeclScopeOf,
-    EnumClassOf,
-    EnumMemberOf,
-    GuardOf,
-    MemberInfoOf,
-    MroOf,
-    OverloadOf,
-    ParamDefaultOf,
-    ParamOf,
-    ParamTypeOf,
-    PrivOf,
-    ReturnsOf,
-    SharedOf,
-    TypeArgOf,
-    TypeMemberOf,
-    TypeParamOf,
-    UnionMemberOf,
-    ValueTypeOf
-}
 
 enum TypeCategory(IntEnum) {
     Unbound,
@@ -71,6 +46,7 @@ node TypeBase {
     def is_class_instance -> bool;
     def is_any_instance -> bool;
     def is_any_type -> bool;
+    def as_class -> (ClassType | None);
 }
 
 node UnknownType(TypeBase) {
@@ -128,7 +104,7 @@ node TypeVarType(TypeBase) {
 
     static has CATEGORY: TypeCategory = TypeCategory.TypeVar;
     has bound: (TypeBase | None) { getter; setter(bound: (TypeBase | None)); }
-    has constraints: (list[TypeBase] | None) {
+    has constraints: list[TypeBase] {
         getter;
         setter(constraints: (list[TypeBase] | None));
     }
@@ -158,25 +134,31 @@ node ClassDetailsShared {
         is_typeddict: bool = False,
         is_root_class: bool = False,
         is_enum_class: bool = False,
+        is_extern_struct: bool = False,
         _identity_key: (tuple[str, int, int, str] | None) = None,
         _derived_special_types: (dict[str, ClassType] | None) = None,
         ct_params: (list[str] | None) = None,
         _mro_cache: (list[ClassType] | None) = None,
-        _acc_cache: (dict[str, any] | None) = None;
+        _native_name: (tuple[SymbolTable, str] | None) = None,
+        _acc_cache: (dict[str, any] | None) = None,
+        _mro_sig: (list[tuple[int, str]] | None) = None,
+        _fresh_epoch: int = -1,
+        _provisional: bool = False,
+        _heal_stamp: int = 0;
 
     has symbol_table: SymbolTable { getter; setter(symbol_table: SymbolTable); }
     has mro: list[ClassType] { getter; setter(mro: list[ClassType]); }
-    has type_params: (list[TypeVarType] | None) {
+    has type_params: list[TypeVarType] {
         getter;
         setter(type_params: (list[TypeVarType] | None));
     }
 
-    has base_classes: (list[TypeBase] | None) {
+    has base_classes: list[TypeBase] {
         getter;
         setter(base_classes: (list[TypeBase] | None));
     }
 
-    has typeddict_fields: (dict[str, TypeBase] | None) {
+    has typeddict_fields: dict[str, TypeBase] {
         getter;
         setter(typeddict_fields: (dict[str, TypeBase] | None));
     }
@@ -186,7 +168,7 @@ node ClassDetailsShared {
         setter(enum_value_type: (TypeBase | None));
     }
 
-    has enum_members: (dict[str, EnumMemberInfo] | None) {
+    has enum_members: dict[str, EnumMemberInfo] {
         getter;
         setter(enum_members: (dict[str, EnumMemberInfo] | None));
     }
@@ -206,6 +188,7 @@ node ClassDetailsShared {
         typeddict_fields: (dict[str, TypeBase] | None) = None,
         is_root_class: bool = False,
         is_enum_class: bool = False,
+        is_extern_struct: bool = False,
         enum_value_type: (TypeBase | None) = None,
         enum_members: (dict[str, EnumMemberInfo] | None) = None,
         _identity_key: (tuple[str, int, int, str] | None) = None,
@@ -218,14 +201,14 @@ node ClassDetailsShared {
 }
 
 node ClassDetailsPrivate {
-    has ct_args: (dict[str, any] | None) = None,
+    has ct_args: (dict[str, CtValue] | None) = None,
         alias_name: (str | None) = None,
         literal_value: (str | int | bool | None) = None,
         distinct_key: (str | None) = None,
         _targs_cache: (list[TypeBase] | None) = None,
         _acc_cache: (dict[str, any] | None) = None;
 
-    has type_args: (list[TypeBase] | None) {
+    has type_args: list[TypeBase] {
         getter;
         setter(type_args: (list[TypeBase] | None));
     }
@@ -233,7 +216,7 @@ node ClassDetailsPrivate {
     def init(
         *,
         type_args: (list[TypeBase] | None) = None,
-        ct_args: (dict[str, any] | None) = None,
+        ct_args: (dict[str, CtValue] | None) = None,
         alias_name: (str | None) = None,
         literal_value: (str | int | bool | None) = None,
         distinct_key: (str | None) = None
@@ -249,6 +232,8 @@ node ClassType(TypeBase) {
 
     has private: ClassDetailsPrivate { getter; setter(private: ClassDetailsPrivate); }
     has shared: ClassDetailsShared { getter; }
+    has _tv_key: str = "",
+        _tv_solution: (dict[str, TypeBase] | None) = None;
 
     def init(
         *,
@@ -263,9 +248,10 @@ node ClassType(TypeBase) {
     def specialize_generics(type_args: list[TypeBase]) -> ClassType;
     def get_class_symbol -> (Symbol | None);
     def lookup_member_symbol(
-        member: str, r_overloaded: list | None = None
+        member: str, r_overloaded: list[Symbol] | None = None
     ) -> (Symbol | None);
 
+    override def as_class -> (ClassType | None);
     def is_builtin(class_name: (str | list[str] | None) = None) -> bool;
     def is_data_class -> bool;
     def is_namedtuple -> bool;
@@ -280,22 +266,14 @@ node ClassType(TypeBase) {
     def get_literal_value -> (str | int | bool | None);
 }
 
-class ParamKind(IntEnum) {
-    with entry {
-        POSONLY = 0;
-        NORMAL = 1;
-        VARARG = 2;
-        KWONLY = 3;
-        KWARG = 4;
-    }
-}
-
 enum FunctionTypeFlags(IntEnum) {
     Null = 0,
     GradualCallableForm = 1 << 0,
     StaticMethod = 1 << 1,
     ClassMethod = 1 << 2,
     SynthesizedMethod = 1 << 3,
+    Generator = 1 << 4,
+    UnboundMethod = 1 << 5,
 }
 
 node Parameter {
@@ -351,7 +329,7 @@ node FunctionType(TypeBase) {
         setter(parameters: (list[Parameter] | None));
     }
 
-    has type_params: (list[TypeVarType] | None) {
+    has type_params: list[TypeVarType] {
         getter;
         setter(type_params: (list[TypeVarType] | None));
     }
@@ -375,6 +353,7 @@ node FunctionType(TypeBase) {
     ) -> None;
 
     def __str__ -> str;
+    def clone -> FunctionType;
     def specialize(class_type: ClassType) -> FunctionType;
     def specialize_func_type_vars(solution: dict[(str, TypeBase)]) -> FunctionType;
     def is_gradual_callable_form -> bool;
@@ -383,38 +362,11 @@ node FunctionType(TypeBase) {
 
 def create_callable_type(
     param_types: list[TypeBase], return_type: TypeBase, is_gradual: bool = False
-) -> FunctionType {
-    parameters: list[Parameter] = [];
-
-    for (idx, param_type) in enumerate(param_types) {
-        parameters.append(
-            Parameter(
-                name=f"__p{idx}",
-                category=ParameterCategory.Positional,
-                param_type=param_type,
-                default_value=None,
-                is_self=False,
-                is_cls=False,
-                param_kind=ParamKind.POSONLY
-            )
-        );
-    }
-
-    flags: int = FunctionTypeFlags.GradualCallableForm
-        if is_gradual
-        else FunctionTypeFlags.Null;
-
-    return FunctionType(
-        func_name="",
-        return_type=return_type,
-        parameters=parameters,
-        function_flags=flags
-    );
-}
+) -> FunctionType;
 
 node OverloadedType(TypeBase) {
     static has CATEGORY: TypeCategory = TypeCategory.Overload;
-    has overloads: (list[FunctionType] | None) {
+    has overloads: list[FunctionType] {
         getter;
         setter(overloads: (list[FunctionType] | None));
     }
@@ -430,10 +382,7 @@ node OverloadedType(TypeBase) {
 
 node UnionType(TypeBase) {
     static has CATEGORY: TypeCategory = TypeCategory.Union;
-    has types: (list[TypeBase] | None) {
-        getter;
-        setter(types: (list[TypeBase] | None));
-    }
+    has types: list[TypeBase] { getter; setter(types: (list[TypeBase] | None)); }
 
     def init(
         *, types: (list[TypeBase] | None) = None, flags: TypeFlags = TypeFlags.Null
@@ -482,3 +431,5 @@ node EnumMemberType(TypeBase) {
     def __str__ -> str;
     def get_value_type -> TypeBase;
 }
+
+glob CLASS_GRAPH_EPOCH: list[int] = [0];

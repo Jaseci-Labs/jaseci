@@ -1,42 +1,42 @@
 import os;
+
 import types;
+
 import from pathlib { Path }
+
 import from typing { Optional, cast }
-import from jaclang.client.vite_bundler { ViteBundler }
 
 glob DEFAULT_FUNCTION_NAME = "app",
      JAC_FILE_EXTENSION = ".jac",
      JAC_LANG_ID = "jac";
 
-def _parse_entry_file(entry_file: Path) -> tuple[str, str] {
-    (base, mod) = os.path.split(str(entry_file));
-    base = base or "./";
-    if mod.endswith(JAC_FILE_EXTENSION) {
-        mod = mod[:-len(JAC_FILE_EXTENSION)];
-    }
-    return (base, mod);
-}
+def _parse_entry_file(entry_file: Path) -> tuple[str, str];
 
-impl WebTarget.setup(project_dir: Path) -> None {}
+def _pwa_enabled(project_dir: Path) -> bool;
+
+impl WebTarget.setup(project_dir: Path) -> None {
+    if _pwa_enabled(project_dir) {
+        import from jaclang.client.targets.pwa_build { ensure_pwa_icons }
+        ensure_pwa_icons(project_dir);
+    }
+}
 
 impl WebTarget.dev(
     entry_file: Path, project_dir: Path, port: int = 8000, api_port: int = 0
 ) -> None {
-    import from jaclang.cli.console { console }
-    import from jaclang.client.targets.client_dev_common {
-        _ClientHmrHandler,
-        ensure_watchdog_common,
-        prepare_vite_dev_compilation,
-        stop_dev_watcher,
-        terminate_dev_processes
-    }
-
     api_p = api_port if api_port > 0 else port + 1;
 
     hot_watcher: any = None;
     (prepared, compiler) = prepare_vite_dev_compilation(project_dir, entry_file);
     bundler = cast(ViteBundler, prepared);
-    bundler.create_vite_config(entry_file, is_dev=True, api_port=api_p);
+    (dev_api_paths, dev_client_paths) = dev_proxy_paths(project_dir, entry_file);
+    bundler.create_vite_config(
+        entry_file,
+        is_dev=True,
+        api_port=api_p,
+        api_paths=dev_api_paths,
+        client_paths=dev_client_paths
+    );
 
     try {
         if ensure_watchdog_common("the browser") {
@@ -69,32 +69,8 @@ impl WebTarget.dev(
 impl WebTarget.start(
     entry_file: Path, project_dir: Path, api_port: int = 8000
 ) -> None {
-    import from jaclang.cli.console { console }
-    import from jaclang.runtime.runtime { JacRuntime as Jac }
-
-    bundler = ViteBundler(project_dir=project_dir);
-    console.print("\n🌐 Building web bundle for production preview...", style="bold");
-    self.build(entry_file, project_dir, None);
-
-    dist_dir = bundler.output_dir;
-    if not dist_dir or not dist_dir.exists() {
-        raise RuntimeError(f"Build output not found: {dist_dir}");
-    }
-
-    (base, mod) = _parse_entry_file(entry_file);
-
-    ServerClass = Jac.get_api_server_class();
-    server = ServerClass(module_name=mod, port=api_port, base_path=base);
-
-    console.print(
-        f"\n🚀 Starting server at http://localhost:{api_port}/", style="bold green"
-    );
-    console.print("  Press Ctrl+C to stop\n", style="muted");
-
-    try {
-        server.start(dev=False, no_client=False);
-    } except KeyboardInterrupt {
-        console.print("\n  Stopping server...", style="muted");
+    if serve(filename=str(entry_file.resolve()), port=api_port, dev=False) {
+        raise RuntimeError(f'Could not start web application: {entry_file}');
     }
 }
 
@@ -102,8 +78,6 @@ impl WebTarget.build(
     entry_file: Path, project_dir: Path, platform: Optional[str] = None
 ) -> Path {
     import shutil;
-    import from jaclang.runtime.runtime { JacRuntime as Jac }
-    import from jaclang.client.vite_client_bundle { make_client_bundle_builder }
 
     bundler = ViteBundler(project_dir=project_dir);
 
@@ -115,23 +89,23 @@ impl WebTarget.build(
         dist_dir.mkdir(parents=True, exist_ok=True);
     }
 
-    (base, mod) = _parse_entry_file(entry_file);
-
-    Jac.jac_import(target=mod, base_path=base, lng=JAC_LANG_ID);
     program = Jac.get_program();
-    if program.errors_had {
-        errors = '\n'.join(str(e) for e in program.errors_had);
-        raise RuntimeError(f"Failed to compile {entry_file}:\n{errors}");
-    }
-    loaded_mod = Jac.loaded_modules.get(mod);
-    if not loaded_mod {
-        raise RuntimeError(f"Module '{mod}' not found after import");
-    }
-    if not isinstance(loaded_mod, types.ModuleType) {
-        raise RuntimeError(f"Module '{mod}' is not a valid module type");
-    }
+    loaded_mod = types.ModuleType(entry_file.stem);
+    loaded_mod.__file__ = str(entry_file.resolve());
     builder = make_client_bundle_builder(project_dir);
-    builder.build(loaded_mod, force=True);
+    try {
+        before = len(program.errors_had);
+        program.compile(str(entry_file.resolve()));
+        if len(program.errors_had) > before {
+            errors = '\n'.join(str(e) for e in program.errors_had[before:]);
+            raise RuntimeError(f"Failed to compile {entry_file}:\n{errors}");
+        }
+        inputs = builder.prepare(loaded_mod);
+        function_name = _get_client_function_name(loaded_mod);
+    } finally {
+        program._get_compiler().release_compile_state(program);
+    }
+    builder.bundle(inputs);
     bundle_path = bundler.find_bundle();
     if not bundle_path {
         raise RuntimeError("Web build failed: bundle not found");
@@ -140,14 +114,44 @@ impl WebTarget.build(
         bundle_path=bundle_path,
         bundler=bundler,
         loaded_mod=loaded_mod,
+        function_name=function_name,
         project_dir=project_dir
     );
+    if _pwa_enabled(project_dir) {
+        import from jaclang.client.targets.pwa_build { apply_pwa }
+        apply_pwa(dist_dir, project_dir);
+    }
     return bundle_path;
 }
 
-def _get_client_function_name(loaded_mod: types.ModuleType) -> str {
-    import from jaclang.runtime.runtime { JacRuntime as Jac }
+def _get_client_function_name(loaded_mod: types.ModuleType) -> str;
 
+def _build_css_link(bundler: ViteBundler) -> str;
+
+def _get_app_meta_data -> dict[str, any];
+
+def _generate_index_html(
+    bundle_path: Path,
+    bundler: ViteBundler,
+    loaded_mod: types.ModuleType,
+    function_name: str,
+    project_dir: Path
+);
+
+impl _parse_entry_file(entry_file: Path) -> tuple[str, str] {
+    (base, mod) = os.path.split(str(entry_file));
+    base = base or "./";
+    if mod.endswith(JAC_FILE_EXTENSION) {
+        mod = mod[:-len(JAC_FILE_EXTENSION)];
+    }
+    return (base, mod);
+}
+
+impl _pwa_enabled(project_dir: Path) -> bool {
+    return JacClientConfig(project_dir).is_pwa_enabled();
+}
+
+impl _get_client_function_name(loaded_mod: types.ModuleType) -> str {
     mod_path = loaded_mod?.__file__;
     if not mod_path {
         return DEFAULT_FUNCTION_NAME;
@@ -174,7 +178,7 @@ def _get_client_function_name(loaded_mod: types.ModuleType) -> str {
     return DEFAULT_FUNCTION_NAME;
 }
 
-def _build_css_link(bundler: ViteBundler) -> str {
+impl _build_css_link(bundler: ViteBundler) -> str {
     import hashlib;
 
     css_file = bundler.find_css();
@@ -189,9 +193,7 @@ def _build_css_link(bundler: ViteBundler) -> str {
     return '';
 }
 
-def _get_app_meta_data -> dict {
-    import from jaclang.project.config { get_config }
-
+impl _get_app_meta_data -> dict[str, any] {
     config = get_config();
     if not config {
         return {};
@@ -201,52 +203,4 @@ def _get_app_meta_data -> dict {
         return {};
     }
     return client_cfg.get("app_meta_data", {});
-}
-
-
-def _generate_index_html(
-    bundle_path: Path,
-    bundler: ViteBundler,
-    loaded_mod: types.ModuleType,
-    project_dir: Path
-) {
-    import html;
-    import json;
-    import from jaclang.client.serving { HeaderBuilder }
-
-    function_name = _get_client_function_name(loaded_mod);
-    module_name = loaded_mod.__name__;
-    dist_dir = Path(bundler.output_dir);
-    css_link = _build_css_link(bundler);
-    meta_data = _get_app_meta_data();
-    head_builder = HeaderBuilder(meta_data, function_name);
-    head_content = head_builder.build_head();
-    if css_link {
-        head_content += f"\n            {css_link}";
-    }
-    init_payload = {
-        "module": module_name,
-        "function": function_name,
-        "args": {},
-        "argOrder": [],
-        "globals": {}
-    };
-
-    init_json = json.dumps(init_payload).replace('</', '<\\/');
-    bundle_filename = bundle_path.name;
-    base_path = bundler.config_loader.get_base_path();
-
-    html_content = f'''<!DOCTYPE html>
-<html lang="en">
-  <head>
-{head_content}
-  </head>
-  <body>
-    <div id="root"></div>
-    <script id="__jac_init__" type="application/json">{init_json}</script>
-    <script type="module" src="{base_path}{bundle_filename}"></script>
-  </body>
-</html>''';
-    index_html = dist_dir / 'index.html';
-    index_html.write_text(html_content, encoding='utf-8');
 }

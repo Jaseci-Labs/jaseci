@@ -1,51 +1,7 @@
-import from enum { Enum }
-import from jaclang.compiler.frontend.unitree {
-    Ability,
-    ArchHas,
-    Archetype,
-    AstDocNode,
-    AtomTrailer,
-    ElseIf,
-    ElseStmt,
-    Enum as UniEnum,
-    Expr,
-    HasVar,
-    IfStmt,
-    Import,
-    ImplDef,
-    KWPair,
-    Module,
-    ModuleItem,
-    Name,
-    ModulePath,
-    Symbol,
-    UnaryExpr,
-    UniNode,
-    UniScopeNode
-}
-import from jaclang.compiler.frontend.constant { Tokens as Tok }
-import from .types {
-    NeverType,
-    EnumMemberType,
-    AnyType,
-    ClassType,
-    FunctionType,
-    ModuleType,
-    ParamKind,
-    Parameter,
-    TypeBase,
-    TypeVarType,
-    UnionType,
-    UnknownType
-}
+glob BARE_GENERIC_REQUIRED: list[str] = ["dict", "list", "tuple"];
 
-class PropertyWriteKind(Enum) {
-    with entry {
-        NOT_PROPERTY = 0;
-        READ_ONLY = 1;
-        WRITABLE = 2;
-    }
-}
+
+enum PropertyWriteKind { NOT_PROPERTY = 0, READ_ONLY = 1, WRITABLE = 2, }
 
 obj PropertyWriteResult {
     has kind: PropertyWriteKind,
@@ -58,11 +14,23 @@ obj ClassMember {
         overloads: list[Symbol];
 }
 
-def compute_mro_linearization(cls: ClassType, _visiting: (set | None) = None) -> None;
+def compute_mro_linearization(
+    cls: ClassType, _visiting: (set[int] | None) = None
+) -> None;
+
+def linearize_mro(
+    cls: ClassType, _visiting: (set[int] | None) = None
+) -> list[ClassType];
+
+def mro_signature(cls: ClassType) -> list[tuple[int, str]];
+
+def ensure_mro_fresh(cls: ClassType, _visiting: (set[int] | None) = None) -> bool;
 
 def primitive_type_name_of(ty: (TypeBase | None)) -> (str | None);
 
 def expr_primitive_name(expr_node: UniNode) -> str;
+
+def expr_type_primitive_name(expr_node: Expr) -> str;
 
 obj ParamAssignmentTracker {
     has params: list[Parameter],
@@ -81,51 +49,8 @@ obj ParamAssignmentTracker {
     def get_unmatched_required_params -> list[Parameter];
 }
 
-enum CompletionItemKind {
-    Text = 1,
-    Method = 2,
-    Function = 3,
-    Constructor = 4,
-    Field = 5,
-    Variable = 6,
-    Class = 7,
-    Interface = 8,
-    Module = 9,
-    Property = 10,
-    Unit = 11,
-    Value = 12,
-    Enum = 13,
-    Keyword = 14,
-    Snippet = 15,
-    Color = 16,
-    File = 17,
-    Reference = 18,
-    Folder = 19,
-    EnumMember = 20,
-    Constant = 21,
-    Struct = 22,
-    Event = 23,
-    Operator = 24,
-    TypeParameter = 25,
-}
-
-obj CompletionItem {
-    has label: str,
-        kind: CompletionItemKind,
-        detail: (str | None) = None,
-        documentation: (str | None) = None;
-}
-
-def doc_of_sym(sym: Symbol) -> (str | None);
-
-def completion_item_from_sym(name: str, sym: Symbol) -> CompletionItem;
-
-def completion_kind_from_sym(sym: Symbol) -> CompletionItemKind;
-
-def get_completion_items(ty: (TypeBase | UniScopeNode)) -> list[CompletionItem];
-
 def lookup_symtab(
-    symtable: UniScopeNode, name: str, builtins_to_inject: Module
+    symtable: UniScopeNode, name: str, builtins_to_inject: Module | None
 ) -> (Symbol | None);
 
 def types_equivalent(a: TypeBase, b: TypeBase, depth: int = 0) -> bool;
@@ -137,7 +62,7 @@ def collect_member_syms(
 ) -> list[Symbol];
 
 def class_implements_protocol(
-    cls: ClassType, proto: ClassType, evaluator: any = None
+    cls: ClassType, proto: ClassType, evaluator: TypeEvaluator | None = None
 ) -> bool;
 
 def get_generator_type_args(return_type: TypeBase) -> (list[TypeBase] | None);
@@ -181,3 +106,7 @@ def build_solution_from_specialized_class(
 ) -> dict[str, TypeBase];
 
 def specialize_for_base_class(src_type: ClassType, base_class: ClassType) -> ClassType;
+
+def is_builtin_region_type(t: (object | None), allow_class: bool = False) -> bool;
+
+def expr_is_builtin_region(expr: (UniNode | None)) -> bool;

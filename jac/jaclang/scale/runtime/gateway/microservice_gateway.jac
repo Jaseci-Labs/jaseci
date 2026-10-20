@@ -1,42 +1,17 @@
 import logging;
 import mimetypes;
 import from pathlib { Path }
-import from jaclang.server.serving.app { ServingApp }
-import from jaclang.server.serving.datatypes { Request }
-import from jaclang.server.serving.datatypes { HTMLResponse, JSONResponse, Response }
-import from jaclang.scale.runtime.gateway.service_registry {
-    ServiceRegistry,
-    ServiceEntry,
-    ServiceStatus
-}
-import from jaclang.scale.runtime.gateway.route_table { ServiceRouteTable }
-import from jaclang.scale.runtime.transport.http_forward { raw_forward }
-import from jaclang.scale.runtime.context.util {
-    DEFAULT_GATEWAY_PORT,
-    DEFAULT_GATEWAY_HOST,
-    DEFAULT_CLIENT_DIST_DIR
-}
-
-import from jaclang.scale.admin.admin_portal { JacAPIServerAdmin }
-import from jaclang.scale.admin.workloads { JacAPIServerWorkloads }
-import from jaclang.scale.server.serve { JacAPIServerAuth }
-import from jaclang.scale.admin.logs { JacAPIServerLogs }
-import from jaclang.scale.admin.traces { JacAPIServerTraces }
-import from jaclang.scale.admin.ops { JacAPIServerOps }
-import from jaclang.scale.admin.deploy_health { JacAPIServerDeployHealth }
-import from jaclang.scale.admin.network { JacAPIServerNetwork }
-import from jaclang.scale.admin.podenv { JacAPIServerPodEnv }
-import from jaclang.scale.admin.llm_telemetry { JacAPIServerLLMTelemetry }
 
 glob logger = logging.getLogger(__name__),
      HOP_BY_HOP_HEADERS: set[str] = {
          "host",
          "transfer-encoding",
          "connection",
-         "keep-alive"
+         "keep-alive",
+         "expect"
      };
 
-obj MicroserviceGateway(JacAPIServerAdmin, JacAPIServerAuth, JacAPIServerWorkloads, JacAPIServerLogs, JacAPIServerTraces, JacAPIServerOps, JacAPIServerDeployHealth, JacAPIServerNetwork, JacAPIServerPodEnv, JacAPIServerLLMTelemetry) {
+obj MicroserviceGateway(EndpointHost, JacAPIServerAdmin, JacAPIServerWorkloads, JacAPIServerLogs, JacAPIServerTraces, JacAPIServerOps, JacAPIServerDeployHealth, JacAPIServerNetwork, JacAPIServerPodEnv, JacAPIServerLLMTelemetry) {
     has registry: ServiceRegistry,
         app: any = None,
         port: int = DEFAULT_GATEWAY_PORT,
@@ -49,13 +24,17 @@ obj MicroserviceGateway(JacAPIServerAdmin, JacAPIServerAuth, JacAPIServerWorkloa
         _metrics_duration: any = None,
         server: any = None,
         user_manager: any = None,
+        emailer: any = None,
         _metrics: any = None,
         base_path: str = ".",
         route_table: ServiceRouteTable = ServiceRouteTable(),
         _spec_crawl: any = None,
-        port_pinned: bool = False;
+        port_pinned: bool = False,
+        drain: DrainState = DrainState();
 
     def setup -> ServingApp;
+    def add_endpoint(ep: JEndPoint) -> None;
+    def identity -> UserManager;
     def resolve_target_url(service_entry: ServiceEntry, path: str, query: str) -> str;
     def handle_health -> Response;
     def handle_health_live -> Response;
@@ -66,9 +45,13 @@ obj MicroserviceGateway(JacAPIServerAdmin, JacAPIServerAuth, JacAPIServerWorkloa
     ) -> Response | None;
 
     def eligible_services -> list[tuple[str, ServiceEntry]];
+    def root_member -> ServiceEntry | None;
+    def shell_answers(request: Request, path: str) -> bool;
+    async def forward_to_root(request: Request, path: str) -> Response | None;
+    async def forward_static_to_root(request: Request, path: str) -> Response | None;
     async def resolve_learned_owner(path: str) -> ServiceEntry | None;
     async def forward_root_path(
-        request: Request, service_entry: ServiceEntry, path: str
+        request: Request, service_entry: ServiceEntry, path: str, base_url: str = ""
     ) -> Response | None;
 
     async def deliver_once(request: Request, path: str) -> Response | None;

@@ -8,17 +8,35 @@ returns on the core and the scale server, and the same diagnostic value the
 `/cl/__error__` endpoint logs.
 """
 
+import from jaclang.server.build_status { BuildMonitor }
+
 import io;
 import json;
 import logging;
 import uuid;
 import from pathlib { Path }
 import from tempfile { TemporaryDirectory }
-import from jaclang.server.hmr { HotReloader, get_build_status }
+import from jaclang.server.hmr { HotReloader }
+import from jaclang.server.build_status { get_build_status }
 import from jaclang.server.watcher { JacFileWatcher }
 import from jaclang.testing.testing { JacTestClient }
 
 glob FIXTURES = str(Path(__file__).parent / "fixtures");
+
+"""Records every message the logger accepts, before any handler sees it.
+
+A logger filter runs at emit time on the logger object itself, so an empty
+tap separates "nothing was ever emitted to this logger" from "a handler or
+its stream dropped the record" -- the two causes an empty buffer conflates.
+"""
+obj _EmitTap {
+    has seen: list[str] = [];
+
+    def filter(record: any) -> bool {
+        self.seen.append(record.getMessage());
+        return True;
+    }
+}
 
 def _as_any(v: any) -> any {
     return v;
@@ -41,11 +59,11 @@ def _reset_client_globals {
     _error_rate_limiter._seen = {};
     _error_rate_limiter._count = 0;
     _error_rate_limiter._window_start = 0.0;
-    active = HotReloader._active;
+    active = BuildMonitor.active;
     if active is not None {
         active.stop();
     }
-    HotReloader._active = None;
+    BuildMonitor.active = None;
 }
 
 """Forget a module this file compiled into the long-lived global program."""
@@ -276,7 +294,14 @@ test "the /cl/__error__ endpoint logs a rendered diagnostic with a Jac location"
         buf = io.StringIO();
         sink = logging.StreamHandler(buf);
         logger = logging.getLogger("jaclang.client_errors");
+        tap = _EmitTap();
         logger.addHandler(sink);
+        # The sink must see the record whatever level the root logger was left
+        # at, so the level is pinned here and restored below.
+        old_level = logger.level;
+        logger.setLevel(logging.ERROR);
+        logger.addFilter(tap);
+        attached_to = id(logger);
         _error_rate_limiter._seen = {};
         _error_rate_limiter._count = 0;
         client = JacTestClient.from_file(
@@ -304,10 +329,16 @@ test "the /cl/__error__ endpoint logs a rendered diagnostic with a Jac location"
             );
             sink.flush();
             logged = buf.getvalue();
+            live = logging.getLogger("jaclang.client_errors");
             assert "error[E7003]" in logged , (
                 f"diagnostic never reached the sink; response={body}; "
-                f"logger disabled={logger.disabled} level={logger.level} "
-                f"handlers={logger.handlers} propagate={logger.propagate}; "
+                f"emitted={len(tap.seen)} records={tap.seen}; "
+                f"logger id at attach={attached_to} at assert={id(live)}; "
+                f"sink still attached={sink in live.handlers}; "
+                f"disabled={live.disabled} level={live.level} "
+                f"effective={live.getEffectiveLevel()} "
+                f"global_disable={logging.root.manager.disable}; "
+                f"handlers={live.handlers} propagate={live.propagate}; "
                 f"buffer={logged!r}"
             );
             assert "--> app.jac:2" in logged , logged;
@@ -316,7 +347,9 @@ test "the /cl/__error__ endpoint logs a rendered diagnostic with a Jac location"
             assert "  Stack: TypeError" in logged , logged;
             assert "at app (app.jac:2:" in logged , logged;
         } finally {
+            logger.removeFilter(tap);
             logger.removeHandler(sink);
+            logger.setLevel(old_level);
             client.close();
             _reset_client_globals();
         }
@@ -364,7 +397,7 @@ test "a tagged stdout line reaches the callback and is never echoed" {
         CLIENT_EVENT_PREFIX
     }
     with TemporaryDirectory() as tmp {
-        seen: list = [];
+        seen: list[any] = [];
         bundler = ViteBundler(Path(tmp));
         bundler.on_client_event = lambda (slot: str, payload: any) { seen.append(
             (slot, payload)
@@ -447,6 +480,82 @@ test "the shared client-error path classifies once and carries both stacks" {
     }
 }
 
+test "an unchanged status document is not rewritten" {
+    import os;
+    with TemporaryDirectory() as tmp {
+        proj = Path(tmp);
+        doc = proj / ".jac" / "client" / ".jac-status.json";
+        reloader = _reloader(proj);
+        try {
+            reloader.record_error(str(proj / "app.jac"), "boom");
+            written = doc.read_text();
+            os.utime(doc, ns=(1000000000, 1000000000));
+            reloader.record_client_event("ready", None);
+            reloader.record_client_event("runtime", None);
+            reloader._sync_status_file();
+            assert doc.stat().st_mtime_ns == 1000000000 , (
+                "an unchanged status document was written again"
+            );
+            reloader.record_error(str(proj / "app.jac"), "a different failure");
+            assert doc.read_text() != written;
+            reloader.record_ok();
+            assert not doc.exists();
+        } finally {
+            _reset_client_globals();
+        }
+    }
+}
+
+test "a workspace app's status document and reload signal sit where its dev config reads them" {
+    import from jaclang { JacRuntime as Jac }
+    import from jaclang.project.config { JacConfig, get_config, set_config }
+    import from jaclang.client.vite_client_bundle { make_client_bundle_builder }
+    previous = get_config();
+    with TemporaryDirectory() as tmp {
+        project = Path(tmp).resolve();
+        manifest = '[project]\nname = "status-paths"\ndefault-app = "web"\n[apps.web]\nkind = "web-app"\nentry-point = "web.main"\n';
+        (project / "jac.toml").write_text(manifest);
+        target = project / "web" / "main.jac";
+        target.parent.mkdir();
+        target.write_text("def:pub app -> JsxElement {\n    return <div/>;\n}\n");
+        try {
+            set_config(JacConfig.from_toml_str(manifest, project / "jac.toml"));
+            compiler = make_client_bundle_builder(
+                project, entry_path=str(target), program=Jac.get_program()
+            )._get_compiler();
+            compiled = Path(str(compiler.jac_client_compiler.compiled_dir));
+            config_path = compiler.vite_bundler.create_vite_config(target, is_dev=True);
+            generated = config_path.read_text();
+            build_dir = config_path.parent.parent;
+            assert compiled.parent != build_dir , (
+                f"not a workspace layout: {compiled} compiles beside the dev config"
+            );
+            assert 'const buildDir = path.resolve(__dirname, "..");' in generated;
+            assert 'path.resolve(buildDir, ".jac-status.json")' in generated;
+            assert 'path.resolve(buildDir, ".jac-force-reload")' in generated;
+            _reset_client_globals();
+            reloader = HotReloader(
+                base_path=str(project),
+                module_name="app",
+                watcher=JacFileWatcher(watch_paths=[str(project)]),
+                client_compiler=compiler
+            );
+            reloader.record_error(str(target), "boom");
+            assert (build_dir / ".jac-status.json").exists() , (
+                "the overlay plugin never sees the status document"
+            );
+            assert not (compiled.parent / ".jac-status.json").exists();
+            reloader._signal_full_reload();
+            assert (build_dir / ".jac-force-reload").read_text() == "1";
+            reloader.record_ok();
+            assert not (build_dir / ".jac-status.json").exists();
+        } finally {
+            set_config(previous);
+            _reset_client_globals();
+        }
+    }
+}
+
 test "the suite leaves no dev-loop global behind" {
     import from jaclang.client.source_mapping {
         _locator_cache,
@@ -455,7 +564,7 @@ test "the suite leaves no dev-loop global behind" {
     }
     _reset_client_globals();
     # A pooled worker runs later suites in this same process.
-    assert HotReloader._active is None;
+    assert BuildMonitor.active is None;
     assert _locator_cache == {};
     assert _mapper_cache == {};
     assert _error_rate_limiter._seen == {};

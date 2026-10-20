@@ -1,6 +1,6 @@
 ---
 name: jac-sv-multi-user
-description: Multi-user data sharing - cross-user permission grants (the ambient AccessLevel enum, everyone or one specific user), the shared root / public feed pattern (root.shared), archetype-wide access policy (__jac_access__), per-user grants with allow_root, roles, scanning every user's root (allroots). Load when logged-in users need to see or act on each other's data, or when tempted to fake "shared" data with a def:pub global graph. Pair with `jac-sv-auth`, `jac-node-edge-patterns`.
+description: Implement graph sharing and per-user authorization. Use for grants, shared roots, roles, or operations on another user’s data.
 ---
 
 Authenticated endpoints give every user an isolated subgraph hung off *their* `root` (see `jac-sv-auth`). Cross-user features punch through that isolation three ways:
@@ -15,7 +15,7 @@ Plus **`allroots()`** (ambient) - enumerate every user's `root` (`list[Root]`) f
 ```jac
 node Profile { has username: str; }
 node Tweet { has content: str; }
-edge Posted {}
+edge Posted: Profile --> Tweet {}
 
 # CREATE - data lives under the author's root; grant() is what makes it
 # reachable by OTHER users. littleX is built on exactly this.
@@ -30,8 +30,8 @@ def post_tweet(content: str) -> str {
 # CROSS-USER READ - allroots() surfaces every root even from a per-user
 # endpoint; you still only see nodes that were granted. NOTE: this scan is
 # O(number of users) per request - for a public feed prefer root.shared below.
-def global_feed() -> list[dict] {
-    feed: list[dict] = [];
+def global_feed() -> list[dict[str, any]] {
+    feed: list[dict[str, any]] = [];
     for r in allroots() {
         for prof in [r --> [?:Profile]] {
             for tw in [prof ->:Posted:-> [?:Tweet]] {
@@ -81,7 +81,7 @@ the grant is one entry, and membership is an edge.
 ```jac
 node Doc { has body: str; }
 node Team { has name: str; }
-edge MemberOf {}
+edge MemberOf: Root --> Team {}
 
 import from jaclang { JacRuntime as Jac }
 import from uuid { UUID }
@@ -137,7 +137,7 @@ node PublicNode {
         return AccessLevel.WRITE;    # every instance opens WRITE to every user
     }
 }
-edge PublicEdge {
+edge PublicEdge: any --> any {
     def __jac_access__ -> AccessLevel {
         return AccessLevel.WRITE;
     }
@@ -177,11 +177,11 @@ store does this correctly (raw value shown once, only the sha256 persisted,
 server-side expiry, atomic single-winner consume) and is exposed for app flows:
 
 ```jac
-import from jaclang.scale.identity.app_tokens {
+import from jaclang.server.identity.app_tokens {
     token_create, token_peek, token_consume, token_revoke
 }
 
-def invite(role: str) -> dict {
+def invite(role: str) -> dict[str, any] {
     # subject groups tokens for revocation; payload rides along to the redeemer
     tok = token_create(
         "org-invite", subject=jid(root), ttl_seconds=86400,
@@ -190,13 +190,13 @@ def invite(role: str) -> dict {
     return {"token": tok};   # shown once; never stored raw
 }
 
-def accept(token: str) -> dict {
+def accept(token: str) -> dict[str, any] {
     got = token_consume("org-invite", token);   # exactly one caller wins
     if got is None { return {"ok": False}; }    # invalid, expired, or lost race
     return {"ok": True, "role": got["payload"]["role"]};
 }
 
-def cancel_invites -> dict {
+def cancel_invites -> dict[str, any] {
     return {"revoked": token_revoke("org-invite", jid(root))};
 }
 ```

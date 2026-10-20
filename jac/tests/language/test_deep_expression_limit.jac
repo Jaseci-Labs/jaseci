@@ -1,24 +1,24 @@
 """A long operator chain compiles instead of exhausting the compiler's stack.
-
-The walkers are driven directly at a depth no compile would reach, so these
-stay green regardless of where any other stage's ceiling moves.
-"""
+The walkers are driven directly at a depth no compile would reach."""
 
 import os;
 import subprocess;
-import sys;
 import tempfile;
 import from jaclang.compiler.backends.py.jcir_gen_pass { CgNode, write_ir_value }
 import from jaclang.compiler.backends.py.codegen_ir { CodegenIrWriter }
 import from jaclang.compiler.frontend.parser.frontend { parse }
 import from jaclang.compiler.frontend.unitree { BinaryExpr }
-import from tests.support { JAC_ROOT }
+import from tests.support { JAC_ROOT, jac_command }
 
 glob TREE_DEPTH: int = 20000,
      IR_DEPTH: int = 50000;
 
 def chain_source(operands: int) -> str {
-    return f"with entry {{\n    x = {'+'.join(['1'] * operands)};\n    print(x);\n}}\n";
+    return (
+        "import sys;\nwith entry {\n    x = "
+        + "+".join(["1"] * operands)
+        + ";\n    sys.stdout.write(str(x));\n}\n"
+    );
 }
 
 def write_chain(dir: str, operands: int) -> str {
@@ -31,10 +31,7 @@ def write_chain(dir: str, operands: int) -> str {
 
 def run_jac(cmd: str, path: str) -> str {
     result = subprocess.run(
-        [sys.executable, "-m", "jaclang", cmd, path],
-        capture_output=True,
-        text=True,
-        cwd=JAC_ROOT
+        jac_command(cmd, path), capture_output=True, text=True, cwd=JAC_ROOT
     );
     return result.stdout + result.stderr;
 }

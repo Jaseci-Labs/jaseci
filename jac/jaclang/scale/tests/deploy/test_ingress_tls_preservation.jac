@@ -1,16 +1,12 @@
 import unittest.mock;
 import from kubernetes.client.exceptions { ApiException }
-import from jaclang.scale.deploy.target.kubernetes.ingress { IngressDeployer }
-import from jaclang.scale.deploy.target.kubernetes.kubernetes_config {
-    KubernetesConfig
-}
 
 def _make_deployer(domain: str = '', cert_email: str = '') -> IngressDeployer {
     cfg = KubernetesConfig(domain=domain, cert_manager_email=cert_email);
     return IngressDeployer(k8s_config=cfg);
 }
 
-def _make_shared_deployer(annotations: dict) -> IngressDeployer {
+def _make_shared_deployer(annotations: dict[str, any]) -> IngressDeployer {
     cfg = KubernetesConfig(
         domain='app.example.com',
         shared_ingress=True,

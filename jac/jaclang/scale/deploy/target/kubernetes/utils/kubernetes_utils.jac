@@ -1,13 +1,6 @@
 import os;
 import time;
 import from pathlib { Path }
-import from jaclang.scale._optdeps.kubernetes {
-    client,
-    config,
-    ApiException,
-    ConfigException
-}
-import from jaclang.scale.deploy.target.kubernetes.cluster_provider { ClusterProvider }
 
 glob _LOCAL_FALLBACK_NOTE: str = (
          "Falling back to local provider semantics: service URLs will be "
@@ -18,13 +11,14 @@ glob _LOCAL_FALLBACK_NOTE: str = (
 
 glob PSS_ENFORCE_LABEL: str = "pod-security.kubernetes.io/enforce",
      PSS_WARN_LABEL: str = "pod-security.kubernetes.io/warn",
-     PSS_SOURCE_LABEL: str = "jac-scale.jaseci.org/pss-enforce-source";
+     PSS_SOURCE_LABEL: str = "jac-scale.jaseci.org/pss-enforce-source",
+     NAMESPACE_OWNER_LABEL: str = "jac-scale.jaseci.org/owned-by";
 
 def default_pss_labels -> dict[str, str];
 
 def privileged_pss_labels(existing: dict[str, str]) -> dict[str, str] | None;
 
-glob COMPANION_DEFS: list = [
+glob COMPANION_DEFS: list[tuple[str, str, bool]] = [
          ("", "Jaseci App", False),
          ("-postgres", "PostgreSQL", True),
          ("-prometheus", "Prometheus", False),
@@ -46,6 +40,15 @@ def create_k8s_secret(
     secret_data: dict[str, str]
 ) -> str;
 
+def resolve_minted_secret(
+    core_v1: client.CoreV1Api,
+    namespace: str,
+    secret_name: str,
+    secret_data: dict[str, str],
+    key: str,
+    fresh: str
+) -> bool;
+
 def delete_k8s_secret(
     core_v1: client.CoreV1Api, namespace: str, secret_name: str
 ) -> None;
@@ -54,7 +57,9 @@ def delete_if_exists(
     delete_func: Callable, name: str, namespace: str, kind: str
 ) -> None;
 
-def ensure_namespace_exists(namespace: str) -> None;
+def ensure_namespace_exists(namespace: str, owner: str) -> None;
+
+def namespace_is_owned(core_v1: client.CoreV1Api, namespace: str, owner: str) -> bool;
 
 def delete_namespace(namespace: str) -> None;
 

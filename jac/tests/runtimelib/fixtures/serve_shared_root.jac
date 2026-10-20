@@ -10,7 +10,7 @@ node Note {
     has text: str = "";
 }
 
-edge HasNote {}
+edge HasNote : Root --> Note {}
 
 walker:pub whereami {
     can run with Root entry {
@@ -61,7 +61,7 @@ node Bin {
     }
 }
 
-edge HasBin {}
+edge HasBin : Root --> Bin {}
 
 walker:pub leave_bin {
     has tag: str = "";
@@ -100,5 +100,30 @@ walker:pub clear_notes {
             del n;
         }
         report len(notes);
+    }
+}
+
+# The commons' stored deployment-wide level: the CONNECT floor is policy in
+# the access check, so a reader's touch must leave this untouched.
+walker:pub shared_level {
+    can run with Root entry {
+        acc = root.shared.__jac__.access;
+        report acc.all.name if acc is not None else "NONE";
+    }
+}
+
+# Walk back from a commons note to the root it hangs on through a typed hop,
+# the shape the store-side ACL pushdown filters in SQL.
+walker:pub note_home {
+    has text: str = "";
+
+    can run with Root entry {
+        notes = [
+            n
+            for n in [root.shared-->[?:Note]]
+            if n.text == self.text
+        ];
+        homes = [notes[0]<-:HasNote:<-[?:Root]] if notes else [];
+        report [jid(h) for h in homes];
     }
 }

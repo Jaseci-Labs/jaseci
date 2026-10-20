@@ -4,11 +4,30 @@ import from pathlib { Path }
 
 glob _CODE_GUIDE_MAP: dict[str, str] = {
          "E0077": "jac-impl-files",
+         "E1141": "jac-arch-wiring",
+         "E1142": "jac-arch-wiring",
+         "E1143": "jac-arch-wiring",
+         "E1144": "jac-arch-wiring",
+         "E1146": "jac-arch-wiring",
+         "E1147": "jac-arch-wiring",
+         "E2088": "jac-arch-wiring",
+         "E2089": "jac-arch-wiring",
+         "E2090": "jac-arch-wiring",
+         "E2091": "jac-arch-wiring",
+         "E2092": "jac-arch-wiring",
+         "E2093": "jac-arch-wiring",
+         "E2094": "jac-arch-wiring",
+         "E2097": "jac-arch-wiring",
+         "E2098": "jac-arch-wiring",
+         "E2099": "jac-arch-wiring",
+         "E2100": "jac-arch-wiring",
+         "W3053": "jac-arch-wiring",
+         "W3054": "jac-arch-wiring",
          "E0033": "jac-comptime",
          "E0108": "jac-comptime",
          "E0109": "jac-comptime",
          "W0060": "jac-core-cheatsheet",
-         "W0061": "jac-sv-persistence",
+         "E1042": "jac-sv-microservices",
          "E1050": "jac-walker-patterns",
          "E1102": "jac-cl-components",
          "E1104": "jac-npm-packages",
@@ -34,8 +53,14 @@ glob _CODE_GUIDE_MAP: dict[str, str] = {
          "W1310": "jac-native-memory",
          "E2004": "jac-has-fields",
          "E2025": "jac-npm-packages",
+         "E2039": "jac-apps",
+         "W2039": "jac-apps",
          "W2075": "jac-sv-persistence",
          "W3037": "jac-types",
+         "E5104": "jac-apps",
+         "E5105": "jac-apps",
+         "E5106": "jac-apps",
+         "E5108": "jac-apps",
 
      },
      _CATEGORY_GUIDE_MAP: dict[str, str] = {"type": "jac-types",};
@@ -52,14 +77,21 @@ glob GUIDE_GROUP_ORDER: list[str] = [
          "Other",
 
      ],
-     _START_HERE_ORDER: list[str] = ["jac-project-kinds", "jac-core-cheatsheet"],
+     _START_HERE_ORDER: list[str] = [
+         "jac-essentials",
+         "jac-project-kinds",
+         "jac-apps",
+         "jac-core-cheatsheet"
+     ],
      _GUIDE_GROUP_MAP: dict[str, str] = {
          "jac-project-kinds": "Start here",
+         "jac-essentials": "Start here",
          "jac-core-cheatsheet": "Start here",
          "jac-types": "Language",
          "jac-comptime": "Language",
          "jac-has-fields": "Language",
          "jac-impl-files": "Language",
+         "jac-arch-wiring": "Tooling & workflow",
          "jac-python-interop": "Language",
          "jac-concurrency": "Language",
          "jac-node-edge-patterns": "Graph & OSP",
@@ -73,6 +105,7 @@ glob GUIDE_GROUP_ORDER: list[str] = [
          "jac-mobui": "Client & fullstack",
          "jac-scaffold": "Tooling & workflow",
          "jac-config": "Tooling & workflow",
+         "jac-apps": "Start here",
          "jac-testing": "Tooling & workflow",
          "jac-debugging": "Tooling & workflow",
          "jac-packaging": "Tooling & workflow",
@@ -197,87 +230,13 @@ impl list_guides -> list[Guide] {
     return guides;
 }
 
-def _clean_markdown(text: str) -> str {
-    text = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", text);
-    text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text);
-    text = re.sub(r"[*_`]", "", text);
-    text = re.sub(r"\s*\{#[^}]*\}", "", text);
-    return " ".join(text.split());
-}
+def _clean_markdown(text: str) -> str;
 
-def _derive_description(body: str) -> str {
-    title = "";
-    para: list[str] = [];
-    in_fence = False;
+def _derive_description(body: str) -> str;
 
-    for raw in body.splitlines() {
-        stripped = raw.strip();
-        if stripped.startswith("```") {
-            if para {
-                break;
-            }
-            in_fence = not in_fence;
-            continue;
-        }
-        if in_fence {
-            continue;
-        }
-        if not stripped {
-            if para {
-                break;
-            }
-            continue;
-        }
-        if stripped.startswith("#") {
-            if para {
-                break;
-            }
-            if not title {
-                title = stripped.lstrip("#").strip();
-            }
-            continue;
-        }
+def _doc_name(rel: Path) -> str;
 
-        if stripped.startswith(("!!!", "???", "===", "<", "|", "---", "- ", "* ")) {
-            if para {
-                break;
-            }
-            continue;
-        }
-        if re.`match(r"^\d+\. ", stripped) or raw.startswith(("    ", "\t")) {
-            if para {
-                break;
-            }
-            continue;
-        }
-        para.append(stripped);
-    }
-    text = _clean_markdown(" ".join(para)) or _clean_markdown(title);
-    if len(text) > _DOC_DESCRIPTION_MAX {
-        cut = text[:_DOC_DESCRIPTION_MAX + 1];
-        text = cut[:cut.rfind(" ")].rstrip(" ,;:") + " ...";
-    }
-    return text;
-}
-
-def _doc_name(rel: Path) -> str {
-    parts = list(rel.parts);
-    parts[-1] = rel.stem;
-
-    if parts[-1] == "index" and len(parts) > 2 {
-        parts.pop();
-    }
-    return "/".join(parts);
-}
-
-def _load_doc(path: Path, name: str) -> Guide | None {
-    g = parse_guide(path);
-    if g is None {
-        return None;
-    }
-    description = g.description or _derive_description(g.body);
-    return Guide(name=name, description=description, body=g.body, path=g.path);
-}
+def _load_doc(path: Path, name: str) -> Guide | None;
 
 impl list_docs -> list[Guide] {
     ddir = docs_dir();
@@ -319,7 +278,7 @@ impl corpus_blurb(ns: str) -> str {
     return _DOC_CORPUS_BLURBS.get(ns, "");
 }
 
-impl nav_manifest -> dict {
+impl nav_manifest -> dict[str, any] {
     path = docs_dir() / "nav.json";
     if not path.is_file() {
         return {};
@@ -335,7 +294,7 @@ impl nav_manifest -> dict {
 impl nav_pages -> list[NavPage] {
     pages: list[NavPage] = [];
 
-    def walk(items: list, trail: list[str]) {
+    def walk(items: list[object], trail: list[str]) {
         for item in items {
             if not isinstance(item, dict) {
                 continue;
@@ -351,25 +310,15 @@ impl nav_pages -> list[NavPage] {
                     )
                 );
             } elif "items" in item {
-                walk(item["items"] as list, trail + [title]);
+                walk(item["items"] as list[object], trail + [title]);
             }
         }
     }
-    walk(nav_manifest().get("nav", []) as list, []);
+    walk(nav_manifest().get("nav", []) as list[object], []);
     return pages;
 }
 
-def _resolve_by_suffix(clean: str) -> Guide | None {
-    matches = [
-        g
-        for g in (list_guides() + list_docs())
-        if g.name == clean or g.name.endswith("/" + clean)
-    ];
-    if len(matches) == 1 {
-        return matches[0];
-    }
-    return None;
-}
+def _resolve_by_suffix(clean: str) -> Guide | None;
 
 impl get_guide(name: str) -> Guide | None {
     clean = name.strip().strip("/");
@@ -487,7 +436,187 @@ impl grep_guides(
     return _doc_level_hits(terms);
 }
 
-def _doc_level_hits(terms: list[str]) -> list[GrepHit] {
+def _doc_level_hits(terms: list[str]) -> list[GrepHit];
+
+impl guide_for_diagnostic(code: str, category: str = "") -> str | None {
+    name = _CODE_GUIDE_MAP.get(code);
+    if name is None and category {
+        name = _CATEGORY_GUIDE_MAP.get(category);
+    }
+    if name is not None and (guides_dir() / f"{name}.md").exists() {
+        return name;
+    }
+    if (docs_dir() / "reference" / "diagnostics.md").is_file() {
+        return "reference/diagnostics";
+    }
+    return None;
+}
+
+
+impl guide_sections(g: Guide) -> list[GuideSection] {
+    lines = g.body.splitlines();
+    headings: list[tuple[int, int, str, str]] = [];
+    counts: dict[str, int] = {};
+    fence_char = "";
+    fence_length = 0;
+    for (i, line) in enumerate(lines) {
+        fence = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", line);
+        if fence is not None {
+            marker = fence.group(1);
+            if not fence_char {
+                fence_char = marker[0];
+                fence_length = len(marker);
+            } elif marker[0] == fence_char
+                and len(marker) >= fence_length
+                and not fence.group(2).strip() {
+                fence_char = "";
+            }
+            continue;
+        }
+        if fence_char {
+            continue;
+        }
+        heading = re.match(r"^ {0,3}(#{1,6})[ \t]+(.+?)\s*$", line);
+        if heading is None {
+            continue;
+        }
+        title = re.sub(r"\s+#+\s*$", "", heading.group(2));
+        custom = re.search(r"\s+\{:?\s*#([^\s}]+)[^}]*\}\s*$", title);
+        if custom is not None {
+            title = title[:custom.start()];
+        }
+        title = _clean_markdown(title);
+        base = custom.group(1)
+            if custom is not None
+            else re.sub(r"[^\w\s-]", "", title.lower());
+        base = re.sub(r"[\s-]+", "-", base).strip("-") or "section";
+        ordinal = counts.get(base, 0) + 1;
+        slug = base if ordinal == 1 else f"{base}-{ordinal}";
+
+        while slug in [h[3] for h in headings] {
+            ordinal += 1;
+            slug = f"{base}-{ordinal}";
+        }
+        counts[base] = ordinal;
+        headings.append((i, len(heading.group(1)), title, slug));
+    }
+    sections: list[GuideSection] = [];
+    for (index, h) in enumerate(headings) {
+        end = len(lines);
+        for following in headings[index + 1:] {
+            if following[1] <= h[1] {
+                end = following[0];
+                break;
+            }
+        }
+        sections.append(
+            GuideSection(
+                title=h[2],
+                slug=h[3],
+                level=h[1],
+                line_no=h[0] + 1,
+                body="\n".join(lines[h[0]:end]).strip()
+            )
+        );
+    }
+    return sections;
+}
+
+impl _clean_markdown(text: str) -> str {
+    text = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", text);
+    text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text);
+    text = re.sub(r"[*_`]", "", text);
+    text = re.sub(r"\s*\{#[^}]*\}", "", text);
+    return " ".join(text.split());
+}
+
+impl _derive_description(body: str) -> str {
+    title = "";
+    para: list[str] = [];
+    in_fence = False;
+
+    for raw in body.splitlines() {
+        stripped = raw.strip();
+        if stripped.startswith("```") {
+            if para {
+                break;
+            }
+            in_fence = not in_fence;
+            continue;
+        }
+        if in_fence {
+            continue;
+        }
+        if not stripped {
+            if para {
+                break;
+            }
+            continue;
+        }
+        if stripped.startswith("#") {
+            if para {
+                break;
+            }
+            if not title {
+                title = stripped.lstrip("#").strip();
+            }
+            continue;
+        }
+
+        if stripped.startswith(("!!!", "???", "===", "<", "|", "---", "- ", "* ")) {
+            if para {
+                break;
+            }
+            continue;
+        }
+        if re.`match(r"^\d+\. ", stripped) or raw.startswith(("    ", "\t")) {
+            if para {
+                break;
+            }
+            continue;
+        }
+        para.append(stripped);
+    }
+    text = _clean_markdown(" ".join(para)) or _clean_markdown(title);
+    if len(text) > _DOC_DESCRIPTION_MAX {
+        cut = text[:_DOC_DESCRIPTION_MAX + 1];
+        text = cut[:cut.rfind(" ")].rstrip(" ,;:") + " ...";
+    }
+    return text;
+}
+
+impl _doc_name(rel: Path) -> str {
+    parts = list(rel.parts);
+    parts[-1] = rel.stem;
+
+    if parts[-1] == "index" and len(parts) > 2 {
+        parts.pop();
+    }
+    return "/".join(parts);
+}
+
+impl _load_doc(path: Path, name: str) -> Guide | None {
+    g = parse_guide(path);
+    if g is None {
+        return None;
+    }
+    description = g.description or _derive_description(g.body);
+    return Guide(name=name, description=description, body=g.body, path=g.path);
+}
+
+impl _resolve_by_suffix(clean: str) -> Guide | None {
+    matches = [
+        g
+        for g in (list_guides() + list_docs())
+        if g.name == clean or g.name.endswith("/" + clean)
+    ];
+    if len(matches) == 1 {
+        return matches[0];
+    }
+    return None;
+}
+
+impl _doc_level_hits(terms: list[str]) -> list[GrepHit] {
     if len(terms) < 2 {
         return [];
     }
@@ -526,18 +655,4 @@ def _doc_level_hits(terms: list[str]) -> list[GrepHit] {
         out.append(GrepHit(guide=name, line_no=0, text=detail));
     }
     return out;
-}
-
-impl guide_for_diagnostic(code: str, category: str = "") -> str | None {
-    name = _CODE_GUIDE_MAP.get(code);
-    if name is None and category {
-        name = _CATEGORY_GUIDE_MAP.get(category);
-    }
-    if name is not None and (guides_dir() / f"{name}.md").exists() {
-        return name;
-    }
-    if (docs_dir() / "reference" / "diagnostics.md").is_file() {
-        return "reference/diagnostics";
-    }
-    return None;
 }

@@ -10,7 +10,6 @@ import os;
 import shutil;
 import tempfile;
 import from pathlib { Path }
-import from jaclang.compiler.tools.code_intel { CodeIntelligence }
 
 # Fixture project source. Docstring lines use single-quoted Jac strings so
 # the embedded triple-quotes need no escaping.
@@ -31,7 +30,7 @@ glob _MODEL = "\n".join(
              "}",
              "",
              '"""Authorship relationship."""',
-             "edge Wrote {}"
+             "edge Wrote: User --> Post {}"
          ]
      ),
      _WALKERS = "\n".join(

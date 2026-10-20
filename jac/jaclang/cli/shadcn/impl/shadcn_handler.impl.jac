@@ -1,7 +1,6 @@
 import re;
 import json as json_mod;
 import from pathlib { Path }
-import from jaclang.cli.console { console }
 
 impl _read_shadcn_config(config: any) -> any {
     if config.project_root is None {
@@ -46,7 +45,8 @@ impl parse_style_css(style_name: str) -> dict[str, str] {
         content = f.read();
     }
 
-    pattern = re.compile(r'\.(cn-[\w-]+)\s*\{\s*@apply\s+([^;]+);');
+    content = re.sub(r'/\*.*?\*/', "", content, flags=re.DOTALL);
+    pattern = re.compile(r'\.(cn-[\w-]+)\s*\{\s*@apply\s+([^;}]+)[;}]');
     resolution_map: dict[str, str] = {};
     for `match in pattern.findall(content) {
         resolution_map[`match[0]] = `match[1].strip();
@@ -334,7 +334,7 @@ impl add_shadcn_components(config: any, component_names: list[str]) -> bool {
         return True;
     }
 
-    auto_added: list = [];
+    auto_added: list[str] = [];
     for name in to_install {
         if name not in component_names {
             auto_added.append(name);
@@ -348,12 +348,12 @@ impl add_shadcn_components(config: any, component_names: list[str]) -> bool {
 
     ui_dir.mkdir(parents=True, exist_ok=True);
 
-    all_npm_deps: dict = {};
+    all_npm_deps: dict[str, str] = {};
     shared_deps = registry_data.get("sharedDeps", {});
     all_npm_deps.update(shared_deps);
     dep_versions = registry_data.get("depVersions", {});
 
-    added: list = [];
+    added: list[str] = [];
     for name in to_install {
         comp_data = resolve_single_component(name, style);
 
@@ -429,7 +429,7 @@ impl remove_shadcn_components(config: any, component_names: list[str]) -> bool {
     registry_data = load_registry();
     components_meta = registry_data.get("components", {});
 
-    removed: list = [];
+    removed: list[str] = [];
     for name in component_names {
         comp = components_meta.get(name);
         filename = str(

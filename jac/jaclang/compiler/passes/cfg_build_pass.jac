@@ -1,62 +1,16 @@
 import from typing { cast }
-import from jaclang.compiler.frontend.unitree {
-    Ability,
-    Archetype,
-    AssertStmt,
-    AstElseBodyNode,
-    AtomUnit,
-    AwaitingClause,
-    BoolExpr,
-    CfgExpr,
-    CodeBlockStmt,
-    CtrlStmt,
-    DictCompr,
-    DisengageStmt,
-    ElseIf,
-    ElseStmt,
-    Except,
-    Expr,
-    FinallyStmt,
-    ForeverStmt,
-    GenCompr,
-    GlobalVars,
-    IfElseExpr,
-    IfStmt,
-    ImplDef,
-    InForStmt,
-    InnerCompr,
-    IterForStmt,
-    JsxSlot,
-    LambdaExpr,
-    ListCompr,
-    MatchCase,
-    MatchStmt,
-    ModuleCode,
-    Name,
-    OpenStmt,
-    RaiseStmt,
-    ReturnStmt,
-    SemDef,
-    Semi,
-    SetCompr,
-    SwitchCase,
-    SwitchStmt,
-    Test,
-    Token,
-    TryStmt,
-    TypeAlias,
-    TypedCtxBlock,
-    UniCFGNode,
-    UniNode,
-    WhileStmt,
-    WithStmt
-}
-import from jaclang.compiler.passes.uni_pass { UniPass }
 
-walker CFGBuildPass(UniPass) {
-    static has PROVIDES: tuple = ('CfgSucc', 'CfgTrue', 'CfgFalse');
+walker CFGBuildPass(TreePass) {
+    static has contract: PassContract = PassContract(
+        provides=(
+            AnalysisFact.CFG_SUCC,
+            AnalysisFact.CFG_TRUE,
+            AnalysisFact.CFG_FALSE,
 
-    def before_pass -> None;
+        ),
+        kernel_safe=True
+    );
+
     def link_bbs(source: UniCFGNode, target: UniCFGNode) -> None;
     def _link_sequential(body: Sequence[CodeBlockStmt]) -> None;
     def _exit_wired(nd: UniCFGNode) -> bool;
@@ -119,6 +73,7 @@ walker CFGBuildPass(UniPass) {
     can exit_gen_compr with GenCompr exit;
     can exit_dict_compr with DictCompr exit;
     def _wire_compr_filters(target_node: UniCFGNode, comprs: list[InnerCompr]) -> None;
+    def _link_on_pass(step: UniCFGNode, nxt: UniCFGNode) -> None;
     can exit_ctrl_stmt with CtrlStmt exit;
     can exit_try_stmt with TryStmt exit;
     can exit_except with Except exit;
@@ -138,17 +93,10 @@ walker CFGBuildPass(UniPass) {
     can exit_test with Test exit;
 }
 
-walker CoalesceBBPass(UniPass) {
-    has basic_blocks: dict[int, dict[str, list[UniCFGNode]]] = {},
-        bb_counter: int = 0;
+def is_structural_child(nd: UniNode) -> bool;
 
-    def before_pass -> None;
-    def get_bb(nd: UniCFGNode) -> list[UniCFGNode];
-    can coalesce_collect with UniNode entry;
-    def printgraph_cfg -> str;
-    def _node_label(nd: UniNode) -> str;
-    def _has_bool_sc(condition: Expr) -> bool;
-}
+def _unwrap_parens(expr: Expr) -> Expr;
 
-def _is_structural_child(nd: UniNode) -> bool;
-def cfg_dot_from_file(file_name: str) -> str;
+def unwrap_to_bool(cfg: CfgExpr) -> BoolExpr | None;
+
+def _bool_is_and(expr: BoolExpr) -> bool;

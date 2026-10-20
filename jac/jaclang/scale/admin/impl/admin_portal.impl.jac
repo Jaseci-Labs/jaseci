@@ -1,31 +1,12 @@
 import logging;
-import from jaclang.server.serving.datatypes { Request }
-import from jaclang.server.serving.datatypes {
-    FileResponse,
-    HTMLResponse,
-    JSONResponse,
-    RedirectResponse,
-    Response
-}
+
 import mimetypes;
 import subprocess;
 import from pathlib { Path }
-import from jaclang.server.transport { TransportResponse, Meta }
-import from jaclang.server.server { JsonValue }
-import from jaclang.server.serving.endpoint {
-    HTTPMethod,
-    JEndPoint,
-    APIParameter,
-    ParameterType
-}
-import from jaclang.scale.config.config_loader { get_scale_config }
-import from jaclang.scale.identity.user_manager { UserRole, JacScaleUserManager }
-import from jaclang.runtime.runtime { JacRuntime as Jac }
-import from jaclang.compiler.frontend.constant { Constants as Con }
 
 glob logger = logging.getLogger(__name__);
 
-impl JacAPIServerAdmin._require_user_manager -> JacScaleUserManager {
+impl JacAPIServerAdmin._require_user_manager -> UserManager {
     manager = self.user_manager;
     if manager is None {
         raise RuntimeError(
@@ -70,6 +51,22 @@ impl JacAPIServerAdmin.register_admin_endpoints -> None {
                     default_value=None,
                     description='Admin password',
                     kind=ParameterType.BODY
+                ),
+                APIParameter(
+                    name='code',
+                    data_type='string',
+                    required=False,
+                    default_value='',
+                    description='Current second factor code, when the account has a verified factor',
+                    kind=ParameterType.BODY
+                ),
+                APIParameter(
+                    name='recovery_code',
+                    data_type='string',
+                    required=False,
+                    default_value='',
+                    description='Single-use recovery code, in place of code',
+                    kind=ParameterType.BODY
                 )
             ],
             response_model=None,
@@ -79,7 +76,6 @@ impl JacAPIServerAdmin.register_admin_endpoints -> None {
         )
     );
 
-    import from jaclang.server.serving.datatypes { Request }
     async def reset_password_handler(
         request: Request, current_password: str, new_password: str
     ) -> TransportResponse {
@@ -177,10 +173,14 @@ impl JacAPIServerAdmin.register_admin_endpoints -> None {
         )
     );
     async def create_user_handler(
-        request: Request, username: str, password: str, role: str = 'user'
+        request: Request,
+        password: str,
+        username: str = '',
+        role: str = 'user',
+        email: str = ''
     ) -> TransportResponse {
         authorization = request.headers.get('Authorization');
-        return self.admin_create_user(username, password, role, authorization);
+        return self.admin_create_user(username, password, role, authorization, email);
     }
     server.add_endpoint(
         JEndPoint(
@@ -191,9 +191,17 @@ impl JacAPIServerAdmin.register_admin_endpoints -> None {
                 APIParameter(
                     name='username',
                     data_type='string',
-                    required=True,
-                    default_value=None,
-                    description='Username for new user',
+                    required=False,
+                    default_value='',
+                    description='Username for new user, when [serve.auth.identifiers] accepts one',
+                    kind=ParameterType.BODY
+                ),
+                APIParameter(
+                    name='email',
+                    data_type='string',
+                    required=False,
+                    default_value='',
+                    description='Email for new user, when [serve.auth.identifiers] accepts one',
                     kind=ParameterType.BODY
                 ),
                 APIParameter(
@@ -534,14 +542,16 @@ impl JacAPIServerAdmin.register_admin_endpoints -> None {
 }
 
 impl JacAPIServerAdmin.bootstrap_admin -> None {
-    result = self._require_user_manager().bootstrap_admin_user();
-    if 'error' not in result {
-        if 'created' in result.get('message', '').lower() {
-            logger.warning(
-                f"Admin user created with default credentials. "
-                "Please change the password immediately!"
-            );
-        }
+    admin_config = get_scale_config().get_admin_config();
+    if not admin_config.get('enabled', True) {
+        return;
+    }
+    result = self._require_user_manager().bootstrap_admin_user(
+        admin_username=str(admin_config.get('username', 'admin')),
+        password=str(admin_config.get('default_password') or '')
+    );
+    if 'error' in result {
+        logger.error(f"Admin user was not created: {result['error']}");
     }
 }
 
@@ -587,7 +597,13 @@ impl JacAPIServerAdmin.require_admin_json(
     return None;
 }
 
-impl JacAPIServerAdmin.admin_login(username: str, password: str) -> TransportResponse {
+impl JacAPIServerAdmin.admin_login(
+    username: str,
+    password: str,
+    code: str = '',
+    recovery_code: str = '',
+    request: (Request | None) = None
+) -> TransportResponse {
     if not username or not password {
         return TransportResponse.fail(
             code='VALIDATION_ERROR',
@@ -595,7 +611,12 @@ impl JacAPIServerAdmin.admin_login(username: str, password: str) -> TransportRes
             meta=Meta(extra={'http_status': 400})
         );
     }
-    result = self._require_user_manager().authenticate(username, password);
+    source = client_ip(request) if request is not None else '';
+    try {
+        result = self._require_user_manager().authenticate(username, password, source);
+    } except AttemptsExhausted as limit {
+        return throttled(limit.retry_after, 'Sign-in');
+    }
     if not result {
         return TransportResponse.fail(
             code='UNAUTHORIZED',
@@ -612,8 +633,51 @@ impl JacAPIServerAdmin.admin_login(username: str, password: str) -> TransportRes
             meta=Meta(extra={'http_status': 403})
         );
     }
+    unverified = self._require_user_manager().unverified_email(user_id);
+    if unverified is not None {
+        if self.server is not None {
+            self.server.mailer().send_verification(user_id, unverified, source);
+        }
+        return TransportResponse.fail(
+            code='EMAIL_NOT_VERIFIED',
+            message='Verify your email address to sign in. A new link has been sent.',
+            meta=Meta(extra={'http_status': 403})
+        );
+    }
+    assurance: (dict[str, any] | None) = None;
+    if result.get('second_factor_required') {
+        if not code and not recovery_code {
+            return TransportResponse.fail(
+                code='MFA_REQUIRED',
+                message='A second factor code is required',
+                meta=Meta(extra={'http_status': 401})
+            );
+        }
+        try {
+            proof = self._require_user_manager().second_factors().prove(
+                user_id, str(code or ''), str(recovery_code or '')
+            );
+        } except SecondFactorUnavailable {
+            return TransportResponse.fail(
+                code='SECOND_FACTOR_UNAVAILABLE',
+                message='Second factor verification is temporarily unavailable. Please try again.',
+                meta=Meta(extra={'http_status': 503})
+            );
+        }
+        if proof.get('code') == 'RATE_LIMITED' {
+            return throttled(int(proof.get('retry_after') or 1), 'Sign-in');
+        }
+        if not proof.get('ok') {
+            return TransportResponse.fail(
+                code='INVALID_CODE',
+                message='Code is invalid or already used',
+                meta=Meta(extra={'http_status': 401})
+            );
+        }
+        assurance = second_factor_claims([METHOD_PASSWORD, str(proof['method'])]);
+    }
     requires_reset = self._require_user_manager().requires_password_reset(user_id);
-    token = self._require_user_manager().create_jwt_token(user_id);
+    token = self._require_user_manager().create_jwt_token(user_id, assurance=assurance);
     return TransportResponse.success(
         data={
             'message': 'Login successful',
@@ -653,30 +717,17 @@ impl JacAPIServerAdmin.reset_password(
             meta=Meta(extra={'http_status': 400})
         );
     }
-    if len(new_password) < 8 {
-        return TransportResponse.fail(
-            code='VALIDATION_ERROR',
-            message='Password must be at least 8 characters',
-            meta=Meta(extra={'http_status': 400})
-        );
-    }
-
     result = self._require_user_manager().update_password(
         user_id, current_password, new_password
     );
     if 'error' in result {
-        return TransportResponse.fail(
-            code='UPDATE_FAILED',
-            message=result.get('error', 'Password update failed'),
-            meta=Meta(extra={'http_status': 400})
-        );
+        return refused(result, 'UPDATE_FAILED');
     }
-
-    self._require_user_manager().set_requires_password_reset(user_id, False);
-
-    new_token = self._require_user_manager().create_jwt_token(user_id);
     return TransportResponse.success(
-        data={'message': 'Password updated successfully', 'token': new_token},
+        data={
+            'message': 'Password updated successfully',
+            'token': self._require_user_manager().refresh_jwt_token(token) or token
+        },
         meta=Meta(extra={'http_status': 200})
     );
 }
@@ -743,27 +794,49 @@ impl JacAPIServerAdmin.admin_get_user(
 }
 
 impl JacAPIServerAdmin.admin_create_user(
-    username: str, password: str, role: str = 'user', Authorization: str | None = None
+    username: str = '',
+    password: str = '',
+    role: str = 'user',
+    Authorization: str | None = None,
+    email: str = ''
 ) -> TransportResponse {
     error = self.require_admin(Authorization);
     if error {
         return error;
     }
-    if not username or not password {
+    try {
+        identities = [
+            IdentityInputModel.from_dict({'type': kind, 'value': value}).model_dump()
+            for (kind, value) in (('username', username), ('email', email))
+            if value
+        ];
+    } except ValueError as invalid {
         return TransportResponse.fail(
             code='VALIDATION_ERROR',
-            message='Username and password required',
+            message=str(invalid),
+            meta=Meta(extra={'http_status': 400})
+        );
+    }
+    if not identities or not password {
+        return TransportResponse.fail(
+            code='VALIDATION_ERROR',
+            message='A username or email, and a password, are required',
             meta=Meta(extra={'http_status': 400})
         );
     }
     result = self._require_user_manager().create_user_as_admin(
-        username=username, password=password, role=role, requires_password_reset=True
+        identities=identities,
+        password=password,
+        role=role,
+        requires_password_reset=True
     );
     if 'error' in result {
-        return TransportResponse.fail(
-            code='CREATE_FAILED',
-            message=result.get('error', 'User creation failed'),
-            meta=Meta(extra={'http_status': 400})
+        return refused(result, 'CREATE_FAILED');
+    }
+    if self.server is not None {
+        self.server.mailer().announce(
+            self._require_user_manager().get_user(str(result.get('user_id') or ''))
+                or {}
         );
     }
     return TransportResponse.success(
@@ -1030,7 +1103,7 @@ impl JacAPIServerAdmin.admin_graph_data(
             content={'error': 'Forbidden', 'message': 'Admin access required'}
         );
     }
-    import from jaclang.runtime.graph_utils { collect_node_connections }
+
     target_username = username or Con.GUEST.value;
     root_id = self._require_user_manager().get_root_id(target_username);
     if not root_id {
@@ -1049,8 +1122,8 @@ impl JacAPIServerAdmin.admin_graph_data(
         visited_nodes: set = set();
         connections: set = set();
         edge_ids: set = set();
-        nodes: list[dict] = [];
-        edges: list[dict] = [];
+        nodes: list[dict[str, str]] = [];
+        edges: list[dict[str, str]] = [];
 
         collect_node_connections(user_root, visited_nodes, connections, edge_ids);
 
@@ -1063,7 +1136,7 @@ impl JacAPIServerAdmin.admin_graph_data(
             }
         }
         for (_, source_node, target_node, edge_arch) in connections {
-            edge_data: dict = {
+            edge_data: dict[str, str] = {
                 'from': Jac.object_ref(source_node),
                 'to': Jac.object_ref(target_node)
             };
@@ -1129,134 +1202,38 @@ impl JacAPIServerAdmin.admin_get_metrics(
     }
 }
 
-def _parse_prometheus_text(raw_metrics: str) -> list[dict[str, any]] {
-    import re;
+def _parse_prometheus_text(raw_metrics: str) -> list[dict[str, any]];
 
-    metrics_data: list[dict[str, any]] = [];
-    current_metric: (dict[str, any] | None) = None;
-    metric_line_re = re.compile(
-        r'^([a-zA-Z_:][a-zA-Z0-9_:]*)((?:\{[^}]*\})?)[ \t]+(.+)$'
-    );
-    label_re = re.compile(r'([a-zA-Z_][a-zA-Z0-9_]*)="([^"]*)"');
+glob _LATENCY_CUTS: list[float] = [0.025, 0.1, 0.5, 2.5];
 
-    for line in raw_metrics.split('\n') {
-        line = line.strip();
-        if not line {
-            continue;
-        }
 
-        if line.startswith('# HELP ') {
-            parts = line[7:].split(' ', 1);
-            current_metric = {
-                'name': parts[0],
-                'description': parts[1] if len(parts) > 1 else '',
-                'type': 'unknown',
-                'values': []
-            };
-            metrics_data.append(current_metric);
-        } elif line.startswith('# TYPE ') {
-            parts = line[7:].split(' ', 1);
-            if current_metric and parts[0] == current_metric['name'] {
-                current_metric['type'] = parts[1] if len(parts) > 1 else 'unknown';
-            }
-        } elif line.startswith('#') {
-            continue;
-        } else {
-            regex_match = metric_line_re.`match(line);
-            if regex_match {
-                metric_name = regex_match.group(1);
-                labels_str = regex_match.group(2);
-                value_str = regex_match.group(3);
-                labels: dict[str, str] = {};
-                if labels_str
-                    and labels_str.startswith('{')
-                    and labels_str.endswith('}') {
-                    for lm in label_re.finditer(labels_str[1:-1]) {
-                        labels[lm.group(1)] = lm.group(2);
-                    }
-                }
-                value: (float | str) = value_str;
-                try {
-                    value = float(value_str);
-                } except ValueError {
-                    value = value_str;
-                }
-                found_metric: (dict[str, any] | None) = None;
-                for m in metrics_data {
-                    m_name: str = m['name'];
-                    if m_name == metric_name or metric_name.startswith(m_name + '_') {
-                        found_metric = m;
-                        break;
-                    }
-                }
-                suffix = '';
-                if found_metric {
-                    found_name: str = found_metric['name'];
-                    if metric_name.startswith(found_name) {
-                        suffix = metric_name[len(found_name):];
-                    }
-                    found_metric['values'].append(
-                        {'labels': labels, 'value': value, 'suffix': suffix}
-                    );
-                } else {
-                    metrics_data.append(
-                        {
-                            'name': metric_name,
-                            'description': '',
-                            'type': 'unknown',
-                            'values': [{'labels': labels, 'value': value, 'suffix': ''}]
-                        }
-                    );
-                }
-            }
-        }
-    }
-    return metrics_data;
-}
+def _classify_path(path: str) -> str;
 
-def _calculate_metrics_summary(metrics_data: list[dict[str, any]]) -> dict {
-    summary: dict = {
-        'total_requests': 0,
-        'active_requests': 0,
-        'error_count': 0,
-        'avg_latency_ms': 0.0
-    };
 
-    for metric in metrics_data {
-        name = metric['name'];
-        if 'http_requests_total' in name {
-            for v in metric['values'] {
-                if isinstance(v['value'], (int, float)) {
-                    summary['total_requests'] += int(v['value']);
-                    if v['labels'].get('status_code', '').startswith('5') {
-                        summary['error_count'] += int(v['value']);
-                    }
-                }
-            }
-        } elif 'requests_in_progress' in name {
-            for v in metric['values'] {
-                if isinstance(v['value'], (int, float)) {
-                    summary['active_requests'] = int(v['value']);
-                }
-            }
-        } elif 'request_duration_seconds' in name {
-            total_sum = 0.0;
-            total_count = 0;
-            for v in metric['values'] {
-                if v['suffix'] == '_sum' and isinstance(v['value'], (int, float)) {
-                    total_sum += v['value'];
-                } elif v['suffix'] == '_count'
-                    and isinstance(v['value'], (int, float)) {
-                    total_count += int(v['value']);
-                }
-            }
-            if total_count > 0 {
-                summary['avg_latency_ms'] = round((total_sum / total_count) * 1000, 2);
-            }
-        }
-    }
-    return summary;
-}
+def _sorted_buckets(acc: dict[float, float]) -> list[dict[str, float]];
+
+
+def _percentile_from_buckets(
+    buckets: list[dict[str, float]], q: float
+) -> dict[str, float | bool];
+
+
+def _format_seconds(secs: float) -> str;
+
+
+def _range_label(lo: float, hi: float) -> str;
+
+
+def _band_edges(edges: list[float]) -> list[float];
+
+
+def _latency_groups(buckets: list[dict[str, float]]) -> list[dict[str, str | int]];
+
+
+def _endpoint_sort_key(row: dict[str, any]) -> tuple[float, int];
+
+
+def _calculate_metrics_summary(metrics_data: list[dict[str, any]]) -> dict[str, any];
 
 impl JacAPIServerAdmin.get_admin_dist_dir -> Path {
     import os;
@@ -1265,21 +1242,7 @@ impl JacAPIServerAdmin.get_admin_dist_dir -> Path {
     return cwd / ".jac" / "admin";
 }
 
-def _copy_dir_contents(src: Path, dst: Path) {
-    import shutil;
-    dst.mkdir(parents=True, exist_ok=True);
-    for item in src.iterdir() {
-        dest = dst / item.name;
-        if item.is_dir() {
-            if dest.exists() {
-                shutil.rmtree(dest);
-            }
-            shutil.copytree(item, dest);
-        } else {
-            shutil.copy2(item, dest);
-        }
-    }
-}
+def _copy_dir_contents(src: Path, dst: Path);
 
 impl JacAPIServerAdmin.build_admin_client(force: bool = False) -> bool {
     dist_dir = self.get_admin_dist_dir();
@@ -1290,7 +1253,6 @@ impl JacAPIServerAdmin.build_admin_client(force: bool = False) -> bool {
         return True;
     }
 
-    import from jaclang.scale.admin { admin_portal }
     admin_dir = Path(admin_portal.__file__).parent;
 
     ui_dir = admin_dir / "ui";
@@ -1301,7 +1263,7 @@ impl JacAPIServerAdmin.build_admin_client(force: bool = False) -> bool {
     logger.info("Building admin client from source...");
     try {
         result = subprocess.run(
-            ["jac", "build", "main.jac", "--client", "web"],
+            ["jac", "build", "--as", "client", "main.jac"],
             cwd=str(ui_dir),
             capture_output=True,
             text=True,
@@ -1392,4 +1354,342 @@ impl JacAPIServerAdmin.serve_admin_asset(path: str) -> Response {
         return FileResponse(path=str(index_file), media_type="text/html");
     }
     return Response(content="Not found", status_code=404);
+}
+
+impl _parse_prometheus_text(raw_metrics: str) -> list[dict[str, any]] {
+    import re;
+
+    metrics_data: list[dict[str, any]] = [];
+    current_metric: (dict[str, any] | None) = None;
+    metric_line_re = re.compile(
+        r'^([a-zA-Z_:][a-zA-Z0-9_:]*)((?:\{[^}]*\})?)[ \t]+(.+)$'
+    );
+    label_re = re.compile(r'([a-zA-Z_][a-zA-Z0-9_]*)="([^"]*)"');
+
+    for line in raw_metrics.split('\n') {
+        line = line.strip();
+        if not line {
+            continue;
+        }
+
+        if line.startswith('# HELP ') {
+            parts = line[7:].split(' ', 1);
+            current_metric = {
+                'name': parts[0],
+                'description': parts[1] if len(parts) > 1 else '',
+                'type': 'unknown',
+                'values': []
+            };
+            metrics_data.append(current_metric);
+        } elif line.startswith('# TYPE ') {
+            parts = line[7:].split(' ', 1);
+            if current_metric and parts[0] == current_metric['name'] {
+                current_metric['type'] = parts[1] if len(parts) > 1 else 'unknown';
+            }
+        } elif line.startswith('#') {
+            continue;
+        } else {
+            regex_match = metric_line_re.`match(line);
+            if regex_match {
+                metric_name = regex_match.group(1);
+                labels_str = regex_match.group(2);
+                value_str = regex_match.group(3);
+                labels: dict[str, str] = {};
+                if labels_str
+                    and labels_str.startswith('{')
+                    and labels_str.endswith('}') {
+                    for lm in label_re.finditer(labels_str[1:-1]) {
+                        labels[lm.group(1)] = lm.group(2);
+                    }
+                }
+                value: (float | str) = value_str;
+                try {
+                    value = float(value_str);
+                } except ValueError {
+                    value = value_str;
+                }
+                found_metric: (dict[str, any] | None) = None;
+                for m in metrics_data {
+                    m_name: str = m['name'];
+                    if m_name == metric_name or metric_name.startswith(m_name + '_') {
+                        found_metric = m;
+                        break;
+                    }
+                }
+                suffix = '';
+                if found_metric {
+                    found_name: str = found_metric['name'];
+                    if metric_name.startswith(found_name) {
+                        suffix = metric_name[len(found_name):];
+                    }
+                    found_metric['values'].append(
+                        {'labels': labels, 'value': value, 'suffix': suffix}
+                    );
+                } else {
+                    metrics_data.append(
+                        {
+                            'name': metric_name,
+                            'description': '',
+                            'type': 'unknown',
+                            'values': [{'labels': labels, 'value': value, 'suffix': ''}]
+                        }
+                    );
+                }
+            }
+        }
+    }
+    return metrics_data;
+}
+
+
+impl _classify_path(path: str) -> str {
+    head: str = path.strip('/').split('/')[0];
+    if head == 'health' or head == 'healthz' {
+        return 'health';
+    }
+    if head == 'admin' {
+        return 'admin';
+    }
+    if head in GATEWAY_WELLKNOWN_SEGMENTS {
+        return 'system';
+    }
+    return 'app';
+}
+
+
+impl _sorted_buckets(acc: dict[float, float]) -> list[dict[str, float]] {
+    return [{'le': le, 'count': acc[le]} for le in sorted(acc.keys())];
+}
+
+
+impl _percentile_from_buckets(
+    buckets: list[dict[str, float]], q: float
+) -> dict[str, float | bool] {
+    total: float = buckets[-1]['count'] if buckets else 0.0;
+    if total <= 0 {
+        return {'value': 0.0, 'over': False, 'known': False};
+    }
+    rank: float = q * total;
+    lo: float = 0.0;
+    lo_edge: float = 0.0;
+    for b in buckets {
+        upper: float = b['le'];
+        count: float = b['count'];
+        if count >= rank {
+            if upper == float('inf') {
+                return {'value': lo_edge, 'over': True, 'known': True};
+            }
+            span: float = count - lo;
+            frac: float = (rank - lo) / span if span > 0 else 0.0;
+            return {
+                'value': round(lo_edge + frac * (upper - lo_edge), 6),
+                'over': False,
+                'known': True
+            };
+        }
+        lo = count;
+        lo_edge = upper;
+    }
+    return {'value': lo_edge, 'over': True, 'known': True};
+}
+
+
+impl _format_seconds(secs: float) -> str {
+    unit: str = 'ms' if secs < 1.0 else 's';
+    value: float = round(secs * 1000.0, 6) if unit == 'ms' else round(secs, 6);
+    text: str = str(int(value)) if value == int(value) else str(value);
+    return text + unit;
+}
+
+
+impl _range_label(lo: float, hi: float) -> str {
+    lo_text: str = _format_seconds(lo);
+    hi_text: str = _format_seconds(hi);
+    lo_unit: str = 'ms' if lo_text.endswith('ms') else 's';
+    hi_unit: str = 'ms' if hi_text.endswith('ms') else 's';
+    if lo_unit == hi_unit {
+        return lo_text[:-len(lo_unit)] + ' - ' + hi_text;
+    }
+    return lo_text + ' - ' + hi_text;
+}
+
+
+impl _band_edges(edges: list[float]) -> list[float] {
+    chosen: list[float] = [];
+    for cut in _LATENCY_CUTS {
+        nearest: float = edges[0];
+        for le in edges {
+            if abs(le - cut) < abs(nearest - cut) {
+                nearest = le;
+            }
+        }
+        if nearest not in chosen {
+            chosen.append(nearest);
+        }
+    }
+    return chosen;
+}
+
+
+impl _latency_groups(buckets: list[dict[str, float]]) -> list[dict[str, str | int]] {
+    edges: list[float] = [
+        b['le']
+        for b in buckets
+        if b['le'] != float('inf')
+    ];
+    if not edges {
+        return [];
+    }
+    counts: dict[float, float] = {b['le']: b['count'] for b in buckets};
+    total: float = buckets[-1]['count'];
+    out: list[dict[str, str | int]] = [];
+    prev: float = 0.0;
+    lo: float = 0.0;
+    for (i, hi) in enumerate(_band_edges(edges)) {
+        seen: float = counts[hi];
+        label: str = ('under ' + _format_seconds(hi))
+            if i == 0
+            else _range_label(lo, hi);
+        out.append({'label': label, 'count': int(seen - prev)});
+        prev = seen;
+        lo = hi;
+    }
+    out.append({'label': 'over ' + _format_seconds(lo), 'count': int(total - prev)});
+    return out;
+}
+
+
+impl _endpoint_sort_key(row: dict[str, any]) -> tuple[float, int] {
+    return (-row['p95']['value'], -row['count']);
+}
+
+
+impl _calculate_metrics_summary(metrics_data: list[dict[str, any]]) -> dict[str, any] {
+    active: int = 0;
+    rows: dict[str, dict[str, any]] = {};
+    hist: dict[str, dict[float, float]] = {};
+
+    for metric in metrics_data {
+        name: str = metric['name'];
+        if 'http_requests_total' in name {
+            for v in metric['values'] {
+                if not isinstance(v['value'], (int, float)) {
+                    continue;
+                }
+                labels: dict[str, str] = v['labels'];
+                method: str = labels.get('method', '?');
+                path: str = labels.get('path', '?');
+                key: str = method + ' ' + path;
+                if key not in rows {
+                    rows[key] = {
+                        'method': method,
+                        'path': path,
+                        'kind': _classify_path(path),
+                        'count': 0,
+                        'server_errors': 0,
+                        'client_errors': 0
+                    };
+                }
+                row: dict[str, any] = rows[key];
+                n: int = int(v['value']);
+                row['count'] += n;
+                status: str = labels.get('status_code', '');
+                if status.startswith('5') {
+                    row['server_errors'] += n;
+                } elif status.startswith('4') {
+                    row['client_errors'] += n;
+                }
+            }
+        } elif 'requests_in_progress' in name {
+            for v in metric['values'] {
+                if isinstance(v['value'], (int, float)) {
+                    active = int(v['value']);
+                }
+            }
+        } elif 'request_duration_seconds' in name {
+            for v in metric['values'] {
+                if v['suffix'] != '_bucket'
+                    or not isinstance(v['value'], (int, float)) {
+                    continue;
+                }
+                labels: dict[str, str] = v['labels'];
+                le_raw: str = labels.get('le', '');
+                if not le_raw {
+                    continue;
+                }
+                le: float = float('inf') if le_raw == '+Inf' else float(le_raw);
+                key: str = labels.get('method', '?') + ' ' + labels.get('path', '?');
+                acc: dict[float, float] = hist.setdefault(key, {});
+                acc[le] = acc.get(le, 0.0) + float(v['value']);
+            }
+        }
+    }
+
+    endpoints: list[dict[str, any]] = [];
+    for (key, row) in rows.items() {
+        buckets = _sorted_buckets(hist.get(key, {}));
+        endpoints.append(
+            {
+                'method': row['method'],
+                'path': row['path'],
+                'kind': row['kind'],
+                'count': row['count'],
+                'failed': row['server_errors'] + row['client_errors'],
+                'p50': _percentile_from_buckets(buckets, 0.5),
+                'p95': _percentile_from_buckets(buckets, 0.95)
+            }
+        );
+    }
+    endpoints.sort(key=_endpoint_sort_key);
+
+    scopes: dict[str, dict[str, any]] = {};
+    for scope_name in ('app', 'other', 'all') {
+        requests: int = 0;
+        server_errors: int = 0;
+        client_errors: int = 0;
+        merged: dict[float, float] = {};
+        for (key, row) in rows.items() {
+            is_app: bool = row['kind'] == 'app';
+            if scope_name == 'app' and not is_app {
+                continue;
+            }
+            if scope_name == 'other' and is_app {
+                continue;
+            }
+            requests += row['count'];
+            server_errors += row['server_errors'];
+            client_errors += row['client_errors'];
+            for (le, count) in hist.get(key, {}).items() {
+                merged[le] = merged.get(le, 0.0) + count;
+            }
+        }
+        buckets = _sorted_buckets(merged);
+        scopes[scope_name] = {
+            'requests': requests,
+            'server_errors': server_errors,
+            'client_errors': client_errors,
+            'p50': _percentile_from_buckets(buckets, 0.5),
+            'p95': _percentile_from_buckets(buckets, 0.95),
+            'p99': _percentile_from_buckets(buckets, 0.99),
+            'distribution': _latency_groups(buckets)
+        };
+    }
+
+    return {'active_requests': active, 'scopes': scopes, 'endpoints': endpoints};
+}
+
+impl _copy_dir_contents(src: Path, dst: Path) {
+    import shutil;
+    dst.mkdir(parents=True, exist_ok=True);
+    for item in src.iterdir() {
+        dest = dst / item.name;
+        if item.is_dir() {
+            if dest.exists() {
+                shutil.rmtree(dest);
+            }
+            shutil.copytree(item, dest);
+        } else {
+            shutil.copy2(item, dest);
+        }
+    }
 }

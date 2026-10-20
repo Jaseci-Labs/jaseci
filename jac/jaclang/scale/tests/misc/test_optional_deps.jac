@@ -1,12 +1,4 @@
 import unittest.mock;
-import from jaclang.scale._optdeps.optional_deps {
-    require_optional,
-    is_optional_available
-}
-import from jaclang.scale._optdeps.prometheus { HAS_PROMETHEUS, Counter }
-import from jaclang.scale._optdeps.apscheduler { HAS_APSCHEDULER, BackgroundScheduler }
-import from jaclang.scale._optdeps.kubernetes { HAS_KUBERNETES, client as k8s_client }
-import from jaclang.scale._optdeps.gcs { HAS_GCS, StorageClient }
 
 test "require_optional does not raise for installed stdlib package" {
     require_optional("json", "serve");
@@ -75,6 +67,32 @@ def _import_probe(module: str) -> str {
     );
     assert result.returncode == 0 , f"probe failed for {module}: {result.stderr[-2000:]}";
     return result.stdout;
+}
+
+test "LLM telemetry registers without importing litellm and attaches once it loads" {
+    import subprocess;
+    import sys;
+    if not is_optional_available("litellm") {
+        return;
+    }
+    probe = (
+        "import sys\n"
+        "from jaclang.scale.admin.llm_telemetry import JacAPIServerLLMTelemetry\n"
+        "class Probe(JacAPIServerLLMTelemetry):\n"
+        "    def require_admin_json(self, Authorization=None):\n"
+        "        return None\n"
+        "Probe().register_llm_telemetry_endpoints()\n"
+        "print('litellm-after-register=' + str('litellm' in sys.modules))\n"
+        "import litellm\n"
+        "names = [type(cb).__name__ for cb in litellm.callbacks]\n"
+        "print('logger-attached=' + str('JacLLMLogger' in names))\n"
+    );
+    result = subprocess.run(
+        [sys.executable, "-c", probe], capture_output=True, text=True, timeout=300
+    );
+    assert result.returncode == 0 , f"probe failed: {result.stderr[-2000:]}";
+    assert "litellm-after-register=False" in result.stdout , result.stdout;
+    assert "logger-attached=True" in result.stdout , result.stdout;
 }
 
 test "the deploy entry point imports without the env capability" {
@@ -242,15 +260,11 @@ test "scheduler setup succeeds without apscheduler installed" {
         with unittest.mock.patch(
             "jaclang.scale.scheduler.scheduler.BackgroundScheduler", None
         ) {
-            with unittest.mock.patch(
-                "jaclang.scale.scheduler.scheduler.ThreadPoolExecutor", None
-            ) {
-                sched = JacScaleScheduler();
-                sched.setup(system_user_id="system-user-id");
-                assert sched._apscheduler is None , "APScheduler should be None when package is not installed";
-                sched.start();
-                sched.stop();
-            }
+            sched = JacScaleScheduler();
+            sched.setup(system_user_id="system-user-id");
+            assert sched._apscheduler is None , "APScheduler should be None when package is not installed";
+            sched.start();
+            sched.stop();
         }
     }
 }
@@ -264,25 +278,21 @@ test "scheduler create_job raises clear error without apscheduler" {
         with unittest.mock.patch(
             "jaclang.scale.scheduler.scheduler.BackgroundScheduler", None
         ) {
-            with unittest.mock.patch(
-                "jaclang.scale.scheduler.scheduler.ThreadPoolExecutor", None
-            ) {
-                sched = JacScaleScheduler();
-                sched.setup(system_user_id="system-user-id");
-                raised = False;
-                try {
-                    import from jaclang.scale.scheduler.scheduler { TriggerSpec }
-                    spec = TriggerSpec.validate(trigger="interval", interval=60.0);
-                    sched.create_job(
-                        name="test_walker", spec=spec, created_by="system-user-id"
-                    );
-                } except RuntimeError as e {
-                    raised = True;
-                    assert "scheduler" in str(e) , "Error message should name the scheduler capability";
-                    assert "jac-scale[" not in str(e);
-                }
-                assert raised , "Expected RuntimeError when creating job without APScheduler";
+            sched = JacScaleScheduler();
+            sched.setup(system_user_id="system-user-id");
+            raised = False;
+            try {
+                import from jaclang.scale.scheduler.scheduler { TriggerSpec }
+                spec = TriggerSpec.validate(trigger="interval", interval=60.0);
+                sched.create_job(
+                    name="test_walker", spec=spec, created_by="system-user-id"
+                );
+            } except RuntimeError as e {
+                raised = True;
+                assert "scheduler" in str(e) , "Error message should name the scheduler capability";
+                assert "jac-scale[" not in str(e);
             }
+            assert raised , "Expected RuntimeError when creating job without APScheduler";
         }
     }
 }

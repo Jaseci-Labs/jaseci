@@ -1,17 +1,20 @@
 import socket;
 
 class PortInUseError(OSError) {
-    def init(self: PortInUseError, port: int) {
-        self.port = port;
-        super.__init__(f"Port {port} is already in use");
-    }
+    def init(self: PortInUseError, port: int);
 }
 
 
 glob PORT_RETRY_LIMIT: int = 10,
-     ERRNO_ADDR_IN_USE_LINUX: int = 98,
-     ERRNO_ADDR_IN_USE_MACOS: int = 48,
-     ERRNO_ADDR_IN_USE_WINDOWS: int = 10048;
+     ERRNO_ADDR_IN_USE: tuple[int, int, int] = (98, 48, 10048);
+
+
+def _address_in_use(e: OSError) -> bool;
+
+
+def bind_listener(
+    host: str, port: int, backlog: int = 2048, port_retries: int = PORT_RETRY_LIMIT
+) -> socket.socket;
 
 
 def find_available_port(
@@ -19,40 +22,4 @@ def find_available_port(
     max_retries: int = PORT_RETRY_LIMIT,
     skip_port: int = 0,
     strict: bool = False
-) -> int {
-    candidate = start_port;
-    for _ in range(max_retries) {
-        if candidate == skip_port {
-            if strict {
-                raise PortInUseError(start_port) from None;
-            }
-            candidate += 1;
-            continue;
-        }
-        try {
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe {
-                probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1);
-                probe.bind(('0.0.0.0', candidate));
-            }
-            return candidate;
-        } except OSError as e {
-            in_use = e.errno
-                in (
-                    ERRNO_ADDR_IN_USE_LINUX,
-                    ERRNO_ADDR_IN_USE_MACOS,
-                    ERRNO_ADDR_IN_USE_WINDOWS
-                )
-                or "Address already in use" in str(e);
-            if not in_use {
-                raise;
-            }
-            if strict {
-                raise PortInUseError(start_port) from None;
-            }
-            candidate += 1;
-        }
-    }
-    raise OSError(
-        f"Could not find an available port after trying {start_port}-{candidate}"
-    );
-}
+) -> int;

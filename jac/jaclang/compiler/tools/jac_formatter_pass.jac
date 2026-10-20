@@ -1,10 +1,7 @@
 import from collections { deque }
-import jaclang.compiler.tools.doc_ir as doc;
-import jaclang.compiler.frontend.unitree as uni;
-import from jaclang.compiler.frontend.diagnostics { W5050, E5051 }
-import from jaclang.compiler.passes { Transform }
 
-walker JacFormatPass(Transform) {
+walker JacFormatPass(CompilerPass) {
+    static has contract: PassContract = PassContract();
     has indent_size: int = 4,
         MAX_LINE_LENGTH: int = 88,
         _probe_cache: dict[tuple[int, int, int], bool] = {},
@@ -12,7 +9,7 @@ walker JacFormatPass(Transform) {
         _line_has_content: bool = False,
         _rendering_suffix: bool = False;
 
-    def pre_transform -> None;
+    can prepare with entry;
     def _flush_suffixes -> str;
     def _probe_fits(
         nd: doc.DocType,
@@ -26,7 +23,6 @@ walker JacFormatPass(Transform) {
         nd: doc.DocType, base: int = 0, is_broken: bool = False
     ) -> int;
 
-    def transform(ir_in: uni.Module) -> uni.Module;
     def _run_impl(ir_in: uni.Module) -> uni.Module;
     can run_walk with uni.Module entry;
     def format_doc_ir(
@@ -39,11 +35,6 @@ walker JacFormatPass(Transform) {
     ) -> str;
 }
 
-def format_module(mod: uni.Module) -> str {
-    import from jaclang.compiler.tools.doc_ir_gen_pass { DocIRGenPass }
-    import from jaclang.compiler.driver.pass_driver { run_pass }
-    import from jaclang.compiler.driver.program { JacProgram }
-    return run_pass(
-        JacFormatPass, run_pass(DocIRGenPass, mod, JacProgram()).ir_out, JacProgram()
-    ).ir_out.gen.jac;
-}
+def format_module(mod: uni.Module) -> str;
+
+def unparse_module(mod: uni.Module, requires_format: bool = True) -> str;

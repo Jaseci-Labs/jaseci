@@ -18,7 +18,6 @@ import from jaclang.dist.payload.fetch {
     fetch_llvm_slice,
     parse_central_directory,
     parse_eocd,
-    pbs_platform,
     slice_wanted,
     unzip_member_by_suffix
 }
@@ -31,7 +30,7 @@ import from jaclang.dist.payload.pins {
     py_minor,
     py_ver
 }
-import from jaclang.client.bun_installer { BUN_VERSION as INSTALLER_BUN_VERSION }
+import from jaclang.client.js_runtime { BUN_VERSION as INSTALLER_BUN_VERSION }
 
 # zipfile's method constants are typed `Final` in typeshed, which the checker
 # cannot assign from; spell them as the ints they are and pin them below.
@@ -109,7 +108,7 @@ test "zip method constants mirror zipfile" {
     assert ZIP_DEFLATED == zipfile.ZIP_DEFLATED;
 }
 
-test "slice_wanted selects the LLVM archives, llvm headers, and (macOS) libLTO" {
+test "slice_wanted selects the LLVM and LLD archives and headers, and (macOS) libLTO" {
     assert slice_wanted("lib/libLLVMCore.a", False);
     assert slice_wanted("lib/libLLVMSupport.a", True);
     assert slice_wanted("include/llvm/ADT/ArrayRef.h", False);
@@ -120,6 +119,11 @@ test "slice_wanted selects the LLVM archives, llvm headers, and (macOS) libLTO" 
     assert not slice_wanted("bin/clang", True);
     assert not slice_wanted("lib/libLTO.dylib", False);
     assert slice_wanted("lib/libLTO.dylib", True);
+    assert slice_wanted("lib/liblldELF.a", False);
+    assert slice_wanted("lib/liblldCommon.a", True);
+    assert slice_wanted("include/lld/Common/Driver.h", False);
+    assert not slice_wanted("lib/liblldb.a", False);
+    assert not slice_wanted("include/lldb/API/LLDB.h", False);
 }
 
 test "central directory parsing agrees with zipfile on a synthetic zip" {
@@ -266,11 +270,6 @@ test "find_sum_line reads `<hex>  <filename>` lines" {
 }
 
 test "platform tables match the Zig tool" {
-    assert pbs_platform("macos-aarch64") == "aarch64-apple-darwin";
-    assert pbs_platform("macos-x86_64") == "x86_64-apple-darwin";
-    assert pbs_platform("linux-x86_64") == "x86_64-unknown-linux-gnu";
-    assert pbs_platform("linux-aarch64") == "aarch64-unknown-linux-gnu";
-    assert pbs_platform("windows-x86_64") is None;
     assert bun_asset_name("macos-aarch64") == "bun-darwin-aarch64";
     assert bun_asset_name("macos-x86_64") == "bun-darwin-x64";
     assert bun_asset_name("linux-x86_64") == "bun-linux-x64";
@@ -279,14 +278,10 @@ test "platform tables match the Zig tool" {
     assert bun_asset_name("freebsd-x86_64") is None;
 }
 
-test "pins.json carries the pbs + llvm pins and bun stays in lockstep" {
+test "source and LLVM pins agree with the payload" {
     p = pins();
-    assert load_pins().pbs.tag == p.pbs.tag;
-    assert p.pbs.tag == "20260610";
-    assert p.pbs.python == "3.14.6";
-    assert p.pbs.flavor == "pgo+lto-full";
-    assert p.pbs.base
-        == "https://github.com/astral-sh/python-build-standalone/releases/download";
+    assert load_pins().python == p.python;
+    assert p.python == "3.14.6";
     assert py_ver() == "3.14";
     assert py_minor("3.14.6") == "3.14";
     try {
@@ -302,23 +297,24 @@ test "pins.json carries the pbs + llvm pins and bun stays in lockstep" {
     slices = p.llvm.slices;
     lx = slices["linux-x86_64"];
     assert llvm_release("linux-x86_64") is lx;
-    assert lx.dirname == "LLVM-22.1.8-Linux-X64-libcxx";
-    assert lx.triple == "x86_64-linux-libcxx";
-    assert lx.zip_size == 667452266;
+    assert lx.dirname == "LLVM-22.1.8-Linux-X64-libcxx-lld";
+    assert lx.triple == "x86_64-linux-libcxx-lld";
+    assert lx.zip_size == 1423609156;
     assert not lx.upstream;
     la = slices["linux-aarch64"];
-    assert la.dirname == "LLVM-22.1.8-Linux-ARM64-libcxx" and la.zip_size == 462054429;
-    assert la.triple == "aarch64-linux-libcxx" and not la.upstream;
+    assert la.dirname == "LLVM-22.1.8-Linux-ARM64-libcxx-lld"
+        and la.zip_size == 1424249476;
+    assert la.triple == "aarch64-linux-libcxx-lld" and not la.upstream;
     ma = slices["macos-aarch64"];
     assert ma.dirname == "LLVM-22.1.8-macOS-ARM64"
         and ma.upstream
         and ma.zip_size == 743879473;
     assert ma.triple == "aarch64-apple-darwin";
     mx = slices["macos-x86_64"];
-    assert mx.dirname == "LLVM-22.1.8-macOS-X64"
+    assert mx.dirname == "LLVM-22.1.8-macOS-X64-lld"
         and not mx.upstream
-        and mx.zip_size == 49613317;
-    assert mx.triple == "x86_64-apple-darwin";
+        and mx.zip_size == 109599841;
+    assert mx.triple == "x86_64-apple-darwin-lld";
     for rel in p.llvm.slices.values() {
         assert len(rel.manifest_sha256) == 64;
         assert rel.dirname.startswith("LLVM-22.1.8-");

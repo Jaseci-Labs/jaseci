@@ -186,7 +186,7 @@ impl WebSocketConnectionManager.maybe_unsubscribe(target_key: str) -> None {
 }
 
 impl WebSocketConnectionManager._on_backplane_message(
-    channel: str, message: dict
+    channel: str, message: dict[str, any]
 ) -> None {
     if not channel.startswith('ws:') {
         return;
@@ -195,7 +195,9 @@ impl WebSocketConnectionManager._on_backplane_message(
     await self._local_fanout(target_key, message);
 }
 
-impl WebSocketConnectionManager._local_fanout(target_key: str, message: dict) -> None {
+impl WebSocketConnectionManager._local_fanout(
+    target_key: str, message: dict[str, any]
+) -> None {
     per_target = self._by_target.get(target_key, {});
     conns = list(per_target.values());
     if not conns {
@@ -206,7 +208,7 @@ impl WebSocketConnectionManager._local_fanout(target_key: str, message: dict) ->
 }
 
 impl WebSocketConnectionManager.broadcast_target(
-    target_kind: str, target_name: str, message: dict
+    target_kind: str, target_name: str, message: dict[str, any]
 ) -> None {
     target_key = f"{target_kind}:{target_name}";
     await self.ensure_backplane_started();
@@ -218,7 +220,9 @@ impl WebSocketConnectionManager.broadcast_target(
     await backplane.publish(channel, message);
 }
 
-impl WebSocketConnectionManager.send_to(ctx: ConnectionContext, message: dict) -> bool {
+impl WebSocketConnectionManager.send_to(
+    ctx: ConnectionContext, message: dict[str, any]
+) -> bool {
     if ctx.closed {
         return False;
     }
@@ -267,7 +271,28 @@ impl _ws_stream_next(gen: any) -> any {
     }
 }
 
-impl _ws_stream_result(send_result: any, result: any) {
+impl _ws_close_stream(result: any, abandon: Callable[[], None]) -> None {
+    try {
+        if isgenerator(result) {
+            await asyncio.get_running_loop().run_in_executor(None, result.close);
+        } else {
+            await result.aclose();
+        }
+    } except BaseException as e {
+        logger.warning(
+            f"WS stream could not be closed ({type(e).__name__}: {e}); aborting "
+            "its request's work so the request scope does not commit it. A "
+            "stream still running in its thread can write again before the "
+            "scope closes."
+        );
+        abandon();
+        if not isinstance(e, Exception) {
+            raise;
+        }
+    }
+}
+
+impl _ws_stream_result(send_result: any, result: any, abandon: Callable[[], None]) {
     stream_error: (str | None) = None;
     try {
         if isgenerator(result) {
@@ -289,6 +314,8 @@ impl _ws_stream_result(send_result: any, result: any) {
     } except Exception as e {
         logger.error(f"WS stream error: {e}");
         stream_error = str(e);
+    } finally {
+        await _ws_close_stream(result, abandon);
     }
     if stream_error is None {
         await send_result({'ok': True, 'type': 'done'});

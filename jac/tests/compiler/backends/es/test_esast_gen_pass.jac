@@ -6,9 +6,12 @@ import jaclang;
 import from jaclang.compiler.backends.es { EsastGenPass }
 import jaclang.compiler.backends.es.estree as es;
 import from jaclang.compiler.backends.es.es_unparse { es_to_js }
+import from jaclang.compiler.backends.es.jac_runtime_js { build_jac_prelude_module }
 import from jaclang.compiler.backends.es.backends.react { ReactBackend }
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.compiler.driver.pass_driver { run_pass }
+import from jaclang.compiler.backends.es.framework_backend { FrameworkBackend }
+import from tests.compiler.backends.es.codegen_helpers { run_es_pass }
 
 """Signals-style test backend: wraps a reactive read as `name()` so the
 value-read seam (contract §4.1.1) can be audited without a real Solid backend.
@@ -80,7 +83,7 @@ def walk_es_nodes(nd: es.Node) -> list[es.Node] {
 }
 
 """Return compile errors that are not non-fatal TypeCheckPass diagnostics."""
-def _fatal_errors(prog: JacProgram) -> list {
+def _fatal_errors(prog: JacProgram) -> list[any] {
     import from jaclang.compiler.passes.type_checker_pass { TypeCheckPass }
     return [
         e
@@ -112,7 +115,7 @@ def compile_to_esast(filename: str) -> es.Program {
     );
 
     es_pass = run_pass(EsastGenPass, ir, prog);
-    es_ir = es_pass.ir_out;
+    es_ir = es_pass.module;
 
     assert hasattr(es_ir.gen, "es_ast") , "es_ast attribute missing";
     assert isinstance(es_ir.gen.es_ast, es.Program);
@@ -120,7 +123,9 @@ def compile_to_esast(filename: str) -> es.Program {
 }
 
 """Compile Jac source to an ESTree program with an explicit FrameworkBackend."""
-def compile_to_esast_with_backend(filename: str, backend: object) -> es.Program {
+def compile_to_esast_with_backend(
+    filename: str, backend: FrameworkBackend
+) -> es.Program {
     prog = JacProgram();
     ir = prog.compile(file_path=filename, no_cgen=True);
 
@@ -129,8 +134,8 @@ def compile_to_esast_with_backend(filename: str, backend: object) -> es.Program 
         f"Compilation errors in {filename}: {[str(e) for e in _fatal]}"
     );
 
-    es_pass = run_pass(EsastGenPass, ir, prog, backend=backend);
-    es_ir = es_pass.ir_out;
+    es_pass = run_es_pass(ir, prog, backend);
+    es_ir = es_pass.module;
 
     assert isinstance(es_ir.gen.es_ast, es.Program);
     return es_ir.gen.es_ast;
@@ -924,6 +929,15 @@ test "union JsxElement return type still triggers props-destructure lowering" {
     assert isinstance(error_banner.params[0], es.Identifier);
     assert error_banner.params[0].name == "props";
 
+    # `JsxPage` and `JsxLayout` returns are components too, lowered through the
+    # same props protocol (`return_type_is_jsx` in `symbol_utils` is the one predicate
+    # the checker and the emitter share).
+    for name in ["PageComp", "LayoutComp"] {
+        assert len(funcs[name].params) == 1 , f"{name} should take one props parameter";
+        assert isinstance(funcs[name].params[0], es.Identifier);
+        assert funcs[name].params[0].name == "props" , f"{name} should be emitted with the props-protocol signature";
+    }
+
     direct_ret = _fn_stmts(funcs["direct_call"])[0];
     assert isinstance(direct_ret, es.ReturnStatement);
     direct_call = direct_ret.argument;
@@ -1123,9 +1137,10 @@ test "unsafe_html builtin emits a raw-HTML marker call" {
         "second call site should be routed through the runtime:\n" + js_code
     );
     # The runtime body returns a marker -- the sentinel key must appear in
-    # the embedded `_jac` prelude so client code can branch on it.
-    assert "__jacUnsafeHtml" in js_code , (
-        "runtime must define the `__jacUnsafeHtml` marker key:\n" + js_code
+    # the shared `@jac/prelude` module so client code can branch on it.
+    prelude = build_jac_prelude_module();
+    assert "__jacUnsafeHtml" in prelude , (
+        "runtime must define the `__jacUnsafeHtml` marker key"
     );
     # The identifier must not be emitted as a string literal.
     assert '"unsafe_html"' not in js_code;
@@ -1221,11 +1236,11 @@ test "unsafe_html marker has the correct shape" {
     # The prelude defines `unsafe_html(html)` that returns
     # `{ __jacUnsafeHtml: String(html == null ? "" : html) }`. Both runtime
     # adapters branch on the `__jacUnsafeHtml` key.
-    assert "unsafe_html(html)" in js_code;
-    assert "__jacUnsafeHtml: String(html" in js_code , (
+    prelude = build_jac_prelude_module();
+    assert "unsafe_html(html)" in prelude;
+    assert "__jacUnsafeHtml: String(html" in prelude , (
         "runtime must coerce the argument with String() so non-string\n"
-        "values (e.g. numbers from a walker) don't blow up:\n"
-        + js_code
+        "values (e.g. numbers from a walker) don't blow up"
     );
 }
 
@@ -1302,7 +1317,7 @@ test "augmented reactive assignments do not double-apply the lhs" {
 }
 
 """Diagnostic code strings carried by a list of alerts."""
-def _codes_of(alerts: list) -> list[str] {
+def _codes_of(alerts: list[any]) -> list[str] {
     return [
         a.code.code
         for a in alerts
@@ -1318,10 +1333,10 @@ def compile_fixture_reporting(filename: str) -> JacProgram {
 }
 
 """Run the ES pass with a backend and hand back the program's alerts."""
-def codegen_alerts(filename: str, backend: object) -> list {
+def codegen_alerts(filename: str, backend: FrameworkBackend) -> list[any] {
     prog = JacProgram();
     ir = prog.compile(file_path=fixture_path(filename), no_cgen=True);
-    run_pass(EsastGenPass, ir, prog, backend=backend);
+    run_es_pass(ir, prog, backend);
     return list(prog.errors_had);
 }
 

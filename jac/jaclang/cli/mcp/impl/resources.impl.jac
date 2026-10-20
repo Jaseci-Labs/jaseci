@@ -13,7 +13,7 @@ impl find_repo_root -> str | None {
     for start in starts {
         chain = [start] + list(start.parents);
         for parent in chain {
-            if (parent / "docs" / "docs").is_dir()
+            if (parent / "jac" / "examples").is_dir()
                 and (parent / "jac" / "jaclang").is_dir() {
                 return str(parent);
             }
@@ -28,7 +28,7 @@ impl ResourceProvider._ensure_indexed -> None {
     }
 }
 
-glob _provider_cache: dict = {};
+glob _provider_cache: dict[str, ResourceProvider] = {};
 
 impl get_resource_provider -> ResourceProvider {
     if "instance" not in _provider_cache {
@@ -236,41 +236,9 @@ impl ResourceProvider._read_example(uri: str) -> str {
     return _fetch_example_github(f"jac/examples/{example_name}");
 }
 
-def _read_example_dir(dir_path: str) -> str {
-    result_parts: list[str] = [];
-    p = Path(dir_path);
-    for jac_file in sorted(p.rglob("*.jac")) {
-        rel = jac_file.relative_to(p);
-        try {
-            content = jac_file.read_text();
-            result_parts.append(f"--- {rel} ---\n{content}");
-        } except Exception as e {
-            result_parts.append(f"--- {rel} ---\nError: {e}");
-        }
-    }
-    if not result_parts {
-        return "No .jac files found in this example.";
-    }
-    return "\n\n".join(result_parts);
-}
+def _read_example_dir(dir_path: str) -> str;
 
-def _github_api_get(url: str) -> any {
-    try {
-        req = Request(
-            url,
-            headers={
-                "Accept": "application/vnd.github.v3+json",
-                "User-Agent": "jac-mcp"
-            }
-        );
-        opened: HTTPResponse = urlopen(req, timeout=10);
-        with opened as resp {
-            return json.loads(resp.read().decode());
-        }
-    } except (URLError, json.JSONDecodeError, OSError) {
-        return None;
-    }
-}
+def _github_api_get(url: str) -> any;
 
 impl ResourceProvider._index_examples_local(examples_dir: Path) -> None {
     EXAMPLE_DESCRIPTIONS: dict[str, str] = {
@@ -323,7 +291,49 @@ impl ResourceProvider._fetch_github_categories -> list[str] {
 }
 
 @lru_cache(maxsize=GITHUB_CACHE_MAXSIZE)
-def _fetch_example_github(github_path: str) -> str {
+def _fetch_example_github(github_path: str) -> str;
+
+def _list_jac_files_recursive(
+    github_path: str, base_path: str = ""
+) -> list[tuple[str, str]];
+
+impl _read_example_dir(dir_path: str) -> str {
+    result_parts: list[str] = [];
+    p = Path(dir_path);
+    for jac_file in sorted(p.rglob("*.jac")) {
+        rel = jac_file.relative_to(p);
+        try {
+            content = jac_file.read_text();
+            result_parts.append(f"--- {rel} ---\n{content}");
+        } except Exception as e {
+            result_parts.append(f"--- {rel} ---\nError: {e}");
+        }
+    }
+    if not result_parts {
+        return "No .jac files found in this example.";
+    }
+    return "\n\n".join(result_parts);
+}
+
+impl _github_api_get(url: str) -> any {
+    try {
+        req = Request(
+            url,
+            headers={
+                "Accept": "application/vnd.github.v3+json",
+                "User-Agent": "jac-mcp"
+            }
+        );
+        opened: HTTPResponse = urlopen(req, timeout=10);
+        with opened as resp {
+            return json.loads(resp.read().decode());
+        }
+    } except (URLError, json.JSONDecodeError, OSError) {
+        return None;
+    }
+}
+
+impl _fetch_example_github(github_path: str) -> str {
     jac_files = _list_jac_files_recursive(github_path);
     if not jac_files {
         return "No .jac files found or GitHub API unavailable.";
@@ -345,12 +355,14 @@ def _fetch_example_github(github_path: str) -> str {
     return result;
 }
 
-def _list_jac_files_recursive(github_path: str, base_path: str = "") -> list[tuple] {
+impl _list_jac_files_recursive(
+    github_path: str, base_path: str = ""
+) -> list[tuple[str, str]] {
     data = _github_api_get(f"{GITHUB_API_BASE}/contents/{github_path}");
     if data is None or not isinstance(data, list) {
         return [];
     }
-    results: list[tuple] = [];
+    results: list[tuple[str, str]] = [];
     for item in data {
         name = item.get("name", "");
         rel = f"{base_path}/{name}" if base_path else name;

@@ -1,32 +1,32 @@
-edge SymOf {}
+edge SymOf: NameAtom --> Symbol {}
 
-edge Defines {}
+edge Defines: Symbol --> NameAtom {}
 
-edge Uses {}
+edge Uses: Symbol --> NameAtom {}
 
-edge InScope {}
+edge InScope: UniScopeNode --> Symbol {}
 
-edge ScopePrimary {}
+edge ScopePrimary: UniScopeNode --> Symbol {}
 
-edge ScopeOverload {}
+edge ScopeOverload: UniScopeNode --> Symbol {}
 
-edge ScopeChild {}
+edge ScopeChild: UniScopeNode --> UniScopeNode {}
 
-edge ScopeParent {}
+edge ScopeParent: UniScopeNode --> UniScopeNode {}
 
-edge CfgSucc {}
+edge CfgSucc: UniCFGNode --> UniCFGNode {}
 
-edge CfgTrue {}
+edge CfgTrue: ConditionalNode --> UniCFGNode {}
 
-edge CfgFalse {}
+edge CfgFalse: ConditionalNode --> UniCFGNode {}
 
-edge PlacedIn {}
+edge PlacedIn: ContextAwareNode --> Codespace {}
 
-edge DecidedCodespace {}
+edge DecidedCodespace: Module --> Codespace {}
 
-edge CalleeDecl {}
+edge CalleeDecl: FuncCall --> Ability {}
 
-edge Absorbs {}
+edge Absorbs: Import --> Module {}
 
 node Codespace {
     has kind: str = "";
@@ -38,63 +38,58 @@ glob _CODESPACES: dict[str, Codespace] = {
          "native": Codespace(kind="native")
      };
 
-def codespace_node(kind: str) -> Codespace {
-    found = _CODESPACES.get(kind);
-    if found is None {
-        found = Codespace(kind=kind);
-        _CODESPACES[kind] = found;
-    }
-    return found;
-}
+def codespace_node(kind: str) -> Codespace;
 
-edge TypeOf {}
+edge TypeOf: AstTypedVarNode | Expr --> TypeBase {}
 
-edge NarrowedTypeOf {}
+edge NarrowedTypeOf: Expr --> TypeBase {}
 
-edge EventTriggerOf {}
+edge CalleeSignature: FuncCall --> TypeBase {}
 
-edge SharedOf {}
+edge EventTriggerOf: Ability --> TypeBase {}
 
-edge PrivOf {}
+edge SharedOf: ClassType --> ClassDetailsShared {}
 
-edge BaseOf {}
+edge PrivOf: ClassType --> ClassDetailsPrivate {}
 
-edge MroOf {}
+edge BaseOf: ClassDetailsShared --> TypeBase {}
 
-edge TypeParamOf {}
+edge MroOf: ClassDetailsShared --> ClassType {}
 
-edge TypeArgOf {}
+edge TypeParamOf: ClassDetailsShared | FunctionType --> TypeVarType {}
 
-edge ParamOf {}
+edge TypeArgOf: ClassDetailsPrivate --> TypeBase {}
 
-edge ReturnsOf {}
+edge ParamOf: FunctionType --> Parameter {}
 
-edge GuardOf {}
+edge ReturnsOf: FunctionType --> TypeBase {}
 
-edge ParamTypeOf {}
+edge GuardOf: FunctionType --> TypeBase {}
 
-edge ParamDefaultOf {}
+edge ParamTypeOf: Parameter --> TypeBase {}
 
-edge UnionMemberOf {}
+edge ParamDefaultOf: Parameter --> Expr {}
 
-edge BoundOf {}
+edge UnionMemberOf: UnionType --> TypeBase {}
 
-edge ConstraintOf {}
+edge BoundOf: TypeVarType --> TypeBase {}
 
-edge OverloadOf {}
+edge ConstraintOf: TypeVarType --> TypeBase {}
 
-edge EnumClassOf {}
+edge OverloadOf: OverloadedType --> FunctionType {}
 
-edge ValueTypeOf {}
+edge EnumClassOf: EnumMemberType --> ClassType {}
 
-edge MemberInfoOf {}
+edge ValueTypeOf: ClassDetailsShared | EnumMemberInfo --> TypeBase {}
 
-edge TypeMemberOf {
+edge MemberInfoOf: EnumMemberType --> EnumMemberInfo {}
+
+edge TypeMemberOf: ClassDetailsShared --> TypeBase {
     has name: str = "";
 }
 
-edge EnumMemberOf {
+edge EnumMemberOf: ClassDetailsShared --> EnumMemberInfo {
     has name: str = "";
 }
 
-edge DeclScopeOf {}
+edge DeclScopeOf: ClassDetailsShared | ModuleType --> UniScopeNode {}

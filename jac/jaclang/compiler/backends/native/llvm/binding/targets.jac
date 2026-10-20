@@ -8,59 +8,12 @@ import from ctypes {
     c_void_p,
     string_at
 }
-import from jaclang.compiler.backends.native.llvm.binding { ffi }
-import from jaclang.compiler.backends.native.llvm.binding.initfini { llvm_version_info }
-import from jaclang.compiler.backends.native.llvm.binding.common {
-    _decode_string,
-    _encode_string
-}
-import from collections { namedtuple }
-import from jaclang.compiler.backends.native.llvm.binding.config {
-    _has_svml as has_svml
-}
-
-with entry {
-    Triple = namedtuple(
-        'Triple', ['Arch', 'SubArch', 'Vendor', 'OS', 'Env', 'ObjectFormat']
-    );
-}
 
 """
     Return a target triple suitable for generating code for the current process.
     An example when the default triple from ``get_default_triple()`` is not be
     suitable is when LLVM is compiled for 32-bit but the process is executing
     in 64-bit mode.
-    """
-def get_process_triple -> object {
-    with ffi.OutputString() as out {
-        ffi.lib.LLVMPY_GetProcessTriple(out);
-        return str(out);
-    }
-}
-
-"""
-    Return a tuple of the parts of the given triple.
-    """
-def get_triple_parts(triple: str) -> object {
-    with ffi.OutputString() as arch, ffi.OutputString() as vendor, ffi.OutputString() as os, ffi.OutputString() as env {
-        ffi.lib.LLVMPY_GetTripleParts(triple.encode('utf8'), arch, vendor, os, env);
-        arch = str(arch);
-        subarch = '';
-        for _str in triple.split('-') {
-            if _str.startswith(arch) {
-                subarch = _str[len(arch):];
-                break;
-            }
-        }
-        return Triple(
-            arch, subarch, str(vendor), str(os), str(env), get_object_format(triple)
-        );
-    }
-}
-
-"""
-    Maps feature name to a boolean indicating the availability of the feature.
-    Extends ``dict`` to add `.flatten()` method.
     """
 class FeatureMap(`dict) {
     """
@@ -93,28 +46,6 @@ class FeatureMap(`dict) {
     If LLVM has not implemented this feature or it fails to get the information,
     this function will raise a RuntimeError exception.
     """
-def get_host_cpu_features -> object {
-    with ffi.OutputString() as out {
-        outdict = FeatureMap();
-        if not ffi.lib.LLVMPY_GetHostCPUFeatures(out) {
-            return outdict;
-        }
-        flag_map = {'+': True, '-': False};
-        content = str(out);
-        if content {
-            for feat in content.split(',') {
-                if feat {
-                    outdict[feat[1:]] = flag_map[feat[0]];
-                }
-            }
-        }
-        return outdict;
-    }
-}
-
-"""
-    Return the default target triple LLVM is configured to produce code for.
-    """
 def get_default_triple -> str {
     with ffi.OutputString() as out {
         ffi.lib.LLVMPY_GetDefaultTargetTriple(out);
@@ -126,13 +57,6 @@ def get_default_triple -> str {
     Get the name of the host's CPU, suitable for using with
     :meth:`Target.create_target_machine()`.
     """
-def get_host_cpu_name -> object {
-    with ffi.OutputString() as out {
-        ffi.lib.LLVMPY_GetHostCPUName(out);
-        return str(out);
-    }
-}
-
 glob llvm_version_major = llvm_version_info[0],
      _object_formats = {
          0: "Unknown",
@@ -162,7 +86,7 @@ def get_object_format(triple: any = None) -> object {
 """
     Create a TargetData instance for the given *layout* string.
     """
-def create_target_data(layout: any) -> object {
+def create_target_data(layout: str) -> TargetData {
     return TargetData(ffi.lib.LLVMPY_CreateTargetData(_encode_string(layout)));
 }
 
@@ -171,6 +95,17 @@ def create_target_data(layout: any) -> object {
     Use :func:`create_target_data` to create instances.
     """
 class TargetData(ffi.ObjectRef) {
+    def get_global_struct_layout(
+        self: TargetData, value: ValueRef, field_count: int
+    ) -> tuple[list[int], int] {
+        """Query a global's struct type while its owning module is alive.""";
+        typ = ffi.lib.LLVMPY_GlobalGetValueType(value);
+        return (
+            [int(self.get_element_offset(typ, i)) for i in range(field_count)],
+            int(self.get_abi_size(typ))
+        );
+    }
+
     def __str__(self: TargetData) -> object {
         if self._closed {
             return "<dead TargetData>";
@@ -350,9 +285,17 @@ class TargetMachine(ffi.ObjectRef) {
 
     """
         Represent the module as a code object, suitable for use with
-        the platform's linker.  Returns a byte string.
+        the platform's linker.  Returns a byte string.  Private functions
+        are emitted with internal linkage, which is equivalent for code
+        generation but keeps a local symbol, so a debugger or crash handler
+        can name the function a fault is in.
         """
     def emit_object(self: TargetMachine, module: any) -> bytes {
+        for fn in module.functions {
+            if not fn.is_declaration and fn.linkage == Linkage.private {
+                fn.linkage = Linkage.internal;
+            }
+        }
         return self._emit_to_memory(module, use_object=True);
     }
 
@@ -407,7 +350,6 @@ class TargetMachine(ffi.ObjectRef) {
 }
 
 with entry {
-    ffi.lib.LLVMPY_GetProcessTriple.argtypes = [POINTER(c_char_p)];
     ffi.lib.LLVMPY_GetTripleParts.argtypes = [
         c_char_p,
         POINTER(c_char_p),
@@ -415,10 +357,7 @@ with entry {
         POINTER(c_char_p),
         POINTER(c_char_p)
     ];
-    ffi.lib.LLVMPY_GetHostCPUFeatures.argtypes = [POINTER(c_char_p)];
-    ffi.lib.LLVMPY_GetHostCPUFeatures.restype = c_int;
     ffi.lib.LLVMPY_GetDefaultTargetTriple.argtypes = [POINTER(c_char_p)];
-    ffi.lib.LLVMPY_GetHostCPUName.argtypes = [POINTER(c_char_p)];
     ffi.lib.LLVMPY_GetTripleObjectFormat.argtypes = [c_char_p];
     ffi.lib.LLVMPY_GetTripleObjectFormat.restype = c_int;
     ffi.lib.LLVMPY_CreateTargetData.argtypes = [c_char_p];

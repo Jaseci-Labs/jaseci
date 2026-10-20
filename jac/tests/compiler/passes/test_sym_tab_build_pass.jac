@@ -110,7 +110,7 @@ test "inner compr scope linking" {
 """The symbol table records every guard branch, live or dead (version-agnostic)."""
 test "version conditional symbols are all recorded in the symbol table" {
     import ast as py_ast;
-    import from jaclang.compiler.passes.pyast_load_pass { PyastBuildPass }
+    import from jaclang.compiler.passes.pyast_load_pass { build_python_module }
     import from jaclang.compiler.passes.sym_tab_build_pass { SymTabBuildPass }
 
     code = """
@@ -130,9 +130,7 @@ Always = "always_available"
     source = uni.Source(code, "test_version.py");
     py_ast_node = py_ast.parse(code);
 
-    mod = PyastBuildPass(
-        ir_in=uni.PythonModuleAst(py_ast_node, orig_src=source)
-    ).ir_out;
+    mod = build_python_module(uni.PythonModuleAst(py_ast_node, orig_src=source));
 
     run_pass(SymTabBuildPass, mod, prog);
 
@@ -148,7 +146,7 @@ Always = "always_available"
 test "version-live branch resolves, dead branch does not" {
     import sys;
     import ast as py_ast;
-    import from jaclang.compiler.passes.pyast_load_pass { PyastBuildPass }
+    import from jaclang.compiler.passes.pyast_load_pass { build_python_module }
     import from jaclang.compiler.passes.sym_tab_build_pass { SymTabBuildPass }
     import from jaclang.compiler.types.type_utils { collect_member_syms }
 
@@ -169,9 +167,7 @@ if sys.version_info >= (3, 15):
     prog = JacProgram();
     source = uni.Source(code, "test_stub_module.py");
     py_ast_node = py_ast.parse(code);
-    mod = PyastBuildPass(
-        ir_in=uni.PythonModuleAst(py_ast_node, orig_src=source)
-    ).ir_out;
+    mod = build_python_module(uni.PythonModuleAst(py_ast_node, orig_src=source));
     run_pass(SymTabBuildPass, mod, prog);
 
     assert collect_member_syms(mod, "MINYEAR") , "unguarded symbol should resolve";
@@ -187,7 +183,7 @@ if sys.version_info >= (3, 15):
 test "version-guarded class members resolve to the live branch" {
     import sys;
     import ast as py_ast;
-    import from jaclang.compiler.passes.pyast_load_pass { PyastBuildPass }
+    import from jaclang.compiler.passes.pyast_load_pass { build_python_module }
     import from jaclang.compiler.passes.sym_tab_build_pass { SymTabBuildPass }
     import from jaclang.compiler.types.type_utils { collect_member_syms }
 
@@ -207,9 +203,7 @@ class C:
     prog = JacProgram();
     source = uni.Source(code, "test_guarded_class.py");
     py_ast_node = py_ast.parse(code);
-    mod = PyastBuildPass(
-        ir_in=uni.PythonModuleAst(py_ast_node, orig_src=source)
-    ).ir_out;
+    mod = build_python_module(uni.PythonModuleAst(py_ast_node, orig_src=source));
     run_pass(SymTabBuildPass, mod, prog);
 
     cls_sym = mod.lookup("C", deep=False);
@@ -221,4 +215,90 @@ class C:
         assert not collect_member_syms(cls_scope, "dead_method") , "dead `else` must not resolve";
     }
     assert not collect_member_syms(cls_scope, "future_method") , "dead guard must not resolve";
+}
+
+test "absorbing a local declaration preserves its binding and overloads" {
+    import from jaclang.compiler.passes.sym_tab_build_pass { SymTabBuildPass }
+    prog = JacProgram();
+    scope = prog.parse_source(
+        "def answer() -> int { return 42; }", "local_include.jac"
+    );
+    builder = run_pass(SymTabBuildPass, scope, prog);
+    symbol = scope.lookup("answer");
+    assert symbol is not None;
+    declaration = symbol.decl;
+    builder._import_absorbed_symbol(scope, symbol);
+    assert scope.lookup("answer") is symbol;
+    assert symbol.defn == [declaration] , "self-absorption duplicated a local declaration";
+    assert scope.names_in_scope_overload.get("answer", []) == [];
+    assert declaration.sym is symbol;
+}
+
+test "self include preserves the existing overload set" {
+    import from jaclang.compiler.passes.sym_tab_build_pass { SymTabBuildPass }
+    prog = JacProgram();
+    scope = prog.parse_source(
+        "def choose(value: int) -> int { return value; }\n"
+            + "def choose(value: str) -> str { return value; }\n"
+            + "include self_include;\n",
+        "self_include.jac"
+    );
+    scope.get_all_sub_nodes(uni.Import)[0].absorbed_mod = scope;
+    run_pass(SymTabBuildPass, scope, prog);
+    symbol = scope.lookup("choose");
+    assert symbol is not None;
+    assert len(symbol.defn) == 2;
+    assert len(scope.names_in_scope_overload.get("choose", [])) == 1;
+    assert symbol.parent_tab is scope;
+}
+
+test "include bindings preserve source declarations and lazy symbol providers" {
+    import from pathlib { Path }
+    import from tempfile { TemporaryDirectory }
+    import from jaclang.compiler.driver.compile_options { CompileOptions }
+    import from jaclang.compiler.passes.sym_tab_build_pass { SymTabBuildPass }
+    import from jaclang.compiler.types.stubcat.locate { jaclang_pkg_dir }
+    import from jaclang.compiler.types.stubcat.writer { build_module_iface }
+    import from jaclang.compiler.types.stubcat.modiface {
+        open_module_iface,
+        iface_module
+    }
+    import from jaclang.compiler.types.types { FunctionType }
+    with TemporaryDirectory() as directory {
+        source_path = Path(directory) / "definitions.jac";
+        source_path.write_text("def answer() -> int { return 42; }\n");
+        prog = JacProgram();
+        source = prog.compile(
+            str(source_path),
+            options=CompileOptions(
+                no_cgen=True,
+                symtab_ir_only=True,
+                need_full_ast=True,
+                default_codespace="server"
+            )
+        );
+        evaluator = prog.get_type_evaluator();
+        payload = build_module_iface(source, evaluator, jaclang_pkg_dir());
+        catalog = open_module_iface(payload, jaclang_pkg_dir());
+        assert catalog is not None;
+        hydrated = iface_module(catalog);
+        assert hydrated is not None;
+        for imported in (source, hydrated) {
+            original = imported.lookup("answer");
+            assert original is not None;
+            declaration = original.decl;
+            consumer = prog.parse_source(
+                "include definitions;", str(Path(directory) / "consumer.jac")
+            );
+            consumer.get_all_sub_nodes(uni.Import)[0].absorbed_mod = imported;
+            run_pass(SymTabBuildPass, consumer, prog);
+            binding = consumer.lookup("answer");
+            assert binding is not None and binding is not original;
+            assert declaration.sym is original , "include rebound the source declaration";
+            assert binding.decl is not declaration;
+            assert binding.parent_tab is consumer;
+            assert binding.provider is original.provider;
+            assert isinstance(evaluator.get_type_of_symbol(binding), FunctionType);
+        }
+    }
 }

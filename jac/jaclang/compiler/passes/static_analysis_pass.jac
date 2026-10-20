@@ -1,70 +1,3 @@
-import from jaclang.compiler.frontend.unitree {
-    Ability,
-    Archetype,
-    Assignment,
-    AtomTrailer,
-    BinaryExpr,
-    Bool,
-    CompareExpr,
-    ConnectOp,
-    CtrlStmt,
-    DisconnectOp,
-    DisengageStmt,
-    EdgeOpRef,
-    ElseIf,
-    ElseStmt,
-    EventSignature,
-    FString,
-    FilterCompr,
-    FinallyStmt,
-    Float,
-    ForeverStmt,
-    FormattedValue,
-    FuncSignature,
-    IfStmt,
-    ImplDef,
-    Import,
-    InForStmt,
-    Int,
-    IterForStmt,
-    KWPair,
-    MatchPattern,
-    Module,
-    ModuleItem,
-    ModulePath,
-    Name,
-    Null,
-    RaiseStmt,
-    ReturnStmt,
-    Semi,
-    SubTag,
-    Token,
-    UniNode,
-    UniScopeNode,
-    WhileStmt
-}
-import from jaclang.compiler.passes.transform { Transform }
-import from jaclang.compiler.frontend.constant { ExprCtx, SymbolType }
-import from jaclang.compiler.frontend.diagnostics {
-    W1103,
-    W2001,
-    W2002,
-    W2003,
-    W2058,
-    W2063,
-    W2070,
-    W2074,
-    W2075,
-    E1122,
-    E1123,
-    E1125,
-    E2018,
-    E2027,
-    E2055,
-    E2083
-}
-import type from jaclang.compiler.driver.program { JacProgram }
-
 glob BUILTIN_NAMES: set[str] = {
          'ArithmeticError',
          'AssertionError',
@@ -235,41 +168,27 @@ glob BUILTIN_NAMES: set[str] = {
          'Type': 'type'
      };
 
-def is_bootstrap_compiled_module(mod_path: str) -> bool {
-    import from jaclang.bootstrap_manifest { is_seed_source }
-    norm = mod_path.replace("\\", "/");
-    if norm.startswith("jaclang/") {
-        return is_seed_source(norm[len("jaclang/"):]);
-    }
-    marker = "/jaclang/";
-    idx = norm.rfind(marker);
-    if idx < 0 {
-        return False;
-    }
-    return is_seed_source(norm[idx + len(marker):]);
+def is_bootstrap_compiled_module(mod_path: str) -> bool;
+
+def is_ambient_provider_module(mod_path: str) -> bool;
+
+walker UnusedSymbolWalker(ScopeWalker) {
+    has analysis: StaticAnalysisPass;
+
+    can check_scope with UniScopeNode entry;
 }
 
-def is_ambient_provider_module(mod_path: str) -> bool {
-    return (mod_path.endswith("builtin.jac") or mod_path.endswith("builtin.py"))
-        and "runtime" in mod_path;
-}
+walker StaticAnalysisPass(CompilerPass) {
+    static has contract: PassContract = PassContract(
+        provides=(AnalysisFact.STATIC_CHECKS, )
+    );
 
-walker StaticAnalysisPass(Transform) {
-    has prog: JacProgram,
-        ir_in: Module,
-        cancel_token: any = None,
-        _checked_scopes: set[int] = set();
-
-    static has PROVIDES: tuple = ('static-checks', ),
-        HOST_PASS: bool = True;
-
-    def postinit -> None;
-    def transform(ir_in: Module) -> Module;
     def _run_impl(ir_in: Module) -> Module;
     can run_walk with Module entry;
     def _check_unused_symbols(scope: UniScopeNode) -> None;
     def _check_undefined_names(mod: Module) -> None;
     def _literal_case_suggestion(name: str) -> (str | None);
+    def _enclosing_class_member(name_nd: Name) -> (str | None);
     def _osp_shape_position(name_nd: Name) -> (str | None);
     def _native_type_position(name_nd: Name) -> (str | None);
     def _check_unreachable_code(mod: Module) -> None;

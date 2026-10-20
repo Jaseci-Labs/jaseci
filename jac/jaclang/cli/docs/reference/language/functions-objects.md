@@ -62,6 +62,50 @@ The tail expression is type-checked exactly like an explicit `return`
   returns `None`, so `def f -> int { 42; }` remains the `E1004`
   missing-return error, never a silent implicit return.
 
+#### Guaranteed Tail Calls
+
+`return tail f(args);` returns the result of a call that reuses the
+caller's frame. On the native backend it is a guaranteed tail call (LLVM
+`musttail`): recursion and dispatch through tail calls run in constant
+stack however deep they go, at every optimization level. This is how a
+CPython-style evaluator hands control from one instruction handler to the
+next.
+
+```jac
+def is_even(n: int) -> bool {
+    if n == 0 {
+        return True;
+    }
+    return tail is_odd(n - 1);
+}
+
+def is_odd(n: int) -> bool {
+    if n == 0 {
+        return False;
+    }
+    return tail is_even(n - 1);
+}
+```
+
+A handler table of C function pointers dispatches the same way:
+`return tail frame.view(1)[0].step(n, acc, frame);`.
+
+`tail` is contextual: it marks a tail call only between `return` and a
+name that starts the call, so a variable named `tail` still reads as one
+(`return tail;`, `return tail(x);`, `return tail.next;`). The operand must be
+a call (`E0097`).
+
+The native backend refuses, with `E5114` naming the reason, a call that
+cannot reuse the frame: the callee must take the caller's parameter list
+and return type with the same calling convention, neither may be variadic
+or take a parameter by an ABI attribute (`sret`, `byval`), no argument may
+be the address of a caller local, and nothing may be left to run after the
+call: no owned local to release, no open region, no enclosing `try`,
+`finally` or `with`, and no conversion of the result. Such a call is never
+quietly lowered as an ordinary call. The Python backend runs `return tail`
+as an ordinary call, so deep tail recursion there is still bounded by the
+interpreter's recursion limit.
+
 ### 2 Docstrings
 
 Docstrings appear *before* declarations (not inside like Python):
@@ -146,7 +190,7 @@ def sum_all(*values: int) -> int {
 }
 
 # **kwargs collects extra keyword arguments
-def build_config(**options: object) -> dict {
+def build_config(**options: object) -> dict[str, any] {
     return dict(options);
 }
 
@@ -406,6 +450,8 @@ glob add_five = make_adder(5);  # add_five(10) returns 15
 
     Captured values are read freely. To mutate state across calls, prefer returning a configured object (see [IIFE & Anonymous Factories](#8-iife-anonymous-factories) below) over rebinding a captured local.
 
+    A closure captures the *binding*, not the value it holds at that moment. A closure created in a loop body is the exception for names local to the loop: it keeps its own iteration's values once that iteration ends. See [Variables and Scope](variables-and-scope.md#4-scope-rules).
+
 ### 8 IIFE & Anonymous Factories
 
 An *Immediately Invoked Function Expression* defines a function and calls it in the same expression -- useful for inlining a one-shot computation, or for producing a configured value from a private scope.
@@ -422,7 +468,7 @@ with entry {
 
 ```jac
 with entry {
-    config = (def () -> dict {
+    config = (def () -> dict[str, any] {
         host = "localhost";
         port = 8080;
         return {"host": host, "port": port, "url": f"http://{host}:{port}"};
@@ -971,7 +1017,7 @@ impl Calculator.multiply {
 
 A single `.jac` module can span all three codespaces -- server, client, and native. There is no per-file spelling for placement: the compiler infers each declaration's codespace from the code itself (JSX and npm imports seed client, extern C declarations seed native, everything else defaults to server), and `[placement.pins]` in `jac.toml` is the override when a decision must be forced. The only compound filename suffixes are the annexes: `.impl.jac` for implementations and `.test.jac` for tests. See [Codespace Model](primitives.md#codespace-model) for the inference rules and [Placement](../placement.md) for pins.
 
-Under `[build] default_codespace = "native"` (the default), the placement solver decides whether a whole anchor-free module can lower natively; a module that prefers native but cannot lower demotes to the server codespace with a note. To force a whole module native, use `jac nacompile`, `jac build --as native`, or `CompileOptions(force_codespace='native')`.
+Under `[placement] default = "native"` (the default), the placement solver decides whether a whole anchor-free module can lower natively; a module that prefers native but cannot lower demotes to the server codespace with a note. To force a whole module native, use `jac build <file> --native` or `CompileOptions(force_codespace='native')`.
 
 #### Native Modules
 

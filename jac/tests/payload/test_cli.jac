@@ -22,7 +22,7 @@ def run(argv: list[str]) -> tuple[int, str] {
 test "no subcommand and unknown subcommand are usage errors" {
     (rc, err) = run([]);
     assert rc == 1;
-    assert err.startswith("payload: usage: payload <fetch-pbs|fetch-typeshed|");
+    assert err.startswith("payload: usage: payload <fetch-typeshed|");
     assert "|mkpayload|typeshed-sha|stubcat|pack> ..." in err;
 
     (rc, err) = run(["bogus"]);
@@ -32,11 +32,6 @@ test "no subcommand and unknown subcommand are usage errors" {
 
 test "every subcommand reports its usage when positional args are missing" {
     cases = [
-        (["fetch-pbs"], "usage: payload fetch-pbs <os-arch> <dest-dir>"),
-        (
-            ["fetch-pbs", "linux-x86_64"],
-            "usage: payload fetch-pbs <os-arch> <dest-dir>"
-        ),
         (["fetch-llvm"], "usage: payload fetch-llvm <dest-dir>"),
         (
             ["fetch-bun", "linux-x86_64"],
@@ -55,7 +50,7 @@ test "every subcommand reports its usage when positional args are missing" {
         (["typeshed-sha"], "usage: payload typeshed-sha <commit>"),
         (
             ["stubcat", "/pbs", "/site"],
-            "usage: payload stubcat <pbs-python-dir> <site-dir> <out.bin>"
+            "usage: payload stubcat <python-dir> <site-dir> <out.bin>"
         ),
         (
             ["pack", "/stub", "/payload"],
@@ -74,11 +69,6 @@ test "every subcommand reports its usage when positional args are missing" {
 test "offline argument validation dies before any network or subprocess" {
     tmp = tempfile.mkdtemp(prefix="jac-payload-cli-");
     try {
-        (rc, err) = run(["fetch-pbs", "plan9-z80", os.path.join(tmp, "pbs")]);
-        assert rc == 1
-            and err == "payload: fetch-pbs: unsupported platform 'plan9-z80'\n";
-        assert not os.path.exists(os.path.join(tmp, "pbs"));
-
         (rc, err) = run(["fetch-bun", "plan9-z80", os.path.join(tmp, "bun")]);
         assert rc == 1
             and err == "payload: fetch-bun: unsupported platform 'plan9-z80'\n";
@@ -125,14 +115,13 @@ test "offline argument validation dies before any network or subprocess" {
 test "mkpayload trailing flags parse into MkPayloadOpts; unknown flags are ignored" {
     opts = parse_mkpayload_flags([]);
     assert opts.shim_so is None and opts.bun_bin is None and opts.link_source is None;
-    assert opts.musl_dir is None and opts.wasm_libc_dir is None;
+    assert opts.musl_dirs == [] and opts.wasm_libc_dir is None;
     assert opts.precompiled_cache is None and opts.layer_cache is None;
-    assert not opts.skip_precompile and not opts.seal and not opts.debug_src;
+    assert not opts.seal and not opts.debug_src;
 
     opts = parse_mkpayload_flags(
         [
             "--shim=/b/libjacllvm.so",
-            "--skip-precompile",
             "--link-source=/repo/jac",
             "--precompiled-cache=/c/pre",
             "--layer-cache=/c/layers",
@@ -148,12 +137,11 @@ test "mkpayload trailing flags parse into MkPayloadOpts; unknown flags are ignor
         ]
     );
     assert opts.shim_so == "/b/libjacllvm.so";
-    assert opts.skip_precompile;
     assert opts.link_source == "/repo/jac";
     assert opts.precompiled_cache == "/c/pre";
     assert opts.layer_cache == "/c/layers";
     assert opts.bun_bin == "/b/bun";
-    assert opts.musl_dir == "/m";
+    assert opts.musl_dirs == ["/m"];
     assert opts.wasm_libc_dir == "/w";
     assert opts.seal and opts.debug_src;
     assert not hasattr(opts, "nvim_dir") and not hasattr(opts, "pyembed_so");

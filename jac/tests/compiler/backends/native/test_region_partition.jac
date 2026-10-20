@@ -9,9 +9,8 @@ byte-identical across gc modes.
 
 import os;
 import subprocess;
-import sys;
 import tempfile;
-import from tests.support { TESTS_DIR }
+import from tests.support { jac_command, TESTS_DIR }
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.compiler.driver.compile_options { CompileOptions }
 
@@ -35,27 +34,44 @@ glob FIXTURE = os.path.join(
          "region_page_share.jac"
      ),
      MODE_FLAGS = {
-         "none": ["--gc", "none"],
-         "rc": ["--gc", "rc"],
-         "cycles": ["--gc", "cycles"]
+         "none": ["--memory", "nogc"],
+         "rc": ["--memory", "rc"],
+         "cycles": ["--memory", "managed"]
      };
 
 test "children draw pages from the parent behind the reabsorb contract" {
     prog = JacProgram();
     ir = prog.compile(
-        file_path=SHARE_FIXTURE, options=CompileOptions(aot_mode=True, na_gc_mode="rc")
+        file_path=SHARE_FIXTURE,
+        options=CompileOptions(aot_mode=True, memory_profile="rc")
     );
     assert not prog.errors_had , [e.pretty_print() for e in prog.errors_had];
     text = str(ir.gen.llvm_ir);
-    assert "raw.draw.lock" in text , "no parent draw path in __jac_region_raw";
-    assert "raw.run" in text , "no run carving in __jac_region_raw";
-    assert "merge.run" in text , "no run splice in __jac_region_drop";
+    assert "__jac_region_partition" in text , "no partition call in the module";
+    # The region kernel is its own unit; the program that links it holds its
+    # draw and reabsorb paths under the unit's prefix.
+    import from jaclang.compiler.backends.native.link_plan {
+        ArtifactKind,
+        build_link_plan,
+        whole_program_module
+    }
+    plan = build_link_plan(prog, [ir.loc.mod_path], prog.options);
+    spec = plan.glue_spec(ArtifactKind.JIT, "jit", False);
+    (linked, _exports) = whole_program_module(plan, spec);
+    linked_any: any = linked;
+    fn_names = {str(f.name) for f in linked_any.functions};
+    assert any(n.endswith("._draw_page") for n in fn_names) , (
+        "the region kernel's parent draw path is not linked"
+    );
+    assert any(n.endswith("._reabsorb") for n in fn_names) , (
+        "the region kernel's reabsorb path is not linked"
+    );
     with tempfile.TemporaryDirectory() as tmp {
         outs: dict[str, str] = {};
         for mode in ("none", "rc", "cycles") {
             out_bin = os.path.join(tmp, f"share_{mode}");
             res = subprocess.run(
-                [sys.executable, "-m", "jaclang", "nacompile", SHARE_FIXTURE]
+                jac_command("build", "--native", SHARE_FIXTURE)
                     + MODE_FLAGS[mode]
                     + ["-o", out_bin],
                 capture_output=True,
@@ -79,7 +95,7 @@ test "partition(n) sugar reabsorbs like the per-child form across gc modes" {
         for mode in ("none", "rc", "cycles") {
             out_bin = os.path.join(tmp, f"partn_{mode}");
             res = subprocess.run(
-                [sys.executable, "-m", "jaclang", "nacompile", SUGAR_FIXTURE]
+                jac_command("build", "--native", SUGAR_FIXTURE)
                     + MODE_FLAGS[mode]
                     + ["-o", out_bin],
                 capture_output=True,
@@ -105,7 +121,7 @@ test "partition reabsorb and zombie teardown across gc modes" {
         for mode in ("none", "rc", "cycles") {
             out_bin = os.path.join(tmp, f"part_{mode}");
             res = subprocess.run(
-                [sys.executable, "-m", "jaclang", "nacompile", FIXTURE]
+                jac_command("build", "--native", FIXTURE)
                     + MODE_FLAGS[mode]
                     + ["-o", out_bin],
                 capture_output=True,

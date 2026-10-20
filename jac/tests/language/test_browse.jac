@@ -23,6 +23,7 @@ import from jaclang.cli.browser_engine {
     connect,
     _walk_ax,
     _key_code,
+    _normalize_url,
     _cookie_param,
     _chrome_args,
     _parse_viewport,
@@ -145,17 +146,17 @@ def _serve_with_ping(srv: socket.socket, make_reply: any) {
 }
 
 
-def _reply_small(req: dict) -> dict {
+def _reply_small(req: dict[str, any]) -> dict[str, any] {
     return {"id": req["id"], "result": {"value": 42}};
 }
 
 
-def _reply_large(req: dict) -> dict {
+def _reply_large(req: dict[str, any]) -> dict[str, any] {
     return {"id": req["id"], "result": {"value": "x" * 300, "echo": req["params"]}};
 }
 
 
-def _reply_error(req: dict) -> dict {
+def _reply_error(req: dict[str, any]) -> dict[str, any] {
     return {"id": req["id"], "error": {"code": -32000, "message": "boom"}};
 }
 
@@ -355,6 +356,30 @@ test "_key_code maps letters and digits to DOM codes, passes through the rest" {
 }
 
 
+test "a bare host:port is a host, and local hosts default to http" {
+    assert _normalize_url("localhost:8010") == "http://localhost:8010";
+    assert _normalize_url("localhost") == "http://localhost";
+    assert _normalize_url("127.0.0.1:3000/app") == "http://127.0.0.1:3000/app";
+    assert _normalize_url("[::1]:8000") == "http://[::1]:8000";
+    assert _normalize_url("app.localhost:8000") == "http://app.localhost:8000";
+    assert _normalize_url("example.com") == "https://example.com";
+    assert _normalize_url("example.com:8443/a") == "https://example.com:8443/a";
+    assert _normalize_url("localhost.example.com") == "https://localhost.example.com";
+}
+
+test "urls that already carry a scheme pass through" {
+    for url in [
+        "http://localhost:8010/",
+        "https://example.com",
+        "about:blank",
+        "data:text/html,<p>hi</p>",
+        "file:///tmp/page.html"
+    ] {
+        assert _normalize_url(url) == url;
+    }
+}
+
+
 test "_cookie_param projects a CDP cookie to Network.setCookies shape" {
     full = _cookie_param(
         {
@@ -505,7 +530,7 @@ def _serve_script(srv: socket.socket, handler: any) {
 
 
 """Reply to Runtime.enable with its result plus replayed console/log events."""
-def _console_replay_handler(req: dict) -> list {
+def _console_replay_handler(req: dict[str, any]) -> list[any] {
     if req["method"] == "Runtime.enable" {
         return [
             {"id": req["id"], "result": {}},
@@ -548,10 +573,10 @@ test "CDP.drain_events collects event frames stashed around calls" {
 # ---------------------------------------------------------------------------
 # Actionability: scroll-into-view + viewport/hit checks (issue #6597, gap 1)
 # ---------------------------------------------------------------------------
-glob _FN_DECLS: list = [];
+glob _FN_DECLS: list[any] = [];
 
 
-def _actionability_replies(req: dict, state: dict) -> list {
+def _actionability_replies(req: dict[str, any], state: dict[str, any]) -> list[any] {
     if req["method"] == "Runtime.evaluate" {
         return [{"id": req["id"], "result": {"result": {"objectId": "node-1"}}}];
     }
@@ -563,14 +588,14 @@ def _actionability_replies(req: dict, state: dict) -> list {
 }
 
 
-def _onscreen_handler(req: dict) -> list {
+def _onscreen_handler(req: dict[str, any]) -> list[any] {
     return _actionability_replies(
         req, {"ok": True, "x": 100.0, "y": 200.0, "hitOk": True, "hit": "input#below"}
     );
 }
 
 
-def _offscreen_handler(req: dict) -> list {
+def _offscreen_handler(req: dict[str, any]) -> list[any] {
     return _actionability_replies(
         req,
         {"ok": False, "reason": "point (437,-1680) is outside the 1280x720 viewport"}
@@ -578,7 +603,7 @@ def _offscreen_handler(req: dict) -> list {
 }
 
 
-def _intercepted_handler(req: dict) -> list {
+def _intercepted_handler(req: dict[str, any]) -> list[any] {
     return _actionability_replies(
         req, {"ok": True, "x": 50.0, "y": 60.0, "hitOk": False, "hit": "div#overlay"}
     );

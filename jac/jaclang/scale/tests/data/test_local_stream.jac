@@ -5,14 +5,12 @@ No external dependencies; runs everywhere.
 
 import time;
 import threading;
-import from jaclang.scale.events.broker { Event, RetryPolicy }
-import from jaclang.scale.events.streams.local { LocalEventStream }
 
 
 def _make_broker(
-    group: str = "test_group", retry: dict | None = None
+    group: str = "test_group", retry: dict[str, any] | None = None
 ) -> LocalEventStream {
-    cfg: dict = {
+    cfg: dict[str, any] = {
         "consumer_group": group,
         "retry": retry
             or {

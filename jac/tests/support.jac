@@ -13,11 +13,95 @@ Imported as `from tests.support`, which resolves identically under the single
 import ctypes;
 
 import from pathlib { Path }
+import type from jaclang.compiler.driver.compile_options { CompileOptions }
+import type from jaclang.compiler.frontend.unitree { Module }
+import type from jaclang.compiler.backends.native.llvm.binding { ExecutionEngine }
 
 # `tests/`: the directory holding this file.
 glob TESTS_DIR: str = str(Path(__file__).resolve().parent),
      # Repo root (the `jac/` dir): the parent of `tests/`.
      JAC_ROOT: str = str(Path(__file__).resolve().parent.parent);
+
+"""The JavaScript runtime this process runs (js_engine or bun), or None when
+neither is built: suites that need one skip on None, and strict lanes, which
+ship a kit with bun, never see it."""
+def js_runtime_or_none -> (str | None) {
+    import from jaclang.artifacts.model { ArtifactUnavailable }
+    import from jaclang.client.js_runtime { js_runtime_path }
+    try {
+        return js_runtime_path();
+    } except ArtifactUnavailable {
+        return None;
+    }
+}
+
+"""Environment overrides isolating every machine-wide cache family."""
+def cache_env(cache_dir: Path | str) -> dict[str, str] {
+    import from jaclang.cache.registry { BUCKETS }
+    base = Path(cache_dir).resolve();
+    env = {"JAC_CACHE_HOME": str(base), "XDG_CACHE_HOME": str(base)};
+    for b in BUCKETS {
+        if b.root_env {
+            env[b.root_env] = str(base / b.root_prefix);
+        }
+    }
+    return env;
+}
+
+"""Let a child under a private cache root reuse this process's Postgres
+distribution instead of provisioning its own (a system Postgres it finds
+by itself)."""
+def share_postgres(cache_home: Path | str) {
+    import from jaclang.data.pg_dist { dist_cache_dir, postgres_bin_dir }
+    dist = Path(postgres_bin_dir()).parent;
+    if not dist.is_relative_to(Path(dist_cache_dir())) {
+        return;
+    }
+    link = Path(cache_home) / "pg" / "dist" / dist.name;
+    link.parent.mkdir(parents=True, exist_ok=True);
+    if not link.exists() {
+        link.symlink_to(dist, target_is_directory=True);
+    }
+}
+
+"""Run as a project whose jac.toml sets `[network] offline`."""
+def offline_project -> any {
+    import from unittest.mock { patch }
+    return patch("jaclang.project.config.offline_mode", return_value=True);
+}
+
+"""Select the parent's compiler, or an explicit checkout for comparative tests."""
+def compiler_python_command(
+    source: str, *args: str, compiler_root: str | None = None
+) -> list[str] {
+    import jaclang;
+    import sys;
+    package_root = str(Path(str(jaclang.__file__)).resolve().parent.parent)
+        if compiler_root is None
+        else str(Path(compiler_root).resolve());
+    if not (Path(package_root) / "jaclang" / "__init__.py").is_file() {
+        raise ValueError(f"No compiler package at {package_root}");
+    }
+    boot = (
+        "import sys\nsys.path.insert(0, "
+        + repr(package_root)
+        + ")\n"
+        + "sys.path.extend("
+        + repr(sys.path)
+        + ")\n"
+        + source
+    );
+    return [sys.executable, "-c", boot, *args];
+}
+
+"""Invoke the selected compiler's CLI, including from a checkout working directory."""
+def jac_command(*args: str, compiler_root: str | None = None) -> list[str] {
+    return compiler_python_command(
+        "import runpy\nrunpy.run_module('jaclang', run_name='__main__', alter_sys=True)",
+        *args,
+        compiler_root=compiler_root
+    );
+}
 
 """CompileOptions that force a fixture into the native codespace.
 
@@ -26,9 +110,9 @@ compile a fixture and expect a JIT engine now state the mandate explicitly.
 Forced placement keeps lowering failures loud (no server demotion), exactly
 like the old suffix.
 """
-def native_force_opts -> any {
+def native_force_opts -> CompileOptions {
     import from jaclang.compiler.driver.compile_options { CompileOptions }
-    return CompileOptions(force_codespace='native', force_target_program=True);
+    return CompileOptions(force_codespace='native');
 }
 
 
@@ -46,11 +130,11 @@ def native_str_func(eng: any, name: str, restype: type | None, *argtypes: type) 
     # slots, so str args pass as (root, data, len) built via
     # jac_str_new, and str returns read back as a two-pointer pair with
     # the payload NUL-bounded at data
-    addr = eng.get_function_address(name);
+    addr = native_address(eng, name);
     assert addr != 0 , f"Function '{name}' not found in JIT engine";
     real_res: any = JacStrABI if restype == ctypes.c_char_p else restype;
-    str_slots: list = [];
-    real_args: list = [];
+    str_slots: list[bool] = [];
+    real_args: list[any] = [];
     for a in argtypes {
         if a == ctypes.c_char_p {
             str_slots.append(True);
@@ -66,7 +150,7 @@ def native_str_func(eng: any, name: str, restype: type | None, *argtypes: type) 
     sn_addr = 0;
     for sn in ("jac_str_new", "__jac_str_new") {
         try {
-            sn_addr = eng.get_function_address(sn);
+            sn_addr = native_address(eng, sn);
         } except Exception {
             sn_addr = 0;
         }
@@ -80,8 +164,8 @@ def native_str_func(eng: any, name: str, restype: type | None, *argtypes: type) 
             else None
     );
     def _call(*args: any) -> any {
-        c_args: list = [];
-        _keep: list = [];
+        c_args: list[any] = [];
+        _keep: list[any] = [];
         for (a, is_str) in zip(args, str_slots) {
             if is_str {
                 b = a.encode("utf-8") if isinstance(a, str) else a;
@@ -145,6 +229,53 @@ glob NATIVE_FIXTURES: str = str(
              / "fixtures"
      );
 
+"""The native identity of archetype `name` declared in `source`.
+
+Structs, method symbols, vtables and layout keys are spelled with it
+(`codeinfo.native_arch_name`: the name scoped by its defining module). A
+relative `source` names a file in the native fixtures directory.
+"""
+def native_arch(source: str, name: str) -> str {
+    import from jaclang.compiler.frontend.codeinfo { native_arch_name }
+    path = Path(source);
+    if not path.is_absolute() {
+        path = Path(NATIVE_FIXTURES) / source;
+    }
+    return native_arch_name(str(path), name);
+}
+
+"""`text` (IR, a symbol, a layout key) with archetype identities spelled by
+source name, for assertions about everything but the scoping itself."""
+def source_spelled(text: str) -> str {
+    import from jaclang.compiler.frontend.codeinfo { native_display_text }
+    return native_display_text(text);
+}
+
+"""`mapping` re-keyed by source name (layout registries, exported layouts)."""
+def by_source_name(mapping: dict[str, any]) -> any {
+    return {source_spelled(key): value for (key, value) in mapping.items()};
+}
+
+"""The link symbol `iface` exports for `name`. A record names the unit's own
+archetypes by source name; an export whose name involves another module's
+archetype (a specialization over it) keeps that archetype's scope, and is
+found here by its source spelling too."""
+def iface_symbol(iface: any, name: str) -> (str | None) {
+    if iface is None {
+        return None;
+    }
+    found = iface.symbol_of(name);
+    if found is not None {
+        return found;
+    }
+    for (key, ex) in iface.exports.items() {
+        if source_spelled(key) == name {
+            return ex.symbol;
+        }
+    }
+    return None;
+}
+
 """Compile a .jac fixture into the native codespace and return (engine, module).
 
 `fixture_dir` defaults to the native pass fixtures directory, which is where
@@ -154,21 +285,196 @@ module's mutable globals, so handing the same one to two tests would let the
 first test's writes reach the second. Tests that want a fixture compiled once
 should assert against it once, in a single test.
 """
-def compile_native(fixture: str, fixture_dir: str = "") -> tuple {
+def compile_native(
+    fixture: str, fixture_dir: str = ""
+) -> tuple[ExecutionEngine, Module] {
+    ir = _compile_native_fixture(fixture, fixture_dir, native_force_opts());
+    import from jaclang.compiler.backends.native.llvm.binding { ExecutionEngine }
+    eng = ir.gen.native_engine;
+    assert isinstance(eng, ExecutionEngine) , f"No JIT engine produced for {fixture}";
+    remember_native_unit(eng, ir);
+    return (eng, ir);
+}
+
+"""The whole-program LLVM IR of `fixture` linked for `triple`: its unit
+bitcode merged with the link glue that defines `jac_entry`, the way an
+executable's object is assembled before the platform linker sees it. Tests
+that hand a single relocatable object to a linker start from this text."""
+def program_ir(fixture: str, triple: str, static_musl: bool = False) -> str {
+    import os;
+    import from jaclang.compiler.driver.program { JacProgram }
+    import from jaclang.compiler.driver.compile_options {
+        CompileOptions,
+        NATIVE_LINK_MODE_BITCODE
+    }
+    import from jaclang.compiler.backends.native.link_plan {
+        ArtifactKind,
+        build_link_plan,
+        whole_program_module
+    }
+    prev = os.environ.get("JAC_NATIVE_TARGET", None);
+    os.environ["JAC_NATIVE_TARGET"] = triple;
+    try {
+        prog = JacProgram();
+        opts = CompileOptions(aot_mode=True, native_link_mode=NATIVE_LINK_MODE_BITCODE);
+        path = str(Path(NATIVE_FIXTURES) / fixture);
+        plan = build_link_plan(
+            prog, [path], options=opts, mode=NATIVE_LINK_MODE_BITCODE
+        );
+        assert not prog.errors_had , f"compile errors: {[
+            str(e) for e in prog.errors_had
+        ]}";
+        tl = triple.lower();
+        platform = "elf";
+        if "darwin" in tl or "apple" in tl {
+            platform = "macho";
+        } elif "windows" in tl or "msvc" in tl or "mingw" in tl {
+            platform = "pe";
+        } elif "wasm" in tl {
+            platform = "wasm";
+        }
+        spec = plan.glue_spec(ArtifactKind.EXECUTABLE, platform, static_musl);
+        (merged, _exports) = whole_program_module(plan, spec);
+        return str(merged);
+    } finally {
+        if prev is None {
+            os.environ.pop("JAC_NATIVE_TARGET", None);
+        } else {
+            os.environ["JAC_NATIVE_TARGET"] = prev;
+        }
+    }
+}
+
+"""Pin the compiled module's unit path and native interface on its engine,
+so `native_address` can map a Jac-level name to the unit's link symbol."""
+def remember_native_unit(eng: any, ir: any) {
+    try {
+        setattr(eng, "_jac_unit_path", ir.loc.mod_path if ir.loc else "");
+        setattr(eng, "_jac_native_iface", ir.gen.native_iface);
+    } except Exception {}
+}
+
+"""The link symbol of a Jac-level name in the engine's root unit.
+
+Every external symbol that is not `:pub` is module-qualified
+(`<unit prefix>.<name>`, methods `<prefix>.Class.method`); `:pub` symbols,
+the glue's `jac_entry` and the runtime's `__jac_*` / `__rc_*` / `jac_*`
+helpers keep bare names. Already qualified symbols retain their spelling.
+A name the interface does not list resolves to the root-qualified form;
+address lookup never retries an unrelated bare symbol.
+"""
+def native_symbol(eng: any, name: str) -> str {
+    path = getattr(eng, "_jac_unit_path", "") or "";
+    if name == "__jac_glob_init" and path {
+        import from jaclang.compiler.frontend.codeinfo { native_glob_init_name }
+        return native_glob_init_name(path);
+    }
+    if name == "jac_entry" {
+        return name;
+    }
+    interfaces = list(eng?._jac_unit_ifaces or []);
+    iface = eng?._jac_native_iface;
+    if iface is not None {
+        interfaces.insert(0, iface);
+    }
+    for unit_iface in interfaces {
+        found = iface_symbol(unit_iface, name);
+        if found is not None {
+            return found;
+        }
+        if unit_iface.prefix and name.startswith(unit_iface.prefix + ".") {
+            return name;
+        }
+    }
+    if name.startswith(("__jac_", "__rc_", "jac_", "__osp", "__mt_")) {
+        return name;
+    }
+    if not path {
+        return name;
+    }
+    import from jaclang.compiler.frontend.codeinfo {
+        native_symbol_name,
+        native_unit_prefix
+    }
+    return native_symbol_name(native_unit_prefix(path), name);
+}
+
+"""The link symbol a compiled module gives a Jac-level name: the unit's
+interface record first, the mangling rule second. Tests that grep emitted
+IR for a function or global build their marker from this."""
+def unit_symbol(ir: any, name: str) -> str {
+    iface = ir.gen.native_iface if ir?.gen else None;
+    found = iface_symbol(iface, name);
+    if found is not None {
+        return found;
+    }
+    path = ir.loc.mod_path if ir?.loc else "";
+    if not path {
+        return name;
+    }
+    import from jaclang.compiler.frontend.codeinfo {
+        native_symbol_name,
+        native_unit_prefix
+    }
+    return native_symbol_name(native_unit_prefix(path), name);
+}
+
+"""Whether `line` names the function `name` under either spelling: bare
+(`@name(` / `@"name"(`, a `:pub` or runtime symbol) or module-qualified
+(`@"<prefix>.name"(`)."""
+def names_function(line: str, name: str) -> bool {
+    return (
+        ('@"' + name + '"(') in line
+        or ("@" + name + "(") in line
+        or ("." + name + '"(') in line
+    );
+}
+
+"""Whether `text` defines or declares the global `name` under either spelling."""
+def names_global(text: str, name: str) -> bool {
+    return ('@"' + name + '"') in text
+        or ("@" + name + " ") in text
+        or ("." + name + '"') in text;
+}
+
+"""Resolve exactly the symbol selected by the native interface or mangling rule."""
+def native_address(eng: any, name: str) -> int {
+    symbol = native_symbol(eng, name);
+    return eng.get_function_address(symbol);
+}
+
+"""Inspect fresh lowering output before LLVM optimization removes layout types."""
+def compile_native_ir(
+    fixture: str, fixture_dir: str = "", options: CompileOptions | None = None
+) -> Module {
+    options = options or native_force_opts();
+    options.skip_native_engine = True;
+    options.no_ir_cache = True;
+    return _compile_native_fixture(fixture, fixture_dir, options);
+}
+
+def _compile_native_fixture(
+    fixture: str, fixture_dir: str, options: CompileOptions
+) -> Module {
     import from jaclang.compiler.driver.program { JacProgram }
     base = fixture_dir or NATIVE_FIXTURES;
     prog = JacProgram();
-    ir = prog.compile(file_path=str(Path(base) / fixture), options=native_force_opts());
-    errors = [str(e) for e in prog.errors_had] if prog.errors_had else [];
+    ir = prog.compile(file_path=str(Path(base) / fixture), options=options);
+    errors = [e.pretty_print() for e in prog.errors_had] if prog.errors_had else [];
+    if errors and ir is not None and ir.gen.llvm_ir is not None {
+        import from jaclang.compiler.backends.native.lowering { native_lowering_issues }
+        errors.extend(
+            issue.detail for issue in native_lowering_issues(str(ir.gen.llvm_ir))
+        );
+    }
     assert not prog.errors_had , f"Compilation errors in {fixture}: {errors}";
-    eng = ir.gen.native_engine;
-    assert eng is not None , f"No native engine produced for {fixture}";
-    return (eng, ir);
+    assert ir is not None , f"No module produced for {fixture}";
+    return ir;
 }
 
 """Get a ctypes-callable function from a JIT engine."""
 def get_func(eng: any, name: str, restype: type | None, *argtypes: type) -> any {
-    addr = eng.get_function_address(name);
+    addr = native_address(eng, name);
     assert addr != 0 , f"Function '{name}' not found in JIT engine";
     functype = ctypes.CFUNCTYPE(restype, *argtypes);
     return functype(addr);
@@ -182,4 +488,228 @@ def has_error_code(prog: any, code: str) -> bool {
         }
     }
     return False;
+}
+
+"""Memory profiles a native test can build under.
+
+`nogc` is the headerless endpoint (zero-RC enforcement, no runtime, the
+RC-free IR scan on); `rc` and `managed` are the reference-counted runtimes
+without and with the cycle collector. The CLI spelling of each profile lives
+here and nowhere else in the test tree, so a flag rename is a one-line
+change.
+"""
+glob NATIVE_MEMORY_PROFILES: list[str] = ["nogc", "rc", "managed"];
+
+def native_memory_flags(memory: str) -> list[str] {
+    if memory in ("nogc", "rc", "managed") {
+        return ["--memory", memory];
+    }
+    raise ValueError(f"unknown native memory profile: {memory}");
+}
+
+"""Build `src` into the native binary `out_bin` through the CLI.
+
+Runs the compiler in a subprocess exactly as a developer would, under the
+given memory profile, and asserts the build succeeded. Returns the build's
+combined stdout/stderr so a caller can grep a build-time line (rc-stats,
+assert-no-rc) without a second compile.
+"""
+def native_build(
+    src: str,
+    out_bin: str,
+    memory: str = "managed",
+    extra: list[str] | None = None,
+    timeout: int = 300
+) -> str {
+    import os;
+    import subprocess;
+    import sys;
+    assert os.path.exists(src) , f"fixture missing: {src}";
+    cmd = (
+        jac_command("build", src, "--native")
+        + native_memory_flags(memory)
+        + list(extra or [])
+        + ["-o", out_bin]
+    );
+    comp = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout);
+    assert comp.returncode == 0 , (
+        f"native build ({memory}) failed for {os.path.basename(src)}:"
+        f" exit={comp.returncode}\n"
+        f"stdout: {comp.stdout[-800:] if comp.stdout else '(empty)'}\n"
+        f"stderr: {comp.stderr[-800:] if comp.stderr else '(empty)'}"
+    );
+    assert os.path.exists(out_bin) , f"binary not produced at {out_bin}";
+    return (comp.stdout or "") + (comp.stderr or "");
+}
+
+"""Build `src` natively expecting the compile to fail; return combined output.
+
+The counterpart to `native_build` for refusal-path tests: asserts the build
+did not succeed and hands back stdout+stderr so the caller can pin the
+diagnostic naming the offending construct.
+"""
+def native_build_fails(src: str, timeout: int = 900) -> str {
+    import os;
+    import subprocess;
+    import tempfile;
+    assert os.path.exists(src) , f"fixture missing: {src}";
+    out_bin = os.path.join(tempfile.mkdtemp(), "nope.bin");
+    comp = subprocess.run(
+        jac_command("build", "--native", src, "-o", out_bin),
+        capture_output=True,
+        text=True,
+        timeout=timeout
+    );
+    combined = (comp.stdout or "") + (comp.stderr or "");
+    assert comp.returncode != 0 , (
+        f"expected a refused native build for {os.path.basename(src)},"
+        f" but it compiled cleanly: {combined[-600:]}"
+    );
+    return combined;
+}
+
+"""Run a built native binary and return its stdout; assert a clean exit."""
+def native_run(
+    out_bin: str,
+    args: list[str] | None = None,
+    timeout: int = 120,
+    env: dict[str, str] | None = None
+) -> str {
+    import os;
+    import subprocess;
+    run_env: dict[str, str] = dict(os.environ);
+    if env {
+        run_env.update(env);
+    }
+    proc = subprocess.run(
+        [out_bin] + list(args or []),
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+        env=run_env
+    );
+    assert proc.returncode == 0 , (
+        f"{os.path.basename(out_bin)} exited {proc.returncode}"
+        f" (a segfault or abort here is a codegen regression)\n"
+        f"stdout: {proc.stdout[-400:] if proc.stdout else '(empty)'}\n"
+        f"stderr: {proc.stderr[-400:] if proc.stderr else '(empty)'}"
+    );
+    return proc.stdout;
+}
+
+"""Run `src` directly on the Python bytecode backend and return its stdout."""
+def python_run(src: str, args: list[str] | None = None, timeout: int = 120) -> str {
+    import os;
+    import subprocess;
+    import sys;
+    proc = subprocess.run(
+        jac_command("run", "--backend", "python", src) + list(args or []),
+        capture_output=True,
+        text=True,
+        timeout=timeout
+    );
+    assert proc.returncode == 0 , (
+        f"Python backend failed for {os.path.basename(src)}: exit={proc.returncode}\n"
+        f"stderr: {proc.stderr[-800:] if proc.stderr else '(empty)'}"
+    );
+    return proc.stdout;
+}
+
+"""Build and run `src` under every memory profile and on the Python backend.
+
+Returns {profile: stdout}. The identity contract of the ownership design is
+that these agree byte for byte: annotations erase, and a headerless build
+must behave exactly like the managed ones. A caller asserts that agreement
+with `assert_native_identity`.
+"""
+def native_outputs(
+    src: str, args: list[str] | None = None, profiles: list[str] | None = None
+) -> dict[str, str] {
+    import os;
+    import tempfile;
+    outs: dict[str, str] = {};
+    with tempfile.TemporaryDirectory() as tmp {
+        for memory in (profiles or NATIVE_MEMORY_PROFILES) {
+            out_bin = os.path.join(tmp, f"{Path(src).stem}.{memory}");
+            native_build(src, out_bin, memory=memory);
+            outs[memory] = native_run(out_bin, args);
+        }
+    }
+    outs["python"] = python_run(src, args);
+    return outs;
+}
+
+"""Assert every backend produced the same stdout for `src`; return that stdout."""
+def assert_native_identity(
+    src: str, args: list[str] | None = None, profiles: list[str] | None = None
+) -> str {
+    outs = native_outputs(src, args, profiles);
+    reference = outs["python"];
+    for (memory, out) in outs.items() {
+        assert out == reference , (
+            f"{Path(src).name}: {memory} output differs from the Python backend\n"
+            f"--- {memory} ---\n{out}\n--- python ---\n{reference}"
+        );
+    }
+    return reference;
+}
+
+"""Run `src` on the sv lane (CPython is the oracle); return (stdout, stderr).
+
+On this lane `import <mod>` binds CPython's own stdlib module, so sv output is
+the reference every bundled-stdlib congruence probe compares against. Bare
+`jac run` is used deliberately: the explicit `--backend python` route installs
+jac's own logging config (INFO level, a `LEVEL - msg` format), which changes
+what a probe that touches `logging` observes.
+"""
+def sv_run(src: str, timeout: int = 900) -> tuple[(str, str)] {
+    import subprocess;
+    proc = subprocess.run(
+        jac_command("run", src), capture_output=True, text=True, timeout=timeout
+    );
+    assert proc.returncode == 0 , f"sv run failed for {src}: {proc.stderr[-800:]
+        if proc.stderr
+        else '(empty)'}";
+    return (proc.stdout, proc.stderr);
+}
+
+"""Compile `src` to a native binary, run it, and return (stdout, stderr).
+
+On this lane `import <mod>` binds the bundled na_stdlib module, so comparing
+na output to `sv_run` output pins the sv<->na congruence contract.
+"""
+def na_run(src: str, timeout: int = 900) -> tuple[(str, str)] {
+    import os;
+    import subprocess;
+    import tempfile;
+    with tempfile.TemporaryDirectory() as tmp {
+        out_bin = os.path.join(tmp, "probe.bin");
+        native_build(src, out_bin, timeout=timeout);
+        proc = subprocess.run([out_bin], capture_output=True, text=True, timeout=120);
+        assert proc.returncode == 0 , f"binary failed for {src}: {proc.stderr[-400:]
+            if proc.stderr
+            else '(empty)'}";
+        return (proc.stdout, proc.stderr);
+    }
+}
+
+"""Assert two captured outputs agree non-blank line for non-blank line."""
+def same_lines(sv_text: str, na_text: str, what: str) {
+    sv = [
+        _l
+        for _l in sv_text.split("\n")
+        if _l.strip()
+    ];
+    na = [
+        _l
+        for _l in na_text.split("\n")
+        if _l.strip()
+    ];
+    assert sv , f"{what}: sv pathway produced no output";
+    assert len(sv) == len(na) , f"{what} line count: sv {len(sv)} vs na {len(na)}";
+    for idx in range(len(sv)) {
+        assert sv[idx] == na[idx] , f"{what} line {idx}: sv {sv[idx]!r} vs na {na[
+            idx
+        ]!r}";
+    }
 }

@@ -20,21 +20,31 @@ if ! grep -q "e2e-harness overlay" "${PROJECT_DIR}/jac.toml"; then
     cat >> "${PROJECT_DIR}/jac.toml" <<'TOML'
 
 # --- e2e-harness overlay (appended by k8s_microservice_real_e2e.sh) ---
-[scale.microservices.logs]
+[scale.gateway.logs]
 enabled = true
 
-[scale.microservices.ingress]
+[scale.gateway.ingress]
 enabled = true
 host = "jac-shop.local"
 ingress_class_name = "nginx"
 
-[scale.microservices.cors]
+[scale.gateway.cors]
 allow_origins = ["http://app.example.com"]
 allow_methods = ["GET", "POST", "OPTIONS"]
 allow_headers = ["Authorization", "Content-Type"]
 allow_credentials = true
 TOML
     echo "# appended the e2e-harness overlay (logs/ingress/cors) to jac.toml"
+fi
+# Own marker: the overlay above is already committed in the fixture, so its guard never appends.
+if ! grep -q "e2e-harness memory_request" "${PROJECT_DIR}/jac.toml"; then
+    cat >> "${PROJECT_DIR}/jac.toml" <<'TOML'
+
+# --- e2e-harness memory_request (appended by k8s_microservice_real_e2e.sh) ---
+[apps.cart_app.scale]
+memory_request = "1Gi"
+TOML
+    echo "# appended the e2e-harness memory_request for cart_app to jac.toml"
 fi
 
 NAMESPACE="${NAMESPACE:-jac-e2e}"
@@ -98,6 +108,8 @@ if [ "${CLUSTER_TYPE}" = "kind" ]; then
         jac-rwx-bundle-pv /var/jac-rwx-bundle jac-rwx-perms
 fi
 
+# Pods must run the code under test, never a published release.
+ship_checkout_binary "${PROJECT_DIR}" || exit 1
 cd "${PROJECT_DIR}"
 # The fixture ships jac.preview.toml with a deployment_overlay marker;
 # selecting it here makes the deploy exercise profile resolution AND
@@ -108,20 +120,7 @@ import logging, os, sys, jaclang  # noqa: F401
 from jaclang.scale.deploy.target.kubernetes.target import KubernetesTarget
 from jaclang.scale.deploy.target.kubernetes.kubernetes_config import KubernetesConfig
 from jaclang.scale.config.app_config import AppConfig
-from jaclang.scale.config.dev_config import BINARY_PATH_ENV
 
-# JAC_SCALE_BINARY_PATH makes the deploy resolve to the LOCAL channel and ship
-# the jac built from THIS checkout, so the e2e validates the code under test
-# rather than a published release.
-_local = os.environ.get(BINARY_PATH_ENV, "")
-if not _local or not os.path.isfile(_local):
-    print(
-        f"FATAL: {BINARY_PATH_ENV} must point at the jac binary built from this "
-        f"checkout so the pod runs the code under test; got {_local!r}.",
-        file=sys.stderr,
-    )
-    sys.exit(1)
-print(f"shipping local jac binary to pods: {_local}", file=sys.stderr)
 
 # Surface MonitoringDeployer / observability warnings to stderr so CI
 # logs show the actual error instead of the silent
@@ -246,13 +245,11 @@ echo "=== verify per-service routing ==="
 # 503 from the gateway means upstream service unreachable; 404/405 means
 # we reached a healthy service that just doesn't have that walker.
 ROUTES=$(jac -c "
-import tomllib
-from jaclang.scale.runtime.routing import resolve_routes
-with open('${PROJECT_DIR}/jac.toml', 'rb') as f:
-    cfg = tomllib.load(f)
-ms = cfg.get('scale', {}).get('microservices', {}) \
-    or cfg.get('plugins', {}).get('scale', {}).get('microservices', {})
-for prefix in resolve_routes(dict(ms)).values():
+from pathlib import Path
+from jaclang.project.config import JacConfig
+from jaclang.scale.runtime.fleet import fleet_from_config
+cfg = JacConfig.load(Path('${PROJECT_DIR}/jac.toml'))
+for prefix in fleet_from_config(cfg, project_root='${PROJECT_DIR}').routes().values():
     print(prefix)
 ")
 for prefix in ${ROUTES}; do
@@ -360,7 +357,7 @@ fi
 echo "  breaker opened after ${BREAKER_CALLS} call(s) and shed load in ${BREAKER_SECS}s"
 
 _t "circuit breaker load shedding OK"
-echo "=== verify HPA OOM guardrails (cpu+memory metrics, behavior rate limits) ==="
+echo "=== verify HPA OOM guardrails (memory metric only with a configured memory_request, behavior rate limits) ==="
 # The heredoc feeds python's stdin, so the HPA JSON must travel via a file.
 HPA_JSON="$(mktemp)"
 kubectl get hpa -n "${NAMESPACE}" -l managed=jac-scale -o json > "${HPA_JSON}"
@@ -372,6 +369,10 @@ with open(sys.argv[1]) as f:
     items = json.load(f).get("items", [])
 if not items:
     sys.exit("FAIL: no managed HPAs found in namespace")
+# Only cart_app sets memory_request in the harness overlay.
+MEMORY_DEPLOYMENT = "cart-app-deployment"
+if not any(h["spec"]["scaleTargetRef"]["name"] == MEMORY_DEPLOYMENT for h in items):
+    sys.exit(f"FAIL: no managed HPA targets {MEMORY_DEPLOYMENT}")
 for hpa in items:
     name = hpa["metadata"]["name"]
     spec = hpa["spec"]
@@ -380,8 +381,9 @@ for hpa in items:
         for m in spec.get("metrics", [])
         if m.get("type") == "Resource"
     )
-    if metric_names != ["cpu", "memory"]:
-        sys.exit(f"FAIL: {name} metrics={metric_names}, expected cpu+memory")
+    expected = ["cpu", "memory"] if spec["scaleTargetRef"]["name"] == MEMORY_DEPLOYMENT else ["cpu"]
+    if metric_names != expected:
+        sys.exit(f"FAIL: {name} metrics={metric_names}, expected {'+'.join(expected)}")
     behavior = spec.get("behavior") or {}
     up = behavior.get("scaleUp") or {}
     down = behavior.get("scaleDown") or {}
@@ -426,8 +428,8 @@ rm -f "${OVL_JSON}"
 
 _t "profile+overlay OK"
 echo "=== M-14.a: verify observability stack (logs.enabled) ==="
-# When [scale.microservices.logs].enabled = true (the fixture
-# default) the microservice target also calls MonitoringDeployer, which
+# When [scale.gateway.logs].enabled = true (the fixture
+# default) the kubernetes target also calls MonitoringDeployer, which
 # adds Prometheus + Grafana + Loki + Alloy + kube-state-metrics +
 # node-exporter to the namespace. Verify each Deployment + the Alloy
 # DaemonSet rolls out, Loki responds to /ready, and a LogQL query for
@@ -437,7 +439,7 @@ LOGS_ENABLED=$(jac - <<PYEOF
 import tomllib
 with open("${PROJECT_DIR}/jac.toml", "rb") as f:
     cfg = tomllib.load(f)
-logs = cfg.get("plugins", {}).get("scale", {}).get("microservices", {}).get("logs", {})
+logs = cfg.get("scale", {}).get("gateway", {}).get("logs", {})
 print(int(bool(logs.get("enabled", False))))
 PYEOF
 )
@@ -534,7 +536,7 @@ INGRESS_INFO=$(jac - <<PYEOF
 import tomllib
 with open("${PROJECT_DIR}/jac.toml", "rb") as f:
     cfg = tomllib.load(f)
-ing = cfg.get("plugins", {}).get("scale", {}).get("microservices", {}).get("ingress", {})
+ing = cfg.get("scale", {}).get("gateway", {}).get("ingress", {})
 print(f"{int(bool(ing.get('enabled', False)))}|{str(ing.get('host', '')).strip()}")
 PYEOF
 )
@@ -665,13 +667,11 @@ run_availability_assertion "gateway" \
 # tolerance for transient endpoint-propagation noise.
 FIRST_PREFIX=$(echo "${ROUTES}" | head -n1)
 FIRST_SVC=$(jac -c "
-import tomllib
-from jaclang.scale.runtime.routing import resolve_routes
-with open('${PROJECT_DIR}/jac.toml', 'rb') as f:
-    cfg = tomllib.load(f)
-ms = cfg.get('scale', {}).get('microservices', {}) \
-    or cfg.get('plugins', {}).get('scale', {}).get('microservices', {})
-for name, prefix in resolve_routes(dict(ms)).items():
+from pathlib import Path
+from jaclang.project.config import JacConfig
+from jaclang.scale.runtime.fleet import fleet_from_config
+cfg = JacConfig.load(Path('${PROJECT_DIR}/jac.toml'))
+for name, prefix in fleet_from_config(cfg, project_root='${PROJECT_DIR}').routes().items():
     if prefix == '${FIRST_PREFIX}':
         print(name.replace('_', '-'))
         break

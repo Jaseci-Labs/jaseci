@@ -1,0 +1,228 @@
+impl Alert.postinit -> None {
+    if (self.help_text is None) and self.code {
+        self.help_text = self.code.help_text;
+    }
+    if self.owner == '' and self.loc.mod_path != '' {
+        import os;
+        try {
+            self.owner = os.path.realpath(self.loc.mod_path);
+        } except OSError {
+            self.owner = self.loc.mod_path;
+        }
+    }
+}
+
+impl Alert.__str__ -> str {
+    return f"{self.loc.mod_path}, line {self.loc.first_line}, col {self.loc.col_start}: {self.msg}";
+}
+
+impl Alert.__repr__ -> str {
+    return self.as_log();
+}
+
+impl Alert.as_log(*, colors: bool = False) -> str {
+    return render_diagnostic_header(
+        self.msg,
+        self.code.code if self.code else '',
+        self.code.severity.value if self.code else 'error',
+        self.loc,
+        colors=colors
+    );
+}
+
+impl Alert.pretty_print(*, colors: bool = False) -> str {
+    return render_diagnostic(
+        self.msg,
+        self.code.code if self.code else '',
+        self.code.severity.value if self.code else 'error',
+        self.loc,
+        self.related,
+        self.help_text,
+        colors=colors
+    );
+}
+
+impl DiagnosticPolicy.is_suppressed(
+    diag: DiagnosticInfo,
+    loc: (CodeLocInfo | Span | None) = None,
+    source: (Source | None) = None
+) -> bool {
+    if (
+        loc is not None
+        and diag.code not in INLINE_LOCKED_CODES
+        and self._inline_suppressed(diag, loc, source)
+    ) {
+        return True;
+    }
+    if diag.code in self.suppress_codes {
+        return True;
+    }
+    if diag.category.value in self.suppress_categories {
+        return True;
+    }
+    if self.lint_active and diag.category.value == "lint" {
+        reverse_aliases: dict[str, str] = {v: k for (k, v) in LINT_ALIASES.items()};
+        kebab_name = reverse_aliases.get(diag.code, None);
+        code_in_select = (
+            diag.code in self.lint_select
+            or (kebab_name is not None and kebab_name in self.lint_select)
+        );
+        code_in_ignore = (
+            diag.code in self.lint_ignore
+            or (kebab_name is not None and kebab_name in self.lint_ignore)
+        );
+
+        non_default_codes: set[str] = {"E3012", "W3050", "W3051", "W3055"};
+        enabled = False;
+        if "all" in self.lint_select {
+            enabled = True;
+        } elif "default" in self.lint_select {
+            enabled = (diag.code not in non_default_codes) or code_in_select;
+        } else {
+            enabled = code_in_select;
+        }
+        if code_in_ignore {
+            enabled = False;
+        }
+        if not enabled {
+            return True;
+        }
+    }
+    return False;
+}
+
+impl DiagnosticPolicy._inline_suppressed(
+    diag: DiagnosticInfo, loc: (CodeLocInfo | Span), source: (Source | None) = None
+) -> bool {
+    if isinstance(loc, CodeLocInfo) {
+        source = loc.orig_src;
+    }
+    if source is None
+        or source.file_path != loc.mod_path
+        or not source.inline_suppressions {
+        return False;
+    }
+    line = loc.first_line;
+    if line not in source.inline_suppressions {
+        return False;
+    }
+    cache_key = (loc.mod_path, line, );
+    if cache_key not in self._inline_cache {
+        (resolved_inline_codes, _) = resolve_diagnostic_tokens(
+            list(source.inline_suppressions[line])
+        );
+        self._inline_cache[cache_key] = resolved_inline_codes;
+    }
+    return diag.code in self._inline_cache[cache_key];
+}
+
+impl CompileContext.emit(
+    diag: DiagnosticInfo,
+    node_override: (UniNode | None) = None,
+    related: (list[tuple[str, UniNode]] | None) = None,
+    help_text: (str | None) = None,
+    **kwargs: object
+) -> bool {
+    loc = node_override.loc if node_override else self.current_node.loc;
+
+    if self.policy is not None and self.policy.is_suppressed(diag, loc) {
+        return False;
+    }
+
+    msg = diag.format_message(**kwargs);
+    resolved_help = help_text if help_text is not None else diag.format_help(**kwargs);
+
+    related_locs: list[tuple[str, Span]] = [];
+    if related {
+        for (label, node) in related {
+            related_locs.append((label, node.loc.span()));
+        }
+    }
+    alrt = Alert(
+        msg=msg,
+        loc=loc.span(),
+        from_pass=self.from_pass,
+        code=diag,
+        related=related_locs,
+        help_text=resolved_help
+    );
+
+    if (diag.severity == Severity.ERROR) {
+        self.errors_had.append(alrt);
+    } else {
+        self.warnings_had.append(alrt);
+    }
+    return True;
+}
+
+impl CompileContext._is_suppressed(
+    diag: DiagnosticInfo, loc: CodeLocInfo | None = None
+) -> bool {
+    return self.policy is not None and self.policy.is_suppressed(diag, loc);
+}
+
+impl CompileContext.ice(msg: str = 'Something went horribly wrong!') -> str {
+    self.emit(E9001, pass_name=self.pass_name, details=msg);
+    return f"Internal Compiler Error: Pass {self.pass_name} - {msg}";
+}
+
+impl CompileContext.log_info(msg: str) -> None {
+    import logging;
+    logging.getLogger(self.pass_name).info(msg);
+}
+
+impl CompileContext.enter_node(nd: UniNode) -> None {
+    if nd.ct_pruned or self.is_canceled() {
+        import from jaclang.runtime.osp_kernel { osp_skip_rest }
+        osp_skip_rest();
+        return;
+    }
+    self.current_node = nd;
+}
+
+impl CompileContext.exit_node(nd: UniNode) -> None {
+    if nd.ct_pruned {
+        import from jaclang.runtime.osp_kernel { osp_skip_rest }
+        osp_skip_rest();
+        return;
+    }
+    self.current_node = nd;
+    if self.is_canceled() {
+        import from jaclang.runtime.osp_kernel { osp_skip_rest }
+        osp_skip_rest();
+    }
+}
+
+impl CompileContext.walk_subtree(nd: UniNode, walk: Walker) -> None {
+    if self.is_canceled() or nd.ct_pruned {
+        return;
+    }
+    self.nested_depth += 1;
+    try {
+        nd spawn walk;
+    } finally {
+        self.nested_depth -= 1;
+    }
+}
+
+impl CompilerPass.prog.getter -> JacProgram {
+    program = self.ctx.program;
+    if program is None {
+        raise RuntimeError(f"{self.ctx.pass_name} needs the program it runs in");
+    }
+    return program;
+}
+
+impl CompileContext.is_canceled -> bool {
+    return self.cancel_requested;
+}
+
+impl CompilerPass.release {}
+
+impl TreePass.enter_walk with UniNode entry {
+    self.ctx.enter_node(here);
+}
+
+impl TreePass.exit_walk with UniNode exit {
+    self.ctx.exit_node(here);
+}

@@ -13,7 +13,13 @@ segfaulted; these tests pin the diagnostic and the guard-free IR shape.
 
 import ctypes;
 import os;
-import from tests.support { TESTS_DIR, compile_native, get_func, native_force_opts }
+import from tests.support {
+    TESTS_DIR,
+    compile_native,
+    compile_native_ir,
+    get_func,
+    native_force_opts
+}
 
 import from jaclang.compiler.driver.program { JacProgram }
 
@@ -41,6 +47,18 @@ test "pointer optional: construct, narrow, and unwrap at every seam" {
     oo = get_func(eng, "obj_opt_flow", ctypes.c_int64, ctypes.c_int64);
     assert oo(1) == 7 , "narrowed obj optional reads its field";
     assert oo(0) == -1 , "None obj optional narrows to the None branch";
+}
+
+test "optional casts preserve absent and false-valued payloads" {
+    (eng, _) = compile_native("optional_ptr.jac");
+    memo = get_func(eng, "memo_cast", ctypes.c_int64, ctypes.c_int64);
+    assert memo(0) == -1;
+    assert memo(1) == 7;
+    number = get_func(eng, "numeric_optional_cast", ctypes.c_int64, ctypes.c_int64);
+    assert number(0) == -1;
+    assert number(1) == 0;
+    assert get_func(eng, "required_cast_still_raises", ctypes.c_int64)() == 1;
+    assert get_func(eng, "memo_keeps_returned_object", ctypes.c_int64)() == 7;
 }
 
 test "pointer optional equality is tag arithmetic matching Python" {
@@ -124,7 +142,7 @@ test "un-narrowed optional use at strict sites is E1121, never runtime UB" {
 }
 
 test "IR shape: tagged optionals, jacval slots, no NULL-guarded strcmp" {
-    (_, ir) = compile_native("optional_ptr.jac");
+    ir = compile_native_ir("optional_ptr.jac");
     text = str(ir.gen.llvm_ir);
     assert "JacOpt." in text , "pointer optionals did not lower to JacOpt";
     assert "List.jacval" in text , "optional elements did not lower to jacval slots";

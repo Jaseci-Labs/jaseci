@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Drive the served jaclang.org site (jac/examples/jaclang_org) through a full
 # user journey with `jac browse`, asserting rendered content and fullstack
-# behavior at every stop. Used by CI (ci.yml pack-smoke, happy-path.yml) and
+# behavior at every stop. Shared by the pack-smoke and pack-eject CI jobs and
 # runnable locally against any server:
 #
 #   scripts/site-browse-journey.sh [BASE_URL]
@@ -9,9 +9,6 @@
 # Env knobs:
 #   SITE_JOURNEY_SKIP_DOCS=1   skip the docs stop (docs sync needs either
 #                              network or JAC_DOCS_LOCAL on the server side)
-#   SITE_JOURNEY_SKIP_WASM=1   skip the arena.wasm asset check (dev-mode wasm
-#                              emission needs a jac newer than the fix; drop
-#                              this knob once that release ships)
 #   SITE_JOURNEY_ARTIFACTS     directory for failure screenshots (default /tmp)
 set -euo pipefail
 
@@ -39,6 +36,12 @@ fail() {
     jac browse snapshot | head -n 60 || true
     echo "--- console at failure ---"
     jac browse console || true
+    echo "--- module requests at failure ---"
+    jac browse eval 'JSON.stringify(performance.getEntriesByType("resource")
+      .filter(e => ["script", "link"].includes(e.initiatorType))
+      .map(e => ({url: e.name, status: e.responseStatus,
+        duration: Math.round(e.duration), transferred: e.transferSize,
+        decoded: e.decodedBodySize})), null, 2)' || true
     exit 1
 }
 
@@ -84,9 +87,33 @@ for i in 1 2 3; do
     sleep 5
     [ "$i" = 3 ] && fail "browser failed to launch after 3 attempts"
 done
-jac browse wait '#top' || fail "landing #top never appeared"
+# Cold 4-vCPU runners transform the whole client graph on demand the first
+# time the dev server is hit, and vite re-runs dep optimization every time a
+# lazily imported package is discovered: each round bumps the dep hash,
+# serves 504s for stale generations, and forces a full page reload, so the
+# landing can be knocked down and restarted several times before anything
+# mounts (observed: 7+ distinct dep generations, >2 minutes on a cold cache;
+# later stops and the fleet pass reuse the warm cache). Poll patiently past
+# the churn instead of a fixed handful of waits, and re-open periodically so
+# a page wedged mid-boot on a stale dep generation gets a clean navigation.
+mount_ok=false
+landing_deadline=$(( $(date +%s) + 360 ))
+next_reopen=$(( $(date +%s) + 90 ))
+while [ "$(date +%s)" -lt "$landing_deadline" ]; do
+    if jac browse wait '#top'; then
+        mount_ok=true
+        break
+    fi
+    echo "landing not mounted yet; waiting out vite's cold dep optimization"
+    if [ "$(date +%s)" -ge "$next_reopen" ]; then
+        echo "re-opening the landing for a clean load"
+        jac browse open "$BASE_URL" || true
+        next_reopen=$(( $(date +%s) + 90 ))
+    fi
+done
+[ "$mount_ok" = true ] || fail "landing #top never appeared"
 # The headless profile persists localStorage between runs; start from a clean
-# slate so the socialize journey always begins at the auth form.
+# slate so the JacYac journey always begins at the auth form.
 jac browse eval 'localStorage.clear(); sessionStorage.clear(); "storage cleared"' \
     || fail "could not clear browser storage"
 title="$(jac browse get title)"
@@ -102,16 +129,19 @@ check '(() => {
   return "install curl one-liner rendered";
 })()'
 
-step "landing: quickstart points at this repo, not jac_site"
+step "landing: quickstart scaffolds the site with jac create --awesome"
 check '(() => {
   const text = document.body.innerText;
   if (/jac_site/.test(text)) {
     throw new Error("landing page still references the retired jac_site repo");
   }
-  if (!/git clone .*jaseci-labs\/jac\b/.test(text)) {
-    throw new Error("landing page does not show the in-tree clone quickstart");
+  if (/git clone/.test(text)) {
+    throw new Error("landing page still shows the clone-and-cd quickstart");
   }
-  return "quickstart clones the in-tree site";
+  if (!/jac create \S+ --awesome/.test(text)) {
+    throw new Error("landing page does not show the jac create --awesome quickstart");
+  }
+  return "quickstart scaffolds the site via --awesome";
 })()'
 
 step "landing: ninja book cover is visible and links to the book"
@@ -140,14 +170,26 @@ check '(async () => {
   throw new Error("book cover image never became visible");
 })()'
 
-if [ "${SITE_JOURNEY_SKIP_WASM:-0}" = "1" ]; then
-    step "landing: wasm check skipped (SITE_JOURNEY_SKIP_WASM=1)"
-else
-    step "landing: native wasm module is built and served"
-    wasm_bytes="$(curl -sf --max-time 30 "$BASE_URL/static/arena.wasm" | wc -c | tr -d ' ')"
-    echo "arena.wasm: ${wasm_bytes} bytes"
-    [ "$wasm_bytes" -gt 10000 ] || fail "arena.wasm missing or implausibly small (${wasm_bytes} bytes)"
-fi
+step "landing: native arena initializes and advances frames"
+check '(async () => {
+  const section = document.querySelector("#game");
+  if (!section) throw new Error("Arena section missing");
+  section.scrollIntoView({block: "center"});
+  const launch = Array.from(section.querySelectorAll("button"))
+    .find(button => button.textContent.includes("Launch"));
+  if (!launch) throw new Error("Arena launch button missing");
+  launch.click();
+  for (let attempt = 0; attempt < 150; attempt++) {
+    const hud = section.querySelector("canvas")?.nextElementSibling;
+    const values = hud ? Array.from(hud.querySelectorAll("b"), item => Number(item.textContent)) : [];
+    if (values.length === 4 && values.every(Number.isFinite) && values[3] > 0) {
+      if (values[0] < 0 || values[0] > 100) throw new Error("Arena returned invalid health");
+      return "Native frames running at " + values[3] + " fps, hp=" + values[0];
+    }
+    await new Promise(resolve => setTimeout(resolve, 200));
+  }
+  throw new Error("Arena never advanced a native frame");
+})()'
 
 # ------------------------------------------------------------- wait-wuuut ---
 step "wait-wuuut: live source windows stream real files"
@@ -162,21 +204,39 @@ check '(() => {
   return "live source windows loaded";
 })()'
 
-# ------------------------------------------------------------ leaderboard ---
-step "leaderboard: page renders the board shell"
+# ----------------------------------------------------------- Ninja Scores ---
+step "Ninja Scores: the legacy board opens the public JacYac directory"
 open_page "$BASE_URL/leaderboard"
-wait_for_text "The board" 30
+wait_for_text "Ninja Scores" 30
+jac browse wait 'section[aria-label="Ninja Scores"]' || fail "public scores never appeared"
 check '(() => {
-  const input = document.querySelector("input");
-  if (!input) throw new Error("no repo submit input on the leaderboard");
-  const btn = [...document.querySelectorAll("button")]
-    .find((b) => /Score my repo/.test(b.textContent));
-  if (!btn) throw new Error("no submit button on the leaderboard");
-  return "leaderboard shell rendered";
+  if (location.pathname !== "/jacyac/scores") {
+    throw new Error("legacy leaderboard did not redirect into JacYac");
+  }
+  const section = document.querySelector("section[aria-label=\"Ninja Scores\"]");
+  if (!section.querySelector("input[aria-label=\"Search Ninja Scores\"]")) {
+    throw new Error("public scores search is missing");
+  }
+  if (!section.textContent.includes("Sign in to add your project")) {
+    throw new Error("anonymous scores must offer sign-in before submission");
+  }
+  if (section.querySelector("input[aria-label=\"GitHub repository URL\"]")) {
+    throw new Error("anonymous visitor was offered repository submission");
+  }
+  const header = document.querySelector("header");
+  const join = [...header.querySelectorAll("a")]
+    .find(a => a.textContent.trim() === "Join JacYac");
+  if (!join || join.getAttribute("href") !== "/jacyac") {
+    throw new Error("site CTA does not open JacYac");
+  }
+  if (header.textContent.includes("Ninja Scores")) {
+    throw new Error("Ninja Scores still appears in the site-wide navigation");
+  }
+  return "legacy redirect, public scores, and signed-in submission boundary verified";
 })()'
 
 # -------------------------------------------------------------- socialize ---
-step "socialize: signup through the real form"
+step "JacYac: signup through the real form"
 open_page "$BASE_URL/socialize"
 jac browse wait '#lx-username' || fail "auth form never appeared"
 check '(() => {
@@ -199,7 +259,30 @@ check '(() => {
 jac browse wait 'textarea' || fail "feed composer never appeared after signup"
 wait_for_text "$USER_NAME" 15
 
-step "socialize: post a tweet"
+step "JacYac: signed-in Ninja Scores validates submissions and retains the draft"
+open_page "$BASE_URL/jacyac/scores"
+jac browse wait 'input[aria-label="GitHub repository URL"]' || fail "signed-in repository input never appeared"
+check '(() => {
+  const submit = document.querySelector("section[aria-label=\"Ninja Scores\"] button[type=submit]");
+  if (!submit || submit.textContent.trim() !== "Add project" || !submit.disabled) {
+    throw new Error("empty repository submission must be disabled");
+  }
+  return "signed-in repository submission rendered";
+})()'
+jac browse fill 'input[aria-label="GitHub repository URL"]' 'https://example.com/owner/repo' || fail "could not fill repository URL"
+jac browse click 'section[aria-label="Ninja Scores"] button[type=submit]' || fail "could not submit invalid repository"
+wait_for_text "That is not a GitHub repository" 20
+check '(() => {
+  const input = document.querySelector("input[aria-label=\"GitHub repository URL\"]");
+  if (input.value !== "https://example.com/owner/repo") {
+    throw new Error("failed submission discarded the repository draft");
+  }
+  return "invalid repository rejected and draft retained";
+})()'
+open_page "$BASE_URL/jacyac"
+jac browse wait 'textarea' || fail "modern JacYac route lost the session"
+
+step "JacYac: post a tweet"
 jac browse fill 'textarea' "$TWEET_TEXT" || fail "could not fill composer"
 # The sidebar has a "Post" nav button too; the composer submit is the first
 # enabled "Post" that follows the textarea in document order.
@@ -215,10 +298,10 @@ check '(() => {
 })()'
 wait_for_text "Hello from the CI journey ${RUN_TAG}" 20
 
-step "socialize: hashtag shows up in trending"
+step "JacYac: hashtag shows up in trending"
 wait_for_text "#jacdev" 20
 
-step "socialize: like the tweet"
+step "JacYac: like the tweet"
 check '(() => {
   const like = [...document.querySelectorAll("main article button")]
     .find((b) => b.querySelector("svg.lucide-heart"));
@@ -237,7 +320,10 @@ check '(async () => {
   throw new Error("like count never reached 1");
 })()'
 
-step "socialize: comment on the tweet"
+# Posts, comments, and channel posts share the default 10-second account quota.
+# Keep this happy-path journey within the same limits as real users.
+sleep 10
+step "JacYac: comment on the tweet"
 check '(() => {
   const reply = [...document.querySelectorAll("main article button")]
     .find((b) => b.querySelector("svg.lucide-message-circle"));
@@ -250,7 +336,7 @@ jac browse fill 'main article input' "$COMMENT_TEXT" || fail "could not fill rep
 jac browse press Enter || fail "could not submit reply"
 wait_for_text "CI reply ${RUN_TAG}" 20
 
-step "socialize: create a channel and post in it"
+step "JacYac: create a channel and post in it"
 check '(() => {
   const nav = [...document.querySelectorAll("aside button")]
     .find((b) => /Channels/.test(b.textContent));
@@ -285,6 +371,7 @@ check "(() => {
   return 'channel opened';
 })()"
 jac browse wait 'textarea' || fail "channel composer never appeared"
+sleep 10
 jac browse fill 'textarea' "$CHANNEL_POST" || fail "could not fill channel post"
 check '(() => {
   const ta = document.querySelector("textarea");
@@ -298,7 +385,7 @@ check '(() => {
 })()'
 wait_for_text "First CI post in ${CHANNEL_NAME}" 20
 
-step "socialize: session and data survive a reload"
+step "JacYac: session and data survive a reload"
 open_page "$BASE_URL/socialize"
 jac browse wait 'textarea' || fail "reload lost the session (auth form is back)"
 wait_for_text "Hello from the CI journey ${RUN_TAG}" 30
@@ -320,6 +407,36 @@ else
     })()'
 fi
 
+# --------------------------------------------------------------- packages ---
+step "packages: the index page settles into a list, an empty state or an error"
+open_page "$BASE_URL/packages"
+wait_for_text "published to the jac-index" 30
+package_state=""
+for _ in $(seq 1 30); do
+    package_state="$(jac browse eval '(() => {
+      const card = document.querySelector("main a[href^=\"/packages/\"], ul a[href^=\"/packages/\"]");
+      if (card) return "list:" + card.getAttribute("href");
+      const text = document.body.innerText;
+      if (text.includes("No packages have been published yet.")) return "empty";
+      if (text.includes("The package index is unavailable")) return "error";
+      return "";
+    })()' 2>/dev/null || true)"
+    [ -n "$package_state" ] && [ "$package_state" != '""' ] && break
+    sleep 2
+done
+echo "packages index: ${package_state:-<none>}"
+case "$package_state" in
+    *list:*)
+        package_href="$(printf '%s' "$package_state" | sed -E 's/.*list:([^"]*).*/\1/')"
+        step "packages: a package page renders its header and tabs"
+        open_page "$BASE_URL$package_href"
+        wait_for_text "All packages" 30
+        wait_for_text "Versions" 30
+        ;;
+    *empty*|*error*) ;;
+    *) fail "the packages page never settled" ;;
+esac
+
 # --------------------------------------------------------------- not found ---
 step "404: unmatched routes render the catch-all page"
 open_page "$BASE_URL/definitely-not-a-page-${RUN_TAG}"
@@ -338,5 +455,5 @@ if printf '%s' "$console_out" \
 fi
 
 step "done"
-echo "journey complete: landing, wait-wuuut, leaderboard, socialize"
-echo "(signup/post/trend/like/comment/channels/reload), docs, 404, console"
+echo "journey complete: landing, wait-wuuut, public Ninja Scores, JacYac"
+echo "(signup/repository validation/post/trend/like/comment/channels/reload), legacy routes, docs, packages, 404, console"

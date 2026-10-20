@@ -1,11 +1,5 @@
-import from jaclang.scale.deploy.target.kubernetes.ops_rbac {
-    build_ops_rbac,
-    ops_role_name
-}
-
-
-def _all_verbs(role: dict) -> list {
-    out: list = [];
+def _all_verbs(role: dict[str, any]) -> list[str] {
+    out: list[str] = [];
     for rule in role["rules"] {
         for v in rule["verbs"] {
             out.append(v);
@@ -23,7 +17,7 @@ test "build_ops_rbac: read-only Role (no mutating verbs) bound to the SA" {
     assert role["metadata"]["namespace"] == "myns";
     verbs = _all_verbs(role);
     assert "patch" not in verbs and "delete" not in verbs and "create" not in verbs;
-    resources: list = [];
+    resources: list[str] = [];
     for rule in role["rules"] {
         for res in rule["resources"] {
             resources.append(res);
@@ -32,6 +26,26 @@ test "build_ops_rbac: read-only Role (no mutating verbs) bound to the SA" {
     assert "configmaps" not in resources , "configmaps excluded (may hold secrets)";
     assert binding["subjects"][0]["name"] == "myapp-sa";
     assert binding["roleRef"]["name"] == ops_role_name("myapp");
+}
+
+
+test "build_ops_rbac: the read-only Role can read and watch KEDA's own resources" {
+    # Without this an autoscaler runtime status cannot be read from inside a pod:
+    # the ScaledObject carries the trigger and scaler conditions, and `watch` is
+    # what a namespace observer needs, so granting it later means a second RBAC
+    # change and a redeploy.
+    role = build_ops_rbac("myapp", "myns", "myapp-sa", False)["role"];
+    keda = [
+        r
+        for r in role["rules"]
+        if "keda.sh" in r["apiGroups"]
+    ];
+    assert len(keda) == 1 , role["rules"];
+    assert sorted(keda[0]["resources"]) == ["scaledobjects", "triggerauthentications"];
+    for verb in ["get", "list", "watch"] {
+        assert verb in keda[0]["verbs"] , keda[0];
+    }
+    assert "patch" not in keda[0]["verbs"] and "delete" not in keda[0]["verbs"];
 }
 
 

@@ -13,6 +13,8 @@ front end -- they are the object-spatial runtime and the driver -- so their
 closure and are deliberately untouched.
 """
 
+import from jaclang.compiler.passes.execution { run_walker }
+
 import os;
 import types;
 import jaclang.compiler.frontend.helpers as helpers_mod;
@@ -20,7 +22,7 @@ import from tests.support { TESTS_DIR }
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.compiler.driver.compile_options { CompileOptions }
 import from jaclang.compiler.frontend.codeinfo { native_safe_sym }
-import from jaclang.compiler.frontend.helpers { pascal_to_snake }
+import from jaclang.project.source { pascal_to_snake }
 
 glob FIXTURES = os.path.join(
          TESTS_DIR, "compiler", "backends", "native", "fixtures"
@@ -33,9 +35,7 @@ def check_na_inline(label: str, code: str) -> JacProgram {
     prog.compile(
         file_path=os.path.join(FIXTURES, f"_idiom_{label}.jac"),
         use_str=code,
-        options=CompileOptions(
-            no_cgen=True, force_codespace="native", force_target_program=True
-        )
+        options=CompileOptions(no_cgen=True, force_codespace="native")
     );
     return prog;
 }
@@ -130,9 +130,12 @@ test "native_safe_sym treats non-ASCII letters as unsafe" {
     assert safe_sym_stem("naïve_mod") == "na_ve_mod";
 }
 
-test "native_safe_sym keeps the kernel modules unhashed" {
-    assert native_safe_sym("osp_kernel") == "osp_kernel";
-    assert native_safe_sym("fmt_kernel") == "fmt_kernel";
+test "native_safe_sym hashes the kernel modules like every other unit" {
+    # Every native module is a unit named by its module key; the toolchain
+    # units carry no fixed link names any more.
+    assert native_safe_sym("osp_kernel") != "osp_kernel";
+    assert native_safe_sym("osp_kernel").startswith("osp_kernel_");
+    assert native_safe_sym("fmt_kernel").startswith("fmt_kernel_");
 }
 
 test "native_safe_sym keeps distinct sources distinct after sanitizing" {
@@ -145,13 +148,7 @@ test "native_safe_sym keeps distinct sources distinct after sanitizing" {
 # helpers.jac: the Python-only tenants moved to their own modules
 # ─────────────────────────────────────────────────────────────────────
 
-# `helpers.jac` sits under most of the front end, so every module-scope
-# import it carried was inherited by every closure above it. The debugger
-# (`pdb`/`dis`/`marshal`), the jac.toml reader (`tomllib`), and the traceback
-# renderer (`traceback`) each moved to their own module, leaving `os` as the
-# only module object bound at helpers' module scope. This is the acceptance
-# criterion for that move, spelled so re-adding an import fails here.
-test "helpers module scope binds os and nothing else" {
+test "helpers module scope binds no Python modules" {
     bound = sorted(
         [
             nm
@@ -159,7 +156,7 @@ test "helpers module scope binds os and nothing else" {
             if isinstance(val, types.ModuleType) and not nm.startswith("__")
         ]
     );
-    assert bound == ["os"] , f"helpers.jac module scope grew imports: {bound}";
+    assert bound == [] , f"helpers.jac module scope grew imports: {bound}";
 }
 
 # Sitting under most of the front end only pays if the module can be linked.
@@ -169,22 +166,21 @@ test "helpers module scope binds os and nothing else" {
 # are type errors, and a type error in a native module refuses the module --
 # there is no callable to demote a signature to. Every one of them is fixed
 # or demotable now, so the module reaches the backend and the constructs that
-# genuinely cannot lower become seams instead of a whole-module refusal.
-test "helpers.jac lowers when a native unit reaches it" {
+# genuinely cannot lower become seams instead of a whole-module refusal. The
+# encoding-probing file reader now lives in `project.textio`, the host-side
+# text I/O module, so none of the helpers here has to demote at all.
+test "source helpers lower when a native unit reaches them" {
     import jaclang;
     import from jaclang.compiler.driver.na_coverage {
         na_coverage_begin,
         na_coverage_end
     }
     helpers_path = os.path.join(
-        os.path.dirname(jaclang.__file__), "compiler", "frontend", "helpers.jac"
+        os.path.dirname(jaclang.__file__), "project", "source.jac"
     );
     prog = JacProgram();
     opts = CompileOptions(
-        aot_mode=True,
-        force_codespace='native',
-        force_target_program=True,
-        no_ir_cache=True
+        aot_mode=True, force_codespace='native'
     ).clone_for_native_import();
     na_coverage_begin();
     try {
@@ -193,25 +189,22 @@ test "helpers.jac lowers when a native unit reaches it" {
         coverage = na_coverage_end();
     }
     assert not prog.errors_had , (
-        f"helpers.jac must reach the backend, not refuse on a signature no "
+        f"project/source.jac must reach the backend, not refuse on a signature no "
         f"callable owns: {[str(e) for e in prog.errors_had]}"
     );
     assert ir is not None and ir.gen.llvm_ir is not None , (
-        "no LLVM IR for helpers.jac, so every consumer that links it inherits "
+        "no LLVM IR for project/source.jac, so every consumer that links it inherits "
         "a module-level refusal"
     );
     rec = coverage.get(os.path.realpath(helpers_path));
-    assert rec is not None , "the coverage recorded nothing for helpers.jac";
+    assert rec is not None , "the coverage recorded nothing for project/source.jac";
     seams = [str(s) for s in (rec["seams"] or [])];
-    reader = [
+    own_seams = [
         s
         for s in seams
-        if s.startswith("read_file_with_encoding: ")
+        if os.path.join("project", "source.jac") in s
     ];
-    assert len(reader) == 1 and "open" in reader[0] , (
-        f"`open(path, encoding=...)` has to demote its own function and name "
-        f"the construct it refused, got: {seams}"
-    );
+    assert not own_seams , f"project/source.jac demoted its own helpers: {own_seams}";
 }
 
 test "helpers no longer exports the moved symbols" {
@@ -339,7 +332,8 @@ test "version-condition comparisons match the operator table they replaced" {
     import sys;
     import ast as py_ast;
     import from jaclang.compiler.frontend.unitree { IfStmt, PythonModuleAst, Source }
-    import from jaclang.compiler.passes.pyast_load_pass { PyastBuildPass }
+    import from jaclang.compiler.driver.pipeline { run_utility }
+    import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
     import from jaclang.compiler.frontend.helpers { evaluate_version_condition }
     code = "import sys\n"
     "if sys.version_info >= (3, 11):\n    a = 1\n"
@@ -351,11 +345,13 @@ test "version-condition comparisons match the operator table they replaced" {
     "if sys.version_info >= (99, 0):\n    g = 1\n"
     "if sys.platform == 'linux':\n    h = 1\n";
     prog = JacProgram();
-    mod = PyastBuildPass(
-        ir_in=PythonModuleAst(
+    mod = run_utility(
+        CompilationProduct.PYTHON_AST,
+        PythonModuleAst(
             py_ast.parse(code), orig_src=Source(code, "test_version_ops.py")
-        )
-    ).ir_out;
+        ),
+        prog
+    ).module;
     got = [
         evaluate_version_condition(nd.condition)
         for nd in mod.get_all_sub_nodes(typ=IfStmt)
@@ -379,8 +375,12 @@ test "version-condition comparisons match the operator table they replaced" {
 # mapping beside the new one, so every CI platform proves the pair agrees.
 test "native_target_os agrees with the platform.system mapping it replaced" {
     import platform;
-    import from jaclang.compiler.frontend.codeinfo { native_target_os }
-    prior = os.environ.pop("JAC_NATIVE_TARGET", None);
+    import from jaclang.compiler.frontend.codeinfo {
+        native_target_os,
+        set_native_target_override,
+        _native_target_ctx
+    }
+    prior = set_native_target_override("");
     try {
         sysname = platform.system();
         legacy = "linux";
@@ -394,29 +394,28 @@ test "native_target_os agrees with the platform.system mapping it replaced" {
             f"native_target_os() said {native_target_os()!r}"
         );
     } finally {
-        if prior is not None {
-            os.environ["JAC_NATIVE_TARGET"] = prior;
-        }
+        _native_target_ctx.set(prior);
     }
 }
 
-test "native_target_os still honors the JAC_NATIVE_TARGET override" {
-    import from jaclang.compiler.frontend.codeinfo { native_target_os }
-    prior = os.environ.pop("JAC_NATIVE_TARGET", None);
+test "native_target_os honors the native target override" {
+    import from jaclang.compiler.frontend.codeinfo {
+        native_target_os,
+        set_native_target_override,
+        _native_target_ctx
+    }
+    prior = set_native_target_override("");
     try {
         for (raw, want) in [
             ("aarch64-apple-darwin", "darwin"),
             ("x86_64-windows-msvc", "windows"),
             ("x86_64-unknown-linux-gnu", "linux")
         ] {
-            os.environ["JAC_NATIVE_TARGET"] = raw;
+            set_native_target_override(raw);
             assert native_target_os() == want , f"{raw} mapped wrong";
         }
     } finally {
-        os.environ.pop("JAC_NATIVE_TARGET", None);
-        if prior is not None {
-            os.environ["JAC_NATIVE_TARGET"] = prior;
-        }
+        _native_target_ctx.set(prior);
     }
 }
 

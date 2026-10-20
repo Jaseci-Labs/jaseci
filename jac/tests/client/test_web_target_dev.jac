@@ -1,9 +1,10 @@
-"""Regression tests for WebTarget.dev() -- the web/static/PWA dev flow.
+"""Regression tests for WebTarget.dev() -- the web/static/desktop dev flow.
 
 Bug (#7660): WebTarget.dev() started Vite without compiling the .jac
 client entry first, so a fresh project's first `jac run -d` failed
-with "Failed to resolve import /compiled/_entry.js". StaticTarget and
-PWATarget inherit this method, so both were affected too.
+with "Failed to resolve import /compiled/_entry.js". StaticTarget inherits
+this method (and DesktopTarget's native-engine dev loop builds on the same
+compile step), so those were affected too.
 
 Tests mock prepare_vite_dev_compilation() rather than calling it for
 real, since it resolves output paths via ambient project config that
@@ -15,13 +16,13 @@ import from pathlib { Path }
 
 
 obj _FakeBundler {
-    has calls: list;
+    has calls: list[str];
 
-    def create_vite_config(entry_file: any, **kw: dict) -> any {
+    def create_vite_config(entry_file: any, **kw: dict[str, any]) -> any {
         return None;
     }
 
-    def start_dev_server(**kw: dict) -> any {
+    def start_dev_server(**kw: dict[str, any]) -> any {
         self.calls.append("serve");
         return None;
     }
@@ -29,7 +30,7 @@ obj _FakeBundler {
 
 
 obj _FakeWatcher {
-    has events: list;
+    has events: list[str];
 
     def add_callback(cb: any) {
         self.events.append("callback");
@@ -48,11 +49,11 @@ obj _FakeWatcher {
 """Runs target.dev() with the compile step and the watchdog probe stubbed out,
 and returns the steps the flow actually took, in order. Passing a watcher makes
 ensure_watchdog_common() report watchdog as available, so the HMR path runs."""
-def _record_dev_calls(target: any, watcher: any = None) -> list {
-    calls: list = [];
+def _record_dev_calls(target: any, watcher: any = None) -> list[str] {
+    calls: list[str] = [];
     fake_bundler = _FakeBundler(calls=calls);
 
-    def _fake_prepare(project_dir: any, entry_file: any) -> tuple {
+    def _fake_prepare(project_dir: any, entry_file: any) -> tuple[any, ...] {
         calls.append("compile");
         return (fake_bundler, object());
     }
@@ -61,7 +62,7 @@ def _record_dev_calls(target: any, watcher: any = None) -> list {
         return watcher is not None;
     }
 
-    def _fake_watcher_cls(**kw: dict) -> any {
+    def _fake_watcher_cls(**kw: dict[str, any]) -> any {
         return watcher;
     }
 
@@ -113,21 +114,37 @@ test "web target dev wires up the hmr watcher and always stops it" {
 
 
 """`jac run -d` on a `kind = "web-static"` project (the bug's original repro)
-runs StaticTarget.dev(), which is WebTarget's inherited one; PWATarget defines
-its own only to print a notice before delegating via super.dev(). Both must end
-up on the fixed compile-then-serve path."""
+runs StaticTarget.dev(), which is WebTarget's inherited one. A PWA is no
+longer a target of its own -- `[client.pwa]` decorates the web build -- so a
+PWA project's dev loop is WebTarget.dev() itself, with the same fix."""
 test "static and pwa dev flows inherit the compile-before-serve fix" {
-    import from jaclang.client.targets.pwa_target { PWATarget }
+    import os;
+    import tempfile;
     import from jaclang.client.targets.static_target { StaticTarget }
+    import from jaclang.client.targets.web_target { WebTarget }
 
     assert _record_dev_calls(StaticTarget()) == ["compile", "serve"] , (
         "StaticTarget must inherit WebTarget.dev(), so web-static projects "
         "compile before Vite starts"
     );
-    assert _record_dev_calls(PWATarget()) == ["compile", "serve"] , (
-        "PWATarget.dev() must delegate to WebTarget.dev() via super.dev(), so "
-        "PWA projects compile before Vite starts"
-    );
+    with tempfile.TemporaryDirectory() as tmp {
+        (Path(tmp) / "jac.toml").write_text(
+            '[project]\nname = "pwa-app"\nversion = "1.0.0"\n'
+            'entry-point = "main"\nkind = "web-app"\n\n'
+            '[client.pwa]\ntheme_color = "#000000"\n',
+            encoding="utf-8"
+        );
+        old_cwd = os.getcwd();
+        os.chdir(tmp);
+        try {
+            assert _record_dev_calls(WebTarget()) == ["compile", "serve"] , (
+                "a [client.pwa] project runs WebTarget.dev(), so PWA projects "
+                "compile before Vite starts"
+            );
+        } finally {
+            os.chdir(old_cwd);
+        }
+    }
 }
 
 
@@ -146,7 +163,7 @@ test "configured scripts reach the dev server index.html" {
     import from jaclang.project.config { JacConfig }
     import from jaclang.client.vite_bundler { ViteBundler }
 
-    def _fake_plugin_config(self: JacConfig, name: str) -> dict {
+    def _fake_plugin_config(self: JacConfig, name: str) -> dict[str, any] {
         return {
             "app_meta_data": {
                 "title": "ignored in dev",
@@ -177,4 +194,115 @@ test "configured scripts reach the dev server index.html" {
         "only the scripts key is injected in dev; the dev index keeps its own "
         "title and meta tags"
     );
+}
+
+
+test "dev HTML and runtime aliases resolve in the selected workspace app" {
+    import re;
+    import tempfile;
+    import from jaclang.project.config { JacConfig, get_config, set_config }
+    import from jaclang.runtime.runtime { JacRuntime }
+    import from jaclang.client.vite_bundler { ViteBundler }
+
+    previous = get_config();
+    with tempfile.TemporaryDirectory() as tmp {
+        project = Path(tmp);
+        manifest = (
+            '[project]\nname = "dev-paths"\ndefault-app = "web"\n[apps.web]\nkind = "web-app"\nentry-point = "web.main"\n[apps.desktop]\nkind = "desktop"\nentry-point = "shell.main"\n[apps.desktop.dependencies.npm]\nreact-native-web = "^0.19.13"\n[client.pwa]\nenabled = true\n[client.vite]\nplugins = ["tailwindcss()"]\nlib_imports = ["import tailwindcss from \'@tailwindcss/vite\'"]\n'
+        );
+        (project / "jac.toml").write_text(manifest);
+        config = JacConfig.from_toml_str(manifest, project / "jac.toml");
+        try {
+            set_config(config);
+            for (app_name, app_path) in [("web", "web"), ("desktop", "shell")] {
+                target = project / app_path / "main.jac";
+                target.parent.mkdir();
+                with unittest.mock.patch.object(
+                    JacRuntime, "get_full_target_path", return_value=str(target)
+                ) {
+                    bundler = ViteBundler(target.parent);
+                    assert bundler.project_dir == project;
+                    build_dir = bundler._get_client_dir();
+                    compiled = build_dir / app_name / "compiled";
+                    compiled.mkdir(parents=True);
+                    for filename in [
+                        "_entry.js",
+                        "client_runtime.js",
+                        "client_mobui.js",
+                        "desktop_api.js",
+                        "wasm_host.js",
+                        "pwa_runtime.js"
+                    ] {
+                        (compiled / filename).write_text("export {};\n");
+                    }
+                    (compiled / "assets").mkdir();
+                    # Fullstack dev passes a build entry; client-only targets
+                    # pass Jac source. Both must resolve the compiled app.
+                    for entry_file in [build_dir / "build" / "main.js", target] {
+                        config_path = bundler.create_vite_config(
+                            entry_file,
+                            is_dev=True,
+                            for_desktop_dev=app_name == "desktop"
+                        );
+                        bundler._ensure_dev_index_html(build_dir);
+                        page = (build_dir / "index.html").read_text();
+                        imports = re.findall(r'import\("(/[^\"]*_entry.js)"\)', page);
+                        assert imports == [f"/{app_name}/compiled/_entry.js"] * 2;
+                        assert all(
+                            (build_dir / url.lstrip("/")).is_file() for url in imports
+                        );
+                        generated = config_path.read_text();
+                        assert '"react-native": "react-native-web"' in generated;
+                        assert "import tailwindcss from '@tailwindcss/vite'"
+                            in generated;
+                        assert "tailwindcss()" in generated;
+                        for filename in [
+                            "client_runtime.js",
+                            "client_mobui.js",
+                            "desktop_api.js",
+                            "wasm_host.js",
+                            "pwa_runtime.js",
+                            "assets"
+                        ] {
+                            assert f'path.resolve(buildDir, "{app_name}/compiled/{filename}")'
+                                in generated;
+                        }
+                        if app_name == "desktop" {
+                            assert 'const compiled = path.resolve(buildDir, "desktop/compiled")'
+                                in generated;
+                        }
+                    }
+                }
+            }
+        } finally {
+            set_config(previous);
+        }
+    }
+}
+
+
+test "single app dev keeps the unscoped compiled entry and aliases" {
+    import tempfile;
+    import from jaclang.project.config { JacConfig, get_config, set_config }
+    import from jaclang.client.vite_bundler { ViteBundler }
+
+    previous = get_config();
+    with tempfile.TemporaryDirectory() as tmp {
+        project = Path(tmp);
+        manifest = '[project]\nname = "single"\nkind = "web-app"\n';
+        (project / "jac.toml").write_text(manifest);
+        try {
+            set_config(JacConfig.from_toml_str(manifest, project / "jac.toml"));
+            bundler = ViteBundler(project);
+            build_dir = bundler._get_client_dir();
+            config_path = bundler.create_vite_config(project / "main.jac", is_dev=True);
+            bundler._ensure_dev_index_html(build_dir);
+            page = (build_dir / "index.html").read_text();
+            assert page.count('import("/compiled/_entry.js")') == 2;
+            assert 'path.resolve(buildDir, "compiled/client_runtime.js")'
+                in config_path.read_text();
+        } finally {
+            set_config(previous);
+        }
+    }
 }

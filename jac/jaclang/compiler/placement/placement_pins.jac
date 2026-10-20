@@ -1,439 +1,72 @@
 import fnmatch;
-import json;
 import os;
-import from jaclang.compiler.driver.modresolver { find_jac_project_root }
 
-glob _VALID_SPACES: tuple = ('server', 'client', 'native'),
-     _pins_cache: dict[str, tuple[float, dict[str, str]]] = {};
+glob PIN_SPACES: tuple[str, ...] = ('server', 'client', 'native');
+
+def validate_pins(pins: dict[str, str], toml_path: str) -> dict[str, str];
+
+def module_dot_path(source_path: str, root_dir: str) -> str;
+
+def match_pin(
+    source_path: str, root_dir: str, pins: dict[str, str], element_name: str = ''
+) -> str;
+
+def config_pins_for(source_path: str) -> dict[str, str];
 
 
-def _load_pins(root_dir: str) -> dict[str, str] {
-    toml_path = os.path.join(root_dir, "jac.toml");
-    try {
-        mtime = os.path.getmtime(toml_path);
-    } except OSError {
-        return {};
-    }
-    cached = _pins_cache.get(root_dir);
-    if cached is not None and cached[0] == mtime {
-        return cached[1];
-    }
-    import tomllib;
-    try {
-        with open(toml_path, "rb") as f {
-            doc = tomllib.load(f);
-        }
-    } except Exception {
-        return {};
-    }
-    raw = doc.get("placement", {}).get("pins", {});
-    pins: dict[str, str] = {};
-    for (key, value) in raw.items() {
-        space = str(value);
-        if space not in _VALID_SPACES {
-            raise ValueError(
-                f"[placement.pins] in {toml_path}: '{key}' pins to "
-                f"'{space}', expected one of {list(_VALID_SPACES)}."
-            );
-        }
-        pins[str(key)] = space;
-    }
-    _pins_cache[root_dir] = (mtime, pins);
-    return pins;
+def config_pin_for(source_path: str, element_name: str) -> str;
+
+
+def config_element_pin(source_path: str, element_name: str) -> str;
+
+
+def config_module_pin(source_path: str) -> str;
+
+
+def effective_pin_for(
+    source_path: str, element_name: str, prog: (JacProgram | None) = None
+) -> str;
+
+
+def effective_module_pin(source_path: str, prog: (JacProgram | None) = None) -> str;
+
+
+def config_project_kind(source_path: str) -> str;
+
+
+def config_kind_space(source_path: str, fallback_kind: str = '') -> str;
+
+
+def pins_digest(source_path: str) -> str;
+
+
+def npm_dependency_names(source_path: str) -> set[str];
+
+def client_framework(source_path: str) -> str;
+
+glob _FRAMEWORK_PACKAGES: dict[str, set[str]] = {
+         "react": {"react", "react-dom"},
+         "preact": {"preact"},
+         "solid": {"solid-js"}
+     };
+
+
+obj BareImportVerdict {
+    has world: str = 'py',
+        rule: str = 'python import',
+        path: str = '';
 }
 
 
-def _module_dot_path(source_path: str, root_dir: str) -> str {
-    abs_path = os.path.realpath(os.path.abspath(source_path));
-    rel = os.path.relpath(abs_path, os.path.realpath(root_dir));
-    if rel.startswith("..") {
-        rel = os.path.basename(abs_path);
-    }
-    if rel.endswith(".jac") {
-        rel = rel[:-4];
-    }
-    return rel.replace(os.sep, ".");
-}
+def npm_package_root(spec: str) -> str;
+
+def _declared_npm_rule(spec: str, source_path: str) -> str;
 
 
-def config_pins_for(source_path: str) -> dict[str, str] {
-    if not source_path {
-        return {};
-    }
-    root_dir = find_jac_project_root(source_path);
-    if not root_dir {
-        return {};
-    }
-    return _load_pins(root_dir);
-}
+def _installed_npm_rule(spec: str, source_path: str) -> str;
 
 
-def config_pin_for(source_path: str, element_name: str) -> str {
-    if not source_path {
-        return '';
-    }
-    root_dir = find_jac_project_root(source_path);
-    if not root_dir {
-        return '';
-    }
-    pins = _load_pins(root_dir);
-    if not pins {
-        return '';
-    }
-    mod_dot = _module_dot_path(source_path, root_dir);
-    for (pattern, space) in pins.items() {
-        if element_name and fnmatch.fnmatchcase(f"{mod_dot}.{element_name}", pattern) {
-            return space;
-        }
-        if fnmatch.fnmatchcase(mod_dot, pattern) {
-            return space;
-        }
-    }
-    return '';
-}
+def in_client_npm_world(spec: str, source_path: str) -> bool;
 
 
-def config_module_pin(source_path: str) -> str {
-    return config_pin_for(source_path, '');
-}
-
-
-glob _na_demotion_memo: dict[str, tuple] = {},
-     _na_demotion_code: dict[str, str] = {},
-     _na_demotion_probed: set[str] = set();
-
-
-def _demotion_sidecar(path: str) -> (str | None) {
-    try {
-        import from jaclang.compiler.driver.jir { get_module_cache_path }
-        return str(get_module_cache_path(path).with_suffix('.nademote'));
-    } except Exception {
-        return None;
-    }
-}
-
-
-def _file_key(path: str) -> (tuple | None) {
-    try {
-        st = os.stat(path);
-        return (st.st_mtime_ns, st.st_size);
-    } except OSError {
-        return None;
-    }
-}
-
-
-def _load_demotion(path: str) -> (tuple | None) {
-    sidecar = _demotion_sidecar(path);
-    if sidecar is None {
-        return None;
-    }
-    try {
-        with open(sidecar, "r", encoding="utf-8") as f {
-            parts = f.read().split();
-        }
-        if len(parts) < 2 {
-            return None;
-        }
-        _na_demotion_code[path] = parts[2] if len(parts) > 2 else "";
-        return (int(parts[0]), int(parts[1]));
-    } except Exception {
-        return None;
-    }
-}
-
-
-def _remove_demotion_sidecar(path: str) {
-    sidecar = _demotion_sidecar(path);
-    if sidecar is None {
-        return;
-    }
-    try {
-        os.remove(sidecar);
-    } except OSError {}
-}
-
-
-def _is_demoted_native(path: str) -> bool {
-    key = _na_demotion_memo.get(path);
-    if key is None {
-        if path in _na_demotion_probed {
-            return False;
-        }
-        _na_demotion_probed.add(path);
-        key = _load_demotion(path);
-        if key is None {
-            return False;
-        }
-        _na_demotion_memo[path] = key;
-    }
-    if key == _file_key(path) {
-        return True;
-    }
-    del _na_demotion_memo[path];
-    _na_demotion_code.pop(path, None);
-    _remove_demotion_sidecar(path);
-    return False;
-}
-
-
-def _demoted_native_code(path: str) -> str {
-    if not _is_demoted_native(path) {
-        return "";
-    }
-    return _na_demotion_code.get(path, "");
-}
-
-
-def _mark_demoted_native(path: str, code: str = "") {
-    import from jaclang.compiler.native_scope {
-        in_native_scope_path,
-        scope_lowering_active
-    }
-    if scope_lowering_active() and in_native_scope_path(path) {
-        return;
-    }
-    key = _file_key(path);
-    if key is None {
-        return;
-    }
-    _na_demotion_memo[path] = key;
-    _na_demotion_code[path] = code;
-    _na_demotion_probed.discard(path);
-    sidecar = _demotion_sidecar(path);
-    if sidecar is None {
-        return;
-    }
-    try {
-        os.makedirs(os.path.dirname(sidecar), exist_ok=True);
-        tmp = f"{sidecar}.{os.getpid()}.tmp";
-        with open(tmp, "w", encoding="utf-8") as f {
-            f.write(f"{key[0]} {key[1]} {code}\n");
-        }
-        os.replace(tmp, sidecar);
-    } except OSError {}
-}
-
-
-def _clear_demoted_native(path: str) {
-    _na_demotion_memo.pop(path, None);
-    _na_demotion_code.pop(path, None);
-    _na_demotion_probed.discard(path);
-    _remove_demotion_sidecar(path);
-}
-
-
-def effective_pin_for(source_path: str, element_name: str) -> str {
-    pin = config_pin_for(source_path, element_name);
-    if pin == 'native' and _is_demoted_native(os.path.realpath(source_path)) {
-        return '';
-    }
-    return pin;
-}
-
-
-def effective_module_pin(source_path: str) -> str {
-    return effective_pin_for(source_path, '');
-}
-
-
-glob _kind_cache: dict[str, tuple[tuple, str]] = {},
-     _kind_chain_cache: dict[str, list[str]] = {},
-     _kind_probe: dict = {"active": False};
-
-
-def _enclosing_project_root(root_dir: str) -> str {
-    parent = os.path.dirname(os.path.realpath(root_dir));
-    if not parent or parent == os.path.realpath(root_dir) {
-        return '';
-    }
-    outer = find_jac_project_root(parent);
-    if not outer or os.path.realpath(outer) == os.path.realpath(root_dir) {
-        return '';
-    }
-    return outer;
-}
-
-
-def _declared_project_kind(root_dir: str) -> str {
-    import tomllib;
-    try {
-        with open(os.path.join(root_dir, "jac.toml"), "rb") as f {
-            doc = tomllib.load(f);
-        }
-        return str(doc.get("project", {}).get("kind", "") or "");
-    } except Exception {
-        return '';
-    }
-}
-
-
-def _project_kind_chain(root_dir: str) -> list[str] {
-    cached = _kind_chain_cache.get(root_dir);
-    if cached is not None {
-        return cached;
-    }
-    chain: list[str] = [];
-    cur = root_dir;
-    while cur {
-        chain.append(cur);
-        cur = _enclosing_project_root(cur);
-    }
-    _kind_chain_cache[root_dir] = chain;
-    return chain;
-}
-
-
-def _load_project_kind(root_dir: str) -> str {
-    chain = _project_kind_chain(root_dir);
-    stamps: list[float] = [];
-    for d in chain {
-        try {
-            stamps.append(os.path.getmtime(os.path.join(d, "jac.toml")));
-        } except OSError {
-            return '';
-        }
-    }
-    stamp = tuple(stamps);
-    cached = _kind_cache.get(root_dir);
-    if cached is not None and cached[0] == stamp {
-        return cached[1];
-    }
-    kind = '';
-    for d in chain {
-        kind = _declared_project_kind(d);
-        if kind {
-            break;
-        }
-    }
-    _kind_cache[root_dir] = (stamp, kind);
-    return kind;
-}
-
-
-def config_project_kind(source_path: str) -> str {
-    if not source_path {
-        return '';
-    }
-    root_dir = find_jac_project_root(source_path);
-    if not root_dir {
-        return '';
-    }
-    return _load_project_kind(root_dir);
-}
-
-
-def config_kind_space(source_path: str) -> str {
-    kind = config_project_kind(source_path);
-    if not kind or _kind_probe["active"] {
-        return '';
-    }
-    _kind_probe["active"] = True;
-    try {
-        import from jaclang.project.kinds { kind_spec }
-        spec = kind_spec(kind);
-        return spec.codespace if spec is not None else '';
-    } except Exception {
-        return '';
-    } finally {
-        _kind_probe["active"] = False;
-    }
-}
-
-
-def pins_digest(source_path: str) -> str {
-    pins = config_pins_for(source_path);
-    if not pins {
-        return '';
-    }
-    return json.dumps(pins, sort_keys=True);
-}
-
-glob _npm_deps_cache: dict[str, tuple[float, set[str]]] = {};
-
-
-def npm_dependency_names(source_path: str) -> set[str] {
-    if not source_path {
-        return set();
-    }
-    root_dir = find_jac_project_root(source_path);
-    if not root_dir {
-        return set();
-    }
-    toml_path = os.path.join(root_dir, "jac.toml");
-    try {
-        mtime = os.path.getmtime(toml_path);
-    } except OSError {
-        return set();
-    }
-    cached = _npm_deps_cache.get(root_dir);
-    if cached is not None and cached[0] == mtime {
-        return cached[1];
-    }
-    import tomllib;
-    try {
-        with open(toml_path, "rb") as f {
-            doc = tomllib.load(f);
-        }
-    } except Exception {
-        return set();
-    }
-    deps = doc.get("dependencies", {});
-    npm = deps.get("npm", {}) if isinstance(deps, dict) else {};
-    names: set[str] = set();
-    if isinstance(npm, dict) {
-        for k in npm {
-            key = str(k);
-            if key == "dev" {
-                continue;
-            }
-            names.add(key);
-        }
-        dev = npm.get("dev", {});
-        if isinstance(dev, dict) {
-            for k in dev {
-                names.add(str(k));
-            }
-        }
-    }
-    _npm_deps_cache[root_dir] = (mtime, names);
-    return names;
-}
-
-glob _framework_cache: dict[str, tuple[float, str]] = {};
-
-
-def client_framework(source_path: str) -> str {
-    if not source_path {
-        return "react";
-    }
-    root_dir = find_jac_project_root(source_path);
-    if not root_dir {
-        return "react";
-    }
-    toml_path = os.path.join(root_dir, "jac.toml");
-    try {
-        mtime = os.path.getmtime(toml_path);
-    } except OSError {
-        return "react";
-    }
-    cached = _framework_cache.get(root_dir);
-    if cached is not None and cached[0] == mtime {
-        return cached[1];
-    }
-    import tomllib;
-    fw = "react";
-    try {
-        with open(toml_path, "rb") as f {
-            doc = tomllib.load(f);
-        }
-        client = doc.get("client", {});
-        if isinstance(client, dict) {
-            fw = str(client.get("framework", "react"));
-        }
-    } except Exception {
-        fw = "react";
-    }
-    _framework_cache[root_dir] = (mtime, fw);
-    return fw;
-}
+def classify_bare_import(spec: str, source_path: str) -> BareImportVerdict;

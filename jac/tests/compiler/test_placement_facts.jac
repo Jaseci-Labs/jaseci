@@ -11,9 +11,10 @@ import from jaclang.compiler.placement.placement_facts {
     emits_server_code,
     is_client_only,
     module_spaces,
+    native_only,
+    native_unit,
     project_root_of,
-    require_project_root,
-    toolchain_native_by_policy
+    require_project_root
 }
 
 glob FIXTURE_DIR = os.path.join(
@@ -94,7 +95,6 @@ test "a module with compile errors is never classified client-only" {
 
 test "sealed images persist placement and expose it without re-derivation" {
     import json;
-    import from jaclang.compiler.placement.placement_facts { sealed_spaces_for }
     import from jaclang.jac0core.sealed { SealedImage, MANIFEST_FORMAT }
     d = tempfile.mkdtemp(prefix="jac-sealed-facts-");
     pre = os.path.join(d, "_precompiled");
@@ -109,9 +109,6 @@ test "sealed images persist placement and expose it without re-derivation" {
     with open(os.path.join(pre, "MANIFEST.json"), "w") as f {
         json.dump(manifest, f);
     }
-    assert sealed_spaces_for(os.path.join(d, "svc.jac")) == {"server"};
-    assert sealed_spaces_for(os.path.join(d, "ui", "page.jac")) == {"client"};
-    assert sealed_spaces_for(os.path.join(d, "unknown.jac")) is None;
     import from pathlib { Path }
     img = SealedImage(Path(pre), manifest);
     assert img.placement == {"svc.jac": ["server"], "ui/page.jac": ["client"]};
@@ -125,20 +122,30 @@ test "placement_pins imports stay within the documented allowlist" {
     allow = {
         "jaclang/cli/commands/impl/fix.impl.jac",
         "jaclang/compiler/driver/boundary_classify.jac",
-        "jaclang/compiler/driver/impl/compiler.impl.jac",
+        "jaclang/compiler/driver/impl/program.impl.jac",
         "jaclang/compiler/driver/jir.jac",
+        "jaclang/compiler/driver/impl/jir.impl.jac",
         "jaclang/compiler/driver/na_coverage.jac",
-        "jaclang/compiler/driver/modresolver.jac",
+        "jaclang/compiler/native_scope.jac",
+        "jaclang/project/modresolver.jac",
         "jaclang/compiler/passes/impl/boundary_analysis_pass.impl.jac",
+        "jaclang/compiler/passes/impl/static_analysis_pass.impl.jac",
+        "jaclang/compiler/passes/placement_pass.jac",
+        "jaclang/lsp/server/impl/engine.impl.jac",
         "jaclang/compiler/placement/placement.jac",
+        "jaclang/compiler/placement/impl/placement.impl.jac",
         "jaclang/compiler/placement/placement_facts.jac",
+        "jaclang/compiler/placement/impl/placement_facts.impl.jac",
         "jaclang/compiler/placement/placement_pins.jac",
         "jaclang/compiler/placement/placement_solver.jac"
     };
+    import from jaclang.compiler.driver.bccache { discover_base_file }
+    import from jaclang.compiler.driver.wiring { wiring_for_path }
+
     pkg = os.path.join(JAC_ROOT, "jaclang");
     offenders: list[str] = [];
     for p in sorted(Path(pkg).rglob("*.jac")) {
-        if not p.is_file() {
+        if not p.is_file() or p.name == "archwire.jac" {
             continue;
         }
         rel = p.relative_to(JAC_ROOT).as_posix();
@@ -150,14 +157,89 @@ test "placement_pins imports stay within the documented allowlist" {
             offenders.append(rel);
         }
     }
+    # Imports that archwire.jac wires in are checked through the wiring itself.
+    allowed_bases = {
+        os.path.realpath(
+            discover_base_file(os.path.join(JAC_ROOT, a)) or os.path.join(JAC_ROOT, a)
+        ) for a in allow
+    };
+    spec = wiring_for_path(
+        os.path.join(pkg, "compiler", "placement", "placement_pins.jac")
+    );
+    assert spec is not None;
+    for wire in spec.wires {
+        if not wire.provider.endswith("placement_pins") {
+            continue;
+        }
+        for consumer in wire.consumers {
+            split = spec.split_consumer(consumer);
+            owner = split[0] if split is not None else consumer;
+            path = spec.module_file(owner);
+            if path is None or "/tests/" in path {
+                continue;
+            }
+            if os.path.realpath(path) not in allowed_bases {
+                offenders.append(os.path.relpath(path, JAC_ROOT));
+            }
+        }
+    }
     assert not offenders , offenders;
 }
 
 
-test "toolchain native policy matches na_stdlib and desktop native trees" {
-    pkg = os.path.join(JAC_ROOT, "jaclang");
-    na = os.path.join(pkg, "runtime", "na_stdlib", "_bz2_native.jac");
-    assert toolchain_native_by_policy(pkg, na);
-    other = os.path.join(pkg, "dist", "precompile_bytecode.jac");
-    assert not toolchain_native_by_policy(pkg, other);
+"""A toolchain source path under the installed jaclang package."""
+def _pkg_path(*parts: str) -> str {
+    import jaclang;
+    return os.path.join(
+        os.path.dirname(os.path.abspath(str(jaclang.__file__))), *parts
+    );
+}
+
+
+test "native_only names the modules with no bytecode meaning" {
+    # The kernel roots import C symbols; the native standard library lives
+    # under runtime/na_stdlib. Neither is ever bytecoded.
+    assert native_only(_pkg_path("compiler", "jc_unit.jac"));
+    assert native_only(_pkg_path("compiler", "jc_materialize.jac"));
+    assert native_only(_pkg_path("runtime", "na_stdlib", "_bz2_native.jac"));
+    assert native_only(_pkg_path("runtime", "na_stdlib", "zlib.jac"));
+    # A frontend module in the kernel's roster is bytecode and native at once,
+    # so it is not native-only; an ordinary toolchain module is neither.
+    assert not native_only(_pkg_path("compiler", "frontend", "unitree.jac"));
+    assert not native_only(_pkg_path("dist", "precompile_bytecode.jac"));
+    # Anything outside the package is never a toolchain native-only module.
+    d = tempfile.mkdtemp(prefix="jac-native-only-");
+    assert not native_only(os.path.join(d, "jc_unit.jac"));
+}
+
+
+test "native_unit follows native_only, the kernel roster and the native-unit compile" {
+    # Native-only modules are native units under any compile.
+    assert native_unit(_pkg_path("compiler", "jc_unit.jac"));
+    assert native_unit(_pkg_path("compiler", "jc_materialize.jac"));
+    assert native_unit(_pkg_path("runtime", "na_stdlib", "_bz2_native.jac"));
+    assert native_unit(_pkg_path("compiler", "jc_unit.jac"), native_unit_compile=False);
+    # A NATIVE_SCOPE frontend module is a native unit only under a
+    # native-unit compile: the same source is a bytecode unit otherwise.
+    scope_mod = _pkg_path("compiler", "frontend", "unitree.jac");
+    assert native_unit(scope_mod, native_unit_compile=True);
+    assert not native_unit(scope_mod, native_unit_compile=False);
+    # The kernel units every artifact may pull in by dependency edge.
+    for rel in [
+        ("runtime", "osp_kernel.jac"),
+        ("runtime", "osp_graph.jac"),
+        ("runtime", "region_native.jac"),
+        ("compiler", "backends", "common", "fmt_kernel.jac")
+    ] {
+        p = _pkg_path(*rel);
+        assert native_unit(p) , f"{'/'.join(rel)} must be a native unit";
+        assert native_unit(p, native_unit_compile=False) , (
+            f"{'/'.join(rel)} is a native unit regardless of the compile mode"
+        );
+    }
+    # An ordinary toolchain module is not a native unit.
+    assert not native_unit(_pkg_path("dist", "precompile_bytecode.jac"));
+    assert not native_unit(
+        _pkg_path("dist", "precompile_bytecode.jac"), native_unit_compile=True
+    );
 }

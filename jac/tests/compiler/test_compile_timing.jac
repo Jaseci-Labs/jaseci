@@ -8,7 +8,7 @@ instead of impressions.
 Three measurements, three shapes:
 
 `warm-compile phase timings` is a REPORT, not a gate. It drives a fixed corpus
-of real repo modules through the four schedules `_compile_once` runs for a
+of real repo modules through the four schedules `JacCompiler.run_module` runs for a
 Python-lane module, one at a time so each is attributable, and prints the
 table. It asserts only what a broken measurement looks like -- a compile error,
 or a phase that took no time at all -- because a wall-clock gate on a developer
@@ -19,8 +19,8 @@ ignore it.
 on a snapshot of `BASELINE_REF`, in alternating rounds, so the delta belongs to
 the branch rather than to the machine or to the order the two were run in. The
 snapshot is a `git archive` of the pinned ref plus symlinks to this checkout's
-gitignored build artifacts, cached under the jac cache root and reused across
-runs. It is opt-in (`JAC_TIMING_BASELINE=1`) because the first run bootstraps a
+gitignored build artifacts, cached under the system temp directory and reused
+across runs. It is opt-in (`JAC_TIMING_BASELINE=1`) because the first run bootstraps a
 second compiler from scratch, which takes minutes and belongs in a deliberate
 measurement, never in `jac test`.
 
@@ -34,7 +34,7 @@ The chess binary also carries a correctness floor instead of a time floor. A
 lower time bound would only catch a binary that exits early, and the printed
 result tally catches that directly and without a threshold to argue about.
 
-Every report is written to `<jac cache root>/timing/*.txt` as well as printed,
+Every report is written to `<temp dir>/jac-compile-timing/timing/*.txt` as well as printed,
 because `jac test` offers no way to turn its capture off and a report that
 only survives a failure is not much of a report. Since the runner came in-house
 (#8287) that file is the only durable copy, so read the tables there.
@@ -45,13 +45,19 @@ import os;
 import shutil;
 import statistics;
 import subprocess;
-import sys;
 import tempfile;
 import time;
 
 import from pathlib { Path }
-import from tests.support { JAC_ROOT, TESTS_DIR }
-import from jaclang.jac0core.cache_paths { get_jir_cache_dir }
+import from tests.support { cache_env, jac_command, JAC_ROOT, TESTS_DIR }
+import from jaclang.cache.home { cache_home }
+
+"""Durable scratch for the reports and the baseline snapshot: the system temp
+directory, never the user's jac cache (a test artifact there would be an
+unmanaged bucket for `jac cache` to report and reclaim)."""
+def scratch_dir -> Path {
+    return Path(tempfile.gettempdir()) / "jac-compile-timing";
+}
 
 glob PROBE: str = os.path.join(
          TESTS_DIR, "compiler", "fixtures", "compile_timing_probe.jac"
@@ -79,7 +85,7 @@ entry block, which is the whole measurement.
 glob CORPUS: list[str] = [
          "jaclang/compiler/frontend/srcloc.jac",
          "jaclang/compiler/frontend/parser/tokens.jac",
-         "jaclang/compiler/passes/uni_pass.jac",
+         "jaclang/compiler/passes/sym_tab_build_pass.jac",
          "jaclang/compiler/frontend/constant.jac",
          "examples/chess/chess.jac"
      ];
@@ -114,7 +120,7 @@ glob SNAPSHOT_LINKS: list[str] = [
 """What a `-b 1` game of AOT-compiled chess costs, and how far it may drift.
 
 Recorded truth on the machine this landed from: 0.07-0.08s per run, over ten
-consecutive runs of a `jac nacompile` binary, with a spread under 0.01s. The
+consecutive runs of a `jac build --native` binary, with a spread under 0.01s. The
 epic's earlier note recorded 0.23-0.26s per run for the same command; that
 figure is kept here because the ceiling has to hold under whichever of the two
 frames is right, and it is 3x the older number and 9x the measured one. Nothing
@@ -128,38 +134,35 @@ glob CHESS_RUNS: int = 5,
 """How many alternating rounds the baseline comparison measures each tree for."""
 glob PAIRED_ROUNDS: int = 2;
 
-glob _PROBE_CACHE: dict[str, list[dict]] = {};
+glob _PROBE_CACHE: dict[str, list[dict[str, any]]] = {};
 
 """This checkout's cache root, which is also where the probe subprocess writes."""
 def head_cache -> str {
-    return os.environ.get("XDG_CACHE_HOME", "") or str(Path.home() / ".cache");
+    return str(cache_home());
 }
 
 """Print a report and leave a copy on disk, because `jac test` swallows stdout.
 
 `jac test` exposes no `--capture=no`, so a passing report would otherwise be
 invisible -- and a report nobody can read is not a report. The file under the
-jac cache root is the copy that survives, and since the runner came in-house
+system temp directory is the copy that survives, and since the runner came in-house
 (#8287) it is the only one.
 """
 def publish(name: str, text: str) {
     print(text);
-    out_dir = get_jir_cache_dir().parent / "timing";
+    out_dir = scratch_dir() / "timing";
     out_dir.mkdir(parents=True, exist_ok=True);
     (out_dir / f"{name}.txt").write_text(text + "\n", encoding="utf-8");
 }
 
-"""Environment for a probe subprocess, pinned to `cache` and to nothing else.
-
-`JAC_DEV_SOURCE` is dropped rather than overridden: `_jac_finder` re-derives it
-from the nearest `jac.toml` above the subprocess cwd, and an inherited value
-would be a second, contradicting answer to the one question this harness needs
-the subprocess to answer for itself -- which compiler is running.
-"""
-def _probe_env(cache: str) -> dict[str, str] {
-    env = dict(os.environ);
-    env.pop("JAC_DEV_SOURCE", None);
-    env["XDG_CACHE_HOME"] = cache;
+"""Keep the probe's imports and native tooling on its selected compiler tree."""
+def _probe_env(cache: str, tree_dir: str) -> dict[str, str] {
+    import json;
+    env: dict[str, str] = dict(os.environ);
+    env["JAC_HANDOFF"] = json.dumps(
+        {"compiler_source": os.path.abspath(tree_dir), "no_precompile": True}
+    );
+    env.update(cache_env(cache));
     return env;
 }
 
@@ -168,15 +171,15 @@ def _probe_env(cache: str) -> dict[str, str] {
 Memoized per `(tree, round)` so the paired comparison can ask for a specific
 round and the HEAD-only report can share round zero with it.
 """
-def run_probe(tree_dir: str, cache: str, round_no: int = 0) -> list[dict] {
+def run_probe(tree_dir: str, cache: str, round_no: int = 0) -> list[dict[str, any]] {
     key = f"{os.path.abspath(tree_dir)}#{round_no}";
     if key in _PROBE_CACHE {
         return _PROBE_CACHE[key];
     }
     proc = subprocess.run(
-        [sys.executable, "-m", "jaclang", "run", PROBE],
+        jac_command("run", PROBE, compiler_root=tree_dir),
         cwd=tree_dir,
-        env=_probe_env(cache),
+        env=_probe_env(cache, tree_dir),
         capture_output=True,
         text=True,
         timeout=1800
@@ -195,8 +198,8 @@ def run_probe(tree_dir: str, cache: str, round_no: int = 0) -> list[dict] {
 }
 
 """Fold several runs of one tree into one row set, keeping each phase's minimum."""
-def merge_runs(runs: list[list[dict]]) -> list[dict] {
-    merged = [dict(r) for r in runs[0]];
+def merge_runs(runs: list[list[dict[str, any]]]) -> list[dict[str, any]] {
+    merged: list[dict[str, any]] = [dict(r) for r in runs[0]];
     for later in runs[1:] {
         by_rel = {str(r["rel"]): r for r in later};
         for row in merged {
@@ -221,9 +224,11 @@ duly reported HEAD faster on every phase of every module -- a result shaped
 like the ordering, not like the branch. Alternating and keeping each phase's
 minimum across rounds removes the monotonic half of that bias.
 """
-def paired_rows(base_tree: str, base_cache: str) -> tuple[list[dict], list[dict]] {
-    base_runs: list[list[dict]] = [];
-    head_runs: list[list[dict]] = [];
+def paired_rows(
+    base_tree: str, base_cache: str
+) -> tuple[list[dict[str, any]], list[dict[str, any]]] {
+    base_runs: list[list[dict[str, any]]] = [];
+    head_runs: list[list[dict[str, any]]] = [];
     for round_no in range(PAIRED_ROUNDS) {
         base_runs.append(run_probe(base_tree, base_cache, round_no));
         head_runs.append(run_probe(JAC_ROOT, head_cache(), round_no));
@@ -235,11 +240,11 @@ def paired_rows(base_tree: str, base_cache: str) -> tuple[list[dict], list[dict]
 
 `git archive` rather than `git worktree add`: the snapshot is a read-only
 measurement subject that must not register itself in the repo the suite is
-running out of. Cached by ref under the jac cache root, so only the first run
+running out of. Cached by ref under the system temp directory, so only the first run
 pays the extraction and the baseline compiler's bootstrap.
 """
 def baseline_tree -> str {
-    dest = get_jir_cache_dir().parent / "timing-baseline" / BASELINE_REF[:12];
+    dest = scratch_dir() / "timing-baseline" / BASELINE_REF[:12];
     tree = dest / "jac";
     if (tree / "jac.toml").is_file() {
         return str(tree);
@@ -295,7 +300,7 @@ def baseline_tree -> str {
 }
 
 """Format one tree's rows as a fixed-width table, phase columns in pipeline order."""
-def phase_table(title: str, rows: list[dict]) -> str {
+def phase_table(title: str, rows: list[dict[str, any]]) -> str {
     width = max([len(str(r["rel"])) for r in rows]);
     head = "  " + "module".ljust(width);
     for phase in PHASES {
@@ -318,7 +323,7 @@ def phase_table(title: str, rows: list[dict]) -> str {
 }
 
 """Format the per-phase delta between two trees as a percentage of baseline."""
-def delta_table(baseline: list[dict], current: list[dict]) -> str {
+def delta_table(baseline: list[dict[str, any]], current: list[dict[str, any]]) -> str {
     by_rel = {str(r["rel"]): r for r in baseline};
     width = max([len(str(r["rel"])) for r in current]);
     head = "  " + "module".ljust(width);
@@ -346,6 +351,35 @@ def delta_table(baseline: list[dict], current: list[dict]) -> str {
     }
     out.append(totals);
     return "\n".join(out);
+}
+
+test "timing subprocess selects each requested compiler checkout" {
+    with tempfile.TemporaryDirectory() as tmp {
+        for name in ("baseline", "head") {
+            tree = Path(tmp) / name;
+            package = tree / "jaclang";
+            package.mkdir(parents=True);
+            bootstrap = package / "jac0core";
+            bootstrap.mkdir();
+            shutil.copyfile(
+                str(Path(JAC_ROOT) / "jaclang" / "jac0core" / "ext_registry.py"),
+                str(bootstrap / "ext_registry.py")
+            );
+            (package / "__init__.py").write_text("");
+            (package / "__main__.py").write_text(
+                "import json, os, sys\nfrom pathlib import Path\n"
+                    + "print('TIMING_ROW ' + json.dumps({"
+                    + "'compiler': str(Path(__file__).resolve().parent.parent),"
+                    + "'dev_source': json.loads(os.environ.get('JAC_HANDOFF') or '{}').get('compiler_source'),"
+                    + "'args': sys.argv[1:]}))\n"
+            );
+            rows = run_probe(str(tree), str(Path(tmp) / "cache"));
+            assert len(rows) == 1;
+            assert rows[0]["compiler"] == str(tree);
+            assert rows[0]["dev_source"] == str(tree);
+            assert rows[0]["args"] == ["run", PROBE];
+        }
+    }
 }
 
 test "the timing corpus names modules that are in this checkout" {
@@ -423,7 +457,7 @@ test "the chess AOT binary stays inside its recorded run envelope" {
     with tempfile.TemporaryDirectory() as tmp {
         out_bin = os.path.join(tmp, "chess");
         comp = subprocess.run(
-            [sys.executable, "-m", "jaclang", "nacompile", CHESS, "-o", out_bin],
+            jac_command("build", "--native", CHESS, "-o", out_bin),
             capture_output=True,
             text=True,
             timeout=1800
@@ -480,37 +514,43 @@ ones in the same cold run. The gate is on work, not
 seconds: pass runs are deterministic for a given tree and compiler, so the
 ceilings below are hard asserts with room, and the warm run must take the
 re-wrap fast path for every unit. Wall times are published, never asserted.
-The fixture's server default is pinned for the measurement: the project
-config resolves from the working directory, so the fixture's own jac.toml is
-never consulted from under the test runner.
+The package's selected entry supplies one compilation context for all units.
+The fixture's server default is also pinned for the measurement.
 """
 glob PRECOMPILE_GATE: str = os.path.join(
          TESTS_DIR, "compiler", "fixtures", "precompile_gate"
      ),
-     GATE_COLD_MAX_RUNS: int = 560,
+     # Context, absorbed-import and boundary/native fact work is now counted
+     # as explicit passes: 140 runs that previously lived inside the driver.
+     # Each of the seven client units also runs the head schedule on the client
+     # runtime it imports, 7 runs (recorded 767 with the wiring pass).
+     GATE_COLD_MAX_RUNS: int = 780,
      GATE_COLD_MAX_RATIO: float = 0.6;
 
-def _precompile_units(pkg: str, rebuild: bool) -> tuple[int, dict, float] {
+def _precompile_units(pkg: str, rebuild: bool) -> tuple[int, dict[str, any], float] {
     import from jaclang.dist.precompile_bytecode {
         precompile_unit,
         find_jac_files,
         _unit_program
     }
-    import from jaclang.compiler.driver.jir { get_module_cache_path }
+    import from jaclang.compiler.driver.ifacecache { artifact_cache_path }
+    import from jaclang.compiler.driver.program { JacProgram }
+    import from jaclang.dist.precompile_bytecode { precompile_context }
     import from jaclang.compiler.frontend.codeinfo {
         set_effective_default_codespace,
         get_effective_default_codespace_override
     }
     files = find_jac_files(pkg);
     for f in files {
-        cp = get_module_cache_path(f);
+        cp = artifact_cache_path(f, precompile_context(f, pkg, JacProgram()));
         if cp.exists() {
             cp.unlink();
         }
     }
     shutil.rmtree(os.path.join(pkg, "_precompiled"), ignore_errors=True);
+    import from jaclang.compiler.driver.jir { set_cache_mode }
     if rebuild {
-        os.environ["JAC_REBUILD"] = "1";
+        set_cache_mode(rebuild=True);
     }
     prior_default = get_effective_default_codespace_override();
     set_effective_default_codespace("server");
@@ -522,7 +562,7 @@ def _precompile_units(pkg: str, rebuild: bool) -> tuple[int, dict, float] {
     } finally {
         set_effective_default_codespace(prior_default);
         if rebuild {
-            os.environ.pop("JAC_REBUILD", None);
+            set_cache_mode(rebuild=False);
         }
     }
     wall = time.perf_counter() - started;
@@ -530,6 +570,7 @@ def _precompile_units(pkg: str, rebuild: bool) -> tuple[int, dict, float] {
     runs = sum(prog.analysis.pass_runs.values()) if prog is not None else 0;
     events = dict(prog.analysis.cache_events) if prog is not None else {};
     if prog is not None {
+        publish("precompile-pass-runs", str(dict(prog.analysis.pass_runs)));
         prog.analysis.pass_runs.clear();
         prog.analysis.pass_time.clear();
         prog.analysis.cache_events.clear();
@@ -537,57 +578,70 @@ def _precompile_units(pkg: str, rebuild: bool) -> tuple[int, dict, float] {
     return (runs, events, wall, );
 }
 
+"""This measures the host's own precompile: its pass runs and the
+dependencies it hydrates. A module the kernel compiles costs the host none
+of that, so the measurement holds the compile on the host for its length."""
 test "the cold precompile path stays inside its work envelope" {
+    import from jaclang.project.kernel_compile { host_prepared, host_preparing }
     import from jaclang.dist.precompile_bytecode {
         precompile_unit,
         find_jac_files,
         _unit_program
     }
+    host_preparing("precompile work envelope");
     import from jaclang.compiler.frontend.codeinfo {
         set_effective_default_codespace,
         get_effective_default_codespace_override
     }
-    with tempfile.TemporaryDirectory() as tmp {
-        pkg = os.path.join(tmp, "precompile_gate");
-        shutil.copytree(
-            PRECOMPILE_GATE, pkg, ignore=shutil.ignore_patterns(".jac", "_precompiled")
-        );
-        (no_cache, _, wall_none) = _precompile_units(pkg, rebuild=True);
-        (cold, events, wall_cold) = _precompile_units(pkg, rebuild=False);
-        shutil.rmtree(os.path.join(pkg, "_precompiled"), ignore_errors=True);
-        prior_default = get_effective_default_codespace_override();
-        set_effective_default_codespace("server");
-        started = time.perf_counter();
-        try {
-            for f in find_jac_files(pkg) {
-                assert precompile_unit(f, pkg, False, collect=False) is not None;
+    try {
+        with tempfile.TemporaryDirectory() as tmp {
+            pkg = os.path.join(tmp, "precompile_gate");
+            shutil.copytree(
+                PRECOMPILE_GATE,
+                pkg,
+                ignore=shutil.ignore_patterns(".jac", "_precompiled")
+            );
+            (no_cache, _, wall_none) = _precompile_units(pkg, rebuild=True);
+            (cold, events, wall_cold) = _precompile_units(pkg, rebuild=False);
+            shutil.rmtree(os.path.join(pkg, "_precompiled"), ignore_errors=True);
+            prior_default = get_effective_default_codespace_override();
+            set_effective_default_codespace("server");
+            started = time.perf_counter();
+            try {
+                for f in find_jac_files(pkg) {
+                    assert precompile_unit(f, pkg, False, collect=False) is not None;
+                }
+            } finally {
+                set_effective_default_codespace(prior_default);
             }
-        } finally {
-            set_effective_default_codespace(prior_default);
+            wall_warm = time.perf_counter() - started;
+            prog: any = _unit_program[0] if _unit_program else None;
+            warm_runs = sum(prog.analysis.pass_runs.values())
+                if prog is not None
+                else 0;
+            publish(
+                "precompile-gate",
+                f"precompile gate x12 units: no-cache {no_cache} runs {wall_none:.2f}s, "
+                f"cold {cold} runs {wall_cold:.2f}s (hydrated {events.get(
+                    'dep_hydrate', 0
+                )}, boundary facts served {events.get('boundary_facts', 0)}), "
+                f"warm {warm_runs} runs {wall_warm:.2f}s"
+            );
+            assert cold <= GATE_COLD_MAX_RUNS , (
+                f"cold precompile did {cold} pass runs; the ceiling is {GATE_COLD_MAX_RUNS} "
+                "(recorded 706 against 1408 without the cache, including 140 newly explicit context/import/fact passes): closure work the cache used to take back is being redone"
+            );
+            assert cold <= GATE_COLD_MAX_RATIO * no_cache , (
+                f"cold precompile with the cache did {cold} pass runs against {no_cache} without it "
+                f"(ratio {cold / max(no_cache, 1):.2f}, ceiling {GATE_COLD_MAX_RATIO})"
+            );
+            assert events.get("dep_hydrate", 0) >= 1 , f"the cold run hydrated nothing (events: {events})";
+            assert events.get("boundary_facts", 0) >= 1 , (
+                f"the cold run served no boundary facts from the cache (events: {events})"
+            );
+            assert warm_runs == 0 , f"the warm precompile ran {warm_runs} passes instead of re-wrapping";
         }
-        wall_warm = time.perf_counter() - started;
-        prog: any = _unit_program[0] if _unit_program else None;
-        warm_runs = sum(prog.analysis.pass_runs.values()) if prog is not None else 0;
-        publish(
-            "precompile-gate",
-            f"precompile gate x12 units: no-cache {no_cache} runs {wall_none:.2f}s, "
-            f"cold {cold} runs {wall_cold:.2f}s (hydrated {events.get(
-                'dep_hydrate', 0
-            )}, boundary facts served {events.get('boundary_facts', 0)}), "
-            f"warm {warm_runs} runs {wall_warm:.2f}s"
-        );
-        assert cold <= GATE_COLD_MAX_RUNS , (
-            f"cold precompile did {cold} pass runs; the ceiling is {GATE_COLD_MAX_RUNS} "
-            "(recorded 472 against 1213 without the cache): closure work the cache used to take back is being redone"
-        );
-        assert cold <= GATE_COLD_MAX_RATIO * no_cache , (
-            f"cold precompile with the cache did {cold} pass runs against {no_cache} without it "
-            f"(ratio {cold / max(no_cache, 1):.2f}, ceiling {GATE_COLD_MAX_RATIO})"
-        );
-        assert events.get("dep_hydrate", 0) >= 1 , f"the cold run hydrated nothing (events: {events})";
-        assert events.get("boundary_facts", 0) >= 1 , (
-            f"the cold run served no boundary facts from the cache (events: {events})"
-        );
-        assert warm_runs == 0 , f"the warm precompile ran {warm_runs} passes instead of re-wrapping";
+    } finally {
+        host_prepared();
     }
 }

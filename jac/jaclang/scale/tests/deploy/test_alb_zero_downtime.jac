@@ -3,15 +3,9 @@ import os;
 import tempfile;
 import unittest;
 import from uuid { uuid4 }
-import from jaclang.scale.config.app_config { AppConfig }
-import from jaclang.scale.deploy.target.kubernetes.kubernetes_config {
-    KubernetesConfig
-}
-import from jaclang.scale.deploy.target.kubernetes.manifest_builder { ManifestBuilder }
-import from jaclang.scale.deploy.target.kubernetes.target { KubernetesTarget }
 
 glob READINESS_GATE_LABEL: str = "elbv2.k8s.aws/pod-readiness-gate-inject",
-     _shared: dict = {};
+     _shared: dict[str, any] = {};
 
 
 # One real k3s apiserver (testcontainers) shared by the whole file, torn down
@@ -73,8 +67,8 @@ def _config(
 # namespace ensure, the readiness-gate step, Service + Deployment apply, and
 # the superseded-Deployment sweep. Nothing is faked or patched.
 def _deploy_through_apply(cfg: KubernetesConfig) {
-    target = KubernetesTarget(config=cfg, microservices_config={});
-    builder = ManifestBuilder(k8s_config=cfg, microservices_config={});
+    target = KubernetesTarget(config=cfg);
+    builder = ManifestBuilder(k8s_config=cfg);
     specs = builder.generate_service_pod_specs(
         AppConfig(code_folder="/apps/standup", file_name="main.jac"), "img"
     );
@@ -92,7 +86,7 @@ def _deploy_through_apply(cfg: KubernetesConfig) {
 }
 
 
-def _live_api(kubeconfig: str) -> tuple {
+def _live_api(kubeconfig: str) -> tuple[any, ...] {
     import from kubernetes { client, config }
     api_client = config.new_client_from_config(config_file=kubeconfig);
     return (
@@ -103,14 +97,14 @@ def _live_api(kubeconfig: str) -> tuple {
 }
 
 
-def _live_namespace_labels(kubeconfig: str, namespace: str) -> dict {
+def _live_namespace_labels(kubeconfig: str, namespace: str) -> dict[str, any] {
     (core_v1, _, _) = _live_api(kubeconfig);
     ns: any = core_v1.read_namespace(name=namespace);
     return dict(ns.metadata.labels or {});
 }
 
 
-def _live_deployments(kubeconfig: str, namespace: str) -> list {
+def _live_deployments(kubeconfig: str, namespace: str) -> list[any] {
     (_, apps_v1, serializer) = _live_api(kubeconfig);
     return [
         serializer.sanitize_for_serialization(d)
@@ -119,7 +113,7 @@ def _live_deployments(kubeconfig: str, namespace: str) -> list {
 }
 
 
-def _drain_of(dep: dict) -> tuple {
+def _drain_of(dep: dict[str, any]) -> tuple[any, ...] {
     pod = dep["spec"]["template"]["spec"];
     sleep_cmd: str = str(
         pod["containers"][0]["lifecycle"]["preStop"]["exec"]["command"][-1]

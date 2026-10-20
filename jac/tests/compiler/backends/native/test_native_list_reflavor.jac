@@ -25,12 +25,12 @@ takes the opposite direction through the same code.
 import ctypes;
 import os;
 import from jaclang.compiler.driver.program { JacProgram }
-import from tests.support { JAC_ROOT, native_force_opts }
+import from tests.support { JAC_ROOT, native_address, native_force_opts }
 
 glob FIXTURES = os.path.join(
          JAC_ROOT, "tests", "compiler", "backends", "native", "fixtures"
      ),
-     _ENGINE: list = [];
+     _ENGINE: list[any] = [];
 
 
 """JIT the fixture once; return its execution engine."""
@@ -53,7 +53,7 @@ def engine -> any {
 
 """A fixture function taking one bool and returning an i64."""
 def flag_fn(name: str) -> any {
-    addr = engine().get_function_address(name);
+    addr = native_address(engine(), name);
     assert addr != 0 , f"'{name}' is absent from the JIT engine";
     return ctypes.CFUNCTYPE(ctypes.c_int64, ctypes.c_bool)(addr);
 }

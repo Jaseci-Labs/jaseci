@@ -1,7 +1,7 @@
 impl LocalDeployer._ensure_pm -> ServiceProcessManager {
     if self.process_manager is None {
         self.process_manager = ServiceProcessManager(
-            registry=self.registry, deployer=self
+            registry=self.registry, deployer=self, dev_mode=self.dev_mode
         );
     }
     return self.process_manager;
@@ -52,12 +52,7 @@ impl LocalDeployer.scale_service(name: str, replicas: int) -> bool {
     return True;
 }
 
-impl LocalDeployer.status -> dict[str, dict] {
-    import from jaclang.scale.runtime.orchestrator.process_manager {
-        _read_pidfile,
-        _read_portfile,
-        _pid_alive
-    }
+impl LocalDeployer.status -> dict[str, dict[str, any]] {
     pm = self._ensure_pm();
 
     for (name, svc_entry) in self.registry.entries.items() {
@@ -75,7 +70,7 @@ impl LocalDeployer.status -> dict[str, dict] {
     }
 
     pm.check_all_health();
-    result: dict[str, dict] = {};
+    result: dict[str, dict[str, any]] = {};
     for (name, svc_entry) in self.registry.entries.items() {
         is_running = name in pm.processes;
         if not is_running {

@@ -1,0 +1,304 @@
+"""MT19937 state and Python Random protocol implemented in native Jac.
+
+Derived from CPython's _randommodule and the MT2002 algorithm by Makoto
+Matsumoto and Takuji Nishimura. See the Mersenne Twister notice in
+../LICENSE.cpython. No host random implementation is called.
+"""
+
+obj mt19937(NativeState) {
+    has words: list[u32] = [u32(0) for i in range(624)],
+        index: int = 0;
+
+    def traverse_refs(visitor: ptr[PyObject], context: ptr[PyObject]) -> i32 {
+        return i32(0);
+    }
+
+    def clear {}
+}
+
+def:pub jacpy_random_new -> mt19937 {
+    return mt19937();
+}
+
+def random_word(state: mt19937) -> u32 {
+    if state.index >= 624 {
+        for i in range(624) {
+            upper = state.words[i] & u32(0x80000000);
+            lower = state.words[(i + 1) % 624] & u32(0x7fffffff);
+            mixed = upper | lower;
+            matrix = u32(0x9908b0df) if (mixed & u32(1)) != u32(0) else u32(0);
+            state.words[i] = state.words[(i + 397) % 624] ^ (mixed >> u32(1)) ^ matrix;
+        }
+        state.index = 0;
+    }
+    value = state.words[state.index];
+    state.index += 1;
+    value ^= value >> u32(11);
+    value ^= wrapping_shl(value, 7) & u32(0x9d2c5680);
+    value ^= wrapping_shl(value, 15) & u32(0xefc60000);
+    value ^= value >> u32(18);
+    return value;
+}
+
+def random_seed_words(state: mt19937, keys: list[u32]) {
+    state.words[0] = u32(19650218);
+    for i in range(1, 624) {
+        previous = state.words[i - 1];
+        mixed = previous ^ (previous >> u32(30));
+        state.words[i] = wrapping_add(wrapping_mul(u32(1812433253), mixed), u32(i));
+    }
+    i = 1;
+    j = 0;
+    for remaining in range(max(624, len(keys))) {
+        previous = state.words[i - 1];
+        mixed = previous ^ (previous >> u32(30));
+        value = state.words[i] ^ wrapping_mul(mixed, u32(1664525));
+        state.words[i] = wrapping_add(wrapping_add(value, keys[j]), u32(j));
+        i += 1;
+        j += 1;
+        if i >= 624 {
+            state.words[0] = state.words[623];
+            i = 1;
+        }
+        if j >= len(keys) {
+            j = 0;
+        }
+    }
+    for remaining in range(623) {
+        previous = state.words[i - 1];
+        mixed = previous ^ (previous >> u32(30));
+        value = state.words[i] ^ wrapping_mul(mixed, u32(1566083941));
+        state.words[i] = wrapping_sub(value, u32(i));
+        i += 1;
+        if i >= 624 {
+            state.words[0] = state.words[623];
+            i = 1;
+        }
+    }
+    state.words[0] = u32(0x80000000);
+    state.index = 624;
+}
+
+def random_seed_buffer(state: mt19937, data: ptr[PyObject]) {
+    keys: list[u32] = [];
+    count = int(jacpy_buffer_size(data) // 4);
+    for i in range(count) {
+        value = u32(0);
+        for byte in range(4) {
+            value |= u32(jacpy_buffer_byte(data, i64(i * 4 + byte))) << u32(byte * 8);
+        }
+        keys.append(value);
+    }
+    random_seed_words(state, keys);
+}
+
+def:pub jacpy_random_seed(state: mt19937, argument: ptr[PyObject]) -> i64 {
+    if argument == 0 {
+        entropy = jacpy_entropy(2496);
+        if entropy != 0 {
+            random_seed_buffer(state, entropy);
+            jacpy_release(entropy);
+            return 0;
+        }
+        PyErr_Clear();
+        now = jacpy_wall_time();
+        if jacpy_error_pending() != 0 {
+            return -1;
+        }
+        monotonic = jacpy_monotonic_time();
+        if jacpy_error_pending() != 0 {
+            return -1;
+        }
+        random_seed_words(
+            state,
+            [
+                u32.wrap(now),
+                u32(u64(now) >> u64(32)),
+                u32(jacpy_process_id()),
+                u32.wrap(monotonic),
+                u32(u64(monotonic) >> u64(32))
+            ]
+        );
+        return 0;
+    }
+    number = jacpy_long_absolute(argument)
+        if jacpy_is_long(argument) != 0
+        else jacpy_hash_unsigned(argument);
+    if number == 0 {
+        return -1;
+    }
+    bits = _PyLong_NumBits(number);
+    size = max(i64(1), (bits + 31) // 32) * 4;
+    data = jacpy_long_bytes(number, size);
+    jacpy_release(number);
+    if data == 0 {
+        return -1;
+    }
+    random_seed_buffer(state, data);
+    jacpy_release(data);
+    return 0;
+}
+
+def:pub jacpy_random_float(state: mt19937) -> f64 {
+    a = random_word(state) >> u32(5);
+    b = random_word(state) >> u32(6);
+    return (f64(a) * f64(67108864.0) + f64(b)) * f64(1.0 / 9007199254740992.0);
+}
+
+def:pub jacpy_random_getstate(state: mt19937) -> ptr[PyObject] {
+    result = PyTuple_New(625);
+    if result == 0 {
+        return NULL;
+    }
+    for i in range(624) {
+        if jacpy_tuple_set_owned(
+            result, i64(i), PyLong_FromLongLong(i64(state.words[i]))
+        )
+            < 0 {
+            jacpy_release(result);
+            return NULL;
+        }
+    }
+    if jacpy_tuple_set_owned(result, 624, PyLong_FromLongLong(i64(state.index))) < 0 {
+        jacpy_release(result);
+        return NULL;
+    }
+    return result;
+}
+
+def:pub jacpy_random_setstate(state: mt19937, value: ptr[PyObject]) -> i64 {
+    if jacpy_is_tuple(value) == 0 {
+        object_error(PyExc_TypeError, "state vector must be a tuple");
+        return -1;
+    }
+    if PyTuple_Size(value) != 625 {
+        object_error(PyExc_ValueError, "state vector is the wrong size");
+        return -1;
+    }
+    words: list[u32] = [];
+    for i in range(624) {
+        item = jacpy_tuple_item(value, i64(i));
+        if item == 0 {
+            return -1;
+        }
+        word = PyLong_AsUnsignedLong(item);
+        jacpy_release(item);
+        if jacpy_error_pending() != 0 {
+            return -1;
+        }
+        words.append(u32.wrap(word));
+    }
+    item = jacpy_tuple_item(value, 624);
+    if item == 0 {
+        return -1;
+    }
+    index = PyLong_AsLongLong(item);
+    jacpy_release(item);
+    if jacpy_error_pending() != 0 {
+        return -1;
+    }
+    if index < 0 or index > 624 {
+        object_error(PyExc_ValueError, "invalid state");
+        return -1;
+    }
+    state.words = words;
+    state.index = int(index);
+    return 0;
+}
+
+def:pub jacpy_random_bits(state: mt19937, bits: u64) -> ptr[PyObject] {
+    if bits == 0 {
+        return PyLong_FromLongLong(0);
+    }
+    if bits <= 32 {
+        return PyLong_FromLongLong(i64(random_word(state) >> u32(32 - bits)));
+    }
+    count = (bits - 1) // 32 + 1;
+    if count > u64(0x7fffffffffffffff) // 4 {
+        object_error(PyExc_MemoryError, "");
+        return NULL;
+    }
+    data = jacpy_buffer_new(i64(count * 4));
+    if data == 0 {
+        return NULL;
+    }
+    for i in range(int(count)) {
+        word = random_word(state);
+        if bits < 32 {
+            word >>= u32(32 - bits);
+        }
+        for byte in range(4) {
+            jacpy_buffer_set(
+                data, i64(i * 4 + byte), i64((word >> u32(byte * 8)) & u32(255))
+            );
+        }
+        if bits > 32 {
+            bits -= 32;
+        }
+    }
+    result = jacpy_long_from_bytes(data);
+    jacpy_release(data);
+    return result;
+}
+
+# The Argument Clinic _impl functions over the instance's MT19937 state,
+# found through the Random ClassToken.
+glob Random_token = ClassToken();
+
+def:priv random_state(instance: ptr[PyObject]) -> (mt19937 | None) {
+    if jacpy_binding_native_present(instance, Random_token.handle) != 0 {
+        state = jacpy_binding_native_get(instance, Random_token.handle);
+        if isinstance(state, mt19937) {
+            return state;
+        }
+    }
+    object_error(PyExc_SystemError, "native Random state is unavailable");
+    return None;
+}
+
+def:priv seeded(instance: ptr[PyObject], seed: ptr[PyObject]) -> i64 {
+    state = random_state(instance);
+    if state is None {
+        return -1;
+    }
+    return jacpy_random_seed(state, NULL if seed == Py_None else seed);
+}
+
+def _random_Random_random_impl(instance: ptr[PyObject]) -> ptr[PyObject] {
+    state = random_state(instance);
+    return PyFloat_FromDouble(jacpy_random_float(state)) if state is not None else NULL;
+}
+
+def _random_Random_seed_impl(
+    instance: ptr[PyObject], n: ptr[PyObject]
+) -> ptr[PyObject] {
+    if seeded(instance, n) < 0 {
+        return NULL;
+    }
+    return Py_NewRef(Py_None);
+}
+
+def _random_Random_getstate_impl(instance: ptr[PyObject]) -> ptr[PyObject] {
+    state = random_state(instance);
+    return jacpy_random_getstate(state) if state is not None else NULL;
+}
+
+def _random_Random_setstate_impl(
+    instance: ptr[PyObject], state: ptr[PyObject]
+) -> ptr[PyObject] {
+    generator = random_state(instance);
+    if generator is None or jacpy_random_setstate(generator, state) < 0 {
+        return NULL;
+    }
+    return Py_NewRef(Py_None);
+}
+
+def _random_Random_getrandbits_impl(instance: ptr[PyObject], k: u64) -> ptr[PyObject] {
+    state = random_state(instance);
+    return jacpy_random_bits(state, k) if state is not None else NULL;
+}
+
+# random_init(): seed from `seed`, or from urandom when absent or None.
+def random_init_impl(instance: ptr[PyObject], seed: ptr[PyObject]) -> i32 {
+    return i32(seeded(instance, NULL if seed == 0 else seed));
+}

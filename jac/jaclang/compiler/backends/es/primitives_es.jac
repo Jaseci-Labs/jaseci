@@ -1,71 +1,20 @@
-import from jaclang.compiler.primitives {
-    IntEmitter,
-    FloatEmitter,
-    ComplexEmitter,
-    StrEmitter,
-    BytesEmitter,
-    ListEmitter,
-    DictEmitter,
-    SetEmitter,
-    FrozensetEmitter,
-    TupleEmitter,
-    RangeEmitter,
-    BuiltinEmitter
-}
-
 obj ESEmitCtx {
     has unparser: object,
-        arg_type_names: (list[str] | None) = None;
+        arg_type_names: (list[str] | None) = None,
+        kwargs: (dict[str, str] | None) = None;
 }
 
-def _mcall(target: str, method: str, args: list[str]) -> str {
-    """Emit target.method(arg1, arg2, ...).""";
-    if len(args) > 0 {
-        return target + "." + method + "(" + ", ".join(args) + ")";
-    }
-    return target + "." + method + "()";
-}
+def _mcall(target: str, method: str, args: list[str]) -> str;
 
-def _fcall(name: str, args: list[str]) -> str {
-    """Emit name(arg1, arg2, ...).""";
-    if len(args) > 0 {
-        return name + "(" + ", ".join(args) + ")";
-    }
-    return name + "()";
-}
+def _fcall(name: str, args: list[str]) -> str;
 
-def _rt(ns: str, method: str, args: list[str]) -> str {
-    """Emit a Jac JS runtime helper call: _jac.ns.method(args).""";
-    if len(args) > 0 {
-        return "_jac." + ns + "." + method + "(" + ", ".join(args) + ")";
-    }
-    return "_jac." + ns + "." + method + "()";
-}
+def _rt(ns: str, method: str, args: list[str]) -> str;
 
-def _binop(left: str, op: str, right: str) -> str {
-    """Emit (left op right) with parens for safety.""";
-    return "(" + left + " " + op + " " + right + ")";
-}
+def _binop(left: str, op: str, right: str) -> str;
 
-def _one_arg_cb(fn: str, seq: str, method: str, cb_body: str) -> str {
-    """Emit seq.method(cb) with cb receiving exactly one element.
+def _one_arg_cb(fn: str, seq: str, method: str, cb_body: str) -> str;
 
-    Python's map/filter call the callback with just the element, while JS's
-    Array.prototype.map/filter also pass (index, array) -- which a two-arity
-    callable such as `int(x, base)` reads as a radix.  Binding `fn` and `seq`
-    as parameters keeps them evaluated once, in the enclosing scope, so a
-    call-expression callback is not re-run per element.
-    """;
-    return "((_f, _s) => _s."
-        + method
-        + "((_v) => "
-        + cb_body
-        + "))("
-        + fn
-        + ", "
-        + seq
-        + ")";
-}
+def _min_max_call(rt_name: str, ctx: ESEmitCtx, args: list[str]) -> (str | None);
 
 
 class ESIntEmitter(IntEmitter[(str, ESEmitCtx)]) {
@@ -1361,10 +1310,6 @@ class ESBuiltinEmitter(BuiltinEmitter[(str, ESEmitCtx)]) {
         self: ESBuiltinEmitter, ctx: ESEmitCtx, args: list[str]
     ) -> (str | None);
 
-    def emit_sized_cast(
-        self: ESBuiltinEmitter, name: str, args: list[str]
-    ) -> (str | None);
-
     def emit_wrapping(
         self: ESBuiltinEmitter, ctx: ESEmitCtx, op: str, args: list[str]
     ) -> (str | None);
@@ -1449,3 +1394,7 @@ class ESBuiltinEmitter(BuiltinEmitter[(str, ESEmitCtx)]) {
         self: ESBuiltinEmitter, ctx: ESEmitCtx, args: list[str]
     ) -> (str | None);
 }
+
+def es_primitive_emitter(suffix: str) -> (PrimitiveEmitter[(str, ESEmitCtx)] | None);
+
+def es_sized_cast(name: str, args: list[str]) -> str;

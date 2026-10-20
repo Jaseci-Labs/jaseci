@@ -1,38 +1,18 @@
 import tempfile;
-import from jaclang.compiler.tools.treeprinter { node_to_dict, print_ast_tree }
-import from jaclang.compiler.tools.unparse_pass { unparse_module }
+
 import os;
 import sys;
 import threading;
 import logging;
 import from typing { IO }
 
-def _extract_error_info(alert: object) -> dict[str, any] {
-    return {
-        "line": alert?.loc?.first_line or 0,
-        "col": alert?.loc?.col_start or 0,
-        "message": alert?.msg or str(alert)
-    };
-}
+def _extract_error_info(alert: object) -> dict[str, any];
 
-def _snippet_task(code: str, worker: object, suffix: str = ".jac") -> object {
-    def _run -> object {
-        with tempfile.NamedTemporaryFile(mode="w", suffix=suffix, delete=False) as f {
-            f.write(code);
-            tmp_path = f.name;
-        }
-        try {
-            return worker(tmp_path);
-        } finally {
-            os.unlink(tmp_path);
-        }
-    }
-    return _run;
-}
+def _snippet_task(code: str, worker: object, suffix: str = ".jac") -> object;
 
-impl run_with_timeout(func: object, timeout: int = 10) -> tuple {
-    result_holder: list = [None];
-    error_holder: list = [None];
+impl run_with_timeout(func: object, timeout: int = 10) -> tuple[bool, any] {
+    result_holder: list[object] = [None];
+    error_holder: list[Exception | None] = [None];
     def _worker {
         try {
             result_holder[0] = func();
@@ -52,49 +32,9 @@ impl run_with_timeout(func: object, timeout: int = 10) -> tuple {
     return (True, result_holder[0]);
 }
 
-def _cap_read(stream: IO[bytes], holder: list, cap: int) {
-    try {
-        chunks: list = [];
-        total: int = 0;
-        while True {
-            want: int = min(4096, cap - total);
-            if want <= 0 {
-                break;
-            }
-            chunk: bytes = stream.read(want);
-            if not chunk {
-                break;
-            }
-            chunks.append(chunk);
-            total += len(chunk);
-        }
-        data: bytes = b"".join(chunks);
-        if total >= cap {
-            if stream.read(1) {
-                while stream.read(65536) {}
-                holder[0] = data + OUTPUT_TRUNCATION_MARKER.encode();
-            } else {
-                holder[0] = data;
-            }
-        } else {
-            holder[0] = data;
-        }
-    } finally {
-        try {
-            stream.close();
-        } except Exception {}
-    }
-}
+def _cap_read(stream: IO[bytes], holder: list[bytes | None], cap: int);
 
-def _join_reader(t: threading.Thread, name: str, deadline: float = 5.0) {
-    t.join(timeout=deadline);
-    if t.is_alive() {
-        logging.getLogger("jac.mcp").warning(
-            f"{name} reader thread still alive {deadline}s after "
-            "process teardown; pipe may be held open by a descendant"
-        );
-    }
-}
+def _join_reader(t: threading.Thread, name: str, deadline: float = 5.0);
 
 impl CompilerBridge.parse_snippet(
     code: str, filename: str = "snippet.jac"
@@ -112,14 +52,11 @@ impl CompilerBridge.parse_snippet(
         };
     }
     def _do_parse(tmp_path: str) -> dict[str, any] {
-        import from jaclang.runtime.runtime { JacRuntime as Jac }
-        import from jaclang.compiler.driver.program { JacProgram }
-
         program = JacProgram();
 
         ir = program.parse_str(code, tmp_path);
 
-        errors: list[dict] = [];
+        errors: list[dict[str, any]] = [];
         for e in program.errors_had {
             errors.append(_extract_error_info(e));
         }
@@ -154,16 +91,13 @@ impl CompilerBridge.typecheck_snippet(
         };
     }
     def _do_typecheck(tmp_path: str) -> dict[str, any] {
-        import from jaclang.runtime.runtime { JacRuntime as Jac }
-        import from jaclang.compiler.driver.program { JacProgram }
-
         program = JacProgram();
         compiler = Jac.get_compiler();
 
         ir = compiler.compile(tmp_path, program);
 
-        errors: list[dict] = [];
-        warnings: list[dict] = [];
+        errors: list[dict[str, any]] = [];
+        warnings: list[dict[str, any]] = [];
         for e in program.errors_had {
             errors.append(_extract_error_info(e));
         }
@@ -194,8 +128,6 @@ impl CompilerBridge.format_snippet(code: str) -> dict[str, any] {
         };
     }
     def _do_format(tmp_path: str) -> dict[str, any] {
-        import from jaclang.runtime.runtime { JacRuntime as Jac }
-
         compiler = Jac.get_compiler();
 
         result_prog = compiler.jac_str_formatter(code, tmp_path);
@@ -227,9 +159,6 @@ impl CompilerBridge.py_to_jac(python_code: str) -> dict[str, any] {
         };
     }
     def _do_py2jac(tmp_path: str) -> dict[str, any] {
-        import from jaclang.runtime.runtime { JacRuntime as Jac }
-        import from jaclang.compiler.driver.program { JacProgram }
-
         compiler = Jac.get_compiler();
 
         program = JacProgram();
@@ -272,14 +201,11 @@ impl CompilerBridge.get_ast_snippet(code: str, fmt: str = "tree") -> dict[str, a
         };
     }
     def _do_ast(tmp_path: str) -> dict[str, any] {
-        import from jaclang.runtime.runtime { JacRuntime as Jac }
-        import from jaclang.compiler.driver.program { JacProgram }
-
         program = JacProgram();
 
         ir = program.parse_str(code, tmp_path);
 
-        errors: list[dict] = [];
+        errors: list[dict[str, any]] = [];
         for e in program.errors_had {
             errors.append(_extract_error_info(e));
         }
@@ -313,9 +239,6 @@ impl CompilerBridge.lint_snippet(code: str, auto_fix: bool = False) -> dict[str,
         };
     }
     def _do_lint(tmp_path: str) -> dict[str, any] {
-        import from jaclang.runtime.runtime { JacRuntime as Jac }
-        import from jaclang.compiler.driver.compiler { JacCompiler }
-
         if auto_fix {
             prog = JacCompiler.jac_str_formatter(
                 source_str=code, file_path=tmp_path, auto_lint=True
@@ -324,7 +247,7 @@ impl CompilerBridge.lint_snippet(code: str, auto_fix: bool = False) -> dict[str,
             prog = JacCompiler.jac_file_linter(file_path=tmp_path);
         }
 
-        violations: list[dict] = [];
+        violations: list[dict[str, any]] = [];
         for w in prog.warnings_had {
             violations.append(_extract_error_info(w));
         }
@@ -366,9 +289,6 @@ impl CompilerBridge.jac_to_py(code: str) -> dict[str, any] {
         };
     }
     def _do_jac2py(tmp_path: str) -> dict[str, any] {
-        import from jaclang.runtime.runtime { JacRuntime as Jac }
-        import from jaclang.compiler.driver.program { JacProgram }
-
         prog = JacProgram();
         ir = prog.compile(file_path=tmp_path);
 
@@ -385,7 +305,7 @@ impl CompilerBridge.jac_to_py(code: str) -> dict[str, any] {
             return {"python_code": "", "warnings": errors or ["Conversion failed"]};
         }
 
-        py_code = ir.gen.py or "";
+        py_code = generated_python(ir.gen);
         return {"python_code": py_code, "warnings": warnings};
     }
     (success, result) = run_with_timeout(
@@ -405,9 +325,6 @@ impl CompilerBridge.jac_to_js(code: str) -> dict[str, any] {
         };
     }
     def _do_jac2js(tmp_path: str) -> dict[str, any] {
-        import from jaclang.runtime.runtime { JacRuntime as Jac }
-        import from jaclang.compiler.driver.program { JacProgram }
-
         prog = JacProgram();
         ir = prog.compile(file_path=tmp_path);
 
@@ -484,8 +401,8 @@ impl CompilerBridge.run_snippet(
                 start_new_session=True,
             );
         }
-        out_buf: list = [None];
-        err_buf: list = [None];
+        out_buf: list[bytes | None] = [None];
+        err_buf: list[bytes | None] = [None];
         t_out = threading.Thread(
             target=_cap_read, args=(proc.stdout, out_buf, MAX_OUTPUT_SIZE), daemon=True
         );
@@ -622,7 +539,6 @@ impl CompilerBridge.graph_viz_snippet(
 
 impl CompilerBridge.list_templates -> dict[str, any] {
     def _do_list_templates -> dict[str, any] {
-        import from jaclang.project.template_registry { get_template_registry }
         registry = get_template_registry();
         templates = registry.list_templates();
         result: list[dict[str, str]] = [];
@@ -694,4 +610,71 @@ impl CompilerBridge.create_project(
         };
     }
     return result;
+}
+
+impl _extract_error_info(alert: object) -> dict[str, any] {
+    return {
+        "line": alert?.loc?.first_line or 0,
+        "col": alert?.loc?.col_start or 0,
+        "message": alert?.msg or str(alert)
+    };
+}
+
+impl _snippet_task(code: str, worker: object, suffix: str = ".jac") -> object {
+    def _run -> object {
+        with tempfile.NamedTemporaryFile(mode="w", suffix=suffix, delete=False) as f {
+            f.write(code);
+            tmp_path = f.name;
+        }
+        try {
+            return worker(tmp_path);
+        } finally {
+            os.unlink(tmp_path);
+        }
+    }
+    return _run;
+}
+
+impl _cap_read(stream: IO[bytes], holder: list[bytes | None], cap: int) {
+    try {
+        chunks: list[bytes] = [];
+        total: int = 0;
+        while True {
+            want: int = min(4096, cap - total);
+            if want <= 0 {
+                break;
+            }
+            chunk: bytes = stream.read(want);
+            if not chunk {
+                break;
+            }
+            chunks.append(chunk);
+            total += len(chunk);
+        }
+        data: bytes = b"".join(chunks);
+        if total >= cap {
+            if stream.read(1) {
+                while stream.read(65536) {}
+                holder[0] = data + OUTPUT_TRUNCATION_MARKER.encode();
+            } else {
+                holder[0] = data;
+            }
+        } else {
+            holder[0] = data;
+        }
+    } finally {
+        try {
+            stream.close();
+        } except Exception {}
+    }
+}
+
+impl _join_reader(t: threading.Thread, name: str, deadline: float = 5.0) {
+    t.join(timeout=deadline);
+    if t.is_alive() {
+        logging.getLogger("jac.mcp").warning(
+            f"{name} reader thread still alive {deadline}s after "
+            "process teardown; pipe may be held open by a descendant"
+        );
+    }
 }

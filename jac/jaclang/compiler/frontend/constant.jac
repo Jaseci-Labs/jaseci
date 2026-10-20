@@ -106,18 +106,6 @@ class JacSemTokenModifier(IntFlag) {
     static def as_str_list -> list[str];
 }
 
-class Constants(StrEnum) {
-    with entry {
-        HERE = 'here';
-        ROOT = 'root';
-        VISITOR = 'visitor';
-        GUEST = '__guest__';
-        SUPER_ROOT_UUID = '00000000-0000-0000-0000-000000000000';
-    }
-
-    def __str__(self: Constants) -> str;
-}
-
 enum CodeContext {
     SERVER = 'server',
     CLIENT = 'client',
@@ -135,19 +123,24 @@ enum CodeContext {
     }
 }
 
-enum EdgeDir: int { IN = 1, OUT = 2, ANY = 3 }
-
 enum ParamKind: int { POSONLY = 0, NORMAL = 1, VARARG = 2, KWONLY = 3, KWARG = 4 }
 
 enum ExprCtx { LOAD = 'load', STORE = 'store', DEL = 'del' }
 
+enum DeleteTargetError {
+    LITERAL = 1,
+    EMPTY_TARGET_LIST = 2,
+    NULL_SAFE_ACCESS = 3,
+    UNPACKED_TARGET = 4
+}
+
 enum OwnershipKind: int { NONE = 0, OWN = 1, BORROW = 2, MUT_BORROW = 3, IMM = 4 }
 
-glob TYPE_PARAM_CONSTRUCTORS: frozenset = frozenset(
+glob TYPE_PARAM_CONSTRUCTORS: frozenset[str] = frozenset(
          {"TypeVar", "ParamSpec", "TypeVarTuple"}
      ),
-     NATIVE_ERASED_TYPE_MARKERS: frozenset = frozenset({"TypeAlias"}),
-     NATIVE_ERASED_ANNOTATIONS: frozenset = frozenset({"ClassVar"});
+     NATIVE_ERASED_TYPE_MARKERS: frozenset[str] = frozenset({"TypeAlias"}),
+     NATIVE_ERASED_ANNOTATIONS: frozenset[str] = frozenset({"ClassVar", "Literal"});
 
 glob BROWSER_SEED_GLOBALS: frozenset[str] = frozenset(
          {
@@ -336,13 +329,13 @@ glob BROWSER_SEED_GLOBALS: frozenset[str] = frozenset(
          }
      );
 
-def is_borrow_kind(k: OwnershipKind) -> bool {
-    return k == OwnershipKind.BORROW or k == OwnershipKind.MUT_BORROW;
-}
+def client_state_setter_name(var_name: str) -> str;
 
-def is_mut_kind(k: OwnershipKind) -> bool {
-    return k == OwnershipKind.MUT_BORROW;
-}
+enum ImmutabilityKind { NONE = 0, FINAL = 1, READONLY = 2 }
+
+def is_borrow_kind(k: OwnershipKind) -> bool;
+
+def is_mut_kind(k: OwnershipKind) -> bool;
 
 enum SymbolAccess {
     PRIVATE = 'private',
@@ -465,6 +458,7 @@ class Tokens(StrEnum) {
         KW_SKIP = 'KW_SKIP';
         KW_REPORT = 'KW_REPORT';
         KW_RETURN = 'KW_RETURN';
+        KW_TAIL = 'KW_TAIL';
         KW_DELETE = 'KW_DELETE';
         KW_TRY = 'KW_TRY';
         KW_EXCEPT = 'KW_EXCEPT';
@@ -489,6 +483,7 @@ class Tokens(StrEnum) {
         KW_PROT = 'KW_PROT';
         KW_HAS = 'KW_HAS';
         KW_GLOBAL = 'KW_GLOBAL';
+        KW_GRAPH = 'KW_GRAPH';
         COMMA = 'COMMA';
         KW_CAN = 'KW_CAN';
         KW_DEF = 'KW_DEF';
@@ -676,6 +671,7 @@ glob TOKEN_MAP: dict[str, str] = {
          'KW_FOREVER': 'forever',
          'KW_FROM': 'from',
          'KW_GLOBAL': 'glob',
+         'KW_GRAPH': 'graph',
          'KW_HAS': 'has',
          'KW_HERE': 'here',
          'KW_IF': 'if',
@@ -796,38 +792,11 @@ glob TOKEN_MAP: dict[str, str] = {
          Tokens.RPAREN: ')',
          Tokens.RETURN_HINT: '->',
          Tokens.DOT: '.'
-     },
-     colors = [
-         '#FFE9E9',
-         '#F0FFF0',
-         '#F5E5FF',
-         '#FFFFE0',
-         '#D2FEFF',
-         '#E8FFD7',
-         '#FFDEAD',
-         '#FFF0F5',
-         '#F5FFFA',
-         '#FFC0CB',
-         '#7FFFD4',
-         '#C0C0C0',
-         '#ADD8E6',
-         '#FFFAF0',
-         '#f4f3f7',
-         '#f5efff',
-         '#b5d7fd',
-         '#ffc0cb',
-         '#FFC0CB',
-         '#e1d4c0',
-         '#FCDFFF',
-         '#F0FFFF',
-         '#F0F8FF',
-         '#F8F8FF',
-         '#F0FFFF'
-     ];
+     };
 
-glob NON_ESCAPED_KEYWORDS: set = {'float', 'int', 'str', 'bool', 'self'};
+glob NON_ESCAPED_KEYWORDS: set[str] = {'float', 'int', 'str', 'bool', 'self'};
 
-glob RESERVED_IDENT_NAMES: set = {
+glob RESERVED_IDENT_NAMES: set[str] = {
          v
          for v in TOKEN_MAP.values()
          if v not in NON_ESCAPED_KEYWORDS

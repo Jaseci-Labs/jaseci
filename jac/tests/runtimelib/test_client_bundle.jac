@@ -25,9 +25,9 @@ test "base builder compiles a client module to JS and extracts its manifest surf
     mod_file = module.__file__;
     assert mod_file is not None;
     source_path = Path(mod_file.replace(".py", ".jac")).resolve();
-    (js, mod) = builder._compile_to_js(source_path);
-    assert js;  # ES output was generated
-    manifest = mod.gen.client_manifest if mod else None;
+    artifact = builder._compile_to_js(source_path);
+    assert artifact.js;  # ES output was generated
+    manifest = artifact.manifest;
     exports = builder._extract_client_exports(manifest);
     assert isinstance(exports, list);
     globals_map = builder._extract_client_globals(manifest, module);
@@ -223,13 +223,13 @@ test "vite builds run under bun with no node on PATH" {
     import subprocess;
     import sys;
     import tempfile;
-    import from jaclang.client { get_bun }
+    import from tests.support { js_runtime_or_none }
     import from jaclang.client.vite_bundler { _build_vite_command }
 
     if sys.platform == "win32" {
         testskip("shebang dispatch is POSIX-only");
     }
-    if get_bun() is None {
+    if js_runtime_or_none() is None {
         testskip("bun is required but could not be located/installed");
     }
     with tempfile.TemporaryDirectory() as tmp {
@@ -240,7 +240,7 @@ test "vite builds run under bun with no node on PATH" {
         # work on a machine that has no node at all.
         empty_dir = Path(tmp) / "empty-path";
         empty_dir.mkdir();
-        env = dict(os.environ);
+        env: dict[str, str] = dict(os.environ);
         env["PATH"] = str(empty_dir);
         result = subprocess.run(
             _build_vite_command(build_dir, ["build"]),
@@ -258,13 +258,13 @@ test "vite builds run under bun with no node on PATH" {
 
 test "vite commands address vite's js entry, not the bunx shim" {
     import tempfile;
-    import from jaclang.client { get_bun }
+    import from tests.support { js_runtime_or_none }
     import from jaclang.client.vite_bundler {
         _build_vite_command,
         _build_vite_dev_command
     }
 
-    if get_bun() is None {
+    if js_runtime_or_none() is None {
         testskip("bun is required but could not be located/installed");
     }
     with tempfile.TemporaryDirectory() as tmp {
@@ -288,11 +288,11 @@ test "vite commands address vite's js entry, not the bunx shim" {
 
 test "a missing vite install is an error, not a silent bunx fallback" {
     import tempfile;
-    import from jaclang.client { get_bun }
+    import from tests.support { js_runtime_or_none }
     import from jaclang.client.client_bundle { ClientBundleError }
     import from jaclang.client.vite_bundler { _build_vite_command }
 
-    if get_bun() is None {
+    if js_runtime_or_none() is None {
         testskip("bun is required but could not be located/installed");
     }
     # install_packages runs before every build, so an unresolvable vite means

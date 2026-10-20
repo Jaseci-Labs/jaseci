@@ -1,7 +1,7 @@
 """Native exponentiation (`**`) parity tests.
 
 Regression coverage for the power-lowering seam in
-`na_ir_gen/math.impl.jac` and the `int ** int` type contract in
+`na_ir_gen_pass.impl/math.impl.jac` and the `int ** int` type contract in
 `compiler/types/operations.jac`. Each case compiles a fixture that
 previously lowered to invalid/unsound IR and asserts the JIT result against
 CPython semantics: literal & dynamic exponents, builtin `pow`, `**=`, the
@@ -10,7 +10,7 @@ fixed-width i32 kernel, float power, and the zero-base ZeroDivisionError.
 
 import ctypes;
 import os;
-import from tests.support { JAC_ROOT, TESTS_DIR, native_force_opts }
+import from tests.support { JAC_ROOT, TESTS_DIR, native_address, native_force_opts }
 import jaclang;
 import from jaclang.compiler.driver.program { JacProgram }
 import jaclang.compiler.frontend.unitree as uni;
@@ -38,7 +38,7 @@ def pow_semantics_engine -> tuple[ExecutionEngine, uni.Module] {
         errors = [str(e) for e in prog.errors_had] if prog.errors_had else [];
         assert not prog.errors_had , f"Compilation errors in pow_semantics.jac: {errors}";
         eng = ir.gen.native_engine;
-        assert eng is not None , "No native engine produced for pow_semantics.jac";
+        assert isinstance(eng, ExecutionEngine) , "No native engine produced for pow_semantics.jac";
         _POW_SEMANTICS_ENG = eng;
         _POW_SEMANTICS_IR = ir;
     }
@@ -52,7 +52,7 @@ def pow_semantics_engine -> tuple[ExecutionEngine, uni.Module] {
 def get_func(
     eng: ExecutionEngine, name: str, restype: type | None, *argtypes: type
 ) -> object {
-    addr = eng.get_function_address(name);
+    addr = native_address(eng, name);
     assert addr != 0 , f"Function '{name}' not found in JIT engine";
     functype = ctypes.CFUNCTYPE(restype, *argtypes);
     return functype(addr);

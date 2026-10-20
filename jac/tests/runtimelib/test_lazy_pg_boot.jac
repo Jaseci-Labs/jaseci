@@ -22,7 +22,7 @@ import from tempfile { TemporaryDirectory }
 import from uuid { UUID }
 import from jaclang { JacRuntime as Jac }
 import from jaclang.cli.commands { execution }
-import from jaclang.compiler.frontend.constant { Constants as Con }
+import from jaclang.runtime.constants { Constants as Con }
 import from jaclang.data.pgembed { PgRuntime }
 import from jaclang.server.session { Session }
 import from jaclang.data.store { PgStore }
@@ -66,7 +66,7 @@ test "a stateless program never boots the embedded postgres" {
     orig_base = Jac.get_base_path_dir();
     try {
         Jac.set_base_path(FIXTURES);
-        rc = execution.run(filename=os.path.join(FIXTURES, "stateless_hello.jac"));
+        rc = execution.run(target=os.path.join(FIXTURES, "stateless_hello.jac"));
         assert rc == 0 , f"stateless_hello.jac exited {rc}";
         assert probe.calls == [] , (
             f"a program that touches no graph state booted embedded postgres "
@@ -75,6 +75,44 @@ test "a stateless program never boots the embedded postgres" {
     } finally {
         probe.remove();
         Jac.set_base_path(orig_base);
+    }
+}
+
+
+node TransientQueryNode {}
+
+
+test "transient queries leave context roots unresolved" {
+    import from jaclang.runtime.context { ExecutionContext }
+    import from jaclang.runtime.graph_query { GraphQuery, QHop }
+
+    probe = _BootProbe();
+    orig_ctx = Jac.exec_ctx;
+    probe.install();
+    try {
+        with TemporaryDirectory() as td {
+            parent = ExecutionContext(
+                base_path_dir=td, full_target_path=str(Path(td) / "app.jac")
+            );
+            try {
+                for ctx in [parent, ExecutionContext(_parent=parent)] {
+                    Jac.exec_ctx = ctx;
+                    assert Jac.refs(
+                        GraphQuery(TransientQueryNode(), hops=[QHop(dir=2)])
+                    )
+                        == [];
+                    assert ctx._system_root is None;
+                    assert ctx._user_root is None;
+                }
+                assert probe.calls == [];
+            } finally {
+                Jac.exec_ctx = orig_ctx;
+                parent.close();
+            }
+        }
+    } finally {
+        Jac.exec_ctx = orig_ctx;
+        probe.remove();
     }
 }
 
@@ -109,6 +147,175 @@ test "session construction is free and the first store read boots once" {
         }
     } finally {
         probe.remove();
+    }
+}
+
+
+test "status probes and the unused-session lifecycle never boot the engine" {
+    probe = _BootProbe();
+    probe.install();
+    try {
+        with TemporaryDirectory() as td {
+            sess = Session(base_path=td, target_path=str(Path(td) / "app.jac"));
+            try {
+                loc = sess.data_location();
+                assert loc is not None , ("a status probe must still locate the data");
+                assert probe.calls == [] , (
+                    f"data_location booted the embedded engine: {probe.calls}"
+                );
+                assert "unbooted" in repr(sess) , (
+                    "repr must report boot state, not trigger it"
+                );
+                assert probe.calls == [] , f"repr booted the engine: {probe.calls}";
+                sess.commit();
+                assert probe.calls == [] , (
+                    f"committing nothing booted the engine: {probe.calls}"
+                );
+                assert sess.store is not None , "store access must boot the store";
+                assert sess.data_location() == loc , (
+                    f"boot moved the data location: {loc} -> {sess.data_location()}"
+                );
+            } finally {
+                sess.close();
+            }
+            assert probe.calls == [] , (
+                f"the whole lifecycle spawned the engine: {probe.calls}"
+            );
+        }
+    } finally {
+        probe.remove();
+    }
+}
+
+test "a failed stateless request stays unbooted" {
+    with TemporaryDirectory() as td {
+        sess = Session(base_path=td, target_path=str(Path(td) / "app.jac"));
+        try {
+            raised = False;
+            try {
+                sess.run_request(lambda { raise ValueError("probe"); });
+            } except ValueError {
+                raised = True;
+            }
+            assert raised , "the probe request must fail";
+            assert "unbooted" in repr(sess) , (
+                "a failed request with no database work must not boot the store"
+            );
+        } finally {
+            sess.close();
+        }
+    }
+}
+
+obj _RollbackOnlyStore {
+    has rollbacks: int = 0,
+        commits: int = 0,
+        closes: int = 0;
+
+    def rollback {
+        self.rollbacks += 1;
+    }
+
+    def commit {
+        self.commits += 1;
+    }
+
+    def close {
+        self.closes += 1;
+    }
+}
+
+
+test "a persistent conflict retries a bounded number of times" {
+    import from jaclang.server.session { MAX_RETRIES }
+
+    sess = Session();
+    fake = _RollbackOnlyStore();
+    sess._store = _as_any(fake);
+    calls: list[int] = [];
+
+    def body {
+        calls.append(1);
+        raise Exception({'C': '40001'});
+    }
+
+    raised = False;
+    try {
+        sess.run_request(body);
+    } except Exception {
+        raised = True;
+    }
+    assert raised , "a persistent conflict must still surface after retrying";
+    assert len(calls) == MAX_RETRIES + 1 , (
+        f"request body ran {len(calls)} times; expected "
+        f"{MAX_RETRIES + 1} (1 try + bounded retries)"
+    );
+    assert fake.rollbacks == MAX_RETRIES + 1 , (
+        f"abort() ran {fake.rollbacks} times; expected one per attempt"
+    );
+}
+
+
+test "an injected store is used instead of booting the embedded engine" {
+    probe = _BootProbe();
+    probe.install();
+    try {
+        with TemporaryDirectory() as td {
+            fake = _RollbackOnlyStore();
+            sess = Session(
+                _store=_as_any(fake),
+                base_path=td,
+                target_path=str(Path(td) / "app.jac")
+            );
+            try {
+                assert sess._store is fake , "the injected store was discarded";
+                assert sess.store is fake , (
+                    "store access must return the injected store, not boot"
+                );
+                assert probe.calls == [] , (
+                    f"an injected store still booted the engine: {probe.calls}"
+                );
+            } finally {
+                sess.close();
+            }
+        }
+    } finally {
+        probe.remove();
+    }
+}
+
+
+test "concurrent first store access boots one shared store" {
+    import threading;
+    with TemporaryDirectory() as td {
+        sess = Session(base_path=td, target_path=str(Path(td) / "app.jac"));
+        try {
+            seen: list[any] = [];
+            gate = threading.Barrier(2);
+
+            def racer {
+                gate.`wait(10);
+                seen.append(sess.store);
+            }
+
+            threads = [
+                threading.Thread(target=racer, name="jac-boot-racer") for _ in range(2)
+            ];
+            for t in threads {
+                t.start();
+            }
+            for t in threads {
+                t.join(30);
+            }
+            assert len(seen) == 2 , "racers did not both finish";
+            assert seen[0] is seen[1] , (
+                "two first-time readers got different stores; "
+                "the lazy boot is not serialized"
+            );
+            assert sess.store is seen[0];
+        } finally {
+            sess.close();
+        }
     }
 }
 
@@ -164,14 +371,14 @@ test "candidate discovery never offers a privileged account" {
 
 test "the official image bakes the embedded postgres distribution" {
     text = DOCKERFILE.read_text();
-    pinned = re.search(r"(?m)^ENV\s+JAC_PG_DIST=(\S+)", text);
-    assert pinned is not None , (
-        "the image must pin JAC_PG_DIST so no distribution is fetched at boot"
+    assert re.search(r"(?m)^RUN jac db fetch\b", text) , (
+        "the image must fetch the distribution at build time, not at boot"
     );
-    dist = pinned.group(1);
-    assert f"{dist}" in text.split("ENV JAC_PG_DIST=")[0] , (
-        f"nothing in the build populates {dist}; the image would still "
-        f"download postgres at container start"
+    assert "JAC_PG_DIST" not in text , (
+        "the cached distribution is found by the router; nothing pins it by env"
+    );
+    assert 'chmod 1777 "${JAC_CACHE_HOME}/pg"' in text , (
+        "the unprivileged account must be able to create its cluster under pg/"
     );
 }
 
@@ -236,6 +443,52 @@ test "first-use schema DDL runs once per database, even from many threads" {
     );
     store.ensure_schema_once({});
     assert store.ddl_runs == 1 , "the gate forgot that the schema was already up";
+}
+
+
+# --- The schema gate is safe on a store nobody has readied (#8982 item 16) ---
+obj _FirstUseStore(PgStore) {
+    has ddl_runs: int = 0;
+
+    def _run(sql: str, params: dict[str, any]) -> list[any] {
+        self._ensure_ready();
+        return [("170000", )];
+    }
+
+    def ensure_schema(promotions: dict[str, list[str]]) {
+        self.ddl_runs += 1;
+        self.server_version();
+    }
+}
+
+
+test "the schema gate readies the store instead of deadlocking on first use" {
+    import threading;
+    import from uuid { uuid4 }
+    import from jaclang.data.store { ConnInfo }
+
+    store = _FirstUseStore(
+        conninfo=ConnInfo(
+            host="127.0.0.1", port=1, database=f"jac_gate_{uuid4().hex[:8]}"
+        ),
+        auto_schema=True
+    );
+    outcome: list[any] = [];
+
+    def first_use {
+        store.ensure_schema_once({});
+        outcome.append(store.ddl_runs);
+    }
+    t = threading.Thread(target=first_use, name="jac-gate-first-use", daemon=True);
+    t.start();
+    t.join(10);
+    assert not t.is_alive() , (
+        "ensure_schema_once on an un-readied auto_schema store deadlocked: the "
+        "gate was held while the schema DDL's first query readied the store, "
+        "and readiness asked for the gate again"
+    );
+    assert outcome == [1] , f"schema DDL ran {outcome} time(s); expected exactly once";
+    assert store._ready , "first use through the schema gate left the store un-readied";
 }
 
 

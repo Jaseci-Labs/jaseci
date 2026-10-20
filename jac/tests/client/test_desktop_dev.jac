@@ -111,7 +111,7 @@ test "generated host source branches on dev_port" {
 
     src = _generate_host_source("T", 800, 600, "test-app");
     assert "_ctx.dev_port" in src , "host must read _ctx.dev_port";
-    assert "target_port = dev_port if dev_port > 0 else port" in src , (
+    assert "target_port: int = dev_port if dev_port > 0 else port" in src , (
         "host must fall back to the loopback port when no dev port is set"
     );
     # No codegen-time URL bake: the env is the control-plane seam, read at boot.
@@ -126,9 +126,9 @@ test "generated host source branches on dev_port" {
 # these tests pin the shared handler that desktop (and mobile) rely on.
 obj _FakeJacCompiler {
     has return_mod: any = "MOD",
-        calls: list = [];
+        calls: list[str] = [];
 
-    def compile_module(entry_file: any) -> tuple {
+    def compile_module(entry_file: any) -> tuple[any, ...] {
         self.calls.append(str(entry_file));
         return (None, self.return_mod, None);
     }
@@ -136,7 +136,7 @@ obj _FakeJacCompiler {
 
 obj _FakeCompiler {
     has jac_compiler: any,
-        compile_calls: list = [];
+        compile_calls: list[any] = [];
 
     def compile(mod: any, entry_file: any) {
         self.compile_calls.append((mod, str(entry_file)));
@@ -160,8 +160,9 @@ test "hmr handler recompiles on in-tree .jac change" {
                 path=str(entry_file), change_type=ChangeType.MODIFIED, timestamp=0.0
             )
         );
-        assert len(jc.calls) == 1 , "entry module must be recompiled on .jac save";
-        assert len(compiler.compile_calls) == 1 , "compiled client must be rebuilt on .jac save";
+        assert compiler.compile_calls == [(None, str(entry_file))] , (
+            "the client must be rebuilt from its entry on .jac save"
+        );
     }
 }
 
@@ -185,7 +186,7 @@ test "hmr handler ignores non-.jac and out-of-tree files" {
                 path=str(css_file), change_type=ChangeType.MODIFIED, timestamp=0.0
             )
         );
-        assert len(jc.calls) == 0 , "non-.jac changes must not trigger a recompile";
+        assert compiler.compile_calls == [] , "non-.jac changes must not trigger a recompile";
         # Out-of-tree .jac file -> no recompile.
         with tempfile.TemporaryDirectory() as other_dir {
             outside = Path(other_dir) / "other.jac";
@@ -195,7 +196,9 @@ test "hmr handler ignores non-.jac and out-of-tree files" {
                     path=str(outside), change_type=ChangeType.MODIFIED, timestamp=0.0
                 )
             );
-            assert len(jc.calls) == 0 , "out-of-tree .jac changes must not trigger a recompile";
+            assert compiler.compile_calls == [] , (
+                "out-of-tree .jac changes must not trigger a recompile"
+            );
         }
     }
 }

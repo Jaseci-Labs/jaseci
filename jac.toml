@@ -5,7 +5,7 @@
 # here (not from a Python pyproject backend).
 [project]
 name = "jaclang"
-version = "0.37.2"
+version = "0.38.0"
 description = "Jac programming language - Python-like syntax, compiles to Python bytecode, JavaScript, and native machine code with novel constructs for AI-integrated programming."
 license = "MIT"
 readme = "jac/README.md"
@@ -26,17 +26,9 @@ Documentation = "https://www.jaclang.org/docs"
 # edits still self-invalidate). A one-time `zig build` is needed first, since
 # sitecustomize.py -- which reads this key -- ships inside the binary payload.
 # Comment this stanza out to fall back to the binary's bundled jaclang.
-# Set JAC_NO_DEV_SOURCE=1 to force it off for a single command.
+# Run jac from outside the repo to use its bundled compiler for one command.
 [dev]
 jaclang_source = "jac"   # dir CONTAINING jaclang/, relative to this file
-
-# `jac test` worker count. The generic default is sized from MemAvailable
-# assuming ~2 GB per worker, which suits an ordinary project. This repo's
-# compiler suite is far heavier: workers running the native/LLVM tests were
-# measured at ~4.9 GB PSS average and 7.1 GB peak (they fork `nacompile`
-# subprocesses), so the generic default over-subscribes here. Pin it.
-# JAC_TEST_JOBS overrides this; "0" or "1" runs everything in one process.
-test_jobs = "8"
 
 # `jac test` discovers the suite here (mirrors pytest's testpaths); relative to
 # this file, so a bare `jac test` works from any directory in the repo. The
@@ -57,31 +49,80 @@ isolate = ["jac/jaclang/scale/tests/*"]
 # These share one shelf_db_path SQLite file, so they additionally run one at
 # a time after the parallel phase.
 serial = [
-    "jac/jaclang/scale/tests/test_gcs_storage.jac",
-    "jac/jaclang/scale/tests/test_firebase_auth_sso.jac",
-    "jac/jaclang/scale/tests/test_identity_password.jac",
-    "jac/jaclang/scale/tests/test_firebase_env.jac",
+    "jac/jaclang/scale/tests/data/test_gcs_storage.jac",
+    "jac/jaclang/scale/tests/server/test_firebase_auth_sso.jac",
+    "jac/jaclang/scale/tests/data/test_identity_password.jac",
+    "jac/jaclang/scale/tests/data/test_firebase_env.jac",
+]
+
+# JacPython is a native-only library in checks, builds and cached imports.
+[native]
+require = [
+    "jaclang.compiler.frontend.python.*",
+    "jaclang.compiler.backends.py.jacpython.*",
+    "jaclang.runtime.python.*",
+]
+
+[check]
+# Modules excluded from the `jac check` gate. `jac check` reads this list, so
+# CI, the precommit hook and a local run all apply the same policy; --ignore
+# adds to it. This replaces the old .jacignore, which now only governs what a
+# `jac build` bundle ships.
+#
+# Matching (project/source.jac:path_matches_exclude): an entry containing `/`
+# is fnmatched against the whole path; a bare entry is fnmatched against EVERY
+# path component, so a bare `types.jac` silences every file of that basename
+# repo-wide. Every path entry below is path-qualified for that reason -- one
+# line per excluded module, so a fix deletes exactly one line.
+exclude = [
+    # Test trees and the fixtures that hold deliberate diagnostics: a checker
+    # fixture exists to fail `jac check`, so checking it proves nothing and
+    # blocks every commit that touches it.
+    "tests",
+    "checker_*.jac",
+    "*_err.jac",
+
+    # js_engine is a separate native project with its own jac.toml; its
+    # regression suite and test262 gate it, not this check.
+    "jac/js_engine/*",
+
+    # JacPython: the CPython runtime port, its compiler backend and its
+    # generators. About 80% of this check's time on a 4 vCPU runner (122 of
+    # 188 worker-minutes in the runtime port alone); its own test suites gate it.
+    "jac/jaclang/runtime/python/*",
+    "jac/jaclang/compiler/backends/py/jacpython/*",
+    "scripts/jacpython/*",
+
+    # Examples and benchmarks are not shipped compiler or runtime code.
+    "jac/examples/*",
+    "scripts/bench*",
+    "scripts/native_compile_bench.jac",
 ]
 
 [check.lint]
-# "all" enables every autolint rule; the two strip-* entries are the opt-in
-# "deslop" rules (W3050/W3051) that remove all comments and docstrings. They
-# only activate when named explicitly here, so `jac format --lintfix`,
-# `jac precommit`, and CI's `jac format --check --lintfix` will strip comments
-# and docstrings from every non-excluded .jac file.
-select = ["all", "strip-comments", "strip-docstrings"]
+# "all" enables every autolint rule, including the ones "default" leaves off:
+# the "deslop" rules (W3050/W3051) that remove all comments and docstrings, and
+# separate-impls (W3055), which moves every function, method and ability body
+# into an impl at the bottom of its module. `jac fmt --lintfix`,
+# `jac precommit`, and CI's `jac fmt --check --lintfix` apply them to every
+# non-excluded .jac file.
+select = ["all"]
 exclude = [
     "docs/*",
     "*/examples/*",
     "*/tests/*",
+    "jac/jaclang/compiler/frontend/python/*",
+    "jac/jaclang/compiler/backends/py/jacpython/*",
+    "jac/jaclang/runtime/python/*",
     # Ops scripts keep their usage docstrings; CI's fmt sweep skips ^scripts/
     # for the same reason -- this entry keeps the precommit hook consistent
     # with that (without it, any commit touching a script is blocked on deslop).
     "scripts/*",
     # Excluded for the no-print rule, not deslop (exclusion is file-level across
     # all lint rules): console.impl.jac IS the console implementation, and
-    # cli_boot.jac is the minimal boot path that must run (e.g. `jac purge`)
-    # before the full CLI/console can load -- bare print() is their mechanism.
+    # cli_boot.jac is the minimal boot path that must run (an app binary's
+    # embedded image) before the full CLI/console can load -- bare print() is
+    # their mechanism.
     # Both were deslopped once by hand and should stay comment/docstring-free.
     "console.impl.jac",
     "cli_boot.jac",
@@ -94,6 +135,11 @@ exclude = [
     # docstring/property style so diffs against llvmlite stay reviewable.
     "*/llvm/ir/*",
     "*/llvm/binding/*",
+    # separate-impls would move webgl's helper bodies into module-level impls,
+    # and client placement then stops inferring the module as client (its
+    # browser globals such as Math go Unknown). Kept inline until placement
+    # places an archetype's or function's impl with its declaration.
+    "jac/jaclang/client/webgl.jac",
 ]
 
 [byllm.model]

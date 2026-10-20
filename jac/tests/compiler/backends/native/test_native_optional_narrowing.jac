@@ -15,7 +15,14 @@ proven uses emit none.
 
 import ctypes;
 import os;
-import from tests.support { TESTS_DIR, compile_native, native_force_opts }
+import from tests.support {
+    TESTS_DIR,
+    compile_native,
+    names_function,
+    native_address,
+    compile_native_ir,
+    native_force_opts
+}
 import jaclang;
 
 import from jaclang.runtime.runtime { JacRuntime }
@@ -34,7 +41,7 @@ def sv_module -> any {
 
 """Get a ctypes-callable int -> int function from the JIT engine."""
 def get_func(eng: any, name: str) -> any {
-    addr = eng.get_function_address(name);
+    addr = native_address(eng, name);
     assert addr != 0 , f"Function '{name}' not found in JIT engine";
     return ctypes.CFUNCTYPE(ctypes.c_int64, ctypes.c_int64)(addr);
 }
@@ -57,11 +64,10 @@ def congruent(eng: any, sv: object, name: str, inputs: list[int]) -> list[int] {
 
 """Slice one function's body out of a printed LLVM module."""
 def func_ir(llvm_ir: str, name: str) -> str {
-    marker = '@"' + name + '"(';
     out: list[str] = [];
     inside = False;
     for line in str(llvm_ir).split("\n") {
-        if not inside and line.startswith("define ") and marker in line {
+        if not inside and line.startswith("define ") and names_function(line, name) {
             inside = True;
         }
         if inside {
@@ -199,7 +205,8 @@ test "a callee that rebinds the attribute keeps the checked unwrap" {
     # k=0 leaves the attribute set, so both backends agree on a value. k=1
     # routes through `drop_slot`, which the checker's intra-procedural walk
     # cannot see: sv raises TypeError there, so native must not read a payload.
-    (eng, ir) = compile_native(FIXTURE);
+    (eng, _) = compile_native(FIXTURE);
+    ir = compile_native_ir(FIXTURE);
     sv = sv_module();
     vals = congruent(eng, sv, "callee_rebinds_attr", [0]);
     assert vals == [1] , f"unexpected callee_rebinds_attr results: {vals}";
@@ -213,13 +220,33 @@ test "a value live across a loop back edge keeps the checked unwrap" {
     # n=6 keeps the rebound value non-None on every iteration, so both
     # backends agree. n=2 puts None on the back edge and sv raises TypeError,
     # so the in-loop use must not have been narrowed away.
-    (eng, ir) = compile_native(FIXTURE);
+    (eng, _) = compile_native(FIXTURE);
+    ir = compile_native_ir(FIXTURE);
     sv = sv_module();
     vals = congruent(eng, sv, "back_edge_rewiden", [0, 6]);
     assert vals == [-1, 21] , f"unexpected back_edge_rewiden results: {vals}";
     body = func_ir(str(ir.gen.llvm_ir), "back_edge_rewiden");
     assert "opt.isnone" in body , (
         "a use the loop body rebinds after must keep its checked unwrap"
+    );
+}
+
+test "a subscript store inside a loop keeps the narrow at the loop head" {
+    (eng, _) = compile_native(FIXTURE);
+    sv = sv_module();
+    vals = congruent(eng, sv, "loop_element_store", [0, 3]);
+    assert vals == [-1, 9] , f"unexpected loop_element_store results: {vals}";
+}
+
+test "a tuple-target rebind inside a loop keeps the checked unwrap" {
+    (eng, _) = compile_native(FIXTURE);
+    ir = compile_native_ir(FIXTURE);
+    sv = sv_module();
+    vals = congruent(eng, sv, "loop_unpack_rebind", [0, 6]);
+    assert vals == [-1, 21] , f"unexpected loop_unpack_rebind results: {vals}";
+    body = func_ir(str(ir.gen.llvm_ir), "loop_unpack_rebind");
+    assert "opt.isnone" in body , (
+        "a use the loop body rebinds through a tuple target must keep its checked unwrap"
     );
 }
 
@@ -233,7 +260,7 @@ test "`case None` over a narrowed subject folds instead of comparing to null" {
 test "the narrowed in-loop use keeps its tag check elided" {
     # `scalar_continue_guard` assigns at the top of the body, so the guard's
     # proof is fresh every iteration and the loop rule must still allow it.
-    (_, ir) = compile_native(FIXTURE);
+    ir = compile_native_ir(FIXTURE);
     body = func_ir(str(ir.gen.llvm_ir), "scalar_continue_guard");
     assert "opt.isnone" not in body , (
         "assign-then-guard inside a loop must still narrow"
@@ -247,12 +274,12 @@ test "narrowing removes the tag check from the proven use" {
     _napatch: any = NaIRGenPass;
     _napatch._narrowed_flow_type = _no_narrowing;
     try {
-        (_, base_ir) = compile_native("optional_scalar.jac");
+        base_ir = compile_native_ir("optional_scalar.jac");
         base = str(base_ir.gen.llvm_ir);
     } finally {
         NaIRGenPass._narrowed_flow_type = orig;
     }
-    (_, narrowed_ir) = compile_native("optional_scalar.jac");
+    narrowed_ir = compile_native_ir("optional_scalar.jac");
     narrowed = str(narrowed_ir.gen.llvm_ir);
 
     for name in ["use_pick", "opt_local", "opt_param"] {
@@ -266,7 +293,7 @@ test "narrowing removes the tag check from the proven use" {
 }
 
 test "a proven pointer-optional use emits no unwrap branch" {
-    (_, narrowed_ir) = compile_native(FIXTURE);
+    narrowed_ir = compile_native_ir(FIXTURE);
     body = func_ir(str(narrowed_ir.gen.llvm_ir), "ptr_guard_is_none");
     assert "opt.isnone" not in body , (
         "the guarded len(ids) must read the payload with no tag check"

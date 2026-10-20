@@ -16,6 +16,7 @@ outside the subset; scripts/check_seed_manifest.py is the gate.
 from __future__ import annotations
 
 import enum
+import keyword
 import os
 import re
 from dataclasses import dataclass, field
@@ -411,7 +412,7 @@ class ClassDef:
     bases: str = ""
     body: list = field(default_factory=list)
     decorators: list = field(default_factory=list)
-    is_dataclass: bool = False
+    is_object: bool = False
     arch_kind: str = ""
 
 
@@ -442,6 +443,7 @@ class FuncDef:
     is_static: bool = False
     is_classmethod: bool = False
     is_async: bool = False
+    is_abstract: bool = False
     event: str = ""
     trigger: str = ""
 
@@ -950,6 +952,48 @@ def _lower_edge_refs(tokens: list[Token]) -> list[Token]:
                     break
             j += 1
         inner = tokens[i + 1 : j]
+        if len(inner) >= 2 and inner[0].value == "?" and inner[1].type == TT.COLON:
+            filter_parts = _split_top(inner[2:], TT.COMMA)
+            type_tokens = filter_parts[0]
+            if not type_tokens or any(
+                t.type != (TT.NAME if n % 2 == 0 else TT.DOT)
+                for n, t in enumerate(type_tokens)
+            ) or len(type_tokens) % 2 == 0:
+                raise ParseError(f"line {tok.line}: seed type filters require a type name")
+            origin = _pop_primary_expr(out)
+            if not origin:
+                raise ParseError(f"line {tok.line}: type filter needs an iterable")
+            item = "_jac_seed_filter_item"
+            names = {t.value for t in tokens if t.type == TT.NAME}
+            while item in names:
+                item += "_"
+            predicates: list[Token] = []
+            for part in filter_parts[1:]:
+                if (
+                    len(part) < 3
+                    or part[0].type != TT.NAME
+                    or part[1].type != TT.OP
+                    or part[1].value not in ("==", "!=", "<", "<=", ">", ">=")
+                ):
+                    raise ParseError(
+                        f"line {tok.line}: seed node predicates require `name op value`"
+                    )
+                predicates.extend([
+                    _tok(TT.NAME, "and", tok), _tok(TT.LPAREN, "(", tok),
+                    _tok(TT.NAME, item, tok), _tok(TT.DOT, ".", tok),
+                    *part, _tok(TT.RPAREN, ")", tok),
+                ])
+            out.extend([
+                _tok(TT.LBRACKET, "[", tok), _tok(TT.NAME, item, tok),
+                _tok(TT.NAME, "for", tok), _tok(TT.NAME, item, tok),
+                _tok(TT.NAME, "in", tok), *origin, _tok(TT.NAME, "if", tok),
+                _tok(TT.NAME, "isinstance", tok), _tok(TT.LPAREN, "(", tok),
+                _tok(TT.NAME, item, tok), _tok(TT.COMMA, ",", tok), *type_tokens,
+                _tok(TT.RPAREN, ")", tok), *predicates,
+                _tok(TT.RBRACKET, "]", tok),
+            ])
+            i = j + 1
+            continue
         edges_only = False
         if inner and inner[0].type == TT.NAME and inner[0].value == "edge" and not inner[0].backtick:
             edges_only = True
@@ -987,6 +1031,27 @@ def _lower_edge_refs(tokens: list[Token]) -> list[Token]:
                 raise ParseError(
                     f"line {tok.line}: only plain typed hops are admitted in the seed subset"
                 )
+            if (
+                not edges_only and len(trailing) >= 4
+                and trailing[0].type == TT.LBRACKET
+                and trailing[1].value == "?"
+                and trailing[2].type == TT.COLON
+                and trailing[-1].type == TT.RBRACKET
+            ):
+                # Apply the same node filter used by `items[?:T, field == value]`
+                # after the hop, preserving the adjacency's child order.
+                cur = _osp_call(
+                    "refs0" if flt else "hop0",
+                    [
+                        cur,
+                        [_tok(TT.NUMBER, str(direction), tok)],
+                        [_tok(TT.NAME, etype or "None", tok)],
+                        [_tok(TT.NAME, "False", tok)],
+                    ] + ([_lower_preds(flt, tok)] if flt else []),
+                    tok,
+                )
+                cur = _lower_edge_refs(cur + trailing)
+                continue
             for tt_ in trailing:
                 if tt_.type == TT.OP and tt_.value.startswith("?"):
                     raise ParseError(
@@ -1149,7 +1214,28 @@ def _lower_spawn(tokens: list[Token]) -> list[Token]:
     return tokens
 
 
-def transform_tokens(tokens: list[Token]) -> list[Token]:
+
+def _paren_group_spans_subscript(tokens: list[Token], open_idx: int) -> bool:
+    """True when the paren group opening at open_idx is the entire subscript.
+
+    `dict[(str, Info)]` and `dict[((int | str), object)]` wrap the whole
+    subscript and lower to `dict[str, Info]`; `tuple[(str | None), bool]`
+    does not, and its parens must survive so the `)` stays matched.
+    """
+    depth = 0
+    j = open_idx
+    while j < len(tokens):
+        t = tokens[j]
+        if t.type in (TT.LPAREN, TT.LBRACKET, TT.LBRACE):
+            depth += 1
+        elif t.type in (TT.RPAREN, TT.RBRACKET, TT.RBRACE):
+            depth -= 1
+            if depth == 0:
+                return j + 1 < len(tokens) and tokens[j + 1].type == TT.RBRACKET
+        j += 1
+    return False
+
+def transform_tokens(tokens: list[Token], *, allow_cast: bool = True) -> list[Token]:
     """Apply Jac→Python transformations on a token list.
 
     1. super.method → super().method
@@ -1169,6 +1255,41 @@ def transform_tokens(tokens: list[Token]) -> list[Token]:
 
     while i < len(tokens):
         tok = tokens[i]
+
+        # An `as` cast is a type assertion, erased on the Python backend.
+        # Consume the same atomic/union type shape as parse_cast_type, leaving
+        # enclosing delimiters and subsequent value operators untouched.
+        if allow_cast and tok.type == TT.NAME and tok.value == "as" and not tok.backtick:
+            i += 1
+            while True:
+                if i >= len(tokens) or tokens[i].type not in (TT.NAME, TT.LPAREN):
+                    raise ParseError(f"line {tok.line}: expected a cast type")
+                if tokens[i].type == TT.NAME:
+                    i += 1
+                while i < len(tokens):
+                    if tokens[i].type == TT.DOT:
+                        i += 1
+                        if i >= len(tokens) or tokens[i].type != TT.NAME:
+                            raise ParseError(f"line {tok.line}: expected a cast type name")
+                        i += 1
+                    elif tokens[i].type in (TT.LPAREN, TT.LBRACKET):
+                        depth = 1
+                        i += 1
+                        while i < len(tokens) and depth:
+                            if tokens[i].type in (TT.LPAREN, TT.LBRACKET):
+                                depth += 1
+                            elif tokens[i].type in (TT.RPAREN, TT.RBRACKET):
+                                depth -= 1
+                            i += 1
+                        if depth:
+                            raise ParseError(f"line {tok.line}: unclosed cast type")
+                    else:
+                        break
+                if i < len(tokens) and tokens[i].type == TT.OP and tokens[i].value == "|":
+                    i += 1
+                    continue
+                break
+            continue
 
         # === lambda NAME: TYPE : body → lambda NAME: body (no parens) ===
         if (
@@ -1218,7 +1339,7 @@ def transform_tokens(tokens: list[Token]) -> list[Token]:
                     "postinit": "__post_init__",
                     "init_subclass": "__init_subclass__",
                 }
-                if mname in dunder_map:
+                if not tokens[i + 2].backtick and mname in dunder_map:
                     out.append(tokens[i + 1])  # DOT
                     out.append(
                         Token(
@@ -1283,13 +1404,15 @@ def transform_tokens(tokens: list[Token]) -> list[Token]:
                 i += 1
             continue
 
-        # === NAME[( → NAME[, skip ( ===
+        # === NAME[( ... )] → NAME[ ... ], only when the group spans the subscript ===
         if (
             tok.type == TT.LBRACKET
             and i + 1 < len(tokens)
             and tokens[i + 1].type == TT.LPAREN
             and out
             and out[-1].type == TT.NAME
+            and not keyword.iskeyword(out[-1].value)
+            and _paren_group_spans_subscript(tokens, i + 1)
         ):
             bracket_depth += 1
             bracket_stack.append(bracket_depth)
@@ -1318,7 +1441,7 @@ def transform_tokens(tokens: list[Token]) -> list[Token]:
             continue
 
         # === .init → .__init__  (general dunder method name conversion) ===
-        if tok.type == TT.NAME and out and out[-1].type == TT.DOT:
+        if tok.type == TT.NAME and not tok.backtick and out and out[-1].type == TT.DOT:
             dunder_map = {
                 "init": "__init__",
                 "postinit": "__post_init__",
@@ -1356,9 +1479,9 @@ def transform_tokens(tokens: list[Token]) -> list[Token]:
     return out
 
 
-def tokens_to_str(tokens: list[Token]) -> str:
+def tokens_to_str(tokens: list[Token], *, allow_cast: bool = True) -> str:
     """Transform and join tokens into a Python expression string."""
-    return _join_tokens(transform_tokens(tokens))
+    return _join_tokens(transform_tokens(tokens, allow_cast=allow_cast))
 
 
 # =============================================================================
@@ -1426,10 +1549,12 @@ class Parser:
         *stop: TT,
         stop_values: set | None = None,
         stop_names: set | None = None,
+        allow_cast: bool = True,
     ) -> str:
         """Collect tokens until a stop token at depth 0, return as Python str."""
         return tokens_to_str(
-            self._collect_tokens_until(*stop, stop_values=stop_values, stop_names=stop_names)
+            self._collect_tokens_until(*stop, stop_values=stop_values, stop_names=stop_names),
+            allow_cast=allow_cast,
         )
 
     def _collect_tokens_until(
@@ -1732,6 +1857,10 @@ class Parser:
         if self._match(TT.LPAREN):
             bases = self._collect_until(TT.RPAREN)
             self._expect(TT.RPAREN)
+        if arch_kind == "edge" and self._match(TT.COLON):
+            # Endpoints are static annotations, erased by the seed compiler
+            # just like field annotations (including type-only imports).
+            self._collect_until(TT.LBRACE)
         self._expect(TT.LBRACE)
         body = self._parse_body()
         self._expect(TT.RBRACE)
@@ -1741,7 +1870,7 @@ class Parser:
             bases=bases,
             body=body,
             decorators=decorators,
-            is_dataclass=is_dc,
+            is_object=is_dc,
             arch_kind=arch_kind,
         )
 
@@ -1868,8 +1997,12 @@ class Parser:
         event, trigger = self._parse_event_clause()
         return_type = ""
         if self._match(TT.ARROW):
-            return_type = self._collect_type()
-        if self._match(TT.SEMI):
+            return_type = self._collect_type(stop_names={"abst"})
+        is_abstract = bool(self._match(TT.NAME, "abst"))
+        if is_abstract:
+            self._expect(TT.SEMI)
+            body = [PassStmt()]
+        elif self._match(TT.SEMI):
             body = [PassStmt()]
         else:
             self._expect(TT.LBRACE)
@@ -1884,6 +2017,7 @@ class Parser:
             is_static=is_static,
             is_classmethod=is_classmethod,
             is_async=is_async,
+            is_abstract=is_abstract,
             event=event,
             trigger=trigger,
         )
@@ -2153,7 +2287,7 @@ class Parser:
         cases: list[tuple[str, list]] = []
         while self._match(TT.NAME, "case"):
             # Collect pattern until : (colon after pattern)
-            pattern = self._collect_until(TT.COLON)
+            pattern = self._collect_until(TT.COLON, allow_cast=False)
             self._expect(TT.COLON)
             # Collect body until next 'case' or closing '}'
             body: list = []
@@ -2229,7 +2363,7 @@ class Parser:
             exc_type = ""
             exc_name = ""
             if not self._at(TT.LBRACE):
-                exc_str = self._collect_until(TT.LBRACE)
+                exc_str = self._collect_until(TT.LBRACE, allow_cast=False)
                 if " as " in exc_str:
                     parts = exc_str.rsplit(" as ", 1)
                     exc_type = parts[0].strip()
@@ -2261,7 +2395,7 @@ class Parser:
         if is_async:
             self._expect(TT.NAME, "async")
         self._expect(TT.NAME, "with")
-        items = self._collect_until(TT.LBRACE)
+        items = self._collect_until(TT.LBRACE, allow_cast=False)
         self._expect(TT.LBRACE)
         body = self._parse_body()
         self._expect(TT.RBRACE)
@@ -2338,7 +2472,7 @@ class CodeGen:
     def __init__(self) -> None:
         self.lines: list[str] = []
         self.indent = 0
-        self.needs_dataclass_import = False
+        self.needs_object_model_import = False
         self.needs_enum_import = False
         self.needs_typing_import = False
         self.impl_registry: dict[str, list[ImplDef]] = {}
@@ -2369,8 +2503,8 @@ class CodeGen:
     def generate(self, module: Module) -> str:
         self._scan_needs(module.body)
         self._line("from __future__ import annotations")
-        if self.needs_dataclass_import:
-            self._line("from dataclasses import dataclass, field")
+        if self.needs_object_model_import:
+            self._line("from jaclang.runtime.object_model import make_object as _jac_make_object, ObjectField")
         if self.needs_enum_import:
             self._line("import enum")
         if self.needs_typing_import:
@@ -2383,15 +2517,15 @@ class CodeGen:
             self.lines.insert(1, "import jaclang.jac0core.osp0 as _jac_osp")
         if any("ClassVar[" in ln for ln in self.lines[header_len:]):
             self.lines.insert(1, "from typing import ClassVar")
+        if any("_jac_abc." in ln for ln in self.lines[header_len:]):
+            self.lines.insert(1, "import abc as _jac_abc")
         return "\n".join(self.lines) + "\n"
 
     def _scan_needs(self, body: list) -> None:
         for node in body:
             if isinstance(node, ClassDef):
-                if node.is_dataclass:
-                    has_dc = any("dataclass" in d for d in node.decorators)
-                    if not has_dc:
-                        self.needs_dataclass_import = True
+                if node.is_object:
+                    self.needs_object_model_import = True
                 self._scan_needs(node.body)
             elif isinstance(node, EnumDef):
                 if not node.bases or node.value_type:
@@ -2507,47 +2641,24 @@ class CodeGen:
     def _emit_class(self, node: ClassDef) -> None:
         for dec in node.decorators:
             self._line(f"@{dec}")
-        # node/edge/walker: the runtime's make_archetype (Archetype.__init_subclass__)
-        # applies dataclass(eq=False) itself, exactly as for full-compiler output;
-        # a second application would clash with the fields it injects.
-        if node.is_dataclass and not node.arch_kind:
-            has_dc = any("dataclass" in d for d in node.decorators)
-            if not has_dc:
-                # Check if the class has 'has' fields. Property-only `has`
-                # declarations (accessor blocks) are not dataclass fields, so a
-                # class whose only `has` is a property must keep its inherited
-                # __init__ rather than getting an arg-less generated one.
-                has_fields = any(
-                    isinstance(n, HasDecl) and any(not v.accessors for v in n.vars)
-                    for n in node.body
-                )
-                # Check if the class has a manual __init__ (def init)
-                impls = self.impl_registry.get(node.name, [])
-                has_init = any(
-                    isinstance(n, FuncDef) and n.name in ("init", "__init__")
-                    for n in node.body
-                ) or any(
-                    i.target.endswith(".init") or i.target.endswith(".__init__")
-                    for i in impls
-                )
-                if has_fields and not has_init:
-                    # Class uses has fields with dataclass-generated __init__
-                    # Use kw_only=True when class has parents to avoid
-                    # field ordering issues (child required fields after
-                    # parent defaulted fields)
-                    if node.bases:
-                        self._line("@dataclass(eq=False, repr=False, kw_only=True)")
-                    else:
-                        self._line("@dataclass(eq=False, repr=False)")
-                else:
-                    # Suppress dataclass __init__ to preserve manual
-                    # or inherited __init__
-                    self._line("@dataclass(eq=False, repr=False, init=False)")
+        # Nodes, edges and walkers use the runtime subclass hook. Plain Jac
+        # objects use the same model directly during seed bootstrapping.
+        if node.is_object and not node.arch_kind:
+            self._line("@_jac_make_object")
         tp_str = f"[{node.type_params}]" if node.type_params else ""
         bases = node.bases
         if node.arch_kind:
             arch_base = "_jac_osp." + node.arch_kind.capitalize()
             bases = f"{bases}, {arch_base}" if bases else arch_base
+        # ABC gives an abstract member its instantiation guard, but a Protocol
+        # subclass may only inherit protocols, so adding it there makes the
+        # class unbuildable. Protocol already supplies the abstract semantics.
+        declared = [b.strip() for b in (node.bases or "").split(",") if b.strip()]
+        is_protocol = any(b == "Protocol" or b.endswith(".Protocol") for b in declared)
+        if not is_protocol and any(
+            isinstance(member, FuncDef) and member.is_abstract for member in node.body
+        ):
+            bases = f"{bases}, _jac_abc.ABC" if bases else "_jac_abc.ABC"
         base_str = f"({bases})" if bases else ""
         self._line(f"class {node.name}{tp_str}{base_str}:")
         self.indent += 1
@@ -2677,6 +2788,8 @@ class CodeGen:
             self._line("@classmethod")
         if node.is_static:
             self._line("@staticmethod")
+        if node.is_abstract:
+            self._line("@_jac_abc.abstractmethod")
         _dunder_names = {"init": "__init__", "postinit": "__post_init__"}
         name = _dunder_names.get(node.name, node.name)
         func_params = list(node.params)
@@ -2789,17 +2902,34 @@ class CodeGen:
                         )
                 continue
             if var.by_postinit:
-                self._line(f"{var.name}: {var.type_ann} = field(init=False)")
+                self._line(f"{var.name}: {var.type_ann} = ObjectField(init=False)")
             elif var.default:
                 d = var.default.strip()
                 d_norm = d.replace(" ", "")
                 if d == "[]":
                     self._line(
-                        f"{var.name}: {var.type_ann} = field(default_factory=list)"
+                        f"{var.name}: {var.type_ann} = ObjectField(default_factory=list)"
                     )
                 elif d_norm == "{}":
                     self._line(
-                        f"{var.name}: {var.type_ann} = field(default_factory=dict)"
+                        f"{var.name}: {var.type_ann} = ObjectField(default_factory=dict)"
+                    )
+                elif d_norm in ("set()", "list()", "dict()", "frozenset()"):
+                    self._line(
+                        f"{var.name}: {var.type_ann} = "
+                        f"ObjectField(default_factory={d_norm[:-2]})"
+                    )
+                elif (
+                    d.endswith(")")
+                    and not d.startswith("(")
+                    and not d.startswith("ObjectField(")
+                    and not d.startswith("ClassVar")
+                ):
+                    # A call expression builds a fresh value per instance;
+                    # a shared default would alias it across instances.
+                    self._line(
+                        f"{var.name}: {var.type_ann} = "
+                        f"ObjectField(default_factory=lambda: {var.default})"
                     )
                 else:
                     self._line(f"{var.name}: {var.type_ann} = {var.default}")
@@ -3008,6 +3138,352 @@ def _ext_registry() -> ModuleType:
     return _ext_registry_mod
 
 
+# =============================================================================
+# Wiring: archwire.jac is where a seed module's project imports come from
+# =============================================================================
+
+ARCH_FILE_NAME = "archwire.jac"
+_WIRE_TOKEN = re.compile(
+    r'\s+|#[^\n]*|-->|\+\+>|"[^"\n]*"|`?[A-Za-z_][A-Za-z_0-9]*|[{}\[\],|;:.*]'
+)
+_WIRE_KEYWORDS = ("comptime", "include", "type")
+_SOURCE_NAMES = {"__init__": "init", "__post_init__": "postinit"}
+_wiring_cache: dict[str, tuple[tuple[float, int], list[WireFact]]] = {}
+
+
+@dataclass
+class WireFact:
+    """One consumer's import from one provider, as an archwire.jac target says.
+
+    Names are relative to the archwire.jac directory with block scopes joined;
+    ``names`` is None for the module form. ``injected`` is False for a ``-->``
+    wire, which declares an import the consumer writes itself.
+    """
+
+    provider: str
+    consumer: str
+    keywords: tuple[str, ...] = ()
+    alias: str = ""
+    names: list[str] | None = None
+    injected: bool = True
+
+
+class _WireReader:
+    """Reads the wires of an archwire.jac (rules restrict, they import nothing)."""
+
+    def __init__(self, source: str, filename: str) -> None:
+        self.toks = [
+            t
+            for t in _WIRE_TOKEN.findall(source)
+            if t.strip() and not t.startswith("#")
+        ]
+        self.pos = 0
+        self.filename = filename
+        self.facts: list[WireFact] = []
+
+    def peek(self, offset: int = 0) -> str:
+        at = self.pos + offset
+        return self.toks[at] if at < len(self.toks) else ""
+
+    def take(self, expected: str = "") -> str:
+        tok = self.peek()
+        if expected and tok != expected:
+            raise ParseError(
+                f"{self.filename}: expected {expected!r} in a wire, got {tok!r}"
+            )
+        self.pos += 1
+        return tok
+
+    def dotted(self) -> str:
+        parts = [self.take().lstrip("`")]
+        while self.peek() == ".":
+            self.take(".")
+            parts.append(self.take().lstrip("`"))
+        return ".".join(parts)
+
+    def read(self) -> list[WireFact]:
+        while self.peek():
+            self.take("graph")
+            self.take("import")
+            scope = "" if self.peek() == "{" else self.dotted()
+            self.take("{")
+            while self.peek() not in ("}", ""):
+                if self.peek() == "edge":
+                    self.skip_rule()
+                else:
+                    self.wire(scope)
+            self.take("}")
+        return self.facts
+
+    def skip_rule(self) -> None:
+        depth = 0
+        while self.peek():
+            tok = self.take()
+            if tok == "{":
+                depth += 1
+            elif tok == "}":
+                depth -= 1
+                if depth == 0:
+                    return
+            elif tok == ";" and depth == 0:
+                return
+
+    def wire(self, scope: str) -> None:
+        keywords: list[str] = []
+        while self.peek() in _WIRE_KEYWORDS and self.peek(1) not in (
+            "-->",
+            "++>",
+            ".",
+            "as",
+            "|",
+        ):
+            keywords.append(self.take())
+        provider = _join_scope(scope, self.dotted())
+        alias = ""
+        if self.peek() == "as":
+            self.take("as")
+            alias = self.take()
+        injected = self.peek() == "++>"
+        self.take("++>" if injected else "-->")
+        if self.peek() == "[":
+            self.take("[")
+            while self.peek() not in ("]", ""):
+                self.target(scope, provider, tuple(keywords), alias, injected)
+                if self.peek() == ",":
+                    self.take(",")
+            self.take("]")
+        else:
+            self.target(scope, provider, tuple(keywords), alias, injected)
+            if self.peek() == ";":
+                self.take(";")
+
+    def target(
+        self,
+        scope: str,
+        provider: str,
+        keywords: tuple[str, ...],
+        alias: str,
+        injected: bool,
+    ) -> None:
+        consumers = [_join_scope(scope, self.dotted())]
+        while self.peek() == "|":
+            self.take("|")
+            consumers.append(_join_scope(scope, self.dotted()))
+        names: list[str] | None = None
+        if self.peek() == "{":
+            self.take("{")
+            names = []
+            while self.peek() not in ("}", ""):
+                name = self.take().lstrip("`")
+                if self.peek() == "as":
+                    self.take("as")
+                    name = f"{name} as {self.take().lstrip('`')}"
+                names.append(name)
+                if self.peek() == ",":
+                    self.take(",")
+            self.take("}")
+        for consumer in consumers:
+            self.facts.append(
+                WireFact(
+                    provider,
+                    consumer,
+                    keywords,
+                    alias if names is None else "",
+                    names,
+                    injected,
+                )
+            )
+
+
+def _join_scope(scope: str, name: str) -> str:
+    return f"{scope}.{name}" if scope else name
+
+
+def arch_file_for(path: str) -> str | None:
+    """The archwire.jac that governs ``path``: the nearest one above it,
+    unless a jac.toml closes the project first."""
+    cur = os.path.dirname(os.path.realpath(path))
+    while True:
+        candidate = os.path.join(cur, ARCH_FILE_NAME)
+        if os.path.isfile(candidate):
+            return candidate
+        if os.path.isfile(os.path.join(cur, "jac.toml")):
+            return None
+        parent = os.path.dirname(cur)
+        if parent == cur:
+            return None
+        cur = parent
+
+
+def wire_facts(arch_path: str) -> list[WireFact]:
+    """Every wire fact of an archwire.jac, read once per process per version."""
+    stat = os.stat(arch_path)
+    stamp = (stat.st_mtime, stat.st_size)
+    held = _wiring_cache.get(arch_path)
+    if held is not None and held[0] == stamp:
+        return held[1]
+    with open(arch_path, encoding="utf-8") as f:
+        facts = _WireReader(f.read(), arch_path).read()
+    _wiring_cache[arch_path] = (stamp, facts)
+    return facts
+
+
+def _is_module(root: str, parts: list[str]) -> bool:
+    base = os.path.join(root, *parts)
+    return (
+        os.path.isfile(base + ".jac")
+        or os.path.isfile(base + ".py")
+        or os.path.isfile(os.path.join(base, "__init__.jac"))
+        or os.path.isfile(os.path.join(base, "__init__.py"))
+    )
+
+
+def _import_prefix(root: str) -> str:
+    """The import name of the archwire.jac directory: the chain of packages
+    above it, up to the outermost one with an ``__init__``."""
+    chain: list[str] = []
+    top = -1
+    cur = os.path.realpath(root)
+    while True:
+        if os.path.isfile(os.path.join(cur, "__init__.jac")) or os.path.isfile(
+            os.path.join(cur, "__init__.py")
+        ):
+            top = len(chain)
+        chain.append(os.path.basename(cur))
+        parent = os.path.dirname(cur)
+        if parent == cur or os.path.isfile(os.path.join(cur, "jac.toml")):
+            break
+        cur = parent
+    return ".".join(reversed(chain[: top + 1]))
+
+
+def wired_imports(filename: str) -> dict[tuple[str, ...], list[Import]]:
+    """The imports archwire.jac generates for a module, keyed by the scope
+    (class, function or method path) they land in; ``()`` is module level."""
+    if not os.path.isfile(filename):
+        return {}
+    arch = arch_file_for(filename)
+    if arch is None:
+        return {}
+    root = os.path.dirname(arch)
+    rel = os.path.relpath(os.path.realpath(filename), os.path.realpath(root))
+    if rel.startswith("..") or not rel.endswith(".jac"):
+        return {}
+    module_parts = rel[: -len(".jac")].split(os.sep)
+    if module_parts[-1] == "__init__":
+        module_parts = module_parts[:-1]
+    module = ".".join(module_parts)
+    prefix = _import_prefix(root)
+    out: dict[tuple[str, ...], list[Import]] = {}
+    for fact in wire_facts(arch):
+        if not fact.injected or (
+            fact.consumer != module and not fact.consumer.startswith(module + ".")
+        ):
+            continue
+        rest = fact.consumer[len(module) :].lstrip(".")
+        scope = tuple(rest.split(".")) if rest else ()
+        if any(
+            _is_module(root, module_parts + list(scope[: i + 1]))
+            for i in range(len(scope))
+        ):
+            continue
+        if "include" in fact.keywords or "comptime" in fact.keywords:
+            raise ParseError(
+                f"{filename}: jac0 cannot weave a {' '.join(fact.keywords)} wire from"
+                f" {fact.provider}; seed modules use plain and type imports"
+            )
+        target = f"{prefix}.{fact.provider}" if prefix else fact.provider
+        if fact.names is None:
+            imp = Import(
+                module=target, alias=fact.alias, is_typed="type" in fact.keywords
+            )
+        else:
+            imp = Import(
+                module=target,
+                names=list(fact.names),
+                is_from=True,
+                is_typed="type" in fact.keywords,
+            )
+        out.setdefault(scope, []).append(imp)
+    return out
+
+
+def wiring_key(filename: str) -> str:
+    """What archwire.jac contributes to a module's bytecode, for cache keys."""
+    rows = [
+        f"{'.'.join(scope)}|{imp.module}|{imp.is_from}|{imp.is_typed}|{imp.alias}|"
+        + ",".join(imp.names)
+        for (scope, imports) in wired_imports(filename).items()
+        for imp in imports
+    ]
+    return "\n".join(sorted(rows))
+
+
+def _after_docstring(body: list) -> int:
+    first = body[0] if body else None
+    if isinstance(first, ExprStmt) and first.expr[:1] in ("'", '"'):
+        return 1
+    return 0
+
+
+def _scope_bodies(
+    module: Module, codegen: CodeGen, scope: tuple[str, ...]
+) -> list[list]:
+    """Every body a scoped wire lands in, as the full compiler finds them: the
+    ``impl`` naming the deepest prefix of the scope, or the module, then the
+    nested classes and functions; a path names every match (functions nested
+    in unnamed blocks such as tests share one path)."""
+    scope = tuple(_SOURCE_NAMES.get(name, name) for name in scope)
+    impls: dict[str, list] = {}
+    for held in codegen.impl_registry.values():
+        for impl in held:
+            impls.setdefault(impl.target, []).append(impl)
+    bodies: list[list] = [module.body]
+    rest = scope
+    for depth in range(len(scope), 0, -1):
+        found = impls.get(".".join(scope[:depth]))
+        if found:
+            bodies = [impl.body for impl in found]
+            rest = scope[depth:]
+            break
+    for name in rest:
+        bodies = [
+            node.body
+            for body in bodies
+            for node in _named_children(body)
+            if node.name == name
+        ]
+    return bodies
+
+
+def _named_children(body: list) -> list:
+    """Classes and functions in a body, looking through unnamed blocks."""
+    out: list = []
+    for node in body:
+        if isinstance(node, (ClassDef, FuncDef)):
+            out.append(node)
+        else:
+            for nested in vars(node).values() if hasattr(node, "__dict__") else ():
+                if isinstance(nested, list) and nested and not isinstance(nested[0], str):
+                    out.extend(_named_children(nested))
+    return out
+
+
+def weave_wiring(module: Module, codegen: CodeGen, filename: str) -> None:
+    """Place the imports archwire.jac generates for this module where the full
+    compiler places them: module level, or the top of the scoped body."""
+    for scope, imports in wired_imports(filename).items():
+        bodies = [module.body] if not scope else _scope_bodies(module, codegen, scope)
+        if not bodies:
+            raise ParseError(
+                f"{filename}: archwire.jac wires imports into '{'.'.join(scope)}',"
+                " which this module does not declare"
+            )
+        for body in bodies:
+            at = _after_docstring(body)
+            body[at:at] = imports
+
+
 def discover_impl_files(jac_path: str) -> list[str]:
     """Discover .impl.jac files for a given .jac file."""
     reg = _ext_registry()
@@ -3067,5 +3543,8 @@ def compile_jac(
                 if isinstance(node, ImplDef):
                     cls = node.target.split(".")[0]
                     codegen.impl_registry.setdefault(cls, []).append(node)
+                else:
+                    module.body.append(node)
 
+    weave_wiring(module, codegen, filename)
     return codegen.generate(module)

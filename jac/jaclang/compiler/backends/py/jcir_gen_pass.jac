@@ -1,164 +1,6 @@
-import from jaclang.runtime.osp_kernel { osp_skip_rest }
 import textwrap;
 import from collections.abc { Sequence }
-import from jaclang.compiler.frontend.unitree {
-    Ability,
-    ArchHas,
-    Archetype,
-    AssertStmt,
-    AssignCompr,
-    Assignment,
-    AstSymbolNode,
-    AtomTrailer,
-    AtomUnit,
-    AwaitExpr,
-    BinaryExpr,
-    Bool,
-    BoolExpr,
-    BuiltinType,
-    CastExpr,
-    CfgExpr,
-    CodeBlockStmt,
-    CommentToken,
-    CompareExpr,
-    ConcurrentExpr,
-    ConnectOp,
-    ContextAwareNode,
-    CtrlStmt,
-    DeleteStmt,
-    DictCompr,
-    DictVal,
-    DisconnectOp,
-    DisengageStmt,
-    EdgeOpRef,
-    EdgeRefTrailer,
-    Ellipsis,
-    ElseIf,
-    ElseStmt,
-    Enum,
-    EnumBlockStmt,
-    EventSignature,
-    Except,
-    Expr,
-    ExprAsItem,
-    ExprCtx,
-    ExprStmt,
-    FString,
-    FilterCompr,
-    FinallyStmt,
-    Float,
-    ForeverStmt,
-    FormattedValue,
-    FuncCall,
-    FuncSignature,
-    GenCompr,
-    GlobalVars,
-    HasVar,
-    IfElseExpr,
-    IfStmt,
-    ImplDef,
-    Import,
-    InForStmt,
-    IndexSlice,
-    InnerCompr,
-    Int,
-    IterForStmt,
-    JsxComment,
-    JsxElement,
-    JsxElementName,
-    JsxExpression,
-    JsxNormalAttribute,
-    JsxSlot,
-    JsxSpreadAttribute,
-    JsxText,
-    KVPair,
-    KWPair,
-    LambdaExpr,
-    ListCompr,
-    ListVal,
-    MatchArch,
-    MatchAs,
-    MatchCase,
-    MatchKVPair,
-    MatchMapping,
-    MatchOr,
-    MatchPattern,
-    MatchSequence,
-    MatchSingleton,
-    MatchStar,
-    MatchStmt,
-    MatchValue,
-    MatchWild,
-    Module,
-    ModuleCode,
-    ModuleItem,
-    ModulePath,
-    MultiString,
-    Name,
-    NameAtom,
-    Null,
-    OpenStmt,
-    ParamVar,
-    PyInlineCode,
-    RaiseStmt,
-    ReportStmt,
-    ReturnStmt,
-    SemDef,
-    Semi,
-    SetCompr,
-    SetVal,
-    SpecialVarRef,
-    String,
-    SubTag,
-    SwitchStmt,
-    Test,
-    Token,
-    TryStmt,
-    TupleVal,
-    TypeAlias,
-    TypeParam,
-    TypedCtxBlock,
-    UnaryExpr,
-    UniNode,
-    UniScopeNode,
-    VisitStmt,
-    WhileStmt,
-    WithStmt,
-    YieldExpr,
-    is_identifier_slot
-}
-import from jaclang.compiler.frontend.constant {
-    CodeContext,
-    EdgeDir,
-    is_borrow_kind,
-    OwnershipKind
-}
-import from jaclang.compiler.frontend.constant { Constants as Con }
-import from jaclang.compiler.frontend.constant { Tokens as Tok }
-import from jaclang.runtime.scalars { shape_of }
 
-import from jaclang.compiler.backends.py.codegen_ir { CodegenIrWriter }
-import from jaclang.compiler.frontend.codeinfo { BoundaryTypeInfo, InteropBinding }
-import from jaclang.compiler.backends.py.jcir_facts {
-    JCIR_AMBIENT_TYPING_NAMES,
-    JCIR_BUILTIN_NAMES,
-    jcir_is_test_path
-}
-import from jaclang.compiler.passes.ast_gen.base_ast_gen_pass { BaseAstGenPass }
-import from jaclang.compiler.frontend.diagnostics {
-    E5001,
-    E5002,
-    E5003,
-    E5004,
-    E5005,
-    E5006,
-    E5007,
-    E5008,
-    E5094,
-    W5096,
-    E5098,
-    E5102
-}
 
 glob TOKEN_CLS_BY_NAME: dict[(str, str)] = {
          'KW_AND': 'And',
@@ -232,47 +74,33 @@ glob EDGE_DIR_NAMES: dict[(int, str)] = {
          int(EdgeDir.IN): 'IN',
          int(EdgeDir.OUT): 'OUT',
          int(EdgeDir.ANY): 'ANY'
-     };
+     },
+     SHORT_INT_LITERAL: int = 17;
 
 obj CgItem {}
 
 obj CgNode(CgItem) {
     has cls: str,
         keys: list[str],
-        vals: list,
+        vals: list[any],
         l1: int = 0,
         c1: int = 0,
         l2: int = 0,
         c2: int = 0,
         jac_src: (UniNode | None) = None;
 
-    def get(key: str) -> any {
-        i = 0;
-        while i < len(self.keys) {
-            if self.keys[i] == key {
-                return self.vals[i];
-            }
-            i += 1;
-        }
-        raise KeyError(f"CgNode {self.cls} has no field {key}");
-    }
+    def get(key: str) -> any;
+    def setf(key: str, value: any) -> None;
+    def hasf(key: str) -> bool;
+    def items(key: str) -> list[any];
+    def push(key: str, item: any);
+}
 
-    def setf(key: str, value: any) -> None {
-        i = 0;
-        while i < len(self.keys) {
-            if self.keys[i] == key {
-                self.vals[i] = value;
-                return;
-            }
-            i += 1;
-        }
-        self.keys.append(key);
-        self.vals.append(value);
-    }
-
-    def hasf(key: str) -> bool {
-        return key in self.keys;
-    }
+obj PlacePath {
+    has kind: str,
+        name: str = "",
+        target: (CgNode | None) = None,
+        key: (CgNode | None) = None;
 }
 
 obj CgSplice(CgItem) {
@@ -283,98 +111,44 @@ obj CgSplice(CgItem) {
 
 obj CgEllipsis(CgItem) {}
 
+obj CgWideInt(CgItem) {
+    has negative: bool,
+        magnitude: bytes;
+}
+
 glob TASK_VALUE: int = 0,
      TASK_NODE: int = 1,
      TASK_LIST: int = 2;
 
+def write_ir_value(w: CodegenIrWriter, v: object);
 
-def write_ir_value(w: CodegenIrWriter, v: object) {
-    tasks: list[tuple[(int, object)]] = [(TASK_VALUE, v)];
-    while tasks {
-        t = tasks.pop();
-        kind = t[0];
-        val = t[1];
-        if kind == TASK_NODE and isinstance(val, CgNode) {
-            nd: CgNode = val;
-            w.emit_loc_needed(nd.l1, nd.c1, nd.l2, nd.c2);
-            w.emit_node(nd.cls, nd.keys);
-            continue;
-        }
-        if kind == TASK_LIST and isinstance(val, int) {
-            n: int = val;
-            w.emit_list(n);
-            continue;
-        }
-        if val is None {
-            w.emit_none();
-        } elif isinstance(val, CgEllipsis) {
-            w.emit_ellipsis();
-        } elif isinstance(val, CgNode) {
-            tasks.append((TASK_NODE, val));
-            items = val.vals;
-            i = len(items) - 1;
-            while i >= 0 {
-                tasks.append((TASK_VALUE, items[i]));
-                i -= 1;
-            }
-        } elif isinstance(val, CgSplice) {
-            w.emit_parse_splice(val.src, val.offset);
-        } elif isinstance(val, bool) {
-            if val {
-                w.emit_true();
-            } else {
-                w.emit_false();
-            }
-        } elif isinstance(val, int) {
-            w.emit_int(val);
-        } elif isinstance(val, float) {
-            w.emit_float(val);
-        } elif isinstance(val, str) {
-            w.emit_str(val);
-        } elif isinstance(val, bytes) {
-            w.emit_bytes(val);
-        } elif isinstance(val, list) {
-            tasks.append((TASK_LIST, len(val)));
-            i = len(val) - 1;
-            while i >= 0 {
-                tasks.append((TASK_VALUE, val[i]));
-                i -= 1;
-            }
-        } else {
-            raise ValueError(
-                "JCIR emitter produced a value outside the v1 constant domain. "
-                "The whole domain is None, a CgEllipsis marker, a CgNode, a "
-                "CgSplice, bool, int, float, str, bytes, and a list of those; a "
-                "value of any other type reached a recipe slot, most often "
-                "because a producer put a live Python object where an encodable "
-                "one belongs."
-            );
-        }
-    }
-}
+def module_container_bytes(mod_path: str, root_node: CgNode) -> bytes;
 
-def module_container_bytes(mod_path: str, root_node: CgNode) -> bytes {
-    w = CodegenIrWriter();
-    w.begin_module(mod_path);
-    write_ir_value(w, root_node);
-    w.end_module();
-    return w.to_bytes();
-}
-
-walker JcirGenPass(BaseAstGenPass[CgItem]) {
+walker JcirGenPass(TreePass) {
+    static has contract: PassContract = PassContract();
     has already_added: list[str] = [],
         _ct_only_names: (set[str] | None) = None,
         jaclib_imports: set[str] postinit,
+        _runtime_aliases: dict[str, str] postinit,
+        _reserved_names: set[str] postinit,
+        _builtin_names: set[str] postinit,
+        _ambient_typing_names: set[str] postinit,
         builtin_imports: set[str] postinit,
         sized_imports: set[str] postinit,
         typing_imports: set[str] postinit,
+        loop_links: LoopLinks postinit,
+        _pass_link_names: dict[int, str] postinit,
         _lambda_counter: int = 0,
         _hoist_frames: list[list[CgNode]] postinit,
         preamble: list[CgItem] postinit,
         _sink: dict[UniNode, list[CgItem]] postinit,
         _module_root: (CgNode | None) = None,
         _module_path: str = "",
-        _interop_stub_node: (UniNode | None) = None;
+        _interop_stub_node: (UniNode | None) = None,
+        _sv_boundary_names: dict[str, str] = {},
+        _sv_boundary_registry: str = "",
+        _sv_serializer: str = "",
+        _c_temp_count: int = 0;
 
     with entry {}
 
@@ -386,21 +160,44 @@ walker JcirGenPass(BaseAstGenPass[CgItem]) {
     def _is_native_ext_module -> bool;
     def _refuse(nd: (UniNode | None), construct: str) -> None;
     def nod(
-        cls_name: str, keys: list[str], vals: list, jac_node: (UniNode | None) = None
+        cls_name: str,
+        keys: list[str],
+        vals: list[any],
+        jac_node: (UniNode | None) = None
     ) -> CgNode;
 
     def nod_loc(
-        cls_name: str, keys: list[str], vals: list, l1: int, c1: int, l2: int, c2: int
+        cls_name: str,
+        keys: list[str],
+        vals: list[any],
+        l1: int,
+        c1: int,
+        l2: int,
+        c2: int
     ) -> CgNode;
 
-    def _flatten_ast_list(items: list[CgItem | list[CgItem] | None]) -> list[CgItem];
+    def _move_release_stmts(stmt: UniNode) -> list[CgNode];
+    def _release_name_stmt(name: str, source: UniNode) -> CgNode;
+    def _scope_cleanup_body(scope: UniNode, body: list[CgNode]) -> list[CgNode];
+    def _stmts_with_releases(stmts: Sequence[UniNode]) -> list[CgItem];
+    def call_node(
+        func: CgNode,
+        args: Sequence[CgItem],
+        keywords: Sequence[CgItem],
+        jac_node: (UniNode | None) = None
+    ) -> CgNode;
+
     def outs(nd: UniNode) -> list[CgItem];
     def set_out(nd: UniNode, items: list[CgItem]) -> None;
     def _apply_coercion(nd: Expr) -> None;
+    def _distinct_base_ast(nd: TypeAlias) -> (CgNode | None);
     def _apply_fw(nd: Expr) -> None;
     def _fw_helper(name: str) -> CgNode;
-    def _fw_call_node(helper: str, args: list, jac_node: UniNode) -> CgNode;
-    def _fw_wrap_call(nd: Expr, helper: str, args: list) -> None;
+    def _fw_call_node(
+        helper: str, args: Sequence[CgItem], jac_node: UniNode
+    ) -> CgNode;
+
+    def _fw_wrap_call(nd: Expr, helper: str, args: Sequence[CgItem]) -> None;
     def _fw_binary(nd: BinaryExpr, name: str) -> None;
     def _fw_unary(nd: UnaryExpr, name: str) -> None;
     def _fw_call(nd: FuncCall) -> None;
@@ -411,23 +208,34 @@ walker JcirGenPass(BaseAstGenPass[CgItem]) {
     def _fw_as_load(item: any) -> any;
     def _fw_aug_assign(nd: Assignment, target: any, value: any) -> (CgNode | None);
     def val(nd: UniNode) -> CgNode;
+    def _clib_block_desc(imp: Import) -> dict[str, any];
+    def _gen_clib_binding(imp: Import) -> list[CgNode];
+    def _c_temp_name(role: str) -> str;
+    def _c_named(name: str, value: CgNode) -> CgNode;
+    def _c_interop_call_rewrite(nd: FuncCall) -> None;
+    def _c_vararg_rewrite(nd: FuncCall, fixed: int) -> None;
+    def _is_c_global_value(nd: Name) -> bool;
+    def _c_copy_rewrite(nd: AtomTrailer) -> None;
     def const_of(value: any, jac_node: (UniNode | None) = None) -> CgNode;
-    def _ct_kind(v: any) -> str;
-    def _ct_order_key(v: any) -> str;
-    def _ct_materializable(v: any) -> bool;
+    def int_const_of(value: CtInt, jac_node: (UniNode | None) = None) -> CgNode;
+    def _ct_kind(v: CtValue) -> str;
+    def _ct_order_key(v: CtValue) -> str;
+    def _ct_materializable(v: CtValue) -> bool;
     def _ct_concrete(nd: Expr) -> bool;
     def _is_comptime_only_name(nd: Name) -> bool;
     def _comptime_only_names -> set[str];
-    def _record_bypasses_init(v: any) -> bool;
+    def _record_bypasses_init(v: CtRecord) -> bool;
     def _is_ct_type_param(nd: Name) -> bool;
     def _ct_param_decls(cls_expr: Expr) -> (list[TypeParam] | None);
-    def _ct_ctor_slots(nd: AtomTrailer) -> (list[tuple] | None);
+    def _ct_ctor_slots(nd: AtomTrailer) -> (list[tuple[str, UniNode]] | None);
     def _trailer_reaches_ct_class(nd: AtomTrailer) -> bool;
     def _ct_param_fields(nd: Archetype) -> list[CgNode];
     def _import_ref(module: str, name: str, jac_node: UniNode) -> CgNode;
     def _class_ref(module: str, name: str, jac_node: UniNode) -> CgNode;
-    def _materialize(v: any, jac_node: UniNode) -> (CgNode | None);
+    def _ct_ordered(items: list[CtValue]) -> list[CtValue];
+    def _materialize(v: CtValue, jac_node: UniNode) -> (CgNode | None);
     def _comptime_if_out(nd: IfStmt) -> bool;
+    def _if_out(nd: IfStmt) -> None;
     def name_load(name_id: str, jac_node: (UniNode | None) = None) -> CgNode;
     def _with_ctx(cgn: CgNode, ctx_cls: str) -> CgNode;
     def jaclib_obj(obj_name: str) -> CgNode;
@@ -437,6 +245,7 @@ walker JcirGenPass(BaseAstGenPass[CgItem]) {
     def _py_name(nd: AstSymbolNode) -> str;
     def py_ctx(nd: AstSymbolNode) -> CgNode;
     def _next_lambda_name -> str;
+    def _reserve_name(preferred: str) -> str;
     def _push_hoist_frame -> None;
     def _hoist_lambda(func_def: CgNode) -> None;
     def _ancestor_is_one_of(nd: (UniNode | None), roots: list[UniNode]) -> bool;
@@ -448,16 +257,35 @@ walker JcirGenPass(BaseAstGenPass[CgItem]) {
     def _docstring_offset(body: list[CgItem]) -> int;
     def _report_leaked_hoisted_lambdas -> None;
     def _function_expr_from_def(func_def: CgNode, jac_node: UniNode) -> CgNode;
+    def _pass_body(loop: LoopStmt) -> list[CgItem];
+    def _pass_link_name(link: PassLink) -> str;
+    def _closure_bindings(closure: UniNode) -> list[str];
+    def _pass_link_args(names: list[str]) -> CgNode;
+    def _pass_link_ref(link: PassLink, nd: Name) -> CgNode;
+    def _pass_link_opens(loop: UniNode) -> list[CgNode];
+    def _pass_link_ctor(kind: str, loop: UniNode) -> CgNode;
+    def _pass_link_detaches(loop: (UniNode | None)) -> list[CgNode];
+    def _linked_closure_value(closure: UniNode, value: CgNode) -> CgNode;
+    def _linked_closure_factory(func_def: CgNode, closure: UniNode) -> CgNode;
     def _get_sem_decorator(nd: UniNode) -> (CgNode | None);
     def _gen_native_interop_stubs(nd: UniNode) -> None;
-    def _native_import_registration_map -> dict;
-    def _top_level_bound_names(items: any) -> list;
-    def _native_test_shim_stmts(nd: Test) -> list;
+    def _native_import_registration_map -> dict[str, list[CgSplice]];
+    def _top_level_bound_names(items: any) -> list[str];
+    def _native_test_shim_stmts(nd: Test) -> list[CgItem];
     def _generate_sv_to_sv_stubs(nd: Import) -> bool;
+    def _gen_py_sv_boundary_types -> None;
+    def _gen_py_wire_methods -> list[str];
+    def _sv_consumer_app_expr -> str;
+    def _sv_endpoint_effects(binding: InteropBinding, key: str) -> list[str];
+    def _sv_bridge_walker_call(expr: Expr) -> (FuncCall | None);
+    def _sv_wire_args_dict(
+        names: list[str], types: list[str], boundary_types: dict[str, BoundaryTypeInfo]
+    ) -> str;
+
     def _gen_py_sv_func_stub(
         local_name: str,
         func_name: str,
-        module_name: str,
+        provider_app: str,
         binding: InteropBinding,
         boundary_types: dict[(str, BoundaryTypeInfo)]
     ) -> str;
@@ -465,7 +293,7 @@ walker JcirGenPass(BaseAstGenPass[CgItem]) {
     def _gen_py_sv_walker_stub(
         local_name: str,
         walker_name: str,
-        module_name: str,
+        provider_app: str,
         binding: InteropBinding,
         boundary_types: dict[(str, BoundaryTypeInfo)]
     ) -> str;
@@ -475,10 +303,13 @@ walker JcirGenPass(BaseAstGenPass[CgItem]) {
         model: CgNode, caller: CgNode, args: CgNode, is_async: bool = False
     ) -> CgNode;
 
-    def gen_llm_body(nd: Ability) -> list;
+    def gen_llm_body(nd: Ability) -> list[CgNode];
     def _is_edge_ref_target(target: UniNode) -> bool;
     def _cmp_op_str(op: CgNode) -> (str | None);
-    def _query_filter_kws(fc: FilterCompr, type_arg: str, preds_arg: str) -> list;
+    def _query_filter_kws(
+        fc: FilterCompr, type_arg: str, preds_arg: str
+    ) -> list[CgNode];
+
     def _order_name_of(x: Expr) -> (tuple[str, bool] | None);
     def _query_filter_kws_ord(
         fc: FilterCompr,
@@ -488,9 +319,14 @@ walker JcirGenPass(BaseAstGenPass[CgItem]) {
         order_out: list[CgNode]
     ) -> tuple[list[CgNode], bool];
 
-    def _recipe_contains_root(v: any) -> bool;
+    def _recipe_ambient_names(v: any) -> list[str];
     def resolve_switch_pattern(pattern: MatchPattern, target: Expr) -> CgNode;
     def resolve_switch_stmt(nd: SwitchStmt) -> list[CgItem];
+    def _switch_passes_continue(nd: SwitchStmt) -> bool;
+    def _continued_flag(nd: SwitchStmt) -> str;
+    def _switch_flag_set(nd: SwitchStmt, value: bool) -> CgNode;
+    def _ctrl_owner(nd: UniNode) -> UniNode | None;
+    def _continue_out(nd: UniNode) -> list[CgItem];
     def resolve_stmt_block(
         nd:
             (
@@ -506,7 +342,7 @@ walker JcirGenPass(BaseAstGenPass[CgItem]) {
     def _resolve_self_type(nd: Name) -> (CgNode | None);
     def _is_in_type_annotation(nd: UniNode) -> bool;
     def _is_descendant_of(nd: UniNode, ancestor: UniNode) -> bool;
-    def gen_call_args(nd: FuncCall) -> tuple[(list, list)];
+    def gen_call_args(nd: FuncCall) -> tuple[list[CgNode], list[CgNode]];
     def _del_ctx_target(target: Expr, ctx_cls: str) -> CgNode;
     def _destroy_call(value: CgNode, strict: bool) -> CgNode;
     def _del_is_trivial(cgn: CgNode) -> bool;
@@ -571,17 +407,21 @@ walker JcirGenPass(BaseAstGenPass[CgItem]) {
     can exit_cast_expr with CastExpr exit;
     can exit_assignment with Assignment exit;
     can exit_binary_expr with BinaryExpr exit;
-    def translate_jac_bin_op(nd: BinaryExpr) -> list;
+    def translate_jac_bin_op(nd: BinaryExpr) -> list[CgItem];
     can exit_compare_expr with CompareExpr exit;
     can exit_cfg_expr with CfgExpr exit;
     can exit_bool_expr with BoolExpr exit;
+    can enter_lambda_expr with LambdaExpr entry;
     can exit_lambda_expr with LambdaExpr exit;
     def _emit_lambda_expr_body(nd: LambdaExpr, body_node: Expr) -> None;
     def _remove_lambda_param_annotations(signature: FuncSignature) -> None;
     can exit_unary_expr with UnaryExpr exit;
     def _emit_jobj_ref(nd: UnaryExpr) -> None;
     can exit_if_else_expr with IfElseExpr exit;
-    def _multi_string_pieces(str_seq: Sequence[UniNode]) -> list;
+    def _multi_string_text(piece: (str | bytes | CgNode)) -> (str | None);
+    def _flush_text_run(merged: list[CgNode], run: list[str]) -> None;
+    def _flush_byte_run(merged: list[CgNode], run: list[bytes]) -> None;
+    def _multi_string_pieces(str_seq: Sequence[UniNode]) -> list[str | bytes | CgNode];
     can exit_multi_string with MultiString exit;
     can exit_f_string with FString exit;
     can exit_formatted_value with FormattedValue exit;
@@ -592,13 +432,21 @@ walker JcirGenPass(BaseAstGenPass[CgItem]) {
     can exit_k_v_pair with KVPair exit;
     can exit_k_w_pair with KWPair exit;
     can exit_inner_compr with InnerCompr exit;
+    can enter_list_compr with ListCompr entry;
     can exit_list_compr with ListCompr exit;
+    def _statement_list_comprehension(nd: ListCompr, hoists: list[CgNode]) -> CgNode;
     can exit_gen_compr with GenCompr exit;
     can exit_set_compr with SetCompr exit;
     can exit_dict_compr with DictCompr exit;
     can exit_atom_trailer with AtomTrailer exit;
     can exit_atom_unit with AtomUnit exit;
     can exit_func_call with FuncCall exit;
+    def _place_parts(arg: UniNode) -> (PlacePath | None);
+    def _name_take_expr(owner: str) -> CgNode;
+    def _name_swap_expr(store_id: str, value: CgNode) -> CgNode;
+    def _lower_take(nd: FuncCall) -> (CgNode | None);
+    def _second_of_pair(first: CgNode) -> CgNode;
+    def _lower_swap(nd: FuncCall) -> (CgNode | None);
     def _exit_func_call_impl(nd: FuncCall) -> None;
     def _fold_sorted_traversal(nd: FuncCall) -> bool;
     def _order_term(

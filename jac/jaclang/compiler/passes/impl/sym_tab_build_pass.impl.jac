@@ -1,4 +1,7 @@
-impl SymTabBuildPass.before_pass -> None {
+impl SymTabBuildPass.prepare with entry {
+    if self.ctx.nested_depth {
+        return;
+    }
     self.cur_sym_tab = [];
 }
 
@@ -30,6 +33,16 @@ impl SymTabBuildPass._bind_import_path_symbols(module_path: ModulePath) -> None 
 
 impl SymTabBuildPass.enter_module with Module entry {
     self.push_scope_and_link(here);
+
+    for stmt in here.body {
+        if isinstance(stmt, Import) and stmt.clib_decls {
+            for decl in stmt.clib_decls {
+                if isinstance(decl, GlobalVars) {
+                    self._declare_global_vars(decl);
+                }
+            }
+        }
+    }
 }
 
 impl SymTabBuildPass.exit_module with Module exit {
@@ -53,14 +66,17 @@ impl SymTabBuildPass.enter_type_param with TypeParam entry {
 }
 
 impl SymTabBuildPass.exit_global_vars with GlobalVars exit {
-    import from jaclang.compiler.frontend.constant { SymbolType }
-    for i in here.assignments {
+    self._declare_global_vars(here);
+}
+
+impl SymTabBuildPass._declare_global_vars(nd: GlobalVars) -> None {
+    for i in nd.assignments {
         for j in i.target {
             if isinstance(j, AstSymbolNode) {
                 j.name_spec._sym_category = SymbolType.MOD_VAR;
-                j.sym_tab.def_insert(j, access_spec=here, single_decl='global var');
+                j.sym_tab.def_insert(j, access_spec=nd, single_decl='global var');
             } else {
-                self.ice('Expected name type for global vars');
+                self.ctx.ice('Expected name type for global vars');
             }
         }
     }
@@ -79,7 +95,7 @@ impl SymTabBuildPass.exit_assignment with Assignment exit {
             if isinstance(i, Name) {
                 scope = find_python_scope_node_of(i);
                 if scope is not None and i.sym_name in scope.implicit_rebinds {
-                    self.emit(E0064, node_override=i, name=i.sym_name);
+                    self.ctx.emit(E0064, node_override=i, name=i.sym_name);
                 }
             }
         }
@@ -88,7 +104,6 @@ impl SymTabBuildPass.exit_assignment with Assignment exit {
 }
 
 impl SymTabBuildPass.exit_binary_expr with BinaryExpr exit {
-    import from jaclang.compiler.frontend.constant { Tokens as Tok }
     if not (isinstance(here.op, Token) and (here.op.name == Tok.WALRUS_EQ)) {
         return;
     }
@@ -123,6 +138,25 @@ impl SymTabBuildPass.exit_test with Test exit {
     self.pop_scope();
 }
 
+impl SymTabBuildPass._import_absorbed_symbol(
+    scope: UniScopeNode, symbol: Symbol
+) -> None {
+    if symbol.access == SymbolAccess.PRIVATE or symbol.parent_tab is scope {
+        return;
+    }
+
+    declaration = Name.gen_stub_from_node(
+        symbol.decl, symbol.sym_name, set_name_of=symbol.decl.name_of
+    );
+    declaration.bind_sym(symbol.decl.name_of, symbol.sym_name, symbol.sym_type);
+    declaration.set_parent(scope);
+    binding = scope.def_insert(declaration, single_decl='import absorb', imported=True);
+    if binding is not None {
+        binding.provider = symbol.provider;
+        binding.imported_from = symbol;
+    }
+}
+
 impl SymTabBuildPass._exit_import_absorb(nd: Import) -> None {
     sym_table_to_update = find_python_scope_node_of(nd);
     if (sym_table_to_update is None) {
@@ -138,23 +172,12 @@ impl SymTabBuildPass._exit_import_absorb(nd: Import) -> None {
         return;
     }
     self._bind_import_path_symbols(import_all_module_path_node);
-    if module {
-        for sym in module.names_in_scope.values() {
-            if (sym.access != SymbolAccess.PRIVATE) {
-                sym_table_to_update.def_insert(
-                    sym.defn[0], single_decl='import absorb', imported=True
-                );
-            }
-        }
-
-        for (name, overload_syms) in module.names_in_scope_overload.items() {
-            for sym in overload_syms {
-                if (sym.access != SymbolAccess.PRIVATE) {
-                    sym_table_to_update.def_insert(
-                        sym.defn[0], single_decl='import absorb', imported=True
-                    );
-                }
-            }
+    for symbol in module.names_in_scope.values() {
+        self._import_absorbed_symbol(sym_table_to_update, symbol);
+    }
+    for overloads in module.names_in_scope_overload.values() {
+        for symbol in overloads {
+            self._import_absorbed_symbol(sym_table_to_update, symbol);
         }
     }
 }
@@ -186,11 +209,8 @@ impl SymTabBuildPass.exit_module_path with ModulePath exit {
     } elif (
         here.path
         and not here.is_import_from
-        and here.parent_of_type(Import)
-        and not (
-            here.parent_of_type(Import).from_loc
-            and here.parent_of_type(Import).jac_detected
-        )
+        and (owner := here.find_parent_of_type(Import)) is not None
+        and not (owner.from_loc and owner.jac_detected)
     ) {
         if isinstance(here.path[0], Name) {
             self.import_binding_scope(here.path[0]).def_insert(
@@ -198,7 +218,11 @@ impl SymTabBuildPass.exit_module_path with ModulePath exit {
             );
         }
     } else {}
-    if (here.path and (here.is_import_from or here.alias)) {
+    if (
+        here.path
+        and isinstance(here.parent, Import)
+        and (here.is_import_from or here.alias)
+    ) {
         self._bind_import_path_symbols(here);
     }
 }
@@ -223,9 +247,11 @@ impl SymTabBuildPass.exit_module_item with ModuleItem exit {
 }
 
 impl SymTabBuildPass.enter_archetype with Archetype entry {
+    absorbed = False;
     if self.cur_sym_tab {
         existing_sym = self.cur_scope.names_in_scope.get(here.sym_name, None);
-        if existing_sym {
+        absorbed = existing_sym is not None and existing_sym.imported;
+        if existing_sym and not absorbed {
             nd_native = here.in_native_context();
             nd_client = here.in_client_context();
             for d in existing_sym.defn {
@@ -234,7 +260,7 @@ impl SymTabBuildPass.enter_archetype with Archetype entry {
                     and (d.name_of.in_native_context() == nd_native)
                     and (d.name_of.in_client_context() == nd_client)
                 ) {
-                    self.emit(
+                    self.ctx.emit(
                         E0077,
                         node_override=here,
                         name=here.sym_name,
@@ -247,7 +273,9 @@ impl SymTabBuildPass.enter_archetype with Archetype entry {
     }
     self.push_scope_and_link(here);
     assert (here.parent_scope is not None);
-    here.parent_scope.def_insert(here, access_spec=here, single_decl='archetype');
+    here.parent_scope.def_insert(
+        here, access_spec=here, single_decl='archetype', force_overwrite=absorbed
+    );
 }
 
 impl SymTabBuildPass.exit_archetype with Archetype exit {
@@ -393,14 +421,14 @@ impl SymTabBuildPass.exit_open_stmt with OpenStmt exit {
 }
 
 impl SymTabBuildPass.enter_if_stmt with IfStmt entry {
-    if here.__class__ is not IfStmt {
+    if type(here) is not IfStmt {
         return;
     }
     self.push_scope_and_link(here);
 }
 
 impl SymTabBuildPass.exit_if_stmt with IfStmt exit {
-    if here.__class__ is not IfStmt {
+    if type(here) is not IfStmt {
         return;
     }
     self.pop_scope();
@@ -505,7 +533,7 @@ impl SymTabBuildPass.exit_lambda_expr with LambdaExpr exit {
 }
 
 impl SymTabBuildPass.enter_list_compr with ListCompr entry {
-    if here.__class__ is not ListCompr {
+    if type(here) is not ListCompr {
         return;
     }
     self.push_scope_and_link(here);
@@ -515,7 +543,7 @@ impl SymTabBuildPass.enter_list_compr with ListCompr entry {
 }
 
 impl SymTabBuildPass.exit_list_compr with ListCompr exit {
-    if here.__class__ is not ListCompr {
+    if type(here) is not ListCompr {
         return;
     }
     self.pop_scope();

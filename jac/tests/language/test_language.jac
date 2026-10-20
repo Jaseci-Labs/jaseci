@@ -612,6 +612,11 @@ test "entry exit" {
     assert "Exiting at the end of walker:  test_node(value=" in lines[11];
 }
 
+test "a walker ability triggered by Node runs at every node" {
+    output = run_jac(os.path.join(FIXTURES, "node_trigger.jac"));
+    assert "starts 1 seen 3 ['Hall', 'Room', 'Room']" in output , output;
+}
+
 test "visit order" {
     output = run_jac(os.path.join(FIXTURES, "visit_order.jac"));
     assert output == "[MyNode(Name='End'), MyNode(Name='Middle')]\n";
@@ -731,6 +736,18 @@ test "while else" {
     assert "Num:  4" in lines[0];
     assert "Num:  3" in lines[1];
     assert "Completed" in lines[2];
+}
+
+test "for else" {
+    output = run_jac(os.path.join(FIXTURES, "for_else.jac"));
+    lines = output.split("\n");
+    assert "Sum:  1006" in lines[0];
+    assert "Done" in lines[1];
+}
+
+test "break in loop else stays in its owning loop" {
+    output = run_jac(os.path.join(FIXTURES, "loop_else_break.jac"));
+    assert output.strip() == "1444";
 }
 
 test "forever loop" {
@@ -1043,6 +1060,11 @@ test "multiple impl-separated property accessors in one class resolve independen
     assert output == "ok\n";
 }
 
+test "a property setter on a class receives the instance and the value" {
+    output = run_jac(os.path.join(FIXTURES, "prop_class_setter.jac"));
+    assert output == "ok\n";
+}
+
 test "as cast is type erased" {
     output = run_jac(os.path.join(FIXTURES, "as_cast.jac"));
     assert output == "42\n7\n6\n43\n";
@@ -1061,4 +1083,10 @@ test "as cast binds tighter than comparison" {
 test "deep walker chain does not hit recursion limit" {
     output = run_jac(os.path.join(FIXTURES, "deep_walker_chain.jac"));
     assert "1500" in output , f"Walker should visit all 1500 nodes: {output}";
+}
+
+
+test "plain walkers execute async abilities in sync and async callers" {
+    output = run_jac(os.path.join(FIXTURES, "inferred_async_walker.jac"));
+    assert "async abilities completed" in output;
 }

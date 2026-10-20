@@ -9,7 +9,7 @@ targets, called **codespaces**:
 |-----------|----------|----------------|---------|
 | **Server** | Inferred; the default, anchored by python imports, graph archetypes, `::py::` blocks, and typed context blocks; `[placement.pins]` override | Python AST → CPython bytecode | CPython |
 | **Client** | **Inferred** from client-only syntax (JSX, browser globals, string-path npm imports) and symbol references; `[placement.pins]` override or a `.jac` implementation-variant file | ESTree → JavaScript | Browsers / Node |
-| **Native** | **Inferred** -- whole modules by the placement solver's verdict under the native default codespace, elements from extern-decl (C-ABI FFI) imports and their users; `[placement.pins]` override, or forced module-wide by `jac nacompile` / `jac build --as native` / `CompileOptions(force_codespace='native')` | LLVM IR → object code → executable | Bare machine (Linux / macOS, x86_64 / arm64) |
+| **Native** | **Inferred** -- whole modules by the placement solver's verdict under the native default codespace, elements from extern-decl (C-ABI FFI) imports and their users; `[placement.pins]` override, or forced module-wide by `jac build <file> --native` / `CompileOptions(force_codespace='native')` | LLVM IR → object code → executable | Bare machine (Linux / macOS, x86_64 / arm64) |
 
 A single `.jac` file can mix all three codespaces; there is no placement
 syntax (the old `sv`/`cl`/`na` markers were deleted -- `jac fix placement`
@@ -116,7 +116,7 @@ graph TD
     end
 
     FRONTEND --> FE1 --> FE2 --> FE3 --> FE4 --> FE5 --> FE6 --> FE7 --> FE8 --> FE9 --> FE10
-    FE10 --> TYPECK["Analysis (unconditional)<br/>TypeCheckPass / StaticAnalysisPass / AccessCheckPass / OwnershipCheckPass /<br/>NativeCapabilityCheckPass / ClientCapabilityCheckPass / PortabilityWarnPass / JacLintCheckPass"]
+    FE10 --> TYPECK["Analysis (unconditional)<br/>TypeCheckPass / StaticAnalysisPass / AccessCheckPass / OwnershipCheckPass /<br/>PlacementPass / PortabilityWarnPass / JacLintCheckPass"]
     TYPECK --> INTEROP["BoundaryAnalysisPass<br/>(boundary discovery)"]
     INTEROP --> SV[JcirGenPass + JcirBytecodeGenPass]
     INTEROP --> CL[EsastGenPass]
@@ -127,7 +127,7 @@ graph TD
     NA --> NAOUT[".o / ELF / Mach-O"]
 ```
 
-The orchestration lives in [`compiler/driver/schedules.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/driver/schedules.jac).
+The orchestration lives in [`compiler/driver/pipeline.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/driver/pipeline.jac).
 Each named "schedule" function returns a list of `Transform[uni.Module, uni.Module]`
 classes to run, and the `JacCompiler.compile` method walks them in order.
 
@@ -157,14 +157,14 @@ positions, flags); each child slot the parser fills (`condition`, `body`,
 `target`, ...) is a role-typed edge from
 [`compiler/frontend/roles.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/frontend/roles.jac)
 (`ConditionRole`, `BodyRole`, ... all subclasses of `Role`), and the ordered
-token stream is a separate `Kid` edge per child. The spelling passes use is
-unchanged: `nd.condition`, `nd.body`, `nd.kid` and `nd.parent` are accessors
-over those edges (`unitree.impl/roles.impl.jac`: each `{ getter; }` slot
-declared in `unitree.jac` reads its edge type there, and the `init` for each
-class links its children through `_link`). `kid` is the Kid edges in
-connection order, so the formatter and `unparse` see the same token stream as
-before; `parent` is the source of the newest incoming Kid edge (or Role edge,
-for a node reachable only through a slot).
+token stream is a separate `Kid` edge per child. Passes read that stream
+directly with `[nd->:Kid:->]`, which returns children in connection order,
+so the formatter and `unparse` see the same token stream as before.
+`nd.condition`, `nd.body` and `nd.parent` are accessors over edges
+(`unitree.impl/roles.impl.jac` implements the role getters declared in
+`unitree.jac`, and the `init` for each class links its children through
+`_link`). `parent` is the source of the newest incoming Kid edge (or Role
+edge, for a node reachable only through a slot).
 
 Construction connects: a class's generated `init` assigns its scalars and calls
 `_link(kid, roles)`, which records each child in the node's adjacency. After
@@ -201,9 +201,14 @@ light edge works on a view (`light_edge_view`).
 
 Every module parses through the staged front end: the lexer and parser in
 `compiler/frontend/parser/`, then the ir-gen schedule pass by pass. The
-native scope (`compiler/native_scope.jac`) names the compiler modules
-served from `libjac_compiler`; it is empty until a native pass can share
-the tree with a bytecode pass.
+native scope (`compiler/native_scope.jac`) names the compiler modules the
+kernel links; each is a native unit whose interface (`SEC_NIFACE`) and
+object (`SEC_NOBJ`, materialized on demand) live in its module JIR, and `libjac_compiler` is the
+link plan's artifact over them (`compiler/backends/native/link_plan.jac`),
+resolved by `kernel_resolve.jac`. The kernel analyzes (`jc_analyze`) and
+compiles (`jc_compile`) whole modules from a snapshot of the inputs the host
+sends, and returns diagnostics and compile products as records; see
+`compiler/README.md` for the boundary.
 
 ---
 
@@ -216,13 +221,13 @@ verdict. Every other plain `.jac` module goes through placement inference
 instead.
 
 The coercion helpers live in
-[`compiler.jac:_coerce_module`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/driver/schedules.jac#L250)
+[`compiler.jac:_coerce_module`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/driver/pipeline.jac#L250)
 and two wrappers around it:
 
 | Helper | Triggered by | What it does |
 |--------|--------------|--------------|
 | `_coerce_client_module` | `.jac` extension | Marks the module's nodes `CodeContext.CLIENT` |
-| `_coerce_native_module` | Forced placement (`CompileOptions(force_codespace='native')` -- set by `jac nacompile` / `jac build --as native` -- or an AOT build under the native default codespace), else a passing placement-solver verdict | Marks the module's nodes `CodeContext.NATIVE` |
+| `_coerce_native_module` | Forced placement (`CompileOptions(force_codespace='native')` -- set by `jac build <file> --native` -- or an AOT build under the native default codespace), else a passing placement-solver verdict | Marks the module's nodes `CodeContext.NATIVE` |
 
 From this point on, every declaration carries a `CodeContext` enum value that
 downstream passes use to dispatch to the correct backend.
@@ -240,42 +245,97 @@ imports), its references to sibling elements, and its value-flow escapes.
 Summaries are serialized into the module's `.jir` as a `SEC_PLACEMENT`
 section and memoized on the program keyed by resolved path.
 
-The solver owns every placement decision, in three cooperating stages:
+Every module is analyzed once. Placement is decided inside that analysis,
+each part from what is known at that point, and the tree it places is the
+tree every backend reads.
 
-1. **Module-granular native verdict** (parse time, from `parse_str`): when
-   the effective default codespace is `native`, the summary's blocker scan
-   plus a memoized walk of the import closure decides whether the whole
-   module lowers native (`_coerce_native_module`) or stays server, feeding
-   the same coverage and demotion memo as before. This stage runs at parse
-   time because whole-module coercion rewrites the module body and must
-   precede symbol tables.
-2. **Per-module seeding and fixpoint** (`PlacementApplyPass`, scheduled in
-   both `get_symtab_ir_sched` and `get_ir_gen_sched`): seeds are read off
-   the summary (JSX and string-path imports stamp CLIENT, clib externs
-   stamp NATIVE, browser-global references stamp CLIENT in unanchored
-   modules), then placement flows across resolved symbol references to a
-   fixpoint in two colors. A hard phase pulls transitive dependents of
-   seeds unconditionally; the soft phase pulls dependencies gated by
-   pullability (archetypes, endpoint-tagged abilities in anchored modules,
-   and non-portable python imports stay server, where both sides bridge to
+1. **Declared at parse** (`JacProgram.parse_source`): a module whose
+   codespace is declared (a native-only or client location, a native unit,
+   a forced or ahead-of-time build) is stamped before symbol tables are
+   built and is typed in that codespace. A native pin or a native project
+   kind is a preference, not a declaration: such a module is typed with no
+   codespace assumed, like any module that may take the project's native
+   default. The parse records only whether the preference is open
+   (`gen.native_undecided`), from configuration: the default or a pin is
+   native, the compile generates code, the native pipeline is available,
+   and the module declares no client elements. Nothing about the module's
+   contents is decided here.
+2. **Seeded before typing** (`PlacementApplyPass`, scheduled in both the
+   `SYMBOLS` and `IR` products, then the program stage):
+   what syntax and symbols decide. Seeds are read off the summary (JSX and
+   string-path imports stamp CLIENT, clib externs stamp NATIVE,
+   browser-global references stamp CLIENT in unanchored modules), then
+   placement flows across resolved symbol references to a fixpoint in two
+   colors. A hard phase pulls transitive dependents of seeds
+   unconditionally; the soft phase pulls dependencies gated by pullability
+   (archetypes, endpoint-tagged abilities in anchored modules, and
+   non-portable python imports stay server, where both sides bridge to
    them). An element claimed by both colors stays on the server.
-   `[placement.pins]` entries feed `ElementSummary.pinned` exactly like the
-   old source markers did: pinned elements never propagate and are never
-   overridden.
-3. **Program stage** (in `_compile_once`, after the ir schedule and before
-   type checking / codegen): client-context plain imports pull their
-   pullable target closures dual (`codespace_dual`) across module
-   boundaries to a program-wide fixpoint, materializing missing `.jac`
-   targets symtab-only and stamping every instance of a target the program
-   holds. Because this runs before codegen, `jac check` sees the same
-   cross-module placements as `jac build`; stale ES output is invalidated
-   when stamps change.
+   `[placement.pins]` entries feed `ElementSummary.pinned`: pinned elements
+   never propagate and are never overridden. The program stage (the
+   placement phase, after the ir schedule and before type checking) then
+   pulls client-context plain imports' target closures dual
+   (`codespace_dual`) across module boundaries to a program-wide fixpoint,
+   materializing missing `.jac` targets symtab-only. Because this runs
+   before type checking, client code is typed as client code, and
+   `jac check` sees the same client placements as `jac build`.
+3. **The native preference, after typing** (`PlacementPass`): a module
+   whose native preference is open was typed with no codespace assumed.
+   Where native code alone can do something the checker recorded a
+   *requirement* (`compiler/capability_notes.jac`); where native code is
+   stricter or the native library lacks a member it recorded a *refusal*
+   (the same table, and `compiler/native_bindings.jac`). The legality table
+   adds what the tree shows (`native_blocker_scan`): an async or `by llm`
+   ability, inline Python, an endpoint, a pin to another codespace, an
+   import with no native form, or access to the persistent graph (`root`)
+   closes the module's native preference, as the parse-time scan did on
+   `main`. These are syntactic facts, so `PlacementApplyPass` reads them
+   before typing (the checker needs to know whether a native-only idiom is
+   a requirement or an error), and the legality table reads them again for
+   the module it judges; they are a reason not to choose native, never an
+   error on an element that is native by requirement or by a C-library
+   seed. A `.jac`
+   import is judged by the placement summaries of the modules it reaches
+   (`native_closure_blocker`): each summary was computed by that module's
+   own analysis and is persisted with it, so no dependency is parsed again
+   to judge an importer. A dependency pinned to the server is reached
+   through the native-to-Python bridge, and each native use is judged by
+   the boundary rule: a call stays native when the callee's signature
+   crosses, a type binds as a data shape, anything else refuses the code
+   that uses it. Any other closure that cannot be native (a dependency
+   whose summary records a blocker, or into the compiler's own frontend)
+   closes the preference, however many modules the closure holds. A native
+   pin on a module is a preference like the project default: only a pin on
+   an element holds that element native. The pass places each top-level element
+   native unless a capability rule or a refusal rules it out, and a
+   reference between two elements placed apart is allowed when the
+   callee's signature can cross (`compiler/boundary_rules.jac`): between
+   native and Python code the
+   ctypes scalars. A required placement that is refused is an error; any
+   other refusal leaves the element in Python.
 
-Every stamp records an evidence note (`jac check --placements` prints the
-chains). Lowering failures demote:
-inferred-native modules recompile server-side, and client-pulled (dual)
-elements that fail ES generation are un-stamped back to the server with a
-note, their call sites bridging instead.
+The placement is final when the pass returns (`gen.placement_mode` is
+`inferred`): the solver adds nothing afterwards, and nothing types the
+module again. The native backend lowers the neutrally typed tree, binding
+interface declarations to the native library, whose conformance to those
+interfaces is checked (`E5116`). A refusal only the backend can see places
+the module on the server in place (`settle_native_module`): the tree was
+typed for no codespace, so the Python backend, which runs after the native
+one in the same schedule, emits it as it is. A backend exception is a
+compiler error and is never absorbed as a refusal, and so is a native unit
+the host fails to link after the kernel lowered it. Nothing about a
+placement is stored between compiles beyond each module's summary.
+
+Between client and server code the same boundary rule judges what a request
+can carry, structurally over the declared signature: scalars, lists, tuples
+and sets of types that cross, dicts with `str` keys, enums, archetypes whose
+fields all cross, and unions of those; an upload only as a parameter and a
+generator only as a streamed result (`E5115`).
+
+Every stamp records an evidence note (`jac explain placement` prints each
+element's codespace and the diagnostics that decided it). Client-pulled
+(dual) elements that fail ES generation are un-stamped back to the server
+with a note, their call sites bridging instead.
 
 On the Python backend, inferred-native declarations in mixed modules are
 pruned from the server projection (mirroring the client pruning), with the
@@ -290,26 +350,26 @@ through the interop stubs.
 
 ## Stage 3: Shared Frontend Analysis
 
-These passes run regardless of codespace and are collected by
-`get_ir_gen_sched` and `get_analysis_sched` in
-[`compiler.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/driver/schedules.jac#L42).
+These passes run regardless of codespace and are collected by the `IR` and
+`ANALYSIS` products of the `PRODUCTS` table in
+[`pipeline.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/driver/pipeline.jac).
 
-The ir-gen schedule (`get_ir_gen_sched`):
+The IR product (`ir_passes`):
 
 | Pass | Source | Role |
 |------|--------|------|
 | `ASTValidationPass` | [`compiler/passes/ast_validation_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/passes/ast_validation_pass.jac) | Structural validation of the parsed tree |
 | `SymTabBuildPass` | [`compiler/passes/sym_tab_build_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/passes/sym_tab_build_pass.jac) | Builds symbol tables; enforces sealed-field rules for archetypes |
 | `DeclImplMatchPass` | [`compiler/passes/decl_impl_match_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/passes/decl_impl_match_pass.jac) | Pairs declarations in `.jac` files with bodies in `.impl.jac` annexes |
+| `PlacementApplyPass` | [`compiler/placement/placement_solver.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/placement/placement_solver.jac) | Applies the placement solver's per-module stage before typing: summary-driven seeding plus the CLIENT/NATIVE reference fixpoint (see stage 2) |
 | `SemanticAnalysisPass` | [`compiler/passes/semantic_analysis_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/passes/semantic_analysis_pass.jac) | Name resolution, scope analysis |
 | `SemDefMatchPass` | [`compiler/passes/sem_def_match_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/passes/sem_def_match_pass.jac) | Matches `sem` blocks to definitions for `by llm` |
 | `CFGBuildPass` | [`compiler/passes/cfg_build_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/passes/cfg_build_pass.jac) | Builds control-flow graphs |
 | `MTIRGenPass` | [`compiler/passes/mtir_gen_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/passes/mtir_gen_pass.jac) | Generates Meaning-Typed IR for `by llm` calls (scheduled unless MTIR generation is off) |
 | `JsxIntrinsicGuardPass` | [`compiler/passes/jsx_intrinsic_guard_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/passes/jsx_intrinsic_guard_pass.jac) | Rejects raw HTML host tags per the project's client kind (`E1105`) |
-| `PlacementApplyPass` | [`compiler/placement/placement_solver.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/placement/placement_solver.jac) | Applies the placement solver's per-module stage: summary-driven seeding plus the CLIENT/NATIVE reference fixpoint (see Stage 2) |
 | `ComptimeResolvePass` | [`compiler/passes/comptime_resolve_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/passes/comptime_resolve_pass.jac) | Settles every `comptime` site (bindings, `if`/`for`/`assert`, comptime-parameter arguments) through the shared `TypeEvaluator` and its `CtEvaluator`, visiting only subtrees that contain a comptime construct; marks the module `ct_resolved` so a later `TypeCheckPass` does not report the same site twice. Runs here, not in the analysis schedule, so modules compiled on import fold identically to `jac check` |
 
-The analysis schedule (`get_analysis_sched`) -- **unconditional**, appended
+The ANALYSIS product (`analysis_passes`) -- **unconditional**, requested
 on every compile:
 
 | Pass | Source | Role |
@@ -318,24 +378,50 @@ on every compile:
 | `StaticAnalysisPass` | [`compiler/passes/static_analysis_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/passes/static_analysis_pass.jac) | Unreachable code, unused variables, import refusals (`E1122`-`E1125`) |
 | `AccessCheckPass` | [`compiler/passes/access_check_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/passes/access_check_pass.jac) | Access-modifier (`:pub`/`:protect`/`:priv`) enforcement |
 | `OwnershipCheckPass` | [`compiler/passes/ownership_check_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/passes/ownership_check_pass.jac) | Ownership and borrow analysis (see the [Ownership Fact Schema](ownership-checker-spec.md)) |
-| `NativeCapabilityCheckPass` | [`compiler/passes/capability_check_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/passes/capability_check_pass.jac) | Stamps native capability facts (native-lowering eligibility for the placement verdict) on module nodes |
-| `ClientCapabilityCheckPass` | [`compiler/passes/capability_check_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/passes/capability_check_pass.jac) | Stamps client capability facts on module nodes |
+| `PlacementPass` | [`compiler/passes/placement_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/passes/placement_pass.jac) | Decides, after typing, whether each top-level element of a module that may prefer native is placed native: reads the requirements and refusals the checker recorded, applies the capability rules and the boundary rule, marks the placement final, and reports a required placement that is refused. For a decided module it holds the placement to account and checks native library conformance (`E5116`) |
 | `PortabilityWarnPass` | [`compiler/passes/capability_check_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/passes/capability_check_pass.jac) | Emits portability warnings (W6001-W6004) for JS-idiom violations; diagnostic-only |
 | `JacLintCheckPass` | [`compiler/tools/jac_auto_lint_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/tools/jac_auto_lint_pass.jac) | Lint rules (W3xxx / E3xxx) |
 
 Type checking is not a mode: there is no gate on the analysis schedule, no
 `CompileOptions` flag or `jac.toml` key to turn it off, and the only way to
 stop a compile before analysis is `--parse_only`. Because type inference is
-on every compile's critical path, `get_analysis_sched` calls
+on every compile's critical path, the ANALYSIS spec's `precheck` calls
 `require_typeshed_stubs()` first -- a missing vendored typeshed tree raises
 `TypeshedUnavailableError` rather than degrading to an unchecked compile.
 
-The pipeline uses a **re-entrancy guard** (`_ir_sched_loading`,
-`_codegen_sched_loading`, `_analysis_sched_loading`) so that compiling the
-compiler's own pass modules degrades gracefully to the bootstrap subset
-instead of recursing forever.
+### How passes are scheduled
 
-Every schedule builder also degrades on `ImportError`, but only for
+Every pass declares its contract on its own class:
+`static has contract: PassContract = PassContract(requires=..., provides=...)`,
+naming the `AnalysisFact`s it needs and supplies, and `kernel_safe=True` for
+the passes the native kernel runs while it parses. A scheduled pass with no
+contract is a scheduling error, and a schedule whose pass requires a fact no
+earlier pass or recorded fact provides is rejected before any pass runs.
+
+One table, `PRODUCTS` in `pipeline.jac`, defines every schedule. Each
+`ProductSpec` names the products it `needs`, its pass list (built lazily, so
+the compiler can compile its own passes), its `bootstrap` variant, the
+modules it `loads`, the products whose tier it shares (`tier_with`), its
+import fallback, and whether a finished task is reused (`cached`). The
+facts a product guarantees are derived from its passes' contracts, and the
+kernel's early passes are the IR product's kernel-safe passes.
+
+There is one way to run passes: `require(program, module, product)`. It
+satisfies the product's needs first, resolves its schedule, and runs each
+pass once per module (a pass already done on that module is skipped).
+`invalidate(program, module, product)` drops a product and every product that
+needs it, so the next request regenerates their outputs; analysis passes
+(those that provide facts) are kept. Module compiles are two tables of steps,
+`ANALYSIS_PLAN` and `CODEGEN_PLAN`, each step an admission rule and a run
+that requests products, driven by one `run_plan` loop.
+
+A single **re-entrancy guard** (`_LOADING`) records which products are
+resolving their schedules. A product resolves to its `bootstrap` schedule
+while it, or a product in its `tier_with`, is loading or has a loaded module
+mid-import, so compiling the compiler's own pass modules degrades gracefully
+to the bootstrap subset instead of recursing forever.
+
+A product whose spec allows it also degrades on `ImportError`, but only for
 **absence**: a pass module a partial build does not ship, or a partially
 initialized one mid-bootstrap. A compiler-source file that resolves and then
 fails to compile is not absence, so `fail_loud_on_compiler_source` re-raises it
@@ -430,7 +516,7 @@ Two design decisions bound what "fully stamped" means:
   single lowering routines. A central table for them would mirror
   emission order rather than describe the program; the invariant
   (every value-consumption seam releases its owned temps) is enforced by
-  the leak-check gates (chess fixture under JAC_RC_DEBUG_CODEGEN, the GC
+  the leak-check gates (chess fixture under `[native] debug`, the GC
   suite) rather than by a second bookkeeping layer.
 
 ---
@@ -444,25 +530,38 @@ runs once *before* code generation. It walks every call site and records:
 2. Type information on each parameter and return value at the boundary.
 3. Imports that cross from a Python module into a native-placed module (for
    native↔native linking).
-4. Server-to-server calls that resolve to a different microservice (the
-   target module is in `[scale.microservices.routes]` or pinned `"server"`
-   at module level).
+4. Server-to-server calls that cross an **app boundary** (the imported
+   element's `app` differs from the importing module's).
+
+Every cross-module import is classified once, by
+`classify_cross_app_import` in `compiler/driver/boundary_classify.jac`, into
+one of four kinds from the *app facts* the driver stamps before any pass runs
+(`app`, `app_root`, `app_kind` on `uni.Module`): `LOCAL` (a plain
+import), `CLIENT_BRIDGE` (client context importing server-placed elements),
+`SERVICE_BRIDGE` (server or native context importing server-placed elements
+owned by another app), or `NATIVE_BIND` (the wasm/ctypes edge). The pass also
+records each `consumer app → provider app` edge into the manifest; the driver
+rejects cycles (`E5104`) and non-`pub` bridge targets (`E5106`).
 
 The result is attached to the module as an `InteropManifest` of
 `InteropBinding` entries (defined in
 [`compiler/frontend/codeinfo.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/frontend/codeinfo.jac)).
 Each backend reads this manifest and generates the appropriate bridge
-stub: an HTTP fetch for `cl → sv`, a ctypes call for `sv → na`, or a
-direct native symbol reference for `na → na`.
+stub: an HTTP fetch for `cl → sv`, a typed-async `__jac_sv_client` stub for
+`sv → sv` across apps, a ctypes call for `sv → na`, or a direct native symbol
+reference for `na → na`.
 
 ---
 
 ## Stage 5: Backend Code Generation
 
-`get_py_code_gen` returns the codegen schedule. All three backends share a
-common base class -- [`ModuleCodegenPass`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/passes/module_codegen_pass.jac)
-(or `BaseAstGenPass` for AST-emitting passes) -- and **each pass only emits
-nodes whose `code_context` matches its target**. A node tagged `CLIENT` is
+The `CODEGEN`, `PY_IR` and `FROZEN` products make up the codegen schedule,
+with `NATIVE_OBJECT` and `BYTECODE` assembled by the session around them. All three backends read the
+same module facts -- [`ModuleFacts`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/frontend/module_facts.jac)
+(context-tagged statements, woven annex segments and the merged module body,
+erased type declarations). The AST-emitting passes are plain tree passes that
+walk the woven body `ModuleFacts.merged_body` returns.
+**Each pass only emits nodes whose `code_context` matches its target**. A node tagged `CLIENT` is
 invisible to the Python codegen and vice versa.
 
 ### Server backend
@@ -485,10 +584,34 @@ The Python AST is reconstructed from the container inside
 `JcirBytecodeGenPass` and dies there, so nothing downstream holds a handle
 back to the originating nodes.
 
-Archetype `has` fields become dataclass fields wrapped with
-`_.field(default=…)` or `_.field(factory=lambda: …)`. Walkers, nodes, and
+Archetype `has` fields use Jac object descriptors. Nonconstant defaults
+lower to internal `ObjectField(default_factory=lambda: …)` calls; constant
+defaults remain direct values. Walkers, nodes, and
 edges descend from the corresponding `Archetype` subclasses in
 [`runtime/archetype.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/runtime/archetype.jac).
+Jac-owned records use `obj` and ordinary `has` defaults such as
+`has items: list[int] = [];`. Deferred fields use `has ready: bool postinit;`
+and are assigned in `postinit`. Plain `class` retains Python class semantics.
+
+`make_object` is Python runtime implementation machinery, also used by the
+bootstrap compiler; it is not the declaration API for ordinary Jac records.
+`ObjectField` is internal construction and reflection metadata. Runtime code
+still uses explicit descriptors where it needs constructor exclusion,
+representation control, or keyword-only fields. These internal options do not
+establish a public Jac field-configuration API. Direct decorator tests cover
+this implementation boundary; language-facing tests use `obj`.
+`WalkerArchetype` is a runtime base marked `__jac_base__`, so the normal
+subclass-registration hook deliberately skips it. Its explicit `make_object`
+call installs inherited `reports` metadata without registering it as a user
+archetype. Its constructor exclusion and representation settings remain
+internal runtime contracts.
+
+`runtime/object_interop.jac` is the single direct Python-dataclasses adapter.
+Code accepting records from Python libraries uses its `is_record` and `fields`
+functions. Jac code should not create Python dataclasses or import their helpers;
+intentional compatibility records belong in Python fixtures. The native import
+rejection test retains a dataclasses import as test input, not an executed import.
+
 Builtins and language keywords ultimately resolve to methods on
 `JacRuntimeInterface` in [`runtime/runtime.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/runtime/runtime.jac).
 
@@ -499,7 +622,7 @@ The primitive type contract for this backend lives in
 
 | Pass | Source | Output |
 |------|--------|--------|
-| `EsastGenPass` | [`compiler/backends/es/esast_gen_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/backends/es/esast_gen_pass.jac) (+ [impl](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/backends/es/impl/esast_gen_pass.impl.jac)) | ESTree AST + serialised JS (`module.gen.js`) |
+| `EsastGenPass` | [`compiler/backends/es/esast_gen_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/backends/es/esast_gen_pass.jac) (+ [impl by concern](https://github.com/Jaseci-Labs/jaseci/tree/main/jac/jaclang/compiler/backends/es/esast_gen_pass.impl)) | ESTree AST + serialised JS (`module.gen.js`) |
 
 `EsastGenPass` derives from `BaseAstGenPass` (shared with `JcirGenPass`)
 so the same traversal infrastructure visits the tree but emits ESTree
@@ -515,7 +638,7 @@ Key components of the client backend:
   is the small JS runtime that ships with every client bundle (signals,
   reactive state, JSX renderer, hash router, fetch helpers).
 - **JSX lowering** -- `EsJsxProcessor` in
-  [`compiler/passes/ast_gen/jsx_processor.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/passes/ast_gen/jsx_processor.jac)
+  [`compiler/backends/es/jsx_processor.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/backends/es/jsx_processor.jac)
   lowers JSX tags for the client lane. The server lane lowers the same tags
   itself, straight into `jaclib` JSX calls, so a tag compiles consistently
   regardless of where it appears.
@@ -540,14 +663,13 @@ order, so it walks the AST manually. The pass derives directly from
 `ModuleCodegenPass`. Primitive types are defined in
 [`primitives_native.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/backends/native/primitives_native.jac).
 
-Linking is also self-contained -- no external linker is invoked:
-
-- [`linker_common.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/backends/native/linker_common.jac)
-  -- shared layout logic
-- [`elf_linker.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/backends/native/elf_linker.jac)
-  -- Linux ELF64 object writer
-- [`macho_linker.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/backends/native/macho_linker.jac)
-  -- macOS Mach-O object writer
+Linking is also self-contained: no system linker is invoked. LLD is
+linked into the bundled LLVM shim and runs in-process
+([`native_link.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/backends/native/native_link.jac)
+builds the `ld.lld`, `ld64.lld`, `lld-link` and `wasm-ld` command lines). A
+library the link never sees is named by a stand-in: an empty stub shared
+object on ELF, a text stub (`.tbd`) on Mach-O, and an import library on
+Windows, all written by the shim.
 
 The native backend supplies its own memory management: a 32-byte
 allocation header with reference counts (see `HDR_*` globals in
@@ -560,7 +682,7 @@ flow through the interop bridge generated from `BoundaryAnalysisPass`.
 
 The two lowering backends (ECMAScript and native) implement the same
 abstract emitter interface, defined in
-[`compiler/primitives.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/primitives.jac).
+[`compiler/backends/common/primitives.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/backends/common/primitives.jac).
 The server backend needs no emitters: it compiles to Python bytecode, so
 CPython itself provides the reference semantics the other backends must
 match. This is what makes "`'hello'.upper()` works in all three codespaces"
@@ -568,7 +690,7 @@ a guarantee rather than a convention.
 
 ```mermaid
 graph TD
-    subgraph "Abstract (compiler/primitives.jac)"
+    subgraph "Abstract (compiler/backends/common/primitives.jac)"
         INT[IntEmitter]
         STR[StrEmitter]
         LIST[ListEmitter]
@@ -618,10 +740,10 @@ user-facing reference, [Primitives & Codespace Semantics](../reference/language/
 |-----------|--------|--------------|
 | `cl → sv` | HTTP `POST` to the walker / function endpoint exposed by `jac run` | `EsastGenPass` emits `fetch(...)` against the URL recorded in the binding |
 | `sv → cl` | None at runtime -- the client mounts its own DOM. The server only ships the bootstrap payload | `JcirGenPass` emits the static-file route for the bundle |
-| `sv → na` | In-process `ctypes.CFUNCTYPE` over the JIT'd function address (MCJIT); an AOT `--shared` build is loaded across the process boundary instead | `JcirGenPass` emits the ctypes stub; `NaIRGenPass` exposes the function with C ABI |
+| `sv → na` | In-process `ctypes.CFUNCTYPE` over the JIT'd function address (MCJIT); an AOT `--lib` build is loaded across the process boundary instead | `JcirGenPass` emits the ctypes stub; `NaIRGenPass` exposes the function with C ABI |
 | `na → sv` | Python callback wrapped in a `ctypes.CFUNCTYPE` and registered as a JIT symbol (`llvm.add_symbol`), so MCJIT resolves the native call back into CPython | `interop_bridge.register_py_callbacks`, alongside the `sv → na` stub |
-| `na → na` | Direct symbol reference resolved by the in-tree linker | `BoundaryAnalysisPass` records the import; `NativeCompilePass` emits the relocation |
-| `sv → sv` (microservice) | HTTP between processes when an import of a `[scale.microservices.routes]` module resolves to a different deployment | `JcirGenPass` emits a generated `__jac_sv_client` RPC stub; the manifest is consumed by the built-in `scale` subsystem |
+| `na → na` | Direct symbol reference resolved by the bundled LLD | `BoundaryAnalysisPass` records the import; `NativeCompilePass` emits the relocation |
+| `sv → sv` (cross-app) | A typed-async stub keyed by the provider **app name** when an import's target is compiled in a different app context; in-process when the provider app is colocated, HTTP `POST` when it runs as its own process | `JcirGenPass` emits a generated `async` `__jac_sv_client` stub (`call` / `spawn_walker`; un-awaited statement spawns become `_deferred`, the outbox); the manifest's app edges drive the built-in `scale` subsystem's boot order |
 
 Boundary types are serialised through the schemas in
 [`codeinfo.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/frontend/codeinfo.jac).
@@ -646,12 +768,26 @@ recompile. It is a developer knob that trusts codegen did not change; leave it
 unset for anything that must be correct.
 
 The compiler keeps two on-disk caches so the front end and back end can be
-skipped when nothing has changed.
+skipped when nothing has changed. Both are buckets of the machine-wide jac
+cache (`~/.cache/jac` on Linux; `jac cache status` prints the root and every
+bucket), whose root, per-bucket `CACHEDIR.TAG` markers and retention policies are owned
+by `jaclang.cache`. The pre-bootstrap Python module
+`jaclang/jac0core/cache_paths.py` holds the root rule itself, because the
+bootstrap tier imports it before any `.jac` module can be compiled.
 
-| Cache | Location | Invalidated when |
-|-------|----------|------------------|
-| **Bootstrap** | `~/.cache/jac/jir/bootstrap/` | A `compiler/driver/` file or `jac0.py` changes |
-| **Module** | `~/.cache/jac/jir/modules/` | The full compiler's output format changes, or the source / its imports change |
+| Cache | Bucket | Invalidated when | Reclaimed when |
+|-------|--------|------------------|----------------|
+| **Bootstrap** | `jir-bootstrap` (`<cache>/jir/bootstrap/`) | A `compiler/driver/` file or `jac0.py` changes | An entry goes unused for 14 days |
+| **Module** | `jir-modules` (`<cache>/jir/modules/<generation>/`) | The full compiler's output format changes, or the source / its imports change | A generation goes unused for 14 days (`JAC_CACHE_GENERATION_TTL_DAYS`) |
+
+Every compiler digest (one per checkout) names a **generation** directory, so
+several checkouts sharing one binary keep disjoint slots; the live generation
+is held by identity, never by age. The stub catalog (`jir-stubcat`), the
+native kernel units (`jir-kernel-units`) and the per-checkout compiler digests
+(`jir-digests`) are further buckets under `jir/` with the same 14-day
+last-use policy. Sweeps run opportunistically from each bucket's write path,
+at most once per process and once per day; `jac cache gc` runs them on
+demand.
 
 Each cache entry is a **JIR file** (Jac IR) with named sections defined in
 [`compiler/driver/jir.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/driver/jir.jac):
@@ -660,8 +796,10 @@ Each cache entry is a **JIR file** (Jac IR) with named sections defined in
 |---------|----------|
 | `SEC_BYTECODE` | Marshalled Python `CodeType` (server backend) |
 | `SEC_MTIR` | Meaning-Typed IR for `by llm` calls |
-| `SEC_LLVM_IR` | LLVM IR text (native backend) |
-| `SEC_NATIVE_OBJ` | Compiled bitcode with target triple (native backend) |
+| `SEC_NBITCODE` | The unit's LLVM bitcode under its native stamp (whole-program and JIT link modes) |
+| `SEC_NIFACE` | The unit's native interface: link symbols, class layouts, initializer, demoted symbols, C library needs; digest-prefixed |
+| `SEC_NOBJ` | The unit's relocatable object, materialized on demand from bitcode under its native stamp (incremental link mode) |
+| `SEC_NCTDEPS` | Native compile-time inputs, using the shared CTDEPS codec under a native stamp |
 | `SEC_INTEROP` | Serialised `InteropManifest` |
 | `SEC_MODKEY` / `SEC_ENVKEY` | Content key and environment fingerprint that gate every read |
 | `SEC_DEBUG_SRC` | Compressed source for traceback rendering |
@@ -679,18 +817,22 @@ hydrates a cache-valid dep from `SEC_IFACE` instead of re-running its
 frontend, `SEC_DEPS` hashes give early cutoff (a body-only edit rewrites a
 dep's JIR but not its interface hash, so importers do not cascade), and a
 warm no-edit `jac check` replays `SEC_DIAG` without running a single pass.
-Hydration is always on; `JAC_REBUILD` recomputes and rewrites the cache, and
+Hydration is always on; `jac cache purge jir-modules` makes the next run
+recompute and rewrite the cache, and
 `JAC_IFACE_VERIFY=1` recomputes everything served from cache and fails on
 any divergence. See [The analysis cache](analysis-cache.md) for the design.
 
-When debugging compiler changes, clear the relevant cache:
+When debugging compiler changes, clear the relevant bucket:
 
 ```bash
-# Bootstrap or core compiler change
-rm -rf ~/.cache/jac/jir/
+# Just the compiled modules
+jac cache purge --bucket jir-modules
 
-# Or just user modules
-rm -rf ~/.cache/jac/jir/modules/
+# The bootstrap tier too
+jac cache purge --bucket jir-bootstrap
+
+# Everything jac manages (fused runtimes, app images, toolchains included)
+jac cache purge
 ```
 
 ---
@@ -723,7 +865,7 @@ A short index, organised by the role each file plays in the pipeline.
 
 **Orchestration**
 
-- [`compiler/driver/schedules.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/driver/schedules.jac)
+- [`compiler/driver/pipeline.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/driver/pipeline.jac)
   -- `JacCompiler`, schedule functions, codespace coercion
 - [`compiler/driver/program.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/driver/program.jac)
   -- `JacProgram`, the module hub passes operate on
@@ -767,15 +909,14 @@ A short index, organised by the role each file plays in the pipeline.
 - [`compiler/backends/es/primitives_es.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/backends/es/primitives_es.jac)
 - [`compiler/backends/es/jac_runtime_js.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/backends/es/jac_runtime_js.jac)
   -- in-browser runtime
-- [`compiler/passes/ast_gen/jsx_processor.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/passes/ast_gen/jsx_processor.jac)
+- [`compiler/backends/es/jsx_processor.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/backends/es/jsx_processor.jac)
   -- JSX lowering
 
 **Native backend**
 
 - [`compiler/backends/native/na_ir_gen_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/backends/native/na_ir_gen_pass.jac)
 - [`compiler/backends/native/na_compile_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/backends/native/na_compile_pass.jac)
-- [`compiler/backends/native/elf_linker.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/backends/native/elf_linker.jac)
-  / [`macho_linker.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/backends/native/macho_linker.jac)
+- [`compiler/backends/native/native_link.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/backends/native/native_link.jac)
 - [`compiler/backends/native/primitives_native.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/backends/native/primitives_native.jac)
 
 **Interop**

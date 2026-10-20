@@ -7,6 +7,257 @@ This page documents significant breaking changes in Jac and Jaseci that may affe
 
 ---
 
+### A closure created in a loop body keeps its own iteration's values (unreleased)
+
+A `lambda` or nested `def` created in a loop body used to share every name with the rest of the function, so a closure kept past its iteration saw whatever the last iteration assigned: in a JSX `for` slot every per-item handler acted on the last item, and on the server a list of callbacks built in a loop all read the final value. A name whose every assignment is inside the loop (the loop target, or a local the body introduces) is now shared with such a closure only while its pass through the body lasts; when the pass ends, the closure keeps that pass's value. This holds in every codespace.
+
+```jac
+def openers(items: list[str], show: Callable[[str], None]) -> list[Callable[[], None]] {
+    handlers: list[Callable[[], None]] = [];
+    for item in items {
+        row_id = item.strip();
+        handlers.append(lambda { show(row_id); });    # each handler shows its own row
+    }
+    return handlers;
+}
+```
+
+Code that relied on a loop's closures reading the final value of a loop-local name now sees each pass's value instead. A name that is also assigned outside the loop (a flag, a running total) is shared as before. See [Variables and Scope](../reference/language/variables-and-scope.md#4-scope-rules).
+
+---
+
+### `[dependencies]` lists Jac packages; Python moves to `[dependencies.pypi]` (unreleased)
+
+Jac now has its own packages (`org/name`, see [Packages](../reference/packages.md)), and `[dependencies]` in `jac.toml` lists them. Python packages move to a `pypi` subtable:
+
+| Before | Now |
+|---|---|
+| `[dependencies]` `requests = ">=2"` | `[dependencies.pypi]` `requests = ">=2"` |
+| `[dev-dependencies]` `pytest = ">=8"` | `[dev-dependencies.pypi]` `pytest = ">=8"` |
+| `[dependencies.git]` `lib = { git = "...", branch = "main" }` | `[dependencies.pypi]` `lib = { git = "...", branch = "main" }` |
+| `jac install requests` | `jac install --pypi requests` |
+| `jac remove requests` / `jac update requests` | `jac remove --pypi requests` / `jac update --pypi requests` |
+| `jac create --use https://.../x.jacpack` | `jac create --use org/name` (a published template), a template directory, or a template `.jab` |
+| `jac create --pack DIR` | `jac build --as jab` in a project with a `[jacpack]` table |
+
+A manifest that still lists a PyPI name under `[dependencies]` fails to load with an error that names the move. `jac fix dependencies` rewrites every `jac.toml` under the current directory, keeping comments and formatting where it can. `[dependencies.npm]` and `[dependencies.system]` are unchanged.
+
+Also in this change: comptime `embed_file` / `embed_bytes` can only read files inside the module's project, and `jac build --as wheel` fails instead of silently dropping client-codespace modules (`--allow-drop-client` restores the old behavior).
+
+---
+
+### Endpoint exposure follows the declaration: plain `def` / `walker` are private, `:protect` is the authenticated endpoint (unreleased)
+
+Which top-level functions and walkers are served, importable by client code,
+and bridgeable from another app is now decided in one place, from the access
+tag on the declaration, and every stage of the toolchain (type checker, client
+bundler, server registration, cross-app imports) reads that one verdict.
+
+| Declaration | Before | Now |
+|---|---|---|
+| `walker Foo` (plain) | served, JWT required | private: not served, not importable by client code, not bridgeable |
+| `def foo` imported by the entry module | served, JWT required | private |
+| any element of a module under a `[placement.pins]` `"server"` pin | callable from client code with auth | private unless tagged; the pin is placement only |
+| `walker:priv` / `def:priv` | served, JWT required | private |
+| `walker:protect` / `def:protect` | served, JWT required | unchanged: authenticated endpoint; now also bridgeable from client code and from other apps |
+| `walker:pub` / `def:pub` | served, no auth | unchanged: anonymous endpoint, always served |
+
+Removed: the `_`-prefix rule, the "imported by the entry module" rule, the
+callers-decide rule for uncalled `def:pub`, and the module-pin trust-boundary
+shape that let client code call non-`:pub` items of a pinned module. There is
+no configuration escape hatch; `[placement.pins]` decides where code runs and
+nothing else. `def:protect` and `walker:protect` are now endpoint placement
+evidence in any app kind that has a server, exactly like `def:pub`, so a
+declared endpoint is never pulled into the client bundle.
+
+Run `jac fix access` (or `jac fix access --dry-run` to preview) at the project
+root. It rewrites every plain `walker` reachable from a serving app and every
+plain `def` declared in, or imported by, a serving app's entry module to
+`:protect`, which preserves the previous authenticated behaviour. It leaves
+`:priv` declarations alone and lists any that used to be served so you can
+decide whether each was really an endpoint. A client import of a private symbol
+is `E5082`; a cross-app import of one is `E5106`.
+
+---
+
+### An `edge` declaration must name its endpoints ([#9315](https://github.com/jaseci-labs/jac/pull/9315), unreleased)
+
+`edge Foo {}` is now `E2086`. The endpoint clause is what lets a traversal through
+an edge infer a node type instead of `any`, so leaving it off was the one place
+Jac let an annotation be implied by silence -- `has v;` is a parse error and an
+untyped parameter is `E0052`.
+
+Name the node types the edge connects, or say the widening out loud:
+
+```jac
+edge Follows: Profile --> Profile {}   # the node types it links
+edge Tagged: any --> any {}            # keeps the old gradual behaviour exactly
+edge Linked: Node --> Node {}          # some node, without naming which
+```
+
+`any --> any` is the mechanical rewrite: an `any` endpoint narrows to nothing, so
+a traversal through it still yields `list[<any>]`. `Node --> Node` is stricter --
+it narrows the traversal to `Node`, so field reads off the result become `E1030`.
+An edge that inherits endpoints from a base edge needs no clause of its own.
+
+The declaration is now enforced as well as read. Connecting node types the edge
+does not declare is `E1136`, and traversing an edge from a node it cannot start
+from is `E1137`; both were previously accepted, and because archetype field
+access resolves by slot index the result was a wrong-field read rather than an
+error. An operand that is merely more general than the declaration -- a `Node`
+where `Profile` is declared -- may still be the declared type at runtime, so it
+warns (`W2081`, `W2082`) instead of failing.
+
+Endpoints also accept a union now, like every other type position:
+
+```jac
+edge Multi: Base --> A | B {}          # narrows to list[A | B]
+```
+
+---
+
+### `jac purge` is removed; `jac cache` owns the machine-wide cache (#9246)
+
+`jac purge` is gone. It removed exactly `~/.cache/jac/jir` plus two
+directories that no longer existed, and never reached the fused-binary
+runtimes, app images, toolchains, model weights or release binaries that made
+up most of the cache. Typing it now prints the replacement and exits:
+
+| Old | New |
+|---|---|
+| `jac purge` | `jac cache purge` (every managed bucket) or `jac cache purge --bucket jir-modules` (just the compiled modules) |
+| `rm -rf ~/.cache/jac` by hand | `jac cache status` to see what is there, `jac cache gc` to reclaim what has expired, `jac cache purge` to clear it |
+
+The cache root rule is now one rule everywhere: `JAC_CACHE_HOME` (which
+until now only the embedded Postgres cluster read), else `XDG_CACHE_HOME/jac`
+(now honored on macOS and Windows too when set), else the platform default.
+Every bucket has a retention policy, `JAC_CACHE_TTL_DAYS` overrides all of
+them at once. Disposable managed buckets carry a standard `CACHEDIR.TAG`;
+the shared root stays untagged because `pg/main` holds persistent state.
+
+A fused `jac` binary's extracted runtime is keyed by the payload's content
+hash alone, no longer by payload plus executable path, so one payload
+materializes once however many locations it runs from. Runtimes unused for
+30 days are reclaimed at the next launch; the first run after upgrading
+extracts once more into the new key, and the old `<hash>-<pathhash>` directories
+age out on the same schedule (or go at once with `jac cache purge --bucket rt`).
+
+Two toolchain trees moved into managed buckets so `jac cache` can reclaim
+them: the LLVM C backend build now lives under `toolchains/build/llvm-cbe/`
+and the CocoaPods home under `toolchains/installed/cocoapods/`. The old
+`toolchains/llvm-cbe/` and `toolchains/cocoapods/` directories are retired;
+`jac cache gc` removes them, and the next `jac build` that needs the tool
+rebuilds or reinstalls it once.
+
+---
+
+### Apps use entry modules and compilation contexts (#9088)
+
+Every explicit `[apps.<name>]` table now requires `kind` and `entry-point`.
+Replace `path = "web"` plus an optional local entry with
+`entry-point = "web.main"`, relative to the project root. Duplicate entries
+and the removed `path` key are configuration errors. Single implicit apps also use dotted module names: change
+`[project] entry-point = "main.jac"` to `entry-point = "main"`. File paths and
+extensions are rejected; CLI file arguments such as `jac run main.jac` remain valid.
+
+Ordinary imports inherit the app selected by `run`, `build`, or `check`.
+Another declared entry forms an app boundary. Shared source is compiled in each
+consumer context; directories, `default-app`, and placement pins no longer
+assign it a global app context. Declare a service entry when several apps must call
+one provider. The shared-layer diagnostics `E2040`/`W2040` and ambiguous-owner
+diagnostic `E5107` are removed; private cross-entry access still uses `E2039`.
+
+A workspace check follows each entry's imports and conventional page roots.
+Name unreachable files explicitly to check them. `jac test <app>` uses its
+configured test directories, or its entry module when none are configured.
+Compilation and artifact preparation happen before application initialization;
+web builds no longer execute the app entry to discover its client output.
+
+---
+
+### Memory profile: `[memory]`, `jac build --native`, and `jac explain` replace `jac nacompile`, `--gc`, `[gc]`, `[build.native]` and the compile-time `JAC_*` variables
+
+The memory axis is one declaration of intent. `[memory] profile = "managed" | "rc" | "nogc"` replaces `[gc] default`; `[memory] enforce` / `exempt` replace `[gc.enforce] modules` / `grandfathered`; `[native] target / opt / debug / threads` replace `[build.native]`; `[placement] default` replaces `[build] default_codespace`. `jac nacompile` is gone: `jac build <file> --native` compiles one self-contained artifact (a binary when the module has `with entry`, a C-ABI library otherwise; `--lib` forces the library), with `--memory`, `--target-triple` and `--debug` as its only knobs. Invariants are no longer flags: `--assert-no-rc` is always on under `nogc`, `--strict` is a property of every native artifact, `--scrub` is `jac clean --cache`. No compile-time environment variable sets behavior; a built binary reads only `JAC_GC=off` and `JAC_THREADS`, and the cycle collector runs by default under `managed`. `jac explain memory | placement | ir` replaces `JAC_RC_STATS`, `JAC_NOGC_DEBUG`, `JAC_NA_DEBUG`-style output, `jac check --placements`, and `JAC_DUMP_IR` / `JAC_DEBUG_IR` / `JAC_SYMMAP`.
+
+| Old | New |
+|---|---|
+| `jac nacompile file.jac` | `jac build file.jac --native` |
+| `--gc cycles / rc / none` | `--memory managed / rc / nogc` |
+| `--enforce-nogc`, `--assert-no-rc`, `--strict` | implied by `nogc`; invariants of every native artifact |
+| `--shared` | inferred from the absence of `with entry`; `--lib` to force |
+| `-t`, `JAC_NATIVE_TARGET`, `[build.native] target` | `--target-triple`, `[native] target` |
+| `-g`, `JAC_NATIVE_DEBUG`, `JAC_RC_DEBUG_CODEGEN`, `[build.native] debug`, `rc_debug_codegen` | `--debug`, `[native] debug` |
+| `--scrub` | `jac clean --cache` |
+| `JAC_OPT_LEVEL`, `[build.native] opt_level` | `[native] opt` |
+| `[gc] default`, `[gc.enforce] modules / grandfathered` | `[memory] profile / enforce / exempt` |
+| `[build] default_codespace` | `[placement] default` |
+| `JAC_RC_STATS`, `JAC_NOGC_DEBUG` | `jac explain memory` |
+| `JAC_DUMP_IR`, `JAC_DEBUG_IR`, `JAC_SYMMAP`, `[build.native] dump_ir` | `jac explain ir` |
+| `JAC_NO_GC`, `JAC_GC_CYCLES` | run time only: `JAC_GC=off`; collection on by default |
+| `JAC_FLOW_THREADS` | `[native] threads`, run-time override `JAC_THREADS` |
+
+---
+
+### Workspaces: `[apps]` replaces `[scale.microservices]`, `client` / `client_kind`, `base_route_app`, `--client` and `JAC_ENV`; Capacitor is deleted ([#8823](https://github.com/jaseci-labs/jac/issues/8823), unreleased)
+
+A project is now a set of **apps** over shared code. Each app is an `[apps.<name>]` table in `jac.toml` with a `kind` and a required module `entry-point`, with optional platform and route settings. Ordinary imports compile in the selected app context; importing another declared entry crosses an app boundary. Directory `path` declarations are rejected. The kind decides the client: `web-app`, `web-static` and `desktop` render the DOM, `mobile` is a React Native mobUI app, and `--platform` is the only per-run override. The app boundary is structural -- it always compiles and type-checks as a cut -- and where the apps run is profile: `jac run <app>` colocates the workspace's service apps in one process, `--fleet` (or `[scale.gateway] colocate = false`) runs them as separate local processes, and `jac scale deploy` always deploys a fleet. A project with no `[apps]` table is one implicit app and its `jac.toml` is unchanged, except that the `mobile` kind names the React Native mobUI app and the Capacitor web-view shell no longer exists. Full reference: [Workspaces & Apps](../reference/apps.md).
+
+The whole old service and client-target surface is gone, not deprecated:
+
+| Old | New |
+|---|---|
+| `[scale.microservices.routes]` (the service cut) | an `[apps.<name>]` table with `kind = "service"` and the module as `entry-point` (`jac create --app <name> --kind service`) |
+| `[scale.microservices.services.<name>.*]` (`replicas`, `rpc_timeout`, `env`, `http_activation`, `hpa`, `pdb`, `triggers`, `deployment_overlay`, ...) | `[apps.<name>.scale.*]` (the same keys, as a per-app overlay) |
+| `[scale.microservices]` infra keys (`gateway_port`, `gateway_host`, `drain_timeout_seconds`, `http_forward_timeout`, `boot_health_timeout`, `boot_max_wait`, `health_monitor_interval`, `identity`, `ingress`, `rate_limit`, `cors`, `logs`, `tracing`, `shared_volumes`) | `[scale.gateway]` (same keys) plus the new `colocate = true` |
+| `[scale.microservices] enabled` / `routes` / `services` / `client` / `service_files` | gone -- fleet membership is every app whose kind has a server |
+| `[[scale.microservices.shared_volumes]] services = [...]` | `[[scale.gateway.shared_volumes]] apps = [...]` |
+| `jac scale split <module>` / `jac setup microservice` | `jac create --app <name> --kind service` |
+| `JAC_SV_<MODULE>_URL` / `JAC_SV_ROUTES` (module-stem keyed) | `JAC_APP_<APP>_URL` / `JAC_APP_<APP>_ROUTE` (app-name keyed) |
+| sv-to-sv stubs: synchronous, keyed by module stem; `RuntimeError("sv-to-sv RPC ... failed")` | typed-async stubs keyed by provider app name -- `await` them (`E1042` otherwise); awaited failures raise `BridgeError` / `BridgeUnavailable` / `BridgeTimeout` / `BridgeRejected` from `jaclang.server.bridge` (and `@jac/runtime`); an un-awaited statement-level walker spawn is a deferred outbox delivery |
+| `sv_client.register(module, url)`, `register_test_client(module, client)`, `resolve_url(module)` | the same functions keyed by **app name**, plus `register_local(app, module)` |
+| `__jac_provider_module__` on generated walker stubs | `__jac_provider_app__` |
+| `Import.is_service_module_stem`, `service_cut.jac`, `cut_digest` | `classify_cross_app_import` (`compiler/driver/boundary_classify.jac`) and `app_fact_digest` |
+| `[project] client_kind = "mobui"`, `[apps.<name>] client_kind` | gone: every `mobile` app is mobUI and no other kind is (both keys are parse errors) |
+| `[client] target`, `JAC_CLIENT_TARGET`, `[apps.<name>] client`, `--client <target>` on `run` / `build` / `setup` | gone: the kind decides the client. `jac run --platform web mobile` runs a mobile app in a browser (react-native-web); `jac build --as client <app>` builds only an app's client bundle |
+| the Capacitor mobile shell (`client = "mobile"`, `jac setup mobile --platform android`, the `android/` and `ios/` project scaffolds, `[client.mobile]`, `JAC_MOBILE_DEV_HOST`, `JAC_MOBILE_SETUP_PLATFORM`, `JAC_MOBILE_VITE_PORT`) | deleted. A web app goes on a phone as a PWA (`[client.pwa]`); a native app is a `mobile` app over the shared core |
+| `pwa` as a client target (`jac setup pwa`, `--client pwa`) | a `[client.pwa]` table in `jac.toml` makes the web build a PWA; `jac setup <app>` creates `pwa_icons/` when the table exists |
+| `cef` as a client target (`--client cef`, output under `.jac/client/cef/`) | `[desktop] engine = "cef"` on a `desktop` app; both engines build into `.jac/client/desktop/` |
+| `[dependencies.npm.react_native]` / `[dependencies.npm.react-native]` | `[dependencies.npm.mobile]` (target-scoped npm tables are keyed by the kind's client name: `web`, `static`, `desktop`, `mobile`) |
+| `TargetType`, `get_target_type`, `TargetFactory`, `app_client_target`, `normalize_client_target`, `CLIENT_TARGETS`, `KindSpec.client_target`, `AppConfig.client` / `client_kind` / `effective_client()`, `CompileOptions.client_kind`, `jaclang.project.client_kind`, `JacClientCompiler.compile(..., target_name=...)` | `KindSpec.ui` (`dom` / `mobui`), `kind_ui` / `kind_has_client` / `kind_is_mobui`, `AppConfig.ui()`, `target_for_kind` / `target_for_app` (`client/targets/registry.jac`, four targets: `web`, `static`, `desktop`, `mobile`), `CompileOptions.ui`, `jaclang.project.mobui_scope`, `JacClientCompiler.compile(..., native=True)` |
+| `[serve] base_route_app`, `[serve] cl_route_prefix` | gone -- the served app is at `/`, every other client-capable app with a built bundle at `/cl/<app-name>/` |
+| `JAC_ENV` | gone -- `--profile`, `JAC_PROFILE`, or `[environment] default_profile` |
+| legacy `[plugins.<name>]` tables, `discover_config_files` | gone -- capability tables are top-level (`[byllm]`, `[scale]`, `[client]`, `[mcp]`, `[desktop]`) |
+| `plan_project_run`, `resolve_project_kind`, `CompileOptions.project_kind` | `plan_app_run` / `plan_workspace`, `resolve_app_kind`, `CompileOptions.app_kind` + `target_app` |
+| `jac run [file]`, `jac build [file]`, `jac test [file]`, `jac setup <target>` | the positional is an **app name or a path**: `jac run web`, `jac build --all`, `jac test mobile`, `jac setup mobile`; no target = `[project] default-app` or the sole app |
+| `jac check` on the project root | with no paths: one compilation context per app, following its imports, diagnostics prefixed `[<app>]`; `--app <name>` for one app |
+| `examples/mobui/hello`, `examples/mobui/littlex` | deleted; the mobUI example is the flagship's `jac/examples/jaclang_org/mobile` (`jac create <name> --awesome`) |
+| `[project] kind = "mobile"` as the Capacitor web-view shell | `mobile` is the React Native mobUI app, with `--platform android`, `ios`, or `web` |
+| the enclosing-project kind chain (`_project_kind_chain` in `placement_facts`: a nested `jac.toml` with no `kind` walked every ancestor `jac.toml` for one) | gone -- an app's kind is its `[apps.<name>] kind`, the implicit app's `[project] kind`, or entry-point inference; a nested `jac.toml` under a workspace is its own project and inherits nothing |
+| `JacServe.ensure_sv_service(module, base_path)`, `JacServe.sv_service_call(module, fn, args)`, `JacServe.sv_walker_call(module, walker, args, stub_cls)` | removed from the runtime interface -- `jaclang.server.sv_client` (`call`, `spawn_walker`, keyed by provider app name) dispatches to the registered scale transport (`JacScalePlugin.sv_service_call` / `sv_walker_call`, app-keyed) or its own HTTP client |
+| `E5087` "Project kind ... has no server" | `E5087` "App kind ... has no server" |
+
+New diagnostics: `E2039`/`W2039` (an app using another app's declaration outside its bridge surface), `E5104` (an app dependency cycle), `E5105` (a `.native.jac` variant disagreeing with its base module), `E5106` (bridging to a non-`pub` element). `[project] kind` / `entry-point` alongside `[apps]` is a hard config error (exit 2).
+
+**Impact:** replace every `[scale.microservices.*]` table with `[apps.<name>]` tables and `[scale.gateway]`; add `await` to every server-to-server call across an app boundary (and `async` to the enclosing function); rename `JAC_SV_*` env vars to `JAC_APP_*`; delete `client` and `client_kind` from every app table (a mobile app is `kind = "mobile"` and nothing else); replace `--client web` with `--as client`, `--client pwa` with a `[client.pwa]` table, `--client cef` with `[desktop] engine = "cef"`, and `--client web` on a mobile app with `--platform web`; drop `base_route_app` / `cl_route_prefix` / `[client] target` / `JAC_ENV` from configs and scripts; pass an app name instead of a filename to `run`/`build`/`test`/`setup` in a workspace. Config keys that no longer exist are hard errors, not warnings.
+
+### Regions have dynamic extent on every backend ([#8913](https://github.com/jaseci-labs/jac/issues/8913), unreleased)
+
+`in r { }` now means one thing everywhere: everything constructed while the open is active on the current thread lands in `r`, including allocations made inside helpers the open calls. Native user code used to get lexical extent (only constructor calls written between the braces were arena-allocated; a helper allocated on the RC heap unless it took a `Region` parameter and opened it itself), and the compiler's own kernel modules got dynamic extent through a hidden second implementation keyed on their file paths. Both are gone; the Python backend already behaved this way.
+
+| Old | New |
+|---|---|
+| `in r { x = helper(); }` allocates `helper`'s result on the heap natively | allocated in `r`, reclaimed at `r`'s drop |
+| `in r { xs.append(helper()); }` with `xs` outside the open | `E1307`: a heap-typed call result made under an open is region-rooted unless the callee receives the handle |
+| runtime bookkeeping constructed under an open leaks into the region | `managed(T(...))` constructs on the managed heap regardless of the current region |
+| `flow for` body under an open inherits nothing | worker threads start with no current region; move a partition in to allocate |
+| inferred anonymous regions were native-only | `RegionInferPass` desugars them to real `in Region() { }` opens, so `drop` hooks fire on the Python backend too |
+
+`region_of(x)` is a declared builtin, and the walker growth rule is the same mechanism: ability dispatch enters `region_of(here)`. The native arena is a Jac kernel unit (`runtime/region_native.jac`) linked like the OSP kernel; `__mem_load_i64`, `__mem_store_i64`, `__atomic_xchg_i64`, and `__mem_call_dtor` are reserved intrinsic names.
+
+**Impact:** native code that relied on a helper's allocation outliving an enclosing open must either hoist the call out of the open, pass the handle so the checker ties the result to it, or rebox scalars with `own`. Everything else is a fix of behaviour the docs already promised.
+
+---
+
 ### `jac run` absorbs `jac start` and `jac dev`; deploying is `jac scale deploy` ([#8596](https://github.com/jaseci-labs/jac/pull/8596), unreleased)
 
 One verb runs and serves. `jac run` resolves the project kind and executes, serves, or builds accordingly; `--serve` and `--dev` force the serve projections; a named file now resolves the kind too, so `jac run main.jac` in a `web-app` or `service` project serves just like the bare form. `jac start` and `jac dev` are tombstoned -- they hard-error with the replacement spelling. Deployment leaves the serve path entirely: the `--scale` flag is gone and `jac scale deploy [app.jac] [--target T] [--enable-tls] [--dry-run] [--show-yaml]` is the deploy command (with no file it deploys `[project] entry-point`).
@@ -49,9 +300,9 @@ The fused neovim editor (`jac ninja`) and the built-in terminal coding agent (`j
 
 ### A keyword is never an identifier, and stray backticks are errors ([#8315](https://github.com/jaseci-labs/jac/pull/8315), unreleased)
 
-The rule is now uniform: a keyword token is never an identifier, and the backtick escape is the only way to use one as a name. Every binding position (archetype, ability, enum, global, field, parameter) reports one `E0013` naming the keyword and the escape, so `has skip: int` becomes ``has `skip: int``, and member access is covered too (`x.test` becomes ``x.`test``). The reverse is also checked: a backtick on a name that is not a keyword is `E0014` ("remove the backtick"). Exempt because they are not identifiers competing with keywords: the eight special references (`self`, `super`, `root`, `here`, `visitor`, `props`, `init`, `postinit`) and the builtin type names (`int`, `str`, `list`, `type`, `i8` ... `f64`).
+The rule is now uniform: a keyword token is never an identifier, and the backtick escape is the only way to use one as a name. Every binding position (archetype, ability, enum, global, field, parameter) reports one `E0013` naming the keyword and the escape, so `has skip: int` becomes ``has `skip: int``. Member access is not a binding position: after a dot a keyword is always an attribute, so `x.test` and `sys.exit(0)` parse unescaped (the escaped spelling still works). The reverse is also checked: a backtick on a name that is not a keyword is `E0014` ("remove the backtick"). Exempt because they are not identifiers competing with keywords: the eight special references (`self`, `super`, `root`, `here`, `visitor`, `props`, `init`, `postinit`) and the builtin type names (`int`, `str`, `list`, `type`, `i8` ... `f64`).
 
-**Impact:** code that bound a bare keyword (`has skip: int`, `for match in xs`, `x.test`) now gets a single actionable `E0013` -- add the backtick. Existing escaped spellings are untouched.
+**Impact:** code that bound a bare keyword (`has skip: int`, `for match in xs`) now gets a single actionable `E0013` -- add the backtick. Existing escaped spellings are untouched. The complete reserved-word list is in [Foundation > Keywords](../reference/language/foundation.md#5-keywords).
 
 ---
 
@@ -104,7 +355,7 @@ Two follow-ups sharpen the contract: read paths run without SERIALIZABLE predica
 
 ### Serving is one Jac-native HTTP stack; the FastAPI closure is gone ([#7969](https://github.com/jaseci-labs/jac/pull/7969), jaclang 0.36.0)
 
-The server behind `jac run` is the toolchain's own asyncio HTTP engine (`jaclang.server.serving`): router, websockets, SSE, multipart, middleware, auth, and OpenAPI generation, with no web framework behind it. It replaces both prior stacks -- the stdlib threading server and the FastAPI adapter the scale path exec'd -- and `fastapi`, `uvicorn`, `pydantic`, and `httpx` leave the serving dependency closure (`pydantic`/`httpx` remain only as byLLM optional deps; eject still *emits* a FastAPI project, since that is the exit's job). Scale reuses the same engine behind its gateway pods.
+The server behind `jac run` is the toolchain's own asyncio HTTP engine (`jaclang.server.serving`): router, websockets, SSE, multipart, middleware, auth, and OpenAPI generation, with no web framework behind it. It replaces both prior stacks -- the stdlib threading server and the FastAPI adapter the scale path exec'd -- and `fastapi`, `uvicorn`, `pydantic`, and `httpx` leave the serving dependency closure (`pydantic`/`httpx` remain only as byLLM optional deps). Scale reuses the same engine behind its gateway pods.
 
 **Impact:** endpoint behavior, `/docs`, and auth are unchanged from a caller's perspective. Anything that imported the serving stack's FastAPI app object or relied on starlette's `TestClient` must move to the Jac-native equivalents (`JacTestClient` for in-process testing).
 
@@ -141,14 +392,14 @@ What replaces them:
 
 - **Inference** places every declaration: JSX, browser globals, and npm imports seed client; extern C declarations seed native; python imports and graph archetypes anchor server (the default). Placement propagates from those seeds through symbol references.
 - **`[placement.pins]` in `jac.toml`** is the override when a decision must be forced. A module-level `"client"` / `"native"` pin coerces the whole module the way the old suffix did; an element-level pin (`"mod.helper" = "server"`) forces one declaration.
-- **`[scale.microservices.routes]`** is the authoritative microservice cut (`jac scale split <module>` writes an entry); imports of cut members lower to service RPC automatically -- this replaces the `sv import` boundary marker.
+- **`[scale.microservices.routes]`** was the authoritative microservice cut at the time (`jac scale split <module>` wrote an entry); imports of cut members lowered to service RPC automatically -- this replaced the `sv import` boundary marker. (Superseded by `[apps.<name>]` service apps; see the workspaces entry above.)
 
 | Old | New |
 |---|---|
 | `cl { ... }` block / `cl` prefix | plain code (inferred client) or a `"client"` pin |
 | `sv { ... }` block / `sv` prefix | plain code (server is the default) or a `"server"` pin |
 | `mod.cl.jac` / `mod.sv.jac` | `mod.jac` (placement inferred; pin the module to coerce it whole) |
-| `sv import from .svc { f }` | plain import + `[scale.microservices.routes]` entry (or a `"server"` module pin) |
+| `sv import from .svc { f }` | plain import + a `[scale.microservices.routes]` entry at the time (now an `[apps.<name>]` service app; see above) |
 | `variant client;` / `variant native;` | nothing -- placement has no per-file spelling |
 
 **Impact:** run `jac fix placement` -- it strips markers, renames retired suffixed files, preserves service topology into the routes table, and pins any element whose inferred placement differs from its old marker. Review the result with `jac check <entry> --placements`. The placement lockfile briefly introduced alongside this work (`jac.placements.lock`, `jac check --update-placements-lock`) was removed before release: placement is the compiler's business, reviewed on demand, never snapshotted.

@@ -2,6 +2,8 @@
 
 In most programming languages, the *interface* of a module -- what it exposes -- is interleaved with its *implementation* -- how it works. Jac takes a fundamentally different approach. Through its `impl` system, Jac allows you to cleanly separate **declarations** (the interfaces, types, and signatures that define a module's contract) from **implementations** (the method bodies and private helpers that fulfill that contract). As we will see throughout this guide, this distinction is far more than syntactic convenience -- it reshapes how both humans and AI models read, navigate, and reason about code.
 
+The same idea extends from one module to the whole project: an `archwire.jac` beside `jac.toml` declares which modules feed which, and generates those imports itself. That file is covered in [Project Wiring](wiring.md).
+
 In this guide, we will walk through the five organizational patterns used in the Jac compiler itself. For each pattern, we will examine when it is most appropriate, study real-world examples drawn from the compiler codebase, and discuss best practices for maintaining clarity and consistency as your projects grow.
 
 !!! note "Examples from the real compiler"
@@ -433,6 +435,31 @@ Work through this decision tree from top to bottom, and you will arrive at the a
 
 ---
 
+## Apps and Shared Code
+
+The patterns above organize one module. A project that ships more than one
+thing (a site, a mobile client, a command-line tool, a service or two) is
+organized one level up as a [workspace](apps.md): each deliverable is an app
+with its own root, and everything under no app's root is shared code.
+
+```
+acme/
+  jac.toml           [apps.web] path = "web"; [apps.cli] path = "cli"; ...
+  core/              shared: domain types, walkers, pure logic; no JSX, no DOM
+    social_graph.jac     claimed by a file-rooted [apps.social_graph] service app
+    scoring.jac
+    impl/                the impl/ folder works the same for shared modules
+  web/               the web app: pages/, components/, main.jac
+  cli/               the command-line app: main.jac, commands/
+```
+
+Ordinary imports participate in the selected app's compilation context. Imports
+through another declared app entry use its public functions and walkers;
+`E2039` diagnoses access outside that surface. File location does not establish
+ownership. Declaration and implementation annexes work within every app context.
+
+---
+
 ## Packages and `__init__.jac`
 
 A **package** in Jac is simply a directory that contains `.jac` files. Unlike Python, Jac does **not** require an `__init__.jac` file to recognize a directory as a package -- any directory containing `.jac` files is automatically treated as an importable package.
@@ -540,7 +567,7 @@ def _ensure_jac_runtime -> None {
     # ... helper logic
 }
 
-def _proc_file(filename: str) -> tuple {
+def _proc_file(filename: str) -> tuple[any, any, any] {
     # ... helper logic
 }
 

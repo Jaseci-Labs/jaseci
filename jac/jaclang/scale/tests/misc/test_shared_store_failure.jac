@@ -14,9 +14,6 @@ manager rendering it verbatim, and failures staying retryable.
 import os;
 import tempfile;
 import unittest.mock;
-import jaclang.scale.persistence.pg as pg_mod;
-import from jaclang.scale.config.config_loader { get_scale_config, reset_scale_config }
-import from jaclang.scale.identity.user_manager { JacScaleUserManager }
 import from pathlib { Path }
 
 glob _DEAD_URL = 'postgresql://jac:jac@127.0.0.1:1/jac';
@@ -69,11 +66,11 @@ test "a url that resolves but cannot be reached is reported as such" {
 obj _SchemaFailingStore {
     has conninfo: any = None;
 
-    def rows(sql: str, params: dict) -> list {
+    def rows(sql: str, params: dict[str, any]) -> list[any] {
         return [];
     }
 
-    def ensure_schema_once(promotions: dict) {
+    def ensure_schema_once(promotions: dict[str, any]) {
         raise RuntimeError(
             'duplicate key value violates unique constraint'
             ' "pg_type_typname_nsp_index"'
@@ -118,7 +115,7 @@ test "the identity manager renders the real cause" {
     _arm(_DEAD_URL);
     try {
         with testraises(RuntimeError) as exc {
-            JacScaleUserManager(base_path='.');
+            UserManager(base_path='.');
         }
         msg = str(exc.value);
         assert 'no [scale.database] url' not in msg , (
@@ -141,10 +138,10 @@ test "the no-url claim survives for the case that really has no url" {
     _arm('');
     try {
         with unittest.mock.patch(
-            'jaclang.scale.persistence.pg.shared_store', return_value=None
+            'jaclang.server.shared_store.shared_store', return_value=None
         ) {
             with testraises(RuntimeError) as exc {
-                JacScaleUserManager(base_path='.');
+                UserManager(base_path='.');
             }
             msg = str(exc.value);
             assert 'JAC_DB_URL' in msg , (

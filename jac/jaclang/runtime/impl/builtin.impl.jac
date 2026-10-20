@@ -1,11 +1,10 @@
 impl _jac_graph_json(file: (str | None) = None) -> str {
-    import from jaclang.runtime.graph_utils { collect_node_connections }
     jac = _get_jac();
     visited_nodes: set = set();
     connections: set = set();
     edge_ids: set = set();
-    nodes: list[dict] = [];
-    edges: list[dict] = [];
+    nodes: list[dict[str, any]] = [];
+    edges: list[dict[str, any]] = [];
     `root = jac.`root();
     collect_node_connections(`root, visited_nodes, connections, edge_ids);
     nodes.append({'id': id(`root), 'label': 'root'});
@@ -102,6 +101,7 @@ impl __getattr__(name: str) -> object {
         name
         in (
             'Region',
+            'region_of',
             '_jac_region_open',
             '_jac_region_close',
             '_jac_region_register',
@@ -111,12 +111,16 @@ impl __getattr__(name: str) -> object {
         import jaclang.runtime.region as _region_mod;
         _region_map = {
             'Region': 'JacRegion',
+            'region_of': 'region_of',
             '_jac_region_open': 'open_region',
             '_jac_region_close': 'close_region',
             '_jac_region_register': 'register_drop',
             '_jac_region_instrument': 'instrument_drops'
         };
         return getattr(_region_mod, _region_map[name]);
+    } elif name in _CINTEROP_NAMES {
+        import jaclang.runtime.cinterop as _cinterop_mod;
+        return getattr(_cinterop_mod, _CINTEROP_NAMES[name]);
     } elif name.startswith('wrapping_') or _is_sized_type_name(name) {
         import jaclang.runtime.sized as _sized_mod;
         if name.startswith('wrapping_') {
@@ -146,7 +150,6 @@ impl _get_llm -> LLMModel {
 impl _get_archetype_alias -> Callable[..., any] {
     def factory(old_name: str) -> Callable {
         def decorator(cls: type) -> type {
-            import from jaclang.data.serializer { Serializer }
             Serializer.register_alias(old_name, cls);
             return cls;
         }
@@ -157,7 +160,6 @@ impl _get_archetype_alias -> Callable[..., any] {
 
 impl _get_schema_builder(name: str) -> Callable[..., any] {
     def builder(*args: any, **kwargs: any) -> any {
-        import jaclang.data.schema_rules as _rules;
         return getattr(_rules, name)(*args, **kwargs);
     }
     return builder;
@@ -199,7 +201,6 @@ impl _get_jid -> Callable[..., any] {
 }
 
 impl _get_access_level -> type[AccessLevel] {
-    import from jaclang.runtime.constructs { AccessLevel }
     return AccessLevel;
 }
 
@@ -212,7 +213,7 @@ impl new(cls: any, *args: any) -> any {
     return cls(*args);
 }
 
-impl unsafe_html(html: any) -> dict {
+impl unsafe_html(html: any) -> dict[str, any] {
     return {"__jacUnsafeHtml": str(html) if (html is not None) else ""};
 }
 
@@ -266,37 +267,12 @@ impl RaisesContext.`match(regexp: str) -> bool {
 }
 
 impl restspec(**specs: any) -> Callable {
-    import logging;
     import from jaclang { JacRuntimeInterface as Jac }
-    import from jaclang.server.serving.endpoint { HTTPMethod }
-    import type from jaclang.server.server { JacAPIServer }
+
     ServerCls: type[JacAPIServer] = Jac.get_api_server_class();
     SpecsCls = ServerCls.RestSpecs;
 
-    protocol = specs.get('protocol');
-    if protocol is not None and not isinstance(protocol, APIProtocol) {
-        raw_p = str(protocol).strip().lower();
-        try {
-            specs['protocol'] = APIProtocol('websocket' if raw_p == 'ws' else raw_p);
-        } except ValueError {
-            raise ValueError(
-                f"@restspec protocol={protocol!r} is not recognized. Expected "
-                "APIProtocol.HTTP / WEBHOOK / WEBSOCKET (or the strings "
-                "'http', 'webhook', 'websocket'/'ws')."
-            );
-        }
-    }
-    method = specs.get('method');
-    if method is not None and not isinstance(method, HTTPMethod) {
-        try {
-            specs['method'] = HTTPMethod(str(method).strip().upper());
-        } except ValueError {
-            raise ValueError(
-                f"@restspec method={method!r} is not routable. Expected one "
-                f"of: {', '.join([m.value for m in HTTPMethod])}."
-            );
-        }
-    }
+    specs = restspec_fields(specs);
 
     def decorator(cls: type) -> type {
         spec = SpecsCls(**specs);
@@ -307,48 +283,9 @@ impl restspec(**specs: any) -> Callable {
     return decorator;
 }
 
-def _validate_restspec_target(spec: any, target: any) {
-    import inspect;
-    import logging;
-    logger = logging.getLogger(__name__);
-    name = getattr(target, '__name__', repr(target));
-    is_walker = inspect.isclass(target);
-    proto = getattr(spec, 'protocol', APIProtocol.HTTP) or APIProtocol.HTTP;
-
-    if proto == APIProtocol.WEBHOOK and not is_walker {
-        raise ValueError(
-            f"@restspec(protocol=WEBHOOK) on '{name}': webhook endpoints are "
-            "walker-only; a plain def cannot receive webhooks. Use a walker "
-            "or drop the webhook protocol."
-        );
-    }
-    if getattr(spec, 'broadcast', False) and proto != APIProtocol.WEBSOCKET {
-        raise ValueError(
-            f"@restspec(broadcast=True) on '{name}' requires "
-            "protocol=WEBSOCKET; broadcast has no meaning on "
-            f"{proto} endpoints."
-        );
-    }
-    if proto in (APIProtocol.WEBHOOK, APIProtocol.WEBSOCKET) {
-        fixed = '/webhook/{name}' if proto == APIProtocol.WEBHOOK else '/ws';
-        if getattr(spec, 'path', '') or getattr(spec, 'method', '') {
-            logger.warning(
-                f"@restspec on '{name}': path/method are ignored for "
-                f"{proto} endpoints; the route is fixed under {fixed}."
-            );
-        }
-    }
-    if is_walker
-        and (getattr(spec, 'produces', '') or not getattr(spec, 'envelope', True)) {
-        logger.warning(
-            f"@restspec on '{name}': produces/envelope are ignored on "
-            "walkers; walker responses always use the report envelope."
-        );
-    }
-}
+def _validate_restspec_target(spec: any, target: any);
 
 impl schedule(**kwargs: any) -> Callable {
-    import from jaclang.server.task_scheduler { ScheduleSpec }
     import from jaclang.runtime.builtin { ScheduleTrigger }
     trigger = kwargs.pop("trigger", ScheduleTrigger.STATIC);
     if isinstance(trigger, str) {
@@ -392,11 +329,52 @@ impl JacListView.__iter__ -> any {
     return iter([self.backing[k] for k in range(self.start, self.stop)]);
 }
 
-impl _jac_chunks(xs: any, n: int) -> list {
+impl _jac_take_attr(owner: any, name: str) -> any {
+    value = getattr(owner, name);
+    setattr(owner, name, None);
+    return value;
+}
+
+impl _jac_take_item(seq: any, key: any) -> any {
+    value = seq[key];
+    seq[key] = None;
+    return value;
+}
+
+impl _jac_replace_attr(owner: any, name: str, value: any) -> any {
+    old = getattr(owner, name);
+    setattr(owner, name, value);
+    return old;
+}
+
+impl _jac_replace_item(seq: any, key: any, value: any) -> any {
+    old = seq[key];
+    seq[key] = value;
+    return old;
+}
+
+impl _jac_swap_places(
+    owner_a: any, key_a: any, attr_a: bool, owner_b: any, key_b: any, attr_b: bool
+) -> None {
+    value_a = getattr(owner_a, key_a) if attr_a else owner_a[key_a];
+    value_b = getattr(owner_b, key_b) if attr_b else owner_b[key_b];
+    if attr_a {
+        setattr(owner_a, key_a, value_b);
+    } else {
+        owner_a[key_a] = value_b;
+    }
+    if attr_b {
+        setattr(owner_b, key_b, value_a);
+    } else {
+        owner_b[key_b] = value_a;
+    }
+}
+
+impl _jac_chunks(xs: any, n: int) -> list[any] {
     if n < 1 {
         n = 1;
     }
-    out: list = [];
+    out: list[any] = [];
     i = 0;
     total = len(xs);
     while i < total {
@@ -410,7 +388,56 @@ impl _jac_chunks(xs: any, n: int) -> list {
     return out;
 }
 
-def _is_sized_type_name(name: str) -> bool {
-    import from jaclang.runtime.scalars { is_sized }
+def _is_sized_type_name(name: str) -> bool;
+
+impl _validate_restspec_target(spec: any, target: any) {
+    import inspect;
+    import logging;
+    logger = logging.getLogger(__name__);
+    name = getattr(target, '__name__', repr(target));
+    is_walker = inspect.isclass(target);
+    proto = getattr(spec, 'protocol', APIProtocol.HTTP) or APIProtocol.HTTP;
+
+    if proto == APIProtocol.WEBHOOK and not is_walker {
+        raise ValueError(
+            f"@restspec(protocol=WEBHOOK) on '{name}': webhook endpoints are "
+            "walker-only; a plain def cannot receive webhooks. Use a walker "
+            "or drop the webhook protocol."
+        );
+    }
+    scheme = getattr(spec, 'scheme', '') or '';
+    if scheme and proto != APIProtocol.WEBHOOK {
+        raise ValueError(
+            f"@restspec(scheme={scheme!r}) on '{name}' requires "
+            "protocol=WEBHOOK; a signature scheme has no meaning on "
+            f"{proto} endpoints."
+        );
+    }
+    if getattr(spec, 'broadcast', False) and proto != APIProtocol.WEBSOCKET {
+        raise ValueError(
+            f"@restspec(broadcast=True) on '{name}' requires "
+            "protocol=WEBSOCKET; broadcast has no meaning on "
+            f"{proto} endpoints."
+        );
+    }
+    if proto in (APIProtocol.WEBHOOK, APIProtocol.WEBSOCKET) {
+        fixed = '/webhook/{name}' if proto == APIProtocol.WEBHOOK else '/ws';
+        if getattr(spec, 'path', '') or getattr(spec, 'method', '') {
+            logger.warning(
+                f"@restspec on '{name}': path/method are ignored for "
+                f"{proto} endpoints; the route is fixed under {fixed}."
+            );
+        }
+    }
+    if is_walker
+        and (getattr(spec, 'produces', '') or not getattr(spec, 'envelope', True)) {
+        logger.warning(
+            f"@restspec on '{name}': produces/envelope are ignored on "
+            "walkers; walker responses always use the report envelope."
+        );
+    }
+}
+
+impl _is_sized_type_name(name: str) -> bool {
     return is_sized(name);
 }

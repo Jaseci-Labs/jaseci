@@ -18,46 +18,13 @@ import from '@solidjs/router' {
 import from '@tanstack/solid-form' { createForm }
 import from 'zod' { z }
 
-import from jaclang.client.client_runtime_core {
-    navigate as _navigate,
-    __createJacSchema as ___createJacSchema,
-    __jacSpawn as ___jacSpawn,
-    jacSpawn as _jacSpawn,
-    __jacCallFunction as ___jacCallFunction,
-    __normalizeIdentity as ___normalizeIdentity,
-    __normalizeCredential as ___normalizeCredential,
-    jacSignup as _jacSignup,
-    jacLogin as _jacLogin,
-    jacLogout as _jacLogout,
-    jacIsLoggedIn as _jacIsLoggedIn,
-    jacSsoLogin as _jacSsoLogin,
-    jacSetToken as _jacSetToken,
-    __jacClearCache as ___jacClearCache,
-    __jacDesktopBroker as ___jacDesktopBroker,
-    __jacPollBrokerSession as ___jacPollBrokerSession,
-    __jacSleep as ___jacSleep,
-    __getApiBaseUrl as ___getApiBaseUrl,
-    __getLocalStorage as ___getLocalStorage,
-    __setLocalStorage as ___setLocalStorage,
-    __removeLocalStorage as ___removeLocalStorage,
-    __getEndpointEffects as ___getEndpointEffects,
-    __getCacheState as ___getCacheState,
-    __isFresh as ___isFresh,
-    __cacheGet as ___cacheGet,
-    __cacheSet as ___cacheSet,
-    __evictOldest as ___evictOldest,
-    __doWalkerFetch as ___doWalkerFetch,
-    __doFuncFetch as ___doFuncFetch,
-    __cachedEndpointCall as ___cachedEndpointCall,
-    __invalidateEndpoint as ___invalidateEndpoint,
-    __overlaps as ___overlaps,
-    __jacReportError as ___jacReportError,
-    __jacInstallErrorHandlers as ___jacInstallErrorHandlers,
-    ErrorFallback as ___ErrorFallback,
-    errorOverlay as ___errorOverlay,
-    __jacReactErrorHandler as ___jacReactErrorHandler,
-    __unwrapFormSchema as ___unwrapFormSchema
-}
+glob:pub BridgeError = _BridgeError,
+     BridgeUnavailable = _BridgeUnavailable,
+     BridgeTimeout = _BridgeTimeout,
+     BridgeRejected = _BridgeRejected,
+     __bridgeErrorFor = ___bridgeErrorFor,
+     __bridgeErrorFromFetch = ___bridgeErrorFromFetch,
+     __bridgeApiBase = ___bridgeApiBase;
 
 glob:pub __createJacSchema = ___createJacSchema,
      __jacSpawn = ___jacSpawn,
@@ -92,15 +59,16 @@ glob:pub ErrorFallback = ___ErrorFallback,
      __unwrapFormSchema = ___unwrapFormSchema;
 
 def:pub navigate(path: str) -> None;
-def:pub jacSpawn(left: str, right: str = "", fields: dict = {}) -> any;
+def:pub jacSpawn(left: str, right: str = "", fields: dict[str, any] = {}) -> any;
 async def:pub jacSignup(
-    identities_or_username: (str | list),
-    credential_or_password: (str | dict),
-    profile: (dict | None) = None
-) -> dict;
+    identities_or_username: (str | list[str | dict[str, any]]),
+    credential_or_password: (str | dict[str, any]),
+    profile: (dict[str, any] | None) = None
+) -> SignupResult;
 
 async def:pub jacLogin(
-    identity_or_username: (str | dict), credential_or_password: (str | dict)
+    identity_or_username: (str | dict[str, any]),
+    credential_or_password: (str | dict[str, any])
 ) -> bool;
 
 def:pub jacLogout -> None;
@@ -124,8 +92,8 @@ def:pub Route(props: dict[str, any]) -> JsxElement;
 def:pub Link(props: dict[str, any]) -> JsxElement;
 def:pub Navigate(props: dict[str, any]) -> JsxElement;
 def:pub Outlet(props: dict[str, any] = {}) -> JsxElement | None;
-def:pub useRouter -> dict;
-def:pub AuthGuard(redirect: str = "/login", children: any = None) -> JsxElement;
+def:pub useRouter -> dict[str, any];
+def:pub AuthGuard(redirect: str = "/login", children: any = None) -> JsxElement | None;
 
 def:pub __jacMakeLayoutRoot(layout_component: any) -> any;
 

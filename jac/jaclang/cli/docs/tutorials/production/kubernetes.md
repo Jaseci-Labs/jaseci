@@ -157,7 +157,7 @@ ingress_node_port = 30080
 
 | Key | Description | Default |
 |----------|-------------|---------|
-| `readiness_initial_delay` | Readiness probe delay (seconds) | `10` |
+| `readiness_initial_delay` | Readiness probe delay (seconds) | `0` |
 | `readiness_period` | Readiness probe interval (seconds) | `20` |
 | `liveness_initial_delay` | Liveness probe delay (seconds) | `10` |
 | `liveness_period` | Liveness probe interval (seconds) | `20` |
@@ -189,8 +189,8 @@ If the URL host is a bare Kubernetes service name and the app deploys into a dif
 
 | Key | Description | Default |
 |----------|-------------|---------|
-| `[scale.jwt]` `secret` | JWT signing key | Testing-only default; set your own in production |
-| `[scale.jwt]` `exp_delta_days` | Token expiration (days) | `7` |
+| `[serve.auth]` `secret` | JWT signing key | Required in a cluster; `jac scale deploy` mints one into the app Secret when unset |
+| `[serve.auth]` `token_ttl_days` | Token expiration (days) | `7` |
 | `[scale.sso.google]` `client_id` | Google OAuth client ID | - |
 | `[scale.sso.google]` `client_secret` | Google OAuth secret | - |
 
@@ -245,14 +245,13 @@ hosts = ["app.example.com"]
 ```
 
 This reconciles a KEDA `InterceptorRoute` and `ScaledObject` for the target,
-and works for both single-app and per-service (`[scale.microservices.services.<name>.http_activation]`) deploys.
+and works for both single-app and per-app (`[apps.<name>.scale.http_activation]`) deploys.
 
 !!! note
-    This needs the KEDA HTTP Add-on installed alongside KEDA core. With
-    `min_replicas = 0`, route inbound traffic through the KEDA HTTP interceptor
-    proxy: jac-scale does not yet rewire the gateway or Ingress to it, so a
-    request that reaches the app Service directly will not wake a scaled-to-zero
-    pod.
+    This needs the KEDA HTTP Add-on installed alongside KEDA core. jac-scale
+    routes gateway-forwarded and sv-to-sv RPC traffic to this target through
+    the KEDA HTTP interceptor proxy automatically, so `min_replicas = 0` is
+    safe to use without any manual Ingress or gateway rewiring.
 
 See the [Scale Reference](../../reference/plugins/jac-scale-kubernetes.md#http-add-on-activation-scale-to-zero-on-request) for the full HTTP activation config (routing rules, cold-start response, timeouts).
 
@@ -306,10 +305,10 @@ action). If it is not published yet, the deploy falls back to `:dev`. An explici
 When two services need to read and write the same files (e.g. an IDE backend and a build worker that both touch a project workspace), declare a shared volume that gets mounted on both pods:
 
 ```toml
-[[scale.microservices.shared_volumes]]
+[[scale.gateway.shared_volumes]]
 name = "workspace"
 mount_path = "/data/workspace"
-services = ["builder_sv", "build_worker"]
+apps = ["builder", "build_worker"]
 
 # Cloud K8s (RWX storage class - EFS / Filestore / Azure Files):
 size = "10Gi"

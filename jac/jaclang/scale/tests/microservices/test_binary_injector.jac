@@ -10,33 +10,6 @@ import threading;
 import unittest.mock;
 import from pathlib { Path }
 import from types { SimpleNamespace }
-import jaclang.scale.injector.binary as binary_mod;
-import from jaclang.scale.config.dev_config {
-    resolve_dev_channel,
-    resolve_experimental_pr,
-    Channel,
-    BINARY_PATH_ENV
-}
-import from jaclang.scale.injector.binary {
-    pack_binary_bytes,
-    cluster_node_archs,
-    node_arch,
-    download_release_binary,
-    stage_admin_dist
-}
-import from jaclang.runtime.graph_utils { host_arch }
-import from jaclang.scale.injector.binary_injector { BinaryInjector }
-import from jaclang.scale.injector.bundle { TOOLCHAIN_SUBDIR }
-import from jaclang.scale.deploy.target.kubernetes.runtime_bootstrap {
-    build_runtime_install_commands,
-    runtime_container_env,
-    build_service_apt_prefix,
-    build_bootstrap_init_container
-}
-import from jaclang.scale.deploy.target.kubernetes.kubernetes_config {
-    KubernetesConfig
-}
-import from jaclang.scale.config.config_loader { JacScaleConfig }
 
 
 def _write_toml(body: str) -> str {
@@ -66,18 +39,9 @@ test "whitespace [ dev ] table still resolves to the dev channel" {
 }
 
 
-test "JAC_SCALE_BINARY_PATH forces the LOCAL channel over any [dev] stanza" {
-    d = _write_toml("[dev]\ntest_jobs = \"auto\"\n");
-    saved = os.environ.get(BINARY_PATH_ENV);
-    try {
-        os.environ[BINARY_PATH_ENV] = "/some/jac";
-        assert resolve_dev_channel(d) == Channel.LOCAL;
-    } finally {
-        os.environ.pop(BINARY_PATH_ENV, None);
-        if saved is not None {
-            os.environ[BINARY_PATH_ENV] = saved;
-        }
-    }
+test "[dev] pod_binary selects the LOCAL channel over any other [dev] key" {
+    d = _write_toml("[dev]\ntest_jobs = \"auto\"\npod_binary = \"/some/jac\"\n");
+    assert resolve_dev_channel(d) == Channel.LOCAL;
 }
 
 
@@ -103,38 +67,32 @@ test "[experimental] without pr falls back to the dev base image" {
 }
 
 
-test "LOCAL channel ships the binary at JAC_SCALE_BINARY_PATH, no download" {
-    with tempfile.NamedTemporaryFile(suffix="-jac", delete=False) as tmp {
-        tmp.write(b"ELF-local-binary");
-        tmp_path = tmp.name;
+test "LOCAL channel ships the [dev] pod_binary, relative to its project, no download" {
+    d = _write_toml("[dev]\npod_binary = \"bin/jac\"\n");
+    os.makedirs(os.path.join(d, "bin"));
+    with open(os.path.join(d, "bin", "jac"), "wb") as handle {
+        handle.write(b"ELF-local-binary");
     }
-    saved = os.environ.get(BINARY_PATH_ENV);
-    try {
-        os.environ[BINARY_PATH_ENV] = tmp_path;
-        assert download_release_binary("local", node_arch()) == b"ELF-local-binary";
-    } finally {
-        os.environ.pop(BINARY_PATH_ENV, None);
-        if saved is not None {
-            os.environ[BINARY_PATH_ENV] = saved;
-        }
-        os.unlink(tmp_path);
-    }
+    assert read_local_binary(d) == b"ELF-local-binary";
 }
 
 
-test "LOCAL channel without JAC_SCALE_BINARY_PATH is a loud error" {
-    saved = os.environ.pop(BINARY_PATH_ENV, None);
-    caught = False;
+test "LOCAL channel names a missing [dev] pod_binary loudly" {
+    d = _write_toml("[dev]\npod_binary = \"missing/jac\"\n");
+    caught = "";
+    try {
+        read_local_binary(d);
+    } except RuntimeError as e {
+        caught = str(e);
+    }
+    assert "pod_binary" in caught , caught;
     try {
         download_release_binary("local", node_arch());
-    } except RuntimeError {
-        caught = True;
-    } finally {
-        if saved is not None {
-            os.environ[BINARY_PATH_ENV] = saved;
-        }
+        caught = "";
+    } except RuntimeError as e {
+        caught = str(e);
     }
-    assert caught;
+    assert "pod_binary" in caught , caught;
 }
 
 
@@ -161,11 +119,55 @@ test "first-boot install only runs jac install (no jir-seed adoption)" {
 }
 
 
-test "runtime_container_env exposes HOME + PATH, no JAC_NO_PRECOMPILE" {
+test "pod bootstrap always skips the npm closure" {
+    # Pods never build the client: the deploy ships the bundle built on the
+    # host or fails fast, so no pod - gateway included - needs npm deps.
+    script = str(
+        build_bootstrap_init_container(KubernetesConfig(), "python:3.12-slim")["args"][
+            0
+        ]
+    );
+    assert "export JAC_CLIENT_SKIP_NPM_INSTALL=1" in script;
+    assert script.index("JAC_CLIENT_SKIP_NPM_INSTALL") < script.index("jac install");
+}
+
+
+test "bootstrap points the pip cache at the shared bundle PVC, best-effort" {
+    ctr = build_bootstrap_init_container(KubernetesConfig(), "python:3.12-slim");
+    script = str(ctr["args"][0]);
+    assert f"PIP_CACHE_DIR={BUNDLE_MOUNT_PATH}/.cache/pip" in script;
+    # bun's cache is deliberately NOT shared: thousands of tiny files are
+    # pathological on EFS/NFS; it stays on the pod-local disk.
+    assert "BUN_INSTALL_CACHE_DIR" not in script;
+    # mkdir-guarded (unwritable PVC degrades to plain installs), size-bounded.
+    assert script.index("if mkdir") < script.index("PIP_CACHE_DIR");
+    assert "du -sm" in script;
+    assert script.index("PIP_CACHE_DIR") < script.index("jac install");
+    mounts = [m["name"] for m in ctr["volumeMounts"]];
+    assert BUNDLE_VOLUME_NAME in mounts;
+}
+
+test "shared pip cache is opened cross-uid, probed, with pod-local fallback" {
+    ctr = build_bootstrap_init_container(KubernetesConfig(), "python:3.12-slim");
+    script = str(ctr["args"][0]);
+    cache = f"{BUNDLE_MOUNT_PATH}/.cache";
+    # The creator opens the dirs so pods running other uids can still write.
+    assert f"chmod 0777 {cache} {cache}/pip" in script;
+    # A pod that cannot write the shared dir must not export it: pip would
+    # silently disable caching and rebuild sdists on every boot. It gets a
+    # pod-local cache instead.
+    assert f"if touch {cache}/pip/.writable" in script;
+    assert "export PIP_CACHE_DIR=/tmp/jac-pip-cache" in script;
+    # The wipe-and-rewarm path re-opens the recreated dir too.
+    assert script.count("chmod 0777") == 2;
+}
+
+
+test "runtime_container_env exposes HOME + PATH, never the handoff" {
     names = [e["name"] for e in runtime_container_env()];
     assert "HOME" in names;
     assert "PATH" in names;
-    assert "JAC_NO_PRECOMPILE" not in names;
+    assert "JAC_HANDOFF" not in names;
 }
 
 
@@ -190,8 +192,13 @@ test "[dependencies.system] in jac.toml installs into the service container" {
         assert prefix.count("grep -q 'install ok installed'") == 2;
         assert prefix.index("ffmpeg") < prefix.index("git");
         assert "else export DEBIAN_FRONTEND=noninteractive && apt-get update" in prefix;
-        # Chains into app-start so a failed apt aborts the boot (no silent start).
-        assert prefix.endswith("fi && ");
+        # One complete statement. Chaining the next command onto this block
+        # with `&&` never aborted the boot: `set -e` exempts the left side of
+        # `&&`, so a failed install skipped that one command and carried on
+        # (jac#8935). A failed install is loud on its own instead.
+        assert prefix.endswith("fi; ");
+        assert "could not install system packages (ffmpeg git)" in prefix;
+        assert "&& " not in prefix.rsplit("fi; ", 1)[-1];
     }
 }
 
@@ -366,7 +373,7 @@ test "BinaryInjector unpacks AND seeds both the app .jab and the toolchain bundl
     assert "toolchain/orders/bbb.tar.gz" in keys;
 }
 
-glob _fake_urls: dict = {};
+glob _fake_urls: dict[str, any] = {};
 
 
 def _fake_admin_dist_urls(channel: str, version: str = "") -> tuple[str, str] {
@@ -484,17 +491,8 @@ test "explicit python_image wins over channel auto-selection" {
 
 test "local channel never auto-selects the official image" {
     import from jaclang.scale.injector.binary { resolve_pod_base_image }
-    d = _write_toml("[project]\nname = \"app\"\n");
-    saved = os.environ.get(BINARY_PATH_ENV);
-    try {
-        os.environ[BINARY_PATH_ENV] = "/some/jac";
-        assert resolve_pod_base_image(d, "") == "python:3.12-slim";
-    } finally {
-        os.environ.pop(BINARY_PATH_ENV, None);
-        if saved is not None {
-            os.environ[BINARY_PATH_ENV] = saved;
-        }
-    }
+    d = _write_toml("[project]\nname = \"app\"\n\n[dev]\npod_binary = \"/some/jac\"\n");
+    assert resolve_pod_base_image(d, "") == "python:3.12-slim";
 }
 
 
@@ -562,6 +560,124 @@ test "bootstrap reuses the image binary only on a checksum match" {
     assert "ln -sf /usr/local/bin/jac" in joined;
     # the shipped-binary install stays as the mismatch/absence fallback
     assert f"{TOOLCHAIN_SUBDIR}/bin/jac" in joined;
+}
+
+
+def _boot_rig(
+    image_payload: bytes, shipped_payload: bytes, bundle_payload: (bytes | None) = None
+) -> dict[str, str] {
+    import subprocess;
+    rig_dir = tempfile.mkdtemp();
+    image_bin = os.path.join(rig_dir, "image-jac");
+    with open(image_bin, "wb") as handle {
+        handle.write(image_payload);
+    }
+    os.chmod(image_bin, 0o755);
+    bundles = os.path.join(rig_dir, "jac-bundles");
+    app = os.path.join(rig_dir, "app");
+    home = os.path.join(rig_dir, "home");
+    os.makedirs(os.path.join(bundles, "bundles", "orders"));
+    os.makedirs(os.path.join(bundles, "toolchain", "orders"));
+    os.makedirs(app);
+    os.makedirs(home);
+    buf = io.BytesIO();
+    with tarfile.open(fileobj=buf, mode="w:gz") as tar {
+        info = tarfile.TarInfo(name="main.jac");
+        info.size = 5;
+        tar.addfile(info, io.BytesIO(b"pass\n"));
+    }
+    with open(os.path.join(bundles, "bundles", "orders", "aaa.jab"), "wb") as handle {
+        handle.write(buf.getvalue() if bundle_payload is None else bundle_payload);
+    }
+    with open(
+        os.path.join(bundles, "toolchain", "orders", "bbb.tar.gz"), "wb"
+    ) as handle {
+        handle.write(pack_binary_bytes(shipped_payload));
+    }
+    injector = BinaryInjector();
+    injector._object_key = "bundles/orders/aaa.jab";
+    injector._toolchain_object_key = "toolchain/orders/bbb.tar.gz";
+    injector._pod_binary_sha256 = hashlib.sha256(shipped_payload).hexdigest();
+
+    def localize(script: str) -> str {
+        return script.replace(BUNDLE_MOUNT_PATH, bundles).replace(
+            "/usr/local/bin/jac", image_bin
+        ).replace(
+            "/app", app
+        );
+    }
+
+    continued = os.path.join(rig_dir, "continued");
+    unpacked = subprocess.run(
+        [
+            "bash",
+            "-c",
+            "( " + localize(injector.unpack_script()) + " ) && touch " + continued
+        ]
+    );
+    if unpacked.returncode != 0 {
+        return {
+            "app": app,
+            "unpack_rc": str(unpacked.returncode),
+            "continued": str(os.path.exists(continued))
+        };
+    }
+    select_cmd = [
+        c
+        for c in build_runtime_install_commands(KubernetesConfig())
+        if "ln -sf" in c
+    ][0];
+    subprocess.run(
+        ["sh", "-c", "mkdir -p \"$HOME/.local/bin\" && " + localize(select_cmd)],
+        check=True,
+        env={** os.environ, "HOME": home}
+    );
+    return {
+        "app": app,
+        "image_bin": image_bin,
+        "pod_jac": os.path.join(home, ".local", "bin", "jac"),
+        "unpack_rc": "0",
+        "continued": str(os.path.exists(continued))
+    };
+}
+
+
+test "an image binary that matches the shipped one skips the toolchain unpack" {
+    payload = b"#!/bin/sh\necho jac\n";
+    rig = _boot_rig(payload, payload);
+    assert rig["continued"] == "True";
+    assert os.path.isfile(os.path.join(rig["app"], "main.jac"));
+    assert not os.path.exists(os.path.join(rig["app"], TOOLCHAIN_SUBDIR));
+    assert os.path.islink(rig["pod_jac"]);
+    assert os.path.realpath(rig["pod_jac"]) == os.path.realpath(rig["image_bin"]);
+}
+
+
+test "an image binary that differs still gets the shipped toolchain binary" {
+    rig = _boot_rig(b"#!/bin/sh\necho stale\n", b"#!/bin/sh\necho shipped\n");
+    assert os.path.isfile(os.path.join(rig["app"], "main.jac"));
+    assert os.path.isfile(os.path.join(rig["app"], TOOLCHAIN_SUBDIR, "bin", "jac"));
+    assert not os.path.islink(rig["pod_jac"]);
+    with open(rig["pod_jac"], "rb") as handle {
+        assert handle.read() == b"#!/bin/sh\necho shipped\n";
+    }
+}
+
+
+test "a bundle that fails to unpack stops the bootstrap chain" {
+    payload = b"#!/bin/sh\necho jac\n";
+    rig = _boot_rig(payload, payload, b"not a tarball");
+    assert rig["unpack_rc"] != "0";
+    assert rig["continued"] == "False";
+    assert not os.path.exists(os.path.join(rig["app"], "jac.toml"));
+}
+
+
+test "without a known binary digest the toolchain is always unpacked" {
+    injector = BinaryInjector();
+    injector._object_key = "bundles/orders/aaa.jab";
+    injector._toolchain_object_key = "toolchain/orders/bbb.tar.gz";
+    assert injector._skip_when_image_binary() == {};
 }
 
 
@@ -672,7 +788,7 @@ test "host_seal_platform accepts linux/macos hosts and rejects the rest" {
 }
 
 
-glob _dl_seen: dict = {};
+glob _dl_seen: dict[str, any] = {};
 
 
 def _capture_fetch(url: str, checksum_url: str, cache_file: Path, what: str) -> bytes {

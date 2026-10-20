@@ -1,11 +1,34 @@
-impl register_agent_callback(callback: Callable) -> None {
+impl register_agent_callback(callback: Callable[[dict[str, any]], None]) -> None {
     if callback not in _agent_callbacks {
         _agent_callbacks.append(callback);
     }
 }
 
+impl _aggregate_usage(usage_history: list[dict[str, any]]) -> dict[str, object] {
+    totals: dict[str, any] = {};
+    by_kind: dict[str, any] = {};
+    for u in usage_history {
+        kind = u.get("call_kind", "react_iteration");
+        if kind not in by_kind {
+            by_kind[kind] = {};
+        }
+        for (k, v) in u.items() {
+            if isinstance(v, (int, float)) {
+                totals[k] = totals.get(k, 0) + v;
+                by_kind[kind][k] = by_kind[kind].get(k, 0) + v;
+            }
+        }
+    }
+    return {
+        "total": totals,
+        "by_kind": by_kind,
+        "per_call": list(usage_history),
+        "requests": len(usage_history)
+    };
+}
+
 impl _emit_agent_telemetry(
-    mt_run: object,
+    mt_run: MTRuntime,
     result: object,
     model_name: str,
     latency_ms: float,
@@ -22,7 +45,7 @@ impl _emit_agent_telemetry(
         logger.debug(f"user_prompt extraction failed: {e}");
     }
 
-    caller_args: dict = {};
+    caller_args: dict[str, any] = {};
     try {
         mtir = getattr(mt_run, "mtir");
         if mtir and mtir.args {
@@ -34,7 +57,7 @@ impl _emit_agent_telemetry(
         logger.debug(f"caller_args extraction failed: {e}");
     }
 
-    conv_history: list = [];
+    conv_history: list[any] = [];
     try {
         conv_history = getattr(mt_run, "get_msg_list")();
     } except Exception as e {
@@ -50,10 +73,23 @@ impl _emit_agent_telemetry(
         }
     }
 
-    record_mtir = mt_run?.mtir;
+    tokens: dict[str, any] = {
+        "total": {},
+        "by_kind": {},
+        "per_call": [],
+        "requests": 0
+    };
+    try {
+        history = mt_run._usage_history;
+        tokens = _aggregate_usage(history);
+    } except Exception as e {
+        logger.debug(f"tokens aggregation failed: {e}");
+    }
+
+    record_mtir = mt_run.mtir;
     record = {
-        "invocation_id": getattr(mt_run, "_invocation_id"),
-        "parent_invocation_id": mt_run?._parent_invocation_id,
+        "invocation_id": mt_run._invocation_id,
+        "parent_invocation_id": mt_run._parent_invocation_id,
         "caller_name": record_mtir.caller.__name__ if record_mtir else "unknown",
         "caller_args": caller_args,
         "user_prompt": user_prompt,
@@ -62,7 +98,9 @@ impl _emit_agent_telemetry(
         "model": model_name,
         "latency_ms": latency_ms,
         "status": status,
-        "error": str(error)[:1000] if error else None
+        "error": str(error)[:1000] if error else None,
+        "tokens": tokens,
+        "compactions": list(mt_run._compactions)
     };
 
     for callback in _agent_callbacks {

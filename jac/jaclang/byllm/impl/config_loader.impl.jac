@@ -13,8 +13,13 @@ impl JacByllmConfig.get_default_config(self: JacByllmConfig) -> dict[str, any] {
             'proxy': False,
             'verbose': False
         },
-        'call_params': {'max_tokens': 0, 'max_output_retries': 3},
-        'litellm': {'local_cost_map': True, 'drop_params': True, 'debug': False},
+        'call_params': {'max_tokens': 0, 'max_output_retries': 3, 'timeout': 600.0},
+        'litellm': {
+            'local_cost_map': True,
+            'drop_params': True,
+            'debug': False,
+            'include_cost_in_streaming_usage': True
+        },
         'fallback': {'strategy': 'fallback', 'num_retries': 1, 'timeout': 60.0},
         'prompt_caching': {'enabled': True},
         'parallel': {'enabled': False},
@@ -62,7 +67,8 @@ impl JacByllmConfig.get_call_params_config(self: JacByllmConfig) -> dict[str, an
     call_params = config.get('call_params', {});
     max_tokens = call_params.get('max_tokens', 0);
     result: dict[str, any] = {
-        'max_output_retries': int(call_params.get('max_output_retries', 3))
+        'max_output_retries': int(call_params.get('max_output_retries', 3)),
+        'timeout': float(call_params.get('timeout', 600.0))
     };
 
     if 'temperature' in call_params {
@@ -80,7 +86,10 @@ impl JacByllmConfig.get_litellm_config(self: JacByllmConfig) -> dict[str, any] {
     return {
         'local_cost_map': bool(litellm_config.get('local_cost_map', True)),
         'drop_params': bool(litellm_config.get('drop_params', True)),
-        'debug': bool(litellm_config.get('debug', False))
+        'debug': bool(litellm_config.get('debug', False)),
+        'include_cost_in_streaming_usage': bool(
+            litellm_config.get('include_cost_in_streaming_usage', True)
+        )
     };
 }
 

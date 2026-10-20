@@ -17,13 +17,14 @@ reported it. Both lanes now report it.
 
 import os;
 import jaclang;
-import jaclang.compiler.driver.compiler as compiler_mod;
+import jaclang.compiler.driver.pipeline as pipeline_mod;
+import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
 import jaclang.compiler.frontend.unitree as uni;
 import from tests.support { TESTS_DIR }
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.compiler.driver.compile_options { CompileOptions }
-import from jaclang.compiler.passes { Transform }
-import from jaclang.compiler.driver.schedules {
+
+import from jaclang.compiler.driver.toolchain {
     _native_env_memo,
     native_pipeline_available
 }
@@ -43,16 +44,13 @@ def collect(n: int) -> list[Branded] {
          TESTS_DIR, "compiler", "fixtures", "distinct", "_brand_determinism.jac"
      );
 
-
 """Check the branded snippet with the codespace forced, reporting E1053 texts."""
 def brand_errors(space: str) -> list[str] {
     prog = JacProgram();
     prog.compile(
         file_path=BRAND_PATH,
         use_str=BRAND_SRC,
-        options=CompileOptions(
-            no_cgen=True, force_codespace=space, force_target_program=True
-        )
+        options=CompileOptions(no_cgen=True, force_codespace=space)
     );
     return [
         str(alrt)
@@ -60,7 +58,6 @@ def brand_errors(space: str) -> list[str] {
         if alrt.code is not None and alrt.code.code == "E1053"
     ];
 }
-
 
 """Check the branded snippet with the codespace inferred, as `jac build` does."""
 def inferred_brand_errors -> list[str] {
@@ -68,9 +65,7 @@ def inferred_brand_errors -> list[str] {
     prog.compile(
         file_path=BRAND_PATH,
         use_str=BRAND_SRC,
-        options=CompileOptions(
-            skip_native_engine=True, suppress_codes=["E5092"], force_target_program=True
-        )
+        options=CompileOptions(skip_native_engine=True, suppress_codes=["E5092"])
     );
     return [
         str(alrt)
@@ -79,12 +74,10 @@ def inferred_brand_errors -> list[str] {
     ];
 }
 
-
 """Stand in for an inference schedule that cannot be built at this instant."""
-def unbuilt_sched -> list[type[Transform]] {
+def unbuilt_sched(request: any) -> list[type] {
     return [];
 }
-
 
 """True when the vendored typeshed stubs the checker needs are on disk."""
 def typeshed_on_disk -> bool {
@@ -99,7 +92,6 @@ def typeshed_on_disk -> bool {
     );
 }
 
-
 test "a distinct brand is enforced in every codespace" {
     server_errs = brand_errors("server");
     native_errs = brand_errors("native");
@@ -111,15 +103,14 @@ test "a distinct brand is enforced in every codespace" {
     );
 }
 
-
 test "the native env verdict does not depend on transient schedule state" {
     saved_memo = dict(_native_env_memo);
-    saved_sched = compiler_mod.get_analysis_sched;
+    saved_sched = pipeline_mod.PRODUCTS[CompilationProduct.ANALYSIS].passes;
     try {
         _native_env_memo.clear();
         baseline = native_pipeline_available();
         _native_env_memo.clear();
-        compiler_mod.get_analysis_sched = unbuilt_sched;
+        pipeline_mod.PRODUCTS[CompilationProduct.ANALYSIS].passes = unbuilt_sched;
         degraded = native_pipeline_available();
         assert degraded == baseline , (
             "an unbuildable schedule changed the environment verdict: "
@@ -131,26 +122,25 @@ test "the native env verdict does not depend on transient schedule state" {
             );
         }
     } finally {
-        compiler_mod.get_analysis_sched = saved_sched;
+        pipeline_mod.PRODUCTS[CompilationProduct.ANALYSIS].passes = saved_sched;
         _native_env_memo.clear();
         _native_env_memo.update(saved_memo);
     }
 }
 
-
 test "the same source checks the same whichever verdict the probe memoized" {
     saved_memo = dict(_native_env_memo);
-    saved_sched = compiler_mod.get_analysis_sched;
+    saved_sched = pipeline_mod.PRODUCTS[CompilationProduct.ANALYSIS].passes;
     try {
         _native_env_memo.clear();
         native_pipeline_available();
         fresh = inferred_brand_errors();
         _native_env_memo.clear();
-        compiler_mod.get_analysis_sched = unbuilt_sched;
+        pipeline_mod.PRODUCTS[CompilationProduct.ANALYSIS].passes = unbuilt_sched;
         try {
             native_pipeline_available();
         } finally {
-            compiler_mod.get_analysis_sched = saved_sched;
+            pipeline_mod.PRODUCTS[CompilationProduct.ANALYSIS].passes = saved_sched;
         }
         degraded = inferred_brand_errors();
         assert fresh == degraded , (
@@ -160,7 +150,7 @@ test "the same source checks the same whichever verdict the probe memoized" {
         assert len(fresh) == 1 , f"expected one brand error, got {fresh}";
         assert "Branded" in fresh[0] , fresh[0];
     } finally {
-        compiler_mod.get_analysis_sched = saved_sched;
+        pipeline_mod.PRODUCTS[CompilationProduct.ANALYSIS].passes = saved_sched;
         _native_env_memo.clear();
         _native_env_memo.update(saved_memo);
     }

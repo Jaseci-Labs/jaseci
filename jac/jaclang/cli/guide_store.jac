@@ -1,11 +1,23 @@
 import from pathlib { Path }
 
+glob __jac_resources__: list[str] = ["docs/**/*", "skills/**/*"];
+
 obj Guide {
     has name: str,
         description: str,
         body: str,
         path: str;
 }
+
+obj GuideSection {
+    has title: str,
+        slug: str,
+        level: int,
+        line_no: int,
+        body: str;
+}
+
+def guide_sections(g: Guide) -> list[GuideSection];
 
 obj GrepHit {
     has guide: str,
@@ -34,7 +46,7 @@ def doc_corpora -> list[tuple[str, list[Guide]]];
 
 def corpus_blurb(ns: str) -> str;
 
-def nav_manifest -> dict;
+def nav_manifest -> dict[str, any];
 
 def nav_pages -> list[NavPage];
 

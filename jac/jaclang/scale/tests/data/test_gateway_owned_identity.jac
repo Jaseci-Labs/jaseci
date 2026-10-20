@@ -10,13 +10,6 @@ real embedded Postgres.
 import os;
 import uuid;
 import from datetime { UTC, datetime, timedelta }
-import from jaclang.server.serving.authcrypt { jwt_encode }
-import from jaclang.scale.config.config_loader { normalize_microservices_config }
-import from jaclang.scale.identity.user_manager {
-    JWT_ALGORITHM,
-    JWT_SECRET,
-    JacScaleUserManager
-}
 
 glob _SV_ENV: str = "JAC_SV_NAME";
 
@@ -25,13 +18,13 @@ glob _SV_ENV: str = "JAC_SV_NAME";
 def _gateway_token(user_id: str) -> str {
     expires = datetime.now(UTC) + timedelta(days=1);
     return jwt_encode(
-        {"sub": user_id, "exp": expires}, JWT_SECRET, algorithm=JWT_ALGORITHM
+        {"sub": user_id, "exp": expires}, jwt_secret(), algorithm=jwt_algorithm()
     );
 }
 
 
 """A manager built as the given process type, or None if Postgres is absent."""
-def _manager(sv_name: str) -> (JacScaleUserManager | None) {
+def _manager(sv_name: str) -> (UserManager | None) {
     previous = os.environ.get(_SV_ENV);
     if sv_name {
         os.environ[_SV_ENV] = sv_name;
@@ -39,7 +32,10 @@ def _manager(sv_name: str) -> (JacScaleUserManager | None) {
         del os.environ[_SV_ENV];
     }
     try {
-        return JacScaleUserManager(base_path=".");
+        return UserManager(
+            base_path=".",
+            provision_unknown_users=fleet_provisions_unknown_users(sv_name)
+        );
     } except Exception as e {
         print(f"[skip] embedded postgres unavailable: {e}");
         return None;
@@ -104,8 +100,8 @@ test "an expired gateway token is never provisioned into existence" {
     user_id = str(uuid.uuid4());
     expired = jwt_encode(
         {"sub": user_id, "exp": datetime.now(UTC) - timedelta(days=1)},
-        JWT_SECRET,
-        algorithm=JWT_ALGORITHM
+        jwt_secret(),
+        algorithm=jwt_algorithm()
     );
     detail = manager.validate_jwt_token_detail(expired);
     assert detail["status"] == "expired";
@@ -113,10 +109,46 @@ test "an expired gateway token is never provisioned into existence" {
 }
 
 
+test "a fleet service reads the assurance level the gateway put in the session" {
+    import asyncio;
+    import from jaclang.server.identity.assurance {
+        caller_assurance_level,
+        second_factor_claims
+    }
+    import from jaclang.server.middleware { jwt_middleware }
+    import from jaclang.server.serving.datatypes { Request, Response }
+    gateway = _manager("__gateway__");
+    service = _manager("orders_app");
+    if gateway is None or service is None {
+        return;
+    }
+    user_id = str(uuid.uuid4());
+    # The service's own middleware, fed the token the gateway forwards.
+    def level_seen(token: str) -> str {
+        request = Request();
+        request.headers.set("Authorization", "Bearer " + token);
+        seen: list[str] = [];
+        async def next_fn(req: Request) -> Response {
+            seen.append(caller_assurance_level());
+            return Response();
+        }
+        asyncio.run(jwt_middleware(service)(request, next_fn));
+        return seen[0];
+    }
+    strong = gateway.create_jwt_token(
+        user_id, assurance=second_factor_claims(["pwd", "otp"])
+    );
+    assert level_seen(strong) == "aal2";
+    assert level_seen(gateway.create_jwt_token(user_id)) == "aal1";
+    assert level_seen("not.a.token") == "";
+    assert caller_assurance_level() == "";
+}
+
+
 test "gateway-owned identity is on by default and can be turned off" {
-    default_config = normalize_microservices_config({});
+    default_config = normalize_gateway_config({});
     assert default_config["identity"]["gateway_owned"] is True;
 
-    opted_out = normalize_microservices_config({"identity": {"gateway_owned": False}});
+    opted_out = normalize_gateway_config({"identity": {"gateway_owned": False}});
     assert opted_out["identity"]["gateway_owned"] is False;
 }

@@ -51,6 +51,10 @@ def _publish_home_module -> (object | None) {
     setattr(shim, '_EarlyNode', _EarlyNode);
     setattr(shim, '_EarlyChild', _EarlyChild);
     previous = sys.modules.get(_EarlyNode.__module__);
+    facts = getattr(previous, '__jac_persistence__', ());
+    if facts {
+        setattr(shim, '__jac_persistence__', facts);
+    }
     sys.modules[_EarlyNode.__module__] = shim;
     return previous;
 }
@@ -69,7 +73,7 @@ def _restore_home_module(previous: (object | None)) {
 }
 
 
-def _anchor_blob(arch: object) -> dict {
+def _anchor_blob(arch: object) -> dict[str, any] {
     raw = Serializer.serialize(arch, include_type=True);
     return {
         '__type__': 'NodeAnchor',
@@ -87,7 +91,7 @@ def _anchor_blob(arch: object) -> dict {
 
 # --- Back-fill on hook install ---------------------------------------------
 test "installing a hook back-fills archetype classes that already exist" {
-    seen: list = [];
+    seen: list[any] = [];
 
     def recorder(cls: type) {
         seen.append(_key(cls));
@@ -109,7 +113,7 @@ test "installing a hook back-fills archetype classes that already exist" {
 
 
 test "installing the same hook twice neither duplicates it nor re-runs it" {
-    calls: list = [];
+    calls: list[type] = [];
 
     def recorder(cls: type) {
         calls.append(cls);
@@ -131,7 +135,7 @@ test "installing the same hook twice neither duplicates it nor re-runs it" {
 
 
 test "an installed hook still fires for classes created afterwards" {
-    seen: list = [];
+    seen: list[str] = [];
 
     def recorder(cls: type) {
         seen.append(cls.__name__);
@@ -155,7 +159,7 @@ test "a raw append cannot install a hook that skips the back-fill" {
     # who reaches for `.append` silently reintroduces #8049: their hook only
     # ever sees classes created after it, so everything defined earlier goes
     # unregistered and every read of those anchors is refused and dropped.
-    seen: list = [];
+    seen: list[type] = [];
 
     def recorder(cls: type) {
         seen.append(cls);
@@ -181,7 +185,7 @@ test "a raw append cannot install a hook that skips the back-fill" {
 
 
 test "uninstall_subclass_hook removes a hook and is safe to repeat" {
-    calls: list = [];
+    calls: list[type] = [];
 
     def recorder(cls: type) {
         calls.append(cls);
@@ -235,15 +239,25 @@ test "an anchor whose class is not registered round-trips instead of dropping" {
 }
 
 
-test "_get_class resolves an unregistered archetype from its own module" {
+test "_get_class resolves an unregistered archetype from its durable identity" {
+    import from jaclang.data.type_identity { type_module, TypeResolutionError }
     key = _key(_EarlyChild);
     saved = Serializer._registry.pop(key, None);
     previous_home = _publish_home_module();
     Serializer._reset_warn_cache();
     try {
-        resolved = Serializer._get_class(_EarlyChild.__module__, "_EarlyChild");
+        resolved = Serializer._get_class(type_module(_EarlyChild), "_EarlyChild");
         assert resolved is _EarlyChild , (
             f"resolution refused a live class: {resolved}"
+        );
+        refused = '';
+        try {
+            Serializer._get_class(_EarlyChild.__module__, "_EarlyChild");
+        } except TypeResolutionError as error {
+            refused = str(error);
+        }
+        assert 'archetype_alias' in refused , (
+            "a runtime module name for a class with a durable identity was accepted"
         );
     } finally {
         _restore_home_module(previous_home);

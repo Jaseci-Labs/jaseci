@@ -79,11 +79,8 @@ test "create jac app" {
             assert config_data["project"]["name"] == test_project_name , (
                 f"project table: {config_data.get('project')}"
             );
-
-            # Verify serve config includes base_route_app for CL apps
-            assert "serve" in config_data , f"toml tables: {list(config_data.keys())}";
-            assert config_data["serve"]["base_route_app"] == "app" , (
-                f"serve table: {config_data['serve']}"
+            assert "base_route_app" not in config_data.get("serve", {}) , (
+                f"serve table still carries the deleted key: {config_data.get('serve')}"
             );
 
             # Verify .gitignore was created with correct content
@@ -238,11 +235,23 @@ test "create jac app with button component" {
             assert config_data["project"]["name"] == test_project_name , (
                 f"project table: {config_data.get('project')}"
             );
+            assert "base_route_app" not in config_data.get("serve", {}) , (
+                f"serve table still carries the deleted key: {config_data.get('serve')}"
+            );
 
-            # Verify serve config includes base_route_app for CL apps
-            assert "serve" in config_data , f"toml tables: {list(config_data.keys())}";
-            assert config_data["serve"]["base_route_app"] == "app" , (
-                f"serve table: {config_data['serve']}"
+            # The mobile scaffold is a single-app mobUI project: the kind
+            # alone makes it a React Native app with the mobUI vocabulary.
+            assert "client_kind" not in config_data["project"] , (
+                f"[project] client_kind is gone: {config_data['project']}"
+            );
+            assert "client" not in config_data["project"] , (
+                f"[project] client is gone: {config_data['project']}"
+            );
+            assert "apps" not in config_data , (
+                f"a single-app scaffold has no [apps] table: {config_data.get('apps')}"
+            );
+            assert config_data["project"].get("kind") == "mobile" , (
+                f"project table: {config_data['project']}"
             );
 
             # Verify components directory and Button.jac were created at project root
@@ -268,20 +277,38 @@ test "create jac app with button component" {
                 f"Button.jac head: {button_content[:400]}"
             );
 
-            # Verify main.jac includes Jac component import
+            # main.jac is the shell: it renders the Home screen, which is where
+            # the Button component is used.
             app_jac_path = os.path.join(project_path, "main.jac");
             assert os.path.exists(app_jac_path) , (
-                f"no app.jac; project has: {os.listdir(project_path)}"
+                f"no main.jac; project has: {os.listdir(project_path)}"
             );
 
             with open(app_jac_path) as f {
                 app_jac_content = f.read();
             }
 
-            assert "import from .components.Button { Button }" in app_jac_content , (
+            assert "import from .screens.Home { HomeScreen }" in app_jac_content , (
                 f"main.jac head: {app_jac_content[:400]}"
             );
-            assert "<Button" in app_jac_content;
+            assert "<HomeScreen" in app_jac_content;
+            assert 'import from "@jac/mobui"' in app_jac_content , (
+                f"a mobUI app renders @jac/mobui primitives only: {app_jac_content[:400]}"
+            );
+
+            home_jac_path = os.path.join(project_path, "screens", "Home.jac");
+            assert os.path.exists(home_jac_path) , (
+                f"no screens/Home.jac; project has: {os.listdir(project_path)}"
+            );
+
+            with open(home_jac_path) as f {
+                home_jac_content = f.read();
+            }
+
+            assert "import from ..components.Button { Button }" in home_jac_content , (
+                f"Home.jac head: {home_jac_content[:400]}"
+            );
+            assert "<Button" in home_jac_content;
 
             # Verify README.md includes component information
             readme_path = os.path.join(project_path, "README.md");
@@ -451,7 +478,7 @@ def _create_jac_toml(temp_dir: str, deps: str = "", dev_deps: str = "") -> str {
     deps_section = f"\n{deps}" if deps else "";
     dev_deps_section = f"\n{dev_deps}" if dev_deps else "";
 
-    toml_content = f'[project]\nname = "test-project"\nversion = "1.0.0"\ndescription = "Test project"\nentry-point = "app.jac"\n\n[dependencies.npm]{deps_section}\n\n[dependencies.npm.dev]{dev_deps_section}\n';
+    toml_content = f'[project]\nname = "test-project"\nversion = "1.0.0"\ndescription = "Test project"\nentry-point = "app"\n\n[dependencies.npm]{deps_section}\n\n[dependencies.npm.dev]{dev_deps_section}\n';
     config_path = os.path.join(temp_dir, "jac.toml");
     with open(config_path, "w") as f {
         f.write(toml_content);
@@ -489,7 +516,7 @@ test "add npm with mixed deps" {
             os.chdir(temp_dir);
 
             # Create jac.toml with both pypi and npm sections
-            toml_content = '[project]\nname = "fullstack-app"\nversion = "1.0.0"\ndescription = "Test project with mixed deps"\nentry-point = "app.jac"\n\n[dependencies]\nrequests = "~=2.31"\nflask = "~=3.0"\n\n[dependencies.npm]\n\n[dev-dependencies]\npytest = ">=8.0.0"\n';
+            toml_content = '[project]\nname = "fullstack-app"\nversion = "1.0.0"\ndescription = "Test project with mixed deps"\nentry-point = "app"\n\n[dependencies.pypi]\nrequests = "~=2.31"\nflask = "~=3.0"\n\n[dependencies.npm]\n\n[dev-dependencies.pypi]\npytest = ">=8.0.0"\n';
             config_path = os.path.join(temp_dir, "jac.toml");
             with open(config_path, "w") as f {
                 f.write(toml_content);
@@ -861,7 +888,7 @@ test "config files from jac toml" {
             os.chdir(temp_dir);
 
             # Create jac.toml with postcss and tailwind configs
-            toml_content = '[project]\nname = "test-configs"\nversion = "1.0.0"\ndescription = "Test project"\nentry-point = "main.jac"\n\n[client.configs.postcss]\nplugins = ["tailwindcss", "autoprefixer"]\n\n[client.configs.tailwind]\ncontent = ["./**/*.jac", "./.jac/client/**/*.{js,jsx}"]\nplugins = []\n\n[client.configs.tailwind.theme.extend]\ncolors = { primary = "#3490dc" }\n';
+            toml_content = '[project]\nname = "test-configs"\nversion = "1.0.0"\ndescription = "Test project"\nentry-point = "main"\n\n[client.configs.postcss]\nplugins = ["tailwindcss", "autoprefixer"]\n\n[client.configs.tailwind]\ncontent = ["./**/*.jac", "./.jac/client/**/*.{js,jsx}"]\nplugins = []\n\n[client.configs.tailwind.theme.extend]\ncolors = { primary = "#3490dc" }\n';
             config_path = os.path.join(temp_dir, "jac.toml");
             with open(config_path, "w") as f {
                 f.write(toml_content);
@@ -915,7 +942,7 @@ test "raw template config files from jac toml" {
 
             # Create jac.toml with raw template config
             raw_content = 'import { defineConfig, defineDocs } from "fumadocs-mdx/config";\n\nexport const docs = defineDocs({\n  dir: "content/docs",\n});\n\nexport default defineConfig({});';
-            toml_content = f'[project]\nname = "test-raw-configs"\nversion = "1.0.0"\ndescription = "Test project"\nentry-point = "main.jac"\n\n[dependencies.npm]\nreact = "^18.2.0"\nreact-dom = "^18.2.0"\nreact-router-dom = "^6.22.0"\nreact-error-boundary = "^5.0.0"\n\n[dependencies.npm.dev]\nvite = "^6.4.1"\n"@vitejs/plugin-react" = "^4.2.1"\ntypescript = "^5.3.3"\n"@types/react" = "^18.2.0"\n"@types/react-dom" = "^18.2.0"\n\n[client.configs.source]\nextension = ".ts"\nraw = """\n{raw_content}\n"""\n';
+            toml_content = f'[project]\nname = "test-raw-configs"\nversion = "1.0.0"\ndescription = "Test project"\nentry-point = "main"\n\n[dependencies.npm]\nreact = "^19.2.0"\nreact-dom = "^19.2.0"\nreact-router-dom = "^6.22.0"\nreact-error-boundary = "^5.0.0"\n\n[dependencies.npm.dev]\nvite = "^6.4.1"\n"@vitejs/plugin-react" = "^4.2.1"\ntypescript = "^5.3.3"\n"@types/react" = "^19.2.0"\n"@types/react-dom" = "^19.2.0"\n\n[client.configs.source]\nextension = ".ts"\nraw = """\n{raw_content}\n"""\n';
             config_path = os.path.join(temp_dir, "jac.toml");
             with open(config_path, "w") as f {
                 f.write(toml_content);
@@ -957,7 +984,7 @@ test "npmrc from jac toml" {
 
             # Create jac.toml with npm scoped registry and auth config
             # Include required npm deps to avoid auto-injection modifying the file
-            toml_content = '[project]\nname = "test-npmrc"\nversion = "1.0.0"\ndescription = "Test project"\nentry-point = "main.jac"\n\n[dependencies.npm]\nreact = "^18.2.0"\nreact-dom = "^18.2.0"\nreact-router-dom = "^6.22.0"\nreact-error-boundary = "^5.0.0"\n\n[dependencies.npm.dev]\nvite = "^6.4.1"\n"@vitejs/plugin-react" = "^4.2.1"\ntypescript = "^5.3.3"\n"@types/react" = "^18.2.0"\n"@types/react-dom" = "^18.2.0"\n\n[client.npm.settings]\nregistry = "https://registry.example.com"\nalways-auth = true\nstrict-ssl = false\n\n[client.npm.scoped_registries]\n"@mycompany" = "https://npm.pkg.github.com"\n"@myorg" = "https://registry.example.com"\n\n[client.npm.auth."//npm.pkg.github.com/"]\n_authToken = "${NODE_AUTH_TOKEN}"\n';
+            toml_content = '[project]\nname = "test-npmrc"\nversion = "1.0.0"\ndescription = "Test project"\nentry-point = "main"\n\n[dependencies.npm]\nreact = "^19.2.0"\nreact-dom = "^19.2.0"\nreact-router-dom = "^6.22.0"\nreact-error-boundary = "^5.0.0"\n\n[dependencies.npm.dev]\nvite = "^6.4.1"\n"@vitejs/plugin-react" = "^4.2.1"\ntypescript = "^5.3.3"\n"@types/react" = "^19.2.0"\n"@types/react-dom" = "^19.2.0"\n\n[client.npm.settings]\nregistry = "https://registry.example.com"\nalways-auth = true\nstrict-ssl = false\n\n[client.npm.scoped_registries]\n"@mycompany" = "https://npm.pkg.github.com"\n"@myorg" = "https://registry.example.com"\n\n[client.npm.auth."//npm.pkg.github.com/"]\n_authToken = "${NODE_AUTH_TOKEN}"\n';
             config_path = os.path.join(temp_dir, "jac.toml");
             with open(config_path, "w") as f {
                 f.write(toml_content);
@@ -1071,7 +1098,7 @@ test "vite build injects core deps without prompting" {
         bundler = ViteBundler(project_dir);
         with unittest.mock.patch("builtins.input", return_value="Y") as mock_input {
             with unittest.mock.patch(
-                "jaclang.client.bun_installer.get_bun", return_value="bun"
+                "jaclang.client.js_runtime.js_runtime_path", return_value="bun"
             ) {
                 with unittest.mock.patch("subprocess.run") as mock_subprocess {
                     # bun install returns success, vite build returns failure
@@ -1110,90 +1137,93 @@ test "vite build injects core deps without prompting" {
     }
 }
 
-"""Test that jac run --dev auto-installs watchdog and performs initial compilation."""
-test "start dev with client does initial compilation" {
-    test_project_name = "test-start-dev-client";
+"""Boot a created web app with `jac run <mode_flags>` and assert its client is
+compiled before readiness, so no page request is left to build it. With
+`declare_kind` False the `[project] kind` line is removed and the kind has to be
+inferred, as it is for a project that never declared one."""
+def assert_client_prepared_before_ready(mode_flags: list[str], declare_kind: bool) {
+    import signal;
+    import socket;
+    import subprocess;
+    import from jaclang.scale.runtime.context.util { jac_executable }
     with tempfile.TemporaryDirectory() as temp_dir {
-        original_cwd = os.getcwd();
+        executable = jac_executable();
+        created = subprocess.run(
+            [executable, "create", "--kind", "web-app", "test-start-dev-client"],
+            cwd=temp_dir,
+            capture_output=True,
+            text=True,
+            timeout=300
+        );
+        assert created.returncode == 0 , created.stdout + created.stderr;
+        project = Path(temp_dir) / "test-start-dev-client";
+        if not declare_kind {
+            toml_path = project / "jac.toml";
+            declared = toml_path.read_text();
+            assert 'kind = "web-app"' in declared , declared;
+            toml_path.write_text(declared.replace('kind = "web-app"\n', ""));
+        }
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock {
+            sock.bind(("127.0.0.1", 0));
+            port = sock.getsockname()[1];
+        }
+        log = Path(temp_dir) / "server.log";
+        with log.open("w") as stream {
+            process = Popen(
+                [executable, "run", *mode_flags, "--port", str(port), "main.jac"],
+                cwd=project,
+                stdout=stream,
+                stderr=subprocess.STDOUT,
+                start_new_session=os.name != "nt"
+            );
+        }
         try {
-            os.chdir(temp_dir);
-            # Create a client project
-            process = Popen(
-                ["jac", "create", "--kind", "mobile", test_project_name],
-                stdin=PIPE,
-                stdout=PIPE,
-                stderr=PIPE,
-                text=True,
-            );
-            (stdout, stderr) = process.communicate();
-            assert process.returncode == 0;
-            # Change to project directory
-            os.chdir(test_project_name);
-            # Run jac run --dev main.jac (should auto-install watchdog and compile)
-            process = Popen(
-                ["jac", "run", "--dev", "main.jac"],
-                stdout=PIPE,
-                stderr=PIPE,
-                text=True,
-            );
-            # Wait for watchdog install and compilation messages
-            start_time = time.time();
             output = "";
-            found_watchdog = False;
-            found_compilation = False;
-            while (time.time() - start_time < 50) {
-                if process.stdout is None {
+            deadline = time.monotonic() + 300;
+            while time.monotonic() < deadline {
+                output = log.read_text(errors="replace");
+                assert process.poll() is None , output;
+                if "Server ready" in output {
                     break;
                 }
-                line = process.stdout.readline();
-                if not line {
-                    if process.poll() is not None {
-                        break;
-                    }
-                    time.sleep(0.1);
-                    continue;
-                }
-                output += line;
-                if "Installing watchdog" in line or "watchdog installed" in line {
-                    found_watchdog = True;
-                }
-                if "Initial client compilation completed" in line {
-                    found_compilation = True;
-                    break;
-                }
+                time.sleep(0.1);
             }
-            # Terminate the process
-            process.terminate();
-            try {
-                process.`wait(timeout=5);
-            } except Exception {
-                process.kill();
-            }
-            # Close pipes
-            if process.stdout {
-                process.stdout.close();
-            }
-            if process.stderr {
-                process.stderr.close();
-            }
-            # The watchdog auto-install message only appears when watchdog is not
-            # already installed in the test environment (e.g. test-client). When it
-            # is pre-installed (e.g. test-core-runtime), the dev server skips the
-            # install, so only assert the message in the not-pre-installed case.
-            import importlib.util;
-            watchdog_preinstalled = importlib.util.find_spec("watchdog") is not None;
-            if not watchdog_preinstalled {
-                assert found_watchdog , (
-                    f"Expected watchdog auto-install message in output, but got: {output}"
-                );
-            }
-            assert found_compilation , (
-                f"Expected 'Initial client compilation completed' in output, but got: {output}"
-            );
+            assert "Server ready" in output , output;
+            assert output.index("Compiling client and native artifacts")
+                < output.index("Initializing application")
+                < output.index("Server ready") , output;
         } finally {
-            os.chdir(original_cwd);
+            # A terminal interrupt reaches the whole dev-server process group.
+            # Isolate this test's group so Vite cannot outlive its temp tree.
+            if os.name != "nt" {
+                try {
+                    os.killpg(process.pid, int(signal.SIGINT));
+                } except ProcessLookupError {}
+            } else {
+                process.send_signal(signal.SIGINT);
+            }
+            try {
+                process.`wait(timeout=45);
+            } except subprocess.TimeoutExpired {
+                if os.name != "nt" {
+                    try {
+                        os.killpg(process.pid, int(signal.SIGKILL));
+                    } except ProcessLookupError {}
+                } else {
+                    process.kill();
+                }
+                process.`wait();
+            }
         }
     }
+}
+
+test "start dev prepares the client before initialization" {
+    assert_client_prepared_before_ready(["--dev"], True);
+}
+
+test "serve prepares the client of a web app whose kind is inferred" {
+    assert_client_prepared_before_ready(["--serve"], False);
 }
 
 """Test that create_vite_config(build/dev) generate correct files."""
@@ -1280,7 +1310,7 @@ test "path aliases in generated vite and tsconfig" {
             os.chdir(temp_dir);
 
             # Create jac.toml with path aliases
-            toml_content = '[project]\nname = "test-paths"\nversion = "1.0.0"\ndescription = "Test path aliases"\nentry-point = "main.jac"\n\n[client.paths]\n"@components/*" = "./components/*"\n"@utils/*" = "./src/utils/*"\n"@shared" = "./shared/index"\n';
+            toml_content = '[project]\nname = "test-paths"\nversion = "1.0.0"\ndescription = "Test path aliases"\nentry-point = "main"\n\n[client.paths]\n"@components/*" = "./components/*"\n"@utils/*" = "./src/utils/*"\n"@shared" = "./shared/index"\n';
             config_path = os.path.join(temp_dir, "jac.toml");
             with open(config_path, "w") as f {
                 f.write(toml_content);

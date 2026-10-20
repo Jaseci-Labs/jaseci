@@ -24,7 +24,7 @@ import tempfile;
 import importlib;
 import jaclang;
 import from pathlib { Path }
-import from jaclang.compiler.driver.modresolver { resolve_relative_path }
+import from jaclang.project.modresolver { resolve_relative_path }
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.compiler.driver.compile_options { CompileOptions }
 
@@ -86,8 +86,7 @@ test "type check holds one identity per class across a self-import cycle" {
     def body(home_pkg: Path, shadow: str) {
         prog = JacProgram();
         prog.compile(
-            file_path=str(home_pkg / 'app.jac'),
-            options=CompileOptions(no_cgen=True, force_target_program=True)
+            file_path=str(home_pkg / 'app.jac'), options=CompileOptions(no_cgen=True)
         );
         errs = [str(e) for e in prog.errors_had];
         assert not errs , f"identity split across package copies: {errs}";
@@ -120,7 +119,7 @@ test "a directory without a marker resolves as the namespace package the runtime
     # source as an implicit namespace package; the resolver answered nothing
     # for the bare directory, so `import from pkg { sub }` could not find
     # `sub` and go-to-definition had nowhere to land.
-    import from jaclang.compiler.driver.modresolver { resolve_module }
+    import from jaclang.project.modresolver { resolve_module }
     base_dir = tempfile.mkdtemp();
     try {
         pkg = os.path.join(base_dir, "nspkg");

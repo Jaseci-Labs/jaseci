@@ -1,8 +1,6 @@
-import from jaclang.compiler.frontend.unitree { Module, SemDef, Symbol, UniScopeNode }
-import from jaclang.compiler.passes.transform { Transform }
+walker SemDefMatchPass(CompilerPass) {
+    static has contract: PassContract = PassContract(kernel_safe=True);
 
-walker SemDefMatchPass(Transform) {
-    def transform(ir_in: Module) -> Module;
     def _run_impl(ir_in: Module) -> Module;
     can run_walk with Module entry;
     def resolve_sem_target(

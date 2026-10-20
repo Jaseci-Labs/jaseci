@@ -38,7 +38,7 @@ glob FIXTURES = os.path.join(JAC_ROOT, "tests", "compiler", "passes", "fixtures"
 # Helpers
 # ──────────────────────────────────────────────────────────────────
 """Compile a fixture with type checking and static analysis. Returns (program, module)."""
-def compile_and_check(fixture_name: str) -> tuple {
+def compile_and_check(fixture_name: str) -> tuple[any, ...] {
     import from jaclang.compiler.driver.compile_options { CompileOptions }
     path = os.path.join(NEW_DIAG_FIXTURES, fixture_name);
     program = JacProgram();
@@ -47,7 +47,7 @@ def compile_and_check(fixture_name: str) -> tuple {
 }
 
 """Compile a fixture without type checking. Returns (program, module)."""
-def compile_only(fixture_name: str) -> tuple {
+def compile_only(fixture_name: str) -> tuple[any, ...] {
     path = os.path.join(NEW_DIAG_FIXTURES, fixture_name);
     program = JacProgram();
     mod = program.compile(path);
@@ -66,7 +66,7 @@ def parse_with_prog(source: str) -> tuple[JacProgram, bool] {
 }
 
 """Parse source string, return (has_errors: bool, program: JacProgram)."""
-def parse_and_validate(source: str) -> tuple {
+def parse_and_validate(source: str) -> tuple[any, ...] {
     try {
         (module, had_error) = parse(source, "/tmp/test.jac");
         if had_error or module is None {
@@ -172,6 +172,32 @@ test "kwesc: the prefix form parses clean" {
     (prog, had_error) = parse_with_prog("obj X { has `match: int = 1; }");
     assert not had_error;
     assert len(prog.errors_had) == 0;
+}
+
+
+test "E0013: a keyword after a dot is an attribute, no escape needed" {
+    # #8982 item 9: `sys.exit(0)` is the idiom every CLI ends with.
+    for src in [
+        "import sys; with entry { sys.exit(0); }",
+        "with entry { m = re.match; x = obj_.entry; y = cfg.default; }",
+        "with entry { z = a.b.node.edge.walker; }"
+    ] {
+        (prog, had_error) = parse_with_prog(src);
+        assert not had_error , src;
+        assert not has_diagnostic_code(prog, "E0013") , src;
+    }
+}
+
+test "E0013: a keyword still cannot bind a name, and names the escape" {
+    for src in [
+        "with entry { exit = 1; }",
+        "def f(match: int) {}",
+        "obj X { has entry: int = 1; }",
+        "def g(own: int, mut: int, imm: int, awaiting: int) {}"
+    ] {
+        (prog, _) = parse_with_prog(src);
+        assert has_diagnostic_code(prog, "E0013") , src;
+    }
 }
 
 test "E0025: js arrow in jsx attribute slot" {
@@ -310,6 +336,27 @@ test "E0058: break inside loop is valid" {
     assert not has_err;
 }
 
+test "E0059: continue inside loop else block" {
+    (has_err, prog) = parse_and_validate(
+        'with entry { for i in [1,2] { } else { continue; } }'
+    );
+    assert has_err or (prog is not None and has_diagnostic_code(prog, "E0059"));
+}
+
+test "E0059: break inside loop else block is valid" {
+    (has_err, _) = parse_and_validate(
+        'with entry { for i in [1,2] { } else { break; } }'
+    );
+    assert not has_err;
+}
+
+test "E0059: continue inside if-else inside loop is valid" {
+    (has_err, _) = parse_and_validate(
+        'with entry { for i in [1,2] { if i == 1 { } else { continue; } } }'
+    );
+    assert not has_err;
+}
+
 test "E0065: duplicate keyword argument" {
     (prog, _) = compile_and_check("parser_E0065_duplicate_kwarg.jac");
     assert has_diagnostic_code(prog, "E0065");
@@ -343,6 +390,38 @@ test "E0076: Python __init__ and init are distinct methods" {
     # `__init__` to Jac's `init` constructor must not collide with it.
     (prog, _) = compile_only("parser_E0076_py_init_distinct.py");
     assert not has_diagnostic_code(prog, "E0076");
+}
+
+test "E2036: a second module-level definition of a name is rejected" {
+    (prog, _) = compile_and_check("scope_E2036_duplicate_def.jac");
+    assert count_diagnostic_code(prog, "E2036") == 2 , "the second 'foo' and the second 'Bar'";
+}
+
+test "E2036: the call the checker passed against the first def is now an error" {
+    # The later def wins at run time, so `resolve("edit")` used to check clean
+    # and then fail with "takes 0 positional arguments but 1 was given".
+    prog = JacProgram();
+    prog.compile(
+        use_str='def resolve(capability: str = "") -> str { return "first:" + capability; }\n'
+            + 'def resolve() -> str { return "second"; }\n'
+            + 'with entry { print(resolve("edit")); }',
+        file_path="dup.jac"
+    );
+    assert count_diagnostic_code(prog, "E2036") == 1;
+}
+
+test "E2036: a stub with its impl and overloads are not duplicates" {
+    (prog, _) = compile_only("scope_E2036_allowed_redefinitions.jac");
+    assert not has_diagnostic_code(prog, "E2036");
+}
+
+test "E2036: a Python module may redefine a name" {
+    prog = JacProgram();
+    prog.compile(
+        use_str="def pick() -> int:\n    return 1\n\n\ndef pick() -> int:\n    return 2\n",
+        file_path="redefine.py"
+    );
+    assert not has_diagnostic_code(prog, "E2036");
 }
 
 test "removed nonlocal directive is a parse error" {
@@ -380,7 +459,7 @@ test "removed placement-marker blocks raise the migration error" {
     }
 }
 
-test "E0063: glob inside a function produces no runnable bytecode" {
+test "E0063: glob inside a function blocks codegen and points at the rebinding idiom" {
     # Detected by ASTValidationPass (not the parser), and the structural
     # error must block codegen so the invalid module cannot silently execute.
     prog = JacProgram();
@@ -390,6 +469,16 @@ test "E0063: glob inside a function produces no runnable bytecode" {
     );
     assert has_diagnostic_code(prog, "E0063");
     assert not mod.gen.py_bytecode;
+    # Jac has no `global` statement; a function rebinds a module glob by
+    # plain assignment, so a hint that says "global" leads to a parse error (#8612).
+    alert = [
+        a
+        for a in prog.errors_had
+        if a.code is not None and a.code.code == "E0063"
+    ][0];
+    assert "global" not in alert.msg;
+    assert alert.help_text is not None;
+    assert "assignment" in alert.help_text and "no global statement" in alert.help_text;
 }
 
 # ══════════════════════════════════════════════════════════════════
@@ -408,24 +497,26 @@ test "E1042: calling an async function without await" {
     f"errors={[str(e) for e in prog.errors_had]}";
 }
 
-test "E1042: missing await on sv-imported call (issue #6236)" {
-    # `sv import` functions are async RPC stubs on the client; calling one
-    # without `await` assigns a coroutine to a typed field and crashes at
-    # runtime. `jac check` must flag it.
+test "E1042: missing await on a bridged server call (issue #6236)" {
+    # Server functions imported into client context (a CLIENT_BRIDGE) are
+    # async RPC stubs; calling one without `await` assigns a coroutine to a
+    # typed field and crashes at runtime. `jac check` must flag it.
     (prog, _) = compile_and_check("type_E1042_sv_missing_await.jac");
-    assert has_diagnostic_code(prog, "E1042") , f"expected E1042 for the un-awaited sv import call; "
+    assert has_diagnostic_code(prog, "E1042") , f"expected E1042 for the un-awaited bridged call; "
     f"errors={[str(e) for e in prog.errors_had]}";
 }
 
-test "E1042: sv->sv import call is synchronous, not an awaitable coroutine" {
-    # An sv->sv import (a server consuming another server) lowers to a
-    # synchronous `def` stub, so binding its result to a concrete type
-    # without `await` is correct and must NOT raise E1042. Uses the SAME
-    # provider as the cl->sv fixture above, which still must raise it --
-    # the check is sensitive to the importing module's context, not just
-    # the `sv import` keyword.
+test "E1042: a same-app server->server call is synchronous, not a coroutine" {
+    # A server module importing another server module of the same app is a
+    # LOCAL import (no app boundary, no bridge), so binding its result to a
+    # concrete type without `await` is correct and must NOT raise E1042.
+    # Uses the SAME provider as the client fixture above, which still must
+    # raise it -- the check is sensitive to the importing module's context,
+    # not to the shape of the import statement. The cross-app server case
+    # (SERVICE_BRIDGE, which IS a coroutine) is covered in
+    # tests/compiler/test_cross_app_import.jac.
     (prog, _) = compile_and_check("type_E1042_sv_sync_call_server.jac");
-    assert count_diagnostic_code(prog, "E1042") == 0 , f"sv->sv call must not be flagged as a missing-await coroutine; "
+    assert count_diagnostic_code(prog, "E1042") == 0 , f"same-app server call must not be flagged as a missing-await coroutine; "
     f"errors={[str(e) for e in prog.errors_had]}";
 }
 
@@ -483,6 +574,17 @@ test "W2075 silent for boolean-literal tests over non-bool operands" {
 test "E2083: disengage outside walker" {
     (prog, _) = compile_and_check("context_E2083_disengage_outside_walker.jac");
     assert has_diagnostic_code(prog, "E2083");
+}
+
+test "E2085: await outside async function or ability (issue #8998)" {
+    # jac check must catch what only jac run's bytecode compile caught before:
+    # a plain `can`/`def` body that awaits is invalid, and the checker had no
+    # opinion on it at all -- `await` was never visited by any checking pass.
+    (prog, _) = compile_and_check("context_E2085_await_outside_async.jac");
+    assert count_diagnostic_code(prog, "E2085") == 1 , f"expected exactly 1 E2085 (the plain 'can', not the 'async can'), got "
+    f"{count_diagnostic_code(prog, 'E2085')}; errors={[
+        str(e) for e in prog.errors_had
+    ]}";
 }
 
 # ══════════════════════════════════════════════════════════════════
@@ -647,7 +749,7 @@ glob IMPLEMENTED_REJECT: set[str] = {
          "E0058_continue_no_loop"
      };
 
-def reject_test(name_snippet: tuple) {
+def reject_test(name_snippet: tuple[any, ...]) {
     (name, snippet) = name_snippet;
     if name not in IMPLEMENTED_REJECT {
         testskip(f"{name} not yet implemented");
@@ -657,7 +759,7 @@ def reject_test(name_snippet: tuple) {
     assert has_errors , f"Validation must reject '{name}': {snippet}";
 }
 
-def validate_reject_test(name_snippet: tuple) {
+def validate_reject_test(name_snippet: tuple[any, ...]) {
     (name, snippet) = name_snippet;
     if name not in IMPLEMENTED_VALIDATE {
         testskip(f"{name} not yet implemented");
@@ -866,4 +968,30 @@ with entry {
         validate_reject_test,
         id_fn=lambda (x: tuple[str, str]) { x[0]; }
     );
+}
+
+
+test "E2085 permits async client functions and implicit async client tests" {
+    prog = JacProgram();
+    prog.compile(
+        use_str='import from "@jac/runtime" { jacLogin }\n'
+        'async def app -> JsxElement { await jacLogin("a", "b"); return <div/>; }\n'
+        'test "login" { await jacLogin("a", "b"); }\n',
+        file_path="await_client.jac",
+        no_cgen=True
+    );
+    assert not prog.errors_had , str(prog.errors_had);
+}
+
+
+test "E2085 rejects plain client functions and lambdas inside async tests" {
+    prog = JacProgram();
+    prog.compile(
+        use_str='import from "@jac/runtime" { jacLogin }\n'
+        'def app -> JsxElement { await jacLogin("a", "b"); return <div/>; }\n'
+        'test "login" { callback = lambda { await jacLogin("a", "b"); }; }\n',
+        file_path="invalid_await_client.jac",
+        no_cgen=True
+    );
+    assert count_diagnostic_code(prog, "E2085") == 2;
 }

@@ -9,22 +9,26 @@ once a catalog is open. Nothing here imports jaclang.
 
 from __future__ import annotations
 
-import os
-from typing import Any
+from typing import TYPE_CHECKING
 
-_ACTIVE: list = [None]
+if TYPE_CHECKING:
+    from jaclang.compiler.types.stubcat.reader import StubCatalog
+
+_ACTIVE: list[StubCatalog | None] = [None]
 
 
-def active() -> Any:
+def active() -> StubCatalog | None:
     """The open catalog, or None (no catalog yet, or catalogs disabled)."""
     return _ACTIVE[0]
 
 
-def set_active(catalog: Any) -> None:
+def set_active(catalog: StubCatalog | None) -> None:
     _ACTIVE[0] = catalog
 
 
-def env_disabled() -> bool:
-    """True inside the catalog writer: the compiler it drives must never open
-    (or build) a catalog, since it is producing the one everything else uses."""
-    return bool(os.environ.get("JAC_STUBCAT_BUILDING"))
+def catalog_disabled() -> bool:
+    """True while this process builds the catalog: the compiler it drives
+    must never open one, since it is producing the one everything else uses."""
+    from jaclang.jac0core.artifact_registry import building
+
+    return "stubcat" in building()

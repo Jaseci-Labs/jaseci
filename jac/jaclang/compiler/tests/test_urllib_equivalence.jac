@@ -23,11 +23,6 @@ import ctypes;
 import os;
 import threading;
 import from http.server { BaseHTTPRequestHandler, HTTPServer }
-import from jaclang.compiler.tests.xbackend_equiv {
-    run_py_fixture,
-    compile_native,
-    get_func
-}
 
 glob _BODY: bytes = b"hello world";
 
@@ -63,7 +58,7 @@ class _LoopbackHandler(BaseHTTPRequestHandler) {
 
 """Start the loopback server on an ephemeral port in a daemon thread; return
 (server, port). The caller shuts it down in a `finally`."""
-def _start_server -> tuple {
+def _start_server -> tuple[any, ...] {
     srv = HTTPServer(("127.0.0.1", 0), _LoopbackHandler);
     port = srv.server_address[1];
     t = threading.Thread(target=srv.serve_forever);
@@ -80,20 +75,22 @@ def _call_na_int(eng: object, name: str) -> int {
 }
 
 
-test "urllib.request.urlopen GET over the libcurl floor (sv<->na congruent)" {
+test "urllib.request.urlopen GET over the socket transport (sv<->na congruent)" {
     (srv, port) = _start_server();
     os.environ["JAC_URLLIB_TEST_PORT"] = str(port);
     try {
         # Pin the canonical sv (CPython urllib) semantics as a hard guard.
-        py = run_py_fixture("prim_urllib", "urllib_py");
+        py = run_py_fixture("prim_urllib_host", "urllib_py");
         assert py["status"] == 200 , py;
         assert py["body"] == "hello world" , py;
         assert py["body_length"] == 11 , py;
         assert py["content_type"] == "text/plain; charset=utf-8" , py;
 
-        # Native libcurl floor: same status and body length, parsed from the
+        # Native socket transport: same status and body length, parsed from the
         # real HTTP exchange against the loopback server.
-        (eng, _) = compile_native("prim_urllib.jac");
+        # Rebuild dependencies so JIT shared-library loading is exercised even
+        # when earlier tests have populated the native IR cache.
+        (eng, _) = compile_native("prim_urllib.jac", no_ir_cache=True);
         assert _call_na_int(eng, "urlopen_status_na") == py["status"] , "status";
         assert _call_na_int(eng, "urlopen_body_length_na") == py["body_length"] , (
             "body_length"
@@ -105,11 +102,11 @@ test "urllib.request.urlopen GET over the libcurl floor (sv<->na congruent)" {
 }
 
 
-test "urllib.request.urlopen follows redirects over the libcurl floor (sv<->na)" {
+test "urllib.request.urlopen follows redirects over the socket transport (sv<->na)" {
     (srv, port) = _start_server();
     os.environ["JAC_URLLIB_TEST_PORT"] = str(port);
     try {
-        py = run_py_fixture("prim_urllib", "urllib_redirect_py");
+        py = run_py_fixture("prim_urllib_host", "urllib_redirect_py");
         assert py["status"] == 200 , py;
         assert py["body"] == "hello world" , py;
         assert py["body_length"] == 11 , py;

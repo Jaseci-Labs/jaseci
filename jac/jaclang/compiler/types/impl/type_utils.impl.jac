@@ -1,5 +1,4 @@
 impl primitive_type_name_of(ty: (TypeBase | None)) -> (str | None) {
-    import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
     if not isinstance(ty, ClassType) {
         return None;
     }
@@ -16,12 +15,17 @@ impl primitive_type_name_of(ty: (TypeBase | None)) -> (str | None) {
 }
 
 impl expr_primitive_name(expr_node: UniNode) -> str {
-    import from jaclang.compiler.frontend.unitree { CfgExpr }
-
     while isinstance(expr_node, CfgExpr) {
         expr_node = expr_node.expr;
     }
-    return primitive_type_name_of(expr_node?.type) or "";
+    if not isinstance(expr_node, Expr) {
+        return "";
+    }
+    return expr_type_primitive_name(expr_node);
+}
+
+impl expr_type_primitive_name(expr_node: Expr) -> str {
+    return primitive_type_name_of(expr_node.type) or "";
 }
 
 impl get_generator_type_args(return_type: TypeBase) -> (list[TypeBase] | None) {
@@ -90,34 +94,16 @@ impl is_generator_family_type(return_type: TypeBase) -> bool {
 }
 
 
-glob _proto_checks_in_progress: set = set();
+glob _proto_checks_in_progress: set[tuple[int, int]] = set();
 
-def _method_entry_of(sym: Symbol) -> any {
-    if sym.provider is not None {
-        import from jaclang.compiler.frontend.constant { SymbolType }
-        if sym.sym_type
-            in (SymbolType.ABILITY, SymbolType.METHOD, SymbolType.CONSTRUCTOR) {
-            return sym;
-        }
-        return None;
-    }
-    if sym.decl and isinstance(sym.decl.name_of, Ability) {
-        return sym.decl.name_of;
-    }
-    return None;
-}
+def _method_entry_of(sym: Symbol) -> Symbol | Ability | None;
 
-def _method_entry_type(evaluator: any, member: any) -> TypeBase {
-    if isinstance(member, Symbol) {
-        return evaluator.get_type_of_symbol(member);
-    }
-    return evaluator.get_type_of_ability(member);
-}
+def _method_entry_type(evaluator: TypeEvaluator, member: Symbol | Ability) -> TypeBase;
 
 impl class_implements_protocol(
-    cls: ClassType, proto: ClassType, evaluator: any = None
+    cls: ClassType, proto: ClassType, evaluator: TypeEvaluator | None = None
 ) -> bool {
-    proto_methods: dict[str, any] = {};
+    proto_methods: dict[str, Symbol | Ability] = {};
     proto_symtab = proto.shared.symbol_table;
     if isinstance(proto_symtab, UniScopeNode) {
         for (name, sym) in proto_symtab.names_in_scope.items() {
@@ -132,7 +118,7 @@ impl class_implements_protocol(
         return True;
     }
 
-    cls_methods: dict[str, any] = {};
+    cls_methods: dict[str, Symbol | Ability] = {};
     for mro_cls in cls.shared.mro {
         mro_symtab = mro_cls.shared.symbol_table;
         if isinstance(mro_symtab, UniScopeNode) {
@@ -162,6 +148,18 @@ impl class_implements_protocol(
                 cls_func_type = _method_entry_type(evaluator, cls_method);
                 if isinstance(proto_func_type, FunctionType)
                     and isinstance(cls_func_type, FunctionType) {
+                    if proto.private is not None and proto.private.type_args {
+                        proto_func_type = proto_func_type.specialize(proto);
+                        cls_member = evaluator._lookup_class_member(cls, name);
+                        impl_func = evaluator._protocol_member_impl(
+                            proto_func_type, cls_member, cls
+                        )
+                            if cls_member is not None
+                            else None;
+                        if impl_func is not None {
+                            cls_func_type = impl_func;
+                        }
+                    }
                     if not evaluator._assign_callable(cls_func_type, proto_func_type) {
                         return False;
                     }
@@ -175,7 +173,7 @@ impl class_implements_protocol(
 }
 
 impl lookup_symtab(
-    symtable: UniScopeNode, name: str, builtins_to_inject: Module
+    symtable: UniScopeNode, name: str, builtins_to_inject: Module | None
 ) -> (Symbol | None) {
     mod: (Module | None) = None;
     if isinstance(symtable, Module) {
@@ -221,14 +219,14 @@ impl types_equivalent(a: TypeBase, b: TypeBase, depth: int = 0) -> bool {
         return True;
     }
     if isinstance(a, ClassType) and isinstance(b, ClassType) {
-        if a.shared != b.shared or a.flags != b.flags {
+        if not a.shared.same_class(b.shared) or a.flags != b.flags {
             return False;
         }
         if a.get_literal_value() != b.get_literal_value() {
             return False;
         }
-        a_args = a.private.type_args or [];
-        b_args = b.private.type_args or [];
+        a_args: list[TypeBase] = a.private.type_args or [];
+        b_args: list[TypeBase] = b.private.type_args or [];
         if len(a_args) != len(b_args) {
             return False;
         }
@@ -240,8 +238,8 @@ impl types_equivalent(a: TypeBase, b: TypeBase, depth: int = 0) -> bool {
         return True;
     }
     if isinstance(a, FunctionType) and isinstance(b, FunctionType) {
-        a_params = a.parameters or [];
-        b_params = b.parameters or [];
+        a_params: list[Parameter] = a.parameters or [];
+        b_params: list[Parameter] = b.parameters or [];
         if len(a_params) != len(b_params) {
             return False;
         }
@@ -268,8 +266,8 @@ impl types_equivalent(a: TypeBase, b: TypeBase, depth: int = 0) -> bool {
         return True;
     }
     if isinstance(a, UnionType) and isinstance(b, UnionType) {
-        a_types = a.types or [];
-        b_types = b.types or [];
+        a_types: list[TypeBase] = a.types or [];
+        b_types: list[TypeBase] = b.types or [];
         if len(a_types) != len(b_types) {
             return False;
         }
@@ -336,8 +334,6 @@ impl origin_of_local_name(nd: UniNode, local: str) -> tuple[str, (str | None)] {
 impl collect_member_syms(
     scope: UniScopeNode, name: str, deep: bool = False
 ) -> list[Symbol] {
-    import from jaclang.compiler.frontend.helpers { evaluate_version_condition }
-
     def live_branches(guard: IfStmt) -> list[UniScopeNode] {
         eval_result = evaluate_version_condition(guard.condition);
         if eval_result is None or eval_result {
@@ -375,6 +371,9 @@ impl collect_member_syms(
 
     def descend(s: UniScopeNode) -> list[Symbol] {
         gathered: list[Symbol] = list(s.lookup_all(name, deep=False) or []);
+        if gathered and not is_overload_sym(gathered[0]) {
+            return gathered;
+        }
         for kid in s.kid_scope {
             if UniScopeNode.is_python_scoping(kid) {
                 continue;
@@ -417,82 +416,6 @@ impl collect_member_syms(
     return [];
 }
 
-impl doc_of_sym(sym: Symbol) -> (str | None) {
-    if not sym.decl {
-        return None;
-    }
-    decl = sym.decl.name_of;
-    if isinstance(decl, AstDocNode) and decl.doc {
-        doc_lit = decl.doc.lit_value;
-        if isinstance(doc_lit, str) {
-            return doc_lit;
-        }
-    }
-    if isinstance(decl, HasVar) {
-        if (arch_has := decl.find_parent_of_type(ArchHas)) and arch_has.doc {
-            arch_doc_lit = arch_has.doc.lit_value;
-            if isinstance(arch_doc_lit, str) {
-                return arch_doc_lit;
-            }
-        }
-    }
-    return None;
-}
-
-impl completion_item_from_sym(name: str, sym: Symbol) -> CompletionItem {
-    kind = completion_kind_from_sym(sym);
-    return CompletionItem(label=name, kind=kind, documentation=doc_of_sym(sym));
-}
-
-impl get_completion_items(ty: (TypeBase | UniScopeNode)) -> list[CompletionItem] {
-    ret = [];
-    if isinstance(ty, UniScopeNode) {
-        scope: (UniScopeNode | None) = ty;
-        while scope {
-            for (name, sym) in scope.names_in_scope.items() {
-                ret.append(completion_item_from_sym(name, sym));
-            }
-            scope = scope.parent_scope;
-        }
-    } elif isinstance(ty, ClassType) {
-        if not ty.shared.mro {
-            compute_mro_linearization(ty);
-        }
-        for cls in ty.shared.mro {
-            for (name, sym) in cls.shared.symbol_table.names_in_scope.items() {
-                ret.append(completion_item_from_sym(name, sym));
-            }
-        }
-    } elif isinstance(ty, ModuleType) {
-        mod_symtab = ty.symbol_table;
-        if mod_symtab is not None {
-            for (name, sym) in mod_symtab.names_in_scope.items() {
-                ret.append(completion_item_from_sym(name, sym));
-            }
-        }
-    }
-    return ret;
-}
-
-impl completion_kind_from_sym(sym: Symbol) -> CompletionItemKind {
-    decl = sym.decl.name_of;
-    if isinstance(decl, ModulePath) {
-        return CompletionItemKind.Module;
-    }
-    if isinstance(decl, Ability) {
-        return CompletionItemKind.Function;
-    }
-    if isinstance(decl, Archetype) {
-        return CompletionItemKind.Class;
-    }
-    if isinstance(decl, UniEnum) {
-        return CompletionItemKind.Enum;
-    }
-    if isinstance(decl, HasVar) {
-        return CompletionItemKind.Variable;
-    }
-    return CompletionItemKind.Text;
-}
 
 impl ParamAssignmentTracker.get_unmatched_required_params -> list[Parameter] {
     ret: list[Parameter] = [];
@@ -602,22 +525,21 @@ impl ParamAssignmentTracker.postinit -> None {
     }
 }
 
-impl compute_mro_linearization(cls: ClassType, _visiting: (set | None) = None) -> None {
-    if cls.shared.mro {
-        return;
-    }
+impl linearize_mro(
+    cls: ClassType, _visiting: (set[int] | None) = None
+) -> list[ClassType] {
     if _visiting is None {
         _visiting = set();
     }
     key = id(cls.shared);
     if key in _visiting {
-        return;
+        return [];
     }
     _visiting.add(key);
     try {
         for base in cls.shared.base_classes {
             if isinstance(base, ClassType) {
-                compute_mro_linearization(base, _visiting);
+                ensure_mro_fresh(base, _visiting);
             }
         }
 
@@ -639,14 +561,14 @@ impl compute_mro_linearization(cls: ClassType, _visiting: (set | None) = None) -
         result: list[ClassType] = [cls];
         while linearizations {
             candidate: (ClassType | None) = None;
-            for lin in linearizations {
-                if not lin {
+            for linz in linearizations {
+                if not linz {
                     continue;
                 }
-                head = lin[0];
+                head = linz[0];
                 in_tail = False;
                 for other_lin in linearizations {
-                    if head in other_lin[1:] {
+                    if any(head.shared.same_class(o.shared) for o in other_lin[1:]) {
                         in_tail = True;
                         break;
                     }
@@ -662,11 +584,11 @@ impl compute_mro_linearization(cls: ClassType, _visiting: (set | None) = None) -
             result.append(candidate);
 
             new_linearizations: list[list[ClassType]] = [];
-            for lin in linearizations {
+            for linz in linearizations {
                 new_lin = [
                     c
-                    for c in lin
-                    if c is not candidate
+                    for c in linz
+                    if not c.shared.same_class(candidate.shared)
                 ];
                 if new_lin {
                     new_linearizations.append(new_lin);
@@ -674,11 +596,50 @@ impl compute_mro_linearization(cls: ClassType, _visiting: (set | None) = None) -
             }
             linearizations = new_linearizations;
         }
-        cls.shared.mro = result;
+        return result;
     } finally {
         _visiting.discard(key);
     }
 }
+
+impl compute_mro_linearization(
+    cls: ClassType, _visiting: (set[int] | None) = None
+) -> None {
+    if cls.shared.mro {
+        return;
+    }
+    result = linearize_mro(cls, _visiting);
+    if result {
+        cls.shared.mro = result;
+        cls.shared._mro_sig = mro_signature(cls);
+    }
+}
+
+impl mro_signature(cls: ClassType) -> list[tuple[int, str]] {
+    sig: list[tuple[int, str]] = [];
+    for base in cls.shared.base_classes {
+        if isinstance(base, ClassType) {
+            sig.append((id(base.shared), str(len(base.shared.mro))));
+        } else {
+            sig.append((0, type(base).__name__));
+        }
+    }
+    return sig;
+}
+
+impl ensure_mro_fresh(cls: ClassType, _visiting: (set[int] | None) = None) -> bool {
+    shared = cls.shared;
+    if shared._fresh_epoch == CLASS_GRAPH_EPOCH[0] {
+        return False;
+    }
+    changed = _ensure_mro_fresh(cls, _visiting);
+    if _visiting is None or not _visiting {
+        shared._fresh_epoch = CLASS_GRAPH_EPOCH[0];
+    }
+    return changed;
+}
+
+def _ensure_mro_fresh(cls: ClassType, _visiting: (set[int] | None) = None) -> bool;
 
 impl compute_module_source_flags(file_path: str) -> ModuleSourceFlags {
     flags = ModuleSourceFlags();
@@ -784,8 +745,8 @@ impl apply_solved_type_vars(
         }
 
         if class_type is not None and ty.name {
-            cls_type_params = class_type.shared.type_params or [];
-            cls_type_args = class_type.private.type_args or [];
+            cls_type_params: list[TypeVarType] = class_type.shared.type_params or [];
+            cls_type_args: list[TypeBase] = class_type.private.type_args or [];
             for (idx, tp) in enumerate(cls_type_params) {
                 if tp.name == ty.name {
                     if idx < len(cls_type_args) {
@@ -861,6 +822,173 @@ impl shadowed_type_var_names(
 }
 
 impl build_type_var_solution(class_type: ClassType) -> dict[str, TypeBase] {
+    private = class_type.private;
+    mro = class_type.shared.mro;
+    parts: list[str] = [str(id(private)), str(id(mro)), str(len(mro))];
+    targs: list[TypeBase] = private.type_args;
+    if targs {
+        for arg in targs {
+            parts.append(str(id(arg)));
+        }
+    }
+    key = ",".join(parts);
+    held = class_type._tv_solution;
+    if held is not None and class_type._tv_key == key {
+        return held;
+    }
+    solution = _build_type_var_solution(class_type);
+    class_type._tv_key = key;
+    class_type._tv_solution = solution;
+    return solution;
+}
+
+def _build_type_var_solution(class_type: ClassType) -> dict[str, TypeBase];
+
+impl build_solution_from_specialized_class(
+    class_type: ClassType
+) -> dict[str, TypeBase] {
+    solution: dict[str, TypeBase] = {};
+
+    if class_type.is_builtin("tuple")
+        and len(class_type.shared.type_params) == 1
+        and len(class_type.private.type_args) > 1
+        and not any(
+            isinstance(arg, UnknownType) for arg in class_type.private.type_args
+        ) {
+        parameter = class_type.shared.type_params[0];
+        if parameter.name {
+            arguments = class_type.private.type_args;
+            first = arguments[0];
+            solution[parameter.name] = first
+                if all(types_equivalent(first, argument) for argument in arguments[1:])
+                else UnionType(types=arguments);
+            return solution;
+        }
+    }
+
+    if class_type.shared.type_params and class_type.private.type_args {
+        for (idx, tp) in enumerate(class_type.shared.type_params) {
+            if tp.name and idx < len(class_type.private.type_args) {
+                if tp.name not in solution {
+                    solution[tp.name] = class_type.private.type_args[idx];
+                }
+            }
+        }
+    } elif class_type.shared.type_params {
+        for tp in class_type.shared.type_params {
+            if tp.name {
+                solution[tp.name] = AnyType();
+            }
+        }
+    }
+
+    return solution;
+}
+
+impl specialize_for_base_class(
+    src_type: ClassType, base_class: ClassType
+) -> ClassType {
+    if src_type.shared.same_class(base_class.shared) {
+        return src_type;
+    }
+
+    if not base_class.shared.type_params {
+        return base_class;
+    }
+
+    return _specialize_for_base_recursive(src_type, base_class);
+}
+
+def _specialize_for_base_recursive(
+    src_type: ClassType, target_base: ClassType
+) -> ClassType;
+
+def _apply_solution_to_class(
+    class_type: ClassType, solution: dict[str, TypeBase]
+) -> ClassType;
+
+def _apply_to_function(
+    func: FunctionType,
+    solution: dict[str, TypeBase],
+    class_type: (ClassType | None),
+    shadowed: (set[str] | None) = None
+) -> FunctionType;
+
+def _apply_to_function_uncached(
+    func: FunctionType,
+    solution: dict[str, TypeBase],
+    class_type: (ClassType | None),
+    shadowed: (set[str] | None) = None
+) -> FunctionType;
+
+impl _method_entry_of(sym: Symbol) -> Symbol | Ability | None {
+    if sym.provider is not None {
+        import from jaclang.compiler.frontend.constant { SymbolType }
+        if sym.sym_type
+            in (SymbolType.ABILITY, SymbolType.METHOD, SymbolType.CONSTRUCTOR) {
+            return sym;
+        }
+        return None;
+    }
+    decl = sym.decl;
+    if decl is not None {
+        owner = decl.name_of;
+        if isinstance(owner, Ability) {
+            return owner;
+        }
+    }
+    return None;
+}
+
+impl _method_entry_type(
+    evaluator: TypeEvaluator, member: Symbol | Ability
+) -> TypeBase {
+    if isinstance(member, Symbol) {
+        return evaluator.get_type_of_symbol(member);
+    }
+    return evaluator.get_type_of_ability(member);
+}
+
+
+impl _ensure_mro_fresh(cls: ClassType, _visiting: (set[int] | None) = None) -> bool {
+    shared = cls.shared;
+    if _visiting is None {
+        _visiting = set();
+    }
+    key = id(shared);
+    if key in _visiting {
+        return False;
+    }
+    _visiting.add(key);
+    for base in shared.base_classes or [] {
+        if isinstance(base, ClassType) {
+            ensure_mro_fresh(base, _visiting);
+        }
+    }
+    _visiting.discard(key);
+    if not shared.mro {
+        compute_mro_linearization(cls, _visiting);
+        return True;
+    }
+    sig = mro_signature(cls);
+    if shared._mro_sig is None {
+        shared._mro_sig = sig;
+        return False;
+    }
+    if shared._mro_sig == sig {
+        return False;
+    }
+    rebuilt = linearize_mro(cls, _visiting);
+    if len(rebuilt) > len(shared.mro) {
+        shared.mro = rebuilt;
+        shared._mro_sig = sig;
+        return True;
+    }
+    shared._mro_sig = sig;
+    return False;
+}
+
+impl _build_type_var_solution(class_type: ClassType) -> dict[str, TypeBase] {
     solution: dict[str, TypeBase] = {};
 
     if class_type.shared.type_params
@@ -920,48 +1048,10 @@ impl build_type_var_solution(class_type: ClassType) -> dict[str, TypeBase] {
     return solution;
 }
 
-impl build_solution_from_specialized_class(
-    class_type: ClassType
-) -> dict[str, TypeBase] {
-    solution: dict[str, TypeBase] = {};
-
-    if class_type.shared.type_params and class_type.private.type_args {
-        for (idx, tp) in enumerate(class_type.shared.type_params) {
-            if tp.name and idx < len(class_type.private.type_args) {
-                if tp.name not in solution {
-                    solution[tp.name] = class_type.private.type_args[idx];
-                }
-            }
-        }
-    } elif class_type.shared.type_params {
-        for tp in class_type.shared.type_params {
-            if tp.name {
-                solution[tp.name] = AnyType();
-            }
-        }
-    }
-
-    return solution;
-}
-
-impl specialize_for_base_class(
-    src_type: ClassType, base_class: ClassType
-) -> ClassType {
-    if src_type.shared == base_class.shared {
-        return src_type;
-    }
-
-    if not base_class.shared.type_params {
-        return base_class;
-    }
-
-    return _specialize_for_base_recursive(src_type, base_class);
-}
-
-def _specialize_for_base_recursive(
+impl _specialize_for_base_recursive(
     src_type: ClassType, target_base: ClassType
 ) -> ClassType {
-    if src_type.shared == target_base.shared {
+    if src_type.shared.same_class(target_base.shared) {
         return src_type;
     }
 
@@ -973,13 +1063,13 @@ def _specialize_for_base_recursive(
                 continue;
             }
 
-            if base.shared == target_base.shared {
+            if base.shared.same_class(target_base.shared) {
                 return _apply_solution_to_class(base, solution);
             }
 
             target_in_mro = False;
             for mro_cls in base.shared.mro {
-                if mro_cls.shared == target_base.shared {
+                if mro_cls.shared.same_class(target_base.shared) {
                     target_in_mro = True;
                     break;
                 }
@@ -996,7 +1086,7 @@ def _specialize_for_base_recursive(
     return target_base;
 }
 
-def _apply_solution_to_class(
+impl _apply_solution_to_class(
     class_type: ClassType, solution: dict[str, TypeBase]
 ) -> ClassType {
     if not class_type.private.type_args {
@@ -1021,21 +1111,55 @@ def _apply_solution_to_class(
     return class_type;
 }
 
-def _apply_to_function(
+impl _apply_to_function(
     func: FunctionType,
     solution: dict[str, TypeBase],
     class_type: (ClassType | None),
     shadowed: (set[str] | None) = None
 ) -> FunctionType {
-    clone = FunctionType(
-        func_name=func.func_name,
-        return_type=func.return_type,
-        parameters=[param.clone() for param in func.parameters],
-        function_flags=func.function_flags,
-        type_params=func.type_params,
-        type_guard=func.type_guard,
-        type_guard_is_strict=func.type_guard_is_strict,
+    if class_type is None or class_type._tv_solution is not solution {
+        return _apply_to_function_uncached(func, solution, class_type, shadowed);
+    }
+    memo_key = (
+        id(solution),
+        id(class_type),
+        frozenset(shadowed) if shadowed is not None else None
     );
+    cache = func._acc_cache;
+    if cache is None {
+        cache = {};
+        func._acc_cache = cache;
+    }
+    memo:
+        (
+            dict[
+                tuple[(int, int, (frozenset[str] | None))],
+                tuple[(dict[str, TypeBase], (ClassType | None), FunctionType)]
+            ]
+            | None
+        ) = cache.get("_applied");
+    if memo is None {
+        memo = {};
+        cache["_applied"] = memo;
+    }
+    held = memo.get(memo_key);
+    if held is not None and held[0] is solution and held[1] is class_type {
+        return held[2];
+    }
+    result = _apply_to_function_uncached(func, solution, class_type, shadowed);
+    if len(memo) < 32 {
+        memo[memo_key] = (solution, class_type, result);
+    }
+    return result;
+}
+
+impl _apply_to_function_uncached(
+    func: FunctionType,
+    solution: dict[str, TypeBase],
+    class_type: (ClassType | None),
+    shadowed: (set[str] | None) = None
+) -> FunctionType {
+    clone = func.clone();
 
     own_shadowed = shadowed;
     if shadowed is not None and func.type_params {
@@ -1062,4 +1186,26 @@ def _apply_to_function(
     }
 
     return clone;
+}
+
+impl is_builtin_region_type(t: (object | None), allow_class: bool = False) -> bool {
+    if not isinstance(t, ClassType) or t.shared is None {
+        return False;
+    }
+    if t.shared.class_name != "Region" {
+        return False;
+    }
+    if not allow_class and t.is_instantiable() and not t.is_instance() {
+        return False;
+    }
+    owner = t.shared.symbol_table;
+    if isinstance(owner, Archetype) {
+        _loc = owner.loc;
+        return _loc is not None and str(_loc.mod_path).endswith(".pyi");
+    }
+    return True;
+}
+
+impl expr_is_builtin_region(expr: (UniNode | None)) -> bool {
+    return isinstance(expr, Expr) and is_builtin_region_type(expr.type);
 }

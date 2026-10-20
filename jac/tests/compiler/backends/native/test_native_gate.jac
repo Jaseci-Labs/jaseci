@@ -5,8 +5,8 @@ binding they pull in -- are only scheduled when a module actually needs native
 codegen. These tests pin the two building blocks the compile scheduler relies
 on so the gate cannot silently drift from `NaIRGenPass.transform`'s own trigger:
 
-1. `get_py_code_gen(native=...)` includes the native passes iff `native=True`.
-2. `ModuleCodegenPass.has_native_context_stmts` -- the shared predicate the gate
+1. `codegen_lane(native=...)` includes the native passes iff `native=True`.
+2. `ModuleFacts.has_native_context_stmts` -- the shared predicate the gate
    and the pass share -- is False for a plain Python module and True for a
    module carrying an inline `na {}` block.
 """
@@ -14,39 +14,62 @@ on so the gate cannot silently drift from `NaIRGenPass.transform`'s own trigger:
 import os;
 import from tests.support { TESTS_DIR }
 import from jaclang.compiler.driver.program { JacProgram }
-import from jaclang.compiler.driver.schedules {
-    get_analysis_sched,
-    get_boundary_analysis_sched,
-    get_ir_gen_sched,
-    get_py_code_gen,
-    providers_of
+import from jaclang.compiler.driver.pipeline { product_passes }
+import from jaclang.compiler.driver.pipeline_types {
+    CompilationProduct,
+    ProductRequest
 }
-import from jaclang.compiler.backends.py.module_codegen_pass { ModuleCodegenPass }
-import from jaclang.compiler.backends.native { NaIRGenPass, NativeCompilePass }
+
+"""The passes a module's codegen requests, in order: the shared lowering, the Python IR, the structure freeze."""
+def codegen_lane(native: bool) -> list[type] {
+    lane: list[type] = [];
+    for product in (
+        CompilationProduct.CODEGEN,
+        CompilationProduct.PY_IR,
+        CompilationProduct.FROZEN
+    ) {
+        lane.extend(product_passes(product, ProductRequest(native=native)));
+    }
+    return lane;
+}
+
+import from jaclang.compiler.frontend.module_facts { ModuleFacts }
+import from jaclang.compiler.backends.native.na_ir_gen_pass { NaIRGenPass }
+import from jaclang.compiler.backends.native.na_compile_pass { NativeCompilePass }
 
 glob FIXTURES = os.path.join(
          TESTS_DIR, "compiler", "backends", "native", "fixtures"
      );
 
+test "importing the native package does not initialize code generation" {
+    import subprocess;
+    import sys;
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import sys; import jaclang.compiler.backends.native; "
+            "assert 'jaclang.compiler.backends.native.na_compile_pass' not in sys.modules; "
+            "assert 'jaclang.compiler.backends.native.na_ir_gen_pass' not in sys.modules"
+        ],
+        capture_output=True,
+        text=True
+    );
+    assert result.returncode == 0 , result.stderr;
+}
 
-test "get_py_code_gen omits the native passes when native=False" {
-    without_native = get_py_code_gen(native=False);
+
+test "the codegen lane omits the native passes when native=False" {
+    without_native = codegen_lane(False);
     assert NaIRGenPass not in without_native;
     assert NativeCompilePass not in without_native;
 }
 
 
-test "get_py_code_gen schedules the native passes when native=True" {
-    # Codegen runs after the analysis stage in the single pipeline, so the
-    # standalone schedule is constructed against its provides.
-    with_native = get_py_code_gen(
-        native=True,
-        provided=providers_of(
-            get_ir_gen_sched() + get_analysis_sched() + get_boundary_analysis_sched()
-        )
-    );
+test "the codegen lane schedules the native passes when native=True" {
+    with_native = codegen_lane(True);
     assert NaIRGenPass in with_native;
-    assert NativeCompilePass in with_native;
+    assert NativeCompilePass not in with_native;
 }
 
 
@@ -57,12 +80,12 @@ test "plain Python module carries no native-context statements" {
         file_path=os.path.join(FIXTURES, "gate_python_only.jac"),
         options=CompileOptions(default_codespace='server')
     );
-    assert not ModuleCodegenPass.has_native_context_stmts(ir);
+    assert not ModuleFacts.has_native_context_stmts(ir);
 }
 
 
 test "module with an inline na block needs native codegen" {
     prog = JacProgram();
     ir = prog.compile(file_path=os.path.join(FIXTURES, "mixed_contexts.jac"));
-    assert ModuleCodegenPass.has_native_context_stmts(ir);
+    assert ModuleFacts.has_native_context_stmts(ir);
 }

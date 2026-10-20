@@ -1,6 +1,3 @@
-import from jaclang.client.bun_installer { BUN_VERSION }
-import from jaclang.dist.payload.pins { LlvmSlice }
-
 glob TYPESHED_TARBALL_BASE: str = "https://codeload.github.com/python/typeshed/tar.gz",
      TYPESHED_VENDOR: str = "jaclang/vendor/typeshed",
      BUN_BASE: str = "https://github.com/oven-sh/bun/releases/download",
@@ -25,9 +22,7 @@ obj HttpSource {
 
 def http_get(url: str) -> bytes;
 def http_get_range(url: str, start: int, end: int) -> bytes;
-def pbs_platform(osarch: str) -> str | None;
 def bun_asset_name(osarch: str) -> str | None;
-def fetch_pbs(osarch: str, dest: str);
 def fetch_typeshed(repo_root: str);
 def typeshed_sha(commit: str);
 def fetch_llvm(dest: str);

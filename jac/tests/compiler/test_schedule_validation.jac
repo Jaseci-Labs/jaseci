@@ -1,27 +1,18 @@
-"""Construction-time schedule validation against declared pass dependencies.
-
-Every pass schedule is validated from the passes' declared REQUIRES/PROVIDES at
-construction time (#7871 workstream H): a schedule that omits a declared
-dependency fails fast with the pass and the missing analysis named, never
-mid-compile on user code.
-
-Since #8398 there is one canonical compile pipeline instead of option-shaped
-fragments, so validation is the whole story: every REQUIRES is satisfied by an
-earlier pass in the single list, and nothing is derived or dropped at runtime.
-The analysis stage is unconditional, so a pass whose declared inputs are
-missing is a construction error rather than a silently omitted analysis.
-
-Dependency tags are the relation-edge class names the analyses materialize
-(CfgSucc/CfgTrue/CfgFalse from CFG build, TypeOf from type checking, SymOf
-from symbol-table build), not the old free-form 'cfg'/'inference' labels.
-"""
+import from jaclang.compiler.driver.pipeline_types { AnalysisFact }
 
 import jaclang.compiler.frontend.unitree as uni;
-import from jaclang.compiler.driver.schedules {
-    get_analysis_sched,
-    get_compile_sched,
+import from jaclang.compiler.driver.pipeline {
+    contract_of,
+    execute_passes,
+    product_passes,
     providers_of,
     validate_schedule
+}
+import from jaclang.compiler.driver.module_analysis { ANALYSIS_PLAN }
+import from jaclang.compiler.driver.module_compile { CODEGEN_PLAN }
+import from jaclang.compiler.driver.pipeline_types {
+    CompilationProduct,
+    ProductRequest
 }
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.compiler.passes.cfg_build_pass { CFGBuildPass }
@@ -46,7 +37,9 @@ test "validation names the first missing analysis with CfgSucc preprovided" {
     err = '';
     try {
         validate_schedule(
-            [OwnershipCheckPass], preprovided={'CfgSucc'}, origin='test schedule'
+            [OwnershipCheckPass],
+            preprovided={AnalysisFact.CFG_SUCC},
+            origin='test schedule'
         );
     } except RuntimeError as e {
         err = str(e);
@@ -57,7 +50,9 @@ test "validation names the first missing analysis with CfgSucc preprovided" {
 
 test "validation accepts a schedule whose dependencies are preprovided" {
     sched = validate_schedule(
-        [OwnershipCheckPass], preprovided={'CfgSucc', 'TypeOf'}, origin='test schedule'
+        [OwnershipCheckPass],
+        preprovided={AnalysisFact.CFG_SUCC, AnalysisFact.TYPE_OF},
+        origin='test schedule'
     );
     assert sched == [OwnershipCheckPass];
 }
@@ -70,15 +65,30 @@ test "validation accepts a schedule whose dependencies run earlier in it" {
 }
 
 test "the analysis stage always carries type checking and the checkers" {
-    sched = get_analysis_sched();
+    sched = product_passes(CompilationProduct.ANALYSIS);
     assert TypeCheckPass in sched;
     assert StaticAnalysisPass in sched;
     assert OwnershipCheckPass in sched;
     assert sched.index(TypeCheckPass) < sched.index(OwnershipCheckPass);
 }
 
+def canonical_pipeline -> list[type] {
+    sched: list[type] = [];
+    for product in (
+        CompilationProduct.IR,
+        CompilationProduct.ANALYSIS,
+        CompilationProduct.BOUNDARIES,
+        CompilationProduct.CODEGEN,
+        CompilationProduct.PY_IR,
+        CompilationProduct.FROZEN
+    ) {
+        sched.extend(product_passes(product, ProductRequest(native=True)));
+    }
+    return sched;
+}
+
 test "the canonical compile pipeline validates end to end" {
-    sched = get_compile_sched();
+    sched = canonical_pipeline();
     assert CFGBuildPass in sched;
     assert TypeCheckPass in sched;
     assert OwnershipCheckPass in sched;
@@ -87,34 +97,77 @@ test "the canonical compile pipeline validates end to end" {
 }
 
 test "every declared requirement is satisfied within the one pipeline" {
-    sched = get_compile_sched();
-    provided: set[str] = set();
+    sched = canonical_pipeline();
+    provided: set[AnalysisFact] = set();
     for p in sched {
-        for tag in (getattr(p, 'REQUIRES', ()) or ()) {
+        for tag in contract_of(p).requires {
             assert tag in provided , f"{p.__name__} requires '{tag}' with no earlier provider";
         }
-        for tag in (getattr(p, 'PROVIDES', ()) or ()) {
+        for tag in contract_of(p).provides {
             provided.add(tag);
         }
     }
 }
 
 test "providers_of reports the tags a schedule segment supplies" {
-    assert 'CfgSucc' in providers_of([CFGBuildPass]);
-    assert 'TypeOf' in providers_of([TypeCheckPass]);
+    assert AnalysisFact.CFG_SUCC in providers_of([CFGBuildPass]);
+    assert AnalysisFact.TYPE_OF in providers_of([TypeCheckPass]);
     assert providers_of([]) == set();
 }
 
-test "run_schedule rejects an incoherent schedule before running any pass" {
+test "execute_passes rejects an incoherent schedule before running any pass" {
     prog = JacProgram();
     stub = uni.Module.make_stub(inject_name='sched_stub');
     err = '';
     try {
-        prog.run_schedule(stub, [OwnershipCheckPass]);
+        execute_passes(prog, stub, [OwnershipCheckPass]);
     } except RuntimeError as e {
         err = str(e);
     }
     assert 'OwnershipCheckPass' in err;
     assert "'CfgSucc'" in err;
     assert 'scheduling error' in err;
+}
+
+test "the module plan declares its complete step order" {
+    assert [step.name for step in ANALYSIS_PLAN + CODEGEN_PLAN]
+        == [
+            "PARSE",
+            "IR",
+            "PLACEMENT",
+            "ANALYSIS",
+            "BOUNDARIES",
+            "NATIVE_CHECKS",
+            "CLIENT_DEPENDENCIES",
+            "INTERFACE",
+            "CODEGEN"
+        ];
+}
+
+
+test "symbols-only requests never resolve types to serialize an interface" {
+    import from pathlib { Path }
+    import from tempfile { TemporaryDirectory }
+    import from unittest.mock { patch }
+    import from jaclang.compiler.driver.compile_options { CompileOptions }
+    with TemporaryDirectory() as td {
+        path = Path(td) / 'main.jac';
+        path.write_text('def value -> int { return 1; }\n');
+        program = JacProgram();
+        registry = program.iface_registry();
+        with patch.object(
+            type(registry),
+            '_encode_iface',
+            side_effect=AssertionError(
+                'symbols-only compilation resolved interface types'
+            )
+        ) as encode {
+            module = program.compile(
+                str(path), options=CompileOptions(symtab_ir_only=True)
+            );
+            assert not encode.called;
+        }
+        assert not program.errors_had;
+        assert not program.analysis.provides(module, AnalysisFact.TYPE_OF);
+    }
 }

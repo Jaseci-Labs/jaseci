@@ -6,9 +6,9 @@ In microservice mode, the client calls gateway function endpoints:
   /orders/function/create_order
 """
 
-impl app.apiCall(service: str, endpoint: str, body: dict = {}) -> any {
+impl app.apiCall(service: str, endpoint: str, body: dict[str, any] = {}) -> any {
     token = localStorage.getItem("jac_token");
-    options: dict = {
+    options: dict[str, any] = {
         "method": "POST",
         "headers": {
             "Content-Type": "application/json",
@@ -96,12 +96,12 @@ impl app.handleSignup -> None {
     loading = True;
     result = await jacSignup(authUsername, authPassword);
     loading = False;
-    if result["success"] {
+    if result.success {
         isLoggedIn = True;
         authUsername = "";
         authPassword = "";
     } else {
-        error = result["error"] if result["error"] else "Signup failed";
+        error = result.error if result.error else "Signup failed";
     }
 }
 

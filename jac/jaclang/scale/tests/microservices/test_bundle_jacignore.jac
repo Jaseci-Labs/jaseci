@@ -2,20 +2,9 @@ import io;
 import tarfile;
 import tempfile;
 import from pathlib { Path }
-import from jaclang.scale.injector.bundle {
-    _stage_app,
-    add_source_members,
-    bundle_source_files,
-    partition_bundle_sources,
-    content_address,
-    nested_sanitized_tomls,
-    open_det_tar,
-    pack_jab,
-    sanitized_jac_toml
-}
 
 
-glob _JAC_BIN: Path = Path(__file__).parents[4] / "zig-out" / "bin" / "jac",
+glob _JAC_BIN: Path = pod_binary(),
      _PARKED: str = "# parked for the deploy\ndocsite/\nevaluation/\n";
 
 
@@ -127,9 +116,7 @@ test "parking the entry module fails the pack, not the fleet" {
 test "a sealed .jab carries no tree that .jacignore parks" {
     # Unfixed, this seal dies on evaluation/broken.jac, which is the crash the
     # in-pod boot compile hits.
-    if not _JAC_BIN.is_file() {
-        return;
-    }
+    require_pod_binary();
     raw = pack_jab(str(_app(_PARKED)), _JAC_BIN.read_bytes());
     with tarfile.open(fileobj=io.BytesIO(raw), mode="r:gz") as tar {
         names = tar.getnames();

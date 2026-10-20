@@ -11,18 +11,25 @@ import sys;
 import tempfile;
 import from pathlib { Path }
 import from tests.support { JAC_ROOT }
+import from tests.compiler.backends.es.codegen_helpers {
+    analyze_fixture_and_emit_js,
+    compile_fixture_to_js,
+    compile_fixture_to_js_production,
+    run_js_module,
+    stage_prelude_dir,
+    _resolve_fixture_path,
+    _fatal_compile_errors
+}
 import jaclang;
 import from jaclang.compiler.backends.es { EsastGenPass }
+import from jaclang.compiler.backends.es.jac_runtime_js { build_jac_prelude_module }
 import from jaclang.compiler.backends.es.es_unparse {
     JSCodeGenerator,
     es_to_js,
     template_element_raw
 }
 import from jaclang.compiler.backends.es.primitives_es { ESDictEmitter, ESEmitCtx }
-import from jaclang.compiler.backends.es.estree { Node as EsNode }
-import from jaclang.compiler.passes.type_checker_pass { TypeCheckPass }
-import from jaclang.compiler.driver.modresolver { convert_to_js_import_path }
-import from jaclang.compiler.passes.transform { Alert }
+import from jaclang.compiler.backends.es.js_paths { convert_to_js_import_path }
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.compiler.driver.pass_driver { run_pass }
 
@@ -30,8 +37,6 @@ glob FIXTURES = os.path.join(
          JAC_ROOT, "tests", "compiler", "backends", "es", "fixtures"
      ),
      LANG_FIXTURES = os.path.join(JAC_ROOT, "tests", "language", "fixtures"),
-     _js_compile_cache: dict[str, str] = {},
-     _js_production_compile_cache: dict[str, str] = {},
      _test_tmp_dir: str = tempfile.mkdtemp(prefix="jac_test_js_");
 
 with entry {
@@ -48,74 +53,6 @@ def write_temp_jac(code: str) -> str {
         tmp.write(code);
         return tmp.name;
     }
-}
-
-"""Resolve a fixture name to an on-disk path."""
-def _resolve_fixture_path(fixture_name: str, fixture_dir: str = "") -> str {
-    fixture_path = fixture_name;
-    if not Path(fixture_path).exists() and fixture_dir {
-        fixture_path = os.path.join(fixture_dir, fixture_name);
-    }
-    return fixture_path;
-}
-
-"""Return compile errors that are not non-fatal TypeCheckPass diagnostics."""
-def _fatal_compile_errors(prog: JacProgram) -> list[Alert] {
-    # Filter out type-checker diagnostics (non-fatal warnings about
-    # Unknown types in client code).  Only fail on parse/compile errors.
-    # issubclass: diagnostics may come from TypeCheckPass itself or its
-    # TypeCheckPass schedule entry.
-    return [
-        e
-        for e in prog.errors_had
-        if not issubclass(e.from_pass, TypeCheckPass)
-    ];
-}
-
-"""Compile a Jac fixture to JavaScript and return the emitted source."""
-def compile_fixture_to_js(fixture_name: str, fixture_dir: str = "") -> str {
-    fixture_path = _resolve_fixture_path(fixture_name, fixture_dir);
-    cache_key = os.path.abspath(fixture_path);
-    if cache_key in _js_compile_cache {
-        return _js_compile_cache[cache_key];
-    }
-    prog = JacProgram();
-    ir = prog.compile(file_path=fixture_path, no_cgen=True);
-    _fatal = _fatal_compile_errors(prog);
-    assert not _fatal , (
-        f"Compilation errors in {fixture_name}: {[str(e) for e in _fatal]}"
-    );
-
-    es_pass = run_pass(EsastGenPass, ir, prog);
-    es_ir = es_pass.ir_out;
-
-    assert hasattr(es_ir.gen, "es_ast") , "es_ast attribute missing";
-    es_ast = es_ir.gen.es_ast;
-    assert isinstance(es_ast, EsNode) , "es_ast should be an EsNode";
-
-    result = es_to_js(es_ast);
-    _js_compile_cache[cache_key] = result;
-    return result;
-}
-
-"""Compile a fixture through the normal production codegen path."""
-def compile_fixture_to_js_production(fixture_name: str, fixture_dir: str = "") -> str {
-    fixture_path = _resolve_fixture_path(fixture_name, fixture_dir);
-    cache_key = os.path.abspath(fixture_path);
-    if cache_key in _js_production_compile_cache {
-        return _js_production_compile_cache[cache_key];
-    }
-    prog = JacProgram();
-    ir = prog.compile(file_path=fixture_path);
-    _fatal = _fatal_compile_errors(prog);
-    assert not _fatal , (
-        f"Compilation errors in {fixture_name}: {[str(e) for e in _fatal]}"
-    );
-    assert ir.gen.js and ir.gen.js.strip() , (
-        f"Production JS codegen produced no output for {fixture_name}"
-    );
-    _js_production_compile_cache[cache_key] = ir.gen.js;
-    return ir.gen.js;
 }
 
 """Ensure generated JavaScript has balanced delimiters."""
@@ -394,6 +331,23 @@ test "cl only js command outputs js" {
     assert 'function greet(name = "World") {' in result.stdout;
 }
 
+test "dict literal with an expression key emits a computed property" {
+    temp_path = write_temp_jac(
+        "def build(k: str) -> dict {\n"
+        "    return {\"lit\": 2, (k + \"x\"): 3, k.upper(): 4};\n"
+        "}\n"
+    );
+    try {
+        js_code = compile_fixture_to_js(temp_path);
+        assert "[(k + \"x\")]: 3" in js_code or "[k + \"x\"]: 3" in js_code , js_code;
+        assert "[k.toUpperCase()]: 4" in js_code , js_code;
+        assert "\"lit\": 2" in js_code or "lit: 2" in js_code , js_code;
+        assert "\"key\":" not in js_code and "key:" not in js_code , js_code;
+    } finally {
+        os.unlink(temp_path);
+    }
+}
+
 test "empty file generates minimal js" {
     temp_path = write_temp_jac("\"\"\"Empty file for smoke testing.\"\"\"\n");
 
@@ -406,19 +360,22 @@ test "empty file generates minimal js" {
     }
 }
 
-test "type to typeof transformation" {
-    jac_code = "\"\"\"Test type() to typeof conversion.\"\"\"\n\ndef check_types() {\n    x = 42;\n    y = \"hello\";\n    my_obj = {\"key\": \"value\"};\n    arr = [1, 2, 3];\n\n    t1 = type(x);\n    t2 = type(y);\n    t3 = type(my_obj);\n    t4 = type(arr[0]);\n\n    return t1;\n}\n";
+test "type() lowers to the runtime type object" {
+    jac_code = "\"\"\"Test type() lowering.\"\"\"\n\ndef check_types() {\n    x = 42;\n    y = \"hello\";\n    my_obj = {\"key\": \"value\"};\n    arr = [1, 2, 3];\n\n    t1 = type(x);\n    t2 = type(y);\n    t3 = type(my_obj);\n    t4 = type(arr[0]);\n\n    return t1;\n}\n";
 
     temp_path = write_temp_jac(jac_code);
 
     try {
         js_code = compile_fixture_to_js(temp_path);
 
-        for pattern in ["typeof x", "typeof y", "typeof my_obj", "typeof arr[0]"] {
+        for pattern in [
+            "_jac.builtin.type(x)",
+            "_jac.builtin.type(y)",
+            "_jac.builtin.type(my_obj)",
+            "_jac.builtin.type(arr[0])"
+        ] {
             assert pattern in js_code;
         }
-        assert "type(" not in js_code;
-        assert js_code.count("typeof") == 4;
         assert_balanced_syntax(js_code, temp_path);
     } finally {
         os.unlink(temp_path);
@@ -437,11 +394,11 @@ test "category1 named imports generate correct js" {
         "import { helper } from \"./utils.js\";",
         "import { formatter as format } from \"../lib.js\";",
         "import { settings } from \"../../config.js\";",
-        "import { renderJsxTree, jacLogin, jacLogout } from \"@jac/runtime\";",
+        "import { jacLogin } from \"@jac/runtime\";",
 
     ];
     for pattern in imports {
-        assert pattern in js_code;
+        assert pattern in js_code , f"Missing {pattern}: {js_code}";
     }
 
     assert "function example_usage()" in js_code;
@@ -597,6 +554,49 @@ test "lambda assignment to an enclosing local stays a closure rebind" {
     );
     assert "let count = (count + 1);" not in js_code;
     assert_balanced_syntax(js_code, temp_path);
+}
+
+test "every handler a for slot builds acts on its own item" {
+    # #8168: a local assigned in a `for` slot body, bare or annotated, is local
+    # to the loop, so each handler keeps its own iteration's value. The loop
+    # target, a .map() lambda-body local (#8130) and a parameter-bound factory
+    # are the same contract.
+    fixture_file_path = os.path.join(FIXTURES, "for_slot_handlers.jac");
+    (prog, js_code) = analyze_fixture_and_emit_js(fixture_file_path);
+    assert not prog.errors_had , "\n".join(e.pretty_print() for e in prog.errors_had);
+
+    harness = (
+        "\nfunction __jacJsx(tag, props, kids) {"
+        " return {tag, props, kids: kids === undefined ? [] : kids}; }\n"
+        "const out = [];\n"
+        "const tree = Handlers({items: [{id: 'first'}, {id: 'second'}, {id: 'last'}],"
+        " sink: (t) => out.push(t)});\n"
+        "const found = [];\n"
+        "(function walk(n, section) {\n"
+        "  if (n == null || typeof n !== 'object') return;\n"
+        "  if (Array.isArray(n)) { for (const c of n) walk(c, section); return; }\n"
+        "  if (n.props && n.props.id) section = n.props.id;\n"
+        "  if (n.props && typeof n.props.onClick === 'function')"
+        " found.push([section, n.props.onClick]);\n"
+        "  walk(n.kids, section);\n"
+        "})(tree, '?');\n"
+        "const bySection = {};\n"
+        "for (const [s, fn] of found) { out.length = 0; fn();"
+        " (bySection[s] = bySection[s] || []).push(out[0]); }\n"
+        "console.log(JSON.stringify(bySection));\n"
+    );
+    result = run_js_module(js_code + harness);
+    assert result.returncode == 0 , (
+        f"for-slot handlers crashed in Node:\nstderr={result.stderr!r}\njs:\n{js_code}"
+    );
+    got = json.loads(result.stdout.strip());
+    for section in ["for_slot", "annotated", "factory", "map_lambda", "loop_target"] {
+        assert got.get(section)
+            == [f"{section}:{item}" for item in ["first", "second", "last"]] , (
+            f"every '{section}' handler must act on its own item, got {got}\njs:\n{js_code}"
+        );
+    }
+    assert_balanced_syntax(js_code, fixture_file_path);
 }
 
 test "lambda returning dict literal parenthesises the arrow body" {
@@ -791,7 +791,7 @@ test "fstring advanced fixture template literals" {
 }
 
 test "fstring edge cases" {
-    jac_code = "\"\"\"Test f-string edge cases.\"\"\"\n\ndef test_edge_cases() -> dict {\n    name = \"Alice\";\n    value = 42;\n\n    # Text only (no interpolation)\n    text_only = f\"This is just plain text\";\n\n    # Expression only (no static text)\n    expr_only = f\"{value}\";\n\n    # Multiple consecutive expressions\n    consecutive = f\"{name}{value}\";\n\n    # Mixed with spaces\n    mixed = f\"Name: {name}, Value: {value}\";\n\n    return {\"text\": text_only, \"expr\": expr_only, \"cons\": consecutive, \"mixed\": mixed};\n}\n";
+    jac_code = "\"\"\"Test f-string edge cases.\"\"\"\n\ndef test_edge_cases() -> dict[any, any] {\n    name = \"Alice\";\n    value = 42;\n\n    # Text only (no interpolation)\n    text_only = f\"This is just plain text\";\n\n    # Expression only (no static text)\n    expr_only = f\"{value}\";\n\n    # Multiple consecutive expressions\n    consecutive = f\"{name}{value}\";\n\n    # Mixed with spaces\n    mixed = f\"Name: {name}, Value: {value}\";\n\n    return {\"text\": text_only, \"expr\": expr_only, \"cons\": consecutive, \"mixed\": mixed};\n}\n";
 
     temp_path = write_temp_jac(jac_code);
 
@@ -924,21 +924,28 @@ test "separated files" {
     # `input` is destructured from useState (external React typings) so its
     # static type is unknown — `.strip()` routes through the polymorphic
     # runtime dispatcher instead of leaking the Python method name.
+    # Compiling the client as an entry crosses the declared service entry,
+    # so the call carries its app, route, and endpoint contract.
     assert (
-        "__jacSpawn(\"create_todo\", \"\", {\"text\": _jac.poly.call(input, \"strip\")});"
+        "__jacSpawn(\"create_todo\", \"\", {\"text\": _jac.poly.call(input, \"strip\")}, "
+            + "{\"app\": \"separated\", \"route\": \"/separated\", \"contract\": \"[\\\"separated\\\",\\\"separated.jac\\\",\\\"walker\\\",\\\"create_todo\\\"]\"});"
         in js_code
-    );
+    ) , js_code;
+    import from tests.compiler.backends.es.codegen_helpers { _js_compile_cache }
+    _js_compile_cache.pop(os.path.abspath(os.path.join(FIXTURES, client_fixture)));
+    warm = compile_fixture_to_js(client_fixture, FIXTURES);
+    assert warm == js_code , "a hydrated walker interface changed the service call";
 }
 
 test "separated defpub generates rpc stubs" {
-    # Compile the client module directly. It uses `sv import` to reference
-    # def:pub functions defined in separated_defpub.jac (the main module).
+    # Compile the client module directly. Its import of def:pub functions
+    # defined in separated_defpub.jac (a service app) is a client bridge.
     fixture = "separated_defpub_client.jac";
     js_code = compile_fixture_to_js(fixture, FIXTURES);
 
-    # The sv-imported def:pub functions must produce __jacCallFunction stubs
+    # The bridged def:pub functions must produce __jacCallFunction stubs
     assert "__jacCallFunction" in js_code , (
-        "sv import of def:pub functions must generate __jacCallFunction RPC stubs"
+        "a client bridge to def:pub functions must generate __jacCallFunction RPC stubs"
     );
 
     # Each def:pub function should have a stub with the correct name
@@ -964,8 +971,8 @@ test "separated defpub generates rpc stubs" {
     assert_balanced_syntax(js_code, fixture);
 }
 
-test "sv import kwargs preserve names in jac call function" {
-    # Regression for issue #5852.  Calling an sv-imported def:pub function
+test "bridged call kwargs preserve names in jac call function" {
+    # Regression for issue #5852.  Calling a bridged def:pub function
     # with kwargs syntax (e.g. ``greet(name=x)``) must compile to the same
     # ``__jacCallFunction("greet", {"name": x})`` shape that the positional
     # form produces.  Previously the kwargs were silently dropped, emitting
@@ -974,7 +981,7 @@ test "sv import kwargs preserve names in jac call function" {
     js_code = compile_fixture_to_js(fixture, FIXTURES);
 
     # Pure-kwargs single arg: ``greet(name=input_text)``
-    assert '__jacCallFunction("greet", {"name": __jacS_input_text.val})' in js_code , (
+    assert '__jacCallFunction("greet", {"name": __jacS_input_text.val},' in js_code , (
         "Single-kwarg call must propagate the name into the args object;\n"
         + "got:\n"
         + js_code
@@ -983,8 +990,8 @@ test "sv import kwargs preserve names in jac call function" {
     # Pure-kwargs out-of-order: ``add_pair(b=2, a=1)`` — both keys must be
     # present in the args object regardless of source order.
     assert (
-        '__jacCallFunction("add_pair", {"b": 2, "a": 1})' in js_code
-        or '__jacCallFunction("add_pair", {"a": 1, "b": 2})' in js_code
+        '__jacCallFunction("add_pair", {"b": 2, "a": 1},' in js_code
+        or '__jacCallFunction("add_pair", {"a": 1, "b": 2},' in js_code
     ) , (
         "Kwargs-only call must include all kwarg keys in the args object;\n"
         + "got:\n"
@@ -993,7 +1000,7 @@ test "sv import kwargs preserve names in jac call function" {
 
     # Mixed positional + kwarg: ``add_pair(1, b=2)`` — first param mapped
     # by position to its server-side name, second carried by kwarg key.
-    assert '__jacCallFunction("add_pair", {"a": 1, "b": 2})' in js_code , (
+    assert '__jacCallFunction("add_pair", {"a": 1, "b": 2},' in js_code , (
         "Mixed positional/kwarg call must merge both into the args object;\n"
         + "got:\n"
         + js_code
@@ -1001,7 +1008,7 @@ test "sv import kwargs preserve names in jac call function" {
 
     # ``**dict`` spread against a known signature can lower to declared
     # parameter-key reads, avoiding the old single-object positional shape.
-    assert '__jacCallFunction("add_pair", {"a": kw["a"], "b": kw["b"]})' in js_code , (
+    assert '__jacCallFunction("add_pair", {"a": kw["a"], "b": kw["b"]},' in js_code , (
         "**dict spread against known signature must compile to keyed parameter reads;\n"
         + "got:\n"
         + js_code
@@ -1009,22 +1016,22 @@ test "sv import kwargs preserve names in jac call function" {
 
     # Sanity: the obvious bug-shape — empty args object — must not appear
     # for any of these named calls.
-    assert '__jacCallFunction("greet", {})' not in js_code , (
+    assert '__jacCallFunction("greet", {},' not in js_code , (
         "Bug regression: kwargs were dropped, emitting empty args object."
     );
-    assert '__jacCallFunction("add_pair", {})' not in js_code , (
+    assert '__jacCallFunction("add_pair", {},' not in js_code , (
         "Bug regression: kwargs were dropped, emitting empty args object."
     );
 
     assert_balanced_syntax(js_code, fixture);
 }
 
-test "sv import kwargs preserve names in production jac2js path" {
+test "bridged call kwargs preserve names in production jac2js path" {
     fixture = "svc_kwargs/sv_import_kwargs_client.jac";
     js_code = compile_fixture_to_js_production(fixture, FIXTURES);
 
-    assert '__jacCallFunction("greet", {"name": __jacS_input_text.val})' in js_code , (
-        "Production jac2js path must lower sv-import kwargs directly into the RPC args object;\n"
+    assert '__jacCallFunction("greet", {"name": __jacS_input_text.val},' in js_code , (
+        "Production jac2js path must lower bridged-call kwargs directly into the RPC args object;\n"
         + "got:\n"
         + js_code
     );
@@ -1033,12 +1040,12 @@ test "sv import kwargs preserve names in production jac2js path" {
         + "got:\n"
         + js_code
     );
-    assert '__jacCallFunction("greet", {})' not in js_code , (
+    assert '__jacCallFunction("greet", {},' not in js_code , (
         "Production jac2js path must not emit an empty RPC args object for kwargs calls."
     );
 }
 
-test "sv import wrapper covers posonly and kwonly params" {
+test "bridge wrapper covers posonly and kwonly params" {
     # Regression for the latent stub-generation bug: ``_generate_sv_import_stubs``
     # used to walk only ``sig.params`` (regular non-posonly non-kwonly), so
     # posonly/kwonly params silently disappeared from the generated wrapper —
@@ -1052,13 +1059,16 @@ test "sv import wrapper covers posonly and kwonly params" {
     # Wrapper signature must list params in declared order — filter (posonly),
     # query (regular), scope (kwonly).
     assert "asyncfunctionquery(filter,query,scope)" in compact_js , (
-        "sv-import wrapper must include posonly + kwonly params in its JS "
+        "bridge wrapper must include posonly + kwonly params in its JS "
         + "signature, not silently drop them;\ngot:\n"
         + js_code
     );
-    # All three params must appear in the RPC args object the wrapper posts.
+    # All three params must appear in the RPC args object the wrapper posts,
+    # including serialization of both boundary-typed params.
+    # The server is a service app of the fixture workspace, so the call also
+    # carries the provider's app and route after the args object.
     assert (
-        '__jacCallFunction("query",{"filter":filter,"query":query,"scope":scope})'
+        '__jacCallFunction("query",{"filter":filter.__to_wire(),"query":query,"scope":scope.__to_wire()},'
         in compact_js
     ) , (
         "sv-import wrapper must forward posonly + kwonly params in the RPC "
@@ -1152,44 +1162,44 @@ test "plain client kwargs lower to ordered js arguments" {
     );
 }
 
-test "sv import duplicate kwarg is a compile error" {
+test "bridged call duplicate kwarg is a compile error" {
     # Calling ``greet(input_text, name=other)`` gives the ``name`` parameter
     # twice — once positionally and once by keyword.  This mirrors Python's
     # ``TypeError: got multiple values for argument 'name'`` and must be
     # reported as a compile-time error so the build fails fast rather than
     # silently emitting a JS object with a duplicated key.
     import from jaclang.compiler.driver.program { JacProgram }
-    import from jaclang.compiler.backends.es { EsastGenPass }
 
     fixture = os.path.join(FIXTURES, "svc_kwargs/sv_import_kwargs_dup.jac");
     prog = JacProgram();
-    ir = prog.compile(file_path=fixture, no_cgen=True);
-    run_pass(EsastGenPass, ir, prog);
+    prog.compile(file_path=fixture, no_cgen=True);
 
     dup_errs = [
         e
         for e in prog.errors_had
-        if "given both positionally and by keyword" in str(e)
+        if e.code is not None and e.code.code == "E1057"
     ];
     assert len(dup_errs) == 1 , (
-        "Expected exactly one E5080 collision diagnostic, got "
+        "Expected exactly one E1057 collision diagnostic, got "
         + str([str(e) for e in prog.errors_had])
     );
-    assert "name" in str(dup_errs[0]) and "greet" in str(dup_errs[0]);
+    assert "name" in str(dup_errs[0]);
 }
 
-test "sv import nested in cl block emits no dead import" {
-    # Regression: a cl {} block clobbered a nested sv import's SERVER
+test "bridged import nested in a client block emits no dead import" {
+    # Regression: a client block clobbered a nested bridged import's SERVER
     # context, making it emit a dead client import of the server.
     js_code = compile_fixture_to_js(
         "svc_kwargs/sv_import_cl_block_client.jac", FIXTURES
     );
-    assert "sv_import_cl_block_server" not in js_code , (
-        "nested sv import must not emit a client import of the server " "module; got:\n"
+    assert 'from "./sv_import_cl_block_server.js"' not in js_code , (
+        "nested bridged import must not emit a client import of the server "
+        "module; got:\n"
         + js_code
     );
     assert '__jacSpawn("say_hi"' in js_code , (
-        "nested sv import must still lower the call to __jacSpawn; got:\n" + js_code
+        "nested bridged import must still lower the call to __jacSpawn; got:\n"
+        + js_code
     );
 }
 
@@ -1293,16 +1303,24 @@ test "jac runtime is defined when referenced in generated js" {
         "that have no direct JS equivalent"
     );
 
-    # The _jac namespace must be defined (inlined as const _jac = {...})
-    assert "const _jac" in js_code , (
-        "Generated JS references _jac but never defines it. "
-        "This causes 'ReferenceError: _jac is not defined' at runtime."
+    # _jac is one object per program, provided by the @jac/prelude module, so
+    # a module that references it must bind it by import.
+    assert 'import { _jac } from "@jac/prelude";' in js_code , (
+        "Generated JS references _jac but never binds it. "
+        "This causes 'ReferenceError: _jac is not defined' at runtime.\n"
+        f"{js_code}"
     );
 
-    # Verify the runtime object contains the expected namespaces
+    prelude = build_jac_prelude_module();
     for ns in ["str:", "list:", "dict:", "builtin:"] {
-        assert ns in js_code , (f"_jac runtime missing namespace '{ns.rstrip(':')}'");
+        assert ns in prelude , (f"_jac runtime missing namespace '{ns.rstrip(':')}'");
     }
+
+    # The import must actually resolve: run the module.
+    result = run_js_module(js_code);
+    assert result.returncode == 0 , (
+        f"module referencing _jac failed to run: stderr={result.stderr!r}"
+    );
 
     assert_balanced_syntax(js_code, fixture);
 }
@@ -1349,6 +1367,25 @@ test "for-of tuple targets destructure into binding patterns" {
         assert "for (const [[c, d], e] of nested)" in js_code;
         assert "for (const [g, ...rest] of rows)" in js_code;
         assert "_item" not in js_code;
+        assert_balanced_syntax(js_code, temp_path);
+    } finally {
+        os.unlink(temp_path);
+    }
+}
+
+test "tuple assignment targets destructure with a rest pattern" {
+    jac_code = (
+        "def f(rows: list[any]) {\n"
+        "    (first, *rest) = rows;\n"
+        "    return rest;\n"
+        "}\n"
+    );
+    temp_path = write_temp_jac(jac_code);
+    try {
+        js_code = compile_fixture_to_js(temp_path);
+        assert "[first, ...rest]" in js_code , (
+            "starred tuple assignment should emit an ESTree rest element"
+        );
         assert_balanced_syntax(js_code, temp_path);
     } finally {
         os.unlink(temp_path);
@@ -1456,12 +1493,7 @@ test "poly get dispatches through runtime helper for untyped receivers" {
 
     # Verify the emitted JS actually runs and produces correct results.
     wrapper = js_code + "\nconsole.log(JSON.stringify(test_poly_get()));\n";
-    result = subprocess.run(
-        ["node", "--input-type=module", "-e", wrapper],
-        capture_output=True,
-        text=True,
-        timeout=30
-    );
+    result = run_js_module(wrapper);
     assert result.returncode == 0 , (
         "poly.get dispatch crashed in Node:\n" "stdout="
         + result.stdout
@@ -1499,12 +1531,7 @@ test "poly get dispatches to custom obj method not plain-object bracket" {
     # treating the instance as a plain-object dict — which would miss keys
     # stored in the internal `data` dict and return the default (-1).
     wrapper = js_code + "\nconsole.log(JSON.stringify(test_poly_get_custom()));\n";
-    result = subprocess.run(
-        ["node", "--input-type=module", "-e", wrapper],
-        capture_output=True,
-        text=True,
-        timeout=30
-    );
+    result = run_js_module(wrapper);
     assert result.returncode == 0 , (
         "poly.get custom-obj dispatch crashed in Node:\n" "stdout="
         + result.stdout
@@ -1552,12 +1579,7 @@ test "poly call dispatches dict/list/set/user methods on untyped receivers" {
         + "\nconsole.log(JSON.stringify(test_poly_complete()));"
         + "\nconsole.log(JSON.stringify(test_poly_attribute_error()));\n"
     );
-    result = subprocess.run(
-        ["node", "--input-type=module", "-e", wrapper],
-        capture_output=True,
-        text=True,
-        timeout=30
-    );
+    result = run_js_module(wrapper);
     assert result.returncode == 0 , (
         "poly.call dispatch crashed in Node:\nstdout="
         + result.stdout
@@ -1650,9 +1672,9 @@ test "issue 5508 case2 str methods on untyped receivers" {
     assert '"lower"' in user_code , (
         "Untyped .lower() should route through _jac.poly.call(.., \"lower\")"
     );
-    # The _jac runtime must be injected when the dispatcher is used.
-    assert "const _jac = {" in js_code , (
-        "_jac runtime must be injected when _jac.poly.call is emitted"
+    # The _jac runtime must be bound when the dispatcher is used.
+    assert 'import { _jac } from "@jac/prelude";' in js_code , (
+        "_jac runtime must be imported when _jac.poly.call is emitted"
     );
 }
 
@@ -2014,12 +2036,7 @@ test "issue 5930 sibling if else branches share one hoisted let" {
             + " { throw new Error('branches must return 0'); }"
             + "\nconsole.log('ok');\n"
         );
-        result = subprocess.run(
-            ["node", "--input-type=module", "-e", wrapper],
-            capture_output=True,
-            text=True,
-            timeout=30
-        );
+        result = run_js_module(wrapper);
         assert result.returncode == 0 , (
             "strict-mode node run failed (#5930 regression):\n"
             f"stdout={result.stdout!r}\nstderr={result.stderr!r}\n"
@@ -2064,12 +2081,7 @@ test "sibling block scopes — elif chain each branch gets its own let" {
             + " { throw new Error('branches must return 0'); }"
             + "\nconsole.log('ok');\n"
         );
-        result = subprocess.run(
-            ["node", "--input-type=module", "-e", wrapper],
-            capture_output=True,
-            text=True,
-            timeout=30
-        );
+        result = run_js_module(wrapper);
         assert result.returncode == 0 , (
             "strict-mode elif chain run failed:\n"
             f"stderr={result.stderr!r}\njs:\n{js_code}"
@@ -2149,12 +2161,7 @@ test "sibling block scopes — try except finally each get their own let" {
             + " { throw new Error('throw path must return 0'); }"
             + "\nconsole.log('ok');\n"
         );
-        result = subprocess.run(
-            ["node", "--input-type=module", "-e", wrapper],
-            capture_output=True,
-            text=True,
-            timeout=30
-        );
+        result = run_js_module(wrapper);
         assert result.returncode == 0 , (
             "strict-mode try/except/finally run failed:\n"
             f"stderr={result.stderr!r}\njs:\n{js_code}"
@@ -2192,12 +2199,7 @@ test "except Exception catches native JS errors (interop resilience)" {
             + " { throw new Error('valid JSON must still parse'); }"
             + "\nconsole.log('ok');\n"
         );
-        result = subprocess.run(
-            ["node", "--input-type=module", "-e", wrapper],
-            capture_output=True,
-            text=True,
-            timeout=30
-        );
+        result = run_js_module(wrapper);
         assert result.returncode == 0 , (
             "except Exception failed to catch a native JS error (#6656):\n"
             f"stderr={result.stderr!r}\njs:\n{js_code}"
@@ -2206,6 +2208,64 @@ test "except Exception catches native JS errors (interop resilience)" {
         assert_balanced_syntax(js_code, temp_path);
     } finally {
         os.unlink(temp_path);
+    }
+}
+
+test "a builtin exception crosses a module boundary (#9259)" {
+    # Every module used to carry its own inlined copy of the _jac runtime, so
+    # every module had a private set of the 35 builtin exception classes.
+    # `except ValueError` lowers to `_jac.exc.matches`, an instanceof against
+    # the CATCHING module's copy, so an exception raised in a sibling module
+    # matched nothing and escaped the handler. One shared @jac/prelude module
+    # is what makes that identity single, and only running both modules
+    # together can tell.
+    raiser = os.path.join(_test_tmp_dir, "xmod_raiser.jac");
+    catcher = os.path.join(_test_tmp_dir, "xmod_catcher.jac");
+    Path(raiser).write_text(
+        "def:pub boom(s: str) -> int {\n" "    return s.index(\"zz\");\n" "}\n"
+    );
+    Path(catcher).write_text(
+        "import from .xmod_raiser { boom }\n"
+        "\n"
+        "def:pub probe -> str {\n"
+        "    try {\n"
+        "        boom(\"abc\");\n"
+        "    } except ValueError as e {\n"
+        "        return \"caught\";\n"
+        "    }\n"
+        "    return \"missed\";\n"
+        "}\n"
+    );
+    stage = tempfile.mkdtemp(prefix="jac_xmod_exc_");
+    try {
+        stage_prelude_dir(stage);
+        Path(os.path.join(stage, "package.json")).write_text('{"type": "module"}');
+        Path(os.path.join(stage, "xmod_raiser.js")).write_text(
+            compile_fixture_to_js(raiser)
+        );
+        Path(os.path.join(stage, "xmod_catcher.js")).write_text(
+            compile_fixture_to_js(catcher)
+        );
+        Path(os.path.join(stage, "main.mjs")).write_text(
+            'import { probe } from "./xmod_catcher.js";\nconsole.log(probe());\n'
+        );
+        result = subprocess.run(
+            ["node", os.path.join(stage, "main.mjs")],
+            capture_output=True,
+            text=True,
+            timeout=30
+        );
+        assert result.returncode == 0 , (
+            "a ValueError raised in a sibling module escaped `except ValueError`:\n"
+            f"stderr={result.stderr!r}"
+        );
+        assert result.stdout.strip() == "caught" , (
+            f"cross-module `except ValueError` did not match: {result.stdout!r}"
+        );
+    } finally {
+        shutil.rmtree(stage, ignore_errors=True);
+        os.unlink(raiser);
+        os.unlink(catcher);
     }
 }
 
@@ -2230,12 +2290,7 @@ test "narrow builtin except does not catch native JS errors" {
             + "\nif (narrow('5') !== 1) { throw new Error('valid path must return 1'); }"
             + "\nconsole.log('ok');\n"
         );
-        result = subprocess.run(
-            ["node", "--input-type=module", "-e", wrapper],
-            capture_output=True,
-            text=True,
-            timeout=30
-        );
+        result = run_js_module(wrapper);
         assert result.returncode == 0 , (
             "narrow except wrongly caught (or mis-handled) a native error:\n"
             f"stderr={result.stderr!r}\njs:\n{js_code}"
@@ -2273,12 +2328,7 @@ test "user-defined exception except is not a catch-all" {
             + " { throw new Error('except MyError must NOT catch a ValueError'); }"
             + "\nconsole.log('ok');\n"
         );
-        result = subprocess.run(
-            ["node", "--input-type=module", "-e", wrapper],
-            capture_output=True,
-            text=True,
-            timeout=30
-        );
+        result = run_js_module(wrapper);
         assert result.returncode == 0 , (
             "user-defined except behaved as a catch-all (#6656):\n"
             f"stderr={result.stderr!r}\njs:\n{js_code}"
@@ -2290,6 +2340,37 @@ test "user-defined exception except is not a catch-all" {
     }
 }
 
+
+test "user-defined exception except with a binding is not a catch-all" {
+    # The type checker stamps the class of an `except` clause, so a clause
+    # binding its exception (`except MyError as err`) resolves to a known
+    # user class. That must still emit `instanceof MyError`, not `if (true)`.
+    jac_code = "\"\"\"bound user-defined except is not a catch-all.\"\"\"\n\nobj MyError {}\ndef classify(which: int) -> str {\n    try {\n        if which == 1 { raise MyError(); }\n        raise ValueError(\"b\");\n    } except MyError as err { return \"mine\"; } except ValueError as ve { return \"ve\"; }\n    return \"none\";\n}\n";
+
+    temp_path = write_temp_jac(jac_code);
+    try {
+        js_code = compile_fixture_to_js(temp_path);
+        assert "instanceof MyError" in js_code , (
+            f"bound user-defined except must emit `instanceof MyError`, got:\n{js_code}"
+        );
+        wrapper = (
+            '"use strict";\n'
+            + js_code
+            + "\nif (classify(1) !== 'mine')"
+            + " { throw new Error('except MyError must catch MyError'); }"
+            + "\nif (classify(2) !== 've')"
+            + " { throw new Error('except MyError must NOT catch a ValueError'); }"
+            + "\nconsole.log('ok');\n"
+        );
+        result = run_js_module(wrapper);
+        assert result.returncode == 0 , (
+            f"bound user-defined except behaved as a catch-all:\nstderr={result.stderr!r}\njs:\n{js_code}"
+        );
+        assert "ok" in result.stdout;
+    } finally {
+        os.unlink(temp_path);
+    }
+}
 
 test "exception archetype subclassing a builtin extends _jac.exc.X" {
     jac_code = "\"\"\"custom exception base test.\"\"\"\n\nobj MyError(Exception) {}\ndef boom() -> int {\n    try { raise MyError(\"x\"); } except Exception { return 1; }\n    return 0;\n}\n";
@@ -2312,12 +2393,7 @@ test "exception archetype subclassing a builtin extends _jac.exc.X" {
             + " { throw new Error('custom exception must load and be caught by except Exception'); }"
             + "\nconsole.log('ok');\n"
         );
-        result = subprocess.run(
-            ["node", "--input-type=module", "-e", wrapper],
-            capture_output=True,
-            text=True,
-            timeout=30
-        );
+        result = run_js_module(wrapper);
         assert result.returncode == 0 , (
             "custom exception subclassing a builtin failed to load/catch (#6663):\n"
             f"stderr={result.stderr!r}\njs:\n{js_code}"
@@ -2351,12 +2427,7 @@ test "exception archetype subclassing ValueError extends _jac.exc.ValueError" {
             + " { throw new Error('custom ValueError subclass must be caught by except ValueError'); }"
             + "\nconsole.log('ok');\n"
         );
-        result = subprocess.run(
-            ["node", "--input-type=module", "-e", wrapper],
-            capture_output=True,
-            text=True,
-            timeout=30
-        );
+        result = run_js_module(wrapper);
         assert result.returncode == 0 , (
             "custom exception subclassing ValueError failed to load/catch (#6663):\n"
             f"stderr={result.stderr!r}\njs:\n{js_code}"
@@ -2375,12 +2446,7 @@ test "in/not in on unknown-typed containers matches Python semantics" {
     # search for strings, element search for lists, key search for dicts.
     js_code = compile_fixture_to_js("dynamic_membership.jac", FIXTURES);
     wrapper = js_code + "\nconsole.log(JSON.stringify(membership()));\n";
-    result = subprocess.run(
-        ["node", "--input-type=module", "-e", wrapper],
-        capture_output=True,
-        text=True,
-        timeout=30
-    );
+    result = run_js_module(wrapper);
     assert result.returncode == 0 , (
         "dynamic `in` membership crashed in Node "
         "(raw JS `in` rejects string/array operands):\n"
@@ -2410,7 +2476,7 @@ test "cl negative indexing counts from the end like Python (#6320)" {
     # Python/Jac negative indices count from the end. A raw JS subscript
     # `xs[-1]` is `undefined`, silently producing the wrong value.
     jac_code = """
-def neg_index() -> dict {
+def neg_index() -> dict[any, any] {
     xs: list[int] = [10, 20, 30];
     s: str = "abc";
     return {
@@ -2429,12 +2495,7 @@ def neg_index() -> dict {
             f"negative index must not lower to a raw JS subscript:\n{js_code}"
         );
         wrapper = js_code + "\nconsole.log(JSON.stringify(neg_index()));\n";
-        result = subprocess.run(
-            ["node", "--input-type=module", "-e", wrapper],
-            capture_output=True,
-            text=True,
-            timeout=30
-        );
+        result = run_js_module(wrapper);
         assert result.returncode == 0 , (
             "negative-index run crashed in Node:\n"
             f"stderr={result.stderr!r}\njs:\n{js_code}"
@@ -2463,7 +2524,7 @@ test "cl collection truthiness matches Python emptiness (#6320)" {
     # never short-circuit. Boolean contexts on a collection must test
     # emptiness like Python (empty list/dict/set is falsy; str already agrees).
     jac_code = """
-def truthy_probe() -> dict {
+def truthy_probe() -> dict[any, any] {
     el: list[int] = [];
     fl: list[int] = [1];
     ed: dict[str, int] = {};
@@ -2503,12 +2564,7 @@ def truthy_probe() -> dict {
     try {
         js_code = compile_fixture_to_js(temp_path);
         wrapper = js_code + "\nconsole.log(JSON.stringify(truthy_probe()));\n";
-        result = subprocess.run(
-            ["node", "--input-type=module", "-e", wrapper],
-            capture_output=True,
-            text=True,
-            timeout=30
-        );
+        result = run_js_module(wrapper);
         assert result.returncode == 0 , (
             "collection-truthiness run crashed in Node:\n"
             f"stderr={result.stderr!r}\njs:\n{js_code}"
@@ -2546,12 +2602,110 @@ def truthy_probe() -> dict {
 }
 
 
+test "cl bool() judges objects by the Python data model, not dict keys (#9667)" {
+    # `bool(x)` judged every value whose `typeof` is "object" by its own
+    # enumerable keys -- Python's dict rule applied to host objects too. A
+    # File, Blob, Date or URL keeps its data on prototype getters, so
+    # `Object.keys(file)` is `[]` and `bool(file)` came out false: an upload
+    # button gated on `bool(selected_file)` never enabled. Only jac's own
+    # containers are judged by emptiness now; anything else is truthy unless
+    # it answers for itself through `__bool__` or `__len__`.
+    jac_code = """
+obj Plain {}
+
+obj Sized {
+    has items: list[int] = [];
+    def __len__ -> int { return len(self.items); }
+}
+
+obj Falsy {
+    has tag: str = "t";
+    def __bool__ -> bool { return False; }
+}
+
+def probe() -> dict[any, any] {
+    ed: dict[str, int] = {};
+    fd: dict[str, int] = {"a": 1};
+    return {
+        "empty_dict": 1 if bool(ed) else 0,
+        "full_dict": 1 if bool(fd) else 0,
+        "empty_list": 1 if bool([]) else 0,
+        "full_list": 1 if bool([1]) else 0,
+        "empty_set": 1 if bool(set()) else 0,
+        "empty_str": 1 if bool("") else 0,
+        "zero": 1 if bool(0) else 0,
+        "plain_arch": 1 if bool(Plain()) else 0,
+        "sized_empty": 1 if bool(Sized()) else 0,
+        "sized_full": 1 if bool(Sized(items=[1])) else 0,
+        "bool_false": 1 if bool(Falsy()) else 0
+    };
+}
+
+def host_probe(f: any, d: any, u: any, e: any, z: any) -> dict[any, any] {
+    return {
+        "host_file": 1 if bool(f) else 0,
+        "host_date": 1 if bool(d) else 0,
+        "host_url": 1 if bool(u) else 0,
+        "host_error": 1 if bool(e) else 0,
+        "bigint_zero": 1 if bool(z) else 0
+    };
+}
+""";
+    temp_path = write_temp_jac(jac_code);
+    try {
+        js_code = compile_fixture_to_js(temp_path);
+        wrapper = js_code
+            + (
+                "\nconsole.log(JSON.stringify(Object.assign({}, probe(),"
+                " host_probe(new File([], \"a.txt\"), new Date(),"
+                " new URL(\"http://x/\"), new Error(\"e\"), 0n))));\n"
+            );
+        result = run_js_module(wrapper);
+        assert result.returncode == 0 , (
+            "object-truthiness run crashed in Node:\n"
+            f"stderr={result.stderr!r}\njs:\n{js_code}"
+        );
+        got = json.loads(result.stdout.strip());
+        expected = {
+            # Containers keep deciding on emptiness.
+            "empty_dict": 0,
+            "full_dict": 1,
+            "empty_list": 0,
+            "full_list": 1,
+            "empty_set": 0,
+            "empty_str": 0,
+            "zero": 0,
+            # An archetype with no fields is an object, not an empty dict.
+            "plain_arch": 1,
+            # `__len__` and `__bool__` answer for the instance, as in Python.
+            "sized_empty": 0,
+            "sized_full": 1,
+            "bool_false": 0,
+            # Host objects carry their data on prototype getters.
+            "host_file": 1,
+            "host_date": 1,
+            "host_url": 1,
+            "host_error": 1,
+            # A bigint is an int to this runtime, so zero is falsy.
+            "bigint_zero": 0
+        };
+        for (key, want) in expected.items() {
+            assert got[key] == want , (
+                f"bool({key}): got {got[key]!r}, expected {want!r}\njs:\n{js_code}"
+            );
+        }
+    } finally {
+        os.unlink(temp_path);
+    }
+}
+
+
 test "cl negative-index assignment and while-truthiness match Python (#6320)" {
     # Negative-index assignment must write the element counted from the end
     # (raw `xs[-1] = v` would create a bogus "-1" property), and a `while`
     # guard on a collection must drain like Python rather than loop forever.
     jac_code = """
-def probe() -> dict {
+def probe() -> dict[any, any] {
     xs: list[int] = [1, 2, 3];
     xs[-1] = 99;
     xs[0] = 5;
@@ -2580,12 +2734,7 @@ def probe() -> dict {
             f"negative-index assignment must not write a raw subscript:\n{js_code}"
         );
         wrapper = js_code + "\nconsole.log(JSON.stringify(probe()));\n";
-        result = subprocess.run(
-            ["node", "--input-type=module", "-e", wrapper],
-            capture_output=True,
-            text=True,
-            timeout=30
-        );
+        result = run_js_module(wrapper);
         assert result.returncode == 0 , (
             "negative-write / while-truthiness run crashed in Node:\n"
             f"stderr={result.stderr!r}\njs:\n{js_code}"
@@ -2617,7 +2766,7 @@ test "cl subscript on unknown-typed values keeps JS undefined-on-miss (#6320)" {
     # index is rewritten to count from the end. This guards the jac-client
     # `data["data"]["user_id"]` pattern from regressing to a KeyError throw.
     jac_code = """
-def probe(resp: any, xs: any) -> dict {
+def probe(resp: any, xs: any) -> dict[any, any] {
     present: any = resp["user_id"];
     guard: int = 1 if (resp["data"] and resp["data"]["k"]) else 0;
     return {
@@ -2641,12 +2790,7 @@ def probe(resp: any, xs: any) -> dict {
             + "\nconst r = probe({user_id: 'u9', data: {}}, [10, 20, 30]);"
             + "\nconsole.log(JSON.stringify(r));\n"
         );
-        result = subprocess.run(
-            ["node", "--input-type=module", "-e", wrapper],
-            capture_output=True,
-            text=True,
-            timeout=30
-        );
+        result = run_js_module(wrapper);
         assert result.returncode == 0 , (
             "unknown-typed subscript run crashed in Node (should never throw):\n"
             f"stderr={result.stderr!r}\njs:\n{js_code}"
@@ -2694,12 +2838,7 @@ test "isinstance/issubclass against builtin types, user class, and tuples (#6458
         + "  subclass: subclass_probe()"
         + "}));\n"
     );
-    result = subprocess.run(
-        ["node", "--input-type=module", "-e", wrapper],
-        capture_output=True,
-        text=True,
-        timeout=30
-    );
+    result = run_js_module(wrapper);
     assert result.returncode == 0 , (
         "isinstance codegen crashed in Node:\n"
         f"stderr={result.stderr!r}\njs:\n{js_code}"
@@ -2758,12 +2897,7 @@ test "builtin type used as a value lowers to a callable (#7454)" {
         + "  subclass: subclass_probe()"
         + "}));\n"
     );
-    result = subprocess.run(
-        ["node", "--input-type=module", "-e", wrapper],
-        capture_output=True,
-        text=True,
-        timeout=30
-    );
+    result = run_js_module(wrapper);
     assert result.returncode == 0 , (
         "builtin-type-as-value codegen crashed in Node:\n"
         f"stderr={result.stderr!r}\njs:\n{js_code}"
@@ -2800,6 +2934,52 @@ test "builtin type used as a value lowers to a callable (#7454)" {
     );
 
     assert_balanced_syntax(js_code, "builtin_type_as_value.jac");
+}
+
+"""`type`, `list`, `dict`, `str` and `set` lex as type keywords, so every read
+of a parameter, loop variable or local with one of those names parsed as a
+BuiltinType and lowered to `_jac.types.<name>`: a component prop named `type`
+called `.toUpperCase()` on the runtime's type object."""
+test "a binding named after a builtin type reads the binding, not the type (#9643)" {
+    js_code = compile_fixture_to_js("builtin_type_name_bindings.jac", FIXTURES);
+    fn_idx = js_code.find("function upper_type");
+    assert fn_idx >= 0 , "compiled function upper_type must be present";
+    user_js = js_code[fn_idx:];
+    for name in ["type", "list", "dict", "set"] {
+        assert f"_jac.types.{name}" not in user_js , (
+            f"a read of the binding `{name}` lowered to the runtime type:\n" + user_js
+        );
+    }
+
+    wrapper = (
+        js_code
+        + "\nconsole.log(JSON.stringify({"
+        + "  upper_type: upper_type(\"abc\"),"
+        + "  count_items: count_items([\"a\", \"b\", \"c\"]),"
+        + "  value_of: value_of({\"k\": 7}, \"k\"),"
+        + "  exclaim: exclaim(\"hi\"),"
+        + "  uppers: uppers([\"x\", \"y\"]),"
+        + "  still_types: still_types(5)"
+        + "}));\n"
+    );
+    result = run_js_module(wrapper);
+    assert result.returncode == 0 , (
+        "builtin-type-named bindings crashed in Node:\n"
+        f"stderr={result.stderr!r}\njs:\n{js_code}"
+    );
+    got = json.loads(result.stdout.strip());
+    assert got["upper_type"] == "ABC" , f"param `type`: {got['upper_type']}\njs:\n{js_code}";
+    assert got["count_items"] == 3 , f"param `list`: {got['count_items']}\njs:\n{js_code}";
+    assert got["value_of"] == 7 , f"param `dict`: {got['value_of']}\njs:\n{js_code}";
+    assert got["exclaim"] == "hi!" , f"param `str`: {got['exclaim']}\njs:\n{js_code}";
+    assert got["uppers"] == ["X", "Y", "done"] , (
+        f"loop variable `type` and local `set`: {got['uppers']}\njs:\n{js_code}"
+    );
+    assert got["still_types"] == ["5", False] , (
+        f"str(x) and isinstance(x, str): {got['still_types']}\njs:\n{js_code}"
+    );
+
+    assert_balanced_syntax(js_code, "builtin_type_name_bindings.jac");
 }
 
 test "imported JS/TS class constructs with new (#8017)" {
@@ -2848,6 +3028,7 @@ test "imported JS/TS class constructs with new (#8017)" {
     # Without a module marker Node treats sibling .js files as CommonJS and
     # the generated named imports fail to resolve.
     Path(os.path.join(comp_dir, "package.json")).write_text('{"type": "module"}');
+    stage_prelude_dir(comp_dir);
     Path(os.path.join(comp_dir, "main.mjs")).write_text(
         js_code + "\nconsole.log(go());\n"
     );
@@ -2868,7 +3049,7 @@ test "imported JS/TS class constructs with new (#8017)" {
     assert_balanced_syntax(js_code, "ts_class_new.jac");
 }
 
-test "builtin functions lower to runtime helpers without type-check (#7480)" {
+test "builtin functions lower to runtime helpers without type-check (#7480, #8589)" {
     # An imported client module reaches the bundler uninferred (call_kind
     # unstamped, as when compiled as a dependency). The bundler chokepoint must
     # run the inference schedule before the backend so builtins lower to their
@@ -2917,18 +3098,24 @@ test "builtin functions lower to runtime helpers without type-check (#7480)" {
     }
     wrapper = (
         js_code
+        + "\nlet _emptyErr = null;"
+        + "\ntry { min_of_empty(); } catch (e) { _emptyErr = e.message; }"
         + "\nconsole.log(JSON.stringify({"
         + "  summarize: summarize([3, 1, 2]),"
         + "  numeric: numeric(5),"
-        + "  zipped: combined([1, 2], [3, 4])[2]"
+        + "  combined: combined([1, 2], [3, 4]),"
+        + "  min_max_key: min_max_by_key([\"ccc\", \"a\", \"bb\"]),"
+        + "  min_spread: min_of_spread([5, 1, 3]),"
+        + "  min_max_varargs: min_max_varargs(3, 1, 2),"
+        + "  sorted_kwargs_order: sorted_kwargs_order([\"ccc\", \"a\", \"bb\"]),"
+        + "  sorted_kwargs_spread: sorted_kwargs_spread("
+        + "[\"ccc\", \"a\", \"bb\"], {key: (s) => s.length}),"
+        + "  pos_spread_kwargs: pos_spread_with_kwargs([3.14159], [[1, 2, 3]]),"
+        + "  method_kwargs: method_kwargs([\"ccc\", \"a\", \"bb\"], \"a b c\"),"
+        + "  empty_error: _emptyErr"
         + "}));\n"
     );
-    result = subprocess.run(
-        ["node", "--input-type=module", "-e", wrapper],
-        capture_output=True,
-        text=True,
-        timeout=30
-    );
+    result = run_js_module(wrapper);
     assert result.returncode == 0 , (
         "builtin-function codegen crashed in Node:\n"
         f"stderr={result.stderr!r}\njs:\n{js_code}"
@@ -2943,7 +3130,71 @@ test "builtin functions lower to runtime helpers without type-check (#7480)" {
     assert got["summarize"]["ranged"] == [0, 1, 2] , got["summarize"];
     assert got["numeric"]["abs"] == 5 , got["numeric"];
     assert got["numeric"]["round"] == 3.14 , got["numeric"];
-    assert got["zipped"] == [[1, 3], [2, 4]] , got["zipped"];
+    assert got["combined"][2] == [[1, 3], [2, 4]] , got["combined"];
+
+    # `combined([1, 2], [3, 4])` calls `min(a)`/`max(a)` in the single-
+    # iterable form (#8589): `Math.min([1, 2])` used to silently return NaN
+    # here, but only index 2 (zip) was ever checked. `min_max_varargs`
+    # covers the other branch of the same fix -- `min(a, b, c)` with several
+    # separate values, which must keep working as a direct comparison, not
+    # collapse into the iterable path. `min_max_by_key` covers the `key=`
+    # form, `min_of_empty` covers the empty-sequence error, and
+    # `min_of_spread` covers `min(*xs)`: a single spread argument lowers to
+    # one `...xs` entry, which the fix must wrap in `[...]` rather than pass
+    # straight through -- otherwise xs's elements splice into the runtime
+    # helper's own argument list instead of forming the array it expects.
+    # The keyword rows below (#9120) must resolve by name, not source order.
+    expected_scalars = {
+        "combined min(a)": (got["combined"][0], 1),
+        "combined max(a)": (got["combined"][1], 2),
+        "min(items, key=)": (got["min_max_key"][0], "a"),
+        "max(items, key=)": (got["min_max_key"][1], "ccc"),
+        "min(*xs)": (got["min_spread"], 1),
+        "min(a, b, c)": (got["min_max_varargs"][0], 1),
+        "max(a, b, c)": (got["min_max_varargs"][1], 3),
+        "sorted(xs, reverse=True)": (got["summarize"]["sorted_reverse"], [3, 2, 1]),
+        "sum(xs, start=)": (got["summarize"]["sum_kwarg"], 16),
+        "enumerate(xs, start=)": (
+            got["summarize"]["enumerated_kwarg"],
+            [[5, 3], [6, 1], [7, 2]]
+        ),
+        "round(x, ndigits=)": (got["numeric"]["round_kwarg"], 3.14),
+        "sorted(key=, reverse=)": (
+            got["sorted_kwargs_order"]["key_then_reverse"],
+            ["ccc", "bb", "a"]
+        ),
+        "sorted(reverse=, key=)": (
+            got["sorted_kwargs_order"]["reverse_then_key"],
+            ["ccc", "bb", "a"]
+        ),
+        "pow(base=, exp=)": (got["numeric"]["pow_base_exp"], 125),
+        "pow(exp=, base=)": (got["numeric"]["pow_exp_base"], 125),
+        "complex(imag=, real=)": (got["numeric"]["complex_kwarg"], {"re": 1, "im": 2}),
+        "sorted(reverse=, **spread)": (got["sorted_kwargs_spread"], ["ccc", "bb", "a"]),
+        "round(*args, ndigits=)": (got["pos_spread_kwargs"][0], 3.14),
+        "sum(*args, start=)": (got["pos_spread_kwargs"][1], 16),
+        "list.sort(reverse=)": (
+            got["method_kwargs"]["sort_reverse"],
+            ["ccc", "bb", "a"]
+        ),
+        "list.sort(reverse=, key=)": (
+            got["method_kwargs"]["sort_reverse_key"],
+            ["ccc", "bb", "a"]
+        ),
+        "str.split(maxsplit=)": (got["method_kwargs"]["split_maxsplit"], ["a", "b c"]),
+        "str.split(maxsplit=, sep=)": (
+            got["method_kwargs"]["split_kw_order"],
+            ["a", "b c"]
+        )
+    };
+    for (label, (actual, expected)) in expected_scalars.items() {
+        assert actual == expected , (
+            f"{label}: expected {expected!r}, got {actual!r}\njs:\n{js_code}"
+        );
+    }
+    assert got["empty_error"] and "empty" in got["empty_error"].lower() , (
+        f"min([]) without a default must raise, got: {got['empty_error']}\njs:\n{js_code}"
+    );
 
     assert_balanced_syntax(js_code, "builtin_func_untyped.jac");
 }
@@ -2954,12 +3205,7 @@ test "getattr default with or/and emits parenthesized nullish coalescing (#6562)
 
     wrapper = js_code
         + "\nconsole.log(JSON.stringify(test_nullish_logical_precedence_cases()));\n";
-    result = subprocess.run(
-        ["node", "--input-type=module", "-e", wrapper],
-        capture_output=True,
-        text=True,
-        timeout=30
-    );
+    result = run_js_module(wrapper);
     assert result.returncode == 0 , (
         "getattr + or/and fixture crashed in Node:\n"
         + "stdout="
@@ -3032,7 +3278,7 @@ test "builtin name used as a dict key lowers to that key, not the 'key' fallback
     # renderer read that accidental `config.key`, so once the builtin-type
     # handler started lowering `type` correctly the form input types broke
     # (native `type="email"` validation stopped working). Lock the key down.
-    jac_code = "def make_cfg() -> dict {\n    return {type: \"email\", label: \"Email\"};\n}\n";
+    jac_code = "def make_cfg() -> dict[any, any] {\n    return {type: \"email\", label: \"Email\"};\n}\n";
 
     temp_path = write_temp_jac(jac_code);
     try {
@@ -3168,12 +3414,7 @@ test "branch-first assignment binds function-wide, not per block (#7882)" {
     js_code = compile_fixture_to_js("scope_hoist_shapes.jac", FIXTURES);
 
     wrapper = js_code + "\nconsole.log(JSON.stringify(t_all()));\n";
-    result = subprocess.run(
-        ["node", "--input-type=module", "-e", wrapper],
-        capture_output=True,
-        text=True,
-        timeout=30
-    );
+    result = run_js_module(wrapper);
     assert result.returncode == 0 , (
         "scope-hoist shapes crashed in Node:\nstdout="
         + result.stdout
@@ -3260,12 +3501,7 @@ test "len dispatches on argument type: dict, set, unknown (#7883)" {
     );
 
     wrapper = js_code + "\nconsole.log(JSON.stringify(t_len_all()));\n";
-    result = subprocess.run(
-        ["node", "--input-type=module", "-e", wrapper],
-        capture_output=True,
-        text=True,
-        timeout=30
-    );
+    result = run_js_module(wrapper);
     assert result.returncode == 0 , (
         "len dispatch crashed in Node:\nstdout="
         + result.stdout
@@ -3293,12 +3529,7 @@ test "dict.get miss is a real None on the client (#7884)" {
     );
 
     wrapper = js_code + "\nconsole.log(JSON.stringify(get_all()));\n";
-    result = subprocess.run(
-        ["node", "--input-type=module", "-e", wrapper],
-        capture_output=True,
-        text=True,
-        timeout=30
-    );
+    result = run_js_module(wrapper);
     assert result.returncode == 0 , (
         "dict.get semantics crashed in Node:\nstdout="
         + result.stdout
@@ -3337,12 +3568,7 @@ test "None comparisons lower to loose equality so undefined cannot impersonate a
     );
 
     wrapper = js_code + "\nconsole.log(JSON.stringify(none_cmp_all()));\n";
-    result = subprocess.run(
-        ["node", "--input-type=module", "-e", wrapper],
-        capture_output=True,
-        text=True,
-        timeout=30
-    );
+    result = run_js_module(wrapper);
     assert result.returncode == 0 , (
         "none-compare fixture crashed in Node:\nstdout="
         + result.stdout
@@ -3384,12 +3610,7 @@ test "match lowers to a guarded if-chain with full pattern coverage (#7881)" {
     );
 
     wrapper = js_code + "\nconsole.log(JSON.stringify(m_all()));\n";
-    result = subprocess.run(
-        ["node", "--input-type=module", "-e", wrapper],
-        capture_output=True,
-        text=True,
-        timeout=30
-    );
+    result = run_js_module(wrapper);
     assert result.returncode == 0 , (
         "match lowering crashed in Node:\nstdout="
         + result.stdout
@@ -3472,12 +3693,7 @@ test "a state setter handed out as a value loads without a ReferenceError" {
             'box.setTheme("light");\n'
             'console.log(JSON.stringify({kind: typeof box.setTheme}));\n'
         );
-    result = subprocess.run(
-        ["node", "--input-type=module", "-e", wrapper],
-        capture_output=True,
-        text=True,
-        timeout=30
-    );
+    result = run_js_module(wrapper);
     assert result.returncode == 0 , (
         "the emitted module must load and run:\nstderr="
         + result.stderr
@@ -3544,12 +3760,7 @@ test "del es runtime" {
     }
     js_code = compile_fixture_to_js_production(DEL_FIXTURE, FIXTURES);
     wrapper = js_code + "\nconsole.log(JSON.stringify(del_forms()));\n";
-    result = subprocess.run(
-        ["node", "--input-type=module", "-e", wrapper],
-        capture_output=True,
-        text=True,
-        timeout=30
-    );
+    result = run_js_module(wrapper);
     assert result.returncode == 0 , (
         "del fixture crashed in Node:\nstderr=" + result.stderr + "\njs:\n" + js_code
     );
@@ -3583,4 +3794,64 @@ test "del on a plain local in a graphless module is a no-op, not an error" {
         "a graphless module must not pull in the OSP driver"
     );
     assert_balanced_syntax(js_code, DEL_PLAIN_FIXTURE);
+}
+
+test "a distinct brand binds the primitive it erases to" {
+    js_code = compile_fixture_to_js("distinct_brand_value.jac", FIXTURES);
+    for (brand, prim) in [("Brand", "int"), ("Tag", "str")] {
+        assert "const " + brand + " = _jac.types." + prim in js_code , (
+            f"a brand is callable wherever the primitive it erases to is, so "
+            f"the module must bind {brand} to {prim}; got:\n{js_code}"
+        );
+    }
+}
+
+
+test "client codegen accepts a module that brands a value" {
+    prog = JacProgram();
+    prog.compile(file_path=os.path.join(FIXTURES, "distinct_brand_value.jac"));
+    unbound = [
+        str(e)
+        for e in prog.errors_had
+        if "never binds" in str(e)
+    ];
+    assert not unbound , (
+        f"a brand read as a free identifier makes client codegen refuse the "
+        f"whole module: {unbound}"
+    );
+}
+
+test "a brand behaves like its primitive when the client output runs" {
+    js_code = compile_fixture_to_js("distinct_brand_runtime.jac", FIXTURES);
+    wrapper = (
+        js_code
+        + "\nconsole.log(JSON.stringify({"
+        + "  brand_call: brand_call(\"42\"),"
+        + "  tag_call: tag_call(5),"
+        + "  brand_all: brand_all([\"1\", \"2\", \"3\"]),"
+        + "  brands_from_list: brands_from_list(5)"
+        + "}));\n"
+    );
+    result = run_js_module(wrapper);
+    assert result.returncode == 0 , (
+        "a brand is not callable in the emitted module:\n"
+        f"stderr={result.stderr!r}\njs:\n{js_code}"
+    );
+    got = json.loads(result.stdout.strip());
+    assert got["brand_call"] == 42 , (
+        f"Brand(x) must coerce like the primitive it erases to: {got['brand_call']}"
+        f"\njs:\n{js_code}"
+    );
+    assert got["tag_call"] == "5" , (
+        f"Tag(x) must coerce like str: {got['tag_call']}\njs:\n{js_code}"
+    );
+    assert got["brand_all"] == [1, 2, 3] , (
+        f"map(Brand, xs) must keep Python's one-argument call contract, or the "
+        f"index leaks into the coercion: {got['brand_all']}\njs:\n{js_code}"
+    );
+    assert got["brands_from_list"] == [5, "5"] , (
+        f"a brand stored in a collection and called out of it must still "
+        f"coerce: {got['brands_from_list']}\njs:\n{js_code}"
+    );
+    assert_balanced_syntax(js_code, "distinct_brand_runtime.jac");
 }

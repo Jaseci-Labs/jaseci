@@ -4,8 +4,6 @@ import from collections.abc { Callable }
 import from enum { StrEnum }
 import from typing { ClassVar, NoReturn, `override }
 import type from enum { IntEnum }
-import type from jaclang.runtime.constructs { AccessLevel, NodeArchetype }
-import type from jaclang.runtime.runtime { LLMModel }
 import type from jaclang { JacRuntimeInterface }
 
 enum APIProtocol(StrEnum) {
@@ -48,6 +46,21 @@ def _get_archetype_alias -> Callable[..., any];
 
 def _get_schema_builder(name: str) -> Callable[..., any];
 
+glob _CINTEROP_NAMES: dict[str, str] = {
+         'ptr': 'JacPtr',
+         'PtrView': 'JacPtrView',
+         'Pinned': 'JacPinned',
+         'pin': 'jac_pin',
+         'addressof': 'jac_addressof',
+         'VaList': 'JacVaList',
+         '_jac_clib_bind': 'clib_bind',
+         '_jac_c_copy': 'c_copy',
+         '_jac_c_cell': 'c_cell',
+         '_jac_c_lend': 'c_lend',
+         '_jac_c_function_ptr': 'c_function_ptr',
+         '_jac_c_vararg': 'c_vararg'
+     };
+
 def __getattr__(name: str) -> object;
 
 def printgraph(
@@ -70,7 +83,7 @@ def schedule(**kwargs: any) -> Callable;
 
 def new(cls: any, *args: any) -> any;
 
-def unsafe_html(html: any) -> dict;
+def unsafe_html(html: any) -> dict[str, any];
 
 def managed(x: any) -> any;
 
@@ -101,7 +114,19 @@ obj JacListView {
     def __iter__ -> any;
 }
 
-def _jac_chunks(xs: any, n: int) -> list;
+def _jac_chunks(xs: any, n: int) -> list[any];
+
+def _jac_take_attr(owner: any, name: str) -> any;
+
+def _jac_take_item(seq: any, key: any) -> any;
+
+def _jac_replace_attr(owner: any, name: str, value: any) -> any;
+
+def _jac_replace_item(seq: any, key: any, value: any) -> any;
+
+def _jac_swap_places(
+    owner_a: any, key_a: any, attr_a: bool, owner_b: any, key_b: any, attr_b: bool
+) -> None;
 
 
 glob __all__ = [
@@ -151,7 +176,25 @@ glob __all__ = [
          'wrapping_neg',
          'JacListView',
          '_jac_chunks',
+         '_jac_take_attr',
+         '_jac_take_item',
+         '_jac_replace_attr',
+         '_jac_replace_item',
+         '_jac_swap_places',
          'Region',
+         'region_of',
+         'ptr',
+         'PtrView',
+         'Pinned',
+         'pin',
+         'addressof',
+         'VaList',
+         '_jac_clib_bind',
+         '_jac_c_copy',
+         '_jac_c_cell',
+         '_jac_c_lend',
+         '_jac_c_function_ptr',
+         '_jac_c_vararg',
          '_jac_region_open',
          '_jac_region_close',
          '_jac_region_register',

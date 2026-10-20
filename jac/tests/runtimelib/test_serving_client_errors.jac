@@ -29,13 +29,13 @@ def _closed_port -> int {
 }
 
 
-def _start_server(handler: any) -> tuple {
+def _start_server(handler: any) -> tuple[any, ...] {
     srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
     srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1);
     srv.bind(("127.0.0.1", 0));
     srv.listen(4);
     port = srv.getsockname()[1];
-    held: list = [];
+    held: list[any] = [];
 
     def serve {
         while True {
@@ -56,7 +56,7 @@ def _start_server(handler: any) -> tuple {
 }
 
 
-def _stop_server(srv: any, held: list) {
+def _stop_server(srv: any, held: list[any]) {
     try {
         srv.close();
     } except OSError {}
@@ -88,6 +88,54 @@ def _http_500(conn: any) {
             + b"Content-Type: text/plain\r\n"
             + b"Content-Length: 4\r\n"
             + b"Connection: close\r\n\r\nboom"
+    );
+    conn.close();
+}
+
+
+def _interim_then_created(conn: any) {
+    conn.recv(65536);
+    conn.sendall(
+        b"HTTP/1.1 100 Continue\r\n\r\n"
+            + b"HTTP/1.1 201 Created\r\n"
+            + b"Content-Length: 2\r\n\r\nok"
+    );
+    conn.close();
+}
+
+
+def _multiple_interim_then_created(conn: any) {
+    conn.recv(65536);
+    conn.sendall(
+        b"HTTP/1.1 103 Early Hints\r\nLink: </style.css>; rel=preload\r\n\r\n"
+            + b"HTTP/1.1 100 Continue\r\n\r\n"
+            + b"HTTP/1.1 201 Created\r\n"
+            + b"Content-Length: 2\r\n\r\nok"
+    );
+    conn.close();
+}
+
+
+def _created(conn: any) {
+    conn.recv(65536);
+    conn.sendall(b"HTTP/1.1 201 Created\r\n" + b"Content-Length: 2\r\n\r\nok");
+    conn.close();
+}
+
+
+def _interim_then_eof(conn: any) {
+    conn.recv(65536);
+    conn.sendall(b"HTTP/1.1 100 Continue\r\n\r\n");
+    conn.close();
+}
+
+
+def _switching_protocols(conn: any) {
+    conn.recv(65536);
+    conn.sendall(
+        b"HTTP/1.1 101 Switching Protocols\r\n"
+            + b"Upgrade: websocket\r\n"
+            + b"Connection: Upgrade\r\n\r\n"
     );
     conn.close();
 }
@@ -224,6 +272,78 @@ test "post_stream_aware_sync classifies HTTP 500 as ClientRequestSent" {
 }
 
 
+test "client skips 100 Continue before a final response" {
+    (srv, held, port) = _start_server(_interim_then_created);
+    try {
+        response = request_sync(
+            'POST', f"http://127.0.0.1:{port}/x", data=b"body", timeout=2.0
+        );
+        assert response.status_code == 201;
+        assert response.text() == "ok";
+    } finally {
+        _stop_server(srv, held);
+    }
+}
+
+
+test "client skips multiple informational responses before a final response" {
+    (srv, held, port) = _start_server(_multiple_interim_then_created);
+    try {
+        response = request_sync(
+            'POST', f"http://127.0.0.1:{port}/x", data=b"body", timeout=2.0
+        );
+        assert response.status_code == 201;
+        assert response.text() == "ok";
+    } finally {
+        _stop_server(srv, held);
+    }
+}
+
+
+test "client preserves a final response without informational responses" {
+    (srv, held, port) = _start_server(_created);
+    try {
+        response = request_sync(
+            'POST', f"http://127.0.0.1:{port}/x", data=b"body", timeout=2.0
+        );
+        assert response.status_code == 201;
+        assert response.text() == "ok";
+    } finally {
+        _stop_server(srv, held);
+    }
+}
+
+
+test "client reports EOF after an informational response" {
+    (srv, held, port) = _start_server(_interim_then_eof);
+    try {
+        caught: any = None;
+        try {
+            request_sync(
+                'POST', f"http://127.0.0.1:{port}/x", data=b"body", timeout=2.0
+            );
+        } except ClientRequestSent as e {
+            caught = e;
+        }
+        assert caught is not None;
+        assert "bad status line" in str(caught);
+    } finally {
+        _stop_server(srv, held);
+    }
+}
+
+
+test "client treats 101 Switching Protocols as terminal" {
+    (srv, held, port) = _start_server(_switching_protocols);
+    try {
+        response = request_sync('GET', f"http://127.0.0.1:{port}/x", timeout=2.0);
+        assert response.status_code == 101;
+    } finally {
+        _stop_server(srv, held);
+    }
+}
+
+
 test "mid-stream connection loss raises from the consumer's iterator" {
     _sse_reset_gate.clear();
     (srv, held, port) = _start_server(_sse_one_event_then_reset);
@@ -233,7 +353,7 @@ test "mid-stream connection loss raises from the consumer's iterator" {
         );
         assert kind == 'sse';
         it = iter(gen);
-        got: list = [next(it)];
+        got: list[any] = [next(it)];
         _sse_reset_gate.set();
         raised: any = None;
         try {

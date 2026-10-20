@@ -1,19 +1,5 @@
 import logging;
 import from uuid { UUID }
-import from jaclang.runtime.archetype { Anchor, EdgeAnchor, anchor_key }
-import from jaclang.runtime.graph_query { GraphQuery, QPred }
-import from jaclang.runtime.graph_walk {
-    access_gated,
-    acl_read_ok,
-    needs_store,
-    origin_anchors,
-    pred_subject,
-    walk,
-    walk_edges,
-    walk_nodes
-}
-import from jaclang.server.session { Session }
-import from jaclang.data.sqlcompile { compile_query }
 
 glob logger = logging.getLogger(__name__),
      __all__ = [
@@ -49,7 +35,7 @@ def resolve_query_exists(mem: Session, q: GraphQuery) -> bool;
 class LazyRefs(list) {
     def init(self: LazyRefs, resolve: any, query: GraphQuery) -> None;
     def _realize(self: LazyRefs) -> None;
-    def _bounded(self: LazyRefs, limit: (int | None), offset: int) -> list;
+    def _bounded(self: LazyRefs, limit: (int | None), offset: int) -> list[any];
     def _count(self: LazyRefs) -> int;
     def _mem(self: LazyRefs) -> any;
     def __len__(self: LazyRefs) -> int;
@@ -73,5 +59,5 @@ class LazyRefs(list) {
     def reverse(self: LazyRefs) -> None;
     def index(self: LazyRefs, item: any, *a: any) -> int;
     def count(self: LazyRefs, item: any) -> int;
-    def copy(self: LazyRefs) -> list;
+    def copy(self: LazyRefs) -> list[any];
 }

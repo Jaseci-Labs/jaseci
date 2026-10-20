@@ -1,6 +1,6 @@
 # Persistence & Schema Migration
 
-Jac apps persist their object-spatial graph automatically, under one rule: whatever is reachable from `root` persists. The rule is called *persistence by reachability*, and the `root` node is the distinguished node anchoring every topology (each served user is issued a root of their own). But the schema of your `node`/`obj`/`edge`/`walker` archetypes inevitably evolves: you add a field, rename one, change a type, rename a class. This page covers what happens when you do.
+Jac applications can persist their object-spatial graph through the runtime. In a persistence-enabled context, attaching transient nodes to persistent graph state promotes them into storage. This page explains that lifecycle and what happens when archetype schemas change: adding or renaming fields, changing types, and renaming classes.
 
 The short version: **edits never delete persisted data**. Schema changes are tolerated, type changes are coerced, and rows that genuinely can't be loaded land in a quarantine sidecar instead of being dropped. For changes that need intent -- a field rename, a custom value transform -- archetypes declare their history in a [`__jac_schema__` hook](#declared-drift-rules-__jac_schema__) and the runtime repairs old rows on load.
 
@@ -8,7 +8,7 @@ The short version: **edits never delete persisted data**. Schema changes are tol
 
 ## What gets persisted, and where
 
-Every Jac archetype instance has a backing **anchor** that the runtime tracks. When an anchor is reachable from `root` (directly or via edges) and marked `persistent`, the runtime writes it to the store when the unit of work commits (each served request commits at its end; a `jac run` commits at process exit).
+Every Jac archetype instance has a backing **anchor** that the runtime tracks. Persistent anchors are written when the unit of work commits. Successful served requests commit at their transaction boundary; script persistence follows the runtime session lifecycle. A transient graph can also be used without durable storage.
 
 ```jac
 node Person { has name: str; }
@@ -24,14 +24,22 @@ walker create {
 
 **The store is Postgres, always.** There is exactly one persistence stack:
 
-- **Local development**: the runtime provisions an **embedded Postgres server** automatically. It is one cluster for the whole machine (`~/.cache/jac/pg/main`) holding one database per project, keyed to the project's absolute path. No installation, no configuration, no daemon to manage -- `jac run` and `jac run` just work. `jac db status` shows the server state and row counts; `jac db stop` shuts it down. Because the key is the path, a project that moves or is deleted leaves its database behind: `jac db list` shows what the cluster holds and who owns it, and `jac db prune` reclaims the ones whose project is gone (see [Database Operations](cli/index.md#database-operations)).,
+- **Local development**: the runtime provisions an **embedded Postgres server** automatically. It is one cluster for the whole machine (`~/.cache/jac/pg/main`) holding one database per project, keyed to the project's absolute path. No installation, no configuration, no daemon to manage -- `jac run` and `jac run` just work. `jac db status` shows the server state and row counts; `jac db stop` shuts it down. Because the key is the path, a project that moves or is deleted leaves its database behind: `jac db list` shows what the cluster holds and who owns it, `jac db prune` reclaims the ones whose project is gone, and the cluster's start-time sweep reclaims them on its own once the directory has been missing for a grace period (24 hours by default) so the cluster does not grow without bound (see [Database Operations](cli/index.md#database-operations)).
 - **Only when the graph is touched**: the embedded server boots on the first operation that actually reads or writes persistent state. A program that never dereferences `root` (a script that just prints, an HTTP proxy, a fixture server) starts no Postgres and runs no `initdb`, so it needs no database at all -- there is nothing to opt out of.
 - **External server**: set the `JAC_DB_URL` environment variable (or `[scale.database] url` in `jac.toml`) to a `postgresql://user:pass@host:port/db` URL and the runtime connects there instead. Kubernetes deploys provision a Postgres StatefulSet and inject `JAC_DB_URL` into every pod.
 
 Anchors live in an `anchors` table with `jsonb` payloads; the same database also carries the `quarantine` sidecar, a `kv_state` utility table, and (under jac-scale) the `jac_docs` table for scheduler jobs and webhook API keys. `jac db inspect` summarizes anchors by kind and archetype; `jac db sql "..."` runs one SQL statement against the project store when you need to look closer.
 
-!!! info "Why reachability? Persistence is a predicate, not an event"
-    In the I/O conception, persistence is something a program *does* at a moment -- open a session, call save -- and forgetting to do it is a bug. Jac makes persistence a *predicate*: a datum is durable exactly while it stands in a reachable position, the same way a value is live under garbage collection exactly while it's reachable from the collector's roots. One rule serves both temporal directions -- reachability decides what survives the past (collection) and what survives into the future (persistence). The idea has a research lineage (it is the identification rule of *orthogonal persistence*, pioneered in PS-algol in the 1980s), with one deliberate restriction that makes it practical: Jac persists the **topology** (nodes and edges), not the whole language heap -- closures, walker-local state, and ordinary objects stay transient, because they are the moving parts, not the remembered world.
+### Named SQL parameters
+
+`PgWireConnection.run` and `PgStore.rows` accept named SQL parameters such as `:name`. Only executable placeholders are bound: ordinary strings, quoted identifiers, dollar-quoted strings, `E'...'` escape strings, and SQL comments retain their text. Repeated names share one positional parameter, and PostgreSQL `::` casts remain unchanged.
+
+### Array NULL parameters
+
+When using `PgWireConnection.run` directly, `None` inside an array parameter represents a SQL `NULL` element. For example, binding `[1, None, 3]` to `:values::int[]` preserves the missing middle value. Strings such as `"None"`, `"NULL"`, and the empty string remain text values in a `text[]` parameter.
+
+!!! info "Attachment, disconnection, and deletion"
+    Reachability from persistent graph state promotes transient nodes and edges into storage. It is not a continuous garbage-collection rule for stored records: removing an edge does not automatically delete a previously persisted node. Use explicit deletion when the record should be destroyed. Ordinary local values and transient graphs do not become durable merely because their types are declared in Jac.
 
 ---
 
@@ -203,7 +211,7 @@ A recoverable quarantine (say, a class-missing row) heals on a later load once t
 
 If you've used Jac before and remember "delete the data directory to run again after editing a node," that workflow is no longer required. Schema edits don't wipe data; they at worst quarantine rows until the fixed code loads them.
 
-The same contract governs whole databases: nothing on the write path ever drops one. Reclaiming disk is always an explicit act (`jac db prune`, `jac db drop`, both of which report and exit unless you pass `-y`), with one opt-in exception you have to configure yourself, `[database] retention_days`. The only deletions the runtime performs on its own are the throwaway scratch databases it creates for its own internal work, which never hold your data.
+The same contract governs whole databases: nothing on the write path ever drops one. Reclaiming disk of a database whose project directory exists is always an explicit act (`jac db prune`, `jac db drop`, both of which report and exit unless you pass `-y`), with one opt-in exception you have to configure yourself, `[database] retention_days`. The deletions the runtime performs on its own are limited to the throwaway scratch databases it creates for its own internal work, which never hold your data, and to project databases whose directory has been gone for longer than a grace period (24 hours by default, `JAC_DB_ORPHAN_GRACE_HOURS`): a cluster start marks such a database, a later start past the grace drops it if nothing is connected, and a directory that comes back in between clears the mark (see [Retention](cli/index.md#retention)).
 
 ---
 
@@ -272,7 +280,7 @@ node User {
 
 ```jac
 # impl/models.impl.jac -- the ledger of the past
-def split_tags(doc: dict) -> dict {
+def split_tags(doc: dict[str, any]) -> dict[str, any] {
     doc["tags"] = [t.strip() for t in doc["tags"].split(",") if t.strip()];
     return doc;
 }
@@ -468,7 +476,7 @@ jac db fetch
 
 The official `jaseci/jaclang` image already carries everything the embedded engine needs, so nothing here is required to run it. The rules matter when you build your own image or override the defaults:
 
-- **The distribution is baked, not downloaded.** The image ships the Postgres binaries and points `JAC_PG_DIST` at them. To do the same in your own image, run `jac db fetch` at build time and set `JAC_PG_DIST` to the resulting directory (the one holding `bin/postgres`); the runtime then never reaches the network. `JAC_PG_DIST` also lets an air-gapped host use a distribution copied in by hand.
+- **The distribution is baked, not downloaded.** The image runs `jac db fetch` at build time, so the Postgres binaries are already in its cache, where the runtime finds them before it would reach the network. Do the same in your own image. On an air-gapped host, point `[database] postgres_dist` in `jac.toml` at a distribution copied in by hand (the directory holding `bin/postgres`).
 - **The cluster is not in `$HOME`.** `JAC_CACHE_HOME` decides where the cluster lives (default `~/.cache/jac`). The image pins it to a shared directory so the path does not change with the uid the pod runs as; that is also the one path to mount if you want the cluster to survive a restart.
 - **Postgres cannot run as root.** `initdb` refuses uid 0. The image therefore defaults to a real unprivileged account (uid 1000) rather than root, and because the account exists in `/etc/passwd`, an explicit `runAsUser: 1000` resolves too. If jac does run as root anyway, the embedded engine drops privileges for the server subprocess to the first resolvable unprivileged account (`JAC_PG_USER`, then `SUDO_USER`, then `jac` / `postgres` / `nobody`), handing it the data directory first. With no such account it fails with a message naming `JAC_PG_USER` and `JAC_DB_URL` instead of leaking `initdb`'s error.
 

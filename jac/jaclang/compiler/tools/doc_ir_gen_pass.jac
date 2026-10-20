@@ -1,9 +1,5 @@
-import jaclang.compiler.tools.doc_ir as doc;
-import jaclang.compiler.frontend.unitree as uni;
-import from jaclang.compiler.frontend.constant { Tokens as Tok, is_mut_kind }
-import from jaclang.compiler.passes { UniPass }
-
-walker DocIRGenPass(UniPass) {
+walker DocIRGenPass(TreePass) {
+    static has contract: PassContract = PassContract();
     has _live_comment_ids: (set[int] | None) = None,
         _emitted_comment_ids: (set[int] | None) = None;
 
@@ -45,7 +41,10 @@ walker DocIRGenPass(UniPass) {
     def _child_docs(nd: uni.UniNode) -> list[doc.DocType];
     def _assign_group_concat(nd: uni.UniNode) -> None;
     def _assign_space_group(nd: uni.UniNode) -> None;
-    def _assign_operator_chain(nd: uni.UniNode, operands: list, ops: list) -> None;
+    def _assign_operator_chain(
+        nd: uni.UniNode, operands: list[uni.UniNode], ops: list[uni.UniNode]
+    ) -> None;
+
     def _assign_semi_stmt_doc_ir(nd: uni.UniNode) -> None;
     def _assign_compr_doc_ir(nd: uni.UniNode) -> None;
     def _assign_else_doc_ir(nd: uni.UniNode, body: Sequence[uni.UniNode]) -> None;
@@ -104,6 +103,7 @@ walker DocIRGenPass(UniPass) {
     can exit_in_for_stmt with uni.InForStmt exit;
     can exit_iter_for_stmt with uni.IterForStmt exit;
     can exit_try_stmt with uni.TryStmt exit;
+    can exit_awaiting_clause with uni.AwaitingClause exit;
     can exit_except with uni.Except exit;
     can exit_finally_stmt with uni.FinallyStmt exit;
     can exit_tuple_val with uni.TupleVal exit;
@@ -143,6 +143,7 @@ walker DocIRGenPass(UniPass) {
     can exit_disconnect_op with uni.DisconnectOp exit;
     can exit_compare_expr with uni.CompareExpr exit;
     can exit_atom_unit with uni.AtomUnit exit;
+    can exit_graph_expr with uni.GraphExpr exit;
     can exit_expr_as_item with uni.ExprAsItem exit;
     can exit_filter_compr with uni.FilterCompr exit;
     can exit_assign_compr with uni.AssignCompr exit;
@@ -188,5 +189,14 @@ walker DocIRGenPass(UniPass) {
     can exit_jsx_expression with uni.JsxExpression exit;
     can exit_jsx_slot with uni.JsxSlot exit;
     can exit_jsx_comment with uni.JsxComment exit;
+    can exit_graph_import with uni.GraphImport exit;
+    can exit_import_wire with uni.ImportWire exit;
+    can exit_wire_target with uni.WireTarget exit;
+    can exit_import_rule with uni.ImportRule exit;
+    can exit_module_pattern with uni.ModulePattern exit;
+    can exit_wire_item with uni.WireItem exit;
+    def _wiring_stmt_doc_ir(nd: uni.UniNode) -> doc.DocType;
+    def _payload_doc_ir(items: list[doc.DocType]) -> doc.DocType;
+    can doc_ir_default_exit with uni.UniNode exit;
     can finish_doc_comments with uni.UniNode exit;
 }

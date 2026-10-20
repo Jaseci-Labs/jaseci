@@ -2,7 +2,7 @@
 name = "{{name}}"
 version = "1.0.0"
 description = "Jac client application: {{name}}"
-entry-point = "main.jac"
+entry-point = "main"
 kind = "web-static"
 
 [dependencies]
@@ -13,11 +13,8 @@ jac-client-node = "1.0.7"
 [dependencies.npm.dev]
 "@jac-client/dev-deps" = "1.0.0"
 
-[dev-dependencies]
+[dev-dependencies.pypi]
 watchdog = ">=3.0.0"
-
-[serve]
-base_route_app = "app"
 
 [client]
 

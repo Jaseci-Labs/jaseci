@@ -1,6 +1,5 @@
-import from jaclang.cli.console { console }
-
 impl run_lang_server -> None {
+    logging.getLogger().setLevel(logging.CRITICAL);
     server = JacLangServer();
 
     server.feature(lspt.TEXT_DOCUMENT_DID_OPEN)(did_open);
@@ -8,6 +7,7 @@ impl run_lang_server -> None {
     server.feature(lspt.TEXT_DOCUMENT_DID_CHANGE)(did_change);
     server.feature(lspt.TEXT_DOCUMENT_DID_CLOSE)(did_close);
     server.feature(lspt.TEXT_DOCUMENT_FORMATTING)(formatting);
+    server.feature(lspt.TEXT_DOCUMENT_INLAY_HINT)(inlay_hint);
     server.feature(
         lspt.WORKSPACE_DID_CREATE_FILES,
         lspt.FileOperationRegistrationOptions(
@@ -97,6 +97,12 @@ impl document_symbol(
     return ls.get_outline(params.text_document.uri);
 }
 
+impl inlay_hint(
+    ls: JacLangServer, params: lspt.InlayHintParams
+) -> list[lspt.InlayHint] {
+    return ls.get_inlay_hints(params.text_document.uri, params.range);
+}
+
 impl hover(
     ls: JacLangServer, params: lspt.TextDocumentPositionParams
 ) -> Optional[lspt.Hover] {
@@ -135,4 +141,31 @@ impl lintfix_formatting(
 
 impl debug(msg: str) -> None {
     console.error(f"[SERVER] {msg}");
+}
+
+impl did_open(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) {
+    ls.type_check(params.text_document.uri);
+}
+
+impl did_save(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) {
+    ls.type_check(params.text_document.uri);
+}
+
+impl did_change(ls: JacLangServer, params: lspt.DidChangeTextDocumentParams) {
+    debug(f"Did change: Type checking started.");
+    ls.type_check(params.text_document.uri);
+}
+
+impl did_create_files(ls: JacLangServer, params: lspt.CreateFilesParams) {}
+
+impl completion(
+    ls: JacLangServer, params: lspt.CompletionParams
+) -> lspt.CompletionList {
+    file_path = params.text_document.uri;
+    debug("Completion requested");
+    return await ls.get_completion(
+        params.text_document.uri,
+        params.position,
+        (params.context.trigger_character if params.context else None)
+    );
 }

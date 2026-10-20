@@ -1,16 +1,44 @@
 impl ASTValidationPass.enter_match_stmt with MatchStmt entry {
     if len(here.cases) == 0 {
-        self.emit(E0041, node_override=here);
+        self.ctx.emit(E0041, node_override=here);
+    }
+}
+
+impl ASTValidationPass.enter_module with Module entry {
+    if here.is_raised_from_py or here.stub_only {
+        return;
+    }
+    first_line: dict[str, int] = {};
+    for item in here.body {
+        name_node: (UniNode | None) = None;
+        if isinstance(item, Ability) {
+            name_node = item.name_ref;
+        } elif isinstance(item, Archetype) {
+            name_node = item.name;
+        }
+        if not isinstance(name_node, Name)
+            or not isinstance(item, (Ability, Archetype))
+            or item.body is None
+            or item.decorators {
+            continue;
+        }
+        if name_node.value in first_line {
+            self.ctx.emit(
+                E2036,
+                node_override=name_node,
+                name=name_node.value,
+                line=first_line[name_node.value]
+            );
+        } else {
+            first_line[name_node.value] = name_node.loc.first_line;
+        }
     }
 }
 
 impl ASTValidationPass.enter_module_code with ModuleCode entry {
     if isinstance(here.parent, Module) or here.parent is None {
-        for k in here.kid {
-            if isinstance(k, Token) and k.name == Tok.KW_EXIT {
-                self.emit(E0031, node_override=here);
-                break;
-            }
+        if [here->:Kid:->[?:Token, name==Tok.KW_EXIT]] {
+            self.ctx.emit(E0031, node_override=here);
         }
     }
 }
@@ -21,7 +49,7 @@ impl ASTValidationPass.enter_binary_expr with BinaryExpr entry {
         and here.op.name == Tok.WALRUS_EQ {
         if not isinstance(here.left, Name)
             and not isinstance(here.left, SpecialVarRef) {
-            self.emit(E0020, node_override=here.left);
+            self.ctx.emit(E0020, node_override=here.left);
         } else {
             self._reject_non_bindable(here.left);
         }
@@ -29,20 +57,20 @@ impl ASTValidationPass.enter_binary_expr with BinaryExpr entry {
 }
 
 impl ASTValidationPass.enter_name with Name entry {
-    if here.__class__ is not Name {
+    if type(here) is not Name {
         return;
     }
     if here.value == "pass" {
-        self.emit(E0010, node_override=here, keyword="pass");
+        self.ctx.emit(E0010, node_override=here, keyword="pass");
     }
 }
 
 impl ASTValidationPass.enter_param_var with ParamVar entry {
-    ctx_owner = here.find_parent_of_type(ContextAwareNode);
+    ctx_owner: (ContextAwareNode | None) = here.find_parent_of_type(ContextAwareNode);
     if isinstance(here.name, Name)
         and keyword.iskeyword(here.name.value)
         and (ctx_owner is None or ctx_owner.code_context == CodeContext.SERVER) {
-        self.emit(
+        self.ctx.emit(
             E0067, node_override=here.name, name=here.name.value, context='parameter'
         );
     }
@@ -52,7 +80,7 @@ impl ASTValidationPass.enter_param_var with ParamVar entry {
     }
     if here.type_tag is None {
         param_name = here.name.value if isinstance(here.name, Name) else str(here.name);
-        self.emit(E0052, node_override=here, name=param_name);
+        self.ctx.emit(E0052, node_override=here, name=param_name);
     }
 }
 
@@ -60,35 +88,37 @@ impl ASTValidationPass.enter_func_signature with FuncSignature entry {
     has_slash = False;
     has_star = False;
     has_kwargs = False;
-    for k in here.kid {
+    for k in [here->:Kid:->] {
         if isinstance(k, Token) and k.name == Tok.DIV {
             if has_slash {
-                self.emit(E0050, node_override=k, param="/");
+                self.ctx.emit(E0050, node_override=k, param="/");
             } elif has_star {
-                self.emit(E0051, node_override=k, first="/", second="*");
+                self.ctx.emit(E0051, node_override=k, first="/", second="*");
             } elif has_kwargs {
-                self.emit(E0051, node_override=k, first="/", second="**kwargs");
+                self.ctx.emit(E0051, node_override=k, first="/", second="**kwargs");
             }
             has_slash = True;
         } elif isinstance(k, Token) and k.name == Tok.STAR_MUL {
             if has_star {
-                self.emit(E0050, node_override=k, param="*");
+                self.ctx.emit(E0050, node_override=k, param="*");
             } elif has_kwargs {
-                self.emit(E0051, node_override=k, first="*", second="**kwargs");
+                self.ctx.emit(E0051, node_override=k, first="*", second="**kwargs");
             }
             has_star = True;
         } elif isinstance(k, ParamVar) {
             if k.unpack and k.unpack?.name {
                 if k.unpack.name == Tok.STAR_MUL {
                     if has_star {
-                        self.emit(E0050, node_override=k, param="*");
+                        self.ctx.emit(E0050, node_override=k, param="*");
                     } elif has_kwargs {
-                        self.emit(E0051, node_override=k, first="*", second="**kwargs");
+                        self.ctx.emit(
+                            E0051, node_override=k, first="*", second="**kwargs"
+                        );
                     }
                     has_star = True;
                 } elif k.unpack.name == Tok.STAR_POW {
                     if has_kwargs {
-                        self.emit(E0050, node_override=k, param="**kwargs");
+                        self.ctx.emit(E0050, node_override=k, param="**kwargs");
                     }
                     has_kwargs = True;
                 }
@@ -101,23 +131,23 @@ impl ASTValidationPass.enter_iter_for_stmt with IterForStmt entry {
     if here.count_by is not None
         and isinstance(here.count_by, Assignment)
         and here.count_by.aug_op is None {
-        self.emit(E0023, node_override=here.count_by);
+        self.ctx.emit(E0023, node_override=here.count_by);
     }
 }
 
 impl ASTValidationPass.enter_enum with Enum entry {
     if isinstance(here.body, list) and len(here.body) == 0 {
-        self.emit(E0043, node_override=here);
+        self.ctx.emit(E0043, node_override=here);
     }
 }
 
 impl ASTValidationPass.enter_switch_stmt with SwitchStmt entry {
     if len(here.cases) == 0 {
-        self.emit(E0042, node_override=here);
+        self.ctx.emit(E0042, node_override=here);
     }
 }
 
-impl ASTValidationPass._reject_non_bindable(target: object) -> None {
+impl ASTValidationPass._reject_non_bindable(target: UniNode) -> None {
     non_bindable = {Tok.KW_ROOT, Tok.KW_SUPER};
     if isinstance(target, (TupleVal, ListVal)) {
         for el in target.values {
@@ -129,7 +159,7 @@ impl ASTValidationPass._reject_non_bindable(target: object) -> None {
     ref = target.right if isinstance(target, AtomTrailer) else target;
 
     if isinstance(ref, Name) and (not ref.is_kwesc) and ref.name in non_bindable {
-        self.emit(E0024, node_override=ref, name=ref.value);
+        self.ctx.emit(E0024, node_override=ref, name=ref.value);
     }
 }
 
@@ -157,7 +187,7 @@ impl ASTValidationPass._check_render_phase_state_write(nd: Assignment) -> None {
         }
         if isinstance(scope, (Ability, ImplDef)) {
             if self._scope_declares_state(scope, name) and self._returns_jsx(scope) {
-                self.emit(E0082, node_override=nd, name=name);
+                self.ctx.emit(E0082, node_override=nd, name=name);
             }
             return;
         }
@@ -202,7 +232,7 @@ impl ASTValidationPass._returns_jsx(scope: (Ability | ImplDef)) -> bool {
             and probe.sym_name in ("JsxElement", "JsxPage", "JsxLayout") {
             return True;
         }
-        kids = probe.kid;
+        kids = [probe->:Kid:->];
         if isinstance(kids, list) {
             stack.extend(kids);
         }
@@ -215,11 +245,11 @@ impl ASTValidationPass.enter_inner_compr with InnerCompr entry {
 }
 
 impl ASTValidationPass.enter_has_var with HasVar entry {
-    ctx_owner = here.find_parent_of_type(ContextAwareNode);
+    ctx_owner: (ContextAwareNode | None) = here.find_parent_of_type(ContextAwareNode);
     if isinstance(here.name, Name)
         and keyword.iskeyword(here.name.value)
         and (ctx_owner is None or ctx_owner.code_context == CodeContext.SERVER) {
-        self.emit(
+        self.ctx.emit(
             E0067, node_override=here.name, name=here.name.value, context='field'
         );
     }
@@ -239,33 +269,26 @@ impl ASTValidationPass.enter_delete_stmt with DeleteStmt entry {
     }
 }
 
-impl ASTValidationPass._reject_undeletable(target: object) -> None {
+impl ASTValidationPass._reject_undeletable(target: UniNode) -> None {
     inner = target;
     while isinstance(inner, AtomUnit) {
         inner = inner.value;
     }
+    error = DeleteStmt.invalid_target(inner);
+    if error is not None {
+        what = {
+            DeleteTargetError.LITERAL: "a literal",
+            DeleteTargetError.EMPTY_TARGET_LIST: "an empty target list",
+            DeleteTargetError.NULL_SAFE_ACCESS: "a null-safe access",
+            DeleteTargetError.UNPACKED_TARGET: "an unpacked target"
+        }[error];
+        self.ctx.emit(E0083, node_override=inner, what=what);
+        return;
+    }
     if isinstance(inner, (TupleVal, ListVal)) {
-        if len(inner.values) == 0 {
-            self.emit(E0083, node_override=inner, what="an empty target list");
-            return;
-        }
         for el in inner.values {
             self._reject_undeletable(el);
         }
-        return;
-    }
-    if isinstance(inner, AtomTrailer) and inner.is_null_ok {
-        self.emit(E0083, node_override=inner, what="a null-safe access");
-        return;
-    }
-    if isinstance(inner, UnaryExpr)
-        and isinstance(inner.op, Token)
-        and inner.op.name in (Tok.STAR_MUL, Tok.STAR_POW) {
-        self.emit(E0083, node_override=inner, what="an unpacked target");
-        return;
-    }
-    if isinstance(inner, (Literal, MultiString, FString)) {
-        self.emit(E0083, node_override=inner, what="a literal");
     }
 }
 
@@ -273,14 +296,14 @@ impl ASTValidationPass.enter_import with Import entry {
     if here.items is not None
         and len(here.items) == 0
         and (here.clib_decls is None or len(here.clib_decls) == 0) {
-        self.emit(E0044, node_override=here);
+        self.ctx.emit(E0044, node_override=here);
     }
 }
 
 impl ASTValidationPass.enter_yield_expr with YieldExpr entry {
     if here.find_parent_of_type(Ability) is None
         and here.find_parent_of_type(ImplDef) is None {
-        self.emit(E0055, node_override=here);
+        self.ctx.emit(E0055, node_override=here);
     }
 }
 
@@ -302,13 +325,19 @@ impl ASTValidationPass.enter_ctrl_stmt with CtrlStmt entry {
         if kw == "break" and isinstance(parent, (SwitchStmt, MatchStmt)) {
             return;
         }
+        if kw == "continue" and isinstance(parent, ElseStmt) {
+            if isinstance(parent.parent, (InForStmt, IterForStmt, WhileStmt)) {
+                self.ctx.emit(E0059, node_override=here);
+                return;
+            }
+        }
 
         if isinstance(parent, (Ability, ImplDef, Module)) {
             break;
         }
         parent = parent.parent;
     }
-    self.emit(E0058, node_override=here, keyword=kw);
+    self.ctx.emit(E0058, node_override=here, keyword=kw);
 }
 
 impl ASTValidationPass.enter_global_vars with GlobalVars entry {
@@ -316,8 +345,11 @@ impl ASTValidationPass.enter_global_vars with GlobalVars entry {
     if here.is_frozen and isinstance(here.parent, Archetype) {
         return;
     }
+    if isinstance(here.parent, Import) and here.parent.clib_decls {
+        return;
+    }
     if not isinstance(here.parent, valid_parents) {
-        self.emit(E0063, node_override=here);
+        self.ctx.emit(E0063, node_override=here);
     }
 }
 
@@ -335,13 +367,13 @@ impl ASTValidationPass.enter_func_call with FuncCall entry {
                     if isinstance(param.key, Name)
                     else str(param.key);
                 if kw_name in seen_kw_names {
-                    self.emit(E0065, node_override=param, name=kw_name);
+                    self.ctx.emit(E0065, node_override=param, name=kw_name);
                 }
                 seen_kw_names.add(kw_name);
             }
         } else {
             if seen_kw {
-                self.emit(E0066, node_override=param);
+                self.ctx.emit(E0066, node_override=param);
             }
         }
     }
@@ -359,7 +391,7 @@ impl ASTValidationPass.enter_archetype with Archetype entry {
             }
             if base_name is not None {
                 if base_name in seen_bases {
-                    self.emit(E0075, node_override=base, name=base_name);
+                    self.ctx.emit(E0075, node_override=base, name=base_name);
                 }
                 seen_bases.add(base_name);
             }
@@ -441,13 +473,13 @@ impl ASTValidationPass.enter_archetype with Archetype entry {
         ) {
             key = (mname, accessor_kind);
             if key in seen_accessors {
-                self.emit(E0076, node_override=nref, name=mname);
+                self.ctx.emit(E0076, node_override=nref, name=mname);
             }
             seen_accessors.add(key);
             continue;
         }
         if dedup_name in seen_methods {
-            self.emit(E0076, node_override=nref, name=mname);
+            self.ctx.emit(E0076, node_override=nref, name=mname);
         }
         seen_methods.add(dedup_name);
     }
@@ -457,12 +489,12 @@ impl ASTValidationPass.enter_try_stmt with TryStmt entry {
     if len(here.excepts) == 0
         and here.finally_body is None
         and here.awaiting_body is None {
-        self.emit(E0040, node_override=here);
+        self.ctx.emit(E0040, node_override=here);
     }
 
     for (i, exc) in enumerate(here.excepts) {
         if exc.ex_type is None and i < len(here.excepts) - 1 {
-            self.emit(E0071, node_override=exc);
+            self.ctx.emit(E0071, node_override=exc);
         }
     }
 }
@@ -473,7 +505,7 @@ impl ASTValidationPass.enter_jsx_slot with JsxSlot entry {
 
 impl ASTValidationPass.enter_expr_stmt with ExprStmt entry {
     if not here.has_semi {
-        self.emit(E2084, node_override=here);
+        self.ctx.emit(E2084, node_override=here);
     }
 }
 
@@ -483,30 +515,30 @@ impl ASTValidationPass._check_slot_body(
     for s in stmts {
         if isinstance(s, ReturnStmt) {
             if s.expr is not None {
-                self.emit(E2019, node_override=s);
+                self.ctx.emit(E2019, node_override=s);
             } else {
-                self.emit(E2020, node_override=s);
+                self.ctx.emit(E2020, node_override=s);
             }
         } elif isinstance(s, CtrlStmt) {
             if in_loop and s.ctrl.value == "break" {
-                self.emit(E2021, node_override=s, kw=s.ctrl.value, loop=loop_kw);
+                self.ctx.emit(E2021, node_override=s, kw=s.ctrl.value, loop=loop_kw);
             }
         } elif isinstance(s, ArchHas) {
-            self.emit(E2024, node_override=s);
+            self.ctx.emit(E2024, node_override=s);
         } elif isinstance(s, WhileStmt) {
             if self._slot_emits_keyless_jsx([b for b in s.body]) {
-                self.emit(W2019, node_override=s);
+                self.ctx.emit(W2019, node_override=s);
             }
             self._check_slot_body([b for b in s.body], True, "while");
             self._check_slot_else(s.else_body, in_loop, loop_kw);
         } elif isinstance(s, ForeverStmt) {
             if self._slot_emits_keyless_jsx([b for b in s.body]) {
-                self.emit(W2019, node_override=s);
+                self.ctx.emit(W2019, node_override=s);
             }
             self._check_slot_body([b for b in s.body], True, "forever");
         } elif isinstance(s, InForStmt) or isinstance(s, IterForStmt) {
             if self._slot_emits_keyless_jsx([b for b in s.body]) {
-                self.emit(W2021, node_override=s);
+                self.ctx.emit(W2021, node_override=s);
             }
             self._check_slot_body([b for b in s.body], True, "for");
             self._check_slot_else(s.else_body, in_loop, loop_kw);
@@ -518,11 +550,11 @@ impl ASTValidationPass._check_slot_body(
         } elif isinstance(s, TryStmt) {
             if s.awaiting_body is not None {
                 if s.finally_body is not None {
-                    self.emit(E2022, node_override=s);
+                    self.ctx.emit(E2022, node_override=s);
                 }
                 if not s.in_client_context() {
                     target = "na" if s.in_native_context() else "sv";
-                    self.emit(W2020, node_override=s, target=target);
+                    self.ctx.emit(W2020, node_override=s, target=target);
                 }
             }
             self._check_slot_body([b for b in s.body], in_loop, loop_kw);

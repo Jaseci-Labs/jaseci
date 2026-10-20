@@ -3,12 +3,8 @@ import unittest.mock;
 import from types { SimpleNamespace }
 import from kubernetes.client.exceptions { ApiException }
 import from jaclang.scale.deploy.target.kubernetes { ingress as ingress_module }
-import from jaclang.scale.deploy.target.kubernetes.ingress { IngressDeployer }
-import from jaclang.scale.deploy.target.kubernetes.kubernetes_config {
-    KubernetesConfig
-}
 
-def _render_rules(domain: str) -> list {
+def _render_rules(domain: str) -> list[any] {
     config = KubernetesConfig(app_name="myapp", namespace="test-ns", domain=domain);
     deployer = IngressDeployer(k8s_config=config, logger=None);
     networking_v1 = unittest.mock.MagicMock();
@@ -44,7 +40,7 @@ test "per-app ingress without a domain renders a single catch-all rule" {
     assert "host" not in rules[0];
 }
 
-def _run_enable_tls(shared: bool) -> list {
+def _run_enable_tls(shared: bool) -> list[any] {
     cfg = KubernetesConfig(
         app_name="myapp",
         namespace="test-ns",

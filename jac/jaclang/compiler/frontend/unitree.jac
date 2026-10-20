@@ -1,183 +1,34 @@
 import os;
 import type from collections.abc { Sequence }
-import type from jaclang.compiler.frontend.codeinfo { CodeGenTarget }
-import from jaclang.compiler.frontend.srcloc { CodeLocInfo }
-import from jaclang.compiler.frontend.constant {
-    BUILTIN_CALLABLE_NAMES,
-    DELIM_MAP,
-    BindingKind,
-    CodeContext,
-    EdgeDir,
-    ExprCtx,
-    OwnershipKind,
-    SymbolAccess,
-    SymbolStorage,
-    SymbolType
-}
-import from jaclang.compiler.frontend.constant { Constants as Con }
-import from jaclang.compiler.frontend.constant { JacSemTokenModifier as SemTokMod }
-import from jaclang.compiler.frontend.constant { JacSemTokenType as SemTokType }
-import from jaclang.compiler.frontend.constant { Tokens as Tok }
-import from jaclang.compiler.frontend.constant { ParamKind }
-import type from jaclang.compiler.types.types { TypeBase }
-import from jaclang.compiler.frontend.roles {
-    Role,
-    Kid,
-    ImplOf,
-    AccessRole,
-    AccessorsRole,
-    AliasRole,
-    ArchTagInfoRole,
-    ArchTypeRole,
-    ArgPatternsRole,
-    AssignmentsRole,
-    AssignsRole,
-    AttributesRole,
-    AugOpRole,
-    AwaitingBodyRole,
-    BaseClassesRole,
-    BodyRole,
-    BoundRole,
-    CasesRole,
-    CastTypeRole,
-    CauseRole,
-    ChainRole,
-    ChildrenRole,
-    ClibDeclsRole,
-    CodeRole,
-    CollectionRole,
-    ComparesRole,
-    ComprRole,
-    ConditionRole,
-    ConditionalRole,
-    ConnAssignRole,
-    ConnTypeRole,
-    CountByRole,
-    CtrlRole,
-    DecoratorsRole,
-    DefaultValRole,
-    DescriptionRole,
-    DocRole,
-    DynamicTagRole,
-    EdgeSpecRole,
-    ElseBodyRole,
-    ElseValueRole,
-    EndRole,
-    ErrorMsgRole,
-    EventRole,
-    ExTypeRole,
-    ExceptsRole,
-    ExprRole,
-    ExprsRole,
-    FTypeRole,
-    FilterCondRole,
-    FinallyBodyRole,
-    FormatPartRole,
-    FormatSpecRole,
-    FromLocRole,
-    FromTargetRole,
-    GuardRole,
-    HintRole,
-    InsertLocRole,
-    ItemsRole,
-    IterRole,
-    KeyRole,
-    KeywordsRole,
-    KvPairRole,
-    KvPairsRole,
-    KwPatternsRole,
-    KwargsRole,
-    KwonlyargsRole,
-    LeftRole,
-    MainRole,
-    NameRole,
-    NameRefRole,
-    OpRole,
-    OperandRole,
-    OpsRole,
-    OutExprRole,
-    ParamsRole,
-    PartsRole,
-    PathRole,
-    PatternRole,
-    PatternsRole,
-    PosonlyParamsRole,
-    ReturnTypeRole,
-    RightRole,
-    RightsRole,
-    SignatureRole,
-    SlicesRole,
-    SpecRole,
-    SrcEndpointRole,
-    StartRole,
-    StepRole,
-    StopRole,
-    StringsRole,
-    TargetRole,
-    TgtEndpointRole,
-    TokRole,
-    TypeCtxRole,
-    TypeParamsRole,
-    TypeTagRole,
-    UnpackRole,
-    ValueRole,
-    ValueTypeRole,
-    ValuesRole,
-    VarargsRole,
-    VarsRole
-}
-import from jaclang.compiler.frontend.relations {
-    Absorbs,
-    CalleeDecl,
-    EventTriggerOf,
-    NarrowedTypeOf,
-    TypeOf,
-    CfgFalse,
-    CfgSucc,
-    CfgTrue,
-    DecidedCodespace,
-    Defines,
-    InScope,
-    PlacedIn,
-    ScopeChild,
-    ScopeParent,
-    ScopeOverload,
-    ScopePrimary,
-    SymOf,
-    Uses,
-    codespace_node
-}
 
 
 walker TreeWalker {}
 
 node UniNode {
-    has _ctx_parent: (UniNode | None) postinit,
-        _struct_frozen: bool postinit,
-        _in_mod_nodes: list[UniNode] postinit,
-        _gen: (CodeGenTarget | None) postinit,
+    has _ctx_parent: (UniNode | None) = None,
+        _struct_frozen: bool = False,
+        _in_mod_nodes: (list[UniNode] | None) = None,
+        _gen: (CodeGenTarget | None) = None,
         loc: CodeLocInfo postinit,
-        _role_shapes: (dict[type, str] | None) postinit,
-        __sub_node_tab: (dict[(type, list[UniNode])] | None) postinit,
-        ct_pruned: bool postinit;
+        _role_shapes: (dict[type, str] | None) = None,
+        __sub_node_tab: (dict[(type, list[UniNode])] | None) = None,
+        ct_pruned: bool = False;
 
     def postinit -> None;
     can walk_kids with TreeWalker entry;
 
-    has kid: list[UniNode] { getter; }
     has parent: (UniNode | None) { getter; }
     has gen: CodeGenTarget { getter; setter(value: CodeGenTarget); }
     has _sub_node_tab: dict[(type, list[UniNode])] { getter; }
 
     def _link(kid: Sequence[UniNode], roles: dict[type, any]) -> None;
-    def detached_copy -> UniNode;
-    def __deepcopy__(memo: dict) -> UniNode;
+    def __deepcopy__(memo: dict[int, object]) -> UniNode;
     def _assert_thawed -> None;
     def freeze_structure -> None;
     def thaw_structure -> None;
     def structure_thawed -> StructureThaw;
-    def _attach(child: UniNode, role: type[Role]) -> None;
-    def _role_clear(role: type[Role]) -> None;
+    def _attach(child: UniNode, role: type[Edge]) -> None;
+    def _role_clear(role: type[Edge]) -> None;
     def _as_node_list(value: any) -> list[UniNode];
     def _children -> list[UniNode];
     def _role_shaped(role: type[Role], found: list[UniNode]) -> any;
@@ -252,19 +103,31 @@ node UniNode {
     def __repr__ -> str;
 }
 
+obj SymbolProvider {
+    def resolve_type(symbol: Symbol) -> TypeBase abst;
+    def definition -> Symbol | None abst;
+    def property_kind -> int abst;
+    def property_write_kind -> int abst;
+    def property_write_type -> TypeBase | None abst;
+}
+
 node Symbol {
     has name: str postinit,
         access: SymbolAccess postinit,
         imported: bool postinit,
         semstr: str postinit,
         ownership: OwnershipKind = OwnershipKind.NONE,
+        immutability: ImmutabilityKind = ImmutabilityKind.NONE,
+        linear: bool = False,
+        is_view: bool = False,
         param_rebound: bool = False,
         na_escapes: bool = False,
         na_region_handle: bool = False,
         na_stack_ok: bool = False,
         _in_stub_scope: (bool | None) = None,
         _binding_kind: (BindingKind | None) = None,
-        provider: any = None;
+        provider: SymbolProvider | None = None,
+        imported_from: Symbol | None = None;
 
     def init(
         defn: NameAtom,
@@ -314,12 +177,7 @@ node UniScopeNode(UniNode) {
     has names_in_scope_overload: dict[(str, list[Symbol])] { getter; }
 
     def _init_scope(name: str, parent_scope: (UniScopeNode | None) = None) -> None;
-    static def is_python_scoping(nd: (UniNode | None)) -> bool {
-        return isinstance(
-            nd, (Module, Enum, Archetype, Ability, ImplDef, Test, LambdaExpr)
-        );
-    }
-
+    static def is_python_scoping(nd: (UniNode | None)) -> bool;
     def lookup(
         name: str, deep: bool = True, incl_inner_scope: bool = False
     ) -> (Symbol | None);
@@ -387,6 +245,7 @@ node AstAccessNode(UniNode) {
     has access: (SubTag[Token] | None) { getter; }
     has access_type: SymbolAccess { getter; }
     has public_access: bool { getter; }
+    has exposure: SymbolAccess { getter; }
 
     def init(
         *, access: (SubTag[Token] | None) = None, kid: Sequence[UniNode] = []
@@ -398,6 +257,7 @@ node AstAccessNode(UniNode) {
 node ContextAwareNode(UniNode) {
     has codespace_dual: bool = False;
     has code_context: CodeContext { getter; setter(code_context: CodeContext); }
+    has placement_name: str { getter; }
 
     def init(*, codespace_dual: bool = False, kid: Sequence[UniNode] = []) -> None;
     def postinit -> None;
@@ -493,14 +353,14 @@ node Expr(UniNode) {
         setter(narrowed_type: (TypeBase | None));
     }
 
-    has _type_sym_tab: (UniScopeNode | None) postinit,
-        _type_cache: (TypeBase | None) postinit,
-        _type_cache_ok: bool postinit,
-        ct_value: any postinit,
-        coerce_to: (str | None) postinit,
-        fw: (str | None) postinit,
-        fw_safe: bool postinit,
-        attached_tokens: (list[Token] | None) postinit;
+    has _type_sym_tab: (UniScopeNode | None) = None,
+        _type_cache: (TypeBase | None) = None,
+        _type_cache_ok: bool = False,
+        ct_value: CtValue | None = None,
+        coerce_to: (str | None) = None,
+        fw: (str | None) = None,
+        fw_safe: bool = False,
+        attached_tokens: (list[Token] | None) = None;
 
     def init(*, kid: Sequence[UniNode] = []) -> None;
     def postinit -> None;
@@ -574,7 +434,7 @@ node NameAtom(AtomExpr, EnumBlockStmt) {
 
     def postinit -> None;
 
-    has sym: (Symbol | None) { getter; setter(sym: Symbol); }
+    has sym: (Symbol | None) { getter; setter(sym: Symbol | None); }
     has sym_name: str { getter; }
     has sym_category: SymbolType { getter; }
 
@@ -614,12 +474,14 @@ node MatchPattern(UniNode) {}
 
 node SubTag[T](UniNode) {
     has tag: T,
-        ownership: OwnershipKind = OwnershipKind.NONE;
+        ownership: OwnershipKind = OwnershipKind.NONE,
+        linear: bool = False;
 
     def init(
         *,
         tag: T,
         ownership: OwnershipKind = OwnershipKind.NONE,
+        linear: bool = False,
         kid: Sequence[UniNode] = []
     ) -> None;
 
@@ -628,6 +490,8 @@ node SubTag[T](UniNode) {
 }
 
 node Module(AstDocNode, UniScopeNode) {
+    def set_code_context(context: CodeContext) -> None;
+
     has name: str,
         source: Source,
         terminals: list[Token],
@@ -638,15 +502,21 @@ node Module(AstDocNode, UniScopeNode) {
         mobui_enforced_root: (str | None) = None,
         jac_project_root: (str | None) = None,
         access_enforced: bool = False,
+        app: (str | None) = None,
+        app_root: (str | None) = None,
+        app_kind: str = "",
+        persistence: list[str] postinit,
         ct_resolved: bool = False,
         ct_file_deps: list[str] postinit,
+        ct_body_deps: list[str] postinit,
+        ct_def_deps: list[tuple[str, str]] postinit,
         native_viols_reported: bool = False,
         client_viols_reported: bool = False,
         rc_last_use: dict[int, list[str]] postinit,
+        rc_scope_cleanup: dict[int, list[str]] postinit,
         rc_move_in: set[int] postinit,
-        anon_region_open: dict[int, int] postinit,
-        anon_region_close: dict[int, int] postinit,
-        anon_region_locals: dict[int, list[str]] postinit;
+        own_move_sites: set[int] postinit,
+        managed_borrow_binds: set[int] postinit;
 
     has body: Sequence[ElementStmt | String | EmptyToken] { getter; }
 
@@ -678,20 +548,11 @@ node Module(AstDocNode, UniScopeNode) {
     has annexable_by: (str | None) { getter; }
 
     def declares_codespace(ctx: CodeContext, path_hint: str = '') -> bool;
-    def absorb_annex_body(stmts: Sequence[UniNode]) -> None;
+    def record_comptime_dependency(path: str, body: bool = False) -> None;
+    def record_comptime_definition(path: str, qualname: str) -> None;
     static def make_stub(
         inject_name: (str | None) = None, inject_src: (Source | None) = None
-    ) -> Module {
-        return Module(
-            name=(inject_name or ''),
-            source=(inject_src or Source('', '')),
-            doc=None,
-            body=[],
-            terminals=[],
-            stub_only=True,
-            kid=[EmptyToken()]
-        );
-    }
+    ) -> Module;
 
     def __repr__ -> str;
 }
@@ -726,9 +587,11 @@ node TypeParam(AstSymbolNode, UniNode) {
 }
 
 node TypeAlias(ContextAwareNode, AstAccessNode, ElementStmt, AstSymbolNode, UniScopeNode, CodeBlockStmt) {
-    has is_distinct: bool = False;
+    has is_distinct: bool = False,
+        distinct_base: (str | None) = None;
+
     has name: Name { getter; }
-    has type_params: (Sequence[TypeParam] | None) { getter; }
+    has type_params: list[TypeParam] { getter; }
     has value: Expr { getter; }
 
     def init(
@@ -831,7 +694,8 @@ obj ImportBoundaryFacts {
         na_unmappable_targets: list[str] = [],
         native_absorb_path: (str | None) = None,
         native_item_paths: dict[(str, str)] = {},
-        bridged_decls: dict[(str, Ability)] = {};
+        bridged_decls: dict[(str, Ability)] = {},
+        cross_app_kind: str = "local";
 }
 
 node Import(ContextAwareNode, ElementStmt, CodeBlockStmt) {
@@ -866,6 +730,7 @@ node Import(ContextAwareNode, ElementStmt, CodeBlockStmt) {
     }
 
     def postinit -> None;
+    def prune_items(doomed: set[int]) -> bool;
 
     has is_jac: bool { getter; }
     has __jac_detected: bool { getter; }
@@ -903,6 +768,7 @@ node ModulePath(UniNode) {
     def resolve_relative_path(target_item: (str | None) = None) -> str;
     def resolve_relative_path_list -> list[str];
     def native_bundled_path -> (str | None);
+    def native_variant_path -> (str | None);
     def __repr__ -> str;
 }
 
@@ -925,12 +791,136 @@ node ModuleItem(UniNode) {
     def __repr__ -> str;
 }
 
+node GraphImport(ElementStmt) {
+    has scope: (ModulePath | None) { getter; }
+    has body: Sequence[ImportWire | ImportRule] { getter; }
+
+    def init(
+        *,
+        doc: (String | None) = None,
+        scope: (ModulePath | None),
+        body: Sequence[ImportWire | ImportRule],
+        kid: Sequence[UniNode] = []
+    ) -> None;
+
+    def postinit -> None;
+
+    has scope_prefix: str { getter; }
+
+    def __repr__ -> str;
+}
+
+node ImportWire(UniNode) {
+    has is_absorb: bool = False,
+        is_typed: bool = False,
+        is_comptime: bool = False,
+        is_grouped: bool = False,
+        is_injected: bool = False;
+
+    has provider: ModulePath { getter; }
+    has targets: Sequence[WireTarget] { getter; }
+
+    def init(
+        *,
+        provider: ModulePath,
+        targets: Sequence[WireTarget],
+        is_grouped: bool = False,
+        is_injected: bool = False,
+        is_absorb: bool = False,
+        is_typed: bool = False,
+        is_comptime: bool = False,
+        kid: Sequence[UniNode] = []
+    ) -> None;
+
+    def postinit -> None;
+
+    has block: GraphImport { getter; }
+    has provider_path: str { getter; }
+
+    def __repr__ -> str;
+}
+
+node WireTarget(UniNode) {
+    has is_module_form: bool = False;
+    has consumers: Sequence[ModulePath] { getter; }
+    has items: Sequence[WireItem] { getter; }
+
+    def init(
+        *,
+        consumers: Sequence[ModulePath],
+        items: (Sequence[WireItem] | None),
+        kid: Sequence[UniNode] = []
+    ) -> None;
+
+    def postinit -> None;
+
+    has wire: ImportWire { getter; }
+    has consumer_paths: list[str] { getter; }
+
+    def __repr__ -> str;
+}
+
+node ImportRule(UniNode) {
+    has is_open: bool = False;
+    has name: Name { getter; }
+    has sources: Sequence[ModulePattern] { getter; }
+    has targets: Sequence[ModulePattern] { getter; }
+    has items: Sequence[WireItem] { getter; }
+
+    def init(
+        *,
+        name: Name,
+        sources: Sequence[ModulePattern],
+        targets: Sequence[ModulePattern],
+        items: (Sequence[WireItem] | None),
+        kid: Sequence[UniNode] = []
+    ) -> None;
+
+    def postinit -> None;
+
+    has block: GraphImport { getter; }
+    has item_names: set[str] { getter; }
+
+    def __repr__ -> str;
+}
+
+node ModulePattern(UniNode) {
+    has is_glob: bool = False;
+    has path: (ModulePath | None) { getter; }
+
+    def init(
+        *, path: (ModulePath | None), is_glob: bool = False, kid: Sequence[UniNode] = []
+    ) -> None;
+
+    def postinit -> None;
+
+    has dotted: str { getter; }
+
+    static def join_scope(prefix: str, name: str) -> str;
+    def __repr__ -> str;
+}
+
+node WireItem(UniNode) {
+    has name: (Name | Token) { getter; }
+    has alias: (Name | None) { getter; }
+
+    def init(
+        *, name: (Name | Token), alias: (Name | None), kid: Sequence[UniNode] = []
+    ) -> None;
+
+    def postinit -> None;
+
+    has binding: str { getter; }
+
+    def __repr__ -> str;
+}
+
 node Archetype(ContextAwareNode, ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode, UniScopeNode, UniCFGNode) {
     has name: Name { getter; }
     has arch_type: Token { getter; }
-    has base_classes: (Sequence[Expr] | None) { getter; }
+    has base_classes: list[Expr] { getter; }
     has keywords: (Sequence[KWPair] | None) { getter; }
-    has type_params: (Sequence[TypeParam] | None) { getter; }
+    has type_params: list[TypeParam] { getter; }
     has src_endpoint: (Expr | None) { getter; }
     has tgt_endpoint: (Expr | None) { getter; }
 
@@ -957,9 +947,13 @@ node Archetype(ContextAwareNode, ArchSpec, AstAccessNode, ArchBlockStmt, AstImpl
 
     has is_abstract: bool { getter; }
     has arch_kind: (str | None) { getter; }
+    has surface_kind: str { getter; }
+    has served: bool { getter; }
 
     def get_has_vars -> list[HasVar];
     def get_methods -> list[Ability];
+    def base_archetypes -> list[Archetype];
+    def declares_endpoints -> bool;
     def __repr__ -> str;
 }
 
@@ -1006,7 +1000,7 @@ node SemDef(ElementStmt, AstSymbolNode, UniScopeNode, CodeBlockStmt) {
 node Enum(ContextAwareNode, ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt, UniScopeNode) {
     has name: Name { getter; }
     has value_type: (Expr | None) { getter; }
-    has base_classes: (Sequence[Expr] | None) { getter; }
+    has base_classes: list[Expr] { getter; }
 
     def init(
         *,
@@ -1042,7 +1036,7 @@ node Ability(ContextAwareNode, AstAccessNode, ElementStmt, AstAsyncNode, ArchBlo
     has name_ref: (NameAtom | None) { getter; }
     has signature: FuncSignature | EventSignature | None { getter; }
     has decorators: (Sequence[Expr] | None) { getter; }
-    has type_params: (Sequence[TypeParam] | None) { getter; }
+    has type_params: list[TypeParam] { getter; }
 
     def init(
         *,
@@ -1067,11 +1061,18 @@ node Ability(ContextAwareNode, AstAccessNode, ElementStmt, AstAsyncNode, ArchBlo
 
     def postinit -> None;
 
+    has receiver_mode: OwnershipKind = OwnershipKind.NONE,
+        raises: list[str] postinit,
+        writes: (list[str] | None) = None;
+
     has is_method: bool { getter; }
     has is_cls_method: bool { getter; }
     has is_def: bool { getter; }
     has method_owner: Archetype | Enum | None { getter; }
+    has class_body_owner: Archetype | Enum | None { getter; }
     has is_genai_ability: bool { getter; }
+    has surface_kind: str { getter; }
+    has served: bool { getter; }
 
     def py_resolve_name -> str;
     def event_trigger_type_names -> (list[str] | None);
@@ -1099,6 +1100,7 @@ node FuncSignature(UniNode) {
 
     def postinit -> None;
     def get_parameters -> list[ParamVar];
+    def get_named_parameters -> list[ParamVar];
 
     has is_static: bool { getter; }
     has is_in_py_class: bool { getter; }
@@ -1458,7 +1460,9 @@ node DeleteStmt(CodeBlockStmt) {
     def __repr__ -> str;
     def leaf_targets -> list[Expr];
     static def unwrap_target(target: Expr) -> Expr;
+    static def invalid_target(target: UniNode) -> (DeleteTargetError | None);
     static def is_location(target: Expr) -> bool;
+    static def type_has_graph_member(t: (TypeBase | None)) -> bool;
     static def type_may_hold_graph(t: (TypeBase | None)) -> bool;
     static def target_may_hold_graph(target: Expr) -> bool;
 }
@@ -1472,11 +1476,17 @@ node ReportStmt(CodeBlockStmt) {
 }
 
 node ReturnStmt(CodeBlockStmt) {
-    has is_implicit: bool = False;
+    has is_implicit: bool = False,
+        is_tail: bool = False;
+
     has expr: (Expr | None) { getter; }
 
     def init(
-        *, expr: (Expr | None), is_implicit: bool = False, kid: Sequence[UniNode] = []
+        *,
+        expr: (Expr | None),
+        is_implicit: bool = False,
+        is_tail: bool = False,
+        kid: Sequence[UniNode] = []
     ) -> None;
 
     def postinit -> None;
@@ -1855,6 +1865,14 @@ node AtomUnit(Expr) {
     def __repr__ -> str;
 }
 
+node GraphExpr(Expr) {
+    has exprs: Sequence[Expr] { getter; }
+
+    def init(*, exprs: Sequence[Expr], kid: Sequence[UniNode] = []) -> None;
+    def postinit -> None;
+    def __repr__ -> str;
+}
+
 node YieldExpr(Expr) {
     has with_from: bool;
     has expr: (Expr | None) { getter; }
@@ -1875,6 +1893,11 @@ node FuncCall(Expr) {
     has callee_decl: (Ability | None) {
         getter;
         setter(callee_decl: (Ability | None));
+    }
+
+    has callee_signature: (TypeBase | None) {
+        getter;
+        setter(callee_signature: (TypeBase | None));
     }
 
     has target: Expr { getter; }
@@ -1965,7 +1988,9 @@ node DisconnectOp(WalkerStmtOnlyNode) {
 }
 
 node ConnectOp(UniNode) {
-    has edge_dir: EdgeDir;
+    has edge_dir: EdgeDir,
+        capture_edges: bool = False;
+
     has conn_type: (Expr | None) { getter; }
     has conn_assign: (AssignCompr | None) { getter; }
 
@@ -2309,24 +2334,7 @@ node Name(Token, NameAtom) {
 
     static def gen_stub_from_node(
         nd: AstSymbolNode, name_str: str, set_name_of: (AstSymbolNode | None) = None
-    ) -> Name {
-        ret = Name(
-            orig_src=nd.loc.orig_src,
-            name=Tok.NAME.value,
-            value=name_str,
-            col_start=nd.loc.col_start,
-            col_end=nd.loc.col_end,
-            line=nd.loc.first_line,
-            end_line=nd.loc.last_line,
-            pos_start=nd.loc.pos_start,
-            pos_end=nd.loc.pos_end
-        );
-        if nd.parent is not None {
-            ret.set_parent(nd.parent);
-        }
-        ret.name_of = set_name_of or ret;
-        return ret;
-    }
+    ) -> Name;
 
     def __repr__ -> str;
 }
@@ -2506,6 +2514,7 @@ node PythonModuleAst(EmptyToken) {
 
 glob _HEX_DIGITS: str = '0123456789abcdefABCDEF',
      _OCT_DIGITS: str = '01234567',
+     _RADIX_DIGITS: str = '0123456789abcdefghijklmnopqrstuvwxyz',
      _LIT_PREFIX_CHARS: str = 'bBrR',
      _MAX_CODE_POINT: int = 1114111,
      _SIMPLE_ESCAPES: dict[str, str] = {
@@ -2521,191 +2530,29 @@ glob _HEX_DIGITS: str = '0123456789abcdefABCDEF',
          'v': '\x0b'
      };
 
-def _lit_prefix_len(text: str) -> int {
-    n = len(text);
-    i = 0;
-    while (i < n and i < 2) {
-        ch = text[i];
-        if (ch == '"' or ch == "'") {
-            return i;
-        }
-        if (ch not in _LIT_PREFIX_CHARS) {
-            return -1;
-        }
-        i += 1;
-    }
-    if (i < n and (text[i] == '"' or text[i] == "'")) {
-        return i;
-    }
-    return -1;
-}
+def _lit_prefix_len(text: str) -> int;
 
-def _lit_quote_len(text: str, start: int) -> int {
-    if ((len(text) - start) >= 6) {
-        opener = text[start:start + 3];
-        if (opener == '"""' or opener == "'''") {
-            return 3;
-        }
-    }
-    return 1;
-}
+def _lit_quote_len(text: str, start: int) -> int;
 
-def _hex_escape_value(text: str, at: int, width: int, kind: str) -> int {
-    digits = text[at + 2:at + 2 + width];
-    bad = len(digits) != width;
-    if not bad {
-        for c in digits {
-            if (c not in _HEX_DIGITS) {
-                bad = True;
-                break;
-            }
-        }
-    }
-    if bad {
-        raise ValueError(
-            f"truncated \\{kind} escape: expected {width} hex digits, got '{digits}'"
-        );
-    }
-    code = int(digits, 16);
-    if (code > _MAX_CODE_POINT) {
-        raise ValueError(f"illegal Unicode character in \\{kind}{digits} escape");
-    }
-    return code;
-}
+def radix_int(digits: str, base: int) -> int;
 
-def _decode_str_escapes(text: str) -> str {
-    if ('\\' not in text) {
-        return text;
-    }
-    out: list[str] = [];
-    i = 0;
-    n = len(text);
-    while (i < n) {
-        ch = text[i];
-        if (ch != '\\' or (i + 1) >= n) {
-            out.append(ch);
-            i += 1;
-            continue;
-        }
-        nxt = text[i + 1];
-        if (nxt in _SIMPLE_ESCAPES) {
-            out.append(_SIMPLE_ESCAPES[nxt]);
-            i += 2;
-            continue;
-        }
-        if (nxt == '\n') {
-            i += 2;
-            continue;
-        }
-        if (nxt == '\r') {
-            i += 3 if ((i + 2) < n and text[i + 2] == '\n') else 2;
-            continue;
-        }
-        if (nxt in _OCT_DIGITS) {
-            j = i + 1;
-            end = min(n, i + 4);
-            while (j < end and text[j] in _OCT_DIGITS) {
-                j += 1;
-            }
-            out.append(chr(int(text[i + 1:j], 8)));
-            i = j;
-            continue;
-        }
-        if (nxt == 'x' or nxt == 'u' or nxt == 'U') {
-            width = 2 if (nxt == 'x') else (4 if (nxt == 'u') else 8);
-            out.append(chr(_hex_escape_value(text, i, width, nxt)));
-            i += 2 + width;
-            continue;
-        }
-        if (nxt == 'N') {
-            raise ValueError(
-                "the \\N{name} escape is not supported: the Unicode name "
-                "database is not available to the compiler, so write the "
-                "code point as \\uXXXX or \\UXXXXXXXX instead"
-            );
-        }
-        out.append('\\');
-        out.append(nxt);
-        i += 2;
-    }
-    return ''.join(out);
-}
+def int_literal_value(text: str) -> int;
 
-def _decode_bytes_escapes(text: str, is_raw: bool) -> bytes {
-    out: list[int] = [];
-    i = 0;
-    n = len(text);
-    while (i < n) {
-        ch = text[i];
-        code = ord(ch);
-        if (code > 127) {
-            raise ValueError('bytes can only contain ASCII literal characters');
-        }
-        if (is_raw or ch != '\\' or (i + 1) >= n) {
-            out.append(code);
-            i += 1;
-            continue;
-        }
-        nxt = text[i + 1];
-        if (nxt in _SIMPLE_ESCAPES) {
-            out.append(ord(_SIMPLE_ESCAPES[nxt]));
-            i += 2;
-            continue;
-        }
-        if (nxt == '\n') {
-            i += 2;
-            continue;
-        }
-        if (nxt == '\r') {
-            i += 3 if ((i + 2) < n and text[i + 2] == '\n') else 2;
-            continue;
-        }
-        if (nxt in _OCT_DIGITS) {
-            j = i + 1;
-            end = min(n, i + 4);
-            while (j < end and text[j] in _OCT_DIGITS) {
-                j += 1;
-            }
-            out.append(int(text[i + 1:j], 8) % 256);
-            i = j;
-            continue;
-        }
-        if (nxt == 'x') {
-            out.append(_hex_escape_value(text, i, 2, 'x'));
-            i += 4;
-            continue;
-        }
-        if (ord(nxt) > 127) {
-            raise ValueError('bytes can only contain ASCII literal characters');
-        }
-        out.append(92);
-        out.append(ord(nxt));
-        i += 2;
-    }
-    return bytes(out);
-}
+def _hex_escape_value(text: str, at: int, width: int, kind: str) -> int;
 
-def decode_string_literal(text: str) -> str | bytes {
-    start = _lit_prefix_len(text);
-    if (start < 0) {
-        return text;
-    }
-    prefix = text[:start].lower();
-    quote_len = _lit_quote_len(text, start);
-    body = text[start + quote_len:len(text) - quote_len];
-    is_raw = 'r' in prefix;
-    if ('b' in prefix) {
-        return _decode_bytes_escapes(body, is_raw);
-    }
-    if is_raw {
-        return body;
-    }
-    return _decode_str_escapes(body);
-}
+def _decode_str_escapes(text: str) -> str;
+
+def _decode_bytes_escapes(text: str, is_raw: bool) -> bytes;
+
+def literal_string_value(expr: UniNode) -> str | None;
+
+def decode_string_literal(text: str) -> str | bytes;
 
 def is_identifier_slot(nd: UniNode) -> bool;
 
 def find_python_scope_node_of(nd: UniNode) -> (UniScopeNode | None);
+
+def same_lexical_scope(left: UniNode | None, right: UniNode | None) -> bool;
 
 def find_typed_decl_scope_of(nd: AstSymbolNode) -> UniScopeNode;
 
@@ -2714,6 +2561,7 @@ def def_insert_unpacking(
 ) -> None;
 
 def bind_assignment_targets(nd: Assignment) -> None;
+def definition_qualname(decl: UniNode) -> str;
 
 def lookup_enclosing_binding(from_scope: UniScopeNode, name: str) -> (Symbol | None);
 
@@ -2741,6 +2589,8 @@ def has_runtime_binding(sym: Symbol, space: CodeContext) -> bool;
 
 def is_client_destined(nd: UniNode) -> bool;
 
+def is_comptime_stmt(nd: UniNode) -> bool;
+
 def type_only_import_of(nd: NameAtom) -> (ModuleItem | None);
 
-def in_type_position(nd: UniNode) -> bool;
+def in_type_position(nd: UniNode, include_subscripts: bool = True) -> bool;

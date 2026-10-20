@@ -3,7 +3,7 @@
 import os;
 import from tests.support { JAC_ROOT }
 import jaclang;
-import from jaclang.compiler.passes.cfg_build_pass { cfg_dot_from_file }
+import from jaclang.compiler.tools.cfg_dot { cfg_dot_from_file }
 
 glob FIXTURES = os.path.join(JAC_ROOT, "tests", "compiler", "passes", "fixtures");
 
@@ -61,8 +61,8 @@ test "cfg ability with has" {
     expected_dot = (
         "digraph G {\n"
         + '  0 [label="BB0\\nobj Rock", shape=box];\n'
-        + '  1 [label="BB1\\nhas pellets : list ;", shape=box];\n'
-        + '  2 [label="BB2\\ndef count_pellets( ) -> int\\nreturn self . pellets . length ( ) ;", shape=box];\n'
+        + '  1 [label="BB1\\nhas pellets : list [ int ] ;", shape=box];\n'
+        + '  2 [label="BB2\\ndef count_pellets-> int\\nreturn self . pellets . length ( ) ;", shape=box];\n'
         + '  3 [label="BB3\\nrock = Rock ( pellets = [ 1 , 2 , 3 ] ) ;\\nprint ( \\"Number of pellets: \\" + rock . count_pellets ( ) . to_string ( ) ) ;", shape=box];\n'
         + "  0 -> 1;\n"
         + "  0 -> 2;\n"

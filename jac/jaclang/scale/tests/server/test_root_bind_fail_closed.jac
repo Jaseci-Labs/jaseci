@@ -15,7 +15,6 @@ import time;
 import uuid;
 import requests;
 import from pathlib { Path }
-import from jaclang.scale.tests.support { get_free_port, register_user, start_server }
 
 glob FIXTURES_DIR: Path = Path(__file__).parent.parent / "fixtures" / "root_bind";
 
@@ -44,7 +43,6 @@ def _cleanup {
 """Boot the app once with a generous window so the one-time compile cost is
 paid outside start_server's health-poll contract."""
 def _prewarm {
-    import from jaclang.scale.runtime.context.util { jac_executable }
     port = get_free_port();
     proc = subprocess.Popen(
         [jac_executable(), "run", "--serve", "--port", str(port), "app.jac"],
@@ -75,17 +73,17 @@ def _prewarm {
     }
 }
 
-def _whoami_status(base: str, token: str) -> int {
+def _whoami(base: str, token: str) -> requests.Response {
     res = requests.post(
         f"{base}/function/whoami",
         json={},
         headers={"Authorization": f"Bearer {token}"},
         timeout=15
     );
-    return res.status_code;
+    return res;
 }
 
-def _corrupt(base: str, username: str, new_root_id: str) -> dict {
+def _corrupt(base: str, username: str, new_root_id: str) -> dict[str, any] {
     res = requests.post(
         f"{base}/function/corrupt_root",
         json={"username": username, "new_root_id": new_root_id},
@@ -110,7 +108,7 @@ test "unresolvable and malformed root ids are rejected with 401, not 500" {
         token = register_user(base, user);
 
         # Positive control: the bind works before the fault is injected.
-        assert _whoami_status(base, token) == 200 , "control request failed";
+        assert _whoami(base, token).status_code == 200 , "control request failed";
 
         # Variant 1: well-formed UUID that resolves to no anchor.
         ghost = uuid.uuid4().hex;
@@ -118,24 +116,26 @@ test "unresolvable and malformed root ids are rejected with 401, not 500" {
         assert injected.get("data", {}).get("result", {}).get("ok") , (
             f"fault injection failed: {injected!r}"
         );
-        status = _whoami_status(base, token);
-        assert status == 401 , (
-            f"unresolvable root must be rejected with 401, got {status}"
+        res = _whoami(base, token);
+        assert res.status_code == 401 , (
+            f"unresolvable root must be rejected with 401, got {res.status_code}"
         );
+        assert res.json().get("error", {}).get("code") == "IDENTITY_UNRESOLVABLE" , res.text;
 
         # Variant 2: malformed root id.
         injected = _corrupt(base, user, "not-a-uuid");
         assert injected.get("data", {}).get("result", {}).get("ok") , (
             f"fault injection failed: {injected!r}"
         );
-        status = _whoami_status(base, token);
-        assert status == 401 , (
-            f"malformed root must be rejected with 401, got {status}"
+        res = _whoami(base, token);
+        assert res.status_code == 401 , (
+            f"malformed root must be rejected with 401, got {res.status_code}"
         );
+        assert res.json().get("error", {}).get("code") == "IDENTITY_UNRESOLVABLE" , res.text;
 
         # A fresh user is unaffected.
         other = register_user(base, f"bindok_{run}");
-        assert _whoami_status(base, other) == 200 , "healthy user was rejected";
+        assert _whoami(base, other).status_code == 200 , "healthy user was rejected";
     } finally {
         server.terminate();
         with contextlib.suppress(Exception) {

@@ -1,16 +1,29 @@
 name: Get jac kit
 description: >
   Download the kit artifact into the checkout (binary, typeshed stubs, vendored
-  musl/wasm runtimes land at their in-tree paths), put jac on PATH, and warm
-  its runtime cache. The kit is the binary built from this checkout
-  (build-kit); the job's JAC_NO_DEV_SOURCE decides whether it runs sealed
-  ("1") or through the [dev] reroute (""). upload-artifact strips the
-  executable bit; restore it.
+  musl/wasm runtimes land at their in-tree paths), put jac on PATH, and, on a
+  reroute lane, seed the checkout with the shared JIR precompile bundle. The
+  kit is the binary built from this checkout (build-kit); `sealed` decides
+  whether the lane runs it sealed (the checkout's `[dev] jaclang_source` is
+  dropped) or through that reroute. upload-artifact strips the executable bit;
+  restore it.
 inputs:
+  sealed:
+    description: >
+      "true" runs the kit's bundled compiler (seal-checkout); anything else
+      runs this checkout's source through the root jac.toml's [dev] reroute.
+    required: false
+    default: "false"
   name:
     description: Kit artifact name
     required: false
     default: jac-kit
+  precompiled-name:
+    description: >
+      Precompile bundle artifact name. Reroute lanes only; a sealed lane never
+      downloads it (it boots from the payload's own sealed image instead).
+    required: false
+    default: jac-precompiled
 runs:
   using: composite
   steps:
@@ -24,31 +37,100 @@ runs:
         chmod +x "$GITHUB_WORKSPACE/jac/zig-out/bin/jac"
         echo "$GITHUB_WORKSPACE/jac/zig-out/bin" >> "$GITHUB_PATH"
 
-    # Reroute lanes only (job env JAC_NO_DEV_SOURCE other than "1"): one
-    # runtime cache for the whole job, outside $HOME, so test steps that
-    # re-home themselves (HOME="$(mktemp -d)") keep the warm reroute compile
-    # below instead of redoing it inside the first worker of every parallel
-    # pool. Named .cache because tests assert the global cache sits in a
-    # platform-style cache directory. Sealed lanes keep the default $HOME
-    # layout: their first use is a payload unpack, not a compile, and the
-    # native suite's memory envelope was measured under that layout.
-    - name: Pin the runtime cache for the reroute
+    - name: Resolve lane mode
+      id: mode
       shell: bash
+      env:
+        SEALED: ${{ inputs.sealed }}
       run: |
-        if [ "${JAC_NO_DEV_SOURCE:-}" != "1" ]; then
-          echo "XDG_CACHE_HOME=$RUNNER_TEMP/.cache" >> "$GITHUB_ENV"
+        if [ "$SEALED" = "true" ]; then
+          echo "reroute=false" >> "$GITHUB_OUTPUT"
+        else
+          echo "reroute=true" >> "$GITHUB_OUTPUT"
         fi
 
-    # First use either unpacks the payload (sealed lanes, seconds) or compiles
-    # this checkout's compiler through the reroute (reroute lanes, ~200
-    # modules, about a minute). Pay it once here, serially. `jac --version` is not
-    # enough: it touches a tenth of the modules a real compile does.
+    - name: Seal the checkout
+      if: steps.mode.outputs.reroute != 'true'
+      uses: ./.github/actions/seal-checkout
+
+    # Reroute lanes only: one runtime cache for the whole job, outside $HOME,
+    # so test steps that re-home themselves (HOME="$(mktemp -d)") keep the
+    # `jac install --global` deps the lane installed into it. Named .cache
+    # because tests assert the global cache sits in a platform-style cache
+    # directory. Sealed lanes keep the default $HOME layout: the native suite's
+    # memory envelope was measured under it.
+    - name: Pin the runtime cache for the reroute
+      if: steps.mode.outputs.reroute == 'true'
+      shell: bash
+      run: echo "XDG_CACHE_HOME=$RUNNER_TEMP/.cache" >> "$GITHUB_ENV"
+
+    # THE one-precompile policy, consumer half. A reroute lane runs the
+    # checkout's compiler source, which used to mean recompiling all ~1300
+    # bundled modules per job. It does not any more: build-kit publishes the
+    # tree its own payload build produced, and the compiler's precompiled-bundle
+    # lookup (JacCompiler._get_precompiled_jir_bytecode) finds it by walking up
+    # from each source file to this sibling `_precompiled` directory.
+    #
+    # The bundle is not trusted on sight. Every unit is checked against
+    # precompiled_jir_matches_source -- module key plus ct-deps freshness -- so a
+    # tree from another compiler generation can only miss, never mis-serve.
+    - name: Fetch the shared precompile bundle
+      if: steps.mode.outputs.reroute == 'true'
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.precompiled-name }}
+        path: jac/jaclang/_precompiled
+
+    - name: Seed the reroute from the shared bundle
+      if: steps.mode.outputs.reroute == 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+        BUNDLE="$GITHUB_WORKSPACE/jac/jaclang/_precompiled"
+        # MANIFEST.json marks a SEALED image, and a sealed bundle is trusted by
+        # manifest instead of by per-module key. That trust is unreachable here
+        # (sealed.image_for_bundle_dir only answers for an image the runtime
+        # actually loaded, and this one is never registered), but dropping the
+        # file removes the question entirely and leaves the key check as the one
+        # reachable path.
+        rm -f "$BUNDLE/MANIFEST.json"
+
+    # First use unpacks the payload (sealed lanes) or binds the seeded bundle
+    # (reroute lanes). Both are seconds now; this step exists to pay it once,
+    # serially, and to fail the lane here rather than inside the first worker of
+    # a parallel pool. `jac --version` is not enough: it touches a tenth of the
+    # modules a real compile does, so it would not exercise the bundle.
+    #
+    # On a reroute lane this is also the dev loop's first run: the checkout
+    # has no kernel (libjac_* is gitignored) and nothing ever builds one
+    # implicitly, so the run must load the kit's kernel where the kit keeps
+    # it (the kit was built from these sources), print no bytecode notice,
+    # and leave nothing beside the loader. A pull request's kit carries no
+    # kernel (ci.yml build-kit): there the lane runs from bytecode by design,
+    # still quietly. See cli/docs/internals/native-units.md.
     - name: Warm the runtime cache
       shell: bash
+      env:
+        REROUTE: ${{ steps.mode.outputs.reroute }}
       run: |
         set -euo pipefail
         WORK="$(mktemp -d)"
         printf 'with entry { print(6*7); }\n' > "$WORK/warm.jac"
         out="$(jac run "$WORK/warm.jac" 2>&1)" || { echo "$out"; exit 1; }
-        echo "$out" | tail -3
-        echo "$out" | grep -q 42
+        tail -3 <<<"$out"
+        grep -q 42 <<<"$out"
+        if [ "$REROUTE" != "true" ]; then
+          exit 0
+        fi
+        # The reroute runs this checkout on the kit, which was built from it:
+        # every artifact a kit carries must resolve -- the kernel, shim and
+        # floors from the kit, loaded in place; every compiler module from the
+        # seeded bundle, or it would be a silent recompile in every lane --
+        # except what the kit's manifest declares it leaves out (a pull
+        # request's kit omits the kernel and runs the bytecode compiler).
+        jac native status
+        jac native status --require kit
+        if compgen -G "$GITHUB_WORKSPACE/jac/jaclang/compiler/libjac_compiler.*" >/dev/null; then
+          echo "::error::resolving the kernel wrote one beside the loader"
+          exit 1
+        fi

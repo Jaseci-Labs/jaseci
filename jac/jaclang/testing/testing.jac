@@ -3,18 +3,6 @@ import json;
 import re;
 import from pathlib { Path }
 import from urllib.parse { urlencode }
-import type from jaclang.project.config { JacConfig }
-import type from jaclang.server.server { JacAPIServer }
-import from jaclang.server.serving.client { run_blocking }
-import from jaclang.server.serving.datatypes {
-    Headers,
-    QueryParams,
-    Request,
-    Response,
-    URL,
-    parse_query_string
-}
-import from jaclang.testing.testkit { dispatch_and_collect }
 
 obj TestResponse {
     has status_code: int,
@@ -34,7 +22,7 @@ obj JacTestClient {
         _server: (JacAPIServer | None) = None,
         _app: any = None,
         _auth_token: (str | None) = None,
-        _hot_reloader: (any | None) = None,
+        _hot_reloader: (HotReloader | None) = None,
         _config: (JacConfig | None) = None;
 
     static def from_file(

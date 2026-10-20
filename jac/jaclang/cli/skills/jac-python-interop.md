@@ -1,6 +1,6 @@
 ---
 name: jac-python-interop
-description: Using Python from Jac and Jac from Python - PyPI imports (numpy, pandas, sklearn), typing the untyped boundary, inline ::py:: blocks, the class archetype for subclassing metaclass-driven Python types (static has), importing .jac modules into Python scripts, jaclang.lib library mode (Node/Walker/spawn/root), jac2py. Load when mixing .jac and .py code or pulling in any PyPI package.
+description: Integrate Jac with Python libraries, embedded Python, import hooks, and library mode. Use when values or declarations cross the Python boundary.
 ---
 
 Jac compiles to Python bytecode, so the entire PyPI ecosystem is directly importable - no wrappers, no FFI. The bridge works in both directions: `.jac` files import `.py` modules with normal `import` syntax, and `.py` files import `.jac` modules through an import hook.
@@ -25,7 +25,7 @@ import numpy as np;                                      # any installed PyPI pa
 import from sklearn.linear_model { LinearRegression }
 ```
 
-Local `.py` files import the same way: `import validators;` then `validators.validate_title(t)` - drop the file next to your `.jac` sources, zero config. Note `jac check` can only type what it can resolve: stdlib modules are fully stubbed, while a PyPI package that isn't installed (or ships no types) reports its members as Unknown. **Only the typeshed *stdlib* stubs ship in the `jac` binary** - third-party stubs are no longer bundled. For a typed PyPI package without inline types, install its stub package (`jac install types-requests`) and the checker resolves it via PEP 561 from the project's `.jac/venv`, so types track the installed version.
+Local `.py` files import the same way: `import validators;` then `validators.validate_title(t)` - drop the file next to your `.jac` sources, zero config. Note `jac check` can only type what it can resolve: stdlib modules are fully stubbed, while a PyPI package that isn't installed (or ships no types) reports its members as Unknown. **Only the typeshed *stdlib* stubs ship in the `jac` binary** - third-party stubs are no longer bundled. For a typed PyPI package without inline types, install its stub package (`jac install --pypi types-requests`) and the checker resolves it via PEP 561 from the project's `.jac/venv`, so types track the installed version.
 
 **The untyped boundary:** untyped Python returns arrive as `any`, and Jac's strict rule blocks `any` from flowing silently into typed destinations (E1001). Three fixes - type the source (`.pyi` stub), accept-and-narrow with `isinstance`, or `value as Type` cast. Full playbook in `jac-types`.
 
@@ -59,9 +59,9 @@ import from pygments.token { Keyword, Name, Whitespace }
 
 class JacLexer(RegexLexer) {
     static has name: str = "Jac";
-    static has aliases: list = ["jac"];
-    static has filenames: list = ["*.jac"];
-    static has tokens: dict = {
+    static has aliases: list[str] = ["jac"];
+    static has filenames: list[str] = ["*.jac"];
+    static has tokens: dict[str, any] = {
         "root": [
             (r"\b(walker|node|edge)\b", Keyword),
             (r"\w+", Name),

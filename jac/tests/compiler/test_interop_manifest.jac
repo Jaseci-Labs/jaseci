@@ -12,6 +12,7 @@ import tempfile;
 import jaclang.compiler.frontend.unitree as uni;
 import from jaclang.compiler.driver.compile_options { CompileOptions }
 import from jaclang.compiler.driver.program { JacProgram }
+import from jaclang.compiler.passes.execution { run_walker }
 
 def write_mods(mods: dict[str, str]) -> str {
     tmp = tempfile.mkdtemp(prefix="jac_interop_manifest_");
@@ -59,7 +60,7 @@ test "unmappable ctypes wire type across na->sv is E5093" {
         {
             "jac.toml": ('[placement.pins]\n"main.crunch" = "native"\n'),
             "main.jac": (
-                "def py_helper(vals: list) -> int {\n"
+                "def py_helper(vals: list[int]) -> int {\n"
                 "    return len(vals);\n"
                 "}\n"
                 "def crunch -> int {\n"
@@ -106,6 +107,154 @@ test "primitive na->sv signatures stay clean of E5093" {
     );
 }
 
+test "native module's pinned-server import records an na->sv binding" {
+    # The na -> sv edge (interop matrix row 8): a native-pinned module
+    # importing from a server-pinned provider. The binding is the one the
+    # sealed-pair gate reads -- `native_imports` non-empty is what drops the
+    # standalone exe at build time and keeps the run host-driven.
+    tmp = write_mods(
+        {
+            "jac.toml": ('[placement.pins]\nmain = "native"\nhelper = "server"\n'),
+            "helper.jac": (
+                "def:pub py_double(x: int) -> int {\n" "    return x * 2;\n" "}\n"
+            ),
+            "main.jac": (
+                "import from .helper { py_double }\n\n"
+                "def crunch(x: int) -> int {\n"
+                "    return py_double(x);\n"
+                "}\n"
+            )
+        }
+    );
+    prog = JacProgram();
+    mod = prog.compile(
+        os.path.join(tmp, "main.jac"),
+        options=CompileOptions(default_codespace='server')
+    );
+    imports = mod.gen.interop_manifest.native_imports;
+    names = [b.name for b in imports];
+    assert "py_double" in names , (
+        f"native caller of a pinned-server fn must land in native_imports; "
+        f"got: {names} (bindings: "
+        f"{list(mod.gen.interop_manifest.bindings.keys())})"
+    );
+    binding = mod.gen.interop_manifest.bindings["py_double"];
+    assert binding.source_context.value == "server";
+    assert "native" in {c.value for c in binding.callers};
+    assert binding.param_types == ["int"] , (
+        f"expected int param on the ctypes wire, got {binding.param_types}"
+    );
+}
+
+test "native import of a pinned-server type records a type binding" {
+    # A native module importing a non-ability symbol (an obj) from a
+    # server-pinned provider must register the data shape, not fabricate a
+    # zero-arg int function binding for the type name. The module is forced
+    # native: a native pin is a preference, and a module whose only element
+    # is an import has nothing to place native.
+    tmp = write_mods(
+        {
+            "jac.toml": ('[placement.pins]\nmain = "native"\nhelper = "server"\n'),
+            "helper.jac": ("obj:pub Point {\n" "    has x: int;\n" "}\n"),
+            "main.jac": ("import from .helper { Point }\n")
+        }
+    );
+    prog = JacProgram();
+    mod = prog.compile(
+        os.path.join(tmp, "main.jac"),
+        options=CompileOptions(default_codespace='server', force_codespace='native')
+    );
+    binding = mod.gen.interop_manifest.bindings.get("Point");
+    assert binding is not None , (
+        f"type import from a pinned-server provider must record a binding; "
+        f"got keys: {list(mod.gen.interop_manifest.bindings.keys())}"
+    );
+    assert binding.kind == "type" , (
+        f"expected a type binding for the imported obj, got kind={binding.kind}"
+    );
+    assert "Point" in [b.name for b in mod.gen.interop_manifest.native_imports] , (
+        "type imports stay in native_imports: the native module still depends "
+        "on the server module, so the standalone-exe refusal must keep firing"
+    );
+    msgs = [e.pretty_print() for e in prog.errors_had];
+    assert not any(["E5093" in m for m in msgs]) , (
+        f"type bindings carry no call signature and must not raise E5093: {msgs}"
+    );
+}
+
+test "a native call that cannot cross into a pinned-server import stays in Python" {
+    # The na -> sv import edge is judged by the boundary rule before anything
+    # is lowered: a list does not cross into Python, so the caller is placed
+    # in Python, nothing native is generated, and nothing has to be demoted.
+    tmp = write_mods(
+        {
+            "jac.toml": ('[placement.pins]\nmain = "native"\nhelper = "server"\n'),
+            "helper.jac": (
+                "def:pub collect(vals: list[int]) -> int {\n"
+                "    return len(vals);\n"
+                "}\n"
+            ),
+            "main.jac": (
+                "import from .helper { collect }\n\n"
+                "def crunch -> int {\n"
+                "    return collect([1, 2]);\n"
+                "}\n"
+            )
+        }
+    );
+    main_path = os.path.join(tmp, "main.jac");
+    prog = JacProgram();
+    mod = prog.compile(main_path, options=CompileOptions(default_codespace='server'));
+    assert not prog.errors_had , [e.pretty_print() for e in prog.errors_had];
+    crunch = [
+        stmt
+        for stmt in mod.body
+        if isinstance(stmt, uni.Ability)
+    ][0];
+    assert crunch.code_context.value == 'server' , (
+        "a list cannot cross into the server module, so the caller stays in Python"
+    );
+    refused = prog.analysis.placement_refusals[os.path.realpath(main_path)]['native'];
+    assert id(crunch) in refused , "the refusal is a recorded placement fact";
+    assert not mod.gen.native_codespace , "nothing in the module is native";
+}
+
+test "native default codespace stamps the na->sv caller once" {
+    # The aot + native-default-codespace path stamps the module-level verdict
+    # once (gen.native_codespace): the binding records a NATIVE caller, never
+    # a meaningless SERVER caller from the stamp pass disagreeing with the
+    # analysis pass.
+    tmp = write_mods(
+        {
+            "jac.toml": ('[placement.pins]\nhelper = "server"\n'),
+            "helper.jac": (
+                "def:pub py_double(x: int) -> int {\n" "    return x * 2;\n" "}\n"
+            ),
+            "main.jac": (
+                "import from .helper { py_double }\n\n"
+                "def crunch(x: int) -> int {\n"
+                "    return py_double(x);\n"
+                "}\n"
+            )
+        }
+    );
+    prog = JacProgram();
+    mod = prog.compile(
+        os.path.join(tmp, "main.jac"),
+        options=CompileOptions(default_codespace='native', aot_mode=True)
+    );
+    binding = mod.gen.interop_manifest.bindings.get("py_double");
+    assert binding is not None , (
+        f"native-default import must record a binding; got keys: "
+        f"{list(mod.gen.interop_manifest.bindings.keys())}"
+    );
+    assert {c.value for c in binding.callers} == {"native"} , (
+        f"the single stamped verdict must yield exactly the NATIVE caller, "
+        f"got callers: {{c.value for c in binding.callers}}"
+    );
+    assert binding.source_context.value == "server";
+}
+
 test "endpoint effects are recorded by the dedicated effect pass" {
     tmp = write_mods(
         {
@@ -125,12 +274,59 @@ test "endpoint effects are recorded by the dedicated effect pass" {
     prog = JacProgram();
     mod = prog.compile(os.path.join(tmp, "main.jac"));
     effects = mod.gen.interop_manifest.endpoint_effects;
-    writer = effects.get("func:add_note");
-    reader = effects.get("func:read_only");
-    assert writer is not None and writer["is_writer"] , (
+    import from jaclang.compiler.frontend.codeinfo { endpoint_key }
+    writer = effects.get(endpoint_key(mod, "func", "add_note"));
+    reader = effects.get(endpoint_key(mod, "func", "read_only"));
+    assert writer is not None and writer["writes"] , (
         f"add_note connects a node and must classify as writer; got {effects}"
     );
-    assert reader is not None and not reader["is_writer"] , (
+    assert reader is not None and not reader["writes"] , (
         f"read_only must classify as non-writer; got {effects}"
+    );
+}
+
+test "a call whose name lost its scope marks the endpoint unknown instead of crashing" {
+    import from unittest.mock { PropertyMock, patch }
+    import from jaclang.compiler.frontend.codeinfo { endpoint_key }
+    import from jaclang.compiler.passes.endpoint_effect_pass { EndpointEffectPass }
+    tmp = write_mods(
+        {
+            "main.jac": (
+                "def helper -> int {\n"
+                "    return 1;\n"
+                "}\n"
+                "def:pub caller -> int {\n"
+                "    return helper();\n"
+                "}\n"
+            )
+        }
+    );
+    prog = JacProgram();
+    mod = prog.compile(os.path.join(tmp, "main.jac"));
+    key = endpoint_key(mod, "func", "caller");
+    before = mod.gen.interop_manifest.endpoint_effects.get(key);
+    assert before is not None and not before["unknown"] , (
+        f"caller resolves helper, so it starts out known; got {before}"
+    );
+    targets: list[uni.Name] = [];
+    for call in mod.get_all_sub_nodes(uni.FuncCall) {
+        target = call.target;
+        if isinstance(target, uni.Name) and target.sym_name == "helper" {
+            targets.append(target);
+        }
+    }
+    assert len(targets) == 1 , f"expected one helper() call, got {len(targets)}";
+    targets[0].sym = None;
+    with patch.object(
+        uni.Name,
+        "sym_tab",
+        new_callable=PropertyMock,
+        side_effect=ValueError("No scope found")
+    ) {
+        run_walker(EndpointEffectPass, mod);
+    }
+    after = mod.gen.interop_manifest.endpoint_effects.get(key);
+    assert after is not None and after["unknown"] , (
+        f"a callee that cannot be resolved must mark the endpoint unknown; got {after}"
     );
 }

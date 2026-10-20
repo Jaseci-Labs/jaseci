@@ -15,21 +15,18 @@ impl TypeEvaluator._ts_decl_path(from_loc: ModulePath) -> (str | None) {
     if cache_key in self._ts_decl_path_cache {
         return self._ts_decl_path_cache[cache_key];
     }
-    import from jaclang.compiler.driver.modresolver {
-        resolve_client_npm_declarations,
-        sibling_declaration_file
-    }
+
     dts_path: (str | None) = None;
     try {
         if spec.startswith('.') {
             js_path = from_loc.resolve_relative_path();
             if js_path {
-                dts_path = sibling_declaration_file(js_path);
+                dts_path = active_host().sibling_declaration(js_path);
             }
         } else {
             base = self._client_npm_base(spec, mod_path);
             if base is not None {
-                dts_path = resolve_client_npm_declarations(spec, base);
+                dts_path = active_host().npm_declarations(spec, base);
             }
         }
     } except Exception {
@@ -91,13 +88,10 @@ impl TypeEvaluator._load_ts_declarations(dts_path: str) -> (dict[str, TsDecl] | 
     if dts_path in self._ts_decl_cache {
         return self._ts_decl_cache[dts_path];
     }
-    import from jaclang.compiler.types.ts_decl_parser { parse_dts }
+
     decls: (dict[str, TsDecl] | None) = None;
     try {
-        with open(dts_path, 'r', encoding='utf-8', errors='replace') as f {
-            source = f.read();
-        }
-        decls = parse_dts(source);
+        decls = parse_dts(active_host().read_source(dts_path));
     } except Exception {
         decls = None;
     }
@@ -373,7 +367,7 @@ impl TypeEvaluator._ts_synth_class_types(
         }
         for (mname, group) in kept_by_name.items() {
             if len(group) > 1 {
-                member_type = AnyType(is_foreign=True);
+                member_type: TypeBase = AnyType(is_foreign=True);
             } else {
                 m = group[0];
                 member_type = self._map_ts_type(m.ty, decls, None, shells);
@@ -386,7 +380,12 @@ impl TypeEvaluator._ts_synth_class_types(
                     );
                 }
             }
-            self._install_synth_member(scope, synth_src, mname, member_type);
+            immutability = ImmutabilityKind.READONLY
+                if all(m.readonly and not m.is_method for m in group)
+                else ImmutabilityKind.NONE;
+            self._install_synth_member(
+                scope, synth_src, mname, member_type, immutability
+            );
         }
         if decl.call_sig is not None {
             self._install_synth_member(
@@ -421,7 +420,11 @@ impl TypeEvaluator._ts_synth_class_types(
 }
 
 impl TypeEvaluator._install_synth_member(
-    scope: UniScopeNode, synth_src: Source, mname: str, member_type: TypeBase
+    scope: UniScopeNode,
+    synth_src: Source,
+    mname: str,
+    member_type: TypeBase,
+    immutability: ImmutabilityKind = ImmutabilityKind.NONE
 ) -> None {
     field_node = Name(
         orig_src=synth_src,
@@ -436,6 +439,7 @@ impl TypeEvaluator._install_synth_member(
     );
     field_node.type = member_type;
     _field_sym = Symbol(defn=field_node, access=SymbolAccess.PUBLIC, parent_tab=scope);
+    _field_sym.immutability = immutability;
     scope.adopt_primary(_field_sym, mname);
 }
 
@@ -464,26 +468,17 @@ impl TypeEvaluator._untyped_external_is_error(node_: UniNode) -> bool {
     if not mod_path {
         return False;
     }
-    import from jaclang.compiler.driver.modresolver { find_jac_project_root }
-    proj_root = find_jac_project_root(mod_path);
-    if not proj_root {
-        return False;
+
+    facts = active_host().project_facts(mod_path);
+    return facts is not None and facts.check.untyped_external_error;
+}
+
+impl TypeEvaluator._jac_virtual_sibling_dts(
+    import_node: Import, from_mod_type: ModuleType
+) -> (str | None) {
+    if not import_node.is_virtual_jac or from_mod_type.file_uri is None {
+        return None;
     }
-    if proj_root in self._untyped_external_cfg_cache {
-        return self._untyped_external_cfg_cache[proj_root];
-    }
-    import os;
-    result = False;
-    try {
-        import from jaclang.project.tomlio { read_toml_with_encoding }
-        data = read_toml_with_encoding(os.path.join(proj_root, 'jac.toml'));
-        check_cfg = data.get('check', {}) if isinstance(data, dict) else {};
-        result = (
-            isinstance(check_cfg, dict) and check_cfg.get('untyped-external') == 'error'
-        );
-    } except Exception {
-        result = False;
-    }
-    self._untyped_external_cfg_cache[proj_root] = result;
-    return result;
+
+    return active_host().sibling_declaration(str(from_mod_type.file_uri));
 }

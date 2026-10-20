@@ -189,7 +189,7 @@ Jac provides five adoption strategies that accommodate different development req
 
 | Pattern | Use Case | Jac Content | Python Content | Key Benefits | Example Scenario |
 |---------|----------|-------------|----------------|--------------|------------------|
-| **1. Pure Jac** | New projects, microservices | 100% | 0% | Full Jac language features, modern syntax | Building a new graph-based application with only `.jac` files |
+| **1. Pure Jac** | New projects, service apps | 100% | 0% | Full Jac language features, modern syntax | Building a new graph-based application with only `.jac` files |
 | **2. Jac + Inline Python** | Inline Python in Jac files | Mixed (::py:: blocks) | Embedded inline | Gradual migration, use Python syntax when needed | `.jac` files with embedded Python for legacy logic or complex imports |
 | **3. Mostly Jac** | Import Python modules into Jac | 80-95% .jac | 5-20% .py | Jac architecture with existing Python utilities | Project with `.jac` files importing your existing `.py` utility modules |
 | **4. Mostly Python** | Import Jac modules into Python | 5-20% .jac | 80-95% .py | Python codebase with select Jac features | Python project with `.py` files importing specialized `.jac` modules for graphs/AI |
@@ -437,7 +437,7 @@ Jac imports Python modules using standard import mechanisms without requiring co
     Untyped Python return values arrive in Jac as `any`. Jac's gradual-typing rules apply strictly inside `.jac` source: an `any` value cannot be silently assigned into a declared non-`any` destination. Two ways to handle this at a boundary -- ship a `.pyi` stub alongside the Python utility (the import stays strongly typed and downstream Jac code is unchanged), or annotate the receiving local as `any` and either narrow with `isinstance` or re-type with the [`as` cast operator](operators.md#10-the-as-cast-operator) (`value as Type`) before use. See [The `any` Type and Gradual Typing](types-and-values.md#the-any-type-and-gradual-typing) for the full rule and migration patterns.
 
 !!! note "Third-party type stubs"
-    The `jac` binary bundles only the typeshed **standard-library** stubs. For a third-party PyPI package that ships no inline types, install its stub package into the project (`jac install types-requests`); the checker resolves it via PEP 561 (`<pkg>-stubs`) from the project's `.jac/venv`, so stub versions track the installed package instead of a vendored snapshot.
+    The `jac` binary bundles only the typeshed **standard-library** stubs. For a third-party PyPI package that ships no inline types, install its stub package into the project (`jac install --pypi types-requests`); the checker resolves it via PEP 561 (`<pkg>-stubs`) from the project's `.jac/venv`, so stub versions track the installed package instead of a vendored snapshot.
 
 ---
 

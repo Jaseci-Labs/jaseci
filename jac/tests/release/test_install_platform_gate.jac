@@ -15,6 +15,7 @@ import os;
 import shutil;
 import subprocess;
 import tempfile;
+import hashlib;
 import from pathlib { Path }
 
 glob REPO_ROOT: Path = Path(__file__).resolve().parents[3],
@@ -29,6 +30,7 @@ glob FAKE_UNAME: str = '#!/usr/bin/env bash\n'
 
 glob FAKE_CURL: str = '#!/usr/bin/env bash\n'
          + 'url="${!#}"\n'
+         + 'printf \'%s\\n\' "$url" >> "$FAKE_CURL_LOG"\n'
          + 'case "$url" in\n'
          + '    */releases/latest)\n'
          + '        echo \'{"tag_name": "v0.37.1"}\'\n'
@@ -41,6 +43,9 @@ glob FAKE_CURL: str = '#!/usr/bin/env bash\n'
          + '        ;;\n'
          + '    */releases/tags/v0.37.0)\n'
          + '        cat "$FAKE_PRIOR" \n'
+         + '        ;;\n'
+         + '    */releases/download/*)\n'
+         + '        cp "$FAKE_DOWNLOADS/${url##*/}" "$3"\n'
          + '        ;;\n'
          + '    *)\n'
          + '        exit 22\n'
@@ -64,8 +69,11 @@ def scaffold(arch: str, assets: list[str]) -> dict[(str, str)] {
         "os": os.path.join(base, "os.txt"),
         "arch": os.path.join(base, "arch.txt"),
         "release": os.path.join(base, "release.json"),
-        "prior": os.path.join(base, "prior.json")
+        "prior": os.path.join(base, "prior.json"),
+        "downloads": os.path.join(base, "downloads"),
+        "log": os.path.join(base, "curl.log")
     };
+    os.makedirs(fx["downloads"]);
     for (name, body) in [("uname", FAKE_UNAME), ("curl", FAKE_CURL)] {
         p = Path(bindir) / name;
         p.write_text(body);
@@ -80,18 +88,26 @@ def scaffold(arch: str, assets: list[str]) -> dict[(str, str)] {
     return fx;
 }
 
-def run_installer(fx: dict[(str, str)]) -> subprocess.CompletedProcess[str] {
-    env = dict(os.environ);
+def run_installer(
+    fx: dict[(str, str)], args: list[str] | None = None
+) -> subprocess.CompletedProcess[str] {
+    env: dict[str, str] = dict(os.environ);
     env["PATH"] = fx["bin"] + os.pathsep + env["PATH"];
     env["HOME"] = fx["base"];
     env["FAKE_OS"] = fx["os"];
     env["FAKE_ARCH"] = fx["arch"];
     env["FAKE_RELEASE"] = fx["release"];
     env["FAKE_PRIOR"] = fx["prior"];
+    env["FAKE_DOWNLOADS"] = fx["downloads"];
+    env["FAKE_CURL_LOG"] = fx["log"];
     env.pop("GITHUB_TOKEN", None);
     env.pop("GH_TOKEN", None);
     return subprocess.run(
-        ["bash", INSTALLER], cwd=fx["base"], env=env, capture_output=True, text=True
+        ["bash", INSTALLER] + (args or []),
+        cwd=fx["base"],
+        env=env,
+        capture_output=True,
+        text=True
     );
 }
 
@@ -143,6 +159,19 @@ test "a platform with a binary is never told to go find another release" {
         out = res.stdout + res.stderr;
         assert ("Downloading jac-0.37.1-macos-aarch64" in out) , "the asset list must be read from the release, not from a subshell that already exited: "
             + out;
+    } finally {
+        shutil.rmtree(fx["base"], ignore_errors=True);
+    }
+}
+
+test "an early asset match survives a release larger than the pipe buffer" {
+    assets = ["jac-0.37.1-macos-aarch64"];
+    assets.extend([f"extra-asset-{i}" for i in range(16384)]);
+    fx = scaffold("arm64", assets);
+    try {
+        res = run_installer(fx);
+        out = res.stdout + res.stderr;
+        assert "Downloading jac-0.37.1-macos-aarch64" in out , out;
     } finally {
         shutil.rmtree(fx["base"], ignore_errors=True);
     }

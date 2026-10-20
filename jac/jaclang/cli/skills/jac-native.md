@@ -1,21 +1,21 @@
 ---
 name: jac-native
-description: Compiling Jac to native machine code via LLVM - whole-module native inference under `jac run` (the default codespace), native sections in mixed .jac files (inferred from extern C seeds; [placement.pins] pins pure compute), and standalone zero-dependency binaries via `jac nacompile`; the supported subset, Python-congruent stdlib, C FFI, and gotchas. Load when speeding up a hot loop, building a native binary or CLI tool, or working with native code. For C-ABI shared libraries see `jac-native-shared`; for in-browser wasm see `jac-native-wasm`.
+description: Compile Jac to native executables. Use for supported native constructs, C interoperation, build options, or native diagnostics.
 ---
 
 The native codespace compiles Jac through LLVM to machine code - no Python runtime, no external compiler or linker (Jac bundles the whole toolchain). Three verbs:
 
 ```bash
 jac run app.jac -- x --flag    # placement inferred: native when the module can lower, else Python (full language, PyPI, OSP) with a note; `--` separates program args
-jac nacompile app.jac -o app   # standalone zero-dependency binary - forces native, loud errors
+jac build --native app.jac -o app   # standalone zero-dependency binary - forces native, loud errors
 ./app x --flag
 ```
 
-- `jac nacompile` compiles a **plain `.jac`**, coercing the whole module native - anything that cannot lower is a loud compile error, never a demotion. `jac build --as native` is the project-level equivalent; `CompileOptions(force_codespace='native')` the programmatic one.
-- Under `[build] default_codespace = "native"` (the default), `jac run` executes a verdict-passing module natively; a module using walkers/PyPI/async just runs on Python, with a dim `note:` when a native-preferring module had to demote. Set `default_codespace = "server"` to opt a project out.
+- `jac build --native` compiles a **plain `.jac`**, coercing the whole module native - anything that cannot lower is a loud compile error, never a demotion. `CompileOptions(force_codespace='native')` is the programmatic one.
+- Under `[placement] default = "native"` (the default), `jac run` executes a verdict-passing module natively; a module using walkers/PyPI/async just runs on Python, with a dim `note:` when a native-preferring module had to demote. Set `[placement] default = "server"` to opt a project out.
 - A standalone binary REQUIRES `with entry { }` - otherwise: *"No entry point found."*
-- `jac nacompile --target wasm32|windows|macos` cross-targets; `--shared` builds a C-ABI library (see the sibling skills); `--gc cycles|rc|none` picks the memory-management runtime (see `jac-native-memory`).
-- **Native placement is inferred - at two granularities.** Whole markerless modules: the placement solver (blocker scan + import-closure fixpoint) compiles a module native when it can lower, demoting to server with a note otherwise. Within mixed files: an import whose braces declare C-ABI functions (`import from raylib { def InitWindow(w: i32, h: i32, title: str) -> None; }`) is an FFI surface only the native backend can satisfy, so it seeds native placement and the declarations using it follow (see `jac-codespaces`). Consuming a native *module* (`import from mymod { fast_fn }`) is not a signal. When native must be mandatory, force it: `jac nacompile`, `jac build --as native`, or the explicit `na` markers.
+- `jac build --native --target wasm32|windows|macos` cross-targets; `--lib` builds a C-ABI library (see the sibling skills); `--memory managed|rc|nogc` picks the memory-management runtime (see `jac-native-memory`).
+- **Native placement is inferred - at two granularities.** Whole markerless modules: the placement solver (blocker scan + import-closure fixpoint) compiles a module native when it can lower, demoting to server with a note otherwise. Within mixed files: an import whose braces declare C-ABI functions (`import from raylib { def InitWindow(w: i32, h: i32, title: str) -> None; }`) is an FFI surface only the native backend can satisfy, so it seeds native placement and the declarations using it follow (see `jac-codespaces`). Consuming a native *module* (`import from mymod { fast_fn }`) is not a signal. When native must be mandatory, force it: `jac build --native`, `jac build --as native`, or the explicit `na` markers.
 
 ## Headline example - a CLI tool
 
@@ -41,7 +41,7 @@ with entry {
 }
 ```
 
-`jac nacompile tool.jac -o tool && ./tool World --shout` -> `HELLO, WORLD!`. Same argv via `jac run tool.jac -- World --shout` (runs natively under the default codespace).
+`jac build --native tool.jac -o tool && ./tool World --shout` -> `HELLO, WORLD!`. Same argv via `jac run tool.jac -- World --shout` (runs natively under the default codespace).
 
 ## What the native subset supports (much more than loops)
 
@@ -51,6 +51,8 @@ with entry {
 - **Functions**: default params, recursion, union types (`Piece | None`).
 - **Control flow**: `if/elif/else`, `while`, `for-in` over range/collections/lazy `map`/`filter`/`enumerate`/`zip`, `break`/`continue`, ternary.
 - **Exceptions**: `try/except/else/finally`, `raise`, `except ValueError as e`, hierarchy matching.
+- **Generators**: a `def` containing `yield` lowers when its return type is written `-> Iterator[T]` (`Generator[...]` is not a native type and fails E2018). `yield from` another generator, generator methods on an `obj`, `next(it, default)`, and an `Iterator[T] | None` field holding a live generator all work, so long jobs can be stepped a slice at a time from a frame loop.
+- **Object-spatial code**: `node`/`edge`/`walker` archetypes, `spawn`, `visit [-->]`, `here`, `+>:E:+>` connects, `del` disconnects and typed edge queries (`[a->:E:->][?:Room]`).
 - **File I/O**: `open`/`read`/`write`/`close`, `with open(...) as f { }`, custom `__enter__`/`__exit__`.
 - **Builtins**: `print`, `len`, `range`, `abs`/`min`/`max`/`pow`, `chr`/`ord`, `str`/`int`/`float`, `input`; f-strings. **str methods**: `upper`/`lower`/`strip`/`split`/`join`/`replace`/`find`/`startswith`/`endswith`/`count`; substring `in`.
 
@@ -60,7 +62,7 @@ Anything else fails **loudly at compile time** - `import json` -> *"Native pathw
 
 The stdlib table is for **host** binaries. On `--target wasm32` there is no libc/libm to link: each unresolved symbol becomes a wasm *import* the JS host must supply (`math.sin` -> an `env.sin` import, `time.time` -> `clock_gettime`; `random` is self-contained and works in-browser). Supply `Math.sin` etc. from JS or hand-roll - the shooter flagship hand-rolls Taylor `jcos`/`jsin` to keep one source for both targets. See `jac-native-wasm`.
 
-**Not supported** (compile errors): walkers/nodes/edges, `async`, generators/`yield`, decorators, multiple inheritance, `::py::`, `by llm()`, PyPI. Lambdas: see gotchas.
+**Not supported** (compile errors): `async`, decorators, multiple inheritance, `::py::`, `by llm()`, PyPI, `subprocess` (E5090), and `os.fork`/`os.pipe` (E5092). Host binaries can run child commands with `os.system`, but that call blocks until the command finishes. For work stepped from a frame loop, see Generators. Lambdas: see gotchas.
 
 ## Gotchas (all verified against the current compiler)
 
@@ -69,8 +71,8 @@ The stdlib table is for **host** binaries. On `--target wasm32` there is no libc
 - **A lambda that captures a local variable compiles silently and computes garbage.** Non-capturing expression lambdas happen to work, but the safe rule is: no lambdas in native code - pass named functions. (Calling a function received through an `any` param is a compile error.)
 - Forward-decl stubs (`obj Board;`) parse, but field access through a stub-typed value fails (`No matching overload ... "__add__"` / `<Unknown>`). They are unnecessary - just reference later-defined types.
 - Booleans are `True`/`False`. Lowercase `true` fails with the misleading `E1002: Cannot return <Unknown>, expected bool`.
-- `node` and `root` are reserved words - they cannot be variable names in native code. `by` is one too (`by llm()`), so the natural 3D grid params `ax, ay, az, bx, by, ...` fail E0013 - escape as `` `by `` or rename.
-- **Mixing an FFI `i32` with an `int` (i64) in a ternary kills codegen**: `return n if n > 0 else 60;` where `n` came from an `-> i32` extern aborts `jac nacompile` with *"PHI nodes not grouped at top of basic block"* (the widening `zext` lands between the merge block's PHIs). `jac check` passes - it only dies at nacompile. Use an explicit `if { return n; } return 60;` instead.
+- `node`, `root`, `edge`, `entry` and `own` are reserved words - they cannot be variable or field names (E0013), and a natural name like `entry` for "the state on entering" has to be renamed. `by` is one too (`by llm()`), so the natural 3D grid params `ax, ay, az, bx, by, ...` fail E0013 - escape as `` `by `` or rename.
+- **Mixing an FFI `i32` with an `int` (i64) in a ternary kills codegen**: `return n if n > 0 else 60;` where `n` came from an `-> i32` extern aborts `jac build --native` with *"PHI nodes not grouped at top of basic block"* (the widening `zext` lands between the merge block's PHIs). `jac check` passes - it only dies at nacompile. Use an explicit `if { return n; } return 60;` instead.
 - Wide flat signatures next to a C import can misbehave: the shooter flagship hit a type-checker param-counting bug on a 12-float-param helper and renamed to short uniform `p0..p11` (minimal repros pass on the current compiler - if you see a phantom arg-count error on a grid-of-floats signature, rename the params).
 
 ## Native sections inside a regular .jac
@@ -106,7 +108,7 @@ These pure-compute functions carry no FFI seed, and the `json` import anchors th
 def square(x: int) -> int { return x * x; }
 ```
 
-```jac
+```
 # app.jac - imports link at the IR level; no dynamic library involved
 import from math_utils { square }
 
@@ -124,7 +126,7 @@ with entry { print(Piece(value=4).score(Board())); }
 impl Piece.score(b: Board) -> int { return square(self.value) + b.bonus; }
 ```
 
-One `jac nacompile app.jac -o app` compiles the whole graph. This is the chess-engine layout (`jac/examples/chess/`: signatures in `chess.jac`, bodies in `chess.impl.jac`).
+One `jac build --native app.jac -o app` compiles the whole graph. This is the chess-engine layout (`jac/examples/chess/`: signatures in `chess.jac`, bodies in `chess.impl.jac`).
 
 ## C FFI - calling precompiled C libraries
 
@@ -161,13 +163,24 @@ with entry {
 - The plain logical name already finds a **sibling** library: every binary gets RUNPATH `$ORIGIN` (`@loader_path` on macOS) plus a bare DT_NEEDED (`libraylib.so`), so the loader checks the binary's own directory first, then `LD_LIBRARY_PATH`/system paths (verified with `readelf -d`). Ship the `.so` next to the binary and it runs from any cwd - the shooter flagship stages `libraylib.so` beside `./shooter` exactly this way.
 - `import from .raylib` (leading dot) **pins** sibling-only resolution: DT_NEEDED becomes `$ORIGIN/libraylib.so`, so a system-installed copy is never used as a fallback. `import from vendor.raylib` -> `$ORIGIN/vendor/...`.
 - A literal string (`import from "/usr/lib/libm.so.6" { def sqrt(x: f64) -> f64; }`) is only for pinning an exact path or versioned soname - no prefix/extension rewriting.
-- Fixed-width types (`i32`, `u8`, `f32`, `f64`, `c_void`) match the C ABI inside the `import from` declaration, and the checker enforces the call site like any other call: widening (`u8 -> i32`, `f32 -> f64`) is implicit, but an `int` into an `i32` parameter needs the checked cast `i32(n)` (E1127 otherwise), and an out-of-range literal is E1126. Carry the sized types through your code or cast at the boundary; there is no silent coercion on any lane. The same rule types the sized fields and `Callable[[...], T]` members of an `import from` struct: a call through `api.fn(...)` checks its sized parameters and returns the declared sized type (so `if api.fn(h) != 0` adopts the literal), and a store into a sized field (`s.width = n`) needs `i32(n)`.
+- Fixed-width types (`i32`, `u8`, `f32`, `f64`) match the C ABI inside the `import from` declaration, and the checker enforces the call site like any other call: widening (`u8 -> i32`, `f32 -> f64`) is implicit, but an `int` into an `i32` parameter needs the checked cast `i32(n)` (E1127 otherwise), and an out-of-range literal is E1126. Carry the sized types through your code or cast at the boundary; there is no silent coercion on any lane. The same rule types the sized fields and `Callable[[...], T]` members of an `import from` struct: a call through `api.fn(...)` checks its sized parameters and returns the declared sized type (so `if api.fn(h) != 0` adopts the literal), and a store into a sized field (`s.width = n`) needs `i32(n)`.
 - **Structs cross by value.** Declare each C struct as an `obj` of fixed-width fields (nested `obj` structs allowed) inside the `import from` block and call the by-value entry points directly: the compiler classifies each struct per the platform C ABI (System V AMD64 eightbytes on x86_64, AArch64 AAPCS) and emits the matching `byval`/`sret`/register coercion, so a `Color`/`Vector3`/`Camera3D` passed or returned by value round-trips correctly - including >16-byte MEMORY-class aggregates like the 44-byte `Camera3D`. Targets outside x86_64 SysV / AArch64 AAPCS fall back to the legacy path; binding a library's scalar entry points (raylib's `rlVertex3f`/`rlColor4ub`) is still a valid lower-level style, just no longer required.
+- **Structs are C layout; pointers are explicit.** A foreign struct's storage is its C layout (nested structs by value), so reading a nested struct or view element as a value copies it, while `cam.position.x = 1.0` writes in place. A parameter typed `&T`/`&mut T` lends C the address of the argument for the call: `UpdateCamera(&mut cam)`, scalar out-params `SDL_GetWindowSize(w, &mut width, &mut height)`. C-owned addresses are `ptr[T]` (bare `ptr` is `void*`): null-test with `p.is_null()`, compare (`==`, and `<`/`<=`/`>`/`>=` by address for one pointee type), step it C-style (`p + n`, `p - q`), pass it back, or read/write a bounds-checked `p.view(n)`; no dereference. A bodiless `obj sqlite3;` is an opaque type used only as `ptr[sqlite3]` (out-param: `&mut ptr[sqlite3]`). A pointer C keeps after the call needs `Pinned[T]` (`pin(value)`) passed to a `&mut Pinned[T]` parameter, and the pin must outlive the registration. Details: `jac guide reference/language/native-pathway` (C Library Interop).
 - No `cc`/`ld` step: each declared symbol becomes an extern Jac's own linker records (DT_NEEDED / LC_LOAD_DYLIB) and the OS loader resolves at run time.
+
+## Fast rebuilds
+
+`jac build --native` is incremental per module: the build says `Recompiled N unit(s); reused M`, and a rebuild with nothing changed costs only the link. How long an edit takes depends on what it invalidates:
+
+- **Check before building.** `jac check <file>` reports type errors, reserved words and unknown types for the files you changed in seconds to a minute; a full native build of a large program takes minutes and stops at the first module that fails.
+- **Keep the cache.** It is keyed by the compiler that built it: pointing `JAC_DEV_SOURCE` at another compiler tree, or `jac clean --cache`, recompiles every module. Stay on one compiler while iterating, and clean only for genuinely stale behaviour.
+- **Mind the import graph.** An edit to a module many others import (a shared base type, a host interface) recompiles all of them; one to a leaf recompiles little.
+- **Probe small.** To try a construct or time a function, build a ten-line program that imports just what it needs rather than the whole application.
+- **One heavy job at a time.** Native builds and `jac test` runs each compile their own closure; running several at once makes each slower.
 
 ## Debugging
 
-- `JAC_DUMP_IR=/tmp/out.ll jac nacompile app.jac` writes the optimized LLVM IR to a readable `.ll` file.
-- Stale behavior after moving/regenerating files: use `jac nacompile --scrub` (or `jac run --no-cache`) to wipe the native IR cache, which lives in the module's cache dir (`.jac/cache/native/`, or the global `~/.cache/jac/jir/` for installed sources).
-- Memory: reference counting by default, with emit-time modes - `jac nacompile --gc cycles|rc|none` - and an opt-in ownership/borrow surface (`own`, `&`/`&mut`, `imm`, `Region` arenas opened with `in r { }`, `def drop`) that scales to fully RC-free binaries (`--enforce-nogc --assert-no-rc`). `JAC_RC_STATS=1` prints per-module RC coverage. Any `E13xx`/`E14xx` diagnostic, leak, or refcount question: see `jac-native-memory`.
+- `JAC_DUMP_IR=/tmp/out.ll jac build --native app.jac` writes the optimized LLVM IR to a readable `.ll` file.
+- Stale behavior after moving/regenerating files: use `jac clean --cache` (or `jac run --no-cache`) to wipe the native IR cache, which lives in the module's cache dir (`.jac/cache/native/`, or the global `~/.cache/jac/jir/` for installed sources). It costs a full rebuild, so it is not a first step for an ordinary build error.
+- Memory: reference counting by default, with memory profiles - `jac build --native --memory managed|rc|nogc` - and an opt-in ownership/borrow surface (`own`, `&`/`&mut`, `imm`, `Region` arenas opened with `in r { }`, `def drop`) that scales to fully RC-free binaries (`--memory nogc`). `jac explain memory <file>` prints per-module RC coverage and the inferred ownership facts. Any `E13xx`/`E14xx` diagnostic, leak, or refcount question: see `jac-native-memory`.
 - Run native test files with `jac test <file>`. See `jac-testing` and `jac-debugging`.

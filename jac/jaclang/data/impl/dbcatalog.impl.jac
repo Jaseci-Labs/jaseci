@@ -7,35 +7,10 @@ glob _heartbeats: dict[str, any] = {},
      _HEARTBEAT_WARN_AFTER_SECONDS = 300;
 
 
-def _registry_ddl -> str {
-    return f"""
-        CREATE TABLE IF NOT EXISTS {REGISTRY_TABLE} (
-            database          text PRIMARY KEY,
-            kind              text NOT NULL DEFAULT '{DbKind.PROJECT.value}',
-            owner_path        text NOT NULL DEFAULT '',
-            host              text NOT NULL DEFAULT '',
-            pid               integer NOT NULL DEFAULT 0,
-            created_at        timestamptz NOT NULL DEFAULT now(),
-            last_used_at      timestamptz NOT NULL DEFAULT now(),
-            last_heartbeat_at timestamptz NOT NULL DEFAULT now(),
-            condemned_at      timestamptz
-        )
-        """;
-}
+def _registry_ddl -> str;
 
 
-def _heartbeat_column_ddl -> list[str] {
-    return [
-        f"""
-        ALTER TABLE {REGISTRY_TABLE}
-        ADD COLUMN IF NOT EXISTS last_heartbeat_at timestamptz NOT NULL DEFAULT now()
-        """,
-        f"""
-        ALTER TABLE {REGISTRY_TABLE}
-        ADD COLUMN IF NOT EXISTS condemned_at timestamptz
-        """
-    ];
-}
+def _heartbeat_column_ddl -> list[str];
 
 
 impl this_host -> str {
@@ -67,8 +42,6 @@ impl sqlstate_of(err: Exception) -> str {
 
 
 impl holds_no_data(info: ConnInfo, database: str) -> bool {
-    import from jaclang.compiler.frontend.constant { Constants as Con }
-    import from jaclang.data.pgload { connect }
     try {
         conn: any = connect(
             info.user,
@@ -135,7 +108,6 @@ impl admin_conninfo(info: ConnInfo) -> ConnInfo {
 
 
 impl connect_admin(info: ConnInfo) -> any {
-    import from jaclang.data.pgload { connect }
     admin = admin_conninfo(info);
     return connect(
         admin.user,
@@ -162,7 +134,9 @@ impl ensure_registry(conn: any) -> bool {
 }
 
 
-impl record_database(conn: any, database: str, kind: DbKind, owner_path: str) -> None {
+impl record_database(
+    conn: any, database: str, kind: DbKind, owner_path: str, pid: int = 0
+) -> None {
     if not is_jac_database(database) {
         return;
     }
@@ -187,7 +161,7 @@ impl record_database(conn: any, database: str, kind: DbKind, owner_path: str) ->
         'kind': str(kind.value),
         'owner': owner_path,
         'host': this_host(),
-        'pid': os.getpid()
+        'pid': pid or os.getpid()
     };
     try {
         conn.run(sql, **params);
@@ -215,58 +189,22 @@ impl forget_database(conn: any, database: str) -> None {
 }
 
 
-def _records_sql(predicate: str) -> str {
-    return f"""
-        SELECT d.datname,
-               pg_database_size(d.datname),
-               r.database IS NOT NULL,
-               coalesce(r.kind, ''),
-               coalesce(r.owner_path, ''),
-               coalesce(r.host, ''),
-               coalesce(r.pid, 0),
-               coalesce(r.created_at::text, ''),
-               coalesce(r.last_used_at::text, ''),
-               floor(extract(epoch FROM now() - r.last_heartbeat_at))::bigint,
-               EXISTS (
-                   SELECT 1 FROM pg_stat_activity a WHERE a.datname = d.datname
-               ),
-               floor(extract(epoch FROM now() - r.condemned_at))::bigint
-        FROM pg_database d
-        LEFT JOIN {REGISTRY_TABLE} r ON r.database = d.datname
-        WHERE {predicate} AND NOT d.datistemplate
-        ORDER BY d.datname
-        """;
-}
+def _records_sql(predicate: str, with_size: bool = True) -> str;
 
 
-def _age_of(raw: any) -> int {
-    return int(raw) if raw is not None else -1;
-}
+def _age_of(raw: any) -> int;
 
 
-def _record_of(row: any) -> DbRecord {
-    return DbRecord(
-        database=str(row[0]),
-        size_bytes=int(row[1] or 0),
-        recorded=bool(row[2]),
-        kind=str(row[3] or ''),
-        owner_path=str(row[4] or ''),
-        host=str(row[5] or ''),
-        pid=int(row[6] or 0),
-        created_at=str(row[7] or ''),
-        last_used_at=str(row[8] or ''),
-        heartbeat_age_seconds=_age_of(row[9]),
-        has_sessions=bool(row[10]),
-        condemned_age_seconds=_age_of(row[11])
-    );
-}
+def _record_of(row: any) -> DbRecord;
 
 
-impl list_databases(conn: any) -> list[DbRecord] {
+impl list_databases(
+    conn: any, prefix: str = DB_PREFIX, with_size: bool = True
+) -> list[DbRecord] {
     ensure_registry(conn);
     rows = conn.run(
-        _records_sql('d.datname LIKE :pattern'),
-        pattern=DB_PREFIX.replace('_', '\\_') + '%'
+        _records_sql('d.datname LIKE :pattern', with_size=with_size),
+        pattern=prefix.replace('_', '\\_') + '%'
     )
         or [];
     return [_record_of(row) for row in rows];
@@ -321,11 +259,35 @@ impl process_alive(host: str, pid: int) -> bool {
 }
 
 
-impl dead_scratch_databases(records: list[DbRecord]) -> list[str] {
+impl reclaimable_databases(records: list[DbRecord]) -> list[str] {
     return [
         rec.database
         for rec in records
-        if rec.is_dead_scratch()
+        if rec.is_reclaimable()
+    ];
+}
+
+
+impl owned_databases(conn: any, pid: int) -> list[str] {
+    if pid <= 0 or not ensure_registry(conn) {
+        return [];
+    }
+    rows = conn.run(
+        f"""
+        SELECT r.database FROM {REGISTRY_TABLE} r
+        JOIN pg_database d ON d.datname = r.database
+        WHERE r.kind = :kind AND r.pid = :pid AND r.host = :host
+        ORDER BY r.database
+        """,
+        kind=DbKind.SCRATCH.value,
+        pid=pid,
+        host=this_host()
+    )
+        or [];
+    return [
+        str(row[0])
+        for row in rows
+        if is_jac_database(str(row[0]))
     ];
 }
 
@@ -346,10 +308,10 @@ impl touch_heartbeat(conn: any, database: str) -> bool {
 }
 
 
-impl condemn_stale_scratch(conn: any, records: list[DbRecord]) -> list[str] {
+impl condemn_abandoned(conn: any, records: list[DbRecord]) -> list[str] {
     marked: list[str] = [];
     for rec in records {
-        if not rec.looks_abandoned() or rec.condemned_age_seconds >= 0 {
+        if not rec.condemnable() or rec.condemned_age_seconds >= 0 {
             continue;
         }
         try {
@@ -367,74 +329,47 @@ impl condemn_stale_scratch(conn: any, records: list[DbRecord]) -> list[str] {
 }
 
 
+impl pardon_recovered(conn: any, records: list[DbRecord]) -> list[str] {
+    pardoned: list[str] = [];
+    for rec in records {
+        if not rec.pardonable() {
+            continue;
+        }
+        try {
+            conn.run(
+                f"UPDATE {REGISTRY_TABLE} SET condemned_at = NULL WHERE database = :db",
+                db=rec.database
+            );
+            pardoned.append(rec.database);
+        } except Exception as e {
+            logger.debug(f"could not pardon {rec.database}: {e}");
+        }
+    }
+    return pardoned;
+}
+
+
 impl drop_if_still_dead(conn: any, database: str) -> bool {
     fresh = load_record(conn, database);
     if fresh is None {
         return False;
     }
-    if not fresh.is_dead_scratch() {
+    if not fresh.is_reclaimable() {
         logger.info(
             f"left {database} alone; its owner accounted for it before the drop"
         );
         return False;
     }
-    return drop_database(conn, database, force=fresh.pid_confirmed_dead());
+    return drop_database(
+        conn, database, force=fresh.is_scratch() and fresh.pid_confirmed_dead()
+    );
 }
 
 
-def _heartbeat_once(info: ConnInfo, database: str) -> bool {
-    conn: (any | None) = None;
-    try {
-        conn = connect_admin(info);
-        return touch_heartbeat(conn, database);
-    } except Exception as e {
-        logger.debug(f"heartbeat for {database} could not reach the registry: {e}");
-        return False;
-    } finally {
-        if conn is not None {
-            try {
-                conn.close();
-            } except Exception {}
-        }
-    }
-}
+def _heartbeat_once(info: ConnInfo, database: str) -> bool;
 
 
-def _heartbeat_loop(info: ConnInfo, database: str, stop: any) {
-    failures = 0;
-    warnings = 0;
-    while not stop.`wait(SCRATCH_HEARTBEAT_SECONDS) {
-        if _heartbeat_once(info, database) {
-            if warnings > 0 {
-                logger.warning(
-                    f"heartbeat for the scratch database {database} recovered after "
-                    f"{failures} failed attempt(s)"
-                );
-            }
-            failures = 0;
-            warnings = 0;
-            continue;
-        }
-        failures += 1;
-        silent = failures * SCRATCH_HEARTBEAT_SECONDS;
-        if warnings == 0 and silent >= _HEARTBEAT_WARN_AFTER_SECONDS {
-            warnings = 1;
-            logger.warning(
-                f"could not heartbeat the scratch database {database} for "
-                f"{silent // 60} minute(s); the registry cannot tell that this "
-                "process is alive while that lasts"
-            );
-        } elif warnings == 1 and silent >= UNREACHABLE_HOST_GRACE_SECONDS {
-            warnings = 2;
-            logger.warning(
-                f"the scratch database {database} has not been heartbeated for "
-                f"{silent // 60} minute(s); a jac process on another host may now "
-                "mark it for reclamation, and will reclaim it if it is still "
-                "silent and unused when it looks again"
-            );
-        }
-    }
-}
+def _heartbeat_loop(info: ConnInfo, database: str, stop: any);
 
 
 impl start_heartbeat(info: ConnInfo, database: str) -> None {
@@ -552,11 +487,103 @@ impl DbRecord.dead_scratch_reason -> str {
 }
 
 
+glob _grace_memo: dict[str, int] = {};
+
+
+impl orphan_grace_seconds -> int {
+    raw = os.environ.get(ORPHAN_GRACE_ENV, '').strip();
+    known = _grace_memo.get(raw);
+    if known is not None {
+        return known;
+    }
+    hours = ORPHAN_GRACE_HOURS;
+    if raw {
+        try {
+            hours = max(0, int(raw));
+        } except ValueError {
+            logger.warning(
+                f"ignoring {ORPHAN_GRACE_ENV}={raw!r}: not a whole number of "
+                f"hours; using {ORPHAN_GRACE_HOURS}"
+            );
+        }
+    }
+    _grace_memo[raw] = hours * 3600;
+    return hours * 3600;
+}
+
+
+def _span(seconds: int) -> str;
+
+
 impl DbRecord.is_orphaned -> bool {
     if not self.recorded or self.is_scratch() or not self.owner_path {
         return False;
     }
     return not os.path.isdir(self.owner_path);
+}
+
+
+impl DbRecord.is_reclaimable_orphan -> bool {
+    return self.is_orphaned()
+        and not self.has_sessions
+        and self.condemned_age_seconds >= 0
+        and self.condemned_age_seconds >= orphan_grace_seconds();
+}
+
+
+impl DbRecord.is_reclaimable -> bool {
+    return self.is_dead_scratch() or self.is_reclaimable_orphan();
+}
+
+
+impl DbRecord.condemnable -> bool {
+    return self.looks_abandoned() or self.is_orphaned();
+}
+
+
+impl DbRecord.pardonable -> bool {
+    return not self.is_scratch()
+        and self.condemned_age_seconds >= 0
+        and not self.is_orphaned();
+}
+
+
+impl DbRecord.reclaim_reason -> str {
+    if self.is_scratch() {
+        return f"scratch store, {self.dead_scratch_reason()}";
+    }
+    gone = f"owner {self.owner_path} is gone";
+    grace = _span(orphan_grace_seconds());
+    if self.has_sessions {
+        return f"{gone} (something is still connected to it)";
+    }
+    if self.condemned_age_seconds < 0 {
+        return (
+            f"{gone} (not yet marked; the next cluster start marks it and "
+            f"reclaims it {grace} later)"
+        );
+    }
+    marked = _span(self.condemned_age_seconds);
+    if self.is_reclaimable_orphan() {
+        return f"{gone} (marked {marked} ago; the next cluster start reclaims it)";
+    }
+    left = _span(orphan_grace_seconds() - self.condemned_age_seconds);
+    return f"{gone} (marked {marked} ago; a cluster start reclaims it in {left})";
+}
+
+
+impl DbRecord.condemn_reason -> str {
+    if self.is_scratch() {
+        return (
+            'its heartbeat stopped, so a later prune will reclaim it if it is '
+            'still silent and unused by then'
+        );
+    }
+    return (
+        f"its owner {self.owner_path} is gone, so a cluster start reclaims it "
+        f"once it has been gone for {_span(orphan_grace_seconds())} and nothing "
+        'is connected to it'
+    );
 }
 
 
@@ -573,5 +600,165 @@ impl DbRecord.state -> str {
     if not self.owner_path {
         return 'unknown owner';
     }
-    return 'orphaned' if self.is_orphaned() else 'live';
+    if not self.is_orphaned() {
+        return 'live';
+    }
+    if self.has_sessions {
+        return 'orphaned, in use';
+    }
+    if self.condemned_age_seconds < 0 {
+        return 'orphaned';
+    }
+    if self.is_reclaimable_orphan() {
+        return 'orphaned, reclaimable';
+    }
+    left = orphan_grace_seconds() - self.condemned_age_seconds;
+    return f"orphaned, reclaim in {_span(left)}";
+}
+
+impl _registry_ddl -> str {
+    return f"""
+        CREATE TABLE IF NOT EXISTS {REGISTRY_TABLE} (
+            database          text PRIMARY KEY,
+            kind              text NOT NULL DEFAULT '{DbKind.PROJECT.value}',
+            owner_path        text NOT NULL DEFAULT '',
+            host              text NOT NULL DEFAULT '',
+            pid               integer NOT NULL DEFAULT 0,
+            created_at        timestamptz NOT NULL DEFAULT now(),
+            last_used_at      timestamptz NOT NULL DEFAULT now(),
+            last_heartbeat_at timestamptz NOT NULL DEFAULT now(),
+            condemned_at      timestamptz
+        )
+        """;
+}
+
+
+impl _heartbeat_column_ddl -> list[str] {
+    return [
+        f"""
+        ALTER TABLE {REGISTRY_TABLE}
+        ADD COLUMN IF NOT EXISTS last_heartbeat_at timestamptz NOT NULL DEFAULT now()
+        """,
+        f"""
+        ALTER TABLE {REGISTRY_TABLE}
+        ADD COLUMN IF NOT EXISTS condemned_at timestamptz
+        """
+    ];
+}
+
+
+impl _records_sql(predicate: str, with_size: bool = True) -> str {
+    size_expr = 'pg_database_size(d.datname)' if with_size else '0';
+    return f"""
+        SELECT d.datname,
+               {size_expr},
+               r.database IS NOT NULL,
+               coalesce(r.kind, ''),
+               coalesce(r.owner_path, ''),
+               coalesce(r.host, ''),
+               coalesce(r.pid, 0),
+               coalesce(r.created_at::text, ''),
+               coalesce(r.last_used_at::text, ''),
+               floor(extract(epoch FROM now() - r.last_heartbeat_at))::bigint,
+               EXISTS (
+                   SELECT 1 FROM pg_stat_activity a WHERE a.datname = d.datname
+               ),
+               floor(extract(epoch FROM now() - r.condemned_at))::bigint
+        FROM pg_database d
+        LEFT JOIN {REGISTRY_TABLE} r ON r.database = d.datname
+        WHERE {predicate} AND NOT d.datistemplate
+        ORDER BY d.datname
+        """;
+}
+
+
+impl _age_of(raw: any) -> int {
+    return int(raw) if raw is not None else -1;
+}
+
+
+impl _record_of(row: any) -> DbRecord {
+    return DbRecord(
+        database=str(row[0]),
+        size_bytes=int(row[1] or 0),
+        recorded=bool(row[2]),
+        kind=str(row[3] or ''),
+        owner_path=str(row[4] or ''),
+        host=str(row[5] or ''),
+        pid=int(row[6] or 0),
+        created_at=str(row[7] or ''),
+        last_used_at=str(row[8] or ''),
+        heartbeat_age_seconds=_age_of(row[9]),
+        has_sessions=bool(row[10]),
+        condemned_age_seconds=_age_of(row[11])
+    );
+}
+
+
+impl _heartbeat_once(info: ConnInfo, database: str) -> bool {
+    conn: (any | None) = None;
+    try {
+        conn = connect_admin(info);
+        return touch_heartbeat(conn, database);
+    } except Exception as e {
+        logger.debug(f"heartbeat for {database} could not reach the registry: {e}");
+        return False;
+    } finally {
+        if conn is not None {
+            try {
+                conn.close();
+            } except Exception {}
+        }
+    }
+}
+
+
+impl _heartbeat_loop(info: ConnInfo, database: str, stop: any) {
+    failures = 0;
+    warnings = 0;
+    while not stop.`wait(SCRATCH_HEARTBEAT_SECONDS) {
+        if _heartbeat_once(info, database) {
+            if warnings > 0 {
+                logger.warning(
+                    f"heartbeat for the scratch database {database} recovered after "
+                    f"{failures} failed attempt(s)"
+                );
+            }
+            failures = 0;
+            warnings = 0;
+            continue;
+        }
+        failures += 1;
+        silent = failures * SCRATCH_HEARTBEAT_SECONDS;
+        if warnings == 0 and silent >= _HEARTBEAT_WARN_AFTER_SECONDS {
+            warnings = 1;
+            logger.warning(
+                f"could not heartbeat the scratch database {database} for "
+                f"{silent // 60} minute(s); the registry cannot tell that this "
+                "process is alive while that lasts"
+            );
+        } elif warnings == 1 and silent >= UNREACHABLE_HOST_GRACE_SECONDS {
+            warnings = 2;
+            logger.warning(
+                f"the scratch database {database} has not been heartbeated for "
+                f"{silent // 60} minute(s); a jac process on another host may now "
+                "mark it for reclamation, and will reclaim it if it is still "
+                "silent and unused when it looks again"
+            );
+        }
+    }
+}
+
+
+impl _span(seconds: int) -> str {
+    if seconds >= 86400 * 2 {
+        return f"{seconds // 86400}d";
+    }
+    if seconds >= 3600 {
+        return f"{(seconds + 3599) // 3600}h";
+    }
+    if seconds >= 60 {
+        return f"{(seconds + 59) // 60}m";
+    }
+    return f"{max(seconds, 0)}s";
 }

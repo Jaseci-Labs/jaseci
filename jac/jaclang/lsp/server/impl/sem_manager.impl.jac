@@ -32,7 +32,7 @@ impl SemTokManager.collect_resolved_nodes(ir: uni.Module) -> list[uni.NameAtom] 
         return resolved_cache[mp] == target;
     }
     nodes: list[uni.NameAtom] = [];
-    for nd in ir._in_mod_nodes {
+    for nd in ir._in_mod_nodes or [] {
         if isinstance(nd, uni.NameAtom) {
             if nd.sem_token and belongs(nd.loc.mod_path) {
                 nodes.append(nd);
@@ -70,7 +70,7 @@ impl SemTokManager.gen_sem_tok_node(
 }
 
 impl SemTokManager.gen_sem_tokens(ir: uni.Module) -> list[int] {
-    tokens = [];
+    tokens: list[tuple[int, int, int, int, int]] = [];
     seen_locs: dict[tuple[int, int], bool] = {};
     try {
         for nd in self.collect_resolved_nodes(ir) {
@@ -95,7 +95,7 @@ impl SemTokManager.gen_sem_tokens(ir: uni.Module) -> list[int] {
     }
 
     tokens.sort(key=lambda (x: any) { (x[0], x[1]); });
-    result = [];
+    result: list[int] = [];
     (prev_line, prev_col) = (0, 0);
     for (line, col_start, length, tok_type, tok_mod) in tokens {
         result += [

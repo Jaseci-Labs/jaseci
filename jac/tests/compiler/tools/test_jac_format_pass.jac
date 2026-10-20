@@ -10,7 +10,7 @@ import from difflib { unified_diff }
 import from tests.support { JAC_ROOT }
 import jaclang;
 import jaclang.compiler.frontend.unitree as uni;
-import from jaclang.compiler.frontend.helpers { add_line_numbers }
+import from jaclang.project.source { add_line_numbers }
 import from jaclang.compiler.driver.program { JacProgram }
 glob FIXTURES = os.path.join(JAC_ROOT, "tests", "compiler", "tools", "fixtures");
 
@@ -93,8 +93,38 @@ test "simple walk fmt" {
     compare_files(os.path.join(FIXTURES, "simple_walk_fmt.jac"));
 }
 
+test "visit insertion position compact fmt" {
+    source = "walker Walk { can step with Root entry { "
+        + "visit : 0 : [-->]; visit : -1 : [-->] else { disengage; } "
+        + "visit : 1 + 2 : [-->]; visit [-->]; } }";
+    formatted = JacProgram.jac_str_formatter(
+        source_str=source, file_path="<test>.jac"
+    ).mod.main.gen.jac;
+    assert "visit:0: [-->];" in formatted;
+    assert "visit:-1: [-->] else {" in formatted;
+    assert "visit:1 + 2: [-->];" in formatted;
+    assert "visit [-->];" in formatted;
+    assert JacProgram.jac_str_formatter(
+        source_str=formatted, file_path="<test>.jac"
+    ).mod.main.gen.jac
+        == formatted;
+}
+
 test "tagbreak" {
     compare_files(os.path.join(FIXTURES, "tagbreak.jac"));
+}
+
+test "graph filter membership keeps keyword spacing" {
+    source = 'node Item { has name: str; }\n\nwith entry {\n'
+        + 'items = [root-->[?:Item, name in ("a", "b")]];\n}\n';
+    formatted = JacProgram.jac_str_formatter(
+        source_str=source, file_path="<test>.jac"
+    ).mod.main.gen.jac;
+    assert "name in " in formatted , formatted;
+    second = JacProgram.jac_str_formatter(
+        source_str=formatted, file_path="<test>.jac"
+    ).mod.main.gen.jac;
+    assert second == formatted , repr(formatted) + "\n" + repr(second);
 }
 
 test "connect op compact fmt" {
@@ -134,6 +164,14 @@ test "forever keyword preserved not rewritten" {
     formatted = prog.mod.main.gen.jac;
     assert "forever {" in formatted;
     assert "while" not in formatted;
+}
+
+test "awaiting fmt" {
+    compare_files(os.path.join(FIXTURES, "awaiting_fmt.jac"));
+}
+
+test "awaiting jsx fmt" {
+    compare_files(os.path.join(FIXTURES, "awaiting_jsx_fmt.jac"));
 }
 
 test "fstring comment not injected" {
@@ -404,7 +442,7 @@ test "empty blocks format without inner space" {
     formatted = prog.mod.main.gen.jac;
 
     assert "obj Empty {}" in formatted;
-    assert "impl HasM.m{}" in formatted;
+    assert "impl HasM.m {}" in formatted;
     assert "can go with Root entry {}" in formatted;
     assert "def multi {}" in formatted;
     assert "if x > 0 {} else {}" in formatted;

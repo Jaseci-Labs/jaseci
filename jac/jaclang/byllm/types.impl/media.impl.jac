@@ -1,8 +1,8 @@
-impl Media.to_dict -> list[dict] {
+impl Media.to_dict -> list[dict[str, any]] {
     raise NotImplementedError("Subclasses must implement this method.");
 }
 
-impl Text.to_dict -> list[dict] {
+impl Text.to_dict -> list[dict[str, any]] {
     return [{"type": "text", "text": self.text}];
 }
 
@@ -23,11 +23,13 @@ impl Image.postinit -> None {
         if not os.path.exists(s) {
             raise ValueError(f"Image file does not exist: {s}");
         }
-        image = open_image(s);
-        fmt = image.format or "PNG";
+
+        image: any = open_image(s);
+        fmt: str = image.format or "PNG";
 
         self.mime_type = self._format_to_mime(fmt);
-        with BytesIO() as buffer {
+        buffer = BytesIO();
+        with buffer {
             image.save(buffer, format=fmt);
             data = buffer.getvalue();
             self.url = self._data_url_from_bytes(data, fmt);
@@ -36,9 +38,11 @@ impl Image.postinit -> None {
     }
 
     if isinstance(value, PILImageCls) {
-        fmt = value.format or "PNG";
-        with BytesIO() as buffer {
-            value.save(buffer, format=fmt);
+        pil: any = value;
+        fmt: str = pil.format or "PNG";
+        buffer = BytesIO();
+        with buffer {
+            pil.save(buffer, format=fmt);
             data = buffer.getvalue();
             self.url = self._data_url_from_bytes(data, fmt);
             return;
@@ -48,13 +52,14 @@ impl Image.postinit -> None {
     if isinstance(value, (bytes, bytearray, memoryview)) {
         raw = bytes(value);
 
-        img = open_image(BytesIO(raw));
-        fmt = img.format or "PNG";
+        img: any = open_image(BytesIO(raw));
+        fmt: str = img.format or "PNG";
 
         try {
             self.url = self._data_url_from_bytes(raw, fmt);
         } except Exception {
-            with BytesIO() as buffer {
+            buffer = BytesIO();
+            with buffer {
                 img.save(buffer, format=fmt);
                 self.url = self._data_url_from_bytes(buffer.getvalue(), fmt);
             }
@@ -80,8 +85,8 @@ impl Image.postinit -> None {
                 }
                 stream_bytes = bytes(value?.read());
             }
-            img = open_image(BytesIO(stream_bytes));
-            fmt = img.format or "PNG";
+            img: any = open_image(BytesIO(stream_bytes));
+            fmt: str = img.format or "PNG";
             self.url = self._data_url_from_bytes(stream_bytes, fmt);
         } finally {
             if pos is not None and value?.seek {
@@ -123,7 +128,7 @@ impl Image._data_url_from_bytes(data: bytes, fmt: str | None) -> str {
     return f"data:{mime};base64,{b64}";
 }
 
-impl Image.to_dict -> list[dict] {
+impl Image.to_dict -> list[dict[str, any]] {
     image_url = {"url": self.url};
     if self.mime_type {
         image_url["format"] = self.mime_type;
@@ -165,7 +170,7 @@ impl Video.load_frames -> None {
     }
 }
 
-impl Video.to_dict -> list[dict] {
+impl Video.to_dict -> list[dict[str, any]] {
     if self._base64frames is None {
         self.load_frames();
     }
@@ -174,4 +179,43 @@ impl Video.to_dict -> list[dict] {
         {"type": "image_url", "image_url": f"data:image/jpeg;base64,{frame}",}
         for frame in self._base64frames
     ];
+}
+
+impl Document.postinit -> None {
+    source = self.source;
+    if isinstance(source, (str, os.PathLike)) {
+        path = os.fsdecode(source);
+        if not os.path.isfile(path) {
+            raise ValueError(f"Document file does not exist: {path}");
+        }
+        with open(path, "rb") as f {
+            raw = f.read();
+        }
+        self.filename = self.filename or os.path.basename(path);
+    } elif isinstance(source, (bytes, bytearray, memoryview)) {
+        raw = bytes(source);
+    } else {
+        raise TypeError(
+            "Unsupported Document input type. Provide a path (str or os.PathLike) "
+            "or bytes."
+        );
+    }
+    start = raw.find(b"%PDF-", 0, 1024);
+    if start < 0 {
+        raise ValueError(
+            "Document accepts PDF files only. Pass text-like files (.md, .txt, "
+            "code, .csv) as Text."
+        );
+    }
+    raw = raw[start:];
+    b64 = base64.b64encode(raw).decode("utf-8");
+    self._data_url = f"data:application/pdf;base64,{b64}";
+}
+
+impl Document.to_dict -> list[dict[str, any]] {
+    file = {"file_data": self._data_url};
+    if self.filename {
+        file["filename"] = self.filename;
+    }
+    return [{"type": "file", "file": file}];
 }

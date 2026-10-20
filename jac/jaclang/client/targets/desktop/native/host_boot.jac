@@ -3,89 +3,116 @@ import sys;
 import json;
 import hashlib;
 import importlib;
-import socketserver;
-import threading;
-import from jaclang.client.targets.desktop.native.inprocess_dispatch {
-    boot as inprocess_boot,
-    dispatch_sync as inprocess_dispatch_sync,
-    forward as inprocess_forward
-}
-import from jaclang.client.targets.desktop.native.oauth_broker {
-    SessionStore,
-    make_handler
-}
+import platform;
+import from pathlib { Path }
 
 
-glob PLUGIN_BOOTSTRAP_MODULES: list = [
+glob PLUGIN_BOOTSTRAP_MODULES: list[str] = [
          "manifest",
          "desktop_plugin",
          "webview_lib",
          "plugin_host",
          "registry"
-     ];
+     ],
+     EMBEDDED: str = "embedded",
+     PORT_RETRIES: int = 64;
 
 
 obj HostContext {
     has port: int = 0,
         dev_port: int = 0,
         host: any = None,
-        server: any = None;
+        runtime: any = None,
+        library_dir: str = "",
+        _stop: any = None;
 
-    def dispatch(req_json: str) -> str {
-        payload = runtime_payload(req_json);
-        if payload is not None {
-            return inprocess_dispatch_sync(payload);
-        }
-        return self.host.dispatch(req_json) as str;
-    }
-
-    def setup_webview(wv_handle: int) {
-        self.host.setup(wv_handle);
-    }
+    def setup_webview(wv_handle: int);
+    def shutdown;
 }
 
 
-def runtime_payload(req_json: str) -> (str | None) {
-    try {
-        wire = json.loads(req_json);
-    } except Exception {
-        return None;
-    }
-    payload: any = None;
-    payload_str: str | None = None;
-    if isinstance(wire, dict) {
-        payload = wire;
-        payload_str = req_json;
-    } elif isinstance(wire, list) and len(wire) == 1 and isinstance(wire[0], str) {
-        first = wire[0] as str;
+def preferred_port(app_name: str) -> int;
+
+
+def host_executable -> str;
+
+
+def default_data_dir(system: str, identifier: str, app_name: str, app_dir: str) -> str;
+
+
+def _apply_extra_deps;
+
+
+def _bootstrap_plugin_host(plugin_configs: dict[str, any]) -> any;
+
+
+def _ensure_jac_meta_importer;
+
+
+def resolve_program(program: dict[str, any], app_dir: str) -> str;
+
+
+def _pinned_port -> int;
+
+
+def serve_program(
+    entry_file: str,
+    data_dir: str,
+    dist_dir: str,
+    app_name: str,
+    backend: str,
+    host: any,
+    store: any
+) -> tuple[any, int, any];
+
+
+def boot(config_json: str) -> HostContext;
+
+impl HostContext.setup_webview(wv_handle: int) {
+    self.host.setup(wv_handle, self.library_dir);
+}
+
+impl HostContext.shutdown {
+    stop = self._stop;
+    self._stop = None;
+    if stop is not None {
         try {
-            payload = json.loads(first);
-            payload_str = first;
-        } except Exception {
-            return None;
+            stop();
+        } except Exception as e {
+            sys.stderr.write("host_boot: server stop failed: " + str(e) + "\n");
         }
     }
-    if isinstance(payload, dict) and payload.get("kind") in ("walker", "function") {
-        return payload_str;
+    runtime = self.runtime;
+    self.runtime = None;
+    if runtime is not None {
+        try {
+            runtime.close();
+        } except Exception as e {
+            sys.stderr.write("host_boot: runtime close failed: " + str(e) + "\n");
+        }
     }
-    return None;
 }
 
-
-def preferred_port(app_name: str) -> int {
+impl preferred_port(app_name: str) -> int {
     return 49152 + (int(hashlib.sha1(app_name.encode()).hexdigest(), 16) % 16000);
 }
 
-
-def _app_root -> str {
-    if os.path.isfile("/proc/self/exe") {
-        return os.path.dirname(os.path.realpath("/proc/self/exe"));
-    }
-    return os.path.dirname(os.path.abspath(sys.argv[0]));
+impl host_executable -> str {
+    return process_executable();
 }
 
+impl default_data_dir(
+    system: str, identifier: str, app_name: str, app_dir: str
+) -> str {
+    if system == "Darwin" {
+        return os.path.join(
+            os.path.expanduser("~/Library/Application Support"), identifier or app_name
+        );
+    }
+    return app_dir;
+}
 
-def _apply_extra_deps {
+impl _apply_extra_deps {
     extra = os.environ.get("JAC_DESKTOP_DEPS", "");
     if not extra {
         return;
@@ -97,8 +124,7 @@ def _apply_extra_deps {
     }
 }
 
-
-def _bootstrap_plugin_host(plugin_configs: dict) -> any {
+impl _bootstrap_plugin_host(plugin_configs: dict[str, any]) -> any {
     import jaclang;
     pdir = os.path.join(
         os.path.dirname(str(jaclang.__file__)), "client", "targets", "desktop", "plugin"
@@ -112,107 +138,151 @@ def _bootstrap_plugin_host(plugin_configs: dict) -> any {
     return sys.modules["registry"].bootstrap_plugins(plugin_configs, sys.modules);
 }
 
-
-def _start_loopback(
-    ctx: HostContext, app_dir: str, data_dir: str, app_name: str, mode: str
-) {
-    dist = os.path.join(app_dir, "dist");
-    store = SessionStore(os.path.join(data_dir, ".jac", "desktop", "session.json"));
-
-    server_cls: any = socketserver.ThreadingTCPServer;
-    server_cls.daemon_threads = True;
-    if mode == "cef" {
-        handler = make_handler(
-            dist,
-            store,
-            dispatch=ctx.dispatch,
-            events=ctx.host as object,
-            sv_bridge=inprocess_forward
-        );
-    } else {
-        handler = make_handler(dist, store, dispatch=ctx.dispatch);
+impl _ensure_jac_meta_importer {
+    if not any(isinstance(f, JacMetaImporter) for f in sys.meta_path) {
+        sys.meta_path.insert(0, JacMetaImporter());
     }
-    server_cls.allow_reuse_address = True;
-    pref = preferred_port(app_name);
-    srv: any = None;
-    port = 0;
-    pinned_raw = os.environ.get("JAC_DESKTOP_BROKER_PORT", "");
-    if pinned_raw {
-        try {
-            pinned = int(pinned_raw);
-        } except ValueError {
-            raise RuntimeError(
-                "JAC_DESKTOP_BROKER_PORT must be a port number, got '"
-                    + pinned_raw
-                    + "'"
-            );
-        }
-        try {
-            srv = server_cls(("127.0.0.1", pinned), handler);
-            port = pinned;
-        } except OSError as bind_err {
-            raise RuntimeError(
-                "JAC_DESKTOP_BROKER_PORT "
-                    + str(pinned)
-                    + " could not be bound: "
-                    + str(bind_err)
-            );
-        }
-    } else {
-        for i in range(64) {
-            try {
-                srv = server_cls(("127.0.0.1", pref + i), handler);
-                port = pref + i;
-                break;
-            } except OSError {
-                continue;
-            }
-        }
-        if srv is None {
-            srv = server_cls(("127.0.0.1", 0), handler);
-            port = int(srv.server_address[1]);
-        }
-    }
-    threading.Thread(target=srv.serve_forever, daemon=True).start();
-    ctx.server = srv;
-    ctx.port = port;
-    sys.stdout.write("JAC_DESKTOP_SERVING http://127.0.0.1:" + str(port) + "/\n");
-    sys.stdout.flush();
 }
 
+impl resolve_program(program: dict[str, any], app_dir: str) -> str {
+    jab = str(program.get("jab") or "");
+    if jab {
+        import from jaclang.dist.jab { jab_app_meta, materialize_jab }
+        jab_path = jab if os.path.isabs(jab) else os.path.join(app_dir, jab);
+        img = materialize_jab(jab_path);
+        entry_rel = str((jab_app_meta(img).get("entry") or {}).get("path") or "");
+        if not entry_rel {
+            raise RuntimeError(f"the app image {jab_path} has no entry to serve");
+        }
+        return str(img / entry_rel);
+    }
+    entry_path = str(program.get("entry") or "");
+    if not entry_path {
+        raise RuntimeError("the host config names neither an app image nor an entry");
+    }
+    return entry_path
+        if os.path.isabs(entry_path)
+        else os.path.join(app_dir, entry_path);
+}
 
-def boot(config_json: str) -> HostContext {
+impl _pinned_port -> int {
+    raw = os.environ.get("JAC_DESKTOP_BROKER_PORT", "");
+    if not raw {
+        return 0;
+    }
+    try {
+        return int(raw);
+    } except ValueError {
+        raise RuntimeError(
+            "JAC_DESKTOP_BROKER_PORT must be a port number, got '" + raw + "'"
+        );
+    }
+}
+
+impl serve_program(
+    entry_file: str,
+    data_dir: str,
+    dist_dir: str,
+    app_name: str,
+    backend: str,
+    host: any,
+    store: any
+) -> tuple[any, int, any] {
+    _ensure_jac_meta_importer();
+    broker = DesktopBrokerExtension(store=store, host=host);
+    remote = backend != EMBEDDED;
+    pinned = _pinned_port();
+    attempts = [(pinned, 0)]
+        if pinned
+        else [(preferred_port(app_name), PORT_RETRIES), (0, 0)];
+    last_error: (Exception | None) = None;
+    for (port, retries) in attempts {
+        runtime = prepare_inprocess_runtime(
+            entry_file,
+            os.path.join(data_dir, ".jac", "desktop", "graph"),
+            endpoint_profile="desktop",
+            setup_background_services=False,
+            transport_kind="listener",
+            extensions=[broker],
+            overrides={
+                "host": "127.0.0.1",
+                "port": port,
+                "strict_port": retries == 0,
+                "no_client": False,
+                "client_dist": dist_dir,
+                "static_only": remote
+            }
+        );
+        bound: list[int] = [];
+        try {
+            stop = runtime.server.serve_background(
+                on_ready=bound.append, port_retries=retries
+            );
+        } except OSError as e {
+            last_error = e;
+            runtime.close();
+            continue;
+        }
+        if not bound {
+            stop();
+            runtime.close();
+            last_error = RuntimeError("the server did not report a bound port");
+            continue;
+        }
+        return (runtime, bound[0], stop);
+    }
+    raise RuntimeError(
+        "the desktop host could not bind a loopback port"
+            + (f": {last_error}" if last_error is not None else "")
+    );
+}
+
+impl boot(config_json: str) -> HostContext {
     cfg = json.loads(config_json);
     app_name = str(cfg.get("app_name") or "app");
     mode = str(cfg.get("mode") or "webview");
-    entry_rel = str(cfg.get("entry_rel") or "");
-    dispatch_cfg = (cfg.get("dispatch") or {}) as dict;
-    plugin_configs = (cfg.get("plugins") or {}) as dict;
+    program = (cfg.get("program") or {}) as dict[str, any];
+    backend = str(cfg.get("backend") or EMBEDDED);
+    plugin_configs = (cfg.get("plugins") or {}) as dict[str, any];
+    identifier = str(cfg.get("identifier") or "");
 
-    app_dir = _app_root();
-    data_dir = str(os.environ.get("JAC_DATA_PATH", app_dir));
+    layout = AppLayout.from_executable(Path(host_executable()));
+    app_dir = str(cfg.get("app_dir") or "") or str(layout.resources);
+    data_dir = str(os.environ.get("JAC_DATA_PATH", ""))
+        or default_data_dir(platform.system(), identifier, app_name, app_dir);
 
     _apply_extra_deps();
 
     host = _bootstrap_plugin_host(plugin_configs);
     if mode == "cef" {
-        host.setup_cef();
+        host.setup_cef(str(layout.library_dir()));
     }
 
-    inprocess_boot(
-        os.path.join(app_dir, "sv", entry_rel),
-        os.path.join(data_dir, ".jac", "desktop", "graph"),
-        timeout_s=(dispatch_cfg.get("timeout_s") or 30.0) as float,
-        max_queue=(dispatch_cfg.get("max_queue") or 128) as int,
-        debug=bool(dispatch_cfg.get("debug") or False)
+    entry_file = resolve_program(program, app_dir) if backend == EMBEDDED else "";
+    store = SessionStore(os.path.join(data_dir, ".jac", "desktop", "session.json"));
+    (runtime, port, stop) = serve_program(
+        entry_file,
+        data_dir,
+        os.path.join(app_dir, "dist"),
+        app_name,
+        backend,
+        host,
+        store
     );
 
-    ctx = HostContext(host=host);
+    ctx = HostContext(
+        host=host,
+        runtime=runtime,
+        port=port,
+        library_dir=str(layout.library_dir()),
+        _stop=stop
+    );
     try {
         ctx.dev_port = int(os.environ.get("JAC_DESKTOP_DEV_PORT", "0") or "0");
     } except (TypeError, ValueError) {
         ctx.dev_port = 0;
     }
-    _start_loopback(ctx, app_dir, data_dir, app_name, mode);
+    sys.stdout.write("JAC_DESKTOP_SERVING http://127.0.0.1:" + str(port) + "/\n");
+    sys.stdout.flush();
     return ctx;
 }

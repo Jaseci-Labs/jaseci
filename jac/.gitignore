@@ -25,6 +25,9 @@ downloads/
 eggs/
 .eggs/
 lib/
+# ...but the jac-shadcn registry ships one: its component templates
+# import `...lib.utils`, so the module that placeholder names is source.
+!jaclang/cli/shadcn/registry/lib/
 lib64/
 parts/
 sdist/
@@ -73,11 +76,15 @@ out.txt
 zig-out/
 /dist/
 .pbs-build/
+.python-build/
 # Pinned bun fetched per target by the payload tool's fetch-bun subcommand
 # (jaclang/dist/payload/) and bundled into the payload (never committed). See
 # build.zig's fetch-bun step.
 .bun-build/
 jaclang/client/_bun/
+# Zig's unpacked build.zig.zon dependencies (the JavaScript engine's foreign
+# sources).
+zig-pkg/
 
 # Vendored typeshed stdlib stubs are fetched at the pinned commit by the
 # payload tool's fetch-typeshed subcommand (zig build fetch-typeshed), not
@@ -85,7 +92,7 @@ jaclang/client/_bun/
 # the stubs are tracked.
 jaclang/vendor/typeshed/stdlib
 .llvm-build/
-# CI staging dir for a cache-restored prebuilt shim (setup-jac -Dshim-bin).
+# CI staging dir for a cache-restored prebuilt shim.
 .shim-build/
 # Persistent JIR precompile cache: mkpayload seeds site/_precompiled from it
 # and writes the refreshed tree back (see build.zig --precompiled-cache).
@@ -96,6 +103,8 @@ jaclang/vendor/typeshed/stdlib
 # Zig-built LLVMPY_* shim, placed in-tree per host platform (see build.zig).
 libjacllvm.so
 libjacllvm.dylib
+libjacllvm.*.artifact.json
+jacllvm.dll.artifact.json
 jacllvm.dll
 # Kit-built native compiler kernel (#8824), staged in-tree by mkpayload.
 libjac_compiler.so
@@ -112,3 +121,7 @@ libjac_*.dylib.layout.json
 libjacpyembed.so
 libjacpyembed.dylib
 jacpyembed.dll
+
+# A kernel publication lock keeps its inode while a build holds it.
+libjac_*.lock
+jac_compiler.dll.lock

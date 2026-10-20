@@ -1,81 +1,16 @@
 import shutil;
-import os;
-import from jaclang.cli.console { console }
-import from pathlib { Path }
-import from jaclang.project.plugin_config { deep_merge }
-import from jaclang.client.npm_provider {
-    CORE_DEV_DEPS,
-    CORE_RUNTIME_DEPS,
-    LEGACY_META_PACKAGES,
-    OPTIONAL_RUNTIME_DEPS,
-    resolve_client_target_name,
-    target_scoped_npm_deps
-}
 
-def _inject_missing(deps: dict, required: dict[str, str]) -> dict {
-    merged = dict(deps);
-    for (name, version) in required.items() {
-        if name not in merged {
-            merged[name] = version;
-        }
-    }
-    return merged;
-}
+import os;
+
+import from pathlib { Path }
+
+def _inject_missing(deps: dict[str, any], required: dict[str, str]) -> dict[str, any];
 
 def _migrate_legacy_meta_packages(
-    jac_config: any, npm_deps: dict, npm_dev_deps: dict
-) -> tuple[dict, dict, bool] {
-    migrated = False;
+    jac_config: any, npm_deps: dict[str, any], npm_dev_deps: dict[str, any]
+) -> tuple[dict[str, any], dict[str, any], bool];
 
-    if 'jac-client-node' in npm_deps {
-        console.warning(
-            "Migrating from jac-client-node meta-package to individual dependencies..."
-        );
-        jac_config.remove_dependency('jac-client-node', dev=False, dep_type='npm');
-        del npm_deps['jac-client-node'];
-
-        all_runtime = {** CORE_RUNTIME_DEPS, ** OPTIONAL_RUNTIME_DEPS};
-        for (name, version) in all_runtime.items() {
-            if name not in npm_deps {
-                jac_config.add_dependency(name, version, dev=False, dep_type='npm');
-                npm_deps[name] = version;
-            }
-        }
-        console.success("Replaced jac-client-node with individual packages");
-        migrated = True;
-    }
-
-    if '@jac-client/dev-deps' in npm_dev_deps {
-        console.warning(
-            "Migrating from @jac-client/dev-deps meta-package to individual dependencies..."
-        );
-        jac_config.remove_dependency('@jac-client/dev-deps', dev=True, dep_type='npm');
-        del npm_dev_deps['@jac-client/dev-deps'];
-        for (name, version) in CORE_DEV_DEPS.items() {
-            if name not in npm_dev_deps {
-                jac_config.add_dependency(name, version, dev=True, dep_type='npm');
-                npm_dev_deps[name] = version;
-            }
-        }
-        console.success("Replaced @jac-client/dev-deps with individual packages");
-        migrated = True;
-    }
-
-    if migrated {
-        jac_config.save();
-    }
-    return (npm_deps, npm_dev_deps, migrated);
-}
-
-def _clear_node_modules(client_dir: Path | None) {
-    if client_dir is not None {
-        node_modules: Path = client_dir / 'node_modules';
-        if node_modules.exists() {
-            shutil.rmtree(node_modules);
-            console.print("  Reinstalling dependencies...\n");
-        }
-    }
-}
+def _clear_node_modules(client_dir: Path | None);
 
 impl JacClientConfig.get_plugin_name(self: JacClientConfig) -> str {
     return "client";
@@ -97,6 +32,7 @@ impl JacClientConfig.get_default_config(self: JacClientConfig) -> dict[str, any]
         'configs': {},
         'paths': {},
         'routing': {'auth_redirect': '/login'},
+        'assets': {'dir': '', 'custom_extensions': []},
         'npm': {},
         'package': {
             'name': '',
@@ -109,22 +45,36 @@ impl JacClientConfig.get_default_config(self: JacClientConfig) -> dict[str, any]
 }
 
 impl JacClientConfig.load(self: JacClientConfig) -> dict[str, any] {
+    target_app = self.get_jac_config().app_for_target(self.entry_path);
+    app_name = target_app.name if target_app is not None else '';
     cached = self._config;
-    if cached is not None {
+    if cached is not None and self._config_app == app_name {
         return cached;
     }
+    self._config_app = app_name;
     default_config = self.get_default_config();
     jac_config = self.get_jac_config();
 
-    client_config = jac_config.get_plugin_config('client');
-    target_name = resolve_client_target_name(jac_config);
+    client_config = self.effective_jac_config().get_plugin_config('client');
 
     npm_deps = jac_config.get_plugin_deps('npm');
-    target_scoped_deps = target_scoped_npm_deps(jac_config, target_name);
+    target_scoped_deps: dict[str, str] = {};
+    app_dev_deps: dict[str, str] = {};
+    for (dep_name, dep_version, _origin, dep_is_dev) in app_npm_deps(jac_config) {
+        if dep_is_dev {
+            app_dev_deps[dep_name] = dep_version;
+        } else {
+            target_scoped_deps[dep_name] = dep_version;
+        }
+    }
 
-    npm_plugin_deps: dict = dict(jac_config.plugin_dependencies.get('npm', {}));
+    npm_plugin_deps: dict[str, any] = dict(
+        jac_config.plugin_dependencies.get('npm', {})
+    );
     dev_section = npm_plugin_deps.get('dev', {});
-    npm_dev_deps: dict = dict(dev_section) if isinstance(dev_section, dict) else {};
+    npm_dev_deps: dict[str, any] = dict(dev_section)
+        if isinstance(dev_section, dict)
+        else {};
 
     if 'client' in jac_config.plugins {
         (npm_deps, npm_dev_deps, migrated) = _migrate_legacy_meta_packages(
@@ -139,7 +89,11 @@ impl JacClientConfig.load(self: JacClientConfig) -> dict[str, any] {
         npm_deps, {** CORE_RUNTIME_DEPS, ** OPTIONAL_RUNTIME_DEPS}
     );
     npm_dev_deps = _inject_missing(npm_dev_deps, CORE_DEV_DEPS);
+    npm_dev_deps = {** npm_dev_deps, ** app_dev_deps};
     merged_npm_deps = {** npm_deps, ** target_scoped_deps};
+    for (dep_name, dep_version) in _package_npm_deps(jac_config).items() {
+        merged_npm_deps.setdefault(dep_name, dep_version);
+    }
 
     user_config: dict[str, any] = {
         'api': client_config.get('api', {}),
@@ -151,8 +105,9 @@ impl JacClientConfig.load(self: JacClientConfig) -> dict[str, any] {
         'routing': client_config.get('routing', {}),
         'npm': client_config.get('npm', {}),
         'pwa': client_config.get('pwa', {}),
+        'assets': client_config.get('assets', {}),
         'package': {
-            'name': jac_config.project.name,
+            'name': _npm_package_name(jac_config.project.name),
             'version': jac_config.project.version,
             'description': jac_config.project.description,
             'dependencies': merged_npm_deps,
@@ -163,6 +118,10 @@ impl JacClientConfig.load(self: JacClientConfig) -> dict[str, any] {
     self._config = merged;
     return merged;
 }
+
+def _package_npm_deps(jac_config: any) -> dict[str, str];
+
+def _npm_package_name(name: str) -> str;
 
 impl JacClientConfig.get_package_config(self: JacClientConfig) -> dict[str, any] {
     config = self.load();
@@ -233,20 +192,70 @@ impl JacClientConfig.get_pwa_config(self: JacClientConfig) -> dict[str, any] {
     return config.get('pwa', {});
 }
 
+impl JacClientConfig.get_assets_config(self: JacClientConfig) -> dict[str, any] {
+    return client_assets_config(self.get_jac_config(), self.entry_path);
+}
+
+impl JacClientConfig.get_asset_extensions(self: JacClientConfig) -> set[str] {
+    return set(self.get_assets_config().get('custom_extensions', []));
+}
+
+impl JacClientConfig.get_assets_dir(
+    self: JacClientConfig, entry_path: str = ""
+) -> Path {
+    return client_assets_dir(
+        self.get_jac_config(),
+        self.project_dir or Path.cwd(),
+        entry_path or self.entry_path
+    );
+}
+
 impl JacClientConfig.is_pwa_enabled(self: JacClientConfig) -> bool {
     pwa_config = self.get_pwa_config();
 
     return len(pwa_config) > 0;
 }
 
-impl JacClientConfig.get_mobile_config(self: JacClientConfig) -> dict[str, any] {
-    client_config = self.get_jac_config().get_plugin_config("client");
-    section = client_config.get("mobile", {});
+impl JacClientConfig.get_react_native_config(self: JacClientConfig) -> dict[str, any] {
+    client_config = self.effective_jac_config().get_plugin_config("client");
+    section = client_config.get("react_native", {});
     return section if isinstance(section, dict) else {};
 }
 
-impl JacClientConfig.get_react_native_config(self: JacClientConfig) -> dict[str, any] {
-    client_config = self.get_jac_config().get_plugin_config("client");
-    section = client_config.get("react_native", {});
-    return section if isinstance(section, dict) else {};
+impl _inject_missing(deps: dict[str, any], required: dict[str, str]) -> dict[str, any] {
+    merged = dict(deps);
+    for (name, version) in required.items() {
+        if name not in merged {
+            merged[name] = version;
+        }
+    }
+    return merged;
+}
+
+impl _clear_node_modules(client_dir: Path | None) {
+    if client_dir is not None {
+        node_modules: Path = client_dir / 'node_modules';
+        if node_modules.exists() {
+            shutil.rmtree(node_modules);
+            console.print("  Reinstalling dependencies...\n");
+        }
+    }
+}
+
+impl _package_npm_deps(jac_config: any) -> dict[str, str] {
+    if jac_config.project_root is None {
+        return {};
+    }
+    try {
+        lock = load_lock(jac_config);
+    } except InstallError {
+        return {};
+    }
+    return {
+        name: spec for (name, spec, _owner) in package_npm_requirements(lock, False)
+    };
+}
+
+impl _npm_package_name(name: str) -> str {
+    return f"@{name}" if "/" in name and not name.startswith("@") else name;
 }

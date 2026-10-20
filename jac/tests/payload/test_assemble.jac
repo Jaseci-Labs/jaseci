@@ -5,8 +5,10 @@ verification, and the floor staging allow-list."""
 import io;
 import os;
 import shutil;
+import sys;
 import tarfile;
 import tempfile;
+import from unittest.mock { patch }
 
 import from compression.zstd {
     CompressionParameter,
@@ -14,7 +16,7 @@ import from compression.zstd {
     compress,
     decompress
 }
-import from jaclang.compiler.backends.native.llvm.binding.ffi { _shim_name }
+import from jaclang.compiler.backends.native.llvm.shim_path { shim_name }
 import from jaclang.dist.payload.assemble {
     MkPayloadOpts,
     PAYLOAD_WINDOW_LOG,
@@ -24,12 +26,13 @@ import from jaclang.dist.payload.assemble {
     assemble_site,
     collect_stage_entries,
     is_volatile_path,
+    precompile_env,
     shim_file_name,
     stage_floor,
     tar_stage,
     tar_zst_dir
 }
-import from jaclang.dist.payload.fsutil { host_os_arch }
+import from jaclang.dist.payload.fsutil { host_os_arch, copy_tree, skip_jaclang }
 import from jaclang.dist.payload.pins { py_ver }
 
 def wf(stage: str, rel: str, data: bytes, mode: int = 0o644) {
@@ -44,6 +47,31 @@ def wf(stage: str, rel: str, data: bytes, mode: int = 0o644) {
 def rf(path: str) -> bytes {
     with open(path, "rb") as f {
         return f.read();
+    }
+}
+
+test "payload excludes interpreted JacPython modules and keeps their license" {
+    with tempfile.TemporaryDirectory() as tmp {
+        source = os.path.join(tmp, "source");
+        target = os.path.join(tmp, "target");
+        removed = [
+            "compiler/frontend/python/parser.jac",
+            "compiler/backends/py/jacpython/native_api.jac",
+            "runtime/python/objects.jac",
+            "runtime/python/_precompiled/objects.jir"
+        ];
+        for path in removed {
+            wf(source, path, b"implementation");
+        }
+        wf(source, "runtime/python/LICENSE.cpython", b"license");
+        wf(source, "compiler/frontend/parser.jac", b"Jac parser");
+        copy_tree(source, target, skip_jaclang);
+        for path in removed {
+            assert not os.path.exists(os.path.join(target, path));
+        }
+        assert rf(os.path.join(target, "runtime/python/LICENSE.cpython")) == b"license";
+        assert rf(os.path.join(target, "compiler/frontend/parser.jac"))
+            == b"Jac parser";
     }
 }
 
@@ -95,9 +123,89 @@ def fake_repo(repo: str) {
         b"in-tree-shim-bytes"
     );
     wf(repo, "bootstrap/pins.json", b"{}\n");
+    wf(repo, "bootstrap/python/sources.json", b"{}\n");
     wf(repo, "_jac_finder.py", b"finder\n");
     wf(repo, "sitecustomize.py", b"sitecustomize\n");
     wf(repo, "jac.toml", b"version = \"0.0.0\"\n");
+}
+
+test "payload interface sealing uses the fresh staged catalog" {
+    import jaclang.dist.payload.assemble as assembly;
+    with tempfile.TemporaryDirectory() as base {
+        site = os.path.join(base, "site");
+        cache = os.path.join(base, "cache");
+        pre = os.path.join(site, "jaclang", "_precompiled");
+        catalog_copy = os.path.join(base, "stubcat.bin");
+        wf(site, "jaclang/dist/precompile_bytecode.jac", b"");
+        wf(cache, "stubcat.bin", b"stale catalog");
+        wf(cache, "MANIFEST.json", b"stale sealed modules");
+        calls: list[str] = [];
+        def child(
+            argv: list[str], env: dict[str, str] | None, allow_fail: bool
+        ) -> bool {
+            assert env is not None;
+            if argv[2].endswith("stubcat_boot.py") {
+                assert "begin(['stubcat'])" in rf(argv[2]).decode() , (
+                    "the catalog writer marks itself before importing the compiler"
+                );
+                assert not os.path.exists(os.path.join(pre, "MANIFEST.json")) , (
+                    "catalog construction must load staged sources, not a cached image"
+                );
+                wf(pre, "stubcat.bin", b"fresh catalog");
+                calls.append("catalog");
+            } else {
+                assert rf(os.path.join(pre, "stubcat.bin")) == b"fresh catalog";
+                wf(pre, "PRECOMPILE_RESULT.json", b"{}");
+                calls.append("interfaces");
+            }
+            return True;
+        }
+        with patch.object(assembly, "run_child", side_effect=child) {
+            assembly.run_precompile_stage(
+                "python",
+                base,
+                site,
+                MkPayloadOpts(precompiled_cache=cache, stubcat_out=catalog_copy)
+            );
+        }
+        assert calls == ["catalog", "interfaces"];
+        assert rf(catalog_copy) == b"fresh catalog";
+        assert rf(os.path.join(cache, "stubcat.bin")) == b"fresh catalog";
+    }
+}
+
+test "a linked-source payload publishes an empty catalog region" {
+    import jaclang.dist.payload.assemble as assembly;
+    with tempfile.TemporaryDirectory() as base {
+        out = os.path.join(base, "stubcat.bin");
+        wf(base, "stubcat.bin", b"stale catalog");
+        with patch.object(assembly, "run_child") as child {
+            assembly.run_precompile_stage(
+                "python", base, base, MkPayloadOpts(link_source=base, stubcat_out=out)
+            );
+            child.assert_not_called();
+        }
+        assert rf(out) == b"";
+    }
+}
+
+test "the precompile child keeps the cache home and the kit omissions while HOME moves" {
+    with tempfile.TemporaryDirectory() as tmp {
+        site = os.path.join(tmp, "site");
+        os.makedirs(site);
+        outer = {
+            "JAC_CACHE_HOME": os.path.join(tmp, "cache"),
+            "JAC_KIT_OMIT": "kernel"
+        };
+        with patch.dict(os.environ, outer) {
+            env = precompile_env(os.path.join(tmp, "python"), site);
+        }
+        assert env["JAC_CACHE_HOME"] == outer["JAC_CACHE_HOME"];
+        assert env["JAC_KIT_OMIT"] == "kernel" , (
+            "the seal reads what the kit build asked it to leave out"
+        );
+        assert env["HOME"] == site + ".home";
+    }
 }
 
 test "tar constants mirror the stdlib" {
@@ -341,6 +449,11 @@ test "stage_floor stages the floor allow-list + CA bundle, skips non-floor archi
         assert os.path.isfile(os.path.join(floor, osarch, "libssl.a"));
         assert os.path.isfile(os.path.join(floor, "cacert.pem"));
         assert not os.path.exists(os.path.join(floor, osarch, "libX11.a"));
+
+        # Source-built Python supplies certificates independently of pip.
+        wf(pbs, "build/cacert.pem", b"# source CA\n");
+        stage_floor(pbs, stage);
+        assert rf(os.path.join(floor, "cacert.pem")) == b"# source CA\n";
     } finally {
         shutil.rmtree(base, ignore_errors=True);
     }
@@ -351,6 +464,14 @@ test "assemble_site bundles a content-keyed shim under the canonical name" {
     try {
         repo = os.path.join(base, "repo");
         fake_repo(repo);
+        for rel in (
+            "build.zig",
+            "build.zig.zon",
+            "bootstrap/pins.json",
+            "native/core.cpp"
+        ) {
+            wf(repo, rel, f"shim input {rel}\n".encode());
+        }
 
         # What the release channel hands mkpayload: the deps-release asset,
         # whose name embeds the platform and the shim-input hash.
@@ -358,20 +479,111 @@ test "assemble_site bundles a content-keyed shim under the canonical name" {
         keyed = os.path.join(base, f"libjacllvm-{host_os_arch()}-deadbeefcafe.{ext}");
         wf(base, os.path.basename(keyed), b"prebuilt-shim-bytes");
 
+        for example in ["jaclang_org", "tiny_jacyac"] {
+            wf(repo, f"examples/{example}/jac.toml", b"template-config\n");
+            wf(repo, f"examples/{example}/web.jac", b"template-entry\n");
+            wf(repo, f"examples/{example}/.jac/generated", b"build-output\n");
+        }
         site = os.path.join(base, "site");
         os.makedirs(site, exist_ok=True);
         assemble_site(repo, site, MkPayloadOpts(shim_so=keyed));
 
-        # Exactly the path _find_shim() scans for on every sys.path entry.
+        for template in ["awesome_template", "awetiny_template"] {
+            assert rf(os.path.join(site, template, "jac.toml")) == b"template-config\n";
+            assert rf(os.path.join(site, template, "web.jac")) == b"template-entry\n";
+            assert not os.path.exists(os.path.join(site, template, ".jac"));
+        }
+        # Exactly the path the llvm-shim artifact probes for in a kit.
         llvm_dir = os.path.join(
             site, "jaclang", "compiler", "backends", "native", "llvm"
         );
         staged = sorted(os.listdir(llvm_dir));
-        assert shim_file_name() == _shim_name() , "payload and loader must spell one shim name";
-        assert staged == [_shim_name()] , f"site shim dir holds {staged}";
-        shim = rf(os.path.join(llvm_dir, _shim_name()));
+        assert shim_file_name() == shim_name() , "payload and loader must spell one shim name";
+        assert staged == [shim_name(), shim_name() + ".artifact.json"] , f"site shim dir holds {staged}";
+        import json;
+        import from jaclang.compiler.backends.native.llvm.shim_path {
+            shim_inputs_digest
+        }
+        record = json.loads(rf(os.path.join(llvm_dir, shim_name() + ".artifact.json")));
+        assert record == {"inputs": shim_inputs_digest(repo)} , (
+            "the kit's shim records the sources it was built from"
+        );
+        shim = rf(os.path.join(llvm_dir, shim_name()));
         assert shim == b"prebuilt-shim-bytes" , "the --shim asset, not the in-tree copy";
     } finally {
         shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+test "stripping the kernel keeps its sidecar hash truthful" {
+    import hashlib;
+    import json;
+    import os;
+    import tempfile;
+    import from pathlib { Path }
+    import from jaclang.dist.payload.assemble { strip_kernel_best_effort }
+    with tempfile.TemporaryDirectory() as tmp {
+        site = os.path.join(tmp, "site");
+        pre = Path(site) / "jaclang" / "_precompiled";
+        pre.mkdir(parents=True);
+        lib = Path(site) / "jaclang" / "compiler" / "libjac_compiler.so";
+        lib.parent.mkdir(parents=True);
+        lib.write_bytes(b"not an ELF image, so strip leaves it alone");
+        (pre / "MANIFEST.json").write_text(
+            json.dumps(
+                {
+                    "native": {
+                        "artifact": {
+                            "path": "compiler/libjac_compiler.so",
+                            "sha256": "stale"
+                        }
+                    }
+                }
+            )
+        );
+        Path(str(lib) + ".layout.json").write_text(
+            json.dumps({"classes": {}, "artifact_sha256": "stale", "plan_digest": "p"})
+        );
+        strip_kernel_best_effort(site);
+        actual = hashlib.sha256(lib.read_bytes()).hexdigest();
+        manifest = json.loads((pre / "MANIFEST.json").read_text());
+        assert manifest["native"]["artifact"]["sha256"] == actual;
+        sidecar = json.loads(Path(str(lib) + ".layout.json").read_text());
+        assert sidecar["artifact_sha256"] == actual , (
+            "the sidecar must describe the library the kit ships, or a checkout never adopts it"
+        );
+        assert sidecar["plan_digest"] == "p" and sidecar["classes"] == {};
+    }
+}
+
+test "the staged interpreter keeps the C API its extension modules link against" {
+    if sys.platform != "darwin" {
+        return;
+    }
+    import subprocess;
+    import from jaclang.dist.payload.assemble { stage_python_bin }
+    cc = shutil.which("cc");
+    assert cc is not None , "a C compiler is required for the interpreter fixture";
+    with tempfile.TemporaryDirectory() as tmp {
+        bindir = os.path.join(tmp, "py", "install", "bin");
+        os.makedirs(bindir);
+        csrc = os.path.join(tmp, "interp.c");
+        with open(csrc, "w") as f {
+            f.write(
+                "int PyExc_Fixture = 1;\nint main(void) { return PyExc_Fixture - 1; }\n"
+            );
+        }
+        exe = os.path.join(bindir, f"python{py_ver()}");
+        subprocess.run([cc, "-o", exe, csrc, "-Wl,-export_dynamic"], check=True);
+        stage = os.path.join(tmp, "stage");
+        stage_python_bin(os.path.join(tmp, "py"), stage);
+        staged = os.path.join(stage, "python", "bin", f"python{py_ver()}");
+        exports = subprocess.run(
+            ["nm", "-gU", staged], capture_output=True, text=True, check=True
+        ).stdout;
+        assert "_PyExc_Fixture" in exports , (
+            "lib-dynload modules resolve the C API against the interpreter; "
+            f"strip removed its exports:\n{exports}"
+        );
     }
 }

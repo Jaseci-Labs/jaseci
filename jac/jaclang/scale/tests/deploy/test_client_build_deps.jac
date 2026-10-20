@@ -7,17 +7,13 @@ otherwise, and since the build is fatal that kills the whole deploy.
 These drive the real ManifestBuilder against real project folders, running the
 actual `jac install` and `jac build` subprocesses; no mocks. Where a test needs
 to see inside the build's ephemeral stage, it goes through the codebase's own
-JAC_EXECUTABLE seam with a wrapper that hands every call to the real binary."""
+jac_executable seam with a wrapper that hands every call to the real binary."""
 
+import from unittest.mock { patch }
 import os;
 import shutil;
 import tempfile;
 import from pathlib { Path }
-import from jaclang.scale.deploy.target.kubernetes.kubernetes_config {
-    KubernetesConfig
-}
-import from jaclang.scale.deploy.target.kubernetes.manifest_builder { ManifestBuilder }
-import from jaclang.scale.runtime.context.util { jac_executable }
 
 # Tiny, pure-python, zero-dependency package: enough to prove the host build
 # env is populated from [dependencies] without making this a download test.
@@ -28,7 +24,7 @@ glob APP_DEP: str = "toposort",
 def _builder(project_dir: str, dry_run: bool = False) -> ManifestBuilder {
     mb = ManifestBuilder(
         k8s_config=KubernetesConfig(app_name="shop", namespace="jb-shop"),
-        microservices_config={"client": {"entry": "main.jac"}},
+        client_entry="main.jac",
         dry_run=dry_run
     );
     mb.project_dir = project_dir;
@@ -42,9 +38,9 @@ def _project(dependencies: str, server_import: str) -> str {
     tmp = tempfile.mkdtemp(prefix="client-build-deps-");
     files = {
         "jac.toml": (
-            '[project]\nname = "shop"\nentry-point = "main.jac"\n\n'
-            f"[dependencies]\n{dependencies}\n\n"
-            '[dependencies.npm]\nreact = "^18.2.0"\nreact-dom = "^18.2.0"\n'
+            '[project]\nname = "shop"\nentry-point = "main"\n\n'
+            f"[dependencies.pypi]\n{dependencies}\n\n"
+            '[dependencies.npm]\nreact = "^19.2.0"\nreact-dom = "^19.2.0"\n'
         ),
         "db.jac": (
             f"import {server_import};\n\n"
@@ -100,19 +96,17 @@ test "the host client build installs the app's declared dependencies" {
     project_dir = _project(f'{APP_DEP} = ">=1.10"', APP_DEP);
     record = tempfile.mkdtemp(prefix="client-build-deps-rec-");
     script = _venv_probing_jac(record, record);
-    saved = os.environ.get("JAC_EXECUTABLE");
-    os.environ["JAC_EXECUTABLE"] = script;
+    _seam = patch(
+        "jaclang.scale.runtime.context.util.jac_executable", return_value=script
+    );
+    _seam.start();
     raised = None;
     try {
         _builder(project_dir)._build_client_bundle(project_dir);
     } except Exception as e {
         raised = e;
     } finally {
-        if saved is None {
-            os.environ.pop("JAC_EXECUTABLE", None);
-        } else {
-            os.environ["JAC_EXECUTABLE"] = saved;
-        }
+        _seam.stop();
         built = (
             Path(project_dir) / ".jac" / "client" / "dist" / "index.html"
         ).is_file();
@@ -172,6 +166,12 @@ test "a dependency the host cannot install does not abort the deploy" {
 
 test "a client build that dies on a missing import names the failed install" {
     project_dir = _project(f'{MISSING_DEP} = ">=1.0"', "jac_nonexistent_module_8010");
+    # Building client artifacts does not execute the server's entry block.
+    # Fail an import the browser needs, while retaining the failed install.
+    (Path(project_dir) / 'main.jac').write_text(
+        'import from .missing_client { Broken }\n'
+            + 'def:pub app -> JsxElement { return <Broken />; }\n'
+    );
     raised = None;
     try {
         _builder(project_dir)._build_client_bundle(project_dir);

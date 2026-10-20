@@ -18,8 +18,8 @@ import from ....utils.api { getErrorMessage }
 import from .CreateUserModal { CreateUserModal }
 import from .EditUserModal { EditUserModal }
 def:pub UsersPage -> JsxElement {
-    has users: list = [],
-        ssoProviders: list = [],
+    has users: list[dict[str, any]] = [],
+        ssoProviders: list[dict[str, any]] = [],
         showCreateModal: bool = False,
         showEditModal: bool = False,
         editUsername: str = "",
@@ -51,8 +51,10 @@ def:pub UsersPage -> JsxElement {
         []
     );
 
-    async def handleCreate(username: str, password: str, role: str) -> dict {
-        result = await createUser(username, password, role, auth["authToken"]);
+    async def handleCreate(
+        username: str, email: str, password: str, role: str
+    ) -> dict[str, any] {
+        result = await createUser(username, email, password, role, auth["authToken"]);
         if result["ok"] {
             alert["showAlert"]("User created", "success");
             loadUsers();
@@ -63,7 +65,9 @@ def:pub UsersPage -> JsxElement {
         };
     }
 
-    async def handleUpdate(username: str, role: str, resetRequired: bool) -> dict {
+    async def handleUpdate(
+        username: str, role: str, resetRequired: bool
+    ) -> dict[str, any] {
         result = await updateUser(username, role, resetRequired, auth["authToken"]);
         if result["ok"] {
             alert["showAlert"]("User updated", "success");

@@ -11,6 +11,7 @@ Tests with SkipTest document DESIRED behavior that will pass once
 the boundary type manifest and hydration codegen are implemented.
 """
 
+import from jaclang.compiler.backends.py.codegen_shim { generated_python }
 import os;
 import unittest;
 import tempfile;
@@ -18,6 +19,7 @@ import from tests.support { JAC_ROOT }
 import from tempfile { NamedTemporaryFile, TemporaryDirectory }
 import jaclang;
 import from jaclang.compiler.driver.program { JacProgram }
+import from jaclang.compiler.frontend.codeinfo { endpoint_key }
 
 glob FIXTURE_DIR = os.path.join(
          JAC_ROOT, "tests", "compiler", "backends", "es", "fixtures"
@@ -104,7 +106,7 @@ test "existing fixtures still compile" {
 # generated and the consumer module failed to import — silently dropping every
 # one of its own endpoints.
 test "sv-to-sv: relative sv import generates HTTP stubs (#6507)" {
-    py = compile_fixture("sv_relative_consumer.jac").gen.py;
+    py = generated_python(compile_fixture("sv_relative_consumer.jac").gen);
     # The provider must NOT be a plain Python import (that is the broken
     # fallthrough that crashes the module at load time).
     assert "from .sv_relative_provider import" not in py , (
@@ -113,7 +115,10 @@ test "sv-to-sv: relative sv import generates HTTP stubs (#6507)" {
     # It must instead emit the sv-to-sv client machinery, keyed on the BARE
     # module name (no leading dot) so the runtime can resolve the provider.
     assert "import sv_client as __jac_sv_client" in py;
-    assert "_declare_consumer_provider(__name__, 'sv_relative_provider')" in py;
+    assert (
+        "_declare_consumer_provider('sv_relative_consumer', 'sv_relative_provider', '/sv-relative')"
+        in py
+    );
     assert "'.sv_relative_provider'" not in py , (
         "stubs must key the provider on the bare module name, not the dotted form"
     );
@@ -136,17 +141,18 @@ test "sv-to-sv: relative sv import generates HTTP stubs (#6507)" {
 # return arrived as a raw `_jac_type` dict and the imported type degraded into a
 # bogus callable stub (#6710).
 test "sv-to-sv: typed archetype return is rehydrated, not a raw dict (#6710)" {
-    py = compile_fixture("sv_relative_consumer.jac").gen.py;
+    py = generated_python(compile_fixture("sv_relative_consumer.jac").gen);
     # The function stub must wrap the remote call in the return type's
     # `_from_wire`, not hand the wire dict straight back.
     assert (
-        "AnalyticsReport._from_wire(__jac_sv_client.call('sv_relative_provider', "
+        "_jac_boundary_AnalyticsReport._from_wire(await __jac_sv_client.call('sv_relative_provider', "
         "'analyze'"
     )
         in py , "sv->sv typed return must be rehydrated via <RetType>._from_wire(...)";
+    assert "async def analyze(" in py , "sv->sv function stubs are typed-async";
     # The imported archetype must lower to a boundary stub *class* (carrying
     # `_from_wire`), never a function stub that would RPC the type name itself.
-    assert "class AnalyticsReport:" in py , (
+    assert "AnalyticsReport = _jac_boundary_AnalyticsReport" in py , (
         "an sv-imported archetype must become a boundary stub class"
     );
     assert "def AnalyticsReport(" not in py , (
@@ -172,7 +178,7 @@ test "cl->sv: sv-imported type does not become a callable stub (#6795)" {
 
 # Inline cl block with def:pub produces __jacCallFunction
 test "inline cl block with defpub generates stubs" {
-    code = '"""Test."""\n\nimport os;\n\ndef:pub get_data(name: str) -> dict {\n    return {"message": "Hello " + name + os.sep};\n}\n\ndef:pub app() -> Any {\n    data = await get_data("World");\n    return <div>{data}</div>;\n}\n';
+    code = '"""Test."""\n\nimport os;\n\ndef:pub get_data(name: str) -> dict[any, any] {\n    return {"message": "Hello " + name + os.sep};\n}\n\nasync def:pub app() -> Any {\n    data = await get_data("World");\n    return <div>{data}</div>;\n}\n';
     mod = compile_inline(code);
     js = mod.gen.js;
     assert "__jacCallFunction" in js;
@@ -181,17 +187,17 @@ test "inline cl block with defpub generates stubs" {
 
 # Endpoint effects correctly classify readers and writers
 test "endpoint effects classify readers and writers" {
-    code = '"""Test."""\n\nnode Item { has name: str; }\n\nwalker read_items {\n    can visit_root with Root entry { report [-->]; }\n}\n\nwalker add_item {\n    has name: str;\n    can do_add with Root entry { here ++> Item(name=self.name); }\n}\n\ndef:pub get_count() -> int { return 0; }\n\ndef:pub delete_all() -> None { items = []; del items; }\n\ndef:pub app() -> Any {\n    root spawn read_items();\n    root spawn add_item(name="x");\n    c = await get_count();\n    await delete_all();\n    return <div>{c}</div>;\n}\n';
+    code = '"""Test."""\n\nnode Item { has name: str; }\n\nwalker read_items {\n    can visit_root with Root entry { report [-->]; }\n}\n\nwalker add_item {\n    has name: str;\n    can do_add with Root entry { here ++> Item(name=self.name); }\n}\n\ndef:pub get_count() -> int { return 0; }\n\ndef:pub delete_all() -> None { items = []; del items; }\n\nasync def:pub app() -> Any {\n    root spawn read_items();\n    root spawn add_item(name="x");\n    c = await get_count();\n    await delete_all();\n    return <div>{c}</div>;\n}\n';
     mod = compile_inline(code);
     effects = mod.gen.client_manifest.endpoint_effects;
-    assert "walker:read_items" in effects;
-    assert not effects["walker:read_items"]["is_writer"];
-    assert "walker:add_item" in effects;
-    assert effects["walker:add_item"]["is_writer"];
-    assert "func:get_count" in effects;
-    assert not effects["func:get_count"]["is_writer"];
-    assert "func:delete_all" in effects;
-    assert effects["func:delete_all"]["is_writer"];
+    assert endpoint_key(mod, "walker", "read_items") in effects;
+    assert not effects[endpoint_key(mod, "walker", "read_items")]["writes"];
+    assert endpoint_key(mod, "walker", "add_item") in effects;
+    assert effects[endpoint_key(mod, "walker", "add_item")]["writes"];
+    assert endpoint_key(mod, "func", "get_count") in effects;
+    assert not effects[endpoint_key(mod, "func", "get_count")]["writes"];
+    assert endpoint_key(mod, "func", "delete_all") in effects;
+    assert effects[endpoint_key(mod, "func", "delete_all")]["writes"];
 }
 
 # Client manifest tracks exports from typed return fixture
@@ -468,7 +474,7 @@ test "gap: dict return type wraps values with __from_wire" {
 # ---------------------------------------------------------------------------
 test "gap: nested_types field populated in manifest" {
     mod = compile_fixture("typed_return_nested.jac");
-    bt = mod.gen.interop_manifest.boundary_types;
+    bt = mod.gen.interop_manifest.boundary_types_for(mod.loc.mod_path);
     assert "Person" in bt , "Person should be a boundary type";
     assert "Address" in bt , "Address should be a boundary type";
     # nested_types tracks transitive dependencies

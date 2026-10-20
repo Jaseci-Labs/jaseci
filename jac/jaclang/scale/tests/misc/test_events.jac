@@ -3,20 +3,7 @@
 Covers Event, the publisher facade, and @subscribe registry. LocalEventStream behavior is in test_local_stream.jac.
 """
 
-import from jaclang.scale.events.broker {
-    EventStreamBroker,
-    Event,
-    RetryPolicy,
-    HealthStatus,
-    StreamPosition,
-    starts_at_earliest
-}
 import from threading { Event as _ThreadStop }
-import from jaclang.scale.events.publisher { publish, set_broker }
-import from jaclang.scale.events.subscriber { subscribe, get_subscriptions }
-import from jaclang.scale.events.streams._stream_common { consumer_loop }
-import from jaclang.scale.events.streams.local { LocalEventStream }
-import from jaclang.scale.events.streams.postgres { PgEventStream }
 
 
 """Broker stub that raises on publish; verifies the facade swallows errors."""
@@ -289,9 +276,9 @@ test "the earliest position is recognized as a string or an enum member" {
 # TypeError on Postgres only. These tests compare call contracts directly, and
 # check that the interface rejects a divergent implementation at definition.
 """Name, kind, and default of every parameter of a method, minus self."""
-def _param_view(fn: any) -> list[tuple] {
+def _param_view(fn: any) -> list[tuple[any, ...]] {
     import inspect;
-    view: list[tuple] = [];
+    view: list[tuple[any, ...]] = [];
     for p in inspect.signature(fn).parameters.values() {
         if p.name == "self" {
             continue;
@@ -317,7 +304,7 @@ def _interface_methods -> list[str] {
 """Every broker implementation that ships in jaclang.scale.events.streams."""
 def _shipped_brokers -> list[type] {
     found: list[type] = [];
-    pending: list = list(getattr(EventStreamBroker, "__subclasses__")());
+    pending: list[type] = list(getattr(EventStreamBroker, "__subclasses__")());
     while pending {
         candidate = pending.pop();
         pending.extend(candidate.__subclasses__());

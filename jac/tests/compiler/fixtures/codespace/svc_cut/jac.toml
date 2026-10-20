@@ -1,6 +1,10 @@
 [project]
 name = "svc-cut-fixture"
-entry-point = "app.jac"
 
-[scale.microservices.routes]
-codespace_backend = "/backend"
+[apps.web]
+kind = "web-app"
+entry-point = "app"
+
+[apps.backend]
+kind = "service"
+entry-point = "codespace_backend"

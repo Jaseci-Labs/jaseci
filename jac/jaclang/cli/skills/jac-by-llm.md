@@ -1,6 +1,6 @@
 ---
 name: jac-by-llm
-description: Delegating a function's body to an LLM call - structured outputs (objects, enums, lists), tool use/ReAct agents, model & provider configuration (API keys, Ollama/local), multi-turn chat, streaming, image/video inputs, MockLLM testing, prompt wiring via sem. Load when any function should be powered by an LLM. Pair with jac-walker-patterns when LLMs drive graph agents, jac-testing for MockLLM tests.
+description: Implement model-delegated functions, structured outputs, tools, and provider configuration. Use for by llm(), sem annotations, or MockLLM tests.
 ---
 
 `by llm(...)` replaces a function body with an LLM call. The signature declares typed args and a return type; at call time the LLM generates a value matching the return type, optionally using any functions listed in `tools=[...]` as ReAct helpers. Describe every LLM-visible thing - the function itself, each parameter, each field of a return obj - with `sem` statements, not docstrings. `sem` is the prompt the LLM sees.
@@ -73,13 +73,16 @@ Method-level `by llm` automatically includes the object's `has` fields as contex
 | Google | `gemini/gemini-2.0-flash` | `GOOGLE_API_KEY` |
 | Ollama | `ollama/llama3:70b` | none - local daemon |
 | Built-in local | `local:gemma-4-e4b` | none - `jac install 'byllm[local]'`, then `jac model pull gemma-4-e4b` |
+| System One (decision model) | `systemone:typesafe/jev-latest` | `TYPESAFE_API_KEY` - closed-set returns only (enum, bool, `list[E]`, obj of enums/bools); set `config={"fallback": "<chat model>"}` for everything else |
 
 Env vars take precedence over `api_key` in `jac.toml`; `BYLLM_DEFAULT_MODEL=...` overrides the project default for one shell. The glob name needn't be `llm` - any module-level glob holding a `Model` works: `glob fast = Model(model_name="gpt-4o-mini"); def quick_label(text: str) -> str by fast();`.
+
+A `systemone:` model answers from a probability distribution, not text: per-member `sem` becomes each label's description, so annotate enum members. `-> Decision[T]` returns `.value`, `.confidence`, `.probabilities`; `config={"min_confidence": 0.7}` re-asks the fallback below that. See the byLLM reference, System One Models.
 
 ## Multi-turn chat & streaming
 
 ```jac
-glob history: list[dict] = [];
+glob history: list[dict[str, any]] = [];
 def chat(message: str) -> str by llm(
     conversation=history,                        # caller-owned list; byLLM appends each turn IN PLACE as plain dicts
     system_prompt="You are a terse assistant."   # EXTENDS the base/system default - never replaces it
@@ -92,20 +95,31 @@ def stream_story(topic: str) -> str by llm(stream=True);
 
 ## Testing with MockLLM
 
-Runs without API keys - mock outputs are consumed sequentially, one per `by` call. For typed returns put pre-built instances in `outputs` (e.g. `Priority.HIGH`, `[Task(...)]`). See `jac-testing` for `jac test` mechanics.
+No API keys needed. `MockLLM` replaces only the network call, so byLLM still builds the real request and parses the reply.
+
+- Outputs are consumed in order, one per model call; a tool loop takes one per step.
+- For a typed return, queue the value (`Priority.HIGH`, `[Task(...)]`). A bare string is the answer when the return type allows a string (a union with `str`, a string enum), otherwise it is parsed like model text.
+- `MockToolCall(tool=fn_or_name, args={...})` must name a tool the function offers.
+- `MockRawResponse(model=...)` answers as another model, as after a fallback; `MockError(error=..., reply=...)` fails a stream after sending a reply.
+- Assert on what was sent with `llm.sent("messages")` or `llm.sent("tools")`.
 
 ```jac
 import from jaclang.byllm.lib { MockLLM }
 
-glob llm = MockLLM(model_name="mockllm", config={"outputs": ["Bonjour", "Salut"]});
+glob llm = MockLLM(outputs=["Bonjour", "Salut"]);
 
 def translate(text: str) -> str by llm();
 
 test "mock outputs consumed in order" {
     assert translate("Hello") == "Bonjour";
     assert translate("Hi") == "Salut";
+    assert "Hello" in str(llm.sent("messages")[0]);
 }
 ```
+
+For a `systemone:` model, `MockSystemOne(answers=[...])` is the counterpart: each entry is the answers for one call, keyed by question (`"value"` for a single enum or bool; the member name for `list[E]`; the field name for an obj); read what was sent from `so1.seen`.
+
+See `jac-testing` for `jac test` mechanics.
 
 ## Errors & retries
 
@@ -124,6 +138,26 @@ def describe_clip(v: Video) -> str by llm();
 # Call as parse_receipt(Image("receipt.jpg")) - Image also accepts URLs, raw bytes, PIL images.
 # Video(path="clip.mp4", fps=1): fps = frames sampled/sec; needs `jac install 'byllm[video]'`.
 # Requires a vision-capable model (e.g. gpt-4o, claude-sonnet-4-6).
+```
+
+`Image` is also a RETURN type, which makes the call an image-generation call:
+
+```jac
+import from jaclang.byllm.lib { Image, Model }
+
+glob painter = Model(model_name="dall-e-3");
+
+def draw_poster(subject: str) -> Image by painter();         # one image
+def draw_variants(subject: str) -> list[Image] by painter(n=3);
+
+# Generation options forwarded when set: n, size, quality, style, response_format,
+# user, timeout. response_format defaults to "b64_json", so the returned Image
+# carries the bytes as a data url rather than an expiring provider url.
+# system_prompt is prepended to the prompt; byLLM's built-in chat persona is
+# dropped for an image return so it cannot steer the image model.
+# Needs an image model, not a chat model. tools= and stream= raise
+# ConfigurationError, and an Image/Video argument cannot be sent with an Image
+# return (no image-editing path yet).
 ```
 
 ## Pitfalls

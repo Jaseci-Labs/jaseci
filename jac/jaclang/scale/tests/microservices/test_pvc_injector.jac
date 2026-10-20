@@ -4,20 +4,9 @@ import tarfile;
 import tempfile;
 import tomllib;
 import from pathlib { Path }
-import from jaclang.scale.injector.bundle { sanitized_jac_toml, pack_jab }
-import from jaclang.scale.injector.pvc_injector {
-    PvcInjector,
-    build_bundle_pvc,
-    build_loader_pod,
-    BUNDLE_MOUNT_PATH,
-    LOADER_UID,
-    LOADER_GID,
-    build_pvc_init_container,
-    bundle_keys_from_pod_spec
-}
 
 
-glob _JAC_BIN: Path = Path(__file__).parents[4] / "zig-out" / "bin" / "jac";
+glob _JAC_BIN: Path = pod_binary();
 
 
 def _make_project(project: str, toml: str) {
@@ -30,7 +19,7 @@ def _make_project(project: str, toml: str) {
 }
 
 
-def _sanitized_toml(project: str) -> dict {
+def _sanitized_toml(project: str) -> dict[str, any] {
     # sanitized_jac_toml owns the strip logic pack_jab ships verbatim, so
     # assert it directly instead of running a full (binary-dependent) seal.
     return tomllib.loads(sanitized_jac_toml(Path(project)) or "");
@@ -38,9 +27,7 @@ def _sanitized_toml(project: str) -> dict {
 
 
 test "secrets are stripped and secret-bearing files excluded from the sealed .jab" {
-    if not _JAC_BIN.is_file() {
-        return;
-    }
+    require_pod_binary();
     with tempfile.TemporaryDirectory() as project {
         with open(os.path.join(project, "app.jac"), "w") as handle {
             handle.write("with entry { print(\"ok\"); }");
@@ -142,8 +129,8 @@ test "the loader pod keeps fsGroup for storage that honors it (#7432)" {
     assert pod["kind"] == "Pod";
     assert pod["metadata"]["name"] == "orders-bundle-loader";
     spec = pod["spec"];
-    assert spec["securityContext"]["fsGroup"] == LOADER_GID;
-    assert spec["securityContext"]["runAsUser"] == LOADER_UID;
+    assert spec["securityContext"]["fsGroup"] == RUNTIME_GID;
+    assert spec["securityContext"]["runAsUser"] == RUNTIME_UID;
     claims = [
         v["persistentVolumeClaim"]["claimName"]
         for v in spec["volumes"]
@@ -177,7 +164,7 @@ test "the loader pod makes the bundle volume root writable without fsGroup (#743
     assert set(sc["capabilities"]["add"]) == {"CHOWN", "FOWNER", "DAC_OVERRIDE"};
     # And it must actually chown/chmod the bundle mount to the loader identity.
     script = perms["command"][-1];
-    assert f"{LOADER_UID}:{LOADER_GID}" in script;
+    assert f"{RUNTIME_UID}:{RUNTIME_GID}" in script;
     assert BUNDLE_MOUNT_PATH in script;
     assert "chown" in script;
     assert "chmod" in script;
@@ -220,6 +207,27 @@ test "bundle keys round-trip from the init container the injector builds" {
         ]
     };
 
+    assert bundle_keys_from_pod_spec(pod_spec) == keys;
+}
+
+
+test "bundle keys are read from the bootstrap container that unpacks them" {
+    import from jaclang.scale.injector.pvc_injector { pvc_unpack_script }
+    import from jaclang.scale.deploy.target.kubernetes.runtime_bootstrap {
+        build_bootstrap_init_container
+    }
+    import from jaclang.scale.deploy.target.kubernetes.kubernetes_config {
+        KubernetesConfig
+    }
+    keys = ["bundles/orders/aaa.jab", "toolchain/orders/bbb.tar.gz"];
+    script = pvc_unpack_script([f"{BUNDLE_MOUNT_PATH}/{k}" for k in keys]);
+    pod_spec = {
+        "initContainers": [
+            build_bootstrap_init_container(
+                KubernetesConfig(), "python:3.12-slim", unpack_script=script
+            )
+        ]
+    };
     assert bundle_keys_from_pod_spec(pod_spec) == keys;
 }
 

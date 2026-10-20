@@ -30,7 +30,7 @@ The key distinction: `async/await` multiplexes tasks on one thread (cooperative)
 !!! note
     Async functions must be `await`ed from an async context. A `with entry`
     block is **not** async, so `await` cannot appear there directly -- it fails
-    to compile with `error[E5043]: ... 'await' outside function`. To drive a
+    checking with `error[E2085]: 'await' is only valid inside an 'async' function or ability`. To drive a
     coroutine from `with entry`, hand it to `asyncio.run()`; only use `await`
     inside an `async def`/`async can`:
 
@@ -56,7 +56,7 @@ Prefix a function definition with `async` to declare it as a coroutine. Inside a
     The examples below use `http_get` as a placeholder for an async HTTP client. In practice, import an async library (e.g., `import from aiohttp { ClientSession }`) or define your own async helper.
 
 ```jac
-async def fetch_data(url: str) -> dict {
+async def fetch_data(url: str) -> dict[str, any] {
     response = await http_get(url);
     return await response.json();
 }
@@ -85,6 +85,8 @@ async walker DataFetcher {
     }
 }
 ```
+
+A plain `walker` with an `async can` entry or exit ability also uses async traversal, including when the ability is inherited. From a synchronous caller with no running event loop, `spawn` completes the traversal before returning. Inside a running event loop, it returns a coroutine: use `await (w spawn node)` or pass the coroutine to `asyncio.gather()`. Exceptions from abilities propagate to the caller.
 
 ### 3 Async For Loops
 
@@ -157,15 +159,15 @@ with entry {
 The real power of `flow/wait` emerges when you launch multiple tasks that each spend their time *blocked*. Each `flow` call starts a new background task immediately, so all tasks run concurrently. You then collect results with `wait` -- when the tasks are blocked on I/O (like the fetches below), the total wall-clock time is roughly the duration of the slowest task, not the sum of all tasks. (If the tasks were instead crunching numbers in pure Jac, the GIL would serialize them and you would get the sum, not the max -- see the warning above.)
 
 ```jac
-def fetch_users -> list {
+def fetch_users -> list[any] {
     return [];
 }
 
-def fetch_orders -> list {
+def fetch_orders -> list[any] {
     return [];
 }
 
-def fetch_inventory -> list {
+def fetch_inventory -> list[any] {
     return [];
 }
 

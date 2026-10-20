@@ -9,7 +9,9 @@ on the na (native LLVM) backend.
 ``mtime=0`` is pinned on both sides so the 10-byte header is deterministic and
 whole streams compare byte-for-byte (poly digest + exact length + XFL byte, at
 levels 0/1/6/9 and the default). ``decompress`` round-trips (including a
-level-0 stored-block stream), concatenates multi-member input like CPython,
+level-0 stored-block stream), concatenates multi-member input like CPython
+(a large leading member whose output far exceeds the last member's ISIZE
+hint exercises the streaming inflater's geometric growth path),
 handles empty and header-flagged (FEXTRA/FNAME/FCOMMENT/FHCRC) input
 identically, and the error paths agree -- bad magic, a truncated stream, a
 bare header glued onto a trailer, a corrupt body, a bad CRC, a bad ISIZE, and
@@ -39,7 +41,7 @@ def _digest(data: bytes) -> int {
 }
 
 
-def gzip_py() -> dict {
+def gzip_py -> dict[any, any] {
     data = b"the quick brown fox jumps over the lazy dog. " * 40;
     comp = compress(data, mtime=0);
     comp0 = compress(data, 0, mtime=0);
@@ -52,6 +54,8 @@ def gzip_py() -> dict {
     multi = decompress(comp + comp);
     small = compress(b"payload", mtime=0);
     mixed = decompress(compress(b"first", mtime=0) + compress(b"second", mtime=0));
+    big = b"\x00" * 200000;
+    bigmulti = decompress(compress(big, mtime=0) + comp);
 
     garbage_raises: int = 0;
     try {
@@ -101,11 +105,33 @@ def gzip_py() -> dict {
     # Hand-spliced header flags over compress output (same splice, both backends).
     hdr = small[0:10];
     rest = small[10:];
-    fname = hdr[0:3] + (hdr[3] | 8).to_bytes(1, "little") + hdr[4:10] + b"name.txt\x00" + rest;
-    fextra = hdr[0:3] + (hdr[3] | 4).to_bytes(1, "little") + hdr[4:10] + b"\x04\x00abcd" + rest;
-    fcomment = hdr[0:3] + (hdr[3] | 16).to_bytes(1, "little") + hdr[4:10] + b"a comment\x00" + rest;
-    fhcrc = hdr[0:3] + (hdr[3] | 2).to_bytes(1, "little") + hdr[4:10] + b"\x12\xab" + rest;
-    allflags = hdr[0:3] + (hdr[3] | 28).to_bytes(1, "little") + hdr[4:10] + b"\x04\x00abcd" + b"n\x00" + b"c\x00" + rest;
+    fname = hdr[0:3]
+        + (hdr[3] | 8).to_bytes(1, "little")
+        + hdr[4:10]
+        + b"name.txt\x00"
+        + rest;
+    fextra = hdr[0:3]
+        + (hdr[3] | 4).to_bytes(1, "little")
+        + hdr[4:10]
+        + b"\x04\x00abcd"
+        + rest;
+    fcomment = hdr[0:3]
+        + (hdr[3] | 16).to_bytes(1, "little")
+        + hdr[4:10]
+        + b"a comment\x00"
+        + rest;
+    fhcrc = hdr[0:3]
+        + (hdr[3] | 2).to_bytes(1, "little")
+        + hdr[4:10]
+        + b"\x12\xab"
+        + rest;
+    allflags = hdr[0:3]
+        + (hdr[3] | 28).to_bytes(1, "little")
+        + hdr[4:10]
+        + b"\x04\x00abcd"
+        + b"n\x00"
+        + b"c\x00"
+        + rest;
 
     return {
         "comp_digest": _digest(comp),
@@ -131,6 +157,8 @@ def gzip_py() -> dict {
         "multi_ok": 1 if multi == data + data else 0,
         "multi_len": len(multi),
         "mixed_ok": 1 if mixed == b"firstsecond" else 0,
+        "bigmulti_ok": 1 if bigmulti == big + data else 0,
+        "bigmulti_len": len(bigmulti),
         "garbage_raises": garbage_raises,
         "bad_magic_raises": bad_magic_raises,
         "trunc_raises": trunc_raises,
@@ -148,7 +176,7 @@ def gzip_py() -> dict {
 }
 
 
-def gzip_cl() -> dict {
+def gzip_cl -> dict[any, any] {
     return {};
 }
 
@@ -164,7 +192,7 @@ def _digest_na(data: bytes) -> int {
     return acc;
 }
 
-def gzip_na() -> dict[str, any] {
+def gzip_na -> dict[str, any] {
     data = b"the quick brown fox jumps over the lazy dog. " * 40;
     comp = compress(data, mtime=0);
     comp0 = compress(data, 0, mtime=0);
@@ -177,6 +205,8 @@ def gzip_na() -> dict[str, any] {
     multi = decompress(comp + comp);
     small = compress(b"payload", mtime=0);
     mixed = decompress(compress(b"first", mtime=0) + compress(b"second", mtime=0));
+    big = b"\x00" * 200000;
+    bigmulti = decompress(compress(big, mtime=0) + comp);
 
     garbage_raises: int = 0;
     try {
@@ -225,11 +255,33 @@ def gzip_na() -> dict[str, any] {
 
     hdr = small[0:10];
     rest = small[10:];
-    fname = hdr[0:3] + (hdr[3] | 8).to_bytes(1, "little") + hdr[4:10] + b"name.txt\x00" + rest;
-    fextra = hdr[0:3] + (hdr[3] | 4).to_bytes(1, "little") + hdr[4:10] + b"\x04\x00abcd" + rest;
-    fcomment = hdr[0:3] + (hdr[3] | 16).to_bytes(1, "little") + hdr[4:10] + b"a comment\x00" + rest;
-    fhcrc = hdr[0:3] + (hdr[3] | 2).to_bytes(1, "little") + hdr[4:10] + b"\x12\xab" + rest;
-    allflags = hdr[0:3] + (hdr[3] | 28).to_bytes(1, "little") + hdr[4:10] + b"\x04\x00abcd" + b"n\x00" + b"c\x00" + rest;
+    fname = hdr[0:3]
+        + (hdr[3] | 8).to_bytes(1, "little")
+        + hdr[4:10]
+        + b"name.txt\x00"
+        + rest;
+    fextra = hdr[0:3]
+        + (hdr[3] | 4).to_bytes(1, "little")
+        + hdr[4:10]
+        + b"\x04\x00abcd"
+        + rest;
+    fcomment = hdr[0:3]
+        + (hdr[3] | 16).to_bytes(1, "little")
+        + hdr[4:10]
+        + b"a comment\x00"
+        + rest;
+    fhcrc = hdr[0:3]
+        + (hdr[3] | 2).to_bytes(1, "little")
+        + hdr[4:10]
+        + b"\x12\xab"
+        + rest;
+    allflags = hdr[0:3]
+        + (hdr[3] | 28).to_bytes(1, "little")
+        + hdr[4:10]
+        + b"\x04\x00abcd"
+        + b"n\x00"
+        + b"c\x00"
+        + rest;
 
     return {
         "comp_digest": _digest_na(comp),
@@ -255,6 +307,8 @@ def gzip_na() -> dict[str, any] {
         "multi_ok": 1 if multi == data + data else 0,
         "multi_len": len(multi),
         "mixed_ok": 1 if mixed == b"firstsecond" else 0,
+        "bigmulti_ok": 1 if bigmulti == big + data else 0,
+        "bigmulti_len": len(bigmulti),
         "garbage_raises": garbage_raises,
         "bad_magic_raises": bad_magic_raises,
         "trunc_raises": trunc_raises,

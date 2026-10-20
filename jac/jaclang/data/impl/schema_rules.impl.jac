@@ -118,7 +118,7 @@ impl merged_rules_for(cls: type) -> (SchemaRules | None) {
 impl validate_rules(rules: SchemaRules, cls: type) -> None {
     declared: set[str] = (
         {f.name for f in fields(cls)}
-            if is_dataclass(cls)
+            if is_record(cls)
             else set(getattr(cls, '__annotations__', {}).keys())
     );
     seen_stored: set[str] = set();
@@ -185,7 +185,9 @@ impl repair_mode -> str {
 }
 
 
-impl apply_rules(data: dict, rules: SchemaRules) -> tuple {
+impl apply_rules(
+    data: dict[str, any], rules: SchemaRules
+) -> tuple[dict[str, any], list[str]] {
     steps: list[str] = [];
     changed = False;
     out = dict(data);

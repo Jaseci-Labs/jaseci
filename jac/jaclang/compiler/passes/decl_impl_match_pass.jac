@@ -1,46 +1,16 @@
-import from dataclasses { field }
-import from jaclang.compiler.frontend.unitree {
-    Ability,
-    Archetype,
-    Assignment,
-    AstImplNeedingNode,
-    AstSymbolNode,
-    AtomTrailer,
-    FuncSignature,
-    HasVar,
-    ImplDef,
-    Module,
-    Name,
-    NameAtom,
-    ParamVar,
-    SpecialVarRef,
-    Symbol,
-    UniNode,
-    UniScopeNode,
-    bind_assignment_targets,
-    find_python_scope_node_of,
-    is_identifier_slot
-}
-import from jaclang.compiler.passes.transform { Transform }
-import from jaclang.compiler.frontend.diagnostics {
-    E2009,
-    E2011,
-    E2012,
-    W2013,
-    E2016,
-    E2017,
-    E2026,
-    W2080
-}
+walker DeclImplMatchPass(CompilerPass) {
+    static has contract: PassContract = PassContract(
+        requires=(AnalysisFact.SYM_OF, ),
+        provides=(AnalysisFact.IMPL_OF, ),
+        kernel_safe=True
+    );
 
-walker DeclImplMatchPass(Transform) {
-    static has PROVIDES: tuple = ('ImplOf', ),
-        REQUIRES: tuple = ('SymOf', );
+    has _e2026_reported: set[int] = set();
 
-    has _e2026_reported: set[int] = field(default_factory=`set);
-
-    def transform(ir_in: Module) -> Module;
     def _run_impl(ir_in: Module) -> Module;
+    def _report_unimplemented(ir_in: Module) -> None;
+    def _impl_optional(ability: Ability, supplied: dict[str, set[str]]) -> bool;
+    def _impl_block_members(ir_in: Module) -> dict[str, set[str]];
     can run_walk with Module entry;
     def defn_lookup(lookup: Symbol) -> (NameAtom | None);
     def _find_archetype_defn(lookup: Symbol) -> (NameAtom | None);

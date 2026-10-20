@@ -37,7 +37,7 @@ The generated `jac.toml` already carries the metadata that will become your whee
 name = "greetlib"
 version = "0.1.0"
 description = "Distributable Python package (built into a wheel)"
-entry-point = "lib.jac"
+entry-point = "lib"
 kind = "py-package"
 ```
 
@@ -139,4 +139,4 @@ npm publish dist/jsgreet-0.1.0.tgz --access public
 ## Where to go next
 
 - [Publishing reference](../../reference/publishing.md) -- metadata fields, `[entrypoints.scripts]` console commands, editable installs
-- [Shared library (C ABI)](../../quick-guide/project-kinds.md#shared-library-c-abi) -- the third packaging target: `jac nacompile --shared` builds a `.so`/`.dylib`/`.dll` any language can link
+- [Shared library (C ABI)](../../quick-guide/project-kinds.md#shared-library-c-abi) -- the third packaging target: `jac build --native --lib` builds a `.so`/`.dylib`/`.dll` any language can link
