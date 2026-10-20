@@ -200,8 +200,23 @@ test "bundled_dist_dir vendors only a relocatable distribution" {
         relocatable = project / "pg";
         _fake_dist(relocatable / "bin");
         (relocatable / "lib").mkdir(parents=True);
+        (relocatable / "share").mkdir();
         with patch.dict(os.environ, {"JAC_PG_DIST": str(relocatable)}) {
             assert bundled_dist_dir() == str(relocatable);
+        }
+        # A system layout with libraries but no share tree beside the
+        # binaries (Debian's /usr/lib/postgresql/<v>) cannot run from a
+        # copied tree: its share data lives outside the prefix.
+        debian = project / "usr" / "lib" / "postgresql" / "17";
+        _fake_dist(debian / "bin");
+        (debian / "lib").mkdir(parents=True);
+        with patch.dict(os.environ, {"JAC_PG_DIST": str(debian)}) {
+            try {
+                bundled_dist_dir();
+                assert False , "a system tree without share/ must not be bundled";
+            } except ArtifactUnavailable as e {
+                assert "share/" in str(e) , str(e);
+            }
         }
         bare = project / "system";
         _fake_dist(bare / "bin");
@@ -267,6 +282,79 @@ test "JAC_PG_HOME relocates the pg bucket" {
     with TemporaryDirectory() as tmp {
         with patch.dict(os.environ, {"JAC_PG_HOME": tmp}) {
             assert str(bucket("pg").path()) == os.path.join(tmp, "pg");
+        }
+    }
+}
+
+test "a dev host runs the distribution it selected, not a cache pick" {
+    import from jaclang.data.pg_dist { PG_MAJOR, cached_dist_dir, platform_slug }
+    slug = platform_slug();
+    if slug is None {
+        return;
+    }
+    with TemporaryDirectory() as tmp {
+        project = Path(tmp);
+        cached_tree = Path(tmp) / "cache" / "pg" / "dist" / f"{slug}-{PG_MAJOR}.9.9";
+        _fake_dist(cached_tree / "bin");
+        (cached_tree / "lib").mkdir();
+        (cached_tree / "share").mkdir();
+        selected = project / "selected";
+        _fake_dist(selected / "bin");
+        (selected / "lib").mkdir();
+        (selected / "share").mkdir();
+        # An explicit JAC_PG_DIST wins over the shared cache...
+        with patch.dict(
+            os.environ,
+            {
+                "JAC_CACHE_HOME": str(project / "cache"),
+                "JAC_PG_HOME": "",
+                "JAC_PG_DIST": str(selected)
+            }
+        ), patch("jaclang.project.config.get_config", return_value=None) {
+            assert cached_dist_dir() == str(selected);
+        }
+        # ...and so does a configured distribution.
+        configured = project / "configured";
+        _fake_dist(configured / "bin");
+        (configured / "lib").mkdir();
+        (configured / "share").mkdir();
+        with patch.dict(
+            os.environ,
+            {
+                "JAC_CACHE_HOME": str(project / "cache"),
+                "JAC_PG_HOME": "",
+                "JAC_PG_DIST": ""
+            }
+        ), patch(
+            "jaclang.project.config.get_config",
+            return_value=_project_config(
+                project, DatabaseConfig(postgres_dist="configured")
+            )
+        ) {
+            assert cached_dist_dir() == str(configured);
+        }
+        # A selection that cannot serve a dev host is not silently replaced
+        # by a cache pick of another version.
+        with patch.dict(
+            os.environ,
+            {
+                "JAC_CACHE_HOME": str(project / "cache"),
+                "JAC_PG_HOME": "",
+                "JAC_PG_DIST": str(project / "missing")
+            }
+        ), patch("jaclang.project.config.get_config", return_value=None) {
+            assert cached_dist_dir() == "" , "must not substitute a cache pick";
+        }
+        # With no selection, the shared cache still serves.
+        with patch.dict(
+            os.environ,
+            {
+                "JAC_CACHE_HOME": str(project / "cache"),
+                "JAC_PG_HOME": "",
+                "JAC_PG_DIST": ""
+            }
+        ), patch("jaclang.project.config.get_config", return_value=None) {
+            assert cached_dist_dir() == str(cached_tree);
         }
     }
 }

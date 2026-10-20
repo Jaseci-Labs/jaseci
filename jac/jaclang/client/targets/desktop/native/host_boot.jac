@@ -239,12 +239,15 @@ impl _join_embedded_store(home: str) -> None {
     """Hold a shared lock for as long as this process uses the app's cluster.
 
     Two instances of one app share one cluster, so only the last may stop it.
-    The OS drops the lock when the process exits, even on a crash, so the lock
-    is the shared count of live instances.
+    The OS drops the lock when the process exits, even on a crash, so the
+    lock is the shared count of live instances. Joining also begins a new
+    host lifetime in this process, so a stop recorded by an earlier lifetime
+    no longer applies.
     """;
     if not home or home in _EMBEDDED_LOCKS {
         return;
     }
+    _EMBEDDED_STOPPED.discard(home);
     try {
         import fcntl;
         path = _embedded_user_lock_path(home);
@@ -307,7 +310,9 @@ impl _stop_embedded_store(home: str) -> None {
 
     The shutdown hook and the atexit backstop both call this, so a second call
     is a no-op. A peer instance that still holds the shared lock keeps the
-    cluster alive -- it stops the cluster on its own exit. When this process
+    cluster alive -- it stops the cluster on its own exit -- but the process
+    environment still returns to its prior state, so later work here does not
+    reach the peer's storage. When this process
     holds no lock (a platform without `fcntl`), stop directly, as before.
     """;
     if not home or home in _EMBEDDED_STOPPED {
@@ -319,6 +324,7 @@ impl _stop_embedded_store(home: str) -> None {
         last = _holds_last_embedded_user(handle);
         handle.close();
         if not last {
+            _leave_embedded_env();
             return;
         }
     }

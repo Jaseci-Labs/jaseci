@@ -1414,6 +1414,9 @@ graph import {
         bundled_dist_dir,
         cached_dist_dir
     }
+    project.config --> client.targets.desktop.desktop_build.desktop_storage_identifier {
+        get_config_for_dir
+    }
     data.pgembed ++> [
         cli.commands.db._catalog_runtime
             | scale.tests.data.test_pg_stream

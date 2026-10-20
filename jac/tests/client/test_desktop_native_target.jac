@@ -705,3 +705,79 @@ test "a failed migration leaves nothing behind and stops the boot" {
         assert (current / "session.json").is_file() , "the next boot retries";
     }
 }
+
+test "a workspace app scopes its storage identity to the served app" {
+    import from pathlib { Path }
+    import from unittest.mock { patch }
+    import from jaclang.client.targets.desktop.desktop_build {
+        desktop_storage_identifier
+    }
+    entry_file = Path("/ws/app/main.jac");
+    # A workspace entry that resolves to a named app carries that app in the
+    # storage identity, so two served apps never share one data dir.
+    with patch(
+        "jaclang.project.config.get_config_for_dir", return_value=None
+    ), patch(
+        "jaclang.client.targets.desktop.desktop_build.serving_app_for",
+        return_value="notes"
+    ) {
+        assert desktop_storage_identifier(
+            "org.example.notes", Path("/ws"), entry_file, "embedded"
+        ) == "org.example.notes.notes";
+    }
+    # A project without a distinct serving app keeps the plain identifier.
+    with patch(
+        "jaclang.project.config.get_config_for_dir", return_value=None
+    ), patch(
+        "jaclang.client.targets.desktop.desktop_build.serving_app_for",
+        return_value=""
+    ) {
+        assert desktop_storage_identifier(
+            "org.example.notes", Path("/ws"), entry_file, "embedded"
+        ) == "org.example.notes";
+    }
+}
+
+test "leaving while a peer holds the cluster still restores the env" {
+    import fcntl;
+    import os;
+    import from tempfile { TemporaryDirectory }
+    import from unittest.mock { patch }
+    import from jaclang.client.targets.desktop.native.host_boot {
+        _EMBEDDED_LOCKS,
+        _EMBEDDED_STOPPED,
+        _embedded_user_lock_path,
+        _enter_embedded_env,
+        _join_embedded_store,
+        _stop_embedded_store
+    }
+    os.environ.pop("JAC_PG_HOME", None);
+    with TemporaryDirectory() as tmp {
+        path = _embedded_user_lock_path(tmp);
+        os.makedirs(os.path.dirname(path), exist_ok=True);
+        peer = open(path, "a");
+        fcntl.flock(peer.fileno(), fcntl.LOCK_SH);
+        calls: list[str] = [];
+        def _record(home: str) {
+            calls.append(home);
+        }
+        try {
+            with patch("jaclang.data.pgembed.stop_cluster", side_effect=_record) {
+                _EMBEDDED_STOPPED.discard(tmp);
+                _enter_embedded_env({"JAC_PG_HOME": tmp});
+                _join_embedded_store(tmp);
+                _stop_embedded_store(tmp);
+                # The peer keeps the cluster alive...
+                assert calls == [] , calls;
+                # ...but this host hands the process environment back, so
+                # later work here cannot reach the peer's storage.
+                assert "JAC_PG_HOME" not in os.environ;
+            }
+        } finally {
+            peer.close();
+            os.environ.pop("JAC_PG_HOME", None);
+            _EMBEDDED_LOCKS.pop(tmp, None);
+            _EMBEDDED_STOPPED.discard(tmp);
+        }
+    }
+}

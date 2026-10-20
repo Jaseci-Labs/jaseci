@@ -404,3 +404,27 @@ impl stage_program(
     build_jab(config, image_dir / "app.jab", app=app, bake_client=False);
     return {"jab": "app.jab"};
 }
+
+def desktop_storage_identifier(
+    identifier: str, project_dir: Path, entry_file: Path, backend: str
+) -> str;
+
+impl desktop_storage_identifier(
+    identifier: str, project_dir: Path, entry_file: Path, backend: str
+) -> str {
+    """Suffix the storage identity with the app a workspace entry serves.
+
+    The `[desktop]` identifier is a project-wide default, but one workspace
+    can serve several apps, and a shared data dir would let them read and
+    overwrite each other's graph, session, and embedded cluster. When the
+    entry resolves to a named serving app, that name joins the identifier so
+    every served app keeps its own storage; a project without distinct apps
+    keeps the plain identifier, so existing installs see no change.""";
+    if not identifier {
+        return identifier;
+    }
+    import from jaclang.project.config { get_config_for_dir }
+    config = get_config_for_dir(str(project_dir));
+    serving = serving_app_for(config, entry_file, backend);
+    return f"{identifier}.{serving}" if serving else identifier;
+}

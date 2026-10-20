@@ -232,7 +232,7 @@ impl download_dist -> str {
     bin_dir = os.path.join(dist_dir, 'bin');
     os.makedirs(dist_cache_dir(), exist_ok=True);
     with FileLock(Path(dist_cache_dir()) / f".{slug}-{version}.lock") {
-        if not os.path.isfile(os.path.join(bin_dir, 'postgres')) {
+        if not os.path.isfile(os.path.join(bin_dir, postgres_exe())) {
             logger.info(f"fetching embedded postgres {version} ({slug})...");
             _unpack(slug, version, dist_dir);
         }
@@ -294,14 +294,24 @@ impl postgres_exe -> str {
 
 impl _dist_root(bin_dir: (str | None)) -> (str | None) {
     """The distribution root for a bin directory, or None when it is not
-    self-contained. A vendorable distribution carries its shared libraries
-    beside the executables (a sibling `lib/`), as the zonky build does; a
-    system Postgres keeps them outside `bin/` and must not be bundled.""";
+    self-contained. A vendorable distribution carries its shared libraries and
+    its share tree beside the executables (sibling `lib/` and `share/`) -- the
+    layout of every platform archive a fetch unpacks. A system install keeps
+    one of them outside the binary directory (Debian's
+    `/usr/lib/postgresql/<version>` has `lib/` but keeps `share/` under
+    `/usr/share`), so bundling it would ship a tree that cannot run on a
+    clean machine.""";
     if not bin_dir {
         return None;
     }
     parent = os.path.dirname(bin_dir);
-    return parent if os.path.isdir(os.path.join(parent, 'lib')) else None;
+    if (
+        os.path.isdir(os.path.join(parent, 'lib'))
+        and os.path.isdir(os.path.join(parent, 'share'))
+    ) {
+        return parent;
+    }
+    return None;
 }
 
 impl bundled_dist_dir -> str {
@@ -321,7 +331,7 @@ impl bundled_dist_dir -> str {
         }
         raise ArtifactUnavailable(
             f"JAC_PG_DIST {env!r} is not a self-contained postgres distribution "
-            "(no sibling lib/); point it at a jac-fetched dist or unset it"
+            "(no sibling lib/ and share/); point it at a jac-fetched dist or unset it"
         );
     }
     configured = _configured_dist();
@@ -332,7 +342,7 @@ impl bundled_dist_dir -> str {
         }
         raise ArtifactUnavailable(
             f"[database] postgres_dist {configured!r} is not self-contained (no "
-            "sibling lib/); a desktop bundle needs a relocatable distribution"
+            "sibling lib/ and share/); a desktop bundle needs a relocatable distribution"
         );
     }
     found = _cached(pinned_major());
@@ -351,7 +361,7 @@ impl bundled_dist_dir -> str {
     vendored = _dist_root(download_dist());
     if vendored is None {
         raise ArtifactUnavailable(
-            "the fetched postgres distribution is not self-contained (no sibling lib/)"
+            "the fetched postgres distribution is not self-contained (no sibling lib/ and share/)"
         );
     }
     return vendored;
@@ -363,7 +373,20 @@ impl cached_dist_dir -> str {
     A dev desktop session passes this path to the host without copying the
     tree, so the host finds the distribution the compiler already fetched in
     the shared machine cache instead of re-fetching it into a per-app cache.
-    """;
+    An explicit `JAC_PG_DIST` or `[database] postgres_dist` is honored first,
+    with `probe_checkout`'s precedence: the dev host must run the
+    distribution the developer selected, not whichever version the shared
+    cache holds, and the returned path would otherwise overwrite that
+    selection in the host's environment. A selection that is unusable for a
+    dev host returns '' rather than a cache substitute; the host's own probe
+    then reports the named distribution as missing.""";
+    for chosen in [_env_dist(), _configured_dist()] {
+        if chosen {
+            bin_dir = _bin_of(chosen);
+            vendored = _dist_root(bin_dir) if bin_dir else None;
+            return vendored or '';
+        }
+    }
     found = _cached(pinned_major());
     return (_dist_root(found) or '') if found is not None else '';
 }

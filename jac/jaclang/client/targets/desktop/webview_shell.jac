@@ -76,7 +76,9 @@ impl _assemble_native_host(
         dispatch.max_queue,
         dispatch.debug,
         plugin_configs,
-        identifier=ident.identifier,
+        identifier=desktop_storage_identifier(
+            ident.identifier, project_dir, entry_file, backend
+        ),
         pg_dist=pg_dist
     );
     (output_dir / "host.jac").write_text(host_src);
