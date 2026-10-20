@@ -7,27 +7,9 @@ glob GEN_PENDING_FLAG_OFF: int = 8,
      GEN_PENDING_MSG_OFF: int = 32,
      GEN_FRAME_HEADER: int = 40;
 
-def _jc_optional_payload(semantic: (TypeBase | None)) -> (TypeBase | None) {
-    if not isinstance(semantic, UnionType) {
-        return semantic;
-    }
-    present = [
-        member
-        for member in semantic.types
-        if not (
-            isinstance(member, ClassType) and member.shared.class_name == "NoneType"
-        )
-    ];
-    return present[0] if len(present) == 1 else None;
-}
+def _jc_optional_payload(semantic: (TypeBase | None)) -> (TypeBase | None);
 
-def _restore_entry[V](table: dict[str, V], key: str, prior: (V | None)) {
-    if prior is None {
-        table.pop(key, None);
-    } else {
-        table[key] = prior;
-    }
-}
+def _restore_entry[V](table: dict[str, V], key: str, prior: (V | None));
 
 obj NativeFinalizer {
     has body: uni.FinallyStmt | None,
@@ -137,27 +119,9 @@ obj ImportedFunctions(FunctionSource) {
         by_name: dict[str, PendingImport] = {},
         by_key: dict[tuple[str, str], PendingImport] = {};
 
-    override def provides(name: str) -> bool {
-        return name in self.by_name;
-    }
-
-    override def resolve(name: str) -> (ir.Function | None) {
-        pending = self.by_name.get(name);
-        if pending is None {
-            return None;
-        }
-        return self.lowering._declare_import(pending);
-    }
-
-    def forget(pending: PendingImport, owner_name: str) {
-        name = pending.module_key[1];
-        for key in [name, f"{owner_name}.{name}"] {
-            if self.by_name.get(key) is pending {
-                del self.by_name[key];
-            }
-        }
-        self.by_key.pop(pending.module_key, None);
-    }
+    override def provides(name: str) -> bool;
+    override def resolve(name: str) -> (ir.Function | None);
+    def forget(pending: PendingImport, owner_name: str);
 }
 
 walker NaIRGenPass(CompilerPass) {
@@ -3479,4 +3443,12 @@ walker NaIRGenPass(CompilerPass) {
     def _decl_field_llvm_types(arch_name: str) -> (dict[str, ir.Type] | None);
     def _lower_view_container(t: any) -> (ir.Type | None);
     def _program_has_subclasses(arch_name: str) -> bool;
+}
+
+impl _restore_entry[V](table: dict[str, V], key: str, prior: (V | None)) {
+    if prior is None {
+        table.pop(key, None);
+    } else {
+        table[key] = prior;
+    }
 }

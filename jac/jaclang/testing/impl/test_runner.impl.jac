@@ -1096,9 +1096,7 @@ impl resolve_jobs(requested: (str | int | None) = None) -> int {
     return _resolve_pool_jobs(requested, env_var="JAC_TEST_JOBS");
 }
 
-def _test_rss_cap_mb -> int {
-    return env_int("JAC_TEST_RECYCLE_MB", 8192);
-}
+def _test_rss_cap_mb -> int;
 
 impl _test_retire(served: int, rss_mb: int) -> bool {
     return _should_retire(
@@ -1181,4 +1179,8 @@ impl _run_plan(
     } else {
         pool.run();
     }
+}
+
+impl _test_rss_cap_mb -> int {
+    return env_int("JAC_TEST_RECYCLE_MB", 8192);
 }

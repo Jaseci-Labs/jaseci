@@ -56,11 +56,7 @@ glob NATIVE_STRUCT_FUNCS: set[str] = {
 
      };
 
-def stdlib_intercepted(module_name: str, func_name: str) -> bool {
-    return (module_name == "os" and func_name in NATIVE_OS_FUNCS)
-        or (module_name == "random" and func_name in NATIVE_RANDOM_FUNCS)
-        or (module_name == "struct" and func_name in NATIVE_STRUCT_FUNCS);
-}
+def stdlib_intercepted(module_name: str, func_name: str) -> bool;
 
 glob RC_COLOR_BLACK: int = 0,
      RC_COLOR_WHITE: int = 1,

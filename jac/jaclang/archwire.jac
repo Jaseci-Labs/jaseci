@@ -297,6 +297,10 @@ graph import {
         register_project_template
     }
     cli.workpool ++> [
+        compiler.backends.native.na_compile_pass.codegen_map {
+            MEM_HEADROOM,
+            memory_headroom_bytes
+        },
         dist.precompile_bytecode._precompile_retire {
             WORKER_MEM_BYTES,
             env_int,
@@ -530,7 +534,6 @@ graph import {
         host_native_fact
     }
     compiler.backends.native.kernel_resolve ++> dist.precompile_bytecode.seal_native {
-        SEALED_LINK_MODE,
         kernel_lib_name
     }
     compiler.backends.native.kernel_resolve --> [
@@ -4393,8 +4396,17 @@ graph import byllm {
         visit_routing { ROUTE_SELECT_ATTR },
     ]
     telemetry ++> [
-        lib { register_agent_callback },
-        llm { _aggregate_usage, _current_invocation_id, _emit_agent_telemetry },
+        lib {
+            register_agent_callback,
+            register_llm_call_hook,
+            unregister_llm_call_hook
+        },
+        llm {
+            _aggregate_usage,
+            _current_invocation_id,
+            _emit_agent_telemetry,
+            _notify_llm_call
+        },
     ]
     tool_protocol ++> llm {
         coerce_message_dict,
@@ -4414,6 +4426,7 @@ graph import byllm {
             MockRawResponse,
             MockToolCall,
             StreamEvent,
+            Text,
             Tool,
             ToolCallResultMsg,
             Video
@@ -4438,17 +4451,17 @@ graph import byllm {
         },
         mtir {
             LiteLLMMessage,
-            Media,
             Message,
             MessageRole,
             MessageType,
             Text,
             Tool,
             ToolCallResultMsg,
+            as_media_list,
             image_resp_kind
         },
         parallel { ToolCallResultMsg, normalize_tool_result },
-        systemone.build_state { Media },
+        systemone.build_state { as_media_list },
         systemone.lower { image_resp_kind },
         visit_routing.route_visit { Message, MessageRole },
     ]
@@ -5695,11 +5708,7 @@ graph import compiler {
             | tests.test_unknown_cascade
             | tests.test_zstd_equivalence
             | tools.lang_tools { CompileOptions },
-        backends.native.kernel_resolve {
-            CompileOptions,
-            NATIVE_LINK_MODE_BITCODE,
-            NATIVE_LINK_MODE_OBJECTS
-        },
+        backends.native.kernel_resolve { CompileOptions, NATIVE_LINK_MODE_OBJECTS },
         backends.native.link_plan {
             CompileOptions,
             NATIVE_LINK_MODE_BITCODE,
@@ -6139,6 +6148,7 @@ graph import compiler {
             STR_LEN_TAG_SHIFT,
             is_package_keyed_path,
             native_unit_identity,
+            real_path,
             str_len_tag
         },
         backends.native.na_ir_gen_pass.NaIRGenPass.__post_init__ { native_unit_prefix },
@@ -6315,6 +6325,7 @@ graph import compiler {
             set_effective_default_codespace
         },
         driver.program.JacProgram.declared_codespace { is_client_by_location },
+        driver.program.JacProgram.init { forget_real_paths },
         driver.session_compile.compile_in_session {
             get_effective_default_codespace_override,
             reset_native_unit_compile,
@@ -6352,6 +6363,7 @@ graph import compiler {
         passes.endpoint_effect_pass.EndpointEffectPass._classify {
             endpoint_descriptor
         },
+        passes.layout_pass { real_path },
         passes.layout_pass._archetype_native_name { native_arch_name },
         passes.layout_pass.interface_class_native_name { native_arch_name },
         placement.placement.native_blocker_scan {
@@ -6557,7 +6569,6 @@ graph import compiler {
             | passes.graph_lowering_pass
             | passes.mtir_gen_pass
             | passes.ownership_check_pass.OwnershipCheckPass._emit_flow_for_diagnostics
-            | passes.sym_tab_build_pass.SymTabBuildPass.exit_binary_expr
             | passes.type_checker_pass.TypeCheckPass.exit_impl_def
             | tools.cfg_dot.CoalesceBBPass._node_label
             | tools.comment_attach_pass
@@ -6839,6 +6850,7 @@ graph import compiler {
             E2016,
             E2017,
             E2026,
+            E2030,
             E2087,
             W2080
         },
@@ -7021,7 +7033,8 @@ graph import compiler {
             W3050,
             W3051,
             W3053,
-            W3054
+            W3054,
+            W3055
         },
         tools.jac_auto_lint_pass.JacAutoLintPass._check_filter_compare_tautology {
             W3040
@@ -7277,8 +7290,7 @@ graph import compiler {
             binding_sites,
             binds_target,
             confined_to,
-            enclosing_loop,
-            is_within
+            enclosing_loop
         },
         backends.native.na_ir_gen_pass {
             LoopLinks,
@@ -7303,7 +7315,8 @@ graph import compiler {
             | passes.osp_analysis
             | passes.package_boundary_pass
             | passes.placement_pass
-            | passes.type_checker_pass.TypeCheckPass.exit_return_stmt
+            | passes.rc_facts_pass
+            | passes.type_checker_pass.TypeCheckPass._is_generator
             | tests.test_module_exports
             | tools.jac_auto_lint_pass
             | types.type_evaluator.TypeEvaluator._init_prelude_from_sources {
@@ -7316,9 +7329,6 @@ graph import compiler {
         passes.placement_pass.client_refused_elements { client_capability_violations },
         types.type_evaluator.TypeEvaluator.get_type_of_ability { ModuleFacts },
     ]
-    frontend.module_facts --> passes.type_checker_pass.TypeCheckPass.exit_ability {
-        ModuleFacts
-    }
     frontend.parser ++> driver.compiler.JacCompiler._prepare_tool_program {
         parse as rd_parse
     }
@@ -7338,11 +7348,13 @@ graph import compiler {
         driver.nativecache._module_files_and_imports { parse as rd_parse },
         driver.program.JacProgram.parse_source { annex_sources, parse_woven },
     ]
-    frontend.parser.lexer ++> tools.jac_auto_lint_pass.JacAutoLintPass._reparse_signature {
-        tokenize_full
-    }
+    frontend.parser.lexer ++> [
+        tools.jac_auto_lint_pass.JacAutoLintPass._impl_header { tokenize_full },
+        tools.jac_auto_lint_pass.JacAutoLintPass._reparse_signature { tokenize_full },
+    ]
     frontend.parser.parser ++> [
         jc_unit { parse_program },
+        tools.jac_auto_lint_pass.JacAutoLintPass._impl_header { Parser },
         tools.jac_auto_lint_pass.JacAutoLintPass._reparse_signature { Parser },
         types.type_evaluator.TypeEvaluator._resolve_string_type_expr {
             parse_expression
@@ -7793,8 +7805,7 @@ graph import compiler {
         },
     ]
     frontend.roles ++> [
-        backends.es.esast_gen_pass
-            | backends.native.na_ir_gen_pass
+        backends.native.na_ir_gen_pass
             | backends.py.jcir_gen_pass
             | driver.program
             | driver.progstate
@@ -7824,6 +7835,7 @@ graph import compiler {
             SpecRole
         },
         passes.annex_weave | passes.static_analysis_pass { BodyRole },
+        passes.context { ImplOf },
         passes.pyast_load_pass {
             Kid,
             NameRefRole,
@@ -7879,6 +7891,7 @@ graph import compiler {
         backends.py.jcir_gen_pass {
             Ability,
             ArchHas,
+            ArchSpec,
             Archetype,
             AssertStmt,
             AssignCompr,
@@ -8353,7 +8366,7 @@ graph import compiler {
             TypeParam,
             UniNode
         },
-        passes.context { Module, Source, TreeWalker, UniNode },
+        passes.context { ImplDef, Module, Source, TreeWalker, UniNode },
         passes.dataflow { UniCFGNode },
         passes.decl_impl_match_pass {
             Ability,
@@ -8362,6 +8375,7 @@ graph import compiler {
             AstImplNeedingNode,
             AstSymbolNode,
             AtomTrailer,
+            BinaryExpr,
             FuncSignature,
             HasVar,
             ImplDef,
@@ -8375,8 +8389,10 @@ graph import compiler {
             UniNode,
             UniScopeNode,
             bind_assignment_targets,
-            find_python_scope_node_of,
-            is_identifier_slot
+            bind_walrus_target,
+            binding_sites_in,
+            is_identifier_slot,
+            typed_rebind_names
         },
         passes.endpoint_effect_pass {
             Ability,
@@ -8513,7 +8529,6 @@ graph import compiler {
             GlobalVars,
             HasVar,
             IfElseExpr,
-            ImplDef,
             Import,
             InForStmt,
             IndexSlice,
@@ -8552,7 +8567,6 @@ graph import compiler {
             Archetype,
             AtomTrailer,
             ContextAwareNode,
-            ImplDef,
             Import,
             Module,
             ModuleCode,
@@ -8671,11 +8685,9 @@ graph import compiler {
             FuncSignature,
             IfElseExpr,
             IfStmt,
-            ImplDef,
             InForStmt,
             IterForStmt,
             KWPair,
-            LambdaExpr,
             ListCompr,
             ListVal,
             Module,
@@ -8688,13 +8700,12 @@ graph import compiler {
             SetVal,
             String,
             Symbol,
-            Test,
             Token,
             UnaryExpr,
             UniCFGNode,
             UniNode,
             WhileStmt,
-            same_lexical_scope
+            is_frame
         },
         passes.region_infer_pass {
             Ability,
@@ -8847,15 +8858,15 @@ graph import compiler {
             TypeAlias,
             TypeParam,
             TypedCtxBlock,
-            UniNode,
             UniScopeNode,
             WhileStmt,
             WithStmt,
             bind_assignment_targets,
+            bind_walrus_target,
             def_insert_unpacking,
             find_python_scope_node_of,
-            rebind_or_def_insert,
-            record_cross_scope_rebind
+            is_walrus,
+            typed_rebind_names
         },
         passes.type_checker_pass {
             Ability,
@@ -9152,6 +9163,7 @@ graph import compiler {
         },
         types.type_evaluator {
             Ability,
+            ArchSpec,
             Archetype,
             AssertStmt,
             AssignCompr,
@@ -10839,7 +10851,7 @@ graph import compiler.backends.native {
         na_ir_gen_pass.NaIRGenPass._foreign_model { collect_foreign_structs },
     ]
     foreign --> na_ir_gen_pass.NaIRGenPass._codegen_call { declared_type_name }
-    kernel_resolve ++> kernel_stage0 { KERNEL_DEV_LINK_MODE, kernel_plan }
+    kernel_resolve ++> kernel_stage0 { KERNEL_LINK_MODE, kernel_plan }
     kernel_stage0 ++> kernel_resolve.build_kernel { link_kernel }
     lexical_scope ++> na_ir_gen_pass { FunctionSource, LexicalScope }
     link_glue ++> [
@@ -10911,7 +10923,13 @@ graph import compiler.backends.native {
     type lowering ++> na_compile_pass { NativeFallbacks }
     na_compile_pass ++> [
         entry_points.validate_native_application { native_linked_ir_text },
-        link_plan { NATIVE_CODE_MODEL, NATIVE_RELOC_MODEL },
+        link_plan {
+            NATIVE_CODE_MODEL,
+            NATIVE_RELOC_MODEL,
+            emit_unit_objects,
+            object_emit_jobs,
+            unit_function_counts
+        },
         wasm_build.prepare_wasm_module { optimize_unit },
     ]
     na_constants ++> [
@@ -11909,6 +11927,7 @@ graph import compiler.frontend {
             get_effective_default_codespace_override,
             set_effective_default_codespace
         },
+        source_layout { real_path },
         unitree.ModulePath.native_bundled_path {
             NATIVE_STDLIB_EXTENSIONS,
             is_bundled_native_module,
@@ -12198,22 +12217,18 @@ graph import compiler.frontend {
             DictCompr,
             Enum,
             ForeverStmt,
-            ImplDef,
             InForStmt,
             InnerCompr,
             IterForStmt,
             LambdaExpr,
             ListCompr,
-            Module,
-            ModuleCode,
             Name,
             Symbol,
-            Test,
             UniNode,
             UniScopeNode,
             WhileStmt,
-            is_identifier_slot,
-            same_lexical_scope
+            is_frame,
+            is_identifier_slot
         },
         module_facts {
             Ability,

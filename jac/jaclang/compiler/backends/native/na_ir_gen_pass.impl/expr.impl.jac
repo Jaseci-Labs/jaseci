@@ -693,7 +693,7 @@ impl NaIRGenPass._codegen_name(nd: uni.Name) -> (ir.Value | None) {
     }
     if var_name == "__file__" and self.module?.loc and self.module.loc.mod_path {
         import os;
-        return self._make_global_string(os.path.realpath(self.module.loc.mod_path));
+        return self._make_global_string(real_path(self.module.loc.mod_path));
     }
 
     _np = nd.parent;
@@ -1061,21 +1061,7 @@ impl NaIRGenPass._codegen_compare(nd: uni.CompareExpr) -> (ir.Value | None) {
 
 def _class_typed_operand(
     pass_ref: NaIRGenPass, value: ir.Value, origin: uni.UniNode
-) -> ir.Value {
-    if value.type != ir.IntType(8).as_pointer() or isinstance(value, ir.Constant) {
-        return value;
-    }
-    class_name = pass_ref._struct_name_of(origin);
-    if class_name is None {
-        return value;
-    }
-    class_type = pass_ref.struct_types.get(class_name);
-    if class_type is None {
-        return value;
-    }
-    typed = pass_ref.builder.bitcast(value, class_type.as_pointer(), name="cmp.typed");
-    return typed;
-}
+) -> ir.Value;
 
 impl NaIRGenPass._codegen_compare_link(
     op: str,
@@ -3388,7 +3374,7 @@ impl NaIRGenPass._ct_type_param_owner(nd: uni.Name) -> (str | None) {
     if not (isinstance(owner, uni.TypeParam) and owner.is_comptime) {
         return None;
     }
-    arch = owner.find_parent_of_type(uni.Archetype);
+    arch = owner.enclosing_decl(uni.Archetype);
     return self._arch_key(arch) if arch is not None else None;
 }
 
@@ -3406,8 +3392,8 @@ impl NaIRGenPass._final_variant_value(
     if mod is None or mod.loc is None or not mod.loc.mod_path {
         return value;
     }
-    variant = os.path.realpath(native_variant_of(mod.loc.mod_path));
-    if variant == os.path.realpath(mod.loc.mod_path) {
+    variant = real_path(native_variant_of(mod.loc.mod_path));
+    if variant == real_path(mod.loc.mod_path) {
         return value;
     }
     variant_mod = self.prog.mod.hub.get(variant);
@@ -3459,4 +3445,22 @@ impl NaIRGenPass._final_scalar_value(
         }
     }
     return None;
+}
+
+impl _class_typed_operand(
+    pass_ref: NaIRGenPass, value: ir.Value, origin: uni.UniNode
+) -> ir.Value {
+    if value.type != ir.IntType(8).as_pointer() or isinstance(value, ir.Constant) {
+        return value;
+    }
+    class_name = pass_ref._struct_name_of(origin);
+    if class_name is None {
+        return value;
+    }
+    class_type = pass_ref.struct_types.get(class_name);
+    if class_type is None {
+        return value;
+    }
+    typed = pass_ref.builder.bitcast(value, class_type.as_pointer(), name="cmp.typed");
+    return typed;
 }

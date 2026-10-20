@@ -779,7 +779,7 @@ impl BoundaryAnalysisPass.enter_ability with Ability entry {
     if (
         here.sym_name
         and isinstance(here.signature, FuncSignature)
-        and here.find_parent_of_type(Ability) is None
+        and here.enclosing_decl(Ability) is None
         and here.find_parent_of_type(LambdaExpr) is None
     ) {
         nd_cc = here.code_context;
@@ -810,10 +810,9 @@ impl BoundaryAnalysisPass.enter_func_call with FuncCall entry {
         target_sym = target.sym;
         target_decl = target_sym.decl if target_sym is not None else None;
         if target_decl is not None {
-            _decl_ab = target_decl.find_parent_of_type(Ability);
+            _decl_ab = target_decl.enclosing_decl(Ability);
             if (
-                _decl_ab is not None
-                and _decl_ab.find_parent_of_type(Ability) is not None
+                _decl_ab is not None and _decl_ab.enclosing_decl(Ability) is not None
             ) {
                 return;
             }
@@ -1549,26 +1548,7 @@ impl BoundaryAnalysisPass._route_facts(
     return (route, scheduled, reflect);
 }
 
-def route_literal(expr: any) -> tuple[bool, any] {
-    if isinstance(expr, (String, MultiString)) {
-        value = expr.lit_value;
-        return (True, value) if isinstance(value, str) else (False, None);
-    }
-    if isinstance(expr, Bool) {
-        return (True, expr.lit_value);
-    }
-    if isinstance(expr, Null) {
-        return (True, None);
-    }
-    if isinstance(expr, AtomTrailer)
-        and expr.is_attr
-        and isinstance(expr.target, Name)
-        and expr.target.value in ('HTTPMethod', 'APIProtocol')
-        and isinstance(expr.right, Name) {
-        return (True, expr.right.value);
-    }
-    return (False, None);
-}
+def route_literal(expr: any) -> tuple[bool, any];
 
 impl BoundaryAnalysisPass.enter_atom_trailer with AtomTrailer entry {
     if not here.is_attr or self._get_context(here) != InteropContext.CLIENT {
@@ -1627,4 +1607,25 @@ impl BoundaryAnalysisPass._export_mixed_native(manifest: InteropManifest) -> Non
             ast_node=stmt
         );
     }
+}
+
+impl route_literal(expr: any) -> tuple[bool, any] {
+    if isinstance(expr, (String, MultiString)) {
+        value = expr.lit_value;
+        return (True, value) if isinstance(value, str) else (False, None);
+    }
+    if isinstance(expr, Bool) {
+        return (True, expr.lit_value);
+    }
+    if isinstance(expr, Null) {
+        return (True, None);
+    }
+    if isinstance(expr, AtomTrailer)
+        and expr.is_attr
+        and isinstance(expr.target, Name)
+        and expr.target.value in ('HTTPMethod', 'APIProtocol')
+        and isinstance(expr.right, Name) {
+        return (True, expr.right.value);
+    }
+    return (False, None);
 }

@@ -1,6 +1,7 @@
 impl JacProgram.init(
     self: JacProgram, main_mod: (uni.ProgramModule | None) = None
 ) -> None {
+    forget_real_paths();
     self.hub: ModuleHub = ModuleHub(mod=main_mod or uni.ProgramModule());
     self.deps: DepGraph = DepGraph();
     self.diags: DiagLedger = DiagLedger();
@@ -1124,4 +1125,20 @@ impl JacProgram.note_stub_tree_served(self: JacProgram, path: str) -> None {
     if host.in_typeshed_tree(path) {
         self._stub_trees_served = True;
     }
+}
+
+impl JacProgram.jac_file_formatter(
+    file_path: str, auto_lint: bool = False
+) -> JacProgram {
+    return active_host().format_file(file_path, auto_lint);
+}
+
+impl JacProgram.jac_str_formatter(
+    source_str: str, file_path: str, auto_lint: bool = False
+) -> JacProgram {
+    return active_host().format_source(source_str, file_path, auto_lint);
+}
+
+impl JacProgram.jac_file_linter(file_path: str) -> JacProgram {
+    return active_host().lint_file(file_path);
 }

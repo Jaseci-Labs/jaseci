@@ -2,14 +2,7 @@ import ast;
 import re;
 import from pathlib { Path }
 
-def tour_sections -> list[dict[str, any]] {
-    source = Path(_project_root(), "core/site/landing/WaitWuuut.jac").read_text();
-    catalog = source.split("glob GROUPS: list[dict[any, any]] = ", 1)[1].split(
-        ",\n     ABSENT:", 1
-    )[0];
-    groups = ast.literal_eval(catalog);
-    return [section for group in groups for section in group["sections"]];
-}
+def tour_sections -> list[dict[str, any]];
 
 test "Every live deep dive clip resolves to a unique current source anchor" {
     sections = tour_sections();
@@ -95,4 +88,13 @@ test "Illustrative ownership clip produces the advertised compiler diagnostics" 
         assert "error[E1301]" in output , output;
         assert "error[E1303]" in output , output;
     }
+}
+
+impl tour_sections -> list[dict[str, any]] {
+    source = Path(_project_root(), "core/site/landing/WaitWuuut.jac").read_text();
+    catalog = source.split("glob GROUPS: list[dict[any, any]] = ", 1)[1].split(
+        ",\n     ABSENT:", 1
+    )[0];
+    groups = ast.literal_eval(catalog);
+    return [section for group in groups for section in group["sections"]];
 }

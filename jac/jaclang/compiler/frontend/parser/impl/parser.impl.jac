@@ -48,7 +48,7 @@ impl Parser.check_peek_any(*kinds: TokenKind) -> bool {
     return self.peek().kind in kinds;
 }
 
-impl Parser.postinit{
+impl Parser.postinit {
     self.source = Source(self.source_code, self.file_path);
     self._tokens_len = len(self.tokens);
 }
@@ -363,7 +363,7 @@ impl Parser.make_semi -> Semi {
     );
 }
 
-impl Parser.synchronize{
+impl Parser.synchronize {
     self.advance();
     while not self.at_end() {
         if self.check_any(
@@ -5607,13 +5607,13 @@ impl Parser.parse_archetype_member -> UniNode | None {
     return EmptyToken();
 }
 
-impl Parser._skip_semicolons{
+impl Parser._skip_semicolons {
     while self.match_tok(TokenKind.SEMI) {
         continue;
     }
 }
 
-impl Parser._error_unexpected_member{
+impl Parser._error_unexpected_member {
     self.emit_diag("Unexpected token in archetype body", "E0046");
     self.advance();
 }
@@ -6634,6 +6634,16 @@ impl Parser.parse_impl_def -> ImplDef {
         target_names.append(self.parse_impl_target_name());
     }
 
+    impl_tp_list: (list[TypeParam] | None) = None;
+    impl_tp_lb_uni: Token | None = None;
+    impl_tp_rb_uni: Token | None = None;
+    impl_tp_comma_unis: list[Token] = [];
+    if self.match_tok(TokenKind.LSQUARE) {
+        impl_tp_lb_uni = self.make_uni_token(self.previous());
+        (impl_tp_list, impl_tp_comma_unis) = self.parse_type_params();
+        impl_tp_rb_uni = self.consume_uni(TokenKind.RSQUARE);
+    }
+
     spec_sig: UniNode | None = None;
     spec_is_inh = False;
     base_classes: list[Expr] = [];
@@ -6718,6 +6728,18 @@ impl Parser.parse_impl_def -> ImplDef {
             kid.append(dot_unis[i]);
         }
     }
+    if impl_tp_list is not None
+        and impl_tp_lb_uni is not None
+        and impl_tp_rb_uni is not None {
+        kid.append(impl_tp_lb_uni);
+        for (i, tp) in enumerate(impl_tp_list) {
+            if i > 0 {
+                kid.append(impl_tp_comma_unis[i - 1]);
+            }
+            kid.append(tp);
+        }
+        kid.append(impl_tp_rb_uni);
+    }
     if spec_sig is not None {
         kid.append(spec_sig);
     } elif spec_is_inh and len(base_classes) > 0 and impl_inh_lp_tok is not None {
@@ -6763,6 +6785,7 @@ impl Parser.parse_impl_def -> ImplDef {
     return ImplDef(
         decorators=decorators,
         target=target_names,
+        type_params=impl_tp_list,
         spec=spec_arg,
         body=impl_body_arg,
         kid=kid,
@@ -7605,4 +7628,79 @@ impl Parser._skip_wiring_stmt(open_lists: int = 0) -> None {
             return;
         }
     }
+}
+
+impl _string_lit_text(raw: str) -> str {
+    v = raw;
+    while v and v[0] in "rbfRBF" {
+        v = v[1:];
+    }
+    if len(v) >= 6 and v.startswith('"""') and v.endswith('"""') {
+        return v[3:-3];
+    }
+    if len(v) >= 6 and v.startswith("'''") and v.endswith("'''") {
+        return v[3:-3];
+    }
+    if len(v) >= 2 and (v[0] == "'" or v[0] == '"') and v[-1] == v[0] {
+        return v[1:-1];
+    }
+    return v;
+}
+
+impl _test_ident_from_desc(desc_text: str) -> str {
+    ident_chars: list[str] = [];
+    prev_sep = False;
+    for ch in desc_text {
+        is_word = ("a" <= ch and ch <= "z")
+            or ("A" <= ch and ch <= "Z")
+            or ("0" <= ch and ch <= "9");
+        if is_word {
+            ident_chars.append(ch);
+            prev_sep = False;
+        } elif not prev_sep {
+            ident_chars.append("_");
+            prev_sep = True;
+        }
+    }
+    ident: str = str("".join(ident_chars));
+    if ident.startswith("_") {
+        ident = ident[1:];
+    }
+    if ident.endswith("_") {
+        ident = ident[:-1];
+    }
+    return ident.lower();
+}
+
+impl parse_program(
+    source: str, file_path: str
+) -> tuple[(Module, int, list[SrcDiag], list[CommentData], list[SrcDiag], int)] {
+    (tokens, comments, lex_diags, lex_error_count) = tokenize_full(source, file_path);
+    parser = Parser(tokens=tokens, file_path=file_path, source_code=source);
+    mod = parser.parse();
+    return (
+        mod,
+        parser.error_count,
+        parser.diags,
+        comments,
+        lex_diags,
+        lex_error_count
+    );
+}
+
+impl parse_expression(
+    source: str, file_path: str = "<input>"
+) -> tuple[Expr, bool, list[SrcDiag], list[SrcDiag]] {
+    (tokens, _comments, lex_diags, lex_errors) = tokenize_full(source, file_path);
+    parser = Parser(tokens=tokens, file_path=file_path, source_code=source);
+    expression = parser.parse_expression();
+    if not parser.at_end() {
+        parser.error("Unexpected token after expression");
+    }
+    return (
+        expression,
+        lex_errors > 0 or parser.error_count > 0,
+        parser.diags,
+        lex_diags
+    );
 }
