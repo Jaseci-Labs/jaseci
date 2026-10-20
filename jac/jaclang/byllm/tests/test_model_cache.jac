@@ -11,8 +11,9 @@ import from jaclang.byllm.cli { model }
 glob ALIAS: str = "gemma-4-e2b",
      GOOD: bytes = b"GGUF" + bytes(range(60));
 
-"""Point the cache at `<base>/models`, fake `_download` to write `GOOD` and record each
-call in `calls`, and give consent; return the cache dir."""
+"""Point the cache at `<base>/models`, fake `_download` to record each call in `calls`
+and, like huggingface_hub, write `GOOD` only where no file is, and give consent; return
+the cache dir."""
 def use_temp_cache(stack: ExitStack, base: Path, calls: list[str]) -> Path {
     cache_dir = base / "models";
     cache_dir.mkdir(parents=True);
@@ -20,7 +21,9 @@ def use_temp_cache(stack: ExitStack, base: Path, calls: list[str]) -> Path {
         calls.append(alias);
         target = gguf_path(alias, spec);
         target.parent.mkdir(parents=True, exist_ok=True);
-        target.write_bytes(GOOD);
+        if not target.exists() {
+            target.write_bytes(GOOD);
+        }
         return target;
     }
     stack.enter_context(
