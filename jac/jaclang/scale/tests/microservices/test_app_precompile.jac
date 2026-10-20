@@ -15,6 +15,7 @@ def _capture_seal(cmd: list[str], **kw: object) -> MagicMock {
     # cmd = [pod_jac, "run", <seal script>, <stage_root>, "--seal"]
     _seal_call["script_text"] = Path(cmd[2]).read_text(encoding="utf-8");
     _seal_call["script_arg"] = cmd[2];
+    _seal_call["timeout"] = str(kw.get("timeout"));
     manifest = Path(cmd[3]) / "app" / "_precompiled" / "MANIFEST.json";
     manifest.parent.mkdir(parents=True, exist_ok=True);
     manifest.write_text("{}", encoding="utf-8");
@@ -98,4 +99,27 @@ test "the seal runs the pod binary's own precompile, not the builder's script" {
         ]
     );
     assert not _seal_call["script_arg"].endswith("precompile_bytecode.jac");
+}
+
+
+test "the seal waits [scale] seal_timeout, 1800s when unset or invalid" {
+    # 600s was too tight for a large app on a CI runner; main raised it to 1800s
+    # and made it configurable, and this is that change on the 0.34 line.
+    for (scale, want) in [
+        ("", "1800"),
+        ("[scale]\nseal_timeout = 900\n", "900"),
+        ("[scale]\nseal_timeout = \"soon\"\n", "1800"),
+        ("[scale]\nseal_timeout = 0\n", "1800")
+    ] {
+        _seal_call.clear();
+        base = Path(tempfile.mkdtemp(prefix="jac-app-"));
+        (base / "jac.toml").write_text("[project]\nname = \"mini\"\n" + scale);
+        (base / "svc.jac").write_text("def:pub ping -> str { return \"pong\"; }\n");
+        with patch.object(bundle_mod.subprocess, "run", _capture_seal) {
+            _precompile_app(base, b"fake-pod-binary");
+        }
+        assert _seal_call["timeout"] == want , f"{scale!r}: seal timeout {_seal_call[
+            'timeout'
+        ]}";
+    }
 }
