@@ -302,19 +302,26 @@ test "lintfix moves separate-impls bodies into the module's impl annex" {
             blocked.write_text(CLEAN);
             stuck = Path(repo) / "stuck.jac";
             stuck.write_text(CLEAN);
+            wide = Path(repo) / "wide.jac";
+            wide.write_text(
+                MOD_SRC + "\ndef h(x: int) -> int {\n    return x - 1;\n}\n"
+            );
+            (Path(repo) / "wide.impl.jac").write_bytes(ANNEX_SRC.encode("utf-16"));
             files = [
                 "fresh.jac",
                 str(mod),
                 str(annex),
                 str(variant),
                 str(blocked),
-                str(stuck)
+                str(stuck),
+                str(wide)
             ];
             reset_state();
             with deny_writes([str(Path(repo) / "blocked.impl.jac"), str(stuck)]) {
                 ret = fmt_cmd(files, lintfix=True, jobs=jobs);
             }
             stuck_annex_left = (Path(repo) / "stuck.impl.jac").exists();
+            wide_annex = (Path(repo) / "wide.impl.jac").read_bytes();
             fresh_text = fresh.read_text();
             fresh_annex = (Path(repo) / "fresh.impl.jac").read_text();
             mod_text = mod.read_text();
@@ -334,6 +341,9 @@ test "lintfix moves separate-impls bodies into the module's impl annex" {
         assert ret == 1 , f"[jobs={jobs}] the unwritable annex must fail the run";
         assert blocked_text == CLEAN , f"[jobs={jobs}] a module whose annex cannot be "
         f"written keeps its bodies, got:\n{blocked_text!r}";
+        assert b"impl h(" in wide_annex and b"bar" in wide_annex , (
+            f"[jobs={jobs}] a UTF-16 annex is fixed like any other, got {wide_annex!r}"
+        );
         assert not stuck_annex_left , f"[jobs={jobs}] an annex written for a module "
         "that then fails to save is rolled back";
         assert "return x + 1" in variant_annex , (

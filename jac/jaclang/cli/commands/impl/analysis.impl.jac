@@ -454,31 +454,30 @@ impl lint(
                 (formatted_code, float_target, float_text) = _float_impls_to_annex(
                     prog, str(path_obj), str(path_obj), formatted_code
                 );
-                annex_backups: dict[str, (str | None)] = {};
-                if float_target {
-                    float_prog = JacProgram.jac_str_formatter(
-                        float_text, float_target, auto_lint=True
-                    );
-                    annex_backups[float_target] = (
-                        Path(float_target).read_text(encoding='utf-8')
-                            if os.path.exists(float_target)
-                            else None
-                    );
-                    os.makedirs(os.path.dirname(float_target) or ".", exist_ok=True);
-                    with open(float_target, 'w', encoding='utf-8') as f {
-                        f.write(float_prog.mod.main.gen.jac or float_text);
+                backups: dict[str, (bytes | None)] = {};
+                try {
+                    if float_target {
+                        float_prog = JacProgram.jac_str_formatter(
+                            float_text, float_target, auto_lint=True
+                        );
+                        backups[float_target] = _snapshot_file(float_target);
+                        os.makedirs(
+                            os.path.dirname(float_target) or ".", exist_ok=True
+                        );
+                        with open(float_target, 'w', encoding='utf-8') as f {
+                            f.write(float_prog.mod.main.gen.jac or float_text);
+                        }
                     }
-                }
-                changed = formatted_code != original_code;
-                if changed {
-                    try {
+                    changed = formatted_code != original_code;
+                    if changed {
+                        backups[str(path_obj)] = _snapshot_file(str(path_obj));
                         with open(str(path_obj), 'w', encoding='utf-8') as f {
                             f.write(formatted_code);
                         }
-                    } except OSError {
-                        _restore_annexes(annex_backups);
-                        raise;
                     }
+                } except OSError {
+                    _restore_files(backups);
+                    raise;
                 }
             }
 
@@ -578,18 +577,21 @@ def _float_impls_to_annex(
     prog: JacProgram, file_path: str, logical: str, formatted: str
 ) -> tuple[str, str, str];
 
-def _restore_annexes(backups: dict[str, (str | None)]) -> None;
+def _snapshot_file(path: str) -> (bytes | None);
 
-impl _restore_annexes(backups: dict[str, (str | None)]) -> None {
-    import os;
-    for (path, text) in backups.items() {
+impl _snapshot_file(path: str) -> (bytes | None) {
+    return Path(path).read_bytes() if Path(path).exists() else None;
+}
+
+def _restore_files(backups: dict[str, (bytes | None)]) -> None;
+
+impl _restore_files(backups: dict[str, (bytes | None)]) -> None {
+    for (path, data) in backups.items() {
         try {
-            if text is None {
-                os.remove(path);
+            if data is None {
+                Path(path).unlink(missing_ok=True);
             } else {
-                with open(path, 'w', encoding='utf-8') as f {
-                    f.write(text);
-                }
+                Path(path).write_bytes(data);
             }
         } except OSError {}
     }
@@ -859,7 +861,7 @@ impl format(
                 }
                 write_errors: list[str] = [];
                 floated_failed = False;
-                annex_backups: dict[str, (str | None)] = {};
+                backups: dict[str, (bytes | None)] = {};
                 for (out_path, code) in outputs {
                     is_module = out_path == res['path'];
                     if floated_failed and is_module {
@@ -874,12 +876,8 @@ impl format(
                         if to_screen {
                             console.print(code, markup=False, highlight=False);
                         } else {
+                            backups[out_path] = _snapshot_file(out_path);
                             if is_owned {
-                                annex_backups[out_path] = (
-                                    Path(out_path).read_text(encoding='utf-8')
-                                        if os.path.exists(out_path)
-                                        else None
-                                );
                                 os.makedirs(
                                     os.path.dirname(out_path) or ".", exist_ok=True
                                 );
@@ -890,10 +888,19 @@ impl format(
                         }
                     } except Exception as e {
                         write_errors.append(f"Error writing to '{out_path}': {e}");
+                        if out_path in backups {
+                            _restore_files({out_path: backups[out_path]});
+                        }
                         if is_owned {
                             floated_failed = True;
                         } elif is_module {
-                            _restore_annexes(annex_backups);
+                            _restore_files(
+                                {
+                                    p: b
+                                    for (p, b) in backups.items()
+                                    if os.path.realpath(p) in owned
+                                }
+                            );
                         }
                     }
                 }
