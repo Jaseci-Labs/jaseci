@@ -108,6 +108,11 @@ def _reasoning_events(
 ) -> Generator[StreamEvent, None, None];
 
 
+def _answer_events(
+    mt_run: MTRuntime, token: str, iteration: int
+) -> Generator[StreamEvent, None, None];
+
+
 def _message_role(msg: dict[str, any]) -> str;
 
 
@@ -511,6 +516,8 @@ impl BaseLLM._typed_retry_reset(
     output: str
 ) -> None {
     mt_run.messages = list(base_msgs);
+    mt_run._llm_hook_cursor = 0;
+    mt_run._llm_hook_compacted = True;
     mt_run._scaffolding_ids = list(base_scaffolding);
     mt_run._has_final_output = False;
     mt_run._final_output = None;
@@ -921,6 +928,11 @@ impl BaseLLM.make_model_params(mt_run: MTRuntime) -> dict[str, any] {
         }
     }
 
+    first = messages[0] if messages else None;
+
+    mt_run._sent_system = dict(first)
+        if isinstance(first, dict) and first.get("role") == "system"
+        else None;
     if _is_prompt_caching_eligible(self.model_name) {
         _apply_prompt_caching(messages, tools);
     }
@@ -1149,7 +1161,9 @@ impl BaseLLM.dispatch_streaming(mt_run: MTRuntime) -> Generator[str, None, None]
         try {
             response = self.model_call_with_stream(params);
             for chunk in response {
-                mt_run._last_stream_chunks.append(chunk);
+                if mt_run._call_kind == "final_answer_restream" {
+                    mt_run._last_stream_chunks.append(chunk);
+                }
                 if events {
                     reasoning_pending += _delta_reasoning(chunk);
                     answering = bool(
@@ -1673,6 +1687,12 @@ impl BaseLLM._stream_final_answer(
                 }
             } except Exception as e {
                 logger.debug(f"final answer rebuild failed, keeping the text: {e}");
+                reasoning = "".join(
+                    _delta_reasoning(c) for c in mt_run._last_stream_chunks
+                );
+                if reasoning {
+                    final["reasoning_content"] = reasoning;
+                }
             }
             mt_run._last_stream_chunks = [];
             mt_run.add_message(final);
@@ -1727,9 +1747,7 @@ impl BaseLLM._yield_recovery_result(
     yield StreamEvent(event_type="steps_done", data={"iterations": iter_count});
     if finish_found {
         for token in self._stream_final_answer(mt_run, fallback=committed) {
-            if token {
-                yield StreamEvent(event_type="chunk", data={"content": token});
-            }
+            yield from _answer_events(mt_run, token, iter_count);
         }
     } elif recovery_resp.output {
         yield StreamEvent(
@@ -1743,16 +1761,7 @@ impl BaseLLM._invoke_streaming(
     mt_run: MTRuntime
 ) -> Generator[StreamEvent, None, None] {
     try {
-        iteration = 0;
-        for event in self._stream_steps(mt_run) {
-            step = event.data.get("iteration")
-                if isinstance(event.data, dict)
-                else None;
-            iteration = step if isinstance(step, int) else iteration;
-            yield from _reasoning_events(mt_run, iteration);
-            yield event;
-        }
-        yield from _reasoning_events(mt_run, iteration);
+        yield from self._stream_steps(mt_run);
     } finally {
         mt_run.write_back_conversation();
     }
@@ -1766,9 +1775,7 @@ impl BaseLLM._stream_steps(mt_run: MTRuntime) -> Generator[StreamEvent, None, No
                 _seen_resets = mt_run._stream_reset_count;
                 yield StreamEvent(event_type="stream_reset", data={"scope": "answer"});
             }
-            if token {
-                yield StreamEvent(event_type="chunk", data={"content": token});
-            }
+            yield from _answer_events(mt_run, token, 0);
         }
     } else {
         max_iters = (
@@ -1823,11 +1830,7 @@ impl BaseLLM._stream_steps(mt_run: MTRuntime) -> Generator[StreamEvent, None, No
                         }
                     );
                     for token in self._stream_final_answer(mt_run) {
-                        if token {
-                            yield StreamEvent(
-                                event_type="chunk", data={"content": token}
-                            );
-                        }
+                        yield from _answer_events(mt_run, token, iter_count);
                     }
                     yield from _usage_step_events(mt_run, _usage_base);
                     break;
@@ -1840,9 +1843,7 @@ impl BaseLLM._stream_steps(mt_run: MTRuntime) -> Generator[StreamEvent, None, No
                     data={"iterations": iter_count - 1, "reason": "max_iterations"}
                 );
                 for token in self._stream_final_answer(mt_run) {
-                    if token {
-                        yield StreamEvent(event_type="chunk", data={"content": token});
-                    }
+                    yield from _answer_events(mt_run, token, iter_count);
                 }
                 yield from _usage_step_events(mt_run, _usage_base);
                 break;
@@ -2066,11 +2067,7 @@ impl BaseLLM._stream_steps(mt_run: MTRuntime) -> Generator[StreamEvent, None, No
                         for token in self._stream_final_answer(
                             mt_run, fallback=str(final_output or "")
                         ) {
-                            if token {
-                                yield StreamEvent(
-                                    event_type="chunk", data={"content": token}
-                                );
-                            }
+                            yield from _answer_events(mt_run, token, iter_count);
                         }
                         yield from _usage_step_events(mt_run, _usage_base);
                     }
@@ -2609,6 +2606,16 @@ impl _reasoning_events(
             event_type="reasoning",
             data={"content": mt_run._reasoning_deltas.pop(0), "iteration": iteration}
         );
+    }
+}
+
+
+impl _answer_events(
+    mt_run: MTRuntime, token: str, iteration: int
+) -> Generator[StreamEvent, None, None] {
+    yield from _reasoning_events(mt_run, iteration);
+    if token {
+        yield StreamEvent(event_type="chunk", data={"content": token});
     }
 }
 

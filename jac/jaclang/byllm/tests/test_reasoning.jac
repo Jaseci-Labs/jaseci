@@ -13,6 +13,7 @@ import from support {
     chunk_text,
     event_types,
     events_of,
+    fail,
     finish,
     fixture_path,
     say
@@ -71,7 +72,12 @@ glob THINK: str = "REASONING " + ("step by step " * 20),
 
 
 """One turn; returns the StreamEvents of a logging stream, else []."""
-def turn(llm: MockLLM, history: list[any], path: tuple, message: str) -> list[any] {
+def turn(
+    llm: MockLLM,
+    history: list[any],
+    path: tuple[str, bool, bool, bool, bool],
+    message: str
+) -> list[any] {
     (_, stream, logging, tools, _) = path;
     def ask(msg: str) -> str by llm(
         tools=[get_weather] if tools else [],
@@ -265,19 +271,77 @@ test "compaction counts reasoning, and the hook then reports the rebuilt request
 
 
 test "a stream litellm cannot rebuild still keeps the reasoning it carried" {
-    history: list[any] = [];
-    llm = MockLLM(
-        outputs=[say("Paris is sunny.", fields={"reasoning_content": THINK})]
-    );
+    think = {"reasoning_content": THINK};
     no_builder = RuntimeError("no builder");
-    with mock.patch.object(
-        _byllm_llm_mod.litellm, "stream_chunk_builder", side_effect=no_builder
-    ) {
-        turn(llm, history, PATHS[3], "How is Paris?");
+    for (path, replies) in [
+        (PATHS[3], [say("Paris is sunny.", fields=think)]),
+        (
+            PATHS[2],
+            [
+                finish("Paris is sunny.", fields=think),
+                say("Paris is sunny.", fields=think)
+            ]
+        )
+    ] {
+        history: list[any] = [];
+        with mock.patch.object(
+            _byllm_llm_mod.litellm, "stream_chunk_builder", side_effect=no_builder
+        ) {
+            turn(MockLLM(outputs=replies), history, path, "How is Paris?");
+        }
+        reply = history[-1];
+        assert (reply.get("content"), reply.get("reasoning_content"))
+            == ("Paris is sunny.", THINK) , f"{path[0]}: {reply}";
     }
-    reply = history[-1];
-    assert (reply.get("content"), reply.get("reasoning_content"))
-        == ("Paris is sunny.", THINK) , (
-        f"the streamed text and reasoning are both the reply: {reply}"
+}
+
+
+test "reasoning streams while the model is still thinking" {
+    llm = MockLLM(
+        outputs=[
+            fail(
+                ValueError("dropped"),
+                reply=say("", fields={"reasoning_content": THINK})
+            )
+        ]
+    );
+    def ask(q: str) -> str by llm(stream=True, logging=True);
+    seen: list[str] = [];
+    try {
+        events: any = ask("hi");
+        for ev in events {
+            seen.append(ev.event_type);
+        }
+    } except ValueError {}
+    assert "reasoning" in seen , f"no reasoning before the stream ended: {seen}";
+}
+
+
+obj Place {
+    has city: str;
+}
+
+
+test "hook records show the request as sent: the parallel hint, and a typed-output retry" {
+    records: list[dict[str, any]] = [];
+    hinted = MockLLM(outputs=[say("ok")]);
+    def ask(q: str) -> str by hinted(tools=[get_weather], parallelize=True);
+    retried = MockLLM(
+        outputs=[say('{"city": '), say('{"schema_object_wrapper": {"city": "Galle"}}')]
+    );
+    def place -> Place by retried();
+    register_llm_call_hook(records.append);
+    try {
+        ask("hi");
+        assert place().city == "Galle";
+    } finally {
+        unregister_llm_call_hook(records.append);
+    }
+    system = records[0]["new_messages"][0];
+    assert "scheduling rules" in str(system["content"]) , f"system prompt recorded as {system}";
+    retry = records[-1];
+    assert retry["after_compaction"]
+        and "output parser reported" in str(retry["new_messages"]) , (
+        f"the retry record misses its feedback: {retry}"
     );
 }
