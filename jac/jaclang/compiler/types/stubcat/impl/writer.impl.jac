@@ -546,7 +546,7 @@ impl CatalogWriter.force_symbol(sym: Symbol) -> None {
         own_scope = None;
     }
     if own_scope is not None
-        and (isinstance(own_scope, (Archetype, Enum)) or hasattr(own_scope, "cat_kind"))
+        and isinstance(own_scope, (Archetype, Enum, CatScope))
         and self.in_boundary(module_of(own_scope)) {
         self.force_scope(own_scope);
     }
@@ -913,12 +913,11 @@ impl CatalogWriter.encode_scope(idx: int) -> bytes {
     } elif isinstance(scope, Ability) {
         kind = SC_FUNCTION;
         owner = scope.name_spec.sym;
-    } elif hasattr(scope, "cat_kind") {
-        kind = int(getattr(scope, "cat_kind"));
-        arch_kind = int(getattr(scope, "cat_arch_kind"));
-        cat_owner: any = scope?.cat_owner_sym;
-        if isinstance(cat_owner, Symbol) {
-            owner = cat_owner;
+    } elif isinstance(scope, CatScope) {
+        kind = scope.cat_kind;
+        arch_kind = scope.cat_arch_kind;
+        if scope.cat_owner_sym is not None {
+            owner = scope.cat_owner_sym;
         }
     }
     put_uvar(out, kind);
@@ -971,10 +970,7 @@ impl CatalogWriter.encode_scope(idx: int) -> bytes {
         } except Exception {
             own_scope = None;
         }
-        if (
-            isinstance(own_scope, (Archetype, Enum, Ability))
-            or hasattr(own_scope, "cat_kind")
-        )
+        if isinstance(own_scope, (Archetype, Enum, Ability, CatScope))
             and self.in_boundary(module_of(own_scope)) {
             seen_kids.add(name);
             kids.append((name, self.ref_scope(own_scope)));
