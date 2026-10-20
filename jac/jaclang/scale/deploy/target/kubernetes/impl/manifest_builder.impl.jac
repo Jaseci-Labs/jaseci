@@ -298,6 +298,10 @@ impl ManifestBuilder._install_app_deps(
 }
 
 impl client_build_alongside_seal -> bool {
+    import os;
+    if not os.path.isfile("/proc/meminfo") {
+        return False;
+    }
     return memory_headroom_bytes()
         >= _CLIENT_BUILD_ALONGSIDE_SEAL_GIB * 1024 * 1024 * 1024;
 }
@@ -319,7 +323,7 @@ impl ManifestBuilder._start_client_build(project_dir: str) -> tuple[any, any] {
     worker = threading.Thread(target=build, name="client-bundle", daemon=True);
     worker.start();
     console.print("Building the client bundle while the app is sealed.");
-    def wait {
+    def join_build {
         worker.join();
     }
     def ready {
@@ -328,7 +332,7 @@ impl ManifestBuilder._start_client_build(project_dir: str) -> tuple[any, any] {
             raise failure[0];
         }
     }
-    return (wait, ready);
+    return (join_build, ready);
 }
 
 impl ManifestBuilder._build_client_bundle(project_dir: str) {
