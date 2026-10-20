@@ -2,7 +2,18 @@
 
 This document provides a summary of new features, improvements, and bug fixes in each version of **Jaclang**. For details on changes that might require updates to your existing code, please refer to the [Breaking Changes](../breaking-changes.md) page.
 
-## jaclang 0.34.24 (Latest Release)
+## jaclang 0.34.25 (Latest Release)
+
+### New Features
+
+- **byLLM: reasoning support**: `reasoning_effort`, `thinking` and `extra_body` pass through from `by llm()` or `[byllm.call_params]`; reasoning streams as `reasoning` events; `reasoning_tokens` is counted per call; and `register_llm_call_hook` reports every model call with its full reply.
+
+### Bug Fixes
+
+- **Fix: byLLM keeps a model's reasoning and every field of its reply**: a streamed tool loop, and a plain answer reloaded from `conversation=`, kept only role, content and tool calls, dropping `reasoning_content`, Claude's signed `thinking_blocks` and anything else the provider sent. The whole reply is now stored and sent back on the next call.
+- **Runtime: `report` no longer copies served responses into the server log**: a reported value is printed only when it is not part of a run the server started, that is, in `jac run` script mode and `jac test`. Walker and function requests, websocket calls and scheduled runs inside a server return their reports without printing them, so response data such as tokens and user records no longer lands in stdout.
+
+## jaclang 0.34.24
 
 ### Bug Fixes
 
