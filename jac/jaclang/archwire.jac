@@ -7826,7 +7826,6 @@ graph import compiler {
             SpecRole
         },
         passes.annex_weave | passes.static_analysis_pass { BodyRole },
-        passes.context { ImplOf },
         passes.pyast_load_pass {
             Kid,
             NameRefRole,
