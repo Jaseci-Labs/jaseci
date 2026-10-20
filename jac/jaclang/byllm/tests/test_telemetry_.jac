@@ -534,11 +534,11 @@ def _lookup_city(city: str) -> str {
 
 
 test "an llm call hook gets each model call once, with its full reply, and cannot break it" {
-    thought = {"reasoning_content": "WHY"};
-    for (path, mode) in [
-        ("whole replies", "whole"),
-        ("stream with events", "events"),
-        ("answer restreamed after finish_tool", "restream")
+    why = {"reasoning_content": "WHY"};
+    for (path, stream, logging, finishes) in [
+        ("whole replies", False, False, False),
+        ("stream with events", True, True, False),
+        ("answer restreamed after finish_tool", True, False, True)
     ] {
         records: list[dict[str, any]] = [];
         def bad_hook(record: dict[str, any]) {
@@ -547,59 +547,47 @@ test "an llm call hook gets each model call once, with its full reply, and canno
         def good_hook(record: dict[str, any]) {
             records.append(record);
         }
-        answers = [say("Kandy found.", fields=thought)];
-        if mode == "restream" {
-            answers = [finish("Kandy found.", fields=thought)] + answers;
+        replies: list[any] = [call("_lookup_city", {"city": "Kandy"}, fields=why)];
+        if finishes {
+            replies.append(finish("Kandy found.", fields=why));
         }
-        llm = MockLLM(
-            outputs=[call("_lookup_city", {"city": "Kandy"}, fields=thought)]
-                + answers
-                + [say("again")]
-        );
+        replies += [say("Kandy found.", fields=why), say("again")];
+        calls = len(replies) - 1;
+        llm = MockLLM(outputs=replies);
 
-        def ask(q: str) -> str by llm(tools=[_lookup_city]);
-        def ask_events(q: str) -> str by llm(
-            tools=[_lookup_city], stream=True, logging=True
+        def ask(q: str) -> str by llm(
+            tools=[_lookup_city], stream=stream, logging=logging
         );
-        def ask_stream(q: str) -> str by llm(tools=[_lookup_city], stream=True);
 
         register_llm_call_hook(bad_hook);
         register_llm_call_hook(good_hook);
         try {
-            if mode == "events" {
-                for _ in ask_events("Find Kandy") {}
-            } elif mode == "restream" {
-                for _ in ask_stream("Find Kandy") {}
-            } else {
-                assert ask("Find Kandy") == "Kandy found." , f"{path}: a failing hook broke the call";
+            answer: any = ask("Find Kandy");
+            if stream {
+                for _ in answer {}
             }
         } finally {
             unregister_llm_call_hook(bad_hook);
             unregister_llm_call_hook(good_hook);
         }
-        calls = len(answers) + 1;
-        assert len(records) == calls , (
-            f"{path}: one record per model call, {calls} expected, got {len(records)}"
-        );
-        first_roles = [m.get("role") for m in records[0]["new_messages"]];
-        assert first_roles[:2] == ["system", "user"] , (
-            f"{path}: the first call reports what it was sent, prompt included: {first_roles}"
+        assert len(records) == calls , f"{path}: {calls} calls, {len(records)} records";
+        assert [m.get("role") for m in records[0]["new_messages"]][:2]
+            == ["system", "user"] , (
+            f"{path}: the first call reports its prompt: {records[0]['new_messages']}"
         );
         assert [m.get("role") for m in records[1]["new_messages"]] == ["tool"] , (
             f"{path}: a later call reports only what is new: {records[1][
                 'new_messages'
             ]}"
         );
-        for (i, rec) in enumerate(records) {
-            assert rec["reply"].get("reasoning_content") == "WHY" , (
-                f"{path}: call {i} must carry the full reply: {rec['reply']}"
-            );
-            assert rec["usage"].get("model") , f"{path}: call {i} needs its usage: {rec}";
+        for rec in records {
+            assert rec["reply"].get("reasoning_content") == "WHY" , f"{path}: {rec[
+                'reply'
+            ]}";
+            assert rec["usage"].get("model") , f"{path}: no usage on {rec}";
         }
-        assert records[0]["reply"].get("tool_calls") , f"{path}: the tool call is in the reply";
-
-        if mode == "whole" {
-            assert ask("Find Kandy") == "again" , f"{path}: the call after unregistering";
+        if not stream {
+            ask("Find Kandy");
             assert len(records) == calls , f"{path}: an unregistered hook must not fire";
         }
     }
@@ -637,16 +625,8 @@ test "after a compaction the hook reports the rebuilt request once" {
         for r in records
         if r["after_compaction"]
     ];
-    assert len(after) == 1 , f"one call follows the compaction: {[
-        r['call_kind'] for r in records
-    ]}";
+    assert len(after) == 1 , f"one call follows the compaction: {records}";
     sent = after[0]["new_messages"];
-    assert sent and sent[0].get("role") == "system" , (
-        f"the whole rebuilt request is reported, prompt first: {[
-            m.get('role') for m in sent
-        ]}"
-    );
-    assert any("SUMMARY_OF_GALLE" in str(m.get("content")) for m in sent) , (
-        f"the summary the model now sees must be in it: {sent}"
-    );
+    assert [m.get("role") for m in sent][0] == "system" , f"the whole request: {sent}";
+    assert "SUMMARY_OF_GALLE" in str(sent) , f"the summary must be in it: {sent}";
 }

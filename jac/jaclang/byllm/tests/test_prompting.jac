@@ -69,7 +69,7 @@ test "incl_info examples and temperature reach the model" {
 }
 
 
-test "reasoning params reach the model only when set" {
+test "reasoning params reach the model only when set, from by llm() or jac.toml" {
     enabled = {"type": "enabled"};
     for (label, effort, thinking, extra) in [
         ("effort", "low", None, None),
@@ -83,32 +83,26 @@ test "reasoning params reach the model only when set" {
             reasoning_effort=effort, thinking=thinking, extra_body=extra
         );
 
-        assert answer("hi") == "ok" , f"{label}: the call must still answer";
+        assert answer("hi") == "ok" , label;
         sent = llm.seen[0];
         for (key, want) in [
             ("reasoning_effort", effort),
             ("thinking", thinking),
             ("extra_body", extra)
         ] {
-            if want is None {
-                assert key not in sent , f"{label}: unset {key} must not be sent: {sent}";
-            } else {
-                assert sent.get(key) == want , f"{label}: {key} must reach the model: {sent}";
-            }
+            assert sent.get(key) == want and (want is not None or key not in sent) , (
+                f"{label}: {key} sent as {sent.get(key)!r}, expected {want!r}"
+            );
         }
     }
-}
-
-
-test "reasoning params can also be set in jac.toml" {
     reset_byllm_config();
     try {
         params = get_byllm_config(
             Path(fixture_path("reasoning_config"))
         ).get_call_params_config();
-        assert params.get("reasoning_effort") == "low" , f"got {params}";
-        assert params.get("thinking") == {"type": "enabled"} , f"got {params}";
-        assert "extra_body" not in params , f"unset keys stay unset: {params}";
+        assert (params.get("reasoning_effort"), params.get("thinking"))
+            == ("low", enabled) , (f"jac.toml: {params}");
+        assert "extra_body" not in params , f"jac.toml: unset keys stay unset: {params}";
     } finally {
         reset_byllm_config();
     }

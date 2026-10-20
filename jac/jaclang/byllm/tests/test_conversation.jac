@@ -195,124 +195,107 @@ test "a second streamed turn grows the same history and keeps the first answer" 
 }
 
 
-"""Provider fields a reply can carry, per kind of model. `stream` is False where
-litellm's stream builder does not carry the field, so only whole replies are checked."""
-def reply_field_rows -> list[tuple[str, dict[str, any], bool]] {
-    signed = {"type": "thinking", "thinking": "THINK_SIGNED", "signature": "SIG_A"};
-    sealed = {"type": "thinking", "thinking": "", "signature": "SIG_SEALED"};
-    return [
-        ("reasoning text", {"reasoning_content": "THINK_TEXT"}, True),
-        (
-            "signed thinking",
-            {"reasoning_content": "THINK_SIGNED", "thinking_blocks": [signed]},
-            True
-        ),
-        # litellm's stream builder keeps a thinking block only when it has text.
-        ("encrypted only", {"thinking_blocks": [sealed]}, False),
-        # Fields litellm parks under provider_specific_fields, such as OpenRouter's.
-        (
-            "provider specific",
-            {"provider_specific_fields": {"reasoning_details": [{"text": "THINK_PS"}]}},
-            False
-        ),
-        ("nothing", {}, True)
-    ];
-}
+"""Reply fields per kind of model: (label, fields, kept when streamed). litellm's stream
+builder drops a thinking block with no text and `provider_specific_fields`."""
+glob REPLY_FIELDS: list[tuple[str, dict[str, any], bool]] = [
+         ("reasoning text", {"reasoning_content": "THINK"}, True),
+         (
+             "signed thinking",
+             {
+                 "reasoning_content": "THINK",
+                 "thinking_blocks": [
+                     {"type": "thinking", "thinking": "THINK", "signature": "SIG"}
+                 ]
+             },
+             True
+         ),
+         (
+             "encrypted only",
+             {
+                 "thinking_blocks": [
+                     {"type": "thinking", "thinking": "", "signature": "SIG"}
+                 ]
+             },
+             False
+         ),
+         (
+             "provider specific",
+             {"provider_specific_fields": {"reasoning_details": [{"text": "THINK"}]}},
+             False
+         ),
+         ("nothing", {}, True)
+     ];
 
 
-"""The ways a caller drives a tool loop, as `by llm()` kwargs."""
-def loop_path_rows -> list[tuple[str, dict[str, any]]] {
-    return [
-        ("whole replies", {}),
-        ("stream", {"stream": True}),
-        (
-            "stream, answer restreamed after finish_tool",
-            {"stream": True, "finish": True}
-        ),
-        ("stream with events", {"stream": True, "logging": True})
-    ];
-}
-
-
-"""One turn of a tool loop over `history`, whatever the path returns."""
-def run_turn(llm: MockLLM, history: list[any], kwargs: dict[str, any], message: str) {
-    stream = kwargs.get("stream", False);
-    logging = kwargs.get("logging", False);
-    if stream and logging {
-        def ask_events(msg: str) -> str by llm(
-            tools=[get_weather], conversation=history, stream=True, logging=True
-        );
-        for _ in ask_events(message) {}
-    } elif stream {
-        def ask_stream(msg: str) -> str by llm(
-            tools=[get_weather], conversation=history, stream=True
-        );
-        for _ in ask_stream(message) {}
-    } else {
-        def ask(msg: str) -> str by llm(tools=[get_weather], conversation=history);
-        ask(message);
+"""One turn of a tool loop over `history`; `stream` and `logging` pick the path."""
+def run_turn(
+    llm: MockLLM, history: list[any], message: str, stream: bool, logging: bool
+) {
+    def ask(msg: str) -> str by llm(
+        tools=[get_weather], conversation=history, stream=stream, logging=logging
+    );
+    reply: any = ask(message);
+    if stream {
+        for _ in reply {}
     }
 }
 
 
 test "the provider's own fields on a reply are kept and sent back, on every loop path" {
-    for (path, kwargs) in loop_path_rows() {
-        for (kind, fields, streams) in reply_field_rows() {
-            if kwargs.get("stream", False) and not streams {
+    for (path, stream, logging, finishes) in [
+        ("whole replies", False, False, False),
+        ("stream", True, False, False),
+        ("stream, answer restreamed after finish_tool", True, False, True),
+        ("stream with events", True, True, False)
+    ] {
+        for (kind, fields, streams) in REPLY_FIELDS {
+            if stream and not streams {
                 continue;
             }
             label = f"{path}, {kind}";
-            history: list[any] = [];
-            answers = [
-                say("Paris is sunny.", fields=fields),
-                say("Still sunny.", fields=fields)
+            want = {
+                k: v
+                for (k, v) in fields.items()
+                if k != "provider_specific_fields"
+            }
+                | (fields.get("provider_specific_fields") or {});
+            replies: list[any] = [
+                call("get_weather", {"city": "Paris"}, fields=fields)
             ];
-            if kwargs.get("finish", False) {
-                answers = [
-                    finish("Paris is sunny.", fields=fields),
-                    answers[0],
-                    finish("Still sunny.", fields=fields),
-                    answers[1]
-                ];
+            for answer in ["Paris is sunny.", "Still sunny."] {
+                if finishes {
+                    replies.append(finish(answer, fields=fields));
+                }
+                replies.append(say(answer, fields=fields));
             }
-            llm = MockLLM(
-                outputs=[call("get_weather", {"city": "Paris"}, fields=fields)]
-                    + answers
-            );
-            run_turn(llm, history, kwargs, "How is Paris?");
+            llm = MockLLM(outputs=replies);
+            history: list[any] = [];
+            run_turn(llm, history, "How is Paris?", stream, logging);
             turn1 = [dict(m) for m in history];
-            replies = by_role(turn1, "assistant");
-            assert len(replies) == 2 , f"{label}: expected the call and the answer: {turn1}";
-            for reply in replies {
-                lifted = dict(fields.get("provider_specific_fields") or {});
-                for (key, value) in (
-                    {
-                        k: v
-                        for (k, v) in fields.items()
-                        if k != "provider_specific_fields"
-                    }
-                    | lifted
-                ).items() {
-                    assert reply.get(key) == value , (
-                        f"{label}: {key} was not kept on {reply}"
-                    );
-                }
-                assert "provider_specific_fields" not in reply , (
-                    f"{label}: litellm's own wrapper must not be sent back: {reply}"
-                );
-                for key in ("reasoning_content", "thinking_blocks") {
-                    if key not in fields {
-                        assert not reply.get(key) , (
-                            f"{label}: {key} appeared from nowhere on {reply}"
-                        );
-                    }
-                }
+            assistants = by_role(turn1, "assistant");
+            assert len(assistants) == 2 , f"{label}: the call and the answer: {turn1}";
+            for reply in assistants {
+                got = {
+                    k: reply.get(k)
+                    for k in set(want)
+                        | {
+                            "reasoning_content",
+                            "thinking_blocks",
+                            "provider_specific_fields"
+                        }
+                };
+                assert got
+                    == want
+                        | {
+                            k: None
+                            for k in got
+                            if k not in want
+                        } , (f"{label}: kept {got}, sent {want}");
             }
-            run_turn(llm, history, kwargs, "Still sunny?");
+            run_turn(llm, history, "Still sunny?", stream, logging);
             sent = list(llm.sent("messages")[-1]);
             assert sent[1:1 + len(turn1)] == turn1 , (
-                f"{label}: turn 2 must resend turn 1 unchanged, for prompt caching:\n"
-                f"sent {sent[1:1 + len(turn1)]}\nheld {turn1}"
+                f"{label}: turn 2 must resend turn 1 unchanged, for prompt caching"
             );
         }
     }
@@ -328,7 +311,7 @@ test "a stream litellm cannot rebuild still keeps the reasoning it carried" {
         "stream_chunk_builder",
         side_effect=RuntimeError("no builder")
     ) {
-        run_turn(llm, history, {"stream": True, "logging": True}, "How is Paris?");
+        run_turn(llm, history, "How is Paris?", True, True);
     }
     replies = by_role(history, "assistant");
     assert [r.get("content") for r in replies] == ["Paris is sunny."] , (

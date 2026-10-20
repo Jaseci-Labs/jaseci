@@ -168,15 +168,15 @@ test "a str answer that skips finish_tool still arrives on the chunk channel" {
 test "reasoning streams on its own channel, merged, and never in the answer" {
     thought = "REASONING " + ("step by step " * 50);
     for (label, fields, cap, tools) in [
-        ("reasoning", {"reasoning_content": thought}, 0, True),
+        ("tool loop", {"reasoning_content": thought}, 0, [get_weather]),
         (
-            "reasoning, answer restreamed at the iteration cap",
+            "answer restreamed at the iteration cap",
             {"reasoning_content": thought},
             1,
-            True
+            [get_weather]
         ),
-        ("reasoning, no tools", {"reasoning_content": thought}, 0, False),
-        ("none", {}, 0, True)
+        ("no tools", {"reasoning_content": thought}, 0, []),
+        ("no reasoning", {}, 0, [get_weather])
     ] {
         replies = [say("It is sunny in London.", fields=fields)];
         if tools {
@@ -187,36 +187,24 @@ test "reasoning streams on its own channel, merged, and never in the answer" {
         llm = MockLLM(outputs=replies, chunk_size=12);
 
         def answer(question: str) -> str by llm(
-            tools=[get_weather], stream=True, logging=True, max_react_iterations=cap
+            tools=tools, stream=True, logging=True, max_react_iterations=cap
         );
-        def answer_plain(question: str) -> str by llm(stream=True, logging=True);
 
-        events = stream_events(
-            (answer if tools else answer_plain)("What is the weather in London?")
-        );
-        reasoning = events_of(events, "reasoning");
-        texts = [str(e.data.get("content", "")) for e in reasoning];
+        events = stream_events(answer("What is the weather in London?"));
+        texts = [
+            str(e.data.get("content", "")) for e in events_of(events, "reasoning")
+        ];
         visible = chunk_text(events)
-            + "".join(
-                str(e.data.get("content", "")) for e in events_of(events, "thought")
-            );
+            + str([e.data for e in events_of(events, "thought")]);
         assert "REASONING" not in visible , f"{label}: reasoning leaked into the answer";
-        if not fields {
-            assert not reasoning , f"{label}: no reasoning was sent, got {texts}";
-            continue;
-        }
-        assert "".join(texts) == thought * calls , (
-            f"{label}: every call's reasoning must arrive whole, got {texts}"
-        );
-        assert len(reasoning) < len(thought) // 12 , (
-            f"{label}: {len(reasoning)} events for {len(thought) // 12
-                * 2} chunks, not merged"
-        );
-        assert all(isinstance(e.data.get("iteration"), int) for e in reasoning) , (
-            f"{label}: each reasoning event names its iteration: {[
-                e.data for e in reasoning
-            ]}"
-        );
+        assert "".join(texts) == thought * calls * bool(fields) , f"{label}: got {texts}";
+        assert len(texts) <= len(thought) // 100 * calls , f"{label}: {len(
+            texts
+        )} events, not merged";
+        assert all(
+            isinstance(e.data.get("iteration"), int)
+            for e in events_of(events, "reasoning")
+        ) , f"{label}: each reasoning event names its iteration";
     }
 }
 
