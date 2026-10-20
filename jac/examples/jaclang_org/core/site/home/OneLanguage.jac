@@ -40,7 +40,215 @@ glob ConvPath: any = motion.path,
 
      ];
 
-def:pub TierLabel(y: int, text: str, hot: bool = False) -> JsxElement {
+def:pub TierLabel(y: int, text: str, hot: bool = False) -> JsxElement;
+
+def:pub ConvergeDiagram -> JsxElement;
+
+glob _LAYERS: list[dict[str, any]] = [
+         {"name": "Web", "tools": ["JavaScript", "TypeScript", "React", "CSS", "npm"]},
+         {
+             "name": "Mobile",
+             "tools": [
+                 "Swift",
+                 "Kotlin",
+                 "Xcode",
+                 "Android Studio",
+                 "App Store",
+                 "Google Play"
+             ]
+         },
+         {
+             "name": "Backend",
+             "tools": ["Python", "FastAPI", "PyPI", "pytest", "Celery"]
+         },
+         {
+             "name": "Database",
+             "tools": ["PostgreSQL", "SQLAlchemy", "Alembic", "MongoDB"]
+         },
+         {"name": "Deployment", "tools": ["Docker", "Kubernetes", "Terraform", "AWS"]},
+
+     ],
+     _GLUE_KINDS: list[dict[str, str]] = [
+         {"key": "api", "label": "API clients", "color": "#ef4444"},
+         {"key": "rest", "label": "REST endpoints", "color": "#a855f7"},
+         {"key": "ser", "label": "serializers", "color": "#14b8a6"},
+         {"key": "orm", "label": "ORM mapping", "color": "#22c55e"},
+         {"key": "schema", "label": "schemas & migrations", "color": "#6366f1"},
+         {"key": "deploy", "label": "deployment manifests", "color": "#ec4899"},
+         {"key": "config", "label": "config & env variables", "color": "#0ea5e9"},
+
+     ],
+     _ROLES: list[dict[str, any]] = [
+         {
+             "role": "Frontend engineer",
+             "lang": "TypeScript · React",
+             "kinds": ["ser", "api"],
+             "files": [
+                 {
+                     "name": "App.tsx",
+                     "segs": [
+                         {"kind": "", "lines": [62, 48]},
+                         {"kind": "ser", "lines": [40, 56, 34]},
+                         {"kind": "", "lines": [70, 52]},
+                         {"kind": "api", "lines": [66, 82, 54, 72, 60, 76, 48]},
+                         {"kind": "", "lines": [44, 62, 70, 56, 38, 64]},
+
+                     ]
+                 },
+
+             ]
+         },
+         {
+             "role": "Backend engineer",
+             "lang": "Python · FastAPI",
+             "kinds": ["ser", "rest"],
+             "files": [
+                 {
+                     "name": "main.py",
+                     "segs": [
+                         {"kind": "", "lines": [72, 58]},
+                         {"kind": "ser", "lines": [46, 56, 40, 52, 36]},
+                         {
+                             "kind": "rest",
+                             "lines": [40, 66, 54, 72, 46, 60, 76, 50, 64, 42]
+                         },
+                         {"kind": "", "lines": [30]},
+
+                     ]
+                 },
+
+             ]
+         },
+         {
+             "role": "Data engineer",
+             "lang": "Python · SQLAlchemy",
+             "kinds": ["schema", "orm"],
+             "files": [
+                 {
+                     "name": "db.py",
+                     "segs": [
+                         {"kind": "schema", "lines": [56, 70, 46, 62, 50, 66]},
+                         {
+                             "kind": "orm",
+                             "lines": [50, 66, 44, 60, 54, 72, 48, 64, 58, 40, 62]
+                         },
+                         {"kind": "", "lines": [42, 30]},
+
+                     ]
+                 },
+
+             ]
+         },
+         {
+             "role": "DevOps engineer",
+             "lang": "Docker · Kubernetes",
+             "kinds": ["deploy", "config"],
+             "files": [
+                 {
+                     "name": "Dockerfile",
+                     "segs": [{"kind": "deploy", "lines": [50, 40, 62, 46, 70]}]
+                 },
+                 {
+                     "name": "deployment.yaml",
+                     "segs": [
+                         {"kind": "deploy", "lines": [46, 56, 40, 62, 50, 66, 36]},
+                         {"kind": "config", "lines": [52, 66, 42]},
+
+                     ]
+                 },
+
+             ]
+         },
+
+     ],
+     _JAC_FILE: list[dict[str, any]] = [
+         {
+             "kind": "",
+             "lines": [
+                 34,
+                 52,
+                 20,
+                 62,
+                 48,
+                 40,
+                 20,
+                 58,
+                 44,
+                 20,
+                 60,
+                 50,
+                 70,
+                 40,
+                 20,
+                 66,
+                 30
+             ]
+         },
+
+     ],
+     _IMPORTS: list[dict[str, str]] = [
+         {
+             "code": "import from sklearn.linear_model { LinearRegression }",
+             "eco": "PyPI",
+             "out": "Python bytecode, on the server"
+         },
+         {
+             "code": "import from \"date-fns\" { format }",
+             "eco": "npm",
+             "out": "JavaScript, in the browser"
+         },
+         {
+             "code": "import from \"libm.so\" { def sqrt(x: f64) -> f64; }",
+             "eco": "C ABI",
+             "out": "native machine code"
+         },
+
+     ];
+
+def glue_color(kind: str) -> str;
+
+def glue_label(kind: str) -> str;
+
+def:pub FileGlyph(name: str, segs: list[dict[str, any]]) -> JsxElement;
+
+def:pub GlueChip(kind: str, struck: bool = False) -> JsxElement;
+
+def:pub CompareRow(
+    label: str,
+    hint: str,
+    delta_from: str,
+    delta_to: str,
+    delta_unit: str,
+    left: any = None,
+    right: any = None,
+    first: bool = False
+) -> JsxElement;
+
+def:pub StackCompare -> JsxElement;
+
+def:pub ImportTable -> JsxElement;
+
+def:pub OneLanguage -> JsxElement;
+
+impl glue_color(kind: str) -> str {
+    for g in _GLUE_KINDS {
+        if g["key"] == kind {
+            return g["color"];
+        }
+    }
+    return "";
+}
+
+impl glue_label(kind: str) -> str {
+    for g in _GLUE_KINDS {
+        if g["key"] == kind {
+            return g["label"];
+        }
+    }
+    return "";
+}
+
+impl TierLabel(y: int, text: str, hot: bool = False) -> JsxElement {
     return
         <text
             x="500"
@@ -56,7 +264,7 @@ def:pub TierLabel(y: int, text: str, hot: bool = False) -> JsxElement {
         </text>;
 }
 
-def:pub ConvergeDiagram -> JsxElement {
+impl ConvergeDiagram -> JsxElement {
     return
         <div className="overflow-x-auto">
             <svg
@@ -253,172 +461,7 @@ def:pub ConvergeDiagram -> JsxElement {
         </div>;
 }
 
-glob _LAYERS: list[dict[str, any]] = [
-         {"name": "Web", "tools": ["JavaScript", "TypeScript", "React", "CSS", "npm"]},
-         {
-             "name": "Mobile",
-             "tools": [
-                 "Swift",
-                 "Kotlin",
-                 "Xcode",
-                 "Android Studio",
-                 "App Store",
-                 "Google Play"
-             ]
-         },
-         {
-             "name": "Backend",
-             "tools": ["Python", "FastAPI", "PyPI", "pytest", "Celery"]
-         },
-         {
-             "name": "Database",
-             "tools": ["PostgreSQL", "SQLAlchemy", "Alembic", "MongoDB"]
-         },
-         {"name": "Deployment", "tools": ["Docker", "Kubernetes", "Terraform", "AWS"]},
-
-     ],
-     _GLUE_KINDS: list[dict[str, str]] = [
-         {"key": "api", "label": "API clients", "color": "#ef4444"},
-         {"key": "rest", "label": "REST endpoints", "color": "#a855f7"},
-         {"key": "ser", "label": "serializers", "color": "#14b8a6"},
-         {"key": "orm", "label": "ORM mapping", "color": "#22c55e"},
-         {"key": "schema", "label": "schemas & migrations", "color": "#6366f1"},
-         {"key": "deploy", "label": "deployment manifests", "color": "#ec4899"},
-         {"key": "config", "label": "config & env variables", "color": "#0ea5e9"},
-
-     ],
-     _ROLES: list[dict[str, any]] = [
-         {
-             "role": "Frontend engineer",
-             "lang": "TypeScript · React",
-             "kinds": ["ser", "api"],
-             "files": [
-                 {
-                     "name": "App.tsx",
-                     "segs": [
-                         {"kind": "", "lines": [62, 48]},
-                         {"kind": "ser", "lines": [40, 56, 34]},
-                         {"kind": "", "lines": [70, 52]},
-                         {"kind": "api", "lines": [66, 82, 54, 72, 60, 76, 48]},
-                         {"kind": "", "lines": [44, 62, 70, 56, 38, 64]},
-
-                     ]
-                 },
-
-             ]
-         },
-         {
-             "role": "Backend engineer",
-             "lang": "Python · FastAPI",
-             "kinds": ["ser", "rest"],
-             "files": [
-                 {
-                     "name": "main.py",
-                     "segs": [
-                         {"kind": "", "lines": [72, 58]},
-                         {"kind": "ser", "lines": [46, 56, 40, 52, 36]},
-                         {
-                             "kind": "rest",
-                             "lines": [40, 66, 54, 72, 46, 60, 76, 50, 64, 42]
-                         },
-                         {"kind": "", "lines": [30]},
-
-                     ]
-                 },
-
-             ]
-         },
-         {
-             "role": "Data engineer",
-             "lang": "Python · SQLAlchemy",
-             "kinds": ["schema", "orm"],
-             "files": [
-                 {
-                     "name": "db.py",
-                     "segs": [
-                         {"kind": "schema", "lines": [56, 70, 46, 62, 50, 66]},
-                         {
-                             "kind": "orm",
-                             "lines": [50, 66, 44, 60, 54, 72, 48, 64, 58, 40, 62]
-                         },
-                         {"kind": "", "lines": [42, 30]},
-
-                     ]
-                 },
-
-             ]
-         },
-         {
-             "role": "DevOps engineer",
-             "lang": "Docker · Kubernetes",
-             "kinds": ["deploy", "config"],
-             "files": [
-                 {
-                     "name": "Dockerfile",
-                     "segs": [{"kind": "deploy", "lines": [50, 40, 62, 46, 70]}]
-                 },
-                 {
-                     "name": "deployment.yaml",
-                     "segs": [
-                         {"kind": "deploy", "lines": [46, 56, 40, 62, 50, 66, 36]},
-                         {"kind": "config", "lines": [52, 66, 42]},
-
-                     ]
-                 },
-
-             ]
-         },
-
-     ],
-     _JAC_FILE: list[dict[str, any]] = [
-         {
-             "kind": "",
-             "lines": [
-                 34,
-                 52,
-                 20,
-                 62,
-                 48,
-                 40,
-                 20,
-                 58,
-                 44,
-                 20,
-                 60,
-                 50,
-                 70,
-                 40,
-                 20,
-                 66,
-                 30
-             ]
-         },
-
-     ],
-     _IMPORTS: list[dict[str, str]] = [
-         {
-             "code": "import from sklearn.linear_model { LinearRegression }",
-             "eco": "PyPI",
-             "out": "Python bytecode, on the server"
-         },
-         {
-             "code": "import from \"date-fns\" { format }",
-             "eco": "npm",
-             "out": "JavaScript, in the browser"
-         },
-         {
-             "code": "import from \"libm.so\" { def sqrt(x: f64) -> f64; }",
-             "eco": "C ABI",
-             "out": "native machine code"
-         },
-
-     ];
-
-def glue_color(kind: str) -> str;
-
-def glue_label(kind: str) -> str;
-
-def:pub FileGlyph(name: str, segs: list[dict[str, any]]) -> JsxElement {
+impl FileGlyph(name: str, segs: list[dict[str, any]]) -> JsxElement {
     return
         <div className="code-window overflow-hidden rounded-lg">
             <div
@@ -458,7 +501,7 @@ def:pub FileGlyph(name: str, segs: list[dict[str, any]]) -> JsxElement {
         </div>;
 }
 
-def:pub GlueChip(kind: str, struck: bool = False) -> JsxElement {
+impl GlueChip(kind: str, struck: bool = False) -> JsxElement {
     return
         <span
             className={cn(
@@ -474,7 +517,7 @@ def:pub GlueChip(kind: str, struck: bool = False) -> JsxElement {
         </span>;
 }
 
-def:pub CompareRow(
+impl CompareRow(
     label: str,
     hint: str,
     delta_from: str,
@@ -544,7 +587,7 @@ def:pub CompareRow(
         </>;
 }
 
-def:pub StackCompare -> JsxElement {
+impl StackCompare -> JsxElement {
     stack_left = <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
         {for layer in _LAYERS {
             <div
@@ -679,7 +722,7 @@ def:pub StackCompare -> JsxElement {
         </div>;
 }
 
-def:pub ImportTable -> JsxElement {
+impl ImportTable -> JsxElement {
     return
         <div className="overflow-hidden rounded-xl border border-border/70">
             <div
@@ -706,7 +749,7 @@ def:pub ImportTable -> JsxElement {
         </div>;
 }
 
-def:pub OneLanguage -> JsxElement {
+impl OneLanguage -> JsxElement {
     has detailed: bool = False;
 
     return
@@ -775,22 +818,4 @@ def:pub OneLanguage -> JsxElement {
                 </div>
             </Reveal>
         </HomeSection>;
-}
-
-impl glue_color(kind: str) -> str {
-    for g in _GLUE_KINDS {
-        if g["key"] == kind {
-            return g["color"];
-        }
-    }
-    return "";
-}
-
-impl glue_label(kind: str) -> str {
-    for g in _GLUE_KINDS {
-        if g["key"] == kind {
-            return g["label"];
-        }
-    }
-    return "";
 }

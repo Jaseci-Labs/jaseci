@@ -1,4 +1,18 @@
-def:pub Card(props: any) -> JsxElement {
+def:pub Card(props: any) -> JsxElement;
+
+def:pub CardHeader(props: any) -> JsxElement;
+
+def:pub CardTitle(props: any) -> JsxElement;
+
+def:pub CardDescription(props: any) -> JsxElement;
+
+def:pub CardAction(props: any) -> JsxElement;
+
+def:pub CardContent(props: any) -> JsxElement;
+
+def:pub CardFooter(props: any) -> JsxElement;
+
+impl Card(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     size = props["size"] or "default";
     return
@@ -13,7 +27,7 @@ def:pub Card(props: any) -> JsxElement {
         />;
 }
 
-def:pub CardHeader(props: any) -> JsxElement {
+impl CardHeader(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     return
         <div
@@ -26,7 +40,7 @@ def:pub CardHeader(props: any) -> JsxElement {
         />;
 }
 
-def:pub CardTitle(props: any) -> JsxElement {
+impl CardTitle(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     return
         <div
@@ -39,7 +53,7 @@ def:pub CardTitle(props: any) -> JsxElement {
         />;
 }
 
-def:pub CardDescription(props: any) -> JsxElement {
+impl CardDescription(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     return
         <div
@@ -52,7 +66,7 @@ def:pub CardDescription(props: any) -> JsxElement {
         />;
 }
 
-def:pub CardAction(props: any) -> JsxElement {
+impl CardAction(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     return
         <div
@@ -65,7 +79,7 @@ def:pub CardAction(props: any) -> JsxElement {
         />;
 }
 
-def:pub CardContent(props: any) -> JsxElement {
+impl CardContent(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     return
         <div
@@ -78,7 +92,7 @@ def:pub CardContent(props: any) -> JsxElement {
         />;
 }
 
-def:pub CardFooter(props: any) -> JsxElement {
+impl CardFooter(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     return
         <div

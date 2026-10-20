@@ -1,7 +1,13 @@
 import from "@hugeicons/react" { HugeiconsIcon }
 import from "@hugeicons/core-free-icons" { Copy01Icon, CheckmarkCircle01Icon }
 
-def:pub CopyCommandBlock(lines: list[str], className: str = "") -> JsxElement {
+def:pub CopyCommandBlock(lines: list[str], className: str = "") -> JsxElement;
+
+def:pub CopyCommand(
+    command: str, display: str = "", className: str = "", prefix: str = "$"
+) -> JsxElement;
+
+impl CopyCommandBlock(lines: list[str], className: str = "") -> JsxElement {
     has copied: bool = False;
 
     def handle_copy(_e: MouseEvent);
@@ -39,7 +45,7 @@ def:pub CopyCommandBlock(lines: list[str], className: str = "") -> JsxElement {
         </button>;
 }
 
-def:pub CopyCommand(
+impl CopyCommand(
     command: str, display: str = "", className: str = "", prefix: str = "$"
 ) -> JsxElement {
     has copied: bool = False;

@@ -1,3 +1,5 @@
-def:pub page -> JsxPage {
+def:pub page -> JsxPage;
+
+impl page -> JsxPage {
     return <GithubCallback/>;
 }
