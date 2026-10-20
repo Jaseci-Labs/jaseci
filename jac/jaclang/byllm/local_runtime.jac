@@ -4,9 +4,6 @@ glob LOCAL_MODELS: dict[str, dict[str, any]] = {
          "gemma-4-e4b": {
              "repo": "unsloth/gemma-4-E4B-it-GGUF",
              "file": "gemma-4-E4B-it-Q4_K_M.gguf",
-             "revision": "bfc15c382204943c3a8fff0c750b94ae2364d7a3",
-             "sha256": "85a896a047553e842f25297ee5b031d64ff30147d9c4af17b1e4b394cd1fab87",
-             "size_bytes": 4977171584,
              "size_mb": 5000,
              "n_ctx": 8192,
              "description": "Google Gemma 4 E4B (instruction-tuned, Q4_K_M)"
@@ -14,9 +11,6 @@ glob LOCAL_MODELS: dict[str, dict[str, any]] = {
          "gemma-4-e2b": {
              "repo": "unsloth/gemma-4-E2B-it-GGUF",
              "file": "gemma-4-E2B-it-Q4_K_M.gguf",
-             "revision": "0314792d7f1f7e229411f620751375812bb9faf2",
-             "sha256": "740185b21d22ceb83a11c3aa62ad5842ef32c70f6096d756bbee85a1e4ec34b8",
-             "size_bytes": 3106738272,
              "size_mb": 2500,
              "n_ctx": 8192,
              "description": "Google Gemma 4 E2B (smaller, faster)"
@@ -24,9 +18,6 @@ glob LOCAL_MODELS: dict[str, dict[str, any]] = {
          "qwen3.5-4b": {
              "repo": "unsloth/Qwen3.5-4B-GGUF",
              "file": "Qwen3.5-4B-Q4_K_M.gguf",
-             "revision": "e87f176479d0855a907a41277aca2f8ee7a09523",
-             "sha256": "00fe7986ff5f6b463e62455821146049db6f9313603938a70800d1fb69ef11a4",
-             "size_bytes": 2740937888,
              "size_mb": 2800,
              "n_ctx": 8192,
              "description": "Alibaba Qwen 3.5 4B (instruction-tuned, Q4_K_M)"
@@ -34,149 +25,18 @@ glob LOCAL_MODELS: dict[str, dict[str, any]] = {
      },
      LOCAL_PREFIX: str = "local:";
 
-def parse_alias(model_name: str) -> str | None {
-    if not model_name.startswith(LOCAL_PREFIX) {
-        return None;
-    }
-    return model_name[len(LOCAL_PREFIX):].strip().lower();
-}
+def parse_alias(model_name: str) -> str | None;
 
-def list_local_aliases -> list[str] {
-    return sorted(list(LOCAL_MODELS.keys()));
-}
+def list_local_aliases -> list[str];
 
-def wrap_tool_call(tc: dict[str, any]) -> object {
-    import from types { SimpleNamespace }
-    fn = tc.get("function", {});
-    return SimpleNamespace(
-        id=tc.get("id", ""),
-        type=tc.get("type", "function"),
-        function=SimpleNamespace(
-            name=fn.get("name", ""), arguments=fn.get("arguments", "")
-        )
-    );
-}
+def wrap_tool_call(tc: dict[str, any]) -> object;
 
-def _flatten_message_content(msg: dict[str, any]) -> dict[str, any] {
-    content = msg.get("content");
-    if not isinstance(content, list) {
-        return msg;
-    }
-    text_chunks: list[str] = [];
-    has_non_text = False;
-    for part in content {
-        if isinstance(part, dict) and part.get("type") == "text" {
-            text_chunks.append(str(part.get("text", "")));
-        } else {
-            has_non_text = True;
-        }
-    }
-    if has_non_text {
-        return msg;
-    }
-    new_msg: dict[str, any] = dict(msg);
-    new_msg["content"] = "\n".join(text_chunks);
-    return new_msg;
-}
+def _flatten_message_content(msg: dict[str, any]) -> dict[str, any];
 
-def _coerce_tool_calls(msg: dict[str, any]) -> dict[str, any] {
-    tcs = msg.get("tool_calls");
-    if not isinstance(tcs, list) or not tcs {
-        return msg;
-    }
-    changed = False;
-    coerced: list[dict[str, any]] = [];
-    for tc in tcs {
-        if isinstance(tc, dict) {
-            coerced.append(tc);
-            continue;
-        }
-        fn = tc?.function;
-        fn_args = getattr(fn, "arguments", "") or "";
-        if not isinstance(fn_args, str) {
-            fn_args = json.dumps(fn_args);
-        }
-        coerced.append(
-            {
-                "id": str(getattr(tc, "id", "") or ""),
-                "type": "function",
-                "function": {
-                    "name": str(getattr(fn, "name", "") or ""),
-                    "arguments": fn_args
-                }
-            }
-        );
-        changed = True;
-    }
-    if not changed {
-        return msg;
-    }
-    new_msg: dict[str, any] = dict(msg);
-    new_msg["tool_calls"] = coerced;
-    return new_msg;
-}
+def _coerce_tool_calls(msg: dict[str, any]) -> dict[str, any];
 
-def normalize_messages(messages: list[dict[str, any]]) -> list[dict[str, any]] {
-    out: list[dict[str, any]] = [];
-    for m in messages {
-        if isinstance(m, dict) {
-            out.append(_coerce_tool_calls(_flatten_message_content(m)));
-        } else {
-            out.append(m);
-        }
-    }
-    return out;
-}
+def normalize_messages(messages: list[dict[str, any]]) -> list[dict[str, any]];
 
-def normalize_response_format(rf: dict[str, any] | None) -> dict[str, any] | None {
-    if not isinstance(rf, dict) {
-        return rf;
-    }
-    if rf.get("type") == "json_schema" {
-        js: any = rf.get("json_schema") or {};
-        schema = js.get("schema") if isinstance(js, dict) else None;
-        translated: dict[str, any] = {"type": "json_object"};
-        if isinstance(schema, dict) {
-            translated["schema"] = schema;
-        }
-        return translated;
-    }
-    return rf;
-}
+def normalize_response_format(rf: dict[str, any] | None) -> dict[str, any] | None;
 
-def filter_params(params: dict[str, any]) -> dict[str, any] {
-    accepted: set[str] = {
-        "messages",
-        "tools",
-        "tool_choice",
-        "response_format",
-        "stop",
-        "max_tokens",
-        "temperature",
-        "top_p",
-        "top_k",
-        "presence_penalty",
-        "frequency_penalty",
-        "repeat_penalty",
-        "seed"
-    };
-    out: dict[str, any] = {};
-    for (k, v) in params.items() {
-        if k in accepted and v is not None {
-            out[k] = v;
-        }
-    }
-    if "max_tokens" in out {
-        mt = out["max_tokens"];
-        if mt is None or mt == 0 {
-            out.pop("max_tokens", None);
-        }
-    }
-    if "messages" in out and isinstance(out["messages"], list) {
-        out["messages"] = normalize_messages(out["messages"]);
-    }
-    if "response_format" in out {
-        out["response_format"] = normalize_response_format(out["response_format"]);
-    }
-    return out;
-}
+def filter_params(params: dict[str, any]) -> dict[str, any];

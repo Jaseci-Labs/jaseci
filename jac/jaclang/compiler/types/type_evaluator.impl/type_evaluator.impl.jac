@@ -4507,7 +4507,7 @@ impl TypeEvaluator._is_sv_async_call(expr: FuncCall) -> bool {
     return id(tgt.sym) in syms;
 }
 
-impl TypeEvaluator._prefetch_types{
+impl TypeEvaluator._prefetch_types {
     def get_types_class(type_name: str) -> ClassType | None {
         return self._get_class_from_module(self.types_module, type_name);
     }
@@ -4739,7 +4739,8 @@ impl TypeEvaluator._init_prelude_from_sources -> list[Module] {
 
     self.ambient_typing_names_by_module = raw_groups;
     self.ambient_typing_names_by_module["typing"] = typing_ambient_flat;
-    for typing_name in typing_ambient_flat {
+
+    for typing_name in sorted(typing_ambient_flat) {
         typing_sym = typing_mod.names_in_scope.get(typing_name);
         if typing_sym is None {
             continue;
@@ -4762,16 +4763,7 @@ impl TypeEvaluator._init_prelude_from_sources -> list[Module] {
 
 glob FLOW_QUERY_DEPTH: int = 48;
 
-def _find_cfg_node_for(at_node: UniNode) -> UniCFGNode | None {
-    cur: UniNode | None = at_node;
-    while cur is not None {
-        if isinstance(cur, UniCFGNode) and not isinstance(cur, InnerCompr) {
-            return cur;
-        }
-        cur = cur.parent;
-    }
-    return None;
-}
+def _find_cfg_node_for(at_node: UniNode) -> UniCFGNode | None;
 
 impl TypeEvaluator.flow_pred_never_returns(pred: UniCFGNode) -> bool {
     if not isinstance(pred, ExprStmt) {
@@ -6804,4 +6796,15 @@ impl TypeEvaluator._scope_is_current(scope: UniScopeNode) -> bool {
         return False;
     }
     return self.program.find_module(self.program.hub_key(mod.loc.mod_path)) is mod;
+}
+
+impl _find_cfg_node_for(at_node: UniNode) -> UniCFGNode | None {
+    cur: UniNode | None = at_node;
+    while cur is not None {
+        if isinstance(cur, UniCFGNode) and not isinstance(cur, InnerCompr) {
+            return cur;
+        }
+        cur = cur.parent;
+    }
+    return None;
 }

@@ -154,7 +154,6 @@ graph import {
     }
     byllm.visit_routing --> runtime.runtime.JacLLM.by_operator { route_visit }
     cache.home ++> cli.commands.cache { cache_home }
-    cache.locking ++> byllm.model_cache { FileLock }
     cache.policy ++> [
         cli.commands.cache { format_bytes },
         cli.format_cache {
@@ -298,6 +297,10 @@ graph import {
         register_project_template
     }
     cli.workpool ++> [
+        compiler.backends.native.na_compile_pass.codegen_map {
+            MEM_HEADROOM,
+            memory_headroom_bytes
+        },
         dist.precompile_bytecode._precompile_retire {
             WORKER_MEM_BYTES,
             env_int,
@@ -531,7 +534,6 @@ graph import {
         host_native_fact
     }
     compiler.backends.native.kernel_resolve ++> dist.precompile_bytecode.seal_native {
-        SEALED_LINK_MODE,
         kernel_lib_name
     }
     compiler.backends.native.kernel_resolve --> [
@@ -4356,9 +4358,9 @@ graph import byllm {
         cli._cmd_model {
             force_pull,
             get_cache_dir,
+            is_downloaded,
             list_downloaded,
-            remove_alias,
-            weight_status
+            remove_alias
         },
         llm { ensure_model },
     ]
@@ -4415,6 +4417,7 @@ graph import byllm {
             MockRawResponse,
             MockToolCall,
             StreamEvent,
+            Text,
             Tool,
             ToolCallResultMsg,
             Video
@@ -4439,17 +4442,17 @@ graph import byllm {
         },
         mtir {
             LiteLLMMessage,
-            Media,
             Message,
             MessageRole,
             MessageType,
             Text,
             Tool,
             ToolCallResultMsg,
+            as_media_list,
             image_resp_kind
         },
         parallel { ToolCallResultMsg, normalize_tool_result },
-        systemone.build_state { Media },
+        systemone.build_state { as_media_list },
         systemone.lower { image_resp_kind },
         visit_routing.route_visit { Message, MessageRole },
     ]
@@ -5696,11 +5699,7 @@ graph import compiler {
             | tests.test_unknown_cascade
             | tests.test_zstd_equivalence
             | tools.lang_tools { CompileOptions },
-        backends.native.kernel_resolve {
-            CompileOptions,
-            NATIVE_LINK_MODE_BITCODE,
-            NATIVE_LINK_MODE_OBJECTS
-        },
+        backends.native.kernel_resolve { CompileOptions, NATIVE_LINK_MODE_OBJECTS },
         backends.native.link_plan {
             CompileOptions,
             NATIVE_LINK_MODE_BITCODE,
@@ -6140,6 +6139,7 @@ graph import compiler {
             STR_LEN_TAG_SHIFT,
             is_package_keyed_path,
             native_unit_identity,
+            real_path,
             str_len_tag
         },
         backends.native.na_ir_gen_pass.NaIRGenPass.__post_init__ { native_unit_prefix },
@@ -6316,6 +6316,7 @@ graph import compiler {
             set_effective_default_codespace
         },
         driver.program.JacProgram.declared_codespace { is_client_by_location },
+        driver.program.JacProgram.init { forget_real_paths },
         driver.session_compile.compile_in_session {
             get_effective_default_codespace_override,
             reset_native_unit_compile,
@@ -6353,6 +6354,7 @@ graph import compiler {
         passes.endpoint_effect_pass.EndpointEffectPass._classify {
             endpoint_descriptor
         },
+        passes.layout_pass { real_path },
         passes.layout_pass._archetype_native_name { native_arch_name },
         passes.layout_pass.interface_class_native_name { native_arch_name },
         placement.placement.native_blocker_scan {
@@ -7022,7 +7024,8 @@ graph import compiler {
             W3050,
             W3051,
             W3053,
-            W3054
+            W3054,
+            W3055
         },
         tools.jac_auto_lint_pass.JacAutoLintPass._check_filter_compare_tautology {
             W3040
@@ -7304,7 +7307,7 @@ graph import compiler {
             | passes.osp_analysis
             | passes.package_boundary_pass
             | passes.placement_pass
-            | passes.type_checker_pass.TypeCheckPass.exit_return_stmt
+            | passes.type_checker_pass.TypeCheckPass._is_generator
             | tests.test_module_exports
             | tools.jac_auto_lint_pass
             | types.type_evaluator.TypeEvaluator._init_prelude_from_sources {
@@ -7317,9 +7320,6 @@ graph import compiler {
         passes.placement_pass.client_refused_elements { client_capability_violations },
         types.type_evaluator.TypeEvaluator.get_type_of_ability { ModuleFacts },
     ]
-    frontend.module_facts --> passes.type_checker_pass.TypeCheckPass.exit_ability {
-        ModuleFacts
-    }
     frontend.parser ++> driver.compiler.JacCompiler._prepare_tool_program {
         parse as rd_parse
     }
@@ -7339,11 +7339,13 @@ graph import compiler {
         driver.nativecache._module_files_and_imports { parse as rd_parse },
         driver.program.JacProgram.parse_source { annex_sources, parse_woven },
     ]
-    frontend.parser.lexer ++> tools.jac_auto_lint_pass.JacAutoLintPass._reparse_signature {
-        tokenize_full
-    }
+    frontend.parser.lexer ++> [
+        tools.jac_auto_lint_pass.JacAutoLintPass._impl_header { tokenize_full },
+        tools.jac_auto_lint_pass.JacAutoLintPass._reparse_signature { tokenize_full },
+    ]
     frontend.parser.parser ++> [
         jc_unit { parse_program },
+        tools.jac_auto_lint_pass.JacAutoLintPass._impl_header { Parser },
         tools.jac_auto_lint_pass.JacAutoLintPass._reparse_signature { Parser },
         types.type_evaluator.TypeEvaluator._resolve_string_type_expr {
             parse_expression
@@ -10840,7 +10842,7 @@ graph import compiler.backends.native {
         na_ir_gen_pass.NaIRGenPass._foreign_model { collect_foreign_structs },
     ]
     foreign --> na_ir_gen_pass.NaIRGenPass._codegen_call { declared_type_name }
-    kernel_resolve ++> kernel_stage0 { KERNEL_DEV_LINK_MODE, kernel_plan }
+    kernel_resolve ++> kernel_stage0 { KERNEL_LINK_MODE, kernel_plan }
     kernel_stage0 ++> kernel_resolve.build_kernel { link_kernel }
     lexical_scope ++> na_ir_gen_pass { FunctionSource, LexicalScope }
     link_glue ++> [
@@ -10912,7 +10914,13 @@ graph import compiler.backends.native {
     type lowering ++> na_compile_pass { NativeFallbacks }
     na_compile_pass ++> [
         entry_points.validate_native_application { native_linked_ir_text },
-        link_plan { NATIVE_CODE_MODEL, NATIVE_RELOC_MODEL },
+        link_plan {
+            NATIVE_CODE_MODEL,
+            NATIVE_RELOC_MODEL,
+            emit_unit_objects,
+            object_emit_jobs,
+            unit_function_counts
+        },
         wasm_build.prepare_wasm_module { optimize_unit },
     ]
     na_constants ++> [
@@ -11910,6 +11918,7 @@ graph import compiler.frontend {
             get_effective_default_codespace_override,
             set_effective_default_codespace
         },
+        source_layout { real_path },
         unitree.ModulePath.native_bundled_path {
             NATIVE_STDLIB_EXTENSIONS,
             is_bundled_native_module,

@@ -181,15 +181,15 @@ impl NaIRGenPass._native_variant_decl(decl: uni.Ability) -> uni.Ability {
         or decl.name_ref is None {
         return decl;
     }
-    variant = os.path.realpath(native_variant_of(mod.loc.mod_path));
-    if variant == os.path.realpath(mod.loc.mod_path) {
+    variant = real_path(native_variant_of(mod.loc.mod_path));
+    if variant == real_path(mod.loc.mod_path) {
         return decl;
     }
     variant_mod = self.prog.mod.hub.get(variant);
     if variant_mod is None {
         for imported in self._foreign_modules {
             if imported.loc is not None
-                and os.path.realpath(imported.loc.mod_path) == variant {
+                and real_path(imported.loc.mod_path) == variant {
                 variant_mod = imported;
                 break;
             }
@@ -1242,18 +1242,18 @@ impl NaIRGenPass._skip_is_other_module(
     callee_path: (str | None) = None;
     declaration = self._callee_ability_of(nd);
     if declaration is not None and isinstance(declaration.parent_scope, uni.Module) {
-        callee_path = os.path.realpath(declaration.parent_scope.source.file_path);
+        callee_path = real_path(declaration.parent_scope.source.file_path);
     } elif mod_qual is not None {
         import from jaclang.compiler.frontend.codeinfo { resolve_native_module }
         (_, source) = resolve_native_module(mod_qual, os.path.dirname(nd.loc.mod_path));
         if source is not None {
-            callee_path = os.path.realpath(source);
+            callee_path = real_path(source);
         }
     }
     if callee_path is None {
         return False;
     }
-    own_path = os.path.realpath(self.module.loc.mod_path) if self.module?.loc else None;
+    own_path = real_path(self.module.loc.mod_path) if self.module?.loc else None;
     return callee_path != own_path and callee_path not in origins;
 }
 
@@ -2433,7 +2433,7 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
         if isinstance(declaring_module, uni.Module) {
             declared_function = self._module_function(
                 (
-                    os.path.realpath(declaring_module.source.file_path),
+                    real_path(declaring_module.source.file_path),
                     declaration.name_ref.sym_name
                 )
             );
@@ -2454,7 +2454,7 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
         (_, source) = resolve_native_module(
             _mod_qual, os.path.dirname(nd.loc.mod_path)
         );
-        func = self._module_function((os.path.realpath(source), func_name))
+        func = self._module_function((real_path(source), func_name))
             if source is not None
             else None;
     }

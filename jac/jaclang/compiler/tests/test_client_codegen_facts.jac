@@ -143,7 +143,7 @@ test "a second client build lowers exactly what the first one did" {
 # full of bare `enumerate(` shipped without one diagnostic. The scan stays
 # unconditional; if that early return is ever hoisted back above it, this test
 # fails. (The rationale lives here because jaclang source is deslopped: the
-# repo's `[check.lint]` selects `strip-comments`/`strip-docstrings`, and
+# repo's `[check.lint]` selects `all`, which strips comments and docstrings, and
 # `*/tests/*` is the exclusion that lets a note like this survive.)
 test "an unlowered builtin in the bundle is an error, never silence" {
     (base, widget) = _project();
