@@ -3645,9 +3645,7 @@ impl NaIRGenPass._try_flow_future(nd: uni.ConcurrentExpr) -> (ir.Value | None) {
     }
     _par_ok = (self.module.gen.nogc_enforced and self._gc_mode() == "none")
         or (self._gc_mode() == "rc" and not self._rc_debug_codegen);
-    if not _par_ok
-        or "wasm" in str(self.llvm_module.triple)
-        or self._gen_ctx is not None {
+    if not _par_ok or self._target_is_wasm() or self._gen_ctx is not None {
         return None;
     }
     i64 = ir.IntType(64);

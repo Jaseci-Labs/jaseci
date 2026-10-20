@@ -62,9 +62,7 @@ impl NaIRGenPass.postinit -> None {
         self.type_map[_scalar.name] = scalar_llvm_type(_scalar);
     }
     self.type_map["str"] = (
-        _byte_ptr
-            if "wasm" in str(self.llvm_module.triple or "")
-            else self._str_desc_type()
+        _byte_ptr if self._target_is_wasm() else self._str_desc_type()
     );
     self.type_map["LiteralString"] = self.type_map["str"];
     self.type_map["Region"] = _byte_ptr;
