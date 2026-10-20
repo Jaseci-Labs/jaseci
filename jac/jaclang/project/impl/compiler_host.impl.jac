@@ -566,16 +566,31 @@ impl ProjectHost.ct_environment -> CtEnvironment {
     import sys;
     import platform;
     import from jaclang.compiler.frontend.codeinfo { effective_native_target }
-    import from jaclang.compiler.target_spec { UnknownTarget, target_spec }
-    triple = effective_native_target();
+    triple = effective_native_target().lower();
     if triple {
-        try {
-            spec = target_spec(triple);
-            machine = {"macos-aarch64": "arm64", "windows-x86_64": "AMD64"}.get(
-                spec.osarch, spec.arch
-            );
-            return CtEnvironment(os=spec.os_family, arch=machine);
-        } except UnknownTarget {}
+        """Parsed here rather than through target_spec: this runs while the
+        type evaluator compiles any module, target_spec.jac included.""";
+        arch = "";
+        if "aarch64" in triple or "arm64" in triple {
+            arch = "aarch64";
+        } elif "x86_64" in triple or "amd64" in triple {
+            arch = "x86_64";
+        }
+        if arch {
+            if "darwin" in triple or "apple" in triple or "macos" in triple {
+                return CtEnvironment(
+                    os="darwin", arch=("arm64" if arch == "aarch64" else arch)
+                );
+            }
+            if "windows" in triple or "msvc" in triple or "mingw" in triple {
+                return CtEnvironment(
+                    os="windows", arch=("AMD64" if arch == "x86_64" else arch)
+                );
+            }
+            if "linux" in triple {
+                return CtEnvironment(os="linux", arch=arch);
+            }
+        }
     }
     host_os = "linux";
     if sys.platform.startswith("win") {
