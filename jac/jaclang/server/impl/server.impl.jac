@@ -1420,9 +1420,22 @@ impl JacAPIServer.serve_background(
             on_ready(bound_port);
         }
     }
-    stop_transport = serving.serve_background(
-        on_ready=_ready, port_retries=port_retries
-    );
+    try {
+        stop_transport = serving.serve_background(
+            on_ready=_ready, port_retries=port_retries
+        );
+    } except BaseException {
+        try {
+            try {
+                self.scheduler.stop(timeout=self.drain.remaining());
+            } finally {
+                stop_worker();
+            }
+        } except BaseException {
+            logger.exception('background startup cleanup failed');
+        }
+        raise;
+    }
     def _stop {
         stop_transport();
         self.scheduler.stop(timeout=self.drain.remaining());
