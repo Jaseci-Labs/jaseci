@@ -272,13 +272,15 @@ def seal_timeout_setting(project_dir: str) -> int {
     if section is None or "seal_timeout" not in section {
         return DEFAULT_SEAL_TIMEOUT_S;
     }
-    try {
-        value = int(section.get("seal_timeout"));
-    } except (TypeError, ValueError) {
-        logger.warning("Ignoring non-integer [scale] seal_timeout in jac.toml.");
+    value = section.get("seal_timeout");
+
+    if isinstance(value, bool) or not isinstance(value, int) or value <= 0 {
+        logger.warning(
+            "Ignoring [scale] seal_timeout in jac.toml: not a positive whole number of seconds."
+        );
         return DEFAULT_SEAL_TIMEOUT_S;
     }
-    return value if value > 0 else DEFAULT_SEAL_TIMEOUT_S;
+    return value;
 }
 
 

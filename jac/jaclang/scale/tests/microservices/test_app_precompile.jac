@@ -109,7 +109,10 @@ test "the seal waits [scale] seal_timeout, 1800s when unset or invalid" {
         ("", "1800"),
         ("[scale]\nseal_timeout = 900\n", "900"),
         ("[scale]\nseal_timeout = \"soon\"\n", "1800"),
-        ("[scale]\nseal_timeout = 0\n", "1800")
+        ("[scale]\nseal_timeout = 0\n", "1800"),
+        ("[scale]\nseal_timeout = true\n", "1800"),
+        ("[scale]\nseal_timeout = 2.5\n", "1800"),
+        ("[scale]\nseal_timeout = inf\n", "1800")
     ] {
         _seal_call.clear();
         base = Path(tempfile.mkdtemp(prefix="jac-app-"));
