@@ -1595,6 +1595,31 @@ Cached input tokens are billed at a fraction of the normal rate, so a high hit r
 
 ---
 
+## Reasoning
+
+Some models think before they answer. byLLM keeps whatever reasoning the provider returns on the reply (`reasoning_content`, Claude's signed `thinking_blocks`) and sends it back on the next call unchanged, so the prompt cache still matches. Models that keep their reasoning hidden (OpenAI, Claude by default) return only an encrypted copy or nothing. Each `per_call` usage entry has `reasoning_tokens`, which is already counted inside `completion_tokens`.
+
+Turn thinking on with the provider's own parameter, per call or under `[byllm.call_params]` in `jac.toml`. `reasoning_effort`, `thinking` and `extra_body` are sent only when set:
+
+```jac
+def plan(goal: str) -> str by llm(reasoning_effort="low");
+```
+
+### Recording every call
+
+`register_llm_call_hook(hook)` calls `hook(record)` after each model call of a tool-calling or non-streaming invocation, and `unregister_llm_call_hook(hook)` removes it. A hook that raises is logged, never raised, and it runs on the call's thread, so hand the record to a queue. The record has:
+
+| Field | Contents |
+|---|---|
+| `invocation_id`, `parent_invocation_id`, `caller` | Which `by llm()` call this was, as in agent telemetry |
+| `call_kind` | `react_iteration`, `final_answer_restream`, `recovery` or `compaction` |
+| `new_messages` | What this call sent that earlier calls did not; the first call includes the system prompt as sent and `conversation=` history |
+| `reply` | The full reply as a dict, reasoning included |
+| `usage` | This call's `per_call` usage entry |
+| `after_compaction` | `True` when compaction or a typed-output retry just rebuilt the history; `new_messages` is then the whole rebuilt request |
+
+---
+
 ## Multimodal Inputs
 
 byLLM supports image and video inputs through the `Image` and `Video` types. These can be used as parameters in any `by llm()` function or method.

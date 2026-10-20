@@ -27,7 +27,11 @@ import from jaclang.byllm.exceptions {
     OutputTruncatedError
 }
 import from jaclang.byllm.mcp { McpClient, McpTool }
-import from jaclang.byllm.telemetry { register_agent_callback }
+import from jaclang.byllm.telemetry {
+    register_agent_callback,
+    register_llm_call_hook,
+    unregister_llm_call_hook
+}
 import from jaclang.byllm.parallel { dispatch_batch, mark_serialize }
 
 glob by = JacRuntime.by ,
@@ -62,6 +66,8 @@ glob by = JacRuntime.by ,
          'ToolCallResultMsg',
          'Video',
          'register_agent_callback',
+         'register_llm_call_hook',
+         'unregister_llm_call_hook',
          'dispatch_batch',
          'mark_serialize'
      ];

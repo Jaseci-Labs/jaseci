@@ -3,12 +3,19 @@ import from contextvars { ContextVar }
 import logging;
 
 glob _agent_callbacks: list = [],
+     _llm_call_hooks: list = [],
      logger = logging.getLogger(__name__),
      _current_invocation_id: ContextVar = ContextVar(
          'byllm_invocation_id', default=None
      );
 
 def:pub register_agent_callback(callback: Callable) -> None;
+
+def:pub register_llm_call_hook(hook: Callable) -> None;
+
+def:pub unregister_llm_call_hook(hook: Callable) -> None;
+
+def _notify_llm_call(mt_run: object) -> None;
 
 def _aggregate_usage(usage_history: list[dict]) -> dict[str, object];
 

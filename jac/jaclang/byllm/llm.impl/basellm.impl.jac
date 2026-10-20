@@ -215,13 +215,16 @@ def _usage_int(usage: any, key: str) -> int {
                 if key == "cache_read_input_tokens"
                 else "cache_creation_tokens"
                     if key == "cache_creation_input_tokens"
-                    else None
+                    else "reasoning_tokens" if key == "reasoning_tokens" else None
         );
+        details_name = "completion_tokens_details"
+            if key == "reasoning_tokens"
+            else "prompt_tokens_details";
         if detail_key {
             ptd = (
-                usage.get("prompt_tokens_details")
+                usage.get(details_name)
                     if isinstance(usage, dict)
-                    else usage?.prompt_tokens_details
+                    else getattr(usage, details_name, None)
             );
             if ptd is not None {
                 val = (
@@ -364,6 +367,7 @@ def _record_usage(
     record["cache_creation_input_tokens"] = _usage_int(
         usage_obj, "cache_creation_input_tokens"
     );
+    record["reasoning_tokens"] = _usage_int(usage_obj, "reasoning_tokens");
     mt_run._usage_history.append(record);
 }
 
@@ -397,7 +401,12 @@ def _copy_for_compaction(model: BaseLLM) -> BaseLLM {
 
 glob _CHARS_PER_TOKEN: int = 4,
      _TAIL_BUDGET_RATIO: float = 0.25,
-     _MIN_SLICE_RATIO: float = 0.05;
+     _MIN_SLICE_RATIO: float = 0.05,
+     _PASS_THROUGH_PARAMS: tuple[str, ...] = (
+         "reasoning_effort",
+         "thinking",
+         "extra_body"
+     );
 
 
 def _message_role(msg: any) -> str {
@@ -439,7 +448,38 @@ def _compaction_line(msg: any) -> str {
 
 
 def _estimate_tokens(messages: list[any]) -> int {
-    return sum(len(_compaction_line(msg)) for msg in messages) // _CHARS_PER_TOKEN;
+    return sum(
+        len(_compaction_line(msg)) + _reasoning_chars(msg) for msg in messages
+    ) // _CHARS_PER_TOKEN;
+}
+
+
+def _reasoning_chars(msg: any) -> int {
+    total = len(str(_msg_field(msg, "reasoning_content") or ""));
+    for block in _msg_field(msg, "thinking_blocks") or [] {
+        if isinstance(block, dict) {
+            total += len(str(block.get("thinking") or ""));
+        }
+    }
+    return total;
+}
+
+
+def _msg_field(msg: any, key: str) -> any {
+    return msg.get(key) if isinstance(msg, dict) else getattr(msg, key, None);
+}
+
+
+def _delta_reasoning(chunk: object) -> str {
+    if isinstance(chunk, dict) {
+        choices: any = chunk.get("choices") or [];
+        delta: any = (choices[0].get("delta") or {}) if choices else {};
+        return str(delta.get("reasoning_content") or "");
+    }
+    if chunk?.choices and chunk?.choices?[0]?.delta {
+        return str(chunk.choices[0].delta?.reasoning_content or "");
+    }
+    return "";
 }
 
 
@@ -706,6 +746,8 @@ impl BaseLLM._compact_messages(mt_run: MTRuntime, cp: dict[str, any]) -> bool {
         return False;
     }
     mt_run.messages = compacted;
+    mt_run._llm_hook_cursor = 0;
+    mt_run._llm_hook_compacted = True;
     logger.info(
         f"byLLM compaction: reduced message list from {original_len} to "
         f"{len(compacted)} messages, about {tokens_before} to {tokens_after} tokens"
@@ -876,6 +918,8 @@ impl BaseLLM._typed_retry_reset(
     mt_run: MTRuntime, base_msgs: list, base_scaffolding: list, reason: str, output: str
 ) -> None {
     mt_run.messages = list(base_msgs);
+    mt_run._llm_hook_cursor = 0;
+    mt_run._llm_hook_compacted = True;
     mt_run._scaffolding_ids = list(base_scaffolding);
     mt_run._has_final_output = False;
     mt_run._final_output = None;
@@ -1277,6 +1321,10 @@ impl BaseLLM.make_model_params(mt_run: MTRuntime) -> dict {
         }
     }
 
+    first = messages[0] if messages else None;
+    mt_run._sent_system = dict(first)
+        if isinstance(first, dict) and first.get("role") == "system"
+        else None;
     if _is_prompt_caching_eligible(self.model_name) {
         _apply_prompt_caching(messages, tools);
     }
@@ -1305,6 +1353,13 @@ impl BaseLLM.make_model_params(mt_run: MTRuntime) -> dict {
 
     if "tool_choice" in mt_run.call_params {
         params["tool_choice"] = mt_run.call_params["tool_choice"];
+    }
+
+    for key in _PASS_THROUGH_PARAMS {
+        value = self.call_params.get(key, _call_params_config.get(key));
+        if value is not None {
+            params[key] = value;
+        }
     }
 
     params = inject_schema_hint(params);
@@ -1561,6 +1616,7 @@ impl BaseLLM.dispatch_no_streaming(mt_run: MTRuntime) -> CompletionResult {
     usage_data = response.get("usage", {});
     _attach_call_cost(usage_data, self.model_name, response);
     _record_usage(mt_run, usage_data, actual_model, finish_reason=finish_reason);
+    _notify_llm_call(mt_run);
     _raise_if_empty_truncation(finish_reason, output_content, tool_calls_list);
     output_value = mt_run.parse_response(output_content)
         if not tool_calls_list
@@ -1604,9 +1660,13 @@ impl BaseLLM.dispatch_streaming(mt_run: MTRuntime) -> Generator[str, None, None]
     while True {
         finish_reason = "";
         produced = False;
+        mt_run._last_stream_chunks = [];
         try {
             response = self.model_call_with_stream(params);
             for chunk in response {
+                if mt_run._call_kind == "final_answer_restream" {
+                    mt_run._last_stream_chunks.append(chunk);
+                }
                 if chunk?.choices and chunk?.choices?[0]?.finish_reason {
                     finish_reason = str(chunk.choices[0].finish_reason);
                 }
@@ -1652,12 +1712,14 @@ impl BaseLLM.dispatch_streaming_with_tools(
     params.pop("api_key", None);
     chunks: list = [];
     content_buf = "";
+    reasoning_buf = "";
     no_stream = False;
     finish_reason = "";
     attempt = 0;
     while True {
         chunks = [];
         content_buf = "";
+        reasoning_buf = "";
 
         mt_run._tool_arg_deltas = [];
         settings = _tool_stream_settings(mt_run);
@@ -1680,6 +1742,7 @@ impl BaseLLM.dispatch_streaming_with_tools(
                         coalescer.observe(_frag);
                     }
                 }
+                reasoning_buf += _delta_reasoning(chunk);
                 delta_content = "";
                 if chunk?.choices and chunk?.choices?[0]?.delta {
                     delta_content = chunk.choices[0].delta?.content or "";
@@ -1738,13 +1801,17 @@ impl BaseLLM.dispatch_streaming_with_tools(
     }
     if message is None {
         message = {"role": "assistant", "content": content_buf};
+        if reasoning_buf {
+            message["reasoning_content"] = reasoning_buf;
+        }
     }
 
     has_native_tool_calls = bool((message or {}).get("tool_calls"));
     if (not self.supports_native_tools)
     or (mt_run.tools and not has_native_tool_calls) {
         if not has_native_tool_calls and not isinstance(message, dict) {
-            message = {"role": "assistant", "content": content_buf};
+            message = coerce_message_dict(message);
+            message["content"] = content_buf;
         }
         message = recover_tool_calls(message, [t.get_name() for t in mt_run.tools]);
     }
@@ -1760,6 +1827,7 @@ impl BaseLLM.dispatch_streaming_with_tools(
         if not tool_calls_list
         else output_content;
     _record_usage(mt_run, usage_data, actual_model, finish_reason=finish_reason);
+    _notify_llm_call(mt_run);
     out.append(
         CompletionResult(
             output=output_value,
@@ -1817,6 +1885,7 @@ impl BaseLLM.adispatch_no_streaming(mt_run: MTRuntime) -> CompletionResult {
     usage_data = response.get("usage", {});
     _attach_call_cost(usage_data, self.model_name, response);
     _record_usage(mt_run, usage_data, actual_model, finish_reason=finish_reason);
+    _notify_llm_call(mt_run);
     _raise_if_empty_truncation(finish_reason, output_content, tool_calls_list);
     output_value = mt_run.parse_response(output_content)
         if not tool_calls_list
@@ -1984,9 +2053,32 @@ impl BaseLLM._stream_final_answer(
         }
 
         if accumulated {
-            mt_run.add_message(
-                Message(role=MessageRole.ASSISTANT, content=accumulated)
-            );
+            final: dict[str, any] = {"role": "assistant", "content": accumulated};
+            try {
+                rebuilt = _rebuild_stream_chunks(mt_run._last_stream_chunks, None)
+                    if mt_run._last_stream_chunks
+                    else None;
+                if rebuilt {
+                    final = dict(
+                        coerce_message_dict(
+                            rebuilt.get("choices", [])[0].get("message")
+                        )
+                    );
+                    final["content"] = accumulated;
+                    final.pop("tool_calls", None);
+                }
+            } except Exception as e {
+                logger.debug(f"final answer rebuild failed, keeping the text: {e}");
+                reasoning = "".join(
+                    _delta_reasoning(c) for c in mt_run._last_stream_chunks
+                );
+                if reasoning {
+                    final["reasoning_content"] = reasoning;
+                }
+            }
+            mt_run._last_stream_chunks = [];
+            mt_run.add_message(final);
+            _notify_llm_call(mt_run);
         }
     }
 }

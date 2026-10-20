@@ -442,6 +442,22 @@ def coerce_message_dict(message: object) -> dict {
     if tc {
         out["tool_calls"] = tc;
     }
+    dump = message?.model_dump;
+    if callable(dump) {
+        for (key, value) in dict(dump(exclude_none=True)).items() {
+            if key not in out and key not in ("tool_calls", "function_call") {
+                out[key] = value;
+            }
+        }
+    }
+    extra = out.pop("provider_specific_fields", None);
+    if isinstance(extra, dict) {
+        for (key, value) in extra.items() {
+            if value is not None and key not in out {
+                out[key] = value;
+            }
+        }
+    }
     return out;
 }
 
