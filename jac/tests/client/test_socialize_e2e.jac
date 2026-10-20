@@ -67,7 +67,7 @@ def _site_source_dir -> str {
 """Copy the whole jaclang_org workspace into ``dest`` minus build artifacts.
 
 Every top-level entry comes along -- ``jac.toml``, the shared ``core/``
-tree and each app root (``web/``, ``mobile/``, ``cli/``) -- so the temp
+tree and each app (``web.jac``, ``mobile/``, ``cli.jac``) -- so the temp
 project is a complete workspace, not one app. Excludes ``node_modules`` /
 ``.jac`` / ``dist`` / ``build`` so the copy is a clean source tree the temp
 project can build from scratch.
@@ -119,8 +119,8 @@ def _setup_site_project(temp_dir: any) -> tuple[any, ...] {
     os.makedirs(project_dir, exist_ok=True);
     _copy_site_into(project_dir);
 
-    main_jac = os.path.join(project_dir, "web", "main.jac");
-    assert os.path.isfile(main_jac) , "site web/main.jac missing after copy";
+    main_jac = os.path.join(project_dir, "web.jac");
+    assert os.path.isfile(main_jac) , "site web.jac missing after copy";
     social_graph = os.path.join(project_dir, "core", "social_graph.jac");
     assert os.path.isfile(social_graph) , (
         "core/social_graph.jac (the social_graph service app) missing after copy"
