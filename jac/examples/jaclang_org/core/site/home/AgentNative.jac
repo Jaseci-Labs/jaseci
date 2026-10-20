@@ -52,7 +52,21 @@ glob _FN_LINES: list[str] = [
 
      ];
 
-def:pub FnMini -> JsxElement {
+def:pub FnMini -> JsxElement;
+
+def:pub ObjMini -> JsxElement;
+
+def:pub WalkMini -> JsxElement;
+
+def:pub WalkerDiagram -> JsxElement;
+
+def:pub Rung(
+    num: str, title: str, body: str, lines: list[str], file: str, diagram: any = None
+) -> JsxElement;
+
+def:pub AgentNative -> JsxElement;
+
+impl FnMini -> JsxElement {
     return
         <svg viewBox="0 0 320 96" className="w-full" aria-hidden="true">
             <rect
@@ -157,7 +171,7 @@ def:pub FnMini -> JsxElement {
         </svg>;
 }
 
-def:pub ObjMini -> JsxElement {
+impl ObjMini -> JsxElement {
     return
         <svg viewBox="0 0 320 120" className="w-full" aria-hidden="true">
             <rect
@@ -273,7 +287,7 @@ def:pub ObjMini -> JsxElement {
         </svg>;
 }
 
-def:pub WalkMini -> JsxElement {
+impl WalkMini -> JsxElement {
     return
         <svg viewBox="0 0 320 110" className="w-full" aria-hidden="true">
             <path
@@ -318,7 +332,7 @@ def:pub WalkMini -> JsxElement {
         </svg>;
 }
 
-def:pub WalkerDiagram -> JsxElement {
+impl WalkerDiagram -> JsxElement {
     return
         <div className="overflow-x-auto">
             <svg
@@ -597,7 +611,7 @@ def:pub WalkerDiagram -> JsxElement {
         </div>;
 }
 
-def:pub Rung(
+impl Rung(
     num: str, title: str, body: str, lines: list[str], file: str, diagram: any = None
 ) -> JsxElement {
     return
@@ -620,7 +634,7 @@ def:pub Rung(
         </Reveal>;
 }
 
-def:pub AgentNative -> JsxElement {
+impl AgentNative -> JsxElement {
     return
         <HomeSection id="agents">
             <svg width="0" height="0" className="absolute" aria-hidden="true">

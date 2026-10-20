@@ -50,7 +50,11 @@ impl fps_pct(v: float) -> str {
     return str(v * 100 / _FPS_MAX) + "%";
 }
 
-def:pub FpsBars -> JsxElement {
+def:pub FpsBars -> JsxElement;
+
+def:pub NativeBench -> JsxElement;
+
+impl FpsBars -> JsxElement {
     has hover: int = -1;
 
     return
@@ -151,7 +155,7 @@ def:pub FpsBars -> JsxElement {
         </div>;
 }
 
-def:pub NativeBench -> JsxElement {
+impl NativeBench -> JsxElement {
     return
         <HomeSection id="benchmark">
             <SectionHead

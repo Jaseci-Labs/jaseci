@@ -8,7 +8,9 @@ import from "@jac/mobui" {
     Linking
 }
 
-def:pub ScoresScreen(model: JacYacState) -> JsxElement {
+def:pub ScoresScreen(model: JacYacState) -> JsxElement;
+
+impl ScoresScreen(model: JacYacState) -> JsxElement {
     theme = useTheme();
     C = theme.colors;
     styles = makeStyles(C);

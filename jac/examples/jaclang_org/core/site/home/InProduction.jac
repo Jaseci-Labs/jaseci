@@ -32,7 +32,11 @@ impl pct(v: int) -> str {
     return str(v * 100 / _AXIS_MAX) + "%";
 }
 
-def:pub ReductionBars -> JsxElement {
+def:pub ReductionBars -> JsxElement;
+
+def:pub InProduction -> JsxElement;
+
+impl ReductionBars -> JsxElement {
     has hover: int = -1;
 
     return
@@ -130,7 +134,7 @@ def:pub ReductionBars -> JsxElement {
         </div>;
 }
 
-def:pub InProduction -> JsxElement {
+impl InProduction -> JsxElement {
     return
         <HomeSection id="in-production">
             <SectionHead

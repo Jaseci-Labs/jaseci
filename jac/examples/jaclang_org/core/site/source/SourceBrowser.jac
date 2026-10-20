@@ -17,7 +17,9 @@ def _build_rows(tree: list[SourceFile]) -> list[dict[str, any]];
 
 def:pub SourceBrowser(
     className: str = "", initial_path: str = "web.jac"
-) -> JsxElement {
+) -> JsxElement;
+
+impl SourceBrowser(className: str = "", initial_path: str = "web.jac") -> JsxElement {
     has tree: list[SourceFile] = [],
         rows: list[dict[str, any]] = [],
         closed: list[str] = [],

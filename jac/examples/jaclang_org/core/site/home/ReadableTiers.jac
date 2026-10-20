@@ -59,7 +59,17 @@ glob _ARCH_LINES: list[str] = [
 
      ];
 
-def:pub ScopeBars -> JsxElement {
+def:pub ScopeBars -> JsxElement;
+
+def:pub CheckLink(text: str) -> JsxElement;
+
+def:pub TierRow(
+    tier: str, name: str, question: str, file: str, when: str, lines: list[str]
+) -> JsxElement;
+
+def:pub ReadableTiers -> JsxElement;
+
+impl ScopeBars -> JsxElement {
     return
         <div className="flex flex-col gap-3">
             {for s in _SCOPES {
@@ -88,7 +98,7 @@ def:pub ScopeBars -> JsxElement {
         </div>;
 }
 
-def:pub CheckLink(text: str) -> JsxElement {
+impl CheckLink(text: str) -> JsxElement {
     return
         <div className="relative flex gap-4 py-6 pl-[19px]">
             <span className="w-px shrink-0 bg-border"></span>
@@ -103,7 +113,7 @@ def:pub CheckLink(text: str) -> JsxElement {
         </div>;
 }
 
-def:pub TierRow(
+impl TierRow(
     tier: str, name: str, question: str, file: str, when: str, lines: list[str]
 ) -> JsxElement {
     return
@@ -131,7 +141,7 @@ def:pub TierRow(
         </div>;
 }
 
-def:pub ReadableTiers -> JsxElement {
+impl ReadableTiers -> JsxElement {
     return
         <HomeSection id="readable">
             <SectionHead
