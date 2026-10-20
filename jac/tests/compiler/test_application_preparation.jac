@@ -1145,6 +1145,39 @@ test "a dynamic import of the application's own entry restores the prepared appl
     }
 }
 
+test "a seal's precompile looks up the module cache entries its prepare wrote" {
+    import from jaclang.compiler.driver.jir { get_module_cache_path }
+    import from jaclang.dist.precompile_bytecode { precompile_unit_context }
+    tmp = tempfile.mkdtemp(prefix='jac-prepare-seal-keys-');
+    base = Path(tmp);
+    path = base / 'main.jac';
+    helper = base / 'helper.jac';
+    try {
+        (base / 'jac.toml').write_text('[project]\nname="sealkeys"\n');
+        helper.write_text("def:pub helper -> int { return 2; }\n");
+        path.write_text(
+            "import from helper { helper }\ndef:pub hello -> int { return helper(); }\n"
+        );
+        import contextlib;
+        with contextlib.chdir(tmp) {
+            prepare_application(str(path), JacProgram(), tmp);
+            written = {
+                str(p) for p in (base / '.jac' / 'cache').rglob('helper.*.jir')
+            };
+            assert written , 'the prepare cached no entry for helper.jac';
+            with precompile_unit_context(str(helper), tmp) as selected {
+                looked = str(get_module_cache_path(str(helper)));
+            }
+        }
+        assert looked in written , (
+            f'the precompile looks up {looked}; the prepare wrote {sorted(written)}'
+        );
+    } finally {
+        forget(str(path));
+        shutil.rmtree(tmp, ignore_errors=True);
+    }
+}
+
 test "a preparation on another thread neither breaks nor wedges an in-process prepare" {
     import threading;
     import jaclang.compiler.driver.application as application;
