@@ -781,3 +781,33 @@ test "leaving while a peer holds the cluster still restores the env" {
         }
     }
 }
+
+test "a rebooted embedded host cleans up on its second leave" {
+    import from tempfile { TemporaryDirectory }
+    import from unittest.mock { patch }
+    import from jaclang.client.targets.desktop.native.host_boot {
+        _EMBEDDED_LOCKS,
+        _EMBEDDED_STOPPED,
+        _embedded_cluster_dir,
+        _join_embedded_store,
+        _stop_embedded_store
+    }
+    with TemporaryDirectory() as tmp {
+        calls: list[str] = [];
+        def _record(home: str) {
+            calls.append(home);
+        }
+        with patch("jaclang.data.pgembed.stop_cluster", side_effect=_record) {
+            _EMBEDDED_STOPPED.discard(tmp);
+            # First lifetime: join, leave. Second lifetime: join, leave --
+            # the stop recorded by the first must not swallow the second.
+            _join_embedded_store(tmp);
+            _stop_embedded_store(tmp);
+            _join_embedded_store(tmp);
+            _stop_embedded_store(tmp);
+            cluster = _embedded_cluster_dir(tmp);
+            assert calls == [cluster, cluster] , calls;
+            assert tmp not in _EMBEDDED_LOCKS;
+        }
+    }
+}
