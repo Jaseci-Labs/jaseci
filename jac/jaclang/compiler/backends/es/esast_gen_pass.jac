@@ -614,6 +614,7 @@ walker EsastGenPass(TreePass) {
     def _unpack_pattern(
         expr: uni.Expr, prefix: str, leaves: list[tuple[uni.Expr, str]]
     ) -> es.Pattern;
+
     def _resolve_source_module(nd: uni.Import) -> (uni.Module | None);
     def _resolve_call_ability(nd: uni.FuncCall) -> (uni.Ability | None);
     def _return_type_route_role(rt: uni.Expr) -> (str | None);

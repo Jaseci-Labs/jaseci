@@ -73,8 +73,7 @@ impl EsastGenPass.exit_assignment with uni.Assignment exit {
     if (
         not here.aug_op
         and any(
-            name in self.reactive_vars
-            for target in here.target
+            name in self.reactive_vars for target in here.target
             for (name, _) in self._collect_pattern_names(target)
         )
     ) {
@@ -436,8 +435,7 @@ impl EsastGenPass._lower_state_assignment(
     self._unpack_seq += 1;
     bound = f"__jac_unpack_{self._unpack_seq}";
     value = cast(es.Expression, value_expr or es.Identifier(name='undefined'));
-    # Bind every value before any write, so a swap reads old values. Only a lone
-    # tuple target destructures the value directly; other shapes bind it once.
+
     unpackable = (uni.TupleVal, uni.ListVal);
     shared = len(here.target) > 1 or not isinstance(here.target[0], unpackable);
     declarators: list[es.VariableDeclarator] = [];
@@ -477,8 +475,9 @@ impl EsastGenPass._unpack_pattern(
 ) -> es.Pattern {
     if isinstance(expr, (uni.TupleVal, uni.ListVal)) {
         elements = [
-            self._unpack_pattern(v, prefix, leaves) if isinstance(v, uni.Expr) else None
-            for v in expr.values
+            self._unpack_pattern(v, prefix, leaves)
+                if isinstance(v, uni.Expr)
+                else None for v in expr.values
         ];
         return self.sync_loc(es.ArrayPattern(elements=elements), jac_node=expr);
     }
