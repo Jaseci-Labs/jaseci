@@ -3,23 +3,43 @@ import from "radix-ui" { Dialog as DialogPrimitive }
 import from "@hugeicons/react" { HugeiconsIcon }
 import from "@hugeicons/core-free-icons" { Cancel01Icon }
 
-def:pub Dialog(props: any) -> JsxElement {
+def:pub Dialog(props: any) -> JsxElement;
+
+def:pub DialogTrigger(props: any) -> JsxElement;
+
+def:pub DialogPortal(props: any) -> JsxElement;
+
+def:pub DialogClose(props: any) -> JsxElement;
+
+def:pub DialogOverlay(props: any) -> JsxElement;
+
+def:pub DialogContent(props: any) -> JsxElement;
+
+def:pub DialogHeader(props: any) -> JsxElement;
+
+def:pub DialogFooter(props: any) -> JsxElement;
+
+def:pub DialogTitle(props: any) -> JsxElement;
+
+def:pub DialogDescription(props: any) -> JsxElement;
+
+impl Dialog(props: any) -> JsxElement {
     <DialogPrimitive.Root data-slot="dialog" {**props}/>
 }
 
-def:pub DialogTrigger(props: any) -> JsxElement {
+impl DialogTrigger(props: any) -> JsxElement {
     <DialogPrimitive.Trigger data-slot="dialog-trigger" {**props}/>
 }
 
-def:pub DialogPortal(props: any) -> JsxElement {
+impl DialogPortal(props: any) -> JsxElement {
     <DialogPrimitive.Portal data-slot="dialog-portal" {**props}/>
 }
 
-def:pub DialogClose(props: any) -> JsxElement {
+impl DialogClose(props: any) -> JsxElement {
     <DialogPrimitive.Close data-slot="dialog-close" {**props}/>
 }
 
-def:pub DialogOverlay(props: any) -> JsxElement {
+impl DialogOverlay(props: any) -> JsxElement {
     <DialogPrimitive.Overlay
         {**props}
         data-slot="dialog-overlay"
@@ -30,7 +50,7 @@ def:pub DialogOverlay(props: any) -> JsxElement {
     />
 }
 
-def:pub DialogContent(props: any) -> JsxElement {
+impl DialogContent(props: any) -> JsxElement {
     showCloseButton = props["showCloseButton"] is not False;  # jac:ignore[W2075]
     <DialogPortal>
         <DialogOverlay/>
@@ -60,7 +80,7 @@ def:pub DialogContent(props: any) -> JsxElement {
     </DialogPortal>
 }
 
-def:pub DialogHeader(props: any) -> JsxElement {
+impl DialogHeader(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     <div
         {**attrs}
@@ -69,7 +89,7 @@ def:pub DialogHeader(props: any) -> JsxElement {
     />
 }
 
-def:pub DialogFooter(props: any) -> JsxElement {
+impl DialogFooter(props: any) -> JsxElement {
     attrs: dict[str, any] = {** props};
     showCloseButton = props["showCloseButton"] or False;
     <div
@@ -91,7 +111,7 @@ def:pub DialogFooter(props: any) -> JsxElement {
     </div>
 }
 
-def:pub DialogTitle(props: any) -> JsxElement {
+impl DialogTitle(props: any) -> JsxElement {
     <DialogPrimitive.Title
         {**props}
         data-slot="dialog-title"
@@ -102,7 +122,7 @@ def:pub DialogTitle(props: any) -> JsxElement {
     />
 }
 
-def:pub DialogDescription(props: any) -> JsxElement {
+impl DialogDescription(props: any) -> JsxElement {
     <DialogPrimitive.Description
         {**props}
         data-slot="dialog-description"

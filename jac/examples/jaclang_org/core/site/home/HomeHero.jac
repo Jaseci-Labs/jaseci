@@ -8,7 +8,9 @@ glob HOME_INSTALL: str = "curl -fsSL https://jaclang.org/install.sh | bash",
 
      ];
 
-def:pub HomeHero -> JsxElement {
+def:pub HomeHero -> JsxElement;
+
+impl HomeHero -> JsxElement {
     def go(sec_id: str) {
         el: any = document.getElementById(sec_id);
         if el {
