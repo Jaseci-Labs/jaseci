@@ -176,6 +176,12 @@ def kernel_unit_path(rel: str) -> str;
 
 def kernel_unit_paths -> list[str];
 
+glob _REAL_PATHS: dict[str, str] = {};
+
+def real_path(path: str) -> str;
+
+def forget_real_paths;
+
 def is_kernel_unit_path(path: str) -> bool;
 
 glob NATIVE_STDLIB_EXTENSIONS: dict[str, str] = {"os": "_os_native"},

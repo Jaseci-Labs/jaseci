@@ -297,6 +297,10 @@ graph import {
         register_project_template
     }
     cli.workpool ++> [
+        compiler.backends.native.na_compile_pass.codegen_map {
+            MEM_HEADROOM,
+            memory_headroom_bytes
+        },
         dist.precompile_bytecode._precompile_retire {
             WORKER_MEM_BYTES,
             env_int,
@@ -530,7 +534,6 @@ graph import {
         host_native_fact
     }
     compiler.backends.native.kernel_resolve ++> dist.precompile_bytecode.seal_native {
-        SEALED_LINK_MODE,
         kernel_lib_name
     }
     compiler.backends.native.kernel_resolve --> [
@@ -5705,11 +5708,7 @@ graph import compiler {
             | tests.test_unknown_cascade
             | tests.test_zstd_equivalence
             | tools.lang_tools { CompileOptions },
-        backends.native.kernel_resolve {
-            CompileOptions,
-            NATIVE_LINK_MODE_BITCODE,
-            NATIVE_LINK_MODE_OBJECTS
-        },
+        backends.native.kernel_resolve { CompileOptions, NATIVE_LINK_MODE_OBJECTS },
         backends.native.link_plan {
             CompileOptions,
             NATIVE_LINK_MODE_BITCODE,
@@ -6149,6 +6148,7 @@ graph import compiler {
             STR_LEN_TAG_SHIFT,
             is_package_keyed_path,
             native_unit_identity,
+            real_path,
             str_len_tag
         },
         backends.native.na_ir_gen_pass.NaIRGenPass.__post_init__ { native_unit_prefix },
@@ -6325,6 +6325,7 @@ graph import compiler {
             set_effective_default_codespace
         },
         driver.program.JacProgram.declared_codespace { is_client_by_location },
+        driver.program.JacProgram.init { forget_real_paths },
         driver.session_compile.compile_in_session {
             get_effective_default_codespace_override,
             reset_native_unit_compile,
@@ -6362,6 +6363,7 @@ graph import compiler {
         passes.endpoint_effect_pass.EndpointEffectPass._classify {
             endpoint_descriptor
         },
+        passes.layout_pass { real_path },
         passes.layout_pass._archetype_native_name { native_arch_name },
         passes.layout_pass.interface_class_native_name { native_arch_name },
         placement.placement.native_blocker_scan {
@@ -7314,7 +7316,7 @@ graph import compiler {
             | passes.osp_analysis
             | passes.package_boundary_pass
             | passes.placement_pass
-            | passes.type_checker_pass.TypeCheckPass.exit_return_stmt
+            | passes.type_checker_pass.TypeCheckPass._is_generator
             | tests.test_module_exports
             | tools.jac_auto_lint_pass
             | types.type_evaluator.TypeEvaluator._init_prelude_from_sources {
@@ -7327,9 +7329,6 @@ graph import compiler {
         passes.placement_pass.client_refused_elements { client_capability_violations },
         types.type_evaluator.TypeEvaluator.get_type_of_ability { ModuleFacts },
     ]
-    frontend.module_facts --> passes.type_checker_pass.TypeCheckPass.exit_ability {
-        ModuleFacts
-    }
     frontend.parser ++> driver.compiler.JacCompiler._prepare_tool_program {
         parse as rd_parse
     }
@@ -10852,7 +10851,7 @@ graph import compiler.backends.native {
         na_ir_gen_pass.NaIRGenPass._foreign_model { collect_foreign_structs },
     ]
     foreign --> na_ir_gen_pass.NaIRGenPass._codegen_call { declared_type_name }
-    kernel_resolve ++> kernel_stage0 { KERNEL_DEV_LINK_MODE, kernel_plan }
+    kernel_resolve ++> kernel_stage0 { KERNEL_LINK_MODE, kernel_plan }
     kernel_stage0 ++> kernel_resolve.build_kernel { link_kernel }
     lexical_scope ++> na_ir_gen_pass { FunctionSource, LexicalScope }
     link_glue ++> [
@@ -10924,7 +10923,13 @@ graph import compiler.backends.native {
     type lowering ++> na_compile_pass { NativeFallbacks }
     na_compile_pass ++> [
         entry_points.validate_native_application { native_linked_ir_text },
-        link_plan { NATIVE_CODE_MODEL, NATIVE_RELOC_MODEL },
+        link_plan {
+            NATIVE_CODE_MODEL,
+            NATIVE_RELOC_MODEL,
+            emit_unit_objects,
+            object_emit_jobs,
+            unit_function_counts
+        },
         wasm_build.prepare_wasm_module { optimize_unit },
     ]
     na_constants ++> [
@@ -11922,6 +11927,7 @@ graph import compiler.frontend {
             get_effective_default_codespace_override,
             set_effective_default_codespace
         },
+        source_layout { real_path },
         unitree.ModulePath.native_bundled_path {
             NATIVE_STDLIB_EXTENSIONS,
             is_bundled_native_module,
