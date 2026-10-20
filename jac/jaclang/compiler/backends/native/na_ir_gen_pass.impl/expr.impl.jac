@@ -59,7 +59,7 @@ impl NaIRGenPass._codegen_expr(nd: (uni.UniNode | None)) -> (ir.Value | None) {
     } elif isinstance(nd, uni.UnaryExpr) {
         _result = self._codegen_unary(nd);
     } elif isinstance(nd, uni.FuncCall) {
-        _result = self._codegen_call(nd);
+        _result = self._void_call_value(nd, self._codegen_call(nd));
     } elif isinstance(nd, uni.AtomTrailer) {
         _result = self._codegen_atom_trailer(nd);
     } elif isinstance(nd, uni.BoolExpr) {
@@ -180,6 +180,37 @@ impl NaIRGenPass._codegen_required(nd: (uni.UniNode | None)) -> (ir.Value | None
         self.emit(E5092, node_override=nd, kind="expression", name=type(nd).__name__);
     }
     return val;
+}
+
+impl NaIRGenPass._void_call_value(
+    nd: uni.FuncCall, value: (ir.Value | None)
+) -> (ir.Value | None) {
+    if value is None
+        or not isinstance(value.type, ir.VoidType)
+        or self._discards_call_value(nd) {
+        return value;
+    }
+    callee = nd.target.right if isinstance(nd.target, uni.AtomTrailer) else nd.target;
+    self.emit(
+        E5092,
+        node_override=nd,
+        kind="the value of a call returning None",
+        name=self._get_name(callee) or "call",
+        help_text="The callee returns None, which native lowers to `void`, so the call has no value to use here; the enclosing function runs on the server, where the value is `None`."
+    );
+    return None;
+}
+
+impl NaIRGenPass._discards_call_value(nd: uni.FuncCall) -> bool {
+    up = nd.parent;
+    while isinstance(up, (uni.AtomUnit, uni.AwaitExpr, uni.ConcurrentExpr)) {
+        up = up.parent;
+    }
+    if isinstance(up, uni.ExprStmt) {
+        return True;
+    }
+    return isinstance(up, (uni.ReturnStmt, uni.LambdaExpr))
+        and isinstance(self.builder.function.return_value.type, ir.VoidType);
 }
 
 impl NaIRGenPass._current_fn_key -> (str | None) {

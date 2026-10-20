@@ -29,11 +29,12 @@ obj NativeLibrary {
 }
 
 glob logger = logging.getLogger(__name__),
-     JAC_TO_CTYPES: dict[(str, type)] = {
+     JAC_TO_CTYPES: dict[(str, (type | None))] = {
          'int': ctypes.c_int64,
          'float': ctypes.c_double,
          'bool': ctypes.c_bool,
-         'str': ctypes.c_char_p
+         'str': ctypes.c_char_p,
+         'None': None
      },
      _pyb_shadows: dict[(int, object)] = {},
      _pyb_class_memo: dict[(tuple[any, ...], type)] = {},
