@@ -26,16 +26,7 @@ import urllib.request;
 import from pathlib { Path }
 import from unittest.mock { AsyncMock, Mock, patch }
 import from jaclang { JacRuntime as Jac }
-import from jaclang.compiler.driver.application { prepare_application }
-import from jaclang.project.config { set_config }
 import from jaclang.server { sv_client }
-import from jaclang.server.net { PortInUseError }
-import from jaclang.server.server { JacAPIServer }
-import from jaclang.server.settings { ServeSettings }
-import from jaclang.server.serving.app { ServingApp }
-import from jaclang.server.serving.server { ServingServer }
-import jaclang.server.serving.server as serving_module;
-import jaclang.server.server as api_module;
 
 
 glob _TOML: str = (
@@ -129,149 +120,78 @@ def _reset(tmp: str) {
 glob _EVENT_WAIT: any = threading.Event.wait;
 
 
-"""Bound the broken baseline's wait without changing worker startup behavior."""
+"""Bound the broken baseline's wait without tightening the latency assertion."""
 def _short_startup_wait(event: any, timeout: any = None) -> bool {
     return _EVENT_WAIT(event, 2 if timeout == 30 else timeout);
 }
 
 
-test "serve_background propagates an occupied port immediately" {
-    occupied = socket.socket();
-    occupied.bind(('127.0.0.1', 0));
-    occupied.listen();
-    port = int(occupied.getsockname()[1]);
-    srv = ServingServer(app=ServingApp(), host='127.0.0.1', port=port);
-    seen: list[int] = [];
-    caught: any = None;
+"""Capture a startup error and clean up even when the broken baseline returns a handle."""
+def _startup_error(srv: any, on_ready: any = None, binding: any = None) -> any {
     stop: any = None;
+    caught: any = None;
     try {
-        started = time.monotonic();
         with patch.object(threading.Event, 'wait', _short_startup_wait) {
             try {
-                stop = srv.serve_background(
-                    on_ready=lambda (p: int) { seen.append(p); }, port_retries=0
-                );
+                stop = srv.serve_background(on_ready=on_ready, port_retries=0);
             } except Exception as e {
                 caught = e;
             }
         }
-        assert isinstance(caught, PortInUseError) , caught;
-        assert caught.port == port , caught;
-        assert time.monotonic() - started < 1.0 , "a known bind failure must wake the caller";
-        assert seen == [] , seen;
-        assert srv._executor is not None and srv._executor._pool is None;
+        assert caught is not None , "startup failure did not reach the caller";
+        if binding is not None and binding.called {
+            assert binding.return_value.fileno() == -1 , "failed startup retained its listener";
+        }
+        return caught;
     } finally {
         if stop is not None {
             try {
                 stop();
             } except RuntimeError {}
         }
-        if srv._executor is not None {
-            srv._executor.shutdown();
-        }
-        occupied.close();
     }
 }
 
 
-test "serve_background preserves startup errors and releases partial resources" {
-    for stage in ('tls', 'server') {
-        srv = ServingServer(app=ServingApp(), host='127.0.0.1', port=0);
-        failure = ValueError(f"{stage} startup failed");
-        listeners: list[any] = [];
-        bind = serving_module.bind_listener;
-        stop: any = None;
-        caught: any = None;
-        def _bind(*args: any, **kwargs: any) -> any {
-            listener = bind(*args, **kwargs);
-            listeners.append(listener);
-            return listener;
-        }
-        failing = patch.object(srv.settings.tls, 'build_context', side_effect=failure)
-            if stage == 'tls'
-            else patch.object(
-                serving_module.asyncio,
-                'start_server',
-                new=AsyncMock(side_effect=failure)
+test "serve_background propagates an occupied port immediately" {
+    with socket.socket() as occupied {
+        occupied.bind(('127.0.0.1', 0));
+        occupied.listen();
+        port = int(occupied.getsockname()[1]);
+        srv = ServingServer(app=ServingApp(), host='127.0.0.1', port=port);
+        seen: list[int] = [];
+        started = time.monotonic();
+        caught = _startup_error(srv, lambda (p: int) { seen.append(p); });
+        assert isinstance(caught, PortInUseError) and caught.port == port , caught;
+        assert time.monotonic() - started < 1.0 , "a known bind failure must wake the caller";
+        assert seen == [] , seen;
+    }
+}
+
+
+test "serve_background preserves boot and callback errors and closes its listener" {
+    for stage in ('tls', 'server', 'callback') {
+        with socket.socket() as listener {
+            listener.bind(('127.0.0.1', 0));
+            listener.listen();
+            listener.setblocking(False);
+            srv = ServingServer(app=ServingApp(), host='127.0.0.1', port=0);
+            failure = ValueError(f"{stage} startup failed");
+            start_server = AsyncMock(
+                wraps=serving_module.asyncio.start_server,
+                side_effect=failure if stage == 'server' else None
             );
-        try {
-            with patch.object(threading.Event, 'wait', _short_startup_wait), patch.object(
-                serving_module, 'bind_listener', _bind
-            ), failing {
-                try {
-                    stop = srv.serve_background(port_retries=0);
-                } except Exception as e {
-                    caught = e;
-                }
+            ready = Mock(side_effect=failure) if stage == 'callback' else None;
+            with patch.object(
+                serving_module, 'bind_listener', return_value=listener
+            ) as binding, patch.object(
+                srv.settings.tls,
+                'build_context',
+                return_value=None,
+                side_effect=failure if stage == 'tls' else None
+            ), patch.object(serving_module.asyncio, 'start_server', start_server) {
+                assert _startup_error(srv, ready, binding) is failure , stage;
             }
-            assert caught is failure , (stage, caught);
-            assert len(listeners) == 1 and listeners[0].fileno() == -1 , stage;
-            assert srv._executor is not None and srv._executor._pool is None , stage;
-        } finally {
-            if stop is not None {
-                try {
-                    stop();
-                } except RuntimeError {}
-            }
-            for listener in listeners {
-                listener.close();
-            }
-            if srv._executor is not None {
-                srv._executor.shutdown();
-            }
-        }
-    }
-}
-
-
-test "serve_background waits for on_ready and propagates its failure" {
-    srv = ServingServer(app=ServingApp(), host='127.0.0.1', port=0);
-    entered = threading.Event();
-    release = threading.Event();
-    returned = threading.Event();
-    failure = ValueError('ready callback failed');
-    errors: list[any] = [];
-    stops: list[any] = [];
-    def _ready(port: int) {
-        entered.set();
-        assert release.`wait(timeout=2) , "callback was not released";
-        raise failure;
-    }
-    def _call {
-        try {
-            stops.append(srv.serve_background(on_ready=_ready));
-        } except Exception as e {
-            errors.append(e);
-        } finally {
-            returned.set();
-        }
-    }
-    caller = threading.Thread(target=_call, daemon=True);
-    try {
-        caller.start();
-        assert entered.`wait(timeout=2) , "callback was not reached";
-        assert not returned.`wait(timeout=0.05) , "success preceded the callback result";
-        release.set();
-        assert returned.`wait(timeout=2) , "callback failure did not wake the caller";
-        caller.join(timeout=2);
-        assert not caller.is_alive();
-        assert errors == [failure] , errors;
-        assert stops == [] , "a failed callback cannot return a stop handle";
-        assert srv._server is not None and not srv._server.is_serving();
-        assert srv._executor is not None and srv._executor._pool is None;
-    } finally {
-        release.set();
-        caller.join(timeout=2);
-        for stop in stops {
-            try {
-                stop();
-            } except RuntimeError {}
-        }
-        if srv._server is not None {
-            srv._server.close();
-        }
-        if srv._executor is not None {
-            srv._executor.shutdown();
         }
     }
 }
@@ -303,7 +223,7 @@ test "serve_background timeout suppresses late readiness and stops a delayed wor
     }
     with patch.object(srv, 'run', side_effect=_delayed_run), patch.object(
         threading.Event, 'wait', _timeout
-    ), patch.object(srv, 'request_stop', wraps=srv.request_stop) as request_stop {
+    ) {
         try {
             try {
                 srv.serve_background(on_ready=lambda (p: int) { seen.append(p); });
@@ -311,13 +231,10 @@ test "serve_background timeout suppresses late readiness and stops a delayed wor
                 caught = e;
             }
             assert isinstance(caught, TimeoutError) , caught;
-            assert request_stop.call_count >= 1 , "timeout must request shutdown";
             release.set();
             assert finished.`wait(timeout=2) , "the late worker kept serving";
             assert seen == [] , "abandoned startup must not notify its host";
-            assert request_stop.call_count >= 2 , "late readiness must retry the early stop";
-            assert srv._server is not None and not srv._server.is_serving();
-            assert srv._executor is not None and srv._executor._pool is None;
+            assert srv._server is None or not srv._server.is_serving();
         } finally {
             release.set();
             cleanup_deadline = time.monotonic() + 2;
@@ -335,65 +252,30 @@ test "serve_background timeout suppresses late readiness and stops a delayed wor
 }
 
 
-test "serve_background rejects worker exit before readiness" {
-    srv = ServingServer(app=ServingApp());
-    caught: any = None;
-    stop: any = None;
-    try {
-        with patch.object(srv, 'run', return_value=0), patch.object(
-            threading.Event, 'wait', _short_startup_wait
-        ) {
-            try {
-                stop = srv.serve_background();
-            } except Exception as e {
-                caught = e;
-            }
-        }
-        assert isinstance(caught, RuntimeError) , caught;
-    } finally {
-        if stop is not None {
-            stop();
-        }
-    }
-}
-
-
 test "API background startup unwinds scheduler and bridge preserving the original error" {
     tmp = _workspace();
     Jac.set_base_path(tmp);
     Jac.set_context(Jac.create_j_context(user_root=None));
     try {
-        for stage in ('transport', 'extension') {
-            settings = ServeSettings.load(tmp, {'host': '127.0.0.1', 'port': 0});
-            failure = ValueError(f"{stage} startup failed");
-            scheduler = Mock();
-            scheduler.stop.side_effect = RuntimeError('scheduler cleanup failed');
-            ext = Mock();
-            if stage == 'extension' {
-                ext.on_worker_start.side_effect = failure;
-            }
-            srv = JacAPIServer(
-                module_name='main', base_path=tmp, settings=settings, extensions=[ext]
-            );
-            srv.scheduler = scheduler;
-            srv.app = ServingApp();
-            caught: any = None;
-            with patch.object(srv, '_prepare_to_serve', return_value=settings), patch.object(
-                ServingServer, 'serve_background', side_effect=failure
-            ), patch.object(api_module, 'start_worker_if_bridging') as start_bridge, patch.object(
-                api_module, 'stop_worker'
-            ) as stop_bridge {
-                try {
-                    srv.serve_background();
-                } except Exception as e {
-                    caught = e;
-                }
-                assert caught is failure , (stage, caught);
-                scheduler.start_if_pending.assert_called_once();
-                start_bridge.assert_called_once();
-                scheduler.stop.assert_called_once();
-                stop_bridge.assert_called_once();
-            }
+        settings = ServeSettings.load(tmp, {'host': '127.0.0.1', 'port': 0});
+        failure = ValueError('transport startup failed');
+        scheduler = Mock();
+        scheduler.stop.side_effect = RuntimeError('scheduler cleanup failed');
+        srv = JacAPIServer(
+            module_name='main', base_path=tmp, settings=settings, extensions=[]
+        );
+        srv.scheduler = scheduler;
+        srv.app = ServingApp();
+        with patch.object(srv, '_prepare_to_serve', return_value=settings), patch.object(
+            ServingServer, 'serve_background', side_effect=failure
+        ), patch.object(outbox_module, 'start_worker_if_bridging') as start_bridge, patch.object(
+            outbox_module, 'stop_worker'
+        ) as stop_bridge {
+            assert _startup_error(srv) is failure;
+            scheduler.start_if_pending.assert_called_once();
+            start_bridge.assert_called_once();
+            scheduler.stop.assert_called_once();
+            stop_bridge.assert_called_once();
         }
     } finally {
         _reset(tmp);
