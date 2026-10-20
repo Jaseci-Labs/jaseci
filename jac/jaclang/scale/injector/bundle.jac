@@ -12,6 +12,8 @@ import from pathlib { Path }
 
 glob logger = logging.getLogger(__name__);
 
+glob DEFAULT_SEAL_TIMEOUT_S: int = 1800;
+
 glob APP_VOLUME_NAME: str = "jac-app",
      APP_MOUNT_PATH: str = "/app",
      JAC_HOME: str = "/app/.jachome",
@@ -234,7 +236,7 @@ def _precompile_app(base: Path, pod_binary: bytes) -> Path {
             [str(jac_path), "run", str(script), str(stage_root), "--seal"],
             capture_output=True,
             text=True,
-            timeout=600,
+            timeout=seal_timeout_setting(str(base)),
             env=release_binary_env(),
             cwd=str(stage_root)
         );
@@ -254,6 +256,29 @@ def _precompile_app(base: Path, pod_binary: bytes) -> Path {
         shutil.rmtree(str(stage_root), ignore_errors=True);
         raise;
     }
+}
+
+
+def seal_timeout_setting(project_dir: str) -> int {
+    import from jaclang.project.config { get_config_for_path }
+
+    try {
+        config = get_config_for_path(Path(project_dir));
+    } except Exception as exc {
+        logger.warning(f"seal_timeout check skipped, jac.toml unparseable: {exc}");
+        return DEFAULT_SEAL_TIMEOUT_S;
+    }
+    section = config.get_section("scale") if config is not None else None;
+    if section is None or "seal_timeout" not in section {
+        return DEFAULT_SEAL_TIMEOUT_S;
+    }
+    try {
+        value = int(section.get("seal_timeout"));
+    } except (TypeError, ValueError) {
+        logger.warning("Ignoring non-integer [scale] seal_timeout in jac.toml.");
+        return DEFAULT_SEAL_TIMEOUT_S;
+    }
+    return value if value > 0 else DEFAULT_SEAL_TIMEOUT_S;
 }
 
 
