@@ -15,15 +15,21 @@ glob EXIT_OK: int = 0,
 
 glob START_HINT: str = "hint: start the site with `jac run web`";
 
-def warn(text: str) {
+def warn(text: str);
+
+def _suffix(detail: str) -> str;
+
+def explain_bridge_error(e: BridgeError) -> int;
+
+impl warn(text: str) {
     print(text, file=sys.stderr);
 }
 
-def _suffix(detail: str) -> str {
+impl _suffix(detail: str) -> str {
     return " (" + detail + ")" if detail else "";
 }
 
-def explain_bridge_error(e: BridgeError) -> int {
+impl explain_bridge_error(e: BridgeError) -> int {
     where = e.app + "." + e.name;
     if isinstance(e, BridgeUnavailable) {
         warn("jacorg: " + where + " is not reachable" + _suffix(e.detail));

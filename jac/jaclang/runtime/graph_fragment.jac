@@ -47,7 +47,7 @@ obj:pub GraphBuilder {
         return GraphPorts(roots=[value], tips=[value]);
     }
 
-    def _add_node(value: Node) -> None {
+    def _add_node(value: Node) -> None {  # jac:ignore[separate-impls]
         if not self.capture {
             return;
         }
@@ -58,13 +58,13 @@ obj:pub GraphBuilder {
         }
     }
 
-    def record_edges(values: list[Edge]) {
+    def record_edges(values: list[Edge]) {  # jac:ignore[separate-impls]
         for value in values {
             self.record_edge(value);
         }
     }
 
-    def record_edge(value: Edge) -> None {
+    def record_edge(value: Edge) -> None {  # jac:ignore[separate-impls]
         if not self.capture {
             return;
         }

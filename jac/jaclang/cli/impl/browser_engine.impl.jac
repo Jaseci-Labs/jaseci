@@ -127,7 +127,7 @@ impl WebSocket.recv -> (str | bytes) {
     }
 }
 
-impl WebSocket.close{
+impl WebSocket.close {
     try {
         self.send(bytes(), opcode=OP_CLOSE);
     } except OSError {}
@@ -178,7 +178,7 @@ impl CDP.drain_events(idle: float = 0.25) -> list[dict[str, any]] {
     return out;
 }
 
-impl CDP.close{
+impl CDP.close {
     self.ws.close();
 }
 
@@ -219,19 +219,36 @@ impl _find_chrome -> str {
         }
     }
 
-    for pw in [
+    pw_dirs = [
         Path.home() / ".cache" / "ms-playwright",
         Path.home() / "Library" / "Caches" / "ms-playwright",
 
-    ] {
+    ];
+    pw_env = os.environ.get("PLAYWRIGHT_BROWSERS_PATH");
+    if pw_env and pw_env != "0" {
+        pw_dirs.insert(0, Path(pw_env));
+    }
+    for pw in pw_dirs {
         if not pw.exists() {
             continue;
         }
-        for d in sorted(pw.`glob("chromium-*"), reverse=True) {
+        for d in (
+            sorted(pw.`glob("chromium-*"), reverse=True)
+            + sorted(pw.`glob("chromium_headless_shell-*"), reverse=True)
+        ) {
             for rel in [
                 "chrome-linux64/chrome",
                 "chrome-linux/chrome",
-                "chrome-mac/Chromium.app/Contents/MacOS/Chromium"
+                "chrome-linux-arm64/chrome",
+                "chrome-mac/Chromium.app/Contents/MacOS/Chromium",
+                "chrome-mac-x64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing",
+                "chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing",
+                "chrome-linux/headless_shell",
+                "chrome-mac/headless_shell",
+                "chrome-headless-shell-linux64/chrome-headless-shell",
+                "chrome-headless-shell-linux-arm64/chrome-headless-shell",
+                "chrome-headless-shell-mac-x64/chrome-headless-shell",
+                "chrome-headless-shell-mac-arm64/chrome-headless-shell"
             ] {
                 exe = d / rel;
                 if exe.exists() {
@@ -240,7 +257,11 @@ impl _find_chrome -> str {
             }
         }
     }
-    raise FileNotFoundError("no Chrome/Chromium found; set JACBROWSER_CHROME");
+    searched = ", ".join(str(pw) for pw in pw_dirs);
+    raise FileNotFoundError(
+        f"no Chrome/Chromium found; searched Playwright directories: {searched}; "
+            + "set JACBROWSER_CHROME"
+    );
 }
 
 impl _state_path(session: str) -> Path {
@@ -536,12 +557,15 @@ impl _key_code(ch: str) -> str {
     return ch;
 }
 
-impl _press(cdp: CDP, key: str, modifiers: int = 0) {
+impl _key_down(key: str, modifiers: int = 0) -> dict[str, any] {
     vk = KEY_CODES.get(key, 0);
     code = key;
-    down = {"type": "keyDown", "key": key, "modifiers": modifiers};
+    down: dict[str, any] = {"type": "keyDown", "key": key, "modifiers": modifiers};
     if vk {
         down["windowsVirtualKeyCode"] = vk;
+        if key == "Enter" and modifiers in (0, 8) {
+            down["text"] = "\r";
+        }
     } elif len(key) == 1 {
         code = _key_code(key);
         down["windowsVirtualKeyCode"] = ord(key.upper());
@@ -550,10 +574,15 @@ impl _press(cdp: CDP, key: str, modifiers: int = 0) {
         }
     }
     down["code"] = code;
+    return down;
+}
+
+impl _press(cdp: CDP, key: str, modifiers: int = 0) {
+    down = _key_down(key, modifiers);
     cdp.call("Input.dispatchKeyEvent", down);
     cdp.call(
         "Input.dispatchKeyEvent",
-        {"type": "keyUp", "key": key, "code": code, "modifiers": modifiers}
+        {"type": "keyUp", "key": key, "code": down["code"], "modifiers": modifiers}
     );
 }
 
@@ -566,10 +595,22 @@ impl cmd_open(session: str, url: (str | None), viewport: str = "1280x720") -> st
     return "browser ready (about:blank)";
 }
 
-impl cmd_navigate(session: str, url: str) -> str {
-    if not re.`match(r"^[a-zA-Z][a-zA-Z0-9+.-]*:", url) {
-        url = "https://" + url;
+impl _normalize_url(url: str) -> str {
+    hierarchical = re.`match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", url);
+    opaque = re.`match(
+        r"^(about|blob|chrome|data|devtools|file|javascript|view-source):", url, re.I
+    );
+    if hierarchical or opaque {
+        return url;
     }
+    local = re.`match(
+        r"^(([\w-]+\.)*localhost|127(\.\d+){3}|0\.0\.0\.0|\[::1\])([:/?#]|$)", url, re.I
+    );
+    return ("http://" if local else "https://") + url;
+}
+
+impl cmd_navigate(session: str, url: str) -> str {
+    url = _normalize_url(url);
     cdp = connect(session);
     cdp.call("Page.enable");
     cdp.call("Page.navigate", {"url": url});
@@ -940,11 +981,7 @@ impl cmd_close(session: str) -> str {
 }
 
 
-def _need(rest: list[str], n: int, usage: str) {
-    if len(rest) < n {
-        raise ValueError(f"usage: {usage}");
-    }
-}
+def _need(rest: list[str], n: int, usage: str);
 
 impl main(argv: list[str]) -> int {
     session = os.environ.get("JACBROWSER_SESSION", "default");
@@ -1013,4 +1050,30 @@ impl main(argv: list[str]) -> int {
     }
     sys.stdout.write((out if isinstance(out, str) else json.dumps(out)) + "\n");
     return 0;
+}
+
+impl _need(rest: list[str], n: int, usage: str) {
+    if len(rest) < n {
+        raise ValueError(f"usage: {usage}");
+    }
+}
+
+impl WebSocket.postinit {
+    if not self.url.startswith("ws://") {
+        raise ValueError(f"only ws:// supported, got {self.url}");
+    }
+    rest = self.url[len("ws://"):];
+    (host_port, _, tail) = rest.partition("/");
+    (host, _, port) = host_port.partition(":");
+    self.path = "/" + tail;
+    port_num = int(port) if port else 80;
+    self.sock = socket.create_connection((host, port_num), timeout=self.timeout);
+    self.sock.settimeout(self.timeout);
+    self._buf = bytearray();
+    self._handshake(host, port_num);
+}
+
+impl CDP.postinit {
+    self.ws = WebSocket(url=self.ws_url);
+    self.events = [];
 }

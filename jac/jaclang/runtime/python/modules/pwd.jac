@@ -5,31 +5,6 @@ Lookups use the reentrant C library calls with the GIL released and a buffer
 that doubles on ERANGE, as the C module does.
 """
 
-import from jaclang.runtime.python.cpython_api {
-    NULL,
-    PyBytes_AsString,
-    PyErr_NoMemory,
-    PyEval_RestoreThread,
-    PyEval_SaveThread,
-    PyList_Append,
-    PyList_New,
-    PyLong_FromLong,
-    PyMem_RawFree,
-    PyMem_RawRealloc,
-    PyObject,
-    PySequence_Contains,
-    PyStructSequence_New,
-    PyStructSequence_SetItem,
-    PyThreadState,
-    PyUnicode_EncodeFSDefault,
-    PyUnicode_FromString,
-    jacpy_error_is,
-    jacpy_fs_text,
-    jacpy_release
-}
-import from jaclang.runtime.python.capi { object_error, repr_value }
-import from jaclang.runtime.python.bindings.module { jacpy_binding_state_get }
-import from jaclang.runtime.python.modules.user_records { passwd, SC_GETPW_R_SIZE_MAX }
 import from c {
     def getpwuid_r(
         uid: u32, record: &mut passwd, buffer: ptr, size: u64, result: &mut ptr[passwd]
@@ -41,9 +16,7 @@ import from c {
         result: &mut ptr[passwd]
     ) -> i32;  def setpwent;  def getpwent -> ptr[passwd];  def endpwent;  def sysconf(
         name: i32
-    ) -> i64;  def _Py_Uid_Converter(value: ptr[PyObject], uid: &mut u32) -> i32;  def _PyLong_FromUid(
-        uid: u32
-    ) -> ptr[PyObject];
+    ) -> i64;
 }
 
 glob:priv ERANGE: i32 = 34,
@@ -121,8 +94,8 @@ def:priv lookup(
 def pwd_getpwuid_impl(module: ptr[PyObject], uidobj: ptr[PyObject]) -> ptr[PyObject] {
     uid = u32(0);
     if _Py_Uid_Converter(uidobj, &mut uid) == 0 {
-        if jacpy_error_is("OverflowError") != 0 {
-            object_error("KeyError", "getpwuid(): uid not found");
+        if PyErr_ExceptionMatches(PyExc_OverflowError) != 0 {
+            object_error(PyExc_KeyError, "getpwuid(): uid not found");
         }
         return NULL;
     }
@@ -137,7 +110,7 @@ def pwd_getpwuid_impl(module: ptr[PyObject], uidobj: ptr[PyObject]) -> ptr[PyObj
         number = _PyLong_FromUid(uid);
         if number {
             object_error(
-                "KeyError", f"getpwuid(): uid not found: {repr_value(number)}"
+                PyExc_KeyError, f"getpwuid(): uid not found: {repr_value(number)}"
             );
             jacpy_release(number);
         }
@@ -155,7 +128,7 @@ def without_null(encoded: ptr[PyObject]) -> bool {
     found = PySequence_Contains(encoded, zero);
     jacpy_release(zero);
     if found > 0 {
-        object_error("ValueError", "embedded null byte");
+        object_error(PyExc_ValueError, "embedded null byte");
     }
     return found == 0;
 }
@@ -179,7 +152,9 @@ def pwd_getpwnam_impl(module: ptr[PyObject], name: ptr[PyObject]) -> ptr[PyObjec
         } elif nomem {
             PyErr_NoMemory();
         } else {
-            object_error("KeyError", f"getpwnam(): name not found: {repr_value(name)}");
+            object_error(
+                PyExc_KeyError, f"getpwnam(): name not found: {repr_value(name)}"
+            );
         }
         PyMem_RawFree(buffer);
     }
