@@ -1,31 +1,5 @@
 """The syslog module: generated clinic tables, the hand-parsed syslog() and constants."""
 
-import from jaclang.runtime.python.cpython_api {
-    NULL,
-    PyModule_AddIntConstant,
-    PyObject,
-    PyTuple_GetItem,
-    PyTuple_Size
-}
-import from jaclang.runtime.python.capi { boundary_failure, object_error }
-import from jaclang.runtime.python.bindings.module {
-    ModuleDefinition,
-    ModuleHooks,
-    MethodCallbacks,
-    MethodDefinition
-}
-import from jaclang.runtime.python.bindings.converters {
-    argument_label,
-    convert_int,
-    convert_str
-}
-import from jaclang.runtime.python.bindings.clinic.syslog { module_methods }
-import from jaclang.runtime.python.modules.syslog {
-    default_priority,
-    syslog_syslog_impl
-}
-import from jaclang.runtime.python.modules.syslog_constants { PLATFORM, CONSTANTS }
-
 # syslog([priority=LOG_INFO,] message): a clinic optional group, parsed as
 # the generated C does, by argument count.
 def:priv syslog_call(module: ptr[PyObject], args: ptr[PyObject]) -> ptr[PyObject] {
@@ -44,7 +18,7 @@ def:priv syslog_call(module: ptr[PyObject], args: ptr[PyObject]) -> ptr[PyObject
             );
             return syslog_syslog_impl(module, i32(1), priority, message);
         }
-        object_error("TypeError", "syslog.syslog requires 1 to 2 arguments");
+        object_error(PyExc_TypeError, "syslog.syslog requires 1 to 2 arguments");
         return NULL;
     } except boundary_failure {
         return NULL;
@@ -54,7 +28,7 @@ def:priv syslog_call(module: ptr[PyObject], args: ptr[PyObject]) -> ptr[PyObject
 def:priv execute(module: ptr[PyObject]) -> i32 {
     if PLATFORM == "" {
         object_error(
-            "ImportError",
+            PyExc_ImportError,
             "syslog has no syslog_constants.<os>.jac for this target platform"
         );
         return i32(-1);

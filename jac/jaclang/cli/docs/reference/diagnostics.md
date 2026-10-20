@@ -148,7 +148,7 @@ All three block code generation for the module that reports them.
 |------|---------|
 | `E0082` | Cannot assign to state field '{name}' during render (component body statements run on every render and state writes are immediately visible; move the assignment into a `can` ability, an event handler, or a method) |
 
-### Wiring (arch.jac)
+### Wiring (archwire.jac)
 
 | Code | Message |
 |------|---------|
@@ -159,10 +159,13 @@ All three block code generation for the module that reports them.
 | `E0090` | Duplicate '{name}' in a wire payload |
 | `E0091` | 'include' takes no payload |
 | `E0092` | An edge rule is named: 'edge Name: source --> target' |
-| `E0093` | An 'impl import' scope is a dotted package name |
+| `E0093` | A 'graph import' scope is a dotted package name |
 | `E0094` | Expected a wire ('provider --> consumer') or an edge rule here |
 | `E0095` | '*' must be the only item in a payload |
 | `E0096` | A rule payload lists names without aliases |
+| `E0097` | `return tail` needs a function call |
+| `E0098` | An edge rule's patterns name modules under this archwire.jac; 'any' is not a pattern |
+| `E0099` | Wiring blocks are written 'graph import'; 'impl import' was removed |
 
 ### Parser Warnings
 
@@ -301,8 +304,15 @@ Emitted by the type checker for [C library](language/native-pathway.md#c-library
 | `E1150` | Field '{field}' of foreign struct '{name}' {reason} |
 | `E1151` | Opaque C type '{name}' has no known size, so it cannot be {use} |
 | `E1152` | {what} needs C plain data, not {type} |
+| `E1153` | C data symbol '{name}' {reason} |
+| `E1154` | addressof() takes a C data symbol, not {what} |
+| `E1155` | C data definition '{name}' {reason} |
+| `E1156` | A C string pointer is made from a string literal of bytes, not {what} |
+| `E1157` | C variadic {what} |
+| `E1158` | C function definition '{name}' {reason} |
+| `E1159` | '{name}' is a borrowed scalar parameter; {what} |
 
-A foreign struct field must be C plain data: a sized scalar, `int`, `float`, `bool`, another foreign struct (nested by value, never containing itself), `ptr[T]` / `ptr`, or a named-function callback (`E1150`). A bodiless `obj Name;` declares an opaque C type, usable only as `ptr[Name]` (`E1151`). `pin(value)`, `p.view(n)` and `&T` / `&mut T` clib parameters lay their payload out in C memory, so `T` needs a known size (`E1152`). Escaping a `PtrView` of C memory is `E1315`, and passing anything but a `Pinned[T]` to a `&mut Pinned[T]` parameter is an ordinary argument mismatch (`E1053`).
+A foreign struct field must be C plain data: a sized scalar, `int`, `float`, `bool`, another foreign struct (nested by value, never containing itself), `ptr[T]` / `ptr`, or a named-function callback (`E1150`). A bodiless `obj Name;` declares an opaque C type, usable only as `ptr[Name]` (`E1151`). `pin(value)`, `p.view(n)` and `&T` / `&mut T` clib parameters lay their payload out in C memory, so `T` needs a known size (`E1152`). `glob name: T;` in a C library import declares a C variable and `glob name: T = value;` defines one; a C object (foreign struct, opaque type or `list[T]` array) is used only by address (`E1153`), `addressof()` takes only such a symbol (`E1154`), a definition's initializer is a C constant, where `ptr(function)` is a named function's address for a `ptr` field such as a `PyMethodDef` entry and a sized integer array also takes a bytes literal, read as its little-endian elements (`E1155`), and `ptr[u8]("text")` takes a string literal (`E1156`). A C variadic function takes C scalars, pointers, `str` or `bytes` as extra arguments and no keyword parameters (`E1157`), and a `def` with a body in a C library import defines a C function whose parameters and result are C data, under a C symbol no other linked module declares with a different signature (`E1158`). Escaping a `PtrView` of C memory is `E1315`, and passing anything but a `Pinned[T]` to a `&mut Pinned[T]` parameter is an ordinary argument mismatch (`E1053`), as is `&mut x` for a `ptr[T]` parameter unless the callee is a C function and `x` is exactly `T` (then it lends x's address for the call). A Jac function's `&mut` parameter holding a scalar (a number, a bool or a pointer) is a value: assigning it, lending it on as `&mut p`, or passing it to a parameter the callee declares `&mut` would write only the function's copy, so each is `E1159`; return the new value or take a `ptr[T]` to storage the caller owns.
 
 ### Exception / Context Manager / Yield
 
@@ -461,17 +471,26 @@ Emitted by `StaticAnalysisPass` for refused `import from` items. All three block
 
 ---
 
-### Project Wiring (arch.jac)
+### Project Wiring (archwire.jac)
 
 See [Project Wiring](wiring.md).
 
 | Code | Message |
 |------|---------|
-| `E1140` | '{scope}' is not a package or module under the project root |
 | `E1141` | '{module}' is not a project module, so it cannot be a wire's provider |
 | `E1142` | '{module}' cannot be a wire's consumer: {detail} |
 | `E1143` | A wire cannot connect '{module}' to itself |
-| `E1144` | Import of '{module}' is not declared by arch.jac for '{consumer}' |
+| `E1144` | Import of '{module}' is written in '{consumer}'; under archwire.jac it is a wire |
+| `E1146` | '{name}' is wired into '{consumer}', which never uses it |
+| `E1147` | '{name}' is declared into '{consumer}' by a '-->' wire, but '{consumer}' does not write that import where it runs |
+
+### Unresolved Names
+
+| Code | Message |
+|------|---------|
+| `E1145` | Cannot import name '{name}' from Jac module '{module}': it defines no such name |
+
+Native lowering reports `E1145` when a module imports a name that the Jac module it binds to does not define. There is no symbol to bind the name to, and every use of it used to lower to a null value (a glob initializer received NULL and the binary crashed at load). The checker reports the same import as the `W1101` warning: its lazy resolution can miss a name that exists (an import cycle still being analyzed, or a sibling module shadowing a standard-library one), so only native lowering, which reads the bound module's complete symbol table, makes it an error.
 
 ## Semantic Errors (E2xxx / W2xxx)
 
@@ -536,20 +555,23 @@ An app's walkers and `def:pub` functions form its public boundary. Other declara
 | `E2013` | Parameter name mismatch: declaration has {decl_name} but implementation has {impl_name} |
 | `E2087` | '{name}' is declared but never implemented |
 
-### Project Wiring (arch.jac)
+### Project Wiring (archwire.jac)
 
 | Code | Message |
 |------|---------|
-| `E2088` | 'impl import' is only valid in the arch.jac beside jac.toml |
-| `E2089` | arch.jac declares wiring only; this {kind} does not belong here |
+| `E2088` | 'graph import' is only valid in a file named archwire.jac |
+| `E2089` | archwire.jac declares wiring only; this {kind} does not belong here |
 | `E2090` | '{provider} --> {consumer}' is not permitted by any edge rule |
 | `E2091` | '{name}' is not admitted across '{provider} --> {consumer}' by {rules} |
 | `E2092` | Edge rule '{name}' is declared more than once |
-| `E2093` | arch.jac has syntax errors, so the wiring for '{consumer}' may be incomplete |
-| `E2094` | Function-level import of '{module}' inside the sealed module '{consumer}' |
+| `E2093` | archwire.jac has syntax errors, so the wiring for '{consumer}' may be incomplete |
+| `E2094` | Import of '{module}' inside '{scope}' is written in '{consumer}'; under archwire.jac it is a scoped wire |
 | `E2095` | Import '{module}' names a module of this package by a bare path; import it as '{qualified}' |
 | `E2096` | '{module}' is not exported by the package '{package}' |
-| `W2083` | Edge rule '{name}': {what} matches no module |
+| `E2097` | '{name}' is not a module under this archwire.jac, so {what} names nothing |
+| `E2098` | Edge rule '{name}': {what} matches no module |
+| `E2099` | '{provider} --> {consumer}' crosses from top-level package '{source}' into '{target}', and no rule admits it; add `{rule}` |
+| `E2100` | Edge rule '{name}': the bare '*' {side} states no architecture |
 
 ### JSX Slot Body Rules
 
@@ -605,12 +627,13 @@ Emitted by `jac check --lint`. Rules can be configured in [`jac.toml`](config/in
 | `W3040` | `filter-compare-tautology` | Filter comparison '{name} == {name}' is always true | default |
 | `W3041` | `stale-has-read` | Reactive `has` field '{name}' is read after being assigned in the same `can with entry` block | default |
 | `W3042` | `map-lambda-to-comprehension` | `.map(lambda x -> any { return <jsx>; })` can be replaced with comprehension syntax | default |
-| `W3050` | `strip-comments` | Comment can be removed | opt-in |
-| `W3051` | `strip-docstrings` | Docstring can be removed | opt-in |
-| `W3052` | `remove-duplicate-wire` | This wire is already declared by an earlier wire | default |
-| `W3053` | `remove-wired-import` | Import of '{name}' from '{module}' is already provided by arch.jac | default |
+| `W3050` | `strip-comments` | Comment can be removed | all |
+| `W3051` | `strip-docstrings` | Docstring can be removed | all |
+| `W3053` | `remove-wired-import` | Import of '{name}' from '{module}' is already provided by archwire.jac (fix only: `jac check` reports it as `E1144`) | default |
+| `W3054` | `remove-dead-import` | Import of '{name}' from '{module}' is neither wired nor read | default |
+| `W3055` | `separate-impls` | Body of '{name}' belongs in a separate impl | all |
 
-> **opt-in group**: `strip-comments` and `strip-docstrings` are destructive "deslop" rules. They are **never** activated by `select = ["all"]` or `["default"]`; they fire only when named explicitly in [`[check.lint]`](config/index.md#checklint). See the config reference for details.
+> **all group**: `strip-comments`, `strip-docstrings` and `separate-impls` are on under `select = ["all"]` and off under `["default"]`. The first two delete comments and docstrings; `separate-impls` moves bodies into `impl` blocks. Each can be named explicitly or listed in `ignore`; see the [config reference](config/index.md#checklint).
 
 ---
 
@@ -674,7 +697,7 @@ Emitted while lowering the unitree into the compact codegen IR container (`JcirG
 
 | Code | Message |
 |------|---------|
-| `E5060` | C library import declaration '{name}' must not have a body |
+| `E5114` | `return tail` cannot be a guaranteed tail call: {reason} |
 
 ### Client Code Generation
 

@@ -135,7 +135,7 @@ impl ingest(bundle: DocBundle) {
     log.info("docs sync: graph ready");
 }
 
-impl docs_sync_tick{
+impl docs_sync_tick {
     if SYNC_STATE.get("settled", False) {
         return;
     }

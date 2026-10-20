@@ -1,8 +1,3 @@
-import from jaclang.compiler.backends.es.primitives_es { ESEmitCtx }
-
-import from jaclang.compiler.frontend.unparse { unparse_node }
-import from jaclang.compiler.symbol_utils { return_type_is_jsx }
-
 impl EsastGenPass._literal_import_spec(spec: uni.Expr | uni.KWPair) -> (str | None) {
     if isinstance(spec, uni.String) {
         return str(spec.lit_value);
@@ -23,7 +18,6 @@ impl EsastGenPass._resolve_dynamic_import_spec(
     raw: str, importer: str
 ) -> (str | None) {
     import os;
-    import from jaclang.project.modresolver { resolve_relative_path }
 
     candidates: list[str] = [raw];
     if not raw.endswith(".jac") {
@@ -145,9 +139,7 @@ impl EsastGenPass._single_export_name(expr: uni.Expr) -> (str | None) {
 
 
 impl EsastGenPass._reject_dynamic_import(nd: uni.FuncCall, details: str) -> None {
-    import from jaclang.compiler.frontend.diagnostics { E5113 }
-
-    self.ctx.emit(E5113, node_override=nd, details=details);
+    self.ctx.emit(E5117, node_override=nd, details=details);
 }
 
 
@@ -156,13 +148,6 @@ impl EsastGenPass._field_constructor_args(
     args: list[es.Expression | es.SpreadElement],
     props: list[es.Property | es.SpreadElement]
 ) -> (es.Expression | None) {
-    import from jaclang.compiler.types.types { ClassType }
-    import from jaclang.compiler.field_semantics { positional_field_names }
-    import from jaclang.compiler.passes.layout_pass {
-        archetype_native_name,
-        get_layout_registry
-    }
-
     target_type = nd.target.type;
     if not isinstance(target_type, ClassType)
         or not target_type.is_instantiable_class() {
@@ -232,17 +217,12 @@ impl EsastGenPass._field_constructor_args(
 }
 
 impl EsastGenPass._resolve_source_module(nd: uni.Import) -> (uni.Module | None) {
-    import from jaclang.compiler.symbol_utils { resolve_import_source_module }
     return resolve_import_source_module(self.prog, nd);
 }
 
 impl EsastGenPass._record_sv_backend(nd: uni.Import) -> None {
     import from pathlib { Path }
-    import from jaclang.compiler.driver.boundary_classify {
-        import_crosses_apps,
-        import_provider_app,
-        import_provider_route
-    }
+
     if not nd.from_loc {
         return;
     }
@@ -265,10 +245,6 @@ impl EsastGenPass._record_sv_backend(nd: uni.Import) -> None {
 }
 
 impl EsastGenPass._is_service_bridge_import(nd: uni.Import) -> bool {
-    import from jaclang.compiler.driver.boundary_classify {
-        CrossAppKind,
-        classify_cross_app_import
-    }
     return (
         classify_cross_app_import(nd, self.module.gen.interop_manifest)
         == CrossAppKind.SERVICE_BRIDGE
@@ -276,11 +252,6 @@ impl EsastGenPass._is_service_bridge_import(nd: uni.Import) -> bool {
 }
 
 impl EsastGenPass._sv_provider_options(nd: uni.Import) -> (es.Expression | None) {
-    import from jaclang.compiler.driver.boundary_classify {
-        import_crosses_apps,
-        import_provider_app,
-        import_provider_route
-    }
     if not import_crosses_apps(nd) {
         return None;
     }
@@ -309,8 +280,6 @@ impl EsastGenPass._sv_provider_options(nd: uni.Import) -> (es.Expression | None)
 }
 
 impl EsastGenPass._resolve_call_ability(nd: uni.FuncCall) -> (uni.Ability | None) {
-    import from jaclang.compiler.symbol_utils { ability_of_symbol }
-
     if nd.callee_decl is not None {
         return nd.callee_decl;
     }
@@ -537,24 +506,63 @@ impl EsastGenPass._param_type_map_from_ability(
     if not isinstance(ability_node.signature, uni.FuncSignature) {
         return type_map;
     }
-    sig = ability_node.signature;
-    param_lists = [sig.posonly_params, sig.params or [], sig.kwonlyargs];
-    for params in param_lists {
-        for p in params {
-            if (
-                p.type_tag and p.type_tag.tag and isinstance(p.type_tag.tag, uni.Name)
-            ) {
-                type_map[p.name.sym_name] = p.type_tag.tag.value;
-            }
+    for p in ability_node.signature.get_named_parameters() {
+        type_tag = p.type_tag;
+        tag = type_tag.tag if type_tag is not None else None;
+        if isinstance(tag, uni.Name) {
+            type_map[p.name.sym_name] = tag.value;
         }
     }
     return type_map;
 }
 
+impl EsastGenPass._builtin_param_names(nd: uni.FuncCall) -> (list[str] | None) {
+    sig = nd.callee_signature;
+    if not isinstance(sig, FunctionType) {
+        return None;
+    }
+    params = [
+        p
+        for p in sig.parameters
+        if not p.is_self and not p.is_cls
+    ];
+    if any(p.category != ParameterCategory.Positional for p in params) {
+        return None;
+    }
+    return [p.name for p in params];
+}
+
+impl EsastGenPass._slot_builtin_kwargs(
+    nd: uni.FuncCall,
+    args: list[(es.Expression | es.SpreadElement)],
+    props: list[(es.Property | es.SpreadElement)],
+    func_name: str
+) -> (
+    tuple[(list[(es.Expression | es.SpreadElement)], (es.Expression | None))] | None
+) {
+    if not props or any(isinstance(a, es.SpreadElement) for a in args) {
+        return None;
+    }
+    param_names = self._builtin_param_names(nd);
+    if param_names is None {
+        return None;
+    }
+    (spread_arg, spread_read_source) = self._make_kwargs_spread_context(props, nd);
+    ordered = self._call_args_from_slots(
+        self._resolve_call_arg_slots(
+            nd, args, props, param_names, func_name, spread_read_source
+        )
+    );
+    if ordered is None {
+        return None;
+    }
+    return (ordered, spread_arg if spread_read_source is not None else None);
+}
+
 impl EsastGenPass._extract_return_type(
-    ability_node: uni.Ability, func_name: str, manifest: any
+    ability_node: uni.Ability, func_name: str, manifest: (InteropManifest | None)
 ) -> str {
-    if manifest {
+    if manifest is not None {
         for b in manifest.server_exports_to_client {
             if b.name == func_name {
                 return b.ret_type;
@@ -1020,7 +1028,6 @@ impl EsastGenPass._try_lower_server_rpc_call(
         args_obj = self._wrap_with_kwargs_temp(args_obj, spread_arg, nd);
     }
 
-    import from jaclang.compiler.frontend.codeinfo { endpoint_key }
     source_module = ability_node.find_parent_of_type(uni.Module);
     assert source_module is not None;
     contract_id = endpoint_key(source_module, "func", ability_node.sym_name);
@@ -1079,20 +1086,15 @@ impl EsastGenPass._warn_rpc_callable_params(
     if not isinstance(ability_node.signature, uni.FuncSignature) {
         return;
     }
-    import re;
-    import from jaclang.compiler.frontend.diagnostics { W6005 }
-    _sig = ability_node.signature;
-    for _plist in [_sig.posonly_params, _sig.params or [], _sig.kwonlyargs] {
-        for _p in _plist {
-            if (
-                _p.type_tag is not None
-                and _p.type_tag.tag is not None
-                and re.search(r"\bCallable\b", unparse_node(_p.type_tag.tag))
-            ) {
-                self.ctx.emit(
-                    W6005, node_override=at, func=func_name, param=_p.name.sym_name
-                );
-            }
+
+    for param in ability_node.signature.get_named_parameters() {
+        type_tag = param.type_tag;
+        if type_tag is not None
+            and type_tag.tag is not None
+            and "Callable" in js_identifiers(unparse_node(type_tag.tag)) {
+            self.ctx.emit(
+                W6005, node_override=at, func=func_name, param=param.name.sym_name
+            );
         }
     }
 }
@@ -1187,11 +1189,6 @@ impl EsastGenPass._build_server_forwarder(
 }
 
 impl EsastGenPass._bind_client_value_refs(nd: uni.Module) -> list[es.Statement] {
-    import from jaclang.compiler.symbol_utils {
-        client_bridged_endpoint,
-        client_value_ref_targets,
-        element_display_name
-    }
     forwarders: list[es.Statement] = [];
     bound: set[str] = set();
     for (ref_name, top) in client_value_ref_targets(nd, self.shared_arch_names) {
@@ -1303,8 +1300,11 @@ impl EsastGenPass.exit_func_call with uni.FuncCall exit {
         here.gen.es_ast = server_call;
         return;
     }
-    callee = here.target.gen.es_ast
-        or self.sync_loc(es.Identifier(name='func'), jac_node=here.target);
+    callee: es.Expression = cast(
+        es.Expression,
+        here.target.gen.es_ast
+            or self.sync_loc(es.Identifier(name='func'), jac_node=here.target)
+    );
 
     if (
         isinstance(callee, es.MemberExpression)
@@ -1318,37 +1318,55 @@ impl EsastGenPass.exit_func_call with uni.FuncCall exit {
         _method_name = callee.property.name;
         if _type_name {
             _emitter = self._primitive_emitters.get(_type_name);
-            _emit_fn_name = "emit_" + _method_name;
-            _emit_fn = getattr(_emitter, _emit_fn_name, None) if _emitter else None;
-            if _emit_fn {
+            _is_method = _emitter is not None
+                and _method_name in _emitter.method_names();
+            _is_static = _emitter is not None
+                and _method_name in _emitter.static_names();
+            if _emitter is not None and (_is_method or _is_static) {
                 _unparser = JSCodeGenerator();
                 _ctx = ESEmitCtx(unparser=_unparser);
                 _target_str = _unparser.generate(callee.object);
+                _call_args: list[(es.Expression | es.SpreadElement)] = args;
+                _kwargs_temp: (es.Expression | None) = None;
+                _slotted = self._slot_builtin_kwargs(here, args, props, _method_name);
+                if _slotted is not None {
+                    (_call_args, _kwargs_temp) = _slotted;
+                }
                 _args_strs: list[str] = [];
-                for _a in args {
+                for _a in _call_args {
                     _args_strs.append(_unparser.generate(_a));
                 }
 
-                for _p in props {
-                    if isinstance(_p, es.Property) and _p.value {
-                        _args_strs.append(_unparser.generate(_p.value));
+                if _slotted is None {
+                    for _p in props {
+                        if isinstance(_p, es.Property) and _p.value {
+                            _args_strs.append(_unparser.generate(_p.value));
+                        }
                     }
                 }
 
-                import inspect;
-                _n_params = len(inspect.signature(_emit_fn).parameters);
-                if _n_params == 2 {
-                    _result = _emit_fn(_ctx, _args_strs);
+                if _is_method {
+                    _result = _emitter.dispatch(
+                        _method_name, _ctx, _target_str, _args_strs
+                    );
                 } else {
-                    _result = _emit_fn(_ctx, _target_str, _args_strs);
+                    _result = _emitter.dispatch_static(_method_name, _ctx, _args_strs);
                 }
-                if _result is not None and "_jac." in str(_result) {
-                    self.needs_jac_runtime = True;
+                if _result is not None {
+                    if "_jac." in _result {
+                        self.needs_jac_runtime = True;
+                    }
+                    _method_expr: es.Expression = self.sync_loc(
+                        es.RawCode(code=_result), jac_node=here
+                    );
+                    if _kwargs_temp is not None {
+                        _method_expr = self._wrap_with_kwargs_temp(
+                            _method_expr, _kwargs_temp, here
+                        );
+                    }
+                    here.gen.es_ast = _method_expr;
+                    return;
                 }
-                here.gen.es_ast = self.sync_loc(
-                    es.RawCode(code=_result), jac_node=here
-                );
-                return;
             }
         }
 
@@ -1393,18 +1411,27 @@ impl EsastGenPass.exit_func_call with uni.FuncCall exit {
         import from jaclang.compiler.backends.es.es_unparse { JSCodeGenerator }
         import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
         _builtin_name = here.target.sym_name;
-        _emit_fn_name = "emit_" + _builtin_name;
-        _emit_fn = getattr(self._builtin_emitter, _emit_fn_name, None);
-        _sized_cast = _emit_fn is None and JAC_TYPE_REGISTRY.is_sized(_builtin_name);
-        if _emit_fn or _sized_cast {
+        _has_emitter = _builtin_name in self._builtin_emitter.static_names();
+        _sized_cast = not _has_emitter and JAC_TYPE_REGISTRY.is_sized(_builtin_name);
+        if _has_emitter or _sized_cast {
             _unparser = JSCodeGenerator();
             _arg_type_names: list[str] = [
                 self._expr_type_name(_p)
                 for _p in here.params
                 if not isinstance(_p, uni.KWPair)
             ];
+
+            _call_args: list[(es.Expression | es.SpreadElement)] = args;
+            _reordered = False;
+            _kwargs_temp: (es.Expression | None) = None;
+            _slotted = self._slot_builtin_kwargs(here, args, props, _builtin_name);
+            if _slotted is not None {
+                (_call_args, _kwargs_temp) = _slotted;
+                _reordered = True;
+            }
+
             _args_strs: list[str] = [];
-            for _a in args {
+            for _a in _call_args {
                 _args_strs.append(_unparser.generate(_a));
             }
 
@@ -1412,7 +1439,9 @@ impl EsastGenPass.exit_func_call with uni.FuncCall exit {
             for _p in props {
                 if isinstance(_p, es.Property) and _p.value {
                     _val_str = _unparser.generate(_p.value);
-                    _args_strs.append(_val_str);
+                    if not _reordered {
+                        _args_strs.append(_val_str);
+                    }
                     if isinstance(_p.key, es.Identifier) {
                         _kwargs[_p.key.name] = _val_str;
                     }
@@ -1440,11 +1469,11 @@ impl EsastGenPass.exit_func_call with uni.FuncCall exit {
             _result = None;
             try {
                 if _sized_cast {
-                    _result = self._builtin_emitter.emit_sized_cast(
-                        _builtin_name, _args_strs
-                    );
+                    _result = es_sized_cast(_builtin_name, _args_strs);
                 } else {
-                    _result = _emit_fn(_ctx, _args_strs);
+                    _result = self._builtin_emitter.dispatch_static(
+                        _builtin_name, _ctx, _args_strs
+                    );
                 }
             } except Exception as _emit_err {
                 self.ctx.emit(
@@ -1457,9 +1486,15 @@ impl EsastGenPass.exit_func_call with uni.FuncCall exit {
                 if "_jac." in str(_result) {
                     self.needs_jac_runtime = True;
                 }
-                here.gen.es_ast = self.sync_loc(
+                _raw_expr: es.Expression = self.sync_loc(
                     es.RawCode(code=_result), jac_node=here
                 );
+                if _kwargs_temp is not None {
+                    _raw_expr = self._wrap_with_kwargs_temp(
+                        _raw_expr, _kwargs_temp, here
+                    );
+                }
+                here.gen.es_ast = _raw_expr;
                 return;
             }
         }
@@ -1473,16 +1508,13 @@ impl EsastGenPass.exit_func_call with uni.FuncCall exit {
     field_args = self._field_constructor_args(here, args, props);
     if field_args is not None {
         here.gen.es_ast = self.sync_loc(
-            es.NewExpression(
-                callee=cast(es.Expression, callee), arguments=[field_args]
-            ),
-            jac_node=here
+            es.NewExpression(callee=callee, arguments=[field_args]), jac_node=here
         );
         return;
     }
 
     args_obj = self.sync_loc(es.ObjectExpression(properties=props), jac_node=here);
-    callee_expr = cast(es.Expression, callee);
+    callee_expr = callee;
     call_args: list[(es.Expression | es.SpreadElement)] = args;
     (spread_arg, spread_read_source) = self._make_kwargs_spread_context(props, here);
     use_kwargs_temp = spread_read_source is not None;

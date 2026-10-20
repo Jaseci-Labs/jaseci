@@ -4,10 +4,63 @@ import shutil;
 import subprocess;
 import sys;
 import from pathlib { Path }
-import from jaclang.cli.console { console }
-import from jaclang.client.targets.desktop._dev_launch { desktop_launch_env }
 
-def _jaclang_src_roots -> list[Path] {
+def _jaclang_src_roots -> list[Path];
+
+def _find_desktop_native_dir -> Path;
+
+def _find_native_asset_dir(subdir: str, marker: str) -> Path;
+
+def _find_webview_dir -> Path;
+
+def _find_cef_dir -> Path;
+
+def _jac_subprocess_env -> dict[str, str];
+
+def _patchelf_rpath(binary: Path, rpath: str) -> bool;
+
+def _patch_host_rpath(binary: Path);
+
+
+def _fused_runtime_dir -> Path;
+
+
+def _stage_fused_runtime(out_dir: Path);
+
+
+def _bundle_runtime(host_binary: Path);
+
+def _jac_bin -> str;
+
+def _cef_bootstrap_js -> str;
+
+def _jac_sdk_js -> str;
+
+def _top_level_import_boundary(lines: list[str]) -> int;
+
+def _inject_platform(host_src: str, platform_src: str) -> str;
+
+def _native_build_cef(
+    cef_dir: Path, source_name: str, build_name: str, output: Path, shared: bool,
+) -> Path;
+
+
+def build_cef_dispatch(cef_dir: Path) -> Path;
+
+def build_cef_subprocess(cef_dir: Path) -> Path;
+
+def serving_app_for(config: any, entry_file: Path, backend: str) -> str;
+
+
+def stage_program(
+    entry_file: Path,
+    project_dir: Path,
+    image_dir: Path,
+    backend: str,
+    dist_dir: (Path | None)
+) -> dict[str, str];
+
+impl _jaclang_src_roots -> list[Path] {
     roots: list[Path] = [];
     jac_src = os.environ.get("JAC_DESKTOP_JAC_SRC");
     if jac_src {
@@ -23,7 +76,7 @@ def _jaclang_src_roots -> list[Path] {
     return roots;
 }
 
-def _find_desktop_native_dir -> Path {
+impl _find_desktop_native_dir -> Path {
     for src in _jaclang_src_roots() {
         native = src / "jaclang" / "client" / "targets" / "desktop" / "native";
         if (
@@ -57,7 +110,7 @@ def _find_desktop_native_dir -> Path {
     );
 }
 
-def _find_native_asset_dir(subdir: str, marker: str) -> Path {
+impl _find_native_asset_dir(subdir: str, marker: str) -> Path {
     if subdir == "webview" and marker == "webview.jac" {
         import from jaclang.toolchains.desktop { source_workspace }
         return source_workspace(_find_desktop_native_dir() / "webview", "webview");
@@ -85,22 +138,19 @@ def _find_native_asset_dir(subdir: str, marker: str) -> Path {
     );
 }
 
-def _find_webview_dir -> Path {
-    import from jaclang.toolchains.desktop { source_workspace }
+impl _find_webview_dir -> Path {
     return source_workspace(_find_desktop_native_dir() / "webview", "webview");
 }
 
-def _find_cef_dir -> Path {
-    import from jaclang.toolchains.desktop { source_workspace }
+impl _find_cef_dir -> Path {
     return source_workspace(_find_native_asset_dir("cef", "cef.jac"), "cef");
 }
 
-def _jac_subprocess_env -> dict[str, str] {
+impl _jac_subprocess_env -> dict[str, str] {
     return desktop_launch_env();
 }
 
-def _patchelf_rpath(binary: Path, rpath: str) -> bool {
-    import from jaclang.toolchains.system { ensure_patchelf }
+impl _patchelf_rpath(binary: Path, rpath: str) -> bool {
     patchelf = ensure_patchelf();
     res = subprocess.run([patchelf, "--set-rpath", rpath, str(binary)]);
     if res.returncode != 0 {
@@ -112,18 +162,16 @@ def _patchelf_rpath(binary: Path, rpath: str) -> bool {
     return True;
 }
 
-def _patch_host_rpath(binary: Path) {
+impl _patch_host_rpath(binary: Path) {
     _patchelf_rpath(binary, "$ORIGIN");
 }
 
-
-def _fused_runtime_dir -> Path {
+impl _fused_runtime_dir -> Path {
     import jaclang;
     return Path(jaclang.__file__).parent / "dist" / "fused";
 }
 
-
-def _stage_fused_runtime(out_dir: Path) {
+impl _stage_fused_runtime(out_dir: Path) {
     src = _fused_runtime_dir();
     if not (src / "bringup.jac").is_file() {
         raise RuntimeError(
@@ -139,9 +187,7 @@ def _stage_fused_runtime(out_dir: Path) {
     }
 }
 
-
-def _bundle_runtime(host_binary: Path) {
-    import from jaclang.dist.fused_binary { graft_runtime }
+impl _bundle_runtime(host_binary: Path) {
     jac_bin = os.path.realpath(os.sys.executable);
 
     if not graft_runtime(jac_bin, str(host_binary)) {
@@ -153,9 +199,9 @@ def _bundle_runtime(host_binary: Path) {
     }
 }
 
-def _jac_bin -> str {
-    exe = os.environ.get("JAC_EXECUTABLE");
-    if exe and os.path.exists(exe) {
+impl _jac_bin -> str {
+    exe = jac_binary();
+    if exe {
         return exe;
     }
     found = shutil.which("jac");
@@ -165,7 +211,7 @@ def _jac_bin -> str {
     raise RuntimeError("jac CLI not found on PATH.");
 }
 
-def _cef_bootstrap_js -> str {
+impl _cef_bootstrap_js -> str {
     src = (_find_cef_dir() / "cef_dispatch.jac").read_text();
     anchor = "glob BOOTSTRAP_JS: str = \"";
     i = src.find(anchor);
@@ -180,7 +226,7 @@ def _cef_bootstrap_js -> str {
     return src[start:end];
 }
 
-def _jac_sdk_js -> str {
+impl _jac_sdk_js -> str {
     boot = _cef_bootstrap_js();
     start = boot.find("(function(){var _l={}");
     end = boot.find("(function(){try{");
@@ -193,7 +239,7 @@ def _jac_sdk_js -> str {
     return boot[start:end];
 }
 
-def _top_level_import_boundary(lines: list[str]) -> int {
+impl _top_level_import_boundary(lines: list[str]) -> int {
     depth = 0;
     idx = 0;
     for line in lines {
@@ -212,17 +258,16 @@ def _top_level_import_boundary(lines: list[str]) -> int {
     return len(lines);
 }
 
-def _inject_platform(host_src: str, platform_src: str) -> str {
+impl _inject_platform(host_src: str, platform_src: str) -> str {
     plat = platform_src[:-1] if platform_src.endswith("\n") else platform_src;
     lines = host_src.split("\n");
     at = _top_level_import_boundary(lines);
     return "\n".join(lines[:at] + [plat] + lines[at:]);
 }
 
-def _native_build_cef(
+impl _native_build_cef(
     cef_dir: Path, source_name: str, build_name: str, output: Path, shared: bool,
 ) -> Path {
-    import from jaclang.jac0core.cache_paths { FileLock }
     with FileLock(cef_dir / ".native-build.lock") {
         build_dir = cef_dir / ".build";
         build_dir.mkdir(parents=True, exist_ok=True);
@@ -246,9 +291,7 @@ def _native_build_cef(
     }
 }
 
-
-def build_cef_dispatch(cef_dir: Path) -> Path {
-    import from jaclang.toolchains.desktop { source_workspace }
+impl build_cef_dispatch(cef_dir: Path) -> Path {
     cef_dir = source_workspace(cef_dir, "cef");
     return _native_build_cef(
         cef_dir,
@@ -259,8 +302,7 @@ def build_cef_dispatch(cef_dir: Path) -> Path {
     );
 }
 
-def build_cef_subprocess(cef_dir: Path) -> Path {
-    import from jaclang.toolchains.desktop { source_workspace }
+impl build_cef_subprocess(cef_dir: Path) -> Path {
     cef_dir = source_workspace(cef_dir, "cef");
     return _native_build_cef(
         cef_dir,
@@ -271,7 +313,7 @@ def build_cef_subprocess(cef_dir: Path) -> Path {
     );
 }
 
-def serving_app_for(config: any, entry_file: Path, backend: str) -> str {
+impl serving_app_for(config: any, entry_file: Path, backend: str) -> str {
     if config is None or not config.is_workspace or not config.apps {
         return "";
     }
@@ -295,8 +337,7 @@ def serving_app_for(config: any, entry_file: Path, backend: str) -> str {
     return selected_app.name if selected_app is not None else "";
 }
 
-
-def stage_program(
+impl stage_program(
     entry_file: Path,
     project_dir: Path,
     image_dir: Path,
@@ -320,7 +361,7 @@ def stage_program(
     if dist_dir is None {
         return {"entry": str(entry_file.resolve())};
     }
-    import from jaclang.dist.seal { build_jab }
+
     import from jaclang.project.config { get_config_for_dir }
     config = get_config_for_dir(str(project_dir));
     if config is None {

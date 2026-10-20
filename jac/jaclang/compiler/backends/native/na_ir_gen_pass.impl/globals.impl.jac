@@ -5,7 +5,7 @@ impl NaIRGenPass._quiet_glob_type(type_expr: (uni.UniNode | None)) -> (ir.Type |
     if isinstance(type_expr, uni.SubTag) and type_expr?.tag is not None {
         return self._quiet_glob_type(type_expr.tag);
     }
-    _ptb = type_expr?.type;
+    _ptb = _node_sem_type(type_expr);
     if _ptb is None {
         return None;
     }
@@ -43,7 +43,7 @@ impl NaIRGenPass._register_globals(module: uni.Module) -> None {
 
 impl NaIRGenPass._register_entry_globals(module: uni.Module) -> None {
     candidates: dict[str, ir.Type] = {};
-    dropped: set = set();
+    dropped: set[str] = set();
     for stmt in ModuleFacts.iter_context_stmts(module, CodeContext.NATIVE) {
         if not isinstance(stmt, uni.ModuleCode) {
             continue;
@@ -52,14 +52,11 @@ impl NaIRGenPass._register_entry_globals(module: uni.Module) -> None {
             if assign.aug_op is not None {
                 continue;
             }
-            targets = assign.target
-                if isinstance(assign.target, (list, tuple))
-                else [(assign.target)];
-            for target in targets {
+            for target in assign.target {
                 if (
                     not isinstance(target, uni.NameAtom)
                     or target.sym is None
-                    or target.sym.storage != uni.SymbolStorage.MODULE_GLOBAL
+                    or target.sym.storage != SymbolStorage.MODULE_GLOBAL
                 ) {
                     continue;
                 }
@@ -97,7 +94,7 @@ impl NaIRGenPass._register_entry_globals(module: uni.Module) -> None {
             }
         }
     }
-    import from jaclang.compiler.frontend.codeinfo { native_def_symbol }
+
     for (var_name, var_type) in candidates.items() {
         try {
             global_var = ir.GlobalVariable(
@@ -242,7 +239,6 @@ impl NaIRGenPass._infer_global_init_type(value_node: uni.UniNode) -> (ir.Type | 
 impl NaIRGenPass._codegen_const_expr(
     nd: uni.UniNode, target_type: ir.Type
 ) -> (ir.Constant | None) {
-    import from jaclang.compiler.frontend.const_fold { fold_const }
     if self?.jacval_type and target_type == self.jacval_type {
         return None;
     }
@@ -283,7 +279,7 @@ impl NaIRGenPass._codegen_const_expr(
 impl NaIRGenPass._register_enums(module: uni.Module) -> None {
     for stmt in ModuleFacts.iter_context_stmts(module, CodeContext.NATIVE) {
         if isinstance(stmt, uni.Enum) {
-            self._codegen_enum(stmt);
+            self._codegen_enum(stmt, quiet=True);
         }
     }
 }

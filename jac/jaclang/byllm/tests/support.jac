@@ -26,6 +26,8 @@ import from jaclang.byllm.lib { MockLLM, MockToolCall, MockRawResponse, MockErro
 import from jaclang.byllm.mtir { MTRuntime }
 import from jaclang.byllm.types { Message, MessageRole, StreamEvent, Tool }
 
+import from jaclang.byllm.llm { MockSystemOne }
+
 glob FIXTURE_DIR: str = os.path.join(os.path.dirname(__file__), "fixtures"),
      TOKENS: dict[str, any] = {
          "prompt_tokens": 100,
@@ -346,6 +348,16 @@ def media_blocks(llm: MockLLM, n: int = 0) -> list[dict[str, any]] {
 }
 
 
+"""Just the `file` blocks (documents) of the user turn of call `n`, in order."""
+def document_blocks(llm: MockLLM, n: int = 0) -> list[dict[str, any]] {
+    return [
+        b
+        for b in user_blocks(llm, n)
+        if b.get("type") == "file"
+    ];
+}
+
+
 """The data url carried by one media block."""
 def data_url(block: dict[str, any]) -> str {
     return block["image_url"]["url"];
@@ -497,4 +509,35 @@ obj RoutingLLM(MockLLM) {
             );
         }
     }
+}
+
+
+"""A scripted `choice` answer for a call that asks one question."""
+def choose(label: str, confidence: float = 1.0) -> dict[str, any] {
+    return {
+        "value": {
+            "type": "choice",
+            "choice": label,
+            "confidence": confidence,
+            "probabilities": {label: (1.0 + confidence) / 2.0}
+        }
+    };
+}
+
+
+"""A scripted `noul` answer for a call that asks one question."""
+def yes(p: float) -> dict[str, any] {
+    return {"value": {"type": "noul", "noul": p}};
+}
+
+
+"""Scripted `noul` answers keyed by question, as `list[E]` and routing calls ask them."""
+def nouls(ps: dict[str, float]) -> dict[str, any] {
+    return {k: {"type": "noul", "noul": v} for (k, v) in ps.items()};
+}
+
+
+"""The questions sent on call `n`, keyed by question id, as they went on the wire."""
+def questions_of(so1: MockSystemOne, n: int = 0) -> dict[str, any] {
+    return so1.seen[n]["questions"];
 }

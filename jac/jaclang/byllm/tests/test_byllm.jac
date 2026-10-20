@@ -19,6 +19,7 @@ import from jaclang.byllm.exceptions {
     McpError
 }
 import from jaclang.byllm.mcp { McpClient, McpTool }
+import from jaclang.byllm.schema { type_display_name }
 import from jaclang.byllm.types { Tool, Message, MessageRole }
 import from jaclang { JacRuntimeInterface as Jac }
 import from jaclang.byllm.lib { MockLLM }
@@ -274,23 +275,57 @@ obj _TestFieldless {}
 
 
 test "parse_response raises OutputConversionError with the raw output attached" {
-    for (why, raw) in [
-        ("plain text", "Alice is a 30 year old engineer."),
-        ("markdown fenced json", "```json\n{\"name\": \"Alice\", \"age\": 30}\n```"),
-        ("wrong json structure", "{\"foo\": \"bar\", \"baz\": 99}")
+    # A union return must fail the same way, named as written.
+    for (why, resp_type, raw, name) in [
+        (
+            "plain text",
+            _TestPerson,
+            "Alice is a 30 year old engineer.",
+            "'_TestPerson'"
+        ),
+        (
+            "markdown fenced json",
+            _TestPerson,
+            "```json\n{\"name\": \"Alice\", \"age\": 30}\n```",
+            "'_TestPerson'"
+        ),
+        (
+            "wrong json structure",
+            _TestPerson,
+            "{\"foo\": \"bar\", \"baz\": 99}",
+            "'_TestPerson'"
+        ),
+        ("union return", int | None, "not json", "'int | None'")
     ] {
         raised = False;
         try {
-            mk_run(resp_type=_TestPerson).parse_response(raw);
+            mk_run(resp_type=resp_type).parse_response(raw);
         } except OutputConversionError as e {
             raised = True;
             err: any = e;
             assert err.raw_output == raw , (
                 f"{why}: raw_output should carry the model output, got '{err.raw_output}'"
             );
-            assert "Person" in str(e) , f"{why}: error message should name the target type";
+            assert name in str(e) , f"{why}: error message should name {name}, got: {e}";
+            assert e.__cause__ is not None , f"{why}: the parse failure must be chained";
         }
         assert raised , f"{why}: expected OutputConversionError";
+    }
+}
+
+test "return types are named the way they are written" {
+    # Error messages and the retry prompt name the return type with this. A union
+    # has no usable __name__ (missing before Python 3.14, just "Union" on 3.14),
+    # so composite annotations are spelled out member by member.
+    for (ty, expected) in [
+        (int, "int"),
+        (None, "None"),
+        (int | None, "int | None"),
+        (dict[str, list[int | None]], "dict[str, list[int | None]]"),
+        (tuple[int, ...], "tuple[int, ...]")
+    ] {
+        got = type_display_name(ty);
+        assert got == expected , f"{ty!r}: expected '{expected}', got '{got}'";
     }
 }
 
@@ -337,16 +372,24 @@ test "unregistered tool call is recovered not fatal" {
 }
 
 test "finish tool error on type mismatch" {
-    finish_tool = Tool.make_finish_tool(_TestPerson);
+    for (resp_type, sent, name) in [
+        (_TestPerson, {"wrong_key": "value"}, "'_TestPerson'"),
+        (int | None, "not a value", "'int | None'")
+    ] {
+        finish_tool = Tool.make_finish_tool(resp_type);
 
-    raised = False;
-    try {
-        finish_tool({"wrong_key": "value"});
-    } except FinishToolError as e {
-        raised = True;
-        assert "Person" in str(e) , f"Error should name the target type, got: {e}";
+        raised = False;
+        try {
+            finish_tool(sent);
+        } except FinishToolError as e {
+            raised = True;
+            assert f"does not match expected type {name}" in str(e) , (
+                f"{name}: error should name the target type, got: {e}"
+            );
+            assert e.__cause__ is not None , f"{name}: the validation error must be chained";
+        }
+        assert raised , f"{name}: expected FinishToolError for mismatched input type";
     }
-    assert raised , "Expected FinishToolError for mismatched input type";
 }
 
 test "finish tool error not raised for valid type" {
@@ -1292,4 +1335,63 @@ test "damaged and truncated tool calls are told apart and get the advice that fi
             assert forbid not in advice , f"{why}: must not say {forbid!r}: {advice!r}";
         }
     }
+}
+
+
+def _fresh_probe(code: str) -> str {
+    import subprocess;
+    import sys;
+    result = subprocess.run(
+        [sys.executable, "-c", code], capture_output=True, text=True, timeout=300
+    );
+    assert result.returncode == 0 , f"probe failed: {result.stderr[-3000:]}";
+    return result.stdout;
+}
+
+# litellm costs seconds to import, so byllm loads it on first use; a cold
+# serve pod that never calls a model must never pay for it.
+test "importing byllm and building a model loads neither litellm nor openai" {
+    out = _fresh_probe(
+        "import sys\n"
+        "import jaclang.byllm.llm as llm\n"
+        "llm.Model(model_name='gpt-4o-mini')\n"
+        "llm.MockLLM(outputs=['x'])\n"
+        "print('litellm=' + str('litellm' in sys.modules))\n"
+        "print('openai=' + str('openai' in sys.modules))\n"
+    );
+    assert "litellm=False" in out , out;
+    assert "openai=False" in out , out;
+}
+
+test "litellm settings and load hooks apply when litellm is first imported" {
+    out = _fresh_probe(
+        "import sys\n"
+        "import jaclang.byllm.llm as llm\n"
+        "from jaclang.byllm._optdeps.litellm import LiteLLMMessage, when_litellm_loaded\n"
+        "llm.Model(model_name='gpt-4o-mini')\n"
+        "seen = []\n"
+        "when_litellm_loaded(lambda mod: seen.append(mod.__name__))\n"
+        "import litellm\n"
+        "print('seen=' + ','.join(seen))\n"
+        "print('drop_params=' + str(litellm.drop_params))\n"
+        "print('suppress=' + str(litellm.suppress_debug_info))\n"
+        "msg = LiteLLMMessage(role='assistant', content='hi')\n"
+        "print('message=' + str(isinstance(msg, litellm.types.utils.Message)))\n"
+        "print('stand_in=' + str(isinstance(msg, LiteLLMMessage)))\n"
+        "print('proxy_same=' + str(llm.litellm.completion is litellm.completion))\n"
+        "from jaclang.byllm.exceptions import LLMTimeout\n"
+        "print('timeout_is_provider=' + str(issubclass(LLMTimeout, litellm.Timeout)))\n"
+        "try:\n"
+        "    raise LLMTimeout(message='slow', model='m')\n"
+        "except litellm.Timeout as caught:\n"
+        "    print('caught_status=' + str(caught.status_code))\n"
+    );
+    assert "seen=litellm" in out , out;
+    assert "drop_params=True" in out , out;
+    assert "suppress=True" in out , out;
+    assert "message=True" in out , out;
+    assert "stand_in=True" in out , out;
+    assert "proxy_same=True" in out , out;
+    assert "timeout_is_provider=True" in out , out;
+    assert "caught_status=408" in out , out;
 }

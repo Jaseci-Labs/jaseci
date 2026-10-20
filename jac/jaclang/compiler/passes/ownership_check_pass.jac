@@ -1,77 +1,4 @@
-import from jaclang.compiler.frontend.roles { BodyRole, Kid }
-import from jaclang.compiler.passes.context { CompileContext, CompilerPass }
-import type from jaclang.compiler.types.types { TypeBase }
 import from enum { Enum }
-import from jaclang.compiler.frontend.unitree {
-    Ability,
-    AstElseBodyNode,
-    Archetype,
-    Assignment,
-    AtomTrailer,
-    BinaryExpr,
-    CfgExpr,
-    ConcurrentExpr,
-    ConnectOp,
-    CtrlStmt,
-    DeleteStmt,
-    DictVal,
-    DisengageStmt,
-    Enum as UniEnum,
-    Expr,
-    FString,
-    FuncCall,
-    FuncSignature,
-    GlobalVars,
-    HasVar,
-    IfElseExpr,
-    Import,
-    InForStmt,
-    IndexSlice,
-    Int,
-    IterForStmt,
-    KWPair,
-    LambdaExpr,
-    ListVal,
-    Module,
-    ModuleCode,
-    MultiString,
-    Name,
-    Null,
-    OpenStmt,
-    ParamVar,
-    RaiseStmt,
-    FinallyStmt,
-    Except,
-    TryStmt,
-    ReturnStmt,
-    SetVal,
-    Slice,
-    String,
-    SubTag,
-    Token,
-    TupleVal,
-    UnaryExpr,
-    UniCFGNode,
-    UniNode,
-    UniScopeNode,
-    WhileStmt,
-    YieldExpr
-}
-import from jaclang.compiler.frontend.constant {
-    Tokens as Tok,
-    OwnershipKind,
-    SymbolStorage,
-    is_borrow_kind,
-    is_mut_kind
-}
-
-import from jaclang.compiler.passes.dataflow {
-    DataflowTransfer,
-    SymId,
-    solve_backward,
-    solve_forward,
-    solve_forward_must
-}
 
 enum AccessKind {
     ASSIGN_TARGET = "assign_target",
@@ -97,13 +24,15 @@ obj BorrowMeta {
         managed: bool = False,
         path_fields: set[str] postinit;
 
-    def postinit {
-        self.extra_owners = [];
-        self.path_fields = set();
-    }
+    def postinit;
 }
 
 walker OwnershipCheckPass(CompilerPass) {
+    static has contract: PassContract = PassContract(
+        requires=(AnalysisFact.CFG_SUCC, AnalysisFact.TYPE_OF, ),
+        provides=(AnalysisFact.OWNERSHIP, )
+    );
+
     has owned_decl: dict[SymId, Name] = {},
         linear_decl: dict[SymId, Name] = {},
         consumed_syms: set[SymId] = set(),
@@ -134,6 +63,7 @@ walker OwnershipCheckPass(CompilerPass) {
     def _nogc_setup -> None;
     def _nogc_resolve_provenance -> (str | None);
     def _nogc_infer_locals -> None;
+    def _nogc_entry_confined_str(tgt: Name) -> bool;
     def _nogc_infer_state(expr: Expr | None) -> tuple[OwnershipKind, list[Name]];
     def _nogc_bind_inferred(
         nd: Assignment, tgt: Name, kind: OwnershipKind, roots: list[Name]

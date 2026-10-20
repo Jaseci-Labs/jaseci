@@ -1,13 +1,4 @@
 impl UniNode.postinit -> None {
-    self.__sub_node_tab = None;
-    self._ctx_parent = None;
-    self._struct_frozen = False;
-    self._in_mod_nodes = [];
-    self._gen = None;
-    self.ct_pruned = False;
-    if self?._role_shapes is None {
-        self._role_shapes = None;
-    }
     (first_tok, last_tok) = self.resolve_tok_range();
     self.loc = CodeLocInfo(first_tok, last_tok);
 }
@@ -436,7 +427,6 @@ impl UniNode.resolve_tok_range -> tuple[(Token, Token)] {
 }
 
 impl UniNode.gen_token(name: Tok, value: (str | None) = None) -> Token {
-    import from jaclang.compiler.frontend.constant { TOKEN_MAP }
     if value is None {
         value = DELIM_MAP[name]
             if (name in DELIM_MAP)
@@ -465,8 +455,30 @@ impl UniNode.codespace -> CodeContext {
             return CodeContext.NATIVE;
         }
     }
+    if isinstance(self, ImplDef) {
+        own_decl = self.decl_link;
+        if isinstance(own_decl, ContextAwareNode) {
+            if (own_decl.code_context == CodeContext.CLIENT) {
+                return CodeContext.CLIENT;
+            }
+            if (own_decl.code_context == CodeContext.NATIVE) {
+                return CodeContext.NATIVE;
+            }
+        }
+    }
     nd: (UniNode | None) = self.parent;
     while (nd is not None) {
+        if isinstance(nd, ImplDef) {
+            decl = nd.decl_link;
+            if isinstance(decl, ContextAwareNode) {
+                if (decl.code_context == CodeContext.CLIENT) {
+                    return CodeContext.CLIENT;
+                }
+                if (decl.code_context == CodeContext.NATIVE) {
+                    return CodeContext.NATIVE;
+                }
+            }
+        }
         if isinstance(nd, ContextAwareNode) {
             context = nd.code_context;
             if (context == CodeContext.CLIENT) {
@@ -680,6 +692,14 @@ impl Symbol.storage.getter -> SymbolStorage {
         }
         return SymbolStorage.CAPTURED;
     }
+    if (
+        def_scope is not owner
+        and not self.imported
+        and isinstance(owner, Ability)
+        and owner.is_method
+    ) {
+        return SymbolStorage.PARAM;
+    }
     return SymbolStorage.LOCAL;
 }
 
@@ -810,7 +830,7 @@ impl UniScopeNode.lookup(
     if decl is not None {
         decl_scope = decl.sym_tab;
         if decl_scope is not None {
-            return decl_scope.lookup(name, deep=True, incl_inner_scope=False);
+            return decl_scope.lookup(name, deep=deep, incl_inner_scope=False);
         }
     }
     return None;
@@ -911,11 +931,14 @@ impl UniScopeNode.get_enclosing_captures -> list[Symbol] {
                 tab = sym.parent_tab;
             }
         }
-        if (
-            (tab is None)
-            or same_lexical_scope(tab, self)
-            or not isinstance(tab, (Ability, ImplDef, LambdaExpr, Test))
-        ) {
+        if (tab is None) or same_lexical_scope(tab, self) {
+            continue;
+        }
+        frame: (UniScopeNode | None) = tab;
+        while frame is not None and not UniScopeNode.is_python_scoping(frame) {
+            frame = frame.parent_scope;
+        }
+        if not isinstance(frame, (Ability, ImplDef, LambdaExpr, Test)) {
             continue;
         }
 
@@ -1340,16 +1363,7 @@ impl UniCFGNode.get_tail -> UniCFGNode {
     return nd;
 }
 
-impl Expr.postinit -> None {
-    self._type_sym_tab = None;
-    self._type_cache = None;
-    self._type_cache_ok = False;
-    self.ct_value = None;
-    self.coerce_to = None;
-    self.fw = None;
-    self.fw_safe = False;
-    self.attached_tokens = None;
-}
+impl Expr.postinit -> None {}
 
 
 impl CodeBlockStmt.postinit -> None {
@@ -1621,7 +1635,6 @@ impl Import.is_jac.getter -> bool {
 }
 
 impl Import.__jac_detected.getter -> bool {
-    import from jaclang.compiler.frontend.host { active_host }
     host = active_host();
     if self.from_loc {
         target = self.from_loc.resolve_relative_path();
@@ -1747,10 +1760,15 @@ impl ModulePath.base_module_name.getter -> str {
 }
 
 impl ModulePath.resolve_relative_path(target_item: (str | None) = None) -> str {
-    import from jaclang.compiler.frontend.host { active_host }
     bundled = self.native_bundled_path();
     if bundled is not None {
         return bundled;
+    }
+    if target_item is None {
+        variant = self.native_variant_path();
+        if variant is not None {
+            return variant;
+        }
     }
     spv = self.string_path_value;
     if spv is not None {
@@ -1764,11 +1782,6 @@ impl ModulePath.resolve_relative_path(target_item: (str | None) = None) -> str {
 
 impl ModulePath.native_bundled_path -> (str | None) {
     import os;
-    import from jaclang.compiler.frontend.codeinfo {
-        is_bundled_native_module,
-        NATIVE_STDLIB_EXTENSIONS,
-        resolve_native_module
-    }
     mod_path = self.loc.mod_path if self.loc else None;
     if not self.in_native_context() {
         return None;
@@ -1783,6 +1796,31 @@ impl ModulePath.native_bundled_path -> (str | None) {
     base_dir = os.path.dirname(mod_path) if mod_path else os.getcwd();
     (_src, full_path) = resolve_native_module(base, base_dir);
     return full_path;
+}
+
+impl ModulePath.native_variant_path -> (str | None) {
+    import os;
+    mod_path = self.loc.mod_path if self.loc else None;
+    if not mod_path
+        or self.level == 0
+        or self.string_path_value is not None
+        or not self.path
+        or "/runtime/na_stdlib/" not in mod_path.replace("\\", "/") {
+        return None;
+    }
+    base = os.path.dirname(mod_path);
+    for _ in range(self.level - 1) {
+        base = os.path.dirname(base);
+    }
+    candidate = base;
+    for segment in self.path {
+        candidate = os.path.join(candidate, segment.value);
+    }
+    if os.path.isfile(candidate + ".jac") or os.path.isdir(candidate) {
+        return None;
+    }
+    import from jaclang.compiler.frontend.codeinfo { _native_variant_path }
+    return _native_variant_path(candidate);
 }
 
 impl ModulePath.resolve_relative_path_list -> list[str] {
@@ -1860,11 +1898,11 @@ impl ModuleItem.resolve_relative_path -> str {
     return self.from_mod_path.resolve_relative_path(target_item=item_name);
 }
 
-impl ImplImport.postinit -> None {
+impl GraphImport.postinit -> None {
     UniNode.postinit(self);
 }
 
-impl ImplImport.scope_prefix.getter -> str {
+impl GraphImport.scope_prefix.getter -> str {
     sc = self.scope;
     return sc.dot_path_str if sc is not None else "";
 }
@@ -1873,9 +1911,9 @@ impl ImportWire.postinit -> None {
     UniNode.postinit(self);
 }
 
-impl ImportWire.block.getter -> ImplImport {
-    if (not self.parent or not isinstance(self.parent, ImplImport)) {
-        raise ValueError('ImplImport parent not found. Not Possible.');
+impl ImportWire.block.getter -> GraphImport {
+    if (not self.parent or not isinstance(self.parent, GraphImport)) {
+        raise ValueError('GraphImport parent not found. Not Possible.');
     }
     return self.parent;
 }
@@ -1886,17 +1924,29 @@ impl ImportWire.provider_path.getter -> str {
     );
 }
 
-impl ImportWire.consumer_paths.getter -> list[str] {
-    return [c.dot_path_str for c in self.consumers];
+impl WireTarget.postinit -> None {
+    UniNode.postinit(self);
+}
+
+impl WireTarget.wire.getter -> ImportWire {
+    if (not self.parent or not isinstance(self.parent, ImportWire)) {
+        raise ValueError('ImportWire parent not found. Not Possible.');
+    }
+    return self.parent;
+}
+
+impl WireTarget.consumer_paths.getter -> list[str] {
+    scope = self.wire.block.scope_prefix;
+    return [ModulePattern.join_scope(scope, c.dot_path_str) for c in self.consumers];
 }
 
 impl ImportRule.postinit -> None {
     UniNode.postinit(self);
 }
 
-impl ImportRule.block.getter -> ImplImport {
-    if (not self.parent or not isinstance(self.parent, ImplImport)) {
-        raise ValueError('ImplImport parent not found. Not Possible.');
+impl ImportRule.block.getter -> GraphImport {
+    if (not self.parent or not isinstance(self.parent, GraphImport)) {
+        raise ValueError('GraphImport parent not found. Not Possible.');
     }
     return self.parent;
 }
@@ -1931,17 +1981,6 @@ impl WireItem.postinit -> None {
 impl WireItem.binding.getter -> str {
     al = self.alias;
     return al.value if al is not None else self.name.value;
-}
-
-impl ModulePattern.matches(module: str, prefix: str = "") -> bool {
-    if self.is_any {
-        return True;
-    }
-    base = ModulePattern.join_scope(prefix, self.dotted);
-    if self.is_glob {
-        return (not base) or module == base or module.startswith(base + ".");
-    }
-    return module == base;
 }
 
 impl Archetype.postinit -> None {
@@ -2318,6 +2357,16 @@ impl FuncSignature.postinit -> None {
 }
 
 
+impl FuncSignature.get_named_parameters -> list[ParamVar] {
+    params: list[ParamVar] = [];
+    params.extend(self.posonly_params);
+    if self.params is not None {
+        params.extend(self.params);
+    }
+    params.extend(self.kwonlyargs);
+    return params;
+}
+
 impl FuncSignature.get_parameters -> list[ParamVar] {
     params: list[ParamVar] = [];
     params.extend(self.posonly_params);
@@ -2346,6 +2395,10 @@ impl FuncSignature.is_static.getter -> bool {
 }
 
 impl FuncSignature.is_in_py_class.getter -> bool {
+    owner = self.parent.decl_link if isinstance(self.parent, ImplDef) else self.parent;
+    if isinstance(owner, Ability) and owner.accessor_kind {
+        return False;
+    }
     is_archi = self.find_parent_of_type(Archetype);
     is_class = (is_archi is not None) and (is_archi.arch_type.name == Tok.KW_CLASS);
     return (
@@ -2596,7 +2649,6 @@ impl DeleteStmt.is_location(target: Expr) -> bool {
 
 
 impl DeleteStmt.type_has_graph_member(t: (TypeBase | None)) -> bool {
-    import from jaclang.compiler.types.types { ClassType, TypeVarType, UnionType }
     if isinstance(t, TypeVarType) {
         return DeleteStmt.type_has_graph_member(t.bound);
     }
@@ -2621,7 +2673,6 @@ impl DeleteStmt.type_has_graph_member(t: (TypeBase | None)) -> bool {
 }
 
 impl DeleteStmt.type_may_hold_graph(t: (TypeBase | None)) -> bool {
-    import from jaclang.compiler.types.types { ClassType, UnionType }
     if DeleteStmt.type_has_graph_member(t) {
         return True;
     }
@@ -3208,7 +3259,6 @@ impl Token.init(
     self.c_end = col_end;
     self.pos_start = pos_start;
     self.pos_end = pos_end;
-    self._is_synthetic = False;
     UniNode.postinit(self);
 }
 
@@ -3514,6 +3564,18 @@ impl FuncCall.callee_decl.setter(callee_decl: (Ability | None)) {
     }
 }
 
+impl FuncCall.callee_signature.getter -> (TypeBase | None) {
+    found = [self->:CalleeSignature:->];
+    return found[0] if found else None;
+}
+
+impl FuncCall.callee_signature.setter(callee_signature: (TypeBase | None)) {
+    del [edge self->:CalleeSignature:->];
+    if callee_signature is not None {
+        self +>:CalleeSignature:+> callee_signature;
+    }
+}
+
 impl Import.absorbed_mod.getter -> (Module | None) {
     found = [self->:Absorbs:->];
     return found[0] if found else None;
@@ -3766,6 +3828,28 @@ impl kind_has_runtime_binding(
 
 impl has_runtime_binding(sym: Symbol, space: CodeContext) -> bool {
     return kind_has_runtime_binding(sym.binding_kind, resolved_decl_of(sym), space);
+}
+
+impl is_comptime_stmt(nd: UniNode) -> bool {
+    if isinstance(nd, Ability) {
+        return nd.is_comptime;
+    }
+    if isinstance(nd, Assignment) {
+        return nd.is_comptime;
+    }
+    if isinstance(nd, IfStmt) {
+        return nd.is_comptime;
+    }
+    if isinstance(nd, InForStmt) {
+        return nd.is_comptime;
+    }
+    if isinstance(nd, AssertStmt) {
+        return nd.is_comptime;
+    }
+    if isinstance(nd, Import) {
+        return nd.is_comptime;
+    }
+    return False;
 }
 
 impl is_client_destined(nd: UniNode) -> bool {
