@@ -25,14 +25,15 @@ impl _notify_llm_call(mt_run: MTRuntime) -> None {
     sent = mt_run.messages[mt_run._llm_hook_cursor:-1];
     mt_run._llm_hook_cursor = len(mt_run.messages);
     caller = mt_run.mtir.caller if mt_run.mtir else None;
+    usage = dict(mt_run._usage_history[-1]) if mt_run._usage_history else {};
     record: dict[str, any] = {
         "invocation_id": mt_run._invocation_id,
         "parent_invocation_id": mt_run._parent_invocation_id,
         "caller": caller?.__name__,
-        "call_kind": mt_run._call_kind,
+        "call_kind": usage.get("call_kind") or mt_run._call_kind,
         "new_messages": [_plain_message(m) for m in sent],
         "reply": _plain_message(mt_run.messages[-1]),
-        "usage": dict(mt_run._usage_history[-1]) if mt_run._usage_history else {},
+        "usage": usage,
         "after_compaction": mt_run._llm_hook_compacted
     };
     mt_run._llm_hook_compacted = False;

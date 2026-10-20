@@ -175,6 +175,13 @@ test "a reply's own fields are kept, sent back, streamed, counted and reported o
                     == want.get("reasoning_content") , (
                     f"{label}: hook reply {rec['reply']}"
                 );
+                assert rec["call_kind"] == rec["usage"].get("call_kind") , (
+                    f"{label}: hook says {rec['call_kind']}, usage says {rec[
+                        'usage'
+                    ].get(
+                        'call_kind'
+                    )}"
+                );
                 assert rec["usage"].get("reasoning_tokens") == 7 , f"{label}: usage {rec[
                     'usage'
                 ]}";
