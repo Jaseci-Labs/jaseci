@@ -1442,10 +1442,7 @@ impl NaIRGenPass._register_unwind_cleanup -> None {
         self.closure_cell_handles = {};
         self._emit_scope_cleanup(skip_var=None, loc="unwind");
         pending = len(probe.instructions) > 0;
-        # Only the slots the cleanup reads go in the record: a registered
-        # slot's address escapes into the chain, so it can never live in a
-        # register and is reloaded after every call. Scalars, borrowed
-        # values and the rest the cleanup leaves alone stay out of it.
+
         read: set[int] = set();
         for blk in func.blocks[probe_at:] {
             for inst_value in blk.instructions {
@@ -1607,8 +1604,6 @@ impl NaIRGenPass._unwind_shadow_slots(
                 continue;
             }
             if isinstance(inst, ir.GEPInstr) {
-                # (a field or element address derived from the slot: the
-                # slot's own stores would no longer be the only writes)
                 plain.pop(id(inst.pointer), None);
                 for index in inst.indices {
                     plain.pop(id(index), None);
@@ -1631,8 +1626,7 @@ impl NaIRGenPass._unwind_shadow_slots(
             shadows[id(slot)] = b.alloca(slot.allocated_type, name=f"{name}.unwind");
         }
     }
-    # (the slot id was recorded by the scan: the entry block's instruction
-    # positions have moved by the shadow allocas since)
+
     mirrors: dict[int, list[int]] = {};
     for (blk, pos, slot_id) in writes {
         if slot_id in shadows {
@@ -1644,8 +1638,7 @@ impl NaIRGenPass._unwind_shadow_slots(
         if not positions {
             continue;
         }
-        # The shadow allocas went in at the entry block's start, so the
-        # recorded positions there moved by that many.
+
         shift = len(shadows) if blk is entry_blk else 0;
         marked = set([pos + shift for pos in positions]);
         rebuilt: list[any] = [];
