@@ -72,6 +72,7 @@ obj RedisBackend(CacheMemory) {
     def invalidate(id: UUID) -> None;
     def lease(ids: list[UUID]) -> dict[UUID, str];
     def fill(anchor: Anchor, token: (str | None)) -> None;
+    def release(leases: dict[UUID, str]) -> None;
     def publish_invalidation(
         anchor_id: str, origin_l1_id: (str | None) = None
     ) -> None;
@@ -162,6 +163,7 @@ obj ScaleTieredMemory(TieredMemory) {
     def _mark_committed(anchor: (Anchor | None)) -> None;
     def get(id: UUID) -> (Anchor | None);
     def batch_get(ids: list[UUID]) -> dict[UUID, Anchor];
+    def execute_plan(plan: QueryPlan) -> Generator[Anchor, None, None];
     def query(
         filter: (Callable[[Anchor], bool] | None) = None
     ) -> Generator[Anchor, None, None];
