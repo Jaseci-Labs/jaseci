@@ -40,7 +40,7 @@ def:pub CopyCommandBlock(lines: list[str], className: str = "") -> JsxElement {
 }
 
 def:pub CopyCommand(
-    command: str, display: str = "", className: str = ""
+    command: str, display: str = "", className: str = "", prefix: str = "$"
 ) -> JsxElement {
     has copied: bool = False;
 
@@ -55,7 +55,7 @@ def:pub CopyCommand(
                 className
             )}
         >
-            <span className="sh-prompt select-none text-primary">$</span>
+            <span className="sh-prompt select-none text-primary">{prefix}</span>
             <span className="min-w-0 flex-1 truncate text-left text-foreground">
                 {display if display != "" else command}
             </span>

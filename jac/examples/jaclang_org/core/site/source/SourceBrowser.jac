@@ -16,7 +16,7 @@ def _dir_paths(rows: list[dict[str, any]]) -> list[str];
 def _build_rows(tree: list[SourceFile]) -> list[dict[str, any]];
 
 def:pub SourceBrowser(
-    className: str = "", initial_path: str = "web/main.jac"
+    className: str = "", initial_path: str = "web.jac"
 ) -> JsxElement {
     has tree: list[SourceFile] = [],
         rows: list[dict[str, any]] = [],
