@@ -1,16 +1,19 @@
 import from c { def clock_gettime(clk: i32, ts: int) -> i32;  }
 import from c { def clock_nanosleep(clk: i32, flags: i32, req: int, rem: int) -> i32;  }
-import from _errno_native { EINTR, last_errno, raise_errno }
-import from _time_common { NS_PER_SEC }
+import from ._errno_native { EINTR, last_errno, raise_errno }
+import from ._time_common { NS_PER_SEC }
 
 glob CLK_REALTIME: int = 0,
      CLK_MONOTONIC: int = 1,
      CLK_PROCESS_CPUTIME: int = 2,
      CLK_THREAD_CPUTIME: int = 3,
      CLK_MONOTONIC_RAW: int = 4,
+     CLK_PY_MONOTONIC: int = 1,
      _TIMER_ABSTIME: int = 1;
 
-def:pub time_sleep_ns(ns: int) {
+def:pub time_sleep_ns(ns: int);
+
+impl time_sleep_ns(ns: int) {
     ts: int = __alloca(16);
     if clock_gettime(i32(CLK_MONOTONIC), ts) != 0 {
         raise_errno(last_errno());

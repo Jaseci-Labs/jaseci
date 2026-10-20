@@ -60,6 +60,9 @@ impl CFGBuildPass._exit_wired(nd: UniCFGNode) -> bool {
         return bool(nd.bb_out);
     }
     for succ in nd.bb_out {
+        if isinstance(succ, InnerCompr) {
+            continue;
+        }
         if not isinstance(succ, CfgExpr)
             or succ.find_parent_of_type(UniCFGNode) is not nd {
             return True;
@@ -117,7 +120,6 @@ impl CFGBuildPass._wire_bool_operands(
     true_target: (UniCFGNode | None),
     false_target: (UniCFGNode | None)
 ) -> CfgExpr {
-    import from jaclang.compiler.expr_keys { collect_narrowing_symbols }
     for cfg in values {
         cfg.affected_symbols.update(collect_narrowing_symbols(cfg.expr));
     }
@@ -187,7 +189,6 @@ impl CFGBuildPass.exit_bool_expr with BoolExpr exit {
 }
 
 impl CFGBuildPass.exit_if_else_expr with IfElseExpr exit {
-    import from jaclang.compiler.expr_keys { collect_narrowing_symbols }
     here.condition.affected_symbols.update(
         collect_narrowing_symbols(here.condition.expr)
     );
@@ -346,7 +347,6 @@ impl is_structural_child(nd: UniNode) -> bool {
 }
 
 impl CFGBuildPass.cfg_collect_affected with UniNode entry {
-    import from jaclang.compiler.expr_keys { collect_assigned_symbols }
     if isinstance(here, (CodeBlockStmt, Archetype))
         and not isinstance(here, (Semi, ModuleCode, GlobalVars, SemDef, TypeAlias))
         and not is_structural_child(here) {
@@ -358,17 +358,15 @@ impl CFGBuildPass.enter_if_stmt with IfStmt entry {
     if here.__class__ is not IfStmt {
         return;
     }
-    import from jaclang.compiler.expr_keys { collect_narrowing_symbols }
+
     here.affected_symbols.update(collect_narrowing_symbols(here.condition));
 }
 
 impl CFGBuildPass.enter_else_if with ElseIf entry {
-    import from jaclang.compiler.expr_keys { collect_narrowing_symbols }
     here.affected_symbols.update(collect_narrowing_symbols(here.condition));
 }
 
 impl CFGBuildPass.enter_assert_stmt with AssertStmt entry {
-    import from jaclang.compiler.expr_keys { collect_narrowing_symbols }
     here.affected_symbols.update(collect_narrowing_symbols(here.condition));
 }
 
@@ -539,7 +537,6 @@ impl CFGBuildPass.exit_dict_compr with DictCompr exit {
 impl CFGBuildPass._wire_compr_filters(
     target_node: UniCFGNode, comprs: list[InnerCompr]
 ) -> None {
-    import from jaclang.compiler.expr_keys { collect_narrowing_symbols }
     if not comprs {
         return;
     }
@@ -589,7 +586,7 @@ impl CFGBuildPass.exit_ctrl_stmt with CtrlStmt exit {
     if not loop {
         return;
     }
-    import from jaclang.compiler.frontend.constant { Tokens as Tok }
+
     if here.ctrl.name == Tok.KW_CONTINUE {
         self.link_bbs(here, loop);
     } elif here.ctrl.name == Tok.KW_BREAK {
@@ -766,4 +763,20 @@ impl CFGBuildPass.exit_test with Test exit {
             self._link_sequential(body);
         }
     }
+}
+
+impl _unwrap_parens(expr: Expr) -> Expr {
+    while isinstance(expr, AtomUnit) and isinstance(expr.value, Expr) {
+        expr = expr.value;
+    }
+    return expr;
+}
+
+impl unwrap_to_bool(cfg: CfgExpr) -> BoolExpr | None {
+    inner = _unwrap_parens(cfg.expr);
+    return inner if isinstance(inner, BoolExpr) else None;
+}
+
+impl _bool_is_and(expr: BoolExpr) -> bool {
+    return isinstance(expr.op, Token) and expr.op.name == Tok.KW_AND;
 }

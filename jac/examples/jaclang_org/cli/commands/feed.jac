@@ -9,14 +9,20 @@ obj FeedLine {
 }
 
 
-def render_line(line: FeedLine) -> str {
+def render_line(line: FeedLine) -> str;
+
+async def run_feed(limit: int, query: str) -> int;
+
+async def run_post(text: str) -> int;
+
+impl render_line(line: FeedLine) -> str {
     stamp = line.created_at[:19].replace("T", " ");
     head = "@" + (line.author or "someone") + "  " + stamp;
     tail = str(line.likes) + " likes · " + str(line.comments) + " comments";
     return head + "  ·  " + tail + "\n    " + line.content;
 }
 
-async def run_feed(limit: int, query: str) -> int {
+impl run_feed(limit: int, query: str) -> int {
     try {
         res = await load_feed(search_query=query);
         rows = res.reports[0] if res.reports else [];
@@ -51,7 +57,7 @@ async def run_feed(limit: int, query: str) -> int {
     }
 }
 
-async def run_post(text: str) -> int {
+impl run_post(text: str) -> int {
     body = text.strip();
     if not body {
         warn("jacorg post: nothing to post");

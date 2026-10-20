@@ -1,137 +1,5 @@
 """Typed conversion from Jac-owned AST nodes to retained CPython AST values."""
 
-import from jaclang.runtime.python.cpython_api {
-    PyLong_FromLongLong,
-    PyObject,
-    jacpy_ast_new,
-    jacpy_list_append_owned,
-    jacpy_list_new,
-    jacpy_none,
-    jacpy_release,
-    jacpy_set_owned,
-    jacpy_text
-}
-import from jaclang.compiler.frontend.python.ast_nodes {
-    ast_field,
-    ast_kind,
-    ast_node,
-    Module,
-    Interactive,
-    Expression,
-    FunctionType,
-    FunctionDef,
-    AsyncFunctionDef,
-    ClassDef,
-    Return,
-    Delete,
-    Assign,
-    TypeAlias,
-    AugAssign,
-    AnnAssign,
-    For,
-    AsyncFor,
-    While,
-    If,
-    With,
-    AsyncWith,
-    Match,
-    Raise,
-    Try,
-    TryStar,
-    Assert,
-    Import,
-    ImportFrom,
-    Global,
-    Nonlocal,
-    Expr,
-    Pass,
-    Break,
-    Continue,
-    BoolOp,
-    NamedExpr,
-    BinOp,
-    UnaryOp,
-    Lambda,
-    IfExp,
-    Dict,
-    Set,
-    ListComp,
-    SetComp,
-    DictComp,
-    GeneratorExp,
-    Await,
-    Yield,
-    YieldFrom,
-    Compare,
-    Call,
-    FormattedValue,
-    Interpolation,
-    JoinedStr,
-    TemplateStr,
-    Constant,
-    Attribute,
-    Subscript,
-    Starred,
-    Name,
-    List,
-    Tuple,
-    Slice,
-    Load,
-    Store,
-    Del,
-    And,
-    Or,
-    Add,
-    Sub,
-    Mult,
-    MatMult,
-    Div,
-    Mod,
-    Pow,
-    LShift,
-    RShift,
-    BitOr,
-    BitXor,
-    BitAnd,
-    FloorDiv,
-    Invert,
-    Not,
-    UAdd,
-    USub,
-    Eq,
-    NotEq,
-    Lt,
-    LtE,
-    Gt,
-    GtE,
-    Is,
-    IsNot,
-    In,
-    NotIn,
-    comprehension,
-    ExceptHandler,
-    arguments,
-    arg,
-    keyword,
-    alias,
-    withitem,
-    match_case,
-    MatchValue,
-    MatchSingleton,
-    MatchSequence,
-    MatchMapping,
-    MatchClass,
-    MatchStar,
-    MatchAs,
-    MatchOr,
-    TypeIgnore,
-    TypeVar,
-    ParamSpec,
-    TypeVarTuple
-}
-import from jaclang.runtime.python.capi { boundary_failure }
-import from jaclang.runtime.python.objects { PyObj }
-import from jaclang.runtime.python.constant_output { constant_object }
 def ast_output_checked(handle: ptr[PyObject]) -> ptr[PyObject] {
     if handle == 0 {
         raise boundary_failure();
@@ -166,19 +34,19 @@ def ast_write_text(value: str) -> ptr[PyObject] {
 def ast_write_optional_text(value: str | None) -> ptr[PyObject] {
     return ast_write_text(value)
         if value is not None
-        else ast_output_checked(jacpy_none());
+        else ast_output_checked(Py_NewRef(Py_None));
 }
 
 def ast_write_optional_int(value: int | None) -> ptr[PyObject] {
     return ast_output_checked(PyLong_FromLongLong(i64(value)))
         if value is not None
-        else ast_output_checked(jacpy_none());
+        else ast_output_checked(Py_NewRef(Py_None));
 }
 
 def ast_write_optional_node(value: ast_node | None) -> ptr[PyObject] {
     return ast_write_node(value)
         if value is not None
-        else ast_output_checked(jacpy_none());
+        else ast_output_checked(Py_NewRef(Py_None));
 }
 
 def ast_write_constant(value: PyObj) -> ptr[PyObject] {

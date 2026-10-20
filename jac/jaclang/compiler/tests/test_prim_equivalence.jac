@@ -1,16 +1,4 @@
 import ctypes;
-import from jaclang.testing.test { parametrize }
-import from jaclang.compiler.tests.xbackend_equiv {
-    run_with_both,
-    run_py_fixture,
-    compile_fixture_to_js,
-    run_js_function,
-    compile_native,
-    compile_native_errors,
-    get_func,
-    compare_results
-}
-import from jaclang.compiler.backends.native.lowering { native_lowering_issues }
 
 # (case, fixture, py fn, cl fn, na fn, [backends that must run])
 """Rows `prim_str`'s native lane does not produce yet.
@@ -486,6 +474,24 @@ glob STR_NA_GAPS: list[any] = [
              ["na"]
          ),
          (
+             "errno bundled",
+             "prim_errno.jac",
+             "errno_py",
+             "errno_cl",
+             "errno_na",
+             ["na"]
+         ),
+         ("glob bundled", "prim_glob.jac", "glob_py", "glob_cl", "glob_na", ["na"]),
+         ("stat bundled", "prim_stat.jac", "stat_py", "stat_cl", "stat_na", ["na"]),
+         (
+             "platform bundled",
+             "prim_platform.jac",
+             "platform_py",
+             "platform_cl",
+             "platform_na",
+             ["na"]
+         ),
+         (
              "secrets bundled",
              "prim_secrets.jac",
              "secrets_py",
@@ -584,6 +590,14 @@ glob STR_NA_GAPS: list[any] = [
              ["na"]
          ),
          ("csv bundled", "prim_csv.jac", "csv_py", "csv_cl", "csv_na", ["na"]),
+         (
+             "itertools bundled",
+             "prim_itertools.jac",
+             "itertools_py",
+             "itertools_cl",
+             "itertools_na",
+             ["na"]
+         ),
          (
              "pprint bundled",
              "prim_pprint.jac",
@@ -687,6 +701,14 @@ glob STR_NA_GAPS: list[any] = [
              "builtins_introspection_py",
              "builtins_introspection_cl",
              "builtins_introspection_na"
+         ),
+         (
+             "type identity",
+             "prim_builtins_introspection.jac",
+             "type_identity_py",
+             "type_identity_cl",
+             "builtins_introspection_na",
+             ["cl"]
          ),
          (
              "match sequence",
