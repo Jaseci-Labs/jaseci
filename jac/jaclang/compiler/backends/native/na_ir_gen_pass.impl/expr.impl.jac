@@ -185,32 +185,25 @@ impl NaIRGenPass._codegen_required(nd: (uni.UniNode | None)) -> (ir.Value | None
 impl NaIRGenPass._void_call_value(
     nd: uni.FuncCall, value: (ir.Value | None)
 ) -> (ir.Value | None) {
-    if value is None
-        or not isinstance(value.type, ir.VoidType)
-        or self._discards_call_value(nd) {
+    if value is None or not isinstance(value.type, ir.VoidType) {
         return value;
     }
-    callee = nd.target.right if isinstance(nd.target, uni.AtomTrailer) else nd.target;
-    self.emit(
-        E5092,
-        node_override=nd,
-        kind="the value of a call returning None",
-        name=self._get_name(callee) or "call",
-        help_text="The callee returns None, which native lowers to `void`, so the call has no value to use here; the enclosing function runs on the server, where the value is `None`."
-    );
-    return None;
-}
-
-impl NaIRGenPass._discards_call_value(nd: uni.FuncCall) -> bool {
     up = nd.parent;
     while isinstance(up, (uni.AtomUnit, uni.AwaitExpr, uni.ConcurrentExpr)) {
         up = up.parent;
     }
-    if isinstance(up, uni.ExprStmt) {
-        return True;
+    if isinstance(up, uni.ExprStmt)
+        or isinstance(up, (uni.ReturnStmt, uni.LambdaExpr))
+        and isinstance(self.builder.function.return_value.type, ir.VoidType) {
+        return value;
     }
-    return isinstance(up, (uni.ReturnStmt, uni.LambdaExpr))
-        and isinstance(self.builder.function.return_value.type, ir.VoidType);
+    self.emit(
+        E5092,
+        node_override=nd,
+        kind="the value of a call returning None",
+        name=self._get_name(nd.target) or "call"
+    );
+    return None;
 }
 
 impl NaIRGenPass._current_fn_key -> (str | None) {
