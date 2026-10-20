@@ -166,7 +166,7 @@ def:pub NoGlue -> JsxElement {
                 lede="Glue is most of what an agent emits and the part no tool can check: routes, ORM models, migrations, serializers, API clients and deployment files. Jac's compiler and runtime derive all of it from the program, so the agent writes only the logic, and every line it writes is type-checked."
             />
             <Figure
-                label="fig. 3"
+                label="fig. 6"
                 caption="A complete full-stack app. Pick a row to see which lines do the work and which hand-written files they replace. The struck-through files do not exist in a Jac project."
             >
                 <GlueMap/>

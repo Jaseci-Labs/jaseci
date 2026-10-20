@@ -18,8 +18,12 @@ def:pub SectionHead(num: str, kicker: str, title: str, lede: str = "") -> JsxEle
                 <div
                     className="flex items-center gap-3 font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground"
                 >
-                    <span className="text-primary">{num}</span>
-                    <span className="h-px w-8 bg-border"></span>
+                    {if num != "" {
+                        <span className="text-primary">{num}</span>
+                    }}
+                    {if num != "" {
+                        <span className="h-px w-8 bg-border"></span>
+                    }}
                     <span>{kicker}</span>
                 </div>
                 <h2

@@ -682,7 +682,7 @@ def:pub AgentNative -> JsxElement {
                 />
             </div>
             <Figure
-                label="fig. 5"
+                label="fig. 8"
                 caption="Rung c in motion. The walker never sees the whole graph at once: at each node the model chooses among that node's edges, so the agent's reasoning follows the structure of the data."
             >
                 <WalkerDiagram/>

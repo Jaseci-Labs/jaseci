@@ -141,13 +141,13 @@ def:pub ReadableTiers -> JsxElement {
                 lede="Nobody should have to read everything to change anything. A Jac project reads top down in three tiers: `archwire.jac` is the whole architecture, declaration modules are each module's contract, and implementation files hold the bodies. An agent or a reviewer stops at the first tier that answers the question."
             />
             <Figure
-                label="fig. 6"
+                label="fig. 9"
                 caption="Each tier describes less of the system in more detail. Most questions about a codebase are answered by the first two."
             >
                 <ScopeBars/>
             </Figure>
             <Figure
-                label="fig. 7"
+                label="fig. 10"
                 caption="The three tiers, quoted from the repository that serves this page: its wiring, the GitHub client's declarations in `core/github.jac`, and one body from `core/impl/github.impl.jac`."
             >
                 <div className="flex flex-col">

@@ -15,9 +15,7 @@ def:pub TechDemo -> JsxElement {
     return
         <>
             <SectionRail items={HOME_NAV}/>
-            <Hero/>
-            <StatsBand/>
-            <div id="h-arena" className="scroll-mt-24">
+            <div id="h-arena" className="scroll-mt-24 pt-16">
                 <WasmGame/>
             </div>
             <div id="h-mobile" className="scroll-mt-24">

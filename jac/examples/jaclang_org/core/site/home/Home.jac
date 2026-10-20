@@ -1,5 +1,7 @@
 glob HOME_SECTIONS: list[dict[str, any]] = [
          {"id": "one-language", "label": "one language"},
+         {"id": "in-production", "label": "in production"},
+         {"id": "benchmark", "label": "benchmark"},
          {"id": "no-glue", "label": "no glue"},
          {"id": "every-platform", "label": "every platform"},
          {"id": "agents", "label": "agents"},
@@ -14,6 +16,8 @@ def:pub Home -> JsxElement {
             <SectionRail items={HOME_SECTIONS}/>
             <HomeHero/>
             <OneLanguage/>
+            <InProduction/>
+            <NativeBench/>
             <NoGlue/>
             <EveryPlatform/>
             <AgentNative/>

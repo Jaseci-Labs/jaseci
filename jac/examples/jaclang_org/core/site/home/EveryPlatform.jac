@@ -248,7 +248,7 @@ def:pub EveryPlatform -> JsxElement {
                 lede="An app is a projection of one codebase. A workspace names its apps in `jac.toml`, and the same shared core compiles to a website, a desktop window, a phone app, a command-line tool and cloud services, with one type checker watching all of them at once."
             />
             <Figure
-                label="fig. 4"
+                label="fig. 7"
                 caption="Every projection reads the same core. The app directories hold only entry points and pages, and each command builds or runs one projection."
             >
                 <ProjectionDiagram/>

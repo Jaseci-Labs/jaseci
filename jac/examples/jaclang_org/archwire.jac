@@ -415,6 +415,8 @@ graph import core.site {
     landing.Reveal ++> home.AgentNative
         | home.EveryPlatform
         | home.HomeClose
+        | home.InProduction
+        | home.NativeBench
         | home.NoGlue
         | home.OneLanguage
         | home.ReadableTiers
@@ -423,7 +425,7 @@ graph import core.site {
     source.CodeSpotlight ++> landing.MobileShowcase | landing.WaitWuuut {
         CodeSpotlight
     }
-    source.FloatingSource ++> landing.Hero | landing.WaitWuuut { FloatingSource }
+    source.FloatingSource ++> landing.WaitWuuut { FloatingSource }
     source.SourceBrowser ++> landing.ExplorerFinale { SourceBrowser }
     ui.CodeBlock ++> [
         docs.Markdown
@@ -433,9 +435,7 @@ graph import core.site {
             | source.SourceBrowser { CodeLines },
         landing.Showcase { CodeBlock },
     ]
-    ui.GraphBackdrop ++> docs.DocsShell | landing.Hero | leaderboard.Methodology {
-        GraphBackdrop
-    }
+    ui.GraphBackdrop ++> docs.DocsShell | leaderboard.Methodology { GraphBackdrop }
     ui.SectionRail ++> home.Home | landing.TechDemo | landing.WaitWuuut { SectionRail }
     ui.alert_dialog ++> jacyac.components.ProjectCard | jacyac.components.TweetCard {
         AlertDialog,
@@ -462,7 +462,6 @@ graph import core.site {
         | landing.Agents
         | landing.BookSection
         | landing.ExplorerFinale
-        | landing.Hero
         | landing.MobileShowcase
         | landing.OneBinary
         | landing.Showcase
@@ -473,9 +472,7 @@ graph import core.site {
         | packages.PackagePage
         | packages.PackagesIndex { Badge }
     ui.button ++> [
-        home.HomeHero | landing.BookSection | landing.ExplorerFinale | landing.Hero {
-            buttonVariants
-        },
+        home.HomeHero | landing.BookSection | landing.ExplorerFinale { buttonVariants },
         jacyac.JacYac
             | jacyac.components.AuthForm
             | jacyac.components.ChannelsTab
@@ -663,6 +660,8 @@ graph import core.site.home {
     EveryPlatform ++> Home { EveryPlatform }
     HomeClose ++> Home { HomeClose }
     HomeHero ++> Home { HomeHero }
+    InProduction ++> Home { InProduction }
+    NativeBench ++> Home { NativeBench }
     NoGlue ++> Home { NoGlue }
     OneLanguage ++> Home { OneLanguage }
     ReadableTiers ++> Home { ReadableTiers }
@@ -671,6 +670,12 @@ graph import core.site.home {
         EveryPlatform { CodeWindow, Fact, Figure, HomeSection, SectionHead },
         HomeClose { HomeSection, Prose },
         HomeHero { Prose },
+        InProduction | NativeBench | OneLanguage {
+            Fact,
+            Figure,
+            HomeSection,
+            SectionHead
+        },
         NoGlue | ReadableTiers {
             CodeWindow,
             Fact,
@@ -679,7 +684,6 @@ graph import core.site.home {
             Prose,
             SectionHead
         },
-        OneLanguage { Fact, Figure, HomeSection, SectionHead },
     ]
 }
 
@@ -710,11 +714,10 @@ graph import core.site.landing {
     BookSection ++> TechDemo { BookSection }
     Capabilities ++> TechDemo { Capabilities }
     CopyCommand ++> [
-        Agents | Hero { CopyCommand },
+        Agents { CopyCommand },
         ExplorerFinale { CopyCommandBlock },
     ]
     ExplorerFinale ++> TechDemo { ExplorerFinale }
-    Hero ++> TechDemo { Hero }
     MobileShowcase ++> TechDemo { MobileShowcase }
     OneBinary ++> TechDemo { OneBinary }
     Reveal ++> Agents
@@ -724,12 +727,10 @@ graph import core.site.landing {
         | MobileShowcase
         | OneBinary
         | Showcase
-        | StatsBand
         | WaitWuuut
         | WasmGame
         | WhyJac { Reveal }
     Showcase ++> TechDemo { Showcase }
-    StatsBand ++> TechDemo { StatsBand }
     WasmGame ++> TechDemo { WasmGame }
     WhyJac ++> [
         Capabilities { WhySlide },
