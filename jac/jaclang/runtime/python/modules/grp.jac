@@ -4,29 +4,6 @@ Derived from CPython 3.14.6 Modules/grpmodule.c; see ../LICENSE.cpython.
 struct group has the same layout on every supported C library.
 """
 
-import from jaclang.runtime.python.cpython_api {
-    NULL,
-    PyBytes_AsString,
-    PyErr_NoMemory,
-    PyErr_Occurred,
-    PyEval_RestoreThread,
-    PyEval_SaveThread,
-    PyList_Append,
-    PyList_New,
-    PyLong_FromLong,
-    PyMem_RawFree,
-    PyMem_RawRealloc,
-    PyObject,
-    PySequence_Contains,
-    PyStructSequence_New,
-    PyStructSequence_SetItem,
-    PyUnicode_EncodeFSDefault,
-    jacpy_fs_text,
-    jacpy_release
-}
-import from jaclang.runtime.python.capi { object_error, repr_value }
-import from jaclang.runtime.python.bindings.module { jacpy_binding_state_get }
-import from jaclang.runtime.python.modules.user_records { SC_GETGR_R_SIZE_MAX }
 import from c {
     obj group {
         has gr_name: ptr[u8] = ptr[u8](),
@@ -43,9 +20,7 @@ import from c {
         result: &mut ptr[group]
     ) -> i32;  def setgrent;  def getgrent -> ptr[group];  def endgrent;  def sysconf(
         name: i32
-    ) -> i64;  def _Py_Gid_Converter(value: ptr[PyObject], gid: &mut u32) -> i32;  def _PyLong_FromGid(
-        gid: u32
-    ) -> ptr[PyObject];
+    ) -> i64;
 }
 
 glob:priv ERANGE: i32 = 34,
@@ -152,7 +127,7 @@ def grp_getgrgid_impl(module: ptr[PyObject], id_: ptr[PyObject]) -> ptr[PyObject
         number = _PyLong_FromGid(gid);
         if number {
             object_error(
-                "KeyError", f"getgrgid(): gid not found: {repr_value(number)}"
+                PyExc_KeyError, f"getgrgid(): gid not found: {repr_value(number)}"
             );
             jacpy_release(number);
         }
@@ -170,7 +145,7 @@ def without_null(encoded: ptr[PyObject]) -> bool {
     found = PySequence_Contains(encoded, zero);
     jacpy_release(zero);
     if found > 0 {
-        object_error("ValueError", "embedded null byte");
+        object_error(PyExc_ValueError, "embedded null byte");
     }
     return found == 0;
 }
@@ -194,7 +169,9 @@ def grp_getgrnam_impl(module: ptr[PyObject], name: ptr[PyObject]) -> ptr[PyObjec
         } elif nomem {
             PyErr_NoMemory();
         } else {
-            object_error("KeyError", f"getgrnam(): name not found: {repr_value(name)}");
+            object_error(
+                PyExc_KeyError, f"getgrnam(): name not found: {repr_value(name)}"
+            );
         }
         PyMem_RawFree(buffer);
     }

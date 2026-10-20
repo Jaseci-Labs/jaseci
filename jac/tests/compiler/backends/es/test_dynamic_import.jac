@@ -75,7 +75,7 @@ test "an import the bundler cannot act on is rejected" {
     accepted = [
         body
         for body in unsplittable
-        if "E5113" not in _emit(body)[1]
+        if "E5117" not in _emit(body)[1]
     ];
-    assert accepted == [] , f"not rejected with E5113: {accepted}";
+    assert accepted == [] , f"not rejected with E5117: {accepted}";
 }

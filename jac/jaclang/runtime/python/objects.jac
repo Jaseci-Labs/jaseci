@@ -5,35 +5,6 @@
 # until compiler values can be separated from the remaining object slots.
 # Its only import is opcode_meta, which defines the NB_* operation kinds.
 
-import from jaclang.runtime.python.cpython_api {
-    NULL,
-    PyErr_SetFromErrnoWithFilenameObjects,
-    PyObject_IsTrue,
-    PyObject_RichCompare,
-    PyObject_RichCompareBool,
-    PySequence_Fast,
-    PySequence_GetItem,
-    PySequence_Tuple,
-    PySlice_AdjustIndices,
-    PyUnicode_Format,
-    _Py_c_pow,
-    _Py_c_quot
-}
-import from jaclang.runtime.python.opcode_meta {
-    NB_ADD,
-    NB_AND,
-    NB_FLOOR_DIVIDE,
-    NB_LSHIFT,
-    NB_MULTIPLY,
-    NB_OR,
-    NB_POWER,
-    NB_REMAINDER,
-    NB_RSHIFT,
-    NB_SUBTRACT,
-    NB_TRUE_DIVIDE,
-    NB_XOR,
-}
-
 #
 # Behavior dispatches through virtual slot methods (CPython's tp_*/nb_*/sq_*/mp_*
 # tables as overridable methods -> na vtable, no function-pointer indirection).
@@ -2552,7 +2523,7 @@ def _base_type_name(v: PyObj) -> str {
 # ``type_name_fn`` resolves each operand's type name so callers with richer
 # operand kinds (user classes, dict views) can supply their own namer.
 def py_ordering_type_error(
-    op_kind: int, v: PyObj, w: PyObj, type_name_fn: any
+    op_kind: int, v: PyObj, w: PyObj, type_name_fn: Callable[[PyObj], str]
 ) -> PyObj {
     ops = ["<", "<=", "", "", ">", ">="];
     if op_kind < 0 or op_kind >= len(ops) or ops[op_kind] == "" {
@@ -2563,9 +2534,9 @@ def py_ordering_type_error(
         "'"
             + ops[op_kind]
             + "' not supported between instances of '"
-            + (type_name_fn(v) as str)
+            + type_name_fn(v)
             + "' and '"
-            + (type_name_fn(w) as str)
+            + type_name_fn(w)
             + "'"
     );
 }

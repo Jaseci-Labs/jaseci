@@ -1,12 +1,12 @@
+import importlib;
 import types;
 
+glob HAS_LITELLM: bool = is_installed("litellm");
+
 with entry {
-    try {
-        import litellm;
-        import from litellm._logging { _disable_debugging }
-        import from litellm.types.utils { Message as LiteLLMMessage }
-        HAS_LITELLM = True;
-    } except ImportError {
+    if HAS_LITELLM {
+        litellm: any = DeferredModule("litellm");
+    } else {
         class _LLMUnavailable(Exception) {}
         class _CtxWindowExceeded(_LLMUnavailable) {}
         class _AuthError(_LLMUnavailable) {}
@@ -16,7 +16,6 @@ with entry {
         class _InternalServer(_LLMUnavailable) {}
         class _ServiceUnavailable(_LLMUnavailable) {}
         class _Timeout(_LLMUnavailable) {}
-
         litellm = types.SimpleNamespace(
             exceptions=types.SimpleNamespace(
                 AuthenticationError=_AuthError,
@@ -29,12 +28,14 @@ with entry {
             ServiceUnavailableError=_ServiceUnavailable,
             Timeout=_Timeout
         );
-
-        def _disable_debugging -> None {
-            return None;
-        }
-
-        class LiteLLMMessage {}
-        HAS_LITELLM = False;
     }
 }
+
+class LiteLLMMessage(metaclass=DeferredClassMeta) {
+    static has _deferred_module: str = "litellm",
+        _deferred_path: str = "types.utils.Message";
+}
+
+def _disable_debugging;
+
+def when_litellm_loaded(callback: any);

@@ -7,48 +7,6 @@ records which implementation owns it: the portable BLAKE2s or BLAKE2b, or on
 x86-64 CPUs that can run them the vectorized ones of blake2_simd.
 """
 
-import from jaclang.runtime.python.cpython_api {
-    NULL,
-    PyErr_NoMemory,
-    PyLong_FromLong,
-    PyMem_Free,
-    PyMem_Malloc,
-    PyObject,
-    PyUnicode_FromString,
-    Py_TYPE,
-    jacpy_hacl_simd_features,
-    jacpy_memory_copy,
-    jacpy_memory_zero,
-    jacpy_offset,
-    jacpy_release
-}
-import from jaclang.runtime.python.capi { object_error }
-import from jaclang.runtime.python.bindings.state { NativeState }
-import from jaclang.runtime.python.bindings.buffer { BufferArgument }
-import from jaclang.runtime.python.bindings.converters { ClassToken }
-import from jaclang.runtime.python.modules.hashlib {
-    HashLock,
-    UINT32_MAX,
-    data_argument,
-    hash_digest,
-    hash_initial_data,
-    hash_object_new,
-    hash_state_of,
-    hash_update
-}
-import from jaclang.runtime.python.modules.blake2_simd {
-    Hacl_Hash_Blake2b_blake2_params,
-    simd128_copy,
-    simd128_digest,
-    simd128_free,
-    simd128_malloc,
-    simd128_update,
-    simd256_copy,
-    simd256_digest,
-    simd256_free,
-    simd256_malloc,
-    simd256_update
-}
 import from c {
     def _Py_LibHacl_Hacl_Hash_Blake2s_malloc_with_params_and_key(
         p: &mut Pinned[Hacl_Hash_Blake2b_blake2_params], last_node: i32, k: ptr
@@ -142,7 +100,7 @@ def:priv blake2b_update(hacl: ptr, address: ptr, size: i64) {
     while remaining > UINT32_MAX {
         _Py_LibHacl_Hacl_Hash_Blake2b_update(hacl, cursor, u32(UINT32_MAX));
         remaining -= UINT32_MAX;
-        cursor = jacpy_offset(cursor, UINT32_MAX);
+        cursor += UINT32_MAX;
     }
     _Py_LibHacl_Hacl_Hash_Blake2b_update(hacl, cursor, u32(remaining));
 }
@@ -153,7 +111,7 @@ def:priv blake2s_update(hacl: ptr, address: ptr, size: i64) {
     while remaining > UINT32_MAX {
         _Py_LibHacl_Hacl_Hash_Blake2s_update(hacl, cursor, u32(UINT32_MAX));
         remaining -= UINT32_MAX;
-        cursor = jacpy_offset(cursor, UINT32_MAX);
+        cursor += UINT32_MAX;
     }
     _Py_LibHacl_Hacl_Hash_Blake2s_update(hacl, cursor, u32(remaining));
 }
@@ -205,7 +163,9 @@ def:priv parameter_bytes(
     jacpy_memory_zero(block, i64(capacity));
     if bool(view.view) and view.size() > 0 {
         if view.size() > i64(capacity) {
-            object_error("ValueError", f"maximum {kind} length is {capacity} bytes");
+            object_error(
+                PyExc_ValueError, f"maximum {kind} length is {capacity} bytes"
+            );
             return False;
         }
         jacpy_memory_copy(block, view.address(), view.size());
@@ -235,7 +195,7 @@ def:priv blake2_new(
     if digest_size <= 0 or digest_size > out_bytes {
         name = "Blake2b" if blake2b else "Blake2s";
         object_error(
-            "ValueError",
+            PyExc_ValueError,
             f"digest_size for {name} must be between 1 and {out_bytes} bytes, here it is {digest_size}"
         );
         return NULL;
@@ -248,7 +208,7 @@ def:priv blake2_new(
         return NULL;
     }
     salt_block = blocks;
-    personal_block = jacpy_offset(blocks, i64(HACL_HASH_BLAKE2B_SALT_BYTES));
+    personal_block = blocks + HACL_HASH_BLAKE2B_SALT_BYTES;
     if not parameter_bytes(
         salt,
         salt_block,
@@ -279,7 +239,7 @@ def:priv blake2_new(
     key_bytes = HACL_HASH_BLAKE2B_KEY_BYTES if blake2b else HACL_HASH_BLAKE2S_KEY_BYTES;
     key_length = key.size() if bool(key.view) else 0;
     if key_length > i64(key_bytes) {
-        object_error("ValueError", f"maximum key length is {key_bytes} bytes");
+        object_error(PyExc_ValueError, f"maximum key length is {key_bytes} bytes");
         PyMem_Free(blocks);
         return NULL;
     }
@@ -344,27 +304,29 @@ def:priv check_tree(
     out_bytes: i32
 ) -> bool {
     if fanout < 0 or fanout > 255 {
-        object_error("ValueError", "fanout must be between 0 and 255");
+        object_error(PyExc_ValueError, "fanout must be between 0 and 255");
         return False;
     }
     if depth <= 0 or depth > 255 {
-        object_error("ValueError", "depth must be between 1 and 255");
+        object_error(PyExc_ValueError, "depth must be between 1 and 255");
         return False;
     }
     if leaf_size > u64(0xFFFFFFFF) {
-        object_error("OverflowError", "leaf_size is too large");
+        object_error(PyExc_OverflowError, "leaf_size is too large");
         return False;
     }
     if not blake2b and node_offset > u64(0xFFFFFFFFFFFF) {
-        object_error("OverflowError", "node_offset is too large");
+        object_error(PyExc_OverflowError, "node_offset is too large");
         return False;
     }
     if node_depth < 0 or node_depth > 255 {
-        object_error("ValueError", "node_depth must be between 0 and 255");
+        object_error(PyExc_ValueError, "node_depth must be between 0 and 255");
         return False;
     }
     if inner_size < 0 or inner_size > out_bytes {
-        object_error("ValueError", f"inner_size must be between 0 and is {out_bytes}");
+        object_error(
+            PyExc_ValueError, f"inner_size must be between 0 and is {out_bytes}"
+        );
         return False;
     }
     return True;

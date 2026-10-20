@@ -225,27 +225,38 @@ test "kernel parses retain no native memory once the tree is handed over" {
 }
 
 
-test "JAC_COMPILER_LIB=off selects the store parser: no kernel is resolved" {
-    # The explicit switch is the first step of `resolve_kernel`'s precedence
-    # (`kernel_resolve.jac`): `off` means no kernel, before a sealed image or
-    # the source tree is consulted, so `ensure_loaded` serves the store parser.
-    import from jaclang.compiler.backends.native.kernel_resolve {
-        KERNEL_LIB_ENV,
-        resolve_kernel
-    }
+test "a checkout without a current kernel parses with the store parser" {
+    # Resolving never builds a kernel (the artifact router): a checkout whose
+    # kernel and kit kernel are both stale runs the compiler from bytecode
+    # with the store parser until `jac native build kernel` publishes one.
+    import from unittest.mock { patch }
+    import jaclang.artifacts.router as router;
+    import from jaclang.artifacts.model { Probe }
+    import jaclang.compiler.backends.native.kernel_resolve as resolver;
     import from jaclang.compiler.native_compiler { ensure_loaded, reset_loaded }
-    saved = os.environ.get(KERNEL_LIB_ENV);
     reset_loaded();
+    router.forget();
     try {
-        os.environ[KERNEL_LIB_ENV] = "off";
-        assert resolve_kernel() is None , "JAC_COMPILER_LIB=off must resolve no kernel";
-        assert ensure_loaded() is None , "ensure_loaded must serve no kernel under the off switch";
-    } finally {
-        if saved is None {
-            os.environ.pop(KERNEL_LIB_ENV, None);
-        } else {
-            os.environ[KERNEL_LIB_ENV] = saved;
+        with patch.object(router, "_omitted", return_value=frozenset()) {
+            with patch.object(resolver, "_from_sealed_image", return_value=None) {
+                with patch.object(
+                    resolver.KernelArtifact,
+                    "probe_checkout",
+                    return_value=Probe.stale(["a unit changed"])
+                ) {
+                    with patch.object(
+                        resolver.KernelArtifact,
+                        "probe_kit",
+                        return_value=Probe.missing()
+                    ) {
+                        assert resolver.resolve_kernel() is None , "a stale checkout must resolve no kernel";
+                        assert ensure_loaded() is None , "a stale checkout must parse with the store parser";
+                    }
+                }
+            }
         }
+    } finally {
         reset_loaded();
+        router.forget();
     }
 }

@@ -3,11 +3,6 @@ import kubernetes;
 import from datetime { datetime, timezone, timedelta }
 import from types { SimpleNamespace }
 import unittest.mock;
-import from jaclang.scale.deploy.target.kubernetes.target { KubernetesTarget }
-import from jaclang.scale.deploy.target.kubernetes.kubernetes_config {
-    KubernetesConfig
-}
-import from jaclang.scale.models.resource_status { REPLICA_FLOOR_ANNOTATION }
 
 def _cs(
     name: str,
@@ -15,7 +10,8 @@ def _cs(
     waiting_reason: str = "",
     last_term_reason: str = "",
     last_term_message: str = "",
-    last_term_exit: int = 0
+    last_term_exit: int = 0,
+    ready: bool | None = None
 ) -> object {
     waiting = SimpleNamespace(reason=waiting_reason, message="")
         if waiting_reason
@@ -28,6 +24,7 @@ def _cs(
     }
     return SimpleNamespace(
         name=name,
+        ready=(restarts == 0 and not waiting_reason) if ready is None else ready,
         restart_count=restarts,
         state=SimpleNamespace(waiting=waiting, terminated=None, running=None),
         last_state=SimpleNamespace(terminated=last_term)
