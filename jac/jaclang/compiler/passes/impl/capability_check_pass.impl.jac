@@ -286,6 +286,22 @@ impl native_capability_violations(
     _native_stmts: list[ElementStmt] = ModuleFacts.iter_context_stmts(
         mod, CodeContext.NATIVE
     );
+    _native_imports = ModuleFacts.iter_module_imports(mod, CodeContext.NATIVE)
+        + ModuleFacts.iter_nested_imports(mod, CodeContext.NATIVE);
+    """Only a name an import binds is asked whether its uses are all erased,
+    so only those names are classified.""";
+    _import_bound: set[str] = set();
+    for stmt in _native_imports {
+        if stmt.clib_decls or not stmt.items {
+            continue;
+        }
+        for item in stmt.items {
+            _bound_name = import_bound_name(item);
+            if _bound_name is not None {
+                _import_bound.add(_bound_name);
+            }
+        }
+    }
     _runtime_used: set[str] = set();
     _type_used: set[str] = set();
     for _stmt in _native_stmts {
@@ -293,7 +309,7 @@ impl native_capability_violations(
             continue;
         }
         for _nm in _stmt.get_all_sub_nodes(typ=Name) {
-            if _nm.expr_ctx != ExprCtx.LOAD {
+            if _nm.expr_ctx != ExprCtx.LOAD or _nm.value not in _import_bound {
                 continue;
             }
             if _nm.find_parent_of_type(Import) is not None {
@@ -311,8 +327,7 @@ impl native_capability_violations(
     _base_dir = os.path.dirname(os.path.abspath(mod.loc.mod_path))
         if (mod?.loc and mod.loc.mod_path)
         else '.';
-    for stmt in ModuleFacts.iter_module_imports(mod, CodeContext.NATIVE)
-        + ModuleFacts.iter_nested_imports(mod, CodeContext.NATIVE) {
+    for stmt in _native_imports {
         if stmt.clib_decls or not stmt.items {
             continue;
         }
