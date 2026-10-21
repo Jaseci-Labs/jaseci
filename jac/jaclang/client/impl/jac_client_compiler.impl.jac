@@ -264,11 +264,13 @@ impl JacClientCompiler.emit_dependencies(
         }
         output_path.parent.mkdir(parents=True, exist_ok=True);
         source_header = f"/* Source: {module_path} */\n";
-        if unit in closure.refreshed
-            and output_path.is_file()
-            and output_path.read_text(encoding='utf-8')
-                == source_header + combined_js {
-            continue;
+        if unit in closure.refreshed and output_path.is_file() {
+            written = output_path.read_text(encoding='utf-8');
+            fresh = source_header + combined_js;
+            mapped = f"{fresh}\n//# sourceMappingURL={output_path.name}.map\n";
+            if written == fresh or (artifact.source_map and written == mapped) {
+                continue;
+            }
         }
         _atomic_write_text(output_path, source_header + combined_js);
         self._write_source_map(
