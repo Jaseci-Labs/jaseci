@@ -1,0 +1,80 @@
+{
+  "unit": "microseconds",
+  "statistic": "median measured actual kernel duration",
+  "source_run_id": "codegen/paired-profile",
+  "fixed_jac_layout": "Predicted",
+  "groups": {
+    "jac_original": "Jac: existing production backend and target-machine code generation",
+    "jac_optimized": "Jac: same raw LLVM module plus standard LLVM O2 middle-end",
+    "handwritten": "Handwritten CUDA: fixed 16x16 shared-memory tiled int64 kernel"
+  },
+  "sources": {
+    "paired-profile/results.json": {
+      "path": "codegen/paired-profile/results.json",
+      "sha256": "783d70ac99a5b9d8f56adc74aa23aa48cf9f6d797b6f595caf217b4421f5f5d9"
+    },
+    "paired-profile/verified-kernels.json": {
+      "path": "codegen/paired-profile/verified-kernels.json",
+      "sha256": "983a070316499f567df9d0869c417a23d32a887dfc11d13f924c2fc88de650a7"
+    },
+    "paired-profile/trace.sqlite": {
+      "path": "codegen/paired-profile/trace.sqlite",
+      "sha256": "a4c275696935703a35cde24691188fc15ce5f8b4373fb90c64ac28cf233a2791"
+    },
+    "paired-profile/trace.nsys-rep": {
+      "path": "codegen/paired-profile/trace.nsys-rep",
+      "sha256": "3bdc88719485758e0604d95f190e7c19bc0177f6981f9f509f3cd13cef778473"
+    },
+    "paired-ordinary/results.json": {
+      "path": "codegen/paired-ordinary/results.json",
+      "sha256": "e284ac7d1dc577b044df05f3e9446aa38a080719008af491b7347b6f11dffa1b"
+    }
+  },
+  "comparisons": [
+    {
+      "case": "matmul-3x5x2",
+      "M": 3,
+      "K": 5,
+      "N": 2,
+      "jac_original_us": 8.3845,
+      "jac_optimized_us": 7.264,
+      "handwritten_us": 1.568
+    },
+    {
+      "case": "matmul-17x31x19",
+      "M": 17,
+      "K": 31,
+      "N": 19,
+      "jac_original_us": 52.736,
+      "jac_optimized_us": 45.216,
+      "handwritten_us": 2.176
+    },
+    {
+      "case": "matmul-64x128x64",
+      "M": 64,
+      "K": 128,
+      "N": 64,
+      "jac_original_us": 183.745,
+      "jac_optimized_us": 155.872,
+      "handwritten_us": 4.704
+    },
+    {
+      "case": "matmul-128x128x128",
+      "M": 128,
+      "K": 128,
+      "N": 128,
+      "jac_original_us": 228.113,
+      "jac_optimized_us": 164.577,
+      "handwritten_us": 4.832
+    },
+    {
+      "case": "matmul-256x256x256",
+      "M": 256,
+      "K": 256,
+      "N": 256,
+      "jac_original_us": 2112.666,
+      "jac_optimized_us": 533.9385,
+      "handwritten_us": 20.544
+    }
+  ]
+}

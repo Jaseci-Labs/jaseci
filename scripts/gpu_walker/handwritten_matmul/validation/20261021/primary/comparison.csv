@@ -1,0 +1,6 @@
+case,M,K,N,jac_original_us,jac_optimized_us,handwritten_us,unit,source_run_id
+matmul-3x5x2,3,5,2,8.3845,7.264,1.568,microseconds,codegen/paired-profile
+matmul-17x31x19,17,31,19,52.736,45.216,2.176,microseconds,codegen/paired-profile
+matmul-64x128x64,64,128,64,183.745,155.872,4.704,microseconds,codegen/paired-profile
+matmul-128x128x128,128,128,128,228.113,164.577,4.832,microseconds,codegen/paired-profile
+matmul-256x256x256,256,256,256,2112.666,533.9385,20.544,microseconds,codegen/paired-profile

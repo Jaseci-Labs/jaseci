@@ -1,0 +1,154 @@
+{
+  "generator_sha256": "4e2209d127e5647f9c6476ec74a51b3fdcc9f3df197217ffe8f860277661402d",
+  "input_ir_sha256": "d67158e1eeb1537d8f73b758d2b58a5f1a128ea7769257d7390ca6e9e7c3104e",
+  "baseline_ptx_sha256": "dda413df1e70f3f1c255b70b66b869dce57ea835b25229924a79d4755b4f22aa",
+  "IR_files": "Verified middle-end IR before target.emit_assembly (which may mutate IR)",
+  "transformations": {
+    "baseline": {
+      "ptx_sha256": "dda413df1e70f3f1c255b70b66b869dce57ea835b25229924a79d4755b4f22aa",
+      "IR_alloca_instructions": 10,
+      "PTX_local_loads": 20,
+      "PTX_local_stores": 20,
+      "PTX_global_loads": 17,
+      "PTX_global_stores": 11,
+      "bypassed_error_codes": [],
+      "bypassed_branches": 0,
+      "ptxas_command": [
+        "/usr/local/cuda-12.9/bin/ptxas",
+        "-arch=sm_86",
+        "-v",
+        "scripts/gpu_walker/handwritten_matmul/validation/20261021/codegen/baseline.ptx",
+        "-o",
+        "scripts/gpu_walker/handwritten_matmul/validation/20261021/codegen/baseline.cubin"
+      ],
+      "ptxas": "ptxas info    : 0 bytes gmem\nptxas info    : Compiling entry function 'jac_Dot_cursors_batch' for 'sm_86'\nptxas info    : Function properties for jac_Dot_cursors_batch\n    80 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads\nptxas info    : Used 28 registers, used 0 barriers, 80 bytes cumulative stack size, 472 bytes cmem[0]\nptxas info    : Compile time = 9.405 ms\n"
+    },
+    "sroa": {
+      "ptx_sha256": "dda413df1e70f3f1c255b70b66b869dce57ea835b25229924a79d4755b4f22aa",
+      "IR_alloca_instructions": 10,
+      "PTX_local_loads": 20,
+      "PTX_local_stores": 20,
+      "PTX_global_loads": 17,
+      "PTX_global_stores": 11,
+      "bypassed_error_codes": [],
+      "bypassed_branches": 0,
+      "ptxas_command": [
+        "/usr/local/cuda-12.9/bin/ptxas",
+        "-arch=sm_86",
+        "-v",
+        "scripts/gpu_walker/handwritten_matmul/validation/20261021/codegen/sroa.ptx",
+        "-o",
+        "scripts/gpu_walker/handwritten_matmul/validation/20261021/codegen/sroa.cubin"
+      ],
+      "ptxas": "ptxas info    : 0 bytes gmem\nptxas info    : Compiling entry function 'jac_Dot_cursors_batch' for 'sm_86'\nptxas info    : Function properties for jac_Dot_cursors_batch\n    80 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads\nptxas info    : Used 28 registers, used 0 barriers, 80 bytes cumulative stack size, 472 bytes cmem[0]\nptxas info    : Compile time = 9.785 ms\n"
+    },
+    "hoist_sroa": {
+      "ptx_sha256": "2e74229a93f69c298f48667e446906e5d89017e367b23dd97eca4f12d7292ccd",
+      "IR_alloca_instructions": 0,
+      "PTX_local_loads": 0,
+      "PTX_local_stores": 0,
+      "PTX_global_loads": 17,
+      "PTX_global_stores": 11,
+      "bypassed_error_codes": [],
+      "bypassed_branches": 0,
+      "ptxas_command": [
+        "/usr/local/cuda-12.9/bin/ptxas",
+        "-arch=sm_86",
+        "-v",
+        "scripts/gpu_walker/handwritten_matmul/validation/20261021/codegen/hoist_sroa.ptx",
+        "-o",
+        "scripts/gpu_walker/handwritten_matmul/validation/20261021/codegen/hoist_sroa.cubin"
+      ],
+      "ptxas": "ptxas info    : 0 bytes gmem\nptxas info    : Compiling entry function 'jac_Dot_cursors_batch' for 'sm_86'\nptxas info    : Function properties for jac_Dot_cursors_batch\n    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads\nptxas info    : Used 40 registers, used 0 barriers, 472 bytes cmem[0]\nptxas info    : Compile time = 8.918 ms\n"
+    },
+    "O2": {
+      "ptx_sha256": "c24fea17965d672cdd2030704345307e07a3b386b44e64b62a1e9adc767fae81",
+      "IR_alloca_instructions": 0,
+      "PTX_local_loads": 0,
+      "PTX_local_stores": 0,
+      "PTX_global_loads": 17,
+      "PTX_global_stores": 6,
+      "bypassed_error_codes": [],
+      "bypassed_branches": 0,
+      "ptxas_command": [
+        "/usr/local/cuda-12.9/bin/ptxas",
+        "-arch=sm_86",
+        "-v",
+        "scripts/gpu_walker/handwritten_matmul/validation/20261021/codegen/O2.ptx",
+        "-o",
+        "scripts/gpu_walker/handwritten_matmul/validation/20261021/codegen/O2.cubin"
+      ],
+      "ptxas": "ptxas info    : 0 bytes gmem\nptxas info    : Compiling entry function 'jac_Dot_cursors_batch' for 'sm_86'\nptxas info    : Function properties for jac_Dot_cursors_batch\n    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads\nptxas info    : Used 40 registers, used 0 barriers, 472 bytes cmem[0]\nptxas info    : Compile time = 9.242 ms\n"
+    },
+    "O2_no_overflow": {
+      "ptx_sha256": "2a63b0fb810690aa7cbb5e705d58643347ca57b7a8c11c516cad3e4a96f66c89",
+      "IR_alloca_instructions": 0,
+      "PTX_local_loads": 0,
+      "PTX_local_stores": 0,
+      "PTX_global_loads": 17,
+      "PTX_global_stores": 6,
+      "bypassed_error_codes": [
+        3
+      ],
+      "bypassed_branches": 2,
+      "ptxas_command": [
+        "/usr/local/cuda-12.9/bin/ptxas",
+        "-arch=sm_86",
+        "-v",
+        "scripts/gpu_walker/handwritten_matmul/validation/20261021/codegen/O2_no_overflow.ptx",
+        "-o",
+        "scripts/gpu_walker/handwritten_matmul/validation/20261021/codegen/O2_no_overflow.cubin"
+      ],
+      "ptxas": "ptxas info    : 0 bytes gmem\nptxas info    : Compiling entry function 'jac_Dot_cursors_batch' for 'sm_86'\nptxas info    : Function properties for jac_Dot_cursors_batch\n    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads\nptxas info    : Used 44 registers, used 0 barriers, 472 bytes cmem[0]\nptxas info    : Compile time = 8.530 ms\n"
+    },
+    "O2_no_validation": {
+      "ptx_sha256": "3020cdbe81aaa0244c7cdf13e3daffa4915b175c7da54d493752a6c6ed3abaed",
+      "IR_alloca_instructions": 0,
+      "PTX_local_loads": 0,
+      "PTX_local_stores": 0,
+      "PTX_global_loads": 21,
+      "PTX_global_stores": 10,
+      "bypassed_error_codes": [
+        1,
+        2,
+        5,
+        6
+      ],
+      "bypassed_branches": 11,
+      "ptxas_command": [
+        "/usr/local/cuda-12.9/bin/ptxas",
+        "-arch=sm_86",
+        "-v",
+        "scripts/gpu_walker/handwritten_matmul/validation/20261021/codegen/O2_no_validation.ptx",
+        "-o",
+        "scripts/gpu_walker/handwritten_matmul/validation/20261021/codegen/O2_no_validation.cubin"
+      ],
+      "ptxas": "ptxas info    : 0 bytes gmem\nptxas info    : Compiling entry function 'jac_Dot_cursors_batch' for 'sm_86'\nptxas info    : Function properties for jac_Dot_cursors_batch\n    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads\nptxas info    : Used 40 registers, used 0 barriers, 472 bytes cmem[0]\nptxas info    : Compile time = 9.956 ms\n"
+    },
+    "O2_unchecked": {
+      "ptx_sha256": "48d01b83af8ac74f801f082abbdf9a24c2e5917553c6379a35285da1fec87fef",
+      "IR_alloca_instructions": 0,
+      "PTX_local_loads": 0,
+      "PTX_local_stores": 0,
+      "PTX_global_loads": 21,
+      "PTX_global_stores": 10,
+      "bypassed_error_codes": [
+        1,
+        2,
+        3,
+        5,
+        6
+      ],
+      "bypassed_branches": 13,
+      "ptxas_command": [
+        "/usr/local/cuda-12.9/bin/ptxas",
+        "-arch=sm_86",
+        "-v",
+        "scripts/gpu_walker/handwritten_matmul/validation/20261021/codegen/O2_unchecked.ptx",
+        "-o",
+        "scripts/gpu_walker/handwritten_matmul/validation/20261021/codegen/O2_unchecked.cubin"
+      ],
+      "ptxas": "ptxas info    : 0 bytes gmem\nptxas info    : Compiling entry function 'jac_Dot_cursors_batch' for 'sm_86'\nptxas info    : Function properties for jac_Dot_cursors_batch\n    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads\nptxas info    : Used 44 registers, used 0 barriers, 472 bytes cmem[0]\nptxas info    : Compile time = 9.661 ms\n"
+    }
+  }
+}

@@ -1,6 +1,29 @@
 # Handwritten int64 CUDA matmul comparison
 
-[Measured results and raw artifacts](validation/20261021/REPORT.md)
+[Three-way measured report](validation/20261021/REPORT.md) ·
+[CSV](validation/20261021/primary/comparison.csv) ·
+[JSON](validation/20261021/primary/comparison.json) ·
+[Supplementary ablations](validation/20261021/codegen/ABLATIONS.md)
+
+The primary groups are original Jac, checked LLVM-O2 Jac, and the same
+handwritten tiled CUDA kernel across all sizes. Both Jac groups hold the
+production-packed Predicted layout fixed. The original backend still uses its
+existing target-machine code generation settings; O2 adds an explicit LLVM
+middle-end pipeline while preserving the walker checks and status semantics. Full profiler traces and independent error/status validation are saved.
+
+Regenerate the investigation in an isolated output directory (requires GPU access):
+
+```bash
+bash scripts/gpu_walker/handwritten_matmul/reproduce_codegen.sh /tmp/matmul-reproduction
+```
+
+`diagnose_codegen.py` emits checked baseline, SROA, hoist+SROA and O2 variants,
+plus clearly labelled diagnostic variants with selected error branches removed.
+`benchmark.py --jac-variant NAME=PTX` interleaves additional compiled variants
+with the baseline. `--graph-controls` enables restricted single-chain kernels;
+their narrower contracts and unresolved attribution are documented in the
+supplementary report. `validate_codegen.py` compares checked GPU error behavior
+with the unmodified production LLVM JIT.
 
 
 `matmul.cu` contains two handwritten kernels:

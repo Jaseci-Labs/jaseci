@@ -110,6 +110,8 @@ def main():
  p=argparse.ArgumentParser(description=__doc__)
  p.add_argument('--inputs',type=Path,default=ROOT/'dist/gpu-cursor-concat-20261007/benchmark/inputs.json')
  p.add_argument('--ptx',type=Path);p.add_argument('--output',type=Path,required=True)
+ p.add_argument('--jac-variant',action='append',default=[],metavar='NAME=PTX',help='Additional Jac PTX arm, interleaved with the baseline in each round')
+ p.add_argument('--graph-controls',action='store_true',help='Restricted single-chain diagnostic kernels; all chains are validated on the host')
  p.add_argument('--warmup',type=int,default=5);p.add_argument('--repeats',type=int,default=25);p.add_argument('--inner',type=int,default=16)
  p.add_argument('--seed',type=int,default=928);p.add_argument('--nvcc',default='/usr/local/cuda-12.9/bin/nvcc')
  p.add_argument('--dense-shapes',nargs='*',default=[])
@@ -120,13 +122,24 @@ def main():
  subprocess.run(nvcc_cmd,check=True)
  source=json.loads(a.inputs.read_text());cases=[r for r in source['cases'] if r['kind']=='matmul']
  ptx=a.ptx or a.inputs.parent/'Dot.ptx'
- result={'runner_sha256':sha(Path(__file__)),'timestamp_utc':datetime.now(timezone.utc).isoformat(),'python':sys.version,'nvcc_version':subprocess.check_output([a.nvcc,'--version'],text=True),'dtype':'int64','measurement':'CUDA-event graph replay time / inner; includes GPU graph scheduling gaps','warmup':a.warmup,'repeats':a.repeats,'inner':a.inner,'seed':a.seed,'input_manifest':str(a.inputs.resolve()),'input_sha256':sha(a.inputs),'jac_ptx':str(ptx),'jac_ptx_sha256':sha(ptx),'cuda_source_sha256':sha(HERE/'matmul.cu'),'nvcc_command':nvcc_cmd,'cases':[],'records':[]}
+ variants={'':ptx}
+ for variant in a.jac_variant:
+  label,path=variant.split('=',1)
+  if not label or label in variants:p.error('Jac variant names must be nonempty and unique')
+  variants[label]=Path(path)
+ result={'runner_sha256':sha(Path(__file__)),'timestamp_utc':datetime.now(timezone.utc).isoformat(),'python':sys.version,'nvcc_version':subprocess.check_output([a.nvcc,'--version'],text=True),'dtype':'int64','measurement':'CUDA-event graph replay time / inner; includes GPU graph scheduling gaps','warmup':a.warmup,'repeats':a.repeats,'inner':a.inner,'seed':a.seed,'input_manifest':str(a.inputs.resolve()),'input_sha256':sha(a.inputs),'jac_ptx':str(ptx),'jac_ptx_sha256':sha(ptx),'jac_variants':{label:{'path':str(path.resolve()),'sha256':sha(path)} for label,path in variants.items()},'cuda_source_sha256':sha(HERE/'matmul.cu'),'nvcc_command':nvcc_cmd,'cases':[],'records':[]}
+ if a.graph_controls:
+  control_cmd=[a.nvcc,'-ptx','-O3','-arch=compute_86','-std=c++17',str(HERE/'graph_controls.cu'),'-o',str(a.output/'graph_controls.ptx')]
+  subprocess.run(control_cmd,check=True)
+  result['graph_controls']={'source_sha256':sha(HERE/'graph_controls.cu'),'ptx_sha256':sha(a.output/'graph_controls.ptx'),'command':control_cmd,'contract':'Host-validated single Scalar seed per channel; degree <=1; finite matching-length chains; bounded int64 arithmetic'}
  try:result['gpu_before']=subprocess.check_output(['nvidia-smi'],text=True)
  except subprocess.CalledProcessError:result['gpu_before']='nvidia-smi failed'
  d=Driver();result['gpu_name']=d.name;result['memory_before']=d.memory()
  try:
-  jac_fn=d.kernel(ptx,'jac_Dot_cursors_batch')
+  jac_functions={label:d.kernel(path,'jac_Dot_cursors_batch') for label,path in variants.items()}
   functions={n:d.kernel(a.output/'matmul.ptx','matmul_'+n+'_i64') for n in ['naive','tiled']}
+  controls={name:d.kernel(a.output/'graph_controls.ptx','graph_'+name) for name in ['chain_csr','chain_next','schedule']} if a.graph_controls else {}
+  if a.graph_controls:functions['flat']=d.kernel(a.output/'graph_controls.ptx','matmul_flat_i64')
   for text in a.dense_shapes:
    shape=[int(v) for v in text.split('x')]
    if len(shape)!=3 or min(shape)<1:raise ValueError(text)
@@ -141,29 +154,55 @@ def main():
    if not meta['dense_only']:
     saved=load(case['expected'],a.inputs.parent/case['id']).reshape(m,n)
     np.testing.assert_array_equal(saved,expected)
-   arms={};outputs={};statuses={}
+   arms={};outputs={};statuses={};meta['launches']={}
    for label,fn in functions.items():
-    exe,ptrs=prepare_arm(d,fn,[A,B,np.full((m,n),-999,dtype=np.int64)],[c.c_int(m),c.c_int(k),c.c_int(n)],((n+15)//16,(m+15)//16,1),(16,16,1),a.inner)
+    grid,block=(((lanes+127)//128,1,1),(128,1,1)) if label=='flat' else (((n+15)//16,(m+15)//16,1),(16,16,1))
+    exe,ptrs=prepare_arm(d,fn,[A,B,np.full((m,n),-999,dtype=np.int64)],[c.c_int(m),c.c_int(k),c.c_int(n)],grid,block,a.inner)
     arms['CUDA '+label]=exe;outputs['CUDA '+label]=ptrs[-1]
+    meta['launches']['CUDA '+label]={'kernel':'matmul_'+label+'_i64','grid':grid,'block':block}
    if not meta['dense_only']:
     for layout in case['layouts']:
-     label='Jac '+layout['label'];arr=[load(f,a.inputs.parent/case['id']) for f in layout['files']]
+     arr=[load(f,a.inputs.parent/case['id']) for f in layout['files']]
      # Verify dense inputs by following EACH saved cursor chain, not the filename.
      values,tags,offsets,targets,heads,counts=arr[:6];nodes=len(tags)
      if not np.all(counts==1) or not np.all(arr[6]==0):raise ValueError('Only zero-initialized, single-seed Dot fixtures supported')
-     ai=heads[:lanes].copy();bi=heads[lanes:].copy()
+     ai=heads[:lanes].copy();bi=heads[lanes:].copy();a_indices=[];b_indices=[]
      for q in range(k):
       if np.any(ai<0) or np.any(bi<0):raise ValueError('Short input chain')
+      if not np.all(tags[ai]==1) or not np.all(tags[bi]==1):raise ValueError('Non-Scalar chain')
       np.testing.assert_array_equal(values[ai],np.repeat(A[:,q],n))
       np.testing.assert_array_equal(values[bi],np.tile(B[q,:],m))
+      if controls:
+       # Prove the compressed schedules retain every lane's actual node identity.
+       np.testing.assert_array_equal(ai,np.repeat(ai[::n],n))
+       np.testing.assert_array_equal(bi,np.tile(bi[:n],m))
+       a_indices.append(ai[::n].copy());b_indices.append(bi[:n].copy())
       for cur,channel in [(ai,0),(bi,1)]:
        rows=channel*(nodes+1)+cur;begin=offsets[rows];end=offsets[rows+1]
        if not np.all(end-begin==(1 if q<k-1 else 0)):raise ValueError('Unexpected chain degree')
        cur[:]=targets[begin] if q<k-1 else -1
      arr[7]=np.full(lanes,-999,dtype=np.int64);arr[8]=np.full(lanes,0xffffffff,dtype=np.uint32)
      args=[c.c_uint64(v) for v in [nodes,len(targets),lanes,layout['queue_capacity'],layout['max_visits']]]
-     exe,ptrs=prepare_arm(d,jac_fn,arr,args,((lanes+127)//128,1,1),(128,1,1),a.inner)
-     arms[label]=exe;outputs[label]=ptrs[7];statuses[label]=ptrs[8]
+     for variant,jac_fn in jac_functions.items():
+      label='Jac '+(variant+' ' if variant else '')+layout['label']
+      exe,ptrs=prepare_arm(d,jac_fn,arr,args,((lanes+127)//128,1,1),(128,1,1),a.inner)
+      arms[label]=exe;outputs[label]=ptrs[7];statuses[label]=ptrs[8]
+      meta['launches'][label]={'kernel':'jac_Dot_cursors_batch','grid':((lanes+127)//128,1,1),'block':(128,1,1)}
+     if controls:
+      direct=np.full(2*nodes,-1,dtype=np.int64)
+      for channel in range(2):
+       begin=offsets[channel*(nodes+1):channel*(nodes+1)+nodes];end=offsets[channel*(nodes+1)+1:(channel+1)*(nodes+1)]
+       if not np.all((end-begin>=0)&(end-begin<=1)):raise ValueError('Controls require degree <=1')
+       mask=end>begin;direct[channel*nodes:(channel+1)*nodes][mask]=targets[begin[mask]]
+      for name,fn in controls.items():
+       out=np.full(lanes,-999,dtype=np.int64);status=np.full(lanes,0xffffffff,dtype=np.uint32)
+       if name=='chain_csr':arrays=[values,offsets,targets,heads,out,status];args=[c.c_int64(nodes),c.c_int64(lanes)]
+       elif name=='chain_next':arrays=[values,direct,heads,out,status];args=[c.c_int64(nodes),c.c_int64(lanes)]
+       else:arrays=[values,np.stack(a_indices),np.stack(b_indices),out,status];args=[c.c_int(m),c.c_int(k),c.c_int(n)]
+       label='Graph '+name+' '+layout['label'];grid=((lanes+127)//128,1,1);block=(128,1,1)
+       exe,ptrs=prepare_arm(d,fn,arrays,args,grid,block,a.inner)
+       arms[label]=exe;outputs[label]=ptrs[-2];statuses[label]=ptrs[-1]
+       meta['launches'][label]={'kernel':'graph_'+name,'grid':grid,'block':block}
    poison=np.ascontiguousarray(np.bitwise_not(expected))
    bad_status=np.full(lanes,0xffffffff,dtype=np.uint32)
    for phase,rounds in [('warmup',a.warmup),('measured',a.repeats)]:

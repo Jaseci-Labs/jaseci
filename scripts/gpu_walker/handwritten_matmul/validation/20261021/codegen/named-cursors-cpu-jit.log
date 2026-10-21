@@ -1,0 +1,27 @@
+test_batch_bfs_conflicts_budget_and_identity (test_named_cursors.NamedGpuTests.test_batch_bfs_conflicts_budget_and_identity) ... ok
+test_bindings_resources_and_chain_validation (test_named_cursors.NamedGpuTests.test_bindings_resources_and_chain_validation) ... ok
+test_cursor_concatenation_complete_sequences_shared_and_fallback (test_named_cursors.NamedGpuTests.test_cursor_concatenation_complete_sequences_shared_and_fallback) ... ok
+test_cycle_round_limit_queue_full (test_named_cursors.NamedGpuTests.test_cycle_round_limit_queue_full) ... ok
+test_dot_lengths_empty_duplicate_initial_events (test_named_cursors.NamedGpuTests.test_dot_lengths_empty_duplicate_initial_events) ... ok
+test_dynamic_loops_reports_and_overflow (test_named_cursors.NamedGpuTests.test_dynamic_loops_reports_and_overflow) ... [[58, 64], [139, 154]]
+8
+True
+23
+True
+ok
+test_fifo_branch_convergence_repeated_arrivals (test_named_cursors.NamedGpuTests.test_fifo_branch_convergence_repeated_arrivals) ... ok
+test_matmul_identity_order_complete_a_then_b (test_named_cursors.NamedGpuTests.test_matmul_identity_order_complete_a_then_b) ... ok
+test_mismatch_no_scan_no_visit_and_conditionals (test_named_cursors.NamedGpuTests.test_mismatch_no_scan_no_visit_and_conditionals) ... ok
+test_mock_cuda_marshalling_and_runtime_integration (test_named_cursors.NamedGpuTests.test_mock_cuda_marshalling_and_runtime_integration) ... ok
+test_random_integer_matmul_shared_inputs_and_output_fields (test_named_cursors.NamedGpuTests.test_random_integer_matmul_shared_inputs_and_output_fields) ... ok
+test_seven_cursors_and_guard_statement_position (test_named_cursors.NamedGpuTests.test_seven_cursors_and_guard_statement_position) ... note: /tmp/jac-multi-gpu-gpse2_6q/seven.jac preferred native but did not lower; compiled in the server codespace (error[E5092]: Native lowering failed for named cursor walker 'Python CPU backend required')
+note: /tmp/jac-multi-gpu-gpse2_6q/guard_order.jac preferred native but did not lower; compiled in the server codespace (error[E5092]: Native lowering failed for named cursor walker 'Python CPU backend required')
+ok
+test_three_cursors_shared_nodes (test_named_cursors.NamedGpuTests.test_three_cursors_shared_nodes) ... ok
+test_unsupported_subsets_explicit (test_named_cursors.NamedGpuTests.test_unsupported_subsets_explicit) ... ok
+test_whole_batch_bfs_precedes_next_cursor (test_named_cursors.NamedGpuTests.test_whole_batch_bfs_precedes_next_cursor) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 8.479s
+
+OK

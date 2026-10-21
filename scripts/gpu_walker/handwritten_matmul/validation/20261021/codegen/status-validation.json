@@ -1,0 +1,528 @@
+{
+  "validator_sha256": "ddb999175a44fc2b571a29a7644515642e6e66efd05cbcc128fb97ef46b810e1",
+  "gpu": "NVIDIA GeForce RTX 3090",
+  "actual_driver_jit_function_attributes": {
+    "baseline": {
+      "local_bytes_per_thread": 80,
+      "registers_per_thread": 28,
+      "ptx_version": 70,
+      "binary_version": 86
+    },
+    "O2": {
+      "local_bytes_per_thread": 0,
+      "registers_per_thread": 40,
+      "ptx_version": 70,
+      "binary_version": 86
+    },
+    "hoist_sroa": {
+      "local_bytes_per_thread": 0,
+      "registers_per_thread": 40,
+      "ptx_version": 70,
+      "binary_version": 86
+    }
+  },
+  "ptx_sha256": {
+    "baseline": "dda413df1e70f3f1c255b70b66b869dce57ea835b25229924a79d4755b4f22aa",
+    "O2": "c24fea17965d672cdd2030704345307e07a3b386b44e64b62a1e9adc767fae81",
+    "hoist_sroa": "2e74229a93f69c298f48667e446906e5d89017e367b23dd97eca4f12d7292ccd"
+  },
+  "oracle": "Unmodified production LLVM host JIT; exact outputs and status, poisoned before each GPU launch",
+  "cases": [
+    {
+      "case": "valid",
+      "expected_status": [
+        0
+      ],
+      "expected_results": [
+        23
+      ],
+      "variants": {
+        "baseline": {
+          "status": [
+            0
+          ],
+          "results": [
+            23
+          ],
+          "pass": true
+        },
+        "O2": {
+          "status": [
+            0
+          ],
+          "results": [
+            23
+          ],
+          "pass": true
+        },
+        "hoist_sroa": {
+          "status": [
+            0
+          ],
+          "results": [
+            23
+          ],
+          "pass": true
+        }
+      }
+    },
+    {
+      "case": "multiply_overflow",
+      "expected_status": [
+        3
+      ],
+      "expected_results": [
+        -998877665544
+      ],
+      "variants": {
+        "baseline": {
+          "status": [
+            3
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        },
+        "O2": {
+          "status": [
+            3
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        },
+        "hoist_sroa": {
+          "status": [
+            3
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        }
+      }
+    },
+    {
+      "case": "add_overflow",
+      "expected_status": [
+        3
+      ],
+      "expected_results": [
+        -998877665544
+      ],
+      "variants": {
+        "baseline": {
+          "status": [
+            3
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        },
+        "O2": {
+          "status": [
+            3
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        },
+        "hoist_sroa": {
+          "status": [
+            3
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        }
+      }
+    },
+    {
+      "case": "round_limit_cycle",
+      "expected_status": [
+        2
+      ],
+      "expected_results": [
+        -998877665544
+      ],
+      "variants": {
+        "baseline": {
+          "status": [
+            2
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        },
+        "O2": {
+          "status": [
+            2
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        },
+        "hoist_sroa": {
+          "status": [
+            2
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        }
+      }
+    },
+    {
+      "case": "queue_capacity_branch",
+      "expected_status": [
+        6
+      ],
+      "expected_results": [
+        -998877665544
+      ],
+      "variants": {
+        "baseline": {
+          "status": [
+            6
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        },
+        "O2": {
+          "status": [
+            6
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        },
+        "hoist_sroa": {
+          "status": [
+            6
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        }
+      }
+    },
+    {
+      "case": "invalid_negative_head",
+      "expected_status": [
+        1
+      ],
+      "expected_results": [
+        -998877665544
+      ],
+      "variants": {
+        "baseline": {
+          "status": [
+            1
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        },
+        "O2": {
+          "status": [
+            1
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        },
+        "hoist_sroa": {
+          "status": [
+            1
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        }
+      }
+    },
+    {
+      "case": "invalid_large_head",
+      "expected_status": [
+        1
+      ],
+      "expected_results": [
+        -998877665544
+      ],
+      "variants": {
+        "baseline": {
+          "status": [
+            1
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        },
+        "O2": {
+          "status": [
+            1
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        },
+        "hoist_sroa": {
+          "status": [
+            1
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        }
+      }
+    },
+    {
+      "case": "invalid_edge_target",
+      "expected_status": [
+        1
+      ],
+      "expected_results": [
+        -998877665544
+      ],
+      "variants": {
+        "baseline": {
+          "status": [
+            1
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        },
+        "O2": {
+          "status": [
+            1
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        },
+        "hoist_sroa": {
+          "status": [
+            1
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        }
+      }
+    },
+    {
+      "case": "invalid_negative_csr",
+      "expected_status": [
+        5
+      ],
+      "expected_results": [
+        -998877665544
+      ],
+      "variants": {
+        "baseline": {
+          "status": [
+            5
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        },
+        "O2": {
+          "status": [
+            5
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        },
+        "hoist_sroa": {
+          "status": [
+            5
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        }
+      }
+    },
+    {
+      "case": "invalid_csr_end",
+      "expected_status": [
+        5
+      ],
+      "expected_results": [
+        -998877665544
+      ],
+      "variants": {
+        "baseline": {
+          "status": [
+            5
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        },
+        "O2": {
+          "status": [
+            5
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        },
+        "hoist_sroa": {
+          "status": [
+            5
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        }
+      }
+    },
+    {
+      "case": "seed_queue_capacity",
+      "expected_status": [
+        6
+      ],
+      "expected_results": [
+        -998877665544
+      ],
+      "variants": {
+        "baseline": {
+          "status": [
+            6
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        },
+        "O2": {
+          "status": [
+            6
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        },
+        "hoist_sroa": {
+          "status": [
+            6
+          ],
+          "results": [
+            -998877665544
+          ],
+          "pass": true
+        }
+      }
+    },
+    {
+      "case": "type_mismatch_skips_visit",
+      "expected_status": [
+        0
+      ],
+      "expected_results": [
+        0
+      ],
+      "variants": {
+        "baseline": {
+          "status": [
+            0
+          ],
+          "results": [
+            0
+          ],
+          "pass": true
+        },
+        "O2": {
+          "status": [
+            0
+          ],
+          "results": [
+            0
+          ],
+          "pass": true
+        },
+        "hoist_sroa": {
+          "status": [
+            0
+          ],
+          "results": [
+            0
+          ],
+          "pass": true
+        }
+      }
+    },
+    {
+      "case": "empty_channel",
+      "expected_status": [
+        0
+      ],
+      "expected_results": [
+        0
+      ],
+      "variants": {
+        "baseline": {
+          "status": [
+            0
+          ],
+          "results": [
+            0
+          ],
+          "pass": true
+        },
+        "O2": {
+          "status": [
+            0
+          ],
+          "results": [
+            0
+          ],
+          "pass": true
+        },
+        "hoist_sroa": {
+          "status": [
+            0
+          ],
+          "results": [
+            0
+          ],
+          "pass": true
+        }
+      }
+    }
+  ],
+  "status": "PASS",
+  "gpu_launches_checked": 39
+}

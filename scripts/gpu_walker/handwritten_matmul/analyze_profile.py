@@ -15,9 +15,11 @@ def main():
  assert len(rows)==len(expected),(len(rows),len(expected))
  samples=[];cases={r['id']:r for r in d['cases']}
  for index,((case,arm,phase,pair),row) in enumerate(zip(expected,rows)):
-  name='jac_Dot_cursors_batch' if arm.startswith('Jac ') else 'matmul_'+arm.split()[-1]+'_i64'
+  launch=cases[case].get('launches',{}).get(arm)
+  name=launch['kernel'] if launch else ('jac_Dot_cursors_batch' if arm.startswith('Jac ') else 'matmul_'+arm.split()[-1]+'_i64')
   assert row[2]==name,(index,case,arm,row[2],name)
   m,k,n=cases[case]['shape'];geometry=((m*n+127)//128,1,1,128,1,1) if arm.startswith('Jac ') else ((n+15)//16,(m+15)//16,1,16,16,1)
+  if launch:geometry=tuple(launch['grid']+launch['block'])
   assert tuple(row[3:])==geometry,(index,row,geometry)
   assert row[1]>row[0]
   samples.append(dict(case=case,arm=arm,phase=phase,pair=pair,kernel=name,kernel_us=(row[1]-row[0])/1000))
