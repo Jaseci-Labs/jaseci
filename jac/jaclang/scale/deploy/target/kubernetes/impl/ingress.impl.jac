@@ -588,6 +588,7 @@ impl IngressDeployer._install_cert_manager(
             result = subprocess.run(
                 [
                     'kubectl',
+                    *self.cluster_args,
                     'apply',
                     '-f',
                     'https://github.com/cert-manager/cert-manager/releases/download/v1.14.5/cert-manager.yaml'

@@ -30536,6 +30536,9 @@ graph import scale {
     ]
     deploy.target.kubernetes.kubernetes_target ++> runtime.realizer.kubernetes_realizer.KubernetesRealizer.realize
         | tests.deploy.test_database_intent { KubernetesTargetBase }
+    deploy.target.kubernetes.kubernetes_target --> tests.microservices.test_pvc_injector {
+        KubernetesTargetBase
+    }
     deploy.target.kubernetes.manifest_builder ++> [
         runtime.cli.diagnostics | runtime.cli.plan { ScalingMode },
         tests.apps.test_app_scale_overrides
@@ -31636,6 +31639,9 @@ graph import scale.deploy.target.kubernetes {
             create_k8s_secret,
             get_cluster_provider,
             resize_pvc_if_needed
+        },
+        kubernetes_target.KubernetesTargetBase._load_cluster_config {
+            kubectl_cluster_args
         },
         monitoring { delete_if_exists, delete_k8s_secret },
         target {

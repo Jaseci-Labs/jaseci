@@ -246,7 +246,7 @@ test "a dry run injector refuses to seed placeholder bytes" {
         );
         seed_failed = False;
         try {
-            injector.seed("app", "ns");
+            injector.seed("app", "ns", []);
         } except ValueError {
             seed_failed = True;
         }

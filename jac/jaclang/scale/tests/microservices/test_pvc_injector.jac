@@ -239,3 +239,113 @@ test "a pod spec with no bootstrap container references no bundles" {
     )
         == [];
 }
+
+
+# The loader pod lives on whichever cluster the Python client loaded. The fake
+# kubectl reaches that cluster only when called with exactly the cluster flags
+# in $FAKE_KUBECTL_REACHES; any other flags (an ambient context, or a context
+# the pod's kubeconfig does not have) answer NotFound.
+glob _FAKE_KUBECTL: str = """#!/usr/bin/env python3
+import json, os, sys
+args = sys.argv[1:]
+with open(os.environ["FAKE_KUBECTL_LOG"], "a") as f:
+    f.write(json.dumps(args) + "\\n")
+flags = []
+while args and args[0] in ("--kubeconfig", "--context"):
+    flags += args[:2]
+    args = args[2:]
+if flags != json.loads(os.environ["FAKE_KUBECTL_REACHES"]):
+    sys.stderr.write("Error from server (NotFound): pods not found\\n")
+    sys.exit(1)
+if "test -f" in " ".join(args):
+    sys.exit(1)
+""";
+
+
+obj _OneClusterPods {
+    has pods: set[str] = set();
+
+    def create_namespaced_pod(namespace: str, body: dict[str, any]) {
+        self.pods.add(body["metadata"]["name"]);
+    }
+
+    def read_namespaced_pod(name: str, namespace: str) -> any {
+        import from types { SimpleNamespace }
+        import from kubernetes.client.exceptions { ApiException }
+        if name not in self.pods {
+            raise ApiException(status=404);
+        }
+        return SimpleNamespace(status=SimpleNamespace(phase="Running"));
+    }
+
+    def delete_namespaced_pod(name: str, namespace: str) {
+        self.pods.discard(name);
+    }
+}
+
+
+test "the bundle seed's kubectl reaches the cluster the client loaded" {
+    import json;
+    import unittest.mock;
+    import from kubernetes.config.config_exception { ConfigException }
+    import from jaclang.scale.deploy.target.kubernetes.kubernetes_config {
+        KubernetesConfig
+    }
+    import from jaclang.scale.deploy.target.kubernetes.kubernetes_target {
+        KubernetesTargetBase
+    }
+    def _loads(*args: any, **kwargs: any) {
+        return;
+    }
+    def _no_such_context(*args: any, **kwargs: any) {
+        raise ConfigException("context 'prod-eks' not found");
+    }
+    kubeconfig = "/etc/jac/kubeconfig";
+    # (kubeconfig load, flags that reach the loaded cluster). The second row is
+    # a builder pod whose jac.toml names a laptop context: the client falls
+    # back to the in-cluster ServiceAccount, so kubectl must name no context.
+    rows: list[tuple[any, list[str]]] = [
+        (_loads, ["--kubeconfig", kubeconfig, "--context", "prod-eks"]),
+        (_no_such_context, []),
+
+    ];
+    for (load_kube_config, reaches) in rows {
+        with tempfile.TemporaryDirectory() as tmp {
+            log = Path(tmp) / "kubectl.log";
+            kubectl = Path(tmp) / "kubectl";
+            kubectl.write_text(_FAKE_KUBECTL);
+            kubectl.chmod(0o755);
+            target = KubernetesTargetBase(
+                config=KubernetesConfig(kube_context="prod-eks", kubeconfig=kubeconfig)
+            );
+            cluster = _OneClusterPods();
+            injector = PvcInjector(_object_key="orders/abc.jab", _bundle_bytes=b"jab");
+            with unittest.mock.patch.dict(
+                os.environ,
+                {
+                    "PATH": f"{tmp}{os.pathsep}{os.environ['PATH']}",
+                    "FAKE_KUBECTL_LOG": str(log),
+                    "FAKE_KUBECTL_REACHES": json.dumps(reaches)
+                }
+            ), unittest.mock.patch.multiple(
+                "kubernetes.config",
+                load_kube_config=load_kube_config,
+                load_incluster_config=_loads
+            ), unittest.mock.patch(
+                "kubernetes.client.CoreV1Api", return_value=cluster
+            ) {
+                target._load_cluster_config();
+                injector.seed("orders", "prod", target._kubectl_args);
+            }
+            calls = [json.loads(line) for line in log.read_text().splitlines()];
+            assert any("cp" in c for c in calls) , f"the bundle was never copied: {calls}";
+            for c in calls {
+                assert c[:len(reaches)] == reaches
+                    and c[len(reaches)] in ("exec", "cp") , (
+                    f"kubectl left the loaded cluster: expected flags {reaches}, ran {c}"
+                );
+            }
+            assert not cluster.pods , "the loader pod outlived the seed";
+        }
+    }
+}

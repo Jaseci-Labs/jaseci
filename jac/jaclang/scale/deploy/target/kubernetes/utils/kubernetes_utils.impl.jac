@@ -1,21 +1,31 @@
 import os;
 import pathlib;
 
-impl run_kubectl_command(args: list[str], cwd: str | Path | None = None) -> None {
+impl kubectl_cluster_args(kube_context: str = "", kubeconfig: str = "") -> list[str] {
+    flags: list[str] = [];
+    if kubeconfig {
+        flags.extend(['--kubeconfig', kubeconfig]);
+    }
+    if kube_context {
+        flags.extend(['--context', kube_context]);
+    }
+    return flags;
+}
+
+impl run_kubectl_command(
+    args: list[str], cluster_args: list[str], cwd: str | Path | None = None
+) -> None {
     import shutil;
     import subprocess;
     if (shutil.which('kubectl') is None) {
         raise RuntimeError('kubectl is required to seed the bundle PVC.');
     }
 
+    cmd = ['kubectl', *cluster_args, *args];
     try {
-        subprocess.run(
-            ['kubectl', *args], check=True, text=True, cwd=str(cwd) if cwd else None
-        );
+        subprocess.run(cmd, check=True, text=True, cwd=str(cwd) if cwd else None);
     } except subprocess.CalledProcessError as exc {
-        raise RuntimeError(
-            f"kubectl command failed: {' '.join(['kubectl', *args])}"
-        ) from exc;
+        raise RuntimeError(f"kubectl command failed: {' '.join(cmd)}") from exc;
     }
 }
 
