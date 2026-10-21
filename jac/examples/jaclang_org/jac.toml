@@ -8,7 +8,7 @@ jac-version = "==0.38.0"
 # jaclang package). The section never reaches a scaffolded project's jac.toml.
 [jacpack]
 name = "awesome"
-description = "The full jaclang.org workspace: a web app, a mobUI mobile app, and a CLI over one shared core, with live docs, the leaderboard, JacYac, and a wasm game"
+description = "The full jaclang.org workspace: a web app, a mobUI mobile app, and a CLI over one shared core, with versioned live docs, JacYac and its ninjaclaw agent, and a wasm game"
 
 # App entry modules establish compilation boundaries. Ordinary imports of
 # core helpers inherit the selected app's context. Imports through a service
@@ -37,9 +37,9 @@ entry-point = "desktop"
 kind = "service"
 entry-point = "core.social_graph"
 
-[apps.scoring]
+[apps.knowledge]
 kind = "service"
-entry-point = "core.scoring_service"
+entry-point = "core.knowledge_service"
 
 [dev]
 jaclang_source = "../.."
@@ -75,7 +75,6 @@ exclude = [
     "core/site/landing/Reveal.jac",
     "core/site/game/webgl_host.jac",
     "core/async_utils.jac",
-    "core/leaderboard/format.jac",
 ]
 
 [memory]

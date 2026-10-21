@@ -25,12 +25,6 @@ obj JacYacState {
         avatarBusy: bool,
         viewedProfile: ProfileBundle | None,
         viewedLoading: bool,
-        exploreMode: str,
-        allProjects: list[Project],
-        projectsLoading: bool,
-        projectBusy: bool,
-        projectError: str,
-        projectNotice: str,
         trendingTags: list[TrendingTag],
         notifCount: int,
         showWelcome: bool,
@@ -52,10 +46,6 @@ obj JacYacState {
         handleSaveProfile: Callable[[dict[str, str]], None],
         handleClearAvatar: Callable[[], None],
         handleViewProfile: Callable[[str], None],
-        loadProjects: Callable[[], None],
-        handleAddProject: Callable[[str], bool],
-        handleRemoveProject: Callable[[str], None],
-        handleRescoreProject: Callable[[str], None],
         handleSearch: Callable[[str], None],
         handleRepost: Callable[[str, str, str], None],
         handleDismissWelcome: Callable[[], None],
@@ -77,7 +67,6 @@ obj JacYacState {
         setSearchQuery: Callable[[str], None],
         setEditingProfile: Callable[[bool], None],
         setProfileError: Callable[[str], None],
-        setExploreMode: Callable[[str], None],
         logout: Callable[[], None],
         dismissError: Callable[[], None],
         reportError: Callable[[str], None];
@@ -117,12 +106,6 @@ impl useJacYac -> JacYacState {
         avatarBusy: bool = False,
         viewedProfile: ProfileBundle | None = None,
         viewedLoading: bool = False,
-        exploreMode: str = "people",
-        allProjects: list[Project] = [],
-        projectsLoading: bool = False,
-        projectBusy: bool = False,
-        projectError: str = "",
-        projectNotice: str = "",
         trendingTags: list[TrendingTag] = [],
         notifCount: int = 0,
         showWelcome: bool = False,
@@ -152,10 +135,6 @@ impl useJacYac -> JacYacState {
     async def handleSaveProfile(fields: dict[str, str]) -> None;
     async def handleClearAvatar -> None;
     async def handleViewProfile(username: str) -> None;
-    async def loadProjects -> None;
-    async def handleAddProject(url: str) -> bool;
-    async def handleRemoveProject(projectId: str) -> None;
-    async def handleRescoreProject(projectId: str) -> None;
     async def handleSearch(query: str) -> None;
     def handleRepost(tweetId: str, content: str, author: str) -> None;
     def handleDismissWelcome -> None;
@@ -190,12 +169,6 @@ impl useJacYac -> JacYacState {
         avatarBusy = False;
         viewedProfile = None;
         viewedLoading = False;
-        exploreMode = "people";
-        allProjects = [];
-        projectsLoading = False;
-        projectBusy = False;
-        projectError = "";
-        projectNotice = "";
         trendingTags = [];
         notifCount = 0;
         showWelcome = False;
@@ -225,12 +198,6 @@ impl useJacYac -> JacYacState {
         avatarBusy=avatarBusy,
         viewedProfile=viewedProfile,
         viewedLoading=viewedLoading,
-        exploreMode=exploreMode,
-        allProjects=allProjects,
-        projectsLoading=projectsLoading,
-        projectBusy=projectBusy,
-        projectError=projectError,
-        projectNotice=projectNotice,
         trendingTags=trendingTags,
         notifCount=notifCount,
         showWelcome=showWelcome,
@@ -252,10 +219,6 @@ impl useJacYac -> JacYacState {
         handleSaveProfile=handleSaveProfile,
         handleClearAvatar=handleClearAvatar,
         handleViewProfile=handleViewProfile,
-        loadProjects=loadProjects,
-        handleAddProject=handleAddProject,
-        handleRemoveProject=handleRemoveProject,
-        handleRescoreProject=handleRescoreProject,
         handleSearch=handleSearch,
         handleRepost=handleRepost,
         handleDismissWelcome=handleDismissWelcome,
@@ -277,7 +240,6 @@ impl useJacYac -> JacYacState {
         setSearchQuery=lambda (value: str) { searchQuery = value; },
         setEditingProfile=lambda (value: bool) { editingProfile = value; },
         setProfileError=lambda (value: str) { profileError = value; },
-        setExploreMode=lambda (value: str) { exploreMode = value; },
         logout=logout,
         dismissError=lambda { bridgeMessage = ""; },
         reportError=lambda (message: str) { bridgeMessage = message; }

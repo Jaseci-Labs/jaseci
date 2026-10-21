@@ -12,16 +12,6 @@ impl MobileNav(
         className="fixed inset-x-0 bottom-0 z-40 flex border-t border-border bg-background/80 backdrop-blur-lg md:hidden"
     >
         <button
-            aria-label="Ninja Scores"
-            className={cn(
-                item,
-                "text-primary" if activeTab == "scores" else "text-muted-foreground"
-            )}
-            onClick={lambda { onNavigate("scores"); }}
-        >
-            <span className="text-xs font-bold">Scores</span>
-        </button>
-        <button
             className={cn(
                 item, "text-primary" if activeTab == "feed" else "text-muted-foreground"
             )}

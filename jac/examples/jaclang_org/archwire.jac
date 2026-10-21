@@ -1,10 +1,9 @@
 graph import {
     edge AppOverCore: core.* --> cli | desktop | mobile.* | pages.* | web;
-    edge BridgeFunnel: jaclang.server.bridge --> cli;
+    edge BridgeFunnel: jaclang.server.bridge --> cli | core.docs.sync;
     edge CoreInternal: core.* --> core.*;
     edge SsoFunnel: jaclang.scale.sso.* --> core.jacyac.github.auth;
 
-    core.ai ++> cli { optional_review }
     core.docs.graph ++> [
         cli { DocsStatus, docs_status },
         web,
@@ -13,30 +12,15 @@ graph import {
         cli { docs_sync_tick },
         web,
     ]
-    core.github ++> cli {
-        RepoMeta,
-        code_breakdown,
-        download_tarball,
-        head_sha,
-        mb_of,
-        repo_meta,
-        text_of,
-        untar
-    }
     core.install ++> web;
     core.jacyac.github.auth ++> desktop | web;
-    core.jacyac.github.repos ++> desktop | web;
     core.jacyac.limits ++> cli { PostingDenied }
     core.jacyac.native.JacYacMobile ++> mobile.main { JacYacMobile }
-    core.leaderboard.scoring ++> cli { RepoAnalysis, ScoreBreakdown, analyze, score }
     core.packages.catalog ++> web;
     core.site.docs.DocsShell ++> pages.docs.index { DocsShell }
     core.site.home.Home ++> pages.index { Home }
     core.site.jacyac.GithubCallback ++> pages.jacyac.github.callback { GithubCallback }
-    core.site.jacyac.JacYac ++> pages.jacyac | pages.jacyac.scores | pages.socialize {
-        JacYac
-    }
-    core.site.leaderboard.Methodology ++> pages.methodology { Methodology }
+    core.site.jacyac.JacYac ++> pages.jacyac | pages.socialize { JacYac }
     core.site.packages.PackagesShell ++> pages.packages.index { PackagesShell }
     core.site.ui.SiteShell ++> pages.layout { SiteShell }
     core.social_graph ++> cli { create_tweet, load_feed }
@@ -44,10 +28,6 @@ graph import {
 }
 
 graph import core {
-    ai ++> [
-        leaderboard.scoring { CodeReview },
-        scoring_service { optional_review },
-    ]
     async_utils ++> jacyac.registration | site.docs.DocsShell { sleep }
     brand.font ++> jacyac.native.JacYacMobile { useBrandFont }
     brand.theme ++> jacyac.native.JacYacMobile
@@ -62,9 +42,9 @@ graph import core {
         | jacyac.native.screens.ExploreScreen
         | jacyac.native.screens.FeedScreen
         | jacyac.native.screens.ProfileScreen
-        | jacyac.native.screens.ScoresScreen
         | site.ui.Navbar { useTheme }
     brand.tokens ++> jacyac.native.theme { Colors, font_family, fonts, radii, spacing }
+    docs.corpus ++> knowledge_service { DocBundle, bundle_from, label_of }
     docs.graph ++> [
         site.docs.DocsArticle { DocPageView },
         site.docs.DocsGraphFloat { TreeNode },
@@ -80,69 +60,46 @@ graph import core {
         site.docs.DocsTocRail { TocEntry },
     ]
     github ++> [
-        install | jacyac.github.repos { fetch },
-        leaderboard.board | social_graph { parse_repo_url },
-        leaderboard.scoring { RepoMeta },
+        install { fetch },
         packages.catalog { API_ROOT, fetch, parse_repo_url },
-        scoring_service {
-            RepoMeta,
-            code_breakdown,
-            download_tarball,
-            head_sha,
-            repo_meta,
-            text_of,
-            untar
-        },
-    ]
-    github_contracts ++> [
-        github { GithubCommit, GithubRepository },
-        jacyac.github.repos { GithubRepository, GithubUser },
     ]
     install ++> site.ui.Navbar { ensure_install }
     jac_tokenizer ++> site.ui.CodeBlock { Token, tokenize_lines }
     jacyac.format ++> [
         site.jacyac.components.ExploreTab
             | site.jacyac.components.ProfileHeader
-            | site.jacyac.components.ProjectCard
             | site.jacyac.components.RightSidebar
             | site.jacyac.components.TweetCard { handle_of, initial_of },
         site.jacyac.components.Sidebar { handle_of },
     ]
     jacyac.genius ++> social_graph { GuideSample, optional_fact, random_guide }
-    jacyac.github.auth ++> [
-        site.jacyac.GithubCallback { complete_native_github, github_callback_mode },
-        social_graph { users },
-    ]
+    jacyac.github.auth ++> site.jacyac.GithubCallback {
+        complete_native_github,
+        github_callback_mode
+    }
     jacyac.github.login ++> site.jacyac.GithubCallback { complete_web_login }
-    jacyac.github.repos ++> social_graph { verified_owner }
     jacyac.identity ++> [
         site.jacyac.JacYac
             | site.jacyac.components.ExploreTab
             | site.jacyac.components.ProfileHeader
             | site.jacyac.components.RightSidebar { avatar_of, name_of },
-        site.jacyac.components.ProjectCard { avatar_of, project_error_message },
         site.jacyac.components.TweetCard { avatar_of },
     ]
     jacyac.limits ++> social_graph { PostingDenied, posting_limit }
     jacyac.native.JacYacMobile ++> site.landing.MobileShowcase { JacYacMobile }
-    jacyac.scores ++> site.jacyac.components.NinjaScores { useScores }
-    jacyac.state ++> [
-        site.jacyac.JacYac { useJacYac },
-        site.jacyac.components.NinjaScores { JacYacState },
-    ]
+    jacyac.state ++> site.jacyac.JacYac { useJacYac }
     jacyac.validation ++> [
         site.jacyac.components.Composer { chars_left, post_limit, valid_post },
         social_graph { valid_post },
     ]
-    leaderboard.board ++> social_graph { BoardHub, OnBoard, RepoEntry }
-    leaderboard.format ++> [
-        site.jacyac.components.ProjectCard { belt_class, belt_label, time_ago },
-        site.leaderboard.Methodology { belt_class, belt_label },
-    ]
-    leaderboard.scoring ++> [
-        scoring_service { RepoAnalysis, ScoreBreakdown, analyze, score },
-        social_graph { ScoreBreakdown },
-    ]
+    knowledge.repo ++> knowledge_service {
+        ReleaseLine,
+        RepoStatus,
+        ensure_repo,
+        export_docs,
+        read_status
+    }
+    knowledge_service ++> docs.sync { release_doc_lines, release_docs }
     packages.catalog ++> [
         site.packages.ApiDocs { ApiMember, ApiModule, ApiParam, ApiSymbol },
         site.packages.PackagePage { PackageDetail, PackageVersion },
@@ -154,7 +111,6 @@ graph import core {
             package_detail
         },
     ]
-    scoring_service ++> social_graph { ScoredPayload, fetch_and_score }
     social_graph ++> [
         jacyac.native.components.TweetCard
             | jacyac.native.screens.FeedScreen
@@ -171,18 +127,13 @@ graph import core {
         jacyac.native.screens.ProfileScreen | site.jacyac.components.ProfileHeader {
             ProfileBundle
         },
-        jacyac.scores
-            | site.jacyac.components.ProjectCard
-            | site.jacyac.components.ProjectsPanel { Project },
         jacyac.state {
             ChannelBundle,
             Profile,
             ProfileBundle,
-            Project,
             TrendingTag,
             Tweet,
             add_comment,
-            add_project,
             clear_avatar,
             create_channel,
             create_channel_tweet,
@@ -190,7 +141,6 @@ graph import core {
             delete_tweet,
             follow_user,
             get_all_profiles,
-            get_all_projects,
             get_avatars,
             get_channel_detail,
             get_channels,
@@ -201,33 +151,29 @@ graph import core {
             leave_channel,
             like_tweet,
             load_feed,
-            remove_project,
-            rescore_project,
             set_avatar,
             setup_profile,
             unfollow_user,
             update_profile
         },
-        site.jacyac.components.ExploreTab { Profile, Project },
-        site.jacyac.components.ProfileEditor { Profile },
+        site.jacyac.components.ExploreTab | site.jacyac.components.ProfileEditor {
+            Profile
+        },
     ]
     source.files ++> [
         site.source.CodeSpotlight { SourceSpan, source_span },
         site.source.SourceBrowser { SourceFile, SourceView, source_file, source_tree },
     ]
     timefmt ++> [
-        docs.sync | progress { now_iso },
-        install | social_graph { now_iso, seconds_since },
-        leaderboard.scoring { days_since },
+        docs.sync | progress | social_graph { now_iso },
+        install { now_iso, seconds_since },
     ]
     utils ++> site.docs.DocsSidebar
         | site.docs.DocsTocRail
         | site.home.NoGlue
         | site.home.OneLanguage
         | site.home.kit
-        | site.jacyac.components.ExploreTab
         | site.jacyac.components.MobileNav
-        | site.jacyac.components.ProjectCard
         | site.jacyac.components.Sidebar
         | site.jacyac.components.TweetCard
         | site.landing.CopyCommand
@@ -266,14 +212,17 @@ graph import core.brand {
 }
 
 graph import core.docs {
+    corpus ++> sync { DocBundle, bundle_from, label_of }
     graph ++> sync {
         DocVersion,
         DocsHub,
         HasHub,
         HasVersion,
         NextPage,
+        _get_hub,
         _pretty,
         _sweep_stale,
+        _teardown_version,
         _version,
         place_page,
         rewrite_href,
@@ -292,19 +241,13 @@ graph import core.jacyac {
     ]
     github.auth ++> session { github_enabled }
     github.login ++> session { github_login }
-    github.repos ++> scores { GithubRepo, github_repositories }
     identity ++> [
         native.components.Avatar { avatar_of },
         native.screens.ExploreScreen | native.screens.ProfileScreen { name_of },
-        state { project_error_message },
     ]
     registration ++> session { register_with_challenge }
-    scores ++> native.screens.ScoresScreen { useScores }
     session ++> state { Session, stored_username, useSession }
-    state ++> [
-        native.JacYacMobile { useJacYac },
-        native.screens.ScoresScreen | scores { JacYacState },
-    ]
+    state ++> native.JacYacMobile { useJacYac }
     validation ++> [
         native.components.Composer { chars_left },
         state { valid_post },
@@ -312,10 +255,7 @@ graph import core.jacyac {
 }
 
 graph import core.jacyac.github {
-    auth ++> [
-        login { begin_github, finish_github },
-        repos { github_id },
-    ]
+    auth ++> login { begin_github, finish_github }
 }
 
 graph import core.jacyac.native {
@@ -348,7 +288,6 @@ graph import core.jacyac.native {
     screens.ExploreScreen ++> JacYacMobile { ExploreScreen }
     screens.FeedScreen ++> JacYacMobile { FeedScreen }
     screens.ProfileScreen ++> JacYacMobile { ProfileScreen }
-    screens.ScoresScreen ++> JacYacMobile { ScoresScreen }
     theme ++> JacYacMobile
         | components.Avatar
         | components.BridgeBanner
@@ -360,16 +299,11 @@ graph import core.jacyac.native {
         | screens.ChannelsScreen
         | screens.ExploreScreen
         | screens.FeedScreen
-        | screens.ProfileScreen
-        | screens.ScoresScreen { makeStyles }
+        | screens.ProfileScreen { makeStyles }
 }
 
 graph import core.jacyac.native.components {
     Avatar ++> Composer | TweetCard { Avatar }
-}
-
-graph import core.leaderboard {
-    scoring ++> board { RepoFeatures, ScoreBreakdown }
 }
 
 graph import core.site {
@@ -387,7 +321,6 @@ graph import core.site {
         | home.OneLanguage
         | home.ReadableTiers
         | home.kit { Reveal }
-    leaderboard.Methodology ++> jacyac.components.NinjaScores { Methodology }
     source.CodeSpotlight ++> landing.MobileShowcase | landing.WaitWuuut {
         CodeSpotlight
     }
@@ -398,9 +331,9 @@ graph import core.site {
         | home.kit
         | source.CodeSpotlight
         | source.SourceBrowser { CodeLines }
-    ui.GraphBackdrop ++> docs.DocsShell | leaderboard.Methodology { GraphBackdrop }
+    ui.GraphBackdrop ++> docs.DocsShell { GraphBackdrop }
     ui.SectionRail ++> home.Home | landing.TechDemo | landing.WaitWuuut { SectionRail }
-    ui.alert_dialog ++> jacyac.components.ProjectCard | jacyac.components.TweetCard {
+    ui.alert_dialog ++> jacyac.components.TweetCard {
         AlertDialog,
         AlertDialogAction,
         AlertDialogCancel,
@@ -414,12 +347,10 @@ graph import core.site {
     ui.avatar ++> jacyac.components.Composer
         | jacyac.components.ExploreTab
         | jacyac.components.ProfileHeader
-        | jacyac.components.ProjectCard
         | jacyac.components.RightSidebar
         | jacyac.components.Sidebar
         | jacyac.components.TweetCard { Avatar, AvatarFallback, AvatarImage }
     ui.badge ++> jacyac.components.ChannelsTab
-        | jacyac.components.ProjectCard
         | jacyac.components.RightSidebar
         | jacyac.components.Sidebar
         | landing.Agents
@@ -428,7 +359,6 @@ graph import core.site {
         | landing.MobileShowcase
         | landing.WaitWuuut
         | landing.WasmGame
-        | leaderboard.Methodology
         | packages.PackagePage
         | packages.PackagesIndex { Badge }
     ui.button ++> [
@@ -437,11 +367,8 @@ graph import core.site {
             | jacyac.components.ChannelsTab
             | jacyac.components.Composer
             | jacyac.components.ExploreTab
-            | jacyac.components.NinjaScores
             | jacyac.components.ProfileEditor
             | jacyac.components.ProfileHeader
-            | jacyac.components.ProjectCard
-            | jacyac.components.ProjectsPanel
             | jacyac.components.RightSidebar
             | jacyac.components.Sidebar
             | jacyac.components.TweetCard
@@ -494,9 +421,7 @@ graph import core.site {
     ui.input ++> docs.DocsSidebar
         | jacyac.components.AuthForm
         | jacyac.components.ChannelsTab
-        | jacyac.components.NinjaScores
         | jacyac.components.ProfileEditor
-        | jacyac.components.ProjectsPanel
         | jacyac.components.RightSidebar
         | jacyac.components.TweetCard
         | packages.PackagesIndex { Input }
@@ -632,10 +557,8 @@ graph import core.site.jacyac {
     components.ExploreTab ++> JacYac { ExploreTab }
     components.FeedTab ++> JacYac { FeedTab }
     components.MobileNav ++> JacYac { MobileNav }
-    components.NinjaScores ++> JacYac { NinjaScores }
     components.ProfileEditor ++> JacYac { ProfileEditor }
     components.ProfileHeader ++> JacYac { ProfileHeader }
-    components.ProjectsPanel ++> JacYac { ProjectsPanel }
     components.RightSidebar ++> JacYac { RightSidebar }
     components.Sidebar ++> JacYac { Sidebar }
     components.TweetCard ++> JacYac { TweetCard }
@@ -643,7 +566,6 @@ graph import core.site.jacyac {
 
 graph import core.site.jacyac.components {
     Composer ++> ChannelsTab | FeedTab { Composer }
-    ProjectCard ++> ExploreTab | NinjaScores | ProjectsPanel { ProjectCard }
     TweetCard ++> ChannelsTab | FeedTab { TweetCard }
     WelcomeBanner ++> FeedTab { WelcomeBanner }
 }

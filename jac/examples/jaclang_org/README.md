@@ -1,8 +1,7 @@
 # jaclang.org -- the official Jac website
 
-The marketing site, docs reader, and JacYac with integrated Ninja Scores (a
-Twitter-style social app at `/jacyac`) for the Jac
-programming language, built end to end in Jac (naturally). One language spans all three
+The marketing site, versioned docs reader, and JacYac (a Twitter-style social
+app at `/jacyac`) for the Jac programming language, built end to end in Jac (naturally). One language spans all three
 codespaces here: the pages and components compile to JavaScript, the
 endpoints compile to Python and serve over RPC, and the game in
 `core/site/game/arena.jac` compiles through LLVM to `/static/arena.wasm` -- fully
@@ -11,7 +10,7 @@ borrow-checked, with zero reference counting in the artifact.
 It is also one **workspace**: a single type-checked repo whose `jac.toml`
 declares six apps -- the `web` site, the same site as a `desktop` app, a mobUI
 `mobile` app, a `cli`, and two file-rooted service apps (`social_graph`,
-`scoring`) -- over one shared `core/` tree. The web, desktop, mobile and cli
+`knowledge`) -- over one shared `core/` tree. The web, desktop, mobile and cli
 apps all consume the same social graph by importing it.
 
 Built on jac-shadcn (nova style, orange accent, Geist). Dark-first with a
@@ -33,27 +32,46 @@ jac run --serve --fleet web   # service apps as their own local processes
 ```
 
 Under plain `jac run` the two service apps are **colocated**: `social_graph`
-and `scoring` load into the web server's process and bridged calls stay
+and `knowledge` load into the web server's process and bridged calls stay
 in-process. `--fleet` (and every deploy) runs each service app as its own
 process behind the gateway. Nothing in the source changes between the two;
 the app boundary is structural and the topology is a profile.
 
-Docs content comes from the binary. The docs corpus bundled with jaclang
--- the same one `jac guide` serves offline and `jac mcp` exposes as
-`jac://docs/*` -- is read in-process through `jaclang.cli.guide_store` by a
-scheduled in-server job (`core/docs/sync.jac`) and grown into the docs graph as
-one version labelled after the running jac (`v0.37` for jac 0.37.1). No
-clone, no network, no GitHub token. The graph is populated once: the job
-fingerprints the corpus (version string plus every page and nav title), and
-a restart whose persisted graph already carries that fingerprint does
-nothing. Only a binary whose bundled docs differ triggers a rebuild, which
-replaces the version in place. After its first pass the tick is a no-op for
-the life of the process, so an edited docs tree under the `[dev]`
-live-source stanza shows up on the next restart. `/docs/latest` is a
-resolve-time alias for that version, which is also where `/docs` lands.
+The docs reader holds three release lines. The newest is the docs corpus
+bundled with the jac binary serving the site -- the same one `jac guide`
+serves offline and `jac mcp` exposes as `jac://docs/*` -- read in-process
+through `jaclang.cli.guide_store` and labelled after the running jac (`v0.38`
+for jac 0.38.0). `/docs/latest` is a resolve-time alias for it, which is also
+where `/docs` lands. The two lines before it come from the `knowledge`
+service app (`core/knowledge_service.jac`), which keeps one clone of
+`jaseci-labs/jac` per deployment:
+
+- **One clone, made at startup.** A scheduled tick (`knowledge_repo_tick`)
+  clones the repo treeless (`--filter=tree:0`) with a sparse checkout of the
+  docs, the guides and the examples: seconds and a few megabytes. One process
+  holds an exclusive file lock while it clones or fetches; every process reads
+  the status file it writes. A restart with the clone already on disk runs
+  `git fetch --tags` instead, at most once an hour. Everything is git
+  protocol, so there are no REST API calls and no rate limit to manage.
+- **Older lines come from git objects.** For each of the two minor lines
+  below the serving release, the newest patch tag's docs are exported through a
+  throwaway index (`git --work-tree=<dir> checkout <tag> -- <docs>`), so the
+  checked-out tree never moves. The serving release's tag is what stays
+  checked out, for anything that reads the tree.
+- **The docs sync stays the only writer.** `docs_sync_tick`
+  (`core/docs/sync.jac`, owned by `web`) ingests the bundled corpus, then asks
+  the knowledge service which release lines it holds (`release_doc_lines`) and
+  pulls any whose fingerprint differs (`release_docs`). Each version is
+  fingerprinted (version string plus every page and nav title), so a restart
+  whose graph already holds those fingerprints changes nothing. Versions that
+  fall out of the window are retired. Until the clone is ready the site serves
+  the bundled version alone.
+
 Requests never trigger a sync -- they only read whatever the job last
-committed. Which docs the site shows is decided by which jac binary serves
-it. `GITHUB_TOKEN` only matters to Ninja Scores repository analysis.
+committed. The clone lives under `.jac/data/knowledge` (`JACORG_KNOWLEDGE_DIR`
+moves it; `JACORG_REPO_URL` points it at another repo). Without `git` on the
+server the knowledge service reports `unavailable` and the docs keep the
+bundled version.
 
 ## Registration verification
 
@@ -75,12 +93,6 @@ desktop, and mobile.
 
 Set `ANTHROPIC_API_KEY` in the server environment to enable the Sonnet 5.5
 model configured in `jac.toml`. No credential belongs in the workspace.
-The scoring service and CLI add an AI review with a summary, an evidenced
-strength, and a suggested next step. The numeric score stays deterministic.
-Web, desktop, mobile, and CLI reports show the review only when it succeeds.
-Each review samples at most 6,000 characters across at most eight files and
-allows 450 output tokens, a 12-second request timeout, and no retries.
-
 The private `jacyac_genius` walker in `core/social_graph.jac` wakes at the
 start of each UTC hour under Jac's scheduler (`0 * * * *`). It traverses
 `GeniusMemory` → `GeniusTopic` → `Profile`, using `Studies` and `PublishesAs` edges. The topic
@@ -113,7 +125,7 @@ app reaches. `jac check --app web` restricts it to one app. `jac precommit
 --install` wires the first two as a git hook. To run one module's tests:
 
 ```bash
-JAC_TEST_JOBS=0 jac test core/docs/graph.jac core/leaderboard/board.jac core/social_graph.test.jac
+JAC_TEST_JOBS=0 jac test core/docs/graph.jac core/knowledge/repo.jac core/social_graph.test.jac
 ```
 
 ## Layout
@@ -128,20 +140,19 @@ root is shared.
 |---|---|
 | `jac.toml` | The workspace: `[apps.*]`, npm deps, shadcn theme, lint/test/gc config |
 | `core/` | Shared modules outside app roots: domain, client behavior, branding, and explicitly named UI trees |
-| `core/social_graph.jac` | The whole JacYac backend (profiles with uploaded avatars, posts, follows, channels, and projects that every user adds as GitHub repos and the Ninja Scores scorer grades on the way in); the `social_graph` **service app** is rooted at this file |
-| `core/scoring_service.jac` | The repo scorer; the `scoring` **service app** is rooted at this file |
-| `core/leaderboard/` | `board.jac` (legacy storage schema; `social_graph.jac` imports it into JacYac), `scoring.jac` (rubric), `format.jac` (belt labels) |
-| `core/docs/` | `graph.jac` is the docs read model (schema + walkers), `sync.jac` the scheduled writer that ingests it |
+| `core/social_graph.jac` | The whole JacYac backend (profiles with uploaded avatars, posts, follows, channels); the `social_graph` **service app** is rooted at this file |
+| `core/knowledge_service.jac` | The repo clone's endpoints and schedule; the `knowledge` **service app** is rooted at this file |
+| `core/knowledge/` | `repo.jac`, the one clone of the jac repo: clone, fetch, the serving checkout and older-line docs exports |
+| `core/docs/` | `graph.jac` is the docs read model (schema + walkers), `sync.jac` the scheduled writer that ingests it, `corpus.jac` the bundle a docs tree reads into (shared with the knowledge service) |
 | `core/source/files.jac` | The workspace-walking source browser backend |
-| `core/{github,timefmt,progress,install,jac_tokenizer,async_utils,utils}.jac` | Tarball/API plumbing, timestamps, the job-progress protocol, the install script endpoint, the syntax highlighter, `sleep`, `cn()` |
+| `core/{github,timefmt,progress,install,jac_tokenizer,async_utils,utils}.jac` | GitHub API plumbing, timestamps, the job-progress protocol, the install script endpoint, the syntax highlighter, `sleep`, `cn()` |
 | `core/jacyac/native/` | The phone UI (`@jac/mobui` only): `JacYacMobile.jac` is the root component, `theme.jac` the native style adapter over `core/brand` tokens, `icon.jac` / `icon.native.jac` one icon API over two backends, `components/` and `screens/`; shared by the `mobile` app and the landing page's phone |
-| `core/site/` | The site's UI, shared by the `web` and `desktop` apps: `landing/`, `docs/`, `leaderboard/`, `jacyac/`, `source/`, `game/`, the jac-shadcn `ui/`, `examples/`, `styles/`, `assets/`, `scripts/` (each described below) |
+| `core/site/` | The site's UI, shared by the `web` and `desktop` apps: `landing/`, `docs/`, `jacyac/`, `source/`, `game/`, the jac-shadcn `ui/`, `examples/`, `styles/`, `assets/`, `scripts/` (each described below) |
 | `web.jac` | The site's entry (`[apps.web]`, `kind = "web-app"`): the global CSS and `app`, the layout wrapper the routes in `pages/` render inside; the wires that bring the web-owned endpoints into its program land here |
 | `desktop.jac` | The site as a desktop app (`kind = "desktop"`): the same entry as `web.jac` over the same `pages/`, so the same `core/site` UI in an OS webview, backed by jaclang.org itself (`[apps.desktop.desktop] backend`) |
 | `pages/` | File-based routes -- thin re-exports into `core/site`. `web` and `desktop` are both rooted at the workspace, so this one tree serves both apps |
 | `core/site/landing/` | The tech demo page (`TechDemo.jac`): the WebAssembly arena, the live mobile app in a bezel (`MobileShowcase.jac`), agents, the book and the source explorer, plus the Wait, Wuuut?! page |
 | `core/site/docs/` | The docs reader: shell, sidebar, TOC rail, article, renderer |
-| `core/site/leaderboard/` | Scoring methodology, reused inside JacYac |
 | `core/site/jacyac/` | JacYac embedded as a login-gated section: `JacYac.jac` + `components/`, shared `core/jacyac/identity.jac` for handles and avatars |
 | `core/site/source/` | The live source browser, code spotlights, and the floating window |
 | `core/site/game/` | The rlgl shooter (`arena.jac`, owned/borrowed, zero-GC) and its WebGL host |
@@ -155,8 +166,8 @@ root is shared.
 also where every server-placed module lives that the web app *owns
 implicitly*: `docs`, `source` and `install` reach the web
 server only through `web.jac`, so `web` is their single owner. The
-social graph and the scorer are reached by more than one app, so they are
-declared as apps of their own and own exactly their entry files.
+social graph and the knowledge service are reached by more than one app, so
+they are declared as apps of their own and own exactly their entry files.
 
 Inside `core/site/`, features may depend on features -- `landing/WaitWuuut.jac`
 embeds `source/FloatingSource.jac` -- and `Reveal` and `CopyCommand` stay in
@@ -176,7 +187,7 @@ Two rules, and neither is stylistic:
   sibling feature.
 - **Within a directory, use the sibling form.** `import from .Reveal {
   Reveal }`, `import from .components.AuthForm { AuthForm }`, `import from
-  .scoring { RepoAnalysis }`.
+  .corpus { DocBundle }`.
 
 The one exception is `core/site/ui/`'s registry-managed primitives, which keep the
 `import from ...core.utils { cn }` form `jac install --shadcn` writes for
@@ -191,21 +202,20 @@ import is a plain `import` -- the compiler classifies each module by its
 anchors and takes the right edge:
 
 - **Server-anchored** (Python imports, nodes/edges/walkers, `::py::`) --
-  `core/docs/graph.jac`, `core/leaderboard/board.jac`,
+  `core/docs/graph.jac`, `core/knowledge/repo.jac`,
   `core/social_graph.jac`: `def:pub`s and walkers bridge to RPC stubs, objs
   cross as wire types.
-- **Across an app boundary** -- `core/social_graph.jac` (owned by
-  `social_graph`) importing `fetch_and_score` from `core/scoring_service.jac` (the
-  `scoring` app): the same plain import, classified as a service bridge. The
-  stub is typed and async, so the call is `await fetch_and_score(...)` and a
+- **Across an app boundary** -- `core/docs/sync.jac` (owned by `web`)
+  importing `release_doc_lines` from `core/knowledge_service.jac` (the
+  `knowledge` app): the same plain import, classified as a service bridge. The
+  stub is typed and async, so the call is `await release_doc_lines()` and a
   missing `await` is a type error, not a runtime surprise.
 - **Native-anchored** (clib externs, ownership marks, or a dep that has
   them) -- `core/site/game/arena.jac` and friends: a client import takes the cl→na
   edge (wasm binding, `/static/arena.wasm`, nothing on the Python side);
   a server import stays the ctypes crossing.
 - **Client-anchored** (JSX, npm string imports, browser globals) -- the
-  components, `core/utils.jac`, `core/leaderboard/format.jac` (`Date`),
-  `core/async_utils.jac` (`Promise`/`setTimeout`).
+  components, `core/utils.jac`, `core/async_utils.jac` (`Promise`/`setTimeout`).
 - **Unanchored pure logic** -- `core/jac_tokenizer.jac`: codespace-polymorphic,
   compiled into whichever side imports it; `def:pub` there means "exported", not
   "endpoint".
@@ -217,18 +227,19 @@ the only override an app can still express is a `[placement.pins]` entry
 
 ### Typed contracts, not dict payloads
 
-Read models and scoring results use declared `obj`s, and the client stores those types
-directly (`has page: DocPageView | None`, `has allProjects: list[Project]`).
+Read models use declared `obj`s, and the client stores those types
+directly (`has page: DocPageView | None`, `has tweets: list[Tweet]`).
 Nothing is hand-marshalled across the wire, so a server signature change lands
 as a `jac check` diagnostic on the exact client line that went stale. Each
 module owns its view models:
 
 - `core/docs/graph.jac` -- `DocsStatus`, `DocTree`, `TreeNode`, `DocPageView`,
   `TocEntry`, `Crumb`, `PageRef`, `VersionInfo`
-- `core/leaderboard/scoring.jac` -- `ScoreBreakdown`, `RepoFeatures`
-- `core/scoring_service.jac` -- `ScoredPayload`, the wire type that crosses
-  the `social_graph` → `scoring` app boundary
-- `core/github.jac` -- `RepoMeta` plus the shared tarball/API plumbing
+- `core/docs/corpus.jac` -- `DocBundle`, `NavEntry`, the docs tree a version
+  is built from
+- `core/knowledge_service.jac` -- `ReleaseLines`, `ReleaseDocsInfo`, the wire
+  types that cross the `web` → `knowledge` app boundary
+- `core/knowledge/repo.jac` -- `RepoStatus`, `ReleaseLine`
 - `core/source/files.jac` -- `SourceFile`, `SourceView`, `SourceSpan`
 - `core/social_graph.jac` -- `ProfileBundle`, `ChannelBundle`, `TrendingTag`
   and the `Profile` / `Tweet` / `Channel` nodes every client app renders
@@ -241,11 +252,11 @@ re-derives a slug.
 
 A bare `jac test` targets the default app (`web`), whose `[test]
 directories` lists `core`, `web`, `mobile` and `cli`, so it runs the whole
-workspace: the pure logic on both sides of the wire -- the URL parser, repo
-analyzer and scoring rubric (`core/leaderboard/*.test.jac`), the docs
+workspace: the pure logic on both sides of the wire -- the docs
 slugifier, route rewriter, TOC builder and swap-commit protocol
 (`core/docs/graph.test.jac`), the version label, link rewriter, corpus
-fingerprint and once-only ingest (`core/docs/sync.test.jac`), the progress
+fingerprint and per-version ingest (`core/docs/sync.test.jac`), the clone
+manager against a local fixture repo (`core/knowledge/repo.test.jac`), the progress
 protocol (`core/progress.test.jac`), the Jac syntax highlighter
 (`core/jac_tokenizer.test.jac`), the social graph
 (`core/social_graph.test.jac`) and its fullstack smoke
@@ -259,22 +270,14 @@ annex instead of inheriting the workspace list, and mobile points at
 ## The CLI app: jacorg
 
 The `cli` app of the workspace (`[apps.cli]`, `kind = "cli"`, entry
-`cli.jac`). It exists to show the two things a command-line app in a
-Jac workspace can be, side by side, over the same shared `core/`:
-
-- **Offline, in-process.** `jacorg score` imports the pure rubric
-  (`core.leaderboard.scoring`) and the tarball plumbing (`core.github`) and
-  scores a GitHub repo right here. No server, no site, nothing bridged.
-- **A client of the site.** `jacorg docs`, `jacorg feed` and `jacorg post`
-  import server-placed elements that belong to other apps -- the docs graph
-  the `web` app owns, the walkers the `social_graph` service app owns. Per
-  the workspace rules a CLI never touches another app's store: those imports
-  compile to typed async stubs, the call is an `await`, and a failure
-  arrives as one of the `BridgeError` family from `jaclang.server.bridge`.
-
-Nothing in the source says which is which. Both flavors are plain
-`import from core... { ... }` lines; the compiler classifies each by the
-owner of what is imported.
+`cli.jac`). It is a client of the site: `jacorg docs`, `jacorg feed` and
+`jacorg post` import server-placed elements that belong to other apps -- the
+docs graph the `web` app owns, the walkers the `social_graph` service app
+owns. Per the workspace rules a CLI never touches another app's store: those
+imports compile to typed async stubs, the call is an `await`, and a failure
+arrives as one of the `BridgeError` family from `jaclang.server.bridge`.
+Nothing in the source says so; they are plain `import from core... { ... }`
+lines, and the compiler classifies each by the owner of what is imported.
 
 ### Run it
 
@@ -282,8 +285,6 @@ From the workspace root:
 
 ```bash
 jac run cli -- --help
-jac run cli -- score jaseci-labs/jac            # offline, prints the breakdown
-jac run cli -- score jaseci-labs/jac --json     # same, as JSON on stdout
 jac run cli -- docs status                      # needs the site: jac run web
 jac run cli -- docs sync
 jac run cli -- feed --limit 5 --search "#jac"
@@ -296,9 +297,8 @@ Everything after `--` is the program's own argv (`argparse`, subcommands).
 
 | Command | Flavor | What it does |
 |---|---|---|
-| `score <owner/name \| github url> [--json]` | offline | Fetches the default-branch tarball, runs `analyze` + `score`, prints the belt, the four category totals and every rubric line. `--json` prints the same breakdown as JSON and keeps stderr quiet. `GITHUB_TOKEN` raises the API rate limit. |
 | `docs status` | client of `web` | `await docs_status()` -- which docs versions the site's graph holds. |
-| `docs sync` | client of `web` | `await docs_sync_tick()` then `status`. The tick is the same scheduled job the server runs: it ingests the bundled corpus only if the graph does not already carry that fingerprint. |
+| `docs sync` | client of `web` | `await docs_sync_tick()` then `status`. The tick is the same scheduled job the server runs: it ingests the bundled corpus and the knowledge service's release lines whose fingerprints the graph does not already carry. |
 | `feed [--limit N] [--search TEXT]` | client of `social_graph` | `await (root spawn load_feed(search_query=...))` and prints `.reports[0]` -- the same walker and the same report shape the web and mobile UIs read. |
 | `post "<text>"` | client of `social_graph` | `await (root spawn create_tweet(content=...))`; prints the tweet the walker reports. |
 
@@ -307,8 +307,8 @@ Everything after `--` is the program's own argv (`argparse`, subcommands).
 | Code | Meaning |
 |---|---|
 | 0 | done |
-| 1 | the command ran and failed (repo not found, not a Jac repo, a bridged call returned a server error) |
-| 2 | usage (argparse), or a repo reference that is not `owner/name` / a github.com URL |
+| 1 | the command ran and failed (a bridged call returned a server error) |
+| 2 | usage (argparse) |
 | 3 | `BridgeUnavailable`: the owning app is not reachable -- start the site with `jac run web` |
 | 4 | `BridgeTimeout` |
 | 5 | `BridgeRejected`: the site refused the call (typically: the command needs a signed-in identity) |
@@ -333,8 +333,8 @@ signed-in user.
 ### Tests
 
 `jac test cli` runs `cli.test.jac`, the annex beside `cli.jac`: the argument
-parser, the repo-reference parser, JSON shape and renderer of the scorer, and
-the exit-code mapping for bridge failures. None of them touch the network or a
+parser, the posting-quota message, and the exit-code mapping for bridge
+failures. None of them touch the network or a
 server; the bridged commands are exercised against a running site by hand.
 
 ## The mobile app
@@ -366,11 +366,6 @@ The web preview uses React Native Web; it is not a native-device test.
 variant uses browser icons. `core/brand/font.native.jac` loads the same
 Geist font asset used by web. See the sections above for shared ownership,
 brand generation, and validation commands.
-
-Ninja Scores is available from the Scores tab, including before sign-in.
-Repository search, sorting, GitHub repository selection, and project mutations
-use the same shared state as the web app. Submissions appear publicly under
-the submitting JacYac profile.
 
 GitHub sign-in opens the system browser through Expo WebBrowser. Jac Scale
 completes the provider callback, and the initiating device redeems the result
@@ -437,8 +432,8 @@ compatibility route. Web navigation and all product copy use **JacYac**.
 
 `core/jacyac/session.jac` owns login, signup, session storage migration, and
 logout. `state.jac` exposes a typed `JacYacState` from `useJacYac`: graph
-loading, mutations, profile editing, avatar caching, project scoring,
-loading flags, and recoverable errors. Both renderers call this hook;
+loading, mutations, profile editing, avatar caching, loading flags, and
+recoverable errors. Both renderers call this hook;
 neither maintains a second copy of the graph operations. The web renderer
 owns browser image resizing. The native renderer owns keyboard handling,
 native views, and its compact bio form. `identity.jac` centralizes names and
@@ -466,16 +461,7 @@ render the live native phone. `react-native-svg` stays in the mobile native
 overlay: the default BrandMark variant uses an image and its native variant
 uses SvgXml, both consuming the same artwork. The embedded phone is the actual mobile UI.
 
-## GitHub sign-in and Ninja Scores
-
-Ninja Scores lives at `/jacyac/scores`, inside both the web and native JacYac
-navigation. It is public without signing in; submissions, removal, and
-rescoring require the user's own JacYac account. `/leaderboard` redirects to
-this directory. The social graph is the single source of project records,
-including the full score breakdown. Old unowned leaderboard submissions are
-imported once per repository under the clearly labeled `ninja_scores_archive`
-profile on the system root. A current user submission takes precedence over
-its archive copy in the public directory; historical data is retained.
+## GitHub sign-in
 
 Register a GitHub OAuth app and configure its callback as
 `http://127.0.0.1:8095/jacyac/github/callback` locally, or
@@ -489,14 +475,15 @@ SSO_GITHUB_CLIENT_ID=your_client_id
 SSO_GITHUB_CLIENT_SECRET=your_client_secret
 ```
 
-GitHub buttons appear when both credentials are configured. Existing password
-users select **Connect GitHub** from Ninja Scores; new users can choose
-**Continue with GitHub**. Account associations use GitHub's immutable user ID,
-never an editable profile handle or a matching email. The repository picker
-lists public repositories owned by that verified identity. Adding a URL is
-also supported: it records the submitter, and only a server-verified owner
-gets an ownership badge. Private repositories are rejected even if a server
-`GITHUB_TOKEN` can access them.
+GitHub buttons appear when both credentials are configured; new users can
+choose **Continue with GitHub**. Account associations use GitHub's immutable
+user ID, never an editable profile handle or a matching email.
+
+Ninja Scores (repo scoring) and the leaderboard were retired with the
+knowledge service; `/leaderboard` and `/jacyac/scores` redirect to `/jacyac`.
+Persisted project and score records belong to types that no longer exist, so
+the store quarantines them on load instead of deleting them; `jac db
+quarantine list` shows them and `jac db` can still recover them.
 
 `core/jacyac/github/auth.jac` is an application configuration/RPC facade over
 Jac Scale's `OAuthSession`. Scale owns PKCE, expiring single-use state,

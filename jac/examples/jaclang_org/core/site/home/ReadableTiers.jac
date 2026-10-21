@@ -10,17 +10,15 @@ glob _ARCH_LINES: list[str] = [
 
      ],
      _DECL_LINES: list[str] = [
-         "obj RepoMeta {",
-         "    has full_name: str = \"\",",
-         "        default_branch: str = \"main\",",
-         "        stars: int = 0;",
-         "}",
+         "glob API_ROOT: str = \"https://api.github.com/repos/\";",
          "",
          "def headers(agent: str, accept_json: bool = True) -> dict[str, str];",
          "",
-         "def:protect repo_meta(repo: str, agent: str) -> RepoMeta | None;",
+         "def fetch(",
+         "    url: str, agent: str, accept_json: bool = False, timeout: int = 10",
+         ") -> bytes | None;",
          "",
-         "def:protect head_sha(repo: str, ref: str, agent: str) -> str;",
+         "def:protect parse_repo_url(url: str) -> tuple[str, str] | None;",
 
      ],
      _IMPL_LINES: list[str] = [

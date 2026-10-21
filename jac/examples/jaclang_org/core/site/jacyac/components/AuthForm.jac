@@ -91,12 +91,6 @@ impl AuthForm(
                             Continue with GitHub
                         </Button>
                     }}
-                    <a
-                        href="/jacyac/scores"
-                        className="mb-4 block text-center text-sm text-primary"
-                    >
-                        Browse Ninja Scores
-                    </a>
                     <form {onSubmit} className="flex flex-col gap-4">
                         <Field>
                             <FieldLabel htmlFor="lx-username">Username</FieldLabel>

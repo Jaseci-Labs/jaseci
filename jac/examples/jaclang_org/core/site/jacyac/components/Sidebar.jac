@@ -47,19 +47,6 @@ impl Sidebar(
                 className={cn(
                     nav_base,
                     "text-primary bg-primary/10"
-                        if activeTab == "scores"
-                        else "text-foreground"
-                )}
-                onClick={lambda { onNavigate("scores"); }}
-            >
-                <Compass size={24}/>
-                <span className="hidden xl:inline">Ninja Scores</span>
-            </Button>
-            <Button
-                variant="ghost"
-                className={cn(
-                    nav_base,
-                    "text-primary bg-primary/10"
                         if activeTab == "feed"
                         else "text-foreground"
                 )}

@@ -24,7 +24,6 @@ def:pub AuthScreen(
     githubEnabled: bool = False,
     onGithub: Callable[[], None] = lambda {},
     embedded: bool = False,
-    onScores: Callable[[], None] = lambda {},
 ) -> JsxElement;
 
 impl AuthScreen(
@@ -40,7 +39,6 @@ impl AuthScreen(
     githubEnabled: bool = False,
     onGithub: Callable[[], None] = lambda {},
     embedded: bool = False,
-    onScores: Callable[[], None] = lambda {},
 ) -> JsxElement {
     theme = useTheme();
     C = theme.colors;
@@ -147,11 +145,6 @@ impl AuthScreen(
                     </Text>
                 </Pressable>
             </View>
-            <Pressable accessibilityRole="button" onPress={onScores}>
-                <Text style={[styles.switchLink, {"textAlign": "center"}]}>
-                    Browse Ninja Scores
-                </Text>
-            </Pressable>
             <Text style={styles.footnote}>
                 Same accounts and the same graph as jaclang.org/jacyac.
             </Text>

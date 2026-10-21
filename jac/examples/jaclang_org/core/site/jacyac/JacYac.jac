@@ -1,6 +1,13 @@
 import from "lucide-react" { Feather, ArrowLeft }
 
-glob AVATAR_SIDE: int = 256;
+glob AVATAR_SIDE: int = 256,
+     PUBLIC_TABS: list[str] = ["user"],
+     TAB_TITLES: dict[str, str] = {
+         "feed": "Home",
+         "explore": "Explore",
+         "channels": "Channels",
+         "profile": "Profile"
+     };
 
 async def shrink_avatar(file: any) -> str;
 
@@ -32,8 +39,8 @@ impl shrink_avatar(file: any) -> str {
 impl JacYac(initialTab: str = "feed") -> JsxElement {
     model = useJacYac();
     can with entry {
-        if initialTab == "scores" {
-            model.navigate("scores");
+        if initialTab != "feed" {
+            model.navigate(initialTab);
         }
     }
     async def handleAvatarFile(file: any) -> None {
@@ -57,7 +64,7 @@ impl JacYac(initialTab: str = "feed") -> JsxElement {
             </div>;
     }
 
-    if not model.session.loggedIn and model.activeTab not in ["scores", "user"] {
+    if not model.session.loggedIn and model.activeTab not in PUBLIC_TABS {
         return
             <AuthForm
                 isSignup={model.session.signup}
@@ -107,25 +114,7 @@ impl JacYac(initialTab: str = "feed") -> JsxElement {
     )
         if model.viewedProfile
         else "Profile";
-    tab_title = "Ninja Scores"
-        if model.activeTab == "scores"
-        else (
-            "Home"
-                if model.activeTab == "feed"
-                else (
-                    "Explore"
-                        if model.activeTab == "explore"
-                        else (
-                            "Channels"
-                                if model.activeTab == "channels"
-                                else (
-                                    "Profile"
-                                        if model.activeTab == "profile"
-                                        else viewedName
-                                )
-                        )
-                )
-        );
+    tab_title = TAB_TITLES.get(model.activeTab, viewedName);
 
     <div
         className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-7xl bg-background text-foreground"
@@ -174,9 +163,7 @@ impl JacYac(initialTab: str = "feed") -> JsxElement {
                     </Button>
                 </div>
             }}
-            {if model.activeTab == "scores" {
-                <NinjaScores model={model}/>
-            } elif model.activeTab == "feed" {
+            {if model.activeTab == "feed" {
                 <FeedTab
                     showWelcome={model.showWelcome}
                     onDismissWelcome={model.handleDismissWelcome}
@@ -197,19 +184,10 @@ impl JacYac(initialTab: str = "feed") -> JsxElement {
                 />
             } elif model.activeTab == "explore" {
                 <ExploreTab
-                    mode={model.exploreMode}
-                    onModeChange={lambda (m: str) {
-                        model.setExploreMode(m);
-                        if m == "repos" {
-                            model.loadProjects();
-                        }
-                    }}
                     allProfiles={model.allProfiles}
                     {followingIds}
                     {myProfileId}
                     avatars={model.avatars}
-                    projects={model.allProjects}
-                    projectsLoading={model.projectsLoading}
                     onFollow={model.handleFollow}
                     onUnfollow={model.handleUnfollow}
                     onViewProfile={model.handleViewProfile}
@@ -272,18 +250,6 @@ impl JacYac(initialTab: str = "feed") -> JsxElement {
                         </p>
                     }
                 }
-                <ProjectsPanel
-                    projects={model.myProfile.projects or []}
-                    isMine={True}
-                    avatars={model.avatars}
-                    busy={model.projectBusy}
-                    error={model.projectError}
-                    notice={model.projectNotice}
-                    onAdd={model.handleAddProject}
-                    onRemove={model.handleRemoveProject}
-                    onRescore={model.handleRescoreProject}
-                    onViewOwner={model.handleViewProfile}
-                />
                 <div className="border-t border-border">
                     {for tweet in (model.myProfile.tweets or []) {
                         <TweetCard
@@ -318,18 +284,6 @@ impl JacYac(initialTab: str = "feed") -> JsxElement {
                         avatarBusy={False}
                         onAvatarFile={lambda (_f: any) {}}
                         onClearAvatar={lambda {}}
-                    />
-                    <ProjectsPanel
-                        projects={model.viewedProfile.projects or []}
-                        isMine={False}
-                        avatars={model.avatars}
-                        busy={False}
-                        error=""
-                        notice=""
-                        onAdd={lambda (_u: str) {}}
-                        onRemove={lambda (_id: str) {}}
-                        onRescore={lambda (_id: str) {}}
-                        onViewOwner={model.handleViewProfile}
                     />
                     <div className="border-t border-border">
                         {for tweet in (model.viewedProfile.tweets or []) {

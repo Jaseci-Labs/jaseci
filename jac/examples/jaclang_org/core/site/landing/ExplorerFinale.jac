@@ -6,7 +6,7 @@ import from "@hugeicons/core-free-icons" {
     ComputerIcon,
     CommandLineIcon,
     UserGroupIcon,
-    ChartHistogramIcon,
+    LibraryIcon,
     StarIcon,
     Book02Icon,
     BookOpen01Icon,
@@ -76,19 +76,19 @@ impl ExplorerFinale -> JsxElement {
                             icon={GlobeIcon}
                             tag="web"
                             title="The website"
-                            body="The site in front of you: live docs, the source explorer, JacYac, Ninja Scores, and the WebAssembly rocket arena."
+                            body="The site in front of you: versioned live docs, the source explorer, JacYac with its ninjaclaw agent, and the WebAssembly rocket arena."
                         />
                         <WorkspaceAppCard
                             icon={SmartPhone01Icon}
                             tag="mobile"
                             title="JacYac on your phone"
-                            body="A mobUI app for the JacYac feed, profiles, channels, and Ninja Scores, built on the same social graph and scoring core."
+                            body="A mobUI app for the JacYac feed, profiles, and channels, built on the same social graph core."
                         />
                         <WorkspaceAppCard
                             icon={CommandLineIcon}
                             tag="cli"
                             title="The command line"
-                            body="Score repositories, read and post to JacYac, and sync or inspect the docs graph from your terminal."
+                            body="Read and post to JacYac, and sync or inspect the docs graph from your terminal."
                         />
                         <WorkspaceAppCard
                             icon={ComputerIcon}
@@ -103,10 +103,10 @@ impl ExplorerFinale -> JsxElement {
                             body="Profiles, follows, posts, comments, and channels live in a persistent graph, explored and updated by Jac walkers."
                         />
                         <WorkspaceAppCard
-                            icon={ChartHistogramIcon}
-                            tag="scoring"
-                            title="The scoring service"
-                            body="Analyze GitHub codebases, calculate Ninja Scores and belts, and add optional AI insights to the reports."
+                            icon={LibraryIcon}
+                            tag="knowledge"
+                            title="The knowledge service"
+                            body="Keeps one clone of the jac repo: the docs of earlier release lines, and the tree ninjaclaw reads to answer Jac questions."
                         />
                     </div>
                 </Reveal>

@@ -9,7 +9,6 @@ import from "@jac/mobui" {
 
 glob TAB_TITLES: dict[str, str] = {
          "feed": "Home",
-         "scores": "Ninja Scores",
          "explore": "Explore",
          "channels": "Channels",
          "profile": "Profile"
@@ -53,11 +52,10 @@ impl JacYacMobile(embedded: bool = False) -> JsxElement {
             </View>;
     }
 
-    if not model.session.loggedIn and model.activeTab != "scores" {
+    if not model.session.loggedIn {
         return
             <AuthScreen
                 embedded={embedded}
-                onScores={lambda { model.navigate("scores"); }}
                 isSignup={model.session.signup}
                 username={model.session.username}
                 password={model.session.password}
@@ -113,9 +111,7 @@ impl JacYacMobile(embedded: bool = False) -> JsxElement {
                 />
             }}
             <View style={styles.body}>
-                {if model.activeTab == "scores" {
-                    <ScoresScreen model={model}/>
-                } elif model.activeTab == "feed" {
+                {if model.activeTab == "feed" {
                     <FeedScreen
                         avatars={model.avatars}
                         username={profileUsername}

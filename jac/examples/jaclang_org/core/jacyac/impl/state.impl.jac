@@ -242,121 +242,6 @@ impl useJacYac.handleViewProfile(username: str) -> None {
     }
 }
 
-impl useJacYac.loadProjects -> None {
-    try {
-        projectsLoading = True;
-        result = root spawn get_all_projects();
-        allProjects = result.reports[0] if result.reports else [];
-        projectsLoading = False;
-        await refreshAvatars();
-    } except BridgeError as e {
-        onBridgeError(e);
-    } except Exception {
-        bridgeMessage = "Something went wrong. Please try again.";
-    } finally {
-        projectsLoading = False;
-    }
-}
-
-impl useJacYac.handleAddProject(url: str) -> bool {
-    if not url.strip() or projectBusy {
-        return False;
-    }
-    try {
-        projectBusy = True;
-        projectError = "";
-        projectNotice = "";
-        result = root spawn add_project(
-            url=url.strip(), session_token=__getLocalStorage("jac_token")
-        );
-        outcome = result.reports[0] if result.reports else None;
-        projectBusy = False;
-        if outcome and outcome.ok and outcome.project {
-            projectNotice = (
-                outcome.project.full
-                + " scored "
-                + str(outcome.project.score)
-                + " points, "
-                + outcome.project.belt
-                + " belt."
-            );
-        } elif outcome and outcome.project {
-            projectError = project_error_message(outcome.error);
-        } else {
-            projectError = project_error_message(
-                outcome.error if outcome else "internal"
-            );
-        }
-        profileResult = root spawn get_profile();
-        myProfile = profileResult.reports[0] if profileResult.reports else myProfile;
-        await loadProjects();
-        return bool(outcome and outcome.ok);
-    } except BridgeError as e {
-        onBridgeError(e);
-    } except Exception {
-        bridgeMessage = "Something went wrong. Please try again.";
-    } finally {
-        projectBusy = False;
-    }
-    return False;
-}
-
-impl useJacYac.handleRemoveProject(projectId: str) -> None {
-    try {
-        projectError = "";
-        projectNotice = "";
-        root spawn remove_project(project_id=projectId);
-        profileResult = root spawn get_profile();
-        myProfile = profileResult.reports[0] if profileResult.reports else myProfile;
-        allProjects = [
-            p
-            for p in allProjects
-            if jid(p) != projectId
-        ];
-    } except BridgeError as e {
-        onBridgeError(e);
-    } except Exception {
-        bridgeMessage = "Something went wrong. Please try again.";
-    }
-}
-
-impl useJacYac.handleRescoreProject(projectId: str) -> None {
-    if projectBusy {
-        return;
-    }
-    try {
-        projectBusy = True;
-        projectError = "";
-        projectNotice = "";
-        result = root spawn rescore_project(project_id=projectId);
-        outcome = result.reports[0] if result.reports else None;
-        projectBusy = False;
-        if outcome and outcome.error == "cooldown" {
-            projectNotice = project_error_message("cooldown");
-        } elif outcome and outcome.ok and outcome.project {
-            projectNotice = (
-                outcome.project.full
-                + " rescored: "
-                + str(outcome.project.score)
-                + " points."
-            );
-        } else {
-            projectError = project_error_message(
-                outcome.error if outcome else "internal"
-            );
-        }
-        profileResult = root spawn get_profile();
-        myProfile = profileResult.reports[0] if profileResult.reports else myProfile;
-        await loadProjects();
-    } except BridgeError as e {
-        onBridgeError(e);
-    } except Exception {
-        bridgeMessage = "Something went wrong. Please try again.";
-    } finally {
-        projectBusy = False;
-    }
-}
-
 impl useJacYac.handleSearch(query: str) -> None {
     try {
         searchQuery = query;
@@ -395,9 +280,6 @@ impl useJacYac.handleTrendClick(tag: str) -> None {
 impl useJacYac.navigate(tab: str) -> None {
     try {
         activeTab = tab;
-        if tab == "scores" {
-            await loadProjects();
-        }
         if tab != "profile" {
             editingProfile = False;
             profileError = "";
@@ -406,9 +288,6 @@ impl useJacYac.navigate(tab: str) -> None {
             result = root spawn get_all_profiles();
             allProfiles = result.reports[0] if result.reports else [];
             await refreshAvatars();
-        }
-        if tab == "explore" and exploreMode == "repos" {
-            await loadProjects();
         }
         if tab == "feed" and searchQuery {
             searchQuery = "";
