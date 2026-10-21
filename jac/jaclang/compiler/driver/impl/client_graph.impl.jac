@@ -8,6 +8,7 @@ impl collect_client_graph(
     result = ClientGraph();
     pending: list[Path] = list(reversed(roots));
     artifacts: dict[Path, ClientArtifact] = {};
+    walked: set[Path] = set();
 
     def require(path: Path) -> ClientArtifact {
         found = artifacts.get(path);
@@ -24,6 +25,7 @@ impl collect_client_graph(
             continue;
         }
         visited.add(path);
+        walked.add(path);
         if path.suffix != '.jac' {
             if path.is_file() {
                 result.assets.append(path);
@@ -37,7 +39,13 @@ impl collect_client_graph(
                 continue;
             }
             target: Path = variant_of(Path(dependency).resolve());
-            provider = require(target).manifest;
+            provider_artifact = require(target);
+            provider = provider_artifact.manifest;
+            if target in visited
+                and target not in walked
+                and not any(unit.path == target for unit in result.refreshed) {
+                result.refreshed.append(ClientUnit(target, provider_artifact));
+            }
             missing = sorted(set(names) - set(provider.exports + provider.globals));
             if missing {
                 raise ClientBundleError(

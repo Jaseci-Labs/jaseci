@@ -173,3 +173,56 @@ test "native runtime emits dependencies for bare imports" {
         }
     }
 }
+
+test "a provider an earlier page emitted is refreshed when a later page grows it" {
+    import from jaclang.compiler.driver.client_graph { collect_client_graph }
+    import from jaclang.compiler.frontend.codeinfo { ClientArtifact, ClientManifest }
+
+    with TemporaryDirectory() as tmp {
+        base = Path(tmp).resolve();
+        (layout, page, provider) = (
+            base / "layout.jac",
+            base / "page.jac",
+            base / "provider.jac"
+        );
+        for path in (layout, page, provider) {
+            path.write_text("");
+        }
+        grown = {"pulled": False};
+        def importer(names: list[str]) -> ClientArtifact {
+            return ClientArtifact(
+                js="",
+                manifest=ClientManifest(
+                    imports={"provider": str(provider)},
+                    runtime_imports={str(provider): names}
+                )
+            );
+        }
+        def artifact_of(path: Path) -> ClientArtifact {
+            if path == layout {
+                return importer(["palette"]);
+            }
+            if path == page {
+                grown["pulled"] = True;
+                return importer(["spacing"]);
+            }
+            exports = ["palette", "spacing"] if grown["pulled"] else ["palette"];
+            return ClientArtifact(
+                js=",".join(exports), manifest=ClientManifest(exports=exports)
+            );
+        }
+        def same(path: Path) -> Path {
+            return path;
+        }
+        visited: set[Path] = set();
+        first = collect_client_graph([layout], artifact_of, same, set(), visited);
+        second = collect_client_graph([page], artifact_of, same, set(), visited);
+    }
+    assert [u.path for u in first.modules] == [layout, provider];
+    assert [u.path for u in second.modules] == [page];
+    assert [u.path for u in second.refreshed] == [provider] , (
+        "the provider the first page emitted must be re-emitted with the export the "
+        "second page pulled"
+    );
+    assert second.refreshed[0].artifact.js == "palette,spacing";
+}
