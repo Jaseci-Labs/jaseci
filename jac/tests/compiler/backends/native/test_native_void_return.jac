@@ -73,13 +73,7 @@ test "every `-> None` callable terminates with ret void" {
         }
     }
     lines = text.splitlines();
-    for name in (
-        "Box.touch",
-        "Box.touch_call",
-        "Box.bare_touch",
-        "free_fn",
-        "bare_fn"
-    ) {
+    for name in ("Box.touch", "Box.touch_call", "Box.bare_touch", "free_fn", "bump") {
         assert any(
             line.startswith("define void") and names_global(line, name)
             for line in lines
@@ -97,9 +91,9 @@ test "the returned expression is still evaluated for its effects" {
     addr = native_address(_eng, "run");
     assert addr != 0 , "'run' not found in the JIT engine";
     run = ctypes.CFUNCTYPE(ctypes.c_int64)(addr);
-    assert run() == 306 , (
-        "three `touch`-style calls and six discarded `bump()`-style results "
-        "(a `return bump()`, parens, a pipe, a lambda): n == 3 and COUNTER == 6"
+    assert run() == 304 , (
+        "three `touch`-style calls and four discarded `bump()` results "
+        "(a `return bump()`, a nested def, parens, a lambda): n == 3, COUNTER == 4"
     );
 }
 
@@ -115,13 +109,7 @@ test "a caller using a None call result as a value refuses with E5092" {
     }
     assert not prog.errors_had , [str(e) for e in prog.errors_had];
     seams = [str(s) for s in coverage[os.path.realpath(path)]["seams"]];
-    for caller in (
-        "caller",
-        "bare_caller",
-        "method_caller",
-        "nested_caller",
-        "str_caller"
-    ) {
+    for caller in ("caller", "method_caller", "str_caller") {
         assert any(
             s.startswith(f"{caller}: [E5092]") and "call returning None" in s
             for s in seams

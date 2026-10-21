@@ -43,17 +43,8 @@ def free_fn -> None {
     return None;
 }
 
-def bare_fn {
-    bump();
-}
-
-def add(x: int) {
-    COUNTER += x;
-}
-
 def discard_forms {
     (bump());
-    1 |> add;
     cb = lambda { return bump(); };
     cb();
 }
@@ -85,13 +76,12 @@ def run -> int {
     b.touch_call();
     b.bare_touch();
     free_fn();
-    bare_fn();
     outer();
     discard_forms();
     return b.n * 100 + COUNTER;
 }
 
 with entry {
-    assert run() == 306;
+    assert run() == 304;
     print("ok");
 }

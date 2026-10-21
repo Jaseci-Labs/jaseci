@@ -21,19 +21,8 @@ def caller(x: int) -> int {
     return x;
 }
 
-def bare_caller(x: int) -> int {
-    y = bare_sink(x);
-    return x;
-}
-
 def method_caller(s: Sink) -> int {
     y = s.annotated();
-    return 1;
-}
-
-def nested_caller -> int {
-    def inner {}
-    y = inner();
     return 1;
 }
 

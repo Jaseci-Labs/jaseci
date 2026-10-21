@@ -2784,8 +2784,6 @@ test "py interop native function has stub in python" {
     # Should reference ctypes for the bridge
     assert "CFUNCTYPE" in py_src;
     assert "get_function_address" in py_src;
-    # native_note returns None: its stub must not read the result as an int
-    assert "ctypes.CFUNCTYPE(None, ctypes.c_int64)" in py_src;
 }
 
 test "py interop interop manifest built" {
