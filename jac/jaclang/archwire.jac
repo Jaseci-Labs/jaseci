@@ -7345,11 +7345,9 @@ graph import compiler {
         passes.placement_pass.client_refused_elements { client_capability_violations },
         types.type_evaluator.TypeEvaluator.get_type_of_ability { ModuleFacts },
     ]
-    frontend.parser ++> driver.compiler.JacCompiler._prepare_tool_program {
-        parse as rd_parse
-    }
     frontend.parser.frontend ++> [
-        driver.wiring.WiringSpec.wire_import { parse_woven },
+        driver.compiler.JacCompiler._prepare_tool_program
+            | driver.wiring.WiringSpec.wire_import { parse_woven },
         driver.wiring.canonical_wiring_source { parse_woven },
         driver.wiring.parse_records { parse_woven },
         driver.wiring.prune_wiring_source { parse_woven },
