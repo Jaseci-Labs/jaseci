@@ -2,7 +2,13 @@
 
 This document provides a summary of new features, improvements, and bug fixes in each version of **Jaclang**. For details on changes that might require updates to your existing code, please refer to the [Breaking Changes](../breaking-changes.md) page.
 
-## jaclang 0.34.25 (Latest Release)
+## jaclang 0.34.26 (Latest Release)
+
+### Bug Fixes
+
+- **Fix: the deploy seal waits `[scale] seal_timeout`, 1800s by default**: it was a hard-coded 600s, which a large app on a small CI runner can now exceed.
+
+## jaclang 0.34.25
 
 ### New Features
 
