@@ -2637,8 +2637,11 @@ impl UniNode.enclosing_decl[T](typ: type[T]) -> (T | None) {
 
 impl UniNode.element_sub_nodes[T](typ: type[T]) -> list[T] {
     found: list[T] = self.get_all_sub_nodes(typ);
-    for impl_def in self.linked_impls() {
-        found.extend(impl_def.element_sub_nodes(typ));
+    pending: list[ImplDef] = list(reversed(self.linked_impls()));
+    while pending {
+        impl_def = pending.pop();
+        found.extend(impl_def.get_all_sub_nodes(typ));
+        pending.extend(reversed(impl_def.linked_impls()));
     }
     return found;
 }

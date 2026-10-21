@@ -2,7 +2,18 @@ import from "@jac/runtime" { Outlet, useLocation }
 
 def init_theme;
 
-def:pub SiteShell -> JsxElement {
+def:pub SiteShell -> JsxElement;
+
+impl init_theme {
+    saved = localStorage.getItem("jac-theme");
+    if saved == "light" {
+        document.documentElement.classList.remove("dark");
+    } else {
+        document.documentElement.classList.add("dark");
+    }
+}
+
+impl SiteShell -> JsxElement {
     init_theme();
     location = useLocation();
     in_app = (
@@ -21,13 +32,4 @@ def:pub SiteShell -> JsxElement {
                 <Footer/>
             }}
         </div>;
-}
-
-impl init_theme {
-    saved = localStorage.getItem("jac-theme");
-    if saved == "light" {
-        document.documentElement.classList.remove("dark");
-    } else {
-        document.documentElement.classList.add("dark");
-    }
 }
