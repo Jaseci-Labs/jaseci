@@ -2,6 +2,10 @@ import from "lucide-react" { Home, Compass, Hash, User }
 
 def:pub MobileNav(
     activeTab: str, notifCount: int, onNavigate: Callable[[str], None]
+) -> JsxElement;
+
+impl MobileNav(
+    activeTab: str, notifCount: int, onNavigate: Callable[[str], None]
 ) -> JsxElement {
     item = "flex flex-1 items-center justify-center py-3 transition-colors";
     <nav

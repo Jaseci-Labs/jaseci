@@ -16,9 +16,7 @@ obj:pub BridgeError(Exception) {
         status: int = 0,
         message: str = "";
 
-    def postinit {
-        self.message = self.detail;
-    }
+    def postinit;
 }
 
 obj:pub BridgeUnavailable(BridgeError) {}
@@ -69,6 +67,7 @@ async def:pub jacLogin(
 
 def:pub jacLogout -> None;
 def:pub jacIsLoggedIn -> bool;
+def:pub __jacTokenExpired(token: str) -> bool;
 def:pub jacSetToken(token: str) -> None;
 def:pub useJacState(initial: any) -> any;
 
@@ -107,3 +106,7 @@ def:pub __jacReportError(
 ) -> None;
 
 def:pub __jacReactErrorHandler(error: any, info: any) -> None;
+
+impl BridgeError.postinit {
+    self.message = self.detail;
+}

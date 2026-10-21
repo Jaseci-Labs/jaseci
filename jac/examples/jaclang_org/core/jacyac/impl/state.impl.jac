@@ -1,3 +1,11 @@
+impl useJacYac.onBridgeError(e: BridgeError) -> None {
+    if isinstance(e, BridgeRejected) and e.status == 401 {
+        logout();
+        return;
+    }
+    bridgeMessage = bridge_error(e);
+}
+
 impl useJacYac.loadData -> None {
     try {
         feedLoading = True;
@@ -8,7 +16,7 @@ impl useJacYac.loadData -> None {
         allProfiles = profilesResult.reports[0] if profilesResult.reports else [];
         await refreshAvatars();
     } except BridgeError as e {
-        bridgeMessage = bridge_error(e);
+        onBridgeError(e);
     } except Exception {
         bridgeMessage = "Something went wrong. Please try again.";
     } finally {
@@ -51,7 +59,7 @@ impl useJacYac.refreshAvatars -> None {
         avatars = next_map;
         avatarSeen = next_seen;
     } except BridgeError as e {
-        bridgeMessage = bridge_error(e);
+        onBridgeError(e);
     } except Exception {
         bridgeMessage = "Something went wrong. Please try again.";
     }
@@ -71,7 +79,7 @@ impl useJacYac.postTweet -> None {
         composerText = "";
         await refreshSocial();
     } except BridgeError as e {
-        bridgeMessage = bridge_error(e);
+        onBridgeError(e);
     } except Exception {
         bridgeMessage = "Something went wrong. Please try again.";
     } finally {
@@ -84,7 +92,7 @@ impl useJacYac.handleLike(tweetId: str) -> None {
         root spawn like_tweet(tweet_id=tweetId);
         await refreshSocial();
     } except BridgeError as e {
-        bridgeMessage = bridge_error(e);
+        onBridgeError(e);
     } except Exception {
         bridgeMessage = "Something went wrong. Please try again.";
     }
@@ -103,7 +111,7 @@ impl useJacYac.handleComment(tweetId: str, content: str) -> bool {
         await refreshSocial();
         return True;
     } except BridgeError as e {
-        bridgeMessage = bridge_error(e);
+        onBridgeError(e);
     } except Exception {
         bridgeMessage = "Something went wrong. Please try again.";
     }
@@ -115,7 +123,7 @@ impl useJacYac.handleDelete(tweetId: str) -> None {
         root spawn delete_tweet(tweet_id=tweetId);
         await refreshSocial();
     } except BridgeError as e {
-        bridgeMessage = bridge_error(e);
+        onBridgeError(e);
     } except Exception {
         bridgeMessage = "Something went wrong. Please try again.";
     }
@@ -126,7 +134,7 @@ impl useJacYac.handleFollow(profileId: str) -> None {
         root spawn follow_user(target_id=profileId);
         await refreshSocial();
     } except BridgeError as e {
-        bridgeMessage = bridge_error(e);
+        onBridgeError(e);
     } except Exception {
         bridgeMessage = "Something went wrong. Please try again.";
     }
@@ -137,7 +145,7 @@ impl useJacYac.handleUnfollow(profileId: str) -> None {
         root spawn unfollow_user(target_id=profileId);
         await refreshSocial();
     } except BridgeError as e {
-        bridgeMessage = bridge_error(e);
+        onBridgeError(e);
     } except Exception {
         bridgeMessage = "Something went wrong. Please try again.";
     }
@@ -167,7 +175,7 @@ impl useJacYac.handleSaveProfile(fields: dict[str, str]) -> None {
                 else "Could not save your profile";
         }
     } except BridgeError as e {
-        bridgeMessage = bridge_error(e);
+        onBridgeError(e);
     } except Exception {
         bridgeMessage = "Something went wrong. Please try again.";
     } finally {
@@ -193,7 +201,7 @@ impl useJacYac.handleClearAvatar -> None {
         profilesResult = root spawn get_all_profiles();
         allProfiles = profilesResult.reports[0] if profilesResult.reports else [];
     } except BridgeError as e {
-        bridgeMessage = bridge_error(e);
+        onBridgeError(e);
     } except Exception {
         bridgeMessage = "Something went wrong. Please try again.";
     } finally {
@@ -224,7 +232,7 @@ impl useJacYac.handleViewProfile(username: str) -> None {
         viewedLoading = False;
         await refreshAvatars();
     } except BridgeError as e {
-        bridgeMessage = bridge_error(e);
+        onBridgeError(e);
     } except Exception {
         bridgeMessage = "Something went wrong. Please try again.";
     } finally {
@@ -240,7 +248,7 @@ impl useJacYac.loadProjects -> None {
         projectsLoading = False;
         await refreshAvatars();
     } except BridgeError as e {
-        bridgeMessage = bridge_error(e);
+        onBridgeError(e);
     } except Exception {
         bridgeMessage = "Something went wrong. Please try again.";
     } finally {
@@ -282,7 +290,7 @@ impl useJacYac.handleAddProject(url: str) -> bool {
         await loadProjects();
         return bool(outcome and outcome.ok);
     } except BridgeError as e {
-        bridgeMessage = bridge_error(e);
+        onBridgeError(e);
     } except Exception {
         bridgeMessage = "Something went wrong. Please try again.";
     } finally {
@@ -304,7 +312,7 @@ impl useJacYac.handleRemoveProject(projectId: str) -> None {
             if jid(p) != projectId
         ];
     } except BridgeError as e {
-        bridgeMessage = bridge_error(e);
+        onBridgeError(e);
     } except Exception {
         bridgeMessage = "Something went wrong. Please try again.";
     }
@@ -339,7 +347,7 @@ impl useJacYac.handleRescoreProject(projectId: str) -> None {
         myProfile = profileResult.reports[0] if profileResult.reports else myProfile;
         await loadProjects();
     } except BridgeError as e {
-        bridgeMessage = bridge_error(e);
+        onBridgeError(e);
     } except Exception {
         bridgeMessage = "Something went wrong. Please try again.";
     } finally {
@@ -353,7 +361,7 @@ impl useJacYac.handleSearch(query: str) -> None {
         feedResult = root spawn load_feed(search_query=query);
         tweets = feedResult.reports[0] if feedResult.reports else [];
     } except BridgeError as e {
-        bridgeMessage = bridge_error(e);
+        onBridgeError(e);
     } except Exception {
         bridgeMessage = "Something went wrong. Please try again.";
     }
@@ -376,7 +384,7 @@ impl useJacYac.handleTrendClick(tag: str) -> None {
         await handleSearch(tag);
         activeTab = "feed";
     } except BridgeError as e {
-        bridgeMessage = bridge_error(e);
+        onBridgeError(e);
     } except Exception {
         bridgeMessage = "Something went wrong. Please try again.";
     }
@@ -420,7 +428,7 @@ impl useJacYac.navigate(tab: str) -> None {
             notifCount = 0;
         }
     } except BridgeError as e {
-        bridgeMessage = bridge_error(e);
+        onBridgeError(e);
     } except Exception {
         bridgeMessage = "Something went wrong. Please try again.";
     }
@@ -433,7 +441,7 @@ impl useJacYac.loadChannels -> None {
         channels = result.reports[0] if result.reports else [];
         channelsLoading = False;
     } except BridgeError as e {
-        bridgeMessage = bridge_error(e);
+        onBridgeError(e);
     } except Exception {
         bridgeMessage = "Something went wrong. Please try again.";
     } finally {
@@ -450,7 +458,7 @@ impl useJacYac.handleCreateChannel(name: str, description: str) -> None {
         result = root spawn get_channels();
         channels = result.reports[0] if result.reports else [];
     } except BridgeError as e {
-        bridgeMessage = bridge_error(e);
+        onBridgeError(e);
     } except Exception {
         bridgeMessage = "Something went wrong. Please try again.";
     }
@@ -470,7 +478,7 @@ impl useJacYac.handleJoinChannel(channelId: str) -> None {
             }
         }
     } except BridgeError as e {
-        bridgeMessage = bridge_error(e);
+        onBridgeError(e);
     } except Exception {
         bridgeMessage = "Something went wrong. Please try again.";
     }
@@ -490,7 +498,7 @@ impl useJacYac.handleLeaveChannel(channelId: str) -> None {
             }
         }
     } except BridgeError as e {
-        bridgeMessage = bridge_error(e);
+        onBridgeError(e);
     } except Exception {
         bridgeMessage = "Something went wrong. Please try again.";
     }
@@ -505,7 +513,7 @@ impl useJacYac.handleSelectChannel(channelId: str) -> None {
             channelPosts = detail.posts or [];
         }
     } except BridgeError as e {
-        bridgeMessage = bridge_error(e);
+        onBridgeError(e);
     } except Exception {
         bridgeMessage = "Something went wrong. Please try again.";
     }
@@ -527,7 +535,7 @@ impl useJacYac.handleChannelPost(text: str) -> bool {
         await refreshSocial();
         return True;
     } except BridgeError as e {
-        bridgeMessage = bridge_error(e);
+        onBridgeError(e);
     } except Exception {
         bridgeMessage = "Something went wrong. Please try again.";
     } finally {
@@ -569,7 +577,7 @@ impl useJacYac.refreshSocial -> None {
             viewedProfile = outcome.bundle if outcome and outcome.ok else None;
         }
     } except BridgeError as e {
-        bridgeMessage = bridge_error(e);
+        onBridgeError(e);
     } except Exception {
         bridgeMessage = "Something went wrong. Please try again.";
     }
@@ -601,7 +609,7 @@ impl useJacYac.handleSaveBio(bio: str) -> None {
             }
         );
     } except BridgeError as e {
-        bridgeMessage = bridge_error(e);
+        onBridgeError(e);
     } except Exception {
         bridgeMessage = "Something went wrong. Please try again.";
     }
@@ -634,7 +642,7 @@ impl useJacYac.handleAvatarData(data_url: str) -> None {
                 else "Could not upload that photo";
         }
     } except BridgeError as e {
-        bridgeMessage = bridge_error(e);
+        onBridgeError(e);
     } except Exception {
         bridgeMessage = "Something went wrong. Please try again.";
     } finally {

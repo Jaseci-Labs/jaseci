@@ -7,27 +7,9 @@ glob GEN_PENDING_FLAG_OFF: int = 8,
      GEN_PENDING_MSG_OFF: int = 32,
      GEN_FRAME_HEADER: int = 40;
 
-def _jc_optional_payload(semantic: (TypeBase | None)) -> (TypeBase | None) {
-    if not isinstance(semantic, UnionType) {
-        return semantic;
-    }
-    present = [
-        member
-        for member in semantic.types
-        if not (
-            isinstance(member, ClassType) and member.shared.class_name == "NoneType"
-        )
-    ];
-    return present[0] if len(present) == 1 else None;
-}
+def _jc_optional_payload(semantic: (TypeBase | None)) -> (TypeBase | None);
 
-def _restore_entry[V](table: dict[str, V], key: str, prior: (V | None)) {
-    if prior is None {
-        table.pop(key, None);
-    } else {
-        table[key] = prior;
-    }
-}
+def _restore_entry[V](table: dict[str, V], key: str, prior: (V | None));
 
 obj NativeFinalizer {
     has body: uni.FinallyStmt | None,
@@ -137,27 +119,9 @@ obj ImportedFunctions(FunctionSource) {
         by_name: dict[str, PendingImport] = {},
         by_key: dict[tuple[str, str], PendingImport] = {};
 
-    override def provides(name: str) -> bool {
-        return name in self.by_name;
-    }
-
-    override def resolve(name: str) -> (ir.Function | None) {
-        pending = self.by_name.get(name);
-        if pending is None {
-            return None;
-        }
-        return self.lowering._declare_import(pending);
-    }
-
-    def forget(pending: PendingImport, owner_name: str) {
-        name = pending.module_key[1];
-        for key in [name, f"{owner_name}.{name}"] {
-            if self.by_name.get(key) is pending {
-                del self.by_name[key];
-            }
-        }
-        self.by_key.pop(pending.module_key, None);
-    }
+    override def provides(name: str) -> bool;
+    override def resolve(name: str) -> (ir.Function | None);
+    def forget(pending: PendingImport, owner_name: str);
 }
 
 walker NaIRGenPass(CompilerPass) {
@@ -956,8 +920,6 @@ walker NaIRGenPass(CompilerPass) {
     def _c_lent_address(arg: uni.UnaryExpr, elem: any) -> (ir.Value | None);
     def _final_variant_value(nd: uni.Name, value: uni.Expr) -> (uni.Expr | None);
     def _final_scalar_value(nd: uni.Name, value_type: ir.Type) -> (ir.Value | None);
-    def _va_abi -> str;
-    def _va_storage_type(abi: str) -> ir.Type;
     def _c_va_start(nd: uni.UniNode) -> (ir.Value | None);
     def _c_va_arg(nd: uni.FuncCall, recv: uni.Expr) -> (ir.Value | None);
     def _c_vararg_value(val: ir.Value, arg: uni.Expr) -> (ir.Value | None);
@@ -1989,7 +1951,24 @@ walker NaIRGenPass(CompilerPass) {
         nd: uni.FuncCall, func_name: str, mod_qual: (str | None)
     ) -> bool;
 
-    def _target_fuses_fp -> bool;
+    def _target_is_wasm -> bool;
+    def _floor_call(
+        name: str,
+        ret: ir.Type,
+        args: list[ir.Value],
+        call_name: str = "",
+        builder: (ir.IRBuilder | None) = None
+    ) -> ir.Value;
+
+    def _emit_stdio_handle(
+        fd: int, name: str, builder: (ir.IRBuilder | None) = None
+    ) -> ir.Value;
+
+    def _emit_platform_name -> ir.Value;
+    def _emit_stat_fields(
+        path: ir.Value, prefix: str
+    ) -> tuple[ir.Value, ir.Value, ir.Value, ir.Value, ir.Value];
+
     def _emit_fmadd(a: ir.Value, b: ir.Value, c: ir.Value) -> ir.Value;
     def _fp_fabs(v: ir.Value) -> ir.Value;
     def _fp_copysign(mag: ir.Value, sgn: ir.Value) -> ir.Value;
@@ -3479,4 +3458,12 @@ walker NaIRGenPass(CompilerPass) {
     def _decl_field_llvm_types(arch_name: str) -> (dict[str, ir.Type] | None);
     def _lower_view_container(t: any) -> (ir.Type | None);
     def _program_has_subclasses(arch_name: str) -> bool;
+}
+
+impl _restore_entry[V](table: dict[str, V], key: str, prior: (V | None)) {
+    if prior is None {
+        table.pop(key, None);
+    } else {
+        table[key] = prior;
+    }
 }
