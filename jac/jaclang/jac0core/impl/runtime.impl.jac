@@ -391,15 +391,25 @@ impl JacWalker.spawn_call(
 impl JacWalker.async_spawn_call(
     `walker: WalkerAnchor, nd: (NodeAnchor | EdgeAnchor)
 ) -> WalkerArchetype {
+    import jaclang.jac0core.osp_kernel as _kernel;
     import from jaclang.jac0core.osp_kernel_sv {
         osp_spawn_async,
         desc_for,
         make_sv_runtime
     }
     warch = `walker.archetype;
+    top_level = not _kernel._walk_stack;
     await osp_spawn_async(
-        make_sv_runtime(), warch, desc_for(`type(warch)), `list(`walker.next)
+        make_sv_runtime(defer_commit=True),
+        warch,
+        desc_for(`type(warch)),
+        `list(`walker.next)
     );
+    if top_level {
+        try {
+            await JacRuntimeInterface.get_context().mem.acommit();
+        } except Exception { }
+    }
     return warch;
 }
 

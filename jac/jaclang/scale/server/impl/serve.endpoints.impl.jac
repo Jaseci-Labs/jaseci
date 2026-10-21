@@ -641,6 +641,45 @@ impl JacAPIServerEndpoints.get_ws_manager -> WebSocketConnectionManager {
     return self._ws_manager;
 }
 
+async def _ws_run_message(
+    websocket: WebSocket,
+    send_result: Callable[[dict[str, any]], any],
+    label: str,
+    target_name: str,
+    call: any,
+    target_timeout: float
+) {
+    import from jaclang.scale.memory.context { JScaleExecutionContext }
+    req_ctx = JScaleExecutionContext();
+    req_token = Jac.push_request_context(req_ctx);
+    try {
+        (ok, result) = await ws_execute_target(
+            websocket, label, target_name, call, target_timeout
+        );
+        if not ok {
+            return;
+        }
+        if (isgenerator(result) or isinstance(result, AsyncGenerator)) {
+            await _ws_stream_result(send_result, result);
+        } elif isinstance(result, dict) and 'error' in result {
+            await websocket.send_json(
+                ws_error_frame(
+                    'EXECUTION_ERROR', result.get('error', f"{label} execution failed")
+                )
+            );
+        } else {
+            await send_result({'ok': True, 'data': result});
+        }
+    } finally {
+        try {
+            Jac.reset_request_context(req_token);
+            req_ctx.close();
+        } except Exception as e {
+            logger.warning(f"Failed to close WS request context: {e}", exc_info=True);
+        }
+    }
+}
+
 async def _ws_serve_connection(
     websocket: WebSocket,
     ws_manager: WebSocketConnectionManager,
@@ -738,28 +777,14 @@ async def _ws_serve_connection(
                 continue;
             }
             data.pop('token', None);
-            (ok, result) = await ws_execute_target(
+            await _ws_run_message(
                 websocket,
+                send_result,
                 label,
                 target_name,
                 make_awaitable(data, (ctx.user_id or Con.GUEST.value)),
                 target_timeout
             );
-            if not ok {
-                continue;
-            }
-            if (isgenerator(result) or isinstance(result, AsyncGenerator)) {
-                await _ws_stream_result(send_result, result);
-            } elif isinstance(result, dict) and 'error' in result {
-                await websocket.send_json(
-                    ws_error_frame(
-                        'EXECUTION_ERROR',
-                        result.get('error', f"{label} execution failed")
-                    )
-                );
-            } else {
-                await send_result({'ok': True, 'data': result});
-            }
         }
     } except WebSocketDisconnect {
         logger.debug(f"WS client disconnected conn_id={ctx.conn_id}");

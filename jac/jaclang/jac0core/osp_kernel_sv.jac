@@ -151,7 +151,7 @@ def _sv_node_desc(tag: int) -> NodeDesc {
     return NodeDesc(type_tag=d.type_tag, entry=d.entry, exit=d.exit);
 }
 
-def _sv_on_complete(scope: WalkScope, ok: bool) {
+def _sv_settle(scope: WalkScope) -> bool {
     if isinstance(scope.wlk, WalkerArchetype) {
         anch = scope.wlk.__jac__;
         anch.path = `list(scope.path);
@@ -163,7 +163,7 @@ def _sv_on_complete(scope: WalkScope, ok: bool) {
         for r in scope.reports {
             outer.reports.append(r);
         }
-        return;
+        return False;
     }
 
     if isinstance(scope.wlk, WalkerArchetype) {
@@ -182,7 +182,12 @@ def _sv_on_complete(scope: WalkScope, ok: bool) {
     } except Exception {
         ;
     }
-    if ok {
+    return True;
+}
+
+def _sv_on_complete(scope: WalkScope, ok: bool) {
+    if _sv_settle(scope) and ok {
+        import from jaclang.jac0core.runtime { JacRuntimeInterface }
         try {
             JacRuntimeInterface.get_context().mem.commit();
         } except Exception {
@@ -191,12 +196,16 @@ def _sv_on_complete(scope: WalkScope, ok: bool) {
     }
 }
 
-def make_sv_runtime -> OspRuntime {
+def _sv_on_complete_deferred(scope: WalkScope, ok: bool) {
+    _sv_settle(scope);
+}
+
+def make_sv_runtime(defer_commit: bool = False) -> OspRuntime {
     return OspRuntime(
         tag_of=_sv_tag_of,
         is_a=_sv_is_a,
         node_desc=_sv_node_desc,
-        on_complete=_sv_on_complete
+        on_complete=_sv_on_complete_deferred if defer_commit else _sv_on_complete
     );
 }
 
