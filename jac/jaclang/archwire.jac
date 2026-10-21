@@ -7,7 +7,7 @@ graph import {
     edge Client: client.* --> cli.* | compiler.* | dist.* | project.* | runtime.* | scale.* | server.* | testing.* | toolchains.*;
     edge Compiler: compiler.* --> cli.* | client.* | dist.* | lsp.* | packages.* | project.* | runtime.* | scale.* | server.* | testing.*;
     edge Comptime: comptime --> byllm.* | cli.* | client.* | scale.* | server.*;
-    edge Data: data.* --> cli.* | compiler.* | runtime.* | scale.* | server.*;
+    edge Data: data.* --> cli.* | client.* | compiler.* | runtime.* | scale.* | server.*;
     edge Dist: dist.* --> cli.* | client.* | compiler.* | packages.* | scale.*;
     edge Jac0: jac0 --> dist.*;
     edge Jac0core: jac0core.* --> artifacts.* | cache.* | cli.* | client.* | compiler.* | data.* | dist.* | packages.* | project.* | runtime.* | scale.* | server.* | testing.* | toolchains.*;
@@ -266,7 +266,9 @@ graph import {
             | project.config._apply_memory_native_placement
             | scale.deploy.target.kubernetes.manifest_builder.ManifestBuilder._install_app_deps
             | server.server.JacAPIServer.start { console },
-        client.cli.run_client_setup | server.server.print_endpoint_docs { console },
+        client.cli.run_client_setup
+            | scale.deploy.target.kubernetes.manifest_builder.ManifestBuilder._start_client_build
+            | server.server.print_endpoint_docs { console },
         client.cli.run_client_start { console },
         client.cli.run_npm_add { console },
         client.cli.run_npm_add_global { console },
@@ -326,6 +328,9 @@ graph import {
             WorkPool,
             pool_available,
             resolve_jobs
+        },
+        scale.deploy.target.kubernetes.manifest_builder.client_build_alongside_seal {
+            memory_headroom_bytes
         },
         server.server.JacAPIServer._validate_or_raise { cpu_quota },
         server.server.JacAPIServer.serve_background { cpu_quota },
@@ -1427,6 +1432,10 @@ graph import {
         server.session.own_child_databases { process_alive, this_host },
     ]
     data.pg_dist ++> cli.commands.db._db_fetch { download_dist }
+    data.pg_dist --> client.targets.desktop.desktop_build.stage_postgres {
+        bundled_dist_dir,
+        cached_dist_dir
+    }
     data.pgembed ++> [
         cli.commands.db._catalog_runtime
             | scale.tests.data.test_pg_stream
@@ -1444,6 +1453,7 @@ graph import {
         },
     ]
     data.pgembed --> [
+        client.targets.desktop.native.host_boot._stop_embedded_store { stop_cluster },
         scale.deploy.database.kubernetes_postgres.KubernetesPostgresProvider.deploy {
             pg_tuning_settings
         },
@@ -1887,7 +1897,9 @@ graph import {
         compiler.driver.application._prepare_revision { client_input_dirs },
     ]
     project.config ++> [
-        artifacts.router._provision | toolchains.store.offline { offline_mode },
+        artifacts.router._provision
+            | data.pg_dist.bundled_dist_dir
+            | toolchains.store.offline { offline_mode },
         cache.registry.project_bucket
             | cli.commands.analysis._configured_check_excludes
             | cli.commands.architecture
@@ -2063,9 +2075,10 @@ graph import {
             | client.jac_client_compiler.JacClientCompiler._client_app_dir
             | client.vite_bundler.ViteBundler._get_client_dir { get_config },
         client.jac_client_compiler.JacClientCompiler._get_client_dir { get_config },
-        client.targets.desktop.desktop_build.stage_program
+        client.targets.desktop.desktop_build.desktop_storage_identifier
             | scale.server.inprocess.prepare_inprocess_runtime
             | server.hmr.HotReloader._reload_server_module { get_config_for_dir },
+        client.targets.desktop.desktop_build.stage_program { get_config_for_dir },
         runtime.runtime.JacRuntime.reset_process_state { set_config },
         runtime.source_app.main { JacConfig, set_config },
         scale.runtime.fleet.fleet_member_names { get_config, get_config_for_dir },
@@ -5189,6 +5202,8 @@ graph import client.targets.desktop {
             _stage_fused_runtime,
             build_cef_dispatch,
             build_cef_subprocess,
+            desktop_storage_identifier,
+            stage_postgres,
             stage_program
         },
         native.cef.build { build_cef_dispatch, build_cef_subprocess },
@@ -5198,6 +5213,8 @@ graph import client.targets.desktop {
             _jac_bin,
             _jac_subprocess_env,
             _stage_fused_runtime,
+            desktop_storage_identifier,
+            stage_postgres,
             stage_program
         },
     ]
@@ -30756,6 +30773,7 @@ graph import scale {
     injector.bundle ++> [
         deploy.target.kubernetes.manifest_builder.ManifestBuilder._build_client_bundle {
             _stage_app,
+            client_build_sources,
             release_binary_env,
             remove_stage_root,
             source_filter_for
