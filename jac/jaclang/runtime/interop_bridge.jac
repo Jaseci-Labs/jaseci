@@ -30,13 +30,17 @@ obj NativeLibrary {
     def initialize -> None;
 }
 
+def _sized_ctypes_tables -> dict[(str, type)];
+
 glob logger = logging.getLogger(__name__),
+     _sized_tables: dict[(str, type)] = _sized_ctypes_tables(),
      JAC_TO_CTYPES: dict[(str, type)] = {
          'int': ctypes.c_int64,
          'float': ctypes.c_double,
          'bool': ctypes.c_bool,
          'str': ctypes.c_char_p
-     },
+     }
+         | _sized_tables,
      _pyb_shadows: dict[(int, object)] = {},
      _pyb_class_memo: dict[(tuple[any, ...], type)] = {},
      _pyb_module_memo: dict[(str, object)] = {},

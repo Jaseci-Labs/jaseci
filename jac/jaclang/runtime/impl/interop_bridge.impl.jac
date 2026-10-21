@@ -246,3 +246,21 @@ impl register_py_callbacks(
         register_symbol(binding.native_symbol or binding.name, cb_addr);
     }
 }
+
+impl _sized_ctypes_tables -> dict[(str, type)] {
+    import from jaclang.runtime.scalars { numeric_shapes }
+    types: dict[(str, type)] = {};
+    for shape in numeric_shapes() {
+        if not shape.sized {
+            continue;
+        }
+        if shape.is_float {
+            ct = ctypes.c_float if shape.width == 32 else ctypes.c_double;
+        } else {
+            sign = "int" if shape.signed else "uint";
+            ct = getattr(ctypes, f"c_{sign}{shape.width}");
+        }
+        types[shape.name] = ct;
+    }
+    return types;
+}

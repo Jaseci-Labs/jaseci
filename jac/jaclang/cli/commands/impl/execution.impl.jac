@@ -28,6 +28,8 @@ def _pin_run_scope(filename: str, takeover: (bool | None)) -> None;
 
 def _default_codespace_is_native -> bool;
 
+
+
 def _populate_native_argv(
     engine: ExecutionEngine | SharedNativeEngine, argv: list[str]
 ) -> None;

@@ -15334,6 +15334,7 @@ graph import runtime {
     ]
     type runtime ++> builtin { LLMModel }
     scalars ++> [
+        interop_bridge._sized_ctypes_tables { numeric_shapes },
         builtin._is_sized_type_name { is_sized },
         cinterop { numeric_shapes },
         sized { numeric_shapes, range_of, shape_of, wrap_value },
