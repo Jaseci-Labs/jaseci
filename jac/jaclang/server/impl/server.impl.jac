@@ -1833,6 +1833,7 @@ impl _run_function_with_occ(
                 return await ctx.bind_stream(outcome) if streaming else outcome;
             } except ReadOnlyRetry as rr {
                 settled = False;
+                ctx.mem.take_ro_retry();
                 if ctx.mem.unit_depth() == 0 {
                     ctx.mem.unit_enter(unit_key);
                 }

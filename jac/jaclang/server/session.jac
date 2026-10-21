@@ -160,6 +160,7 @@ obj Session(Memory) {
         _flushing: (int | None) postinit,
         _read_scopes: int postinit,
         _ro_units: int postinit,
+        _ro_retry_raised: str | None postinit,
         _unit_stack: list[tuple[(str | None), bool]] postinit,
         _snapshot_reads: set[UUID] postinit,
         _foreign_refs: set[UUID] postinit,
@@ -247,6 +248,7 @@ obj Session(Memory) {
     def _txn_isolation -> TxnIsolation;
     def _register_ro_writers -> str;
     def _raise_ro_retry -> None;
+    def take_ro_retry -> str | None;
     def _drop_snapshot_reads -> None;
     def _materialize(row: AnchorRow) -> (Anchor | None);
     def _load_edges(nd: NodeAnchor) -> list[EdgeAnchor];
