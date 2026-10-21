@@ -287,7 +287,8 @@ graph import {
     cli.manifest_route ++> [
         scale.injector.binary.deploy_generation_refusal
             | scale.tests.deploy.test_client_build_fail_fast
-            | scale.tests.deploy.test_version_pin { resolve_cli_version },
+            | scale.tests.deploy.test_version_pin
+            | server.sealed_serve.serve_manifest_stamp { resolve_cli_version },
         scale.injector.binary.host_toolchain_path { resolve_cli_version },
     ]
     cli.manifest_route --> scale.observability.prometheus_metrics.PrometheusMetricsCollector.__post_init__
@@ -3692,9 +3693,9 @@ graph import {
             | dist.seal.bake_native_payloads { NATIVE_DIR_REL },
         client.artifact.client_output_dir { client_dist_for },
         client.artifact.prebuilt_bundle { client_dist_for, serve_manifest_for },
-        compiler.driver.application._prepare_sealed | dist.seal.bake_serve_payloads {
+        compiler.driver.application._prepare_sealed {
             CLIENT_DIST_REL,
-            SERVE_MANIFEST_REL
+            read_serve_manifest
         },
         dist.precompile_bytecode.app_metadata { CLIENT_DIST_REL, NATIVE_DIR_REL },
         dist.precompile_bytecode.collect_payloads {
@@ -3703,6 +3704,8 @@ graph import {
             SERVE_MANIFEST_REL
         },
         dist.precompile_bytecode.seal_runtime_closure { SERVE_MANIFEST_REL },
+        dist.seal.bake_serve_payloads { CLIENT_DIST_REL, SERVE_MANIFEST_REL },
+        dist.seal.build_serve_manifest { serve_manifest_stamp },
     ]
     server.sealed_serve --> [
         compiler.driver.application.prepare_application {
