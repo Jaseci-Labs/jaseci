@@ -453,8 +453,7 @@ impl _is_jac_builtin_fn(evaluator: TypeEvaluator, callee: Expr, name: str) -> bo
     if sym is stub_sym {
         return True;
     }
-    """A module analyzed on demand can bind the name in another load of the
-    same stub, so the builtin is the stub's file, not the stub's object.""";
+
     home = sym.decl.loc.mod_path if sym.decl.loc else "";
     return bool(home) and home == stub.loc.mod_path;
 }
