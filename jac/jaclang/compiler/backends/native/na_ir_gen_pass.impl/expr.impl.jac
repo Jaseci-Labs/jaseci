@@ -539,8 +539,8 @@ impl NaIRGenPass._codegen_lambda(nd: uni.LambdaExpr) -> (ir.Value | None) {
             body_value = self._codegen_expr(tail);
             if isinstance(ret_type, ir.VoidType) {
                 """A void lambda evaluates its tail expression for effect
-                only; the expression's value (a call's placeholder, say)
-                is never the function's result.""";
+                only; the expression's value is never the function's
+                result.""";
                 self.builder.ret_void();
             } elif body_value is not None {
                 self.builder.ret(self._coerce_type(body_value, ret_type));

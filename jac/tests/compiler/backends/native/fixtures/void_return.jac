@@ -8,6 +8,8 @@ parse -- taking the whole module's codegen with it.
 
 `bump` is called from each of them so the side effect is observable: a return
 still has to evaluate its expression before discarding the value.
+`discard_forms`, `await_form` and `flow_form` drop a void call's result in
+every position that does so; they must all stay native.
 """
 
 glob COUNTER: int = 0;
@@ -45,6 +47,29 @@ def bare_fn {
     bump();
 }
 
+def add(x: int) {
+    COUNTER += x;
+}
+
+def discard_forms {
+    (bump());
+    1 |> add;
+    cb = lambda { return bump(); };
+    cb();
+}
+
+async def abump {
+    bump();
+}
+
+async def await_form {
+    await abump();
+}
+
+def flow_form {
+    flow bump() ;
+}
+
 def outer {
     def inner {
         bump();
@@ -62,10 +87,11 @@ def run -> int {
     free_fn();
     bare_fn();
     outer();
+    discard_forms();
     return b.n * 100 + COUNTER;
 }
 
 with entry {
-    assert run() == 303;
+    assert run() == 306;
     print("ok");
 }

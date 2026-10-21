@@ -97,9 +97,9 @@ test "the returned expression is still evaluated for its effects" {
     addr = native_address(_eng, "run");
     assert addr != 0 , "'run' not found in the JIT engine";
     run = ctypes.CFUNCTYPE(ctypes.c_int64)(addr);
-    assert run() == 303 , (
-        "three `touch`-style calls and three `bump()` calls, one of them the "
-        "discarded `return bump()`: n == 3 and COUNTER == 3"
+    assert run() == 306 , (
+        "three `touch`-style calls and six discarded `bump()`-style results "
+        "(a `return bump()`, parens, a pipe, a lambda): n == 3 and COUNTER == 6"
     );
 }
 
