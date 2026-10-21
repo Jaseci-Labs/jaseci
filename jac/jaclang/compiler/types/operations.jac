@@ -79,6 +79,10 @@ glob NONE_UNSAFE_BINARY_OPERATORS: set[str] = (
 
 def operand_carries_none(evaluator: TypeEvaluator, ty: TypeBase) -> bool;
 
+def _every_member_accepts(
+    evaluator: TypeEvaluator, receiver: TypeBase, method: str, arg: Expr
+) -> bool;
+
 def none_unsafe_operand(
     evaluator: TypeEvaluator,
     magic: str,

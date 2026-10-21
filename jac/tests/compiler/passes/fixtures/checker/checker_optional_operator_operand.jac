@@ -81,6 +81,10 @@ def fail_aug_mul(x: int | None) -> int {
     return x;
 }
 
+def fail_union_receiver_format(fmt: str | int, value: str | None) -> str {
+    return fmt % value;
+}
+
 # ---------------------------------------------------------------------------
 # ok_: patterns that must stay clean
 # ---------------------------------------------------------------------------

@@ -42,6 +42,19 @@ impl operand_carries_none(evaluator: TypeEvaluator, ty: TypeBase) -> bool {
     return has_none;
 }
 
+impl _every_member_accepts(
+    evaluator: TypeEvaluator, receiver: TypeBase, method: str, arg: Expr
+) -> bool {
+    members = receiver.types if isinstance(receiver, UnionType) else [receiver];
+    for member in members {
+        if evaluator.get_type_of_magic_method_call(member, method, [arg], None)
+            is None {
+            return False;
+        }
+    }
+    return True;
+}
+
 impl none_unsafe_operand(
     evaluator: TypeEvaluator,
     magic: str,
@@ -56,20 +69,14 @@ impl none_unsafe_operand(
     if left_none
         and (
             right_none
-            or evaluator.get_type_of_magic_method_call(
-                right_type, rmagic, [left_node], None
-            )
-                is None
+            or not _every_member_accepts(evaluator, right_type, rmagic, left_node)
         ) {
         return left_type;
     }
     if right_none
         and (
             left_none
-            or evaluator.get_type_of_magic_method_call(
-                left_type, magic, [right_node], None
-            )
-                is None
+            or not _every_member_accepts(evaluator, left_type, magic, right_node)
         ) {
         return right_type;
     }
