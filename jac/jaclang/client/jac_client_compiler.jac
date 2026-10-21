@@ -10,7 +10,8 @@ with entry {
 class JacClientCompiler {
     has entry_path: str = "",
         na_wasm_modules: set[str] = set(),
-        input_files: dict[str, str] = {};
+        input_files: dict[str, str] = {},
+        emitted_js: dict[(Path, tuple[(Path, str)])] = {};
 
     with entry {
         ROUTER_EXPORTS = [
@@ -94,6 +95,19 @@ class JacClientCompiler {
         collected_globals: (dict[(str, any)] | None) = None,
         native: bool = False
     ) -> bool;
+
+    def _write_module(
+        self: JacClientCompiler,
+        module_path: Path,
+        artifact: ClientArtifact,
+        output_path: Path
+    ) -> None;
+
+    def _rewrite_grown_modules(
+        self: JacClientCompiler,
+        collected_exports: set[str],
+        collected_globals: dict[(str, any)]
+    ) -> None;
 
     def rescan_pages(self: JacClientCompiler) -> bool;
     def _check_entry_renders_routes(
