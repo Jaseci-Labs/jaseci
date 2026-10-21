@@ -2434,7 +2434,9 @@ graph import {
     }
     runtime.constructs ++> [
         cli.commands.execution._invoke_entrypoint
-            | server.server.ModuleIntrospector.scheduled_members { WalkerArchetype },
+            | server.server.JacAPIServer._colocated_scheduled_targets {
+            WalkerArchetype
+        },
         data.serializer {
             Archetype,
             GenericEdge,
@@ -2455,6 +2457,7 @@ graph import {
         server.identity.identity_storage.IdentityStorage.reset_root { Root },
         server.server.ExecutionManager.spawn_walker_async { NodeArchetype },
         server.server.ExecutionManager.spawn_walker_sync { NodeArchetype },
+        server.server.ModuleIntrospector.scheduled_members { WalkerArchetype },
         server.server.ModuleIntrospector.target { WalkerArchetype },
         server.session._ancestry_of {
             Archetype,
@@ -32436,6 +32439,7 @@ graph import server {
     task_scheduler ++> [
         server { Scheduler },
         server.JacAPIServer.__post_init__ { Scheduler },
+        server.JacAPIServer._colocated_scheduled_targets { ScheduleSpec },
         server.JacAPIServer._register_scheduled_tasks { schedule_namespace },
         server.JacAPIServer._scheduled_targets { ScheduleSpec },
         server.ModuleIntrospector.scheduled_members { ScheduleSpec },

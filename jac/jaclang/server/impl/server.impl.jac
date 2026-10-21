@@ -1237,6 +1237,33 @@ impl JacAPIServer._scheduled_targets -> list[tuple[str, any, bool]] {
     return found;
 }
 
+impl JacAPIServer._colocated_scheduled_targets -> list[
+    tuple[str, str, any, ScheduleSpec, bool]
+] {
+    import from jaclang.server { sv_client }
+    found: list[tuple[str, str, any, ScheduleSpec, bool]] = [];
+    if self.is_sv_sibling {
+        return found;
+    }
+    for (app, module) in sorted(sv_client._local_providers.items()) {
+        for (name, member) in inspect.getmembers(module) {
+            spec = member?.schedule_spec;
+            if not isinstance(spec, ScheduleSpec) {
+                continue;
+            }
+            if getattr(member, '__module__', '') != module.__name__ {
+                continue;
+            }
+            if isinstance(member, type) and issubclass(member, WalkerArchetype) {
+                found.append((app, name, member, spec, True));
+            } elif inspect.isfunction(member) {
+                found.append((app, name, member, spec, False));
+            }
+        }
+    }
+    return found;
+}
+
 impl JacAPIServer._register_scheduled_tasks -> None {
     if self.resolved_settings().static_only {
         return;
@@ -1286,6 +1313,42 @@ impl JacAPIServer._register_scheduled_tasks -> None {
             continue;
         }
         self.scheduler.register(name, _make_target(name, is_walker), spec, is_walker);
+    }
+    def _make_member_target(
+        label: str, member: any, is_walker: bool
+    ) -> Callable[[], None] {
+        async def _run_member -> any {
+            with _self.request_scope() {
+                if is_walker {
+                    return await _self.execution_manager.spawn_walker(
+                        member, {}, SYSTEM_USER
+                    );
+                }
+                return await _self.execution_manager.execute_function(
+                    member, {}, SYSTEM_USER
+                );
+            }
+        }
+        def member_target {
+            outcome = asyncio.run(_run_member());
+            if (
+                isinstance(outcome, dict)
+                and 'error' in outcome
+                and outcome.get('error_code') != 'execution_error'
+            ) {
+                logger.error(f"scheduled {label} failed: {outcome.get('error')}");
+            }
+        }
+        return member_target;
+    }
+    for (app, name, member, spec, is_walker) in self._colocated_scheduled_targets() {
+        if spec.trigger == ScheduleTrigger.DYNAMIC {
+            continue;
+        }
+        label = f"{app}.{name}";
+        self.scheduler.register(
+            label, _make_member_target(label, member, is_walker), spec, is_walker
+        );
     }
     if self.scheduler.has_pending() {
         logger.info(

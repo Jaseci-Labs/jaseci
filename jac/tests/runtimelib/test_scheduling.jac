@@ -330,6 +330,44 @@ test "the served app registers its scheduled targets with the scheduler" {
     }
 }
 
+"""A colocated service app's static schedules run in the serving process too.
+Colocated services are only registered for bridged calls, so their @schedule
+targets never reached the scheduler: a service's scheduled job (a repo sync, a
+digest) silently never ran under `jac run`, only in a fleet."""
+test "a colocated service's static schedules are registered under its app" {
+    import importlib;
+    import sys;
+    import from tempfile { TemporaryDirectory }
+    import from jaclang.server { sv_client }
+    import from jaclang.testing.testing { JacTestClient }
+    with TemporaryDirectory() as tmpdir {
+        client = JacTestClient.from_file(
+            str(Path(FIXTURES) / "scheduled_tasks.jac"), base_path=tmpdir
+        );
+        sys.path.insert(0, FIXTURES);
+        try {
+            svc = importlib.import_module("colocated_scheduled_svc");
+            sv_client.register_local("colo", svc);
+            server: any = client.server;
+            server._register_scheduled_tasks();
+            names = {task.name for task in server.scheduler._tasks};
+            assert "colo.svc_tick" in names , f"not registered: {sorted(names)}";
+            assert "IntervalWalker" in names;
+            task = [
+                t
+                for t in server.scheduler._tasks
+                if t.name == "colo.svc_tick"
+            ][0];
+            server.scheduler._execute(task);
+            assert svc.TICKS == [1] , "the colocated schedule must run its own target";
+        } finally {
+            sv_client.unregister_local("colo");
+            sys.path.remove(FIXTURES);
+            client.close();
+        }
+    }
+}
+
 class _Records(logging.Handler) {
     def init(self: _Records) {
         super.__init__();

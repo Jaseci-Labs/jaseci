@@ -1088,6 +1088,34 @@ test "grouped targets on one line each reach their own function" {
 }
 
 
+"""One wire whose chain names two functions of the same module reaches both.
+The consumer index kept a single scope per wire and module, so the second
+function silently got no import; `jac fmt` merges same-payload consumers into
+one chain, so formatting alone could break a working wiring."""
+test "a chained wire reaches every function of one module it names" {
+    base = _standard(
+        arch=_ARCH
+            + "\ngraph import {\n"
+            + "    core.other ++> app.main.greet | app.main.again { helper }\n"
+            + "}\n",
+        main=(
+            "def greet -> str {\n"
+            "    return serve() + when() + str(helper());\n"
+            "}\n"
+            "\n"
+            "def again -> int {\n"
+            "    return helper();\n"
+            "}\n"
+        )
+    );
+    try {
+        assert _errors(_compile(base, "app/main.jac")) == [];
+    } finally {
+        shutil.rmtree(base, ignore_errors=True);
+    }
+}
+
+
 test "jac fmt keeps the escape on a wired name that is a keyword" {
     base = _standard(
         arch=_ARCH.replace(

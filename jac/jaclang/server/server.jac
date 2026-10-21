@@ -228,6 +228,9 @@ obj JacAPIServer(EndpointHost) {
     def _ensure_sv_siblings -> None;
     def _ensure_client_bundle -> None;
     def _ensure_internal_users -> None;
+    def _colocated_scheduled_targets -> list[
+        tuple[str, str, any, ScheduleSpec, bool]
+    ];
     def _register_scheduled_tasks -> None;
     def _scheduled_targets -> list[tuple[str, any, bool]];
     def _start_problems -> list[str];
