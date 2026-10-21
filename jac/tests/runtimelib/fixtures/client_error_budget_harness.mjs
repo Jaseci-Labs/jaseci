@@ -2,6 +2,7 @@
 // that would reach POST /cl/__error__. Prints one JSON line of results.
 //
 //   node client_error_budget_harness.mjs runtime <client_runtime_core.js>
+//   node client_error_budget_harness.mjs native <client_react_core.js>
 //   node client_error_budget_harness.mjs inline <early-handler-script.js>
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
@@ -55,6 +56,15 @@ let install;
 if (mode === "runtime") {
   const core = await import(pathToFileURL(target).href);
   install = () => core.__jacInstallErrorHandlers();
+} else if (mode === "native") {
+  const core = await import(pathToFileURL(target).href);
+  globalThis.__jacGetApiBaseUrl__ = () => "";
+  // Stands in for the ErrorUtils global handler client_runtime_native installs.
+  install = () => {
+    const report = (err) => core.__jacReportError(err.message, err.stack, "", "ErrorUtils");
+    window.addEventListener("unhandledrejection", (event) => report(event.reason));
+    window.addEventListener("error", (event) => report(event.error ?? { message: event.message, stack: "" }));
+  };
 } else if (mode === "inline") {
   const source = readFileSync(target, "utf8");
   install = () => new Function(source)();

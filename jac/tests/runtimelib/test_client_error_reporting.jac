@@ -197,30 +197,42 @@ def run_error_budget_harness(mode: str, target: Path) -> dict[str, any] {
     return json.loads(result.stdout.strip().splitlines()[-1]);
 }
 
-test "runtime reporter drops extension errors and caps reports per page" {
-    import from jaclang.testing.requires { require_tool }
+"""Compile one runtime core into `work` beside the modules it imports, with its
+npm imports stubbed, and return the path node should load."""
+def write_runtime_core(work: Path, core_name: str) -> Path {
     import from jaclang.client.runtime_source { resolve_client_runtime_cl_path }
     import from .react_jsdom_harness {
         compile_react,
         wire_jac_runtime,
         write_runtime_support
     }
+    runtime_path = resolve_client_runtime_cl_path("react");
+    write_runtime_support(work, runtime_path);
+    js = wire_jac_runtime(
+        compile_react(str(Path(runtime_path).parent / f"{core_name}.jac"))
+    );
+    for npm_module in ["react", "react-hook-form", "@hookform/resolvers/zod"] {
+        js = js.replace(f'"{npm_module}"', '"./npm_stub.js"');
+    }
+    (work / "jac_runtime.js").write_text(
+        "export function __jacJsx() { return null; }\n", encoding="utf-8"
+    );
+    (work / "npm_stub.js").write_text(
+        "export const useForm = () => null;\nexport const zodResolver = () => null;\n",
+        encoding="utf-8"
+    );
+    (work / "package.json").write_text('{"type": "module"}', encoding="utf-8");
+    core = work / f"{core_name}.js";
+    core.write_text(js, encoding="utf-8");
+    return core;
+}
+
+test "runtime reporter drops extension errors and caps reports per page" {
+    import from jaclang.testing.requires { require_tool }
     require_tool("node");
     with TemporaryDirectory() as tmp {
-        work = Path(tmp);
-        runtime_path = resolve_client_runtime_cl_path("react");
-        write_runtime_support(work, runtime_path);
-        core_js = compile_react(
-            str(Path(runtime_path).parent / "client_runtime_core.jac")
-        );
-        (work / "client_runtime_core.js").write_text(
-            wire_jac_runtime(core_js), encoding="utf-8"
-        );
-        (work / "jac_runtime.js").write_text(
-            "export function __jacJsx() { return null; }\n", encoding="utf-8"
-        );
-        (work / "package.json").write_text('{"type": "module"}', encoding="utf-8");
-        results = run_error_budget_harness("runtime", work / "client_runtime_core.js");
+        core = write_runtime_core(Path(tmp), "client_runtime_core");
+        results = run_error_budget_harness("runtime", core);
     }
     assert results["extensionRejections"]["sent"] == 0 , results;
     assert results["firefoxExtensionRejections"]["sent"] == 0 , results;
@@ -235,6 +247,21 @@ test "runtime reporter drops extension errors and caps reports per page" {
     assert results["mixedStack"]["sent"] == 1 , results;
     assert results["appWindowError"]["sent"] == 1 , results;
     # At most 10 reports a minute, and the budget refills the next minute.
+    assert results["distinctAppErrors"]["sent"] == 10 , results;
+    assert results["distinctAppErrorsOverTwoMinutes"]["sent"] == 20 , results;
+}
+
+test "native runtime reporter holds the same per-page budget" {
+    import from jaclang.testing.requires { require_tool }
+    require_tool("node");
+    with TemporaryDirectory() as tmp {
+        core = write_runtime_core(Path(tmp), "client_react_core");
+        results = run_error_budget_harness("native", core);
+    }
+    assert results["extensionRejections"]["sent"] == 0 , results;
+    assert results["identicalAppErrors"]["sent"] == 1 , results;
+    assert results["identicalAppErrors"]["first"]["source"] == "ErrorUtils";
+    assert results["mixedStack"]["sent"] == 1 , results;
     assert results["distinctAppErrors"]["sent"] == 10 , results;
     assert results["distinctAppErrorsOverTwoMinutes"]["sent"] == 20 , results;
 }
