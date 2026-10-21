@@ -266,7 +266,9 @@ graph import {
             | project.config._apply_memory_native_placement
             | scale.deploy.target.kubernetes.manifest_builder.ManifestBuilder._install_app_deps
             | server.server.JacAPIServer.start { console },
-        client.cli.run_client_setup | server.server.print_endpoint_docs { console },
+        client.cli.run_client_setup
+            | scale.deploy.target.kubernetes.manifest_builder.ManifestBuilder._start_client_build
+            | server.server.print_endpoint_docs { console },
         client.cli.run_client_start { console },
         client.cli.run_npm_add { console },
         client.cli.run_npm_add_global { console },
@@ -326,6 +328,9 @@ graph import {
             WorkPool,
             pool_available,
             resolve_jobs
+        },
+        scale.deploy.target.kubernetes.manifest_builder.client_build_alongside_seal {
+            memory_headroom_bytes
         },
         server.server.JacAPIServer._validate_or_raise { cpu_quota },
         server.server.JacAPIServer.serve_background { cpu_quota },
@@ -30756,6 +30761,7 @@ graph import scale {
     injector.bundle ++> [
         deploy.target.kubernetes.manifest_builder.ManifestBuilder._build_client_bundle {
             _stage_app,
+            client_build_sources,
             release_binary_env,
             remove_stage_root,
             source_filter_for
