@@ -1,0 +1,9 @@
+# Run from the jac-on-gpu repository root.
+# CPU graph construction and LLVM compilation complete before performance runs.
+PYTHONPATH=jac:scripts/gpu_walker env/bin/python scripts/gpu_walker/handwritten_matmul/prepare_inputs.py --output /tmp/jac-handwritten-inputs-20261021
+# Save the resulting directory as validation/20261021/inputs; manifest paths relocate by case/basename.
+env/bin/python scripts/gpu_walker/handwritten_matmul/benchmark.py --inputs scripts/gpu_walker/handwritten_matmul/validation/20261021/inputs/inputs.json --output scripts/gpu_walker/handwritten_matmul/validation/20261021/ordinary --warmup 5 --repeats 25 --inner 16
+nsys profile --trace=cuda --cuda-graph-trace=node --sample=none --cpuctxsw=none --force-overwrite=true --output scripts/gpu_walker/handwritten_matmul/validation/20261021/profile/trace env/bin/python scripts/gpu_walker/handwritten_matmul/benchmark.py --inputs scripts/gpu_walker/handwritten_matmul/validation/20261021/inputs/inputs.json --output scripts/gpu_walker/handwritten_matmul/validation/20261021/profile --warmup 5 --repeats 15 --inner 16
+nsys export --type sqlite --force-overwrite=true --output scripts/gpu_walker/handwritten_matmul/validation/20261021/profile/trace.sqlite scripts/gpu_walker/handwritten_matmul/validation/20261021/profile/trace.nsys-rep
+env/bin/python scripts/gpu_walker/handwritten_matmul/analyze_profile.py scripts/gpu_walker/handwritten_matmul/validation/20261021/profile/results.json scripts/gpu_walker/handwritten_matmul/validation/20261021/profile/trace.sqlite --output scripts/gpu_walker/handwritten_matmul/validation/20261021/profile/verified-kernels.json
+env/bin/python scripts/gpu_walker/handwritten_matmul/build_report.py scripts/gpu_walker/handwritten_matmul/validation/20261021/ordinary/results.json scripts/gpu_walker/handwritten_matmul/validation/20261021/profile/verified-kernels.json --output scripts/gpu_walker/handwritten_matmul/validation/20261021/REPORT.md

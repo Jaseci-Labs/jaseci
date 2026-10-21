@@ -396,3 +396,11 @@ are reported separately and do not establish hardware cache/transaction/DRAM
 behavior. Raw artifacts remain in `dist/gpu-cursor-concat-20261007/` and
 `/tmp/jac-layout-cursor-concat-20261007/`. The former 2026-10-06 report measures
 the removed rank-interleaving policy and is retained as historical evidence.
+
+## Handwritten CUDA matmul comparison
+
+[Two int64 CUDA kernels](handwritten_matmul/matmul.cu) and a
+[complete-output comparison with Jac](handwritten_matmul/validation/20261021/REPORT.md)
+cover dense naive/tiled execution and Current/Predicted/Random real Jac graphs.
+The runner checks identical inputs and all outputs, and separately reports CUDA
+graph event intervals and verified Nsight kernel durations.

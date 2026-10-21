@@ -1,0 +1,4278 @@
+{
+  "runner_sha256": "94b4fd2456d422394368c9585e6363f0c393feebfbf26404ae78c74c05b3dfa1",
+  "timestamp_utc": "2026-10-21T21:10:44.889888+00:00",
+  "python": "3.12.11 (main, Aug 13 2025, 15:23:38) [GCC 11.4.0]",
+  "nvcc_version": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2025 NVIDIA Corporation\nBuilt on Wed_Apr__9_19:24:57_PDT_2025\nCuda compilation tools, release 12.9, V12.9.41\nBuild cuda_12.9.r12.9/compiler.35813241_0\n",
+  "dtype": "int64",
+  "measurement": "CUDA-event graph replay time / inner; includes GPU graph scheduling gaps",
+  "warmup": 5,
+  "repeats": 15,
+  "inner": 16,
+  "seed": 928,
+  "input_manifest": "/home/baichuan/jaseci/jac-on-gpu/scripts/gpu_walker/handwritten_matmul/validation/20261021/inputs/inputs.json",
+  "input_sha256": "8c91348cf62ce5d9d115bd3b3866dd1fcd0316882b77df9d70af10ab8d929591",
+  "jac_ptx": "scripts/gpu_walker/handwritten_matmul/validation/20261021/inputs/Dot.ptx",
+  "jac_ptx_sha256": "dda413df1e70f3f1c255b70b66b869dce57ea835b25229924a79d4755b4f22aa",
+  "cuda_source_sha256": "6c1d25c54f48ae3dcdc412228365e7edc6cf9f430494e549d9860f7a7ec23725",
+  "nvcc_command": [
+    "/usr/local/cuda-12.9/bin/nvcc",
+    "-ptx",
+    "-O3",
+    "-arch=compute_86",
+    "-std=c++17",
+    "/home/baichuan/jaseci/jac-on-gpu/scripts/gpu_walker/handwritten_matmul/matmul.cu",
+    "-o",
+    "scripts/gpu_walker/handwritten_matmul/validation/20261021/profile/matmul.ptx"
+  ],
+  "cases": [
+    {
+      "id": "matmul-3x5x2",
+      "shape": [
+        3,
+        5,
+        2
+      ],
+      "outputs": 6,
+      "MACs": 30,
+      "dense_only": false,
+      "A_sha256": "ef27bcb2ec368161fbd308f356e0d9c4d71b6be968eaa00b2d59b03bd9d818cc",
+      "B_sha256": "3a37a68de8d5a90498d2c79eb73a94decedadeea13fa0869ebc786dedc76149a",
+      "expected_sha256": "28027377a5cf14c2e6a14d8f2147d099c9c9b65880c9614b97c7708eb180f40c",
+      "arms": {
+        "CUDA naive": {
+          "median_us": 2.3880000226199627,
+          "min_us": 2.343999920412898,
+          "max_us": 2.5319999549537897,
+          "sample_n": 15
+        },
+        "CUDA tiled": {
+          "median_us": 2.426000079140067,
+          "min_us": 2.377999946475029,
+          "max_us": 2.604000037536025,
+          "sample_n": 15
+        },
+        "Jac Current": {
+          "median_us": 8.670000359416008,
+          "min_us": 8.63800011575222,
+          "max_us": 8.911999873816967,
+          "sample_n": 15
+        },
+        "Jac Predicted": {
+          "median_us": 8.117999881505966,
+          "min_us": 8.085999637842178,
+          "max_us": 9.507999755442142,
+          "sample_n": 15
+        },
+        "Jac Random-928": {
+          "median_us": 7.455999962985516,
+          "min_us": 7.420000154525042,
+          "max_us": 9.088000282645226,
+          "sample_n": 15
+        }
+      },
+      "all_outputs_and_statuses_verified": true
+    },
+    {
+      "id": "matmul-17x31x19",
+      "shape": [
+        17,
+        31,
+        19
+      ],
+      "outputs": 323,
+      "MACs": 10013,
+      "dense_only": false,
+      "A_sha256": "1df0f88e399add04593434b916d1b1ffe5b0fb84c3c3e58340fd5216fb34ecab",
+      "B_sha256": "fdbb642ff82f1fdf4b790a1cc13a7ce034b9c6a614dc4ddec57d7b4111146be8",
+      "expected_sha256": "14aae05b9b391da860f6db9b697e222c957edbe4112aa383e8f7be5dc088983a",
+      "arms": {
+        "CUDA naive": {
+          "median_us": 3.7239999510347843,
+          "min_us": 3.67600005120039,
+          "max_us": 3.8999998942017555,
+          "sample_n": 15
+        },
+        "CUDA tiled": {
+          "median_us": 2.966000000014901,
+          "min_us": 2.92599992826581,
+          "max_us": 3.128000069409609,
+          "sample_n": 15
+        },
+        "Jac Current": {
+          "median_us": 46.59999907016754,
+          "min_us": 46.57600075006485,
+          "max_us": 46.63600027561188,
+          "sample_n": 15
+        },
+        "Jac Predicted": {
+          "median_us": 46.870000660419464,
+          "min_us": 46.85800150036812,
+          "max_us": 46.90999910235405,
+          "sample_n": 15
+        },
+        "Jac Random-928": {
+          "median_us": 43.96799951791763,
+          "min_us": 43.894000351428986,
+          "max_us": 44.0559983253479,
+          "sample_n": 15
+        }
+      },
+      "all_outputs_and_statuses_verified": true
+    },
+    {
+      "id": "matmul-64x128x64",
+      "shape": [
+        64,
+        128,
+        64
+      ],
+      "outputs": 4096,
+      "MACs": 524288,
+      "dense_only": false,
+      "A_sha256": "853a3da6d7dae91329165dd7432dceeb47d74076df1b70854add9c5915d7512c",
+      "B_sha256": "898d1de54f5752702f90060dcfd4e9ec108d9efd719daf1a0d1dd7facea1fc27",
+      "expected_sha256": "b038c4fde672b5b6f7b1eb7db415b2a841fa12026177d7029deb41ece86f35a9",
+      "arms": {
+        "CUDA naive": {
+          "median_us": 7.25799985229969,
+          "min_us": 7.207999937236309,
+          "max_us": 7.474000100046396,
+          "sample_n": 15
+        },
+        "CUDA tiled": {
+          "median_us": 5.803999956697226,
+          "min_us": 5.774000193923712,
+          "max_us": 6.535999942570925,
+          "sample_n": 15
+        },
+        "Jac Current": {
+          "median_us": 185.2779984474182,
+          "min_us": 185.19599735736847,
+          "max_us": 186.28600239753723,
+          "sample_n": 15
+        },
+        "Jac Predicted": {
+          "median_us": 184.83799695968628,
+          "min_us": 184.70999598503113,
+          "max_us": 185.41200459003448,
+          "sample_n": 15
+        },
+        "Jac Random-928": {
+          "median_us": 202.15000212192535,
+          "min_us": 201.99400186538696,
+          "max_us": 202.37800478935242,
+          "sample_n": 15
+        }
+      },
+      "all_outputs_and_statuses_verified": true
+    },
+    {
+      "id": "matmul-128x128x128",
+      "shape": [
+        128,
+        128,
+        128
+      ],
+      "outputs": 16384,
+      "MACs": 2097152,
+      "dense_only": false,
+      "A_sha256": "1334b5e47c1bb0841e6de0475e6b6c8fc1b3ddf0c39b2de69452fdd8f2864c9e",
+      "B_sha256": "33af012e0ebe93903d63ef072071c19fc06c1effe20c448a40b2b2269cb2dde1",
+      "expected_sha256": "de906ba69d1a5b2d537c4e9a5d3f37ee8b4abacc4ea6d047c38c7f1d6a3c669d",
+      "arms": {
+        "CUDA naive": {
+          "median_us": 7.431999780237675,
+          "min_us": 7.151999976485968,
+          "max_us": 7.594000082463026,
+          "sample_n": 15
+        },
+        "CUDA tiled": {
+          "median_us": 5.822000093758106,
+          "min_us": 5.704000126570463,
+          "max_us": 8.008000440895557,
+          "sample_n": 15
+        },
+        "Jac Current": {
+          "median_us": 232.83199965953827,
+          "min_us": 228.83200645446777,
+          "max_us": 233.15399885177612,
+          "sample_n": 15
+        },
+        "Jac Predicted": {
+          "median_us": 231.85600340366364,
+          "min_us": 228.15200686454773,
+          "max_us": 232.21200704574585,
+          "sample_n": 15
+        },
+        "Jac Random-928": {
+          "median_us": 313.3240044116974,
+          "min_us": 311.60199642181396,
+          "max_us": 315.1620030403137,
+          "sample_n": 15
+        }
+      },
+      "all_outputs_and_statuses_verified": true
+    },
+    {
+      "id": "matmul-256x256x256",
+      "shape": [
+        256,
+        256,
+        256
+      ],
+      "outputs": 65536,
+      "MACs": 16777216,
+      "dense_only": false,
+      "A_sha256": "0b5c2cc40a97d2de107ed25023920935d2d905909eba1ee6a123a0bf19d8627d",
+      "B_sha256": "c06e504f5884d3313ffcc9371b30cf086d7d248bfeae98409ca12e0c50b4fbe0",
+      "expected_sha256": "25c807bc4da6dff44104c763cd650cd45fe3dde4ce41f0561741c9debaa58af4",
+      "arms": {
+        "CUDA naive": {
+          "median_us": 25.39999969303608,
+          "min_us": 24.963999167084694,
+          "max_us": 27.305999770760536,
+          "sample_n": 15
+        },
+        "CUDA tiled": {
+          "median_us": 22.081999108195305,
+          "min_us": 21.87200076878071,
+          "max_us": 23.029999807476997,
+          "sample_n": 15
+        },
+        "Jac Current": {
+          "median_us": 2081.1240673065186,
+          "min_us": 2073.26602935791,
+          "max_us": 2091.14408493042,
+          "sample_n": 15
+        },
+        "Jac Predicted": {
+          "median_us": 2071.3961124420166,
+          "min_us": 2068.1140422821045,
+          "max_us": 2084.023952484131,
+          "sample_n": 15
+        },
+        "Jac Random-928": {
+          "median_us": 4493.261814117432,
+          "min_us": 4489.692211151123,
+          "max_us": 4495.503902435303,
+          "sample_n": 15
+        }
+      },
+      "all_outputs_and_statuses_verified": true
+    }
+  ],
+  "records": [
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA tiled",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us_per_launch": 3.2659999560564756,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA naive",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us_per_launch": 2.7379998937249184,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Random-928",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us_per_launch": 7.74999987334013,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Predicted",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us_per_launch": 8.476000279188156,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Current",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us_per_launch": 8.973999880254269,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Current",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us_per_launch": 8.741999976336956,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Predicted",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us_per_launch": 8.150000125169754,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Random-928",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us_per_launch": 7.49000022187829,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA naive",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us_per_launch": 2.555999904870987,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA tiled",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us_per_launch": 2.4240000639110804,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Predicted",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us_per_launch": 8.139999583363533,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Current",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us_per_launch": 8.840000256896019,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA tiled",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us_per_launch": 2.4419999681413174,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA naive",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us_per_launch": 2.3739999160170555,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Random-928",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us_per_launch": 7.395999971777201,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA naive",
+      "phase": "warmup",
+      "pair": 3,
+      "event_us_per_launch": 2.3960000835359097,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA tiled",
+      "phase": "warmup",
+      "pair": 3,
+      "event_us_per_launch": 2.4300001095980406,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Current",
+      "phase": "warmup",
+      "pair": 3,
+      "event_us_per_launch": 8.682000450789928,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Random-928",
+      "phase": "warmup",
+      "pair": 3,
+      "event_us_per_launch": 7.581999991089106,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Predicted",
+      "phase": "warmup",
+      "pair": 3,
+      "event_us_per_launch": 8.142000064253807,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Predicted",
+      "phase": "warmup",
+      "pair": 4,
+      "event_us_per_launch": 8.150000125169754,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA tiled",
+      "phase": "warmup",
+      "pair": 4,
+      "event_us_per_launch": 2.4240000639110804,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Current",
+      "phase": "warmup",
+      "pair": 4,
+      "event_us_per_launch": 8.899999782443047,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA naive",
+      "phase": "warmup",
+      "pair": 4,
+      "event_us_per_launch": 2.403999911621213,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Random-928",
+      "phase": "warmup",
+      "pair": 4,
+      "event_us_per_launch": 7.426000200212002,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 0,
+      "event_us_per_launch": 9.088000282645226,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 0,
+      "event_us_per_launch": 2.3880000226199627,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 0,
+      "event_us_per_launch": 2.4419999681413174,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 0,
+      "event_us_per_launch": 8.271999657154083,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 0,
+      "event_us_per_launch": 8.700000122189522,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 1,
+      "event_us_per_launch": 7.431999780237675,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 1,
+      "event_us_per_launch": 2.4319998919963837,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 1,
+      "event_us_per_launch": 8.085999637842178,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 1,
+      "event_us_per_launch": 2.426000079140067,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 1,
+      "event_us_per_launch": 8.63800011575222,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 2,
+      "event_us_per_launch": 2.4480000138282776,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 2,
+      "event_us_per_launch": 8.667999878525734,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 2,
+      "event_us_per_launch": 2.3739999160170555,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 2,
+      "event_us_per_launch": 7.652000058442354,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 2,
+      "event_us_per_launch": 8.117999881505966,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 3,
+      "event_us_per_launch": 8.65199975669384,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 3,
+      "event_us_per_launch": 2.360000042244792,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 3,
+      "event_us_per_launch": 8.104000240564346,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 3,
+      "event_us_per_launch": 7.451999932527542,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 3,
+      "event_us_per_launch": 2.377999946475029,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 4,
+      "event_us_per_launch": 7.488000206649303,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 4,
+      "event_us_per_launch": 8.142000064253807,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 4,
+      "event_us_per_launch": 2.3799999617040157,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 4,
+      "event_us_per_launch": 2.580000087618828,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 4,
+      "event_us_per_launch": 8.704000152647495,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 5,
+      "event_us_per_launch": 2.604000037536025,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 5,
+      "event_us_per_launch": 8.12000036239624,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 5,
+      "event_us_per_launch": 8.685999549925327,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 5,
+      "event_us_per_launch": 7.420000154525042,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 5,
+      "event_us_per_launch": 2.394000068306923,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 6,
+      "event_us_per_launch": 2.420000033453107,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 6,
+      "event_us_per_launch": 8.675999939441681,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 6,
+      "event_us_per_launch": 8.117999881505966,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 6,
+      "event_us_per_launch": 7.594000082463026,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 6,
+      "event_us_per_launch": 2.4220000486820936,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 7,
+      "event_us_per_launch": 8.675999939441681,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 7,
+      "event_us_per_launch": 8.112000301480293,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 7,
+      "event_us_per_launch": 2.403999911621213,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 7,
+      "event_us_per_launch": 2.3739999160170555,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 7,
+      "event_us_per_launch": 7.437999825924635,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 8,
+      "event_us_per_launch": 7.462000008672476,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 8,
+      "event_us_per_launch": 8.104000240564346,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 8,
+      "event_us_per_launch": 2.41199997253716,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 8,
+      "event_us_per_launch": 8.911999873816967,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 8,
+      "event_us_per_launch": 2.4220000486820936,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 9,
+      "event_us_per_launch": 7.445999886840582,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 9,
+      "event_us_per_launch": 2.4319998919963837,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 9,
+      "event_us_per_launch": 2.3900000378489494,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 9,
+      "event_us_per_launch": 8.662000298500061,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 9,
+      "event_us_per_launch": 8.117999881505966,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 10,
+      "event_us_per_launch": 8.162000216543674,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 10,
+      "event_us_per_launch": 2.3719999007880688,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 10,
+      "event_us_per_launch": 7.581999991089106,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 10,
+      "event_us_per_launch": 2.420000033453107,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 10,
+      "event_us_per_launch": 8.671999908983707,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 11,
+      "event_us_per_launch": 7.453999947756529,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 11,
+      "event_us_per_launch": 8.12000036239624,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 11,
+      "event_us_per_launch": 8.647999726235867,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 11,
+      "event_us_per_launch": 2.392000053077936,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 11,
+      "event_us_per_launch": 2.5859999004751444,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 12,
+      "event_us_per_launch": 8.113999851047993,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 12,
+      "event_us_per_launch": 8.670000359416008,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 12,
+      "event_us_per_launch": 7.602000143378973,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 12,
+      "event_us_per_launch": 2.4160000029951334,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 12,
+      "event_us_per_launch": 2.3560000117868185,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 13,
+      "event_us_per_launch": 2.343999920412898,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 13,
+      "event_us_per_launch": 2.5599999353289604,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 13,
+      "event_us_per_launch": 8.659999817609787,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 13,
+      "event_us_per_launch": 7.455999962985516,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 13,
+      "event_us_per_launch": 9.507999755442142,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 14,
+      "event_us_per_launch": 8.12199991196394,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 14,
+      "event_us_per_launch": 2.4079999420791864,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 14,
+      "event_us_per_launch": 2.5319999549537897,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 14,
+      "event_us_per_launch": 8.667999878525734,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-3x5x2",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 14,
+      "event_us_per_launch": 7.441999856382608,
+      "outputs_checked": 6
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA tiled",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us_per_launch": 3.372000064700842,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA naive",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us_per_launch": 4.019999876618385,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Random-928",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us_per_launch": 44.2579984664917,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Predicted",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us_per_launch": 47.15000092983246,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Current",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us_per_launch": 46.959999948740005,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Current",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us_per_launch": 46.65200039744377,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Predicted",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us_per_launch": 46.86800017952919,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Random-928",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us_per_launch": 43.99999976158142,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA naive",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us_per_launch": 3.7360000424087048,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA tiled",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us_per_launch": 2.985999919474125,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Predicted",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us_per_launch": 46.831998974084854,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Current",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us_per_launch": 46.61199823021889,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA tiled",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us_per_launch": 2.985999919474125,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA naive",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us_per_launch": 3.69199994020164,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Random-928",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us_per_launch": 43.97999867796898,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA naive",
+      "phase": "warmup",
+      "pair": 3,
+      "event_us_per_launch": 3.719999920576811,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA tiled",
+      "phase": "warmup",
+      "pair": 3,
+      "event_us_per_launch": 3.1320000998675823,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Current",
+      "phase": "warmup",
+      "pair": 3,
+      "event_us_per_launch": 46.57600075006485,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Random-928",
+      "phase": "warmup",
+      "pair": 3,
+      "event_us_per_launch": 43.92800107598305,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Predicted",
+      "phase": "warmup",
+      "pair": 3,
+      "event_us_per_launch": 46.88199982047081,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Predicted",
+      "phase": "warmup",
+      "pair": 4,
+      "event_us_per_launch": 46.890001744031906,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA tiled",
+      "phase": "warmup",
+      "pair": 4,
+      "event_us_per_launch": 2.9720000457018614,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Current",
+      "phase": "warmup",
+      "pair": 4,
+      "event_us_per_launch": 46.60400003194809,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA naive",
+      "phase": "warmup",
+      "pair": 4,
+      "event_us_per_launch": 3.6800000816583633,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Random-928",
+      "phase": "warmup",
+      "pair": 4,
+      "event_us_per_launch": 43.96799951791763,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 0,
+      "event_us_per_launch": 43.91999915242195,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 0,
+      "event_us_per_launch": 3.7239999510347843,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 0,
+      "event_us_per_launch": 2.9720000457018614,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 0,
+      "event_us_per_launch": 46.90999910235405,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 0,
+      "event_us_per_launch": 46.629998832941055,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 1,
+      "event_us_per_launch": 43.99999976158142,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 1,
+      "event_us_per_launch": 3.727999981492758,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 1,
+      "event_us_per_launch": 46.86199873685837,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 1,
+      "event_us_per_launch": 2.985999919474125,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 1,
+      "event_us_per_launch": 46.59999907016754,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 2,
+      "event_us_per_launch": 2.966000000014901,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 2,
+      "event_us_per_launch": 46.61000147461891,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 2,
+      "event_us_per_launch": 3.708000062033534,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 2,
+      "event_us_per_launch": 43.96599903702736,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 2,
+      "event_us_per_launch": 46.884000301361084,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 3,
+      "event_us_per_launch": 46.63600027561188,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 3,
+      "event_us_per_launch": 3.8999998942017555,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 3,
+      "event_us_per_launch": 46.865999698638916,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 3,
+      "event_us_per_launch": 43.9860001206398,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 3,
+      "event_us_per_launch": 2.985999919474125,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 4,
+      "event_us_per_launch": 43.9860001206398,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 4,
+      "event_us_per_launch": 46.870000660419464,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 4,
+      "event_us_per_launch": 3.7299999967217445,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 4,
+      "event_us_per_launch": 2.966000000014901,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 4,
+      "event_us_per_launch": 46.57600075006485,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 5,
+      "event_us_per_launch": 2.993999980390072,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 5,
+      "event_us_per_launch": 46.87400162220001,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 5,
+      "event_us_per_launch": 46.59799858927727,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 5,
+      "event_us_per_launch": 43.96799951791763,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 5,
+      "event_us_per_launch": 3.67600005120039,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 6,
+      "event_us_per_launch": 3.693999955430627,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 6,
+      "event_us_per_launch": 46.61399871110916,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 6,
+      "event_us_per_launch": 46.87799885869026,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 6,
+      "event_us_per_launch": 43.94400119781494,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 6,
+      "event_us_per_launch": 2.9460000805556774,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 7,
+      "event_us_per_launch": 46.60400003194809,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 7,
+      "event_us_per_launch": 46.87200114130974,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 7,
+      "event_us_per_launch": 2.9619999695569277,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 7,
+      "event_us_per_launch": 3.7040000315755606,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 7,
+      "event_us_per_launch": 43.93799975514412,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 8,
+      "event_us_per_launch": 43.974000960588455,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 8,
+      "event_us_per_launch": 46.870000660419464,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 8,
+      "event_us_per_launch": 2.950000111013651,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 8,
+      "event_us_per_launch": 46.58199846744537,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 8,
+      "event_us_per_launch": 3.877999959513545,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 9,
+      "event_us_per_launch": 43.963998556137085,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 9,
+      "event_us_per_launch": 2.950000111013651,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 9,
+      "event_us_per_launch": 3.69199994020164,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 9,
+      "event_us_per_launch": 46.59400135278702,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 9,
+      "event_us_per_launch": 46.85800150036812,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 10,
+      "event_us_per_launch": 46.87200114130974,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 10,
+      "event_us_per_launch": 3.7360000424087048,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 10,
+      "event_us_per_launch": 43.894000351428986,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 10,
+      "event_us_per_launch": 2.959999954327941,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 10,
+      "event_us_per_launch": 46.59999907016754,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 11,
+      "event_us_per_launch": 43.935999274253845,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 11,
+      "event_us_per_launch": 46.859998255968094,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 11,
+      "event_us_per_launch": 46.59799858927727,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 11,
+      "event_us_per_launch": 3.725999966263771,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 11,
+      "event_us_per_launch": 2.951999893411994,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 12,
+      "event_us_per_launch": 46.870000660419464,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 12,
+      "event_us_per_launch": 46.626001596450806,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 12,
+      "event_us_per_launch": 44.03800144791603,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 12,
+      "event_us_per_launch": 2.974000060930848,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 12,
+      "event_us_per_launch": 3.702000016346574,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 13,
+      "event_us_per_launch": 3.7640000227838755,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 13,
+      "event_us_per_launch": 2.92599992826581,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 13,
+      "event_us_per_launch": 46.60400003194809,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 13,
+      "event_us_per_launch": 44.00600120425224,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 13,
+      "event_us_per_launch": 46.86199873685837,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 14,
+      "event_us_per_launch": 46.87200114130974,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 14,
+      "event_us_per_launch": 3.128000069409609,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 14,
+      "event_us_per_launch": 3.6959999706596136,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 14,
+      "event_us_per_launch": 46.59799858927727,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-17x31x19",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 14,
+      "event_us_per_launch": 44.0559983253479,
+      "outputs_checked": 323
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA tiled",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us_per_launch": 6.34999992325902,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA naive",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us_per_launch": 7.778000086545944,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Random-928",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us_per_launch": 202.4179995059967,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Predicted",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us_per_launch": 185.15600264072418,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Current",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us_per_launch": 185.65000593662262,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Current",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us_per_launch": 185.3639930486679,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Predicted",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us_per_launch": 184.80800092220306,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Random-928",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us_per_launch": 202.09600031375885,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA naive",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us_per_launch": 7.278000004589558,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA tiled",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us_per_launch": 5.8200000785291195,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Predicted",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us_per_launch": 184.80999767780304,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Current",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us_per_launch": 185.32800674438477,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA tiled",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us_per_launch": 5.82600012421608,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA naive",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us_per_launch": 7.23800016567111,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Random-928",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us_per_launch": 202.19799876213074,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA naive",
+      "phase": "warmup",
+      "pair": 3,
+      "event_us_per_launch": 7.249999791383743,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA tiled",
+      "phase": "warmup",
+      "pair": 3,
+      "event_us_per_launch": 5.807999987155199,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Current",
+      "phase": "warmup",
+      "pair": 3,
+      "event_us_per_launch": 185.33200025558472,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Random-928",
+      "phase": "warmup",
+      "pair": 3,
+      "event_us_per_launch": 202.17999815940857,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Predicted",
+      "phase": "warmup",
+      "pair": 3,
+      "event_us_per_launch": 184.87800657749176,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Predicted",
+      "phase": "warmup",
+      "pair": 4,
+      "event_us_per_launch": 185.0620061159134,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA tiled",
+      "phase": "warmup",
+      "pair": 4,
+      "event_us_per_launch": 5.8120000176131725,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Current",
+      "phase": "warmup",
+      "pair": 4,
+      "event_us_per_launch": 185.3339970111847,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA naive",
+      "phase": "warmup",
+      "pair": 4,
+      "event_us_per_launch": 7.267999928444624,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Random-928",
+      "phase": "warmup",
+      "pair": 4,
+      "event_us_per_launch": 202.79400050640106,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 0,
+      "event_us_per_launch": 202.15000212192535,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 0,
+      "event_us_per_launch": 7.207999937236309,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 0,
+      "event_us_per_launch": 6.535999942570925,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 0,
+      "event_us_per_launch": 184.80999767780304,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 0,
+      "event_us_per_launch": 185.32000482082367,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 1,
+      "event_us_per_launch": 202.18199491500854,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 1,
+      "event_us_per_launch": 7.236000150442123,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 1,
+      "event_us_per_launch": 184.85599756240845,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 1,
+      "event_us_per_launch": 5.787999834865332,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 1,
+      "event_us_per_launch": 185.25800108909607,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 2,
+      "event_us_per_launch": 5.803999956697226,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 2,
+      "event_us_per_launch": 185.27600169181824,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 2,
+      "event_us_per_launch": 7.459999993443489,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 2,
+      "event_us_per_launch": 202.0680010318756,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 2,
+      "event_us_per_launch": 184.78600680828094,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 3,
+      "event_us_per_launch": 185.20399928092957,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 3,
+      "event_us_per_launch": 7.2479997761547565,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 3,
+      "event_us_per_launch": 184.84599888324738,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 3,
+      "event_us_per_launch": 202.15800404548645,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 3,
+      "event_us_per_launch": 5.781999789178371,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 4,
+      "event_us_per_launch": 202.0300030708313,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 4,
+      "event_us_per_launch": 184.70999598503113,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 4,
+      "event_us_per_launch": 7.474000100046396,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 4,
+      "event_us_per_launch": 5.83800021559,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 4,
+      "event_us_per_launch": 186.28600239753723,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 5,
+      "event_us_per_launch": 5.816000048071146,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 5,
+      "event_us_per_launch": 184.8360002040863,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 5,
+      "event_us_per_launch": 185.3020042181015,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 5,
+      "event_us_per_launch": 202.20400393009186,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 5,
+      "event_us_per_launch": 7.25199980661273,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 6,
+      "event_us_per_launch": 7.25799985229969,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 6,
+      "event_us_per_launch": 185.2779984474182,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 6,
+      "event_us_per_launch": 184.7900003194809,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 6,
+      "event_us_per_launch": 202.37800478935242,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 6,
+      "event_us_per_launch": 5.774000193923712,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 7,
+      "event_us_per_launch": 185.25999784469604,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 7,
+      "event_us_per_launch": 184.8219931125641,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 7,
+      "event_us_per_launch": 5.787999834865332,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 7,
+      "event_us_per_launch": 7.246000226587057,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 7,
+      "event_us_per_launch": 202.04399526119232,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 8,
+      "event_us_per_launch": 202.06399261951447,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 8,
+      "event_us_per_launch": 184.87000465393066,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 8,
+      "event_us_per_launch": 5.801999941468239,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 8,
+      "event_us_per_launch": 185.2779984474182,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 8,
+      "event_us_per_launch": 7.3899999260902405,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 9,
+      "event_us_per_launch": 202.24200189113617,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 9,
+      "event_us_per_launch": 5.814000032842159,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 9,
+      "event_us_per_launch": 7.265999913215637,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 9,
+      "event_us_per_launch": 185.2779984474182,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 9,
+      "event_us_per_launch": 185.41200459003448,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 10,
+      "event_us_per_launch": 184.83999371528625,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 10,
+      "event_us_per_launch": 7.259999867528677,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 10,
+      "event_us_per_launch": 201.99400186538696,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 10,
+      "event_us_per_launch": 5.807999987155199,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 10,
+      "event_us_per_launch": 185.32000482082367,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 11,
+      "event_us_per_launch": 202.11000740528107,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 11,
+      "event_us_per_launch": 184.85400080680847,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 11,
+      "event_us_per_launch": 185.19599735736847,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 11,
+      "event_us_per_launch": 7.24400021135807,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 11,
+      "event_us_per_launch": 5.8120000176131725,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 12,
+      "event_us_per_launch": 184.84599888324738,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 12,
+      "event_us_per_launch": 185.32399833202362,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 12,
+      "event_us_per_launch": 202.11200416088104,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 12,
+      "event_us_per_launch": 5.805999971926212,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 12,
+      "event_us_per_launch": 7.267999928444624,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 13,
+      "event_us_per_launch": 7.23800016567111,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 13,
+      "event_us_per_launch": 5.783999804407358,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 13,
+      "event_us_per_launch": 185.25800108909607,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 13,
+      "event_us_per_launch": 202.20600068569183,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 13,
+      "event_us_per_launch": 184.8360002040863,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 14,
+      "event_us_per_launch": 184.83799695968628,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 14,
+      "event_us_per_launch": 5.778000224381685,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 14,
+      "event_us_per_launch": 7.259999867528677,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 14,
+      "event_us_per_launch": 185.3100061416626,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-64x128x64",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 14,
+      "event_us_per_launch": 202.21799612045288,
+      "outputs_checked": 4096
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA tiled",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us_per_launch": 7.067999802529812,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA naive",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us_per_launch": 8.263999596238136,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Random-928",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us_per_launch": 313.3639991283417,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Predicted",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us_per_launch": 230.97600042819977,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Current",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us_per_launch": 233.74800384044647,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Current",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us_per_launch": 228.97200286388397,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Predicted",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us_per_launch": 228.41399908065796,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Random-928",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us_per_launch": 313.3920133113861,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA naive",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us_per_launch": 7.482000160962343,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA tiled",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us_per_launch": 6.022000219672918,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Predicted",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us_per_launch": 230.41799664497375,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Current",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us_per_launch": 233.0780029296875,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA tiled",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us_per_launch": 5.8120000176131725,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA naive",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us_per_launch": 7.431999780237675,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Random-928",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us_per_launch": 314.0980005264282,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA naive",
+      "phase": "warmup",
+      "pair": 3,
+      "event_us_per_launch": 7.290000095963478,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA tiled",
+      "phase": "warmup",
+      "pair": 3,
+      "event_us_per_launch": 5.762000102549791,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Current",
+      "phase": "warmup",
+      "pair": 3,
+      "event_us_per_launch": 231.07999563217163,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Random-928",
+      "phase": "warmup",
+      "pair": 3,
+      "event_us_per_launch": 314.3079876899719,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Predicted",
+      "phase": "warmup",
+      "pair": 3,
+      "event_us_per_launch": 232.06600546836853,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Predicted",
+      "phase": "warmup",
+      "pair": 4,
+      "event_us_per_launch": 228.23399305343628,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA tiled",
+      "phase": "warmup",
+      "pair": 4,
+      "event_us_per_launch": 5.8559998869895935,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Current",
+      "phase": "warmup",
+      "pair": 4,
+      "event_us_per_launch": 233.04599523544312,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA naive",
+      "phase": "warmup",
+      "pair": 4,
+      "event_us_per_launch": 7.4640000239014626,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Random-928",
+      "phase": "warmup",
+      "pair": 4,
+      "event_us_per_launch": 314.06399607658386,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 0,
+      "event_us_per_launch": 313.3240044116974,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 0,
+      "event_us_per_launch": 7.3379999957978725,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 0,
+      "event_us_per_launch": 5.764000117778778,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 0,
+      "event_us_per_launch": 232.01000690460205,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 0,
+      "event_us_per_launch": 232.98600316047668,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 1,
+      "event_us_per_launch": 314.05800580978394,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 1,
+      "event_us_per_launch": 7.47800013050437,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 1,
+      "event_us_per_launch": 232.15000331401825,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 1,
+      "event_us_per_launch": 6.041999906301498,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 1,
+      "event_us_per_launch": 232.96600580215454,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 2,
+      "event_us_per_launch": 5.793999880552292,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 2,
+      "event_us_per_launch": 228.85799407958984,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 2,
+      "event_us_per_launch": 7.431999780237675,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 2,
+      "event_us_per_launch": 313.96999955177307,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 2,
+      "event_us_per_launch": 232.06199705600739,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 3,
+      "event_us_per_launch": 233.15399885177612,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 3,
+      "event_us_per_launch": 7.468000054359436,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 3,
+      "event_us_per_launch": 228.18799316883087,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 3,
+      "event_us_per_launch": 313.70601058006287,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 3,
+      "event_us_per_launch": 5.8120000176131725,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 4,
+      "event_us_per_launch": 312.74598836898804,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 4,
+      "event_us_per_launch": 228.98399829864502,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 4,
+      "event_us_per_launch": 7.416000124067068,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 4,
+      "event_us_per_launch": 5.739999935030937,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 4,
+      "event_us_per_launch": 232.99799859523773,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 5,
+      "event_us_per_launch": 5.8120000176131725,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 5,
+      "event_us_per_launch": 228.90600562095642,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 5,
+      "event_us_per_launch": 228.83200645446777,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 5,
+      "event_us_per_launch": 312.6020133495331,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 5,
+      "event_us_per_launch": 7.48400017619133,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 6,
+      "event_us_per_launch": 7.199999876320362,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 6,
+      "event_us_per_launch": 229.58199679851532,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 6,
+      "event_us_per_launch": 231.94600641727448,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 6,
+      "event_us_per_launch": 312.747985124588,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 6,
+      "event_us_per_launch": 5.894000176340342,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 7,
+      "event_us_per_launch": 232.83199965953827,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 7,
+      "event_us_per_launch": 231.85600340366364,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 7,
+      "event_us_per_launch": 5.822000093758106,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 7,
+      "event_us_per_launch": 7.459999993443489,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 7,
+      "event_us_per_launch": 313.8140141963959,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 8,
+      "event_us_per_launch": 313.5699927806854,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 8,
+      "event_us_per_launch": 229.98599708080292,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 8,
+      "event_us_per_launch": 5.8280001394450665,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 8,
+      "event_us_per_launch": 232.697993516922,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 8,
+      "event_us_per_launch": 7.435999810695648,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 9,
+      "event_us_per_launch": 315.1620030403137,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 9,
+      "event_us_per_launch": 5.830000154674053,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 9,
+      "event_us_per_launch": 7.236000150442123,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 9,
+      "event_us_per_launch": 230.9579998254776,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 9,
+      "event_us_per_launch": 232.0999950170517,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 10,
+      "event_us_per_launch": 228.22000086307526,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 10,
+      "event_us_per_launch": 7.422000169754028,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 10,
+      "event_us_per_launch": 313.2080137729645,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 10,
+      "event_us_per_launch": 6.039999891072512,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 10,
+      "event_us_per_launch": 232.92399942874908,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 11,
+      "event_us_per_launch": 313.1600022315979,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 11,
+      "event_us_per_launch": 232.21200704574585,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 11,
+      "event_us_per_launch": 232.9840064048767,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 11,
+      "event_us_per_launch": 7.495999801903963,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 11,
+      "event_us_per_launch": 5.83800021559,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 12,
+      "event_us_per_launch": 229.01800274848938,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 12,
+      "event_us_per_launch": 229.76799309253693,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 12,
+      "event_us_per_launch": 312.4940097332001,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 12,
+      "event_us_per_launch": 5.762000102549791,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 12,
+      "event_us_per_launch": 7.431999780237675,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 13,
+      "event_us_per_launch": 7.151999976485968,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 13,
+      "event_us_per_launch": 5.704000126570463,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 13,
+      "event_us_per_launch": 231.11599683761597,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 13,
+      "event_us_per_launch": 311.60199642181396,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 13,
+      "event_us_per_launch": 231.92399740219116,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 14,
+      "event_us_per_launch": 228.15200686454773,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 14,
+      "event_us_per_launch": 8.008000440895557,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 14,
+      "event_us_per_launch": 7.594000082463026,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 14,
+      "event_us_per_launch": 232.9079955816269,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-128x128x128",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 14,
+      "event_us_per_launch": 313.9980137348175,
+      "outputs_checked": 16384
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA tiled",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us_per_launch": 22.644000127911568,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA naive",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us_per_launch": 26.057999581098557,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Random-928",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us_per_launch": 4493.929862976074,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Predicted",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us_per_launch": 2077.1539211273193,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Current",
+      "phase": "warmup",
+      "pair": 0,
+      "event_us_per_launch": 2080.833911895752,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Current",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us_per_launch": 2083.401918411255,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Predicted",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us_per_launch": 2065.0179386138916,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Random-928",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us_per_launch": 4490.273952484131,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA naive",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us_per_launch": 25.391999632120132,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA tiled",
+      "phase": "warmup",
+      "pair": 1,
+      "event_us_per_launch": 22.167999297380447,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Predicted",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us_per_launch": 2071.428060531616,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Current",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us_per_launch": 2072.2620487213135,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA tiled",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us_per_launch": 22.053999826312065,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA naive",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us_per_launch": 25.38999915122986,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Random-928",
+      "phase": "warmup",
+      "pair": 2,
+      "event_us_per_launch": 4490.469932556152,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA naive",
+      "phase": "warmup",
+      "pair": 3,
+      "event_us_per_launch": 25.56999959051609,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA tiled",
+      "phase": "warmup",
+      "pair": 3,
+      "event_us_per_launch": 22.126000374555588,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Current",
+      "phase": "warmup",
+      "pair": 3,
+      "event_us_per_launch": 2078.305959701538,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Random-928",
+      "phase": "warmup",
+      "pair": 3,
+      "event_us_per_launch": 4494.574069976807,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Predicted",
+      "phase": "warmup",
+      "pair": 3,
+      "event_us_per_launch": 2070.2080726623535,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Predicted",
+      "phase": "warmup",
+      "pair": 4,
+      "event_us_per_launch": 2070.9381103515625,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA tiled",
+      "phase": "warmup",
+      "pair": 4,
+      "event_us_per_launch": 22.63600006699562,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Current",
+      "phase": "warmup",
+      "pair": 4,
+      "event_us_per_launch": 2078.226089477539,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA naive",
+      "phase": "warmup",
+      "pair": 4,
+      "event_us_per_launch": 25.44200047850609,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Random-928",
+      "phase": "warmup",
+      "pair": 4,
+      "event_us_per_launch": 4491.459846496582,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 0,
+      "event_us_per_launch": 4494.564056396484,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 0,
+      "event_us_per_launch": 25.431999936699867,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 0,
+      "event_us_per_launch": 22.175999358296394,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 0,
+      "event_us_per_launch": 2074.0339756011963,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 0,
+      "event_us_per_launch": 2073.26602935791,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 1,
+      "event_us_per_launch": 4492.866039276123,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 1,
+      "event_us_per_launch": 25.394000113010406,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 1,
+      "event_us_per_launch": 2084.012031555176,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 1,
+      "event_us_per_launch": 22.045999765396118,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 1,
+      "event_us_per_launch": 2091.14408493042,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 2,
+      "event_us_per_launch": 21.87200076878071,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 2,
+      "event_us_per_launch": 2090.3680324554443,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 2,
+      "event_us_per_launch": 25.38999915122986,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 2,
+      "event_us_per_launch": 4489.692211151123,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 2,
+      "event_us_per_launch": 2080.1780223846436,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 3,
+      "event_us_per_launch": 2078.4618854522705,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 3,
+      "event_us_per_launch": 25.71200020611286,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 3,
+      "event_us_per_launch": 2068.3300495147705,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 3,
+      "event_us_per_launch": 4492.869853973389,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 3,
+      "event_us_per_launch": 22.29199931025505,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 4,
+      "event_us_per_launch": 4494.915962219238,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 4,
+      "event_us_per_launch": 2071.7360973358154,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 4,
+      "event_us_per_launch": 25.39999969303608,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 4,
+      "event_us_per_launch": 22.081999108195305,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 4,
+      "event_us_per_launch": 2077.3661136627197,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 5,
+      "event_us_per_launch": 23.029999807476997,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 5,
+      "event_us_per_launch": 2068.3441162109375,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 5,
+      "event_us_per_launch": 2076.4899253845215,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 5,
+      "event_us_per_launch": 4493.261814117432,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 5,
+      "event_us_per_launch": 27.305999770760536,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 6,
+      "event_us_per_launch": 25.097999721765518,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 6,
+      "event_us_per_launch": 2082.7879905700684,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 6,
+      "event_us_per_launch": 2071.013927459717,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 6,
+      "event_us_per_launch": 4492.119789123535,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 6,
+      "event_us_per_launch": 22.506000474095345,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 7,
+      "event_us_per_launch": 2088.641881942749,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 7,
+      "event_us_per_launch": 2068.1140422821045,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 7,
+      "event_us_per_launch": 21.903999149799347,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 7,
+      "event_us_per_launch": 25.351999327540398,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 7,
+      "event_us_per_launch": 4495.503902435303,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 8,
+      "event_us_per_launch": 4491.057872772217,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 8,
+      "event_us_per_launch": 2084.023952484131,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 8,
+      "event_us_per_launch": 22.02799916267395,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 8,
+      "event_us_per_launch": 2090.3940200805664,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 8,
+      "event_us_per_launch": 25.49399994313717,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 9,
+      "event_us_per_launch": 4494.748115539551,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 9,
+      "event_us_per_launch": 22.067999467253685,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 9,
+      "event_us_per_launch": 25.37599951028824,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 9,
+      "event_us_per_launch": 2086.40193939209,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 9,
+      "event_us_per_launch": 2070.513963699341,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 10,
+      "event_us_per_launch": 2070.9779262542725,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 10,
+      "event_us_per_launch": 25.86599998176098,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 10,
+      "event_us_per_launch": 4492.281913757324,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 10,
+      "event_us_per_launch": 22.67399989068508,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 10,
+      "event_us_per_launch": 2082.4480056762695,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 11,
+      "event_us_per_launch": 4491.0759925842285,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 11,
+      "event_us_per_launch": 2068.187952041626,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 11,
+      "event_us_per_launch": 2081.1240673065186,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 11,
+      "event_us_per_launch": 25.95200017094612,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 11,
+      "event_us_per_launch": 22.137999534606934,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 12,
+      "event_us_per_launch": 2071.3961124420166,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 12,
+      "event_us_per_launch": 2073.9779472351074,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 12,
+      "event_us_per_launch": 4493.686199188232,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 12,
+      "event_us_per_launch": 22.60800078511238,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 12,
+      "event_us_per_launch": 25.590000674128532,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 13,
+      "event_us_per_launch": 24.963999167084694,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 13,
+      "event_us_per_launch": 21.921999752521515,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 13,
+      "event_us_per_launch": 2080.486059188843,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 13,
+      "event_us_per_launch": 4495.341777801514,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 13,
+      "event_us_per_launch": 2076.6079425811768,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Predicted",
+      "phase": "measured",
+      "pair": 14,
+      "event_us_per_launch": 2071.7101097106934,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA tiled",
+      "phase": "measured",
+      "pair": 14,
+      "event_us_per_launch": 21.959999576210976,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "CUDA naive",
+      "phase": "measured",
+      "pair": 14,
+      "event_us_per_launch": 25.335999205708504,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Current",
+      "phase": "measured",
+      "pair": 14,
+      "event_us_per_launch": 2075.014114379883,
+      "outputs_checked": 65536
+    },
+    {
+      "case": "matmul-256x256x256",
+      "arm": "Jac Random-928",
+      "phase": "measured",
+      "pair": 14,
+      "event_us_per_launch": 4494.83585357666,
+      "outputs_checked": 65536
+    }
+  ],
+  "gpu_before": "Wed Oct 21 17:10:44 2026       \n+-----------------------------------------------------------------------------------------+\n| NVIDIA-SMI 580.65.06              Driver Version: 580.65.06      CUDA Version: 13.0     |\n+-----------------------------------------+------------------------+----------------------+\n| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |\n|                                         |                        |               MIG M. |\n|=========================================+========================+======================|\n|   0  NVIDIA GeForce RTX 3090        On  |   00000000:01:00.0  On |                  N/A |\n| 38%   49C    P2            181W /  350W |   23488MiB /  24576MiB |      0%      Default |\n|                                         |                        |                  N/A |\n+-----------------------------------------+------------------------+----------------------+\n\n+-----------------------------------------------------------------------------------------+\n| Processes:                                                                              |\n|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |\n|        ID   ID                                                               Usage      |\n|=========================================================================================|\n|    0   N/A  N/A         4017881      C   /usr/local/bin/ollama                 23462MiB |\n+-----------------------------------------------------------------------------------------+\n",
+  "gpu_name": "NVIDIA GeForce RTX 3090",
+  "memory_before": {
+    "free": 357826560,
+    "total": 25272516608
+  },
+  "memory_after": {
+    "free": 357826560,
+    "total": 25272516608
+  },
+  "complete": true,
+  "gpu_after": "Wed Oct 21 17:10:50 2026       \n+-----------------------------------------------------------------------------------------+\n| NVIDIA-SMI 580.65.06              Driver Version: 580.65.06      CUDA Version: 13.0     |\n+-----------------------------------------+------------------------+----------------------+\n| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |\n|                                         |                        |               MIG M. |\n|=========================================+========================+======================|\n|   0  NVIDIA GeForce RTX 3090        On  |   00000000:01:00.0  On |                  N/A |\n| 43%   56C    P2            324W /  350W |   23488MiB /  24576MiB |     92%      Default |\n|                                         |                        |                  N/A |\n+-----------------------------------------+------------------------+----------------------+\n\n+-----------------------------------------------------------------------------------------+\n| Processes:                                                                              |\n|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |\n|        ID   ID                                                               Usage      |\n|=========================================================================================|\n|    0   N/A  N/A         4017881      C   /usr/local/bin/ollama                 23462MiB |\n+-----------------------------------------------------------------------------------------+\n"
+}

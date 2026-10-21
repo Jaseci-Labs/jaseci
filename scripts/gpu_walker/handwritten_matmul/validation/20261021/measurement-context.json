@@ -1,0 +1,47 @@
+{
+  "source_basis_commit": "09fefa3b29bce268edee8929d8d7e6fb48722816",
+  "graph_builder": "Existing compare_named_layouts.prepare_case and production pack_cursors",
+  "scope": "Complete M*N output per kernel, same bounded signed int64 matrices; ordinary and profiler runs separate",
+  "gpu_sharing": "Ollama process resident at 23462 MiB in before/after snapshots. Measurements were performed without stopping or modifying it.",
+  "shapes": [
+    [
+      3,
+      5,
+      2
+    ],
+    [
+      17,
+      31,
+      19
+    ],
+    [
+      64,
+      128,
+      64
+    ],
+    [
+      128,
+      128,
+      128
+    ],
+    [
+      256,
+      256,
+      256
+    ]
+  ],
+  "input_manifest_sha256": "8c91348cf62ce5d9d115bd3b3866dd1fcd0316882b77df9d70af10ab8d929591",
+  "kernel_profiler_validation": {
+    "launches_verified": 8025,
+    "measured_launches": 6000
+  },
+  "LLVM_shim_sha256": "0fe41757f78f00a17db7d1644af3503c5375677cb70a31a8253108c43fe791d0",
+  "nsys_version": "NVIDIA Nsight Systems version 2025.3.2.367-253236224375v0",
+  "sources": {
+    "analyze_profile.py": "604b6c667762db72ea9b39999c67abeee0b523b5a8fcd31bdf3f5785952174e2",
+    "prepare_inputs.py": "f00ae14f4fe91a4958e8bac5de4ca5773dfb6c535a10430528e8b67dd104f8c2",
+    "build_report.py": "6f888608124a0858ce5c69bf639562fce053b0914020881ce3d95edf508c47ff",
+    "benchmark.py": "94b4fd2456d422394368c9585e6363f0c393feebfbf26404ae78c74c05b3dfa1",
+    "matmul.cu": "6c1d25c54f48ae3dcdc412228365e7edc6cf9f430494e549d9860f7a7ec23725"
+  }
+}
