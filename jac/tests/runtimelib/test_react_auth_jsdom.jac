@@ -30,9 +30,12 @@ import from tempfile { TemporaryDirectory }
 
 import from jaclang.compiler.backends.es.backends.react { ReactBackend }
 import from tests.support { js_runtime_or_none }
+import from jaclang.client.runtime_source { resolve_client_runtime_cl_path }
 import from .react_jsdom_harness {
+    REACT_JSDOM_DEPS,
     bun_install,
     compile_page,
+    compile_react,
     require_client_integration,
     run_harness,
     write_runtime
@@ -203,12 +206,25 @@ test "react AuthGuard renders children, child routes, and nothing -- in jsdom" {
 
 
 glob _STALE_401_HARNESS: str = """
-import { JSDOM } from "jsdom";
+import { JSDOM, VirtualConsole } from "jsdom";
 
-const dom = new JSDOM("<!DOCTYPE html><html><body></body></html>", { url: "http://localhost/" });
+let reloads = 0;
+const virtualConsole = new VirtualConsole();
+virtualConsole.on("jsdomError", (e) => {
+  if (String(e && e.message).includes("navigation")) reloads += 1;
+  else console.error(e);
+});
+const dom = new JSDOM("<!DOCTYPE html><html><body></body></html>",
+  { url: "http://localhost/", virtualConsole });
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 globalThis.localStorage = dom.window.localStorage;
+globalThis.__jacGetLocalStorage__ = (k) => localStorage.getItem(k);
+globalThis.__jacSetLocalStorage__ = (k, v) => localStorage.setItem(k, v);
+globalThis.__jacRemoveLocalStorage__ = (k) => localStorage.removeItem(k);
+globalThis.__jacGetApiBaseUrl__ = () => "";
+let unauthorized = 0;
+globalThis.__jacHandleWalkerUnauthorized__ = () => { unauthorized += 1; };
 
 const failures = [];
 const check = (label, ok, detail) => {
@@ -216,44 +232,61 @@ const check = (label, ok, detail) => {
   if (!ok) failures.push(label);
 };
 
-const core = await import("./client_runtime_core.js");
 let answer;
 globalThis.fetch = () => new Promise((resolve) => {
   answer = () => resolve(new Response("unauthorized", { status: 401 }));
 });
-const call = (token) => {
-  localStorage.setItem("jac_token", token);
-  const pending = core.__doWalkerFetch("w", "", {}, { app: "svc" }).then(
-    () => null,
-    (e) => e
-  );
-  return pending;
+
+/* Send with `old-token`; optionally sign in again before the 401 lands. */
+const run = async (core, opts, reloginTo) => {
+  localStorage.setItem("jac_token", "old-token");
+  const pending = core.__doWalkerFetch("w", "", {}, opts).then(() => null, (e) => e);
+  await new Promise((r) => setTimeout(r, 0));
+  if (reloginTo) localStorage.setItem("jac_token", reloginTo);
+  answer();
+  return await pending;
 };
 
-// A request sent with the old token answers 401 after the user signed in again.
-let pending = call("old-token");
-await new Promise((r) => setTimeout(r, 0));
-localStorage.setItem("jac_token", "new-token");
-answer();
-let err = await pending;
-check("a stale 401 keeps the newer login", localStorage.getItem("jac_token") === "new-token",
-  `jac_token=${localStorage.getItem("jac_token")}`);
-check("the stale call still raises a 401 BridgeRejected", !!err && err.status === 401, String(err));
-
-// A 401 for the token still in use drops it.
-pending = call("current-token");
-await new Promise((r) => setTimeout(r, 0));
-answer();
-err = await pending;
-check("a 401 for the current token drops it", !localStorage.getItem("jac_token"),
-  `jac_token=${localStorage.getItem("jac_token")}`);
+// web: the browser runtime reloads the page on an own-app 401.
+// native: the React Native runtime calls __jacHandleWalkerUnauthorized__.
+const cores = [
+  ["web", await import("./client_runtime_core.js"), () => reloads],
+  ["native", await import("./client_react_core.js"), () => unauthorized],
+];
+for (const [name, core, signals] of cores) {
+  for (const opts of [{ app: "svc" }, {}]) {
+    const where = `${name} ${opts.app ? "service" : "own-app"}`;
+    let before = signals();
+    let err = await run(core, opts, "new-token");
+    check(`${where}: a stale 401 keeps the newer login`,
+      localStorage.getItem("jac_token") === "new-token", `jac_token=${localStorage.getItem("jac_token")}`);
+    if (opts.app) {
+      check(`${where}: the stale call still raises a 401 BridgeRejected`, !!err && err.status === 401, String(err));
+    } else {
+      check(`${where}: a stale 401 does not signal unauthorized`, signals() === before,
+        `signals ${before} -> ${signals()}`);
+    }
+    before = signals();
+    err = await run(core, opts, null);
+    check(`${where}: a 401 for the current token drops it`, !localStorage.getItem("jac_token"),
+      `jac_token=${localStorage.getItem("jac_token")}`);
+    if (!opts.app) {
+      check(`${where}: a 401 for the current token signals unauthorized`, signals() === before + 1,
+        `signals ${before} -> ${signals()}`);
+    }
+  }
+}
 
 console.log(failures.length ? `FAILED: ${failures.join(", ")}` : "OK");
 process.exit(failures.length ? 1 : 0);
 """;
 
-"""A 401 only clears the token the failing request sent. A slow request that
-went out before the user signed in again must not erase the new login."""
+"""A 401 only clears the token the failing request sent, in both client
+runtimes and on both paths: a service call, and an own-app call whose 401
+reloads the page (web) or calls `__jacHandleWalkerUnauthorized__` (native). A
+slow request that went out before the user signed in again must neither erase
+the new login nor signal unauthorized; a 401 for the token still in use must
+do both."""
 test "a delayed 401 from an old request keeps a newer login" {
     require_client_integration("stale 401");
     bun = js_runtime_or_none();
@@ -263,8 +296,21 @@ test "a delayed 401 from an old request keeps a newer login" {
     with TemporaryDirectory() as tmp {
         work = Path(tmp);
         write_runtime(work);
+        core_dir = Path(resolve_client_runtime_cl_path("react")).parent;
+        (work / "client_react_core.js").write_text(
+            compile_react(str(core_dir / "client_react_core.jac")), encoding="utf-8"
+        );
         (work / "harness.mjs").write_text(_STALE_401_HARNESS, encoding="utf-8");
-        bun_install(bun, work, "react-stale-401-jsdom-test");
+        bun_install(
+            bun,
+            work,
+            "react-stale-401-jsdom-test",
+            {
+                ** REACT_JSDOM_DEPS,
+                "react-hook-form": "^7.54.0",
+                "@hookform/resolvers": "^3.10.0"
+            }
+        );
         run_harness(bun, work, [], "stale 401");
     }
 }
