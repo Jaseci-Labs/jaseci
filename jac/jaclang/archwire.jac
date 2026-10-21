@@ -2585,7 +2585,7 @@ graph import {
     ]
     runtime.osp_graph_sv --> byllm.visit_routing._candidate_for { sv_register_hydrated }
     runtime.osp_kernel ++> [
-        byllm.visit_routing._route_context { _current_scope },
+        byllm.visit_routing._route_context { _current_scope }
     ]
     runtime.osp_kernel --> [
         compiler.passes.context.CompileContext.enter_node { osp_skip_rest },
