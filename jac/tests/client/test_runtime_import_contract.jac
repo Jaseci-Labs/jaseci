@@ -180,13 +180,14 @@ test "a provider an earlier page emitted is refreshed when a later page grows it
 
     with TemporaryDirectory() as tmp {
         base = Path(tmp).resolve();
-        (layout, page, provider, nested) = (
+        (layout, page, provider, nested, extra) = (
             base / "layout.jac",
             base / "page.jac",
             base / "provider.jac",
-            base / "nested.jac"
+            base / "nested.jac",
+            base / "extra.jac"
         );
-        for path in (layout, page, provider, nested) {
+        for path in (layout, page, provider, nested, extra) {
             path.write_text("");
         }
         grown = {"pulled": False};
@@ -216,13 +217,16 @@ test "a provider an earlier page emitted is refreshed when a later page grows it
                 if grown["pulled"] {
                     return module(
                         ["palette", "spacing"],
-                        {"nested": str(nested)},
-                        {str(nested): ["base", "gap"]}
+                        {"nested": str(nested), "extra": str(extra)},
+                        {str(nested): ["base", "gap"], str(extra): ["tool"]}
                     );
                 }
                 return module(
                     ["palette"], {"nested": str(nested)}, {str(nested): ["base"]}
                 );
+            }
+            if path == extra {
+                return module(["tool"], {}, {});
             }
             return module(["base", "gap"] if grown["pulled"] else ["base"], {}, {});
         }
@@ -234,7 +238,9 @@ test "a provider an earlier page emitted is refreshed when a later page grows it
         second = collect_client_graph([page], artifact_of, same, set(), visited);
     }
     assert [u.path for u in first.modules] == [layout, provider, nested];
-    assert [u.path for u in second.modules] == [page];
+    assert [u.path for u in second.modules] == [page, extra] , (
+        "a module the grown provider newly imports must be compiled and emitted"
+    );
     assert [u.path for u in second.refreshed] == [provider, nested] , (
         "the modules the first page emitted must be re-emitted with what the second "
         "page pulled, including the provider's own dependency"

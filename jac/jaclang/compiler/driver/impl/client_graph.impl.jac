@@ -20,6 +20,15 @@ impl collect_client_graph(
         return found;
     }
 
+    def queue_imports(artifact: ClientArtifact) {
+        imports = [
+            Path(str(import_path))
+            for (name, import_path) in artifact.manifest.imports.items()
+            if name not in virtual_modules
+        ];
+        pending.extend(reversed(imports));
+    }
+
     def check_runtime_imports(path: Path, artifact: ClientArtifact) {
         for (dependency, names) in artifact.manifest.runtime_imports.items() {
             if not names {
@@ -41,6 +50,7 @@ impl collect_client_graph(
                 refreshed.add(target);
                 result.refreshed.append(ClientUnit(target, provider_artifact));
                 check_runtime_imports(target, provider_artifact);
+                queue_imports(provider_artifact);
             }
         }
     }
@@ -61,12 +71,7 @@ impl collect_client_graph(
         artifact = require(path);
         result.modules.append(ClientUnit(path, artifact));
         check_runtime_imports(path, artifact);
-        imports = [
-            Path(str(import_path))
-            for (name, import_path) in artifact.manifest.imports.items()
-            if name not in virtual_modules
-        ];
-        pending.extend(reversed(imports));
+        queue_imports(artifact);
     }
     return result;
 }
