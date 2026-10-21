@@ -223,10 +223,19 @@ impl BoundaryAnalysisPass.enter_import with Import entry {
                     caller_context = self._caller_context(here, import_context);
                     server_pinned_target = False;
                     if caller_context == InteropContext.NATIVE {
-                        import from jaclang.compiler.symbol_utils {
-                            import_target_pinned_server
+                        try {
+                            target = from_loc.resolve_relative_path();
+                            if isinstance(target, str) and target.endswith(".jac") {
+                                import from jaclang.compiler.placement.placement_facts {
+                                    pinned_module_space
+                                }
+                                server_pinned_target = (
+                                    pinned_module_space(target) == "server"
+                                );
+                            }
+                        } except Exception {
+                            server_pinned_target = False;
                         }
-                        server_pinned_target = import_target_pinned_server(here);
                     }
                     if server_pinned_target {
                         self._register_sv_import(
