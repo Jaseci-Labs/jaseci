@@ -1,13 +1,14 @@
-// Drives a client error reporter under a stub window and counts the reports
+// Drives the client error reporters under a stub page and counts the reports
 // that would reach POST /cl/__error__. Prints one JSON line of results.
 //
 //   node client_error_budget_harness.mjs runtime <client_runtime_core.js>
 //   node client_error_budget_harness.mjs native <client_react_core.js>
 //   node client_error_budget_harness.mjs inline <early-handler-script.js>
+//   node client_error_budget_harness.mjs handoff <client_runtime_core.js> <early-handler-script.js>
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
-const [mode, target] = process.argv.slice(2);
+const [mode, target, inlineTarget] = process.argv.slice(2);
 const START = 1_700_000_000_000;
 const sent = [];
 let now = START;
@@ -16,6 +17,9 @@ globalThis.fetch = (url, init) => {
   sent.push({ endpoint: url, ...JSON.parse(init.body) });
   return Promise.resolve({ ok: true });
 };
+// As in a browser, `window` is the global object, so `window.x` and
+// `globalThis.x` are the same property.
+globalThis.window = globalThis;
 
 // The stack the jachammer flood carried (jacBuilder#2354).
 const EXTENSION_STACK = [
@@ -26,6 +30,15 @@ const EXTENSION_STACK = [
 const FIREFOX_EXTENSION_STACK = [
   "Y@moz-extension://0a1b2c3d/content.js:1:761",
   "E@moz-extension://0a1b2c3d/content.js:1:1442",
+].join("\n");
+const SAFARI_EXTENSION_STACK = [
+  "Y@safari-web-extension://0A1B2C3D/content.js:1:761",
+  "global code@safari-web-extension://0A1B2C3D/content.js:3:4",
+].join("\n");
+// The message names an app URL; every frame is still the extension's.
+const EXTENSION_STACK_WITH_URL_MESSAGE = [
+  "Error: Request failed for https://app.test/api/data",
+  "    at Y (chrome-extension://abc/inject.js:1:5)",
 ].join("\n");
 const APP_STACK = "TypeError: boom\n    at render (https://app.test/static/client.js:1:200)";
 const MIXED_STACK = [
@@ -52,12 +65,34 @@ function windowError(message, error, filename) {
   window.dispatchEvent(event);
 }
 
+function times(n, fn) {
+  for (let i = 0; i < n; i++) fn(i);
+}
+
+// A fresh page: new event target, no handlers installed, an empty budget.
+function newPage() {
+  const events = new EventTarget();
+  window.addEventListener = events.addEventListener.bind(events);
+  window.dispatchEvent = events.dispatchEvent.bind(events);
+  window.location = { href: "https://app.test/project/p1" };
+  delete globalThis.__jacErrorHandlersInstalled;
+  delete globalThis.__jacErrorReportBudget;
+  now = START;
+  sent.length = 0;
+}
+
+const loadCore = async (path) => import(pathToFileURL(path).href);
+const runInline = (path) => {
+  const source = readFileSync(path, "utf8");
+  return () => new Function(source)();
+};
+
 let install;
 if (mode === "runtime") {
-  const core = await import(pathToFileURL(target).href);
+  const core = await loadCore(target);
   install = () => core.__jacInstallErrorHandlers();
 } else if (mode === "native") {
-  const core = await import(pathToFileURL(target).href);
+  const core = await loadCore(target);
   globalThis.__jacGetApiBaseUrl__ = () => "";
   // Stands in for the ErrorUtils global handler client_runtime_native installs.
   install = () => {
@@ -66,27 +101,34 @@ if (mode === "runtime") {
     window.addEventListener("error", (event) => report(event.error ?? { message: event.message, stack: "" }));
   };
 } else if (mode === "inline") {
-  const source = readFileSync(target, "utf8");
-  install = () => new Function(source)();
+  install = runInline(target);
+} else if (mode === "handoff") {
+  // The served page: the early handler runs first, then the bundle installs
+  // the runtime's handlers, all inside one minute.
+  const core = await loadCore(target);
+  const installInline = runInline(inlineTarget);
+  newPage();
+  installInline();
+  times(10, (i) => rejection(`early ${i}`, APP_STACK));
+  const early = sent.length;
+  core.__jacInstallErrorHandlers();
+  times(10, (i) => rejection(`late ${i}`, APP_STACK));
+  rejection("early 0", APP_STACK);
+  const sameMinute = sent.length - early;
+  now += 60_000;
+  times(10, (i) => rejection(`later ${i}`, APP_STACK));
+  const nextMinute = sent.length - early - sameMinute;
+  console.log(JSON.stringify({ early, sameMinute, nextMinute }));
+  process.exit(0);
 } else {
   throw new Error(`unknown mode: ${mode}`);
 }
 
-// Each scenario is a fresh page: new window, no handlers, an empty budget.
 function scenario(fire) {
-  globalThis.window = new EventTarget();
-  window.location = { href: "https://app.test/project/p1" };
-  delete globalThis.__jacErrorHandlersInstalled;
-  delete globalThis.__jacErrorReportBudget;
-  now = START;
-  sent.length = 0;
+  newPage();
   install();
   fire();
   return { sent: sent.length, first: sent[0] ?? null };
-}
-
-function times(n, fn) {
-  for (let i = 0; i < n; i++) fn(i);
 }
 
 const results = {
@@ -95,6 +137,12 @@ const results = {
   ),
   firefoxExtensionRejections: scenario(() =>
     times(1000, () => rejection("x is undefined", FIREFOX_EXTENSION_STACK)),
+  ),
+  safariExtensionRejections: scenario(() =>
+    times(1000, () => rejection("x is undefined", SAFARI_EXTENSION_STACK)),
+  ),
+  extensionStackWithUrlMessage: scenario(() =>
+    times(100, () => rejection("Request failed for https://app.test/api/data", EXTENSION_STACK_WITH_URL_MESSAGE)),
   ),
   extensionScriptWithoutStack: scenario(() =>
     times(100, () => windowError("Script error.", null, "chrome-extension://abc/content.js")),
@@ -109,6 +157,14 @@ const results = {
     times(1000, (i) => rejection(`boom ${i}`, APP_STACK));
     now += 60_000;
     times(1000, (i) => rejection(`later ${i}`, APP_STACK));
+  }),
+  // Twenty new errors a minute for half an hour, then an early one again.
+  distinctAppErrorsOverHalfAnHour: scenario(() => {
+    times(30, (minute) => {
+      times(20, (i) => rejection(`minute ${minute} error ${i}`, APP_STACK));
+      now += 60_000;
+    });
+    times(5, () => rejection("minute 0 error 0", APP_STACK));
   }),
   afterRuntimeHandlersInstalled: scenario(() => {
     window.__jacErrorHandlersInstalled = true;

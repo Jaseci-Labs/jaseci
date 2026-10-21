@@ -133,7 +133,11 @@ glob __JAC_EXTENSION_URL_PREFIXES: list[str] = [
          "safari-extension://"
      ],
      __JAC_ERROR_REPORTS_PER_MINUTE: int = 10,
-     __JAC_ERROR_REPORT_KEYS_MAX: int = 200;
+     __JAC_ERROR_REPORTS_PER_PAGE: int = 200,
+     __JAC_STACK_FRAME_URL_RE: any = RegExp(
+         "^\\s*at\\s+(?:.*?\\()?([a-z][a-z0-9+.-]*://[^\\s()]+)|^[^@]*@([a-z][a-z0-9+.-]*://[^\\s()]+)",
+         "i"
+     );
 
 def:pub __jacInstallErrorHandlers -> None;
 

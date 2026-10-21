@@ -179,16 +179,12 @@ test "prod render_page injects early error handler before module bundle script" 
 # =============================================================================
 # Client-side report budget
 # =============================================================================
-"""Run the budget harness against one reporter and return its per-scenario results."""
-def run_error_budget_harness(mode: str, target: Path) -> dict[str, any] {
+"""Run the budget harness in `mode` against `targets` and return its results."""
+def run_error_budget_harness(mode: str, targets: list[Path]) -> dict[str, any] {
     import subprocess;
     result = subprocess.run(
-        [
-            "node",
-            fixture_abs_path("client_error_budget_harness.mjs"),
-            mode,
-            str(target)
-        ],
+        ["node", fixture_abs_path("client_error_budget_harness.mjs"), mode]
+            + [str(t) for t in targets],
         capture_output=True,
         text=True,
         timeout=120
@@ -227,49 +223,9 @@ def write_runtime_core(work: Path, core_name: str) -> Path {
     return core;
 }
 
-test "runtime reporter drops extension errors and caps reports per page" {
-    import from jaclang.testing.requires { require_tool }
-    require_tool("node");
-    with TemporaryDirectory() as tmp {
-        core = write_runtime_core(Path(tmp), "client_runtime_core");
-        results = run_error_budget_harness("runtime", core);
-    }
-    assert results["extensionRejections"]["sent"] == 0 , results;
-    assert results["firefoxExtensionRejections"]["sent"] == 0 , results;
-    assert results["extensionScriptWithoutStack"]["sent"] == 0 , results;
-    # One report per distinct error, however often it is thrown.
-    assert results["identicalAppErrors"]["sent"] == 1 , results;
-    first = results["identicalAppErrors"]["first"];
-    assert first["endpoint"] == "/cl/__error__";
-    assert first["message"] == "boom";
-    assert first["source"] == "unhandledrejection";
-    # A stack that passes through app code is ours to see.
-    assert results["mixedStack"]["sent"] == 1 , results;
-    assert results["appWindowError"]["sent"] == 1 , results;
-    # At most 10 reports a minute, and the budget refills the next minute.
-    assert results["distinctAppErrors"]["sent"] == 10 , results;
-    assert results["distinctAppErrorsOverTwoMinutes"]["sent"] == 20 , results;
-}
-
-test "native runtime reporter holds the same per-page budget" {
-    import from jaclang.testing.requires { require_tool }
-    require_tool("node");
-    with TemporaryDirectory() as tmp {
-        core = write_runtime_core(Path(tmp), "client_react_core");
-        results = run_error_budget_harness("native", core);
-    }
-    assert results["extensionRejections"]["sent"] == 0 , results;
-    assert results["identicalAppErrors"]["sent"] == 1 , results;
-    assert results["identicalAppErrors"]["first"]["source"] == "ErrorUtils";
-    assert results["mixedStack"]["sent"] == 1 , results;
-    assert results["distinctAppErrors"]["sent"] == 10 , results;
-    assert results["distinctAppErrorsOverTwoMinutes"]["sent"] == 20 , results;
-}
-
-test "prod early error handler drops extension errors and caps reports per page" {
+"""Write the early error handler a served page inlines to `work` and return its path."""
+def write_early_handler(work: Path) -> Path {
     import re;
-    import from jaclang.testing.requires { require_tool }
-    require_tool("node");
     scripts = re.findall(r"<script>(.*?)</script>", render_stub_page(), re.S);
     handlers = [
         s
@@ -277,20 +233,86 @@ test "prod early error handler drops extension errors and caps reports per page"
         if "/cl/__error__" in s
     ];
     assert len(handlers) == 1 , scripts;
-    with TemporaryDirectory() as tmp {
-        script = Path(tmp) / "early_error_handler.js";
-        script.write_text(handlers[0], encoding="utf-8");
-        results = run_error_budget_harness("inline", script);
+    script = work / "early_error_handler.js";
+    script.write_text(handlers[0], encoding="utf-8");
+    return script;
+}
+
+"""The budget every reporter holds a page to."""
+def assert_page_budget(results: dict[str, any]) {
+    for name in [
+        "extensionRejections",
+        "firefoxExtensionRejections",
+        "safariExtensionRejections",
+        "extensionStackWithUrlMessage"
+    ] {
+        assert results[name]["sent"] == 0 , (name, results[name]);
     }
-    assert results["extensionRejections"]["sent"] == 0 , results;
-    assert results["firefoxExtensionRejections"]["sent"] == 0 , results;
-    assert results["extensionScriptWithoutStack"]["sent"] == 0 , results;
+    # One report per distinct error, however often it is thrown.
+    assert results["identicalAppErrors"]["sent"] == 1 , results;
+    # A stack that passes through app code is ours to see.
     assert results["mixedStack"]["sent"] == 1 , results;
+    # At most 10 reports a minute, and the budget refills the next minute...
+    assert results["distinctAppErrors"]["sent"] == 10 , results;
+    assert results["distinctAppErrorsOverTwoMinutes"]["sent"] == 20 , results;
+    # ...up to 200 for the page, after which nothing new or repeated is sent.
+    assert results["distinctAppErrorsOverHalfAnHour"]["sent"] == 200 , results;
+}
+
+test "runtime reporter drops extension errors and caps reports per page" {
+    import from jaclang.testing.requires { require_tool }
+    require_tool("node");
+    with TemporaryDirectory() as tmp {
+        core = write_runtime_core(Path(tmp), "client_runtime_core");
+        results = run_error_budget_harness("runtime", [core]);
+    }
+    assert_page_budget(results);
+    assert results["extensionScriptWithoutStack"]["sent"] == 0 , results;
     assert results["appWindowError"]["sent"] == 1 , results;
-    # The early handler only covers the moments before the bundle loads, so it
-    # has a flat budget of 10 per page rather than a per-minute one.
-    assert results["identicalAppErrors"]["sent"] == 10 , results;
-    assert results["distinctAppErrorsOverTwoMinutes"]["sent"] == 10 , results;
+    first = results["identicalAppErrors"]["first"];
+    assert first["endpoint"] == "/cl/__error__";
+    assert first["message"] == "boom";
+    assert first["source"] == "unhandledrejection";
+}
+
+test "native runtime reporter holds the same per-page budget" {
+    import from jaclang.testing.requires { require_tool }
+    require_tool("node");
+    with TemporaryDirectory() as tmp {
+        core = write_runtime_core(Path(tmp), "client_react_core");
+        results = run_error_budget_harness("native", [core]);
+    }
+    assert_page_budget(results);
+    assert results["identicalAppErrors"]["first"]["source"] == "ErrorUtils";
+}
+
+test "prod early error handler holds the same per-page budget" {
+    import from jaclang.testing.requires { require_tool }
+    require_tool("node");
+    with TemporaryDirectory() as tmp {
+        results = run_error_budget_harness("inline", [write_early_handler(Path(tmp))]);
+    }
+    assert_page_budget(results);
+    assert results["extensionScriptWithoutStack"]["sent"] == 0 , results;
+    assert results["appWindowError"]["sent"] == 1 , results;
     # Once the runtime has installed its own handlers, the early one stands down.
     assert results["afterRuntimeHandlersInstalled"]["sent"] == 0 , results;
+}
+
+test "early handler and runtime share one budget across the handoff" {
+    import from jaclang.testing.requires { require_tool }
+    require_tool("node");
+    with TemporaryDirectory() as tmp {
+        work = Path(tmp);
+        core = write_runtime_core(work, "client_runtime_core");
+        results = run_error_budget_harness(
+            "handoff", [core, write_early_handler(work)]
+        );
+    }
+    # The early handler spends the first minute's 10 reports; the runtime takes
+    # over the same budget, so it sends nothing more until the next minute and
+    # never repeats an error the early handler already sent.
+    assert results["early"] == 10 , results;
+    assert results["sameMinute"] == 0 , results;
+    assert results["nextMinute"] == 10 , results;
 }

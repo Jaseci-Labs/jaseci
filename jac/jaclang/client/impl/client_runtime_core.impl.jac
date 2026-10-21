@@ -586,12 +586,18 @@ impl __jacIsExtensionUrl(url: str) -> bool {
 }
 
 impl __jacIsExtensionError(stack: str, filename: str = "") -> bool {
-    text: any = stack;
-    urls: any = text.match(RegExp("[a-z][a-z0-9+.-]*://[^\\s()]+", "gi"));
-    if not urls {
+    frame_urls: list[str] = [];
+    for line in stack.split("\n") {
+        text: any = line;
+        frame: any = text.match(__JAC_STACK_FRAME_URL_RE);
+        if frame {
+            frame_urls.append(frame[1] or frame[2]);
+        }
+    }
+    if len(frame_urls) == 0 {
         return __jacIsExtensionUrl(filename);
     }
-    for frame_url in urls {
+    for frame_url in frame_urls {
         if not __jacIsExtensionUrl(frame_url) {
             return False;
         }
@@ -607,7 +613,7 @@ impl __jacClaimErrorReport(message: str, stack: str) -> bool {
         setattr(globalThis, "__jacErrorReportBudget", budget);
     }
     key = f"{message}\n{stack}";
-    if budget.seen[key] {
+    if budget.seen[key] or budget.seenCount >= __JAC_ERROR_REPORTS_PER_PAGE {
         return False;
     }
     if now - budget.windowStart >= 60000 {
@@ -618,10 +624,8 @@ impl __jacClaimErrorReport(message: str, stack: str) -> bool {
         return False;
     }
     budget.sent += 1;
-    if budget.seenCount < __JAC_ERROR_REPORT_KEYS_MAX {
-        budget.seen[key] = True;
-        budget.seenCount += 1;
-    }
+    budget.seenCount += 1;
+    budget.seen[key] = True;
     return True;
 }
 
