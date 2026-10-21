@@ -172,7 +172,7 @@ impl apply_seo(
             (
                 d / name
                 for d in public_dirs
-                if (d / name).is_file()
+                if (d / name).is_file() and d.resolve() in (d / name).resolve().parents
             ),
             None
         );
