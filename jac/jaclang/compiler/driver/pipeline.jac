@@ -102,7 +102,6 @@ def require_typeshed_stubs -> None;
 glob IR_LOADS: list[str] = [
          'jaclang.compiler.symbol_utils',
          'jaclang.compiler.expr_keys',
-         'jaclang.runtime.scalars',
          'jaclang.compiler.type_registry',
          'jaclang.compiler.field_semantics',
          'jaclang.compiler.intrinsic_registry',
@@ -128,7 +127,6 @@ glob IR_LOADS: list[str] = [
          'jaclang.compiler.types.ts_decl_parser',
          'jaclang.compiler.symbol_utils',
          'jaclang.compiler.expr_keys',
-         'jaclang.runtime.scalars',
          'jaclang.compiler.type_registry',
          'jaclang.compiler.driver.bccache',
          'jaclang.compiler.frontend.codeinfo',
