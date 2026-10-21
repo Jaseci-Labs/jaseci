@@ -96,7 +96,7 @@ utils_path = "core/utils.jac"
 [dependencies]
 
 [byllm.model]
-default_model = "anthropic/claude-sonnet-5"
+default_model = "anthropic/claude-sonnet-5-5"
 
 [dependencies.npm]
 "@noble/hashes" = "^2.0.1"

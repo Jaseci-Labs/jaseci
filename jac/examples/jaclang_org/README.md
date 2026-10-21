@@ -73,7 +73,7 @@ desktop, and mobile.
 
 ## Optional AI
 
-Set `ANTHROPIC_API_KEY` in the server environment to enable the Sonnet 5
+Set `ANTHROPIC_API_KEY` in the server environment to enable the Sonnet 5.5
 model configured in `jac.toml`. No credential belongs in the workspace.
 The scoring service and CLI add an AI review with a summary, an evidenced
 strength, and a suggested next step. The numeric score stays deterministic.
