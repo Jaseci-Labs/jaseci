@@ -120,6 +120,21 @@ def:pub __jacReportError(
     componentStack: str = ""
 ) -> None;
 
+def __jacIsExtensionError(stack: str, filename: str = "") -> bool;
+
+def __jacIsExtensionUrl(url: str) -> bool;
+
+def __jacClaimErrorReport(message: str, stack: str) -> bool;
+
+glob __JAC_EXTENSION_URL_PREFIXES: list[str] = [
+         "chrome-extension://",
+         "moz-extension://",
+         "safari-web-extension://",
+         "safari-extension://"
+     ],
+     __JAC_ERROR_REPORTS_PER_MINUTE: int = 10,
+     __JAC_ERROR_REPORT_KEYS_MAX: int = 200;
+
 def:pub __jacInstallErrorHandlers -> None;
 
 def:pub ErrorFallback(error: any, resetErrorBoundary: any) -> JsxElement;

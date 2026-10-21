@@ -550,6 +550,11 @@ impl __jacReportError(
     componentStack: str = ""
 ) -> None {
     try {
+        stack_text = str(stack or "");
+        if __jacIsExtensionError(stack_text, str(url or ""))
+            or not __jacClaimErrorReport(str(message), stack_text) {
+            return;
+        }
         baseUrl = __getApiBaseUrl();
         fetch(
             f"{baseUrl}/cl/__error__",
@@ -569,6 +574,55 @@ impl __jacReportError(
             }
         );
     } except Exception {}
+}
+
+impl __jacIsExtensionUrl(url: str) -> bool {
+    for prefix in __JAC_EXTENSION_URL_PREFIXES {
+        if url.startswith(prefix) {
+            return True;
+        }
+    }
+    return False;
+}
+
+impl __jacIsExtensionError(stack: str, filename: str = "") -> bool {
+    text: any = stack;
+    urls: any = text.match(RegExp("[a-z][a-z0-9+.-]*://[^\\s()]+", "gi"));
+    if not urls {
+        return __jacIsExtensionUrl(filename);
+    }
+    for frame_url in urls {
+        if not __jacIsExtensionUrl(frame_url) {
+            return False;
+        }
+    }
+    return True;
+}
+
+impl __jacClaimErrorReport(message: str, stack: str) -> bool {
+    now = Date.now();
+    budget: any = globalThis.__jacErrorReportBudget;
+    if not budget {
+        budget = {"seen": {}, "seenCount": 0, "windowStart": now, "sent": 0};
+        setattr(globalThis, "__jacErrorReportBudget", budget);
+    }
+    key = f"{message}\n{stack}";
+    if budget.seen[key] {
+        return False;
+    }
+    if now - budget.windowStart >= 60000 {
+        budget.windowStart = now;
+        budget.sent = 0;
+    }
+    if budget.sent >= __JAC_ERROR_REPORTS_PER_MINUTE {
+        return False;
+    }
+    budget.sent += 1;
+    if budget.seenCount < __JAC_ERROR_REPORT_KEYS_MAX {
+        budget.seen[key] = True;
+        budget.seenCount += 1;
+    }
+    return True;
 }
 
 impl __jacInstallErrorHandlers -> None {
