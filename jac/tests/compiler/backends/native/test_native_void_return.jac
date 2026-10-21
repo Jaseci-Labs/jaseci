@@ -91,9 +91,9 @@ test "the returned expression is still evaluated for its effects" {
     addr = native_address(_eng, "run");
     assert addr != 0 , "'run' not found in the JIT engine";
     run = ctypes.CFUNCTYPE(ctypes.c_int64)(addr);
-    assert run() == 304 , (
-        "three `touch`-style calls and four discarded `bump()` results "
-        "(a `return bump()`, a nested def, parens, a lambda): n == 3, COUNTER == 4"
+    assert run() == 305 , (
+        "three `touch`-style calls and five `bump()` calls (a `return bump()`, a "
+        "nested def, parens, a lambda, a reassignment): n == 3, COUNTER == 5"
     );
 }
 
@@ -109,10 +109,13 @@ test "a caller using a None call result as a value refuses with E5092" {
     }
     assert not prog.errors_had , [str(e) for e in prog.errors_had];
     seams = [str(s) for s in coverage[os.path.realpath(path)]["seams"]];
-    for caller in ("caller", "method_caller", "str_caller") {
+    for (caller, refusal) in (
+        ("caller", "binding a void-typed value"),
+        ("method_caller", "binding a void-typed value"),
+        ("str_caller", "call returning None")
+    ) {
         assert any(
-            s.startswith(f"{caller}: [E5092]") and "call returning None" in s
-            for s in seams
-        ) , f"{caller} must refuse the None result it uses: {seams}";
+            s.startswith(f"{caller}: [E5092]") and refusal in s for s in seams
+        ) , (f"{caller} must refuse the None result it uses: {seams}");
     }
 }

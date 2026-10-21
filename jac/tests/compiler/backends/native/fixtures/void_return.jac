@@ -9,7 +9,8 @@ parse -- taking the whole module's codegen with it.
 `bump` is called from each of them so the side effect is observable: a return
 still has to evaluate its expression before discarding the value.
 `discard_forms`, `await_form` and `flow_form` drop a void call's result in
-every position that does so; they must all stay native.
+every position that does so, and `reassigned` stores it into a declared
+`object | None` slot as None; they must all stay native.
 """
 
 glob COUNTER: int = 0;
@@ -61,6 +62,12 @@ def flow_form {
     flow bump() ;
 }
 
+def reassigned -> (object | None) {
+    res: object | None = None;
+    res = bump();
+    return res;
+}
+
 def outer {
     def inner {
         bump();
@@ -78,10 +85,11 @@ def run -> int {
     free_fn();
     outer();
     discard_forms();
+    reassigned();
     return b.n * 100 + COUNTER;
 }
 
 with entry {
-    assert run() == 304;
+    assert run() == 305;
     print("ok");
 }

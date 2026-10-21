@@ -192,8 +192,8 @@ impl NaIRGenPass._void_call_value(
     while isinstance(up, (uni.AtomUnit, uni.AwaitExpr, uni.ConcurrentExpr)) {
         up = up.parent;
     }
-    if isinstance(up, uni.ExprStmt)
-        or isinstance(up, (uni.ReturnStmt, uni.LambdaExpr))
+    if isinstance(up, (uni.ExprStmt, uni.Assignment, uni.ReturnStmt))
+        or isinstance(up, uni.LambdaExpr)
         and isinstance(self.builder.function.return_value.type, ir.VoidType) {
         return value;
     }
