@@ -135,11 +135,6 @@ exclude = [
     # docstring/property style so diffs against llvmlite stay reviewable.
     "*/llvm/ir/*",
     "*/llvm/binding/*",
-    # separate-impls would move webgl's helper bodies into module-level impls,
-    # and client placement then stops inferring the module as client (its
-    # browser globals such as Math go Unknown). Kept inline until placement
-    # places an archetype's or function's impl with its declaration.
-    "jac/jaclang/client/webgl.jac",
 ]
 
 [byllm.model]

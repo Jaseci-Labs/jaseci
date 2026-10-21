@@ -2058,8 +2058,8 @@ impl NaIRGenPass._drop_member_of(owner: str) -> (uni.Ability | None) {
     if arch is None or arch.body is None {
         return None;
     }
-    for ability in arch.get_all_sub_nodes(uni.Ability) {
-        if ability.find_parent_of_type(uni.Archetype) is arch
+    for ability in arch.element_sub_nodes(uni.Ability) {
+        if ability.enclosing_decl(uni.Archetype) is arch
             and ability.name_ref is not None
             and ability.name_ref.sym_name == "drop" {
             return ability;

@@ -2272,19 +2272,7 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
             buf = self._stack_entry_alloca(buf_type, "input.buf");
             buf_ptr = self.builder.bitcast(buf, i8p, name="input.ptr");
 
-            stdin_name = "__stdinp"
-                if active_host().native_fact(FACT_OS, "") == "Darwin"
-                else "stdin";
-            if stdin_name not in self.llvm_module.globals {
-                stdin_type = i8p;
-                stdin_global = ir.GlobalVariable(
-                    self.llvm_module, stdin_type, name=stdin_name
-                );
-                stdin_global.linkage = "external";
-            }
-            stdin_var = self.llvm_module.globals[stdin_name];
-            assert isinstance(stdin_var, ir.GlobalVariable);
-            stdin_val = self.builder.load(stdin_var, name="stdin.val");
+            stdin_val = self._emit_stdio_handle(0, "stdin.val");
             fgets = self._get_or_declare_extern(
                 "fgets", i8p, [i8p, ir.IntType(32), i8p]
             );
@@ -3614,7 +3602,7 @@ impl NaIRGenPass._flow_future_licensed(nd: uni.ConcurrentExpr) -> (uni.Name | No
     if h.sym is None {
         return None;
     }
-    _fn = asgn.find_parent_of_type(uni.Ability);
+    _fn = asgn.enclosing_decl(uni.Ability);
     _scope = _fn if _fn is not None else asgn.find_parent_of_type(uni.ModuleCode);
     if _scope is None {
         return None;
@@ -3625,7 +3613,7 @@ impl NaIRGenPass._flow_future_licensed(nd: uni.ConcurrentExpr) -> (uni.Name | No
         or asgn.find_parent_of_type(uni.IterForStmt)
     );
     _waits = 0;
-    for use in _scope.get_all_sub_nodes(uni.Name) {
+    for use in _scope.element_sub_nodes(uni.Name) {
         if use.sym is not h.sym or use is h {
             continue;
         }
@@ -3657,9 +3645,7 @@ impl NaIRGenPass._try_flow_future(nd: uni.ConcurrentExpr) -> (ir.Value | None) {
     }
     _par_ok = (self.module.gen.nogc_enforced and self._gc_mode() == "none")
         or (self._gc_mode() == "rc" and not self._rc_debug_codegen);
-    if not _par_ok
-        or "wasm" in str(self.llvm_module.triple)
-        or self._gen_ctx is not None {
+    if not _par_ok or self._target_is_wasm() or self._gen_ctx is not None {
         return None;
     }
     i64 = ir.IntType(64);

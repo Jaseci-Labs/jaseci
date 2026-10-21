@@ -65,7 +65,6 @@ def element_display_name(top: UniNode) -> str;
 
 def _client_emitted_top(stmt: UniNode, extra_bound: set[str]) -> bool;
 
-def _module_top_element(mod: Module, nd: UniNode) -> (UniNode | None);
 
 def client_bridged_endpoint(mod: Module, top: UniNode) -> bool;
 

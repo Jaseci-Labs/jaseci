@@ -93,7 +93,29 @@ def _copy_for_compaction(model: BaseLLM) -> BaseLLM;
 
 glob _CHARS_PER_TOKEN: int = 4,
      _TAIL_BUDGET_RATIO: float = 0.25,
-     _MIN_SLICE_RATIO: float = 0.05;
+     _MIN_SLICE_RATIO: float = 0.05,
+     _REASONING_MIN_CHARS: int = 200,
+     _PASS_THROUGH_PARAMS: tuple[str, ...] = (
+         "reasoning_effort",
+         "thinking",
+         "extra_body"
+     );
+
+
+def _delta_reasoning(chunk: object) -> str;
+
+
+def _reasoning_chars(msg: any) -> int;
+
+
+def _reasoning_events(
+    mt_run: MTRuntime, iteration: int
+) -> Generator[StreamEvent, None, None];
+
+
+def _answer_events(
+    mt_run: MTRuntime, token: str, iteration: int
+) -> Generator[StreamEvent, None, None];
 
 
 def _message_role(msg: dict[str, any]) -> str;
@@ -288,6 +310,8 @@ impl BaseLLM._compact_messages(
         return False;
     }
     mt_run.messages = compacted;
+    mt_run._llm_hook_cursor = 0;
+    mt_run._llm_hook_compacted = True;
     mt_run._compactions.append(
         {
             "reason": reason,
@@ -497,6 +521,8 @@ impl BaseLLM._typed_retry_reset(
     output: str
 ) -> None {
     mt_run.messages = list(base_msgs);
+    mt_run._llm_hook_cursor = 0;
+    mt_run._llm_hook_compacted = True;
     mt_run._scaffolding_ids = list(base_scaffolding);
     mt_run._has_final_output = False;
     mt_run._final_output = None;
@@ -907,6 +933,11 @@ impl BaseLLM.make_model_params(mt_run: MTRuntime) -> dict[str, any] {
         }
     }
 
+    first = messages[0] if messages else None;
+
+    mt_run._sent_system = dict(first)
+        if isinstance(first, dict) and first.get("role") == "system"
+        else None;
     if _is_prompt_caching_eligible(self.model_name) {
         (messages, tools) = _apply_prompt_caching(messages, tools);
     }
@@ -930,6 +961,13 @@ impl BaseLLM.make_model_params(mt_run: MTRuntime) -> dict[str, any] {
 
     if "tool_choice" in mt_run.call_params {
         params["tool_choice"] = mt_run.call_params["tool_choice"];
+    }
+
+    for key in _PASS_THROUGH_PARAMS {
+        value = self.call_params.get(key, _call_params_config.get(key));
+        if value is not None {
+            params[key] = value;
+        }
     }
 
     params = inject_schema_hint(params);
@@ -1077,6 +1115,7 @@ impl BaseLLM.dispatch_no_streaming(mt_run: MTRuntime) -> CompletionResult {
     usage_data = response.get("usage", {});
     _attach_call_cost(usage_data, self.model_name, response);
     _record_usage(mt_run, usage_data, actual_model, finish_reason=finish_reason);
+    _notify_llm_call(mt_run);
     _raise_if_empty_truncation(finish_reason, output_content, tool_calls_list);
     output_value = mt_run.parse_response(output_content)
         if not tool_calls_list
@@ -1118,12 +1157,31 @@ impl BaseLLM.dispatch_streaming(mt_run: MTRuntime) -> Generator[str, None, None]
     attempt = 0;
     usage_base = len(mt_run._usage_history);
     stream_model: str = self.model_name;
+    events = bool(mt_run.call_params.get("logging", False));
     while True {
         finish_reason = "";
         produced = False;
+        mt_run._last_stream_chunks = [];
+        reasoning_pending = "";
         try {
             response = self.model_call_with_stream(params);
             for chunk in response {
+                if mt_run._call_kind == "final_answer_restream" {
+                    mt_run._last_stream_chunks.append(chunk);
+                }
+                if events {
+                    reasoning_pending += _delta_reasoning(chunk);
+                    answering = bool(
+                        chunk?.choices and chunk?.choices?[0]?.delta?.content
+                    );
+                    if reasoning_pending
+                        and (
+                            len(reasoning_pending) >= _REASONING_MIN_CHARS or answering
+                        ) {
+                        mt_run._reasoning_deltas.append(reasoning_pending);
+                        reasoning_pending = "";
+                    }
+                }
                 stream_model = chunk?.model or stream_model;
                 if chunk?.choices and chunk?.choices?[0]?.finish_reason {
                     finish_reason = str(chunk?.choices?[0]?.finish_reason);
@@ -1141,6 +1199,10 @@ impl BaseLLM.dispatch_streaming(mt_run: MTRuntime) -> Generator[str, None, None]
                     produced = produced or bool(str(delta?.content or "").strip());
                     yield delta?.content or "";
                 }
+            }
+            if reasoning_pending {
+                mt_run._reasoning_deltas.append(reasoning_pending);
+                yield "";
             }
             break;
         } except Exception as e {
@@ -1173,12 +1235,15 @@ impl BaseLLM.dispatch_streaming_with_tools(
     params.pop("api_key", None);
     chunks: list[any] = [];
     content_buf = "";
+    reasoning_buf = "";
     no_stream = False;
     finish_reason = "";
     attempt = 0;
     while True {
         chunks = [];
         content_buf = "";
+        reasoning_buf = "";
+        reasoning_pending = "";
 
         mt_run._tool_arg_deltas = [];
         settings = _tool_stream_settings(mt_run);
@@ -1212,6 +1277,21 @@ impl BaseLLM.dispatch_streaming_with_tools(
                         );
                     }
                 }
+                delta_reasoning = _delta_reasoning(chunk);
+                if delta_reasoning {
+                    reasoning_buf += delta_reasoning;
+                    reasoning_pending += delta_reasoning;
+                }
+                if reasoning_pending
+                    and (
+                        len(reasoning_pending) >= _REASONING_MIN_CHARS
+                        or delta_content
+                        or _tool_call_fragments(chunk)
+                    ) {
+                    mt_run._reasoning_deltas.append(reasoning_pending);
+                    reasoning_pending = "";
+                    yield "";
+                }
                 if delta_content {
                     content_buf += str(delta_content);
                     yield str(delta_content);
@@ -1221,6 +1301,10 @@ impl BaseLLM.dispatch_streaming_with_tools(
             }
             if stream_args {
                 coalescer.flush();
+            }
+            if reasoning_pending {
+                mt_run._reasoning_deltas.append(reasoning_pending);
+                yield "";
             }
             break;
         } except NotImplementedError {
@@ -1260,6 +1344,9 @@ impl BaseLLM.dispatch_streaming_with_tools(
     }
     if message is None {
         message = {"role": "assistant", "content": content_buf};
+        if reasoning_buf {
+            message["reasoning_content"] = reasoning_buf;
+        }
     }
 
     has_native_tool_calls = bool((message or {}).get("tool_calls"));
@@ -1284,6 +1371,7 @@ impl BaseLLM.dispatch_streaming_with_tools(
         if not tool_calls_list
         else output_content;
     _record_usage(mt_run, usage_data, actual_model, finish_reason=finish_reason);
+    _notify_llm_call(mt_run);
     out.append(
         CompletionResult(
             output=output_value,
@@ -1343,6 +1431,7 @@ impl BaseLLM.adispatch_no_streaming(mt_run: MTRuntime) -> CompletionResult {
     usage_data = response.get("usage", {});
     _attach_call_cost(usage_data, self.model_name, response);
     _record_usage(mt_run, usage_data, actual_model, finish_reason=finish_reason);
+    _notify_llm_call(mt_run);
     _raise_if_empty_truncation(finish_reason, output_content, tool_calls_list);
     output_value = mt_run.parse_response(output_content)
         if not tool_calls_list
@@ -1589,9 +1678,30 @@ impl BaseLLM._stream_final_answer(
         }
 
         if accumulated {
-            mt_run.add_message(
-                Message(role=MessageRole.ASSISTANT, content=accumulated)
-            );
+            final: dict[str, any] = {"role": "assistant", "content": accumulated};
+            try {
+                rebuilt = _rebuild_stream_chunks(mt_run._last_stream_chunks, None)
+                    if mt_run._last_stream_chunks
+                    else None;
+                if rebuilt {
+                    final = coerce_message_dict(
+                        rebuilt.get("choices", [])[0].get("message")
+                    );
+                    final["content"] = accumulated;
+                    final.pop("tool_calls", None);
+                }
+            } except Exception as e {
+                logger.debug(f"final answer rebuild failed, keeping the text: {e}");
+                reasoning = "".join(
+                    _delta_reasoning(c) for c in mt_run._last_stream_chunks
+                );
+                if reasoning {
+                    final["reasoning_content"] = reasoning;
+                }
+            }
+            mt_run._last_stream_chunks = [];
+            mt_run.add_message(final);
+            _notify_llm_call(mt_run);
         }
     }
 }
@@ -1642,9 +1752,7 @@ impl BaseLLM._yield_recovery_result(
     yield StreamEvent(event_type="steps_done", data={"iterations": iter_count});
     if finish_found {
         for token in self._stream_final_answer(mt_run, fallback=committed) {
-            if token {
-                yield StreamEvent(event_type="chunk", data={"content": token});
-            }
+            yield from _answer_events(mt_run, token, iter_count);
         }
     } elif recovery_resp.output {
         yield StreamEvent(
@@ -1672,9 +1780,7 @@ impl BaseLLM._stream_steps(mt_run: MTRuntime) -> Generator[StreamEvent, None, No
                 _seen_resets = mt_run._stream_reset_count;
                 yield StreamEvent(event_type="stream_reset", data={"scope": "answer"});
             }
-            if token {
-                yield StreamEvent(event_type="chunk", data={"content": token});
-            }
+            yield from _answer_events(mt_run, token, 0);
         }
     } else {
         max_iters = (
@@ -1729,11 +1835,7 @@ impl BaseLLM._stream_steps(mt_run: MTRuntime) -> Generator[StreamEvent, None, No
                         }
                     );
                     for token in self._stream_final_answer(mt_run) {
-                        if token {
-                            yield StreamEvent(
-                                event_type="chunk", data={"content": token}
-                            );
-                        }
+                        yield from _answer_events(mt_run, token, iter_count);
                     }
                     yield from _usage_step_events(mt_run, _usage_base);
                     break;
@@ -1746,9 +1848,7 @@ impl BaseLLM._stream_steps(mt_run: MTRuntime) -> Generator[StreamEvent, None, No
                     data={"iterations": iter_count - 1, "reason": "max_iterations"}
                 );
                 for token in self._stream_final_answer(mt_run) {
-                    if token {
-                        yield StreamEvent(event_type="chunk", data={"content": token});
-                    }
+                    yield from _answer_events(mt_run, token, iter_count);
                 }
                 yield from _usage_step_events(mt_run, _usage_base);
                 break;
@@ -1768,6 +1868,7 @@ impl BaseLLM._stream_steps(mt_run: MTRuntime) -> Generator[StreamEvent, None, No
                             data={"scope": "thought", "iteration": iter_count}
                         );
                     }
+                    yield from _reasoning_events(mt_run, iter_count);
                     while mt_run._tool_arg_deltas {
                         _d = mt_run._tool_arg_deltas.pop(0);
                         _emitted_deltas = True;
@@ -1971,11 +2072,7 @@ impl BaseLLM._stream_steps(mt_run: MTRuntime) -> Generator[StreamEvent, None, No
                         for token in self._stream_final_answer(
                             mt_run, fallback=str(final_output or "")
                         ) {
-                            if token {
-                                yield StreamEvent(
-                                    event_type="chunk", data={"content": token}
-                                );
-                            }
+                            yield from _answer_events(mt_run, token, iter_count);
                         }
                         yield from _usage_step_events(mt_run, _usage_base);
                     }
@@ -2234,24 +2331,28 @@ impl _usage_int(usage: any, key: str) -> int {
     }
     val = usage.get(key) if isinstance(usage, dict) else getattr(usage, key, None);
     if val is None {
-        detail_key = (
-            "cached_tokens"
-                if key == "cache_read_input_tokens"
-                else "cache_creation_tokens"
-                    if key == "cache_creation_input_tokens"
-                    else None
+        detail: tuple[str, str] | None = {
+            "cache_read_input_tokens": ("prompt_tokens_details", "cached_tokens"),
+            "cache_creation_input_tokens": (
+                "prompt_tokens_details",
+                "cache_creation_tokens"
+            ),
+            "reasoning_tokens": ("completion_tokens_details", "reasoning_tokens")
+        }.get(
+            key
         );
-        if detail_key {
-            ptd = (
-                usage.get("prompt_tokens_details")
+        if detail is not None {
+            (details_name, detail_key) = detail;
+            details = (
+                usage.get(details_name)
                     if isinstance(usage, dict)
-                    else usage?.prompt_tokens_details
+                    else getattr(usage, details_name, None)
             );
-            if ptd is not None {
+            if details is not None {
                 val = (
-                    ptd.get(detail_key)
-                        if isinstance(ptd, dict)
-                        else getattr(ptd, detail_key, None)
+                    details.get(detail_key)
+                        if isinstance(details, dict)
+                        else getattr(details, detail_key, None)
                 );
             }
         }
@@ -2405,6 +2506,7 @@ impl _record_usage(
     record["cache_creation_input_tokens"] = _usage_int(
         usage_obj, "cache_creation_input_tokens"
     );
+    record["reasoning_tokens"] = _usage_int(usage_obj, "reasoning_tokens");
     mt_run._usage_history.append(record);
 }
 
@@ -2488,7 +2590,57 @@ impl _compaction_line(msg: any) -> str {
 
 
 impl _estimate_tokens(messages: list[any]) -> int {
-    return sum(len(_compaction_line(msg)) for msg in messages) // _CHARS_PER_TOKEN;
+    return sum(len(_compaction_line(msg)) + _reasoning_chars(msg) for msg in messages)
+        // _CHARS_PER_TOKEN;
+}
+
+
+impl _reasoning_chars(msg: any) -> int {
+    if not isinstance(msg, dict) {
+        return 0;
+    }
+    total = len(str(msg.get("reasoning_content") or ""));
+    for block in msg.get("thinking_blocks") or [] {
+        if isinstance(block, dict) {
+            total += len(str(block.get("thinking") or ""));
+        }
+    }
+    return total;
+}
+
+
+impl _delta_reasoning(chunk: object) -> str {
+    if isinstance(chunk, dict) {
+        choices: any = chunk.get("choices") or [];
+        delta: any = (choices[0].get("delta") or {}) if choices else {};
+        return str(delta.get("reasoning_content") or "");
+    }
+    if chunk?.choices and chunk?.choices?[0]?.delta {
+        return str(chunk?.choices?[0]?.delta?.reasoning_content or "");
+    }
+    return "";
+}
+
+
+impl _reasoning_events(
+    mt_run: MTRuntime, iteration: int
+) -> Generator[StreamEvent, None, None] {
+    while mt_run._reasoning_deltas {
+        yield StreamEvent(
+            event_type="reasoning",
+            data={"content": mt_run._reasoning_deltas.pop(0), "iteration": iteration}
+        );
+    }
+}
+
+
+impl _answer_events(
+    mt_run: MTRuntime, token: str, iteration: int
+) -> Generator[StreamEvent, None, None] {
+    yield from _reasoning_events(mt_run, iteration);
+    if token {
+        yield StreamEvent(event_type="chunk", data={"content": token});
+    }
 }
 
 

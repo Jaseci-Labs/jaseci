@@ -2799,16 +2799,16 @@ impl NaIRGenPass._codegen_plain_trailer(nd: uni.AtomTrailer) -> (ir.Value | None
                     return self._emit_sys_argv();
                 }
                 if right_name == "platform" {
-                    return self._make_global_string(
-                        active_host().native_fact(FACT_OS, "").lower()
-                    );
+                    return self._emit_platform_name();
                 }
                 if right_name == "maxsize" {
                     return ir.Constant(ir.IntType(64), 0x7FFFFFFFFFFFFFFF);
                 }
                 if right_name == "byteorder" {
-                    import sys as _sys;
-                    return self._make_global_string(_sys.byteorder);
+                    layout = str(self.llvm_module.data_layout or "");
+                    return self._make_global_string(
+                        "big" if layout.startswith("E") else "little"
+                    );
                 }
                 if right_name == "stdout" or right_name == "stderr" {
                     return self._emit_sys_stream(right_name);
@@ -3374,7 +3374,7 @@ impl NaIRGenPass._ct_type_param_owner(nd: uni.Name) -> (str | None) {
     if not (isinstance(owner, uni.TypeParam) and owner.is_comptime) {
         return None;
     }
-    arch = owner.find_parent_of_type(uni.Archetype);
+    arch = owner.enclosing_decl(uni.Archetype);
     return self._arch_key(arch) if arch is not None else None;
 }
 

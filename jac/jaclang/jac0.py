@@ -2195,6 +2195,9 @@ class Parser:
         self._expect(TT.NAME, "impl")
         is_static = False
         target = self._collect_dotted()
+        if self._match(TT.LBRACKET):
+            self._collect_until(TT.RBRACKET)
+            self._expect(TT.RBRACKET)
         params: list[Param] = []
         if self._at(TT.LPAREN):
             self._advance()

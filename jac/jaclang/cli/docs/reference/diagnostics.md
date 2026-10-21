@@ -553,6 +553,7 @@ An app's walkers and `def:pub` functions form its public boundary. Other declara
 | `E2011` | Parameter count mismatch for ability {name} |
 | `E2012` | From the declaration of {name} |
 | `E2013` | Parameter name mismatch: declaration has {decl_name} but implementation has {impl_name} |
+| `E2030` | Type parameter mismatch: declaration has [{decl_params}] but implementation has [{impl_params}] |
 | `E2087` | '{name}' is declared but never implemented |
 
 ### Project Wiring (archwire.jac)

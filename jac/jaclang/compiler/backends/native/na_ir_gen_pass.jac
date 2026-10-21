@@ -9,13 +9,7 @@ glob GEN_PENDING_FLAG_OFF: int = 8,
 
 def _jc_optional_payload(semantic: (TypeBase | None)) -> (TypeBase | None);
 
-def _restore_entry[V](table: dict[str, V], key: str, prior: (V | None)) {
-    if prior is None {
-        table.pop(key, None);
-    } else {
-        table[key] = prior;
-    }
-}
+def _restore_entry[V](table: dict[str, V], key: str, prior: (V | None));
 
 obj NativeFinalizer {
     has body: uni.FinallyStmt | None,
@@ -926,8 +920,6 @@ walker NaIRGenPass(CompilerPass) {
     def _c_lent_address(arg: uni.UnaryExpr, elem: any) -> (ir.Value | None);
     def _final_variant_value(nd: uni.Name, value: uni.Expr) -> (uni.Expr | None);
     def _final_scalar_value(nd: uni.Name, value_type: ir.Type) -> (ir.Value | None);
-    def _va_abi -> str;
-    def _va_storage_type(abi: str) -> ir.Type;
     def _c_va_start(nd: uni.UniNode) -> (ir.Value | None);
     def _c_va_arg(nd: uni.FuncCall, recv: uni.Expr) -> (ir.Value | None);
     def _c_vararg_value(val: ir.Value, arg: uni.Expr) -> (ir.Value | None);
@@ -1959,7 +1951,24 @@ walker NaIRGenPass(CompilerPass) {
         nd: uni.FuncCall, func_name: str, mod_qual: (str | None)
     ) -> bool;
 
-    def _target_fuses_fp -> bool;
+    def _target_is_wasm -> bool;
+    def _floor_call(
+        name: str,
+        ret: ir.Type,
+        args: list[ir.Value],
+        call_name: str = "",
+        builder: (ir.IRBuilder | None) = None
+    ) -> ir.Value;
+
+    def _emit_stdio_handle(
+        fd: int, name: str, builder: (ir.IRBuilder | None) = None
+    ) -> ir.Value;
+
+    def _emit_platform_name -> ir.Value;
+    def _emit_stat_fields(
+        path: ir.Value, prefix: str
+    ) -> tuple[ir.Value, ir.Value, ir.Value, ir.Value, ir.Value];
+
     def _emit_fmadd(a: ir.Value, b: ir.Value, c: ir.Value) -> ir.Value;
     def _fp_fabs(v: ir.Value) -> ir.Value;
     def _fp_copysign(mag: ir.Value, sgn: ir.Value) -> ir.Value;
@@ -3449,4 +3458,12 @@ walker NaIRGenPass(CompilerPass) {
     def _decl_field_llvm_types(arch_name: str) -> (dict[str, ir.Type] | None);
     def _lower_view_container(t: any) -> (ir.Type | None);
     def _program_has_subclasses(arch_name: str) -> bool;
+}
+
+impl _restore_entry[V](table: dict[str, V], key: str, prior: (V | None)) {
+    if prior is None {
+        table.pop(key, None);
+    } else {
+        table[key] = prior;
+    }
 }
