@@ -34,6 +34,11 @@ def:pub app -> JsxElement {
         a = b = 7;
     }
 
+    def middle_star {
+        (a, *mid, b) = items;
+        a = len(mid);
+    }
+
     return
         <div>
             <span>{a}</span>
@@ -46,6 +51,7 @@ def:pub app -> JsxElement {
                     star();
                     nested();
                     chained();
+                    middle_star();
                 }}
             >
                 go

@@ -612,8 +612,19 @@ walker EsastGenPass(TreePass) {
     ) -> list[es.Statement];
 
     def _unpack_pattern(
-        expr: uni.Expr, prefix: str, leaves: list[tuple[uni.Expr, str]]
+        expr: uni.Expr,
+        prefix: str,
+        leaves: list[tuple[uni.Expr, str]],
+        trailing: list[es.VariableDeclarator]
     ) -> es.Pattern;
+
+    def _unpack_bind(
+        target: uni.Expr,
+        source: es.Expression,
+        prefix: str,
+        leaves: list[tuple[uni.Expr, str]],
+        trailing: list[es.VariableDeclarator]
+    ) -> None;
 
     def _resolve_source_module(nd: uni.Import) -> (uni.Module | None);
     def _resolve_call_ability(nd: uni.FuncCall) -> (uni.Ability | None);

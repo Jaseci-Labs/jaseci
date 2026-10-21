@@ -194,6 +194,22 @@ def assert_state_unpack(js: str, backend_name: str) {
     for name in ("a", "b") {
         assert_written(js[chained.end():], name, chained.group(1), backend_name);
     }
+    assert re.search(r"\.\.\.\w+\s*,", js) is None , (
+        f"[{backend_name}] a rest element must be the last element:\n{js}"
+    );
+    middle = re.search(
+        r"const \[(__jac_unpack_\d+)_0, \.\.\.\1_rest0\] = __jacS_items\.val,\s*"
+        r"\1_1 = \1_rest0\.slice\(0, \1_rest0\.length - 1\),\s*"
+        r"\1_2 = \1_rest0\[\1_rest0\.length - 1\];",
+        js
+    );
+    assert middle is not None , (
+        f"[{backend_name}] `(a, *mid, b)` must split the tail after the rest:\n{js}"
+    );
+    temp = middle.group(1);
+    for (i, name) in enumerate(["a", "mid", "b"]) {
+        assert_written(js[middle.end():], name, f"{temp}_{i}", backend_name);
+    }
 }
 
 test "react routes tuple and chained writes to state through setters" {

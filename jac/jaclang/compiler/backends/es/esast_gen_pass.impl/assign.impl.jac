@@ -445,15 +445,17 @@ impl EsastGenPass._lower_state_assignment(
         );
     }
     leaves: list[tuple[uni.Expr, str]] = [];
+    trailing: list[es.VariableDeclarator] = [];
     for target in here.target {
         if isinstance(target, unpackable) {
-            pattern = self._unpack_pattern(target, bound, leaves);
+            pattern = self._unpack_pattern(target, bound, leaves, trailing);
             source = es.Identifier(name=bound) if shared else value;
             declarators.append(es.VariableDeclarator(id=pattern, init=source));
         } else {
             leaves.append((target, bound));
         }
     }
+    declarators.extend(trailing);
     decl = es.VariableDeclaration(declarations=declarators, kind='const');
     stmts: list[es.Statement] = [self.sync_loc(decl, jac_node=here)];
     for (leaf, temp) in leaves {
@@ -471,20 +473,78 @@ impl EsastGenPass._lower_state_assignment(
 }
 
 impl EsastGenPass._unpack_pattern(
-    expr: uni.Expr, prefix: str, leaves: list[tuple[uni.Expr, str]]
+    expr: uni.Expr,
+    prefix: str,
+    leaves: list[tuple[uni.Expr, str]],
+    trailing: list[es.VariableDeclarator]
 ) -> es.Pattern {
     if isinstance(expr, (uni.TupleVal, uni.ListVal)) {
-        elements = [
-            self._unpack_pattern(v, prefix, leaves)
-                if isinstance(v, uni.Expr)
-                else None for v in expr.values
+        values = [
+            v
+            for v in expr.values
+            if isinstance(v, uni.Expr)
         ];
+        star = -1;
+        for (i, v) in enumerate(values) {
+            if isinstance(v, uni.UnaryExpr) and v.op.name == Tok.STAR_MUL.value {
+                star = i;
+            }
+        }
+        if star < 0 or star == len(values) - 1 {
+            elements = [
+                self._unpack_pattern(v, prefix, leaves, trailing) for v in values
+            ];
+            return self.sync_loc(es.ArrayPattern(elements=elements), jac_node=expr);
+        }
+        elements = [
+            self._unpack_pattern(v, prefix, leaves, trailing) for v in values[:star]
+        ];
+        rest = f"{prefix}_rest{len(trailing)}";
+        elements.append(es.RestElement(argument=es.Identifier(name=rest)));
+        after = len(values) - star - 1;
+        star_node = cast(uni.UnaryExpr, values[star]);
+        self._unpack_bind(
+            star_node.operand,
+            es.RawCode(code=f"{rest}.slice(0, {rest}.length - {after})"),
+            prefix,
+            leaves,
+            trailing
+        );
+        for (j, v) in enumerate(values[star + 1:]) {
+            self._unpack_bind(
+                v,
+                es.RawCode(code=f"{rest}[{rest}.length - {after - j}]"),
+                prefix,
+                leaves,
+                trailing
+            );
+        }
         return self.sync_loc(es.ArrayPattern(elements=elements), jac_node=expr);
     }
     if isinstance(expr, uni.UnaryExpr) and expr.op.name == Tok.STAR_MUL.value {
-        inner = self._unpack_pattern(expr.operand, prefix, leaves);
+        inner = self._unpack_pattern(expr.operand, prefix, leaves, trailing);
         return self.sync_loc(es.RestElement(argument=inner), jac_node=expr);
     }
     leaves.append((expr, f"{prefix}_{len(leaves)}"));
     return self.sync_loc(es.Identifier(name=leaves[-1][1]), jac_node=expr);
+}
+
+impl EsastGenPass._unpack_bind(
+    target: uni.Expr,
+    source: es.Expression,
+    prefix: str,
+    leaves: list[tuple[uni.Expr, str]],
+    trailing: list[es.VariableDeclarator]
+) -> None {
+    if isinstance(target, (uni.TupleVal, uni.ListVal)) {
+        slot = len(trailing);
+        trailing.append(es.VariableDeclarator(id=es.Identifier(name='_'), init=source));
+        pattern = self._unpack_pattern(target, prefix, leaves, trailing);
+        trailing[slot] = es.VariableDeclarator(id=pattern, init=source);
+        return;
+    }
+    leaves.append((target, f"{prefix}_{len(leaves)}"));
+    trailing.append(
+        es.VariableDeclarator(id=es.Identifier(name=leaves[-1][1]), init=source)
+    );
 }
