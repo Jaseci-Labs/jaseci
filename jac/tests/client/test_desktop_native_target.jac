@@ -808,3 +808,103 @@ test "a rebooted embedded host cleans up on its second leave" {
         }
     }
 }
+
+test "the last embedded user holds the exclusive lock through cluster stop" {
+    import fcntl;
+    import os;
+    import from tempfile { TemporaryDirectory }
+    import from unittest.mock { patch }
+    import from jaclang.client.targets.desktop.native.host_boot {
+        _EMBEDDED_LOCKS,
+        _EMBEDDED_STOPPED,
+        _embedded_user_lock_path,
+        _join_embedded_store,
+        _stop_embedded_store
+    }
+    with TemporaryDirectory() as tmp {
+        path = _embedded_user_lock_path(tmp);
+        attempts: list[bool] = [];
+        def _probe_during_stop(home: str) {
+            probe = open(path, "a");
+            acquired = False;
+            try {
+                fcntl.flock(probe.fileno(), fcntl.LOCK_SH | fcntl.LOCK_NB);
+                acquired = True;
+            } except BlockingIOError {
+                acquired = False;
+            } finally {
+                probe.close();
+            }
+            attempts.append(acquired);
+        }
+        with patch(
+            "jaclang.data.pgembed.stop_cluster", side_effect=_probe_during_stop
+        ) {
+            _EMBEDDED_STOPPED.discard(tmp);
+            _join_embedded_store(tmp);
+            _stop_embedded_store(tmp);
+            assert attempts == [False] , "new instances must wait until the old cluster stops";
+            assert tmp not in _EMBEDDED_LOCKS;
+            _EMBEDDED_STOPPED.discard(tmp);
+        }
+    }
+}
+
+test "a failed embedded boot releases its store lock" {
+    import json;
+    import os;
+    import from tempfile { TemporaryDirectory }
+    import from unittest.mock { patch }
+    import jaclang.client.targets.desktop.native.host_boot as host_boot;
+    with TemporaryDirectory() as data_dir {
+        prior_home = os.environ.get("JAC_PG_HOME");
+        prior_dist = os.environ.get("JAC_PG_DIST");
+        prior_data = os.environ.get("JAC_DATA_PATH");
+        os.environ["JAC_DATA_PATH"] = data_dir;
+        os.environ["JAC_PG_HOME"] = "/prior/pg-home";
+        os.environ["JAC_PG_DIST"] = "/prior/pg-dist";
+        host_boot._EMBEDDED_STOPPED.discard(data_dir);
+        failed = False;
+        try {
+            with patch.object(
+                host_boot, "_apply_extra_deps", side_effect=RuntimeError("boot failed")
+            ) {
+                with patch("jaclang.data.pgembed.stop_cluster"), patch(
+                    "atexit.register"
+                ) {
+                    try {
+                        host_boot.boot(json.dumps({"backend": "embedded"}));
+                    } except RuntimeError as e {
+                        failed = True;
+                        assert "boot failed" in str(e);
+                    }
+                }
+            }
+            assert failed , "the injected boot failure must propagate";
+            assert data_dir not in host_boot._EMBEDDED_LOCKS , "failed boot must release its lock";
+            assert os.environ["JAC_PG_HOME"] == "/prior/pg-home";
+            assert os.environ["JAC_PG_DIST"] == "/prior/pg-dist";
+        } finally {
+            handle = host_boot._EMBEDDED_LOCKS.pop(data_dir, None);
+            if handle is not None {
+                handle.close();
+            }
+            host_boot._EMBEDDED_STOPPED.discard(data_dir);
+            if prior_data is None {
+                os.environ.pop("JAC_DATA_PATH", None);
+            } else {
+                os.environ["JAC_DATA_PATH"] = prior_data;
+            }
+            if prior_home is None {
+                os.environ.pop("JAC_PG_HOME", None);
+            } else {
+                os.environ["JAC_PG_HOME"] = prior_home;
+            }
+            if prior_dist is None {
+                os.environ.pop("JAC_PG_DIST", None);
+            } else {
+                os.environ["JAC_PG_DIST"] = prior_dist;
+            }
+        }
+    }
+}

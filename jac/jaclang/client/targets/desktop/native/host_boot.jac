@@ -320,10 +320,11 @@ impl _stop_embedded_store(home: str) -> None {
     }
     _EMBEDDED_STOPPED.add(home);
     handle = _EMBEDDED_LOCKS.pop(home, None);
+    last = True;
     if handle is not None {
         last = _holds_last_embedded_user(handle);
-        handle.close();
         if not last {
+            handle.close();
             _leave_embedded_env();
             return;
         }
@@ -333,8 +334,12 @@ impl _stop_embedded_store(home: str) -> None {
         stop_cluster(_embedded_cluster_dir(home));
     } except Exception as e {
         sys.stderr.write("host_boot: embedded postgres stop failed: " + str(e) + "\n");
+    } finally {
+        if handle is not None {
+            handle.close();
+        }
+        _leave_embedded_env();
     }
-    _leave_embedded_env();
 }
 
 impl _apply_extra_deps {
@@ -526,7 +531,11 @@ impl boot(config_json: str) -> HostContext {
         sys.stdout.flush();
         return ctx;
     } except Exception {
-        _leave_embedded_env();
+        if backend == EMBEDDED {
+            _stop_embedded_store(data_dir);
+        } else {
+            _leave_embedded_env();
+        }
         raise;
     }
 }
