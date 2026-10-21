@@ -5,6 +5,7 @@ import os;
 import socket;
 import subprocess;
 import sys;
+import threading;
 import time;
 import from pathlib { Path }
 import from typing { cast }
@@ -1294,6 +1295,7 @@ test "commit() re-arms _committed so an earlier clean commit cannot mask a later
     import from jaclang.runtimelib.changeset { ChangeSet }
 
     mem = object.__new__(ScaleTieredMemory);
+    mem._commit_lock = threading.RLock();
     mem.changes = ChangeSet();
     mem.l3 = None;
     mem.commit();
@@ -1317,6 +1319,50 @@ test "commit() re-arms _committed so an earlier clean commit cannot mask a later
             "the stale clean flag from the earlier commit and mask the failure"
         );
     }
+}
+
+
+test "close waits for a commit still running in its worker thread" {
+    import from unittest.mock { patch }
+    import from jaclang.scale.memory.memory_hierarchy { ScaleTieredMemory }
+    import from jaclang.runtimelib.changeset { ChangeSet }
+
+    mem = object.__new__(ScaleTieredMemory);
+    mem._commit_lock = threading.RLock();
+    mem.changes = ChangeSet();
+    mem.__mem__ = {};
+    mem.l2 = None;
+    mem.l3 = None;
+    mem._l1_id = "";
+    mem._committed = False;
+    events: list[str] = [];
+    started = threading.Event();
+    release = threading.Event();
+
+    def slow_commit(self: ScaleTieredMemory, anchor: any = None) {
+        events.append("commit");
+        started.set();
+        release.wait(5);
+        events.append("commit done");
+    }
+
+    with patch.object(ScaleTieredMemory, '_commit_locked', slow_commit) {
+        worker = threading.Thread(target=mem.commit);
+        worker.start();
+        assert started.wait(5) , "the first commit never started";
+        closer = threading.Thread(target=mem.close);
+        closer.start();
+        closer.join(0.2);
+        assert closer.is_alive() , (
+            "close() ran while a commit on the same memory was still in flight"
+        );
+        release.set();
+        worker.join(5);
+        closer.join(5);
+    }
+    assert events == ["commit", "commit done", "commit", "commit done"] , (
+        f"close's commit overlapped the in-flight one: {events}"
+    );
 }
 
 

@@ -673,7 +673,7 @@ async def _ws_run_message(
     } finally {
         try {
             Jac.reset_request_context(req_token);
-            req_ctx.close();
+            await asyncio.to_thread(req_ctx.close);
         } except Exception as e {
             logger.warning(f"Failed to close WS request context: {e}", exc_info=True);
         }

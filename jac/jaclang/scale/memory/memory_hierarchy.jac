@@ -1,5 +1,6 @@
 import json;
 import logging;
+import threading;
 import from collections.abc { Callable, Generator, Iterable }
 import from datetime { datetime, timezone }
 import from pickle { dumps, loads }
@@ -149,11 +150,13 @@ obj ScaleTieredMemory(TieredMemory) {
         _committed: bool = False,
         _persistence_type: PersistenceType = PersistenceType.NONE,
         _l1_id: str = "",
+        _commit_lock: (threading.RLock | None) = None,
         use_cache: bool = True;
 
     def postinit -> None;
     def put(anchor: Anchor) -> None;
     def commit(anchor: (Anchor | None) = None) -> None;
+    def _commit_locked(anchor: (Anchor | None)) -> None;
     async def acommit(anchor: (Anchor | None) = None) -> None;
     def close -> None;
     def _mark_committed(anchor: (Anchor | None)) -> None;

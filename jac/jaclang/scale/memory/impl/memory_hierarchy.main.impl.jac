@@ -5,6 +5,7 @@ def _carries_topology_index(anchor: Anchor) -> bool {
 
 impl ScaleTieredMemory.postinit -> None {
     self.__mem__ = {};
+    self._commit_lock = threading.RLock();
 
     self.changes = ChangeSet();
 
@@ -105,6 +106,12 @@ impl ScaleTieredMemory.put(anchor: Anchor) -> None {
 }
 
 impl ScaleTieredMemory.commit(anchor: (Anchor | None) = None) -> None {
+    with self._commit_lock {
+        self._commit_locked(anchor);
+    }
+}
+
+impl ScaleTieredMemory._commit_locked(anchor: (Anchor | None)) -> None {
     self._committed = False;
     if self.l3 is None {
         self.changes.clear();
@@ -230,23 +237,25 @@ impl ScaleTieredMemory.acommit(anchor: (Anchor | None) = None) -> None {
 }
 
 impl ScaleTieredMemory.close -> None {
-    try {
-        if not self._committed {
-            self.commit();
-        }
-    } finally {
-        if self.l3 {
-            self.l3.close();
-        }
-        if self.l2 {
-            self.l2.close();
-        }
+    with self._commit_lock {
+        try {
+            if not self._committed {
+                self.commit();
+            }
+        } finally {
+            if self.l3 {
+                self.l3.close();
+            }
+            if self.l2 {
+                self.l2.close();
+            }
 
-        if self._l1_id {
-            deregister_l1(self._l1_id);
+            if self._l1_id {
+                deregister_l1(self._l1_id);
+            }
+            self.__mem__.clear();
+            self.changes.clear();
         }
-        self.__mem__.clear();
-        self.changes.clear();
     }
 }
 
