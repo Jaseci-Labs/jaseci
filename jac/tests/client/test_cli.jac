@@ -1356,6 +1356,46 @@ test "vite build rollupOptions overrides are merged" {
     }
 }
 
+test "vite build rollupOptions of the wrong shape is a clear error" {
+    import from jaclang.client.vite_bundler { ViteBundler }
+    import from jaclang.client.client_bundle { ClientBundleError }
+
+    cases = [
+        (
+            '\n[client.vite.build]\nrollupOptions = "bad"\n',
+            "rollupOptions must be a table"
+        ),
+        (
+            '\n[[client.vite.build.rollupOptions.output]]\nformat = "es"\n\n[[client.vite.build.rollupOptions.output]]\nformat = "cjs"\n',
+            "output must be a single table"
+        )
+    ];
+    for (toml_content, expected) in cases {
+        with tempfile.TemporaryDirectory() as temp_dir {
+            original_cwd = os.getcwd();
+            try {
+                os.chdir(temp_dir);
+                with open(os.path.join(temp_dir, "jac.toml"), "w") as f {
+                    f.write(toml_content);
+                }
+                bundler = ViteBundler(Path(temp_dir));
+                entry_file = Path(temp_dir) / ".jac" / "client" / "build" / "main.js";
+                entry_file.parent.mkdir(parents=True, exist_ok=True);
+                entry_file.write_text("// Mock entry file");
+                raised = "";
+                try {
+                    bundler.create_vite_config(entry_file);
+                } except ClientBundleError as e {
+                    raised = str(e);
+                }
+                assert expected in raised , f"expected {expected!r}, got {raised!r}";
+            } finally {
+                os.chdir(original_cwd);
+            }
+        }
+    }
+}
+
 """Test that [client.paths] aliases appear in generated vite config and tsconfig."""
 test "path aliases in generated vite and tsconfig" {
     with tempfile.TemporaryDirectory() as temp_dir {
