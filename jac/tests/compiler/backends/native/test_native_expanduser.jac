@@ -83,18 +83,21 @@ test "native expanduser handles HOME and account lookups across import forms" {
 }
 
 """The floor reports the home directory's full length when the caller's buffer
-is too small, so user_home can retry with one that fits instead of reporting
-the account missing."""
+is too small, and user_home, started on a buffer shorter than the path, calls
+again with one that fits instead of reporting the account missing."""
 test "the floor's home lookup reports the full length to a short buffer" {
     record = pwd.getpwuid(os.getuid());
     with tempfile.TemporaryDirectory() as directory {
         source = Path(directory) / "home_len.jac";
         source.write_text(
             "import from c { def __jac_home_dir(name: str, buffer: bytes, size: int) -> int;  }\n"
+                + "import from _user_home { user_home }\n"
                 + "with entry {\n"
                 + "    print(__jac_home_dir(\"\", b\"\\x00\", 1));\n"
                 + f"    print(__jac_home_dir({record.pw_name!r}, b\"\\x00\", 1));\n"
                 + "    print(__jac_home_dir(\"jac_no_such_user_3c27c4f6\", b\"\\x00\", 1));\n"
+                + "    print(user_home(\"\", 2));\n"
+                + f"    print(user_home({record.pw_name!r}, 2));\n"
                 + "}\n"
         );
         binary = str(Path(directory) / "home_len");
@@ -108,6 +111,7 @@ test "the floor's home lookup reports the full length to a short buffer" {
         run = subprocess.run([binary], capture_output=True, text=True, timeout=60);
         assert run.returncode == 0 , run.stdout + run.stderr;
         want = str(len(record.pw_dir.encode("utf-8")));
-        assert run.stdout.split() == [want, want, "-1"] , run.stdout;
+        assert run.stdout.splitlines()
+            == [want, want, "-1", record.pw_dir, record.pw_dir] , run.stdout;
     }
 }

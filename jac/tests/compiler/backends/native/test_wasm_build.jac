@@ -220,17 +220,20 @@ test "the runtime floor's functions resolve inside a wasm module" {
         "  %e7 = call i64 @__jac_dirent_name(i64 0)",
         "  %e8 = call i64 @__jac_home_dir(ptr null, ptr null, i64 0)",
         "  %e9 = call i64 @__jac_executable_path(ptr null, i64 0)",
-        "  %ea = call i32 @__jac_sockaddr_family(ptr null)",
+        "  %ea = call i32 @__jac_sockaddr_family(ptr @family)",
         "  %fc = sitofp i64 %ck to double",
         "  %fa = sitofp i64 %ai to double",
+        "  %ff = sitofp i32 %ea to double",
         "  %s1 = fadd double %fm, %fc",
         "  %s2 = fadd double %s1, %fa",
-        "  ret double %s2"
+        "  %s3 = fadd double %s2, %ff",
+        "  ret double %s3"
     ];
     app_ir = (
         "target triple = \"wasm32-unknown-unknown\"\n"
         + "\n".join(floor_decls.values())
-        + "\ndefine double @probe() {\n"
+        + "\n@family = private constant [2 x i8] c\"\\0A\\00\"\n"
+        + "define double @probe() {\n"
         + "\n".join(calls)
         + "\n}\n"
     );
@@ -257,8 +260,9 @@ console.log(`probe=${instance.exports.probe()}`);
         [node_bin, hpath, wpath], capture_output=True, text=True, timeout=60
     );
     assert proc.returncode == 0 , f"node failed: {proc.stderr}";
-    """fmadd 7, the Python monotonic clock id 1, sizeof(addrinfo) 48.""";
-    assert proc.stdout.strip().splitlines()[-1] == "probe=56";
+    """fmadd 7, the Python monotonic clock id 1, sizeof(addrinfo) 48 and the
+    family AF_INET6 (10) read from a little-endian sockaddr.""";
+    assert proc.stdout.strip().splitlines()[-1] == "probe=66";
 }
 
 test "a missing wasm libc is an error that names the build command" {

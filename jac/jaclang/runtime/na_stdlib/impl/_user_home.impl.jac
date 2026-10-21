@@ -1,8 +1,7 @@
-impl user_home(name: str) -> str | None {
+impl user_home(name: str, size: int = 4096) -> str | None {
     if "\x00" in name {
         raise ValueError("embedded null byte");
     }
-    size = 4096;
     while True {
         buffer = b"\x00" * size;
         length = __jac_home_dir(name, buffer, size);
