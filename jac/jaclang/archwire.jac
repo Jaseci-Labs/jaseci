@@ -11104,7 +11104,6 @@ graph import compiler.backends.native.llvm.binding {
         module | targets | value { _decode_string, _encode_string },
     ]
     context ++> module { get_global_context }
-    initfini ++> targets { llvm_version_info }
     linker ++> module { link_modules }
     value ++> [
         module { ValueRef },

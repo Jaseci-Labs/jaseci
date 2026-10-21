@@ -123,6 +123,9 @@ impl __doWalkerFetch(
             window.location.reload();
             return {};
         }
+        if response.status == 401 and token {
+            __removeLocalStorage("jac_token");
+        }
         error_text = await response.text();
         walker_name = f"{`walker}/{nodeId}" if nodeId else `walker;
         raise __bridgeErrorFor(
@@ -160,6 +163,9 @@ impl __doFuncFetch(
             __removeLocalStorage("jac_token");
             window.location.reload();
             return {};
+        }
+        if response.status == 401 and token {
+            __removeLocalStorage("jac_token");
         }
         error_text = await response.text();
         raise __bridgeErrorFor(
@@ -419,7 +425,29 @@ impl jacLogout -> None {
 
 impl jacIsLoggedIn -> bool {
     token = __getLocalStorage("jac_token");
-    return token != None and token != "";
+    if not token {
+        return False;
+    }
+    if __jacTokenExpired(str(token)) {
+        __removeLocalStorage("jac_token");
+        return False;
+    }
+    return True;
+}
+
+impl __jacTokenExpired(token: str) -> bool {
+    parts = token.split(".");
+    if len(parts) != 3 {
+        return False;
+    }
+    try {
+        claims: any = JSON.parse(
+            str(globalThis.atob(parts[1].replace("-", "+").replace("_", "/")))
+        );
+        return Number.isFinite(claims["exp"]) and claims["exp"] * 1000 <= Date.now();
+    } except Exception {
+        return False;
+    }
 }
 
 impl __jacClearCache -> None {

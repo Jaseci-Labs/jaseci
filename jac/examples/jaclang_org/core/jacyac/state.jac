@@ -139,6 +139,7 @@ impl useJacYac -> JacYacState {
             loadData();
         }
     }
+    def onBridgeError(e: BridgeError) -> None;
     async def loadData -> None;
     async def refreshAvatars -> None;
     async def postTweet -> None;
