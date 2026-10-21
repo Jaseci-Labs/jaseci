@@ -1517,6 +1517,40 @@ Cannot return int, expected bool
              0,
              True,
              []
+         ),
+         (
+             "raise_operands_must_be_exceptions",
+             "checker",
+             "checker_raise_exception_types.jac",
+             5,
+             False,
+             [
+                 (0, """
+        raise 5;
+        ^^^^^^^^
+    """),
+                 (
+                     1,
+                     """
+        raise NotAnError();
+        ^^^^^^^^^^^^^^^^^^^
+    """
+                 ),
+                 (2, """
+        Cannot raise ValueError | NoneType
+    """),
+                 (3, """
+        Cannot raise ValueError | int
+    """),
+                 (
+                     4,
+                     """
+        Cannot use int as an exception cause
+        raise ValueError("x") from 5;
+                                   ^
+    """
+                 )
+             ]
          )
      ];
 

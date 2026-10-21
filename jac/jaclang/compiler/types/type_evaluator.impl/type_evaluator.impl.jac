@@ -3393,12 +3393,23 @@ impl TypeEvaluator._protocol_signature_fits(
     return True;
 }
 
-impl TypeEvaluator.is_sub_class(super_cls: ClassType, sub_cls: ClassType) -> bool {
+impl TypeEvaluator.is_sub_class(
+    super_cls: ClassType, sub_cls: ClassType, ignore_unknown: bool = False
+) -> bool {
     self._heal_ancestry(sub_cls);
     ensure_mro_fresh(sub_cls);
     for cls in sub_cls.shared.mro {
         if cls.shared.same_class(super_cls.shared) {
             return True;
+        }
+    }
+    if ignore_unknown {
+        for cls in sub_cls.shared.mro or [sub_cls] {
+            for base in cls.shared.base_classes {
+                if not isinstance(base, ClassType) or self.is_any_type(base) {
+                    return True;
+                }
+            }
         }
     }
     return False;
@@ -4514,6 +4525,7 @@ impl TypeEvaluator._prefetch_types {
     self.prefetch.none_type_class = get_types_class("NoneType");
     self.prefetch.object_class = get_builtin_class("object");
     self.prefetch.type_class = get_builtin_class("type");
+    self.prefetch.base_exception_class = get_builtin_class("BaseException");
     self.prefetch.classmethod_class = get_builtin_class("classmethod");
 
     self.prefetch.coroutine_class = get_typing_class("Coroutine");
