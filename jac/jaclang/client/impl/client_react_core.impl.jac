@@ -556,21 +556,24 @@ impl __jacClaimErrorReport(message: str, stack: str) -> bool {
     now = Date.now();
     budget: any = globalThis.__jacErrorReportBudget;
     if not budget {
-        budget = {"seen": {}, "seenCount": 0, "windowStart": now, "sent": 0};
+        budget = {"seen": {}, "seenCount": 0, "sentAt": []};
         setattr(globalThis, "__jacErrorReportBudget", budget);
     }
     key = f"{message}\n{stack}";
     if budget.seen[key] or budget.seenCount >= __JAC_ERROR_REPORTS_PER_PAGE {
         return False;
     }
-    if now - budget.windowStart >= 60000 {
-        budget.windowStart = now;
-        budget.sent = 0;
+    recent: list[float] = [];
+    for sent_at in budget.sentAt {
+        if now - sent_at < 60000 {
+            recent.append(sent_at);
+        }
     }
-    if budget.sent >= __JAC_ERROR_REPORTS_PER_MINUTE {
+    budget.sentAt = recent;
+    if len(recent) >= __JAC_ERROR_REPORTS_PER_MINUTE {
         return False;
     }
-    budget.sent += 1;
+    recent.append(now);
     budget.seenCount += 1;
     budget.seen[key] = True;
     return True;

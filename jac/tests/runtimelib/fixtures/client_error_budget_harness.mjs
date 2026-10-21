@@ -158,6 +158,15 @@ const results = {
     now += 60_000;
     times(1000, (i) => rejection(`later ${i}`, APP_STACK));
   }),
+  // One report at the start, nine at 59s, then ten more at 60s: only the
+  // first has left the trailing minute by then.
+  burstAcrossMinuteBoundary: scenario(() => {
+    rejection("start", APP_STACK);
+    now += 59_000;
+    times(9, (i) => rejection(`edge ${i}`, APP_STACK));
+    now += 1_000;
+    times(10, (i) => rejection(`after ${i}`, APP_STACK));
+  }),
   // Twenty new errors a minute for half an hour, then an early one again.
   distinctAppErrorsOverHalfAnHour: scenario(() => {
     times(30, (minute) => {

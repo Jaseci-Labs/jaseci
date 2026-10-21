@@ -255,6 +255,8 @@ def assert_page_budget(results: dict[str, any]) {
     # At most 10 reports a minute, and the budget refills the next minute...
     assert results["distinctAppErrors"]["sent"] == 10 , results;
     assert results["distinctAppErrorsOverTwoMinutes"]["sent"] == 20 , results;
+    # The minute trails each report, so no burst straddles a window edge...
+    assert results["burstAcrossMinuteBoundary"]["sent"] == 11 , results;
     # ...up to 200 for the page, after which nothing new or repeated is sent.
     assert results["distinctAppErrorsOverHalfAnHour"]["sent"] == 200 , results;
 }
