@@ -1,0 +1,1 @@
+- **A generic method that calls itself no longer crashes native code**: the call reaches the specialization being compiled instead of an empty vtable slot, so recursive walks like `element_sub_nodes` lower natively again.

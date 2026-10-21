@@ -174,6 +174,8 @@ test "mono: generic method on an archetype stamps per call site" {
     g = get_func(eng, "pick_str_len", ctypes.c_int64, ctypes.c_int64);
     assert g(1) == 2 , "picks 'xx'";
     assert g(0) == 3 , "picks 'yyy'";
+    h = get_func(eng, "count_leaves", ctypes.c_int64);
+    assert h() == 3 , "count_of[T] recursing into its own specialization";
 }
 
 test "iter flow: generator through a monomorphized Iterator[T] param" {
