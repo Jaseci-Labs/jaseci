@@ -276,11 +276,15 @@ async walker:pub EchoMessage {
     has client_id: str = "anonymous";
 
     async can echo with Root entry {
+        import from jaclang.jac0core.runtime { JacRuntime, JacRuntimeInterface }
+        glob_ctx = JacRuntime.exec_ctx;
         report {
             "status": "success",
             "echo": self.message,
             "client_id": self.client_id,
-            "protocol": "websocket"
+            "protocol": "websocket",
+            "process_global_mem": glob_ctx is not None
+            and JacRuntimeInterface.get_context().mem is glob_ctx.mem
         };
     }
 }

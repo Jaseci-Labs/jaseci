@@ -68,14 +68,18 @@ test "ws function streaming yields chunk frames then a done frame" {
 }
 
 
-test "ws walker canonical path /ws/walker/{name} works" {
+test "ws walker canonical path /ws/walker/{name} works, each message in its own context" {
     client = _ws_client();
     try {
         tc = client.raw_client;
         with tc.websocket_connect("/ws/walker/EchoMessage") as ws {
-            ws.send_json({"message": "cw", "client_id": "c2"});
-            resp = ws.receive_json();
-            assert resp["ok"] == True , f"expected ok, got {resp}";
+            for i in range(2) {
+                ws.send_json({"message": f"cw{i}", "client_id": "c2"});
+                resp = ws.receive_json();
+                assert resp["ok"] == True , f"expected ok, got {resp}";
+                rpt = resp["data"]["reports"][0];
+                assert rpt["process_global_mem"] == False , f"got {rpt}";
+            }
         }
     } finally {
         client.close();

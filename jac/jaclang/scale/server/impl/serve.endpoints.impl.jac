@@ -655,6 +655,7 @@ async def _ws_serve_connection(
     msgs_per_sec: float,
     make_awaitable: any
 ) {
+    import from jaclang.scale.memory.context { JScaleExecutionContext }
     rate_capacity = max(msgs_per_sec, 1.0);
     user_id: (str | None) = None;
     token_exp: (float | None) = None;
@@ -738,27 +739,40 @@ async def _ws_serve_connection(
                 continue;
             }
             data.pop('token', None);
-            (ok, result) = await ws_execute_target(
-                websocket,
-                label,
-                target_name,
-                make_awaitable(data, (ctx.user_id or Con.GUEST.value)),
-                target_timeout
-            );
-            if not ok {
-                continue;
-            }
-            if (isgenerator(result) or isinstance(result, AsyncGenerator)) {
-                await _ws_stream_result(send_result, result);
-            } elif isinstance(result, dict) and 'error' in result {
-                await websocket.send_json(
-                    ws_error_frame(
-                        'EXECUTION_ERROR',
-                        result.get('error', f"{label} execution failed")
-                    )
+            req_ctx = JScaleExecutionContext();
+            req_token = Jac.push_request_context(req_ctx);
+            try {
+                (ok, result) = await ws_execute_target(
+                    websocket,
+                    label,
+                    target_name,
+                    make_awaitable(data, (ctx.user_id or Con.GUEST.value)),
+                    target_timeout
                 );
-            } else {
-                await send_result({'ok': True, 'data': result});
+                if not ok {
+                    continue;
+                }
+                if (isgenerator(result) or isinstance(result, AsyncGenerator)) {
+                    await _ws_stream_result(send_result, result);
+                } elif isinstance(result, dict) and 'error' in result {
+                    await websocket.send_json(
+                        ws_error_frame(
+                            'EXECUTION_ERROR',
+                            result.get('error', f"{label} execution failed")
+                        )
+                    );
+                } else {
+                    await send_result({'ok': True, 'data': result});
+                }
+            } finally {
+                try {
+                    Jac.reset_request_context(req_token);
+                    req_ctx.close();
+                } except Exception as e {
+                    logger.warning(
+                        f"Failed to clear WS request context: {e}", exc_info=True
+                    );
+                }
             }
         }
     } except WebSocketDisconnect {
