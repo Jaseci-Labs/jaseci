@@ -2584,7 +2584,7 @@ graph import {
         server.session.Session.quarantine_ref { sv_forget_by_id },
     ]
     runtime.osp_graph_sv --> byllm.visit_routing._candidate_for { sv_register_hydrated }
-    runtime.osp_kernel ++> [
+    runtime.osp_kernel --> [
         byllm.visit_routing._route_context { _current_scope },
         compiler.backends.es.esast_gen_pass.EsastGenPass.enter_walk
             | compiler.backends.es.esast_gen_pass.EsastGenPass.exit_walk
