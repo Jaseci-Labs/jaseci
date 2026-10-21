@@ -11104,7 +11104,6 @@ graph import compiler.backends.native.llvm.binding {
         module | targets | value { _decode_string, _encode_string },
     ]
     context ++> module { get_global_context }
-    initfini ++> targets { llvm_version_info }
     linker ++> module { link_modules }
     value ++> [
         module { ValueRef },
@@ -11815,7 +11814,7 @@ graph import compiler.driver {
             | ifacecache.IfaceRegistry._ensure_in_context { require },
         compiler.JacCompiler.jac_file_linter { require },
         ifacecache.IfaceRegistry._prepare { product_facts },
-        nativecache.NativeBuildSession.lower { invalidate, require },
+        nativecache.NativeBuildSession.lower { invalidate, require, unavailable },
     ]
     pipeline_runner --> [
         application._prepare_revision { compile_application },
