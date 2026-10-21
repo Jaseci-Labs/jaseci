@@ -808,7 +808,8 @@ test "usage_step correctly attributes an interleaved compaction call" {
 
 test "usage_step fires for the recovery call" {
     # A text answer that cannot become a _Person is recovered by a forced
-    # finish_tool call; that episode reports its own usage_step.
+    # finish_tool call; that episode reports its own usage_step, which also
+    # counts the call whose reply failed to parse, since it was billed too.
     llm = MockLLM(
         model_name="test-model",
         outputs=[
@@ -829,10 +830,12 @@ test "usage_step fires for the recovery call" {
     assert llm.exhausted() , f"recovery never ran: {llm.outputs}";
     assert len(steps) == 1 , f"the recovery episode must report one usage_step: {steps}";
     kinds = [c["call_kind"] for c in steps[0]["per_call"]];
-    assert kinds == ["recovery", "final_answer_restream"] , (
+    assert kinds == ["react_iteration", "recovery", "final_answer_restream"] , (
         f"the usage_step must cover the recovery call, got call_kinds={kinds}"
     );
-    assert steps[0]["total"]["total_tokens"] == 48;
+    tokens = {c["call_kind"]: c.get("total_tokens") or 0 for c in steps[0]["per_call"]};
+    assert tokens["recovery"] == 48
+        and steps[0]["total"]["total_tokens"] == sum(tokens.values()) , str(tokens);
 }
 
 

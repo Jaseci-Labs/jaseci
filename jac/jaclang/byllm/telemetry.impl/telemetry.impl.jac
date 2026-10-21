@@ -22,12 +22,15 @@ impl _notify_llm_call(mt_run: MTRuntime) -> None {
     if not _llm_call_hooks or not mt_run.messages {
         return;
     }
-    sent = list(mt_run.messages[mt_run._llm_hook_cursor:-1]);
 
-    if mt_run._llm_hook_cursor == 0 and sent and mt_run._sent_system is not None {
-        sent[0] = mt_run._sent_system;
+    request = list(mt_run._sent_messages or mt_run.messages[:-1]);
+    start = mt_run._llm_hook_cursor;
+    if 0 < start < len(request)
+        and _plain_message(request[start]).get("role") == "assistant" {
+        start += 1;
     }
-    mt_run._llm_hook_cursor = len(mt_run.messages);
+    sent = request[start:];
+    mt_run._llm_hook_cursor = len(request);
     caller = mt_run.mtir.caller if mt_run.mtir else None;
     usage = dict(mt_run._usage_history[-1]) if mt_run._usage_history else {};
     record: dict[str, any] = {

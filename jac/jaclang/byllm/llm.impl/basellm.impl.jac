@@ -933,11 +933,6 @@ impl BaseLLM.make_model_params(mt_run: MTRuntime) -> dict[str, any] {
         }
     }
 
-    first = messages[0] if messages else None;
-
-    mt_run._sent_system = dict(first)
-        if isinstance(first, dict) and first.get("role") == "system"
-        else None;
     if _is_prompt_caching_eligible(self.model_name) {
         (messages, tools) = _apply_prompt_caching(messages, tools);
     }
@@ -975,6 +970,8 @@ impl BaseLLM.make_model_params(mt_run: MTRuntime) -> dict[str, any] {
     if not self.supports_native_tools {
         params = inject_tool_hint(params);
     }
+
+    mt_run._sent_messages = list(params.get("messages") or []);
 
     if mt_run.stream {
         import httpx;
@@ -1359,6 +1356,9 @@ impl BaseLLM.dispatch_streaming_with_tools(
     }
     damaged_ids = _sanitize_tool_calls(message);
     mt_run.add_message(message);
+
+    _record_usage(mt_run, usage_data, actual_model, finish_reason=finish_reason);
+    _notify_llm_call(mt_run);
     output_content = message.get("content") or "";
     assert isinstance(output_content, str);
 
@@ -1370,8 +1370,6 @@ impl BaseLLM.dispatch_streaming_with_tools(
     output_value = mt_run.parse_response(output_content)
         if not tool_calls_list
         else output_content;
-    _record_usage(mt_run, usage_data, actual_model, finish_reason=finish_reason);
-    _notify_llm_call(mt_run);
     out.append(
         CompletionResult(
             output=output_value,

@@ -35,7 +35,7 @@ obj MTRuntime {
         _last_stream_chunks: list[any] = [],
         _llm_hook_cursor: int = 0,
         _llm_hook_compacted: bool = False,
-        _sent_system: dict[str, any] | None = None;
+        _sent_messages: list[any] = [];
 
     static def factory(mtir: MTIR) -> MTRuntime;
     def add_message(message: MessageType) -> None;
