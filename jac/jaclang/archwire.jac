@@ -1676,9 +1676,9 @@ graph import {
             | project.kernel_snapshot.KernelSnapshot.emits
             | testing.cl_test_runner.module_entry_for { is_annex },
         cli.commands.cli_helpers { base_stem, is_jac, is_python },
-        cli.commands.execution._jab_native_bin { base_stem }
-            | cli.commands.execution._jab_run_entry_lib { base_stem }
-            | client.jac_client_compiler.JacClientCompiler._native_variant
+        cli.commands.execution._jab_native_bin { base_stem },
+        cli.commands.execution._jab_run_entry_lib { base_stem },
+        client.jac_client_compiler.JacClientCompiler._native_variant
             | client.targets.client_dev_common.dev_proxy_paths
             | compiler.driver.application._semantic_metadata
             | dist.seal.bake_native_payloads
@@ -3705,15 +3705,15 @@ graph import {
     }
     server.request_scope ++> scale.server.websocket_ext { RequestScope }
     server.sealed_serve ++> [
-        cli.commands.execution._jab_native_bin { NATIVE_DIR_REL }
-            | cli.commands.execution._jab_interop_record { interop_record_path }
-            | cli.commands.execution._jab_run_entry_lib {
-                NATIVE_DIR_REL,
-                interop_record_path,
-                native_lib_name
-            }
-            | dist.precompile_bytecode.seal_native
-            | dist.seal.bake_native_payloads { NATIVE_DIR_REL, native_lib_name },
+        cli.commands.execution._jab_native_bin { NATIVE_DIR_REL },
+        cli.commands.execution._jab_interop_record { interop_record_path },
+        cli.commands.execution._jab_run_entry_lib {
+            NATIVE_DIR_REL,
+            interop_record_path,
+            native_lib_name
+        },
+        dist.precompile_bytecode.seal_native,
+        dist.seal.bake_native_payloads { NATIVE_DIR_REL, native_lib_name },
         cli.commands.native_build.native_build_sealed_pair { interop_record_path },
         cli.commands.execution._run_native_lib { interop_record_path },
         client.artifact.client_output_dir { client_dist_for },
