@@ -79,6 +79,7 @@ impl JacClientCompiler.compile(
     native: bool = False
 ) -> tuple[list[str], list[str]] {
     self.input_files = {};
+    self.emitted_js = {};
     self.emit_prelude();
     artifact = self.jac_compiler.compile_module(module_path);
     self._collect_na_modules(artifact);
@@ -108,6 +109,7 @@ impl JacClientCompiler.compile(
         collected_globals=collected_globals,
         native=native
     );
+    self._rewrite_grown_modules(collected_exports, collected_globals);
     if native {
         self.compile_runtime_utils(self.NATIVE_RUNTIME_FILE);
     }
@@ -253,7 +255,6 @@ impl JacClientCompiler.emit_dependencies(
             non_root_globals[name] = manifest.globals_values.get(name);
         }
         collected_globals.update(non_root_globals);
-        combined_js = self.jac_compiler.add_runtime_imports(artifact.js);
         try {
             relative_path = module_path.relative_to(source_root);
             rel_str = self._jac_path_to_js(str(relative_path));
@@ -262,12 +263,7 @@ impl JacClientCompiler.emit_dependencies(
             name = self._jac_path_to_js(module_path.name);
             output_path = self.compiled_dir / name;
         }
-        output_path.parent.mkdir(parents=True, exist_ok=True);
-        source_header = f"/* Source: {module_path} */\n";
-        _atomic_write_text(output_path, source_header + combined_js);
-        self._write_source_map(
-            artifact, str(module_path), output_path, source_header + combined_js
-        );
+        self._write_module(module_path, artifact, output_path);
     }
 
     for asset in closure.assets {
@@ -281,6 +277,41 @@ impl JacClientCompiler.emit_dependencies(
         } else {
             self._copy_asset_file(asset, source_root);
         }
+    }
+}
+
+impl JacClientCompiler._write_module(
+    self: JacClientCompiler,
+    module_path: Path,
+    artifact: ClientArtifact,
+    output_path: Path
+) -> None {
+    combined_js = self.jac_compiler.add_runtime_imports(artifact.js);
+    output_path.parent.mkdir(parents=True, exist_ok=True);
+    source_header = f"/* Source: {module_path} */\n";
+    _atomic_write_text(output_path, source_header + combined_js);
+    self._write_source_map(
+        artifact, str(module_path), output_path, source_header + combined_js
+    );
+    self.emitted_js[module_path] = (output_path, combined_js);
+}
+
+impl JacClientCompiler._rewrite_grown_modules(
+    self: JacClientCompiler,
+    collected_exports: set[str],
+    collected_globals: dict[(str, any)]
+) -> None {
+    for (module_path, (output_path, written)) in list(self.emitted_js.items()) {
+        artifact = self.jac_compiler.compile_module(module_path);
+        if self.jac_compiler.add_runtime_imports(artifact.js) == written {
+            continue;
+        }
+        manifest = artifact.manifest;
+        collected_exports.update(self.jac_compiler.extract_exports(manifest));
+        for name in manifest.globals {
+            collected_globals[name] = manifest.globals_values.get(name);
+        }
+        self._write_module(module_path, artifact, output_path);
     }
 }
 
