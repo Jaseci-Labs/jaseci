@@ -10005,9 +10005,6 @@ graph import compiler {
         frontend.codeinfo._inferred_native_path { native_default_path_ok },
     ]
     type placement.placement_work ++> driver.progstate { PlacementWork }
-    placement.placement_facts ++> passes.boundary_analysis_pass.BoundaryAnalysisPass.enter_import {
-        pinned_module_space
-    }
     symbol_utils ++> [
         backends.es.esast_gen_pass | passes.type_checker_pass { return_type_is_jsx },
         backends.es.esast_gen_pass.EsastGenPass._bind_client_value_refs {
