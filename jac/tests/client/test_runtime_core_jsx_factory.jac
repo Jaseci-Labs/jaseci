@@ -65,3 +65,33 @@ test "compiled runtime core does not re-import globals it defines" {
         assert "{__jacJsx, __jacSpawn}" not in js;
     }
 }
+
+test "every framework's runtime is written where @jac/runtime resolves" {
+    import jaclang.client.runtime_source as runtime_source;
+    import from jaclang.client.vite_client_bundle { ViteClientBundleBuilder }
+
+    original = runtime_source.client_runtime_cl_basename;
+    try {
+        for basename in ["client_runtime.jac", "solid_runtime.jac"] {
+            runtime_source.client_runtime_cl_basename = lambda (
+                framework: str = ""
+            ) -> str { return basename; };
+            with TemporaryDirectory() as tmp {
+                proj = Path(tmp);
+                (proj / "package.json").write_text('{"name":"t","version":"0.0.0"}');
+                compiler = ViteClientBundleBuilder(
+                    vite_package_json=proj / "package.json"
+                )._get_compiler();
+                compiler.runtime_path = proj / "package.json";
+                compiler.compiled_dir = proj / "out";
+                compiler.jac_client_compiler.compiled_dir = proj / "out";
+                compiler.compile_runtime_utils();
+                runtime_js = proj / "out" / "client_runtime.js";
+                assert runtime_js.exists() , f"{basename} was not written to client_runtime.js";
+                assert basename in runtime_js.read_text().split("\n", 1)[0];
+            }
+        }
+    } finally {
+        runtime_source.client_runtime_cl_basename = original;
+    }
+}

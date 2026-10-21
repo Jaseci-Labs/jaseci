@@ -251,7 +251,6 @@ impl JacClientCompiler.emit_dependencies(
             non_root_globals[name] = manifest.globals_values.get(name);
         }
         collected_globals.update(non_root_globals);
-        combined_js = self.jac_compiler.add_runtime_imports(artifact.js);
         try {
             relative_path = module_path.relative_to(source_root);
             rel_str = self._jac_path_to_js(str(relative_path));
@@ -261,18 +260,15 @@ impl JacClientCompiler.emit_dependencies(
             output_path = self.compiled_dir / name;
         }
         output_path.parent.mkdir(parents=True, exist_ok=True);
-        source_header = f"/* Source: {module_path} */\n";
+        fresh = self._module_text(module_path, artifact);
         if unit in closure.refreshed and output_path.is_file() {
             written = output_path.read_text(encoding='utf-8');
-            fresh = source_header + combined_js;
             mapped = f"{fresh}\n//# sourceMappingURL={output_path.name}.map\n";
             if written == fresh or (artifact.source_map and written == mapped) {
                 continue;
             }
         }
-        self._write_js(
-            artifact, str(module_path), output_path, source_header + combined_js
-        );
+        self._write_js(artifact, str(module_path), output_path, fresh);
     }
 
     for asset in closure.assets {
@@ -384,6 +380,13 @@ impl JacClientCompiler.compile_pwa_runtime(
     pwa_out = self.compiled_dir / 'pwa_runtime.js';
     self._write_js(pwa, str(pwa_runtime_path), pwa_out, pwa.js);
     return (pwa.js, all_exports);
+}
+
+impl JacClientCompiler._module_text(
+    self: JacClientCompiler, module_path: Path, artifact: ClientArtifact
+) -> str {
+    return f"/* Source: {module_path} */\n"
+        + self.jac_compiler.add_runtime_imports(artifact.js);
 }
 
 impl JacClientCompiler._write_js(

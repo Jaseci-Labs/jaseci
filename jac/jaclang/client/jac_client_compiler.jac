@@ -106,6 +106,10 @@ class JacClientCompiler {
 
     def _warn_unrouted_pages(self: JacClientCompiler, scanner: RouteScanner) -> None;
     def _generate_routes_manifest(self: JacClientCompiler) -> bool;
+    def _module_text(
+        self: JacClientCompiler, module_path: Path, artifact: ClientArtifact
+    ) -> str;
+
     def _write_js(
         self: JacClientCompiler,
         artifact: ClientArtifact,

@@ -162,7 +162,7 @@ impl ViteCompiler.compile_runtime_utils(self: ViteCompiler) -> tuple[str, list[s
         raise ClientBundleError('Runtime path not set');
     }
 
-    runtime_utils_path = Path(resolve_client_runtime_cl_path());
+    runtime_utils_path = Path(resolve_client_runtime_cl_path()).resolve();
     runtime = self.jac_compiler.compile_module(runtime_utils_path);
     runtimeutils_js = runtime.js;
     runtimeutils_exports_list = self.jac_compiler.extract_exports(runtime.manifest);
@@ -176,8 +176,23 @@ impl ViteCompiler.compile_runtime_utils(self: ViteCompiler) -> tuple[str, list[s
     );
     self.compiled_dir.mkdir(parents=True, exist_ok=True);
 
-    self.jac_client_compiler.emit_dependencies(
-        runtime_utils_path, source_root=runtime_utils_path.parent
+    visited: set[Path] = {runtime_utils_path};
+    for (name, dependency) in runtime.manifest.imports.items() {
+        if name in self.jac_client_compiler.SELF_COMPILED_VIRTUAL_MODULES {
+            continue;
+        }
+        dependency_path = Path(str(dependency)).resolve();
+        if dependency_path.suffix == '.jac' {
+            self.jac_client_compiler.emit_dependencies(
+                dependency_path, visited=visited, source_root=runtime_utils_path.parent
+            );
+        }
+    }
+    self.jac_client_compiler._write_js(
+        runtime,
+        str(runtime_utils_path),
+        self.compiled_dir / 'client_runtime.js',
+        self.jac_client_compiler._module_text(runtime_utils_path, runtime)
     );
 
     self.jac_client_compiler.compile_mobui_utils();
