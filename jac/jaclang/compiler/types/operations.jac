@@ -79,6 +79,14 @@ glob NONE_UNSAFE_BINARY_OPERATORS: set[str] = (
 
 def operand_carries_none(evaluator: TypeEvaluator, ty: TypeBase) -> bool;
 
+def none_unsafe_operand(
+    evaluator: TypeEvaluator,
+    magic: str,
+    rmagic: str,
+    left: tuple[TypeBase, Expr],
+    right: tuple[TypeBase, Expr]
+) -> (TypeBase | None);
+
 def get_numeric_promotion_type(
     evaluator: TypeEvaluator,
     left_type: TypeBase,

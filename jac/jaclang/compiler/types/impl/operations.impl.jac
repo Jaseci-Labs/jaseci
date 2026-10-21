@@ -42,6 +42,40 @@ impl operand_carries_none(evaluator: TypeEvaluator, ty: TypeBase) -> bool {
     return has_none;
 }
 
+impl none_unsafe_operand(
+    evaluator: TypeEvaluator,
+    magic: str,
+    rmagic: str,
+    left: tuple[TypeBase, Expr],
+    right: tuple[TypeBase, Expr]
+) -> (TypeBase | None) {
+    (left_type, left_node) = left;
+    (right_type, right_node) = right;
+    left_none = operand_carries_none(evaluator, left_type);
+    right_none = operand_carries_none(evaluator, right_type);
+    if left_none
+        and (
+            right_none
+            or evaluator.get_type_of_magic_method_call(
+                right_type, rmagic, [left_node], None
+            )
+                is None
+        ) {
+        return left_type;
+    }
+    if right_none
+        and (
+            left_none
+            or evaluator.get_type_of_magic_method_call(
+                left_type, magic, [right_node], None
+            )
+                is None
+        ) {
+        return right_type;
+    }
+    return None;
+}
+
 impl get_numeric_promotion_type(
     evaluator: TypeEvaluator,
     left_type: TypeBase,
@@ -317,16 +351,21 @@ impl get_type_of_binary_operation(
         (magic, rmagic) = BINARY_OPERATOR_MAP[expr.op.name];
 
         if expr.op.name in NONE_UNSAFE_BINARY_OPERATORS {
-            for (operand_type, operand_node) in (
+            unsafe = none_unsafe_operand(
+                evaluator,
+                magic,
+                rmagic,
                 (left_type, expr.left),
                 (right_type, expr.right)
-            ) {
-                if operand_carries_none(evaluator, operand_type) {
-                    evaluator.emit_diag(
-                        E1160, operand_node, op=expr.op.value, type=str(operand_type)
-                    );
-                    return UnknownType(is_diagnosed=True);
-                }
+            );
+            if unsafe is not None {
+                evaluator.emit_diag(
+                    E1160,
+                    expr.left if unsafe is left_type else expr.right,
+                    op=expr.op.value,
+                    type=str(unsafe)
+                );
+                return UnknownType(is_diagnosed=True);
             }
         }
 

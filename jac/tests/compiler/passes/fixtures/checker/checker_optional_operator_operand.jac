@@ -150,3 +150,13 @@ class DynamicAttr {
         return "";
     }
 }
+
+def ok_str_format_optional(x: str | None) -> str {
+    return "%s" % x;
+}
+
+def ok_str_format_optional_aug(x: str | None) -> str {
+    s = "%s";
+    s %= x;
+    return s;
+}
