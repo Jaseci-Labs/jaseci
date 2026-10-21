@@ -1,5 +1,3 @@
-import from jaclang.byllm._optdeps.litellm { litellm }
-
 obj ByLLMError(Exception) {
     has message: str = "";
 
@@ -16,7 +14,7 @@ obj RateLimitError(ByLLMError) {}
 
 obj ModelNotFoundError(ByLLMError) {}
 
-obj LLMTimeout(ByLLMError, litellm.Timeout) {
+obj LLMTimeout(ByLLMError) {
     has model: str = "",
         llm_provider: str = "",
         num_retries: int | None = None,
@@ -35,6 +33,12 @@ impl LLMTimeout.__str__ -> str {
     return self.message;
 }
 
+def _adopt_provider_timeout(module: any);
+
+with entry {
+    when_litellm_loaded(_adopt_provider_timeout);
+}
+
 obj OutputConversionError(ByLLMError) {}
 
 obj FinishToolError(ByLLMError) {}
@@ -44,3 +48,5 @@ obj ConfigurationError(ByLLMError) {}
 obj McpError(ByLLMError) {}
 
 obj CompactionNotEffectiveError(ByLLMError) {}
+
+obj OutputTruncatedError(ByLLMError) {}

@@ -6,45 +6,6 @@ functions named in HASH_INFO are recognized. A BLAKE2 HMAC object uses the
 vectorized HACL* kind when the CPU runs it, decided once at creation.
 """
 
-import from jaclang.runtime.python.cpython_api {
-    NULL,
-    PyErr_NoMemory,
-    PyErr_SetObject,
-    PyLong_FromLong,
-    PyLong_FromVoidPtr,
-    PyMem_Free,
-    PyMem_Malloc,
-    PyNumber_ToBase,
-    PyObject,
-    PyObject_CallNoArgs,
-    PyObject_GetAttrString,
-    PyObject_Repr,
-    PyUnicode_AsUTF8,
-    PyUnicode_Concat,
-    PyUnicode_FromString,
-    Py_TYPE,
-    _Py_strhex,
-    jacpy_bytes_from_memory,
-    jacpy_hacl_simd_features,
-    jacpy_is_none,
-    jacpy_is_unicode,
-    jacpy_offset,
-    jacpy_release
-}
-import from jaclang.runtime.python.capi { object_error, text_value }
-import from jaclang.runtime.python.bindings.module { jacpy_binding_state_get }
-import from jaclang.runtime.python.bindings.state { NativeState }
-import from jaclang.runtime.python.bindings.buffer { BufferArgument }
-import from jaclang.runtime.python.bindings.converters { ClassToken }
-import from jaclang.runtime.python.modules.hashlib {
-    HashLock,
-    UINT32_MAX,
-    hash_buffer,
-    hash_initial_data,
-    hash_object_new,
-    hash_state_of,
-    hash_update
-}
 import from c {
     def _Py_LibHacl_Hacl_Streaming_HMAC_malloc_(
         hash_impl: u8, key: ptr, key_length: u32, dst: &mut ptr
@@ -158,16 +119,16 @@ def:priv convert_errno(code: u8) -> int {
         return 0;
     }
     if code == u8(1) {
-        object_error("ValueError", "invalid HACL* algorithm");
+        object_error(PyExc_ValueError, "invalid HACL* algorithm");
     } elif code == u8(2) {
-        object_error("ValueError", "invalid length");
+        object_error(PyExc_ValueError, "invalid length");
     } elif code == u8(3) {
-        object_error("OverflowError", "maximum length exceeded");
+        object_error(PyExc_OverflowError, "maximum length exceeded");
     } elif code == u8(4) {
         PyErr_NoMemory();
     } else {
         object_error(
-            "RuntimeError",
+            PyExc_RuntimeError,
             f"HACL* internal routine failed with error code: {int(code)}"
         );
     }
@@ -247,7 +208,7 @@ def:priv hmac_update(hacl: ptr, address: ptr, size: i64) {
     while remaining > UINT32_MAX {
         _Py_LibHacl_Hacl_Streaming_HMAC_update(hacl, cursor, u32(UINT32_MAX));
         remaining -= UINT32_MAX;
-        cursor = jacpy_offset(cursor, UINT32_MAX);
+        cursor += UINT32_MAX;
     }
     _Py_LibHacl_Hacl_Streaming_HMAC_update(hacl, cursor, u32(remaining));
 }
@@ -267,7 +228,7 @@ def _hmac_new_impl(
     hash_info_ref: ptr[PyObject]
 ) -> ptr[PyObject] {
     if not hash_info_ref {
-        object_error("TypeError", "new() missing 1 required argument 'digestmod'");
+        object_error(PyExc_TypeError, "new() missing 1 required argument 'digestmod'");
         return NULL;
     }
     info = find_hash_info(module, hash_info_ref);
@@ -280,7 +241,7 @@ def _hmac_new_impl(
     }
     if key.size() > UINT32_MAX {
         key.close();
-        object_error("OverflowError", f"key length exceeds {UINT32_MAX}");
+        object_error(PyExc_OverflowError, f"key length exceeds {UINT32_MAX}");
         return NULL;
     }
     kind = narrow_kind(info.kind);
@@ -306,7 +267,7 @@ def _hmac_new_impl(
     if not instance {
         return NULL;
     }
-    if msgobj and jacpy_is_none(msgobj) == 0 {
+    if msgobj and msgobj != Py_None {
         if not hash_initial_data(hacl, msgobj, hmac_update) {
             jacpy_release(instance);
             return NULL;
@@ -481,7 +442,7 @@ def:priv oneshot(
     }
     if key.size() > UINT32_MAX {
         key.close();
-        object_error("OverflowError", f"key length exceeds {UINT32_MAX}");
+        object_error(PyExc_OverflowError, f"key length exceeds {UINT32_MAX}");
         return NULL;
     }
     msg = hash_buffer(msgobj);
@@ -492,7 +453,7 @@ def:priv oneshot(
     if msg.size() > UINT32_MAX {
         msg.close();
         key.close();
-        object_error("OverflowError", f"message length exceeds {UINT32_MAX}");
+        object_error(PyExc_OverflowError, f"message length exceeds {UINT32_MAX}");
         return NULL;
     }
     out = PyMem_Malloc(u64(MAX_DIGEST_SIZE));

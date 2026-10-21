@@ -228,6 +228,24 @@ impl JcirGenPass.exit_binary_expr with BinaryExpr exit {
                 )
             ]
         );
+    } elif (
+        here.op.name in [Tok.WALRUS_EQ]
+        and isinstance(here.left, Name)
+        and (link := self.loop_links.of_name(here.left)) is not None
+    ) {
+        put = self.nod(
+            'Attribute',
+            ['value', 'attr', 'ctx'],
+            [
+                self.name_load(self._pass_link_name(link), here),
+                'put',
+                self.nod('Load', [], [], jac_node=here)
+            ],
+            jac_node=here
+        );
+        self.set_out(
+            here, [self.call_node(put, [self.val(here.right)], [], jac_node=here)]
+        );
     } elif ((here.op.name in [Tok.WALRUS_EQ]) and self.val(here.left).cls == 'Name') {
         self.val(here.left).setf('ctx', self.nod('Store', [], []));
         self.set_out(
@@ -396,7 +414,7 @@ impl JcirGenPass.exit_lambda_expr with LambdaExpr exit {
             body_stmts = self.resolve_stmt_block(here.body, doc=None);
         }
         body_stmts = [*body_hoists, *body_stmts];
-        directive_stmts = self.scope_directive_stmts([here]);
+        directive_stmts = self.scope_directive_stmts(here);
         if directive_stmts {
             body_stmts = [*directive_stmts, *body_stmts];
         }
@@ -442,17 +460,10 @@ impl JcirGenPass._emit_lambda_expr_body(nd: LambdaExpr, body_node: Expr) -> None
             jac_node=nd
         );
     }
-    self.set_out(
-        nd,
-        [
-            self.nod(
-                'Lambda',
-                ['args', 'body'],
-                [arguments, self.val(body_node)],
-                jac_node=nd
-            )
-        ]
+    lam = self.nod(
+        'Lambda', ['args', 'body'], [arguments, self.val(body_node)], jac_node=nd
     );
+    self.set_out(nd, [self._linked_closure_value(nd, lam)]);
 }
 
 impl JcirGenPass._remove_lambda_param_annotations(signature: FuncSignature) -> None {
@@ -898,6 +909,11 @@ impl JcirGenPass.exit_name with Name exit {
     if here.__class__ is not Name {
         return;
     }
+    link = self.loop_links.of_name(here);
+    if link is not None {
+        self.set_out(here, [self._pass_link_ref(link, here)]);
+        return;
+    }
     if here.expr_ctx == ExprCtx.LOAD
         and id(here) in self.module.own_move_sites
         and here.sym is not None
@@ -941,6 +957,20 @@ impl JcirGenPass.exit_name with Name exit {
             }
         }
     }
+    if self._is_c_global_value(here) {
+        self.set_out(
+            here,
+            [
+                self.nod(
+                    'Attribute',
+                    ['value', 'attr', 'ctx'],
+                    [self.name_load(name, here), "value", self.py_ctx(here)],
+                    jac_node=here
+                )
+            ]
+        );
+        return;
+    }
     if not is_identifier_slot(here) {
         if (name in self._get_builtin_names()) {
             self.builtin_imports.add(name);
@@ -953,29 +983,17 @@ impl JcirGenPass.exit_name with Name exit {
 }
 
 impl JcirGenPass._resolve_self_type(nd: Name) -> (CgNode | None) {
-    arch = nd.find_parent_of_type(Archetype);
-    enum_parent = nd.find_parent_of_type(Enum) if not arch else None;
-    enclosing = arch or enum_parent;
-    enclosing_name: str | None = None;
-    if enclosing {
-        enclosing_name = enclosing.name.sym_name if enclosing.name else None;
-    }
-    if not enclosing_name {
-        impl_def = nd.find_parent_of_type(ImplDef);
-        if (impl_def and impl_def.target and len(impl_def.target) > 0) {
-            enclosing_name = impl_def.target[0].sym_name
-                if isinstance(impl_def.target[0], NameAtom)
-                else None;
-        }
-    }
+    enclosing = nd.enclosing_decl(ArchSpec);
+    enclosing_name = enclosing.name.sym_name
+        if isinstance(enclosing, (Archetype, Enum)) and enclosing.name
+        else None;
     if not enclosing_name {
         return None;
     }
     if self._is_in_type_annotation(nd) {
         return self.name_load(enclosing_name);
     }
-    ability = nd.find_parent_of_type(Ability);
-    impl_def = nd.find_parent_of_type(ImplDef);
+    ability = nd.enclosing_decl(Ability);
     is_in_classmethod = False;
     is_in_method = False;
     if ability {
@@ -983,15 +1001,6 @@ impl JcirGenPass._resolve_self_type(nd: Name) -> (CgNode | None) {
         is_in_method = ability.is_method
             and not ability.is_static
             and not ability.is_cls_method;
-    } elif (
-        impl_def and impl_def.decl_link and isinstance(impl_def.decl_link, Ability)
-    ) {
-        is_in_classmethod = impl_def.decl_link.is_cls_method;
-        is_in_method = (
-            impl_def.decl_link.is_method
-            and not impl_def.decl_link.is_static
-            and not impl_def.decl_link.is_cls_method
-        );
     }
     if is_in_classmethod {
         return self.nod('Name', ['id', 'ctx'], ['cls', self.py_ctx(nd)]);

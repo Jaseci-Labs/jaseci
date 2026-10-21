@@ -1,74 +1,10 @@
 import shutil;
 
-import from jaclang.server.serving.ws { WebSocket }
-import from jaclang.server.serving.endpoint { WSEndPoint }
-import from jaclang.scale.runtime.routing {
-    GATEWAY_BUILTIN_PREFIXES,
-    GATEWAY_BARE_API_PATHS,
-    GATEWAY_DISCOVERY_SEGMENTS,
-    GATEWAY_REPLICATED_SEGMENTS
-}
 
-
-def _install_ws_catchall(gw: MicroserviceGateway) {
-    import from jaclang.scale.runtime.middleware.ws_forward { websocket_forward }
-    import from jaclang.scale.runtime.gateway.service_registry { ServiceStatus }
-
-    async def ws_proxy(websocket: WebSocket) -> None {
-        ws_path: str = websocket.path_params.get('ws_path', '');
-        if gw.drain.draining {
-            await websocket.close(code=1012);
-            return;
-        }
-        full_path: str = "/" + ws_path;
-        matched = gw.registry.match_route(full_path);
-        if not matched {
-            await gw.refresh_app_routes();
-            matched = gw.registry.entries.get(gw.route_table.owner(full_path));
-        }
-        page_base: str = "";
-        if not matched {
-            matched = gw.root_member();
-            if matched is not None and matched.owns_root() {
-                page_base = matched.page_url;
-            }
-        }
-        if not matched or not (page_base or matched.url) {
-            await websocket.accept();
-            await websocket.close(code=1008);
-            return;
-        }
-        if matched.status not in (ServiceStatus.HEALTHY, ServiceStatus.STARTING) {
-            await websocket.accept();
-            await websocket.close(code=1013);
-            return;
-        }
-        remaining: str = full_path;
-        if not matched.is_root and full_path.startswith(matched.prefix) {
-            remaining = full_path[len(matched.prefix):];
-        }
-        remaining = remaining or "/";
-        query: str = str(websocket.url.query);
-        target_http: str = f"{page_base or matched.url}{remaining}";
-        if query {
-            target_http = f"{target_http}?{query}";
-        }
-
-        async def _accept_as_upstream_did(selected: str) {
-            await websocket.accept(subprotocol=selected);
-        }
-        req_headers: dict[str, str] = dict(websocket.headers.items());
-        logger.debug(f"ws proxy: {full_path} -> {target_http}");
-        await websocket_forward(
-            websocket, target_http, req_headers, on_upstream=_accept_as_upstream_did
-        );
-    }
-    gw.app.add_ws_endpoint(WSEndPoint(path="/{ws_path:path}", handler=ws_proxy));
-}
+def _install_ws_catchall(gw: MicroserviceGateway);
 
 impl MicroserviceGateway.service_base_url(service_entry: ServiceEntry) -> str {
     import jaclang;
-
     registry: dict[str, str] = jaclang.JacRuntime.get_sv_registry();
     return registry.get(service_entry.name, service_entry.url);
 }
@@ -259,10 +195,6 @@ glob _BUILTIN_PREFIXES: tuple[str, ...] = GATEWAY_BUILTIN_PREFIXES,
      _REPLICATED_SEGMENTS: set[str] = set(GATEWAY_REPLICATED_SEGMENTS);
 
 impl MicroserviceGateway.build_forward_headers(request: Request) -> dict[str, str] {
-    import from jaclang.scale.runtime.context.trace_ctx {
-        get_current_trace,
-        ensure_trace_id
-    }
     fwd: dict[str, str] = {};
     for (key, value) in request.headers.items() {
         if key.lower() not in HOP_BY_HOP_HEADERS and key.lower() != "x-forwarded-for" {
@@ -278,7 +210,6 @@ impl MicroserviceGateway.build_forward_headers(request: Request) -> dict[str, st
     trace = get_current_trace() or ensure_trace_id(request.headers.get("X-Trace-Id"));
     fwd["X-Trace-Id"] = trace;
 
-    import from jaclang.scale.runtime.context.tracing { current_traceparent }
     tp = current_traceparent(trace);
     if tp {
         fwd["traceparent"] = tp;
@@ -321,8 +252,6 @@ impl MicroserviceGateway.handle_health_ready -> Response {
 
 impl MicroserviceGateway.aggregate_graph_data(request: Request) -> Response | None {
     import json;
-    import from jaclang.scale.runtime.context.util { http_forward_timeout }
-    import from jaclang.scale.runtime.transport.http_forward { raw_forward }
 
     fwd_headers = self.build_forward_headers(request);
     query: str = str(request.url.query);
@@ -560,9 +489,6 @@ impl MicroserviceGateway.deliver_once(request: Request, path: str) -> Response |
 impl MicroserviceGateway.probe_services(
     request: Request, path: str, candidates: list[tuple[str, ServiceEntry]]
 ) -> Response {
-    import from jaclang.scale.runtime.context.util { http_forward_timeout }
-    import from jaclang.scale.runtime.transport.http_forward { stream_forward }
-
     fwd_headers = self.build_forward_headers(request);
     body: bytes = request.body;
     query: str = str(request.url.query);
@@ -588,13 +514,19 @@ impl MicroserviceGateway.probe_services(
         if svc_entry.host_override {
             per_svc_headers["Host"] = svc_entry.host_override;
         }
-        fr = await stream_forward(
-            request.method,
-            target_url,
-            per_svc_headers,
-            body,
-            timeout=int(http_forward_timeout(svc_name))
-        );
+        try {
+            fr = await stream_forward(
+                request.method,
+                target_url,
+                per_svc_headers,
+                body,
+                timeout=int(http_forward_timeout(svc_name))
+            );
+        } except ClientReadTimeout as timed_out {
+            import from jaclang.scale.runtime.context.errors { gateway_timeout }
+            logger.info(f"Probe: {svc_name} timed out: {timed_out}");
+            return gateway_timeout(svc_name);
+        }
         if fr is None {
             import from jaclang.scale.runtime.context.errors { service_unavailable }
             return service_unavailable(svc_name, "transport_error");
@@ -605,7 +537,7 @@ impl MicroserviceGateway.probe_services(
         }
         return fr.to_response();
     }
-    import from jaclang.scale.runtime.context.errors { not_found }
+
     return not_found(path, message="Not found on any service");
 }
 
@@ -624,13 +556,6 @@ impl MicroserviceGateway.handle_admin(path: str) -> Response | None {
 impl MicroserviceGateway.forward_to(
     request: Request, service_entry: ServiceEntry, target_url: str
 ) -> Response | None {
-    import from jaclang.scale.runtime.context.errors {
-        service_unavailable,
-        gateway_timeout
-    }
-    import from jaclang.scale.runtime.transport.http_forward { stream_forward }
-    import from jaclang.scale.runtime.context.util { http_forward_timeout }
-
     if service_entry.status not in (ServiceStatus.HEALTHY, ServiceStatus.STARTING) {
         return service_unavailable(service_entry.name, service_entry.status.value);
     }
@@ -642,11 +567,15 @@ impl MicroserviceGateway.forward_to(
     body: bytes = request.body;
 
     timeout = http_forward_timeout(service_entry.name);
-    fr = await stream_forward(
-        request.method, target_url, fwd_headers, body, timeout=int(timeout)
-    );
-    if fr is None {
+    try {
+        fr = await stream_forward(
+            request.method, target_url, fwd_headers, body, timeout=int(timeout)
+        );
+    } except ClientReadTimeout {
         return gateway_timeout(service_entry.name);
+    }
+    if fr is None {
+        return bad_gateway(service_entry.name);
     }
     return fr.to_response();
 }
@@ -664,8 +593,6 @@ impl MicroserviceGateway.handle_proxy(request: Request, path: str) -> Response |
 impl MicroserviceGateway.refresh_app_routes -> bool {
     import asyncio;
     import time;
-    import from jaclang.scale.runtime.gateway.route_table { learn_service_routes }
-    import from jaclang.scale.runtime.context.util { route_refresh_seconds }
 
     crawl = self._spec_crawl;
     if crawl is None or crawl.done() {
@@ -707,19 +634,15 @@ impl MicroserviceGateway.handle_app_route(
 }
 
 impl MicroserviceGateway.handle_openapi -> Response {
-    import from jaclang.scale.runtime.gateway.openapi_agg { aggregate_openapi }
     doc = await aggregate_openapi(self.registry);
     return JSONResponse(status_code=200, content=doc);
 }
 
 impl MicroserviceGateway.handle_docs -> Response {
-    import from jaclang.server.serving.openapi { swagger_ui_html }
     return HTMLResponse(content=swagger_ui_html("/openapi.json", "Jac Gateway - API"));
 }
 
 impl MicroserviceGateway.handle_metrics -> Response {
-    import from jaclang.scale.runtime.middleware.metrics { render_metrics }
-    import from jaclang.scale.runtime.context.errors { error_response }
     (body, ctype) = render_metrics(self._metrics_registry);
     if not body {
         return error_response(
@@ -804,15 +727,8 @@ impl MicroserviceGateway.setup -> ServingApp {
         );
     }
 
-    import from jaclang.scale.runtime.context.trace_ctx {
-        set_current_trace,
-        reset_current_trace,
-        ensure_trace_id
-    }
-    import from jaclang.scale.runtime.middleware.metrics { build_gateway_metrics }
-    import from jaclang.scale.config.config_loader { get_scale_config }
     mon_cfg = get_scale_config().get_monitoring_config();
-    import from jaclang.scale.runtime.context.log_emit { install_structured_logging }
+
     install_structured_logging();
     (self._metrics_registry, self._metrics_requests, self._metrics_duration) = (
         build_gateway_metrics(
@@ -821,14 +737,8 @@ impl MicroserviceGateway.setup -> ServingApp {
         )
     );
 
-    import from jaclang.scale.observability.factory { UtilityFactory }
     self._metrics = UtilityFactory.create_metrics('prometheus', mon_cfg);
 
-    import from jaclang.scale.runtime.context.tracing {
-        install_tracing,
-        start_server_span,
-        end_span
-    }
     trc_cfg = get_scale_config().get_gateway_config().get("tracing", {});
     install_tracing(
         enabled=trc_cfg.get("enabled", False),
@@ -1016,25 +926,16 @@ impl MicroserviceGateway.setup -> ServingApp {
 
     self.app.add_middleware(dispatcher);
 
-    import from jaclang.scale.runtime.middleware.middleware {
-        Middleware,
-        MiddlewareRegistry
-    }
     registry = MiddlewareRegistry();
 
-    import from jaclang.server.serving.drain { drain_middleware }
     registry.register(
         Middleware(
             name="drain", priority=20, fn=drain_middleware(self.drain, "__gateway__")
         )
     );
 
-    import from jaclang.scale.config.config_loader { get_scale_config }
     gw_cfg = get_scale_config().get_gateway_config();
 
-    import from jaclang.scale.runtime.middleware.rate_limit {
-        build_rate_limit_middleware
-    }
     rl_mw = build_rate_limit_middleware(gw_cfg.get("rate_limit", {}));
     if rl_mw is not None {
         registry.register(Middleware(name="rate_limit", priority=10, fn=rl_mw));
@@ -1061,16 +962,10 @@ impl MicroserviceGateway.setup -> ServingApp {
     return self.app;
 }
 
-def _log_gateway_ready(host: str, bound: int) {
-    logger.info(f"Gateway starting on {host}:{bound}");
-}
+def _log_gateway_ready(host: str, bound: int);
 
 
 impl MicroserviceGateway.start(on_ready: any = None) -> None {
-    import from jaclang.server.net { PORT_RETRY_LIMIT }
-    import from jaclang.server.serving.server { ServingServer }
-    import from jaclang.server.settings { ServeSettings }
-
     if self.app is None {
         self.setup();
     }
@@ -1104,13 +999,17 @@ impl MicroserviceGateway.identity -> UserManager {
 
 
 impl MicroserviceGateway._install_admin_api -> None {
-    import from jaclang.server.endpoints.auth { register_auth_endpoints }
-    import from jaclang.server.middleware { jwt_middleware }
-    import from jaclang.server.identity.config { configure_identity }
-    import from jaclang.server.settings { ServeSettings }
-
     settings = ServeSettings.load(self.base_path);
     configure_identity(settings.auth, self.base_path);
+    self.emailer = configured_emailer();
+    problems = settings.auth.problems()
+        + verification_problems(settings.auth.email.verification, self.emailer);
+    if problems {
+        raise ServeConfigError('\n'.join(f"- {p}" for p in problems));
+    }
+    for warning in settings.warnings() {
+        logger.warning(warning);
+    }
     self.server = self;
     self.user_manager = self.identity();
     self.app.add_middleware(jwt_middleware(self.user_manager));
@@ -1136,4 +1035,62 @@ impl MicroserviceGateway._install_admin_api -> None {
         "Gateway-owned identity installed "
         "(/user/register, /user/login, /user/me served by the gateway)"
     );
+}
+
+impl _install_ws_catchall(gw: MicroserviceGateway) {
+    async def ws_proxy(websocket: WebSocket) -> None {
+        ws_path: str = websocket.path_params.get('ws_path', '');
+        if gw.drain.draining {
+            await websocket.close(code=1012);
+            return;
+        }
+        full_path: str = "/" + ws_path;
+        matched = gw.registry.match_route(full_path);
+        if not matched {
+            await gw.refresh_app_routes();
+            matched = gw.registry.entries.get(gw.route_table.owner(full_path));
+        }
+        page_base: str = "";
+        if not matched {
+            matched = gw.root_member();
+            if matched is not None and matched.owns_root() {
+                page_base = matched.page_url;
+            }
+        }
+        if not matched or not (page_base or matched.url) {
+            await websocket.accept();
+            await websocket.close(code=1008);
+            return;
+        }
+        if matched.status not in (ServiceStatus.HEALTHY, ServiceStatus.STARTING) {
+            await websocket.accept();
+            await websocket.close(code=1013);
+            return;
+        }
+        remaining: str = full_path;
+        if not matched.is_root and full_path.startswith(matched.prefix) {
+            remaining = full_path[len(matched.prefix):];
+        }
+        remaining = remaining or "/";
+        query: str = str(websocket.url.query);
+        target_http: str = f"{page_base or matched.url}{remaining}";
+        if query {
+            target_http = f"{target_http}?{query}";
+        }
+
+        async def _accept_as_upstream_did(selected: str) {
+            await websocket.accept(subprotocol=selected);
+        }
+        req_headers: dict[str, str] = dict(websocket.headers.items());
+        logger.debug(f"ws proxy: {full_path} -> {target_http}");
+        await websocket_forward(
+            websocket, target_http, req_headers, on_upstream=_accept_as_upstream_did
+        );
+    }
+    gw.app.add_ws_endpoint(WSEndPoint(path="/{ws_path:path}", handler=ws_proxy));
+}
+
+
+impl _log_gateway_ready(host: str, bound: int) {
+    logger.info(f"Gateway starting on {host}:{bound}");
 }

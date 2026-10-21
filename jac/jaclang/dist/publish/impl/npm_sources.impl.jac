@@ -1,11 +1,6 @@
 import re;
 import fnmatch;
 import from pathlib { Path }
-import from jaclang.project.config { JacConfig }
-import from jaclang.dist.publish.sources { EXCLUDED_DIRS }
-import from jaclang.dist.publish.jsdoc { jsdoc_for_module, inject_jsdoc }
-import from jaclang.dist.publish.dts { dts_for_module }
-import from jaclang.dist.publish.runtime_npm { runtime_api_names }
 
 glob _DEFAULT_RUNTIME_PKG: str = "@jaseci/runtime";
 
@@ -17,51 +12,9 @@ impl runtime_pkg_name(config: JacConfig) -> str {
     return _DEFAULT_RUNTIME_PKG;
 }
 
-def _top_level_decls(js: str) -> set[str] {
-    names: set[str] = set();
-    for m in re.finditer(
-        r"(?m)^(?:export\s+)?(?:async\s+)?(?:function|const|let|var|class)\s+([A-Za-z_$][\w$]*)",
-        js
-    ) {
-        names.add(m.group(1));
-    }
-    return names;
-}
+def _top_level_decls(js: str) -> set[str];
 
-def _wire_externals(js: str, runtime_pkg: str) -> tuple[str, list[str]] {
-    externals: list[str] = [];
-    local = _top_level_decls(js);
-    api = runtime_api_names();
-
-    used: list[str] = [];
-    for name in sorted(api) {
-        if name in local {
-            continue;
-        }
-        if re.search(r"\b" + re.escape(name) + r"\b", js) {
-            used.append(name);
-        }
-    }
-    out = js;
-    if used {
-        out = f'import {{ {", ".join(used)} }} from "{runtime_pkg}";\n' + out;
-        externals.append(runtime_pkg);
-    }
-
-    for m in re.finditer(r'from\s+["\']([^"\']+)["\']', js) {
-        spec = m.group(1);
-        base = spec;
-        if spec.startswith("react/") {
-            base = "react";
-        } elif spec.startswith("react-dom/") {
-            base = "react-dom";
-        }
-        if base in ("react", "react-dom") and base not in externals {
-            externals.append(base);
-        }
-    }
-    return (out, externals);
-}
+def _wire_externals(js: str, runtime_pkg: str) -> tuple[str, list[str]];
 
 impl npm_js_path(rel_path: str) -> str {
     p = rel_path.replace("\\", "/");
@@ -71,73 +24,13 @@ impl npm_js_path(rel_path: str) -> str {
     return p;
 }
 
-def _in_excluded_dir(file_path: Path, pkg_root: Path) -> bool {
-    try {
-        rel = file_path.relative_to(pkg_root);
-    } except ValueError {
-        return False;
-    }
-    for part in rel.parts[:-1] {
-        if part in EXCLUDED_DIRS or part.endswith(".egg-info") {
-            return True;
-        }
-    }
-    return False;
-}
+def _in_excluded_dir(file_path: Path, pkg_root: Path) -> bool;
 
-def _package_dirs(config: JacConfig, proj_root: Path) -> list[Path] {
-    package_patterns = config.project.`include.packages;
-    if not package_patterns and config.project.name {
-        package_patterns = [config.project.name.replace("-", "_")];
-    }
-    candidates = sorted(
-        c
-        for c in proj_root.iterdir()
-        if c.is_dir() and c.name not in EXCLUDED_DIRS
-    );
-    dirs: list[Path] = [];
-    for pkg_glob in package_patterns {
-        for candidate in candidates {
-            if fnmatch.fnmatch(candidate.name, pkg_glob) and candidate not in dirs {
-                dirs.append(candidate);
-            }
-        }
-    }
-    return dirs;
-}
+def _package_dirs(config: JacConfig, proj_root: Path) -> list[Path];
 
-def _crosses_server_boundary(mod: any) -> bool {
-    im = mod.gen.interop_manifest if mod and mod.gen else None;
-    if im is None {
-        return False;
-    }
-    if im?.bindings {
-        return True;
-    }
-    if im?.server_exports_to_client {
-        return True;
-    }
-    return False;
-}
+def _crosses_server_boundary(mod: any) -> bool;
 
-def _compile_module(program: any, path: Path) -> any {
-    import from jaclang.compiler.driver.compile_options { CompileOptions }
-    source_key = str(path);
-    prev = len(program.errors_had);
-
-    mod = program.compile(source_key, options=CompileOptions(force_codespace='client'));
-    new_errors = program.errors_had[prev:];
-    if new_errors {
-        formatted = "\n".join(str(err) for err in new_errors);
-        raise ValueError(f"Failed to compile '{path}' for npm bundle:\n{formatted}");
-    }
-    import from jaclang.compiler.backends.es.esast_gen_pass { EsastGenPass }
-    import from jaclang.compiler.driver.pipeline { require_product, CompilationProduct }
-    if mod and mod.gen and not mod.gen.js {
-        require_product(program, mod, CompilationProduct.CLIENT);
-    }
-    return mod;
-}
+def _compile_module(program: any, path: Path) -> any;
 
 impl collect_npm_sources(
     config: JacConfig, project_root: Path | None = None,
@@ -155,7 +48,6 @@ impl collect_npm_sources(
         );
     }
 
-    import from jaclang.compiler.driver.program { JacProgram }
     program = JacProgram();
 
     runtime_pkg = runtime_pkg_name(config);
@@ -237,4 +129,116 @@ impl resolve_npm_entry(config: JacConfig, files: list[NpmSourceFile],) -> str | 
         return files[0].npm_path;
     }
     return None;
+}
+
+impl _top_level_decls(js: str) -> set[str] {
+    names: set[str] = set();
+    for m in re.finditer(
+        r"(?m)^(?:export\s+)?(?:async\s+)?(?:function|const|let|var|class)\s+([A-Za-z_$][\w$]*)",
+        js
+    ) {
+        names.add(m.group(1));
+    }
+    return names;
+}
+
+impl _wire_externals(js: str, runtime_pkg: str) -> tuple[str, list[str]] {
+    externals: list[str] = [];
+    local = _top_level_decls(js);
+    api = runtime_api_names();
+
+    used: list[str] = [];
+    for name in sorted(api) {
+        if name in local {
+            continue;
+        }
+        if re.search(r"\b" + re.escape(name) + r"\b", js) {
+            used.append(name);
+        }
+    }
+    out = js;
+    if used {
+        out = f'import {{ {", ".join(used)} }} from "{runtime_pkg}";\n' + out;
+        externals.append(runtime_pkg);
+    }
+
+    for m in re.finditer(r'from\s+["\']([^"\']+)["\']', js) {
+        spec = m.group(1);
+        base = spec;
+        if spec.startswith("react/") {
+            base = "react";
+        } elif spec.startswith("react-dom/") {
+            base = "react-dom";
+        }
+        if base in ("react", "react-dom") and base not in externals {
+            externals.append(base);
+        }
+    }
+    return (out, externals);
+}
+
+impl _in_excluded_dir(file_path: Path, pkg_root: Path) -> bool {
+    try {
+        rel = file_path.relative_to(pkg_root);
+    } except ValueError {
+        return False;
+    }
+    for part in rel.parts[:-1] {
+        if part in EXCLUDED_DIRS or part.endswith(".egg-info") {
+            return True;
+        }
+    }
+    return False;
+}
+
+impl _package_dirs(config: JacConfig, proj_root: Path) -> list[Path] {
+    package_patterns = config.project.`include.packages;
+    if not package_patterns and config.project.name {
+        package_patterns = [config.project.name.replace("-", "_")];
+    }
+    candidates = sorted(
+        c
+        for c in proj_root.iterdir()
+        if c.is_dir() and c.name not in EXCLUDED_DIRS
+    );
+    dirs: list[Path] = [];
+    for pkg_glob in package_patterns {
+        for candidate in candidates {
+            if fnmatch.fnmatch(candidate.name, pkg_glob) and candidate not in dirs {
+                dirs.append(candidate);
+            }
+        }
+    }
+    return dirs;
+}
+
+impl _crosses_server_boundary(mod: any) -> bool {
+    im = mod.gen.interop_manifest if mod and mod.gen else None;
+    if im is None {
+        return False;
+    }
+    if im?.bindings {
+        return True;
+    }
+    if im?.server_exports_to_client {
+        return True;
+    }
+    return False;
+}
+
+impl _compile_module(program: any, path: Path) -> any {
+    source_key = str(path);
+    prev = len(program.errors_had);
+
+    mod = program.compile(source_key, options=CompileOptions(force_codespace='client'));
+    new_errors = program.errors_had[prev:];
+    if new_errors {
+        formatted = "\n".join(str(err) for err in new_errors);
+        raise ValueError(f"Failed to compile '{path}' for npm bundle:\n{formatted}");
+    }
+
+    if mod and mod.gen and not mod.gen.js {
+        require(program, mod, CompilationProduct.CLIENT);
+    }
+    return mod;
 }

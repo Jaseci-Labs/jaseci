@@ -50,12 +50,12 @@ The jac client wraps this (`jacLogin` etc. - see `jac-cl-auth`); raw REST consum
 curl -X POST http://localhost:8000/user/register -H "Content-Type: application/json" -d '{
   "identities": [{"type": "username", "value": "alice"},
                  {"type": "email", "value": "a@example.com"}],
-  "credential": {"type": "password", "password": "secret123"},
+  "credential": {"type": "password", "password": "correct horse battery"},
   "profile": {"firstname": "Alice"}}'              # profile optional; response includes a token
 
 curl -X POST http://localhost:8000/user/login -H "Content-Type: application/json" -d '{
   "identity": {"type": "username", "value": "alice"},
-  "credential": {"type": "password", "password": "secret123"}}'
+  "credential": {"type": "password", "password": "correct horse battery"}}'
 # -> {"ok": true, "data": {"user_id": "...", "token": "eyJ...", "root_id": "...", "role": "user"}}
 
 curl -X POST http://localhost:8000/function/my_todos \
@@ -64,7 +64,7 @@ curl -X POST http://localhost:8000/function/my_todos \
 curl http://localhost:8000/user/me -H "Authorization: Bearer $TOKEN"   # profile, identities, role
 ```
 
-Identity types: `username`, `email` (max one of each; login works with either). Also available: `POST /user/refresh-token`, `PUT /user/password`, password-reset/verify endpoints via a configured emailer.
+Identity types: `username`, `email` (max one of each; login works with either unless `login_with` narrows it). Which ones an account needs, and how strong the password must be, is the project's **auth policy** (below); a value that breaks it gets `400 POLICY_VIOLATION` with every broken rule in `error.details.violations`. Also available: `POST /user/refresh-token`, `PUT /user/password`, password-reset/verify endpoints via a configured emailer.
 
 ## Media and downloads: the session cookie
 
@@ -103,7 +103,7 @@ Opt-in per user; an account with no verified factor signs in exactly as above. A
 
 Once a factor is verified, `POST /user/login` stops answering a `token`: it answers `{"mfa_required": true, "challenge_token": "...", "expires_in": 300}`. The challenge is not a session (every other endpoint answers 401 for it); exchange it at `/user/mfa/login`. Codes are RFC 6238 (SHA-1, 6 digits, 30 s, one step of clock skew), single-use, and five failures lock the account's second step for 15 minutes (`JAC_SERVE_AUTH_SECOND_FACTOR_ATTEMPTS`, `..._LOCKOUT_SECONDS`, `..._CHALLENGE_TTL_SECONDS`, `..._ISSUER`).
 
-A session that proved a second factor carries `"aal": "aal2"` (plus `amr`, `auth_time`); a password-only or SSO session has no `aal` claim and reads as `aal1`. Use `/user/mfa/verify` on a verified factor to step an `aal1` session up. Require the level inside an endpoint:
+A session that proved a second factor carries `"aal": "aal2"` (plus `amr`, `auth_time`); `amr` lists how each step was proven, `["pwd", "otp"]` after a password login and `["sso", "otp"]` after an SSO login. A password-only or SSO session on an account with no verified factor has no `aal` claim and reads as `aal1`; an account with a verified factor is always challenged, whichever way it signs in. Use `/user/mfa/verify` on a verified factor to step an `aal1` session up. Require the level inside an endpoint:
 
 ```jac
 import from jaclang.server.identity.assurance { caller_assurance_level }
@@ -117,6 +117,41 @@ def:protect rotate_keys -> dict[str, any] {
 ```
 
 `caller_assurance_level()` is `"aal2"`, `"aal1"`, or `""` when there is no signed-in HTTP caller (anonymous, scheduled, or a WebSocket call - gate those closed).
+
+## Auth policy (`[serve.auth]`)
+
+The policy is declared in `jac.toml` and enforced at every write (register, password change/reset, add-identity, rename, admin create). Existing accounts are never locked out by a change; rules apply to new values.
+
+```toml
+[serve.auth.identifiers]
+username = "optional"       # "required" | "optional" | "off"; an account needs at least one identifier
+email = "optional"          # username "off" + email "required" = the email is the login
+login_with = []             # kinds that may log in; [] = both. "off" stops NEW identifiers only
+
+[serve.auth.email]
+verification = "none"       # "optional": mail a link, do not block. "required": no session until it is used (needs [scale.emailer])
+allowed_domains = []
+
+[serve.auth.password]
+min_length = 8              # default
+require = []                # any of "lower", "upper", "digit", "symbol"
+reject_common = true        # default: bundled common-password list
+history = 0                 # last N passwords may not be reused
+max_age_days = 0
+
+[serve.auth.registration]
+enabled = true              # false: 403 REGISTRATION_CLOSED, accounts come from an admin
+
+[serve.auth.lockout]
+max_attempts = 10           # failed logins per source address + identity per window_seconds (900); 429 RATE_LIMITED. Behind an ingress, list it in [serve.proxy] trusted or the limit is per identity (anyone can lock an account out)
+```
+
+- A new username may not contain `@`. Register an email as `{"type": "email", ...}`, not as a username.
+- `GET /user/auth-policy` (public) returns the rules a form needs; `jacSignup` reads it to type a bare string as a username or an email (`jacLogin` types by shape: `@` means email).
+- With `verification = "required"`, `/user/register` returns `verification_required: true` and no token, and `/user/login` answers `403 EMAIL_NOT_VERIFIED` (re-sending the link) until `POST /user/verify-identity` succeeds. The emailed link is `verify_url_template` with `{token}` filled in; the server does not serve that page, so the app needs a route that posts the token to `/user/verify-identity`. Signing in again is the resend (`/user/send-verification` needs a session the account cannot get yet; sends cap at 5 per user per hour). Only an email given at registration blocks sign-in; one added later with `/user/add-identity` is mailed a link but does not.
+- The mail transport is `[scale.emailer] provider = "smtp"` plus `from_address`, with the server in a `[scale.emailer.smtp]` sub-table (`host`, `port`, `username`, `use_tls`; password via `EMAILER_SMTP_PASSWORD`). The message is fixed plain text; only the link is configurable.
+- Every key takes an env override named `JAC_SERVE_AUTH_<TABLE>_<KEY>` (`JAC_SERVE_AUTH_PASSWORD_MIN_LENGTH`). An unknown key under `[serve.auth]` stops the server at startup.
+- The bootstrap admin has no default password: a dev server mints one and logs it once; a cluster needs `[scale.admin] default_password` or `JAC_SCALE_ADMIN_PASSWORD` (`jac scale deploy` mints one into the app Secret).
 
 ## JWT production footgun
 
@@ -140,6 +175,6 @@ No token revocation exists - tokens stay valid until expiry. SSO (Google/Apple/G
 - Don't "fix" a 401 by making the endpoint `:pub` - that changes whose graph it runs on, not just who may call it.
 - `:pub` and authenticated endpoints can live in the same file - visibility is per-declaration.
 - Client calls to an authenticated endpoint without a session raise an error containing `"UNAUTHORIZED"` - catch and redirect to login (`jac-cl-auth`).
-- `register` returns a token too (verified), but `login`'s response is the canonical source of `token` + `root_id` - keep `root_id` if you plan to use per-user grants (`jac-sv-multi-user`).
+- `register` returns `token` and `root_id` too (no token when `verification = "required"`: it answers `verification_required: true`), but `login`'s response is the canonical source of `token` + `root_id` - keep `root_id` if you plan to use per-user grants (`jac-sv-multi-user`).
 
 Deep dive bundled with the CLI: `jac guide reference/persistence` (auth + per-user roots in the full persistence reference).

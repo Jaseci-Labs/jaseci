@@ -1,11 +1,11 @@
 """Degradation path: with the LLVM shim unavailable, programs must still
 compile cleanly into the server codespace with zero scheduling errors.
 
-The shim is present in every environment the suite runs in, so the disable
-knob (`JAC_LLVM_SHIM=none`) stands in for a missing shim: `_find_shim`
-refuses before probing the filesystem, which is the same signal the native
-scheduling gate sees when the shared object is genuinely absent. This is
-the suite home of what used to be ci.yml's `test-no-llvm` job.
+The shim is present in every environment the suite runs in, so the child
+process makes the artifact router find none: every tier of the `llvm-shim`
+artifact probes as missing, which is the same signal the native scheduling
+gate sees when the shared object is genuinely absent. This is the suite
+home of what used to be ci.yml's `test-no-llvm` job.
 """
 
 import os;
@@ -30,6 +30,11 @@ def _run_no_llvm(argv: list[str], work: str) -> tuple[int, str] {
     script = f"""
 import sys, runpy
 sys.path.insert(0, {JAC_ROOT!r})
+from unittest.mock import patch
+from jaclang.artifacts.model import Probe
+from jaclang.compiler.backends.native.llvm.shim_path import ShimArtifact
+for probe in ('probe_sealed', 'probe_checkout', 'probe_kit'):
+    patch.object(ShimArtifact, probe, return_value=Probe.missing()).start()
 sys.argv = {argv_repr}
 try:
     runpy.run_module('jaclang', run_name='__main__', alter_sys=True)
@@ -37,7 +42,6 @@ except SystemExit as exc:
     raise SystemExit(int(exc.code) if isinstance(exc.code, int) else 1)
 """;
     env: dict[str, str] = dict(os.environ);
-    env["JAC_LLVM_SHIM"] = "none";
     env["HOME"] = work;
     env.update(cache_env(os.path.join(work, "cache")));
     proc = subprocess.run(
@@ -59,7 +63,7 @@ test "no-llvm run degrades to the server codespace and still executes" {
             f.write(PROG);
         }
         (rc, out) = _run_no_llvm(["run", prog], work);
-        assert rc == 0 , f"jac run failed under JAC_LLVM_SHIM=none:\n{out}";
+        assert rc == 0 , f"jac run failed without an LLVM shim:\n{out}";
         assert "42" in out.splitlines() or "42" in out , out;
         assert "scheduling error" not in out , out;
         assert "preferred native but did not lower" not in out , out;
@@ -69,17 +73,20 @@ test "no-llvm run degrades to the server codespace and still executes" {
 
 test "native availability probes do not load code generators or LLVM bindings" {
     script = """
-import os, sys, tempfile
-from pathlib import Path
+import sys
+from unittest.mock import patch
+from jaclang.artifacts import router
+from jaclang.artifacts.model import Probe, Source
+from jaclang.compiler.backends.native.llvm.shim_path import ShimArtifact
 from jaclang.compiler.driver.toolchain import native_pipeline_available, _native_env_memo
 heavy = ('jaclang.compiler.backends.native.na_ir_gen_pass',
          'jaclang.compiler.backends.native.na_compile_pass',
          'jaclang.compiler.backends.native.llvm.binding')
-with tempfile.TemporaryDirectory() as directory:
-    shim = Path(directory) / 'probe-shim'
-    shim.touch()
-    for setting, expected in [('none', False), (str(shim), True)]:
-        os.environ['JAC_LLVM_SHIM'] = setting
+for probe, expected in [(Probe.missing(), False), (Probe.hit(Source.CHECKOUT, '/probe-shim', {}), True)]:
+    with patch.object(ShimArtifact, 'probe_sealed', return_value=None), \
+         patch.object(ShimArtifact, 'probe_checkout', return_value=probe), \
+         patch.object(ShimArtifact, 'probe_kit', return_value=Probe.missing()):
+        router.forget()
         _native_env_memo.clear()
         available, reason = native_pipeline_available()
         assert available is expected, (available, reason)
@@ -90,4 +97,47 @@ with tempfile.TemporaryDirectory() as directory:
         [sys.executable, "-c", script], capture_output=True, text=True, timeout=600
     );
     assert proc.returncode == 0 , proc.stdout + proc.stderr;
+}
+
+
+"""Importing the LLVM bindings must not call into the shim. `initfini` used to
+ask the shim for its version at import time, so a stale or missing shim broke
+every import of the `native` command, including `jac native build llvm-shim`,
+the command that repairs it. The child makes every shim lookup raise
+`ArtifactUnavailable`, the error a stale or missing shim produces, then imports
+that command module."""
+test "native command module imports while the LLVM shim is unavailable" {
+    script = f"""
+import sys
+sys.path.insert(0, {JAC_ROOT!r})
+import jaclang
+from jaclang.artifacts import router
+from jaclang.artifacts.model import ArtifactUnavailable
+assert not [m for m in sys.modules if ".llvm." in m], "LLVM bindings loaded before the patch"
+_real_require = router.require
+
+def _require(name, *args, **kwargs):
+    if name == "llvm-shim":
+        raise ArtifactUnavailable("stale: simulated by the test")
+    return _real_require(name, *args, **kwargs)
+
+router.require = _require
+import jaclang.cli.commands.native
+print("IMPORTED")
+""";
+    with tempfile.TemporaryDirectory() as work {
+        env: dict[str, str] = dict(os.environ);
+        env["HOME"] = work;
+        env.update(cache_env(os.path.join(work, "cache")));
+        proc = subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=JAC_ROOT,
+            capture_output=True,
+            text=True,
+            env=env,
+            timeout=600,
+        );
+        out = proc.stdout + proc.stderr;
+        assert proc.returncode == 0 and "IMPORTED" in out , out;
+    }
 }

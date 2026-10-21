@@ -202,6 +202,9 @@ class SealedImage:
         # Optional native record (format 9): the package's native units and
         # the one linked artifact the link plan produced from them.
         self.native: dict = manifest.get("native") or {}
+        # Optional: the artifacts this image leaves out by design (a pull
+        # request's CI kit omits the kernel); each runs on its floor quietly.
+        self.omits: frozenset = frozenset(manifest.get("omits") or ())
         # fullname -> (entry, src_relpath). One tree: full-compiler modules and
         # jac0-compiled bootstrap modules share the JIR container + manifest;
         # ``entry["bootstrap"]`` flags the jac0 tier (loaded via bootstrap_code).

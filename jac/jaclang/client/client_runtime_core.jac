@@ -1,19 +1,3 @@
-import from jaclang.client.auth_contract { SignupResult }
-import from jaclang.client.endpoint_cache {
-    __endpointKey,
-    __getEndpointEffects as cache___getEndpointEffects,
-    __getCacheState as cache___getCacheState,
-    __isFresh as cache___isFresh,
-    __cacheGet as cache___cacheGet,
-    __cacheSet as cache___cacheSet,
-    __evictOldest as cache___evictOldest,
-    __overlaps as cache___overlaps,
-    __invalidateEndpoint as cache___invalidateEndpoint,
-    __cachedEndpointCall as cache___cachedEndpointCall,
-    __invalidateEffects as cache___invalidateEffects,
-    __jacClearCache as cache___jacClearCache
-}
-
 obj:pub BridgeError(Exception) {
     has app: str = "",
         name: str = "",
@@ -21,9 +5,7 @@ obj:pub BridgeError(Exception) {
         status: int = 0,
         message: str = "";
 
-    def postinit {
-        self.message = self.detail;
-    }
+    def postinit;
 }
 
 obj:pub BridgeUnavailable(BridgeError) {}
@@ -65,7 +47,8 @@ async def:pub __jacCallFunction(
     function_name: str, args: dict[str, any] = {}, opts: (dict[str, any] | None) = None
 ) -> any;
 
-def:pub __normalizeIdentity(x: any) -> dict[str, any];
+async def:pub __authPolicy -> any;
+def:pub __normalizeIdentity(x: any, policy: any = None) -> dict[str, any];
 def:pub __normalizeCredential(x: any) -> dict[str, any];
 def:pub __errorMessage(err: any) -> str;
 
@@ -82,6 +65,8 @@ async def:pub jacLogin(
 
 def:pub jacLogout -> None;
 def:pub jacIsLoggedIn -> bool;
+def:pub __jacTokenExpired(token: str) -> bool;
+def:pub __jacDropRejectedToken(sent: str) -> bool;
 
 async def:pub jacSsoLogin(
     platform: str, api_base: str = "", operation: str = "login"
@@ -145,3 +130,7 @@ def:pub errorOverlay(filePath: str, errors: str) -> JsxElement;
 def:pub __jacReactErrorHandler(error: any, info: any) -> None;
 
 def:pub __unwrapFormSchema(schema: any) -> any;
+
+impl BridgeError.postinit {
+    self.message = self.detail;
+}

@@ -57,17 +57,12 @@ python_tree cpython | emit python_cpython
     jac/native jac/build.zig jac/build.zig.zon jac/bootstrap/pins.json
 } | emit python_jacpython
 tree jac/jaclang | emit payload
+tree jac/jaclang jac/native jac/build.zig jac/build.zig.zon \
+  jac/bootstrap/pins.json jac/_jac_finder.py jac.toml | emit kernel
 tree jac/jaclang jac/build.zig jac/build.zig.zon jac/launcher jac/bootstrap \
   jac/native jac/_jac_finder.py jac/sitecustomize.py jac/examples/jaclang_org \
   jac/examples/tiny_jacyac \
   jac.toml jac/jac.toml | emit binary
 tree jac/launcher jac/bootstrap jac/build.zig jac/build.zig.zon jac/native \
-  jac/jaclang/client/bun_installer.jac jac/jaclang/compiler/backends/native/wasm_rt |
+  jac/jaclang/client/js_runtime.jac jac/jaclang/compiler/backends/native/wasm_rt |
   emit layers
-# The kernel's stage-0 compiler as the committed pin names it: a pinned commit,
-# or "self" when this checkout's compiler builds its own kernel (also when the
-# pin is absent). Read from HEAD like every key above, never the work tree.
-stage0_pin=$(git show HEAD:jac/bootstrap/stage0.json 2>/dev/null || true)
-stage0=$(printf '%s' "$stage0_pin" | tr -d ' \t\r\n' |
-  sed -n 's/.*"commit":"\([0-9a-f]\{40,64\}\)".*/\1/p')
-printf 'stage0=%s\n' "${stage0:-self}"
