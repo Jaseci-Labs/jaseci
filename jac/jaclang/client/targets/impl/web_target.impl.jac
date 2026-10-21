@@ -124,9 +124,26 @@ impl WebTarget.build(
         apply_pwa(dist_dir, project_dir);
     }
     if dist_dir {
-        _copy_public_dirs(
-            bundler.config_loader.get_public_dirs(str(entry_file.resolve())), dist_dir
-        );
+        entry_path = str(entry_file.resolve());
+        public_dirs = bundler.config_loader.get_public_dirs(entry_path);
+        seo_config = bundler.config_loader.get_seo_config(entry_path);
+        if seo_config.get('site_url') {
+            import from jaclang.client.targets.seo_build { apply_seo, scan_routes }
+            base_path = bundler.config_loader.get_base_path();
+            asset_paths = [f"{base_path}{bundle_path.name}"];
+            css_file = bundler.find_css();
+            if css_file and css_file.exists() {
+                asset_paths.append(f"{base_path}styles.css");
+            }
+            apply_seo(
+                dist_dir,
+                seo_config,
+                scan_routes(bundler.config_loader.get_app_root(entry_path)),
+                public_dirs,
+                asset_paths
+            );
+        }
+        _copy_public_dirs(public_dirs, dist_dir);
     }
     return bundle_path;
 }

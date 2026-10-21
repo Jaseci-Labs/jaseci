@@ -61,6 +61,37 @@ the project root's second; for a path in both, the app's file wins. A file whose
 path matches one the build writes, such as `index.html`, fails the build instead
 of replacing it.
 
+### robots.txt and sitemap.xml
+
+Set the site's public URL and `jac build` writes both files into `dist/`:
+
+```toml
+[client.seo]
+site_url = "https://example.org"   # required: nothing is generated without it
+
+[client.seo.sitemap]
+exclude = ["/preview-auth"]        # paths to leave out
+extra = ["/blog/launch"]           # paths the route scanner can't see
+
+[client.seo.robots]
+disallow = ["/internal"]           # paths to block, on top of the (auth) routes
+```
+
+- The sitemap lists the routes under `pages/`, except routes in an `(auth)` group,
+  catch-all routes and routes with a dynamic segment (`[id].jac`), which can't be
+  listed. An app without `pages/` lists `/`. It has no `<lastmod>`.
+- `robots.txt` disallows the `(auth)` routes and everything in `disallow`, always
+  allows the client bundle and stylesheet so crawlers can render the app, and
+  points at the sitemap.
+- A file of the same name in `public/` wins: the build uses it instead and says so.
+
+`jac run --serve` and the jac-scale gateways compare the host of a `/robots.txt`
+request (`X-Forwarded-Host`, then `Host`) with `site_url`. On any other host, such
+as a preview or staging deployment, they answer `User-agent: *` / `Disallow: /`,
+whether the file was generated or hand-written, so previews are not indexed. Both
+files are served with `Cache-Control: no-cache`. In a workspace, `[client.seo]`
+applies to every app; `[apps.<name>.client.seo]` overrides it for one app.
+
 ### Client Code Is Inferred
 
 A component file needs no marker at all -- JSX and npm imports are client-only syntax, so the compiler places these declarations (and any helpers they use) in the client bundle automatically:
