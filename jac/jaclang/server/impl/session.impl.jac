@@ -1284,7 +1284,18 @@ impl Session.acommit(anchor: (Anchor | None) = None) -> None {
 }
 
 impl Session.aclose -> None {
-    await _off_loop(self.close);
+    import asyncio;
+    job = asyncio.ensure_future(_off_loop(self.close));
+    try {
+        await asyncio.shield(job);
+    } except asyncio.CancelledError {
+        while not job.done() {
+            try {
+                await asyncio.shield(job);
+            } except asyncio.CancelledError {}
+        }
+        raise;
+    }
 }
 
 

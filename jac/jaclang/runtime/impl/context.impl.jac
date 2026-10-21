@@ -110,7 +110,12 @@ impl ExecutionContext.aclose -> None {
         return;
     }
 
-    await self.mem.aclose();
+    try {
+        await self.mem.aclose();
+    } except asyncio.CancelledError {
+        self.run_pending_effects();
+        raise;
+    }
 
     self.run_pending_effects();
 }
