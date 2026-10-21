@@ -25,6 +25,7 @@ import from pathlib { Path }
 import from tempfile { TemporaryDirectory }
 import from uuid { UUID }
 import from jaclang { JacRuntime as Jac }
+import from jaclang.runtime.archetype { Anchor }
 import from jaclang.runtime.context { ExecutionContext }
 import from jaclang.scale.server.inprocess {
     PreparedInProcessRuntime,
@@ -34,6 +35,7 @@ import from jaclang.scale.server.websocket_ext { WebSocketExtension }
 import from jaclang.scale.websocket.websocket { _ws_stream_result }
 import from jaclang.server.request_scope { RequestScope }
 import from jaclang.server.serving.datatypes { WebSocketDisconnect }
+import from jaclang.server.session { Session }
 import from jaclang.testing.testkit { ServingTestClient }
 
 # Hash throwaway fixture credentials at minimum scrypt cost so it does not dominate test time.
@@ -180,6 +182,21 @@ def _restore_env(name: str, prior: (str | None)) {
 
 test "a websocket walker sees a user registered after the process-global session began reading" {
     prior = os.environ.get("JAC_SCALE_RUNTIME");
+    commits: list[bool] = [];
+    original_commit = Session.commit;
+
+    def tracking_commit(self: Session, anchor: (Anchor | None) = None) {
+        on_loop = True;
+        try {
+            asyncio.get_running_loop();
+        } except RuntimeError {
+            on_loop = False;
+        }
+        commits.append(on_loop);
+        original_commit(self, anchor);
+    }
+
+    Session.commit = tracking_commit;
     with TemporaryDirectory() as project {
         runtime = _serve(project);
         try {
@@ -203,10 +220,14 @@ test "a websocket walker sees a user registered after the process-global session
             assert second.get("ok") is True , f"websocket walker failed: {second}";
             assert second["data"]["reports"][0] == ["one", "two"] , f"got {second}";
         } finally {
+            Session.commit = original_commit;
             runtime.close();
             _restore_env("JAC_SCALE_RUNTIME", prior);
         }
     }
+    on_loop = commits.count(True);
+    assert commits , "nothing committed";
+    assert on_loop == 0 , f"{on_loop} of {len(commits)} commits ran on the event loop";
 }
 
 

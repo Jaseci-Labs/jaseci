@@ -1283,6 +1283,10 @@ impl Session.acommit(anchor: (Anchor | None) = None) -> None {
     await _off_loop(settle);
 }
 
+impl Session.aclose -> None {
+    await _off_loop(self.close);
+}
+
 
 impl Session._leave_queue -> None {
     self._contended.clear();

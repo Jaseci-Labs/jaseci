@@ -71,4 +71,5 @@ obj Memory {
     def read_scope_exit;
     def run_request(body: Callable) -> any;
     def close;
+    async def aclose;
 }

@@ -217,3 +217,7 @@ impl Memory.close {
     self._dirty.clear();
     self._deleted.clear();
 }
+
+impl Memory.aclose {
+    self.close();
+}

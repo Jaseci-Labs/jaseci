@@ -105,6 +105,16 @@ impl ExecutionContext.close -> None {
     self.run_pending_effects();
 }
 
+impl ExecutionContext.aclose -> None {
+    if self._parent is not None and self.mem is self._parent.mem {
+        return;
+    }
+
+    await self.mem.aclose();
+
+    self.run_pending_effects();
+}
+
 impl ExecutionContext.on_commit(callback: Callable) -> None {
     self.pending_effects.append(callback);
 }
