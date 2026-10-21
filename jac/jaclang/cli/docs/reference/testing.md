@@ -675,6 +675,14 @@ exception type. With `port_retries=0` (the `JacAPIServer` default), an occupied
 port raises `PortInUseError`, which is an `OSError`. TLS, boot, and readiness
 callback errors also propagate; a failed start does not return a stop handle.
 
+API server starts share the process-wide bridge worker through distinct owner
+claims. Startup cleanup and the returned stop callable release only that start's
+claim, so another running server keeps its worker. Repeated releases are harmless;
+releasing the final claim requests worker shutdown. Forked children start with
+fresh worker ownership. The outbox helpers retain their legacy behavior:
+`start_worker()` is idempotent, and `stop_worker()` without an owner explicitly
+stops the process-wide worker.
+
 If startup has not completed within 30 seconds, the call raises `TimeoutError`
 and requests shutdown. A delayed worker that observes abandonment at
 readiness requests shutdown again. Shutdown is cooperative: bind operations,
