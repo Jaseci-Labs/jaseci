@@ -3432,15 +3432,6 @@ graph import {
         },
         compiler.boundary_rules.non_string_key { sized_scalar_names },
         compiler.boundary_rules.python_native_wire { sized_scalar_names },
-        compiler.type_registry { ScalarShape },
-        compiler.type_registry._numeric_entry { ScalarShape },
-        compiler.type_registry._registry_entries { numeric_shapes },
-        compiler.type_registry._shape_table { numeric_shapes },
-        compiler.type_registry._builtin_name_set { sized_scalar_names },
-        compiler.type_registry.JacTypeRegistry.range_of { shape_range },
-        compiler.type_registry.JacTypeRegistry.literal_fits { shape_literal_fits },
-        compiler.type_registry.JacTypeRegistry.widens_to { shapes_widen_to },
-        compiler.type_registry.JacTypeRegistry.unify { shapes_unify },
     ]
     runtime.scalars --> [
         compiler.passes.wasm_contract.value_contract { ScalarShape, shape_range },
