@@ -2596,7 +2596,7 @@ graph import {
             | compiler.passes.scope_walk.ScopeWalker.walk_scope
             | compiler.tools.grammar_extract_pass.GrammarExtractPass.enter_impl_def {
             osp_skip_rest
-        },
+        }
     ]
     runtime.osp_kernel --> [
         compiler.passes.context.CompileContext.enter_node { osp_skip_rest },
