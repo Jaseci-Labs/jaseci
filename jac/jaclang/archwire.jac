@@ -2294,6 +2294,11 @@ graph import {
         runtime.traceback_render { pretty_print_source_location },
         scale.injector.bundle.BundleSourceFilter.parks { path_matches_exclude },
     ]
+    project.source --> [
+        compiler.passes.import_wiring_pass { pascal_to_snake },
+        compiler.passes.pyast_load_pass.PyastBuildPass.convert { pascal_to_snake },
+        compiler.tools.lang_tools { pascal_to_snake },
+    ]
     project.template_loader ++> [
         cli.commands.fix._ensure_workspace { migrate_implicit_app },
         cli.commands.project._create_app { scaffold_app },
