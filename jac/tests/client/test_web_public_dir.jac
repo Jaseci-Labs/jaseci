@@ -111,3 +111,80 @@ test "a public/ file that would overwrite a build output fails the build" {
         );
     }
 }
+
+test "a public/ folder where the build writes a file fails the build" {
+    with tempfile.TemporaryDirectory() as tmp {
+        project_dir = Path(tmp).resolve();
+        entry_path = single_app(
+            project_dir,
+            {"client.test.js/readme.txt": "clash", "robots.txt": "User-agent: *\n"}
+        );
+        try {
+            build_web(project_dir, entry_path);
+            assert False , "the build accepted a public/ folder named like its bundle";
+        } except RuntimeError as err {
+            assert "client.test.js" in str(err) , f"the error does not name the path: {err}";
+        }
+        assert not list((project_dir / ".jac").rglob("robots.txt")) , (
+            "a failed build still copied part of public/"
+        );
+    }
+}
+
+test "a file in one public/ and a folder of the same name in another fails before copying" {
+    with tempfile.TemporaryDirectory() as tmp {
+        project_dir = Path(tmp).resolve();
+        app_dir = project_dir / "apps" / "web";
+        (app_dir / "public").mkdir(parents=True);
+        (project_dir / "public" / "docs.txt").mkdir(parents=True);
+        entry_path = app_dir / "main.jac";
+        entry_path.write_text('def:pub app -> any { return <div>site</div>; }');
+        (project_dir / "jac.toml").write_text(
+            '[project]\nname = "site"\ndefault-app = "web"\n\n'
+                + '[apps.web]\nkind = "web-app"\nentry-point = "apps.web.main"\n'
+        );
+        (project_dir / "package.json").write_text('{"name":"site","version":"0.0.0"}');
+        (app_dir / "public" / "docs.txt").write_text("a file\n");
+        (project_dir / "public" / "docs.txt" / "page.txt").write_text("a folder\n");
+        (project_dir / "public" / "robots.txt").write_text("User-agent: *\n");
+        try {
+            build_web(project_dir, entry_path);
+            assert False , "the build accepted docs.txt as both a file and a folder";
+        } except RuntimeError as err {
+            for part in ["apps/web/public/docs.txt", "docs.txt/page.txt"] {
+                assert part in str(err) , f"the error does not name {part}: {err}";
+            }
+        }
+        assert not list((project_dir / ".jac").rglob("robots.txt")) , (
+            "a failed build still copied part of public/"
+        );
+    }
+}
+
+test "linked folders inside public/ are copied, links that leave it or loop are not" {
+    with tempfile.TemporaryDirectory() as tmp {
+        project_dir = Path(tmp).resolve();
+        entry_path = single_app(project_dir, {"shared/logo.svg": "<svg></svg>\n"});
+        public = project_dir / "public";
+        secret = project_dir / "secret";
+        secret.mkdir();
+        (secret / "key.txt").write_text("not public\n");
+        (public / "icons").symlink_to("shared", target_is_directory=True);
+        (public / "loop").symlink_to(".", target_is_directory=True);
+        (public / "outside").symlink_to("../secret", target_is_directory=True);
+        (public / "leak.txt").symlink_to("../secret/key.txt");
+        dist = build_web(project_dir, entry_path);
+        rows = [
+            ("a real folder", "shared/logo.svg", True),
+            ("a link to a folder inside public/", "icons/logo.svg", True),
+            ("a link to a folder outside public/", "outside/key.txt", False),
+            ("a link to a file outside public/", "leak.txt", False),
+            ("a link back to public/ itself", "loop/shared/logo.svg", False)
+        ];
+        for (label, rel, copied) in rows {
+            assert (dist / rel).is_file() == copied , (
+                f"{label}: {rel} {'missing from' if copied else 'copied into'} dist"
+            );
+        }
+    }
+}

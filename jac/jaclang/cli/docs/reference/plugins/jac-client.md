@@ -57,9 +57,11 @@ Files under `public/` are served at the site root: `public/robots.txt` at
 `/robots.txt`, `public/img/logo.png` at `/img/logo.png`. `jac build` copies them
 into `dist/` unchanged, so a deployment that serves only `dist/` answers the same
 URLs as `jac run --serve`. In a workspace, the app's own `public/` is read first and
-the project root's second; for a path in both, the app's file wins. A file whose
-path matches one the build writes, such as `index.html`, fails the build instead
-of replacing it.
+the project root's second; for a path in both, the app's file wins. Links are
+followed when they point inside the same `public/`, as when serving, and links
+that leave it are skipped. A file whose path matches one the build writes, such as
+`index.html`, or a path that would need a folder where a file already is, fails
+the build before anything is copied.
 
 ### robots.txt and sitemap.xml
 
