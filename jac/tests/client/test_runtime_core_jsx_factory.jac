@@ -25,7 +25,16 @@ def _compile_runtime_core_js(proj: Path) -> str {
     compiler.runtime_path = proj / "package.json";
     compiler.compiled_dir = out_dir;
     compiler.jac_client_compiler.compiled_dir = out_dir;
+    # A full compile emits the app's closure, which reaches the runtime through
+    # @jac/runtime, before compile_runtime_utils writes it: both must agree.
+    (proj / "app.jac").write_text(
+        'def:pub app() -> any {\n    has count: int = 0;\n    return <div>{count}</div>;\n}\n'
+    );
+    compiler.jac_client_compiler.emit_dependencies(proj / "app.jac", visited=set());
+    runtime_js = out_dir / "client_runtime.js";
+    emitted = runtime_js.read_text();
     compiler.compile_runtime_utils();
+    assert runtime_js.read_text() == emitted , "client_runtime.js has two writers that disagree";
 
     core_js = out_dir / "client_runtime_core.js";
     assert core_js.exists() , "compile path should emit client_runtime_core.js";

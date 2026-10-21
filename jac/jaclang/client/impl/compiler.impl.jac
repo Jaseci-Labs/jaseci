@@ -176,22 +176,8 @@ impl ViteCompiler.compile_runtime_utils(self: ViteCompiler) -> tuple[str, list[s
     );
     self.compiled_dir.mkdir(parents=True, exist_ok=True);
 
-    visited: set[Path] = {runtime_utils_path.resolve()};
-    for (name, dependency) in runtime.manifest.imports.items() {
-        if name in self.jac_client_compiler.SELF_COMPILED_VIRTUAL_MODULES {
-            continue;
-        }
-        dependency_path = Path(str(dependency)).resolve();
-        if dependency_path.suffix == '.jac' {
-            self.jac_client_compiler.emit_dependencies(
-                dependency_path, visited=visited, source_root=runtime_utils_path.parent
-            );
-        }
-    }
-    runtime_out = self.compiled_dir / 'client_runtime.js';
-    runtime_out.write_text(runtimeutils_js, encoding='utf-8');
-    self.jac_client_compiler._write_source_map(
-        runtime, str(runtime_utils_path), runtime_out, runtimeutils_js
+    self.jac_client_compiler.emit_dependencies(
+        runtime_utils_path, source_root=runtime_utils_path.parent
     );
 
     self.jac_client_compiler.compile_mobui_utils();
@@ -226,8 +212,7 @@ impl ViteCompiler.compile_desktop_sdk(self: ViteCompiler) {
         desktop_js = desktop_js + '\n' + export_line + '\n';
     }
     desktop_out = self.compiled_dir / 'desktop_api.js';
-    desktop_out.write_text(desktop_js, encoding='utf-8');
-    self.jac_client_compiler._write_source_map(
+    self.jac_client_compiler._write_js(
         desktop, str(desktop_path), desktop_out, desktop_js
     );
 }
