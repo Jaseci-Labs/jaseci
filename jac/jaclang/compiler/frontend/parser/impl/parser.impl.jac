@@ -2721,6 +2721,7 @@ impl Parser.parse_lambda_expr -> Expr {
     rbrace_uni: Token | None = None;
     if self.match_tok(TokenKind.LBRACE) {
         lbrace_uni = self.make_uni_token(self.previous());
+        self._lambda_block = True;
         body_stmts2 = self._apply_implicit_return(self.parse_code_block_stmts());
         rbrace_uni = self.consume_uni(TokenKind.RBRACE);
     } else {
@@ -3482,15 +3483,16 @@ impl Parser.parse_module_code -> ModuleCode {
 
 impl Parser.parse_code_block_stmts -> list[CodeBlockStmt] {
     stmts: list[CodeBlockStmt] = [];
-    checked_first = False;
+    lambda_block = self._lambda_block;
+    self._lambda_block = False;
+    flagged: list[SourceLoc] = [];
     while not self.check(TokenKind.RBRACE) and not self.at_end() {
         before = self.pos;
         stmt = self.parse_statement();
         if stmt is not None {
             is_docstring = False;
             if (
-                not checked_first
-                and self._view_body_depth == 0
+                self._view_body_depth == 0
                 and isinstance(stmt, ExprStmt)
                 and not stmt.in_fstring
                 and stmt.has_semi
@@ -3506,14 +3508,7 @@ impl Parser.parse_code_block_stmts -> list[CodeBlockStmt] {
                 }
             }
             if is_docstring {
-                self.emit_warn(
-                    "Docstrings in Jac go before the declaration, not inside the body. Move this string before the enclosing test/can/obj/etc.",
-                    "W0060",
-                    loc=self.tokens[before].loc
-                );
-            }
-            if not isinstance(stmt, Semi) {
-                checked_first = True;
+                flagged.append(self.tokens[before].loc);
             }
             stmts.append(stmt);
 
@@ -3538,6 +3533,24 @@ impl Parser.parse_code_block_stmts -> list[CodeBlockStmt] {
         if self.pos == before {
             self.advance();
         }
+    }
+    if lambda_block
+        and len(
+            [
+                s
+                for s in stmts
+                if not isinstance(s, Semi)
+            ]
+        )
+            == 1 {
+        return stmts;
+    }
+    for loc in flagged {
+        self.emit_warn(
+            "A string on its own does nothing. Docstrings go before the declaration, not inside the body; write a note inside a body as a # comment.",
+            "W0060",
+            loc=loc
+        );
     }
     return stmts;
 }
@@ -4733,13 +4746,6 @@ impl Parser.parse_class_pattern_args(
 }
 
 impl Parser.parse_return_stmt -> ReturnStmt {
-    """`return expr;`, or `return tail call(...);` for a guaranteed tail call.
-
-    `tail` is contextual: it marks a tail call only directly after `return`
-    and before a name that starts the call, so `return tail;`,
-    `return tail(x);` and `return tail.next;` still read a variable named
-    `tail`. The operand of `return tail` must be a call.
-    """;
     ret_uni = self.consume_uni(TokenKind.KW_RETURN);
     expr = None;
     tail_uni: Token | None = None;
