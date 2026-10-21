@@ -1,4 +1,5 @@
 import asyncio;
+import threading;
 
 import from jaclang.jac0core.archetype { Root }
 import from jaclang.runtimelib.changeset { ChangeSet }
@@ -16,6 +17,7 @@ obj _FailingBackend {
 
 def _mem_with_pending_intent -> ScaleTieredMemory {
     mem = ScaleTieredMemory.__new__(ScaleTieredMemory);
+    mem._commit_lock = threading.RLock();
     mem.__mem__ = {};
     mem.changes = ChangeSet();
     mem.l2 = None;
