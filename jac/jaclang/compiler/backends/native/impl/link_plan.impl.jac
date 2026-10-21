@@ -397,7 +397,13 @@ impl _build_link_plan(
             return;
         }
         for dep in registry.known_native_deps(path, opts) {
-            walk_unit(dep, stack + [path]);
+            """A dependency the cached unit recorded may since have been deleted
+            or renamed (a platform variant folded into one unit, say). The
+            unit's own check below then finds it stale and lowers it again, and
+            the dependencies it has now are walked after it.""";
+            if os.path.isfile(dep) {
+                walk_unit(dep, stack + [path]);
+            }
         }
         errs_before = len(prog.errors_had);
         """The unit's dependencies are walked first, so a cached unit is

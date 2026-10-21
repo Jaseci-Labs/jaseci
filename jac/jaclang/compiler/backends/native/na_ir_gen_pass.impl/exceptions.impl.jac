@@ -720,7 +720,7 @@ impl NaIRGenPass._exc_lineage_fns -> tuple[ir.Function, ir.Function] {
     table = ir.GlobalVariable(self.llvm_module, table_ty, name="__jac_exc_lineage");
     table.linkage = "weak";
     table.initializer = ir.Constant(table_ty, None);
-    atomic = "wasm" not in str(self.llvm_module.triple or "");
+    atomic = not self._target_is_wasm();
 
     has_fn = ir.Function(
         self.llvm_module, ir.FunctionType(i1, [i64]), name="__jac_exc_lineage_has"
@@ -1299,7 +1299,7 @@ impl NaIRGenPass._codegen_try_unwind(
 }
 
 impl NaIRGenPass._slot_lowering_active -> bool {
-    return (self.module.gen.nogc_enforced or "wasm" in str(self.llvm_module.triple))
+    return (self.module.gen.nogc_enforced or self._target_is_wasm())
         and self._gen_ctx is None;
 }
 
@@ -1406,7 +1406,7 @@ impl NaIRGenPass._register_unwind_cleanup -> None {
             return;
         }
     }
-    if self.module.gen.nogc_enforced or "wasm" in str(self.llvm_module.triple) {
+    if self.module.gen.nogc_enforced or self._target_is_wasm() {
         return;
     }
     slots: list[tuple[str, ir.Value]] = [];

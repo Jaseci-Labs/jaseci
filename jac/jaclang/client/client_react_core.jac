@@ -67,6 +67,7 @@ async def:pub jacLogin(
 
 def:pub jacLogout -> None;
 def:pub jacIsLoggedIn -> bool;
+def:pub __jacTokenExpired(token: str) -> bool;
 def:pub jacSetToken(token: str) -> None;
 def:pub useJacState(initial: any) -> any;
 

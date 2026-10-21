@@ -533,9 +533,15 @@ graph import {
     compiler.backends.native.host_facts --> project.compiler_host.ProjectHost.native_fact {
         host_native_fact
     }
-    compiler.backends.native.kernel_resolve ++> dist.precompile_bytecode.seal_native {
-        kernel_lib_name
-    }
+    compiler.backends.native.kernel_resolve ++> [
+        dist.precompile_bytecode.adopt_kernel {
+            LAYOUT_SIDECAR_SUFFIX,
+            kernel_lib_name,
+            read_sidecar,
+            unit_drift
+        },
+        dist.precompile_bytecode.seal_native { kernel_lib_name },
+    ]
     compiler.backends.native.kernel_resolve --> [
         project.kernel_check.analysis_kernel { KernelLoadError },
         project.kernel_check.kernel_check | project.kernel_compile.kernel_route {
@@ -1015,6 +1021,7 @@ graph import {
     compiler.frontend.codeinfo --> [
         cli.check_report.print_native_coverage { native_display_text },
         project.compiler_host.ProjectHost.client_stub_globals { jaclang_pkg_root },
+        project.compiler_host.ProjectHost.ct_environment { effective_native_target },
     ]
     type compiler.frontend.codeinfo ++> client.client_bundle
         | client.compiler
@@ -1250,6 +1257,7 @@ graph import {
             kernel_root_path,
             native_scope_paths
         },
+        dist.precompile_bytecode.adopt_kernel { in_native_scope_path },
         dist.precompile_bytecode.seal_native { in_native_scope_path },
     ]
     compiler.native_scope --> dist.precompile_bytecode.native_roots { kernel_root_path }
@@ -1307,6 +1315,11 @@ graph import {
     compiler.placement.placement_solver ++> dist.seal.bake_native_payloads {
         native_default_path_ok
     }
+    compiler.target_spec ++> [
+        dist.precompile_bytecode._shared_suffix { host_target_spec },
+        dist.precompile_bytecode.adopt_kernel { host_target_spec },
+    ]
+    compiler.target_spec --> dist.precompile_bytecode.seal_native { host_target_spec }
     compiler.tools.code_intel ++> cli.commands.code { CodeIntelligence }
     compiler.tools.grammar_extract_pass ++> cli.commands.analysis.grammar {
         GrammarExtractPass
@@ -7835,7 +7848,6 @@ graph import compiler {
             SpecRole
         },
         passes.annex_weave | passes.static_analysis_pass { BodyRole },
-        passes.context { ImplOf },
         passes.pyast_load_pass {
             Kid,
             NameRefRole,
@@ -10062,6 +10074,12 @@ graph import compiler {
             report_serverless_kind_errors
         },
     ]
+    target_spec ++> [
+        backends.native.kernel_resolve { host_target_spec, target_spec, triple_osarch },
+        backends.native.link_glue.link_glue_ir { triple_osarch },
+    ]
+    type target_spec ++> backends.native.kernel_resolve
+        | backends.native.kernel_stage0 { TargetSpec }
     tools.cfg_dot ++> driver.pipeline.cfg_dot_passes { CoalesceBBPass }
     tools.code_intel ++> tests.test_code_intel { CodeIntelligence }
     tools.comment_attach_pass ++> [
@@ -10938,7 +10956,6 @@ graph import compiler.backends.native {
             FACT_CODEC_NAME,
             FACT_CODEC_TABLES,
             FACT_IMPORT_PATHS,
-            FACT_OS,
             FACT_PACKAGE_STORE,
             FACT_PRIMITIVE_METHODS,
             FACT_SEALED_RUNTIME,
@@ -10956,7 +10973,6 @@ graph import compiler.backends.native {
             EXC_LINEAGE_SLOTS,
             FACT_CODEC_NAME,
             FACT_CODEC_TABLES,
-            FACT_OS,
             FACT_PRIMITIVE_METHODS,
             FACT_SEALED_RUNTIME,
             FACT_SEP,
@@ -11003,6 +11019,13 @@ graph import compiler.backends.native {
         },
         wasm_build { NativeLinkError, WasmLinkJob, link_wasm_module },
     ]
+    posix_floor --> link_glue.link_glue_ir { posix_floor_ir }
+    posix_floor_ir ++> posix_floor {
+        POSIX_FLOOR_IR_LINUX_AARCH64,
+        POSIX_FLOOR_IR_LINUX_X86_64,
+        POSIX_FLOOR_IR_MACOS_AARCH64,
+        POSIX_FLOOR_IR_MACOS_X86_64
+    }
     primitives_native ++> na_ir_gen_pass {
         NativeDictEmitter,
         NativeEmitCtx,
@@ -11081,7 +11104,6 @@ graph import compiler.backends.native.llvm.binding {
         module | targets | value { _decode_string, _encode_string },
     ]
     context ++> module { get_global_context }
-    initfini ++> targets { llvm_version_info }
     linker ++> module { link_modules }
     value ++> [
         module { ValueRef },
@@ -15315,6 +15337,8 @@ graph import runtime.na_stdlib {
         dt_tm_gmtoff,
         dt_tm_zone
     }
+    _digest ++> hashlib | hmac { new_core }
+    type _digest ++> hashlib | hmac { DigestCore }
     _directory_native ++> [
         glob | shutil | uuid | zoneinfo { try_directory_names },
         pathlib { directory_names },
@@ -15328,37 +15352,15 @@ graph import runtime.na_stdlib {
         _directory_native { clear_errno, last_errno, raise_os_error },
         _socket_native | shutil | socket { errno_message },
         _time_common { last_errno, raise_errno },
+        _time_native { raise_errno },
     ]
     _errno_platform ++> _errno_native { errno_address }
+    _fd_native ++> _replace_native { AT_FDCWD }
     _file_native ++> [
         gettext | mimetypes | pathlib | uuid | zoneinfo { read_file_bytes },
         io { close_stream, open_stream, read_stream, read_stream_all, seek_stream },
     ]
     _glob_native ++> glob { glob_lexists }
-    _hashlib_native ++> [
-        hashlib {
-            block_size_for,
-            ctx_require,
-            digest_size_for,
-            evp_ctx_clone,
-            evp_ctx_digest,
-            evp_ctx_free,
-            evp_ctx_new,
-            evp_ctx_update,
-            evp_md_for
-        },
-        hmac {
-            block_size_for,
-            ctx_require,
-            digest_size_for,
-            evp_md_for,
-            hmac_ctx_clone,
-            hmac_ctx_digest,
-            hmac_ctx_free,
-            hmac_ctx_new,
-            hmac_ctx_update
-        },
-    ]
     _hex ++> hashlib | hmac | secrets { to_hex }
     _locale_tables ++> locale { _load_alias, _load_encalias }
     _logging_native ++> logging {
@@ -15432,7 +15434,6 @@ graph import runtime.na_stdlib {
         _default_types_ext,
         _default_types_val
     }
-    _passwd_layout ++> _user_home { PASSWD_DIR, PASSWD_SIZE }
     _replace_native ++> _os_native { replace_file }
     _socket_abi ++> [
         _socket_native {
@@ -15514,6 +15515,18 @@ graph import runtime.na_stdlib {
     _time_common ++> [
         _datetime_native { time_clock_ns },
         time { time_clock_ns, time_clock_seconds, time_clock_set_ns },
+    ]
+    _time_native ++> [
+        _datetime_native { CLK_REALTIME },
+        time {
+            CLK_MONOTONIC,
+            CLK_MONOTONIC_RAW,
+            CLK_PROCESS_CPUTIME,
+            CLK_PY_MONOTONIC,
+            CLK_REALTIME,
+            CLK_THREAD_CPUTIME,
+            time_sleep_ns
+        },
     ]
     _typename ++> hmac | secrets { typename }
     _user_home ++> os.path { user_home }

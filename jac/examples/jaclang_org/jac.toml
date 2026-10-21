@@ -16,7 +16,7 @@ description = "The full jaclang.org workspace: a web app, a mobUI mobile app, an
 # `--fleet` places them in separate processes.
 [apps.web]
 kind = "web-app"
-entry-point = "web.main"
+entry-point = "web"
 
 [apps.mobile]
 kind = "mobile"
@@ -24,14 +24,14 @@ entry-point = "mobile.main"
 
 [apps.cli]
 kind = "cli"
-entry-point = "cli.main"
+entry-point = "cli"
 
 # The site as a desktop app: the same core/site UI in an OS webview. Its
 # backend is jaclang.org itself (see [apps.desktop.desktop] backend), so it is
 # a native window onto the live site, not a private copy of it.
 [apps.desktop]
 kind = "desktop"
-entry-point = "desktop.main"
+entry-point = "desktop"
 
 [apps.social_graph]
 kind = "service"
@@ -53,13 +53,15 @@ attempts_per_hour = 5
 challenges_per_10_minutes = 20
 
 [test]
-directories = ["core", "web", "mobile", "cli"]
+directories = ["."]
 
 # `jac test cli` / `jac test mobile` run one app; a bare `jac test` targets the
-# default app (web) and so runs the workspace list above. The mobile app is a
+# default app (web) and so runs the whole workspace. The cli app is one file:
+# an empty list stops it inheriting the workspace list, so `jac test cli` runs
+# just its entry (cli.jac, with the cli.test.jac annex). The mobile app is a
 # shell over the phone UI in core/jacyac/native, so its tests live there.
 [apps.cli.test]
-directories = ["."]
+directories = []
 
 [apps.mobile.test]
 directories = ["core/jacyac"]
