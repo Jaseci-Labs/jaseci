@@ -1,3 +1,4 @@
+import from jaclang.runtime.osp_kernel { osp_skip_rest }
 def _is_comptime_marker(nd: UniNode) -> bool;
 
 def comptime_reach(top: UniNode) -> set[int];

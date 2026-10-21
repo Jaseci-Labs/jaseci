@@ -1,5 +1,6 @@
 import json;
 import from typing { cast }
+import from jaclang.runtime.osp_kernel { osp_skip_rest }
 
 glob _T = TypeVar('_T', bound=es.Node),
      ES_LOGICAL_OPS: dict[str, str] = {Tok.KW_AND: '&&', Tok.KW_OR: '||'},

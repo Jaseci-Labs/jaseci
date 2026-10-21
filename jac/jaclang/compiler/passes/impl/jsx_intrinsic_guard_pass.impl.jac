@@ -22,7 +22,6 @@ impl JsxIntrinsicGuardPass.prepare with entry {
 
 impl JsxIntrinsicGuardPass.enter_module with Module entry {
     if self._enforced_root is None {
-        import from jaclang.runtime.osp_kernel { osp_skip_rest }
         osp_skip_rest();
     }
 }

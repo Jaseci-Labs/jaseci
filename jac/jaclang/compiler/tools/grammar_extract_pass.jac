@@ -1,3 +1,4 @@
+import from jaclang.runtime.osp_kernel { osp_skip_rest }
 def is_nil_expr(nd: object) -> bool;
 
 obj GExpr {
