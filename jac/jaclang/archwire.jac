@@ -2584,7 +2584,15 @@ graph import {
         server.session.Session.quarantine_ref { sv_forget_by_id },
     ]
     runtime.osp_graph_sv --> byllm.visit_routing._candidate_for { sv_register_hydrated }
-    runtime.osp_kernel --> byllm.visit_routing._route_context { _current_scope }
+    runtime.osp_kernel --> [
+        byllm.visit_routing._route_context { _current_scope },
+        compiler.backends.es.esast_gen_pass
+            | compiler.backends.py.jcir_gen_pass
+            | compiler.passes.comptime_resolve_pass
+            | compiler.passes.jsx_intrinsic_guard_pass
+            | compiler.passes.scope_walk
+            | compiler.tools.grammar_extract_pass { osp_skip_rest },
+    ]
     runtime.osp_kernel --> [
         compiler.passes.context.CompileContext.enter_node { osp_skip_rest },
         compiler.passes.context.CompileContext.exit_node { osp_skip_rest },
