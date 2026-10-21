@@ -2590,7 +2590,6 @@ graph import {
             | compiler.backends.py.jcir_gen_pass.JcirGenPass.exit_walk
             | compiler.passes.comptime_resolve_pass.ComptimeResolvePass.enter_walk
             | compiler.passes.comptime_resolve_pass.ComptimeResolvePass.exit_walk
-            | compiler.passes.jsx_intrinsic_guard_pass.JsxIntrinsicGuardPass.enter_module
             | compiler.passes.scope_walk.ScopeWalker.walk_scope
             | compiler.tools.grammar_extract_pass.GrammarExtractPass.enter_impl_def {
             osp_skip_rest
