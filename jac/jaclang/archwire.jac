@@ -1864,6 +1864,7 @@ graph import {
             | server.server.JacAPIServer._ensure_client_bundle { client_app_dir_for },
         client.config_loader.JacClientConfig.get_assets_config { client_assets_config },
         client.config_loader.JacClientConfig.get_assets_dir { client_assets_dir },
+        client.config_loader.JacClientConfig.get_public_dirs { client_app_root },
         client.targets.react_native.scaffold._project_native_deps {
             client_workspace_app
         },

@@ -14,6 +14,8 @@ def _parse_entry_file(entry_file: Path) -> tuple[str, str];
 
 def _pwa_enabled(project_dir: Path) -> bool;
 
+def _copy_public_dirs(public_dirs: list[Path], dist_dir: Path) -> list[str];
+
 impl WebTarget.setup(project_dir: Path) -> None {
     if _pwa_enabled(project_dir) {
         import from jaclang.client.targets.pwa_build { ensure_pwa_icons }
@@ -121,6 +123,11 @@ impl WebTarget.build(
         import from jaclang.client.targets.pwa_build { apply_pwa }
         apply_pwa(dist_dir, project_dir);
     }
+    if dist_dir {
+        _copy_public_dirs(
+            bundler.config_loader.get_public_dirs(str(entry_file.resolve())), dist_dir
+        );
+    }
     return bundle_path;
 }
 
@@ -145,6 +152,35 @@ impl _parse_entry_file(entry_file: Path) -> tuple[str, str] {
         mod = mod[:-len(JAC_FILE_EXTENSION)];
     }
     return (base, mod);
+}
+
+impl _copy_public_dirs(public_dirs: list[Path], dist_dir: Path) -> list[str] {
+    import shutil;
+    planned: dict[str, Path] = {};
+    for public_dir in public_dirs {
+        for source in sorted(public_dir.rglob('*')) {
+            if not source.is_file() {
+                continue;
+            }
+            rel = source.relative_to(public_dir).as_posix();
+            if rel in planned {
+                continue;
+            }
+            if (dist_dir / rel).exists() {
+                raise RuntimeError(
+                    f"Web build failed: {source} would overwrite {rel}, which the "
+                    "build itself creates. Rename or move it out of public/."
+                );
+            }
+            planned[rel] = source;
+        }
+    }
+    for (rel, source) in planned.items() {
+        target = dist_dir / rel;
+        target.parent.mkdir(parents=True, exist_ok=True);
+        shutil.copy2(source, target);
+    }
+    return sorted(planned);
 }
 
 impl _pwa_enabled(project_dir: Path) -> bool {
