@@ -17,7 +17,7 @@ def chain_source(operands: int) -> str {
     return (
         "import sys;\nwith entry {\n    x = "
         + "+".join(["1"] * operands)
-        + ";\n    sys.stdout.write(str(x));\n}\n"
+        + ";\n    sys.stdout.write(str(x));\n    sys.stdout.write(\"\\n\");\n}\n"
     );
 }
 
@@ -29,11 +29,10 @@ def write_chain(dir: str, operands: int) -> str {
     return path;
 }
 
-def run_jac(cmd: str, path: str) -> str {
-    result = subprocess.run(
+def run_jac(cmd: str, path: str) -> subprocess.CompletedProcess {
+    return subprocess.run(
         jac_command(cmd, path), capture_output=True, text=True, cwd=JAC_ROOT
     );
-    return result.stdout + result.stderr;
 }
 
 def deep_cg_node(depth: int) -> CgNode {
@@ -68,15 +67,17 @@ test "a five thousand operand chain runs and gives the right answer" {
     # Native lowering still recurses per operator and gives out near six
     # thousand, so the end-to-end run stays below that ceiling.
     with tempfile.TemporaryDirectory() as dir {
-        out = run_jac("run", write_chain(dir, 5000));
-        assert "5000" in out , out;
-        assert "✖ Error" not in out , out;
+        result = run_jac("run", write_chain(dir, 5000));
+        assert result.returncode == 0 , result.stdout + result.stderr;
+        assert "5000" in result.stdout.splitlines() , result.stdout + result.stderr;
     }
 }
 
 test "a ten thousand operand chain type checks" {
     with tempfile.TemporaryDirectory() as dir {
-        out = run_jac("check", write_chain(dir, 10000));
+        result = run_jac("check", write_chain(dir, 10000));
+        out = result.stdout + result.stderr;
+        assert result.returncode == 0 , out;
         assert "maximum recursion depth" not in out , out;
         assert "1 passed" in out , out;
     }
