@@ -20,7 +20,7 @@ impl collect_client_graph(
         return found;
     }
 
-    def check_runtime_imports(path: Path, artifact: ClientArtifact) -> None {
+    def check_runtime_imports(path: Path, artifact: ClientArtifact) {
         for (dependency, names) in artifact.manifest.runtime_imports.items() {
             if not names {
                 continue;
