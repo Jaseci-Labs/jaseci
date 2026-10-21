@@ -1540,13 +1540,15 @@ test "W3051 strip-docstrings removes string statements inside bodies" {
         assert gone not in formatted , f"{gone} survived:\n{formatted}";
     }
     # An f-string can run code, a suppressed line opted out, a case body
-    # cannot be left empty, a lone lambda statement is its return value, and
-    # a string in a JSX slot is rendered content.
+    # cannot be left empty, a lone lambda statement is its return value (so a
+    # string whose removal would leave one expression statement must stay),
+    # and a string in a JSX slot is rendered content.
     for kept in [
         "KEPT_FSTRING",
         "KEPT_SUPPRESSED",
         "KEPT_LONE_CASE",
         "KEPT_LAMBDA_RETURN",
+        "KEPT_BEFORE_LONE_EXPR",
         "KEPT_SLOT_CONTENT"
     ] {
         assert kept in formatted , f"{kept} was stripped:\n{formatted}";

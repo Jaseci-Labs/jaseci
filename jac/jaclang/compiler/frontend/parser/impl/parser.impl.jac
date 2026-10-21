@@ -3486,6 +3486,7 @@ impl Parser.parse_code_block_stmts -> list[CodeBlockStmt] {
     lambda_block = self._lambda_block;
     self._lambda_block = False;
     flagged: list[SourceLoc] = [];
+    flagged_at: list[int] = [];
     while not self.check(TokenKind.RBRACE) and not self.at_end() {
         before = self.pos;
         stmt = self.parse_statement();
@@ -3509,6 +3510,7 @@ impl Parser.parse_code_block_stmts -> list[CodeBlockStmt] {
             }
             if is_docstring {
                 flagged.append(self.tokens[before].loc);
+                flagged_at.append(len(stmts));
             }
             stmts.append(stmt);
 
@@ -3534,16 +3536,26 @@ impl Parser.parse_code_block_stmts -> list[CodeBlockStmt] {
             self.advance();
         }
     }
-    if lambda_block
-        and len(
-            [
-                s
-                for s in stmts
-                if not isinstance(s, Semi)
-            ]
-        )
-            == 1 {
-        return stmts;
+    if lambda_block {
+        real = [
+            i
+            for i in range(len(stmts))
+            if not isinstance(stmts[i], Semi)
+        ];
+        rest = [
+            i
+            for i in real
+            if i not in flagged_at
+        ];
+        if len(real) == 1 {
+            return stmts;
+        }
+        if len(rest) == 1 {
+            lone = stmts[rest[0]];
+            if isinstance(lone, ExprStmt) and lone.has_semi {
+                return stmts;
+            }
+        }
     }
     for loc in flagged {
         self.emit_warn(

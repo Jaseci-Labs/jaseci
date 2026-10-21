@@ -29,7 +29,11 @@ def lambdas -> list[str] {
         "LAMBDA_NOTE";
         return "LAMBDA_VALUE";
     };
-    return [kept(), noted()];
+    shielded = lambda {
+        "KEPT_BEFORE_LONE_EXPR";
+        len("abc");
+    };
+    return [kept(), noted(), str(shielded())];
 }
 
 def:pub slot_view(show: bool) -> JsxElement {

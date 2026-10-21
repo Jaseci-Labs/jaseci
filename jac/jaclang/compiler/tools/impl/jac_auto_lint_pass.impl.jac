@@ -2941,8 +2941,19 @@ impl JacAutoLintPass._strip_string_stmts(start: uni.UniNode) -> None {
                 for s in body
                 if not isinstance(s, uni.Semi)
             ];
+            rest = [
+                s
+                for s in real
+                if not self._is_string_stmt(s)
+            ];
             if strs
-                and not (isinstance(current, uni.LambdaExpr) and len(real) == 1)
+                and not (
+                    isinstance(current, uni.LambdaExpr)
+                    and (
+                        len(real) == 1
+                        or (len(rest) == 1 and isinstance(rest[0], uni.ExprStmt))
+                    )
+                )
                 and not (
                     isinstance(current, (uni.MatchCase, uni.SwitchCase))
                     and len(strs) == len(real)
