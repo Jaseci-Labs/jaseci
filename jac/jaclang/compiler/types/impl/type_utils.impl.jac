@@ -812,7 +812,7 @@ impl shadowed_type_var_names(
                 declared.add(tp_node.sym_name);
             }
         }
-        scope = scope.parent;
+        scope = scope.decl_parent;
     }
     return {
         name

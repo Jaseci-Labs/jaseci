@@ -143,10 +143,10 @@ impl native_placement_candidate(
     if in_native_scope_path(mod_path) and not native_unit_compile {
         return (False, "compiler frontend module: native only inside the kernel build");
     }
-    if not any([isinstance(e, uni.ElementStmt) for e in module.body]) {
+    if not any([isinstance(e, uni.ElementStmt) for e in module.elements]) {
         return (False, "empty module: nothing to lower");
     }
-    for elem in module.body {
+    for elem in module.elements {
         if isinstance(elem, uni.ContextAwareNode)
             and elem.code_context == CodeContext.CLIENT {
             return (False, "declares client elements");
@@ -216,14 +216,6 @@ impl _endpoint_veto_applies(module: uni.Module) -> bool {
     return project_has_server(module);
 }
 
-impl _top_element(module: uni.Module, nd: uni.UniNode) -> (uni.UniNode | None) {
-    cur: (uni.UniNode | None) = nd;
-    while (cur is not None and cur.parent is not module) {
-        cur = cur.parent;
-    }
-    return cur;
-}
-
 impl _is_client_top(elem: uni.UniNode) -> bool {
     return isinstance(elem, uni.ContextAwareNode)
         and elem.code_context == CodeContext.CLIENT;
@@ -275,7 +267,7 @@ impl _pullable_by_client_reference(
         return _py_import_client_portable(elem, module.app_kind);
     }
     if isinstance(elem, (uni.Archetype, uni.TypeAlias)) {
-        for top in module.body {
+        for top in module.elements {
             if top is elem {
                 continue;
             }
@@ -295,7 +287,7 @@ impl _pullable_by_client_reference(
 
 impl _ref_top_ids(module: uni.Module, elem: uni.UniNode) -> set[int] {
     refs: set[int] = set();
-    for nm in elem.get_all_sub_nodes(uni.Name) {
+    for nm in elem.element_sub_nodes(uni.Name) {
         par = nm.parent;
         if (isinstance(par, uni.AtomTrailer) and par.is_attr and par.right is nm) {
             continue;
@@ -312,7 +304,7 @@ impl _ref_top_ids(module: uni.Module, elem: uni.UniNode) -> set[int] {
         if decl is None {
             continue;
         }
-        top = _top_element(module, decl);
+        top = decl.element_in(module);
         if (top is None or top is elem) {
             continue;
         }
@@ -332,7 +324,7 @@ impl _named_top_element(target: uni.Module, name: str) -> (uni.UniNode | None) {
     if decl is None {
         return None;
     }
-    return _top_element(target, decl);
+    return decl.element_in(target);
 }
 
 impl _materialize_module(path: str, prog: JacProgram) -> (uni.Module | None) {
@@ -418,7 +410,7 @@ impl _closure_pullable(
     ) {
         return False;
     }
-    elem_by_id: dict[int, uni.UniNode] = {id(stmt): stmt for stmt in module.body};
+    elem_by_id: dict[int, uni.UniNode] = {id(stmt): stmt for stmt in module.elements};
     for ref_id in work.refs(module).get(id(top), set()) {
         ref_elem = elem_by_id.get(ref_id);
         if ref_elem is None {
@@ -567,7 +559,7 @@ impl solve_module_placement(
     native_tops: list[uni.UniNode] = [];
     inferable: list[uni.UniNode] = [];
     for (sidx, stmt) in enumerate(module.body) {
-        if not isinstance(stmt, uni.ContextAwareNode) {
+        if not isinstance(stmt, uni.ContextAwareNode) or stmt.top_element is not stmt {
             continue;
         }
         if stmt.code_context == CodeContext.CLIENT {

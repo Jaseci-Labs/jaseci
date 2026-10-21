@@ -452,8 +452,8 @@ impl ProjectHost.native_parse(
     load_kernel: bool = True
 ) -> (tuple[Module, bool] | None) {
     natives = program._natives if program is not None else None;
-    if natives is not None and natives.progress is not None {
-        natives.note_step("parse", file_path);
+    if natives is not None {
+        natives.begin_parse(file_path);
     }
     kernel = _jc.ensure_loaded()
         if load_kernel
@@ -560,8 +560,38 @@ impl ProjectHost.host_platform -> HostPlatform {
 }
 
 impl ProjectHost.ct_environment -> CtEnvironment {
+    """The comptime `target`: the native target this compile builds for, else
+    the host. Analysis identities carry the target, so each target's comptime
+    answers are cached apart.""";
     import sys;
     import platform;
+    import from jaclang.compiler.frontend.codeinfo { effective_native_target }
+    triple = effective_native_target().lower();
+    if triple {
+        """Parsed here rather than through target_spec: this runs while the
+        type evaluator compiles any module, target_spec.jac included.""";
+        arch = "";
+        if "aarch64" in triple or "arm64" in triple {
+            arch = "aarch64";
+        } elif "x86_64" in triple or "amd64" in triple {
+            arch = "x86_64";
+        }
+        if arch {
+            if "darwin" in triple or "apple" in triple or "macos" in triple {
+                return CtEnvironment(
+                    os="darwin", arch=("arm64" if arch == "aarch64" else arch)
+                );
+            }
+            if "windows" in triple or "msvc" in triple or "mingw" in triple {
+                return CtEnvironment(
+                    os="windows", arch=("AMD64" if arch == "x86_64" else arch)
+                );
+            }
+            if "linux" in triple {
+                return CtEnvironment(os="linux", arch=arch);
+            }
+        }
+    }
     host_os = "linux";
     if sys.platform.startswith("win") {
         host_os = "windows";

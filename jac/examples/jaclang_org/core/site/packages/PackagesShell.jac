@@ -1,6 +1,8 @@
 import from "@jac/runtime" { useLocation }
 
-def:pub PackagesShell -> JsxElement {
+def:pub PackagesShell -> JsxElement;
+
+impl PackagesShell -> JsxElement {
     has catalog: PackageCatalog | None = None,
         detail: PackageDetail | None = None,
         loading: bool = True,

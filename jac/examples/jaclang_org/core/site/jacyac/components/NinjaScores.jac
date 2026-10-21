@@ -1,4 +1,6 @@
-def:pub NinjaScores(model: JacYacState) -> JsxElement {
+def:pub NinjaScores(model: JacYacState) -> JsxElement;
+
+impl NinjaScores(model: JacYacState) -> JsxElement {
     scores = useScores(model);
     has url: str = "";
     async def submit(e: FormEvent) {

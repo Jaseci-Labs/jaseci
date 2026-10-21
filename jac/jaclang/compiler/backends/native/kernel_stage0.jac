@@ -36,13 +36,16 @@ def link_kernel(
     target: (KernelTarget | None) = None,
     prog: (JacProgram | None) = None,
     log: (Callable[[str], None] | None) = None,
-    link_mode: str = ""
+    link_mode: str = "",
+    spec: (TargetSpec | None) = None
 ) -> LinkResult;
 
 obj GcPauses {
     has collections: int = 0,
         total_seconds: float = 0.0,
         longest_seconds: float = 0.0,
+        origin: float = 0.0,
+        long_pauses: list[tuple[float, float, int]] = [],
         _started: float = 0.0;
 
     def observe(phase: str, info: dict[str, int]);

@@ -1,4 +1,6 @@
-def:pub DocsTocRail(toc: list[TocEntry]) -> JsxElement {
+def:pub DocsTocRail(toc: list[TocEntry]) -> JsxElement;
+
+impl DocsTocRail(toc: list[TocEntry]) -> JsxElement {
     return
         <aside className="hidden xl:block">
             {if len(toc) > 0 {

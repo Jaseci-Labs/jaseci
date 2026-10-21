@@ -20,7 +20,8 @@ obj NativeUnitEntry {
         bitcode: (bytes | None) = None,
         compile_deps: bytes = b"",
         compile_deps_base: str = "",
-        dep_digests: dict[str, str] = {};
+        dep_digests: dict[str, str] = {},
+        deps_checked: bool = True;
 }
 
 obj NativeUnitRegistry {
@@ -28,7 +29,6 @@ obj NativeUnitRegistry {
         session: (NativeBuildSession | None) = None,
         entries: dict[str, NativeUnitEntry] = {},
         building: set[str] postinit,
-        checking: set[str] postinit,
         not_native: dict[str, str] = {},
         failures: dict[str, str] = {},
         compiled_paths: list[str] = [],
@@ -41,6 +41,7 @@ obj NativeUnitRegistry {
         unit_functions: dict[str, tuple[int, int]] = {};
 
     def postinit;
+    def begin_parse(path: str);
     def note_step(verb: str, path: str = "", detail: str = "") -> float;
     def note_slow_step(verb: str, path: str, started: float);
     def clear;
@@ -92,14 +93,11 @@ obj NativeUnitRegistry {
     ) -> list[tuple[str, str]];
 
     def _deps_match(
-        data: bytes,
-        stamp: NativeStamp,
-        base_dir: str,
-        anchor: str = "",
-        options: (CompileOptions | None) = None
+        dep_digests: list[tuple[str, str]], options: (CompileOptions | None) = None
     ) -> bool;
 
     def dep_digests(paths: list[str]) -> dict[str, str];
+    def _dep_miss(resolved: str);
     def _read_from_disk(
         resolved: str,
         stamp: NativeStamp,
@@ -142,6 +140,10 @@ obj NativeUnitRegistry {
 
     def _stash_products(resolved: str, gen: CodeGenTarget);
     def known_digest(path: str) -> str;
+    def _with_products(
+        path: str, options: (CompileOptions | None) = None
+    ) -> (NativeUnitEntry | None);
+
     def emit_objects(paths: list[str], options: (CompileOptions | None) = None);
     def object_for(
         path: str, options: (CompileOptions | None) = None
