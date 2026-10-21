@@ -3674,7 +3674,8 @@ graph import {
         enqueue,
         use_store
     }
-    server.outbox as outbox_module ++> scale.tests.server.test_host_serving;
+    server.outbox as outbox_module ++> scale.tests.server.test_host_serving
+        | scale.tests.server.test_sv_outbox_endpoints;
     server.request_scope ++> scale.server.websocket_ext { RequestScope }
     server.sealed_serve ++> [
         cli.commands.execution._jab_native_bin
