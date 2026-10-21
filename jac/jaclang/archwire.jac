@@ -2291,9 +2291,6 @@ graph import {
         client.client_diagnostics.ClientDiagnostic.render
             | compiler.passes.context.Alert.pretty_print { render_diagnostic },
         compiler.passes.context.Alert.as_log { render_diagnostic_header },
-        compiler.passes.import_wiring_pass
-            | compiler.passes.pyast_load_pass.PyastBuildPass.convert
-            | compiler.tools.lang_tools { pascal_to_snake },
         runtime.traceback_render { pretty_print_source_location },
         scale.injector.bundle.BundleSourceFilter.parks { path_matches_exclude },
     ]

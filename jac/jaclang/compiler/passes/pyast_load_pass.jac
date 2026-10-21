@@ -2,6 +2,7 @@ import ast as py_ast;
 import os;
 import re;
 import from typing { TypeAlias, cast }
+import from jaclang.project.source { pascal_to_snake }
 
 glob T = TypeVar('T', bound=UniNode),
      ComprT = TypeVar('ComprT', bound=ListCompr),

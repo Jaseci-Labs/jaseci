@@ -1,4 +1,5 @@
 import os;
+import from jaclang.project.source { pascal_to_snake }
 
 walker ImportWiringPass(CompilerPass) {
     static has contract: PassContract = PassContract(requires=(AnalysisFact.SYM_OF, ));
