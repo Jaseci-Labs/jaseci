@@ -2,7 +2,13 @@
 
 This document provides a summary of new features, improvements, and bug fixes in each version of **Jaclang**. For details on changes that might require updates to your existing code, please refer to the [Breaking Changes](../breaking-changes.md) page.
 
-## jaclang 0.34.26 (Latest Release)
+## jaclang 0.34.27 (Latest Release)
+
+### Bug Fixes
+
+- **jac-scale: each WebSocket message runs in its own request context**: a walker or function called over a WebSocket used to run against the process-global context, so every message shared one L1 cache and one transaction across all users and connections. Commit cost grew with everything the pod had loaded since it started, which held the event loop and failed health probes, and one connection's failure or commit could drop or publish another connection's uncommitted writes. Each message now opens and closes a context of its own, as an HTTP request does.
+
+## jaclang 0.34.26
 
 ### Bug Fixes
 
