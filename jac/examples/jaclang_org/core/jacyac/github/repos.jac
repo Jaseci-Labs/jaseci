@@ -17,7 +17,13 @@ obj GithubRepos {
         error: str = "";
 }
 
-def public_api(path: str) -> bytes {
+def public_api(path: str) -> bytes;
+
+def:pub github_repositories(session_token: str, page: int = 1) -> GithubRepos;
+
+def:protect verified_owner(full: str, session_token: str) -> bool;
+
+impl public_api(path: str) -> bytes {
     data = fetch("https://api.github.com" + path, "JacYac", accept_json=True);
     if data is None {
         raise RuntimeError("GitHub is unavailable or rate limited.");
@@ -25,7 +31,7 @@ def public_api(path: str) -> bytes {
     return data;
 }
 
-def:pub github_repositories(session_token: str, page: int = 1) -> GithubRepos {
+impl github_repositories(session_token: str, page: int = 1) -> GithubRepos {
     external_id = github_id(session_token);
     if not external_id {
         return GithubRepos();
@@ -77,7 +83,7 @@ def:pub github_repositories(session_token: str, page: int = 1) -> GithubRepos {
     }
 }
 
-def:protect verified_owner(full: str, session_token: str) -> bool {
+impl verified_owner(full: str, session_token: str) -> bool {
     external_id = github_id(session_token);
     if not external_id {
         return False;

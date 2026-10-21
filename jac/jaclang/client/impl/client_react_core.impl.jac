@@ -13,12 +13,7 @@ impl JacAwaiting(props: dict[str, any]) -> JsxElement {
     );
 }
 
-async def _awaitPlatformReady {
-    ready: any = globalThis.__jacPlatformReady__;
-    if ready {
-        await ready;
-    }
-}
+async def _awaitPlatformReady;
 
 impl __createJacSchema(zodLib: any) -> any {
     handler = {
@@ -136,6 +131,9 @@ impl __doWalkerFetch(
             }
             return {};
         }
+        if response.status == 401 and token {
+            globalThis.__jacRemoveLocalStorage__("jac_token");
+        }
         error_text = await response.text();
         walker_name = f"{`walker}/{nodeId}" if nodeId else `walker;
         raise __bridgeErrorFor(
@@ -183,6 +181,9 @@ impl __doFuncFetch(
                 handler();
             }
             return {};
+        }
+        if response.status == 401 and token {
+            globalThis.__jacRemoveLocalStorage__("jac_token");
         }
         error_text = await response.text();
         raise __bridgeErrorFor(
@@ -421,7 +422,29 @@ impl jacLogout -> None {
 
 impl jacIsLoggedIn -> bool {
     token = globalThis.__jacGetLocalStorage__("jac_token");
-    return token != None and token != "";
+    if not token {
+        return False;
+    }
+    if __jacTokenExpired(str(token)) {
+        globalThis.__jacRemoveLocalStorage__("jac_token");
+        return False;
+    }
+    return True;
+}
+
+impl __jacTokenExpired(token: str) -> bool {
+    parts = token.split(".");
+    if len(parts) != 3 {
+        return False;
+    }
+    try {
+        claims: any = JSON.parse(
+            str(globalThis.atob(parts[1].replace("-", "+").replace("_", "/")))
+        );
+        return Number.isFinite(claims["exp"]) and claims["exp"] * 1000 <= Date.now();
+    } except Exception {
+        return False;
+    }
 }
 
 impl jacSetToken(token: str) -> None {
@@ -502,4 +525,11 @@ impl __jacReactErrorHandler(error: any, info: any) -> None {
         componentStack = info.componentStack if info else "";
         __jacReportError(message, stack, "", "ErrorBoundary", componentStack);
     } except Exception {}
+}
+
+impl _awaitPlatformReady {
+    ready: any = globalThis.__jacPlatformReady__;
+    if ready {
+        await ready;
+    }
 }

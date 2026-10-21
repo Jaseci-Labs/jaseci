@@ -1,7 +1,4 @@
-def _effective_uid -> int {
-    `getter = os?.geteuid;
-    return int(`getter()) if `getter is not None else -1;
-}
+def _effective_uid -> int;
 
 
 impl pg_run_candidates -> list[PgRunAs] {
@@ -373,7 +370,6 @@ impl PgRuntime._start(bin_dir: str) -> None {
 
 
 impl PgRuntime._wait_ready(timeout: float = 60.0) -> None {
-    import from jaclang.data.pgload { connect }
     info = self.conninfo();
     deadline = time.monotonic() + timeout;
     last: (Exception | None) = None;
@@ -398,11 +394,6 @@ impl PgRuntime._wait_ready(timeout: float = 60.0) -> None {
 
 
 impl PgRuntime._ensure_database -> None {
-    import from jaclang.data.dbcatalog {
-        connect_admin,
-        record_database,
-        start_heartbeat
-    }
     conn: any = connect_admin(self.conninfo());
     try {
         rows = conn.run(
@@ -431,7 +422,6 @@ impl PgRuntime._ensure_database -> None {
 
 
 impl PgRuntime._warn_superseded(conn: any) -> None {
-    import from jaclang.data.dbcatalog { list_databases }
     try {
         previous = [
             rec.database
@@ -457,7 +447,6 @@ impl PgRuntime._warn_superseded(conn: any) -> None {
 
 
 impl PgRuntime._reap_scratch(conn: any) -> int {
-    import from jaclang.data.dbcatalog { SCRATCH_PREFIX, list_databases }
     try {
         records = [
             rec
@@ -473,13 +462,6 @@ impl PgRuntime._reap_scratch(conn: any) -> int {
 
 
 impl PgRuntime._reap(conn: any, records: list[DbRecord]) -> int {
-    import from jaclang.data.dbcatalog {
-        condemn_abandoned,
-        drop_if_still_dead,
-        orphan_grace_seconds,
-        pardon_recovered,
-        reclaimable_databases
-    }
     by_name = {rec.database: rec for rec in records};
     grace_h = orphan_grace_seconds() // 3600;
     reaped_scratch = 0;
@@ -556,7 +538,6 @@ impl PgRuntime._reap(conn: any, records: list[DbRecord]) -> int {
 
 
 impl PgRuntime.drop_database(database: str, force: bool = False) -> bool {
-    import from jaclang.data.dbcatalog { connect_admin, drop_database as catalog_drop }
     conn: any = connect_admin(self.conninfo());
     try {
         return catalog_drop(conn, database, force=force);
@@ -567,7 +548,6 @@ impl PgRuntime.drop_database(database: str, force: bool = False) -> bool {
 
 
 impl PgRuntime.databases(with_size: bool = True) -> list[DbRecord] {
-    import from jaclang.data.dbcatalog { connect_admin, list_databases }
     conn: any = connect_admin(self.conninfo());
     try {
         return list_databases(conn, with_size=with_size);
@@ -578,12 +558,6 @@ impl PgRuntime.databases(with_size: bool = True) -> list[DbRecord] {
 
 
 impl PgRuntime._sweep_on_start -> None {
-    import from jaclang.data.dbcatalog {
-        connect_admin,
-        drop_database,
-        expired_databases,
-        list_databases
-    }
     try {
         conn: any = connect_admin(self.conninfo());
     } except Exception as e {
@@ -641,4 +615,9 @@ impl PgRuntime.serve -> int {
     signal.signal(int(signal.SIGTERM), _forward);
     signal.signal(int(signal.SIGINT), _forward);
     return proc.`wait();
+}
+
+impl _effective_uid -> int {
+    `getter = os?.geteuid;
+    return int(`getter()) if `getter is not None else -1;
 }

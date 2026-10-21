@@ -82,7 +82,24 @@ obj JacYacState {
         reportError: Callable[[str], None];
 }
 
-def:pub useJacYac -> JacYacState {
+def:pub useJacYac -> JacYacState;
+
+def bridge_error(error: BridgeError) -> str;
+
+impl bridge_error(error: BridgeError) -> str {
+    if isinstance(error, BridgeUnavailable) {
+        return "Can’t reach the server. Check your connection and try again.";
+    }
+    if isinstance(error, BridgeTimeout) {
+        return "The server is taking too long to answer.";
+    }
+    if isinstance(error, BridgeRejected) {
+        return "The server refused that request. Please sign in again.";
+    }
+    return "Something went wrong talking to the server.";
+}
+
+impl useJacYac -> JacYacState {
     session = useSession();
     has activeTab: str = "feed",
         myProfile: ProfileBundle | None = None,
@@ -122,6 +139,7 @@ def:pub useJacYac -> JacYacState {
             loadData();
         }
     }
+    def onBridgeError(e: BridgeError) -> None;
     async def loadData -> None;
     async def refreshAvatars -> None;
     async def postTweet -> None;
@@ -263,17 +281,4 @@ def:pub useJacYac -> JacYacState {
         dismissError=lambda { bridgeMessage = ""; },
         reportError=lambda (message: str) { bridgeMessage = message; }
     );
-}
-
-def bridge_error(error: BridgeError) -> str {
-    if isinstance(error, BridgeUnavailable) {
-        return "Can’t reach the server. Check your connection and try again.";
-    }
-    if isinstance(error, BridgeTimeout) {
-        return "The server is taking too long to answer.";
-    }
-    if isinstance(error, BridgeRejected) {
-        return "The server refused that request. Please sign in again.";
-    }
-    return "Something went wrong talking to the server.";
 }

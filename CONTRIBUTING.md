@@ -168,86 +168,41 @@ To skip this check, add the `skip-release-notes-check` label to your PR.
 
 **Example PR with a release note fragment**: [#5573](https://github.com/jaseci-labs/jaseci/pull/5573)
 
-## Trying the JacPython release binary
+## Building JacPython
 
-Releases provide stock CPython by default and an experimental JacPython variant.
-Pass `--jacpython` to `scripts/install.sh`, or download the platform asset ending
-in `-jacpython` from the [releases page](https://github.com/jaseci-labs/jac/releases).
-The Python compiler replacement runs as native Jac machine code. CPython still
-provides the bytecode VM, object runtime, and standard library. Compiler
-compatibility continues to be expanded; include a reproducer when reporting an issue.
-
-Choose the platform token for your machine:
-
-| Machine | `PLATFORM` |
-| --- | --- |
-| Linux x86-64 | `linux-x86_64` |
-| Linux ARM64 | `linux-aarch64` |
-| Apple Silicon Mac | `macos-aarch64` |
-| Intel Mac | `macos-x86_64` (only when the manual release lane has published it) |
-
-In Bash, replace `vX.Y.Z` with a released tag containing both runtime variants and
-set `PLATFORM` from the table. Use `TAG=dev` for the rolling development release
-once it includes both variants. The commands download into a temporary directory,
-verify the checksum, and keep your installed `jac` unchanged:
+Releases ship one configuration: stock CPython. JacPython (CPython with its C
+progressively replaced by native Jac, the Python compiler included) is an
+accelerator you build on request. From the repository, with Zig 0.16 and the
+LLVM shim in place (`zig build fetch-llvm` once):
 
 ```bash
-TAG=vX.Y.Z
-PLATFORM=linux-x86_64
-TRIAL=$(mktemp -d)
-ASSET="jac-${TAG#v}-${PLATFORM}-jacpython"
-BASE="https://github.com/jaseci-labs/jac/releases/download/$TAG"
-
-curl -fL --retry 3 "$BASE/$ASSET" -o "$TRIAL/$ASSET" &&
-curl -fL --retry 3 "$BASE/$ASSET.sha256" -o "$TRIAL/$ASSET.sha256" &&
-(cd "$TRIAL" && shasum -a 256 -c "$ASSET.sha256") &&
-chmod +x "$TRIAL/$ASSET" &&
-JACPYTHON_BIN="$TRIAL/$ASSET" &&
-cd "$TRIAL" &&
-"$JACPYTHON_BIN" --version
+jac native build jacpython
 ```
 
-Continue only if the download and checksum check succeed. A 404 means the
-selected tag/platform does not have that asset; check the release's asset list.
-`shasum` is available on macOS; on Linux, `sha256sum -c` can replace
-`shasum -a 256 -c`. First use extracts the bundled runtime into Jac's cache.
-
-Verify the active compiler and exercise Python source and AST compilation:
+That builds a second jac, `jac/zig-out/jacpython/bin/jac`, whose bundled
+interpreter is JacPython; the jac you ran it with is unchanged. Use it like any
+jac. It reports the native compiler as active:
 
 ```bash
+JACPYTHON_BIN="$PWD/jac/zig-out/jacpython/bin/jac"
+cd "$(mktemp -d)"   # outside the repo, so its [dev] stanza does not reroute the compiler
 "$JACPYTHON_BIN" -c '
-import ast, ctypes, sys
+import ast, ctypes
 assert ctypes.pythonapi._PyJac_CompilerBridgeVersion() == 4
-assert not hasattr(sys, "_jacpython_compile")
-assert not hasattr(sys, "_jacpython_image")
 print("Python compiler: native JacPython")
-assert eval("6 * 7") == 42
 exec(compile(ast.parse("print(6 * 7)"), "<jacpython-trial>", "exec"))
 '
-
-printf 'with entry { print(6 * 7); }\n' > "$TRIAL/hello.jac"
-"$JACPYTHON_BIN" run "$TRIAL/hello.jac"
+"$JACPYTHON_BIN" native status jacpython
 ```
 
-Both examples should print `42`; the compiler probe should report native
-JacPython. The replacement executes as native machine code, while CPython
-provides the object runtime and executes the resulting Python bytecode.
-The `-c` probe exercises the Python replacement directly;
-`run` retains Jac's normal backend selection. Keep running from `$TRIAL`, outside
-this repository, so the repository's `[dev]` setting does not substitute the
-checkout's Jac compiler.
-
-Use the explicit `$JACPYTHON_BIN` path for further experiments. Include the tag,
-platform, compiler-probe output, and a minimal reproducer when reporting an issue.
-Older releases may use CPython's C compiler; the probe above distinguishes them.
-
-For changes to the JacPython implementation, rebuild with
-`cd jac && zig build -Dpython=jacpython` and use the resulting `zig-out/bin/jac`.
-Its native compiler object is linked at build time: editing source through the
-dev loop does not replace that object in an existing binary. Plain `zig build`
-produces the stock CPython variant. A separate build-only CPython host
-produces the initial native object and is not shipped. See
-[the build guide](jac/launcher/README.md#build) for cache details and prerequisites.
+`jac native build jacpython --exact` rebuilds the runtime instead of reusing one
+whose lowered sources are unchanged. Its native compiler object is linked at
+build time, so editing compiler source through the dev loop does not change an
+existing JacPython binary: rebuild it. CI builds and tests JacPython in its own
+lane (`.github/workflows/_jacpython.yml`), on a pull request carrying the
+`native:jacpython` label and nightly on every supported platform. See
+[the build guide](jac/launcher/README.md#build) for cache details and
+prerequisites.
 
 ## Code Rules and Guidelines
 

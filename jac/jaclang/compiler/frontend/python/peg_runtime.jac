@@ -7,33 +7,6 @@
 #
 # Product module: imports token_model + tokenizer only.
 
-import from jaclang.compiler.frontend.python.token_model {
-    ENDMARKER,
-    NAME,
-    NUMBER,
-    NEWLINE,
-    INDENT,
-    DEDENT,
-    NL,
-    COMMENT,
-    TYPE_IGNORE,
-    ERRORTOKEN,
-    NT_OFFSET,
-    TOK_NO_LINE,
-    TOK_NO_COLUMN,
-    is_whitespace_token,
-    tok_diag,
-    mk_diag,
-    tok_loc,
-    tok_no_loc,
-    tok_token,
-}
-import from jaclang.compiler.frontend.python.tokenizer {
-    tok_state,
-    tokenizer_from_string,
-    tokenizer_next
-}
-
 # Keyword token ids start at 500 in CPython's pegen generator (parser_generator.py).
 glob PEG_KEYWORD_TYPE_BASE: int = 500;
 glob STAR_TARGETS: int = 0,
@@ -80,7 +53,39 @@ obj peg_parser {
         error: tok_diag | None = None,
         known_err_token: peg_token | None = None,
         filename: str = "<unknown>",
-        parsing_started: bool = False;
+        parsing_started: bool = False,
+        # Rule nesting depth (Parser.level).
+        level: int = 0;
+}
+
+# Parser/parser.c's MAXSTACK: deeper rule nesting is a MemoryError.
+glob MAXSTACK: int = 6000;
+
+# The prologue of every rule (Parser/parser.c): count the nesting level and
+# give up with _Pypegen_stack_overflow() past MAXSTACK; a parser that already
+# failed returns at once. True when the rule must return None; otherwise the
+# caller decrements `level` when the rule returns.
+def peg_enter_rule(p: peg_parser) -> bool {
+    if p.level >= MAXSTACK {
+        peg_stack_overflow(p);
+    }
+    if p.error_indicator {
+        return True;
+    }
+    p.level += 1;
+    return False;
+}
+
+def peg_stack_overflow(p: peg_parser) {
+    if p.error is None {
+        p.error = mk_diag(
+            "MemoryError",
+            "Parser stack overflowed - Python source too complex to parse",
+            tok_loc(lineno=1, end_lineno=1, col_offset=0, end_col_offset=0),
+            p.filename
+        );
+    }
+    p.error_indicator = True;
 }
 
 def peg_token_from_tok(tok: tok_token) -> peg_token {

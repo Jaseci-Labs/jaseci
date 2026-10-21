@@ -1,9 +1,3 @@
-import jaclang.compiler.backends.native.llvm.ir.instructions as instructions;
-import jaclang.compiler.backends.native.llvm.ir.types as types;
-import jaclang.compiler.backends.native.llvm.ir.values as values;
-import from jaclang.compiler.backends.native.llvm.ir.values { Value }
-import type from jaclang.compiler.backends.native.llvm.ir.module { Module }
-
 glob _CMP_MAP: dict[str, str] = {
          '>': 'gt',
          '<': 'lt',
@@ -997,13 +991,14 @@ class IRBuilder {
         indices: any,
         inbounds: bool = False,
         name: str = '',
-        source_etype: types.Type | None = None
+        source_etype: types.Type | None = None,
+        nusw: bool = False
     ) -> Value {
         if ptr is None {
             raise TypeError(MISSING_OPERAND);
         }
         instr = instructions.GEPInstr(
-            self.block, ptr, indices, inbounds, name, source_etype
+            self.block, ptr, indices, inbounds, name, source_etype, nusw
         );
         self._insert(instr);
         return instr;

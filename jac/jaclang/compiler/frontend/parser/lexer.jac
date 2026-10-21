@@ -1,13 +1,3 @@
-import from .tokens {
-    LexToken,
-    TokenKind,
-    SourceLoc,
-    SrcDiag,
-    CommentData,
-    lookup_keyword,
-    is_special_var_kind
-}
-
 enum LexerMode {
     NORMAL = "normal",
     FSTRING_DQ = "fstring_dq",
@@ -111,16 +101,8 @@ obj Lexer {
     def tokenize -> list[LexToken];
 }
 
-def tokenize(source: str, file_path: str = "<input>") -> tuple[list[LexToken], int] {
-    lexer = Lexer(source=source, file_path=file_path);
-    tokens = lexer.tokenize();
-    return (tokens, lexer.error_count);
-}
+def tokenize(source: str, file_path: str = "<input>") -> tuple[list[LexToken], int];
 
 def tokenize_full(
     source: str, file_path: str = "<input>"
-) -> tuple[list[LexToken], list[CommentData], list[SrcDiag], int] {
-    lexer = Lexer(source=source, file_path=file_path);
-    tokens = lexer.tokenize();
-    return (tokens, lexer.comments, lexer.diags, lexer.error_count);
-}
+) -> tuple[list[LexToken], list[CommentData], list[SrcDiag], int];
