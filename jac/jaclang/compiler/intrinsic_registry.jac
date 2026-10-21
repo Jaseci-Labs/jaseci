@@ -7,7 +7,8 @@ enum IntrinsicDispatch {
     ATOMIC_XCHG = "atomic_xchg",
     CALL_DTOR = "call_dtor",
     REGION_TLS = "region_tls",
-    ALLOCA = "alloca"
+    ALLOCA = "alloca",
+    LIST_DATA = "list_data"
 }
 
 obj IntrinsicEntry {
@@ -121,6 +122,12 @@ glob INTRINSIC_REGISTRY = IntrinsicRegistry(
                  param_specs=["i64", "i64"],
                  result_spec="none",
                  dispatch=IntrinsicDispatch.MEM_STORE
+             ),
+             "__list_data_ptr": IntrinsicEntry(
+                 name="__list_data_ptr",
+                 param_specs=["list"],
+                 result_spec="i64",
+                 dispatch=IntrinsicDispatch.LIST_DATA
              ),
              "__atomic_xchg_i64": IntrinsicEntry(
                  name="__atomic_xchg_i64",
