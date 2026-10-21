@@ -14,6 +14,16 @@ def _parse_entry_file(entry_file: Path) -> tuple[str, str];
 
 def _pwa_enabled(project_dir: Path) -> bool;
 
+def _walk_public(
+    dir_path: Path,
+    rel_prefix: str,
+    public_root: Path,
+    ancestors: set[Path],
+    found: list[tuple[str, Path]]
+) -> None;
+
+def _public_files(public_dir: Path) -> list[tuple[str, Path]];
+
 def _copy_public_dirs(public_dirs: list[Path], dist_dir: Path) -> list[str];
 
 impl WebTarget.setup(project_dir: Path) -> None {
@@ -154,15 +164,43 @@ impl _parse_entry_file(entry_file: Path) -> tuple[str, str] {
     return (base, mod);
 }
 
+impl _walk_public(
+    dir_path: Path,
+    rel_prefix: str,
+    public_root: Path,
+    ancestors: set[Path],
+    found: list[tuple[str, Path]]
+) -> None {
+    real = dir_path.resolve();
+    if real in ancestors {
+        return;
+    }
+    inner = ancestors | {real};
+    for child in sorted(dir_path.iterdir()) {
+        resolved = child.resolve();
+        if public_root not in resolved.parents {
+            continue;
+        }
+        rel = f"{rel_prefix}{child.name}";
+        if child.is_dir() {
+            _walk_public(child, f"{rel}/", public_root, inner, found);
+        } elif child.is_file() {
+            found.append((rel, child));
+        }
+    }
+}
+
+impl _public_files(public_dir: Path) -> list[tuple[str, Path]] {
+    found: list[tuple[str, Path]] = [];
+    _walk_public(public_dir, '', public_dir.resolve(), set(), found);
+    return found;
+}
+
 impl _copy_public_dirs(public_dirs: list[Path], dist_dir: Path) -> list[str] {
     import shutil;
     planned: dict[str, Path] = {};
     for public_dir in public_dirs {
-        for source in sorted(public_dir.rglob('*')) {
-            if not source.is_file() {
-                continue;
-            }
-            rel = source.relative_to(public_dir).as_posix();
+        for (rel, source) in _public_files(public_dir) {
             if rel in planned {
                 continue;
             }
@@ -173,6 +211,25 @@ impl _copy_public_dirs(public_dirs: list[Path], dist_dir: Path) -> list[str] {
                 );
             }
             planned[rel] = source;
+        }
+    }
+    for (rel, source) in planned.items() {
+        parts = rel.split('/');
+        for depth in range(1, len(parts)) {
+            folder = '/'.join(parts[:depth]);
+            if folder in planned {
+                raise RuntimeError(
+                    f"Web build failed: {planned[folder]} is a file and {source} "
+                    f"needs {folder} to be a folder. Rename one of them."
+                );
+            }
+            if (dist_dir / folder).is_file() {
+                raise RuntimeError(
+                    f"Web build failed: {source} needs {folder} to be a folder, but "
+                    "the build itself creates a file there. Rename or move it out "
+                    "of public/."
+                );
+            }
         }
     }
     for (rel, source) in planned.items() {
