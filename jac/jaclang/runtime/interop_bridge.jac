@@ -11,7 +11,8 @@ class CallbackSignature(Protocol) {
 obj NativeCallback {
     has name: str,
         ret_type: str,
-        param_types: list[str];
+        param_types: list[str],
+        native_symbol: str = "";
 }
 
 obj NativeLibrary {
@@ -20,7 +21,8 @@ obj NativeLibrary {
         library: ctypes.CDLL | None = None,
         initialized: bool = False,
         callbacks: list[object] = [],
-        functions: dict[str, Callable] = {};
+        functions: dict[str, Callable] = {},
+        eager: bool = False;
 
     def handle -> ctypes.CDLL;
     def get_function_address(name: str) -> int;
@@ -37,7 +39,8 @@ glob logger = logging.getLogger(__name__),
      },
      _pyb_shadows: dict[(int, object)] = {},
      _pyb_class_memo: dict[(tuple[any, ...], type)] = {},
-     _pyb_module_memo: dict[(str, object)] = {};
+     _pyb_module_memo: dict[(str, object)] = {},
+     _loaded_native_libraries: list[NativeLibrary] = [];
 
 def _pyb_import_module(mod_path: str) -> object;
 
@@ -65,6 +68,10 @@ def _pyb_super_call(
     args: tuple[any, ...],
     kwargs: dict[str, any]
 ) -> object;
+
+def resolve_sv_callbacks(
+    callbacks: Iterable[dict[str, any]], img_root: str
+) -> tuple[(dict[(str, Callable)], list[str])];
 
 def register_py_callbacks(
     bindings: Iterable[CallbackSignature],

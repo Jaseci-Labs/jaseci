@@ -84,3 +84,5 @@ def serverless_server_evidence(
 def report_serverless_kind_errors(reporter: CompilerPass, mod: Module);
 
 def return_type_is_jsx(rt: (Expr | None)) -> bool;
+
+def import_target_pinned_server(nd: Import) -> bool;

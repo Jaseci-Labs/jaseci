@@ -199,7 +199,7 @@ graph import {
     cli.commands.analysis ++> packages.publish.check_gate { check }
     cli.commands.execution ++> client.targets.web_target.WebTarget.start { serve }
     cli.commands.execution --> scale.tests.server.test_serve { _find_free_port }
-    cli.commands.native_build ++> dist.seal.bake_native_payloads { native_build }
+    cli.commands.native_build ++> dist.seal.bake_native_payloads { native_build, native_build_sealed_pair }
     cli.console ++> [
         byllm.cli
             | byllm.model_cache._emit
@@ -545,6 +545,7 @@ graph import {
     compiler.backends.native.kernel_stage0 --> dist.precompile_bytecode.seal_native {
         refuse_missing_entries
     }
+    compiler.frontend.unitree.Module --> cli.commands.native_build._callback_source_path { Module }
     compiler.backends.native.link_plan ++> [
         cli.commands.native_build { LinkPlan },
         cli.commands.native_build.native_build {
@@ -552,6 +553,25 @@ graph import {
             LinkPlanError,
             build_link_plan,
             link_artifact
+        },
+        cli.commands.native_build._link_kind_artifact {
+            ArtifactKind,
+            LinkPlan,
+            LinkPlanError,
+            link_artifact
+        },
+        cli.commands.native_build._sealed_native_plan {
+            LinkPlan,
+            LinkPlanError,
+            build_link_plan
+        },
+        cli.commands.native_build.native_build_sealed_pair {
+            ArtifactKind,
+            LinkPlan,
+            LinkPlanError,
+            build_link_plan,
+            link_artifact,
+            resolved_callback_bindings
         },
         dist.native_product.write_native_product {
             ArtifactKind,
@@ -571,8 +591,11 @@ graph import {
         get_default_triple
     }
     compiler.backends.native.llvm.binding as llvm ++> cli.commands.native_build._application_ir;
-    compiler.backends.native.llvm.binding as llvm --> cli.commands.execution._jab_native_bin
-        | dist.seal.bake_native_payloads;
+    compiler.backends.native.llvm.binding as llvm --> [
+        cli.commands.execution._jab_native_bin,
+        cli.commands.execution._jab_run_entry_lib
+    ]
+    compiler.backends.native.llvm.binding as llvm --> dist.seal.bake_native_payloads;
     type compiler.backends.native.llvm.binding.executionengine ++> cli.commands.execution {
         ExecutionEngine
     }
@@ -688,6 +711,11 @@ graph import {
             NATIVE_LINK_MODES,
             push_native_target
         },
+        cli.commands.native_build._sealed_native_plan {
+            CompileOptions,
+            push_native_target
+        },
+        cli.commands.native_build._link_kind_artifact { push_native_target },
         dist.precompile_bytecode.precompile_native_unit { CompileOptions },
         dist.precompile_bytecode.seal_native { CompileOptions },
         lsp.server.engine { CancelToken },
@@ -900,6 +928,7 @@ graph import {
         cli.commands.analysis.lint
             | cli.mcp.compiler_bridge.CompilerBridge.py_to_jac._do_py2jac
             | dist.precompile_bytecode.seal_native { JacProgram },
+        cli.commands.native_build._sealed_native_plan { JacProgram },
         cli.mcp.compiler_bridge.CompilerBridge.typecheck_snippet._do_typecheck {
             JacProgram
         },
@@ -991,6 +1020,7 @@ graph import {
         },
         cli.commands.execution.serve { set_effective_default_codespace },
         cli.commands.native_build._application_ir { is_toolchain_unit },
+        cli.commands.native_build.native_build_sealed_pair { native_unit_spelling },
         client.compiler.ViteCompiler._compile_wasm_module
             | dist.source.client.write_client { native_wasm_stem },
         client.js_runtime._pkg_dir
@@ -1646,7 +1676,8 @@ graph import {
             | project.kernel_snapshot.KernelSnapshot.emits
             | testing.cl_test_runner.module_entry_for { is_annex },
         cli.commands.cli_helpers { base_stem, is_jac, is_python },
-        cli.commands.execution._jab_native_bin
+        cli.commands.execution._jab_native_bin { base_stem }
+            | cli.commands.execution._jab_run_entry_lib { base_stem }
             | client.jac_client_compiler.JacClientCompiler._native_variant
             | client.targets.client_dev_common.dev_proxy_paths
             | compiler.driver.application._semantic_metadata
@@ -1659,6 +1690,10 @@ graph import {
             | testing.test_runner.run_file { base_stem },
         cli.commands.native_build.native_build {
             base_stem,
+            is_jac,
+            is_retired_native_marker
+        },
+        cli.commands.native_build._sealed_native_plan {
             is_jac,
             is_retired_native_marker
         },
@@ -1800,6 +1835,7 @@ graph import {
     }
     packages.verify --> cli.commands.project.publish { run_verify }
     project ++> cli.commands.native_build.native_build { get_config }
+    project ++> cli.commands.native_build._sealed_native_plan { get_config }
     project --> compiler.backends.native.wasm_build._project_gc_settings { get_config }
     project.app_kinds ++> [
         cli.commands.execution._app_serves { kind_spec },
@@ -3671,9 +3707,17 @@ graph import {
     }
     server.request_scope ++> scale.server.websocket_ext { RequestScope }
     server.sealed_serve ++> [
-        cli.commands.execution._jab_native_bin
+        cli.commands.execution._jab_native_bin { NATIVE_DIR_REL }
+            | cli.commands.execution._jab_interop_record { interop_record_path }
+            | cli.commands.execution._jab_run_entry_lib {
+                NATIVE_DIR_REL,
+                interop_record_path,
+                native_lib_name
+            }
             | dist.precompile_bytecode.seal_native
-            | dist.seal.bake_native_payloads { NATIVE_DIR_REL },
+            | dist.seal.bake_native_payloads { NATIVE_DIR_REL, native_lib_name },
+        cli.commands.native_build.native_build_sealed_pair { interop_record_path },
+        cli.commands.execution._run_native_lib { interop_record_path },
         client.artifact.client_output_dir { client_dist_for },
         client.artifact.prebuilt_bundle { client_dist_for, serve_manifest_for },
         compiler.driver.application._prepare_sealed | dist.seal.bake_serve_payloads {
@@ -9962,6 +10006,9 @@ graph import compiler {
     ]
     type placement.placement_work ++> driver.progstate { PlacementWork }
     symbol_utils ++> [
+        passes.boundary_analysis_pass.BoundaryAnalysisPass.enter_import {
+            import_target_pinned_server
+        },
         backends.es.esast_gen_pass | passes.type_checker_pass { return_type_is_jsx },
         backends.es.esast_gen_pass.EsastGenPass._bind_client_value_refs {
             client_bridged_endpoint,
@@ -10848,6 +10895,7 @@ graph import compiler.backends.native {
     lexical_scope ++> na_ir_gen_pass { FunctionSource, LexicalScope }
     link_glue ++> [
         link_plan {
+            ENTRY_SYMBOL,
             GlueSpec,
             GlueUnit,
             RC_THREADED_SYMBOL,
@@ -13725,6 +13773,7 @@ graph import compiler.placement {
         placement_solver._pullable_by_client_reference { module_has_root_access },
     ]
     placement_facts ++> placement_solver.native_closure_blocker { pinned_module_space }
+    placement_facts ++> symbol_utils.import_target_pinned_server { pinned_module_space }
     placement_pins ++> [
         placement.module_anchor_reasons
             | placement_facts.pinned_module_space
@@ -15179,6 +15228,11 @@ graph import runtime {
     interop_bridge --> [
         prepared.execute_module { NativeLibrary },
         source_app._load_application { NativeCallback, NativeLibrary },
+        cli.commands.execution._run_native_lib {
+            NativeCallback,
+            NativeLibrary,
+            resolve_sv_callbacks
+        },
     ]
     memory ++> context { Memory }
     object_interop ++> typecache { fields, is_record }

@@ -60,6 +60,8 @@ Jac ships its own native linker, so there's no `gcc`/`ld` in the loop. The nativ
 
 Set `kind = "cli-native"` in `jac.toml` when you want the *program* to execute through the native pathway rather than producing a distributable artifact -- the same native subset, run as a command. A bare `jac run` then compiles-and-executes it. (`cli` runs on the Python VM; `cli-native` runs the native build; `native-binary` ships the executable.)
 
+Sealed `cli-native` apps run from a native pair built by one compile: a self-contained executable first, and -- when the app's native code calls back into Python (a standalone binary cannot carry that half) -- a sealed entry library loaded in process, with the callback contract recorded in `<lib>.interop.json` beside it. The runner picks the lane per bundle; a corrupt or stale contract is reported, never guessed around.
+
 ## Your learning path
 
 - **Concepts you need** → [Core Concepts](../quick-guide/what-makes-jac-different.md) -- codespaces & object-spatial programming

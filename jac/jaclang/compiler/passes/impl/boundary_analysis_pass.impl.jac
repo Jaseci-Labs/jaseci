@@ -221,7 +221,21 @@ impl BoundaryAnalysisPass.enter_import with Import entry {
                 } elif (facts and facts.client_native_edge) {
                     self._register_na_client_import(here);
                 } else {
-                    self._register_client_bridged_import(here);
+                    caller_context = self._caller_context(here, import_context);
+                    server_pinned_target = False;
+                    if caller_context == InteropContext.NATIVE {
+                        import from jaclang.compiler.symbol_utils {
+                            import_target_pinned_server
+                        }
+                        server_pinned_target = import_target_pinned_server(here);
+                    }
+                    if server_pinned_target {
+                        self._register_sv_import(
+                            here, from_loc.base_module_name, caller_context
+                        );
+                    } else {
+                        self._register_client_bridged_import(here);
+                    }
                 }
             }
             if (native_path and here.items) {

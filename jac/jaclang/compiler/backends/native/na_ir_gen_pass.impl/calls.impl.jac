@@ -2522,6 +2522,8 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
                     _src_ab.find_parent_of_type(uni.Module),
                     bool(_src_ab.access and _src_ab.access.tag.name == Tok.KW_PUB)
                 );
+            } elif binding.source_context.value == "server" {
+                _extern_sym = self._symbol_for(func_name);
             }
             func = self._get_or_declare_extern(
                 _extern_sym, ret_ir_type, param_ir_types
