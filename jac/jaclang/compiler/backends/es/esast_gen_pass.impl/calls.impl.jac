@@ -1456,7 +1456,7 @@ impl EsastGenPass.exit_func_call with uni.FuncCall exit {
                     return;
                 }
                 (_dyn_spec, _dyn_export) = _dyn;
-                _args_strs = ['"' + _dyn_spec + '"'];
+                _args_strs = [json.dumps(_dyn_spec)];
                 _kwargs = {};
                 if _dyn_export is not None {
                     _kwargs["default_export"] = _dyn_export;
