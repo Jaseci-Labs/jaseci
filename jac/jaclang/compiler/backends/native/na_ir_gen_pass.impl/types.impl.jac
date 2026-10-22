@@ -3475,7 +3475,9 @@ impl NaIRGenPass._emit_str_concat_inplace(
     self.builder.position_at_end(tail_bb);
     buf = self.builder.phi(i8p, name="ip.buf");
     buf.add_incoming(left, hdr_bb);
-    buf.add_incoming(left, capcall_bb);
+    if not self._target_is_wasm() {
+        buf.add_incoming(left, capcall_bb);
+    }
     buf.add_incoming(grown, grow_bb);
     self.builder.call(
         memcpy_cc, [self.builder.gep(buf, [len1], name="ip.dst"), rdata, len2]

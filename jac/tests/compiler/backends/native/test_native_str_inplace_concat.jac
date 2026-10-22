@@ -79,3 +79,39 @@ test "in-place str append keeps the ASCII flag honest" {
         f"{grow_then_wide(8)}"
     );
 }
+
+"""On wasm there is no floor to ask for the block's usable size, so the
+capacity probe always grows the buffer; the module must still verify."""
+test "in-place str append verifies on wasm, which skips the capacity probe" {
+    import from jaclang.compiler.driver.compile_options {
+        CompileOptions,
+        push_native_target,
+        pop_native_target
+    }
+    import jaclang.compiler.backends.native.llvm.binding as llvm;
+    prev = push_native_target("wasm32-unknown-unknown");
+    txt = "";
+    try {
+        prog = JacProgram();
+        mod = prog.compile(
+            file_path=os.path.join(FIXTURES, "_inplace_concat_wasm_probe.jac"),
+            use_str="def grow(n: int) -> str {\n"
+            "    s = \"lit\";\n"
+            "    i: int = 0;\n"
+            "    while i < n {\n"
+            "        s += \"x\";\n"
+            "        i += 1;\n"
+            "    }\n"
+            "    return s;\n"
+            "}\n",
+            options=CompileOptions(force_codespace="native", aot_mode=True)
+        );
+        assert not prog.errors_had , f"{[str(e) for e in prog.errors_had]}";
+        txt = str(mod.gen.llvm_ir);
+    } finally {
+        pop_native_target(prev);
+    }
+    assert 'target triple = "wasm32-unknown-unknown"' in txt;
+    assert "cat.capcall" in txt , "the probe compiled the in-place append";
+    llvm.parse_assembly(txt).verify();
+}
