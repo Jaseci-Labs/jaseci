@@ -1,7 +1,6 @@
 import atexit;
 import os;
 import sys;
-import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
 
 obj SetupProgress {
     has _banner_shown: bool = False,
@@ -16,7 +15,6 @@ obj SetupProgress {
     def on_internal_compile(file_path: str) -> None;
     def on_internal_reuse(file_path: str) -> None;
     def _register_exit -> None;
-    def on_kernel_build(lib_path: str) -> None;
     def _precompile_limit -> int;
     def _halt_at_limit -> None;
 

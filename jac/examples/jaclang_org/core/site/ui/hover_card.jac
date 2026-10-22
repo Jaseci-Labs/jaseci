@@ -1,14 +1,20 @@
 import from "radix-ui" { HoverCard as HoverCardPrimitive }
 
-def:pub HoverCard(props: any) -> JsxElement {
+def:pub HoverCard(props: any) -> JsxElement;
+
+def:pub HoverCardTrigger(props: any) -> JsxElement;
+
+def:pub HoverCardContent(props: any) -> JsxElement;
+
+impl HoverCard(props: any) -> JsxElement {
     <HoverCardPrimitive.Root data-slot="hover-card" {**props}/>
 }
 
-def:pub HoverCardTrigger(props: any) -> JsxElement {
+impl HoverCardTrigger(props: any) -> JsxElement {
     <HoverCardPrimitive.Trigger data-slot="hover-card-trigger" {**props}/>
 }
 
-def:pub HoverCardContent(props: any) -> JsxElement {
+impl HoverCardContent(props: any) -> JsxElement {
     align = props["align"] or "center";
     sideOffset = props["sideOffset"] or 4;
     <HoverCardPrimitive.Portal data-slot="hover-card-portal">

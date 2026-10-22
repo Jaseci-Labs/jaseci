@@ -2,24 +2,9 @@ import os;
 import json;
 import tempfile;
 import unittest.mock;
-import jaclang.scale.injector.binary as binary_mod;
-import from jaclang.scale.injector.binary { _resolve_target_version }
-import from jaclang.project.jac_version { exact_pin, version_key }
-import from jaclang.cli.manifest_route { resolve_cli_version }
-import from jaclang.scale.config.app_config { AppConfig }
-import from jaclang.scale.deploy.target.kubernetes.kubernetes_config {
-    KubernetesConfig
-}
-import from jaclang.scale.deploy.target.kubernetes.target { KubernetesTarget }
 import inspect;
 import io;
 import from contextlib { redirect_stderr }
-import from jaclang.scale.runtime.realizer.kubernetes_realizer {
-    DELEGATED_ENV,
-    KubernetesRealizer,
-    pinned_deploy_argv
-}
-import from jaclang.project.config { JacConfig }
 import from pathlib { Path }
 import from urllib.error { HTTPError, URLError }
 import from email.message { Message }
@@ -469,7 +454,7 @@ test "delegating runs the pinned binary with this deploy, and forwards its resul
         "#!/bin/sh\n" f'printf "%s\\n" "$@" > {d}/argv\n' f"env > {d}/env\n" "exit 7\n"
     );
     stub.chmod(0o755);
-    os.environ["JAC_DEV_SOURCE"] = d;
+    os.environ["JAC_HANDOFF"] = '{"compiler_source": "' + d + '"}';
     err = io.StringIO();
     with unittest.mock.patch.object(
         binary_mod, "host_toolchain_path", return_value=str(stub)
@@ -478,7 +463,7 @@ test "delegating runs the pinned binary with this deploy, and forwards its resul
             f"{d}/main.jac", "kubernetes", False, False
         );
     }
-    os.environ.pop("JAC_DEV_SOURCE", None);
+    os.environ.pop("JAC_HANDOFF", None);
 
     assert rc == 7 , f"the child exited 7; the deploy reported {rc}";
     # A child that fails quietly would otherwise leave a bare non-zero exit.
@@ -490,7 +475,7 @@ test "delegating runs the pinned binary with this deploy, and forwards its resul
         == ["scale", "deploy", f"{d}/main.jac", "--target", "kubernetes"] , argv;
     env = (Path(d) / "env").read_text();
     assert f"{DELEGATED_ENV}=1" in env , "the child can delegate again and fork forever";
-    assert "JAC_DEV_SOURCE" not in env , (
+    assert "JAC_HANDOFF" not in env , (
         "the child inherited the parent's dev source and would run its code, "
         "not the release it was fetched for"
     );

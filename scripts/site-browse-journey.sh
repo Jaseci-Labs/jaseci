@@ -129,7 +129,7 @@ check '(() => {
   return "install curl one-liner rendered";
 })()'
 
-step "landing: quickstart scaffolds the site with jac create --awesome"
+step "landing: no retired quickstart"
 check '(() => {
   const text = document.body.innerText;
   if (/jac_site/.test(text)) {
@@ -138,16 +138,27 @@ check '(() => {
   if (/git clone/.test(text)) {
     throw new Error("landing page still shows the clone-and-cd quickstart");
   }
+  return "no retired quickstart on the landing page";
+})()'
+
+# -------------------------------------------------------------- tech demo ---
+# The landing page is the minimal agent-first home; the arena, the book and
+# the jac create --awesome quickstart live on the tech demo page.
+step "tech demo: quickstart scaffolds the site with jac create --awesome"
+open_page "$BASE_URL/tech-demo"
+jac browse wait '#game' || fail "tech demo #game never appeared"
+check '(() => {
+  const text = document.body.innerText;
   if (!/jac create \S+ --awesome/.test(text)) {
-    throw new Error("landing page does not show the jac create --awesome quickstart");
+    throw new Error("tech demo does not show the jac create --awesome quickstart");
   }
   return "quickstart scaffolds the site via --awesome";
 })()'
 
-step "landing: ninja book cover is visible and links to the book"
+step "tech demo: ninja book cover is visible and links to the book"
 check '(async () => {
   const section = document.querySelector("#book");
-  if (!section) throw new Error("no #book section on the landing page");
+  if (!section) throw new Error("no #book section on the tech demo page");
   section.scrollIntoView({block: "center"});
   const img = section.querySelector("a[href] img[src*=ninja-book-cover]");
   if (!img) throw new Error("no ninja book cover image inside a link");
@@ -170,7 +181,7 @@ check '(async () => {
   throw new Error("book cover image never became visible");
 })()'
 
-step "landing: native arena initializes and advances frames"
+step "tech demo: native arena initializes and advances frames"
 check '(async () => {
   const section = document.querySelector("#game");
   if (!section) throw new Error("Arena section missing");

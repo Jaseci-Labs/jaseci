@@ -5,16 +5,6 @@ and permission bits are POSIX and identical on every supported platform; the
 BSD file flags that differ live in stat_platform.jac and its per-OS variants.
 """
 
-import from jaclang.runtime.python.cpython_api {
-    PyErr_Occurred,
-    PyLong_AsUnsignedLong,
-    PyNumber_Index,
-    PyObject,
-    jacpy_is_long,
-    jacpy_release
-}
-import from jaclang.runtime.python.capi { boundary_failure, object_error }
-
 glob S_IMODE: u64 = 0o7777,
      S_IFMT: u64 = 0o170000,
      S_IFDIR: u64 = 0o040000,
@@ -59,7 +49,7 @@ def mode_value(value: ptr[PyObject]) -> u64 {
         raise boundary_failure();
     }
     if number > u64(0xFFFFFFFF) {
-        object_error("OverflowError", "mode out of range");
+        object_error(PyExc_OverflowError, "mode out of range");
         raise boundary_failure();
     }
     return number;

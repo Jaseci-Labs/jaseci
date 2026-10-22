@@ -12,15 +12,15 @@ impl RcFactsPass._run_impl(ir_in: Module) -> Module {
 impl RcFactsPass._enclosing_fn_scope(
     nd: UniNode, stop_at_comprehension: bool = False
 ) -> UniNode | None {
-    cur = nd.parent;
-    while cur is not None {
-        if isinstance(cur, (Ability, ImplDef, LambdaExpr, Test, ModuleCode)) {
+    cur = nd.decl_parent;
+    while cur is not None and not isinstance(cur, Module) {
+        if is_frame(cur) {
             return cur;
         }
         if stop_at_comprehension and isinstance(cur, (ListCompr, DictCompr)) {
             return cur;
         }
-        cur = cur.parent;
+        cur = cur.decl_parent;
     }
     return None;
 }
@@ -173,8 +173,6 @@ impl RcFactsPass._borrow_arg_callee_ok(bx: UnaryExpr) -> bool {
 }
 
 impl RcFactsPass._asn_makes_region_handle(nd: Assignment) -> bool {
-    import from jaclang.compiler.types.type_utils { expr_is_builtin_region }
-    import from jaclang.compiler.frontend.constant { OwnershipKind }
     if isinstance(nd.value, FuncCall) and expr_is_builtin_region(nd.value) {
         return True;
     }
@@ -226,9 +224,9 @@ impl RcFactsPass._stamp_region_handles(ir_in: Module) -> None {
 impl RcFactsPass._stamp_last_use(ir_in: Module) -> None {
     out: dict[int, list[str]] = {};
     for ab in ir_in.get_all_sub_nodes(Ability) {
-        if isinstance(ab.signature, FuncSignature)
-            and isinstance(ab.body, (list, tuple)) {
-            self._collect_last_use(ab, ab.body, out);
+        stmts = ModuleFacts.unwrap_body(ab);
+        if isinstance(ab.signature, FuncSignature) and stmts is not None {
+            self._collect_last_use(ab, stmts, out);
         }
     }
     for mc in ir_in.get_all_sub_nodes(ModuleCode) {
@@ -252,14 +250,13 @@ impl RcFactsPass._collect_last_use(
                 or not self._last_use_tracked(sym) {
                 continue;
             }
-            if not same_lexical_scope(self._enclosing_fn_scope(nm), owner) {
+            if self._enclosing_fn_scope(nm) is not owner {
                 continue;
             }
             decl = sym.decl;
             if decl is None
-                or not same_lexical_scope(
-                    self._enclosing_fn_scope(decl, stop_at_comprehension=True), owner
-                ) {
+                or self._enclosing_fn_scope(decl, stop_at_comprehension=True)
+                    is not owner {
                 continue;
             }
             sym_last[id(sym)] = (idx, nm.sym_name);
@@ -296,9 +293,7 @@ impl RcFactsPass._stamp_move_in(ir_in: Module) -> None {
         if id(sym) in seen {
             continue;
         }
-        if sym.storage != SymbolStorage.LOCAL
-            or self._is_param_sym(sym)
-            or nm.sym_name == "self" {
+        if sym.storage != SymbolStorage.LOCAL or self._is_param_sym(sym) {
             continue;
         }
         seen.add(id(sym));
@@ -315,7 +310,8 @@ impl RcFactsPass._stamp_move_in(ir_in: Module) -> None {
         use = uses[0];
         if use.find_parent_of_type(WhileStmt) is not None
             or use.find_parent_of_type(InForStmt) is not None
-            or use.find_parent_of_type(IterForStmt) is not None {
+            or use.find_parent_of_type(IterForStmt) is not None
+            or self._repeats_in_comprehension(use) {
             continue;
         }
         if sym.defn
@@ -326,6 +322,37 @@ impl RcFactsPass._stamp_move_in(ir_in: Module) -> None {
         out.add(id(use));
     }
     ir_in.rc_move_in = out;
+}
+
+impl RcFactsPass._repeats_in_comprehension(use: NameAtom) -> bool {
+    came_from: UniNode = use;
+    cur = use.parent;
+    while cur is not None {
+        if isinstance(cur, (ListCompr, DictCompr)) {
+            once = cur.compr[0].collection if cur.compr else None;
+            if once is None or came_from is not cur.compr[0] {
+                return True;
+            }
+            inner: UniNode = use;
+            in_once = False;
+            while inner is not cur {
+                if inner is once {
+                    in_once = True;
+                    break;
+                }
+                if inner.parent is None {
+                    break;
+                }
+                inner = inner.parent;
+            }
+            if not in_once {
+                return True;
+            }
+        }
+        came_from = cur;
+        cur = cur.parent;
+    }
+    return False;
 }
 
 impl RcFactsPass._stamp_param_rebound(ir_in: Module) -> None {
@@ -341,9 +368,7 @@ impl RcFactsPass._stamp_param_rebound(ir_in: Module) -> None {
             continue;
         }
         owner = self._enclosing_fn_scope(pv);
-        body = owner.body if isinstance(owner, Ability) else None;
-        sym.param_rebound = (id(owner), sym.sym_name) in bound
-            or (isinstance(body, ImplDef) and (id(body), sym.sym_name) in bound);
+        sym.param_rebound = (id(owner), sym.sym_name) in bound;
     }
 }
 
@@ -541,12 +566,12 @@ impl RcFactsPass._stamp_scope_cleanup(ir_in: Module) -> None {
         names: list[str] = [];
         borrows: list[str] = [];
         seen: set[int] = set();
-        for nm in ability.get_all_sub_nodes(Name) {
+        for nm in ability.element_sub_nodes(Name) {
             sym = nm.sym;
             if sym is None
                 or id(sym) in seen
                 or sym.storage not in (SymbolStorage.LOCAL, SymbolStorage.PARAM)
-                or nm.find_parent_of_type(Ability) is not ability {
+                or nm.enclosing_decl(Ability) is not ability {
                 continue;
             }
             seen.add(id(sym));
@@ -577,4 +602,113 @@ impl RcFactsPass._stamp_scope_cleanup(ir_in: Module) -> None {
         }
     }
     ir_in.rc_scope_cleanup = out;
+}
+
+impl method_returns_borrow(callee: (Ability | None)) -> bool {
+    if not isinstance(callee, Ability)
+        or not callee.is_method
+        or callee.is_static
+        or not isinstance(callee.signature, FuncSignature) {
+        return False;
+    }
+    if type_tag_borrows(callee.signature.return_type) {
+        return True;
+    }
+    _found = False;
+    for _ret in callee.element_sub_nodes(ReturnStmt) {
+        if _ret.enclosing_frame is not callee {
+            continue;
+        }
+        if not (isinstance(_ret.expr, Name) and _ret.expr.value == "self") {
+            return False;
+        }
+        _found = True;
+    }
+    return _found;
+}
+
+impl call_borrows_receiver(call: FuncCall) -> bool {
+    if not isinstance(call.target, AtomTrailer) or not call.target.is_attr {
+        return False;
+    }
+    _recv: (UniNode | None) = call.target.target;
+    while isinstance(_recv, AtomTrailer) {
+        _recv = _recv.target;
+    }
+    if not isinstance(_recv, Name) {
+        return False;
+    }
+    return method_returns_borrow(call.callee_decl);
+}
+
+impl result_ownership(expr: (Expr | None)) -> Ownership {
+    if expr is None {
+        return Ownership.UNKNOWN;
+    }
+    if isinstance(expr, FuncCall) {
+        import from jaclang.compiler.erased_imports { erased_identity_call_arg }
+        erased_to = erased_identity_call_arg(expr);
+        if erased_to is not None {
+            return result_ownership(erased_to);
+        }
+        return Ownership.OWNED;
+    }
+    if isinstance(expr, BinaryExpr)
+        and isinstance(expr.op, ConnectOp)
+        and expr.op.capture_edges {
+        return Ownership.OWNED;
+    }
+    if isinstance(expr, (ListVal, SetVal, DictVal, ListCompr, DictCompr)) {
+        return Ownership.OWNED;
+    }
+    if isinstance(expr, FString) {
+        return Ownership.OWNED;
+    }
+    if isinstance(expr, MultiString) {
+        if len(expr.strings) == 1 and not isinstance(expr.strings[0], FString) {
+            return Ownership.STATIC;
+        }
+        return Ownership.OWNED;
+    }
+    if isinstance(expr, String) {
+        return Ownership.STATIC;
+    }
+    if isinstance(expr, AtomTrailer) {
+        import from jaclang.compiler.c_interop { foreign_read_copies }
+        if foreign_read_copies(expr) {
+            return Ownership.OWNED;
+        }
+    }
+    if isinstance(expr, (Name, AtomTrailer)) {
+        return Ownership.BORROWED;
+    }
+    return Ownership.UNKNOWN;
+}
+
+impl loop_body_locals(body: (Sequence[UniNode] | None)) -> list[str] {
+    out: list[str] = [];
+    seen: set[str] = set();
+    if not body {
+        return out;
+    }
+    body_names: list[Name] = [];
+    for stmt in body {
+        body_names.extend(stmt.get_all_sub_nodes(typ=Name));
+    }
+    body_ids = {id(nm) for nm in body_names};
+    for nm in body_names {
+        sym = nm.sym;
+        if sym is None or not sym.defn {
+            continue;
+        }
+        if sym.defn[0] is nm and nm.sym_name not in seen {
+            seen.add(nm.sym_name);
+
+            if any(id(use) not in body_ids for use in sym.uses) {
+                continue;
+            }
+            out.append(nm.sym_name);
+        }
+    }
+    return out;
 }
