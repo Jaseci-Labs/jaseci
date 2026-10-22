@@ -78,10 +78,14 @@ impl JacYac(initialTab: str = "feed") -> JsxElement {
             <AuthForm
                 isSignup={model.session.signup}
                 username={model.session.username}
+                email={model.session.email}
                 password={model.session.password}
                 error={model.session.error}
                 loading={model.session.busy}
                 onUsernameChange={lambda (e: ChangeEvent) { model.session.setUsername(
+                    e.target.value
+                ); }}
+                onEmailChange={lambda (e: ChangeEvent) { model.session.setEmail(
                     e.target.value
                 ); }}
                 onPasswordChange={lambda (e: ChangeEvent) { model.session.setPassword(

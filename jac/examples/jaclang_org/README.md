@@ -73,6 +73,16 @@ moves it; `JACORG_REPO_URL` points it at another repo). Without `git` on the
 server the knowledge service reports `unavailable` and the docs keep the
 bundled version.
 
+## Accounts
+
+Every account registers with a username and an email address
+(`[serve.auth.identifiers] username = "required"`, `email = "required"`). The
+username is the public JacYac handle; the email stays private and can be used
+in place of the username to log in. After a login the client reads the
+account's username from `/user/me`, so signing in with the email still shows
+the username. Email addresses are not verified (`[serve.auth.email]` keeps its
+default `verification = "none"`).
+
 ## Registration verification
 
 Password registration uses a built-in SHA-256 proof-of-work challenge. The
@@ -86,8 +96,7 @@ claim an SSO exemption through the password registration endpoint.
 This workspace enables the check with `[serve.auth.registration] challenge = true`.
 Other Jac projects retain their existing registration behavior by default.
 The existing shared authentication token store provides replay protection
-across workers. The signup button performs the check automatically on web,
-desktop, and mobile.
+across workers. `jacSignup` performs the check automatically on web, desktop, and mobile.
 
 ## Optional AI
 

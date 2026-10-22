@@ -19,6 +19,8 @@ def:pub AuthScreen(
     loading: bool,
     onUsernameChange: Callable[[str], None],
     onPasswordChange: Callable[[str], None],
+    email: str = "",
+    onEmailChange: Callable[[str], None] = lambda (t: str) {},
     onSubmit: Callable[[], None],
     onToggleMode: Callable[[], None],
     githubEnabled: bool = False,
@@ -34,6 +36,8 @@ impl AuthScreen(
     loading: bool,
     onUsernameChange: Callable[[str], None],
     onPasswordChange: Callable[[str], None],
+    email: str = "",
+    onEmailChange: Callable[[str], None] = lambda (t: str) {},
     onSubmit: Callable[[], None],
     onToggleMode: Callable[[], None],
     githubEnabled: bool = False,
@@ -44,7 +48,10 @@ impl AuthScreen(
     C = theme.colors;
     styles = makeStyles(C);
     viewport = useWindowDimensions();
-    can_submit = username.strip() != "" and password != "" and not loading;
+    can_submit = username.strip() != ""
+        and password != ""
+        and (not isSignup or email.strip() != "")
+        and not loading;
 
     <KeyboardAvoidingView
         style={[
@@ -96,13 +103,28 @@ impl AuthScreen(
                 <TextInput
                     style={styles.fieldInput}
                     value={username}
-                    placeholder="Username"
+                    placeholder={"Username" if isSignup else "Username or email"}
                     placeholderTextColor={C.muted}
                     autoCapitalize="none"
                     autoCorrect={False}
                     onChangeText={onUsernameChange}
                 />
             </View>
+            {if isSignup {
+                <View style={styles.fieldRow}>
+                    <Icon name="mail" size={18} color={C.muted}/>
+                    <TextInput
+                        style={styles.fieldInput}
+                        value={email}
+                        placeholder="Email"
+                        placeholderTextColor={C.muted}
+                        autoCapitalize="none"
+                        autoCorrect={False}
+                        keyboardType="email-address"
+                        onChangeText={onEmailChange}
+                    />
+                </View>
+            }}
             <View style={styles.fieldRow}>
                 <Icon name="lock" size={18} color={C.muted}/>
                 <TextInput

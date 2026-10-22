@@ -31,7 +31,7 @@ graph import {
 }
 
 graph import core {
-    async_utils ++> jacyac.registration | site.docs.DocsShell { sleep }
+    async_utils ++> site.docs.DocsShell { sleep }
     brand.font ++> jacyac.native.JacYacMobile { useBrandFont }
     brand.theme ++> jacyac.native.JacYacMobile
         | jacyac.native.components.Avatar
@@ -348,7 +348,6 @@ graph import core.jacyac {
         native.components.Avatar { avatar_of },
         native.screens.ExploreScreen | native.screens.ProfileScreen { name_of },
     ]
-    registration ++> session { register_with_challenge }
     session ++> state { Session, stored_username, useSession }
     state ++> native.JacYacMobile { useJacYac }
     validation ++> [

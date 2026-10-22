@@ -47,6 +47,10 @@ jaclang_source = "../.."
 [precommit]
 typecheck = true
 
+[serve.auth.identifiers]
+username = "required"
+email = "required"
+
 [serve.auth.registration]
 challenge = true
 attempts_per_hour = 5
@@ -98,7 +102,6 @@ utils_path = "core/utils.jac"
 default_model = "anthropic/claude-sonnet-5-5"
 
 [dependencies.npm]
-"@noble/hashes" = "^2.0.1"
 react-native-web = "^0.21.2"
 embla-carousel-react = "*"
 # 4.3.4 ships dist/esm/index.js re-exporting './Grid2x2Icon.js' etc. while the
@@ -138,7 +141,6 @@ min_width = 900
 min_height = 600
 
 [apps.mobile.dependencies.npm.native]
-"@noble/hashes" = "^2.0.1"
 expo-web-browser = "~15.0.0"
 expo-crypto = "~15.0.0"
 expo-font = "~14.0.0"

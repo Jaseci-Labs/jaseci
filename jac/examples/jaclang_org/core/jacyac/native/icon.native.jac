@@ -23,7 +23,8 @@ import from "lucide-react-native" {
     Check,
     Inbox,
     Bot,
-    BookOpen
+    BookOpen,
+    Mail
 }
 
 glob LUCIDE: dict[str, any] = {
@@ -51,7 +52,8 @@ glob LUCIDE: dict[str, any] = {
          "check": Check,
          "inbox": Inbox,
          "bot": Bot,
-         "book": BookOpen
+         "book": BookOpen,
+         "mail": Mail
      };
 
 def:pub Icon(name: str, size: int, color: str, fill: bool = False) -> JsxElement;
