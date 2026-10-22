@@ -224,6 +224,14 @@ def begin_prepare_memo -> any;
 
 def end_prepare_memo(token: any);
 
+glob _DIGEST_MEMO: ContextVar[dict[str, str] | None] = ContextVar(
+         'jac_digest_memo', `default=None
+     );
+
+def begin_digest_memo -> any;
+
+def end_digest_memo(token: any);
+
 def _memoized(kind: str, source_path: str, compute: any) -> str;
 
 def _project_env_fingerprint(source_path: str) -> str;

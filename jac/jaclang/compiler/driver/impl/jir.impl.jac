@@ -261,10 +261,9 @@ impl get_jir_cache_dir -> Path {
 }
 
 impl compute_content_sha256(file_path: str) -> str {
-    memo = _PREPARE_MEMO.get();
-    key = "sha\x1f" + file_path;
+    memo = _DIGEST_MEMO.get();
     if memo is not None {
-        found = memo.get(key);
+        found = memo.get(file_path);
         if found is not None {
             return found;
         }
@@ -281,7 +280,7 @@ impl compute_content_sha256(file_path: str) -> str {
     }
     digest = h.hexdigest();
     if memo is not None {
-        memo[key] = digest;
+        memo[file_path] = digest;
     }
     return digest;
 }
@@ -792,11 +791,19 @@ impl _module_projection(source_path: str) -> str {
 }
 
 impl begin_prepare_memo -> any {
-    return _PREPARE_MEMO.set(_PREPARE_MEMO.get() or {});
+    return _PREPARE_MEMO.set({});
 }
 
 impl end_prepare_memo(token: any) {
     _PREPARE_MEMO.reset(token);
+}
+
+impl begin_digest_memo -> any {
+    return _DIGEST_MEMO.set({});
+}
+
+impl end_digest_memo(token: any) {
+    _DIGEST_MEMO.reset(token);
 }
 
 impl _memoized(kind: str, source_path: str, compute: any) -> str {

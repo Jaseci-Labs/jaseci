@@ -929,6 +929,7 @@ impl NativeBuildSession.close_discovery -> bool {
 
 impl NativeBuildSession.postinit {
     self.memo = begin_prepare_memo();
+    self.digest_memo = begin_digest_memo();
     self.prog = JacProgram();
     self.prog.options = self.options.clone_for_native_import();
     self.prog._natives = self.registry;
@@ -1200,8 +1201,10 @@ impl NativeBuildSession._finish(paths: list[str]) {
     import from jaclang.compiler.driver.pipeline { require }
     import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
     if self.memo is not None {
+        end_digest_memo(self.digest_memo);
         end_prepare_memo(self.memo);
         self.memo = None;
+        self.digest_memo = None;
     }
     self.prog.options = self.options.clone_for_native_import();
     for path in paths {
@@ -1265,8 +1268,10 @@ impl NativeBuildSession.close {
     } finally {
         self.heap.release();
         if self.memo is not None {
+            end_digest_memo(self.digest_memo);
             end_prepare_memo(self.memo);
             self.memo = None;
+            self.digest_memo = None;
         }
     }
 }

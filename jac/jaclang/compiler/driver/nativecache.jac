@@ -179,6 +179,7 @@ obj NativeBuildSession {
         unlowerable: set[str] = set(),
         heap: SessionHeap = SessionHeap(),
         memo: any = None,
+        digest_memo: any = None,
         symbol_irs: dict[str, any] = {},
         symbol_sets: dict[str, tuple[set[str], set[str]]] = {};
 
