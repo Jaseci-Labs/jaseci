@@ -15341,6 +15341,11 @@ graph import runtime {
 }
 
 graph import runtime.na_stdlib {
+    _ascii ++> [
+        datetime { is_digit, is_space },
+        re { hexv, is_alpha, is_digit, is_space, is_word, swapcase },
+        string { is_id_start, is_word },
+    ]
     _bz2_native ++> bz2 { bz2_compress, bz2_decompress }
     _csprng_native ++> secrets | uuid { csprng_bytes }
     _datetime_native ++> datetime {
@@ -15452,7 +15457,12 @@ graph import runtime.na_stdlib {
         _default_types_ext,
         _default_types_val
     }
+    _re_posix_native ++> re { posix_compile, posix_exec, posix_free, posix_probe }
     _replace_native ++> _os_native { replace_file }
+    _repr ++> [
+        difflib { str_gt },
+        pprint | reprlib { repr_str, sorted_str_keys },
+    ]
     _socket_abi ++> [
         _socket_native {
             ADDRINFO_ADDRLEN_OFFSET,
@@ -15548,6 +15558,10 @@ graph import runtime.na_stdlib {
     ]
     _typename ++> hmac | secrets { typename }
     _user_home ++> os.path { user_home }
+    _utf8 ++> [
+        re { cp_len, cp_off, cps_str, cpslice_str, utf8_cps },
+        reprlib { cp_len, cpslice_str },
+    ]
     _zlib_native ++> [
         gzip {
             ZInflateResult,

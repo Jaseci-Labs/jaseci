@@ -1,7 +1,3 @@
-import from _repr { repr_str, sorted_str_keys }
-import from _utf8 { cp_len, cpslice_str }
-
-
 def _fill_head(limit: int) -> int {
     i: int = (limit - 3) // 2;
     if i < 0 {

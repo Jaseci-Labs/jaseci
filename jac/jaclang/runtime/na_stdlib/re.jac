@@ -84,11 +84,6 @@ glob _DIGIT_PRS: list[int] = [48, 57],
      _WORD_PRS: list[int] = [48, 57, 65, 90, 95, 95, 97, 122],
      _NWORD_PRS: list[int] = [0, 47, 58, 64, 91, 94, 96, 96, 123, 1114111];
 
-import from _re_posix_native { posix_probe, posix_compile, posix_exec, posix_free }
-
-import from _ascii { is_digit, is_word, is_alpha, is_space, swapcase, hexv }
-import from _utf8 { utf8_cps, cp_off, cp_len, cps_str, cpslice_str }
-
 
 obj _PS {
     has gen: int = 0,

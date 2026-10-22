@@ -1,5 +1,3 @@
-import from _ascii { is_id_start, is_word }
-
 glob:pub whitespace: str = " \t\n\r\x0b\x0c",
      ascii_lowercase: str = "abcdefghijklmnopqrstuvwxyz",
      ascii_uppercase: str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
@@ -89,19 +87,30 @@ def _strval(v: any) -> str {
 def _invalid(template: str, i: int) {
     bv: bytes = template.encode();
     lineno: int = 1;
-    lastnl: int = -1;
-    j: int = 0;
-    while j < i {
-        if bv[j] == 10 {
-            lineno += 1;
-            lastnl = j;
+    colno: int = 0;
+    k: int = 0;
+    while k <= i {
+        c: int = bv[k];
+        brk: bool = False;
+        if c == 13 and k < i and bv[k + 1] == 10 {
+            k += 1;
+            brk = True;
+        } elif (c >= 10 and c <= 13) or (c >= 28 and c <= 30) {
+            brk = True;
+        } elif c == 194 and k < i and bv[k + 1] == 133 {
+            k += 1;
+            brk = True;
+        } elif c == 226
+            and k + 1 < i
+            and bv[k + 1] == 128
+            and (bv[k + 2] == 168 or bv[k + 2] == 169) {
+            k += 2;
+            brk = True;
         }
-        j += 1;
-    }
-    colno: int = 1;
-    k: int = lastnl + 1;
-    while k < i {
-        if (bv[k] & 192) != 128 {
+        if brk {
+            lineno += 1;
+            colno = 0;
+        } elif (c & 192) != 128 {
             colno += 1;
         }
         k += 1;

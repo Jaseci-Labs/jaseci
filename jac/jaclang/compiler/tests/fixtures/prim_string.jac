@@ -11,8 +11,8 @@ locale-aware behavior are outside the native module's scope.
 i64, so it is probed via `len(...)` and element reads. `suberr`/`caperr` pin the
 KeyError / ValueError paths; `lit*` pin `safe_substitute`'s literal preservation
 of malformed placeholders. `inv*` pin the "Invalid placeholder" message with
-its one-based line and column (first line, a later line, and a non-ASCII
-prefix counted in characters); `valid4`/`lit5` pin that a braced name must
+its one-based line and column (first line, a later line, a non-ASCII
+prefix counted in characters, and every `str.splitlines` line break); `valid4`/`lit5` pin that a braced name must
 start like an identifier, so `${1}` is malformed. ES/JS opts out.
 """
 
@@ -58,10 +58,17 @@ def string_py -> dict[any, any] {
     } except ValueError as e {
         inv3 = str(e);
     }
+    inv4: str = "no raise";
+    try {
+        Template("a\rb\r\nc\x1d\u2028d$").substitute(me);
+    } except ValueError as e {
+        inv4 = str(e);
+    }
     return {
         "inv1": inv1,
         "inv2": inv2,
         "inv3": inv3,
+        "inv4": inv4,
         "valid4": Template("${1}").is_valid(),
         "valid5": Template("${_a1} $_b").is_valid(),
         "lit5": Template("${1} ${9z}").safe_substitute(me),
@@ -137,10 +144,17 @@ def string_na -> dict[str, any] {
     } except ValueError as e {
         inv3 = str(e);
     }
+    inv4: str = "no raise";
+    try {
+        Template("a\rb\r\nc\x1d\u2028d$").substitute(me);
+    } except ValueError as e {
+        inv4 = str(e);
+    }
     return {
         "inv1": inv1,
         "inv2": inv2,
         "inv3": inv3,
+        "inv4": inv4,
         "valid4": Template("${1}").is_valid(),
         "valid5": Template("${_a1} $_b").is_valid(),
         "lit5": Template("${1} ${9z}").safe_substitute(me),

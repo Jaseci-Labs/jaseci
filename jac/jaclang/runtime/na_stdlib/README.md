@@ -306,8 +306,9 @@ native layout records the emitted name separately from its source-level key.
   non-participating groups as CPython does, so its element type is `any`;
   `Match.groups()` returns `list[any]` (not a tuple); `Match[...]`
   `__getitem__` and `Match.re`/`lastindex` not provided; LOCALE flag
+  ignored; `error`/`PatternError` surfaces as `ValueError` (catch
   `Exception`/`ValueError` accordingly -- CPython's `re.error` is not a
-  `ValueError` subclass, so code catching `re.error` specifically diverges.
+  `ValueError` subclass, so code catching `re.error` specifically diverges).
   Decimal escapes follow CPython's rules exactly: `\N` with 1-2 digits is a
   group reference, a three-octal-digit escape (e.g. `\123`) is a literal,
   a fourth digit or non-octal next char stays literal text, and octal
