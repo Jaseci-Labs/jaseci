@@ -897,3 +897,214 @@ def re_na -> dict[str, any] {
         "mb0": mb0v
     };
 }
+
+
+def _sub_py(p: str, r: str, s: str) -> str {
+    try {
+        return re.sub(p, r, s);
+    } except Exception as e {
+        return "E:" + str(e);
+    }
+}
+
+
+def _span_py(m: (re.Match | None), g: int) -> str {
+    if m is None {
+        return "N";
+    }
+    mm: re.Match = m;
+    return str(mm.start(g)) + "," + str(mm.end(g));
+}
+
+
+def _join_py(xs: list[str]) -> str {
+    out: str = "";
+    for x in xs {
+        out += "[" + x + "]";
+    }
+    return out;
+}
+
+
+def _iter_py(p: str, s: str) -> str {
+    out: str = "";
+    for m in re.finditer(p, s) {
+        out += _span_py(m, 0) + ";";
+    }
+    return out;
+}
+
+
+def _split_py(p: str, s: str, k: int) -> str {
+    out: str = "";
+    for y in re.split(p, s, maxsplit=k) {
+        if y is None {
+            out += "[N]";
+        } else {
+            ys: str = str(y);
+            out += "[" + ys + "]";
+        }
+    }
+    return out;
+}
+
+
+def pins_py -> dict[str, any] {
+    look = re.match("(?=(a))z|a", "a");
+    look_g: str = "nomatch";
+    if look is not None {
+        lm: re.Match = look;
+        lg = lm.group(1);
+        look_g = "None" if lg is None else str(lg);
+    }
+    return {
+        "look_span": _span_py(look, 0),
+        "look_g1": look_g,
+        "look_keep": _span_py(re.match("(?=(a))a", "a"), 1),
+        "r_oct": _sub_py("a", "\\123", "a"),
+        "r_oct0": _sub_py("a", "<\\01>", "a"),
+        "r_oct07": _sub_py("a", "<\\07x>", "a"),
+        "r_oct_big": _sub_py("a", "\\777", "a"),
+        "r_x41": _sub_py("a", "\\x41", "a"),
+        "r_amp": _sub_py("a", "\\&", "a"),
+        "r_dash": _sub_py("a", "\\-\\.", "a"),
+        "r_bs": _sub_py("a", "<\\b>", "a"),
+        "r_esc": _sub_py("a", "\\\\n\\t", "a"),
+        "r_u": _sub_py("a", "\\u0041", "a"),
+        "r_g0": _sub_py("b", "<\\g<0>>", "abc"),
+        "r_gname": _sub_py("(?P<n>b)", "[\\g<n>]", "abc"),
+        "r_gnum": _sub_py("(b)", "[\\g<1>]", "abc"),
+        "r_g12": _sub_py("(b)", "\\12", "abc"),
+        "r_g1x": _sub_py("(b)(c)", "\\1x\\2", "abc"),
+        "r_gbad": _sub_py("(b)", "\\g<1a>", "abc"),
+        "r_gunk": _sub_py("(b)", "\\g<zz>", "abc"),
+        "r_gopen": _sub_py("(b)", "\\g<b", "abc"),
+        "r_gempty": _sub_py("(b)", "\\g<>", "abc"),
+        "r_gnolt": _sub_py("(a)", "\\g", "b"),
+        "r_trail": _sub_py("(a)", "x\\", "b"),
+        "r_nomatch_bad": _sub_py("(a)", "\\9", "b"),
+        "fm_alt": _span_py(re.fullmatch("a|ab", "ab"), 0),
+        "fm_lazy": _span_py(re.fullmatch("a+?", "aaa"), 0),
+        "fm_lazy_g": _span_py(re.fullmatch("(a+?)(a*?)", "aaa"), 2),
+        "fa_dollar": _join_py(re.findall("$", "a")),
+        "fa_lazy": _join_py(re.findall(".*?", "a")),
+        "fa_star": _join_py(re.findall("x*", "axb")),
+        "it_lazy": _iter_py(".*?", "a"),
+        "it_alt": _iter_py("x*|b", "ab"),
+        "sp_lazy": _split_py(".*?", "ab", 0),
+        "sp_neg": _split_py(",", "a,b,c", -1),
+        "sp_one": _split_py(",", "a,b,c", 1),
+        "su_lazy": re.sub(".*?", "-", "ab"),
+        "su_star": re.sub("x*", "-", "abxd"),
+        "neg_pos": _span_py(re.compile("x").search("xa", -1), 0),
+        "neg_pos_m": _span_py(re.compile("a").`match("ba", -5), 0)
+    };
+}
+
+
+def _sub_na(p: str, r: str, s: str) -> str {
+    try {
+        return re.sub(p, r, s);
+    } except Exception as e {
+        return "E:" + str(e);
+    }
+}
+
+
+def _span_na(m: (re.Match | None), g: int) -> str {
+    if m is None {
+        return "N";
+    }
+    mm: re.Match = m;
+    return str(mm.start(g)) + "," + str(mm.end(g));
+}
+
+
+def _join_na(xs: list[str]) -> str {
+    out: str = "";
+    for x in xs {
+        out += "[" + x + "]";
+    }
+    return out;
+}
+
+
+def _iter_na(p: str, s: str) -> str {
+    out: str = "";
+    for m in re.finditer(p, s) {
+        out += _span_na(m, 0) + ";";
+    }
+    return out;
+}
+
+
+def _split_na(p: str, s: str, k: int) -> str {
+    out: str = "";
+    for y in re.split(p, s, maxsplit=k) {
+        if y is None {
+            out += "[N]";
+        } else {
+            ys: str = str(y);
+            out += "[" + ys + "]";
+        }
+    }
+    return out;
+}
+
+
+def pins_na -> dict[str, any] {
+    look = re.match("(?=(a))z|a", "a");
+    look_g: str = "nomatch";
+    if look is not None {
+        lm: re.Match = look;
+        lg = lm.group(1);
+        look_g = "None" if lg is None else str(lg);
+    }
+    return {
+        "look_span": _span_na(look, 0),
+        "look_g1": look_g,
+        "look_keep": _span_na(re.match("(?=(a))a", "a"), 1),
+        "r_oct": _sub_na("a", "\\123", "a"),
+        "r_oct0": _sub_na("a", "<\\01>", "a"),
+        "r_oct07": _sub_na("a", "<\\07x>", "a"),
+        "r_oct_big": _sub_na("a", "\\777", "a"),
+        "r_x41": _sub_na("a", "\\x41", "a"),
+        "r_amp": _sub_na("a", "\\&", "a"),
+        "r_dash": _sub_na("a", "\\-\\.", "a"),
+        "r_bs": _sub_na("a", "<\\b>", "a"),
+        "r_esc": _sub_na("a", "\\\\n\\t", "a"),
+        "r_u": _sub_na("a", "\\u0041", "a"),
+        "r_g0": _sub_na("b", "<\\g<0>>", "abc"),
+        "r_gname": _sub_na("(?P<n>b)", "[\\g<n>]", "abc"),
+        "r_gnum": _sub_na("(b)", "[\\g<1>]", "abc"),
+        "r_g12": _sub_na("(b)", "\\12", "abc"),
+        "r_g1x": _sub_na("(b)(c)", "\\1x\\2", "abc"),
+        "r_gbad": _sub_na("(b)", "\\g<1a>", "abc"),
+        "r_gunk": _sub_na("(b)", "\\g<zz>", "abc"),
+        "r_gopen": _sub_na("(b)", "\\g<b", "abc"),
+        "r_gempty": _sub_na("(b)", "\\g<>", "abc"),
+        "r_gnolt": _sub_na("(a)", "\\g", "b"),
+        "r_trail": _sub_na("(a)", "x\\", "b"),
+        "r_nomatch_bad": _sub_na("(a)", "\\9", "b"),
+        "fm_alt": _span_na(re.fullmatch("a|ab", "ab"), 0),
+        "fm_lazy": _span_na(re.fullmatch("a+?", "aaa"), 0),
+        "fm_lazy_g": _span_na(re.fullmatch("(a+?)(a*?)", "aaa"), 2),
+        "fa_dollar": _join_na(re.findall("$", "a")),
+        "fa_lazy": _join_na(re.findall(".*?", "a")),
+        "fa_star": _join_na(re.findall("x*", "axb")),
+        "it_lazy": _iter_na(".*?", "a"),
+        "it_alt": _iter_na("x*|b", "ab"),
+        "sp_lazy": _split_na(".*?", "ab", 0),
+        "sp_neg": _split_na(",", "a,b,c", -1),
+        "sp_one": _split_na(",", "a,b,c", 1),
+        "su_lazy": re.sub(".*?", "-", "ab"),
+        "su_star": re.sub("x*", "-", "abxd"),
+        "neg_pos": _span_na(re.compile("x").search("xa", -1), 0),
+        "neg_pos_m": _span_na(re.compile("a").`match("ba", -5), 0)
+    };
+}
+
+
+def pins_cl -> dict[any, any] {
+    return {};
+}

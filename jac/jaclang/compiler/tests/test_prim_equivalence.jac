@@ -656,6 +656,7 @@ glob STR_NA_GAPS: list[any] = [
              ["na"]
          ),
          ("re bundled", "prim_re.jac", "re_py", "re_cl", "re_na", ["na"]),
+         ("re pins bundled", "prim_re.jac", "pins_py", "pins_cl", "pins_na", ["na"]),
          (
              "re fuzz bundled",
              "prim_re_fuzz.jac",
