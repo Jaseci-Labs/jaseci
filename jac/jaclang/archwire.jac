@@ -4333,10 +4333,10 @@ graph import byllm {
     _optdeps.openai ++> llm { AsyncOpenAI, OpenAI, openai }
     _optdeps.pillow ++> types { PILImageCls, open_image }
     _optdeps.pydantic ++> schema | types { TypeAdapter }
+    call_deadline ++> llm | mtir { CallDeadline }
     config_loader ++> llm | mtir { get_byllm_config }
-    deadline ++> llm | mtir { CallDeadline }
     exceptions ++> [
-        deadline { LLMTimeout },
+        call_deadline { LLMTimeout },
         lib {
             AuthenticationError,
             ByLLMError,
