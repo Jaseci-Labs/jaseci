@@ -204,7 +204,7 @@ impl _host_export(export: Expr | KWPair, program: JacProgram) -> (Ability | None
         }
         for ab in provider_module.get_all_sub_nodes(Ability) {
             if ab.sym_name == item.name.value
-                and ab.find_parent_of_type(Archetype) is None {
+                and ab.enclosing_decl(Archetype) is None {
                 return ab;
             }
         }
