@@ -54,11 +54,17 @@ obj MarkerClaim {
 }
 
 
+obj SvImport {
+    has target: str = '',
+        line: int = 0;
+}
+
+
 obj StripResult {
     has text: str = '',
         changed: bool = False,
         claims: list[MarkerClaim] = [],
-        sv_imports: list[str] = [],
+        sv_imports: list[SvImport] = [],
         note: str = '';
 }
 
@@ -111,6 +117,9 @@ def _parses_clean(src: str, file_path: str) -> bool;
 
 
 def _format_source(src: str, file_path: str) -> (str | None);
+
+
+def _client_imports(file_path: str, src: str) -> dict[tuple[int, str], bool];
 
 
 def _verify_claims(
@@ -182,7 +191,8 @@ impl fix(
     changed_files: list[str] = [];
     renamed: list[tuple[str, str]] = [];
     claims_by_file: dict[str, list[MarkerClaim]] = {};
-    sv_imports_by_file: dict[str, list[str]] = {};
+    sv_imports_by_file: dict[str, list[SvImport]] = {};
+    migrated_text: dict[str, str] = {};
     scanned: list[str] = [];
     skipped: list[str] = [];
     for path in files {
@@ -254,6 +264,7 @@ impl fix(
         }
         if res.sv_imports {
             sv_imports_by_file[final_path] = res.sv_imports;
+            migrated_text[final_path] = res.text;
         }
     }
 
@@ -275,8 +286,9 @@ impl fix(
         }
     }
     apps_by_root: dict[str, dict[str, dict[str, str]]] = {};
+    causes_by_root: dict[str, dict[str, str]] = {};
     orphaned: list[str] = [];
-    for (path, targets) in sv_imports_by_file.items() {
+    for (path, imports) in sv_imports_by_file.items() {
         app_root = find_jac_project_root(path);
         if not app_root {
             orphaned.append(path);
@@ -284,7 +296,21 @@ impl fix(
         }
         entry_stem = _project_entry_stem(os.path.join(app_root, 'jac.toml'));
         tables = apps_by_root.setdefault(app_root, {});
-        for tgt in targets {
+        causes = causes_by_root.setdefault(app_root, {});
+        client = _client_imports(path, migrated_text.get(path, ''));
+        for imp in imports {
+            tgt = imp.target;
+            client_only = client.get((imp.line, tgt));
+            if client_only {
+                continue;
+            }
+            cause = f"{path}:{imp.line}";
+            if client_only is None {
+                unverified.append(
+                    f"{cause} 'sv import from {tgt}' (placement not inferred; "
+                    "treated as a server-to-server import)"
+                );
+            }
             stem = tgt.strip('.').rsplit('.', 1)[-1];
             if not stem or stem == entry_stem or stem in tables {
                 continue;
@@ -309,6 +335,7 @@ impl fix(
                 table['route'] = old_route;
             }
             tables[stem] = table;
+            causes[stem] = cause;
         }
     }
 
@@ -323,6 +350,9 @@ impl fix(
         }
     }
     for (app_root, tables) in sorted(apps_by_root.items()) {
+        if not tables {
+            continue;
+        }
         toml_path = os.path.join(app_root, 'jac.toml');
         try {
             base_name = _ensure_workspace(toml_path, dry_run);
@@ -349,7 +379,12 @@ impl fix(
             }
             added = _append_app_table(toml_path, name, table, dry_run);
             if added {
-                apps_added.append(f"{app_root}: [apps.{name}] " + " ".join(added));
+                cause = causes_by_root[app_root][name];
+                apps_added.append(
+                    f"{app_root}: [apps.{name}] "
+                        + " ".join(added)
+                        + f" (from the sv import at {cause})"
+                );
             }
         }
     }
@@ -444,7 +479,7 @@ impl _collect_block_claims(
                 if k < body_end and tokens[k].value == 'from' {
                     tgt = _dotted_target(tokens, k + 1);
                     if tgt {
-                        res.sv_imports.append(tgt);
+                        res.sv_imports.append(SvImport(target=tgt, line=tok.loc.line));
                     }
                 }
             } elif tok.value in _NAMED_ELEMENT_KEYWORDS {
@@ -556,7 +591,9 @@ impl _strip_markers(src: str, file_path: str) -> StripResult {
                         and tokens[i + 2].value == 'from' {
                         tgt = _dotted_target(tokens, i + 3);
                         if tgt {
-                            res.sv_imports.append(tgt);
+                            res.sv_imports.append(
+                                SvImport(target=tgt, line=nxt.loc.line)
+                            );
                         }
                     }
                 } elif nxt.value in _NAMED_ELEMENT_KEYWORDS {
@@ -586,6 +623,7 @@ impl _strip_markers(src: str, file_path: str) -> StripResult {
     for (start, end, repl) in edits {
         out.append(src_bytes[cursor:start]);
         out.append(repl.encode('utf-8'));
+        out.append(b'\n' * src_bytes[start:end].count(b'\n'));
         cursor = end;
     }
     out.append(src_bytes[cursor:]);
@@ -826,6 +864,29 @@ impl _format_source(src: str, file_path: str) -> (str | None) {
     } except Exception {
         return None;
     }
+}
+
+
+impl _client_imports(file_path: str, src: str) -> dict[tuple[int, str], bool] {
+    prog = JacProgram();
+    try {
+        mod = prog.compile(file_path, use_str=src, no_cgen=True);
+    } except Exception {
+        return {};
+    }
+    if prog.count_module_errors(os.path.normpath(mod.loc.mod_path)) {
+        return {};
+    }
+    client: dict[tuple[int, str], bool] = {};
+    for stmt in mod.body {
+        if isinstance(stmt, uni.Import) and stmt.from_loc is not None {
+            key = (stmt.loc.first_line, stmt.from_loc.dot_path_str);
+            client[key] = client.get(key, True)
+                and getattr(stmt?.code_context, 'value', '') == 'client'
+                and not getattr(stmt, 'codespace_dual', False);
+        }
+    }
+    return client;
 }
 
 
