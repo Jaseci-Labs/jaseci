@@ -9989,6 +9989,10 @@ graph import compiler {
             refresh_placement_module,
             solve_module_placement
         },
+        passes.placement_pass._demote_unreached_imports {
+            placement_work,
+            refresh_placement_module
+        },
         passes.placement_pass.build_native_legality { native_closure_blocker },
         passes.placement_pass.settle_native_module { invalidate_importers_es },
         passes.placement_pass.uncrossable_native {
